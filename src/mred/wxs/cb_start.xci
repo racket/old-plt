@@ -9,4 +9,4 @@ extern Scheme_Object *objscheme_bundle_wxCommandEvent(wxCommandEvent *);
 #if 0
 static Scheme_Object *CB_TOC(wxFunction f, int n, struct Scheme_Object **p);
 #endif
-static void CB_TOSCHEME(CB_REALCLASS *obj, wxCommandEvent &event);
+static void CB_TOSCHEME(CB_REALCLASS *obj, wxCommandEvent *event);

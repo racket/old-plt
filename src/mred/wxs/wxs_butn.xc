@@ -19,9 +19,9 @@
 @SET CALLBACK_CLASS_USER = METHODNAME("button%","initialization")
 @INCLUDE cb_start.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,string,int=-1,int=-1,int=-1,int=-1,SYM[buttonStyle]=0,string="button"); : : ubCallbackSetup/NOZERO[5]|NOZERO[6]//ubCallbackCreatorFinish <> string label
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,string,int=-1,int=-1,int=-1,int=-1,SYM[buttonStyle]=0,string="button"); : : ubCallbackSetup/NOZERO[5]|NOZERO[6]//ubCallbackCreatorFinish <> string label
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,wxBitmap!,int=-1,int=-1,int=-1,int=-1,SYM[buttonStyle]=0,string="button"); : : ubCallbackSetup/CHECKOK[2.METHODNAME("button%","initialization")]|NOZERO[5]|NOZERO[6]//ubCallbackCreatorFinish <> bitmap label
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,wxBitmap!,int=-1,int=-1,int=-1,int=-1,SYM[buttonStyle]=0,string="button"); : : ubCallbackSetup/CHECKOK[2.METHODNAME("button%","initialization")]|NOZERO[5]|NOZERO[6]//ubCallbackCreatorFinish <> bitmap label
 
 @INCLUDE wxs_item.xci
 

@@ -708,8 +708,7 @@ int main(int argc, char **argv)
   }
 # else
   {
-    oskit_filesystem_t fs;
-    start_msmfs();
+    start_memfs();
   }
 # endif
 

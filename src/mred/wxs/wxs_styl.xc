@@ -118,7 +118,7 @@
 @IVAR "alignment-on" : SYM[align] alignmentOn
 @IVAR "alignment-off" : SYM[align] alignmentOff
   
-@CREATOR (SYM[changeNoArg]=wxCHANGE_NOTHING,-int=0); <> no change argument
+@CREATOR (SYM[changeNoArg]=wxCHANGE_NOTHING,-int=0); : : /setX1Zero <> no change argument
 @CREATORX (SYM[changeFam],SYM[family]); <> family
 @CREATORX (SYM[changeStyle],SYM[style]); <> style
 @CREATORX (SYM[changeWeight],SYM[weight]); <> weight

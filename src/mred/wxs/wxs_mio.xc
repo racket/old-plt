@@ -70,7 +70,7 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 @ V "seek" : void Seek(nnlong);
 @ V "skip" : void Skip(nnlong);
 @ V "bad?" : bool Bad(); : : : rZERO
-@ V "read" : long Read(char[]/setNULL/setNULL,-long); : /arrayToVector/copyVectorToArray : /vectorToArray/copyArrayToVector : rZERO
+@ V "read" : long Read(char[]/setNULL/setNULL////push,-long); : /arrayToVector/copyVectorToArray : /vectorToArray/copyArrayToVector : rZERO
 
 @END
 
@@ -81,7 +81,7 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 @ V "tell" : long Tell(); : : : rZERO
 @ V "seek" : void Seek(nnlong);
 @ V "bad?" : bool Bad(); : : : rZERO
-@ V "write" : void Write(char[]/bList/ubList/cList,-long); : /methListSet[char.0.0.1] : /glueListSet[char.0.0.1.METHODNAME("editor-stream-out-base%","write")]
+@ V "write" : void Write(char[]/bList/ubList/cList///push,-long); : /methListSet[char.0.0.1] : /glueListSet[char.0.0.1.METHODNAME("editor-stream-out-base%","write")]
 
 @END
 

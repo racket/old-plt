@@ -101,7 +101,7 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 @MACRO BundleVoidStar = (void *){x}
 @MACRO spSema = semaphore
 
-@ "yield" : void wxSchemeYield(void[]=NULL//BundleVoidStar///spSema);
+@ "yield" : void wxSchemeYield(void[]=NULL//BundleVoidStar///spSema/push);
 @ "flush-display" : void wxFlushDisplay();
 
 @ "fill-private-color" : void wxsFillPrivateColor(wxDC!, wxColour!);

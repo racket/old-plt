@@ -40,7 +40,7 @@ class wxsGauge : public wxGauge
 
 @HEADER
 
-@BEGINSYMBOLS gaugeStyle > PRED BUNDLE
+@BEGINSYMBOLS gaugeStyle > > PRED BUNDLE
 @SYM "vertical" : wxVERTICAL
 @SYM "horizontal" : wxHORIZONTAL
 @ENDSYMBOLS

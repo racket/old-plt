@@ -114,7 +114,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 @MACRO ubUndoer = ((void *){x})
 @MACRO CHECKUNDOER = scheme_check_proc_arity(METHODNAME("editor<%>","add-undo"), 0, 0, 1, p);
 
-@ "add-undo" : void AddSchemeUndo(UNKNOWN_OBJ//ubUndoer); : : /CHECKUNDOER
+@ "add-undo" : void AddSchemeUndo(UNKNOWN_OBJ//ubUndoer////push); : : /CHECKUNDOER
 
 @ "set-max-undo-history" : void SetMaxUndoHistory(rint[0|100000]);
 @ "get-max-undo-history" : int GetMaxUndoHistory();

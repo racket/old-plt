@@ -69,9 +69,11 @@
 static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 {
   Scheme_Object *cdr = scheme_null, *obj;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cdr);
 
   while (c--) {
-    obj = l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]);
+    obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
     cdr = scheme_make_pair(obj, cdr);
   }
   
@@ -83,22 +85,30 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   Scheme_Object *orig_l = l;
   int i = 0;
   long len;
+  l_TYPE l_POINT *f = NULL;
 
-  len = scheme_proper_list_length(l);
-  if (len < 0) scheme_wrong_type(who, "proper-list", -1, 0, &l);
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH(0, l);
+  VAR_STACK_PUSH(1, orig_l);
+  VAR_STACK_PUSH(2, f);
+
+  len = WITH_VAR_STACK(scheme_proper_list_length(l));
+  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
   if (c) *c = len;
 
   if (!(len + l_EXTRA))
     return NULL;
 
-  l_TYPE l_POINT *f = new l_TYPE l_POINT[len + l_EXTRA];
+  f = WITH_VAR_STACK(new l_TYPE l_POINT[len + l_EXTRA]);
 
   while (!SCHEME_NULLP(l)) {
-    if (!SCHEME_LISTP(l))
-     scheme_arg_mismatch(who, "expected a proper list: ", orig_l);
+    if (!SCHEME_LISTP(l)) {
+      WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
+      return NULL;
+    }
 
 #define l_COPYDEST f[i]
-#define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
+#define l_COPYSRC (l_DEREF WITH_VAR_STACK(l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST)))
 
     l_COPY
 
@@ -173,12 +183,9 @@ class os_wxMediaStreamInBase : public wxMediaStreamInBase {
 
 Scheme_Object *os_wxMediaStreamInBase_class;
 
-os_wxMediaStreamInBase::os_wxMediaStreamInBase(Scheme_Object * o)
+os_wxMediaStreamInBase::os_wxMediaStreamInBase(Scheme_Object *)
 : wxMediaStreamInBase()
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxMediaStreamInBase::~os_wxMediaStreamInBase()
@@ -193,18 +200,25 @@ long os_wxMediaStreamInBase::Read(char* x0, long x1)
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  VAR_STACK_PUSH(4, x0);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaStreamInBase_class, "read", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     return 0;
   } else {
   
   p[0] = NULL;
   p[0] = ArrayToVector(x0, NULL, x1);
 
-  v = scheme_apply(method, 1, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 1, p));
   VectorToArray(x0, p[0], &x1);
   
-  return objscheme_unbundle_integer(v, "read in editor-stream-in-base%"", extracting return value");
+  return WITH_VAR_STACK(objscheme_unbundle_integer(v, "read in editor-stream-in-base%"", extracting return value"));
   }
 }
 
@@ -215,17 +229,22 @@ Bool os_wxMediaStreamInBase::Bad()
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, method);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaStreamInBase_class, "bad?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     return 0;
   } else {
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
   
   
-  return objscheme_unbundle_bool(v, "bad? in editor-stream-in-base%"", extracting return value");
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "bad? in editor-stream-in-base%"", extracting return value"));
   }
 }
 
@@ -236,15 +255,21 @@ void os_wxMediaStreamInBase::Skip(nnlong x0)
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(4);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaStreamInBase_class, "skip", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     return;
   } else {
   
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 1, p));
   
   
   }
@@ -257,15 +282,21 @@ void os_wxMediaStreamInBase::Seek(nnlong x0)
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(4);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaStreamInBase_class, "seek", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     return;
   } else {
   
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 1, p));
   
   
   }
@@ -278,37 +309,48 @@ long os_wxMediaStreamInBase::Tell()
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, method);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaStreamInBase_class, "tell", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     return 0;
   } else {
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
   
   
-  return objscheme_unbundle_integer(v, "tell in editor-stream-in-base%"", extracting return value");
+  return WITH_VAR_STACK(objscheme_unbundle_integer(v, "tell in editor-stream-in-base%"", extracting return value"));
   }
 }
 
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInBaseRead(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   long r;
   objscheme_check_valid(obj);
   char* x0;
   long x1;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
 
   
   x0 = NULL;
 
   x0 = VectorToArray(NULL, p[0], &x1);
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Read(x0, x1);
+    r = WITH_VAR_STACK(((os_wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Read(x0, x1));
   else
-    r = ((wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Read(x0, x1);
+    r = WITH_VAR_STACK(((wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Read(x0, x1));
 
   ArrayToVector(x0, p[0], x1);
   
@@ -318,17 +360,22 @@ static Scheme_Object *os_wxMediaStreamInBaseRead(Scheme_Object *obj, int n,  Sch
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInBaseBad(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Bad();
+    r = WITH_VAR_STACK(((os_wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Bad());
   else
-    r = ((wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Bad();
+    r = WITH_VAR_STACK(((wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Bad());
 
   
   
@@ -338,18 +385,23 @@ static Scheme_Object *os_wxMediaStreamInBaseBad(Scheme_Object *obj, int n,  Sche
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInBaseSkip(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   nnlong x0;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
-  x0 = objscheme_unbundle_nonnegative_integer(p[0], "skip in editor-stream-in-base%");
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "skip in editor-stream-in-base%"));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Skip(x0);
+    WITH_VAR_STACK(((os_wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Skip(x0));
   else
-    ((wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Skip(x0);
+    WITH_VAR_STACK(((wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Skip(x0));
 
   
   
@@ -359,18 +411,23 @@ static Scheme_Object *os_wxMediaStreamInBaseSkip(Scheme_Object *obj, int n,  Sch
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInBaseSeek(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   nnlong x0;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
-  x0 = objscheme_unbundle_nonnegative_integer(p[0], "seek in editor-stream-in-base%");
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "seek in editor-stream-in-base%"));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Seek(x0);
+    WITH_VAR_STACK(((os_wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Seek(x0));
   else
-    ((wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Seek(x0);
+    WITH_VAR_STACK(((wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Seek(x0));
 
   
   
@@ -380,17 +437,22 @@ static Scheme_Object *os_wxMediaStreamInBaseSeek(Scheme_Object *obj, int n,  Sch
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInBaseTell(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   long r;
   objscheme_check_valid(obj);
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Tell();
+    r = WITH_VAR_STACK(((os_wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Tell());
   else
-    r = ((wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Tell();
+    r = WITH_VAR_STACK(((wxMediaStreamInBase *)((Scheme_Class_Object *)obj)->primdata)->Tell());
 
   
   
@@ -402,12 +464,18 @@ static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(Scheme_Object *obj,
 {
   os_wxMediaStreamInBase *realobj;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n != 0) 
-    scheme_wrong_count("initialization in editor-stream-in-base%", 0, 0, n, p);
+    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-stream-in-base%", 0, 0, n, p));
 
   
   realobj = new os_wxMediaStreamInBase(obj);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -418,26 +486,30 @@ static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(Scheme_Object *obj,
 
 void objscheme_setup_wxMediaStreamInBase(void *env)
 {
-if (os_wxMediaStreamInBase_class) {
+  if (os_wxMediaStreamInBase_class) {
     objscheme_add_global_class(os_wxMediaStreamInBase_class, "editor-stream-in-base%", env);
-} else {
-  os_wxMediaStreamInBase_class = objscheme_def_prim_class(env, "editor-stream-in-base%", "object%", os_wxMediaStreamInBase_ConstructScheme, 5);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxMediaStreamInBase_class = objscheme_def_prim_class(env, "editor-stream-in-base%", "object%", os_wxMediaStreamInBase_ConstructScheme, 5);
 
- scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "read", os_wxMediaStreamInBaseRead, 1, 1);
- scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "bad?", os_wxMediaStreamInBaseBad, 0, 0);
- scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "skip", os_wxMediaStreamInBaseSkip, 1, 1);
- scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "seek", os_wxMediaStreamInBaseSeek, 1, 1);
- scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "tell", os_wxMediaStreamInBaseTell, 0, 0);
+    wxREGGLOB("editor-stream-in-base%");
+
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "read", os_wxMediaStreamInBaseRead, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "bad?", os_wxMediaStreamInBaseBad, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "skip", os_wxMediaStreamInBaseSkip, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "seek", os_wxMediaStreamInBaseSeek, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "tell", os_wxMediaStreamInBaseTell, 0, 0));
 
 
-  scheme_made_class(os_wxMediaStreamInBase_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxMediaStreamInBase_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxMediaStreamInBase(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMediaStreamInBase_class))
@@ -445,7 +517,7 @@ int objscheme_istype_wxMediaStreamInBase(Scheme_Object *obj, const char *stop, i
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "editor-stream-in-base% object or " XC_NULL_STR: "editor-stream-in-base% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "editor-stream-in-base% object or " XC_NULL_STR: "editor-stream-in-base% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -459,16 +531,20 @@ Scheme_Object *objscheme_bundle_wxMediaStreamInBase(class wxMediaStreamInBase *r
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxMediaStreamInBase_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaStreamInBase_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -476,9 +552,11 @@ class wxMediaStreamInBase *objscheme_unbundle_wxMediaStreamInBase(Scheme_Object 
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxMediaStreamInBase(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxMediaStreamInBase *)o->primdata;
   else
@@ -502,12 +580,9 @@ class os_wxMediaStreamOutBase : public wxMediaStreamOutBase {
 
 Scheme_Object *os_wxMediaStreamOutBase_class;
 
-os_wxMediaStreamOutBase::os_wxMediaStreamOutBase(Scheme_Object * o)
+os_wxMediaStreamOutBase::os_wxMediaStreamOutBase(Scheme_Object *)
 : wxMediaStreamOutBase()
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxMediaStreamOutBase::~os_wxMediaStreamOutBase()
@@ -522,15 +597,22 @@ void os_wxMediaStreamOutBase::Write(char* x0, long x1)
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  VAR_STACK_PUSH(4, x0);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaStreamOutBase_class, "write", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     return;
   } else {
   
   p[0] = NULL;
   p[0] = __MakecharList(x0, x1);
 
-  v = scheme_apply(method, 1, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 1, p));
   
   
   }
@@ -543,17 +625,22 @@ Bool os_wxMediaStreamOutBase::Bad()
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, method);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaStreamOutBase_class, "bad?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     return 0;
   } else {
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
   
   
-  return objscheme_unbundle_bool(v, "bad? in editor-stream-out-base%"", extracting return value");
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "bad? in editor-stream-out-base%"", extracting return value"));
   }
 }
 
@@ -564,15 +651,21 @@ void os_wxMediaStreamOutBase::Seek(nnlong x0)
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(4);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaStreamOutBase_class, "seek", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     return;
   } else {
   
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 1, p));
   
   
   }
@@ -585,36 +678,47 @@ long os_wxMediaStreamOutBase::Tell()
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, method);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaStreamOutBase_class, "tell", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     return 0;
   } else {
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
   
   
-  return objscheme_unbundle_integer(v, "tell in editor-stream-out-base%"", extracting return value");
+  return WITH_VAR_STACK(objscheme_unbundle_integer(v, "tell in editor-stream-out-base%"", extracting return value"));
   }
 }
 
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOutBaseWrite(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   char* x0;
   long x1;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
 
   
   x0 = NULL;
 
   x0 = __MakecharArray((0 < n) ? p[0] : scheme_null, &x1, METHODNAME("editor-stream-out-base%","write"));
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Write(x0, x1);
+    WITH_VAR_STACK(((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Write(x0, x1));
   else
-    ((wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Write(x0, x1);
+    WITH_VAR_STACK(((wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Write(x0, x1));
 
   
   
@@ -624,17 +728,22 @@ static Scheme_Object *os_wxMediaStreamOutBaseWrite(Scheme_Object *obj, int n,  S
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOutBaseBad(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Bad();
+    r = WITH_VAR_STACK(((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Bad());
   else
-    r = ((wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Bad();
+    r = WITH_VAR_STACK(((wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Bad());
 
   
   
@@ -644,18 +753,23 @@ static Scheme_Object *os_wxMediaStreamOutBaseBad(Scheme_Object *obj, int n,  Sch
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOutBaseSeek(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   nnlong x0;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
-  x0 = objscheme_unbundle_nonnegative_integer(p[0], "seek in editor-stream-out-base%");
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "seek in editor-stream-out-base%"));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Seek(x0);
+    WITH_VAR_STACK(((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Seek(x0));
   else
-    ((wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Seek(x0);
+    WITH_VAR_STACK(((wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Seek(x0));
 
   
   
@@ -665,17 +779,22 @@ static Scheme_Object *os_wxMediaStreamOutBaseSeek(Scheme_Object *obj, int n,  Sc
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOutBaseTell(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   long r;
   objscheme_check_valid(obj);
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Tell();
+    r = WITH_VAR_STACK(((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Tell());
   else
-    r = ((wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Tell();
+    r = WITH_VAR_STACK(((wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Tell());
 
   
   
@@ -687,12 +806,18 @@ static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(Scheme_Object *obj
 {
   os_wxMediaStreamOutBase *realobj;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n != 0) 
-    scheme_wrong_count("initialization in editor-stream-out-base%", 0, 0, n, p);
+    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-stream-out-base%", 0, 0, n, p));
 
   
   realobj = new os_wxMediaStreamOutBase(obj);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -703,25 +828,29 @@ static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(Scheme_Object *obj
 
 void objscheme_setup_wxMediaStreamOutBase(void *env)
 {
-if (os_wxMediaStreamOutBase_class) {
+  if (os_wxMediaStreamOutBase_class) {
     objscheme_add_global_class(os_wxMediaStreamOutBase_class, "editor-stream-out-base%", env);
-} else {
-  os_wxMediaStreamOutBase_class = objscheme_def_prim_class(env, "editor-stream-out-base%", "object%", os_wxMediaStreamOutBase_ConstructScheme, 4);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxMediaStreamOutBase_class = objscheme_def_prim_class(env, "editor-stream-out-base%", "object%", os_wxMediaStreamOutBase_ConstructScheme, 4);
 
- scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "write", os_wxMediaStreamOutBaseWrite, 1, 1);
- scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "bad?", os_wxMediaStreamOutBaseBad, 0, 0);
- scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "seek", os_wxMediaStreamOutBaseSeek, 1, 1);
- scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "tell", os_wxMediaStreamOutBaseTell, 0, 0);
+    wxREGGLOB("editor-stream-out-base%");
+
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "write", os_wxMediaStreamOutBaseWrite, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "bad?", os_wxMediaStreamOutBaseBad, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "seek", os_wxMediaStreamOutBaseSeek, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "tell", os_wxMediaStreamOutBaseTell, 0, 0));
 
 
-  scheme_made_class(os_wxMediaStreamOutBase_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxMediaStreamOutBase_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxMediaStreamOutBase(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMediaStreamOutBase_class))
@@ -729,7 +858,7 @@ int objscheme_istype_wxMediaStreamOutBase(Scheme_Object *obj, const char *stop, 
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "editor-stream-out-base% object or " XC_NULL_STR: "editor-stream-out-base% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "editor-stream-out-base% object or " XC_NULL_STR: "editor-stream-out-base% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -743,16 +872,20 @@ Scheme_Object *objscheme_bundle_wxMediaStreamOutBase(class wxMediaStreamOutBase 
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxMediaStreamOutBase_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaStreamOutBase_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -760,9 +893,11 @@ class wxMediaStreamOutBase *objscheme_unbundle_wxMediaStreamOutBase(Scheme_Objec
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxMediaStreamOutBase(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxMediaStreamOutBase *)o->primdata;
   else
@@ -783,12 +918,9 @@ class os_wxMediaStreamInStringBase : public wxMediaStreamInStringBase {
 
 Scheme_Object *os_wxMediaStreamInStringBase_class;
 
-os_wxMediaStreamInStringBase::os_wxMediaStreamInStringBase(Scheme_Object * o, string x0, long x1)
+os_wxMediaStreamInStringBase::os_wxMediaStreamInStringBase(Scheme_Object *, string x0, long x1)
 : wxMediaStreamInStringBase(x0, x1)
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxMediaStreamInStringBase::~os_wxMediaStreamInStringBase()
@@ -803,13 +935,20 @@ static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(Scheme_Object
   string x0;
   long x1;
 
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
+
   
   if (n != 1) 
-    scheme_wrong_count("initialization in editor-stream-in-string-base%", 1, 1, n, p);
-  x0 = (string)objscheme_unbundle_string(p[0], "initialization in editor-stream-in-string-base%");
+    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-stream-in-string-base%", 1, 1, n, p));
+  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "initialization in editor-stream-in-string-base%"));
 
   x1 = SCHEME_STRTAG_VAL(p[0]);
   realobj = new os_wxMediaStreamInStringBase(obj, x0, x1);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -820,21 +959,25 @@ static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(Scheme_Object
 
 void objscheme_setup_wxMediaStreamInStringBase(void *env)
 {
-if (os_wxMediaStreamInStringBase_class) {
+  if (os_wxMediaStreamInStringBase_class) {
     objscheme_add_global_class(os_wxMediaStreamInStringBase_class, "editor-stream-in-string-base%", env);
-} else {
-  os_wxMediaStreamInStringBase_class = objscheme_def_prim_class(env, "editor-stream-in-string-base%", "editor-stream-in-base%", os_wxMediaStreamInStringBase_ConstructScheme, 0);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxMediaStreamInStringBase_class = objscheme_def_prim_class(env, "editor-stream-in-string-base%", "editor-stream-in-base%", os_wxMediaStreamInStringBase_ConstructScheme, 0);
+
+    wxREGGLOB("editor-stream-in-string-base%");
 
 
 
-  scheme_made_class(os_wxMediaStreamInStringBase_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxMediaStreamInStringBase_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxMediaStreamInStringBase(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMediaStreamInStringBase_class))
@@ -842,7 +985,7 @@ int objscheme_istype_wxMediaStreamInStringBase(Scheme_Object *obj, const char *s
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "editor-stream-in-string-base% object or " XC_NULL_STR: "editor-stream-in-string-base% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "editor-stream-in-string-base% object or " XC_NULL_STR: "editor-stream-in-string-base% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -856,16 +999,20 @@ Scheme_Object *objscheme_bundle_wxMediaStreamInStringBase(class wxMediaStreamInS
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxMediaStreamInStringBase_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaStreamInStringBase_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -873,9 +1020,11 @@ class wxMediaStreamInStringBase *objscheme_unbundle_wxMediaStreamInStringBase(Sc
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxMediaStreamInStringBase(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxMediaStreamInStringBase *)o->primdata;
   else
@@ -896,12 +1045,9 @@ class os_wxMediaStreamOutStringBase : public wxMediaStreamOutStringBase {
 
 Scheme_Object *os_wxMediaStreamOutStringBase_class;
 
-os_wxMediaStreamOutStringBase::os_wxMediaStreamOutStringBase(Scheme_Object * o)
+os_wxMediaStreamOutStringBase::os_wxMediaStreamOutStringBase(Scheme_Object *)
 : wxMediaStreamOutStringBase()
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxMediaStreamOutStringBase::~os_wxMediaStreamOutStringBase()
@@ -912,16 +1058,21 @@ os_wxMediaStreamOutStringBase::~os_wxMediaStreamOutStringBase()
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOutStringBaseGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   nstring r;
   objscheme_check_valid(obj);
   long _x0;
   long* x0 = &_x0;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = ((wxMediaStreamOutStringBase *)((Scheme_Class_Object *)obj)->primdata)->GetString(x0);
+  r = WITH_VAR_STACK(((wxMediaStreamOutStringBase *)((Scheme_Class_Object *)obj)->primdata)->GetString(x0));
 
   
   
@@ -933,12 +1084,18 @@ static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(Scheme_Objec
 {
   os_wxMediaStreamOutStringBase *realobj;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n != 0) 
-    scheme_wrong_count("initialization in editor-stream-out-string-base%", 0, 0, n, p);
+    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-stream-out-string-base%", 0, 0, n, p));
 
   
   realobj = new os_wxMediaStreamOutStringBase(obj);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -949,22 +1106,26 @@ static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(Scheme_Objec
 
 void objscheme_setup_wxMediaStreamOutStringBase(void *env)
 {
-if (os_wxMediaStreamOutStringBase_class) {
+  if (os_wxMediaStreamOutStringBase_class) {
     objscheme_add_global_class(os_wxMediaStreamOutStringBase_class, "editor-stream-out-string-base%", env);
-} else {
-  os_wxMediaStreamOutStringBase_class = objscheme_def_prim_class(env, "editor-stream-out-string-base%", "editor-stream-out-base%", os_wxMediaStreamOutStringBase_ConstructScheme, 1);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxMediaStreamOutStringBase_class = objscheme_def_prim_class(env, "editor-stream-out-string-base%", "editor-stream-out-base%", os_wxMediaStreamOutStringBase_ConstructScheme, 1);
 
- scheme_add_method_w_arity(os_wxMediaStreamOutStringBase_class, "get-string", os_wxMediaStreamOutStringBaseGetString, 0, 0);
+    wxREGGLOB("editor-stream-out-string-base%");
+
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutStringBase_class, "get-string", os_wxMediaStreamOutStringBaseGetString, 0, 0));
 
 
-  scheme_made_class(os_wxMediaStreamOutStringBase_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxMediaStreamOutStringBase_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxMediaStreamOutStringBase(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMediaStreamOutStringBase_class))
@@ -972,7 +1133,7 @@ int objscheme_istype_wxMediaStreamOutStringBase(Scheme_Object *obj, const char *
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "editor-stream-out-string-base% object or " XC_NULL_STR: "editor-stream-out-string-base% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "editor-stream-out-string-base% object or " XC_NULL_STR: "editor-stream-out-string-base% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -986,16 +1147,20 @@ Scheme_Object *objscheme_bundle_wxMediaStreamOutStringBase(class wxMediaStreamOu
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxMediaStreamOutStringBase_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaStreamOutStringBase_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -1003,9 +1168,11 @@ class wxMediaStreamOutStringBase *objscheme_unbundle_wxMediaStreamOutStringBase(
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxMediaStreamOutStringBase(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxMediaStreamOutStringBase *)o->primdata;
   else
@@ -1045,12 +1212,9 @@ class os_wxMediaStreamIn : public wxMediaStreamIn {
 
 Scheme_Object *os_wxMediaStreamIn_class;
 
-os_wxMediaStreamIn::os_wxMediaStreamIn(Scheme_Object * o, class wxMediaStreamInBase* x0)
+os_wxMediaStreamIn::os_wxMediaStreamIn(Scheme_Object *, class wxMediaStreamInBase* x0)
 : wxMediaStreamIn(x0)
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxMediaStreamIn::~os_wxMediaStreamIn()
@@ -1061,14 +1225,19 @@ os_wxMediaStreamIn::~os_wxMediaStreamIn()
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInOk(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Ok();
+  r = WITH_VAR_STACK(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Ok());
 
   
   
@@ -1078,15 +1247,20 @@ static Scheme_Object *os_wxMediaStreamInOk(Scheme_Object *obj, int n,  Scheme_Ob
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInJumpTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   nnlong x0;
 
-  
-  x0 = objscheme_unbundle_nonnegative_integer(p[0], "jump-to in editor-stream-in%");
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
-  ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->JumpTo(x0);
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "jump-to in editor-stream-in%"));
+
+  
+  WITH_VAR_STACK(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->JumpTo(x0));
 
   
   
@@ -1096,14 +1270,19 @@ static Scheme_Object *os_wxMediaStreamInJumpTo(Scheme_Object *obj, int n,  Schem
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInTell(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   long r;
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Tell();
+  r = WITH_VAR_STACK(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Tell());
 
   
   
@@ -1113,15 +1292,20 @@ static Scheme_Object *os_wxMediaStreamInTell(Scheme_Object *obj, int n,  Scheme_
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInSkip(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   nnlong x0;
 
-  
-  x0 = objscheme_unbundle_nonnegative_integer(p[0], "skip in editor-stream-in%");
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
-  ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Skip(x0);
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "skip in editor-stream-in%"));
+
+  
+  WITH_VAR_STACK(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Skip(x0));
 
   
   
@@ -1131,13 +1315,18 @@ static Scheme_Object *os_wxMediaStreamInSkip(Scheme_Object *obj, int n,  Scheme_
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInRemoveBoundary(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->RemoveBoundary();
+  WITH_VAR_STACK(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->RemoveBoundary());
 
   
   
@@ -1147,15 +1336,20 @@ static Scheme_Object *os_wxMediaStreamInRemoveBoundary(Scheme_Object *obj, int n
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInSetBoundary(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   nnlong x0;
 
-  
-  x0 = objscheme_unbundle_nonnegative_integer(p[0], "set-boundary in editor-stream-in%");
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
-  ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->SetBoundary(x0);
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "set-boundary in editor-stream-in%"));
+
+  
+  WITH_VAR_STACK(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->SetBoundary(x0));
 
   
   
@@ -1165,74 +1359,93 @@ static Scheme_Object *os_wxMediaStreamInSetBoundary(Scheme_Object *obj, int n,  
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInGet(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   class wxMediaStreamIn* r;
   objscheme_check_valid(obj);
   if ((n >= 1) && (objscheme_istype_box(p[0], NULL) && objscheme_istype_integer(objscheme_unbox(p[0], NULL), NULL))) {
     long _x0;
     long* x0 = &_x0;
 
-    
-    if (n != 1) 
-      scheme_wrong_count("get in editor-stream-in% (exact number case)", 1, 1, n, p);
-          *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get in editor-stream-in% (exact number case)"), "get in editor-stream-in% (exact number case)"", extracting boxed argument");
+    SETUP_VAR_STACK_REMEMBERED(2);
+    VAR_STACK_PUSH(0, obj);
+    VAR_STACK_PUSH(1, p);
 
     
-    r = ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Get(x0);
+    if (n != 1) 
+      WITH_VAR_STACK(scheme_wrong_count("get in editor-stream-in% (exact number case)", 1, 1, n, p));
+          *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get in editor-stream-in% (exact number case)")), "get in editor-stream-in% (exact number case)"", extracting boxed argument"));
+
+    
+    r = WITH_VAR_STACK(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Get(x0));
 
     
     if (n > 0)
-      objscheme_set_box(p[0], scheme_make_integer(_x0));
+      WITH_VAR_STACK(objscheme_set_box(p[0], scheme_make_integer(_x0)));
     
   } else  {
     double _x0;
     double* x0 = &_x0;
 
-    
-    if (n != 1) 
-      scheme_wrong_count("get in editor-stream-in% (inexact number case)", 1, 1, n, p);
-          *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get in editor-stream-in% (inexact number case)"), "get in editor-stream-in% (inexact number case)"", extracting boxed argument");
+    SETUP_VAR_STACK_REMEMBERED(2);
+    VAR_STACK_PUSH(0, obj);
+    VAR_STACK_PUSH(1, p);
 
     
-    r = ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Get(x0);
+    if (n != 1) 
+      WITH_VAR_STACK(scheme_wrong_count("get in editor-stream-in% (inexact number case)", 1, 1, n, p));
+          *x0 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[0], "get in editor-stream-in% (inexact number case)")), "get in editor-stream-in% (inexact number case)"", extracting boxed argument"));
+
+    
+    r = WITH_VAR_STACK(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Get(x0));
 
     
     if (n > 0)
-      objscheme_set_box(p[0], scheme_make_double(_x0));
+      WITH_VAR_STACK(objscheme_set_box(p[0], WITH_VAR_STACK(scheme_make_double(_x0))));
     
   }
 
-  return objscheme_bundle_wxMediaStreamIn(r);
+  return WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInGetInexact(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   double r;
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = GetInexact(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata));
+  r = WITH_VAR_STACK(GetInexact(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)));
 
   
   
-  return scheme_make_double(r);
+  return WITH_VAR_STACK(scheme_make_double(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInGetExact(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   long r;
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = GetExact(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata));
+  r = WITH_VAR_STACK(GetExact(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)));
 
   
   
@@ -1242,49 +1455,59 @@ static Scheme_Object *os_wxMediaStreamInGetExact(Scheme_Object *obj, int n,  Sch
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInGetFixed(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   class wxMediaStreamIn* r;
   objscheme_check_valid(obj);
   long _x0;
   long* x0 = &_x0;
 
-  
-      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-fixed in editor-stream-in%"), "get-fixed in editor-stream-in%"", extracting boxed argument");
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
-  r = ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->GetFixed(x0);
+      *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get-fixed in editor-stream-in%")), "get-fixed in editor-stream-in%"", extracting boxed argument"));
+
+  
+  r = WITH_VAR_STACK(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->GetFixed(x0));
 
   
   if (n > 0)
-    objscheme_set_box(p[0], scheme_make_integer(_x0));
+    WITH_VAR_STACK(objscheme_set_box(p[0], scheme_make_integer(_x0)));
   
-  return objscheme_bundle_wxMediaStreamIn(r);
+  return WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamInGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   nstring r;
   objscheme_check_valid(obj);
   nnlong _x0;
   nnlong* x0 = &_x0;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
   if (n > 0) {
     if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_nonnegative_integer(objscheme_nullable_unbox(p[0], "get-string in editor-stream-in%"), "get-string in editor-stream-in%"", extracting boxed argument");
+    *x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-string in editor-stream-in%")), "get-string in editor-stream-in%"", extracting boxed argument"));
   } else
     x0 = NULL;
 
   x0 = &_x0;
-  r = ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->GetString(x0);
+  r = WITH_VAR_STACK(((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->GetString(x0));
 
   
   if (n > 0 && !XC_SCHEME_NULLP(p[0]))
-    objscheme_set_box(p[0], scheme_make_integer(_x0));
+    WITH_VAR_STACK(objscheme_set_box(p[0], scheme_make_integer(_x0)));
   
   return (r ? scheme_make_sized_string(r, _x0 - 1, 0) : XC_SCHEME_NULL);
 }
@@ -1295,13 +1518,20 @@ static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(Scheme_Object *obj, int
   os_wxMediaStreamIn *realobj;
   class wxMediaStreamInBase* x0;
 
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
+
   
   if (n != 1) 
-    scheme_wrong_count("initialization in editor-stream-in%", 1, 1, n, p);
-  x0 = objscheme_unbundle_wxMediaStreamInBase(p[0], "initialization in editor-stream-in%", 0);
+    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-stream-in%", 1, 1, n, p));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamInBase(p[0], "initialization in editor-stream-in%", 0));
 
   
   realobj = new os_wxMediaStreamIn(obj, x0);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -1312,32 +1542,36 @@ static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(Scheme_Object *obj, int
 
 void objscheme_setup_wxMediaStreamIn(void *env)
 {
-if (os_wxMediaStreamIn_class) {
+  if (os_wxMediaStreamIn_class) {
     objscheme_add_global_class(os_wxMediaStreamIn_class, "editor-stream-in%", env);
-} else {
-  os_wxMediaStreamIn_class = objscheme_def_prim_class(env, "editor-stream-in%", "object%", os_wxMediaStreamIn_ConstructScheme, 11);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxMediaStreamIn_class = objscheme_def_prim_class(env, "editor-stream-in%", "object%", os_wxMediaStreamIn_ConstructScheme, 11);
 
- scheme_add_method_w_arity(os_wxMediaStreamIn_class, "ok?", os_wxMediaStreamInOk, 0, 0);
- scheme_add_method_w_arity(os_wxMediaStreamIn_class, "jump-to", os_wxMediaStreamInJumpTo, 1, 1);
- scheme_add_method_w_arity(os_wxMediaStreamIn_class, "tell", os_wxMediaStreamInTell, 0, 0);
- scheme_add_method_w_arity(os_wxMediaStreamIn_class, "skip", os_wxMediaStreamInSkip, 1, 1);
- scheme_add_method_w_arity(os_wxMediaStreamIn_class, "remove-boundary", os_wxMediaStreamInRemoveBoundary, 0, 0);
- scheme_add_method_w_arity(os_wxMediaStreamIn_class, "set-boundary", os_wxMediaStreamInSetBoundary, 1, 1);
- scheme_add_method_w_arity(os_wxMediaStreamIn_class, ">>", os_wxMediaStreamInGet, 1, 1);
- scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-inexact", os_wxMediaStreamInGetInexact, 0, 0);
- scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-exact", os_wxMediaStreamInGetExact, 0, 0);
- scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-fixed", os_wxMediaStreamInGetFixed, 1, 1);
- scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-string", os_wxMediaStreamInGetString, 0, 1);
+    wxREGGLOB("editor-stream-in%");
+
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "ok?", os_wxMediaStreamInOk, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "jump-to", os_wxMediaStreamInJumpTo, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "tell", os_wxMediaStreamInTell, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "skip", os_wxMediaStreamInSkip, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "remove-boundary", os_wxMediaStreamInRemoveBoundary, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "set-boundary", os_wxMediaStreamInSetBoundary, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, ">>", os_wxMediaStreamInGet, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-inexact", os_wxMediaStreamInGetInexact, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-exact", os_wxMediaStreamInGetExact, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-fixed", os_wxMediaStreamInGetFixed, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-string", os_wxMediaStreamInGetString, 0, 1));
 
 
-  scheme_made_class(os_wxMediaStreamIn_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxMediaStreamIn_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxMediaStreamIn(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMediaStreamIn_class))
@@ -1345,7 +1579,7 @@ int objscheme_istype_wxMediaStreamIn(Scheme_Object *obj, const char *stop, int n
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "editor-stream-in% object or " XC_NULL_STR: "editor-stream-in% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "editor-stream-in% object or " XC_NULL_STR: "editor-stream-in% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -1359,16 +1593,20 @@ Scheme_Object *objscheme_bundle_wxMediaStreamIn(class wxMediaStreamIn *realobj)
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxMediaStreamIn_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaStreamIn_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -1376,9 +1614,11 @@ class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *obj, co
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxMediaStreamIn(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxMediaStreamIn *)o->primdata;
   else
@@ -1403,12 +1643,9 @@ class os_wxMediaStreamOut : public wxMediaStreamOut {
 
 Scheme_Object *os_wxMediaStreamOut_class;
 
-os_wxMediaStreamOut::os_wxMediaStreamOut(Scheme_Object * o, class wxMediaStreamOutBase* x0)
+os_wxMediaStreamOut::os_wxMediaStreamOut(Scheme_Object *, class wxMediaStreamOutBase* x0)
 : wxMediaStreamOut(x0)
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxMediaStreamOut::~os_wxMediaStreamOut()
@@ -1419,14 +1656,19 @@ os_wxMediaStreamOut::~os_wxMediaStreamOut()
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOutOk(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = ((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Ok();
+  r = WITH_VAR_STACK(((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Ok());
 
   
   
@@ -1436,15 +1678,20 @@ static Scheme_Object *os_wxMediaStreamOutOk(Scheme_Object *obj, int n,  Scheme_O
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOutJumpTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   nnlong x0;
 
-  
-  x0 = objscheme_unbundle_nonnegative_integer(p[0], "jump-to in editor-stream-out%");
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
-  ((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->JumpTo(x0);
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "jump-to in editor-stream-out%"));
+
+  
+  WITH_VAR_STACK(((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->JumpTo(x0));
 
   
   
@@ -1454,14 +1701,19 @@ static Scheme_Object *os_wxMediaStreamOutJumpTo(Scheme_Object *obj, int n,  Sche
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOutTell(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   long r;
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = ((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Tell();
+  r = WITH_VAR_STACK(((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Tell());
 
   
   
@@ -1471,32 +1723,42 @@ static Scheme_Object *os_wxMediaStreamOutTell(Scheme_Object *obj, int n,  Scheme
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOutPut(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   class wxMediaStreamOut* r;
   objscheme_check_valid(obj);
   if ((n >= 1) && objscheme_istype_string(p[0], NULL)) {
     string x0;
 
-    
-    if (n != 1) 
-      scheme_wrong_count("put in editor-stream-out% (string without length case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "put in editor-stream-out% (string without length case)");
+    SETUP_VAR_STACK_REMEMBERED(3);
+    VAR_STACK_PUSH(0, obj);
+    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(2, x0);
 
     
-    r = ((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Put(x0);
+    if (n != 1) 
+      WITH_VAR_STACK(scheme_wrong_count("put in editor-stream-out% (string without length case)", 1, 1, n, p));
+    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "put in editor-stream-out% (string without length case)"));
+
+    
+    r = WITH_VAR_STACK(((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Put(x0));
 
     
     
   } else if ((n >= 1) && objscheme_istype_float(p[0], NULL)) {
     double x0;
 
-    
-    if (n != 1) 
-      scheme_wrong_count("put in editor-stream-out% (inexact number case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_float(p[0], "put in editor-stream-out% (inexact number case)");
+    SETUP_VAR_STACK_REMEMBERED(2);
+    VAR_STACK_PUSH(0, obj);
+    VAR_STACK_PUSH(1, p);
 
     
-    r = ((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Put(x0);
+    if (n != 1) 
+      WITH_VAR_STACK(scheme_wrong_count("put in editor-stream-out% (inexact number case)", 1, 1, n, p));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "put in editor-stream-out% (inexact number case)"));
+
+    
+    r = WITH_VAR_STACK(((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Put(x0));
 
     
     
@@ -1504,52 +1766,66 @@ static Scheme_Object *os_wxMediaStreamOutPut(Scheme_Object *obj, int n,  Scheme_
     nnint x0;
     string x1;
 
-    
-    if (n != 2) 
-      scheme_wrong_count("put in editor-stream-out% (length and string case)", 2, 2, n, p);
-    x0 = objscheme_unbundle_nonnegative_integer(p[0], "put in editor-stream-out% (length and string case)");
-    x1 = (string)objscheme_unbundle_string(p[1], "put in editor-stream-out% (length and string case)");
+    SETUP_VAR_STACK_REMEMBERED(3);
+    VAR_STACK_PUSH(0, obj);
+    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(2, x1);
 
     
-    r = ((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Put(x0, x1);
+    if (n != 2) 
+      WITH_VAR_STACK(scheme_wrong_count("put in editor-stream-out% (length and string case)", 2, 2, n, p));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "put in editor-stream-out% (length and string case)"));
+    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "put in editor-stream-out% (length and string case)"));
+
+    
+    r = WITH_VAR_STACK(((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Put(x0, x1));
 
     
     
   } else  {
     long x0;
 
-    
-    if (n != 1) 
-      scheme_wrong_count("put in editor-stream-out% (exact number case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "put in editor-stream-out% (exact number case)");
+    SETUP_VAR_STACK_REMEMBERED(2);
+    VAR_STACK_PUSH(0, obj);
+    VAR_STACK_PUSH(1, p);
 
     
-    r = ((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Put(x0);
+    if (n != 1) 
+      WITH_VAR_STACK(scheme_wrong_count("put in editor-stream-out% (exact number case)", 1, 1, n, p));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "put in editor-stream-out% (exact number case)"));
+
+    
+    r = WITH_VAR_STACK(((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Put(x0));
 
     
     
   }
 
-  return objscheme_bundle_wxMediaStreamOut(r);
+  return WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxMediaStreamOutPutFixed(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   class wxMediaStreamOut* r;
   objscheme_check_valid(obj);
   long x0;
 
-  
-  x0 = objscheme_unbundle_integer(p[0], "put-fixed in editor-stream-out%");
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
-  r = ((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->PutFixed(x0);
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "put-fixed in editor-stream-out%"));
+
+  
+  r = WITH_VAR_STACK(((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->PutFixed(x0));
 
   
   
-  return objscheme_bundle_wxMediaStreamOut(r);
+  return WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(r));
 }
 
 #pragma argsused
@@ -1558,13 +1834,20 @@ static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(Scheme_Object *obj, in
   os_wxMediaStreamOut *realobj;
   class wxMediaStreamOutBase* x0;
 
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
+
   
   if (n != 1) 
-    scheme_wrong_count("initialization in editor-stream-out%", 1, 1, n, p);
-  x0 = objscheme_unbundle_wxMediaStreamOutBase(p[0], "initialization in editor-stream-out%", 0);
+    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-stream-out%", 1, 1, n, p));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamOutBase(p[0], "initialization in editor-stream-out%", 0));
 
   
   realobj = new os_wxMediaStreamOut(obj, x0);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -1575,26 +1858,30 @@ static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(Scheme_Object *obj, in
 
 void objscheme_setup_wxMediaStreamOut(void *env)
 {
-if (os_wxMediaStreamOut_class) {
+  if (os_wxMediaStreamOut_class) {
     objscheme_add_global_class(os_wxMediaStreamOut_class, "editor-stream-out%", env);
-} else {
-  os_wxMediaStreamOut_class = objscheme_def_prim_class(env, "editor-stream-out%", "object%", os_wxMediaStreamOut_ConstructScheme, 5);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxMediaStreamOut_class = objscheme_def_prim_class(env, "editor-stream-out%", "object%", os_wxMediaStreamOut_ConstructScheme, 5);
 
- scheme_add_method_w_arity(os_wxMediaStreamOut_class, "ok?", os_wxMediaStreamOutOk, 0, 0);
- scheme_add_method_w_arity(os_wxMediaStreamOut_class, "jump-to", os_wxMediaStreamOutJumpTo, 1, 1);
- scheme_add_method_w_arity(os_wxMediaStreamOut_class, "tell", os_wxMediaStreamOutTell, 0, 0);
- scheme_add_method_w_arity(os_wxMediaStreamOut_class, "<<", os_wxMediaStreamOutPut, 1, 2);
- scheme_add_method_w_arity(os_wxMediaStreamOut_class, "put-fixed", os_wxMediaStreamOutPutFixed, 1, 1);
+    wxREGGLOB("editor-stream-out%");
+
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "ok?", os_wxMediaStreamOutOk, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "jump-to", os_wxMediaStreamOutJumpTo, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "tell", os_wxMediaStreamOutTell, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "<<", os_wxMediaStreamOutPut, 1, 2));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "put-fixed", os_wxMediaStreamOutPutFixed, 1, 1));
 
 
-  scheme_made_class(os_wxMediaStreamOut_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxMediaStreamOut_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxMediaStreamOut(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMediaStreamOut_class))
@@ -1602,7 +1889,7 @@ int objscheme_istype_wxMediaStreamOut(Scheme_Object *obj, const char *stop, int 
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "editor-stream-out% object or " XC_NULL_STR: "editor-stream-out% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "editor-stream-out% object or " XC_NULL_STR: "editor-stream-out% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -1616,16 +1903,20 @@ Scheme_Object *objscheme_bundle_wxMediaStreamOut(class wxMediaStreamOut *realobj
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxMediaStreamOut_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaStreamOut_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -1633,9 +1924,11 @@ class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *obj, 
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxMediaStreamOut(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxMediaStreamOut *)o->primdata;
   else

@@ -662,10 +662,6 @@ void objscheme_destroy(void *realobj, Scheme_Object *obj_in)
   }
 }
 
-void objscheme_backpointer(void *obj)
-{
-}
-
 void objscheme_register_primpointer(void *prim_ptr_address)
 {
   GC_general_register_disappearing_link((void **)prim_ptr_address, NULL);

@@ -45,9 +45,11 @@
 static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 {
   Scheme_Object *cdr = scheme_null, *obj;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cdr);
 
   while (c--) {
-    obj = l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]);
+    obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
     cdr = scheme_make_pair(obj, cdr);
   }
   
@@ -59,22 +61,30 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   Scheme_Object *orig_l = l;
   int i = 0;
   long len;
+  l_TYPE l_POINT *f = NULL;
 
-  len = scheme_proper_list_length(l);
-  if (len < 0) scheme_wrong_type(who, "proper-list", -1, 0, &l);
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH(0, l);
+  VAR_STACK_PUSH(1, orig_l);
+  VAR_STACK_PUSH(2, f);
+
+  len = WITH_VAR_STACK(scheme_proper_list_length(l));
+  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
   if (c) *c = len;
 
   if (!(len + l_EXTRA))
     return NULL;
 
-  l_TYPE l_POINT *f = new l_TYPE l_POINT[len + l_EXTRA];
+  f = WITH_VAR_STACK(new l_TYPE l_POINT[len + l_EXTRA]);
 
   while (!SCHEME_NULLP(l)) {
-    if (!SCHEME_LISTP(l))
-     scheme_arg_mismatch(who, "expected a proper list: ", orig_l);
+    if (!SCHEME_LISTP(l)) {
+      WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
+      return NULL;
+    }
 
 #define l_COPYDEST f[i]
-#define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
+#define l_COPYSRC (l_DEREF WITH_VAR_STACK(l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST)))
 
     l_COPY
 

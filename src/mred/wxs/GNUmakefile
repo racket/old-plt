@@ -159,7 +159,7 @@ $(OBJDIR)/wxscheme.o : wxscheme.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) wxsmred.h
 	$(WXSCC) wxscheme.cxx -o $(OBJDIR)/wxscheme.o 
 
 $(OBJDIR)/xcglue.o : ../../mzscheme/utils/xcglue.c ../../mzscheme/utils/xcglue.h $(WXSCHEMEHEADERS)
-	$(WXSCC) ../../mzscheme/utils/xcglue.c -o $(OBJDIR)/xcglue.o
+	$(CC) $(WXSCFLAGS) $(LOCALFLAGS) -c ../../mzscheme/utils/xcglue.c -o $(OBJDIR)/xcglue.o
 
 $(OBJDIR)/wxscomon.o : wxscomon.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) wxscomon.cxx -o $(OBJDIR)/wxscomon.o

@@ -46,7 +46,7 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 @SET NOTEST = 1
 @INCLUDE list.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,SYM[kind]=wxSINGLE,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList,SYM[style]=0,string="button"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]|glueListSet[string.8.9.8.METHODNAME("list-box%","initialization")]/glueCleanup[9]/ubCallbackCreatorFinish
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,nstring,SYM[kind]=wxSINGLE,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList///push,SYM[style]=0,string="button"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]|glueListSet[string.8.9.8.METHODNAME("list-box%","initialization")]/glueCleanup[9]/ubCallbackCreatorFinish
 
 @INCLUDE wxs_item.xci
 
@@ -77,7 +77,7 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 
 @ m "get-selections" : Scheme_Object*/bundleAny GetSelectionList();
 
-@ "set" : void Set(-int,string[]/bList/ubList/cList); : : /glueListSet[string.0.1.0.METHODNAME("list%","set")]//
+@ "set" : void Set(-int,string[]/bList/ubList/cList///push); : : /glueListSet[string.0.1.0.METHODNAME("list%","set")]//
 @ "set-first-visible-item" : void SetFirstItem(int); : : /RANGE[0] <> index
 @ "set-string-selection" : bool SetStringSelection(string);
 @ "get-string" : nstring GetString(int); : : /RANGERET[0.XC_SCHEME_NULL]

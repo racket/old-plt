@@ -37,7 +37,6 @@ Scheme_Class_Object *objscheme_find_object(void *);
 void objscheme_check_valid(Scheme_Object *);
 int objscheme_is_shutdown(Scheme_Object *o);
 
-void objscheme_backpointer(void *obj_ptr_address);
 void objscheme_register_primpointer(void *prim_ptr_address);
 
 void objscheme_destroy(void *, Scheme_Object *obj);
@@ -147,9 +146,34 @@ typedef float nnfloat;
 #define XC_NULL_STR "#f"
 
 #ifdef __GNUG__
-#define WXS_USE_ARGUMENT(x) x = x; /* compiler optimizes it away */
+# define WXS_USE_ARGUMENT(x) x = x; /* compiler optimizes it away */
 #else
-#define WXS_USE_ARGUMENT(x) 
+# define WXS_USE_ARGUMENT(x) 
+#endif
+
+#ifdef MZ_PRECISE_GC
+# define _SETUP_VAR_STACK(n, vs)         void *__gc_var_stack__[n + 2]; \
+                                         __gc_var_stack__[0] = vs; \
+                                         __gc_var_stack__[1] = (void *)n
+# define SETUP_VAR_STACK(n)              _SETUP_VAR_STACK(n, GC_variable_stack)
+# define SETUP_VAR_STACK_REMEMBERED(n)   _SETUP_VAR_STACK(n, __remembered_vs__)
+# define VAR_STACK_PUSH(p, var)          __gc_var_stack__[p+2] = &(var)
+# define VAR_STACK_PUSH_ARRAY(p, var, n) __gc_var_stack__[p+2] = 0; \
+                                         __gc_var_stack__[p+3] = &(var); \
+                                         __gc_var_stack__[p+4] = (void *)n
+# define SET_VAR_STACK()                 GC_variable_stack = __gc_var_stack__
+# define WITH_VAR_STACK(x)               (SET_VAR_STACK(), x)
+# define REMEMBER_VAR_STACK()            void *__remembered_vs__ = GC_variable_stack
+# define WITH_REMEMBERED_STACK(x)        (GC_variable_stack = __remembered_vs__, x)
+#else
+# define SETUP_VAR_STACK(n) /* empty */
+# define SETUP_VAR_STACK_REMEMBERED(n) /* empty */
+# define VAR_STACK_PUSH(p, var) /* empty */
+# define VAR_STACK_PUSH_ARRAY(p, var, n) /* empty */
+# define SET_VAR_STACK() /* empty */
+# define WITH_VAR_STACK(x) x
+# define REMEMBER_VAR_STACK() /* empty */
+# define WITH_REMEMBERED_STACK(x) x
 #endif
 
 #ifdef __cplusplus

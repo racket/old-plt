@@ -83,7 +83,7 @@
 
 @CLASSBASE wxMediaEdit "text" : "editor"
 
-@CREATOR (nnfloat=1.0,float[]=NULL/bList/ubList/cList,-int=0); : : /glueListSet[float.1.1.2.METHODNAME("text%","initialization")]//
+@CREATOR (nnfloat=1.0,float[]=NULL/bList/ubList/cList///push,-int=0); : : /glueListSet[float.1.1.2.METHODNAME("text%","initialization")]//
 
 @CLASSID wxTYPE_MEDIA_EDIT
 
@@ -204,7 +204,7 @@
 @MACRO checkNull = if (!x0) x0 = &_x0;
 
 @ "get-tabs" : float[]/bReturnList[float.0] GetTabs(nnint?=NULL,float?=NULL,bool?=NULL); : : /checkNull/
-@ "set-tabs" : void SetTabs(float[]/bList/ubList/cList,-int,float=wxTAB_WIDTH,bool=TRUE); : : /glueListSet[float.0.0.1.METHODNAME("text%","set-tabs")]//
+@ "set-tabs" : void SetTabs(float[]/bList/ubList/cList///push,-int,float=wxTAB_WIDTH,bool=TRUE); : : /glueListSet[float.0.0.1.METHODNAME("text%","set-tabs")]//
 
 @ v "can-insert?" : bool CanInsert(nnlong,nnlong);
 @ v "on-insert" : void OnInsert(nnlong,nnlong);
@@ -247,9 +247,9 @@ static void WordbreakCallbackToScheme(wxMediaEdit *,long*,long*,int,Scheme_Objec
 @MACRO cCallback2 = SCHEME_PROCP({x})
 @MACRO spCallback2 = (wxMediaEdit-object num num -> void)
 
-@ "set-wordbreak-func" : void SetWordbreakFunc(wxWordbreakFunc//ubCallback/cCallback//spCallback,-unknown#void*//ubData);
+@ "set-wordbreak-func" : void SetWordbreakFunc(wxWordbreakFunc//ubCallback/cCallback//spCallback/nopush,-unknown#void*//ubData);
 
-@ "set-clickback" : void SetClickback(nnlong,nnlong,wxClickbackFunc//ubCallback2/cCallback2//spCallback2,-unknown#void*//ubData2,wxStyleDelta^=NULL,bool=FALSE);
+@ "set-clickback" : void SetClickback(nnlong,nnlong,wxClickbackFunc//ubCallback2/cCallback2//spCallback2/nopush,-unknown#void*//ubData2,wxStyleDelta^=NULL,bool=FALSE);
 @ "remove-clickback" : void RemoveClickback(nnlong,nnlong);
 
 static void WordbreakCallbackToScheme(wxMediaEdit *media,
@@ -258,25 +258,32 @@ static void WordbreakCallbackToScheme(wxMediaEdit *media,
 				      Scheme_Object *f)
 {
     Scheme_Object *p[4], *s, *e;
+    SETUP_VAR_STACK(8);
+    VAR_STACK_PUSH_ARRAY(0, p, 4);
+    VAR_STACK_PUSH(3, s);
+    VAR_STACK_PUSH(4, e);
+    VAR_STACK_PUSH(5, start);
+    VAR_STACK_PUSH(6, end);
+    VAR_STACK_PUSH(7, f);
 
-    p[0] = objscheme_bundle_wxMediaEdit(media);
+    p[0] = WITH_VAR_STACK(objscheme_bundle_wxMediaEdit(media));
     if (start)
-      s = scheme_box(objscheme_bundle_integer(*start));
+      s = WITH_VAR_STACK(scheme_box(WITH_VAR_STACK(objscheme_bundle_integer(*start))));
     else
       s = XC_SCHEME_NULL;
     if (end)
-      e = scheme_box(objscheme_bundle_integer(*end));
+      e = WITH_VAR_STACK(scheme_box(WITH_VAR_STACK(objscheme_bundle_integer(*end))));
     else
       e = XC_SCHEME_NULL;
     p[1] = s;
     p[2] = e;
-    p[3] = bundle_symset_breakType(reason);
+    p[3] = WITH_VAR_STACK(bundle_symset_breakType(reason));
 
-    scheme_apply_multi(f, 4, p);
+    WITH_VAR_STACK(scheme_apply_multi(f, 4, p));
     if (start)
-      *start = objscheme_unbundle_integer(scheme_unbox(s), "Scheme wordbreak callback");
+      *start = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(scheme_unbox(s)), "Scheme wordbreak callback"));
     if (end)
-      *end = objscheme_unbundle_integer(scheme_unbox(e), "Scheme wordbreak callback");
+      *end = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(scheme_unbox(e)), "Scheme wordbreak callback"));
 }
 
 static void ClickbackToScheme(wxMediaEdit *media,
@@ -284,14 +291,15 @@ static void ClickbackToScheme(wxMediaEdit *media,
 			      Scheme_Object *f)
 {
   Scheme_Object *p[3];
+  SETUP_VAR_STACK(4);
+  VAR_STACK_PUSH_ARRAY(0, p, 3);
+  VAR_STACK_PUSH(3, f);
 
-  p[0] = objscheme_bundle_wxMediaEdit(media);
-  p[1] = objscheme_bundle_integer(start);
-  p[2] = objscheme_bundle_integer(end);
+  p[0] = WITH_VAR_STACK(objscheme_bundle_wxMediaEdit(media));
+  p[1] = WITH_VAR_STACK(objscheme_bundle_integer(start));
+  p[2] = WITH_VAR_STACK(objscheme_bundle_integer(end));
 
-  scheme_apply_multi(f, 3, p);
+  WITH_VAR_STACK(scheme_apply_multi(f, 3, p));
 }
 
 @END
-
-

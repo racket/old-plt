@@ -16,8 +16,8 @@
 @SET CALLBACK_CLASS_USER = METHODNAME("check-box%","initialization")
 @INCLUDE cb_start.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,string,int=-1,int=-1,int=-1,int=-1,SYM[checkboxStyle]=0,string="checkBox"); : : ubCallbackSetup/NOZERO[5]|NOZERO[6]//ubCallbackCreatorFinish <> string label
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,wxBitmap!,int=-1,int=-1,int=-1,int=-1,SYM[checkboxStyle]=0,string="checkBox"); : : ubCallbackSetup/CHECKOK[2.METHODNAME("check-box%","initialization")]|NOZERO[5]|NOZERO[6]//ubCallbackCreatorFinish <> bitmap label
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,string,int=-1,int=-1,int=-1,int=-1,SYM[checkboxStyle]=0,string="checkBox"); : : ubCallbackSetup/NOZERO[5]|NOZERO[6]//ubCallbackCreatorFinish <> string label
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,wxBitmap!,int=-1,int=-1,int=-1,int=-1,SYM[checkboxStyle]=0,string="checkBox"); : : ubCallbackSetup/CHECKOK[2.METHODNAME("check-box%","initialization")]|NOZERO[5]|NOZERO[6]//ubCallbackCreatorFinish <> bitmap label
 
 @INCLUDE wxs_item.xci
 

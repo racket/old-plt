@@ -65,13 +65,15 @@ static Scheme_Object *gaugeStyle_wxVERTICAL_sym = NULL;
 static Scheme_Object *gaugeStyle_wxHORIZONTAL_sym = NULL;
 
 static void init_symset_gaugeStyle(void) {
+  REMEMBER_VAR_STACK();
   wxREGGLOB(gaugeStyle_wxVERTICAL_sym);
-  gaugeStyle_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  gaugeStyle_wxVERTICAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("vertical"));
   wxREGGLOB(gaugeStyle_wxHORIZONTAL_sym);
-  gaugeStyle_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+  gaugeStyle_wxHORIZONTAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal"));
 }
 
 static int unbundle_symset_gaugeStyle(Scheme_Object *v, const char *where) {
+  REMEMBER_VAR_STACK();
   if (!gaugeStyle_wxHORIZONTAL_sym) init_symset_gaugeStyle();
   Scheme_Object *i, *l = v;
   long result = 0;
@@ -84,33 +86,8 @@ static int unbundle_symset_gaugeStyle(Scheme_Object *v, const char *where) {
   l = SCHEME_CDR(l);
   }
   if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "gaugeStyle symbol list", -1, 0, &v);
+  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "gaugeStyle symbol list", -1, 0, &v));
   return 0;
-}
-
-static int istype_symset_gaugeStyle(Scheme_Object *v, const char *where) {
-  if (!gaugeStyle_wxHORIZONTAL_sym) init_symset_gaugeStyle();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == gaugeStyle_wxVERTICAL_sym) { ; }
-  else if (i == gaugeStyle_wxHORIZONTAL_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
-  }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "gaugeStyle symbol list", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_gaugeStyle(int v) {
-  if (!gaugeStyle_wxHORIZONTAL_sym) init_symset_gaugeStyle();
-  Scheme_Object *l = scheme_null;
-  if (v & wxVERTICAL) l = scheme_make_pair(gaugeStyle_wxVERTICAL_sym, l);
-  if (v & wxHORIZONTAL) l = scheme_make_pair(gaugeStyle_wxHORIZONTAL_sym, l);
-  return l;
 }
 
 
@@ -138,12 +115,9 @@ class os_wxsGauge : public wxsGauge {
 
 Scheme_Object *os_wxsGauge_class;
 
-os_wxsGauge::os_wxsGauge(Scheme_Object * o, class wxPanel* x0, nstring x1, int x2, int x3, int x4, int x5, int x6, int x7, string x8)
+os_wxsGauge::os_wxsGauge(Scheme_Object *, class wxPanel* x0, nstring x1, int x2, int x3, int x4, int x5, int x6, int x7, string x8)
 : wxsGauge(x0, x1, x2, x3, x4, x5, x6, x7, x8)
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxsGauge::~os_wxsGauge()
@@ -158,15 +132,22 @@ void os_wxsGauge::OnDropFile(pathname x0)
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  VAR_STACK_PUSH(4, x0);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxsGauge_class, "on-drop-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     wxsGauge::OnDropFile(x0);
   } else {
   mz_jmp_buf savebuf;
-  p[0] = objscheme_bundle_pathname((char *)x0);
+  p[0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
-  v = scheme_apply(method, 1, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
@@ -179,19 +160,27 @@ Bool os_wxsGauge::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(6);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH_ARRAY(1, p, 2);
+  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(5, x1);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxsGauge_class, "pre-on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     return FALSE;
   } else {
   mz_jmp_buf savebuf;
-  p[0] = objscheme_bundle_wxWindow(x0);
-  p[1] = objscheme_bundle_wxMouseEvent(x1);
+  p[0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
+  p[1] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x1));
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 0; }
 
-  v = scheme_apply(method, 2, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return objscheme_unbundle_bool(v, "pre-on-event in gauge%"", extracting return value");
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in gauge%"", extracting return value"));
   }
 }
 
@@ -202,19 +191,27 @@ Bool os_wxsGauge::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(6);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH_ARRAY(1, p, 2);
+  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(5, x1);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxsGauge_class, "pre-on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     return FALSE;
   } else {
   mz_jmp_buf savebuf;
-  p[0] = objscheme_bundle_wxWindow(x0);
-  p[1] = objscheme_bundle_wxKeyEvent(x1);
+  p[0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
+  p[1] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x1));
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 0; }
 
-  v = scheme_apply(method, 2, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return objscheme_unbundle_bool(v, "pre-on-char in gauge%"", extracting return value");
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in gauge%"", extracting return value"));
   }
 }
 
@@ -225,8 +222,14 @@ void os_wxsGauge::OnSize(int x0, int x1)
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(4);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH_ARRAY(1, p, 2);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxsGauge_class, "on-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     wxsGauge::OnSize(x0, x1);
   } else {
   
@@ -234,7 +237,7 @@ void os_wxsGauge::OnSize(int x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
   
   
   }
@@ -247,14 +250,19 @@ void os_wxsGauge::OnSetFocus()
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, method);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxsGauge_class, "on-set-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     wxsGauge::OnSetFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
-  v = scheme_apply(method, 0, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
@@ -267,14 +275,19 @@ void os_wxsGauge::OnKillFocus()
   Scheme_Object *method;
   static void *mcache = 0;
 
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, method);
+  SET_VAR_STACK();
+
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxsGauge_class, "on-kill-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
     wxsGauge::OnKillFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
-  v = scheme_apply(method, 0, p);
+  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
@@ -283,14 +296,19 @@ void os_wxsGauge::OnKillFocus()
 #pragma argsused
 static Scheme_Object *os_wxsGaugeGetValue(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   int r;
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = ((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->GetValue();
+  r = WITH_VAR_STACK(((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->GetValue());
 
   
   
@@ -300,15 +318,20 @@ static Scheme_Object *os_wxsGaugeGetValue(Scheme_Object *obj, int n,  Scheme_Obj
 #pragma argsused
 static Scheme_Object *os_wxsGaugeSetValue(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   int x0;
 
-  
-  x0 = objscheme_unbundle_integer(p[0], "set-value in gauge%");
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
-  ((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->SetValue(x0);
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "set-value in gauge%"));
+
+  
+  WITH_VAR_STACK(((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->SetValue(x0));
 
   
   
@@ -318,14 +341,19 @@ static Scheme_Object *os_wxsGaugeSetValue(Scheme_Object *obj, int n,  Scheme_Obj
 #pragma argsused
 static Scheme_Object *os_wxsGaugeGetRange(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   int r;
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = ((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->GetRange();
+  r = WITH_VAR_STACK(((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->GetRange());
 
   
   
@@ -335,15 +363,20 @@ static Scheme_Object *os_wxsGaugeGetRange(Scheme_Object *obj, int n,  Scheme_Obj
 #pragma argsused
 static Scheme_Object *os_wxsGaugeSetRange(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   int x0;
 
-  
-  x0 = objscheme_unbundle_integer(p[0], "set-range in gauge%");
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
-  ((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->SetRange(x0);
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "set-range in gauge%"));
+
+  
+  WITH_VAR_STACK(((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->SetRange(x0));
 
   
   
@@ -353,18 +386,24 @@ static Scheme_Object *os_wxsGaugeSetRange(Scheme_Object *obj, int n,  Scheme_Obj
 #pragma argsused
 static Scheme_Object *os_wxsGaugeOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   pathname x0;
 
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
+
   
-  x0 = (pathname)objscheme_unbundle_pathname(p[0], "on-drop-file in gauge%");
+  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[0], "on-drop-file in gauge%"));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->wxsGauge::OnDropFile(x0);
+    WITH_VAR_STACK(((os_wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->wxsGauge::OnDropFile(x0));
   else
-    ((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->OnDropFile(x0);
+    WITH_VAR_STACK(((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->OnDropFile(x0));
 
   
   
@@ -374,21 +413,28 @@ static Scheme_Object *os_wxsGaugeOnDropFile(Scheme_Object *obj, int n,  Scheme_O
 #pragma argsused
 static Scheme_Object *os_wxsGaugePreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
   class wxWindow* x0;
   class wxMouseEvent* x1;
 
+  SETUP_VAR_STACK_REMEMBERED(4);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(3, x1);
+
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-event in gauge%", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "pre-on-event in gauge%", 0);
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[0], "pre-on-event in gauge%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[1], "pre-on-event in gauge%", 0));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxsGauge *)((Scheme_Class_Object *)obj)->primdata)-> wxWindow::PreOnEvent(x0, x1);
+    r = WITH_VAR_STACK(((os_wxsGauge *)((Scheme_Class_Object *)obj)->primdata)-> wxWindow::PreOnEvent(x0, x1));
   else
-    r = ((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->PreOnEvent(x0, x1);
+    r = WITH_VAR_STACK(((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->PreOnEvent(x0, x1));
 
   
   
@@ -398,21 +444,28 @@ static Scheme_Object *os_wxsGaugePreOnEvent(Scheme_Object *obj, int n,  Scheme_O
 #pragma argsused
 static Scheme_Object *os_wxsGaugePreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
   class wxWindow* x0;
   class wxKeyEvent* x1;
 
+  SETUP_VAR_STACK_REMEMBERED(4);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(3, x1);
+
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-char in gauge%", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "pre-on-char in gauge%", 0);
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[0], "pre-on-char in gauge%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxKeyEvent(p[1], "pre-on-char in gauge%", 0));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxsGauge *)((Scheme_Class_Object *)obj)->primdata)-> wxWindow::PreOnChar(x0, x1);
+    r = WITH_VAR_STACK(((os_wxsGauge *)((Scheme_Class_Object *)obj)->primdata)-> wxWindow::PreOnChar(x0, x1));
   else
-    r = ((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->PreOnChar(x0, x1);
+    r = WITH_VAR_STACK(((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->PreOnChar(x0, x1));
 
   
   
@@ -422,20 +475,25 @@ static Scheme_Object *os_wxsGaugePreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
 #pragma argsused
 static Scheme_Object *os_wxsGaugeOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   int x0;
   int x1;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
-  x0 = objscheme_unbundle_integer(p[0], "on-size in gauge%");
-  x1 = objscheme_unbundle_integer(p[1], "on-size in gauge%");
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "on-size in gauge%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[1], "on-size in gauge%"));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->wxsGauge::OnSize(x0, x1);
+    WITH_VAR_STACK(((os_wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->wxsGauge::OnSize(x0, x1));
   else
-    ((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->OnSize(x0, x1);
+    WITH_VAR_STACK(((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->OnSize(x0, x1));
 
   
   
@@ -445,16 +503,21 @@ static Scheme_Object *os_wxsGaugeOnSize(Scheme_Object *obj, int n,  Scheme_Objec
 #pragma argsused
 static Scheme_Object *os_wxsGaugeOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->wxsGauge::OnSetFocus();
+    WITH_VAR_STACK(((os_wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->wxsGauge::OnSetFocus());
   else
-    ((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->OnSetFocus();
+    WITH_VAR_STACK(((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->OnSetFocus());
 
   
   
@@ -464,16 +527,21 @@ static Scheme_Object *os_wxsGaugeOnSetFocus(Scheme_Object *obj, int n,  Scheme_O
 #pragma argsused
 static Scheme_Object *os_wxsGaugeOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->wxsGauge::OnKillFocus();
+    WITH_VAR_STACK(((os_wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->wxsGauge::OnKillFocus());
   else
-    ((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->OnKillFocus();
+    WITH_VAR_STACK(((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->OnKillFocus());
 
   
   
@@ -494,39 +562,48 @@ static Scheme_Object *os_wxsGauge_ConstructScheme(Scheme_Object *obj, int n,  Sc
   int x7;
   string x8;
 
+  SETUP_VAR_STACK_REMEMBERED(5);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(3, x1);
+  VAR_STACK_PUSH(4, x8);
+
   
   if ((n < 3) ||(n > 9)) 
-    scheme_wrong_count("initialization in gauge%", 3, 9, n, p);
-  x0 = objscheme_unbundle_wxPanel(p[0], "initialization in gauge%", 0);
-  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "initialization in gauge%");
-  x2 = objscheme_unbundle_integer(p[2], "initialization in gauge%");
+    WITH_VAR_STACK(scheme_wrong_count("initialization in gauge%", 3, 9, n, p));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in gauge%", 0));
+  x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[1], "initialization in gauge%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[2], "initialization in gauge%"));
   if (n > 3) {
-    x3 = objscheme_unbundle_integer(p[3], "initialization in gauge%");
+    x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in gauge%"));
   } else
     x3 = -1;
   if (n > 4) {
-    x4 = objscheme_unbundle_integer(p[4], "initialization in gauge%");
+    x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[4], "initialization in gauge%"));
   } else
     x4 = -1;
   if (n > 5) {
-    x5 = objscheme_unbundle_integer(p[5], "initialization in gauge%");
+    x5 = WITH_VAR_STACK(objscheme_unbundle_integer(p[5], "initialization in gauge%"));
   } else
     x5 = -1;
   if (n > 6) {
-    x6 = objscheme_unbundle_integer(p[6], "initialization in gauge%");
+    x6 = WITH_VAR_STACK(objscheme_unbundle_integer(p[6], "initialization in gauge%"));
   } else
     x6 = -1;
   if (n > 7) {
-    x7 = unbundle_symset_gaugeStyle(p[7], "initialization in gauge%");
+    x7 = WITH_VAR_STACK(unbundle_symset_gaugeStyle(p[7], "initialization in gauge%"));
   } else
     x7 = wxHORIZONTAL;
   if (n > 8) {
-    x8 = (string)objscheme_unbundle_string(p[8], "initialization in gauge%");
+    x8 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[8], "initialization in gauge%"));
   } else
     x8 = "gauge";
 
   if (!x5) x5 = -1;if (!x6) x6 = -1;
   realobj = new os_wxsGauge(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -537,31 +614,35 @@ static Scheme_Object *os_wxsGauge_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
 void objscheme_setup_wxsGauge(void *env)
 {
-if (os_wxsGauge_class) {
+  if (os_wxsGauge_class) {
     objscheme_add_global_class(os_wxsGauge_class, "gauge%", env);
-} else {
-  os_wxsGauge_class = objscheme_def_prim_class(env, "gauge%", "item%", os_wxsGauge_ConstructScheme, 10);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxsGauge_class = objscheme_def_prim_class(env, "gauge%", "item%", os_wxsGauge_ConstructScheme, 10);
 
- scheme_add_method_w_arity(os_wxsGauge_class, "get-value", os_wxsGaugeGetValue, 0, 0);
- scheme_add_method_w_arity(os_wxsGauge_class, "set-value", os_wxsGaugeSetValue, 1, 1);
- scheme_add_method_w_arity(os_wxsGauge_class, "get-range", os_wxsGaugeGetRange, 0, 0);
- scheme_add_method_w_arity(os_wxsGauge_class, "set-range", os_wxsGaugeSetRange, 1, 1);
- scheme_add_method_w_arity(os_wxsGauge_class, "on-drop-file", os_wxsGaugeOnDropFile, 1, 1);
- scheme_add_method_w_arity(os_wxsGauge_class, "pre-on-event", os_wxsGaugePreOnEvent, 2, 2);
- scheme_add_method_w_arity(os_wxsGauge_class, "pre-on-char", os_wxsGaugePreOnChar, 2, 2);
- scheme_add_method_w_arity(os_wxsGauge_class, "on-size", os_wxsGaugeOnSize, 2, 2);
- scheme_add_method_w_arity(os_wxsGauge_class, "on-set-focus", os_wxsGaugeOnSetFocus, 0, 0);
- scheme_add_method_w_arity(os_wxsGauge_class, "on-kill-focus", os_wxsGaugeOnKillFocus, 0, 0);
+    wxREGGLOB("gauge%");
+
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "get-value", os_wxsGaugeGetValue, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "set-value", os_wxsGaugeSetValue, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "get-range", os_wxsGaugeGetRange, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "set-range", os_wxsGaugeSetRange, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "on-drop-file", os_wxsGaugeOnDropFile, 1, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "pre-on-event", os_wxsGaugePreOnEvent, 2, 2));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "pre-on-char", os_wxsGaugePreOnChar, 2, 2));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "on-size", os_wxsGaugeOnSize, 2, 2));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "on-set-focus", os_wxsGaugeOnSetFocus, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "on-kill-focus", os_wxsGaugeOnKillFocus, 0, 0));
 
 
-  scheme_made_class(os_wxsGauge_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxsGauge_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxsGauge(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxsGauge_class))
@@ -569,7 +650,7 @@ int objscheme_istype_wxsGauge(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "gauge% object or " XC_NULL_STR: "gauge% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "gauge% object or " XC_NULL_STR: "gauge% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -583,16 +664,20 @@ Scheme_Object *objscheme_bundle_wxsGauge(class wxsGauge *realobj)
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxsGauge_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxsGauge_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -600,9 +685,11 @@ class wxsGauge *objscheme_unbundle_wxsGauge(Scheme_Object *obj, const char *wher
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxsGauge(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxsGauge *)o->primdata;
   else

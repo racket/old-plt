@@ -36,7 +36,7 @@ static void menuSelect(wxMenu *XTMAC_UNUSED(m))
 @MACRO CHECKNEGNULL[pos] = $$CHECKNEG[<pos>.XC_SCHEME_NULL]
 @MACRO CHECKNEGFALSE[pos] = $$CHECKNEG[<pos>.scheme_false]
 
-@CREATOR (nstring=NULL,wxFunction=NULL/bCallback/ubCallback/cCallback//spCallback); : : ubCallbackSetup///ubCallbackCreatorFinish
+@CREATOR (nstring=NULL,wxFunction=NULL/bCallback/ubCallback/cCallback//spCallback/nopush); : : ubCallbackSetup///ubCallbackCreatorFinish
 
 @ "append" : void Append(ExactLong,string,wxMenu!,nstring=NULL); : : <> submenu
 @ "append" : void Append(ExactLong,string,nstring=NULL,bool=FALSE); : : <> string item
@@ -75,7 +75,7 @@ static void menuSelect(wxMenu *XTMAC_UNUSED(m))
 @MACRO spMenuList = (listof wxMenu-object)
 
 @CREATOR (); <> no argument
-@CREATOR (-int, wxMenu*[]/bList/ubList/cList//spMenuList, string[]/bList/ubList/cList); : : CHECKSAMELENGTH/glueListSet[wxMenu.0.1.0.METHODNAME("menu-bar%","initialization")] | glueListSet[string.1.2.0.METHODNAME("menu-bar%","initialization")]// <> menu% list
+@CREATOR (-int, wxMenu*[]/bList/ubList/cList//spMenuList/push, string[]/bList/ubList/cList///push); : : CHECKSAMELENGTH/glueListSet[wxMenu.0.1.0.METHODNAME("menu-bar%","initialization")] | glueListSet[string.1.2.0.METHODNAME("menu-bar%","initialization")]// <> menu% list
 
 @ "append" : void Append(wxMenu!,string);
 @ "delete" : bool Delete(wxMenu^,int=0);

@@ -60,7 +60,7 @@ typedef void *(*CAPOFunc)(void*);
 @MACRO spAnything = _
 @MACRO spCAPOProc = (-> _)
 
-@ "call-as-primary-owner" : void[]/CastToSO//spAnything CallAsPrimaryOwner(CAPOFunc//ubTestFunc///spCAPOProc, -void[]//ubData);
+@ "call-as-primary-owner" : void[]/CastToSO//spAnything CallAsPrimaryOwner(CAPOFunc//ubTestFunc///spCAPOProc/nopush, -void[]//ubData////push);
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci
@@ -162,9 +162,9 @@ typedef void *(*CAPOFunc)(void*);
 typedef Scheme_Object KeymapCallbackToSchemeRec;
 #define kctsr(o) o
 
-static Bool KMCallbackToScheme(UNKNOWN_OBJ, wxEvent &, KeymapCallbackToSchemeRec *data);
-static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxKeyEvent &, KeymapCallbackToSchemeRec *data);
-static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxMouseEvent &, KeymapCallbackToSchemeRec *data);
+static Bool KMCallbackToScheme(UNKNOWN_OBJ, wxEvent *, KeymapCallbackToSchemeRec *data);
+static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxKeyEvent *, KeymapCallbackToSchemeRec *data);
+static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxMouseEvent *, KeymapCallbackToSchemeRec *data);
 static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 
 @MACRO bCallback =
@@ -195,65 +195,85 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 @MACRO ubAnythingToVoid = ((void *){x})
 @MACRO cAnything = 1
 
-@ v "handle-key-event" : bool HandleKeyEvent(UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxKeyEvent!);
-@ v "handle-mouse-event" : bool HandleMouseEvent(UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxMouseEvent!);
+@ v "handle-key-event" : bool HandleKeyEvent(UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything///push,wxKeyEvent!);
+@ v "handle-mouse-event" : bool HandleMouseEvent(UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything///push,wxMouseEvent!);
 @ "break-sequence" : void BreakSequence();
 @ "map-function" : void MapFunction(string,string);
-@ "add-function" : void AddFunction(string,wxKMFunction/bCallback/ubCallbackKM/cCallback//spCallbackKM,-unknown#void*=NULL); : : ubSetup / ubSetData[1.2]
-@ "set-grab-key-function" : void SetGrabKeyFunction(wxGrabKeyFunction/bCallback/ubCallbackGrabKey/cCallback//spCallbackGrabKey,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
+@ "add-function" : void AddFunction(string,wxKMFunction/bCallback/ubCallbackKM/cCallback//spCallbackKM/nopush,-unknown#void*=NULL); : : ubSetup / ubSetData[1.2]
+@ "set-grab-key-function" : void SetGrabKeyFunction(wxGrabKeyFunction/bCallback/ubCallbackGrabKey/cCallback//spCallbackGrabKey/nopush,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
 @ "remove-grab-key-function" : void RemoveGrabKeyFunction()
-@ "set-grab-mouse-function" : void SetGrabMouseFunction(wxGrabMouseFunction/bCallback/ubCallbackGrabMouse/cCallback//spCallbackGrabMouse,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
+@ "set-grab-mouse-function" : void SetGrabMouseFunction(wxGrabMouseFunction/bCallback/ubCallbackGrabMouse/cCallback//spCallbackGrabMouse/nopush,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
 @ "remove-grab-mouse-function" : void RemoveGrabMouseFunction()
-@ "call-function" : bool CallFunction(string,UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxEvent!,bool=FALSE);
-@ "set-break-sequence-callback" : void SetBreakSequenceCallback(wxBreakSequenceFunction/bCallback/ubCallbackBreak/cCallback//spCallbackBreak,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
+@ "call-function" : bool CallFunction(string,UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything///push,wxEvent!,bool=FALSE);
+@ "set-break-sequence-callback" : void SetBreakSequenceCallback(wxBreakSequenceFunction/bCallback/ubCallbackBreak/cCallback//spCallbackBreak/nopush,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
 @ "chain-to-keymap" : void ChainToKeymap(wxKeymap!,bool);
 @ "remove-chained-keymap" : void RemoveChainedKeymap(wxKeymap!);
 
 @END
 
-static Bool KMCallbackToScheme(UNKNOWN_OBJ media, wxEvent &event, 
+static Bool KMCallbackToScheme(UNKNOWN_OBJ media, wxEvent *event, 
 			       KeymapCallbackToSchemeRec *data)
 {
   extern Scheme_Object *objscheme_bundle_wxEvent(wxEvent *);
   Scheme_Object *p[2], *obj;
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, p[0]);
+  VAR_STACK_PUSH(1, p[1]);
+  VAR_STACK_PUSH(2, obj);
+  VAR_STACK_PUSH(3, event);
+  VAR_STACK_PUSH(4, data);
 
   p[0] = (Scheme_Object *)media;
-  p[1] = objscheme_bundle_wxEvent(&event);
+  p[1] = WITH_VAR_STACK(objscheme_bundle_wxEvent(event));
 
-  obj = scheme_apply(kctsr(data), 2, p);
-  return objscheme_unbundle_bool(obj, "Scheme key callback");
+  obj = WITH_VAR_STACK(scheme_apply(kctsr(data), 2, p));
+  return WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme key callback"));
 }
 
 static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
-				    UNKNOWN_OBJ media, wxKeyEvent &event, 
+				    UNKNOWN_OBJ media, wxKeyEvent *event, 
 				    KeymapCallbackToSchemeRec *data)
 {
   extern Scheme_Object *objscheme_bundle_wxKeyEvent(wxKeyEvent *);
   Scheme_Object *p[4], *obj;
+  SETUP_VAR_STACK(6);
+  VAR_STACK_PUSH_ARRAY(0, p, 4);
+  VAR_STACK_PUSH(3, obj);
+  VAR_STACK_PUSH(4, event);
+  VAR_STACK_PUSH(5, data);
+  VAR_STACK_PUSH(6, km);
 
-  p[0] = objscheme_bundle_string(s);
-  p[1] = objscheme_bundle_wxKeymap(km);
   p[2] = (Scheme_Object *)media;
-  p[3] = objscheme_bundle_wxKeyEvent(&event);
 
-  obj = scheme_apply(kctsr(data), 4, p);
-  return objscheme_unbundle_bool(obj, "Scheme grab-key callback");
+  p[0] = WITH_VAR_STACK(objscheme_bundle_string(s));
+  p[1] = WITH_VAR_STACK(objscheme_bundle_wxKeymap(km));
+  p[3] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(event));
+
+  obj = WITH_VAR_STACK(scheme_apply(kctsr(data), 4, p));
+  return WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme grab-key callback"));
 }
 
 static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
-				      UNKNOWN_OBJ media, wxMouseEvent &event, 
+				      UNKNOWN_OBJ media, wxMouseEvent *event, 
 				      KeymapCallbackToSchemeRec *data)
 {
   extern Scheme_Object *objscheme_bundle_wxMouseEvent(wxMouseEvent *);
   Scheme_Object *p[3], *obj;
+  SETUP_VAR_STACK(6);
+  VAR_STACK_PUSH_ARRAY(0, p, 3);
+  VAR_STACK_PUSH(3, obj);
+  VAR_STACK_PUSH(4, event);
+  VAR_STACK_PUSH(5, data);
+  VAR_STACK_PUSH(6, km);
 
-  p[0] = objscheme_bundle_string(s);
-  p[1] = objscheme_bundle_wxKeymap(km);
   p[2] = (Scheme_Object *)media;
-  p[3] = objscheme_bundle_wxMouseEvent(&event);
 
-  obj = scheme_apply(kctsr(data), 4, p);
-  return objscheme_unbundle_bool(obj, "Scheme grab-mouse callback");
+  p[0] = WITH_VAR_STACK(objscheme_bundle_string(s));
+  p[1] = WITH_VAR_STACK(objscheme_bundle_wxKeymap(km));
+  p[3] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(event));
+
+  obj = WITH_VAR_STACK(scheme_apply(kctsr(data), 4, p));
+  return WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme grab-mouse callback"));
 }
 
 static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)

@@ -346,10 +346,11 @@ sub ReadFields {
     @schemes = ();
     @schemeparams = ();
     @spideytypes = ();
+    @pushables = ();
     @paramtypes = split(/,/, $s);
     $numschemes = 0;
     foreach $paramtype (@paramtypes) {
-	($paramtype, $bundle, $unbundle, $typecheck, $typeid, $spideytype) 
+	($paramtype, $bundle, $unbundle, $typecheck, $typeid, $spideytype, $pushable) 
 	    = split('/', $paramtype);
 
 	($paramtype, $defval) = split(/=/, $paramtype);
@@ -366,6 +367,7 @@ sub ReadFields {
 	$typecheck = &Wash($typecheck);
 	$typeid = &Wash($typeid);
 	$spideytype = &Wash($spideytype);
+	$pushable = &Wash($pushable);
 
 	@defvals = (@defvals, $defval); 
 	@bundles = (@bundles, $bundle);
@@ -373,6 +375,7 @@ sub ReadFields {
 	@typechecks = (@typechecks, $typecheck);
 	@typeids = (@typeids, $typeid);
 	@spideytypes = (@spideytypes, $spideytype);
+	@pushables = (@pushables, $pushable);
 	@schemes = (@schemes, $scheme);
 	if ($scheme) {
 	    @schemeparams = (@schemeparams, $paramtype);

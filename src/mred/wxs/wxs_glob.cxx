@@ -50,24 +50,26 @@ static Scheme_Object *fileSelMode_wxOVERWRITE_PROMPT_sym = NULL;
 static Scheme_Object *fileSelMode_wxHIDE_READONLY_sym = NULL;
 
 static void init_symset_fileSelMode(void) {
+  REMEMBER_VAR_STACK();
   wxREGGLOB(fileSelMode_wxOPEN_sym);
-  fileSelMode_wxOPEN_sym = scheme_intern_symbol("get");
+  fileSelMode_wxOPEN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("get"));
   wxREGGLOB(fileSelMode_wxSAVE_sym);
-  fileSelMode_wxSAVE_sym = scheme_intern_symbol("put");
+  fileSelMode_wxSAVE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("put"));
   wxREGGLOB(fileSelMode_wxOVERWRITE_PROMPT_sym);
-  fileSelMode_wxOVERWRITE_PROMPT_sym = scheme_intern_symbol("overwrite-prompt");
+  fileSelMode_wxOVERWRITE_PROMPT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("overwrite-prompt"));
   wxREGGLOB(fileSelMode_wxHIDE_READONLY_sym);
-  fileSelMode_wxHIDE_READONLY_sym = scheme_intern_symbol("hide-readonly");
+  fileSelMode_wxHIDE_READONLY_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hide-readonly"));
 }
 
 static int unbundle_symset_fileSelMode(Scheme_Object *v, const char *where) {
+  REMEMBER_VAR_STACK();
   if (!fileSelMode_wxHIDE_READONLY_sym) init_symset_fileSelMode();
   if (0) { }
   else if (v == fileSelMode_wxOPEN_sym) { return wxOPEN; }
   else if (v == fileSelMode_wxSAVE_sym) { return wxSAVE; }
   else if (v == fileSelMode_wxOVERWRITE_PROMPT_sym) { return wxOVERWRITE_PROMPT; }
   else if (v == fileSelMode_wxHIDE_READONLY_sym) { return wxHIDE_READONLY; }
-  if (where) scheme_wrong_type(where, "fileSelMode symbol", -1, 0, &v);
+  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "fileSelMode symbol", -1, 0, &v));
   return 0;
 }
 
@@ -129,13 +131,20 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 #pragma argsused
 static Scheme_Object *wxsGlobalwxsFillPrivateColor(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   class wxDC* x0;
   class wxColour* x1;
 
+  SETUP_VAR_STACK_REMEMBERED(4);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(3, x1);
+
   
-  x0 = objscheme_unbundle_wxDC(p[0], "fill-private-color", 0);
-  x1 = objscheme_unbundle_wxColour(p[1], "fill-private-color", 0);
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxDC(p[0], "fill-private-color", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[1], "fill-private-color", 0));
 
   
   wxsFillPrivateColor(x0, x1);
@@ -148,7 +157,12 @@ static Scheme_Object *wxsGlobalwxsFillPrivateColor(int n,  Scheme_Object *p[])
 #pragma argsused
 static Scheme_Object *wxsGlobalwxFlushDisplay(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
@@ -163,8 +177,14 @@ static Scheme_Object *wxsGlobalwxFlushDisplay(int n,  Scheme_Object *p[])
 #pragma argsused
 static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   void* x0;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
 
   
   if (n > 0) {
@@ -183,7 +203,8 @@ static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
 #pragma argsused
 static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   if ((n >= 3) && objscheme_istype_string(p[0], NULL) && objscheme_istype_string(p[1], NULL) && objscheme_istype_string(p[2], NULL)) {
     string x0;
@@ -191,14 +212,22 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     string x2;
     npathname x3;
 
+    SETUP_VAR_STACK_REMEMBERED(6);
+    VAR_STACK_PUSH(0, obj);
+    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(3, x1);
+    VAR_STACK_PUSH(4, x2);
+    VAR_STACK_PUSH(5, x3);
+
     
     if ((n < 3) ||(n > 4)) 
-      scheme_wrong_count("write-resource (string case)", 3, 4, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "write-resource (string case)");
-    x1 = (string)objscheme_unbundle_string(p[1], "write-resource (string case)");
-    x2 = (string)objscheme_unbundle_string(p[2], "write-resource (string case)");
+      WITH_VAR_STACK(scheme_wrong_count("write-resource (string case)", 3, 4, n, p));
+    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "write-resource (string case)"));
+    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "write-resource (string case)"));
+    x2 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[2], "write-resource (string case)"));
     if (n > 3) {
-      x3 = (npathname)objscheme_unbundle_nullable_pathname(p[3], "write-resource (string case)");
+      x3 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[3], "write-resource (string case)"));
     } else
       x3 = NULL;
 
@@ -213,14 +242,21 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     ExactLong x2;
     npathname x3;
 
+    SETUP_VAR_STACK_REMEMBERED(5);
+    VAR_STACK_PUSH(0, obj);
+    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(3, x1);
+    VAR_STACK_PUSH(4, x3);
+
     
     if ((n < 3) ||(n > 4)) 
-      scheme_wrong_count("write-resource (number case)", 3, 4, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "write-resource (number case)");
-    x1 = (string)objscheme_unbundle_string(p[1], "write-resource (number case)");
-    x2 = objscheme_unbundle_ExactLong(p[2], "write-resource (number case)");
+      WITH_VAR_STACK(scheme_wrong_count("write-resource (number case)", 3, 4, n, p));
+    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "write-resource (number case)"));
+    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "write-resource (number case)"));
+    x2 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[2], "write-resource (number case)"));
     if (n > 3) {
-      x3 = (npathname)objscheme_unbundle_nullable_pathname(p[3], "write-resource (number case)");
+      x3 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[3], "write-resource (number case)"));
     } else
       x3 = NULL;
 
@@ -237,7 +273,8 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
 #pragma argsused
 static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   if ((n >= 3) && objscheme_istype_string(p[0], NULL) && objscheme_istype_string(p[1], NULL) && (objscheme_istype_box(p[2], NULL) && objscheme_istype_string(objscheme_unbox(p[2], NULL), NULL))) {
     string x0;
@@ -246,14 +283,21 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     string* x2 = &_x2;
     npathname x3;
 
+    SETUP_VAR_STACK_REMEMBERED(5);
+    VAR_STACK_PUSH(0, obj);
+    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(3, x1);
+    VAR_STACK_PUSH(4, x3);
+
     
     if ((n < 3) ||(n > 4)) 
-      scheme_wrong_count("get-resource (string case)", 3, 4, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "get-resource (string case)");
-    x1 = (string)objscheme_unbundle_string(p[1], "get-resource (string case)");
-          *x2 = (string)objscheme_unbundle_string(objscheme_unbox(p[2], "get-resource (string case)"), "get-resource (string case)"", extracting boxed argument");
+      WITH_VAR_STACK(scheme_wrong_count("get-resource (string case)", 3, 4, n, p));
+    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "get-resource (string case)"));
+    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "get-resource (string case)"));
+          *x2 = (string)WITH_VAR_STACK(objscheme_unbundle_string(WITH_VAR_STACK(objscheme_unbox(p[2], "get-resource (string case)")), "get-resource (string case)"", extracting boxed argument"));
     if (n > 3) {
-      x3 = (npathname)objscheme_unbundle_nullable_pathname(p[3], "get-resource (string case)");
+      x3 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[3], "get-resource (string case)"));
     } else
       x3 = NULL;
 
@@ -262,7 +306,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
 
     
     if (n > 2)
-      objscheme_set_box(p[2], objscheme_bundle_string((char *)_x2));
+      WITH_VAR_STACK(objscheme_set_box(p[2], WITH_VAR_STACK(objscheme_bundle_string((char *)_x2))));
     
   } else  {
     string x0;
@@ -271,14 +315,21 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     long* x2 = &_x2;
     npathname x3;
 
+    SETUP_VAR_STACK_REMEMBERED(5);
+    VAR_STACK_PUSH(0, obj);
+    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(3, x1);
+    VAR_STACK_PUSH(4, x3);
+
     
     if ((n < 3) ||(n > 4)) 
-      scheme_wrong_count("get-resource (number case)", 3, 4, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "get-resource (number case)");
-    x1 = (string)objscheme_unbundle_string(p[1], "get-resource (number case)");
-          *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get-resource (number case)"), "get-resource (number case)"", extracting boxed argument");
+      WITH_VAR_STACK(scheme_wrong_count("get-resource (number case)", 3, 4, n, p));
+    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "get-resource (number case)"));
+    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "get-resource (number case)"));
+          *x2 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[2], "get-resource (number case)")), "get-resource (number case)"", extracting boxed argument"));
     if (n > 3) {
-      x3 = (npathname)objscheme_unbundle_nullable_pathname(p[3], "get-resource (number case)");
+      x3 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[3], "get-resource (number case)"));
     } else
       x3 = NULL;
 
@@ -287,7 +338,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
 
     
     if (n > 2)
-      objscheme_set_box(p[2], scheme_make_integer(_x2));
+      WITH_VAR_STACK(objscheme_set_box(p[2], scheme_make_integer(_x2)));
     
   }
 
@@ -297,42 +348,53 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
 #pragma argsused
 static Scheme_Object *wxsGlobalwxStripMenuCodes_Scheme(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   string r;
   string x0;
 
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
+
   
-  x0 = (string)objscheme_unbundle_string(p[0], "label->plain-label");
+  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "label->plain-label"));
 
   
   r = wxStripMenuCodes_Scheme(x0);
 
   
   
-  return objscheme_bundle_string((char *)r);
+  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
 }
 
 #pragma argsused
 static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   int _x0;
   int* x0 = &_x0;
   int _x1;
   int* x1 = &_x1;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
-      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "display-size"), "display-size"", extracting boxed argument");
-      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "display-size"), "display-size"", extracting boxed argument");
+      *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "display-size")), "display-size"", extracting boxed argument"));
+      *x1 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "display-size")), "display-size"", extracting boxed argument"));
 
   
   wxDisplaySize(x0, x1);
 
   
   if (n > 0)
-    objscheme_set_box(p[0], scheme_make_integer(_x0));
+    WITH_VAR_STACK(objscheme_set_box(p[0], scheme_make_integer(_x0)));
   if (n > 1)
-    objscheme_set_box(p[1], scheme_make_integer(_x1));
+    WITH_VAR_STACK(objscheme_set_box(p[1], scheme_make_integer(_x1)));
   
   return scheme_void;
 }
@@ -340,7 +402,12 @@ static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
 #pragma argsused
 static Scheme_Object *wxsGlobalwxBell(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
@@ -355,7 +422,12 @@ static Scheme_Object *wxsGlobalwxBell(int n,  Scheme_Object *p[])
 #pragma argsused
 static Scheme_Object *wxsGlobalwxEndBusyCursor(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
@@ -370,8 +442,13 @@ static Scheme_Object *wxsGlobalwxEndBusyCursor(int n,  Scheme_Object *p[])
 #pragma argsused
 static Scheme_Object *wxsGlobalwxIsBusy(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
@@ -386,7 +463,12 @@ static Scheme_Object *wxsGlobalwxIsBusy(int n,  Scheme_Object *p[])
 #pragma argsused
 static Scheme_Object *wxsGlobalwxBeginBusyCursor(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
@@ -401,7 +483,8 @@ static Scheme_Object *wxsGlobalwxBeginBusyCursor(int n,  Scheme_Object *p[])
 #pragma argsused
 static Scheme_Object *wxsGlobalwxMakeMetaFilePlaceable(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   string x0;
   float x1;
@@ -410,13 +493,18 @@ static Scheme_Object *wxsGlobalwxMakeMetaFilePlaceable(int n,  Scheme_Object *p[
   float x4;
   float x5;
 
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
+
   
-  x0 = (string)objscheme_unbundle_string(p[0], "make-meta-file-placeable");
-  x1 = objscheme_unbundle_float(p[1], "make-meta-file-placeable");
-  x2 = objscheme_unbundle_float(p[2], "make-meta-file-placeable");
-  x3 = objscheme_unbundle_float(p[3], "make-meta-file-placeable");
-  x4 = objscheme_unbundle_float(p[4], "make-meta-file-placeable");
-  x5 = objscheme_unbundle_float(p[5], "make-meta-file-placeable");
+  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "make-meta-file-placeable"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[1], "make-meta-file-placeable"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[2], "make-meta-file-placeable"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_float(p[3], "make-meta-file-placeable"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "make-meta-file-placeable"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[5], "make-meta-file-placeable"));
 
   
   r = wxMakeMetaFilePlaceable(x0, x1, x2, x3, x4, x5);
@@ -429,8 +517,13 @@ static Scheme_Object *wxsGlobalwxMakeMetaFilePlaceable(int n,  Scheme_Object *p[
 #pragma argsused
 static Scheme_Object *wxsGlobalwxDisplayDepth(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   int r;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
@@ -445,8 +538,13 @@ static Scheme_Object *wxsGlobalwxDisplayDepth(int n,  Scheme_Object *p[])
 #pragma argsused
 static Scheme_Object *wxsGlobalwxColourDisplay(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
 
   
 
@@ -461,7 +559,8 @@ static Scheme_Object *wxsGlobalwxColourDisplay(int n,  Scheme_Object *p[])
 #pragma argsused
 static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   nstring r;
   nstring x0;
   nstring x1;
@@ -473,35 +572,45 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
   int x7;
   int x8;
 
+  SETUP_VAR_STACK_REMEMBERED(8);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(3, x1);
+  VAR_STACK_PUSH(4, x2);
+  VAR_STACK_PUSH(5, x3);
+  VAR_STACK_PUSH(6, x4);
+  VAR_STACK_PUSH(7, x6);
+
   
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "file-selector");
+  x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[0], "file-selector"));
   if (n > 1) {
-    x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "file-selector");
+    x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[1], "file-selector"));
   } else
     x1 = NULL;
   if (n > 2) {
-    x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "file-selector");
+    x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "file-selector"));
   } else
     x2 = NULL;
   if (n > 3) {
-    x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "file-selector");
+    x3 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[3], "file-selector"));
   } else
     x3 = NULL;
   if (n > 4) {
-    x4 = (nstring)objscheme_unbundle_nullable_string(p[4], "file-selector");
+    x4 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[4], "file-selector"));
   } else
     x4 = FILE_SEL_DEF_PATTERN;
   if (n > 5) {
-    x5 = unbundle_symset_fileSelMode(p[5], "file-selector");
+    x5 = WITH_VAR_STACK(unbundle_symset_fileSelMode(p[5], "file-selector"));
   } else
     x5 = wxOPEN;
   x6 = (((n <= 6) || XC_SCHEME_NULLP(p[6])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[6], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[6], NULL, 0) : (objscheme_istype_wxDialogBox(p[6], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[6], NULL, 0) : (scheme_wrong_type("file-selector", "frame% or dialog%", -1, 0, &p[6]), (wxWindow *)NULL))));
   if (n > 7) {
-    x7 = objscheme_unbundle_integer(p[7], "file-selector");
+    x7 = WITH_VAR_STACK(objscheme_unbundle_integer(p[7], "file-selector"));
   } else
     x7 = -1;
   if (n > 8) {
-    x8 = objscheme_unbundle_integer(p[8], "file-selector");
+    x8 = WITH_VAR_STACK(objscheme_unbundle_integer(p[8], "file-selector"));
   } else
     x8 = -1;
 
@@ -510,7 +619,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
 
   
   
-  return objscheme_bundle_string((char *)r);
+  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
 }
 
 void objscheme_setup_wxsGlobal(void *env)

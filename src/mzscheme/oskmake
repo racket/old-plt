@@ -92,12 +92,9 @@ fi
 
 DEST="MZOSKDEST=${MZOSKDEST:-mzscheme.multiboot}"
 
-if [ -x "${OSKHOME}/bin/i386-oskit-gcc" ] ; then
-  COMPILER="${OSKHOME}/bin/i386-oskit-gcc"
-elif [ -x "${OSKHOME}/bin/i586-oskit-gcc" ] ; then
-  COMPILER="${OSKHOME}/bin/i586-oskit-gcc"
-else
-  echo "oskmake: can't find i[35]86-oskit-gcc compiler script"
+COMPILER=`(ls ${OSKHOME}/bin/*-oskit-gcc | head -1) 2> /dev/null`
+if [ ! -x "${COMPILER}" ] ; then
+  echo "oskmake: can't find *-oskit-gcc compiler script in ${OSKHOME}/bin"
   exit 255
 fi
 

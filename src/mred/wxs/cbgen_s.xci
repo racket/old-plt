@@ -21,8 +21,8 @@ class CALLBACKCLASS;
 @MACRO ubCallback = (SCHEME_NULLP({x}) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2({x}, CB_USER), tmp_callback = {x}, (CB_FUNCTYPE)CB_TOSCHEME))
 
 @MACRO ubCallbackSetup = Scheme_Object *tmp_callback = NULL;
-@MACRO ubCallbackFinish = ((CALLBACKCLASS *)((Scheme_Class_Object *)obj)->primdata)->callback_closure = tmp_callback; objscheme_backpointer(&((CALLBACKCLASS *)((Scheme_Class_Object *)obj)->primdata)->callback_closure);
-@MACRO ubCallbackCreatorFinish = realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);
+@MACRO ubCallbackFinish = ((CALLBACKCLASS *)((Scheme_Class_Object *)obj)->primdata)->callback_closure = tmp_callback;
+@MACRO ubCallbackCreatorFinish = realobj->callback_closure = tmp_callback;
 
 @MACRO bCallback = scheme_make_closed_prim((Scheme_Closed_Prim *)CB_TOC, {x})
 @MACRO cCallback = (SCHEME_NULLP({x}) || objscheme_istype_proc2({x}, {s}))

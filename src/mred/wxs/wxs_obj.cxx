@@ -39,12 +39,9 @@ class os_wxObject : public wxObject {
 
 Scheme_Object *os_wxObject_class;
 
-os_wxObject::os_wxObject(Scheme_Object * o)
+os_wxObject::os_wxObject(Scheme_Object *)
 : wxObject()
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxObject::~os_wxObject()
@@ -57,12 +54,18 @@ static Scheme_Object *os_wxObject_ConstructScheme(Scheme_Object *obj, int n,  Sc
 {
   os_wxObject *realobj;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n != 0) 
-    scheme_wrong_count("initialization in object%", 0, 0, n, p);
+    WITH_VAR_STACK(scheme_wrong_count("initialization in object%", 0, 0, n, p));
 
   
   realobj = new os_wxObject(obj);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -73,21 +76,25 @@ static Scheme_Object *os_wxObject_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
 void objscheme_setup_wxObject(void *env)
 {
-if (os_wxObject_class) {
+  if (os_wxObject_class) {
     objscheme_add_global_class(os_wxObject_class, "object%", env);
-} else {
-  os_wxObject_class = objscheme_def_prim_class(env, "object%", NULL, os_wxObject_ConstructScheme, 0);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxObject_class = objscheme_def_prim_class(env, "object%", NULL, os_wxObject_ConstructScheme, 0);
+
+    wxREGGLOB("object%");
 
 
 
-  scheme_made_class(os_wxObject_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxObject_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxObject(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxObject_class))
@@ -95,7 +102,7 @@ int objscheme_istype_wxObject(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "object% object or " XC_NULL_STR: "object% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "object% object or " XC_NULL_STR: "object% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -109,16 +116,20 @@ Scheme_Object *objscheme_bundle_wxObject(class wxObject *realobj)
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxObject_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxObject_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -126,9 +137,11 @@ class wxObject *objscheme_unbundle_wxObject(Scheme_Object *obj, const char *wher
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxObject(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxObject *)o->primdata;
   else

@@ -40,12 +40,9 @@ class os_wxEvent : public wxEvent {
 
 Scheme_Object *os_wxEvent_class;
 
-os_wxEvent::os_wxEvent(Scheme_Object * o)
+os_wxEvent::os_wxEvent(Scheme_Object *)
 : wxEvent()
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxEvent::~os_wxEvent()
@@ -66,7 +63,7 @@ static Scheme_Object *objscheme_wxEvent_GettimeStamp(Scheme_Object *obj, int n, 
   else
     v = ((wxEvent *)cobj->primdata)->timeStamp;
 
-  return scheme_make_integer_value(v);
+  return WITH_VAR_STACK(scheme_make_integer_value(v));
 }
 
 static Scheme_Object *objscheme_wxEvent_SettimeStamp(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -77,7 +74,7 @@ static Scheme_Object *objscheme_wxEvent_SettimeStamp(Scheme_Object *obj, int n, 
 
   if (n != 1) scheme_wrong_count("set-time-stamp in event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_ExactLong(p[0], "set-time-stamp in event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "set-time-stamp in event%"));
   ((wxEvent *)cobj->primdata)->timeStamp = v;
 
   return scheme_void;
@@ -88,12 +85,18 @@ static Scheme_Object *os_wxEvent_ConstructScheme(Scheme_Object *obj, int n,  Sch
 {
   os_wxEvent *realobj;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n != 0) 
-    scheme_wrong_count("initialization in event%", 0, 0, n, p);
+    WITH_VAR_STACK(scheme_wrong_count("initialization in event%", 0, 0, n, p));
 
   
   realobj = new os_wxEvent(obj);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -104,23 +107,27 @@ static Scheme_Object *os_wxEvent_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
 void objscheme_setup_wxEvent(void *env)
 {
-if (os_wxEvent_class) {
+  if (os_wxEvent_class) {
     objscheme_add_global_class(os_wxEvent_class, "event%", env);
-} else {
-  os_wxEvent_class = objscheme_def_prim_class(env, "event%", "object%", os_wxEvent_ConstructScheme, 2);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxEvent_class = objscheme_def_prim_class(env, "event%", "object%", os_wxEvent_ConstructScheme, 2);
+
+    wxREGGLOB("event%");
 
 
   scheme_add_method_w_arity(os_wxEvent_class,"get-time-stamp", objscheme_wxEvent_GettimeStamp, 0, 0);
   scheme_add_method_w_arity(os_wxEvent_class,"set-time-stamp", objscheme_wxEvent_SettimeStamp, 1, 1);
 
-  scheme_made_class(os_wxEvent_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxEvent_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxEvent(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxEvent_class))
@@ -128,7 +135,7 @@ int objscheme_istype_wxEvent(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "event% object or " XC_NULL_STR: "event% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "event% object or " XC_NULL_STR: "event% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -142,16 +149,20 @@ Scheme_Object *objscheme_bundle_wxEvent(class wxEvent *realobj)
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxEvent_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxEvent_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -159,9 +170,11 @@ class wxEvent *objscheme_unbundle_wxEvent(Scheme_Object *obj, const char *where,
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxEvent(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxEvent *)o->primdata;
   else
@@ -181,29 +194,31 @@ static Scheme_Object *actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = NULL;
 static Scheme_Object *actionType_wxEVENT_TYPE_MENU_SELECT_sym = NULL;
 
 static void init_symset_actionType(void) {
+  REMEMBER_VAR_STACK();
   wxREGGLOB(actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym);
-  actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym = scheme_intern_symbol("button");
+  actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("button"));
   wxREGGLOB(actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym);
-  actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym = scheme_intern_symbol("check-box");
+  actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("check-box"));
   wxREGGLOB(actionType_wxEVENT_TYPE_CHOICE_COMMAND_sym);
-  actionType_wxEVENT_TYPE_CHOICE_COMMAND_sym = scheme_intern_symbol("choice");
+  actionType_wxEVENT_TYPE_CHOICE_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("choice"));
   wxREGGLOB(actionType_wxEVENT_TYPE_LISTBOX_COMMAND_sym);
-  actionType_wxEVENT_TYPE_LISTBOX_COMMAND_sym = scheme_intern_symbol("list-box");
+  actionType_wxEVENT_TYPE_LISTBOX_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("list-box"));
   wxREGGLOB(actionType_wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND_sym);
-  actionType_wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND_sym = scheme_intern_symbol("list-box-dclick");
+  actionType_wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("list-box-dclick"));
   wxREGGLOB(actionType_wxEVENT_TYPE_TEXT_COMMAND_sym);
-  actionType_wxEVENT_TYPE_TEXT_COMMAND_sym = scheme_intern_symbol("text-field");
+  actionType_wxEVENT_TYPE_TEXT_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("text-field"));
   wxREGGLOB(actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym);
-  actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym = scheme_intern_symbol("slider");
+  actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("slider"));
   wxREGGLOB(actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym);
-  actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym = scheme_intern_symbol("radio-box");
+  actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("radio-box"));
   wxREGGLOB(actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym);
-  actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = scheme_intern_symbol("text-field-enter");
+  actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("text-field-enter"));
   wxREGGLOB(actionType_wxEVENT_TYPE_MENU_SELECT_sym);
-  actionType_wxEVENT_TYPE_MENU_SELECT_sym = scheme_intern_symbol("menu");
+  actionType_wxEVENT_TYPE_MENU_SELECT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("menu"));
 }
 
 static int unbundle_symset_actionType(Scheme_Object *v, const char *where) {
+  REMEMBER_VAR_STACK();
   if (!actionType_wxEVENT_TYPE_MENU_SELECT_sym) init_symset_actionType();
   if (0) { }
   else if (v == actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym) { return wxEVENT_TYPE_BUTTON_COMMAND; }
@@ -216,7 +231,7 @@ static int unbundle_symset_actionType(Scheme_Object *v, const char *where) {
   else if (v == actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym) { return wxEVENT_TYPE_RADIOBOX_COMMAND; }
   else if (v == actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym) { return wxEVENT_TYPE_TEXT_ENTER_COMMAND; }
   else if (v == actionType_wxEVENT_TYPE_MENU_SELECT_sym) { return wxEVENT_TYPE_MENU_SELECT; }
-  if (where) scheme_wrong_type(where, "actionType symbol", -1, 0, &v);
+  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "actionType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -250,12 +265,9 @@ class os_wxCommandEvent : public wxCommandEvent {
 
 Scheme_Object *os_wxCommandEvent_class;
 
-os_wxCommandEvent::os_wxCommandEvent(Scheme_Object * o, int x0)
+os_wxCommandEvent::os_wxCommandEvent(Scheme_Object *, int x0)
 : wxCommandEvent(x0)
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxCommandEvent::~os_wxCommandEvent()
@@ -276,7 +288,7 @@ static Scheme_Object *objscheme_wxCommandEvent_GeteventType(Scheme_Object *obj, 
   else
     v = ((wxCommandEvent *)cobj->primdata)->eventType;
 
-  return bundle_symset_actionType(v);
+  return WITH_VAR_STACK(bundle_symset_actionType(v));
 }
 
 static Scheme_Object *objscheme_wxCommandEvent_SeteventType(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -287,7 +299,7 @@ static Scheme_Object *objscheme_wxCommandEvent_SeteventType(Scheme_Object *obj, 
 
   if (n != 1) scheme_wrong_count("set-event-type in control-event%", 1, 1, n, p);
 
-  v = unbundle_symset_actionType(p[0], "set-event-type in control-event%");
+  v = WITH_VAR_STACK(unbundle_symset_actionType(p[0], "set-event-type in control-event%"));
   ((wxCommandEvent *)cobj->primdata)->eventType = v;
 
   return scheme_void;
@@ -299,13 +311,19 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(Scheme_Object *obj, int 
   os_wxCommandEvent *realobj;
   int x0;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n != 1) 
-    scheme_wrong_count("initialization in control-event%", 1, 1, n, p);
-  x0 = unbundle_symset_actionType(p[0], "initialization in control-event%");
+    WITH_VAR_STACK(scheme_wrong_count("initialization in control-event%", 1, 1, n, p));
+  x0 = WITH_VAR_STACK(unbundle_symset_actionType(p[0], "initialization in control-event%"));
 
   
   realobj = new os_wxCommandEvent(obj, x0);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -316,23 +334,27 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(Scheme_Object *obj, int 
 
 void objscheme_setup_wxCommandEvent(void *env)
 {
-if (os_wxCommandEvent_class) {
+  if (os_wxCommandEvent_class) {
     objscheme_add_global_class(os_wxCommandEvent_class, "control-event%", env);
-} else {
-  os_wxCommandEvent_class = objscheme_def_prim_class(env, "control-event%", "event%", os_wxCommandEvent_ConstructScheme, 2);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxCommandEvent_class = objscheme_def_prim_class(env, "control-event%", "event%", os_wxCommandEvent_ConstructScheme, 2);
+
+    wxREGGLOB("control-event%");
 
 
   scheme_add_method_w_arity(os_wxCommandEvent_class,"get-event-type", objscheme_wxCommandEvent_GeteventType, 0, 0);
   scheme_add_method_w_arity(os_wxCommandEvent_class,"set-event-type", objscheme_wxCommandEvent_SeteventType, 1, 1);
 
-  scheme_made_class(os_wxCommandEvent_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxCommandEvent_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxCommandEvent(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxCommandEvent_class))
@@ -340,7 +362,7 @@ int objscheme_istype_wxCommandEvent(Scheme_Object *obj, const char *stop, int nu
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "control-event% object or " XC_NULL_STR: "control-event% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "control-event% object or " XC_NULL_STR: "control-event% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -354,16 +376,20 @@ Scheme_Object *objscheme_bundle_wxCommandEvent(class wxCommandEvent *realobj)
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxCommandEvent_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxCommandEvent_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -371,9 +397,11 @@ class wxCommandEvent *objscheme_unbundle_wxCommandEvent(Scheme_Object *obj, cons
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxCommandEvent(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxCommandEvent *)o->primdata;
   else
@@ -395,12 +423,9 @@ class os_wxPopupEvent : public wxPopupEvent {
 
 Scheme_Object *os_wxPopupEvent_class;
 
-os_wxPopupEvent::os_wxPopupEvent(Scheme_Object * o)
+os_wxPopupEvent::os_wxPopupEvent(Scheme_Object *)
 : wxPopupEvent()
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxPopupEvent::~os_wxPopupEvent()
@@ -421,7 +446,7 @@ static Scheme_Object *objscheme_wxPopupEvent_GetmenuId(Scheme_Object *obj, int n
   else
     v = ((wxPopupEvent *)cobj->primdata)->menuId;
 
-  return scheme_make_integer_value(v);
+  return WITH_VAR_STACK(scheme_make_integer_value(v));
 }
 
 static Scheme_Object *objscheme_wxPopupEvent_SetmenuId(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -432,7 +457,7 @@ static Scheme_Object *objscheme_wxPopupEvent_SetmenuId(Scheme_Object *obj, int n
 
   if (n != 1) scheme_wrong_count("set-menu-id in popup-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_ExactLong(p[0], "set-menu-id in popup-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "set-menu-id in popup-event%"));
   ((wxPopupEvent *)cobj->primdata)->menuId = v;
 
   return scheme_void;
@@ -443,12 +468,18 @@ static Scheme_Object *os_wxPopupEvent_ConstructScheme(Scheme_Object *obj, int n,
 {
   os_wxPopupEvent *realobj;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n != 0) 
-    scheme_wrong_count("initialization in popup-event%", 0, 0, n, p);
+    WITH_VAR_STACK(scheme_wrong_count("initialization in popup-event%", 0, 0, n, p));
 
   
   realobj = new os_wxPopupEvent(obj);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -459,24 +490,28 @@ static Scheme_Object *os_wxPopupEvent_ConstructScheme(Scheme_Object *obj, int n,
 
 void objscheme_setup_wxPopupEvent(void *env)
 {
-if (os_wxPopupEvent_class) {
+  if (os_wxPopupEvent_class) {
     objscheme_add_global_class(os_wxPopupEvent_class, "popup-event%", env);
-} else {
-  os_wxPopupEvent_class = objscheme_def_prim_class(env, "popup-event%", "control-event%", os_wxPopupEvent_ConstructScheme, 2);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxPopupEvent_class = objscheme_def_prim_class(env, "popup-event%", "control-event%", os_wxPopupEvent_ConstructScheme, 2);
+
+    wxREGGLOB("popup-event%");
 
 
   scheme_add_method_w_arity(os_wxPopupEvent_class,"get-menu-id", objscheme_wxPopupEvent_GetmenuId, 0, 0);
   scheme_add_method_w_arity(os_wxPopupEvent_class,"set-menu-id", objscheme_wxPopupEvent_SetmenuId, 1, 1);
 
-  scheme_made_class(os_wxPopupEvent_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxPopupEvent_class));
 
-  objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxPopupEvent, wxTYPE_POPUP_EVENT);
+    WITH_REMEMBERED_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxPopupEvent, wxTYPE_POPUP_EVENT));
 
-}
+  }
 }
 
 int objscheme_istype_wxPopupEvent(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxPopupEvent_class))
@@ -484,7 +519,7 @@ int objscheme_istype_wxPopupEvent(Scheme_Object *obj, const char *stop, int null
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "popup-event% object or " XC_NULL_STR: "popup-event% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "popup-event% object or " XC_NULL_STR: "popup-event% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -498,16 +533,20 @@ Scheme_Object *objscheme_bundle_wxPopupEvent(class wxPopupEvent *realobj)
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((realobj->__type != wxTYPE_POPUP_EVENT) && (sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((realobj->__type != wxTYPE_POPUP_EVENT) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxPopupEvent_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxPopupEvent_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -515,9 +554,11 @@ class wxPopupEvent *objscheme_unbundle_wxPopupEvent(Scheme_Object *obj, const ch
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxPopupEvent(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxPopupEvent *)o->primdata;
   else
@@ -534,23 +575,25 @@ static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym = NULL;
 static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym = NULL;
 
 static void init_symset_scrollMoveType(void) {
+  REMEMBER_VAR_STACK();
   wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym);
-  scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym = scheme_intern_symbol("top");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("top"));
   wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym);
-  scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym = scheme_intern_symbol("bottom");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("bottom"));
   wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym);
-  scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym = scheme_intern_symbol("line-up");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("line-up"));
   wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym);
-  scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym = scheme_intern_symbol("line-down");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("line-down"));
   wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym);
-  scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym = scheme_intern_symbol("page-up");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("page-up"));
   wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym);
-  scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym = scheme_intern_symbol("page-down");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("page-down"));
   wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym);
-  scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym = scheme_intern_symbol("thumb");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("thumb"));
 }
 
 static int unbundle_symset_scrollMoveType(Scheme_Object *v, const char *where) {
+  REMEMBER_VAR_STACK();
   if (!scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) init_symset_scrollMoveType();
   if (0) { }
   else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym) { return wxEVENT_TYPE_SCROLL_TOP; }
@@ -560,7 +603,7 @@ static int unbundle_symset_scrollMoveType(Scheme_Object *v, const char *where) {
   else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym) { return wxEVENT_TYPE_SCROLL_PAGEUP; }
   else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym) { return wxEVENT_TYPE_SCROLL_PAGEDOWN; }
   else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) { return wxEVENT_TYPE_SCROLL_THUMBTRACK; }
-  if (where) scheme_wrong_type(where, "scrollMoveType symbol", -1, 0, &v);
+  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "scrollMoveType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -584,18 +627,20 @@ static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
 static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
 
 static void init_symset_orientation(void) {
+  REMEMBER_VAR_STACK();
   wxREGGLOB(orientation_wxVERTICAL_sym);
-  orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  orientation_wxVERTICAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("vertical"));
   wxREGGLOB(orientation_wxHORIZONTAL_sym);
-  orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+  orientation_wxHORIZONTAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal"));
 }
 
 static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
+  REMEMBER_VAR_STACK();
   if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
   if (0) { }
   else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
   else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "orientation symbol", -1, 0, &v));
   return 0;
 }
 
@@ -621,12 +666,9 @@ class os_wxScrollEvent : public wxScrollEvent {
 
 Scheme_Object *os_wxScrollEvent_class;
 
-os_wxScrollEvent::os_wxScrollEvent(Scheme_Object * o)
+os_wxScrollEvent::os_wxScrollEvent(Scheme_Object *)
 : wxScrollEvent()
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxScrollEvent::~os_wxScrollEvent()
@@ -647,7 +689,7 @@ static Scheme_Object *objscheme_wxScrollEvent_GetmoveType(Scheme_Object *obj, in
   else
     v = ((wxScrollEvent *)cobj->primdata)->moveType;
 
-  return bundle_symset_scrollMoveType(v);
+  return WITH_VAR_STACK(bundle_symset_scrollMoveType(v));
 }
 
 static Scheme_Object *objscheme_wxScrollEvent_SetmoveType(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -658,7 +700,7 @@ static Scheme_Object *objscheme_wxScrollEvent_SetmoveType(Scheme_Object *obj, in
 
   if (n != 1) scheme_wrong_count("set-event-type in scroll-event%", 1, 1, n, p);
 
-  v = unbundle_symset_scrollMoveType(p[0], "set-event-type in scroll-event%");
+  v = WITH_VAR_STACK(unbundle_symset_scrollMoveType(p[0], "set-event-type in scroll-event%"));
   ((wxScrollEvent *)cobj->primdata)->moveType = v;
 
   return scheme_void;
@@ -677,7 +719,7 @@ static Scheme_Object *objscheme_wxScrollEvent_Getdirection(Scheme_Object *obj, i
   else
     v = ((wxScrollEvent *)cobj->primdata)->direction;
 
-  return bundle_symset_orientation(v);
+  return WITH_VAR_STACK(bundle_symset_orientation(v));
 }
 
 static Scheme_Object *objscheme_wxScrollEvent_Setdirection(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -688,7 +730,7 @@ static Scheme_Object *objscheme_wxScrollEvent_Setdirection(Scheme_Object *obj, i
 
   if (n != 1) scheme_wrong_count("set-direction in scroll-event%", 1, 1, n, p);
 
-  v = unbundle_symset_orientation(p[0], "set-direction in scroll-event%");
+  v = WITH_VAR_STACK(unbundle_symset_orientation(p[0], "set-direction in scroll-event%"));
   ((wxScrollEvent *)cobj->primdata)->direction = v;
 
   return scheme_void;
@@ -718,7 +760,7 @@ static Scheme_Object *objscheme_wxScrollEvent_Setpos(Scheme_Object *obj, int n, 
 
   if (n != 1) scheme_wrong_count("set-position in scroll-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer_in(p[0], 0, 10000, "set-position in scroll-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[0], 0, 10000, "set-position in scroll-event%"));
   ((wxScrollEvent *)cobj->primdata)->pos = v;
 
   return scheme_void;
@@ -729,12 +771,18 @@ static Scheme_Object *os_wxScrollEvent_ConstructScheme(Scheme_Object *obj, int n
 {
   os_wxScrollEvent *realobj;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n != 0) 
-    scheme_wrong_count("initialization in scroll-event%", 0, 0, n, p);
+    WITH_VAR_STACK(scheme_wrong_count("initialization in scroll-event%", 0, 0, n, p));
 
   
   realobj = new os_wxScrollEvent(obj);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -745,10 +793,13 @@ static Scheme_Object *os_wxScrollEvent_ConstructScheme(Scheme_Object *obj, int n
 
 void objscheme_setup_wxScrollEvent(void *env)
 {
-if (os_wxScrollEvent_class) {
+  if (os_wxScrollEvent_class) {
     objscheme_add_global_class(os_wxScrollEvent_class, "scroll-event%", env);
-} else {
-  os_wxScrollEvent_class = objscheme_def_prim_class(env, "scroll-event%", "event%", os_wxScrollEvent_ConstructScheme, 6);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxScrollEvent_class = objscheme_def_prim_class(env, "scroll-event%", "event%", os_wxScrollEvent_ConstructScheme, 6);
+
+    wxREGGLOB("scroll-event%");
 
 
   scheme_add_method_w_arity(os_wxScrollEvent_class,"get-event-type", objscheme_wxScrollEvent_GetmoveType, 0, 0);
@@ -758,14 +809,15 @@ if (os_wxScrollEvent_class) {
   scheme_add_method_w_arity(os_wxScrollEvent_class,"get-position", objscheme_wxScrollEvent_Getpos, 0, 0);
   scheme_add_method_w_arity(os_wxScrollEvent_class,"set-position", objscheme_wxScrollEvent_Setpos, 1, 1);
 
-  scheme_made_class(os_wxScrollEvent_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxScrollEvent_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxScrollEvent(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxScrollEvent_class))
@@ -773,7 +825,7 @@ int objscheme_istype_wxScrollEvent(Scheme_Object *obj, const char *stop, int nul
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "scroll-event% object or " XC_NULL_STR: "scroll-event% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "scroll-event% object or " XC_NULL_STR: "scroll-event% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -787,16 +839,20 @@ Scheme_Object *objscheme_bundle_wxScrollEvent(class wxScrollEvent *realobj)
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxScrollEvent_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxScrollEvent_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -804,9 +860,11 @@ class wxScrollEvent *objscheme_unbundle_wxScrollEvent(Scheme_Object *obj, const 
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxScrollEvent(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxScrollEvent *)o->primdata;
   else
@@ -883,141 +941,143 @@ static Scheme_Object *keyCode_WXK_NUMLOCK_sym = NULL;
 static Scheme_Object *keyCode_WXK_SCROLL_sym = NULL;
 
 static void init_symset_keyCode(void) {
+  REMEMBER_VAR_STACK();
   wxREGGLOB(keyCode_WXK_ESCAPE_sym);
-  keyCode_WXK_ESCAPE_sym = scheme_intern_symbol("escape");
+  keyCode_WXK_ESCAPE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("escape"));
   wxREGGLOB(keyCode_WXK_START_sym);
-  keyCode_WXK_START_sym = scheme_intern_symbol("start");
+  keyCode_WXK_START_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("start"));
   wxREGGLOB(keyCode_WXK_CANCEL_sym);
-  keyCode_WXK_CANCEL_sym = scheme_intern_symbol("cancel");
+  keyCode_WXK_CANCEL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("cancel"));
   wxREGGLOB(keyCode_WXK_CLEAR_sym);
-  keyCode_WXK_CLEAR_sym = scheme_intern_symbol("clear");
+  keyCode_WXK_CLEAR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("clear"));
   wxREGGLOB(keyCode_WXK_SHIFT_sym);
-  keyCode_WXK_SHIFT_sym = scheme_intern_symbol("shift");
+  keyCode_WXK_SHIFT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("shift"));
   wxREGGLOB(keyCode_WXK_CONTROL_sym);
-  keyCode_WXK_CONTROL_sym = scheme_intern_symbol("control");
+  keyCode_WXK_CONTROL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("control"));
   wxREGGLOB(keyCode_WXK_MENU_sym);
-  keyCode_WXK_MENU_sym = scheme_intern_symbol("menu");
+  keyCode_WXK_MENU_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("menu"));
   wxREGGLOB(keyCode_WXK_PAUSE_sym);
-  keyCode_WXK_PAUSE_sym = scheme_intern_symbol("pause");
+  keyCode_WXK_PAUSE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("pause"));
   wxREGGLOB(keyCode_WXK_CAPITAL_sym);
-  keyCode_WXK_CAPITAL_sym = scheme_intern_symbol("capital");
+  keyCode_WXK_CAPITAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("capital"));
   wxREGGLOB(keyCode_WXK_PRIOR_sym);
-  keyCode_WXK_PRIOR_sym = scheme_intern_symbol("prior");
+  keyCode_WXK_PRIOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("prior"));
   wxREGGLOB(keyCode_WXK_NEXT_sym);
-  keyCode_WXK_NEXT_sym = scheme_intern_symbol("next");
+  keyCode_WXK_NEXT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("next"));
   wxREGGLOB(keyCode_WXK_END_sym);
-  keyCode_WXK_END_sym = scheme_intern_symbol("end");
+  keyCode_WXK_END_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("end"));
   wxREGGLOB(keyCode_WXK_HOME_sym);
-  keyCode_WXK_HOME_sym = scheme_intern_symbol("home");
+  keyCode_WXK_HOME_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("home"));
   wxREGGLOB(keyCode_WXK_LEFT_sym);
-  keyCode_WXK_LEFT_sym = scheme_intern_symbol("left");
+  keyCode_WXK_LEFT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("left"));
   wxREGGLOB(keyCode_WXK_UP_sym);
-  keyCode_WXK_UP_sym = scheme_intern_symbol("up");
+  keyCode_WXK_UP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("up"));
   wxREGGLOB(keyCode_WXK_RIGHT_sym);
-  keyCode_WXK_RIGHT_sym = scheme_intern_symbol("right");
+  keyCode_WXK_RIGHT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("right"));
   wxREGGLOB(keyCode_WXK_DOWN_sym);
-  keyCode_WXK_DOWN_sym = scheme_intern_symbol("down");
+  keyCode_WXK_DOWN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("down"));
   wxREGGLOB(keyCode_WXK_SELECT_sym);
-  keyCode_WXK_SELECT_sym = scheme_intern_symbol("select");
+  keyCode_WXK_SELECT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("select"));
   wxREGGLOB(keyCode_WXK_PRINT_sym);
-  keyCode_WXK_PRINT_sym = scheme_intern_symbol("print");
+  keyCode_WXK_PRINT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("print"));
   wxREGGLOB(keyCode_WXK_EXECUTE_sym);
-  keyCode_WXK_EXECUTE_sym = scheme_intern_symbol("execute");
+  keyCode_WXK_EXECUTE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("execute"));
   wxREGGLOB(keyCode_WXK_SNAPSHOT_sym);
-  keyCode_WXK_SNAPSHOT_sym = scheme_intern_symbol("snapshot");
+  keyCode_WXK_SNAPSHOT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("snapshot"));
   wxREGGLOB(keyCode_WXK_INSERT_sym);
-  keyCode_WXK_INSERT_sym = scheme_intern_symbol("insert");
+  keyCode_WXK_INSERT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("insert"));
   wxREGGLOB(keyCode_WXK_HELP_sym);
-  keyCode_WXK_HELP_sym = scheme_intern_symbol("help");
+  keyCode_WXK_HELP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("help"));
   wxREGGLOB(keyCode_WXK_NUMPAD0_sym);
-  keyCode_WXK_NUMPAD0_sym = scheme_intern_symbol("numpad0");
+  keyCode_WXK_NUMPAD0_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numpad0"));
   wxREGGLOB(keyCode_WXK_NUMPAD1_sym);
-  keyCode_WXK_NUMPAD1_sym = scheme_intern_symbol("numpad1");
+  keyCode_WXK_NUMPAD1_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numpad1"));
   wxREGGLOB(keyCode_WXK_NUMPAD2_sym);
-  keyCode_WXK_NUMPAD2_sym = scheme_intern_symbol("numpad2");
+  keyCode_WXK_NUMPAD2_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numpad2"));
   wxREGGLOB(keyCode_WXK_NUMPAD3_sym);
-  keyCode_WXK_NUMPAD3_sym = scheme_intern_symbol("numpad3");
+  keyCode_WXK_NUMPAD3_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numpad3"));
   wxREGGLOB(keyCode_WXK_NUMPAD4_sym);
-  keyCode_WXK_NUMPAD4_sym = scheme_intern_symbol("numpad4");
+  keyCode_WXK_NUMPAD4_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numpad4"));
   wxREGGLOB(keyCode_WXK_NUMPAD5_sym);
-  keyCode_WXK_NUMPAD5_sym = scheme_intern_symbol("numpad5");
+  keyCode_WXK_NUMPAD5_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numpad5"));
   wxREGGLOB(keyCode_WXK_NUMPAD6_sym);
-  keyCode_WXK_NUMPAD6_sym = scheme_intern_symbol("numpad6");
+  keyCode_WXK_NUMPAD6_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numpad6"));
   wxREGGLOB(keyCode_WXK_NUMPAD7_sym);
-  keyCode_WXK_NUMPAD7_sym = scheme_intern_symbol("numpad7");
+  keyCode_WXK_NUMPAD7_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numpad7"));
   wxREGGLOB(keyCode_WXK_NUMPAD8_sym);
-  keyCode_WXK_NUMPAD8_sym = scheme_intern_symbol("numpad8");
+  keyCode_WXK_NUMPAD8_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numpad8"));
   wxREGGLOB(keyCode_WXK_NUMPAD9_sym);
-  keyCode_WXK_NUMPAD9_sym = scheme_intern_symbol("numpad9");
+  keyCode_WXK_NUMPAD9_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numpad9"));
   wxREGGLOB(keyCode_3_sym);
-  keyCode_3_sym = scheme_intern_symbol("numpad-enter");
+  keyCode_3_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numpad-enter"));
   wxREGGLOB(keyCode_WXK_MULTIPLY_sym);
-  keyCode_WXK_MULTIPLY_sym = scheme_intern_symbol("multiply");
+  keyCode_WXK_MULTIPLY_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("multiply"));
   wxREGGLOB(keyCode_WXK_ADD_sym);
-  keyCode_WXK_ADD_sym = scheme_intern_symbol("add");
+  keyCode_WXK_ADD_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("add"));
   wxREGGLOB(keyCode_WXK_SEPARATOR_sym);
-  keyCode_WXK_SEPARATOR_sym = scheme_intern_symbol("separator");
+  keyCode_WXK_SEPARATOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("separator"));
   wxREGGLOB(keyCode_WXK_SUBTRACT_sym);
-  keyCode_WXK_SUBTRACT_sym = scheme_intern_symbol("subtract");
+  keyCode_WXK_SUBTRACT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("subtract"));
   wxREGGLOB(keyCode_WXK_DECIMAL_sym);
-  keyCode_WXK_DECIMAL_sym = scheme_intern_symbol("decimal");
+  keyCode_WXK_DECIMAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("decimal"));
   wxREGGLOB(keyCode_WXK_DIVIDE_sym);
-  keyCode_WXK_DIVIDE_sym = scheme_intern_symbol("divide");
+  keyCode_WXK_DIVIDE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("divide"));
   wxREGGLOB(keyCode_WXK_F1_sym);
-  keyCode_WXK_F1_sym = scheme_intern_symbol("f1");
+  keyCode_WXK_F1_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f1"));
   wxREGGLOB(keyCode_WXK_F2_sym);
-  keyCode_WXK_F2_sym = scheme_intern_symbol("f2");
+  keyCode_WXK_F2_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f2"));
   wxREGGLOB(keyCode_WXK_F3_sym);
-  keyCode_WXK_F3_sym = scheme_intern_symbol("f3");
+  keyCode_WXK_F3_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f3"));
   wxREGGLOB(keyCode_WXK_F4_sym);
-  keyCode_WXK_F4_sym = scheme_intern_symbol("f4");
+  keyCode_WXK_F4_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f4"));
   wxREGGLOB(keyCode_WXK_F5_sym);
-  keyCode_WXK_F5_sym = scheme_intern_symbol("f5");
+  keyCode_WXK_F5_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f5"));
   wxREGGLOB(keyCode_WXK_F6_sym);
-  keyCode_WXK_F6_sym = scheme_intern_symbol("f6");
+  keyCode_WXK_F6_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f6"));
   wxREGGLOB(keyCode_WXK_F7_sym);
-  keyCode_WXK_F7_sym = scheme_intern_symbol("f7");
+  keyCode_WXK_F7_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f7"));
   wxREGGLOB(keyCode_WXK_F8_sym);
-  keyCode_WXK_F8_sym = scheme_intern_symbol("f8");
+  keyCode_WXK_F8_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f8"));
   wxREGGLOB(keyCode_WXK_F9_sym);
-  keyCode_WXK_F9_sym = scheme_intern_symbol("f9");
+  keyCode_WXK_F9_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f9"));
   wxREGGLOB(keyCode_WXK_F10_sym);
-  keyCode_WXK_F10_sym = scheme_intern_symbol("f10");
+  keyCode_WXK_F10_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f10"));
   wxREGGLOB(keyCode_WXK_F11_sym);
-  keyCode_WXK_F11_sym = scheme_intern_symbol("f11");
+  keyCode_WXK_F11_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f11"));
   wxREGGLOB(keyCode_WXK_F12_sym);
-  keyCode_WXK_F12_sym = scheme_intern_symbol("f12");
+  keyCode_WXK_F12_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f12"));
   wxREGGLOB(keyCode_WXK_F13_sym);
-  keyCode_WXK_F13_sym = scheme_intern_symbol("f13");
+  keyCode_WXK_F13_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f13"));
   wxREGGLOB(keyCode_WXK_F14_sym);
-  keyCode_WXK_F14_sym = scheme_intern_symbol("f14");
+  keyCode_WXK_F14_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f14"));
   wxREGGLOB(keyCode_WXK_F15_sym);
-  keyCode_WXK_F15_sym = scheme_intern_symbol("f15");
+  keyCode_WXK_F15_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f15"));
   wxREGGLOB(keyCode_WXK_F16_sym);
-  keyCode_WXK_F16_sym = scheme_intern_symbol("f16");
+  keyCode_WXK_F16_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f16"));
   wxREGGLOB(keyCode_WXK_F17_sym);
-  keyCode_WXK_F17_sym = scheme_intern_symbol("f17");
+  keyCode_WXK_F17_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f17"));
   wxREGGLOB(keyCode_WXK_F18_sym);
-  keyCode_WXK_F18_sym = scheme_intern_symbol("f18");
+  keyCode_WXK_F18_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f18"));
   wxREGGLOB(keyCode_WXK_F19_sym);
-  keyCode_WXK_F19_sym = scheme_intern_symbol("f19");
+  keyCode_WXK_F19_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f19"));
   wxREGGLOB(keyCode_WXK_F20_sym);
-  keyCode_WXK_F20_sym = scheme_intern_symbol("f20");
+  keyCode_WXK_F20_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f20"));
   wxREGGLOB(keyCode_WXK_F21_sym);
-  keyCode_WXK_F21_sym = scheme_intern_symbol("f21");
+  keyCode_WXK_F21_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f21"));
   wxREGGLOB(keyCode_WXK_F22_sym);
-  keyCode_WXK_F22_sym = scheme_intern_symbol("f22");
+  keyCode_WXK_F22_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f22"));
   wxREGGLOB(keyCode_WXK_F23_sym);
-  keyCode_WXK_F23_sym = scheme_intern_symbol("f23");
+  keyCode_WXK_F23_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f23"));
   wxREGGLOB(keyCode_WXK_F24_sym);
-  keyCode_WXK_F24_sym = scheme_intern_symbol("f24");
+  keyCode_WXK_F24_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("f24"));
   wxREGGLOB(keyCode_WXK_NUMLOCK_sym);
-  keyCode_WXK_NUMLOCK_sym = scheme_intern_symbol("numlock");
+  keyCode_WXK_NUMLOCK_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numlock"));
   wxREGGLOB(keyCode_WXK_SCROLL_sym);
-  keyCode_WXK_SCROLL_sym = scheme_intern_symbol("scroll");
+  keyCode_WXK_SCROLL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("scroll"));
 }
 
 static int unbundle_symset_keyCode(Scheme_Object *v, const char *where) {
+  REMEMBER_VAR_STACK();
   if (!keyCode_WXK_SCROLL_sym) init_symset_keyCode();
   if (0) { }
   else if (SCHEME_CHARP(v)) { return SCHEME_CHAR_VAL(v); }
@@ -1087,7 +1147,7 @@ static int unbundle_symset_keyCode(Scheme_Object *v, const char *where) {
   else if (v == keyCode_WXK_F24_sym) { return WXK_F24; }
   else if (v == keyCode_WXK_NUMLOCK_sym) { return WXK_NUMLOCK; }
   else if (v == keyCode_WXK_SCROLL_sym) { return WXK_SCROLL; }
-  if (where) scheme_wrong_type(where, "keyCode symbol", -1, 0, &v);
+  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "keyCode symbol", -1, 0, &v));
   return 0;
 }
 
@@ -1178,12 +1238,9 @@ class os_wxKeyEvent : public wxKeyEvent {
 
 Scheme_Object *os_wxKeyEvent_class;
 
-os_wxKeyEvent::os_wxKeyEvent(Scheme_Object * o, int x0)
+os_wxKeyEvent::os_wxKeyEvent(Scheme_Object *, int x0)
 : wxKeyEvent(x0)
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxKeyEvent::~os_wxKeyEvent()
@@ -1204,7 +1261,7 @@ static Scheme_Object *objscheme_wxKeyEvent_GetkeyCode(Scheme_Object *obj, int n,
   else
     v = ((wxKeyEvent *)cobj->primdata)->keyCode;
 
-  return bundle_symset_keyCode(v);
+  return WITH_VAR_STACK(bundle_symset_keyCode(v));
 }
 
 static Scheme_Object *objscheme_wxKeyEvent_SetkeyCode(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -1215,7 +1272,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetkeyCode(Scheme_Object *obj, int n,
 
   if (n != 1) scheme_wrong_count("set-key-code in key-event%", 1, 1, n, p);
 
-  v = unbundle_symset_keyCode(p[0], "set-key-code in key-event%");
+  v = WITH_VAR_STACK(unbundle_symset_keyCode(p[0], "set-key-code in key-event%"));
   ((wxKeyEvent *)cobj->primdata)->keyCode = v;
 
   return scheme_void;
@@ -1245,7 +1302,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetshiftDown(Scheme_Object *obj, int 
 
   if (n != 1) scheme_wrong_count("set-shift-down in key-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "set-shift-down in key-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-shift-down in key-event%"));
   ((wxKeyEvent *)cobj->primdata)->shiftDown = v;
 
   return scheme_void;
@@ -1275,7 +1332,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetcontrolDown(Scheme_Object *obj, in
 
   if (n != 1) scheme_wrong_count("set-control-down in key-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "set-control-down in key-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-control-down in key-event%"));
   ((wxKeyEvent *)cobj->primdata)->controlDown = v;
 
   return scheme_void;
@@ -1305,7 +1362,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetmetaDown(Scheme_Object *obj, int n
 
   if (n != 1) scheme_wrong_count("set-meta-down in key-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "set-meta-down in key-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-meta-down in key-event%"));
   ((wxKeyEvent *)cobj->primdata)->metaDown = v;
 
   return scheme_void;
@@ -1335,7 +1392,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetaltDown(Scheme_Object *obj, int n,
 
   if (n != 1) scheme_wrong_count("set-alt-down in key-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "set-alt-down in key-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-alt-down in key-event%"));
   ((wxKeyEvent *)cobj->primdata)->altDown = v;
 
   return scheme_void;
@@ -1354,7 +1411,7 @@ static Scheme_Object *objscheme_wxKeyEvent_Getx(Scheme_Object *obj, int n,  Sche
   else
     v = ((wxKeyEvent *)cobj->primdata)->x;
 
-  return scheme_make_double(v);
+  return WITH_VAR_STACK(scheme_make_double(v));
 }
 
 static Scheme_Object *objscheme_wxKeyEvent_Setx(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -1365,7 +1422,7 @@ static Scheme_Object *objscheme_wxKeyEvent_Setx(Scheme_Object *obj, int n,  Sche
 
   if (n != 1) scheme_wrong_count("set-x in key-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_float(p[0], "set-x in key-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "set-x in key-event%"));
   ((wxKeyEvent *)cobj->primdata)->x = v;
 
   return scheme_void;
@@ -1384,7 +1441,7 @@ static Scheme_Object *objscheme_wxKeyEvent_Gety(Scheme_Object *obj, int n,  Sche
   else
     v = ((wxKeyEvent *)cobj->primdata)->y;
 
-  return scheme_make_double(v);
+  return WITH_VAR_STACK(scheme_make_double(v));
 }
 
 static Scheme_Object *objscheme_wxKeyEvent_Sety(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -1395,7 +1452,7 @@ static Scheme_Object *objscheme_wxKeyEvent_Sety(Scheme_Object *obj, int n,  Sche
 
   if (n != 1) scheme_wrong_count("set-y in key-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_float(p[0], "set-y in key-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "set-y in key-event%"));
   ((wxKeyEvent *)cobj->primdata)->y = v;
 
   return scheme_void;
@@ -1407,12 +1464,18 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(Scheme_Object *obj, int n,  
   os_wxKeyEvent *realobj;
   int x0;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n != 0) 
-    scheme_wrong_count("initialization in key-event%", 0, 0, n, p);
+    WITH_VAR_STACK(scheme_wrong_count("initialization in key-event%", 0, 0, n, p));
 
   x0=wxEVENT_TYPE_CHAR;
   realobj = new os_wxKeyEvent(obj, x0);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -1423,10 +1486,13 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(Scheme_Object *obj, int n,  
 
 void objscheme_setup_wxKeyEvent(void *env)
 {
-if (os_wxKeyEvent_class) {
+  if (os_wxKeyEvent_class) {
     objscheme_add_global_class(os_wxKeyEvent_class, "key-event%", env);
-} else {
-  os_wxKeyEvent_class = objscheme_def_prim_class(env, "key-event%", "event%", os_wxKeyEvent_ConstructScheme, 14);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxKeyEvent_class = objscheme_def_prim_class(env, "key-event%", "event%", os_wxKeyEvent_ConstructScheme, 14);
+
+    wxREGGLOB("key-event%");
 
 
   scheme_add_method_w_arity(os_wxKeyEvent_class,"get-key-code", objscheme_wxKeyEvent_GetkeyCode, 0, 0);
@@ -1444,14 +1510,15 @@ if (os_wxKeyEvent_class) {
   scheme_add_method_w_arity(os_wxKeyEvent_class,"get-y", objscheme_wxKeyEvent_Gety, 0, 0);
   scheme_add_method_w_arity(os_wxKeyEvent_class,"set-y", objscheme_wxKeyEvent_Sety, 1, 1);
 
-  scheme_made_class(os_wxKeyEvent_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxKeyEvent_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxKeyEvent(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxKeyEvent_class))
@@ -1459,7 +1526,7 @@ int objscheme_istype_wxKeyEvent(Scheme_Object *obj, const char *stop, int nullOK
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "key-event% object or " XC_NULL_STR: "key-event% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "key-event% object or " XC_NULL_STR: "key-event% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -1473,16 +1540,20 @@ Scheme_Object *objscheme_bundle_wxKeyEvent(class wxKeyEvent *realobj)
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxKeyEvent_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxKeyEvent_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -1490,9 +1561,11 @@ class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *obj, const char *
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxKeyEvent(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxKeyEvent *)o->primdata;
   else
@@ -1511,27 +1584,29 @@ static Scheme_Object *mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym = NULL;
 static Scheme_Object *mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym = NULL;
 
 static void init_symset_mouseEventType(void) {
+  REMEMBER_VAR_STACK();
   wxREGGLOB(mouseEventType_wxEVENT_TYPE_LEFT_DOWN_sym);
-  mouseEventType_wxEVENT_TYPE_LEFT_DOWN_sym = scheme_intern_symbol("left-down");
+  mouseEventType_wxEVENT_TYPE_LEFT_DOWN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("left-down"));
   wxREGGLOB(mouseEventType_wxEVENT_TYPE_LEFT_UP_sym);
-  mouseEventType_wxEVENT_TYPE_LEFT_UP_sym = scheme_intern_symbol("left-up");
+  mouseEventType_wxEVENT_TYPE_LEFT_UP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("left-up"));
   wxREGGLOB(mouseEventType_wxEVENT_TYPE_MIDDLE_DOWN_sym);
-  mouseEventType_wxEVENT_TYPE_MIDDLE_DOWN_sym = scheme_intern_symbol("middle-down");
+  mouseEventType_wxEVENT_TYPE_MIDDLE_DOWN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("middle-down"));
   wxREGGLOB(mouseEventType_wxEVENT_TYPE_MIDDLE_UP_sym);
-  mouseEventType_wxEVENT_TYPE_MIDDLE_UP_sym = scheme_intern_symbol("middle-up");
+  mouseEventType_wxEVENT_TYPE_MIDDLE_UP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("middle-up"));
   wxREGGLOB(mouseEventType_wxEVENT_TYPE_RIGHT_DOWN_sym);
-  mouseEventType_wxEVENT_TYPE_RIGHT_DOWN_sym = scheme_intern_symbol("right-down");
+  mouseEventType_wxEVENT_TYPE_RIGHT_DOWN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("right-down"));
   wxREGGLOB(mouseEventType_wxEVENT_TYPE_RIGHT_UP_sym);
-  mouseEventType_wxEVENT_TYPE_RIGHT_UP_sym = scheme_intern_symbol("right-up");
+  mouseEventType_wxEVENT_TYPE_RIGHT_UP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("right-up"));
   wxREGGLOB(mouseEventType_wxEVENT_TYPE_MOTION_sym);
-  mouseEventType_wxEVENT_TYPE_MOTION_sym = scheme_intern_symbol("motion");
+  mouseEventType_wxEVENT_TYPE_MOTION_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("motion"));
   wxREGGLOB(mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym);
-  mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym = scheme_intern_symbol("enter");
+  mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("enter"));
   wxREGGLOB(mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym);
-  mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym = scheme_intern_symbol("leave");
+  mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("leave"));
 }
 
 static int unbundle_symset_mouseEventType(Scheme_Object *v, const char *where) {
+  REMEMBER_VAR_STACK();
   if (!mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) init_symset_mouseEventType();
   if (0) { }
   else if (v == mouseEventType_wxEVENT_TYPE_LEFT_DOWN_sym) { return wxEVENT_TYPE_LEFT_DOWN; }
@@ -1543,7 +1618,7 @@ static int unbundle_symset_mouseEventType(Scheme_Object *v, const char *where) {
   else if (v == mouseEventType_wxEVENT_TYPE_MOTION_sym) { return wxEVENT_TYPE_MOTION; }
   else if (v == mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym) { return wxEVENT_TYPE_ENTER_WINDOW; }
   else if (v == mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) { return wxEVENT_TYPE_LEAVE_WINDOW; }
-  if (where) scheme_wrong_type(where, "mouseEventType symbol", -1, 0, &v);
+  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "mouseEventType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -1571,24 +1646,26 @@ static Scheme_Object *buttonId_2_sym = NULL;
 static Scheme_Object *buttonId_3_sym = NULL;
 
 static void init_symset_buttonId(void) {
+  REMEMBER_VAR_STACK();
   wxREGGLOB(buttonId_NEGATIVE_ONE_sym);
-  buttonId_NEGATIVE_ONE_sym = scheme_intern_symbol("any");
+  buttonId_NEGATIVE_ONE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("any"));
   wxREGGLOB(buttonId_1_sym);
-  buttonId_1_sym = scheme_intern_symbol("left");
+  buttonId_1_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("left"));
   wxREGGLOB(buttonId_2_sym);
-  buttonId_2_sym = scheme_intern_symbol("middle");
+  buttonId_2_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("middle"));
   wxREGGLOB(buttonId_3_sym);
-  buttonId_3_sym = scheme_intern_symbol("right");
+  buttonId_3_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("right"));
 }
 
 static int unbundle_symset_buttonId(Scheme_Object *v, const char *where) {
+  REMEMBER_VAR_STACK();
   if (!buttonId_3_sym) init_symset_buttonId();
   if (0) { }
   else if (v == buttonId_NEGATIVE_ONE_sym) { return NEGATIVE_ONE; }
   else if (v == buttonId_1_sym) { return 1; }
   else if (v == buttonId_2_sym) { return 2; }
   else if (v == buttonId_3_sym) { return 3; }
-  if (where) scheme_wrong_type(where, "buttonId symbol", -1, 0, &v);
+  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "buttonId symbol", -1, 0, &v));
   return 0;
 }
 
@@ -1606,12 +1683,9 @@ class os_wxMouseEvent : public wxMouseEvent {
 
 Scheme_Object *os_wxMouseEvent_class;
 
-os_wxMouseEvent::os_wxMouseEvent(Scheme_Object * o, int x0)
+os_wxMouseEvent::os_wxMouseEvent(Scheme_Object *, int x0)
 : wxMouseEvent(x0)
 {
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
 }
 
 os_wxMouseEvent::~os_wxMouseEvent()
@@ -1622,14 +1696,19 @@ os_wxMouseEvent::~os_wxMouseEvent()
 #pragma argsused
 static Scheme_Object *os_wxMouseEventMoving(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Moving();
+  r = WITH_VAR_STACK(((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Moving());
 
   
   
@@ -1639,14 +1718,19 @@ static Scheme_Object *os_wxMouseEventMoving(Scheme_Object *obj, int n,  Scheme_O
 #pragma argsused
 static Scheme_Object *os_wxMouseEventLeaving(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Leaving();
+  r = WITH_VAR_STACK(((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Leaving());
 
   
   
@@ -1656,14 +1740,19 @@ static Scheme_Object *os_wxMouseEventLeaving(Scheme_Object *obj, int n,  Scheme_
 #pragma argsused
 static Scheme_Object *os_wxMouseEventEntering(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Entering();
+  r = WITH_VAR_STACK(((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Entering());
 
   
   
@@ -1673,14 +1762,19 @@ static Scheme_Object *os_wxMouseEventEntering(Scheme_Object *obj, int n,  Scheme
 #pragma argsused
 static Scheme_Object *os_wxMouseEventDragging(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
 
   
-  r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Dragging();
+  r = WITH_VAR_STACK(((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Dragging());
 
   
   
@@ -1690,19 +1784,24 @@ static Scheme_Object *os_wxMouseEventDragging(Scheme_Object *obj, int n,  Scheme
 #pragma argsused
 static Scheme_Object *os_wxMouseEventButtonUp(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
   int x0;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n > 0) {
-    x0 = unbundle_symset_buttonId(p[0], "button-up? in mouse-event%");
+    x0 = WITH_VAR_STACK(unbundle_symset_buttonId(p[0], "button-up? in mouse-event%"));
   } else
     x0 = -1;
 
   
-  r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->ButtonUp(x0);
+  r = WITH_VAR_STACK(((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->ButtonUp(x0));
 
   
   
@@ -1712,19 +1811,24 @@ static Scheme_Object *os_wxMouseEventButtonUp(Scheme_Object *obj, int n,  Scheme
 #pragma argsused
 static Scheme_Object *os_wxMouseEventButtonDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
   int x0;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n > 0) {
-    x0 = unbundle_symset_buttonId(p[0], "button-down? in mouse-event%");
+    x0 = WITH_VAR_STACK(unbundle_symset_buttonId(p[0], "button-down? in mouse-event%"));
   } else
     x0 = -1;
 
   
-  r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->ButtonDown(x0);
+  r = WITH_VAR_STACK(((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->ButtonDown(x0));
 
   
   
@@ -1734,19 +1838,24 @@ static Scheme_Object *os_wxMouseEventButtonDown(Scheme_Object *obj, int n,  Sche
 #pragma argsused
 static Scheme_Object *os_wxMouseEventButton(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
   int x0;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n > 0) {
-    x0 = unbundle_symset_buttonId(p[0], "button-changed? in mouse-event%");
+    x0 = WITH_VAR_STACK(unbundle_symset_buttonId(p[0], "button-changed? in mouse-event%"));
   } else
     x0 = -1;
 
   
-  r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Button(x0);
+  r = WITH_VAR_STACK(((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Button(x0));
 
   
   
@@ -1766,7 +1875,7 @@ static Scheme_Object *objscheme_wxMouseEvent_GeteventType(Scheme_Object *obj, in
   else
     v = ((wxMouseEvent *)cobj->primdata)->eventType;
 
-  return bundle_symset_mouseEventType(v);
+  return WITH_VAR_STACK(bundle_symset_mouseEventType(v));
 }
 
 static Scheme_Object *objscheme_wxMouseEvent_SeteventType(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -1777,7 +1886,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SeteventType(Scheme_Object *obj, in
 
   if (n != 1) scheme_wrong_count("set-event-type in mouse-event%", 1, 1, n, p);
 
-  v = unbundle_symset_mouseEventType(p[0], "set-event-type in mouse-event%");
+  v = WITH_VAR_STACK(unbundle_symset_mouseEventType(p[0], "set-event-type in mouse-event%"));
   ((wxMouseEvent *)cobj->primdata)->eventType = v;
 
   return scheme_void;
@@ -1807,7 +1916,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetleftDown(Scheme_Object *obj, int
 
   if (n != 1) scheme_wrong_count("set-left-down in mouse-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "set-left-down in mouse-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-left-down in mouse-event%"));
   ((wxMouseEvent *)cobj->primdata)->leftDown = v;
 
   return scheme_void;
@@ -1837,7 +1946,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetmiddleDown(Scheme_Object *obj, i
 
   if (n != 1) scheme_wrong_count("set-middle-down in mouse-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "set-middle-down in mouse-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-middle-down in mouse-event%"));
   ((wxMouseEvent *)cobj->primdata)->middleDown = v;
 
   return scheme_void;
@@ -1867,7 +1976,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetrightDown(Scheme_Object *obj, in
 
   if (n != 1) scheme_wrong_count("set-right-down in mouse-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "set-right-down in mouse-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-right-down in mouse-event%"));
   ((wxMouseEvent *)cobj->primdata)->rightDown = v;
 
   return scheme_void;
@@ -1897,7 +2006,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetshiftDown(Scheme_Object *obj, in
 
   if (n != 1) scheme_wrong_count("set-shift-down in mouse-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "set-shift-down in mouse-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-shift-down in mouse-event%"));
   ((wxMouseEvent *)cobj->primdata)->shiftDown = v;
 
   return scheme_void;
@@ -1927,7 +2036,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetcontrolDown(Scheme_Object *obj, 
 
   if (n != 1) scheme_wrong_count("set-control-down in mouse-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "set-control-down in mouse-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-control-down in mouse-event%"));
   ((wxMouseEvent *)cobj->primdata)->controlDown = v;
 
   return scheme_void;
@@ -1957,7 +2066,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetmetaDown(Scheme_Object *obj, int
 
   if (n != 1) scheme_wrong_count("set-meta-down in mouse-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "set-meta-down in mouse-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-meta-down in mouse-event%"));
   ((wxMouseEvent *)cobj->primdata)->metaDown = v;
 
   return scheme_void;
@@ -1987,7 +2096,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetaltDown(Scheme_Object *obj, int 
 
   if (n != 1) scheme_wrong_count("set-alt-down in mouse-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "set-alt-down in mouse-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-alt-down in mouse-event%"));
   ((wxMouseEvent *)cobj->primdata)->altDown = v;
 
   return scheme_void;
@@ -2006,7 +2115,7 @@ static Scheme_Object *objscheme_wxMouseEvent_Getx(Scheme_Object *obj, int n,  Sc
   else
     v = ((wxMouseEvent *)cobj->primdata)->x;
 
-  return scheme_make_double(v);
+  return WITH_VAR_STACK(scheme_make_double(v));
 }
 
 static Scheme_Object *objscheme_wxMouseEvent_Setx(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -2017,7 +2126,7 @@ static Scheme_Object *objscheme_wxMouseEvent_Setx(Scheme_Object *obj, int n,  Sc
 
   if (n != 1) scheme_wrong_count("set-x in mouse-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_float(p[0], "set-x in mouse-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "set-x in mouse-event%"));
   ((wxMouseEvent *)cobj->primdata)->x = v;
 
   return scheme_void;
@@ -2036,7 +2145,7 @@ static Scheme_Object *objscheme_wxMouseEvent_Gety(Scheme_Object *obj, int n,  Sc
   else
     v = ((wxMouseEvent *)cobj->primdata)->y;
 
-  return scheme_make_double(v);
+  return WITH_VAR_STACK(scheme_make_double(v));
 }
 
 static Scheme_Object *objscheme_wxMouseEvent_Sety(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -2047,7 +2156,7 @@ static Scheme_Object *objscheme_wxMouseEvent_Sety(Scheme_Object *obj, int n,  Sc
 
   if (n != 1) scheme_wrong_count("set-y in mouse-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_float(p[0], "set-y in mouse-event%");
+  v = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "set-y in mouse-event%"));
   ((wxMouseEvent *)cobj->primdata)->y = v;
 
   return scheme_void;
@@ -2059,13 +2168,19 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(Scheme_Object *obj, int n,
   os_wxMouseEvent *realobj;
   int x0;
 
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, p);
+
   
   if (n != 1) 
-    scheme_wrong_count("initialization in mouse-event%", 1, 1, n, p);
-  x0 = unbundle_symset_mouseEventType(p[0], "initialization in mouse-event%");
+    WITH_VAR_STACK(scheme_wrong_count("initialization in mouse-event%", 1, 1, n, p));
+  x0 = WITH_VAR_STACK(unbundle_symset_mouseEventType(p[0], "initialization in mouse-event%"));
 
   
   realobj = new os_wxMouseEvent(obj, x0);
+  realobj->__gc_external = (void *)obj;
+  objscheme_note_creation(obj);
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
@@ -2076,18 +2191,21 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(Scheme_Object *obj, int n,
 
 void objscheme_setup_wxMouseEvent(void *env)
 {
-if (os_wxMouseEvent_class) {
+  if (os_wxMouseEvent_class) {
     objscheme_add_global_class(os_wxMouseEvent_class, "mouse-event%", env);
-} else {
-  os_wxMouseEvent_class = objscheme_def_prim_class(env, "mouse-event%", "event%", os_wxMouseEvent_ConstructScheme, 27);
+  } else {
+    REMEMBER_VAR_STACK();
+    os_wxMouseEvent_class = objscheme_def_prim_class(env, "mouse-event%", "event%", os_wxMouseEvent_ConstructScheme, 27);
 
- scheme_add_method_w_arity(os_wxMouseEvent_class, "moving?", os_wxMouseEventMoving, 0, 0);
- scheme_add_method_w_arity(os_wxMouseEvent_class, "leaving?", os_wxMouseEventLeaving, 0, 0);
- scheme_add_method_w_arity(os_wxMouseEvent_class, "entering?", os_wxMouseEventEntering, 0, 0);
- scheme_add_method_w_arity(os_wxMouseEvent_class, "dragging?", os_wxMouseEventDragging, 0, 0);
- scheme_add_method_w_arity(os_wxMouseEvent_class, "button-up?", os_wxMouseEventButtonUp, 0, 1);
- scheme_add_method_w_arity(os_wxMouseEvent_class, "button-down?", os_wxMouseEventButtonDown, 0, 1);
- scheme_add_method_w_arity(os_wxMouseEvent_class, "button-changed?", os_wxMouseEventButton, 0, 1);
+    wxREGGLOB("mouse-event%");
+
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "moving?", os_wxMouseEventMoving, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "leaving?", os_wxMouseEventLeaving, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "entering?", os_wxMouseEventEntering, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "dragging?", os_wxMouseEventDragging, 0, 0));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-up?", os_wxMouseEventButtonUp, 0, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-down?", os_wxMouseEventButtonDown, 0, 1));
+    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-changed?", os_wxMouseEventButton, 0, 1));
 
   scheme_add_method_w_arity(os_wxMouseEvent_class,"get-event-type", objscheme_wxMouseEvent_GeteventType, 0, 0);
   scheme_add_method_w_arity(os_wxMouseEvent_class,"set-event-type", objscheme_wxMouseEvent_SeteventType, 1, 1);
@@ -2110,14 +2228,15 @@ if (os_wxMouseEvent_class) {
   scheme_add_method_w_arity(os_wxMouseEvent_class,"get-y", objscheme_wxMouseEvent_Gety, 0, 0);
   scheme_add_method_w_arity(os_wxMouseEvent_class,"set-y", objscheme_wxMouseEvent_Sety, 1, 1);
 
-  scheme_made_class(os_wxMouseEvent_class);
+    WITH_REMEMBERED_STACK(scheme_made_class(os_wxMouseEvent_class));
 
 
-}
+  }
 }
 
 int objscheme_istype_wxMouseEvent(Scheme_Object *obj, const char *stop, int nullOK)
 {
+  REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMouseEvent_class))
@@ -2125,7 +2244,7 @@ int objscheme_istype_wxMouseEvent(Scheme_Object *obj, const char *stop, int null
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "mouse-event% object or " XC_NULL_STR: "mouse-event% object", -1, 0, &obj);
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "mouse-event% object or " XC_NULL_STR: "mouse-event% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -2139,16 +2258,20 @@ Scheme_Object *objscheme_bundle_wxMouseEvent(class wxMouseEvent *realobj)
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
     return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxMouseEvent_class);
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMouseEvent_class));
 
   obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
+  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
   return (Scheme_Object *)obj;
 }
 
@@ -2156,9 +2279,11 @@ class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *obj, const ch
 {
   if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
+  REMEMBER_VAR_STACK();
+
   (void)objscheme_istype_wxMouseEvent(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
+  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
   if (o->primflag)
     return (os_wxMouseEvent *)o->primdata;
   else

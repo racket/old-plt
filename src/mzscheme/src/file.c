@@ -3347,6 +3347,7 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
   return scheme_false;
 #else
   char *filename;
+  int len, copied;
 
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("make-directory", "string", 0, argc, argv);
@@ -3354,9 +3355,20 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
 				    "make-directory",
-				    NULL,
+				    &copied,
 				    SCHEME_GUARD_FILE_WRITE);
   
+  /* Make sure pathname doesn't have trailing separator: */
+  len = strlen(filename);
+  while (len && IS_A_SEP(filename[len - 1])) {
+    if (!copied) {
+      filename = scheme_strdup(filename);
+      copied = 1;
+    }
+    filename[--len] = 0;
+  }
+
+
   while (1) {
     if (!MSC_IZE(mkdir)(filename
 #ifndef MKDIR_NO_MODE_FLAG

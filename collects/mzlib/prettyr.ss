@@ -35,6 +35,14 @@
 ;                              procedure, called to finally write text
 ;                              to the port
 ;
+;  pretty-print-pre-print-hook - parameter for a procedure that is called
+;                                just before each object is printed
+;    initial setting: (lambda (x port) (void))
+;
+;  pretty-print-post-print-hook - parameter for a procedure that is called
+;                                 just after each object is printed
+;    initial setting: (lambda (x port) (void))
+;
 ;  (pretty-print-handler v) - pretty-prints v if v is not #<void>
 ;
 ; TO INSTALL this pretty-printer into a MzScheme's read-eval-print loop,
@@ -132,6 +140,26 @@
 				x))
 		       x)))
 
+   (define pretty-print-pre-print-hook
+     (make-parameter void
+		     (lambda (x)
+		       (unless (can-accept-n? 2 x)
+			       (raise-type-error 
+				'pretty-print-pre-print-hook
+				"procedure of 2 arguments"
+				x))
+		       x)))
+
+   (define pretty-print-post-print-hook
+     (make-parameter void
+		     (lambda (x)
+		       (unless (can-accept-n? 2 x)
+			       (raise-type-error 
+				'pretty-print-post-print-hook
+				"procedure of 2 arguments"
+				x))
+		       x)))
+
    (define make-pretty-print
      (lambda (display?)
        (letrec ([pretty-print
@@ -139,7 +167,9 @@
 		  [(obj port)
 		   (let ([width (pretty-print-columns)]
 			 [size-hook (pretty-print-size-hook)]
-			 [print-hook (pretty-print-print-hook)])
+			 [print-hook (pretty-print-print-hook)]
+			 [pre-hook (pretty-print-pre-print-hook)]
+			 [post-hook (pretty-print-post-print-hook)])
 		     (generic-write obj display?
 				    width
 				    (let ([display (pretty-print-display-string-handler)])
@@ -156,7 +186,11 @@
 				      (size-hook o display? port))
 				    (let ([print-line (pretty-print-print-line)])
 				      (lambda (line offset)
-					(print-line line port offset width))))
+					(print-line line port offset width)))
+				    (lambda (obj)
+				      (pre-hook obj port))
+				    (lambda (obj)
+				      (post-hook obj port)))
 		     (void))]
 		  [(obj) (pretty-print obj (current-output-port))])])
 	 pretty-print)))
@@ -166,7 +200,8 @@
 
    (define (generic-write obj display? width output output-hooked 
 			  print-graph? print-struct? print-vec-length?
-			  depth size-hook print-line)
+			  depth size-hook print-line
+			  pre-print post-print)
 
      (define line-number 0)
 
@@ -244,7 +279,8 @@
 				    [width width] 
 				    [output output] [output-hooked output-hooked]
 				    [depth depth] [def-box (box #t)]
-				    [startpos (print-line 0 0)])
+				    [startpos (print-line 0 0)]
+				    [pre-print pre-print] [post-print post-print])
 	
 	(define (read-macro? l)
 	  (define (length1? l) (and (pair? l) (null? (cdr l))))
@@ -344,102 +380,105 @@
 				  (out ")" (wr l (out " . " col) (dsub1 depth))))))))))))
 	       (out "()" col)))
 
-	 (if (and depth (negative? depth))
-	     (out "..." col)
+	 (pre-print obj)
+	 (begin0
+	  (if (and depth (negative? depth))
+	      (out "..." col)
 
-	     (cond ((size-hook obj display?)
-		                       => (lambda (len)
-					    (and col
-						 (output-hooked obj len)
-						 (+ len col))))
+	      (cond ((size-hook obj display?)
+		     => (lambda (len)
+			  (and col
+			       (output-hooked obj len)
+			       (+ len col))))
+		    
+		    ((pair? obj)        (wr-expr obj col depth))
+		    ((null? obj)        (wr-lst obj col #f depth))
+		    ((vector? obj)      (check-expr-found
+					 obj #t col
+					 #f #f
+					 (lambda (col)
+					   (wr-lst (let ([l (vector->list obj)])
+						     (if print-vec-length?
+							 (drop-repeated l)
+							 l))
+						   (let ([col (out "#" col)])
+						     (if print-vec-length?
+							 (out (number->string (vector-length obj)) col)
+							 col))
+						   #f depth))))
+		    ((box? obj)         (check-expr-found
+					 obj #t col
+					 #f #f
+					 (lambda (col)
+					   (wr (unbox obj) (out "#&" col) 
+					       (dsub1 depth)))))
+		    ((struct? obj)      (if (and print-struct?
+						 (not (and depth
+							   (zero? depth))))
+					    (check-expr-found
+					     obj #t col
+					     #f #f
+					     (lambda (col)
+					       (wr-lst (vector->list 
+							(struct->vector obj))
+						       (out "#" col) #f
+						       depth)))
+					    (out
+					     (let ([p (open-output-string)]
+						   [p-s (print-struct)])
+					       (when p-s
+						 (print-struct #f))
+					       ((if display? display write) obj p)
+					       (when p-s
+						 (print-struct p-s))
+					       (get-output-string p))
+					     col)))
 
-		   ((pair? obj)        (wr-expr obj col depth))
-		   ((null? obj)        (wr-lst obj col #f depth))
-		   ((vector? obj)      (check-expr-found
-					obj #t col
-					#f #f
-					(lambda (col)
-					  (wr-lst (let ([l (vector->list obj)])
-						    (if print-vec-length?
-							(drop-repeated l)
-							l))
-						  (let ([col (out "#" col)])
-						    (if print-vec-length?
-							(out (number->string (vector-length obj)) col)
-							col))
-						  #f depth))))
-		   ((box? obj)         (check-expr-found
-					obj #t col
-					#f #f
-					(lambda (col)
-					  (wr (unbox obj) (out "#&" col) 
-					      (dsub1 depth)))))
-		   ((struct? obj)      (if (and print-struct?
-						(not (and depth
-							  (zero? depth))))
-					   (check-expr-found
-					    obj #t col
-					    #f #f
-					    (lambda (col)
-					      (wr-lst (vector->list 
-						       (struct->vector obj))
-						      (out "#" col) #f
-						      depth)))
-					   (out
-					    (let ([p (open-output-string)]
-						  [p-s (print-struct)])
-					      (when p-s
-						    (print-struct #f))
-					      ((if display? display write) obj p)
-					      (when p-s
-						    (print-struct p-s))
-					      (get-output-string p))
-					    col)))
+		    ((boolean? obj)     (out (if obj "#t" "#f") col))
+		    ((number? obj)
+		     (when (and show-inexactness?
+				(inexact? obj))
+		       (out "#i" col))
+		     (out (number->string obj) col))
+		    ; Let symbol get printed by default case to get proper quoting
+		    ; ((symbol? obj)      (out (symbol->string obj) col))
+		    ((string? obj)      (if display?
+					    (out obj col)
+					    (let loop ((i 0) (j 0) (col (out "\"" col)))
+					      (if (and col (< j (string-length obj)))
+						  (let ((c (string-ref obj j)))
+						    (if (or (char=? c #\\)
+							    (char=? c #\"))
+							(loop j
+							      (+ j 1)
+							      (out "\\"
+								   (out (substring obj i j)
+									col)))
+							(loop i (+ j 1) col)))
+						  (out "\""
+						       (out (substring obj i j) col))))))
+		    ((char? obj)        (if display?
+					    (out (make-string 1 obj) col)
+					    (out (case obj
+						   ((#\space)    "space")
+						   ((#\newline)  "newline")
+						   ((#\linefeed) "linefeed")
+						   ((#\return)   "return")
+						   ((#\rubout)   "rubout")
+						   ((#\backspace)"backspace")
+						   ((#\nul)      "nul")
+						   ((#\page)     "page")
+						   ((#\tab)      "tab")
+						   ((#\vtab)      "vtab")
+						   ((#\newline)  "newline")
+						   (else        (make-string 1 obj)))
+						 (out "#\\" col))))
 
-		   ((boolean? obj)     (out (if obj "#t" "#f") col))
-		   ((number? obj)
-		    (when (and show-inexactness?
-			       (inexact? obj))
-		      (out "#i" col))
-		    (out (number->string obj) col))
-		   ; Let symbol get printed by default case to get proper quoting
-		   ; ((symbol? obj)      (out (symbol->string obj) col))
-		   ((string? obj)      (if display?
-					   (out obj col)
-					   (let loop ((i 0) (j 0) (col (out "\"" col)))
-					     (if (and col (< j (string-length obj)))
-						 (let ((c (string-ref obj j)))
-						   (if (or (char=? c #\\)
-							   (char=? c #\"))
-						       (loop j
-							     (+ j 1)
-							     (out "\\"
-								  (out (substring obj i j)
-								       col)))
-						       (loop i (+ j 1) col)))
-						 (out "\""
-						      (out (substring obj i j) col))))))
-		   ((char? obj)        (if display?
-					   (out (make-string 1 obj) col)
-					   (out (case obj
-						  ((#\space)    "space")
-						  ((#\newline)  "newline")
-						  ((#\linefeed) "linefeed")
-						  ((#\return)   "return")
-						  ((#\rubout)   "rubout")
-						  ((#\backspace)"backspace")
-						  ((#\nul)      "nul")
-						  ((#\page)     "page")
-						  ((#\tab)      "tab")
-						  ((#\vtab)      "vtab")
-						  ((#\newline)  "newline")
-						  (else        (make-string 1 obj)))
-						(out "#\\" col))))
-
-		   (else (out (let ([p (open-output-string)])
-				((if display? display write) obj p)
-				(get-output-string p))
-			      col)))))
+		    (else (out (let ([p (open-output-string)])
+				 ((if display? display write) obj p)
+				 (get-output-string p))
+			       col))))
+	 (post-print obj)))
 
        (define (pp obj col depth)
 
@@ -488,7 +527,11 @@
 				    (snoc (cons s l) l))
 				  depth
 				  new-def-box
-				  0)
+				  0
+				  (lambda (obj)
+				    (snoc (cons 'pre obj) 0))
+				  (lambda (obj)
+				    (snoc (cons 'post obj) 0)))
 		   (if (> left 0) ; all can be printed on one line
 		       (let loop ([result result][col col])
 			 (if (null? result) 
@@ -496,9 +539,16 @@
 			     (loop (cdr result)
 				   (+ (let ([v (car result)])
 					(if (pair? v)
-					    (begin 
+					    (cond
+					     [(eq? (car v) 'pre)
+					      (pre-print (cdr v))
+					      col]
+					     [(eq? (car v) 'post)
+					      (post-print (cdr v))
+					      col]
+					     [else
 					      (output-hooked (car v) (cdr v))
-					      (+ col (cdr v)))
+					      (+ col (cdr v))])
 					    (out (car result) col)))))))
 		       (begin
 			 (set-box! new-def-box #f)
@@ -506,23 +556,26 @@
 				(if ref
 				    (expr-found ref col)
 				    col)])
-			   (cond
-			    [(pair? obj) (pp-pair obj col extra depth)]
-			    [(vector? obj)
-			     (pp-list (let ([l (vector->list obj)])
-					(if print-vec-length?
-					    (drop-repeated l)
-					    l))
-				      (let ([col (out "#" col)])
-					(if print-vec-length?
-					    (out (number->string (vector-length obj)) col)
-					    col))
-				      extra pp-expr #f depth)]
-			    [(struct? obj)
-			     (pp-list (vector->list (struct->vector obj))
-				      (out "#" col) extra pp-expr #f depth)]
-			    [(box? obj)
-			     (pr (unbox obj) (out "#&" col) extra pp-pair depth)])))))
+			   (pre-print obj)
+			   (begin0
+			    (cond
+			     [(pair? obj) (pp-pair obj col extra depth)]
+			     [(vector? obj)
+			      (pp-list (let ([l (vector->list obj)])
+					 (if print-vec-length?
+					     (drop-repeated l)
+					     l))
+				       (let ([col (out "#" col)])
+					 (if print-vec-length?
+					     (out (number->string (vector-length obj)) col)
+					     col))
+				       extra pp-expr #f depth)]
+			     [(struct? obj)
+			      (pp-list (vector->list (struct->vector obj))
+				       (out "#" col) extra pp-expr #f depth)]
+			     [(box? obj)
+			      (pr (unbox obj) (out "#&" col) extra pp-pair depth)])
+			    (post-print obj))))))
 		 (wr obj col depth))))
 
 	 (define (pp-expr expr col extra depth)

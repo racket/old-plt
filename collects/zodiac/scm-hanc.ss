@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.66 2000/05/31 18:32:09 shriram Exp $
+; $Id: scm-hanc.ss,v 1.67 2000/06/08 19:52:28 mflatt Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -1407,7 +1407,9 @@
 		      (list
 			(cons (z:read-object tag)
 			  (cu/s-build-link-names small-sig
-			    (cu/s-build-link-prefix ids)))))
+                            (string-append
+			     (cu/s-build-link-prefix ids)
+			     ":")))))
 		    (else
 		      (internal-error tag-table-entry
 			"Illegal tag-table entry"))))))))

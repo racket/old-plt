@@ -640,7 +640,8 @@
 
  ;; number snip popup menu
  (show-decimal-expansion "View decimal expansion")
- (show-fraction-view "View as fraction")
+ (show-mixed-fraction-view "View as mixed fraction")
+ (show-improper-fraction-view "View as improper fraction")
  (show-more-decimal-places "Show more decimal places")
  
  ;;; Teachpack messages

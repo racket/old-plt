@@ -223,6 +223,8 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
   cFrame->GetClientSize(&w, &h);
   SetSize(-1, -1, w, h, 0x70);
   
+  fprintf(stderr,"That frame was a dialog box.\n");
+  
   __type = wxTYPE_DIALOG_BOX;
   
   wx_cursor = wxSTANDARD_CURSOR;
@@ -622,3 +624,10 @@ char *wxFileSelector(char *message, char *default_path,
   }
 #endif
 }
+
+void wxDialogBox::Paint()
+{
+	// debugging hook
+	wxPanel::Paint();
+}
+

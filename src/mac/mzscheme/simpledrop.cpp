@@ -50,10 +50,11 @@ static char *ThisAppName(void)
   dir = scheme_os_getcwd(NULL, 0, NULL, 1);
   dlen = strlen(dir);
   
-  result = (char *)scheme_malloc_atomic(buffer[0] + dlen + 1);
+  result = (char *)scheme_malloc_atomic(buffer[0] + dlen + 2);
   memcpy(result, dir, dlen);
-  memcpy(result + dlen, buffer + 1, buffer[0]);
-  result[buffer[0] + dlen] = 0;
+  result[dlen] = ':';
+  memcpy(result + dlen + 1, buffer + 1, buffer[0]);
+  result[buffer[0] + dlen + 1] = 0;
   
   return result;
 #else

@@ -64,8 +64,6 @@ int wxEntry(int argc, char* argv[])
 	wxTheApp->argc = argc;
 	wxTheApp->argv = argv;
 
-//	if (!wxTheApp->wx_class) wxTheApp->wx_class = macCopyString(argv[0]);
-
 	wxmac_startup_directory = scheme_os_getcwd(NULL, 0, NULL, 1);
 	wxREGGLOB(wxmac_startup_directory);
 	

@@ -116,6 +116,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 	CheckMemOK(theMacWindow);
 	
 	cMacDC = new wxMacDC(GetWindowPort(theMacWindow));
+	fprintf(stderr,"frame's port: %X\n",(long)(GetWindowPort(theMacWindow)));
 
 #ifndef OS_X
  	WStateData **wstatedata = (WStateData**)((WindowPeek)theMacWindow)->dataHandle;

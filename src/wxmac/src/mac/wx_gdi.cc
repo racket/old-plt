@@ -366,7 +366,11 @@ wxPen::wxPen(char *col, float Width, int Style):
 //-----------------------------------------------------------------------------
 wxBrush::wxBrush(void)
 {
-  colour = NULL;
+  wxColour *c;
+  
+  c = new wxColour(wxBLACK);
+  
+  colour = *c;
   style = wxSOLID;
   stipple = NULL ;
 }
@@ -692,10 +696,11 @@ int wxDisplayDepth(void)
 #if USE_XPM_IN_MAC
 	return XDefaultDepth(NULL, NULL); // Args are not used for Mac
 #else
+	// code COPIED from XPM package
     int d, b;
 	PixMapHandle pmap;
 	GDHandle dev;
-	dev = GetGDevice();
+	dev = GetMainDevice();
 	pmap = (**dev).gdPMap;
 	b = (**pmap).pixelSize;
     return (b);

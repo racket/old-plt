@@ -621,8 +621,14 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		PixMapHandle srpixh = pixmap = ::GetGWorldPixMap(source->x_pixmap);
 		// ::LockPixels(srpixh);
 
+		fprintf(stderr,"destr (x,y,x',y'): %d %d %d %d\n",destr.left,destr.top,destr.right,destr.bottom);
+		fprintf(stderr,"macGrafPort: %X\n",(long)(cMacDC->macGrafPort()));
+		fprintf(stderr,"destbm: %X\n",(long)(dstbm));
+		if ((destr.right) == 379 && (destr.bottom == 160)) {
+			fprintf(stderr,"NOT BLITTING!\n");
+		} else {
 		::CopyBits((BitMap *)(*srpixh), dstbm, &srcr, &destr, mode, NULL);
-
+		}
 		// ::UnlockPixels(srpixh);
 		CalcBoundingBox(xdest, ydest);
 		CalcBoundingBox(xdest + width, ydest + height);

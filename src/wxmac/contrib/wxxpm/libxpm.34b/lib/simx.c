@@ -134,7 +134,7 @@ XDefaultDepth(Display *display, Screen *screen)
 #ifdef FOR_MAC
 	PixMapHandle pmap;
 	GDHandle dev;
-	dev = GetGDevice();
+	dev = GetMainDevice();
 	pmap = (**dev).gdPMap;
 	b = (**pmap).pixelSize;
 #else
@@ -277,10 +277,10 @@ XCreateImage(Display *d, Visual *v,
 	GetGWorld(&saveport, &savegw);
 	QDErr err;
 	GWorldPtr	newGWorld;
-	err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice); // SET-ORIGIN FLAGGED
+	err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice);
 	if (!err) {
   	  SetGWorld(newGWorld, 0);
-	  ::EraseRect(&bounds); // SET-ORIGIN FLAGGED
+	  ::EraseRect(&bounds);
 	  img->bitmap = newGWorld;	
 	  SetGWorld(saveport, savegw);
 	} else {

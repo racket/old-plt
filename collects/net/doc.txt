@@ -160,9 +160,17 @@ PROCEDURES -----------------------------------------------------------
 
 > (purify-port input-port) -> string
 
-  Purifies a port, returning the MIME headers. The "head.ss" library
-  provides procedures, such as `extract-field, for manipulating the
-  header.
+  Purifies a port, returning the MIME headers, plus a leading line
+  for the form
+
+   HTTP/<vers> <code> <messsage>
+
+  where <vers> is something like 1.0 or 1.1, <code> is an exact
+  integer for the response code, and <message> is arbitrary text
+  without a return or newline.
+
+  The "head.ss" library provides procedures, such as `extract-field,
+  for manipulating the header.
 
 > (call/input-url url url->port-proc port->X-proc [list-of-strings]) -> X
 

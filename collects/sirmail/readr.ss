@@ -1894,8 +1894,7 @@
       (define (not-me? name-addr-full)
 	(let ([addr (cadr name-addr-full)])
 	  (cond
-            [(string-ci=? addr my-address)
-             #f]
+            [(string-ci=? addr my-address) #f]
             [(and (SELF-ADDRESSES) (member addr (SELF-ADDRESSES))) #f]
             [(and (> (string-length addr) (string-length  my-username-@))
                   (string-ci=? my-username-@ (substring addr 0 (string-length  my-username-@))))

@@ -57,8 +57,7 @@
 			  (with-handlers ([not-break-exn? (lambda (x) null)])
 			    (with-input-from-file f read))))
 
-      (define (SELF-ADDRESSES) (cons (MAIL-FROM)
-				     (get-pref 'sirmail:self-addresses)))
+      (define (SELF-ADDRESSES) (get-pref 'sirmail:self-addresses))
 
       (define (AUTO-FILE-TABLE) (let ([f (get-pref 'sirmail:auto-file-table-file)])
 				  (and f

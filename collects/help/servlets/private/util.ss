@@ -70,7 +70,7 @@
 				  "index.htm")]
 	   [href (if (file-exists? main-page)
 		     (string-append "/doc/" manual "/")
-		     (string-append "/servlets/missing-manual?"
+		     (string-append "/servlets/missing-manual.ss?"
 				    "manual=" manual "&"
 				    "name="
 				    (hexify-string name)))])

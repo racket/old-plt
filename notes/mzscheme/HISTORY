@@ -1,3 +1,12 @@
+Version 103.3:
+
+ * 2k: compiles and runs for Windows (not tested much)
+
+   To compile it, first build and install MzScheme. Also,
+   the MSVC tools must be in your path. Then cd to
+   plt/src/mzscheme/gc2, and run mzscheme -r winmake.ss.
+   The binary will be mz2k.exe in that directory.
+
 Version 103.2:
 
  * Windows and Unix: MzScheme-implemented threads swap roughly every
@@ -14,7 +23,7 @@ Version 103.2:
    killing a thread blocked on a TCP connect could leak file
    descriptors.
 
- * Fixed weak hash table growth in the precence of infrequent garbage
+ * Fixed weak hash table growth in the presence of infrequent garbage
    collections (by forcing a collection before rehashing). (PR 934)
 
  * Fixed/improved some unit/sig error messages. (PRs 304, 830)

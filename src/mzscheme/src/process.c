@@ -721,7 +721,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
     mref = scheme_add_managed(mgr
 			      ? mgr
 			      : (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER),
-			      (Scheme_Object *)process->mr_hop, NULL, NULL, 0);
+			      (Scheme_Object *)hop, NULL, NULL, 0);
     process->mref = mref;
 
     scheme_weak_reference((void **)&hop->p);

@@ -891,7 +891,8 @@ set_link(Scheme_Object *data, Link_Info *link)
   val = scheme_link_expr(val, link);
 
   if (SAME_TYPE(SCHEME_TYPE(var), scheme_local_type)) {
-    Scheme_Let_Value *lv, *cv;
+    Scheme_Let_Value *lv;
+    Scheme_Object *cv;
     int flags, li;
 
     cv = scheme_compiled_void(link->can_optimize_constants);
@@ -1220,7 +1221,7 @@ bangboxvalue_execute(Scheme_Object *data)
       for (i = p->ku.multiple.count; i--; )
 	naya[i] = a[i];
       {
-	Scheme-Object *eb;
+	Scheme_Object *eb;
 	eb = scheme_make_envunbox(naya[pos]);
 	naya[pos] = eb;
       }
@@ -1422,7 +1423,7 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
       lv->value = expr;
       if (clv->count) {
 	int li;
-	l = scheme_link_info_lookup(linfo, clv->position, NULL);
+	li = scheme_link_info_lookup(linfo, clv->position, NULL);
 	lv->position = li + extra_alloc;
       } else
 	lv->position = 0;
@@ -1616,7 +1617,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
 
   recs[num_clauses].value_name = defname;
   {
-    Scheme-Object *cs;
+    Scheme_Object *cs;
     cs = scheme_compile_sequence(forms, env, recs + num_clauses);
     last->body = cs;
   }
@@ -1624,7 +1625,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
   /* Save flags: */
   lv = (Scheme_Compiled_Let_Value *)first;
   for (i = 0; i < num_clauses; i++, lv = (Scheme_Compiled_Let_Value *)lv->body) {
-    int flags;
+    int *flags;
     flags = scheme_env_get_flags(env, lv->position, lv->count);
     lv->flags = flags;
   }

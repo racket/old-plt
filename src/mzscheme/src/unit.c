@@ -538,7 +538,8 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 	    e->u.def.expr = value;
 	    e->u.def.count = count;
 
-	    vs = e->u.def.vars = MALLOC_N_RT(BodyVar, count);
+	    vs = MALLOC_N_RT(BodyVar, count);
+	    e->u.def.vars = vs;
 
 	    for (i = 0; i < count; i++, names = SCHEME_CDR(names)) {
 #ifdef MZTAG_REQUIRED
@@ -658,12 +659,13 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   }
   
   /* Extend environment: */
-  indirect_env = env = scheme_add_compilation_frame(indirect_first, env, 
-						    SCHEME_AUTO_UNBOX
+  env = scheme_add_compilation_frame(indirect_first, env, 
+				     SCHEME_AUTO_UNBOX
 #ifndef MZ_PRECISE_GC 
-						    | SCHEME_ANCHORED_FRAME
+				     | SCHEME_ANCHORED_FRAME
 #endif
-						    | SCHEME_PRIM_GLOBALS_ONLY);
+				     | SCHEME_PRIM_GLOBALS_ONLY);
+  indirect_env = env;
 
   for (c = 0; c < import_count; c++)
     scheme_unsettable_variable(env, c);
@@ -849,10 +851,15 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 
   /* Compile/expand expressions of `link' clause: */
   for (c = 0, id = withs->first; id; id = id->next, c++) {
-    if (!rec)
-      id->int_id = scheme_expand_expr(id->int_id, env, depth);
-    else
-      id->int_id = scheme_compile_expr(id->int_id, env, rec);
+    if (!rec) {
+      Scheme_Object *ee;
+      ee = scheme_expand_expr(id->int_id, env, depth);
+      id->int_id = ee;
+    } else {
+      Scheme_Object *ce;
+      ce = scheme_compile_expr(id->int_id, env, rec);
+      id->int_id = ce;
+    }
   }
 
   if (rec)
@@ -917,14 +924,18 @@ static Scheme_Unit *InitCompiledUnitRec(UnitId *exports, int num_imports,
     i++;
   m->num_exports = i;
 
-  if (m->num_exports)
-    m->exports = MALLOC_N(Scheme_Object *, m->num_exports);
-  else
+  if (m->num_exports) {
+    Scheme_Object **sa;
+    sa = MALLOC_N(Scheme_Object *, m->num_exports);
+    m->exports = sa;
+  } else
     m->exports = NULL;
 
-  if (m->num_exports && debuggable)
-    m->export_debug_names = MALLOC_N(Scheme_Object *, m->num_exports);
-  else
+  if (m->num_exports && debuggable) {
+    Scheme_Object **sa;
+    sa = MALLOC_N(Scheme_Object *, m->num_exports);
+    m->export_debug_names = sa;
+  } else
     m->export_debug_names = NULL;
 
   for (i = 0, id = exports; id; id = id->next, i++) {
@@ -948,8 +959,9 @@ static Scheme_Object *link_unit(Scheme_Object *o, Link_Info *info)
     info = scheme_link_info_extend(info, 0, 0, i);
 
     while (i--) {
-      int pos = label->closure_map[i], flags;
-      label->closure_map[i] = scheme_link_info_lookup(info, pos, &flags);
+      int pos = label->closure_map[i], flags, li;
+      li = scheme_link_info_lookup(info, pos, &flags);
+      label->closure_map[i] = li;
       scheme_link_info_add_mapping(info, pos, i, flags);
     }
   }
@@ -974,10 +986,18 @@ static Scheme_Object *link_unit(Scheme_Object *o, Link_Info *info)
   for (e = label->body; e; e = e->next) {
     switch (e->btype) {
     case mm_body_def:
-      e->u.def.expr = scheme_link_expr(e->u.def.expr, info);
+      {
+	Scheme_Object *le;
+	le = scheme_link_expr(e->u.def.expr, info);
+	e->u.def.expr = le;
+      }
       break;
     case mm_body_seq:
-      e->u.seq.expr = scheme_link_expr(e->u.seq.expr, info);
+      {
+	Scheme_Object *le;
+	le = scheme_link_expr(e->u.seq.expr, info);
+	e->u.seq.expr = le;
+      }
       break;
     }
   }
@@ -1142,9 +1162,18 @@ make_compound_unit_record(int count, /* subunits */
 
   data->type = scheme_unit_compound_data_type;
   data->num_subunits = count;
-  data->subunit_exprs = MALLOC_N(Scheme_Object *, count);
-  data->param_maps = param_maps = MALLOC_N(ParamMap *, count);
-  data->param_counts = MALLOC_N_ATOMIC(short, count);
+  {
+    Scheme_Object **sa;
+    sa = MALLOC_N(Scheme_Object *, count);
+    data->subunit_exprs = sa;
+  }
+  param_maps = MALLOC_N(ParamMap *, count);
+  data->param_maps = param_maps;
+  {
+    short *sa;
+    sa = MALLOC_N_ATOMIC(short, count);
+    data->param_counts = sa;
+  }
   data->defname = defname;
   
   tags = MALLOC_N(Scheme_Object *, count);
@@ -1156,14 +1185,18 @@ make_compound_unit_record(int count, /* subunits */
 
     j = count_ids((UnitId *)id->ext_id);
     data->param_counts[i] = j;
-    param_maps[i] = MALLOC_N_RT(ParamMap, j);
-#ifdef MZTAG_REQUIRED
     {
-      int k;
-      for (k = 0; k < j; k++)
-	param_maps[i][k].type = scheme_rt_param_map;
-    }
+      ParamMap *pms;
+      pms = MALLOC_N_RT(ParamMap, j);
+      param_maps[i] = pms;
+#ifdef MZTAG_REQUIRED
+      {
+	int k;
+	for (k = 0; k < j; k++)
+	  pms[k].type = scheme_rt_param_map;
+      }
 #endif
+    }
   }
 
   /* Fill in param map: */
@@ -1206,7 +1239,11 @@ make_compound_unit_record(int count, /* subunits */
   /* Fill in export map: */
   i = count_ids(exports);
   data->num_exports = i;
-  data->exports = MALLOC_N_RT(ExportSource, i);
+  {
+    ExportSource *esa;
+    esa = MALLOC_N_RT(ExportSource, i);
+    data->exports = esa;
+  }
   export_srcs = data->exports;
   for (i = 0, id = exports; id; id = id->next, i++) {
     Scheme_Object *tag = id->tag;
@@ -1254,8 +1291,11 @@ static Scheme_Object *link_compound_unit(Scheme_Object *o, Link_Info *info)
   CompoundData *data = (CompoundData *)m->data;
   int i;
 
-  for (i = 0; i < data->num_subunits; i++)
-    data->subunit_exprs[i] = scheme_link_expr(data->subunit_exprs[i], info);
+  for (i = 0; i < data->num_subunits; i++) {
+    Scheme_Object *le;
+    le = scheme_link_expr(data->subunit_exprs[i], info);
+    data->subunit_exprs[i] = le;
+  }
   
   return scheme_make_syntax_link(CloseCompoundUnit, (Scheme_Object *)m);
 }
@@ -1312,8 +1352,10 @@ Scheme_Object *scheme_assemble_compound_unit(Scheme_Object *imports,
     first = NULL;
     ilast = NULL;
     for (l = SCHEME_CDR(l); SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-      UnitId *id = MALLOC_ONE_RT(UnitId);
+      UnitId *id;
       Scheme_Object *i = SCHEME_CAR(l);
+
+      id = MALLOC_ONE_RT(UnitId);
 
 #ifdef MZTAG_REQUIRED
       id->type = scheme_rt_unit_id;
@@ -1345,8 +1387,10 @@ Scheme_Object *scheme_assemble_compound_unit(Scheme_Object *imports,
   last = NULL;
   export_ids = NULL;
   for (m = exports; SCHEME_PAIRP(m); m = SCHEME_CDR(m)) {
-    UnitId *id = MALLOC_ONE_RT(UnitId);
+    UnitId *id;
     Scheme_Object *l = SCHEME_CAR(m);
+
+    id = MALLOC_ONE_RT(UnitId);
 
 #ifdef MZTAG_REQUIRED
     id->type = scheme_rt_unit_id;
@@ -1439,8 +1483,11 @@ static Scheme_Object *link_invoke_unit(Scheme_Object *o, Link_Info *info)
       num_local++;
 
   data->num_local_exports = num_local;
-  if (num_local)
-    data->anchor_positions = MALLOC_N_ATOMIC(short, num_local);
+  if (num_local) {
+    short *sa;
+    sa = MALLOC_N_ATOMIC(short, num_local);
+    data->anchor_positions = sa;
+  }
 
   for (i = 0, j = 0; i < data->num_exports; i++) {
     if (SAME_TYPE(SCHEME_TYPE(data->exports[i]), scheme_local_type)) {
@@ -1456,10 +1503,18 @@ static Scheme_Object *link_invoke_unit(Scheme_Object *o, Link_Info *info)
       data->anchor_positions[j++] = (short)p;
     }
 
-    data->exports[i] = scheme_link_expr(data->exports[i], info);
+    {
+      Scheme_Object *le;
+      le = scheme_link_expr(data->exports[i], info);
+      data->exports[i] = le;
+    }
   }
 
-  data->expr = scheme_link_expr(data->expr, info);
+  {
+    Scheme_Object *le;
+    le = scheme_link_expr(data->expr, info);
+    data->expr = le;
+  }
 
   return scheme_make_syntax_link(InvokeUnit, (Scheme_Object *)data);
 }
@@ -1481,14 +1536,22 @@ static Scheme_Object *do_invoke_unit_syntax(char *where,
 
   scheme_compile_rec_done_local(rec);
 
-  data->expr = scheme_compile_expr(SCHEME_CADR(form), env, rec);
+  {
+    Scheme_Object *ce;
+    ce = scheme_compile_expr(SCHEME_CADR(form), env, rec);
+    data->expr = ce;
+  }
 
   data->anchors = NULL;
 
   data->num_local_exports = 0;
   data->anchor_positions = NULL;
 
-  data->exports = MALLOC_N(Scheme_Object *, c);
+  {
+    Scheme_Object **sa;
+    sa = MALLOC_N(Scheme_Object *, c);
+    data->exports = sa;
+  }
   l = SCHEME_CDR(SCHEME_CDR(form));
 
   for (i = 0; i < c; i++, l = SCHEME_CDR(l)) {
@@ -1594,7 +1657,8 @@ static Scheme_Object *CloseUnit(Scheme_Object *data)
     cl->defname = data->defname;
 
     i = data->closure_size;
-    cl->closure_saved = saved = MALLOC_N(Scheme_Object *, i);
+    saved = MALLOC_N(Scheme_Object *, i);
+    cl->closure_saved = saved;
     map = data->closure_map;
     stack = MZ_RUNSTACK;
     while (i--)
@@ -1770,10 +1834,12 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
     if (m->export_debug_names) {
       Scheme_Unit *submod = subunits[data->exports[i].submod_index];
       
-      if (submod->export_debug_names)
-	m->export_debug_names[i] = 
-	  cons(data->tags[data->exports[i].submod_index],
-	       submod->export_debug_names[pos]);
+      if (submod->export_debug_names) {
+	Scheme_Object *dn;
+	dn = cons(data->tags[data->exports[i].submod_index],
+		  submod->export_debug_names[pos]);
+	m->export_debug_names[i] = dn;
+      }
     }
   }
 
@@ -1926,7 +1992,9 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
   }
 
   for (i = 0, j = data->num_exports; j < c; j++, i++) {
-    boxes[j] = scheme_make_envunbox(scheme_undefined);
+    Scheme_Object *eb;
+    eb = scheme_make_envunbox(scheme_undefined);
+    boxes[j] = eb;
     anchors[j] = NULL;
   }
 
@@ -1935,8 +2003,10 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
      starts with a minimal stack and reset the continuation marks
      counter: */
   {
-    Do_Invoke_Data *diu = MALLOC_ONE_RT(Do_Invoke_Data);
+    Do_Invoke_Data *diu;
     Scheme_Object *invoke_unit_f;
+
+    diu = MALLOC_ONE_RT(Do_Invoke_Data);
 
 #ifdef MZTAG_REQUIRED
     diu->type = scheme_rt_do_invoke_data;
@@ -2061,7 +2131,9 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
       BodyVar *vs = e->u.def.vars;
       for (i = 0; i < e->u.def.count; i++) {
 	if (!vs[i].exported) {
-	  direct[vs[i].pos] = scheme_make_envunbox(scheme_undefined);
+	  Scheme_Object *eb;
+	  eb = scheme_make_envunbox(scheme_undefined);
+	  direct[vs[i].pos] = eb;
 	  direct[vs[i].pos + data->num_locals] = NULL; /* anchor */
 	}
       }
@@ -2333,12 +2405,19 @@ static Scheme_Object *read_compiled_unit(Scheme_Object *o)
   m->data = SCHEME_CAR(o);
   o = SCHEME_CDR(o);
 
-  m->exports = list_to_array(o, c, &o);
+  {
+    Scheme_Object **sa;
+    sa = list_to_array(o, c, &o);
+    m->exports = sa;
+  }
 
   if (SCHEME_FALSEP(o))
     m->export_debug_names = NULL;
-  else
-    m->export_debug_names = list_to_array(o, c, NULL);
+  else {
+    Scheme_Object **sa;
+    sa = list_to_array(o, c, NULL);
+    m->export_debug_names = sa;
+  }
 
   if (SAME_TYPE(SCHEME_TYPE(m->data), scheme_unit_body_data_type))
     m->init_func = do_unit;
@@ -2567,7 +2646,11 @@ static Scheme_Object *read_compound_data(Scheme_Object *o)
   counts = SCHEME_CAR(o);
   maps = SCHEME_CDR(o);
 
-  data->exports = MALLOC_N_RT(ExportSource, data->num_exports);
+  {
+    ExportSource *esa;
+    esa = MALLOC_N_RT(ExportSource, data->num_exports);
+    data->exports = esa;
+  }
   for (i = 0; i < c; i++) {
 #ifdef MZTAG_REQUIRED
     data->exports[i].type = scheme_rt_export_source;
@@ -2578,17 +2661,31 @@ static Scheme_Object *read_compound_data(Scheme_Object *o)
     exs = SCHEME_CDR(exs);
   }
 
-  data->tags = list_to_array(tags, n, NULL);
-  data->subunit_exprs = list_to_array(subs, n, NULL);
+  {
+    Scheme_Object **sa;
+    sa = list_to_array(tags, n, NULL);
+    data->tags = sa;
+    sa = list_to_array(subs, n, NULL);
+    data->subunit_exprs = sa;
+  }
 
-  data->param_counts = MALLOC_N_ATOMIC(short, n);
+  {
+    short *sa;
+    sa = MALLOC_N_ATOMIC(short, n);
+    data->param_counts = sa;
+  }
   for (i = 0; i < n; i++, counts = SCHEME_CDR(counts))
     data->param_counts[i] = SCHEME_INT_VAL(SCHEME_CAR(counts));
 
-  data->param_maps = MALLOC_N(ParamMap *, n);
+  {
+    ParamMap **pms;
+    pms = MALLOC_N(ParamMap *, n);
+    data->param_maps = pms;
+  }
   for (i = 0; i < n; i++) {
     c = data->param_counts[i];
-    map = data->param_maps[i] = MALLOC_N_RT(ParamMap, c);
+    map = MALLOC_N_RT(ParamMap, c);
+    data->param_maps[i] = map;
     
     for (j = 0; j < c; j++) {
       if (d >= p) {
@@ -2649,7 +2746,11 @@ static Scheme_Object *read_invoke_data(Scheme_Object *o)
   data->expr = SCHEME_CAR(o);
   o = SCHEME_CDR(o);
 
-  data->exports = list_to_array(o, data->num_exports, NULL);
+  {
+    Scheme_Object **ex;
+    ex = list_to_array(o, data->num_exports, NULL);
+    data->exports = ex;
+  }
 
   data->anchors = NULL;
 

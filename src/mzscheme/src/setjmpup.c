@@ -234,7 +234,7 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
     /* printf("Stack size: %d\n", size); */
     void *copy;
     b->stack_copy = make_stack_copy_rec(size);
-    copy = MALLOC_STACK(size)
+    copy = MALLOC_STACK(size);
     set_copy(b->stack_copy, copy);
     b->stack_max_size = size;
   }

@@ -1,0 +1,50 @@
+_String Constants_
+
+This library provides the facility for multiple
+langauges in DrScheme's GUI. These are the exported
+syntactic forms and procedures:
+        
+> (string-constant name) : string
+ 
+   This form returns the string constant named `name'.
+   
+> (string-constants name) : (listof string)
+
+  This form returns a list of string constants, one for each
+  language that DrScheme's GUI supports.
+  
+> (this-language) : string
+
+  This form returns the name of the current language
+  
+> (all-languages) : (listof string)
+
+  This form returns a list of strings (in the same order as
+  those returned from string-constants) naming each
+  language.
+
+> (set-language-pref lang) : void
+
+  Sets the language for the next run of DrScheme to
+  lang, which must be a string. Does not affect the 
+  running DrScheme.
+  
+============================================================
+
+To add string-constants to DrScheme, see the files:
+
+  _english-string-constants.ss_
+  _french-string-constants.ss_
+  _spanish-string-constants.ss_
+  _german-string-constants.ss_
+  
+Each file has the same format. When `read',
+they produce a list of lists of length two.
+Each inner list is contains a symbol that names
+the string constant and a string, in the appropriate
+langauge. The english-string-constants.ss is considered
+the master file -- string constants will be set there
+and translated into each of the other langauge files.
+In addition, the english-string-constants.ss file 
+should contain hints about the context of the strings
+whose symbol name might not be clear.

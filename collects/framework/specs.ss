@@ -9,7 +9,7 @@
 	    (format "module ~e: " module-name)
 	    (apply format fmt args))))
 
-  (define-struct wrap (defn type))
+  (define-struct wrapper (defn type))
 
   (define-syntax wrap
     (lambda (stx)
@@ -69,7 +69,7 @@
 	   (syntax
 	    (begin
 	      (define external-name
-		(make-wrap
+		(make-wrapper
 		 (wrap type internal-name #t module-name)
 		 (quote type)))
 	      (provide external-name))))])))
@@ -81,7 +81,7 @@
 	 (with-syntax ([module-name (syntax-source stx)])
 	   (syntax
 	    (define wrap-name
-	      (if (equal? (quote type) (wrap-type orig-name))
-		  (wrap type (wrap-defn orig-name) #f module-name)
+	      (if (equal? (quote type) (wrapper-type orig-name))
+		  (wrap type (wrapper-defn orig-name) #f module-name)
 		  (error 'require/type "expected types to match, but they don't: ~s ~s"
-			 (quote type) (wrap-type orig-name))))))]))))
+			 (quote type) (wrapper-type orig-name))))))]))))

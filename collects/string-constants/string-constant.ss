@@ -8,13 +8,17 @@
   (define (set-language-pref language)
     (write-resource "mred" "gui_language" language (find-graphical-system-path 'setup-file)))
   
+  ;; language : symbol
   (define language 
     (let* ([b (box "")]
            [r (get-resource "mred" "gui_language" b #f)]
-           [default (string->symbol "UNKEnglish")])
+           [default-str "English"]
+           [default (string->symbol default-str)])
       (if r
-          (unbox b)
-          default)))
+          (string->symbol (unbox b))
+          (begin
+            (write-resource "mred" "gui_language" default-str)
+            default))))
   
   (define-syntaxes (string-constant string-constants this-language all-languages)
     (let ()
@@ -46,8 +50,10 @@
       
       (define available-string-constant-sets
         (list 
-         ;(make-sc "UNKEnglish" (get-string-constants "mt-string-constants.ss"))
-         (make-sc "English" (get-string-constants "english-string-constants.ss"))))
+         (make-sc "English" (get-string-constants "english-string-constants.ss"))
+         (make-sc "Spanish" (get-string-constants "spanish-string-constants.ss"))
+         (make-sc "French" (get-string-constants "french-string-constants.ss"))
+         (make-sc "German" (get-string-constants "german-string-constants.ss"))))
       
       (define first-string-constant-set (car available-string-constant-sets))
       
@@ -56,15 +62,16 @@
                (lambda (sc1 sc2)
                  (let ([ht1 (sc-constants sc1)]
                        [ht2 (sc-constants sc2)]
-                       [already-warned? #&#f])
+                       [already-warned #&()])
                    (hash-table-for-each
                     ht1
                     (lambda (constant value)
                       (unless (hash-table-get ht2 constant (lambda () #f))
-                        (let ([unknown-word (string-append "UNK" value)])
+                        (let ([unknown-word (string-append "UNK" value)]
+                              [no-warning-cache-key (cons (sc-language-name sc1) (sc-language-name sc2))])
                           (hash-table-put! ht2 constant unknown-word)
-                          (unless (unbox already-warned?)
-                            (set-box! already-warned? #t)
+                          (unless (member no-warning-cache-key (unbox already-warned))
+                            (set-box! already-warned (cons no-warning-cache-key (unbox already-warned)))
                             (printf 
                              "WARNING: language ~a defines ~a, but\n         language ~a does not, substituting:\n         \"~a\"\n         other words may be substituted without warning.\n"
                              (sc-language-name sc1)
@@ -118,7 +125,7 @@
       (define (this-language stx)
         (syntax-case stx ()
           [(_)
-           (syntax language)]))
+           (syntax (symbol->string language))]))
       
       (define (all-languages stx)
         (syntax-case stx ()

@@ -14,6 +14,6 @@
 	      [make--exn make-exn]
 	      [-exn? exn?])
 
-      (define-struct (-exn struct:exn) ())
-      (define-struct (unknown-preference struct:exn) ())
-      (define-struct (during-preferences struct:exn) ()))))
+      (define-struct (-exn exn) ())
+      (define-struct (unknown-preference exn) ())
+      (define-struct (during-preferences exn) ()))))

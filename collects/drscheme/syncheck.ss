@@ -6,9 +6,6 @@
        maybe making a ht for binding occurrances will help.
      - run test suite for colors
      - write test suite for arrows and menus
-     - have execute-like behavior, ie separate thread,
-       for check syntax processing?
-     
 |#
 
 (module syncheck mzscheme
@@ -299,7 +296,7 @@
                [super-on-paint on-paint]
                [super-on-local-event on-local-event])
               
-              ;; arrow-vector : (union #f (vector (listof (union (cons sym (menu -> void))
+              ;; arrow-vector : (union #f (vector (listof (union (cons (union #f sym) (menu -> void))
               ;;                                                 arrow))))
               (define arrow-vector #f)
               
@@ -334,23 +331,26 @@
                   (invalidate-bitmap-cache)))
               (define/public (syncheck:add-menu start-pos end-pos key make-menu)
                 (when (and (<= 0 start-pos end-pos (last-position)))
-                  (add-to-range/key start-pos end-pos make-menu key)))
+                  (add-to-range/key start-pos end-pos make-menu key #t)))
               (define/public (syncheck:add-arrow start-pos-left start-pos-right
                                                  end-pos-left end-pos-right)
                 (let* ([arrow (make-arrow start-pos-left start-pos-right
                                           end-pos-left end-pos-right
                                           0 0 0 0)])
-                  (add-to-range/key start-pos-left start-pos-right arrow #f)
-                  (add-to-range/key end-pos-left end-pos-right arrow #f)))
+                  (add-to-range/key start-pos-left start-pos-right arrow #f #f)
+                  (add-to-range/key end-pos-left end-pos-right arrow #f #f)))
 
-              (define (add-to-range/key start end to-add key)
+              (define (add-to-range/key start end to-add key use-key?)
                 (let loop ([p start])
                   (when (<= p end)
                     (let ([r (vector-ref arrow-vector p)])
                       (cond
-                        [key (unless (ormap (lambda (x) (and (pair? x) (eq? (car x) key)))
-                                            r)
-                               (vector-set! arrow-vector p (cons (cons key to-add) r)))]
+                        [use-key?
+                         (unless (ormap (lambda (x) (and (pair? x) 
+                                                         (car x)
+                                                         (eq? (car x) key)))
+                                        r)
+                           (vector-set! arrow-vector p (cons (cons key to-add) r)))]
                         [else
                          (vector-set! arrow-vector p (cons to-add r))]))
                     (loop (add1 p)))))
@@ -674,58 +674,47 @@
           
           (public syncheck:button-callback)
           (define (syncheck:button-callback)
-            (time
-             (send (get-definitions-text) begin-edit-sequence #f)
-             (clear-annotations)
-             (send (get-definitions-text) syncheck:init-arrows)            
-             (color-range (get-definitions-text)
-                          0
-                          (send (get-definitions-text) last-position)
-                          base-style-str)
-             (let ([binders null]
-                   [varrefs null]
-                   [tops null]
-                   [users-namespace #f]
-                   [err-termination? #f])
-               (send (get-interactions-text)
-                     expand-program
-                     (drscheme:language:make-text/pos (get-definitions-text) 
-                                                      0
-                                                      (send (get-definitions-text)
-                                                            last-position))
-                     (fw:preferences:get
-                      (drscheme:language-configuration:get-settings-preferences-symbol))
-                     (lambda (err? sexp run-in-expansion-thread loop)
-                       (unless users-namespace
-                         (set! users-namespace (run-in-expansion-thread current-namespace)))
-                       (if err?
-                           (begin
-                             (set! err-termination? #t)
-                             (report-error (car sexp) (cdr sexp)))
-                           (let-values ([(new-binders new-varrefs new-tops
-                                                      requires referenced-macros)
-                                         (time
-                                          (begin0
-                                            (annotate-basic sexp run-in-expansion-thread)
-                                            (printf "annotate-basic~n")))])
-                             (time
+            (send (get-definitions-text) begin-edit-sequence #f)
+            (clear-annotations)
+            (send (get-definitions-text) syncheck:init-arrows)            
+            (color-range (get-definitions-text)
+                         0
+                         (send (get-definitions-text) last-position)
+                         base-style-str)
+            (let ([binders null]
+                  [varrefs null]
+                  [tops null]
+                  [users-namespace #f]
+                  [err-termination? #f])
+              (send (get-interactions-text)
+                    expand-program
+                    (drscheme:language:make-text/pos (get-definitions-text) 
+                                                     0
+                                                     (send (get-definitions-text)
+                                                           last-position))
+                    (fw:preferences:get
+                     (drscheme:language-configuration:get-settings-preferences-symbol))
+                    (lambda (err? sexp run-in-expansion-thread loop)
+                      (unless users-namespace
+                        (set! users-namespace (run-in-expansion-thread current-namespace)))
+                      (if err?
+                          (begin
+                            (set! err-termination? #t)
+                            (report-error (car sexp) (cdr sexp)))
+                          (let-values ([(new-binders pre-new-varrefs new-tops
+                                                     requires referenced-macros)
+                                        (annotate-basic sexp run-in-expansion-thread)])
+                            (let ([new-varrefs
+                                   (if requires
+                                       (annotate-require-vars pre-new-varrefs requires referenced-macros)
+                                       pre-new-varrefs)])
                               (set! binders (append new-binders binders))
-                              (set! varrefs (append (if requires
-                                                        (annotate-require-vars 
-                                                         new-varrefs
-                                                         requires
-                                                         referenced-macros)
-                                                        new-varrefs) 
-                                                    varrefs))
-                              (set! tops (append new-tops tops))
-                              (printf "set!s~n"))))
-                       (loop)))
-               (time
-                (unless err-termination? 
-                  (annotate-variables users-namespace binders varrefs tops))
-                (printf "annotate-variables~n")))
-             (send (get-definitions-text) end-edit-sequence)
-             (printf "total~n")))
+                              (set! varrefs (append new-varrefs varrefs))
+                              (set! tops (append new-tops tops)))))
+                      (loop)))
+              (unless err-termination? 
+                (annotate-variables users-namespace binders varrefs tops)))
+            (send (get-definitions-text) end-edit-sequence))
 
           (super-instantiate ())
           
@@ -809,7 +798,7 @@
       (define (get-module-req-path stx)
         (let ([binding (identifier-binding stx)])
           (and (pair? binding)
-               (let ([mod-path (car binding)])
+               (let ([mod-path (caddr binding)])
                  (and (module-path-index? mod-path)
                       (let loop ([mpi mod-path]
                                  [ph #f])
@@ -893,9 +882,15 @@
                 (color varref bound-variable-style-str)
                 (color varref unbound-variable-style-str)))))
       
-          ;; handle-no-binders/lexical : syntax[original] -> void
+      ;; handle-no-binders/lexical : syntax[original] -> void
       (define (handle-no-binders/lexical varref)
-        (color varref unbound-variable-style-str))
+        (let ([binding (identifier-binding varref)])
+          (cond
+            [(not binding)
+             (color varref unbound-variable-style-str)]
+            [(pair? binding)
+             (color varref bound-variable-style-str)]
+            [else (void)])))
       
       ;; connect-syntaxes : syntax[original] syntax[original] -> void
       ;; adds an arrow from `from' to `to', unless they have the same source loc. 
@@ -959,8 +954,8 @@
                (begin
                  (annotate-raw-keyword sexp)
                  (loop (syntax test))
-                 (loop (syntax then))
-                 (loop (syntax else)))]
+                 (loop (syntax else))
+                 (loop (syntax then)))]
               [(if test then)
                (begin
                  (annotate-raw-keyword sexp)
@@ -1038,6 +1033,8 @@
               [(module m-name lang (#%plain-module-begin bodies ...))
                (begin
                  (set! has-module? #t)
+                 ((annotate-require-open run-in-expansion-thread) (syntax lang))
+                 (set! requires (cons (syntax lang) requires))
                  (annotate-raw-keyword sexp)
                  (for-each loop (syntax->list (syntax (bodies ...)))))]
               
@@ -1150,10 +1147,10 @@
       
       
 
-          ;; combine-binders : syntax (listof syntax) -> (listof syntax)
-          ;; transforms an argument list into a bunch of symbols/symbols and puts 
-          ;; them on `incoming'
-          ;; [could be more efficient if it processed the stx itself instead of append]
+      ;; combine-binders : syntax (listof syntax) -> (listof syntax)
+      ;; transforms an argument list into a bunch of symbols/symbols and puts 
+      ;; them on `incoming'
+      ;; [could be more efficient if it processed the stx itself instead of append]
       (define (combine-binders stx incoming)
         (let ([lst (syntax->list stx)])
           (if lst
@@ -1237,14 +1234,12 @@
                         (label (format (string-constant cs-rename-var) name-to-offer))
                         (callback
                          (lambda (x y)
-                           (let ([same-names (filter (lambda (x) (module-identifier=? x stx))
-                                                     (hash-table-get vars-ht (syntax-e stx)))])
-                             (rename-callback name-to-offer same-names)))))))))))
+                           (rename-callback name-to-offer stx vars-ht))))))))))
 
-      ;; rename-callback : string (listof syntax) -> void
+      ;; rename-callback : string syntax[original] (listof syntax) -> void
       ;; callback for the rename popup menu item
-      (define (rename-callback name-to-offer same-names)
-        (let ([new-id 
+      (define (rename-callback name-to-offer stx vars-ht)
+        (let ([new-sym 
                (fw:keymap:call/text-keymap-initializer
                 (lambda ()
                   (get-text-from-user
@@ -1252,27 +1247,50 @@
                    (format (string-constant cs-rename-var-to) name-to-offer)
                    #f
                    name-to-offer)))])
-          (when new-id
-            (let ([to-be-renamed 
-                   (remove-duplicates
-                    (quicksort 
-                     (filter syntax-original? same-names)
-                     (lambda (x y) 
-                       ((syntax-position x) . >= . (syntax-position y)))))])
-              (unless (null? to-be-renamed)
-                (let ([first-one-source (syntax-source (car to-be-renamed))])
-                  (when (is-a? first-one-source text%)
-                    (send first-one-source begin-edit-sequence)
-                    (for-each (lambda (stx) 
-                                (let ([source (syntax-source stx)])
-                                  (when (is-a? source text%)
-                                    (let* ([start (- (syntax-position stx) 1)]
-                                           [end (+ start (syntax-span stx))])
-                                      (send source delete start end #f)
-                                      (send source insert new-id start start #f)))))
-                              to-be-renamed)
-                    (send first-one-source invalidate-bitmap-cache)
-                    (send first-one-source end-edit-sequence))))))))
+          (when new-sym
+            (let* ([same-names
+                    (filter (lambda (x) (module-identifier=? x stx))
+                            (hash-table-get vars-ht (syntax-e stx)))]
+                   [to-be-renamed 
+                    (remove-duplicates
+                     (quicksort 
+                      (filter syntax-original? same-names)
+                      (lambda (x y) 
+                        ((syntax-position x) . >= . (syntax-position y)))))])
+              (cond
+                [(name-duplication? to-be-renamed vars-ht new-sym)
+                 (message-box (string-constant check-syntax)
+                              (format (string-constant cs-name-duplication-error) 
+                                      new-sym))]
+                [else
+                 (unless (null? to-be-renamed)
+                   (let ([first-one-source (syntax-source (car to-be-renamed))])
+                     (when (is-a? first-one-source text%)
+                       (send first-one-source begin-edit-sequence)
+                       (for-each (lambda (stx) 
+                                   (let ([source (syntax-source stx)])
+                                     (when (is-a? source text%)
+                                       (let* ([start (- (syntax-position stx) 1)]
+                                              [end (+ start (syntax-span stx))])
+                                         (send source delete start end #f)
+                                         (send source insert new-sym start start #f)))))
+                                 to-be-renamed)
+                       (send first-one-source invalidate-bitmap-cache)
+                       (send first-one-source end-edit-sequence))))])))))
+      
+      ;; name-duplication? : (listof syntax) hash-table symbol -> boolean
+      ;; returns #t if the name chosen would be the same as another name in this scope.
+      (define (name-duplication? to-be-renamed vars-ht new-str)
+        (let* ([new-sym (string->symbol new-str)]
+               [possible-conflicts/with-tbr (hash-table-get vars-ht new-sym (lambda () null))]
+               [possible-conflicts
+                (filter (lambda (x) (not (memf (lambda (y) (module-identifier=? x y)) to-be-renamed)))
+                        possible-conflicts/with-tbr)])
+          (ormap (lambda (to-be-renamed-var)
+                   (let ([new-identifier (datum->syntax-object to-be-renamed-var new-sym)])
+                     (ormap (lambda (possible-conflict) (module-identifier=? possible-conflict new-identifier))
+                            possible-conflicts)))
+                 to-be-renamed)))
       
       ;; remove-duplicates : (listof syntax[original]) -> (listof syntax[original])
       ;; removes duplicates, based on the source locations of the identifiers

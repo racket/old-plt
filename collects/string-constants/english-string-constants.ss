@@ -3,14 +3,11 @@
  ;;; when translating this constant, substitue name of actual langauge for `English'
  (is-this-your-native-language "Is English Your Native Language?")
 
- ;;; this is used in the Help Desk bug report form
- ;;; put the name of this language in there
- (human-language "English")
-
-
+ (are-you-sure-you-want-to-switch-languages
+  "This will change the language of the GUI, which requires you to restart DrScheme. Are you sure?")
+ 
  ;;; general purpose (DrScheme is hereby a word in every language, by decree of Robby :)
  (drscheme "DrScheme")
- (help-desk "Help Desk")
  (ok "OK")
  (cancel "Cancel")
  (untitled "Untitled")
@@ -21,7 +18,7 @@
 
  ;;; bug report form
  (cancel-bug-report? "Cancel Bug Report?")
- (are-you-sure-cancel-bug-report
+ (are-you-sure-cancel-bug-report?
   "Are you sure that you want to cancel sending this bug report?")
  (bug-report-form "Bug Report Form")
  (bug-report-field-name "Name")
@@ -40,6 +37,7 @@
  (bug-report-field-teachpacks "Teachpacks")
  (bug-report-field-collections "Collections")
  (bug-report-field-human-language "Human Language")
+ (bug-report-field-version "Version")
  (bug-report-show-synthesized-info "Show Synthesized Info")
  (bug-report-hide-synthesized-info "Hide Synthesized Info")
  (bug-report-submit "Submit")
@@ -65,6 +63,7 @@
  (cs-rename-var "Rename ~a")
  (cs-rename-id "Rename Identifier")
  (cs-rename-var-to "Rename ~a to:")
+ (cs-name-duplication-error "The new name you have chosen, ~s, conflicts with an already established name in this scope.")
  
  ;;; info bar at botttom of drscheme frame
  (collect-button-label "Collect")
@@ -77,14 +76,20 @@
  
  ;;; misc
  (welcome-to-something "Welcome to ~a")
- (welcome-to-drs-version "Welcome to DrScheme, version ~a")
+ 
+ ; this appears in the drscheme about box.
+ (welcome-to-drscheme-version/language "Welcome to DrScheme, version ~a, ~a")
+
+ ; these appear on subsequent lines in the `Help|Welcome to DrScheme' dialog.
+ (welcome-to-drscheme "Welcome to DrScheme")
+ (version/language "version ~a, ~a")
+
  (goto-line "Goto line")
  (goto-line-invalid-number
   "~a is not a valid line number. It must be an integer between 1 and ~a")
  (goto-position "Goto Position")
  (no-full-name-since-not-saved
   "The file does not have a full name because it has not yet been saved.")
- (open-url "Open URL...")
  (cannot-open-because-dne "Cannot open ~a becuase it does not exist")
  (interactions-out-of-sync
   "WARNING: Interactions window is out of sync with the definitions window. Click Execute.")
@@ -92,6 +97,45 @@
  (save "Save")
  (please-choose-either "Please choose either \"~a\" or \"~a\"")
  (close-anyway "Close Anyway")
+
+ (url "URL")
+ (url: "URL:")
+ (open-url... "Open URL...")
+ (open-url "Open URL")
+ (browse... "Browse...")
+ (bad-url "Bad URL")
+ (bad-url:this "Bad URL: ~a")
+ 
+ ;; Help Desk
+ (search-results "Search Results")
+ (help-desk "Help Desk")
+ (help-desk-n "Help Desk ~a")
+ (about-help-desk "About Help Desk")
+ (help-desk-about-string
+  "Help Desk is a complete source of information about PLT software, including DrScheme, MzScheme, and MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT")
+ (help-on-help "Help on Help")
+ (help-on-help-details "For help on using Help Desk, follow the `How to use Help Desk' link on Help Desk's home page. (To get to the home page if you're not already there, click the `Home' button at the top of the Help Desk window.)")
+ (find-docs-for "Find docs for:")
+ (search "Search")
+ ; next 3 are popup menu choices at bottom of help desk window
+ (search-for-keyword "for Keyword")
+ (search-for-keyword-or-index "for Keyword or Index Entry")
+ (search-for-keyword-or-index-or-text "for Keyword, Index Entry, or Text")
+ (exact-match "exact match")
+ (containing-match "containing match")
+ (regexp-match "regexp match")
+ (stop "Stop")
+ (feeling-lucky "Feeling Lucky")
+ (nothing-found-for-search-key "Nothing found for \"~a\".")
+ (searching "Searching...")
+ (search-stopped "(Search stopped.)")
+ (search-stopped-too-many-matches "(Search stopped - found too many matches.)")
+ (reload "Reload")
+ (help "Help")
+ (searching... "Searching...")
+ (nothing-found-for-empty-search "Nothing found for the empty search")
+ (nothing-found-for "Nothing found for ~a")
+ (and "and")
  
  ;; install plt file when opened in drscheme strings
  (install-plt-file "Install ~a or open for editing?")
@@ -103,6 +147,9 @@
  (take-a-tour "Take a Tour!")
  (release-notes "Release Notes")
  (parenthetical-last-version "(previous version ~a)")
+ (parenthetical-last-language "(previous language ~a)")
+ (parenthetical-last-version/language "(previous version ~a, language ~a)")
+ 
  
  ;;; save file in particular format prompting.
  (save-as-plain-text "Save this file as plain text?")
@@ -455,11 +502,11 @@
  (beginning-student/abbrev "Beginning Student with List Abbreviations")
  (intermediate-student "Intermediate Student")
  (advanced-student "Advanced Student")
- (how-to-design-programs "How to Design Programs") ;; should agree with MIT on this one...
+ (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (full-languages "Full")
- (mred-lang-name "MrEd without Debugging")
- (mzscheme-lang-name "MzScheme without Debugging")
- (unknown-debug-frame "<<unknown>>")
+ (mred-lang-name "Graphical without debugging (MrEd)")
+ (mzscheme-lang-name "Textual without debugging (MzScheme)")
+ (unknown-debug-frame "[unknown]")
  
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")

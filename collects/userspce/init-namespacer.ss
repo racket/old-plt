@@ -115,7 +115,7 @@
                    (import plt:userspace^)
                    (with-handlers ([(lambda (x) #t)
                                     (lambda (x)
-                                      ((error-display-handler)
+                                      (,invalid-teachpack
                                        (format
                                         "Invalid Teachpack: ~a~n~a"
                                         ,v
@@ -276,8 +276,12 @@
                        (export)))])
       (values
        (lambda ()
-         (invoke-unit/sig
-          cu))
+	 (with-handlers ([(lambda (x) #t)
+			  (lambda (x)
+			    (invalid-teachpack (exn-message x))
+			    #f)])
+	   (invoke-unit/sig
+	    cu)))
        (lambda (vocab) (for-each (lambda (x) (x vocab)) macro-thunks))
        bad-teachpacks)))
   

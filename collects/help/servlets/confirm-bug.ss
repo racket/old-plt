@@ -5,6 +5,7 @@
 	 (lib "smtp.ss" "net"))
 
 (require "private/hd-css.ss")
+(require "private/external.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -296,10 +297,12 @@
 	    "30 minutes, please send an e-mail describing the problem to "
 	    (TT "scheme@plt-scheme.org") "."))])
     
-    (with-handlers ; no harm if not saved
-     ([void void])
-     (put-prefs (list 'user-name 'user-email)
-		(list originator reply-to)))
+    ; don't save user/email if server accepts external connections
+    (unless (unbox external-box)
+      (with-handlers ; no harm if not saved
+       ([void void])
+       (put-prefs (list 'user-name 'user-email)
+		  (list originator reply-to))))
     
     (send/suspend sending-page)
     (with-handlers

@@ -4,14 +4,20 @@
 (require "private/hd-css.ss")
 (require "private/util.ss")
 (require "private/synthesize.ss")
+(require "private/external.ss")
 
 (unit/sig ()
   (import servlet^)
 
-  (define name
-    (get-pref/default 'user-name ""))
-  (define email
-    (get-pref/default 'user-email ""))
+  (define external? (unbox external-box))
+
+  (define (get-pref/external sym)
+    (if external?	
+	""
+	(get-pref/default sym "")))
+
+  (define name (get-pref/external 'user-name))
+  (define email (get-pref/external 'user-email))
 
   (define (make-option s)
     (if (string=? (car s) "*")

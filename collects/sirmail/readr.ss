@@ -705,8 +705,7 @@
           
           (inherit get-edit-target-object)
           (define/override (get-text-to-search) 
-            (or (get-edit-target-object)
-                (send message get-editor)))
+            (send message get-editor))
           
           (rename [super-on-size on-size])
           [define/override on-size

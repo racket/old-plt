@@ -31,16 +31,20 @@
 	  [insert-windows-menu
 	   (lambda (frame)
 	     (let ([mb (send frame get-menu-bar)])
-	       (unless (send mb get-menu-named window-menu-name)
+	       (unless (send mb get-menu-named windows-menu-name)
 		 (let ([menu (send frame make-menu)])
-		   (set! windows-menus (cons menu windows-menus))
+		   (set! windows-menus (cons (list menu) windows-menus))
 		   (send mb append menu windows-menu-name)))))]
 	  [remove-windows-menu
 	   (lambda (frame)
 	     (let* ([mb (send frame get-menu-bar)]
 		    [menu (send mb get-menu-named windows-menu-name)])
 	       (set! windows-menus
-		     (mzlib:function:remq menu windows-menus))
+		     (mzlib:function:remove
+		      menu
+		      windows-menus
+		      (lambda (x y)
+			(eq? x (car y)))))
 	       (send mb delete menu -1)))]
 	  
 	  [update-windows-menus
@@ -54,22 +58,27 @@
 		      (lambda (f1 f2)
 			(string-ci<=? (get-name f1)
 				      (get-name f2))))])
-	       (for-each
-		(lambda (menu)
-		  (let loop ([n (+ windows 1)])
-		    (unless (zero? n)
-		      (send menu delete-by-position 0)
-		      (loop (sub1 n))))
-		  (for-each
-		   (lambda (frame)
-		     (let ([frame (frame-frame frame)])
-		       (printf "menu: ~a frame: ~a~n" menu (send frame get-title))
-		       (send menu append-item
-			     (send frame get-title)
-			     (lambda ()
-			       (send frame show #t)))))
-		   sorted-frames))
-		windows-menus)))])
+	       (set! windows-menus
+		     (map
+		      (lambda (menu-list)
+			(let ([menu (car menu-list)]
+			      [old-ids (cdr menu-list)])
+			  (for-each (lambda (id) (send menu delete id))
+				    old-ids)
+			  (let ([new-ids
+				 (map
+				  (lambda (frame)
+				    (let ([frame (frame-frame frame)])
+				      (send menu append-item
+					    (let ([title (send frame get-title)])
+					      (if (string=? title "")
+						  "Untitled"
+						  title))
+					    (lambda ()
+					      (send frame show #t)))))
+				  sorted-frames)])
+			  (cons menu new-ids))))
+		      windows-menus))))])
 	       
 	
 	(public

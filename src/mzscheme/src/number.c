@@ -3321,8 +3321,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			   || (ch == 'd') || (ch == 'D') \
 			   || (ch == 'l') || (ch == 'L'))
 
-#define isbase16digit(ch) (((ch >= 'a') && (ch <= 'f')) \
-                           || ((ch >= 'A') && (ch <= 'F')))
+#define isbaseNdigit(N, ch) (((ch >= 'a') && (ch <= ('a' + N - 11))) \
+                             || ((ch >= 'A') && (ch <= ('A' + N - 11))))
 
   has_i = 0;
   has_at = 0;
@@ -3335,7 +3335,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			 "read-number: embedded null character: %s",
 			 NICE_SIZE(str));
       return scheme_false;
-    } else if (isinexactmark(ch) && ((radix < 10) || !isbase16digit(ch))) {
+    } else if (isinexactmark(ch) && ((radix <= 10) || !isbaseNdigit(radix, ch))) {
       /* If a sign follows, don't count it */
       if (str[i+1] == '+' || str[i+1] == '-')
 	i++;
@@ -3576,7 +3576,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       }
       has_decimal = 1;
     } else if (isinexactmark(ch)) {
-      if ((radix <= 10) || !isbase16digit(ch)) {
+      if ((radix <= 10) || !isbaseNdigit(radix, ch)) {
 	if (!i) {
 	  if (report)
 	    scheme_raise_exn(MZEXN_READ, complain, 
@@ -3635,7 +3635,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	return scheme_false;
       }
       has_hash = 1;
-    } else if (!isdigit(ch) && !((radix == 16) && isbase16digit(ch))) {
+    } else if (!isdigit(ch) && !((radix > 10) && isbaseNdigit(radix, ch))) {
       if (has_decimal) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
@@ -3796,7 +3796,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (str[i] == '+' || str[i] == '-')
 	digits[dcp++] = str[i++];
 
-      for (; isdigit((unsigned char)str[i]) || ((radix == 16) && isbase16digit(str[i])); i++) {
+      for (; isdigit((unsigned char)str[i]) || ((radix > 10) && isbaseNdigit(radix, str[i])); i++) {
 	digits[dcp++] = str[i];
       }
 
@@ -3811,7 +3811,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (str[i] == '.') {
 	i++;
 	if (num_ok)
-	  for (; isdigit((unsigned char)str[i]) || ((radix == 16) && isbase16digit(str[i])); i++) {
+	  for (; isdigit((unsigned char)str[i]) || ((radix > 10) && isbaseNdigit(radix, str[i])); i++) {
 	    digits[dcp++] = str[i];
 	    extra_power++;
 	  }
@@ -3824,7 +3824,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
       if ((str[i] && (!has_expt || i != has_expt))
 	  || !dcp || (dcp == 1 && !(isdigit((unsigned char)digits[0])
-				    || ((radix == 16) && isbase16digit(digits[0]))))) {
+				    || ((radix > 10) && isbaseNdigit(radix, digits[0]))))) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
 			   "read-number: bad decimal number %s", 

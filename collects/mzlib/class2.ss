@@ -258,31 +258,43 @@
 					#f))
 				     ;; filter: removes shadows vars, so that we
 				     ;;  don't unshadow them
-				     (define (filter xforms vars)
+				     (define (filter xforms vars rec-name new-name)
 				       (let ([vars ;; flatten var list
 					      (let loop ([vars vars])
-						(cond
-						 [(identifier? vars) (list vars)]
-						 [(stx-null? vars) null]
-						 [(stx-pair? vars)
-						  (cons (stx-car vars)
-							(loop (stx-cdr vars)))]))])
+						  (cond
+						   [(identifier? vars) (list vars)]
+						   [(stx-null? vars) null]
+						   [(stx-pair? vars)
+						    (cons (stx-car vars)
+							  (loop (stx-cdr vars)))]))]
+					     [base 
+					      (if rec-name
+						  (with-syntax ([old-name rec-name]
+								[new-name new-name]
+								[this-id this-id])
+						    (list 
+						     (syntax
+						      (old-name (make-direct-method-map 
+								 (quote-syntax this-id)
+								 (quote-syntax new-name))))))
+						  null)])
 					 (let loop ([xforms (syntax->list xforms)])
 					   (cond
-					    [(null? xforms) null]
+					    [(null? xforms) base]
 					    [(ormap (lambda (id)
 						      (bound-identifier=? id (stx-car (car xforms))))
-						    xforms)
+						    vars)
 					     (loop (cdr xforms))]
 					    [else (cons (car xforms) (loop (cdr xforms)))]))))
 				     ;; -- tranform loop starts here --
-				     (let loop ([stx expr][can-expand? #t])
+				     (let loop ([stx expr][can-expand? #t][rec-name #f][new-name #f])
 				       (syntax-case stx (lambda case-lambda letrec-values let-values)
 					 [(lambda vars body1 body ...)
 					  (vars-ok? (syntax vars))
 					  (if xforms
 					      (with-syntax ([this-id this-id]
-							    [xforms (filter xforms (syntax vars))]
+							    [xforms (filter xforms (syntax vars) 
+									    rec-name new-name)]
 							    [name (mk-name)])
 						(syntax/loc stx 
 						  (let ([name
@@ -300,7 +312,8 @@
 							    [(xforms ...)
 							     (map
 							      (lambda (vars)
-								(filter xforms vars))
+								(filter xforms vars
+									rec-name new-name))
 							      (syntax->list (syntax (vars ...))))]
 							    [name (mk-name)])
 						(syntax/loc stx
@@ -320,11 +333,24 @@
 					       (identifier? (syntax id1))
 					       (identifier? (syntax id2))
 					       (bound-identifier=? (syntax id1) (syntax id2)))
-					  (with-syntax ([proc (loop (syntax expr) #t)])
-					    (syntax/loc stx (let- ([(id1) proc]) id2)))]
+					  (let* ([letrec? (module-identifier=? (syntax let-) 
+									       (quote-syntax letrec-values))]
+						 [id1 (syntax id1)]
+						 [new-id (if (and letrec? xforms)
+							     (datum->syntax-object
+							      #f
+							      (gensym (syntax-e id1))
+							      id1)
+							     id1)])
+					    (with-syntax ([proc (loop (syntax expr) 
+								      #t
+								      (and letrec? id1)
+								      new-id)]
+							  [new-id new-id])
+					      (syntax/loc stx (let- ([(new-id) proc]) new-id))))]
 					 [_else 
 					  (if can-expand?
-					      (loop (expand stx) #f)
+					      (loop (expand stx) #f rec-name new-name)
 					      (bad "bad form for method definition" stx))])))])
 		   ;; Do the extraction:
 		   (let-values ([(methods exprs)
@@ -461,7 +487,9 @@
 							      (set! . idp)
 							      ...))]
 					     [(init-rest id)
-					      (with-syntax ([n (length plain-inits)])
+					      (with-syntax ([n (+ (length plain-inits)
+								  (length plain-init-fields)
+								  -1)])
 						(syntax/loc e (set! id (extract-rest-args n init-args))))]
 					     [_else e]))
 					 exprs)])
@@ -822,7 +850,7 @@
 				       (vector-ref (class-methods c) n))))])
 	      (vector-set! (class-supers c) (add1 (class-pos super)) c)
 
-	      ;; --- Mane the new object struct ---
+	      ;; --- Make the new object struct ---
 	      (let*-values ([(prim-tagged-object-make prim-object? struct:prim-object)
 			     (if make-struct:prim
 				 (make-struct:prim c prop:object dispatcher)

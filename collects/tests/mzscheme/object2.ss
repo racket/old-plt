@@ -35,7 +35,7 @@
 
 (test 115 'e (send fish2 eat fish1))
 
-(define fish-size (class-field-accessor fish% 'size))
+(define fish-size (make-class-field-accessor fish% 'size))
 (test 12 fish-size fish1)
 (test 115 fish-size fish2)
 
@@ -52,7 +52,7 @@
 (define blue-fish (instantiate color-fish% () (color 'blue) (size 10)))
 (define red-fish (instantiate color-fish% () (size 1)))
 
-(define color-fish-color (class-field-accessor color-fish% 'color))
+(define color-fish-color (make-class-field-accessor color-fish% 'color))
 
 (test 'red color-fish-color red-fish)
 (test 'blue color-fish-color blue-fish)
@@ -131,10 +131,15 @@
     (define first-name -first-name) 
     (define nicknames -nicknames) 
 
-    (define (greeting)
-      (format "~a ~a, a.k.a.: ~a"
-	      first-name last-name
-	      nicknames))
+    (define greeting
+      (letrec ([loop
+		(case-lambda
+		 [() (loop first-name last-name)]
+		 [(last-name first-name) ;; intentionally backwards to test scope
+		  (format "~a ~a, a.k.a.: ~a"
+			  last-name first-name
+			  nicknames)])])
+	loop))
 
     (super-instantiate () (size 12))))
 

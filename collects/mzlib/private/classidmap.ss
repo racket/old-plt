@@ -102,7 +102,31 @@
        [else
 	(reverse (cons args accum))])))
 
+  ;; For methods that are dirrectly available via their names:
+  (define (make-direct-method-map this-id new-name)
+    (let ([set!-stx (datum->syntax-object this-id 'set!)])
+      (make-set!-transformer
+       (lambda (stx)
+	 (syntax-case stx ()
+	   [(set! id expr)
+	    (module-identifier=? (syntax set!) set!-stx)
+	    (raise-syntax-error 'class "cannot mutate method" stx)]
+	   [(id . args)
+	    (datum->syntax-object 
+	     this-id 
+	     (make-method-apply
+	      new-name
+	      this-id
+	      (syntax args))
+	     stx)]
+	   [_else
+	    (raise-syntax-error 
+	     'class 
+	     "misuse of method (not in application)" 
+	     stx)])))))
+
   (provide make-field-map make-method-map make-rename-map
-	   init-error-map super-error-map flatten-args))
+	   init-error-map super-error-map flatten-args
+	   make-direct-method-map))
 
     

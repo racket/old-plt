@@ -15,9 +15,15 @@
         arguments v...
 
       (primitive-class-prepare-struct-type! prim-class gen-property
-        gen-value) - prepares a class's struct-type for objects
-        generated C-side, returns a constructor, predicate, and
-	a struct:type for derived classes.
+        gen-value dispatcher) - prepares a class's struct-type for
+        objects generated C-side; returns a constructor, predicate,
+        and a struct:type for derived classes. The constructor and
+        strcut:type map the given dispatcher to the class.
+
+        The dispatcher takes two arguments: an object, and a
+        method-specific box initially containing the method name. It
+        returns #f (not overridden by a non-primitive method) or a
+        method procedure.
 
       (primitive-class->method-name-list prim-class) - gets a list of
         symbolic method names for the class.
@@ -156,6 +162,7 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
     scheme_wrong_type("primitive-class-prepare-struct-type!", "primitive-class", 0, argc, argv);
   if (SCHEME_TYPE(argv[1]) != scheme_struct_property_type)
     scheme_wrong_type("primitive-class-prepare-struct-type!", "struct-type-property", 1, argc, argv);
+  scheme_check_proc_arity("primitive-class-prepare-struct-type!", 2, 3, argc, argv);
 
   c = ((Scheme_Class *)argv[0]);
   
@@ -197,7 +204,7 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 										     argv[0]),
 								    scheme_null)));
   
-  c->struct_type = base_stype;
+  c->struct_type = stype;
   
   /* Type to derive from Scheme: */
   
@@ -219,7 +226,7 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 				  scheme_make_pair(scheme_make_pair(argv[1], argv[2]),
 						   scheme_make_pair(scheme_make_pair(dispatcher_property, argv[3]),
 								    scheme_make_pair(scheme_make_pair(object_property, 
-										     argv[0]),
+												      argv[0]),
 										     scheme_null))));
   
   /* Need constructor from instantiate type: */
@@ -592,7 +599,7 @@ void objscheme_add_global_interface(Scheme_Object *in, char *name, void *env)
 Scheme_Object *objscheme_find_method(Scheme_Object *_obj, Scheme_Object *sclass,
 				     char *name, void **cache)
 {
-  Scheme_Object *s, *m, *p[1], *dispatcher;
+  Scheme_Object *s, *m, *p[2], *dispatcher;
   Scheme_Class_Object *obj = (Scheme_Class_Object *)_obj;
 
   if (!obj)
@@ -602,19 +609,16 @@ Scheme_Object *objscheme_find_method(Scheme_Object *_obj, Scheme_Object *sclass,
   if (!dispatcher)
     return NULL;
 
-  /* Make sure dispatcher has the right shape: */
-  if (!scheme_check_proc_arity(NULL, 1, 0, 1, &dispatcher))
-    return NULL;
-
   if (*cache)
     s = (Scheme_Object *)*cache;
   else {
-    s = scheme_intern_symbol(name);
+    s = scheme_box(scheme_intern_symbol(name));
     *cache = s;
   }
 
-  p[0] = s;
-  m = scheme_apply(dispatcher, 1, p);
+  p[0] = (Scheme_Object *)obj;
+  p[1] = s;
+  m = scheme_apply(dispatcher, 2, p);
 
   if (SCHEME_FALSEP(m))
     return NULL;

@@ -10,12 +10,29 @@
            (lib "framework.ss" "framework")
            (lib "pretty.ss")
            (lib "class.ss")
+           (lib "contract.ss")
            (lib "list.ss"))
 
-  (provide (rename gui traces)
-           (rename gui/multiple traces/multiple)
-           (rename gui/pred traces/pred)
-	   reduction-steps-cutoff initial-font-size initial-char-width)
+  (provide/contract
+   [traces (opt-> (compiled-lang?
+                   (listof red?)
+                   any/c)
+                  (procedure?)
+                  any)]
+   [traces/pred (opt-> (compiled-lang?
+                            (listof red?)
+                            (listof any/c))
+                           (procedure?)
+                           any)]
+   [traces/multiple (opt-> (compiled-lang?
+                            (listof red?)
+                            (listof any/c)
+                            (-> any/c boolean?))
+                           (procedure?)
+                           any)])
+               
+   
+  (provide reduction-steps-cutoff initial-font-size initial-char-width)
 
   (preferences:set-default 'plt-reducer:show-bottom #t boolean?)
   
@@ -40,15 +57,15 @@
     (parameterize ([pretty-print-columns w])
       (pretty-print v port)))
   
-  (define gui
+  (define traces
     (opt-lambda (lang reductions expr [pp default-pp])
-      (gui/multiple lang reductions (list expr) pp)))
+      (traces/multiple lang reductions (list expr) pp)))
       
-  (define gui/multiple
+  (define traces/multiple
     (opt-lambda (lang reductions exprs [pp default-pp])
-      (gui/pred lang reductions exprs (lambda (x) #t) pp)))
+      (traces/pred lang reductions exprs (lambda (x) #t) pp)))
   
-  (define gui/pred
+  (define traces/pred
     (opt-lambda (lang reductions exprs pred [pp default-pp])
       (define graph-pb (make-object graph-pasteboard%))
       (define f (instantiate red-sem-frame% ()

@@ -802,8 +802,8 @@
 
    ;; help desk http proxy
    (http-proxy "Proxy de HTTP")
-   (proxy-direct-connection "Coneción Directa")
-   (proxy-use-proxy "Utilizar proxy:")
+   ; (proxy-direct-connection "Coneción Directa") ; more precise: "for HTTP downloads"
+   ; (proxy-use-proxy "Utilizar proxy:") ; more precise: "for HTTP downloads"
    (proxy-host "Host")
    (proxy-port "Port")
    (proxy-bad-host "El Host Proxy está mal especificado")

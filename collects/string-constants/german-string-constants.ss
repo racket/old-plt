@@ -639,10 +639,10 @@
    (plt-homepage "PLT")
    (pref-lock-not-gone "Voreinstellungs-Sperrdatei:\n\n   ~a\n\nverhundert das Speichern der Voreinstellungen. Versichern Sie sich, daß kein PLT Programm mehr rennt und löschen Sie ggf. diese Sperrdatei.")
    (proxy-bad-host "Ungültiger Proxy Host")
-   (proxy-direct-connection "Direkte Internetverbindung")
+   ; (proxy-direct-connection "Direkte Internetverbindung") ; more precise: "for HTTP downloads"
    (proxy-host "Host")
    (proxy-port "Port")
-   (proxy-use-proxy "Verwende Proxy:")
+   ; (proxy-use-proxy "Verwende Proxy:") ; more precise: "for HTTP downloads"
    (r5rs-one-line-summary "Pures R5RS, ohne Zusatzschmäh's")
    (save-an-executable "Sichere EXE")
    (still-locked-exit-anyway? "Die Voreinstellungen konnten nicht gesichert werden. Trotzdem beenden?")

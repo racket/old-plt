@@ -168,8 +168,8 @@
  ; help desk htty proxy
  (http-proxy "HTTP Proxy")
  (proxy-direct-connection "Direkte forbindelse")
- (proxy-use-proxy "Benyt proxyen:")
- (proxy-host "Host")
+ ;(proxy-use-proxy "Benyt proxyen:") ; more precise: "for HTTP downloads"
+ ;(proxy-host "Host") ; more precise: "for HTTP downloads"
  (proxy-port "Port")
  (proxy-bad-host "Ugyldig Proxy Host")
 

@@ -165,8 +165,8 @@
 
  ;; help desk htty proxy
  (http-proxy "HTTP Proxy")
- (proxy-direct-connection "Directe vebinding")
- (proxy-use-proxy "Gebruik proxy:")
+ ; (proxy-direct-connection "Directe vebinding") ; more precise: "for HTTP downloads"
+ ; (proxy-use-proxy "Gebruik proxy:") ; more precise: "for HTTP downloads"
  (proxy-host "Host")
  (proxy-port "Port")
  (proxy-bad-host "Verkeerde Proxy Host")

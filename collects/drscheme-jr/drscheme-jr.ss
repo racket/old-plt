@@ -14,13 +14,14 @@
 		       f)])
 	 (dynamic-wind
 	  (lambda ()
-	    (set! indent-string (list->string (vector->list (make-vector indent #\space))))
+	    (printf "~aLoading ~a...~n" indent-string file)
 	    (set! indent (+ indent offset))
-	    (printf "~aLoading ~a...~n" indent-string file))
+	    (set! indent-string (list->string (vector->list (make-vector indent #\space)))))
 	  (lambda () (old-handler file))
 	  (lambda ()
-	    (printf "~aLoaded ~a...~n" indent-string file)
-	    (set! indent (- indent offset)))))))))
+	    (set! indent (- indent offset))
+	    (set! indent-string (list->string (vector->list (make-vector indent #\space))))
+            (printf "~aLoaded ~a...~n" indent-string file))))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

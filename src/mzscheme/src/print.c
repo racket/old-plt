@@ -1487,6 +1487,32 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
           print_byte_string(SCHEME_BYTE_STR_VAL(SCHEME_CPTR_TYPE(obj)),
                             SCHEME_BYTE_STRLEN_VAL(SCHEME_CPTR_TYPE(obj)),
                             0, pp);
+        } else if (SCHEME_CHAR_STRINGP(SCHEME_CPTR_TYPE(obj))) {
+          /* copied from the SCHEME_CHAR_STRINGP case above */
+          /* this functionality might be moved to a seperate function */
+          int l, el, reset;
+          char *buf;
+          Scheme_Object *s = SCHEME_CPTR_TYPE(obj);
+          l = SCHEME_CHAR_STRTAG_VAL(s);
+          el = l * MAX_UTF8_CHAR_BYTES;
+          if (el <= QUICK_ENCODE_BUFFER_SIZE) {
+            if (quick_encode_buffer) {
+              buf = quick_encode_buffer;
+              quick_encode_buffer = NULL;
+            } else
+              buf = (char *)scheme_malloc_atomic(QUICK_ENCODE_BUFFER_SIZE);
+            reset = 1;
+          } else {
+            buf = (char *)scheme_malloc_atomic(el);
+            reset = 0;
+          }
+          el = scheme_utf8_encode_all(SCHEME_CHAR_STR_VAL(s), l, buf);
+          print_char_string(buf, el,
+                            SCHEME_CHAR_STR_VAL(s), l,
+                            0, pp);
+          closed = 1;
+          if (reset)
+            quick_encode_buffer = buf;
         } else {
           print_this_string(pp, "#", 0, 1);
         }

@@ -17,5 +17,5 @@ all: $(LIBFFI_A) foreign.o
 $(LIBFFI_A):
 	cd gcc/libffi; $(MAKE) libffi.la
 
-foreign.o:
+foreign.o: $(srcdir)/foreign.c
 	$(CC) $(CFLAGS) -c $(srcdir)/foreign.c -o foreign.o

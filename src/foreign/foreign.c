@@ -488,16 +488,16 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
  * C->Scheme:   (<C>==NULL)?scheme_false:scheme_make_path_without_copying(<C>)
  */
 
-/* This is for any C pointer: #f is NULL, ffi-ptr values as well as
+/* This is for any C pointer: #f is NULL, cpointer values as well as
  * ffi-obj and string values pass their pointer.  When used as a return
- * value, either an ffi-ptr object or #f is returned. */
+ * value, either a cpointer object or #f is returned. */
 #define FFI_pointer (20)
 /* Type Name:   pointer
  * LibFfi type: ffi_type_pointer
  * C type:      void*
  * Predicate:   SCHEME_FFIANYPTRP(<Scheme>)
  * Scheme->C:   SCHEME_FFIANYPTR_VAL(<Scheme>)
- * C->Scheme:   scheme_make_ffiptr(<C>)
+ * C->Scheme:   scheme_make_foreign_cpointer(<C>)
  */
 
 /* This is used for passing and Scheme_Object* value as is.  Useful for
@@ -683,7 +683,7 @@ static Scheme_Object *FP_make_ffi_type(int argc, Scheme_Object *argv[])
 
 /* (make-ffi-struct-type types) -> ffi-type */
 /* This creates a new primitive type that is a struct.  This type can be used
- * with ffi-ptr objects, except that the contents is used rather than the
+ * with cpointer objects, except that the contents is used rather than the
  * pointer value.  Marshaling to lists or whatever should be done in Scheme. */
 #undef MYNAME
 #define MYNAME "make-ffi-struct-type"
@@ -730,43 +730,21 @@ static Scheme_Object *FP_make_ffi_struct_type(int argc, Scheme_Object *argv[])
 
 /*****************************************************************************/
 /* Pointer objects */
-
-/* ffi-ptr structure definition */
-static Scheme_Type ffi_ptr_tag;
-typedef struct ffi_ptr_struct {
-  Scheme_Type type;
-  void* ptr;
-} ffi_ptr_struct;
-#define SCHEME_FFIPTRP(x) (SCHEME_TYPE(x)==ffi_ptr_tag)
-#undef MYNAME
-#define MYNAME "ffi-ptr?"
-static Scheme_Object *FP_ffi_ptr_p(int argc, Scheme_Object *argv[])
-{ return SCHEME_FFIPTRP(argv[0]) ? scheme_true : scheme_false; }
+/* use cpointer (with a NULL tag when creating), #f for NULL */
 
 #define SCHEME_FFIANYPTRP(x) \
-  (SCHEME_FALSEP(x) || SCHEME_FFIPTRP(x) || SCHEME_FFIOBJP(x) || \
+  (SCHEME_FALSEP(x) || SCHEME_CPTRP(x) || SCHEME_FFIOBJP(x) || \
    SCHEME_BYTE_STRINGP(x))
 #define SCHEME_FFIANYPTR_VAL(x) \
-  (SCHEME_FALSEP(x) ? NULL : \
-    (SCHEME_FFIPTRP(x) ? (((ffi_ptr_struct*)x)->ptr) : \
+  (SCHEME_CPTRP(x) ? SCHEME_CPTR_VAL(x) : \
+    (SCHEME_FALSEP(x) ? NULL : \
       (SCHEME_FFIOBJP(x) ? (((ffi_obj_struct*)x)->obj) : \
        SCHEME_BYTE_STRINGP(x) ? SCHEME_BYTE_STR_VAL(x) : \
         ({scheme_wrong_type("any->pointer", "pointer-type", 0, 1, &(x)); \
           NULL;}))))
 
-/* Not a user-level function */
-static Scheme_Object *ffi_make_ptr(void* p)
-{
-  ffi_ptr_struct *ptr;
-  if (p == NULL) return scheme_false;
-  ptr = (ffi_ptr_struct*)scheme_malloc_stubborn(sizeof(ffi_ptr_struct));
-  ptr->type = ffi_ptr_tag;
-  ptr->ptr = (p);
-  scheme_end_stubborn_change(ptr);
-  return (Scheme_Object*)ptr;
-}
-#define scheme_make_ffiptr(x) \
-  ((x==NULL)?scheme_false:ffi_make_ptr(x))
+#define scheme_make_foreign_cpointer(x) \
+  ((x==NULL)?scheme_false:scheme_make_cptr(x,NULL))
 
 /*****************************************************************************/
 /* Callback type */
@@ -823,10 +801,10 @@ static Scheme_Object *ffi_c_to_scheme(Scheme_Object *type, void *src)
     case FFI_string: return (((mzchar**)src)[0]==NULL)?scheme_false:scheme_make_char_string_without_copying(((mzchar**)src)[0]);
     case FFI_bytes: return (((char**)src)[0]==NULL)?scheme_false:scheme_make_byte_string_without_copying(((char**)src)[0]);
     case FFI_path: return (((char**)src)[0]==NULL)?scheme_false:scheme_make_path_without_copying(((char**)src)[0]);
-    case FFI_pointer: return scheme_make_ffiptr(((void**)src)[0]);
+    case FFI_pointer: return scheme_make_foreign_cpointer(((void**)src)[0]);
     case FFI_scheme: return ((Scheme_Object**)src)[0];
     case FFI_fmark: return scheme_void;
-    case FFI_struct: return scheme_make_ffiptr(src);
+    case FFI_struct: return scheme_make_foreign_cpointer(src);
     default: scheme_signal_error("corrupt ffi type: %V", type);
   }
   return NULL; /* shush the compiler */
@@ -848,8 +826,8 @@ static void* ffi_scheme_to_c(Scheme_Object *type, void *dst,
   if (FFITYPE_PRIMLABEL(type) == FFI_fmark) {
     if (SCHEME_FFICALLBACKP(val))
       ((void**)dst)[0] = ((ffi_callback_struct*)val)->callback;
-    else if (SCHEME_FFIPTRP(val))
-      ((void**)dst)[0] = ((void**)dst)[0];
+    else if (SCHEME_CPTRP(val))
+      ((void**)dst)[0] = SCHEME_CPTR_VAL(val);
     else if (SCHEME_FFIOBJP(val))
       ((void**)dst)[0] = ((ffi_obj_struct*)val)->obj;
     else /* ((void**)dst)[0] = val; */
@@ -979,11 +957,11 @@ static Scheme_Object *stubborn_sym;
 static Scheme_Object *uncollectable_sym;
 static Scheme_Object *eternal_sym;
 
-/* (ffi-malloc num type ffi-ptr flag) -> pointer */
+/* (ffi-malloc num type cpointer flag) -> pointer */
 /* The arguments for this function are:
  * - num: bytes to allocate, or the number of instances of type when given,
  * - type: malloc the size of this type (or num instances of it),
- * - ffi-ptr: a source pointer to copy contents from,
+ * - cpointer: a source pointer to copy contents from,
  * - mode: a symbol for different allocation functions to use - one of
  *   'atomic, 'stubborn, 'uncollectable, 'eternal
  * The arguments can be specified in any order at all since they are all
@@ -1031,11 +1009,11 @@ static Scheme_Object *FP_ffi_malloc(int argc, Scheme_Object *argv[])
   else if (SAME_OBJ(mode, atomic_sym))   res = scheme_malloc_atomic(size);
   else if (SAME_OBJ(mode, stubborn_sym)) res = scheme_malloc_stubborn(size);
   else if (SAME_OBJ(mode, eternal_sym))  res = scheme_malloc_eternal(size);
-  /* else if (SAME_OBJ(mode, uncollectable_sym)) */
-  /*   res = scheme_malloc_uncollectable(size); */
+  else if (SAME_OBJ(mode, uncollectable_sym))
+    res = scheme_malloc_uncollectable(size);
   else scheme_signal_error(MYNAME": bad allocation mode: %V", mode);
   if ((from != NULL) && (res != NULL)) memcpy(res, from, size);
-  return scheme_make_ffiptr(res);
+  return scheme_make_foreign_cpointer(res);
 }
 
 /* (ffi-end-stubborn-change ptr) */
@@ -1045,16 +1023,17 @@ static Scheme_Object *FP_ffi_end_stubborn_change(int argc, Scheme_Object *argv[]
 {
   void *ptr;
   if (!SCHEME_FFIANYPTRP(argv[0]))
-    scheme_wrong_type(MYNAME, "ffi-ptr", 0, argc, argv);
+    scheme_wrong_type(MYNAME, "cpointer", 0, argc, argv);
   ptr = SCHEME_FFIANYPTR_VAL(argv[0]);
-  if (ptr == NULL) scheme_wrong_type(MYNAME, "non-null-ptr", 0, argc, argv);
+  if (ptr == NULL)
+    scheme_wrong_type(MYNAME, "non-null-cpointer", 0, argc, argv);
   scheme_end_stubborn_change(ptr);
   return scheme_void;
 }
 
 static Scheme_Object *abs_sym;
 
-/* (ptr-ref ffi-ptr type [[abs] n]) -> the object at the given location */
+/* (ptr-ref cpointer type [[abs] n]) -> the object at the given location */
 /* n defaults to 0 which is the only value that should be used with ffi_objs */
 /* if n is given, an 'abs flag can precede it to make n be a byte offset rather
  * than some multiple of sizeof(type). */
@@ -1065,10 +1044,10 @@ static Scheme_Object *FP_ptr_ref(int argc, Scheme_Object *argv[])
 {
   int size=0; void *ptr; Scheme_Object *base;
   if (!SCHEME_FFIANYPTRP(argv[0]))
-    scheme_wrong_type(MYNAME, "ffi-ptr", 0, argc, argv);
+    scheme_wrong_type(MYNAME, "cpointer", 0, argc, argv);
   ptr = SCHEME_FFIANYPTR_VAL(argv[0]);
   if (ptr == NULL)
-    scheme_wrong_type(MYNAME, "non-null-ptr", 0, argc, argv);
+    scheme_wrong_type(MYNAME, "non-null-cpointer", 0, argc, argv);
   if (NULL == (base = ffi_base_ctype(argv[1])))
     scheme_wrong_type(MYNAME, "C-type", 1, argc, argv);
   else size = ffi_sizeof(base);
@@ -1097,7 +1076,7 @@ static Scheme_Object *FP_ptr_ref(int argc, Scheme_Object *argv[])
   return ffi_c_to_scheme(argv[1], ptr);
 }
 
-/* (ptr-set! ffi-ptr type [[abs] n] value) -> void */
+/* (ptr-set! cpointer type [[abs] n] value) -> void */
 /* n defaults to 0 which is the only value that should be used with ffi_objs */
 /* if n is given, an 'abs flag can precede it to make n be a byte offset rather
  * than some multiple of sizeof(type). */
@@ -1109,10 +1088,10 @@ static Scheme_Object *FP_ptr_set(int argc, Scheme_Object *argv[])
   int size=0; void *ptr;
   Scheme_Object *val = argv[argc-1], *base;
   if (!SCHEME_FFIANYPTRP(argv[0]))
-    scheme_wrong_type(MYNAME, "ffi-ptr", 0, argc, argv);
+    scheme_wrong_type(MYNAME, "cpointer", 0, argc, argv);
   ptr = SCHEME_FFIANYPTR_VAL(argv[0]);
   if (ptr == NULL)
-    scheme_wrong_type(MYNAME, "non-null-ptr", 0, argc, argv);
+    scheme_wrong_type(MYNAME, "non-null-cpointer", 0, argc, argv);
   if (NULL == (base = ffi_base_ctype(argv[1])))
     scheme_wrong_type(MYNAME, "C-type", 1, argc, argv);
   else size = ffi_sizeof(base);
@@ -1120,8 +1099,8 @@ static Scheme_Object *FP_ptr_set(int argc, Scheme_Object *argv[])
     if (argc > 3) {
       scheme_signal_error
         (MYNAME": referencing a special value with extra arguments");
-    } else if (SCHEME_FFIPTRP(argv[0])) {
-      ptr = ((ffi_ptr_struct*)(argv[0]))->ptr;
+    } else if (SCHEME_CPTRP(argv[0])) {
+      ptr = SCHEME_CPTR_VAL(argv[0]);
     } else if SCHEME_FFIOBJP(argv[0]) {
       ptr = ((ffi_obj_struct*)(argv[0]))->obj;
     } else {
@@ -1148,21 +1127,21 @@ static Scheme_Object *FP_ptr_set(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-/* (ptr-equal? ffi-ptr ffi-ptr) -> boolean */
+/* (ptr-equal? cpointer cpointer) -> boolean */
 #undef MYNAME
 #define MYNAME "ptr-equal?"
 static Scheme_Object *FP_ptr_equal_p(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_FFIANYPTRP(argv[0]))
-    scheme_wrong_type(MYNAME, "ffi-ptr", 0, argc, argv);
+    scheme_wrong_type(MYNAME, "cpointer", 0, argc, argv);
   if (!SCHEME_FFIANYPTRP(argv[1]))
-    scheme_wrong_type(MYNAME, "ffi-ptr", 1, argc, argv);
+    scheme_wrong_type(MYNAME, "cpointer", 1, argc, argv);
   return (SAME_OBJ(argv[0],argv[1]) ||
           (SCHEME_FFIANYPTR_VAL(argv[0]) == SCHEME_FFIANYPTR_VAL(argv[1])))
          ? scheme_true : scheme_false;
 }
 
-/* (make-sized-byte-string ffi-ptr len) */
+/* (make-sized-byte-string cpointer len) */
 #undef MYNAME
 #define MYNAME "make-sized-byte-string"
 static Scheme_Object *FP_make_sized_byte_string(int argc, Scheme_Object *argv[])
@@ -1171,7 +1150,7 @@ static Scheme_Object *FP_make_sized_byte_string(int argc, Scheme_Object *argv[])
 {
   long len;
   if (!SCHEME_FFIANYPTRP(argv[0]))
-    scheme_wrong_type(MYNAME, "ffi-ptr", 0, argc, argv);
+    scheme_wrong_type(MYNAME, "cpointer", 0, argc, argv);
   if (!scheme_get_int_val(argv[1],&len))
     scheme_wrong_type(MYNAME, "integer in a C long range", 1, argc, argv);
   if (SCHEME_FALSEP(argv[0])) return scheme_false;
@@ -1190,10 +1169,10 @@ void ffi_ptr_finalizer(void *p, void *finalizer)
   Scheme_Object *f = (Scheme_Object*)finalizer;
   Scheme_Object *ptr;
   if (p == NULL) return;
-  ptr = ffi_make_ptr(p);
+  ptr = scheme_make_cptr(p,NULL);
   if (!SCHEME_FALSEP(f)) _scheme_apply(f, 1, (Scheme_Object**)(&ptr));
   /* don't leave dangling references! */
-  (((ffi_ptr_struct*)ptr)->ptr) = NULL;
+  SCHEME_CPTR_VAL(ptr) = NULL;
   ptr = NULL;
 }
 
@@ -1205,8 +1184,8 @@ static Scheme_Object *pointer_sym;
 /* finalizer if any.*/
 /* If two arguments are used, this is used with any Scheme object, and the */
 /* finalizer will be called on it.  If a third argument of 'pointer is used, */
-/* the object must be an ffi-ptr object, the finalizer will be invoked when */
-/* the pointer itself is unreachable, and it will get a new ffi-ptr object */
+/* the object must be an cpointer object, the finalizer will be invoked when */
+/* the pointer itself is unreachable, and it will get a new cpointer object */
 /* that points to it.  (Only needed in systems where pointer aliases might */
 /* be created.) */
 #undef MYNAME
@@ -1217,10 +1196,10 @@ static Scheme_Object *FP_ffi_register_finalizer(int argc, Scheme_Object *argv[])
   int ptrsym = (argc == 3 && argv[2] == pointer_sym);
   if (ptrsym) {
     if (!SCHEME_FFIANYPTRP(argv[0]))
-      scheme_wrong_type(MYNAME, "ffi-ptr", 0, argc, argv);
+      scheme_wrong_type(MYNAME, "cpointer", 0, argc, argv);
     ptr = SCHEME_FFIANYPTR_VAL(argv[0]);
     if (ptr == NULL)
-      scheme_wrong_type(MYNAME, "non-null-ptr", 0, argc, argv);
+      scheme_wrong_type(MYNAME, "non-null-cpointer", 0, argc, argv);
   } else {
     if (argc == 3)
       scheme_wrong_type(MYNAME, "pointer-mode", 2, argc, argv);
@@ -1270,7 +1249,8 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   ffi_call(cif, c_func, p, avalues);
   if (FFITYPE_PRIMLABEL(base) == FFI_fmark) {
     /* need to allocate a pointer */
-    return ffi_c_to_scheme(otype, scheme_make_ffiptr(oval.x_pointer));
+    return ffi_c_to_scheme(otype,
+                           scheme_make_foreign_cpointer(oval.x_pointer));
   } else {
     return ffi_c_to_scheme(otype, p);
   }
@@ -1295,7 +1275,7 @@ static Scheme_Object *FP_ffi_call(int argc, Scheme_Object *argv[])
     scheme_wrong_type(MYNAME, "ffi-obj-or-ptr", 0, argc, argv);
   obj = SCHEME_FFIANYPTR_VAL(argv[0]);
   if (obj == NULL)
-    scheme_wrong_type(MYNAME, "non-null-ptr", 0, argc, argv);
+    scheme_wrong_type(MYNAME, "non-null-cpointer", 0, argc, argv);
   nargs = scheme_proper_list_length(itypes);
   if (nargs < 0)
     scheme_wrong_type(MYNAME, "proper list", 1, argc, argv);
@@ -1408,7 +1388,6 @@ void scheme_init_foreign(Scheme_Env *env)
   ffi_lib_tag = scheme_make_type("<ffi-lib>");
   ffi_obj_tag = scheme_make_type("<ffi-obj>");
   ffi_type_tag = scheme_make_type("<ffi-type>");
-  ffi_ptr_tag = scheme_make_type("<ffi-ptr>");
   ffi_callback_tag = scheme_make_type("<ffi-callback>");
   opened_libs = scheme_make_hash_table(SCHEME_hash_string);
   /* scheme_register_extension_global should change to MZ_REGISTER_STATIC when
@@ -1452,8 +1431,6 @@ void scheme_init_foreign(Scheme_Env *env)
     scheme_make_prim_w_arity(FP_make_ffi_type, "make-ffi-type", 3, 3), menv);
   scheme_add_global("make-ffi-struct-type",
     scheme_make_prim_w_arity(FP_make_ffi_struct_type, "make-ffi-struct-type", 1, 1), menv);
-  scheme_add_global("ffi-ptr?",
-    scheme_make_prim_w_arity(FP_ffi_ptr_p, "ffi-ptr?", 1, 1), menv);
   scheme_add_global("ffi-callback?",
     scheme_make_prim_w_arity(FP_ffi_callback_p, "ffi-callback?", 1, 1), menv);
   scheme_add_global("ffi-sizeof",

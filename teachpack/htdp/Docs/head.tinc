@@ -7,4 +7,6 @@
 
 #define LIBDESC <hr> <A NAME="~1"> <h3>~1</h3> <!-- DOCNOTE="teach=~1" -->
 
-<H1><<LIBNAME>></H2>
+<a href="index.html"><img src="../icons/up.gif"></a> <a href="index.html">Up</a>
+
+<H1><<LIBNAME>></H1>

@@ -42,7 +42,16 @@
       (let-values ([(collections-doc-files collection-names) (colldocs)])
         (apply
          string-append
+         "<html><head>"
          "<TITLE>Installed Manuals</TITLE>"
+         "</head>"
+         "<body>"
+         (let ([up-file (build-path (collection-path "doc") "help" "scheme" "doc.html")]
+               [up-icon (build-path (collection-path "doc") "icons" "up.gif")])
+           (format "<a href=\"file:~a\"><img src=\"file:~a\"></a> <a href=\"file:~a\">Up</a>"
+                   up-file
+                   up-icon
+                   up-file))
          "<H1>Installed Manuals</H1>"
          "<UL>"
          (append
@@ -89,4 +98,4 @@
                                 " (index installed)"
                                 "")))
                   uninstalled)
-                 (list "</UL>")))]))))))))
+                 (list "</UL></body></html>")))]))))))))

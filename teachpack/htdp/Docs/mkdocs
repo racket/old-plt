@@ -1,5 +1,5 @@
 #!/bin/sh
-string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
+string=? ; exec mzscheme -r $0 "$@"
 
 ; This list determines the order of libraries in the index file:
 (define libraries
@@ -22,12 +22,22 @@ string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
     "Protect-the-Wall"
     ))
 
-; Defines go:
-(load (format "~a/Packages/TrashyTeXTools/bin/thtml2html"
-	      (or (getenv "HOMESCHEME")
-		  "/home/scheme")))
+; Defines go to be the go from thtml2html
+(define go
+  (let* ([testpath (lambda (x) (and (directory-exists? x) x))]
+         [trashy-path
+          (or (testpath (build-path (collection-path "mzlib") 'up 'up  'up "TrashyTeXTools"))
+              (testpath (format "~a/Packages/TrashyTeXTools/"
+                                (or (getenv "HOMESCHEME")
+                                    "/home/scheme"))))])
+    (unless trashy-path
+      (error 'mkdocs "Couldn't find TrashyTeXTools"))
+    
+    ;; this dynamic-require should work, but require doesn't seem to
+    ;; like absolute paths, so do a load manually.
+    (dynamic-require `(file ,(build-path trashy-path "bin" "thtml2html.scm")) 'go)))
 
-(require-library "cmdline.ss")
+(require (lib "cmdline.ss"))
 
 (parse-command-line
  "mkdocs"
@@ -36,14 +46,9 @@ string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
  (lambda (-) (void))
  null)
 
-(require-library "function.ss")
+(require (lib "list.ss"))
 
-(define dest-dir (build-path 'up ; plt/teachpack/htdp dir
-			     'up ; plt/teachpack dir
-			     'up ; plt dir
-			     "collects"
-			     "doc"
-			     "teachpack"))
+(define dest-dir (build-path (collection-path "doc") "teachpack"))
 
 (unless (directory-exists? dest-dir)
   (make-directory dest-dir))
@@ -68,13 +73,15 @@ string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
 		 [(regexp-match "#define LIBNAME (.*)" l)
 		  => (lambda (m)
 		       (cons (cadr m) s))]
-		 [else (loop)]))))))
+		 [else (loop)]))))
+          'text))
       src-files))
 
 ;; Check library list:
 
 (for-each (lambda (s) (unless (member (car s) libraries)
-			(error 'mkdocs "library not listed in mkdocs: ~a = ~a" 
+                        (printf "libraries: ~s~n" libraries)
+                        (error 'mkdocs "library not listed in mkdocs: ~s = ~s" 
 			       (cdr s) (car s))))
 	  lib-names)
 (let ([found-libraries (map car lib-names)])
@@ -98,15 +105,21 @@ string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
 
 (with-output-to-file "index.thtml"
   (lambda ()
-    (printf "#define LIBNAME Teachpacks for How to Design Programs~n")
-    (printf "#include head.tinc~n")
+    (printf "<HTML>~n")
+    (printf "<HEAD>~n")
+    (printf "<TITLE>Teachpacks for How to Design Programs</TITLE>~n")
+    (printf "</HEAD>~n")
+    (printf "<BODY bgcolor=\"#ffffff\" text=\"#000000\" link=\"#009900\" vlink=\"#007700\" alink=\"#cc0000\">~n")
+    (printf "<a href=\"../help/howtoprogram.html\"><img src=\"../icons/up.gif\"></a> <a href=\"../help/howtoprogram.html\">Up</a>~n")
+    (printf "<h1>Teachpacks for How to Design Programs</h1>~n")
+    (printf "~n")
     (printf "<UL>~n")
     (for-each
      (lambda (libname)
        (let ([file (thtml-name->html (cdr (assoc libname lib-names)))])
 	 (printf "<LI> <A HREF=~s>~a</A>~n" file libname)))
      libraries)
-    (printf "</UL>~n")
+    (printf "</UL>~n~n")
     (printf "#include foot.tinc~n"))
   'replace)
 
@@ -132,14 +145,15 @@ string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
 ;; Make hdindex file:
 
 (let ([ifile (build-path dest-dir "hdindex")])
+  (printf "Writing ~s~n" ifile)
   (with-output-to-file ifile
     (lambda ()
       (printf "(~n")
       (printf "~s~n"
-	'("Teachpacks for \"How to Design Programs\""
-	   "index.html"
-	   "HtDP"
-	   "Arrows GUI teachpack"))
+              '("Teachpacks for \"How to Design Programs\""
+                "index.html"
+                "HtDP"
+                "Arrows GUI teachpack"))
       (for-each
        (lambda (lib-name)
 	 (let ([src (cdr lib-name)]
@@ -156,7 +170,8 @@ string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
 				 (thtml-name->html src) 
 				 (cadr m)
 				 (format "~a teachpack" title))))
-		     (loop))))))))
+		     (loop)))))
+             'text)))
        lib-names)
       (printf ")~n"))
     'truncate))

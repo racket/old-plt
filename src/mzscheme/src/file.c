@@ -539,6 +539,50 @@ int scheme_os_setcwd(char *expanded, int noexn)
   return !err;
 }
 
+#ifdef DOS_FILE_SYSTEM
+#define WC_BUFFER_SIZE 1024
+static wchar_t wc_buffer[WC_BUFFER_SIZE];
+
+wchar_t *scheme_convert_to_wchar(char *s, int do_copy)
+{
+  long len, l;
+  wchar_t *ws;
+
+  l = strlen(s);
+  len = scheme_utf8_decode(s, 0, l,
+			   NULL, 0, -1,
+			   NULL, 1/*UTF-16*/, 0);
+  if (!do_copy && (len < (WX_BUFFER_SIZE-1)))
+    ws = wc_buffer;
+  else
+    ws = (wchar_t *)scheme_malloc_atomic(sizeof(wchar_t) * (l + 1));
+  scheme_utf8_decode(s, 0, l,
+		     ws, 0, -1,
+		     NULL, 1/*UTF-16*/, 0);
+  ws[len] = 0;
+  return ws;
+}
+
+char *scheme_convert_from_wchar(wchar_t *ws)
+{
+  int i;
+  long len, l;
+  char *s;
+
+  for (l =0; ws[l]; l++) { }
+  len = scheme_utf8_encode(ws, 0, l,
+			   NULL, 0,
+			   1/*UTF-16*/, 0);
+  s = (char *)scheme_malloc_atomic(l + 1);
+  scheme_utf8_decode(ws, 0, l,
+		     s, 0,
+		     1/*UTF-16*/);
+  s[len] = 0;
+  return s;
+}
+#endif
+
+
 Scheme_Object *scheme_get_file_directory(const char *filename)
 {
   int isdir;

@@ -2,7 +2,7 @@
 ;;
 ;; parser-tests.ss
 ;; Richard Cobbe
-;; $Id: parser-tests.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
+;; $Id: parser-tests.ss,v 1.2 2004/08/03 17:03:06 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -12,6 +12,7 @@
            (lib "etc.ss")
            "ast.ss")
   (require/expose "parser.ss" (make-temp-class
+                               temp-class?
                                parse-expr
                                parse-defn
                                parse-init-program
@@ -22,6 +23,14 @@
                      (lambda (exn)
                        (and (string=? msg (exn-message exn))
                             (equal? val (exn:application-value exn))))]
+                    [(lambda _ #t) (lambda _ #f)])
+      (begin expr #f)))
+
+  (define-assertion (assert-inheritance-cycle expr)
+    (with-handlers ([exn:aj:parse?
+                     (lambda (exn)
+                       (and (string=? "inheritance cycle" (exn-message exn))
+                            (temp-class? (exn:application-value exn))))]
                     [(lambda _ #t) (lambda _ #f)])
       (begin expr #f)))
 
@@ -117,11 +126,8 @@
        (let ([a (make-temp-class 'a 'b null null)]
              [b (make-temp-class 'b 'c null null)]
              [c (make-temp-class 'c 'a null null)])
-         (assert-parse-exn "inheritance cycle" a
-                           (make-final-classes
-                            (hash-table ['a a]
-                                        ['b b]
-                                        ['c c])))))
+         (assert-inheritance-cycle
+          (make-final-classes (hash-table ['a a] ['b b] ['c c])))))
 
      (make-test-case "Numeric expression"
        (assert-equal? (parse-expr '(* (+ 3 4) (- 7 -2)))

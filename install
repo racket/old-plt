@@ -101,43 +101,6 @@ if [ "$installplthome" != '' ] ; then
   done
 fi
 
-checklink ()
-{
-  PACKAGE=$1
-  SPECIAL=$2
-  STD=$3
-  SHORTSPECIAL=$4
-  SPECIALNAME=$5
-  STDNAME=$6
-
-  if [ -r $SPECIAL ] ; then
-   if [ ! \( -r $STD \) ] ; then
-     echo "If you *do not* plan to install the $STDNAME "
-     echo " version of the PLT software, a soft-link to"
-     echo " the $SPECIALNAME version should be installed for"
-     echo " $PACKAGE."
-     echo -n " Add this link (y/n)? [y] "
-     read response
-     if [ "$response" != 'n' ] ; then
-      if [ "$response" != 'N' ] ; then
-       didnothing=""
-       ln -s $SHORTSPECIAL $STD
-       echo "link from $STDNAME ($STD) to $SPECIALNAME ($SHORTSPECIAL) added"
-      fi
-     fi
-   fi
-  fi
-}
-
-checklink "MrEd/DrScheme" ".bin/rs6k-aix-xt/mred" ".bin/rs6k-aix/mred" "../rs6k-aix-xt/mred" "AIX Xt" "AIX Motif"
-checklink "MrEd/DrScheme" ".bin/sparc-solaris-motif/mred" ".bin/sparc-solaris/mred" "../sparc-solaris-motif/mred" "Solaris Motif" "Solaris Xt"
-checklink "MzScheme/MrEd/DrScheme" ".bin/sparc-sunos4-static" ".bin/sparc-sunos4" "sparc-sunos4-static" "SunOS4 Static" "Regular SunOS4"
-
-if [ `bin/archsys` = "sparc-solaris" ] ; then
-  checklink "MzScheme/MrEd/DrScheme" ".bin/sparc-sunos4" ".bin/sparc-solaris" "sparc-sunos4" "SunOS4" "Solaris"
-  checklink "MzScheme/MrEd/DrScheme" ".bin/sparc-sunos4-static" ".bin/sparc-solaris" "sparc-sunos4-static" "SunOS4 Static" "Solaris"
-fi
-
 if [ -z "${RPM_INSTALL_PREFIX}" ] ; then
   echo 'PLT software starts up much faster with .zo files, but creating .zo'
   echo 'files now takes a few minutes and requires about 5MB of additional'

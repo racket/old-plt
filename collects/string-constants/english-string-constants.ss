@@ -286,6 +286,11 @@ please adhere to these guidelines:
  (plt:hd:refresh-done "Done refreshing CVS manuals")
  (plt:hd:refresh-installation-log "Installation log")
  (plt:hd:refresh-stopped "PLT manuals refresh stopped")
+ (plt:hd:refreshing-manuals "Re-downloading Manuals")
+ (plt:hd:refresh-downloading... "Downloading ~a...")
+ (plt:hd:refresh-deleting... "Deleting old version of ~a...")
+ (plt:hd:refresh-installing... "Installing new version of ~a...")
+ (plt:hd:refreshing-manuals-finished "Finished.")
 
  ;; help desk htty proxy
  (http-proxy "HTTP Proxy")

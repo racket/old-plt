@@ -159,10 +159,10 @@
  (manual-installed-date "(installeret ~a)")
 
  ;; refreshing manuals
- (refreshing-manuals "Downloader manualer igen")
- (refresh-downloading... "Downloader ~a...")
- (refresh-deleting... "Sletter gammel version af ~a...")
- (refresh-installing... "Installerer ny version af ~a...")
+ (plt:hd:refreshing-manuals "Downloader manualer igen")
+ (plt:hd:refresh-downloading... "Downloader ~a...")
+ (plt:hd:refresh-deleting... "Sletter gammel version af ~a...")
+ (plt:hd:refresh-installing... "Installerer ny version af ~a...")
 
 
  ; help desk htty proxy

@@ -186,6 +186,10 @@
  (plt:hd:refresh-done "Refresco de los manuales via CVS terminado")
  (plt:hd:refresh-installation-log "Bitácora de instalación")
  (plt:hd:refresh-stopped "Refresco de manuales del PLT detenido")
+ (plt:hd:refresh-deleting... "Borrando la versi<F3>n vieja de ~a...")
+ (plt:hd:refresh-downloading... "Bajando ~a...")
+ (plt:hd:refresh-installing... "Instalando nueva versi<F3>n de ~a...")
+ (plt:hd:refreshing-manuals "Bajando (nuevamente) los Manuales")
 
  ;; help desk http proxy
  (http-proxy "Proxy de HTTP")

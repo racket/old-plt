@@ -63,7 +63,7 @@
 	 "set! on undefined variables")
    (list "--auto-else"
 	 compile-allow-cond-fallthrough
-	 "auto \"else\" clause in \"cond\" and \"case\" that returns (void)")
+	 "non-matching cond/case produces (void)")
    (list "--signal-undef"
 	 signal-undef
 	 "error if using #<undefined> variable")
@@ -81,10 +81,10 @@
 	 "#i required for inexact numbers")
    (list "--print-convert"
 	 use-print-convert
-	 "Use output style that matches input style")
+	 "print values using input syntax")
    (list "--print-list"
 	 print-with-list
-	 "abbreviate multiple \"cons\"es with \"list\" [only applies when --print-convert is used]")
+	 "\"list\" in --print-convert output")
    (list "--print-sharing"
 	 print-graph
 	 "show sharing in values")))
@@ -247,14 +247,7 @@
   (parse-command-line
    "DrScheme Jr"
    argv
-   `([multi
-      ,@(map
-	 (lambda (f)
-	   `[(,(car f))
-	     ,(lambda (_ v) ((cadr f) (on? v)))
-	     ,(make-on/off (caddr f))])
-	 flags)]
-     [once-each
+   `([once-each
       [("-l" "--language")
        ,(lambda (_ level)
 	  (set-level (string->symbol level)))
@@ -263,7 +256,15 @@
 			(map (lambda (l)
 			       (format " ~a" (car l)))
 			     language-levels)))
-	"language")]
+	"language")]]
+     [multi
+      ,@(map
+	 (lambda (f)
+	   `[(,(car f))
+	     ,(lambda (_ v) ((cadr f) (on? v)))
+	     ,(make-on/off (caddr f))])
+	 flags)]
+     [once-each
       [("--choose")
        ,(lambda (_)
 	  (choose-mode))

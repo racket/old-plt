@@ -53,7 +53,8 @@
 	[get-filename (lambda () filename)])
 
       (public
-	[do-save void])
+	[do-save void]
+	[get-canvas void])
 
       (private
 	[save-as
@@ -63,6 +64,8 @@
 	       (update-filename fn)
 	       (do-save))))])
       (rename [super-file-menu:between-new-and-open file-menu:between-new-and-open])
+
+
       (override
        [file-menu:new-string (lambda () "Puzzle")]
        [file-menu:new
@@ -110,7 +113,15 @@
 		     (player problem (cadr (cddddr state))))]
 		  [else
 		   (message-box "Error"
-				(format "Unknown save file ~a" fn))])))))])
+				(format "Unknown save file ~a" fn))])))))]
+
+       [edit-menu:undo
+	(lambda (_1 _2)
+	  (send (get-canvas) undo))]
+
+       [edit-menu:redo
+	(lambda (_1 _2)
+	  (send (get-canvas) redo))])
 
       (sequence
 	(super-init name))))
@@ -227,7 +238,7 @@
 		    (set-problem (list-ref problems (send choice get-selection)))))]
 	[canvas #f])
 
-      (public
+      (override
 	[get-canvas
 	 (lambda ()
 	   canvas)])
@@ -268,6 +279,10 @@
 
       (private
 	[canvas #f])
+      (override
+	[get-canvas
+	 (lambda ()
+	   canvas)])
 
       (sequence
 	(super-init editor-name)

@@ -845,23 +845,32 @@
 					    (list public-final-temp ... . public-methods)
 					    (list override-final-temp ... . override-methods)
 					    ;; Initialization
-					    (lambda (the-obj super-id init-args)
+					    (lambda (the-obj super-id si_c si_inited? si_leftovers init-args)
 					      (fluid-let-syntax ([the-finder (quote-syntax the-obj)])
 						(letrec-syntax ([super-instantiate-id
 								 (lambda (stx)
 								   (syntax-case stx () 
 								     [(_ (arg (... ...)) (kw kwarg) (... ...))
 								      (with-syntax ([stx stx])
-									(syntax (-instantiate super-id stx #f 
+									(syntax (-instantiate super-id stx (the-obj si_c si_inited? si_leftovers)
 											      (list arg (... ...)) 
-											      (kw kwarg) (... ...))))]))])
-						  (let ([super-make-object-id
-							 (lambda args
-							   (super-id #f args null))])
-						    (let ([plain-init-name undefined]
-							  ...)
-						      (void) ; in case the body is empty
-						      . exprs)))))))))
+											      (kw kwarg) (... ...))))]))]
+								[super-make-object-id
+								 (lambda (stx)
+								   (let ([code 
+									  (quote-syntax
+									   (lambda args
+									     (super-id the-obj si_c si_inited? si_leftovers args null)))])
+								     (if (identifier? stx)
+									 code
+									 (datum->syntax-object
+									  code
+									  (cons code
+										(cdr (syntax-e stx)))))))])
+						  (let ([plain-init-name undefined]
+							...)
+						    (void) ; in case the body is empty
+						    . exprs))))))))
 				     ;; Not primitive:
 				     #f)))))))))))))))])))
 
@@ -1514,7 +1523,7 @@
 		   null
 		   'normal
 
-		   (lambda (this super-init args) 
+		   (lambda (this super-init si_c si_inited? si_leftovers args) 
 		     (unless (null? args)
 		       (unused-args-error this args))
 		     (void))
@@ -1545,20 +1554,20 @@
       (syntax-case stx ()
 	[(form class (arg ...) . x)
 	 (with-syntax ([stx stx])
-	   (syntax (-instantiate do-make-object stx class (list arg ...) . x)))])))
+	   (syntax (-instantiate do-make-object stx (class) (list arg ...) . x)))])))
 
   ;; Helper; used by instantiate and super-instantiate
   (define-syntax -instantiate
     (lambda (stx)
       (syntax-case stx ()
-	[(_ do-make-object orig-stx class args (kw arg) ...)
+	[(_ do-make-object orig-stx (maker-arg ...) args (kw arg) ...)
 	 (andmap identifier? (syntax->list (syntax (kw ...))))
 	 (with-syntax ([(kw ...) (map localize (syntax->list (syntax (kw ...))))])
-	   (syntax (do-make-object class
+	   (syntax (do-make-object maker-arg ...
 				   args
 				   (list (cons `kw arg)
 					 ...))))]
-	[(_ super-make-object orig-stx class args kwarg ...)
+	[(_ super-make-object orig-stx (make-arg ...) args kwarg ...)
 	 ;; some kwarg must be bad:
 	 (for-each (lambda (kwarg)
 		     (syntax-case kwarg ()
@@ -1584,86 +1593,98 @@
       (raise-type-error 'instantiate "class" class))
     (let ([o ((class-make-object class))])
       ;; Initialize it:
-      (let loop ([c class][by-pos-args by-pos-args][named-args named-args][explict-named-args? #t])
-	(let ([by-pos-only? (not (class-init-args c))])
-	  ;; Primitive class with by-pos arguments?
-	  (when by-pos-only?
-	    (unless (null? named-args)
-	      (if explict-named-args?
-		  (obj-error 
-		   'instantiate
-		   "class has only by-position initializers, but given by-name arguments:~a~a" 
-		   (make-named-arg-string named-args)
-		   (for-class (class-name c)))
-		  ;; If args were implicit from subclass, should report as unused:
-		  (unused-args-error o named-args))))
-	  ;; Merge by-pos into named args:
-	  (let* ([named-args (if (not by-pos-only?)
-				 ;; Normal merge
-				 (let loop ([al by-pos-args][nl (class-init-args c)][ic c])
-				   (cond
-				    [(null? al) named-args]
-				    [(null? nl)
-				     ;; continue mapping with superclass init args, if allowed
-				     (let ([super (and (eq? 'normal (class-init-mode ic))
-						       (positive? (class-pos ic))
-						       (vector-ref (class-supers ic) (sub1 (class-pos ic))))])
-				       (cond
-					[(and super (class-init-args super))
-					 (loop al (class-init-args super) super)]
-					[(eq? 'list (class-init-mode ic))
-					 ;; All unconsumed named-args must have #f
-					 ;;  "name"s, otherwise an error is raised in
-					 ;;  the leftovers checking.
-					 (append (map (lambda (x) (cons #f x)) al)
-						 named-args)]
-					[else
-					 (obj-error 'instantiate 
-						    "too many initialization arguments:~a~a" 
-						    (make-pos-arg-string by-pos-args)
-						    (for-class (class-name c)))]))]
-				    [else (cons (cons (car nl) (car al))
-						(loop (cdr al) (cdr nl) ic))]))
-				 ;; Non-merge for by-position initializers:
-				 by-pos-args)]
-		 [leftovers (if (not by-pos-only?)
-				(let loop ([l named-args][names (class-init-args c)])
-				  (cond
-				   [(null? l) null]
-				   [(memq (caar l) names)
-				    (loop (cdr l) (remq (caar l) names))]
-				   [else (cons (car l) (loop (cdr l) names))]))
-				null)])
-	    ;; In 'list mode, make sure no by-name arguments are left over
-	    (when (eq? 'list (class-init-mode c))
-	      (unless (or (null? leftovers)
-			  (not (ormap car leftovers)))
-		(unused-args-error o (filter car leftovers))))
-	    (let ([inited? (class-no-super-init? c)])
-	      ((class-init c)
-	       o 
-	       ;; ----- This is the super-init function -----
-	       (lambda (ignore-false by-pos-args new-named-args)
-		 (when inited?
-		   (obj-error 'instantiate "superclass already initialized by class initialization~a"
-			      (for-class (class-name c))))
-		 (set! inited? #t)
-		 (let ([named-args (if (eq? 'list (class-init-mode c))
-				       ;; all old args must have been used up
-				       new-named-args
-				       ;; Normal mode: merge leftover keyword-based args with new ones
-				       (append
-					new-named-args
-					leftovers))])
-		   (loop (vector-ref (class-supers c) (sub1 (class-pos c))) 
-			 by-pos-args 
-			 named-args
-			 (pair? new-named-args))))
-	       named-args)
-	      (unless inited?
-		(obj-error 'instantiate "superclass initialization not invoked by initialization~a"
-			   (for-class (class-name c))))))))
+      (continue-make-object o class by-pos-args named-args #t)
       o))
+
+  (define (continue-make-object o c by-pos-args named-args explict-named-args?)
+    (let ([by-pos-only? (not (class-init-args c))])
+      ;; Primitive class with by-pos arguments?
+      (when by-pos-only?
+	(unless (null? named-args)
+	  (if explict-named-args?
+	      (obj-error 
+	       'instantiate
+	       "class has only by-position initializers, but given by-name arguments:~a~a" 
+	       (make-named-arg-string named-args)
+	       (for-class (class-name c)))
+	      ;; If args were implicit from subclass, should report as unused:
+	      (unused-args-error o named-args))))
+      ;; Merge by-pos into named args:
+      (let* ([named-args (if (not by-pos-only?)
+			     ;; Normal merge
+			     (do-merge by-pos-args (class-init-args c) c named-args by-pos-args c)
+			     ;; Non-merge for by-position initializers:
+			     by-pos-args)]
+	     [leftovers (if (not by-pos-only?)
+			    (get-leftovers named-args (class-init-args c))
+			    null)])
+	;; In 'list mode, make sure no by-name arguments are left over
+	(when (eq? 'list (class-init-mode c))
+	  (unless (or (null? leftovers)
+		      (not (ormap car leftovers)))
+	    (unused-args-error o (filter car leftovers))))
+	(unless (and (eq? c object%)
+		     (null? named-args))
+	  (let ([inited? (box (class-no-super-init? c))])
+	    ;; ----- Execute the class body -----
+	    ((class-init c)
+	     o 
+	     continue-make-super
+	     c inited? leftovers ; merely passed through to continue-make-super
+	     named-args)
+	    (unless (unbox inited?)
+	      (obj-error 'instantiate "superclass initialization not invoked by initialization~a"
+			 (for-class (class-name c)))))))))
+
+  (define (continue-make-super o c inited? leftovers by-pos-args new-named-args)
+    (when (unbox inited?)
+      (obj-error 'instantiate "superclass already initialized by class initialization~a"
+		 (for-class (class-name c))))
+    (set-box! inited? #t)
+    (let ([named-args (if (eq? 'list (class-init-mode c))
+			  ;; all old args must have been used up
+			  new-named-args
+			  ;; Normal mode: merge leftover keyword-based args with new ones
+			  (append
+			   new-named-args
+			   leftovers))])
+      (continue-make-object o
+			    (vector-ref (class-supers c) (sub1 (class-pos c))) 
+			    by-pos-args 
+			    named-args
+			    (pair? new-named-args))))
+
+  (define (do-merge al nl ic named-args by-pos-args c)
+    (cond
+     [(null? al) named-args]
+     [(null? nl)
+      ;; continue mapping with superclass init args, if allowed
+      (let ([super (and (eq? 'normal (class-init-mode ic))
+			(positive? (class-pos ic))
+			(vector-ref (class-supers ic) (sub1 (class-pos ic))))])
+	(cond
+	 [(and super (class-init-args super))
+	  (do-merge al (class-init-args super) super named-args by-pos-args c)]
+	 [(eq? 'list (class-init-mode ic))
+	  ;; All unconsumed named-args must have #f
+	  ;;  "name"s, otherwise an error is raised in
+	  ;;  the leftovers checking.
+	  (append (map (lambda (x) (cons #f x)) al)
+		  named-args)]
+	 [else
+	  (obj-error 'instantiate 
+		     "too many initialization arguments:~a~a" 
+		     (make-pos-arg-string by-pos-args)
+		     (for-class (class-name c)))]))]
+     [else (cons (cons (car nl) (car al))
+		 (do-merge (cdr al) (cdr nl) ic named-args by-pos-args c))]))
+
+  (define (get-leftovers l names)
+    (cond
+     [(null? l) null]
+     [(memq (caar l) names)
+      (get-leftovers (cdr l) (remq (caar l) names))]
+     [else (cons (car l) (get-leftovers (cdr l) names))]))
 
   (define (extract-arg class-name name arguments default)
     (if (symbol? name)

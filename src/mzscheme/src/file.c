@@ -374,10 +374,6 @@ void scheme_init_file(Scheme_Env *env)
 #endif
 }
 
-#ifdef USE_MAC_FILE_TOOLBOX
-char *scheme_build_mac_filename(FSSpec *spec, int given_dir);
-#endif
-
 #ifdef USE_GET_CURRENT_DIRECTORY
 static char *getcwd(char *s, int l)
 {

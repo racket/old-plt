@@ -272,6 +272,10 @@
 #define scheme_getdrive (scheme_extension_table->scheme_getdrive)
 #define scheme_split_pathname (scheme_extension_table->scheme_split_pathname)
 #define scheme_build_pathname (scheme_extension_table->scheme_build_pathname)
+#ifdef USE_MAC_FILE_TOOLBOX
+#define scheme_build_mac_filename (scheme_extension_table->scheme_build_mac_filename)
+#define scheme_mac_path_to_spec (scheme_extension_table->scheme_mac_path_to_spec)
+#endif
 #define scheme_alloc_fdset_array (scheme_extension_table->scheme_alloc_fdset_array)
 #define scheme_init_fdset_array (scheme_extension_table->scheme_init_fdset_array)
 #define scheme_get_fdset (scheme_extension_table->scheme_get_fdset)

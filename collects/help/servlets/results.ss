@@ -100,7 +100,7 @@
 		     `(B ,(substring label start stop))
 		     (substring label stop
 				(string-length label))))
-		  (list curr-string))))
+		  (list label))))
 	label))
 
   (define (maybe-extract-coll s)

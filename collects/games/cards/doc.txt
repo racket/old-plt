@@ -79,7 +79,7 @@ Table methods: [in addition to standard frame% methods]
         table.
 
 
-> remove:card :: (send t remove-card card) - removes `card' from the
+> remove-card :: (send t remove-card card) - removes `card' from the
         table
 
 > remove-cards :: (send t remove-cards cards) - removes `cards' from

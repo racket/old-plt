@@ -53,17 +53,13 @@ void GC_cleanup(void *obj, void *ignored);
 extern void *GC_cpp_malloc(size_t);
 #endif
 
-#if defined(MZ_PRECISE_GC) || defined(USE_SENORA_GC)
-# ifndef WX_REGISTER_GLOBAL_MEMORY
-#  define WX_REGISTER_GLOBAL_MEMORY
-# endif
-#endif
+#define WX_REGISTER_GLOBAL_MEMORY
 
 #ifdef WX_REGISTER_GLOBAL_MEMORY
 extern "C" {
-  void scheme_register_extension_global(void *p, long size);
+  void scheme_register_static(void *p, long size);
 }
-# define wxREGGLOB(x) scheme_register_extension_global((void *)&x, sizeof(x))
+# define wxREGGLOB(x) scheme_register_static((void *)&x, sizeof(x))
 #else
 # define wxREGGLOB(x) /* empty */
 #endif

@@ -20,9 +20,10 @@
 
 @HEADER
 
-@BEGINSYMBOLS solidity > ONE
+@BEGINSYMBOLS textMode > ONE
 @SYM "transparent" : wxTRANSPARENT
 @SYM "solid" : wxSOLID
+@SYM "xor" : wxXOR
 @ENDSYMBOLS
 
 @BEGINSYMBOLS bitmapDrawStyle > ONE
@@ -130,12 +131,12 @@ static void* MyGetSize(wxDC *dc)
 
 @ Q "try-color" : void TryColour(wxColour!,wxColour!);
 
-@ Q "set-background-mode" : void SetBackgroundMode(SYM[solidity]); :  : /CheckOk
+@ Q "set-text-mode" : void SetBackgroundMode(SYM[textMode]); :  : /CheckOk
 @ Q "set-scale" : void SetUserScale(nnfloat,nnfloat); : : /CheckOk
 @ Q "set-origin" : void SetDeviceOrigin(float,float); : : /CheckOk
 
 @ q "get-background" : wxColour! GetBackground();
-@ q "get-background-mode" : SYM[solidity] GetBackgroundMode();
+@ q "get-text-mode" : SYM[textMode] GetBackgroundMode();
 @ q "get-brush" : wxBrush! GetBrush();
 @ q "get-font" : wxFont! GetFont();
 @ q "get-pen" : wxPen! GetPen();

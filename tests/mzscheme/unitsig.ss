@@ -180,6 +180,7 @@
    ()
    (import)
    
+   (+ 3 4)
    (include "uinc3.ss")))
 
 (test 9 'include (invoke-unit/sig i1.5@))

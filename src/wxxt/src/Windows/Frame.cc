@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.12 1999/01/06 15:03:56 mflatt Exp $
+ * $Id: Frame.cc,v 1.13 1999/02/05 04:30:17 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -88,13 +88,7 @@ wxFrame::~wxFrame(void)
     // destroy children first to popdown child frames
     DestroyChildren();
     // adjust list of top level frames
-    if (!parent)
-      wxTopLevelFrames(this)->DeleteObject(this);
-#if !WXGARBAGE_COLLECTION_ON
-    if (wxTopLevelFrames.Number() == 0) {
-	wxTheApp->ExitMainLoop();
-    }
-#endif
+    wxTopLevelFrames(this)->DeleteObject(this);
 }
 
 /* MATTHEW: [3] Used to ensure that hide-&-show within an event cycle works */
@@ -132,9 +126,10 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 	parent->AddChild(this);
     } else {
 	parent_widget = wxAPP_TOPLEVEL;
-	wxTopLevelFrames(this)->Append(this);
-	wxTopLevelFrames(this)->Show(this, FALSE);
     }
+    wxTopLevelFrames(this)->Append(this);
+    wxTopLevelFrames(this)->Show(this, FALSE);
+
     // create top level or transient shell
     if ( (style = _style) & wxTRANSIENT ) {
       // create transient shell with WM_TRANSIENT_FOR property
@@ -418,9 +413,6 @@ extern "C" long scheme_get_milliseconds(void);
 
 Bool wxFrame::Show(Bool show)
 {
-  if (parent)
-    parent->GetChildren()->Show(this, show);
-  
   if (show == IsShown()) { // do nothing if state doesn't change
     if (show) {
       /* Make sure window isn't iconized: */
@@ -431,9 +423,10 @@ Bool wxFrame::Show(Bool show)
     return TRUE;
   }
 
-  if (!parent)
-    wxTopLevelFrames(this)->Show(this, show);
-
+  wxTopLevelFrames(this)->Show(this, show);
+  if (parent)
+    parent->GetChildren()->Show(this, show);
+  
   SetShown(show);
   if (show) {
     XtMapWidget(X->frame);

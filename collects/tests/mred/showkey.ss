@@ -4,13 +4,21 @@
 (let ([c%
        (class-asi canvas%
 	 (override
+	   [on-event
+	    (lambda (ev)
+	      (printf "MOUSE ~a  meta: ~a  control: ~a  alt: ~a  shift: ~a~n" 
+		      (send ev get-event-type)
+		      (send ev get-meta-down)
+		      (send ev get-control-down)
+		      (send ev get-alt-down)
+		      (send ev get-shift-down)))]
 	   [on-char
 	    (lambda (ev)
-	      (printf "code: ~a  meta: ~a  control: ~a  alt: ~a  shift: ~a~n" 
+	      (printf "KEY code: ~a  meta: ~a  control: ~a  alt: ~a  shift: ~a~n" 
 		      (let ([v (send ev get-key-code)])
 			(if (symbol? v)
 			    v
-			    (char->integer v)))
+			    (format "~a = ASCII ~a" v (char->integer v))))
 		      (send ev get-meta-down)
 		      (send ev get-control-down)
 		      (send ev get-alt-down)

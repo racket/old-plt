@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.21 1999/02/05 04:30:17 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.22 1999/02/14 03:06:47 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -912,9 +912,17 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit)
       (void)XTextExtents(fontinfo, text, textlen, &direction, &ascent, &descent,
 			 &overall);
 
+    if (current_text_bgmode == wxXOR) {
+      XGCValues values, values_req;
+      XGetGCValues(DPY, BRUSH_GC, GCBackground | GCForeground, &values_req);
+      values.foreground = values_req.foreground ^ values_req.background;
+      values.function = GXxor;
+      XChangeGC(DPY, TEXT_GC, GCForeground | GCFunction, &values);
+    }
+
     cx = overall.width;
     cy = ascent + descent;
-    if (current_text_bgmode != wxTRANSPARENT) {
+    if (current_text_bgmode == wxSOLID) {
       if (use16bit)
 	XDrawImageString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text, textlen);
       else
@@ -927,6 +935,14 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit)
     }
     CalcBoundingBox(x, y);
     CalcBoundingBox(x+XDEV2LOG(cx), y+YDEV2LOG(cy));
+
+    /* Restore if it was XOR */
+    if (current_text_bgmode == wxXOR) {
+      values.foreground = current_text_fg.GetPixel(current_cmap, IS_COLOR, 1);
+      values.function = GXcopy;
+      XChangeGC(DPY, TEXT_GC, GCForeground | GCFunction, &values);
+    }
+
 }
 
 float wxWindowDC::GetCharHeight(void)

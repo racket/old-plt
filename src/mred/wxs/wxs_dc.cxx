@@ -29,37 +29,42 @@
 #include "wxscomon.h"
 
 
-static Scheme_Object *solidity_wxTRANSPARENT_sym = NULL;
-static Scheme_Object *solidity_wxSOLID_sym = NULL;
+static Scheme_Object *textMode_wxTRANSPARENT_sym = NULL;
+static Scheme_Object *textMode_wxSOLID_sym = NULL;
+static Scheme_Object *textMode_wxXOR_sym = NULL;
 
-static void init_symset_solidity(void) {
-  solidity_wxTRANSPARENT_sym = scheme_intern_symbol("transparent");
-  solidity_wxSOLID_sym = scheme_intern_symbol("solid");
+static void init_symset_textMode(void) {
+  textMode_wxTRANSPARENT_sym = scheme_intern_symbol("transparent");
+  textMode_wxSOLID_sym = scheme_intern_symbol("solid");
+  textMode_wxXOR_sym = scheme_intern_symbol("xor");
 }
 
-static int unbundle_symset_solidity(Scheme_Object *v, const char *where) {
-  if (!solidity_wxSOLID_sym) init_symset_solidity();
+static int unbundle_symset_textMode(Scheme_Object *v, const char *where) {
+  if (!textMode_wxXOR_sym) init_symset_textMode();
   if (0) { }
-  else if (v == solidity_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
-  else if (v == solidity_wxSOLID_sym) { return wxSOLID; }
-  if (where) scheme_wrong_type(where, "solidity symbol", -1, 0, &v);
+  else if (v == textMode_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
+  else if (v == textMode_wxSOLID_sym) { return wxSOLID; }
+  else if (v == textMode_wxXOR_sym) { return wxXOR; }
+  if (where) scheme_wrong_type(where, "textMode symbol", -1, 0, &v);
   return 0;
 }
 
-static int istype_symset_solidity(Scheme_Object *v, const char *where) {
-  if (!solidity_wxSOLID_sym) init_symset_solidity();
+static int istype_symset_textMode(Scheme_Object *v, const char *where) {
+  if (!textMode_wxXOR_sym) init_symset_textMode();
   if (0) { }
-  else if (v == solidity_wxTRANSPARENT_sym) { return 1; }
-  else if (v == solidity_wxSOLID_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "solidity symbol", -1, 0, &v);
+  else if (v == textMode_wxTRANSPARENT_sym) { return 1; }
+  else if (v == textMode_wxSOLID_sym) { return 1; }
+  else if (v == textMode_wxXOR_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "textMode symbol", -1, 0, &v);
   return 0;
 }
 
-static Scheme_Object *bundle_symset_solidity(int v) {
-  if (!solidity_wxSOLID_sym) init_symset_solidity();
+static Scheme_Object *bundle_symset_textMode(int v) {
+  if (!textMode_wxXOR_sym) init_symset_textMode();
   switch (v) {
-  case wxTRANSPARENT: return solidity_wxTRANSPARENT_sym;
-  case wxSOLID: return solidity_wxSOLID_sym;
+  case wxTRANSPARENT: return textMode_wxTRANSPARENT_sym;
+  case wxSOLID: return textMode_wxSOLID_sym;
+  case wxXOR: return textMode_wxXOR_sym;
   default: return NULL;
   }
 }
@@ -552,7 +557,7 @@ static Scheme_Object *os_wxDCGetBackgroundMode(Scheme_Object *obj, int n,  Schem
 
   
   
-  return bundle_symset_solidity(r);
+  return bundle_symset_textMode(r);
 }
 
 #pragma argsused
@@ -620,7 +625,7 @@ static Scheme_Object *os_wxDCSetBackgroundMode(Scheme_Object *obj, int n,  Schem
   int x0;
 
   
-  x0 = unbundle_symset_solidity(p[0], "set-background-mode in dc<%>");
+  x0 = unbundle_symset_textMode(p[0], "set-text-mode in dc<%>");
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetBackgroundMode(x0);
@@ -1256,11 +1261,11 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "get-pen", os_wxDCGetPen, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-font", os_wxDCGetFont, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-brush", os_wxDCGetBrush, 0, 0);
- scheme_add_method_w_arity(os_wxDC_class, "get-background-mode", os_wxDCGetBackgroundMode, 0, 0);
+ scheme_add_method_w_arity(os_wxDC_class, "get-text-mode", os_wxDCGetBackgroundMode, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-background", os_wxDCGetBackground, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "set-origin", os_wxDCSetDeviceOrigin, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "set-scale", os_wxDCSetUserScale, 2, 2);
- scheme_add_method_w_arity(os_wxDC_class, "set-background-mode", os_wxDCSetBackgroundMode, 1, 1);
+ scheme_add_method_w_arity(os_wxDC_class, "set-text-mode", os_wxDCSetBackgroundMode, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "try-color", os_wxDCTryColour, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap", os_wxDCDrawBitmap, 3, 5);
  scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap-section", os_wxDCDrawBitmapRegion, 7, 9);

@@ -211,104 +211,6 @@ wxKeycode *wxKeymap::FindKey(long code,
   return bestKey;
 }
 
-wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl, 
-				 int alt, int meta,
-				 char *fname, wxKeycode *prev, int type)
-{
-  wxKeycode *key, *newkey;
-
-  /* Look for exact key: */
-  key = keys ? ((wxKeycode *)keys->Get(code)) : NULL;
-  while (key) {
-    if (key->code == code
-	&& (key->shiftOn == (shift > 0))
-	&& (key->shiftOff == (shift < 0))
-	&& (key->ctrlOn == (ctrl > 0))
-	&& (key->ctrlOff == (ctrl < 0))
-	&& (key->altOn == (alt > 0))
-	&& (key->altOff == (alt < 0))
-	&& (key->metaOn == (meta > 0))
-	&& (key->metaOff == (meta < 0))
-	&& key->seqprefix == prev)
-      break;
-    key = key->next;
-  }
-
-  if (key) {
-    if ((type == wxKEY_PREFIX) != key->isprefix) {
-      char buffer[256];
-	
-      if (isprint(code))
-	sprintf(buffer, "keymap: key %c ", (char)code);
-      else
-	sprintf(buffer, "keymap: key code %ld ", code);
-
-      if (shift)
-	strcat(buffer, "+ shift ");
-      if (ctrl)
-	strcat(buffer, "+ control ");
-      if (alt)
-	strcat(buffer, "+ alt ");
-      if (meta)
-	strcat(buffer, "+ meta ");
-
-      strcat(buffer, "is ");
-      if (!key->isprefix)
-	strcat(buffer, "not ");
-      strcat(buffer, "a prefix key");
-	
-      wxsKeymapError(buffer);
-
-      return NULL;
-    }  else {
-      if (strcmp(key->fname, fname)) {
-	delete[] key->fname;
-	key->fname = copystring(fname);
-      }
-      return key;
-    }
-  }
-  
-  newkey = new wxKeycode;
-
-  newkey->code = code;
-  newkey->shiftOn = (shift > 0);
-  newkey->shiftOff = (shift < 0);
-  newkey->ctrlOn = (ctrl > 0);
-  newkey->ctrlOff = (ctrl < 0);
-  newkey->altOn = (alt > 0);
-  newkey->altOff = (alt < 0);
-  newkey->metaOn = (meta > 0);
-  newkey->metaOff = (meta < 0);
-  newkey->score = ((newkey->shiftOn ? 1 : 0)
-		   + (newkey->shiftOff ? 5 : 0)
-		   + (newkey->ctrlOn ? 1 : 0)
-		   + (newkey->ctrlOff ? 5 : 0)
-		   + (newkey->altOn ? 1 : 0)
-		   + (newkey->altOff ? 5 : 0)
-		   + (newkey->metaOn ? 1 : 0)
-		   + (newkey->metaOn ? 5 : 0));
-  newkey->fname = copystring(fname);
-  newkey->next = NULL;
-
-  newkey->seqprefix = prev;
-
-  newkey->isprefix = (type == wxKEY_PREFIX);
-
-  if (!keys)
-    keys = new wxHashTable(wxKEY_INTEGER, 25);
-
-  key = (wxKeycode *)keys->Get(code);
-  if (!key)
-    keys->Put(code, (wxObject *)newkey);
-  else {
-    while (key->next)
-      key = key->next;
-    key->next = newkey;
-  }
-
-  return newkey;
-}
 
 static struct {
   char *str;
@@ -381,6 +283,122 @@ static struct {
 		{ "f23", WXK_F23 },
 		{ "f24", WXK_F24 },
 		{ NULL, 0 }};
+
+wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl, 
+				 int alt, int meta,
+				 char *fname, wxKeycode *prev, int type)
+{
+  wxKeycode *key, *newkey;
+
+  /* Look for exact key: */
+  key = keys ? ((wxKeycode *)keys->Get(code)) : NULL;
+  while (key) {
+    if (key->code == code
+	&& (key->shiftOn == (shift > 0))
+	&& (key->shiftOff == (shift < 0))
+	&& (key->ctrlOn == (ctrl > 0))
+	&& (key->ctrlOff == (ctrl < 0))
+	&& (key->altOn == (alt > 0))
+	&& (key->altOff == (alt < 0))
+	&& (key->metaOn == (meta > 0))
+	&& (key->metaOff == (meta < 0))
+	&& key->seqprefix == prev)
+      break;
+    key = key->next;
+  }
+
+  if (key) {
+    if ((type == wxKEY_PREFIX) != key->isprefix) {
+      char buffer[256], modbuf[256], *keystr = NULL;
+      int i;
+	
+      modbuf[0] = 0;
+      if (meta > 0)
+	strcat(modbuf, "m:");
+      if (meta < 0)
+	strcat(modbuf, "~m:");
+
+      if (alt > 0)
+	strcat(modbuf, "a:");
+      if (alt < 0)
+	strcat(modbuf, "~a:");
+
+      if (ctrl > 0)
+	strcat(modbuf, "c:");
+      if (ctrl < 0)
+	strcat(modbuf, "~c:");
+
+      if (shift > 0)
+	strcat(modbuf, "s:");
+      if (shift < 0)
+	strcat(modbuf, "~s:");
+
+      for (i = 0; keylist[i].str; i++)
+	if (keylist[i].code == code)
+	  keystr = keylist[i].str;
+
+      if (keystr)
+	sprintf(buffer, "keymap: \"%s%s\" ", modbuf, keystr);
+      else
+	sprintf(buffer, "keymap: \"%s%c\" ", modbuf, (char)code);
+
+      strcat(buffer, "is already mapped as a ");
+      if (!key->isprefix)
+	strcat(buffer, "non-");
+      strcat(buffer, "prefix key");
+      
+      wxsKeymapError(buffer);
+
+      return NULL;
+    }  else {
+      if (strcmp(key->fname, fname)) {
+	delete[] key->fname;
+	key->fname = copystring(fname);
+      }
+      return key;
+    }
+  }
+  
+  newkey = new wxKeycode;
+
+  newkey->code = code;
+  newkey->shiftOn = (shift > 0);
+  newkey->shiftOff = (shift < 0);
+  newkey->ctrlOn = (ctrl > 0);
+  newkey->ctrlOff = (ctrl < 0);
+  newkey->altOn = (alt > 0);
+  newkey->altOff = (alt < 0);
+  newkey->metaOn = (meta > 0);
+  newkey->metaOff = (meta < 0);
+  newkey->score = ((newkey->shiftOn ? 1 : 0)
+		   + (newkey->shiftOff ? 5 : 0)
+		   + (newkey->ctrlOn ? 1 : 0)
+		   + (newkey->ctrlOff ? 5 : 0)
+		   + (newkey->altOn ? 1 : 0)
+		   + (newkey->altOff ? 5 : 0)
+		   + (newkey->metaOn ? 1 : 0)
+		   + (newkey->metaOn ? 5 : 0));
+  newkey->fname = copystring(fname);
+  newkey->next = NULL;
+
+  newkey->seqprefix = prev;
+
+  newkey->isprefix = (type == wxKEY_PREFIX);
+
+  if (!keys)
+    keys = new wxHashTable(wxKEY_INTEGER, 25);
+
+  key = (wxKeycode *)keys->Get(code);
+  if (!key)
+    keys->Put(code, (wxObject *)newkey);
+  else {
+    while (key->next)
+      key = key->next;
+    key->next = newkey;
+  }
+
+  return newkey;
+}
 
 static long GetCode(char **keyseqp)
 {

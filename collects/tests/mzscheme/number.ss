@@ -1327,8 +1327,10 @@
 
 (test 3166.+1960.i  z-round (* 1000 (sin 1+2i)))
 (test -3166.-1960.i  z-round (* 1000 (sin -1-2i)))
+(test 0+1175.i z-round (* 1000 (sin 0+i)))
 (test -642.-1069.i z-round (* 1000 (cos 2+i)))
 (test -642.-1069.i z-round (* 1000 (cos -2-i)))
+(test 1543. z-round (* 1000 (cos 0+i)))
 (test 272-1084.i z-round (* 1000 (tan 1-i)))
 (test -272+1084.i z-round (* 1000 (tan -1+i)))
 

@@ -263,32 +263,37 @@
 				(cadr b)
 				(syntax-e stx))
 			    (and (pair? b) (car b))
-			    (and (pair? b) (list-ref b 4))
 			    (get-slot stx slot-table)
+			    #f
 			    #f
 			    #f)))
 		       (syntax->list (syntax names)))
 		  (loop (syntax rhs) null #f))]
 		
-		[(define-syntaxes names rhs)
-		 (make-define-syntaxes-form
-		  stx
-		  (mk-back)
-		  (map (lambda (stx)
-			 (let ([b (identifier-binding stx)])
-			   (make-top-level-varref
-			    stx
-			    (mk-back)
-			    (if (pair? b)
-				(cadr b)
-				(syntax-e stx))
-			    (and (pair? b) (car b))
-			    (and (pair? b) (list-ref b 4))
-			    (get-slot stx syntax-slot-table)
-			    #f
-			    #f)))
-		       (syntax->list (syntax names)))
-		  (loop (syntax rhs) null #t))]
+		[(-define names rhs)
+		 (or (module-identifier=? #'-define #'define-syntaxes)
+		     (module-identifier=? #'-define #'define-values-for-syntax))
+		 (let ([for-stx? (module-identifier=? #'-define #'define-values-for-syntax)])
+		   ((if for-stx?
+			make-define-for-syntax-form
+			make-define-syntaxes-form)
+		    stx
+		    (mk-back)
+		    (map (lambda (stx)
+			   (let ([b (identifier-binding stx)])
+			     (make-top-level-varref
+			      stx
+			      (mk-back)
+			      (if (pair? b)
+				  (cadr b)
+				  (syntax-e stx))
+			      (and (pair? b) (car b))
+			      (get-slot stx syntax-slot-table)
+			      #f
+			      for-stx?
+			      #f)))
+			 (syntax->list (syntax names)))
+		    (loop (syntax rhs) null #t)))]
 		
 		[(module name init-require (#%plain-module-begin . body))
 		 (let* ([body (map (lambda (x)
@@ -329,9 +334,13 @@
 			 (cons (syntax init-require)
 			       (get-required-modules (quote-syntax require-for-template)))]
 			[et-body
-			 (filter define-syntaxes-form? body)]
+			 (filter (lambda (e)
+				   (or (define-syntaxes-form? e)
+				       (define-for-syntax-form? e)))
+				 body)]
 			[rt-body
 			 (filter (lambda (e) (and (not (define-syntaxes-form? e))
+						  (not (define-for-syntax-form? e))
 						  (not (require/provide-form? e))))
 				 body)])
 		   (make-module-form
@@ -694,6 +703,10 @@
       (define-struct (define-syntaxes-form parsed) (names expr))
       (define (create-define-syntaxes-form z names expr)
 	(make-define-syntaxes-form (zodiac-stx z) (mk-back) names expr))
+
+      (define-struct (define-for-syntax-form parsed) (names expr))
+      (define (create-define-for-syntax-form z names expr)
+	(make-define-for-syntax-form (zodiac-stx z) (mk-back) names expr))
 
       (define-struct (module-form parsed) (name requires for-syntax-requires for-template-requires 
 						body syntax-body 

@@ -2028,12 +2028,14 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env,
     Scheme_Env *cenv;
 
     /* To simplify mzc's job, we make up an environment where the
-       syntax table is the same as menv, and the exp_env is exp_env */
+       syntax table is the same as menv, the toplevel table is
+       exp_env's, and exp_env itself is exp_env */
     cenv = MALLOC_ONE_TAGGED(Scheme_Env);
     cenv->so.type = scheme_namespace_type;
     cenv->module_registry = menv->module_registry;
     cenv->module = menv->module;
     cenv->syntax = menv->syntax;
+    cenv->toplevel = exp_env->toplevel;
     cenv->exp_env = exp_env;
     cenv->modchain = menv->modchain;
 

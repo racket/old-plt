@@ -1241,7 +1241,7 @@
 			  ))))]
 	       
 	       
-	       ;; (define-syntax! x R)
+	       ;; (define-syntax! x R) or (define-for-syntax! x R)
 	       [(vm:syntax!? ast)
 		(let* ([process-set!
 			(lambda (target val process-val? return-arity-ok?)
@@ -1256,13 +1256,19 @@
 			    (unless return-arity-ok?
 			      (emit " if (mcv != SCHEME_MULTIPLE_VALUES || scheme_multiple_count) {")
 			      (emit " NO_MULTIPLE_VALUES(mcv); "))
-			    (emit "scheme_install_macro(scheme_global_keyword_bucket(~a, ~a), "
-				  sym
-				  (if in-module? "env" "SCHEME_CURRENT_ENV(pr)"))
-			    (if process-val? 
-				(emit "mcv")
-				(emit val))
-			    (emit ")")
+			    (let ([for-stx? (zodiac:top-level-varref-expdef? target)])
+			      (emit "scheme_~a(~ascheme_global_~abucket(~a, ~a), "
+				    (if for-stx? "set_global_bucket" "install_macro")
+				    (if for-stx? "NULL, " "")
+				    (if for-stx? "" "keyword_")
+				    sym
+				    (if in-module? "env" "SCHEME_CURRENT_ENV(pr)"))
+			      (if process-val? 
+				  (emit "mcv")
+				  (emit val))
+			      (when for-stx?
+				(emit ", 1"))
+			      (emit ")"))
 			    (when (or (not return-arity-ok?) process-val?)
 			      (emit ";"))
 			    (unless return-arity-ok?

@@ -22,6 +22,8 @@
 ; Lambdas that are really c-lambdas are converted to quote forms
 ;  containing c-lambda records
 ; Applications that are really c-declares are converted to voids
+; Converts define-for-syntax to define-syntaxes (where id module
+;  phase distinguishes them in the end)
 
 ;;; Annotatitons: ----------------------------------------------
 ;;    binding - `binding-properties' structure
@@ -465,20 +467,27 @@
 			    ast))]
 		     
 		     ;;----------------------------------------------------------
-		     ;; DEFINE-SYNTAX
+		     ;; DEFINE-SYNTAX or DEFINE-FOR-SYNTAX
 		     ;;
-		     [(zodiac:define-syntaxes-form? ast)
-		      (let ([ast
-			     (zodiac:make-define-syntaxes-form 
-			      (zodiac:zodiac-stx ast)
-			      (zodiac:parsed-back ast)
-			      (map (lambda (e) (prephase! e in-mod? #t #f))
-				   (zodiac:define-syntaxes-form-names ast))
-			      (prephase! (zodiac:define-syntaxes-form-expr ast)
-					 in-mod?
-					 #t (zodiac:define-syntaxes-form-names ast)))])
-			(set-annotation! ast in-mod?)
-			ast)]
+		     [(or (zodiac:define-syntaxes-form? ast)
+			  (zodiac:define-for-syntax-form? ast))
+		      (let ([get-names (if (zodiac:define-for-syntax-form? ast)
+					   zodiac:define-for-syntax-form-names
+					   zodiac:define-syntaxes-form-names)]
+			    [get-expr (if (zodiac:define-for-syntax-form? ast)
+					  zodiac:define-for-syntax-form-expr
+					  zodiac:define-syntaxes-form-expr)])
+			(let ([ast
+			       (zodiac:make-define-syntaxes-form 
+				(zodiac:zodiac-stx ast)
+				(zodiac:parsed-back ast)
+				(map (lambda (e) (prephase! e in-mod? #t #f))
+				     (get-names ast))
+				(prephase! (get-expr ast)
+					   in-mod?
+					   #t (get-names ast)))])
+			  (set-annotation! ast in-mod?)
+			  ast))]
 		     
 		     ;;-----------------------------------------------------------
 		     ;; APPLICATIONS

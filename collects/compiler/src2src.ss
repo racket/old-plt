@@ -484,6 +484,11 @@
       (init varnames expr tables stx)
       (super-instantiate ((quote-syntax define-syntaxes) varnames expr tables stx))))
 
+  (define for-syntax-def% 
+    (class top-def% 
+      (init varnames expr tables stx)
+      (super-instantiate ((quote-syntax define-values-for-syntax) varnames expr tables stx))))
+
   (define (install-values vars expr)
     (when (= 1 (length vars))
       (send (car vars) set-value expr)))
@@ -1588,6 +1593,13 @@
 	
 	[(define-syntaxes names rhs)
 	 (make-object syntax-def% 
+           (syntax->list (syntax names))
+           (parse (syntax rhs) env #t in-module? tables)
+           tables
+           stx)]
+	
+	[(define-values-for-syntax names rhs)
+	 (make-object for-syntax-def% 
            (syntax->list (syntax names))
            (parse (syntax rhs) env #t in-module? tables)
            tables

@@ -77,6 +77,7 @@
      ;; Thess are new:
      (struct quote-syntax-form (expr))               create-quote-syntax-form
      (struct define-syntaxes-form (names expr))      create-define-syntaxes-form
+     (struct define-for-syntax-form (names expr))    create-define-for-syntax-form
      (struct module-form (name requires            ; lstof stx for module paths
 			       for-syntax-requires ; lstof stx for module paths
 			       for-template-requires ; lstof stx for module paths

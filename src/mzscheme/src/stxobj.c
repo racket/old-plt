@@ -3783,7 +3783,7 @@ static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **ar
     } else
       return CONS(m, CONS(a, CONS(nom_mod, 
 				  CONS(nom_a, 
-				       CONS(scheme_make_integer(mod_phase), 
+				       CONS(mod_phase ? scheme_true : scheme_false, 
 					    scheme_null)))));
   }
 }

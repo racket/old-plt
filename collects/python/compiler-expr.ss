@@ -503,24 +503,25 @@
 
   ;; scheme-op->python-op:  symbol -> symbol
   (define (scheme-op->python-op oper)
-    (case oper
-      [(>) 'py>]
-      [(<) 'py<]
-      [else oper]))
+    (py-so (case oper
+             [(>) 'py>]
+             [(<) 'py<]
+             [else oper])))
       
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
         (->orig-so
-         (letrec ([f (lambda (cmps)
-                       (let* ([first-lhs (send (first cmps) to-scheme)]
-                              [first-rhs (send (third cmps) to-scheme)]
-                              [first-comp `(,(py-so (scheme-op->python-op (second cmps))) ,first-lhs ,first-rhs)]
-                              [what-else (rest (rest cmps))])
-                         (if (> (length what-else) 2)
-                             `(and ,first-comp ,(f what-else))
-                             first-comp)))])
-           (f comps))))
+         (let ([s-comps (map (lambda (e)
+                               (if (symbol? e)
+                                   (scheme-op->python-op e)
+                                   (send e to-scheme)))
+                             comps)])
+           `(,(py-so 'py-compare) ,(car s-comps)
+                                  ,(car (cdr s-comps))
+                                  ,(car (cdr (cdr s-comps)))
+                                  (list ,@(cdr (cdr (cdr s-comps))))))))
+ 
       
       (super-instantiate ())))
   

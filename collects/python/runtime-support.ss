@@ -36,6 +36,15 @@
     (and (not (== a b))
          (not (py> a b))))
   
+  (define (py-compare x op y comp-lst)
+    (and (op x y)
+         (if (null? comp-lst)
+             #t
+             (py-compare y
+                         (car comp-lst)
+                         (car (cdr comp-lst))
+                         (cdr (cdr comp-lst))))))
+  
   ;; py-print: (listof X) -> void
   (define (py-print lst)
     (for-each (lambda (x)

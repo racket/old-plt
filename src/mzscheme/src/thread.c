@@ -1065,7 +1065,7 @@ static void check_scheduled_kills()
     Scheme_Object *k;
     k = SCHEME_CAR(scheduled_kills);
     scheduled_kills = SCHEME_CDR(scheduled_kills);
-    scheme_close_managed((Scheme_Custodian *)scheduled_kills);
+    scheme_close_managed((Scheme_Custodian *)k);
   }
 }
 

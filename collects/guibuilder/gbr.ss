@@ -2511,7 +2511,7 @@
     (class mred:pasteboard-info-file-frame% ([file #f])
       (inherit get-edit make-menu show panel)
       (rename [super-make-menu-bar make-menu-bar]
-	      [super-help-menu:after-help-menu help-menu:after-help-menu])
+	      [super-help-menu:after-about help-menu:after-about])
       (private)
       (public
         [help-menu:about-string "GUI Builder"]
@@ -2521,13 +2521,13 @@
 				     GB:SNIP-VERSION
 				     MINOR-VERSION)
 			     "About GUI Builder"))]
-	[help-menu:after-help-menu 
+	[help-menu:after-about
 	 (lambda (help-menu)
 	   (send help-menu append-item "GUI Builder Help"
 		 (lambda ()
 		   (let ([f (mred:edit-file (build-path (collection-path "guibuilder") "help.mre"))])
 		     (send (send f get-edit) lock #t))))
-	   (super-help-menu:after-help-menu help-menu))]
+	   (super-help-menu:after-about help-menu))]
 
 	[get-edit% (lambda () gb:edit%)]
 	[instantiate

@@ -382,7 +382,7 @@ The _utils.ss_ module provides utilities helpful in implementing
 
 > (check-defined eval name) - checks whether `name' is defined in the
   evaluator `eval', and raises an error if not (suitably phrased for
-  the handin client).
+  the handin client).  If it is defined, its value is returned.
 
 > (look-for-tests text name n) - inspects the given text% object to
   determine whether it contains at least `n' tests for the function

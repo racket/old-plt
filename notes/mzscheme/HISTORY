@@ -1,14 +1,20 @@
-Version 100alpha3, June 19, 1999
+Version 100alpha4, July 14, 1999
+ * indicates a change since 100alpha3
 Changed class syntax, splitting public clause use into:
  public : defines ivars not in superclass
  override : defines ivars already in superclass
 Changed empty superclass from the empty list to object%;
  every class initialization must call super-init
 Added ivar-in-interface?
+* Added class->interface
+* Added object-interface
+* WARNING: Plan to remove object-class and ivar-in-class? in
+ final version 100 or version 101
 Changed interface: raises an exception if a superinterface
  declares a variable that is also declared in the interface
  expression
 Removed letrec*; letrec has the same semantics
+* Fixed scope of function name in a named let
 Internal definitions are allowed only at the beginning of lambda,
  case-lambda, let, let-values, let*, let*-values,
  letrec, letrec-values, fluid-let, let-macro, let-id-macro,
@@ -26,6 +32,9 @@ Removed semaphore-callback (MrEd now has queue-callback)
 Removed parameterizations (but not parameters!)
 parameterize sets parameter values in parallel (like let)
  instead of in series (like let*)
+* Changed the initialization of the exception handler in a new
+ thread to use the value of the initial-exception-handler
+ parameter
 Fixed unfairness in threads (perpetually creating threads
  would starve certain threads, particularly the main thread)
 Unreachable thread blocked on an unreachable semaphore is
@@ -74,6 +83,7 @@ All zero-length vectors are eq
 Vectors are written (but not displayed) using the Chez-style
  #n(...) shorthand by default; added print-vector-length
  parameter
+* The value of a built-in procedure is eq across namespaces
 Replaced require-library-use-compiled with use-compiled-file-kinds
 Changed interface for wills: no current executor, register-will
  -> will-register, will-executor-try -> will-try-execute, added

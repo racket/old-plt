@@ -619,10 +619,7 @@
 
     ; ----------------------------------------------------------------------
 
-    (define arglist-pattern
-      (if (language>=? 'side-effecting)
-	'(args)
-	'((args ...))))
+    (define arglist-pattern '(args))
 
     (define-struct arglist (vars))
     (define-struct (sym-arglist struct:arglist) ())
@@ -634,11 +631,12 @@
     (define arglist-decls-vocab
       (create-vocabulary 'arglist-decls-vocab))
 
-    (add-sym-micro arglist-decls-vocab
-      (lambda (expr env attributes vocab)
-	(make-sym-arglist
-	  (list
-	    (create-lexical-binding+marks expr)))))
+    (when (language>=? 'side-effecting)
+      (add-sym-micro arglist-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (make-sym-arglist
+	    (list
+	      (create-lexical-binding+marks expr))))))
 
     (add-list-micro arglist-decls-vocab
       (lambda (expr env attributes vocab)
@@ -646,11 +644,12 @@
 	  (map create-lexical-binding+marks
 	    (expose-list expr)))))
 
-    (add-ilist-micro arglist-decls-vocab
-      (lambda (expr env attributes vocab)
-	(make-ilist-arglist
-	  (map create-lexical-binding+marks
-	    (expose-list expr)))))
+    (when (language>=? 'structured)
+      (add-ilist-micro arglist-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (make-ilist-arglist
+	    (map create-lexical-binding+marks
+	      (expose-list expr))))))
 
     ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

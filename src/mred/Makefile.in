@@ -44,13 +44,13 @@ LDFLAGS = $(XLIB)
 MREDLINKER = @MREDLINKER@
 
 EXTRALDFLAGS_wx_xt =
-EXTRALDFLAGS_wx_mac = -framework Carbon -framework QuickTime
+EXTRALDFLAGS_wx_mac = -framework Carbon -framework QuickTime -lz
 MREDLDFLAGS = $(LDFLAGS) $(EXTRALDFLAGS_@WXVARIANT@)
 WXLIBS_wx_xt = ../wxxt/src/libwx_xt.a ../wxxt/contrib/xpm/lib/libXpm.a ../wxxt/utils/image/src/libimage_xt.a 
 MREDX_wx_xt = mredx.o
 WXLIBS_wx_mac = ../wxmac/src/libwxmac.a
 MREDX_wx_mac = mredmac.o simpledrop.o
-WXLIBSNORM = mred.o $(MREDX_@WXVARIANT@) wxGC.o wxJPEG.o wxs/libwxscheme.a wxme/libwxme.a $(WXLIBS_@WXVARIANT@) ../wxcommon/jpeg/libjpeg.a ../wxcommon/libpng/libpng.a ../wxcommon/zlib/libz.a
+WXLIBSNORM = mred.o $(MREDX_@WXVARIANT@) wxGC.o wxJPEG.o wxs/libwxscheme.a wxme/libwxme.a $(WXLIBS_@WXVARIANT@) ../wxcommon/jpeg/libjpeg.a ../wxcommon/libpng/libpng.a @ZLIB_A@
 WXLIBSDYN = libmred.@LIBSFX@
 GUILIBS_wx_xt = $(LDLIBS)
 GUILIBS_wx_mac = @LIBS@

@@ -18,12 +18,10 @@ CC = @CC@
 DESTDIR=
 
 # Where the zlib library and include files are located
-#ZLIBLIB=/usr/local/lib
 #ZLIBINC=/usr/local/include
-ZLIBLIB=../zlib
-ZLIBINC=../zlib
+ZLIBINC=@ZLIB_INC@
 
-CFLAGS=@CFLAGS@ @OPTIONS@ @MROPTIONS@ -I$(ZLIBINC)
+CFLAGS=@CFLAGS@ @OPTIONS@ @MROPTIONS@ $(ZLIBINC)
 
 RANLIB=@RANLIB@
 

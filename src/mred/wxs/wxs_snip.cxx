@@ -6243,7 +6243,7 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 class os_wxImageSnip : public wxImageSnip {
  public:
 
-  os_wxImageSnip CONSTRUCTOR_ARGS((nstring x0 = NULL, int x1 = wxBITMAP_TYPE_MASK, Bool x2 = FALSE, Bool x3 = TRUE));
+  os_wxImageSnip CONSTRUCTOR_ARGS((nstring x0 = NULL, int x1 = 0, Bool x2 = FALSE, Bool x3 = TRUE));
 #ifndef MZ_PRECISE_GC
   os_wxImageSnip CONSTRUCTOR_ARGS((class wxBitmap* x0, class wxBitmap* x1 = NULL));
 #endif
@@ -7319,7 +7319,7 @@ static Scheme_Object *os_wxImageSnipLoadFile(int n,  Scheme_Object *p[])
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "load-file in image-snip%"));
   } else
-    x1 = wxBITMAP_TYPE_MASK;
+    x1 = 0;
   if (n > (POFFSET+2)) {
     x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "load-file in image-snip%"));
   } else
@@ -8151,7 +8151,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "initialization in image-snip% (filename case)"));
     } else
-      x1 = wxBITMAP_TYPE_MASK;
+      x1 = 0;
     if (n > (POFFSET+2)) {
       x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "initialization in image-snip% (filename case)"));
     } else

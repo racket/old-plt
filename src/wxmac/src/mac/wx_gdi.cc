@@ -25,6 +25,11 @@
 # include "wx_image.h"
 #endif
 
+extern int write_JPEG_file(char * filename, wxBitmap *bm, int quality_val);
+
+extern int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg);
+extern int wx_write_png(char *file_name, wxBitmap *bm);
+
 CGrafPtr gMacFontGrafPort = NULL; // mac platform only
 
 #define PLAIN_MALLOC_FOR_XPM
@@ -886,13 +891,13 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
 }
 
 //-----------------------------------------------------------------------------
-wxBitmap::wxBitmap(char *bitmap_file, long flags)
+wxBitmap::wxBitmap(char *bitmap_file, long flags, wxColour *bg)
 {
   __type = wxTYPE_BITMAP;
   selectedInto = NULL;
   WXGC_IGNORE(this, selectedInto);
 
-  if (flags & wxBITMAP_TYPE_PICT_RESOURCE)	{ 
+  if (flags & wxBITMAP_TYPE_PICT_RESOURCE) { 
     // look for a 'PICT' resource with the given name
     Str255 resname;
     PicHandle	h;
@@ -918,7 +923,7 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
   }
   // we also get here if we asked for a resource but it wasn't found
   x_pixmap = NULL;
-  if (LoadFile(bitmap_file, flags) == FALSE) {
+  if (LoadFile(bitmap_file, flags, bg) == FALSE) {
     char t[200];
     sprintf(t, "Could not load Bitmap: %s", bitmap_file);
     // mflatt: This is not a fatal error
@@ -997,7 +1002,7 @@ extern int wxsGetImageType(char *);
    USE_IMAGE_LOADING... does NOT look at the flags, instead it looks at file
    extensions. This deserves a proper cleanup.
    */
-Bool wxBitmap::LoadFile(char *name, long flags)
+Bool wxBitmap::LoadFile(char *name, long flags, wxColour *bg)
 {
   wxColourMap *colourmap;
   Bool getMask;
@@ -1023,10 +1028,10 @@ Bool wxBitmap::LoadFile(char *name, long flags)
 
     xpmAttr.valuemask = XpmReturnInfos;	/* nothing yet, but get infos back */
     ErrorStatus = XpmReadFileToImage(NULL,	// don't have a Display dpy
-				     name,
-				     &ximage,							// we get this back
-				     NULL,							// don't want a shapemask
-				     &xpmAttr);						// where to put the attributes
+				     name, 
+				     &ximage,   // we get this back
+				     NULL,      // don't want a shapemask
+				     &xpmAttr); // where to put the attributes
 
     if (ErrorStatus == XpmSuccess) {
       // Set attributes
@@ -1036,7 +1041,7 @@ Bool wxBitmap::LoadFile(char *name, long flags)
       XpmFreeAttributes(&xpmAttr);
       ok = TRUE;
       x_pixmap = ximage->bitmap;	// Actually a GWorldPtr!
-      XImageFree(ximage);			// does not delete the GWorld
+      XImageFree(ximage);		// does not delete the GWorld
     }
     return ok;
   }
@@ -1053,6 +1058,17 @@ Bool wxBitmap::LoadFile(char *name, long flags)
     if (ok) SetDepth(wxDisplayDepth());
   } else if (flags & wxBITMAP_TYPE_JPEG) {
     ok = read_JPEG_file(name, this);
+    if (!ok) {
+      if (x_pixmap) {
+	FreeGWorld(x_pixmap);
+	x_pixmap = NULL;
+      }
+      ok = FALSE;
+    } else {
+      SetDepth(wxDisplayDepth());
+    }	
+  } else if (flags & wxBITMAP_TYPE_PNG) {
+    ok = wx_read_png(name, this, getMask, bg);
     if (!ok) {
       if (x_pixmap) {
 	FreeGWorld(x_pixmap);

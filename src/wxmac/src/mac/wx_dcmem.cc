@@ -90,6 +90,8 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
       // bitmap->DrawMac(0, 0);
       ok = TRUE;
       
+      Colour = (bitmap->GetDepth() > 1);
+
       SetCurrentDC();
       InstallColor(current_background_color, FALSE);
       PenMode(patCopy);

@@ -108,14 +108,14 @@ class wxBitmap: public wxObject
   wxBitmap(void) ;
   wxBitmap(char bits[], int width, int height);
   // Load a file or resource
-  wxBitmap(char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_RESOURCE);
+  wxBitmap(char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_RESOURCE, wxColour *bg = NULL);
 
   // If depth is omitted, will create a bitmap compatible with the display
   wxBitmap(int width, int height, Bool bandw = FALSE);
   ~wxBitmap(void);
 
   virtual Bool Create(int width, int height, int depth = -1);
-  virtual Bool LoadFile(char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_RESOURCE);
+  virtual Bool LoadFile(char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_RESOURCE, wxColour *bg = NULL);
   virtual Bool SaveFile(char *name, int type, wxColourMap *cmap = NULL);
 
   inline Bool Ok(void) { return ok; }

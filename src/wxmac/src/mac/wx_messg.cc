@@ -271,8 +271,14 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
   sBitmap = bitmap;
   sBitmap->selectedIntoDC++;
   
-  // erase the old
+  // erase the old, draw the new
   if (SetCurrentDC()) {
+    Rect r;
+
+    ::SetRect(&r, -1, -1, cWindowWidth, cWindowHeight);
+    OffsetRect(&r,SetOriginX,SetOriginY);
+    EraseRect(&r);
+
     sBitmap->DrawMac();
     FlushDisplay();
 

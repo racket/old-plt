@@ -117,16 +117,35 @@ void wxCanvasDC::SetPixel(float x, float y, wxColour *col)
   
   SetCurrentDC();
 
-  if ((col->Red() == 255) && (col->Blue() == 255) && (col->Green() == 255)) {
-    rgb.red = 0xFFFF;
-    rgb.green = 0xFFFF;
-    rgb.blue = 0xFFFF;
+  if (Colour) {
+    rgb.red = col->Red();
+    rgb.red = (rgb.red << 8) | rgb.red;
+    rgb.green = col->Green();
+    rgb.green = (rgb.green << 8) | rgb.green;
+    rgb.blue = col->Blue();
+    rgb.blue = (rgb.blue << 8) | rgb.blue;
+
+    SetCPixel(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY, &rgb);
   } else {
-    rgb.red = col->Red() << 8;
-    rgb.green = col->Green() << 8;
-    rgb.blue = col->Blue() << 8;
+    int qcol;
+
+    if ((col->Red() == 255) && (col->Blue() == 255) && (col->Green() == 255)) {
+      qcol = whiteColor;
+    } else {
+      qcol = blackColor;      
+    }
+
+    GetForeColor(&rgb);
+    ForeColor(qcol);
+    wxMacDrawPoint(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY);
+    if (rgb.red) {
+      if (qcol != whiteColor)
+	ForeColor(whiteColor);
+    } else {
+      if (qcol != blackColor)
+	ForeColor(blackColor);
+    }
   }
-  SetCPixel(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY, &rgb);
 
   ReleaseCurrentDC();
 }
@@ -601,8 +620,6 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		      wxBitmap *source, float xsrc, float ysrc, int rop, wxColour *c,
 		      wxBitmap *mask)
 {
-  RgnHandle maskRgn = NULL;
-  
   if (!Ok() || !cMacDC || !source->Ok()) return FALSE;
   if (mask && !mask->Ok()) return FALSE;
 
@@ -679,23 +696,14 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
       srcbm = GetPortBitMapForCopyBits(source->x_pixmap);
       
       if (mask) {
-	OSErr err;
+	const BitMap *maskbm;
 	
-	maskRgn = NewRgn();
-	err = BitMapToRegion(maskRgn,GetPortBitMapForCopyBits(mask->x_pixmap));
-	if (err != noErr) {
-	  DisposeRgn(maskRgn);
-	  if (!noDCSet)
-	    ReleaseCurrentDC();
-	  return FALSE;
-	}
-	OffsetRgn(maskRgn, destr.left, destr.top);
+	maskbm = GetPortBitMapForCopyBits(mask->x_pixmap);
+
+	::CopyDeepMask(srcbm, maskbm, dstbm, &srcr, &srcr, &destr, mode, NULL);
+      } else {
+	::CopyBits(srcbm, dstbm, &srcr, &destr, mode, NULL);
       }
-      
-      ::CopyBits(srcbm, dstbm, &srcr, &destr, mode, maskRgn);
-      
-      if (maskRgn)
-	DisposeRgn(maskRgn);
       
       CalcBoundingBox(xdest, ydest);
       CalcBoundingBox(xdest + width, ydest + height);

@@ -2428,7 +2428,7 @@ static Scheme_Object *os_wxMediaBufferInsertImage(int n,  Scheme_Object *p[])
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "insert-image in editor<%>"));
   } else
-    x1 = wxBITMAP_TYPE_MASK;
+    x1 = 0;
   if (n > (POFFSET+2)) {
     x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "insert-image in editor<%>"));
   } else

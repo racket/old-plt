@@ -252,6 +252,9 @@ currently exist).
   `filename-string-or-#f' is a string, a suitable exception is raised,
   and if `filename-string-or-#f' is #f, #f is returned.
 
+  If stx is eof or eof wrapped as a syntax object, then an error is
+  raised or #f is returned.
+
 > (get-module-code module-path-v [compiled-subdir compile-proc]) - returns
   a compiled expression for the declaration of the module specified by
   `module-path-v'. The `module-path-v' argument is a quoted module

@@ -27,6 +27,16 @@
   
   (define (check-module-form exp expected-module filename)
     (cond
+     [(or (eof-object? exp)
+	  (eof-object? (syntax-e exp)))
+      (and filename
+	   (raise
+	    (make-exn:fail
+	     (string->immutable-string
+	      (format
+	       "load-handler: expected a `module' declaration for `~a' in ~s, but found end-of-file"
+	       expected-module filename))
+	     (current-continuation-marks))))]
      [(compiled-module-expression? (syntax-e exp))
       (if (eq? (module-compiled-name (syntax-e exp))
 	       expected-module)
@@ -53,13 +63,13 @@
 			      exp))]
      [else
       (and filename
-            (raise
-             (make-exn:fail
-	      (string->immutable-string
-	       (format
-		"load-handler: expected a `module' declaration for `~a' in ~s, but found something else"
-		expected-module filename))
-              (current-continuation-marks))))]))
+	   (raise
+	    (make-exn:fail
+	     (string->immutable-string
+	      (format
+	       "load-handler: expected a `module' declaration for `~a' in ~s, but found something else"
+	       expected-module filename))
+	     (current-continuation-marks))))]))
   
   (define re:suffix #rx#"\\..*$")
 	  

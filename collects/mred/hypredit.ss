@@ -613,18 +613,14 @@
 				(super-load-file filename format))])
 			 (cond
 			   [(string? filename)
-			    (let* ([url (mred:url:parse-url filename)]
-				   [get-string
-				    (lambda (cons)
-				      (and cons
-					   (substring filename (car cons) (cdr cons))))]
-				   [url-method (get-string (mred:url:url-method url))]
-				   [url-path (get-string (mred:url:url-path url))])
+			    (let* ([url (mred:url:string->url filename)]
+				   [url-method (mred:url:url-scheme url)]
+				   [url-path (mred:url:url-path url)])
 			      (begin0
 				(cond
 				  [(and url-method 
 					(not (string=? url-method "file")))
-				   (lambda (f) (mred:url:call-with-input-url url f))]
+				   (lambda (f) (mred:url:call/input-url url f))]
 				  [(and (or (not url-method)
 					    (string=? url-method "file"))
 					(regexp-match re:html url-path))

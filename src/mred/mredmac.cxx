@@ -29,6 +29,10 @@ static int last_was_front;
 
 #include "mred.h"
 
+#ifdef OS_X
+# include <fcntl.h>
+#endif
+
 #define DELAY_TIME 5
 #define FG_SLEEP_TIME 0
 #define BG_SLEEP_TIME DELAY_TIME
@@ -1035,16 +1039,21 @@ int MrEdCheckForBreak(void)
 
 #ifdef OS_X
 #include <pthread.h>
-static volatile int thread_running, need_post;
+static volatile int thread_running;
+static volatile int need_post; /* 0=>1 transition has a benign race condition, an optimization */
 static SLEEP_PROC_PTR mzsleep;
 static pthread_t watcher;
 static volatile float sleep_secs;
 static ProcessSerialNumber psn;
 
-
 /* These file descriptors act as semaphores: */
 static int watch_read_fd, watch_write_fd;
 static int watch_done_read_fd, watch_done_write_fd;
+
+/* These file descriptors are used for breaking the event loop.
+   See ARGH below. */
+static int cb_socket_ready;
+static int ready_sock, write_ready_sock;
 
 static void *do_watch(void *fds)
 {
@@ -1057,6 +1066,12 @@ static void *do_watch(void *fds)
     if (need_post) {
       need_post = 0;
       WakeUpProcess(&psn);
+      if (cb_socket_ready) {
+	/* Sometimes WakeUpProcess() doesn't work. 
+	   Try a notification socket as a backup. 
+	   See ARGH below. */
+	write(write_ready_sock, "y", 1);
+      }
     }
 
     write(watch_done_write_fd, "y", 1);
@@ -1117,6 +1132,31 @@ static void EndFDWatcher(void)
     thread_running = 0;
   }
 }
+
+/* See ARGH below. */
+void socket_callback(CFSocketRef s, CFSocketCallBackType type, CFDataRef address, const void *data, void *info)
+{
+  WakeUpProcess(&psn);
+}
+
+/* See ARGH below. */
+static const void *sock_retain(const void *info)
+{
+  return NULL;
+}
+
+/* See ARGH below. */
+static void sock_release(const void *info)
+{
+  /* do nothing */
+}
+
+/* See ARGH below. */
+static CFStringRef sock_copy_desc(const void *info)
+{
+  return CFSTR("sock");
+}
+
 #endif
 
 void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
@@ -1129,16 +1169,72 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
     EventRecord e;
 
 #ifdef OS_X
+    if (!cb_socket_ready) {
+      /* ARGH: We set up a pipe for the purpose of breaking the Carbon
+	 event manager out of its loop. When the watcher thread sees
+	 that an fd is ready, it writes to write_sock_ready, which
+	 means that sock_ready is ready to read, which means that
+	 socket_callback is invoked, and it calls WakeUpProcess().
+
+	 None of this would be necessary if WakeUpProcess() worked
+	 correctly, because the watcher thread also calls
+	 WakeUpProcess(). It seems to have become broken in OS X 10.2,
+	 where WakeUpprocess() doesn't work when called before the WNE
+	 starts (reminiscent of OS 7.1.2 or so). */
+      int fds[2];
+      if (!pipe(fds)) {
+	CFRunLoopRef rl;
+	CFSocketRef cfs;
+	CFRunLoopSourceRef source;
+	CFSocketContext context;
+
+	/* True, they're not really sockets... */
+	ready_sock = fds[0];
+	write_ready_sock = fds[1];
+
+	/* The code below simply says says "please call
+	   socket_callback from WNE when there's data to read on
+	   ready_sock" */
+
+	context.version = 0; /* ? */
+	context.info = NULL;
+	context.retain = sock_retain;
+	context.release = sock_release;
+	context.copyDescription = sock_copy_desc;
+
+	rl = (CFRunLoopRef)GetCFRunLoopFromEventLoop(GetMainEventLoop());
+	cfs = CFSocketCreateWithNative(CFAllocatorGetDefault(), ready_sock, kCFSocketReadCallBack, socket_callback, &context);
+	source = CFSocketCreateRunLoopSource(CFAllocatorGetDefault(), cfs, 0);
+	CFRunLoopAddSource(rl, source, kCFRunLoopDefaultMode);
+	
+	fcntl(ready_sock, F_SETFL, O_NONBLOCK);
+	cb_socket_ready = 1;
+      }
+    }
+
+    /* Starts a watcher thread, which runs select() on the fds,
+       and also breaks when SIGINT is received. */
     if (!StartFDWatcher(mzsleep, secs, fds)) {
       secs = 0;
     }
 #endif
 
-    if (WNE(&e, secs ? secs : kEventDurationForever))
-      QueueTransferredEvent(&e);
+#ifdef OS_X
+    if (need_post) /* useless check in principle, but an optimization
+		      in the case that the select() succeeds before
+		      we even start */
+#endif
+      if (WNE(&e, secs ? secs : kEventDurationForever))
+	QueueTransferredEvent(&e);
 
 #ifdef OS_X
+    /* Shut down the watcher thread */
     EndFDWatcher();
+    if (cb_socket_ready) {
+      /* clear out the pipe: */
+      char buf[1];
+      read(ready_sock, buf, 1);
+    }
 #endif
   }
 }

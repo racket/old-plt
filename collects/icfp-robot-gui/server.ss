@@ -125,8 +125,11 @@
   (define replay-slider #f)
   (define (set-slider! v)
     (when replay-slider
-      (send replay-slider show #t)
-      (send (send replay-slider get-parent) delete-child replay-slider))
+      (let ([parent (send replay-slider get-parent)])
+	;; avoid resizing bouncing:
+	(send parent min-height (send parent get-height))
+	(send replay-slider show #t)
+	(send parent delete-child replay-slider)))
     (set! replay-slider
           (make-object slider% #f 0 v replay-panel
             (lambda (s e)

@@ -2,8 +2,7 @@
   (import [z : zodiac:system^]
 	  mzlib:function^
 	  [e : stepper:error^]
-	  stepper:shared^
-	  stepper:reconstruct^)
+	  stepper:shared^)
   
     ; ANNOTATE SOURCE CODE
   

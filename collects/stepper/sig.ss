@@ -26,12 +26,14 @@
    set-expr-read!
    flatten-take
    improper-map
-   improper-foreach))
+   improper-foreach
+   closure-table-put!
+   closure-table-lookup))
 
 (define-signature stepper:annotate^
   (annotate))
 
 (define-signature stepper:reconstruct^
-  (closure-table-put! reconstruct))
+  (reconstruct))
 
   

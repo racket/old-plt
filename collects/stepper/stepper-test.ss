@@ -29,6 +29,10 @@
 	  [ERROR : stepper:error^ (stepper:default-error@)]
 	  [PRETTY : mzlib:pretty-print^ ((require-library-unit/sig "prettyr.ss"))]
 	  [MZLIB-STRING : mzlib:string^ ((require-library-unit/sig "stringr.ss"))]
+          [MZLIB-PRINT-CONVERT : mzlib:print-convert^
+                               ((require-library-unit/sig "pconverr.ss")
+                                MZLIB-STRING
+                                FUNCTION)]
 	  [MZLIB-FILE : mzlib:file^ ((require-library-unit/sig "filer.ss")
 				     MZLIB-STRING
 				     FUNCTION)]
@@ -44,13 +48,13 @@
 		     ZODIAC
 		     FUNCTION
 		     ERROR
-		     SHARED
-		     RECONSTRUCT)]
+ 		     SHARED)]
 	  [RECONSTRUCT : stepper:reconstruct^ 
 		       ((require-library-unit/sig "reconstructr.ss" "stepper")
 			ZODIAC
                         FUNCTION
 			ERROR
+                        MZLIB-PRINT-CONVERT
 			SHARED)]
           [STEPPER : stepper:stepper^
                    ((require-library-unit/sig "stepperr.ss" "stepper")
@@ -123,8 +127,8 @@
              (program->string struct-program)))
           (stepper:stepper-step)))))
 
-;(require-library "view.ss" "stepper")
-;(view step)
+(require-library "view.ss" "stepper")
+(view step)
 
 ;(stepper:stepper-start
 ; "(define (fact n) (if (= n 0) 1 (* n (- n 1))))

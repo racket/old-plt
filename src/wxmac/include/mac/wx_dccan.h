@@ -108,6 +108,8 @@ class wxCanvasDC: public wxbCanvasDC
 
   Bool Blit(float xdest, float ydest, float width, float height,
             wxBitmap* source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL);
+  Bool GCBlit(float xdest, float ydest, float width, float height,
+            wxBitmap* source, float xsrc, float ysrc);
 
   void wxMacSetClip(void); // Internal only
   void wxMacSetCurrentTool(wxMacToolType whichTool); // Internal only

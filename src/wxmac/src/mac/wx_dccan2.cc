@@ -588,6 +588,15 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
   	return theResult;
 }
 
+Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
+		      wxBitmap *source, float xsrc, float ysrc)
+{
+  /* Non-allocating (i.e. no collectable allocation) Blit. Look like
+     the normal one will work. */
+
+  return Blit(xdest, ydest, width, height, source, xsrc, ysrc, wxSTIPPLE, NULL);
+}
+
 void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)
 {
   SetCurrentDC();

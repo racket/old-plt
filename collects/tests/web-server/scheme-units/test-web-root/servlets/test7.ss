@@ -12,5 +12,5 @@
   (define (start req)
     (send/finish
       (list "text/plain"
-            (current-directory))))
+            (path->string (current-directory)))))
   )

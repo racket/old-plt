@@ -6,7 +6,7 @@
          )
 (unit/sig ()
   (import servlet^)
-(let ((cd (current-directory)))
+(let ((cd (path->string (current-directory))))
   (send/finish
     (make-html-response/incremental
       (lambda (output-chunked)

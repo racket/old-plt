@@ -16,5 +16,5 @@
            (title "Title"))
          (body
            (h1 "Title")
-           (p "Current path: " ,(current-directory))))))
+           (p "Current path: " ,(path->string (current-directory)))))))
   )

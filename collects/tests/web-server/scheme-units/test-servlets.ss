@@ -25,12 +25,7 @@
   (define test2-incremental-output
     (string-append
       "<html><head><title>Title</title></head><body><h1>Title</h1><p>Current "
-      "path: "
-      (path->string
-        (build-path
-          (collection-path "tests")
-          "web-server"
-          "scheme-units"))
+      "path: " (path->string (build-path web-root "servlets"))
       "</p></body></html>"))
 
   (define test3-output "blah blah plain text")
@@ -49,7 +44,7 @@
 
   (define test6-output "abseed")
 
-  (define test7-output (build-path web-root "servlets"))
+  (define test7-output (path->string (build-path web-root "servlets")))
 
   (define test8-output (string-append (path->string
                                         (build-path web-root "servlets"))

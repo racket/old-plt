@@ -20,6 +20,6 @@
           (output-chunked "</title></head><body><h1>Title</h1>")
           (output-chunked "<p>Current path: ")
           (sleep 4)
-          (output-chunked (current-directory))
+          (output-chunked (path->string (current-directory)))
           (output-chunked "</p></body></html>")))))
   )

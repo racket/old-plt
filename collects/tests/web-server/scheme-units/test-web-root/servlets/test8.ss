@@ -2,7 +2,7 @@
 ;; path.
 (module test8 mzscheme
   (require (lib "servlet.ss" "web-server")
-           (lib "servlet-sig.ss" "web-server")
+           (lib "servlet-helpers.ss" "web-server")
            )
 
   (provide start timeout interface-version)
@@ -14,9 +14,9 @@
     (send/finish
       (cons "text/plain"
             (cons
-              (current-directory)
+              (path->string (current-directory))
               (map
                 (lambda (binding)
-                  (string-append (symbol->string (car binding)) (cdr binding)))
+                  (string-append (car binding) (cdr binding)))
                 (request-bindings req))))))
   )

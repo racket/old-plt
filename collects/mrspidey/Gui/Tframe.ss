@@ -165,9 +165,9 @@
             (thread
               (lambda ()
                 (sleep)
-                (send program-canvas set-focus)
+                (send program-canvas focus)
                 (send program-edit
-                  set-position-bias-scroll -1 real-pos end)))))]
+                  set-position-bias-scroll 'start real-pos end)))))]
 
       [shake-it
         (lambda ()

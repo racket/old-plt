@@ -3,8 +3,14 @@
    MzScheme 299.X. Minor changes are listed below.
 
 Version 299.15
+Removed syntax-recertify-constrained?, syntax-extend-certificate-env,
+  make-syntax-certificate-env, and syntax-certificate-env?
+Added syntax-local-certify and changed syntax-recertify
 Added 'module-begin to the set of possible results from
- `syntax-local-context'.
+ syntax-local-context
+Added begin-with-definitions to (lib "etc.ss")
+Changed eval, expand, etc. so that only the leading
+ identifier in a module form is given context
 
 Version 299.14
 Removed fluid-let-syntax

@@ -17,19 +17,29 @@
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;Environment functions
+
+  ;(make-environment (list var-type) (list type) (list string))
+  (define-struct environment (type-env exn-env label-env))
   
   ;Constant empty environment
-  (define empty-env null)
+  (define empty-env (make-environment null null null))
 
   ;; env => (list (list type-bound) (list var-type))
   ;; var-type => (make-var-type string type boolean boolean)
   (define-struct var-type (var type local? static?))
   
   ;; add-var-to-env: string type boolean boolean env -> env
-  (define add-var-to-env
-    (lambda (name type local? static? oldEnv)
-      (cons (make-var-type name type local? static?)
-            oldEnv)))
+  (define (add-var-to-env name type local? static? oldEnv)
+    (make-environment (cons (make-var-type name type local? static?)
+                            (environment-type-env oldEnv))
+                      (environment-exn-env oldEnv)
+                      (environment-label-env oldEnv)))
+  
+  ;;add-var-group (list var-type) env -> env
+  (define (add-var-group vars env)
+    (make-environment (append vars (environment-type-env env))
+                      (environment-exn-env env)
+                      (environment-label-env env)))
 
   ;; lookup-var-in-env: string env -> (U var-type boolean)
   (define (lookup-var-in-env name env)
@@ -40,7 +50,29 @@
                     (if (string=? name (var-type-var (car env)))
                         (car env)
                         (lookup (cdr env)))))))
-      (lookup env)))
+      (lookup (environment-type-env env))))
+  
+  ;;add-exn-to-env: type env -> env
+  (define (add-exn-to-env exn env)
+    (make-environment (environment-type-env env)
+                      (cons exn (environment-exn-env env))
+                      (environment-label-env env)))
+  
+  ;;lookup-exn: type env type-records-> bool
+  (define (lookup-exn type env type-recs)
+    (ormap (lambda (lookup)
+             (assignment-conversion lookup type type-recs))
+           (environment-exn-env env)))
+  
+  ;;add-label-to-env: string env -> env
+  (define (add-label-to-env label env)
+    (make-environment (environment-type-env env)
+                      (environment-exn-env env)
+                      (cons label (environment-label-env env))))
+  
+  ;;lookup-label: string env -> bool
+  (define (lookup-label label env)
+    (member label (environment-label-env env)))
     
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Generic helper functions
@@ -102,7 +134,7 @@
                          type-recs))
         ((var-decl? prog) (void))
         ((statement? prog)
-         (check-statement prog null env null level type-recs current-class #f #t))
+         (check-statement prog null env level type-recs current-class #f #t))
         ((expr? prog)
          (check-expr prog env level type-recs current-class #f #t))
         (else
@@ -149,9 +181,9 @@
                            (check-method member field-env type-recs current-class)))
                       ((initialize? member)
                        (if (initialize-static member)
-                           (check-statement (initialize-block member) null (get-static-env field-env) null
+                           (check-statement (initialize-block member) null (get-static-env field-env)
                                             'full type-recs current-class #f #t)
-                           (check-statement (initialize-block member) null field-env null 'full
+                           (check-statement (initialize-block member) null field-env 'full
                                             type-recs current-class #f #f)))
                       ((var-init? member)
                        (check-var-init (var-init-init member) 
@@ -201,7 +233,6 @@
             (check-statement (method-body method)
                              return
                              (build-method-env (method-parms method) field-env type-recs)
-                             null
                              'full
                              type-recs
                              current-class
@@ -221,34 +252,33 @@
   
   ;get-static-env: env -> env
   (define (get-static-env env)
-    (filter var-type-static? env))  
+    (make-environment (filter var-type-static? (environment-type-env env))
+                      (environment-exn-env env)
+                      (environment-label-env env)))
 
     
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Statement checking functions
   
-  ;;check-statement: statement type env (list type) (list string) symbol type-records (U #f string) bool bool-> type
+  ;;check-statement: statement type env symbol type-records (U #f string) bool bool-> type
   (define check-statement
-    (lambda (statement return env exn-env label-env level type-recs c-c ctor? static?)
-      (let* ((check-s (lambda (stmt env exn-env label-env)
-                       (check-statement stmt return env exn-env label-env level type-recs c-c ctor? static?)))
-             (check-s-no-change (lambda (stmt) (check-s stmt env exn-env label-env)))
-             (check-s-env-change (lambda (stmt env) (check-s stmt env exn-env label-env)))
-             (check-s-exn-change (lambda (stmt exn-env) (check-s stmt env exn-env label-env)))
-             (check-s-label-change (lambda (stmt label-env) (check-s stmt env exn-env label-env)))
-             (check-e (lambda (exp env exn-env)
+    (lambda (statement return env level type-recs c-c ctor? static?)
+      (let* ((check-s (lambda (stmt env)
+                       (check-statement stmt return env level type-recs c-c ctor? static?)))
+             (check-s-no-change (lambda (stmt) (check-s stmt env)))
+             (check-e (lambda (exp env)
                         (check-expr exp env level type-recs c-c ctor? static?)))
-             (check-e-no-change (lambda (exp) (check-e exp env exn-env))))
+             (check-e-no-change (lambda (exp) (check-e exp env))))
       (cond
         ((ifS? statement) 
          (check-ifS (check-e-no-change (ifS-cond statement))
                     (expr-src (ifS-cond statement)))
          (check-s-no-change (ifS-then statement))
-         (check-s-no-change (ifS-else statement)))                                     
+         (check-s-no-change (ifS-else statement)))                           
         ((throw? statement)
-         (check-throw (check-e (throw-expr statement) env exn-env)
+         (check-throw (check-e-no-change (throw-expr statement))
                       (expr-src (throw-expr statement))
-                      exn-env
+                      env
                       type-recs))
         ((return? statement)
          (check-return (return-expr statement)
@@ -269,8 +299,8 @@
                     (for-cond statement)
                     (for-incr statement)
                     (for-loop statement)
-                    (lambda (exp env) (check-e exp env exn-env))
-                    (lambda (stmt env) (check-s stmt env exn-env))
+                    check-e
+                    check-s
                     env
                     type-recs))
         ((try? statement) 
@@ -278,33 +308,32 @@
                     (try-catches statement)
                     (try-finally statement)
                     env
-                    exn-env
                     check-s
                     type-recs))
         ((switch? statement)
-         (check-switch (check-e (switch-expr statement) env exn-env)
+         (check-switch (check-e-no-change (switch-expr statement))
                        (expr-src (switch-expr statement))
                        (switch-cases statement)
                        env
-                       (lambda (e) (check-e e env exn-env))
-                       (lambda (s env) (check-s s env exn-env))))
+                       check-e-no-change
+                       check-s))
         ((block? statement)
          (check-block (block-stmts statement)
                       env
-                      (lambda (s env) (check-s s env exn-env))
-                      (lambda (e env) (check-e e env exn-env))
+                      check-s
+                      check-e
                       type-recs))
         ((break? statement)
          void)
         ((continue? statement)
          void)
         ((label? statement)
-         (check-s (label-stmt statement) env exn-env))
+         (check-s-no-change (label-stmt statement)))
         ((synchronized? statement)
-         (check-e (synchronized-expr statement) env exn-env)
-         (check-s (synchronized-stmt statement) env exn-env))
+         (check-e-no-change (synchronized-expr statement))
+         (check-s-no-change (synchronized-stmt statement)))
         ((statement-expression? statement)
-         (check-e statement env exn-env))))))
+         (check-e-no-change statement))))))
   
   ;check-cond: symbol -> (type src -> void)
   (define (check-cond kind)
@@ -315,16 +344,14 @@
   ;check-ifS: type src -> void
   (define check-ifS (check-cond 'if))
 
-  ;check-throw: type src (list type) type-records -> void
-  (define (check-throw exp-type src exn-env type-recs)
+  ;check-throw: type src env type-records -> void
+  (define (check-throw exp-type src env type-recs)
     (cond
       ((or (not (ref-type? exp-type))
            (not (is-subclass? exp-type throw-type type-recs)))
        (raise-statement-error exp-type src 'throw throw-not-throwable))
-      ((not (is-subclass? exp-type (make-ref-type "RuntimeException" (list "java" "lang")) type-recs))
-       (unless (ormap 
-                (lambda (caught) (assignment-conversion caught exp-type exn-env type-recs))
-                exn-env)
+      ((not (is-subclass? exp-type runtime-exn-type type-recs))
+       (unless (lookup-exn exp-type env type-recs)
          (raise-statement-error exp-type src 'throw thrown-not-declared)))
       (else
        (send type-recs add-req (make-req "Throwable" (list "java" "lang"))))))
@@ -378,8 +405,7 @@
         (let ((new-type (check-var-init (var-init-init local) check-e type sym-name type-recs)))
           (unless (assignment-conversion type new-type type-recs)
             (raise-statement-error (list new-type type) (var-init-src local) sym-name incompatible-type))))
-      (add-var-to-env name type #t #f env)))
-  
+      (add-var-to-env name type #t #f env)))  
   
   ;check-var-init: expression (expression -> type) type symbol type-records -> type
   (define (check-var-init init check-e dec-type name type-recs)
@@ -406,31 +432,30 @@
                        (raise-statement-error (list dec-type new-type) 
                                               (expr-src e) name init-incompatible))))
                  inits)
-       (make-array-type dec-type 1))))         
+       (make-array-type dec-type 1))))
 
-  ;check-try: statement (list catch) (U #f statement) env (list type) 
-  ;           (statement env (list type) -> void) type-records -> void
-  (define (check-try body catches finally env exn-env check-s type-recs)
-    (let ((cought-types (map 
-                         (lambda (catch)
-                           (let ((type (field-type (catch-cond catch))))
-                             (unless (and (ref-type? type)
-                                          (is-subclass? type throw-type type-recs))
-                               (raise-statement-error type (field-src (catch-cond catch)) 'catch catch-throwable))
-                             type))
-                         catches)))
-      (check-s body env (append cought-types exn-env))
+  ;check-try: statement (list catch) (U #f statement) env (statement env -> void) type-records -> void
+  (define (check-try body catches finally env check-s type-recs)
+    (let ((new-env
+           (let loop ((catches catches) (new-env env))
+             (if (null? catches)
+                 new-env
+                 (let* ((catch (car catches))
+                        (type (field-type (catch-cond catch))))
+                   (unless (and (ref-type? type)
+                                (is-subclass? type throw-type type-recs))
+                     (raise-statement-error type (field-src (catch-cond catch)) 'catch catch-throwable))
+                   (loop (cdr catches) (add-exn-to-env type env)))))))
+      (check-s body new-env)
       (for-each (lambda (catch)
                   (let* ((field (catch-cond catch))
                          (name (id-string (field-name field))))
                     (if (lookup-var-in-env name env)
                         (raise-statement-error name (field-src field) (string->symbol name) name-already-defined)
                         (check-s (catch-body catch) 
-                                 (add-var-to-env name (field-type field) #t #f env)
-                                 exn-env))))
+                                 (add-var-to-env name (field-type field) #t #f env)))))
                 catches)
-      (when finally
-        (check-s finally env exn-env))))
+      (when finally (check-s finally env))))
 
   ;Skipping proper checks of the statements + proper checking that constants aren't repeated
   ;check-switch: type src (list caseS) (expression -> type) (statement env -> void) -> void
@@ -536,87 +561,86 @@
         ((access? exp)
          (set-expr-type exp
                         (check-access exp check-sub-expr env level type-recs current-class)))
-      ((special-name? exp)
-       (set-expr-type exp (check-special-name exp env #f)))
-      
-      ((call? exp)
-       (set-expr-type exp (check-call exp
-                                      (map check-sub-expr (call-args exp))
-                                      check-sub-expr
-                                      current-class
-                                      level
-                                      env
-                                      type-recs
-                                      ctor?
-                                      static?)))
-      ((class-alloc? exp)
-       (set-expr-type exp
-                      (check-class-alloc (class-alloc-name exp)
-                                         (map check-sub-expr (class-alloc-args exp))
-                                         (expr-src exp)
-                                         type-recs
-                                         current-class
-                                         env)))
-      ((array-alloc? exp)
-       (set-expr-type exp
-                      (check-array-alloc (array-alloc-name exp)
-                                         (array-alloc-size exp)
-                                         (array-alloc-dim exp)
-                                         (expr-src exp)
-                                         check-sub-expr
-                                         type-recs)))
-      ((cond-expression? exp)
-       (set-expr-type exp
-                      (check-cond-expr (check-sub-expr (cond-expression-cond exp))
-                                       (check-sub-expr (cond-expression-then exp))
-                                       (check-sub-expr (cond-expression-else exp))
-                                       (expr-src exp)
-                                       (expr-src (cond-expression-cond exp))
-                                       type-recs)))
-      ((array-access? exp)
-       (set-expr-type exp
-                      (check-array-access (check-sub-expr (array-access-name exp))
-                                          (check-sub-expr (array-access-index exp))
-                                          (expr-src exp)
-                                          type-recs)))
-      ((post-expr? exp)
-       (set-expr-type exp
-                      (check-pre-post-expr (check-sub-expr (post-expr-expr exp))
-                                           (post-expr-op exp)
-                                           (expr-src exp))))
-      ((pre-expr? exp)
-       (set-expr-type exp
-                      (check-pre-post-expr (check-sub-expr (pre-expr-expr exp))
-                                           (pre-expr-op exp)
-                                           (expr-src exp))))      
-      ((unary? exp)
-       (set-expr-type exp
-                      (check-unary (check-sub-expr (unary-expr exp))
-                                   (unary-op exp)
-                                   (expr-src exp))))
-      ((cast? exp)
-       (set-expr-type exp
-                      (check-cast (check-sub-expr (cast-expr exp))
-                                  (cast-type exp)
-                                  (expr-src exp)
-                                  current-class 
-                                  type-recs)))
-      ((instanceof? exp)
-       (set-expr-type exp
-                      (check-instanceof (check-sub-expr (instanceof-expr exp))
-                                        (instanceof-type exp)
-                                        (expr-src exp)
+        ((special-name? exp)
+         (set-expr-type exp (check-special-name exp env #f)))
+        ((call? exp)
+         (set-expr-type exp (check-call exp
+                                        (map check-sub-expr (call-args exp))
+                                        check-sub-expr
                                         current-class
-                                        type-recs)))
-      ((assignment? exp)
-       (set-expr-type exp
-                      (check-assignment (assignment-op exp)
-                                        (check-sub-expr (assignment-left exp))
-                                        (check-sub-expr (assignment-right exp))
-                                        (expr-src exp)
-                                        ctor? ;#t
                                         level
-                                        type-recs))))))
+                                        env
+                                        type-recs
+                                        ctor?
+                                        static?)))
+        ((class-alloc? exp)
+         (set-expr-type exp
+                        (check-class-alloc (class-alloc-name exp)
+                                           (map check-sub-expr (class-alloc-args exp))
+                                           (expr-src exp)
+                                           type-recs
+                                           current-class
+                                           env)))
+        ((array-alloc? exp)
+         (set-expr-type exp
+                        (check-array-alloc (array-alloc-name exp)
+                                           (array-alloc-size exp)
+                                           (array-alloc-dim exp)
+                                           (expr-src exp)
+                                           check-sub-expr
+                                           type-recs)))
+        ((cond-expression? exp)
+         (set-expr-type exp
+                        (check-cond-expr (check-sub-expr (cond-expression-cond exp))
+                                         (check-sub-expr (cond-expression-then exp))
+                                         (check-sub-expr (cond-expression-else exp))
+                                         (expr-src exp)
+                                         (expr-src (cond-expression-cond exp))
+                                         type-recs)))
+        ((array-access? exp)
+         (set-expr-type exp
+                        (check-array-access (check-sub-expr (array-access-name exp))
+                                            (check-sub-expr (array-access-index exp))
+                                            (expr-src exp)
+                                            type-recs)))
+        ((post-expr? exp)
+         (set-expr-type exp
+                        (check-pre-post-expr (check-sub-expr (post-expr-expr exp))
+                                             (post-expr-op exp)
+                                             (expr-src exp))))
+        ((pre-expr? exp)
+         (set-expr-type exp
+                        (check-pre-post-expr (check-sub-expr (pre-expr-expr exp))
+                                             (pre-expr-op exp)
+                                             (expr-src exp))))      
+        ((unary? exp)
+         (set-expr-type exp
+                        (check-unary (check-sub-expr (unary-expr exp))
+                                     (unary-op exp)
+                                     (expr-src exp))))
+        ((cast? exp)
+         (set-expr-type exp
+                        (check-cast (check-sub-expr (cast-expr exp))
+                                    (cast-type exp)
+                                    (expr-src exp)
+                                    current-class 
+                                    type-recs)))
+        ((instanceof? exp)
+         (set-expr-type exp
+                        (check-instanceof (check-sub-expr (instanceof-expr exp))
+                                          (instanceof-type exp)
+                                          (expr-src exp)
+                                          current-class
+                                          type-recs)))
+        ((assignment? exp)
+         (set-expr-type exp
+                        (check-assignment (assignment-op exp)
+                                          (check-sub-expr (assignment-left exp))
+                                          (check-sub-expr (assignment-right exp))
+                                          (expr-src exp)
+                                          ctor?
+                                          level
+                                          type-recs))))))
 
   ;;added assignment ops so that error messages will be correct
   ;;check-bin-op: symbol type type src-loc symbol type-records -> type

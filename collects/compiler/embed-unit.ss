@@ -274,7 +274,7 @@
 		 [else 'ok]))
 	      ;; First use of the module. Get code and then get code for imports.
 	      (let ([code (get-module-code filename)])
-		(let-values ([(imports fs-imports) (module-compiled-imports code)])
+		(let-values ([(imports fs-imports ft-imports) (module-compiled-imports code)])
 		  (let ([name (let-values ([(base name dir?) (split-path filename)])
 				(path->string (path-replace-suffix name #"")))]
 			[prefix (let ([a (assoc filename prefixes)])
@@ -282,7 +282,7 @@
 				      (cdr a)
 				      (generate-prefix)))]
 			[all-file-imports (filter (lambda (x) (not (symbol? x)))
-						  (append imports fs-imports))])
+						  (append imports fs-imports ft-imports))])
 		    (let ([sub-files (map (lambda (i) (normalize (resolve-module-path-index i filename)))
 					  all-file-imports)]
 			  [sub-paths (map (lambda (i) (collapse-module-path-index i module-path))

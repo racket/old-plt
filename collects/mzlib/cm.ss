@@ -22,12 +22,12 @@
       (x (apply max x))))
   
   (define (get-deps code path)
-    (let-values ([(imports fs-imports) (module-compiled-imports code)])
+    (let-values ([(imports fs-imports ft-imports) (module-compiled-imports code)])
       (map path->bytes
 	   (map (lambda (x)
 		  (resolve-module-path-index x path))
 		;; Filter symbols:
-		(let loop ([l (append imports fs-imports)])
+		(let loop ([l (append imports fs-imports ft-imports)])
 		  (cond
 		   [(null? l) null]
 		   [(symbol? (car l)) (loop (cdr l))]

@@ -16,8 +16,9 @@
 				  begin begin0 set!
 				  with-continuation-mark
 				  if #%app
-				  define-values define-syntaxes
-				  module #%plain-module-begin require provide require-for-syntax))
+				  define-values define-syntaxes define-values-for-syntax
+				  module #%plain-module-begin require provide 
+				  require-for-syntax require-for-template))
 			(if trans? module-transformer-identifier=? module-identifier=?)
 	    clause ...))])))
 
@@ -27,6 +28,7 @@
 	 '(begin
 	    define-values
 	    define-syntaxes
+	    define-values-for-syntax
 	    set!
 	    let-values
 	    let*-values

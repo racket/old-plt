@@ -331,18 +331,19 @@
 	  relto-mp)))
 
   (define (show-import-tree module-path)
-    (let loop ([path (resolve-module-path module-path #f)][indent ""][fs? #f])
-      (printf "~a~a~a~n" indent path (if fs? " [for-syntax]" ""))
+    (let loop ([path (resolve-module-path module-path #f)][indent ""][fs ""])
+      (printf "~a~a~a~n" indent path fs)
       (let ([code (get-module-code path)])
-	(let-values ([(imports fs-imports) (module-compiled-imports code)]
-		     [(mk-loop) (lambda (fs?)
+	(let-values ([(imports fs-imports ft-imports) (module-compiled-imports code)]
+		     [(mk-loop) (lambda (fs)
 				  (lambda (i)
 				    (unless (symbol? i)
 				      (loop (resolve-module-path-index i path)
 					    (format " ~a" indent)
-					    fs?))))])
-	  (for-each (mk-loop #f) imports)
-	  (for-each (mk-loop #t) fs-imports)))))
+					    fs))))])
+	  (for-each (mk-loop "") imports)
+	  (for-each (mk-loop " [for-syntax]") fs-imports)
+	  (for-each (mk-loop " [for-template]") ft-imports)))))
 
   (provide check-module-form
 

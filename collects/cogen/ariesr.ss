@@ -46,7 +46,7 @@
     (define check-for-keyword
       (lambda (id)
 	(when (keyword-name? (zodiac:read-object id))
-	  (zodiac:static-error id "Invalid use of keyword"))))
+	  (error id "Invalid use of keyword"))))
 
     (define annotate
       (lambda (expr)

@@ -289,10 +289,21 @@
 		(get-width) (get-height))
 	      (let-values ([(client-width client-height)
 			    (get-two-int-values get-client-size)])
-		(mred:debug:printf 'container-panel-on-size
-		  "container-panel-on-size: Client size: ~s x ~s"
-		  client-width client-height)
-		(redraw client-width client-height)))]
+		(if (and (number? curr-width)
+			 (number? curr-height)
+			 (= curr-width client-width)
+			 (= curr-height client-height))
+		    (mred:debug:printf
+		     'container-panel-on-size
+		     (string-append
+		      "Container-panel-on-size: "
+		      "same size so not redrawing."))
+		    (begin
+		      (mred:debug:printf
+		       'container-panel-on-size
+		       "container-panel-on-size: Client size: ~s x ~s"
+		       client-width client-height)
+		      (redraw client-width client-height)))))]
 
 	  ; place-children: determines where each child of panel should be
 	  ; placed.

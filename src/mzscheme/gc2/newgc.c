@@ -1233,6 +1233,7 @@ struct thread {
   struct thread *next;
 };
 
+static Mark_Proc normal_thread_mark = NULL, normal_custodian_mark = NULL;
 static struct thread *threads = NULL;
 
 inline static void register_thread(void *t, void *c)
@@ -1256,9 +1257,8 @@ inline static void mark_threads(int owner)
   struct thread *work;
 
   for(work = threads; work; work = work->next)
-    if(work->owner == owner) {
-      mark_table[scheme_thread_type](work->thread);
-    }
+    if(work->owner == owner) 
+      normal_thread_mark(work->thread);
 }
 
 inline static void clean_up_thread_list(void)
@@ -1383,6 +1383,7 @@ inline static void clear_stack_pages(void)
       if(keep) keep--; else free(int_top);
     }
     int_top = base;
+    int_top->top = PPTR(int_top) + 4;
   }
 }
 
@@ -1554,6 +1555,20 @@ inline static void memory_account_mark(struct mpage *page, void *ptr)
   }
 }
 
+int BTC_thread_mark(void *p)
+{
+  return ((struct objhead *)(NUM(p) - WORD_SIZE))->size;
+}
+
+int BTC_custodian_mark(void *p)
+{
+  if(custodian_to_owner_set(p) == current_mark_owner)
+    return normal_custodian_mark(p);
+  else
+    return ((struct objhead *)(NUM(p) - WORD_SIZE))->size;
+}
+
+
 inline static void mark_normal_obj(struct mpage *page, void *ptr)
 {
   switch(page->page_type) {
@@ -1563,13 +1578,14 @@ inline static void mark_normal_obj(struct mpage *page, void *ptr)
 	 of threads, we already used it for roots, so we can just
 	 ignore them outright. In the case of custodians, we do need
 	 to do the check */
-      unsigned short tag = *(unsigned short*)ptr;
-      if(tag != scheme_thread_type) {
-	if(tag == scheme_custodian_type) {
-	  if(custodian_to_owner_set(ptr) == current_mark_owner)
-	    mark_table[scheme_custodian_type](ptr);
-	} else mark_table[tag](ptr);
-      }
+      mark_table[*(unsigned short*)ptr](ptr);
+/*       unsigned short tag = *(unsigned short*)ptr; */
+/*       if(tag != scheme_thread_type) { */
+/* 	if(tag == scheme_custodian_type) { */
+/* 	  if(custodian_to_owner_set(ptr) == current_mark_owner) */
+/* 	    mark_table[scheme_custodian_type](ptr); */
+/* 	} else mark_table[tag](ptr); */
+/*       } */
       break;
     }
     case PAGE_ATOMIC: break;
@@ -1648,6 +1664,13 @@ static void do_btc_accounting(void)
   doing_memory_accounting = 1;
   in_unsafe_allocation_mode = 1;
   unsafe_allocation_abort = btc_overmem_abort;
+
+  if(!normal_thread_mark) {
+    normal_thread_mark = mark_table[scheme_thread_type];
+    normal_custodian_mark = mark_table[scheme_custodian_type];
+  }
+  mark_table[scheme_thread_type] = &BTC_thread_mark;
+  mark_table[scheme_custodian_type] = &BTC_custodian_mark;
   
   /* clear the memory use numbers out */
   for(i = 1; i < owner_table_top; i++)
@@ -1674,6 +1697,8 @@ static void do_btc_accounting(void)
     box = cur->global_prev; cur = box ? SCHEME_PTR1_VAL(box) : NULL;
   }
   
+  mark_table[scheme_thread_type] = normal_thread_mark;
+  mark_table[scheme_custodian_type] = normal_custodian_mark;
   in_unsafe_allocation_mode = 0;
   doing_memory_accounting = 0;
   old_btc_mark = new_btc_mark;

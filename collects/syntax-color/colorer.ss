@@ -4,17 +4,124 @@
            (lib "framework.ss" "framework")
            "token-tree.ss")
   
-  (provide colorer)
-  
-  
-  (define (wrap-port p)
-    (make-custom-input-port
-     (lambda (s)
-       (let ((v (read-string-avail! s p)))
-         (write s)
-         v))
-     #f
-     (lambda () (close-input-port p))))
+  (provide colorer text-mixin)
+
+  (define (text-mixin %)
+    (class %
+      
+      ;; The tree of valid tokens, starting at (get-prompt-position)
+      (define tokens #f)
+      
+      ;; The tree of tokens that have been invalidated by an edit
+      ;; but might still be valid.
+      (define invalid-tokens #f)
+
+      ;; The starting position of the invalid-tokens tree
+      (define invalid-tokens-start #f)
+
+      ;; A list of thunks that color the buffer
+      (define colors null)
+
+      ;; The last known (get-prompt-position)
+      (define last-prompt-position (get-prompt-position))
+
+      ;; A channel for communication between the background tokenizer and the foreground
+      ;; thread.
+      (define sync (make-channel))
+      
+      (define background-thread #f)
+      
+      (inherit get-prompt-position change-style begin-edit-sequence end-edit-sequence)
+      
+      (define (reset)
+        (set! tokens #f)
+        (set! invalid-tokens #f)
+        (set! invalid-tokens-start #f)
+        (set! colors null)
+        (set! last-prompt-position (get-prompt-position)))
+      
+      (define (color)
+        (unless (null? colors)
+          ((car colors))
+          (set! colors (cdr colors))
+          (color)))
+      
+      (define (re-tokenize prefix get-token in input-start-pos current-pos)
+        (cond
+          ((and invalid-tokens (= invalid-tokens-start current-pos))
+           (set! tokens (insert-after! tokens (search-min! invalid-tokens null))))
+          (else
+           (let-values (((type data new-token-start new-token-end) (get-token in)))
+             (unless (eq? 'eof type)
+               (let ((len (- new-token-end new-token-start)))
+                 (let loop ()
+                   (cond
+                     ((and invalid-tokens (< invalid-tokens-start current-pos))
+                      (let ((min-tree (search-min! invalid-tokens null)))
+                        (set! invalid-tokens (node-right min-tree))
+                        (set! invalid-tokens-start (+ invalid-tokens-start
+                                                       (node-token-length min-tree)))
+                        (loop)))
+                     (else
+                      (set! colors (cons
+                                    (lambda ()
+                                      (change-style
+                                       (preferences:get (string->symbol (format "drscheme:editor-modes:~a:~a"
+                                                                                prefix
+                                                                                type)))
+                                       (sub1 (+ input-start-pos new-token-start))
+                                       (sub1 (+ input-start-pos new-token-end))
+                                       #f))
+                                    colors))
+                      (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
+                      (re-tokenize prefix get-token in input-start-pos (+ current-pos len)))))))))))
+    
+      (define/public (do-insert/delete prefix get-token edit-start-pos change-length)
+        (let ((buffer-start (get-prompt-position)))
+          (unless (= last-prompt-position buffer-start)
+            (reset))
+          (when (> edit-start-pos buffer-start)
+            (set! edit-start-pos (sub1 edit-start-pos)))
+          (channel-put sync
+                       (lambda ()
+                         (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
+                                       (split tokens (- edit-start-pos buffer-start))))
+                           (let ((in (open-input-text-editor this (+ buffer-start orig-token-start) 'end)))
+                             (set! tokens valid-tree)
+                             (set! invalid-tokens invalid-tree)
+                             (set! invalid-tokens-start (+ orig-token-end change-length))
+                             (re-tokenize prefix get-token in
+                                          (+ buffer-start orig-token-start)
+                                          (+ buffer-start orig-token-start)))))))
+        (channel-get sync)
+        (printf "~a~n~n" (to-list tokens))
+        (begin-edit-sequence #f)
+        (color)
+        (end-edit-sequence))
+      
+      (define/public (start prefix get-token)
+        (reset)
+        (unless background-thread
+          (set! background-thread (thread background-colorer)))
+        (channel-put sync
+                     (lambda ()
+                       (re-tokenize prefix get-token (open-input-text-editor this last-prompt-position 'end)
+                                    last-prompt-position last-prompt-position)))
+        (channel-get sync)
+        (printf "~a~n~n" (to-list tokens))
+        (begin-edit-sequence #f)
+        (color)
+        (end-edit-sequence))
+      
+      (define/public (stop prefix get-token)
+        (reset))
+      
+      (define (background-colorer)
+        ((channel-get sync))
+        (channel-put sync #f)
+        (background-colorer))
+      
+      (super-instantiate ())))
   
   (define (colorer %)
     (class %
@@ -25,82 +132,26 @@
       ;; The token's ending offset
       (init-field get-token prefix)
       
-      (define (update-style text start end tok-type)
-        (queue-callback
-         (lambda ()
-           (send text change-style
-                 (preferences:get (string->symbol (format "drscheme:editor-modes:~a:~a"
-                                                          prefix
-                                                          tok-type)))
-                 (sub1 start)
-                 (sub1 end)
-                 #f))))
-      
       (rename (super-on-disable-surrogate on-disable-surrogate))
       (define/override (on-disable-surrogate text)
         (super-on-disable-surrogate text)
-        (send text set-tokens #f))
-
+        (send text stop prefix get-token))
+      
       (rename (super-on-enable-surrogate on-enable-surrogate))
       (define/override (on-enable-surrogate text)
         (super-on-enable-surrogate text)
-        (send text set-tokens #f)
-        (re-tokenize (open-input-text-editor text 0 'end)
-                     text
-                     0
-                     #f
-                     #f
-                     0))
-            
-      (define (re-tokenize in text real-offset valid-tree invalid-tree invalid-tree-offset)
-        (cond
-          ((and invalid-tree (= invalid-tree-offset 0))
-           (send text set-tokens (insert-after! valid-tree (search-min! invalid-tree null))))
-          (else
-           (let-values (((type data new-token-start new-token-end) (get-token in)))
-             (cond
-               ((eq? 'eof type)
-                (send text set-tokens valid-tree))
-               (else
-                (let ((len (- new-token-end new-token-start)))
-                  (let loop ((next-invalid-offset (- invalid-tree-offset len))
-                             (next-invalid-tree invalid-tree))
-                    (cond
-                      ((and next-invalid-tree (< next-invalid-offset 0))
-                       (let ((min-tree (search-min! next-invalid-tree null)))
-                         (loop (+ next-invalid-offset (node-token-length min-tree)) (node-right min-tree))))
-                      (else
-                       (update-style text
-                                     (+ real-offset new-token-start)
-                                     (+ real-offset new-token-end)
-                                     type)
-                       (re-tokenize in text real-offset
-                                    (insert-after! valid-tree (make-node len data 0 #f #f))
-                                    next-invalid-tree
-                                    next-invalid-offset)))))))))))
+        (send text start prefix get-token))
       
       (rename (super-after-insert after-insert))
       (define/override (after-insert text _ edit-start-pos change-length)
         (super-after-insert text _ edit-start-pos change-length)
-        (after-insert-or-delete text edit-start-pos change-length))
+        (send text do-insert/delete prefix get-token edit-start-pos change-length))
       
       (rename (super-after-delete after-delete))
       (define/override (after-delete text _ edit-start-pos change-length)
         (super-after-delete text _ edit-start-pos change-length)
-        (after-insert-or-delete text edit-start-pos (- change-length)))
-        
-      (define (after-insert-or-delete text edit-start-pos change-length)
-        (let ((buffer-start (send text get-buffer-start)))
-          (when (> edit-start-pos buffer-start)
-            (set! edit-start-pos (sub1 edit-start-pos)))
-          (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
-                        (split (send text get-tokens) edit-start-pos)))
-            (when (< orig-token-start buffer-start)
-              (set! orig-token-start buffer-start))
-            (let ((in (open-input-text-editor text orig-token-start 'end)))
-              (re-tokenize in text orig-token-start valid-tree invalid-tree
-                           (- (+ orig-token-end change-length) orig-token-start))))))
+        (send text do-insert/delete prefix get-token edit-start-pos (- change-length)))
       
-        (super-instantiate ())
-        ))
+      (super-instantiate ())
+      ))
   )

@@ -132,7 +132,7 @@
 	(if (> s e) #t
 	  (let ((ball1 (f ball0 1)))
 	    (and
-	      (draw-solid-disk (ball-posn ball1) 3 RED)
+	      (draw-solid-disk (ball-posn ball1) 3 'red)
 	      (draw-solid-line (ball-posn ball0) (ball-posn ball1))
 	      (dl ball1 (+ s 1)))))))
 
@@ -190,7 +190,7 @@
       (start2 EAST SOUTH)
       (draw-solid-rect   (make-posn (- (quotient EAST 2) 100) 10) 200 20 BG-COLOR)
       ((draw-string @VP) (make-posn (- (quotient EAST 2)  65) 20)
-       "Click anywhere when ready!" RED)
+       "Click anywhere when ready!")
       (let loop () (unless (ready-mouse-click @VP) (loop)))
       (draw-solid-rect   (make-posn (- (quotient EAST 2) 100) 10) 200 20 BG-COLOR))
  
@@ -201,8 +201,8 @@
     ;; The Graphical Ball Representation
     ;; ---------------------------------
     (define BALL-RADIUS 5)
-    (define (draw-ball p) (draw-solid-disk p BALL-RADIUS RED))
-    (define (clear-ball p) (draw-solid-disk p BALL-RADIUS WHITE))
+    (define (draw-ball p) (draw-solid-disk p BALL-RADIUS 'red))
+    (define (clear-ball p) (draw-solid-disk p BALL-RADIUS 'white))
 
     ;(define (draw-ball p)
     ;  (set! draw-ball ((draw-pixmap-posn "Gifs/redball.gif") @VP))
@@ -215,14 +215,14 @@
     ;; Global Properties (initialized by set-up!)
     ;; ------------------------------------------
 
-    (define BG-COLOR GREEN)
-    (define BALL-COLOR RED)
-    (define PAD-COLOR BLUE)
-    (define (set-pad) (set! PAD-COLOR BLUE)) 
-    (define (unset-pad) (set! PAD-COLOR WHITE)) 
-    (define TRACE-COLOR WHITE)
-    (define (set-trace) (set! TRACE-COLOR GREEN)) 
-    (define (unset-trace) (set! TRACE-COLOR WHITE)) 
+    (define BG-COLOR   'green)
+    (define BALL-COLOR 'red)
+    (define PAD-COLOR  'blue)
+    (define (set-pad)   (set! PAD-COLOR 'blue)) 
+    (define (unset-pad) (set! PAD-COLOR 'white)) 
+    (define TRACE-COLOR 'white)
+    (define (set-trace) (set! TRACE-COLOR 'green)) 
+    (define (unset-trace) (set! TRACE-COLOR 'white)) 
 
     (define SLEEP .15)
     (define SWITCH 10000)

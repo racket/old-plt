@@ -1579,20 +1579,24 @@ Check Syntax separates four classes of identifiers:
                                   requires
                                   require-for-syntaxes)
         (let ([unused-requires (make-hash-table 'equal)]
-              [unused-require-for-syntaxes (make-hash-table 'equal)])
+              [unused-require-for-syntaxes (make-hash-table 'equal)]
+              [id-sets (list binders varrefs high-varrefs mac-binders macrefs high-macrefs)])
           (hash-table-for-each requires (lambda (k v) (hash-table-put! unused-requires k #t)))
           (hash-table-for-each require-for-syntaxes (lambda (k v) (hash-table-put! unused-require-for-syntaxes k #t)))
         
           ;(printf "> color binders\n")
-          (for-each (lambda (vars) (for-each (lambda (x)
-                                               (when (syntax-original? x)
-                                                 (color-variable x identifier-binding)))
+          (for-each (lambda (vars) (for-each (lambda (var)
+                                               (when (syntax-original? var)
+                                                 (color-variable var identifier-binding)
+                                                 (make-rename-menu var id-sets)))
                                              vars))
                     (get-idss binders))
           ;(printf "> color varrefs\n")
           (for-each (lambda (vars) (for-each 
                                     (lambda (var)
                                       (color-variable var identifier-binding)
+                                      (when (get-ids binders var)
+                                        (make-rename-menu var id-sets))
                                       (connect-identifier var
                                                           binders
                                                           unused-requires
@@ -1604,6 +1608,8 @@ Check Syntax separates four classes of identifiers:
           (for-each (lambda (vars) (for-each 
                                     (lambda (var)
                                       (color-variable var identifier-transformer-binding)
+                                      (when (get-ids binders var)
+                                        (make-rename-menu var id-sets))
                                       (connect-identifier var
                                                           binders 
                                                           unused-require-for-syntaxes
@@ -1613,15 +1619,18 @@ Check Syntax separates four classes of identifiers:
                     (get-idss high-varrefs))
           
           ;(printf "> color mac binders\n")
-          (for-each (lambda (vars) (for-each (lambda (x)
-                                               (when (syntax-original? x)
-                                                 (color-syntax x identifier-binding)))
+          (for-each (lambda (vars) (for-each (lambda (var)
+                                               (when (syntax-original? var)
+                                                 (color-syntax var identifier-binding)
+                                                 (make-rename-menu var id-sets)))
                                              vars))
                     (get-idss mac-binders))
           ;(printf "> color macrefs\n")
           (for-each (lambda (vars) (for-each
                                     (lambda (var)
                                       (color-syntax var identifier-binding)
+                                      (when (get-ids binders var)
+                                        (make-rename-menu var id-sets))
                                       (connect-identifier var
                                                           mac-binders
                                                           unused-requires
@@ -1633,6 +1642,8 @@ Check Syntax separates four classes of identifiers:
           (for-each (lambda (vars) (for-each
                                     (lambda (var)
                                       (color-syntax var identifier-transformer-binding)
+                                      (when (get-ids binders var)
+                                        (make-rename-menu var id-sets))
                                       (connect-identifier var
                                                           mac-binders
                                                           unused-require-for-syntaxes
@@ -2131,8 +2142,8 @@ Check Syntax separates four classes of identifiers:
                   (loop (send enclosing-snip-admin get-editor)))
                 ed))))
       
-      ;; make-rename-menu : stx[original] (hash-table symbol (listof syntax)) -> void
-      (define (make-rename-menu stx vars-ht)
+      ;; make-rename-menu : stx[original] (listof id-set) -> void
+      (define (make-rename-menu stx id-sets)
         (let ([source (syntax-source stx)])
           (when (is-a? source text%)
             (let ([syncheck-text (find-syncheck-text source)])
@@ -2149,7 +2160,10 @@ Check Syntax separates four classes of identifiers:
                             (callback
                              (lambda (x y)
                                (let ([frame-parent (find-menu-parent menu)])
-                                 (rename-callback name-to-offer stx vars-ht frame-parent)))))))))))))
+                                 (rename-callback name-to-offer
+                                                  stx
+                                                  id-sets
+                                                  frame-parent)))))))))))))
       
       ;; find-parent : menu-item-container<%> -> (union #f (is-a?/c top-level-window<%>)
       (define (find-menu-parent menu)
@@ -2169,9 +2183,9 @@ Check Syntax separates four classes of identifiers:
             [(is-a? menu menu-item<%>) (loop (send menu get-parent))]
             [else #f])))
 
-      ;; rename-callback : string syntax[original] (listof syntax) (union #f (is-a?/c top-level-window<%>)) -> void
+      ;; rename-callback : string syntax[original] (listof id-set) (union #f (is-a?/c top-level-window<%>)) -> void
       ;; callback for the rename popup menu item
-      (define (rename-callback name-to-offer stx vars-ht parent)
+      (define (rename-callback name-to-offer stx id-sets parent)
         (let ([new-sym 
                (fw:keymap:call/text-keymap-initializer
                 (lambda ()
@@ -2181,17 +2195,17 @@ Check Syntax separates four classes of identifiers:
                    parent
                    name-to-offer)))])
           (when new-sym
-            (let* ([same-names
-                    (filter (lambda (x) (module-identifier=? x stx))
-                            (hash-table-get vars-ht (syntax-e stx)))]
-                   [to-be-renamed 
+            (let* ([to-be-renamed 
                     (remove-duplicates
                      (quicksort 
-                      (filter syntax-original? same-names)
+                      (apply 
+                       append
+                       (map (lambda (id-set) (or (get-ids id-set stx) '()))
+                            id-sets))
                       (lambda (x y) 
                         ((syntax-position x) . >= . (syntax-position y)))))])
               (cond
-                [(name-duplication? to-be-renamed vars-ht new-sym)
+                [(name-duplication? to-be-renamed id-sets new-sym)
                  (message-box (string-constant check-syntax)
                               (format (string-constant cs-name-duplication-error) 
                                       new-sym)
@@ -2213,20 +2227,16 @@ Check Syntax separates four classes of identifiers:
                        (send first-one-source invalidate-bitmap-cache)
                        (send first-one-source end-edit-sequence))))])))))
       
-      ;; name-duplication? : (listof syntax) hash-table symbol -> boolean
+      ;; name-duplication? : (listof syntax) (listof id-set) symbol -> boolean
       ;; returns #t if the name chosen would be the same as another name in this scope.
-      (define (name-duplication? to-be-renamed vars-ht new-str)
-        (let* ([new-sym (string->symbol new-str)]
-               [possible-conflicts/with-tbr (hash-table-get vars-ht new-sym (lambda () null))]
-               [possible-conflicts
-                (filter (lambda (x) (not (memf (lambda (y) (module-identifier=? x y)) to-be-renamed)))
-                        possible-conflicts/with-tbr)])
-          (ormap (lambda (to-be-renamed-var)
-                   (let ([new-identifier (datum->syntax-object to-be-renamed-var new-sym)])
-                     (ormap (lambda (possible-conflict) (module-identifier=? possible-conflict new-identifier))
-                            possible-conflicts)))
-                 to-be-renamed)))
-      
+      (define (name-duplication? to-be-renamed id-sets new-str)
+        (let ([new-ids (map (lambda (id) (datum->syntax-object id (string->symbol new-str)))
+                            to-be-renamed)])
+          (ormap (lambda (id-set)
+                   (ormap (lambda (new-id) (get-ids id-set new-id)) 
+                          new-ids))
+                 id-sets)))
+               
       ;; remove-duplicates : (listof syntax[original]) -> (listof syntax[original])
       ;; removes duplicates, based on the source locations of the identifiers
       (define (remove-duplicates ids)

@@ -219,8 +219,8 @@
   ;(make-field-access (U Expression #f) id var-access)
   (p-define-struct field-access (object field access))
   
-  ;;(make-var-access bool bool bool string)
-  (p-define-struct var-access (static? final? init? class))
+  ;;(make-var-access bool bool bool symbol string)
+  (p-define-struct var-access (static? final? init? access class))
   
   ;(make-local-access id)
   (p-define-struct local-access (name))

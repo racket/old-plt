@@ -1330,6 +1330,11 @@
                                           (memq 'static (field-record-modifiers record))
                                           (memq 'final (field-record-modifiers record))
                                           (field-record-init? record)
+                                          (cond
+                                            ((memq 'private (field-record-modifiers record)) 'private)
+                                            ((memq 'public (field-record-modifiers record)) 'public)
+                                            ((memq 'protected (field-record-modifiers record)) 'protected)
+                                            (else 'package))
                                           (car (field-record-class record))))
            (add-required c-class 
                          (car (field-record-class record))
@@ -1362,7 +1367,7 @@
                                     (make-field-access 
                                      #f
                                      (car accs)
-                                     (make-var-access #t #f #f (class-record-name (car static-class)))))
+                                     (make-var-access #t #f #f 'temp (class-record-name (car static-class)))))
                        (cdr accs))))
                    ((and (memq level '(beginner intermediate advanced)) (not first-binding) (> (length acc) 1)
                          (with-handlers ((exn:syntax? (lambda (e) #f)))
@@ -1372,7 +1377,7 @@
                                   (expr-src exp)
                                   (make-field-access #f
                                                      (cadr acc)
-                                                     (make-var-access #t #f #f first-acc)))
+                                                     (make-var-access #t #f #f 'temp first-acc)))
                      (cddr acc)))
                    ((and first-binding (properties-local? (var-type-properties first-binding)))
                     (build-field-accesses
@@ -1389,7 +1394,7 @@
                            (make-access #f (expr-src exp)
                                         (make-field-access #f
                                                            (car acc)
-                                                           (make-var-access #t #f #f encl-class)))
+                                                           (make-var-access #t #f #f 'temp encl-class)))
                            (cdr acc))
                           (if interactions?
                               (build-field-accesses (make-access #f (expr-src exp) (make-local-access (car acc)))

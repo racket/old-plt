@@ -153,7 +153,7 @@
     (lambda (id types)
       (letrec ((parm-name
                 (lambda (t)
-                  (format "_~a"
+                  (format "-~a"
                           (cond
                             ((symbol? t) t)
                             ((ref-type? t) 

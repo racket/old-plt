@@ -40,8 +40,8 @@
   ;Object interface, and a mixin to create objects from.
   
   (define ObjectI
-    (interface () Object-constructor clone equals_java.lang.Object finalize getClass
-      hashCode notify notifyAll toString wait wait_long wait_long_int my-name))
+    (interface () Object-constructor clone equals-java.lang.Object finalize getClass
+      hashCode notify notifyAll toString wait wait-long wait-long-int my-name))
   
   (define Object-Mix
     (lambda (parent)
@@ -52,7 +52,7 @@
         ;Needs to do something
         (define/public clone (lambda () void))
         
-        (define/public (equals_java.lang.Object obj) (eq? this obj))
+        (define/public (equals-java.lang.Object obj) (eq? this obj))
         
         ;Needs to do something
         (define/public (finalize) void)
@@ -74,10 +74,10 @@
         (define/public (toString)
           (make-java-string (format "~a@~a" (send this my-name) (send this hashCode))))
         
-        (public-final wait wait_long wait_long_int)
+        (public-final wait wait-long wait-long-int)
         (define wait (lambda () void))
-        (define wait_long (lambda (l) void))
-        (define wait_long_int (lambda (l i) void))
+        (define wait-long (lambda (l) void))
+        (define wait-long-int (lambda (l i) void))
 
         (define/public (field-names) null)
         (define/public (field-values) null)
@@ -209,10 +209,10 @@
 ;                                       ;;;  
 
   ;;String.java
-  (provide make-java-string String String-valueOf_java.lang.Object String-valueOf_char1 
-           String-valueOf_char1_int_int String-copyValueOf_char1_int_int String-copyValueOf_char1
-           String-valueOf_boolean String-valueOf_char String-valueOf_int String-valueOf_long 
-           String-valueOf_float String-valueOf_double)
+  (provide make-java-string String String-valueOf-java.lang.Object String-valueOf-char1 
+           String-valueOf-char1-int-int String-copyValueOf-char1-int-int String-copyValueOf-char1
+           String-valueOf-boolean String-valueOf-char String-valueOf-int String-valueOf-long 
+           String-valueOf-float String-valueOf-double)
   
   (define (make-java-string s)
     (let ((obj (make-object String)))
@@ -230,33 +230,33 @@
       ;Constructors
       (define/public (String-constructor) (send this Object-constructor))      
 
-      (define/public (String-constructor_java.lang.String string)
+      (define/public (String-constructor-java.lang.String string)
         (send this Object-constructor)
         (set! text (send string get-mzscheme-string)))    
       
-      (define/public (String-constructor_char1 chars)
+      (define/public (String-constructor-char1 chars)
         (send this Object-constructor)
         (set! text (list->string (array->list chars 0 (send chars length)))))
     
-      (define/public (String-constructor_char1_int_int chars offset count)
+      (define/public (String-constructor-char1-int-int chars offset count)
         (send this Object-constructor)
         (set! text (list->string (array->list chars offset count))))
     
       ;Does not take into account char-set: PROBLEM
-      (define/public (String-constructor_byte1_int_int_java.lang.String ascii offset len char-set)
+      (define/public (String-constructor-byte1-int-int-java.lang.String ascii offset len char-set)
         (send this Object-constructor)
         (set! text (list->string (map integer->char (array->list ascii offset len)))))
-      (define/public (|String-constructor_byte1_java.lang.String| ascii char-set)
+      (define/public (|String-constructor-byte1-java.lang.String| ascii char-set)
         (send this Object-constructor)
         (set! text (list->string (map integer->char (array->list ascii 0 (send ascii length))))))
     
       ;currently broken until I figure out how to deal appropriately with hi bytes
-      (define/public (String-constructor_byte1_int_int_int ascii hi offset count)
+      (define/public (String-constructor-byte1-int-int-int ascii hi offset count)
         (send this Object-constructor))
-      (define/public (String-constructor_byte1_int ascii hi)
+      (define/public (String-constructor-byte1-int ascii hi)
         (send this Object-constructor))
     
-      (define/public (String-constructor_StringBuffer buffer)
+      (define/public (String-constructor-StringBuffer buffer)
         (send this Object-constructor)
         (set! text (substring (send (send buffer toString) get-mzscheme-string)
                               0 
@@ -272,10 +272,10 @@
       ; -> int
       (define/public (length) (string-length text))
       ; int -> char
-      (define/public  (charAt_int index) (string-ref text index))
+      (define/public  (charAt-int index) (string-ref text index))
     
       ;-> void
-      (define/public (getChars_int_int_char1_int begin end dest i)
+      (define/public (getChars-int-int-char1-int begin end dest i)
         (letrec ((build-char-array
                   (lambda (offset index)
                     (if (= offset end)
@@ -296,10 +296,10 @@
                           (send array set index (char->integer (string-ref text index)))
                           (build-byte-array (add1 index)))))))
           (build-byte-array 0)))
-      (define/public (getBytes_java.lang.String charset)
+      (define/public (getBytes-java.lang.String charset)
         (getBytes))
     
-      (define/public (getBytes_int_int_byte1_int begin end dest i)
+      (define/public (getBytes-int-int-byte1-int begin end dest i)
         (letrec ((build-byte-array
                   (lambda (offset index)
                     (if (= offset end)
@@ -309,20 +309,20 @@
                           (build-byte-array (add1 offset) (add1 index)))))))
           (build-byte-array begin i)))
 
-      (define/public (contentEquals_java.lang.StringBuffer buf)
-        (equals_java.lang.Object (send buf toString)))
+      (define/public (contentEquals-java.lang.StringBuffer buf)
+        (equals-java.lang.Object (send buf toString)))
     
       ;Object -> boolean
-      (define/override (equals_java.lang.Object obj)
+      (define/override (equals-java.lang.Object obj)
         (and (is-a? obj String)
              (equal? text (send (send obj toString) get-mzscheme-string))))
       
       ;Object -> boolean
-      (define/public (equalsIgnoreCase_java.lang.String str)
+      (define/public (equalsIgnoreCase-java.lang.String str)
         (string-ci=? text (send str get-mzscheme-string)))
       
       ;String -> int
-      (define/public (compareTo_java.lang.String str)
+      (define/public (compareTo-java.lang.String str)
         (letrec ((string (send str get-mzscheme-string))
                  (find-diff-chars
                   (lambda (i)
@@ -334,7 +334,7 @@
                  (text-l (string-length text))
                  (str-l (string-length string)))
           (cond
-            ((equals_java.lang.Object str) 0)
+            ((equals-java.lang.Object str) 0)
             ((string<? text string) 
              (if (= text-l str-l)
                  (let-values (((int-text int-str) (find-diff-chars 0)))
@@ -347,17 +347,17 @@
                  (- text-l str-l))))))
   
       ;Object -> int: Throws ClassCastException
-      (define/public (compareTo_java.lang.Object obj)
+      (define/public (compareTo-java.lang.Object obj)
         (if (is-a? obj String)
-            (compareTo_java.lang.String obj)
+            (compareTo-java.lang.String obj)
             (raise (create-java-exception ClassCastException
                                           (format "ClassCastException: Expected argument of class String given ~a"
                                                   (send (send obj toString) get-mzscheme-string))
-                                          (lambda (obj msg) (send obj ClassCastException-constructor_String msg))
+                                          (lambda (obj msg) (send obj ClassCastException-constructor-String msg))
                                           (current-continuation-marks)))))
       
       ;String -> int
-      (define/public (compareToIgnoreCase_java.lang.String str)
+      (define/public (compareToIgnoreCase-java.lang.String str)
         (letrec ((string (send str get-mzscheme-string))
                  (find-diff-chars
                   (lambda (i)
@@ -369,7 +369,7 @@
                  (text-l (string-length text))
                  (str-l (string-length string)))
           (cond
-            ((equalsIgnoreCase_java.lang.String str) 0)
+            ((equalsIgnoreCase-java.lang.String str) 0)
             ((string-ci<? text string) 
              (if (= text-l str-l)
                  (let-values (((int-text int-str) (find-diff-chars 0)))
@@ -382,7 +382,7 @@
                  (- text-l str-l))))))
     
       ;int String int int -> boolean
-      (define/public (regionMatches_int_java.lang.String_int_int toffset jstr ooffset len)
+      (define/public (regionMatches-int-java.lang.String-int-int toffset jstr ooffset len)
         (let ((str (send jstr get-mzscheme-string)))
           (and (not (negative? toffset))
                (not (negative? ooffset))
@@ -392,7 +392,7 @@
                          (substring str ooffset (+ ooffset len))))))
     
       ;.... -> boolean
-      (define/public (regionMatches_boolean_int_java.lang.String_int_int case? toffset jstr ooffset len)
+      (define/public (regionMatches-boolean-int-java.lang.String-int-int case? toffset jstr ooffset len)
         (let ((str (send jstr get-mzscheme-string)))
           (and (not (negative? toffset))
                (not (negative? ooffset))
@@ -402,19 +402,19 @@
                 (substring str ooffset (+ ooffset len))))))
     
       ; .... -> boolean
-      (define/public (startsWith_java.lang.String_int Jprefix offset)
+      (define/public (startsWith-java.lang.String-int Jprefix offset)
         (let ((prefix (send Jprefix get-mzscheme-string)))
           (and (not (negative? offset))
                (<= (+ offset (string-length prefix)) (string-length text))
                (string=? prefix (substring text offset (+ offset (string-length prefix)))))))
     
       ;..... -> boolean
-      (define/public (startsWith_java.lang.String Jprefix)
+      (define/public (startsWith-java.lang.String Jprefix)
         (let ((prefix (send Jprefix get-mzscheme-string)))
           (and (<= (string-length prefix) (string-length text))
                (string=? prefix (substring text 0 (string-length prefix))))))     
           
-      (define/public (endsWith_java.lang.String Jsuffix)
+      (define/public (endsWith-java.lang.String Jsuffix)
         (let ((suffix (send Jsuffix get-mzscheme-string)))
           (and (<= (string-length suffix) (string-length text))
                (string=? suffix (substring text (- (string-length text) (string-length suffix)) (string-length text))))))
@@ -449,7 +449,7 @@
       (define (find-str sch-str str pos)
         (if (>= (+ pos (string-length sch-str)) (string-length text))
             -1
-            (if (startsWith_java.lang.String_int str pos)
+            (if (startsWith-java.lang.String-int str pos)
                 pos
                 (find-str sch-str str (add1 pos)))))
     
@@ -457,36 +457,36 @@
       (define (find-last-string sch-str str pos lpos)
         (if (>= (+ pos (string-length sch-str)) (string-length text))
             lpos
-            (if (startsWith_java.lang.String_int str pos)
+            (if (startsWith-java.lang.String-int str pos)
                 (find-last-string sch-str str (add1 pos) pos)
                 (find-last-string sch-str str (add1 pos) lpos))))
     
-      (define/public (indexOf_int ch) (find-char (integer->char ch) 0))
-      (define/public (indexOf_int_int ch offset) (find-char (integer->char ch) offset))
-      (define/public (indexOf_java.lang.String str) (find-str (send str get-mzscheme-string) 0))    
-      (define/public (indexOf_java.lang.String_int str offset) (find-str (send str get-mzscheme-string) offset))
+      (define/public (indexOf-int ch) (find-char (integer->char ch) 0))
+      (define/public (indexOf-int-int ch offset) (find-char (integer->char ch) offset))
+      (define/public (indexOf-java.lang.String str) (find-str (send str get-mzscheme-string) 0))    
+      (define/public (indexOf-java.lang.String-int str offset) (find-str (send str get-mzscheme-string) offset))
       
-      (define/public (lastIndexOf_int ch) (find-last-char (integer->char ch) 0 -1))
-      (define/public (lastIndexOf_int_int ch offset) (find-last-char (integer->char ch) offset -1))    
-      (define/public (lastIndexOf_java.lang.String str) (find-last-string (send str get-mzscheme-string) str 0 -1))
-      (define/public (lastIndexOf_java.lang.String_int str offset) (find-last-string (send str get-mzscheme-string) str offset -1))
+      (define/public (lastIndexOf-int ch) (find-last-char (integer->char ch) 0 -1))
+      (define/public (lastIndexOf-int-int ch offset) (find-last-char (integer->char ch) offset -1))    
+      (define/public (lastIndexOf-java.lang.String str) (find-last-string (send str get-mzscheme-string) str 0 -1))
+      (define/public (lastIndexOf-java.lang.String-int str offset) (find-last-string (send str get-mzscheme-string) str offset -1))
     
       ;int -> String
-      (define/public (substring_int index) (make-java-string (substring text index (string-length text))))
+      (define/public (substring-int index) (make-java-string (substring text index (string-length text))))
     
       ;... -> String
-      (define/public (substring_int_int begin end) (make-java-string (substring text begin end)))
+      (define/public (substring-int-int begin end) (make-java-string (substring text begin end)))
     
-      (define/public (subSequence_int_int begin end)
+      (define/public (subSequence-int-int begin end)
         (error 'subSequence "Internal Error: subsequence is unimplemented because charSequence is unimplemented"))
     
       ;String -> String
-      (define/public (concat_java.lang.String Jstr)
+      (define/public (concat-java.lang.String Jstr)
         (let ((str (send Jstr get-mzscheme-string)))
           (make-java-string (string-append text str))))
     
       ; .. -> String
-      (define/public (replace_char_char old new)
+      (define/public (replace-char-char old new)
         (let ((new-text (apply string-append (map string (string->list text)))))
           (let loop ([index 0])
             (let ((pos (find-char old index)))
@@ -496,19 +496,19 @@
           (make-java-string new-text)))
     
       ;Does not currently work. Needs to replace regex in text with replace and return new string; PROBLEM
-      (define/public (replaceAll_java.lang.String_java.lang.String regex replace)
+      (define/public (replaceAll-java.lang.String-java.lang.String regex replace)
         (error 'replaceAll "Internal error: replaceAll is unimplemented at this time"))
     
-      (define/public (replaceFirst_java.lang.String_java.lang.String regex replace)
+      (define/public (replaceFirst-java.lang.String-java.lang.String regex replace)
         (error 'replaceFirst "Internal error: replaceFirst is unimplemented at this time"))
     
-      (define/public (matches_java.lang.String regex)
+      (define/public (matches-java.lang.String regex)
         (error 'matches "Internal error: matches is unimplemented at this time"))
     
-      (define/public (split_java.lang.String_int regex limit)
+      (define/public (split-java.lang.String-int regex limit)
         (error 'split "Internal error: split is unimplemented at this time"))
       
-      (define/public (split_java.lang.String regex)
+      (define/public (split-java.lang.String regex)
         (error 'split "Internal error: split is unimplemented at this time"))
     
       ; -> String
@@ -516,14 +516,14 @@
         (make-java-string (apply string-append (map string (map char-downcase (string->list text))))))
     
       ;Does not take Locale into account
-      (define/public (toLowerCase_java.util.Locale locale)
+      (define/public (toLowerCase-java.util.Locale locale)
         (toLowerCase))
     
       (define/public (toUpperCase)
         (make-java-string (apply string-append (map string (map char-upcase (string->list text))))))
     
       ;Does not take Locale into account: Problem
-      (define/public (toUpperCase_java.util.Locale locale)
+      (define/public (toUpperCase-java.util.Locale locale)
         (toUpperCase))
     
       ;... -> String
@@ -540,28 +540,28 @@
       (super-instantiate ())))
   
   ;valueOf -> String
-  (define (String-valueOf_java.lang.Object obj)
+  (define (String-valueOf-java.lang.Object obj)
     (if (null? obj)
         (make-java-string "null")
         (send obj |toString|)))
-  (define (String-valueOf_char1 data) 
+  (define (String-valueOf-char1 data) 
     (make-java-string (list->string (array->list data 0 (send data length)))))
 
   ;Should throw exceptions
-  (define (String-valueOf_char1_int_int data offset len)
+  (define (String-valueOf-char1-int-int data offset len)
     (make-java-string (list->string (array->list data offset len))))
 
-  (define (String-valueOf_boolean b) (make-java-string (if b "true" "false")))
-  (define (String-valueOf_char c) (make-java-string (string c)))
-  (define (String-valueOf_int i) (make-java-string (number->string i)))
-  (define (String-valueOf_long l) (make-java-string (number->string l)))
-  (define (String-valueOf_float f) (make-java-string (number->string f)))
-  (define (String-valueOf_double d) (make-java-string (number->string d)))
+  (define (String-valueOf-boolean b) (make-java-string (if b "true" "false")))
+  (define (String-valueOf-char c) (make-java-string (string c)))
+  (define (String-valueOf-int i) (make-java-string (number->string i)))
+  (define (String-valueOf-long l) (make-java-string (number->string l)))
+  (define (String-valueOf-float f) (make-java-string (number->string f)))
+  (define (String-valueOf-double d) (make-java-string (number->string d)))
   
   ;copyValueOf -> String
-  (define (String-copyValueOf_char1_int_int data offset count)
-    (String-valueOf_char1_int_int data offset count))
-  (define (String-copyValueOf_char1 data) (String-valueOf_char1 data))
+  (define (String-copyValueOf-char1-int-int data offset count)
+    (String-valueOf-char1-int-int data offset count))
+  (define (String-copyValueOf-char1 data) (String-valueOf-char1 data))
   
   ;Comparator
   (define String-CASE_INSENSITIVE_ORDER null)
@@ -603,18 +603,18 @@
         (set! stack (current-continuation-marks))
         (send this Object-constructor))
                 
-      (define/public (Throwable-constructor_java.lang.String msg)
+      (define/public (Throwable-constructor-java.lang.String msg)
         (set! message msg)
         (set! stack (current-continuation-marks))
         (send this Object-constructor))
       
-      (define/public (Throwable-constructor_java.lang.String_java.lang.Throwable msg cse)
+      (define/public (Throwable-constructor-java.lang.String-java.lang.Throwable msg cse)
         (set! message msg)
         (set! cause cse)
         (set! stack (current-continuation-marks))
         (send this Object-constructor))
       
-      (define/public (Throwable-constructor_java.lang.Throwable cse)
+      (define/public (Throwable-constructor-java.lang.Throwable cse)
         (set! message (if (null? cse) null (send cse |toString|)))
         (set! cause cse)
         (set! stack (current-continuation-marks))
@@ -628,7 +628,7 @@
       (define (get-exception) exception)
 
       ;Needs to throw exceptions. Needs to be callable only once per object
-      (define/public (initCause_java.lang.Throwable cse)
+      (define/public (initCause-java.lang.Throwable cse)
         (set! cause cse)
         this)
       
@@ -637,7 +637,7 @@
       (define/public (getCause) cause)
       (define/public (getLocalizedMessage) (send this getMessage))
       
-      (define/public (setStackTrace_java.lang.StackTraceElement1 elments)
+      (define/public (setStackTrace-java.lang.StackTraceElement1 elments)
         (error 'setStackTrace "Internal error: setStackTrace will not be implemented until strack trace element s implemented"))
       (define/public (getStackTrace)
         (error 'getStackTrace "Internal error: getStackTrace will not be implemented until StackTraceElement is implemented"))
@@ -656,8 +656,8 @@
                            (make-exn message stack)))
 
       ;These functions do not work correctly yet, and won't until printStreams are implemented
-      (define/public printStackTrace_PrintStream (lambda (printStream) void)) 
-      (define/public printStackTrace_PrintWriter (lambda (pW) void))
+      (define/public printStackTrace-PrintStream (lambda (printStream) void)) 
+      (define/public printStackTrace-PrintWriter (lambda (pW) void))
       
       ;This function does nothing at this time
       (define/public (fillInStackTrace) this)

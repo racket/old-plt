@@ -35,14 +35,6 @@
                                            ,(syn (access (make-name))))
                                   #f)
             (syn (access (make-name))))))
-
-  ;flatten: (list (list ~a)...) -> (list ~a)
-  (define (flatten l)
-    (cond
-      ((null? l) l)
-      ((pair? (car l)) (append (flatten (car l))
-                               (flatten (cdr l))))
-      (else (cons (car l) (flatten (cdr l))))))
   
   ;-------------------------------------------------------------------------------
   ;Main functions

@@ -8,14 +8,14 @@
     kind-types)
 
   (define search-types
-    `(("keyword" ,(string-constant search-for-keyword))
-      ("keyword-index" ,(string-constant search-for-keyword-or-index) *) ; default
-      ("keyword-index-text" ,(string-constant search-for-keyword-or-index-or-text))))
+    `(("keyword" ,(string-constant plt:hd:search-for-keyword))
+      ("keyword-index" ,(string-constant plt:hd:search-for-keyword-or-index) *) ; default
+      ("keyword-index-text" ,(string-constant plt:hd:search-for-keyword-or-index-or-text))))
 
   (define match-types
-    `(("exact-match" ,(string-constant exact-match))
-      ("containing-match" ,(string-constant containing-match) *) ; default
-      ("regexp-match" ,(string-constant regexp-match))))
+    `(("exact-match" ,(string-constant plt:hd:exact-match))
+      ("containing-match" ,(string-constant plt:hd:containing-match) *) ; default
+      ("regexp-match" ,(string-constant plt:hd:regexp-match))))
 
   (define kind-types
     `(("index entries" html)

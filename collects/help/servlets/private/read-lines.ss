@@ -24,19 +24,19 @@
 	s))
 
   (define (template caption lines) 
-    `(HTML 
-      (HEAD ,hd-css)
-      (BODY 
-       (B ,(color-with "blue" caption))
-       (P)
-       (PRE ((STYLE "font-family:monospace"))
-        ; use <BR>'s instead of newlines, for Opera
-        ; don't put in a <BR> for the temp-anchor, which wasn't a line in the source
-	,@(semi-flatten (map (lambda (ln) 
-			       (if (eq? ln temp-anchor)
-				   `(,ln "")
-				   `(,(spacify ln) (BR)))) lines))))))
-
+    `(TABLE ((CELLPADDING "0")
+	     (CELLSPACING "0"))
+	    (B ,(color-with "blue" caption))
+	    (P)
+	    (PRE ((STYLE "font-family:monospace"))
+            ; use <BR>'s instead of newlines, for Opera
+            ; don't put in a <BR> for the temp-anchor, which wasn't a line in the source
+		 ,@(semi-flatten 
+		    (map (lambda (ln) 
+			   (if (eq? ln temp-anchor)
+			       `(,ln "")
+			       `(,(spacify ln) (BR)))) lines)))))
+    
   (define eoregexp
     "($|\\s|(\\.(\\s|$))|>)")
 
@@ -55,7 +55,7 @@
   (define http-regexp (make-url-regexp "http"))
   (define cheap-http-regexp (regexp "http://"))
   (define (http-format url)
-    `(A ((HREF ,url) (TARGET "main")) ,url))
+    `(A ((HREF ,url) (TARGET ,(text-frame))) ,url))
   (define ftp-regexp (make-url-regexp "ftp"))
   (define cheap-ftp-regexp (regexp "ftp://"))
   (define ftp-format http-format) 

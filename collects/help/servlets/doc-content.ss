@@ -1,6 +1,7 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server"))
 
+(require "private/hd-css.ss")
 (require "private/read-lines.ss")
 
 (unit/sig ()
@@ -13,7 +14,11 @@
 		  ((void (lambda _ #f)))
 		  (string->number 
 		   (extract-binding/single 'offset bindings)))])
-    (read-lines file caption offset)))
+    `(HTML
+      (HEAD (TITLE "PLT Help Desk") 
+	    ,hd-css)
+      ,(read-lines file caption offset))))
+
 
 
 

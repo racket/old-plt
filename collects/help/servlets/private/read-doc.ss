@@ -23,26 +23,43 @@
   (define (build-page file caption coll offset)
     (let ([msg (get-message coll)])
       (if msg
-	  `(HTML 
-            (HEAD ,hd-css)
-	    (FRAMESET ((ROWS "36,*")
-		       (BORDER "0"))
-	      (FRAME ((NAME "message")
-		      (MARGINHEIGHT "2")
-		      (MARGINWIDTH "4")
-		      (BORDERCOLOR "whitesmoke")
-		      (SCROLLING "no")
-		      (SRC ,(format "/servlets/doc-message.ss?msg=~a" 
-				    (hexify-string msg)))))
-	      (FRAME ((NAME "content")	
-		      (SRC ,(format 
-			     "/servlets/doc-content.ss?~a"
-			     (if offset
-				  (format offset-format
-					  (hexify-string file) caption offset)
-				  (format no-offset-format
-					  (hexify-string file) caption))))))))
-	  (read-lines file caption offset))))
+	  (if (use-frames?)
+	      ; message, with frames
+	      `(HTML 
+		(HEAD (TITLE "PLT Help Desk") 
+		      ,hd-css)
+		(FRAMESET ((ROWS "36,*")
+			   (BORDER "0"))
+			  (FRAME ((NAME "message")
+				  (MARGINHEIGHT "2")
+				  (MARGINWIDTH "4")
+				  (BORDERCOLOR "whitesmoke")
+				  (SCROLLING "no")
+				  (SRC ,(format "/servlets/doc-message.ss?msg=~a" 
+						(hexify-string msg)))))
+			  (FRAME ((NAME "content")	
+				  (SRC ,(format 
+					 "/servlets/doc-content.ss?~a"
+					 (if offset
+					     (format 
+					      offset-format
+					      (hexify-string file) caption offset)
+					     (format 
+					      no-offset-format
+					      (hexify-string file) caption))))))))
+	      ; message, no frames
+              `(HTML
+		(HEAD (TITLE "PLT Help Desk") 
+		      ,hd-css)
+		(BODY
+		 ,(format-collection-message msg)
+		 (HR)
+		 ,(read-lines file caption offset))))
+          ; no message		 
+	  `(HTML
+	    (HEAD (TITLE "PLT Help Desk") 
+		  ,hd-css)
+	    ,(read-lines file caption offset)))))
 
   (define read-doc 
     (opt-lambda (file caption coll [offset #f])

@@ -1,8 +1,6 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
-         (lib "servlet-helpers.ss" "web-server")
-	 (lib "string-constant.ss" "string-constants")
-         (lib "xml.ss" "xml"))
+         (lib "servlet-helpers.ss" "web-server"))
 
 (require "private/util.ss")
 (require "private/hd-css.ss")

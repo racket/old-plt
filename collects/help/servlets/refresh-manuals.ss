@@ -48,11 +48,11 @@
 		   (show (format format-string doc-label) "<BR>")
 		   (action tmp-directory doc-name))))]
 	    [downloader (make-action download-known-doc 
-				     (string-constant refresh-downloading))]
+				     (string-constant plt:hd:refresh-downloading))]
 	    [deleter (make-action delete-known-doc 
-				  (string-constant refresh-deleting))]
+				  (string-constant plt:hd:refresh-deleting))]
 	    [installer (make-action run-setup-plt 
-				    (string-constant refresh-installing))]
+				    (string-constant plt:hd:refresh-installing))]
 	    [looper (lambda (f)
 		      (for-each f known-docs))])
        (doc-collections-changed)
@@ -71,8 +71,7 @@
 		   (list downloader deleter installer))
 	 (close-output-port oport))
        (delete-directory/r tmp-directory)
-       (show (xexpr->string `(B ,(string-constant 
-				  refresh-done))))
+       (show (xexpr->string `(B ,(string-constant plt:hd:refresh-done))))
        (show "</PRE>")
        (show "<P>")
        (show (xexpr->string home-page))

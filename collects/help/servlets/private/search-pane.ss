@@ -38,12 +38,9 @@
 	   [txt (cadr opt)])
       `(OPTION ,attribs ,txt)))
 
-  (define (main-frame)
-    (if (use-frames?) "main" "_top"))
-
   (define (search-pane-form s)
     `(FORM ((ACTION "/servlets/results.ss")
-	    (TARGET ,(main-frame))
+	    (TARGET ,(text-frame))
 	    (METHOD "POST"))
 	   (TABLE ((CELLSPACING "0")
 		   (CELLPADDING "0"))
@@ -53,7 +50,7 @@
 			(TR 
 			 (TD ((ALIGN "right"))
 			     (B ,(color-with (search-fg)
-					     (string-constant search-for)
+					     (string-constant plt:hd:search-for)
 					     ":")))
 			 (TD ((NOWRAP "true"))
 			     (INPUT ((TYPE "text")
@@ -63,16 +60,16 @@
 			     'nbsp
 			     (INPUT ((TYPE "submit")
 				     (NAME "search")
-				     (VALUE ,(string-constant search))))
+				     (VALUE ,(string-constant plt:hd:search))))
 			     'nbsp 
 			     (INPUT ((TYPE "submit")
 				     (NAME "lucky")
-				     (VALUE ,(string-constant lucky)))))
+				     (VALUE ,(string-constant plt:hd:lucky)))))
 			 (TD 'nbsp 'nbsp))
 			(TR 
 			 (TD ((ALIGN "right")) 
 			     (B  ,(color-with (search-fg) (string-constant
-							 options) ":")))
+							 plt:hd:options) ":")))
 			 (TD ((COLSPAN "2")
 			      (NOWRAP "true"))
 			     (SELECT ((NAME "search-type"))
@@ -90,26 +87,26 @@
 			      (TR 
 			       (TD
 				,(make-search-link "/servlets/home.ss" 
-						   (string-constant hd-home)
+						   (string-constant plt:hd:home)
 						   "_top")))
 			      (TR
 			       (TD 
 				,(make-search-link "/servlets/manuals.ss"
 						   (string-constant 
-						    show-manuals)
-						   (main-frame))))
+						    plt:hd:show-manuals)
+						   (text-frame))))
 			      (TR 
 			       (TD
 				,(make-search-link "/servlets/bug-report.ss"
 						   (string-constant 
-						    send-bug-report)
+						    plt:hd:send-bug-report)
 						   "_top")))
 			      
 			      (TR 
 			       (TD
 				,(make-search-link "http://bugs.plt-scheme.org/query/"
 						   (string-constant 
-						    query-bug-reports)
+						    plt:hd:query-bug-reports)
 						   "_top")))))))))
 
   (define search-pane

@@ -103,9 +103,9 @@
 					   "[<A HREF=\"/servlets/download-manual.ss?manual=~a&label=~a\">~a</A>]"
 					   manual-dir
 					   (hexify-string name)
-					   (string-constant refresh))
+					   (string-constant plt:hd:refresh))
 					  "&nbsp;"))
-				     (format (string-constant manual-installed-date)
+				     (format (string-constant plt:hd:manual-installed-date)
                                              (date->string
                                               (seconds->date
                                                (file-or-directory-modify-seconds
@@ -137,7 +137,7 @@
 	  
 	  (if (and cvs-user? (not external-connections?))
 	      (list "<b>CVS:</b> <a href=\"/servlets/refresh-manuals.ss\" target=\"outer\">"
-		    (string-constant refresh-all-manuals)
+		    (string-constant plt:hd:refresh-all-manuals)
 		    "</a>")
 	      '())
 	  

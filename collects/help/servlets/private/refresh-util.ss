@@ -45,7 +45,7 @@
 	   (INPUT ((TYPE "submit")
 		   (ID "stop")
 		   (NAME "stop")
-		   (VALUE ,(string-constant stop))))
+		   (VALUE ,(string-constant plt:hd:stop))))
 	   (P)
 	   "If JavaScript is enabled in your browser, an "
 	   "installation log should appear in a separate browser "

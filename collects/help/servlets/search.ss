@@ -2,7 +2,6 @@
 	 (lib "string.ss")
          (lib "servlet-sig.ss" "web-server")
          (lib "servlet-helpers.ss" "web-server")
-	 (lib "string-constant.ss" "string-constants")
          (lib "xml.ss" "xml"))
 
 (require "private/search-pane.ss")

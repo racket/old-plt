@@ -16,6 +16,6 @@
       (HEAD ,hd-css
 	    (TITLE "PLT manuals refresh stopped"))
       (BODY
-	(H2 (B ,(color-with "red" (string-constant refresh-stopped))))
+	(H2 (B ,(color-with "red" (string-constant plt:hd:refresh-stopped))))
 	(P)
 	,home-page))))

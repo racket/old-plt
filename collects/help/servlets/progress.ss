@@ -21,7 +21,7 @@
      (show (xexpr->string 
 	    `(H3 ,(color-with 
 		   "blue" 
-	           (string-constant refresh-installation-log)))))
+	           (string-constant plt:hd:refresh-installation-log)))))
      (show "<P></P>")
      (show "<PRE>")
      (show nl)

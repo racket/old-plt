@@ -29,6 +29,8 @@
 	   color-choices
 	   home-page
 	   plt-version
+           text-frame
+	   format-collection-message
 	   nl
 	   make-javascript
 	   redir-javascript
@@ -36,7 +38,7 @@
 
   (define home-page 
     `(A ((HREF "/servlets/home.ss") (TARGET "_top"))
-	,(string-constant hd-home)))
+	,(string-constant plt:hd:home)))
 
   (define (get-pref/default pref default)
     (get-preference pref (lambda () default)))
@@ -168,6 +170,12 @@
       "springgreen" "steelblue" "tan" "teal" "thistle" "tomato"
       "turquoise" "violet" "wheat" "white" "whitesmoke" "yellow"
       "yellowgreen"))
+
+  (define (text-frame)
+    (if (use-frames?) "main" "_top"))
+
+  (define (format-collection-message s)
+    `(B ((STYLE "color:green")) ,s))
 
   (define nl (string #\newline))
 

@@ -71,7 +71,7 @@
            (letrec ((RC
                      (lambda (ac-list)
                        (cond ((null? ac-list) '())
-                             ((not ac-list) '())
+                             ((not (car ac-list)) '())
                              (else (cons (car ac-list)
                                          (RC (cdr ac-list))))))))
              (reverse (RC l))))))

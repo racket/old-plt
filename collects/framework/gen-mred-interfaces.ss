@@ -121,7 +121,7 @@ string=? ; exec mred -magqvf $0
 
 (define plt-home (or (getenv "PLTHOME")
 		     (build-path framework-dir 'up 'up)))
-(define cdb-file (build-path plt-home "src" "doc" "framework-mred-interfaces.cdb"))
+(define cdb-file (build-path (collection-path "framework") "framework-mred-interfaces.cdb"))
 (fprintf (current-error-port) "building cdb file: ~a~n" cdb-file)
 (call-with-output-file cdb-file
   (lambda (port)

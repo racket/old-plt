@@ -22,7 +22,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\mzscheme\include,."
+				AdditionalIncludeDirectories="..\..,..\..\mzscheme\include,."
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,GC_DLL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -75,7 +75,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\..\mzscheme\include,."
+				AdditionalIncludeDirectories="..\..,..\..\mzscheme\include,."
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,GC_DLL"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"

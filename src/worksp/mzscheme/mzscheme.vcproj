@@ -21,7 +21,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\mzscheme\include,$(NOINHERIT)"
+				AdditionalIncludeDirectories="..\..,..\..\mzscheme\include,$(NOINHERIT)"
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,GC_DLL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -75,7 +75,7 @@ cd ..\..\worksp\mzscheme
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\..\mzscheme\include,$(NOINHERIT)"
+				AdditionalIncludeDirectories="..\..,..\..\mzscheme\include,$(NOINHERIT)"
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,GC_DLL"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"

@@ -6,6 +6,10 @@
            "marks.ss"
            "breakpoint-token.ss")
   
+  (define (annotate-expr stx)
+    (let ([result-box (box null)])
+      ((f-maker null null result-box) stx #t)))
+  
   (define (free-vars stx)
     (kernel:kernel-syntax-case stx #f
       [(#%top . var)
@@ -153,32 +157,19 @@
              (rebuild-stx (syntax->list new-stx) stx))])
       (kernel:kernel-syntax-case stx #f
         [(define-values (var ...) expr)
-         (rebuild #`(define-values (var ...) #,@(]
+         (rebuild #`(define-values (var ...) #,(annotate-expr #'expr)))]
         [(define-syntaxes (var ...) expr)
-         ...]
+         stx]
         [(begin . top-level-exprs)
-         ...]
+         (rebuild #`(begin #,@(map top-level-expr-iterator (syntax->list #'top-level-exprs))))]
         [(require . require-specs)
-         ...]
+         stx]
         [(require-for-syntax . require-specs)
-         ...]
+         stx]
         [else
-         ...]))
-      
-general-top-level-expr is one of
-  expr
-  (define-values (variable ссс) expr)
-  (define-syntaxes (variable ссс) expr)
-  (begin top-level-expr ссс)
-  (require require-spec ссс)
-  (require-for-syntax require-spec ссс)
-
-
-  
+         (annotate-expr stx)])))
   
   
   (provide/contract [annotate (-> syntax? syntax?)])
   
-  (define (annotate stx)
-    (let ([result-box (box null)])
-      ((f-maker null null result-box) stx #t))))
+  )

@@ -49,7 +49,18 @@
 					    (let ([v (syntax-local-value name (lambda () #f))])
 					      (and v
 						   (struct-declaration-info? v)
-						   v)))))))])
+						   v)))))))]
+	   [same-special-id? (lambda (a b)
+			       ;; Almost module-or-top-identifier=?,
+			       ;; but handle the-cons specially
+			       (or (module-identifier=? a b)
+				   (module-identifier=? 
+				    a 
+				    (datum->syntax-object
+				     #f
+				     (if (eq? 'the-cons (syntax-e b))
+					 'cons
+					 (syntax-e b))))))])
        (with-syntax ([(init-expr ...)
 		      (map (lambda (expr)
 			     (define (bad n)
@@ -58,7 +69,7 @@
 				(format "illegal use of ~a" n)
 				stx
 				expr))
-			     (syntax-case* expr (the-cons list box vector) module-or-top-identifier=?
+			     (syntax-case* expr (the-cons list box vector) same-special-id?
 			       [(the-cons a d)
 				(syntax (cons undefined undefined))]
 			       [(the-cons . _)
@@ -115,7 +126,7 @@
 						 (loop (cdr l) (add1 n))))))])
 			(map (lambda (name expr)
 			       (with-syntax ([name name])
-				 (syntax-case* expr (the-cons list box vector) module-or-top-identifier=?
+				 (syntax-case* expr (the-cons list box vector) same-special-id?
 				   [(the-cons a d)
 				    (syntax (begin 
 					      (set-car! name a)
@@ -144,8 +155,7 @@
 		     [(check-expr ...)
 		      (if make-check-cdr
 			  (map (lambda (name expr)
-				 (syntax-case* expr (the-cons list box vector) 
-				     module-or-top-identifier=?
+				 (syntax-case* expr (the-cons list box vector) same-special-id?
 				   [(the-cons a d)
 				    (make-check-cdr name)]
 				   [_else (syntax #t)]))

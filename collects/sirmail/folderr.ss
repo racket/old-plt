@@ -26,11 +26,11 @@
               hierlist^)
       
       (define (imap-open-connection)
-        (imap-connect IMAP-SERVER
-                      USERNAME
-                      (or (get-PASSWORD) (get-text-from-user "Enter Password"))
-                      mailbox-name))
-      
+	(imap-connect IMAP-SERVER
+		      USERNAME
+		      (or (get-PASSWORD) (get-text-from-user "Enter Password" "Enter Password"))
+		      mailbox-name))
+
       (define imap-mailbox-name-mixin
         (lambda (list%)
           (class100 list% args

@@ -24,13 +24,18 @@
 
 ; I don't expect there are many bugs, but shortcomings are manifold:
 ; 
-; - Has only rudimentary ability to tell if the buffer has been
-;   modified.  (Modifications render the source locations invalid.)
+; - Has only rudimentary ability to tell if the REP buffer has been
+;   modified.
 ;
 ; - Doesn't provide a simple `load' interface.  (Could enhance this
 ;   further with temporary files -- platform dependence issues?)
 ;
 ; - Could provide menus and other niceties.  Not even a key-binding.
+; 
+; - Cannot handle load/cd, since the resulting filename is without a
+;   directory path, so it is no longer possible to tell which directory
+;   the file came from.  Indeed, if an identically named file is in
+;   the current directory, then it will be loaded instead.
 ;
 ; Comments welcome.
 

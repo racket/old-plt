@@ -53,13 +53,13 @@ Unix compilation
 
 For Unix, unlike Windows, there is no standard driver manager.
 Therefore, you will definitely need to modify the Makefile
-in order to compile SrPersist.  Change DRIVER_MSG_LIB to the
+in order to compile SrPersist.  Change DRIVER_MGR_LIB to the
 name of the static library that implements the driver manager 
 you wish to use.  By convention, Unix static libraries are named 
 lib<name>.a.  So if the library file is libdrivermanager.a, you
 would have
 
-	DRIVER_MSG_LIB=drivermanager
+	DRIVER_MGR_LIB=drivermanager
 
 in the Makefile.  You need to set the variable ODBCVER to the version of 
 ODBC supported by your driver manager.  ODBC versions are indicated using 

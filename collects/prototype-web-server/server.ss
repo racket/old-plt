@@ -9,7 +9,7 @@
 
            (lib "configuration-structures.ss" "web-server")
 
-           "prototype-utils.ss"
+           "utils.ss"
            "hardcoded-configuration.ss"
            "session.ss"
            )

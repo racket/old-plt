@@ -76,6 +76,7 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
 {
     wxWindow_Xintern *ph;
     Widget wgt;
+    wxFont *fnt;
 
     if (!panel)
 	wxFatalError("wxPanel created without a parent!");
@@ -86,12 +87,14 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
 
     ph = parent->GetHandle();
 
+    fnt = wxNORMAL_FONT;
+
     // create frame
     wgt = XtVaCreateWidget
 	(name, xfwfEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
-	 XtNfont,        wxNORMAL_FONT->GetInternalFont(),
+	 XtNfont,        fnt->GetInternalFont(),
 	 XtNhighlightThickness, 0,
 	 NULL);
     if (!(style & wxINVISIBLE))

@@ -371,9 +371,22 @@ int main(int argc, char *argv[])
 
 #ifdef wx_msw 
 
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR m_lpCmdLine, int nCmdShow)
+int APIENTRY WinMainW(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR m_lpCmdLine, int nCmdShow)
 {
-  return wxWinMain(hInstance, hPrevInstance, m_lpCmdLine, nCmdShow, main);
+  long l, j;
+  char *a;
+  
+  for (j = 0; m_lpCmdLine[j]; j++) {
+  }
+  l = scheme_utf8_encode(m_lpCmdLine, 0, j, 
+			 NULL, 0,
+			 1 /* UTF-16 */);
+  a = malloc(l + 1);
+  scheme_utf8_encode(m_lpCmdLine, 0, j, 
+		     a, 0,
+		     1 /* UTF-16 */);
+
+  return wxWinMain(hInstance, hPrevInstance, a, nCmdShow, main);
 }
 
 #endif

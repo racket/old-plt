@@ -52,18 +52,23 @@
 		   [r (or mr mz)])
 	      (unless r (fail))
 	      (if (eq? 'macosx (system-type))
-		  (cond
-		   [(not mred?)
-		    ;; Need MzScheme:
-		    (build-path base 'up 'up 'up "bin" (string-append 
-							"mzscheme"
-							variant-suffix))]
-		   [mred?
-		    ;; Need MrEd:
-		    (build-path base 'up 
-				(format "MrEd~a.app" variant-suffix)
-				"Contents" "MacOS" 
-				(format "MrEd~a" variant-suffix))])
+		  ;; OS X --- found Mz or Mr and need Mz or Mr,
+		  ;;  but Mz and Mr have different paths...
+		  (let ([plt-rel
+			 (cond
+			  [(not mred?)
+			   ;; Need MzScheme:
+			   (build-path"bin" (string-append 
+					     "mzscheme"
+					     variant-suffix))]
+			  [mred?
+			   ;; Need MrEd:
+			   (build-path (format "MrEd~a.app" variant-suffix)
+				       "Contents" "MacOS" 
+				       (format "MrEd~a" variant-suffix))])])
+		    (if mr
+			(build-path base 'up 'up 'up plt-rel)
+			(build-path base 'up plt-rel)))
 		  ;; Not OS X --- simply splice in the right name:
 		  (let ([exe
 			 (build-path base

@@ -85,6 +85,9 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNbackground,  wxGREY_PIXEL,
 	 NULL);
     X->scroll = wgt;
+#ifdef USE_GL
+    gl_create_window = 1;
+#endif
     // create canvas
     wgt = XtVaCreateManagedWidget
       ("canvas", xfwfCanvasWidgetClass, X->scroll,
@@ -95,6 +98,9 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
        XtNframeWidth, 0,
        XtNtraversalOn, FALSE,
        NULL);
+#ifdef USE_GL
+    gl_create_window = 0;
+#endif
     X->handle = wgt;
     // Initialize CanvasDC
     CreateDC();

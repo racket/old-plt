@@ -629,7 +629,7 @@
  (vc-no-update-string "All installed PLT software packages are up-to-date")
  
  ;; large semi colon letters
- (insert-large-semicolon-letters... "Insert Large Letters...")
+ (insert-large-letters... "Insert Large Letters...")
  (large-semicolon-letters "Large Semicolon Letters")
  (text-to-insert "Text to insert")
  )

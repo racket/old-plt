@@ -28,6 +28,11 @@ Version 199.18:
  * Changed the default error value conversion handler to print values
    using the current global port print handler.
 
+ * Attempting to write a bytecode that contains unmarshalable
+   constants now raises an exception. (Effectively, the exception is
+   moved from read time to write time, since reading such a bytecode
+   back in would fail anyway).
+
  * Re-renamed "2k" to "3m" (for "moving memory manager").
 
    Garbage collection is inherently imprecise, making "precise garbage
@@ -257,6 +262,8 @@ Changed quoted parts of a symbol (with | or \) to always preserve case
 Added an optional third argument to tcp-listen to reuse addresses
 Fixed quotient, remainder, and modulo when the first argument
  is exact 0 and the second argument is inexact
+Inside MzScheme: "process" names changed to "thread", and
+ "manager" names changed to "custodian"
 Default for pconvert.ss's whole/fractional-exact-numbers parameter
  changed to #f
 Renamed "2k" to "3m" (for "moving memory manager")

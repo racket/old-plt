@@ -139,7 +139,7 @@ BOOL wxGIF::ReadHeader(FILE *fp)
   ushort widlow, widhigh, hgtlow, hgthi, i;
   ushort index = 0;
   
-  if (fread((char*)&tstA[0],13,1,fp) != 13)
+  if (fread((char*)&tstA[0],13,1,fp) != 1)
     return FALSE;
   
   for (i = 0; i < 6; i++) {
@@ -184,7 +184,7 @@ BOOL wxGIF::ReadHeader(FILE *fp)
 	if (fread(&single,1,1,fp) != 1) /* block size */
 	  return FALSE;
 	if (single) {
-	  if (fread((char*)&tstA[0],single,1,fp) != single)
+	  if (fread((char*)&tstA[0],single,1,fp) != 1)
 	    return FALSE;
 	  if ((eid == 0xF9) && (single == 4)) {
 	    /* Transparent color index? */
@@ -199,7 +199,7 @@ BOOL wxGIF::ReadHeader(FILE *fp)
       break;
   }
       
-  if (fread((char*)&tstA[0],9,1,fp) != 9)
+  if (fread((char*)&tstA[0],9,1,fp) != 1)
     return FALSE;
   index = 0;
   image.sep = single;
@@ -221,7 +221,7 @@ BOOL wxGIF::ReadHeader(FILE *fp)
 	j = 0;
       if (!j) {
 	amt = (len - i > 66) ? 198 : (3 * (len - i));
-	if (fread((char*)&tstA[0], amt, 1, fp) != amt)
+	if (fread((char*)&tstA[0], amt, 1, fp) != 1)
 	  return FALSE;
       }
       TabCol.paleta[i].r = tstA[j++];

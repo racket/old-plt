@@ -41,7 +41,7 @@ class wxBufferDataClassList;
 extern short wxMacDisableMods;
 extern long wxMediaCreatorId;
 # include "simpledrop.h"
-int wx_in_terminal;
+extern int wx_in_terminal;
 #endif
 
 #ifdef MPW_CPLUS
@@ -130,44 +130,6 @@ static char *pltcollects_from_resource;
 #define VERSION_YIELD_FLAG
 
 # include "../mzscheme/cmdline.inc"
-
-#ifdef wx_mac
-void Drop_Runtime(char **argv, int argc)
-{
-  int i;
-  mz_jmp_buf savebuf;
-  
-  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-
-  if (scheme_setjmp(scheme_error_buf)) {
-    /* give up on rest */
-    scheme_clear_escape();
-  } else {
-    for (i = 0; i < argc; i++) {
-      Scheme_Object *p[1];
-      p[0] = scheme_make_string(argv[i]);
-      scheme_apply(wxs_app_file_proc, 1, p);
-    }
-  }
-
-  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-}
-
-void Drop_Quit()
-{
-  mz_jmp_buf savebuf;
-  
-  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-
-  if (scheme_setjmp(scheme_error_buf)) {
-    scheme_clear_escape();
-  } else {
-    scheme_apply(wxs_app_quit_proc, 0, NULL);
-  }
-
-  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-}
-#endif
 
 #ifdef wx_x
 #if INTERRUPT_CHECK_ON

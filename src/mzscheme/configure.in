@@ -239,6 +239,10 @@ EXTRALIBS=
 # for gmp assembly:
 EXTRA_GMP_OBJ=
 
+# For MzScheme targets:
+OSX=".osx"
+NOT_OSX=""
+
 case $OS in
   SunOS)
     case `$UNAME -r` in
@@ -320,7 +324,11 @@ case $OS in
     CFLAGS="$CFLAGS -DOS_X"
 
     if test "${enable_quartz}" = "yes" ; then
-      :
+      CFLAGS="$CFLAGS -fno-common"
+      OSX=""
+      NOT_OSX=".other"
+      MZINSTALLTARGET=osx-install
+      FRAMEWORK_INSTALL_DIR=/Library/Frameworks
     else
       CFLAGS="$CFLAGS -DXONX "
     fi
@@ -536,6 +544,9 @@ AC_SUBST(GCDIR)
 AC_SUBST(MZBINTARGET)
 AC_SUBST(MZINSTALLTARGET)
 AC_SUBST(EXTRA_GMP_OBJ)
+AC_SUBST(OSX)
+AC_SUBST(NOT_OSX)
+AC_SUBST(FRAMEWORK_INSTALL_DIR)
 
 AC_SUBST(MREDLINKER)
 AC_SUBST(LIBSFX)

@@ -88,16 +88,19 @@ all:
 bin:
 	$(MAKE) $(LINKRESULT)
 
-EXTRASETUP_wx_xt =
-EXTRASETUP_wx_mac = MrEd.app/Contents/Resources/MrEd.rsrc
-
-$(LINKRESULT) : $(MZSCHEME) mrmain.o $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB) $(EXTRASETUP_@WXVARIANT@)
-	$(MREDLINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(LINKRESULT) $(MREDOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB)
+mred : $(MZSCHEME) mrmain.o $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB)
+	$(MREDLINKER) $(MREDLDFLAGS) $(MRSTATIC) -o mred $(MREDOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB)
 
 libmred.@LIBSFX@: $(WXLIBSNORM)
 	$(AR) $(ARFLAGS) libmred.@LIBSFX@ $(WXLIBSNORM)
 
-MrEd.app/Contents/Resources/MrEd.rsrc: $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
+PLT_MrEd.framework/PLT_MrEd : $(MZSCHEME) $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB)
+	$(MREDLINKER) $(MREDLDFLAGS) -dynamiclib -o PLT_MrEd.framework/PLT_MrEd -F../mzscheme -F@FRAMEWORK_INSTALL_DIR@ -framework PLT_MzScheme $(@WXLIBS@) $(GUILIBS_@WXVARIANT@)
+
+MrEd.app/Contents/MacOS/MrEd: PLT_MrEd.framework/Resources/PLT_MrEd.rsrc PLT_MrEd.framework/PLT_MrEd mrmain.o 
+	$(MREDLINKER) -o MrEd.app/Contents/MacOS/MrEd mrmain.o -F. -F../mzscheme -F@FRAMEWORK_INSTALL_DIR@ -framework PLT_MrEd -framework Carbon -framework PLT_MzScheme
+
+PLT_MrEd.framework/Resources/PLT_MrEd.rsrc: $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
 	$(srcdir)/../mac/osx_appl.ss $(srcdir)/..
 
 
@@ -199,10 +202,12 @@ install_wx_xt:
 	$(MAKE) @MRLIBINSTALL@
 
 install_wx_mac:
-	cd ..; rm -rf $(prefix)/MrEd.app
+	cd ..; rm -rf $(prefix)/MrEd.app @FRAMEWORK_INSTALL_DIR@/PLT_MrEd.framework
 	cd ..; rm -rf $(prefix)/collects/launcher/Starter.app
 	cd ..; $(ICP) -r mred/MrEd.app $(prefix)/.
+	cd ..; $(ICP) -r mred/PLT_MrEd.framework @FRAMEWORK_INSTALL_DIR@
 	cd ..; $(ICP) -r mred/Starter.app $(prefix)/collects/launcher/.
+	if [ ! -e $(prefix)/bin/mred ] ; then ln -s ../MrEd.app/Contents/MacOS/MrEd $(prefix)/bin/mred ; fi
 
 install:
 	$(MAKE) install_@WXVARIANT@

@@ -73,7 +73,7 @@
 #  include <Events.h>
 # endif
 # ifdef OS_X
-extern int wx_in_terminal;
+int wx_in_terminal;
 # else
 #  define wx_in_terminal 0
 # endif
@@ -2899,5 +2899,47 @@ void wxFlushDisplay(void)
 /* Weird hack to avoid linking to libg++ */
 extern "C" {
  void __pure_virtual(void) {  }
+}
+#endif
+
+/****************************************************************************/
+/*                              Mac AE support                              */
+/****************************************************************************/
+
+#ifdef wx_mac
+void Drop_Runtime(char **argv, int argc)
+{
+  int i;
+  mz_jmp_buf savebuf;
+  
+  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+
+  if (scheme_setjmp(scheme_error_buf)) {
+    /* give up on rest */
+    scheme_clear_escape();
+  } else {
+    for (i = 0; i < argc; i++) {
+      Scheme_Object *p[1];
+      p[0] = scheme_make_string(argv[i]);
+      scheme_apply(wxs_app_file_proc, 1, p);
+    }
+  }
+
+  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+}
+
+void Drop_Quit()
+{
+  mz_jmp_buf savebuf;
+  
+  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+
+  if (scheme_setjmp(scheme_error_buf)) {
+    scheme_clear_escape();
+  } else {
+    scheme_apply(wxs_app_quit_proc, 0, NULL);
+  }
+
+  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 }
 #endif

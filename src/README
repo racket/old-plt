@@ -52,14 +52,24 @@ Mac OS X:
  installing, run `fixPrecomps' to speed up compilations. (You can
  safely run `fixPrecomps' multiple times.)
 
- Then follow the Unix instructions below. (The --enable-dynlib for
- `configure' is not currently supported for Mac OS X.) The output of
- the MrEd build will be a bundle "MrEd.app"; you can run MrEd from the
- command line as `MrEd.app/Contents/MacOS/MrEd'.
+ Then follow the Unix instructions below, but note the following:
+
+   * The MzScheme build creates a framework, PLT_MzScheme.framework,
+     which is installed into /Library/Frameworks. This framework is
+     used by the executable `mzscheme' that goes into plt/bin.
+
+   * The MrEd build creates a framework, PLT_MrEd.framework, which is
+     installed into /Library/Frameworks. This framework is used by the
+     executable bundle MrEd.app that goes into the `plt' directory.
+     Installation creates a link, plt/bin/mred, into the bundle.
+
+   * The --enable-dynlib for `configure' is not supported for Mac OS
+     X, because it is redundant (i.e., all builds create and use
+     frameworks).
 
  To build an X11-based MrEd, run `configure' with the --enable-xonx
- flag. This flag also affects the MzScheme build in one way:
- `system-type' reports 'unix.
+ flag. Frameworks are not used for such builds. The --enable-xonx flag
+ also affects the MzScheme build so that `system-type' reports 'unix.
 
 Mac OS Classic (PowerPC only):
 
@@ -80,7 +90,8 @@ Mac OS Classic (PowerPC only):
 ========================================================================
 
  0. If you have an old PLT installation in the target directory,
-    remove it (unless you are using CVS with an "in-place" build).
+    remove it (unless you are using CVS with an "in-place" build as
+    described below).
 
  1. Run the script `configure' (which is in the same directory as this
     README), usually with a --prefix=TARGETDIR command-line argument,

@@ -84,8 +84,15 @@ libmzscheme.@LIBSFX@: src/*.o
 sproc.o: @GCDIR@/sproc.o
 	cp @GCDIR@/sproc.o sproc.o
 
-mzscheme: libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o $(SPECIALIZINGOBJECTS)
+mzscheme@NOT_OSX@: libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o $(SPECIALIZINGOBJECTS)
 	$(CC) -o mzscheme main.o $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LIBS@
+
+PLT_MzScheme.framework: libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ $(SPECIALIZINGOBJECTS)
+	if [ ! -d PLT_MzScheme.framework ] ; then mkdir PLT_MzScheme.framework ; fi
+	$(CC) -o PLT_MzScheme.framework/PLT_MzScheme -dynamiclib -all_load $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LIBS@
+
+mzscheme@OSX@: PLT_MzScheme.framework main.o
+	$(CC) -o mzscheme main.o -F. -framework PLT_MzScheme
 
 # OSKit-based MzScheme
 mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o
@@ -216,6 +223,12 @@ normal-install:
 	cd ..; echo 'CC=@CC@' > $(BUILDINFO)
 	cd ..; echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(BUILDINFO)
 	cd ..; echo 'LIBS=@LIBS@' >> $(BUILDINFO)
+
+osx-install:
+	$(MAKE) normal-install
+	rm -rf @FRAMEWORK_INSTALL_DIR@/PLT_MzScheme.framework
+	if [ ! -d @FRAMEWORK_INSTALL_DIR@ ] ; then mkdir @FRAMEWORK_INSTALL_DIR@ ; fi
+	cp -r PLT_MzScheme.framework @FRAMEWORK_INSTALL_DIR@
 
 WLIBIDIR=$(prefix)/lib
 WBUILDINFO=$(WLIBIDIR)/buildinfo

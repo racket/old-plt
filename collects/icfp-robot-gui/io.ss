@@ -44,8 +44,8 @@
         (check #\newline (read-char r))
         (let ([board (read-board width height r values)])
           (let ([me (read r)]
-                [max-lift (read r)]
-                [money (read r)])
+                [money (read r)]
+                [max-lift (read r)])
             (skip-space r)
             (check #\newline (read-char r))
             (let-values ([(robots packages)

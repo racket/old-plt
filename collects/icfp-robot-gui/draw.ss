@@ -11,6 +11,7 @@
   (provide board-panel%)
   
   (define animate? #t)
+  (define animate-steps 2)
   
   (define black (make-object color% 0 0 0))
   
@@ -288,6 +289,7 @@
       (define/public (queue-robot-actions orig-actions)
         ;; Each robot action is (list id bid (one-of 'e 'w 'n 's (list 'pick id...) (list 'drop id ...)))
         (define bid-index 0)
+        (map (lambda (r) (set-robot-bid-index! r #f)) robots)
         (set! actions
               (map (lambda (act)
                      (let ([id (car act)])
@@ -355,7 +357,6 @@
               #f
               l)))
       
-      (define animate-steps 5)
       (define/private (animate f)
         (when f
           (if animate?
@@ -523,7 +524,6 @@
                                          #t)))))))))))
                   actions)
         (set! actions null)
-        (map (lambda (r) (set-robot-bid-index! r #f)) robots)
         (update))
       
       (define/public (get-most-recent-activity)

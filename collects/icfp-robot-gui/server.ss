@@ -3,6 +3,7 @@
   (require "io.ss"
            "draw.ss"
            "data.ss"
+           (lib "list.ss")
            (lib "mred.ss" "mred")
            (lib "class.ss"))
   
@@ -15,7 +16,7 @@
   (define pack-file "~/tmp/packs3") ; pkg configuartions available there, too
   
   (define robot-capacity 100)
-  (define start-money 100)
+  (define start-money 1000)
   
   ;; -----------------------------------
   
@@ -121,6 +122,14 @@
                    null))])
         (server client-semas server-sema))))
   
+  (define (randomize l)
+    (let loop ([l l])
+      (if (null? l)
+          l
+          (let ([n (random (length l))])
+          (cons (list-ref l n)
+                (loop (remq (list-ref l n) l)))))))
+  
   (define (update-state!)
     (let ([commands (let loop ([i 0])
                      (if (= i num-players)
@@ -134,7 +143,8 @@
                                     [(move) (command-args cmd)]
                                     [(pick drop) (cons (command-type cmd) (command-args cmd))]))
                             (loop (add1 i))))))])
-      (send drawn queue-robot-actions commands)
+      (send drawn queue-robot-actions (quicksort (randomize commands) (lambda (a b)
+                                                                        (< (cadr a) (cadr b)))))
       (send drawn apply-queued-actions)
       (set! activity (send drawn get-most-recent-activity))
       (set!-values (robots packages) (send drawn get-robots&packages))))

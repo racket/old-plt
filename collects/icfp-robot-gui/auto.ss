@@ -122,7 +122,7 @@
                                          (if (null? packages)
                                              null
                                              (let ([new-weight (+ current-weight (pkg-weight (car packages)))])
-                                               (if (< new-weight (bot-max-lift r))
+                                               (if (<= new-weight (bot-max-lift r))
                                                    (cons (car packages) (loop new-weight (cdr packages)))
                                                    (loop current-weight (cdr packages)))))))]
                 [packages-should-drop (filter (lambda (pid)
@@ -130,7 +130,7 @@
                                                   (and (= rx (sub1 (pkg-dest-x p)))
                                                        (= ry (sub1 (pkg-dest-y p))))))
                                               (bot-packages r))])
-           
+                      
            ;; ----------------------------------------
            ;; Base management
            ;; Forget bases that have no packages:

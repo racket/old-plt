@@ -1951,15 +1951,23 @@ scheme_put_string(const char *who, Scheme_Object *port,
        the same as a non-blocking flush */
     rarely_block = 0;
 
-  out = ws(op, str, d, len, rarely_block);
+  while (len) {
+    out = ws(op, str, d, len, rarely_block);
+    
+    /* If out is 0, it might be because the port got closed: */
+    if (!out) {
+      CHECK_PORT_CLOSED(who, "output", port, op->closed);
+    }
+    
+    if (out > 0)
+      op->pos += out;
 
-  /* If out is 0, it might be because the port got closed: */
-  if (!out) {
-    CHECK_PORT_CLOSED(who, "output", port, op->closed);
+    if (rarely_block)
+      break;
+
+    d += out;
+    len -= out;
   }
-
-  if (out > 0)
-    op->pos += out;
 
   mzAssert(!rarely_block ? (out == len) : 1);
   mzAssert((out < 0) ? (rarely_block == 2) : 1);

@@ -61,12 +61,23 @@ struct sslplt {
   Scheme_Type type;
 #endif
   SSL *ssl;
-  char ibuffer, obuffer;
-  char ib_used, ob_used;
+  char *obuffer; /* Buffer for outgoing bytes, but this is not a "buffer"
+		    at the Scheme level. A daemon thread flushes it.
+		    This is necessary because there's no way to know
+		    whether a write to SSL will succeed, and handing
+		    WANT_READ and WANT_WRITE requires consistent
+		    calls to SSL_write. */
+  int ob_used;  /* Length of data in obuffer. */
+  char ibuffer; /* One char is enough because SSL_read doesn't appear
+		   to actually need consistency for WANT_READ and WANT_WRITE.
+		   Or maybe I've just been [un]lucky. */
+  char ib_used; /* 0 or 1, length of data in ibuffer */
   char close_in, close_out;
   char write_blocked_reason; /* 0 => might not be blocked, 1 => for read, 2 => for write */
   struct sslplt *next;
 };
+
+#define OBUFFER_SIZE 4096
 
 typedef struct {
   Scheme_Type type;
@@ -99,6 +110,7 @@ static Scheme_Type sslplt_type;
 struct sslplt *create_register_sslplt(SSL *ssl)
 {
   struct sslplt *sslplt;
+  char *obuffer;
 
 #ifdef MZ_PRECISE_GC
   sslplt = (struct sslplt *)scheme_malloc_tagged(sizeof(struct sslplt));
@@ -107,10 +119,13 @@ struct sslplt *create_register_sslplt(SSL *ssl)
   sslplt = (struct sslplt *)scheme_malloc(sizeof(struct sslplt));
 #endif
 
+  obuffer = (char *)scheme_malloc_atomic(OBUFFER_SIZE);
+
   sslplt->ssl = ssl;
   sslplt->ib_used = 0; sslplt->ob_used = 0; 
   sslplt->close_in = 0; sslplt->close_out = 0;
   sslplt->write_blocked_reason = 0;
+  sslplt->obuffer = obuffer;
   return sslplt;
 }
 
@@ -178,8 +193,9 @@ int daemon_ready(Scheme_Object *ignored)
     } else
       /* The SLL layer is waiting for either input or output
 	 on the underlying socket: */
-      check_socket_ready(BIO_get_fd(SSL_get_wbio(cur->ssl), NULL),
-			 (cur->write_blocked_reason == 2));
+      if (check_socket_ready(BIO_get_fd(SSL_get_wbio(cur->ssl), NULL),
+			     (cur->write_blocked_reason == 2)))
+	return 1;
   }
 
   return 0;
@@ -221,19 +237,23 @@ Scheme_Object *write_close_thread(int argc, Scheme_Object *argv[])
 	  cur->write_blocked_reason = 0;
 
 	  /* Try to write: */
-	  status = SSL_write(cur->ssl, &(cur->obuffer), 1);
+	  status = SSL_write(cur->ssl, cur->obuffer, cur->ob_used);
 
-	  if (status > 1) {
-	    cur->ob_used = 0;
+	  if (status >= 1) {
+	    cur->ob_used -= status;
+	    if (cur->ob_used) {
+	      memmove(cur->obuffer, cur->obuffer + status, cur->ob_used);
+	      drop = 0;
+	    }
 	  } else {
 	    int err;
 	    drop = 0;
 	    err = SSL_get_error(cur->ssl, status);
-	    if (err == SSL_ERROR_WANT_READ)
+	    if (err == SSL_ERROR_WANT_READ) {
 	      cur->write_blocked_reason = 1;
-	    else if (err == SSL_ERROR_WANT_WRITE)
+	    } else if (err == SSL_ERROR_WANT_WRITE) {
 	      cur->write_blocked_reason = 2;
-	    else {
+	    } else {
 	      /* Some error. We drop the char, and assume
 		 that it's not a transient error, so the
 		 next action will find the same error. */
@@ -247,7 +267,7 @@ Scheme_Object *write_close_thread(int argc, Scheme_Object *argv[])
         }
 	/* there shouldn't be a 3rd possibility */
 	
-	if (drop) {
+	if (!drop) {
 	  prev = cur; 
 	} else{
 	  if (prev)
@@ -369,37 +389,43 @@ long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
        ssl channel */
     ssl->write_blocked_reason = 0;
   
-    /* read the data. maybe. hopefully. please. */
-    status = SSL_read(ssl->ssl, buffer+offset+bytes_read, size-bytes_read);
+    if (ssl->ob_used) {
+      /* A write needs to be re-tried. Can't read until then. */
+      bytes_read = 0;
+      *stuck_why = 3;
+    } else {
+      /* read the data. maybe. hopefully. please. */
+      status = SSL_read(ssl->ssl, buffer+offset+bytes_read, size-bytes_read);
+      
+      if(status < 1) {
+	/* see what kind of error this was */
+	err = SSL_get_error(ssl->ssl, status);
 
-    if(status < 1) {
-      /* see what kind of error this was */
-      err = SSL_get_error(ssl->ssl, status);
+	/* see if we've hit the end of file */
+	if ((err == SSL_ERROR_ZERO_RETURN)
+	    || ((err == SSL_ERROR_SYSCALL) && !status)) {
+	  if(bytes_read == 0)
+	    return EOF;
+	  else
+	    return bytes_read;
+	} else if ((err != SSL_ERROR_WANT_READ) && (err != SSL_ERROR_WANT_WRITE)) {
+	  /* critical error */
+	  if (!err_ok) return 0;
 
-      /* see if we've hit the end of file */
-      if ((err == SSL_ERROR_ZERO_RETURN)
-	  || ((err == SSL_ERROR_SYSCALL) && !status)) {
-	if(bytes_read == 0)
-	  return EOF;
-	else
-	  return bytes_read;
-      } else if ((err != SSL_ERROR_WANT_READ) && (err != SSL_ERROR_WANT_WRITE)) {
-        /* critical error */
-	if (!err_ok) return 0;
+	  err = get_ssl_error_msg(err, &errstr, status, 1);
+	  goto read_error;
+	}
 
-	err = get_ssl_error_msg(err, &errstr, status, 1);
-        goto read_error;
-      }
-
-      *stuck_why = ((err == SSL_ERROR_WANT_READ) ? 1 : 2);
-    } else
-      bytes_read += status;
+	*stuck_why = ((err == SSL_ERROR_WANT_READ) ? 1 : 2);
+      } else
+	bytes_read += status;
+    }
 
     if (nonblocking)
       break;
 
     /* It might be tempting at this point to block on the fd
-       forreading if SSL_ERROR_WANT_READ. That would be a bad
+       for reading if SSL_ERROR_WANT_READ. That would be a bad
        idea, because another thread might be using the port,
        and might shift it into SSL_ERROR_WANT_WRITE mode.
        Use the general sll input blocking functions. */
@@ -499,7 +525,10 @@ static void sslin_need_wakeup(Scheme_Input_Port *port, void *fds)
     /* Need wakeup now! */
     scheme_cancel_sleep();
   } else {
-    socket_add_fds(rfd, fds, (stuck_why == 2));
+    if (stuck_why != 3)
+      socket_add_fds(rfd, fds, (stuck_why == 2));
+    /* but stuck_why == 3 implies that a write is
+       responsible for waking up */
   }
 }
 
@@ -543,6 +572,7 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
   const char *errstr = "Unknown error";
   int err = 0;
   int status = 0;
+  long out_size;
   long wrote_bytes = 0;
 
   /* make sure people aren't trying to do something sneaky */
@@ -569,8 +599,15 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
     goto write_error;
   }
 
-  /* Try to write a decent sized chunk: */
-  status = SSL_write(ssl->ssl, buffer+offset+wrote_bytes, size-wrote_bytes);
+  /* Try to write a decent sized chunk.  We have to copy it to
+     obuffer, in case the write must be continued (in which case
+     SSL_write insists on getting the same arguments that it received
+     last time). */
+  out_size = size-wrote_bytes;
+  if (out_size > OBUFFER_SIZE)
+    out_size = OBUFFER_SIZE;
+  memcpy(ssl->obuffer, buffer + offset, out_size);
+  status = SSL_write(ssl->ssl, ssl->obuffer, out_size);
 
   if (status > 0)
     return status; /* success */
@@ -580,16 +617,13 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
     err = get_ssl_error_msg(err, &errstr, status, 1);
     goto write_error;
   }
-  if (rarely_block == 2) 
-    return 0;
 
-  /* Can't write a decent-sized chunk. Put one char in the outgoing
-     buffer, and block as necessary until the char is flushed */
-   {
+  /* Can't write a decent-sized chunk. Put out_size chars in the outgoing
+     buffer, and block as necessary until those chars are flushed */
+  if (out_size) {
     int was_empty;
 
-    ssl->ob_used = 1;
-    ssl->obuffer= buffer[offset];
+    ssl->ob_used = out_size;
 
     /* Put this SLL into the list of things that the deamon must
        process. */
@@ -597,15 +631,16 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
     ssl->next = ssls;
     ssls = ssl;
 
-    /* Wake up the daemon thread if the list usedto be empty: */
+    /* Wake up the daemon thread if the list used to be empty: */
     if (was_empty)
       scheme_post_sema(daemon_attn);
 
-    /* We "wrote" one byte. The daemon will ensure that the byte
-       actually goes out. */
+    /* We "wrote" out_size bytes. The daemon will ensure that the bytes
+       actually go out. */
 
-    return 1;
-  }
+    return out_size;
+  } else
+    return 0;
 
  write_error:
    scheme_raise_exn(MZEXN_I_O_PORT_WRITE, port, "ssl-write: error writing (%Z)",
@@ -1574,6 +1609,7 @@ int sslplt_MARK(void *p) {
   struct sslplt *ssl = (struct sslplt *)p;
 
   gcMARK(ssl->next);
+  gcMARK(ssl->obuffer);
 
   return
   gcBYTES_TO_WORDS(sizeof(struct sslplt));
@@ -1583,6 +1619,7 @@ int sslplt_FIXUP(void *p) {
   struct sslplt *ssl = (struct sslplt *)p;
 
   gcFIXUP(ssl->next);
+  gcFIXUP(ssl->obuffer);
 
   return
   gcBYTES_TO_WORDS(sizeof(struct sslplt));

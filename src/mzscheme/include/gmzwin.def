@@ -34,6 +34,7 @@ EXPORTS
  scheme_signal_error
  scheme_raise_exn
  scheme_warning
+ scheme_raise
  scheme_wrong_count
  scheme_case_lambda_wrong_count
  scheme_wrong_type

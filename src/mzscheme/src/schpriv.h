@@ -1513,8 +1513,6 @@ void scheme_wrong_rator(Scheme_Object *rator, int argc, Scheme_Object **argv);
 
 void scheme_raise_out_of_memory(const char *where, const char *msg, ...);
 
-void scheme_raise(Scheme_Object *exn);
-
 extern long scheme_max_found_symbol_name;
 
 char *scheme_make_arity_expect_string(Scheme_Object *proc,

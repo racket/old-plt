@@ -50,6 +50,7 @@
 #define scheme_signal_error (scheme_extension_table->scheme_signal_error)
 #define scheme_raise_exn (scheme_extension_table->scheme_raise_exn)
 #define scheme_warning (scheme_extension_table->scheme_warning)
+#define scheme_raise (scheme_extension_table->scheme_raise)
 #define scheme_wrong_count (scheme_extension_table->scheme_wrong_count)
 #define scheme_case_lambda_wrong_count (scheme_extension_table->scheme_case_lambda_wrong_count)
 #define scheme_wrong_type (scheme_extension_table->scheme_wrong_type)

@@ -113,6 +113,8 @@ void scheme_signal_error(char *msg, ...);
 void scheme_raise_exn(int exnid, ...);
 void scheme_warning(char *msg, ...);
 
+void scheme_raise(Scheme_Object *exn);
+
 void scheme_wrong_count(const char *name, int minc, int maxc, int argc,
 			Scheme_Object **argv);
 void scheme_case_lambda_wrong_count(const char *name, int argc, 

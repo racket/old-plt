@@ -42,7 +42,7 @@
 		     (lambda ()
 		       (let* ([modes (map mred:handler:handler-name 
 					  mred:handler:mode-handlers)]
-			      [name (wx:get-single-choice
+			      [name (mred:gui-utils:get-single-choice
 				     "Select a Mode" "Mode"
 				     modes)])
 			 (unless (null? name)

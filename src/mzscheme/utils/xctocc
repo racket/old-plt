@@ -1990,9 +1990,9 @@ sub PrintSpecificFunction
 	
 	print ", $POFFSET+${minimumok}, $POFFSET+${possible}, n, p, ";
 	if ($global) {
-	    print "1";
-	} else {
 	    print "0";
+	} else {
+	    print "1";
 	}
 	print "));\n";
     }

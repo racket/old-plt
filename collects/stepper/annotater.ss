@@ -648,7 +648,10 @@
                         (values outer-annotated free-bindings))))]
 	       
 	       [(z:quote-form? expr)
-                (let ([annotated `(#%quote ,(utils:read->raw (z:quote-form-expr expr)))])
+                (let* ([raw (utils:read->raw (z:quote-form-expr expr))]
+                       [annotated (if (or (number? raw) (procedure? raw))
+                                      raw
+                                      `(#%quote ,raw))])
                   (values (if (or cheap-wrap? ankle-wrap?)
                               annotated
                               (wcm-wrap (make-debug-info-normal null) annotated))

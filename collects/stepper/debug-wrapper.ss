@@ -21,7 +21,7 @@
                                 'cheap-wrap)
                             annotation-style))
                   (if (null? opts-list)
-                      '((no-temps-for-varrefs))
+                      '((no-temps-for-varrefs no-closure-capturing)) ; this is a bad way to handle this.
                       opts-list)))])
 	(car annotateds)))
 

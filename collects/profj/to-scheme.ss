@@ -1473,6 +1473,10 @@
                                                                          (map id-string (ref-type-path type))))
                                         (ref-type-class/iface type))
                                 (ref-type-class/iface type))))))
+      ((unknown-ref? type)
+       '...)
+      ((method-contract? type)
+       '...)
       ))
   
   ;------------------------------------------------------------------------------------------------------------------------

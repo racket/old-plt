@@ -4,7 +4,7 @@
   (require (lib "class.ss"))
   
   (provide run-tests run-tests/initialize
-           test test-error test-function
+           test test-error test-function test-exit
            test-manifest)
   
 ;; =======================================================================
@@ -16,10 +16,15 @@
 ;;        (syntax (_ str sexp expectation (union str #f))) -> (syntax test-struct)
 ;; test-error : (syntax (_ str sexp str))  -> (syntax test-struct)
 ;; test-function : (syntax (_ str sexp (value -> bool))) -> (syntax test-struct)
-(define-syntaxes (test test-error test-function)
+(define-syntaxes (test test-error test-function test-exit)
   (let ((syntax->test-struct
          (lambda (x)
-           (syntax-case x ()
+           (syntax-case x (test-exit)
+             [(test-exit descrip body)
+              (syntax (make-test descrip 
+                                 (quote body) 
+                                 (lambda () body)
+                                 (make-expect (make-exit) "")))]
              [(test-type descrip body compare out ...)
               (with-syntax
                   ([expect-criterion
@@ -38,7 +43,7 @@
                                    (quote body)
                                    (lambda () body)
                                    (make-expect expect-criterion printed-output))))]))))
-    (values syntax->test-struct syntax->test-struct syntax->test-struct)))
+    (values syntax->test-struct syntax->test-struct syntax->test-struct syntax->test-struct)))
 
 ;; current-tester : (union #f controller%)
 ;; the currently-registered tester gui.

@@ -7,6 +7,7 @@
            (lib "string-constant.ss" "string-constants")
            (lib "url.ss" "net")
            (lib "external.ss" "browser")
+           (lib "bday.ss" "framework" "private")
            "standard-urls.ss"
            "cookie.ss"
            "docpos.ss")
@@ -106,6 +107,10 @@
     
     (define (catch-url-canvas-mixin %)
       (class %
+        
+        (rename [super-get-editor% get-editor%])
+        (define/override (get-editor%) (sk-bday-editor-mixin (super-get-editor%)))
+        
         (define/override (remap-url url)
           (let ([internal-url-test (hd-cookie-url-on-server-test hd-cookie)]
                 [extract-url-path (hd-cookie-extract-url-path hd-cookie)])
@@ -149,6 +154,39 @@
                        url)))]
               [else 
                url])))
+        (super-instantiate ())))
+    
+    (define sk-bitmap #f)
+    
+    (define sk-bday-editor-mixin
+      (mixin (editor<%>) ()
+        (rename [super-on-paint on-paint])
+        (inherit get-admin editor-location-to-dc-location)
+        (define/override (on-paint before? dc left top right bottom dx dy draw-caret)
+          (when before?
+            (when (sk-bday?)
+              (unless sk-bitmap
+                (set! sk-bitmap (make-object bitmap% (build-path (collection-path "icons") "sk.jpg"))))
+              (let ([admin (get-admin)])
+                (when admin
+                  (let ([wb (box 0)]
+                        [hb (box 0)]
+                        [xb (box 0)]
+                        [yb (box 0)])
+                    (send admin get-view xb yb wb hb)
+                    (let-values ([(x-center y-bot)
+                                  (editor-location-to-dc-location 
+                                   (+ (unbox xb) (/ (unbox wb) 2))
+                                   (+ (unbox yb) (unbox hb)))]
+                                 [(x-zero y-zero) 
+                                  (editor-location-to-dc-location
+                                   (unbox xb)
+                                   (unbox yb))])
+                      (send dc draw-bitmap sk-bitmap
+                            (floor (- x-center (/ (send sk-bitmap get-width) 2)))
+                            (max x-zero (- y-bot (send sk-bitmap get-height))))))))))
+          (super-on-paint before? dc left top right bottom dx dy draw-caret))
+        
         (super-instantiate ())))
     
     (lambda (%)

@@ -1829,6 +1829,36 @@
    (box-immutable #t))
 
   
+  (test/spec-passed 
+   'anaphoric1
+   '(contract (let-values ([(in out) (anaphoric-contracts)]) in)
+              1
+              'pos
+              'neg))
+  
+  (test/pos-blame
+   'anaphoric2
+   '(contract (let-values ([(in out) (anaphoric-contracts)]) out)
+              1
+              'pos
+              'neg))
+  
+  (test/spec-passed
+   'anaphoric3
+   '((contract (let-values ([(in out) (anaphoric-contracts)]) (-> in out))
+               (lambda (x) x)
+               'pos
+               'neg)
+     1))
+  
+  (test/pos-blame
+   'anaphoric4
+   '((contract (let-values ([(in out) (anaphoric-contracts)]) (-> in out))
+               (lambda (x) (* 2 x))
+               'pos
+               'neg)
+     1))
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;
   ;;   Flat Contract Tests                                  ;;

@@ -489,7 +489,7 @@ add structu contracts for immutable structs?
               pos
               neg
               orig-str
-              "expected type <~a>, given: ~e"
+              "expected <~a>, given: ~e"
               name
               val))))
      predicate))
@@ -572,7 +572,7 @@ add structu contracts for immutable structs?
   (define (predicate->expected-msg pred)
     (let ([name (predicate->type-name pred)])
       (if name
-          (format "expected type <~a>, " name)
+          (format "expected <~a>, " name)
           "")))
   
   ;; predicate->type-name : pred -> (union #f string)
@@ -2069,7 +2069,8 @@ add structu contracts for immutable structs?
 
   
   
-  (provide any? 
+  (provide any?
+           anaphoric-contracts
            flat-rec-contract
 	   union
            and/c
@@ -2099,11 +2100,9 @@ add structu contracts for immutable structs?
           (let* ([pred (lambda (x) (error 'flat-rec-contract "applied too soon"))]
                  [name (flat-contract (let ([name (lambda (x) (pred x))]) name))])
             (let ([ctc-id (coerce-contract flat-rec-contract ctc)] ...)
-              (begin 
-                (void) ;; ensure begin has at least one arg.
-                (unless (flat-contract? ctc-id)
-                  (error 'flat-rec-contract "expected flat contracts as arguments, got ~e" ctc-id))
-                ...)
+              (unless (flat-contract? ctc-id)
+                (error 'flat-rec-contract "expected flat contracts as arguments, got ~e" ctc-id))
+              ...
               (set! pred
                     (let ([pred-id (flat-contract-predicate ctc-id)] ...)
                       (lambda (x)
@@ -2112,7 +2111,26 @@ add structu contracts for immutable structs?
       [(_ name ctc ...)
        (raise-syntax-error 'flat-rec-contract "expected first argument to be an identifier" stx (syntax name))]))
   
-  ;; tidy contracts
+
+  (define anaphoric-contracts
+    (case-lambda
+      [() (make-anaphoric-contracts (make-hash-table 'weak))]
+      [(x)
+       (unless (eq? x 'equal)
+         (error 'anaphoric-contracts "expected either no arguments, or 'equal as first argument, got ~e" x))
+       (make-anaphoric-contracts (make-hash-table 'equal 'weak))]))
+
+  (define (make-anaphoric-contracts ht)
+    (values
+     (flat-named-contract
+      "(anaphoric-contracts,from)"
+      (lambda (v)
+        (hash-table-put! ht v #t)
+        v))
+     (flat-named-contract
+      "(anaphoric-contracts,to)"
+      (lambda (v)
+        (hash-table-get ht v (lambda () #f))))))     
   
   (define (union . args)
     (for-each
@@ -2585,7 +2603,7 @@ add structu contracts for immutable structs?
   
   (define (subclass?/c %)
     (unless (class? %)
-      (error 'subclass?/c "expected type <class>, given: ~e" %))
+      (error 'subclass?/c "expected <class>, given: ~e" %))
     (let ([name (object-name %)])
       (flat-named-contract
        (if name

@@ -1,29 +1,42 @@
-(module add01 "../web-interaction.ss"
-  (require (lib "url.ss" "net")
-           (lib "request-parsing.ss" "web-server"))
-  
-  ;; get-number-from-user: string -> number
-  ;; ask the user for a number
-  (define (gn msg)
-    (let ([req
-           (send/suspend
-            (lambda (k-url)
-              `(hmtl (head (title ,(format "Get ~a number" msg)))
+(module add01 mzscheme
+  (require (lib "session.ss" "prototype-web-server")
+           (lib "request-parsing.ss" "web-server")
+           (lib "url.ss" "net")
+           )
+
+  (define (dispatch req)
+    (let* ([uri (request-uri req)]
+           [qry (url-query uri)])
+      (cond
+        [(assoc 'second qry)
+         => (lambda (a-pair)
+              `(html (head (title "Answer Page"))
                      (body
-                      (form ([action ,(url->string k-url)]
-                             [method "get"]
-                             [enctype "application/x-www-form-urlencoded"])
-                            ,(format "Enter the ~a number to add: " msg)
-                            (input ([type "text"] [name "number"] [value ""]))
-                            (input ([type "submit"])))))))])
-      (string->number
-       (cdr (assoc 'number (url-query (request-uri req)))))))
-  
-  (let ([initial-request (start-servlet)])
-    `(html (head (title "Final Page"))
-           (body
-            (h1 "Final Page")
-            (p ,(format "The answer is ~a"
-                        (+ (gn "first") (gn "second")))))))
-  
-  )
+                      (h1 "Answer Page")
+                      (p ,(format "The answer is: ~a"
+                                  (+ (string->number (cdr a-pair))
+                                     (string->number (cdr (assoc 'first qry)))))))))]
+        [(assoc 'first qry)
+         => (lambda (a-pair)
+              `(html (head (title "Second Page"))
+                     (body
+                      (h1 "Second Page")
+                      (form ([action ,(url->string uri)]
+                             [method "get"] [enctype "application/x-www-form-urlencoded"])
+                         "Enter the second number to add: "
+                         (input ([type "hidden"] [name "first"] [value ,(cdr a-pair)]))
+                         (input ([type "text"] [name "second"] [value ""]))
+                         (input ([type "submit"] [name "enter"] [value "Enter"]))))))]
+        [else
+         `(html (head (title "Hello"))
+                (body
+                 (h1 "Hello World!")
+                 (form ([action ,(url->string (session-url (current-session)))]
+                        [method "get"] [enctype "application/x-www-form-urlencoded"])
+                         "Enter the first number to add: "
+                         (input ([type "text"] [name "first"] [value ""]))
+                         (input ([type "submit"] [name "enter"] [value "Enter"])))))])))
+
+  (start-session dispatch))
+
+    

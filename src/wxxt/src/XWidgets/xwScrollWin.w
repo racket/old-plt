@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.1 (see README for history)
 # 
-# $Id: xwScrollWin.w,v 1.4 1998/07/09 22:45:04 mflatt Exp $
+# $Id: xwScrollWin.w,v 1.5 1998/07/18 21:50:24 mflatt Exp $
 
 @CLASS XfwfScrolledWindow (XfwfBoard)  @file = xwScrollWin
 
@@ -554,7 +554,9 @@ sliders in the scrollbars.
 
 @proc xws_set_scroll_direct($, long hlen, long hpage, long hpos, long vlen, long vpage, long vpos)
 {
+  if (!hpage) hpage = 1;
   XfwfSetScrollbar($hscroll, !hlen ? 0 : (float)hpos / hlen, (float)hpage / (hlen + hpage));
+  if (!vpage) vpage = 1;
   XfwfSetScrollbar($vscroll, !vlen ? 0 : (float)vpos / vlen, (float)vpage / (vlen + vpage));
 }
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.h,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
+ * $Id: MenuBar.h,v 1.2 1998/04/22 14:38:47 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -52,21 +52,21 @@ public:
     /* MATTHEW: */
     Bool  Delete(wxMenu *menu, int pos = 0);
     // modify items
-    void  Check(int id, Bool flag);
-    Bool  Checked(int id);
-    void  Enable(int id, Bool flag);
+    void  Check(long id, Bool flag);
+    Bool  Checked(long id);
+    void  Enable(long id, Bool flag);
     void  EnableTop(int pos, Bool flag);
-    char  *GetHelpString(int id);
-    char  *GetLabel(int id);
+    char  *GetHelpString(long id);
+    char  *GetLabel(long id);
     char  *GetLabelTop(int pos);
-    void  SetHelpString(int id, char *help);
-    void  SetLabel(int id, char *label);
+    void  SetHelpString(long id, char *help);
+    void  SetLabel(long id, char *label);
     void  SetLabelTop(int pos, char *label);
     // search for item by label
     int   FindMenuItem(char *menu, char *label);
 private:
     // search for internal data by id
-    wxMenuItem  *FindItemForId(int id, wxMenu **menu=NULL);
+    wxMenuItem  *FindItemForId(long id, wxMenu **menu=NULL);
     // callback functions
 #   ifdef Have_Xt_Types
     static void SelectEventCallback(Widget, XtPointer, XtPointer);

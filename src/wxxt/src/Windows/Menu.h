@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.h,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
+ * $Id: Menu.h,v 1.2 1998/04/22 14:38:47 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -62,23 +62,23 @@ public:
     int Number(void);
 
     // add items to menu
-    void  Append(int id, char *label, char *help=NULL, Bool checkable=FALSE);
-    void  Append(int id, char *label, wxMenu *submenu, char *help=NULL);
+    void  Append(long id, char *label, char *help=NULL, Bool checkable=FALSE);
+    void  Append(long id, char *label, wxMenu *submenu, char *help=NULL);
     void  AppendSeparator(void);
     /* MATTHEW: */
-    Bool  DeleteItem(int id, int pos);
-    Bool  Delete(int id);
+    Bool  DeleteItem(long id, int pos);
+    Bool  Delete(long id);
     Bool  DeleteByPosition(int pos);
     // modify items
     void  Break(void) {}; // not supported
-    void  Check(int id, Bool flag);
-    Bool  Checked(int id);
-    void  Enable(int id, Bool flag);
-    char  *GetHelpString(int id);
-    char  *GetLabel(int id);
+    void  Check(long id, Bool flag);
+    Bool  Checked(long id);
+    void  Enable(long id, Bool flag);
+    char  *GetHelpString(long id);
+    char  *GetLabel(long id);
     char  *GetTitle(void);
-    void  SetHelpString(int id, char *help);
-    void  SetLabel(int id, char *label);
+    void  SetHelpString(long id, char *help);
+    void  SetLabel(long id, char *label);
     void  SetTitle(char *title);
     // set font & colour
     void  SetFont(wxFont *newfont)            { if (newfont) font = newfont; }
@@ -93,7 +93,7 @@ private:
     // allow callback and menubar access to private data
     friend class wxMenuBar;
 
-    wxMenuItem  *FindItemForId(int id, wxMenu **menu=NULL); // search for internal data
+    wxMenuItem  *FindItemForId(long id, wxMenu **menu=NULL); // search for internal data
 #   ifdef Have_Xt_Types
     static void EventCallback(Widget, XtPointer, XtPointer);
 #   endif

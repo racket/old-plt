@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: EvtHandler.h,v 1.1.1.1 1997/12/22 17:28:50 mflatt Exp $
+ * $Id: EvtHandler.h,v 1.2 1998/08/08 03:33:01 mflatt Exp $
  *
  * Purpose: base event handler of windows etc.
  *
@@ -65,8 +65,7 @@ public:
     inline virtual void OnCommand(wxWindow& WXUNUSED(win),
 				  wxCommandEvent& WXUNUSED(event)) {};
     inline virtual void OnDefaultAction(wxItem *WXUNUSED(initiatingItem)) {};
-    inline virtual void OnDropFiles(int WXUNUSED(n), char *WXUNUSED(files)[],
-				    int WXUNUSED(x), int WXUNUSED(y)) {};
+    inline virtual void OnDropFile(char *WXUNUSED(file)) {};
     inline virtual void OnEvent(wxMouseEvent& WXUNUSED(event)) {};
     inline virtual Bool OnFunctionKey(wxKeyEvent &WXUNUSED(event)) { return FALSE; };
     inline virtual void OnItemEvent(wxItem *WXUNUSED(item),

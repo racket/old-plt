@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.cc,v 1.6 1998/05/05 00:07:08 mflatt Exp $
+ * $Id: MenuBar.cc,v 1.7 1998/07/13 21:00:17 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -248,14 +248,14 @@ int wxMenuBar::Number()
 // modify items
 //-----------------------------------------------------------------------------
 
-void wxMenuBar::Check(int id, Bool flag)
+void wxMenuBar::Check(long id, Bool flag)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
 	found->set = flag;
 }
 
-Bool wxMenuBar::Checked(int id)
+Bool wxMenuBar::Checked(long id)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
@@ -263,7 +263,7 @@ Bool wxMenuBar::Checked(int id)
     return FALSE;
 }
 
-void wxMenuBar::Enable(int id, Bool flag)
+void wxMenuBar::Enable(long id, Bool flag)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
@@ -284,7 +284,7 @@ void wxMenuBar::EnableTop(int pos, Bool flag)
     }
 }
 
-char *wxMenuBar::GetHelpString(int id)
+char *wxMenuBar::GetHelpString(long id)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
@@ -292,7 +292,7 @@ char *wxMenuBar::GetHelpString(int id)
     return NULL;
 }
 
-char *wxMenuBar::GetLabel(int id)
+char *wxMenuBar::GetLabel(long id)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
@@ -311,14 +311,14 @@ char *wxMenuBar::GetLabelTop(int pos)
     return NULL;
 }
 
-void wxMenuBar::SetHelpString(int id, char *help)
+void wxMenuBar::SetHelpString(long id, char *help)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
 	found->help_text = help;
 }
 
-void wxMenuBar::SetLabel(int id, char *label)
+void wxMenuBar::SetLabel(long id, char *label)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found) {
@@ -362,7 +362,7 @@ int wxMenuBar::FindMenuItem(char *menu, char *itemstring)
     return answer;
 }
 
-wxMenuItem *wxMenuBar::FindItemForId(int id, wxMenu **req_menu)
+wxMenuItem *wxMenuBar::FindItemForId(long id, wxMenu **req_menu)
 {
     menu_item *answer=NULL;
 

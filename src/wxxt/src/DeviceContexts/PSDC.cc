@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.5 1998/08/13 02:13:13 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.6 1998/08/14 21:44:39 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1962,11 +1962,11 @@ XPrinterDialog (wxWindow *parent)
 #	define PS_PRINTER_COMMAND	"lpr"
 #	define PS_PRINTER_OPTIONS	""
 #	define PS_AFM_PATH		NULL
-#elif defined(wx_msw)
-#	define PS_PREVIEW_COMMAND	NULL
+#elif defined(wx_msw) || defined(wx_mac)
+#	define PS_PREVIEW_COMMAND	"ghostview"
 #	define PS_PRINTER_COMMAND	"print"
 #	define PS_PRINTER_OPTIONS	""
-#	define PS_AFM_PATH		"c:\\windows\\system\\"
+#	define PS_AFM_PATH		NULL
 #else
 #	define PS_PREVIEW_COMMAND	NULL
 #	define PS_PRINTER_COMMAND	NULL

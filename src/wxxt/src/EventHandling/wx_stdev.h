@@ -107,7 +107,7 @@ class wxPopupEvent: public wxCommandEvent
 {
 public:
   wxPopupEvent();
-  int menuId;
+  long menuId;
 };
 
 // Mouse event class

@@ -199,9 +199,10 @@ static XtResource resources[] =
 
 	{XtNcursor, XtCCursor, XtRCursor, sizeof(Cursor),
 	    SimpleFieldOffset(cursor), XtRString, "left_ptr"},
-
+#if 0
 	{XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
 	    MultiListFieldOffset(foreground), XtRString,"XtDefaultForeground"},
+#endif
 	{XtNhighlightForeground, XtCHForeground, XtRPixel, sizeof(Pixel),
 	    MultiListFieldOffset(highlight_fg), XtRString, "XtDefaultBackground"},
 	{XtNhighlightBackground, XtCHBackground, XtRPixel, sizeof(Pixel),

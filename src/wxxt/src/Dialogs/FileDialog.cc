@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: FileDialog.cc,v 1.2 1998/08/08 03:33:00 mflatt Exp $
+ * $Id: FileDialog.cc,v 1.3 1998/08/13 02:13:14 mflatt Exp $
  *
  * Purpose: file load and save dialogs
  *
@@ -31,9 +31,9 @@
 
 #include "wx.h"
 
-extern char *wxsPrinterDialog(char *message, char *default_path, 
-			      char *default_filename, char *default_extension, 
-			      int is_put, wxWindow *parent);
+extern char *wxsFileDialog(char *message, char *default_path, 
+			   char *default_filename, char *default_extension, 
+			   int is_put, wxWindow *parent);
 
 //-----------------------------------------------------------------------------
 // wxFileSelector
@@ -42,8 +42,8 @@ char *wxFileSelector(char *message, char *default_path,
 		     char *default_filename, char *default_extension,
 		     char *wildcard, int flags, wxWindow *parent, int x, int y)
 {
-  return wxsPrinterDialog(message, default_path, default_filename, default_extension, 
-			  (flags & wxSAVE), parent);
+  return wxsFileDialog(message, default_path, default_filename, default_extension, 
+		       (flags & wxSAVE), parent);
 }
 
 char *wxLoadFileSelector(char *WXUNUSED(what), char *extension, char *default_name,

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.4 1998/04/22 15:36:34 mflatt Exp $
+ * $Id: Menu.cc,v 1.5 1998/08/08 03:33:04 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -143,7 +143,7 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 // add items to menu
 //-----------------------------------------------------------------------------
 
-void wxMenu::Append(int id, char *label, char *help, Bool checkable)
+void wxMenu::Append(long id, char *label, char *help, Bool checkable)
 {
     menu_item *item = 0;
     // create new menu item or use topdummy
@@ -179,7 +179,7 @@ void wxMenu::Append(int id, char *label, char *help, Bool checkable)
     item->type      = checkable ? MENU_TOGGLE : MENU_BUTTON;
 }
 
-void wxMenu::Append(int id, char *label, wxMenu *submenu, char *help)
+void wxMenu::Append(long id, char *label, wxMenu *submenu, char *help)
 {
   /* MATTHEW: enforce one-menu-owner: */
   if (submenu->owner)
@@ -206,7 +206,7 @@ void wxMenu::AppendSeparator(void)
 }
 
 /* MATTHEW: */
-Bool wxMenu::DeleteItem(int id, int pos)
+Bool wxMenu::DeleteItem(long id, int pos)
 {
   menu_item *found, *prev;
 
@@ -246,7 +246,7 @@ Bool wxMenu::DeleteItem(int id, int pos)
     return FALSE;
 }
 
-Bool wxMenu::Delete(int id)
+Bool wxMenu::Delete(long id)
 {
   return DeleteItem(id, -1);
 }
@@ -277,14 +277,14 @@ int wxMenu::Number()
 // modify items
 //-----------------------------------------------------------------------------
 
-void wxMenu::Check(int id, Bool flag)
+void wxMenu::Check(long id, Bool flag)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
 	found->set = flag;
 }
 
-Bool wxMenu::Checked(int id)
+Bool wxMenu::Checked(long id)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
@@ -292,14 +292,14 @@ Bool wxMenu::Checked(int id)
     return FALSE;
 }
 
-void wxMenu::Enable(int id, Bool flag)
+void wxMenu::Enable(long id, Bool flag)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
 	found->enabled = flag;
 }
 
-char *wxMenu::GetHelpString(int id)
+char *wxMenu::GetHelpString(long id)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
@@ -307,7 +307,7 @@ char *wxMenu::GetHelpString(int id)
     return NULL;
 }
 
-char *wxMenu::GetLabel(int id)
+char *wxMenu::GetLabel(long id)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
@@ -322,14 +322,14 @@ char *wxMenu::GetTitle(void)
     return NULL;
 }
 
-void wxMenu::SetHelpString(int id, char *help)
+void wxMenu::SetHelpString(long id, char *help)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
 	found->help_text = help;
 }
 
-void wxMenu::SetLabel(int id, char *label)
+void wxMenu::SetLabel(long id, char *label)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found) {
@@ -370,7 +370,7 @@ int wxMenu::FindItem(char *itemstring)
     return answer;
 }
 
-wxMenuItem *wxMenu::FindItemForId(int id, wxMenu **req_menu)
+wxMenuItem *wxMenu::FindItemForId(long id, wxMenu **req_menu)
 {
     menu_item *answer=NULL;
 

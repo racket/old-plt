@@ -1346,8 +1346,13 @@
 	 (syntax/loc x (syntax-case (list in ...) ()
 			 ((out ...) (begin e1 e2 ...))))))))
 
-  (define (generate-temporaries l)
-    (let ([l (stx->list l)])
+  (define (generate-temporaries sl)
+    (unless (stx-list? sl)
+      (raise-type-error 
+       'generate-temporaries
+       "syntax pair"
+       sl))
+    (let ([l (stx->list sl)])
       (map (lambda (x) (datum->syntax (cond
 				       [(or (symbol? x) (string? x))
 					(gensym x)]
@@ -2005,6 +2010,9 @@
 		  ;; Result is the module name:
 		  modname))))))))
 
+  ;; This module must be invoked at startup!
+  (current-module-name-resolver standard-module-name-resolver)
+
   (define (find-library-collection-paths)
     (path-list-string->path-list
      (or (getenv "PLTCOLLECTS") "")
@@ -2103,7 +2111,7 @@
 	   path-list-string->path-list find-executable-path
 	   collection-path load/use-compiled
 	   simple-return-primitive? port? not-break-exn?
-	   standard-module-name-resolver find-library-collection-paths
+	   find-library-collection-paths
 	   interaction-environment scheme-report-environment null-environment))
 
 ;;----------------------------------------------------------------------
@@ -2163,5 +2171,3 @@
   ;; Special start-up require copies bindings to top-level
   (require mzscheme)
   (require-for-syntax mzscheme))
-
-(current-module-name-resolver standard-module-name-resolver)

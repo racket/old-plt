@@ -701,7 +701,7 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 /*                           stx comparison                               */
 /*========================================================================*/
 
-static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
+static int same_marks(Scheme_Object *awl, Scheme_Object *bwl, int ignore_barrier)
 /* Compares the marks in two wraps lists */
 {
   while (1) {
@@ -715,7 +715,7 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
 	  awl = SCHEME_CDDR(awl);
 	else
 	  break;
-      } else if (SAME_OBJ(SCHEME_CAR(awl), barrier_symbol)) {
+      } else if (SAME_OBJ(SCHEME_CAR(awl), barrier_symbol) && !ignore_barrier) {
 	awl = scheme_null;
       } else
 	awl = SCHEME_CDR(awl);
@@ -882,7 +882,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
       for (ri = istart; ri < iend; ri++) {
 	renamed = SCHEME_VEC_ELS(rename)[2+ri];
 	if (SAME_OBJ(SCHEME_STX_VAL(a), SCHEME_STX_VAL(renamed))) {
-	  if (same_marks(((Scheme_Stx *)renamed)->wraps, wraps)) {
+	  if (same_marks(((Scheme_Stx *)renamed)->wraps, wraps, 0)) {
 	    Scheme_Object *other_env, *envname;
 	    
 	    envname = SCHEME_VEC_ELS(rename)[0];
@@ -1076,14 +1076,18 @@ int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *u
     return 1;
 
   if (!uid)
-    if (!same_marks(((Scheme_Stx *)a)->wraps, ((Scheme_Stx *)b)->wraps))
+    if (!same_marks(((Scheme_Stx *)a)->wraps, ((Scheme_Stx *)b)->wraps, 0))
       return 0;
 
   a = resolve_env(a, phase, 0, NULL);
+  a = scheme_module_resolve(a);
+
   if (uid)
     b = uid;
-  else
+  else {
     b = resolve_env(b, phase, 0, NULL);
+    b = scheme_module_resolve(b);
+  }
 
   /* Same binding environment? */
   return SAME_OBJ(a, b);
@@ -2136,7 +2140,7 @@ static Scheme_Object *syntax_original_p(int argc, Scheme_Object **argv)
   } else
     return scheme_false;
 
-  if (same_marks(stx->wraps, scheme_null))
+  if (same_marks(stx->wraps, scheme_null, 1))
     return scheme_true;
   else
     return scheme_false;

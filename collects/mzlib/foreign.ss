@@ -722,7 +722,7 @@
 ;; Tagged pointers
 
 ;; Make these operations available
-(provide cpointer-type set-cpointer-type!)
+(provide cpointer-tag set-cpointer-tag!)
 
 ;; This is a kind of a pointer that gets a specific tag when converted to
 ;; Scheme, and accepts only such tagged pointers when going to C.  An optional
@@ -740,12 +740,12 @@
                   (lambda (p)
                     (let ([p (if scheme->c (scheme->c p) p)])
                       (if (cpointer? p)
-                        (unless (eq? tag (cpointer-type p))
+                        (unless (eq? tag (cpointer-tag p))
                           (error tagged->C error-string p))
                         (error tagged->C error-string p))
                       p))
                   (lambda (p)
-                    (when p (set-cpointer-type! p tag))
+                    (when p (set-cpointer-tag! p tag))
                     (if c->scheme (c->scheme p) p))))]))
 
 ;; A macro version of the above, using the defined name for a tag string, and
@@ -773,7 +773,7 @@
              (let ([TYPE-tag name-string])
                (values (_cpointer TYPE-tag ptr-type scheme->c c->scheme)
                        (lambda (x)
-                         (and (cpointer? x) (eq? TYPE-tag (cpointer-type x))))
+                         (and (cpointer? x) (eq? TYPE-tag (cpointer-tag x))))
                        TYPE-tag)))))]))
 
 ;; ----------------------------------------------------------------------------
@@ -854,11 +854,11 @@
                            [(offset ...) (apply values
                                                 (compute-offsets types))])
                (define _TYPE* (_cpointer TYPE-tag (make-cstruct-type types)))
-               (define-cpointer-type _TYPE)
+               (define-cpointer-tag _TYPE)
                (values _TYPE* _TYPE TYPE? TYPE-tag
                        (lambda (slot ...)
                          (let ([block (malloc _TYPE*)])
-                           (set-cpointer-type! block TYPE-tag)
+                           (set-cpointer-tag! block TYPE-tag)
                            (ptr-set! block stype 'abs offset slot)
                            ...
                            block))

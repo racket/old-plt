@@ -1,3 +1,5 @@
+(require-library "macro.ss")
+
 ; Input ports have three statuses:
 ;   "raw" = they've just been opened
 ;   "impure" = they have text waiting
@@ -8,10 +10,10 @@
 ; lookup-mime-header : list mime-header -> str + #f
 
 (define-signature mred:url^
-  (http/get-impure-port    ; url x list (str) -> in-port
+  (http/get-impure-port    ; url [x list (str)] -> in-port
     display-pure-port      ; in-port -> ()
     string->url            ; str -> url
-    call/input-url         ; url x (in-port -> ()) x list (str) -> ()
+    call/input-url         ; url x (in-port -> ()) [x list (str)] -> ()
     purify-port            ; in-port -> ()
 ))
 
@@ -48,9 +50,9 @@
 			     (url->default-port url))))
 	  (tcp-connect (accessor-host accessor) port-number))))
 
-    ; http/get-impure-port : url x list (str) -> in-port
+    ; http/get-impure-port : url [x list (str)] -> in-port
     (define http/get-impure-port
-      (lambda (url strings)
+      (opt-lambda (url (strings '()))
 	(let ((accessor (url->accessor url)))
 	  (let-values (((server->client client->server)
 			 (make-ports url accessor)))
@@ -72,9 +74,9 @@
 	      (loop))))
 	(close-input-port server->client)))
 
-    ; call/input-url : url x (in-port -> ()) x list (str) -> ()
+    ; call/input-url : url x (in-port -> ()) [x list (str)] -> ()
     (define call/input-url
-      (lambda (url handler params)
+      (opt-lambda (url handler (params '()))
 	(let ((server->client (http/get-impure-port url params)))
 	  (dynamic-wind
 	    (lambda () 'do-nothing)
@@ -218,5 +220,4 @@
 	(string->url str)
 	(lambda (p)
 	  (purify-port p)
-	  (display-pure-port p))
-	'()))))
+	  (display-pure-port p))))))

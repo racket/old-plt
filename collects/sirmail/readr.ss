@@ -1767,14 +1767,11 @@
           (stretchable-width #f)))
       
       (define-values (show-new-mail-msg hide-new-mail-msg disconnected-msg enqueued-msg)
-	(let* ([orig-font (send disable-button-panel get-label-font)]
-               [font (make-object font% (send orig-font get-point-size) 'system 'normal 'bold)])
-	  (send disable-button-panel set-label-font font)
+	(let* ([font (make-object font% (send normal-control-font get-point-size) 'system 'normal 'bold)])
 	  (let ([spacer (make-object message% "  " disable-button-panel)]
                 [m (make-object new-mail-message% font disable-button-panel)]
-		[d (make-object message% "Disconnected" disable-button-panel)]
-                [e-msg (new message% (label "Mail Enqueued") (parent disable-button-panel))])
-	    (send disable-button-panel set-label-font font)
+		[d (new message% [label "Disconnected"] [parent disable-button-panel] [font font])]
+                [e-msg (new message% [label "Mail Enqueued"] [parent disable-button-panel] [font font])])
 	    (send m show #f)
             (send e-msg show #f)
 	    (values (lambda () 

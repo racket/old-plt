@@ -133,10 +133,6 @@ void GC_end_stubborn_change(void *s)
 {
 }
 
-void GC_gcollect()
-{
-}
-
 #define SKIP ((Scheme_Type)0x7000)
 #define MOVED ((Scheme_Type)0x3000)
 
@@ -251,7 +247,9 @@ static void *cautious_mark(void *p)
 
 void GC_mark_variable_stack(void **var_stack,
 			    int var_count,
-			    long delta)
+			    long delta,
+			    void *low_limit,
+			    void *high_limit)
 {
   int i, stack_depth;
 
@@ -261,6 +259,11 @@ void GC_mark_variable_stack(void **var_stack,
     void ***p;
 
     var_stack = (void **)((char *)var_stack + delta);
+    if (low_limit
+	&& (((unsigned long)var_stack < (unsigned long)low_limit)
+	    || ((unsigned long)var_stack > (unsigned long)high_limit)))
+      return;
+
     p = (void ***)(var_stack + 2);
     
     while (size--) {
@@ -283,10 +286,12 @@ void GC_mark_variable_stack(void **var_stack,
       p++;
     }
 
+#if 0
     if (*var_stack && ((unsigned long)*var_stack < (unsigned long)var_stack)) {
       printf("bad %d\n", stack_depth);
       *(int *)0x0 = 1;
     }
+#endif
 
     var_count = ((long *)var_stack)[1]; 
     var_stack = *var_stack;
@@ -365,7 +370,8 @@ void gcollect(int needsize)
 
   GC_mark_variable_stack(GC_variable_stack,
 			 GC_variable_count,
-			 0);
+			 0,
+			 NULL, NULL);
 
   for (i = 0; i < roots_count; i += 2) {
     void **s = (void **)roots[i];
@@ -626,4 +632,9 @@ void GC_unregister_disappearing_link(void **p)
 void GC_register_traverser(Scheme_Type tag, Traverse_Proc proc)
 {
   tag_table[tag] = proc;
+}
+
+void GC_gcollect()
+{
+  gcollect(0);
 }

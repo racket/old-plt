@@ -207,8 +207,8 @@ void set_copy(void *s_c, void *c)
 
 /* Precise GC: */
 # define MALLOC_STACK(size) scheme_malloc_atomic(size)
-# define get_copy(s_c) (sc)
-# define set_copy(s_c, c) sc = c
+# define get_copy(s_c) (s_c)
+# define set_copy(s_c, c) s_c = c
 
 #endif
 
@@ -238,9 +238,14 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
   if (b->stack_max_size < size) {
     /* printf("Stack size: %d\n", size); */
     void *copy;
+#ifndef MZ_PRECISE_GC
     copy = make_stack_copy_rec(size);
     b->stack_copy = copy;
     set_copy(b->stack_copy, MALLOC_STACK(size));
+#else
+    copy = MALLOC_STACK(size);
+    set_copy(b->stack_copy, copy);
+#endif
     b->stack_max_size = size;
   }
   b->stack_size = size;
@@ -286,7 +291,7 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
   }
 
 #ifdef MZ_PRECISE_GC
-  GC_variable_stack = c->gc_var_stack;
+  GC_variable_stack = b->gc_var_stack;
   GC_variable_count = b->gc_var_count;
 #endif
 

@@ -75,7 +75,9 @@ void GC_register_traverser(Scheme_Type tag, Traverse_Proc proc);
 void *GC_resolve(void *p);
 void GC_mark_variable_stack(void **var_stack,
 			    int var_count,
-			    long delta);
+			    long delta,
+			    void *low_limit,
+			    void *high_limit);
 
 #define gcMARK(x) x = mark(x)
 #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2)

@@ -1008,7 +1008,8 @@ read_list(Scheme_Object *port,
       return (stxsrc
 	      ? scheme_make_stx(list, line, col, stxsrc, STX_SRCTAG)
 	      : list);
-    } else if ((ch == '.')
+    } else if (!local_can_read_dot
+	       && (ch == '.')
 	       && (next = scheme_peekc(port),
 		   ((next == EOF)
 		    || isspace(next)
@@ -1287,7 +1288,7 @@ read_number_or_symbol(Scheme_Object *port,
 
   buf[i] = '\0';
 
-  if (!quoted_ever && (i == 1) && (buf[0] == '.')) {
+  if (!quoted_ever && (i == 1) && (buf[0] == '.') && !local_can_read_dot) {
     scheme_raise_exn(MZEXN_READ,
 		     port,
 		     "read: illegal use of \".\" at position %ld%L in %q",

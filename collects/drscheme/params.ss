@@ -1,7 +1,16 @@
 (unit/sig drscheme:parameters^
   (import [mred : mred^]
 	  [drscheme:unit : drscheme:unit^]
+	  [drscheme:frame : drscheme:frame^]
 	  [drscheme:rep : drscheme:rep^])
+
+  (define make-parameter
+    (lambda (x g)
+      (case-lambda
+       [() x]
+       [(n) (if (g n)
+		(set! x n)
+		(error 'parameter "value: ~a failed guard" n))])))
 
   (define current-interactions-canvas%
     (make-parameter drscheme:unit:interactions-canvas%
@@ -21,6 +30,7 @@
 				 "expected a subclass of wx:media-canvas%, got: ~a"
 				 x)))))  
 
+  ;; change me to drscheme:unit:frame%
   (define current-frame%
     (make-parameter 
      drscheme:unit:frame%
@@ -33,7 +43,13 @@
 
   (define current-interactions-edit%
     (make-parameter 
-     drscheme:rep:edit%
+     (begin0
+       (class-asi mred:edit%
+	 (public
+	   [enable-autoprompt void]
+	   [insert-prompt void]
+	   [initialize-console void]))
+       drscheme:rep:edit%)
      (lambda (x)
        (if (subclass? x wx:media-edit%)
 	   x

@@ -1,3 +1,5 @@
+
+
 ; first question: what character set shall we use? how to represent 6 umlauted vowels and sharp s (s-zed)
 ; the ones that Reini has translated look wrong on my PC. hmmm, copied and pasted from Mac. maybe my one fault.
 ; (Latin-1 or better iso-8859-15 for the euro symbol: reini urban)
@@ -665,5 +667,6 @@
    (vc-error-format "Fehler: ~a")
    (inline-saved-program-in-executable? "Dürfen wir Ihr Programm in die ausführbare Datei einbauen?\n\nFalls ja, können Sie die ausführbare Datei auf einen anderen ~a Computer kopieren, aber die Datei wird sehr gross sein.\n\nFalls nein, dann können Sie die ausführbare Datei nicht auf einen anderen Computer kopieren und es wird relative klein sein. Darüber hinaus wird die ausführbare Datei immer die neueste Version des Programms benutzen.")
 
-
+   (inline-saved-program-in-executable/windows
+    "ACHTUNG, ACHTUNG!! Falls Sie das Executable zu einem anderen Computer kopieren, muessen Sie auch die Dateien llibmred.dll, libmzsc heme.dll, and libgc.dll kopieren.  Ihre PATH Umgebungsvariable muss zusätzlich den Pfad zu den DLL Dateien enthalten.") 
  )

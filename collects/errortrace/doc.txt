@@ -90,6 +90,12 @@ profiling):
   enabled, #f otherwise
 > (profiling-enabled on?) - enables/disables profiling instrumentation
 
+> (profiling-record-enabled) - returns #t if profiling info is
+  recorded for instrumented code, #f otherwise; the default is #t
+> (profiling-enabled on?) - enables/disables the recording of
+  profiling info (independent of whether newly evaluated code is
+  instrumented)
+
 Profiling records:
 
  * the number of times a procedure was called.
@@ -99,11 +105,10 @@ Profiling records:
    within the procedure, but not including time consumed by a
    tail-call from the procedure).
 
- * an inferred name for the procedure, or the procedure's source
-   expression if no name can be inferred.
+ * an inferred name for the procedure.
 
- * the name of the procedure's source file, or #f if the source file
-   is unknown.
+ * the procedure's source in the form of a syntax object (which might,
+   in turn, provide a source location file and position).
 
  * optionally, information about the procedure call path (something
    like the stack trace) for every call to the procedure. Path
@@ -140,9 +145,9 @@ To retireve all profiling information accumulated so far, call
     each two-element list contains the calling proceure's name or
     source expression and the calling procedure's source file or #f.
 
-Depending of the source program, profiling induces a factor of 2 to 4
-slowdown (in addition to any slowdown from the exception information
-instrumentation).
+Depending of the source program, profiling usually induces a factor of
+2 to 4 slowdown (in addition to any slowdown from the exception
+information instrumentation).
 
 > (output-profile-results paths? sort-time?)
 

@@ -17,23 +17,25 @@
   (define profile-key (gensym))
   
   (define profiling-enabled (make-parameter #f))
+  (define profiling-record-enabled (make-parameter #t))
   (define profile-paths-enabled (make-parameter #f))
   
   (define profile-info (make-hash-table))
   
   (define (register-profile-start key)
-    (let ([v (hash-table-get profile-info key)])
-      (let ([b (car v)]
-	    [v (cdr v)])
-	(set-car! v (add1 (car v)))
-	(when (profile-paths-enabled)
-	  (let ([v (cdddr v)])
-	    (set-car! v (cons (current-continuation-marks profile-key) (car v)))))
-	(if (unbox b)
-	    #f
-	    (begin
-	      (set-box! b #t)
-	      (current-process-milliseconds))))))
+    (and (profiling-record-enabled)
+	 (let ([v (hash-table-get profile-info key)])
+	   (let ([b (car v)]
+		 [v (cdr v)])
+	     (set-car! v (add1 (car v)))
+	     (when (profile-paths-enabled)
+	       (let ([v (cdddr v)])
+		 (set-car! v (cons (current-continuation-marks profile-key) (car v)))))
+	     (if (unbox b)
+		 #f
+		 (begin
+		   (set-box! b #t)
+		   (current-process-milliseconds)))))))
   
   (define (register-profile-done key start)
     (when start
@@ -354,6 +356,7 @@
 	   instrumenting-enabled 
 
 	   profiling-enabled
+	   profiling-record-enabled
 	   profile-paths-enabled 
 	   get-profile-results
 	   output-profile-results

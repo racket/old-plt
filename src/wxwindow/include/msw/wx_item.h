@@ -24,7 +24,10 @@ class wxItem: public wxbItem
  protected:
    Bool isFafa;      // because we can mix Fafa/non-Fafa controls
  public:
-   wxList *subControls; // For controls like radiobuttons which are really composite
+   int *subControls; // For controls like radiobuttons which are really composite
+   int numSubControls;
+   void **subControlPtrs;
+
    FARPROC oldWndProc; // For subclassed controls
    Bool isBeingDeleted; // Fudge because can't access parent
                         // when being deleted (don't know why)

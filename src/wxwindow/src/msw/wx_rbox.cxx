@@ -29,11 +29,12 @@ BOOL wxRadioBox::MSWCommand(UINT param, WORD id)
 extern int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 			long *r, int tramp);
 
-typedef struct {
+class wxRBInfo {
+public:
   FARPROC old;
   wxItem *item;
   int which;
-} wxRBInfo;
+};
 
 extern int wx_trampolining;
 
@@ -82,12 +83,12 @@ wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 static FARPROC wxGenericRIProc;
 
-static void SubclassRadioButton(HWND hWnd, wxItem *item, int which)
+static void *SubclassRadioButton(HWND hWnd, wxItem *item, int which)
 {
   wxRBInfo *i;
   FARPROC io;
 
-  i = (wxRBInfo *)malloc(sizeof(wxRBInfo));
+  i = new wxRBInfo;
   
   i->item = item;
   i->which = which;
@@ -100,6 +101,8 @@ static void SubclassRadioButton(HWND hWnd, wxItem *item, int which)
     wxGenericRIProc = MakeProcInstance((FARPROC) wxRadioItemProc, wxhInstance);
   }
   SetWindowLong(hWnd, GWL_WNDPROC, (LONG) wxGenericRIProc);
+
+  return i;
 }
 
 void UnsubclassRadioButton(HWND hWnd)
@@ -110,7 +113,6 @@ void UnsubclassRadioButton(HWND hWnd)
   if (i) {
     wxRemoveControlHandle(hWnd);
     SetWindowLong(hWnd, GWL_WNDPROC, (LONG)i->old);
-    free(i);
   }
 }
 
@@ -188,15 +190,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   
   the_handle = cparent->handle;
 
-#ifdef MZ_PRECISE_GC
-  {
-    HWND *a;
-    a = (HWND *)GC_malloc_atomic(sizeof(HWND) * N);
-    radioButtons = a;
-  }
-#else
   radioButtons = new WXGC_ATOMIC HWND[N];
-#endif
   radioWidth = new WXGC_ATOMIC int[N];
   radioHeight = new WXGC_ATOMIC int[N];
   if (bmChoices) {
@@ -206,11 +200,14 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   }
   buttonEnabled = new Bool[N];
 
-  subControls = new wxList();
+  numSubControls = N;
+  subControls = new WXGC_ATOMIC int[N];
+  subControlPtrs = new void*[N];
 
   for (i = 0; i < N; i++) {
     long newId;
     long groupStyle = 0;
+    void *scp;
 
     if (i == 0 && _style==0)
       groupStyle = WS_GROUP;
@@ -261,9 +258,10 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
       radioButtons[i] = rbhand;
     }
 
-    SubclassRadioButton(radioButtons[i], this, i);
+    scp = SubclassRadioButton(radioButtons[i], this, i);
+    subControlPtrs[i] = scp;
     wxSetWinFont(buttonFont, radioButtons[i]);
-    subControls->Append((wxObject *)newId);
+    subControls[i] = newId;
   }
 
   // Create a dummy radio control to end the group.

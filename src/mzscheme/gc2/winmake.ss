@@ -343,7 +343,13 @@
 
 (wx-try "mred" "mred" "mrmain" #f "cxx")
 
+(unless (file-exists? "mred.res")
+  (system- (string-append 
+	    "rc /l 0x409 /I ../../wxwindow/include/msw /I ../../wxwindow/contrib/fafa "
+	    "/fomred.res ../../worksp/mred/mred.rc")))
+
 (let ([objs (list
+	     "mred.res"
 	     "xsrc/mrmain.obj"
 	     "libmzsch3mxxxxxxx.lib"
 	     "libmred3mxxxxxxx.lib")])

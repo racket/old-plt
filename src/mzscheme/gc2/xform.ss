@@ -700,6 +700,8 @@
 		      (convert-body body-e arg-vars arg-vars (make-live-var-info #f -1 0 null null null 0) #t)])
 	  body-e))))))
 
+(define re:funcarg (regexp "^__funcarg"))
+
 (define (convert-body body-e extra-vars pushable-vars live-vars setup-stack?)
   (let ([el (body->lines body-e #f)])
     (let-values ([(decls body) (split-decls el)])
@@ -788,7 +790,9 @@
 	      ;; Calculate vars to push in this block
 	      (let ([newly-pushed (filter (lambda (x)
 					    (or (assq (car x) local-vars)
-						(assq (car x) pushable-vars)))
+						(assq (car x) pushable-vars)
+						(and setup-stack?
+						     (regexp-match re:funcarg (symbol->string (car x))))))
 					  (live-var-info-pushed-vars live-vars))])
 		(values (apply
 			 append

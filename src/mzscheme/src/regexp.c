@@ -1341,10 +1341,13 @@ static Scheme_Object *gen_compare(char *name, int pos,
   save = full_s[endset];
   if (save)
     full_s[endset] = 0;
-  s = full_s + offset;
 
   startp = MALLOC_N_ATOMIC(char *, r->nsubexp);
   endp = MALLOC_N_ATOMIC(char *, r->nsubexp);
+
+  /* s might be mis-aligned, so with MZ_PRECISE_GC we rely on 
+     GC not happening for a while... */
+  s = full_s + offset;
 
   srcbase = (unsigned long)s; /* precise gc: srcbase isn't moved */
   /* No GCs during regexc... */
@@ -1366,11 +1369,22 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	  l = scheme_make_pair(scheme_make_pair(scheme_make_integer(startpd),
 						scheme_make_integer(endpd)),
 			       l);
-	} else
-	  l = scheme_make_pair(scheme_make_sized_string(s + ((unsigned long)startp[i] - srcbase),
-							(endp[i] - startp[i]),
-							1),
+	} else {
+	  int len = (endp[i] - startp[i]), allocit = 1;
+	  char *m;
+#ifdef MZ_PRECISE_GC
+	  /* Can't pass mis-aligned pointer */
+	  if (((long)startp[i]) & 1) {
+	    allocit = 0;
+	    m = MALLOC_N_ATOMIC(char, len + 1);
+	    memcpy(m, full_s + offset + ((unsigned long)startp[i] - srcbase), len);
+	    m[len] = 0;
+	  } else
+#endif
+	    m = full_s + offset + ((unsigned long)startp[i] - srcbase);
+	  l = scheme_make_pair(scheme_make_sized_string(m, len, allocit),
 			       l);
+	}
       } else
 	l = scheme_make_pair(scheme_false, l);
     }

@@ -17,10 +17,10 @@
 
 #if USE_MMAP
 /* For mmap: */
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <errno.h>
+# include <fcntl.h>
+# include <sys/types.h>
+# include <sys/mman.h>
+# include <errno.h>
 #endif
 
 typedef short Type_Tag;
@@ -32,7 +32,7 @@ typedef short Type_Tag;
 #define SAFETY 0
 #define RECYCLE_HEAP 0
 
-#define GROW_FACTOR 1
+#define GROW_FACTOR 2
 
 void (*GC_collect_start_callback)(void);
 void (*GC_collect_end_callback)(void);
@@ -90,10 +90,10 @@ void *malloc_pages(size_t len)
     len += PAGE_SIZE - (len & (PAGE_SIZE - 1));
   }
 
-  r = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  r = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
 
   if (r  == (void *)-1) {
-    printf("mmap failed: %d\n", errno);
+    printf("mmap failed: %s\n", strerror(errno));
     exit(-1);
   }
 

@@ -574,6 +574,7 @@ int actual_main(int argc, char *argv[])
   }
 #endif /* DONT_PARSE_COMMAND_LINE */
   
+  
   global_env = scheme_basic_env();
 
   sch_argv = scheme_make_vector(argc, scheme_null);

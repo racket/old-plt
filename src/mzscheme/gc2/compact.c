@@ -13,7 +13,7 @@
 #include <string.h>
 
 #define USE_MMAP 1
-#define GROW_FACTOR 1.5
+#define GROW_FACTOR 2
 #define COMPACT_THRESHOLD 0.2
 
 #define GENERATIONS 1
@@ -43,7 +43,7 @@ typedef short Type_Tag;
 
 #include "gc2.h"
 
-#define TIME 1
+#define TIME 0
 #define SEARCH 0
 #define SAFETY 0
 #define RECYCLE_HEAP 0
@@ -913,10 +913,10 @@ void GC_dump(void)
 
 
   fprintf(stderr, "Memory use: %ld\n", memory_in_use - FREE_LIST_DELTA);
-  fprintf(stderr, "Memory overhead: %ld (%f%%)   %d on free list\n", 
+  fprintf(stderr, "Memory overhead: %ld (%f%%)   %ld on free list\n", 
 	  page_allocations - memory_in_use + FREE_LIST_DELTA,
 	  (100.0 * ((double)page_allocations - memory_in_use)) / memory_in_use,
-	  FREE_LIST_DELTA);
+	  (long)FREE_LIST_DELTA);
 }
 
 long GC_get_memory_use()
@@ -2077,7 +2077,7 @@ static void freelist_tagged_mpage(void **p, MPage *page)
   }
 
   if (on_at_start != on_free_list)
-    page->age = 0;
+    page->age = page->refs_age = -1;  /* will be promoted to 0 */
 }
 
 static void freelist_untagged_mpage(void **p, MPage *page)
@@ -2137,7 +2137,7 @@ static void freelist_untagged_mpage(void **p, MPage *page)
   }
 
   if (on_at_start != on_free_list)
-    page->age = 0;
+    page->age = page->refs_age = -1; /* will be promoted to 0 */
 }
 
 static void freelist_all_mpages(int young)
@@ -2147,7 +2147,7 @@ static void freelist_all_mpages(int young)
   for (page = first; page; page = page->next) {
     if (page->type & COLOR_MASK) {
       if (page->refs_age <= young)
-	page->refs_age = 0; /* best we can assume */
+	page->refs_age = -1; /* best we can assume */
       if (!(page->type & (MTYPE_BIGBLOCK | MTYPE_OLD))) {
 	void *p;
 	
@@ -2802,7 +2802,7 @@ static void gcollect(int full)
   int i;
 
   INITTIME();
-  PRINTTIME((STDERR, "gc: start with %ld [%d]: %ld\n", 
+  PRINTTIME((STDERR, "gc: << start with %ld [%d]: %ld\n", 
 	     memory_in_use, cycle_count + 1, GETTIMEREL()));
 
   cycle_count++;
@@ -2874,25 +2874,6 @@ static void gcollect(int full)
 
   /******************** Init ****************************/
 
-#if USE_FREELIST && (COMPACTING == SELECTIVELY_COMPACT)
-  if (full)
-    compact = 1;
-  else {
-    /* Remaining free list items few enough? */
-    if (((float)(on_free_list << 2) / memory_in_use) < COMPACT_THRESHOLD)
-      compact = 0;
-    else
-      compact = 1;
-  }
-#else
-# if (COMPACTING == ALWAYS_COMPACT) || !USE_FREELIST
-  compact = 1;
-# endif
-# if (COMPACTING == NEVER_COMPACT)
-  compact = 0;
-# endif
-#endif
-
   skipped_pages = 0;
   scanned_pages = 0;
   young_pages = 0;
@@ -2915,10 +2896,29 @@ static void gcollect(int full)
   young = 15;
 #endif
 
+#if USE_FREELIST && (COMPACTING == SELECTIVELY_COMPACT)
+  if (full)
+    compact = 1;
+  else {
+    /* Remaining free list items few enough? */
+    if (((float)(on_free_list << 2) / memory_in_use) < COMPACT_THRESHOLD)
+      compact = 0;
+    else
+      compact = 1;
+  }
+#else
+# if (COMPACTING == ALWAYS_COMPACT) || !USE_FREELIST
+  compact = 1;
+# endif
+# if (COMPACTING == NEVER_COMPACT)
+  compact = 0;
+# endif
+#endif
+
   init_all_mpages(young);
 
-  PRINTTIME((STDERR, "gc: init %d[%f] (y:%d k:%d c:%d i:%d): %ld\n", 
-	     compact, (double)(FREE_LIST_DELTA << 2) / memory_in_use,
+  PRINTTIME((STDERR, "gc: init %s [freelist=%f] (young:%d skip:%d scan:%d init:%d): %ld\n", 
+	     compact ? "cmpct" : "frlst", (double)(FREE_LIST_DELTA << 2) / memory_in_use,
 	     young_pages, skipped_pages, scanned_pages, inited_pages,
 	     GETTIMEREL()));
 
@@ -2932,7 +2932,7 @@ static void gcollect(int full)
   getrusage(RUSAGE_SELF, &post);
 #endif
 
-  PRINTTIME((STDERR, "gc: roots (i:%d d:%d) [%ld faults]: %ld\n", 
+  PRINTTIME((STDERR, "gc: roots (init:%d deep:%d) [%ld faults]: %ld\n", 
 	     inited_pages, stack_depth, post.ru_minflt - pre.ru_minflt,
 	     GETTIMEREL()));
 
@@ -3105,7 +3105,7 @@ static void gcollect(int full)
   getrusage(RUSAGE_SELF, &post);
 #endif
 
-  PRINTTIME((STDERR, "gc: mark (i:%d c:%ld s:%ld d:%ld)"
+  PRINTTIME((STDERR, "gc: mark (init:%d cycle:%ld stkcnt:%ld stkdp:%ld)"
 	     STATS_FORMAT
 	     " [%ld faults]: %ld\n", 
 	     inited_pages, iterations, 
@@ -3199,9 +3199,9 @@ static void gcollect(int full)
 
   /******************************************************/
 
-  if (compact) {
-    promote_all_ages();
+  promote_all_ages();
 
+  if (compact) {
     for (i = 0; i < NUM_SETS; i++) {
       sets[i]->malloc_page = sets[i]->compact_page;
       sets[i]->low = sets[i]->compact_to + sets[i]->compact_to_offset;
@@ -3264,7 +3264,7 @@ static void gcollect(int full)
   getrusage(RUSAGE_SELF, &post);
 #endif
 
-  PRINTTIME((STDERR, "gc: done with %ld (%d/%d) [%ld faults]: %ld\n",
+  PRINTTIME((STDERR, "gc: done with %ld (%d/%d) [%ld faults]: %ld >>\n",
 	     memory_in_use, scanned_pages, skipped_pages, post.ru_minflt - pre.ru_minflt,
 	     GETTIMEREL()));
 

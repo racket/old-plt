@@ -3173,7 +3173,8 @@ local_certify(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 local_lift_expr(int argc, Scheme_Object *argv[])
 {
-  Scheme_Comp_Env *env;
+  Scheme_Env *menv;
+  Scheme_Comp_Env *env, *orig_env;
   Scheme_Object *id, *local_mark, *expr, *data, *vec, *a[1];
   char buf[16];
   Scheme_Lift_Capture_Proc cp;  
@@ -3182,7 +3183,7 @@ local_lift_expr(int argc, Scheme_Object *argv[])
   if (!SCHEME_STXP(expr))
     scheme_wrong_type("syntax-local-lift-expression", "syntax", 0, argc, argv);
 
-  env = scheme_current_thread->current_local_env;
+  env = orig_env = scheme_current_thread->current_local_env;
   local_mark = scheme_current_thread->current_local_mark;
 
   if (!env)
@@ -3208,6 +3209,13 @@ local_lift_expr(int argc, Scheme_Object *argv[])
   vec = COMPILE_DATA(env)->lifts;
   cp = *(Scheme_Lift_Capture_Proc *)SCHEME_VEC_ELS(vec)[1];
   data = SCHEME_VEC_ELS(vec)[2];
+
+  menv = scheme_current_thread->current_local_menv;
+
+  expr = scheme_stx_cert(expr, scheme_false, 
+			 (menv && menv->module) ? menv : NULL,
+			 scheme_current_thread->current_local_certs, 
+			 NULL);
 
   expr = cp(data, id, expr);
 

@@ -520,6 +520,8 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_progress_evt_type, twoptr_obj);
 
   GC_REG_TRAV(scheme_thread_cell_type, iptr_obj);
+
+  GC_REG_TRAV(scheme_already_comp_type, iptr_obj);
 }
 
 END_XFORM_SKIP;

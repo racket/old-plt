@@ -187,7 +187,7 @@ static Scheme_Object *read_syntax(Scheme_Object *obj);
 static Scheme_Object *define_values_symbol, *letrec_values_symbol, *lambda_symbol;
 static Scheme_Object *unknown_symbol, *void_link_symbol, *quote_symbol;
 static Scheme_Object *letrec_syntaxes_symbol, *begin_symbol;
-static Scheme_Object *let_symbol, *let_star_symbol;
+static Scheme_Object *let_symbol;
 
 static Scheme_Object *internal_define_symbol;
 static Scheme_Object *module_symbol;
@@ -270,12 +270,10 @@ scheme_init_eval (Scheme_Env *env)
   REGISTER_SO(letrec_syntaxes_symbol);
   REGISTER_SO(begin_symbol);
   REGISTER_SO(let_symbol);
-  REGISTER_SO(let_star_symbol);
   
   define_values_symbol = scheme_intern_symbol("define-values");
   letrec_values_symbol = scheme_intern_symbol("letrec-values");
   let_symbol = scheme_intern_symbol("let");
-  let_star_symbol = scheme_intern_symbol("let*");
   lambda_symbol = scheme_intern_symbol("lambda");
   unknown_symbol = scheme_intern_symbol("unknown");
   void_link_symbol = scheme_intern_symbol("-v");
@@ -2084,7 +2082,9 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     } else {
       /* A hack for handling lifted expressions. See compile_expand_lift_to_let. */
       if (SAME_TYPE(SCHEME_TYPE(SCHEME_STX_VAL(form)), scheme_already_comp_type)) {
-	return SCHEME_PTR_VAL(SCHEME_STX_VAL(form));
+	form = SCHEME_STX_VAL(form);
+	rec[drec].max_let_depth = SCHEME_PINT_VAL(form);
+	return SCHEME_IPTR_VAL(form);
       }
 
       stx = datum_symbol;
@@ -2279,11 +2279,11 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
 {
   Scheme_Object *form, *naya;
 
+  scheme_rec_add_certs(rec, drec, forms);
   if (taking_shortcut) {
     form = forms;
     taking_shortcut = 0;
   } else {
-    scheme_rec_add_certs(rec, drec, forms);
     form = SCHEME_STX_CDR(forms);
     form = scheme_datum_to_syntax(form, forms, forms, 0, 0);
   }
@@ -2546,6 +2546,8 @@ static Scheme_Object *pair_lifted(Scheme_Object *_ip, Scheme_Object *id, Scheme_
   return icons(id, icons(expr, scheme_null));
 }
 
+static Scheme_Object *compile_expand_expr_lift_to_let_k(void);
+
 static Scheme_Object *
 compile_expand_expr_lift_to_let(Scheme_Object *form, Scheme_Comp_Env *env,
 				Scheme_Expand_Info *rec, int drec)
@@ -2554,12 +2556,52 @@ compile_expand_expr_lift_to_let(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *l, *orig_form = form;
   Scheme_Comp_Env *inserted, **ip;
 
-  /* FIXME: need stack check */
-
   /* This function only works when `env' has no lexical bindings,
      because we might insert new ones at the beginning.  In
      particular, we might insert frames between `inserted' and
-     `env': */
+     `env'.
+
+     This function also relies on the way that compilation of `let'
+     works. A let-bound variable is compiled to a count of the frames
+     to skip and the indiex within the frame, so we can insert new
+     frames without affecting lookups computed so far. Inserting each
+     new frame before any previous one turns out to be consistent with
+     the nested `let's that we generate at the end. 
+
+     Some optimizations can happen later, for example constant
+     propagate.  But these optimizations take place on the result of
+     this function, so we don't have to worry about them.  
+
+     Don't generate a `let*' expression instead of nested `let's,
+     because the compiler actually takes shortcuts (that are
+     inconsistent with our frame nesting) instead of expanding `let*'
+     to `let'. */
+
+#ifdef DO_STACK_CHECK
+  {
+# include "mzstkchk.h"
+    {
+      Scheme_Thread *p = scheme_current_thread;
+      Scheme_Compile_Expand_Info *recx;
+
+      recx = MALLOC_ONE_RT(Scheme_Compile_Expand_Info);
+      memcpy(recx, rec, sizeof(Scheme_Compile_Expand_Info));
+#ifdef MZTAG_REQUIRED
+      recx->type = scheme_rt_compile_info;
+#endif
+
+      p->ku.k.p1 = (void *)form;
+      p->ku.k.p2 = (void *)env;
+      p->ku.k.p3 = (void *)recx;
+
+      form = scheme_handle_stack_overflow(compile_expand_expr_lift_to_let_k);
+
+      memcpy(rec, recx, sizeof(Scheme_Compile_Expand_Info));
+      return form;
+    }
+  }
+#endif
+
   inserted = scheme_new_compilation_frame(0, 0, env);
 
   ip = MALLOC_N(Scheme_Comp_Env *, 1);
@@ -2583,22 +2625,43 @@ compile_expand_expr_lift_to_let(Scheme_Object *form, Scheme_Comp_Env *env,
     return form;
   } else {
     /* We have lifts, so add let* wrapper and go again */
-    Scheme_Object *o;
+    Scheme_Object *o, *revl;
     if (rec[drec].comp) {
       /* Wrap compiled part so the compiler recognizes it later: */
-      o = scheme_alloc_small_object();
+      o = scheme_alloc_object();
       o->type = scheme_already_comp_type;
-      SCHEME_PTR_VAL(o) = form;
+      SCHEME_IPTR_VAL(o) = form;
+      SCHEME_PINT_VAL(o) = recs[0].max_let_depth;
     } else
       o = form;
-    l = icons(scheme_datum_to_syntax(let_star_symbol, scheme_false, scheme_sys_wraps(env), 0, 0),
-	      icons(l, icons(o, scheme_null)));
-    form = scheme_datum_to_syntax(l, orig_form, scheme_false, 0, 0);
+    for (revl = scheme_null; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+      revl = icons(SCHEME_CAR(l), revl);
+    }
+    for (; SCHEME_PAIRP(revl); revl = SCHEME_CDR(revl)) {
+      o = icons(scheme_datum_to_syntax(let_symbol, scheme_false, scheme_sys_wraps(env), 0, 0),
+		icons(icons(SCHEME_CAR(revl), scheme_null),
+		      icons(o, scheme_null)));
+    }
+    form = scheme_datum_to_syntax(o, orig_form, scheme_false, 0, 0);
     form = compile_expand_expr_lift_to_let(form, env, recs, 1);
     if (rec[drec].comp)
       scheme_merge_compile_recs(rec, drec, recs, 2);
     return form;
   }
+}
+
+static Scheme_Object *compile_expand_expr_lift_to_let_k(void)
+{
+  Scheme_Thread *p = scheme_current_thread;
+  Scheme_Object *form = (Scheme_Object *)p->ku.k.p1;
+  Scheme_Comp_Env *env = (Scheme_Comp_Env *)p->ku.k.p2;
+  Scheme_Compile_Info *rec = (Scheme_Compile_Info *)p->ku.k.p3;
+
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
+
+  return compile_expand_expr_lift_to_let(form, env, rec, 0);
 }
 
 Scheme_Object *

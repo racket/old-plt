@@ -19,7 +19,8 @@
            (lib "process.ss"))
 
   (require (lib "string.ss")
-           (lib "list.ss"))
+           (lib "list.ss")
+	   (lib "thread.ss"))
 
   (require "sirmails.ss")
 
@@ -774,10 +775,10 @@
 		  (regexp-replace* #rx"[ \r\n\t]+" s " "))]
 	       [snip (new line-snip% 
                           (from
-                           (one-line (or (parse-iso-8859-1 (message-from m))
+                           (one-line (or (parse-encoded (message-from m))
                                          "<unknown>")))
                           (subject
-                           (one-line (or (parse-iso-8859-1 (message-subject m))
+                           (one-line (or (parse-encoded (message-subject m))
                                          no-subject-string)))
                           (uid (format "~a" (message-uid m))))]
                [before (send e last-position)])
@@ -2055,11 +2056,11 @@
 					 aid bid
 					 (if first?
 					     (cdr ah+f)
-					     (parse-iso-8859-1
+					     (parse-encoded
 					      (extract-field (caar fields) (car ah+f))))
 					 (if first?
 					     (cdr bh+f)
-					     (parse-iso-8859-1
+					     (parse-encoded
 					      (extract-field (caar fields) (car bh+f)))))])
 				 (if (eq? c 'same)
 				     (loop (cdr fields) #f)
@@ -2137,7 +2138,7 @@
 
       (define get-viewable-headers
 	(lambda (h)
-	  (parse-iso-8859-1 
+	  ((if mime-mode? parse-encoded values)
 	   (if show-full-headers?
 	       h
 	       (let loop ([l (reverse (MESSAGE-FIELDS-TO-SHOW))]
@@ -2250,7 +2251,7 @@
                                          (let-values ([(in out) (make-pipe)])
                                            (slurp-stream ent out)
                                            (close-output-port out)
-                                           (render-html-to-text in target img-mode? #f))
+					   (render-html-to-text in target img-mode? #f))
                                          (status "")))
                                      close-frame)
                                     (unless text-obj
@@ -2447,10 +2448,10 @@
 				      [else (or refs id)]))
 			     "")))
 	       (if quote-in-reply?
-                   (let ([date (parse-iso-8859-1 (extract-field "Date" h))]
+                   (let ([date (parse-encoded (extract-field "Date" h))]
                          [name
                           (with-handlers ([exn:fail? (lambda (x) #f)])
-                            (let ([from (parse-iso-8859-1 (extract-field "From" h))])
+                            (let ([from (parse-encoded (extract-field "From" h))])
                               (car (extract-addresses from 'name))))])
                      (string-append
 		      (cond

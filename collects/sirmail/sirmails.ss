@@ -35,7 +35,7 @@
 
      confirm-box
 
-     parse-iso-8859-1))
+     parse-encoded))
 
   (provide sirmail:send^)
   (define-signature sirmail:send^

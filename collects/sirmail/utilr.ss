@@ -227,23 +227,35 @@
       ;;  Decoding `from' names                                  ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define re:iso #rx#"^(.*)=[?][iI][sS][oO]-8859-1[?]([qQbB])[?](.*?)[?]=(.*)$")
-      (define (parse-iso-8859-1 s)
+      (define re:iso #rx#"[iI][sS][oO]-8859-1")
+      (define re:utf-8 #rx#"[uU][tT][fF]-8")
+
+      (define re:encoded #rx#"^(.*)=[?]([^?]+)[?]([qQbB])[?](.*?)[?]=(.*)$")
+
+      (define (parse-encoded s)
 	(and s
-	     (let ([m (regexp-match re:iso s)])
+	     (let ([m (regexp-match re:encoded (string->bytes/latin-1 s (char->integer #\?)))])
 	       (if m
-		   (let ([s ((if (member (caddr m) '(#"q" #"Q"))
-				 ;; quoted-printable; strip newline:
-				 (lambda (s)
-				   (let ([s (qp-decode s)])
-				     (subbytes s 0 (sub1 (bytes-length s)))))
+		   (let ([s ((if (member (cadddr m) '(#"q" #"Q"))
+				 ;; quoted-printable
+				 qp-decode
 				 ;; base64:
 				 base64-decode)
-			     (cadddr m))])
-		     (parse-iso-8859-1
-		      (string-append
-		       (bytes->string/utf-8 (cadr m))
-		       (bytes->string/latin-1 s)
-		       (bytes->string/utf-8 (cadddr (cdr m))))))
+			     (cadddr (cdr m)))]
+			 [encoding (caddr m)])
+		     (string-append
+		      (parse-encoded (bytes->string/latin-1 (cadr m)))
+		      (cond
+		       [(regexp-match re:iso encoding) (bytes->string/latin-1 s)]
+		       [(regexp-match re:utf-8 encoding) (bytes->string/utf-8 s #\?)]
+		       [else (let ([c (bytes-open-converter (bytes->string/latin-1 encoding) "UTF-8")])
+			       (if c
+				   (let-values ([(r got status) (bytes-convert c s)])
+				     (bytes-close-converter c)
+				     (if (eq? status 'complete)
+					 (bytes->string/utf-8 r #\?)
+					 (bytes->string/latin-1 s)))
+				   (bytes->string/latin-1 s)))])
+		      (parse-encoded (bytes->string/latin-1 (cadddr (cddr m))))))
 		   s)))))))
 

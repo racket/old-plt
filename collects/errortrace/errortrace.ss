@@ -38,7 +38,7 @@
 	(let ([b (car v)]
 	      [v (cddr v)])
 	  (set-box! b #f)
-	  (let ([v (cdr (hash-table-get profile-info key))])
+	  (let ([v (cddr (hash-table-get profile-info key))])
 	    (set-car! v (+ (- (current-process-milliseconds) start) (car v))))))))
   
   (define (get-profile-results)
@@ -128,9 +128,12 @@
 		       [else2 (insert-at-tail se (syntax else) trans?)])
 	   (syntax (if test then2 else2)))]
 
-	[(#%app . _)
-	 ;; application; exploit guaranteed left-to-right evaluation
-	 (insert-at-tail* se sexpr trans?)]
+	[(#%app . rest)
+	 (if (stx-null? (syntax rest))
+	     ;; null constant
+	     (syntax (begin e expr))
+	     ;; application; exploit guaranteed left-to-right evaluation
+	     (insert-at-tail* se sexpr trans?))]
 	
 	[_else
 	 (error 'errortrace
@@ -266,7 +269,11 @@
 			(map (lambda (b)
 			       (annotate-top b env trans?))
 			     (syntax->list (syntax (body ...))))])
-	   (syntax/loc expr (module name init-import . bodyl)))]
+	   (datum->syntax-object
+	    expr
+	    ;; Preserve original #%module-begin:
+	    (list* (syntax module) (syntax name) (syntax init-import) (syntax bodyl))
+	    expr))]
 
 	;; No way to wrap
 	[(require i ...) expr]
@@ -327,10 +334,13 @@
 
 	;; Wrap whole application, plus subexpressions
 	[(#%app . body)
-	 (with-mark expr
-		    (annotate-seq env trans? expr 
-				  (syntax #%app) (syntax body) 
-				  annotate))]
+	 (if (stx-null? (syntax body))
+	     ;; It's a null:
+	     expr
+	     (with-mark expr
+			(annotate-seq env trans? expr 
+				      (syntax #%app) (syntax body) 
+				      annotate)))]
 
 	[_else
 	 (error 'errortrace
@@ -445,10 +455,10 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   (provide print-error-trace 
-	  error-context-display-depth 
-	  instrumenting-enabled 
-	  profiling-enabled
-	  profile-paths-enabled 
-	  get-profile-results
-	  output-profile-results))
+	   error-context-display-depth 
+	   instrumenting-enabled 
+	   profiling-enabled
+	   profile-paths-enabled 
+	   get-profile-results
+	   output-profile-results))
  

@@ -71,7 +71,7 @@ class wxbDC: public wxObject
   double max_y;
   char *title;
 
-  Bool Colour;
+  Bool Colour, anti_alias;
 
   int current_bk_mode;
 
@@ -208,6 +208,8 @@ class wxbDC: public wxObject
   void GetDeviceOrigin(double *x, double *y) 
       { *x = device_origin_x; *y = device_origin_y; }
  
+  Bool GetAntiAlias();
+  virtual void SetAntiAlias(Bool v);
 
 };
 

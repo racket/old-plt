@@ -75,7 +75,8 @@ class wxbDC: public wxObject
   wxColour *current_text_foreground;
   wxColour *current_text_background;
   wxFont *font;
-  Bool autoSetting ;
+  Bool autoSetting;
+  Bool anti_alias;
 
   wxbDC(void);
 
@@ -213,6 +214,9 @@ class wxbDC: public wxObject
   inline virtual Bool GetOptimization(void) { return dcOptimize; }
 
   virtual void TryColour(wxColour *src, wxColour *dest);
+ 
+  Bool GetAntiAlias();
+  virtual void SetAntiAlias(Bool v);
 };
 
 /*

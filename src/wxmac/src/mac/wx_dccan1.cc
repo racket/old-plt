@@ -829,6 +829,11 @@ Bool wxCanvasDC::GlyphAvailable(int c, wxFont *f)
   return f->ScreenGlyphAvailable(c);
 }
 
+void wxCanvasDC::SetAntiAlias(Bool v)
+{
+  wxbCanvasDC::SetAntiAlias(v);
+}
+
 /************************************************************************/
 /*                                GL                                    */
 /************************************************************************/

@@ -50,6 +50,8 @@ class wxCanvasDC: public wxbCanvasDC
   void *fast_pb;
   long fast_rb;
 
+  CGContextRef cgcref;
+
   int gdx, gdy;
   wxCanvasDC *chain_next, *chain_prev;
 
@@ -168,6 +170,8 @@ class wxCanvasDC: public wxbCanvasDC
   wxGL *GetGL();
 
   void ResetBackground();
+
+  void SetAntiAlias(Bool v);
 };
 
 long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str, int d = 0, int len = -1);

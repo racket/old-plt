@@ -178,6 +178,17 @@ void wxbDC::TryColour(wxColour *src, wxColour *dest)
   dest->CopyFrom(src);
 }
 
+Bool wxbDC::GetAntiAlias()
+{
+  return anti_alias;
+}
+
+void wxbDC::SetAntiAlias(Bool v)
+{
+  anti_alias = v;
+}
+
+
 wxbCanvasDC::wxbCanvasDC(void)
 {
 }

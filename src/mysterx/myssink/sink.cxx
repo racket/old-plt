@@ -18,12 +18,11 @@ int CSink::getHashValue(DISPID dispId) {
   return (int)((ULONG)dispId % EVENT_HANDLER_TBL_SIZE);
 }
 
-EVENT_HANDLER_ENTRY *CSink::newEventHandlerEntry(DISPID dispId,Scheme_Object *handler,FUNCDESC *pFuncDesc) {
+EVENT_HANDLER_ENTRY *CSink::newEventHandlerEntry(DISPID dispId,Scheme_Object *handler) {
   EVENT_HANDLER_ENTRY *p;
   p = (EVENT_HANDLER_ENTRY *)scheme_malloc(sizeof(EVENT_HANDLER_ENTRY));
   p->dispId = dispId;
   p->handler = handler;
-  p->pFuncDesc = pFuncDesc;
   p->next = NULL;
 
   return p;
@@ -61,7 +60,7 @@ STDMETHODIMP CSink::set_myssink_table(int p)
   return S_OK;
 }
 
-STDMETHODIMP CSink::register_handler(DISPID dispId,int handler,int pFuncDesc) {
+STDMETHODIMP CSink::register_handler(DISPID dispId,int handler) {
   unsigned short hashVal;
   EVENT_HANDLER_ENTRY *p;
 
@@ -72,7 +71,6 @@ STDMETHODIMP CSink::register_handler(DISPID dispId,int handler,int pFuncDesc) {
   if (p->dispId == (DISPID)0) {
     p->dispId = dispId;
     p->handler = (Scheme_Object *)handler;
-    p->pFuncDesc = (FUNCDESC *)pFuncDesc;
     p->next = NULL;
   }
   else {
@@ -81,15 +79,13 @@ STDMETHODIMP CSink::register_handler(DISPID dispId,int handler,int pFuncDesc) {
 
       if (p->dispId == dispId) { // update existing entry
 	p->handler = (Scheme_Object *)handler;
-	p->pFuncDesc = (FUNCDESC *)pFuncDesc;
-
 	return S_OK;
       }
 
       p = p->next;
     }
 
-    p->next = newEventHandlerEntry(dispId,(Scheme_Object *)handler,(FUNCDESC *)pFuncDesc);
+    p->next = newEventHandlerEntry(dispId,(Scheme_Object *)handler);
   }
 
   return S_OK;
@@ -384,7 +380,6 @@ HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
 
   Scheme_Object *handler;
   EVENT_HANDLER_ENTRY *p;  
-  FUNCDESC *pFuncDesc;
   VARIANTARG *pCurrArg;
   short numParams,actualParams;
   Scheme_Object *argv[128];
@@ -398,7 +393,6 @@ HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
   }
 
   handler = p->handler;
-  pFuncDesc = p->pFuncDesc;
   
   numParams = pDispParams->cArgs;
 

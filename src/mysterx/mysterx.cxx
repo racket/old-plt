@@ -701,15 +701,13 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
     }
 
     if (wcscmp(unicodeName,bstr) == 0) {
-      pISink->register_handler(pFuncDesc->memid,(int)argv[2],(int)pFuncDesc);
+      pISink->register_handler(pFuncDesc->memid,(int)argv[2]);
       foundEvent = TRUE;
     }
 
     SysFreeString(bstr);
 
-    if (foundEvent == FALSE) {
-      pITypeInfo->ReleaseFuncDesc(pFuncDesc);
-    }
+    pITypeInfo->ReleaseFuncDesc(pFuncDesc);
   }
   
   SysFreeString(unicodeName);

@@ -11,7 +11,6 @@
 typedef struct _event_handler_entry_ { // entry in hash table
   DISPID dispId;
   Scheme_Object *handler;
-  FUNCDESC *pFuncDesc;
   _event_handler_entry_ *next;
 } EVENT_HANDLER_ENTRY;
 
@@ -34,7 +33,7 @@ private:
   void handlerUpdateError(char *);
 
   int getHashValue(DISPID);
-  EVENT_HANDLER_ENTRY *newEventHandlerEntry(DISPID,Scheme_Object *,FUNCDESC *);
+  EVENT_HANDLER_ENTRY *newEventHandlerEntry(DISPID,Scheme_Object *);
   EVENT_HANDLER_ENTRY *lookupHandler(DISPID);
 
   EVENT_HANDLER_ENTRY eventHandlerTable[EVENT_HANDLER_TBL_SIZE];
@@ -56,7 +55,7 @@ END_COM_MAP()
 public:
  STDMETHOD(set_extension_table)(int);
  STDMETHOD(set_myssink_table)(int);
- STDMETHOD(register_handler)(DISPID,int,int); 
+ STDMETHOD(register_handler)(DISPID,int); 
 
 //override IDispatch::Invoke()
 

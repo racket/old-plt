@@ -2,7 +2,7 @@
 
 
 /* File created by MIDL compiler version 5.01.0164 */
-/* at Thu May 20 14:45:59 1999
+/* at Fri May 21 11:02:12 1999
  */
 /* Compiler settings for myssink.idl:
     Oicf (OptLev=i2), W1, Zp8, env=Win32, ms_ext, c_ext
@@ -28,7 +28,7 @@
 #include "myssink.h"
 
 #define TYPE_FORMAT_STRING_SIZE   3                                 
-#define PROC_FORMAT_STRING_SIZE   97                                
+#define PROC_FORMAT_STRING_SIZE   91                                
 
 typedef struct _MIDL_TYPE_FORMAT_STRING
     {
@@ -262,14 +262,14 @@ static const MIDL_PROC_FORMAT_STRING __MIDL_ProcFormatString =
 /* 58 */	NdrFcLong( 0x0 ),	/* 0 */
 /* 62 */	NdrFcShort( 0x9 ),	/* 9 */
 #ifndef _ALPHA_
-/* 64 */	NdrFcShort( 0x14 ),	/* x86, MIPS, PPC Stack size/offset = 20 */
+/* 64 */	NdrFcShort( 0x10 ),	/* x86, MIPS, PPC Stack size/offset = 16 */
 #else
-			NdrFcShort( 0x28 ),	/* Alpha Stack size/offset = 40 */
+			NdrFcShort( 0x20 ),	/* Alpha Stack size/offset = 32 */
 #endif
-/* 66 */	NdrFcShort( 0x18 ),	/* 24 */
+/* 66 */	NdrFcShort( 0x10 ),	/* 16 */
 /* 68 */	NdrFcShort( 0x8 ),	/* 8 */
 /* 70 */	0x4,		/* Oi2 Flags:  has return, */
-			0x4,		/* 4 */
+			0x3,		/* 3 */
 
 	/* Parameter __MIDL_0017 */
 
@@ -293,26 +293,15 @@ static const MIDL_PROC_FORMAT_STRING __MIDL_ProcFormatString =
 /* 82 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
-	/* Parameter __MIDL_0019 */
+	/* Return value */
 
-/* 84 */	NdrFcShort( 0x48 ),	/* Flags:  in, base type, */
+/* 84 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
 #ifndef _ALPHA_
 /* 86 */	NdrFcShort( 0xc ),	/* x86, MIPS, PPC Stack size/offset = 12 */
 #else
 			NdrFcShort( 0x18 ),	/* Alpha Stack size/offset = 24 */
 #endif
 /* 88 */	0x8,		/* FC_LONG */
-			0x0,		/* 0 */
-
-	/* Return value */
-
-/* 90 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
-#ifndef _ALPHA_
-/* 92 */	NdrFcShort( 0x10 ),	/* x86, MIPS, PPC Stack size/offset = 16 */
-#else
-			NdrFcShort( 0x20 ),	/* Alpha Stack size/offset = 32 */
-#endif
-/* 94 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
 			0x0

@@ -1550,15 +1550,7 @@
 					   first-field 
 					   h)))])
 		       (hash-table-put! ht uid p)
-		       p))))]
-	       [just-by-name? (and (= (length fields) 1)
-				   (string=? (caar fields) "from"))]
-	       [mailbox-ht (and just-by-name?
-				(let ([ht (make-hash-table)])
-				  (for-each (lambda (m)
-					      (hash-table-put! ht (car m) m))
-					    mailbox)
-				  ht))])
+		       p))))])
 	  (as-background
 	   enable-main-frame
 	   (lambda (break-bad break-ok)
@@ -1567,42 +1559,26 @@
 		   (lambda (a b)
 		     (let ([aid (send a user-data)]
 			   [bid (send b user-data)])
-		       (cond
-                         ;; fastest: order recived:
-                         [(null? fields) (< aid bid)]
-                         ;; faster: sender
-                         [just-by-name?
-                          (let ([ma (hash-table-get mailbox-ht aid)]
-                                [mb (hash-table-get mailbox-ht bid)])
-                            (let ([c ((cadar fields) 
-                                      aid bid
-                                      (parse-iso-8859-1 (message-from ma))
-                                      (parse-iso-8859-1 (message-from mb)))])
-                              (if (eq? c 'same)
-                                  (< aid bid)
-                                  c)))]
-                         ;; slow: general case
-                         [else
-                          (let ([ah+f (get-header/cached aid (and (pair? fields)
-                                                                  (caar fields)))]
-                                [bh+f (get-header/cached bid (and (pair? fields)
-                                                                  (caar fields)))])
-                            (let loop ([fields fields][first? #t])
-                              (if (null? fields)
-                                  (< aid bid)
-                                  (let ([c ((cadar fields)
-                                            aid bid
-                                            (if first?
-                                                (cdr ah+f)
-                                                (parse-iso-8859-1
-						 (extract-field (caar fields) (car ah+f))))
-                                            (if first?
-                                                (cdr bh+f)
-						(parse-iso-8859-1
-						 (extract-field (caar fields) (car bh+f)))))])
-                                    (if (eq? c 'same)
-                                        (loop (cdr fields) #f)
-                                        c)))))]))))
+		       (let ([ah+f (get-header/cached aid (and (pair? fields)
+							       (caar fields)))]
+			     [bh+f (get-header/cached bid (and (pair? fields)
+							       (caar fields)))])
+			 (let loop ([fields fields][first? #t])
+			   (if (null? fields)
+			       (< aid bid)
+			       (let ([c ((cadar fields)
+					 aid bid
+					 (if first?
+					     (cdr ah+f)
+					     (parse-iso-8859-1
+					      (extract-field (caar fields) (car ah+f))))
+					 (if first?
+					     (cdr bh+f)
+					     (parse-iso-8859-1
+					      (extract-field (caar fields) (car bh+f)))))])
+				 (if (eq? c 'same)
+				     (loop (cdr fields) #f)
+				     c))))))))
 	     (status ""))
 	   void)))
 

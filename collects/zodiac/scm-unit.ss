@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.48 1997/09/19 02:35:34 shriram Exp mflatt $
+; $Id: scm-unit.ss,v 1.49 1997/12/02 20:44:33 mflatt Exp shriram $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -909,39 +909,35 @@
       (when (language>=? 'advanced)
 	(add-primitivized-micro-form form-name scheme-vocabulary
 	  (let* ((kwd '())
-		  (in-pattern-1 `(_ filename))
-		  (in-pattern-2 `(_ filename collection))
-		  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
-		  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+		  (in-pattern '(_ filename collections ...))
+		  (m&e (pat:make-match&env in-pattern kwd)))
 	    (lambda (expr env attributes vocab)
 	      (cond
-		((pat:match-against m&e-1 expr env)
-		  =>
-		  (lambda (p-env)
-		    (expand-expr
-		      (structurize-syntax
-			(pat:pexpand
-			  `(,form-name filename "mzlib")
-			  p-env kwd)
-			expr)
-		      env attributes vocab)))
-		((pat:match-against m&e-2 expr env)
+		((pat:match-against m&e expr env)
 		  =>
 		  (lambda (p-env)
 		    (let ((filename (pat:pexpand 'filename p-env kwd))
-			   (collection (pat:pexpand 'collection p-env kwd)))
+			   (collections (pat:pexpand '(collections ...)
+					  p-env kwd)))
 		      (let ((f (expand-expr filename env attributes vocab))
-			     (c (expand-expr collection env attributes vocab)))
+			     (cs (map (lambda (c)
+					(expand-expr c env attributes vocab))
+				   collections)))
 			(unless (and (quote-form? f)
 				  (z:string? (quote-form-expr f)))
-			  (static-error filename
-			    "Does not yield a filename"))
-			(unless (and (quote-form? c)
-				  (z:string? (quote-form-expr c)))
-			  (static-error collection
-			    "Does not yield a string"))
+			  (static-error filename "Does not yield a filename"))
+			(for-each
+			  (lambda (c collection)
+			    (unless (and (quote-form? c)
+				      (z:string? (quote-form-expr c)))
+			      (static-error collection
+				"Does not yield a string")))
+			  cs collections)
 			(let ((raw-f (z:read-object (quote-form-expr f)))
-			       (raw-c (z:read-object (quote-form-expr c))))
+			       (raw-cs (map (lambda (c)
+					      (z:read-object
+						(quote-form-expr c)))
+					 cs)))
 			  (unless (relative-path? raw-f)
 			    (static-error f
 			      "Library path ~s must be a relative path"
@@ -949,13 +945,11 @@
 			  (expand-expr
 			    (structurize-syntax
 			      `(let ((result (,(if relative?
-						   '#%require-relative-library
-						   '#%require-library)
+						 '#%require-relative-library
+						 '#%require-library)
 					       ,(quote-form-expr f)
-					       ,(quote-form-expr c))))
-				 (unless (,(if sig?
-					     '#%unit/sig?
-					     '#%unit?)
+					       ,@(map quote-form-expr cs))))
+				 (unless (,(if sig? '#%unit/sig? '#%unit?)
 					   result)
 				   (#%raise
 				     (,(if sig?
@@ -965,15 +959,18 @@
 					  "~s: result from ~s in collection ~a not a ~aunit"
 					  form-name
 					  raw-f
-					  raw-c
+					  (if (null? raw-cs)
+					    '"mzlib"
+					    raw-cs)
 					  (if sig? "signed " ""))
-				       ((debug-info-handler))
+				       ((#%debug-info-handler))
 				       result)))
 				 result)
 			      expr)
 			    env attributes vocab))))))
 		(else
-		  (static-error expr "Malformed ~a" form-name)))))))))
+		  (static-error expr
+		    (string-append "Malformed ~a" form-name))))))))))
 
   (reference-library-unit-maker 'reference-library-unit #f #f)
   (reference-library-unit-maker 'reference-library-unit/sig #t #f)

@@ -524,7 +524,7 @@
        "bad syntax (expected an ivar name)"
        (#%list 'make-generic c% name)
        name))
-    `(#%make-generic/proc ,c% (quote ,name))))
+    `(#%make-generic/proc ,c% (#%quote ,name))))
 
 > kstop make-generic <
 

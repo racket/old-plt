@@ -66,6 +66,9 @@ typedef struct {
   int no_rep;
   int script_mode;
 #endif
+#ifdef VERSION_YIELD_FLAG
+  int add_yield;
+#endif
   Scheme_Env *global_env;
 } FinishArgs;
 
@@ -122,7 +125,13 @@ static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
     repl();
     exit_val = 0;
   }
-#endif /* DONT_PARSE_COMMAND_LINE */
+#endif /* DONT_RUN_REP */
+
+#ifdef VERSION_YIELD_FLAG
+  if (fa->add_yield) {
+    yield_indefinitely();
+  }
+#endif
 
   return exit_val;
 }
@@ -153,6 +162,9 @@ static int run_from_cmd_line(int argc, char *argv[],
 #endif
 #if !defined(DONT_LOAD_INIT_FILE) || !defined(DONT_PARSE_COMMAND_LINE)
   int no_init_file = 0;
+#endif
+#ifdef VERSION_YIELD_FLAG
+  int add_yield = 0;
 #endif
   int no_lib_path = 0;
   FinishArgs *fa;
@@ -223,6 +235,10 @@ static int run_from_cmd_line(int argc, char *argv[],
 # ifdef CMDLINE_STDIO_FLAG
     else if (!strcmp("--stdio", argv[0]))
       argv[0] = "-z";
+# endif
+# ifdef VERSION_YIELD_FLAG
+    else if (!strcmp("--yield", argv[0]))
+      argv[0] = "-V";
 # endif
 #if defined(_IBMR2)
     else if (!strcmp("--persistent", argv[0]))
@@ -359,6 +375,12 @@ static int run_from_cmd_line(int argc, char *argv[],
 	case 'v':
 	  no_rep = 1;
 	  break;
+#ifdef VERSION_YIELD_FLAG
+	case 'V':
+	  no_rep = 1;
+	  add_yield = 1;
+	  break;
+#endif
 	case 'm':
 	  mute_banner = 1;
 	  break;
@@ -469,8 +491,8 @@ static int run_from_cmd_line(int argc, char *argv[],
 #endif /* NO_FILE_SYSTEM_UTILS */
 
 #ifndef MZSCHEME_CMD_LINE  
-  scheme_eval_string("(with-handlers ([void void])"
-		     "  (send (current-ps-setup) set-afm-path (collection-path \"afm\")))",
+  scheme_eval_string("(#%with-handlers ([void void])"
+		     "  (#%send (current-ps-setup) set-afm-path (collection-path \"afm\")))",
 		     global_env);
 #endif
 
@@ -486,6 +508,9 @@ static int run_from_cmd_line(int argc, char *argv[],
 #ifndef DONT_RUN_REP
   fa->no_rep = no_rep;
   fa->script_mode = script_mode;
+#endif
+#ifdef VERSION_YIELD_FLAG
+  fa->add_yield = add_yield;
 #endif
   fa->global_env = global_env;
 
@@ -546,6 +571,9 @@ static int run_from_cmd_line(int argc, char *argv[],
 	 ".\n"
 # else
 	 ", prints version.\n"
+# endif
+# ifdef VERSION_YIELD_FLAG
+	 "  -V, --yield : Like -v, adds yield after loading/evaling all files/exprs.\n"
 # endif
 	 "  -h, --help : Shows this information and exits, ignoring other switches.\n"
 #ifdef UNIX_IMAGE_DUMPS

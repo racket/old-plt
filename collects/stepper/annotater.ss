@@ -19,10 +19,6 @@
   
   (define closure-temp (gensym "closure-temp-"))
   
-  ; should-stop-temp : uninterned-symol
-  
-  (define should-stop-temp (gensym "should-stop-temp-"))
-  
   ; var-set-union takes some lists of varrefs where no element appears twice in one list, and 
   ; forms a new list which is the union of the sets.  when a top-level and a non-top-level
   ; varref have the same name, we must keep the non-top-level one.
@@ -213,7 +209,7 @@
            `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,expr))
          
          (define (wcm-pre-break-wrap debug-info expr)
-           (simple-wcm-wrap debug-info `(#%begin (,(make-break 'result)) ,expr)))
+           (simple-wcm-wrap debug-info `(#%begin (,(make-break 'result-break)) ,expr)))
          
          (define (break-wrap expr)
            `(#%begin (,(make-break 'normal)) ,expr))
@@ -222,10 +218,9 @@
            (simple-wcm-wrap debug-info (break-wrap expr)))
          
          (define (return-value-wrap expr)
-            `(#%let* ([,should-stop-temp #f]
-                      [result ,expr])
-             (,(make-break 'result-break) result)
-             result))
+            `(#%let* ([result ,expr])
+              (,(make-break 'result-break) result)
+              result))
 
 ;  For Multiple Values:         
 ;           `(#%call-with-values
@@ -323,7 +318,7 @@
                                                        (#%quote ,v)))
                                              ,v)
                                            v)])
-                       (values (return-value-wrap (wcm-break-wrap debug-info annotated)) free-vars)))])
+                       (values (wcm-break-wrap debug-info (return-value-wrap annotated)) free-vars)))])
 	     
              ; find the source expression and associate it with the parsed expression
              
@@ -508,13 +503,8 @@
              (cond [(z:define-values-form? expr)
                     annotated]
                    [else
-                    `(#%define-values ,(list (top-level-exp-gensym-source expr)) 
-                      ,(simple-wcm-wrap (make-debug-info '(#%quote not-a-source-expression)
-                                                         'all
-                                                         top-env
-                                                         null
-                                                         'guard-mark)
-                                       annotated))]))))
+                    `(#%define-values ,(list (top-level-exp-gensym-source expr))
+                      ,annotated)]))))
          
          ; body of local
          

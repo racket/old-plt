@@ -7,7 +7,8 @@
           [e : stepper:error^]
           [a : stepper:annotate^]
           [r : stepper:reconstruct^]
-          [f : framework^])
+          [f : framework^]
+          stepper:shared^)
   
   (define drscheme-eventspace (current-eventspace))
 
@@ -99,16 +100,24 @@
                          [output (open-output-string)]
                          [real-print-hook (pretty-print-print-hook)]
                          [redex-begin #f]
-                         [redex-end #f])
+                         [redex-end #f]
+                         [placeholder-present? #f])
                      (parameterize ([current-output-port output]
                                     [pretty-print-size-hook
                                      (lambda (value display? port)
-                                       (if (image? value)
-                                           1   ; if there was a good way to calculate a image widths ...
-                                           #f))]
+                                       (if (eq? value highlight-placeholder)
+                                           (begin
+                                             (set! placeholder-present? #t)
+                                             (string-length (format "~s" redex)))
+                                           (if (image? value)
+                                               1   ; if there was a good way to calculate a image widths ...
+                                               #f)))]
                                     [pretty-print-print-hook
                                      (lambda (value display? port)
-                                       (insert (send value copy)))]
+                                       (if (eq? value highlight-placeholder)
+                                           (insert (format "~s" redex))
+                                           ; next occurs if value is an image:
+                                           (insert (send value copy))))]
                                     [pretty-print-display-string-handler
                                      (lambda (string port)
                                        (insert string))]
@@ -119,11 +128,15 @@
                                        0)]
                                     [pretty-print-pre-print-hook
                                      (lambda (value p)
-                                       (when (eq? value redex)
+                                       (when (or (and (not placeholder-present?)
+                                                      (eq? value redex))
+                                                 (eq? value highlight-placeholder))
                                          (set! redex-begin (get-start-position))))]
                                     [pretty-print-post-print-hook
                                      (lambda (value p)
-                                       (when (eq? value redex)
+                                       (when (or (and (not placeholder-present?)
+                                                      (eq? value redex))
+                                                 (eq? value highlight-placeholder))
                                          (set! redex-end (get-start-position))))])
                        (for-each
                         (lambda (expr)
@@ -230,11 +243,14 @@
                          
              [break 
               (lambda (mark-list all-defs current-def break-kind returned-value-list)
+                (printf "began break of kind: ~s~n" break-kind)
                 (when (case break-kind
-                        [(result-break) 
-                         (r:result-step-stop-here? mark-list)]
+                        [(result-break)
+                         (if (not (null? returned-value-list))
+                             (not (r:skip-redex-step? mark-list))
+                             (not (r:skip-result-step? mark-list)))]
                         [(normal)
-                         (r:stop-here? mark-list)]
+                         (not (r:skip-redex-step? mark-list))]
                         [else 
                          (e:internal-error 'break "unknown break type: ~s~n" break-kind)])
                   (parameterize ([current-eventspace drscheme-eventspace])

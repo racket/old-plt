@@ -23,6 +23,7 @@
    *unevaluated* 
    if-temp
    struct-flag
+   highlight-placeholder
    get-arg-symbol
    top-level-exp-gensym-source
    expr-read
@@ -39,7 +40,7 @@
 (define-signature stepper:reconstruct^
   (reconstruct 
    final-mark-list?
-   result-step-stop-here?
-   stop-here?))
+   skip-result-step?
+   skip-redex-step?))
 
   

@@ -50,5 +50,6 @@
                   error
                   annotate
                   reconstruct
-                  framework)])       
+                  framework
+                  shared)])       
       (export))

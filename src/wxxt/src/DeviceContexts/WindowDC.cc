@@ -237,29 +237,32 @@ static wxBitmap *ScaleBitmap(wxBitmap *src,
     if (tw > sw) {
       for (ti = 0; ti < tw; ti++) {
 	i = (int)(ti / scale_x);
-	if (th > h) {
-	  for (tj = 0; tj < th; tj++) {
-	    j = (int)(tj / scale_y);
-	    pixel = XGetPixel(simg, i + xs, j + ys);
-	    if (forceMono) {
-	      if (pixel == whiteVal)
-		pixel = 0;
-	      else
-		pixel = 1;
+	if (i < sw) {
+	  if (th > h) {
+	    for (tj = 0; tj < th; tj++) {
+	      j = (int)(tj / scale_y);
+	      pixel = XGetPixel(simg, i + xs, j + ys);
+	      if (forceMono) {
+		if (pixel == whiteVal)
+		  pixel = 0;
+		else
+		  pixel = 1;
+	      }
+	      XPutPixel(timg, ti, tj, pixel);
 	    }
-	    XPutPixel(timg, ti, tj, pixel);
-	  }
-	} else {
-	  for (j = 0; j < sh; j++) {
-	    tj = (int)(j * scale_y);
-	    pixel = XGetPixel(simg, i + xs, j + ys);
-	    if (forceMono) {
-	      if (pixel == whiteVal)
-		pixel = 0;
-	      else
-		pixel = 1;
+	  } else {
+	    for (j = 0; j < sh; j++) {
+	      tj = (int)(j * scale_y);
+	      pixel = XGetPixel(simg, i + xs, j + ys);
+	      if (forceMono) {
+		if (pixel == whiteVal)
+		  pixel = 0;
+		else
+		  pixel = 1;
+	      }
+	      if (tj < th)
+		XPutPixel(timg, ti, tj, pixel);
 	    }
-	    XPutPixel(timg, ti, tj, pixel);
 	  }
 	}
       }
@@ -288,7 +291,8 @@ static wxBitmap *ScaleBitmap(wxBitmap *src,
 	      else
 		pixel = 1;
 	    }
-	    XPutPixel(timg, ti, tj, pixel);
+	    if (tj < th)
+	      XPutPixel(timg, ti, tj, pixel);
 	  }
 	}
       }

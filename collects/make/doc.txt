@@ -169,3 +169,67 @@ does not try to infer sophisticated file dependencies. Each .c/.kp/.zo
 is dependent just on the .ss source file, each object file is depend
 only on its .c file, and the extension is dependent only on the
 object files.
+
+_setup-extension.ss_
+--------------------
+
+ [index entry: _Setup PLT compile extension_]
+
+The "setup-extension.ss" library helps create an compilation step to
+be run by Setup PLT in the "pre-install" phase. This module provide
+one main export:
+
+> (pre-install plthome-dir
+               collection-dir
+               file.c
+               default-lib-dir
+               include-subdirs
+               find-unix-libs
+               find-windows-libs
+               unix-libs
+               windows-libs
+               last-chance-k)
+
+The argument are as follows:
+
+  * plthome-dir --- the directory provided to a `pre-installer'
+    function.
+
+  * collection-dir --- a directory to use as the current directory
+    while building.
+
+  * file.c --- the name of the source file (relative to
+    `collection-dir').
+
+  * default-lib-dir --- a default directory for finding supporting
+    libraries, often a subdirectory of `collection-dir'.
+
+  * include-subdirs --- a list of relative paths in which incldue
+    files will be found; the path of the path will be determined
+    through a search, in case it's not in a standard place like
+    /usr/include.
+
+    For example, the list is '("openssl") for the "openssl"
+    collection, because the source uses "#include <openssl/ssl.h>" and
+    "#include <openssl/err.h>".
+
+  * find-unix-libs --- like `include-subdirs', but a list of library
+    bases. For "openssl", the list is '("ssl" "crypto"). This name
+    will get a "-l" prefix on the link line.
+
+  * find-windows-libs --- like `find-unix-libs', but for Windows.  The
+    library name will be suffixed with ".lib" and supplied directly to
+    the linker.
+
+  * unix-libs --- like `find-unix-libs', except that the installer
+    makes no attempt to find the libraries in a non-standard
+    place. For example, the "readline" installer supplies '("curses").
+
+  * windows-libs --- like `unix-libs', but for Windows. For example,
+    the "openssl" installer supplies '("wsock32").
+
+  * last-chance-k --- a procedure of one argument, which is a thunk.
+    this procedure should invoke the thunk to make the file, but may
+    add parameterizations before the final build. For example, the
+    "readline" installer adds an AIX-specific compile flag in this
+    step when under AIX.

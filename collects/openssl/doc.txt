@@ -97,11 +97,13 @@ Per-platform notes:
    by the system for application using the OpenSSL library (e.g., in
    the system folder, in the same directory as the application).
 
+   To designate a directory other than plt/collects/openssl
+
    If OpenSLL is built with cygwin, ".a" files are generated instead
    of ".lib" an ".dll" files. Presumably "mzssl.c" could be made to
-   build with those libraries by modifying "mzmake.ss", but we haven't
-   tried. Similar caveats apply to other build techniques that do not
-   produce DLLs.
+   build with those libraries by modifying "pre-installer.ss", but we
+   haven't tried. Similar caveats apply to other build techniques that
+   do not produce DLLs.
 
  * Mac OS
 
@@ -112,4 +114,7 @@ Per-platform notes:
  * Unix (including Linux)
 
    Usually "just works" if you have OpenSSL installed.  If the header
-   files or libraries are in a non-standard place, edit "mzmake.ss".
+   files or libraries are in a non-standard place, define the
+   environment variable PLT_EXTENSION_LIB_PATHS as a colon-separated
+   path list, where one of the paths contains "include" and "lib"
+   subdirectories with the OpenSSL headers and libraries.

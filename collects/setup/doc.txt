@@ -98,6 +98,10 @@ Additional "info.ss" fields trigger additional setup actions:
    This procedure should avoid unnecessary work in the case that it is
    called multiple times for the same installation.
 
+>  pre-install-collection - like `install-collection', except that the
+   corresponding installer is called *before* normal the .zo build,
+   instead of after.
+
 >  clean - a list of pathnames to be deleted when the --clean or -c
    flag is passed to Setup PLT. The pathnames must be relative to the
    collection.  If any path names a directory, each of the files

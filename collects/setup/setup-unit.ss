@@ -395,6 +395,45 @@
 		 (setup-fprintf port "  ~s" x))))
 	 errors))
 
+
+      (define (do-pre/post-install pre?)
+	(when (call-install)
+	  (for-each (lambda (cc)
+		      (let/ec k
+			(record-error
+			 cc
+			 (if pre?
+			     "Early Install"
+			     "General Install")
+			 (lambda ()
+			   (let ([fn (call-info (cc-info cc)
+						(if pre?
+						    'pre-install-collection
+						    'install-collection)
+						(lambda () (k #f))
+						(lambda (v)
+						  (unless (and (string? v)
+							       (relative-path? v))
+						    (error "result is not a relative path string: " v))
+						  (let ([p (build-path (cc-path cc) v)])
+						    (unless (file-exists? p)
+						      (error "installer file does not exist: " p)))))])
+			     (let ([installer 
+				    (with-handlers ([not-break-exn?
+						     (lambda (exn)
+						       (error 'setup-plt
+							      "error loading installer: ~a"
+							      (if (exn? exn)
+								  (exn-message exn)
+								  exn)))])
+				      (dynamic-require `(lib ,fn ,@(cc-collection cc)) 
+						       (if pre? 'pre-installer 'installer)))])
+			       (setup-printf "~aInstalling ~a" (if pre? "Pre-" "") (cc-name cc))
+			       (installer plthome)))))))
+		    collections-to-compile)))
+
+      (do-pre/post-install #t)
+
       (define (make-it desc compile-collection)
 	(for-each (lambda (cc)
 		    (record-error
@@ -505,35 +544,7 @@
 		   (available-mzscheme-variants))))))
 	   collections-to-compile)))
 
-      (when (call-install)
-	(for-each (lambda (cc)
-		    (let/ec k
-		      (record-error
-		       cc
-		       "General Install"
-		       (lambda ()
-			 (let ([fn (call-info (cc-info cc)
-					      'install-collection
-					      (lambda () (k #f))
-					      (lambda (v)
-						(unless (and (string? v)
-							     (relative-path? v))
-						  (error "result is not a relative path string: " v))
-						(let ([p (build-path (cc-path cc) v)])
-						  (unless (file-exists? p)
-						    (error "installer file does not exist: " p)))))])
-			   (let ([installer 
-				  (with-handlers ([not-break-exn?
-						   (lambda (exn)
-						     (error 'setup-plt
-							    "error loading installer: ~a"
-							    (if (exn? exn)
-								(exn-message exn)
-								exn)))])
-				    (dynamic-require `(lib ,fn ,@(cc-collection cc)) 'installer))])
-			     (setup-printf "Installing ~a" (cc-name cc))
-			     (installer plthome)))))))
-		  collections-to-compile))
+      (do-pre/post-install #f)
 
       (done)
 

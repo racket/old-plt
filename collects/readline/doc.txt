@@ -1,16 +1,15 @@
 
 The _readline_ collection (not to be confused with MzScheme's
 `read-line' procedure) provides glue for using GNU's readline library
-with the MzScheme read-eval-print-loop. It has been tested under Linux
-(various flavors), FreeBSD, and Solaris.
+with the MzScheme read-eval-print-loop. It probably works under Unix
+variants, only.
 
 To use readline, you must be able to compile the "mzrl.c" file to
-produce a MzScheme extension, which requires a C compiler. The
-"mzmake.ss" program in the "readline" library attempts to compile it
-for you, and the collection installer runs "mzmake.ss". Thus, if the
-installation succeeds, you can use the readline library right
-away. Otherwise, you may have to modified "mzmake.ss" to get it to
-work.
+produce a MzScheme extension, which requires a C compiler. Setup PLT
+attempts to compile it for you; if the installation fails, you may
+need to set the PLT_EXTENSION_LIB_PATHS environment variable to
+include a path with "include" and "lib" directories containing the GNU
+readline headers and library.
 
 
 Normal use of readline
@@ -48,4 +47,4 @@ crash (I'm not sure which one).
 
 
 
-                                                   mflatt@cs.utah.edu
+                                                 mflatt@plt-scheme.org

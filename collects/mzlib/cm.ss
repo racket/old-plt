@@ -1,6 +1,7 @@
 (module cm mzscheme
   (require (lib "moddep.ss" "syntax")
-	   (lib "plthome.ss" "setup"))
+	   (lib "plthome.ss" "setup")
+	   (lib "file.ss"))
 
   (provide make-compilation-manager-load/use-compiled-handler
 	   managed-compile-zo
@@ -105,7 +106,7 @@
                            (get-module-code path mode))]
                    [code-dir (get-code-dir mode path)])
               (if (not (directory-exists? code-dir))
-                (make-directory code-dir))
+                (make-directory* code-dir))
               (let ((out (open-output-file zo-name 'replace)))
                 (with-handlers ((exn:fail?
                                  (lambda (ex) (compilation-failure mode path zo-name #f (exn-message ex)))))

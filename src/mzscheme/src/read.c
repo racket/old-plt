@@ -267,7 +267,7 @@ void scheme_alloc_list_stack(Scheme_Thread *p)
 
 void scheme_clean_list_stack(Scheme_Thread *p)
 {
-  if (0 && p->list_stack) {
+  if (p->list_stack) {
     memset(p->list_stack + p->list_stack_pos, 0, 
 	   (NUM_CELLS_PER_STACK - p->list_stack_pos) * sizeof(Scheme_Object));
   }
@@ -1009,9 +1009,9 @@ read_list(Scheme_Object *port,
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	/* Overflow */
 	Scheme_Object *sa;
-	local_list_stack_pos = 0;
 	sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
 	local_list_stack = sa;
+	local_list_stack_pos = 0;
       }
 
       pair = local_list_stack + (local_list_stack_pos++);
@@ -2314,9 +2314,9 @@ static Scheme_Object *read_compact(CPort *port,
 	if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	  /* Overflow */
 	  Scheme_Object *sa;
-	  local_list_stack_pos = 0;
 	  sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
 	  local_list_stack = sa;
+	  local_list_stack_pos = 0;
 	}
 	
 	pair = local_list_stack + (local_list_stack_pos++);
@@ -2356,9 +2356,9 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
     if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
       /* Overflow */
       Scheme_Object *sa;
-      local_list_stack_pos = 0;
       sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
       local_list_stack = sa;
+      local_list_stack_pos = 0;
     }
     
     last = local_list_stack + (local_list_stack_pos++);
@@ -2377,9 +2377,9 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	/* Overflow */
 	Scheme_Object *sa;
-	local_list_stack_pos = 0;
 	sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
 	local_list_stack = sa;
+	local_list_stack_pos = 0;
       }
       
       pair = local_list_stack + (local_list_stack_pos++);

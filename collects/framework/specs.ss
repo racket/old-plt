@@ -504,7 +504,8 @@
            false? any? 
            union symbols
            subclass?/c implementation?/c is-a?/c
-           listof)
+           listof vectorof
+	   mixin-contract make-mixin-contract/<%> make-mixin-contract/%)
   
   (define-syntax (name stx)
     (syntax-case stx ()
@@ -570,4 +571,18 @@
           (lambda (v)
             (and (vector? v)
                  (andmap p (vector->list v))))))
-  )
+
+  (define mixin-contract
+    (class?
+     . ->d .
+     subclass?/c))
+
+  (define (make-mixin-contract/<%> <%>)
+    ((and/f class? (implementation?/c <%>))
+     . ->d .
+     subclass?/c))
+
+  (define (make-mixin-contract/% %)
+    ((and/f class? (subclass?/c %))
+     . ->d .
+     subclass?/c)))

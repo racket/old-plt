@@ -174,7 +174,7 @@
 			       (if (vm:control-return? last)
 				   (begin0
 				    (cons ast (vm:sequence-vals (vm:if-else ast)))
-				    (set-vm:if-else! ast (make-vm:sequence #f #f #f '())))
+				    (set-vm:if-else! ast (make-vm:sequence #f '())))
 				   (list ast))))))]
 
 		       
@@ -250,9 +250,7 @@
 					 [global-vars (code-global-vars code)])
 				    (if same-vehicle?
 					(make-vm:tail-call
-					 (zodiac:zodiac-origin ast)
-					 (zodiac:zodiac-start ast)
-					 (zodiac:zodiac-finish ast)
+					 (zodiac:zodiac-stx ast)
 					 (case-label L label cl-case)
 					 closure
 					 (or (not (set-empty? free-vars))
@@ -267,12 +265,8 @@
 					(set-case-code-has-continue?! 
 					 (list-ref (procedure-code-case-codes (get-annotation L)) cl-case) 
 					 #t)
-					(make-vm:continue (zodiac:zodiac-origin ast)
-							  (zodiac:zodiac-start ast)
-							  (zodiac:zodiac-finish ast)))
-				      (make-vm:tail-call (zodiac:zodiac-origin ast)
-							 (zodiac:zodiac-start ast)
-							 (zodiac:zodiac-finish ast)
+					(make-vm:continue (zodiac:zodiac-stx ast)))
+				      (make-vm:tail-call (zodiac:zodiac-stx ast)
 							 (case-label L label cl-case)
 							 closure)))))))]
 		       
@@ -302,9 +296,7 @@
 		       ;;
 		       [(vm:generic-args? ast)
 			(if (vm:generic-args-prim ast)
-			    (list (make-vm:args (zodiac:zodiac-origin ast)
-						(zodiac:zodiac-start ast)
-						(zodiac:zodiac-finish ast)    
+			    (list (make-vm:args (zodiac:zodiac-stx ast)
 						(if (vm:generic-args-tail? ast)
 						    arg-type:tail-arg
 						    arg-type:arg)
@@ -325,9 +317,7 @@
 					((if (compiler:option:stupid) compiler:warning compiler:error )
 					 ast 
 					 "procedure called with wrong number of arguments")
-					(list (make-vm:args (zodiac:zodiac-origin ast)
-							    (zodiac:zodiac-start ast)
-							    (zodiac:zodiac-finish ast)
+					(list (make-vm:args (zodiac:zodiac-stx ast)
 							    (if tail?
 								arg-type:tail-arg
 								arg-type:arg)
@@ -340,9 +330,7 @@
 					; unknown function - could be at a level where an 
 					; optimized jump is not allowed
 				       (lambda (_ __ ___ ____)
-					 (list (make-vm:args (zodiac:zodiac-origin ast)
-							     (zodiac:zodiac-start ast)
-							     (zodiac:zodiac-finish ast)
+					 (list (make-vm:args (zodiac:zodiac-stx ast)
 							     (if tail? 
 								 arg-type:tail-arg
 								 arg-type:arg)
@@ -350,9 +338,7 @@
 				       
 					; known call
 				       (lambda (label cl-case L same-vehicle?)
-					 (list (make-vm:args (zodiac:zodiac-origin ast)
-							     (zodiac:zodiac-start ast)
-							     (zodiac:zodiac-finish ast)
+					 (list (make-vm:args (zodiac:zodiac-stx ast)
 							     (if tail?
 								 (if same-vehicle?
 								     arg-type:register
@@ -365,23 +351,25 @@
 					; set! of local variables
 				       (lambda (label cl-case L _)
 					 (if (not tail?)
-					     (list (make-vm:args (zodiac:zodiac-origin ast)
-								 (zodiac:zodiac-start ast)
-								 (zodiac:zodiac-finish ast)
+					     (list (make-vm:args (zodiac:zodiac-stx ast)
 								 arg-type:arg vals))
-					     (let ([bindings (zodiac:arglist-vars (list-ref (zodiac:case-lambda-form-args L) cl-case))])
+					     (let ([bindings (zodiac:arglist-vars 
+							      (list-ref (zodiac:case-lambda-form-args L) 
+									cl-case))])
 					       (let loop ([bindings bindings][vals vals][set-ok? #f])
 						 (if (null? bindings)
 						     null
 						     (let* ([binding (car bindings)]
 							    [val (car vals)]
-							    [this-binding? (lambda (val)
-									     (let loop ([val val])
-									       (or (and (vm:local-varref? val)
-											(eq? (vm:local-varref-binding val) binding))
-										   (and (vm:deref? val)
-											(loop (vm:deref-var val))))))])
-					; If this is x = x, skip it.
+							    [this-binding? 
+							     (lambda (val)
+							       (let loop ([val val])
+								 (or (and (vm:local-varref? val)
+									  (eq? (vm:local-varref-binding val)
+									       binding))
+								     (and (vm:deref? val)
+									  (loop (vm:deref-var val))))))])
+						       ;; If this is x = x, skip it.
 						       (if (this-binding? val)
 							   (loop (cdr bindings) (cdr vals) #f)
 							   
@@ -401,16 +389,16 @@
 															(rep:pointer-to rep)
 															rep)))
 										     b)]
-								      [v (make-vm:local-varref #f #f #f name new-binding)])
+								      [v (make-vm:local-varref #f name new-binding)])
 								 (add-local-var! new-binding)
 					; Start over; replace uses of binding in vals with uses of new-binding
 								 (loop (cons new-binding bindings)
 								       (list* (let ([v (make-vm:local-varref 
-											#f #f #f
+											#f
 											(zodiac:binding-var binding)
 											binding)])
 										(if (rep:pointer? rep)
-										    (make-vm:deref #f #f #f v)
+										    (make-vm:deref #f v)
 										    v))
 									      (car vals)
 									      (map
@@ -427,9 +415,7 @@
 									     [(vm _) (vm-phase vref #f #f identity #f)]
 									     [(vm) (car (vm:sequence-vals vm))])
 								 (cons (make-vm:set! 
-									(zodiac:zodiac-origin val)
-									(zodiac:zodiac-start val)
-									(zodiac:zodiac-finish val)
+									(zodiac:zodiac-stx val)
 									(list
 									 (cons target-type:lexical vm))
 									val
@@ -441,9 +427,7 @@
 					  (and closure-label (satisfies-arity? (length vals) 
 									       L arglist)))
 				      
-				      (list (make-vm:args (zodiac:zodiac-origin ast)
-							  (zodiac:zodiac-start ast)
-							  (zodiac:zodiac-finish ast)
+				      (list (make-vm:args (zodiac:zodiac-stx ast)
 							  (if tail?
 							      arg-type:tail-arg
 							      arg-type:arg)
@@ -453,9 +437,7 @@
 					((if (compiler:option:stupid) compiler:warning compiler:error)
 					 ast
 					 "procedure called with wrong number of arguments")
-					(list (make-vm:args (zodiac:zodiac-origin ast)
-							    (zodiac:zodiac-start ast)
-							    (zodiac:zodiac-finish ast)
+					(list (make-vm:args (zodiac:zodiac-stx ast)
 							    (if tail?
 								arg-type:tail-arg
 								arg-type:arg)

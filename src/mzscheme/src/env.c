@@ -1069,17 +1069,18 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
     p += frame->num_bindings;
   }
+
+  srcsym = symbol;
+  modidx = scheme_stx_module_name(&symbol, phase);
   
   /* Used out of context? */
-  if (scheme_stx_has_binder(symbol, phase)) {
+  if (SAME_OBJ(modidx, scheme_undefined)) {
     if (!(flags & SCHEME_OUT_OF_CONTEXT_OK))
       scheme_wrong_syntax("compile", NULL, symbol,
 			  "identifier used out of context");
     return NULL;
   }
 
-  srcsym = symbol;
-  modidx = scheme_stx_module_name(&symbol, phase);
   if (modidx) {
     /* If it's an access path, resolve it: */
     modname = scheme_module_resolve(modidx);

@@ -1010,8 +1010,6 @@
 			      (unless (zero? (const:get-inexact-counter))
 				(fprintf c-port "~amake_inexacts();~n"
 					 vm->c:indent-spaces))
-			      (fprintf c-port "~amake_export_symbols();~n"
-				       vm->c:indent-spaces)
 			      (fprintf c-port "~ainit_prims(env);~n"
 				       vm->c:indent-spaces)
 			      (unless (null? (compiler:get-case-lambdas))

@@ -753,7 +753,11 @@ static Scheme_Object *get_marks(Scheme_Object *awl)
 #define QUICK_STACK_SIZE 10
 
 static Scheme_Object *resolve_env(Scheme_Object *a, long phase, 
-				  int w_mod, Scheme_Object **assume_nolex_get_name)
+				  int w_mod, Scheme_Object **get_name)
+/* Module binding ignored if w_mod is 0.
+   If module bound, result is module idx, and get_name is set to exported name.
+   If lexically bound, result is env id, and a get_name is set to scheme_undefined.
+   If neither, result is NULL and get_name is unchanged. */
 {
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *o_rename_stack = scheme_null;
@@ -779,6 +783,8 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
       }
       if (SCHEME_FALSEP(result))
 	result = mresult;
+      else if (get_name)
+	*get_name = scheme_undefined;
       return result;
     } else if (SCHEME_RENAMESP(SCHEME_CAR(wraps)) && w_mod) {
       /* Module rename: */
@@ -801,8 +807,8 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	      mresult = scheme_modidx_shift(mresult,
 					    modidx_shift_from,
 					    modidx_shift_to);
-	    if (assume_nolex_get_name)
-	      *assume_nolex_get_name = SCHEME_CDR(rename);
+	    if (get_name)
+	      *get_name = SCHEME_CDR(rename);
 	  }
 	}
       }
@@ -815,7 +821,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
       if (!modidx_shift_to)
 	modidx_shift_to = SCHEME_VEC_ELS(vec)[2];
       modidx_shift_from = SCHEME_VEC_ELS(vec)[1];
-    } else if (SCHEME_VECTORP(SCHEME_CAR(wraps)) && !assume_nolex_get_name) {
+    } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
       /* Lexical rename: */
       Scheme_Object *rename, *renamed;
       int ri, c, istart, iend;
@@ -993,6 +999,9 @@ int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 }
 
 Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase)
+/* If module bound, result is module idx, and a is set to exported name.
+   If lexically bound, result is scheme_undefined and a is unchanged. 
+   If neither, result is NULL and a is unchanged. */
 {
   if (SCHEME_STXP(*a)) {
     Scheme_Object *modname, *exname = NULL;
@@ -1000,8 +1009,12 @@ Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase)
     modname = resolve_env(*a, phase, 1, &exname);
     
     if (exname) {
-      *a = exname;
-      return modname;
+      if (SAME_OBJ(exname, scheme_undefined)) {
+	return scheme_undefined;
+      } else {
+	*a = exname;
+	return modname;
+      }
     } else
       return NULL;
   } else
@@ -1048,15 +1061,6 @@ int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *u
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 {
   return scheme_stx_env_bound_eq(a, b, NULL, phase);
-}
-
-int scheme_stx_has_binder(Scheme_Object *a, long phase)
-{
-  if (SCHEME_STXP(a)) {
-    a = resolve_env(a, phase, 0, NULL);
-    return SCHEME_TRUEP(a);
-  } else
-    return 0;
 }
 
 int scheme_stx_list_length(Scheme_Object *list)

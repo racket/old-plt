@@ -434,7 +434,6 @@ Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase);
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid, long phase);
-int scheme_stx_has_binder(Scheme_Object *a, long phase);
 
 Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
 				      Scheme_Object *old_midx, Scheme_Object *new_midx);

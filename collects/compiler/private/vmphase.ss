@@ -544,7 +544,7 @@
 			 [closure-alloc-rep (closure-code-alloc-rep code)]
 			 [vehicle (closure-code-vehicle code)]
 			 [n (compiler:gensym)]
-					; a variable in which to construct the closure
+			 ;; a variable in which to construct the closure
 			 [new-bound 
 			  (if closure-alloc-rep
 			      (zodiac:make-binding 
@@ -864,8 +864,8 @@
 		 ;; for static variables
 		 [(zodiac:top-level-varref? ast)
 		  (let* ([ignore-ast (lambda (maker)
-				       (lambda (a b c d ast)
-					 (maker a b c d)))]
+				       (lambda (a d ast)
+					 (maker a d)))]
 			 [maker 
 			  (cond
 			   [(top-level-varref/bind-from-lift? ast)

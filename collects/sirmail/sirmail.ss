@@ -12,8 +12,6 @@
            (lib "framework.ss" "framework"))
   
   (require "sirmails.ss"
-	   "keyfunc.ss"
-	   "keymap.ss"
 	   "pref.ss"
 	   "sirmailr.ss")
 
@@ -32,15 +30,6 @@
 
   (require (lib "hierlist-sig.ss" "hierlist")
 	   (lib "hierlist.ss" "hierlist"))
-
-  (define-values/invoke-unit/sig (install-text-functions) 
-    keyfunc@
-    #f
-    mred^)
-  (define-values/invoke-unit/sig (install-emacs-bindings)
-    keymap@
-    #f
-    mred^)
 
   (define inbox-name "Inbox")
   (define default-mailbox-options null)
@@ -90,9 +79,7 @@
 	  net:base64^
 	  net:mime^
 	  net:qp^
-	  hierlist^
-	  (install-text-functions)
-	  (install-emacs-bindings))))]))
+	  hierlist^)))]))
 
   (define folders-window #f)
 

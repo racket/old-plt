@@ -33,9 +33,7 @@
 	      net:head^
 	      net:base64^
 	      net:qp^
-	      hierlist^
-	      (install-text-functions)
-	      (install-emacs-bindings))
+	      hierlist^)
 
               
       (define FRAME-WIDTH 560)
@@ -432,8 +430,8 @@
 	  (send km map-function ":a:q" "reflow-paragraph")
 	  (special-option-key #t)
 
-	  (install-text-functions km)
-	  (install-emacs-bindings km)
+	  (add-text-keymap-functions km)
+	  (keymap:setup-global km)
 	  
 	  (send km add-function "send-message"
 		(lambda (w e) (send-msg)))

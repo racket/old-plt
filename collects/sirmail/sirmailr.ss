@@ -30,9 +30,7 @@
 	     (BASE64 : net:base64^)
 	     (MIME : net:mime^)
 	     (QP : net:qp^)
-	     (HIER : hierlist^)
-	     (TXT : (install-text-functions))
-	     (EMACS : (install-emacs-bindings)))
+	     (HIER : hierlist^))
      (link [UTILS : sirmail:utils^
 		  (util@
 		   MRED)]
@@ -44,11 +42,9 @@
 	   [READ : sirmail:read^
 		 (read@
 		  OPTIONS ENV UTILS SEND
-		  MRED IMAP SMTP HEAD BASE64 MIME QP HIER
-		  TXT EMACS)]
+		  MRED IMAP SMTP HEAD BASE64 MIME QP HIER)]
 	   [SEND : sirmail:send^
 		 (send@
 		  (ENV : (exit-sirmail)) UTILS OPTIONS READ
-		  MRED IMAP SMTP HEAD BASE64 QP HIER
-		  TXT EMACS)])
+		  MRED IMAP SMTP HEAD BASE64 QP HIER)])
      (export))))

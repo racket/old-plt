@@ -40,9 +40,7 @@
 	      net:base64^
 	      (mime : net:mime^)
 	      net:qp^
-	      hierlist^
-	      (install-text-functions)
-	      (install-emacs-bindings))
+	      hierlist^)
       
       (define no-subject-string "<No subject>")
 
@@ -73,10 +71,10 @@
       (current-exception-handler
        (initial-exception-handler))
       
-      ; Make my bindings global for file dialog, etc.
+      ;; Install std bindings global for file dialog, etc.
       (let ([km (make-object keymap%)])
-	(install-text-functions km)
-	(install-emacs-bindings km)
+	(add-text-keymap-functions km)
+	(keymap:setup-global km)
 	(let ([f (current-text-keymap-initializer)])
 	  (current-text-keymap-initializer
 	   (lambda (k)

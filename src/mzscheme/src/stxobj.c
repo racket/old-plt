@@ -629,26 +629,25 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
 
       for (ri = 0; ri < c; ri++) {
 	renamed = SCHEME_VEC_ELS(rename)[1+ri];
-	if (SAME_OBJ(SCHEME_STX_VAL(a), SCHEME_STX_VAL(renamed)))
-	  break;
-      }
+	if (SAME_OBJ(SCHEME_STX_VAL(a), SCHEME_STX_VAL(renamed))) {
+	  if (same_marks(((Scheme_Stx *)renamed)->wraps, wraps)) {
+	    Scheme_Object *other_env, *envname;
+	    
+	    envname = SCHEME_VEC_ELS(rename)[0];
+	    other_env = SCHEME_VEC_ELS(rename)[1+c+ri];
+	    
+	    if (SCHEME_FALSEP(other_env)) {
+	      other_env = resolve_env(renamed, 0, NULL);
+	      SCHEME_VEC_ELS(rename)[1+c+ri] = other_env;
+	    }
+	    
+	    /* If it turns out that we're going to return
+	       other_env, then return envname instead. */
+	    rename_stack = scheme_make_pair(scheme_make_pair(other_env, envname),
+					    rename_stack);
 
-      if (ri < c) {
-	if (same_marks(((Scheme_Stx *)renamed)->wraps, wraps)) {
-	  Scheme_Object *other_env, *envname;
-	  
-	  envname = SCHEME_VEC_ELS(rename)[0];
-	  other_env = SCHEME_VEC_ELS(rename)[1+c+ri];
-	  
-	  if (SCHEME_FALSEP(other_env)) {
-	    other_env = resolve_env(renamed, 0, NULL);
-	    SCHEME_VEC_ELS(rename)[1+c+ri] = other_env;
+	    break;
 	  }
-	  
-	  /* If it turns out that we're going to return
-	     other_env, then return envname instead. */
-	  rename_stack = scheme_make_pair(scheme_make_pair(other_env, envname),
-					  rename_stack);
 	}
       }
     }

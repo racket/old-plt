@@ -59,6 +59,7 @@ static Scheme_Object *defined(int argc, Scheme_Object *argv[]);
 static Scheme_Object *global_defined_value(int, Scheme_Object *[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
+static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
 static Scheme_Object *id_macro(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *write_variable(Scheme_Object *obj);
@@ -386,6 +387,7 @@ static void make_init_env(void)
 						      "global-defined-value",
 						      1, 2),
 			     env);
+  
   scheme_add_global_constant("syntax-local-value", 
 			     scheme_make_prim_w_arity(local_exp_time_value,
 						      "syntax-value",
@@ -394,6 +396,11 @@ static void make_init_env(void)
   scheme_add_global_constant("syntax-local-name", 
 			     scheme_make_prim_w_arity(local_exp_time_name,
 						      "syntax-local-name",
+						      0, 0),
+			     env);
+  scheme_add_global_constant("syntax-local-context", 
+			     scheme_make_prim_w_arity(local_context,
+						      "syntax-local-context",
 						      0, 0),
 			     env);
 
@@ -423,10 +430,10 @@ static void make_init_env(void)
 
   scheme_finish_kernel(env);
 
-#if USE_COMPILED_MACROS
+#if USE_COMPILED_STARTUP
   if (builtin_ref_counter != EXPECTED_PRIM_COUNT) {
     printf("Primitive count %d doesn't match expected count %d\n"
-	   "Turn off USE_COMPILED_MACROS in src/schminc.h\n",
+	   "Turn off USE_COMPILED_STARTUP in src/schminc.h\n",
 	   builtin_ref_counter, EXPECTED_PRIM_COUNT);
     exit(1);
   }
@@ -888,7 +895,7 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
       env->rename_var_count = count;
     }
 
-  stx = scheme_add_rename(stx, env->renames);
+    stx = scheme_add_rename(stx, env->renames);
 
     env = env->next;
   }
@@ -1253,7 +1260,6 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 			     Scheme_Object *form)
 {
   int i;
-  Scheme_Object *l, *p;
   char *key;
 
   if (r->count <= 5) {
@@ -1266,31 +1272,21 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
       r->syms[r->count++] = symbol;
       return;
     } else {
-      r->ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+      r->ht = scheme_hash_table(7, SCHEME_hash_bound_id, 0, 0);
       for (i = 0; i < r->count; i++) {
-	key = (char *)SCHEME_STX_VAL(r->syms[i]);
-	l = (Scheme_Object *)scheme_lookup_in_table(r->ht, key);
-	if (!l)
-	  l = scheme_null;
-	l = scheme_make_pair(r->syms[i], l);
-	scheme_add_to_table(r->ht, key, (void *)l, 0);
+	key = (char *)r->syms[i];
+	scheme_add_to_table(r->ht, key, (void *)scheme_true, 0);
       }
     }
   }
 
-  key = (char *)SCHEME_STX_VAL(symbol);
-  l = (Scheme_Object *)scheme_lookup_in_table(r->ht, key);
-  if (!l)
-    l = scheme_null;
-
-  for (p = l; SCHEME_PAIRP(p); p = SCHEME_CDR(p)) {
-    if (scheme_stx_bound_eq(symbol, SCHEME_CAR(p), r->phase))
-      scheme_wrong_syntax(where, symbol, form,
-			  "duplicate %s name", what);
+  key = (char *)symbol;
+  if (scheme_lookup_in_table(r->ht, key)) {
+    scheme_wrong_syntax(where, symbol, form,
+			"duplicate %s name", what);
   }
 
-  l = scheme_make_pair(symbol, l);
-  scheme_add_to_table(r->ht, key, (void *)l, 0);
+  scheme_add_to_table(r->ht, key, (void *)scheme_true, 0);
 }
 
 Resolve_Info *scheme_resolve_info_create()
@@ -1541,7 +1537,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
   env = scheme_current_process->current_local_env;
   if (!env)
     scheme_raise_exn(MZEXN_MISC, 
-		     "syntax-local-value: not currently expansion time");
+		     "syntax-local-value: not currently transforming");
 
   sym = argv[0];
 
@@ -1587,9 +1583,27 @@ local_exp_time_name(int argc, Scheme_Object *argv[])
   sym = scheme_current_process->current_local_name;
   if (!sym)
     scheme_raise_exn(MZEXN_MISC, 
-		     "syntax-local-name: not currently expansion time");
+		     "syntax-local-name: not currently transforming");
 
   return sym;
+}
+
+static Scheme_Object *
+local_context(int argc, Scheme_Object *argv[])
+{
+  Scheme_Comp_Env *env;
+
+  env = scheme_current_process->current_local_env;
+  if (!env)
+    scheme_raise_exn(MZEXN_MISC, 
+		     "syntax-local-context: not currently transforming");
+
+  if (scheme_is_module_env(env))
+    return scheme_intern_symbol("module");
+  else if (scheme_is_toplevel(env))
+    return scheme_intern_symbol("top-level");
+  else
+    return scheme_intern_symbol("expression");
 }
 
 static Scheme_Object *

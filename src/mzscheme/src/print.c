@@ -1137,11 +1137,26 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       print_this_string(p, "#", 1);
       print_this_string(p, scheme_symbol_val(op->sub_type), SCHEME_SYM_LEN(op->sub_type));
     }
-  else if (compact && SCHEME_STXP(obj))
+  else if (SCHEME_STXP(obj))
     {
-      print_compact(p, CPT_STX);
-      closed = print(scheme_syntax_to_datum(obj, 2, rnht), 
-		     notdisplay, 1, ht, symtab, rnht, p);
+      if (compact) {
+	print_compact(p, CPT_STX);
+	closed = print(scheme_syntax_to_datum(obj, 2, rnht), 
+		       notdisplay, 1, ht, symtab, rnht, p);
+      } else {
+	Scheme_Stx *stx = (Scheme_Stx *)obj;
+	if (stx->line >= 0) {
+	  print_this_string(p, "#<syntax:", 9);
+	  if (stx->src && SCHEME_STRINGP(stx->src)) {
+	    print_this_string(p, SCHEME_STR_VAL(stx->src), SCHEME_STRLEN_VAL(stx->src));
+	    print_this_string(p, ":", 1);
+	  }
+	  sprintf(quick_buffer, "%ld.%ld", stx->line, stx->col);
+	  print_this_string(p, quick_buffer, -1);
+	  print_this_string(p, ">", 1);
+	} else
+	  print_this_string(p, "#<syntax>", 10);
+      }
     }
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_module_index_type)) 
     {

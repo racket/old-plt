@@ -947,7 +947,7 @@ static char *make_srcloc_string(Scheme_Object *form, long *len)
     long srclen, rlen;
     
     src = ((Scheme_Stx *)form)->src;
-    if (SCHEME_STRINGP(src)) {
+    if (src && SCHEME_STRINGP(src)) {
       /* Truncate from the front, to get the interesting part of paths: */
       srclen = SCHEME_STRLEN_VAL(src);
       if (srclen > MZERR_MAX_SRC_LEN) {

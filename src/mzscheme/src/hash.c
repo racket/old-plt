@@ -82,6 +82,24 @@ static int p_strcmp(char *a, char *b)
 }
 #endif
 
+static void id_hash_indices(void *_key, long *_h, long *_h2)
+{
+  Scheme_Object *key = (Scheme_Object *)_key;
+  long lkey;
+
+  if (SCHEME_STXP(key))
+    key = SCHEME_STX_VAL(key);
+    
+  lkey = PTR_TO_LONG((Scheme_Object *)key);
+  *_h = (lkey >> 2);
+  *_h2 = (lkey >> 3);
+}
+
+static int not_stx_bound_eq(char *a, char *b)
+{
+  return !scheme_stx_bound_eq((Scheme_Object *)a, (Scheme_Object *)b, 0);
+}
+
 Scheme_Hash_Table *
 scheme_hash_table (int size, int type, int has_const, int forever)
 {
@@ -124,6 +142,10 @@ scheme_hash_table (int size, int type, int has_const, int forever)
 #else
     table->compare = (Hash_Compare_Proc)strcmp;
 #endif
+  }
+  if (type == SCHEME_hash_bound_id) {
+    table->make_hash_indices = id_hash_indices;
+    table->compare = (Hash_Compare_Proc)not_stx_bound_eq;
   }
 
 #ifdef MZ_REAL_THREADS

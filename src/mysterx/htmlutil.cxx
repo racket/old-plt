@@ -168,6 +168,8 @@ IDispatch *getObjectInCollection(IHTMLElementCollection *pObjectCollection,int n
       
     pIHTMLObjectElement->get_object(&pIDispatch);
 
+    pIHTMLObjectElement->Release();
+
     if (pIDispatch == NULL) {
       scheme_signal_error("Unable to get object element interface for object");
     }

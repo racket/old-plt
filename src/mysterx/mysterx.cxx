@@ -458,6 +458,8 @@ void mx_register_object(Scheme_Object *obj,IUnknown *pIUnknown,
     return;
   }
 
+  pIUnknown->AddRef();
+
   scheme_register_finalizer(obj,release_fun,pIUnknown,NULL,NULL);
   scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,
 							MZCONFIG_MANAGER),
@@ -3747,7 +3749,7 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
     com_object->released = FALSE;
 
     mx_register_com_object((Scheme_Object *)com_object,pObjectDispatch);
-    
+
     retval = scheme_make_pair((Scheme_Object *)com_object,retval);
   }
   

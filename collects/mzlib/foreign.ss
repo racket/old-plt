@@ -821,38 +821,74 @@
 ;; ----------------------------------------------------------------------------
 ;; Tagged pointers
 
-;; Make these operations available
-(provide cpointer-tag set-cpointer-tag!)
+;; Make these operations available for unsafe interfaces (they can be used to
+;; grab a hidden tag value and break code).
+(provide* (unsafe cpointer-tag) (unsafe set-cpointer-tag!))
+
+(define (cpointer-maker nullable?)
+  (case-lambda
+   [(tag) ((cpointer-maker nullable?) tag #f #f #f)]
+   [(tag ptr-type) ((cpointer-maker nullable?) tag ptr-type #f #f)]
+   [(tag ptr-type scheme->c c->scheme)
+    (let* ([tag->C (string->symbol (format "~a->C" tag))]
+           [error-str (format "~a`~a' pointer"
+                              (if nullable? "" "non-null ") tag)]
+           [error* (lambda (p) (raise-type-error tag->C error-str p))])
+      (make-ctype (or ptr-type _pointer)
+        ;; bad hack: cond outside the lambda for efficiency
+        (if nullable?
+          (if scheme->c
+            (lambda (p)
+              (let ([p (scheme->c p)])
+                (if (cpointer? p)
+                  (when p (unless (eq? tag (cpointer-tag p)) (error* p)))
+                  (error* p))
+                p))
+            (lambda (p)
+              (if (cpointer? p)
+                (when p (unless (eq? tag (cpointer-tag p)) (error* p)))
+                (error* p))
+              p))
+          (if scheme->c
+            (lambda (p)
+              (let ([p (scheme->c p)])
+                (if (cpointer? p)
+                  (unless (eq? tag (cpointer-tag p)) (error* p))
+                  (error* p))
+                p))
+            (lambda (p)
+              (if (cpointer? p)
+                (unless (eq? tag (cpointer-tag p)) (error* p))
+                (error* p))
+              p)))
+        (if nullable?
+          (if c->scheme
+            (lambda (p) (when p (set-cpointer-tag! p tag)) (c->scheme p))
+            (lambda (p) (when p (set-cpointer-tag! p tag)) p))
+          (if c->scheme
+            (lambda (p)
+              (if p (set-cpointer-tag! p tag) (error* p))
+              (c->scheme p))
+            (lambda (p)
+              (if p (set-cpointer-tag! p tag) (error* p))
+              p)))))]))
 
 ;; This is a kind of a pointer that gets a specific tag when converted to
 ;; Scheme, and accepts only such tagged pointers when going to C.  An optional
 ;; `ptr-type' can be given to be used as the base pointer type, instead of
 ;; _pointer, `scheme->c' and `c->scheme' can be used for adding conversion
 ;; hooks.
-(define* _cpointer
-  (case-lambda
-   [(tag) (_cpointer tag #f #f #f)]
-   [(tag ptr-type) (_cpointer tag ptr-type #f #f)]
-   [(tag ptr-type scheme->c c->scheme)
-    (let ([tagged->C (string->symbol (format "~a->C" tag))]
-          [error-string (format "expecting a \"~a\" pointer, got ~~e" tag)])
-      (make-ctype (or ptr-type _pointer)
-                  (lambda (p)
-                    (let ([p (if scheme->c (scheme->c p) p)])
-                      (if (cpointer? p)
-                        (unless (eq? tag (cpointer-tag p))
-                          (error tagged->C error-string p))
-                        (error tagged->C error-string p))
-                      p))
-                  (lambda (p)
-                    (when p (set-cpointer-tag! p tag))
-                    (if c->scheme (c->scheme p) p))))]))
+(define* _cpointer (cpointer-maker #f))
 
-;; A macro version of the above, using the defined name for a tag string, and
-;; defining a predicate too.  The name should look like `_foo', the predicate
-;; will be `foo?', and the tag will be "foo".  In addition, `foo-tag' is bound
-;; to the tag.  The optional `ptr-type', `scheme->c', and `c->scheme' arguments
-;; are the same as those of `_cpointer'.
+;; Similar to the above, but can tolerate null pointers (#f).
+(define* _cpointer/null (cpointer-maker #t))
+
+;; A macro version of the above two functions, using the defined name for a tag
+;; string, and defining a predicate too.  The name should look like `_foo', the
+;; predicate will be `foo?', and the tag will be "foo".  In addition, `foo-tag'
+;; is bound to the tag.  The optional `ptr-type', `scheme->c', and `c->scheme'
+;; arguments are the same as those of `_cpointer'.  `_foo' will be bound to the
+;; _cpointer type, and `_foo/null' to the _cpointer/null type.
 (provide define-cpointer-type)
 (define-syntax (define-cpointer-type stx)
   (syntax-case stx ()
@@ -867,11 +903,13 @@
          (datum->syntax-object
           #'_TYPE (string->symbol (apply string-append strings)) #'_TYPE))
        (with-syntax ([name-string name]
-                     [TYPE?       (id name "?")]
-                     [TYPE-tag    (id name "-tag")])
-         #'(define-values (_TYPE TYPE? TYPE-tag)
+                     [TYPE?      (id name "?")]
+                     [TYPE-tag   (id name "-tag")]
+                     [_TYPE/null (id "_" name "/null")])
+         #'(define-values (_TYPE _TYPE/null TYPE? TYPE-tag)
              (let ([TYPE-tag name-string])
-               (values (_cpointer TYPE-tag ptr-type scheme->c c->scheme)
+               (values (_cpointer      TYPE-tag ptr-type scheme->c c->scheme)
+                       (_cpointer/null TYPE-tag ptr-type scheme->c c->scheme)
                        (lambda (x)
                          (and (cpointer? x) (eq? TYPE-tag (cpointer-tag x))))
                        TYPE-tag)))))]))

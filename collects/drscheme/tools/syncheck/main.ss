@@ -65,53 +65,44 @@
 	(for-each (lambda (fs v) ((cdr fs) style v)) style-delta-get/set info)
 	style)))
   
+  (define default-style-assoc-list 
+    (map (lambda (x) 
+           (cons
+            (string->symbol (string-append "drscheme:check-syntax:" (symbol->string (car x))))
+            (cdr x)))
+         (require-library "default-style.ss" "drscheme" "tools" "syncheck")))
   
-  (define delta-symbols (list 'mzprizm:syntax
-			      'mzprizm:primitive
-			      'mzprizm:constant
-			      '|mzprizm:bound variable|
-			      '|mzprizm:unbound variable|))
+  (define delta-symbols (map car default-style-assoc-list))
   
-  (for-each (lambda (s) (fw:preferences:set-un/marshall
-			 s
-			 marshall-style
-			 unmarshall-style))
-	    delta-symbols)
+  (for-each 
+   (lambda (s) 
+     (fw:preferences:set-un/marshall s marshall-style unmarshall-style))
+   delta-symbols)
   
-  (let ([style-delta?
-	 (lambda (x)
-	   (is-a? x mred:style-delta%))])
-    (fw:preferences:set-default 'mzprizm:syntax
-				(let ([s (make-object mred:style-delta%)])
-				  (send s set-delta 'change-bold)
-				  s)
-				style-delta?)
-    (fw:preferences:set-default 'mzprizm:primitive
-				(let ([s (make-object mred:style-delta%)])
-				  (send s set-delta-foreground "BLUE")
-				  s)
-				style-delta?)
-    (fw:preferences:set-default 'mzprizm:constant
-				(let ([s (make-object mred:style-delta%)])
-				  (send s set-delta-foreground "BLUE")
-				  s)
-				style-delta?)
-    (fw:preferences:set-default '|mzprizm:bound variable|
-				(let ([s (make-object mred:style-delta%)])
-				  (if (< (mred:get-display-depth) 8)
-				      (send s set-delta 'change-underline #t)
-				      (send s set-delta-foreground "DARK GREEN"))
-				  s)
-				style-delta?)
-    (fw:preferences:set-default '|mzprizm:unbound variable|
-				(let ([s (make-object mred:style-delta%)])
-				  (when (< (mred:get-display-depth) 8)
-				    (send s set-delta
-					  'change-style
-					  'slant))
-				  (send s set-delta-foreground "RED")
-				  s)
-				style-delta?))
+  (let ([set-default
+         (lambda (default)
+           (let ([sym (car default)]
+                 [color (cadr default)]
+                 [style-settings (cddr default)])
+             (fw:preferences:set-default
+              sym
+              (let ([s (make-object mred:style-delta%)])
+                (send s set-delta-foreground (if (string? color)
+                                                 color
+                                                 (make-object mred:color%
+                                                   (car color)
+                                                   (cadr color)
+                                                   (caddr color))))
+                (for-each (lambda (sym)
+                            (case sym
+                              [(bold) (send s set-delta 'change-bold)]
+                              [(underline) (send s set-delta 'change-underline)]
+                              [(italic) (send s set-delta 'change-slant)]))
+                          style-settings)
+                s)
+              (lambda (x)
+                (is-a? x mred:style-delta%)))))])
+    (for-each set-default default-style-assoc-list))
   
   ; takes and edit to set the style in
   ; a symbol naming the style  and a delta to set it to
@@ -177,7 +168,7 @@
 			check))]
 		   [_ (send c set-editor e)]
 		   [short-style-name (substring style-name
-						(string-length "mzprizm:")
+						(string-length "drscheme:check-syntax:")
 						(string-length style-name))]
 		   [_ (send* e
 			(insert short-style-name)
@@ -717,11 +708,12 @@
                           [defineds (make-hash-table)]
                           [local-bindings (make-hash-table)]
                           [style-list (send definitions-text get-style-list)]
-                          [bound-style (send style-list find-named-style "mzprizm:bound variable")]
-                          [unbound-style (send style-list find-named-style "mzprizm:unbound variable")]
-                          [primitive-style (send style-list find-named-style "mzprizm:primitive")]
-                          [syntax-style (send style-list find-named-style "mzprizm:syntax")]
-                          [const-style (send style-list find-named-style "mzprizm:constant")]
+                          [bound-style (send style-list find-named-style "drscheme:check-syntax:bound-variable")]
+                          [unbound-style (send style-list find-named-style "drscheme:check-syntax:unbound-variable")]
+                          [primitive-style (send style-list find-named-style "drscheme:check-syntax:primitive")]
+                          [keyword-style (send style-list find-named-style "drscheme:check-syntax:keyword")]
+                          [const-style (send style-list find-named-style "drscheme:check-syntax:constant")]
+                          [base-style (send style-list find-named-style "drscheme:check-syntax:base")]
                           [rename-bindings
                            (lambda (occurrances input-name)
                              (send definitions-text begin-edit-sequence)
@@ -766,8 +758,8 @@
                                                 [finish (find-next-whitespace start)])
                                            (when (and finish start)
                                              (if (is-a? z:text mred:text%)
-                                                 (send z:text change-style syntax-style start finish)
-                                                 (change-style syntax-style start finish))))))]
+                                                 (send z:text change-style keyword-style start finish)
+                                                 (change-style keyword-style start finish))))))]
                                     
                                     [color
                                      (lambda (delta)
@@ -954,6 +946,8 @@
                       (lambda ()
                         (send definitions-text clear-annotations)
                         (send definitions-text syncheck:init-arrows)
+
+                        (send definitions-text change-style base-style 0 (send definitions-text last-position))
                         
 			;; color each exp
                         (let ([output-port (current-output-port)]

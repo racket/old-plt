@@ -168,9 +168,11 @@
 	(public
 	  [init-transparent-io
 	   (lambda (grab-focus?)
+	     (begin-edit-sequence)
 	     (super-init-transparent-io grab-focus?)
 	     (when (eq? (current-thread) evaluation-thread)
-	       (set-caret-owner transparent-snip wx:const-focus-display)))]
+	       (set-caret-owner transparent-snip wx:const-focus-display))
+	     (end-edit-sequence))]
 	  [init-transparent-io-do-work
 	   (lambda (grab-focus?)
 	     (with-parameterization drscheme:init:system-parameterization

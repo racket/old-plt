@@ -568,14 +568,12 @@
 		     "setting sizes and leaving"))
 		   (set-min-width
 		    (if horizontal
-			(+ (* range pixels-per-value)
-			   (- full-width client-w))
+			default-width
 			full-width))
 		   (set-min-height
 		    (if horizontal
 			full-height
-			(+ (* range pixels-per-value)
-			   (- full-height client-h)))))))])
+			default-width)))))])
 	  
 	  (sequence
 	    (apply super-init

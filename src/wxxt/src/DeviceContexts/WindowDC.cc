@@ -539,6 +539,10 @@ void wxFreePicture(long p) {
 }
 #endif
 
+#ifndef WX_RENDER_CAN_SCALE
+# define WX_RENDER_CAN_SCALE 0
+#endif
+
 Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *src,
 		      double xsrc, double ysrc, int rop, wxColor *dcolor, wxBitmap *mask)
 {

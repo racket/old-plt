@@ -1877,23 +1877,22 @@
       (define (get-address msg)
         (let ([frm (message-from msg)])
           (if frm
-              (let ([key (string->symbol frm)])
-                (hash-table-get
-                 address-memo-table
-                 key
-                 (lambda ()
-                   (let ([res
-                          (with-handlers ([not-break-exn? (lambda (x) "")])
-                            (regexp-replace* re:quote 
-                                             (car (extract-addresses
-                                                   frm
-                                                   'name))
-                                             ""))])
-                     (hash-table-put! address-memo-table key res)
-                     res))))
+	      (hash-table-get
+	       address-memo-table
+	       frm
+	       (lambda ()
+		 (let ([res
+			(with-handlers ([not-break-exn? (lambda (x) "")])
+			  (regexp-replace* re:quote 
+					   (car (extract-addresses
+						 frm
+						 'address))
+					   ""))])
+		   (hash-table-put! address-memo-table frm res)
+		   res)))
               "")))
       
-      (define address-memo-table (make-hash-table))
+      (define address-memo-table (make-hash-table 'equal))
       
       (define re:re (regexp "^[rR][eE]: *(.*)"))
       ;; subject<? : message message -> boolean

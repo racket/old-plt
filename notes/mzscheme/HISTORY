@@ -1,4 +1,12 @@
 
+Version 204.8
+Changed eval handler so that when it is given a syntax object, it
+ should not extend the object's lexical context with top-level
+ bindings from the current namespace
+Added namespace-syntax-introduce
+Added eval-syntax, compile-syntax, expand-syntax, expand-syntax-once,
+ and expand-syntax-to-top-form
+
 Version 204.7
 Added namespace-module-registry
 Added module->namespace

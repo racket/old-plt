@@ -12,6 +12,7 @@
   (define new-help-frame #f)
   (define open-url-from-user #f)
   (define help-desk-frame #f)
+  (define (set-font-size x) (void))
 
   (include "startup-url.ss")
 
@@ -20,6 +21,12 @@
   (preferences:add-callback
    drscheme:language:settings-preferences-symbol
    (lambda (p v) (doc-collections-changed)))
+
+  (preferences:add-callback
+   'drscheme:font-size
+   (lambda (p v)
+     (set-font-size v)
+     #t))
 
   (define (user-defined-doc-position doc)
     (let ([lang (preferences:get drscheme:language:settings-preferences-symbol)])
@@ -53,12 +60,14 @@
     (define frame-mixin drscheme:frame:basics-mixin)
     (let-values ([(_new-help-frame
 		   _open-url-from-user
-		   _doc-collections-changed)
+		   _doc-collections-changed
+		   _set-font-size)
 		  (let ()
 		    (define-values/invoke-unit/sig
 		      (new-help-frame
 		       open-url-from-user
-		       doc-collections-changed)
+		       doc-collections-changed
+		       set-font-size)
 		      (require-library "helpr.ss" "help")
 		      #f
 		      mzlib:function^
@@ -71,10 +80,12 @@
 		      help:doc-position^)
 		    (values new-help-frame
 			    open-url-from-user
-			    doc-collections-changed))])
+			    doc-collections-changed
+			    set-font-size))])
       (set! new-help-frame _new-help-frame)
       (set! open-url-from-user _open-url-from-user)
       (set! doc-collections-changed _doc-collections-changed)
+      (set! set-font-size _set-font-size)
       (set! load-help-desk void)))
 
   (define (open-url url)

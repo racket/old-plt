@@ -20,7 +20,8 @@
 
 (define-signature help:help-window^
   (new-help-frame
-   open-url-from-user))
+   open-url-from-user
+   set-font-size))
 
 (define-signature help:help^
   ((open help:help-window^)

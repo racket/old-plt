@@ -16,6 +16,14 @@
 
   (define last-url-string #f)
 
+  (define (set-font-size size)
+    (let* ([standard (send hyper-style-list find-named-style "Standard")]
+	   [delta (make-object style-delta%)])
+      (send standard get-delta delta)
+      (send delta set-size-mult 0)
+      (send delta set-size-add size)
+      (send standard set-delta delta)))
+
   (on-installer-run doc-collections-changed)
 
   (define (get-icon size)

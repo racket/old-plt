@@ -2,7 +2,7 @@
   (parameterize ([current-eventspace (make-eventspace)])
     (let* ([f (make-object frame% "Quit")]
            [h (make-object horizontal-panel% f)])
-      (make-object button% "Quit" h (lambda (x y) (exit)))
+      (send (make-object button% "Quit" h (lambda (x y) (exit))) stretchable-width #t)
       (make-object grow-box-spacer-pane% h)
       (send f reflow-container)
       (let-values ([(w h) (get-display-size)])

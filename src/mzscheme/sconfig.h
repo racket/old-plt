@@ -555,7 +555,7 @@
   /* instructions have been preserved.                    */
 
 #if (defined(__BORLANDC__) || defined(_MSC_VER) || defined(__CYGWIN32__)) \
-    && (defined(__WIN32__) || defined(WIN32) || defined(_WIN32))
+    && (defined(__WIN32__) || defined(WIN32) || defined(_WIN32) || defined(__CYGWIN32__))
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "win32\\i386"
 

@@ -21,13 +21,17 @@
 		       (error 'extend-% "expected output of extension to create a subclass of its input, got: ~a"
 			      new%)))))])
 	(values
-	 (lambda (extension)
-	   (when built-yet?
-	     (error 'extender "cannot build a new extension of ~a after initialization"
-		    base%))
-	   (set! extensions (mzlib:function:compose 
-			     (verify extension)
-			     extensions)))
+         (rec add-extender
+           (case-lambda
+            [(extension) (add-extender extension #t)]
+            [(extension before?)
+             (when built-yet?
+               (error 'extender "cannot build a new extension of ~a after initialization"
+                      base%))
+             (set! extensions 
+                   (if before?
+                       (mzlib:function:compose (verify extension) extensions)
+                       (mzlib:function:compose extensions (verify extension))))]))
 	 (lambda ()
 	   (unless built-yet?
 	     (set! built-yet? #t)

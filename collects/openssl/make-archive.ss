@@ -16,7 +16,17 @@
 
 (module make-archive mzscheme
   (require (lib "pack.ss" "setup")
-	   (lib "file.ss"))
+	   (lib "file.ss")
+	   (lib "cmdline.ss"))
+
+  (define target-sys-type (system-type))
+
+  (command-line
+   "make-archive"
+   (current-command-line-arguments)
+   (once-each
+    [("-s" "--src") "Make source bundle"
+     (set! target-sys-type 'unix)]))
 
   (define tmp-dir (find-system-path 'temp-dir))
   (define work-dir (build-path tmp-dir "mk-openssl-plt"))
@@ -46,7 +56,7 @@
 
   (copy-files (collection-path "openssl") ssl-target-dir #rx".")
 
-  (unless (eq? (system-type) 'unix)
+  (unless (eq? target-sys-type 'unix)
     (let ()
       (define pre-dir (build-path ssl-target-dir "precompiled" "native" (system-library-subpath)))
 
@@ -57,11 +67,11 @@
 			      "native"
 			      (system-library-subpath))
 		  pre-dir
-		  (if (eq? (system-type) 'windows)
+		  (if (eq? target-sys-type 'windows)
 		      #rx"[.]dll$"
 		      #rx"[.]so$"))
       
-      (when (eq? (system-type) 'windows)
+      (when (eq? target-sys-type 'windows)
 	;; Assume that the xxxx-ized versions of the DLLs are in
 	;; the plt directory:
 	(let* ([new-version (substring
@@ -94,10 +104,9 @@
 			 (file-position i 0)
 			 ;; This is a poor technique for updating the files, but
 			 ;;  it works well enough.
-			 (let ([m (regexp-match-positions #rx"eay32xxxxxxx" i)])
+			 (let ([m (regexp-match-positions #rx"[eE][aA][yY]32xxxxxxx" i)])
 			   (when m
-				 (file-position o (caar m))
-				 (display "eay32" o)
+				 (file-position o (+ (caar m) 5))
 				 (display new-version o)
 				 (loop))))
 		       (close-input-port i)
@@ -121,10 +130,10 @@
 	  null ;; FIXME - we need better version tracking!
 	  '(("openssl"))))
 
-  (define dest  (format "openssl.~a.plt" (case (system-type)
+  (define dest  (format "openssl.~a.plt" (case target-sys-type
 					   [(windows) "i386-win32"]
 					   [(macosx) "ppc-macosx"]
-					   [(else) "src"])))
+					   [else "src"])))
   
   (when (file-exists? dest)
     (delete-file dest))

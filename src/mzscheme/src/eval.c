@@ -1054,6 +1054,13 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
 	Scheme_Env *m;
 	
 	m = scheme_module_access(b->home->modname, info);
+
+	if (!m) {
+	  scheme_wrong_syntax("import", NULL, (Scheme_Object *)b->bucket.bucket.key, 
+			      "broken compiled code (link): cannot find prepared module");
+	  return NULL;
+	}
+
 	return (Scheme_Object *)scheme_global_bucket((Scheme_Object *)b->bucket.bucket.key, m);
       }
     }
@@ -1669,7 +1676,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     if (rec)
       return scheme_null;
     else
-      return form;
+      return scheme_datum_to_syntax(scheme_null, forms, scheme_sys_wraps(env));
   } else if (SCHEME_STX_SYMBOLP(SCHEME_CAR(form))) {
 #if 0
     /* Optimize (void) to just the value void */
@@ -1761,7 +1768,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
   /* Make sure resulting form for macro expansion has system wraps on the parens: */
   form = scheme_datum_to_syntax(scheme_make_pair(SCHEME_STX_CAR(form), SCHEME_STX_CDR(form)),
 				forms,
-				forms);
+				scheme_sys_wraps(env));
   return form;
 }
 
@@ -1814,7 +1821,7 @@ static void check_unbound(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
   if (!SCHEME_STX_SYMBOLP(c))
     scheme_wrong_syntax("#%unbound", NULL, form, NULL);
 
-  if (env->genv->phase) {
+  if (env->genv->phase || SCHEME_TRUEP(env->genv->modname)) {
     Scheme_Object *modname, *symbol = c;
     Scheme_Env *home;
 

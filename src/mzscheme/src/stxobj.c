@@ -433,6 +433,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *rename_stack = scheme_null;
   Scheme_Object *result, *mresult = scheme_false;
+  int phase_found = 0;
 
   if (home)
     *home = NULL;
@@ -449,13 +450,15 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
       if (SCHEME_FALSEP(result))
 	result = mresult;
       return result;
-    } else if (SCHEME_HASHTP(SCHEME_CAR(wraps)) && home) {
+    } else if (SCHEME_HASHTP(SCHEME_CAR(wraps)) && home && !phase_found) {
       /* Module rename: */
       Scheme_Hash_Table *ht = (Scheme_Hash_Table *)SCHEME_CAR(wraps);
       if (SAME_OBJ(scheme_make_integer(phase),
 		   scheme_lookup_in_table(ht, (const char *)phase_uninterned))) {
 	Scheme_Object *rename;
 	
+	phase_found = 1;
+
 	rename = scheme_lookup_in_table(ht, (const char *)SCHEME_STX_VAL(a));
 	if (rename) {
 	  /* Match: set mresult for the case of no lexical capture: */
@@ -473,7 +476,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
       p = SCHEME_PTR_VAL(SCHEME_CAR(wraps));
       n = SCHEME_CAR(p);
       phase -= SCHEME_INT_VAL(n);
-      if (phase == 2)
+      if (phase == 1)
 	*home = SCHEME_CDR(p);
     } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
       /* Lexical rename: */
@@ -517,6 +520,7 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always, long pha
 {
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *result;
+  int phase_found = 0;
 
   result = NULL;
 
@@ -526,13 +530,15 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always, long pha
 	return SCHEME_STX_VAL(a);
       else
 	return result;
-    } else if (SCHEME_HASHTP(SCHEME_CAR(wraps))) {
+    } else if (SCHEME_HASHTP(SCHEME_CAR(wraps)) && !phase_found) {
       Scheme_Hash_Table *ht = (Scheme_Hash_Table *)SCHEME_CAR(wraps);
       if (SAME_OBJ(scheme_make_integer(phase),
 		   scheme_lookup_in_table(ht, (const char *)phase_uninterned))) {
 	/* Module rename: */
 	Scheme_Object *rename;
 	
+	phase_found = 1;
+
 	rename = scheme_lookup_in_table(ht, (const char *)SCHEME_STX_VAL(a));
 	if (rename) {
 	  /* Match: set result: */

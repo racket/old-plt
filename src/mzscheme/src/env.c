@@ -493,7 +493,6 @@ scheme_new_module_env(Scheme_Env *env, Scheme_Object *modname)
   menv = make_env(env);
 
   menv->modname = modname;
-  menv->phase = 1;
   menv->init->flags |= SCHEME_MODULE_FRAME;
 
   menv->exp_env = NULL; /* Create on demand. */
@@ -1039,8 +1038,22 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     if (SAME_OBJ(modname, env->genv->modname)) {
       modname = NULL;
       genv = env->genv;
-    } else
+    } else {
       genv = scheme_module_access(modname, home_env ? home_env : env->genv);
+
+      if (!genv) {
+	scheme_wrong_syntax("import", NULL, srcsym, 
+			    "broken compiled code (stat-dist): cannot find prepared module"
+#if 0
+			    " %V in %V/%V at %d from %V",
+			    modname, home_env ? home_env : scheme_false, 
+			    env->genv->modname, 
+			    phase, scheme_syntax_to_datum(srcsym, 1)
+#endif
+			    );
+	return NULL;
+      }
+    }
   } else
     genv = env->genv;
 

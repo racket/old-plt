@@ -16,11 +16,16 @@
            (prefix fw: (lib "framework.ss" "framework"))
            (lib "mred.ss" "mred"))
   (provide tool@)
+
+  (define o (current-output-port))
   
   (define tool@
     (unit/sig ()
       (import drscheme:tool^)
 
+
+      (define (printf . args)
+        (apply fprintf o args))
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;;                                                                ;;;

@@ -14,7 +14,6 @@ Various common pieces of code that both the client and server need to access
   
   (provide (all-defined))
   
-  
   (define-syntax (define-parameters stx)
     (syntax-case stx ()
       [(_ (name val) ...)
@@ -26,7 +25,8 @@ Various common pieces of code that both the client and server need to access
   
   ; exn:i/o:protocol: exception indicating that a protocol error occured
   (define-struct (exn:i/o:protocol exn:fail:network) ())
-  
+
+  (define BUILD "build")
   
   ; ==========================================================================================
   ; CACHE LOGIC
@@ -206,20 +206,23 @@ Various common pieces of code that both the client and server need to access
       (for-each (lambda (item) (hash-table-put! ht (car item) (cadr item))) asl)
       ht))
   
+  ; categorize : (X -> Y) (listof X) -> (listof (cons Y (listof X)))
+  ; sorts the l into categories given by f
   (define (categorize f l)
-    (let ((h (make-hash-table)))
-      (begin
-        (for-each
-         (lambda (x) 
-           (let ((key (f x)))
-             (hash-table-put! h
-                              key
-                              (cons x (hash-table-get h key (lambda () null))))))
-         l)
-        (hash-table-map h list))))
+    (let ((ht (make-hash-table 'equal)))
+      (for-each 
+       (lambda (i)
+         (let ((key (f i)))
+           (hash-table-put! ht key (cons i (hash-table-get ht key (lambda () '()))))))
+       l)
+      (hash-table-map ht cons)))
+  
+  
   
   (define (drop-last l) (reverse (cdr (reverse l))))
   
+  ;; note: this can be done faster by reading a copy-port'ed port with
+  ;; ( and ) tacked around it
   (define read-all
     (case-lambda
       [() (read-all (current-input-port))]
@@ -247,18 +250,30 @@ Various common pieces of code that both the client and server need to access
                (files (map (lambda (d) (build-path directory d)) files))
                (files (filter (lambda (d) (and (directory-exists? d) (valid-dir? d))) files)))
           (make-branch 
-           (path->string name) 
+           (path->string name)
+           ;; NOTE: the above line should not use path->string. I don't have time to track this down though
            (if (equal? max-depth 0) 
                '()
                (let ((next-depth (if max-depth (sub1 max-depth) #f)))
                  (map (lambda (d) (directory->tree d valid-dir? next-depth)) files))))))))
+
+  ;; filter-pattern : (listof pattern-term)
+  ;; pattern-term   : (x -> y) | (make-star (tst -> bool) (x -> y))
+  (define-struct star (pred fun))
   
-  ;; filter-tree-by-pattern : tree[x] (listof (x -> y)) -> tree[y]
+  ;; filter-tree-by-pattern : tree[x] filter-pattern -> tree[y]
   ;; constraint: depth of the tree <= length of the list
   ;; converts the tree by applying to each depth the function at that position in the list
   (define (filter-tree-by-pattern tree pattern)
     (cond
       [(null? pattern) (error 'filter-tree-by-pattern "Tree too deep: ~e" tree)]
+      [(star? (car pattern))
+       (if (star-pred (car pattern))
+           (make-branch
+            (star-fun (branch-node tree))
+            (map (lambda (x) (filter-tree-by-pattern x pattern))
+                 (branch-children tree)))
+           (filter-tree-by-pattern tree (cdr pattern)))]
       [else
        (make-branch ((car pattern) (branch-node tree))
                     (map 
@@ -267,11 +282,24 @@ Various common pieces of code that both the client and server need to access
   
   ;; sexp-tree[x] ::= (cons x (listof sexp-tree[x]))
   
+  ;; tree-apply : (... -> tst) tree -> listof tst
+  ;; applies f to every path from root to leaf and
+  ;; accumulates all results in a list
+  (define (tree-apply f t)
+    (let loop ((t t)
+               (priors '()))
+      (cond
+        [(null? (branch-children t))
+         (list (apply f (reverse (cons (branch-node t) priors))))]
+        [else
+         (let ((args (cons (branch-node t) priors)))
+           (apply append
+                  (map (lambda (x) (loop x args)) (branch-children t))))])))
+      
+               
+    
+    
+  
   ;; tree->list : tree[x] -> sexp-tree[x]
   (define (tree->list tree)
-    (cons (branch-node tree) (map tree->list (branch-children tree))))
-  
-  
-  
-  
-  )
+    (cons (branch-node tree) (map tree->list (branch-children tree)))))

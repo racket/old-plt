@@ -144,6 +144,7 @@ an appropriate subdirectory.
   (require (lib "match.ss")
            (lib "file.ss")
            (lib "port.ss")
+           (lib "list.ss")
            (lib "plt-single-installer.ss" "setup")
            "config.ss"
            "private/planet-shared.ss"
@@ -152,10 +153,11 @@ an appropriate subdirectory.
   (provide (rename resolver planet-module-name-resolver))
 
   (define install? (make-parameter #t)) ;; if #f, will not install packages and instead give an error
-  
+
   ;; ensure these directories exist
   (make-directory* (PLANET-DIR))
   (make-directory* (CACHE-DIR))
+  
   
   (define (resolver spec module-path stx)
     (establish-diamond-property-monitor)
@@ -174,10 +176,8 @@ an appropriate subdirectory.
     (unless (namespace-variable-value VER-CACHE-NAME #t (lambda () #f))
       (namespace-set-variable-value! VER-CACHE-NAME (make-hash-table 'equal))))
       
-  (define (the-version-cache) (namespace-variable-value VER-CACHE-NAME))
-  
-  (define (pkg->diamond-key pkg)
-    (cons (pkg-name pkg) (pkg-route pkg)))
+  (define (the-version-cache)    (namespace-variable-value VER-CACHE-NAME))
+  (define (pkg->diamond-key pkg) (cons (pkg-name pkg) (pkg-route pkg)))
   
   (define (add-pkg-to-diamond-registry! pkg)
     (let ((orig (hash-table-get (the-version-cache)
@@ -207,18 +207,21 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
   ; resolves the given request. Returns a name corresponding to the module in the correct
   ; environment
   (define (planet-resolve spec module-path stx)
-    (match-let* ([(file-name pkg-spec path ...) (cdr spec)]
-                 [pspec (pkg-spec->full-pkg-spec pkg-spec stx)]
-                 [pkg (or (get-linkage module-path pspec)
-                          (add-linkage! module-path pspec
-                                        (or
-                                         (get-package-from-cache pspec)
-                                         (get-package-from-server pspec)
-                                         (raise (make-exn:fail
-                                                 "Could not find matching package"
-                                                 (current-continuation-marks))))))])
-      (add-pkg-to-diamond-registry! pkg)
-      (do-require file-name path module-path stx pkg)))
+    (match (cdr spec)
+      [(file-name pkg-spec path ...)
+       (match-let*
+           ([pspec (pkg-spec->full-pkg-spec pkg-spec stx)]
+            [pkg (or (get-linkage module-path pspec)
+                     (add-linkage! module-path pspec
+                                   (or
+                                    (get-package-from-cache pspec)
+                                    (get-package-from-server pspec)
+                                    (raise (make-exn:fail
+                                            "Could not find matching package"
+                                            (current-continuation-marks))))))])
+         (add-pkg-to-diamond-registry! pkg)
+         (do-require file-name path module-path stx pkg))]
+      [_ (raise-syntax-error 'require (format "Illegal PLaneT invocation: ~e" (cdr spec)) stx)]))
   
   ; pkg-spec->full-pkg-spec : PKG-SPEC syntax -> FULL-PKG-SPEC
   (define (pkg-spec->full-pkg-spec spec stx)
@@ -235,9 +238,7 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
            [('+ (? number? min))            (pkg min #f)]
            [('- (? number? min))            (pkg 0   min)]))]
       [_ (raise-syntax-error 'require (format "Invalid PLaneT package specifier: ~e" spec) stx)]))
-  
-  
-    
+
   ; ==========================================================================================
   ; PHASE 2: CACHE SEARCH
   ; If there's no linkage, there might still be an appropriate cached module.
@@ -254,16 +255,17 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
                  
   ; get-package-from-server : FULL-PKG-SPEC -> PKG | #f
   ; downloads and installs the given package from the PLaneT server and installs it in the cache,
-  ; then returns a path to it
+  ; then returns a path to it 
   (define (get-package-from-server pkg)
     (with-handlers
-        ([exn:fail? (lambda (e) (raise (make-exn:fail
-                                        (format 
-                                         "Error downloading module from PLaneT server: ~a"
-                                         (exn-message e))
-                                        (exn-continuation-marks e))))])
+        ([exn:fail? (lambda (e) 
+                      (raise (make-exn:fail
+                              (format 
+                               "Error downloading module from PLaneT server: ~a"
+                               (exn-message e))
+                              (exn-continuation-marks e))))])
       (match (download-package pkg)
-        [(#t str maj min) (install-pkg pkg str maj min)]
+        [(#t path maj min) (install-pkg pkg path maj min)]
         [(#f str) #f])))
   
   (require (lib "date.ss"))
@@ -276,15 +278,17 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
                 (date-minute date)
                 (date-second date)))))
   
-  ; install-pkg : FULL-PKG-SPEC string Nat Nat -> PKG
-  ; install the given pkg to the planet cache and return a path to it as a string
-  (define (install-pkg pkg str maj min)
-    (let ((the-dir 
-           (apply 
-            build-path 
-            (CACHE-DIR) 
-            (append (pkg-spec-path pkg) 
-                    (list (pkg-spec-name pkg) (number->string maj) (number->string min))))))
+  ; install-pkg : FULL-PKG-SPEC path[file] Nat Nat -> PKG
+  ; install the given pkg to the planet cache and return a PKG representing the installed file
+  (define (install-pkg pkg path maj min)
+    (let* ((owner (car (pkg-spec-path pkg)))
+           (extra-path (cdr (pkg-spec-path pkg)))
+           (the-dir 
+            (apply 
+             build-path 
+             (CACHE-DIR) 
+             (append (pkg-spec-path pkg) 
+                     (list (pkg-spec-name pkg) (number->string maj) (number->string min))))))
       (if (directory-exists? the-dir)
           (raise (make-exn:fail 
                   "Internal PLaneT error: trying to install already-installed package" 
@@ -297,17 +301,18 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
                         (with-handlers ((exn:fail:filesystem? (lambda (e) null-out)))
                           (open-output-file (LOG-FILE) 'append))
                         null-out)))
-              (parameterize ((current-output-port outport))
+              (parameterize ([current-output-port outport])
                 (printf "\n============= Installing ~a on ~a =============\n" 
                         (pkg-spec-name pkg)
                         (current-time))
-                (run-single-installer str (lambda () the-dir))))
-            (make-pkg (pkg-spec-name pkg) (pkg-spec-path pkg) maj min the-dir)))))
+                (install-planet-package path the-dir (list owner (pkg-spec-name pkg) extra-path maj min)))
+            
+            (make-pkg (pkg-spec-name pkg) (pkg-spec-path pkg) maj min the-dir))))))
          
   ; download-package : FULL-PKG-SPEC -> RESPONSE
-  ; RESPONSE ::= (list #f string) | (list #t string Nat Nat)
+  ; RESPONSE ::= (list #f string) | (list #t path[file] Nat Nat)
   ; downloads the given package and returns (list bool string): if bool is #t,
-  ; the string is the name of a file that contains the package. If bool is #f, the package
+  ; the path is to a file that contains the package. If bool is #f, the package
   ; didn't exist and the string is the server's informative message.
   ; raises an exception if some protocol failure occurs in the download process
   (define (download-package pkg)
@@ -348,8 +353,10 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
            (read-char ip) ; throw away newline that must be present
            (read-n-chars-to-file bytes ip filename)
            (list #t filename maj min))]
-        [(_ 'error 'malformed-request (? string? msg)) (state:abort (format "Internal error (malformed request): ~a" msg))]
-        [(_ 'get 'error 'not-found (? string? msg)) (state:failure (format "Server had no matching package: ~a" msg))]
+        [(_ 'error 'malformed-request (? string? msg)) 
+         (state:abort (format "Internal error (malformed request): ~a" msg))]
+        [(_ 'get 'error 'not-found (? string? msg)) 
+         (state:failure (format "Server had no matching package: ~a" msg))]
         [(_ 'get 'error (? symbol? code) (? string? msg))
          (state:abort (format "Unknown error ~a receiving package: ~a" code msg))]
         [bad-response  (state:abort (format "Server returned malformed message: ~e" bad-response))]))
@@ -367,17 +374,17 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
   ; Handles interaction with the module system
   ; ==========================================================================================
   
-  ; do-require : string string syntax PKG -> symbol
+  ; do-require : string path syntax PKG -> symbol
   ; requires the given filename, which must be a module, in the given path.
   (define (do-require file path module-path stx pkg)
-    (parameterize ((current-load-relative-directory (pkg-path pkg)))
-      ((current-module-name-resolver) 
-       `(file ,(path->string (apply build-path (pkg-path pkg) (append path (list file)))))
+    (parameterize ((current-load-relative-directory (pkg-path pkg)))    
+      ((current-module-name-resolver)
+       (apply build-path (pkg-path pkg) (append path (list file)))
        module-path
        stx)))
 
-; ============================================================
-; UTILITY
-; A few small utility functions
+  ; ============================================================
+  ; UTILITY
+  ; A few small utility functions
 
-(define (last l) (car (reverse l))))
+  (define (last l) (car (last-pair l))))

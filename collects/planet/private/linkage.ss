@@ -2,7 +2,9 @@
   
   (require "planet-shared.ss"
            "../config.ss"
-           (lib "file.ss"))
+           (lib "file.ss")
+           (lib "match.ss")
+           (prefix srfi1: (lib "1.ss" "srfi")))
 
   (provide get-linkage add-linkage!)
   
@@ -41,7 +43,7 @@
                                     (pkg-route pkg)
                                     (pkg-maj pkg)
                                     (pkg-min pkg)
-                                    (pkg-path pkg))))
+                                    (path->bytes (pkg-path pkg)))))
              (begin
                (hash-table-put! (get-linkage-table) key pkg-as-list)
                (with-output-to-file (LINKAGE-FILE)
@@ -56,7 +58,11 @@
                        (get-linkage-table)
                        (get-key module-specifier pkg-specifier)
                        (lambda () #f))))
-      (if pkg-fields (apply make-pkg pkg-fields) #f)))
+      (if pkg-fields 
+          (with-handlers ([exn:fail? (lambda (e) #f)])
+            (match-let ([(name route maj min pathbytes) pkg-fields])
+              (make-pkg name route maj min (bytes->path pathbytes))))
+          #f)))
   
   ; get-key : symbol FULL-PKG-SPEC -> LINKAGE-KEY
   ; produces a linkage key for the given pair.
@@ -110,8 +116,9 @@
   ; desuffix : path -> path
   ; removes the suffix from the given file
   (define (desuffix file)
-    (let ((extension (filename-extension file))
-          (filename-str (path->string file)))
-      (if extension
-          (string->path (substring filename-str 0 (- (string-length filename-str) (+ (string-length extension) 1))))
+    (let ((the-extension    (filename-extension file))
+          (the-bytes (path->bytes file)))
+      (if the-extension
+          (bytes->path (list->bytes (reverse (srfi1:drop (reverse (bytes->list the-bytes))
+                                                         (add1 (bytes-length the-extension))))))
           file))))

@@ -1098,6 +1098,21 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(Scheme_Object *obj, int n,  Scheme
 
     
     
+  } else if ((n >= 1) && istype_symset_changeAlign(p[0], NULL)) {
+    int x0;
+    int x1;
+
+    
+    if (n != 2) 
+      scheme_wrong_count("wx:style-delta%::set-delta (size case)", 2, 2, n, p);
+    x0 = unbundle_symset_changeAlign(p[0], "wx:style-delta%::set-delta (size case)");
+    x1 = unbundle_symset_align(p[1], "wx:style-delta%::set-delta (size case)");
+
+    
+    r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDelta(x0, x1);
+
+    
+    
   } else  {
     int x0;
     int x1;
@@ -1608,7 +1623,21 @@ static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOff(Scheme_Object *obj,
 static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxStyleDelta *realobj;
-  if ((n >= 1) && istype_symset_changeSize(p[0], NULL)) {
+  if ((n >= 1) && istype_symset_changeAlign(p[0], NULL)) {
+    int x0;
+    int x1;
+
+    
+    if (n != 2) 
+      scheme_wrong_count("wx:style-delta%::initialization (size case)", 2, 2, n, p);
+    x0 = unbundle_symset_changeAlign(p[0], "wx:style-delta%::initialization (size case)");
+    x1 = unbundle_symset_align(p[1], "wx:style-delta%::initialization (size case)");
+
+    
+    realobj = new os_wxStyleDelta(obj, x0, x1);
+    
+    
+  } else if ((n >= 1) && istype_symset_changeSize(p[0], NULL)) {
     int x0;
     int x1;
 

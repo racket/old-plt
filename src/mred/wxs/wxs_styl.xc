@@ -121,6 +121,7 @@
 @CREATORX (SYM[changeWeight],SYM[weight]); <> weight
 @CREATORX (SYM[changeUnderline],bool); <> underline
 @CREATORX (SYM[changeSize],int); <> size
+@CREATORX (SYM[changeAlign],SYM[align]); <> size
 
 @CLASSID wxTYPE_STYLE_DELTA
 
@@ -130,6 +131,7 @@
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeWeight],SYM[weight]); <> weight
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeUnderline],bool); <> underline
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeSize],int); <> size
+@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeAlign],SYM[align]); <> size
 
 @ "set-delta-face" : wxStyleDelta! SetDeltaFace(string);
 @ "set-delta-background" : wxStyleDelta! SetDeltaBackground(string); <> color name

@@ -274,7 +274,7 @@ zo:
 2k:
 	$(XMAKE) bin
 	cd gc2; $(XMAKE) all
-	cd gc2; $(XMAKE) $(MZBUILDDIR)mzscheme2k
+	cd gc2; $(XMAKE) ../$(MZBUILDDIR)mzscheme2k
 
 depend:
 	cd src; $(XMAKE) -e depend 

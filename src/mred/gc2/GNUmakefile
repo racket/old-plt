@@ -256,9 +256,6 @@ gc2/$(OBJDIR)/%.o: gc2/xsrc/%.c
 gc2/$(OBJDIR)/wxGC.o: ../wxcommon/wxGC.cxx
 	$(CXX) -DMZ_PRECISE_GC -I../mzscheme/gc2/ $(CPPFLAGS) -c -o $@ $<
 
-gc2/$(OBJDIR)/gc2.o: ../mzscheme/gc2/gc2.c
-	$(CC) -DMZ_PRECISE_GC -I../mzscheme/gc2/ $(CPPFLAGS) -c -o $@ $<
-
 XSRCS = gc2/xsrc/Window.cc \
   gc2/xsrc/Button.cc \
   gc2/xsrc/Frame.cc \
@@ -378,8 +375,7 @@ XSRCS = gc2/xsrc/Window.cc \
 
 XOBJS = ${XSRCS:gc2/xsrc/%.cc=gc2/$(OBJDIR)/%.o} \
   gc2/$(OBJDIR)/xcglue.o \
-  gc2/$(OBJDIR)/wxGC.o \
-  gc2/$(OBJDIR)/gc2.o
+  gc2/$(OBJDIR)/wxGC.o
 
 
 MZOBJS = ../mzscheme/gc2/$(MZOBJDIR)/salloc.o \
@@ -413,8 +409,8 @@ MZOBJS = ../mzscheme/gc2/$(MZOBJDIR)/salloc.o \
 	../mzscheme/gc2/$(MZOBJDIR)/syntax.o \
 	../mzscheme/gc2/$(MZOBJDIR)/type.o \
         ../mzscheme/gc2/$(MZOBJDIR)/unit.o \
-	../mzscheme/gc2/$(MZOBJDIR)/vector.o
-#	../mzscheme/gc2/$(MZOBJDIR)/gc2.o
+	../mzscheme/gc2/$(MZOBJDIR)/vector.o \
+	../mzscheme/gc2/$(MZOBJDIR)/gc2.o
 
 XWOBJS = ../wxxt/src/XWidgets/$(MZOBJDIR)/xwArrow.o \
     ../wxxt/src/XWidgets/$(MZOBJDIR)/xwCommon.o \
@@ -448,12 +444,12 @@ gc2/xsrc:
 	mkdir gc2/xsrc
 
 gc2/objects:
-	gc2/objects
+	mkdir gc2/objects
 
 gc2/$(OBJDIR):
 	mkdir gc2/$(OBJDIR)
 
 2k: gc2/xsrc gc2/objects gc2/$(OBJDIR)
-	cd ../mzscheme; $(MAKE) 2k
+	cd ../mzscheme; ./mzmake 2k
 	$(MAKE) all
 	$(MAKE) $(MRBUILDDIR)mred2k

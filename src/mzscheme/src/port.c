@@ -2969,7 +2969,7 @@ static long fd_get_string(Scheme_Input_Port *port,
 	
 	rgot = target_size;
 	
-	if (fip->texmode) {
+	if (fip->textmode) {
 	  ext_target = 0;
 	  target = fip->buffer;
 	  target_offset = 0;
@@ -4777,7 +4777,7 @@ static long mz_spawnv(char *command, const char * const *argv,
 static void close_subprocess_handle(void *sp, void *ignored)
 {
   Scheme_Subprocess *subproc = (Scheme_Subprocess *)sp;
-  CloseHandle(sp->handle);
+  CloseHandle(subproc->handle);
 }
 
 #endif /* WINDOWS_PROCESSES */
@@ -5194,7 +5194,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   subproc->handle = (void *)sc;
   subproc->pid = pid;
 # if defined(WINDOWS_PROCESSES)
-  scheme_add_finalizer(subproc, clsoe_subprocess_handle, NULL);
+  scheme_add_finalizer(subproc, close_subprocess_handle, NULL);
 # endif
 
 #define cons scheme_make_pair
@@ -5287,7 +5287,7 @@ static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
 static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
 {
   int show;
-  char *file, *dir;
+  char *dir;
 #ifdef WINDOWS_PROCESSES
 # define mzseSHOW(x) x
 #else
@@ -5317,7 +5317,7 @@ static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
     mzseCMP(SW_SHOWMINIMIZED);
     mzseCMP(SW_SHOWMINNOACTIVE);
     mzseCMP(SW_SHOWNA);
-    mzseCMP(SW_SHOWNOACTIVE);
+    mzseCMP(SW_SHOWNOACTIVATE);
     mzseCMP(SW_SHOWNORMAL);
 
     if (!show)
@@ -5333,8 +5333,8 @@ static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
     SHELLEXECUTEINFO se;
     int nplen, res;
 
-    nplen = strlen(file);
-    dir = scheme_normal_path_case(file, &nplen);
+    nplen = strlen(dir);
+    dir = scheme_normal_path_case(dir, &nplen);
 
     memset(&se, 0, sizeof(se));
     se.fMask = SEE_MASK_NOCLOSEPROCESS;
@@ -5354,7 +5354,7 @@ static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
 	subproc->type = scheme_subprocess_type;
 	subproc->handle = (void *)se.hProcess;
 	subproc->pid = 0;
-	scheme_add_finalizer(subproc, clsoe_subprocess_handle, NULL);
+	scheme_add_finalizer(subproc, close_subprocess_handle, NULL);
 
 	return (Scheme_Object *)subproc;
       } else
@@ -5365,6 +5365,7 @@ static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
 			  GetLastError());
       return NULL;
     }
+  }
 #else
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "shell-execute: not supported on this platform");

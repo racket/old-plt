@@ -1975,26 +1975,16 @@ static void break_console_reading_threads()
   }
 }
 
-static int mrconsole_getc(Scheme_Input_Port *ip, int *nonblock, int *eof_on_err)
+static long mrconsole_get_string(Scheme_Input_Port *ip, 
+				 char *buffer, long offset, long size,
+				 int nonblock)
 {
-  int result;
+  long result;
   Scheme_Object *pipe = (Scheme_Object *)ip->port_data;
   MrEdSchemeMessages("");
 
   add_console_reading();
-  result = scheme_getc(pipe);
-  remove_console_reading();
-  return result;
-}
-
-static int mrconsole_peekc(Scheme_Input_Port *ip)
-{
-  int result;
-  Scheme_Object *pipe = (Scheme_Object *)ip->port_data;
-  MrEdSchemeMessages("");
-
-  add_console_reading();
-  result = scheme_peekc(pipe);
+  result = scheme_get_string("console get-string", pipe, buffer, offset, size, nonblock ? 2 : 0, 0, 0);
   remove_console_reading();
   return result;
 }
@@ -2023,8 +2013,8 @@ static Scheme_Object *MrEdMakeStdIn(void)
 
   ip = scheme_make_input_port(scheme_make_port_type("mred-console-input-port"), 
 			      readp,
-			      mrconsole_getc,
-			      mrconsole_peekc,
+			      mrconsole_get_string,
+			      NULL,
 			      mrconsole_char_ready,
 			      mrconsole_close,
 			      NULL,
@@ -2033,7 +2023,7 @@ static Scheme_Object *MrEdMakeStdIn(void)
   return (Scheme_Object *)ip;
 }
 
-static void stdout_write(char *s, long d, long l, Scheme_Output_Port*)
+static long stdout_write(Scheme_Output_Port*, const char *s, long d, long l, int rarely_block)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
   MrEdSchemeMessages(NULL, s, d, l);
@@ -2046,6 +2036,7 @@ static void stdout_write(char *s, long d, long l, Scheme_Output_Port*)
   if (out)
     fwrite(s + d, l, 1, out);
 #endif
+  return l;
 }
 
 static Scheme_Object *MrEdMakeStdOut(void)
@@ -2057,7 +2048,7 @@ static Scheme_Object *MrEdMakeStdOut(void)
 						  NULL, NULL, NULL, 0);
 }
 
-static void stderr_write(char *s, long d, long l, Scheme_Output_Port*)
+static long stderr_write(Scheme_Output_Port*, const char *s, long d, long l, int rarely_block)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
   MrEdSchemeMessages(NULL, s, d, l);
@@ -2068,6 +2059,7 @@ static void stderr_write(char *s, long d, long l, Scheme_Output_Port*)
   if (mrerr)
     fwrite(s + d, l, 1, mrerr);
 #endif
+  return l;
 }
 
 static Scheme_Object *MrEdMakeStdErr(void)

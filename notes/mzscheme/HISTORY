@@ -2,6 +2,11 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.17
+In a syntax template, when an identifier has more ellipses
+ then in the pattern, inner ellipses bind more
+ tightly than the outer ellipses
+
 Version 299.16
 Inside MzScheme: added scheme_set_type_printer, scheme_print_bytes,
  and scheme_print_string

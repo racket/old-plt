@@ -1580,7 +1580,7 @@
   ;; Checks whether the given nesting matches a nesting in the
   ;; environment prototype, returning the prototype entry if it is
   ;; found, and signaling an error otherwise. If the prototype 
-  ;; entry can be unwrapped by one, it is, and the resulting
+  ;; entry should be unwrapped by one, it is, and the resulting
   ;; prototype is paired with #f. Otherwise, the prototype is left
   ;; alone and paired with #t.
   (-define ellipsis-sub-env
@@ -1589,15 +1589,16 @@
 			(let ([start (if (pair? proto)
 					 (car proto)
 					 proto)])
-			  (let loop ([c start] [n nesting])
+			  (let loop ([c start] [n nesting] [unwrap? (pair? proto)])
 			    (cond
 			     [(and (pair? c) (pair? n))
-			      (loop (car c) (car n))]
+			      (loop (car c) (car n) #t)]
 			     [(pair? n)
-			      (loop c (car n))]
+			      (loop c (car n) #f)]
 			     [(and (syntax? c) (syntax? n))
 			      (if (bound-identifier=? c n)
-				  (cons start (identifier? proto))
+				  (cons (if unwrap? start proto)
+					(not unwrap?))
 				  #f)]
 			     [else #f]))))
 		      proto-r)])

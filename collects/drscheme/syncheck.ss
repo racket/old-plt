@@ -12,6 +12,7 @@
            "default-code-style.ss"
            (lib "class.ss")
            (lib "list.ss")
+           (lib "toplevel.ss" "syntax")
            (prefix drscheme:arrow: "arrow.ss")
            (prefix fw: (lib "framework.ss" "framework"))
            (lib "mred.ss" "mred"))
@@ -813,6 +814,7 @@
                               (cleanup)
                               (custodian-shutdown-all user-custodian))))]
                         [else
+                         (eval-compile-time-part-of-top-level sexp)
                          (parameterize ([current-eventspace drs-eventspace])
                            (queue-callback
                             (lambda () ; =drs=

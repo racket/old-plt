@@ -448,6 +448,14 @@ int wxXRenderHere(void)
   return xrender_here;
 }
 
+#define WX_RENDER_CAN_SCALE 1
+#if RENDER_MAJOR < 1
+# if RENDER_MINOR < 6
+#  undef WX_RENDER_CAN_SCALE
+#  define WX_RENDER_CAN_SCALE 0
+# endif
+#endif
+
 #ifndef WX_USE_XFT
 # define WX_XR_PICTURE
 #else
@@ -576,7 +584,8 @@ Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *
     
     
     should_xrender= (wxXRenderHere()
-		     && (mask || (user_scale_x != 1.0) || (user_scale_y != 1.0))
+		     && (mask 
+			 || (WX_RENDER_CAN_SCALE && ((user_scale_x != 1.0) || (user_scale_y != 1.0))))
 		     && ((src->GetDepth() > 1)
 			 || ((rop == wxSOLID)
 			     && (!dcolor || (!dcolor->Red() && !dcolor->Green() && !dcolor->Blue())))));
@@ -593,7 +602,8 @@ Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *
     scaled_height = (int)YLOG2DEV(ydest + h) - ty;
 
     /* Handle scaling by creating a new, temporary bitmap: */
-    if (!should_xrender && ((scaled_width != (int)w) || (scaled_height != (int)h))) {
+    if ((!should_xrender || !WX_RENDER_CAN_SCALE)
+	&& ((scaled_width != (int)w) || (scaled_height != (int)h))) {
       int retval;
       src = ScaleBitmap(src, scaled_width, scaled_height, xsrc, ysrc, w, h, DPY, &tmp, &retval, 0, 0);
       if (!src)
@@ -742,6 +752,7 @@ Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *
 	XRenderSetPictureClipRegion(wxAPP_DISPLAY, destp, CURRENT_REG);
       }
 
+# if WX_RENDER_CAN_SCALE
       if ((scaled_width != (int)w) || (scaled_height != (int)h)) {
  	XTransform xform;
 	int ih = (int)h, iw = (int)w;
@@ -762,6 +773,7 @@ Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *
 	if (maskp)
 	  XRenderSetPictureTransform(wxAPP_DISPLAY, maskp, &xform);
       }
+# endif
 
       /* This is the actual blit. */
       XRenderComposite(wxAPP_DISPLAY,
@@ -805,6 +817,7 @@ Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *
 	DELETE_OBJ free_bmp;
       }
 
+# if WX_RENDER_CAN_SCALE
       if ((srcp || maskp) 
 	  && ((scaled_width != (int)w) || (scaled_height != (int)h))) {
 	XTransform xform;
@@ -826,6 +839,7 @@ Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *
 	if (maskp)
 	  XRenderSetPictureTransform(wxAPP_DISPLAY, maskp, &xform);
       }
+# endif
     } else {
 #endif
       /* Non-Xrender mode... */

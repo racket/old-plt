@@ -723,6 +723,7 @@ static wxFontStruct *wxLoadQueryNearestAAFont(const char *name,
     long ex_vals[2];
     int ex_pos = 0;
     XftMatrix rot;
+    int use_rot = 0;
 
     wt = ((weight == wxBOLD)
 	  ? XFT_WEIGHT_BOLD
@@ -758,9 +759,7 @@ static wxFontStruct *wxLoadQueryNearestAAFont(const char *name,
       XftMatrixInit(&rot);
       XftMatrixRotate(&rot, cos(angle), sin(angle));
       XftMatrixScale(&rot, scale_x, scale_y);
-      ex_vals[ex_pos] = (long)&rot;
-      ex_types[ex_pos] = XftTypeMatrix;
-      ex_tags[ex_pos++] = XFT_MATRIX;
+      use_rot = 1;
     }
     
     if (name) {
@@ -776,9 +775,15 @@ static wxFontStruct *wxLoadQueryNearestAAFont(const char *name,
 			    ex_tags[0], ex_types[0], ex_vals[0],
 			    ex_tags[1], ex_types[1], ex_vals[1],
 			    NULL);
-      
+
       pat = XftFontMatch(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), pat, &res);
       
+      if (use_rot) {
+	pat = XftPatternBuild(pat,
+			      XFT_MATRIX, XftTypeMatrix, &rot,
+			      NULL);
+      }
+
       fs = XftFontOpenPattern(wxAPP_DISPLAY, pat);
     } else
       fs = NULL;

@@ -430,7 +430,7 @@ static struct hostent *get_host_by_number(const char *address)
 {
   if (parse_numerical(address, &by_number_id)) {
 #ifdef HOST_RESULT_IS_ADDR
-    return (struct hostent *)by_number_host;
+    return (struct hostent *)by_number_id;
 #else
     by_number_array[0] = &by_number_id;
     by_number_host.h_addr_list = (char **)by_number_array;

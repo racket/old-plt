@@ -54,6 +54,10 @@
 ;
 ;  (pretty-print-handler v) - pretty-prints v if v is not #<void>
 ;
+;  (pretty-print-style symbol like-symbol) - informs pretty-print to use 
+;                                            for symbol the same style as
+;                                            currently used for like-symbol
+;
 ; TO INSTALL this pretty-printer into a MzScheme's read-eval-print loop,
 ;  load this file and evaluate:
 ;      (current-print pretty-print-handler)
@@ -69,6 +73,7 @@
 ;; size- and print-hook 8/22/96
 ;; real parameters 9/27/96
 ;; print-line parameter 8/18/97
+;; Added pretty-print-style 12/1/01
 
 (module pretty mzscheme
    (require)
@@ -86,7 +91,49 @@
 	   pretty-print-print-line
 	   pretty-print-show-inexactness
 	   pretty-print-exact-as-decimal
-	   pretty-print-.-symbol-without-bars)
+	   pretty-print-.-symbol-without-bars
+           pretty-print-style
+
+	   pretty-print-style-table?
+	   pretty-print-make-style-table
+	   pretty-print-current-style-table)
+
+   (define-struct pretty-print-style-table (hash))
+   (define pretty-print-make-style-table
+     (lambda (old-table)
+       (when old-table
+	 (unless (pretty-print-style-table? old-table)
+	   (raise-type-error
+	    'pretty-print-make-style-table 
+	    "pretty-print style table"
+	    old-table)))
+       (let ([ht (make-hash-table)])
+	 (when old-table
+	   (hash-table-for-each
+	    (pretty-print-style-table-hash old-table)
+	    (lambda (k v)
+	      (hash-table-put! ht k v))))
+	 (make-pretty-print-style-table ht))))
+
+   (define pretty-print-current-style-table 
+     (make-parameter 
+      (pretty-print-make-style-table #f)
+      (lambda (s)
+	(unless (pretty-print-style-table? s)
+	  (raise-type-error
+	   'pretty-print-current-style-table 
+	   "pretty-print style table"
+	   s))
+	s)))
+
+   (define pretty-print-style
+     (lambda (symbol like-symbol)
+       (let ([ht (pretty-print-style-table-hash 
+		  (pretty-print-current-style-table))])
+	 (let ((s (hash-table-get ht
+				  like-symbol
+				  (lambda () #f))))
+	   (hash-table-put! ht symbol (or s like-symbol))))))
 
    (define pretty-print-.-symbol-without-bars
      (make-parameter #f (lambda (x) (and x #t))))
@@ -762,31 +809,39 @@
 	 (define max-call-head-width 5)
 
 	 (define (style head)
-	   (case head
-	     ((lambda let* letrec define shared
-		      unless #%unless
-		      when #%when
-		      '|$\spadesuit$|
-		      #%lambda #%let* #%letrec #%define
-		      define-macro #%define-macro)
+	   (case (or (hash-table-get (pretty-print-style-table-hash
+				      (pretty-print-current-style-table))
+				     head
+                                     (lambda () #f))
+                     head)
+	     ((lambda define define-macro define-syntax
+		      syntax-rules
+		      shared
+		      unless when)
 	      pp-lambda)
-	     ((if set! #%if #%set!)
+	     ((if set! set!-values)
 	      pp-if)
-	     ((cond #%cond public private import export)
+	     ((cond case-lambda)
 	      pp-cond)
-	     ((case #%case) 
+	     ((case) 
 	      pp-case)
-	     ((and or #%and #%or link)
+	     ((and or import export require require-for-syntax provide link
+		   public private override rename inherit field init)
 	      pp-and)
-	     ((let #%let)
+	     ((let letrec let*
+		let-values letrec-values let*-values
+		let-syntax letrec-syntax
+		let-syntaxes letrec-syntaxes)
 	      pp-let)
-	     ((begin #%begin)
+	     ((begin begin0)
 	      pp-begin)
-	     ((do #%do)
+	     ((do letrec-syntaxes+values)
 	      pp-do)
 
-	     ((send class #%class) pp-class)
-	     ((send make-object) pp-make-object)
+	     ((send class syntax-case instantiate module)
+	      pp-class)
+	     ((make-object)
+	      pp-make-object)
 
 	     (else #f)))
 
@@ -851,3 +906,4 @@
 			 (number->string x)))))))]))
 
    )
+

@@ -77,7 +77,7 @@ to the original stdout of DrScheme.
                  (current-eval (add-debugging (current-eval)))
                  (error-print-source-location #f)
                  (read-decimal-as-inexact #f)
-                 (read-dot-as-symbol #t))))
+                 (read-accept-dot #f))))
             (super-on-execute settings run-in-user-thread))
           
           (define (set-printing-parameters thunk)

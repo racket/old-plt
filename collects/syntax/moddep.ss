@@ -11,7 +11,7 @@
 		   (read-accept-bar-quote #t)
 		   (read-accept-graph #t)
 		   (read-decimal-as-inexact #t)
-		   (read-dot-as-symbol #f)
+		   (read-accept-dot #t)
 		   (read-accept-quasiquote #t))
       (thunk)))
 

@@ -119,9 +119,9 @@
 			 (read p))
 		      exn:read?
 		      #f)
-		(list read-dot-as-symbol
+		(list read-accept-dot
 		      (list #t #f)
-		      '(let ([p (open-input-string "(1 .)")])
+		      '(let ([p (open-input-string "(1 . 2)")])
 			 (read p))
 		      exn:read?
 		      #f)

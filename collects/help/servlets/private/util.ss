@@ -5,9 +5,10 @@
 	   (lib "url.ss" "net")
            ; help-desk here gives load cycle
  	   (lib "finddoc.ss" "help" "private"))
-
+	
   (provide get-pref/default
 	   put-prefs
+	   cvs?
 	   search-height-default
 	   search-bg-default
 	   search-text-default
@@ -55,6 +56,10 @@
   ; xexpr ... -> xexpr
   (define (color-highlight . s)
     (apply color-with *the-highlight-color* s))
+
+  (define (cvs?)
+    (directory-exists? 
+     (build-path (collection-path "help") "CVS")))
 
   ; string string string -> xexpr
   ; man is manual name

@@ -3,13 +3,18 @@
 	 (lib "help-desk.ss" "help"))
 
 (require "private/hd-css.ss")
+(require "private/util.ss")
 
-(define doc-root (format "http://download.plt-scheme.org/doc/~a"
-			   (version)))
+(define doc-root "http://download.plt-scheme.org/doc")
 
 (define (no-manual manual label)
-  (let ([html-url (format "~a/~a/index.htm" doc-root manual)]
-	[plt-url (format "~a/bundles/~a-doc.plt" doc-root manual)])
+  (let* ([vno (version)]
+	 [html-url (format "~a/~a/html/~a/index.htm" 
+			  doc-root vno manual)]
+	 [plt-url (format "~a/~a/bundles/~a-doc.plt" 
+			  doc-root 
+			  (if (cvs?) "pre-release" vno)
+			  manual)])
     `(HTML
       (HEAD ,hd-css)
       (BODY ((BGCOLOR "white")) 
@@ -51,6 +56,9 @@
 				       bindings)
 	       (extract-binding/single 'name
 				       bindings))))
+
+
+
 
 	       
      

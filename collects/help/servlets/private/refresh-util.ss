@@ -5,6 +5,8 @@
 	   (lib "process.ss")
 	   (lib "etc.ss"))
 
+  (require "util.ss")
+
   (provide find/create-temporary-docs-dir
 	   refresh-docs-dir-base
 	   delete-directory/r
@@ -67,7 +69,14 @@
                         children)
               (delete-directory dir)))))
 
-  (define doc-url-format "http://download.plt-scheme.org/doc/pre-release/bundles/~a-doc.plt")
+  (define doc-url-format 
+    (string-append 
+     (format "http://download.plt-scheme.org/doc/~a"
+	     (if (cvs?)
+		 "pre-release"
+		 (version)))
+     "/bundles/~a-doc.plt"))
+
   (define (make-local-doc-filename tmp-dir stub)
     (build-path tmp-dir (format "~a-doc.plt" stub)))
       

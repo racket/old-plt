@@ -18,7 +18,7 @@
 
   (define (find-manuals)
     (let* ([sys-type (system-type)]
-	   [cvs-user? (directory-exists? (build-path (collection-path "help") "CVS"))]
+	   [cvs-user? (cvs?)]
            [doc-collection-path (with-handlers ([void (lambda (x) #f)])
                                   (collection-path "doc"))]
            [docs (let loop ([l (if doc-collection-path
@@ -163,7 +163,8 @@
 			   (car doc-pair)
 			   (hexify-string (cdr doc-pair))
 			   (cdr doc-pair)
-			   (if (file-exists? (build-path doc-collection-path (car doc-pair) "hdindex"))
+			   (if (file-exists? 
+				(build-path doc-collection-path (car doc-pair) "hdindex"))
 			       " (index installed)"
 			       "")))
 		 uninstalled)

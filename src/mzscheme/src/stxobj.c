@@ -2253,9 +2253,12 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
   
   if (SCHEME_PAIRP(v)) {
     Scheme_Object *first = NULL, *last = NULL, *p;
+    int cnt = 0;
     
     while (SCHEME_PAIRP(v)) {
       Scheme_Object *a;
+
+      cnt++;
 
       a = syntax_to_datum_inner(SCHEME_CAR(v), ht, with_marks, rns);
       
@@ -2271,6 +2274,15 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
     if (!SCHEME_NULLP(v)) {
       v = syntax_to_datum_inner(v, ht, with_marks, rns);
       SCHEME_CDR(last) = v;
+
+      if (with_marks > 1) {
+	/* v is a pair, and v's car might be a pair,
+	   which means that the datum->syntax part
+	   won't be able to detect that v is a "non-pair"
+	   terminal. Therefore, we communicate the
+	   length before the terminal to datum->syntax: */
+	first = scheme_make_pair(scheme_make_integer(cnt), first);
+      }
     }
     
     result = first;
@@ -2645,7 +2657,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     }
   }
 
-  if ((Scheme_Object *)SCHEME_HASHTP(stx_wraps)) {
+  if (SCHEME_HASHTP(stx_wraps)) {
     if (!SCHEME_PAIRP(o)) return NULL;
     wraps = SCHEME_CDR(o);
     o = SCHEME_CAR(o);
@@ -2666,8 +2678,17 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     if (SCHEME_NULLP(p) || SCHEME_STXP(p)) {
       result = o;
     } else {
+      int cnt = -1;
+      
+      if (wraps && SCHEME_INTP(SCHEME_CAR(o))) {
+	/* First element is the number of items
+	   before a non-null terminal: */
+	cnt = SCHEME_INT_VAL(SCHEME_CAR(o));
+	o = SCHEME_CDR(o);
+      }
+
       /* Build up a new list while converting elems */
-      while (SCHEME_PAIRP(o)) {
+      while (SCHEME_PAIRP(o) && cnt) {
 	Scheme_Object *a;
       
 	if (wraps) {
@@ -2695,6 +2716,8 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 	  first = p;
 	last = p;
 	o = SCHEME_CDR(o);
+
+	--cnt;
       }
       if (!SCHEME_NULLP(o)) {
 	o = datum_to_syntax_inner(o, stx_src, stx_wraps, ht);

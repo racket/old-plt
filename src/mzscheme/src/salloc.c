@@ -865,6 +865,124 @@ static void count_managed(Scheme_Custodian *m, int *c, int *a, int *u, int *t,
 }
 #endif
 
+#if defined(USE_TAGGED_ALLOCATION) || (defined(MZ_PRECISE_GC) && 0)
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+void scheme_print_tagged_value(const char *prefix, 
+			       void *v, int xtagged, unsigned long diff, int max_w,
+			       const char *suffix)
+{
+  char *type, *sep, diffstr[30];
+  long len;
+  
+  sep = "";
+  
+  if (!xtagged) {
+    type = scheme_write_to_string_w_max((Scheme_Object *)v, &len, max_w);
+    if (!scheme_strncmp(type, "#<thread", 8)) {
+      char buffer[256];
+      char *run, *sus, *kill, *clean, *all, *t2;
+      int state = ((Scheme_Thread *)v)->running, len2;
+	    
+      run = (state & MZTHREAD_RUNNING) ? "+run" : "";
+      sus = (state & MZTHREAD_SUSPENDED) ? "+suspended" : "";
+      kill = (state & MZTHREAD_KILLED) ? "+killed" : "";
+      clean = (state & MZTHREAD_NEED_KILL_CLEANUP) ? "+cleanup" : "";
+      all = !state ? "defunct" : "";
+
+      sprintf(buffer, "[%d=%s%s%s%s%s]",
+	      state, run, sus, kill, clean, all);
+
+      len2 = strlen(buffer);
+      t2 = (char *)scheme_malloc_atomic(len + len2 + 1);
+      memcpy(t2, type, len);
+      memcpy(t2 + len, buffer, len2 + 1);
+      len += len2;
+      type = t2;
+    } else if (!scheme_strncmp(type, "#<namespace", 11)) {
+      char buffer[256];
+      char *t2;
+      int len2;
+	    
+      sprintf(buffer, "[%ld:%.100s]",
+	      ((Scheme_Env *)v)->phase,
+	      (((Scheme_Env *)v)->module
+	       ? SCHEME_SYM_VAL(((Scheme_Env *)v)->module->modname)
+	       : "(toplevel)"));
+	    
+      len2 = strlen(buffer);
+      t2 = (char *)scheme_malloc_atomic(len + len2 + 1);
+      memcpy(t2, type, len);
+      memcpy(t2 + len, buffer, len2 + 1);
+      len += len2;
+      type = t2;
+    }  else if (!scheme_strncmp(type, "#<global-variable-code", 22)) {
+      Scheme_Bucket *b = (Scheme_Bucket *)v;
+      Scheme_Object *bsym = (Scheme_Object *)b->key;
+      char *t2;
+      int len2;
+
+      len2 = SCHEME_SYM_LEN(bsym);
+      t2 = scheme_malloc_atomic(len + len2 + 3);
+      memcpy(t2, type, len);
+      memcpy(t2 + len + 1, SCHEME_SYM_VAL(bsym), len2);
+      t2[len] = '[';
+      t2[len + 1 + len2] = ']';
+      t2[len + 1 + len2 + 1] = 0;
+      len += len2;
+      type = t2;
+    } else if (!scheme_strncmp(type, "#<hash-table:", 13)) {
+      char buffer[256];
+      char *t2;
+      int len2;
+      int htype, size, count;
+
+      if (SCHEME_HASHTP((Scheme_Object *)v)) {
+	htype = 'n';
+	size = ((Scheme_Hash_Table *)v)->size;
+	count = ((Scheme_Hash_Table *)v)->count;
+      } else {
+	htype = 'b';
+	size = ((Scheme_Bucket_Table *)v)->size;
+	count = ((Scheme_Bucket_Table *)v)->count;
+      }
+
+      sprintf(buffer, "[%c:%d:%d]", htype, count, size);
+
+      len2 = strlen(buffer);
+      t2 = scheme_malloc_atomic(len + len2 + 1);
+      memcpy(t2, type, len);
+      memcpy(t2 + len, buffer, len2 + 1);
+      len += len2;
+      type = t2;
+    }
+
+    sep = "=";
+  } else if (scheme_external_dump_type) {
+    type = scheme_external_dump_type(v);
+    if (*type)
+      sep = ":";
+  } else
+    type = "";
+  
+  if (diff)
+    sprintf(diffstr, "%lx", diff);
+  
+  scheme_console_printf("%s%lx%s%s%s%s%s", 
+			prefix,
+			v, 
+			sep,
+			type,
+			diff ? "+" : "",
+			diff ? diffstr : "",
+			suffix);
+}
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+#endif
+
 Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 {
   Scheme_Object *result = scheme_void;
@@ -1112,10 +1230,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
       for (i = 1, j = 2; i < l; i++, j += 2) {
 	void *v = ps[j];
 	unsigned long diff = (unsigned long)ps[j + 1];
-	char *type, *sep, diffstr[30];
 	struct GC_Set *home;
-
-	sep = "";
 
 	home = GC_set(v);
 	if (home
@@ -1123,104 +1238,9 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 		|| (home == tagged_atomic)
 		|| (home == tagged_uncollectable)
 		|| (home == tagged_eternal))) {
-	  long len;
-	  type = scheme_write_to_string_w_max((Scheme_Object *)v, &len, max_w);
-	  if (!scheme_strncmp(type, "#<thread", 8)) {
-	    char buffer[256];
-	    char *run, *sus, *kill, *clean, *all, *t2;
-	    int state = ((Scheme_Thread *)v)->running, len2;
-	    
-	    run = (state & MZTHREAD_RUNNING) ? "+run" : "";
-	    sus = (state & MZTHREAD_SUSPENDED) ? "+suspended" : "";
-	    kill = (state & MZTHREAD_KILLED) ? "+killed" : "";
-	    clean = (state & MZTHREAD_NEED_KILL_CLEANUP) ? "+cleanup" : "";
-	    all = !state ? "defunct" : "";
-
-	    sprintf(buffer, "[%d=%s%s%s%s%s]",
-		    state, run, sus, kill, clean, all);
-
-	    len2 = strlen(buffer);
-	    t2 = (char *)scheme_malloc_atomic(len + len2 + 1);
-	    memcpy(t2, type, len);
-	    memcpy(t2 + len, buffer, len2 + 1);
-	    len += len2;
-	    type = t2;
-	  } else if (!scheme_strncmp(type, "#<namespace", 11)) {
-	    char buffer[256];
-	    char *t2;
-	    int len2;
-	    
-	    sprintf(buffer, "[%ld:%.100s]",
-		    ((Scheme_Env *)v)->phase,
-		    (((Scheme_Env *)v)->module
-		     ? SCHEME_SYM_VAL(((Scheme_Env *)v)->module->modname)
-		     : "(toplevel)"));
-	    
-	    len2 = strlen(buffer);
-	    t2 = (char *)scheme_malloc_atomic(len + len2 + 1);
-	    memcpy(t2, type, len);
-	    memcpy(t2 + len, buffer, len2 + 1);
-	    len += len2;
-	    type = t2;
-	  }  else if (!scheme_strncmp(type, "#<global-variable-code", 22)) {
-	    Scheme_Bucket *b = (Scheme_Bucket *)v;
-	    Scheme_Object *bsym = (Scheme_Object *)b->key;
-	    char *t2;
-	    int len2;
-
-	    len2 = SCHEME_SYM_LEN(bsym);
-	    t2 = scheme_malloc_atomic(len + len2 + 3);
-	    memcpy(t2, type, len);
-	    memcpy(t2 + len + 1, SCHEME_SYM_VAL(bsym), len2);
-	    t2[len] = '[';
-	    t2[len + 1 + len2] = ']';
-	    t2[len + 1 + len2 + 1] = 0;
-	    len += len2;
-	    type = t2;
-	  } else if (!scheme_strncmp(type, "#<hash-table:", 13)) {
-	    char buffer[256];
-	    char *t2;
-	    int len2;
-	    int htype, size, count;
-
-	    if (SCHEME_HASHTP((Scheme_Object *)v)) {
-	      htype = 'n';
-	      size = ((Scheme_Hash_Table *)v)->size;
-	      count = ((Scheme_Hash_Table *)v)->count;
-	    } else {
-	      htype = 'b';
-	      size = ((Scheme_Bucket_Table *)v)->size;
-	      count = ((Scheme_Bucket_Table *)v)->count;
-	    }
-
-	    sprintf(buffer, "[%c:%d:%d]", htype, count, size);
-
-	    len2 = strlen(buffer);
-	    t2 = scheme_malloc_atomic(len + len2 + 1);
-	    memcpy(t2, type, len);
-	    memcpy(t2 + len, buffer, len2 + 1);
-	    len += len2;
-	    type = t2;
-	  }
-
-	  sep = "=";
-	} else if (scheme_external_dump_type) {
-	  type = scheme_external_dump_type(v);
-	  if (*type)
-	    sep = ":";
+	  scheme_print_tagged_value("\n  ->", v, 0, diff, max_w, "");
 	} else
-	  type = "";
-
-	if (diff)
-	  sprintf(diffstr, "%lx", diff);
-
-	scheme_console_printf("%s->%lx%s%s%s%s", 
-			      "\n  ",
-			      v, 
-			      sep,
-			      type,
-			      diff ? "+" : "",
-			      diff ? diffstr : "");
+	  scheme_print_tagged_value("\n  ->", v, 1, diff, max_w, "");
       }
       scheme_console_printf("\n");
     }

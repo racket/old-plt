@@ -395,6 +395,7 @@
 						  ((#\nul)      "nul")
 						  ((#\page)     "page")
 						  ((#\tab)      "tab")
+						  ((#\vtab)      "vtab")
 						  ((#\newline)  "newline")
 						  (else        (make-string 1 obj)))
 						(out "#\\" col))))

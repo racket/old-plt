@@ -67,7 +67,8 @@
 	       (raise-type-error 'compile-file "string or output-port" dest))
        (unless (and (list flags) 
 		    (andmap (lambda (s) 
-			      (member s '(expand-load 
+			      (member s '(ignore-macro-definitions
+					  expand-load 
 					  use-current-namespace
 					  ignore-require-library
 					  expand-require-library
@@ -80,7 +81,8 @@
        (unless (and (procedure? preprocessor)
 		    (procedure-arity-includes? preprocessor 2))
 	       (raise-type-error 'compile-file "procedure (arity 2)" preprocessor))
-       (let ([expand-load? (member 'expand-load flags)]
+       (let ([do-macros? (not (member 'ignore-macro-definitions flags))]
+	     [expand-load? (member 'expand-load flags)]
 	     [expand-rl? (member 'expand-require-library flags)]
 	     [ignore-rl? (member 'ignore-require-library flags)]
 	     [expand-only? (member 'only-expand flags)]
@@ -101,7 +103,7 @@
 				 s)))])
 	 (let ([out (if (output-port? dest)
 			dest
-			(open-output-file dest 'replace))])
+			(open-output-file dest 'truncate))])
 	   (dynamic-wind
 	    void
 	    (lambda ()
@@ -250,11 +252,12 @@
 						    #%define-macro
 						    #%define-id-macro 
 						    #%define-expansion-time)
-						  (do-defmacro s)]
+						  (and do-macros? (do-defmacro s))]
 						 [(begin-expansion-time
 						   #%begin-expansion-time)
-						  (parameterize ([current-namespace namespace])
-								(eval s))
+						  (when do-macros?
+							(parameterize ([current-namespace namespace])
+								      (eval s)))
 						  #f]
 						 [(load #%load)
 						  (and expand-load? (do-load s #f #f))]

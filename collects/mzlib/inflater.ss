@@ -1,6 +1,6 @@
 
 (unit/sig mzlib:inflate^ 
-   (import)
+  (import)
 #|
 
 /* inflate.c -- Not copyrighted 1992 by Mark Adler
@@ -116,29 +116,31 @@
    error in the data. */
 |#
 
-(define-struct huft (e b v))
+  (define-struct huft (e b v))
+  
+  (define (huft-copy dest src)
+    (set-huft-e! dest (huft-e src))
+    (set-huft-b! dest (huft-b src))
+    (set-huft-v! dest (huft-v src)))
+  
+  (define (step start < end add1 f)
+    (let loop ([i start])
+      (when (< i end)
+	(f i)
+	(loop (add1 i)))))
+  
+  (define (subvector v offset)
+    (let* ([len (- (vector-length v) offset)]
+	   [new (make-vector len)])
+      (step 0 < len add1 
+	    (lambda (i) 
+	      (vector-set! new i (vector-ref v (+ i offset)))))
+      new))
 
-(define (huft-copy dest src)
-  (set-huft-e! dest (huft-e src))
-  (set-huft-b! dest (huft-b src))
-  (set-huft-v! dest (huft-v src)))
-
- (define (step start < end add1 f)
-   (let loop ([i start])
-     (when (< i end)
-       (f i)
-       (loop (add1 i)))))
-
- (define (subvector v offset)
-   (let* ([len (- (vector-length v) offset)]
-	  [new (make-vector len)])
-     (step 0 < len add1 (lambda (i) (vector-set! new i (vector-ref v (+ i offset)))))
-     new))
-
-(define (build-vector n p)
-  (let ([v (make-vector n)])
-    (step 0 < n add1 (lambda (i) (vector-set! v i (p i))))
-    v))
+  (define (build-vector n p)
+    (let ([v (make-vector n)])
+      (step 0 < n add1 (lambda (i) (vector-set! v i (p i))))
+      v))
 
 #|
 /* The inflate algorithm uses a sliding 32K byte window on the uncompressed
@@ -147,48 +149,61 @@
    and'ing with 0x7fff (32K-1). */
 |#
 
-(define input-port #f)
-(define output-port #f)
+  (define WSIZE 32768)
+  
+  (define border 
+    (vector 
+     16 17 18 0 8 7 9 6 10 5 11 4 12 3 13 2 14 1 15))
+  
+  (define cplens
+    (vector
+     3 4 5 6 7 8 9 10 11 13 15 17 19 23 27 31
+     35 43 51 59 67 83 99 115 131 163 195 227 258 0 0))
+  ; /* note: see note #13 above about the 258 in this list. */
+  (define cplext
+    (vector
+     0 0 0 0 0 0 0 0 1 1 1 1 2 2 2 2
+     3 3 3 3 4 4 4 4 5 5 5 5 0 99 99)) ; /* 99==invalid */
+  (define cpdist
+    (vector
+     1 2 3 4 5 7 9 13 17 25 33 49 65 97 129 193
+     257 385 513 769 1025 1537 2049 3073 4097 6145
+     8193 12289 16385 24577))
+  (define cpdext
+    (vector
+     0 0 0 0 1 1 2 2 3 3 4 4 5 5 6 6
+     7 7 8 8 9 9 10 10 11 11
+     12 12 13 13))
+  
+  (define mask_bits
+    (vector
+     #x0000
+     #x0001 #x0003 #x0007 #x000f #x001f #x003f #x007f #x00ff
+     #x01ff #x03ff #x07ff #x0fff #x1fff #x3fff #x7fff #xffff))
 
-(define WSIZE 32768)
+  (define lbits 9) ; /* bits in base literal/length lookup table */
+  (define dbits 6) ; /* bits in base distance lookup table */
 
-(define slide (make-string WSIZE))
-(define wp 0)
 
-(define (flush-output len)
-  ; write out the data
-  (if (= len WSIZE)
-      (display slide output-port)
-      (display (substring slide 0 len) output-port)))
+  ; /* If BMAX needs to be larger than 16, then h and x[] should be ulg. */
+  (define BMAX 16) ; /* maximum bit length of any code (16 for explode) */
+  (define N_MAX 288) ; /* maximum number of codes in any set */
 
-(define (check-flush)
-  (when (= wp WSIZE)
-	(flush-output WSIZE)
-	(set! wp 0)))
+(define (inflate input-port output-port)
 
-(define border 
- (vector 
-  16 17 18 0 8 7 9 6 10 5 11 4 12 3 13 2 14 1 15))
-
-(define cplens
- (vector
-  3 4 5 6 7 8 9 10 11 13 15 17 19 23 27 31
-  35 43 51 59 67 83 99 115 131 163 195 227 258 0 0))
-; /* note: see note #13 above about the 258 in this list. */
-(define cplext
- (vector
-  0 0 0 0 0 0 0 0 1 1 1 1 2 2 2 2
-  3 3 3 3 4 4 4 4 5 5 5 5 0 99 99)) ; /* 99==invalid */
-(define cpdist
- (vector
-  1 2 3 4 5 7 9 13 17 25 33 49 65 97 129 193
-  257 385 513 769 1025 1537 2049 3073 4097 6145
-  8193 12289 16385 24577))
-(define cpdext
- (vector
-  0 0 0 0 1 1 2 2 3 3 4 4 5 5 6 6
-  7 7 8 8 9 9 10 10 11 11
-  12 12 13 13))
+  (define slide (make-string WSIZE))
+  (define wp 0)
+  
+  (define (flush-output len)
+    ; write out the data
+    (if (= len WSIZE)
+	(display slide output-port)
+	(display (substring slide 0 len) output-port)))
+  
+  (define (check-flush)
+    (when (= wp WSIZE)
+      (flush-output WSIZE)
+      (set! wp 0)))
 
 #|
 /* Macros for inflate() bit peeking and grabbing.
@@ -222,29 +237,23 @@
  */
 |#
 
-(define bb 0) ;                         /* bit buffer */
-(define bk 0) ;                    /* bits in bit buffer */
-
-(define mask_bits
- (vector
-  #x0000
-  #x0001 #x0003 #x0007 #x000f #x001f #x003f #x007f #x00ff
-  #x01ff #x03ff #x07ff #x0fff #x1fff #x3fff #x7fff #xffff))
-
-(define (NEEDBITS n)
-  (when (< bk n)
-	(set! bb (+ bb (arithmetic-shift (char->integer (read-char input-port)) bk)))
-	(set! bk (+ bk 8))
-	(NEEDBITS n)))
-(define (DUMPBITS n)
-  (set! bb (arithmetic-shift bb (- n)))
-  (set! bk (- bk n)))
-
-(define (GETBITS n)
-  (NEEDBITS n)
-  (begin0
-    bb
-    (DUMPBITS n)))
+  (define bb 0) ;                         /* bit buffer */
+  (define bk 0) ;                    /* bits in bit buffer */
+  
+  (define (NEEDBITS n)
+    (when (< bk n)
+      (set! bb (+ bb (arithmetic-shift (char->integer (read-char input-port)) bk)))
+      (set! bk (+ bk 8))
+      (NEEDBITS n)))
+  (define (DUMPBITS n)
+    (set! bb (arithmetic-shift bb (- n)))
+    (set! bk (- bk n)))
+  
+  (define (GETBITS n)
+    (NEEDBITS n)
+    (begin0
+      bb
+      (DUMPBITS n)))
     
 #|
 /*
@@ -280,22 +289,14 @@
  */
 |#
 
-(define lbits 9) ;          /* bits in base literal/length lookup table */
-(define dbits 6) ;          /* bits in base distance lookup table */
-
-
-; /* If BMAX needs to be larger than 16, then h and x[] should be ulg. */
-(define BMAX 16) ;         /* maximum bit length of any code (16 for explode) */
-(define N_MAX 288) ;       /* maximum number of codes in any set */
-
-(define (huft_build
-	 b ; int vector           /* code lengths in bits (all assumed <= BMAX) */ 
-	 n ;             /* number of codes (assumed <= N_MAX) */
-	 s ;             /* number of simple-valued codes (0..s-1) */
-	 d ; int vector                /* list of base values for non-simple codes */
-	 e ; int vector                /* list of extra bits for non-simple codes */
-	 m) ; int                /* maximum lookup bits, returns actual */
-  ; return: new-t new-m ok?
+  (define (huft_build
+	   b ; int vector           /* code lengths in bits (all assumed <= BMAX) */ 
+	   n ;             /* number of codes (assumed <= N_MAX) */
+	   s ;             /* number of simple-valued codes (0..s-1) */
+	   d ; int vector                /* list of base values for non-simple codes */
+	   e ; int vector                /* list of extra bits for non-simple codes */
+	   m) ; int                /* maximum lookup bits, returns actual */
+    ; return: new-t new-m ok?
 
 #|
 /* Given a list of code lengths and a maximum table size, make a set of
@@ -304,579 +305,565 @@
    case), two if the input is invalid (all zero length codes or an
    oversubscribed set of lengths), and three if not enough memory. */
 |#
-   (define c (make-vector (add1 BMAX) 0))
-   (define x (make-vector (add1 BMAX)))
-   (define v (make-vector N_MAX))
+    (define c (make-vector (add1 BMAX) 0))
+    (define x (make-vector (add1 BMAX)))
+    (define v (make-vector N_MAX))
+    
+    (define final-y 0)
+    (define t-result #f)
+    
+    ; (printf "n: ~s~n" n)
 
-   (define final-y 0)
-   (define t-result #f)
-
-   ; (printf "n: ~s~n" n)
-
-  (let/cc 
-   return
+    (let/ec return
 
 #|
-   (if (= n 270)
-       (step 0 < n add1
+(if (= n 270)
+    (step 0 < n add1
 	     (lambda (i) (printf "b[~a] = ~a~n" i (vector-ref b i)))))
 |#
 
-   (step 0 < n add1
-	 (lambda (i) 
-	   (let ([pos (vector-ref b i)])
-	     (vector-set! c pos (add1 (vector-ref c pos))))))
+      (step 0 < n add1
+	    (lambda (i) 
+	      (let ([pos (vector-ref b i)])
+		(vector-set! c pos (add1 (vector-ref c pos))))))
 
-   (when (= n (vector-ref c 0))
-	 ; (printf "zero~n")
-	 (return #f 0 #t))
+      (when (= n (vector-ref c 0))
+	; (printf "zero~n")
+	(return #f 0 #t))
 
 #|
-   (when (= n 270)
-	 (step 0 <= BMAX add1
-	       (lambda (i)
-		 (printf "c[~s]: ~s~n" i (vector-ref c i)))))
+(when (= n 270)
+  (step 0 <= BMAX add1
+	(lambda (i)
+	  (printf "c[~s]: ~s~n" i (vector-ref c i)))))
 |#
 
-   ; /* Find minimum and maximum length, bound m-result by those */
-   (let* ([j ; min-code-length
-	   (let loop ([j 1])
-	     (cond
-	      [(> j BMAX) j]
-	      [(positive? (vector-ref c j)) j]
-	      [else (loop (add1 j))]))]
-	  [k j]
-	  [i ; max-code-length
-	   (let loop ([i BMAX])
-	     (cond
-	      [(zero? i) 0]
-	      [(positive? (vector-ref c i)) i]
-	      [else (loop (sub1 i))]))]
-	  [g i]
-	  [l (min (max m j) i)]
-	  [m-result l])
-     ; (printf "min: ~s max: ~s~n" k g)
-     ; /* Adjust last length count to fill out codes, if needed */
-     (let-values ([(y j)
-		   (let loop ([y (arithmetic-shift 1 j)][j j])
-		     (if (>= j i)
-			 (values y j)
-			 (let ([new-y (- y (vector-ref c j))])
-			   (if (negative? new-y) 
-			       (return null m-result #f)
-			       (loop (* new-y 2) (add1 j))))))])
-		 ; (printf "loop y: ~s~n" y)
-		 (let ([y (- y (vector-ref c i))])
-		   (when (negative? y)
-			 (return #f m-result #f))
-		   ; (printf "set c[~s] ~s + ~s~n" i (vector-ref c i) y)
-		   (vector-set! c i (+ (vector-ref c i) y))
-		   (set! final-y y)))
-     ; /* Generate starting offsets into the value table for each length */
-     (vector-set! x 1 0)
-     (let* ([j (let loop ([i (sub1 i)][x-pos 2][c-pos 1][j 0])
-		 (if (zero? i)
-		     j
-		     (let ([v (vector-ref c c-pos)])
-		       (vector-set! x x-pos (+ j v))
-		       (loop (sub1 i) (add1 x-pos) (add1 c-pos) (+ j v)))))])
-       ; /* Make a table of values in order of bit lengths */
-       (let loop ([i 0][b-pos 0])
-	 (let ([j (vector-ref b b-pos)])
-	   (unless (zero? j)
-		   (let ([xj (vector-ref x j)])
-		     (vector-set! x j (add1 xj))
-		     (vector-set! v xj i)))
-	   (let ([new-i (add1 i)])
-	     (when (< new-i n)
-	       (loop new-i (add1 b-pos))))))
+      ; /* Find minimum and maximum length, bound m-result by those */
+      (let* ([j ; min-code-length
+	      (let loop ([j 1])
+		(cond
+		  [(> j BMAX) j]
+		  [(positive? (vector-ref c j)) j]
+		  [else (loop (add1 j))]))]
+	     [k j]
+	     [i ; max-code-length
+	      (let loop ([i BMAX])
+		(cond
+		  [(zero? i) 0]
+		  [(positive? (vector-ref c i)) i]
+		  [else (loop (sub1 i))]))]
+	     [g i]
+	     [l (min (max m j) i)]
+	     [m-result l])
+	; (printf "min: ~s max: ~s~n" k g)
+	; /* Adjust last length count to fill out codes, if needed */
+	(let-values ([(y j)
+		      (let loop ([y (arithmetic-shift 1 j)][j j])
+			(if (>= j i)
+			    (values y j)
+			    (let ([new-y (- y (vector-ref c j))])
+			      (if (negative? new-y) 
+				  (return null m-result #f)
+				  (loop (* new-y 2) (add1 j))))))])
+	  ; (printf "loop y: ~s~n" y)
+	  (let ([y (- y (vector-ref c i))])
+	    (when (negative? y)
+	      (return #f m-result #f))
+	    ; (printf "set c[~s] ~s + ~s~n" i (vector-ref c i) y)
+	    (vector-set! c i (+ (vector-ref c i) y))
+	    (set! final-y y)))
+	; /* Generate starting offsets into the value table for each length */
+	(vector-set! x 1 0)
+	(let* ([j (let loop ([i (sub1 i)][x-pos 2][c-pos 1][j 0])
+		    (if (zero? i)
+			j
+			(let ([v (vector-ref c c-pos)])
+			  (vector-set! x x-pos (+ j v))
+			  (loop (sub1 i) (add1 x-pos) (add1 c-pos) (+ j v)))))])
+	  ; /* Make a table of values in order of bit lengths */
+	  (let loop ([i 0][b-pos 0])
+	    (let ([j (vector-ref b b-pos)])
+	      (unless (zero? j)
+		(let ([xj (vector-ref x j)])
+		  (vector-set! x j (add1 xj))
+		  (vector-set! v xj i)))
+	      (let ([new-i (add1 i)])
+		(when (< new-i n)
+		  (loop new-i (add1 b-pos))))))
+	  
+	  ; /* Generate the Huffman codes and for each, make the table entries */
+	  (vector-set! x 0 0) ; /* first Huffman code is zero */
+	  (let ([v-pos 0] ; /* grab values in bit order */
+		[i 0]     ; /* the Huffman code of length k bits for value *p */
+		[h -1]    ; /* no tables yet--level -1 */
+		[w (- l)] ; /* bits decoded == (l * h) */
+		[u (make-vector BMAX)] ; /* table stack */
+		[q null]  ; /* points to current table */
+		[z 0]     ; /* number of entries in current table */
+		[r (make-huft 0 0 0)]) ; /* table entry for structure assignment */
+	    ; /* go through the bit lengths (k already is bits in shortest code) */
+	    (let k-loop ([k k])
+	      ; (printf "k: ~s~n" k)
+	      (when (<= k g)
+		(let ([a (vector-ref c k)])
+		  (let a-loop ([a (sub1 a)])
+		    (unless (negative? a)
+		      ; (printf "a: ~s~n" a)
+		      ; /* here i is the Huffman code of length k bits for value *p */
+		      ; /* make tables up to required level */
+		      (let kwl-loop ()
+			(when (> k (+ w l))
+			  (set! h (add1 h))
+			  (set! w (+ w l)) ; /* previous table always l bits */
+			  
+			  ; /* compute minimum size table less than or equal to l bits */
+			  (set! z (min (- g w) l)) ; /* upper limit on table size */
 
-       ; /* Generate the Huffman codes and for each, make the table entries */
-       (vector-set! x 0 0) ; /* first Huffman code is zero */
-       (let ([v-pos 0] ; /* grab values in bit order */
-	     [i 0]     ; /* the Huffman code of length k bits for value *p */
-	     [h -1]    ; /* no tables yet--level -1 */
-	     [w (- l)] ; /* bits decoded == (l * h) */
-	     [u (make-vector BMAX)] ; /* table stack */
-	     [q null]  ; /* points to current table */
-	     [z 0]     ; /* number of entries in current table */
-	     [r (make-huft 0 0 0)]) ; /* table entry for structure assignment */
-	 ; /* go through the bit lengths (k already is bits in shortest code) */
-	 (let k-loop ([k k])
-	   ; (printf "k: ~s~n" k)
-	  (when (<= k g)
-	   (let ([a (vector-ref c k)])
-	     (let a-loop ([a (sub1 a)])
-	       (unless (negative? a)
-		  ; (printf "a: ~s~n" a)
-		  ; /* here i is the Huffman code of length k bits for value *p */
-		  ; /* make tables up to required level */
-		  (let kwl-loop ()
-		    (when (> k (+ w l))
-		       (set! h (add1 h))
-		       (set! w (+ w l)) ; /* previous table always l bits */
-
-		       ; /* compute minimum size table less than or equal to l bits */
-		       (set! z (min (- g w) l)) ; /* upper limit on table size */
-
-		       ; (printf "z: ~s k: ~s w: ~s~n" z k w)
-
-		       (let* ([j (- k w)]
-			      [f (arithmetic-shift 1 j)])
-			 (when (> f (add1 a)) ; /* try a k-w bit table */
-			    ; /* too few codes for k-w bit table */
-			    (set! f (- f a 1)) ; /* deduct codes from patterns left */
-			    ; /* try smaller tables up to z bits */
-			    (let loop ([c-pos k])
-			      (set! j (add1 j))
-			      (when (< j z)
-				(set! f (* f 2))
-				(let* ([c-pos (add1 c-pos)]
-				       [cv (vector-ref c c-pos)])
-				  (if (<= f cv)
-				      (void) ; /* enough codes to use up j bits */
-				      (begin
-					(set! f (- f cv)) ; /* else deduct codes from patterns */
-					(loop c-pos)))))))
-			 (set! z (arithmetic-shift 1 j)) ; /* table entries for j-bit table */
-
-			 ; /* allocate and link in new table */
-			 ; (printf "alloc: ~a~n" z)
-			 (set! q (build-vector z (lambda (i) (make-huft 0 0 0))))
-
-			 (when (not t-result)
-			       (set! t-result q))
-
-			 (vector-set! u h q)
-
-			 ; /* connect to last table, if there is one */
-			 (unless (zero? h)
-			   (vector-set! x h i) ; /* save pattern for backing up */
-			   (set-huft-b! r l) ; /* bits to dump before this table */
-			   (set-huft-e! r (+ j 16)); /* bits in this table */
-			   (set-huft-v! r q) ; /* pointer to this table */
-			   (set! j (arithmetic-shift i (- l w)))
-			   ; /* connect to last table: */
-			   (huft-copy (vector-ref (vector-ref u (sub1 h)) j) r))) 
-					     
-		       (kwl-loop)))
-
-		  (set-huft-b! r (- k w)) ; cast uch  (- k w) if needed
-		  (if (>= v-pos n)
-		      (set-huft-e! r 99) ; /* out of values--invalid code */
-		      (let ([vv (vector-ref v v-pos)])
-			; (printf "*p: ~s s: ~s~n" vv s)
-			(if (< vv s)
+			  ; (printf "z: ~s k: ~s w: ~s~n" z k w)
+			  
+			  (let* ([j (- k w)]
+				 [f (arithmetic-shift 1 j)])
+			    (when (> f (add1 a)) ; /* try a k-w bit table */
+			      ; /* too few codes for k-w bit table */
+			      (set! f (- f a 1)) ; /* deduct codes from patterns left */
+			      ; /* try smaller tables up to z bits */
+			      (let loop ([c-pos k])
+				(set! j (add1 j))
+				(when (< j z)
+				  (set! f (* f 2))
+				  (let* ([c-pos (add1 c-pos)]
+					 [cv (vector-ref c c-pos)])
+				    (if (<= f cv)
+					(void) ; /* enough codes to use up j bits */
+					(begin
+					  (set! f (- f cv)) ; /* else deduct codes from patterns */
+					  (loop c-pos)))))))
+			    (set! z (arithmetic-shift 1 j)) ; /* table entries for j-bit table */
+			    
+			    ; /* allocate and link in new table */
+			    ; (printf "alloc: ~a~n" z)
+			    (set! q (build-vector z (lambda (i) (make-huft 0 0 0))))
+			    
+			    (when (not t-result)
+			      (set! t-result q))
+			    
+			    (vector-set! u h q)
+			    
+			    ; /* connect to last table, if there is one */
+			    (unless (zero? h)
+			      (vector-set! x h i) ; /* save pattern for backing up */
+			      (set-huft-b! r l) ; /* bits to dump before this table */
+			      (set-huft-e! r (+ j 16)); /* bits in this table */
+			      (set-huft-v! r q) ; /* pointer to this table */
+			      (set! j (arithmetic-shift i (- l w)))
+			      ; /* connect to last table: */
+			      (huft-copy (vector-ref (vector-ref u (sub1 h)) j) r))) 
+			  
+			  (kwl-loop)))
+		      
+		      (set-huft-b! r (- k w)) ; cast uch  (- k w) if needed
+		      (if (>= v-pos n)
+			  (set-huft-e! r 99) ; /* out of values--invalid code */
+			  (let ([vv (vector-ref v v-pos)])
+			    ; (printf "*p: ~s s: ~s~n" vv s)
+			    (if (< vv s)
+				(begin
+				  (set-huft-e! r (if (< vv 256) 16 15)) ; /* 256 is end-of-block code */
+				  (set-huft-v! r vv)) ; /* simple code is just the value */
+				(begin
+				  (set-huft-e! r (vector-ref e (- vv s))) ; /* non-simple--look up in lists */
+				  (set-huft-v! r (vector-ref d (- vv s)))))
+			    (set! v-pos (add1 v-pos))))
+		      ; /* fill code-like entries with r */
+		      ; (printf "i: ~s w: ~s k: ~s~n" i w k)
+		      (let ([f (arithmetic-shift 1 (- k w))]) ; /* i repeats in table every f entries */
+			(let loop ([j (arithmetic-shift i (- w))])
+			  (when (< j z)
+			    (huft-copy (vector-ref q j) r)
+			    (loop (+ j f)))))
+		      ; /* backwards increment the k-bit code i */
+		      (let loop ([j (arithmetic-shift 1 (sub1 k))])
+			(if (positive? (bitwise-and i j))
 			    (begin
-			      (set-huft-e! r (if (< vv 256) 16 15)) ; /* 256 is end-of-block code */
-			      (set-huft-v! r vv)) ; /* simple code is just the value */
-			    (begin
-			      (set-huft-e! r (vector-ref e (- vv s))) ; /* non-simple--look up in lists */
-			      (set-huft-v! r (vector-ref d (- vv s)))))
-			(set! v-pos (add1 v-pos))))
-		  ; /* fill code-like entries with r */
-		  ; (printf "i: ~s w: ~s k: ~s~n" i w k)
-		  (let ([f (arithmetic-shift 1 (- k w))]) ; /* i repeats in table every f entries */
-		    (let loop ([j (arithmetic-shift i (- w))])
-		      (when (< j z)
-			 (huft-copy (vector-ref q j) r)
-			 (loop (+ j f)))))
-		  ; /* backwards increment the k-bit code i */
-		  (let loop ([j (arithmetic-shift 1 (sub1 k))])
-		    (if (positive? (bitwise-and i j))
-			(begin
-			  (set! i (bitwise-xor i j))
-			  (loop (arithmetic-shift j -1)))
-			(set! i (bitwise-xor i j))))
-		  ; /* backup over finished tables */
-		  (let loop ()
-		    (unless (= (vector-ref x h) (bitwise-and i (sub1 (arithmetic-shift 1 w))))
-			    (set! h (sub1 h)) ; /* don't need to update q */
-			    (set! w (- w l))
-			    (loop)))
+			      (set! i (bitwise-xor i j))
+			      (loop (arithmetic-shift j -1)))
+			    (set! i (bitwise-xor i j))))
+		      ; /* backup over finished tables */
+		      (let loop ()
+			(unless (= (vector-ref x h) (bitwise-and i (sub1 (arithmetic-shift 1 w))))
+			  (set! h (sub1 h)) ; /* don't need to update q */
+			  (set! w (- w l))
+			  (loop)))
+		      
+		      (a-loop (sub1 a))))
+		  (k-loop (add1 k)))))
+	    
+	    ; /* Return #f as third if we were given an incomplete table */t
+	    ; (printf "done: ~s ~s~n" final-y g)
+	    (values t-result m-result (not (and (not (zero? final-y))
+						(not (= g 1))))))))))
+  
+  (define (inflate_codes
+	   tl ; vector of hufts ; /* literal/length tables */
+	   td ; vector of hufts ; /* distance decoder tables */
+	   bl ; /* number of bits decoded by tl */
+	   bd) ; /* number of bits decoded by td[] */
+    ; /* inflate (decompress) the codes in a deflated (compressed) block.
+    ;    Return an error code or zero if it all goes ok. */
 
-		  (a-loop (sub1 a))))
-	     (k-loop (add1 k)))))
+    ; /* inflate the coded data */
 
-	 ; /* Return #f as third if we were given an incomplete table */t
-	 ; (printf "done: ~s ~s~n" final-y g)
-	 (values t-result m-result (not (and (not (zero? final-y))
-					     (not (= g 1))))))))))
+    ; /* precompute masks for speed */
+    (define ml (vector-ref mask_bits bl))
+    (define md (vector-ref mask_bits bd))
+    (define t (void))
+    (define e 0)
+    (define n 0)
+    (define d 0)
+    
+    (let/ec return
 
-(define (inflate_codes
-	 tl ; vector of hufts ; /* literal/length tables */
-	 td ; vector of hufts ; /* distance decoder tables */
-	 bl ; /* number of bits decoded by tl */
-	 bd) ; /* number of bits decoded by td[] */
-; /* inflate (decompress) the codes in a deflated (compressed) block.
-;    Return an error code or zero if it all goes ok. */
+      (define (jump-to-next)
+	(let loop ()
+	  (when (= e 99)
+	    (return #f))
+	  (DUMPBITS (huft-b t))
+	  (set! e (- e 16))
+	  (NEEDBITS e)
+	  (set! t (vector-ref (huft-v t) (bitwise-and bb (vector-ref mask_bits e))))
+	  (set! e (huft-e t))
+	  (when (> e 16)
+	    (loop))))
+      
+      (let loop () ; /* do until end of block */
+	(NEEDBITS bl)
+	(set! t (vector-ref tl (bitwise-and bb ml)))
+	; (printf "t->e: ~s t->b: ~s~n" (huft-e t) (huft-b t))
+	(set! e (huft-e t))
+	(if (> e 16)
+	    (jump-to-next))
+	(DUMPBITS (huft-b t))
+	; (printf "e: ~s~n" e)
+	(if (= e 16) ; /* then it's a literal */
+	    (begin
+	      (string-set! slide wp (integer->char (huft-v t)))
+	      (set! wp (add1 wp))
+	      (check-flush))
+	    (begin ; /* it's an EOB or a length */
+	      ; /* exit if end of block */
+	      (when (= e 15)
+		(return #t))
+	      
+	      ; /* get length of block to copy */
+	      (NEEDBITS e)
+	      (set! n (+ (huft-v t) (bitwise-and bb (vector-ref mask_bits e))))
+	      (DUMPBITS e)
+	      ; (printf "n: ~s bb: ~s md: ~s~n" n bb md)
+	      
+	      ; /* decode distance of block to copy */
+	      (NEEDBITS bd)
+	      (set! t (vector-ref td (bitwise-and bb md)))
+	      ; (printf "t->e: ~s t->b: ~s~n" (huft-e t) (huft-b t))
+	      (set! e (huft-e t))
+	      ; (printf "e: ~s~n" e)
+	      (when (> e 16)
+		(jump-to-next))
+	      (DUMPBITS (huft-b t))
+	      ; (printf "e: ~s~n" e)
+	      
+	      (NEEDBITS e)
+	      (set! d (modulo (- wp (huft-v t) (bitwise-and bb (vector-ref mask_bits e))) WSIZE))
+	      (DUMPBITS e)
+	      
+	      ; (printf "wp: ~s t->v: ~s d: ~s~n" wp (huft-v t) d)
+	      
+	      ; /* do the copy */
+	      (let loop ()
+		(set! d (bitwise-and d (sub1 WSIZE)))
+		(set! e (min n (- WSIZE (max d wp))))
+		(set! n (- n e))
+		(let loop ()
+		  (string-set! slide wp (string-ref slide d))
+		  (set! wp (add1 wp))
+		  (set! d (add1 d))
+		  (set! e (sub1 e))
+		  (unless (zero? e)
+		    (loop)))
+		(check-flush)
+		(unless (zero? n)
+		  (loop)))))
+	(loop))))
+  
+  (define (inflate_stored)
+    ; /* "decompress" an inflated type 0 (stored) block. */
+    
+    (let/ec return
 
-  ; /* inflate the coded data */
+      ; /* go to byte boundary */
+      (DUMPBITS (bitwise-and bk 7))
+      
+      ; /* get the length and its complement */
+      (NEEDBITS 16)
+      (let ([n (bitwise-and bb #xffff)])
+	(DUMPBITS 16)
+	(NEEDBITS 16)
+	(unless (= n (bitwise-and bb #xffff))
+	  (return #f)) ; /* error in compressed data */
+	(DUMPBITS 16)
+	
+	; /* read and output the compressed data */
+	(let loop ([n n])
+	  (when (positive? n)
+	    (NEEDBITS 8)
+	    (string-set! slide wp (integer->char (bitwise-and bb #xff)))
+	    (set! wp (add1 wp))
+	    (check-flush)
+	    (DUMPBITS 8)
+	    (loop (sub1 n))))
+	
+	#t)))
 
-  ; /* precompute masks for speed */
-  (define ml (vector-ref mask_bits bl))
-  (define md (vector-ref mask_bits bd))
-  (define t (void))
-  (define e 0)
-  (define n 0)
-  (define d 0)
+  (define (inflate_fixed)
+    ; /* decompress an inflated type 1 (fixed Huffman codes) block.  We should
+    ;    either replace this with a custom decoder, or at least precompute the
+    ;    Huffman tables. */
 
-  (let/cc
-   return
+    (define l (make-vector 288))
+    
+    (step 0 < 144 add1 (lambda (i) (vector-set! l i 8)))
+    (step 144 < 256 add1 (lambda (i) (vector-set! l i 9)))
+    (step 256 < 280 add1 (lambda (i) (vector-set! l i 7)))
+    (step 280 < 288 add1 (lambda (i) (vector-set! l i 8)))
+    
+    (let-values ([(tl bl ok?)
+		  (huft_build l 288 257 cplens cplext 7)])
+      
+      (if (not ok?)
+	  #f
+	  (begin
+	    (step 0 < 30 add1 (lambda (i) (vector-set! l i 5)))
+	    (let-values ([(td bd ok?)
+			  (huft_build l 30 0 cpdist cpdext 5)])
+	      (if (not ok?)
+		  #f
+		  ; /* decompress until an end-of-block code */
+		  (inflate_codes tl td bl bd)))))))
 
-   (define (jump-to-next)
-     (let loop ()
-       (when (= e 99)
-	     (return #f))
-       (DUMPBITS (huft-b t))
-       (set! e (- e 16))
-       (NEEDBITS e)
-       (set! t (vector-ref (huft-v t) (bitwise-and bb (vector-ref mask_bits e))))
-       (set! e (huft-e t))
-       (when (> e 16)
-	     (loop))))
+  (define (inflate_dynamic)
+    ; /* decompress an inflated type 2 (dynamic Huffman codes) block. */
 
-   (let loop () ; /* do until end of block */
-     (NEEDBITS bl)
-     (set! t (vector-ref tl (bitwise-and bb ml)))
-     ; (printf "t->e: ~s t->b: ~s~n" (huft-e t) (huft-b t))
-     (set! e (huft-e t))
-     (if (> e 16)
-	 (jump-to-next))
-     (DUMPBITS (huft-b t))
-     ; (printf "e: ~s~n" e)
-     (if (= e 16) ; /* then it's a literal */
-	 (begin
-	   (string-set! slide wp (integer->char (huft-v t)))
-	   (set! wp (add1 wp))
-	   (check-flush))
-	 (begin ; /* it's an EOB or a length */
-	   ; /* exit if end of block */
-	   (when (= e 15)
-		 (return #t))
+    (let/ec return
 
-	   ; /* get length of block to copy */
-	   (NEEDBITS e)
-	   (set! n (+ (huft-v t) (bitwise-and bb (vector-ref mask_bits e))))
-	   (DUMPBITS e)
-	   ; (printf "n: ~s bb: ~s md: ~s~n" n bb md)
+      ; /* read in table lengths */
+      ; (define junk1 (begin (NEEDBITS 5) (printf "~s ~s~n" bb bk)))
+      (define nl (+ 257 (bitwise-and (GETBITS 5) #x1f)))
+      ; (define junk2 (begin (NEEDBITS 5) (printf "~s ~s~n" bb bk)))
+      (define nd (+ 1 (bitwise-and (GETBITS 5) #x1f)))
+      ; (define junk3 (begin (NEEDBITS 4) (printf "~s ~s~n" bb bk)))
+      (define nb (+ 4 (bitwise-and (GETBITS 4) #xf)))
 
-	   ; /* decode distance of block to copy */
-	   (NEEDBITS bd)
-	   (set! t (vector-ref td (bitwise-and bb md)))
-	   ; (printf "t->e: ~s t->b: ~s~n" (huft-e t) (huft-b t))
-	   (set! e (huft-e t))
-	   ; (printf "e: ~s~n" e)
-	   (when (> e 16)
-		 (jump-to-next))
-	   (DUMPBITS (huft-b t))
-	   ; (printf "e: ~s~n" e)
+      ; (define junk8 (printf "~s ~s ~s~n" nl nd nb))
 
-	   (NEEDBITS e)
-	   (set! d (modulo (- wp (huft-v t) (bitwise-and bb (vector-ref mask_bits e))) WSIZE))
-	   (DUMPBITS e)
+      (define ll (make-vector (+ 286 30)))
+      (define i 0)
+      (define l 0)
 
-	   ; (printf "wp: ~s t->v: ~s d: ~s~n" wp (huft-v t) d)
-
-	   ; /* do the copy */
-	   (let loop ()
-	     (set! d (bitwise-and d (sub1 WSIZE)))
-	     (set! e (min n (- WSIZE (max d wp))))
-	     (set! n (- n e))
-	     (let loop ()
-	       (string-set! slide wp (string-ref slide d))
-	       (set! wp (add1 wp))
-	       (set! d (add1 d))
-	       (set! e (sub1 e))
-	       (unless (zero? e)
-		  (loop)))
-	     (check-flush)
-	     (unless (zero? n)
-		(loop)))))
-     (loop))))
-
-(define (inflate_stored)
-  ; /* "decompress" an inflated type 0 (stored) block. */
-
-  (let/cc
-   return
-
-   ; /* go to byte boundary */
-   (DUMPBITS (bitwise-and bk 7))
-
-   ; /* get the length and its complement */
-   (NEEDBITS 16)
-   (let ([n (bitwise-and bb #xffff)])
-     (DUMPBITS 16)
-     (NEEDBITS 16)
-     (unless (= n (bitwise-and bb #xffff))
-	(return #f)) ; /* error in compressed data */
-     (DUMPBITS 16)
-
-     ; /* read and output the compressed data */
-     (let loop ([n n])
-       (when (positive? n)
-	 (NEEDBITS 8)
-	 (string-set! slide wp (integer->char (bitwise-and bb #xff)))
-	 (set! wp (add1 wp))
-	 (check-flush)
-	 (DUMPBITS 8)
-	 (loop (sub1 n))))
-     
-     #t)))
-
-(define (inflate_fixed)
-#|
-/* decompress an inflated type 1 (fixed Huffman codes) block.  We should
-   either replace this with a custom decoder, or at least precompute the
-   Huffman tables. */
-|#
-
-   (define l (make-vector 288))
-   
-   (step 0 < 144 add1 (lambda (i) (vector-set! l i 8)))
-   (step 144 < 256 add1 (lambda (i) (vector-set! l i 9)))
-   (step 256 < 280 add1 (lambda (i) (vector-set! l i 7)))
-   (step 280 < 288 add1 (lambda (i) (vector-set! l i 8)))
-
-   (let-values ([(tl bl ok?)
-		 (huft_build l 288 257 cplens cplext 7)])
-   
-     (if (not ok?)
-	 #f
-	 (begin
-	   (step 0 < 30 add1 (lambda (i) (vector-set! l i 5)))
-	   (let-values ([(td bd ok?)
-			 (huft_build l 30 0 cpdist cpdext 5)])
-	     (if (not ok?)
-		 #f
-		 ; /* decompress until an end-of-block code */
-		 (inflate_codes tl td bl bd)))))))
-
-(define (inflate_dynamic)
-  ; /* decompress an inflated type 2 (dynamic Huffman codes) block. */
-
- (let/cc 
-  return
-
-  ; /* read in table lengths */
-  ; (define junk1 (begin (NEEDBITS 5) (printf "~s ~s~n" bb bk)))
-  (define nl (+ 257 (bitwise-and (GETBITS 5) #x1f)))
-  ; (define junk2 (begin (NEEDBITS 5) (printf "~s ~s~n" bb bk)))
-  (define nd (+ 1 (bitwise-and (GETBITS 5) #x1f)))
-  ; (define junk3 (begin (NEEDBITS 4) (printf "~s ~s~n" bb bk)))
-  (define nb (+ 4 (bitwise-and (GETBITS 4) #xf)))
-
-  ; (define junk8 (printf "~s ~s ~s~n" nl nd nb))
-
-  (define ll (make-vector (+ 286 30)))
-  (define i 0)
-  (define l 0)
-
-  (if (or (> nl 286) (> nd 30))
-      #f ; /* bad lengths */
-      (begin
-	; /* read in bit-length-code lengths */
-	(step 0 < nb add1 
-	      (lambda (j) 
-		(vector-set! ll (vector-ref border j) (bitwise-and (GETBITS 3) 7))))
-	(step nb < 19 add1 
-	      (lambda (j) 
-		(vector-set! ll (vector-ref border j) 0)))
-
-	; /* build decoding table for trees--single level, 7 bit lookup */
-	(let-values ([(tl bl ok?)
-		      (huft_build ll 19 19 null null 7)])
-	   (if (not ok?)
-	       #f
-	       (begin
-		 ; /* read in literal and distance code lengths */
-		 (let ([n (+ nl nd)]
-		       [m (vector-ref mask_bits bl)])
-		   ; (printf "bl: ~s~n" bl)
-		   (set! i 0)
-		   (set! l 0)
-		   (let loop ()
-		     (when (< i n)
-			(NEEDBITS bl)
-			(let* ([pos (bitwise-and bb m)]
-			       [td (vector-ref tl pos)]
-			       [dmp (huft-b td)]
-			       [j (huft-v td)]
-			       [set-lit
-				(lambda (j l)
-				  (when (> (+ i j) n)
-					(return #f))
-				  (let loop ([j j])
-				    (unless (zero? j)
+      (if (or (> nl 286) (> nd 30))
+	  #f ; /* bad lengths */
+	  (begin
+	    ; /* read in bit-length-code lengths */
+	    (step 0 < nb add1 
+		  (lambda (j) 
+		    (vector-set! ll (vector-ref border j) (bitwise-and (GETBITS 3) 7))))
+	    (step nb < 19 add1 
+		  (lambda (j) 
+		    (vector-set! ll (vector-ref border j) 0)))
+	    
+	    ; /* build decoding table for trees--single level, 7 bit lookup */
+	    (let-values ([(tl bl ok?)
+			  (huft_build ll 19 19 null null 7)])
+	      (if (not ok?)
+		  #f
+		  (begin
+		    ; /* read in literal and distance code lengths */
+		    (let ([n (+ nl nd)]
+			  [m (vector-ref mask_bits bl)])
+		      ; (printf "bl: ~s~n" bl)
+		      (set! i 0)
+		      (set! l 0)
+		      (let loop ()
+			(when (< i n)
+			  (NEEDBITS bl)
+			  (let* ([pos (bitwise-and bb m)]
+				 [td (vector-ref tl pos)]
+				 [dmp (huft-b td)]
+				 [j (huft-v td)]
+				 [set-lit
+				  (lambda (j l)
+				    (when (> (+ i j) n)
+				      (return #f))
+				    (let loop ([j j])
+				      (unless (zero? j)
 					(vector-set! ll i l)
 					(set! i (add1 i))
 					(loop (sub1 j)))))])
-			  (DUMPBITS dmp)
-			  ; (printf "pos: ~s j: ~s l: ~s i: ~s~n" pos j l i)
-			  (cond
-			   [(< j 16) ; /* length of code in bits (0..15) */
-			    (vector-set! ll i j)
-			    (set! l j) ; /* save last length in l */
-			    (set! i (add1 i))]
-			   [(= j 16) ; /* repeat last length 3 to 6 times */
-			    (let ([j (+ 3 (bitwise-and (GETBITS 2) 3))])
-			      (set-lit j l))]
-			   [(= j 17) ; /* 3 to 10 zero length codes */
-			    (let ([j (+ 3 (bitwise-and (GETBITS 3) 7))])
-			      (set-lit j 0)
-			      (set! l 0))]
-			   [else ; /* j == 18: 11 to 138 zero length codes */
-			    (let ([j (+ 11 (bitwise-and (GETBITS 7) #x7f))])
-			      (set-lit j 0)
-			      (set! l 0))]))
-			(loop)))
+			    (DUMPBITS dmp)
+			    ; (printf "pos: ~s j: ~s l: ~s i: ~s~n" pos j l i)
+			    (cond
+			      [(< j 16) ; /* length of code in bits (0..15) */
+			       (vector-set! ll i j)
+			       (set! l j) ; /* save last length in l */
+			       (set! i (add1 i))]
+			      [(= j 16) ; /* repeat last length 3 to 6 times */
+			       (let ([j (+ 3 (bitwise-and (GETBITS 2) 3))])
+				 (set-lit j l))]
+			      [(= j 17) ; /* 3 to 10 zero length codes */
+			       (let ([j (+ 3 (bitwise-and (GETBITS 3) 7))])
+				 (set-lit j 0)
+				 (set! l 0))]
+			      [else ; /* j == 18: 11 to 138 zero length codes */
+			       (let ([j (+ 11 (bitwise-and (GETBITS 7) #x7f))])
+				 (set-lit j 0)
+				 (set! l 0))]))
+			  (loop)))
+		      
+		      ; /* build the decoding tables for literal/length and distance codes */
+		      (let-values ([(tl bl ok?)
+				    (huft_build ll nl 257 cplens cplext lbits)])
+			(if (not ok?)
+			    #f ; /* incomplete code set */
+			    (let-values ([(td bd ok?)
+					  (huft_build (subvector ll nl) nd 0 cpdist cpdext dbits)])
+			      (if (not ok?)
+				  #f ; /* incomplete code set */
+				  ; /* decompress until an end-of-block code */
+				  (inflate_codes tl td bl bd)))))))))))))
 
-		   ; /* build the decoding tables for literal/length and distance codes */
-		   (let-values ([(tl bl ok?)
-				 (huft_build ll nl 257 cplens cplext lbits)])
-		      (if (not ok?)
-			  #f ; /* incomplete code set */
-			  (let-values ([(td bd ok?)
-					(huft_build (subvector ll nl) nd 0 cpdist cpdext dbits)])
-			    (if (not ok?)
-				#f ; /* incomplete code set */
-				; /* decompress until an end-of-block code */
-				(inflate_codes tl td bl bd)))))))))))))
+  (define (inflate_block)
+    ; return values: /* last block flag */ ok?
+    ; /* decompress an inflated block */
 
-(define (inflate_block)
-  ; return values: /* last block flag */ ok?
-  ; /* decompress an inflated block */
+    (define e-result (bitwise-and (GETBITS 1) 1))
+    
+    ; /* read in block type */
+    (define t (bitwise-and (GETBITS 2) 3))
 
-  (define e-result (bitwise-and (GETBITS 1) 1))
+    (values e-result
+	    (case t
+	      [(2) (inflate_dynamic)]
+	      [(0) (inflate_stored)]
+	      [(1) (inflate_fixed)]
+	      [else #f])))
 
-  ; /* read in block type */
-  (define t (bitwise-and (GETBITS 2) 3))
-
-  (values e-result
-	  (case t
-	    [(2) (inflate_dynamic)]
-	    [(0) (inflate_stored)]
-	    [(1) (inflate_fixed)]
-	    [else #f])))
-
-(define (inflate in out)
- ; /* decompress an inflated entry */
+  ;;;;;;;;;;;;;;;;;;;;;;;;
+  ; inflate starts here
+  ;;;;;;;;;;;;;;;;;;;;;;;;
+  
+  ; /* decompress an inflated entry */
   ; /* initialize window, bit buffer */
   (set! wp 0)
   (set! bk 0)
   (set! bb 0)
 
-  (dynamic-wind
-   (lambda ()
-     (set! input-port in)
-     (set! output-port out))
-   (lambda ()
-     ; /* decompress until the last block */
-     (let loop ()
-       (let-values ([(e ok?) (inflate_block)])
-         (if ok?
-	     (if (zero? e)
-		 (loop)
-		 (begin
-		   #|
-		   /* Undo too much lookahead. The next read will be byte aligned so we
-		   * can discard unused bits in the last meaningful byte.
-		   */
-		   |#
-		   (let loop ()
-		     (when (> bk 8)
-		       (set! bk (- bk 8))
-		       ; do something: inptr--
-		       (loop)))
-		   (flush-output wp)
-		   #t))
-	     #f))))
-   (lambda ()
-     (set! input-port #f)
-     (set! output-port #f))))
+  
+  ; /* decompress until the last block */
+  (let loop ()
+    (let-values ([(e ok?) (inflate_block)])
+      (if ok?
+	  (if (zero? e)
+	      (loop)
+	      (begin
+		; /* Undo too much lookahead. The next read will be byte aligned so we
+		; * can discard unused bits in the last meaningful byte.
+		; */
+		(let loop ()
+		  (when (> bk 8)
+		    (set! bk (- bk 8))
+		    ; do something: inptr--
+		    (loop)))
+		(flush-output wp)
+		#t))
+	  #f))))
 
-(define (make-small-endian . chars)
-  (let loop ([chars chars][n 0][mult 1])
-    (if (null? chars)
-	n
-	(loop (cdr chars) 
-	      (+ n (* mult (char->integer (car chars))))
-	      (* mult 256)))))
-
-(define (do-gunzip in out name-filter)
-  (let ([header1 (read-char in)]
-	[header2 (read-char in)])
-    (unless (and (char=? header1 #\037) (char=? header2 #\213))
-	    (error 'gnu-unzip "bad header")))
-  (let ([compression-type (read-char in)])
-    (unless (char=? compression-type #\010)
-	    (error 'gnu-unzip "unknown compression type")))
-  (let* ([flags (char->integer (read-char in))]
-	 [ascii? (positive? (bitwise-and flags #b1))]
-	 [continuation? (positive? (bitwise-and flags #b10))]
-	 [has-extra-field? (positive? (bitwise-and flags #b100))]
-	 [has-original-filename? (positive? (bitwise-and flags #b1000))]
-	 [has-comment? (positive? (bitwise-and flags #b10000))]
-	 [encrypted? (positive? (bitwise-and flags #b100000))])
-    (when encrypted?
-	  (error 'gnu-unzip "cannot unzip encrypted file"))
-    (when continuation?
-	  (error 'gnu-unzip "cannot handle multi-part files"))
-    (let ([unix-mod-time (make-small-endian (read-char in) (read-char in)
-					    (read-char in) (read-char in))]
-	  [extra-flags (read-char in)]
-	  [source-os (read-char in)])
+  (define (make-small-endian . chars)
+    (let loop ([chars chars][n 0][mult 1])
+      (if (null? chars)
+	  n
+	  (loop (cdr chars) 
+		(+ n (* mult (char->integer (car chars))))
+		(* mult 256)))))
+  
+  (define (do-gunzip in out name-filter)
+    (let ([header1 (read-char in)]
+	  [header2 (read-char in)])
+      (unless (and (char=? header1 #\037) (char=? header2 #\213))
+	(error 'gnu-unzip "bad header")))
+    (let ([compression-type (read-char in)])
+      (unless (char=? compression-type #\010)
+	(error 'gnu-unzip "unknown compression type")))
+    (let* ([flags (char->integer (read-char in))]
+	   [ascii? (positive? (bitwise-and flags #b1))]
+	   [continuation? (positive? (bitwise-and flags #b10))]
+	   [has-extra-field? (positive? (bitwise-and flags #b100))]
+	   [has-original-filename? (positive? (bitwise-and flags #b1000))]
+	   [has-comment? (positive? (bitwise-and flags #b10000))]
+	   [encrypted? (positive? (bitwise-and flags #b100000))])
+      (when encrypted?
+	(error 'gnu-unzip "cannot unzip encrypted file"))
       (when continuation?
-	    (let ([part-number (make-small-endian (read-char in) (read-char in))])
-	      'ok))
-      (when has-extra-field?
-	    (let ([len (make-small-endian (read-char in) (read-char in))])
-	      (let loop ([len len])
-		(unless (zero? len)
-			(read-char in)
-			(loop (sub1 len))))))
-      (let* ([read-null-term-string
-	      (lambda ()
-		(let loop ([s null])
-		  (let ([r (read-char in)])
-		    (if (char=? #\null r)
-			(list->string (reverse! s))
-			(loop (cons r s))))))]
-	     [original-filename (and has-original-filename?
-				     (read-null-term-string))]
-	     [comment (and has-comment? (read-null-term-string))])
-	(when encrypted?
-	      (let loop ([n 12])
-		(unless (zero? n)
-		   (read-char in)
-		   (loop (sub1 n)))))
-	
-	(let-values ([(out close?) (if out
-				       (values out #f)
-				       (let-values ([(fn orig?)
-						     (if original-filename
-							 (values original-filename #t)
-							 (values "unzipped" #f))])
-					    (values (open-output-file (name-filter fn orig?) 'truncate)
-						    #t)))])
-	     (dynamic-wind
-	      void
-	      (lambda () (inflate in out))
-	      (lambda () (when close? (close-output-port out)))))))))
-
-(define (gunzip-through-ports in out)
-  (do-gunzip in out void))
-
-(define gunzip
-  (case-lambda
-   [(src) (gunzip src (lambda (name from-file?) name))]
-   [(src name-filter)
-    (let ([in (open-input-file src 'binary)])
-      (dynamic-wind
-       void
-       (lambda () (do-gunzip in #f name-filter))
-       (lambda () (close-input-port in))))]))
-
-	     
+	(error 'gnu-unzip "cannot handle multi-part files"))
+      (let ([unix-mod-time (make-small-endian (read-char in) (read-char in)
+					      (read-char in) (read-char in))]
+	    [extra-flags (read-char in)]
+	    [source-os (read-char in)])
+	(when continuation?
+	  (let ([part-number (make-small-endian (read-char in) (read-char in))])
+	    'ok))
+	(when has-extra-field?
+	  (let ([len (make-small-endian (read-char in) (read-char in))])
+	    (let loop ([len len])
+	      (unless (zero? len)
+		(read-char in)
+		(loop (sub1 len))))))
+	(let* ([read-null-term-string
+		(lambda ()
+		  (let loop ([s null])
+		    (let ([r (read-char in)])
+		      (if (char=? #\null r)
+			  (list->string (reverse! s))
+			  (loop (cons r s))))))]
+	       [original-filename (and has-original-filename?
+				       (read-null-term-string))]
+	       [comment (and has-comment? (read-null-term-string))])
+	  (when encrypted?
+	    (let loop ([n 12])
+	      (unless (zero? n)
+		(read-char in)
+		(loop (sub1 n)))))
+	  
+	  (let-values ([(out close?) (if out
+					 (values out #f)
+					 (let-values ([(fn orig?)
+						       (if original-filename
+							   (values original-filename #t)
+							   (values "unzipped" #f))])
+					   (values (open-output-file (name-filter fn orig?) 'truncate)
+						   #t)))])
+	    (dynamic-wind
+	     void
+	     (lambda () (inflate in out))
+	     (lambda () (when close? (close-output-port out)))))))))
+  
+  (define (gunzip-through-ports in out)
+    (do-gunzip in out void))
+  
+  (define gunzip
+    (case-lambda
+     [(src) (gunzip src (lambda (name from-file?) name))]
+     [(src name-filter)
+      (let ([in (open-input-file src 'binary)])
+	(dynamic-wind
+	 void
+	 (lambda () (do-gunzip in #f name-filter))
+	 (lambda () (close-input-port in))))]))	     
 )

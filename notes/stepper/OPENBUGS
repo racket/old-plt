@@ -1,18 +1,12 @@
-The stepper no longer works with the "Intermediate" language.
-More accurately, perhaps, the Intermediate language is no 
-longer compatible with the stepper.  
-
-The stepper doesn't handle 'include' provided as a teachpack
-element.
-
 Primitives like 'make-number/make-numeric' that are renamed
 as module provides are not displayed using their renamed
 names.
 
-'And' expressions containing subexpressions which don't
-evaluate to booleans are not reduced correctly.
-
 Inexact numbers are not printed with a leading #i.
+
+XML boxes evaluate successfully but are printed poorly.
+
+Changes to language level in other windows affect stepper.
 
 For a more complete listing of known bugs, see our
 <a href="http://bugs.plt-scheme.org/query/">

@@ -105,7 +105,7 @@ times. The resulting conversions are
                           -> plt\lib\win32\msvc\libmzsch<version>.lib
   plt\src\worksp\libmzgc\Release\libmzgcxxxxxxx.lib
                           -> plt\lib\win32\msvc\libmzgc<version>.lib
-  plt\pltgdi_.dll -> plt\pltgdi_<version>.dll
+  plt\pltgdi_xxxxxxx.dll -> plt\pltgdi_<version>.dll
   plt\uniplt_xxxxxxx.dll -> plt\uniplt_<version>.dll
 
 ----------------------------------------------------------------------

@@ -28,6 +28,13 @@
 
 (define (scheme-implementation-type) '|MzScheme|)
 
+;;; (scheme-implementation-home-page) should return a (string) URL
+;;; (Uniform Resource Locator) for this scheme implementation's home
+;;; page; or false if there isn't one.
+
+(define (scheme-implementation-home-page)
+  "http://www.cs.rice.edu/CS/PLT/mzscheme/")
+
 ;;; (scheme-implementation-version) should return a string describing
 ;;; the version the scheme implementation loading this file.
 
@@ -198,6 +205,13 @@
       (receiver sp)
       (get-output-string sp))))
 
+;;; "rationalize" adjunct procedures.
+(define (find-ratio x e)
+  (let ((rat (rationalize x e)))
+    (list (numerator rat) (denominator rat))))
+(define (find-ratio-between x y)
+  (find-ratio (/ (+ x y) 2) (/ (- x y) 2)))
+
 ;;; CHAR-CODE-LIMIT is one greater than the largest integer which can
 ;;; be returned by CHAR->INTEGER.
 (define char-code-limit 256)
@@ -259,7 +273,11 @@
 	(set! *load-pathname* old-load-pathname)))))
 
 ;;; define an error procedure for the library
-(define slib:error error)
+(define slib:error
+  (lambda args
+    (let ((cep (current-error-port)))
+      (if (provided? 'trace) (print-call-stack cep))
+      (apply error "Error:" args))))
 
 ;;; define these as appropriate for your system.
 (define slib:tab (integer->char 9))
@@ -311,5 +329,13 @@
 ;;; At this point SLIB:LOAD must be able to load SLIB files.
 
 (define slib:load slib:load-source)
+
+(define slib:warn
+  (lambda args
+    (let ((cep (current-error-port)))
+      (if (provided? 'trace) (print-call-stack cep))
+      (display "Warn: " cep)
+      (for-each (lambda (x) (display x cep)) args)
+      (newline cep))))
 
 (slib:load (in-vicinity (library-vicinity) "require"))

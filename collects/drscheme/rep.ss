@@ -227,72 +227,71 @@
 		 (do-many-evals get-zodiac-code pre post)))]
 	    [do-many-evals
 	     (lambda (get-sexp pre post)
-		 (let/ec k
-		   (let ([new-pre
-			  (lambda ()
-			    (set-escape (lambda () (k #f)))
-			    (pre))]
-			 [new-post 
-			  (lambda (sucessful?)
-			    (set-escape #f)
-			    (post))])
-		     (send-scheme get-sexp new-pre new-post))))]
+	       (mred:local-busy-cursor
+		(get-canvas)
+		(lambda ()
+		  (let/ec k
+		    (let ([new-pre
+			   (lambda ()
+			     (set-escape (lambda () (k #f)))
+			     (pre))]
+			  [new-post 
+			   (lambda (sucessful?)
+			     (set-escape #f)
+			     (post))])
+		      (send-scheme get-sexp new-pre new-post))))))])
+	  (private
+	    [make-get-sexp
+	     (lambda (file get-chars start)
+	       (lambda ()
+		 (let* ([loc (zodiac:make-location 0 0 start file)]
+			[reader (zodiac:read get-chars loc)]
+			[exprs (let loop ()
+				 (let ([expr (reader)])
+				   (if (zodiac:eof? expr)
+				       null
+				       (cons expr (loop)))))]
+			[built `(begin ,@exprs)]
+			[_ (mred:debug:printf 
+			    'zodiac
+			    "zodiac; built: ~a~n" built)]
+			[structurized (zodiac:structurize-syntax
+				       built
+				       (zodiac:make-zodiac 'rep loc loc))]
+			[_ (mred:debug:printf 
+			    'zodiac
+			    "zodiac; structurized: ~a~n" structurized)]
+			[expanded (zodiac:scheme-expand structurized param)]
+			[_ (mred:debug:printf 
+			    'zodiac
+			    "zodiac; expanded: ~a~n" expanded)]
+			[_ (mred:debug:printf 
+			    'zodiac
+			    "zodiac; unparsed: ~a~n" (zodiac:parsed->raw expanded))]
+			[annotated (aries:annotate expanded)]
+			[_ (mred:debug:printf 
+			    'zodiac
+			    "zodiac; annotated: ~a~n" annotated)])
+		   annotated)))])
+	  (public
 	    [do-load
 	     (lambda (filename)
-	       (call-with-input-file filename
-		 (lambda (p)
-		   (call-with-values
-		    (lambda () (aries:transform p 0 filename))
-		    (lambda e
-		      (let loop ([sexps e])
-			(cond
-			 [(null? sexps) (void)]
-			 [(null? (cdr sexps)) (eval (car sexps))]
-			 [else (begin (eval (car sexps))
-				      (loop (cdr sexps)))])))))))]
+	       (let ([p (open-input-file filename)])
+		 (do-many-evals
+		  (make-get-sexp filename p 0)
+		  (lambda () (do-pre-eval))
+		  (lambda () 
+		    (close-input-port p)
+		    (do-post-eval)))))]
 	    [do-eval
 	     (lambda (start end)
-	       (let ([get-sexp
-		      (lambda ()
-			(let* ([loc (zodiac:make-location 0 0 start this)]
-			       [reader (zodiac:read
-					(mred:read-snips/chars-from-buffer
-					 this start end)
-					loc)]
-			       [exprs (let loop ()
-					(let ([expr (reader)])
-					  (if (zodiac:eof? expr)
-					      null
-					      (cons expr (loop)))))]
-			       [built `(begin ,@exprs)]
-			       [_ (mred:debug:printf 
-				   'zodiac
-				   "zodiac; built: ~a~n" built)]
-			       [structurized (zodiac:structurize-syntax
-					      built
-					      (zodiac:make-zodiac 'rep loc loc))]
-			       [_ (mred:debug:printf 
-				   'zodiac
-				   "zodiac; structurized: ~a~n" structurized)]
-			       [expanded (zodiac:scheme-expand structurized param)]
-			       [_ (mred:debug:printf 
-				   'zodiac
-				   "zodiac; expanded: ~a~n" expanded)]
-			       [_ (mred:debug:printf 
-				   'zodiac
-				   "zodiac; unparsed: ~a~n" (zodiac:parsed->raw expanded))]
-			       [annotated (aries:annotate expanded)]
-			       [_ (mred:debug:printf 
-				   'zodiac
-				   "zodiac; annotated: ~a~n" annotated)])
-			  annotated))])
-		 (mred:local-busy-cursor
-		  (get-canvas)
-		  (lambda ()
-		    (do-many-evals
-		     get-sexp
-		     (lambda () (do-pre-eval))
-		     (lambda () (do-post-eval)))))))])
+	       (do-many-evals
+		(make-get-sexp 
+		 this
+		 (mred:read-snips/chars-from-buffer this start end)
+		 start)
+		(lambda () (do-pre-eval))
+		(lambda () (do-post-eval))))])
 	  (public
 	    [reset-console
 	     (lambda ()

@@ -7,6 +7,7 @@
          (lib "servlet-helpers.ss" "web-server")
          (lib "xml.ss" "xml")
          (lib "path.ss" "help" "private")
+	 (lib "docpos.ss" "help" "private")
          (lib "search.ss" "help" "private"))
 
 (require "private/util.ss")

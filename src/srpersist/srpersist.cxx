@@ -6904,6 +6904,8 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   sortConsts();
 
+  scheme_register_extension_global(&bufferTable,sizeof(bufferTable));
+
   srp_unit = (Scheme_Unit *)scheme_malloc(sizeof(Scheme_Unit));
   srp_unit->type = scheme_unit_type;
   srp_unit->num_imports = 0;
@@ -6934,7 +6936,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 #ifndef __MAC_OS__
   if (isatty(fileno(stdin))) {
     fputs("SisterPersist extension for MzScheme, "
-	  "Copyright (c) 1999-2000 Rice PLT (Paul Steckler)\n",stderr);
+	  "Copyright (c) 1999-2001 Rice PLT (Paul Steckler)\n",stderr);
   }
 #endif
 

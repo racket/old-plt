@@ -103,7 +103,14 @@ exit 1
                               (set! var val))]))
   (define more-help
     (lambda (help)
-      (printf "This is the PLT installer.\nUsage: ")
+      (for-each display
+                '("This is the PLT installer.\n"
+                  "  When it is used with the \"-i\" flag, it will run in\n"
+                  "  `install-mode' -- updating launchers, and preparing an\n"
+                  "  existing tree for operation.  This is intended as a\n"
+                  "  one-time operation so it will remove itself when it is\n"
+                  "  done.\n"
+                  "Usage: "))
       (display help)
       (exit 0)))
   (command-line "install" (current-command-line-arguments)

@@ -475,7 +475,11 @@
 				(when (or (file-exists? dest)
 					  (directory-exists? dest)
 					  (link-exists? dest))
-				  (delete-directory/files dest))
+				  ;; Delete-file isn't enough if the target
+				  ;;  is supposed to be a directory. But
+				  ;;  currently, that happens only for MrEd 
+				  ;;  on Mac OS X, which is handles above.
+				  (delete-file dest))
 				(copy-file exe dest)
 				(values dest #f)))])
 	      (with-handlers ([void (lambda (x)

@@ -189,12 +189,6 @@ int MrEdCheckForBreak(void)
   return ((c & hit) && (c & hitnow) && (control & hit) && (shift & hit));
 }
 
-static long signal_waitdone(void *)
-{
-  WaitMessage();
-  return 0;
-}
-
 static long signal_fddone(void *fds)
 {
   win_extended_fd_set *r = (win_extended_fd_set *)fds;
@@ -205,8 +199,6 @@ static long signal_fddone(void *fds)
 
   return 0;
 }
-
-static HANDLE wait_msg_thread = NULL;
 
 void MrEdMSWSleep(float secs, void *fds)
 {
@@ -257,22 +249,9 @@ void MrEdMSWSleep(float secs, void *fds)
     } else
       th2 = NULL;
 
-    if (wait_msg_thread)
-      if (WaitForSingleObject(wait_msg_thread, 0) == WAIT_OBJECT_0) {
-	CloseHandle(wait_msg_thread);
-	wait_msg_thread = NULL;
-      }
-
-    if (!wait_msg_thread)
-      wait_msg_thread = CreateThread(NULL, 5000, 
-				     (LPTHREAD_START_ROUTINE)signal_waitdone,
-				     NULL, 0, &id);
-
-    rps[num_handles] = 0;
-    handles[num_handles++] = wait_msg_thread;
-
-    result = WaitForMultipleObjects(num_handles, handles, FALSE, 
-                                    secs ? (DWORD)(secs * 1000) : INFINITE);
+    result = MsgWaitForMultipleObjects(num_handles, handles, FALSE, 
+				       secs ? (DWORD)(secs * 1000) : INFINITE,
+				       QS_ALLINPUT);
 
     if ((result >= WAIT_OBJECT_0) && (result < WAIT_OBJECT_0 + num_handles)) {
       result -= WAIT_OBJECT_0;

@@ -11,6 +11,7 @@ typedef struct {
 
   int *repost_sema;
 
+  int wait_event_mask;
 } win_extended_fd_set;
 # endif
 #endif

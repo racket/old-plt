@@ -971,6 +971,7 @@ void *scheme_alloc_fdset_array(int count, int permanent)
   if (count) {
     ((win_extended_fd_set *)fdarray)->added = 0;
     ((win_extended_fd_set *)fdarray)->num_handles = 0;
+    ((win_extended_fd_set *)fdarray)->wait_event_mask = 0;
   }
 # endif
   return fdarray;
@@ -985,6 +986,7 @@ void *scheme_init_fdset_array(void *fdarray, int count)
   if (count) {
     ((win_extended_fd_set *)fdarray)->added = 0;
     ((win_extended_fd_set *)fdarray)->num_handles = 0;
+    ((win_extended_fd_set *)fdarray)->wait_event_mask = 0;
   }
 #endif
   return fdarray;
@@ -1064,6 +1066,13 @@ void scheme_add_fd_handle(void *h, void *fds, int repost)
   efd->repost_sema = rps;
 #else
   /* Do nothing. */
+#endif
+}
+
+void scheme_add_fd_eventmask(void *fds, int mask)
+{
+#if defined(WIN32_FD_HANDLES)
+  ((win_extended_fd_set *)fds)->wait_event_mask |= mask;
 #endif
 }
 
@@ -2178,7 +2187,7 @@ static void tested_file_need_wakeup(Scheme_Input_Port *p, void *fds)
     RELEASE_MUTEX(tip->lock_mutex);
   }
 
-  add_fd_handle((void *)tip->ready_sema, fds, 1);
+  scheme_add_fd_handle((void *)tip->ready_sema, fds, 1);
 }
 
 #ifdef WIN32_FD_HANDLES
@@ -4519,11 +4528,11 @@ static void subp_needs_wakeup(Scheme_Object *sci, void *fds)
 {
 #ifdef WINDOWS_PROCESSES
 # ifndef NO_STDIO_THREADS
-  add_fd_handle((void *)(HANDLE)sci, fds, 0);
+  scheme_add_fd_handle((void *)(HANDLE)sci, fds, 0);
 # endif
 #endif
 #ifdef BEOS_PROCESSES
-  add_fd_handle((void *)((BeOSProcess *)sci)->done_sem, fds, 1);
+  scheme_add_fd_handle((void *)((BeOSProcess *)sci)->done_sem, fds, 1);
 #endif
 }
 
@@ -6952,7 +6961,10 @@ static void default_sleep(float v, void *fds)
       if (count && !fd_added) {
 	/* Simple: just wait for HANDLE-based input: */
 #if defined(WIN32_FD_HANDLES)
-	result = WaitForMultipleObjects(count, array, FALSE, v ? (DWORD)(v * 1000) : INFINITE);
+	/* Extensions may handle events */
+	result = MsgWaitForMultipleObjects(count, array, FALSE, 
+					   v ? (DWORD)(v * 1000) : INFINITE,
+					   ((win_extended_fd_set *)fds)->wait_event_mask);
 #endif
 #if defined(USE_BEOS_PORT_THREADS)
 	result = wait_multiple_sema(count, array, v);

@@ -217,6 +217,7 @@ EXPORTS
  scheme_fdclr
  scheme_fdisset
  scheme_add_fd_handle
+ scheme_add_fd_eventmask
  scheme_add_global
  scheme_add_global_constant
  scheme_add_global_keyword

@@ -447,6 +447,7 @@ void scheme_fdset(void *fd, int pos);
 void scheme_fdclr(void *fd, int pos);
 int scheme_fdisset(void *fd, int pos);
 void scheme_add_fd_handle(void *h, void *fds, int repost);
+void scheme_add_fd_eventmask(void *fds, int mask);
 
 /* environment */
 void scheme_add_global(const char *name, Scheme_Object *val, Scheme_Env *env);

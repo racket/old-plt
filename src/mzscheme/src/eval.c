@@ -88,7 +88,7 @@
    
    Top-level variables (global or module) are referenced through the
    Scheme stack, so that the variables can be "re-linked" each time a
-   module is instantiated. Syntax constants are similarly access
+   module is instantiated. Syntax constants are similarly accessed
    through the Scheme stack. The global variables and syntax objects
    are sometimes called the "prefix", and scheme_push_prefix()
    initializes the prefix portion of the stack.

@@ -559,6 +559,7 @@ int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 Scheme_Object *scheme_stx_module_name(Scheme_Object **name, long phase,
 				      Scheme_Object **nominal_modidx,
 				      Scheme_Object **nominal_name);
+int scheme_stx_parallel_is_used(Scheme_Object *sym, Scheme_Object *stx);
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid, long phase);
@@ -1737,6 +1738,8 @@ struct Scheme_Env {
   Scheme_Hash_Table *modvars; /* for scheme_module_variable_type hashing */
 
   Scheme_Hash_Table *marked_names; /* for mapping marked ids to uninterned symbols */
+
+  int id_counter;
 };
 
 /* A module access path (or "idx") is a pair: sexp * symbol-or-#f
@@ -1814,6 +1817,7 @@ void scheme_add_global_constant(const char *name, Scheme_Object *v, Scheme_Env *
 void scheme_add_global_constant_symbol(Scheme_Object *name, Scheme_Object *v, Scheme_Env *env);
 
 Scheme_Object *scheme_tl_id_sym(Scheme_Env *env, Scheme_Object *id, int is_def);
+int scheme_tl_id_is_sym_used(Scheme_Hash_Table *marked_names, Scheme_Object *sym);
 
 Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env);
 

@@ -1849,6 +1849,31 @@ Scheme_Object *scheme_stx_source_module(Scheme_Object *stx, int resolve)
   return srcmod;
 }
 
+int scheme_stx_parallel_is_used(Scheme_Object *sym, Scheme_Object *stx)
+{
+  /* Inspect the wraps to look for a binding: */
+  WRAP_POS w;
+
+  WRAP_POS_INIT(w, ((Scheme_Stx *)stx)->wraps);
+
+  while (!WRAP_POS_END_P(w)) {
+    if (SCHEME_RENAMESP(WRAP_POS_FIRST(w))) {
+      /* Module rename. For simplicity, we look at all renames, even
+	 if they're in the wrong phase, or for the wrong module,
+	 etc. */
+      Module_Renames *mrn = (Module_Renames *)WRAP_POS_FIRST(w);
+      
+      if (scheme_tl_id_is_sym_used(mrn->marked_names, sym))
+	return 1;
+    }
+    WRAP_POS_INC(w);
+  }
+  
+  return 0;
+}
+
+
+
 /*========================================================================*/
 /*                           stx and lists                                */
 /*========================================================================*/

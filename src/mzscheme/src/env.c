@@ -99,7 +99,6 @@ typedef Scheme_Object *(*Lazy_Macro_Fun)(Scheme_Object *, int);
 
 static Scheme_Object *kernel_symbol;
 
-static int tl_id_counter = 0;
 static int intdef_counter = 0;
 
 static int builtin_ref_counter = 0;
@@ -1466,22 +1465,38 @@ Scheme_Object *scheme_tl_id_sym(Scheme_Env *env, Scheme_Object *id, int is_def)
     /* Adding a definition. We "gensym" here in a sense; actually, we
        use a symbol table that's in parallel to the normal table, so
        that we get the same parallel-symbol when unmarshalling
-       code. We use a counter, which works fine for modules and
-       marshalling, because symbols need to be distinct only within
-       the module. For the top level, it's possible that symbols from
-       different compilations collide. */
+       code. We use a counter attached to the environment. Normally,
+       this counter just increments, but if a module is re-expanded,
+       then the counter starts at 0 for the re-expand, and we may
+       re-pick an existing name. To avoid re-picking the same name,
+       double-check for a mapping in the environment by inspecting the
+       renames attached to id. In the top-level environment, it's
+       still possible to get a collision, because separately compiled
+       code might be loaded into the same environment (which is just
+       too bad). */
     if (!best_match) {
-      char buf[50];
+      char onstack[50], *buf;
       int len;
 
-      tl_id_counter++;
-      len = SCHEME_SYM_LEN(sym);
-      if (len > 25)
-	len = 25;
-      memcpy(buf, SCHEME_SYM_VAL(sym), len);
-      sprintf(buf + len, "%d", tl_id_counter);
+      while (1) {
+	env->id_counter++;
+	len = SCHEME_SYM_LEN(sym);
+	if (len <= 35)
+	  buf = onstack;
+	else
+	  buf = scheme_malloc_atomic(len + 15);
+	memcpy(buf, SCHEME_SYM_VAL(sym), len);
+	
+	/* The dot here is significant; it might gets stripped away when
+	   printing the symbol */
+	sprintf(buf + len, ".%d", env->id_counter);
+	
+	best_match = scheme_intern_exact_parallel_symbol(buf, strlen(buf));
 
-      best_match = scheme_intern_exact_parallel_symbol(buf, strlen(buf));
+	if (!scheme_stx_parallel_is_used(best_match, id))
+	  break;
+	/* Otherwise, increment counter and try again... */
+      }
     }
     a = scheme_make_pair(marks, best_match);
     map = scheme_make_pair(a, map);
@@ -1490,6 +1505,28 @@ Scheme_Object *scheme_tl_id_sym(Scheme_Env *env, Scheme_Object *id, int is_def)
   }
 
   return best_match;
+}
+
+int scheme_tl_id_is_sym_used(Scheme_Hash_Table *marked_names, Scheme_Object *sym)
+{
+  int i;
+  Scheme_Object *l, *a;
+
+  if (!marked_names)
+    return 0;
+
+  for (i = marked_names->size; i--; ) {
+    l = marked_names->vals[i];
+    if (l) {
+      for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	a = SCHEME_CAR(l);
+	if (SAME_OBJ(sym, SCHEME_CDR(a)))
+	  return 1;
+      }
+    }
+  }
+
+  return 0;
 }
 
 static Scheme_Object *make_uid()

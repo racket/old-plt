@@ -1,6 +1,6 @@
 
 The _launcherr.ss_ library in the "launcher" collection imports
-nothing and exports the following procedures for creating MzScheme and
+mzlib:file^ and exports the following procedures for creating MzScheme and
 MrEd launcher executables:
 
 > (make-mred-launcher args dest) - Creates the launcher `dest'. The

@@ -117,7 +117,7 @@ wxMemoryDC *create_dc(int width, int height, wxBitmap *bm, int mono)
   return dc;
 }
 
-wxMemoryDC *create_reader_dc(wxBitmap *bm, int *desel)
+wxMemoryDC *create_reader_dc(wxBitmap *bm, volatile int *desel)
 {
   wxMemoryDC *dc;
 
@@ -171,7 +171,7 @@ static void my_error_exit(j_common_ptr cinfo)
 
 int read_JPEG_file(char * filename, wxBitmap *bm)
 {
-  FILE * infile;		/* source file */
+  FILE * volatile infile;       /* source file */
   JSAMPARRAY buffer;		/* Output row buffer */
   int row_stride;		/* physical row width in output buffer */
   wxMemoryDC *dc;
@@ -315,10 +315,11 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
 int write_JPEG_file(char *filename, wxBitmap *bm, int quality)
 {
   /* More stuff */
-  FILE * outfile;		/* target file */
+  FILE * volatile outfile;		/* target file */
   JSAMPROW row_pointer;	/* pointer to JSAMPLE row[s] */
-  wxMemoryDC *dc;
-  int wid, desel = 1;
+  wxMemoryDC * volatile dc;
+  int wid;
+  volatile int desel = 1;
 
 #ifdef MZ_PRECISE_GC
   START_XFORM_SKIP;
@@ -343,10 +344,10 @@ int write_JPEG_file(char *filename, wxBitmap *bm, int quality)
   END_XFORM_SKIP;
 #endif
 
-  dc = create_reader_dc(bm, &desel);
+  dc = create_reader_dc(bm, (int *)&desel);
 
   wid = bm->GetWidth();
-  row_pointer = (JSAMPROW)malloc(sizeof(JSAMPLE) * 3 * wid);
+  row_pointer = new JSAMPLE[3 * wid];
 
   if ((outfile = fopen(filename, "wb")) == NULL) {
     free(row_pointer);
@@ -431,7 +432,7 @@ int write_JPEG_file(char *filename, wxBitmap *bm, int quality)
      * more than one scanline at a time if that's more convenient.
      */
     get_scanline(row_pointer, wid, cinfo.next_scanline, dc);
-    (void) jpeg_write_scanlines(&cinfo, &row_pointer, 1);
+    (void)jpeg_write_scanlines(&cinfo, &row_pointer, 1);
   }
 
   /* Step 6: Finish compression */
@@ -602,13 +603,15 @@ static void png_get_line1(png_bytep row, int cols, int rownum, wxMemoryDC *dc)
 int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
 {
    png_structp png_ptr;
+   png_structp volatile png_ptr_orig;
    png_infop info_ptr;
+   png_infop volatile info_ptr_orig;
    png_uint_32 width, height;
    int bit_depth, color_type, interlace_type, is_mono = 0, row_width;
    unsigned int number_passes, pass, y;
-   FILE *fp;
+   FILE * volatile fp;
    png_bytep *rows, row;
-   wxMemoryDC *dc = NULL;
+   wxMemoryDC * volatile dc = NULL;
    wxMemoryDC *mdc = NULL;
    wxBitmap *mbm = NULL;
 
@@ -643,15 +646,20 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
     * set up your own error handlers in the png_create_read_struct() earlier.
     */
 
+   png_ptr_orig = png_ptr;
+   info_ptr_orig = info_ptr;
+
    if (setjmp(png_jmpbuf(png_ptr)))
    {
-      /* Free all of the memory associated with the png_ptr and info_ptr */
-      png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
-      fclose(fp);
-      if (dc)
-	dc->SelectObject(NULL);
-      /* If we get here, we had a problem reading the file */
-      return 0;
+     /* Free all of the memory associated with the png_ptr and info_ptr */
+     png_ptr = png_ptr_orig;
+     info_ptr = info_ptr_orig;
+     png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+     fclose(fp);
+     if (dc)
+       dc->SelectObject(NULL);
+     /* If we get here, we had a problem reading the file */
+     return 0;
    }
 
    /* Set up the input control if you are using standard C streams */
@@ -876,16 +884,19 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
 int wx_write_png(char *file_name, wxBitmap *bm)
 {
    png_structp png_ptr;
+   png_structp volatile png_ptr_orig;
    png_infop info_ptr;
+   png_infop volatile info_ptr_orig;
    int width, height;
    int bit_depth, color_type, row_width;
    int y;
-   FILE *fp;
+   FILE *volatile fp;
    png_bytep *rows, row;
-   wxMemoryDC *dc = NULL;
-   wxMemoryDC *mdc = NULL;
+   wxMemoryDC * volatile dc = NULL;
+   wxMemoryDC * volatile mdc = NULL;
    wxBitmap *mbm = NULL;
-   int desel = 1, mdesel = 1;
+   volatile int desel = 1;
+   volatile int mdesel = 1;
 
    if ((fp = fopen(file_name, "wb")) == NULL)
      return 0;
@@ -918,17 +929,20 @@ int wx_write_png(char *file_name, wxBitmap *bm)
     * set up your own error handlers in the png_create_read_struct() earlier.
     */
 
-   if (setjmp(png_jmpbuf(png_ptr)))
-   {
-      /* Free all of the memory associated with the png_ptr and info_ptr */
-      png_destroy_write_struct(&png_ptr, &info_ptr);
-      fclose(fp);
-      if (dc && desel)
-	dc->SelectObject(NULL);
-      if (mdc && mdesel)
-	mdc->SelectObject(NULL);
-      /* If we get here, we had a problem reading the file */
-      return 0;
+   png_ptr_orig = png_ptr;
+   info_ptr_orig = info_ptr;
+   if (setjmp(png_jmpbuf(png_ptr))) {
+     /* Free all of the memory associated with the png_ptr and info_ptr */
+     png_ptr = png_ptr_orig;
+     info_ptr = info_ptr_orig;
+     png_destroy_write_struct(&png_ptr, &info_ptr);
+     fclose(fp);
+     if (dc && desel)
+       dc->SelectObject(NULL);
+     if (mdc && mdesel)
+       mdc->SelectObject(NULL);
+     /* If we get here, we had a problem reading the file */
+     return 0;
    }
 
    /* Set up the input control if you are using standard C streams */

@@ -638,10 +638,10 @@ if test "${enable_libpng}" = "" ; then
 fi
 
 if test "${enable_libpng}" = "yes" ; then  
-  AC_CHECK_HEADER(png.h, enable_png=yes, enable_png=no)
-  if test "${enable_png}" = "yes" ; then  
-    AC_CHECK_LIB(png, png_read_info, enable_png="yes", enable_png="no", -lpng -lz)
-    if test "${enable_png}" = "yes" ; then  
+  AC_CHECK_HEADER(png.h, enable_libpng=yes, enable_libpng=no)
+  if test "${enable_libpng}" = "yes" ; then  
+    AC_CHECK_LIB(png, png_read_info, enable_libpng="yes", enable_libpng="no", -lpng -lz)
+    if test "${enable_libpng}" = "yes" ; then  
       PNG_A=""
       PNG_INC=""
       X_EXTRA_LIBS="$X_EXTRA_LIBS -lpng -lz"
@@ -661,10 +661,10 @@ if test "${enable_libjpeg}" = "" ; then
 fi
 
 if test "${enable_libjpeg}" = "yes" ; then  
-  AC_CHECK_HEADER(jpeglib.h, enable_jpeg=yes, enable_jpeg=no)
-  if test "${enable_jpeg}" = "yes" ; then  
-    AC_CHECK_LIB(jpeg, jpeg_start_decompress, enable_jpeg="yes", enable_jpeg="no", -ljpeg)
-    if test "${enable_jpeg}" = "yes" ; then  
+  AC_CHECK_HEADER(jpeglib.h, enable_libjpeg=yes, enable_libjpeg=no)
+  if test "${enable_libjpeg}" = "yes" ; then  
+    AC_CHECK_LIB(jpeg, jpeg_start_decompress, enable_libjpeg="yes", enable_libjpeg="no", -ljpeg)
+    if test "${enable_libjpeg}" = "yes" ; then  
       JPEG_A=""
       JPEG_INC=""
       ZLIB_A=""

@@ -178,7 +178,8 @@
                      (add-var-to-env "this" this-ref parm empty-env)
                      level
                      type-recs 
-                     (list (id-string (header-id (class-def-info class)))) #f))
+                     (list (id-string (header-id (class-def-info class)))) 
+                     #f (memq 'abstract (map modifier-kind (header-modifiers (class-def-info class))))))
     (set-class-def-uses! class (send type-recs get-class-reqs)))
 
   ;check-interface: interface-def (list string) symbol type-recs -> void
@@ -186,14 +187,14 @@
     (send type-recs set-location! (interface-def-file iface))
     (send type-recs set-class-reqs (interface-def-uses iface))
     (check-members (interface-def-members iface) empty-env level type-recs 
-                   (list (id-string (header-id (interface-def-info iface)))) #t)
+                   (list (id-string (header-id (interface-def-info iface)))) #t #f)
     (set-interface-def-uses! iface (send type-recs get-class-reqs)))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Member checking methods
   
-  ;check-members: (list member) env symbol type-records (list string) bool -> void
-  (define (check-members members env level type-recs c-class iface?)
+  ;check-members: (list member) env symbol type-records (list string) bool bool -> void
+  (define (check-members members env level type-recs c-class iface? abst-class?)
     (let* ((class-record (lookup-this type-recs env))
            (fields (class-record-fields class-record))
            (field-env (create-field-env fields env (car c-class)))
@@ -232,7 +233,7 @@
                                      type
                                      (string->symbol name)
                                      type-recs)
-                     (when (field-needs-set? member level)
+                     (when (field-needs-set? member level abst-class?)
                        (set! setting-fields (cons member setting-fields))))
                  (if static?
                      (loop (cdr rest) 
@@ -295,10 +296,10 @@
                       (environment-exns env)
                       (environment-labels env)))
 
-  ;field-needs-set?: field symbol -> bool
-  (define (field-needs-set? field level)
+  ;field-needs-set?: field symbol bool-> bool
+  (define (field-needs-set? field level abst-class?)
     (cond
-      ((eq? level 'beginner) #t)
+      ((and (eq? level 'beginner) (not abst-class?) #t))
       ((memq 'final (map modifier-kind (field-modifiers field))) #t)
       (else #f)))
   
@@ -423,30 +424,30 @@
   
   ;field-set?: field (list assignment) string symbol bool -> bool
   (define (field-set? field assigns class level static?)
-    (if 
-     (null? assigns) (field-not-set-error (field-name field)
-                                          class
-                                          (if (memq level '(beginner intermediate))
-                                              level
-                                              (if static? 'static 'instance))
-                                          (field-src field))
-     (let* ((assign (car assigns))
-            (left (assignment-left assign)))
-       (or (cond
-             ((local-access? left) 
-              (equal? (id-string (local-access-name left))
-                      (id-string (field-name field))))
-             ((field-access? left)
-              (and (special-name? (field-access-object left))
-                   (equal? "this" (special-name-name (field-access-object left)))
-                   (equal? (id-string (field-access-field left))
-                           (id-string (field-name field))))))
-           (field-set? field
-                       (if (assignment? (assignment-right assign))
-                           (cons (assignment-right assign)
-                                 (cdr assigns))
-                           (cdr assigns))
-                       class level static?)))))
+    (if (null? assigns) 
+        (field-not-set-error (field-name field)
+                             class
+                             (if (memq level '(beginner intermediate))
+                                 level
+                                 (if static? 'static 'instance))
+                             (field-src field))
+        (let* ((assign (car assigns))
+               (left (assignment-left assign)))
+          (or (cond
+                ((local-access? left) 
+                 (equal? (id-string (local-access-name left))
+                         (id-string (field-name field))))
+                ((field-access? left)
+                 (and (special-name? (field-access-object left))
+                      (equal? "this" (special-name-name (field-access-object left)))
+                      (equal? (id-string (field-access-field left))
+                              (id-string (field-name field))))))
+              (field-set? field
+                          (if (assignment? (assignment-right assign))
+                              (cons (assignment-right assign)
+                                    (cdr assigns))
+                              (cdr assigns))
+                          class level static?)))))
   
   ;check-method: method env type-records (list string) boolean boolean-> void
   (define (check-method method env level type-recs c-class static? iface?)

@@ -1178,7 +1178,7 @@
               (cond
                 ((eof? next-tok) (parse-error "Expected constructor arguments for class allocation" start end))
                 ((dot? next-tok) 
-                 (parse-expression next-tok (parse-name (getter) getter) 'class-args-start getter))
+                 (parse-expression next (parse-name (getter) getter) 'class-args-start getter))
                 ((o-paren? next-tok) (parse-expression cur-tok next 'class-args-start getter))
                 ((open-separator? next-tok) 
                  (parse-error (format "Expected ( to begin constructor arguments, found ~a" (get-token-name next-tok))
@@ -1195,7 +1195,7 @@
                    (next-tok (get-tok next)))
               (cond
                 ((eof? next-tok) (parse-error "Expected constructor arguments or )" start end))
-                ((c-paren? next-tok) (parse-expression next-tok (getter) 'dot-op-or-end getter))
+                ((c-paren? next-tok) (parse-expression next (getter) 'dot-op-or-end getter))
                 (else (parse-expression next (parse-expression cur-tok next 'start getter) 'class-args getter)))))
            (else (parse-error (format "Expected constructor arguments, starting with (, found ~a" out) start end))))
         ((class-args)

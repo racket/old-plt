@@ -29,8 +29,8 @@ static wxMenuBar *GetTheMenuBar(wxFrame *f)
   return GET_THE_MENU_BAR(f);
 }
 
-#ifndef wxTOOBAR_BUTTON
-# define wxTOOBAR_BUTTON 0
+#ifndef wxTOOLBAR_BUTTON
+# define wxTOOLBAR_BUTTON 0
 #endif
 
 @BEGINSYMBOLS frameStyle > > PRED BUNDLE

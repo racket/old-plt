@@ -70,16 +70,34 @@
             (for-each (lambda (fs v) ((cdr fs) style v)) style-delta-get/set info)
             style)))
       
+      ;; prefix-style : (union symbol string) -> string
+      (define (prefix-style x) (format "drscheme:check-syntax:~a" x))
+      
+      (define (prefix-style/check x)
+        (unless (and (assq x color-default-code-styles)
+                     (assq x bw-default-code-styles))
+          (error 'prefix-style/check "unknown style: ~e" x))
+        (prefix-style x))
+      
       (define prefixed-code-styles 
         (map (lambda (x) 
                (cons
-                (string->symbol (string-append "drscheme:check-syntax:" (symbol->string (car x))))
+                (string->symbol (prefix-style (car x)))
                 (cdr x)))
              (if ((mred:get-display-depth) . < . 8)
                  bw-default-code-styles
                  color-default-code-styles)))
       
       (define delta-symbols (map car prefixed-code-styles))
+      
+      
+      ;; all strings naming styles
+      (define keyword-style-str (prefix-style/check 'keyword))
+      (define unbound-variable-style-str (prefix-style/check 'unbound-variable))
+      (define bound-variable-style-str (prefix-style/check 'bound-variable))
+      (define primitive-style-str (prefix-style/check 'primitive))
+      (define constant-style-str (prefix-style/check 'constant))
+      (define base-style-str (prefix-style/check 'base))
       
       (let ([set-default
              (lambda (default)
@@ -156,7 +174,8 @@
                                          (define (after-insert pos offset)
                                            (super-after-insert pos offset)
                                            (let ([style (send (get-style-list)
-                                                              find-named-style style-name)])
+                                                              find-named-style
+                                                              style-name)])
                                              (change-style style pos (+ pos offset))))
                                          (super-instantiate ())))]
                        [_ (fw:preferences:add-callback sym
@@ -620,9 +639,103 @@
                   (fw:preferences:get
                    (drscheme:language-configuration:get-settings-preferences-symbol))
                   (lambda (sexp run-in-evaluation-thread loop)
-                    (display (datum->syntax-object sexp))
-                    (newline)
+                    (annotate sexp)
                     (loop))))
+
+          ;; annotate : syntax -> void
+          ;; annotates the program described by the sexp
+          (define (annotate sexp)
+            (printf "~s~n" (syntax-object->datum sexp))
+            (let loop ([sexp sexp]
+                       [bound-vars null])
+              (syntax-case sexp (lambda case-lambda if begin0 let-value letrec-values set!
+                                  quote quote-syntax with-continuation-mark 
+                                  #%app #%datum #%top)
+                [(lambda args bodies ...)
+                 (begin
+                   (printf "lambda: ~s~n" 
+                           (syntax-object->datum (list (syntax args) (syntax (bodies ...)))))
+                   (annotate-origin sexp keyword-style-str)
+                   (for-each (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
+                             (syntax->list (syntax (bodies ...)))))]
+                [(case-lambda [argss bodiess ...]...)
+                 (begin
+                   (annotate-origin sexp keyword-style-str)
+                   (for-each
+                    (lambda (args bodies)
+                      (for-each
+                       (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
+                       (syntax->list bodies)))
+                    (syntax->list (syntax (argss ...)))
+                    (syntax->list (syntax ((bodiess ...) ...)))))]
+                [(if test then else)
+                 (begin (annotate-origin sexp keyword-style-str)
+                        (loop (syntax test) bound-vars)
+                        (loop (syntax then) bound-vars)
+                        (loop (syntax else) bound-vars))]
+                [(begin0 bodies ...)
+                 (begin
+                   (annotate-origin sexp keyword-style-str)
+                   (for-each (lambda (body) (loop body bound-vars))
+                             (syntax->list (syntax (bodies ...)))))]
+                ;let-values
+                ;letrec-values
+                ;set!
+                ;quote
+                ;quote-syntax
+                ;with-continuation-mark
+                [(#%app pieces ...)
+                 (for-each (lambda (arg) (loop arg bound-vars))
+                           (syntax->list (syntax (pieces ...))))]
+                [(#%datum datum)
+                 (color sexp constant-style-str)]
+                [(#%top var)
+                 (void)]
+                
+                ; top-level only:
+                ;begin
+                ;define-values
+                ;define-syntaxes
+                ;module
+                
+                ; top level or module top level only:
+                ;require
+                ;require-for-syntax
+                
+                ; module top level only:
+                ;provide
+                
+                [else (void)])))
+
+          ;; args->vars : syntax (listof syntax) -> (listof syntax)
+          ;; transforms an argument list into a bunch of symbols/symbols and puts 
+          ;; them on `incoming'
+          (define (args->vars stx incoming)
+            (let ([first (syntax-e stx)])
+              (cond
+                [(cons? first)
+                 (args->vars (cdr first) (cons (car first) incoming))]
+                [(null? first)
+                 incoming]
+                [else (cons first incoming)])))
+                         
+          
+          ;; annotate-origin : syntax str -> void
+          ;; annotates the origin of the stx with style-name's style.
+          (define (annotate-origin stx style-name)
+            (printf "~s~n" (syntax-property stx 'origin)))
+          
+          ;; color : syntax str -> void
+          ;; colors the syntax with style-name's style
+          (define (color stx style-name)
+            (let ([source (syntax-source stx)])
+              (when (is-a? source mred:text%)
+                (let ([style (send (send source get-style-list)
+                                   find-named-style
+                                   style-name)]
+                      [pos (syntax-position stx)]
+                      [span (syntax-span stx)])
+                  (send source change-style style pos (+ pos span))))))
           
           (super-instantiate ())
           

@@ -6,17 +6,20 @@
   
   (define w-c-m-key marks:debug-key)
   
-  (define (annotate sexp zodiac-read)
+  (define (annotate sexp zodiac-read . opts-list)
     (let*-values 
         ([(annotateds new-envs)
-          (annotate:annotate (and zodiac-read (list zodiac-read)) 
-                             (list sexp)
-                             null
-                             #f
-                             (if (marks:ankle-wrap-enabled)
-                                 'ankle-wrap
-                                 'cheap-wrap))])
-      (car annotateds)))
+          (apply annotate:annotate
+		 (append
+		  (list (and zodiac-read (list zodiac-read)) 
+			(list sexp)
+			null
+			#f
+			(if (marks:ankle-wrap-enabled)
+			    'ankle-wrap
+			    'cheap-wrap))
+		  opts-list))])
+	(car annotateds)))
 
   (define extract-zodiac-locations marks:extract-zodiac-locations)
   (define extract-mark-list marks:extract-mark-list)

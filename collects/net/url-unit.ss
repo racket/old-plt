@@ -498,7 +498,8 @@
       (define (decode-some-url-parts url)
 	(let ([uri-decode/maybe
 	       (lambda (f)
-		 (and f (uri-decode f)))])
+		 ;; If #f, and leave unmolested any % that in't followed by hex digit
+		 (and f (uri-decode (regexp-replace* "%([^0-9a-fA-F])" f "%25\\1"))))])
 	  (make-url/user (uri-decode/maybe (url-scheme url))
 			 (uri-decode/maybe (url-host url))
 			 (uri-decode/maybe (url-port url))

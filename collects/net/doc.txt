@@ -149,6 +149,10 @@ PROCEDURES -----------------------------------------------------------
   `fragment' parts of the input URL, and assembles the decoded and
   remaining parts into a new URL.
 
+  Before using `uri-decode', any "%" that is not followed by a hex
+  digit is replaced with "%25". (In other words, the decoing process
+  tries to accomodate ill-formed URLs.)
+
   The `params' and `query' parts are not decoded because they are not
   fully parsed (e.g., a "%xx" encoding might have been used to avoid
   generating a parameter delimitter).

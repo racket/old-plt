@@ -770,7 +770,7 @@
 	       (cond
 		[(arrow? t2) (and (unify (car (arrow-arglist t1)) (car (arrow-arglist t2)) syn) (unify (arrow-result t1) (arrow-result t2) syn))]
 		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
-		[else (begin (raise-syntax-error #f "Expected an arrow type" syn) #f)])]
+		[else (begin (raise-syntax-error #f (format "Expected ~a -> ~a but found ~a" (car (arrow-arglist t1)) (arrow-result t1) t2) syn) #f)])]
 	      [(<tuple>? t1)
 	       (cond
 		[(<tuple>? t2) 
@@ -846,11 +846,11 @@
 				     (car function)
 				     (begin
 				       (raise-syntax-error #f (format "Error: ~a not found in ~a" (syntax-object->datum name) (syntax-object->datum (ast:lident-name longident))) uname)
-				       #f)))
+				       (if syntax syntax uname))))
 			       (begin
 				 (raise-syntax-error #f (format "Error: Library ~a not found" (syntax-object->datum (ast:lident-name longident))) (ast:lident-name longident))
 
-				 #f))))]))
+				 (if syntax syntax uname)))))]))
 
 	   (define (convert-tvars type mappings)
 	     (cond

@@ -194,7 +194,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
       case WAIT_TIMEOUT :
 
-	eval_string_or_get_exn_message("(sleep)");
+	scheme_eval_string("(#%sleep)",env);
 	break;
 
       case WAIT_OBJECT_0 + 1:
@@ -215,7 +215,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
 	  DispatchMessage(&msg);
 	}
 
-	eval_string_or_get_exn_message("(sleep)");
+	scheme_eval_string("(#%sleep)",env);
 
 	break;
 

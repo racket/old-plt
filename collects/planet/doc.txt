@@ -1,10 +1,6 @@
-=====================================================
-_The PLaneT Module Repository Interaction Collection_
-=====================================================
+_PLaneT_
 
---------------
-_Using PLaneT_
---------------
+The PLaneT Module Repository Interaction Collection
 
 The PLaneT system is a method for automatically sharing code packages,
 both as libraries and as full applications, that gives every user of a
@@ -13,9 +9,7 @@ package on the server, but is parsimonious in its transmission. It
 consists of a centralized server that holds all packages and
 individual clients that hold some portion of the archive
 locally. Maintenance of that archive should be transparent, and is the
-complete responsibility of the PLaneT client. This library provides
-both a client and a server; most users will only ever need to use the
-client.
+complete responsibility of the PLaneT client.
 
 The PLaneT client receives user requests (i.e., the (require (planet
 ...)) forms) and loads the appropriate modules in response. In the
@@ -33,10 +27,10 @@ MINOR          ::= Nat       ; the specified revision or above
                  | (= Nat)   ; exactly the revision specified
                  | (+ Nat)   ; the specified revision or above
                  | (- Nat)   ; the specified revision or below
-FILE-PATH      ::= string
+FILE-PATH      ::= string    ; the path to the given package in the repository
 PKG-NAME       ::= string
 OWNER-NAME     ::= string
-PATH           ::= string
+PATH           ::= string    ; the subdirectory path to the specified file within the package
 
 All strings must be legal filename strings.
 
@@ -48,35 +42,39 @@ VER-SPEC is provided, the most recent version is assumed. If no
 owner-name/path ... clause is provided, the default package is
 assumed.
 
-_config.ss: client configuration_
+_config.ss_: client configuration
 
 This file provides several parameters useful for configuring how
 PLaneT works. 
 
 Parameters:
 
-> PLANET-SERVER-NAME: parameter[string]
+> (planet-server-name) -> string
+> (planet-server-name string) -> void
 
 The name of the PLaneT server to which the client should connect if it
 needs to fetch a package. The default value for this parameter is
 "planet.plt-scheme.org".
 
-> PLANET-SERVER-PORT: parameter[Nat]
+> (planet-server-port) -> Nat
+> (planet-server-port Nat) -> void
 
 The port on the server the client should connect to. The default value
 for this parameter is 10000.
 
-> PLANET-DIR: parameter[directory]
+> (planet-dir) -> directory-string
+> (planet-dir directory-string) -> void
 
 The root PLaneT directory. Default is the directory in which config.ss
 is found.
 
-> CACHE-DIR: parameter[directory]
+> (cache-dir) -> directory-string
+> (cache-dir directory-string) -> void
 
-The root of the PLaneT client's cache directory. The default is the
-"planet-cache" subdirectory of the root PLaneT directory.
+The root of the PLaneT client's cache directory.
 
-> LINKAGE-FILE: parameter[file]
+> (linkage-file) file-string
+> (linkage-file file-string) -> void
 
 The file to use as the first place PLaneT looks to determine how a
 particular PLaneT dependence in a file should be satisfied. The
@@ -84,7 +82,8 @@ contents of this file are used to ensure that no "magic upgrades"
 occur after a package is installed. The default is the file "LINKAGE"
 in the root PLaneT directory.
 
-> LOG-FILE: parameter[file or #f]
+> (log-file) -> file-string or #f
+> (log-file [file-string or #f]) -> void
 
 If #f, indicates that no logging should take place. Otherwise
 specifies the file into which logging should be written. The default
@@ -97,27 +96,58 @@ most user programs cannot set them until PLaneT has already
 run. Therefore to meaningfully change these settings it is best to
 manually edit the config.ss file.
 
-_util.ss: utility functions_
+_util.ss_
+
+utility functions
 
 The functions in this module support examination of the pieces of
 PLaneT. They are meant primarily to support debugging and to allow
 easier development of higher-level package-management tools.
 
-_current-cache-contents_ : -> ((string ((string ((nat (nat ...)) ...)) ...)) ...)
+> (current-cache-contents) -> ((string ((string ((nat (nat ...)) ...)) ...)) ...)
 
 Returns a listing of all package names and versions installed in the
 local cache.
 
-_current-linkage_: -> ((filename (package-name nat nat) ...) ...)
+> (current-linkage) -> ((filename (package-name nat nat) ...) ...)
 
 Gives the current linkage table.
 
-_make-planet-archive_: directory [file] -> file
+> (make-planet-archive directory [file-string]) -> file-string
 
 Makes a .plt archive file suitable for PLaneT whose contents are all
 files in the given directory and returns that file's name.  If the
 optional filename argument is provided, that filename will be used as
 the output file's name.
+
+_The PLaneT search order_
+-------------------------
+
+PLaneT has three strategies it uses to match a request with an appropriate
+package that it tries in order.
+
+1. Previous linkage
+
+Whenever a file requires a package via PLaneT and that requirement is
+satisfied, the system makes a note of exactly which package satisfied
+that requirement and from then on always uses that exact same package,
+even if a newer version is available. This is done to prevent 
+"magic upgrades" in which a program stops working after installation
+because an unrelated package was installed.
+
+2. Acceptable local package
+
+If the PLaneT client doesn't have any previous linkage information,
+it checks its list of already-installed PLaneT packages for one that
+meets the requirement, and uses it if available.
+
+3. Acceptable remote package
+
+If there is no acceptable local package, the PLaneT client sends 
+a request to the PLaneT server for a new package that would satisfy
+the requirement. The server then finds the newest matching package
+and sends it back to the client, which then installs it and uses
+it to satisfy the original requirement.
 
 
 _Distributing Packages with PLaneT_
@@ -148,15 +178,20 @@ home/
       private/
          implementation.ss
 
+There are no strict requirements for what sorts of files can go in
+your package, but for it to work well with PLT Scheme's module
+system you should arrange your Schme code into modules.
+
 2. CREATE INFO.SS AND DOC.TXT FILES [OPTIONAL]
 
 If you put a file named info.ss in your package's root directory, the
 PLaneT system will look in it for descriptive metadata about your
-package. The PLaneT system looks for two names in that file:
+package. The PLaneT system looks for certain names in that file:
 
 The _'blurb field_
 
-If present, the blurb field should contain a list of xexprs that
+If present, the blurb field should contain a list of XHTML fragments 
+encoded as x-expressions (see the xml collection for details) that
 PLaneT will use as a short description of your project. This field
 is also used by the Help Desk.
 
@@ -166,6 +201,21 @@ If present, the primary-file field should be a string corresponding to
 the name (without path) of the main Scheme source file of your
 package. PLaneT will direct casual users of your library to require
 this file.
+
+The _'url field_
+
+If present, the URL field should be a string corresponding to a URL
+for the package. PLaneT provides this link with the description of your
+package on the main PLaneT web page.
+
+The _'version field_
+
+If present, the version field should describe the version number
+of this code that should be presented to users (e.g., "0.15 alpha").
+This field does not override or in any way interact with your package's
+package version number, which is assigned by PLaneT, but may be useful
+to users.
+
 
 In addition, PLaneT uses the setup-plt installer to install packages
 on client machines, so all the fields it looks for can be included. In
@@ -182,7 +232,6 @@ An example info.ss file looks like this:
 	  "butter. It even shows a fancy graphic!"))
   (define primary-file "my-app.ss"))
 
-
 See the PLT mzc: MzScheme Compiler Manual, chapter 7 for more
 information on info.ss files.
 
@@ -197,7 +246,7 @@ Run the function make-planet-archive from the util.ss module in the
 planet collection with the name of the directory you've prepared as
 its argument: 
 
-> (make-planet-archive "/home/jacob/my-app/")
+  (make-planet-archive "/home/jacob/my-app/")
 
 This function will build a packaged version of your directory and
 return the path to that package. The path will always be a file named

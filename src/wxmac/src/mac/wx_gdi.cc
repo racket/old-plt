@@ -870,6 +870,8 @@ wxBitmap::wxBitmap(char **data, wxItem *anItem)
 }
 #endif
 
+extern int wxsGetImageType(char *);
+
 /*
 	if USE_XPM_IN_MAC and USE_IMAGE_LOADING_IN_MAC are not defined in wx_setup.h
 	then the only thing we can load is a PICT file.
@@ -887,6 +889,9 @@ Bool wxBitmap::LoadFile(char *name, long flags)
 	}
 	wxColourMap *colourmap;
 	ok = FALSE;
+
+	if (!flags)
+	  flags = wxsGetImageType(name);
 
 #if USE_XPM_IN_MAC
 	if (flags & wxBITMAP_TYPE_XPM) {

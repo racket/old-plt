@@ -115,14 +115,14 @@ buffer to hold results:
 
 For the age column:
 
-    (define age-buffer (make-buffer 'sql-c-long 1))
+    (define age-buffer (make-buffer 'sql-c-slong 1))
 
 There are ways to find out the types associated with columns,
 but unfortunately, it's a complicated business.  There are
 actually distinct types (SQL types) for the columns themselves, 
 and separate C types for buffers that receive their data.
 But 'sql-c-char is probably what you want for string buffers,
-and 'sql-c-long for integer buffers.
+and 'sql-c-slong for integer buffers.
 
 We'll need another kind of buffer, an "indicator":
 

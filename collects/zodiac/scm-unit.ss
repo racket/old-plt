@@ -239,7 +239,11 @@
   ; ----------------------------------------------------------------------
 
   (define c/imports-vocab
-    (create-vocabulary 'c/imports-vocab))
+    (create-vocabulary 'c/imports-vocab #f
+      "Invalid import declaration"
+      "Invalid import declaration"
+      "Invalid import declaration"
+      "Invalid import declaration"))
 
   (add-sym-micro c/imports-vocab
     (lambda (expr env attributes vocab)
@@ -249,7 +253,11 @@
   ; ----------------------------------------------------------------------
 
   (define unit-exports-vocab
-    (create-vocabulary 'unit-exports-vocab))
+    (create-vocabulary 'unit-exports-vocab #f
+      "Invalid export declaration"
+      "Invalid export declaration"
+      "Invalid export declaration"
+      "Invalid export declaration"))
 
   (add-sym-micro unit-exports-vocab
     (lambda (expr env attributes vocab)
@@ -340,7 +348,11 @@
   ; ----------------------------------------------------------------------
 
   (define c-unit-link-import-vocab
-    (create-vocabulary 'c-unit-link-import-vocab))
+    (create-vocabulary 'c-unit-link-import-vocab #f
+      "Invalid link import declaration"
+      "Invalid link import declaration"
+      "Invalid link import declaration"
+      "Invalid link import declaration"))
 
   (add-sym-micro c-unit-link-import-vocab
     (lambda (expr env attributes vocab)
@@ -366,7 +378,11 @@
 	    (static-error expr "Invalid link syntax"))))))
 
   (define c-unit-link-body-vocab
-    (create-vocabulary 'c-unit-link-body-vocab))
+    (create-vocabulary 'c-unit-link-body-vocab #f
+      "Invalid link body declaration"
+      "Invalid link body declaration"
+      "Invalid link body declaration"
+      "Invalid link body declaration"))
 
   (add-list-micro c-unit-link-body-vocab
     (let* ((kwd '())
@@ -390,7 +406,11 @@
 	    (static-error expr "Invalid linkage body"))))))
 
   (define c-unit-exports-vocab
-    (create-vocabulary 'c-unit-exports-vocab))
+    (create-vocabulary 'c-unit-exports-vocab #f
+      "Invalid unit export declaration"
+      "Invalid unit export declaration"
+      "Invalid unit export declaration"
+      "Invalid unit export declaration"))
 
   (add-sym-micro c-unit-exports-vocab
     (lambda (expr env attributes vocab)
@@ -414,7 +434,11 @@
 	    (static-error expr "Invalid export clause"))))))
 
   (define c-unit-export-clause-vocab
-    (create-vocabulary 'c-unit-export-clause-vocab))
+    (create-vocabulary 'c-unit-export-clause-vocab #f
+      "Invalid export clause declaration"
+      "Invalid export clause declaration"
+      "Invalid export clause declaration"
+      "Invalid export clause declaration"))
 
   (add-list-micro c-unit-export-clause-vocab
     (let* ((kwd '())
@@ -692,7 +716,11 @@
 	      (create-define-values-form id-exprs expr-expr expr)))))))
 
   (define define-values-id-parse-vocab
-    (create-vocabulary 'define-values-id-parse-vocab))
+    (create-vocabulary 'define-values-id-parse-vocab #f
+      "Invalid in identifier position"
+      "Invalid in identifier position"
+      "Invalid in identifier position"
+      "Invalid in identifier position"))
 
   (add-sym-micro define-values-id-parse-vocab
     (lambda (expr env attributes vocab)

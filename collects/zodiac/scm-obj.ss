@@ -162,10 +162,19 @@
 
 					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-  (define ivar-decls-vocab (create-vocabulary 'ivar-decls-vocab))
+  (define ivar-decls-vocab
+    (create-vocabulary 'ivar-decls-vocab #f
+      "Invalid ivar declaration"
+      "Invalid ivar declaration"
+      "Invalid ivar declaration"
+      "Invalid ivar declaration"))
 
   (define public-ivar-decl-entry-parser-vocab
-    (create-vocabulary 'public-ivar-decl-entry-parser-vocab))
+    (create-vocabulary 'public-ivar-decl-entry-parser-vocab #f
+      "Invalid public declaration"
+      "Invalid public declaration"
+      "Invalid public declaration"
+      "Invalid public declaration"))
 
   (add-sym-micro public-ivar-decl-entry-parser-vocab
     (lambda (expr env attributes vocab)
@@ -236,7 +245,11 @@
 					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
   (define private-ivar-decl-entry-parser-vocab
-    (create-vocabulary 'private-ivar-decl-entry-parser-vocab))
+    (create-vocabulary 'private-ivar-decl-entry-parser-vocab #f
+      "Invalid private declaration"
+      "Invalid private declaration"
+      "Invalid private declaration"
+      "Invalid private declaration"))
 
   (add-sym-micro private-ivar-decl-entry-parser-vocab
     (lambda (expr env attributes vocab)
@@ -291,7 +304,11 @@
 					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
   (define inherit-ivar-decl-entry-parser-vocab
-    (create-vocabulary 'inherit-ivar-decl-entry-parser-vocab))
+    (create-vocabulary 'inherit-ivar-decl-entry-parser-vocab #f
+      "Invalid inherit declaration"
+      "Invalid inherit declaration"
+      "Invalid inherit declaration"
+      "Invalid inherit declaration"))
 
   (add-sym-micro inherit-ivar-decl-entry-parser-vocab
     (lambda (expr env attributes vocab)
@@ -341,7 +358,11 @@
 					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
   (define rename-ivar-decl-entry-parser-vocab
-    (create-vocabulary 'rename-ivar-decl-entry-parser-vocab))
+    (create-vocabulary 'rename-ivar-decl-entry-parser-vocab #f
+      "Invalid rename declaration"
+      "Invalid rename declaration"
+      "Invalid rename declaration"
+      "Invalid rename declaration"))
 
   (add-list-micro rename-ivar-decl-entry-parser-vocab
     (let* ((kwd '())

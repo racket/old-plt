@@ -255,4 +255,9 @@
                          ;; Map first step back to move
                          (match-up steps possible-moves possible-dests))])])
              (let-values ([(new-robots new-packages) (move 1 session m me robots packages)])
-               (run-loop new-robots new-packages (add1 iteration))))))))))
+               (run-loop new-robots new-packages (add1 iteration)))))))))
+  
+  ;; 2 arguments => run mode
+  (let ([cmdl (current-command-line-arguments)])
+    (when (= 2 (vector-length cmdl))
+      (run-robot (vector-ref cmdl 0) (string->number (vector-ref cmdl 1))))))

@@ -3,6 +3,7 @@
   (require "io.ss"
            "draw.ss"
            "data.ss"
+           (lib "cmdline.ss")
            (lib "list.ss")
            (lib "mred.ss" "mred")
            (lib "class.ss"))
@@ -13,10 +14,43 @@
 
   (define num-players 2)
   (define board-file "~/tmp/map")  ; maps available at the contest web site
-  (define pack-file "~/tmp/packs") ; pkg configuartions available there, too
+  (define package-file "~/tmp/packs") ; pkg configuartions available there, too
   
   (define robot-capacity 100)
   (define start-money 100)
+  
+  (command-line
+   "plt-robot-server"
+   (current-command-line-arguments)
+   [once-each
+    [("-p") portno "serve at TCP port number <portno>; default is 4004"
+     (let ([n (string->number portno)])
+       (if (and n (exact? n) (integer? n) (<= 1 n 65535))
+           (set! server-port n)
+           (error 'command-line "given <portno> is not a an exact integer in [1,65535]: ~e" portno)))]
+    [("-n") num "host <num> players; default is 2"
+     (let ([n (string->number num)])
+       (if (and n (exact? n) (integer? n) (positive? n))
+           (set! num-players n)
+           (error 'command-line "given <num> is not a positive exact integer: ~e" num)))]
+    [("-m") map-file "sets the map file; default is ~/tmp/map"
+     (set! board-file map-file)]
+    [("-k") pack-file "sets the package file; default is ~/tmp/packs"
+     (set! package-file pack-file)]
+    [("-f") fuel "sets the fuel for each player, between 1 and 1000000000"
+     (let ([n (string->number fuel)])
+       (if (and n (exact? n) (integer? n) (<= 1 n 1000000000))
+           (set! start-money n)
+           (error 'command-line "given <fuel> is not an exact integer in [1,1000000000]: ~e" fuel)))]
+    [("-c") capacity "sets the fuel for each player, bnetween 1 and 1000000000"
+     (let ([n (string->number capacity)])
+       (if (and n (exact? n) (integer? n) (<= 1 n 1000000000))
+           (set! robot-capacity n)
+           (error 'command-line "given <capacity> is not an exact integer in [1,1000000000]: ~e" capacity)))]])
+    
+     
+     
+     
   
   ;; -----------------------------------
   
@@ -35,7 +69,7 @@
   (define board-height (vector-length board))
   
   (define packages
-    (let ([str (with-input-from-file pack-file (lambda () (read-string (file-size pack-file))))])
+    (let ([str (with-input-from-file package-file (lambda () (read-string (file-size package-file))))])
       (let ([p (open-input-string (regexp-replace* ",|Mk|(dest=)|(uid=)|(weight=)" str " "))])
         (let ([raw-packs (read p)])
           (apply
@@ -164,11 +198,14 @@
                   current-internal-state
                   (list-ref past-states (- (length past-states) state-index 1)))])
       (when forward?
-        (send replay-panel enable #f)
-        (send play-button enable #f)
+        (let ([old? running-old?])
+          (unless old?
+            (send replay-panel enable #f)
+            (send play-button enable #f))
         (send drawn apply-queued-actions)
-        (send play-button enable #t)
-        (send replay-panel enable #t))
+          (unless old?
+            (send play-button enable #t)
+            (send replay-panel enable #t))))
       (send drawn set-internal-state s)
       (send backward-button enable (> state-index 0))
       (send forward-button enable (not last?))))
@@ -213,35 +250,49 @@
       (semaphore-Pn s (sub1 n))))
   
   (define (start-server)
-    (let ((listener (tcp-listen server-port 5 #t))
-          (server-sema (make-semaphore)))
-      (let ([client-semas
-             (let server-loop ((id 1))
-               (if (<= id num-players)
-                   (let-values (((input output) (tcp-accept listener))
-                                ((client-sema) (make-semaphore)))
-                     (thread (lambda () 
-                               (with-handlers ([void
-                                                (lambda (exn)
-                                                  (fprintf (current-error-port)
-                                                           "bot ~a exn: ~e~n"
-                                                           id (if (exn? exn)
-                                                                  (exn-message exn)
-                                                                  exn))
-                                                  (close-input-port input)
-                                                  (close-output-port output)
-                                                  ;; For now, we'll just go into a
-                                                  ;; do-nothing loop.
-                                                  (let loop ()
-                                                    (semaphore-post server-sema)
-                                                    (semaphore-wait client-sema)
-                                                    (loop)))])
-                                 (client-handler input output client-sema server-sema id))))
-                     (cons client-sema (server-loop (add1 id))))
-                   null))])
-        (thread 
-         (lambda ()
-           (server client-semas server-sema))))))
+    (let* ([d (make-object (class dialog%
+                             (define/override (on-close) (exit))
+                             (super-instantiate ()))
+                "Waiting" f)]
+           [mk-label (lambda (num-players)
+                       (format "Waiting for ~a clients..." num-players))]
+           [m (make-object message% (mk-label num-players) d)])
+      (make-object button% "Exit" d (lambda (b e) (exit)))
+      (thread
+       (lambda ()
+         (let ((listener (tcp-listen server-port 5 #t))
+               (server-sema (make-semaphore)))
+           (let ([client-semas
+                  (let server-loop ((id 1))
+                    (if (<= id num-players)
+                        (let-values (((input output) (tcp-accept listener))
+                                     ((client-sema) (make-semaphore)))
+                          (send m set-label (mk-label (- num-players id)))                                
+                          (thread (lambda () 
+                                    (with-handlers ([void
+                                                     (lambda (exn)
+                                                       (unless (eq? exn 'dead)
+                                                         (fprintf (current-error-port)
+                                                                  "bot ~a exn: ~e~n"
+                                                                  id (if (exn? exn)
+                                                                         (exn-message exn)
+                                                                         exn)))
+                                                       (close-input-port input)
+                                                       (close-output-port output)
+                                                       ;; For now, we'll just go into a
+                                                       ;; do-nothing loop.
+                                                       (let loop ()
+                                                         (semaphore-post server-sema)
+                                                         (semaphore-wait client-sema)
+                                                         (loop)))])
+                                      (client-handler input output client-sema server-sema id))))
+                          (cons client-sema (server-loop (add1 id))))
+                        null))])
+             (thread 
+              (lambda ()
+                (server client-semas server-sema)))))
+         (send d show #f)))
+      (send d show #t)))
   
   (define (randomize l)
     (let loop ([l l])
@@ -274,11 +325,6 @@
       (send drawn apply-queued-actions)
       (set! activity (send drawn get-most-recent-activity))
       (set!-values (robots packages) (send drawn get-robots&packages))
-      (for-each (lambda (d)
-                  (fprintf (current-error-port)
-                           "Robot ~a final score: ~a~n"
-                           (car d) (cadr d)))
-                (send drawn get-dead-robot-scores))
       ;; Continue if non-empty action list:
       (pair? commands)))
   

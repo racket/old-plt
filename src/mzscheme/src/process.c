@@ -619,6 +619,7 @@ static Scheme_Process *make_process(Scheme_Config *config, Scheme_Manager *mgr)
   process->runstack_start = MALLOC_N(Scheme_Object*, INIT_SCHEME_STACK_SIZE);
   process->runstack = process->runstack_start + INIT_SCHEME_STACK_SIZE;
   process->runstack_saved = NULL;
+  process->cont_mark_chain = NULL;
 
 #ifdef MZ_REAL_THREADS
   process->done_sema = scheme_make_sema(0);

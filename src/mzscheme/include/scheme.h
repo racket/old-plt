@@ -444,6 +444,7 @@ typedef struct Scheme_Saved_Stack {
   Scheme_Object **runstack_start;
   Scheme_Object **runstack;
   long runstack_size;
+  Scheme_Object **runstack_last_mark;
   struct Scheme_Saved_Stack *prev;
 } Scheme_Saved_Stack;
 
@@ -578,6 +579,8 @@ typedef struct Scheme_Process {
   struct Scheme_Process_Manager_Hop *mr_hop;
 
   Scheme_Manager_Reference *mref;
+
+  Scheme_Object **cont_mark_chain;
 } Scheme_Process;
 
 /* Type readers & writers for compiled code data */

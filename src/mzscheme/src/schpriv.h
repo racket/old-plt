@@ -303,8 +303,9 @@ void *scheme_top_level_do(void *(*k)(void), int eb);
 typedef struct Scheme_Stack_State {
   Scheme_Object **runstack;
   Scheme_Object **runstack_start;
-  Scheme_Saved_Stack *runstack_saved;
   long runstack_size;
+  Scheme_Saved_Stack *runstack_saved;
+  Scheme_Object **cont_mark_chain;
 } Scheme_Stack_State;
 
 typedef struct Scheme_Dynamic_Wind {
@@ -586,9 +587,11 @@ int scheme_find_type(Scheme_Object *ts);
 
 #define scheme_save_env_stack_w_process(ss, p) \
     (ss.runstack = p->runstack, ss.runstack_start = p->runstack_start, \
+     ss.cont_mark_chain = p->cont_mark_chain, \
      ss.runstack_size = p->runstack_size, ss.runstack_saved = p->runstack_saved)
 #define scheme_restore_env_stack_w_process(ss, p) \
     (p->runstack = ss.runstack, p->runstack_start = ss.runstack_start, \
+     p->cont_mark_chain = ss.cont_mark_chain, \
      p->runstack_size = ss.runstack_size, p->runstack_saved = ss.runstack_saved)
 #define scheme_save_env_stack(ss) \
     scheme_save_env_stack_w_process(ss, scheme_current_process)

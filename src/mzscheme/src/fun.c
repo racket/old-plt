@@ -1827,43 +1827,27 @@ static Scheme_Object *
 cc_marks(int argc, Scheme_Object *argv[])
 {
   Scheme_Process *p = scheme_current_process;
-  Scheme_Object *first = scheme_null, *last = NULL, **s, **limit, *key;
-  Scheme_Saved_Stack *csaved = NULL;
+  Scheme_Object *first = scheme_null, *last = NULL, *key;
   Scheme_Object *frame_key = NULL;
+  Scheme_Object **s;
 
   key = argv[0];
+  s = p->cont_mark_chain;
 
-  do {
-    if (csaved) {
-      s = csaved->runstack;
-      limit = csaved->runstack_start + csaved->runstack_size;
-    } else {
-      s = p->runstack;
-      limit = p->runstack_start + p->runstack_size;
+  while(s) {
+    if (SAME_OBJ(key, s[1]) && !SAME_OBJ(frame_key, s[3])) {
+      Scheme_Object *pr = scheme_make_pair(s[2], scheme_null);
+      if (last)
+	SCHEME_CDR(last) = pr;
+      else
+	first = pr;
+      last = pr;
+      /* No more for this frame */
+      frame_key = s[3];
     }
-
-    while (s < limit) {
-      if (*s == MZ_CONT_MARK_INDICATOR) {
-	if (SAME_OBJ(key, s[1]) && !SAME_OBJ(frame_key, s[3])) {
-	  Scheme_Object *pr = scheme_make_pair(s[2], scheme_null);
-	  if (last)
-	    SCHEME_CDR(last) = pr;
-	  else
-	    first = pr;
-	  last = pr;
-	  /* No more for this frame */
-	  frame_key = s[3];
-	}
-	s += MZ_CONT_MARK_SPACE;
-      } else
-	s++;
-    }
-
-    if (!csaved)
-      csaved = p->runstack_saved;
-    else
-      csaved = csaved->prev;
-  } while (csaved);
+    
+    s = (Scheme_Object **)s[0];
+  }
 
   return first;
 }

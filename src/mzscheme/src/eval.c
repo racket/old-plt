@@ -1828,6 +1828,7 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
 }
 
 #define USE_LOCAL_RUNSTACK 1
+#define DELAY_THREAD_RUNSTACK_UPDATE 1
 
 /* Optimization that's helpful on some platforms for some programs, 
    but not others */
@@ -1845,7 +1846,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #endif
 {
   Scheme_Type type;
-  Scheme_Object *v, **old_runstack;
+  Scheme_Object *v, **old_runstack, **old_cont_mark_chain;
 #if USE_LOCAL_RUNSTACK
   Scheme_Object **runstack;
 #endif
@@ -1887,9 +1888,18 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
   }
 #endif
 
+# define CONT_MARK_CHAIN p->cont_mark_chain
+# define RESET_CONT_MARK_CHAIN() (CONT_MARK_CHAIN = old_cont_mark_chain)
+
 #if USE_LOCAL_RUNSTACK
 # define RUNSTACK runstack
-# define UPDATE_THREAD_RSPTR() (p->runstack = runstack)
+# if DELAY_THREAD_RUNSTACK_UPDATE
+#  define UPDATE_THREAD_RSPTR() (p->runstack = runstack)
+#  define RUNSTACK_CHANGED() /**/
+# else
+#  define UPDATE_THREAD_RSPTR() /**/
+#  define RUNSTACK_CHANGED() (p->runstack = runstack)
+# endif
   runstack = p->runstack;
 #else
 # define RUNSTACK p->runstack
@@ -1899,7 +1909,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #define UPDATE_THREAD_RSPTR_FOR_GC() UPDATE_THREAD_RSPTR()
 #define UPDATE_THREAD_RSPTR_FOR_ERROR() UPDATE_THREAD_RSPTR()
 
-  old_runstack = p->runstack;
+  old_runstack = RUNSTACK;
+  old_cont_mark_chain = CONT_MARK_CHAIN;
 
   if (num_rands >= 0) {
 
@@ -1934,6 +1945,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  Scheme_Object **quick_rands;
 
 	  quick_rands = PUSH_RUNSTACK(p, RUNSTACK, num_rands);
+	  RUNSTACK_CHANGED();
 
 	  for (i = num_rands; i--; )
 	    quick_rands[i] = rands[i];
@@ -2002,6 +2014,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  
 	  stack = RUNSTACK = old_runstack - num_params;
 	  CHECK_RUNSTACK(p, RUNSTACK);
+	  RUNSTACK_CHANGED();
+	  RESET_CONT_MARK_CHAIN();
 
 	  extra = num_rands - n;
 	  if (extra) {
@@ -2061,6 +2075,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	
 	  stack = RUNSTACK = old_runstack - num_params;
 	  CHECK_RUNSTACK(p, RUNSTACK);
+	  RUNSTACK_CHANGED();
+	  RESET_CONT_MARK_CHAIN();
 
 	  if (rands != stack) {
 	    int n = num_params; 
@@ -2080,6 +2096,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  return NULL; /* Doesn't get here */
 	}
 	RUNSTACK = old_runstack;
+	RUNSTACK_CHANGED();
+	RESET_CONT_MARK_CHAIN();
       }
       
       {
@@ -2088,7 +2106,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	if (n) {
 	  src = SCHEME_COMPILED_CLOS_ENV(obj);
 	  stack = PUSH_RUNSTACK(p, RUNSTACK, n);
-	  
+	  RUNSTACK_CHANGED();
+
 	  while (n--)
 	    stack[n] = src[n];
 	}
@@ -2108,6 +2127,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  Scheme_Object **quick_rands;
 
 	  quick_rands = PUSH_RUNSTACK(p, RUNSTACK, num_rands);
+	  RUNSTACK_CHANGED();
 
 	  for (i = num_rands; i--; )
 	    quick_rands[i] = rands[i];
@@ -2324,6 +2344,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  obj = app->args[0];
 	  
 	  stack = PUSH_RUNSTACK(p, RUNSTACK, num_rands);
+	  RUNSTACK_CHANGED();
 	  UPDATE_THREAD_RSPTR();
 
 	  /* Inline local & global variable lookups for speed */
@@ -2505,6 +2526,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  obj = lv->body;
 
 	  PUSH_RUNSTACK(p, RUNSTACK, c);
+	  RUNSTACK_CHANGED();
 
 	  if (lv->autobox) {
 	    Scheme_Object **stack = RUNSTACK;
@@ -2562,6 +2584,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  Scheme_Let_One *lo = (Scheme_Let_One *)obj;
 
 	  PUSH_RUNSTACK(p, RUNSTACK, 1);
+	  RUNSTACK_CHANGED();
 
 	  switch (lo->eval_type) {
 	  case SCHEME_EVAL_CONSTANT:
@@ -2604,13 +2627,14 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    val = _scheme_eval_compiled_expr_wp(wcm->val, p);
 
 	  PUSH_RUNSTACK(p, RUNSTACK, MZ_CONT_MARK_SPACE);
+	  RUNSTACK_CHANGED();
 
-	  /* 0x2 embedded in the runstack indicates a continuation mark */
-	  RUNSTACK[0] = MZ_CONT_MARK_INDICATOR;
+	  RUNSTACK[0] = (Scheme_Object *)CONT_MARK_CHAIN;
 	  RUNSTACK[1] = key;
 	  RUNSTACK[2] = val;
 	  RUNSTACK[3] = (Scheme_Object *)old_runstack;
 	  /* old_runstack is effectively a key for this `frame' */
+	  CONT_MARK_CHAIN = RUNSTACK;
 
 	  obj = wcm->body;
 
@@ -2631,6 +2655,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
     p->ku.apply.tail_rands = NULL;
 #endif
     RUNSTACK = old_runstack;
+    RUNSTACK_CHANGED();
+    RESET_CONT_MARK_CHAIN();
     goto apply_top;
   }
 
@@ -2654,6 +2680,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
     }
      
     RUNSTACK = old_runstack;
+    RUNSTACK_CHANGED();
+    RESET_CONT_MARK_CHAIN();
     old_runstack = kstack;
     
 #if USE_IF_K && USE_LET_K
@@ -2702,6 +2730,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
     }
 
   p->runstack = old_runstack;
+  p->cont_mark_chain = old_cont_mark_chain;
 
   DEBUG_CHECK_TYPE(v);
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Message.cc,v 1.3 1998/08/08 03:33:04 mflatt Exp $
+ * $Id: Message.cc,v 1.4 1998/12/05 01:08:21 mflatt Exp $
  *
  * Purpose: message panel item
  *
@@ -104,6 +104,8 @@ Bool wxMessage::Create(wxPanel *panel, char *message,
     /* This just turns on KeyPress events in the widget so that PreOnChar() works. */
     XtAddEventHandler(X->frame, KeyPressMask, FALSE, (XtEventHandler)do_nothing, NULL);
     XtAddEventHandler(X->handle, KeyPressMask, FALSE, (XtEventHandler)do_nothing, NULL);
+    
+    AllowResize(FALSE);
 
     return TRUE;
 }
@@ -145,6 +147,8 @@ Bool wxMessage::Create(wxPanel *panel, wxBitmap *bitmap,
 	     NULL);
 
     panel->PositionItem(this, x, y, -1, -1);
+
+    AllowResize(FALSE);
 
     return TRUE;
 }

@@ -652,7 +652,11 @@ double scheme_real_to_double(Scheme_Object *r)
     return 0.0;
 }
 
-static MSC_IZE(inline) int minus_zero_p(double d)
+static
+#ifndef NO_INLINE_KEYWORD
+MSC_IZE(inline)
+#endif
+minus_zero_p(double d)
 {
   double a[2];
   long *f, *s;

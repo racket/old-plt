@@ -320,6 +320,8 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define POW_HANDLES_INF_CORRECTLY
 
+# define NO_INLINE_KEYWORD
+
 # define NO_USLEEP
 # define USE_FCNTL_O_NONBLOCK
 
@@ -1124,12 +1126,16 @@ int scheme_pthread_semaphore_try_down(void *);
 /***********************/
 
 #define UNISTD_INCLUDE
+#define NO_INLINE_KEYWORD
 
  /* REGISTER_POOR_MACHINE guides a hand optimization that seems to
     be work best one way for Sparc machines, and better the other
     way for x86 machines. */
 
  /* SIXTY_FOUR_BIT_INTEGERS indicates that 'long's are 64-bits wide. */
+
+ /* NO_INLINE_KEYWORD indicates that the C compiler doesn't recognize
+    C's `inline' keyword. */
 
  /* NO_USER_BREAK_HANDLER turns off handling of INT signal in main.c */
 

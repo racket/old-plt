@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.15 1998/11/25 13:06:20 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.16 1998/12/06 17:44:47 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -222,7 +222,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *src,
 			float xsrc, float ysrc)
 {
-    /* A non-allocating blit */
+    /* A non-allocating (of collectable memory) blit */
 
     if (!DRAWABLE) // ensure that a drawable has been associated
       return FALSE;

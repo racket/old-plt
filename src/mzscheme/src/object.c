@@ -1767,7 +1767,7 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
   item = ivars;
   while (item) {
     if (item->vartype != varNOTHING) {
-      scheme_dup_symbol_check(r, CLASS_STAR, IVAR_INT_NAME(item), "internal ivar", form, 0);
+      scheme_dup_symbol_check(r, CLASS_STAR, IVAR_INT_NAME(item), "internal ivar or initialization variable", form, 0);
       if (ispublic(item))
 	scheme_dup_symbol_check(er, CLASS_STAR, IVAR_EXT_NAME(item), "external ivar", form, 0);
     }

@@ -624,9 +624,13 @@
 				   (when m
 				     (found "text")
 				     (add-choice (car m)
-						 (if (eq? doc-kind 'html)
-						     (clean-html r)
-						     r)
+						 ; Strip leading space and clean HTML
+						 (regexp-replace
+						  "^ [ ]*"
+						  (if (eq? doc-kind 'html)
+						      (clean-html r)
+						      r)
+						  "")
 						 "content"
 						 (build-path doc f)
 						 (if (eq? doc-kind 'text) pos "NO TAG")

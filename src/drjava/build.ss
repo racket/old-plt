@@ -40,7 +40,7 @@ string=? ; exec mzscheme -f "$0" "$@"
 ;;;;;;; begin jvm-dependent
 
 ;;;; begin kaffe stuff
-(define kaffe-base "/home/ptg/.bin/kaffe-6-10-1999AD")
+(define kaffe-base "/home/ptg/.bin/kaffe-7-22-1999AD")
 (define kaffe-I-flags
   (list* "-I" (build-path kaffe-base "include" "kaffe") mzscheme-I))
 (define kaffe-libs (build-path kaffe-base "lib"))

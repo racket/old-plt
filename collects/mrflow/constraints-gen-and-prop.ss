@@ -920,17 +920,46 @@
             [then-label (create-label-from-term (syntax then) gamma enclosing-lambda-label)]
             [else-label (create-label-from-term (syntax else) gamma enclosing-lambda-label)]
             ; our edges are origin-independant, so we can use the same one for both then and else.
-            [inflowing-if-simple-edge (create-simple-edge if-label)])
-       (add-edge-and-propagate-set-through-edge then-label inflowing-if-simple-edge)
-       (add-edge-and-propagate-set-through-edge else-label inflowing-if-simple-edge)
+            [if-edge (create-simple-edge if-label)]
+            [test-edge
+             (let ([edge-fake-destination (gensym)])
+               (case-lambda
+                [(out-label inflowing-label)
+                 ; sink edge, so no need for out-label
+                 (if (not (syntax-e (label-term inflowing-label)))
+                     (add-edge-and-propagate-set-through-edge
+                      else-label if-edge)
+                     (add-edge-and-propagate-set-through-edge
+                      then-label if-edge))]
+                ; test value sink
+                [() edge-fake-destination]))])
+       (add-edge-and-propagate-set-through-edge test-label test-edge)
        if-label)]
     [(if test then)
-     (let ([if-label (create-simple-label term)]
-           [test-label (create-label-from-term (syntax test) gamma enclosing-lambda-label)]
-           [then-label (create-label-from-term (syntax then) gamma enclosing-lambda-label)])
-       (add-edge-and-propagate-set-through-edge
-        then-label
-        (create-simple-edge if-label))
+     (let* ([if-label (create-simple-label term)]
+            [test-label (create-label-from-term (syntax test) gamma enclosing-lambda-label)]
+            [then-label (create-label-from-term (syntax then) gamma enclosing-lambda-label)]
+            [else-label (make-label-cst #f #f
+                                        (datum->syntax-object term (void) term term)
+                                        (make-hash-table)
+                                        '())]
+            ; our edges are origin-independant, so we can use the same one for both then and else.
+            [if-edge (create-simple-edge if-label)]
+            [test-edge
+             (let ([edge-fake-destination (gensym)])
+               (case-lambda
+                [(out-label inflowing-label)
+                 ; sink edge, so no need for out-label
+                 (if (not (syntax-e (label-term inflowing-label)))
+                     (add-edge-and-propagate-set-through-edge
+                      else-label if-edge)
+                     (add-edge-and-propagate-set-through-edge
+                      then-label if-edge))]
+                ; test value sink
+                [() edge-fake-destination]))])
+       (initialize-label-set-for-value-source else-label)
+       ;(associate-label-with-term-position else-label term)
+       (add-edge-and-propagate-set-through-edge test-label test-edge)
        if-label)]
     [(begin exps ...)
      (let ([begin-label (create-simple-label term)]
@@ -1005,6 +1034,7 @@
  (define-struct (type-union type) (elements))
  (define-struct (type-rec type) (vars types body))
  (define-struct (type-values type) (types))
+ (define-struct (type-scheme type) (flow-vars&types type))
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GUI INTERFACE
  
@@ -1308,17 +1338,13 @@
  ; returns list of labels from which label went in or out, depending on selector
  (define (get-parents/children selector)
    (lambda (label)
-     (let ([foo
-            (list:foldr
-             (lambda (edges edgess)
-               (merge-lists edges edgess))
-             '()
-             (hash-table-map (label-set label)
-                             (lambda (label in/out-edges)
-                               (selector in/out-edges))))
-            ])
-       (printf "edges: ~a~n" (length foo))
-       foo)))
+     (list:foldr
+      (lambda (edges edgess)
+        (merge-lists edges edgess))
+      '()
+      (hash-table-map (label-set label)
+                      (lambda (label in/out-edges)
+                        (selector in/out-edges))))))
  
  ; label -> (listof label)
  (define parents (get-parents/children car))

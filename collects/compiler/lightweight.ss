@@ -1419,8 +1419,7 @@
 		   [t2-phi (phi t2)])
 	       (unless (set-subset? t1-phi t2-phi)
 		       (set-phi! t2 (set-union t1-phi t2-phi))
-		       (set! inner-done #f)
-		       (set! outer-done #f))))]
+		       (set! inner-done #f))))]
 	  [do-set-zactor 
 	   (make-object
 	    (class zactor% ()
@@ -1577,6 +1576,8 @@
 		      (unless inner-done
 			      (set! inner-done #t)
 			      (traverse-ast-with-zactor ast do-set-zactor)
+			      (unless inner-done
+				      (set! outer-done #f))
 			      (inner-closure-loop))))
 		asts)
 	       (outer-closure-loop)))))

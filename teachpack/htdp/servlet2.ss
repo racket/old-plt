@@ -153,8 +153,8 @@
   ; Form -> Bindings 
   ; to ask N questions with tags, receive N answers 
   ; assert: (lambda (result) (set-equal? (map car aloss) (map car result)))
-  (define (form-query aloss)
-    (check-list-list 'form-query (form? aloss) "form" aloss)
+  (define (form-query f)
+    (check-list-list 'form-query (form? f) "form" f)
     (map list (map first f)
          (conduct-query "Web Query" (map list (make-keys f) (map second f)))))
 

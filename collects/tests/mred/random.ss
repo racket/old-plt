@@ -175,7 +175,7 @@
      [add (lambda (x) (void))]
      [choose-example
       (opt-lambda ([which #f])
-	(format "[dummy for ~a]" name))]
+	(format "[dummy for ~a]" (get-name)))]
      [bad-examples
       (lambda () null)])
     (sequence (super-init))))
@@ -228,6 +228,23 @@
 		    (- start 2)
 		    (add1 end))
 		(send parent bad-examples)))])
+    (sequence (super-init))))
+
+
+(define maker-example-list%
+  (class100 object% (-maker)
+    (private-field [maker -maker])
+    (public
+     [get-name (lambda () `(make ,maker))]
+     [all-examples
+      (lambda ()
+	(list (maker)))]
+     [add (lambda (x) (void))]
+     [choose-example
+      (opt-lambda ([which #f])
+	(maker))]
+     [bad-examples
+      (lambda () null)])
     (sequence (super-init))))
 
 (define-struct (fatal-exn exn) ())
@@ -294,6 +311,7 @@
   boolean
   procedure
   eventspace
+  container-alignment
 
   (area<%> window<%> subarea<%> area-container<%>)
 
@@ -463,6 +481,16 @@
 (send integer-list-example-list add-bad 7)
 (send real-list-example-list add-bad 7.0)
 
+(for-each (lambda (h)
+	    (for-each (lambda (v)
+			(send container-alignment-example-list add (list h v)))
+		      '(top center bottom)))
+	  '(left center right))
+
+(define input-port-example-list (make-object maker-example-list%
+					     (lambda () 
+					       (open-input-string (send string-example-list choose-example)))))
+
 (define empty-list-example-list (make-object example-list% 'empty-list '()))
 (send empty-list-example-list add null)
 (send empty-list-example-list add-bad #f)
@@ -559,8 +587,8 @@
 (send* string-example-list
        (add "")
        (add "hello")
-       (add "system/mred.xbm")
-       (add "system/mred.bmp")
+       (add "random/mred.xbm")
+       (add "random/mred.bmp")
        (add "mred.gif")
        (add "goodbye adious see you later zai jian seeya bye-bye"))
 
@@ -590,6 +618,8 @@
 (define (choice . l) (make-object choose-example-list% l))
 (define (style-list . l) (make-object listed-example-list% (make-object discrete-example-list% l)))
 (define (symbol-in l) (make-object discrete-example-list% l))
+
+(define message-label-example-list (choice labelstring-example-list bitmap%-example-list (symbol-in '(app caution stop))))
 
 (load-relative "windowing-classes.ss")
 (load-relative "drawing-classes.ss")
@@ -791,9 +821,9 @@
 			     (when (eq? iv 'set-scale)
 			       (set! args (map (lambda (x) (min x 10)) args)))
 
-			     (send-generic use (make-generic (object->interface use) iv) . args))
+			     (send-generic use (make-generic (object-interface use) iv) . args))
 
-			   (apply (global-defined-value iv) args))))))
+			   (apply (namespace-variable-value iv) args))))))
 	    (loop (cdr l)))))))
 
 (define (call-random except)
@@ -1013,21 +1043,11 @@
 				  names methods))
 			       
 			       ; Check everything is documented
-			       (when (procedure? (with-handlers ([void void]) (global-defined-value 'class->names)))
-				 (for-each
-				  (lambda (n)
-				    (unless (memq n names)
-				      (printf "Undocumented method: ~a in ~a~n" n key)))
-				  (let ([l ((if (interface? key) interface->names class->names) key)]
-					[l2 (interface->ivar-names (if (interface? key) 
-								       key
-								       (class->interface key)))])
-				    (unless (and (= (length l)
-						    (length l2))
-						 (andmap (lambda (i) (member i l2))
-							 l))
-				      (printf "Ivar list doesn't match expected for ~a~n" key))
-				    l))))))))
+			       (for-each
+				(lambda (n)
+				  (unless (memq n names)
+				    (printf "Undocumented method: ~a in ~a~n" n key)))
+				(interface->method-names (if (interface? key) key (class->interface key)))))))))
 (printf " Method-checking done~n")
 
 (let* ([get-all (lambda (n)
@@ -1049,6 +1069,18 @@
 (unless (and (>= (vector-length argv) 1)
 	     (string=? (vector-ref argv 0) "-r"))
   (exit 0))
+
+;; Disallow writes outside of random/...
+(unless (directory-exists? "random")
+  (make-directory "random"))
+(current-security-guard (make-security-guard (current-security-guard)
+					     (lambda (who what why)
+					       (when (memq why '(write delete))
+						 (unless (regexp-match "/random/" what)
+						   (error who
+							  "not allowed to write file: ~e"
+							  what))))
+					     (lambda args 'ok)))
 
 ;; Remove some things:
 (for-each (lambda (p)

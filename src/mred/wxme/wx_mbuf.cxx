@@ -1958,6 +1958,18 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
       total = new char[1];
     
     total[length] = 0;
+
+#ifdef wx_mac
+    /* Change newline to return: */
+    {
+      int i;
+
+      for (i = 0; i < length; i++) {
+	if (total[i] == '\n')
+	  total[i] == '\r';
+      }
+    }
+#endif
     
     *size = length;
 

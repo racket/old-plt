@@ -329,7 +329,7 @@ static void check_tagged(char *where,
 	  expr = SCHEME_CAR(app);
 	  links = SCHEME_CDR(app);
 	  
-	  check_tagged(where, links, form, env, 1, &ids, 0, -1, 1, tag);
+	  check_tagged(where, links, form, env, 1, &ids, 0, -1, 0, tag);
 
 	  extend_ids(m, tag, expr, (Scheme_Object *)ids.first);
 	}
@@ -810,7 +810,7 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_wrong_syntax(MAKE_COMPOUND_UNIT, 
 			export, form,
 			"expected `export' keyword");
-  check_tagged(MAKE_COMPOUND_UNIT, SCHEME_CDR(export), form, env, 1, exports, 1, 0, -1, NULL);
+  check_tagged(MAKE_COMPOUND_UNIT, SCHEME_CDR(export), form, env, 1, exports, 1, 0, 0, NULL);
 
   check_tags_unique(withs, MAKE_COMPOUND_UNIT, form, &drec, 0, 0, 0);
   /* Check that export tags were defined by withs: */

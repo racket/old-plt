@@ -83,7 +83,7 @@
   
   (define core-flat@ (require-library-unit/sig "coreflatr.ss"))
   
-  ;; build-single-teachpack-unit : string boolean -> (union #f (unit () X))
+  ;; build-single-teachpack-unit : string boolean -> (union #f (cons (-> void) (unit () X)))
   (define (build-single-teachpack-unit v)
     (with-handlers
         ([(lambda (x) #t)
@@ -217,7 +217,7 @@
                                       (cons (car unit-pair) thunks)
                                       (cons
                                        `[,(string->symbol (format "teachpack~a" tagn)) : ()
-                                         (,(car unit-pair) userspace)]
+                                         (,(cdr unit-pair) userspace)]
                                        link-clauses)))
                               (begin
                                 (set! bad-teachpacks (cons (car teachpack-strings) bad-teachpacks))

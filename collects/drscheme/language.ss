@@ -234,10 +234,10 @@
 			    basis:setting-print-booleans-as-true/false
 			    "Print booleans as true and false"
 			    output-syntax-panel)]
-	   [use-pretty-printer
+	   [use-pretty-printer?
 	    (make-check-box basis:set-setting-use-pretty-printer?!
 			    basis:setting-use-pretty-printer?
-			    "Use pretty printer to format values"
+			    "Insert newlines in printed values"
 			    output-syntax-panel)]
 	   [ok-panel (make-object mred:horizontal-pane% main)]
 	   [hide-button (make-object mred:button%
@@ -276,6 +276,7 @@
 		     (compare-check-box sharing-printing? basis:setting-sharing-printing?)
 		     (compare-check-box whole/fractional-exact-numbers basis:setting-whole/fractional-exact-numbers)
 		     (compare-check-box booleans-as-true/false basis:setting-print-booleans-as-true/false)
+                     (compare-check-box use-pretty-printer? basis:setting-use-pretty-printer?)
 		     (eq? (printer-number->symbol (send printing get-selection))
 			  (basis:setting-printing setting)))))]
 	   [reset-choice
@@ -342,6 +343,7 @@
 		 (lambda (get check-box) (send check-box set-value (get v)))
 		 (list basis:setting-case-sensitive?
 		       basis:setting-sharing-printing?
+                       basis:setting-use-pretty-printer?
 		       basis:setting-whole/fractional-exact-numbers
 		       basis:setting-print-booleans-as-true/false
 		       basis:setting-unmatched-cond/case-is-error?
@@ -349,6 +351,7 @@
 		       basis:setting-teaching-primitives-and-syntax?)
 		 (list case-sensitive? 
 		       sharing-printing?
+                       use-pretty-printer?
 		       whole/fractional-exact-numbers
 		       booleans-as-true/false
 		       unmatched-cond/case-is-error?

@@ -57,3 +57,7 @@ appears in the second text box.
 mouse-off: important, robby
 If you mouse down on a button snip and move the mouse off, the button
 stays depressed.
+
+keys-presses: important
+If you press control-z or control-y in the test-cases you can undo some of
+the inserts and even see some of the snip handles when stuff gets uninserted

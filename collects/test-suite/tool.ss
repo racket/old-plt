@@ -21,29 +21,48 @@
       
       (define needs-reset? false)
       
-      ;; Adds an Insert test case item to the special menu of the drscheme frame
+      ;; Adds the test suite tool menu to the Dr. Scheme frame
       ;; Updates the needs-reset? when the the program is executed
       (define (test-case-mixin %)
         (class %
-          (inherit get-special-menu get-edit-target-object)
+          (inherit get-definitions-text get-edit-target-object get-menu-bar)
           
           (rename [super-execute-callback execute-callback])
           (define/override (execute-callback)
             (super-execute-callback)
             (set! needs-reset? true))
           
+          (define (enable enable?)
+            (send (get-definitions-text) for-each-test-case
+                  (lambda (case) (send case enable enable?))))
+          
           (super-new)
           
-          (new menu-item%
-            (label "Insert Test Case")
-            (parent (get-special-menu))
-            (callback
-             (lambda (menu event)
-               (let ([test-box (new test-case-box%)]
-                     [text (get-edit-target-object)])
-                 (send text insert test-box)
-                 (send test-box resize 600 100)
-                 (send text set-caret-owner test-box 'global)))))))
+          (field
+           [test-suite-menu
+            (new menu% (label "Test Suite")
+                 (parent (get-menu-bar)))]
+           [insert-menu-item
+            (new menu-item%
+                 (label "Insert Test Case")
+                 (parent test-suite-menu)
+                 (callback
+                  (lambda (menu event)
+                    (let ([test-box (new test-case-box%
+                                         (enabled? (send enable-menu-item is-checked?)))]
+                          [text (get-edit-target-object)])
+                      (send text insert test-box)
+                      ;(send test-box resize 600 100)
+                      (send text set-caret-owner test-box 'global)))))]
+           [enable-menu-item
+            (new checkable-menu-item%
+                 (parent test-suite-menu)
+                 (label "Enable Test Cases")
+                 (checked true)
+                 (callback
+                  (lambda (menu event)
+                    (enable (send menu is-checked?)))))])
+          ))
       
       (drscheme:get/extend:extend-unit-frame test-case-mixin)
       
@@ -74,12 +93,16 @@
           (define/public (reset-test-case-boxes)
             (when needs-reset?
               (set! needs-reset? false)
-              (for-each-snip
+              (for-each-test-case (lambda (snip) (send snip reset)))))
+          
+          ;; executes the given function on each test-case-box
+          (define/public (for-each-test-case f)
+            (for-each-snip
                (lambda (snip)
                  (when (is-a? snip test-case-box%)
-                   (send snip update 'unknown)))
-               (find-first-snip))))
-            
+                   (f snip)))
+               (find-first-snip)))
+          
           (super-new)))
       
       (drscheme:get/extend:extend-definitions-text clear-results-mixin)

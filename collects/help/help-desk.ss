@@ -14,7 +14,6 @@
   (provide (rename server:start-help-server start-help-server)
 	   help-desk-browser
            in-help-desk-navigate?
-           set-dr-bug-report-info!
            search-for-docs
 	   goto-manual-link
 	   goto-hd-location))

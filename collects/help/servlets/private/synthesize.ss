@@ -1,7 +1,7 @@
 (module synthesize mzscheme
   (require (lib "list.ss"))
   (require (lib "string-constant.ss" "string-constants"))
-  (require "drbug.ss")
+  (require "buginfo.ss")
 
   (provide get-synthesized-info)
 

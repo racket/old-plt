@@ -84,6 +84,9 @@ sunos4-static: $(OBJDIR)/dl_stub.o
 solaris-static:
 	$(MAKE) $(MRED) MRSTATIC="-Wl,-Bstatic" LDNONSTATICLIBS='-Wl,-Bdynamic -ldl -Wl,-Bstatic'
 
+linux-static: $(OBJDIR)/dl_stub.o
+	$(MAKE) $(MRED) MRSTATIC=-static MRSTATIC_STUB='$(OBJDIR)/dl_stub.o' LDNONSTATICLIBS='-Wl,--verbose'
+
 $(OBJDIR)/checkm.o: misc/checkm.c
 	$(CC) $(CFLAGS) $(LOCALFLAGS) -c misc/checkm.c -o $(OBJDIR)/checkm.o
 

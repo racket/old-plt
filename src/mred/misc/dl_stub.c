@@ -29,3 +29,4 @@ int dlclose(void *dl)
   return -1;
 }
 
+int _DYNAMIC;

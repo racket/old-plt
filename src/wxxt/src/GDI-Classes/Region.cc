@@ -233,7 +233,7 @@ void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset,
   MoveTo(cpoints[0].x, cpoints[0].y);
   for (i = 0; i < n; i++)
     LineTo(cpoints[i].x, cpoints[i].y);
-  LineTo(cpoints[n - 1].x, cpoints[n - 1].y);
+  LineTo(cpoints[0].x, cpoints[0].y);
   CloseRgn(rgn);
 #endif
 }

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Misc.cc,v 1.1 1996/01/10 14:56:54 markus Exp $
+ * $Id: Misc.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
  *
  * Purpose: miscellaneous utilities
  *
@@ -32,7 +32,7 @@
 
 void wxBell(void)
 {
-    XBell(wxAPP_DISPLAY, 0);
+    XBell(wxAPP_DISPLAY, 100);
 }
 
 long wxGetFreeMemory(void)

@@ -58,7 +58,7 @@ make with cmd-m.
 directory
 
 4) to compile .zo's and create launchers, cd to plt/bin and type:
-./mzscheme -mvql- setup.ss setup
+./mzscheme -mvqL- setup.ss setup
 
 *** OPTION 3: Compiling MzScheme for Mac OS X using only cc :
 

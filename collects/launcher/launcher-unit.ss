@@ -305,7 +305,8 @@
 	      (let ([str (str-list->dos-str flags)]
 		    [p (open-input-file dest)]
 		    [m "<Command Line: Replace This[^>]*>"]
-		    [x "<Executable Directory: Replace This[^>]*>"])
+		    [x "<Executable Directory: Replace This[^>]*>"]
+		    [v "<Executable Variant: Replace This>"])
 		(let* ([exedir (string-append 
 				plthome
 				;; null character marks end of executable directory
@@ -326,10 +327,12 @@
 				    "Couldn't find ~a position in template" s))))))]
 		       [exedir-poslen (find-it x "executable path")]
 		       [command-poslen (find-it m "command-line")]
+		       [variant-poslen (find-it v "variant")]
 		       [pos-exedir (car exedir-poslen)]
 		       [len-exedir (- (cdr exedir-poslen) (car exedir-poslen))]
 		       [pos-command (car command-poslen)]
 		       [len-command (- (cdr command-poslen) (car command-poslen))]
+		       [pos-variant (car variant-poslen)]
 		       [write-magic
 			(lambda (p s pos len)
 			  (file-position p pos)
@@ -350,6 +353,8 @@
 		  (let ([p (open-output-file dest 'update)])
 		    (write-magic p exedir pos-exedir len-exedir)   
 		    (write-magic p str pos-command len-command)   
+		    (when (eq? '3m (current-launcher-variant))
+		      (write-magic p "3" pos-variant 1))
 		    (close-output-port p)))))))
       
       ;; OS X launcher code:

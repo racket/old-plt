@@ -20,12 +20,14 @@
 #ifdef MRSTART
 # define GOSUBDIR "\\"
 # define GOEXE "mred.exe"
+# define GOEXE3M "mred3m.exe"
 # define WAITTILLDONE 0
 #endif
 
 #ifdef MZSTART
 # define GOSUBDIR "\\"
 # define GOEXE "mzscheme.exe"
+# define GOEXE3M "mzscheme3m.exe"
 # define WAITTILDONE 1
 #endif
 
@@ -83,6 +85,8 @@ static char *exedir = "<Executable Directory: Replace This ********"
                       "********************************************"
                       "********************************************"
                       "********************************************>";
+
+static char *variant = "<Executable Variant: Replace This>";
 
 static char *protect(char *s)
 {
@@ -250,7 +254,8 @@ int main(int argc_in, char **argv_in)
   
   /* exedir should be PLTHOME path */
   strcpy(go, exedir);
-  strcat(go, GOSUBDIR GOEXE);
+  strcat(go, GOSUBDIR);
+  strcat(go, (variant[0] != '<') ? GOEXE3M : GOEXE);
 
   if (_stat(go, &st)) {
     char errbuff[MAXCOMMANDLEN * 2];

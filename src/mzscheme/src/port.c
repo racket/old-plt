@@ -3892,7 +3892,7 @@ fd_close_output(Scheme_Output_Port *port)
   close(fop->fd);
 }
 
-Scheme_Object *
+static Scheme_Object *
 make_fd_output_port(int fd, int regfile)
 {
   Scheme_FD *fop;

@@ -108,26 +108,7 @@
             (define-syntax name
               (make-set!-transformer
                (lambda (stx)
-                 
-                 ;; build-src-loc-string/unk : syntax -> (union #f string)
-                 (define (build-src-loc-string/unk stx)
-                   (let ([source (syntax-source stx)]
-                         [line (syntax-line stx)]
-                         [col (syntax-column stx)]
-                         [pos (syntax-position stx)])
-                     (cond
-                       [(and (string? source) line col)
-                        (format "~a: ~a.~a" source line col)]
-                       [(and line col)
-                        (format "~a.~a" line col)]
-                       [(and (string? source) pos)
-                        (format "~a: ~a" source pos)]
-                       [pos
-                        (format "~a" pos)]
-                       [else #f])))
-                 
-                 (with-syntax ([neg-blame-str (or (build-src-loc-string/unk stx)
-                                                  "")])
+                 (with-syntax ([neg-blame-str (or (a:build-src-loc-string stx) "")])
                    (syntax-case stx (set!)
                      [(set! _ arg) 
                       (raise-syntax-error 'define/contract

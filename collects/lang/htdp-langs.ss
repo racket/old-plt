@@ -248,41 +248,40 @@
             (get-htdp-style-delta))
           
           (inherit get-reader set-printing-parameters)
-          (define/override (front-end/complete-program input settings teachpacks)
-            (let-values ([(port source offset line col) (drscheme:language:open-program-for-reading input)])
-              (let ([state 'init]
-                    ;; state : 'init => 'require => 'done
-                    [reader (get-reader)])
-                
-                (lambda ()
-                  (case state
-                    [(init)
-                     (with-syntax ([(body-exp ...) 
-                                    (let loop ()
-                                      (let ([result (reader source port (list line col offset))])
-                                        (if (eof-object? result)
-                                            null
-                                            (cons result (loop)))))]
-                                   [language-module (get-module)]
-                                   [(require-specs ...) 
-                                    (drscheme:teachpack:teachpack-cache-require-specs teachpacks)])
-                       (set! state 'require)
-                       (let ([mod (expand (syntax (module #%htdp language-module 
-                                                    (require require-specs ...)
-                                                    body-exp ...)))])
-                         (rewrite-module mod)))]
-                    [(require) 
-                     (set! state 'done)
-                     (syntax
-                      (let ([done-already? #f])
-                        (dynamic-wind
-                         void
-                         (lambda () (dynamic-require '#%htdp #f))
-                         (lambda () 
-                           (unless done-already?
-                             (set! done-already? #t)
-                             (current-namespace (module->namespace '#%htdp)))))))]
-                    [(done) eof])))))
+          (define/override (front-end/complete-program port source settings teachpacks)
+            (let ([state 'init]
+                  ;; state : 'init => 'require => 'done
+                  [reader (get-reader)])
+              
+              (lambda ()
+                (case state
+                  [(init)
+                   (with-syntax ([(body-exp ...) 
+                                  (let loop ()
+                                    (let ([result (reader source port (list 1 0 0))])
+                                      (if (eof-object? result)
+                                          null
+                                          (cons result (loop)))))]
+                                 [language-module (get-module)]
+                                 [(require-specs ...) 
+                                  (drscheme:teachpack:teachpack-cache-require-specs teachpacks)])
+                     (set! state 'require)
+                     (let ([mod (expand (syntax (module #%htdp language-module 
+                                                  (require require-specs ...)
+                                                  body-exp ...)))])
+                       (rewrite-module mod)))]
+                  [(require) 
+                   (set! state 'done)
+                   (syntax
+                    (let ([done-already? #f])
+                      (dynamic-wind
+                       void
+                       (lambda () (dynamic-require '#%htdp #f))
+                       (lambda () 
+                         (unless done-already?
+                           (set! done-already? #t)
+                           (current-namespace (module->namespace '#%htdp)))))))]
+                  [(done) eof]))))
 
           (super-instantiate ())))
 
@@ -416,18 +415,34 @@
       ;;    (string (union TST exn) -> void) -> string exn -> void
       ;; adds in the bug icon, if there are contexts to display
       (define (teaching-languages-error-display-handler msg exn)
-        (let ([src 
+        (let ([src-string
+               #f
+               
+               #;
                (cond
-                 [(exn:syntax? exn) (syntax-source (exn:syntax-expr exn))]
-                 [(exn:read? exn) (exn:read-source exn)]
+                 [(exn:fail:syntax? exn) 
+                  (let loop ([exprs (exn:syntax-exprs exn)])
+                    (cond
+                      [(null? exprs) #f]
+                      [else
+                       (let ([src (syntax-source (car exprs))])
+                         (if (string? src)
+                             src
+                             (loop (cdr exprs))))]))]
+                 [(exn:read? exn) (if (string? (exn:read-source exn))
+                                      (exn:read-source exn)
+                                      #f)]
                  [(exn? exn) 
                   (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
                     (when (and cms (not (null? cms)))
                       (let* ([first-cms (st-mark-source (car cms))]
                              [src (car first-cms)])
-                        src)))]
+                        (if (string? src)
+                            src
+                            #f))))]
                  [else #f])])
-          
+          (void)
+          #;
           (let ([rep (drscheme:rep:current-rep)])
             (when (and rep
                        mf-note
@@ -450,7 +465,8 @@
                         (send rep lock locked?)
                         (send rep end-edit-sequence))))))
           
-          (when (string? src)
+          #;
+          (when (string? src-string)
             (display src (current-error-port))
             (display ": " (current-error-port))))
         
@@ -459,12 +475,13 @@
             (fprintf (current-error-port) "uncaught exception: ~e" exn))
         (fprintf (current-error-port) "\n")
         
+        #;
         (let ([rep (drscheme:rep:current-rep)])
           (when rep
             (send rep wait-for-io-to-complete/user)
             (cond
               [(exn:syntax? exn) 
-               (let ([obj (exn:syntax-expr exn)])
+               (let ([obj (exn:fail:syntax-expr exn)])
                  (when (syntax? obj)
                    (let ([src (syntax-source obj)]
                          [pos (syntax-position obj)]
@@ -474,9 +491,9 @@
                                 (number? span))
                        (send rep highlight-error src (- pos 1) (+ pos -1 span))))))]
               [(exn:read? exn) 
-               (let ([src (exn:read-source exn)]
-                     [pos (exn:read-position exn)]
-                     [span (exn:read-span exn)])
+               (let ([srcs (exn:fail:read-srclocs exn)]
+                     [pos (exn:fail:read-position exn)]
+                     [span (exn:fail:read-span exn)])
                  (when (and (is-a? src text:basic<%>)
                             (number? pos)
                             (number? span))

@@ -1456,12 +1456,14 @@
      (default-settings (-> any?))
      (default-settings? (any? . -> . boolean?))
      (order-manuals ((listof string?) . -> . (values (listof string?) boolean?)))
-     (front-end/complete-program (drscheme:language:text/pos?
+     (front-end/complete-program (input-port?
+                                  any?
                                   any?
                                   drscheme:teachpack:teachpack-cache?
                                   . -> .
                                   (-> any?)))
-     (front-end/interaction (drscheme:language:text/pos?
+     (front-end/interaction (input-port?
+                             any?
                              any?
                              drscheme:teachpack:teachpack-cache?
                              . -> .

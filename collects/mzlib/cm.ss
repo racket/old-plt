@@ -96,11 +96,14 @@
 		  (let ([ss-sec (file-or-directory-modify-seconds path)]
 			[zo-sec (file-or-directory-modify-seconds zo-name)])
 		    (when (< zo-sec ss-sec)
-		      (error 'compile-zo "newly created .zo file (~a @ ~a) is older than .ss file (~a @ ~a)"
+		      (error 'compile-zo "date for newly created .zo file (~a @ ~a) is before source-file date (~a @ ~a)~a"
 			     zo-name
 			     (format-date (seconds->date zo-sec))
 			     path
-			     (format-date (seconds->date ss-sec)))))
+			     (format-date (seconds->date ss-sec))
+			     (if (> ss-sec (current-seconds))
+				 ", which appears to be in the future"
+				 ""))))
 		  (write-deps code path external-deps)))))))
     (indent (substring (indent) 2 (string-length (indent))))
     ((trace) (format "~aend compile: ~a" (indent) path)))

@@ -521,7 +521,6 @@
       (class panel% args
 	
 	(inherit
-	  list-diff
 	  object-ID
 	  children
 	  force-redraw)
@@ -568,12 +567,6 @@
 		    this new-children))
 		(unless (memq (active-child) new-children)
 		  (active-child null))
-		(let ([added-children (list-diff new-children children)]
-		     [removed-children (list-diff children new-children)])
-		 (for-each (lambda (child) (send child show #t))
-			   added-children)
-		 (for-each (lambda (child) (send child show #f))
-			   removed-children))
 		(set! children new-children)
 		(force-redraw)))]
 

@@ -150,7 +150,7 @@
 	     '("\\&lt;" "\\&gt;" "\\&amp;")))
       
       (define escape-attribute-table
-	(list* (cons (regexp "'") "\\&apos;") (cons (regexp "\"") "\\&quot;") escape-table))
+	(list* (cons (regexp "\"") "\\&quot;") escape-table))
       
       ;; escape : String -> String
       ;; more here - this could be much more efficient

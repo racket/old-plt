@@ -74,7 +74,7 @@ public:
 
 #ifdef WX_USE_XFT
     int HasAASubstitutions(void);
-    void *GetNextAASubstitution(int index, float scale_x, float scale_y, float angle);
+    void *GetNextAASubstitution(int index, int cval, float scale_x, float scale_y, float angle);
 #endif
 
 private:

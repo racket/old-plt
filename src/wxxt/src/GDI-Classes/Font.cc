@@ -59,7 +59,6 @@ static XFontStruct *wxLoadQueryNearestFont(const char *main_screen_name,
 #ifdef WX_USE_XFT
 static wxFontStruct *wxLoadQueryNearestAAFont(const char *main_screen_name,
 					      int point_size, float scale_x, float scale_y,
-					      int fontid, int family,
 					      int style, int weight, 
 					      Bool underlined, int smoothing, 
 					      Bool size_in_pixels,
@@ -76,6 +75,7 @@ XftFontSet *fs;
 
 static int complete_face_list_size;
 static char **complete_face_list;
+static wxFontStruct **complete_font_list;
 
 char **wxGetCompleteFaceList(int *_len)
 {
@@ -92,7 +92,9 @@ char **wxGetCompleteFaceList(int *_len)
 
   complete_face_list_size = fs->nfont;
   wxREGGLOB(complete_face_list);
+  wxREGGLOB(complete_font_list);
   complete_face_list = new char*[complete_face_list_size];
+  complete_font_list = (wxFontStruct **)(new char[sizeof(wxFontStruct*) * complete_face_list_size]);
 
   for (i = 0; i < fs->nfont; i++) {
     s = buf;
@@ -104,17 +106,104 @@ char **wxGetCompleteFaceList(int *_len)
       s = new WXGC_ATOMIC char[ssize];
     } while (1);
 
-    /* Add a space at the fton to indicate "Xft" */
+    /* Add a space at the font to indicate "Xft" */
     len = strlen(s);
     copy = new WXGC_ATOMIC char[len + 2];
     memcpy(copy + 1, s, len + 1);
     copy[0] = ' ';
     complete_face_list[i] = copy;
+    complete_font_list[i] = NULL;
   }
   XftFontSetDestroy(fs);
 
   return wxGetCompleteFaceList(_len);
 }
+
+static wxFontStruct *prev_subs;
+static Display *prev_subs_display;
+
+static wxFontStruct *doFindAAFont(Display *dpy, wxFontStruct *xfont, int c, int *index)
+{
+  wxFontStruct *naya;
+  int i;
+
+  wxGetCompleteFaceList(NULL);
+
+  for (i = 0; i < complete_face_list_size; i++) {
+    if (!complete_font_list[i]) {
+      naya = wxLoadQueryNearestAAFont(complete_face_list[i], 
+				      13, 1.0, 1.0,
+				      wxNORMAL, wxNORMAL_WEIGHT,
+				      FALSE, wxSMOOTHING_DEFAULT,
+				      TRUE, 0.0);
+      complete_font_list[i] = naya;
+    }
+    
+    if (XftGlyphExists(dpy, complete_font_list[i], c)) {
+      /* Need the right size, weight, etc. */
+      int sz, wt, sl, sip;
+      XftPattern *pat;
+      XftResult res;
+
+      if (index) {
+	*index = i;
+	return xfont;
+      }
+
+      if (XftPatternGetInteger(xfont->pattern, XFT_PIXEL_SIZE, 0, &sz) 
+	  == XftResultMatch) {
+	sip = 1;
+      } else if (XftPatternGetInteger(xfont->pattern, XFT_SIZE, 0, &sz) 
+		 == XftResultMatch) {
+	sip = 0;
+      } else {
+	sz = 13;
+	sip = 1;
+      }
+      if (XftPatternGetInteger(xfont->pattern, XFT_WEIGHT, 0, &wt)
+	  != XftResultMatch) {
+	wt = XFT_WEIGHT_MEDIUM;
+      }
+      if (XftPatternGetInteger(xfont->pattern, XFT_SLANT, 0, &sl)
+	  != XftResultMatch) {
+	sl = XFT_SLANT_ROMAN;
+      }
+
+      if ((sz == 13) && sip
+	  && (wt == XFT_WEIGHT_MEDIUM)
+	  && (sl == XFT_SLANT_ROMAN))
+	return complete_font_list[i];
+
+      if (prev_subs) {
+	XftFontClose(prev_subs_display, prev_subs);
+	prev_subs = NULL;
+      }
+
+
+      pat = XftNameParse(complete_face_list[i] XFORM_OK_PLUS 1);
+      pat = XftPatternBuild(pat,
+			    (sip ? XFT_PIXEL_SIZE : XFT_SIZE), XftTypeInteger, sz,
+			    XFT_WEIGHT, XftTypeInteger, wt,
+			    XFT_SLANT, XftTypeInteger, sl,
+			    NULL);
+      pat = XftFontMatch(wxAPP_DISPLAY, DefaultScreen(dpy), pat, &res);
+      prev_subs = XftFontOpenPattern(dpy, pat);
+      prev_subs_display = dpy;
+
+      return prev_subs ? prev_subs : xfont;
+    }
+  }
+
+  return xfont;
+}
+
+extern "C" {
+  wxFontStruct *wxFindAAFont(Display *dpy, wxFontStruct *xfont, int c)
+  {
+    return doFindAAFont(dpy, xfont, c, NULL);
+  }
+};
+
 
 #endif
 
@@ -276,7 +365,7 @@ Bool wxFont::ScreenGlyphAvailable(int c)
       if (XftGlyphExists(wxAPP_DISPLAY, xfontinfo, c))
 	return TRUE;
       
-      xfontinfo = (wxFontStruct*)GetNextAASubstitution(index++, 1.0, 1.0, 0.0);
+      xfontinfo = (wxFontStruct*)GetNextAASubstitution(index++, c, 1.0, 1.0, 0.0);
       if (!xfontinfo)
 	return FALSE;
     }
@@ -409,7 +498,7 @@ void *wxFont::GetInternalAAFont(float scale_x, float scale_y, float angle)
     } else {
       xft_font = wxLoadQueryNearestAAFont(main_screen_name,
 					  point_size, scale_x, scale_y, 
-					  font_id, family, style, weight,
+					  style, weight,
 					  underlined, smoothing, size_in_pixels, angle);
 
       /* Record a 0x1 to mean "no AA font": */
@@ -446,7 +535,7 @@ int wxFont::HasAASubstitutions()
   return 0;
 }
 
-void *wxFont::GetNextAASubstitution(int index, float scale_x, float scale_y, float angle)
+void *wxFont::GetNextAASubstitution(int index, int cval, float scale_x, float scale_y, float angle)
 {
   wxFont *subs;
   wxNode *node;
@@ -474,10 +563,16 @@ void *wxFont::GetNextAASubstitution(int index, float scale_x, float scale_y, flo
       }
     }
     if (!name[i]) {
-      wxGetCompleteFaceList(NULL);
-      if (index - c >= complete_face_list_size)
+      if (index == c + 1) {
+	wxGetCompleteFaceList(NULL);
+	c = -1;
+	doFindAAFont(wxAPP_DISPLAY, NULL, cval, &c);
+	if (c >= 0)
+	  next_name = complete_face_list[c];
+	else
+	  return NULL;
+      } else
 	return NULL;
-      next_name = complete_face_list[index - c];
     } else {
       i++;
       len = strlen(name XFORM_OK_PLUS i);
@@ -575,7 +670,6 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, const char *Face,
 
 static wxFontStruct *wxLoadQueryNearestAAFont(const char *name,
 					      int point_size, float scale_x, float scale_y,
-					      int fontid, int family,
 					      int style, int weight,
 					      Bool underlined, int smoothing, Bool sip,
 					      float angle)

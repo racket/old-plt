@@ -16,6 +16,9 @@ extern int scheme_utf8_decode_all(unsigned char *, int, unsigned int *, int);
 extern int scheme_utf8_decode(const unsigned char *s, int start, int end, 
 			      unsigned int *us, int dstart, int dend,
 			      long *ipos, char utf16, int permissive);
+#ifdef WX_USE_XFT
+extern wxExtFont wxFindAAFont(Display *dpy, wxExtFont xfont, int c);
+#endif
 
 static int leading_utf8_len(char *s, int len)
 {
@@ -64,7 +67,7 @@ static int xdoDraw(measure, font,
 #endif
     {
       /* Squash 32-bit encoding into 16-bit encoding.
-	 Since we overwrite te array, it's important
+	 Since we overwrite the array, it's important
 	 to start at position 0 and go up: */
       int i, v;
       for (i = 0; i < ulen; i++) {
@@ -79,16 +82,55 @@ static int xdoDraw(measure, font,
 
   if (measure
 #ifdef WX_USE_XFT
-      || (xfont && gc)
+      || xfont
 #endif
       ) {
 #ifdef WX_USE_XFT
     if (xfont) {
       XGlyphInfo overall;
+      int i, start = 0;
       
-      XftTextExtents32(display, xfont, us, ulen, &overall);
-      
-      width = overall.xOff;
+      width = 0;
+      while (1) {
+	for (i = start; i < ulen; i++) {
+	  if (!XftGlyphExists(display, xfont, us[i]))
+	    break;
+	}
+
+	if (i > start) {
+	  XftTextExtents32(display, xfont, us + start, i - start, &overall);
+	  if (!measure) {
+	    if (gc) {
+	      XFillRectangle(display, drawable, gc, x + width, y - xfont->ascent,
+			     overall.xOff, xfont->ascent + xfont->descent);
+	    }
+	    XftDrawString32(draw, col, xfont, x + width, y, us + start, i - start);
+	  }
+	  width += overall.xOff;
+	}
+
+	ulen -= (i - start);
+	start = i;
+	if (ulen) {
+	  /* Substitute */
+	  wxExtFont sxfont;
+	  sxfont = wxFindAAFont(display, xfont, us[start]);
+	  XftTextExtents32(display, sxfont, us + start, 1, &overall);
+
+	  if (!measure) {
+	    if (gc) {
+	      XFillRectangle(display, drawable, gc, x + width, y - xfont->ascent,
+			     overall.xOff, xfont->ascent + xfont->descent);
+	    }
+	    XftDrawString32(draw, col, sxfont, x + width, y, us + start, 1);
+	  }
+
+	  width += overall.xOff;
+	  start++;
+	  ulen--;
+	} else
+	  break;
+      }
     } else
 #endif
       {
@@ -99,11 +141,7 @@ static int xdoDraw(measure, font,
   if (!measure) {
 #ifdef WX_USE_XFT
     if (xfont) {
-      if (gc) {
-	XFillRectangle(display, drawable, gc, x, y - xfont->ascent,
-		       width, xfont->ascent + xfont->descent);
-      }
-      XftDrawString32(draw, col, xfont, x, y, us, ulen);
+      /* Done above */
     } else 
 #endif
       {

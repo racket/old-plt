@@ -1930,14 +1930,14 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
 	  while (1) {
 	    cval = text[dt];
 	    if (!XftGlyphExists(DPY, this_time, cval)) {
-	      this_time = (wxFontStruct*)current_font->GetNextAASubstitution(index++, scale_x, scale_y, angle);
+	      this_time = (wxFontStruct*)current_font->GetNextAASubstitution(index++, cval, scale_x, scale_y, angle);
 	      if (!this_time) {
 		this_time = xfontinfo;
 		this_time_no_rotate = no_rotate;
 		break;
 	      }
 	      if (angle != 0.0)
-		this_time_no_rotate = (wxFontStruct*)current_font->GetNextAASubstitution(index++, e_scale_x, e_scale_y, 0.0);
+		this_time_no_rotate = (wxFontStruct*)current_font->GetNextAASubstitution(index++, cval, e_scale_x, e_scale_y, 0.0);
 	      else
 		this_time_no_rotate = this_time;
 	    } else
@@ -1948,7 +1948,9 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
 	  if (this_time == xfontinfo) {
 	    while (partlen < textlen) {
 	      cval = text[dt + partlen];
-	      if (!XftGlyphExists(DPY, this_time, cval))
+	      if (((this_time != xfontinfo)
+		   && XftGlyphExists(DPY, xfontinfo, cval))
+		  || !XftGlyphExists(DPY, this_time, cval))
 		break;
 	      partlen++;
 	    }
@@ -2118,7 +2120,7 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
 	while (1) {
 	  cval = s[dt];
 	  if (!XftGlyphExists(DPY, this_time, cval)) {
-	    this_time = (wxFontStruct*)font_to_use->GetNextAASubstitution(index++, scale_x, scale_y, 0.0);
+	    this_time = (wxFontStruct*)font_to_use->GetNextAASubstitution(index++, cval, scale_x, scale_y, 0.0);
 	    if (!this_time) {
 	      this_time = xfontinfo;
 	      break;
@@ -2131,7 +2133,9 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
 	if (this_time == xfontinfo) {
 	  while (partlen < textlen) {
 	    cval = s[dt + partlen];
-	    if (!XftGlyphExists(DPY, this_time, cval))
+	    if (((this_time != xfontinfo)
+		 && XftGlyphExists(DPY, xfontinfo, cval))
+		|| !XftGlyphExists(DPY, this_time, cval))
 	      break;
 	    partlen++;
 	  }

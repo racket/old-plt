@@ -5,9 +5,6 @@
 
    Please see full copyright in the documentation
    Search for "FIXME" for possible improvement points
-
-../../mzscheme/mzscheme3m -rq ./../../mzscheme/gc2/xform.ss ./../../mzscheme/gc2/ctok.ss "gcc -E -I./../../mzscheme/gc2 -I/usr/X11R6/include -I./../../wxxt/src/AIAI-include -I./../../wxxt/src -I./../../mred/wxme/ -I./../../mzscheme/include/ -DOPERATOR_NEW_ARRAY -Dwx_xt -I./../../wxxt/src/XWidgets -I./../../wxxt/src -I./../../wxcommon/jpeg -I../../wxcommon/jpeg" ./../wxme/wx_media.cxx xsrc/wx_media.cc
-
 */
 #define MZ_PRECISE_GC 1
 #include <stdlib.h>
@@ -189,6 +186,15 @@ static struct owner_list *ol_sort(struct owner_list *ol) {
   }
 }
 
+/* free every item in an owner set list */
+static void ol_free(struct owner_list *ol) {
+  while(ol) {
+    struct owner_list *next = ol->next;
+    free(ol);
+    ol = next;
+  }
+}
+
 /* return true iff the given custodian is a member of the given list */
 static bool cl_member_p(struct cust_list *cl, Scheme_Custodian *c) {
   struct cust_list *temp;
@@ -204,6 +210,24 @@ static struct cust_list *cl_add(struct cust_list *cl, Scheme_Custodian *c) {
   retval->cust = c;
   retval->next = cl;
   return retval;
+}
+
+/* free every item in a custodian list */
+static void cl_free(struct cust_list *cl) {
+  while(cl) {
+    struct cust_list *next = cl->next;
+    free(cl);
+    cl = next;
+  }
+}
+
+/* free every item in a union list */
+static void ul_free(struct union_list *ul) {
+  while(ul) {
+    struct union_list *next = ul->next;
+    free(ul);
+    ul = next;
+  }
 }
 
 /* return true if the custodians which make up owner1 are a subset of the
@@ -344,19 +368,67 @@ static unsigned long ot_memuse(Scheme_Custodian *c) {
 
 /* Fix up the pointers into the scheme heap from the owner table, and
    remove any dead owner sets */
-static void ot_fixup(void) {
-  struct cust_list *temp;
+static void ot_fixup(struct owner_list *root_owners) {
   short i;
 
-  for(i = 0; i < ot_top; i++)
-    if(ot_table[i]) {
-      if(!mark_p(ot_table[i]->creator)) ot_table[i]->creator = NULL;
-      else GC_fixup(&(ot_table[i]->creator));
-      for(temp = ot_table[i]->custs; temp; temp = temp->next)
-	if(!mark_p(temp->cust)) temp->cust = NULL;
-        else gcFIXUP(temp->cust);
+  /* only do this cleaning when we're doing a full collection */
+  if(gc_topgen == (GENERATIONS - 1)) {
+    /* First look for owner sets which are using no memory and are not
+       referenced through roots. Those that are so are dead, and can be
+       removed */
+    for(i = 0; i < ot_top; i++) {
+      if(ot_table[i] && !ol_member_p(root_owners, i)) {
+	unsigned long mem = 0;
+	short gen = 0;
+
+	for(gen = 0; gen < GENERATIONS; gen++) 
+	  mem = mem + ot_table[i]->memuse[gen];
+	if(mem == 0) {
+	  cl_free(ot_table[i]->custs);
+	  ul_free(ot_table[i]->unions);
+	  free(ot_table[i]);
+	  ot_table[i] = NULL;
+	}
+      } 
     }
-  /* FIXME: remove dead owner sets */
+    /* Then look through union sets for unions with things that are now
+       dead and kill them */
+    for(i = 0; i < ot_top; i++) {
+      if(ot_table[i]) {
+	struct union_list *ul = ot_table[i]->unions, *next;
+	ot_table[i]->unions = NULL;
+	for(; ul; ul = next) {
+	  next = ul->next;
+	  if(ot_table[ul->owner] && ot_table[ul->result]) {
+	    ul->next = ot_table[i]->unions;
+	    ot_table[i]->unions = ul;
+	  } else free(ul);
+	}
+      }
+    }
+  }
+
+  /* Finally, clean out custodians that are dead and fix those that are
+     alive */
+  for(i = 0; i < ot_top; i++) 
+    if(ot_table[i]) {
+      struct cust_list *cl = ot_table[i]->custs, *next;
+      
+      if(ot_table[i]->creator) {
+	if(mark_p(ot_table[i]->creator))
+	  gcFIXUP(ot_table[i]->creator);
+	else ot_table[i]->creator = NULL;
+      }
+      ot_table[i]->custs = NULL;
+      for(; cl; cl = next) {
+	next = cl->next;
+	if(mark_p(cl->cust)) {
+	  gcFIXUP(cl->cust);
+	  cl->next = ot_table[i]->custs;
+	  ot_table[i]->custs = cl;
+	} else free(cl);
+      }
+    }
 }
 
 /* Prepare the owner set table for a collection which is about to happen */
@@ -2380,7 +2452,7 @@ static void gc_collect(int force_full) {
   if(!gc_deny) {
 #ifdef NEWGC_ACCNT
     short curown = ot_current();
-    struct owner_list *ol = ol_add(NULL, curown);
+    struct owner_list *ol = ol_add(NULL, curown), *temp;
 #endif
 
     gc_runcycle(force_full);
@@ -2401,21 +2473,18 @@ static void gc_collect(int force_full) {
     if(gc_topgen == (GENERATIONS - 1)) wfnl_clear_weaks();
     /* mark the roots from the owner list */
     old_mark();
-    while(ol) {
-      struct owner_list *next = ol->next;
-      gc_owner = ol->owner; 
-      roots_mark(ol->owner);
-      accnt_mark(ol->owner);
-      imm_mark(ol->owner);
-      fnl_mark(ol->owner);
-      wfnl_mark(ol->owner);
-      if(ol->owner == curown)
+    for(temp = ol; temp; temp = temp->next) {
+      gc_owner = temp->owner; 
+      roots_mark(temp->owner);
+      accnt_mark(temp->owner);
+      imm_mark(temp->owner);
+      fnl_mark(temp->owner);
+      wfnl_mark(temp->owner);
+      if(temp->owner == curown)
 	GC_mark_variable_stack(GC_variable_stack, 0, 
 			       (void*)(GC_get_thread_stack_base
 				       ? GC_get_thread_stack_base()
 				       : (unsigned long)stack_base));
-      free(ol);
-      ol = next;
       mark_propogate();
     }
 #else
@@ -2441,7 +2510,8 @@ static void gc_collect(int force_full) {
 
     /* repair */
 #ifdef NEWGC_ACCNT
-    ot_fixup();
+    ot_fixup(ol);
+    ol_free(ol);
 #endif
     roots_fixup();
 #ifdef NEWGC_ACCNT
@@ -2693,10 +2763,11 @@ void GC_dump() {
       
       for(j = 0; j < GENERATIONS; j++)
 	use += ot_table[i]->memuse[j];
-      printf("OTENTRY #%li (%li): creator(%p)", i, use, ot_table[i]->creator);
+      fprintf(stderr, "OTENTRY #%li (%li): creator(%p)", i, use, 
+	      ot_table[i]->creator);
       for(cl = ot_table[i]->custs; cl; cl = cl->next)
-	printf(", %p", cl->cust);
-      printf("\n");
+	fprintf(stderr, ", %p", cl->cust);
+      fprintf(stderr, "\n");
     }
 #endif
 }

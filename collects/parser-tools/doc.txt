@@ -27,6 +27,11 @@ string                             match its sequence of characters
 (^ char_or_range ...1)             match any character not listed
 (the null concatenation `(@) means epsilon)
 
+WARNING: symbol and (symbol) are quite different.  If letter has been
+defined as an abbreviation for (: (- a z) (- "A" "Z")), then (letter)
+will match a letter, while letter will match the sequence l-e-t-t-e-r.
+Leaving off the () is a common mistake.
+
 To use the _lexer generator_ you must (require (lib "lex.ss" "parser-tools")).
 This gives you the following syntactic forms:
 
@@ -102,6 +107,12 @@ structures tracked by start-pos and end-pos:
 > (position-line position) - the line number of the character.
 > (position-col position) - the offset of the character in the current line.
 > (position? x) - the question associated with a position struct
+
+and a parameter for tracking the source file:
+
+> (file-path string) - sets the parameter file-path, which the lexer
+   will use as the source location if it raises a read error.  This
+   allows DrScheme to open the file containing the error.
 
 Each time the scheme code for a lexer is compiled (e.g. when a .ss
 file containing a (lex ...) is loaded/required) the lexer generator is

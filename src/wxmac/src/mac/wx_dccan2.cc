@@ -400,6 +400,20 @@ void wxCanvasDC::DrawArc(double x,double y,double w,double h,double start,double
       CGContextFillPath(cg);
     }
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+      if ((anti_alias == 2)
+	  && (scale_x == 1.0)
+	  && (scale_y == 1.0)
+	  && (current_pen->GetWidthF() <= 1.0)) {
+	x += 0.5;
+	y += 0.5;
+	w -= 1.0;
+	h -= 1.0;
+
+	CGPathRelease(path);
+	path = CGPathCreateMutable();
+	xform = CGAffineTransformScale(CGAffineTransformMakeTranslation(x, y), w, h);
+	CGPathAddArc(path, &xform, 0.5, 0.5, 0.5, start, end, TRUE);
+      }
       wxMacSetCurrentTool(kPenTool);
       CGContextBeginPath(cg);
       CGContextAddPath(cg, path);

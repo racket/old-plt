@@ -1208,7 +1208,17 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
     if (pw) {
       cairo_matrix_t *m;
       double xx = x, yy = y, ww = w, hh = h;
-      
+
+      if ((anti_alias == 2)
+	  && (scale_x == 1.0)
+	  && (scale_y == 1.0)
+	  && (current_pen->GetWidthF() <= 1.0)) {
+	xx += 0.5;
+	yy += 0.5;
+	ww -= 1.0;
+	hh -= 1.0;
+      }      
+
       m = cairo_matrix_create();
       cairo_current_matrix (CAIRO_DEV, m);
       cairo_translate(CAIRO_DEV, xx, yy);

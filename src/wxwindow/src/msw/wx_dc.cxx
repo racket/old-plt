@@ -708,6 +708,15 @@ void wxDC::DrawArc(double x, double y, double w, double h, double start, double 
     }
 
     if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
+      if ((anti_alias == 2)
+	  && (user_scale_x == 1.0)
+	  && (user_scale_y == 1.0)
+	  && (current_pen->GetWidthF() <= 1.0)) {
+	x += 0.5;
+	y += 0.5;
+	w -= 1.0;
+	h -= 1.0;
+      }
       wxGDrawArc(g, current_pen->GraphicsPen(), x, y, w, h, init, span);
     }
 
@@ -1122,21 +1131,20 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
   if (anti_alias) {
     InitGraphics(dc);
 
-    if ((anti_alias == 2)
-	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)
-	&& (current_pen->GetWidthF() <= 1.0)) {
-      x += 0.5;
-      y += 0.5;
-      width -= 1.0;
-      height -= 1.0;
-    }
-    
     if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
       wxGFillRectangle(g, current_brush->GraphicsBrush(), x, y, width, height);
     }
 
     if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
+      if ((anti_alias == 2)
+	  && (user_scale_x == 1.0)
+	  && (user_scale_y == 1.0)
+	  && (current_pen->GetWidthF() <= 1.0)) {
+	x += 0.5;
+	y += 0.5;
+	width -= 1.0;
+	height -= 1.0;
+      }
       wxGDrawRectangle(g, current_pen->GraphicsPen(), x, y, width, height);
     }
     

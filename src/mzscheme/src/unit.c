@@ -39,25 +39,19 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
 static Scheme_Object *do_compound_unit(Scheme_Object **boxes, Scheme_Object **anchors, 
 				       Scheme_Unit *m, void *dr);
 
-#ifdef PALMOS_STUFF
-# define STATIC /**/
-#else
-# define STATIC static
-#endif
-
-STATIC Scheme_Object *import_symbol, *export_symbol, *with_symbol;
-STATIC Scheme_Object *define_values_symbol;
+static Scheme_Object *import_symbol, *export_symbol, *with_symbol;
+static Scheme_Object *define_values_symbol;
 
 #define cons scheme_make_pair
 
 #define scheme_bind scheme_add_good_binding
 #define scheme_bind_anchored scheme_add_binding_with_anchor
 
-STATIC Scheme_Object *unit_symbol;
-STATIC Scheme_Object *compound_unit_symbol;
-STATIC Scheme_Object *invoke_unit_symbol;
+static Scheme_Object *unit_symbol;
+static Scheme_Object *compound_unit_symbol;
+static Scheme_Object *invoke_unit_symbol;
 
-STATIC Scheme_Object *unitsig_macros;
+static Scheme_Object *unitsig_macros;
 
 typedef Scheme_Object *(*Init_Func)(Scheme_Object **boxes, Scheme_Object **anchors,
 				    struct Scheme_Unit *m,

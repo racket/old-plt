@@ -81,11 +81,7 @@ wxColour::wxColour(wxColour *col)
   
   locked = 0;
   
-  if (col->Ok()) {
-    X  = new wxColour_Xintern; // create new X representation
-    *X = *(col->X);		   // assign data
-  } else
-    X = NULL; // not Ok
+  CopyFrom(col);
 }
 
 wxColour::wxColour(const char *col)
@@ -97,13 +93,7 @@ wxColour::wxColour(const char *col)
 
     locked = 0;
 
-    the_colour = wxTheColourDatabase->FindColour(col); // find colour by name
-
-    if (the_colour) {
-	X  = new wxColour_Xintern; // create new X representation
-	*X = *(the_colour->X);	   // assign data
-    } else
-	X = NULL; // not Ok
+    CopyFrom(col);
 }
 
 wxColour::wxColour(unsigned char r, unsigned char g, unsigned char b)
@@ -120,7 +110,7 @@ wxColour::~wxColour(void)
   /* If you do anything important here, be sure to change
      COLOR_CLEANUP */
 
-    FreePixel(TRUE);
+  FreePixel(TRUE);
 }
 
 //--- assignment -------------------------------------------------------------

@@ -900,7 +900,8 @@
 
       (define hierlist%
 	(class/d (hierlist-item-mixin hierlist:hierarchical-list%) args
-	  ((override on-item-opened on-item-closed on-double-select on-select))
+	  ((override on-item-opened on-item-closed on-double-select on-select)
+	   (inherit min-height))
 
 	  (define (on-item-opened i)
 	    (unless ignore-open/closes?
@@ -920,7 +921,8 @@
 	  (define (on-double-select i)
 	    (handler:edit-file (send i get-file)))
 
-	  (apply super-init args)))
+	  (apply super-init args)
+	  (min-height 20)))
 
       (define (open-loaded-file)
 	(let ([sel (send loaded-files-hierarchical-list get-selected)])
@@ -1114,8 +1116,6 @@
       (define open-loaded-file-button (make-object button% "Open" loaded-files-button-panel (lambda x (open-loaded-file))))
       (send loaded-files-button-panel set-alignment 'center 'center)
       (send loaded-files-button-panel stretchable-width #f)
-
-      (send loaded-files-button-panel min-height (send to-load-button-panel get-height))
 
       (send loaded-files-outer-panel change-children (lambda (l) null))
       (send loaded-files-outer-panel stretchable-height #f)

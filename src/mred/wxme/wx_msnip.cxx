@@ -640,7 +640,7 @@ void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h,
 }
 
 Bool wxMediaSnipMediaAdmin::ScrollTo(float localx, float localy, float w, float h,
-				Bool refresh, int bias)
+				     Bool refresh, int bias)
 {
   wxSnipAdmin *sadmin;
   sadmin = snip->GetAdmin();
@@ -669,7 +669,7 @@ void wxMediaSnipMediaAdmin::Resized(Bool redraw_now)
 }
 
 void wxMediaSnipMediaAdmin::NeedsUpdate(float localx, float localy, 
-				   float w, float h)
+					float w, float h)
 {
   wxSnipAdmin *sadmin;
   sadmin = snip->GetAdmin();

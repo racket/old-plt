@@ -208,6 +208,7 @@ Window GetEventWindow(XEvent *e)
     WINCASE(ResizeRequest, xresizerequest);
     WINCASE(CirculateNotify, xcirculate);
     WINCASE(ConfigureNotify, xconfigure);
+    WINCASE(CreateNotify, xcreatewindow);
     WINCASE(DestroyNotify, xdestroywindow);
     WINCASE(GravityNotify, xgravity);
     WINCASE(MapNotify, xmap);
@@ -233,9 +234,14 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
   Window window = GetEventWindow(e);
   Widget widget;
 
-  if (window)
+  if (window) {
     widget = XtWindowToWidget(display, window);
-  else
+#if 0
+    if (widget)
+      if (e->type == DestroyNotify)
+	printf("DestroyNotified window %lx is still widget-mapped; BadWindow error is imminent.\n", window);
+#endif
+  } else
     widget = 0;
 
   if (widget) {
@@ -306,7 +312,8 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
 
   } else {
 #if 0
-    printf("warning: window->widget mapping failed!\n");
+    printf("warning: window->widget mapping failed: %lx; event: %d; parent: %lx\n", 
+	   window, e->type, ((XCreateWindowEvent *)e)->parent);
 #endif
     if (checking_for_break)
       return FALSE;
@@ -487,6 +494,10 @@ void MrEdDispatchEvent(XEvent *event)
       }
     }
   }
+
+#if 0
+  printf("dispatch %d for %lx in %lx\n", event->type, GetEventWindow(event), scheme_current_process);
+#endif
 
   XtDispatchEvent(event);
 }

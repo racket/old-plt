@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.9 1998/09/18 22:08:58 mflatt Exp $
+ * $Id: Frame.cc,v 1.10 1998/11/17 13:11:48 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -97,7 +97,7 @@ wxFrame::~wxFrame(void)
 #endif
 }
 
-/* MATTHEW: [3] Used to insure that hide-&-show within an event cycle works */
+/* MATTHEW: [3] Used to ensure that hide-&-show within an event cycle works */
 static void wxFrameMapProc(Widget w, XtPointer clientData, 
 			   XCrossingEvent * event)
 {
@@ -264,10 +264,6 @@ void wxFrame::Iconize(Bool iconize)
     XIconifyWindow(XtDisplay(X->frame), 
 		   XtWindow(X->frame), 
 		   XScreenNumberOfScreen(XtScreen(X->frame)));
-#if 0
-    /* MATTHEW: [5] cast to Boolean */
-    XtVaSetValues(X->frame, XtNiconic, (Boolean)iconize, NULL);
-#endif
   } else {
     XtMapWidget(X->frame);
   }
@@ -285,12 +281,6 @@ Bool wxFrame::Iconized(void)
   XGetWindowAttributes(XtDisplay(X->frame), XtWindow(X->frame), &wa);
 
   return (wa.map_state == IsUnmapped);
-  
-#if 0
-  Boolean iconized; /* MATTHEW: [5] from Bool */
-  XtVaGetValues(X->frame, XtNiconic, &iconized, NULL);
-  return iconized;
-#endif
 }
 
 void wxFrame::Maximize(Bool WXUNUSED(maximize))
@@ -449,14 +439,8 @@ Bool wxFrame::Show(Bool show)
     XtUnmapWidget(X->frame);
   }
 
-#if 0
-  // Now process all events, to ensure focus out before anything else
-  if (!being_destroyed)
-    wxFlushEvents();
-#else
-  XFlush(XtDisplay(wxAPP_TOPLEVEL));
-  XSync(XtDisplay(wxAPP_TOPLEVEL), FALSE);
-#endif
+  XFlush(XtDisplay(X->frame));
+  XSync(XtDisplay(X->frame), FALSE);
 
   return TRUE;
 }

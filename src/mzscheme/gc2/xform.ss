@@ -1,15 +1,48 @@
-
-;; Assumptions:
+;; This program reads MzScheme/MrEd C/C++ source and transforms it
+;; to work with precise garbage collection or(!) PalmOS. The source
+;; is C-pre-processed first, then run though a `lex'-based lexer that
+;; produces S-expressions.
+;;
+;; It probably won't work for other C/C++ code, because it
+;; doesn't bother *parsing* the source. Instead, it relies on
+;; various heuristics that work for MzScheme/MrEd code.
+;;
+;; There are also some input hacks, such as START_XFORM_SKIP.
+;; 
+;; Notable assumptions:
 ;;  No calls of the form (f)(...)
 ;;  For arrays, records, and non-pointers, pass by address only
 ;;  No gc-triggering code in .h files
 ;;  No instance vars declared as function pointers without a typedef
 ;;    for the func ptr type
 ;;
-;; BUGS: doesn't check for pointer comparisons where one of the comparees
-;;       is a function call
+;; BUGS: Doesn't check for pointer comparisons where one of the
+;;       comparees is a function call. This doesn't happen in
+;;       MzScheme/MrEd (or, because of this bug, shouldn't!).
 
-(define cmd-line (vector->list argv))
+;; To call for Precise GC:
+;;   mzscheme -r xform.ss [--notes] <cpp> <src> <dest>
+;;
+;; To call for Palm:
+;;   mzscheme -r xform.ss [--notes] --palm <cpp> <src> <dest> <mapdest>
+
+(define show-info? #f)
+
+(define palm? #f)
+(define pgc? #t)
+
+(define cmd-line (let ([l (vector->list argv)])
+		   (let ([l (if (string=? (car l) "--notes")
+				(begin
+				  (set! show-info? #t)
+				  (cdr l))
+				l)])
+		     (if (string=? (car l) "--palm")
+			 (begin
+			   (set! palm? #t)
+			   (set! pgc? #f)
+			   (cdr l))
+			 l))))
 
 (define (filter-false s)
   (if (string=? s "#f")
@@ -19,6 +52,9 @@
 (define cpp (filter-false (car cmd-line)))
 (define file-in (cadr cmd-line))
 (define file-out (filter-false (caddr cmd-line)))
+(define palm-out (if palm?
+		     (cadddr cmd-line)))
+		     #f))
 
 (define source-is-c++? (regexp-match "([.]cc$)|([.]cxx$)" file-in))
 
@@ -26,9 +62,14 @@
 (require-library "errortrace.ss" "errortrace")
 (error-print-width 100)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Pre-process and S-expr-ize
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define cpp-process
-  (process (format "~a -DMZ_PRECISE_GC ~a ~a"
+  (process (format "~a ~a ~a ~a"
 		   cpp
+		   (if pgc? "-DMZ_PRECISE_GC" "")
 		   (if (null? (cdddr cmd-line))
 		       ""
 		       (cadddr cmd-line))
@@ -89,6 +130,10 @@
 (when (exn? e-raw)
   (raise e-raw))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Output and error-handling
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (current-output-port (if file-out
 			 (open-output-file file-out 'truncate)
 			 (make-output-port void void)))
@@ -109,29 +154,41 @@
   (newline (current-error-port))
   (set! exit-with-error? #t))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Output common defns
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define per-block-push? #t)
 
-;; Header:
-(printf "#define FUNCCALL(setup, x) (setup, x)~n")
-(printf "#define FUNCCALL_EMPTY(x) FUNCCALL(SETUP(0), x)~n")
-(printf "#define PREPARE_VAR_STACK(size) void *__gc_var_stack__[size+2]; __gc_var_stack__[0] = GC_variable_stack;~n")
-(printf "#define SETUP(x) (GC_variable_stack = __gc_var_stack__, __gc_var_stack__[1] = (void *)x)~n")
-(printf "#define PUSH(v, x) (__gc_var_stack__[x+2] = (void *)&(v))~n")
-(printf "#define PUSHARRAY(v, l, x) (__gc_var_stack__[x+2] = (void *)0, __gc_var_stack__[x+3] = (void *)&(v), __gc_var_stack__[x+4] = (void *)l)~n")
-(printf "#define BLOCK_SETUP(x) ~a~n" (if per-block-push? "x" "/* skipped */"))
-(printf "~n")
+(when pgc?
+  ;; Header:
+  (printf "#define FUNCCALL(setup, x) (setup, x)~n")
+  (printf "#define FUNCCALL_EMPTY(x) FUNCCALL(SETUP(0), x)~n")
+  (printf "#define PREPARE_VAR_STACK(size) void *__gc_var_stack__[size+2]; __gc_var_stack__[0] = GC_variable_stack;~n")
+  (printf "#define SETUP(x) (GC_variable_stack = __gc_var_stack__, __gc_var_stack__[1] = (void *)x)~n")
+  (printf "#define PUSH(v, x) (__gc_var_stack__[x+2] = (void *)&(v))~n")
+  (printf "#define PUSHARRAY(v, l, x) (__gc_var_stack__[x+2] = (void *)0, __gc_var_stack__[x+3] = (void *)&(v), __gc_var_stack__[x+4] = (void *)l)~n")
+  (printf "#define BLOCK_SETUP(x) ~a~n" (if per-block-push? "x" "/* skipped */"))
+  (printf "~n")
+  
+  ;; C++ cupport:
+  (printf "#define NEW_OBJ(t) new t~n")
+  (printf "#define NEW_ARRAY(t, array) (new t array)~n")
+  (printf "#define NEW_ATOM(t) (new (AtomicGC) t)~n")
+  (printf "#define NEW_PTR(t) (new t)~n")
+  (printf "#define NEW_ATOM_ARRAY(t, array) (new (AtomicGC) t array)~n")
+  (printf "#define NEW_PTR_ARRAY(t, array) (new t* array)~n")
+  (printf "#define DELETE(x) (delete x)~n")
+  (printf "#define DELETE_ARRAY(x) (delete[] x)~n")
+  (printf "#define XFORM_RESET_VAR_STACK GC_variable_stack = (void **)__gc_var_stack__[0];~n")
+  (printf "~n"))
 
-;; C++ cupport:
-(printf "#define NEW_OBJ(t) new t~n")
-(printf "#define NEW_ARRAY(t, array) (new t array)~n")
-(printf "#define NEW_ATOM(t) (new (AtomicGC) t)~n")
-(printf "#define NEW_PTR(t) (new t)~n")
-(printf "#define NEW_ATOM_ARRAY(t, array) (new (AtomicGC) t array)~n")
-(printf "#define NEW_PTR_ARRAY(t, array) (new t* array)~n")
-(printf "#define DELETE(x) (delete x)~n")
-(printf "#define DELETE_ARRAY(x) (delete[] x)~n")
-(printf "#define XFORM_RESET_VAR_STACK GC_variable_stack = (void **)__gc_var_stack__[0];~n")
-(printf "~n")
+(when palm?
+  (printf "#include \"segmap.h\"~n"))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Structures and constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-struct tok (n line file))
 (define-struct (seq struct:tok) (close in))
@@ -158,8 +215,6 @@
 (define-struct c++-class (parent parent-name prototyped top-vars))
 
 (define c++-classes null)
-
-(define show-info? #f)
 
 (define semi '|;|)
 (define START_XFORM_SKIP (string->symbol "START_XFORM_SKIP"))
@@ -272,6 +327,10 @@
       (set! count (add1 count))
       (format "XfOrM~a" count))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Pretty-printing output
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define next-indent #f)
 
 (define (newline/indent i)
@@ -283,6 +342,7 @@
     ;; can't get pre-processor line directive to work
     '(when (and v (tok-file v) (tok-line v))
       (printf "# ~a ~s~n" (max 1 (- (tok-line v) 1)) (tok-file v)))
+
     (display (make-string next-indent #\space))
     (set! next-indent #f))
   (display s))
@@ -420,6 +480,10 @@
 	    (newline/indent indent))])
 	(loop (cdr e) v)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; "Parsing"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define skipping? #f)
 
 (define (top-level e where)
@@ -434,8 +498,10 @@
     e]
 
    [(access-modifier? e)
+    ;; public, private, etc.
     (list* (car e) (cadr e) (top-level (cddr e) where))]
    [(friend? e)
+    ;; C++ friend annotation
     e]
 
    [(and (>= (length e) 3)
@@ -453,18 +519,24 @@
 	      (list->seq (process-top-level (seq->list (seq-in body-v)) where))))
 	   (cdddr e))]
    
-   [(prototype? e) 
+   [(prototype? e)
     (let ([name (register-proto-information e)])
-      (when show-info? (printf "/* PROTO ~a */~n" name)))
-    e]
+      (when show-info?
+	(printf "/* PROTO ~a */~n" name))
+      (if palm?
+	  (add-segment-label e)
+	  e))]
    [(typedef? e)
-    (when show-info? (printf "/* TYPEDEF */~n"))
-    (check-pointer-type e)
+    (when show-info?
+      (printf "/* TYPEDEF */~n"))
+    (when pgc?
+      (check-pointer-type e))
     e]
    [(struct-decl? e)
     (if (braces? (caddr e))
 	(begin
-	  (register-struct e)
+	  (when pgc?
+	    (register-struct e))
 	  (when show-info? (printf "/* STRUCT ~a */~n" (tok-n (cadr e)))))
 	(when show-info? (printf "/* STRUCT DECL */~n")))
     e]
@@ -480,25 +552,27 @@
    [(function? e)
     (let ([name (register-proto-information e)])
       (when show-info? (printf "/* FUNCTION ~a */~n" name)))
-    (if (and where 
-	     (regexp-match "[.]h$" where)
-	     (let loop ([e e][prev #f])
-	       (cond
-		[(null? e) #t]
-		[(and (eq? ':: (tok-n (car e)))
-		      prev
-		      (eq? (tok-n prev) (tok-n (cadr e))))
-		 ;; inline constructor: need to convert
-		 #f]
-		[else (loop (cdr e) (car e))])))
-	;; Still in headers; probably a simple inlined function
+    (if (or (not pgc?)
+	    (and where 
+		 (regexp-match "[.]h$" where)
+		 (let loop ([e e][prev #f])
+		   (cond
+		    [(null? e) #t]
+		    [(and (eq? ':: (tok-n (car e)))
+			  prev
+			  (eq? (tok-n prev) (tok-n (cadr e))))
+		     ;; inline constructor: need to convert
+		     #f]
+		    [else (loop (cdr e) (car e))]))))
+	;; Not pgc, or still in headers and probably a simple inlined function
 	e
 	(convert-function e))]
    [(var-decl? e)
     (when show-info? (printf "/* VAR */~n"))
-    (unless (eq? (tok-n (car e)) 'static)
-      (let-values ([(pointers non-pointers) (get-vars e "TOPVAR" #f)])
-	(top-vars (append pointers non-pointers (top-vars)))))
+    (when pgc?
+      (unless (eq? (tok-n (car e)) 'static)
+	(let-values ([(pointers non-pointers) (get-vars e "TOPVAR" #f)])
+	  (top-vars (append pointers non-pointers (top-vars))))))
     e]
 
    [else (print-struct #t)
@@ -797,14 +871,9 @@
 	     (set! struct-defs (cons (cons name l) struct-defs))
 	     name)))))
 
-(define (body->lines e comma-sep?)
-  (reverse!
-   (foldl-statement
-    e
-    comma-sep?
-    (lambda (sube l)
-      (cons sube l))
-    null)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Transformations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (type->decl x where-v)
   (cond
@@ -2153,6 +2222,19 @@
 (define (convert-paren-interior v vars c++-class live-vars complain-not-in)
   (convert-seq-interior v #t vars c++-class live-vars complain-not-in))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; More "parsing", main loop
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (body->lines e comma-sep?)
+  (reverse!
+   (foldl-statement
+    e
+    comma-sep?
+    (lambda (sube l)
+      (cons sube l))
+    null)))
+
 (define (split-decls el)
   (let loop ([el el][decls null])
     (if (null? el)
@@ -2222,7 +2304,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (let* ([e-r e-raw]
-       [_ (set! e-raw #f)]
+       [_ (set! e-raw #f)] ;; to allow GC
        [e (let ([source #f])
 	    (letrec ([translate
 		      (lambda (v)

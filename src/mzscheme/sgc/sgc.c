@@ -1390,7 +1390,7 @@ static void init_size_map()
   long k, next;
 
   size_index_map = (long *)malloc_sector(MAX_COMMON_SIZE, sector_kind_other, 0);
-  size_map = malloc_sector(NUM_COMMON_SIZE * sizeof(long), sector_kind_other, 0);
+  size_map = (long *)malloc_sector(NUM_COMMON_SIZE * sizeof(long), sector_kind_other, 0);
 
   i = 0;
   while (i < 8) {

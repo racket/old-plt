@@ -400,6 +400,8 @@ int actual_main(int argc, char *argv[])
   return run_from_cmd_line(argc, argv, scheme_basic_env, cont_run);
 }
 
+#undef OSKIT
+
 /**************** OSKIT stuff START **********************/
 #if defined(OSKIT) && !defined(OSKIT_TEST)
 

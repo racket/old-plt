@@ -19,7 +19,7 @@ CPP_FLAGS=/I"../mzscheme/include" /I"./myspage" /I"./mysc" /I"./myssink" /I"$(SH
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $< 
 
-MZC="C:\Program Files\PLT\mzc"
+MZC="D:\plt\mzc"
         
 LINK32=$(MZC)
 LINK32_LIBS= \

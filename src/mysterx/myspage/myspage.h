@@ -2,7 +2,7 @@
 
 
 /* File created by MIDL compiler version 5.01.0164 */
-/* at Fri May 28 17:02:10 1999
+/* at Tue Jun 01 16:13:53 1999
  */
 /* Compiler settings for myspage.idl:
     Oicf (OptLev=i2), W1, Zp8, env=Win32, ms_ext, c_ext
@@ -1167,6 +1167,12 @@ EXTERN_C const IID IID_IEventQueue;
         
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE PumpMsgs( void) = 0;
         
+        virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE GetReaderSemaphore( 
+            int __RPC_FAR *__MIDL_0021) = 0;
+        
+        virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE set_extension_table( 
+            int __MIDL_0022) = 0;
+        
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_EventAvailable( 
             /* [retval][out] */ VARIANT_BOOL __RPC_FAR *pVal) = 0;
         
@@ -1229,6 +1235,14 @@ EXTERN_C const IID IID_IEventQueue;
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *PumpMsgs )( 
             IEventQueue __RPC_FAR * This);
         
+        /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *GetReaderSemaphore )( 
+            IEventQueue __RPC_FAR * This,
+            int __RPC_FAR *__MIDL_0021);
+        
+        /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *set_extension_table )( 
+            IEventQueue __RPC_FAR * This,
+            int __MIDL_0022);
+        
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *get_EventAvailable )( 
             IEventQueue __RPC_FAR * This,
             /* [retval][out] */ VARIANT_BOOL __RPC_FAR *pVal);
@@ -1278,6 +1292,12 @@ EXTERN_C const IID IID_IEventQueue;
 #define IEventQueue_PumpMsgs(This)	\
     (This)->lpVtbl -> PumpMsgs(This)
 
+#define IEventQueue_GetReaderSemaphore(This,__MIDL_0021)	\
+    (This)->lpVtbl -> GetReaderSemaphore(This,__MIDL_0021)
+
+#define IEventQueue_set_extension_table(This,__MIDL_0022)	\
+    (This)->lpVtbl -> set_extension_table(This,__MIDL_0022)
+
 #define IEventQueue_get_EventAvailable(This,pVal)	\
     (This)->lpVtbl -> get_EventAvailable(This,pVal)
 
@@ -1317,6 +1337,30 @@ void __RPC_STUB IEventQueue_QueueEvent_Stub(
 
 
 void __RPC_STUB IEventQueue_PumpMsgs_Stub(
+    IRpcStubBuffer *This,
+    IRpcChannelBuffer *_pRpcChannelBuffer,
+    PRPC_MESSAGE _pRpcMessage,
+    DWORD *_pdwStubPhase);
+
+
+/* [helpstring][id] */ HRESULT STDMETHODCALLTYPE IEventQueue_GetReaderSemaphore_Proxy( 
+    IEventQueue __RPC_FAR * This,
+    int __RPC_FAR *__MIDL_0021);
+
+
+void __RPC_STUB IEventQueue_GetReaderSemaphore_Stub(
+    IRpcStubBuffer *This,
+    IRpcChannelBuffer *_pRpcChannelBuffer,
+    PRPC_MESSAGE _pRpcMessage,
+    DWORD *_pdwStubPhase);
+
+
+/* [helpstring][id] */ HRESULT STDMETHODCALLTYPE IEventQueue_set_extension_table_Proxy( 
+    IEventQueue __RPC_FAR * This,
+    int __MIDL_0022);
+
+
+void __RPC_STUB IEventQueue_set_extension_table_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,

@@ -81,6 +81,7 @@ typedef struct _com_document_ {
   HWND hwnd;
   IHTMLDocument2 *pIHTMLDocument2;
   IEventQueue *pIEventQueue;
+  HANDLE readSem;
 } MX_Document_Object;
 
 typedef struct _mx_element_ {

@@ -8,6 +8,9 @@
 #include "stdafx.h"
 #include "resource.h"
 #include <initguid.h>
+
+#include "escheme.h"
+
 #include "myspage.h"
 
 #include "myspage_i.c"

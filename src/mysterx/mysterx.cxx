@@ -2885,8 +2885,8 @@ Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
   }
 
   pDocument = MX_DOCUMENT_VAL(argv[0]);
-  html = schemeStringToBSTR(argv[1]);
 
+  html = schemeStringToBSTR(argv[1]);
   pDocument->get_body(&pBody);
 
   if (pBody == NULL) {
@@ -3177,6 +3177,14 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
     scheme_signal_error("Error retrieving DHTML document interface, code %X",hr);
   }
 
+  pIEventQueue->GetReaderSemaphore((int *)&doc->readSem);
+
+  if (doc->readSem == 0) {
+    scheme_signal_error("Error retrieving document event read semaphore");
+  }
+
+  pIEventQueue->set_extension_table((int)scheme_extension_table); 
+
   doc->pIHTMLDocument2 = pIHTMLDocument2;
   doc->pIEventQueue = pIEventQueue;
 
@@ -3187,7 +3195,7 @@ Scheme_Object *mx_document_pump_msgs(int argc,Scheme_Object **argv) {
   MX_Document_Object *pDoc;
 
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("show-document","mx-document",0,argc,argv);
+    scheme_wrong_type("document-pump-msgs","mx-document",0,argc,argv);
   }
 
   pDoc = (MX_Document_Object *)argv[0];
@@ -3312,4 +3320,3 @@ BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {
 
   return TRUE;
 }
-

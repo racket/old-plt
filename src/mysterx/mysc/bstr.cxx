@@ -50,13 +50,13 @@ BSTR stringToBSTR(char *s,size_t len) {
   hr = MultiByteToWideChar(CP_ACP,(DWORD)0,s,len + 1,
 			   unicodeString,len + 1);
 
-  scheme_gc_ptr_ok(unicodeString);
-
   if (hr == 0) {
     scheme_signal_error("Error translating string parameter to Unicode");
   }
 
   bstr = SysAllocString(unicodeString);
+
+  scheme_gc_ptr_ok(unicodeString);
 
   if (bstr == NULL) {
     scheme_signal_error("Error allocating string parameter");

@@ -23,12 +23,22 @@ Scheme_Object *hash_table_put;
 Scheme_Object *hash_table_remove;
 Scheme_Object *make_hash_table;
 
-BOOL mx_event_available(MX_Document_Object *doc) {
+static BOOL html_event_available(MX_Document_Object *doc) {
+  MSG msg;
   VARIANT_BOOL val;
+
+  while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
+  } 
 
   doc->pIEventQueue->get_EventAvailable(&val);
 
   return val;
+}
+
+static void html_event_sem_fun(MX_Document_Object *doc,void *fds) {
+  scheme_add_fd_handle(doc->readSem,fds,TRUE); 
 }
 
 Scheme_Object *mx_block_until_event(int argc,Scheme_Object **argv) {
@@ -36,8 +46,9 @@ Scheme_Object *mx_block_until_event(int argc,Scheme_Object **argv) {
     scheme_wrong_type("block-until-event","mx-document",0,argc,argv) ;
   }
 
-  scheme_block_until((int (*)(Scheme_Object *))mx_event_available,
-		     NULL,argv[0],0.02F);
+  scheme_block_until((int (*)(Scheme_Object *))html_event_available,
+		     (void (*)(Scheme_Object *,void *))html_event_sem_fun,
+		     argv[0],0.0F);
 
   return scheme_void;
 }

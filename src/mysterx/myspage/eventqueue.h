@@ -18,12 +18,12 @@ class ATL_NO_VTABLE CEventQueue :
   {
 
 private:
-  HANDLE stubHandle;
   HANDLE readSem,mutex;
   int readerNdx,writerNdx;
   int queueLength;
   IEvent *theQueue[MAXQUEUELENGTH];
-  
+  Scheme_Extension_Table *scheme_extension_table;
+
 public:
   CEventQueue(void);
 
@@ -42,6 +42,8 @@ public:
 	  STDMETHOD(QueueEvent)(IEvent *pEvent);
 	  STDMETHOD(GetEvent)(IEvent **ppEvent);
 	  STDMETHOD(PumpMsgs)(void);
+	  STDMETHOD(GetReaderSemaphore)(int *);
+	  STDMETHOD(set_extension_table)(int);
 };
 
 #endif //__EVENTQUEUE_H_

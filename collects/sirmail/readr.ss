@@ -1,4 +1,15 @@
 
+;; This module implements the mail-reading window as a unit. The
+;; unit is instantiated once for each window.
+
+;; General notes:
+;;
+;;   * Always use `as-background' when communicating with the
+;;     server. That way, the user can kill the window if necessary.
+;;     use `enable-main-frame' for the first argument to `as-background'.
+;;     The `as-background' function is defined in "utilr.ss".
+;;
+
 (module readr mzscheme
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
@@ -26,6 +37,9 @@
 
   (require (lib "sendurl.ss" "net"))
 
+  ;; Constant for messages without a title:
+  (define no-subject-string "<No subject>")
+
   (provide read@)
   (define read@
     (unit/sig sirmail:read^
@@ -42,10 +56,16 @@
 	      net:qp^
 	      hierlist^)
       
-      (define no-subject-string "<No subject>")
-
+      ;; This will be set to the frame object
       (define main-frame #f)
       
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  Error Handling                                         ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; It's possible that SirMail can't even start with
+      ;;  the default preference values. This flag lets us
+      ;;  give the user a chance.
       (define got-started? #f)
 
       (define (show-error x)
@@ -63,14 +83,14 @@
 				       #f
 				       '(app)))
 	    (show-pref-dialog))))
-        
+
       (initial-exception-handler
        (lambda (x)
 	 (show-error x)
 	 ((error-escape-handler))))
       (current-exception-handler
        (initial-exception-handler))
-      
+
       ;; Install std bindings global for file dialog, etc.
       (let ([km (make-object keymap%)])
 	(add-text-keymap-functions km)
@@ -85,9 +105,12 @@
       ;;  Mailbox List                                           ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+      ;; In case this is the first run...
       (unless (directory-exists? (LOCAL-DIR))
 	(make-directory (LOCAL-DIR)))
 
+      ;; The "mailboxes" file tells us where to find local copies
+      ;;  of the mailbox content
       (define mailboxes
 	(with-handlers ([void (lambda (x) '(("Inbox" "inbox")))])
 	  (with-input-from-file (build-path (LOCAL-DIR) "mailboxes")
@@ -96,6 +119,7 @@
       (unless (assoc mailbox-name mailboxes)
 	(error 'sirmail "No local mapping for mailbox: ~a" mailbox-name))
       
+      ;; find the mailbox for this window:
       (define mailbox-dir (build-path (LOCAL-DIR) (cadr (assoc mailbox-name mailboxes))))
       
       (unless (directory-exists? mailbox-dir)
@@ -110,6 +134,9 @@
       ;; type message = (list ... message attributes, see selectors below ...)
 
       ;; mailbox : (listof message)
+      ;; mailboxes holds the list of messages reflected in the top list
+      ;; in the GUI. When modifying this value (usually indirectly), use
+      ;; `header-chganging-action'. Mutate the variable, but not the list!
       (define mailbox (with-handlers ([void (lambda (x) null)])
 			(with-input-from-file
 			    (build-path mailbox-dir "mailbox")
@@ -122,7 +149,7 @@
       (define message-subject (lambda (m) (list-ref m 4)))
       (define message-flags (lambda (m) (list-ref m 5)))
       (define message-size (lambda (m) (let ([l (list-tail m 6)])
-                                         ; For backward compatibility:
+                                         ;; For backward compatibility:
 					 (if (pair? l)
 					     (car l)
 					     #f))))
@@ -211,43 +238,20 @@
 	     (set! connection #f)))))
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;  Decoding `from' names                                  ;;
-      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-      (define re:iso (regexp "^(.*)=[?][iI][sS][oO]-8859-1[?]([qQbB])[?](.*?)[?]=(.*)$"))
-      (define (parse-iso-8859-1 s)
-	(and s
-	     (let ([m (regexp-match re:iso s)])
-	       (if m
-		   (let ([s ((if (member (caddr m) '("q" "Q"))
-				 ;; quoted-printable; strip newline:
-				 (lambda (s)
-				   (let ([s (qp-decode s)])
-				     (substring s 0 (sub1 (string-length s)))))
-				 ;; base64:
-				 base64-decode)
-			     (cadddr m))])
-		     (parse-iso-8859-1
-		      (string-append
-		       (cadr m)
-		       s
-		       (cadddr (cdr m)))))
-		   s))))
-
-      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;  Mailbox actions                                        ;;
+      ;;  Mailbox Actions (indepdent of the GUI)                 ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       (define initialized? #f)
       (define new-messages? #f)
       (define current-next-uid 0)
-      
+
       (define (initialized next-uid)
 	(set! initialized? #t)
 	(set! new-messages? #f)
 	(set! current-next-uid next-uid)
 	(send new-mail-msg show #f))
-      
+
+      ;; Syncs `mailbox' with the server
       (define (update-local)
 	(status "Updating ~a from ~a..." mailbox-name (IMAP-SERVER))
 	(let-values ([(imap count new next-uid) (connect 'reselect)])
@@ -349,12 +353,14 @@
 	      #f))
 	new-messages?)
       
+      ;; gets cached header
       (define (get-header uid)
 	(let ([file (build-path mailbox-dir (format "~a" uid))])
 	  (with-input-from-file file
 	    (lambda ()
 	      (read-string (file-size file))))))
       
+      ;; gets cached body or downloads from server (and caches)
       (define (get-body uid)
 	(let ([v (assoc uid mailbox)]
 	      [file (build-path mailbox-dir (format "~abody" uid))])
@@ -389,11 +395,14 @@
                 (read-string (file-size file))))
             (status ""))))
       
+      ;; Checks that `mailbox' is synced with the server
       (define (check-positions imap msgs)
 	(status "Checking message mapping...")
 	(let ([ids (imap-get-messages imap (map message-position msgs) '(uid))])
 	  (unless (equal? (map car ids) (map message-uid msgs))
-	    (error 'position-check "server's position->id mapping doesn't match local copy. server: ~s local: ~s" (map car ids) (map message-uid msgs)))))
+	    (error 'position-check "server's position->id mapping doesn't match local copy. server: ~s local: ~s" 
+                   (map car ids) 
+                   (map message-uid msgs)))))
       
       (define (remove-delete-flags imap)
 	(status "Removing old delete flags...")
@@ -453,10 +462,9 @@
       (define (purge-marked)
 	(let* ([marked (filter message-marked? mailbox)])
 	  (purge-messages marked)))
-      
-      
+
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;  Mail Reader GUI                                        ;;
+      ;;  GUI: Message List Tools                                ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       (define FROM-WIDTH 150)
@@ -509,12 +517,6 @@
       
       (update-frame-width)
       
-      (define show-full-headers? #f)
-      (define quote-in-reply? #t)
-      (define mime-mode? #t)
-      (define html-mode? #t)
-      (define img-mode? #f)
-      
       (define unselected-delta (make-object style-delta% 'change-normal-color))
       (define selected-delta (make-object style-delta%))
       (send selected-delta set-delta-foreground "BLUE")
@@ -566,445 +568,6 @@
               ; In case we downloaded it just now:
 	      (apply-style i read-delta))
 	    (send e end-edit-sequence))))
-      
-      (define (logout)
-	(with-handlers ([void
-			 (lambda (x)
-			   (show-error x)
-			   (when (eq? 'yes
-				      (confirm-box
-				       "Error"
-				       "There was an error disconnecting. Exit anyway?"
-				       main-frame))
-			     (exit-sirmail)
-			     (send main-frame show #f)))])
-	  (disconnect)
-	  (when biff (send biff stop))
-	  (exit-sirmail)
-	  (send main-frame show #f)))
-      
-      (define global-keymap (make-object keymap%))
-      (send global-keymap add-function "new-mailer"
-	    (lambda (w e) (start-new-mailer #f "" "" "" "" "" null)))
-      (send global-keymap add-function "disconnect"
-	    (lambda (w e)
-	      (disconnect)
-	      (send disconnected-msg show #t)))
-      (send global-keymap add-function "get-new-mail"
-	    (lambda (w e) (get-new-mail)))
-      (send global-keymap add-function "prev-msg"
-	    (lambda (w e) (send header-list select-prev)))
-      (send global-keymap add-function "next-msg"
-	    (lambda (w e) (send header-list select-next)))
-      (send global-keymap add-function "mark-msg"
-	    (lambda (w e) (send header-list mark-message)))
-      (send global-keymap add-function "unmark-msg"
-	    (lambda (w e) (send header-list unmark-message)))
-      (send global-keymap add-function "hit-msg"
-	    (lambda (w e) (send header-list hit)))
-      (send global-keymap add-function "scroll-down"
-	    (lambda (w e) 
-	      (if (send header-list selected-hit?)
-		  (let*-values ([(e) (send message get-editor)]
-				[(x y) (send e editor-location-to-dc-location 0 0)])
-		    (send e move-position 'down #f 'page)
-		    (let*-values ([(x2 y2) (send e editor-location-to-dc-location 0 0)])
-		      (when (= y y2)
-			(let ([current (send header-list get-selected)])
-			  (send header-list select-next)
-			  (unless (eq? current (send header-list get-selected))
-			    (send header-list hit))))))
-		  (send header-list hit))))
-      (send global-keymap add-function "scroll-up"
-	    (lambda (w e) 
-	      (when (send header-list selected-hit?)
-		(let ([e (send message get-editor)])
-		  (send e move-position 'up #f 'page)))))
-      (send global-keymap add-function "purge"
-	    (lambda (w e) 
-	      (purge-marked/update-headers)))
-      (send global-keymap add-function "gc"
-	    (lambda (w e) (dump-memory-stats) (collect-garbage)))
-      
-      (send global-keymap map-function ":m" "new-mailer")
-      (send global-keymap map-function ":g" "get-new-mail")
-      (send global-keymap map-function ":i" "disconnect")
-      (send global-keymap map-function ":n" "next-msg")
-      (send global-keymap map-function ":p" "prev-msg")
-      (send global-keymap map-function ":return" "hit-msg")
-      (send global-keymap map-function ":d" "mark-msg")
-      (send global-keymap map-function ":u" "unmark-msg")
-      (send global-keymap map-function ":space" "scroll-down")
-      (send global-keymap map-function ":b" "scroll-up")
-      (send global-keymap map-function "#" "purge")
-      (send global-keymap map-function "!" "gc")
-      
-      (define icon (make-object bitmap% (build-path (collection-path "sirmail")
-						    "postmark.bmp")))
-      (define icon-mask (make-object bitmap% (build-path (collection-path "sirmail")
-							 "postmark-mask.xbm")))
-      (unless (and (send icon ok?)
-		   (send icon-mask ok?))
-	(set! icon #f))
-      
-      (define sm-super-frame%
-        (frame:searchable-mixin
-         (frame:standard-menus-mixin
-          frame:basic%)))
-      
-      (define sm-frame%
-	(class sm-super-frame%
-          (rename [super-on-subwindow-char on-subwindow-char])
-          (inherit get-menu-bar set-icon)
-
-          (define/override (file-menu:create-new?) #f)
-          (define/override (file-menu:create-open?) #f)
-          (define/override (file-menu:create-open-recent?) #f)
-          
-          (define/override (file-menu:between-save-as-and-print file-menu)
-            (make-object menu-item% "&Get New Mail" file-menu
-              (lambda (i e) (get-new-mail))
-              #\g)
-            (make-object menu-item% "&Download All" file-menu
-              (lambda (i e) (download-all))
-              #\l)
-            (make-object separator-menu-item% file-menu)
-            (make-object menu-item%
-              "&Open Folders List"
-              file-menu
-              (lambda x
-                (if (ROOT-MAILBOX-FOR-LIST)
-                    (open-folders-window)
-                    (error "You must first set the Folder List Root preference"))))
-            (make-object separator-menu-item% file-menu)
-            (make-object menu-item% "&New Message" file-menu
-              (lambda (i e) (start-new-mailer #f "" "" "" "" "" null))
-              #\m)
-            (make-object menu-item% "&Resume Message..." file-menu
-              (lambda (i e) 
-                (let ([file (get-file "Select message to resume"
-                                      main-frame)])
-                  (when file
-                    (start-new-mailer file "" "" "" "" "" null)))))
-            (instantiate menu-item% () 
-              (label "Send Queued Messages")
-              (parent file-menu)
-              (demand-callback
-               (lambda (menu-item) 
-                 (send menu-item enable (enqueued-messages?))))
-              (callback
-               (lambda (i e)
-                 (send-queued-messages))))
-            
-            (make-object separator-menu-item% file-menu)
-            (make-object menu-item% "&Save Message As..." file-menu
-              (lambda (i e)
-                (let ([f (put-file "Save message to"
-                                   main-frame)])
-                  (when f
-                    (send (send message get-editor) save-file f 'text))))))
-          
-          (define/override (file-menu:create-print?) #t)
-          (define/override (file-menu:print-callback i e)
-            (send (send message get-editor) print))
-          
-          (define/override (file-menu:between-print-and-close file-menu)
-            (make-object separator-menu-item% file-menu)
-            (make-object menu-item% "D&isconnect" file-menu
-              (lambda (i e) 
-                (disconnect)
-                (send disconnected-msg show #t))
-              #\i))
-          
-          (define/override (file-menu:close-callback i e) (logout))
-          (define/override (file-menu:create-quit?) #f)
-          
-          (rename [super-help-menu:after-about help-menu:after-about])
-          (define/override (help-menu:after-about menu)
-            (make-object menu-item% "&Help" menu
-              (lambda (i e)
-                (let* ([f (instantiate frame% ("Help")
-                            [width 500]
-                            [height 300])]
-                       [e (make-object text%)]
-                       [c (make-object editor-canvas% f e)])
-                  (send e load-file
-                        (build-path (collection-path "sirmail")
-                                    "doc.txt"))
-                  (send f show #t))))
-            (super-help-menu:after-about menu))
-          
-          
-          (inherit get-edit-target-object)
-          (define/override (get-text-to-search) 
-            (send message get-editor))
-          
-          (rename [super-on-size on-size])
-          [define/override on-size
-            (lambda (w h)
-              (put-pref 'sirmail:frame-width w)
-              (put-pref 'sirmail:frame-height h)
-              (update-frame-width)
-              (super-on-size w h))]
-          [define/override can-close? (lambda () (send (get-menu-bar) is-enabled?))]
-          [define/override on-close (lambda () (logout))]
-          [define/override on-subwindow-char
-            (lambda (w e)
-              (or (and
-                   (send (send main-frame get-menu-bar) is-enabled?)
-                   (or (send global-keymap handle-key-event w e)
-                       (and (eq? #\tab (send e get-key-code))
-                            (member w (list header-list message))
-                            (send (if (eq? w message)
-                                      header-list
-                                      message)
-                                  focus))))
-                  (super-on-subwindow-char w e)))]
-          (super-instantiate ())
-          (when icon
-            (set-icon icon icon-mask 'both))))
-      
-      (define drag-cursor (make-object cursor% 'hand))      
-      (define plain-cursor (make-object cursor% 'arrow))
-      
-      (define header-list%
-	(class hierarchical-list%
-
-          (inherit get-items show-focus set-cursor)
-          (field [selected #f])
-          
-          (define/public (mark marked?)
-            (when selected
-              (let* ([uid (send selected user-data)]
-                     [m (assoc uid mailbox)]
-                     [flags (message-flags m)])
-                (unless (eq? (not marked?) 
-                             (not (memq 'marked flags)))
-                  (set-message-flags! m (if marked?
-                                            (cons 'marked flags)
-                                            (remq 'marked flags)))
-                  (write-mailbox)
-                  (apply-style selected 
-                               (if marked? 
-                                   marked-delta
-                                   unmarked-delta))
-                  (status "~aarked" 
-                          (if marked? "M" "Unm"))))))
-          (define/public (hit)
-            (when selected
-              (on-double-select selected)))
-          
-          (define/public (mark-message)
-            (mark #t))
-          (define/public (unmark-message)
-            (mark #f))
-          (define/public (selected-hit?) (eq? selected current-selected))
-          (define/override (on-select i)
-            (set! selected i))
-
-          (define/override (on-double-select i)
-            (let ([e (send message get-editor)]
-                  [uid (send i user-data)])
-              (dynamic-wind
-               (lambda ()
-                 (send e lock #f)
-                 (send e begin-edit-sequence))
-               (lambda ()
-                 (send e erase)
-                 (set-current-selected #f)
-                 (let* ([h (get-header uid)]
-			[small-h (get-viewable-headers h)])
-                   (send e insert (crlf->lf small-h)
-                         0 'same #f)
-		   ;; Do the body (possibly mime)
-		   (let ([body (as-background 
-				enable-main-frame
-				(lambda (break-bad break-ok) 
-				  (with-handlers ([exn:break? (lambda (x) "<interrupted>")])
-				    (get-body uid)))
-				void)]
-			 [insert (lambda (body delta)
-				   (let ([start (send e last-position)])
-				     (send e set-position start)
-				     (send e insert 
-					   (if (string? body) (crlf->lf body) body)
-					   start 'same #f)
-				     (let ([end (send e last-position)])
-				       (delta e start end))))])
-		     (parse-and-insert-body h body e insert 78 img-mode?)))
-                 (send e set-position 0)
-                 (set-current-selected i))
-               (lambda ()
-                 (send e end-edit-sequence)
-                 (send e lock #t)))))
-
-          (inherit get-editor client->screen)
-          (field (dragging-item #f)
-                 (dragging-title #f)
-                 (last-status #f)
-                 (drag-start-x 0)
-                 (drag-start-y 0))
-          (rename [super-on-event on-event])
-          (define/override (on-event evt)
-            (cond
-              [(send evt button-down?)
-               (when dragging-item
-                 (status "")
-                 (send (get-editor) set-cursor plain-cursor)
-                 (set! dragging-item #f))
-               (let ([text (get-editor)])
-                 (when text
-                   (let ([xb (box (send evt get-x))]
-                         [yb (box (send evt get-y))])
-                     (send text global-to-local xb yb)
-                     (let* ([pos (send text find-position (unbox xb) (unbox yb))]
-                            [snip (send text find-snip pos 'after-or-none)]
-                            [item (and (is-a? snip hierarchical-item-snip%)
-                                       (send snip get-item))])
-                       (set! dragging-title "???")
-                       (set! dragging-item item)
-                       (set! drag-start-x (send evt get-x))
-                       (set! drag-start-y (send evt get-y))
-                       (when dragging-item
-                         (let* ([ud (send dragging-item user-data)]
-                                [message (assoc ud mailbox)]
-                                [cap-length 50])
-                           (when message
-                             (let ([title (message-subject message)])
-                               (cond
-                                 [(not title) (set! dragging-title no-subject-string)]
-                                 [((string-length title) . <= . cap-length)
-                                  (set! dragging-title title)]
-                                 [else
-                                  (set! dragging-title
-                                        (string-append (substring title 0 (- cap-length 3)) "..."))])))))))))]
-              [(send evt dragging?)
-	       (when dragging-item
-                 (when (or ((abs (- (send evt get-x) drag-start-x)) . > . 5)
-                           ((abs (- (send evt get-y) drag-start-y)) . > . 5))
-                   (send (get-editor) set-cursor drag-cursor))
-		 (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
-		   (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
-		     (if (string? mailbox-name)
-			 (status "Move message \"~a\" to ~a" dragging-title mailbox-name)
-			 (status "")))))]
-              [(send evt button-up?)
-	       (when dragging-item
-                 (send (get-editor) set-cursor plain-cursor)
-		 (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
-		   (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
-		     (if (string? mailbox-name)
-                         (let* ([user-data (send dragging-item user-data)]
-                                [item (assoc user-data mailbox)])
-                           (when item
-			     (header-changing-action
-			      #f
-			      (lambda ()
-				(as-background
-				 enable-main-frame
-				 (lambda (bad-break break-ok)
-				   (copy-messages-to (list item) mailbox-name)
-				   (purge-messages (list item)))
-				 void)))))
-                         (status ""))))
-                 (set! dragging-item #f))]
-              [else
-               (when (and dragging-item
-			  (not (and (or (send evt leaving?)
-					(send evt entering?))
-				    (or (send evt get-left-down)
-					(send evt get-middle-down)
-					(send evt get-right-down)))))
-                 (set! dragging-item #f)
-                 (send (get-editor) set-cursor plain-cursor)
-                 (status ""))])
-
-            (super-on-event evt))
-
-          (super-instantiate ())
-          (show-focus #t)))
-      
-      (define (header-changing-action downloads? go)
-	(let ([old-mailbox mailbox])
-	  (dynamic-wind
-	   void
-	   go
-	   (lambda ()
-	     (let ([items (send header-list get-items)]
-		   [selected (send header-list get-selected)]
-		   [need-del-selection? #f]
-		   [set-selection? #f])
-	       (send (send header-list get-editor) begin-edit-sequence)
-	       (for-each
-		(lambda (i)
-		  (let ([a (assoc (send i user-data) mailbox)])
-		    (if a
-			(begin ; Message still here
-			  (when (and downloads? (message-downloaded? a))
-				(apply-style i read-delta))
-			  (when need-del-selection?
-				(set! need-del-selection? #f)
-				(send i select #t)))
-			(begin ; Message gone
-			  (when (eq? i selected)
-				(set! need-del-selection? #t))
-			  (when (eq? i current-selected)
-				(let ([e (send message get-editor)])
-				  (send e lock #f)
-				  (send e erase)
-				  (send e lock #t))
-				(set-current-selected #f))
-			  (send header-list delete-item i)))))
-		items)
-	       (for-each
-		(lambda (m)
-		  (unless (assoc (message-uid m) old-mailbox)
-			  (let ([i (add-message m)])
-			    (unless set-selection?
-				    (set! set-selection? #t)
-				    (send i select #t)
-				    (send i scroll-to)))))
-		mailbox)
-	       (send (send header-list get-editor) end-edit-sequence))))))
-      
-      (define (get-new-mail)
-	(with-handlers ([void
-			 (lambda (x)
-			   (status "")
-			   (if (send disconnected-msg is-shown?)
-			       (raise x)
-			       (begin
-				 (show-error x)
-				 (when (exn:i/o? x)
-				   (when (eq? 'yes
-					      (confirm-box
-					       "Error"
-					       (format "There was an communication error.~nClose the connection?")
-					       main-frame))
-				     (send disconnected-msg show #t)
-				     (set! initialized? #f)
-				     (force-disconnect))))))])
-	  (header-changing-action
-	   #f
-	   (lambda ()
-	     (as-background
-	      enable-main-frame
-	      (lambda (break-bad break-ok) 
-		(when (or (not initialized?)
-			  (check-for-new))
-		  (update-local)))
-	      void)))))
-      
-      (define (purge-marked/update-headers)
-	(header-changing-action 
-	 #f
-	 (lambda ()
-	   (as-background 
-	    enable-main-frame
-	    (lambda (break-bad break-ok) 
-	      (with-handlers ([void no-status-handler])
-		(purge-marked)))
-	    void))))
       
       (define vertical-line-snipclass
 	(make-object
@@ -1136,71 +699,11 @@
 	    (apply-style i marked-delta))      
 	  (send e end-edit-sequence)
 	  i))
-      
-      (define last-status "")
-      (define status-sema (make-semaphore 1))
-      (define (status . args)
-        (semaphore-wait status-sema)
-	(let ([s (apply format args)])
-          (unless (equal? s last-status)
-            (set! last-status s)
-            (update-status-text)))
-        (semaphore-post status-sema))
-      
-      ;; update-status-text : -> void
-      ;; =any thread=
-      (define (update-status-text)
-        (send sm-frame set-status-text 
-              (if (equal? last-status "")
-                  (format "(~a bytes)"
-                          (format-number (current-memory-use)))
-                  (format "~a (~a bytes)"
-                          last-status
-                          (format-number (current-memory-use))))))
-      (thread
-       (lambda ()
-         (let loop ()
-           (semaphore-wait status-sema)
-           (when (object? sm-frame)
-             (update-status-text))
-           (semaphore-post status-sema)
-           (sleep 5)
-           (loop))))
 
-      ;; copied from framerok/private/frame.sss -- be sure to propogate fixes....
-      ;; or establish single point of control.
-      (define (format-number n)
-        (let loop ([n n])
-          (cond
-            [(<= n 1000) (number->string n)]
-            [else
-             (string-append 
-              (loop (quotient n 1000))
-              ","
-              (pad-to-3 (modulo n 1000)))])))
+            (define display-text% (html-text-mixin text%))
       
-      (define (pad-to-3 n)
-        (cond
-          [(<= n 9) (format "00~a" n)]
-          [(<= n 99) (format "0~a" n)]
-          [else (number->string n)]))
-      
-      (define can-poll? #t)
-      
-      (define (enable-main-frame on? refocus break-proc)
-	(let ([w (send main-frame get-focus-window)])
-	  (set! can-poll? on?)
-	  (send header-list enable on?)
-	  (send message enable on?)
-	  (send (send main-frame get-menu-bar) enable on?)
-	  (set! cancel-button-todo break-proc)
-	  (send cancel-button enable (not on?))
-	  (when (and on? refocus)
-	    (send refocus focus))
-	  w))
-      
-      (define display-text% (html-text-mixin text%))
-      
+      ;; Class for the panel that has columns titles and
+      ;; supports clicks to change the sort order
       (define sorting-list%
         (class hierarchical-list%
           (inherit get-editor selectable)
@@ -1232,62 +735,213 @@
           (super-instantiate ())
 	(selectable #f)))
            
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  GUI: Frame, Menus, & Key Bindings                      ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
+      ;; Message display modes
+      (define show-full-headers? #f)
+      (define quote-in-reply? #t)
+      (define mime-mode? #t)
+      (define html-mode? #t)
+      (define img-mode? #f)
+      
+      (define global-keymap (make-object keymap%))
+      (send global-keymap add-function "new-mailer"
+	    (lambda (w e) (start-new-mailer #f "" "" "" "" "" null)))
+      (send global-keymap add-function "disconnect"
+	    (lambda (w e)
+	      (disconnect)
+	      (send disconnected-msg show #t)))
+      (send global-keymap add-function "get-new-mail"
+	    (lambda (w e) (get-new-mail)))
+      (send global-keymap add-function "prev-msg"
+	    (lambda (w e) (send header-list select-prev)))
+      (send global-keymap add-function "next-msg"
+	    (lambda (w e) (send header-list select-next)))
+      (send global-keymap add-function "mark-msg"
+	    (lambda (w e) (send header-list mark-message)))
+      (send global-keymap add-function "unmark-msg"
+	    (lambda (w e) (send header-list unmark-message)))
+      (send global-keymap add-function "hit-msg"
+	    (lambda (w e) (send header-list hit)))
+      (send global-keymap add-function "scroll-down"
+	    (lambda (w e) 
+	      (if (send header-list selected-hit?)
+		  (let*-values ([(e) (send message get-editor)]
+				[(x y) (send e editor-location-to-dc-location 0 0)])
+		    (send e move-position 'down #f 'page)
+		    (let*-values ([(x2 y2) (send e editor-location-to-dc-location 0 0)])
+		      (when (= y y2)
+			(let ([current (send header-list get-selected)])
+			  (send header-list select-next)
+			  (unless (eq? current (send header-list get-selected))
+			    (send header-list hit))))))
+		  (send header-list hit))))
+      (send global-keymap add-function "scroll-up"
+	    (lambda (w e) 
+	      (when (send header-list selected-hit?)
+		(let ([e (send message get-editor)])
+		  (send e move-position 'up #f 'page)))))
+      (send global-keymap add-function "purge"
+	    (lambda (w e) 
+	      (purge-marked/update-headers)))
+      (send global-keymap add-function "gc"
+	    (lambda (w e) (dump-memory-stats) (collect-garbage)))
+      
+      (send global-keymap map-function ":m" "new-mailer")
+      (send global-keymap map-function ":g" "get-new-mail")
+      (send global-keymap map-function ":i" "disconnect")
+      (send global-keymap map-function ":n" "next-msg")
+      (send global-keymap map-function ":p" "prev-msg")
+      (send global-keymap map-function ":return" "hit-msg")
+      (send global-keymap map-function ":d" "mark-msg")
+      (send global-keymap map-function ":u" "unmark-msg")
+      (send global-keymap map-function ":space" "scroll-down")
+      (send global-keymap map-function ":b" "scroll-up")
+      (send global-keymap map-function "#" "purge")
+      (send global-keymap map-function "!" "gc")
+      
+      (define icon (make-object bitmap% (build-path (collection-path "sirmail")
+						    "postmark.bmp")))
+      (define icon-mask (make-object bitmap% (build-path (collection-path "sirmail")
+							 "postmark-mask.xbm")))
+      (unless (and (send icon ok?)
+		   (send icon-mask ok?))
+	(set! icon #f))
+      
+      (define sm-super-frame%
+        (frame:searchable-mixin
+         (frame:standard-menus-mixin
+          frame:basic%)))
+      
+      (define sm-frame%
+	(class sm-super-frame%
+          (rename [super-on-subwindow-char on-subwindow-char])
+          (inherit get-menu-bar set-icon)
+
+          (define/override (file-menu:create-new?) #f)
+          (define/override (file-menu:create-open?) #f)
+          (define/override (file-menu:create-open-recent?) #f)
+
+          ;; -------------------- File Menu --------------------
+          
+          (define/override (file-menu:between-save-as-and-print file-menu)
+            (make-object menu-item% "&Get New Mail" file-menu
+              (lambda (i e) (get-new-mail))
+              #\g)
+            (make-object menu-item% "&Download All" file-menu
+              (lambda (i e) (download-all))
+              #\l)
+            (make-object separator-menu-item% file-menu)
+            (make-object menu-item%
+              "&Open Folders List"
+              file-menu
+              (lambda x
+                (if (ROOT-MAILBOX-FOR-LIST)
+                    (open-folders-window)
+                    (error "You must first set the Folder List Root preference"))))
+            (make-object separator-menu-item% file-menu)
+            (make-object menu-item% "&New Message" file-menu
+              (lambda (i e) (start-new-mailer #f "" "" "" "" "" null))
+              #\m)
+            (make-object menu-item% "&Resume Message..." file-menu
+              (lambda (i e) 
+                (let ([file (get-file "Select message to resume"
+                                      main-frame)])
+                  (when file
+                    (start-new-mailer file "" "" "" "" "" null)))))
+            (instantiate menu-item% () 
+              (label "Send Queued Messages")
+              (parent file-menu)
+              (demand-callback
+               (lambda (menu-item) 
+                 (send menu-item enable (enqueued-messages?))))
+              (callback
+               (lambda (i e)
+                 (send-queued-messages))))
+            
+            (make-object separator-menu-item% file-menu)
+            (make-object menu-item% "&Save Message As..." file-menu
+              (lambda (i e)
+                (let ([f (put-file "Save message to"
+                                   main-frame)])
+                  (when f
+                    (send (send message get-editor) save-file f 'text))))))
+          
+          (define/override (file-menu:create-print?) #t)
+          (define/override (file-menu:print-callback i e)
+            (send (send message get-editor) print))
+          
+          (define/override (file-menu:between-print-and-close file-menu)
+            (make-object separator-menu-item% file-menu)
+            (make-object menu-item% "D&isconnect" file-menu
+              (lambda (i e) 
+                (disconnect)
+                (send disconnected-msg show #t))
+              #\i))
+          
+          (define/override (file-menu:close-callback i e) (logout))
+          (define/override (file-menu:create-quit?) #f)
+          
+          ;; -------------------- Help Menu --------------------
+          
+          (rename [super-help-menu:after-about help-menu:after-about])
+          (define/override (help-menu:after-about menu)
+            (make-object menu-item% "&Help" menu
+              (lambda (i e)
+                (let* ([f (instantiate frame% ("Help")
+                            [width 500]
+                            [height 300])]
+                       [e (make-object text%)]
+                       [c (make-object editor-canvas% f e)])
+                  (send e load-file
+                        (build-path (collection-path "sirmail")
+                                    "doc.txt"))
+                  (send f show #t))))
+            (super-help-menu:after-about menu))
+          
+          ;; -------------------- Misc. --------------------
+          
+          (inherit get-edit-target-object)
+          (define/override (get-text-to-search) 
+            (send message get-editor))
+          
+          (rename [super-on-size on-size])
+          [define/override on-size
+            (lambda (w h)
+              (put-pref 'sirmail:frame-width w)
+              (put-pref 'sirmail:frame-height h)
+              (update-frame-width)
+              (super-on-size w h))]
+          [define/override can-close? (lambda () (send (get-menu-bar) is-enabled?))]
+          [define/override on-close (lambda () (logout))]
+          [define/override on-subwindow-char
+            (lambda (w e)
+              (or (and
+                   (send (send main-frame get-menu-bar) is-enabled?)
+                   (or (send global-keymap handle-key-event w e)
+                       (and (eq? #\tab (send e get-key-code))
+                            (member w (list header-list message))
+                            (send (if (eq? w message)
+                                      header-list
+                                      message)
+                                  focus))))
+                  (super-on-subwindow-char w e)))]
+          (super-instantiate ())
+          (when icon
+            (set-icon icon icon-mask 'both))))
+
+      ;; -------------------- Frame Creation --------------------
+      
       (define sm-frame (make-object sm-frame% mailbox-name #f 
                          (get-pref 'sirmail:frame-width)
                          (get-pref 'sirmail:frame-height)))
       (set! main-frame sm-frame)
-      (define sizing-panel (make-object panel:vertical-dragable% (send sm-frame get-area-container)))
-      (define top-half (make-object vertical-panel% sizing-panel))
-      (define button-panel (make-object horizontal-panel% top-half))
-      (define sorting-list (instantiate sorting-list% ()
-                             (parent top-half)
-                             (stretchable-height #f)
-                             (line-count 1)
-                             (style '(hide-hscroll))))
-      (define header-list (make-object header-list% top-half))
-      (send (send header-list get-editor) set-line-spacing 0)
-      (define message (make-object editor-canvas% sizing-panel))
-      (send header-list min-height 20)
-      (send header-list stretchable-height #t)
-      (send main-frame reflow-container)
-      (send sizing-panel set-percentages (list 1/3 2/3))
-      (let ([e (make-object display-text%)])
-	((current-text-keymap-initializer) (send e get-keymap))
-	(send e set-max-undo-history 0)
-	(send message set-editor e)
-	(make-fixed-width message e #f #f)
-	(let ([b (make-object bitmap% (build-path (collection-path "icons") "return.xbm") 'xbm)])
-	  (when (send b ok?)
-	    (send e set-autowrap-bitmap b)))
-	(send e lock #t))
-
-      (send sorting-list min-height 5)
-      (send sorting-list set-line-count 1)
-      (define sorting-text (send (send sorting-list new-item) get-editor))
-      (define sorting-text-from (make-object text%))
-      (send sorting-text-from insert "From")
-      (define sorting-text-subject (make-object text%))
-      (send sorting-text-subject insert "Subject")
-      (define sorting-text-uid (make-object text%))
-      (send sorting-text-uid insert "UID")
-      (define (add-sorting-es text width)
-        (let ([es (instantiate editor-snip% ()
-                    (with-border? #f)
-                    (editor text)
-                    (top-margin 1)
-                    (top-inset 1)
-                    (bottom-margin 1)
-                    (bottom-inset 1))])
-          (send sorting-text insert es)
-          (send es set-flags (remove 'handles-events (send es get-flags)))
-          es))
-      (define sorting-from-snip (add-sorting-es sorting-text-from FROM-WIDTH))
-      (send sorting-text insert (make-object vertical-line-snip%))
-      (define sorting-subject-snip (add-sorting-es sorting-text-subject SUBJECT-WIDTH))
-      (send sorting-text insert (make-object vertical-line-snip%))
-      (define sorting-uid-snip (add-sorting-es sorting-text-uid UID-WIDTH))
-      
       (define mb (send sm-frame get-menu-bar))
+
+      ;; -------------------- Message Menu --------------------
+      
       (define msg-menu (make-object menu% "&Message" mb))
       
       (make-object menu-item% "&Reply" msg-menu
@@ -1362,16 +1016,6 @@
                 (copy-marked-to mbox)
                 (bell)))))
       
-      (when (AUTO-FILE-TABLE)
-	(make-object separator-menu-item% msg-menu)
-	(make-object menu-item% "Auto File" msg-menu
-          (lambda (i e)
-            (auto-file))))
-      
-      (define (redisplay-current)
-	(when current-selected
-	  (send header-list on-double-select current-selected)))
-
       (make-object separator-menu-item% msg-menu)
       (define sort-menu (make-object menu% "&Sort" msg-menu))
       (let ([m (make-object menu% "Decode" msg-menu)])
@@ -1415,14 +1059,558 @@
           (set! show-full-headers? (send i is-checked?))
 	  (redisplay-current)))
 
-      (when (get-pref 'sirmail:wrap-lines)
-	(send wrap-lines-item check #t)
-	(send (send message get-editor) auto-wrap #t))
-      
       (make-object menu-item% "by Sender" sort-menu (lambda (i e) (sort-by-sender)))
       (make-object menu-item% "by Subject" sort-menu (lambda (i e) (sort-by-subject)))
       (make-object menu-item% "by Date" sort-menu (lambda (i e) (sort-by-date)))
       (make-object menu-item% "by Order Received" sort-menu (lambda (i e) (sort-by-order-received)))
+      
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  GUI: Message List                                      ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (define drag-cursor (make-object cursor% 'hand))      
+      (define plain-cursor (make-object cursor% 'arrow))
+      
+      (define header-list%
+	(class hierarchical-list%
+
+          (inherit get-items show-focus set-cursor)
+          (field [selected #f])
+          
+          (define/public (mark marked?)
+            (when selected
+              (let* ([uid (send selected user-data)]
+                     [m (assoc uid mailbox)]
+                     [flags (message-flags m)])
+                (unless (eq? (not marked?) 
+                             (not (memq 'marked flags)))
+                  (set-message-flags! m (if marked?
+                                            (cons 'marked flags)
+                                            (remq 'marked flags)))
+                  (write-mailbox)
+                  (apply-style selected 
+                               (if marked? 
+                                   marked-delta
+                                   unmarked-delta))
+                  (status "~aarked" 
+                          (if marked? "M" "Unm"))))))
+          (define/public (hit)
+            (when selected
+              (on-double-select selected)))
+          
+          (define/public (mark-message)
+            (mark #t))
+          (define/public (unmark-message)
+            (mark #f))
+          (define/public (selected-hit?) (eq? selected current-selected))
+          (define/override (on-select i)
+            (set! selected i))
+
+          ;; -------------------- Message selection --------------------
+          
+          (define/override (on-double-select i)
+            (let ([e (send message get-editor)]
+                  [uid (send i user-data)])
+              (dynamic-wind
+               (lambda ()
+                 (send e lock #f)
+                 (send e begin-edit-sequence))
+               (lambda ()
+                 (send e erase)
+                 (set-current-selected #f)
+                 (let* ([h (get-header uid)]
+			[small-h (get-viewable-headers h)])
+                   (send e insert (crlf->lf small-h)
+                         0 'same #f)
+		   ;; Do the body (possibly mime)
+		   (let ([body (as-background 
+				enable-main-frame
+				(lambda (break-bad break-ok) 
+				  (with-handlers ([exn:break? (lambda (x) "<interrupted>")])
+				    (get-body uid)))
+				void)]
+			 [insert (lambda (body delta)
+				   (let ([start (send e last-position)])
+				     (send e set-position start)
+				     (send e insert 
+					   (if (string? body) (crlf->lf body) body)
+					   start 'same #f)
+				     (let ([end (send e last-position)])
+				       (delta e start end))))])
+		     (parse-and-insert-body h body e insert 78 img-mode?)))
+                 (send e set-position 0)
+                 (set-current-selected i))
+               (lambda ()
+                 (send e end-edit-sequence)
+                 (send e lock #t)))))
+
+          ;; -------------------- Message drag'n'drop --------------------
+          
+          (inherit get-editor client->screen)
+          (field (dragging-item #f)
+                 (dragging-title #f)
+                 (last-status #f)
+                 (drag-start-x 0)
+                 (drag-start-y 0))
+          (rename [super-on-event on-event])
+          (define/override (on-event evt)
+            (cond
+              [(send evt button-down?)
+               (when dragging-item
+                 (status "")
+                 (send (get-editor) set-cursor plain-cursor)
+                 (set! dragging-item #f))
+               (let ([text (get-editor)])
+                 (when text
+                   (let ([xb (box (send evt get-x))]
+                         [yb (box (send evt get-y))])
+                     (send text global-to-local xb yb)
+                     (let* ([pos (send text find-position (unbox xb) (unbox yb))]
+                            [snip (send text find-snip pos 'after-or-none)]
+                            [item (and (is-a? snip hierarchical-item-snip%)
+                                       (send snip get-item))])
+                       (set! dragging-title "???")
+                       (set! dragging-item item)
+                       (set! drag-start-x (send evt get-x))
+                       (set! drag-start-y (send evt get-y))
+                       (when dragging-item
+                         (let* ([ud (send dragging-item user-data)]
+                                [message (assoc ud mailbox)]
+                                [cap-length 50])
+                           (when message
+                             (let ([title (message-subject message)])
+                               (cond
+                                 [(not title) (set! dragging-title no-subject-string)]
+                                 [((string-length title) . <= . cap-length)
+                                  (set! dragging-title title)]
+                                 [else
+                                  (set! dragging-title
+                                        (string-append (substring title 0 (- cap-length 3)) "..."))])))))))))]
+              [(send evt dragging?)
+	       (when dragging-item
+                 (when (or ((abs (- (send evt get-x) drag-start-x)) . > . 5)
+                           ((abs (- (send evt get-y) drag-start-y)) . > . 5))
+                   (send (get-editor) set-cursor drag-cursor))
+		 (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
+		   (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
+		     (if (string? mailbox-name)
+			 (status "Move message \"~a\" to ~a" dragging-title mailbox-name)
+			 (status "")))))]
+              [(send evt button-up?)
+	       (when dragging-item
+                 (send (get-editor) set-cursor plain-cursor)
+		 (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
+		   (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
+		     (if (string? mailbox-name)
+                         (let* ([user-data (send dragging-item user-data)]
+                                [item (assoc user-data mailbox)])
+                           (when item
+			     (header-changing-action
+			      #f
+			      (lambda ()
+				(as-background
+				 enable-main-frame
+				 (lambda (bad-break break-ok)
+				   (copy-messages-to (list item) mailbox-name)
+				   (purge-messages (list item)))
+				 void)))))
+                         (status ""))))
+                 (set! dragging-item #f))]
+              [else
+               (when (and dragging-item
+			  (not (and (or (send evt leaving?)
+					(send evt entering?))
+				    (or (send evt get-left-down)
+					(send evt get-middle-down)
+					(send evt get-right-down)))))
+                 (set! dragging-item #f)
+                 (send (get-editor) set-cursor plain-cursor)
+                 (status ""))])
+
+            (super-on-event evt))
+
+          (super-instantiate ())
+          (show-focus #t)))
+      
+      ;; header-changing-action: bool thunk -> thunk-result
+      ;; Use this function to bracket operations that change
+      ;; `mailbox'. It will use before an after values to update
+      ;; the message list.
+      (define (header-changing-action downloads? go)
+	(let ([old-mailbox mailbox])
+	  (dynamic-wind
+	   void
+	   go
+	   (lambda ()
+	     (let ([items (send header-list get-items)]
+		   [selected (send header-list get-selected)]
+		   [need-del-selection? #f]
+		   [set-selection? #f])
+	       (send (send header-list get-editor) begin-edit-sequence)
+	       (for-each
+		(lambda (i)
+		  (let ([a (assoc (send i user-data) mailbox)])
+		    (if a
+			(begin ; Message still here
+			  (when (and downloads? (message-downloaded? a))
+				(apply-style i read-delta))
+			  (when need-del-selection?
+				(set! need-del-selection? #f)
+				(send i select #t)))
+			(begin ; Message gone
+			  (when (eq? i selected)
+				(set! need-del-selection? #t))
+			  (when (eq? i current-selected)
+				(let ([e (send message get-editor)])
+				  (send e lock #f)
+				  (send e erase)
+				  (send e lock #t))
+				(set-current-selected #f))
+			  (send header-list delete-item i)))))
+		items)
+	       (for-each
+		(lambda (m)
+		  (unless (assoc (message-uid m) old-mailbox)
+			  (let ([i (add-message m)])
+			    (unless set-selection?
+				    (set! set-selection? #t)
+				    (send i select #t)
+				    (send i scroll-to)))))
+		mailbox)
+	       (send (send header-list get-editor) end-edit-sequence))))))
+      
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  GUI: Message Operations                                ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;;  Closes connections and  terminates the window
+      (define (logout)
+	(with-handlers ([void
+			 (lambda (x)
+			   (show-error x)
+			   (when (eq? 'yes
+				      (confirm-box
+				       "Error"
+				       "There was an error disconnecting. Exit anyway?"
+				       main-frame))
+			     (exit-sirmail)
+			     (send main-frame show #f)))])
+	  (disconnect)
+	  (when biff (send biff stop))
+	  (exit-sirmail)
+	  (send main-frame show #f)))
+            
+      (define (get-new-mail)
+	(with-handlers ([void
+			 (lambda (x)
+			   (status "")
+			   (if (send disconnected-msg is-shown?)
+			       (raise x)
+			       (begin
+				 (show-error x)
+				 (when (exn:i/o? x)
+				   (when (eq? 'yes
+					      (confirm-box
+					       "Error"
+					       (format "There was an communication error.~nClose the connection?")
+					       main-frame))
+				     (send disconnected-msg show #t)
+				     (set! initialized? #f)
+				     (force-disconnect))))))])
+	  (header-changing-action
+	   #f
+	   (lambda ()
+	     (as-background
+	      enable-main-frame
+	      (lambda (break-bad break-ok) 
+		(when (or (not initialized?)
+			  (check-for-new))
+		  (update-local)))
+	      void)))))
+      
+      (define (purge-marked/update-headers)
+	(header-changing-action 
+	 #f
+	 (lambda ()
+	   (as-background 
+	    enable-main-frame
+	    (lambda (break-bad break-ok) 
+	      (with-handlers ([void no-status-handler])
+		(purge-marked)))
+	    void))))
+      
+      (define (copy-marked-to dest-mailbox-name)
+	(let* ([marked (filter message-marked? mailbox)])
+          (copy-messages-to marked dest-mailbox-name)))
+      
+      (define (copy-messages-to marked dest-mailbox-name)
+        (unless (null? marked)
+          (let-values ([(imap count new next-uid) (connect)])
+            (check-positions imap marked)
+            (status "Copying messages to ~a..." dest-mailbox-name)
+            (as-background
+             enable-main-frame
+             (lambda (break-bad break-ok)
+               (status "Copying messages to ~a..." dest-mailbox-name)
+               (with-handlers ([void no-status-handler])
+                 (imap-copy imap (map message-position marked) dest-mailbox-name)))
+             void)
+            (status "Copied to ~a" dest-mailbox-name))))
+      
+      (define (auto-file)
+	(as-background
+	 enable-main-frame
+	 (lambda (break-bad break-ok)
+	   (break-ok)
+	   (map
+	    (lambda (auto)
+	      (let* ([dest-mailbox-name (car auto)]
+		     [fields (map car (cadr auto))]
+		     [val-rxs (map string->regexp (map cadr (cadr auto)))])
+		(with-handlers ([void no-status-handler])
+		  (break-ok)
+		  (status "Finding ~a messages..." dest-mailbox-name)
+		  (let ([file-msgs 
+			 (filter
+			  (lambda (m)
+			    (and (not (message-marked? m))
+				 (let ([h (get-header (message-uid m))])
+				   (ormap (lambda (field val-rx)
+					    (let ([v (extract-field field h)])
+					      (and v (regexp-match val-rx v))))
+					  fields val-rxs))))
+			  mailbox)])
+		    (unless (null? file-msgs)
+		      (status "Filing to ~a..." dest-mailbox-name)
+		      (break-bad)
+		      (let-values ([(imap count new next-uid) (connect)])
+			(status (format "Filing to ~a..." dest-mailbox-name))
+                        ; Copy messages for filing:
+			(imap-copy imap (map message-position file-msgs) dest-mailbox-name)
+                        ; Mark them (let the user delete)
+			(for-each (lambda (m)
+				    (set-message-flags! m (cons 'marked (message-flags m)))
+				    (let ([i (let ([items (send header-list get-items)]
+						   [uid (message-uid m)])
+					       (ormap (lambda (i) (and (eq? (send i user-data) uid)
+								       i))
+						      items))])
+				      (apply-style i marked-delta)))
+				  file-msgs)
+			(write-mailbox)))))))
+	    (AUTO-FILE-TABLE)))
+	 void)
+	(status "Auto file done"))
+      
+      (define (download-all)
+	(get-new-mail)
+	(header-changing-action
+	 #t
+	 (lambda ()
+	   (as-background
+	    enable-main-frame
+	    (lambda (break-bad break-ok)
+	      (with-handlers ([exn:break?
+			       (lambda (x) "<interrupted>")])
+		(break-ok)
+		(with-handlers ([exn:break? (lambda (x) (void))])
+	           (for-each (lambda (message)
+			       (let ([uid (message-uid message)])
+				 (break-bad)
+				 (get-body uid)
+				 (break-ok)))
+			     mailbox))))
+	    void))))
+      
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  GUI: Rest of Frame                                     ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (define sizing-panel (make-object panel:vertical-dragable% (send sm-frame get-area-container)))
+      (define top-half (make-object vertical-panel% sizing-panel))
+      (define button-panel (make-object horizontal-panel% top-half))
+      (define sorting-list (instantiate sorting-list% ()
+                             (parent top-half)
+                             (stretchable-height #f)
+                             (line-count 1)
+                             (style '(hide-hscroll))))
+      (define header-list (make-object header-list% top-half))
+      (send (send header-list get-editor) set-line-spacing 0)
+      (define message (make-object editor-canvas% sizing-panel))
+      (send header-list min-height 20)
+      (send header-list stretchable-height #t)
+      (send main-frame reflow-container)
+      (send sizing-panel set-percentages (list 1/3 2/3))
+      (let ([e (make-object display-text%)])
+	((current-text-keymap-initializer) (send e get-keymap))
+	(send e set-max-undo-history 0)
+	(send message set-editor e)
+	(make-fixed-width message e #f #f)
+	(let ([b (make-object bitmap% (build-path (collection-path "icons") "return.xbm") 'xbm)])
+	  (when (send b ok?)
+	    (send e set-autowrap-bitmap b)))
+	(send e lock #t))
+
+      (when (get-pref 'sirmail:wrap-lines)
+	(send wrap-lines-item check #t)
+	(send (send message get-editor) auto-wrap #t))
+      
+      ;; enable-main-frame - use with `as-background'
+      (define can-poll? #t)      
+      (define (enable-main-frame on? refocus break-proc)
+	(let ([w (send main-frame get-focus-window)])
+	  (set! can-poll? on?)
+	  (send header-list enable on?)
+	  (send message enable on?)
+	  (send (send main-frame get-menu-bar) enable on?)
+	  (set! cancel-button-todo break-proc)
+	  (send cancel-button enable (not on?))
+	  (when (and on? refocus)
+	    (send refocus focus))
+	  w))
+      
+      (define no-status-handler (lambda (x) (status "") (raise x)))
+            
+      (send button-panel stretchable-height #f)
+      (define disable-button-panel (make-object horizontal-panel% button-panel))
+      (define mailbox-message (make-object message% (format "~a: XXXXX" mailbox-name) disable-button-panel))
+      (define (display-message-count n)
+	(send mailbox-message set-label (format "~a: ~a" mailbox-name n)))
+      (display-message-count (length mailbox))
+      (define-values (new-mail-msg disconnected-msg)
+	(let ([font (send disable-button-panel get-label-font)])
+	  (send disable-button-panel set-label-font 
+		(make-object font% 
+                  (send font get-point-size)
+                  'system 'normal 'bold))
+	  (let ([m (make-object message% "  New Mail!" disable-button-panel)]
+		[d (make-object message% "Disconnected" disable-button-panel)])
+	    (send disable-button-panel set-label-font font)
+	    (send m show #f)
+	    (values m d))))
+
+      ;; Optional GC icon (lots of work for this little thing!)
+      (when (get-pref 'sirmail:show-gc-icon)
+	(let* ([gif (make-object bitmap% (build-path (collection-path "icons") "recycle.gif"))]
+	       [w (send gif get-width)]
+	       [h (send gif get-height)]
+	       [recycle-bm (make-object bitmap% (quotient w 2) (quotient h 2))]
+	       [dc (make-object bitmap-dc% recycle-bm)])
+	  (send dc set-scale 0.5 0.5)
+	  (send dc draw-bitmap gif 0 0)
+	  (send dc set-bitmap #f)
+	  (let* ([w (send recycle-bm get-width)]
+		 [h (send recycle-bm get-height)]
+		 [canvas (instantiate canvas% (button-panel)
+				      [min-width w]
+				      [min-height h]
+				      [stretchable-width #f]
+				      [stretchable-height #f])]
+		 [empty-bm (make-object bitmap% w h)]
+		 [dc (make-object bitmap-dc% empty-bm)])
+	    (send dc clear)
+	    (send dc set-bitmap #f)
+	    (register-collecting-blit canvas 
+				      0 0 w h
+				      recycle-bm empty-bm
+				      0 0 0 0))))
+
+      (define cancel-button
+	(make-object button% "Stop" button-panel
+		     (lambda (b e) (cancel-button-todo))))
+      (define cancel-button-todo void)
+      (send cancel-button enable #f)
+
+      ;; -------------------- Status Line --------------------
+      
+      (define last-status "")
+      (define status-sema (make-semaphore 1))
+      (define (status . args)
+        (semaphore-wait status-sema)
+	(let ([s (apply format args)])
+          (unless (equal? s last-status)
+            (set! last-status s)
+            (update-status-text)))
+        (semaphore-post status-sema))
+      
+      ;; update-status-text : -> void
+      ;; =any thread=
+      (define (update-status-text)
+        (send sm-frame set-status-text 
+              (if (equal? last-status "")
+                  (format "(~a bytes)"
+                          (format-number (current-memory-use)))
+                  (format "~a (~a bytes)"
+                          last-status
+                          (format-number (current-memory-use))))))
+      (thread
+       (lambda ()
+         (let loop ()
+           (semaphore-wait status-sema)
+           (when (object? sm-frame)
+             (update-status-text))
+           (semaphore-post status-sema)
+           (sleep 5)
+           (loop))))
+
+      ;; copied from framerok/private/frame.sss -- be sure to propogate fixes....
+      ;; or establish single point of control.
+      (define (format-number n)
+        (let loop ([n n])
+          (cond
+            [(<= n 1000) (number->string n)]
+            [else
+             (string-append 
+              (loop (quotient n 1000))
+              ","
+              (pad-to-3 (modulo n 1000)))])))
+      
+      (define (pad-to-3 n)
+        (cond
+          [(<= n 9) (format "00~a" n)]
+          [(<= n 99) (format "0~a" n)]
+          [else (number->string n)]))
+      
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  GUI: Sorting                                           ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;      
+
+      (send sorting-list min-height 5)
+      (send sorting-list set-line-count 1)
+      (define sorting-text (send (send sorting-list new-item) get-editor))
+      (define sorting-text-from (make-object text%))
+      (send sorting-text-from insert "From")
+      (define sorting-text-subject (make-object text%))
+      (send sorting-text-subject insert "Subject")
+      (define sorting-text-uid (make-object text%))
+      (send sorting-text-uid insert "UID")
+      (define (add-sorting-es text width)
+        (let ([es (instantiate editor-snip% ()
+                    (with-border? #f)
+                    (editor text)
+                    (top-margin 1)
+                    (top-inset 1)
+                    (bottom-margin 1)
+                    (bottom-inset 1))])
+          (send sorting-text insert es)
+          (send es set-flags (remove 'handles-events (send es get-flags)))
+          es))
+      (define sorting-from-snip (add-sorting-es sorting-text-from FROM-WIDTH))
+      (send sorting-text insert (make-object vertical-line-snip%))
+      (define sorting-subject-snip (add-sorting-es sorting-text-subject SUBJECT-WIDTH))
+      (send sorting-text insert (make-object vertical-line-snip%))
+      (define sorting-uid-snip (add-sorting-es sorting-text-uid UID-WIDTH))
+      
+      (when (AUTO-FILE-TABLE)
+	(make-object separator-menu-item% msg-menu)
+	(make-object menu-item% "Auto File" msg-menu
+          (lambda (i e)
+            (auto-file))))
+      
+      (define (redisplay-current)
+	(when current-selected
+	  (send header-list on-double-select current-selected)))
+
       
       (define (sort-by-date) 
         (sort-by-fields (list (list "date" date-cmp)))
@@ -1627,8 +1815,37 @@
 	     (status ""))
 	   void)))
 
-      (define no-status-handler (lambda (x) (status "") (raise x)))
-            
+      (when (SORT)
+	(case (SORT)
+	  [(date) (sort-by-date)]
+	  [(subject) (sort-by-subject)]
+	  [(from) (sort-by-sender)]
+	  [(id) (void)])) ;; which is (sort-by-order-received)
+
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  GUI: Finish Setup                                      ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (send header-list focus)
+      
+      (for-each add-message mailbox)
+      
+      (send sm-frame create-status-line)
+      
+      (send sm-frame show #t)
+      (set! got-started? #t)
+      
+      (unless (null? mailbox)
+	(let ([last (car (last-pair (send header-list get-items)))])
+	  (send last select #t)
+	  (queue-callback (lambda () (send last scroll-to)))))
+
+      (frame:reorder-menus sm-frame)
+      
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  Queued Message Sends                                   ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
       ;; queue-directory : string
       ;; the directory where queue'd files are stored (created at this point)
       (define queue-directory 
@@ -1669,163 +1886,7 @@
              (send (new-mailer full-filename "" "" "" "" "" null)
                    send-message)
              (delete-file full-filename)))))
-      
-      (define (copy-marked-to dest-mailbox-name)
-	(let* ([marked (filter message-marked? mailbox)])
-          (copy-messages-to marked dest-mailbox-name)))
-      
-      (define (copy-messages-to marked dest-mailbox-name)
-        (unless (null? marked)
-          (let-values ([(imap count new next-uid) (connect)])
-            (check-positions imap marked)
-            (status "Copying messages to ~a..." dest-mailbox-name)
-            (as-background
-             enable-main-frame
-             (lambda (break-bad break-ok)
-               (status "Copying messages to ~a..." dest-mailbox-name)
-               (with-handlers ([void no-status-handler])
-                 (imap-copy imap (map message-position marked) dest-mailbox-name)))
-             void)
-            (status "Copied to ~a" dest-mailbox-name))))
-      
-      (define (auto-file)
-	(as-background
-	 enable-main-frame
-	 (lambda (break-bad break-ok)
-	   (break-ok)
-	   (map
-	    (lambda (auto)
-	      (let* ([dest-mailbox-name (car auto)]
-		     [fields (map car (cadr auto))]
-		     [val-rxs (map string->regexp (map cadr (cadr auto)))])
-		(with-handlers ([void no-status-handler])
-		  (break-ok)
-		  (status "Finding ~a messages..." dest-mailbox-name)
-		  (let ([file-msgs 
-			 (filter
-			  (lambda (m)
-			    (and (not (message-marked? m))
-				 (let ([h (get-header (message-uid m))])
-				   (ormap (lambda (field val-rx)
-					    (let ([v (extract-field field h)])
-					      (and v (regexp-match val-rx v))))
-					  fields val-rxs))))
-			  mailbox)])
-		    (unless (null? file-msgs)
-		      (status "Filing to ~a..." dest-mailbox-name)
-		      (break-bad)
-		      (let-values ([(imap count new next-uid) (connect)])
-			(status (format "Filing to ~a..." dest-mailbox-name))
-                        ; Copy messages for filing:
-			(imap-copy imap (map message-position file-msgs) dest-mailbox-name)
-                        ; Mark them (let the user delete)
-			(for-each (lambda (m)
-				    (set-message-flags! m (cons 'marked (message-flags m)))
-				    (let ([i (let ([items (send header-list get-items)]
-						   [uid (message-uid m)])
-					       (ormap (lambda (i) (and (eq? (send i user-data) uid)
-								       i))
-						      items))])
-				      (apply-style i marked-delta)))
-				  file-msgs)
-			(write-mailbox)))))))
-	    (AUTO-FILE-TABLE)))
-	 void)
-	(status "Auto file done"))
-      
-      (send button-panel stretchable-height #f)
-      (define disable-button-panel (make-object horizontal-panel% button-panel))
-      (define mailbox-message (make-object message% (format "~a: XXXXX" mailbox-name) disable-button-panel))
-      (define (display-message-count n)
-	(send mailbox-message set-label (format "~a: ~a" mailbox-name n)))
-      (display-message-count (length mailbox))
-      (define-values (new-mail-msg disconnected-msg)
-	(let ([font (send disable-button-panel get-label-font)])
-	  (send disable-button-panel set-label-font 
-		(make-object font% 
-                  (send font get-point-size)
-                  'system 'normal 'bold))
-	  (let ([m (make-object message% "  New Mail!" disable-button-panel)]
-		[d (make-object message% "Disconnected" disable-button-panel)])
-	    (send disable-button-panel set-label-font font)
-	    (send m show #f)
-	    (values m d))))
-
-      ;; Optional GC icon (lots of work for this little thing!)
-      (when (get-pref 'sirmail:show-gc-icon)
-	(let* ([gif (make-object bitmap% (build-path (collection-path "icons") "recycle.gif"))]
-	       [w (send gif get-width)]
-	       [h (send gif get-height)]
-	       [recycle-bm (make-object bitmap% (quotient w 2) (quotient h 2))]
-	       [dc (make-object bitmap-dc% recycle-bm)])
-	  (send dc set-scale 0.5 0.5)
-	  (send dc draw-bitmap gif 0 0)
-	  (send dc set-bitmap #f)
-	  (let* ([w (send recycle-bm get-width)]
-		 [h (send recycle-bm get-height)]
-		 [canvas (instantiate canvas% (button-panel)
-				      [min-width w]
-				      [min-height h]
-				      [stretchable-width #f]
-				      [stretchable-height #f])]
-		 [empty-bm (make-object bitmap% w h)]
-		 [dc (make-object bitmap-dc% empty-bm)])
-	    (send dc clear)
-	    (send dc set-bitmap #f)
-	    (register-collecting-blit canvas 
-				      0 0 w h
-				      recycle-bm empty-bm
-				      0 0 0 0))))
-
-      (define cancel-button
-	(make-object button% "Stop" button-panel
-		     (lambda (b e) (cancel-button-todo))))
-      (define cancel-button-todo void)
-      (send cancel-button enable #f)
-
-      (define (download-all)
-	(get-new-mail)
-	(header-changing-action
-	 #t
-	 (lambda ()
-	   (as-background
-	    enable-main-frame
-	    (lambda (break-bad break-ok)
-	      (with-handlers ([exn:break?
-			       (lambda (x) "<interrupted>")])
-		(break-ok)
-		(with-handlers ([exn:break? (lambda (x) (void))])
-	           (for-each (lambda (message)
-			       (let ([uid (message-uid message)])
-				 (break-bad)
-				 (get-body uid)
-				 (break-ok)))
-			     mailbox))))
-	    void))))
-      
-      (send header-list focus)
-      
-      (for-each add-message mailbox)
-      
-      (send sm-frame create-status-line)
-      
-      (send sm-frame show #t)
-      (set! got-started? #t)
-
-      (when (SORT)
-	(case (SORT)
-	  [(date) (sort-by-date)]
-	  [(subject) (sort-by-subject)]
-	  [(from) (sort-by-sender)]
-	  [(id) (void)])) ;; which is (sort-by-order-received)
-      
-      (unless (null? mailbox)
-	(let ([last (car (last-pair (send header-list get-items)))])
-	  (send last select #t)
-	  (queue-callback (lambda () (send last scroll-to)))))
-
-      (frame:reorder-menus sm-frame)
-      
+            
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Message Parsing                                        ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2034,6 +2095,9 @@
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Mail Sending                                           ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; Mail-sending window is implemented in sendr.ss. This is
+      ;;  the set-up for opening such a window.
       
       (define my-address 
 	(with-handlers ([void (lambda (x) "<bad address>")])
@@ -2190,12 +2254,10 @@
 	 (lambda ()
            (send (new-mailer file to cc subject other-headers body enclosures)
                  send-message))))
-      
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;                                                                  ;;
-      ;;                        misc formatting                           ;;
-      ;;                                                                  ;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  Misc Formatting                                        ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       ;; handle-formatting : text -> void
       (define (handle-formatting e)
@@ -2282,12 +2344,10 @@
     
       (define bold-style-delta (make-object style-delta% 'change-bold))
       (define italic-style-delta (make-object style-delta% 'change-italic))
-    
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;                                                                  ;;
-      ;;                       highlighting urls                          ;;
-      ;;                                                                  ;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  Hiliting URLS                                          ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ;; hilite-urls : text -> void
       ;; highligts all of the urls (strings beginning with `http:', `https:' or `ftp:')
@@ -2320,4 +2380,3 @@
 
       ;;; main init stuff (at least some of it)
       (ask-about-queued-messages))))
-

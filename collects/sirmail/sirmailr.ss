@@ -35,7 +35,9 @@
 	     (HIER : hierlist^))
      (link [UTILS : sirmail:utils^
 		  (util@
-		   MRED)]
+		   MRED
+		   BASE64
+		   QP)]
 	   [OPTIONS : sirmail:options^
 		    (option@
 		     ENV

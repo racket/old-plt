@@ -30,12 +30,14 @@
 
      make-fixed-width
 
-     confirm-box))
+     confirm-box
+
+     parse-iso-8859-1))
 
   (provide sirmail:send^)
   (define-signature sirmail:send^
     (new-mailer
-     (struct enclosure (name subheader data))))
+     (struct enclosure (name subheader data-thunk))))
 
   (provide sirmail:options^)
   (define-signature sirmail:options^

@@ -3,6 +3,8 @@
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
 	   (lib "mred-sig.ss" "mred")
+	   (lib "qp-sig.ss" "net")
+	   (lib "base64-sig.ss" "net")
 	   (lib "etc.ss"))
 
   (require "sirmails.ss")
@@ -10,7 +12,9 @@
   (provide util@)
   (define util@
     (unit/sig sirmail:utils^
-      (import mred^)
+      (import mred^
+	      net:base64^
+	      net:qp^)
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Utilities                                              ;;
@@ -102,6 +106,22 @@
 	  (send d show #t)
 	  result))
 
+      ;; as-background: (bool window<%> braek-thunk ->)
+      ;;                (break-ok-thunk break-not-ok-thunk -> X) 
+      ;;                (-> Y) -> X
+      ;; Runs a task in the background.
+      ;; The `enable' function is called with #f as the first argument
+      ;;  to start the background task. The `break-thunk' can be
+      ;;  called to interrupt the task.
+      ;; The `go' function performs the task (in a thread created by
+      ;;   as-background); it receives thunks that it can call to
+      ;;   indicate when breaks are "safe". If the user tries to break
+      ;;   at a non-safe point, the user is warned; if the user
+      ;;   proceeds, things are killed and `exit' is called. If
+      ;;   the user breaks at a safe point, a break signal is sent
+      ;;   to the thread for the background task.
+      ;; The `pre-kill' thunk is called before things are killed
+      ;;   for a non-"safe" break.
       (define (as-background enable go pre-kill)
 	(let* ([v #f]
 	       [exn #f]
@@ -181,7 +201,6 @@
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
       (define confirm-box 
 	(opt-lambda (title message [parent #f] [style null])
 	  (if (= 1 (message-box/custom
@@ -195,5 +214,29 @@
 			    '(default=1))
 		    2))
 	      'yes
-	      'no))))))
+	      'no)))
+
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  Decoding `from' names                                  ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (define re:iso (regexp "^(.*)=[?][iI][sS][oO]-8859-1[?]([qQbB])[?](.*?)[?]=(.*)$"))
+      (define (parse-iso-8859-1 s)
+	(and s
+	     (let ([m (regexp-match re:iso s)])
+	       (if m
+		   (let ([s ((if (member (caddr m) '("q" "Q"))
+				 ;; quoted-printable; strip newline:
+				 (lambda (s)
+				   (let ([s (qp-decode s)])
+				     (substring s 0 (sub1 (string-length s)))))
+				 ;; base64:
+				 base64-decode)
+			     (cadddr m))])
+		     (parse-iso-8859-1
+		      (string-append
+		       (cadr m)
+		       s
+		       (cadddr (cdr m)))))
+		   s)))))))
 

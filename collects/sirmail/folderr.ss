@@ -24,7 +24,15 @@
               mred^
               net:imap^
               hierlist^)
-      
+  
+      (define (show-error x)
+	(message-box "Error" 
+		     (if (exn? x)
+			 (exn-message x)
+			 (format "Strange exception: ~s" x))
+		     frame
+		     '(ok stop)))
+        
       (define mailbox-cache-file (build-path (LOCAL-DIR) "folder-window-mailboxes"))
       
       (define (imap-open-connection)
@@ -426,4 +434,12 @@
       (send frame create-status-line)
       (send top-list set-mailbox-name (ROOT-MAILBOX-FOR-LIST))
       (update-gui (read-mailbox-folder))
+      
+      (initial-exception-handler
+         (lambda (x)
+           (show-error x frame)
+           ((error-escape-handler))))
+      (current-exception-handler
+       (initial-exception-handler))
+      
       frame)))

@@ -1,4 +1,7 @@
 
+;; This module implements the mail-composing window. The `new-mailer'
+;;  function creates a compose-window instance.
+
 (module sendr mzscheme
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
@@ -35,7 +38,18 @@
 	      net:qp^
 	      hierlist^)
 
-              
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  Constants                                             ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (define (show-error x main-frame)
+	(message-box "Error" 
+		     (if (exn? x)
+			 (exn-message x)
+			 (format "Strange exception: ~s" x))
+		     main-frame
+		     '(ok stop)))
+        
       (define FRAME-WIDTH 560)
       (define FRAME-HEIGHT 600)
       (let-values ([(display-width display-height) (get-display-size)])
@@ -61,6 +75,10 @@
 	(set! send-icon #f))
 
       (define SEPARATOR (make-string 75 #\=))
+
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  Address Parsing                                       ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ;; Returns a list of <full>-<address> pairs
       (define (resolve-alias addr)
@@ -101,9 +119,13 @@
 	    h
 	    (remove-fields (cdr l) (remove-field (car l) h))))
 
-      (define-struct enclosure (name      ; identifies enclosure in the GUI
-				subheader ; header for enclosure
-				data))    ; enclosure data (already encoded)
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  Enclosures                                            ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
+      (define-struct enclosure (name            ; identifies enclosure in the GUI
+				subheader       ; header for enclosure
+				data-thunk))    ; gets enclosure data (already encoded)
 
       ;; Create a message with enclosures.
       ;;  `header' is a message header created with the head.ss library
@@ -112,19 +134,21 @@
       (define (enclose header body enclosures)
 	(if (null? enclosures)
 	    (values header body)
-	    (let ([boundary
-		   ;; Generate something that isn't there:
-		   (let loop ()
-		     (let* ([b (format "---~a~a~a-----" (random 10000) (random 10000) (random 10000))]
-			    [m (regexp b)])
-		       (if (or (regexp-match-positions m body)
-			       (ormap
-				(lambda (enc)
-				  (or (regexp-match-positions m (enclosure-subheader enc))
-				      (regexp-match-positions m (enclosure-data enc))))
-				enclosures))
-			   (loop)
-			   b)))])
+	    (let* ([enclosure-datas
+                    (map (lambda (e) ((enclosure-data-thunk e))) enclosures)]
+                   [boundary
+                    ;; Generate something that isn't there:
+                    (let loop ()
+                      (let* ([b (format "---~a~a~a-----" (random 10000) (random 10000) (random 10000))]
+                             [m (regexp b)])
+                        (if (or (regexp-match-positions m body)
+                                (ormap
+                                 (lambda (enc data)
+                                   (or (regexp-match-positions m (enclosure-subheader enc))
+                                       (regexp-match-positions m data)))
+                                 enclosures enclosure-datas))
+                            (loop)
+                            b)))])
 	      (let ([mime-header (insert-field
 				  "MIME-Version"
 				  "1.0"
@@ -151,14 +175,79 @@
 			    empty-header))
 			  body
 			  (map
-			   (lambda (enc)
+			   (lambda (enc data)
 			     (string-append
 			      crlf "--" boundary crlf
 			      (enclosure-subheader enc)
-			      (enclosure-data enc)))
-			   enclosures))
+			      data))
+			   enclosures enclosure-datas))
 			 crlf "--" boundary "--" crlf))))))
 
+      (define (get-enclosure-type-and-encoding filename mailer-frame)
+        (let ([types '("application/postscript"
+                       "text/plain"
+                       "image/jpeg"
+                       "image/gif"
+                       "application/octet-stream")]
+              [encodings '("7bit"
+                           "quoted-printable"
+                           "base64")]
+              [d (instantiate dialog% ("Enclosure" mailer-frame)
+                   [alignment '(left center)])])
+          (send d set-label-position 'vertical)
+          (make-object message% "File:" d)
+          (make-object message% (string-append 
+                                 "  "
+                                 (let ([l (string-length filename)])
+                                   (if (l . < . 198)
+                                       filename
+                                       (string-append
+                                        (substring filename 0 5)
+                                        "..."
+                                        (substring filename (- l 190) l)))))
+            d)
+          (let ([type-list (make-object list-box% "Type:" types d void)]
+                [encoding-list (make-object list-box% "Encoding:" encodings d void)]
+                [button-panel (instantiate horizontal-pane% (d)
+                                [alignment '(right center)])]
+                [ok? #f])
+            (let-values ([(ok cancel) (gui-utils:ok/cancel-buttons
+                                       button-panel
+                                       (lambda (b e) 
+                                         (set! ok? #t)
+                                         (send d show #f))
+                                       (lambda (b e)
+                                         (send d show #f)))])
+              (send d reflow-container)
+              (let ([default (lambda (t e)
+                               (letrec ([findpos (lambda (l s)
+                                                   (if (string=? (car l) s)
+                                                       0
+                                                       (add1 (findpos (cdr l) s))))])
+                                 (let ([p (findpos types t)])
+                                   (send type-list set-selection p)
+                                   (send type-list set-first-visible-item p))
+                                 (let ([p (findpos encodings e)])
+                                   (send encoding-list set-selection p)
+                                   (send encoding-list set-first-visible-item p))))]
+                    [suffix (let ([m (regexp-match "[.](.?.?.?)$" filename)])
+                              (and m (cadr m)))])
+                (case (if suffix (string->symbol suffix) '???)
+                  [(txt ss scm) (default "text/plain" "quoted-printable")]
+                  [(ps) (default "application/postscript" "base64")]
+                  [(jpeg jpg) (default "image/jpeg" "base64")]
+                  [(gif) (default "image/gif" "base64")]
+                  [else (default "application/octet-stream" "base64")]))
+              (send d show #t)
+              (if ok?
+                  (values (list-ref types (send type-list get-selection))
+                          (list-ref encodings (send encoding-list get-selection)))
+                  (values #f #f))))))
+			
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  Composer Instance                                     ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
       ;; new-mailer : ... -> frame[with send-message method]
       (define (new-mailer file to cc subject other-headers body enclosures)
 	(define f% (class frame:basic%
@@ -180,6 +269,7 @@
                      (when send-icon
                        (set-icon send-icon send-icon-mask))))
 	(define mailer-frame (make-object f% "Send Mail" #f FRAME-WIDTH FRAME-HEIGHT))
+        
 	(define mb (send mailer-frame get-menu-bar))
 	(define file-menu (make-object menu% "File" mb))
 	(define edit-menu (make-object menu% "Edit" mb))
@@ -257,6 +347,7 @@
                 (send enclosure-list get-items))
            enable
            (lambda () (send mailer-frame set-status-text "Sending mail..."))
+           (lambda () (send mailer-frame set-status-text "Building enclosures..."))
            (lambda () (send mailer-frame set-status-text ""))
            (lambda ()
              (send mailer-frame on-close)
@@ -336,56 +427,35 @@
 		     (lambda (i env)
 		       (let ([file (get-file)])
 			 (when file
-			   (let* ([types '("application/postscript"
-					   "text/plain"
-                                           "image/jpeg"
-                                           "image/gif"
-					   "application/octet-stream")]
-				  [type (get-choices-from-user
-					 "Content Type"
-					 "Type of enclosure:"
-					 types
-					 mailer-frame
-					 '(0))])
-			     (when type
-			       (let* ([encodings '("7bit"
-						   "quoted-printable"
-						   "base64")]
-				      [encoding (get-choices-from-user
-						 "Content Encoding"
-						 "Encoding for enclosure:"
-						 encodings
-						 mailer-frame
-						 '(0))])
-				 (when encoding
-				   (let ([type (list-ref types (car type))]
-					 [encoding (list-ref encodings (car encoding))])
-				     (let ([i (send enclosure-list new-item)]
-					   [enc (make-enclosure
-						 file
-						 (insert-field
-						  "Content-Type" 
-						  (data-lines->data
-						   (list
-						    (string-append type ";")
-						    (format "name=~s" (clean-filename
-								       (with-handlers ([void (lambda (x) "unknown")])
-									 (let-values ([(base name dir?) (split-path file)])
-									   name))))))
-						  (insert-field
-						   "Content-Transfer-Encoding" encoding
-						   empty-header))
-						 (let ([content (with-input-from-file file
-								  (lambda ()
-								    (read-string (file-size file))))])
-						   (case (string->symbol encoding)
-						     [(base64) (base64-encode content)]
-						     [(quoted-printable) (qp-encode content)]
-						     [(7bit) (lf->crlf content)])))])
-				       (send (send i get-editor) insert (enclosure-name enc))
-				       (send i user-data enc)
-				       (unless (memq enclosure-list (send mailer-frame get-children))
-					 (send (send mailer-frame get-area-container) add-child enclosure-list))))))))))))
+                           (let-values ([(type encoding) (get-enclosure-type-and-encoding file mailer-frame)])
+                             (when (and type encoding)
+                               (let ([i (send enclosure-list new-item)]
+                                     [enc (make-enclosure
+                                           file
+                                           (insert-field
+                                            "Content-Type" 
+                                            (data-lines->data
+                                             (list
+                                              (string-append type ";")
+                                              (format "name=~s" (clean-filename
+                                                                 (with-handlers ([void (lambda (x) "unknown")])
+                                                                   (let-values ([(base name dir?) (split-path file)])
+                                                                     name))))))
+                                            (insert-field
+                                             "Content-Transfer-Encoding" encoding
+                                             empty-header))
+                                           (lambda ()
+                                             (let ([content (with-input-from-file file
+                                                              (lambda ()
+                                                                (read-string (file-size file))))])
+                                               (case (string->symbol encoding)
+                                                 [(base64) (base64-encode content)]
+                                                 [(quoted-printable) (qp-encode content)]
+                                                 [(7bit) (lf->crlf content)]))))])
+                                 (send (send i get-editor) insert (enclosure-name enc))
+                                 (send i user-data enc)
+                                 (unless (memq enclosure-list (send mailer-frame get-children))
+                                   (send (send mailer-frame get-area-container) add-child enclosure-list)))))))))
 	(make-object separator-menu-item% file-menu)
 	(make-object (class menu% 
 		       (inherit get-items)
@@ -418,6 +488,17 @@
 	   (when (is-a? i selectable-menu-item<%>)
 	     (send i set-shortcut #f)))
 	 (send edit-menu get-items))
+        
+        (make-object separator-menu-item% edit-menu)
+        (send (instantiate menu-item% ("Delete Enclosure" edit-menu)
+                [callback (lambda (i e)
+                            (let ([i (send enclosure-list get-selected)])
+                              (send enclosure-list delete-item i)))]
+                [demand-callback (lambda (m)
+                                   (send m enable (send enclosure-list get-selected)))])
+              enable #f)
+                  
+        
 	(add-preferences-menu-items edit-menu)
 
 	(let ([km (send message-editor get-keymap)])
@@ -444,9 +525,9 @@
 	(send c set-editor message-editor)
 
 	(if file
-					; Resume a composition...
+            ;; Resume a composition...
 	    (send message-editor load-file file)
-					; Build message skeleton
+            ;; Build message skeleton
 	    (begin
 	      (send message-editor insert "To: ")
 	      (send message-editor insert (crlf->lf to))
@@ -480,6 +561,14 @@
 	(send mailer-frame create-status-line)
 
 	(send mailer-frame show #t)
+
+        (initial-exception-handler
+         (lambda (x)
+           (show-error x mailer-frame)
+           ((error-escape-handler))))
+        (current-exception-handler
+         (initial-exception-handler))
+
         mailer-frame)
 
       
@@ -488,12 +577,17 @@
       (define (clean-filename name)
         (regexp-replace* "[ /:\\\"'`?*%<>$|]" name "_"))
       
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  Message Send                                          ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
       (define (send-message message-str
                             smtp-server
                             smtp-port
                             enclosures
                             enable 
                             status-message-starting
+                            status-message-enclosures
                             status-message-clear
                             status-done
                             save-before-killing)
@@ -523,28 +617,34 @@
                          [new-header (append-headers std-header prop-header)]
                          [tos (map cdr (append to* cc* bcc*))])
                     
-                    (let-values ([(new-header body) (enclose new-header body enclosures)])
-                      (when (SAVE-SENT)
-                        (let* ([chop (lambda (s)
-                                       (let ([l (string-length s)])
-                                         (clean-filename (substring s 0 (min l 10)))))]
-                               [to (if (null? tos) "noone" (chop (car tos)))]
-                               [subj (if subject (chop subject) "nosubj")])
-                          (let loop ([n 1])
-                            (let ([fn (build-path (SAVE-SENT) (format "~a_~a_~a" to subj n))])
-                              (if (file-exists? fn)
-                                  (loop (add1 n))
-                                  (with-output-to-file fn
-                                    (lambda ()
-                                      (display (crlf->lf header))
-                                      (display (crlf->lf body)))))))))
-                      (as-background
-                       enable
-                       (lambda (break-bad break-ok)
-                         (status-message-starting)
-                         (with-handlers ([void (lambda (x)
-                                                 (status-message-clear)
-                                                 (raise x))])
+                    (as-background
+                     enable
+                     (lambda (break-bad break-ok)
+                       (if (null? enclosures)
+                           (status-message-starting)
+                           (status-message-enclosures))
+                       (with-handlers ([void (lambda (x)
+                                               (status-message-clear)
+                                               (raise x))])
+                         (break-ok)
+                         (let-values ([(new-header body) (enclose new-header body enclosures)])
+                           (break-bad)
+                           (unless (null? enclosures)
+                             (status-message-starting))
+                           (when (SAVE-SENT)
+                             (let* ([chop (lambda (s)
+                                            (let ([l (string-length s)])
+                                              (clean-filename (substring s 0 (min l 10)))))]
+                                    [to (if (null? tos) "noone" (chop (car tos)))]
+                                    [subj (if subject (chop subject) "nosubj")])
+                               (let loop ([n 1])
+                                 (let ([fn (build-path (SAVE-SENT) (format "~a_~a_~a" to subj n))])
+                                   (if (file-exists? fn)
+                                       (loop (add1 n))
+                                       (with-output-to-file fn
+                                         (lambda ()
+                                           (display (crlf->lf header))
+                                           (display (crlf->lf body)))))))))
                            (break-ok)
                            (smtp-sending-end-of-message break-bad)
                            (smtp-send-message smtp-server
@@ -552,16 +652,16 @@
                                               tos
                                               new-header
                                               (split-crlf body)
-                                              smtp-port)))
-                       save-before-killing)))
+                                              smtp-port))))
+                       save-before-killing))
                   (status-done))
                 (message-box
                  "Error"
                  (format "Lost \"~a\" separator" SEPARATOR))))))
       
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Meta-Q Reflowing                                      ;;
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       (define reflow-wordbreak-map
 	(make-object editor-wordbreak-map%))

@@ -3,6 +3,7 @@
   (require (lib "unitsig.ss")
 	   (lib "list.ss")
            (lib "file.ss")
+           (lib "etc.ss")
 	   (lib "framework.ss" "framework")
 	   (lib "mred.ss" "mred")
 	   (lib "string-constant.ss" "string-constants")
@@ -23,7 +24,9 @@
       (define-struct cache-entry (filename))
       
       ;; new-teachpack-cache : -> teachpack-cache
-      (define (new-teachpack-cache) (make-teachpack-cache null))
+      (define new-teachpack-cache
+        (opt-lambda ([filenames '[]])
+          (make-teachpack-cache (map make-cache-entry filenames))))
       
       ;; set-teachpack-cache-filenames! : teachpack-cache (listof string) -> void
       ;; this shouldn't remove all of the #fs.
@@ -33,11 +36,6 @@
          (map (lambda (filename) (make-cache-entry filename))
               filenames)))
       
-      ;; load-teachpacks : namespace teachpack-cache -> void
-      ;; in this implementation of teachpacks, there is no preloading to do.
-      (define (load-teachpacks user-namespace tp)
-        (void))
-
       ;; install-teachpacks : teqachpack-cache -> void
       ;; =User=
       ;; installs the loaded teachpacks
@@ -93,7 +91,7 @@
         (map (lambda (ce) `(file ,(cache-entry-filename ce)))
              (teachpack-cache-tps cache)))
 
-      ;; show-teachpack-error : TST -> void
+      ;; show-teachpack-error : string TST -> void
       ;; shows an error message for a bad teachpack.
       (define (show-teachpack-error tp-filename exn)
         (message-box 

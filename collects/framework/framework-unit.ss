@@ -62,7 +62,7 @@
 	    [text : framework:text^
 		  (text@ mred icon editor preferences keymap color-model frame scheme)]
             [comment-box : framework:comment-box^
-                         (comment-box@ text scheme)]
+                         (comment-box@ text scheme keymap)]
 	    [finder : framework:finder^ (finder@ mred preferences keymap)]
 	    [group : framework:group^ 
                    (group@ mred application frame preferences text canvas menu)]

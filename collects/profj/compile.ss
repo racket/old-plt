@@ -4,7 +4,7 @@
            (lib "file.ss")
            (lib "class.ss"))
 
-  (provide compile-java compile-interactions compile-files compile-ast
+  (provide compile-java compile-interactions compile-files compile-ast compile-interactions-ast
            compilation-unit-code compilation-unit-contains set-compilation-unit-code!
            read-record write-record
            set-syntax-location create-type-record
@@ -150,6 +150,15 @@
             (check-interactions-types ast level location type-recs)
             (translate-interactions ast location type-recs)))))
       
+  (define (compile-interactions-ast ast location level type-recs)
+    (to-file #f)
+    (if (null? ast)
+        (datum->syntax-object #f '(void) #f)
+        (begin
+          (build-interactions-info ast level location type-recs)
+          (check-interactions-types ast level location type-recs)
+          (translate-interactions ast location type-recs))))
+  
   (define-struct elt (prev val next))
   
   (define fifo

@@ -252,7 +252,6 @@ please adhere to these guidelines:
  (scheme-mode-color-parenthesis "Parenthesis")
  (scheme-mode-color-error "Error")
  (scheme-mode-color-other "Other")
- (color-syntax-interactively "Color syntax interactively")
  ;; the ~a is filled in with one of the above (scheme-mode-*)
  (syntax-coloring-choose-color "Choose a color for ~a")
  (preferences-colors "Colors") ;; used in the preferences dialog

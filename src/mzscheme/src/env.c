@@ -1344,7 +1344,7 @@ Scheme_Object *scheme_tl_id_sym(Scheme_Env *env, Scheme_Object *id, int is_def)
 
   if (is_def) {
     /* If we're defining, see if we need to create a table.  Getting
-       marks is reletaively expensive, but we only do this once per
+       marks is relatively expensive, but we only do this once per
        definition. */
     marks = scheme_stx_extract_marks(id);
     if (SCHEME_NULLP(marks))

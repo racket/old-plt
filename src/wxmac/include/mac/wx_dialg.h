@@ -21,8 +21,8 @@ class wxButton;
 
 class wxDialogBox: public wxPanel
 {
- protected:
-	int cButtonPressed;
+ public:
+	int cCloseRequested;
 
 //=============================================================================
 // Public constructors
@@ -61,8 +61,6 @@ public:
 	void Show(Bool show);
 	Bool IsModal(void);
 	void ShowModal(void);
-	int GetButtonPressed(void);
-	void SetButtonPressed(int buttonPressed);
 	Bool OnClose(void);
 
 	virtual void Fit(void);

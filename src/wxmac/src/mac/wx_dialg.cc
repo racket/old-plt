@@ -31,21 +31,27 @@ extern wxApp* wxTheApp;
 
 static int IsUnshown(void *data)
 {
-  return !((wxDialogBox *)data)->IsShown();
+  return !((wxDialogBox *)data)->IsShown() || ((wxDialogBox *)data)->cCloseRequested;
 }
 
 //-----------------------------------------------------------------------------
 void wxDialogBox::Show(Bool show)
 {
-  cFrame->Show(show);
   if (show) {
+    cCloseRequested = FALSE;
+    cFrame->Show(TRUE);
     if (cFrame->IsModal()) {
       wxPushModalWindow(ContextWindow(), cFrame);
       
       wxDispatchEventsUntil(IsUnshown, (void *)this);
       
       wxPopModalWindow(ContextWindow(), cFrame);
+
+      cCloseRequested = FALSE;
+      cFrame->Show(FALSE);
     }
+  } else {
+    cCloseRequested = TRUE;
   }
 }
 
@@ -133,18 +139,6 @@ void wxDialogBox::Fit(void)
 }
 
 //-----------------------------------------------------------------------------
-int wxDialogBox::GetButtonPressed(void)
-{
-  return cButtonPressed;
-}
-
-//-----------------------------------------------------------------------------
-void wxDialogBox::SetButtonPressed(int buttonPressed)
-{
-  cButtonPressed = buttonPressed;
-}
-
-//-----------------------------------------------------------------------------
 Bool wxDialogBox::OnClose(void)
 {
   Bool result;
@@ -198,7 +192,7 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
 {
   int w, h;
 
-  cButtonPressed = 0;
+  cCloseRequested = 0;
 
   WXGC_IGNORE(this, cFrame);
 

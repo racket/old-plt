@@ -44,11 +44,11 @@ inplace-finish:
 
 copytree:
 	if [ ! -d $(prefix) ] ; then mkdir $(prefix) ; fi
-	cp -r $(srcdir)/../collects $(prefix)/collects
-	if [ @MZINSTALLTARGET@ = "normal-install" ] ; then cp -r $(srcdir)/../bin $(prefix)/bin ; fi
-	cp -r $(srcdir)/../lib $(prefix)/lib
-	cp -r $(srcdir)/../include $(prefix)/include
-	cp -r $(srcdir)/../notes $(prefix)/notes
-	cp -r $(srcdir)/../man $(prefix)/man
+	cp -p -r $(srcdir)/../collects $(prefix)/.
+	if [ @MZINSTALLTARGET@ = "normal-install" ] ; then cp -p -r $(srcdir)/../bin $(prefix)/. ; fi
+	cp -p -r $(srcdir)/../lib $(prefix)/.
+	cp -p -r $(srcdir)/../include $(prefix)/.
+	cp -p -r $(srcdir)/../notes $(prefix)/.
+	cp -p -r $(srcdir)/../man $(prefix)/.
 	if [ -d $(srcdir)/../teachpack ] ; then  cp -r $(srcdir)/../teachpack $(prefix)/teachpack ; fi
-	if [ @MZINSTALLTARGET@ = "normal-install" ] ; then cp -r $(srcdir)/../install $(prefix)/install ; fi
+	if [ @MZINSTALLTARGET@ = "normal-install" ] ; then cp -p $(srcdir)/../install $(prefix)/install ; fi

@@ -180,7 +180,11 @@ The html-eval-ok parameter controls the evaluation of
 > hyper-text% = (hyper-text-mixin text:keymap%)
 
   This is an extension of the keymap class, to support standard keybindings
-  in the browser window.
+  in the browser window. It adds the following method:
+
+>   get-hyper-keymap :: (send o get-hyper-keymap) -> keymap% object
+    Returns a keymap suitable for frame-level handling of events to
+    redirect page-up, etc. to the browser canvas.
 
 ----------------------------------------
 

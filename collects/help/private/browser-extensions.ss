@@ -53,6 +53,7 @@
      (make-catch-url-frame-mixin hd-cookie)
      (make-bug-report/help-desk-mixin hd-cookie)
      (make-help-desk-framework-mixin hd-cookie)
+     browser-scroll-frame-mixin
      frame:searchable-mixin
      frame:standard-menus-mixin
      (make-search-button-mixin hd-cookie)))
@@ -76,6 +77,20 @@
              (string-constant plt:hd:help-on-help)
              (string-constant plt:hd:help-on-help-details)
              this))))
+      (super-instantiate ())))
+
+  (define (browser-scroll-frame-mixin %)
+    (class %
+      (rename [super-on-subwindow-char on-subwindow-char])
+
+      (inherit get-hyper-panel)
+
+      (define/override (on-subwindow-char w e)
+	(or (let ([txt (send (send (get-hyper-panel) get-canvas) get-editor)])
+	      (let ([km (send txt get-hyper-keymap)])
+		(send km handle-key-event txt e)))
+	    (super-on-subwindow-char w e)))
+
       (super-instantiate ())))
 
   ;; redirect urls to outside pages to external browsers (depending on the preferences settings)

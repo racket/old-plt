@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.h,v 1.6 1998/10/18 12:04:10 mflatt Exp $
+ * $Id: WindowDC.h,v 1.7 1998/12/06 17:44:47 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -158,6 +158,8 @@ public:
     void BeginSetPixel();
     void EndSetPixel();
     void SetPixel(float x, float y, wxColour *col);
+
+    void FillPrivateColor(wxColour *c);
 
     /* MATTHEW: */
     virtual Bool Ok(void);

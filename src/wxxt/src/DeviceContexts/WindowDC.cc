@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.23 1999/02/23 18:00:14 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.24 1999/02/24 23:25:22 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -872,6 +872,47 @@ void wxWindowDC::TryColour(wxColour *src, wxColour *dest)
   }
 }
 
+
+void wxWindowDC::FillPrivateColor(wxColour *c)
+{
+  if (!DRAWABLE)
+    return;
+
+  XColor xcol;
+  int free = 0;
+
+  xcol.red = c->Red() << SHIFT;
+  xcol.green = c->Green() << SHIFT;
+  xcol.blue = c->Blue() << SHIFT;
+
+  if (XAllocColor(wxAPP_DISPLAY, GETCOLORMAP(current_cmap), &xcol) == 1) {
+    XQueryColor(wxAPP_DISPLAY, GETCOLORMAP(current_cmap), &xcol);
+    c->Set(xcol.red >> SHIFT, xcol.green >> SHIFT, xcol.blue >> SHIFT);
+    free = 1;
+  } else {
+    xcol.pixel = BlackPixel(DPY, DefaultScreen(DPY));
+    c->Set(0, 0, 0);
+  }
+
+  XGCValues values;
+  int mask = 0;
+
+  values.foreground = xcol.pixel;
+  values.fill_style = FillSolid;
+  mask |= GCForeground | GCFillStyle;
+
+  GC gc = XCreateGC(DPY, DRAWABLE, mask, &values);
+  
+  float w, h;
+  GetSize(&w, &h);
+
+  XFillRectangle(DPY, DRAWABLE, gc, 0, 0, (int)w, (int)h);
+
+  XFreeGC(DPY, gc);
+
+  if (free)
+    XFreeColors(wxAPP_DISPLAY, GETCOLORMAP(current_cmap), &xcol.pixel, 1, 0);
+}
 
 //-----------------------------------------------------------------------------
 // text and font methods

@@ -1714,6 +1714,10 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
     
     return MX_IUNKNOWNP(val);
     
+  case VT_DISPATCH :
+    
+    return MX_COM_OBJP(val);
+    
   case VT_VARIANT : // we can package anything into a VARIANTARG
     
     return TRUE;

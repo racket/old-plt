@@ -127,12 +127,14 @@
       
       ;; read-html-as-xml : [Input-port] -> (listof Content)
       (define read-html-as-xml
-	(lambda (port)
+	(case-lambda 
+	 [(port)
 	  ((if (use-html-spec) clean-up-pcdata values)
 	   ((sgml:gen-read-sgml (if (use-html-spec)
 				    may-contain 
 				    may-contain-anything)
-				implicit-starts) port))))
+				implicit-starts) port))]
+	 [() (read-html-as-xml (current-input-port))]))
       
       ;; read-html : [Input-port] -> Html
       (define read-html

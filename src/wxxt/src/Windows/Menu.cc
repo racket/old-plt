@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.9 1998/12/05 01:08:21 mflatt Exp $
+ * $Id: Menu.cc,v 1.10 1999/03/15 14:32:26 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -145,6 +145,8 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 
 void wxMenu::Append(long id, char *label, char *help, Bool checkable)
 {
+    Stop();
+  
     menu_item *item = 0;
     // create new menu item or use topdummy
     if (topdummy) {
@@ -186,6 +188,8 @@ void wxMenu::Append(long id, char *label, wxMenu *submenu, char *help)
   if (submenu->owner)
     return;
 
+  Stop();
+
   // do the same thing as if appending a "button"
   Append(id, label, help, FALSE);
   // change data for submenu
@@ -199,6 +203,8 @@ void wxMenu::Append(long id, char *label, wxMenu *submenu, char *help)
 
 void wxMenu::AppendSeparator(void)
 {
+    Stop();
+
     // do the same thing as if appending a "button"
     Append(-1, NULL, NULL, FALSE);
     // change data for separator
@@ -222,6 +228,8 @@ Bool wxMenu::DeleteItem(long id, int pos)
   }
 
   if (found) {
+    Stop();
+
     if (!prev) {
       top = (wxMenuItem*)found->next;
       if (!top) {
@@ -289,22 +297,25 @@ Bool wxMenu::Checked(long id)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
-	return found->set;
+      return found->set;
     return FALSE;
 }
 
 void wxMenu::Enable(long id, Bool flag)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
-    if (found)
-	found->enabled = flag;
+    if (found) {
+      if (!flag && found->enabled)
+	Stop();
+      found->enabled = flag;
+    }
 }
 
 char *wxMenu::GetHelpString(long id)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
-	return found->help_text;
+      return found->help_text;
     return NULL;
 }
 
@@ -312,14 +323,14 @@ char *wxMenu::GetLabel(long id)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
-	return found->label;
+      return found->label;
     return NULL;
 }
 
 char *wxMenu::GetTitle(void)
 {
     if (title)
-	return ((menu_item*)title)->label;
+      return ((menu_item*)title)->label;
     return NULL;
 }
 
@@ -327,24 +338,26 @@ void wxMenu::SetHelpString(long id, char *help)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found)
-	found->help_text = help;
+      found->help_text = help;
 }
 
 void wxMenu::SetLabel(long id, char *label)
 {
     menu_item *found = (menu_item*)FindItemForId(id);
     if (found) {
-	delete found->label;
-	wxGetLabelAndKey(label, &found->label, &found->key_binding);
+      Stop();
+      delete found->label;
+      wxGetLabelAndKey(label, &found->label, &found->key_binding);
     }
 }
 
 void wxMenu::SetTitle(char *label)
 {
     if (title) {
-	menu_item *item = (menu_item*)title;
-	delete item->label;
-	wxGetLabelAndKey(label, &item->label, &item->key_binding);
+      Stop();
+      menu_item *item = (menu_item*)title;
+      delete item->label;
+      wxGetLabelAndKey(label, &item->label, &item->key_binding);
     }
 }
 
@@ -425,4 +438,9 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
       if (menu->callback)
 	(void)(*(menu->callback))(*menu, *event);
     }
+}
+
+void wxMenu::Stop()
+{
+  /* No way to get to menu bar right now... */
 }

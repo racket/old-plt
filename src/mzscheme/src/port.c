@@ -595,6 +595,8 @@ scheme_init_port (Scheme_Env *env)
     non_elaboration_symbol = scheme_intern_symbol("non-elaboration");
     none_symbol = scheme_intern_symbol("none");
 
+    scheme_set_param(config, MZCONFIG_USE_COMPILED_KIND, all_symbol);
+
     default_read_handler = scheme_make_prim_w_arity(sch_default_read_handler,
 						    "default-port-read-handler", 
 						    1, 1);

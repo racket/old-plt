@@ -1,4 +1,4 @@
-/* $Id: xwMenu.c,v 1.9 1998/12/05 01:08:21 mflatt Exp $ */
+/* $Id: xwMenu.c,v 1.10 1998/12/06 05:06:18 mflatt Exp $ */
 
 /***********************************************************
 Copyright 1995 by Markus Holzem
@@ -496,14 +496,14 @@ static void Select(w, event, params, num_params)
     Cardinal  *num_params;
 {
   MenuWidget  mw = (MenuWidget)w;
-  XMotionEvent  *ev   = &event->xmotion;
+  XMotionEvent  *ev   = event ? &event->xmotion : NULL;
   int force;
 
   mw->menu.moused_out = 0;
 
   force = !HandleMotionEvent(mw, ev) || mw->menu.moused_out;
   
-  DoSelect(w, event->xmotion.time, force);
+  DoSelect(w, event ? event->xmotion.time : 0L, force);
 }
 
 static void Key(w, event, params, num_params)
@@ -512,7 +512,7 @@ static void Key(w, event, params, num_params)
     String    *params;
     Cardinal  *num_params;
 {
-  MenuWidget  mw = (MenuWidget)w;
+  /* MenuWidget  mw = (MenuWidget)w; */
   XKeyEvent  *ev   = &event->xkey;
   KeySym	   keysym;
 
@@ -1114,31 +1114,33 @@ static void UnhighlightItem(MenuWidget mw, menu_state *ms, menu_item *item)
 
 static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
 {
-    menu_state *ms;
+    menu_state *ms = NULL;
     menu_item  *item = NULL;
     Dimension  pushright = 0;
     Boolean    foundone = 0;
 
     /* find menu_state belonging to event */
-    for (ms = mw->menu.state; ms; ms = ms->prev) {
+    if (ev) {
+      for (ms = mw->menu.state; ms; ms = ms->prev) {
 	if (ms->x <= ev->x_root && ev->x_root <= ms->x + ms->w
-        &&  ms->y <= ev->y_root && ev->y_root <= ms->y + ms->h) {
-	    foundone = 1;
-	    /* find menu_item belonging to event */
-	    for (item = ms->menu; item; item = item->next)
-		if (mw->menu.horizontal && !ms->prev) {
-		    if (!pushright && item->type == MENU_PUSHRIGHT)
-			pushright = ms->w - item->end - item->start;
-		    else if (ms->x + pushright + item->start <= ev->x_root
-			     && ev->x_root < ms->x + pushright + item->end)
-			break;
-		} else {
-		    if (ms->y + item->start <= ev->y_root
-			&&  ev->y_root < ms->y + item->end)
-			break;
-		}
-	    break;
+	    &&  ms->y <= ev->y_root && ev->y_root <= ms->y + ms->h) {
+	  foundone = 1;
+	  /* find menu_item belonging to event */
+	  for (item = ms->menu; item; item = item->next)
+	    if (mw->menu.horizontal && !ms->prev) {
+	      if (!pushright && item->type == MENU_PUSHRIGHT)
+		pushright = ms->w - item->end - item->start;
+	      else if (ms->x + pushright + item->start <= ev->x_root
+		       && ev->x_root < ms->x + pushright + item->end)
+		break;
+	    } else {
+	      if (ms->y + item->start <= ev->y_root
+		  &&  ev->y_root < ms->y + item->end)
+		break;
+	    }
+	  break;
 	}
+      }
     }
     
     if (!foundone)

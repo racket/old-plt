@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.cc,v 1.8 1998/08/14 21:44:41 mflatt Exp $
+ * $Id: MenuBar.cc,v 1.9 1999/01/14 14:07:04 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -149,6 +149,8 @@ void wxMenuBar::Append(wxMenu *menu, char *title)
     if (menu->owner)
       return;
 
+    Stop();
+
     menu_item *item = 0;
     // create new menu item or use topdummy
     if (topdummy) {
@@ -277,6 +279,7 @@ void wxMenuBar::EnableTop(int pos, Bool flag)
     for (int i=0; item && i<pos; ++i)
 	item = item->next;
     if (item) {
+      Stop();
       if (X->handle) {
 	item->enabled = flag;
 	XtVaSetValues(X->handle, XtNmenu, top, XtNrefresh, True, NULL);
@@ -334,6 +337,7 @@ void wxMenuBar::SetLabelTop(int pos, char *label)
     for (int i=0; item && i<pos; ++i)
 	item = item->next;
     if (item) {
+        Stop();
 	delete item->label;
 	wxGetLabelAndKey(label, &item->label, &item->key_binding);
 	if (X->handle) { // redisplay if menu added
@@ -405,4 +409,9 @@ void wxMenuBar::SelectEventCallback(Widget WXUNUSED(w),
     // call OnMenuSelect of parent (usually of a frame)
     if (menu->parent)
 	menu->parent->GetEventHandler()->OnMenuSelect(item->ID);
+}
+
+void wxMenuBar::Stop(void)
+{
+  XtCallActionProc(X->handle, "select", NULL, NULL, 0);
 }

@@ -2414,8 +2414,6 @@ static Scheme_Config *make_initial_config(void)
 						     ? scheme_true
 						     : scheme_false));
 
-  scheme_set_param(config, MZCONFIG_USE_COMPILED_KIND, scheme_make_symbol("all"));
-
   scheme_set_param(config, MZCONFIG_REQUIRE_COLLECTION, scheme_false);
 
   scheme_set_param(config, MZCONFIG_CURRENT_DIRECTORY, scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1)));

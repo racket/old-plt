@@ -266,11 +266,20 @@
     (let ([drawer (make-pict-drawer p)])
       (dc
        (lambda (dc x y)
-	 (send dc set-scale factor factor)
-	 (drawer dc
-		 (/ x factor)
-		 (/ y factor))
-	 (send dc set-scale 1 1))
+	 (define (reset-pen)
+	   (let ([p (send dc get-pen)])
+	     (send dc set-pen (send the-pen-list
+				    find-or-create-pen
+				    "white" 1 'transparent))
+	     (send dc set-pen p)))
+	 (let-values ([(xs ys) (send dc get-scale)])
+	   (send dc set-scale (* xs factor) (* ys factor))
+	   (reset-pen)
+	   (drawer dc
+		   (/ x factor)
+		   (/ y factor))
+	   (send dc set-scale xs ys)
+	   (reset-pen)))
        (* (pict-width p) factor)
        (* (pict-height p) factor)
        (* (pict-ascent p) factor)

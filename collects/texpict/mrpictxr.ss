@@ -140,7 +140,7 @@
     (case-lambda
      [(exact close-enough x1 y1 x2 y2) (~connect exact close-enough x1 y1 x2 y2 #f)]
      [(exact close-enough x1 y1 x2 y2 arrow?)
-      `((put ,x1 ,y1 (,(if arrow? 'vector 'line) ,(- x2 x1) ,(- y2 y1) 1)))]))
+      `((put ,x1 ,y1 (,(if arrow? 'vector 'line) ,(- x2 x1) ,(- y2 y1) #f)))]))
 
   (define (render dc h+top l dx dy)
     (define b&w? #f)
@@ -171,9 +171,11 @@
 		 (let ([xs (cadr x)]
 		       [ys (caddr x)]
 		       [len (cadddr x)])
-		   (draw-line 
-		    dx (- h+top dy)
-		    (+ dx (* xs len)) (- h+top (+ dy (* ys len)))))]
+		   (let ([mx (if len (abs (if (zero? xs) ys xs)) 1)]
+			 [len (or len 1)])
+		     (draw-line 
+		      dx (- h+top dy)
+		      (+ dx (* (/ xs mx) len)) (- h+top (+ dy (* (/ ys mx) len))))))]
 		[(circle circle*)
 		 (let ([size (cadr x)])
 		   (send dc draw-ellipse 
@@ -196,10 +198,14 @@
 				       cr))])
 		     (send dc set-clipping-region
 			   (cond
+			    [(string=? part "[l]")
+			     (set-rect 0 0 0.5 1.0)]
 			    [(string=? part "[tl]")
 			     (set-rect 0 0 0.5 0.5)]
 			    [(string=? part "[tr]")
 			     (set-rect 0.5 0 1.0 0.5)]
+			    [(string=? part "[r]")
+			     (set-rect 0.5 0 1.0 1.0)]
 			    [(string=? part "[bl]")
 			     (set-rect 0 0.5 0.5 1.0)]
 			    [(string=? part "[br]")

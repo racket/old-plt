@@ -60,16 +60,12 @@ Scheme_Env *scheme_get_env(Scheme_Config *config);
 /*                                threads                                 */
 /*========================================================================*/
 
-#ifdef MZ_REAL_THREADS
-Scheme_Thread *scheme_get_current_thread();
-#else
 #ifndef LINK_EXTENSIONS_BY_TABLE
 extern Scheme_Thread *scheme_current_thread;
 extern volatile int scheme_fuel_counter;
 #else
 extern Scheme_Thread **scheme_current_thread_ptr;
 extern volatile int *scheme_fuel_counter_ptr;
-#endif
 #endif
 
 #ifndef NO_SCHEME_THREADS
@@ -80,18 +76,14 @@ void scheme_kill_thread(Scheme_Thread *p);
 #endif
 void scheme_break_thread(Scheme_Thread *p);
 
-#ifndef MZ_REAL_THREADS
 void scheme_thread_block(float sleep_time);
 void scheme_swap_thread(Scheme_Thread *process);
-#else
-void scheme_thread_block_w_thread(float sleep_time, Scheme_Thread *p);
-#endif
 void scheme_making_progress();
 
 void scheme_weak_suspend_thread(Scheme_Thread *p);
 void scheme_weak_resume_thread(Scheme_Thread *p);
 
-int scheme_block_until(int (*f)(Scheme_Object *), void (*fdfd)(Scheme_Object *, void *), void *, float);
+int scheme_block_until(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Object *, float);
 
 int scheme_in_main_thread(void);
 
@@ -107,6 +99,14 @@ void scheme_remove_managed(Scheme_Custodian_Reference *m, Scheme_Object *o);
 void scheme_close_managed(Scheme_Custodian *m);
 
 void scheme_add_atexit_closer(Scheme_Exit_Closer_Func f);
+
+void scheme_add_waitable(Scheme_Type type,
+			 Scheme_Ready_Fun ready, 
+			 Scheme_Needs_Wakeup_Fun wakeup, 
+			 Scheme_Wait_Filter_Fun filter);
+void scheme_add_waitable_through_sema(Scheme_Type type,
+				      Scheme_Wait_Sema_Fun sema, 
+				      Scheme_Wait_Filter_Fun filter);
 
 /*========================================================================*/
 /*                              error handling                            */
@@ -174,21 +174,10 @@ Scheme_Object *scheme_eval_compiled_multi(Scheme_Object *obj, Scheme_Env *env);
 Scheme_Object *_scheme_eval_compiled(Scheme_Object *obj, Scheme_Env *env);
 Scheme_Object *_scheme_eval_compiled_multi(Scheme_Object *obj, Scheme_Env *env);
 
-#ifndef MZ_REAL_THREADS
 Scheme_Object *scheme_apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
 Scheme_Object *scheme_apply_multi(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
 Scheme_Object *scheme_apply_eb(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
 Scheme_Object *scheme_apply_multi_eb(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
-#else
-Scheme_Object *scheme_apply_wp(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
-			       Scheme_Thread *p);
-Scheme_Object *scheme_apply_multi_wp(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
-				     Scheme_Thread *p);
-Scheme_Object *scheme_apply_eb_wp(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
-				  Scheme_Thread *p);
-Scheme_Object *scheme_apply_multi_eb_wp(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
-					Scheme_Thread *p);
-#endif
 Scheme_Object *scheme_apply_to_list(Scheme_Object *rator, Scheme_Object *argss);
 Scheme_Object *scheme_eval_string(const char *str, Scheme_Env *env);
 Scheme_Object *scheme_eval_string_multi(const char *str, Scheme_Env *env);
@@ -226,11 +215,7 @@ void scheme_temp_inc_mark_depth();
 Scheme_Object *scheme_current_continuation_marks(void);
 
 /* Internal */
-#ifndef MZ_REAL_THREADS
 Scheme_Object *scheme_do_eval(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val);
-#else
-Scheme_Object *scheme_do_eval_w_thread(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val, Scheme_Thread *p);
-#endif
 
 Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *str, Scheme_Env *env, 
 					       long shift, Scheme_Object *modidx);

@@ -14,12 +14,12 @@ Version 199.20:
    semaphore is returned, then its internal count has been decremented
    by the wait.
 
-   The waitable objects, plus the corresponding blocking states, are
-   as follows:
+   The waitable objects, including their corresponding blocking
+   states, are as follows:
 
      type of object   blocking state      
-     --------------   --------------------
-     semaphore        count is zero       
+     --------------   ----------------------
+     semaphore        internal count is zero       
      thread           running             
      subprocess       running             
      TCP listener     nothing to accept   
@@ -31,26 +31,36 @@ Version 199.20:
 
    The `semaphore-wait', `semaphore-wait/enable-break', `thread-wait',
    and `subprocess-wait' procedures are all technically redundant, but
-   it seems worthwhile to keep them.
+   it seems worthwhile to keep them for error checking and code
+   clarity.
+
+ * Removed `semaphore-wait-multiple' from the "thread.ss" MzLib
+   library.
 
  * Added `letrec-syntaxes+values', and changed the expansion of
    internal defines to use the new form so that a sequence of internal
-   `define' and `define-syntax' defininitions create a single,
+   `define' and `define-syntax' defininitions creates a single,
    mutually recursive scope (as in Chez).
 
- * Changed the `datum->syntax-object' interface for position lists.
-
  * Fixed `write' on symbols with uppercase characters to quote the
-   characters.
+   characters (unless `read-case-sentitive' is set to #t).
 
- * Added a fourth optional argument to `datum->syntax-errors' for
+ * Changed the `datum->syntax-object' interface for position lists.
+   Added a fourth optional argument to `datum->syntax-errors' for
    copying properties.
 
  * Fixed reader error messages to use `error-print-source-location'
    and GNU-style source locations.
 
- * Removed `semaphore-wait-multiple' from the "thread.ss" MzLib
-   library.
+ * Unix, Windows: fixed bug in `sleep' when asked to sleep for more
+   than 2,147,483,647 seconds.
+
+ * Inside MzScheme: changed type of third argument for
+   scheme_block_until() from void* to Scheme_Object*.
+
+ * Inside MzScheme: added scheme_add_waitable() and
+   scheme_add_waitable_through_sema() for extending the set of objects
+   supported by `object-wait-multiple'.
 
 Version 199.19:
 

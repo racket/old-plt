@@ -72,11 +72,6 @@
 # undef USE_ITIMER
 #endif
 
-#ifdef MZ_REAL_THREADS
-# undef USE_ITIMER
-# undef USE_WIN32_THREAD_TIMER
-#endif
-
 #if defined(USE_ITIMER) || defined(USE_WIN32_THREAD_TIMER)
 # define FUEL_AUTODECEREMENTS
 #endif
@@ -573,6 +568,11 @@ typedef struct Scheme_Custodian *Scheme_Custodian_Reference;
 
 typedef struct Scheme_Custodian Scheme_Custodian;
 
+typedef int (*Scheme_Ready_Fun)(Scheme_Object *o);
+typedef void (*Scheme_Needs_Wakeup_Fun)(Scheme_Object *, void *);
+typedef Scheme_Object *(*Scheme_Wait_Sema_Fun)(Scheme_Object *, int *repost);
+typedef int (*Scheme_Wait_Filter_Fun)(Scheme_Object *);
+
 /* The Scheme_Thread structure represents a MzScheme thread. */
 
 typedef struct Scheme_Thread {
@@ -602,15 +602,6 @@ typedef struct Scheme_Thread {
 
   void *stack_start, *stack_end;
   Scheme_Jumpup_Buf jmpup_buf;
-#ifdef MZ_REAL_THREADS
-  void *thread;
-  int break_received;
-  struct timeval *select_tv;
-# ifdef MZ_USE_LINUX_PTHREADS
-  int jump_on_signal;
-  mz_jmp_buf signal_buf;
-# endif
-#endif 
 
   void *cc_start;
   long *cc_ok;
@@ -690,13 +681,6 @@ typedef struct Scheme_Thread {
   short suspend_break;
   short external_break;
 
-#ifdef MZ_REAL_THREADS
-  Scheme_Object *done_sema;
-  volatile long fuel_counter;
-# define scheme_fuel_counter (scheme_current_thread->fuel_counter)
-# define scheme_stack_boundary ((unsigned long)scheme_current_thread->stack_end)
-#endif
-
   Scheme_Object *list_stack;
   int list_stack_pos;
 
@@ -723,12 +707,8 @@ typedef struct Scheme_Thread {
 } Scheme_Thread;
 
 #if !SCHEME_DIRECT_EMBEDDED
-# ifdef MZ_REAL_THREADS
-#  define scheme_current_thread (scheme_get_current_thread())
-# else
-#  ifdef LINK_EXTENSIONS_BY_TABLE
-#   define scheme_current_thread (*scheme_current_thread_ptr)
-#  endif
+# ifdef LINK_EXTENSIONS_BY_TABLE
+#  define scheme_current_thread (*scheme_current_thread_ptr)
 # endif
 #endif
 
@@ -844,9 +824,7 @@ typedef struct Scheme_Input_Port
   long position, lineNumber, charsSinceNewline;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines, was_cr;
-#ifdef MZ_REAL_THREADS
-  Scheme_Object *sema;
-#endif
+  struct Scheme_Output_Port *output_half;
 } Scheme_Input_Port;
 
 typedef struct Scheme_Output_Port
@@ -863,9 +841,7 @@ typedef struct Scheme_Output_Port
   Scheme_Object *display_handler;
   Scheme_Object *write_handler;
   Scheme_Object *print_handler;
-#ifdef MZ_REAL_THREADS
-  Scheme_Object *sema;
-#endif
+  struct Scheme_Input_Port *input_half;
 } Scheme_Output_Port;
 
 #define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port *)(obj))->port_data)
@@ -932,22 +908,11 @@ typedef void (*Scheme_Invoke_Proc)(Scheme_Env *env, long phase_shift,
 
 #define scheme_setjmpup(b, base, s) scheme_setjmpup_relative(b, base, s, NULL)
 
-#ifdef MZ_REAL_THREADS
-#define scheme_do_eval(r,n,e,f) scheme_do_eval_w_thread(r,n,e,f,scheme_current_thread)
-#else
 #define scheme_do_eval_w_thread(r,n,e,f,p) scheme_do_eval(r,n,e,f)
-#endif
-#ifdef MZ_REAL_THREADS
-#define scheme_apply(r,n,a) scheme_apply_wp(r,n,a,scheme_current_thread)
-#define scheme_apply_multi(r,n,a) scheme_apply_multi_wp(r,n,a,scheme_current_thread)
-#define scheme_apply_eb(r,n,a) scheme_apply_eb_wp(r,n,a,scheme_current_thread)
-#define scheme_apply_multi_eb(r,n,a) scheme_apply_multi_eb_wp(r,n,a,scheme_current_thread)
-#else
 #define scheme_apply_wp(r,n,a,p) scheme_apply(r,n,a)
 #define scheme_apply_multi_wp(r,n,a,p) scheme_apply_multi(r,n,a)
 #define scheme_apply_eb_wp(r,n,a,p) scheme_apply_eb(r,n,a)
 #define scheme_apply_multi_eb_wp(r,n,a,p) scheme_apply_multi_eb(r,n,a)
-#endif
 
 #define _scheme_apply(r,n,rs) scheme_do_eval(r,n,rs,1)
 #define _scheme_apply_multi(r,n,rs) scheme_do_eval(r,n,rs,-1)
@@ -977,20 +942,14 @@ typedef void (*Scheme_Invoke_Proc)(Scheme_Env *env, long phase_shift,
 #define _scheme_tail_apply_no_copy_wp(f, n, args, p) _scheme_tail_apply_no_copy_wp_tcw(f, n, args, p, SCHEME_TAIL_CALL_WAITING)
 #define _scheme_tail_apply_no_copy(f, n, args) _scheme_tail_apply_no_copy_wp(f, n, args, scheme_current_thread)
 
-#ifndef MZ_REAL_THREADS
-# define scheme_thread_block_w_thread(t,p) scheme_thread_block(t)
-#else
-# define scheme_thread_block(t) scheme_thread_block_w_thread(t,scheme_current_thread)
-#endif
+#define scheme_thread_block_w_thread(t,p) scheme_thread_block(t)
 
-#ifndef MZ_REAL_THREADS
-# if !SCHEME_DIRECT_EMBEDDED
-#  ifdef LINK_EXTENSIONS_BY_TABLE
-#   define scheme_fuel_counter (*scheme_fuel_counter_ptr)
-#  endif
-# else
-extern volatile int scheme_fuel_counter;
+#if !SCHEME_DIRECT_EMBEDDED
+# ifdef LINK_EXTENSIONS_BY_TABLE
+#  define scheme_fuel_counter (*scheme_fuel_counter_ptr)
 # endif
+#else
+extern volatile int scheme_fuel_counter;
 #endif
 
 #ifdef FUEL_AUTODECEREMENTS
@@ -999,13 +958,8 @@ extern volatile int scheme_fuel_counter;
 # define DECREMENT_FUEL(f, p) (f -= (p))
 #endif
 
-#ifdef MZ_REAL_THREADS
-# define _scheme_check_for_break_wp(penalty, p) \
-   { if (DECREMENT_FUEL((p)->fuel_counter, penalty) <= 0) scheme_thread_block_w_thread(0, p); }
-#else
-# define _scheme_check_for_break_wp(penalty, p) \
+#define _scheme_check_for_break_wp(penalty, p) \
    { if (DECREMENT_FUEL(scheme_fuel_counter, penalty) <= 0) scheme_thread_block_w_thread(0, p); }
-#endif
 #define _scheme_check_for_break(penalty) _scheme_check_for_break_wp(penalty, scheme_current_thread)
 
 #if SCHEME_DIRECT_EMBEDDED
@@ -1141,12 +1095,7 @@ extern int scheme_hash_percent_syntax_only; /* Defaults to 0 */
 extern int scheme_hash_percent_globals_only; /* Defaults to 0 */
 extern int scheme_binary_mode_stdio; /* Windows-MacOS-specific. Defaults to 0 */
 
-#ifdef MZ_REAL_THREADS
-Scheme_Thread *scheme_get_current_thread();
-# define scheme_current_thread (SCHEME_GET_CURRENT_THREAD())
-#else
 extern Scheme_Thread *scheme_current_thread;
-#endif
 extern Scheme_Thread *scheme_first_thread;
 
 /* Set these global hooks (optionally): */
@@ -1268,9 +1217,10 @@ extern Scheme_Extension_Table *scheme_extension_table;
 /*========================================================================*/
 
 /* For use with scheme_symbol_name_and_size: */
-#define SNF_FOR_TS 0x1
-#define SNF_PIPE_QUOTE 0x2
-#define SNF_NO_PIPE_QUOTE 0x4
+#define SCHEME_SNF_FOR_TS 0x1
+#define SCHEME_SNF_PIPE_QUOTE 0x2
+#define SCHEME_SNF_NO_PIPE_QUOTE 0x4
+#define SCHEME_SNF_NEED_CASE 0x8
 
 /* For use with scheme_make_struct_values et al.: */
 #define SCHEME_STRUCT_NO_TYPE 0x01

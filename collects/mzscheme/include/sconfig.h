@@ -142,49 +142,6 @@
 #  define SOME_FDS_ARE_NOT_SELECTABLE
 #  define NEED_RESET_STDOUT_BLOCKING
 #  define USE_TIMEZONE_AND_ALTZONE_VAR
-
-#  ifdef SOLARIS_THREADS
-#   define MZ_REAL_THREADS
-#   define MZ_USE_SOLARIS_THREADS
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-void *scheme_solaris_init_threads(void);
-void scheme_solaris_create_thread(void (*f)(void *), void *data, unsigned long *stackend, void **thp);
-void scheme_solaris_exit_thread();
-void scheme_solaris_break_thread(void *th);
-struct Scheme_Thread *scheme_solaris_get_current_thread();
-void scheme_solaris_set_current_thread(struct Scheme_Thread *);
-void *scheme_solaris_make_mutex();
-void scheme_solaris_free_mutex(void *);
-void scheme_solaris_lock_mutex(void *);
-void scheme_solaris_unlock_mutex(void *);
-void *scheme_solaris_make_semaphore(int init);
-void scheme_solaris_free_semaphore(void *);
-int scheme_solaris_semaphore_up(void *);
-int scheme_solaris_semaphore_down_breakable(void *);
-int scheme_solaris_semaphore_try_down(void *);
-#ifdef __cplusplus
-}
-#endif
-
-#define SCHEME_INIT_THREADS() scheme_solaris_init_threads()
-#define SCHEME_CREATE_THREAD(f, data, slimit, thp) scheme_solaris_create_thread(f, data, slimit, thp)
-#define SCHEME_EXIT_THREAD() scheme_solaris_exit_thread()
-#define SCHEME_BREAK_THREAD(th) scheme_solaris_break_thread(th)
-#define SCHEME_GET_CURRENT_PROCESS() scheme_solaris_get_current_thread()
-#define SCHEME_SET_CURRENT_PROCESS(p) scheme_solaris_set_current_thread(p)
-#define SCHEME_MAKE_MUTEX() scheme_solaris_make_mutex()
-#define SCHEME_FREE_MUTEX(m) scheme_solaris_free_mutex(m)
-#define SCHEME_LOCK_MUTEX(m) scheme_solaris_lock_mutex(m)
-#define SCHEME_UNLOCK_MUTEX(m) scheme_solaris_unlock_mutex(m)
-#define SCHEME_MAKE_SEMA(init) scheme_solaris_make_semaphore(init)
-#define SCHEME_FREE_SEMA(s) scheme_solaris_free_semaphore(s)
-#define SCHEME_SEMA_UP(s) scheme_solaris_semaphore_up(s)
-#define SCHEME_SEMA_DOWN_BREAKABLE(s) scheme_solaris_semaphore_down_breakable(s)
-#define SCHEME_SEMA_TRY_DOWN(s) scheme_solaris_semaphore_try_down(s)
-#  endif
 # else
 /* SunOS4 */
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-sunos4"
@@ -268,12 +225,6 @@ int scheme_solaris_semaphore_try_down(void *);
 # define USE_DYNAMIC_FDSET_SIZE
 
 # define USE_TIMEZONE_VAR
-
-# ifdef LINUX_THREADS
-#  define MZ_USE_PTHREADS
-#  define MZ_USE_LINUX_PTHREADS
-   /* More configuration below for pthreads */
-# endif
 
 # define FLAGS_ALREADY_SET
 
@@ -492,58 +443,7 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define USE_TIMEZONE_AND_ALTZONE_VAR
 
-#  ifdef MZ_X_THREADS
-#    ifndef MZ_FAKE_THREADS
-#      define MZ_FAKE_THREADS
-#    endif
-#  endif
-
-#  ifndef MZ_FAKE_THREADS
-#    ifdef IRIX_SPROCS
-#      define MZ_REAL_THREADS
-#      define MZ_USE_IRIX_SPROCS
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-void *scheme_sproc_init_threads(void);
-void  scheme_sproc_create_thread(void (*f)(void *), void *data, unsigned long *stackend, void **thp);
-void  scheme_sproc_exit_thread();
-void  scheme_sproc_break_thread(void *);
-struct Scheme_Thread *scheme_sproc_get_current_thread();
-void  scheme_sproc_set_current_thread(struct Scheme_Thread *);
-void *scheme_sproc_make_mutex();
-void  scheme_sproc_free_mutex(void *);
-void scheme_sproc_lock_mutex(void *);
-void scheme_sproc_unlock_mutex(void *);
-void *scheme_sproc_make_semaphore(int init);
-void  scheme_sproc_free_semaphore(void *);
-int   scheme_sproc_semaphore_up(void *);
-int   scheme_sproc_semaphore_down_breakable(void *);
-int   scheme_sproc_semaphore_try_down(void *);
-#ifdef __cplusplus
-}
-#endif
-
-#define SCHEME_INIT_THREADS() scheme_sproc_init_threads()
-#define SCHEME_CREATE_THREAD(f, data, slimit, thp) scheme_sproc_create_thread(f, data, slimit, thp)
-#define SCHEME_EXIT_THREAD() scheme_sproc_exit_thread()
-#define SCHEME_BREAK_THREAD(th) scheme_sproc_break_thread(th)
-#define SCHEME_GET_CURRENT_PROCESS() scheme_sproc_get_current_thread()
-#define SCHEME_SET_CURRENT_PROCESS(p) scheme_sproc_set_current_thread(p)
-#define SCHEME_MAKE_MUTEX() scheme_sproc_make_mutex()
-#define SCHEME_FREE_MUTEX(m) scheme_sproc_free_mutex(m)
-#define SCHEME_LOCK_MUTEX(m) scheme_sproc_lock_mutex(m)
-#define SCHEME_UNLOCK_MUTEX(m) scheme_sproc_unlock_mutex(m)
-#define SCHEME_MAKE_SEMA(init) scheme_sproc_make_semaphore(init)
-#define SCHEME_FREE_SEMA(s) scheme_sproc_free_semaphore(s)
-#define SCHEME_SEMA_UP(s) scheme_sproc_semaphore_up(s)
-#define SCHEME_SEMA_DOWN_BREAKABLE(s) scheme_sproc_semaphore_down_breakable(s)
-#define SCHEME_SEMA_TRY_DOWN(s) scheme_sproc_semaphore_try_down(s)
-#    endif /* IRIX_SPROCS */
-#  endif /* !MZ_FAKE_THREADS */
-
-#  define FLAGS_ALREADY_SET
+# define FLAGS_ALREADY_SET
 
 #endif
 
@@ -735,48 +635,6 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define USE_WINSOCK_TCP
 #endif
 
-# ifdef WIN32_THREADS
-#  define MZ_REAL_THREADS
-#  define MZ_USE_WIN32_THREADS
-#ifdef __cplusplus
-extern "C" {
-#endif
-void *scheme_win32_init_threads(void);
-void scheme_win32_create_thread(void (*f)(void *), void *data, unsigned long *stackend, void **thp);
-void scheme_win32_exit_thread();
-void scheme_win32_break_thread(void *th);
-struct Scheme_Thread *scheme_win32_get_current_thread();
-void scheme_win32_set_current_thread(struct Scheme_Thread *);
-void *scheme_win32_make_mutex();
-void scheme_win32_free_mutex(void *s);
-void scheme_win32_lock_mutex(void *);
-void scheme_win32_unlock_mutex(void *);
-void *scheme_win32_make_semaphore(int init);
-void scheme_win32_free_semaphore(void *s);
-int scheme_win32_semaphore_up(void *);
-int scheme_win32_semaphore_down_breakable(void *);
-int scheme_win32_semaphore_try_down(void *);
-#ifdef __cplusplus
-}
-#endif
-
-#define SCHEME_INIT_THREADS() scheme_win32_init_threads()
-#define SCHEME_CREATE_THREAD(f, data, slimit, thp) scheme_win32_create_thread(f, data, slimit, thp)
-#define SCHEME_BREAK_THREAD(th) scheme_win32_break_thread(th)
-#define SCHEME_EXIT_THREAD() scheme_win32_exit_thread()
-#define SCHEME_GET_CURRENT_PROCESS() scheme_win32_get_current_thread()
-#define SCHEME_SET_CURRENT_PROCESS(p) scheme_win32_set_current_thread(p)
-#define SCHEME_MAKE_MUTEX() scheme_win32_make_mutex()
-#define SCHEME_FREE_MUTEX(m) scheme_win32_free_mutex(m)
-#define SCHEME_LOCK_MUTEX(m) scheme_win32_lock_mutex(m)
-#define SCHEME_UNLOCK_MUTEX(m) scheme_win32_unlock_mutex(m)
-#define SCHEME_MAKE_SEMA(init) scheme_win32_make_semaphore(init)
-#define SCHEME_FREE_SEMA(s) scheme_win32_free_semaphore(s)
-#define SCHEME_SEMA_UP(s) scheme_win32_semaphore_up(s)
-#define SCHEME_SEMA_DOWN_BREAKABLE(s) scheme_win32_semaphore_down_breakable(s)
-#define SCHEME_SEMA_TRY_DOWN(s) scheme_win32_semaphore_try_down(s)
-# endif
-
 /* MS Visual C++ likes underscore prefixes */
 #if defined(_MSC_VER)
 # define MSC_IZE(x) _ ## x
@@ -946,54 +804,6 @@ int scheme_win32_semaphore_try_down(void *);
 
 /************** (END KNOWN ARCHITECTURE/SYSTEMS) ****************/
 
-
-/************** (BEGIN PTHREAD SETUP) ***************/
-
-#ifdef MZ_USE_PTHREADS
-
-# define MZ_REAL_THREADS
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-void *scheme_pthread_init_threads(void);
-void scheme_pthread_create_thread(void (*f)(void *), void *data, unsigned long *stackend, void **thp);
-void scheme_pthread_exit_thread();
-void scheme_pthread_break_thread(void *th);
-struct Scheme_Thread *scheme_pthread_get_current_thread();
-void scheme_pthread_set_current_thread(struct Scheme_Thread *);
-void *scheme_pthread_make_mutex();
-void scheme_pthread_free_mutex(void *);
-void scheme_pthread_lock_mutex(void *);
-void scheme_pthread_unlock_mutex(void *);
-void *scheme_pthread_make_semaphore(int init);
-void scheme_pthread_free_semaphore(void *);
-int scheme_pthread_semaphore_up(void *);
-int scheme_pthread_semaphore_down_breakable(void *);
-int scheme_pthread_semaphore_try_down(void *);
-#ifdef __cplusplus
-}
-#endif
-
-#define SCHEME_INIT_THREADS() scheme_pthread_init_threads()
-#define SCHEME_CREATE_THREAD(f, data, slimit, thp) scheme_pthread_create_thread(f, data, slimit, thp)
-#define SCHEME_EXIT_THREAD() scheme_pthread_exit_thread()
-#define SCHEME_BREAK_THREAD(th) scheme_pthread_break_thread(th)
-#define SCHEME_GET_CURRENT_PROCESS() scheme_pthread_get_current_thread()
-#define SCHEME_SET_CURRENT_PROCESS(p) scheme_pthread_set_current_thread(p)
-#define SCHEME_MAKE_MUTEX() scheme_pthread_make_mutex()
-#define SCHEME_FREE_MUTEX(m) scheme_pthread_free_mutex(m)
-#define SCHEME_LOCK_MUTEX(m) scheme_pthread_lock_mutex(m)
-#define SCHEME_UNLOCK_MUTEX(m) scheme_pthread_unlock_mutex(m)
-#define SCHEME_MAKE_SEMA(init) scheme_pthread_make_semaphore(init)
-#define SCHEME_FREE_SEMA(s) scheme_pthread_free_semaphore(s)
-#define SCHEME_SEMA_UP(s) scheme_pthread_semaphore_up(s)
-#define SCHEME_SEMA_DOWN_BREAKABLE(s) scheme_pthread_semaphore_down_breakable(s)
-#define SCHEME_SEMA_TRY_DOWN(s) scheme_pthread_semaphore_try_down(s)
-
-#endif
-
-/************** (END PTHREAD SETUP) ***************/
 
 /***** (BEGIN CONFIGURATION FLAG DESCRPTIONS AND DEFAULTS) ******/
 
@@ -1321,7 +1131,8 @@ int scheme_pthread_semaphore_try_down(void *);
 
  /* UNIX_FIND_STACK_BOUNDS figures out the maximum stack position
      on Unix systems, using getrlimit() and the GC_find_stack_base()
-     defined in the conservative garbage collector.
+     defined in the conservative garbage collector. But no more
+     than UNIX_STACK_MAXIMUM bytes, if defined, will be used.
     USE_STACKAVIL uses stackavail() function for checking stack
      overflow; works with Borland C++, maybe other compilers.
     WINDOWS_FIND_STACK_BOUNDS figures out the maximum stack position
@@ -1467,9 +1278,9 @@ int scheme_pthread_semaphore_try_down(void *);
 
  /* NO_NEED_FOR_BEGINTHREAD indicates that the C library used for
     Windows is always thread-ready and there's no need use the
-	_beginthreadex() function instead of CreateThread(). This is only
-	used when stdin and process ports are tested in a separate thread
-	(see NO_STDIO_TREADS). */
+    _beginthreadex() function instead of CreateThread(). This is only
+    used when stdin and process ports are tested in a separate thread
+    (see NO_STDIO_TREADS). */
 
  /* WIN32S_HACK uses a special hack to implement threads under Win32s
     with some compilers. Obsolete. */

@@ -13,9 +13,6 @@
 #define scheme_param_config (scheme_extension_table->scheme_param_config)
 #define scheme_register_parameter (scheme_extension_table->scheme_register_parameter)
 #define scheme_get_env (scheme_extension_table->scheme_get_env)
-#ifdef MZ_REAL_THREADS
-#define scheme_get_current_thread (scheme_extension_table->scheme_get_current_thread)
-#else
 #ifndef LINK_EXTENSIONS_BY_TABLE
 #define scheme_current_thread (scheme_extension_table->scheme_current_thread)
 #define scheme_fuel_counter (scheme_extension_table->scheme_fuel_counter)
@@ -23,19 +20,14 @@
 #define scheme_current_thread_ptr (scheme_extension_table->scheme_current_thread_ptr)
 #define scheme_fuel_counter_ptr (scheme_extension_table->scheme_fuel_counter_ptr)
 #endif
-#endif
 #ifndef NO_SCHEME_THREADS
 #define scheme_thread (scheme_extension_table->scheme_thread)
 #define scheme_thread_w_custodian (scheme_extension_table->scheme_thread_w_custodian)
 #define scheme_kill_thread (scheme_extension_table->scheme_kill_thread)
 #endif
 #define scheme_break_thread (scheme_extension_table->scheme_break_thread)
-#ifndef MZ_REAL_THREADS
 #define scheme_thread_block (scheme_extension_table->scheme_thread_block)
 #define scheme_swap_thread (scheme_extension_table->scheme_swap_thread)
-#else
-#define scheme_thread_block_w_thread (scheme_extension_table->scheme_thread_block_w_thread)
-#endif
 #define scheme_making_progress (scheme_extension_table->scheme_making_progress)
 #define scheme_weak_suspend_thread (scheme_extension_table->scheme_weak_suspend_thread)
 #define scheme_weak_resume_thread (scheme_extension_table->scheme_weak_resume_thread)
@@ -49,6 +41,8 @@
 #define scheme_remove_managed (scheme_extension_table->scheme_remove_managed)
 #define scheme_close_managed (scheme_extension_table->scheme_close_managed)
 #define scheme_add_atexit_closer (scheme_extension_table->scheme_add_atexit_closer)
+#define scheme_add_waitable (scheme_extension_table->scheme_add_waitable)
+#define scheme_add_waitable_through_sema (scheme_extension_table->scheme_add_waitable_through_sema)
 #define scheme_signal_error (scheme_extension_table->scheme_signal_error)
 #define scheme_raise_exn (scheme_extension_table->scheme_raise_exn)
 #define scheme_warning (scheme_extension_table->scheme_warning)
@@ -77,17 +71,10 @@
 #define scheme_eval_compiled_multi (scheme_extension_table->scheme_eval_compiled_multi)
 #define _scheme_eval_compiled (scheme_extension_table->_scheme_eval_compiled)
 #define _scheme_eval_compiled_multi (scheme_extension_table->_scheme_eval_compiled_multi)
-#ifndef MZ_REAL_THREADS
 #define scheme_apply (scheme_extension_table->scheme_apply)
 #define scheme_apply_multi (scheme_extension_table->scheme_apply_multi)
 #define scheme_apply_eb (scheme_extension_table->scheme_apply_eb)
 #define scheme_apply_multi_eb (scheme_extension_table->scheme_apply_multi_eb)
-#else
-#define scheme_apply_wp (scheme_extension_table->scheme_apply_wp)
-#define scheme_apply_multi_wp (scheme_extension_table->scheme_apply_multi_wp)
-#define scheme_apply_eb_wp (scheme_extension_table->scheme_apply_eb_wp)
-#define scheme_apply_multi_eb_wp (scheme_extension_table->scheme_apply_multi_eb_wp)
-#endif
 #define scheme_apply_to_list (scheme_extension_table->scheme_apply_to_list)
 #define scheme_eval_string (scheme_extension_table->scheme_eval_string)
 #define scheme_eval_string_multi (scheme_extension_table->scheme_eval_string_multi)
@@ -110,11 +97,7 @@
 #define scheme_temp_dec_mark_depth (scheme_extension_table->scheme_temp_dec_mark_depth)
 #define scheme_temp_inc_mark_depth (scheme_extension_table->scheme_temp_inc_mark_depth)
 #define scheme_current_continuation_marks (scheme_extension_table->scheme_current_continuation_marks)
-#ifndef MZ_REAL_THREADS
 #define scheme_do_eval (scheme_extension_table->scheme_do_eval)
-#else
-#define scheme_do_eval_w_thread (scheme_extension_table->scheme_do_eval_w_thread)
-#endif
 #define scheme_eval_compiled_stx_string (scheme_extension_table->scheme_eval_compiled_stx_string)
 #ifndef SCHEME_NO_GC
 # ifndef SCHEME_NO_GC_PROTO

@@ -1,6 +1,7 @@
 (module util mzscheme
   
   (require "config.ss"
+           (prefix server: "server-config.ss")
            "private/planet-shared.ss"
            (lib "list.ss")
            (lib "pack.ss" "setup"))
@@ -8,49 +9,29 @@
   #| The util collection provides a number of useful functions for interacting with the PLaneT system. |#
   
   (provide current-cache-contents
+           current-repository-contents
            current-linkage
            make-planet-archive)
-  
-  
-  
-  ;; current-repository-contents : -> ((string (string (number (number ...)) ...) ...) ...)
-  (define (directory->tree directory valid-dir?)
-    (let-values ([(path name _) (split-path directory)])
-      (let* ((files (directory-list directory))
-             (files (map (lambda (d) (build-path directory d)) files))
-             (files (filter (lambda (d) (and (directory-exists? d) (valid-dir? d))) files)))
-        (cond
-          [(null? files) name]
-          [else 
-           (list name (map (lambda (d) (directory->tree d valid-dir?)) files))]))))
-  
-  
-  
+    
   ;; current-cache-contents : -> ((string ((string ((nat (nat ...)) ...)) ...)) ...)
   ;; returns the packages installed in the local PLaneT cache
-  ;; bug: this code is godawful
   (define (current-cache-contents)
-    (let ((tree (cadr (directory->tree (cache-dir) (lambda (x) (not (regexp-match ".*/CVS$" x)))))))
-      (map
-       (lambda (usr+)
-         (list
-          (car usr+)
-          (map 
-           (lambda (pkg+)
-             (list
-              (car pkg+)
-              (map
-               (lambda (maj-ver+)
-                 (list 
-                  (string->number (car maj-ver+))
-                  (map
-                   (lambda (min-ver) (string->number min-ver))
-                   (cadr maj-ver+))))
-               (cadr pkg+))))
-           (cadr usr+))))
-       tree)))
+    (define id (lambda (x) x))
+    (cdr
+     (tree->list
+      (filter-tree-by-pattern
+       (directory->tree (cache-dir) (lambda (x) (not (regexp-match ".*/CVS$" x))))
+       (list id id id string->number string->number)))))
   
-  
+  (define (current-repository-contents)
+    (define id (lambda (x) x))
+    (apply list
+           (cdr
+            (tree->list
+             (filter-tree-by-pattern
+              (directory->tree (server:planet-server-repository) (lambda (x) (not (regexp-match ".*/CVS$" x))))
+              (list id id id id string->number string->number))))))
+
   ;; current-linkage : -> ((symbol (package-name nat nat) ...) ...)
   ;; gives the current "linkage table"; a table that links modules to particular versions
   ;; of planet requires that satisfy those linkages

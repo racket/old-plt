@@ -47,7 +47,12 @@
            (loop (add1 i))))))))
                
   
-  (define (update actions)
+  (define (update actions packs)
+    ;(send (drawn) install-robots&packages
+    ;      '()
+    ;      (map (lambda (p) (list (package-id p) (get-player-x) (get-player-y)
+    ;                             (package-x p) (package-y p) (package-weight p)))
+    ;           packs))
     (send (drawn) queue-robot-actions
           ;; Each robot action is (list id bid (one-of 'e 'w 'n 's (list 'pick id...) (list 'drop id ...)))
           actions)

@@ -69,6 +69,12 @@
             
             
                   
+  (define (best-dir px py gx gy)
+    (cond
+      ((< px gx) 'e)
+      ((> px gx) 'w)
+      ((> py gy) 's)
+      (else 'n)))
   
   
   (define (compute-baseline-move packages robots)
@@ -81,17 +87,28 @@
              ((not (null? picks)) (make-command 1 'p picks))
              (else
               (let ((goal (compute-goal (get-player-x) (get-player-y))))
-                (make-command
-                 1
-                 (cond
-                   ((< (get-player-x) (car goal))
-                    'e)
-                   ((> (get-player-x) (car goal))
-                    'w)
-                   ((> (get-player-y) (cdr goal))
-                    's)
-                   (else
-                    'n))
-                 null)))))))))
+                (let loop ((dir (best-dir (get-player-x)
+                                          (get-player-y)
+                                          (car goal)
+                                          (cdr goal))))
+                  (let ((dest (case dir
+                                ((e) (cons (add1 (get-player-x))
+                                           (get-player-y)))
+                                ((w) (cons (sub1 (get-player-x))
+                                           (get-player-y)))
+                                ((n) (cons (get-player-x)
+                                           (add1 (get-player-y))))
+                                ((s) (cons (get-player-x)
+                                           (sub1 (get-player-y)))))))
+                    (cond
+                      ((or (= 1 (get-type (get-spot (board) (car dest) (cdr dest))))
+                           (= 2 (get-type (get-spot (board) (car dest) (cdr dest)))))
+                       (loop (case (random 4)
+                               ((0) 'n)
+                               ((1) 's)
+                               ((2) 'e)
+                               ((3) 'w))))
+                      (else
+                       (make-command 1 dir null)))))))))))))
                 
   )

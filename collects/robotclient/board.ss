@@ -267,7 +267,8 @@
                                                            good-responses))))))))
                        (filter (lambda (rl)
                                  (not (eq? 'nothing (response-name (car rl)))))
-                               responses)))
+                               responses))
+                  packages)
                                     
       (for-each
        (lambda (p)

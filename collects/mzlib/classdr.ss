@@ -13,6 +13,68 @@
 		     (cons (car l) (loop (cdr l)))
 		     (loop (cdr l)))])))
       
+      (define (andmap/dot pred? lst)
+        (cond
+          [(pair? lst) (and (pred? (car lst))
+                            (andmap/dot pred? (cdr lst)))]
+          [(null? lst) #t]
+          [else (pred? lst)]))
+      
+      (define (hack-local-expand-body-expression entire-exp exp)
+        (cond
+          [(not (pair? exp)) (values exp #f)]
+          [(memq (car exp) '(define #%define))
+           (when (null? (cdr exp))
+             (error 'class/d "malformed definition: ~s" exp))
+           (let ([head (cadr exp)])
+             (cond
+               [(symbol? head) (values `(#%define-values (,head) ,@(cddr exp)) '#%define-values)]
+               [else 
+                (unless (andmap/dot symbol? head)
+                  (raise-syntax-error 'class/d "malformed definition" entire-exp exp))
+                (values `(#%define-values (,(car head)) (#%lambda ,(cdr head) ,@(cddr exp))) '#%define-values)]))]
+          [(memq (car exp) '(define-values #%define-values))
+           (unless (and (list? exp) (= 3 (length exp)))
+             (error "malformed definition: ~s" exp))
+           (let ([vars (cadr exp)]
+                 [rhs (caddr exp)])
+             (unless (and (list? vars)
+                          (andmap symbol? vars))
+               (raise-syntax-error 'class/d "malformed definition" entire-exp exp))
+             (values `(#%define-values ,vars ,rhs) '#%define-values))]
+          [(memq (car exp) '(define-struct #%define-struct))
+           (unless (and (list? exp)
+                        (= 3 (length exp)))
+             (raise-syntax-error 'class/d "malformed definition" entire-exp exp))
+           (let ([struct-header (cadr exp)]
+                 [struct-fields (caddr exp)])
+             (unless (or (symbol? struct-header) 
+                         (and (list? struct-header)
+                              (= 2 (length struct-header))
+                              (andmap symbol? struct-header)))
+               (raise-syntax-error 'class/d "malformed definition" entire-exp exp))
+             (unless (and (list? struct-fields)
+                          (andmap symbol? struct-fields))
+               (raise-syntax-error 'class/d "malformed definition" entire-exp exp))
+             (values
+              `(#%define-values ,(get-struct-names
+                                  (if (symbol? struct-header) struct-header (car struct-header))
+                                  struct-fields)
+                (struct ,struct-header ,struct-fields))
+              '#%define-values))]
+          [else (values exp #f)]))
+        
+      (define (get-struct-names struct-name fields)
+        (append (list (join-syms 'struct: struct-name)
+                      (join-syms 'make- struct-name)
+                      (join-syms struct-name '?))
+                (apply append
+                       (map (lambda (field) 
+                              (list (join-syms struct-name '- field)
+                                    (join-syms 'set- struct-name '- field '!))) fields))))
+
+      (define (join-syms . syms) (string->symbol (apply string-append (map symbol->string syms))))
+      
       (define (validate-clauses clauses)
 	(unless (and (list? clauses)
 		     (andmap (lambda (x)
@@ -52,13 +114,13 @@
 								     (symbol? (cadr x))))
 							      (cdr x)))))
       
-      (define (class/d*-f super interfaces init-args clauses . def/exps)
+      (define (class/d* super interfaces init-args clauses . def/exps)
 	(apply class/d*/names '(this super-init) super interfaces init-args clauses def/exps))
 
-      (define (class/d-f super init-args clauses . def/exps)
+      (define (class/d super init-args clauses . def/exps)
 	(apply class/d* super '() init-args clauses def/exps))
 
-      (define (class/d*/names-f local-names super interfaces init-args clauses . def/exps)
+      (define (class/d*/names local-names super interfaces init-args clauses . def/exps)
 	(unless (and (list? local-names)
 		     (= 2 (length local-names))
 		     (andmap symbol? local-names))
@@ -68,7 +130,6 @@
 	  (raise-syntax-error 'class/d*/names "expected interfaces" interfaces))
 
 	(validate-clauses clauses)
-
 
 	(let ([class/d-super (gensym "class/d-super")]
 	      [public-vars (extract-public-vars clauses)]
@@ -80,7 +141,10 @@
 			  (cond
 			   [(null? def/exps) (values null null)]
 			   [else
-			    (let-values ([(expanded-def/exp type) (local-expand-body-expression (car def/exps))]
+			    (let-values ([(expanded-def/exp type) (hack-local-expand-body-expression 
+                                                                   `(class/d*/names ,local-names ,super ,interfaces ,init-args ,clauses
+                                                                                    ,@def/exps)
+                                                                   (car def/exps))]
 					 [(def/exps types) (loop (cdr def/exps))])
 			      (values (cons expanded-def/exp def/exps)
 				      (cons type types)))]))])
@@ -129,24 +193,4 @@
 			       (rename ,@renamed-vars)
 			       (inherit ,@inherited-vars)
 
-			       ,@(apply append clausess)))))))
-      
-
-      (define namespace (make-namespace 'no-keywords))
-      
-      (parameterize ([current-namespace namespace])
-        (eval `(define-macro class/d*/names ,class/d*/names-f))
-        (eval `(define-macro class/d* ,class/d*-f))
-        (eval `(define-macro class/d ,class/d-f)))
-      
-      (define (class/d*/names . args)
-        (parameterize ([current-namespace namespace])
-          (expand-defmacro `(class/d*/names ,@args))))
-      
-      (define (class/d* . args)
-        (parameterize ([current-namespace namespace])
-          (expand-defmacro `(class/d* ,@args))))
-      
-      (define (class/d . args)
-        (parameterize ([current-namespace namespace])
-          (expand-defmacro `(class/d ,@args)))))
+			       ,@(apply append clausess))))))))

@@ -4633,9 +4633,29 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       } else {
 	int err;
 
+	/* Reset ignored signals: */
+	START_XFORM_SKIP;
+#ifndef DONT_IGNORE_FPE_SIGNAL
+	MZ_SIGSET(SIGFPE, SIG_DFL);
+#endif
+#ifndef DONT_IGNORE_PIPE_SIGNAL
+	MZ_SIGSET(SIGPIPE, SIG_DFL);
+#endif
+	END_XFORM_SKIP;
+
       	err = MSC_IZE(execv)(command, argv);
 
 	/* If we get here it failed; give up */
+
+	/* back to MzScheme signal dispositions: */
+	START_XFORM_SKIP;
+#ifndef DONT_IGNORE_FPE_SIGNAL
+	MZ_SIGSET(SIGFPE, SIG_IGN);
+#endif
+#ifndef DONT_IGNORE_PIPE_SIGNAL
+	MZ_SIGSET(SIGPIPE, SIG_IGN);
+#endif
+	END_XFORM_SKIP;
 
 	if (as_child || !def_exit_on)
 	  _exit(err ? err : 1);

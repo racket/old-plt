@@ -1,25 +1,26 @@
 This directory contains makefiles and projects files for building
-MzScheme and MrEd with Microsoft Visual C++ (MSVC) version 6. MzScheme
-(but not MrEd) also compiles with Cygwin gcc (a free compiler from GNU
-and Cygnus Solutions); to compile with gcc, follow the instructions in
-plt\src\mzscheme\README (there is a short Windows-specific section in
-that file.)
+MzScheme, MzCOM, and MrEd with Microsoft Visual C++ (MSVC) version 6. 
+MzScheme (but not MzCOM and MrEd) also compiles with Cygwin gcc 
+(a free compiler from GNU and Cygnus Solutions); to compile with gcc, 
+follow the instructions in plt\src\mzscheme\README (there is a short 
+Windows-specific section in that file.)
 
-As always, submit bug reports using
-  http://www.cs.rice.edu/CS/PLT/Bugs/
-or (as a last resort) send mail to
-  plt-bugs@cs.rice.edu
+As always, submit bug reports 
+
+- using DrScheme Help Desk (preferred), 
+- or using the Web form at http://www.cs.rice.edu/CS/PLT/Bugs/, 
+- or (as a last resort) send mail to plt-bugs@cs.rice.edu
 
 -Matthew Flatt
- Rice University PLT
- mflatt@cs.rice.edu
- http://www.cs.rice.edu/~mflatt/
+ University of Utah PLT
+ mflatt@cs.utah.edu
+ http://www.cs.utah.edu/~mflatt/
 
 ----------------------------------------------------------------------
-Building MzScheme and MrEd
+Building MzScheme, MzCOM, and MrEd
 ----------------------------------------------------------------------
 
-The source code for MzScheme and MrEd is split into several
+The source code for MzScheme, MzCOM, and MrEd is split into several
 projects. To make the project named `X', either open the file
 plt\src\worksp\X\X.dsw with MSVC, or go into plt\src\worksp\X\ and
 execute `nmake -f X.mak' (assuming the MSVC programs are in your
@@ -34,10 +35,13 @@ path).
 To build MzScheme, make the MzScheme project in
    plt\src\worksp\mzscheme - makes plt\mzscheme.exe
 
+To build MzCOM, make the MzCOM project in
+   plt\src\worksp\mzcom - makes plt\collects\mzcom\mzcom.exe
+
 To build MrEd, make the MrEd project:
    plt\src\worksp\mred - makes plt\mred.exe
 
-The make process for MzScheme automatically builds the following:
+The make processes for MzScheme and MzCOM automatically build the following:
    gc - makes plt\src\worksp\gc\Release\gc.lib
    mzsrc - makes plt\src\worksp\mzsrc\Release\mzsrc.lib
 
@@ -83,8 +87,8 @@ to embed MzScheme in another application.
 Project Configurations
 ----------------------------------------------------------------------
 
-The MzScheme and MrEd projects are distributed to compile using
-"Release" as the default configuration. Most of the projects support
+The MzScheme, MzCOM, and MrEd projects are distributed to compile using
+"Release" as the default configuration.  Most of the projects support
 several configurations:
 
   * Debug - less optimization to make debugging easier
@@ -95,4 +99,6 @@ several configurations:
              statically
 
 Of course, the mzscheme Debug configuration works with the Debug
-configurations of mzsrc and gc, etc.
+configurations of mzsrc and gc, etc.  MzCOM has only a Release
+and Debug configuration.
+

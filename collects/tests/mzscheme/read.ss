@@ -62,14 +62,9 @@
 		 [v (car pair)]
 		 [s (cadr pair)])
 	    (cond
-	     [(eq? v 'DBZ) 
+	     [(memq v '(DBZ X))
 	      (err/rt-test (readstr s) exn:read?)
-	      (test #f string->number s)
-	      (test 'dbz string->number s 10 'dbz)]
-	     [(eq? v 'X) 
-	      (err/rt-test (readstr s) exn:read?)
-	      (test #f string->number s)
-	      (test #f string->number s 10 'dbz)]
+	      (test #f string->number s)]
 	     [v 
 	      (test v readstr s)
 	      (test (if (symbol? v) #f v) string->number s)]

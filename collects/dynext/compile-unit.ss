@@ -127,7 +127,7 @@
       
       (define current-make-compile-input-strings
 	(make-parameter
-	 (lambda (s) (list s))
+	 (lambda (s) (list (path-string->string s)))
 	 (lambda (p)
 	   (unless (procedure-arity-includes? p 1)
 	     (raise-type-error 'current-make-compile-input-strings "procedure of arity 1" p))

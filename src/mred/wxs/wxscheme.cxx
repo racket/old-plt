@@ -120,7 +120,7 @@ static Scheme_Object *make_media_edit, *make_media_pasteboard, *make_media_snip,
 
 static Scheme_Object *wait_symbol;
 
-static Scheme_Object *mono_symbol;
+static Scheme_Object *mono_symbol, *all_symbol;
 
 #define CONS scheme_make_pair
 
@@ -954,12 +954,14 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
   if (argc > 0) {
     if (!mono_symbol) {
       wxREGGLOB(mono_symbol);
+      wxREGGLOB(all_symbol);
       mono_symbol = scheme_intern_symbol("mono");
+      all_symbol = scheme_intern_symbol("all");
     }
     if (SAME_OBJ(mono_symbol, argv[0]))
       mono_only = 1;
-    else {
-      scheme_wrong_type("get-face-list", "'mono symbol", 0, argc, argv);
+    else if (!SAME_OBJ(all_symbol, argv[0])) {
+      scheme_wrong_type("get-face-list", "'mono or 'all symbol", 0, argc, argv);
       return NULL;
     }
   }

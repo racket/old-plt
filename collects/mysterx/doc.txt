@@ -98,6 +98,12 @@ _MysterX_
  Returns the current document in the browser, an instance
  of mx-document%.
 
+> print :: (send an-mx-browser print)
+
+ Prints the contents displayed by the browser to the default
+ printer.  As an unintentional side-effect, the browser 
+ window is minimized.
+
 > show :: (send an-mx-browser show b)
 
   If `b' is #f, the browser window is hidden.

@@ -1570,6 +1570,9 @@
 	     (lambda () 
 	       (make-object mx-document% 
 			    (mxprims:current-document browser)))]
+	    [print
+	     (lambda ()
+	       (mxprims:print browser))]
 	    [register-event-handler
 	     (lambda (elt fn)
 	       (dynamic-wind

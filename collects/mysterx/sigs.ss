@@ -106,6 +106,7 @@
    register-navigate-handler
    current-url
    current-document	
+   print
    document?
    document-title
    document-insert-html

@@ -222,8 +222,10 @@ Scheme_Object *scheme_complex_power(const Scheme_Object *base, const Scheme_Obje
   Scheme_Complex *ce = (Scheme_Complex *)exponent;
   double a, b, c, d, bm, ba, nm, na, r1, r2;
 
-  if ((ce->i == zero) && !SCHEME_FLOATP(ce->r))
-    return scheme_generic_power(base, ce->r);
+  if ((ce->i == zero) && !SCHEME_FLOATP(ce->r)) {
+    if (SCHEME_INTP(ce->r) || SCHEME_BIGNUMP(ce->r))
+      return scheme_generic_integer_power(base, ce->r);
+  }
 
   a = scheme_get_val_as_double(cb->r);
   b = scheme_get_val_as_double(cb->i);

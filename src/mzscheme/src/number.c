@@ -2365,8 +2365,14 @@ static double sch_pow(double x, double y)
   } else
     return pow(x, y);
 }
-# define F_EXPT(x, y) scheme_make_double(sch_pow((double)x, (double)y))
-# define FS_EXPT(x, y) scheme_make_float(sch_pow((double)x, (double)y))
+# define F_EXPT(x, y) (((x < 0.0) && (y != floor(y))) \
+                       ? scheme_complex_power(scheme_real_to_complex(scheme_make_double(x)), \
+				              scheme_real_to_complex(scheme_make_double(y))) \
+                       : scheme_make_double(sch_pow((double)x, (double)y)))
+# define FS_EXPT(x, y) (((x < 0.0) && (y != floor(y))) \
+                       ? scheme_complex_power(scheme_real_to_complex(scheme_make_float(x)), \
+				              scheme_real_to_complex(scheme_make_float(y))) \
+                        : scheme_make_float(sch_pow((double)x, (double)y)))
 #endif
 
 static GEN_BIN_OP(bin_expt, "expt", fixnum_expt, F_EXPT, FS_EXPT, scheme_bignum_power, scheme_rational_power, scheme_complex_power, GEN_RETURN_0_USUALLY, GEN_RETURN_1, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)

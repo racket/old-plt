@@ -607,7 +607,7 @@ double scheme_get_val_as_double(const Scheme_Object *n);
 
 Scheme_Object *scheme_double_to_integer(const char *where, double d);
 
-Scheme_Object *scheme_generic_power(const Scheme_Object *o, const Scheme_Object *p);
+Scheme_Object *scheme_generic_integer_power(const Scheme_Object *o, const Scheme_Object *p);
 
 #define scheme_add_good_binding(i,v,f) (f->values[i] = v)
 

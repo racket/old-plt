@@ -265,7 +265,7 @@ Scheme_Object *scheme_rational_divide(const Scheme_Object *n, const Scheme_Objec
   return scheme_rational_multiply(n, (Scheme_Object *)&d_inv);
 }
 
-Scheme_Object *scheme_generic_power(const Scheme_Object *o, const Scheme_Object *p)
+Scheme_Object *scheme_generic_integer_power(const Scheme_Object *o, const Scheme_Object *p)
 {
   Scheme_Object *r = one, *zero = scheme_make_integer(0);
   Scheme_Object *two = scheme_make_integer(2);
@@ -307,12 +307,17 @@ Scheme_Object *scheme_rational_power(const Scheme_Object *o, const Scheme_Object
   double b, e;
 
   if (((Scheme_Rational *)p)->denom == one)
-    return scheme_generic_power(o, ((Scheme_Rational *)p)->num);
+    return scheme_generic_integer_power(o, ((Scheme_Rational *)p)->num);
 
-  b = scheme_rational_to_double(o);
-  e = scheme_rational_to_double(p);
-
-  return scheme_make_double(pow(b, e));
+  if (scheme_is_rational_positive(o)) {
+    b = scheme_rational_to_double(o);
+    e = scheme_rational_to_double(p);
+    
+    return scheme_make_double(pow(b, e));
+  } else {
+    return scheme_complex_power(scheme_real_to_complex(o),
+				scheme_real_to_complex(p));
+  }
 }
 
 Scheme_Object *scheme_rational_truncate(const Scheme_Object *o)

@@ -3285,10 +3285,8 @@ void scheme_thread_block(float sleep_time)
 
   if (p->block_descriptor == SLEEP_BLOCKED) {
     p->block_descriptor = NOT_BLOCKED;
-    p->sleep_end = 0.0;
-  } else if (p->block_descriptor == GENERIC_BLOCKED) {
-    p->sleep_end = 0.0;
   }
+  p->sleep_end = 0.0;
 
   /* Killed while I was asleep? */
   if (p->running & MZTHREAD_KILLED) {
@@ -4260,7 +4258,10 @@ static Waiting *make_waiting(Waitable_Set *waitable_set, float timeout, double s
 #endif
   waiting->set = waitable_set;
   waiting->timeout = timeout;
-  waiting->sleep_end = start_time + (timeout * 1000);
+  if (timeout >= 0)
+    waiting->sleep_end = start_time + (timeout * 1000);
+  else
+    waiting->sleep_end = 0.0;
 
   if (waitable_set->argc > 1) {
     pos = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_SCHEDULER_RANDOM_STATE));
@@ -4422,7 +4423,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
   Waitable_Set *waitable_set;
   int is_poll;
   double sleep_end;
-
+  
   sleep_end = waiting->sleep_end;
 
   if (waiting->result) {
@@ -4534,8 +4535,9 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
  set_sleep_end_and_return:
 
   waiting->sleep_end = sleep_end;
-  if (!sinfo->sleep_end
-      || (sinfo->sleep_end > waiting->sleep_end))
+  if (waiting->sleep_end
+      && (!sinfo->sleep_end
+	  || (sinfo->sleep_end > waiting->sleep_end)))
     sinfo->sleep_end = waiting->sleep_end;
 
   return result;

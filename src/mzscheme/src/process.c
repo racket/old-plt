@@ -2620,7 +2620,8 @@ static Scheme_Object *def_nested_exn_handler(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 {
-  Scheme_Process *p = scheme_current_process, * volatile np;
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Process * volatile np;
   Scheme_Manager *mgr;
   Scheme_Object * volatile v;
   volatile int failure;
@@ -2671,7 +2672,7 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   memcpy(&np->overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
 
   /* In case it's not yet set in the main thread... */
-  scheme_ensure_stack_start(np, &failure);
+  scheme_ensure_stack_start((Scheme_Process *)np, &failure);
   
   np->list_stack = p->list_stack;
   np->list_stack_pos = p->list_stack_pos;

@@ -2385,9 +2385,19 @@ static Scheme_Object *fixnum_expt(int x, int y)
 static double sch_pow(double x, double y)
 {
   if (MZ_IS_POS_INFINITY(y)) {
-    return scheme_infinity_val;
+    if ((x == 1.0) || (x == -1.0))
+      return not_a_number_val;
+    else if ((x < 1.0) && (x > -1.0))
+      return 0.0;
+    else
+      return scheme_infinity_val;
   } else if (MZ_IS_NEG_INFINITY(y)) {
-    return 0.0;
+    if ((x == 1.0) || (x == -1.0))
+      return not_a_number_val;
+    else if ((x < 1.0) && (x > -1.0))
+      return scheme_infinity_val;
+    else
+      return 0.0;
   } else if (MZ_IS_POS_INFINITY(x)) {
     if (y == 0.0)
       return 1.0;
@@ -2432,6 +2442,8 @@ scheme_expt(int argc, Scheme_Object *argv[])
     scheme_wrong_type("expt", "number", 0, argc, argv);
 
   if (argv[1] == scheme_make_integer(1))
+    return n;
+  if (n == scheme_make_integer(1))
     return n;
 
   if (argv[0] == zeroi) {

@@ -1265,9 +1265,19 @@
 (test -0.0 expt -0.0 1)
 (test-nan.0 expt +nan.0 10)
 (test-nan.0 expt 2 +nan.0)
+
 (test-nan.0 expt 1.0 +inf.0)
 (test-nan.0 expt 1.0 -inf.0)
 (test-nan.0 expt 1.0 +nan.0)
+
+(test 0.0 expt 0.5 +inf.0)
+(test +inf.0 expt 0.5 -inf.0)
+(test +inf.0 expt 1.5 +inf.0)
+(test 0.0 expt 1.5 -inf.0)
+(test 0.0 expt -0.5 +inf.0)
+(test +inf.0 expt -0.5 -inf.0)
+(test +inf.0 expt -1.5 +inf.0)
+(test 0.0 expt -1.5 -inf.0)
 
 (error-test '(expt 0 -1) exn:application:divide-by-zero?)
 (error-test '(expt 0 -1.0) exn:application:divide-by-zero?)

@@ -80,6 +80,9 @@ if [ "$1" = '-t' ] ; then
  INCLUDES="-DOSKIT_TEST"
  TARGET=""
  BUILDDIR=_oskit_x86_t
+elif [ "$*" = 'clean' ] ; then
+ TARGET=clean
+ BUILDDIR=_oskit_x86
 elif [ "$*" = '' ] ; then
  echo "Build MzScheme kernel"
  INCLUDES="-nostdinc -I${OSKHOME}/include/oskit -I${OSKHOME}/include/oskit/freebsd -I${OSKHOME}/include/oskit/c -I${OSKHOME}/include -I${STDINC}"

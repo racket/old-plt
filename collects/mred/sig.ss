@@ -32,8 +32,8 @@
    (struct child-info (x-posn y-posn x-min y-min x-stretch y-stretch))
    frame%
    dialog-box%
-   canvas%
-   media-canvas%
+   ;canvas%
+   ;media-canvas%
    button%
    check-box%
    choice%

@@ -54,11 +54,9 @@ tex2page can be called with the following options
 instead of an argument filename.
 
 --help
-
     Print help message and exit.
 
 --version
-
     Print version information and exit.
 
 .SH DIAGNOSTICS
@@ -84,7 +82,6 @@ immediately exits.
 .nf
 
 TEXINPUTS
-
     tex2page uses the same search path as TeX to search
     for \einput and \eopenin files.  The default search
     path is implementation-dependent but can be changed
@@ -96,14 +93,12 @@ TEXINPUTS
     to recursively search all subdirectories of.
 
 TIIPINPUTS
-
     If the environment variable TIIPINPUTS is set, tex2page
     will use the TIIPINPUTS value as its search path
     instead of TEXINPUTS.  TIIPINPUTS  does not
     support the double-slash mechanism of TEXINPUTS.
 
 TEXEDIT
-
     If the environment variable TEXEDIT is set, tex2page
     uses its string value as the editor call to use when it
     encounters a fatal error (see the DIAGNOSTICS section).
@@ -113,7 +108,6 @@ TEXEDIT
     the offending line.
 
 EDITOR
-
     If TEXEDIT is not set, the value of the environment
     variable EDITOR is chosen as the editor.  Note that
     unlike TEXEDIT which contains the editor call as a
@@ -135,7 +129,6 @@ EDITOR
 .nf
 
 <jobname>.hdir, .tex2page.hdir, ~/.tex2page.hdir
-
     By default, tex2page generates its output HTML
     files in the current directory.  You can specify a
     different directory by naming it in one of the
@@ -154,7 +147,6 @@ EDITOR
     <jobname>, the basename of the input document.
 
 <jobname>.t2p
-
     Before processing a TeX source file whose basename
     is <jobname>, tex2page will automatically load the
     file <jobname>.t2p, if it exists.  <jobname>.t2p is
@@ -162,7 +154,6 @@ EDITOR
     HTML version of the document.
 
 tex2page.tex, tex2page.sty
-
     tex2page recognizes some commands that are not
     supplied in the LaTeX or plain-TeX formats --
     typically these are commands that add value to the

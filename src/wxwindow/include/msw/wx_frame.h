@@ -59,6 +59,8 @@ class wxFrame: public wxbFrame
   void Fit(void);
   virtual void ChangeToGray(Bool gray);
 
+  void EnforceSize(int minw, int minh, int maxw, int maxh, int incw=1, int inch=1);
+
   // Iconize
   virtual void Iconize(Bool iconize);
   virtual Bool Iconized(void);

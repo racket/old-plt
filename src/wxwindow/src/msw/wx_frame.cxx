@@ -325,6 +325,10 @@ void wxFrame::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlag
   }
 }
 
+void wxFrame::EnforceSize(int minw, int minh, int maxw, int maxh, int incw, int inch)
+{
+}
+
 Bool wxFrame::Show(Bool show)
 {
   int skipShow;

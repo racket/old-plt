@@ -355,3 +355,7 @@ void wxDialogBox::SystemMenu(void)
   ::DefWindowProc(GetHWND(), WM_SYSKEYDOWN, ' ', 1 << 29);
   ::DefWindowProc(GetHWND(), WM_SYSCHAR, ' ', 1 << 29);
 }
+
+void wxDialogBox::EnforceSize(int minw, int minh, int maxw, int maxh, int incw, int inch)
+{
+}

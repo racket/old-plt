@@ -176,6 +176,8 @@ class wxFrame: public wxbFrame
   Rect wxMacGetStrucRect(void);
   inline wxDialogBox* wxMacGetDialog(void) {return cDialogPanel;} 
 
+  void EnforceSize(int minw, int minh, int maxw, int maxh, int incw=1, int inch=1);
+
   /*============================================================================= */
   /* Private methods */
   /*============================================================================= */

@@ -45,6 +45,8 @@ class wxDialogBox: public wxbDialogBox
   void SetTitle(char *title);
   char *GetTitle(void);
 
+  void EnforceSize(int minw, int minh, int maxw, int maxh, int incw=1, int inch=1);
+
   virtual void ChangeToGray(Bool gray);
 
   void SystemMenu(void);

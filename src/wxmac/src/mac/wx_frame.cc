@@ -556,6 +556,34 @@ void wxFrame::Maximize(Bool maximize)
     }
 }
 
+void wxFrame::EnforceSize(int minw, int minh, int maxw, int maxh, int incw, int inch)
+{
+  HISize minl, maxl;
+
+  if (minw < 0)
+    minw = 0;
+  if (minh < 0)
+    minh = 0;
+  minl.width = minw;
+  minl.height = minh;
+
+  /* Here, again, we assume that 65000 is effectively infinity.  The
+     fields of a HISize are floats, so there's no danger of
+     overflow. */
+  if (maxh < 0)
+    maxh = 65000;
+  if (maxw < 0)
+    maxh = 65000;
+
+  maxl.width = maxw;
+  maxl.height = maxh;
+
+  SetWindowResizeLimits(GetWindowFromPort(cMacDC->macGrafPort()), &minl, &maxl);
+);
+
+  cFrame->EnforceSize(minw, minh, maxw, maxh, incw, inch);
+}
+
 //-----------------------------------------------------------------------------
 // Mac platform only; internal use only.
 //-----------------------------------------------------------------------------

@@ -77,6 +77,8 @@ public:
 	void LoadAccelerators(char* table) { cFrame->LoadAccelerators(table); }
 	virtual void SetSize(int x, int y, int width, int height, int flags = wxSIZE_AUTO);
 	virtual void OnSize(int w, int h);
+
+	void EnforceSize(int minw, int minh, int maxw, int maxh, int incw=1, int inch=1);
 	
 };
 

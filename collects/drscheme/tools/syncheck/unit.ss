@@ -588,9 +588,10 @@
 			  [color-loop
 			   (lambda (zodiac-ast)
 			     (let* ([source-object?
-				     (let ([who (zodiac:origin-who
-						 (zodiac:zodiac-origin zodiac-ast))])
-				       (or (eq? who 'source) (eq? who 'reader)))]
+				     (lambda (zodiac-ast)
+				       (let ([who (zodiac:origin-who
+						   (zodiac:zodiac-origin zodiac-ast))])
+					 (or (eq? who 'source) (eq? who 'reader))))]
 				    [z:start (zodiac:location-offset (zodiac:zodiac-start zodiac-ast))]
 				    [z:finish (+ 1
 						 (zodiac:location-offset
@@ -611,7 +612,7 @@
 					    [else (void)]))))]
 				    [color-syntax
 				     (lambda ()
-				       (if source-object?
+				       (if (source-object? zodiac-ast)
 					   (let* ([start (find-next-non-whitespace (add1 z:start))]
 						  [finish (find-next-whitespace start)])
 					     (when (and finish start)
@@ -620,7 +621,7 @@
 				    
 				    [color
 				     (lambda (delta)
-				       (when (and source-object? z:finish z:start)
+				       (when (and (source-object? zodiac-ast) z:finish z:start)
 					 (change-style delta z:start z:finish)))]
 				    
 				    [color-argss
@@ -633,30 +634,31 @@
 				 (color const-style)]			      
 				[(zodiac:binding? zodiac-ast) (color bound-style)]
 				[(zodiac:bound-varref? zodiac-ast)
-				 (when source-object?
-				   (let* ([binding (zodiac:bound-varref-binding zodiac-ast)]
-					  [user-name (zodiac:binding-orig-name binding)]
-					  [gen-name (zodiac:varref-var zodiac-ast)]
-					  [start (zodiac:location-offset (zodiac:zodiac-start binding))]
-					  [finish (add1 (zodiac:location-offset (zodiac:zodiac-finish binding)))]
-					  [rename (lambda (new-name)
-						    (when new-name
-						      (rename-bindings
-						       (cons binding
-							     (hash-table-get local-bindings
-									     gen-name (lambda () null)))
-						       new-name)))])
-				     (hash-table-put!
-				      local-bindings
-				      gen-name
-				      (cons zodiac-ast
-					    (hash-table-get local-bindings
-							    gen-name (lambda () null))))
-				     (add-arrow z:start z:finish start finish user-name rename))
+				 (when (source-object? zodiac-ast)
+				   (let* ([binding (zodiac:bound-varref-binding zodiac-ast)])
+				     (when (source-object? binding)
+				       (let* ([user-name (zodiac:binding-orig-name binding)]
+					      [gen-name (zodiac:varref-var zodiac-ast)]
+					      [start (zodiac:location-offset (zodiac:zodiac-start binding))]
+					      [finish (add1 (zodiac:location-offset (zodiac:zodiac-finish binding)))]
+					      [rename (lambda (new-name)
+							(when new-name
+							  (rename-bindings
+							   (cons binding
+								 (hash-table-get local-bindings
+										 gen-name (lambda () null)))
+							   new-name)))])
+					 (hash-table-put!
+					  local-bindings
+					  gen-name
+					  (cons zodiac-ast
+						(hash-table-get local-bindings
+								gen-name (lambda () null))))
+					 (add-arrow z:start z:finish start finish user-name rename))))
 				   (color bound-style))]
 				
 				[(zodiac:top-level-varref? zodiac-ast)
-				 (when source-object?
+				 (when (source-object? zodiac-ast)
 				   (set! top-level-varrefs (cons zodiac-ast top-level-varrefs)))]
 				
 				[(or (zodiac:list? zodiac-ast)
@@ -679,15 +681,17 @@
 				[(zodiac:define-values-form? zodiac-ast)
 				 (color-syntax)
 				 (for-each 
-				  (lambda (var) (hash-table-put! 
-						 defineds (zodiac:varref-var var)
-						 (cons var
-						       (hash-table-get defineds 
-								       (zodiac:varref-var var)
-								       (lambda () null)))))
+				  (lambda (var) 
+				    (when (source-object? var)
+				      (hash-table-put! 
+				       defineds (zodiac:varref-var var)
+				       (cons var
+					     (hash-table-get defineds 
+							     (zodiac:varref-var var)
+							     (lambda () null))))))
 				  (zodiac:define-values-form-vars zodiac-ast))
 				 (for-each (lambda (var)
-					     (when (eq? 'source (zodiac:origin-who (zodiac:zodiac-origin var)))
+					     (when (source-object? var)
 					       (change-style bound-style 
 							     (zodiac:location-offset (zodiac:zodiac-start var))
 							     (add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))

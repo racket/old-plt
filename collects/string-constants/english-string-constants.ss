@@ -29,6 +29,7 @@
 
  ;;; important urls
  (web-materials "Related Web Sites") ;; menu item title
+ (tool-web-sites "Tool Web Sites")   ;; menu item title
  (drscheme-homepage "DrScheme")
  (plt-homepage "PLT")
  (how-to-use-scheme "How to Use Scheme") ;; title of a book.

@@ -114,8 +114,8 @@
       
       ;; 19.7
       (Modifiers
-       [(Modifier) (list $1)]
-       [(Modifiers Modifier) (cons $2 $1)])
+       [(Modifier) (list $1)])
+;       [(Modifiers Modifier) (cons $2 $1)])
       
       (Modifier
        [(abstract) (make-modifier 'abstract (build-src 1))])
@@ -208,7 +208,15 @@
 				 null 
 				 (make-type-spec 'void 0 (build-src 2 2))
 				 $3
+				 null)]
+       [(Type MethodDeclarator) (construct-method-header (list (make-modifier 'public #f)) null $2 $3 null)]
+       [(void MethodDeclarator)
+	(construct-method-header (list (make-modifier 'public #f))
+				 null 
+				 (make-type-spec 'void 0 (build-src 1 1))
+				 $2
 				 null)])
+
       
       (MethodDeclarator
        [(IDENTIFIER O_PAREN FormalParameterList C_PAREN) (list (make-id $1 (build-src 1)) (reverse $3) 0)]

@@ -42,7 +42,8 @@
    stack copy to account for pointers to the interior of collectable
    objects. */     
 
-extern GC_push_all_stack(void *, void *);
+extern void GC_push_all_stack(void *, void *);
+extern void GC_flush_mark_stack(void);
 extern void (*GC_push_last_roots)(void);
 #ifdef USE_SENORA_GC
 #define GC_is_marked(p) GC_base(p)
@@ -87,6 +88,7 @@ static void push_copied_stacks(void)
 	pushed_one = 1;
 	cs->pushed = 1;
 	GC_push_all_stack(cs->stack_copy, (char *)cs->stack_copy + cs->size);
+	GC_flush_mark_stack();
       }
   } while (pushed_one);
 }

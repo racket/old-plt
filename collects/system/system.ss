@@ -114,6 +114,7 @@
 		     (not (directory-exists? default-path)))
 		 (unbox path-box)
 		 default-path))))
+	(printf "mred:startup: ~a~n" (and (defined? 'mred:startup) mred:startup))
 	(load-system)
 	(current-library-path (normalize-path (current-library-path)))
 	(set! mred:plt-home-directory (normalize-path mred:plt-home-directory))
@@ -127,13 +128,13 @@
 	  (wx:exit))
 	(user-break-poll-handler wx:check-for-break)
 	(mred:change-splash-message "Command Line...")
-	(for-each (lambda (x) (apply (car x) (cdr x))) todo)
+	(for-each (lambda (x) (apply (car x) (cdr x))) (reverse todo))
 	(mred:change-splash-message "Invoking...")
 	(mred:no-more-splash-messages)
 	(mred:invoke)
-	(for-each mred:edit-file files-to-open)
 	(when mred:non-unit-startup?
 	  (set! mred:console (mred:startup)))
+	(for-each mred:edit-file files-to-open)
 	'(unless (= mred:splash-max mred:splash-counter)
 	  (printf "WARNING: splash max (~a) != splash counter (~a)~n"
 		  mred:splash-max mred:splash-counter))
@@ -181,7 +182,7 @@
 	    (apply mred:initialize rest)]
 	   [(string-ci=? "-nu" arg)
 	    (set! todo
-		  (cons (list (lambda () (mred:invoke))) todo))
+		  (cons (list (lambda () (mred:non-unit-startup))) todo))
 	    (apply mred:initialize rest)]
 	   [else (set! files-to-open (cons arg files-to-open))
 		 (apply mred:initialize rest)]))]))))

@@ -55,18 +55,13 @@
       [(_ name contract-expr expr)
        (identifier? (syntax name))
        (with-syntax ([pos-blame-stx (datum->syntax-object define-stx 'here)]
-                     [contract-id (datum->syntax-object 
-                                   #f 
-                                   (string->symbol
-                                    (format
-                                     "define/contract-contract-id-~a"
-                                     (syntax-object->datum (syntax name)))))]
-                     [id (datum->syntax-object 
-                          define-stx
-                          (string->symbol
-                           (format
-                            "define/contract-id-~a"
-                            (syntax-object->datum (syntax name)))))])
+                     [contract-id 
+                      (a:mangle-id define-stx
+                                   "define/contract-contract-id"
+                                   (syntax name))]
+                     [id (a:mangle-id define-stx
+                                      "define/contract-id"
+                                      (syntax name))])
          (syntax/loc define-stx 
           (begin
             (define contract-id contract-expr)
@@ -217,9 +212,10 @@
          ;; first arg is the original syntax object, for source locations
          (define (build-struct-code stx struct-name field-names field-contracts)
            (let* ([field-contract-ids (map (lambda (field-name) 
-                                             (mangle-id "provide/contract-field-contract"
-                                                        field-name
-                                                        struct-name))
+                                             (a:mangle-id provide-stx
+                                                          "provide/contract-field-contract"
+                                                          field-name
+                                                          struct-name))
                                            field-names)]
                   [selector-ids (map (lambda (field-name) 
                                        (build-selector-id struct-name field-name))
@@ -344,9 +340,9 @@
          ;; builds a begin expression for the entire contract and provide
          ;; the first syntax object is used for source locations
          (define (code-for-one-id stx id ctrct)
-           (with-syntax ([id-rename (mangle-id "provide/contract-id" id)]
-                         [contract-id (mangle-id "provide/contract-contract-id" id)]
-                         [pos-module-source (mangle-id "provide/contract-pos-module-source" id)]
+           (with-syntax ([id-rename (a:mangle-id provide-stx "provide/contract-id" id)]
+                         [contract-id (a:mangle-id provide-stx "provide/contract-contract-id" id)]
+                         [pos-module-source (a:mangle-id provide-stx "provide/contract-pos-module-source" id)]
                          [pos-stx (datum->syntax-object provide-stx 'here)]
                          [id id]
                          [ctrct ctrct])
@@ -385,25 +381,6 @@
                                       pos-module-source 
                                       (module-source-as-symbol #'neg-stx)
                                       (quote-syntax _)))])))))))))
-         
-         ;; mangle-id : string syntax ... -> syntax
-         ;; constructs a mangled name of an identifier from an identifier
-         ;; the name isn't fresh, so `id' combined with `ids' must already be unique.
-         (define (mangle-id prefix id . ids)
-           (datum->syntax-object
-            (syntax-local-introduce provide-stx)
-            (string->symbol
-             (string-append
-              prefix
-              (format 
-               "-~a~a"
-               (syntax-object->datum id)
-               (apply 
-                string-append 
-                (map 
-                 (lambda (id)
-                   (format "-~a" (syntax-object->datum id)))
-                 ids)))))))
          
          (with-syntax ([(bodies ...) (code-for-each-clause (syntax->list (syntax (p/c-ele ...))))])
            (syntax 

@@ -1,7 +1,26 @@
 (module contract-helpers mzscheme
 
-  (provide module-source-as-symbol build-src-loc-string)
+  (provide module-source-as-symbol build-src-loc-string mangle-id)
 
+  ;; mangle-id : syntax string syntax ... -> syntax
+  ;; constructs a mangled name of an identifier from an identifier
+  ;; the name isn't fresh, so `id' combined with `ids' must already be unique.
+  (define (mangle-id main-stx prefix id . ids)
+    (datum->syntax-object
+     (syntax-local-introduce main-stx)
+     (string->symbol
+      (string-append
+       prefix
+       (format 
+        "-~a~a"
+        (syntax-object->datum id)
+        (apply 
+         string-append 
+         (map 
+          (lambda (id)
+            (format "-~a" (syntax-object->datum id)))
+          ids)))))))
+  
   ;; build-src-loc-string : syntax -> (union #f string)
   (define (build-src-loc-string stx)
     (let ([source (syntax-source stx)]

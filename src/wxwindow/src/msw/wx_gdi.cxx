@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.1.1.1 1997/12/22 16:12:03 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.2 1998/02/03 18:49:56 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -35,14 +35,8 @@
 #include "wximgfil.h"
 #include "wximgxbm.h"
 
-#if USE_RESOURCE_LOADING_IN_MSW
-// Commented out to avoid generated dependency with an absolute path
-// #include "..\..\utils\rcparser\src\wxcurico.h"
-// #include "..\..\utils\rcparser\src\cric_prv.h"
-#endif
-
 // Resource counting
-#if 1
+#if 0
 int pen_count, brush_count, font_count, bitmap_count;
 # define COUNT_P(c) c++
 # define COUNT_M(c) --c
@@ -51,8 +45,7 @@ int pen_count, brush_count, font_count, bitmap_count;
 # define COUNT_M(c) 
 #endif
 
-Bool wxMakeBitmapAndPalette(LPBITMAPINFOHEADER lpInfo,
-			HPALETTE * phPal, HBITMAP * phBitmap);
+Bool wxMakeBitmapAndPalette(LPBITMAPINFOHEADER lpInfo, HPALETTE * phPal, HBITMAP * phBitmap);
 
 // #define DEBUG_CREATE
 // #define TRACE_GDI
@@ -61,11 +54,6 @@ IMPLEMENT_DYNAMIC_CLASS(wxFont, wxObject)
 
 wxFont::wxFont(void)
 {
-
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheFontList->Append(this);
-#endif
-
   COUNT_P(font_count);
 
   Create(12, wxDEFAULT, wxNORMAL, wxNORMAL, FALSE);
@@ -77,23 +65,14 @@ wxFont::wxFont(void)
 wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined):
   wxbFont(PointSize, Family, Style, Weight, Underlined)
 {
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheFontList->Append(this);
-#endif
-
   COUNT_P(font_count);
 
   Create(PointSize, Family, Style, Weight, Underlined);
 }
 
-/* MATTHEW: [4] New font system */
 wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, Bool Underlined):
   wxbFont(PointSize, Family, Style, Weight, Underlined)
 {
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheFontList->Append(this);
-#endif
-
   COUNT_P(font_count);
 
   Create(PointSize, 
@@ -101,7 +80,6 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weigh
 	 Style, Weight, Underlined);
 }
 
-/* MATTHEW: [4] New font system */
 Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Underlined)
 {
   fontid = FontId;
@@ -120,23 +98,16 @@ Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Under
 wxFont::~wxFont()
 {
   if (cfont)
-  {
     DeleteObject(cfont);
-  }
-  cfont = NULL ;
+
+  cfont = NULL;
 
   COUNT_M(font_count);
-
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheFontList->DeleteObject(this);
-#endif
 }
 
-/* MATTHEW: [4] Use wxTheFontNameDirectory */
 void wxFont::BuildInternalFont(HDC WXUNUSED(dc))
 {
-  if (!cfont)
-  {
+  if (!cfont) {
     BYTE ff_italic;
     int ff_weight = 0;
     int ff_family = 0;
@@ -146,22 +117,27 @@ void wxFont::BuildInternalFont(HDC WXUNUSED(dc))
     ff_face = wxTheFontNameDirectory.GetScreenName(fontid, weight, style);
     if (!*ff_face)
       ff_face = NULL;
-
-    switch (family)
-    {
-      case wxSCRIPT:     ff_family = FF_SCRIPT ;
-                         break ;
-      case wxDECORATIVE: ff_family = FF_DECORATIVE;
-                         break;
-		case wxROMAN:      ff_family = FF_ROMAN;
-                         break;
+    
+    switch (family) {
+      case wxSCRIPT:
+	ff_family = FF_SCRIPT;
+	break;
+      case wxDECORATIVE: 
+	ff_family = FF_DECORATIVE;
+	break;
+      case wxROMAN: 
+	ff_family = FF_ROMAN;
+	break;
       case wxTELETYPE:
-      case wxMODERN:     ff_family = FF_MODERN;
-                         break;
-      case wxSWISS:      ff_family = FF_SWISS;
-                         break;
+      case wxMODERN:
+	ff_family = FF_MODERN;
+	break;
+      case wxSWISS: 
+	ff_family = FF_SWISS;
+	break;
       case wxDEFAULT:
-		default:           ff_family = FF_SWISS;
+      default: 
+	ff_family = FF_SWISS;
     }
 
     if (style == wxITALIC || style == wxSLANT)
@@ -175,26 +151,7 @@ void wxFont::BuildInternalFont(HDC WXUNUSED(dc))
       ff_weight = FW_LIGHT;
     else if (weight == wxBOLD)
       ff_weight = FW_BOLD;
-/* Always calculate fonts using the screen DC (is this the best strategy?)
- * There may be confusion if a font is selected into a printer
- * DC (say), because the height will be calculated very differently.
-    // What sort of display is it?
-    int technology = ::GetDeviceCaps(dc, TECHNOLOGY);
 
-    int nHeight;
-    
-    if (technology != DT_RASDISPLAY && technology != DT_RASPRINTER)
-    {
-      // Have to get screen DC Caps, because a metafile will return 0.
-      HDC dc2 = ::GetDC(NULL);
-      nHeight = point_size*GetDeviceCaps(dc2, LOGPIXELSY)/72;
-      ::ReleaseDC(NULL, dc2);
-    }
-    else
-    {
-      nHeight = point_size*GetDeviceCaps(dc, LOGPIXELSY)/72;
-    }
-*/
     // Have to get screen DC Caps, because a metafile will return 0.
     HDC dc2 = ::GetDC(NULL);
     int nHeight = point_size*GetDeviceCaps(dc2, LOGPIXELSY)/72;
@@ -202,27 +159,25 @@ void wxFont::BuildInternalFont(HDC WXUNUSED(dc))
 
     Bool ff_underline = underlined;
     
-	 cfont = CreateFont(nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
-					 0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-					 PROOF_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
-
-	/* MATTHEW: [13] Safety */
-	if (!cfont)
-		cfont = CreateFont(12, 0, 0, 0,FW_NORMAL,0,(BYTE)0,
-					 0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-					 PROOF_QUALITY, DEFAULT_PITCH | FF_SWISS, NULL);
-
+    cfont = CreateFont(nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
+		       0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+		       PROOF_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
+    
+    if (!cfont)
+      cfont = CreateFont(12, 0, 0, 0,FW_NORMAL,0,(BYTE)0,
+			 0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+			 PROOF_QUALITY, DEFAULT_PITCH | FF_SWISS, NULL);
+    
 #ifdef DEBUG_CREATE
-	 if (cfont==NULL) wxError("Cannot create font","Internal Error") ;
+    if (cfont==NULL) wxError("Cannot create font","Internal Error");
 #endif
-
   }
 }
 
 HFONT wxFont::GetInternalFont(HDC dc)
 {
-  BuildInternalFont(dc) ;
-  return cfont ;
+  BuildInternalFont(dc);
+  return cfont;
 }
 
 /*
@@ -245,9 +200,7 @@ wxColourMap::wxColourMap(const int n, const unsigned char *red, const unsigned c
 wxColourMap::~wxColourMap(void)
 {
   if (ms_palette)
-  {
     DeleteObject(ms_palette);
-  }
 }
 
 Bool wxColourMap::Create(const int n, const unsigned char *red, const unsigned char *green, const unsigned char *blue)
@@ -256,7 +209,7 @@ Bool wxColourMap::Create(const int n, const unsigned char *red, const unsigned c
     return FALSE;
     
   NPLOGPALETTE npPal = (NPLOGPALETTE)LocalAlloc(LMEM_FIXED, sizeof(LOGPALETTE) + 
-                        (WORD)n * sizeof(PALETTEENTRY));
+						(WORD)n * sizeof(PALETTEENTRY));
   if (!npPal)
     return(FALSE);
 
@@ -264,8 +217,7 @@ Bool wxColourMap::Create(const int n, const unsigned char *red, const unsigned c
   npPal->palNumEntries = n;
 
   int i;
-  for (i = 0; i < n; i ++)
-  {
+  for (i = 0; i < n; i ++) {
     npPal->palPalEntry[i].peRed = red[i];
     npPal->palPalEntry[i].peGreen = green[i];
     npPal->palPalEntry[i].peBlue = blue[i];
@@ -284,17 +236,16 @@ int wxColourMap::GetPixel(const unsigned char red, const unsigned char green, co
 Bool wxColourMap::GetRGB(const int index, unsigned char *red, unsigned char *green, unsigned char *blue)
 {
   if (index < 0 || index > 255)
-         return FALSE;
-
+    return FALSE;
+  
   PALETTEENTRY entry;
-  if (::GetPaletteEntries(ms_palette, index, 1, &entry))
-  {
-         *red = entry.peRed;
-         *green = entry.peGreen;
-         *blue = entry.peBlue;
-         return TRUE;
+  if (::GetPaletteEntries(ms_palette, index, 1, &entry)) {
+    *red = entry.peRed;
+    *green = entry.peGreen;
+    *blue = entry.peBlue;
+    return TRUE;
   } else
-         return FALSE;
+    return FALSE;
 }
 
 // Pens
@@ -305,27 +256,23 @@ wxPen::wxPen(void)
 {
   COUNT_P(pen_count);
 
-  stipple = NULL ;
+  stipple = NULL;
   style = wxSOLID;
   width = 1;
-  join = wxJOIN_ROUND ;
-  cap = wxCAP_ROUND ;
-  nb_dash = 0 ;
-  dash = NULL ;
+  join = wxJOIN_ROUND;
+  cap = wxCAP_ROUND;
+  nb_dash = 0;
+  dash = NULL;
   cpen = NULL;
-  my_old_cpen = NULL ;
-  old_width = -1 ;
-  old_style = -1 ;
-  old_join  = -1 ;
-  old_cap  = -1 ;
-  old_nb_dash  = -1 ;
-  old_dash  = NULL ;
-  old_color  = 0 ;
-  old_stipple = NULL ;
-
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxThePenList->AddPen(this);
-#endif
+  my_old_cpen = NULL;
+  old_width = -1;
+  old_style = -1;
+  old_join  = -1;
+  old_cap  = -1;
+  old_nb_dash  = -1;
+  old_dash  = NULL;
+  old_color  = 0;
+  old_stipple = NULL;
 }
 
 wxPen::~wxPen()
@@ -333,14 +280,9 @@ wxPen::~wxPen()
   COUNT_M(pen_count);
 
   if (cpen)
-  {
     DeleteObject(cpen);
-  }
-  cpen = NULL ;
 
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxThePenList->RemovePen(this);
-#endif
+  cpen = NULL;
 }
 
 wxPen::wxPen(wxColour& col, int Width, int Style)
@@ -351,49 +293,28 @@ wxPen::wxPen(wxColour& col, int Width, int Style)
   stipple = NULL;
   width = Width;
   style = Style;
-  join = wxJOIN_ROUND ;
-  cap = wxCAP_ROUND ;
-  nb_dash = 0 ;
-  dash = NULL ;
-  cpen = NULL ;
-  my_old_cpen = NULL ;
-  old_width = -1 ;
-  old_style = -1 ;
-  old_join  = -1 ;
-  old_cap  = -1 ;
-  old_nb_dash  = -1 ;
-  old_dash  = NULL ;
-  old_color  = 0 ;
-  old_stipple = NULL ;
+  join = wxJOIN_ROUND;
+  cap = wxCAP_ROUND;
+  nb_dash = 0;
+  dash = NULL;
+  cpen = NULL;
+  my_old_cpen = NULL;
+  old_width = -1;
+  old_style = -1;
+  old_join  = -1;
+  old_cap  = -1;
+  old_nb_dash  = -1;
+  old_dash  = NULL;
+  old_color  = 0;
+  old_stipple = NULL;
 
-#ifndef WIN32
   // In Windows, only a pen of width = 1 can be dotted or dashed!
   if ((Style == wxDOT) || (Style == wxLONG_DASH) ||
       (Style == wxSHORT_DASH) || (Style == wxDOT_DASH) ||
       (Style == wxUSER_DASH))
     width = 1;
-#else
-/***
-  DWORD vers = GetVersion() ;
-  WORD  high = HIWORD(vers) ; // high bit=0 for NT, 1 for Win32s
-  // Win32s doesn't support wide dashed pens
-
-  if ((high&0x8000)!=0)
-***/
-  if (wxGetOsVersion()==wxWIN32S)
-  {
-    // In Windows, only a pen of width = 1 can be dotted or dashed!
-    if ((Style == wxDOT) || (Style == wxLONG_DASH) ||
-        (Style == wxSHORT_DASH) || (Style == wxDOT_DASH) ||
-        (Style == wxUSER_DASH))
-      width = 1;
-  }
-#endif 
-  ChangePen() ;
-
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxThePenList->AddPen(this);
-#endif
+  
+  ChangePen();
 }
 
 wxPen::wxPen(const char *col, int Width, int Style)
@@ -401,48 +322,44 @@ wxPen::wxPen(const char *col, int Width, int Style)
   COUNT_P(pen_count);
 
   colour = col;
-  stipple = NULL ;
+  stipple = NULL;
   width = Width;
   style = Style;
-  join = wxJOIN_ROUND ;
-  cap = wxCAP_ROUND ;
-  nb_dash = 0 ;
-  dash = NULL ;
-  cpen = NULL ;
-  old_width = -1 ;
-  old_style = -1 ;
-  old_join  = -1 ;
-  old_cap  = -1 ;
-  old_nb_dash  = -1 ;
-  old_dash  = NULL ;
-  old_color  = 0 ;
-  old_stipple = NULL ;
+  join = wxJOIN_ROUND;
+  cap = wxCAP_ROUND;
+  nb_dash = 0;
+  dash = NULL;
+  cpen = NULL;
+  old_width = -1;
+  old_style = -1;
+  old_join  = -1;
+  old_cap  = -1;
+  old_nb_dash  = -1;
+  old_dash  = NULL;
+  old_color  = 0;
+  old_stipple = NULL;
 
   // In Windows, only a pen of width = 1 can be dotted or dashed!
   if ((Style == wxDOT) || (Style == wxLONG_DASH) || (Style == wxSHORT_DASH) || (Style == wxDOT_DASH))
     width = 1;
     
-  ChangePen() ;
-
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxThePenList->AddPen(this);
-#endif
+  ChangePen();
 }
 
 void wxPen::ChangePen(void)
 {
   // Handled by wxPen::SelectPen() !!
   if (style==wxTRANSPARENT)
-    return ;
+    return;
 
-  Bool must_change = FALSE ;
+  Bool must_change = FALSE;
 
-  COLORREF ms_colour = 0 ;
+  COLORREF ms_colour = 0;
 
-  ms_colour = colour.pixel ;
+  ms_colour = colour.pixel;
 
   if (cpen==NULL)
-    must_change = TRUE ;
+    must_change = TRUE;
   else
     must_change = !(width==old_width     &&
                     join==old_join       &&
@@ -451,19 +368,19 @@ void wxPen::ChangePen(void)
                     nb_dash==old_nb_dash &&
                     style==old_style     &&
                     stipple==old_stipple &&
-                    old_color==ms_colour) ;
+                    old_color==ms_colour);
 
   if (!must_change)
-    return ;
+    return;
 
-  old_width = width ;
-  old_join = join ;
-  old_cap = cap ;
-  old_dash = dash ;
-  old_nb_dash = nb_dash ;
-  old_style = style ;
-  old_stipple = stipple ;
-  old_color = ms_colour ;
+  old_width = width;
+  old_join = join;
+  old_cap = cap;
+  old_dash = dash;
+  old_nb_dash = nb_dash;
+  old_style = style;
+  old_stipple = stipple;
+  old_color = ms_colour;
 
   /* Note: the pen can't be selected anywhere if we're changing it. */
   if (cpen) {
@@ -471,10 +388,6 @@ void wxPen::ChangePen(void)
     cpen = NULL;
   }
 
-  // Join style, Cap style, Pen Stippling only on Win32.
-  // Currently no time to find equivalent on Win3.1, sorry
-  // [if such equiv exist!!]
-#ifdef WIN32
   if (join==wxJOIN_ROUND        &&
       cap==wxCAP_BUTT          &&
       style!=wxUSER_DASH        &&
@@ -482,110 +395,84 @@ void wxPen::ChangePen(void)
       style!=wxOPAQUE_STIPPLE
      )
     cpen = CreatePen(wx2msPenStyle(style), width, ms_colour);
-  else
-  {
-    DWORD ms_style = PS_GEOMETRIC|wx2msPenStyle(style) ;
+  else {
+    DWORD ms_style = PS_GEOMETRIC|wx2msPenStyle(style);
+    
+    LOGBRUSH logb;
 
-    LOGBRUSH logb ;
-
-    switch(join)
-    {
-    case wxJOIN_BEVEL: ms_style |= PS_JOIN_BEVEL ; break ;
-    case wxJOIN_MITER: ms_style |= PS_JOIN_MITER ; break ;
+    switch(join) {
+    case wxJOIN_BEVEL: ms_style |= PS_JOIN_BEVEL; break;
+    case wxJOIN_MITER: ms_style |= PS_JOIN_MITER; break;
     default:
-    case wxJOIN_ROUND: ms_style |= PS_JOIN_ROUND ; break ;
+    case wxJOIN_ROUND: ms_style |= PS_JOIN_ROUND; break;
     }
 
-    switch(cap)
-    {
-    case wxCAP_PROJECTING: ms_style |= PS_ENDCAP_SQUARE ; break ;
-    case wxCAP_BUTT:       ms_style |= PS_ENDCAP_FLAT ;   break ;
+    switch(cap) {
+    case wxCAP_PROJECTING: ms_style |= PS_ENDCAP_SQUARE; break;
+    case wxCAP_BUTT:       ms_style |= PS_ENDCAP_FLAT;   break;
     default:
-    case wxCAP_ROUND:      ms_style |= PS_ENDCAP_ROUND ;  break ;
+    case wxCAP_ROUND:      ms_style |= PS_ENDCAP_ROUND;  break;
     }
 
-    switch(style)
-    {
+    switch(style) {
     case wxSTIPPLE:
     case wxOPAQUE_STIPPLE:
-      logb.lbStyle = BS_PATTERN ;
+      logb.lbStyle = BS_PATTERN;
       if (stipple)
-        logb.lbHatch = (LONG)stipple->ms_bitmap ;
+        logb.lbHatch = (LONG)stipple->ms_bitmap;
       else
-        logb.lbHatch = (LONG)0 ;
-    break ;
+        logb.lbHatch = (LONG)0;
+    break;
     case wxBDIAGONAL_HATCH:
-      logb.lbStyle = BS_HATCHED ;
-      logb.lbHatch = HS_BDIAGONAL ;
-    break ;
+      logb.lbStyle = BS_HATCHED;
+      logb.lbHatch = HS_BDIAGONAL;
+    break;
     case wxCROSSDIAG_HATCH:
-      logb.lbStyle = BS_HATCHED ;
-      logb.lbHatch = HS_DIAGCROSS ;
-    break ;
+      logb.lbStyle = BS_HATCHED;
+      logb.lbHatch = HS_DIAGCROSS;
+    break;
     case wxFDIAGONAL_HATCH:
-      logb.lbStyle = BS_HATCHED ;
-      logb.lbHatch = HS_FDIAGONAL ;
-    break ;
+      logb.lbStyle = BS_HATCHED;
+      logb.lbHatch = HS_FDIAGONAL;
+    break;
     case wxCROSS_HATCH:
-      logb.lbStyle = BS_HATCHED ;
-      logb.lbHatch = HS_CROSS ;
-    break ;
+      logb.lbStyle = BS_HATCHED;
+      logb.lbHatch = HS_CROSS;
+    break;
     case wxHORIZONTAL_HATCH:
-      logb.lbStyle = BS_HATCHED ;
-      logb.lbHatch = HS_HORIZONTAL ;
-    break ;
+      logb.lbStyle = BS_HATCHED;
+      logb.lbHatch = HS_HORIZONTAL;
+    break;
     case wxVERTICAL_HATCH:
-      logb.lbStyle = BS_HATCHED ;
-      logb.lbHatch = HS_VERTICAL ;
-    break ;
+      logb.lbStyle = BS_HATCHED;
+      logb.lbHatch = HS_VERTICAL;
+    break;
     default:
-      logb.lbStyle = BS_SOLID ;
-    break ;
+      logb.lbStyle = BS_SOLID;
+    break;
     }
-    logb.lbColor = ms_colour ;
-    wxDash *real_dash ;
-    if (style==wxUSER_DASH&&nb_dash&&dash)
-    {
-      real_dash = new wxDash[nb_dash] ;
+    logb.lbColor = ms_colour;
+    wxDash *real_dash;
+    if (style==wxUSER_DASH&&nb_dash&&dash) {
+      real_dash = new wxDash[nb_dash];
       int i;
       for (i=0;i<nb_dash;i++)
-        real_dash[i] = dash[i] * width ;
-    }
-    else
-    real_dash = NULL ;
-
-/***
-    DWORD vers = GetVersion() ;
-    WORD  high = HIWORD(vers) ; // high bit=0 for NT, 1 for Win32s
-    // Win32s doesn't have ExtCreatePen function...
-
-    if ((high&0x8000)==0)
-***/
-
-#if 0
-    if (wxGetOsVersion()==wxWINDOWS_NT)
-
-#endif
-      cpen = ExtCreatePen(ms_style,width,&logb,
-                          style==wxUSER_DASH?nb_dash:0,real_dash);
-
-#if 0
-    else
-      cpen = CreatePen(wx2msPenStyle(style), width, ms_colour);
-
-#endif
-
+        real_dash[i] = dash[i] * width;
+    } else
+      real_dash = NULL;
+    
+    cpen = ExtCreatePen(ms_style,width,&logb,
+			style==wxUSER_DASH?nb_dash:0,real_dash);
+    
     if (real_dash)
-      delete [] real_dash ;
+      delete [] real_dash;
   }
-#else
-    cpen = CreatePen(wx2msPenStyle(style), width, ms_colour);
-#endif
+
 #ifdef DEBUG_CREATE
-    if (cpen==NULL) wxError("Cannot create pen","Internal error") ;
+    if (cpen==NULL) wxError("Cannot create pen","Internal error");
 #endif
 
-  return ;
+  return;
 }
 
 HPEN wxPen::SelectPen(HDC dc)
@@ -593,11 +480,8 @@ HPEN wxPen::SelectPen(HDC dc)
   HPEN prev_pen;
 
   if (cpen && style!=wxTRANSPARENT)
-  {
     prev_pen = ::SelectObject(dc,cpen);
-  }
-  else
-  {
+  else {
     HPEN nullPen = ::GetStockObject(NULL_PEN);
     prev_pen = ::SelectObject(dc , nullPen);
   }
@@ -608,44 +492,30 @@ HPEN wxPen::SelectPen(HDC dc)
 int wx2msPenStyle(int wx_style)
 {
   int cstyle;
-/***
-#ifdef WIN32
-  DWORD vers = GetVersion() ;
-  WORD  high = HIWORD(vers) ; // high bit=0 for NT, 1 for Win32s
-#endif
-***/
-  switch (wx_style)
-  {
-    case wxDOT:
-      cstyle = PS_DOT;
+
+  switch (wx_style) {
+  case wxDOT:
+    cstyle = PS_DOT;
       break;
-    case wxSHORT_DASH:
-    case wxLONG_DASH:
-      cstyle = PS_DASH;
-      break;
-    case wxTRANSPARENT:
-      cstyle = PS_NULL;
-      break;
-    case wxUSER_DASH:
-      // User dash style not supported on Win3.1, sorry...
-#ifdef WIN32
-      // Win32s doesn't have PS_USERSTYLE
-/***
-      if ((high&0x8000)==0)
-***/
-      if (wxGetOsVersion()==wxWINDOWS_NT)
-        cstyle = PS_USERSTYLE ;
-      else
-        cstyle = PS_DOT ; // We must make a choice... This is mine!
-#else
-      cstyle = PS_DASH ;
-#endif
-      break ;
-    case wxSOLID:
-    default:
-      cstyle = PS_SOLID;
-      break;
+  case wxSHORT_DASH:
+  case wxLONG_DASH:
+    cstyle = PS_DASH;
+    break;
+  case wxTRANSPARENT:
+    cstyle = PS_NULL;
+    break;
+  case wxUSER_DASH:
+    if (wxGetOsVersion()==wxWINDOWS_NT)
+      cstyle = PS_USERSTYLE;
+    else
+      cstyle = PS_DOT; // We must make a choice... This is mine!
+    break;
+  case wxSOLID:
+  default:
+    cstyle = PS_SOLID;
+    break;
   }
+
   return cstyle;
 }
 
@@ -658,15 +528,11 @@ wxBrush::wxBrush(void)
   COUNT_P(brush_count);
   
   style = wxSOLID;
-  stipple = NULL ;
+  stipple = NULL;
   cbrush = NULL;
-  old_color = 0 ;
-  old_style = -1 ;
-  old_stipple = NULL ;
-
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheBrushList->AddBrush(this);
-#endif
+  old_color = 0;
+  old_style = -1;
+  old_stipple = NULL;
 }
 
 wxBrush::~wxBrush()
@@ -674,14 +540,9 @@ wxBrush::~wxBrush()
   COUNT_M(brush_count);
 
   if (cbrush)
-  {
     DeleteObject(cbrush);
-  }
-  cbrush = NULL ;
 
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheBrushList->RemoveBrush(this);
-#endif
+  cbrush = NULL;
 }
 
 wxBrush::wxBrush(wxColour& col, int Style)
@@ -690,108 +551,93 @@ wxBrush::wxBrush(wxColour& col, int Style)
 
   colour = col;
   style = Style;
-  stipple = NULL ;
+  stipple = NULL 
   cbrush = NULL;
-  old_color = 0 ;
-  old_style = -1 ;
-  old_stipple = NULL ;
+  old_color = 0;
+  old_style = -1;
+  old_stipple = NULL;
 
   ChangeBrush();
-  
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheBrushList->AddBrush(this);
-#endif
 }
 
 void wxBrush::ChangeBrush(void) 
 {
   // Handled by wxBrush::SelectBrush() !!
   if (style==wxTRANSPARENT)
-    return ;
+    return;
 
-  Bool must_change = FALSE ;
+  Bool must_change = FALSE;
 
-  COLORREF ms_colour = 0 ;
+  COLORREF ms_colour = 0;
 
-  ms_colour = colour.pixel ;
+  ms_colour = colour.pixel;
 
   if (cbrush==NULL)
-    must_change = TRUE ;
+    must_change = TRUE;
   else
-    must_change = !(style==old_style     &&
-                    stipple==old_stipple &&
-                    old_color==ms_colour) ;
+    must_change = ((style != old_style)
+		   || (stipple != old_stipple)
+		   || (old_color != ms_colour));
 
   if (!must_change)
-    return ;
+    return;
 
-	/* Note: brush isn't selected anywhere if we can change it. */
+  /* Note: brush isn't selected anywhere if we can change it. */
   if (cbrush) {
-	  DeleteObject(cbrush);
-      cbrush = NULL;
+    DeleteObject(cbrush);
+    cbrush = NULL;
   }
 
-  switch (style)
-  {
-/****
-    // Don't reset cbrush, wxTRANSPARENT is handled by wxBrush::SelectBrush()
-    // this could save (many) time if frequently switching from
-    // wxSOLID to wxTRANSPARENT, because Create... is not always called!!
-    //
-    case wxTRANSPARENT:
-      cbrush = NULL;  // Must always select a suitable background brush
-                      // - could choose white always for a quick solution
+  switch (style) {
+  case wxTRANSPARENT:
       break;
-***/
-    case wxBDIAGONAL_HATCH:
-      cbrush = CreateHatchBrush(HS_BDIAGONAL,ms_colour) ;
-    break ;
-    case wxCROSSDIAG_HATCH:
-      cbrush = CreateHatchBrush(HS_DIAGCROSS,ms_colour) ;
-    break ;
-    case wxFDIAGONAL_HATCH:
-      cbrush = CreateHatchBrush(HS_FDIAGONAL,ms_colour) ;
-    break ;
-    case wxCROSS_HATCH:
-      cbrush = CreateHatchBrush(HS_CROSS,ms_colour) ;
-    break ;
-    case wxHORIZONTAL_HATCH:
-      cbrush = CreateHatchBrush(HS_HORIZONTAL,ms_colour) ;
-    break ;
-    case wxVERTICAL_HATCH:
-      cbrush = CreateHatchBrush(HS_VERTICAL,ms_colour) ;
-    break ;
-    case wxSTIPPLE:
-    case wxOPAQUE_STIPPLE:
-      if (stipple)
-        cbrush = CreatePatternBrush(stipple->ms_bitmap) ;
-      else
-        cbrush = CreateSolidBrush(ms_colour) ;
-      break ;
-    case wxSOLID:
-    default:
-      cbrush = CreateSolidBrush(ms_colour) ;
-      break;
+  case wxBDIAGONAL_HATCH:
+    cbrush = CreateHatchBrush(HS_BDIAGONAL, ms_colour);
+    break;
+  case wxCROSSDIAG_HATCH:
+    cbrush = CreateHatchBrush(HS_DIAGCROSS, ms_colour);
+    break;
+  case wxFDIAGONAL_HATCH:
+    cbrush = CreateHatchBrush(HS_FDIAGONAL, ms_colour);
+    break;
+  case wxCROSS_HATCH:
+    cbrush = CreateHatchBrush(HS_CROSS, ms_colour);
+    break;
+  case wxHORIZONTAL_HATCH:
+    cbrush = CreateHatchBrush(HS_HORIZONTAL, ms_colour);
+    break;
+  case wxVERTICAL_HATCH:
+    cbrush = CreateHatchBrush(HS_VERTICAL, ms_colour);
+    break;
+  case wxSTIPPLE:
+  case wxOPAQUE_STIPPLE:
+    if (stipple)
+      cbrush = CreatePatternBrush(stipple->ms_bitmap);
+    else
+      cbrush = CreateSolidBrush(ms_colour);
+    break;
+  case wxSOLID:
+  default:
+    cbrush = CreateSolidBrush(ms_colour);
+    break;
   }
-  old_style = style ;
-  old_stipple = stipple ;
-  old_color = ms_colour ;
+  old_style = style;
+  old_stipple = stipple;
+  old_color = ms_colour;
+
 #ifdef DEBUG_CREATE
-    if (cbrush==NULL) wxError("Cannot create brush","Internal error") ;
+  if (cbrush==NULL) wxError("Cannot create brush","Internal error");
 #endif
 
 }
 
 HBRUSH wxBrush::SelectBrush(HDC dc)
 {
-  HBRUSH prev_brush ;
+  HBRUSH prev_brush;
 
-  if (cbrush && style!=wxTRANSPARENT)
-  {
+  if (cbrush && style!=wxTRANSPARENT) {
     prev_brush = ::SelectObject(dc, cbrush);
-  }
-  else
-  {
+  } else {
     HBRUSH nullBrush = ::GetStockObject(NULL_BRUSH);
     prev_brush = ::SelectObject(dc, nullBrush);
   }
@@ -805,15 +651,11 @@ wxBrush::wxBrush(const char *col, int Style)
 
   colour = col;
   style = Style;
-  stipple = NULL ;
+  stipple = NULL;
   cbrush = NULL;
-  old_color = 0 ;
-  old_style = -1 ;
-  old_stipple = NULL ;
-
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheBrushList->AddBrush(this);
-#endif
+  old_color = 0;
+  old_style = -1;
+  old_stipple = NULL;
 }
 
 // Icons
@@ -822,7 +664,6 @@ IMPLEMENT_DYNAMIC_CLASS(wxIcon, wxBitmap)
 wxIcon::wxIcon(void) : wxBitmap()
 {
   SetupIcon();
-//  wxTheIconList->Append(this);
 }
 
 wxIcon::wxIcon(char bits[], int width, int height)
@@ -835,7 +676,6 @@ wxIcon::wxIcon(const char *icon_file, long flags)
 : wxBitmap((char *)icon_file, flags)
 {
   SetupIcon();
-//  wxTheIconList->Append(this);
 }
 
 wxIcon::~wxIcon(void)
@@ -882,10 +722,10 @@ Bool wxIcon::LoadFile(char *icon_file, long flags)
       ms_icon = LoadIcon(wxhInstance, icon_file);
     if (ms_icon) 
     {
-      ICONINFO info ;
+      ICONINFO info;
       if (GetIconInfo(ms_icon, &info))
       {
-        HBITMAP ms_bitmap = info.hbmMask ;
+        HBITMAP ms_bitmap = info.hbmMask;
         if (ms_bitmap)
         {
           BITMAP bm;
@@ -894,9 +734,9 @@ Bool wxIcon::LoadFile(char *icon_file, long flags)
           height = bm.bmHeight;
         }
         if (info.hbmMask)
-          DeleteObject(info.hbmMask) ;
+          DeleteObject(info.hbmMask);
         if (info.hbmColor)
-          DeleteObject(info.hbmColor) ;
+          DeleteObject(info.hbmColor);
       }
     }
     ok = (ms_icon != 0);
@@ -916,17 +756,17 @@ wxCursor::wxCursor(void)
 {
   __type = wxTYPE_CURSOR;
   width = 32; height = 32;
-  ms_cursor = NULL ;
+  ms_cursor = NULL;
   destroyCursor = FALSE;
-//  wxTheCursorList->Append(this) ;
+//  wxTheCursorList->Append(this);
 }
 
 wxCursor::wxCursor(char WXUNUSED(bits)[], int WXUNUSED(width), int WXUNUSED(height))
 {
   __type = wxTYPE_CURSOR;
-  ms_cursor = NULL ;
+  ms_cursor = NULL;
   destroyCursor = FALSE;
-//  wxTheCursorList->Append(this) ;
+//  wxTheCursorList->Append(this);
 }
 
 wxCursor::wxCursor(const char *cursor_file, long flags, int hotSpotX, int hotSpotY)
@@ -974,7 +814,7 @@ wxCursor::wxCursor(const char *cursor_file, long flags, int hotSpotX, int hotSpo
       ok = TRUE;
 #endif
   }
-//  wxTheCursorList->Append(this) ;
+//  wxTheCursorList->Append(this);
 }
 
 // Cursors by stock number
@@ -1097,13 +937,13 @@ wxCursor::wxCursor(int cursor_type)
       ms_cursor = LoadCursor(NULL, IDC_ARROW);
       break;
   }
-//  wxTheCursorList->Append(this) ;
+//  wxTheCursorList->Append(this);
   ok = !!ms_cursor;
 }
 
 wxCursor::~wxCursor(void)
 {
-//  wxTheCursorList->DeleteObject(this) ;
+//  wxTheCursorList->DeleteObject(this);
 }
 
 // Global cursor setting
@@ -1178,13 +1018,10 @@ wxBitmap::wxBitmap(void)
   width = 0;
   height = 0;
   depth = 0;
-  ms_bitmap = NULL ;
+  ms_bitmap = NULL;
   selectedInto = NULL;
   numColors = 0;
   bitmapColourMap = NULL;
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheBitmapList->Append(this);
-#endif
   WXGC_IGNORE(selectedInto);
 }
 
@@ -1193,8 +1030,8 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height, int no_bits)
   COUNT_P(bitmap_count);
 
   __type = wxTYPE_BITMAP;
-  width = the_width ;
-  height = the_height ;
+  width = the_width;
+  height = the_height;
   depth = no_bits = 1;
   numColors = 0;
   bitmapColourMap = NULL;
@@ -1207,9 +1044,6 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height, int no_bits)
     ok = FALSE;
 
   selectedInto = NULL;
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheBitmapList->Append(this);
-#endif
   WXGC_IGNORE(selectedInto);
 }
 
@@ -1227,9 +1061,6 @@ wxBitmap::wxBitmap(int w, int h, int d)
   bitmapColourMap = NULL;
 
   (void)Create(w, h, d);
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheBitmapList->Append(this);
-#endif
   WXGC_IGNORE(selectedInto);
 }
 
@@ -1247,9 +1078,6 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
   bitmapColourMap = NULL;
 
   LoadFile(bitmap_file, (int)flags);
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheBitmapList->Append(this);
-#endif
   WXGC_IGNORE(selectedInto);
 }
 
@@ -1507,14 +1335,10 @@ wxBitmap::~wxBitmap(void)
   {
     DeleteObject(ms_bitmap);
   }
-  ms_bitmap = NULL ;
+  ms_bitmap = NULL;
 
   if (bitmapColourMap)
     delete bitmapColourMap;
-
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxTheBitmapList->DeleteObject(this);
-#endif
 }
 
 Bool wxBitmap::SaveFile(char *filename, int typ, wxColourMap *cmap)

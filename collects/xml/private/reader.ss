@@ -286,14 +286,14 @@
       
       ;; lex-name : Input-port (-> Location) -> Symbol
       (define (lex-name in pos)
-        (let ([c (read-char in)])
+        (let ([c (non-eof read-char in pos)])
           (unless (name-start? c)
             (lex-error in pos "expected name, received ~s" c))
           (string->symbol
            (list->string
             (cons c (let lex-rest ()
                       (cond
-                        [(name-char? (peek-char in))
+                        [(name-char? (non-eof peek-char in pos))
                          (cons (read-char in) (lex-rest))]
                         [else null])))))))
       

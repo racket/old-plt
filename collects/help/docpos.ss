@@ -36,4 +36,5 @@
    ("match" . "PLT Match: Pattern Matching for Scheme Manual")
    ("mzc" . "PLT mzc: MzScheme Compiler Manual")
    ("insidemz" . "Inside PLT MzScheme")
-   ("tools" . "PLT Tools: DrScheme Extension Manual")))
+   ("tools" . "PLT Tools: DrScheme Extension Manual")
+   ("t-y-scheme" . "Teach Yourself Scheme in Fixnum Days")))

@@ -443,6 +443,7 @@ please adhere to these guidelines:
  (font-smoothing-none "None")
  (font-smoothing-some "Some")
  (font-smoothing-all "All")
+ (font-smoothing-default "Use system-wide default")
  (select-font-name "Select Font Name")
  (example-text "Example Text:")
  (only-warn-once "Only warn once when definitions and interactions are not synchronized")

@@ -130,8 +130,12 @@
   (send item-keymap map-function "leftbutton" "select")
   (send item-keymap map-function "leftbuttondouble" "double-select")
 
+  (define hierarchical-list-item<%>
+    (interface ()
+      get-editor is-selected? select user-data))
+
   (define hierarchical-list-item%
-    (class null (snip)
+    (class* null (hierarchical-list-item<%>) (snip)
       (private
 	[data #f])
       (public
@@ -140,8 +144,12 @@
 	[select (lambda (on?) (send snip select on?))]
 	[user-data (case-lambda [() data][(x) (set! data x)])])))
 
+  (define hierarchical-list-compound-item<%>
+    (interface (hierarchical-list-item<%>)
+      new-item new-list delete-item get-items))
+
   (define hierarchical-list-compound-item%
-    (class hierarchical-list-item% (snip)
+    (class* hierarchical-list-item% (hierarchical-list-compound-item<%>) (snip)
       (override
 	[get-editor (lambda () (send snip get-title-buffer))])
       (public

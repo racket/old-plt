@@ -1,39 +1,84 @@
 
+_Hierarchical List Control_
+
 hierlists.ss defines hierlist^
 hierlistr.ss returns a unit/sig, importes mred^ and exports hierlist^
 hierlist.ss invoke-opens hierlistr.ss
 
-hierlist defines three classes:
+_hierlist_ defines three classes:
 
- hierarchical-list%, derived from editor-canvas%
+--------------------------------------------------
+
+> hierarchical-list%, derived from editor-canvas%
    
   New methods:
-   (get-selected) - returns #f or an instance of  hierarchical-list-item%
-   (new-item) - creates and returns a new (empty) hierarchical-list-item%
-   (new-list) - creates and returns a new (empty) hierarchical-list-compound-item%
-   (delete-item i) - delete hierarchical-list-item% i from the list
-   (get-items) - returns a list of the items in the list
-   (select i) - called for new select of i, hierarchical-list-item%  or #f,
-                where #f means that no item is now selected
-   (double-select i) - called for double-click on i hierarchical-list-item% i
-   (item-opened i) - called when the arrow on i is turned down
-   (item-closed i) - called when the arrow on i is turned up
 
- hierarchical-list-item%, instantiate via new-item
+>  get-selected :: (send a-list get-selected) - returns #f or an
+     instance of hierarchical-list-item<%>
+
+>  new-item :: (send a-list new-item) - creates and returns a new
+     (empty) hierarchical-list-item<%>
+
+>  new-list :: (send a-list new-list) - creates and returns a new
+     (empty) hierarchical-list-compound-item<%>
+
+>  delete-item :: (send a-list delete-item i) - delete
+     hierarchical-list-item<%> i from the list
+
+>  get-items :: (send a-list get-items) - returns a list of the items
+     in the list
+
+>  selectable :: (send a-list selectable) - returns #t if items are
+     selectable, #f otherwise; default is #t
+>  selectable :: (send a-list selectable on?) - sets whether items
+     are selectable
+
+>  on-select :: (send a-list on-select i) - called for new select of
+     `i', hierarchical-list-item<%> or #f, where #f means that no item
+     is selected
+
+>  on-double-select :: (send a-list on-double-select i) - called for
+     double-click on hierarchical-list-item<%> `i'
+
+>  on-item-opened :: (send a-list on-item-opened i) - called when the
+     arrow for `i' is turned down
+
+>  on-item-closed :: (send a-list on-item-closed i) - called when the
+     arrow for `i' is turned up
+
+--------------------------------------------------
+
+> hierarchical-list-item<%>, instantiate via new-item
 
   Methods:
-   (get-editor) - returns text% editor containing the display representation 
-                  of the item
-   (is-selected?) - returns #t or #f
-   (select on?) - selects or deselects the item; hierarchical-list%'s select is called
-   (user-data) - returns user data; initialized to #f
-   (user-data v) - sets user data to v
 
- hierarchical-list-compound-item%, derived from hierarchical-list-item%, 
-   instantiate via new-list
+>  get-editor :: (send an-item get-editor) - returns text% editor
+     containing the display representation of the item
+
+>  is-selected? :: (send an-item is-selected?) - returns #t or #f
+
+>  select :: (send an-item select on?) - selects or deselects the
+     item; hierarchical-list%'s select is called
+
+>  user-data :: (send an-item user-data) - returns user data;
+     initialized to #f
+>  user-data :: (send an-item user-data v) - sets user data to v
+
+--------------------------------------------------
+
+> hierarchical-list-compound-item<%>, instantiate via new-list
+  extends hierarchical-list-item<%>
 
   New methods:
-   (new-item) - creates and returns a new (empty) hierarchical-list-item%
-   (new-list) - creates and returns a new (empty) hierarchical-list-compound-item%
-   (delete-item i) - delete hierarchical-list-item% i from the compound item
-   (get-items) - returns a list of the items in the compound item
+
+>  new-item :: (send a-list-item new-item) - creates and returns a new
+     (empty) hierarchical-list-item<%>
+
+>  new-list :: (send a-list-item new-list) - creates and returns a new
+     (empty) hierarchical-list-compound-item<%>
+
+>  delete-item :: (send a-list delete-item i) - delete
+     hierarchical-list-item<%> `i' from the compound item
+
+>  get-items :: (send a-list-item get-items) - returns a list of the
+     items in the compound item

@@ -1,3 +1,8 @@
+(unless (equal? (version) "100/21")
+  (error 'mred-interfaces
+         "mred-interfaces.ss and mred-interfacess.ss compiled for version ~a, not version ~a"
+         "100/21"
+         (version)))
 (require-library "mred-interfacess.ss" "framework")
 
 (define mred-interfaces@
@@ -743,8 +748,8 @@
                           on-move
                           has-focus?
                           get-cursor
-                          focus
                           get-number
+                          focus
                           is-enabled?
                           get-top-level-window
                           get-graphical-min-size
@@ -1249,8 +1254,8 @@
                           on-move
                           has-focus?
                           get-cursor
-                          focus
                           get-number
+                          focus
                           is-enabled?
                           get-top-level-window
                           get-graphical-min-size
@@ -1699,6 +1704,7 @@
                           is-enabled?
                           get-top-level-window
                           get-graphical-min-size
+                          lazy-refresh
                           set-line-count
                           get-plain-label
                           accept-drop-files
@@ -1711,7 +1717,6 @@
                           on-subwindow-char
                           min-client-width
                           min-client-height
-                          lazy-refresh
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1833,12 +1838,7 @@
                       ($$color<%>
                         (interface () copy-from green blue ok? set red))
                       ($$clipboard-client<%>
-                        (interface
-                          ()
-                          being-replaced
-                          add-type
-                          get-types
-                          get-data))
+                        (interface () on-replaced add-type get-types get-data))
                       ($$choice<%>
                         (interface
                           ()
@@ -1848,8 +1848,8 @@
                           on-move
                           has-focus?
                           get-cursor
-                          focus
                           get-number
+                          focus
                           is-enabled?
                           get-top-level-window
                           get-graphical-min-size

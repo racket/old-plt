@@ -129,12 +129,12 @@ string=? ; exec mred -magqvf $0
 
 (define (version-check filename)
   `(unless (equal? (version) ,(version))
-     (error ',filename "compiled for version ~a, not version ~a" ,(version) (version))))
+     (error 'mred-interfaces "mred-interfaces.ss and mred-interfacess.ss compiled for version ~a, not version ~a" ,(version) (version))))
 
 (let ([fn (build-path framework-dir "mred-interfacess.ss")])
   (call-with-output-file fn
     (lambda (port)
-      (pretty-print (version-check fn))
+      (pretty-print (version-check fn) port)
       (pretty-print new-signature-definition port)
       (newline port))
   'truncate))
@@ -142,7 +142,7 @@ string=? ; exec mred -magqvf $0
 (let ([fn (build-path framework-dir "mred-interfaces.ss")])
   (call-with-output-file fn
     (lambda (port)
-      (pretty-print (version-check fn))
+      (pretty-print (version-check fn) port)
       (pretty-print '(require-library "mred-interfacess.ss" "framework") port)
       (newline port)
       (pretty-print new-unit-definition port))

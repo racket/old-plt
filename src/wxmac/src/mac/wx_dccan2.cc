@@ -401,8 +401,8 @@ void wxCanvasDC::DrawArc(double x,double y,double w,double h,double start,double
     }
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
       if ((anti_alias == 2)
-	  && (scale_x == 1.0)
-	  && (scale_y == 1.0)
+	  && (user_scale_x == 1.0)
+	  && (user_scale_y == 1.0)
 	  && (current_pen->GetWidthF() <= 1.0)) {
 	x += 0.5;
 	y += 0.5;

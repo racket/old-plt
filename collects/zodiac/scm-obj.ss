@@ -560,6 +560,7 @@
 		       (in:initvars (pat:pexpand `,optarglist-pattern
 				      p-env kwd))
 		       (in:ivars (pat:pexpand '(inst-vars ...) p-env kwd)))
+		  (distinct-valid-syntactic-id/s? in:supervars)
 		  (let* ((proc:supervars (map create-supervar-binding+marks
 					   in:supervars))
 			  (proc:superinits (map

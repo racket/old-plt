@@ -189,12 +189,12 @@
 		    ((arglists+exprs
 		       (map
 			 (lambda (arg body)
+			   (distinct-valid-syntactic-id/s? arg)
 			   (let* ((arglist
 				    (expand-expr arg env attributes
 				      arglist-decls-vocab))
 				   (arg-vars+marks
 				     (arglist-vars arglist)))
-			     (distinct-valid-id/s? (map car arg-vars+marks))
 			     (extend-env arg-vars+marks env)
 			     (begin0
 			       (cons

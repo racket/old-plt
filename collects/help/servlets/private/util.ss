@@ -4,37 +4,42 @@
 	   (lib "xml.ss" "xml")
 	   (lib "finddoc.ss" "help" "private")
 	   (lib "string-constant.ss" "string-constants")
- 	   (lib "plt-browser.ss" "help" "private")
 	   (lib "docpos.ss" "help" "private"))
 
   (provide get-pref/default
 	   get-bool-pref/default
 	   put-prefs
 	   cvs?
-	   use-frames?
 	   search-height-default
 	   search-bg-default
 	   search-text-default
 	   search-link-default
-	   use-frames-default
 	   color-highlight
 	   color-with
 	   hexify-string
 	   main-manual-page
-           make-main-frameset
 	   manual-entry
 	   collection-doc-link
 	   fold-into-web-path
-	   color-choices
 	   home-page
-	   plt-version
-           text-frame
 	   format-collection-message
 	   nl
+           plt-version
 	   make-javascript
 	   redir-javascript
 	   onload-redir)
 
+  ;; would be nice if this could use version:version from the framework.
+  (define (plt-version)
+    (let ([mz-version (version)]
+          [stamp-collection
+           (with-handlers ([not-break-exn? (lambda (exn) #f)])
+             (collection-path "cvs-time-stamp"))])
+      (if (and stamp-collection (file-exists? (build-path stamp-collection "stamp.ss")))
+          (format "~a-cvs~a" mz-version (dynamic-require '(lib "stamp.ss" "cvs-time-stamp") 'stamp))
+          mz-version)))
+  
+  
   (define home-page 
     `(A ((HREF "/servlets/home.ss") (TARGET "_top"))
 	,(string-constant plt:hd:home)))
@@ -53,7 +58,6 @@
   (define search-bg-default "lightsteelblue")
   (define search-text-default "black")
   (define search-link-default "darkblue")
-  (define use-frames-default "true")
 
   (define *the-highlight-color* "forestgreen")
 
@@ -68,28 +72,6 @@
   (define (cvs?)
     (directory-exists? 
      (build-path (collection-path "help") "CVS")))
-
-  (define (use-frames?)
-    (and (not (use-plt-browser?))
-	 (get-bool-pref/default 'plt:hd:use-frames use-frames-default)))
-
-  (define search-frame-servlet "/servlets/search.ss")
-  
-  (define (make-main-frameset search-string lower-url)
-    (let ([search-height 
-	   (get-pref/default 'plt:hd:search-height search-height-default)])
-      `(FRAMESET ((ROWS ,(string-append search-height ",*")))
-		 (FRAME ((NAME "search")
-			 (SRC ,(if search-string
-				   (string-append 
-				    search-frame-servlet
-				    "?search-string="
-				    (hexify-string search-string))
-				   search-frame-servlet))
-			 (MARGINHEIGHT "2")
-			 (MARGINWIDTH "2")))
-		 (FRAME ((NAME "main")
-			 (SRC ,lower-url))))))
 
   ; manual is doc collection subdirectory, e.g. "mred"
   (define (main-manual-page manual)
@@ -159,43 +141,9 @@
 		   s))
 	     #f
 	     lst))
-
-  (define color-choices
-    '("aliceblue" "antiquewhite" "aqua" "aquamarine" "azure"
-      "beige" "bisque" "black" "blanchedalmond" "blue"
-      "blueviolet" "brown" "burlywood" "cadetblue" "chartreuse"
-      "chocolate" "coral" "cornflower" "cornsilk" "crimson" "cyan"
-      "darkblue" "darkcyan" "darkgoldenrod" "darkgray"
-      "darkgreen" "darkkhaki" "darkmagenta" "darkolivegreen"
-      "darkorange" "darkorchid" "darkred" "darksalmon"
-      "darkseagreen" "darkslateblue" "darkslategray"
-      "darkturquoise" "darkviolet" "deeppink" "deepskyblue"
-      "dimgray" "dodgerblue" "firebrick" "floralwhite"
-      "forestgreen" "fuchsia" "gainsboro" "ghostwhite" "gold"
-      "goldenrod" "gray" "green" "greenyellow" "honeydew"
-      "hotpink" "indianred" "indigo" "ivory" "khaki" "lavender"
-      "lavenderblush" "lawngreen" "lemonchiffon" "lightblue"
-      "lightcoral" "lightcyan" "lightgoldenrodyellow"
-      "lightgreen" "lightgray" "lightpink" "lightsalmon"
-      "lightseagreen" "lightskyblue" "lightslategray"
-      "lightsteelblue" "lightyellow" "lime" "limegreen" "linen"
-      "magenta" "maroon" "mediumaquamarine" "mediumblue"
-      "mediumorchid" "mediumpurple" "mediumseagreen"
-      "mediumslateblue" "mediumspringgreen"
-      "mediumturquoise" "mediumvioletred" "midnightblue"
-      "mintcream" "mistyrose" "moccasin" "navajowhite" "navy"
-      "oldlace" "olive" "olivedrab" "orange" "orangered" "orchid"
-      "palegoldenrod" "palegreen" "paleturquoise"
-      "palevioletred" "papayawhip" "peachpuff" "peru" "pink"
-      "plum" "powderblue" "purple" "red" "rosybrown" "royalblue"
-      "saddlebrown" "salmon" "sandybrown" "seagreen" "seashell"
-      "sienna" "silver" "skyblue" "slateblue" "slategray" "snow"
-      "springgreen" "steelblue" "tan" "teal" "thistle" "tomato"
-      "turquoise" "violet" "wheat" "white" "whitesmoke" "yellow"
-      "yellowgreen"))
-
-  (define (text-frame)
-    (if (use-frames?) "main" "_top"))
+  
+  ;; ??
+  ;(define (text-frame) "_top")
 
   (define (format-collection-message s)
     `(B ((STYLE "color:green")) ,s))
@@ -210,16 +158,6 @@
 		      (map (lambda (s)
 			     (string-append s nl))
 			   ss)))))
-
-  (define (plt-version)
-    (let ([mz-version (version)]
-	  [stamp-collection
-	   (with-handlers
-	    ([void (lambda _ #f)])
-	    (collection-path "cvs-time-stamp"))])
-      (if (and stamp-collection (file-exists? (build-path stamp-collection "stamp.ss")))
-	  (format "~a-cvs~a" mz-version (dynamic-require '(lib "stamp.ss" "cvs-time-stamp") 'stamp))
-	  mz-version)))
 
   (define (redir-javascript k-url)
     (make-javascript

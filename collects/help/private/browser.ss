@@ -1,16 +1,9 @@
 (module browser mzscheme
-  (require (lib "list.ss")
-	   (lib "browser.ss" "net")
-           (lib "util.ss" "help" "servlets" "private"))
+  (require (lib "browser.ss" "net"))
 
   (require "server-config.ss")
 
   (provide help-desk-browser help-desk-navigate)
-
-  (define (build-dispatch-url hd-cookie url)
-    (format "http://127.0.0.1:~a/servlets/start.ss?url=~a"
-	    (hd-cookie->port hd-cookie)
-	    (hexify-string url)))
 
   (define home-page-format "http://127.0.0.1:~a/servlets/home.ss")
 

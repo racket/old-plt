@@ -6,8 +6,7 @@
 	   (lib "pregexp.ss")
            "colldocs.ss"
            "docpos.ss"
-	   (lib "util.ss" "help" "servlets" "private")
-	   (lib "remote.ss" "help" "servlets" "private"))
+           "../servlets/private/util.ss")
 
   ; to get CSS style spec
   (require (lib "xml.ss" "xml"))
@@ -16,8 +15,6 @@
   (provide find-manuals)
  
   (define re:title (regexp "<[tT][iI][tT][lL][eE]>(.*)</[tT][iI][tT][lL][eE]>"))
-
-  (define remote-connections? (unbox remote-box))
 
   (define (find-manuals)
     (let* ([sys-type (system-type)]
@@ -95,16 +92,15 @@
                                     (string-append 
                                      "<BR>&nbsp;&nbsp;"
 				     "<FONT SIZE=\"-1\">"
-				     (if (or remote-connections?
-					     (not (assoc manual-dir known-docs)))
-					 ""
+				     (if (assoc manual-dir known-docs)
 					 (string-append
 					  (format 
-					   "[<A HREF=\"/servlets/download-manual.ss?manual=~a&label=~a\">~a</A>]"
+					   "[<A mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals) (list (cons |~a| |~a|)))\">~a</A>]"
 					   manual-dir
-					   (hexify-string name)
-					   (string-constant plt:hd:refresh))
-					  "&nbsp;"))
+					   name
+                                           (string-constant plt:hd:refresh))
+					  "&nbsp;")
+					 "")
 				     (format (string-constant plt:hd:manual-installed-date)
                                              (date->string
                                               (seconds->date
@@ -137,8 +133,8 @@
 	  
 	  (list "<H1>Installed Manuals</H1>")
 	  
-	  (if (and cvs-user? (not remote-connections?))
-	      (list "<b>CVS:</b> <a href=\"/servlets/refresh-manuals.ss\" target=\"_top\">"
+	  (if cvs-user?
+	      (list "<b>CVS:</b> <a mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals))\">"
 		    (string-constant plt:hd:refresh-all-manuals)
 		    "</a>")
 	      '())
@@ -186,9 +182,9 @@
 		 (lambda (doc-pair)
 		   (let ([manual (car doc-pair)]
 			 [name (cdr doc-pair)])
-		     (format "<LI> <A HREF=\"/servlets/missing-manual.ss?manual=~a&name=~a\">~a</A>~a"
+		     (format "<LI> <A mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals) (list (cons |~a| |~a|)))\">~a</A>~a"
 			     manual
-			     (hexify-string name)
+			     name
 			     name
 			     (if (file-exists? 
 				  (build-path doc-collection-path manual "hdindex"))

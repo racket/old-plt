@@ -2,12 +2,14 @@
 
   (require (lib "etc.ss")
 	   (lib "pregexp.ss")
-	   (lib "xml.ss" "xml"))
-
-  (require "util.ss")	
+	   "util.ss")	
 
   (provide read-lines)
 
+  (define read-lines
+    (opt-lambda (file caption [offset #f])
+      (template caption (get-the-lines file offset))))
+  
   (define (semi-flatten lst)
     (if (null? lst) 
 	'()
@@ -54,7 +56,7 @@
   (define http-regexp (make-url-regexp "http"))
   (define cheap-http-regexp (regexp "http://"))
   (define (http-format url)
-    `(A ((HREF ,url) (TARGET ,(text-frame))) ,url))
+    `(A ((HREF ,url)) ,url))
   (define ftp-regexp (make-url-regexp "ftp"))
   (define cheap-ftp-regexp (regexp "ftp://"))
   (define ftp-format http-format) 
@@ -81,17 +83,16 @@
       (let ([curr-len (string-length built-line)])
 	(let-values 
 	 ([(raw-indices formatter)
-	   (let regexp-loop 
-	       ([regexps (list http-regexp
-			       ftp-regexp
-			       email-regexp)]
-		[cheap-regexps 
-		 (list cheap-http-regexp
-		       cheap-ftp-regexp
-		       cheap-email-regexp)]
-		[formats (list http-format
-			       ftp-format
-			       email-format)])
+	   (let regexp-loop ([regexps (list http-regexp
+                                            ftp-regexp
+                                            email-regexp)]
+                             [cheap-regexps 
+                              (list cheap-http-regexp
+                                    cheap-ftp-regexp
+                                    cheap-email-regexp)]
+                             [formats (list http-format
+                                            ftp-format
+                                            email-format)])
 	     (if (null? regexps)
 		 (values #f #f)
 		 (let* ([curr-regexp (car regexps)]
@@ -130,15 +131,23 @@
     (let ([len (string-length line)])
       (if (and (> len 3)
 	       (char=? (string-ref line 0) #\>))
-	  `(B ">"
-	      ,(color-highlight 
-		(substring line 1 len)))
-	  line)))
+          (let* ([rest-of-line (substring line 1 len)]
+                 [port (open-input-string rest-of-line)]
+                 [dist
+                  (with-handlers ([not-break-exn? (lambda (x) #f)])
+                    (read port)
+                    (let-values ([(_1 _2 pos) (port-next-location port)])
+                      pos))])
+            (if dist
+                `(div (b ">" ,(color-highlight (substring line 1 dist)))
+                      ,(substring line dist len))
+                line))
+          #f)))
 
   ; format line for doc.txt files
   (define (process-doc-line line)
     (let ([key-result (process-for-keywords line)])
-      (if (pair? key-result) ; it's transformed
+      (if key-result
 	  key-result
 	  (process-for-urls line))))
 
@@ -173,11 +182,4 @@
 		      (cons (process-line (car lines))
 			    (loop (cdr lines)
 				  (+ count len)))))))
-	  (map process-line lines))))
-
-  (define read-lines
-    (opt-lambda (file caption [offset #f])
-      (template caption (get-the-lines file offset)))))
-
-
-
+	  (map process-line lines)))))

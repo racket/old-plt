@@ -10,19 +10,22 @@
 	   hd-cookie->exit-proc
 	   hd-cookie->browser
            hd-cookie->browser-mixin
+           hd-cookie->internal-url-test
            set-hd-cookie-port!
            set-hd-cookie-exit-proc!
            set-hd-cookie-browser!
+           set-hd-cookie-internal-url-test!
 	   hd-cookie?
            min-port
            max-port)
 
-  (define-struct hd-cookie (port exit-proc browser browser-mixin) (make-inspector))
+  (define-struct hd-cookie (port exit-proc browser internal-url-test browser-mixin) (make-inspector))
   (define hd-cookie->port hd-cookie-port)
   (define hd-cookie->exit-proc hd-cookie-exit-proc)
   (define hd-cookie->browser hd-cookie-browser)
   (define hd-cookie->browser-mixin hd-cookie-browser-mixin)
-
+  (define hd-cookie->internal-url-test hd-cookie-internal-url-test)
+  
   (define min-port 8000)
   (define max-port 8900)
 
@@ -49,6 +52,7 @@
 	  (servlets-refreshed "servlet-refresh.html")
 	  (passwords-refreshed "passwords-refresh.html")
 	  (file-not-found-message "not-found.html")
+          ;(file-not-found-message ,(build-path servlet-root "servlets" "home.ss"))
 	  (protocol-message "protocol-error.html"))
 	 (timeouts
 	  (default-servlet-timeout 120)

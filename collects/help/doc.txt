@@ -55,10 +55,7 @@ The following functions are provided by both `help-desk-mz.ss' and
 _Server functions_
 ------------------
 
-> start-help-server : [port #f]
-                      [remote? #f]
-                      [browser-frame-mixin (lambda (x) x)] 
-                   -> hd-cookie
+> start-help-server : (browser-frame-mixin . -> . hd-cookie)
 
 Starts the Web server for Help Desk.  The optional argument
 `remote?' indicates whether remote connections should be
@@ -184,14 +181,17 @@ documentation.
 _Supplemental Help Desk functions_
 ----------------------------------
 
-> (set-bug-report-info! thunk)
+> (set-bug-report-info! string thunk)
 
-Sets dynamic information used when submitting a bug report.
-The `thunk' argument returns a list of lists, where each sublist 
-contains two strings.  The first string is a textual description, 
-such as "Computer language", and the second string is a value.
+  Adds dynamic information used when submitting a bug
+  report.
+
+  The string is the label for the information and the thunk
+  must return a string that is the current value of the
+  information.
 
 > (help-desk:installed-components)
+
   It returns a string of XHTML with documentation extracted from the 
   _'blurb_ fields of the info.ss files in each collection.
 

@@ -17,15 +17,15 @@
       [(intermediate-lambda) -16]
       [(advanced) -15]
 
-      [(r5rs) -10]
-      [(mzscheme) -5]
-      [(mred) -4]
-
       [(help) 0]
       [(drscheme) 1]
-      [(mzlib) 2]
-      [(framework) 4]
-      [(misclib) 6]
+
+      [(r5rs) 2]
+      [(mzscheme) 3]
+      [(mzlib) 4]
+      [(misclib) 5]
+      [(mred) 6]
+      [(framework) 7]
       [(teach) 8]
       [(mzc) 10]
       [(tools) 30]
@@ -74,4 +74,6 @@
       ("tools" . "PLT Tools: DrScheme Extension Manual")
       ("tour" . "A Brief Tour of DrScheme")
       ("t-y-scheme" . "Teach Yourself Scheme in Fixnum Days")
-      ("tex2page" . "TeX2page"))))
+      ("tex2page" . "TeX2page")))
+  
+  )

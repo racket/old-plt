@@ -56,6 +56,8 @@ class wxbDC: public wxObject
 
   double user_scale_x;
   double user_scale_y;
+  double logical_scale_x;
+  double logical_scale_y;
 
   int mapping_mode;
   int scaling_mode;

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: BusyCursor.cc,v 1.5 1998/07/18 21:51:02 mflatt Exp $
+ * $Id: BusyCursor.cc,v 1.6 1998/09/08 15:07:57 mflatt Exp $
  *
  * Purpose: busy cursor
  *
@@ -44,6 +44,8 @@ void wxXSetNoCursor(wxWindow *win, wxCursor *cursor)
   else
     c = GETCURSOR(win->cursor);
 
+  win->user_edit_mode = !!cursor;
+
   Cursor cc;
   XtVaGetValues(win->X->handle, XtNcursor, &cc, NULL);
   if (cc != c) {
@@ -70,6 +72,8 @@ void wxXSetBusyCursor(wxWindow *win, wxCursor *cursor)
   else
     c = GETCURSOR(wxSTANDARD_CURSOR);
   
+  win->user_edit_mode = !!cursor;
+
   XtVaSetValues(win->X->handle, XtNcursor, c, NULL);
   if (win->__type == wxTYPE_LIST_BOX) {
     XtVaSetValues(XtParent(win->X->handle), XtNcursor, c, NULL);

@@ -291,6 +291,67 @@
             (stop-server)
             (or (regexp-match #rx"<p>Okay</p>" p2) (fail)))))
 
+      ;; Thread at load time, still running after a timeout.
+      (make-test-case
+        "Thread at load time, still running after a timeout"
+        (let ((stop-server (start-server)))
+          (let ((u (string->url
+                     (format "http://~a:~a/servlets/thread-at-load.ss"
+                             THE-IP THE-PORT))))
+            (let ((p1 (get-pure-port u)))
+              (sleep 7)
+              (let ((p2 (get-pure-port u)))
+                (stop-server)
+                (begin0
+                  (input-port-equal? p1 p2)
+                  (close-input-port p1)
+                  (close-input-port p2)))))))
+
+      ;; Thread started from within (start), stopped after a timeout.
+      (make-test-case
+        "Thread started from within (start), stopped after a timeout"
+        (let ((stop-server (start-server)))
+          (close-input-port
+            (get-pure-port
+              (string->url
+                (format "http://~a:~a/servlets/thread-in-start.ss"
+                        THE-IP THE-PORT))))
+          (sleep 9)
+          (or
+            (begin0
+              (let ((p (build-path "/" "tmp" "thread-in-start")))
+                (if (file-exists? p)
+                  (> (- (current-seconds) (file-or-directory-modify-seconds p))
+                      2)
+                  #f))
+              (stop-server))
+            (fail))))
+
+      ;; Thread started at load time, shutdown during a refresh.
+      (make-test-case
+        "Thread started at load time, shutdown during a refresh"
+        (let ((stop-server (start-server)))
+          (close-input-port
+            (get-pure-port
+              (string->url
+                (format "http://~a:~a/servlets/thread-at-load.ss"
+                        THE-IP THE-PORT))))
+          (close-input-port
+            (get-pure-port
+              (string->url
+                (format "http://~a:~a/conf/refresh-servlets"
+                        THE-IP THE-PORT))))
+          (sleep 3)
+          (or
+            (begin0
+              (let ((p (build-path "/" "tmp" "thread-at-load")))
+                (if (file-exists? p)
+                  (<= (- (current-seconds) (file-or-directory-modify-seconds p))
+                      2)
+                  #f))
+              (stop-server))
+            (fail))))
+
       ))
 
   )

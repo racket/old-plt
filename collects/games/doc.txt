@@ -44,7 +44,7 @@ or other games installed as sub-collections of the "games" collection
    4-of-a-kind sets to win. Each card must be used in one set. On each
    turn, you can either draw from the deck or from the top of the
    discard pile, then you must discard one of your own cards. Aces can
-   be use in both A-2-3 sequences and Q-K-A sequences. [The computer
+   be used in both A-2-3 sequences and Q-K-A sequences. [The computer
    player is fairly smart.]
 
                                               - by Matthew

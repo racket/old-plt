@@ -1186,7 +1186,7 @@
     
     ;; ->*/h : stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
     (define (->*/h stx)
-      (syntax-case stx ()
+      (syntax-case stx (any)
         [(_ (dom ...) (rng ...))
          (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-length dom-index ...) (generate-indicies (syntax (dom ...)))]
@@ -1359,7 +1359,50 @@
                        (cond
                          [(= len rng-length) (vector rng-x ...)]
                          [else #f]))
-                   #f)))))]))
+                   #f)))))]
+	[(_ (dom ...) rest any)
+         (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
+                       [(arg-x ...) (generate-temporaries (syntax (dom ...)))]
+                       [(dom-length dom-index ...) (generate-indicies (syntax (dom ...)))]
+                       [(dom-ant-x ...) (generate-temporaries (syntax (dom ...)))]
+                       [dom-rest-x (car (generate-temporaries (list (syntax rest))))]
+                       [arg-rest-x (car (generate-temporaries (list (syntax rest))))]
+                       
+                       [arity (length (syntax->list (syntax (dom ...))))])
+           (values
+            (lambda (body)
+              (with-syntax ([body body])
+                (syntax
+                 (let ([dom-x dom] ...
+                       [dom-rest-x rest])
+                   (unless (-contract? dom-x)
+                     (error '->* "expected contract for domain position, given: ~e" dom-x)) ...
+                   (unless (-contract? dom-rest-x)
+                     (error '->* "expected contract for rest position, given: ~e" dom-rest-x))
+                   body))))
+            (lambda (stx)
+              (with-syntax ([(val check-rev-contract check-same-contract failure) stx])
+                (syntax
+                 (unless (procedure? val)
+                   (raise-contract-error
+                    src-info
+                    pos-blame
+                    neg-blame
+                    "expected a procedure that accepts ~a arguments, given: ~e"
+                    dom-length
+                    val)))))
+            (lambda (stx)
+              (with-syntax ([(val pos-blame neg-blame src-info) stx])
+                (syntax
+                 ((arg-x ... . arg-rest-x)
+                  (apply
+		   val
+		   (check-contract dom-x arg-x neg-blame pos-blame src-info)
+		   ...
+		   (check-contract dom-rest-x arg-rest-x neg-blame pos-blame src-info))))))
+	    (lambda (body stx) (syntax (lambda x (error 'impl-contract "unimplemented for ->* (any case)"))))
+	    (syntax (x (error 'impl-contract "unimplemented for ->* (any case)")))
+	    (syntax (lambda x (error 'impl-contract "unimplemented for ->* (any case)")))))]))
     
     ;; ->d/h : stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
     (define (->d/h stx)

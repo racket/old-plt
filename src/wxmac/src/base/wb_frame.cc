@@ -68,7 +68,7 @@ void wxbFrame::OnSize(int x, int y)
   for(wxChildNode *node = GetChildren()->First(); node; node = node->Next())
   {
     wxWindow *win = (wxWindow *)(node->Data());
-`    WXTYPE winType = win->__type;
+    WXTYPE winType = win->__type;
 
     if (wxSubType(winType, wxTYPE_PANEL) ||
         wxSubType(winType, wxTYPE_TEXT_WINDOW) ||

@@ -1534,6 +1534,23 @@ Bool wxArcPathRgn::Install(long target, Bool reverse)
 
 Bool wxArcPathRgn::InstallPS(wxPostScriptDC *dc, wxPSStream *s)
 {
+  double xx, yy, ww, hh;
+
+  xx = dc->FsLogicalToDeviceX(x, ox, sx);
+  yy = dc->FsLogicalToDeviceY(y, oy, sy);
+  ww = dc->FsLogicalToDeviceXRel(w, ox, sx);
+  hh = dc->FsLogicalToDeviceYRel(h, oy, sy);
+
+  s->Out("matrix currentmatrix ");
+  s->Out(xx + ww/2); s->Out(" "); s->Out(yy - hh/2); s->Out(" translate ");
+  s->Out(ww); s->Out(" "); s->Out(hh); s->Out(" scale\n");
+  if ((start != 0) || (end != 2 * wxPI)) {
+    s->Out("0 0 moveto\n");
+  }
+  s->Out("0 0 0.5 "); 
+  s->Out(start * 180 / wxPI); s->Out(" "); 
+  s->Out(end * 180 / wxPI); s->Out(" arc setmatrix closepath\n");
+  
   return FALSE;
 }
 

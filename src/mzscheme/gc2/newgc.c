@@ -2376,8 +2376,10 @@ inline static void mark_all_roots(void)
   /* first clear out all the memory_use values for this top */
   for(i = 0; i < owner_table_top; i++) 
     if(owner_table[i]) 
-      for(j = 0; j <= collection_top; j++)
+      for(j = 0; j < collection_top; j++)
 	owner_table[i]->memory_use[j] = 0;
+  if(collection_full)
+    owner_table[i]->memory_use[collection_top] = 0;
   /* and set up the data in the thread list */
   prepare_thread_list_for_collection();
   /* mark the older pointers if necessary */
@@ -2443,6 +2445,8 @@ inline static void mark_all_roots(void)
     if(owner_table[i]) 
       for(j = 0; j < collection_top; j++)
 	owner_table[i]->memory_use[j] = 0;
+  if(collection_full)
+    owner_table[i]->memory_use[collection_top] = 0;
   /* and set up the data in the thread list */
   prepare_thread_list_for_collection();
   /* mark the older pointers if necessary */

@@ -146,7 +146,7 @@ static Scheme_Object *same_symbol;
 static Scheme_Object *read_symbol, *write_symbol, *execute_symbol;
 
 static Scheme_Object *temp_dir_symbol, *home_dir_symbol, *pref_dir_symbol;
-static Scheme_Object *init_dir_symbol, *init_file_symbol;
+static Scheme_Object *init_dir_symbol, *init_file_symbol, *sys_dir_symbol;
 
 # ifdef MACINTOSH_EVENTS
 static Scheme_Object *record_symbol, *file_symbol;
@@ -173,6 +173,7 @@ void scheme_init_file(Scheme_Env *env)
     REGISTER_SO(pref_dir_symbol);
     REGISTER_SO(init_dir_symbol);
     REGISTER_SO(init_file_symbol);
+    REGISTER_SO(sys_dir_symbol);
 #endif
     
     up_symbol = scheme_intern_symbol("up");
@@ -190,6 +191,7 @@ void scheme_init_file(Scheme_Env *env)
     pref_dir_symbol = scheme_intern_symbol("pref-dir");
     init_dir_symbol = scheme_intern_symbol("init-dir");
     init_file_symbol = scheme_intern_symbol("init-file");
+    sys_dir_symbol = scheme_intern_symbol("sys-dir");
 
 # ifdef MACINTOSH_EVENTS
 	record_symbol = scheme_intern_symbol("record");
@@ -3234,7 +3236,8 @@ enum {
   id_home_dir,
   id_pref_dir,
   id_init_dir,
-  id_init_file
+  id_init_file,
+  id_sys_dir
 };
 
 static Scheme_Object *
@@ -3252,6 +3255,8 @@ find_system_path(int argc, Scheme_Object **argv)
     which = id_init_dir;
   else if (argv[0] == init_file_symbol)
     which = id_init_file;
+  else if (argv[0] == sys_dir_symbol)
+    which = id_sys_dir;
   else {
     scheme_wrong_type("find-system-path", "system-path-symbol",
 		      0, argc, argv);
@@ -3259,6 +3264,10 @@ find_system_path(int argc, Scheme_Object **argv)
   }
 
 #ifdef UNIX_FILE_SYSTEM
+  if (which == id_sys_dir) {
+    return scheme_make_string("/");
+  }
+
   if (which == id_temp_dir) {
     char *p;
     
@@ -3296,6 +3305,13 @@ find_system_path(int argc, Scheme_Object **argv)
 #endif
 
 #ifdef DOS_FILE_SYSTEM
+  if (which == id_sys_dir) {
+    int size = GetSystemDirectory(NULL, 0);
+    char *s = scheme_malloc_atomic(size + 1);
+    GetSystemDirectory(s, size + 1);
+    return scheme_make_string(s);
+  }
+
   {
     char *d, *p;
     Scheme_Object *home;
@@ -3377,6 +3393,9 @@ find_system_path(int argc, Scheme_Object **argv)
     case id_init_dir:
     case id_init_file:
       t = 'pref';
+      break;
+    case id_sys_dir:
+      t = 'macs';
       break;
     case id_temp_dir:
     default:

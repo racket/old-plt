@@ -51,8 +51,7 @@
 	       (let/ec k
 		 (with-handlers ([(lambda (x) #t)
 				  (lambda (x) #f)])
-		   (let ([info (load (build-path (collection-path collection)
-						 "info.ss"))])
+		   (let ([info (require-library "info.ss" collection)])
 		     (for-each 
 		      (lambda (sym) (info sym (lambda () (k #f))))
 		      '(name compile-prefix))
@@ -105,13 +104,20 @@
 		 "encountered ~a, neither a file nor a directory"
 		 path)]))
 
+(define (clean-collection collection-list)
+  (let* ([path (build-path (apply collection-path collection-list)
+			   "compiled")])
+    (when (directory-exists? path)
+	  (printf "deleting files in ~a~n" path)
+	  (delete-files-in-directory path))
+    (let ([info (apply require-library "info.ss" collection-list)])
+      (for-each
+       (lambda (sub)
+	 (clean-collection (append collection-list sub)))
+       (info 'compile-subcollections (lambda () null))))))
+
 (when clean?
-  (for-each (lambda (collection-list)
-	      (let* ([path (build-path (apply collection-path collection-list)
-				       "compiled")])
-		(when (directory-exists? path)
-		  (printf "deleting files in ~a~n" path)
-		  (delete-files-in-directory path))))
+  (for-each clean-collection
 	    collections-to-compile))
 
 (when (or zo? so?)

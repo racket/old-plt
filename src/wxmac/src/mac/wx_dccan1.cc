@@ -1006,7 +1006,7 @@ double wxCanvasDC::SmoothingXFormW(double w, double x)
 double wxCanvasDC::SmoothingXFormH(double h, double y)
 {
   if (AlignSmoothing())
-    return SmoothingXFormY(y + h) - SmoothingXFormX(y);
+    return SmoothingXFormY(y + h) - SmoothingXFormY(y);
   else
     return h;
 }

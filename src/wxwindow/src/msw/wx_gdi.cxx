@@ -621,7 +621,8 @@ void wxPen::ChangePen(void)
                     nb_dash==old_nb_dash &&
                     style==old_style     &&
                     stipple==old_stipple &&
-                    old_color==ms_colour);
+                    old_color==ms_colour &&
+		    old_scale == current_scale);
 
   if (!must_change)
     return;
@@ -634,6 +635,7 @@ void wxPen::ChangePen(void)
   old_style = style;
   old_stipple = stipple;
   old_color = ms_colour;
+  old_scale = current_scale;
 
   if (cpen) {
     /* Note: the pen can't be selected anywhere if we're changing it, so

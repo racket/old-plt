@@ -246,12 +246,12 @@ void wxDC::ShiftXY(double x, double y, int *ix, int *iy)
     *iy = (int)floor(y);
   } else {
     *ix = MS_XLOG2DEV(x);
-    *ix = MS_XLOG2DEV(y);
+    *iy = MS_YLOG2DEV(y);
   }
 
   if (canvas) {
     wxWnd *wnd = (wxWnd *)canvas->handle;
-    wnd->CalcScrolledPosition((int)x, (int)y, ix, iy);
+    wnd->CalcScrolledPosition(*ix, *iy, ix, iy);
   }
 }
 
@@ -299,7 +299,7 @@ double wxDC::SmoothingXFormW(double w, double x)
 double wxDC::SmoothingXFormH(double h, double y)
 {
   if (AlignSmoothing())
-    return SmoothingXFormY(y + h) - SmoothingXFormX(y);
+    return SmoothingXFormY(y + h) - SmoothingXFormY(y);
   else
     return h;
 }
@@ -463,7 +463,7 @@ void wxDC::InitGraphics(HDC dc)
 {
   if (!g) {
     /* Turn off GDI-level scaling: */
-    SetMapMode(2, dc); 
+    SetScaleMode(wxWX_SCALE, dc); 
     /* Turn off GDI-level clipping: */
     {
       HRGN rgn;
@@ -818,8 +818,6 @@ void wxDC::DrawArc(double x, double y, double w, double h, double start, double 
   } else
     ReleaseGraphics(dc);
 
-  SetScaleMode(wxWX_SCALE, dc);
-  
   if (StippleBrush()) {
     wxRegion *r;
     r = new wxRegion(this);
@@ -827,6 +825,8 @@ void wxDC::DrawArc(double x, double y, double w, double h, double start, double 
     FillWithStipple(this, r, current_brush);
   }
 
+  SetScaleMode(wxWX_SCALE, dc);
+  
   ShiftXY(x, y, &xx1, &yy1);
   ShiftXY(x + w, y + h, &xx2, &yy2);
   hh = yy2 - yy1;
@@ -990,14 +990,14 @@ void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,i
   } else
     ReleaseGraphics(dc);
 
-  SetScaleMode(wxWX_SCALE, dc);
-
   if (StippleBrush()) {
     wxRegion *r;
     r = new wxRegion(this);
     r->SetPolygon(n, points, xoffset, yoffset, fillStyle);
     FillWithStipple(this, r, current_brush);
   }
+
+  SetScaleMode(wxWX_SCALE, dc);
 
   cpoints = new POINT[n];
   for (i = 0; i < n; i++) {
@@ -1245,8 +1245,6 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
   } else
     ReleaseGraphics(dc);
 
-  SetScaleMode(wxWX_SCALE, dc);
-  
   if (StippleBrush()) {
     wxRegion *r;
     r = new wxRegion(this);
@@ -1254,6 +1252,8 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
     FillWithStipple(this, r, current_brush);
   }
 
+  SetScaleMode(wxWX_SCALE, dc);
+  
   ShiftXY(x, y, &x1, &y1);
   ShiftXY(x + width, y + height, &x2, &y2);
 
@@ -1400,14 +1400,14 @@ void wxDC::DrawEllipse(double x, double y, double width, double height)
   } else
     ReleaseGraphics(dc);
 
-  SetScaleMode(wxWX_SCALE, dc);
-
   if (StippleBrush()) {
     wxRegion *r;
     r = new wxRegion(this);
     r->SetEllipse(x, y, width, height);
     FillWithStipple(this, r, current_brush);
   }
+
+  SetScaleMode(wxWX_SCALE, dc);
 
   ShiftXY(x, y, &x1, &y1);
   ShiftXY(x + width, y + height, &x2, &y2);
@@ -2021,7 +2021,6 @@ void wxDC::SetScaleMode(int m, HDC given_dc)
 
 void wxDC::SetUserScale(double x, double y)
 {
-
   user_scale_x = x;
   user_scale_y = y;
 

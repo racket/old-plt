@@ -53,7 +53,7 @@ class wxColourMap: public wxObject
 class wxPen: public wxbPen
 {
  public:
-  double old_width, current_scale;
+  double old_width, current_scale, old_scale;
   int old_style;
   int old_join;
   int old_cap;

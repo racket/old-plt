@@ -11,13 +11,8 @@
     (define cached-name (make-vector 10 ""))
     (define cached-use (make-vector 10 0))
 
-    ;; assumes that there is at least one filesystem root.
-    ;; if the path is relative, it just arbitrarily picks the first
+    ;; if the path is absolute, it just arbitrarily picks the first
     ;; filesystem root.
-    ;; empty string input yields empty string output, should it be an error?
-    ;; assumes / as the first character is the only way to specify an
-    ;; absolute path. Is that valid?
-    ;; paths ending in "/" are translated into paths ending in "/."
     (define unixpath->path
       (letrec* ([r (regexp "([^/]*)/(.*)")]
 		[translate-dir

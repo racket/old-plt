@@ -26,6 +26,8 @@
   (define com-object-eq? mxprims:com-object-eq?)
 
   (define html-sem (make-semaphore 1))   ; protects HTML insertions
+  (define html-wait (lambda () (semaphore-wait html-sem)))
+  (define html-post (lambda () (semaphore-post html-sem)))
 
   (define mx-element%
     (class object% (document dhtml-element)
@@ -37,21 +39,22 @@
 	   (public
 	    [insert-html
 	     (lambda (s)
-	       (semaphore-wait html-sem)
-	       (begin0 (mxprims:element-insert-html elt s)
-		       (semaphore-post html-sem)))]
+	       (dynamic-wind
+		html-wait
+		(lambda () (mxprims:element-insert-html elt s))
+		html-post))]
 	    [append-html
 	     (lambda (s)
-	       (semaphore-wait html-sem)
-	       (begin0
-		(mxprims:element-append-html elt s)
-		(semaphore-post html-sem)))]
+	       (dynamic-wind
+		html-wait
+		(lambda () (mxprims:element-append-html elt s))
+		html-post))]
 	    [replace-html
 	     (lambda (s)
-	       (semaphore-wait html-sem)
-	       (begin0 
-		(mxprims:element-replace-html elt s)
-		(semaphore-post html-sem)))]
+	       (dynamic-wind
+		html-wait
+		(lambda () (mxprims:element-replace-html elt s))
+		html-post))]
 	    [insert-text 
 	     (lambda (s)
 	       (mxprims:element-insert-text elt s))]
@@ -60,24 +63,28 @@
 	       (mxprims:element-append-text elt s))]
 	    [insert-object 
 	     (lambda (object)
-	       (semaphore-wait html-sem)
-	       (let ([old-objects (mxprims:document-objects doc)])
-		 (mxprims:element-insert-html elt (coclass->html object))
-		    (let* ([new-objects (mxprims:document-objects doc)])
-		      (semaphore-post html-sem)
-		      (car (remove* old-objects
-				    new-objects
-				    com-object-eq?)))))]
+	       (dynamic-wind
+		html-wait
+		(lambda () 
+		  (let ([old-objects (mxprims:document-objects doc)])
+		    (mxprims:element-insert-html elt (coclass->html object))
+		       (let* ([new-objects (mxprims:document-objects doc)])
+			 (car (remove* old-objects
+				       new-objects
+				       com-object-eq?)))))
+		html-post))]
 	    [append-object 
 	     (lambda (object)
-	       (semaphore-wait html-sem)
-	       (let ([old-objects (mxprims:document-objects doc)])
-		 (mxprims:element-append-html elt (coclass->html object))
-		    (let* ([new-objects (mxprims:document-objects doc)])
-		      (semaphore-post html-sem)
-		      (car (remove* old-objects
-				    new-objects
-				    com-object-eq?)))))]
+	       (dynamic-wind
+		html-wait
+		(lambda ()
+		  (let ([old-objects (mxprims:document-objects doc)])
+		    (mxprims:element-append-html elt (coclass->html object))
+		       (let* ([new-objects (mxprims:document-objects doc)])
+			 (car (remove* old-objects
+				       new-objects
+				       com-object-eq?)))))
+		html-post))]
 	    [attribute
 	     (lambda (s)
 	       (mxprims:element-attribute elt s))]
@@ -623,7 +630,7 @@
 
 	   (public
 
-					; predicates
+            ; predicates
 
 	    [keypress? (lambda () (mxprims:event-keypress? event))]
 	    [keydown? (lambda () (mxprims:event-keydown? event))]
@@ -637,7 +644,7 @@
 	    [dblclick? (lambda () (mxprims:event-dblclick? event))] 
 	    [error? (lambda () (mxprims:event-error? event))]
 	    
-					; attributes
+            ; attributes
 
 	    [tag (lambda () (mxprims:event-tag event))]
 	    [id (lambda () (mxprims:event-id event))]
@@ -668,14 +675,18 @@
 	   (private
 	    [doc (mxprims:make-document label width height x y style-options)]
 	    [thread-sem (make-semaphore 1)]   ; protects *handler-threads*
+	    [thread-wait (lambda () (semaphore-wait thread-sem))]
+	    [thread-post (lambda () (semaphore-post thread-sem))]
 	    [handler-sem (make-semaphore 1)]  ; protects *handler-table* and its contained hash tables
+	    [handler-wait (lambda () (semaphore-wait handler-sem))]
+	    [handler-post (lambda () (semaphore-post handler-sem))]
 	    [handler-table (make-hash-table)]
 	    [handler-thread #f]
 	    [block-until-event ; busy-wait loop -- until Mz threads allow blocking
 	     (lambda ()
 	       (let loop () 
 		 (unless (mxprims:event-available? doc)
-			 (sleep 0.1)
+			 (sleep 0.02)
 			 (loop))))]
 	    [make-event-key 
 	     (lambda (tag id) ; string x string -> symbol
@@ -698,89 +709,113 @@
 	       (mxprims:document-objects doc))]
 	    [insert-html 
 	     (lambda (html-string)
-	       (semaphore-wait html-sem)
-	       (begin0 
-		(mxprims:document-insert-html doc html-string)
-		(semaphore-post html-sem)))]
+	       (dynamic-wind
+		html-wait
+		(lambda () (mxprims:document-insert-html doc html-string))
+		html-post))]
 	    [append-html 
 	     (lambda (html-string)
-	       (semaphore-wait html-sem)
-	       (begin0
-		(mxprims:document-append-html doc html-string)
-		(semaphore-post html-sem)))]
+	       (dynamic-wind
+		html-wait
+		(lambda () (mxprims:document-append-html doc html-string))
+		html-post))]
 	    [replace-html 
 	     (lambda (html-string)
-	       (semaphore-wait html-sem)
-	       (begin0 
-		(mxprims:document-replace-html doc html-string)
-		(semaphore-post html-sem)))]
+	       (dynamic-wind
+		html-wait
+		(lambda () (mxprims:document-replace-html doc html-string))
+		html-post))]
 	    [register-event-handler
 	     (lambda (elt fn)
-	       (semaphore-wait handler-sem)
-	       (let* ([tag (send elt tag)]
-		      [id (send elt attribute "id")]) 
-		 (let ([key (make-event-key tag id)])
-		   (hash-table-remove! handler-table key)
-		      (hash-table-put! handler-table key fn)))
-	       (semaphore-post handler-sem))]
+	       (dynamic-wind
+		handler-wait
+		(lambda () 
+		  (let* ([tag (send elt tag)]
+			 [id (send elt attribute "id")]) 
+		    (let ([key (make-event-key tag id)])
+		      (hash-table-remove! handler-table key)
+			 (hash-table-put! handler-table key fn))))
+		handler-post))]
 	    [unregister-event-handler
 	     (lambda (elt)
-	       (semaphore-wait handler-sem)
-	       (let* ([tag (send elt tag)]
-		      [id (send elt attribute "id")])
-		 (let ([key (make-event-key tag id)])
-		   (hash-table-remove! handler-table key)))
-	       (semaphore-post handler-sem))]
+	       (dynamic-wind
+		handler-wait
+		(lambda () 
+		  (let* ([tag (send elt tag)]
+			 [id (send elt attribute "id")])
+		    (let ([key (make-event-key tag id)])
+		      (hash-table-remove! handler-table key))))
+		handler-post))]
 	    [insert-object 
 	     (lambda (object)
-	       (semaphore-wait html-sem)
-	       (mxprims:document-insert-html doc (coclass->html object))
-	       (begin0
-		(car (mxprims:document-objects doc))
-		(semaphore-post html-sem)))]
+	       (dynamic-wind 
+		html-wait
+		(lambda ()
+		  (mxprims:document-insert-html doc (coclass->html object))
+		  (car (mxprims:document-objects doc)))
+		html-post))]
 	    [append-object 
 	     (lambda (object)
-	       (semaphore-wait html-sem)
-	       (append-html (coclass->html object))
-	       (begin0
-		(car (last-pair (mxprims:document-objects doc)))
-		(semaphore-post html-sem)))]
+	       (dynamic-wind
+		html-wait
+		(lambda ()
+		  (append-html (coclass->html object))
+		  (car (last-pair (mxprims:document-objects doc))))
+		html-post))]
 	    [handle-events 
 	     (lambda ()
-	       (semaphore-wait thread-sem)
-					; no-op if existing handler-thread
-	       (unless handler-thread
-		       (semaphore-wait handler-sem)
-		       (let* ([handler-thunk
-			       (lambda ()
-				 (let loop ()
-				   (block-until-event)
-				      (let* ([event (make-object mx-event% 
-								 (mxprims:get-event doc))]
-					     [tag (send event tag)]
-					     [id (send event id)]
-					     [key (make-event-key tag id)]
-					     [handler (hash-table-get handler-table key void)])
-					(unless (void? handler)
-						(handler event))
-					(loop))))])
-			 (set! handler-thread (thread handler-thunk)))
-		       (semaphore-post handler-sem))
-	       (semaphore-post thread-sem))]
+	       (dynamic-wind
+		thread-wait 
+                (lambda ()	; no-op if existing handler-thread
+		  (unless handler-thread
+			  (dynamic-wind
+			   handler-wait
+			   (lambda ()
+			     (let* ([handler-thunk
+				     (lambda ()
+				       (let loop ()
+					 (block-until-event)
+					    (let* ([event (make-object mx-event% 
+								       (mxprims:get-event doc))]
+						   [tag (send event tag)]
+						   [id (send event id)]
+						   [key (make-event-key tag id)]
+						   [handler (hash-table-get handler-table key void)])
+					      (unless (void? handler)
+						      (handler event))
+					      (loop))))])
+			       (set! handler-thread (thread handler-thunk))))
+			   handler-post)))
+		thread-post))]
 	    [stop-handling-events 
 	     (lambda ()
-	       (semaphore-wait thread-sem)
-	       (when handler-thread
-		     (kill-thread handler-thread))
-	       (set! handler-thread #f)
-	       (semaphore-post thread-sem))])
+	       (dynamic-wind
+		thread-wait
+		(lambda () 
+		  (when handler-thread
+			(kill-thread handler-thread))
+		  (set! handler-thread #f))
+		thread-post))])
 
-	   (sequence (super-init)))))
+	   (sequence 
+
+	     (super-init)
+
+	     (thread
+	      (lambda ()
+
+		; this is unwanted, but appears necessary
+		
+		(let loop ()
+		  (mxprims:document-pump-msgs doc)
+                  (sleep 0.02)		     
+		  (loop))))))))
 
 
-  
-  
-  
-  
+
+
+   
+		    
+	
 
 

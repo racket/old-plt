@@ -48,6 +48,7 @@
    document-find-element
    document-objects
    document-show
+   document-pump-msgs
    element-insert-html
    element-append-html
    element-insert-text

@@ -40,7 +40,7 @@
           (define/public (execute expander next)
             (send expander expand-text (get-editor)
                   (lambda (def-syntax)
-                    (send expander eval-syntax def-syntax next))))
+                    (send expander eval-stx def-syntax next))))
           
           (super-instantiate ()
             (editor (instantiate def-text% ())))

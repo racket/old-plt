@@ -1,17 +1,17 @@
 
 (load-relative "loadtest.ss")
 
-;; Needs to be expanded!
-
 (SECTION 'MACRO)
 
 (error-test #'(define-syntaxes () (values 1)) exn:application:arity?)
 (error-test #'(define-syntaxes () (values 1 2)) exn:application:arity?)
-(error-test #'(define-syntaxes (x) (values)) exn:application:arity?)
 (error-test #'(define-syntaxes (x) (values 1 2)) exn:application:arity?)
-(error-test #'(define-syntaxes (x y) (values)) exn:application:arity?)
 (error-test #'(define-syntaxes (x y) (values 1)) exn:application:arity?)
 (error-test #'(define-syntaxes (x y) (values 1 2 3)) exn:application:arity?)
+
+;; Declarations:
+(define-syntaxes (x) (values))
+(define-syntaxes (x y) (values))
 
 (define-syntax mx
   (lambda (stx)

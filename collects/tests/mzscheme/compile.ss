@@ -17,8 +17,8 @@
 
 (define try-one
   (lambda (e)
-    (let ([c (compile e)]
-	  [ec (compile (expand e))]
+    (let ([c (compile-syntax e)]
+	  [ec (compile-syntax (expand e))]
 	  [p (open-output-string)]
 	  [ep (open-output-string)])
       (write c p)
@@ -62,8 +62,8 @@
 		  ;; (write x file) (newline file)
 		  (let ([p (open-output-string)]
 			[ep (open-output-string)]
-			[c (compile x)]
-			[ec (compile (expand x))])
+			[c ((if (syntax? x) compile-syntax compile) x)]
+			[ec (compile-syntax ((if (syntax? x) expand-syntax expand) x))])
 		    (write c p)
 		    (write ec ep)
 		    (let ([s (get-output-string p)]

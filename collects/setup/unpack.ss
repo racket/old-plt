@@ -114,7 +114,8 @@
 
   (define unpack 
     (opt-lambda (archive [plthome (current-directory)] [print-status (lambda (x) (printf "~a~n" x))]
-			 [get-target-directory (lambda () (current-directory))] [force? #f])
+			 [get-target-directory (lambda () (current-directory))] [force? #f]
+			 [get-target-plt-directory (lambda (preferred plthome options) preferred)])
       (let*-values ([(p64gz) (open-input-file archive)]
 		    [(p kill) (port64gz->port p64gz)])
 	(dynamic-wind
@@ -142,11 +143,19 @@
 					   (lambda (n) 
 					     (unless (eq? n 'mzscheme)
 					       (error "unpacker isn't mzscheme:" n))))]
-		      [target-dir (let ([rel? (call-info info 'plt-relative? (lambda () #f) values)])
+		      [target-dir (let ([rel? (call-info info 'plt-relative? (lambda () #f) values)]
+					[not-user-rel? (call-info info 'plt-home-relative? (lambda () #f) values)])
 				    (if rel?
-					plthome
+					(if not-user-rel?
+					    (get-target-plt-directory plthome plthome (list plthome))
+					    (let ([addons (build-path (find-system-path 'addon-dir)
+								      (version))])
+					      (get-target-plt-directory
+					       addons
+					       plthome
+					       (list addons plthome))))
 					(get-target-directory)))])
-
+		  
 		  ;; Stop if no target directory:
 		  (if target-dir
 
@@ -230,6 +239,7 @@
 			(let ([u (eval (read p) n)])
 			  (unless (eval `(unit? ,u) n)
 			    (error "expected a unit, got" u))
+			  (make-directory* target-dir)
 			  (let ([unmztar (lambda (filter)
 					   (unmztar p filter target-dir print-status))])
 			    (eval `(invoke-unit ,u ,target-dir ,unmztar) n))))

@@ -126,8 +126,8 @@
 			 (and (syntax? x) (compiled-expression? (syntax-e x))))
 		     x
 		     (parameterize ([current-module-name-prefix #f])
-		       (expand
-			(expand x))))])
+		       (expand-syntax
+			((if (syntax? x) expand-syntax expand) x))))])
 	  (set! mz-test-syntax-errors-allowed? #f)
 	  (orig x)))))
    (lambda ()

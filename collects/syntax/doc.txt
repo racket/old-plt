@@ -69,7 +69,7 @@ _kerncase.ss_: matching fully-expanded expressions
 _toplevel.ss_: helper for moduleless compilation and expansion
 ======================================================================
 
-> (expand-top-level-with-compile-time-evals expr) - expands `expr' as
+> (expand-top-level-with-compile-time-evals stx) - expands `stx' as
   a top-level expression, and evaluates its compile-time portion for
   the benefit of later expansions.
 
@@ -80,14 +80,26 @@ _toplevel.ss_: helper for moduleless compilation and expansion
   expanding a `begin' is the same as expanding separate top-level
   expressions.)
 
-> (eval-compile-time-part-of-top-level syntax) - evaluates
+  The `stx' argument should have a context already, possibily
+  introduced with `namespacae-inroduce-syntax'.
+
+> (expand-syntax-top-level-with-compile-time-evals stx)
+  Like `expand-top-level-with-compile-time-evals', but `stx' should
+  have a context already, possibily introduced with
+  `namespacae-inroduce-syntax'.
+
+> (eval-compile-time-part-of-top-level stx) - evaluates
   expansion-time code in the fully expanded top-level expression
-  represented by `syntax' (or a part of it, in the case of `begin'
+  represented by `stx (or a part of it, in the case of `begin'
   expressions). The expansion-time code might affect the compilation
-  of later top-level expressions. For example, if `syntax' is a
+  of later top-level expressions. For example, if `stx is a
   `require' expression, then `namespace-require/expansion-time' is
   used on each require specification in the form. Normally, this
   function is used only by `expand-top-level-with-compile-time-evals'.
+
+> (eval-compile-time-part-of-top-level/compile stx) - like
+  `eval-compile-time-part-of-top-level', but the result is compiled
+  code.
 
 ======================================================================
 _struct.ss_: generating the same names as `define-struct'

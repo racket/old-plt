@@ -255,10 +255,16 @@
     (let ([orig (current-eval)]
           [ns (current-namespace)])
       (lambda (e)
-        (if (eq? ns (current-namespace))
+        (if (and (eq? ns (current-namespace))
+		 (not (compiled-expression? (if (syntax? e)
+						(syntax-e e)
+						e))))
             ;; Loop to flatten top-level `begin's:
-            (let loop ([e e])
-              (let ([top-e (expand-to-top-form e)])
+            (let loop ([e (if (syntax? e)
+			      e
+			      (namespace-syntax-introduce
+			       (datum->syntax-object #f e)))])
+              (let ([top-e (expand-syntax-to-top-form e)])
                 (syntax-case top-e (begin)
                   [(begin expr ...)
                    ;; Found a `begin', so expand/eval each contained
@@ -269,12 +275,9 @@
                           (syntax->list #'(expr ...)))]
                   [_else
                    ;; Not `begin', so proceed with normal expand and eval
-                   (let* ([ex (expand top-e)]
-                          [a (if (or (compiled-expression? (if (syntax? e) 
-                                                               (syntax-e e) 
-                                                               e))
-                                     (not (instrumenting-enabled)))
-                                 e
+                   (let* ([ex (expand-syntax top-e)]
+                          [a (if (not (instrumenting-enabled))
+                                 ex
                                  (annotate-top ex #f))])
                      (orig a))])))
             (orig e)))))

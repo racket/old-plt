@@ -38,8 +38,11 @@
 				  (compiler-verbose #t)]
       [("-p" "--pause") "Pause at the end if there are any errors"
 			(pause-on-errors #t)]
-      [("--force") "Treat version mismatches in unpacking as mere warnings"
+      [("--force") "Treat version mismatches for archives as mere warnings"
                    (force-unpacks #t)]
+      [("-a" "--all-users") "Install archives into PLTHOME, not user-specific directory"
+                            (current-target-plt-directory-getter
+			     (lambda (preferred plthome choices) plthome))]
       [("-l") =>
 	      (lambda (flag . collections)
 		(map list collections))

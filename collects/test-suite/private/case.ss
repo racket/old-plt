@@ -152,7 +152,7 @@
                                  (lambda (test-value) ; =drscheme-eventspace=
                                    (if (= (length call-values)
                                           (length expected-values))
-                                       (send expander eval-syntax
+                                       (send expander eval-stx
                                              (with-syntax ([test-value test-value]
                                                            [(call-values ...) call-values]
                                                            [(expected-values ...) expected-values])

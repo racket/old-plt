@@ -151,9 +151,9 @@
                  [else (error 'eval-text "Error")]))
              #f))
           
-          ;; eval-syntax (syntax? (any? . -> . void?) . -> . void?)
+          ;; eval-stx (syntax? (any? . -> . void?) . -> . void?)
           ;; evaluate the syntax in the users eventspace
-          (define/public (eval-syntax syntax-object next) ; =drscheme-eventspace=
+          (define/public (eval-stx syntax-object next) ; =drscheme-eventspace=
             (queue-to-user
              (lambda () ; =user-eventspace=
                (let ([value (eval syntax-object)])

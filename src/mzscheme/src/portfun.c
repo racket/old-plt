@@ -2883,6 +2883,7 @@ static Scheme_Object *do_load_handler(void *data)
   Scheme_Thread *p = lhd->p;
   Scheme_Config *config = lhd->config;
   Scheme_Object *last_val = scheme_void, *obj, **save_array = NULL;
+  Scheme_Env *genv;
   int save_count = 0, got_one = 0;
 
   while ((obj = scheme_internal_read(port, lhd->stxsrc, 1, 0))
@@ -2980,6 +2981,12 @@ static Scheme_Object *do_load_handler(void *data)
 
     /* ... end special support for module loading ... */
 
+    genv = (Scheme_Env *)scheme_get_param(config, MZCONFIG_ENV);
+    if (genv->rename)
+      obj = scheme_add_rename(obj, genv->rename);
+    if (genv->exp_env && genv->exp_env->rename)
+      obj = scheme_add_rename(obj, genv->exp_env->rename);
+    
     last_val = _scheme_apply_multi(scheme_get_param(config, MZCONFIG_EVAL_HANDLER),
 				   1, &obj);
 

@@ -4,7 +4,8 @@
   
   (provide eval-compile-time-part-of-top-level
 	   eval-compile-time-part-of-top-level/compile
-           expand-top-level-with-compile-time-evals)
+           expand-top-level-with-compile-time-evals
+           expand-syntax-top-level-with-compile-time-evals)
   
   ;; eval-compile-time-part-of-top-level/compile : syntax -> (listof compiled-expression)
   (define (eval-compile-time-part-of-top-level/compile expr)
@@ -16,7 +17,11 @@
               (flatten-out-begins stx)))
   
   (define (expand-top-level-with-compile-time-evals stx)
-    (let ([e (expand-to-top-form stx)])
+    (expand-syntax-top-level-with-compile-time-evals 
+     (namespace-syntax-introduce stx)))
+
+  (define (expand-syntax-top-level-with-compile-time-evals stx)
+    (let ([e (expand-syntax-to-top-form stx)])
       (syntax-case e (begin)
         [(begin expr ...)
          (with-syntax ([(expr ...) 
@@ -26,7 +31,7 @@
                        [(beg . _) e])
            (datum->syntax-object e (syntax-e (syntax (beg expr ...))) e e))]
         [else 
-         (let ([e (expand e)])
+         (let ([e (expand-syntax e)])
            (compile-and-eval-compile-time-part e #f)
            e)])))
   
@@ -37,7 +42,7 @@
   ;; pre: there are no top-level begins in stx.
   (define (compile-and-eval-compile-time-part stx compile?)
     (let ([eval/compile (lambda (stx) 
-                          (let ([compiled (compile stx)])
+                          (let ([compiled (compile-syntax stx)])
                             (eval compiled)
                             (when compile?
                               compiled)))])
@@ -45,7 +50,7 @@
         [(require req ...)
          (for-each (lambda (req) (namespace-require/expansion-time (syntax-object->datum req)))
                    (syntax->list (syntax (req ...))))
-         (when compile? (compile stx))]
+         (when compile? (compile-syntax stx))]
         [(module . _)
          (eval/compile stx)]
         [(define-syntaxes . _)
@@ -56,18 +61,18 @@
          (for-each (lambda (id)
                      (with-syntax ([id id]
                                    [undefined (letrec ([x x]) x)])
-                       (eval (syntax (define-values (id) undefined)))))
+                       (eval-syntax (syntax (define-values (id) undefined)))))
                    (syntax->list (syntax (id ...))))
-         (when compile? (compile stx))]
+         (when compile? (compile-syntax stx))]
         [_else 
-         (when compile? (compile stx))])))
+         (when compile? (compile-syntax stx))])))
   
   ;; flatten-out-begins : syntax -> (listof syntax)
   ;; flattens out the begins in a top-level expression,
   ;; into multiple expressions
   (define (flatten-out-begins expr)
     (let loop ([expr expr])
-      (syntax-case (expand-to-top-form expr) (begin)
+      (syntax-case (expand-syntax-to-top-form expr) (begin)
 	[(begin expr ...)
 	 (apply append (map loop (syntax->list (syntax (expr ...)))))]
 	[else 

@@ -186,8 +186,16 @@ parameters that control the setup process:
             by the archives are set-up in addition to the collections
             listed in specific-collections  [default: null]
 > current-target-directory-getter - a thunk that returns the target
-            directory for unpacking a relative .plt archive
+            directory for unpacking a relative .plt archive; when
+            unpacking an archive, either this or the procedure
+            in `current-target-plt-directory-getter' will be called
             [default: current-directory]
+> current-target-plt-directory-getter - a procedure that takes a
+            preferred path, the PLTHOME path, and a list of path choices;
+            it returns a path for a "plt-relative" install; when
+            unpacking an archive, either this or the procedure
+            in `current-target-directory-getter' will be called
+            [default: (lambda (preferred plthome choices) preferred)]
 
 Thus, to unpack a single .plt archive "x.plt", set the `archives'
 parameter to (list "x.plt") and leave `specific-collections' as null.
@@ -272,7 +280,11 @@ The raw format is
        unpacking the archive
 
      + 'plt-relative? - a boolean; if true, then the archive's content
-       should be unpacked relative to the plt installation directory.
+       should be unpacked relative to the plt add-ons directory.
+
+     + 'plt-home-relative? - a boolean; if true and if `plt-relative?'
+       is true, then the archive's content should be unpacked relative
+       to the plt installation directory.
 
    The procedure is extracted from the archive using MzScheme's `read'
    and `eval' procedures (in a fresh namespace).
@@ -351,7 +363,7 @@ mzc supports the creation of simple .plt files (see the mzc manual for
 details) but the setup collection's _pack.ss_ library provides more
 general functions to help make .plt archives:
 
-> (pack-collections dest name collections replace? extra-setup-collections [filter])
+> (pack-collections dest name collections replace? extra-setup-collections [filter] [at-plt-home?])
 
   Creates the .plt file specified by the pathname `dest', using the
   string `name' as the name reported to Setup PLT as the archive's
@@ -372,7 +384,10 @@ general functions to help make .plt archives:
   The optional `filter' argument is the same as for `pack' (see
   below).
 
-> (pack dest name paths collections [filter encode? file-mode unpack-unit plt-relative? requires conflicts])
+  The optional `at-plt-home?' argument is the same as for `pack'
+  where `plt-relative?' is true.
+
+> (pack dest name paths collections [filter encode? file-mode unpack-unit plt-relative? requires conflicts at-plt-home?])
 
   Creates the .plt file specified by the pathname `dest', using the
   string `name' as the name reported to Setup PLT as the archive's
@@ -403,7 +418,8 @@ general functions to help make .plt archives:
   `unpack-unit' is #f, an appropriate unpacking unit is generated.
 
   If `plt-relative?', the archive's files and directories are to be
-  unpacked relative to the plt installation directory.
+  unpacked relative to the plt add-ons directory (unless
+  `plt-at-home?' is #t; see below).
 
   The `requires' argument should have the shape
       (list (list <coll-path> <version>) ...)
@@ -419,6 +435,9 @@ general functions to help make .plt archives:
   where each <coll-path> is a non-empty list of relative-path
   strings. The indicated collections must *not* be installed at
   unpacking time.
+
+  If `at-plt-home?' and `plt-relative?', the archive is to be unpacked
+  relative to the plt installation directory. The default is #f.
 
 > (std-filter p) - returns #t unless `p' matches one of the following
   regular expressions: "CVS$", "compiled$", "~$", "^#.*#$", or

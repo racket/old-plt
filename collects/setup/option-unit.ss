@@ -24,5 +24,7 @@
       (define specific-collections (make-parameter null))
       (define archives (make-parameter null))
 
-      (define current-target-directory-getter (make-parameter current-directory)))))
-
+      (define current-target-directory-getter (make-parameter current-directory))
+      (define current-target-plt-directory-getter 
+	(make-parameter 
+	 (lambda (preferred plthome choices) preferred))))))

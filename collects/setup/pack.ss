@@ -17,7 +17,8 @@
 		      [unpack-unit #f]
 		      [plt-relative? #t]
 		      [requires null]
-		      [conflicts null])
+		      [conflicts null]
+		      [plt-home-relative? #f])
       (let*-values ([(file) (open-output-file dest 'truncate/replace)]
                     [(fileout thd)
                      (if encode?
@@ -86,14 +87,16 @@
                                (close-output-port file)))))
                          (values file (thread void)))])
         (fprintf fileout "PLT~n")
-        (write
+	(write
          `(lambda (request failure)
             (case request
               [(name) ,name]
               [(unpacker) 'mzscheme]
 	      [(requires) ',requires]
 	      [(conflicts) ',conflicts]
-	      [(plt-relative?) ,plt-relative?]))
+	      [(plt-relative?) ,plt-relative?]
+	      [(plt-home-relative?) ,(and plt-relative?
+					  plt-home-relative?)]))
          fileout)
         (newline fileout)
         (write
@@ -168,7 +171,7 @@
              (regexp-match #rx"[.]plt$" path))))
 
   (define pack-collections
-    (opt-lambda (output name collections replace? extra-setup-collections [file-filter std-filter])
+    (opt-lambda (output name collections replace? extra-setup-collections [file-filter std-filter] [plt-home-relative? #f])
       (let-values ([(dir source-files requires conflicts name)
 		    (let ([dirs (map (lambda (cp) (apply collection-path cp)) collections)])
 		      ;; Figure out the base path:
@@ -261,4 +264,5 @@
 		       (cons
 			'("mzscheme")
 			requires))
-		  conflicts)))))))
+		  conflicts
+		  plt-home-relative?)))))))

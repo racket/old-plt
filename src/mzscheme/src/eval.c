@@ -151,6 +151,13 @@ static Scheme_Object *expand_to_top_form(int argc, Scheme_Object **argv);
 static Scheme_Object *enable_break(int, Scheme_Object *[]);
 static Scheme_Object *current_eval(int argc, Scheme_Object *[]);
 
+static Scheme_Object *eval_stx(int argc, Scheme_Object *argv[]);
+static Scheme_Object *compile_stx(int argc, Scheme_Object *argv[]);
+static Scheme_Object *expand_stx(int argc, Scheme_Object **argv);
+static Scheme_Object *expand_stx_once(int argc, Scheme_Object **argv);
+static Scheme_Object *expand_stx_to_top_form(int argc, Scheme_Object **argv);
+static Scheme_Object *top_introduce_stx(int argc, Scheme_Object **argv);
+
 static Scheme_Object *allow_set_undefined(int argc, Scheme_Object **argv);
 
 static Scheme_Object *app_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
@@ -299,9 +306,20 @@ scheme_init_eval (Scheme_Env *env)
 						       1, 2,
 						       0, -1), 
 			     env);
+  scheme_add_global_constant("eval-syntax", 
+			     scheme_make_prim_w_arity2(eval_stx, 
+						       "eval-syntax", 
+						       1, 2,
+						       0, -1), 
+			     env);
   scheme_add_global_constant("compile", 
 			     scheme_make_prim_w_arity(compile, 
 						      "compile", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("compile-syntax", 
+			     scheme_make_prim_w_arity(compile_stx, 
+						      "compile-syntax", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("compiled-expression?",
@@ -314,6 +332,11 @@ scheme_init_eval (Scheme_Env *env)
 						      "expand",
 						      1, 1), 
 			     env);
+  scheme_add_global_constant("expand-syntax", 
+			     scheme_make_prim_w_arity(expand_stx, 
+						      "expand-syntax",
+						      1, 1), 
+			     env);
   scheme_add_global_constant("local-expand", 
 			     scheme_make_prim_w_arity(local_expand, 
 						      "local-expand",
@@ -324,9 +347,24 @@ scheme_init_eval (Scheme_Env *env)
 						      "expand-once", 
 						      1, 1), 
 			     env);
+  scheme_add_global_constant("expand-syntax-once", 
+			     scheme_make_prim_w_arity(expand_stx_once, 
+						      "expand-once", 
+						      1, 1), 
+			     env);
   scheme_add_global_constant("expand-to-top-form", 
 			     scheme_make_prim_w_arity(expand_to_top_form, 
 						      "expand-to-top-form", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("expand-syntax-to-top-form", 
+			     scheme_make_prim_w_arity(expand_stx_to_top_form, 
+						      "expand-syntax-to-top-form", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("namespace-syntax-introduce", 
+			     scheme_make_prim_w_arity(top_introduce_stx, 
+						      "namespace-syntax-introduce", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("break-enabled", 
@@ -1477,7 +1515,7 @@ static void *compile_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *form;
-  int writeable, for_eval;
+  int writeable, for_eval, rename;
   Scheme_Comp_Env *env;
   Scheme_Compile_Info rec;
   Scheme_Object *o, *tl_queue;
@@ -1489,22 +1527,27 @@ static void *compile_k(void)
   env = (Scheme_Comp_Env *)p->ku.k.p2;
   writeable = p->ku.k.i1;
   for_eval = p->ku.k.i2;
+  rename = p->ku.k.i3;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
 
-  if (!SCHEME_STXP(form))
+  if (!SCHEME_STXP(form)) {
     form = scheme_datum_to_syntax(form, scheme_false, scheme_false, 1, 0);
+    rename = 1;
+  }
 
   /* Renamings for requires: */
-  if (env->genv->rename)
-    form = scheme_add_rename(form, env->genv->rename);
-  if (env->genv->exp_env && env->genv->exp_env->rename)
-    form = scheme_add_rename(form, env->genv->exp_env->rename);
-  if (env->genv->module) {
-    form = scheme_stx_phase_shift(form, 0, 
-				  env->genv->module->src_modidx, 
-				  env->genv->module->self_modidx);
+  if (rename) {
+    if (env->genv->rename)
+      form = scheme_add_rename(form, env->genv->rename);
+    if (env->genv->exp_env && env->genv->exp_env->rename)
+      form = scheme_add_rename(form, env->genv->exp_env->rename);
+    if (env->genv->module) {
+      form = scheme_stx_phase_shift(form, 0, 
+				    env->genv->module->src_modidx, 
+				    env->genv->module->self_modidx);
+    }
   }
 
 
@@ -1564,7 +1607,7 @@ static void *compile_k(void)
   return (void *)top;
 }
 
-static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeable, int for_eval, int eb)
+static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeable, int for_eval, int eb, int rename)
 {
   Scheme_Comp_Env *cenv;
   Scheme_Thread *p = scheme_current_thread;
@@ -1583,18 +1626,19 @@ static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeab
   p->ku.k.p2 = cenv;
   p->ku.k.i1 = writeable;
   p->ku.k.i2 = for_eval;
+  p->ku.k.i3 = rename;
 
   return (Scheme_Object *)scheme_top_level_do(compile_k, eb);
 }
 
 Scheme_Object *scheme_compile(Scheme_Object *form, Scheme_Env *env, int writeable)
 {
-  return _compile(form, env, writeable, 0, 1);
+  return _compile(form, env, writeable, 0, 1, 1);
 }
 
 Scheme_Object *scheme_compile_for_eval(Scheme_Object *form, Scheme_Env *env)
 {
-  return _compile(form, env, 0, 1, 1);
+  return _compile(form, env, 0, 1, 1, 1);
 }
 
 Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first, 
@@ -3997,7 +4041,7 @@ static void *expand_k(void)
   if (!SCHEME_STXP(obj))
     obj = scheme_datum_to_syntax(obj, scheme_false, scheme_false, 1, 0);
 
-  if (rename) {
+  if (rename > 0) {
     /* Renamings for requires: */
     if (env->genv->rename)
       obj = scheme_add_rename(obj, env->genv->rename);
@@ -4048,7 +4092,7 @@ do_default_eval_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
 {
   Scheme_Object *v;
 
-  v = _compile(argv[0], env, 0, 1, 0);
+  v = _compile(argv[0], env, 0, 1, 0, 0);
 
   return _eval(v, env, 0, 1, 0);
 }
@@ -4086,7 +4130,7 @@ static Scheme_Object *do_eval_in_env(void *e)
 }
 
 static Scheme_Object *
-eval(int argc, Scheme_Object *argv[])
+sch_eval(const char *who, int argc, Scheme_Object *argv[])
 {
   if (argc == 1) {
     return _scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_EVAL_HANDLER),
@@ -4095,7 +4139,7 @@ eval(int argc, Scheme_Object *argv[])
     Eval_In_Env *ee;
     
     if (SCHEME_TYPE(argv[1]) != scheme_namespace_type)
-      scheme_wrong_type("eval", "namespace", 1, argc, argv);
+      scheme_wrong_type(who, "namespace", 1, argc, argv);
 
     ee = MALLOC_ONE_RT(Eval_In_Env);
 #ifdef MZTAG_REQUIRED
@@ -4108,6 +4152,39 @@ eval(int argc, Scheme_Object *argv[])
     return scheme_dynamic_wind(pre_eval_in_env, do_eval_in_env, post_eval_in_env,
 			       NULL, ee);
   }
+}
+
+static Scheme_Object *
+eval(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *a[2], *form;
+
+  form = argv[0];
+  if (SCHEME_STXP(form)
+      && !SAME_TYPE(SCHEME_TYPE(SCHEME_STX_VAL(form)), scheme_compilation_top_type)) {
+    Scheme_Env *genv;
+    genv = (Scheme_Env *)scheme_get_param(scheme_config, MZCONFIG_ENV);
+    if (genv->rename)
+      form = scheme_add_rename(form, genv->rename);
+    if (genv->exp_env && genv->exp_env->rename)
+      form = scheme_add_rename(form, genv->exp_env->rename);
+  }
+
+  a[0] = form;
+  if (argc > 1)
+    a[1] = argv[1];  
+  return sch_eval("eval", argc, a);
+}
+
+static Scheme_Object *
+eval_stx(int argc, Scheme_Object *argv[])
+{
+  if (!SCHEME_STXP(argv[0])) {
+    scheme_wrong_type("eval-syntax", "syntax", 0, argc, argv);
+    return NULL;
+  }
+  
+  return sch_eval("eval-syntax", argc, argv);
 }
 
 Scheme_Object *
@@ -4130,9 +4207,42 @@ current_eval(int argc, Scheme_Object **argv)
 }
 
 static Scheme_Object *
+top_introduce_stx(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *form;
+
+  if (!SCHEME_STXP(argv[0])) {
+    scheme_wrong_type("namespace-syntax-introduce", "syntax", 0, argc, argv);
+    return NULL;
+  }
+  
+  form = argv[0];
+
+  if (!SAME_TYPE(SCHEME_TYPE(SCHEME_STX_VAL(form)), scheme_compilation_top_type)) {
+    Scheme_Env *genv;
+    genv = (Scheme_Env *)scheme_get_param(scheme_config, MZCONFIG_ENV);
+    if (genv->rename)
+      form = scheme_add_rename(form, genv->rename);
+    if (genv->exp_env && genv->exp_env->rename)
+      form = scheme_add_rename(form, genv->exp_env->rename);
+  }
+
+  return form;
+}
+
+static Scheme_Object *
 compile(int argc, Scheme_Object *argv[])
 {
-  return _compile(argv[0], scheme_get_env(scheme_config), 1, 0, 0);
+  return _compile(argv[0], scheme_get_env(scheme_config), 1, 0, 0, 1);
+}
+
+static Scheme_Object *
+compile_stx(int argc, Scheme_Object *argv[])
+{
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("compile-syntax", "syntax", 0, argc, argv);
+
+  return _compile(argv[0], scheme_get_env(scheme_config), 1, 0, 0, 0);
 }
 
 static Scheme_Object *
@@ -4151,6 +4261,18 @@ static Scheme_Object *expand(int argc, Scheme_Object **argv)
   env = scheme_get_env(scheme_config);
 
   return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), -1, 1, 0, 0);
+}
+
+static Scheme_Object *expand_stx(int argc, Scheme_Object **argv)
+{
+  Scheme_Env *env;
+
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("expand-syntax", "syntax", 0, argc, argv);
+
+  env = scheme_get_env(scheme_config);
+
+  return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), -1, -1, 0, 0);
 }
 
 static Scheme_Object *stop_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
@@ -4273,6 +4395,19 @@ expand_once(int argc, Scheme_Object **argv)
 }
 
 static Scheme_Object *
+expand_stx_once(int argc, Scheme_Object **argv)
+{
+  Scheme_Env *env;
+
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("expand-syntax-once", "syntax", 0, argc, argv);
+  
+  env = scheme_get_env(scheme_config);
+
+  return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), 1, -1, 0, 0);
+}
+
+static Scheme_Object *
 expand_to_top_form(int argc, Scheme_Object **argv)
 {
   Scheme_Env *env;
@@ -4280,6 +4415,19 @@ expand_to_top_form(int argc, Scheme_Object **argv)
   env = scheme_get_env(scheme_config);
 
   return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), 1, 1, 1, 0);
+}
+
+static Scheme_Object *
+expand_stx_to_top_form(int argc, Scheme_Object **argv)
+{
+  Scheme_Env *env;
+
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("expand-syntax-to-top", "syntax", 0, argc, argv);
+  
+  env = scheme_get_env(scheme_config);
+
+  return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), 1, -1, 1, 0);
 }
 
 Scheme_Object *scheme_eval_string_all(const char *str, Scheme_Env *env, int cont)

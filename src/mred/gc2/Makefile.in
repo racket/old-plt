@@ -215,11 +215,11 @@ xsrc/xcglue.c: $(srcdir)/../mzscheme/utils/xcglue.c ../wxs/xcglue.o $(XFORMDEP)
 	$(XFORM) $(srcdir)/../mzscheme/utils/xcglue.c xsrc/xcglue.c
 
 
-xsrc/mred.cc: $(srcdir)/mred.cxx mred.o $(XFORMDEP)
-	$(XFORM) $(srcdir)/mred.cxx xsrc/mred.cc
+xsrc/mred.cc: $(srcdir)/../mred.cxx ../mred.o $(XFORMDEP)
+	$(XFORM) $(srcdir)/../mred.cxx xsrc/mred.cc
 
-xsrc/mredx.cc: $(srcdir)/mredx.cxx mredx.o $(XFORMDEP)
-	$(XFORM) $(srcdir)/mredx.cxx xsrc/mredx.cc
+xsrc/mredx.cc: $(srcdir)/../mredx.cxx ../mredx.o $(XFORMDEP)
+	$(XFORM) $(srcdir)/../mredx.cxx xsrc/mredx.cc
 
 xsrc/wxs_bmap.cc: $(srcdir)/../wxs/wxs_bmap.cxx ../wxs/wxs_bmap.o $(XFORMDEP)
 	$(XFORM) $(srcdir)/../wxs/wxs_bmap.cxx xsrc/wxs_bmap.cc

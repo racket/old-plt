@@ -2,7 +2,33 @@
 srcdir = @srcdir@
 
 PLTSRCDIR = $(srcdir)/../..
-include ../../mred/Make.env
+
+###########################
+#      Common Macros      #
+###########################
+CC = @CC@
+CXX = @CXX@
+LINKER = $(CXX)
+PERL = @PERL@
+RANLIB = @RANLIB@
+AR = @AR@
+ARFLAGS = @ARFLAGS@
+OPTIONS = @OPTIONS@ @MROPTIONS@
+COMPFLAGS = @CFLAGS@
+XINCLUDE = @X_CFLAGS@
+XLIB = @X_LIBS@
+LDLIBS = @X_PRE_LIBS@ -lXaw -lXmu -lXt -lX11 -lXext @X_EXTRA_LIBS@ @LIBS@
+GCDIRECTORY = @GCDIR@
+WBUILD = @WBUILD@
+
+WXINC = $(PLTSRCDIR)/wxxt/src/AIAI-include -I$(PLTSRCDIR)/wxxt/src
+NOGCINC = -I$(WXINC) -I$(PLTSRCDIR)/mred/wxme/ -I$(PLTSRCDIR)/mzscheme/include/
+INC = -I$(PLTSRCDIR)/mzscheme/$(GCDIRECTORY) $(NOGCINC)
+CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt $(COMPFLAGS)
+CPPFLAGS = $(CXXFLAGS)
+CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt $(COMPFLAGS)
+LDFLAGS = $(XLIB)
+###########################
 
 WXDIR = ..
 
@@ -80,12 +106,7 @@ CCOBJS =\
  Windows/Message.o\
  Windows/Panel.o\
  Windows/RadioBox.o\
- ${WXRESOURCES}\
- ${SCROLLBAR}\
  Windows/Slider.o\
- ${STATICITEMS}\
- ${TOOLBAR}\
- ${VIRTLISTBOX}\
  Windows/Window.o\
 
 COBJS =\
@@ -119,44 +140,42 @@ WOBJS =\
 \
  XWidgets/xwScrollWin.o\
 
-OBJS = ${COBJS} ${WOBJS} ${CCOBJS}
-
-SRCS = ${CCOBJS:.o=.cc} ${COBJS:.o=.c} ${WOBJS:.o=.c}
+OBJS = $(COBJS) $(WOBJS) $(CCOBJS)
 
 #------------------------------------------------------------------------------
 # dependencies for wbuild widgets
 #------------------------------------------------------------------------------
 
-xwArrow.w.dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwArrow_w_dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwArrow.w
-xwBoard.w.dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w
-xwButton.w.dep    = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwBoard_w_dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w
+xwButton_w_dep    = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwLabel.w $(srcdir)/XWidgets/xwButton.w
-xwCanvas.w.dep    = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwCanvas_w_dep    = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwCanvas.w
-xwCommon.w.dep    = $(srcdir)/XWidgets/xwCommon.w
-xwMenu.w.dep    = $(srcdir)/XWidgets/xwBoard.w $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w \
-                         $(srcdir)/XWidgets/xwMenu.w
-xwEnforcer.w.dep  = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwCommon_w_dep    = $(srcdir)/XWidgets/xwCommon.w
+xwMenu_w_dep    = $(srcdir)/XWidgets/xwBoard.w $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w \
+			 $(srcdir)/XWidgets/xwMenu.w
+xwEnforcer_w_dep  = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwEnforcer.w
-xwFrame.w.dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w
-xwGroup.w.dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwFrame_w_dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w
+xwGroup_w_dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwRowCol.w $(srcdir)/XWidgets/xwGroup.w
-xwHScrollb.w.dep  = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwHScrollb_w_dep  = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwScrollbar.w $(srcdir)/XWidgets/xwHScrollb.w
-xwLabel.w.dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwLabel_w_dep     = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwLabel.w
-xwRowCol.w.dep    = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwRowCol_w_dep    = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwRowCol.w
-xwScrollWin.w.dep = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwScrollWin_w_dep = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwScrollWin.w
-xwScrollbar.w.dep = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwScrollbar_w_dep = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwScrollbar.w
-xwSlider2.w.dep   = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwSlider2_w_dep   = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwLabel.w $(srcdir)/XWidgets/xwSlider2.w
-xwToggle.w.dep    = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwToggle_w_dep    = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwLabel.w $(srcdir)/XWidgets/xwButton.w $(srcdir)/XWidgets/xwToggle.w
-xwVScrollb.w.dep  = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
+xwVScrollb_w_dep  = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $(srcdir)/XWidgets/xwBoard.w \
 			 $(srcdir)/XWidgets/xwScrollbar.w $(srcdir)/XWidgets/xwVScrollb.w
 
 #------------------------------------------------------------------------------
@@ -166,33 +185,173 @@ xwVScrollb.w.dep  = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $
 _WX_CXX_FLAGS = -I$(srcdir) -I$(srcdir)/XWidgets
 _WX_C_FLAGS = -I$(srcdir)/XWidgets
 
-Application/%.o: $(srcdir)/Application/%.cc
-	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
-DataStructures/%.o: $(srcdir)/DataStructures/%.cc
-	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
-DeviceContexts/%.o: $(srcdir)/DeviceContexts/%.cc
-	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
-Dialogs/%.o: $(srcdir)/Dialogs/%.cc
-	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
-EventHandling/%.o: $(srcdir)/EventHandling/%.cc
-	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
-GDI-Classes/%.o: $(srcdir)/GDI-Classes/%.cc
-	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
-Misc/%.o: $(srcdir)/Misc/%.cc
-	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
-Utilities/%.o: $(srcdir)/Utilities/%.cc
-	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
-Windows/%.o: $(srcdir)/Windows/%.cc
-	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o $@ $<
-
-XWidgets/%.o: $(srcdir)/XWidgets/%.c
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o $@ $<
-
 all: lib$(LIBNAME).a
 
 lib$(LIBNAME).a: $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
+	$(AR) $(ARFLAGS) lib$(LIBNAME).a $(OBJS)
 	$(RANLIB) $@
+
+Application/AppMain.o: $(srcdir)/Application/AppMain.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Application/AppMain.o $(srcdir)/Application/AppMain.cc
+Application/GlobalData.o: $(srcdir)/Application/GlobalData.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Application/GlobalData.o $(srcdir)/Application/GlobalData.cc
+
+DataStructures/Object.o: $(srcdir)/DataStructures/Object.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o DataStructures/Object.o $(srcdir)/DataStructures/Object.cc
+DataStructures/TypeTree.o: $(srcdir)/DataStructures/TypeTree.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o DataStructures/TypeTree.o $(srcdir)/DataStructures/TypeTree.cc
+DataStructures/wb_hash.o: $(srcdir)/DataStructures/wb_hash.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o DataStructures/wb_hash.o $(srcdir)/DataStructures/wb_hash.cc
+DataStructures/wb_list.o: $(srcdir)/DataStructures/wb_list.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o DataStructures/wb_list.o $(srcdir)/DataStructures/wb_list.cc
+
+DeviceContexts/DC.o: $(srcdir)/DeviceContexts/DC.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o DeviceContexts/DC.o $(srcdir)/DeviceContexts/DC.cc
+DeviceContexts/WindowDC.o: $(srcdir)/DeviceContexts/WindowDC.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o DeviceContexts/WindowDC.o $(srcdir)/DeviceContexts/WindowDC.cc
+DeviceContexts/PSDC.o: $(srcdir)/DeviceContexts/PSDC.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o DeviceContexts/PSDC.o $(srcdir)/DeviceContexts/PSDC.cc
+DeviceContexts/MemoryDC.o: $(srcdir)/DeviceContexts/MemoryDC.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o DeviceContexts/MemoryDC.o $(srcdir)/DeviceContexts/MemoryDC.cc
+
+Dialogs/FileDialog.o: $(srcdir)/Dialogs/FileDialog.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Dialogs/FileDialog.o $(srcdir)/Dialogs/FileDialog.cc
+Dialogs/MessageBox.o: $(srcdir)/Dialogs/MessageBox.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Dialogs/MessageBox.o $(srcdir)/Dialogs/MessageBox.cc
+
+EventHandling/EvtHandler.o: $(srcdir)/EventHandling/EvtHandler.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o EventHandling/EvtHandler.o $(srcdir)/EventHandling/EvtHandler.cc
+EventHandling/wb_sysev.o: $(srcdir)/EventHandling/wb_sysev.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o EventHandling/wb_sysev.o $(srcdir)/EventHandling/wb_sysev.cc
+EventHandling/wb_stdev.o: $(srcdir)/EventHandling/wb_stdev.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o EventHandling/wb_stdev.o $(srcdir)/EventHandling/wb_stdev.cc
+
+GDI-Classes/Bitmap.o: $(srcdir)/GDI-Classes/Bitmap.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o GDI-Classes/Bitmap.o $(srcdir)/GDI-Classes/Bitmap.cc
+GDI-Classes/Pen+Brush.o: $(srcdir)/GDI-Classes/Pen+Brush.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o GDI-Classes/Pen+Brush.o $(srcdir)/GDI-Classes/Pen+Brush.cc
+GDI-Classes/Colour.o: $(srcdir)/GDI-Classes/Colour.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o GDI-Classes/Colour.o $(srcdir)/GDI-Classes/Colour.cc
+GDI-Classes/Font.o: $(srcdir)/GDI-Classes/Font.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o GDI-Classes/Font.o $(srcdir)/GDI-Classes/Font.cc
+GDI-Classes/FontDirectory.o: $(srcdir)/GDI-Classes/FontDirectory.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o GDI-Classes/FontDirectory.o $(srcdir)/GDI-Classes/FontDirectory.cc
+
+Misc/Clipboard.o: $(srcdir)/Misc/Clipboard.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Misc/Clipboard.o $(srcdir)/Misc/Clipboard.cc
+Misc/Timer.o: $(srcdir)/Misc/Timer.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Misc/Timer.o $(srcdir)/Misc/Timer.cc
+
+Utilities/Application.o: $(srcdir)/Utilities/Application.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Application.o $(srcdir)/Utilities/Application.cc
+Utilities/Assert.o: $(srcdir)/Utilities/Assert.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Assert.o $(srcdir)/Utilities/Assert.cc
+Utilities/BusyCursor.o: $(srcdir)/Utilities/BusyCursor.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/BusyCursor.o $(srcdir)/Utilities/BusyCursor.cc
+Utilities/Date+Time.o: $(srcdir)/Utilities/Date+Time.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Date+Time.o $(srcdir)/Utilities/Date+Time.cc
+Utilities/Directory.o: $(srcdir)/Utilities/Directory.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Directory.o $(srcdir)/Utilities/Directory.cc
+Utilities/Error.o: $(srcdir)/Utilities/Error.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Error.o $(srcdir)/Utilities/Error.cc
+Utilities/GDI.o: $(srcdir)/Utilities/GDI.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/GDI.o $(srcdir)/Utilities/GDI.cc
+Utilities/Home.o: $(srcdir)/Utilities/Home.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Home.o $(srcdir)/Utilities/Home.cc
+Utilities/Misc.o: $(srcdir)/Utilities/Misc.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Misc.o $(srcdir)/Utilities/Misc.cc
+Utilities/Net.o: $(srcdir)/Utilities/Net.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Net.o $(srcdir)/Utilities/Net.cc
+Utilities/Path.o: $(srcdir)/Utilities/Path.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Path.o $(srcdir)/Utilities/Path.cc
+Utilities/Resources.o: $(srcdir)/Utilities/Resources.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Resources.o $(srcdir)/Utilities/Resources.cc
+Utilities/String.o: $(srcdir)/Utilities/String.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/String.o $(srcdir)/Utilities/String.cc
+Utilities/TempFile.o: $(srcdir)/Utilities/TempFile.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/TempFile.o $(srcdir)/Utilities/TempFile.cc
+
+Windows/Button.o: $(srcdir)/Windows/Button.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Button.o $(srcdir)/Windows/Button.cc
+Windows/Canvas.o: $(srcdir)/Windows/Canvas.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Canvas.o $(srcdir)/Windows/Canvas.cc
+Windows/CheckBox.o: $(srcdir)/Windows/CheckBox.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/CheckBox.o $(srcdir)/Windows/CheckBox.cc
+Windows/Choice.o: $(srcdir)/Windows/Choice.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Choice.o $(srcdir)/Windows/Choice.cc
+Windows/DialogBox.o: $(srcdir)/Windows/DialogBox.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/DialogBox.o $(srcdir)/Windows/DialogBox.cc
+Windows/Frame.o: $(srcdir)/Windows/Frame.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Frame.o $(srcdir)/Windows/Frame.cc
+Windows/Gauge.o: $(srcdir)/Windows/Gauge.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Gauge.o $(srcdir)/Windows/Gauge.cc
+Windows/Item.o: $(srcdir)/Windows/Item.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Item.o $(srcdir)/Windows/Item.cc
+Windows/Layout.o: $(srcdir)/Windows/Layout.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Layout.o $(srcdir)/Windows/Layout.cc
+Windows/ListBox.o: $(srcdir)/Windows/ListBox.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/ListBox.o $(srcdir)/Windows/ListBox.cc
+Windows/Menu.o: $(srcdir)/Windows/Menu.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Menu.o $(srcdir)/Windows/Menu.cc
+Windows/MenuBar.o: $(srcdir)/Windows/MenuBar.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/MenuBar.o $(srcdir)/Windows/MenuBar.cc
+Windows/Message.o: $(srcdir)/Windows/Message.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Message.o $(srcdir)/Windows/Message.cc
+Windows/Panel.o: $(srcdir)/Windows/Panel.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Panel.o $(srcdir)/Windows/Panel.cc
+Windows/RadioBox.o: $(srcdir)/Windows/RadioBox.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/RadioBox.o $(srcdir)/Windows/RadioBox.cc
+Windows/Slider.o: $(srcdir)/Windows/Slider.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Slider.o $(srcdir)/Windows/Slider.cc
+Windows/Window.o: $(srcdir)/Windows/Window.cc
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Window.o $(srcdir)/Windows/Window.cc
+
+XWidgets/wxAllocColor.o: $(srcdir)/XWidgets/wxAllocColor.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/wxAllocColor.o $(srcdir)/XWidgets/wxAllocColor.c
+XWidgets/xwArrow.o: $(srcdir)/XWidgets/xwArrow.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwArrow.o $(srcdir)/XWidgets/xwArrow.c
+XWidgets/xwBoard.o: $(srcdir)/XWidgets/xwBoard.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwBoard.o $(srcdir)/XWidgets/xwBoard.c
+XWidgets/xwButton.o: $(srcdir)/XWidgets/xwButton.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwButton.o $(srcdir)/XWidgets/xwButton.c
+XWidgets/xwCanvas.o: $(srcdir)/XWidgets/xwCanvas.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwCanvas.o $(srcdir)/XWidgets/xwCanvas.c
+XWidgets/xwCommon.o: $(srcdir)/XWidgets/xwCommon.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwCommon.o $(srcdir)/XWidgets/xwCommon.c
+XWidgets/xwEnforcer.o: $(srcdir)/XWidgets/xwEnforcer.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwEnforcer.o $(srcdir)/XWidgets/xwEnforcer.c
+XWidgets/xwFrame.o: $(srcdir)/XWidgets/xwFrame.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwFrame.o $(srcdir)/XWidgets/xwFrame.c
+XWidgets/xwGroup.o: $(srcdir)/XWidgets/xwGroup.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwGroup.o $(srcdir)/XWidgets/xwGroup.c
+XWidgets/xwHScrollb.o: $(srcdir)/XWidgets/xwHScrollb.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwHScrollb.o $(srcdir)/XWidgets/xwHScrollb.c
+XWidgets/xwLabel.o: $(srcdir)/XWidgets/xwLabel.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwLabel.o $(srcdir)/XWidgets/xwLabel.c
+XWidgets/xwMenu.o: $(srcdir)/XWidgets/xwMenu.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwMenu.o $(srcdir)/XWidgets/xwMenu.c
+XWidgets/xwMultiList.o: $(srcdir)/XWidgets/xwMultiList.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwMultiList.o $(srcdir)/XWidgets/xwMultiList.c
+XWidgets/xwRowCol.o: $(srcdir)/XWidgets/xwRowCol.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwRowCol.o $(srcdir)/XWidgets/xwRowCol.c
+XWidgets/xwScrollText.o: $(srcdir)/XWidgets/xwScrollText.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwScrollText.o $(srcdir)/XWidgets/xwScrollText.c
+XWidgets/xwScrollWin.o: $(srcdir)/XWidgets/xwScrollWin.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwScrollWin.o $(srcdir)/XWidgets/xwScrollWin.c
+XWidgets/xwScrollbar.o: $(srcdir)/XWidgets/xwScrollbar.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwScrollbar.o $(srcdir)/XWidgets/xwScrollbar.c
+XWidgets/xwSlider2.o: $(srcdir)/XWidgets/xwSlider2.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwSlider2.o $(srcdir)/XWidgets/xwSlider2.c
+XWidgets/xwTabString.o: $(srcdir)/XWidgets/xwTabString.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwTabString.o $(srcdir)/XWidgets/xwTabString.c
+XWidgets/xwToggle.o: $(srcdir)/XWidgets/xwToggle.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwToggle.o $(srcdir)/XWidgets/xwToggle.c
+XWidgets/xwTools3d.o: $(srcdir)/XWidgets/xwTools3d.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwTools3d.o $(srcdir)/XWidgets/xwTools3d.c
+XWidgets/xwVScrollb.o: $(srcdir)/XWidgets/xwVScrollb.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwVScrollb.o $(srcdir)/XWidgets/xwVScrollb.c
+XWidgets/xwscroll.o: $(srcdir)/XWidgets/xwscroll.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwscroll.o $(srcdir)/XWidgets/xwscroll.c
 
 clean:
 	rm -f Application/*.o
@@ -212,37 +371,37 @@ clean:
 #------------------------------------------------------------------------------
 
 $(srcdir)/XWidgets/xwArrow.c $(srcdir)/XWidgets/xwArrow.h: $(srcdir)/XWidgets/xwArrow.w
-	$(WBUILD) $(xwArrow.w.dep)
+	$(WBUILD) $(xwArrow_w_dep)
 $(srcdir)/XWidgets/xwBoard.c $(srcdir)/XWidgets/xwBoard.h: $(srcdir)/XWidgets/xwBoard.w
-	$(WBUILD) $(xwBoard.w.dep)
+	$(WBUILD) $(xwBoard_w_dep)
 $(srcdir)/XWidgets/xwButton.c $(srcdir)/XWidgets/xwButton.h: $(srcdir)/XWidgets/xwButton.w
-	$(WBUILD) $(xwButton.w.dep)
+	$(WBUILD) $(xwButton_w_dep)
 $(srcdir)/XWidgets/xwCanvas.c $(srcdir)/XWidgets/xwCanvas.h: $(srcdir)/XWidgets/xwCanvas.w
-	$(WBUILD) $(xwCanvas.w.dep)
+	$(WBUILD) $(xwCanvas_w_dep)
 $(srcdir)/XWidgets/xwCommon.c $(srcdir)/XWidgets/xwCommon.h: $(srcdir)/XWidgets/xwCommon.w
-	$(WBUILD) $(xwCommon.w.dep)
+	$(WBUILD) $(xwCommon_w_dep)
 $(srcdir)/XWidgets/xwEnforcer.c $(srcdir)/XWidgets/xwEnforcer.h: $(srcdir)/XWidgets/xwEnforcer.w
-	$(WBUILD) $(xwEnforcer.w.dep)
+	$(WBUILD) $(xwEnforcer_w_dep)
 $(srcdir)/XWidgets/xwFrame.c $(srcdir)/XWidgets/xwFrame.h: $(srcdir)/XWidgets/xwFrame.w
-	$(WBUILD) $(xwFrame.w.dep)
+	$(WBUILD) $(xwFrame_w_dep)
 $(srcdir)/XWidgets/xwGroup.c $(srcdir)/XWidgets/xwGroup.h: $(srcdir)/XWidgets/xwGroup.w
-	$(WBUILD) $(xwGroup.w.dep)
+	$(WBUILD) $(xwGroup_w_dep)
 $(srcdir)/XWidgets/xwHScrollb.c $(srcdir)/XWidgets/xwHScrollb.h: $(srcdir)/XWidgets/xwHScrollb.w
-	$(WBUILD) $(xwHScrollb.w.dep)
+	$(WBUILD) $(xwHScrollb_w_dep)
 $(srcdir)/XWidgets/xwLabel.c $(srcdir)/XWidgets/xwLabel.h: $(srcdir)/XWidgets/xwLabel.w
-	$(WBUILD) $(xwLabel.w.dep)
+	$(WBUILD) $(xwLabel_w_dep)
 $(srcdir)/XWidgets/xwRowCol.c $(srcdir)/XWidgets/xwRowCol.h: $(srcdir)/XWidgets/xwRowCol.w
-	$(WBUILD) $(xwRowCol.w.dep)
+	$(WBUILD) $(xwRowCol_w_dep)
 $(srcdir)/XWidgets/xwScrollWin.c $(srcdir)/XWidgets/xwScrollWin.h: $(srcdir)/XWidgets/xwScrollWin.w
-	$(WBUILD) $(xwScrollWin.w.dep)
+	$(WBUILD) $(xwScrollWin_w_dep)
 $(srcdir)/XWidgets/xwScrollbar.c $(srcdir)/XWidgets/xwScrollbar.h: $(srcdir)/XWidgets/xwScrollbar.w
-	$(WBUILD) $(xwScrollbar.w.dep)
+	$(WBUILD) $(xwScrollbar_w_dep)
 $(srcdir)/XWidgets/xwSlider2.c $(srcdir)/XWidgets/xwSlider2.h: $(srcdir)/XWidgets/xwSlider2.w
-	$(WBUILD) $(xwSlider2.w.dep)
+	$(WBUILD) $(xwSlider2_w_dep)
 $(srcdir)/XWidgets/xwToggle.c $(srcdir)/XWidgets/xwToggle.h: $(srcdir)/XWidgets/xwToggle.w
-	$(WBUILD) $(xwToggle.w.dep)
+	$(WBUILD) $(xwToggle_w_dep)
 $(srcdir)/XWidgets/xwVScrollb.c $(srcdir)/XWidgets/xwVScrollb.h: $(srcdir)/XWidgets/xwVScrollb.w
-	$(WBUILD) $(xwVScrollb.w.dep)
+	$(WBUILD) $(xwVScrollb_w_dep)
  
 Application/AppMain.o:\
 	$(srcdir)/Application/AppMain.cc \
@@ -363,7 +522,7 @@ GDI-Classes/Pen+Brush.o:\
 	$(srcdir)/GDI-Classes/Pen+Brush.cc  $(srcdir)/DeviceContexts/DC.h \
 	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
 	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Pen+Brush.h \
-        $(srcdir)/../../wxcommon/Region.h $(srcdir)/../../wxcommon/Region.cxx
+	$(srcdir)/../../wxcommon/Region.h $(srcdir)/../../wxcommon/Region.cxx
 
 Misc/Timer.o:\
 	$(srcdir)/Misc/Timer.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
@@ -628,34 +787,34 @@ XWidgets/xwMultiList.o:\
 XWidgets/xwScrollText.o:\
 	$(srcdir)/XWidgets/xwScrollText.c $(srcdir)/XWidgets/xwScrollText.h $(srcdir)/XWidgets/xwScrollTextP.h
 
-XWidgets/xwCommon.o:	 $(xwCommon.w.dep) $(srcdir)/XWidgets/wxAllocColor.c
+XWidgets/xwCommon.o:	 $(xwCommon_w_dep) $(srcdir)/XWidgets/wxAllocColor.c
 
-XWidgets/xwFrame.o:	 $(xwFrame.w.dep)
+XWidgets/xwFrame.o:	 $(xwFrame_w_dep)
 
-XWidgets/xwBoard.o:	 $(xwBoard.w.dep)
+XWidgets/xwBoard.o:	 $(xwBoard_w_dep)
 
-XWidgets/xwLabel.o:	 $(xwLabel.w.dep)
+XWidgets/xwLabel.o:	 $(xwLabel_w_dep)
 
-XWidgets/xwButton.o:	 $(xwButton.w.dep)
+XWidgets/xwButton.o:	 $(xwButton_w_dep)
 
-XWidgets/xwToggle.o:	 $(xwToggle.w.dep)
+XWidgets/xwToggle.o:	 $(xwToggle_w_dep)
 
-XWidgets/xwCanvas.o:	 $(xwCanvas.w.dep)
+XWidgets/xwCanvas.o:	 $(xwCanvas_w_dep)
 
-XWidgets/xwEnforcer.o:	 $(xwEnforcer.w.dep)
+XWidgets/xwEnforcer.o:	 $(xwEnforcer_w_dep)
 
-XWidgets/xwGroup.o:	 $(xwGroup.w.dep)
+XWidgets/xwGroup.o:	 $(xwGroup_w_dep)
 
-XWidgets/xwRowCol.o:	 $(xwRowCol.w.dep)
+XWidgets/xwRowCol.o:	 $(xwRowCol_w_dep)
 
-XWidgets/xwArrow.o:	 $(xwArrow.w.dep)
+XWidgets/xwArrow.o:	 $(xwArrow_w_dep)
 
-XWidgets/xwSlider2.o:	 $(xwSlider2.w.dep)
+XWidgets/xwSlider2.o:	 $(xwSlider2_w_dep)
 
-XWidgets/xwHScrollb.o:	 $(xwHScrollb.w.dep)
+XWidgets/xwHScrollb.o:	 $(xwHScrollb_w_dep)
 
-XWidgets/xwVScrollb.o:	 $(xwVScrollb.w.dep)
+XWidgets/xwVScrollb.o:	 $(xwVScrollb_w_dep)
 
-XWidgets/xwScrollbar.o:	 $(xwScrollbar.w.dep)
+XWidgets/xwScrollbar.o:	 $(xwScrollbar_w_dep)
 
-XWidgets/xwScrollWin.o:	 $(xwScrollWin.w.dep)
+XWidgets/xwScrollWin.o:	 $(xwScrollWin_w_dep)

@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.2 for FWF V4.0
 #
-# $Id: xwCommon.w,v 1.8 1998/12/06 17:44:47 mflatt Exp $
+# $Id: xwCommon.w,v 1.9 1999/08/28 16:14:51 mflatt Exp $
 
 @class XfwfCommon (Composite)  @file=xwCommon
 
@@ -408,10 +408,10 @@ focus, the parent is asked to give it to another widget.
 
 @proc destroy
 {
+#if 0
     Widget parent = XtParent($);
     Time time = CurrentTime;
 
-#if 0
     /* For MrEd: no focus delegation. If the widget is being destroyed,
        it can't still have the efefctive focus. (Either the widget is hidden
        or its parent is hidden.) */

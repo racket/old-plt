@@ -34,7 +34,6 @@
     location->window
     set-dialogs
     set-executer
-    current-gl-context
     send-event
     file-creator-and-type
     set-snip-class-getter

@@ -2030,7 +2030,7 @@ void wxWindow::GetTextExtent(const char *s, float *w, float *h, float *descent,
       if (xfont) {
 	XGlyphInfo goverall;
 	XftTextExtents8(wxAPP_DISPLAY, xfont, (XftChar8 *)s, strlen(s), &goverall);
-	*w = (float)(goverall.width);
+	*w = (float)(goverall.xOff);
 	*h = (float)(xfont->ascent + xfont->descent);
 	if (descent) *descent = (float)xfont->descent;
 	if (ext_leading) *ext_leading = 0.0;

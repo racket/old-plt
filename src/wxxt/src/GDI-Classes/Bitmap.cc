@@ -280,8 +280,9 @@ void wxBitmap::Destroy(void)
   if (Xbitmap) {
     XFreePixmap(wxAPP_DISPLAY, Xbitmap->x_pixmap); // free pixmap
 # ifdef WX_USE_XRENDER
-    if (Xbitmap->picture)
+    if (Xbitmap->picture) {
       wxFreePicture(Xbitmap->picture);
+    }
 # endif
     
     switch (Xbitmap->type) { // free type specific data

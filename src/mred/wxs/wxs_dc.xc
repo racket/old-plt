@@ -339,7 +339,7 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 
 @ m "get-size" : void[]/CastToSO//spAnything MyGetSize(); : : /CheckOk[METHODNAME("dc<%>","get-size")]
 
-@ m "get-gl" : wxGL^ _GetGL();
+@ m "get-gl-context" : wxGL^ _GetGL();
 
 @ q "ok?" : bool Ok();
 
@@ -430,31 +430,22 @@ START_XFORM_SKIP;
 
 
 #ifdef USE_GL
-extern void *wxWithGLContext(wxGL *gl, void *thunk);
-extern void wxSetGLContext(wxGL *gl);
+extern void *wxWithGLContext(wxGL *gl, void *thunk, void *alt_waitable, int eb);
 #endif
 
-static void *WithContext(wxGL *gl, void *thunk)
+static void *WithContext(wxGL *gl, void *thunk, void *alt_waitable, int eb)
 {
 #ifdef USE_GL
-  return wxWithGLContext(gl, thunk);
+  return wxWithGLContext(gl, thunk, alt_waitable, eb);
 #endif
 }
 
-static void _ThisContextCurrent(wxGL *gl)
-{
-#ifdef USE_GL
-  wxSetGLContext(gl);
-#endif
-}
-
-@CLASSBASE wxGL "gl" : "object"
-@INTERFACE "gl"
+@CLASSBASE wxGL "gl-context" : "object"
+@INTERFACE "gl-context"
 
 @ "ok?" : bool Ok()
 @ "swap-buffers" : void SwapBuffers()
-@ m "set-as-context" : void _ThisContextCurrent()
-@ m "with-context" : void[]/CastToSO//spAnything WithContext(void[]/CastToSO/CastFromSO/spAnything///push)
+@ m "call-as-current" : void[]/CastToSO//spAnything WithContext(void[]/CastToSO/CastFromSO/spAnything///push,void[]=NULL/CastToSO/CastFromSO/spAnything///push,bool=0)
 
 @END
 

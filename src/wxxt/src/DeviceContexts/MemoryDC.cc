@@ -78,45 +78,48 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
     }
   }
 
-    // free all associated GCs
-    Destroy();
-
-    if (bitmap && bitmap->Ok()) {
-	// The bitmap must use the display and screen of the application.
-	// The drawable is the associated pixmap, width, height and depth
-	// will be queried with XGetGeometry.
-	wxWindowDC_Xinit *init;
-	Pixmap pm;
-	init = new wxWindowDC_Xinit;
-	init->dpy      = wxAPP_DISPLAY;
-	init->scn      = wxAPP_SCREEN;
-	pm = GETPIXMAP(bitmap);
-	init->drawable = pm;
-	Initialize(init);
-#ifdef USE_GL
-	if (X->wx_gl) {
-	  int depth;
-	  depth = bitmap->GetDepth();
-	  X->wx_gl->Reset((depth == 1) ? 0 : (long)pm, 1);
-	}
+  // free all associated GCs
+#ifdef WX_USE_XRENDER
+  X->picture = 0;
 #endif
-	// If another colourmap is associated with the bitmap,
-	//  use it instead of the current colourmap.
-	if (bitmap->GetColourMap() != current_cmap) {
-	  wxColourMap *cm;
-	  cm = bitmap->GetColourMap();
-	  SetColourMap(cm);
-	}
-	selected = bitmap;
-	if (!read_only) {
-	  bitmap->selectedIntoDC = -1;
-	  selected->selectedTo = this;
-	}
-    } else {
-	DRAWABLE = 0;
-	WIDTH = HEIGHT = 0;
-	selected = NULL;
+  Destroy();
+  
+  if (bitmap && bitmap->Ok()) {
+    // The bitmap must use the display and screen of the application.
+    // The drawable is the associated pixmap, width, height and depth
+    // will be queried with XGetGeometry.
+    wxWindowDC_Xinit *init;
+    Pixmap pm;
+    init = new wxWindowDC_Xinit;
+    init->dpy      = wxAPP_DISPLAY;
+    init->scn      = wxAPP_SCREEN;
+    pm = GETPIXMAP(bitmap);
+    init->drawable = pm;
+    Initialize(init);
+#ifdef USE_GL
+    if (X->wx_gl) {
+      int depth;
+      depth = bitmap->GetDepth();
+      X->wx_gl->Reset((depth == 1) ? 0 : (long)pm, 1);
     }
+#endif
+    // If another colourmap is associated with the bitmap,
+    //  use it instead of the current colourmap.
+    if (bitmap->GetColourMap() != current_cmap) {
+      wxColourMap *cm;
+      cm = bitmap->GetColourMap();
+      SetColourMap(cm);
+    }
+    selected = bitmap;
+    if (!read_only) {
+      bitmap->selectedIntoDC = -1;
+      selected->selectedTo = this;
+    }
+  } else {
+    DRAWABLE = 0;
+    WIDTH = HEIGHT = 0;
+    selected = NULL;
+  }
 }
 
 #ifdef WX_USE_XRENDER

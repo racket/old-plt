@@ -343,14 +343,22 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
 #endif
 #ifdef wx_mac
 # define USE_GL
+# define PROTECT_GLS
 #endif
 
+#ifdef PROTECT_GLS
 static int gl_param;
+#endif
 
 #ifdef USE_GL
 
-static wxGL *prev_param;
+extern void wxGLNoContext(void);
+static Scheme_Object *context_sema;
 
+#ifdef PROTECT_GLS
+/* We can protect a GL context from other threads only if it's ok to
+   switch the GL context at any time. It appears to be ok only under
+   Mac OS. */
 static Scheme_Object *on_thread_swap(Scheme_Object *)
 {
   Scheme_Object *o;
@@ -362,38 +370,57 @@ static Scheme_Object *on_thread_swap(Scheme_Object *)
   else
     c = NULL;
  
-  if (c != prev_param) {
-    prev_param = c;
-    if (c)
-      c->ThisContextCurrent();
-  }
+  if (c)
+    c->ThisContextCurrent();
+  else
+    wxGLNoContext();
 
   return NULL;
 }
+#endif
 
 static void init_gl_mgr(void)
 {
-  wxREGGLOB(prev_param);
+#ifdef PROTECT_GLS
   scheme_set_param(scheme_config, gl_param, scheme_false);
   scheme_add_swap_callback(on_thread_swap, NULL);
+#endif
 }
 
 static void swap_ctx(void *c)
+     /* In the PROTECT_GLS case, We defeat this general
+	parameterize-like swap below to keep it in sync with the lock,
+	but maybe it will be useful some day. */
 {
-  Scheme_Object *o, *n;
+  Scheme_Object *n;
   wxGL *gl;
 
-  o = scheme_get_param(scheme_config, gl_param);
   n = ((Scheme_Object **)c)[1];
-  scheme_set_param(scheme_config, gl_param, n);
-  ((Scheme_Object **)c)[1] = o;
+#ifdef PROTECT_GLS
+  {
+    Scheme_Object *o;
+    o = scheme_get_param(scheme_config, gl_param);
+    scheme_set_param(scheme_config, gl_param, n);
+    ((Scheme_Object **)c)[1] = o;
+  }
+#else
+  ((Scheme_Object **)c)[1] = scheme_false;
+#endif
 
   if (SCHEME_TRUEP(n)) {
     gl = objscheme_unbundle_wxGL(n, NULL, 0);
-    if (gl) {
+    if (gl)
       gl->ThisContextCurrent();
-    }
-  }
+    else
+      wxGLNoContext();
+  } else
+    wxGLNoContext();
+}
+
+static void swap_ctx_in(void *c)
+{
+  if (*(Scheme_Object **)c)
+    swap_ctx(c);
 }
 
 static Scheme_Object *do_call_ctx(void *c)
@@ -401,26 +428,69 @@ static Scheme_Object *do_call_ctx(void *c)
   return _scheme_apply_multi(((Scheme_Object **)c)[0], 0, NULL);
 }
 
-void *wxWithGLContext(wxGL *gl, void *thunk)
+static void swap_ctx_out(void *c)
 {
-  Scheme_Object **a, *glo;
-  a = (Scheme_Object **)scheme_malloc(2 * sizeof(Scheme_Object *));
-  glo = objscheme_bundle_wxGL(gl);
-  a[0] = (Scheme_Object *)thunk;
-  a[1] = glo;
-
-  scheme_check_proc_arity("with-context in gl<%>", 0, 0, 1, a);
-
-  return scheme_dynamic_wind(swap_ctx, do_call_ctx, swap_ctx,
-			     NULL, a);
+  if (*(Scheme_Object **)c) {
+    swap_ctx(c);
+    *(Scheme_Object **)c = NULL;
+    scheme_post_sema(context_sema);
+  }
 }
 
-void wxSetGLContext(wxGL *gl)
+static void release_context_lock(void *c)
 {
-  Scheme_Object *glo;
+  wxGLNoContext();
+  scheme_post_sema(context_sema);
+}
+
+void *wxWithGLContext(wxGL *gl, void *thunk, void *alt_waitable, int eb)
+{
+  Scheme_Object **a, *wa[3], *glo, *v;
+  int waitables;
+
+  if (!context_sema) {
+    wxREGGLOB(context_sema);
+    context_sema = scheme_make_sema(1);
+  }
+
+  a = (Scheme_Object **)scheme_malloc(2 * sizeof(Scheme_Object *));
   glo = objscheme_bundle_wxGL(gl);
-  scheme_set_param(scheme_config, gl_param, glo);
-  gl->ThisContextCurrent();
+
+  a[0] = (Scheme_Object *)thunk;
+  a[1] = (Scheme_Object *)alt_waitable;
+
+  scheme_check_proc_arity("call-as-current in gl-context<%>", 
+			  0, 0, 
+			  (alt_waitable ? 2 : 1), a);
+  if (alt_waitable) {
+    if (!scheme_is_waitable((Scheme_Object *)alt_waitable)) {
+      scheme_wrong_type("call-as-current in gl-context<%>", "waitable", 1, 2, a);
+      return NULL;
+    }
+    waitables = 3;
+    wa[2] = a[1];
+  } else
+    waitables = 2;
+
+  wa[0] = scheme_false;
+  wa[1] = context_sema;
+
+  if (eb)
+    v = scheme_object_wait_multiple_enable_break(waitables, wa);
+  else
+    v = scheme_object_wait_multiple(waitables, wa);
+
+  if (v == context_sema) {
+    a[0] = (Scheme_Object *)thunk;
+    a[1] = glo;
+
+    BEGIN_ESCAPEABLE(release_context_lock, a);
+    v = scheme_dynamic_wind(swap_ctx_in, do_call_ctx, swap_ctx_out,
+			    NULL, a);
+    END_ESCAPEABLE();
+  }
+
+  return v;
 }
 
 #endif
@@ -428,28 +498,9 @@ void wxSetGLContext(wxGL *gl)
 
 void wxscheme_early_gl_init(void)
 {
+#ifdef PROTECT_GLS
   gl_param = scheme_new_param();
-}
-
-static Scheme_Object *gl_p(int argc, Scheme_Object **argv)
-{
-  return argv[0];
-}
-
-static Scheme_Object *wxsCurrentGLContext(int argc, Scheme_Object **argv)
-{
-  Scheme_Object *v;
-
-  v = scheme_param_config("current-gl-context",
-			  scheme_make_integer(gl_param),
-			  argc, argv,
-			  -1, CAST_SP gl_p, "gl", 1);
-
-#ifdef USE_GL
-  on_thread_swap(NULL);
 #endif
-
-  return v;
 }
 
 /***********************************************************************/
@@ -2711,11 +2762,6 @@ static void wxScheme_Install(Scheme_Env *global_env)
 #ifdef USE_GL
   init_gl_mgr();
 #endif
-  scheme_install_xc_global("current-gl-context",
-			   scheme_register_parameter(CAST_SP wxsCurrentGLContext,
-						     "current-gl-context",
-						     gl_param),
-			   global_env);
 
   /* Order is important! Base class must be initialized before derived. */
   objscheme_setup_wxObject(global_env);

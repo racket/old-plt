@@ -2396,7 +2396,7 @@ wxGL::wxGL()
 {
   if (!gl_registered) {
     Visual *vis;      
-    XVisualInfo *visi, tmpl;
+    GC_CAN_IGNORE XVisualInfo *visi, tmpl;
     int n, i;
 
     wxREGGLOB(current_gl_context); 
@@ -2483,7 +2483,7 @@ void wxGL::Reset(long d, int offscreen)
     glXMakeCurrent(wxAPP_DISPLAY, None, NULL);
   }
   
-  if (GLctx && !d) {
+  if (GLctx) {
     glXDestroyContext(wxAPP_DISPLAY, (GLXContext)GLctx);
     GLctx = 0;
   }
@@ -2531,12 +2531,20 @@ void wxGL::SwapBuffers(void)
 
 void wxGL::ThisContextCurrent(void)
 {
-  current_gl_context = this;
-  if (GLctx) {
-    glXMakeCurrent(wxAPP_DISPLAY, (Drawable)draw_to, (GLXContext)GLctx);
-  } else {
-    glXMakeCurrent(wxAPP_DISPLAY, None, NULL);
+  if (current_gl_context != this) {
+    current_gl_context = this;
+    if (GLctx) {
+      glXMakeCurrent(wxAPP_DISPLAY, (Drawable)draw_to, (GLXContext)GLctx);
+    } else {
+      glXMakeCurrent(wxAPP_DISPLAY, None, NULL);
+    }
   }
+}
+
+void wxGLNoContext(void)
+{
+  glXMakeCurrent(wxAPP_DISPLAY, None, NULL);
+  current_gl_context = NULL;
 }
 
 #endif

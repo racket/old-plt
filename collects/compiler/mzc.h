@@ -4,6 +4,7 @@
 
 #define GLOBAL_VARREF(x) ((x)->val ? (Scheme_Object *)(x)->val : \
   (scheme_unbound_global((Scheme_Object*)(x)->key), (Scheme_Object *)NULL))
+#define CHECK_GLOBAL_BOUND(x) ((void)GLOBAL_VARREF(x))
 
 #define DO_FUEL_POLL ((scheme_fuel_counter-- <= 0) ? (scheme_process_block(0), 0) : 0)
 

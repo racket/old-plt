@@ -1474,7 +1474,12 @@
 				 "")
 			     (vm:invoke-num-variables ast)
 			     (vm:invoke-num-variables ast)))]
-
+	 [(vm:check-global? ast)
+	  (emit-expr (format "CHECK_GLOBAL_BOUND(G~a)"
+			     (vm->c:convert-symbol
+			      (vm->c:bucket-name
+			       (vm:check-global-var ast)))))]
+	  
 	 ;; Interfaces are similar to compound units: args are ready
 	 [(vm:interface? ast)
 	  (emit-expr (format "scheme_create_interface(S.interfaceAssemblies[~a], arg)"

@@ -539,6 +539,7 @@
 		  ;; INVOKE
 		  ;;
 		  [(vm:invoke? ast) (list ast)]
+		  [(vm:check-global? ast) (list ast)]
 
 		  ;;--------------------------------------------------------------------
 		  ;; INTERFACE

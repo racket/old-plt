@@ -779,52 +779,63 @@
 		  [cast-so
 		   (lambda (e) 
 		     (make-vm:cast #f #f #f e (make-rep:atomic 'scheme-object)))])
-	      (cons (make-vm:generic-args (zodiac:zodiac-origin ast)
-					  (zodiac:zodiac-start ast)
-					  (zodiac:zodiac-finish ast)
-					  #f #f #f
-					  (cons
-					   (convert (zodiac:invoke-unit-form-unit ast) #f identity #f #f)
-					   (append
-					    (map (lambda (v) 
-						   (cond
-						    [(zodiac:bound-varref? v) 
-						     (cast-so
-						      (let ([cv (convert v #f identity #f #f)])
-							(if (vm:deref? cv)
-							    (vm:deref-var cv)
-							    (make-vm:ref #f #f #f cv))))]
-						    [(zodiac:top-level-varref? v)
-						     (cast-so
-						      (make-vm:ref
-						       #f #f #f
-						       (make-vm:struct-ref
-							#f #f #f
-							'val
-							(make-vm:deref
-							 #f #f #f
-							 (make-vm:bucket #f #f #f (zodiac:varref-var v))))))]
-						    [else
-						     (compiler:internal-error
-						      #f
-						      "convert invoke supplies: don't know how to link with ~a"
-						      v)]))
-						 (zodiac:invoke-unit-form-variables ast))
-					    (map (lambda (v anchor) 
-						   (cond
-						    [(zodiac:top-level-varref? v)
-						     (cast-so (make-vm:bucket #f #f #f (zodiac:varref-var v)))]
-						    [anchor (cast-so
-							     (make-vm:local-varref
-							      #f #f #f
-							      (zodiac:binding-var anchor)
-							      anchor))]
-						    [else (make-vm:immediate #f #f #f 0)]))
-						 (zodiac:invoke-unit-form-variables ast)
-						 (invoke-info-anchors (get-annotation ast))))))
-		    (if tail-pos
-			(leaf (tail-pos exp))
-			(leaf exp))))]
+	      (append (let loop ([l (zodiac:invoke-unit-form-variables ast)])
+			(cond
+			 [(null? l) null]
+			 [(zodiac:top-level-varref? (car l))
+			  (cons
+			   (make-vm:check-global
+			    #f #f #f
+			    (zodiac:varref-var (car l)))
+			   (loop (cdr l)))]
+			 [else (loop (cdr l))]))
+		      (cons
+		       (make-vm:generic-args (zodiac:zodiac-origin ast)
+					     (zodiac:zodiac-start ast)
+					     (zodiac:zodiac-finish ast)
+					     #f #f #f
+					     (cons
+					      (convert (zodiac:invoke-unit-form-unit ast) #f identity #f #f)
+					      (append
+					       (map (lambda (v) 
+						      (cond
+						       [(zodiac:bound-varref? v) 
+							(cast-so
+							 (let ([cv (convert v #f identity #f #f)])
+							   (if (vm:deref? cv)
+							       (vm:deref-var cv)
+							       (make-vm:ref #f #f #f cv))))]
+						       [(zodiac:top-level-varref? v)
+							(cast-so
+							 (make-vm:ref
+							  #f #f #f
+							  (make-vm:struct-ref
+							   #f #f #f
+							   'val
+							   (make-vm:deref
+							    #f #f #f
+							    (make-vm:bucket #f #f #f (zodiac:varref-var v))))))]
+						       [else
+							(compiler:internal-error
+							 #f
+							 "convert invoke supplies: don't know how to link with ~a"
+							 v)]))
+						    (zodiac:invoke-unit-form-variables ast))
+					       (map (lambda (v anchor) 
+						      (cond
+						       [(zodiac:top-level-varref? v)
+							(cast-so (make-vm:bucket #f #f #f (zodiac:varref-var v)))]
+						       [anchor (cast-so
+								(make-vm:local-varref
+								 #f #f #f
+								 (zodiac:binding-var anchor)
+								 anchor))]
+						       [else (make-vm:immediate #f #f #f 0)]))
+						    (zodiac:invoke-unit-form-variables ast)
+						    (invoke-info-anchors (get-annotation ast))))))
+		       (if tail-pos
+			   (leaf (tail-pos exp))
+			   (leaf exp)))))]
 	   
 	   ;;-------------------------------------------------------------------
 	   ;; INTERFACE

@@ -339,6 +339,7 @@
    (struct vm:wcm-pop! (var))
    (struct vm:wcm-remember! (var val))
    (struct vm:wcm-extract (var))
+   (struct vm:check-global (var))
 
    (struct vm:global-varref (var))
    (struct vm:bucket (var))

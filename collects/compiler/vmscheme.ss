@@ -58,6 +58,7 @@
   (define-struct (vm:wcm-pop! zodiac:struct:zodiac) (var))
   (define-struct (vm:wcm-remember! zodiac:struct:zodiac) (var val))
   (define-struct (vm:wcm-extract zodiac:struct:zodiac) (var))
+  (define-struct (vm:check-global zodiac:struct:zodiac) (var))
 
   ;; a-values
   (define-struct (vm:global-varref zodiac:struct:zodiac) (var))

@@ -87,6 +87,8 @@
 (test 'second (lambda () (cons 'first 2) 'second))
 (syntax-test '(lambda))
 (syntax-test '(lambda x))
+(syntax-test '(lambda ()))
+(syntax-test '(lambda () (begin)))
 (syntax-test '(lambda . x))
 (syntax-test '(lambda x . x))
 (syntax-test '(lambda x . 5))

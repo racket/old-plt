@@ -189,7 +189,9 @@
 (define parameterization (make-parameterization))
 
 (define namespace (make-namespace 'no-constants
-				  'hash-percent-syntax
+				  (if annotate?
+				      'hash-percent-syntax
+				      'all-syntax)
 				  (if params:unmatched-cond/case-is-error?
 				      'no-auto-else
 				      'auto-else)

@@ -223,6 +223,7 @@
  (fixup-parens "Correct parens")
  (flash-paren-match "Flash paren match")
  (auto-save-files "Auto-save files")
+ (backup-files "Backup files")
  (map-delete-to-backspace "Map delete to backspace")
  (verify-exit "Verify exit")
  (ask-before-changing-format "Ask before changing save format")
@@ -651,6 +652,21 @@
  (mzscheme-one-line-summary "PLT Scheme without the GUI library")
  (mred-w/debug "Graphical (MrEd)")
  (mred-one-line-summary "PLT Scheme plus the GUI library")
+
+ ;; profiling
+ (profiling-low-color "Low")
+ (profiling-high-color "High")
+ (profiling-choose-low-color "Please select a low color")
+ (profiling-choose-high-color "Please select a high color")
+ (profiling "Profiling")
+ (profiling-example-text "(define (whee) (whee))")
+ (profiling-color-config "Profiling Color Range") 
+ (profiling-scale "Profiling Color Scale")
+ (profiling-sqrt "Square root")
+ (profiling-linear "Linear")
+ (profiling-square "Square")
+ (profiling-number "Number of Calls")
+ (profiling-time "Cumulative Time")
  
  ;;; repl stuff
  (evaluation-terminated "Evaluation Terminated")
@@ -710,4 +726,7 @@
  (module-browser "Module Browser") ;; frame title
  (module-browser... "Module Browser...") ;; menu item title
  (module-browser-error-expanding "Error expanding the program:\n\n~a")
+
+ (happy-birthday-matthias "Happy Birthday, Matthias!")
+
  )

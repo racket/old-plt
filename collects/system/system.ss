@@ -128,7 +128,6 @@
 	(user-break-poll-handler wx:check-for-break)
 	(mred:change-splash-message "Command Line...")
 	(for-each (lambda (x) (apply (car x) (cdr x))) (reverse todo))
-	(mred:change-splash-message "Invoking...")
 	(mred:no-more-splash-messages)
 	(mred:invoke)
 	(when mred:non-unit-startup?

@@ -733,11 +733,13 @@
                       y
                       (+ x FROM-WIDTH first-gap SUBJECT-WIDTH (/ second-gap 2))
                       (+ y h)))))
-          
+
+          (inherit get-style)
           (define/override (get-extent dc x y wb hb db sb lb rb)
-            (let-values ([(w h _1 _2) (send dc get-text-extent "yX")])
+            (let-values ([(w h _1 _2) (send dc get-text-extent "yX" (send (get-style) get-font))])
               (set-box/f! hb h)
               (set-box/f! wb (get-width))))
+
           (inherit get-admin)
           
           (field [width 500])

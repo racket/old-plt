@@ -69,19 +69,13 @@
   ; ndx is index into the manual
   ; txt is the link text
   (define (manual-entry man ndx txt)
-    (let ([fname (with-handlers
-		  ([void (lambda _ #f)])
-		  (finddoc-page man ndx))])
-      (if fname
-	  `(A ((HREF ,(string-append 
-		       "/doc/"
-		       man
-		       "/"
-		       fname)))
-	      ,txt)
-	  (color-with "red" 
-		      `(B "[Bad manual entry: "
-			  ,man "::" ,ndx)))))
+    (with-handlers 
+     ([void (lambda _
+	      (color-with "red" 
+			  `(B "[Bad manual entry: "
+			      ,man "::" ,ndx "]")))])
+     `(A ((HREF ,(finddoc-page man ndx)))
+	 ,txt)))
 
   (define hexifiable '(#\: #\; #\? #\& #\% #\#))
   ; string -> string

@@ -29,21 +29,32 @@
                   (cadddr m)
                   label))))
 
-  ; finddoc-page : string string -> string
-  ; returns just the page html, suitable for use by PLT Web server
-  (define (finddoc-page manual index-key)
+  (define (finddoc-page-help manual index-key anchor?)
     (let ([m (lookup manual index-key "dummy")])
       (if (string? m)
-          m
-          (caddr m))))
+	(error (format "Error finding index \"~a\" in manual \"~a\""
+		       index-key manual))
+	(let ([raw-page (if anchor?
+			    (string-append (caddr m) "#" (cadddr m))
+			    (caddr m))])
+	  (if (regexp-match "^/servlets/" raw-page)
+	      raw-page
+	      (format "/doc/~a/~a" manual raw-page))))))
+  
+
+  ; finddoc-page : string string -> string
+  ; returns path for use by PLT Web server
+  ;  path is of form /doc/manual/page, or
+  ;  /servlet/<rest-of-path>
+  (define (finddoc-page manual index-key)
+    (finddoc-page-help manual index-key #f))
 
   ; finddoc-page-anchor : string string -> string
-  ; returns just the page html, with an anchor name, for use by PLT Web server
+  ; returns path (with anchor) for use by PLT Web server
+  ;  path is of form /doc/manual/page#anchor, or
+  ;  /servlet/<rest-of-path>#anchor
   (define (finddoc-page-anchor manual index-key)
-    (let ([m (lookup manual index-key "dummy")])
-      (if (string? m)
-          m
-          (format "~a#~a" (caddr m) (cadddr m)))))
+    (finddoc-page-help manual index-key #t))
 
   (define ht (make-hash-table))
   

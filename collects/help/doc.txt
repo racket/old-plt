@@ -124,6 +124,8 @@ documentation.
   If the manual is not found, or the index-key is not in the manual,
   it returns html code that shows an error. Because the link is
   a "file:" link, it cannot link to a particular anchor in the target.
+  Note that "help" is not a valid value for `manual', because 
+  Help Desk content is not stored in a doc collection.
 
 > (findreldoc to-doc-path manual index-key label)
   Like `finddoc', but `to-doc-path' is a Unix-style relative path that
@@ -131,10 +133,13 @@ documentation.
   it can point to a specific anchor in the target.
 
 > (finddoc-page-anchor manual index-key)
-  This procedure accepts two strings. The first is the name of a 
-  manual, the second is an index entry in that manual.  It 
-  returns a string representation of the filename that contains 
-  the index entry in the manual.  If the manual is not found, or the 
+  This procedure accepts two strings. The `manual' argument is the name 
+  of a doc collection, or "help"; the second is an index entry in that 
+  manual.  It returns a forward-slashed path to the manual or Help Desk 
+  entry, to be passed to the Help Desk web server.  For manuals in the 
+  doc collection, that path is of the form "/doc/manual/page#anchor"; 
+  for Help Desk entries, that path is of the form 
+  "/servlets/<rest-of-path>#anchor.  If the manual is not found, or the 
   index-key is not in the manual, an error occurs.
 
 > (finddoc-page manual index-key)

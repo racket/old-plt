@@ -14,11 +14,7 @@
          ; remove quotes
 	 [section (substring raw-section 
 			     1 (sub1 (string-length raw-section)))]
-	 [page-anchor (finddoc-page-anchor manual section)]
-	 [url (if (hd-servlet? page-anchor)
-		  page-anchor
-		  (format "/doc/~a/~a" 
-			  manual
-			  page-anchor))])
+	 [page (finddoc-page-anchor manual section)])
     (send/finish
-     (redirect-to url))))
+     (redirect-to page))))
+

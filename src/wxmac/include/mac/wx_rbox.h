@@ -97,6 +97,10 @@ public:
   void ChangeToGray(Bool gray);
   
   int ButtonFocus(int);
+  
+  ControlHandle cEmbeddingControl;
+  void OnClientAreaDSize(int dW, int dH, int dX, int dY);
+
 };
 
 #endif // IN_CPROTO

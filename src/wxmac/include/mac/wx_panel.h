@@ -55,9 +55,23 @@ public:
 	(
 		wxArea*		parentArea,
 		int 		x = -1,
-		int			y = -1,
-		int			width = -1,
-		int			height = -1,
+		int		y = -1,
+		int		width = -1,
+		int		height = -1,
+		long		style = 0,
+		char*		windowName = "panel",
+		WXTYPE		objectType = wxTYPE_PANEL
+	);
+
+	wxPanel // Constructor (given parentArea and embedding control)
+        // see implementation for explanation of this ugly hack.
+	(
+		wxArea*		parentArea,
+                ControlHandle	parentEmbeddingPanel,
+		int 		x = -1,
+		int		y = -1,
+		int		width = -1,
+		int		height = -1,
 		long		style = 0,
 		char*		windowName = "panel",
 		WXTYPE		objectType = wxTYPE_PANEL

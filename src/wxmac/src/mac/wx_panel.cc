@@ -38,6 +38,31 @@ wxPanel::wxPanel // Constructor (given parentArea)
 }
 
 //-----------------------------------------------------------------------------
+wxPanel::wxPanel // Constructor (given parentArea and control to embed to)
+// this is a cheap hack because I don't understand how wxAreas work and I don't want to.
+// the problem is that in a radio box, there's a sub-panel which needs to be embedded in
+// the radio box itself.
+	(
+		wxArea*		parentArea,
+                ControlHandle	parentEmbeddingControl,
+		int 		x,
+		int			y,
+		int			width,
+		int			height,
+		long		style,
+		char*		windowName,
+		WXTYPE		objectType
+	) :
+		wxbPanel (windowName, parentArea, x, y, width, height, style)
+{
+	CreateWxPanel(x, y, width, height);
+
+        if (cEmbeddingControl && parentEmbeddingControl) {
+            ::EmbedControl(cEmbeddingControl,parentEmbeddingControl);
+        }
+}
+
+//-----------------------------------------------------------------------------
 wxPanel::wxPanel // Constructor (given parentFrame)
 	(
 		wxFrame*	parentFrame,

@@ -62,7 +62,17 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
 {
 	Callback(function);
 
-	cRadioPanel = new wxPanel(this->ClientArea(), 0, 0, 0, 0, 0);
+        // create an embedding control so that embedded controls get moved.
+        SetCurrentMacDCNoMargin();
+        Rect cRect;
+        Str255 embeddingTitle = "\pebmedding title";
+        SetRect(&cRect,0,0,width,height);
+        OffsetRect(&cRect,SetOriginX,SetOriginY);
+        cEmbeddingControl = ::NewControl(GetWindowFromPort(cMacDC->macGrafPort()),&cRect,embeddingTitle,TRUE,
+                                            kControlSupportsEmbedding,0,0,kControlUserPaneProc,NULL);
+
+
+	cRadioPanel = new wxPanel(this->ClientArea(), cEmbeddingControl, 0, 0, 0, 0, 0);
 	cRadioPanel->SetButtonFont(buttonFont);
 	cRadioPanel->SetLabelFont(labelFont);
 
@@ -106,6 +116,10 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
 	
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
+
+        if (cEmbeddingControl) {
+            ::SizeControl(cEmbeddingControl,cWindowWidth,cWindowHeight);
+        }
 }
 
 //-----------------------------------------------------------------------------
@@ -130,7 +144,16 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
 {
 	Callback(function);
 
-	cRadioPanel = new wxPanel(this->ClientArea(), 0, 0, 0, 0, 0);
+        // create an embedding control so that embedded controls get moved.
+        SetCurrentMacDCNoMargin();
+        Rect cRect;
+        Str255 embeddingTitle = "\pebmedding title";
+        SetRect(&cRect,0,0,width,height);
+        OffsetRect(&cRect,SetOriginX,SetOriginY);
+        cEmbeddingControl = ::NewControl(GetWindowFromPort(cMacDC->macGrafPort()),&cRect,embeddingTitle,TRUE,
+                                            kControlSupportsEmbedding,0,0,kControlUserPaneProc,NULL);
+
+	cRadioPanel = new wxPanel(this->ClientArea(), cEmbeddingControl, 0, 0, 0, 0, 0);
 	cRadioPanel->SetButtonFont(buttonFont);
 	cRadioPanel->SetLabelFont(labelFont);
 	
@@ -168,6 +191,10 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
 	{
 		Fit(); // WCH: need wxHorizontal and wxVertical for Fit(direction)
 	}
+        
+        if (cEmbeddingControl) {
+            ::SizeControl(cEmbeddingControl,cWindowWidth,cWindowHeight);
+        }        
 }
 
 //=============================================================================
@@ -349,6 +376,17 @@ void wxRadioBox::ChangeToGray(Bool gray)
 int wxRadioBox::ButtonFocus(int)
 {
   return -1;
+}
+
+//-----------------------------------------------------------------------------
+void wxRadioBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
+{
+	SetCurrentMacDCNoMargin();
+        
+        if (cEmbeddingControl) {
+            ::MoveControl(cEmbeddingControl,SetOriginX,SetOriginY);
+            ::SizeControl(cEmbeddingControl,cWindowWidth,cWindowHeight);
+        }
 }
 
 	

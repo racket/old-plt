@@ -20,11 +20,7 @@
 					   "drscheme"
 					   "index.htm")))))
 
-    (define frame-group
-      (make-object
-	  (class-asi mred:frame-group%
-	    (public
-	      [frame% unit-frame%]))))
+    (define frame-group (make-object mred:frame-group%))
     (send frame-group set-empty-callback (lambda () (mred:exit) #t))
     
     (define interactions-canvas%
@@ -514,6 +510,6 @@
 	  (mred:debug:printf 'super-init "drscheme:frame% finished ivars~n"))))
 
   (mred:insert-format-handler "Units"
-                              (list "ss")
+                              (list "ss" "scm" "sch" "mredrc")
 				(opt-lambda ([name null] [group frame-group])
 				  (make-object unit-frame% name #f group)))))

@@ -1342,5 +1342,6 @@
 	   (rename make-generic/proc make-generic) apply-generic
 	   is-a? subclass? implementation? interface-extension?
 	   method-in-interface? interface->method-names class->interface
-	   exn:object? struct:exn:object make-exn:object))
+	   exn:object? struct:exn:object make-exn:object
+	   make-primitive-class))
 

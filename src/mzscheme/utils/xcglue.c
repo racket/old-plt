@@ -16,11 +16,8 @@
 
       (primitive-class-prepare-struct-type! prim-class gen-property
         gen-value) - prepares a class's struct-type for objects
-        generated C-side.
-
-      (primitive-class->struct prim-class) - returns a struct-type for
-        the primitive class, to be used for instances generated
-        Scheme-side.
+        generated C-side, returns a constructor, predicate, and
+	a struct:type for derived classes.
 
       (primitive-class->method-name-list prim-class) - gets a list of
         symbolic method names for the class.
@@ -33,11 +30,6 @@
       (primitive-class->superclass prim-class) - gets the superclass.
 
       (primitive-class? v) - returns #t if v is a primitive class.
-
-      dispatcher-property - a property whose value should be a method
-       dispatcher that takes one argument, a method name, and returns
-       a method, or #f if there is no method overriding the primitive
-       one
 
    In addition, the C code generates definitions of classes.
 
@@ -79,7 +71,7 @@ typedef struct Scheme_Class {
   Scheme_Object **names;
   Scheme_Object **methods;
   Scheme_Object *cache_nl, *cache_mv;
-  Scheme_Object *gen_struct_type;
+  Scheme_Object *base_struct_type;
   Scheme_Object *struct_type;
 } Scheme_Class;
 
@@ -110,6 +102,7 @@ int gc_class_mark(void *_c)
   gcMARK(c->methods);
   gcMARK(c->cache_nl);
   gcMARK(c->cache_mv);
+  gcMARK(c->base_struct_type);
   gcMARK(c->struct_type);
   
   return gcBYTES_TO_WORDS(sizeof(Scheme_Class));
@@ -126,6 +119,7 @@ int gc_class_fixup(void *_c)
   gcFIXUP(c->methods);
   gcFIXUP(c->cache_nl);
   gcFIXUP(c->cache_mv);
+  gcFIXUP(c->base_struct_type);
   gcFIXUP(c->struct_type);
   
   return gcBYTES_TO_WORDS(sizeof(Scheme_Class));
@@ -153,52 +147,103 @@ static Scheme_Object *init_prim_obj(int argc, Scheme_Object **argv)
 
 static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 {
-  Scheme_Object *stype;
+  Scheme_Object *name, *base_stype, *stype, *derive_stype;
+  Scheme_Object **names, **vals, *a[3];
+  Scheme_Class *c;
+  int flags, count;
 
   if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
     scheme_wrong_type("primitive-class-prepare-struct-type!", "primitive-class", 0, argc, argv);
   if (SCHEME_TYPE(argv[1]) != scheme_struct_property_type)
     scheme_wrong_type("primitive-class-prepare-struct-type!", "struct-type-property", 1, argc, argv);
+
+  c = ((Scheme_Class *)argv[0]);
   
-  stype = ((Scheme_Class *)argv[0])->struct_type;
+  stype = c->struct_type;
+
+  name = scheme_intern_symbol(c->name);
 
   if (stype) {
-    scheme_arg_mismatch("primitive-class->struct-type",
+    scheme_arg_mismatch("primitive-class-prepare-struct-type!",
 			"struct-type already prepared for primitive-class: ",
-			argv[0]);
+			name);
     return NULL;
   }
 
-  stype = scheme_make_struct_type(scheme_intern_symbol(((Scheme_Class *)argv[0])->name), 
-				  object_struct, 
+  if (SCHEME_TRUEP(c->sup) && !((Scheme_Class *)c->sup)->base_struct_type) {
+    scheme_arg_mismatch("primitive-class-prepare-struct-type!",
+			"super struct-type not yet prepared for primitive-class: ",
+			name);
+    return NULL;
+  }
+
+  /* Root for this class.  */
+
+  base_stype = scheme_make_struct_type(name, 
+				       (SCHEME_TRUEP(c->sup) ? ((Scheme_Class *)c->sup)->base_struct_type : object_struct),
+				       NULL,
+				       0, 0, NULL,
+				       NULL);
+  c->base_struct_type = base_stype;
+
+  /* Type to use when instantiating from C: */
+
+  stype = scheme_make_struct_type(name,
+				  base_stype, 
 				  NULL,
 				  0, 0, NULL,
 				  scheme_make_pair(scheme_make_pair(argv[1], argv[2]),
 						   scheme_make_pair(scheme_make_pair(object_property, 
 										     argv[0]),
 								    scheme_null)));
-  ((Scheme_Class *)argv[0])->struct_type = stype;
-
-
-  return scheme_void;
-}
-
-static Scheme_Object *class_struct_type(int argc, Scheme_Object **argv)
-{
-  Scheme_Object *stype;
-
-  if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
-    scheme_wrong_type("primitive-class->struct-type", "primitive-class", 0, argc, argv);
-
-  stype = scheme_make_struct_type(scheme_intern_symbol(((Scheme_Class *)argv[0])->name), 
-				  object_struct, 
+  
+  c->struct_type = base_stype;
+  
+  /* Type to derive from Scheme: */
+  
+  derive_stype = scheme_make_struct_type(name,
+					 base_stype, 
+					 NULL,
+					 0, 0, NULL,
+					 scheme_make_pair(scheme_make_pair(dispatcher_property, argv[3]),
+							  scheme_make_pair(scheme_make_pair(object_property, 
+											    argv[0]),
+									   scheme_null)));
+  
+  /* Type to instantiate from Scheme: */
+  
+  stype = scheme_make_struct_type(name,
+				  base_stype, 
 				  NULL,
 				  0, 0, NULL,
-				  scheme_make_pair(scheme_make_pair(object_property, 
-								    argv[0]),
-						   scheme_null));
+				  scheme_make_pair(scheme_make_pair(argv[1], argv[2]),
+						   scheme_make_pair(scheme_make_pair(dispatcher_property, argv[3]),
+								    scheme_make_pair(scheme_make_pair(object_property, 
+										     argv[0]),
+										     scheme_null))));
   
-  return stype;
+  /* Need constructor from instantiate type: */
+  flags = (SCHEME_STRUCT_NO_TYPE
+	   | SCHEME_STRUCT_NO_PRED
+	   | SCHEME_STRUCT_NO_GET
+	   | SCHEME_STRUCT_NO_SET);
+  names = scheme_make_struct_names(name, NULL, flags, &count);
+  vals = scheme_make_struct_values(stype, names, count, flags);
+  a[0] = vals[0];
+
+  /* Need predicate from base type: */
+  flags = (SCHEME_STRUCT_NO_TYPE
+	   | SCHEME_STRUCT_NO_CONSTR
+	   | SCHEME_STRUCT_NO_GET
+	   | SCHEME_STRUCT_NO_SET);
+  names = scheme_make_struct_names(name, NULL, flags, &count);
+  vals = scheme_make_struct_values(base_stype, names, count, flags);
+  a[1] = vals[0];
+
+  /* Need derive type: */
+  a[2] = derive_stype;
+
+  return scheme_values(3, a);
 }
 
 static Scheme_Object *class_sup(int argc, Scheme_Object **argv)
@@ -480,13 +525,7 @@ void objscheme_init(Scheme_Env *env)
   scheme_install_xc_global("primitive-class-prepare-struct-type!",
 			   scheme_make_prim_w_arity(class_prepare_struct_type,
 						    "primitive-class-prepare-struct-type!",
-						    3, 3),
-			   env);
-  
-  scheme_install_xc_global("primitive-class->struct-type",
-			   scheme_make_prim_w_arity(class_struct_type,
-						    "primitive-class->struct_type",
-						    1, 1),
+						    4, 4),
 			   env);
   
   scheme_install_xc_global("primitive-class->method-name-list",
@@ -517,10 +556,6 @@ void objscheme_init(Scheme_Env *env)
 			   scheme_make_prim_w_arity(find_meth,
 						    "find-in-primitive-class",
 						    2, 2),
-			   env);
-
-  scheme_install_xc_global("dispatcher-property",
-			   dispatcher_property,
 			   env);
 }
 

@@ -5,7 +5,7 @@
 	(list "Analyzer" (build-path "drscheme" "spidstub"))
 
 ;;          this is the example tool.
-	(list "Toy" (build-path "drscheme" "toy"))
+;	(list "Toy" (build-path "drscheme" "toy"))
 
 	))
 

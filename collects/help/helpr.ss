@@ -1,17 +1,19 @@
 
 (compound-unit/sig
- (import (OPTION : help:option^)
-	 (FUNCTION : mzlib:function^)
+ (import (FUNCTION : mzlib:function^)
 	 (STRING : mzlib:string^)
 	 (FILE : mzlib:file^)
 	 (URL : mzlib:url^)
-	 (MRED : mred^))
+	 (MRED : mred^)
+	 (FRAMEWORK : framework^))
  (link [BROWSER : browser^ ((require-library "browserr.ss" "browser")
 			    FUNCTION STRING FILE URL MRED)]
        [SEARCH : help:search^ ((require-relative-library "search.ss")
-			       HELP FUNCTION)]
+			       FUNCTION)]
        [HELP : help:help^
 	     ((require-relative-library "helpwin.ss")
 	      SEARCH
-	      OPTION BROWSER FUNCTION STRING FILE URL MRED)])
- (export))
+	      BROWSER FUNCTION STRING FILE URL
+	      MRED FRAMEWORK)])
+ (export (open HELP)))
+

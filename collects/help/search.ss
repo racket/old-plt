@@ -1,6 +1,5 @@
 (unit/sig help:search^
-  (import help:help^
-	  mzlib:function^)
+  (import mzlib:function^)
   
   ; Define an order for the documentation:
   (define html-doc-position (require-library "docpos.ss" "help"))
@@ -51,14 +50,21 @@
 
   (define not-break? (lambda (x) (not (exn:misc:user-break? x))))
 
+  ; One lock for all hash table operations is good enough
+  (define ht-lock (make-semaphore 1))
+
   (define (with-hash-table ht key compute)
-    (hash-table-get
-     ht
-     (string->symbol key)
+    (dynamic-wind
+     (lambda () (semaphore-wait ht-lock))
      (lambda ()
-       (let ([v (compute)])
-	 (hash-table-put! ht (string->symbol key) v)
-	 v))))
+       (hash-table-get
+	ht
+	(string->symbol key)
+	(lambda ()
+	  (let ([v (compute)])
+	    (hash-table-put! ht (string->symbol key) v)
+	    v))))
+     (lambda () (semaphore-post ht-lock))))
 
   (define html-keywords (make-hash-table))
   (define (load-html-keywords doc)
@@ -184,7 +190,8 @@
 	  [else (list c)]))
        (string->list s)))))
   
-  (define (do-search given-find search-level regexp? exact? ckey maxxed-out)
+  (define (do-search given-find search-level regexp? exact? ckey maxxed-out
+		     add-doc-section add-kind-section add-choice)
     (let* ([hit-count 0]
 	   [string-finds (list given-find)]
 	   [finds (cond

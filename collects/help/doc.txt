@@ -8,22 +8,36 @@ Loading the _help.ss_ library directly executes the Help Desk
 program. The _helpr.ss_ library provides the Help Desk as a unit with
 the following imports:
 
-> help:option^ - described below
-  mzlib:function^
+> mzlib:function^
   mzlib:string^
   mzlib:file^
   mzlib:url^ - not really in MzLib; it's in the "net" collection
   mred^
+  framework^
 
-The help:option^ signature is defined in _sig.ss_. It contains one
-item:
+It exports
 
->  startup-url - a url (a string or a url record) which is used as the
-                 initial page for the Help Desk.
+> help:help^
 
-Invoking the Help Desk unit executes the Help Desk program. Thus, when
-linking Help Desk into a larger program, all of its imports must be
-initialized before the Help Desk unit itself.
+which contains one item:
+
+> (new-help-frame startup-url) - takes a a url (a string or a url
+       record) to use as the initial page for the window. Returns a
+       frame% object.
+
+The returned frame is derived from franework's frame:basic% and has
+one extra method:
+
+> search-for-help :: (send a-help-frame search-for-help string type mode)
+    - simulates a user-initiated search in the window, where `string'
+    is the search input, `type' is 'keyword, 'keyword+index, or 'all,
+    and `mode' is 'exact, 'contains, or 'regexp.
+
+All of the helpr.ss unit's imports must be initialized before the Help
+Desk unit itself. For dynamic-linking convenience, the`
+new-help-frame' procedure is also returned as the value of the unit's
+initialization expression.
+
 
 _Creating Help Desk Documentation_
 ==================================

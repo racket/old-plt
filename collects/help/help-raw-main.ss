@@ -1,4 +1,4 @@
-(unit/sig help:help^
+(unit/sig ()
   (import (argv)
 	  mzlib:command-line^
 	  help:search^)
@@ -121,7 +121,10 @@
 		    (gensym)
 		    (lambda ()
 		      (output "(maximum searches reached)")
-		      (k (void))))])
+		      (k (void)))
+		    add-doc-section
+		    add-kind-section
+		    add-choice)])
       (cond
        [err-msg
 	(display err-msg)

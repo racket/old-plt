@@ -3,18 +3,27 @@
 	  mzlib:string^
 	  mzlib:file^
 	  mzlib:url^
-	  mred^)
+	  mred^
+	  framework^)
+
+  (define new-help-frame #f)
 
   (include "startup-url.ss")
 
   (define (start-help-desk)
-    (parameterize ([exit-handler void])
-      (invoke-unit/sig
-       (require-library "helpr.ss" "help")
-       help:option^
-       mzlib:function^
-       mzlib:string^
-       mzlib:file^
-       mzlib:url^
-       mred^))))
+    (unless new-help-frame
+      (set! new-help-frame
+	    (invoke-unit/sig
+	     (require-library "helpr.ss" "help")
+	     mzlib:function^
+	     mzlib:string^
+	     mzlib:file^
+	     mzlib:url^
+	     mred^
+	     framework^)))
+    (new-help-frame startup-url)))
+
+
+
+      
 

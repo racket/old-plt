@@ -154,10 +154,9 @@ wxFont::~wxFont(void)
   if (substitute_xft_fonts) {
     node = substitute_xft_fonts->First();
     while (node) {
-      wxFontStruct *xfont;
-      xfont = (wxFontStruct*)node->Data();
-      if (xfont != (wxFontStruct *)0x1)
-	XftFontClose(wxAPP_DISPLAY, xfont);
+      wxFont *sfont;
+      sfont = (wxFont*)node->Data();
+      DELETE_OBJ sfont;
       node = node->Next();
     }
     DELETE_OBJ substitute_xft_fonts;
@@ -168,11 +167,9 @@ wxFont::~wxFont(void)
     node = rotated_fonts->First();
     while (node) {
       wxFont *rot;
-      wxNode *next;
       rot = (wxFont*)node->Data();
-      next = node->Next();
       DELETE_OBJ rot;
-      node = next;
+      node = node->Next();
     }
     DELETE_OBJ rotated_fonts;
   }

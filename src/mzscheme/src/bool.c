@@ -44,6 +44,7 @@ static Scheme_Object *eqv_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *equal_prim (int argc, Scheme_Object *argv[]);
 
 static int vector_equal (Scheme_Object *vec1, Scheme_Object *vec2);
+static int struct_equal (Scheme_Object *s1, Scheme_Object *s2);
 
 void scheme_init_true_false(void)
 {
@@ -226,9 +227,8 @@ int scheme_equal (Scheme_Object *obj1, Scheme_Object *obj2)
       insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
       if (scheme_inspector_sees_part(obj1, insp, -2)
 	  && scheme_inspector_sees_part(obj2, insp, -2)) {
-	obj1 = scheme_struct_to_vector(obj1, NULL, insp);
-	obj2 = scheme_struct_to_vector(obj2, NULL, insp);
-	goto top;
+#       include "mzeqchk.inc"
+	return struct_equal(obj1, obj2);
       } else
 	return 0;
     }
@@ -259,5 +259,18 @@ static int vector_equal(Scheme_Object *vec1, Scheme_Object *vec2)
   return 1;
 }
 
+int struct_equal(Scheme_Object *obj1, Scheme_Object *obj2)
+{
+  Scheme_Structure *s1, *s2;
+  int i;
 
+  s1 = (Scheme_Structure *)obj1;
+  s2 = (Scheme_Structure *)obj2;
 
+  for (i = SCHEME_STRUCT_NUM_SLOTS(s1); i--; ) {
+    if (!scheme_equal(s1->slots[i], s2->slots[i]))
+      return 0;
+  }
+
+  return 1;
+}

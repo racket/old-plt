@@ -753,9 +753,19 @@ long scheme_equal_hash_key(Scheme_Object *o)
   } else  if (t == scheme_structure_type) {
     Scheme_Object *insp;
     insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
-    if (scheme_inspector_sees_part(o, insp, -2))
-      o = scheme_struct_to_vector(o, NULL, insp);
-    else
+    if (scheme_inspector_sees_part(o, insp, -2)) {
+      int i;
+      Scheme_Structure *s1 = (Scheme_Structure *)o;
+
+#     include "mzhashchk.inc"
+
+      for (i = SCHEME_STRUCT_NUM_SLOTS(s1); i--; ) {
+	k += scheme_equal_hash_key(s1->slots[i]);
+	k = (k << 1) + k;
+      }
+
+      return k;
+    } else
       return k + (PTR_TO_LONG(o) >> 4);
   } else if (SCHEME_BOXP(o)) {
     SCHEME_USE_FUEL(1);
@@ -771,6 +781,7 @@ long scheme_equal_hash_key(Scheme_Object *o)
 long scheme_equal_hash_key2(Scheme_Object *o)
 {
   Scheme_Type t;
+  static int hash_counter = HASH_COUNT_START;
 
  top:
   t = SCHEME_TYPE(o);
@@ -789,32 +800,44 @@ long scheme_equal_hash_key2(Scheme_Object *o)
   } else if (t == scheme_bignum_type) {
     return SCHEME_BIGDIG(o)[0];
   } else if (t == scheme_rational_type) {
-    return scheme_equal_hash_key(scheme_rational_numerator(o));
+    return scheme_equal_hash_key2(scheme_rational_numerator(o));
   } else if ((t == scheme_complex_type) || (t == scheme_complex_izi_type)) {
     Scheme_Complex *c = (Scheme_Complex *)o;
-    return (scheme_equal_hash_key(c->r)
-	    + scheme_equal_hash_key(c->i));
+    return (scheme_equal_hash_key2(c->r)
+	    + scheme_equal_hash_key2(c->i));
   } else if (t == scheme_pair_type) {
-    return (scheme_equal_hash_key(SCHEME_CAR(o))
-	    + scheme_equal_hash_key(SCHEME_CDR(o)));
+#   include "mzhashchk.inc"
+    return (scheme_equal_hash_key2(SCHEME_CAR(o))
+	    + scheme_equal_hash_key2(SCHEME_CDR(o)));
   } else if (t == scheme_vector_type) {
     int len = SCHEME_VEC_SIZE(o), i;
     long k = 0;
 
+#   include "mzhashchk.inc"
+
     for (i = 0; i < len; i++) {
       SCHEME_USE_FUEL(1);
-      k += scheme_equal_hash_key(SCHEME_VEC_ELS(o)[i]);
+      k += scheme_equal_hash_key2(SCHEME_VEC_ELS(o)[i]);
     }
     
     return k;
   } else if (t == scheme_string_type) {
     return SCHEME_STRLEN_VAL(o);
-  } else  if (t == scheme_structure_type) {
+  } else  if (t == scheme_structure_type)  {
     Scheme_Object *insp;
     insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
     if (scheme_inspector_sees_part(o, insp, -2)) {
-      o = scheme_struct_to_vector(o, NULL, insp);
-      goto top;
+      int i;
+      long k = 0;
+      Scheme_Structure *s1 = (Scheme_Structure *)o;
+
+#     include "mzhashchk.inc"
+
+      for (i = SCHEME_STRUCT_NUM_SLOTS(s1); i--; ) {
+	k += scheme_equal_hash_key2(s1->slots[i]);
+      }
+
+      return k;
     } else
       return t;
   } else if (SCHEME_BOXP(o)) {

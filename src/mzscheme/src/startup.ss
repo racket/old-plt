@@ -978,15 +978,17 @@
 				 (if last?
 				     '(stx->list e)
 				     '(list (stx->list e)))
-				 `(let/ec esc
-				    (let ([l (map (lambda (e) (stx-check/esc ,b esc))
-						  (stx->list e))])
-				      (if (null? l)
-					  (quote ,(let ([empties (map (lambda (v) '()) nest-vars)])
-						    (if last?
-							(apply list* empties)
-							empties)))
-					  (,(if last? 'stx-rotate* 'stx-rotate) l))))))
+				 (if (null? nest-vars)
+				     `(andmap (lambda (e) ,b) (stx->list e))
+				     `(let/ec esc
+					(let ([l (map (lambda (e) (stx-check/esc ,b esc))
+						      (stx->list e))])
+					  (if (null? l)
+					      (quote ,(let ([empties (map (lambda (v) '()) nest-vars)])
+							(if last?
+							    (apply list* empties)
+							    empties)))
+					      (,(if last? 'stx-rotate* 'stx-rotate) l)))))))
 			  #f))
 		   mh-did-var?)))))]
        [(stx-pair? p)

@@ -2952,14 +2952,6 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   if (len < 0)
     len = strlen(str);
 
-#if 0
-  /* Why would we want this? */
-  while (isspace(*str)) {
-    str++;
-    --len;
-  }
-#endif
-
   orig = str;
 
   while (str[0] == '#') {
@@ -3280,7 +3272,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   }
 
   has_decimal = has_slash = has_hash = has_expt = saw_digit = saw_nonzero_digit = 0;
-  for (i= 0; i < len; i++) {
+  for (i = 0; i < len; i++) {
     int ch = str[i];
     if (ch == '.') {
 #if 0

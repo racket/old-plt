@@ -1180,8 +1180,6 @@ Scheme_Object *scheme_read_bignum(const char *str, int radix)
 
   while (len--) {
     d = *(str++);
-    if (isspace(d))
-      break;
     if (d >= '0' && d <= '9')
       d -= '0';
     else if (d >= 'a' && d <= 'z')

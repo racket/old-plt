@@ -151,13 +151,16 @@
   (define re:dir (regexp "(.+?)/+(.*)"))
 
   (define resolve-module-path
-    ;; relto should be a complete path or #f
+    ;; relto should be a complete path, #f, or procedure that returns a complete path
     (lambda (s relto)
       (let ([get-dir (lambda ()
-		       (if relto
-			   (let-values ([(base n d?) (split-path relto)])
-			     base)
-			   (current-directory)))])
+		       (cond
+			[(string? relto)
+			 (let-values ([(base n d?) (split-path relto)])
+			   base)]
+			[(procedure? relto) (relto)]
+			[else
+			 (current-directory)]))])
 	(cond
 	 [(string? s)
 	  ;; Parse Unix-style relative path string
@@ -204,13 +207,15 @@
 		 (char=? #\, (string-ref s 0)))
 	    `(file ,(substring s 1 (string-length s)))
 	    relto))]
-     [else
-      relto]))
+     [relto (if (procedure? relto)
+		(relto)
+		relto)]
+     [else #f]))
 
   (define re:path-only (regexp "^(.*)/[^/]*$"))
 
   (define collapse-module-path
-    ;; relto-mp should be a relative-path, '(lib relative-path collection), or '(file path)
+    ;; relto-mp should be a relative path, '(lib relative-path collection), or '(file path)
     (lambda (s relto-mp)
       (let ([combine-relative-elements
 	     (lambda (elements)

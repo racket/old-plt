@@ -47,24 +47,40 @@ static char *objectAttributes[] = { "InprocServer", "InprocServer32",
 static char *controlAttributes[] = { "Control", NULL };
 
 static MX_PRIM mxPrims[] = {
-  { mx_com_invoke,"invoke",2,-1}, 
-  { mx_com_set_property,"set-property!",2,-1 },
-  { mx_com_get_property,"get-property",2, -1 },
-  { mx_com_methods,"methods",1,1 },
-  { mx_com_get_properties,"get-properties",1,1 },
-  { mx_com_set_properties,"set-properties", 1, 1 },
-  { mx_com_method_type,"method-type",2,2 },
-  { mx_com_get_property_type,"get-property-type",2,2 },
-  { mx_com_set_property_type,"set-property-type",2,2 },
-  { mx_com_help,"help",1,2 },
-  { mx_all_coclasses,"all-coclasses",0,0 },
-  { mx_find_element,"document-find-element",3,3 },
-  { mx_document_objects,"document-objects",1,1 },
+
+  // COM reflection
+
+  { mx_com_invoke,"com-invoke",2,-1}, 
+  { mx_com_set_property,"com-set-property!",2,-1 },
+  { mx_com_get_property,"com-get-property",2, -1 },
+  { mx_com_methods,"com-methods",1,1 },
+  { mx_com_get_properties,"com-get-properties",1,1 },
+  { mx_com_set_properties,"com-set-properties", 1, 1 },
+  { mx_com_method_type,"com-method-type",2,2 },
+  { mx_com_get_property_type,"com-get-property-type",2,2 },
+  { mx_com_set_property_type,"com-set-property-type",2,2 },
+  { mx_com_help,"com-help",1,2 },
+
+  // coclasses
+
+  { mx_all_coclasses,"com-all-coclasses",0,0 },
+  { mx_all_controls,"com-all-controls",0,0 },
   { mx_coclass_to_html,"coclass->html",1,3 },
+
+  // COM objects
+
+  { mx_com_object_eq,"com-object-eq?",2,2 },
+
+  // documents 
+
+  { mx_make_document,"make-document",6,6},
+  { mx_document_pred,"document?",1,1 },
   { mx_insert_html,"document-insert-html",2,2 },
   { mx_append_html,"document-append-html",2,2 },
   { mx_replace_html,"document-replace-html",2,2 },
-  { mx_document_pred,"document?",1,1 },
+  { mx_find_element,"document-find-element",3,3 },
+  { mx_document_objects,"document-objects",1,1 },
+  { mx_document_show,"document-show",2,2},
 
   // elements
 
@@ -280,8 +296,6 @@ static MX_PRIM mxPrims[] = {
   { mx_event_dblclick_pred,"event-dblclick?",1,1},
   { mx_event_error_pred,"event-error?",1,1},
   { mx_event_available,"event-available?",1,1},
-  { mx_make_document,"make-document",6,6},
-  { mx_document_show,"document-show",2,2},
 };
 
 DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
@@ -2098,6 +2112,25 @@ Scheme_Object *mx_all_coclasses(int argc,Scheme_Object **argv) {
   return mx_all_clsid(argc,argv,objectAttributes);
 }
 
+Scheme_Object *mx_com_object_eq(int argc,Scheme_Object **argv) {
+  IUnknown *pIUnknown1,*pIUnknown2;
+  IDispatch *pIDispatch1,*pIDispatch2;
+
+  for (int i = 0; i < 2; i++) {
+    if (MX_COM_OBJP(argv[i]) == FALSE) {
+      scheme_wrong_type("com-object-eq?","com-object",i,argc,argv);
+    }
+  }
+
+  pIDispatch1 = MX_COM_OBJ_VAL(argv[0]);
+  pIDispatch2 = MX_COM_OBJ_VAL(argv[1]);
+
+  pIDispatch1->QueryInterface(IID_IUnknown,(void **)&pIUnknown1);
+  pIDispatch2->QueryInterface(IID_IUnknown,(void **)&pIUnknown2);
+
+  return (pIUnknown1 == pIUnknown2) ? scheme_true : scheme_false;
+}
+
 Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   IHTMLDocument2 *pDocument;
   IHTMLElement *pBody;
@@ -2312,6 +2345,8 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
   retval->type = mx_element_type;
   retval->valid = TRUE;
   retval->pIHTMLElement = pIHTMLElement;
+
+  mx_register_com_object((Scheme_Object *)retval,pIHTMLElement);
 
   return (Scheme_Object *)retval;
 }

@@ -513,6 +513,8 @@ void GC_push_gc_structures GC_PROTO((void))
   void GC_mark_thread_local_free_lists();
 #endif
 
+#include "include/private/gc_pmark.h"
+
 /*
  * Call the mark routines (GC_tl_push for a single pointer, GC_push_conditional
  * on groups of pointers) on every top level accessible pointer.
@@ -534,6 +536,7 @@ ptr_t cold_gc_frame;
      */
 #   ifdef USE_GENERIC_PUSH_REGS
 	GC_generic_push_regs(cold_gc_frame);
+	MARK_FROM_MARK_STACK();
 #   else
         GC_push_regs(); /* usually defined in machine_dep.c */
 #   endif

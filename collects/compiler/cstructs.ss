@@ -46,10 +46,11 @@
 			  anchor     ; zodiac:binding - anchor binding for this binding
 			  letrec-set?; set! to implement a letrec
 			  ivar?      ; is a class ivar?
-			  known?     ; has ``known'' value?
+			  known?     ; known to have a fixed value? (i.e., it's not
+			             ; mutated or detectably #<undefined> for a while?)
 			  val
 			  ; ``known'' value as an abitrary AST (so it's
-			  ; really only known if this is a constant
+			  ; really only *known* if this is a constant
 			  known-but-used? 
 			  ; known value used in an improper way?
 			  ; if so, always preserve the variable (i.e., don't

@@ -302,7 +302,7 @@
 		      
 		      ;; annotate each binding with our information
 		      (for-each
-		       (lambda (bound) (set-annotation! bound (make-unknown-binding bound)))
+		       (lambda (bound) (set-annotation! bound (make-known-binding bound #f)))
 		       (zodiac:arglist-vars args))
 		      
 		      (analyze! body))

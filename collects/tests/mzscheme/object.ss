@@ -7,6 +7,7 @@
 
 (SECTION 'OBJECT)
 
+
 ;; ------------------------------------------------------------
 ;; Test syntax errors
 
@@ -632,6 +633,59 @@
     (super-instantiate ("um..."))))
 
 (test '("hey," "um..." "hi" "there") 'to-rest (send (instantiate to-rest3% ("hi" "there")) get-args))
+
+;; ------------------------------------------------------------
+;; ...-final  clauses.
+;; Internal calls to public-final and and pubment are direct,
+;;  but other calls must be indirect.
+
+(let ()
+  (define c% (class object%
+	       (define/pubment (foo x)
+		 1)
+	       (define/public-final (fool x)
+		 10)
+	       (define/public (aoo x) (foo x))
+	       (define/public (aool x) (fool x))
+	       (define/public (foo2 x) 2)
+	       (super-new)))
+  (define d% (class c%
+	       (define/augment (foo y)
+		 2)
+	       (define/public (goo z)
+		 (foo z))
+	       (define/override-final (foo2 x) 
+		 20)
+	       (define/public (goo2 z)
+		 (foo2 z))
+	       (super-new)))
+  (define e% (class c%
+	       (define/augment-final (foo y)
+		 2)
+	       (define/public (goo z)
+		 (foo z))
+	       (super-new)))
+  
+  (test 1 'foo (send (new c%) foo 0))
+  (test 1 'foo (send (new d%) foo 0))
+  (test 1 'foo (send (new d%) goo 0))
+  (test 1 'foo (send (new e%) goo 0))
+
+  (test 2 'foo (send (new c%) foo2 0))
+  (test 20 'foo (send (new d%) foo2 0))
+  (test 20 'foo (send (new d%) goo2 0))
+
+  (test 1 'aoo (send (new c%) aoo 0))
+  (test 10 'aool (send (new d%) aool 0))
+  (test 10 'aool (send (new d%) aool 0))
+
+  (err/rt-test (class c% (define/override (fool x) 12)) exn:fail:object?)
+  (err/rt-test (class c% (define/augment (fool x) 12)) exn:fail:object?)
+  (err/rt-test (class d% (define/override (foo2 x) 12)) exn:fail:object?)
+  (err/rt-test (class d% (define/augment (foo2 x) 12)) exn:fail:object?)
+  (err/rt-test (class e% (define/override (foo x) 12)) exn:fail:object?)
+  (err/rt-test (class e% (define/augment (foo x) 12)) exn:fail:object?)
+  )
 
 ;; ------------------------------------------------------------
 ;; Test send/apply dotted send and method-call forms:

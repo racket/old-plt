@@ -21,7 +21,7 @@
 	     (define (get-procs!)
 	       (unless tried?
 		 (set! tried? #t)
-		 (with-handlers ([not-break-exn? (lambda (x) #f)])
+		 (with-handlers ([exn:fail? (lambda (x) #f)])
 		   (set! got-id (dynamic-require '(lib "image.ss" "lang" "private") 'id))
 		   ...)))))]))
 
@@ -79,7 +79,7 @@
     (check who real? w "positive integer")
     (check who real? h "positive integer")
     (check who symbol? color "symbol")
-    (raise (make-exn:misc:unsupported 
+    (raise (make-exn:fail:unsupported 
 	    (format "~a: not supported" who)
 	    (current-continuation-marks))))
 
@@ -98,6 +98,6 @@
     (unless (= (* w h) (length cl))
       (error (format "given width times given height is ~a, but the given color list has ~a items"
 		     (* w h) (length cl))))
-    (raise (make-exn:misc:unsupported 
+    (raise (make-exn:fail:unsupported 
 	    "color-list->image: not supported"
 	    (current-continuation-marks)))))

@@ -1212,7 +1212,8 @@
 		    defn-or-expr
 		    ...)))])))
 
-  (define-syntaxes (private* public* pubment* override* overment* augride* augment*)
+  (define-syntaxes (private* public* pubment* override* overment* augride* augment*
+			     public-final* override-final* augment-final*)
     (let ([mk
 	   (lambda (who decl-form)
 	     (lambda (stx)
@@ -1253,11 +1254,15 @@
        (mk 'override* (syntax override))
        (mk 'overment* (syntax overment))
        (mk 'augride* (syntax augride))
-       (mk 'augment* (syntax augment)))))
+       (mk 'augment* (syntax augment))
+       (mk 'public-final* (syntax public-final))
+       (mk 'override-final* (syntax override-final))
+       (mk 'augment-final* (syntax augment)))))
 
   (define-syntaxes (define/private define/public define/pubment 
 		     define/override define/overment
-		     define/augride define/augment)
+		     define/augride define/augment
+		     define/public-final define/override-final define/augment-final)
     (let ([mk
 	   (lambda (decl-form)
 	     (lambda (stx)
@@ -1278,7 +1283,10 @@
        (mk #'override)
        (mk #'overment)
        (mk #'augride)
-       (mk #'augment))))
+       (mk #'augment)
+       (mk #'public-final)
+       (mk #'override-final)
+       (mk #'augment-final))))
 
   (define-syntax (define-local-member-name stx)
     (syntax-case stx ()
@@ -2887,9 +2895,11 @@
 	   private* public*  pubment*
 	   override* overment*
 	   augride* augment*
+	   public-final* override-final* augment-final*
 	   define/private define/public define/pubment 
 	   define/override define/overment
 	   define/augride define/augment
+	   define/public-final define/override-final define/augment-final
 	   define-local-member-name
 	   (rename generic/form generic) (rename make-generic/proc make-generic) send-generic
 	   is-a? subclass? implementation? interface-extension?

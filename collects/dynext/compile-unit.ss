@@ -57,7 +57,7 @@
 					  [(ppc-darwin) '("-fno-common" "-DOS_X" "-DXONX" )]
 					  [else null])))
       (define unix-compile-flags (case (string->symbol (path->string (system-library-subpath)))
-				   [(parisc-hpux) '("-c" "-O2" "-Aa" "-D_HPUX_SOURCE" "+z")]
+				   [(parisc-hpux) '("-c" "-O2" "-Aa" "-D_HPUX_SOURCE" "+z" "+e")]
 				   [else gcc-compile-flags]))
       (define msvc-compile-flags '("/c" "/MT" "/O2"))
 

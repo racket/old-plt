@@ -907,7 +907,7 @@ typedef struct Scheme_Thread {
 typedef void (*Scheme_Kill_Action_Func)(void *);
 
 # define BEGIN_ESCAPEABLE(func, data) \
-    { mz_jmp_buf *savebuf, newbuf; \
+    { mz_jmp_buf * volatile savebuf, newbuf; \
       scheme_push_kill_action((Scheme_Kill_Action_Func)func, (void *)data); \
       savebuf = scheme_current_thread->error_buf; \
       scheme_current_thread->error_buf = &newbuf; \

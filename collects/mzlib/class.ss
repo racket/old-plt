@@ -16,9 +16,11 @@
 	   private* public*  pubment*
 	   override* overment*
 	   augride* augment*
+	   public-final* override-final* augment-final*
 	   define/private define/public define/pubment
 	   define/override define/overment
 	   define/augride define/augment
+	   define/public-final define/override-final define/augment-final
 	   define-local-member-name
 	   generic make-generic send-generic
 	   is-a? subclass? implementation? interface-extension?

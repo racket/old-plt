@@ -1113,7 +1113,7 @@ static int tcp_getc(Scheme_Input_Port *port)
     }
 
     BEGIN_ESCAPEABLE(scheme_post_sema, data->tcp.lock);
-    scheme_block_until(tcp_check_read, tcp_read_needs_wakeup, pb, 0);
+    scheme_block_until(tcp_check_read, tcp_read_needs_wakeup, (Scheme_Object *)pb, 0);
     END_ESCAPEABLE();
 
     data->activeRcv = NULL;
@@ -1550,7 +1550,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     }
     
     BEGIN_ESCAPEABLE(mac_tcp_close_all, data);
-    scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, pb, 0);
+    scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, (Scheme_Object *)pb, 0);
     END_ESCAPEABLE();
     
     if (data->tcp.state != SOCK_STATE_CONNECTED) {

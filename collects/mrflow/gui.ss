@@ -385,8 +385,8 @@
             (callback
              (lambda (button evt)
                (clear-annotations)
-               (mrflow:reset-all)
                (let ([start (current-milliseconds)])
+                 (mrflow:reset-all)
                  (send (get-interactions-text)
                        expand-program
                        (drscheme:language:make-text/pos (get-definitions-text) 

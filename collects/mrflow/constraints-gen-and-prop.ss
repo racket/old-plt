@@ -3,10 +3,10 @@
 ; in the edge, and can be obtained by applying the second clause.
 ; (define-type edge (case-lambda [label label -> boolean] [-> label]))
 
-(module
-    constraints-gen-and-prop mzscheme
+(module constraints-gen-and-prop mzscheme
   (require (prefix kern: (lib "kerncase.ss" "syntax"))
            (prefix list: (lib "list.ss"))
+           (prefix etc: (lib "etc.ss"))
            (prefix string: (lib "string.ss"))
            )
   (provide ;sba-driver
@@ -29,24 +29,28 @@
   ; debug XXX
   ;read-and-analyze label-case-lambda-exps label-set label-term)
   
-  ;  (define-syntax debug1
-  ;    (let ([counter 1])
-  ;      (lambda (stx)
-  ;        (syntax-case stx ()
-  ;          [(_ args ...)
-  ;           (begin
-  ;             (printf "debug counter: ~a~n" counter)
-  ;             (let* ([stx-args (syntax (args ...))]
-  ;                    [stx-args-list (syntax-e stx-args)]
-  ;                    [stx-out (datum->syntax-object
-  ;                              stx-args
-  ;                              `(#%app debug2 ,counter ,@stx-args-list))])
-  ;               (set! counter (add1 counter))
-  ;               stx-out))]))))
-  ;  
-  ;  (define (debug2 n . args)
-  ;    (printf "debug: ~a args: ~a~n" n args)
-  ;    (apply sub1 args))
+;  (define-syntax debug1
+;    (let ([counter 1])
+;      (lambda (stx)
+;        (syntax-case stx ()
+;          [(_ args ...)
+;           (begin
+;             (printf "debug counter: ~a~n" counter)
+;             (let* ([stx-args (syntax (args ...))]
+;                    [stx-args-list (syntax-e stx-args)]
+;                    [stx-out (datum->syntax-object
+;                              stx-args
+;                              `(#%app debug2 ,counter ,@stx-args-list))])
+;               (set! counter (add1 counter))
+;               stx-out))]))))
+;  
+;  (define (debug2 n . args)
+;    (when (and (label-cst? (cadr args))
+;               (number? (label-cst-value (cadr args)))
+;               (= 7 (label-cst-value (cadr args))))
+;      (printf "debug: ~a args: ~a~n" n args)
+;      )
+;    (apply (car args) (cdr args)))
   
   ;  ; XXX perf analysis
   ;  (define ast-nodes 0)
@@ -102,6 +106,7 @@
   (define-struct (label-vector label) (element) (make-inspector))
   (define-struct (label-promise label) (value) (make-inspector))
   
+  ; struct = label-struct
   ; rest-arg?s = (listof boolean), req-args = (listof number), argss = (listof (listof label)),
   ; exps = (listof label), top-free-varss = (listof (listof labels)),
   ; app-thunks = (listof (-> void))
@@ -114,8 +119,10 @@
   ; clause is applied. app-thunk is a thunk that is used to delay the transformation of the
   ; graph when a function flows into an application, until the clause around the application
   ; is itself applied.
+  ; struct is just a placeholder to tell the type of structure a given structure-processing
+  ; function is supposed to deal with.
   (define-struct (label-case-lambda label)
-                 (rest-arg?s req-args argss exps top-free-varss app-thunks) (make-inspector))
+                 (struct rest-arg?s req-args argss exps top-free-varss app-thunks) (make-inspector))
   
   ; label = label (a label-cons based list of labels)
   ; used to simulate multiple values. So this label is going to flow around and work pretty
@@ -125,6 +132,11 @@
   ; the reason for the complication in create-simple-edge. Note that define-struct expands
   ; into a define-values, so we need all that stuff.
   (define-struct (label-values label) (label) (make-inspector))
+  
+  ; symbol symbol label number (listof label)
+  (define-struct (label-struct-value label) (type fields) (make-inspector))
+  (define-struct (label-struct-type label)
+                 (name parent parent-fields-nbr total-fields-nbr error?) (make-inspector))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MISC
   
@@ -158,7 +170,7 @@
                     ;       "not a label list: ~a ~a ~a"
                     ;       (syntax-object->datum
                     ;        (label-term start-label))
-                    ;       (pp-type (get-type start-label))
+                    ;       (pp-type (get-type start-label) 'label-list-length)
                     ;       label))))])
                     ; the assumption is that we'll never call this function
                     ; for something not a list. So if what we have doesn't
@@ -231,7 +243,7 @@
   ; the labels in args-labels are all simple labels (not pseudo-labels)
   (define (extend-env env args args-labels)
     ; doesn't matter whether we foldl or foldr
-    (list:foldl 
+    (list:foldl
      (lambda (arg arg-label env)
        (cons (cons (syntax-e arg) arg-label)
              env))
@@ -260,6 +272,68 @@
   (define (lookup-top-level-name name)
     (hash-table-get *top-level-name->label* name *fail-false*))
   
+  ; (listof label) term -> boolean
+  ; Note that we make sure that all free variables are bound before
+  ; creating the edges, and we check all free variables even if we
+  ; already know some of them are unbound.
+  ; Note also that a free variable can not be captured by a lexical
+  ; binding, it has to be a top level binding.
+  (define (lookup-and-bind-top-level-vars free-vars-labels-in term)
+    (let ([binding-labels-in
+           (map
+            (lambda (free-var-label-in)
+              ; we do the top level lookup first, so we allow primitives to be redefined
+              (let* ([free-var-name-in (syntax-e (label-term free-var-label-in))]
+                     [binding-label-in (lookup-top-level-name free-var-name-in)])
+                (if binding-label-in
+                  binding-label-in
+                  (let ([primitive-type-scheme (lookup-primitive-type-scheme free-var-name-in)])
+                    (if primitive-type-scheme
+                      ; no polyvariance for primitives here...
+                      (reconstruct-graph-from-type-scheme
+                       primitive-type-scheme (make-hash-table)
+                       (label-term free-var-label-in))
+                      (cond
+                        [(eq? free-var-name-in 'make-struct-type)
+                         (create-make-struct-type-label term)]
+                        ; we will process these two after the one above, for a given struct
+                        ; definition, because, after program expansion,
+                        ; make-struct-field-accessor/mutator appear in the body of a letrec-values
+                        ; with make-struct-type being used in one of the letrec-values clauses.
+                        [(eq? free-var-name-in 'make-struct-field-accessor)
+                         (create-make-struct-field-accessor-label term)]
+                        [(eq? free-var-name-in 'make-struct-field-mutator)
+                         (create-make-struct-field-mutator-label term)]
+                        [else
+                         (begin
+                           (set! *errors*
+                                 (cons
+                                  (list
+                                   (list (label-term free-var-label-in)) ; term)
+                                   'red
+                                   ;(format "reference to undefined identifier: ~a in function ~a"
+                                   ;        free-var-name-in
+                                   ;        (unexpand (syntax-object->datum term))))
+                                   (format "reference to undefined identifier: ~a"
+                                           free-var-name-in))
+                                  *errors*))
+                           #f)]))))))
+            free-vars-labels-in)])
+      ; we don't expect to have many free variables, so processing
+      ; free-vars-labels-in twice and binding-labels once should be ok.
+      (if (andmap *id* binding-labels-in)
+        (begin
+          (for-each
+           (lambda (binding-label-in free-var-label-in)
+             (add-edge-and-propagate-set-through-edge
+              binding-label-in
+              (extend-edge-for-values
+               (create-simple-edge free-var-label-in))))
+           binding-labels-in
+           free-vars-labels-in)
+          #t)
+        #f)))
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PROPAGATION
   
   ; label boolean -> edge
@@ -287,11 +361,14 @@
            ; propagated when we add a new edge to the in-label.
            (unless (hash-table-get in-set inflowing-label *fail-false*)
              (hash-table-put! in-set inflowing-label (cons '() '())))
-           ;(printf "propagate ~a from ~a to ~a (type ~a)~n"
-           ;        (pp-type (get-type inflowing-label))
-           ;        (syntax-object->datum (label-term out-label))
-           ;        (syntax-object->datum (label-term in-label))
-           ;        (label-type-var in-label))
+           ;(when (and (label-cst? inflowing-label)
+           ;           (number? (label-cst-value inflowing-label))
+           ;           (= 7 (label-cst-value inflowing-label)))
+           ;  (printf "propagate ~a from ~a to ~a (type ~a)~n"
+           ;          (pp-type (get-type inflowing-label) 'create-simpled-edge1)
+           ;          (syntax-object->datum (label-term out-label))
+           ;          (syntax-object->datum (label-term in-label))
+           ;          (label-type-var in-label)))
            (ormap-strict (lambda (edge)
                            (edge in-label inflowing-label))
                          (label-edges in-label))]
@@ -334,11 +411,14 @@
                  (hash-table-put! out-set inflowing-label
                                   (cons in-edges-out-set
                                         (cons in-label out-edges-out-set)))
-                 ;(printf "propagate ~a from ~a to ~a (type ~a)~n"
-                 ;        (pp-type (get-type inflowing-label))
-                 ;        (syntax-object->datum (label-term out-label))
-                 ;        (syntax-object->datum (label-term in-label))
-                 ;        (label-type-var in-label))
+                 ;(when (and (label-cst? inflowing-label)
+                 ;           (number? (label-cst-value inflowing-label))
+                 ;           (= 7 (label-cst-value inflowing-label)))
+                 ;  (printf "propagate ~a from ~a to ~a (type ~a)~n"
+                 ;          (pp-type (get-type inflowing-label) 'create-simple-edge2)
+                 ;          (syntax-object->datum (label-term out-label))
+                 ;          (syntax-object->datum (label-term in-label))
+                 ;          (label-type-var in-label)))
                  (ormap-strict (lambda (edge)
                                  (edge in-label inflowing-label))
                                (label-edges in-label)))))]
@@ -412,7 +492,7 @@
                    (set! *errors*
                          (cons (list (list (label-term inflowing-label))
                                      'red
-                                     (format "extend-edge-for-values: context expected 1 value, received ~a values"
+                                     (format "context expected 1 value, received ~a values"
                                              (label-list-length values-label)))
                                *errors*))
                    #f)))
@@ -451,57 +531,12 @@
   (define (initialize-label-set-for-value-source label)
     (hash-table-put! (label-set label) label (cons '() '())))
   
-  ; (listof label) term -> boolean
-  ; Note that we make sure that all free variables are bound before
-  ; creating the edges, and we check all free variables even if we
-  ; already know some of them are unbound.
-  ; Note also that a free variable can not be captured by a lexical
-  ; binding, it has to be a top level binding.
-  (define (lookup-and-bind-top-level-vars free-vars-labels-in term)
-    (let ([binding-labels-in
-           (map
-            (lambda (free-var-label-in)
-              (let* ([free-var-name-in (syntax-e (label-term free-var-label-in))]
-                     [binding-label-in (lookup-top-level-name free-var-name-in)])
-                (if binding-label-in
-                  binding-label-in
-                  (let ([primitive-type-scheme (lookup-primitive-type-scheme free-var-name-in)])
-                    (if primitive-type-scheme
-                      ; no polyvariance for primitives here...
-                      (reconstruct-graph-from-type-scheme
-                       primitive-type-scheme (make-hash-table)
-                       (label-term free-var-label-in))
-                      (begin
-                        (set! *errors*
-                              (cons
-                               (list
-                                (list (label-term free-var-label-in) term)
-                                'red
-                                (format "reference to undefined identifier: ~a in function ~a"
-                                        free-var-name-in
-                                        (unexpand (syntax-object->datum term))))
-                               *errors*))
-                        #f))))))
-            free-vars-labels-in)])
-      ; we don't expect to have many free variables, so processing
-      ; free-vars-labels-in twice and binding-labels once should be ok.
-      (if (andmap *id* binding-labels-in)
-        (begin
-          (for-each
-           (lambda (binding-label-in free-var-label-in)
-             (add-edge-and-propagate-set-through-edge
-              binding-label-in
-              (extend-edge-for-values
-               (create-simple-edge free-var-label-in))))
-           binding-labels-in
-           free-vars-labels-in)
-          #t)
-        #f)))
-  
   ; (listof booleans) (listof integer) (listof (listof label)) (listof label) term boolean -> edge
   ; The four first parameters simulate the surrounding case-lambda specification. We could
   ; wrap it inside a real case-lambda label, but we would have to create fake values for the
   ; other components of the structure...
+  ; Note: we always create the args edges from left to right. We *need* this when we do
+  ; the black magic for structures (see the create-make-struct-type-label function)
   (define (create-case-lambda-edge rest-arg?s-around req-args-around
                                    argss-labelss-around exps-labels-around
                                    term contra-union?)
@@ -1038,12 +1073,960 @@
                                (format "procedure application: expected procedure, given: ~a"
                                        (unexpand (syntax-object->datum
                                                   (label-term inflowing-case-lambda-label)))))
+                               ;inflowing-case-lambda-label))
                          *errors*))
              #f))]
         ; function value sink => unique, fake destination
         [() edge-fake-destination])))
   
-  ;(define (process-make-struct-type-primitive var-stx) ...)
+  ; (label -> boolean) label label edge -> edge
+  ; The returned edge simulates an "if" based on the result of pred.
+  ; our edges are origin-independant, so we can use the same one for both true and false.
+  (define (create-self-modifying-edge pred true-label false-label join-edge)
+    (letrec ([edge-fake-destination (gensym)]
+             [dummy-edge (case-lambda
+                           [(out-label inflowing-label)
+                            ; sink edge, so no need for out-label
+                            (set-label-tunnel?! inflowing-label #f)
+                            #t]
+                           ; test value sink
+                           [() edge-fake-destination])]
+             [self-modifying-edge
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; sink edge, so no need for out-label
+                 (set-label-tunnel?! inflowing-label #f)
+                 (if (pred inflowing-label)
+                   (begin
+                     (set! self-modifying-edge
+                           (case-lambda
+                             [(out-label inflowing-label)
+                              ; sink edge, so no need for out-label
+                              (set-label-tunnel?! inflowing-label #f)
+                              (when (not (pred inflowing-label))
+                                ; it would be more efficient to directly remove the edge.
+                                (set! self-modifying-edge dummy-edge)
+                                (add-edge-and-propagate-set-through-edge
+                                 false-label join-edge))]
+                             ; test value sink
+                             [() edge-fake-destination]))
+                     (add-edge-and-propagate-set-through-edge
+                      true-label join-edge))
+                   (begin
+                     (set! self-modifying-edge
+                           (case-lambda
+                             [(out-label inflowing-label)
+                              ; sink edge, so no need for out-label
+                              (set-label-tunnel?! inflowing-label #f)
+                              (when (pred inflowing-label)
+                                ; it would be more efficient to directly remove the edge.
+                                (set! self-modifying-edge dummy-edge)
+                                (add-edge-and-propagate-set-through-edge
+                                 true-label join-edge))]
+                             ; test value sink
+                             [() edge-fake-destination]))
+                     (add-edge-and-propagate-set-through-edge
+                      false-label join-edge)))]
+                ; test value sink
+                [() edge-fake-destination])])
+      self-modifying-edge))
+  
+  ; label label-struct-type -> boolean
+  ; is a struct value a subtype of a struct type ?
+  (define (is-subtype? label struct-type-label)
+    (and (label-struct-value? label)
+         (let loop ([type (label-struct-value-type label)])
+           (if type
+             (if (eq? type struct-type-label)
+               #t
+               (loop (label-struct-type-parent type)))
+             ; no more parent
+             #f))))
+  
+  ; syntax-object -> label
+  ; create a label in which a case-lambda label flows, which, when applied, creates
+  ; struct function labels of the right type.
+  ; Note that we will return a case-lambda label that does strange things when something
+  ; flows into it, in the sense that it will gather its different arguments using
+  ; struct-label, and then create new case-lambda labels on the fly.
+  ; Note also that we know that no multiple values can flow into the case-lambda label
+  ; for make-struct-type, or any other for that matter, so we don't have to worry about that.
+  ; (define-struct (bar foo) (d e f)) expands into
+  ; (begin
+  ;   (define-values
+  ;     (struct:bar make-bar bar? bar-d set-bar-d! bar-e set-bar-e! bar-f set-bar-f!)
+  ;     (let-values
+  ;         (((type maker pred access mutate)
+  ;           (#%app make-struct-type
+  ;                  'bar
+  ;                  (#%top . struct:foo)
+  ;                  (#%datum . 3)
+  ;                  (#%datum . 0)
+  ;                  (#%datum . #f)
+  ;                  null
+  ;                  (#%datum . #f))))
+  ;       (#%app values
+  ;              type
+  ;              maker
+  ;              pred
+  ;              (#%app make-struct-field-accessor access (#%datum . 0) 'd)
+  ;              (#%app make-struct-field-mutator mutate (#%datum . 0) 'd)
+  ;              (#%app make-struct-field-accessor access (#%datum . 1) 'e)
+  ;              (#%app make-struct-field-mutator mutate (#%datum . 1) 'e)
+  ;              (#%app make-struct-field-accessor access (#%datum . 2) 'f)
+  ;              (#%app make-struct-field-mutator mutate (#%datum . 2) 'f))))
+  ;   (define-syntaxes ...))
+  ; which explains most of the names below...
+  ; We only explicitely deal here with the
+  ;           (#%app make-struct-type
+  ;                  'bar
+  ;                  (#%top . struct:foo)
+  ;                  (#%datum . 3)
+  ;                  (#%datum . 0)
+  ;                  (#%datum . #f)
+  ;                  null
+  ;                  (#%datum . #f))))
+  ; part, and let the rest of the anlysis deal with values, let-values, variable bindings, etc...
+  (define (create-make-struct-type-label term)
+    (let* (; We really use this label as a type shared between the different instances
+           ; of the structure. It's also what we use to differentiate between two kinds of
+           ; structures with the same name. The only reason it's a label instead of a type
+           ; is because mzscheme treats it as a first class value and have it bound
+           ; to struct:blablabla, so it needs to be a label to be able to flow...
+           [struct-type-label (make-label-struct-type
+                               #f #f #f #t
+                               term
+                               (make-hash-table)
+                               '()
+                               'uninitialized ; struct has no name (yet)
+                               #f ; no parent by default
+                               0 ; parent has no fields by default
+                               0 ; struct has no fields by default
+                               #f)]
+           [maker-label (create-simple-prim-label term)]
+           [maker-edge (create-simple-edge maker-label)]
+           [pred-label (create-simple-prim-label term)]
+           [pred-edge (create-simple-edge pred-label)]
+           [access-label (create-simple-prim-label term)]
+           [access-edge (create-simple-edge access-label)]
+           [mutate-label (create-simple-prim-label term)]
+           [mutate-edge (create-simple-edge mutate-label)]
+           [null-label (make-label-cst #f #f #f #t term (make-hash-table) '() '())]
+           [cons-label1 (make-label-cons #f #f #f #t term (make-hash-table) '()
+                                         mutate-label null-label)]
+           [cons-label2 (make-label-cons #f #f #f #t term (make-hash-table) '()
+                                         access-label cons-label1)]
+           [cons-label3 (make-label-cons #f #f #f #t term (make-hash-table) '()
+                                         pred-label cons-label2)]
+           [cons-label4 (make-label-cons #f #f #f #t term (make-hash-table) '()
+                                         maker-label cons-label3)]
+           [cons-label5 (make-label-cons #f #f #f #t term (make-hash-table) '()
+                                         struct-type-label cons-label4)]
+           [values-label (make-label-values #f #f #f #t term (make-hash-table) '()
+                                            cons-label5)]
+           [name-label (create-simple-prim-label term)]
+           [name-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 (set-label-tunnel?! inflowing-label #f)
+                 ; only symbol should flow in here
+                 (if (and (label-cst? inflowing-label)
+                          (symbol? (label-cst-value inflowing-label)))
+                   (begin
+                     (set-label-struct-type-name! struct-type-label
+                                                  (label-cst-value inflowing-label))
+                     #t)
+                   (begin
+                     (set! *errors*
+                           (cons (list (list (label-term inflowing-label))
+                                       'red
+                                       "make-struct-type expected symbol")
+                                 *errors*))
+                     (set-label-struct-type-error?! struct-type-label #t)
+                     #f))]
+                [() edge-fake-destination]))]
+           [parent-label (create-simple-prim-label term)]
+           [parent-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 (set-label-tunnel?! inflowing-label #f)
+                 ; if anything flows in here, it should be the struct label for the
+                 ; parent struct, or #f
+                 (if (or (label-struct-type? inflowing-label)
+                         (and (label-cst? inflowing-label)
+                              (not (label-cst-value inflowing-label))))
+                   (begin
+                     (when (label-struct-type? inflowing-label)
+                       (set-label-struct-type-parent! struct-type-label
+                                                      inflowing-label))
+                     #t)
+                   (begin
+                     (set! *errors*
+                           (cons (list (list (label-term inflowing-label))
+                                       'red
+                                       "make-struct-type expected structure type")
+                                 *errors*))
+                     (set-label-struct-type-error?! struct-type-label #t)
+                     #f))]
+                [() edge-fake-destination]))]
+           [field-label (create-simple-prim-label term)]
+           [field-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 (set-label-tunnel?! inflowing-label #f)
+                 ; inflowing label will tell use how many fields the struct will have
+                 (if (and (label-cst? inflowing-label)
+                          (number? (label-cst-value inflowing-label)))
+                   (begin
+                     (let* ([parent (label-struct-type-parent struct-type-label)]
+                            [parent-fields-nbr (if parent
+                                                 (label-struct-type-total-fields-nbr
+                                                  (label-struct-type-parent struct-type-label))
+                                                 0)])
+                       (set-label-struct-type-parent-fields-nbr! struct-type-label parent-fields-nbr)
+                       (set-label-struct-type-total-fields-nbr! struct-type-label
+                                                                (+ (label-cst-value inflowing-label)
+                                                                   parent-fields-nbr)))
+                     #t)
+                   (begin
+                     (set! *errors*
+                           (cons (list (list (label-term inflowing-label))
+                                       'red
+                                       "make-struct-type expected number")
+                                 *errors*))
+                     (set-label-struct-type-error?! struct-type-label #t)
+                     #f))]
+                [() edge-fake-destination]))]
+           [auto-field-label (create-simple-prim-label term)]
+           [auto-field-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 (set-label-tunnel?! inflowing-label #f)
+                 ; only 0 should flow in here
+                 (if (and (label-cst? inflowing-label)
+                          (let ([value (label-cst-value inflowing-label)])
+                            (and (number? value) (zero? value))))
+                   #t
+                   (begin
+                     (set! *errors*
+                           (cons (list (list (label-term inflowing-label))
+                                       'red
+                                       "auto-initialized structure fields not yet supported: expected 0")
+                                 *errors*))
+                     (set-label-struct-type-error?! struct-type-label #t)
+                     #f))]
+                [() edge-fake-destination]))]
+           [auto-field-value-label (create-simple-prim-label term)]
+           [auto-field-value-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 (set-label-tunnel?! inflowing-label #f)
+                 ; only #f should flow in here
+                 (if (and (label-cst? inflowing-label)
+                          (not (label-cst-value inflowing-label)))
+                   #t
+                   (begin
+                     (set! *errors*
+                           (cons (list (list (label-term inflowing-label))
+                                       'red
+                                       "auto-initialized structure fields not yet supported: expected #f")
+                                 *errors*))
+                     (set-label-struct-type-error?! struct-type-label #t)
+                     #f))]
+                [() edge-fake-destination]))]
+           [properties-label (create-simple-prim-label term)]
+           [properties-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 (set-label-tunnel?! inflowing-label #f)
+                 ; only '() should flow in here
+                 (if (and (label-cst? inflowing-label)
+                          (null? (label-cst-value inflowing-label)))
+                   #t
+                   (begin
+                     (set! *errors*
+                           (cons (list (list (label-term inflowing-label))
+                                       'red
+                                       "structure properties not yet supported: expected ()")
+                                 *errors*))
+                     (set-label-struct-type-error?! struct-type-label #t)
+                     #f))]
+                [() edge-fake-destination]))]
+           [inspector-label (create-simple-prim-label term)]
+           [inspector-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 (set-label-tunnel?! inflowing-label #f)
+                 ; only #f should flow in here
+                 (if (and (label-cst? inflowing-label)
+                          (not (label-cst-value inflowing-label)))
+                   ; now, at this point, and since edges from actual to formal arguments
+                   ; are created left to right when a function is applied, we know struct-label
+                   ; has been complitely filled out. So we can do the black magic part, which
+                   ; consists in creating case-lambdas on the fly, that will become the maker,
+                   ; pred, access and mutate functions, and gather them in the multiple value
+                   ; label.
+                   (if (label-struct-type-error? struct-type-label)
+                     ; nothing created, so nothing ever propagates down to
+                     ; make-struct-field-accessor or make-struct-field-mutator
+                     #f
+                     (let* ([total-fields-nbr (label-struct-type-total-fields-nbr struct-type-label)]
+                            ; maker
+                            [maker-body-label (make-label-struct-value
+                                               #f #f #f #t
+                                               term
+                                               (make-hash-table)
+                                               '()
+                                               struct-type-label
+                                               (etc:build-list total-fields-nbr
+                                                               (lambda (_)
+                                                                 (create-simple-prim-label term))))]
+                            [maker-case-lambda-label (make-label-case-lambda
+                                                      #f #f #f #t
+                                                      term
+                                                      (make-hash-table)
+                                                      '()
+                                                      struct-type-label ; never used
+                                                      (list #f)
+                                                      (list total-fields-nbr)
+                                                      (list (label-struct-value-fields
+                                                             maker-body-label))
+                                                      (list maker-body-label)
+                                                      (list '())
+                                                      (list *dummy-thunk*))]
+                            ; pred
+                            [pred-true-label (make-label-cst #f #f #f #t
+                                                             term
+                                                             (make-hash-table)
+                                                             '()
+                                                             #t)]
+                            [pred-false-label (make-label-cst #f #f #f #t
+                                                              term
+                                                              (make-hash-table)
+                                                              '()
+                                                              #f)]
+                            [pred-body-label (create-simple-prim-label term)]
+                            [pred-body-edge (create-simple-edge pred-body-label)]
+                            [pred-arg-label (create-simple-prim-label term)]
+                            [pred-arg-edge
+                             (create-self-modifying-edge (lambda (label)
+                                                           (is-subtype? label struct-type-label))
+                                                         pred-true-label pred-false-label
+                                                         pred-body-edge)]
+                            [pred-case-lambda-label (make-label-case-lambda
+                                                     #f #f #f #t
+                                                     term
+                                                     (make-hash-table)
+                                                     '()
+                                                     struct-type-label ; never used
+                                                     (list #f)
+                                                     (list 1)
+                                                     (list (list pred-arg-label))
+                                                     (list pred-body-label)
+                                                     (list '())
+                                                     (list *dummy-thunk*))]
+                            ; access is a bit tricky: make-struct-field-accessor will
+                            ; manually link access's second arg and wrap access inside another
+                            ; case-lambda with one arg less. We just have to remember which
+                            ; structure type access is about by setting the struct field to
+                            ; struct-type-label (something we didn't really have to do for the
+                            ; maker and pred, because the maker-body-label and pred-arg-edge
+                            ; already explicitely refer to it, but we did it anyway, above,
+                            ; just for consistency).
+                            ; Note: no error checking on the input is done here. It will be done
+                            ; by the wrapper.
+                            ; Note: structures will flow into the first arg, so tunneling needs
+                            ; to be resetted there. And the index will flow into the second arg,
+                            ; so tunelling need to be reset there too.
+                            [tunnel-resetting-edge
+                             (let ([edge-fake-destination (gensym)])
+                               (case-lambda
+                                 [(out-label inflowing-label)
+                                  ; name sink => no use for out-label
+                                  (set-label-tunnel?! inflowing-label #f)
+                                  ; Note that we don't need to check that what flows in is
+                                  ; actually a struct, it's already tested by the first arg
+                                  ; of the accessor in create-make-struct-field-accessor-label
+                                  ; below.
+                                  #t]
+                                 [() edge-fake-destination]))]
+                            [access-first-arg-label (create-simple-prim-label term)]
+                            [access-second-arg-label (create-simple-prim-label term)]
+                            [access-case-lambda-label (make-label-case-lambda
+                                                       #f #f #f #t
+                                                       term
+                                                       (make-hash-table)
+                                                       '()
+                                                       struct-type-label
+                                                       (list #f)
+                                                       (list 2)
+                                                       (list (list access-first-arg-label
+                                                                   access-second-arg-label))
+                                                       (list (create-simple-prim-label term))
+                                                       (list '())
+                                                       (list *dummy-thunk*))]
+                            ; same problem with mutate
+                            ; Note: structures will flow into the first arg, so tunneling needs
+                            ; to be resetted there. And the index will flow into the second arg,
+                            ; so tunelling need to be reset there too. And the value will flow
+                            ; into the third arg, so it needs to be resetted too.
+                            [mutate-first-arg-label (create-simple-prim-label term)]
+                            [mutate-second-arg-label (create-simple-prim-label term)]
+                            [mutate-third-arg-label (create-simple-prim-label term)]
+                            [mutate-case-lambda-label (make-label-case-lambda
+                                                       #f #f #f #t
+                                                       term
+                                                       (make-hash-table)
+                                                       '()
+                                                       struct-type-label
+                                                       (list #f)
+                                                       (list 2)
+                                                       (list (list mutate-first-arg-label
+                                                                   mutate-second-arg-label
+                                                                   mutate-third-arg-label))
+                                                       (list (create-simple-prim-label term))
+                                                       (list '())
+                                                       (list *dummy-thunk*))])
+                       ; XXX should all the add-edge-and-propagate-set-through-edge be and-ed ?
+                       ; maker
+                       (initialize-label-set-for-value-source maker-body-label)            
+                       (initialize-label-set-for-value-source maker-case-lambda-label)
+                       (add-edge-and-propagate-set-through-edge
+                        maker-case-lambda-label maker-edge)
+                       ; pred
+                       (initialize-label-set-for-value-source pred-true-label)
+                       (initialize-label-set-for-value-source pred-false-label)
+                       (add-edge-and-propagate-set-through-edge
+                        pred-arg-label pred-arg-edge)
+                       (initialize-label-set-for-value-source pred-case-lambda-label)
+                       (add-edge-and-propagate-set-through-edge
+                        pred-case-lambda-label pred-edge)
+                       ; access
+                       (add-edge-and-propagate-set-through-edge
+                        access-first-arg-label tunnel-resetting-edge)
+                       (add-edge-and-propagate-set-through-edge
+                        access-second-arg-label tunnel-resetting-edge)
+                       (initialize-label-set-for-value-source access-case-lambda-label)
+                       (add-edge-and-propagate-set-through-edge
+                        access-case-lambda-label access-edge)
+                       ; mutate
+                       (add-edge-and-propagate-set-through-edge
+                        mutate-first-arg-label tunnel-resetting-edge)
+                       (add-edge-and-propagate-set-through-edge
+                        mutate-second-arg-label tunnel-resetting-edge)
+                       (add-edge-and-propagate-set-through-edge
+                        mutate-third-arg-label tunnel-resetting-edge)
+                       (initialize-label-set-for-value-source mutate-case-lambda-label)
+                       (add-edge-and-propagate-set-through-edge
+                        mutate-case-lambda-label mutate-edge)
+                       #t))
+                   (begin
+                     (set! *errors*
+                           (cons (list (list (label-term inflowing-label))
+                                       'red
+                                       "structure inspectors not yet supported: expected #f")
+                                 *errors*))
+                     (set-label-struct-type-error?! struct-type-label #t)
+                     #f))]
+                [() edge-fake-destination]))]
+           [make-struct-type-label (make-label-case-lambda
+                                    #f #f #f #t term (make-hash-table) '() #f
+                                    (list #f)
+                                    (list 7)
+                                    (list (list name-label
+                                                parent-label
+                                                field-label
+                                                auto-field-label
+                                                auto-field-value-label
+                                                properties-label
+                                                inspector-label))
+                                    (list values-label)
+                                    (list '())
+                                    (list *dummy-thunk*))])
+      ; make-struct-type args
+      (add-edge-and-propagate-set-through-edge name-label name-edge)
+      (add-edge-and-propagate-set-through-edge parent-label parent-edge)
+      (add-edge-and-propagate-set-through-edge field-label field-edge)
+      (add-edge-and-propagate-set-through-edge auto-field-label auto-field-edge)
+      (add-edge-and-propagate-set-through-edge auto-field-value-label auto-field-value-edge)
+      (add-edge-and-propagate-set-through-edge properties-label properties-edge)
+      (add-edge-and-propagate-set-through-edge inspector-label inspector-edge)
+      (initialize-label-set-for-value-source struct-type-label)
+      ; multiple values list
+      (initialize-label-set-for-value-source null-label)
+      (initialize-label-set-for-value-source cons-label1)
+      (initialize-label-set-for-value-source cons-label2)
+      (initialize-label-set-for-value-source cons-label3)
+      (initialize-label-set-for-value-source cons-label4)
+      (initialize-label-set-for-value-source cons-label5)
+      (initialize-label-set-for-value-source values-label)
+      (initialize-label-set-for-value-source make-struct-type-label)
+      make-struct-type-label))
+  
+  ; syntax-object -> label
+  ; Here again we rely heavily on the order in which actual arguments are connected
+  ; to formal arguments (i.e. left to right). Note that the first arg of
+  ; make-struct-field-accessor will be access, which is bound to the access defined
+  ; by make-struct-type. This means that, if the define-struct is inside a lambda,
+  ; we should make sure that, when the lambda is applied, make-struct-type is applied
+  ; before make-struct-field-accessor. Hence the order in which the thunks are built
+  ; in the #%app rule of create-label-from-term.
+  (define (create-make-struct-field-accessor-label term)
+    (let* (; WARNING: we assume that each occurence of make-struct-field-accessor is
+           ; only used once in the program being analyzed, so set!-ing struct-label, access,
+           ; and field-index is ok. This *will* break if the user starts using a
+           ; function like:
+           ; (lambda (index name)
+           ;   (make-struct-field-accessor access index name))
+           ; to create the different accessors, because the state will then be shared
+           ; between several call places.
+           ; Note that we could get back the struct-label and field-index when needed
+           ; by fishing them out of the sets of the first and second args, but it's
+           ; less painful to do it that way, and doing the fishing would still break
+           ; the same way anyway...
+           [struct-type-label #f]
+           [access #f]
+           [field-index #f]
+           [body-label (create-simple-prim-label term)]
+           [body-edge (create-simple-edge body-label)]
+           [first-arg-label (create-simple-prim-label term)]
+           [first-arg-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 (set-label-tunnel?! inflowing-label #f)
+                 ; only a case-lambda for a struct with a single arity-2 clause
+                 ; should flow in here. Note that, as in create-make-struct-type-label,
+                 ; we do the type checking as stuff flows in, instead of doing it
+                 ; post-analysis, just to make sure we don't screw our invariants when
+                 ; we finally run third-arg-edge...
+                 (if (and (label-case-lambda? inflowing-label)
+                          (label-case-lambda-struct inflowing-label)
+                          (= (length (label-case-lambda-rest-arg?s inflowing-label)) 1)
+                          (= (length (car (label-case-lambda-argss inflowing-label))) 2))
+                   (begin
+                     (set! struct-type-label (label-case-lambda-struct inflowing-label))
+                     (set! access inflowing-label)
+                     #t)
+                   (begin
+                     (set! *errors*
+                           (cons (list (list (label-term inflowing-label))
+                                       'red
+                                       (format "make-struct-field-accessor: expects type <accessor procedure that requires a field index> as 1st argument, given: ~a"
+                                               (pp-type (get-type inflowing-label) 'create-make-struct-field-accessor-label1)))
+                                 *errors*))
+                     #f))]
+                [() edge-fake-destination]))]
+           [second-arg-label (create-simple-prim-label term)]
+           [second-arg-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 ; no resetting, because the number will later flow into access's second arg
+                 ; where the tunnelling wil be reset
+                 ;(set-label-tunnel?! inflowing-label #f)
+                 ; only a number in the right range should flow in here
+                 (if struct-type-label
+                   (if (and (label-cst? inflowing-label)
+                            (let ([value (label-cst-value inflowing-label)])
+                              (and (number? value)
+                                   (exact? value)
+                                   (<= 0 value))))
+                     (let ([value (label-cst-value inflowing-label)])
+                       (if (< value (- (label-struct-type-total-fields-nbr struct-type-label)
+                                       (label-struct-type-parent-fields-nbr struct-type-label)))
+                         (begin
+                           (set! field-index
+                                 (+ value (label-struct-type-parent-fields-nbr struct-type-label)))
+                           #t)
+                         (begin
+                           (set! *errors*
+                                 (cons
+                                  (list
+                                   (list (label-term inflowing-label))
+                                   'red
+                                   (format "make-struct-field-accessor: slot index for ~a not in [0, ~a]: ~a"
+                                           (pp-type (get-type struct-type-label) 'create-make-struct-field-accessor-label2)
+                                           (- (label-struct-type-total-fields-nbr struct-type-label)
+                                              (label-struct-type-parent-fields-nbr struct-type-label))
+                                           (pp-type (get-type inflowing-label) 'create-make-struct-field-accessor-label3)))
+                                  *errors*))
+                           #f)))
+                     (begin
+                       (set! struct-type-label #f)
+                       (set! access #f)
+                       (set! *errors*
+                             (cons (list (list (label-term inflowing-label))
+                                         'red
+                                         (format "make-struct-field-accessor: expects type <non-negative exact integer> as 2nd argument, given: ~a"
+                                                 (pp-type (get-type inflowing-label) 'create-make-struct-field-accessor-label4)))
+                                   *errors*))
+                       #f))
+                   #f)]
+                [() edge-fake-destination]))]
+           [third-arg-label (create-simple-prim-label term)]
+           [third-arg-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 (set-label-tunnel?! inflowing-label #f)
+                 ; only a symbol should flow in here
+                 (if field-index ; is not set if struct-label is not set...
+                   (if (and (label-cst? inflowing-label)
+                            (symbol? (label-cst-value inflowing-label)))
+                     ; ready to wrap access... accessor is the result of applying
+                     ; make-struct-field-accessor to access (i.e. it's the accessor
+                     ; that will be bound to foo-a...)
+                     (let* ([access-args (car (label-case-lambda-argss access))]
+                            [access-body-edge (create-simple-edge (car (label-case-lambda-exps access)))]
+                            [accessor-body-label (create-simple-prim-label term)]
+                            [accessor-body-edge (create-simple-edge accessor-body-label)]
+                            [accessor-arg-label (create-simple-prim-label term)]
+                            [accessor-arg-edge
+                             (let ([edge-fake-destination (gensym)])
+                               (case-lambda
+                                 [(out-label inflowing-label)
+                                  ; name sink => no use for out-label
+                                  ; do not reset tunnel because the struct will keep flowing
+                                  ; into access's first arg, where the tunneling will be reset.
+                                  ;(set-label-tunnel?! inflowing-label #f)
+                                  (if (is-subtype? inflowing-label struct-type-label)
+                                    (let ([result-label
+                                           (list-ref (label-struct-value-fields
+                                                      inflowing-label)
+                                                     field-index)])
+                                      ; we make the result flow into both the result of access and the result
+                                      ; of the accessor
+                                      (add-edge-and-propagate-set-through-edge
+                                       result-label access-body-edge)
+                                      (add-edge-and-propagate-set-through-edge
+                                       result-label accessor-body-edge)
+                                      #t)
+                                    (begin
+                                      (set! *errors*
+                                            (cons
+                                             (list
+                                              ; we know we are inside a primitive, so we
+                                              ; flag the entrance of the tunnel as the error.
+                                              (list (label-term (label-tunnel? inflowing-label)))
+                                              'red
+                                              (format "accessor expects type ~a as 1st argument, given: ~a"
+                                                      (pp-type (get-type struct-type-label) 'create-make-struct-field-accessor-label5)
+                                                      (pp-type (get-type inflowing-label) 'create-make-struct-field-accessor-label6)))
+                                             *errors*))
+                                      #f))]
+                                 [() edge-fake-destination]))]
+                            [accessor-case-lambda-label (make-label-case-lambda
+                                                         #f #f #f #t term (make-hash-table) '() #f
+                                                         (list #f)
+                                                         (list 1)
+                                                         (list (list accessor-arg-label))
+                                                         (list accessor-body-label)
+                                                         (list '())
+                                                         (list *dummy-thunk*))])
+                       ; this is just to get the type for access right...
+                       ; the structure flowing into the accessor flows into access's first arg
+                       (add-edge-and-propagate-set-through-edge
+                        accessor-arg-label
+                        (create-simple-edge (car access-args)))
+                       ; the index given to make-struct-field-accessor flows into the second arg
+                       (add-edge-and-propagate-set-through-edge
+                        second-arg-label
+                        (create-simple-edge (cadr access-args)))
+                       ; accessor
+                       (add-edge-and-propagate-set-through-edge accessor-arg-label accessor-arg-edge)
+                       (initialize-label-set-for-value-source accessor-case-lambda-label)
+                       (add-edge-and-propagate-set-through-edge
+                        accessor-case-lambda-label body-edge)
+                       #t)
+                     (begin
+                       (set! struct-type-label #f)
+                       (set! access #f)
+                       (set! field-index #f)
+                       (set! *errors*
+                             (cons (list (list (label-term inflowing-label))
+                                         'red
+                                         (format "make-struct-field-accessor: expects type <symbol> as 3rd argument, given: ~a"
+                                                 (pp-type (get-type inflowing-label) 'create-make-struct-field-accessor-label7)))
+                                   *errors*))
+                       #f))
+                   #f)]
+                [() edge-fake-destination]))]
+           [make-struct-field-accessor-label (make-label-case-lambda
+                                              #f #f #f #t term (make-hash-table) '() #f
+                                              (list #f)
+                                              (list 3)
+                                              (list (list first-arg-label
+                                                          second-arg-label
+                                                          third-arg-label))
+                                              (list body-label)
+                                              (list '())
+                                              (list *dummy-thunk*))])
+      (add-edge-and-propagate-set-through-edge first-arg-label first-arg-edge)
+      (add-edge-and-propagate-set-through-edge second-arg-label second-arg-edge)
+      (add-edge-and-propagate-set-through-edge third-arg-label third-arg-edge)
+      (initialize-label-set-for-value-source make-struct-field-accessor-label)
+      make-struct-field-accessor-label))
+  
+  ; syntax-object -> label
+  ; Here again we rely heavily on the order in which actual arguments are connected
+  ; to formal arguments (i.e. left to right)
+  (define (create-make-struct-field-mutator-label term)
+    (let* (; WARNING: we assume that each occurence of make-struct-field-mutator is
+           ; only used once in the program being analyzed, so set!-ing struct-label
+           ; and field-index is ok. This *will* break if the user starts using a
+           ; function like:
+           ; (lambda (index name)
+           ;   (make-struct-field-mutator mutate index name))
+           ; to create the different mutators...
+           ; Note that we could get back the struct-label and field-index when needed
+           ; by fishing them out of the sets of the first and second args, but it's
+           ; less painful to do it that way, and doing the fishing would still break
+           ; the same way anyway...
+           [struct-type-label #f]
+           [mutate #f]
+           [field-index #f]
+           [body-label (create-simple-prim-label term)]
+           [body-edge (create-simple-edge body-label)]
+           [void-label (make-label-cst #f #f #f #f
+                                       term
+                                       (make-hash-table)
+                                       '()
+                                       (void))]
+           [first-arg-label (create-simple-prim-label term)]
+           [first-arg-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 (set-label-tunnel?! inflowing-label #f)
+                 ; only a case-lambda for a struct with a single arity-3 clause
+                 ; should flow in here. Note that, as in create-make-struct-type-label,
+                 ; we do the type checking as stuff flows in, instead of doing it
+                 ; post-analysis, just to make sure we don't screw our invariants when
+                 ; we finally run third-arg-edge...
+                 (if (and (label-case-lambda? inflowing-label)
+                          (label-case-lambda-struct inflowing-label)
+                          (= (length (label-case-lambda-rest-arg?s inflowing-label)) 1)
+                          (= (length (car (label-case-lambda-argss inflowing-label))) 3))
+                   (begin
+                     (set! struct-type-label (label-case-lambda-struct inflowing-label))
+                     (set! mutate inflowing-label)
+                     #t)
+                   (begin
+                     (set! *errors*
+                           (cons (list (list (label-term inflowing-label))
+                                       'red
+                                       (format "make-struct-field-mutator: expects type <mutator procedure that requires a field index> as 1st argument, given: ~a"
+                                               (pp-type (get-type inflowing-label) 'create-make-struct-field-mutator-label1)))
+                                 *errors*))
+                     #f))]
+                [() edge-fake-destination]))]
+           [second-arg-label (create-simple-prim-label term)]
+           [second-arg-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 ; no resetting, because the number will later flow into mutate's second arg
+                 ; where the tunnelling wil be reset
+                 ;(set-label-tunnel?! inflowing-label #f)
+                 ; only a number in the right range should flow in here
+                 (if struct-type-label
+                   (if (and (label-cst? inflowing-label)
+                            (let ([value (label-cst-value inflowing-label)])
+                              (and (number? value)
+                                   (exact? value)
+                                   (<= 0 value))))
+                     (let ([value (label-cst-value inflowing-label)])
+                       (if (< value (- (label-struct-type-total-fields-nbr struct-type-label)
+                                       (label-struct-type-parent-fields-nbr struct-type-label)))
+                         (begin
+                           (set! field-index 
+                                 (+ value (label-struct-type-parent-fields-nbr struct-type-label)))
+                           #t)
+                         (begin
+                           (set! *errors*
+                                 (cons
+                                  (list
+                                   (list (label-term inflowing-label))
+                                   'red
+                                   (format "make-struct-field-mutator: slot index for ~a not in [0, ~a]: ~a"
+                                           (pp-type (get-type (struct-type-label)) 'create-make-struct-field-mutator-label2)
+                                           (- (label-struct-type-total-fields-nbr struct-type-label)
+                                              (label-struct-type-parent-fields-nbr struct-type-label))
+                                           (pp-type (get-type inflowing-label) 'create-make-struct-field-mutator-label3)))
+                                  *errors*))
+                           #f)))
+                     (begin
+                       (set! struct-type-label #f)
+                       (set! mutate #f)
+                       (set! *errors*
+                             (cons (list (list (label-term inflowing-label))
+                                         'red
+                                         (format "make-struct-field-mutator: expects type <non-negative exact integer> as 2nd argument, given: ~a"
+                                                 (pp-type (get-type inflowing-label) 'create-make-struct-field-mutator-label4)))
+                                   *errors*))
+                       #f))
+                   #f)]
+                [() edge-fake-destination]))]
+           [third-arg-label (create-simple-prim-label term)]
+           [third-arg-edge
+            (let ([edge-fake-destination (gensym)])
+              (case-lambda
+                [(out-label inflowing-label)
+                 ; name sink => no use for out-label
+                 (set-label-tunnel?! inflowing-label #f)
+                 ; only a symbol should flow in here
+                 (if field-index ; is not set if struct-label is not set...
+                   (if (and (label-cst? inflowing-label)
+                            (symbol? (label-cst-value inflowing-label)))
+                     ; ready to wrap mutate... mutator is the result of applying
+                     ; make-struct-field-mutator to mutate (i.e. it's the mutator
+                     ; that will be bound to set-foo-a!...)
+                     (let* ([mutate-args (car (label-case-lambda-argss mutate))]
+                            [mutate-body-edge (create-simple-edge (car (label-case-lambda-exps mutate)))]
+                            ; yet another hidden state variable, because the mutator takes
+                            ; two args, so when we finally see the second one flowing in, we
+                            ; have to fish out for the first one...
+                            [mutated-label #f]
+                            [mutator-body-label (create-simple-prim-label term)]
+                            [mutator-body-edge (create-simple-edge mutator-body-label)]
+                            [mutator-first-arg-label (create-simple-prim-label term)]
+                            [mutator-first-arg-edge
+                             (let ([edge-fake-destination (gensym)])
+                               (case-lambda
+                                 [(out-label inflowing-label)
+                                  ; name sink => no use for out-label
+                                  ; do not reset tunnel because the struct will keep flowing
+                                  ; into mutate's first arg, where the tunneling will be reset.
+                                  ;(set-label-tunnel?! inflowing-label #f)
+                                  (if (is-subtype? inflowing-label struct-type-label)
+                                    (begin
+                                      (set! mutated-label
+                                            (list-ref (label-struct-value-fields
+                                                       inflowing-label)
+                                                      field-index))
+                                      #t)
+                                    (begin
+                                      (set! *errors*
+                                            (cons (list
+                                                   ; we know we are inside a primitive, so we
+                                                   ; flag the entrance of the tunnel as the error.
+                                                   (list (label-term (label-tunnel? inflowing-label)))
+                                                   'red
+                                                   (format "mutator expects type ~a as 1st argument, given: ~a"
+                                                           (pp-type (get-type struct-type-label) 'create-make-struct-field-mutator-label5)
+                                                           (pp-type (get-type inflowing-label) 'create-make-struct-field-mutator-label6)))
+                                                  *errors*))
+                                      #f))]
+                                 [() edge-fake-destination]))]
+                            [mutator-second-arg-label (create-simple-prim-label term)]
+                            [mutator-second-arg-edge
+                             (let ([edge-fake-destination (gensym)])
+                               (case-lambda
+                                 [(out-label inflowing-label)
+                                  ; name sink => no use for out-label
+                                  ; do not reset tunnel because the value will keep flowing
+                                  ; into mutate's third arg, where the tunneling will be reset.
+                                  ;(set-label-tunnel?! inflowing-label #f)
+                                  (if mutated-label
+                                    (begin
+                                      ; very conservative approximation of set! => should
+                                      ; use indirection.
+                                      (add-edge-and-propagate-set-through-edge
+                                       inflowing-label 
+                                       (create-simple-edge mutated-label))
+                                      ; should reset mutated label to be ready for the next
+                                      ; call of the mutator. If we don't do this, and an error
+                                      ; occurs with the first arg, the second arg might still flow.
+                                      (set! mutated-label #f)
+                                      #t)
+                                    #f)]
+                                 [() edge-fake-destination]))]
+                            [mutator-case-lambda-label (make-label-case-lambda
+                                                        #f #f #f #t term (make-hash-table) '() #f
+                                                        (list #f)
+                                                        (list 2)
+                                                        (list (list mutator-first-arg-label
+                                                                    mutator-second-arg-label))
+                                                        (list mutator-body-label)
+                                                        (list '())
+                                                        (list *dummy-thunk*))])
+                       ; this is just to get the type for mutate right...
+                       ; the structure flowing into the mutator's first arg flows into
+                       ; mutate's first arg
+                       (add-edge-and-propagate-set-through-edge
+                        mutator-first-arg-label
+                        (create-simple-edge (car mutate-args)))
+                       ; the index given to make-struct-field-mutator flows into mutate's second arg
+                       (add-edge-and-propagate-set-through-edge
+                        second-arg-label
+                        (create-simple-edge (cadr mutate-args)))
+                       ; the value flowing into the mutator's second args flows into
+                       ; mutate's third arg
+                       (add-edge-and-propagate-set-through-edge
+                        mutator-second-arg-label
+                        (create-simple-edge (caddr mutate-args)))
+                       ; body
+                       (add-edge-and-propagate-set-through-edge void-label mutate-body-edge)
+                       ; mutator
+                       (add-edge-and-propagate-set-through-edge
+                        mutator-first-arg-label mutator-first-arg-edge)
+                       (add-edge-and-propagate-set-through-edge
+                        mutator-second-arg-label mutator-second-arg-edge)
+                       (add-edge-and-propagate-set-through-edge
+                        void-label mutator-body-edge)
+                       (initialize-label-set-for-value-source mutator-case-lambda-label)
+                       (add-edge-and-propagate-set-through-edge
+                        mutator-case-lambda-label body-edge)
+                       #t)
+                     (begin
+                       (set! struct-type-label #f)
+                       (set! mutate #f)
+                       (set! field-index #f)
+                       (set! *errors*
+                             (cons (list (list (label-term inflowing-label))
+                                         'red
+                                         (format "make-struct-field-mutator: expects type <symbol> as 3rd argument, given: ~a"
+                                                 (pp-type (get-type inflowing-label) 'create-make-struct-field-mutator-label7)))
+                                   *errors*))
+                       #f))
+                   #f)]
+                [() edge-fake-destination]))]
+           [make-struct-field-mutator-label (make-label-case-lambda
+                                             #f #f #f #t term (make-hash-table) '() #f
+                                             (list #f)
+                                             (list 3)
+                                             (list (list first-arg-label
+                                                         second-arg-label
+                                                         third-arg-label))
+                                             (list body-label)
+                                             (list '())
+                                             (list *dummy-thunk*))])
+      (initialize-label-set-for-value-source void-label)
+      (add-edge-and-propagate-set-through-edge first-arg-label first-arg-edge)
+      (add-edge-and-propagate-set-through-edge second-arg-label second-arg-edge)
+      (add-edge-and-propagate-set-through-edge third-arg-label third-arg-edge)
+      (initialize-label-set-for-value-source make-struct-field-mutator-label)
+      make-struct-field-mutator-label))
   
   ; syntax-object (listof (cons symbol label)) label (listof label) -> label
   ; gamma is the binding-variable-name-to-label environment
@@ -1071,6 +2054,7 @@
                      term
                      (make-hash-table)
                      '()
+                     #f
                      *dummy*
                      *dummy*
                      *dummy*
@@ -1199,8 +2183,19 @@
                  [current-thunk (car enclosing-lambda-app-thunks)])
             (set-car! enclosing-lambda-app-thunks
                       (lambda ()
+                        ; the order in which we evaluate the thunks here is normally
+                        ; insignificant, but it is *very* important to have it in this
+                        ; order when we start having structs. Otherwise, if a define-struct
+                        ; is inside a lambda, the application of make-struct-type might
+                        ; occur after the application of make-struct-field-accessor, which
+                        ; means access won't have been created by the time
+                        ; make-struct-field-accessor is applied, which will make the
+                        ; assumption (that args flow into make-struct-field-accessor in order,
+                        ; from left to right) we made in create-make-struct-field-accessor-label
+                        ; break.
+                        (current-thunk)
                         (add-edge-and-propagate-set-through-edge op-label edge)
-                        (current-thunk))))
+                        )))
           (add-edge-and-propagate-set-through-edge op-label edge))
         app-label)]
      [(#%datum . datum)
@@ -1571,55 +2566,11 @@
              ; the else-label, so that the wrong label/position association created by the
              ; else-label is overwritten.
              [if-label (create-simple-label term)]
-             ; our edges are origin-independant, so we can use the same one for both then and else.
              [if-edge (create-simple-edge if-label)]
-             [test-edge
-              (letrec ([edge-fake-destination (gensym)]
-                       [dummy-edge (case-lambda
-                                     [(out-label inflowing-label)
-                                      ; sink edge, so no need for out-label
-                                      #t]
-                                     ; test value sink
-                                     [() edge-fake-destination])]
-                       [self-modifying-edge
-                        (case-lambda
-                          [(out-label inflowing-label)
-                           ; sink edge, so no need for out-label
-                           (if (and (label-cst? inflowing-label)
-                                    (not (label-cst-value inflowing-label)))
-                             (begin
-                               (set! self-modifying-edge
-                                     (case-lambda
-                                       [(out-label inflowing-label)
-                                        ; sink edge, so no need for out-label
-                                        (when (or (not (label-cst? inflowing-label))
-                                                  (label-cst-value inflowing-label))
-                                          ; it would be more efficient to directly remove the edge.
-                                          (set! self-modifying-edge dummy-edge)
-                                          (add-edge-and-propagate-set-through-edge
-                                           then-label if-edge))]
-                                       ; test value sink
-                                       [() edge-fake-destination]))
-                               (add-edge-and-propagate-set-through-edge
-                                else-label if-edge))
-                             (begin
-                               (set! self-modifying-edge
-                                     (case-lambda
-                                       [(out-label inflowing-label)
-                                        ; sink edge, so no need for out-label
-                                        (when (and (label-cst? inflowing-label)
-                                                   (not (label-cst-value inflowing-label)))
-                                          ; it would be more efficient to directly remove the edge.
-                                          (set! self-modifying-edge dummy-edge)
-                                          (add-edge-and-propagate-set-through-edge
-                                           else-label if-edge))]
-                                       ; test value sink
-                                       [() edge-fake-destination]))
-                               (add-edge-and-propagate-set-through-edge
-                                then-label if-edge)))]
-                          ; test value sink
-                          [() edge-fake-destination])])
-                self-modifying-edge)])
+             [test-edge (create-self-modifying-edge (lambda (label)
+                                                      (or (not (label-cst? label))
+                                                          (label-cst-value label)))
+                                                    then-label else-label if-edge)])
         (add-edge-and-propagate-set-through-edge test-label test-edge)
         if-label)]
      [(if test then)
@@ -1666,27 +2617,7 @@
             (set-car! enclosing-lambda-top-free-varss
                       (cons bound-label (car enclosing-lambda-top-free-varss))))
           ; top level
-          ; we do the top level lookup first, so we allow primitives to be redefined.
-          (let ([binding-label (lookup-top-level-name identifier-name)])
-            (if binding-label
-              (add-edge-and-propagate-set-through-edge
-               binding-label
-               (extend-edge-for-values (create-simple-edge bound-label)))
-              ; free var at top level XXX must be a primitive (explicit call to
-              ; primitive at top level)
-              (let ([primitive-type-scheme (lookup-primitive-type-scheme identifier-name)])
-                (if primitive-type-scheme
-                  ; we allow a primitive like pi to evaluate to multiple values...
-                  (add-edge-and-propagate-set-through-edge
-                   (reconstruct-graph-from-type-scheme
-                    primitive-type-scheme (make-hash-table) identifier)
-                   (create-simple-edge bound-label))
-                  (set! *errors*
-                        (cons (list (list term)
-                                    'red
-                                    (format "reference to undefined identifier (at top level): ~a"
-                                            identifier-name))
-                              *errors*)))))))
+          (lookup-and-bind-top-level-vars (list bound-label) identifier))
         bound-label)]
      [(set! foo ...)
       (set! *errors*
@@ -1756,55 +2687,24 @@
       ; simpler graph and simpler types, it screws up the arrows
       (let* ([var-stx (syntax var)]
              [var-name (syntax-e var-stx)]
-             [bound-label (create-simple-label term)]
              [binding-label (lookup-env var-stx gamma)])
         (if binding-label
-          (if (memq binding-label letrec-trace)
-            (set! *errors*
-                  (cons (list (list term)
-                              'red
-                              (format "bound but undefined variable: ~a" (syntax-object->datum var-stx)))
-                        *errors*))
-            (add-edge-and-propagate-set-through-edge
-             binding-label
-             (extend-edge-for-values (create-simple-edge bound-label))))
-          ; no binding label at all. Either a construct we don't know how to analyze yet,
-          ; or an implicit call to a primitive (call to cons as the result of using
-          ; quasiquotes, call to make-a-promise when using delay, stuff like that - don't
-          ; ask me why  such primitive calls are not wrapped inside a #%top...)
-          (if (lookup-primitive-type-scheme var-name)
-            (let ([binding-label (create-label-from-term
-                                  (datum->syntax-object var-stx
-                                                        (cons '#%top var-stx)
-                                                        var-stx var-stx)
-                                  gamma enclosing-lambda-label letrec-trace)])
+          (let ([bound-label (create-simple-label term)])
+            (if (memq binding-label letrec-trace)
+              (set! *errors*
+                    (cons (list (list term)
+                                'red
+                                (format "bound but undefined variable: ~a" (syntax-object->datum var-stx)))
+                          *errors*))
               (add-edge-and-propagate-set-through-edge
                binding-label
                (extend-edge-for-values (create-simple-edge bound-label))))
-            (cond
-;              [(eq? var-name 'make-struct-type)
-;               (add-edge-and-propagate-set-through-edge
-;                (process-make-struct-type-primitive var-stx)
-;                (create-simple-edge bound-label))]
-;              ; we will process these two after the one above, for a given struct
-;              ; definition, because, after program expansion,
-;              ; make-struct-field-accessor/mutator appear in the body of a letrec-values
-;              ; with make-struct-type being used in one of the letrec-values clauses.
-;              [(eq? var-name 'make-struct-field-accessor)
-;               (add-edge-and-propagate-set-through-edge
-;                (process-make-struct-field-accessor var-stx)
-;                (create-simple-edge bound-label))]
-;              [(eq? var-name 'make-struct-field-mutator)
-;               (add-edge-and-propagate-set-through-edge
-;                (process-make-struct-field-mutator var-stx)
-;                (create-simple-edge bound-label))]
-              [else
-               (set! *errors*
-                     (cons (list (list term)
-                                 'red
-                                 (format "unknown or not yet supported construct: ~a" (syntax-object->datum var-stx)))
-                           *errors*))])))
-        bound-label)]
+            bound-label)
+          (create-label-from-term
+           (datum->syntax-object var-stx
+                                 (cons '#%top var-stx)
+                                 var-stx var-stx)
+           gamma enclosing-lambda-label letrec-trace)))]
      ))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; TYPES
@@ -1829,6 +2729,15 @@
   (define-struct (type-flow-var type) (name) (make-inspector))
   (define-struct (type-promise type) (value) (make-inspector))
   (define-struct (type-scheme type) (flow-vars type^Cs type) (make-inspector))
+  ; note: we have to keep the type label around, because that's the only thing
+  ; that allows us to differentiate structurally equivalent structure that have
+  ; the same name (i.e. the only way to have subtyping work in the presence of generative
+  ; structures). The reason for type-struct-type is because structure types are first
+  ; class values in mzscheme. Also, by keeping the type-label around, we avoid the need
+  ; to duplicate the type hierarchy all the way up to the root each time we compute the
+  ; type of a structure.
+  (define-struct (type-struct-value type) (type-label types))
+  (define-struct (type-struct-type type) (type-label))
   
   ; each entry is of the form (type-name (listof direct-subtypes) scheme-predicate)
   ; top should appear first (see the subtype function below)
@@ -2368,6 +3277,7 @@
                         term
                         (make-hash-table)
                         '()
+                        #f
                         (type-case-lambda-rest-arg?s type)
                         (type-case-lambda-req-args type)
                         (car all-labels)
@@ -3164,6 +4074,16 @@
               (subt (type-values-type t1) (type-values-type t2) t1-env t2-env delta-flow trace))
          (and (type-promise? t1) (type-promise? t2)
               (subt (type-promise-value t1) (type-promise-value t2) t1-env t2-env delta-flow trace))
+         (and (type-struct-type? t1) (type-struct-type? t2)
+              ; can't use strutural equivalence here because of genericity
+              (or (eq? (type-struct-type-type-label t1) (type-struct-type-type-label t2))
+                  (let ([t1-parent-label (label-struct-type-parent
+                                          (type-struct-type-type-label t1))])
+                    (if t1-parent-label
+                      (subt (get-type t1-parent-label) t2 t1-env t2-env delta-flow trace)
+                      #f))))
+         (and (type-struct-value? t1) (type-struct-type? t2)
+              (subt (get-type (type-struct-value-type-label t1)) t2 t1-env t2-env delta-flow trace))
          (and (type-flow-var? t2)
               (let ([label&type^C (lookup-flow-var-in-env delta-flow t2)])
                 (subt t1 (cdr label&type^C) t1-env t2-env delta-flow trace)))
@@ -3363,6 +4283,12 @@
                                                               (label-case-lambda-req-args label)
                                                               (car all-types)
                                                               (cdr all-types)))]
+                                    [(label-struct-value? label)
+                                     (make-type-struct-value
+                                      (label-struct-value-type label)
+                                      (map get-non-rec-type (label-struct-value-fields label)))]
+                                    [(label-struct-type? label)
+                                     (make-type-struct-type label)]
                                     [else (error 'get-non-rec-type "unknown label: ~a" label)])))]
                [type-union-elements-flattened
                 (let loop ([cur-types type-union-elements])
@@ -3548,6 +4474,26 @@
          (type-rec-types type))
         (pp-type (type-rec-body type) delta-flow)
         ")")]
+      [(type-struct-value? type)
+       (string-append
+        "#(struct:"
+        (symbol->string (label-struct-type-name (type-struct-value-type-label type)))
+        " "
+        (list:foldr
+         (lambda (elt-type str)
+           (string-append
+            (pp-type elt-type delta-flow)
+            (if (string=? str ")")
+              ""
+              " ")
+            str))
+         ")"
+         (type-struct-value-types type)))]
+      [(type-struct-type? type)
+       (string-append
+        "#<struct-type:"
+        (symbol->string (label-struct-type-name (type-struct-type-type-label type)))
+        ">")]
       [else (error 'pp-type "unknown type: ~a" type)]))
   
   ; ((cons (listof label) (listof label)) -> (listof label)) -> (label -> (listof label))
@@ -3583,9 +4529,10 @@
   
   ; port value -> void
   (define (sba-driver port source)
-    (reset-all)
     (let ([start (current-milliseconds)])
+      (reset-all)
       (read-and-analyze port source)
+      (check-primitive-types)
       (printf "time: ~a ms~n" (- (current-milliseconds) start)))
     
     ; XXX perf analysis
@@ -3604,15 +4551,15 @@
   ; read and analyze, one syntax object at a time
   (define (read-and-analyze port source)
     (let ([stx-obj (read-syntax source port)])
-      (unless (eof-object? stx-obj)
-        (begin (printf "sba-driver in: ~a~n" (syntax-object->datum stx-obj))
-               (printf "sba-driver analyzed: ~a~n~n" (syntax-object->datum (expand stx-obj)))
-               (printf "sba-driver out: ~a~n~n" (create-label-from-term (expand stx-obj) '() #f '())))
-        (read-and-analyze port source))))
-  ;     (if (eof-object? stx-obj)
-  ;         '()
-  ;         (cons (create-label-from-term (expand stx-obj) '() #f '())
-  ;               (read-and-analyze port source)))))
+;      (unless (eof-object? stx-obj)
+;        (begin (printf "sba-driver in: ~a~n" (syntax-object->datum stx-obj))
+;               (printf "sba-driver analyzed: ~a~n~n" (syntax-object->datum (expand stx-obj)))
+;               (printf "sba-driver out: ~a~n~n" (create-label-from-term (expand stx-obj) '() #f '())))
+;        (read-and-analyze port source))))
+      (if (eof-object? stx-obj)
+        '()
+        (cons (create-label-from-term (expand stx-obj) '() #f '())
+              (read-and-analyze port source)))))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PERFORMANCE TEST
   
@@ -3639,6 +4586,7 @@
   ;                               string<=?)
   ;                              )]
   ;  	)
+  ;     (initialize-primitive-type-schemes)
   ;     (for-each (lambda (file)
   ;                 (printf "~a: " file)
   ;                 (test-f (build-path path file))

@@ -18,4 +18,5 @@
   (define (box-select-dir file)
     (cons-selection file))
   (define filter-files all-files)
-  (define sort-files dirs-first))
+  (define sort-files dirs-first)
+  (open-dir-window (get-current-dir)))

@@ -35,7 +35,7 @@
               (define f-int name) ...)))))))
   
   (define orig-output (current-output-port))
-  (define trace? #f)
+  (define trace? #t)
   (define-syntax trace
     (syntax-rules ()
       ((_ str arg ...)
@@ -83,7 +83,7 @@
            
            (define code-engine@
              (unit/sig code-engine^
-               (import script^)
+               (import script^ gui^)
                
                (trace "invoking code-engine")
                
@@ -103,7 +103,15 @@
                    (queue-callback
                     (lambda ()
                       (trace "user callback running: ~a" code)
-                      (callback (eval code))))))))
+                      (disable-evaluation)
+                      (trace "disabled")
+                      (with-handlers ((exn?
+                                       (lambda (ex)
+                                         (enable-evaluation)
+                                         (raise ex))))
+                        (callback (eval code))
+                        (enable-evaluation)))
+                    #t)))))
            
            (define script-unit #f)
            (define (get-script-unit) script-unit)
@@ -114,11 +122,13 @@
            (rename (super-enable-evaluation enable-evaluation))
            (define/override (enable-evaluation)
              (send button enable #t)
+             (send (car (send container get-children)) enable #t)
              (super-enable-evaluation))
            
            (rename (super-disable-evaluation disable-evaluation))
            (define/override (disable-evaluation)
              (send button enable #f)
+             (send (car (send container get-children)) enable #f)
              (super-disable-evaluation))
            
            (rename (super-execute-callback execute-callback))
@@ -129,9 +139,6 @@
            
            (rename (super-make-root-area-container make-root-area-container))
            (define container #f)
-           
-           (define/public (set-bp x)
-             (set! container x))
            
            (define/override (make-root-area-container % parent)
              (set! container
@@ -147,31 +154,33 @@
                    (import)
                    (link (FS : file-system^ ((make-file-system@ state) GUI))
                          (SCRIPT : script^ (script@ GUI FS))
-                         (CODE : code-engine^ (code-engine@ SCRIPT))
+                         (CODE : code-engine^ (code-engine@ SCRIPT GUI))
                          (GUI : gui^ ((make-gui@ state)
                                       SCRIPT CODE)))
                    (export))))))
            (set! frame this)
-           
+
            (trace "super-frame start")
            (super-instantiate ())  ;; on-execute happens in here
            (trace "super-frame finish")
-           (cond
-             (active?
-              (send container begin-container-sequence)
-              (start container)
-              (send container change-children
-                    (lambda (c) (cons (cadr c) (cons (car c) null))))
-              (send container end-container-sequence)))
            
            (define button
              (make-object button% (activate-bitmap this) (get-button-panel)
                (lambda (a b)
                  (new-file-window)
                  (drscheme:unit:open-drscheme-window))))
-
+           
            (send (get-button-panel) change-children
-                 (lambda (x) (cons button (remq button x)))))))
+                 (lambda (x) (cons button (remq button x))))
+           (cond
+             (active?
+              (send container begin-container-sequence)
+              (trace "opening gui")
+              (start container)
+              (send container change-children
+                    (lambda (c) (cons (cadr c) (cons (car c) null))))
+              (send container end-container-sequence))))))
+           
            
       
       (define (phase1)

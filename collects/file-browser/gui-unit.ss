@@ -275,7 +275,13 @@
               (send c get-dir)
               (script:make-file (find-system-path 'home-dir)))))
       
+      (define (disable)
+        (send window-pane enable #f))
+      (define (enable)
+        (send window-pane enable #t))
+      
       (lambda (frame)
-        (set! window-pane (make-object tabbed-panel% frame))
-        (add-window (get-current-directory))
-        (send frame show #t)))))
+        (cond
+          ((not window-pane)
+           (set! window-pane (make-object tabbed-panel% frame))
+           (send frame show #t)))))))

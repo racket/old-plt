@@ -21,7 +21,9 @@
      selection-removed
      get-current-directory
      add-window
-     close-window))
+     close-window
+     disable
+     enable))
   (define-signature script^ 
     (make-file
      file-name

@@ -3175,7 +3175,7 @@ static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **ar
 
   a = argv[0];
 
-  if (!SCHEME_STXP(a) || !SCHEME_STX_SYM(a))
+  if (!SCHEME_STXP(a) || !SCHEME_STX_SYMBOLP(a))
     scheme_wrong_type(name, "identifier syntax", 0, argc, argv);
 
   m = scheme_stx_module_name(&a, dphase + (p->current_local_env

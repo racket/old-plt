@@ -19,12 +19,19 @@
 					  "index.htm"))))
 
     (define frame-group (make-object mred:frame-group%))
+    (send frame-group set-empty-callback mred:exit)
     
     (define frame%
       (class mred:simple-menu-frame% (name snip)
 	(rename [super-make-root-panel make-root-panel]
+		[super-on-close on-close]
 		[super-make-menu-bar make-menu-bar])
 	(inherit panel)
+	(public
+	  [on-close
+	   (lambda ()
+	     (and (super-on-close)
+		  (send group remove-frame this)))])
 	(public
 	  [root-panel #f]
 	  [make-root-panel

@@ -1,3 +1,4 @@
+
 (define drscheme:toplevel-tools
   (list (list "Stepper" (build-path "donkey" "donkey"))
 	(list "Syntax Checker" (build-path "drscheme" "mrslatex"))
@@ -117,7 +118,7 @@
 	     [setup : drscheme:setup^ (drscheme:setup@ mred mzlib)]
 	     [tool : drscheme:tool^ 
 		   (drscheme:tool@ mred mzlib print-convert zodiac
-				 (app : drscheme:export^) params)]
+				 (frame : drscheme:export^) params)]
 	     [rep : drscheme:rep^
 		    (drscheme:rep@ mred mzlib print-convert
 				     params aries zodiac
@@ -139,6 +140,7 @@
 	       (unit tool drscheme:tool)
 	       (unit rep drscheme:rep)
 	       (unit unit drscheme:unit)
+	       (unit frame drscheme:frame)
 	       (unit aries drscheme:aries)
 	       (unit compound-unit drscheme:compound-unit)
 	       (unit zodiac zodiac))))))

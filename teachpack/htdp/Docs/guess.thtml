@@ -11,14 +11,14 @@ game. </p>
 
 <p> The teachpack provides three operations: 
 <menu>
-  <li><code>repl : check-guess -> true; </code> <br>
+  <li><code>guess-with-gui : check-guess -> true; </code> <br>
   The check-guess function consumes two numbers: <code>guess</code>, which
   is the user's guess, and <code>target</code>, which is the randomly
   chosen number-to-be-guessed. The result is a symbol that reflects the
   relationship of the player's guess to the target. 
   <br><br>
 
-  <li><code>repl3 : check-guess -> true; </code> <br>
+  <li><code>guess-with-gui-3 : check-guess -> true; </code> <br>
 
   The check-guess function consumes three digits and one number:
   <code>digit0, digit1, digit2</code>, which make up the user's guess, and
@@ -32,7 +32,7 @@ game. </p>
   the user chose and <code>digit2</code> is the <em>most</em> significant
   one. 
   
-  <li><code>repl-for-list : check-guess -> true; </code> <br>
+  <li><code>guess-with-gui-list : check-guess -> true; </code> <br>
 
   The check-guess function consumes a list of digits and one number:
   <code>digits</code>, a list that makes up the user's guess, and

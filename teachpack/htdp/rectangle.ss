@@ -37,7 +37,7 @@
 			       (IL (rest line) (+ x LENGTH-SQUARE))))))
 		(OL (rest rect) (+ y LENGTH-SQUARE))))))
     
-    ;; draw-square : number number color -> #t
+    ;; draw-square : number number symbol -> #t
     (define (draw-square y x c)
       (draw-solid-rect (make-posn y x) LENGTH-SQUARE LENGTH-SQUARE c))
     

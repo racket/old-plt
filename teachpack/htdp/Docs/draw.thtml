@@ -11,25 +11,26 @@ graphics functions:
 opens a canvas
 <li><code> stop </code> : -> void (no arguments);  <br>
 closes the canvas
-<li><code> draw-circle</code> : posn number color -> true; <br> 
+<li><code> draw-circle</code> : posn number symbol -> true; <br> 
 draws a circle at posn with given radius and color
-<li><code> draw-solid-disk</code> : posn number color -> true; <br> 
+<li><code> draw-solid-disk</code> : posn number symbol -> true; <br> 
 draws a disk at posn with given radius and color
-<li><code> draw-solid-rect</code> : posn number number color -> true; <br>
+<li><code> draw-solid-rect</code> : posn number number symbol -> true; <br>
 draws a rectangle at posn with given width, height, and color
-<li><code> draw-solid-line</code> : posn posn color -> true; <br>
+<li><code> draw-solid-line</code> : posn posn symbol -> true; <br>
 draws a line from one posn to other
 <br>
 <li><code> sleep-for-a-while</code> : number -> true; <br>
 suspends evaluation for the given number of seconds 
 <br>
-<li> predefined colors: 
-<code> WHITE</code>
-<code> YELLOW</code>
-<code> RED</code>
-<code> BLUE</code>
-<code> GREEN</code>
-<code> BLACK</code>
+<li>The following symbols are recognized as colors: 
+<code> 'white</code>
+<code> 'yellow</code>
+<code> 'red</code>
+<code> 'blue</code>
+<code> 'green</code>
+<code> 'black</code>
+Applying the functions to any other symbol triggers an error. 
 </menu>
 <br>
 <br>
@@ -43,12 +44,12 @@ The color argument for all functions are optional.
 
 <p>Sample session: Set teachpack to <code> draw.ss </code> and execute:
 <br> <code> > (start 500 500) </code>
-<br> <code> > (draw-solid-disk (make-posn 100 100) 3 RED) </code>
+<br> <code> > (draw-solid-disk (make-posn 100 100) 3 'red) </code>
 <br> <code> true </code>
-<br> <code> > (clear-solid-disk (make-posn 100 100) 3 RED) </code>
+<br> <code> > (clear-solid-disk (make-posn 100 100) 3 'red) </code>
 <br> <code> true </code>
 <br> <code> > (sleep-for-a-while 1)
-<br> <code> > (draw-solid-disk (make-posn 100 100) 3 RED) </code>
+<br> <code> > (draw-solid-disk (make-posn 100 100) 3 'red) </code>
 <br> <code> true </code>
 <br> <code> > (clear-solid-disk (make-posn 100 100) 3) </code>
 <br> <code> true </code>

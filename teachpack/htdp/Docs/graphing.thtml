@@ -9,13 +9,12 @@ graphing functions in the regular (north-east) quadrant of the Cartesian
 plane (between 0 and 10 in both directions):
 graphics functions:
 <menu>
-<li><code>graph-fun</code> : (number -> number) color -> true; <br>
-draws a function in bulletized form 
-<li><code>graph-line </code> : (number -> number) color -> true (no arguments);  <br>
-draws a straight-line function
+<li><code>graph-fun</code> : (number -> number) symbol -> true; <br>
+draws a function in bulletized form with a given color
+<li><code>graph-line </code> : (number -> number) symbol -> true (no arguments);  <br>
+draws a straight-line function with a given color 
 </menu>
-For <code>color</code>, see <a href = draw.html>the documentation for
-the draw teachpack.</a>
+For legal color symbols, see the documentation for the <a href=draw.html>draw.ss</a> teachpack. 
 <br>
 
 #include foot.tinc

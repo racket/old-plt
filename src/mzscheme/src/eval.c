@@ -458,13 +458,19 @@ void scheme_init_stack_check()
   getrlimit(RLIMIT_STACK, &rl);
 
   {
-    unsigned long bnd;
+    unsigned long bnd, lim;
     bnd = (unsigned long)scheme_get_stack_base();
 
+    lim = (unsigned long)rl.rlim_cur;
+# ifdef UNIX_STACK_MAXIMUM
+    if (lim > UNIX_STACK_MAXIMUM)
+      lim;
+# endif
+
     if (scheme_stack_grows_up)
-      bnd += ((unsigned long)rl.rlim_cur - STACK_SAFETY_MARGIN);
+      bnd += (lim - STACK_SAFETY_MARGIN);
     else
-      bnd += (STACK_SAFETY_MARGIN - (unsigned long)rl.rlim_cur);
+      bnd += (STACK_SAFETY_MARGIN - lim);
 
     scheme_stack_boundary = bnd;
   }

@@ -1131,7 +1131,8 @@
 
  /* UNIX_FIND_STACK_BOUNDS figures out the maximum stack position
      on Unix systems, using getrlimit() and the GC_find_stack_base()
-     defined in the conservative garbage collector.
+     defined in the conservative garbage collector. But no more
+     than UNIX_STACK_MAXIMUM bytes, if defined, will be used.
     USE_STACKAVIL uses stackavail() function for checking stack
      overflow; works with Borland C++, maybe other compilers.
     WINDOWS_FIND_STACK_BOUNDS figures out the maximum stack position

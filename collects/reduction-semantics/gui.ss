@@ -227,7 +227,7 @@
       (send f show #t)))
   
   (define red-sem-frame%
-    (class (frame:standard-menus-mixin frame:basic%)
+    (class (frame:standard-menus-mixin (frame:basic-mixin frame%))
       (init-field graph-pb)
       (define/override (file-menu:create-save?) #f)
       (define/override (file-menu:between-save-as-and-print file-menu)

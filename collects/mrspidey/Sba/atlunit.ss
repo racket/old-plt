@@ -474,7 +474,7 @@
 		(with-directory
 		 file-directory
 		 (lambda ()
-		   (my-scheme-expand-program exps)))]
+		   (my-scheme-expand-program exps #t)))]
 	       [_ (unless (= (length parsed-exps) 1)
 		    (mrspidey:error 
 		     (format

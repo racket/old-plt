@@ -205,7 +205,7 @@
     (let*-vals
      ( [filename (normalize-path filename)]
        [boot-defs (zodiac:read* (open-code-file filename) filename)]
-       [(defs free-names) (my-scheme-expand-program boot-defs)]
+       [(defs free-names) (my-scheme-expand-program boot-defs #t)]
        [env (get-default-bindings free-names)]
        [(env refs result) (top-level-traverse-defs defs env)])
      (for-each

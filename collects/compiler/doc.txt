@@ -342,6 +342,10 @@ The _embed.ss_ library provides a function to embed Scheme code into a
 copy of MzScheme or MrEd, thus creating a (large) _stand-alone_ Scheme
 executable.
 
+The _embedr-unit.ss_ library provides a signed unit, _compiler:embed@_
+that imports nothing and exports the functions below. The
+_embedr-sig.ss_ library provides the signature, _compiler:embed^_.
+
 > (make-embedding-executable dest-file mred? verbose? mod-list literal-file-list literal-sexpr cmdline-list [aux launcher?])
   - Copies the MzScheme (if `mred?' is #f) or MrEd (otherwise) binary,
   embedding code into the copied executable to be loaded on startup.
@@ -423,5 +427,16 @@ executable.
    'exec-file)' produces the source MzScheme or MrEd path instead of
    the embedding executable.
 
-The _embedr-unit.ss_ library provides a signed unit, _compiler:embed@_
-that imports nothing and exports `make-embedding-executable'.
+
+> (embedding-executable-is-directory? mred?) - Returns #t if
+  Mzscheme/MrEd executables for the current platform correspond to
+  directories (as on Mac OS X).
+
+
+> (embedding-executable-put-file-extension+style+filters mred?) -
+  Returns three values suitable for use as the `extension', `style',
+  and `filters' arguments to `put-file', respectively. If
+  MzScheme/MrEd launchers for this platform are directories, the
+  `style' result is suitable for use with `get-directory', and the
+  `extension' result may be a string indicating a required extension
+  for the directory name (e.g., ".app" for Mac OS X).

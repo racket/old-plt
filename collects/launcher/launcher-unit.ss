@@ -340,7 +340,11 @@
 	    (let ([data-fork-size (file-position p)])
 	      (close-input-port p)
 	      (let ([p (open-output-file dest 'update)]
-		    [str (str-list->sh-str flags)])
+		    [str (str-list->sh-str (append
+					    (if (eq? kind 'mred)
+						null
+						'("-Z"))
+					    flags))])
 		(file-position p (caar m))
 		(display (integer->integer-byte-string (string-length str) 4 #t #t) p)
 		(display (integer->integer-byte-string data-fork-size 4 #t #t) p)

@@ -40,6 +40,8 @@ class wxMediaAdmin : public wxObject
   virtual Bool DelayRefresh();
 
   virtual Bool PopupMenu(void *m, float x, float y) = 0;
+
+  virtual void Modified(Bool) = 0;
 };
 
 inline wxMediaAdmin::wxMediaAdmin()
@@ -88,6 +90,8 @@ class wxCanvasMediaAdmin : public wxMediaAdmin
   Bool PopupMenu(void *m, float x, float y);
 
   inline wxMediaCanvas *GetCanvas() { return canvas; }
+
+  void Modified(Bool);
 };
 
 /* Used by wxMediaSnipMediaAdmin: */
@@ -133,6 +137,8 @@ class wxMediaSnipMediaAdmin : public wxMediaAdmin
   Bool PopupMenu(void *m, float x, float y);
 
   inline wxMediaSnip* GetSnip() { return snip; }
+
+  void Modified(Bool);
 };
 
 /* Only to make wxs_madm.xc happy */

@@ -185,6 +185,8 @@ class wxSnip : public wxObject
   virtual long FindScrollStep(float y);
   virtual float GetScrollStepOffset(long i);
 
+  virtual void SetUnmodified();
+
   void SetStyle(wxStyle *s);
 
  protected:
@@ -340,6 +342,8 @@ class wxSnipAdmin : public wxObject
 
   virtual void UpdateCursor() = 0;
   virtual Bool PopupMenu(void *m, wxSnip *s, float x, float y) = 0;
+
+  virtual void Modified(wxSnip *s, Bool mod) = 0;
 };
 
 inline wxSnipAdmin::wxSnipAdmin()
@@ -444,6 +448,8 @@ class wxMediaSnip : public wxInternalSnip
   void GetInset(int *li, int *ti, int *ri, int *bi);
 
   virtual Bool Resize(float w, float h);
+
+  void SetUnmodified();
 
   wxMediaBuffer *GetThisMedia(void);
   void SetMedia(wxMediaBuffer *b);

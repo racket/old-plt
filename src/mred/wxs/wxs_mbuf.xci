@@ -49,6 +49,7 @@
 @ Y "set-snip-data" : void SetSnipData(wxSnip!, wxBufferData^);
 
 @ Z "set-modified" : void SetModified(bool);
+@ Z "on-snip-modified" : void OnSnipModified(wxSnip!,bool);
 
 @ Y "release-snip" : bool ReleaseSnip(wxSnip!); : : : : XrZERO
 

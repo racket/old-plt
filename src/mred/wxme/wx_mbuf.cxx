@@ -2112,9 +2112,13 @@ void wxMediaBuffer::SetModified(Bool mod)
 {
   modified = mod;
 
+  if (mod)
+    num_parts_modified = 1;
+
   if (!mod && !undomode) {
     /* Get rid of undos that reset the modification state. */
     int i;
+    num_parts_modified = 0;
     for (i = changes_end; i != changes_start; ) {
       wxChangeRecord *cr;
       i = (i - 1 + maxUndos) % maxUndos;
@@ -2127,6 +2131,33 @@ void wxMediaBuffer::SetModified(Bool mod)
       cr = redochanges[i];
       cr->DropSetUnmodified();
     }
+  }
+
+  if (admin)
+    admin->Modified(modified);
+
+  if (!mod && !undomode) {
+    /* Tell all snips that they should now consider themselves unmodified: */
+    wxSnip *snip;
+    for (snip = FindFirstSnip(); snip; snip = snip->next) {
+      snip->SetUnmodified();
+    }
+  }
+}
+
+void wxMediaBuffer::OnSnipModified(wxSnip *s, Bool mod)
+{
+  if (!mod) {
+    if (num_parts_modified == 1) {
+      num_parts_modified = 0;
+      if (modified)
+	SetModified(FALSE);
+    }
+  } else {
+    if (!modified)
+      SetModified(TRUE);
+    else
+      num_parts_modified++;
   }
 }
 
@@ -2418,6 +2449,11 @@ Bool wxStandardSnipAdmin::PopupMenu(void *m, wxSnip *snip, float x, float y)
   }
    
   return FALSE;
+}
+
+void wxStandardSnipAdmin::Modified(wxSnip *snip, Bool modified)
+{
+  media->OnSnipModified(snip, modified);
 }
 
 #ifdef wx_mac

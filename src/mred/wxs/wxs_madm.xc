@@ -123,6 +123,7 @@ typedef void *(*CAPOFunc)(void*);
 @ V "release-snip" : bool ReleaseSnip(wxSnip!); : : : rFALSE
 @ V "update-cursor" : void UpdateCursor();
 @ V "popup-menu" : bool PopupMenu(void[]/bAnythingFromVoid/ubAnythingToVoid/cAnything///push,wxSnip!,float,float); : : CHECKMENU[METHODNAME("snip-admin%","popup-menu").0] : rFALSE
+@ V "modified" : void Modified(wxSnip!, bool);
 
 @END
 

@@ -29,3 +29,5 @@
 @ s "get-num-scroll-steps" : nnlong GetNumScrollSteps()
 @ s "find-scroll-step" :  nnlong FindScrollStep(float)
 @ s "get-scroll-step-offset" : nnfloat GetScrollStepOffset(nnlong)
+
+@ s "set-unmodified" : void SetUnmodified()

@@ -80,6 +80,8 @@ class wxMediaBuffer : public wxObject
   TF_Flag( customCursorOverrides );
   TF_Flag( pasteTextOnly );
   
+  int num_parts_modified;
+
   int noundomode;
 
   wxSnip *caretSnip;
@@ -319,6 +321,7 @@ class wxMediaBuffer : public wxObject
   Bool IsLocked();
   Bool Modified(void);
   virtual void SetModified(Bool);
+  virtual void OnSnipModified(wxSnip *, Bool);
 
   void SetLoadOverwritesStyles(Bool);
   Bool GetLoadOverwritesStyles();
@@ -470,6 +473,8 @@ class wxStandardSnipAdmin : public wxSnipAdmin
 
   void UpdateCursor();
   Bool PopupMenu(void *m, wxSnip *s, float x, float y);
+
+  void Modified(wxSnip *, Bool);
 };
 
 class wxBufferData;

@@ -9,3 +9,4 @@
 @ A "update-cursor" : void UpdateCursor();
 @ A "popup-menu" : bool PopupMenu(void[]/bAnythingFromVoid/ubAnythingToVoid/cAnything///push,float,float); : : CHECKMENU[METHODNAME("editor-admin%","popup-menu").0] : rFALSE
 @ A "refresh-delayed?" : bool DelayRefresh(); : : : rFALSE
+@ A "modified" : void Modified(bool)

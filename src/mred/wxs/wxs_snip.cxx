@@ -250,11 +250,13 @@ static Scheme_Object *bundle_symset_editOp(int v) {
 
 
 
+
 class os_wxSnip : public wxSnip {
  public:
 
   os_wxSnip CONSTRUCTOR_ARGS(());
   ~os_wxSnip();
+  void SetUnmodified();
   nnfloat GetScrollStepOffset(nnlong x0);
   nnlong FindScrollStep(float x0);
   nnlong GetNumScrollSteps();
@@ -302,6 +304,37 @@ CONSTRUCTOR_INIT(: wxSnip())
 os_wxSnip::~os_wxSnip()
 {
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+void os_wxSnip::SetUnmodified()
+{
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "set-unmodified", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    ASSELF wxSnip::SetUnmodified();
+  } else {
+  
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
+  
+  
+  }
 }
 
 nnfloat os_wxSnip::GetScrollStepOffset(nnlong x0)
@@ -1131,6 +1164,28 @@ static Scheme_Object *os_wxSnipNext(int n,  Scheme_Object *p[])
   
   
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
+}
+
+static Scheme_Object *os_wxSnipSetUnmodified(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxSnip_class, "set-unmodified in snip%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxSnip::SetUnmodified());
+  else
+    WITH_VAR_STACK(((wxSnip *)((Scheme_Class_Object *)p[0])->primdata)->SetUnmodified());
+
+  
+  
+  return scheme_void;
 }
 
 static Scheme_Object *os_wxSnipGetScrollStepOffset(int n,  Scheme_Object *p[])
@@ -2089,10 +2144,11 @@ void objscheme_setup_wxSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxSnip_class);
 
-  os_wxSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip%", "object%", (Scheme_Method_Prim *)os_wxSnip_ConstructScheme, 35));
+  os_wxSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip%", "object%", (Scheme_Method_Prim *)os_wxSnip_ConstructScheme, 36));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "previous" " method", (Scheme_Method_Prim *)os_wxSnipPrevious, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "next" " method", (Scheme_Method_Prim *)os_wxSnipNext, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "set-unmodified" " method", (Scheme_Method_Prim *)os_wxSnipSetUnmodified, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-scroll-step-offset" " method", (Scheme_Method_Prim *)os_wxSnipGetScrollStepOffset, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "find-scroll-step" " method", (Scheme_Method_Prim *)os_wxSnipFindScrollStep, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-num-scroll-steps" " method", (Scheme_Method_Prim *)os_wxSnipGetNumScrollSteps, 0, 0));
@@ -2203,6 +2259,7 @@ class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *obj, const char *where, i
 
 
 
+
 class os_wxTextSnip : public wxTextSnip {
  public:
 
@@ -2211,6 +2268,7 @@ class os_wxTextSnip : public wxTextSnip {
   os_wxTextSnip CONSTRUCTOR_ARGS((string x0, long x1));
 #endif
   ~os_wxTextSnip();
+  void SetUnmodified();
   nnfloat GetScrollStepOffset(nnlong x0);
   nnlong FindScrollStep(float x0);
   nnlong GetNumScrollSteps();
@@ -2265,6 +2323,37 @@ CONSTRUCTOR_INIT(: wxTextSnip(x0, x1))
 os_wxTextSnip::~os_wxTextSnip()
 {
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+void os_wxTextSnip::SetUnmodified()
+{
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxTextSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "set-unmodified", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    ASSELF wxTextSnip::SetUnmodified();
+  } else {
+  
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
+  
+  
+  }
 }
 
 nnfloat os_wxTextSnip::GetScrollStepOffset(nnlong x0)
@@ -3109,6 +3198,28 @@ static Scheme_Object *os_wxTextSnipInsert(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxTextSnipSetUnmodified(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxTextSnip_class, "set-unmodified in string-snip%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxTextSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxTextSnip::SetUnmodified());
+  else
+    WITH_VAR_STACK(((wxTextSnip *)((Scheme_Class_Object *)p[0])->primdata)->SetUnmodified());
+
+  
+  
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxTextSnipGetScrollStepOffset(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3887,10 +3998,11 @@ void objscheme_setup_wxTextSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxTextSnip_class);
 
-  os_wxTextSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "string-snip%", "snip%", (Scheme_Method_Prim *)os_wxTextSnip_ConstructScheme, 24));
+  os_wxTextSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "string-snip%", "snip%", (Scheme_Method_Prim *)os_wxTextSnip_ConstructScheme, 25));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "read" " method", (Scheme_Method_Prim *)os_wxTextSnipRead, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "insert" " method", (Scheme_Method_Prim *)os_wxTextSnipInsert, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "set-unmodified" " method", (Scheme_Method_Prim *)os_wxTextSnipSetUnmodified, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-scroll-step-offset" " method", (Scheme_Method_Prim *)os_wxTextSnipGetScrollStepOffset, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "find-scroll-step" " method", (Scheme_Method_Prim *)os_wxTextSnipFindScrollStep, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-num-scroll-steps" " method", (Scheme_Method_Prim *)os_wxTextSnipGetNumScrollSteps, 0, 0));
@@ -3989,11 +4101,13 @@ class wxTextSnip *objscheme_unbundle_wxTextSnip(Scheme_Object *obj, const char *
 
 
 
+
 class os_wxTabSnip : public wxTabSnip {
  public:
 
   os_wxTabSnip CONSTRUCTOR_ARGS(());
   ~os_wxTabSnip();
+  void SetUnmodified();
   nnfloat GetScrollStepOffset(nnlong x0);
   nnlong FindScrollStep(float x0);
   nnlong GetNumScrollSteps();
@@ -4041,6 +4155,37 @@ CONSTRUCTOR_INIT(: wxTabSnip())
 os_wxTabSnip::~os_wxTabSnip()
 {
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+void os_wxTabSnip::SetUnmodified()
+{
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxTabSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "set-unmodified", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    ASSELF wxTabSnip::SetUnmodified();
+  } else {
+  
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
+  
+  
+  }
 }
 
 nnfloat os_wxTabSnip::GetScrollStepOffset(nnlong x0)
@@ -4832,6 +4977,28 @@ void os_wxTabSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nn
   }
 }
 
+static Scheme_Object *os_wxTabSnipSetUnmodified(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxTabSnip_class, "set-unmodified in tab-snip%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxTabSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxTabSnip::SetUnmodified());
+  else
+    WITH_VAR_STACK(((wxTabSnip *)((Scheme_Class_Object *)p[0])->primdata)->SetUnmodified());
+
+  
+  
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxTabSnipGetScrollStepOffset(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5580,8 +5747,9 @@ void objscheme_setup_wxTabSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxTabSnip_class);
 
-  os_wxTabSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-snip%", "string-snip%", (Scheme_Method_Prim *)os_wxTabSnip_ConstructScheme, 22));
+  os_wxTabSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-snip%", "string-snip%", (Scheme_Method_Prim *)os_wxTabSnip_ConstructScheme, 23));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "set-unmodified" " method", (Scheme_Method_Prim *)os_wxTabSnipSetUnmodified, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-scroll-step-offset" " method", (Scheme_Method_Prim *)os_wxTabSnipGetScrollStepOffset, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "find-scroll-step" " method", (Scheme_Method_Prim *)os_wxTabSnipFindScrollStep, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-num-scroll-steps" " method", (Scheme_Method_Prim *)os_wxTabSnipGetNumScrollSteps, 0, 0));
@@ -5758,6 +5926,7 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 
 
 
+
 // This isn't `pathname' because it expands internally
 
 
@@ -5771,6 +5940,7 @@ class os_wxImageSnip : public wxImageSnip {
   os_wxImageSnip CONSTRUCTOR_ARGS((class wxBitmap* x0, class wxBitmap* x1 = NULL));
 #endif
   ~os_wxImageSnip();
+  void SetUnmodified();
   nnfloat GetScrollStepOffset(nnlong x0);
   nnlong FindScrollStep(float x0);
   nnlong GetNumScrollSteps();
@@ -5825,6 +5995,37 @@ CONSTRUCTOR_INIT(: wxImageSnip(x0, x1))
 os_wxImageSnip::~os_wxImageSnip()
 {
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+void os_wxImageSnip::SetUnmodified()
+{
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxImageSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "set-unmodified", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    ASSELF wxImageSnip::SetUnmodified();
+  } else {
+  
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
+  
+  
+  }
 }
 
 nnfloat os_wxImageSnip::GetScrollStepOffset(nnlong x0)
@@ -6757,6 +6958,28 @@ static Scheme_Object *os_wxImageSnipLoadFile(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxImageSnipSetUnmodified(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxImageSnip_class, "set-unmodified in image-snip%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxImageSnip::SetUnmodified());
+  else
+    WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->SetUnmodified());
+
+  
+  
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxImageSnipGetScrollStepOffset(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -7556,13 +7779,14 @@ void objscheme_setup_wxImageSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxImageSnip_class);
 
-  os_wxImageSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "image-snip%", "snip%", (Scheme_Method_Prim *)os_wxImageSnip_ConstructScheme, 27));
+  os_wxImageSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "image-snip%", "snip%", (Scheme_Method_Prim *)os_wxImageSnip_ConstructScheme, 28));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset" " method", (Scheme_Method_Prim *)os_wxImageSnipSetOffset, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap" " method", (Scheme_Method_Prim *)os_wxImageSnipSetBitmap, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-filetype" " method", (Scheme_Method_Prim *)os_wxImageSnipGetFiletype, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-filename" " method", (Scheme_Method_Prim *)os_wxImageSnipGetFilename, 0, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "load-file" " method", (Scheme_Method_Prim *)os_wxImageSnipLoadFile, 1, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-unmodified" " method", (Scheme_Method_Prim *)os_wxImageSnipSetUnmodified, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-scroll-step-offset" " method", (Scheme_Method_Prim *)os_wxImageSnipGetScrollStepOffset, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "find-scroll-step" " method", (Scheme_Method_Prim *)os_wxImageSnipFindScrollStep, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-num-scroll-steps" " method", (Scheme_Method_Prim *)os_wxImageSnipGetNumScrollSteps, 0, 0));
@@ -7665,11 +7889,13 @@ class wxImageSnip *objscheme_unbundle_wxImageSnip(Scheme_Object *obj, const char
 
 
 
+
 class os_wxMediaSnip : public wxMediaSnip {
  public:
 
   os_wxMediaSnip CONSTRUCTOR_ARGS((class wxMediaBuffer* x0 = NULL, Bool x1 = TRUE, nnint x2 = wxMSNIPBOX_XMARGIN, nnint x3 = wxMSNIPBOX_YMARGIN, nnint x4 = wxMSNIPBOX_XMARGIN, nnint x5 = wxMSNIPBOX_YMARGIN, nnint x6 = wxMSNIPBOX_XINSET, nnint x7 = wxMSNIPBOX_YINSET, nnint x8 = wxMSNIPBOX_XINSET, nnint x9 = wxMSNIPBOX_YINSET, float x10 = -1, float x11 = -1, float x12 = -1, float x13 = -1));
   ~os_wxMediaSnip();
+  void SetUnmodified();
   nnfloat GetScrollStepOffset(nnlong x0);
   nnlong FindScrollStep(float x0);
   nnlong GetNumScrollSteps();
@@ -7717,6 +7943,37 @@ CONSTRUCTOR_INIT(: wxMediaSnip(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11,
 os_wxMediaSnip::~os_wxMediaSnip()
 {
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+void os_wxMediaSnip::SetUnmodified()
+{
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "set-unmodified", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    ASSELF wxMediaSnip::SetUnmodified();
+  } else {
+  
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
+  
+  
+  }
 }
 
 nnfloat os_wxMediaSnip::GetScrollStepOffset(nnlong x0)
@@ -8929,6 +9186,28 @@ static Scheme_Object *os_wxMediaSnipSetMaxWidth(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxMediaSnipSetUnmodified(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaSnip_class, "set-unmodified in editor-snip%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxMediaSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaSnip::SetUnmodified());
+  else
+    WITH_VAR_STACK(((wxMediaSnip *)((Scheme_Class_Object *)p[0])->primdata)->SetUnmodified());
+
+  
+  
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxMediaSnipGetScrollStepOffset(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -9790,7 +10069,7 @@ void objscheme_setup_wxMediaSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaSnip_class);
 
-  os_wxMediaSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip%", "snip%", (Scheme_Method_Prim *)os_wxMediaSnip_ConstructScheme, 42));
+  os_wxMediaSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip%", "snip%", (Scheme_Method_Prim *)os_wxMediaSnip_ConstructScheme, 43));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-inset" " method", (Scheme_Method_Prim *)os_wxMediaSnipGetInset, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-inset" " method", (Scheme_Method_Prim *)os_wxMediaSnipSetInset, 4, 4));
@@ -9810,6 +10089,7 @@ void objscheme_setup_wxMediaSnip(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-max-width" " method", (Scheme_Method_Prim *)os_wxMediaSnipGetMaxWidth, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-max-height" " method", (Scheme_Method_Prim *)os_wxMediaSnipSetMaxHeight, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-max-width" " method", (Scheme_Method_Prim *)os_wxMediaSnipSetMaxWidth, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-unmodified" " method", (Scheme_Method_Prim *)os_wxMediaSnipSetUnmodified, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-scroll-step-offset" " method", (Scheme_Method_Prim *)os_wxMediaSnipGetScrollStepOffset, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "find-scroll-step" " method", (Scheme_Method_Prim *)os_wxMediaSnipFindScrollStep, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-num-scroll-steps" " method", (Scheme_Method_Prim *)os_wxMediaSnipGetNumScrollSteps, 0, 0));

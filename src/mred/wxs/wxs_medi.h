@@ -8,6 +8,7 @@ extern Scheme_Object *objscheme_bundle_wxMediaStreamIn(class wxMediaStreamIn *);
 extern Scheme_Object *objscheme_bundle_wxMediaStreamIn(class wxMediaStreamIn *);
 extern Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *);
 extern Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *);
+extern Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *);
 extern Scheme_Object *objscheme_bundle_wxBufferData(class wxBufferData *);
 extern Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *);
 extern class wxBufferData *objscheme_unbundle_wxBufferData(Scheme_Object *, const char *, int);
@@ -49,6 +50,7 @@ extern class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object
 extern class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *, const char *, int);
 extern class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *, const char *, int);
 extern class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *, const char *, int);
+extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
 extern class wxBufferData *objscheme_unbundle_wxBufferData(Scheme_Object *, const char *, int);

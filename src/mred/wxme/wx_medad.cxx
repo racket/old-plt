@@ -1479,6 +1479,11 @@ void wxCanvasMediaAdmin::AdjustStdFlag(void)
     ? -1 : 1; 
 }
 
+void wxCanvasMediaAdmin::Modified(Bool modified)
+{
+  /* nothing to do */
+}
+
 void wxMediaAdmin::GetMaxView(float *fx, float *fy, float *fh, float *fw, 
 			      Bool full)
 {

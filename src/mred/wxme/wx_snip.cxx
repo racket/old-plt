@@ -447,6 +447,11 @@ Bool wxSnip::ReleaseFromOwner(void)
     return FALSE;
 }
 
+void wxSnip::SetUnmodified()
+{
+  /* do nothing */
+}
+
 /***************************************************************/
 
 class TextSnipClass : public wxSnipClass

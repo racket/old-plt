@@ -659,6 +659,12 @@ float wxMediaSnip::GetScrollStepOffset(long i)
   return (me ? me->ScrollLineLocation(i) + topMargin : 0);
 }
 
+void wxMediaSnip::SetUnmodified()
+{
+  if (me)
+    me->SetModified(FALSE);
+}
+
 /****************************************************************/
 
 wxMediaSnipMediaAdmin::wxMediaSnipMediaAdmin(wxMediaSnip *s)
@@ -881,6 +887,14 @@ Bool wxMediaSnipMediaAdmin::DelayRefresh()
     return b->RefreshDelayed();
   } else
     return 0;
+}
+
+void wxMediaSnipMediaAdmin::Modified(Bool modified)
+{
+  wxSnipAdmin *sadmin;
+  sadmin = snip->GetAdmin();
+  if (sadmin)
+    sadmin->Modified(snip, modified);
 }
 
 /************************************************************************/

@@ -74,7 +74,8 @@
   (define unsaved-warning
     (case-lambda
      [(filename action) (unsaved-warning filename action #f)]
-     [(filename action can-save-now?)
+     [(filename action can-save-now?) (unsaved-warning filename action can-save-now? #f)]
+     [(filename action can-save-now? parent)
       (let* ([result (void)]
 	     [unsaved-dialog%
 	      (class dialog% ()
@@ -93,7 +94,7 @@
 		     (set! result 'cancel)
 		     (show #f))])
 		(sequence
-		  (super-init "Warning")
+		  (super-init "Warning" parent)
 		  (let* ([panel (make-object vertical-panel% this)]
 			 [msg
 			  (make-object message% 

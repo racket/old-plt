@@ -1,9 +1,29 @@
 (module encode-decode mzscheme
-  (require (lib "deflate.ss"))
+  (require (lib "deflate.ss")
+           (lib "match.ss"))
   (require-for-syntax (lib "inflate.ss")
                       (lib "string.ss"))
   
-  (provide encode-sexp decode)
+  (provide encode-sexp
+           decode
+           encode-module)
+  
+  (define (encode-module in-filename out-filename)
+    (call-with-input-file in-filename
+      (lambda (port)
+        (let ([mod (read port)])
+          (unless (eof-object? (read port))
+            (error 'encode-module "found an extra expression"))
+          (match mod 
+            [`(module ,m mzscheme ,@(bodies ...))
+             (call-with-output-file out-filename
+               (lambda (oport)
+                 (write `(module ,m mzscheme
+                           (require (lib "encode-decode.ss" "framework" "private"))
+                           (decode ,(encode-sexp `(begin ,@bodies))))
+                        oport))
+               'truncate 'text)]
+            [else (error 'encode-module "cannot parse module")])))))
   
   (define (encode-sexp sexp)
     (define (str->sym string)

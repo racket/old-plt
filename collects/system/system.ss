@@ -86,7 +86,7 @@
 		    (set! output-spidey-file arg))
 		  ("Output spidey file to filename"
 		   "filename")]
-		 [("-b") 
+		 [("-b" "--no-splash") 
 		  ,(lambda (_)
 		    (set! splash-path #f)
 		    'splash)
@@ -119,9 +119,6 @@
 		    [wx : wx^]
 		    mzlib:command-line^)
 	    (define leftover-args null)
-
-	    (printf "parse command line system: ~a~n" (list->vector input-args))
-
 	    (parse-command-line "mred"
 				(list->vector input-args)
 				table

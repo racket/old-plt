@@ -494,12 +494,14 @@
  (tool-error-phase2 "Error in phase 2 for tool ~s; ~s")
 
 
- ;;; define popup menu (and other sorting things)
+ ;;; define popup menu
  (end-of-buffer-define "<< end of buffer >>")
  (sort-by-name "Sort by name")
- (sort-by-age "Sort by age")
  (sort-by-position "Sort by position in file")
  (no-definitions-found "<< no definitions found >>")
+
+ (recent-items-sort-by-age "Sort by Age")
+ (recent-items-sort-by-name "Sort by Name")
  
  ;;; show menu
  (hide-definitions-menu-item-label "Hide &Definitions")

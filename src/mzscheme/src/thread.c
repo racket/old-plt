@@ -2157,10 +2157,9 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   if (np->prev)
     np->prev->next = np->next;
-  else {
+  else
     scheme_first_thread = np->next;
-    np->next->prev = np->prev;
-  }
+  np->next->prev = np->prev;
 
   np->next = NULL;
   np->prev = NULL;

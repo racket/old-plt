@@ -25,7 +25,8 @@
    (help-labels "   (see the documentation for this option)")
    (multi
     [("-E" "--eval") expr "evaluates <expr> before processing starts"
-     (eval (read (open-input-string expr)))])
+     (parameterize ([read-case-sensitive #t])
+       (eval (read (open-input-string expr))))])
    (once-each
     [("--debug") "show preprocessed Scheme code (for debugging)"
      (debug? #t)])

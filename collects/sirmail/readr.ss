@@ -3,6 +3,7 @@
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
 	   (lib "class100.ss")
+           (lib "etc.ss")
 	   (lib "mred-sig.ss" "mred"))
 
   (require (lib "string.ss")
@@ -34,16 +35,16 @@
 	      hierlist^
 	      (install-text-functions)
 	      (install-emacs-bindings))
-
+      
       (define main-frame #f)
-
+      
       (define (show-error x)
 	(message-box "Error" 
 		     (if (exn? x)
 			 (exn-message x)
 			 (format "Strange exception: ~s" x))
 		     main-frame))
-
+      
       (initial-exception-handler
        (lambda (x)
 	 (show-error x)
@@ -51,7 +52,7 @@
       (current-exception-handler
        (initial-exception-handler))
       
-					; Make my bindings global for file dialog, etc.
+      ; Make my bindings global for file dialog, etc.
       (let ([km (make-object keymap%)])
 	(install-text-functions km)
 	(install-emacs-bindings km)
@@ -72,23 +73,23 @@
 
       (unless (assoc mailbox-name mailboxes)
 	(error 'sirmail "No local mapping for mailbox: ~a" mailbox-name))
-
+      
       (define mailbox-dir (build-path LOCAL* (cadr (assoc mailbox-name mailboxes))))
-
+      
       (unless (directory-exists? mailbox-dir)
 	(error 'sirmail "Mailbox directory missing: ~a" mailbox-dir))
-
+      
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Message data structure                                 ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+      
       ;; We use a lists so they can be easily read and written
-
+      
       (define mailbox (with-handlers ([void (lambda (x) null)])
 			(with-input-from-file
 			    (build-path mailbox-dir "mailbox")
 			  read)))
-
+      
       (define message-uid car)
       (define message-position cadr)
       (define message-downloaded? caddr)
@@ -96,7 +97,7 @@
       (define message-subject (lambda (m) (list-ref m 4)))
       (define message-flags (lambda (m) (list-ref m 5)))
       (define message-size (lambda (m) (let ([l (list-tail m 6)])
-					; For backward compatibility:
+                                         ; For backward compatibility:
 					 (if (pair? l)
 					     (car l)
 					     #f))))
@@ -105,18 +106,18 @@
       (define set-message-flags! (lambda (m v) (set-car! (list-tail m 5) v)))
 
       (define (message-marked? m) (memq 'marked (message-flags m)))
-
+      
       (define (write-mailbox)
 	(status "Saving mailbox information...")
 	(with-output-to-file (build-path mailbox-dir "mailbox")
 	  (lambda ()
 	    (write mailbox))
 	  'truncate))
-
+      
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Connection                                             ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+      
       (define-values (connect disconnect force-disconnect)
 	(let ([connection #f]
 	      [message-count 0]
@@ -124,40 +125,40 @@
 	  (values
 	   (letrec ([connect
 		     (case-lambda
-		      [() (connect 'reuse)]
-		      [(mode)
-		       (if connection
-			   
-			   ;; Already Connected
-			   (cond
-			    [(eq? mode 'reselect)
-			     (let-values ([(count new) (imap-reselect connection mailbox-name)]
-					  [(uid-l) (imap-status connection mailbox-name '(uidnext))])
-			       (set! message-count count)
-			       (set! next-uid (car uid-l))
-			       (values connection count new next-uid))]
-			    [(eq? mode 'next-uid)
-			     (let-values ([(uid-l) (imap-status connection mailbox-name '(uidnext))])
-			       (set! next-uid (car uid-l))
-			       (values connection message-count 0 next-uid))]
-			    [else
-			     (values connection message-count 0 next-uid)])
-
-			   ;; New connection
-			   (begin
-			     (unless (get-PASSWORD)
-			       (let ([p (get-text-from-user "Password" 
-							    (format "Password for ~a:" USERNAME))])
-				 (unless p (error 'connect "connection cancelled"))
-				 (set-PASSWORD p)))
-			     (let*-values ([(imap count new) (imap-connect IMAP-SERVER USERNAME (get-PASSWORD) mailbox-name)]
-					   [(uid-l) (imap-status imap mailbox-name '(uidnext))])
-			       (status "(Connected, ~a messages)" count)
-			       (set! connection imap)
-			       (set! message-count count)
-			       (set! next-uid (car uid-l))
-			       (send disconnected-msg show #f)
-			       (values imap count new next-uid))))])])
+                       [() (connect 'reuse)]
+                       [(mode)
+                        (if connection
+                            
+                            ;; Already Connected
+                            (cond
+                              [(eq? mode 'reselect)
+                               (let-values ([(count new) (imap-reselect connection mailbox-name)]
+                                            [(uid-l) (imap-status connection mailbox-name '(uidnext))])
+                                 (set! message-count count)
+                                 (set! next-uid (car uid-l))
+                                 (values connection count new next-uid))]
+                              [(eq? mode 'next-uid)
+                               (let-values ([(uid-l) (imap-status connection mailbox-name '(uidnext))])
+                                 (set! next-uid (car uid-l))
+                                 (values connection message-count 0 next-uid))]
+                              [else
+                               (values connection message-count 0 next-uid)])
+                            
+                            ;; New connection
+                            (begin
+                              (unless (get-PASSWORD)
+                                (let ([p (get-text-from-user "Password" 
+                                                             (format "Password for ~a:" USERNAME))])
+                                  (unless p (error 'connect "connection cancelled"))
+                                  (set-PASSWORD p)))
+                              (let*-values ([(imap count new) (imap-connect IMAP-SERVER USERNAME (get-PASSWORD) mailbox-name)]
+                                            [(uid-l) (imap-status imap mailbox-name '(uidnext))])
+                                (status "(Connected, ~a messages)" count)
+                                (set! connection imap)
+                                (set! message-count count)
+                                (set! next-uid (car uid-l))
+                                (send disconnected-msg show #f)
+                                (values imap count new next-uid))))])])
 	     connect)
 	   (lambda ()
 	     (when connection
@@ -175,21 +176,21 @@
 	       (disconnect))
 	     (imap-force-disconnect connection)
 	     (set! connection #f)))))
-
+      
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Mailbox actions                                        ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+      
       (define initialized? #f)
       (define new-messages? #f)
       (define current-next-uid 0)
-
+      
       (define (initialized next-uid)
 	(set! initialized? #t)
 	(set! new-messages? #f)
 	(set! current-next-uid next-uid)
 	(send new-mail-msg show #f))
-
+      
       (define (update-local)
 	(status "Updating ~a from ~a..." mailbox-name IMAP-SERVER)
 	(let-values ([(imap count new next-uid) (connect 'reselect)])
@@ -248,22 +249,22 @@
 				   (lambda (uid pos)
 				     (let ([old (assoc uid mailbox)])
 				       `(,uid ,pos 
-					      ,(if old
-						   (message-downloaded? old)
-						   #f)
-					      ,(if old
-						   (message-from old)
-						   (extract-field "From" (get-header uid)))
-					      ,(if old
-						   (message-subject old)
-						   (extract-field "Subject" (get-header uid)))
-					      ,(if old
-						   (message-flags old)
-						   null)
-					      ,(if old
-						   (message-size old)
-						   (let ([new (assoc uid new-uid/size-map)])
-						     (if new
+                                         ,(if old
+                                              (message-downloaded? old)
+                                              #f)
+                                         ,(if old
+                                              (message-from old)
+                                              (extract-field "From" (get-header uid)))
+                                         ,(if old
+                                              (message-subject old)
+                                              (extract-field "Subject" (get-header uid)))
+                                         ,(if old
+                                              (message-flags old)
+                                              null)
+                                         ,(if old
+                                              (message-size old)
+                                              (let ([new (assoc uid new-uid/size-map)])
+                                                (if new
 							 (cdr new)
 							 0))))))
 				   uids positions))
@@ -275,7 +276,7 @@
 			      len
 			      (if (= 1 len) "" "s")))
 		    #t))))))
-
+      
       (define (check-for-new)
 	(status "Checking ~a at ~a..." mailbox-name IMAP-SERVER)
 	(unless new-messages?
@@ -291,13 +292,13 @@
 	      (status "No new mail")
 	      #f))
 	new-messages?)
-
+      
       (define (get-header uid)
 	(let ([file (build-path mailbox-dir (format "~a" uid))])
 	  (with-input-from-file file
 	    (lambda ()
 	      (read-string (file-size file))))))
-
+      
       (define (get-body uid)
 	(let ([v (assoc uid mailbox)]
 	      [file (build-path mailbox-dir (format "~abody" uid))])
@@ -323,25 +324,25 @@
 		(with-output-to-file file
 		  (lambda () (display body))
 		  'truncate)
-
+                
 		(set-message-downloaded?! v #t)
 		(write-mailbox))))
 	  (begin0
-	   (with-input-from-file file
-	     (lambda ()
-	       (read-string (file-size file))))
-	   (status ""))))
-
+            (with-input-from-file file
+              (lambda ()
+                (read-string (file-size file))))
+            (status ""))))
+      
       (define (check-positions imap msgs)
 	(status "Checking message mapping...")
 	(let ([ids (imap-get-messages imap (map message-position msgs) '(uid))])
 	  (unless (equal? (map car ids) (map message-uid msgs))
 	    (error 'position-check "server's position->id mapping doesn't match local copy. server: ~s local: ~s" (map car ids) (map message-uid msgs)))))
-
+      
       (define (remove-delete-flags imap)
 	(status "Removing old delete flags...")
 	(imap-store imap '- (map message-position mailbox) (list (symbol->imap-flag 'deleted))))
-
+      
       (define (purge-marked)
 	(let* ([marked (filter message-marked? mailbox)])
 	  (unless (null? marked)
@@ -390,19 +391,19 @@
 			       main-frame))
 		(display-message-count (length mailbox))
 		(status "Messages deleted"))))))
-
-
+      
+      
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Mail Reader GUI                                        ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+      
       (define FRAME-WIDTH 560)
       (define FRAME-HEIGHT 600)
       (let-values ([(display-width display-height) (get-display-size)])
 	(set! FRAME-HEIGHT (min display-height FRAME-HEIGHT))
 	(set! FRAME-WIDTH (min display-width FRAME-WIDTH)))
-
-
+      
+      
       (define FROM-WIDTH 150)
       (define SUBJECT-WIDTH 300)
       (define (update-frame-width w)
@@ -433,41 +434,41 @@
 			  (send subject-snip set-max-width SUBJECT-WIDTH)))
 		      (send header-list get-items))
 	    (send e end-edit-sequence))))
-
+      
       (update-frame-width FRAME-WIDTH)
-
+      
       (define show-full-headers? #f)
       (define quote-in-reply? #t)
-
+      
       (define unselected-delta (make-object style-delta% 'change-normal-color))
       (define selected-delta (make-object style-delta%))
       (send selected-delta set-delta-foreground "BLUE")
-
+      
       (define unread-delta (make-object style-delta% 'change-bold))
       (define read-delta (make-object style-delta% 'change-weight 'normal))
-
+      
       (define marked-delta (make-object style-delta% 'change-italic))
       (define unmarked-delta (make-object style-delta% 'change-style 'normal))
-
+      
       (define (apply-style i delta)
 	(define (get-header-editors i)
 	  (let ([e (send i get-editor)])
 	    (let loop ([s (send e find-first-snip)]
 		       [l null])
 	      (cond
-	       [(not s) (reverse! l)]
-	       [(is-a? s editor-snip%) (loop (send s next)
-					     (cons (send s get-editor)
-						   l))]
-	       [else (loop (send s next) l)]))))
+                [(not s) (reverse! l)]
+                [(is-a? s editor-snip%) (loop (send s next)
+                                              (cons (send s get-editor)
+                                                    l))]
+                [else (loop (send s next) l)]))))
 	(for-each
 	 (lambda (e)
 	   (send e change-style delta
 		 0 (send e last-position)))
 	 (get-header-editors i)))
-
+      
       (define current-selected #f)
-
+      
       (define (set-current-selected i)
 	(unless (eq? current-selected i)
 	  (let ([e (send header-list get-editor)])
@@ -477,10 +478,10 @@
 	    (set! current-selected i)
 	    (when i
 	      (apply-style i selected-delta)
-					; In case we downloaded it just now:
+              ; In case we downloaded it just now:
 	      (apply-style i read-delta))
 	    (send e end-edit-sequence))))
-
+      
       (define (logout)
 	(with-handlers ([void
 			 (lambda (x)
@@ -497,7 +498,7 @@
 	  (when biff (send biff stop))
 	  (exit-sirmail)
 	  (send main-frame show #f)))
-
+      
       (define global-keymap (make-object keymap%))
       (send global-keymap add-function "new-mailer"
 	    (lambda (w e) (start-new-mailer #f "" "" "" "" "" null)))
@@ -540,7 +541,7 @@
 	      (purge-marked/update-headers)))
       (send global-keymap add-function "gc"
 	    (lambda (w e) (dump-memory-stats) (collect-garbage)))
-
+      
       (send global-keymap map-function ":m" "new-mailer")
       (send global-keymap map-function ":g" "get-new-mail")
       (send global-keymap map-function ":i" "disconnect")
@@ -553,7 +554,7 @@
       (send global-keymap map-function ":b" "scroll-up")
       (send global-keymap map-function "#" "purge")
       (send global-keymap map-function "!" "gc")
-
+      
       (define icon (make-object bitmap% (build-path (collection-path "sirmail")
 						    "postmark.bmp")))
       (define icon-mask (make-object bitmap% (build-path (collection-path "sirmail")
@@ -561,34 +562,34 @@
       (unless (and (send icon ok?)
 		   (send icon-mask ok?))
 	(set! icon #f))
-
+      
       (define sm-frame%
 	(class100 frame% args
-	       (rename [super-on-subwindow-char on-subwindow-char])
-	       (inherit get-menu-bar set-icon)
-	       (override
-		 [on-size
-		  (lambda (w h)
-		    (update-frame-width w))]
-		 [can-close? (lambda () (send (get-menu-bar) is-enabled?))]
-		 [on-close (lambda () (logout))]
-		 [on-subwindow-char
-		  (lambda (w e)
-		    (or (and
-			 (send (send main-frame get-menu-bar) is-enabled?)
-			 (or (send global-keymap handle-key-event w e)
-			     (and (eq? #\tab (send e get-key-code))
-				  (member w (list header-list message))
-				  (send (if (eq? w message)
-					    header-list
-					    message)
-					focus))))
-			(super-on-subwindow-char w e)))])
-	       (sequence
-		 (apply super-init args)
-		 (when icon
-		   (set-icon icon icon-mask 'both)))))
-
+          (rename [super-on-subwindow-char on-subwindow-char])
+          (inherit get-menu-bar set-icon)
+          (override
+            [on-size
+             (lambda (w h)
+               (update-frame-width w))]
+            [can-close? (lambda () (send (get-menu-bar) is-enabled?))]
+            [on-close (lambda () (logout))]
+            [on-subwindow-char
+             (lambda (w e)
+               (or (and
+                    (send (send main-frame get-menu-bar) is-enabled?)
+                    (or (send global-keymap handle-key-event w e)
+                        (and (eq? #\tab (send e get-key-code))
+                             (member w (list header-list message))
+                             (send (if (eq? w message)
+                                       header-list
+                                       message)
+                                   focus))))
+                   (super-on-subwindow-char w e)))])
+          (sequence
+            (apply super-init args)
+            (when icon
+              (set-icon icon icon-mask 'both)))))
+      
       (define header-list%
 	(class100 hierarchical-list% args
           (inherit get-items show-focus)
@@ -625,6 +626,7 @@
                (let ([e (send message get-editor)]
                      [uid (send i user-data)])
                  (send e lock #f)
+                 (send e begin-edit-sequence)
                  (send e erase)
                  (set-current-selected #f)
                  (let* ([h (get-header uid)]
@@ -643,22 +645,25 @@
                                                  (loop (cdr l) small-h))))))])
                    (send e insert (crlf->lf small-h)
                          0 'same #f))
-                 (send e insert (crlf->lf (as-background 
-                                           enable-main-frame
-                                           (lambda (break-bad break-ok) 
-                                             (with-handlers ([exn:break?
-                                                              (lambda (x) "<interrupted>")])
-                                               (get-body uid)))
-                                           void))
+                 (send e insert 
+                       (crlf->lf (as-background 
+                                  enable-main-frame
+                                  (lambda (break-bad break-ok) 
+                                    (with-handlers ([exn:break?
+                                                     (lambda (x) "<interrupted>")])
+                                      (get-body uid)))
+                                  void))
                        (send e last-position) 'same #f)
                  (when SHOW-URLS (hilite-urls e))
+                 ;(handle-formatting e) ; too slow
                  (send e set-position 0)
                  (set-current-selected i)
+                 (send e end-edit-sequence)
                  (send e lock #t)))])
           (sequence
             (apply super-init args)
             (show-focus #t))))
-
+      
       (define (header-changing-action downloads? go)
 	(let ([old-mailbox mailbox])
 	  (go)
@@ -698,7 +703,7 @@
 		     (send i scroll-to)))))
 	     mailbox)
 	    (send (send header-list get-editor) end-edit-sequence))))
-
+      
       (define (get-new-mail)
 	(with-handlers ([void
 			 (lambda (x)
@@ -727,7 +732,7 @@
 			  (check-for-new))
 		  (update-local)))
 	      void)))))
-
+      
       (define (purge-marked/update-headers)
 	(header-changing-action 
 	 #f
@@ -741,11 +746,11 @@
       
       (define vertical-line-snipclass
 	(make-object
-	 (class100 snip-class% ()
-	   (override
-	     [read (lambda (s) (make-object vertical-line-snip%))])
-	   (sequence
-	     (super-init)))))
+            (class100 snip-class% ()
+              (override
+                [read (lambda (s) (make-object vertical-line-snip%))])
+              (sequence
+                (super-init)))))
       (send vertical-line-snipclass set-version 1)
       (send vertical-line-snipclass set-classname "sirmail:vertical-line%")
       (send (get-the-snip-class-list) add vertical-line-snipclass)
@@ -768,12 +773,12 @@
                                (send dc get-text-extent "yxX")])
                    (when w-box
                      (set-box! w-box width))
-
+                   
                    ;; add one here because I know the descent for the entire
                    ;; line is going to be one more than the descent of the font.
                    (when descent-box
                      (set-box! descent-box (+ descent 1)))
-
+                   
                    (when space-box
                      (set-box! space-box ascent))
                    (let ([text (and (get-admin)
@@ -812,7 +817,7 @@
           (sequence
             (super-init)
             (set-snipclass vertical-line-snipclass))))
-
+      
       (define common-style-list #f)
       (define (single-style t)
 	;; Commented out for now:
@@ -820,7 +825,7 @@
 	     (send t set-style-list common-style-list)
 	     (set! common-style-list (send t get-style-list)))
 	t)
-
+      
       (define (make-field w)
 	(let ([m (instantiate editor-snip% ()
                    (editor (single-style (let ([e (make-object text% 0.0)])
@@ -836,9 +841,9 @@
                    (max-width w))])
 	  (send m set-flags (remove 'handles-events (send m get-flags)))
 	  m))
-
+      
       (define re:one-line (regexp (format "^[^~a~a]*" #\newline #\return)))
-
+      
       (define (add-message m)
 	(let* ([i (send header-list new-item)]
 	       [e (send i get-editor)]
@@ -864,13 +869,13 @@
 	    (apply-style i marked-delta))      
 	  (send e end-edit-sequence)
 	  i))
-
+      
       (define (status . args)
 	(let ([s (apply format args)])
 	  (send f set-status-text s)))
-
+      
       (define can-poll? #t)
-
+      
       (define (enable-main-frame on? refocus break-proc)
 	(let ([w (send main-frame get-focus-window)])
 	  (set! can-poll? on?)
@@ -882,7 +887,7 @@
 	  (when (and on? refocus)
 	    (send refocus focus))
 	  w))
-
+      
       (define f (make-object sm-frame% mailbox-name #f FRAME-WIDTH FRAME-HEIGHT))
       (set! main-frame f)
       (define button-panel (make-object horizontal-panel% f))
@@ -898,27 +903,27 @@
 	  (when (send b ok?)
 	    (send e set-autowrap-bitmap b)))
 	(send e lock #t))
-
+      
       (define mb (make-object menu-bar% f))
       (define file-menu (make-object menu% "&File" mb))
       (define edit-menu (make-object menu% "&Edit" mb))
       (define msg-menu (make-object menu% "&Message" mb))
       (make-object menu-item% "&Get New Mail" file-menu
-		   (lambda (i e) (get-new-mail))
-		   #\G)
+        (lambda (i e) (get-new-mail))
+        #\G)
       (make-object menu-item% "&Download All" file-menu
-		   (lambda (i e) (download-all))
-		   #\L)
-
+        (lambda (i e) (download-all))
+        #\L)
+      
       (make-object menu-item% "&New Message" file-menu
 		   (lambda (i e) (start-new-mailer #f "" "" "" "" "" null))
 		   #\M)
       (make-object menu-item% "&Resume Message..." file-menu
-		   (lambda (i e) 
-		     (let ([file (get-file "Select message to reume"
-					   main-frame)])
-		       (when file
-			 (start-new-mailer file "" "" "" "" "" null)))))
+        (lambda (i e) 
+          (let ([file (get-file "Select message to reume"
+                                main-frame)])
+            (when file
+              (start-new-mailer file "" "" "" "" "" null)))))
       (instantiate menu-item% () 
         (label "Send Queued Messages")
         (parent file-menu)
@@ -931,40 +936,40 @@
       
       (make-object separator-menu-item% file-menu)
       (make-object menu-item% "&Save Message As..." file-menu
-		   (lambda (i e)
-		     (let ([f (put-file "Save message to"
-					main-frame)])
-		       (when f
-			 (send (send message get-editor) save-file f 'text)))))
+        (lambda (i e)
+          (let ([f (put-file "Save message to"
+                             main-frame)])
+            (when f
+              (send (send message get-editor) save-file f 'text)))))
       (make-object menu-item% "&Print" file-menu
-		   (lambda (i e) (send (send message get-editor) print))
-		   #\P)
+        (lambda (i e) (send (send message get-editor) print))
+        #\P)
       (make-object separator-menu-item% file-menu)
       (define mailboxes-menu (make-object menu% "&Open Mailbox" file-menu))
       (make-object menu-item% "&Add Mailbox..." file-menu
-		   (lambda (i e) (add-mailbox)))
+        (lambda (i e) (add-mailbox)))
       (make-object separator-menu-item% file-menu)
       (make-object menu-item% "D&isconnect" file-menu
-		   (lambda (i e) 
-		     (disconnect)
-		     (send disconnected-msg show #t))
-		   #\I)
+        (lambda (i e) 
+          (disconnect)
+          (send disconnected-msg show #t))
+        #\I)
       (make-object menu-item% "&Quit" file-menu
-		   (lambda (i e) (logout))
-		   #\Q)
-
+        (lambda (i e) (logout))
+        #\Q)
+      
       (make-object menu-item% "&Reply" msg-menu
 		   (lambda (i e) (do-reply #f quote-in-reply?))
 		   #\R)
       (make-object menu-item% "&Follow Up" msg-menu
-		   (lambda (i e) (do-reply #t quote-in-reply?))
-		   #\F)
+        (lambda (i e) (do-reply #t quote-in-reply?))
+        #\F)
       (make-object menu-item% "F&orward" msg-menu
-		   (lambda (i e) (do-forward))
-		   #\Z)
+        (lambda (i e) (do-forward))
+        #\Z)
       (send (make-object checkable-menu-item% "&Quote Original" msg-menu
-			 (lambda (item e)
-			   (set! quote-in-reply? (send item is-checked?))))
+              (lambda (item e)
+                (set! quote-in-reply? (send item is-checked?))))
 	    check #t)
       (make-object separator-menu-item% msg-menu)
       (make-object menu-item% "&Mark Selected" msg-menu
@@ -972,9 +977,9 @@
 		     (send header-list mark-message))
 		   #\D)
       (make-object menu-item% "&Unmark Selected" msg-menu
-		   (lambda (i e)
-		     (send header-list unmark-message))
-		   #\U)
+        (lambda (i e)
+          (send header-list unmark-message))
+        #\U)
       (define (mark-all mark?)
 	(let* ([marked-uids (map message-uid (filter (if mark?
 							 (lambda (x) (not (message-marked? x)))
@@ -995,29 +1000,29 @@
 	      (send (send header-list get-selected) select #f))))
       
       (make-object menu-item% "Mark All" msg-menu
-		   (lambda (i e) (mark-all #t)))
+        (lambda (i e) (mark-all #t)))
       (make-object menu-item% "Unmark All" msg-menu
-		   (lambda (i e) (mark-all #f)))
-
+        (lambda (i e) (mark-all #f)))
+      
       (make-object separator-menu-item% msg-menu)
       (make-object menu-item% "&Delete Marked" msg-menu
-		   (lambda (i e)
-		     (when (eq? 'yes
-				(message-box
-				 "Delete Marked?"
-				 "Really delete the marked messages?"
-				 main-frame
-				 '(yes-no)))
-		       (purge-marked/update-headers))))
+        (lambda (i e)
+          (when (eq? 'yes
+                     (message-box
+                      "Delete Marked?"
+                      "Really delete the marked messages?"
+                      main-frame
+                      '(yes-no)))
+            (purge-marked/update-headers))))
       (define move-menu (make-object menu% "&Copy Marked To" msg-menu))
-
+      
       (when ROOT-MAILBOX-FOR-LIST
 	(let ([mailbox-menu (make-object menu% "M&ailboxes" mb)])
 	  (make-object menu-item%
-		       "&Show Folders Window"
-		       mailbox-menu
-		       (lambda x
-			 (open-folders-window)))
+            "&Show Folders Window"
+            mailbox-menu
+            (lambda x
+              (open-folders-window)))
 	  (make-object (class100 menu-item% args
 			 (inherit enable set-label)
 			 (override
@@ -1028,43 +1033,43 @@
 				(when folder
 				  (set-label (format "&Copy Selected to ~a" folder)))))])
 			 (sequence (apply super-init args)))
-		       "&Copy Selected to Folders Window Selection" 
-		       mailbox-menu
-		       (lambda x
-			 (let ([mbox (get-active-folder)])
-			   (if mbox
-			       (copy-marked-to mbox)
-			       (bell)))))))
-
+            "&Copy Selected to Folders Window Selection" 
+            mailbox-menu
+            (lambda x
+              (let ([mbox (get-active-folder)])
+                (if mbox
+                    (copy-marked-to mbox)
+                    (bell)))))))
+      
       (when AUTO-FILE-TABLE
 	(make-object separator-menu-item% msg-menu)
 	(make-object menu-item% "Auto File" msg-menu
-		     (lambda (i e)
-		       (auto-file))))
-
+          (lambda (i e)
+            (auto-file))))
+      
       (make-object separator-menu-item% msg-menu)
       (define sort-menu (make-object menu% "&Sort" msg-menu))
       (make-object checkable-menu-item% "&Wrap Lines" msg-menu
-		   (lambda (item e)
-		     (send (send message get-editor) auto-wrap
-			   (send item is-checked?))))
+        (lambda (item e)
+          (send (send message get-editor) auto-wrap
+                (send item is-checked?))))
       (make-object checkable-menu-item% "&View Full Header" msg-menu
-		   (lambda (i e)
-		     (set! show-full-headers? (send i is-checked?))
-		     (let ([i (send header-list get-selected)])
-		       (when current-selected
-			 (send header-list on-double-select current-selected)))))
-
+        (lambda (i e)
+          (set! show-full-headers? (send i is-checked?))
+          (let ([i (send header-list get-selected)])
+            (when current-selected
+              (send header-list on-double-select current-selected)))))
+      
       (make-object menu-item% "by Sender" sort-menu (lambda (i e) (sort-by-sender)))
       (make-object menu-item% "by Subject" sort-menu (lambda (i e) (sort-by-subject)))
       (make-object menu-item% "by Date" sort-menu (lambda (i e) (sort-by-date)))
       (make-object menu-item% "by Order Received" sort-menu (lambda (i e) (sort-by-order-received)))
-
+      
       (define (sort-by-date) (sort-by (list (list "date" date-cmp))))
       (define (sort-by-sender) (sort-by (list (list "from" string-cmp))))
       (define (sort-by-subject) (sort-by (list (list "subject" subject-cmp))))
       (define (sort-by-order-received) (sort-by null))
-
+      
       (define re:date
 	(regexp
 	 "([0-9]*)[ 	]+([A-Za-z]+)[ 	]+([0-9]+)[ 	]+([0-9][0-9]):([0-9][0-9]):([0-9][0-9])"))
@@ -1086,14 +1091,14 @@
 	    [(oct) 10]
 	    [(nov) 11]
 	    [(dec) 12]))
-
+        
 	(define (pairwise-cmp l1 l2)
 	  (cond
-	   [(and (null? l1) (null? l2)) 'same]
-	   [(or (null? l1) (null? l2)) (error 'pairwise-cmp "internal error; date lists mismatched")]
-	   [(= (car l1) (car l2)) (pairwise-cmp (cdr l1) (cdr l2))]
-	   [else (< (car l1) (car l2))]))
-
+            [(and (null? l1) (null? l2)) 'same]
+            [(or (null? l1) (null? l2)) (error 'pairwise-cmp "internal error; date lists mismatched")]
+            [(= (car l1) (car l2)) (pairwise-cmp (cdr l1) (cdr l2))]
+            [else (< (car l1) (car l2))]))
+        
 	(define (get-date a)
 	  (let* ([m (regexp-match re:date a)])
 	    (if m
@@ -1108,11 +1113,11 @@
 			hours minutes seconds))
 		(list 0 0 0
 		      0 0 0))))
-
+        
 	(pairwise-cmp
 	 (get-date a)
 	 (get-date b)))
-
+      
       (define re:re (regexp "^[rR][eE]: *(.*)"))
       (define (subject-cmp aid bid a b)
 	(let ([simplify (lambda (s)
@@ -1123,12 +1128,12 @@
 				    s))
 			      ""))])
 	  (string-cmp aid bid (simplify a) (simplify b))))
-
+      
       (define (string-cmp aid bid a b)
 	(if (string-ci=? a b)
 	    'same
 	    (string-ci<? a b)))
-
+      
       (define (sort-by fields)
 	(let* ([ht (make-hash-table)]
 	       [get-header/cached 
@@ -1154,45 +1159,45 @@
 		     (let ([aid (send a user-data)]
 			   [bid (send b user-data)])
 		       (cond
-			;; fastest: order recived:
-			[(null? fields) (< aid bid)]
-			;; faster: sender
-			[(and (= (length fields) 1)
-			      (string=? (caar fields) "from"))
-			 (let ([ma (assq aid mailbox)]
-			       [mb (assq bid mailbox)])
-			   (let ([c ((cadar fields) 
-				     aid bid
-				     (message-from ma)
-				     (message-from mb))])
-			     (if (eq? c 'same)
-				 (< aid bid)
-				 c)))]
-			;; slow: general case
-			[else
-			 (let ([ah+f (get-header/cached aid (and (pair? fields)
-								 (caar fields)))]
-			       [bh+f (get-header/cached bid (and (pair? fields)
-								 (caar fields)))])
-			   (let loop ([fields fields][first? #t])
-			     (if (null? fields)
-				 (< aid bid)
-				 (let ([c ((cadar fields)
-					   aid bid
-					   (if first?
-					       (cdr ah+f)
-					       (extract-field (caar fields) (car ah+f)))
-					   (if first?
-					       (cdr bh+f)
-					       (extract-field (caar fields) (car bh+f))))])
-				   (if (eq? c 'same)
-				       (loop (cdr fields) #f)
-				       c)))))]))))
+                         ;; fastest: order recived:
+                         [(null? fields) (< aid bid)]
+                         ;; faster: sender
+                         [(and (= (length fields) 1)
+                               (string=? (caar fields) "from"))
+                          (let ([ma (assq aid mailbox)]
+                                [mb (assq bid mailbox)])
+                            (let ([c ((cadar fields) 
+                                      aid bid
+                                      (message-from ma)
+                                      (message-from mb))])
+                              (if (eq? c 'same)
+                                  (< aid bid)
+                                  c)))]
+                         ;; slow: general case
+                         [else
+                          (let ([ah+f (get-header/cached aid (and (pair? fields)
+                                                                  (caar fields)))]
+                                [bh+f (get-header/cached bid (and (pair? fields)
+                                                                  (caar fields)))])
+                            (let loop ([fields fields][first? #t])
+                              (if (null? fields)
+                                  (< aid bid)
+                                  (let ([c ((cadar fields)
+                                            aid bid
+                                            (if first?
+                                                (cdr ah+f)
+                                                (extract-field (caar fields) (car ah+f)))
+                                            (if first?
+                                                (cdr bh+f)
+                                                (extract-field (caar fields) (car bh+f))))])
+                                    (if (eq? c 'same)
+                                        (loop (cdr fields) #f)
+                                        c)))))]))))
 	     (status ""))
 	   void)))
       
       (append-editor-operation-menu-items edit-menu #t)
-					; Certain menu items are never useful since the window is read-only:
+      ; Certain menu items are never useful since the window is read-only:
       (for-each
        (lambda (i)
 	 (when (and (is-a? i labelled-menu-item<%>)
@@ -1200,9 +1205,9 @@
 	   (send i enable #f)))
        (send edit-menu get-items))
 
-
+      
       (define no-status-handler (lambda (x) (status "") (raise x)))
-
+      
       (define (add-mailbox)
 	(let ([t (get-text-from-user "New Mailbox" "New mailbox name:" main-frame)])
 	  (when t
@@ -1213,9 +1218,9 @@
 			 (lambda (break-bad break-ok)
 			   (status "Checking for mailbox...")
 			   (begin0
-			    (with-handlers ([void no-status-handler])
-			      (imap-mailbox-exists? imap t))
-			    (status "")))
+                             (with-handlers ([void no-status-handler])
+                               (imap-mailbox-exists? imap t))
+                             (status "")))
 			 void)
 			#t
 			(and (eq? 'yes
@@ -1244,33 +1249,33 @@
 		'truncate)
 	      (reset-mailboxes-menus)
 	      (status "Added mailbox")))))
-
+      
       (define (reset-mailboxes-menus)
 	(for-each
 	 (lambda (i) (send i delete))
 	 (append (send mailboxes-menu get-items)
 		 (send move-menu get-items)))
-
+        
 	(for-each
 	 (lambda (mb)
 	   (unless (string=? (car mb) mailbox-name)
 	     (make-object menu-item% (car mb) move-menu
-			  (lambda (i e)
-			    (copy-marked-to (car mb))))))
+               (lambda (i e)
+                 (copy-marked-to (car mb))))))
 	 mailboxes)
-
+        
 	(for-each
 	 (lambda (mb)
 	   (unless (string=? (car mb) mailbox-name)
 	     (make-object menu-item% (car mb) mailboxes-menu
-			  (lambda (i e)
-			    (let ([mailbox-name (car mb)]
-				  [mailbox-options (cddr mb)])
-			      (open-mailbox mailbox-name mailbox-options))))))
+               (lambda (i e)
+                 (let ([mailbox-name (car mb)]
+                       [mailbox-options (cddr mb)])
+                   (open-mailbox mailbox-name mailbox-options))))))
 	 mailboxes))
       
       (reset-mailboxes-menus)
-
+      
       ;; send-queued-messsages : -> void
       ;; sends the files queued in `queue-directory'
       (define (send-queued-messages)
@@ -1285,7 +1290,7 @@
              (send (new-mailer full-filename "" "" "" "" "" null)
                    send-message)
              (delete-file full-filename)))))
-
+      
       (define (copy-marked-to dest-mailbox-name)
 	(let* ([marked (filter message-marked? mailbox)])
 	  (unless (null? marked)
@@ -1329,9 +1334,9 @@
 		      (break-bad)
 		      (let-values ([(imap count new next-uid) (connect)])
 			(status (format "Filing to ~a..." dest-mailbox-name))
-					; Copy messages for filing:
+                        ; Copy messages for filing:
 			(imap-copy imap (map message-position file-msgs) dest-mailbox-name)
-					; Mark them (let the user delete)
+                        ; Mark them (let the user delete)
 			(for-each (lambda (m)
 				    (set-message-flags! m (cons 'marked (message-flags m)))
 				    (let ([i (let ([items (send header-list get-items)]
@@ -1345,11 +1350,11 @@
 	    AUTO-FILE-TABLE))
 	 void)
 	(status "Auto file done"))
-
+      
       (send header-list min-height 150)
       (send header-list stretchable-height #f)
       (send message min-height 200)
-
+      
       (send button-panel stretchable-height #f)
       (define disable-button-panel (make-object horizontal-panel% button-panel))
       (define mailbox-message (make-object message% (format "~a: XXXXX" mailbox-name) disable-button-panel))
@@ -1360,8 +1365,8 @@
 	(let ([font (send disable-button-panel get-label-font)])
 	  (send disable-button-panel set-label-font 
 		(make-object font% 
-			     (send font get-point-size)
-			     'system 'normal 'bold))
+                  (send font get-point-size)
+                  'system 'normal 'bold))
 	  (let ([m (make-object message% "  New Mail!" disable-button-panel)]
 		[d (make-object message% "Disconnected" disable-button-panel)])
 	    (send disable-button-panel set-label-font font)
@@ -1372,7 +1377,7 @@
 		     (lambda (b e) (cancel-button-todo))))
       (define cancel-button-todo void)
       (send cancel-button enable #f)
-
+      
       (define (download-all)
 	(get-new-mail)
 	(header-changing-action
@@ -1394,15 +1399,15 @@
 				(break-ok))))
 			  mailbox)))
 	    void))))
-
+      
       (send header-list focus)
-
+      
       (for-each add-message mailbox)
-
+      
       (send f create-status-line)
-
+      
       (send f show #t)
-
+      
       (when SORT
 	(case SORT
 	  [(date) (sort-by-date)]
@@ -1414,16 +1419,16 @@
 	    "SirMail"
 	    (format "invalid setting for SORT preference: ~s" SORT)
 	    main-frame)]))
-
+      
       (unless (null? mailbox)
 	(let ([last (car (last-pair (send header-list get-items)))])
 	  (send last select #t)
 	  (queue-callback (lambda () (send last scroll-to)))))
-
+      
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Biff                                                   ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+      
       (define biff%
 	(class100 timer% ()
 	  (inherit stop)
@@ -1450,48 +1455,48 @@
 			      (bell))))))])
 	  (sequence
 	    (super-init))))
-
+      
       (define biff
 	(if BIFF-DELAY
 	    (make-object biff%)
 	    #f))
-
+      
       (define (start-biff)
 	(when biff
 	  (send biff start (* 1000 BIFF-DELAY))))
-
+      
       (start-biff)
-
+      
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Mail Sending                                           ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+      
       (define my-address 
 	(with-handlers ([void (lambda (x) "<bad address>")])
 	  (car (extract-addresses MAIL-FROM 'address))))
-
+      
       (define my-username-@
 	(let ([m (regexp-match "^([^@]*)@" my-address)])
 	  (if m
 	      (cadr m)
 	      (string-append my-address "@"))))
-
+      
       (define (not-me? name-addr-full)
 	(let ([addr (cadr name-addr-full)])
 	  (cond
-	   [(string=? addr my-address)
-	    #f]
-	   [(and SELF-ADDRESSES (member addr SELF-ADDRESSES)) #f]
-	   [(and (> (string-length addr) (string-length  my-username-@))
-		 (string=? my-username-@ (substring addr 0 (string-length  my-username-@))))
-	    (eq? (message-box
-		  "Identity?"
-		  (format "Are you ~a?" (caddr name-addr-full))
-		  main-frame
-		  '(yes-no))
-		 'no)]
-	   [else #t])))
-
+            [(string=? addr my-address)
+             #f]
+            [(and SELF-ADDRESSES (member addr SELF-ADDRESSES)) #f]
+            [(and (> (string-length addr) (string-length  my-username-@))
+                  (string=? my-username-@ (substring addr 0 (string-length  my-username-@))))
+             (eq? (message-box
+                   "Identity?"
+                   (format "Are you ~a?" (caddr name-addr-full))
+                   main-frame
+                   '(yes-no))
+                  'no)]
+            [else #t])))
+      
       (define (do-reply follow-up? quote-msg?)
 	(define selected (send header-list get-selected))
 	(unless selected
@@ -1527,16 +1532,16 @@
 		 "")
 	     (let ([s (extract-field "Subject" h)])
 	       (cond
-		[(not s) ""]
-		[(regexp-match "^[Rr][Ee][(]([0-9]+)[)]:(.*)$" s)
-		 ;; Other mailer is counting replies. We'll count, too.
-		 => (lambda (m)
-		      (format "~a(~a):~a"
-			      (substring s 0 2)
-			      (add1 (string->number (cadr m)))
-			      (caddr m)))]
-		[(regexp-match "^[Rr][Ee]:" s) s]
-		[else (string-append "Re: " s)]))
+                 [(not s) ""]
+                 [(regexp-match "^[Rr][Ee][(]([0-9]+)[)]:(.*)$" s)
+                  ;; Other mailer is counting replies. We'll count, too.
+                  => (lambda (m)
+                       (format "~a(~a):~a"
+                               (substring s 0 2)
+                               (add1 (string->number (cadr m)))
+                               (caddr m)))]
+                 [(regexp-match "^[Rr][Ee]:" s) s]
+                 [else (string-append "Re: " s)]))
 	     (let ([id (extract-field "Message-Id" h)]
 		   [refs (extract-field "References" h)])
 	       (format "~a~a"
@@ -1546,10 +1551,10 @@
 		       (if (or refs id)
 			   (format "References: ~a~a"
 				   (cond
-				    [(and refs id)
-				     (format "~a~a~a~a~a"
-					     refs crlf #\tab #\tab id)]
-				    [else (or refs id)])
+                                     [(and refs id)
+                                      (format "~a~a~a~a~a"
+                                              refs crlf #\tab #\tab id)]
+                                     [else (or refs id)])
 				   crlf)
 			   "")))
 	     (if quote-in-reply?
@@ -1597,7 +1602,7 @@
 		  "Content-Disposition" "inline"
 		  empty-header)))
 	       (string-append h body)))))))
-
+      
       (define (start-new-mailer file to cc subject other-headers body enclosures)
 	(start-new-window
 	 (lambda ()
@@ -1608,6 +1613,104 @@
 	 (lambda ()
            (send (new-mailer file to cc subject other-headers body enclosures)
                  send-message))))
+      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;                                                                  ;;
+      ;;                        misc formatting                           ;;
+      ;;                                                                  ;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
+      ;; handle-formatting : text -> void
+      (define (handle-formatting e)
+        (let loop ([line (send e last-line)])
+          (unless (zero? line)
+            (for-each
+             (lambda (regexp/action)
+               (handle-single-line/formatting
+                (car regexp/action) 
+                (cadr regexp/action)
+                e
+                line))
+             regexps/actions)
+            (loop (- line 1)))))
+      
+      (define (handle-single-line/formatting regexp action e line)
+        (let ([start (send e line-start-position line)]
+              [end (send e line-end-position line)])
+          (let loop ([string (send e get-text start end #f)]
+                     [line-offset 0])
+            (cond
+              [(regexp-match-positions regexp string)
+               =>
+               (lambda (m)
+                 (let ([before (cadr m)]
+                       [during (caddr m)]
+                       [after (cadddr m)])
+                   (action e
+                           (+ line-offset start (car during))
+                           (+ line-offset start (cdr during)))
+                   (loop (substring string (car before) (cdr before))
+                         (+ (car before) line-offset))
+                   (loop (substring string (car after) (cdr after))
+                         (+ (car after) line-offset))))]
+              [else (void)]))))
+      
+      ;; emoticon-path (may not exist)
+      (define emoticon-path 
+        (build-path (this-expression-source-directory) "emoticon"))
+      
+      ;; emoticon : string string -> (listof (list regexp (text number number -> void)))
+      (define (emoticon img . icons)
+        (let ([snip (make-object image-snip% (build-path emoticon-path img))])
+          (map
+           (lambda (icon)
+             (list (regexp (string-append "(.*)(" (quote-regexp-chars icon) ")(.*)"))
+                   (lambda (e start end)
+                     (send e insert (send snip copy) start end))))
+           icons)))
+      
+      (define (quote-regexp-chars str)
+        (apply
+         string
+         (let loop ([chars (string->list str)])
+           (cond
+             [(null? chars) null]
+             [else (let ([char (car chars)])
+                     (if (memq char regexp-special-chars)
+                         (list* #\\ char (loop (cdr chars)))
+                         (cons char (loop (cdr chars)))))]))))
+      
+      (define regexp-special-chars (string->list "()*+?[].^\\|"))
+      
+      ;; all regexps must have three parenthesized sub-expressions
+      ;; the first is unmatched text before the regexp, the second
+      ;; is the matched tetx and the third is unmatched text after the regexp.
+      (define regexps/actions
+        (list*
+         (list (regexp "(.*)( \\*([^\\*]*)\\* )(.*)")
+               (lambda (e start end) (send e change-style bold-style-delta start end)))
+         (list (regexp "(.*) _([^_]*)_ (.*)")
+               (lambda (e start end) (send e change-style italic-style-delta start end)))
+         (if (directory-exists? emoticon-path)
+             (append
+              (emoticon "bigsmile.gif" ":D" ":-D")
+              (emoticon "cry.gif" ":')" ":'-)")
+              (emoticon "happy.gif" ":)" ":-)" ":>" ":->" "<-:" "<:" "(-:" "(:")
+              (emoticon "kiss.gif" "*:" ":*")
+              (emoticon "sad.gif" ":(" ":-(" ":<" ":-<" ">-:" ">:" "):" ")-:")
+              (emoticon "tongue.gif" ":P" ":-P")
+              (emoticon "wink.gif" ";)" ";-)" ";>" ";->"))
+             null)))
+
+    
+      (define bold-style-delta (make-object style-delta% 'change-bold))
+      (define italic-style-delta (make-object style-delta% 'change-italic))
+    
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;                                                                  ;;
+      ;;                       highlighting urls                          ;;
+      ;;                                                                  ;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ;; hilite-urls : text -> void
       ;; highligts all of the urls (strings beginning with `http:', `https:' or `ftp:')

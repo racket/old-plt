@@ -936,7 +936,7 @@
        (ivar/proc             (forall (i) ((all-ivars i) _ -> i)))
 
        ;; ------ units
-       (unit/sig->unit         (_ -> unit))
+       (unit/sig->unit         (forall (a) (a -> a)))
        (unit?                  (_ -> bool))
        (unit/sig?              (_ -> bool) (predicate unit/sig))
 

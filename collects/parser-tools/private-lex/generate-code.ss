@@ -149,10 +149,13 @@
       (string-append
        (format "Scheme_Object* char_in;~n")
        (format "Scheme_Object* res[2];~n")
+       (format "Scheme_Object* peekarg[3];~n")
        (format "int longest_match_length, longest_match_action, length;~n")
        (format "longest_match_action = ~a;~n" start-state)
        (format "longest_match_length = 1;~n")
        (format "length = 0;~n")
+       (format "peekarg[0] = scheme_make_integer(1);~n")
+       (format "peekarg[2] = ___arg1;~n")
        (format "goto scheme_lexer_~a;~n" start-state)
        (let loop ((current-state 0))
 	 (cond
@@ -164,10 +167,11 @@
                   (format "  longest_match_action = ~a;~n" current-state)
                   (format "  longest_match_length = length;~n"))
                  "")
-             (format "  char_in = scheme_apply(___arg2, 1, &___arg1);~n")
+	     (format "  peekarg[1] = scheme_make_integer(length);~n")
+             (format "  char_in = scheme_apply(___arg2, 3, peekarg);~n")
              (format "  length = length + 1;~n")
              (format "  switch ((char_in != scheme_eof) ? (SCHEME_STR_VAL(char_in))[0] : 256)~n  {~n")
-            
+	     
              (let ((cases
                     (let loop ((current-char 0))
                       (cond

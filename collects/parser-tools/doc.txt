@@ -35,19 +35,19 @@ This gives you the following syntactic forms:
 
 > (define-lex-abbrevs [name re] ...) defines several lex-abbrevs
 
-> (lexer (re action) ...) expands into a function that takes a
-   lex-buf, matches the re's against the buffer and returns the result
-   of executing the corresponding action.  Each action is scheme code
-   that has the same scope as its lexer definition, except that the
-   variables get-start-pos, get-end-pos, get-lexeme,
-   return-without-pos and lex-buf are also bound in the action (hiding
-   any outside binding).  
+> (lexer (re action) ...) expands into a function that takes an
+   input-port, matches the re's against the buffer and returns the
+   result of executing the corresponding action.  Each action is
+   scheme code that has the same scope as its lexer definition, except
+   that the variables get-start-pos, get-end-pos, get-lexeme,
+   return-without-pos and input-port are also bound in the action
+   (hiding any outside binding).
    > (get-start-pos) returns a position struct for the first character
       matched
    > (get-end-pos) returns a position struct for the character after
       the last character in the match
    > (get-lexeme) returns the matched string
-   > lex-buf is the lex-buf being processed (this is useful for
+   > input-port is the input-port being processed (this is useful for
       matching input with multiple lexers, see example below)
    > (return-without-pos x) is a function (continuation) that
      immediately returns the value of x from the lexer.  This useful
@@ -56,11 +56,11 @@ This gives you the following syntactic forms:
      (define get-token
        (lexer-src-pos
        ...
-       ((comment) (get-token lex-buf))
+       ((comment) (get-token input-port))
        ...))
      would wrap the source location information for the comment around
      the value of the recursive call.  Using
-     ((comment) (return-without-pos (get-token lex-buf))) 
+     ((comment) (return-without-pos (get-token input-port))) 
      will cause the value of the recursive call to be returned without
      wrapping position around it.
 
@@ -95,14 +95,8 @@ lexer in other situations.
 
 Several values are also provided:
 
-> (make-lex-buf input-port) creates a lex-buf from an input-port.
-> (make-lex-buf input-port offsets) creates a lex-buf from an
-  input-port that starts at the source location provided by offsets plus 1
-  rather than at 1.  Offsets must be a list of 3 non-negative integers
-  whose car is the line number, whose cadr is the column number and
-  whose caddr is the total character offset.
-> (get-position lex-buf) returns a position structure for the next
-  unmatched character in the lex-buf
+> (get-position input-port) returns a position structure for the next
+   unmatched character in the input-port
 > (position-offset position) the offset of the character in the stream.
 > (position-line position) the line number of the character.
 > (position-col position) the offset of the character in the current line.

@@ -1,5 +1,5 @@
 ;;
-;; $Id: contkids.ss,v 1.50 1998/02/27 00:21:59 robby Exp $
+;; $Id: contkids.ss,v 1.51 1998/07/04 03:00:24 mflatt Exp $
 ;;
 
 ; need to export:
@@ -579,6 +579,8 @@
 		 (unless (null? func)
 		   (let ([evt (make-object wx:command-event% wx:const-event-type-listbox-command)])
 		     (send evt set-extra-long 2)
+		     (send evt set-event-object this)
+		     (send evt set-command-int -1)
 		     (func this evt))))])
 	    (sequence (apply super-init parent func args)))))
 	  

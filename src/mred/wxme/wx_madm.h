@@ -60,7 +60,7 @@ class wxCanvasMediaAdmin : public wxMediaAdmin
 
   inline void AdjustStdFlag(void);
 
-  wxCanvasMediaAdmin(wxMediaCanvas *);
+  wxCanvasMediaAdmin(wxMediaCanvas *c);
 
  public:
   ~wxCanvasMediaAdmin();

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.23 1999/11/18 23:25:14 mflatt Exp $
+ * $Id: Frame.cc,v 1.24 1999/11/25 20:47:00 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -115,13 +115,16 @@ wxFrame::wxFrame(wxFrame *parent, char *title,
 
 wxFrame::~wxFrame(void)
 {
+    wxChildList *tlf;
+
     being_destroyed = TRUE;
     // hide frame
     Show(FALSE);
     // destroy children first to popdown child frames
     DestroyChildren();
     // adjust list of top level frames
-    wxTopLevelFrames(this)->DeleteObject(this);
+    tlf = wxTopLevelFrames(this);
+    tlf->DeleteObject(this);
 }
 
 /* MATTHEW: [3] Used to ensure that hide-&-show within an event cycle works */
@@ -148,33 +151,46 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 		     int x, int y, int width, int height,
 		     int _style, char *name)
 {
-  context = wxGetContextForFrame();
-  /* WXGC_IGNORE(context);  - NO, context itself is not finalized */
+    Widget parent_widget, wgt;
+    wxChildList *tlf;
+    Atom WM_DELETE_WINDOW;
 
-    Widget parent_widget;
+    context = wxGetContextForFrame();
 
     // chain child <-> parent
     if ((parent = frame_parent)) {
- 	parent_widget = frame_parent->GetHandle()->frame;
-	parent->AddChild(this);
+      wxWindow_Xintern *ph;
+      ph = frame_parent->GetHandle();
+      parent_widget = ph->frame;
+      parent->AddChild(this);
     } else {
 	parent_widget = wxAPP_TOPLEVEL;
     }
-    wxTopLevelFrames(this)->Append(this);
-    wxTopLevelFrames(this)->Show(this, FALSE);
+    tlf = wxTopLevelFrames(this);
+    tlf->Append(this);
+    tlf->Show(this, FALSE);
 
     // create top level or transient shell
     if ( (style = _style) & wxTRANSIENT ) {
       // create transient shell with WM_TRANSIENT_FOR property
       wxWindow *p;
-      for (p = parent; p; p = p->GetParent())
+      Widget pw;
+
+      for (p = parent; p; p = p->GetParent()) {
 	if (wxSubType(p->__type, wxTYPE_FRAME)
 	    && !(p->GetWindowStyleFlag() & wxTRANSIENT)) // frame must not be transient
 	  break;
+      }
+      if (p) {
+	wxWindow_Xintern *ph;
+	ph = p->GetHandle();
+	pw = ph->frame;
+      } else
+	pw = wxAPP_TOPLEVEL;
       X->frame = XtVaCreatePopupShell
 	(name ? name : "shell", transientShellWidgetClass, parent_widget,
 	 XtNsaveUnder, FALSE,
-	 XtNtransientFor, (p ? p->GetHandle()->frame : wxAPP_TOPLEVEL),
+	 XtNtransientFor, pw,
 	 NULL);
     } else {
       // create top level shell
@@ -185,11 +201,12 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
     SetSize(x, y, width, height, wxSIZE_AUTO);
     SetTitle(title);
     // create board widget
-    X->handle = XtVaCreateManagedWidget(
+    wgt = XtVaCreateManagedWidget(
 	name, xfwfBoardWidgetClass, X->frame,
 	XtNhighlightThickness, 0,
 	XtNbackground, bg->GetPixel(cmap),
 	NULL);
+    wgt = X->handle;
     AddEventHandlers();
 
     /* MATTHEW */
@@ -197,9 +214,9 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
     // make a WM_PROTOCOLS atom if necessary
     XInternAtom(XtDisplay(X->frame), "WM_PROTOCOLS", False);
     // make a WM_DELETE_WINDOW atom
-    Atom WM_DELETE_WINDOW = XInternAtom(XtDisplay(X->frame),
-					"WM_DELETE_WINDOW",
-					False);
+    WM_DELETE_WINDOW = XInternAtom(XtDisplay(X->frame),
+				   "WM_DELETE_WINDOW",
+				   False);
     XSetWMProtocols(XtDisplay(X->frame),
 		    XtWindow(X->frame),
 		    &WM_DELETE_WINDOW,
@@ -219,7 +236,12 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
       plt_mask = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, plt_xbm, plt_width, plt_height);
     }
     if (!plt_icon) {
-      XpmAttributes *xpm = new XpmAttributes;
+      XpmAttributes *xpm;
+#ifdef MZ_PRECISE_GC
+      xpm = (XpmAttributes *)GC_malloc_atomic(sizeof(XpmAttributes));
+#else
+      xpm = new WXGC_ATOMIC XpmAttributes;
+#endif
       xpm->valuemask = XpmReturnInfos | XpmReturnPixels | XpmCloseness;
       xpm->closeness = 40000;
       if (XpmCreatePixmapFromData(wxAPP_DISPLAY, wxAPP_ROOT,
@@ -246,19 +268,22 @@ void wxFrame::Fit(void)
     int hsize=0, vsize=0;
 
     if (children) {
-	for (wxChildNode *node = children->First(); node; node = node->Next()) {
-	    wxWindow *child = (wxWindow*)(node->Data());
+        wxChildNode *node;
+	for (node = children->First(); node; node = node->Next()) {
+	    wxWindow *child;
+	    child = (wxWindow*)(node->Data());
 	    if (child) {
 		// skip menubar and status line for computation
+		int x, y, w, h;
 		int i=0;
-		for ( /* i=0 */; i<num_status; ++i)
-		    if (child == status[i])
-			break;
+		for ( /* i=0 */; i<num_status; ++i) {
+		  if (child == status[i])
+		    break;
+		}
 		if (child == menubar || i < num_status) {
-		    continue;
+		  continue;
 		}
 		// compute maximal size
-		int x, y, w, h;
 		child->GetPosition(&x, &y); child->GetSize(&w, &h);
 		hsize = max(hsize, x + w);
 		vsize = max(vsize, y + h);
@@ -320,10 +345,10 @@ void wxFrame::Iconize(Bool iconize)
 
 Bool wxFrame::Iconized(void)
 {
+  XWindowAttributes wa;
+
   if (!IsShown())
     return FALSE;
-
-  XWindowAttributes wa;
 
   XSync(XtDisplay(X->frame), FALSE);
 
@@ -349,11 +374,13 @@ void wxFrame::CreateStatusLine(int number, char *)
     for (int i = 0; i < num_status; ++i) {
 	wxLayoutConstraints *constr;
 	int ww, hh;
+	wxMessage *sm;
 
-	status[i] = DEBUG_NEW wxMessage(this, "", 0, 0, wxBORDER, "status");
-	status[i]->AllowResize(FALSE);
-	status[i]->SetAlignment(wxALIGN_LEFT);
-	status[i]->GetSize(&ww, &hh);
+	sm = DEBUG_NEW wxMessage(this, "", 0, 0, wxBORDER, "status");
+	status[i] = sm;
+	sm->AllowResize(FALSE);
+	sm->SetAlignment(wxALIGN_LEFT);
+	sm->GetSize(&ww, &hh);
 	constr = DEBUG_NEW wxLayoutConstraints;
 	constr->left.PercentOf(this, wxWidth, i*(100/num_status));
 	constr->top.Below(this, 0); // wxBottom of client area
@@ -397,18 +424,28 @@ void wxFrame::SetIcon(wxBitmap *icon, wxBitmap *mask, int kind)
     return;
 
   if (icon->Ok()) {
-    wxBitmap *bm = new wxBitmap(icon->GetWidth(), icon->GetHeight());
+    wxBitmap *bm;
+    int w, h;
+
+    w = icon->GetWidth();
+    h = icon->GetHeight();
+    bm = new wxBitmap(w, h);
     if (bm->Ok()) {
-      wxMemoryDC *mdc = new wxMemoryDC();
+      wxMemoryDC *mdc;
+      Pixmap pm;
+
+      mdc = new wxMemoryDC();
       mdc->SelectObject(bm);
-      mdc->Blit(0, 0, icon->GetWidth(), icon->GetHeight(), icon, 0, 0, wxSTIPPLE, NULL);
+      mdc->Blit(0, 0, w, h, icon, 0, 0, wxSTIPPLE, NULL);
       mdc->SelectObject(NULL);
 
       if (mask && !mask->Ok())
 	mask = NULL;
-
-      XtVaSetValues(X->frame, XtNiconMask, mask ? GETPIXMAP(mask) : (Pixmap)NULL, NULL);
-      XtVaSetValues(X->frame, XtNiconPixmap, GETPIXMAP(bm), (Pixmap)NULL);
+      
+      pm = mask ? GETPIXMAP(mask) : (Pixmap)NULL;
+      XtVaSetValues(X->frame, XtNiconMask, pm, NULL);
+      pm = GETPIXMAP(bm);
+      XtVaSetValues(X->frame, XtNiconPixmap, pm, (Pixmap)NULL);
       
       frame_icon = bm;
       frame_mask = mask;
@@ -456,10 +493,11 @@ static void ForceFocus(Widget frame)
     int old_revert;
     XGetInputFocus(XtDisplay(frame), &current, &old_revert);
     if (current != PointerRoot) {
+      XWindowAttributes attrib;
+
       XFlush(XtDisplay(frame));
       XGrabServer(XtDisplay(frame));
       
-      XWindowAttributes attrib;
       XGetWindowAttributes(XtDisplay(frame), XtWindow(frame), &attrib);
       if (attrib.map_state == IsViewable)
 	XSetInputFocus(XtDisplay(frame), XtWindow(frame),
@@ -473,6 +511,8 @@ extern "C" long scheme_get_milliseconds(void);
 
 Bool wxFrame::Show(Bool show)
 {
+  wxChildList *tlf;
+  
   if (show == IsShown()) { // do nothing if state doesn't change
     if (show) {
       /* Make sure window isn't iconized: */
@@ -483,9 +523,13 @@ Bool wxFrame::Show(Bool show)
     return TRUE;
   }
 
-  wxTopLevelFrames(this)->Show(this, show);
-  if (parent)
-    parent->GetChildren()->Show(this, show);
+  tlf = wxTopLevelFrames(this);
+  tlf->Show(this, show);
+  if (parent) {
+    wxChildList *cl;
+    cl = parent->GetChildren();
+    cl->Show(this, show);
+  }
   
   SetShown(show);
   if (show) {

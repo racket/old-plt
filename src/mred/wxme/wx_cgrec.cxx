@@ -60,9 +60,6 @@ public:
 };
 
 wxChangeRecord::wxChangeRecord(void)
-#ifdef CGREC_COLLECTED
-: wxObject(WXGC_NO_CLEANUP)
-#endif
 {
 }
 
@@ -178,8 +175,11 @@ wxDeleteSnipRecord::~wxDeleteSnipRecord()
 {
   int i;
   
-  for (i = deletions->Count(); i--; )
-    delete (DeleteSnipItem *)deletions->Get(i);
+  for (i = deletions->Count(); i--; ) {
+    DeleteSnipItem *ds;
+    ds = (DeleteSnipItem *)deletions->Get(i);
+    delete ds;
+  }
 
   delete deletions;
 }
@@ -294,8 +294,11 @@ Bool wxDeleteRecord::Undo(wxMediaBuffer *buffer)
   }
   if (clickbacks) {
     count = clickbacks->Count();
-    for (i = 0; i < count; i++)
-      media->SetClickback((wxClickback *)clickbacks->Get(i));
+    for (i = 0; i < count; i++) {
+      wxClickback *cb;
+      cb = (wxClickback *)clickbacks->Get(i);
+      media->SetClickback(cb);
+    }
   }
 
   if (!continued)
@@ -326,8 +329,11 @@ wxStyleChangeRecord::~wxStyleChangeRecord()
 {
   int i;
 
-  for (i = changes->Count(); i--; )
-    delete (StyleChange *)changes->Get(i);
+  for (i = changes->Count(); i--; ) {
+    StyleChange *sc;
+    sc = (StyleChange *)changes->Get(i);
+    delete sc;
+  }
 
   delete changes;
 }
@@ -386,8 +392,11 @@ wxStyleChangeSnipRecord::~wxStyleChangeSnipRecord()
 {
   int i;
 
-  for (i = changes->Count(); i--; )
-    delete (StyleChange *)changes->Get(i);
+  for (i = changes->Count(); i--; ) {
+    StyleChange *sc;
+    sc = (StyleChange *)changes->Get(i);
+    delete sc;
+  }
   
   delete changes;
 }

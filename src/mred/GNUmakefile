@@ -161,11 +161,15 @@ gc2/Window.cc: $(WXDIR)/src/Windows/Window.cc
 	$(XFORM) $< $@
 gc2/Button.cc: $(WXDIR)/src/Windows/Button.cc
 	$(XFORM) $< $@
+gc2/Frame.cc: $(WXDIR)/src/Windows/Frame.cc
+	$(XFORM) $< $@
 gc2/Layout.cc: $(WXDIR)/src/Windows/Layout.cc
 	$(XFORM) $< $@
 gc2/MenuBar.cc: $(WXDIR)/src/Windows/MenuBar.cc
 	$(XFORM) $< $@
 gc2/RadioBox.cc: $(WXDIR)/src/Windows/RadioBox.cc
+	$(XFORM) $< $@ 
+gc2/CheckBox.cc: $(WXDIR)/src/Windows/CheckBox.cc
 	$(XFORM) $< $@ 
 gc2/Choice.cc: $(WXDIR)/src/Windows/Choice.cc
 	$(XFORM) $< $@
@@ -307,10 +311,16 @@ gc2/wx_keym.cc: wxme/wx_keym.cxx
 gc2/wx_medio.cc: wxme/wx_medio.cxx
 	$(XFORM) $< $@
 
+gc2/wx_medad.cc: wxme/wx_medad.cxx
+	$(XFORM) $< $@
+
 gc2/wx_style.cc: wxme/wx_style.cxx
 	$(XFORM) $< $@
 
 gc2/wx_mline.cc: wxme/wx_mline.cxx
+	$(XFORM) $< $@
+
+gc2/wx_cgrec.cc: wxme/wx_cgrec.cxx
 	$(XFORM) $< $@
 
 
@@ -342,9 +352,11 @@ gc2/$(OBJDIR)/wxGC.o: ../wxcommon/wxGC.cxx
 
 XSRCS = gc2/Window.cc \
   gc2/Button.cc \
+  gc2/Frame.cc \
   gc2/Layout.cc \
   gc2/MenuBar.cc \
   gc2/RadioBox.cc \
+  gc2/CheckBox.cc \
   gc2/Choice.cc \
   gc2/Gauge.cc \
   gc2/ListBox.cc \
@@ -416,8 +428,10 @@ XSRCS = gc2/Window.cc \
   gc2/wx_mpbrd.cc \
   gc2/wx_keym.cc \
   gc2/wx_medio.cc \
+  gc2/wx_medad.cc \
   gc2/wx_style.cc \
   gc2/wx_mline.cc \
+  gc2/wx_cgrec.cc \
 \
   gc2/wxscheme.cc \
   gc2/xcglue.c \

@@ -352,6 +352,11 @@ void GC_register_finalizer(void *p, void (*f)(void *p, void *data),
   GC_register_eager_finalizer(p, 0, f, data, oldf, olddata);
 }
 
+void GC_finalization_weak_ptr(void **p)
+{
+  /* need to do something here... */
+}
+
 void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
 				 void *data, void (**oldf)(void *p, void *data), 
 				 void **olddata)

@@ -7,7 +7,7 @@ typedef struct {
 } ObjectHash;
 
 static ObjectHash *hash;
-long hashsize = 100, hashcount = 0;
+static long hashsize = 100, hashcount = 0;
 
 typedef struct {
   long id;
@@ -15,7 +15,7 @@ typedef struct {
 } BundlerHash;
 
 static BundlerHash *bhash;
-long bhashsize = 201, bhashcount = 0, bhashstep = 17;
+static long bhashsize = 201, bhashcount = 0, bhashstep = 17;
 
 #ifndef FALSE
 #define FALSE 0

@@ -20,7 +20,7 @@ class wxSchemeModifyRecord : public wxChangeRecord
 {
   void *p;
  public:
-  wxSchemeModifyRecord(void *);
+  wxSchemeModifyRecord(void *p);
   Bool Undo(wxMediaBuffer *media);
 };
 
@@ -52,7 +52,7 @@ class wxInsertSnipRecord : public wxChangeRecord
   Bool continued;
 
  public:
-  wxInsertSnipRecord(wxSnip *, Bool cont);
+  wxInsertSnipRecord(wxSnip *s, Bool cont);
 
   Bool Undo(wxMediaBuffer *media);
 };

@@ -1047,11 +1047,12 @@
 								    r))
 							     inits)])
 					       (unless r
-						 (error 'xform "~a in ~a: Couldn't find init mapping for ~a" 
-							(tok-line (car e)) (tok-file (car e))
-							(caar args)))
+						 (log-error "[INIT] ~a in ~a: Couldn't find init mapping for ~a" 
+							    (tok-line (car e)) (tok-file (car e))
+							    (caar args)))
 					       (cons
-						r
+						(or r (cons 'fake
+							    (make-pointer-type 'int 1)))
 						(loop (cdr args) (filter (lambda (x) (not (eq? r x))) inits))))))))]
 		[(make-init-setups) (lambda ()
 				      (if init-mapping

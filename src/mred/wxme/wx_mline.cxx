@@ -557,8 +557,13 @@ wxMediaParagraph *wxMediaLine::GetParagraphStyle(Bool *first)
     if (first) *first = 1;
     return paragraph;
   } else {
+    wxMediaLine *root, *pstart;
+    int p;
     if (first) *first = 0;
-    return (GetRoot()->FindParagraph(GetParagraph()))->paragraph;
+    root = GetRoot();
+    p = GetParagraph();
+    pstart = root->FindParagraph(p);
+    return pstart->paragraph;
   }
 }
 

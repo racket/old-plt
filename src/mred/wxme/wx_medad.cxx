@@ -194,12 +194,14 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 			  1, 1,
 #endif
 			  1, 1, 0, 0, FALSE);
-  hscroll = fakeXScroll 
-    ? new SimpleScroll(this, wxHORIZONTAL, 0, 1, 0) 
-    : (SimpleScroll *)NULL;
-  vscroll = fakeYScroll 
-    ? new SimpleScroll(this, wxVERTICAL, 0, 1, 0) 
-    : (SimpleScroll *)NULL;
+  if (fakeXScroll) {
+    hscroll = new SimpleScroll(this, wxHORIZONTAL, 0, 1, 0) ;
+  } else
+    hscroll = (SimpleScroll *)NULL;
+  if (fakeYScroll) {
+    vscroll = new SimpleScroll(this, wxVERTICAL, 0, 1, 0);
+  } else
+    vscroll = (SimpleScroll *)NULL;
   scrollWidth = fakeXScroll ? 0 : 1;
   scrollHeight = fakeYScroll ? 0 : 1;
 #endif
@@ -210,9 +212,13 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
   noloop = FALSE;
 
 #ifdef wx_xt
-  SetBackgroundColour(new wxColour("white"));
+  SetBackgroundColour(wxWHITE);
 #else
-  GetDC()->SetBackground(new wxColour("white"));
+  {
+    wxDC *dc;
+    dc = GetDC();
+    dc->SetBackground(wxWHITE);
+  }
 #endif
 
   admin = new wxCanvasMediaAdmin(this);
@@ -238,7 +244,11 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
     SetMedia(m);
 
 #ifndef wx_mac
-  GetDC()->SetOptimization(TRUE);
+  {
+    wxDC *adc;
+    adc = GetDC();
+    adc->SetOptimization(TRUE);
+  }
 #endif
 }
 
@@ -326,8 +336,9 @@ void wxMediaCanvas::OnFocus(Bool focus)
   }
 
   if (focuson) {
-    if (!blinkTimer)
+    if (!blinkTimer) {
       blinkTimer = new wxBlinkTimer(this);
+    }
     blinkTimer->Start(BLINK_DELAY, 1);
   }
 }
@@ -461,8 +472,12 @@ void wxMediaCanvas::OnEvent(wxMouseEvent *event)
     if (PTRNE((oldadmin = (wxCanvasMediaAdmin *)media->GetAdmin()), admin)) {
       media->SetAdmin(admin);
     }
-    
-    SetCustomCursor(media->AdjustCursor(event));
+
+    {
+      wxCursor *c;
+      c = media->AdjustCursor(event);
+      SetCustomCursor(c);
+    }
     media->OnEvent(event);
     
     if (PTRNE(oldadmin, admin)) {
@@ -476,8 +491,9 @@ void wxMediaCanvas::OnEvent(wxMouseEvent *event)
 	/* Dragging outside the canvas: auto-generate more events because the buffer
 	   is probably scrolling. But make sure we're shown. */
 	wxWindow *w = this;
-	while (w && w->IsShown())
+	while (w && w->IsShown()) {
 	  w = w->GetParent();
+	}
 	if (!w)
 	  autoDragger = new wxAutoDragTimer(this, event);
       }
@@ -488,7 +504,8 @@ void wxMediaCanvas::OnEvent(wxMouseEvent *event)
 void wxMediaCanvas::UpdateCursorNow(void)
 {
   wxMouseEvent *event;
-
+  wxCanvasMediaAdmin *oldadmin;
+    
   if (!media)
     return;
 
@@ -498,12 +515,14 @@ void wxMediaCanvas::UpdateCursorNow(void)
   event->y = last_y;
   event->timeStamp = 0L;
 
-  wxCanvasMediaAdmin *oldadmin;
-    
   if (PTRNE((oldadmin = (wxCanvasMediaAdmin *)media->GetAdmin()), admin))
     media->SetAdmin(admin);
   
-  SetCustomCursor(media->AdjustCursor(event));
+  {
+    wxCursor *c;
+    c = media->AdjustCursor(event);
+    SetCustomCursor(c);
+  }
     
   if (PTRNE(oldadmin, admin))
     media->SetAdmin(oldadmin);
@@ -635,7 +654,11 @@ wxDC *wxMediaCanvas::GetDCAndOffset(float *fx, float *fy)
 #endif
 	if (h < 0)
 	  h = 0;
-	*fy = media->ScrollLineLocation(y + scrollOffset) - YMARGIN;
+	{
+	  float v;
+	  v = media->ScrollLineLocation(y + scrollOffset) - YMARGIN;
+	  *fy = v;
+	}
 	if (scrollBottomBased && (scrollHeight || scrollToLast))
 	  *fy -= h;
       } else
@@ -793,7 +816,8 @@ Bool wxMediaCanvas::ScrollTo(float localx, float localy, float fw, float fh,
     else if (// doesn't fit, no conflicting bias, maybe shift down to see more:
 	     (fh > ih && bias != -1 && localy + fh > y + ih)) {
       // Shift to one more than the first scroll position that shows last line
-      long my = media->FindScrollLine(find_dy + localy + fh - ih) + 1 - scrollOffset;
+      long my;
+      my = media->FindScrollLine(find_dy + localy + fh - ih) + 1 - scrollOffset;
       // But only shift down the extra line if doing so doesn't skip the whole area
       if (media->ScrollLineLocation(my) < find_dy + localy + fh)
 	sy = my;
@@ -898,7 +922,8 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
       }
 
       if (vnumScrolls > 0) {
-	int numLines = media->NumScrollLines() - 1;
+	int numLines;
+	numLines = media->NumScrollLines() - 1;
 	vspp = (long)(((float)h * numLines) / totalHeight) - 1;
 	if (vspp < 1)
 	  vspp = 1;
@@ -938,6 +963,9 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
 	|| vspp != vscrollsPerPage
 	|| hspp != hscrollsPerPage
 	|| x != sx || y != sy) {
+      Bool goAgain;
+      int savenoloop;
+      int saveHSPP;
       
       if (hscroll)
 	hscroll->SetScroll(hnumScrolls, hspp, x);
@@ -947,8 +975,8 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
 #ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
       PaintScrolls();
 #else
-      int savenoloop = noloop;
-      int saveHSPP = givenHScrollsPerPage;
+      savenoloop = noloop;
+      saveHSPP = givenHScrollsPerPage;
       
       noloop = TRUE;
       givenHScrollsPerPage = -1;
@@ -983,7 +1011,7 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
 	  SetScrollPage(wxVERTICAL, vspp);
       }
 
-      Bool goAgain = (givenHScrollsPerPage < -1);
+      goAgain = (givenHScrollsPerPage < -1);
       givenHScrollsPerPage = saveHSPP;
       
       noloop = savenoloop;
@@ -1056,17 +1084,29 @@ void wxMediaCanvas::SetScrollbars(int, int, int, int,
 
 void wxMediaCanvas::GetScroll(int *x, int *y)
 {
+  int v;
+  
   /* Get fake scroll values if available */
-  if (hscroll)
-    *x = hscroll->GetValue();
-  if (vscroll)
-    *y = vscroll->GetValue();
+  if (hscroll) {
+    v = hscroll->GetValue();
+    *x = v;
+  }
+  if (vscroll) {
+    v = vscroll->GetValue();
+    *y = v;
+  }
 
 #ifndef MEDIA_CANVAS_INTERNAL_SCROLLS
-  if (!hscroll)
-    *x = GetScrollPos(wxHORIZONTAL);
-  if (!vscroll)
-    *y = GetScrollPos(wxVERTICAL);
+  if (!hscroll) {
+    int v;
+    v = GetScrollPos(wxHORIZONTAL);
+    *x = v;
+  }
+  if (!vscroll) {
+    int v;
+    v = GetScrollPos(wxVERTICAL);
+    *y = v;
+  }
 #endif
 }
 
@@ -1217,8 +1257,9 @@ void wxCanvasMediaAdmin::GetMaxView(float *fx, float *fy, float *fw, float *fh,
     float cx, x, cy, y, cw, w, ch, h, cr, r, cb, b;
 
     a = this;
-    while (a->prevadmin)
+    while (a->prevadmin) {
       a = a->prevadmin;
+    }
     a->GetView(&cx, &cy, &cw, &ch);
     cr = cx + cw;
     cb = cy + ch;
@@ -1257,12 +1298,14 @@ Bool wxCanvasMediaAdmin::ScrollTo(float localx, float localy,
   if (!canvas->IsFocusOn()) {
     wxCanvasMediaAdmin *a;
     
-    for (a = nextadmin; a; a = a->nextadmin)
+    for (a = nextadmin; a; a = a->nextadmin) {
       if (a->canvas->IsFocusOn())
 	return a->ScrollTo(localx, localy, w, h, refresh, bias);
-    for (a = prevadmin; a; a = a->prevadmin)
+    }
+    for (a = prevadmin; a; a = a->prevadmin) {
       if (a->canvas->IsFocusOn())
 	return a->ScrollTo(localx, localy, w, h, refresh, bias);
+    }
   }
 
   return canvas->ScrollTo(localx, localy, w, h, refresh, bias);
@@ -1303,7 +1346,9 @@ void wxCanvasMediaAdmin::Resized(Bool update)
 
   resizedBlock = TRUE;
 
-  resetFlag = canvas->ResetVisual(FALSE) || resetFlag;
+  if (canvas->ResetVisual(FALSE))
+    resetFlag = TRUE;
+
   if (update) {
     canvas->Repaint();
     resetFlag = FALSE;

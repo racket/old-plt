@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.3 1998/06/26 20:31:34 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.4 1998/07/04 02:57:33 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -180,10 +180,7 @@ void wxDC::SelectOldObjects(HDC dc)
   }
 }
 
-
-
 HDC wxDC::ThisDC(void)
-
 {
   HDC dc = NULL;
   wxWnd *wnd = NULL;
@@ -197,36 +194,22 @@ HDC wxDC::ThisDC(void)
   return dc;
 }
 
-
-
 void wxDC::DoneDC(HDC dc)
-
 {
-
   if (dc && !cdc) {
-
     wxWnd *wnd = NULL;
-
     if (canvas) wnd = (wxWnd *)canvas->handle;
-
     if (!cdc && wnd)
-
       wnd->ReleaseHDC();
-
   }
-
 }
 
-
-
 void wxDC::ShiftXY(float x, float y, int &ix, int &iy)
-
 {
-  ix = (int)x;
-  iy = (int)y;
+  ix = (int)floor(x);
+  iy = (int)floor(y);
 
-  if (canvas)
-  {
+  if (canvas) {
     wxWnd *wnd = (wxWnd *)canvas->handle;
     wnd->CalcScrolledPosition((int)x, (int)y, &ix, &iy);
   }
@@ -1450,11 +1433,7 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
   if (!dc) return FALSE;
 
-
-
   int xdest1, ydest1, xsrc1, ysrc1;
-
-
 
   ShiftXY(xdest, ydest, xdest1, ydest1);
 
@@ -1462,13 +1441,8 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
   HDC dc_src = source->ThisDC();
 
-
   if (!dc_src) return FALSE;
 
-
-  xdest1 = XLOG2DEV(xdest1);
-  ydest1 = YLOG2DEV(ydest1);
-  
   Bool special_op = FALSE;
   Bool success;
 
@@ -1476,90 +1450,49 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
   wxBrush *tmpbrush = NULL, *savebrush = NULL;
 
-
-
   if (rop == wxCOLOR) {
-
     if (current_pen) {
-
       wxColour c = current_pen->GetColour();
-
       if (c.Red() || c.Green() || c.Blue()) {
-
 	tmpbrush = wxTheBrushList->FindOrCreateBrush(&c, wxSOLID);
-
 	if (tmpbrush) {
-
 	  op = 0x00FC008A;
-
 	  special_op = TRUE;
-
 	  savebrush = current_brush;
-
 	  SetBrush(tmpbrush);
-
 	}
-
       }
-
     }
-
   } 
 
-    
-
   if (!special_op) {
-
     op = rop == wxCOPY ? SRCCOPY :
-
                 rop == wxCLEAR ? WHITENESS :
-
                 rop == wxSET ? BLACKNESS :
-
                 rop == wxINVERT ? DSTINVERT :
-
                 rop == wxAND ? MERGECOPY :
-
                 rop == wxOR ? MERGEPAINT :
-
                 rop == wxSRC_INVERT ? NOTSRCCOPY :
-
                 rop == wxXOR ? SRCINVERT :
-
                 rop == wxOR_REVERSE ? MERGEPAINT :
-
                 rop == wxAND_REVERSE ? SRCERASE :
-
                 rop == wxSRC_OR ? SRCPAINT :
-
                 rop == wxSRC_AND ? SRCAND :
-
                 rop == wxCOLOR ? SRCCOPY :
-
                 SRCCOPY;		
-
   }
-
-
 
   success = BitBlt(dc, xdest1, ydest1, 
-
-		       XLOG2DEVREL(width), YLOG2DEVREL(height), 
-
-		       dc_src, xsrc1, ysrc1, op);
-
+		   XLOG2DEVREL(width), YLOG2DEVREL(height), 
+		   dc_src, xsrc1, ysrc1, op);
 
   if (special_op) {
-
     SetBrush(savebrush);
-
   }
-
 
   DoneDC(dc);
 
   source->DoneDC(dc_src);
-  
 
   return success;
 }

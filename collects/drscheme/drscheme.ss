@@ -1,10 +1,4 @@
 (require-library "errortrace.ss" "errortrace")
-(load-relative "start-drs.ss")
-(start-drscheme)
-(yield (make-semaphore))
-
-#|
-(require-library "errortrace.ss" "errortrace")
 (error-print-width 80)
 
 (require-library "refer.ss")
@@ -278,9 +272,9 @@
 	   [load/save
 	    (lambda (filename reason)
 	      (printf "loading: ~a because ~a~n" filename reason)
-	      (let ([ans (load filename)])
-		(hash-table-put! value-ht sym ans)
-		ans))]
+	      (let ([anss (call-with-values (lambda () (load filename)) list)])
+		(hash-table-put! value-ht sym anss)
+		(apply values anss)))]
 	   [hash-table-maps?
 	    (lambda (ht value)
 	      (let/ec k
@@ -296,7 +290,7 @@
 				(cons filename (hash-table-get file-ht sym (lambda () null))))])
 	    (if reason
 		(load/save filename (format "~a was modified" reason))
-		(hash-table-get value-ht sym)))
+		(apply values (hash-table-get value-ht sym))))
 	  (load/save filename "never before loaded")))))
 
 (define-macro require-relative-library
@@ -323,7 +317,7 @@
 	     f)))))))
 
 
-(define debug? #t)
+(define graphical-debug? #f)
 
 (define drscheme-custodian #f)
 
@@ -338,35 +332,37 @@
 
 (define start-drscheme-expression '(T))
 
-(if debug?
-    (begin
-      (thread
-       (lambda ()
-	 (let* ([f (let loop ([n 10])
-		     (cond
+(cond
+  [graphical-debug?
+   (begin
+     (thread
+      (lambda ()
+	(let* ([f (let loop ([n 10])
+		    (cond
 		      [(get-top-level-focus-window) => (lambda (x) x)]
 		      [(zero? n) (error 'drscheme.ss "didn't find frame after 5 seconds")]
 		      [else
 		       (sleep/yield 1/2)
 		       (loop (- n 1))]))]
-		[canvas
-		 (let loop ([f f])
-		   (cond
+	       [canvas
+		(let loop ([f f])
+		  (cond
 		    [(is-a? f editor-canvas%) f]
 		    [(is-a? f area-container<%>) (ormap loop (send f get-children))]
 		    [else (error 'drscheme.ss "couldn't find editor")]))]
-		[text (send canvas get-editor)]
-		[send-sexp
-		 (lambda (sexp)
-		   (let ([port (open-output-string)]
-			 [event (make-object key-event%)])
-		     (write sexp port)
-		     (send text insert (get-output-string port))
-		     (send event set-key-code #\return)
-		     (send text on-char event)
-		     (sleep 1/2)))])
-	   (send-sexp start-drscheme-expression))))
+	       [text (send canvas get-editor)]
+	       [send-sexp
+		(lambda (sexp)
+		  (let ([port (open-output-string)]
+			[event (make-object key-event%)])
+		    (write sexp port)
+		    (send text insert (get-output-string port))
+		    (send event set-key-code #\return)
+		    (send text on-char event)
+		    (sleep 1/2)))])
+	  (send-sexp start-drscheme-expression))))
 
-      (graphical-read-eval-print-loop))
-    (eval start-drscheme-expression))
-|#
+     (graphical-read-eval-print-loop))]
+  [else
+   (require-library "rep.ss" "readline")
+   (read-eval-print-loop)])

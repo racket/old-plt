@@ -1463,8 +1463,8 @@
 		(lambda ()
 
 		  ;; ensure that there is a newline before the snip is inserted
-		  (unless (zero? (member 'hard-newline
-					 (send (find-snip (last-position) 'before) get-flags)))
+		  (unless (member 'hard-newline
+				  (send (find-snip (last-position) 'before) get-flags))
 		    (insert #\newline (last-position) (last-position)))
 		      
 		  (when starting-at-prompt-mode?

@@ -137,35 +137,14 @@
 
     (for-each set-slatex-style delta-symbols (map fw:preferences:get delta-symbols))
 
-    (define others-string "Other...")
-
-    (define short-colors '("BLACK" "RED" "BLUE" "NAVY" "GREEN" "DARK OLIVE GREEN"
-			   "PURPLE" "MAROON" "BROWN" "ORANGE"))
-
-    (define other-colors '("AQUAMARINE" "BLUE VIOLET"
-			   "CADET BLUE" "CORAL" "CORNFLOWER BLUE" "CYAN" "DARK GREY"
-			   "DARK GREEN" "DARK ORCHID" "DARK SLATE BLUE"
-			   "DARK SLATE GREY" "DARK TURQUOISE" "DIM GREY" "FIREBRICK" "FOREST GREEN"
-			   "GOLD" "GOLDENROD" "GREY" "GREEN YELLOW" "INDIAN RED"
-			   "KHAKI" "LIGHT BLUE" "LIGHT GREY" "LIGHT STEEL BLUE" "LIME GREEN"
-			   "MAGENTA" "MEDIUM AQUAMARINE" "MEDIUM BLUE"
-			   "MEDIUM FOREST GREEN" "MEDIUM GOLDENROD" "MEDIUM ORCHID"
-			   "MEDIUM SEA GREEN" "MEDIUM SLATE BLUE" "MEDIUM SPRING GREEN"
-			   "MEDIUM TURQUOISE" "MEDIUM VIOLET RED" "MIDNIGHT BLUE"
-			   "ORANGE RED" "ORCHID" "PALE GREEN" "PINK" "PLUM" "RED"
-			   "SALMON" "SEA GREEN" "SIENNA" "SKY BLUE" "SLATE BLUE"
-			   "SPRING GREEN" "STEEL BLUE" "TAN" "THISTLE" "TURQUOISE" "VIOLET"
-			   "VIOLET RED" "WHEAT" "WHITE" "YELLOW" "YELLOW GREEN"))
-
-    (for-each (lambda (x) (send mred:the-color-database find-color x))
-	      (append short-colors other-colors))
-
     ;; used for quicker debugging of the preference panel
     '(define test-preference-panel
       (lambda (name f)
 	(let ([frame (make-object mred:frame% name)])
 	  (f frame)
 	  (send frame show #t))))
+    
+    (define simple-scheme-text% (fw:scheme:text-mixin fw:text:basic%))
 
     (fw:preferences:add-panel
      "Check Syntax"
@@ -179,10 +158,10 @@
 				     (list 'hide-hscroll
 					   'hide-vscroll))]
 		     [_ (send c set-line-count 1)]
-		     [e (make-object (class-asi fw:scheme:text%
+		     [e (make-object (class-asi simple-scheme-text%
 				       (inherit change-style get-style-list)
 				       (rename [super-after-insert after-insert])
-				       (public
+				       (override
 					[after-insert
 					 (lambda (pos offset)
 					   (super-after-insert pos offset)
@@ -203,10 +182,11 @@
 			       [check (make-object mred:check-box% name h c)])
 			  check))]
 		     [_ (send c set-editor e)]
-		     [_ (send* e
-			       (insert (substring style-name
+		     [short-style-name (substring style-name
 						  (string-length "mzprizm:")
-						  (string-length style-name)))
+						  (string-length style-name))]
+		     [_ (send* e
+			       (insert short-style-name)
 			       (set-position 0))]
 		     [slant-check
 		      (make-check "Slant"
@@ -232,40 +212,23 @@
 				  (lambda ()
 				    (send delta set-underlined-off #t)
 				    (send delta set-underlined-on #f)))]
-		     [change-color
-		      (lambda (choice command)
-			(let ([string (send choice get-string (send command get-selection))])
-			  (when (string=? string others-string)
-			    (set! string (mred:get-choices-from-user "Choose a color" "Colors" other-colors)))
-			  (when string
-			    (send delta set-delta-foreground string)
-			    (fw:preferences:set sym delta))))]
-		     [color-choice (if (< (mred:get-display-depth) 8)
-				       #f
-				       (make-object mred:choice%
-					 "Color"
-					 (if (eq? (system-type) 'unix)
-					     (append short-colors
-						     (list others-string))
-					     (append short-colors
-						     other-colors))
-					 h
-					 change-color))]
+		     [color-button
+		      (and (>= (mred:get-display-depth) 8)
+			   (make-object button%
+			     "Change Color"
+			     h
+			     (lambda (color-button evt)
+			       (let ([users-choice
+				      (mred:get-color-from-user
+				       (format "Choose a color for ~a~a"
+					       short-style-name
+					       (if (string=? "syntax" short-style-name)
+						   ""
+						   "s"))
+				       color)])
+				 (when choice
+				   (send delta set-delta-foreground choice))))))]
 		     [style (send (send e get-style-list) find-named-style style-name)])
-		(when color-choice
-		  (send color-choice stretchable-in-x #f)
-		  (let ([color (send mred:the-color-database find-name (send style get-foreground))])
-		    (cond
-		     [(not color)
-		      (send delta set-delta-foreground "BLACK")
-		      (fw:preferences:set sym delta)
-		      (send color-choice set-selection
-			    (send color-choice find-string "BLACK"))]
-		     [else
-		      (let ([c (send color-choice find-string color)])
-			(if (= -1 c)
-			    (send color-choice set-selection (length short-colors))
-			    (send color-choice set-selection c)))])))
 		(send slant-check set-value (eq? (send style get-style) 'slant))
 		(send bold-check set-value (eq? (send style get-weight) 'bold))
 		(send underline-check set-value (send style get-underlined))))])

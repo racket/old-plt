@@ -3592,17 +3592,7 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	    i++;
 	    continue;
 	  } 
-# ifdef WINDOWS_UNICODE_SUPPORT
-	  else if (utf16 && (v == 6)) {
-	    /* WIN-UTF-16 mode. We decode 0x11Dxxx as misplaced
-	       UTF-16 surrogate 0xDxxxx */
-	    state = 3;
-	    i++;
-	    continue;
-	  }
-# else
 	  /* Else will be larger than 0x10FFFF, so fail */
-# endif
 	}
 	/* Too small, or 0xFF or 0xFe, or start of a 5- or 6-byte sequence */
 	if (permissive) {
@@ -3625,8 +3615,24 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	      ((unsigned short *)us)[j+1] = 0xDC00 | (v & 0x3FF);
 	    }
 	    j++;
-	  } else if (us) {
-	    ((unsigned short *)us)[j] = v;
+	  } else {
+# ifdef WINDOWS_UNICODE_SUPPORT
+	    /* We allow a surrogate by itself, but don't allow
+	       two in a row, otherwise multiple encodings can
+	       map to the same thing. */
+	    if ((v >= 0xD800) && (v <= 0xDFFF)) {
+	      if (utf16 == 2) {
+		if (permissive)
+		  v = permissive;
+		else
+		  ENCFAIL;
+	      } else
+		utf16 = 2;
+	    } else
+	      utf16 = 1;
+# endif
+	    if (us)
+	      ((unsigned short *)us)[j] = v;
 	  }
 	} else {
 	  int delta;
@@ -3809,7 +3815,7 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
 	     well formed, unless this is Windows. */
 # ifdef WINDOWS_UNICODE_SUPPORT
 	  if ((i + 1 >= end)
-	      || (((((unsigned short *)us)[i]) & 0xF800) != 0xD800)) {
+	      || (((((unsigned short *)us)[i+1]) & 0xF800) != 0xD800)) {
 	  } else 
 # endif
 	    {
@@ -3847,7 +3853,7 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
 	     well formed on non-Windows platforms. */
 # ifdef WINDOWS_UNICODE_SUPPORT
 	  if ((i + 1 >= end)
-	      || (((((unsigned short *)us)[i]) & 0xF800) != 0xD800)) {
+	      || (((((unsigned short *)us)[i+1]) & 0xF800) != 0xD800)) {
 	    /* Let the misplaced surrogate through */
 	  } else
 # endif

@@ -5,12 +5,21 @@
            (lib "servlet-sig.ss" "web-server")
            (lib "error.ss" "htdp")
            (lib "xml.ss" "xml")
-           (lib "list.ss"))
-  (provide (all-from (lib "servlet-primitives.ss" "web-server"))
-           (all-from-except (lib "servlet-sig.ss" "web-server") servlet^)
+           (lib "list.ss")
+           (lib "prim.ss" "lang")
+           (lib "unitsig.ss"))
+  (provide (all-from-except (lib "servlet-sig.ss" "web-server") servlet^)
            (all-from-except (lib "servlet-helpers.ss" "web-server") build-suspender)
            (rename wrapped-build-suspender build-suspender))
-
+  (provide-signature-elements servlet^)
+  
+  (define-values/invoke-unit/sig servlet^ servlet@ #f)
+  
+;  (define initial-request u:initial-request)
+;  (define-primitive adjust-timeout! u:adjust-timeout!)
+;  (define-primitive send/finish u:send/finish)
+;  (define-higher-order-primitive send/suspend u:send/suspend (suspender))
+  
   (define wrapped-build-suspender
     (case-lambda
       [(title content)

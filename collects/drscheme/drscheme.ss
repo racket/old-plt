@@ -311,15 +311,6 @@
 	 (apply collection-path require-relative-collection)
 	 ,filename)))))
 
-(define-macro require-relative-library-unit/sig
-  (lambda (filename)
-    (let ([g (gensym "require-relative-library-unit/sig")])
-      `(let ([,g (require-relative-library ,filename)])
-	 (printf "requie-relative-library-unit/sig: ~a~n" filename)
-	 (unless (unit/sig? ,g)
-	   (error 'require-relative-library-unit/sig "not a unit/sig: ~a~n" ,g))
-	 ,g))))
-
 (define-macro require-library
   (lambda (filename . collections)
     `(let ([g (list ,@collections)]
@@ -332,15 +323,6 @@
 	    (build-path
 	     (apply collection-path h)
 	     f)))))))
-
-(define-macro require-library-unit/sig
-  (lambda (filename . collections)
-    (let ([g (gensym "require-library-unit/sig")])
-      `(let ([,g (require-relative-library ,filename ,@collections)])
-	 (unless (unit/sig? ,g)
-	   (error 'require-library-unit/sig "not a unit/sig: ~a~n" ,g))
-	 ,g))))
-
 
 (define graphical-debug? #t)
 

@@ -9,6 +9,6 @@
     (let ([unit (require-relative-library "link.ss")])
       (change-splash-message "Invoking...")
       (shutdown-splash)
-      (invoke-unit/sig unit (program argv))
+      (invoke-open-unit/sig unit #f (program argv))
       (close-splash))))
 

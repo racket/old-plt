@@ -1,13 +1,15 @@
+
 (module constants mzscheme
   (provide
    dummy
    dummy-thunk
    undefined
-   fail-empty
-   fail-false
+   thunk-empty
+   thunk-false
    test-true
    test-false
    id
+   (rename void-cst void)
    select-right
    select-left
    ;car!
@@ -17,11 +19,12 @@
   (define dummy (void))
   (define dummy-thunk (lambda () dummy))
   (define undefined (letrec ([x x]) x))
-  (define fail-empty (lambda () '()))
-  (define fail-false (lambda () #f))
+  (define thunk-empty (lambda () '()))
+  (define thunk-false (lambda () #f))
   (define test-true (lambda (x) #t))
   (define test-false (lambda (x) #f))
   (define id (lambda (x) x))
+  (define void-cst (void))
   (define select-right (lambda (x y) y))
   (define select-left (lambda (x y) x))
   ;(define car! (case-lambda

@@ -1,7 +1,6 @@
-; In the first clause, the first label is the origin label (the origin of the arrow), the
-; second label in the one flowing along the arrow. The destination of the arrow is embedded
-; in the edge, and can be obtained by applying the second clause. The third label is used
-; for tunneling (see create-simple-edge below).
+; The first label is the origin label (the origin of the arrow), the second label in the one
+; flowing along the arrow. The destination of the arrow is embedded in the edge. The third
+; label is used for tunneling (see create-simple-edge below).
 ; (define-type edge (label label label -> boolean))
 
 (module constraints-gen-and-prop mzscheme
@@ -10,27 +9,30 @@
            (prefix etc: (lib "etc.ss"))
            (prefix string: (lib "string.ss"))
            
+           "labels.ss"
            (prefix cst: "constants.ss")
-           (prefix sba-gui: (lib "sba-gui-interface.ss" "mrflow"))
            ;(prefix types: "types.ss")
+           (prefix err: "sba-errors.ss")
            )
-  (provide ;sba-driver
+  (provide
+   ;sba-driver
    create-label-from-term
    initialize-primitive-type-schemes
    check-primitive-types
    reset-all
-   get-regions-to-color
-   get-mzscheme-position
-   get-label
-   get-type
+   get-type-from-label
    pp-type
    parents
    children
    has-member?
-   get-errors
    ast-nodes
-   get-span
-   is-atom?
+
+   get-label-from-mzscheme-position
+   get-mzscheme-position-from-label
+   is-label-atom?
+   get-span-from-label
+   get-errors-from-label
+   
    ;graph-nodes graph-edges ; XXX perf
    ;show-expanded ; XXX debug
    )
@@ -71,80 +73,10 @@
     ;    (set! graph-edges 0)
     )
   
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; FLOW GRAPH LABELS & PSEUDO_LABELS
-  
-  ; type-var = (union type-var #f), trace = boolean, prim? = boolean
-  ; term = syntax-object, set = (hash-table-of label (cons (listof label) (listof label)),
-  ; edges = (hashtableof symbol edge))
-  ; a flow graph label/node type-var is a type variable name used when reconstructing recursive
-  ; types.
-  ; trace is used to detect cycles in the graph during type reconstruction.
-  ; prim? tells whether the label was created during graph reconstruction from a primitive
-  ; type. We need this to detect the entrance of a tunnel.
-  ; Note that the only reason we need to have this tunneling stuff is to keep the GUI arrows right.
-  ; term: the source program term (or a fake version of it, in the case of "null" when we have
-  ; a rest argument)
-  ; set: contains label structures (see below) for all the values that flow into this term.
-  ; Each label in the set has two lists of in and out edges pointing back and forth to the nodes
-  ; from which this label has flowed in (or '() if the label is the source of the label) and
-  ; flowed out to. The in edges (which need to be checked each time a propagation is done, to 
-  ; revent cycles) are in a list, and not in an hash-table, because we assume that the same
-  ; label is not going to flow very often into this term through several paths. The out-edge
-  ; list is only used to draw arrows, so it doesn't have to be implemented very efficiently.
-  ; Note that, since constants are represented by label structs, the same constant can appear
-  ; several times in the set, even symbols.
-  ; edges: functions that take two labels as argument and either propagate the second one to
-  ; another label, using the first label as the source, or transform the graph accordingly (if
-  ; the inflowing label is a function pseudo-label and the label into which it flows corresponds
-  ; to the operator in an application, for example).
-  (define-struct label (type-var trace prim? term set edges) (make-inspector))
-  
-  ; a constant...
-  (define-struct (label-cst label) (value) (make-inspector))
-  
-  ; car = label, cdr = label
-  (define-struct (label-cons label) (car cdr) (make-inspector))
-  
-  (define-struct (label-vector label) (element) (make-inspector))
-  (define-struct (label-promise label) (value) (make-inspector))
-  
-  ; struct = label-struct
-  ; rest-arg?s = (listof boolean), req-args = (listof number), argss = (listof (listof label)),
-  ; exps = (listof label), app-thunks = (listof (-> void))
-  ; Each "level" of the six lists represents the args and body labels of a given clause in the
-  ; case-lambda. At a given level, rest-arg? tells whether this clause has a rest argument,
-  ; and req-args gives the number of required arguments, so it only has to be computed once.
-  ; XXX top-free-varss are the labels of the top level free variables in the corresponding clause.
-  ; This field is updated as a side effect when analyzing top level variable references inside
-  ; the body of a lambda. Edges flowing into these free variables must be created when the
-  ; clause is applied. app-thunk is a thunk that is used to delay the transformation of the
-  ; graph when a function flows into an application, until the clause around the application
-  ; is itself applied. The two are merged, because one of the delayed app could set! a top level
-  ; variable, and the top level variable can be referenced both before and after the application,
-  ; so lookups and applications have to be done in exactly the right order.
-  ; struct is just a placeholder to tell the type of structure a given structure-processing
-  ; function is supposed to deal with.
-  (define-struct (label-case-lambda label)
-                 (struct rest-arg?s req-args argss exps effects) (make-inspector))
-  
-  ; label = label (a label-cons based list of labels)
-  ; used to simulate multiple values. So this label is going to flow around and work pretty
-  ; much like a cons label. the problem is that multiple values are not first-class in Scheme,
-  ; so we have to be careful to only propagate them through edges that correspond to the result
-  ; of applications, never through edges that correspond to arguments of applications. Hence
-  ; the reason for the complication in create-simple-edge. Note that define-struct expands
-  ; into a define-values, so we need all that stuff.
-  (define-struct (label-values label) (label) (make-inspector))
-  
-  ; symbol symbol label number (listof label)
-  (define-struct (label-struct-value label) (type fields) (make-inspector))
-  (define-struct (label-struct-type label)
-                 (name parent parent-fields-nbr total-fields-nbr error?) (make-inspector))
-  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MISC
   
   (define-struct arrows (in out tunnel) (make-inspector))
-    
+  
   ; (listof (list (listof term) label symbol string))
   ; term is where the error occured
   ; symbol is a color
@@ -152,7 +84,7 @@
   (define *errors* 'uninitialized)
   
   (define (reset-derivation)
-    (set! *errors* '())
+    (set! *errors* (err:make-error-table))
     (set! *top-level-name->label* (make-hash-table))
     )
   
@@ -169,7 +101,7 @@
                         ;       "not a label list: ~a ~a ~a"
                         ;       (syntax-object->datum
                         ;        (label-term start-label))
-                        ;       (pp-type (get-type start-label) 'label-list-length)
+                        ;       (pp-type (get-type-from-label start-label) 'label-list-length)
                         ;       label))))])
                         ; the assumption is that we'll never call this function
                         ; for something not a list. So if what we have doesn't
@@ -277,7 +209,7 @@
   ; symbol -> (union label #f)
   ; finds the label for a top level var.
   (define (lookup-top-level-name name)
-    (hash-table-get *top-level-name->label* name cst:fail-false))
+    (hash-table-get *top-level-name->label* name cst:thunk-false))
   
   ; (listof label) term -> boolean
   ; Note that we make sure that all free variables are bound before
@@ -291,144 +223,144 @@
        ; we do the top level lookup first, so we allow primitives to be redefined
        (let* ([free-var-name-in (syntax-e (label-term free-var-label-in))]
               [free-var-edge (extend-edge-for-values (create-simple-edge free-var-label-in))]
-              [binding-label-in (lookup-top-level-name free-var-name-in)])
-         (add-edge-and-propagate-set-through-edge
-          (if binding-label-in
-              binding-label-in
-              (let ([primitive-type-scheme (lookup-primitive-type-scheme free-var-name-in)])
-                (if primitive-type-scheme
-                    ; no polyvariance for primitives here...
-                    (reconstruct-graph-from-type-scheme
-                     primitive-type-scheme (make-hash-table)
-                     (label-term free-var-label-in))
-                    (cond
-                      [(eq? free-var-name-in 'make-struct-type)
-                       (create-make-struct-type-label term)]
-                      ; we will process these two after the one above, for a given struct
-                      ; definition, because, after program expansion,
-                      ; make-struct-field-accessor/mutator appear in the body of a letrec-values
-                      ; with make-struct-type being used in one of the letrec-values clauses.
-                      [(eq? free-var-name-in 'make-struct-field-accessor)
-                       (create-make-struct-field-accessor-label term)]
-                      [(eq? free-var-name-in 'make-struct-field-mutator)
-                       (create-make-struct-field-mutator-label term)]
-                      [(eq? free-var-name-in 'set-car!)
-                       (create-2args-mutator label-cons?
-                                             cst:test-true
-                                             label-cons-car
-                                             cst:id
-                                             "pair"
-                                             "internal error 1: all types must be a subtype of top"
-                                             term)]
-                      [(eq? free-var-name-in 'set-cdr!)
-                       (create-2args-mutator label-cons?
-                                             cst:test-true
-                                             label-cons-cdr
-                                             cst:id
-                                             "pair"
-                                             "internal error 2: all types must be a subtype of top"
-                                             term)]
-                      ; we just inject the string type into the first arg
-                      [(eq? free-var-name-in 'string-set!)
-                       (create-3args-mutator (lambda (inflowing-label)
-                                               (subtype (get-type inflowing-label)
-                                                        (make-type-cst 'string)
-                                                        'lookup-and-bind-top-level-vars1
-                                                        #f #f))
-                                             (lambda (inflowing-label)
-                                               (subtype (get-type inflowing-label)
-                                                        (make-type-cst 'exact-integer)
-                                                        'lookup-and-bind-top-level-vars2
-                                                        #f #f))
-                                             (lambda (inflowing-label)
-                                               (subtype (get-type inflowing-label)
-                                                        (make-type-cst 'char)
-                                                        'lookup-and-bind-top-level-vars3
-                                                        #f #f))
-                                             cst:id
-                                             (lambda (inflowing-label)
-                                               (let ([label (make-label-cst
-                                                             #f #f #f
-                                                             (label-term inflowing-label)
-                                                             (make-hash-table)
-                                                             (make-hash-table)
-                                                             'string)])
-                                                 (initialize-label-set-for-value-source label)
-                                                 label))
-                                             "string"
-                                             "exact-integer"
-                                             "char"
-                                             term)]
-                      [(eq? free-var-name-in 'string-fill!)
-                       (create-2args-mutator (lambda (inflowing-label)
-                                               (subtype (get-type inflowing-label)
-                                                        (make-type-cst 'string)
-                                                        'lookup-and-bind-top-level-vars4
-                                                        #f #f))
-                                             (lambda (inflowing-label)
-                                               (subtype (get-type inflowing-label)
-                                                        (make-type-cst 'char)
-                                                        'lookup-and-bind-top-level-vars5
-                                                        #f #f))
-                                             cst:id
-                                             (lambda (inflowing-label)
-                                               (let ([label (make-label-cst
-                                                             #f #f #f
-                                                             (label-term inflowing-label)
-                                                             (make-hash-table)
-                                                             (make-hash-table)
-                                                             'string)])
-                                                 (initialize-label-set-for-value-source label)
-                                                 label))
-                                             "string"
-                                             "char"
-                                             term)]
-                      ; inject third arg into first
-                      [(eq? free-var-name-in 'vector-set!)
-                       (create-3args-mutator (lambda (inflowing-label)
-                                               (subtype (get-type inflowing-label)
-                                                        (make-type-vector (make-type-cst 'top))
-                                                        'lookup-and-bind-top-level-vars6
-                                                        #f #f))
-                                             (lambda (inflowing-label)
-                                               (subtype (get-type inflowing-label)
-                                                        (make-type-cst 'exact-integer)
-                                                        'lookup-and-bind-top-level-vars7
-                                                        #f #f))
-                                             cst:test-true
-                                             label-vector-element
-                                             cst:id
-                                             "vector"
-                                             "exact-integer"
-                                             "internal error 3: all types must be a subtype of top"
-                                             term)]
-                      [(eq? free-var-name-in 'vector-fill!)
-                       (create-2args-mutator (lambda (inflowing-label)
-                                               (subtype (get-type inflowing-label)
-                                                        (make-type-vector (make-type-cst 'top))
-                                                        'lookup-and-bind-top-level-vars8
-                                                        #f #f))
-                                             cst:test-true
-                                             label-vector-element
-                                             cst:id
-                                             "vector"
-                                             "internal error 4: all types must be a subtype of top"
-                                             term)]
-                      [else
-                       (begin
-                         (set! *errors*
-                               (cons
-                                (list
-                                 (list (label-term free-var-label-in)) ; term)
-                                 'red
-                                 ;(format "reference to undefined identifier: ~a in function ~a"
-                                 ;        free-var-name-in
-                                 ;        (unexpand (syntax-object->datum term))))
-                                 (format "reference to undefined identifier: ~a"
-                                         free-var-name-in))
-                                *errors*))
-                         (create-simple-label term))]))))
-          (extend-edge-for-values (create-simple-edge free-var-label-in)))))
+              [binding-label-in
+               (let ([top-label (lookup-top-level-name free-var-name-in)])
+                 (if top-label
+                     top-label
+                     (let ([primitive-type-scheme (lookup-primitive-type-scheme free-var-name-in)])
+                       (if primitive-type-scheme
+                           ; no polyvariance for primitives here...
+                           (reconstruct-graph-from-type-scheme
+                            primitive-type-scheme (make-hash-table)
+                            free-var-label-in)
+                           (cond
+                             [(eq? free-var-name-in 'make-struct-type)
+                             (create-make-struct-type-label term)]
+                            ; we will process these two after the one above, for a given struct
+                            ; definition, because, after program expansion,
+                            ; make-struct-field-accessor/mutator appear in the body of a letrec-values
+                            ; with make-struct-type being used in one of the letrec-values clauses.
+                            [(eq? free-var-name-in 'make-struct-field-accessor)
+                             (create-make-struct-field-accessor-label term)]
+                            [(eq? free-var-name-in 'make-struct-field-mutator)
+                             (create-make-struct-field-mutator-label term)]
+                            [(eq? free-var-name-in 'set-car!)
+                             (create-2args-mutator label-cons?
+                                                   cst:test-true
+                                                   label-cons-car
+                                                   cst:id
+                                                   "pair"
+                                                   "internal error 1: all types must be a subtype of top"
+                                                   term)]
+                            [(eq? free-var-name-in 'set-cdr!)
+                             (create-2args-mutator label-cons?
+                                                   cst:test-true
+                                                   label-cons-cdr
+                                                   cst:id
+                                                   "pair"
+                                                   "internal error 2: all types must be a subtype of top"
+                                                   term)]
+                            ; we just inject the string type into the first arg
+                            [(eq? free-var-name-in 'string-set!)
+                             (create-3args-mutator (lambda (inflowing-label)
+                                                     (subtype (get-type-from-label inflowing-label)
+                                                              (make-type-cst 'string)
+                                                              'lookup-and-bind-top-level-vars1
+                                                              #f #f))
+                                                   (lambda (inflowing-label)
+                                                     (subtype (get-type-from-label inflowing-label)
+                                                              (make-type-cst 'exact-integer)
+                                                              'lookup-and-bind-top-level-vars2
+                                                              #f #f))
+                                                   (lambda (inflowing-label)
+                                                     (subtype (get-type-from-label inflowing-label)
+                                                              (make-type-cst 'char)
+                                                              'lookup-and-bind-top-level-vars3
+                                                              #f #f))
+                                                   cst:id
+                                                   (lambda (inflowing-label)
+                                                     (let ([label (make-label-cst
+                                                                   #f #f #f
+                                                                   (label-term inflowing-label)
+                                                                   (make-hash-table)
+                                                                   (make-hash-table)
+                                                                   'string)])
+                                                       (initialize-label-set-for-value-source label)
+                                                       label))
+                                                   "string"
+                                                   "exact-integer"
+                                                   "char"
+                                                   term)]
+                            [(eq? free-var-name-in 'string-fill!)
+                             (create-2args-mutator (lambda (inflowing-label)
+                                                     (subtype (get-type-from-label inflowing-label)
+                                                              (make-type-cst 'string)
+                                                              'lookup-and-bind-top-level-vars4
+                                                              #f #f))
+                                                   (lambda (inflowing-label)
+                                                     (subtype (get-type-from-label inflowing-label)
+                                                              (make-type-cst 'char)
+                                                              'lookup-and-bind-top-level-vars5
+                                                              #f #f))
+                                                   cst:id
+                                                   (lambda (inflowing-label)
+                                                     (let ([label (make-label-cst
+                                                                   #f #f #f
+                                                                   (label-term inflowing-label)
+                                                                   (make-hash-table)
+                                                                   (make-hash-table)
+                                                                   'string)])
+                                                       (initialize-label-set-for-value-source label)
+                                                       label))
+                                                   "string"
+                                                   "char"
+                                                   term)]
+                            ; inject third arg into first
+                            [(eq? free-var-name-in 'vector-set!)
+                             (create-3args-mutator (lambda (inflowing-label)
+                                                     (subtype (get-type-from-label inflowing-label)
+                                                              (make-type-vector (make-type-cst 'top))
+                                                              'lookup-and-bind-top-level-vars6
+                                                              #f #f))
+                                                   (lambda (inflowing-label)
+                                                     (subtype (get-type-from-label inflowing-label)
+                                                              (make-type-cst 'exact-integer)
+                                                              'lookup-and-bind-top-level-vars7
+                                                              #f #f))
+                                                   cst:test-true
+                                                   label-vector-element
+                                                   cst:id
+                                                   "vector"
+                                                   "exact-integer"
+                                                   "internal error 3: all types must be a subtype of top"
+                                                   term)]
+                            [(eq? free-var-name-in 'vector-fill!)
+                             (create-2args-mutator (lambda (inflowing-label)
+                                                     (subtype (get-type-from-label inflowing-label)
+                                                              (make-type-vector (make-type-cst 'top))
+                                                              'lookup-and-bind-top-level-vars8
+                                                              #f #f))
+                                                   cst:test-true
+                                                   label-vector-element
+                                                   cst:id
+                                                   "vector"
+                                                   "internal error 4: all types must be a subtype of top"
+                                                   term)]
+                            [else
+                             (begin
+                               (err:error-table-set *errors*
+                                                    (list free-var-label-in)
+                                                    'red
+                                                    ;(format "reference to undefined identifier: ~a in function ~a"
+                                                    ;        free-var-name-in
+                                                    ;        (unexpand (syntax-object->datum term))))
+                                                    (format "reference to undefined identifier: ~a"
+                                                            free-var-name-in))
+                               #f)])))))])
+         (when binding-label-in
+           (add-edge-and-propagate-set-through-edge
+            binding-label-in
+            (extend-edge-for-values (create-simple-edge free-var-label-in))))))
      free-vars-labels-in)
     ; we act as if all the lookups always work, so we propagate as much as possible
     ; and find as many errors as possible.
@@ -465,7 +397,7 @@
              ; don't have to keep track of in/out edges. We still have to put the
              ; inflowing-label in the set, because otherwise nothing is going to be
              ; propagated when we add a new edge to the in-label.
-             (let ([arrows (hash-table-get in-set inflowing-label cst:fail-false)])
+             (let ([arrows (hash-table-get in-set inflowing-label cst:thunk-false)])
                (if arrows
                    (if (memq tunnel-label (arrows-tunnel arrows))
                        ; we have seen this inflowing-label before, and we already know about
@@ -493,7 +425,7 @@
            ;               (or (= 1 (label-cst-value inflowing-label))
            ;                   (= 1 (label-cst-value inflowing-label)))))
            ;(printf "propagate ~a from ~a to ~a (type ~a)~n"
-           ;        (pp-type (get-type inflowing-label) 'create-simpled-edge1)
+           ;        (pp-type (get-type-from-label inflowing-label) 'create-simpled-edge1)
            ;        (syntax-object->datum (label-term out-label))
            ;        (syntax-object->datum (label-term in-label))
            ;        (label-type-var in-label))
@@ -515,9 +447,9 @@
                (set! out-label tunnel-label))
              (let* ([out-set (label-set out-label)]
                     [arrows-in-set
-                     (hash-table-get in-set inflowing-label cst:fail-false)]
+                     (hash-table-get in-set inflowing-label cst:thunk-false)]
                     [arrows-out-set
-                     (hash-table-get out-set inflowing-label cst:fail-false)])
+                     (hash-table-get out-set inflowing-label cst:thunk-false)])
                (if arrows-in-set
                    ; the value has already flown before into this set, which means it has
                    ; already been propagated further down. So we just need to update the
@@ -551,7 +483,7 @@
                      ;               (or (= 1 (label-cst-value inflowing-label))
                      ;                   (= 2 (label-cst-value inflowing-label)))))
                      ;  (printf "propagate ~a from ~a to ~a (type ~a)~n"
-                     ;          (pp-type (get-type inflowing-label) 'create-simple-edge2)
+                     ;          (pp-type (get-type-from-label inflowing-label) 'create-simple-edge2)
                      ;          (syntax-object->datum (label-term out-label))
                      ;          (syntax-object->datum (label-term in-label))
                      ;          (label-type-var in-label))
@@ -574,7 +506,7 @@
     (let ([existing-edges-table (label-edges out-label)]
           [edge-func (car new-edge)]
           [in-label (cdr new-edge)])
-      (unless (hash-table-get existing-edges-table in-label cst:fail-false)
+      (unless (hash-table-get existing-edges-table in-label cst:thunk-false)
         (hash-table-put! existing-edges-table in-label edge-func)
         ; note: no need to return a boolean, because we never check this result in union-
         (hash-table-for-each (label-set out-label)
@@ -627,16 +559,15 @@
                           (extend-edge-for-values simple-edge)))
                        ; (define-values (x) (... (values a b ...) ...))
                        (begin
-                         (set! *errors*
-                               (cons (list (list (label-term inflowing-label))
-                                           'red
-                                           (format "context expected 1 value, received ~a values"
-                                                   (label-list-length values-label)))
-                                     *errors*))
+                         (err:error-table-set *errors*
+                                              (list inflowing-label)
+                                              'red
+                                              (format "context expected 1 value, received ~a values"
+                                                      (label-list-length values-label)))
                          #f)))
                  (error 'extend-edge-for-values "values didn't contain list: ~a"
                         (map (lambda (label)
-                               (pp-type (get-type label) 'extend-edge-for-values))
+                               (pp-type (get-type-from-label label) 'extend-edge-for-values))
                              label-list))
                  ))
            ; (define-values (x) a) or equivalent (e.g. the result of analysing something like
@@ -669,7 +600,7 @@
   (define (initialize-label-set-for-value-source label)
     (hash-table-put! (label-set label) label (make-arrows '() '() (list #f))))
   
-  ; (listof booleans) (listof integer) (listof (listof label)) (listof label) term boolean -> edge
+  ; (listof booleans) (listof integer) (listof (listof label)) (listof label) label boolean -> edge
   ; The four first parameters simulate the surrounding case-lambda specification. We could
   ; wrap it inside a real case-lambda label, but we would have to create fake values for the
   ; other components of the structure...
@@ -677,7 +608,7 @@
   ; the black magic for structures (see the create-make-struct-type-label function)
   (define (create-case-lambda-edge rest-arg?s-around req-args-around
                                    argss-labelss-around exps-labels-around
-                                   term contra-union?)
+                                   label contra-union?)
     (cons
      (lambda (out-label inflowing-case-lambda-label tunnel-label)
        ; inflowing-case-lambda-label doesn't go anywhere, it's components are just connected to
@@ -709,22 +640,21 @@
                                  (if (null? rest-arg?s-in)
                                      ; No match found.
                                      (begin
-                                       (set! *errors*
-                                             (cons (list
-                                                    (list term)
-                                                    'red
-                                                    (format "procedure application: arity mismatch, given: ~a; ~a required arguments were given"
-                                                            (if (label-prim? inflowing-case-lambda-label)
-                                                                ; this won't work if we use a primitive
-                                                                ; in a higer-order way, but they can
-                                                                ; always trace the case-lambda back,
-                                                                ; so that should be good enough.
-                                                                (unexpand (syntax-object->datum term))
-                                                                (unexpand
-                                                                 (syntax-object->datum
-                                                                  (label-term inflowing-case-lambda-label))))
-                                                            (car req-args-around)))
-                                                   *errors*))
+                                       (err:error-table-set 
+                                        *errors*
+                                        (list label)
+                                        'red
+                                        (format "procedure application: arity mismatch, given: ~a; ~a required arguments were given"
+                                                (if (label-prim? inflowing-case-lambda-label)
+                                                    ; this won't work if we use a primitive
+                                                    ; in a higer-order way, but they can
+                                                    ; always trace the case-lambda back,
+                                                    ; so that should be good enough.
+                                                    (unexpand (syntax-object->datum (label-term label)))
+                                                    (unexpand
+                                                     (syntax-object->datum
+                                                      (label-term inflowing-case-lambda-label))))
+                                                (car req-args-around)))
                                        #f)
                                      (let ([rest-arg?-in (car rest-arg?s-in)]
                                            [req-arg-in (car req-args-in)]
@@ -740,7 +670,7 @@
                                           ; rest args, it's the same
                                           (lambda ()
                                             ;(when (lookup-and-bind-top-level-vars
-                                            ;       (car effects-in) term)
+                                            ;       (car effects-in) (label-term term))
                                             ; make internal apps flow and top level vars looked up
                                             ((car effects-in))
                                             ;(set-car! app-thunks-in *dummy-thunk*)
@@ -766,7 +696,7 @@
                                           ; the rest argument.
                                           (lambda ()
                                             ;(when (lookup-and-bind-top-level-vars
-                                            ;       (car effects-in) term)
+                                            ;       (car effects-in) (label-term term))
                                             ; make internal apps flow
                                             ((car effects-in))
                                             ;(set-car! app-thunks-in *dummy-thunk*)
@@ -887,7 +817,7 @@
                                                                        [car-edge (create-simple-edge car-label)]
                                                                        [cdr-label (rest-loop-in (cdr args-labels-in))]
                                                                        [cdr-edge (create-simple-edge cdr-label)]
-                                                                       [cons-label (create-simple-prim-label term)]
+                                                                       [cons-label (create-simple-prim-label (label-term label))]
                                                                        [cons-edge
                                                                         (cons
                                                                          (lambda (out-label inflowing-label tunnel-label)
@@ -928,7 +858,7 @@
                                                                             req-arg-in))
                                                                      (begin
                                                                        ;(when (lookup-and-bind-top-level-vars
-                                                                       ;       (car effects-in) term)
+                                                                       ;       (car effects-in) (label-term term))
                                                                        ; make internal apps flow
                                                                        ((car effects-in))
                                                                        ;(set-car! app-thunks-in *dummy-thunk*)
@@ -937,23 +867,21 @@
                                                                         splitting-rest-arg-edge)
                                                                        (inner-thunk))
                                                                      (begin
-                                                                       (set! *errors*
-                                                                             (cons
-                                                                              (list
-                                                                               (list (label-term inflowing-case-lambda-label))
-                                                                               'red
-                                                                               (format "possible arity error (might be a side effect of generating an infinite list): function ~a expected ~a arguments, received ~a"
-                                                                                       ; this would underline the primitive that generated the list
-                                                                                       ;(syntax-object->datum
-                                                                                       ; (label-term 
-                                                                                       ;  inflowing-label))
-                                                                                       (syntax-object->datum
-                                                                                        (label-term
-                                                                                         inflowing-case-lambda-label))
-                                                                                       req-arg-in
-                                                                                       (+ rest-list-length req-arg-around)
-                                                                                       ))
-                                                                              *errors*))
+                                                                       (err:error-table-set
+                                                                        *errors*
+                                                                        (list inflowing-case-lambda-label)
+                                                                        'red
+                                                                        (format "possible arity error (might be a side effect of generating an infinite list): function ~a expected ~a arguments, received ~a"
+                                                                                ; this would underline the primitive that generated the list
+                                                                                ;(syntax-object->datum
+                                                                                ; (label-term 
+                                                                                ;  inflowing-label))
+                                                                                (syntax-object->datum
+                                                                                 (label-term
+                                                                                  inflowing-case-lambda-label))
+                                                                                req-arg-in
+                                                                                (+ rest-list-length req-arg-around)
+                                                                                ))
                                                                        #f))))
                                                              ; sink
                                                              (gensym)))])
@@ -1012,7 +940,7 @@
                                                                        [car-edge (create-simple-edge car-label)]
                                                                        [cdr-label (rest-loop-in (cdr args-labels-in))]
                                                                        [cdr-edge (create-simple-edge cdr-label)]
-                                                                       [cons-label (create-simple-prim-label term)]
+                                                                       [cons-label (create-simple-prim-label (label-term label))]
                                                                        [cons-edge
                                                                         (cons
                                                                          (lambda (out-label inflowing-label tunnel-label)
@@ -1053,7 +981,7 @@
                                                                             req-arg-in))
                                                                      (begin
                                                                        ;(when (lookup-and-bind-top-level-vars
-                                                                       ;       (car effects-in) term)
+                                                                       ;       (car effects-in) (label-term term))
                                                                        ; make internal apps flow
                                                                        ((car effects-in))
                                                                        ;(set-car! app-thunks-in *dummy-thunk*)
@@ -1062,23 +990,21 @@
                                                                         splitting-rest-arg-edge)
                                                                        (inner-thunk))
                                                                      (begin
-                                                                       (set! *errors*
-                                                                             (cons
-                                                                              (list
-                                                                               (list (label-term inflowing-case-lambda-label))
-                                                                               'red
-                                                                               (format "possible arity error (might be a side effect of generating an infinite list): function ~a expected ~a arguments, received ~a"
-                                                                                       ; this would underline the primitive that generated the list
-                                                                                       ;(syntax-object->datum
-                                                                                       ; (label-term 
-                                                                                       ;  inflowing-label))
-                                                                                       (syntax-object->datum
-                                                                                        (label-term
-                                                                                         inflowing-case-lambda-label))
-                                                                                       req-arg-in
-                                                                                       (+ rest-list-length req-arg-around)
-                                                                                       ))
-                                                                              *errors*))
+                                                                       (err:error-table-set
+                                                                        *errors*
+                                                                        (list inflowing-case-lambda-label)
+                                                                        'red
+                                                                        (format "possible arity error (might be a side effect of generating an infinite list): function ~a expected ~a arguments, received ~a"
+                                                                                ; this would underline the primitive that generated the list
+                                                                                ;(syntax-object->datum
+                                                                                ; (label-term 
+                                                                                ;  inflowing-label))
+                                                                                (syntax-object->datum
+                                                                                 (label-term
+                                                                                  inflowing-case-lambda-label))
+                                                                                req-arg-in
+                                                                                (+ rest-list-length req-arg-around)
+                                                                                ))
                                                                        #f))))
                                                              ; sink
                                                              (gensym)))])
@@ -1106,7 +1032,7 @@
                                                (< req-arg-in req-arg-around))
                                           (lambda ()
                                             ;(when (lookup-and-bind-top-level-vars
-                                            ;       (car effects-in) term)
+                                            ;       (car effects-in) (label-term term))
                                             ; make internal apps flow
                                             ((car effects-in))
                                             ;(set-car! app-thunks-in *dummy-thunk*)
@@ -1180,14 +1106,12 @@
            ; trying to apply something not a function
            ; Note: nothing was done, so there's nothing to undo
            (begin
-             (set! *errors*
-                   (cons (list (list term)
-                               'red
-                               (format "procedure application: expected procedure, given: ~a"
-                                       (unexpand (syntax-object->datum
-                                                  (label-term inflowing-case-lambda-label)))))
-                         ;inflowing-case-lambda-label))
-                         *errors*))
+             (err:error-table-set *errors*
+                                  (list label)
+                                  'red
+                                  (format "procedure application: expected procedure, given: ~a"
+                                          (unexpand (syntax-object->datum
+                                                     (label-term inflowing-case-lambda-label)))))
              #f)))
      ; function value sink => unique, fake destination
      (gensym)))
@@ -1347,11 +1271,10 @@
                                                   (label-cst-value inflowing-label))
                      #t)
                    (begin
-                     (set! *errors*
-                           (cons (list (list (label-term inflowing-label))
-                                       'red
-                                       "make-struct-type expected symbol")
-                                 *errors*))
+                     (err:error-table-set *errors*
+                                          (list inflowing-label)
+                                          'red
+                                          "make-struct-type expected symbol")
                      (set-label-struct-type-error?! struct-type-label #t)
                      #f)))
              (gensym))]
@@ -1371,11 +1294,10 @@
                                                       inflowing-label))
                      #t)
                    (begin
-                     (set! *errors*
-                           (cons (list (list (label-term inflowing-label))
-                                       'red
-                                       "make-struct-type expected structure type")
-                                 *errors*))
+                     (err:error-table-set *errors*
+                                          (list inflowing-label)
+                                          'red
+                                          "make-struct-type expected structure type")
                      (set-label-struct-type-error?! struct-type-label #t)
                      #f)))
              (gensym))]
@@ -1399,11 +1321,10 @@
                                                                    parent-fields-nbr)))
                      #t)
                    (begin
-                     (set! *errors*
-                           (cons (list (list (label-term inflowing-label))
-                                       'red
-                                       "make-struct-type expected number")
-                                 *errors*))
+                     (err:error-table-set *errors*
+                                          (list inflowing-label)
+                                          'red
+                                          "make-struct-type expected number")
                      (set-label-struct-type-error?! struct-type-label #t)
                      #f)))
              (gensym))]
@@ -1418,11 +1339,10 @@
                           (and (number? value) (zero? value))))
                    #t
                    (begin
-                     (set! *errors*
-                           (cons (list (list (label-term inflowing-label))
-                                       'red
-                                       "auto-initialized structure fields not yet supported: expected 0")
-                                 *errors*))
+                     (err:error-table-set *errors*
+                                          (list inflowing-label)
+                                          'red
+                                          "auto-initialized structure fields not yet supported: expected 0")
                      (set-label-struct-type-error?! struct-type-label #t)
                      #f)))
              (gensym))]
@@ -1436,11 +1356,10 @@
                         (not (label-cst-value inflowing-label)))
                    #t
                    (begin
-                     (set! *errors*
-                           (cons (list (list (label-term inflowing-label))
-                                       'red
-                                       "auto-initialized structure fields not yet supported: expected #f")
-                                 *errors*))
+                     (err:error-table-set *errors*
+                                          (list inflowing-label)
+                                          'red
+                                          "auto-initialized structure fields not yet supported: expected #f")
                      (set-label-struct-type-error?! struct-type-label #t)
                      #f)))
              (gensym))]
@@ -1454,11 +1373,10 @@
                         (null? (label-cst-value inflowing-label)))
                    #t
                    (begin
-                     (set! *errors*
-                           (cons (list (list (label-term inflowing-label))
-                                       'red
-                                       "structure properties not yet supported: expected ()")
-                                 *errors*))
+                     (err:error-table-set *errors*
+                                          (list inflowing-label)
+                                          'red
+                                          "structure properties not yet supported: expected ()")
                      (set-label-struct-type-error?! struct-type-label #t)
                      #f)))
              (gensym))]
@@ -1598,11 +1516,10 @@
                           mutate-case-lambda-label mutate-edge)
                          #t))
                    (begin
-                     (set! *errors*
-                           (cons (list (list (label-term inflowing-label))
-                                       'red
-                                       "structure inspectors not yet supported: expected #f")
-                                 *errors*))
+                     (err:error-table-set *errors*
+                                          (list inflowing-label)
+                                          'red
+                                          "structure inspectors not yet supported: expected #f")
                      (set-label-struct-type-error?! struct-type-label #t)
                      #f)))
              (gensym))]
@@ -1684,12 +1601,11 @@
                      (set! access inflowing-label)
                      #t)
                    (begin
-                     (set! *errors*
-                           (cons (list (list (label-term inflowing-label))
-                                       'red
-                                       (format "make-struct-field-accessor: expects type <accessor procedure that requires a field index> as 1st argument, given: ~a"
-                                               (pp-type (get-type inflowing-label) 'create-make-struct-field-accessor-label1)))
-                                 *errors*))
+                     (err:error-table-set *errors*
+                                          (list inflowing-label)
+                                          'red
+                                          (format "make-struct-field-accessor: expects type <accessor procedure that requires a field index> as 1st argument, given: ~a"
+                                                  (pp-type (get-type-from-label inflowing-label) 'create-make-struct-field-accessor-label1)))
                      #f)))
              (gensym))]
            [second-arg-label (create-simple-prim-label term)]
@@ -1712,27 +1628,25 @@
                                      (+ value (label-struct-type-parent-fields-nbr struct-type-label)))
                                #t)
                              (begin
-                               (set! *errors*
-                                     (cons
-                                      (list
-                                       (list (label-term inflowing-label))
-                                       'red
-                                       (format "make-struct-field-accessor: slot index for ~a not in [0, ~a]: ~a"
-                                               (pp-type (get-type struct-type-label) 'create-make-struct-field-accessor-label2)
-                                               (- (label-struct-type-total-fields-nbr struct-type-label)
-                                                  (label-struct-type-parent-fields-nbr struct-type-label))
-                                               (pp-type (get-type inflowing-label) 'create-make-struct-field-accessor-label3)))
-                                      *errors*))
+                               (err:error-table-set
+                                *errors*
+                                (list inflowing-label)
+                                'red
+                                (format "make-struct-field-accessor: slot index for ~a not in [0, ~a]: ~a"
+                                        (pp-type (get-type-from-label struct-type-label) 'create-make-struct-field-accessor-label2)
+                                        (- (label-struct-type-total-fields-nbr struct-type-label)
+                                           (label-struct-type-parent-fields-nbr struct-type-label))
+                                        (pp-type (get-type-from-label inflowing-label) 'create-make-struct-field-accessor-label3)))
                                #f)))
                        (begin
                          (set! struct-type-label #f)
                          (set! access #f)
-                         (set! *errors*
-                               (cons (list (list (label-term inflowing-label))
-                                           'red
-                                           (format "make-struct-field-accessor: expects type <non-negative exact integer> as 2nd argument, given: ~a"
-                                                   (pp-type (get-type inflowing-label) 'create-make-struct-field-accessor-label4)))
-                                     *errors*))
+                         (err:error-table-set
+                          *errors*
+                          (list inflowing-label)
+                          'red
+                          (format "make-struct-field-accessor: expects type <non-negative exact integer> as 2nd argument, given: ~a"
+                                  (pp-type (get-type-from-label inflowing-label) 'create-make-struct-field-accessor-label4)))
                          #f))
                    #f))
              (gensym))]
@@ -1770,17 +1684,15 @@
                                          result-label accessor-body-edge)
                                         #t)
                                       (begin
-                                        (set! *errors*
-                                              (cons
-                                               (list
-                                                ; we know we are inside a primitive, so we
-                                                ; flag the entrance of the tunnel as the error.
-                                                (list (label-term tunnel-label))
-                                                'red
-                                                (format "accessor expects type ~a as 1st argument, given: ~a"
-                                                        (pp-type (get-type struct-type-label) 'create-make-struct-field-accessor-label5)
-                                                        (pp-type (get-type inflowing-label) 'create-make-struct-field-accessor-label6)))
-                                               *errors*))
+                                        (err:error-table-set
+                                         *errors*
+                                         ; we know we are inside a primitive, so we
+                                         ; flag the entrance of the tunnel as the error.
+                                         (list tunnel-label)
+                                         'red
+                                         (format "accessor expects type ~a as 1st argument, given: ~a"
+                                                 (pp-type (get-type-from-label struct-type-label) 'create-make-struct-field-accessor-label5)
+                                                 (pp-type (get-type-from-label inflowing-label) 'create-make-struct-field-accessor-label6)))
                                         #f)))
                                 (gensym))]
                               [accessor-case-lambda-label (make-label-case-lambda
@@ -1809,12 +1721,12 @@
                          (set! struct-type-label #f)
                          (set! access #f)
                          (set! field-index #f)
-                         (set! *errors*
-                               (cons (list (list (label-term inflowing-label))
-                                           'red
-                                           (format "make-struct-field-accessor: expects type <symbol> as 3rd argument, given: ~a"
-                                                   (pp-type (get-type inflowing-label) 'create-make-struct-field-accessor-label7)))
-                                     *errors*))
+                         (err:error-table-set
+                          *errors*
+                          (list inflowing-label)
+                          'red
+                          (format "make-struct-field-accessor: expects type <symbol> as 3rd argument, given: ~a"
+                                  (pp-type (get-type-from-label inflowing-label) 'create-make-struct-field-accessor-label7)))
                          #f))
                    #f))
              (gensym))]
@@ -1872,12 +1784,12 @@
                      (set! mutate inflowing-label)
                      #t)
                    (begin
-                     (set! *errors*
-                           (cons (list (list (label-term inflowing-label))
-                                       'red
-                                       (format "make-struct-field-mutator: expects type <mutator procedure that requires a field index> as 1st argument, given: ~a"
-                                               (pp-type (get-type inflowing-label) 'create-make-struct-field-mutator-label1)))
-                                 *errors*))
+                     (err:error-table-set
+                      *errors*
+                      (list inflowing-label)
+                      'red
+                      (format "make-struct-field-mutator: expects type <mutator procedure that requires a field index> as 1st argument, given: ~a"
+                              (pp-type (get-type-from-label inflowing-label) 'create-make-struct-field-mutator-label1)))
                      #f)))
              (gensym))]
            [second-arg-label (create-simple-prim-label term)]
@@ -1900,27 +1812,25 @@
                                      (+ value (label-struct-type-parent-fields-nbr struct-type-label)))
                                #t)
                              (begin
-                               (set! *errors*
-                                     (cons
-                                      (list
-                                       (list (label-term inflowing-label))
-                                       'red
-                                       (format "make-struct-field-mutator: slot index for ~a not in [0, ~a]: ~a"
-                                               (pp-type (get-type (struct-type-label)) 'create-make-struct-field-mutator-label2)
-                                               (- (label-struct-type-total-fields-nbr struct-type-label)
-                                                  (label-struct-type-parent-fields-nbr struct-type-label))
-                                               (pp-type (get-type inflowing-label) 'create-make-struct-field-mutator-label3)))
-                                      *errors*))
+                               (err:error-table-set
+                                *errors*
+                                (list inflowing-label)
+                                'red
+                                (format "make-struct-field-mutator: slot index for ~a not in [0, ~a]: ~a"
+                                        (pp-type (get-type-from-label (struct-type-label)) 'create-make-struct-field-mutator-label2)
+                                        (- (label-struct-type-total-fields-nbr struct-type-label)
+                                           (label-struct-type-parent-fields-nbr struct-type-label))
+                                        (pp-type (get-type-from-label inflowing-label) 'create-make-struct-field-mutator-label3)))
                                #f)))
                        (begin
                          (set! struct-type-label #f)
                          (set! mutate #f)
-                         (set! *errors*
-                               (cons (list (list (label-term inflowing-label))
-                                           'red
-                                           (format "make-struct-field-mutator: expects type <non-negative exact integer> as 2nd argument, given: ~a"
-                                                   (pp-type (get-type inflowing-label) 'create-make-struct-field-mutator-label4)))
-                                     *errors*))
+                         (err:error-table-set
+                          *errors*
+                          (list inflowing-label)
+                          'red
+                          (format "make-struct-field-mutator: expects type <non-negative exact integer> as 2nd argument, given: ~a"
+                                  (pp-type (get-type-from-label inflowing-label) 'create-make-struct-field-mutator-label4)))
                          #f))
                    #f))
              (gensym))]
@@ -1948,7 +1858,7 @@
                                              inflowing-label)
                                             field-index))
                                 cst:id
-                                (pp-type (get-type struct-type-label) 'create-make-struct-field-mutator-label5)
+                                (pp-type (get-type-from-label struct-type-label) 'create-make-struct-field-mutator-label5)
                                 "internal error 5: all types must be a subtype of top"
                                 term)]
                               ; a mutator has only one clause
@@ -1980,12 +1890,12 @@
                          (set! struct-type-label #f)
                          (set! mutate #f)
                          (set! field-index #f)
-                         (set! *errors*
-                               (cons (list (list (label-term inflowing-label))
-                                           'red
-                                           (format "make-struct-field-mutator: expects type <symbol> as 3rd argument, given: ~a"
-                                                   (pp-type (get-type inflowing-label) 'create-make-struct-field-mutator-label7)))
-                                     *errors*))
+                         (err:error-table-set
+                          *errors*
+                          (list inflowing-label)
+                          'red
+                          (format "make-struct-field-mutator: expects type <symbol> as 3rd argument, given: ~a"
+                                  (pp-type (get-type-from-label inflowing-label) 'create-make-struct-field-mutator-label7)))
                          #f))
                    #f))
              (gensym))]
@@ -2015,7 +1925,7 @@
                                        term
                                        (make-hash-table)
                                        (make-hash-table)
-                                       (void))]
+                                       cst:void)]
            [state-label (create-simple-prim-label term)]
            [state-edge (create-simple-edge state-label)]
            [mutator-body-label (create-simple-prim-label term)]
@@ -2031,16 +1941,15 @@
                     state-label
                     (create-simple-edge (accessor-first-arg inflowing-label)))
                    (begin
-                     (set! *errors*
-                           (cons (list
-                                  ; we know we are inside a primitive, so we
-                                  ; flag the entrance of the tunnel as the error.
-                                  (list (label-term tunnel-label))
-                                  'red
-                                  (format "mutator expects type ~a as 1st argument, given: ~a"
-                                          error-first-arg
-                                          (pp-type (get-type inflowing-label) 'create-2args-mutator1)))
-                                 *errors*))
+                     (err:error-table-set
+                      *errors*
+                      ; we know we are inside a primitive, so we
+                      ; flag the entrance of the tunnel as the error.
+                      (list tunnel-label)
+                      'red
+                      (format "mutator expects type ~a as 1st argument, given: ~a"
+                              error-first-arg
+                              (pp-type (get-type-from-label inflowing-label) 'create-2args-mutator1)))
                      #f)))
              (gensym))]
            [mutator-second-arg-edge
@@ -2052,16 +1961,15 @@
                     (accessor-second-arg inflowing-label)
                     state-edge)
                    (begin
-                     (set! *errors*
-                           (cons (list
-                                  ; we know we are inside a primitive, so we
-                                  ; flag the entrance of the tunnel as the error.
-                                  (list (label-term tunnel-label))
-                                  'red
-                                  (format "mutator expects type ~a as 2nd argument, given: ~a"
-                                          error-second-arg
-                                          (pp-type (get-type inflowing-label) 'create-2args-mutator2)))
-                                 *errors*))
+                     (err:error-table-set
+                      *errors*
+                      ; we know we are inside a primitive, so we
+                      ; flag the entrance of the tunnel as the error.
+                      (list tunnel-label)
+                      'red
+                      (format "mutator expects type ~a as 2nd argument, given: ~a"
+                              error-second-arg
+                              (pp-type (get-type-from-label inflowing-label) 'create-2args-mutator2)))
                      #f)))
              (gensym))]
            [mutator-case-lambda-label (make-label-case-lambda
@@ -2092,7 +2000,7 @@
                                        term
                                        (make-hash-table)
                                        (make-hash-table)
-                                       (void))]
+                                       cst:void)]
            [state-label (create-simple-prim-label term)]
            [state-edge (create-simple-edge state-label)]
            [mutator-body-label (create-simple-prim-label term)]
@@ -2109,16 +2017,15 @@
                     state-label
                     (create-simple-edge (accessor-first-arg inflowing-label)))
                    (begin
-                     (set! *errors*
-                           (cons (list
-                                  ; we know we are inside a primitive, so we
-                                  ; flag the entrance of the tunnel as the error.
-                                  (list (label-term tunnel-label))
-                                  'red
-                                  (format "mutator expects type ~a as 1st argument, given: ~a"
-                                          error-first-arg
-                                          (pp-type (get-type inflowing-label) 'create-3args-mutator1)))
-                                 *errors*))
+                     (err:error-table-set
+                      *errors*
+                      ; we know we are inside a primitive, so we
+                      ; flag the entrance of the tunnel as the error.
+                      (list tunnel-label)
+                      'red
+                      (format "mutator expects type ~a as 1st argument, given: ~a"
+                              error-first-arg
+                              (pp-type (get-type-from-label inflowing-label) 'create-3args-mutator1)))
                      #f)))
              (gensym))]
            [mutator-second-arg-edge
@@ -2128,16 +2035,15 @@
                (if (pred-second-arg inflowing-label)
                    #t
                    (begin
-                     (set! *errors*
-                           (cons (list
-                                  ; we know we are inside a primitive, so we
-                                  ; flag the entrance of the tunnel as the error.
-                                  (list (label-term tunnel-label))
-                                  'red
-                                  (format "mutator expects type ~a as 2nd argument, given: ~a"
-                                          error-second-arg
-                                          (pp-type (get-type inflowing-label) 'create-3args-mutator2)))
-                                 *errors*))
+                     (err:error-table-set
+                      *errors*
+                      ; we know we are inside a primitive, so we
+                      ; flag the entrance of the tunnel as the error.
+                      (list tunnel-label)
+                      'red
+                      (format "mutator expects type ~a as 2nd argument, given: ~a"
+                              error-second-arg
+                              (pp-type (get-type-from-label inflowing-label) 'create-3args-mutator2)))
                      #f)))
              (gensym))]
            [mutator-third-arg-edge
@@ -2149,16 +2055,15 @@
                     (accessor-third-arg inflowing-label)
                     state-edge)
                    (begin
-                     (set! *errors*
-                           (cons (list
-                                  ; we know we are inside a primitive, so we
-                                  ; flag the entrance of the tunnel as the error.
-                                  (list (label-term tunnel-label))
-                                  'red
-                                  (format "mutator expects type ~a as 3rd argument, given: ~a"
-                                          error-third-arg
-                                          (pp-type (get-type inflowing-label) 'create-3args-mutator3)))
-                                 *errors*))
+                     (err:error-table-set
+                      *errors*
+                      ; we know we are inside a primitive, so we
+                      ; flag the entrance of the tunnel as the error.
+                      (list tunnel-label)
+                      'red
+                      (format "mutator expects type ~a as 3rd argument, given: ~a"
+                              error-third-arg
+                              (pp-type (get-type-from-label inflowing-label) 'create-3args-mutator3)))
                      #f)))
              (gensym))]
            [mutator-case-lambda-label (make-label-case-lambda
@@ -2319,7 +2224,7 @@
                     (list actual-args-length)
                     (list actual-args-labels)
                     (list app-label)
-                    op-term
+                    op-label
                     #f)])
         ; If the app is inside a lambda, we delay the addition of the edge until the enclosing
         ; lambda is itself applied.
@@ -2383,7 +2288,7 @@
                             term
                             (make-hash-table)
                             (make-hash-table)
-                            (void))])
+                            cst:void)])
         ; don't add to top level before analysing exp-label, otherwise (define x x) will work.
         (for-each add-top-level-name vars vars-labels)
         ;(set! graph-nodes (add1 graph-nodes))
@@ -2446,28 +2351,25 @@
                                        values-label vars-labels)
                                       ; (define-values (x y) (... (values a b c) ...))
                                       (begin
-                                        (set! *errors*
-                                              (cons
-                                               (list (list (label-term inflowing-label))
-                                                     'red
-                                                     (format "define-values: context expected ~a value, received ~a values"
-                                                             vars-length (label-list-length values-label)))
-                                               *errors*))
+                                        (err:error-table-set
+                                         *errors*
+                                         (list inflowing-label)
+                                         'red
+                                         (format "define-values: context expected ~a value, received ~a values"
+                                                 vars-length (label-list-length values-label)))
                                         #f)))
                                 (error 'define-values "values didn't contain list: ~a"
                                        (map (lambda (label)
-                                              (pp-type (get-type label) 'define-values))
+                                              (pp-type (get-type-from-label label) 'define-values))
                                             label-list))))
                           ; (define-values (x y) (... 1 ...))
                           (begin
-                            (set! *errors*
-                                  (cons
-                                   (list
-                                    (list term)
-                                    'red
-                                    (format "define-values: context expected ~a values, received 1 non-multiple-values value"
-                                            vars-length))
-                                   *errors*))
+                            (err:error-table-set
+                             *errors*
+                             (list define-label)
+                             'red
+                             (format "define-values: context expected ~a values, received 1 non-multiple-values value"
+                                     vars-length))
                             #f)))
                     ; multiple values sink => unique, fake destination
                     (gensym))])
@@ -2558,30 +2460,26 @@
                                                  ; (let-values ([(x y) (... (values a b c ...) ...)]
                                                  ;             ...) ...)
                                                  (begin
-                                                   (set! *errors*
-                                                         (cons
-                                                          (list
-                                                           (list (label-term inflowing-label))
-                                                           'red
-                                                           (format "let-values: context expected ~a value, received ~a values"
-                                                                   vars-length
-                                                                   (label-list-length values-label)))
-                                                          *errors*))
+                                                   (err:error-table-get
+                                                    *errors*
+                                                    (list inflowing-label)
+                                                    'red
+                                                    (format "let-values: context expected ~a value, received ~a values"
+                                                            vars-length
+                                                            (label-list-length values-label)))
                                                    #f)))
                                            (error 'let-values "values didn't contain list: ~a"
                                                   (map (lambda (label)
-                                                         (pp-type (get-type label) 'let-values))
+                                                         (pp-type (get-type-from-label label) 'let-values))
                                                        label-list))))
                                      ; (let-values ([(x y) (... 1 ...)] ...) ...)
                                      (begin
-                                       (set! *errors*
-                                             (cons
-                                              (list
-                                               (list term)
-                                               'red
-                                               (format "let-values: context expected ~a values, received 1 non-multiple-values value"
-                                                       vars-length))
-                                              *errors*))
+                                       (err:error-table-set
+                                        *errors*
+                                        (list let-values-label)
+                                        'red
+                                        (format "let-values: context expected ~a values, received 1 non-multiple-values value"
+                                                vars-length))
                                        #f)))
                                ; multiple values sink
                                (gensym))])
@@ -2607,7 +2505,8 @@
       (set! ast-nodes (add1 ast-nodes))
       ; we simulate letrec by doing a let followed by a set!, except that we have to do that
       ; clause after clause.
-      (let* ([varss-stx (map syntax-e (syntax-e (syntax (vars ...))))]
+      (let* ([letrec-values-label (create-simple-label term)]
+             [varss-stx (map syntax-e (syntax-e (syntax (vars ...))))]
              [varss-labelss (map (lambda (single-clause-vars-stx)
                                    (map (lambda (var-stx)
                                           (let ([undefined-label (make-label-cst #f #f #f
@@ -2688,28 +2587,25 @@
                                                    values-label vars-stx)
                                                   ; [(x y) (... (values a b c) ...)]
                                                   (begin
-                                                    (set! *errors*
-                                                          (cons
-                                                           (list (list (label-term inflowing-label))
-                                                                 'red
-                                                                 (format "letrec-values: context expected ~a value, received ~a values"
-                                                                         vars-length (label-list-length values-label)))
-                                                           *errors*))
+                                                    (err:error-table-set
+                                                     *errors*
+                                                     (list inflowing-label)
+                                                     'red
+                                                     (format "letrec-values: context expected ~a value, received ~a values"
+                                                             vars-length (label-list-length values-label)))
                                                     #f)))
                                             (error 'letrec-values "values didn't contain list: ~a"
                                                    (map (lambda (label)
-                                                          (pp-type (get-type label) 'letrec-values))
+                                                          (pp-type (get-type-from-label label) 'letrec-values))
                                                         label-list))))
                                       ; [(x y) (... 1 ...))]
                                       (begin
-                                        (set! *errors*
-                                              (cons
-                                               (list
-                                                (list term)
-                                                'red
-                                                (format "letrec-values: context expected ~a values, received 1 non-multiple-values value"
-                                                        vars-length))
-                                               *errors*))
+                                        (err:error-table-set
+                                         *errors*
+                                         (list letrec-values-label)
+                                         'red
+                                         (format "letrec-values: context expected ~a values, received 1 non-multiple-values value"
+                                                 vars-length))
                                         #f)))
                                 ; multiple values sink => unique, fake destination
                                 (gensym))])
@@ -2723,8 +2619,7 @@
                (lambda (exp _)
                  (create-label-from-term exp gamma-extended enclosing-lambda-label))
                cst:dummy
-               (syntax-e (syntax (body-exps ...))))]
-             [letrec-values-label (create-simple-label term)])
+               (syntax-e (syntax (body-exps ...))))])
         (add-edge-and-propagate-set-through-edge
          last-body-exp-label
          (create-simple-edge letrec-values-label))
@@ -2813,129 +2708,111 @@
                                          term
                                          (make-hash-table)
                                          (make-hash-table)
-                                         (void))])
+                                         cst:void)])
         (initialize-label-set-for-value-source void-label)
         (if binding-label
             ; lexical variable
-            (let ([binding-edge (create-simple-edge binding-label)])
+            (let* ([binding-edge (create-simple-edge binding-label)]
+                   [effect
+                    (lambda ()
+                      ;(search-and-replace gamma var-name var-label)
+                      (add-edge-and-propagate-set-through-edge
+                       exp-label var-edge)
+                      (add-edge-and-propagate-set-through-edge
+                       var-label binding-edge)
+                      (add-edge-and-propagate-set-through-edge
+                       void-label set!-edge))])
               (if enclosing-lambda-label
                   (let* ([enclosing-lambda-effects (label-case-lambda-effects enclosing-lambda-label)]
                          [current-thunk (car enclosing-lambda-effects)])
                     (set-car! enclosing-lambda-effects
                               (lambda ()
                                 (current-thunk)
-                                ;(search-and-replace gamma var-name var-label)
-                                (add-edge-and-propagate-set-through-edge
-                                 exp-label var-edge)
-                                (add-edge-and-propagate-set-through-edge
-                                 var-label binding-edge)
-                                (add-edge-and-propagate-set-through-edge
-                                 void-label set!-edge))))
-                  (begin
-                    ;(search-and-replace gamma var-name var-label)
-                    (add-edge-and-propagate-set-through-edge
-                     exp-label var-edge)
-                    (add-edge-and-propagate-set-through-edge
-                     var-label binding-edge)
-                    (add-edge-and-propagate-set-through-edge
-                     void-label set!-edge)))
-              )
-            (let ([binding-label (lookup-top-level-name var-name)])
-              (if (or binding-label
-                      (eq? var-name 'make-struct-type)
-                      (eq? var-name 'make-struct-field-accessor)
-                      (eq? var-name 'make-struct-field-mutator)
-                      (eq? var-name 'set-car!)
-                      (eq? var-name 'set-cdr!)
-                      (eq? var-name 'string-set!)
-                      (eq? var-name 'string-fill!)
-                      (eq? var-name 'vector-set!)
-                      (eq? var-name 'vector-fill!))
-                  ; top level var
-                  (let ([binding-edge (create-simple-edge binding-label)]) 
-                    (if enclosing-lambda-label
-                        (let* ([enclosing-lambda-effects (label-case-lambda-effects enclosing-lambda-label)]
-                               [current-thunk (car enclosing-lambda-effects)])
-                          (set-car! enclosing-lambda-effects
-                                    (lambda ()
-                                      (current-thunk)
-                                      ;(add-top-level-name var-stx var-label)
-                                      (add-edge-and-propagate-set-through-edge
-                                       exp-label var-edge)
-                                      (add-edge-and-propagate-set-through-edge
-                                       var-label binding-edge)
-                                      (add-edge-and-propagate-set-through-edge
-                                       void-label set!-edge))))
-                        (begin
-                          ;(add-top-level-name var-stx var-label)
-                          (add-edge-and-propagate-set-through-edge
-                           exp-label var-edge)
-                          (add-edge-and-propagate-set-through-edge
-                           var-label binding-edge)
-                          (add-edge-and-propagate-set-through-edge
-                           void-label set!-edge)))
-                    )
-                  (set! *errors*
-                        (cons (list (list term)
-                                    'red
-                                    (format "set!: cannot set undefined identifier: ~a" var-name))
-                              *errors*)))))
-            set!-label)]
+                                (effect))))
+                  (effect)))
+            (let ([effect
+                   (lambda ()
+                     ; delay the lookup until the effect takes place
+                     (let ([binding-label (lookup-top-level-name var-name)])
+                       (if (or binding-label
+                               (eq? var-name 'make-struct-type)
+                               (eq? var-name 'make-struct-field-accessor)
+                               (eq? var-name 'make-struct-field-mutator)
+                               (eq? var-name 'set-car!)
+                               (eq? var-name 'set-cdr!)
+                               (eq? var-name 'string-set!)
+                               (eq? var-name 'string-fill!)
+                               (eq? var-name 'vector-set!)
+                               (eq? var-name 'vector-fill!))
+                           ; top level var
+                           (let ([binding-edge (create-simple-edge binding-label)]) 
+                             ;(add-top-level-name var-stx var-label)
+                             (add-edge-and-propagate-set-through-edge
+                              exp-label var-edge)
+                             (add-edge-and-propagate-set-through-edge
+                              var-label binding-edge)
+                             (add-edge-and-propagate-set-through-edge
+                              void-label set!-edge))
+                           (err:error-table-set *errors*
+                                                (list set!-label)
+                                                'red
+                                                (format "set!: cannot set undefined identifier: ~a" var-name)))))])
+              (if enclosing-lambda-label
+                  (let* ([enclosing-lambda-effects (label-case-lambda-effects enclosing-lambda-label)]
+                         [current-thunk (car enclosing-lambda-effects)])
+                    (set-car! enclosing-lambda-effects
+                              (lambda ()
+                                (current-thunk)
+                                (effect))))
+                  (effect))))
+        set!-label)]
      [(quote-syntax foo ...)
-      (set! *errors*
-            (cons (list (list term)
-                        'red
-                        (format "quote-syntax not yet implemented"))
-                  *errors*))
+      (err:error-table-set *errors*
+                           (list (create-simple-label term))
+                           'red
+                           (format "quote-syntax not yet implemented"))
       (create-simple-label term)]
      [(with-continuation-mark foo ...)
-      (set! *errors*
-            (cons (list (list term)
-                        'red
-                        (format "with-continuation-mark not yet implemented"))
-                  *errors*))
+      (err:error-table-set *errors*
+                           (list (create-simple-label term))
+                           'red
+                           (format "with-continuation-mark not yet implemented"))
       (create-simple-label term)]
      [(define-syntaxes foo ...)
-      (set! *errors*
-            (cons (list (list term)
-                        'red
-                        (format "define-syntaxes not yet implemented"))
-                  *errors*))
+      (err:error-table-set *errors*
+                           (list (create-simple-label term))
+                           'red
+                           (format "define-syntaxes not yet implemented"))
       (create-simple-label term)]
      [(module foo ...)
-      (set! *errors*
-            (cons (list (list term)
-                        'red
-                        (format "module not yet implemented"))
-                  *errors*))
+      (err:error-table-set *errors*
+                           (list (create-simple-label term))
+                           'red
+                           (format "module not yet implemented"))
       (create-simple-label term)]
      [(require foo ...)
-      (set! *errors*
-            (cons (list (list term)
-                        'red
-                        (format "require not yet implemented"))
-                  *errors*))
+      (err:error-table-set *errors*
+                           (list (create-simple-label term))
+                           'red
+                           (format "require not yet implemented"))
       (create-simple-label term)]
      [(require-for-syntax foo ...)
-      (set! *errors*
-            (cons (list (list term)
-                        'red
-                        (format "require-for-syntax not yet implemented"))
-                  *errors*))
+      (err:error-table-set *errors*
+                           (list (create-simple-label term))
+                           'red
+                           (format "require-for-syntax not yet implemented"))
       (create-simple-label term)]
      [(provide foo ...)
-      (set! *errors*
-            (cons (list (list term)
-                        'red
-                        (format "provide not yet implemented"))
-                  *errors*))
+      (err:error-table-set *errors*
+                           (list (create-simple-label term))
+                           'red
+                           (format "provide not yet implemented"))
       (create-simple-label term)]
      [(#%plain-module-begin foo ...)
-      (set! *errors*
-            (cons (list (list term)
-                        'red
-                        (format "#%plain-module-begin not yet implemented"))
-                  *errors*))
+      (err:error-table-set *errors*
+                           (list (create-simple-label term))
+                           'red
+                           (format "#%plain-module-begin not yet implemented"))
       (create-simple-label term)]
      [var
       ; we cannot directly return the binding label, because, even though it makes for a
@@ -2977,7 +2854,7 @@
      ))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; TYPES
-
+  
   (define-struct type () (make-inspector))
   
   ; (make-type-empty) is the same as (make-type-cst 'bottom) for now. The reason we
@@ -3066,7 +2943,7 @@
   
   ; symbol -> (union type-scheme #f)
   (define (lookup-primitive-type-scheme name)
-    (hash-table-get *primitive-types-table* name cst:fail-false))
+    (hash-table-get *primitive-types-table* name cst:thunk-false))
   
   ; string -> void
   (define (initialize-primitive-type-schemes filename)
@@ -3091,7 +2968,7 @@
                   (let ([primitive-name (car prim-entry)]
                         [primitive-type (cadr prim-entry)])
                     (when (hash-table-get *primitive-types-table*
-                                          primitive-name cst:fail-false)
+                                          primitive-name cst:thunk-false)
                       (raise-syntax-error
                        'initialize-primitive-type-schemes
                        (format "found duplicate for primitive ~a in file ~a"
@@ -3122,7 +2999,7 @@
                           'parse&check-type-scheme
                           (format "flow variable ~a is already the name of a basic type or type constructor, in type scheme for primitive ~a in file ~a"
                                   flow-var primitive-name filename)))
-                       (when (hash-table-get delta-flow flow-var cst:fail-false)
+                       (when (hash-table-get delta-flow flow-var cst:thunk-false)
                          (raise-syntax-error
                           'parse&check-type-scheme
                           (format "duplicate flow variable ~a in type scheme for primitive ~a in file ~a"
@@ -3283,7 +3160,7 @@
                                          (= (length clause) 2))
                                     (let ([type-var-name (car clause)])
                                       (if (or (assq type-var-name delta-type)
-                                              (hash-table-get delta-flow sexp cst:fail-false))
+                                              (hash-table-get delta-flow sexp cst:thunk-false))
                                           (raise-syntax-error
                                            'parse&check-type
                                            (format "recursive type variable ~a used twice or conflicts with flow variable name in type scheme for primitive ~a in file ~a"
@@ -3387,7 +3264,7 @@
               'parse&check-type-scheme
               (format "type variable ~a is already the name of a type constructor, in type scheme for primitive ~a in file ~a"
                       sexp primitive-name filename)))]
-          [(hash-table-get delta-flow sexp cst:fail-false)
+          [(hash-table-get delta-flow sexp cst:thunk-false)
            =>
            (lambda (type-info)
              (if covariant?
@@ -3415,7 +3292,7 @@
              [(eq? sexp 'boolean)
               (make-type-union (list (make-type-cst #t) (make-type-cst #f)))]
              [(eq? sexp 'void)
-              (make-type-cst (void))]
+              (make-type-cst cst:void)]
              [(eq? sexp 'bottom)
               (make-type-empty)]
              [(eq? sexp 'undefined)
@@ -3488,29 +3365,30 @@
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GRAPH RECONSTRUCTION FROM TYPE
   
-  ; type (hash-table-of symbol label) term -> label
+  ; type (hash-table-of symbol label) label -> label
   ; analyse type scheme and creates flow var environment
-  ; term is the term into which the final result will flow into. We need that
+  ; label is the label into which the final result will flow into. We need that
   ; mainly to report errors correctly.
-  (define (reconstruct-graph-from-type-scheme type delta-flow term)
-    (if (type-scheme? type)
-        (begin
-          (for-each (lambda (flow-var type^C)
-                      (let ([label (create-simple-prim-label term)])
-                        ;(associate-label-with-type label type^C)
-                        (add-flow-var-to-env delta-flow flow-var (cons label type^C))))
-                    (type-scheme-flow-vars type)
-                    (type-scheme-type^Cs type))
-          (reconstruct-graph-from-type (type-scheme-type type) delta-flow '() term #t #f))
-        (reconstruct-graph-from-type type delta-flow '() term #t #f)))
+  (define (reconstruct-graph-from-type-scheme type delta-flow label)
+    (let ([term (label-term label)])
+      (if (type-scheme? type)
+          (begin
+            (for-each (lambda (flow-var type^C)
+                        (let ([label (create-simple-prim-label term)])
+                          ;(associate-label-with-type label type^C)
+                          (add-flow-var-to-env delta-flow flow-var (cons label type^C))))
+                      (type-scheme-flow-vars type)
+                      (type-scheme-type^Cs type))
+            (reconstruct-graph-from-type (type-scheme-type type) delta-flow '() label term #t #f))
+          (reconstruct-graph-from-type type delta-flow '() label term #t #f))))
   
   ; type (hash-table-of type-flow-var (cons label type)) (listof (cons type-var label))
-  ; term boolean label -> label
-  ; reconstructs a graph from type representing the primitive represented by term,
+  ; label term boolean label -> label
+  ; reconstructs a graph from type representing the primitive represented by label,
   ; using environment delta.
   ; delta-flow is the flow-var->label environment, delta-type is the type-var->label one.
-  ; term is the term for the primitive whose type we are analyzing. It's just used for underlining
-  ; erros. covariant? is self-explanatory...
+  ; label is the label for the primitive whose type we are analyzing. It's just used for underlining
+  ; errors. Same for term. covariant? is self-explanatory...
   ; contra-union? is a boolean telling whether the parent label we are dealing
   ; with is a union in contravariant position: since the flows are not filtered by types,
   ; everything that flows into a union will normally flow into the different componants
@@ -3526,7 +3404,7 @@
   ; Note how we use associate-label-with-type to memorize type checking only in the contravariant
   ; case. The type to check in the covariant case is always top, since we assume internal
   ; correctness of the graph generation from a primitive type.
-  (define (reconstruct-graph-from-type type delta-flow delta-type term covariant? contra-union?)
+  (define (reconstruct-graph-from-type type delta-flow delta-type label term covariant? contra-union?)
     (if covariant?
         ; covariant cases
         (cond
@@ -3538,11 +3416,11 @@
                             [exps-labels (cdr other-clauses-labels)])
                         (cons (cons (map (lambda (arg-type)
                                            (reconstruct-graph-from-type
-                                            arg-type delta-flow delta-type term #f #f))
+                                            arg-type delta-flow delta-type label term #f #f))
                                          args-types)
                                     argss-labelss)
                               (cons (reconstruct-graph-from-type
-                                     exp-type delta-flow delta-type term #t #f)
+                                     exp-type delta-flow delta-type label term #t #f)
                                     exps-labels))))
                     (cons '()'())
                     (type-case-lambda-argss type)
@@ -3568,9 +3446,9 @@
                          (make-hash-table)
                          (make-hash-table)
                          (reconstruct-graph-from-type
-                          (type-cons-car type) delta-flow delta-type term #t #f)
+                          (type-cons-car type) delta-flow delta-type label term #t #f)
                          (reconstruct-graph-from-type
-                          (type-cons-cdr type) delta-flow delta-type term #t #f))])
+                          (type-cons-cdr type) delta-flow delta-type label term #t #f))])
              (initialize-label-set-for-value-source label)
              label)]
           [(type-vector? type)
@@ -3580,7 +3458,7 @@
                          (make-hash-table)
                          (make-hash-table)
                          (reconstruct-graph-from-type
-                          (type-vector-element type) delta-flow delta-type term #t #f))])
+                          (type-vector-element type) delta-flow delta-type label term #t #f))])
              (initialize-label-set-for-value-source label)
              label)]
           [(type-promise? type)
@@ -3590,7 +3468,7 @@
                          (make-hash-table)
                          (make-hash-table)
                          (reconstruct-graph-from-type
-                          (type-promise-value type) delta-flow delta-type term #t #f))])
+                          (type-promise-value type) delta-flow delta-type label term #t #f))])
              (initialize-label-set-for-value-source label)
              label)]
           [(type-flow-var? type)
@@ -3611,7 +3489,7 @@
           [(type-union? type)
            (let* ([elt-labels (map (lambda (elt-type)
                                      (reconstruct-graph-from-type
-                                      elt-type delta-flow delta-type term #t #f))
+                                      elt-type delta-flow delta-type label term #t #f))
                                    (type-union-elements type))]
                   [union-label (create-simple-prim-label term)]
                   ; can return multiple values
@@ -3622,7 +3500,7 @@
              union-label)]
           [(type-values? type)
            (let* ([values-content-label (reconstruct-graph-from-type
-                                         (type-values-type type) delta-flow delta-type term #t #f)]
+                                         (type-values-type type) delta-flow delta-type label term #t #f)]
                   [values-label (make-label-values
                                  #f #f #t
                                  term
@@ -3638,7 +3516,7 @@
                   [all-var-labels (append clauses-vars-types&labels delta-type)]
                   [clauses-types-labels (map (lambda (clause-type)
                                                (reconstruct-graph-from-type
-                                                clause-type delta-flow all-var-labels term #t #f))
+                                                clause-type delta-flow all-var-labels label term #t #f))
                                              (type-rec-types type))])
              ; note: we never check whether all clauses are used. If they are not, they'll be
              ; garbage collected after we return from here.
@@ -3647,7 +3525,7 @@
                           clause-type-label
                           (create-simple-edge (cdr clause-var-type&label))))
                        clauses-vars-types&labels clauses-types-labels)
-             (reconstruct-graph-from-type (type-rec-body type) delta-flow all-var-labels term #t #f))]
+             (reconstruct-graph-from-type (type-rec-body type) delta-flow all-var-labels label term #t #f))]
           [(type-empty? type)
            (create-simple-prim-label term)]
           [else (error 'reconstruct-graph-from-type "unknown covariant type for primitive ~a: ~a"
@@ -3663,12 +3541,12 @@
                   [argss-labelss-around (map (lambda (args-types)
                                                (map (lambda (arg-type)
                                                       (reconstruct-graph-from-type
-                                                       arg-type delta-flow delta-type term #t #f))
+                                                       arg-type delta-flow delta-type label term #t #f))
                                                     args-types))
                                              (type-case-lambda-argss type))]
                   [exps-labels-around (map (lambda (exp-type)
                                              (reconstruct-graph-from-type
-                                              exp-type delta-flow delta-type term #f #f))
+                                              exp-type delta-flow delta-type label term #f #f))
                                            (type-case-lambda-exps type))]
                   [case-lambda-label (create-simple-prim-label term)]
                   [case-lambda-edge (create-case-lambda-edge
@@ -3676,7 +3554,7 @@
                                      req-args-around
                                      argss-labelss-around
                                      exps-labels-around
-                                     term
+                                     case-lambda-label
                                      contra-union?)])
              (unless contra-union?
                (associate-label-with-type
@@ -3717,10 +3595,10 @@
              case-lambda-label)]
           [(type-cons? type)
            (let* ([car-label (reconstruct-graph-from-type
-                              (type-cons-car type) delta-flow delta-type term #f #f)]
+                              (type-cons-car type) delta-flow delta-type label term #f #f)]
                   [car-edge (create-simple-edge car-label)]
                   [cdr-label (reconstruct-graph-from-type
-                              (type-cons-cdr type) delta-flow delta-type term #f #f)]
+                              (type-cons-cdr type) delta-flow delta-type label term #f #f)]
                   [cdr-edge (create-simple-edge cdr-label)]
                   [cons-label (create-simple-prim-label term)]
                   [cons-edge
@@ -3752,14 +3630,11 @@
                               ; term anymore in check-primitive-types (yet)... See the commented call to
                               ; associate-label-with-type below.
                               (begin
-                                (set! *errors*
-                                      (cons (list (list term)
-                                                  'red
-                                                  (format "primitive expects argument of type <pair>; given ~a"
-                                                          (pp-type (get-type inflowing-label) 'type-cons)))
-                                            ;(syntax-object->datum
-                                            ; (label-term inflowing-label))))
-                                            *errors*))
+                                (err:error-table-set *errors*
+                                                     (list label)
+                                                     'red
+                                                     (format "primitive expects argument of type <pair>; given ~a"
+                                                             (pp-type (get-type-from-label inflowing-label) 'type-cons)))
                                 #f))))
                     ; cons sink
                     (gensym))])
@@ -3773,7 +3648,7 @@
              cons-label)]
           [(type-vector? type)
            (let* ([element-label (reconstruct-graph-from-type
-                                  (type-vector-element type) delta-flow delta-type term #f #f)]
+                                  (type-vector-element type) delta-flow delta-type label term #f #f)]
                   [element-edge (create-simple-edge element-label)]
                   [vector-label (create-simple-prim-label term)]
                   [vector-edge
@@ -3799,14 +3674,11 @@
                               ; term anymore in check-primitive-types (yet)... See the commented call to
                               ; associate-label-with-type below.
                               (begin
-                                (set! *errors*
-                                      (cons (list (list term)
-                                                  'red
-                                                  (format "primitive expects argument of type <vector>; given ~a"
-                                                          (pp-type (get-type inflowing-label) 'type-vector)))
-                                            ;(syntax-object->datum
-                                            ; (label-term inflowing-label))))
-                                            *errors*))
+                                (err:error-table-set *errors*
+                                                     (list label)
+                                                     'red
+                                                     (format "primitive expects argument of type <vector>; given ~a"
+                                                             (pp-type (get-type-from-label inflowing-label) 'type-vector)))
                                 #f))))
                     ; vector sink
                     (gensym))])
@@ -3818,7 +3690,7 @@
              vector-label)]
           [(type-promise? type)
            (let* ([element-label (reconstruct-graph-from-type
-                                  (type-promise-value type) delta-flow delta-type term #f #f)]
+                                  (type-promise-value type) delta-flow delta-type label term #f #f)]
                   [element-edge (create-simple-edge element-label)]
                   [promise-label (create-simple-prim-label term)]
                   [promise-edge
@@ -3844,14 +3716,11 @@
                               ; term anymore in check-primitive-types (yet)... See the commented call to
                               ; associate-label-with-type below.
                               (begin
-                                (set! *errors*
-                                      (cons (list (list term)
-                                                  'red
-                                                  (format "primitive expects argument of type <promise>; given ~a"
-                                                          (pp-type (get-type inflowing-label) 'type-promise)))
-                                            ;(syntax-object->datum
-                                            ; (label-term inflowing-label))))
-                                            *errors*))
+                                (err:error-table-set *errors*
+                                                     (list label)
+                                                     'red
+                                                     (format "primitive expects argument of type <promise>; given ~a"
+                                                             (pp-type (get-type-from-label inflowing-label) 'type-promise)))
                                 #f))))
                     ; promise sink
                     (gensym))])
@@ -3889,7 +3758,7 @@
              cst-label)]
           [(type-values? type)
            (let* ([values-content-label (reconstruct-graph-from-type
-                                         (type-values-type type) delta-flow delta-type term #f #f)]
+                                         (type-values-type type) delta-flow delta-type label term #f #f)]
                   [values-content-edge (create-simple-edge values-content-label)]
                   [values-label (create-simple-prim-label term)]
                   [values-edge
@@ -3962,7 +3831,7 @@
                                      ; XXX this does not work in the case of a flow var,
                                      ; because associate-label-with-type has already been done.
                                      (reconstruct-graph-from-type
-                                      elt-type delta-flow delta-type term #f #t))
+                                      elt-type delta-flow delta-type label term #f #t))
                                    (type-union-elements type))]
                   [union-label (create-simple-prim-label term)]
                   [union-label-in-between (create-simple-prim-label term)]
@@ -3974,16 +3843,15 @@
                           (begin
                             #t)
                           (begin
-                            (set! *errors*
-                                  (cons (list (list term)
-                                              'red
-                                              (format "value ~a not a subtype of union ~a inside application of ~a"
-                                                      (pp-type (get-type inflowing-label) 'type-union1)
-                                                      ;(syntax-object->datum
-                                                      ; (label-term inflowing-label))
-                                                      (pp-type type 'type-union2)
-                                                      (syntax-object->datum term)))
-                                        *errors*))
+                            (err:error-table-set *errors*
+                                                 (list label)
+                                                 'red
+                                                 (format "value ~a not a subtype of union ~a inside application of ~a"
+                                                         (pp-type (get-type-from-label inflowing-label) 'type-union1)
+                                                         ;(syntax-object->datum
+                                                         ; (label-term inflowing-label))
+                                                         (pp-type type 'type-union2)
+                                                         (syntax-object->datum term)))
                             ; stop error up-propagation
                             #t)))
                     (cdr simple-non-error-checking-edge))])
@@ -4008,10 +3876,10 @@
                   [all-var-labels (append clauses-vars&labels delta-type)]
                   [clauses-types-labels (map (lambda (clause-type)
                                                (reconstruct-graph-from-type
-                                                clause-type delta-flow all-var-labels term #f #f))
+                                                clause-type delta-flow all-var-labels label term #f #f))
                                              (type-rec-types type))]
                   [rec-body-label (reconstruct-graph-from-type
-                                   (type-rec-body type) delta-flow all-var-labels term #f #f)]
+                                   (type-rec-body type) delta-flow all-var-labels label term #f #f)]
                   [rec-label (create-simple-prim-label term)])
              ; note: we never check whether all clauses are used. If they are not, they'll be
              ; garbage collected after we return from here.
@@ -4057,14 +3925,14 @@
     (hash-table-for-each
      *label-types*
      (lambda (label expected-type&delta)
-       (let ([computed-type (get-type label)])
+       (let ([computed-type (get-type-from-label label)])
          (subtype computed-type (car expected-type&delta)
-                  (cdr expected-type&delta) #t (label-term label))))))
+                  (cdr expected-type&delta) #t label)))))
   
   ; (hashtableof symbol (cons (listof symbol) (top -> boolean)) symbol -> (listof symbol)
   ; computes the complete (closed) list of subtypes for type-entry
   (define (close-subtypes table type-name)
-    (let ([new-type-entry (hash-table-get table type-name cst:fail-false)])
+    (let ([new-type-entry (hash-table-get table type-name cst:thunk-false)])
       (if new-type-entry
           (car new-type-entry)
           (let* ([original-type-entry (cdr (assq type-name *basic-types*))]
@@ -4101,7 +3969,7 @@
          (and (type-cst? t1) (type-cst? t2)
               (let* ([t1 (type-cst-type t1)]
                      [t2 (type-cst-type t2)]
-                     [t2-entry (hash-table-get subtyping-table t2 cst:fail-false)])
+                     [t2-entry (hash-table-get subtyping-table t2 cst:thunk-false)])
                 (if t2-entry
                     ; t2 is a symbolic type (like number)
                     (if (or (memq t1 (car t2-entry)) ; for symbolic t1: real <= number
@@ -4301,10 +4169,10 @@
                   (let ([t1-parent-label (label-struct-type-parent
                                           (type-struct-type-type-label t1))])
                     (if t1-parent-label
-                        (subt (get-type t1-parent-label) t2 t1-env t2-env delta-flow trace)
+                        (subt (get-type-from-label t1-parent-label) t2 t1-env t2-env delta-flow trace)
                         #f))))
          (and (type-struct-value? t1) (type-struct-type? t2)
-              (subt (get-type (type-struct-value-type-label t1)) t2 t1-env t2-env delta-flow trace))
+              (subt (get-type-from-label (type-struct-value-type-label t1)) t2 t1-env t2-env delta-flow trace))
          (and (type-flow-var? t2)
               (let ([label&type^C (lookup-flow-var-in-env delta-flow t2)])
                 (subt t1 (cdr label&type^C) t1-env t2-env delta-flow trace)))
@@ -4312,19 +4180,18 @@
                   (type-scheme? t1) (type-scheme? t2))
               (error 'subt "unexpected types: ~a ~a" t1 t2))))))
   
-  ; type type (hash-table-of type-flow-var (cons label type)) boolean syntax-object -> boolean
-  (define (subtype t1 t2 delta-flow error? term)
+  ; type type (hash-table-of type-flow-var (cons label type)) boolean label -> boolean
+  (define (subtype t1 t2 delta-flow error? label)
     (if (subt t1 t2 '() '() delta-flow '())
         #t
         (begin
           (when error?
-            (set! *errors*
-                  (cons (list (list term)
-                              'red
-                              (format "~a not a subtype of ~a" 
-                                      (pp-type t1 'subtype)
-                                      (pp-type t2 delta-flow)))
-                        *errors*)))
+            (err:error-table-set *errors*
+                                 (list label)
+                                 'red
+                                 (format "~a not a subtype of ~a" 
+                                         (pp-type t1 'subtype)
+                                         (pp-type t2 delta-flow))))
           #f)))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GUI INTERFACE
@@ -4341,7 +4208,7 @@
   
   ; number -> (union label #f)
   (define (lookup-label-from-position position)
-    (hash-table-get *position->label* position cst:fail-false))
+    (hash-table-get *position->label* position cst:thunk-false))
   
   (define type-var-counter 'uninitialized)
   (define (create-type-var-name)
@@ -4354,92 +4221,17 @@
     (set! *position->label* (make-hash-table))
     )
   
-  ; -> (listof (list positive-int positive-int value symbol))
-  ; extracts locations of erroneous terms, to be flaged by DrScheme
-  (define (get-regions-to-color)
-    (letrec ([get-regions-to-color-l
-              (lambda (l)
-                (if (null? l)
-                    '()
-                    (let* ([current-error (car l)]
-                           [terms (car current-error)]
-                           ; mzscheme uses offset 1, drscheme offset 0
-                           ; XXX "the source containing `call/cc' has been compiled to .zo,
-                           ; and the byte code format currently does not preserve location
-                           ; information." dixit Matthew Flatt. So after let/cc has been
-                           ; expanded into call/cc, we end up with a term that has no position,
-                           ; and since call/cc is not yet part of our table of primitives
-                           ; (only call-with-current-continuation is...), we'd better filter
-                           ; below...
-                           [terms-pos (map
-                                       (lambda (term)
-                                         (let ([pos (syntax-position term)])
-                                           (if pos
-                                               (sub1 pos)
-                                               (begin
-                                                 (printf "term has unknown position: ~a~nerror was: ~a~n"
-                                                         (syntax-object->datum term) (caddr current-error))
-                                                 #f))))
-                                       terms)])
-                      (list:foldl
-                       (lambda (term-pos term other-elements)
-                         (if term-pos
-                             (cons (sba-gui:make-region-to-color term-pos
-                                                                 (+ term-pos (syntax-span term)
-                                                                    
-                                                                    ;-1 ; XXX not for new gui
-                                                                    
-                                                                    )
-                                                                 (syntax-source term)
-                                                                 (cadr current-error))
-                                   other-elements)
-                             other-elements))
-                       (get-regions-to-color-l (cdr l))
-                       terms-pos
-                       terms))))])
-      (get-regions-to-color-l *errors*)))
-  
-  ; label -> (listof string)
-  ; extracts error messages.
-  ; XXX could be faster with a hash table or something...
-  (define (get-errors label)
-    (letrec ([label-pos (sub1 (syntax-position (label-term label)))]
-             [get-errors-l
-              (lambda (l)
-                (if (null? l)
-                    '()
-                    (let* ([current-error (car l)]
-                           [terms (car current-error)]
-                           ; mzscheme uses offset 1, drscheme offset 0
-                           [terms-pos (list:foldl
-                                       (lambda (term other-pos)
-                                         (let ([pos (syntax-position term)])
-                                           (if pos
-                                               (cons (sub1 pos) other-pos)
-                                               other-pos)))
-                                       '()
-                                       terms)])
-                      (if (memq label-pos terms-pos)
-                          (cons (caddr current-error)
-                                (get-errors-l (cdr l)))
-                          (get-errors-l (cdr l))))))])
-      (get-errors-l *errors*)))
+  ; number -> (union label #f)
+  ; given a mzscheme position, returns the label associated with the terms that start at that offset.
+  (define get-label-from-mzscheme-position lookup-label-from-position)
   
   ; label -> positive-int
   ; returns start location of term associated with label
-  (define (get-mzscheme-position label)
+  (define (get-mzscheme-position-from-label label)
     (syntax-position (label-term label)))
   
-  ; number -> (union label #f)
-  ; given a DrScheme offset, returns the label associated with the terms that start at that offset.
-  (define get-label lookup-label-from-position)
-  
-  ; label -> (union number #f)
-  (define (get-span label)
-    (syntax-span (label-term label)))
-
   ; label -> boolean
-  (define (is-atom? label)
+  (define (is-label-atom? label)
     (let ([stx-l (syntax-e (label-term label))])
       (or (not (pair? stx-l)) ; identifier
           (let ([term-type (syntax-e (car stx-l))])
@@ -4447,12 +4239,21 @@
                 (eq? term-type '#%top)
                 (eq? term-type 'quote))))))
   
+  ; label -> (union number #f)
+  (define (get-span-from-label label)
+    (syntax-span (label-term label)))
+  
+  ; label -> (listof sba-error)
+  ; extracts error messages.
+  (define (get-errors-from-label label)
+    (err:error-table-get *errors* label))
+  
   ; (make-hash-tableof label (cons type-var type))
   (define *rec-types* 'uninitialized)
   
   ; label -> type
   ; computes type for label and wraps a rec-type around if necessary
-  (define (get-type label)
+  (define (get-type-from-label label)
     (set! *rec-types* (make-hash-table))
     ; let* to enforce sequentiality
     (let* ([non-rec-type (get-non-rec-type label)]
@@ -4574,7 +4375,7 @@
                 ; hash table of rec-types, and just return the type variable.
                 (begin
                   (set-type-var-recur! type-var #f)
-                  (unless (hash-table-get *rec-types* label cst:fail-false)
+                  (unless (hash-table-get *rec-types* label cst:thunk-false)
                     (hash-table-put! *rec-types* label (cons type-var final-type)))
                   type-var)
                 ;                 (make-type-rec (list type-var)
@@ -4587,7 +4388,7 @@
                 ; cycle, without any corresponding rec-type.
                 final-type)))))
   
-  ; (define get-type get-non-rec-type)
+  ; (define get-type-from-label get-non-rec-type)
   
   ; type (union (hash-table-of type-flow-var (cons label type)) symbol) -> string
   ; type pretty printer
@@ -4807,45 +4608,45 @@
     (reset-perf)
     )
   
-;    ; port value -> void
-;    (define (sba-driver port source)
-;      (let ([start (current-milliseconds)])
-;        (reset-all)
-;        (read-and-analyze port source)
-;        (check-primitive-types)
-;        (printf "time: ~a ms~n" (- (current-milliseconds) start)))
-;      
-;      ; XXX perf analysis
-;      ;(printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n" ast-nodes graph-nodes graph-edges)
-;      )
-;  
-;    ; port value -> void
-;    ; read and analyze, one syntax object at a time
-;    (define (read-and-analyze port source)
-;      (let ([stx-obj (read-syntax source port)])
-;        ;(unless (eof-object? stx-obj)
-;        ;  (begin (printf "sba-driver in: ~a~n" (syntax-object->datum stx-obj))
-;        ;         (printf "sba-driver analyzed: ~a~n~n" (syntax-object->datum (expand stx-obj)))
-;        ;         (printf "sba-driver out: ~a~n~n" (create-label-from-term (expand stx-obj) '() #f)))
-;        ;  (read-and-analyze port source))))
-;        (if (eof-object? stx-obj)
-;          '()
-;          (cons (create-label-from-term (expand stx-obj) '() #f)
-;                (read-and-analyze port source)))))
-;    
-;    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PERFORMANCE TEST
-;    
-;    ; (: test-i (nothing -> void))
-;    ; parse expression interactively
-;    (define (test-i)
-;      (sba-driver (current-input-port) 'interactive))
-;    
-;    ; (: test-f (string -> (listof Ast)))
-;    (define (test-f filename)
-;      (let ([port (open-input-file filename)])
-;        (sba-driver port filename)
-;        (close-input-port port)))
-;    
+  ;    ; port value -> void
+  ;    (define (sba-driver port source)
+  ;      (let ([start (current-milliseconds)])
+  ;        (reset-all)
+  ;        (read-and-analyze port source)
+  ;        (check-primitive-types)
+  ;        (printf "time: ~a ms~n" (- (current-milliseconds) start)))
+  ;      
+  ;      ; XXX perf analysis
+  ;      ;(printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n" ast-nodes graph-nodes graph-edges)
+  ;      )
+  ;  
+  ;    ; port value -> void
+  ;    ; read and analyze, one syntax object at a time
+  ;    (define (read-and-analyze port source)
+  ;      (let ([stx-obj (read-syntax source port)])
+  ;        ;(unless (eof-object? stx-obj)
+  ;        ;  (begin (printf "sba-driver in: ~a~n" (syntax-object->datum stx-obj))
+  ;        ;         (printf "sba-driver analyzed: ~a~n~n" (syntax-object->datum (expand stx-obj)))
+  ;        ;         (printf "sba-driver out: ~a~n~n" (create-label-from-term (expand stx-obj) '() #f)))
+  ;        ;  (read-and-analyze port source))))
+  ;        (if (eof-object? stx-obj)
+  ;          '()
+  ;          (cons (create-label-from-term (expand stx-obj) '() #f)
+  ;                (read-and-analyze port source)))))
+  ;    
+  ;    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PERFORMANCE TEST
+  ;    
+  ;    ; (: test-i (nothing -> void))
+  ;    ; parse expression interactively
+  ;    (define (test-i)
+  ;      (sba-driver (current-input-port) 'interactive))
+  ;    
+  ;    ; (: test-f (string -> (listof Ast)))
+  ;    (define (test-f filename)
+  ;      (let ([port (open-input-file filename)])
+  ;        (sba-driver port filename)
+  ;        (close-input-port port)))
+  ;    
   ;  (let* ([path (build-path (collection-path "mrflow") "tests")]
   ;         [files (list:filter (lambda (file)
   ;                               (and (> (string-length file) 3)

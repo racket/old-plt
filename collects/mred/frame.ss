@@ -36,74 +36,75 @@
       (when (< (unbox h) frame-height)
 	(set! frame-height (- (unbox h) 65))))
 
-    (define empty-frame%
-      (class mred:container:frame% args
-	(rename [super-on-frame-active on-frame-active]
-		[super-pre-on-char pre-on-char]
-		[super-on-close on-close]
-		[super-pre-on-event pre-on-event])
-	(sequence (mred:debug:printf 'creation "creating a frame"))
-	(inherit active-canvas)
-	(rename [super-show show])
-	(public
-	  [get-panel% (lambda () mred:container:vertical-panel%)]
-	  [show
-	   (lambda (on?)
-	     (when on?
-	       (unless (member this (send mred:group:the-frame-group get-frames))
-		 (send mred:group:the-frame-group insert-frame this)))
-	     (super-show on?))]
-	  [can-close? (lambda () (send mred:group:the-frame-group
-				       can-remove-frame?
+    (define make-empty-frame%
+      (lambda (super%)
+	(class super% args
+	  (rename [super-on-frame-active on-frame-active]
+		  [super-pre-on-char pre-on-char]
+		  [super-on-close on-close]
+		  [super-pre-on-event pre-on-event])
+	  (sequence (mred:debug:printf 'creation "creating a frame"))
+	  (inherit active-canvas)
+	  (rename [super-show show])
+	  (public
+	    [get-panel% (lambda () mred:container:vertical-panel%)]
+	    [show
+	     (lambda (on?)
+	       (when on?
+		 (unless (member this (send mred:group:the-frame-group get-frames))
+		   (send mred:group:the-frame-group insert-frame this)))
+	       (super-show on?))]
+	    [can-close? (lambda () (send mred:group:the-frame-group
+					 can-remove-frame?
+					 this))]
+	    [do-close (lambda () (send mred:group:the-frame-group
+				       remove-frame
 				       this))]
-	  [do-close (lambda () (send mred:group:the-frame-group
-				     remove-frame
-				     this))]
-	  [on-close
-	   (lambda ()
-	     (if (and (super-on-close)
-		      (can-close?))
-		 (begin (do-close)
-			#t)
-		 #f))])
-	(sequence 
-	  (mred:debug:printf 'super-init "before empty-frame%")
-	  (apply super-init args)
-	  (mred:debug:printf 'super-init "after empty-frame%"))
-	(public
-	  [on-frame-active
-	   (lambda ()
-	     (super-on-frame-active)
-	     (send mred:group:the-frame-group set-active-frame this))]
-	  [keymap (make-object wx:keymap%)]
-	  [make-root-panel
-	   (lambda (% parent)
-	     (make-object % parent))]
-	  [panel (make-root-panel (get-panel%) this)])
-	(public
-	  [pre-on-char
-	   (lambda (receiver event)
-	     (let* ([canvas (active-canvas)]
-		    [edit-should-handle?
-		     (and canvas (send canvas is-focus-on?))]
-		    [handled? (if edit-should-handle?
-				  #f
-				  (send keymap handle-key-event this event))])
-	       '(printf "canvas ~a focus? ~a edit-should-handle? ~a handled? ~a~n"
-		       canvas (send canvas is-focus-on?)
-		       edit-should-handle? handled?)
-	       (or handled?
-		   (super-pre-on-char receiver event))))]
-	  [pre-on-event
-	   (lambda (receiver event)
-	     (let* ([canvas (active-canvas)]
-		    [canvas-should-handle?
-		     (and canvas (send canvas is-focus-on?))]
-		    [handled? (if canvas-should-handle?
-				  #f
-				  (send keymap handle-mouse-event this event))])
-	       (or handled?
-		   (super-pre-on-event receiver event))))])))
+	    [on-close
+	     (lambda ()
+	       (if (and (super-on-close)
+			(can-close?))
+		   (begin (do-close)
+			  #t)
+		   #f))])
+	  (sequence 
+	    (mred:debug:printf 'super-init "before empty-frame%")
+	    (apply super-init args)
+	    (mred:debug:printf 'super-init "after empty-frame%"))
+	  (public
+	    [on-frame-active
+	     (lambda ()
+	       (super-on-frame-active)
+	       (send mred:group:the-frame-group set-active-frame this))]
+	    [keymap (make-object wx:keymap%)]
+	    [make-root-panel
+	     (lambda (% parent)
+	       (make-object % parent))]
+	    [panel (make-root-panel (get-panel%) this)])
+	  (public
+	    [pre-on-char
+	     (lambda (receiver event)
+	       (let* ([canvas (active-canvas)]
+		      [edit-should-handle?
+		       (and canvas (send canvas is-focus-on?))]
+		      [handled? (if edit-should-handle?
+				    #f
+				    (send keymap handle-key-event this event))])
+		 '(printf "canvas ~a focus? ~a edit-should-handle? ~a handled? ~a~n"
+			  canvas (send canvas is-focus-on?)
+			  edit-should-handle? handled?)
+		 (or handled?
+		     (super-pre-on-char receiver event))))]
+	    [pre-on-event
+	     (lambda (receiver event)
+	       (let* ([canvas (active-canvas)]
+		      [canvas-should-handle?
+		       (and canvas (send canvas is-focus-on?))]
+		      [handled? (if canvas-should-handle?
+				    #f
+				    (send keymap handle-mouse-event this event))])
+		 (or handled?
+		     (super-pre-on-event receiver event))))]))))
 
     (define make-menu-frame%
       (lambda (super%)
@@ -143,8 +144,6 @@
 		  (move-right "&Help"))
 	      (set-menu-bar menu-bar)
 	      (send menu-bar set-frame this))))))
-
-    (define menu-frame% (make-menu-frame% empty-frame%))
 
     (define tab (string #\tab))
 
@@ -325,8 +324,6 @@
                      (public
                        [make-menu-bar
                          ,(build-make-menu-bar items)])))))))))
-
-    (define standard-menus-frame% (make-standard-menus-frame% menu-frame%))
 
 
     (mred:preferences:set-preference-default 'mred:print-output-mode
@@ -554,8 +551,6 @@
 	      (mred:debug:printf 'matthew "got canvas.2 ~a~n" (ivar canvas set-focus))
 	      (send canvas set-focus))
 	    (mred:debug:printf 'matthew "after initial call to set-focus~n")))))
-
-    (define simple-menu-frame% (make-simple-frame% standard-menus-frame%))
 
     (define make-searchable-frame%
       (let* ([anchor 0]
@@ -850,8 +845,6 @@
 	      (send replace-edit add-canvas replace-canvas)
 	      (hide-search #t))))))
 
-    (define searchable-frame% (make-searchable-frame% simple-menu-frame%))
-
     (let ([boolean? 
 	   (lambda (x)
 	     (or (not x)
@@ -1145,4 +1138,52 @@
 	      (semaphore-post time-semaphore)
 	      (update-time))))))
     
-    (define info-frame% (make-info-frame% searchable-frame%)))
+    (define make-file-frame%
+      (lambda (super%)
+	(class-asi super%
+	  (inherit get-edit)
+	  (rename [super-can-close? can-close?])
+	  (public
+	    [can-close?
+	     (lambda ()
+	       (let* ([edit (get-edit)]
+		      [user-allowed-or-not-modified
+		       (or (not (send edit modified?))
+			   (case (mred:gui-utils:unsaved-warning
+				  (let ([fn (send edit get-filename)])
+				    (if (string? fn)
+					fn
+					"Untitled"))
+				  "Close"
+				  #t)
+			     [(continue) #t]
+			     [(save) (begin (send edit save-file) #t)]
+			     [else #f]))])
+		 (and user-allowed-or-not-modified
+		      (super-can-close?))))]))))
+
+    (define make-pasteboard-frame%
+      (lambda (super%)
+	(class-asi super%
+	  (public
+	    [get-canvas% (lambda () mred:container:media-canvas%)]
+	    [get-edit% (lambda () mred:edit:pasteboard%)]))))
+
+    (define make-pasteboard-file-frame%
+      (lambda (class%)
+	(class-asi class%
+	  (public
+	    [get-edit% (lambda () mred:edit:file-pasteboard%)]))))
+
+    (define empty-frame% (make-empty-frame% mred:container:frame%))
+    (define menu-frame% (make-menu-frame% empty-frame%))
+    (define standard-menus-frame% (make-standard-menus-frame% menu-frame%))
+    (define simple-menu-frame% (make-simple-frame% standard-menus-frame%))
+    (define searchable-frame% (make-searchable-frame% simple-menu-frame%))
+    (define info-frame% (make-info-frame% searchable-frame%))
+    (define info-file-frame% (make-file-frame% info-frame%))
+
+    (define pasteboard-frame% (make-pasteboard-frame% simple-menu-frame%))
+    (define pasteboard-file-frame% (make-pasteboard-file-frame%
+				    (make-file-frame%
+				     pasteboard-frame%))))

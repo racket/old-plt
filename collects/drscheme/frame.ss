@@ -13,28 +13,8 @@
   (define (make-frame% super%)
     (class super% (unit)
       (rename [super-make-root-panel make-root-panel]
-	      [super-can-close? can-close?]
 	      [super-make-menu-bar make-menu-bar])
       (inherit panel get-edit save-as)
-      (public
-	[can-close?
-	 (lambda ()
-	   (let* ([edit (get-edit)]
-		  [user-allowed-or-not-modified
-		   (or (not (send edit modified?))
-		       (case (mred:unsaved-warning
-			      (let ([fn (send edit get-filename)])
-				(if (string? fn)
-				    fn
-				    "Untitled"))
-			      "Close"
-			      #t)
-			 [(continue) #t]
-			 [(save) (begin (send edit save-file) #t)]
-			 [else #f]))])
-	     (and user-allowed-or-not-modified
-		  (super-can-close?))))])
-      
       (public
 	[root-panel #f]
 	[make-root-panel

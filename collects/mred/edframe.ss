@@ -175,15 +175,6 @@
     (define editor-frame% (make-editor-frame% 
 			   mred:frame:info-frame%))
 
-    (define make-pasteboard-frame%
-      (lambda (super%)
-	(class-asi super%
-	  (public
-	    [get-canvas% (lambda () mred:container:media-canvas%)]
-	    [get-edit% (lambda () mred:edit:pasteboard%)]))))
-
-    (define pasteboard-frame% (make-pasteboard-frame% mred:frame:simple-menu-frame%))
-
     (define make-status-frame%
       (lambda (super%)
 	(class-asi super%

@@ -27,6 +27,9 @@ extern ptr_t GC_clear_stack();  /* in misc.c, behaves like identity */
 void GC_extend_size_map();      /* in misc.c. */
 GC_bool GC_alloc_reclaim_list();	/* in malloc.c */
 
+/* MATTHEW: For MSVC /MD Compilation */
+#ifndef  USE_MSVC_MD_LIBRARY
+
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h	 */
 /* or introducing dependencies on internal data structure layouts.	 */
@@ -36,6 +39,8 @@ ptr_t * CONST GC_uobjfreelist_ptr = GC_uobjfreelist;
 # ifdef ATOMIC_UNCOLLECTABLE
     ptr_t * CONST GC_auobjfreelist_ptr = GC_auobjfreelist;
 # endif
+
+#endif /* MATTHEW: GC_MSVC_MD_LIBRARY */
 
 /* Allocate a composite object of size n bytes.  The caller guarantees  */
 /* that pointers past the first page are not relevant.  Caller holds    */

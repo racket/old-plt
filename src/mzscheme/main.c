@@ -401,6 +401,10 @@ int main(int argc, char **argv)
   GC_set_stack_base(mzscheme_stack_start);
 #endif
 
+#ifdef USE_MSVC_MD_LIBRARY
+  GC_pre_init();
+#endif
+
 #ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT
   DllMain(NULL, DLL_PROCESS_ATTACH, NULL);
 #endif

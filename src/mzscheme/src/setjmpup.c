@@ -17,6 +17,9 @@
     Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+/* Some copilers don't like re-def of GC_malloc in schemef.h: */
+#define SCHEME_NO_GC_PROTO
+
 #include "schpriv.h"
 #include "schmach.h"
 #include "schgc.h"

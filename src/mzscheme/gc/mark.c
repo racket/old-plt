@@ -35,14 +35,23 @@ word x;
 mark_proc GC_mark_procs[MAX_MARK_PROCS] = {0};
 word GC_n_mark_procs = 0;
 
+/* MATTHEW: To work with MSVC /MD flag. Client must
+   call GC_pre_init(). */
+#ifdef USE_MSVC_MD_LIBRARY
+# define INIT_FLD(x) 0
+#else
+# define INIT_FLD(x) x
+#endif
+
 /* Initialize GC_obj_kinds properly and standard free lists properly.  	*/
 /* This must be done statically since they may be accessed before 	*/
 /* GC_init is called.							*/
 /* It's done here, since we need to deal with mark descriptors.		*/
+/* MATTHEW: use INIT_FLD */
 struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
-/* PTRFREE */ { &GC_aobjfreelist[0], 0 /* filled in dynamically */,
+/* PTRFREE */ { INIT_FLD(&GC_aobjfreelist[0]), 0 /* filled in dynamically */,
 		0 | DS_LENGTH, FALSE, FALSE },
-/* NORMAL  */ { &GC_objfreelist[0], 0,
+/* NORMAL  */ { INIT_FLD(&GC_objfreelist[0]), 0,
 #		if defined(ADD_BYTE_AT_END) && ALIGNMENT > DS_TAGS
 		(word)(-ALIGNMENT) | DS_LENGTH,
 #		else
@@ -50,18 +59,35 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 #		endif
 		TRUE /* add length to descr */, TRUE },
 /* UNCOLLECTABLE */
-	      { &GC_uobjfreelist[0], 0,
+	      { INIT_FLD(&GC_uobjfreelist[0]), 0,
 		0 | DS_LENGTH, TRUE /* add length to descr */, TRUE },
 # ifdef ATOMIC_UNCOLLECTABLE
    /* AUNCOLLECTABLE */
-	      { &GC_auobjfreelist[0], 0,
+	      { INIT_FLD(&GC_auobjfreelist[0]), 0,
 		0 | DS_LENGTH, FALSE /* add length to descr */, FALSE },
 # endif
 # ifdef STUBBORN_ALLOC
-/*STUBBORN*/ { &GC_sobjfreelist[0], 0,
+/*STUBBORN*/ { INIT_FLD(&GC_sobjfreelist[0]), 0,
 		0 | DS_LENGTH, TRUE /* add length to descr */, TRUE },
 # endif
 };
+
+/* MATTHEW: explicit init proc */
+#ifdef USE_MSVC_MD_LIBRARY
+void GC_pre_init(void)
+{
+  int i = 0;
+  GC_obj_kinds[i++].ok_freelist = &GC_aobjfreelist[0];
+  GC_obj_kinds[i++].ok_freelist = &GC_objfreelist[0];
+  GC_obj_kinds[i++].ok_freelist = &GC_uobjfreelist[0];
+# ifdef ATOMIC_UNCOLLECTABLE
+  GC_obj_kinds[i++].ok_freelist = &GC_auobjfreelist[0];
+# endif
+# ifdef STUBBORN_ALLOC
+  GC_obj_kinds[i++].ok_freelist = &GC_sobjfreelist[0];
+# endif
+}
+#endif
 
 # ifdef ATOMIC_UNCOLLECTABLE
 #   ifdef STUBBORN_ALLOC

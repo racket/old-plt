@@ -21,6 +21,9 @@
   All rights reserved.
 */
 
+/* Some copilers don't like re-def of GC_malloc in schemef.h: */
+#define SCHEME_NO_GC_PROTO
+
 #include "schpriv.h"
 #include <string.h>
 #include <ctype.h>

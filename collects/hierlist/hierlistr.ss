@@ -264,11 +264,11 @@
 			(begin
 			  (send main-buffer begin-edit-sequence)
 			  (send content-buffer deselect-all)
+			  (send top item-opened (get-item))
 			  (send* main-buffer
 			    (insert #\newline 2)
 			    (insert whitespace 3)
 			    (insert content-snip 4))
-			  (send top item-opened (get-item))
 			  (send main-buffer end-edit-sequence))
 			(begin
 			  (send main-buffer begin-edit-sequence)

@@ -1,5 +1,5 @@
 
-(lambda (request)
+(lambda (request failure)
   (case request
     [(name) "zodiac"]
     [(compile-prefix) '(begin
@@ -11,4 +11,4 @@
 			 (require-library "sparams.ss" "backward"))]
     [(compile-omit-files)
      (list "namedarg.ss" "sigs.ss" "zsigs.ss" "scm-hanc.ss")]
-    [else (error 'zodiac-info "Unknown request: ~s" request)]))
+    [else (failure)]))

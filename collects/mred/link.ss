@@ -1,5 +1,5 @@
 ;;
-;; $Id: link.ss,v 1.45 1997/12/04 21:28:32 mflatt Exp robby $
+;; $Id: link.ss,v 1.46 1997/12/08 18:41:42 robby Exp robby $
 ;;
 
 (compound-unit/sig (import [core : mzlib:core^])

@@ -10,7 +10,7 @@
   (mred:debug:printf 'invoke "drscheme:main@")
 
   (mred:current-app-name "DrScheme")
-  (mred:add-version-spec 'd 4)
+  (mred:add-version-spec 'd 5)
   
   ;; no more extension after this point
   (drscheme:get/extend:get-interactions-canvas%)

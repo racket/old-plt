@@ -12,7 +12,7 @@
 	   [(set-resource)
 	    (lambda (name value)
 	      (wx:write-resource "mred" name value (wx:find-path 'setup-file)))]
-	   [(filename) (info 'splash-image-path)]
+	   [(filename) (info 'splash-image-path (lambda () #f))]
 	   [(_)
 	    (begin
 	      (unless filename
@@ -21,12 +21,16 @@
 		(fprintf (current-error-port) "WARNING: bitmap path ~s not found~n" filename)
 		(no-splash)))]
 
-	   [(title) (info 'name)]
+	   [(title) (info 'name (lambda () "Splash"))]
 
 	   [(splash-width-resource) (format "~a-splash-max-width" title)]
 	   [(splash-depth-resource) (format "~a-splash-max-depth" title)]
-	   [(splash-max-width) (get-resource splash-width-resource (info 'splash-max))]
-	   [(splash-max-depth) (get-resource splash-depth-resource (info 'splash-depth))]
+	   [(splash-max-width) (get-resource splash-width-resource
+					     (info 'splash-max
+						   (lambda () 100)))]
+	   [(splash-max-depth) (get-resource splash-depth-resource
+					     (info 'splash-depth
+						   (lambda () 5)))]
 	   
 	   [(splash-sofar-depth) 0]
 	   [(splash-current-width) 0]

@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.15 1997/12/04 21:24:58 mflatt Exp robby $
+;; $Id: stprims.ss,v 1.16 1997/12/08 18:41:42 robby Exp robby $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.

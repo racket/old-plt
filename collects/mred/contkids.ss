@@ -1,5 +1,5 @@
 ;;
-;; $Id: contkids.ss,v 1.47 1997/12/08 18:41:42 robby Exp robby $
+;; $Id: contkids.ss,v 1.48 1997/12/13 02:23:58 robby Exp robby $
 ;;
 
 ; need to export:

@@ -1,146 +1,163 @@
-;; dont open a spash screen if the splash image is #f
-
-'(load-relative "loader.ss")
-(error-print-width 250)
-
-'(define-macro min
-  (let ([min min]
-	[counter 0])
-    (lambda args
-      (set! counter (+ counter 1))
-      (printf "min.~a~n" counter)
-      (let ([gs (map (lambda (x) (gensym)) args)])
-	`(let ,(map (lambda (g arg) `[,g ,arg]) gs args)
-	   (unless (andmap number? (list ,@gs))
-	     (error 'min "min.~a got args ~a~n" ,counter (list ,@gs)))
-	   (,min ,@gs))))))  
+;(load-relative "loader.ss")
 
 (when (getenv "MREDCOMPILE")
   (load-relative "compsys.ss"))
 
+(error-print-width 250)
+(read-case-sensitive #t) ;; reminder, more than anything
 (require-library "refer.ss")
-
-(load-relative "debug.ss")
 (load-relative "invsig.ss")
-(load-relative "invoke.ss")
-(load-relative "splash.ss")
+(load-relative "debug.ss")
+
+(require-library "cmdlines.ss")
 
 (mred:debug:printf 'startup "current-library-collection-paths: ~s"
 		   (current-library-collection-paths))
 
 ;; called with the arguments on the command line
 (define mred:initialize
-  (lambda input-args
-    (let* ([user-setup? #t]
-	   [output-spidey-file #f]
-	   [app-determined? #f]
-	   [app-name "MrEd-nu"]
-	   [app-collection "system"]
-	   [app-unit-library "nuapp.ss"]
-	   [app-sig-library "nusig.ss"]
-	   [splash-path (with-handlers ([(lambda (x) #t)
-					 (lambda (x) "mred.gif")])
-			  (build-path (collection-path "icons") "mred.gif"))]
-	   [splash-depth 4]
-	   [splash-max 73]
-	   [basic-info (lambda (sym)
-			 (case sym
-			   [(app-unit-library) app-unit-library]
-			   [(app-sig-library) app-sig-library]
-			   [(name) app-name]
-			   [(splash-image-path) splash-path]
-			   [(splash-depth) splash-depth]
-			   [(splash-max) splash-max]
-			   [else (error 'basic-info "unexpected symbol: ~a~n" sym)]))]
-	   [app-determined
-	    (lambda ()
-	      (when app-determined?
-		(error "Conflicting -A, -a, and/or -nu flags"))
-	      (set! app-determined? #t))]
-	   [remaining-args
-	    (let loop ([args input-args])
-	      (cond
-	       [(null? args) null]
-	       [else 
-		(let* ([arg (car args)]
-		       [rest (cdr args)]
-		       [use-next-arg
-			(lambda (f)
-			  (if (null? rest)
-			      (error "expected another arg after ~a" arg)
-			      (begin (f (car rest))
-				     (loop (cdr rest)))))]
-		       [use-next-2args
-			(lambda (f)
-			  (if (or (null? rest)
-				  (null? (cdr rest)))
-			      (error "expected another 2 args after ~a" arg)
-			      (begin (f (car rest) (cadr rest))
-				     (loop (cddr rest)))))]
-		       [use-next-3args
-			(lambda (f)
-			  (if (or (null? rest)
-				  (null? (cdr rest))
-				  (null? (cddr rest)))
-			      (error "expected another three args after ~a" arg)
-			      (begin (f (car rest) (cadr rest) (caddr rest))
-				     (loop (cdddr rest)))))]
-		       [use-next-4args
-			(lambda (f)
-			  (if (or (null? rest)
-				  (null? (cdr rest))
-				  (null? (cddr rest))
-				  (null? (cdddr rest)))
-			      (error "expected another four args after ~a" arg)
-			      (begin (f (car rest) (cadr rest) (caddr rest) (cadddr rest))
-				     (loop (cddddr rest)))))])
-		  (cond
-		   [(string=? "-w" arg)
-		    (use-next-arg
-		     (lambda (arg)
-		       (set! output-spidey-file arg)))]
-		   [(string=? "-A" arg)
-		    (app-determined)
-		    (use-next-arg
-		     (lambda (collection)
-		       (set! app-collection collection)
-		       (set! basic-info (require-library "info.ss" collection))))]
-		   [(string=? "-a" arg)
-		    (app-determined)
-		    (use-next-3args
-		     (lambda (collection unit-lib sig-lib)
-		       (set! app-collection collection)
-		       (set! app-unit-library unit-lib)
-		       (set! app-sig-library sig-lib)))]
-		   [(string=? "-b" arg) 
+  (let* ([splash/invoke
+	  (unit/sig (mred:startup-application)
+	    (import [wx : wx^])
+	    (include "splash.ss")
+	    (include "invoke.ss"))]
+	 [cmdline-table
+	  (unit/sig (output-spidey-file table info app-collection)
+	    (import)
+
+	    (define output-spidey-file #f)
+	    (define app-determined? #f)
+	    (define app-name "MrEd-n")
+	    (define app-collection "system")
+	    (define app-unit-library "nuapp.ss")
+	    (define app-sig-library "nusig.ss")
+	    (define splash-path (with-handlers ([(lambda (x) #t)
+						 (lambda (x) #f)])
+				  (build-path (collection-path "icons") "mred.gif")))
+	    (define splash-depth 4)
+	    (define splash-max 73)
+	    (define config-info
+	      (lambda (sym failure)
+		(case sym
+		  [(app-unit-library) app-unit-library]
+		  [(app-sig-library) app-sig-library]
+		  [(name) app-name]
+		  [(splash-image-path) splash-path]
+		  [(splash-depth) splash-depth]
+		  [(splash-max) splash-max]
+		  [else (failure)])))
+
+	    (define info (require-library "info.ss" "system"))
+
+	    (define table
+	      `((once-any
+		 [("--version" "-v")
+		  ,(lambda (_)
+		     (printf "MrEd version ~a, Copyright (c) 1995-1997 PLT, Rice University~
+~n~a               (Matthew Flatt and Robert Bruce Findler)~n" 
+			     (version) (make-string (string-length (version)) #\space))
+		     (exit))
+		  ("Print version information")]
+		 [("-A")
+		  ,(lambda (_ collection)
+		     (set! app-collection collection)
+		     (set! info (require-library "info.ss" collection)))
+		  ("Use collection's info.ss for application"
+		   "collection")]
+		 [("-a")
+		  ,(lambda (_ collection unit-lib sig-lib)
+		     (set! app-collection collection)
+		     (set! app-unit-library unit-lib)
+		     (set! app-sig-library sig-lib)
+		     (set! info config-info)
+		     '-a)
+		  ("Use collection's unit file and sig/macros file for application"
+		   "collection"
+		   "unit file"
+		   "sig/macros file")]
+		 [("-n")
+		  ,(lambda (_)
+		     (set! info config-info)
+		     '-n)
+		  ("Non unitized application")])
+		(once-each
+		 [("-w")
+		  ,(lambda (_ arg)
+		    (set! output-spidey-file arg))
+		  ("Output spidey file to filename"
+		   "filename")]
+		 [("-b") 
+		  ,(lambda (_)
 		    (set! splash-path #f)
-		    (loop rest)]
-		   [(string=? "-p" arg)
-		    (use-next-4args
-		     (lambda (image title num-files depth)
-		       (set! splash-path image)
-		       (set! app-name title)
-		       (let ([max (string->number num-files)]
-			     [deep (string->number depth)])
-			 (if (and (number? max)
-				  (number? deep))
-			     (begin
-			       (set! splash-max max)
-			       (set! splash-depth deep))
-			     (error 'startup 
-				    "-p flag expects the 3rd and 4th arguments to be numbers, got ~a ~a")))))]
-		   [(string=? "--" arg)
-		    args]
-		   [(string=? "-nu" arg)
-		    (app-determined)
-		    (loop rest)]
-		   [else (cons arg (loop rest))]))]))])
-      (unless app-determined?
-	(set! basic-info (require-library "info.ss" "system")))
-      (when output-spidey-file
-	((load-relative "spidey.ss")
-	 output-spidey-file app-collection basic-info))
-      (mred:startup-application app-collection
-				basic-info
-				remaining-args
-				void))))
+		    'splash)
+		  ("No splash screen (only use with -n or -a)")]
+		 [("-p")
+		  ,(lambda (_ image title num-files depth)
+		     (set! splash-path image)
+		     (set! app-name title)
+		     (let ([max (string->number num-files)]
+			   [deep (string->number depth)])
+		       (if (and (number? max)
+				(number? deep))
+			   (begin
+			     (set! splash-max max)
+			     (set! splash-depth deep))
+			   (error 'startup 
+				  "-p flag expects the 3rd and 4th arguments to be numbers, got ~a ~a"
+				  num-files depth)))
+		     'splash)
+		  ("Specify splash screen image, frame title, number of files and depth(only use with -n or -a)"
+		   "image"
+		   "title"
+		   "files"
+		   "depth")]))))]
+	 [main
+	  (unit/sig ()
+	    (import (output-spidey-file table info app-collection)
+		    (input-args)
+		    (mred:startup-application)
+		    [wx : wx^]
+		    mzlib:command-line^)
+	    (define leftover-args null)
+	    (parse-command-line "mred"
+				(list->vector input-args)
+				table
+				(lambda (accum . rest)
+				  (when (member 'splash accum)
+				    (unless (or (member '-a accum)
+						(member '-n accum))
+				      (error 'commmand-line
+					     "found -b or -p and no -a or -n")))
+				  (set! leftover-args rest))
+				'("arg")
+				(lambda (string)
+				  (display string)
+				  (printf "The remaining arguments are passed on to the application.~n")
+				  (printf "Use -- to pass arguments to the application. For example,~n")
+				  (printf "use \"mred -- -h\" to see the application's help~n")
+				  (exit)))
+
+	    ;; why isn't just one wx:yield neccessary?
+	    (sleep) (sleep) (sleep)
+	    (wx:yield) (wx:yield) (wx:yield)
+
+	    (when output-spidey-file
+	      ((load-relative "spidey.ss") output-spidey-file
+					   app-collection
+					   info))
+	    (mred:startup-application app-collection
+				      info
+				      leftover-args
+				      void))]
+	 [compound
+	  (compound-unit/sig (import (I : (input-args)))
+	    (link [wx : wx^ (wx@)]
+		  [splash/invoke : (mred:startup-application) (splash/invoke wx)]
+		  [cmdline-table : (output-spidey-file table info app-collection)
+				 (cmdline-table)]
+		  [cmdline : mzlib:command-line^
+			   ((reference-library-unit/sig "cmdliner.ss"))]
+		  [main : () (main cmdline-table I splash/invoke wx cmdline)])
+	    (export))])
+    (lambda input-args
+      (invoke-unit/sig compound (input-args)))))

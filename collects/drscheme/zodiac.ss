@@ -1,12 +1,18 @@
 (begin-elaboration-time
  (let* ([get-signature
-	 (lambda (name)
-	   (let ([e (eval `(let-id-macro 
-			    x 
-			    `',(global-expansion-time-value ',name) 
-			    x))])
-	     e))]
-	[all-names (vector->list (get-signature 'zodiac:system^))]
+	 (lambda (sexp name)
+	   (parameterize ([current-namespace (make-namespace)])
+	     (eval sexp)
+	     (let ([e (eval `(let-id-macro 
+			      x 
+			      `',(global-expansion-time-value ',name) 
+			      x))])
+	       (vector->list e))))]
+	[all-names (get-signature '(begin
+				     (require-library "refer.ss")
+				     (require-library "zsigs.ss" "zodiac")
+				     (require-library "sigs.ss" "zodiac"))
+				   'zodiac:system^)]
 	[non-function-names
 	 '(scheme-vocabulary
 	   arglist-decls-vocab
@@ -120,10 +126,15 @@
 	   struct:vector
 	   struct:vocabulary-record
 	   struct:zodiac)]
+
+	;; if needed, some names can be defined individually
+	[special-names null]
+
 	[bad-names-table
-	 (let ([ht (make-hash-table)])
-	   (for-each (lambda (x) (hash-table-put! ht x #t))
-		     non-function-names)
+	 (let* ([ht (make-hash-table)]
+		[add (lambda (x) (hash-table-put! ht x #t))])
+	   (for-each add non-function-names)
+	   (for-each add special-names)
 	   ht)]
 	[function-names
 	 (let loop ([names all-names])
@@ -217,7 +228,7 @@
 				       ,(prefix "quasi-r4rs")
 				       args))])
 	       (list* test defn (loop (cdr names))))]))
-      
+
       (unless (null? bad-names)
 	(printf "bad-names~n~a~n" bad-names)
 	(error 'zodiac.ss "found non-procedural names"))

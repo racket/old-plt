@@ -1,4 +1,4 @@
-(lambda (request)
+(lambda (request failure)
   (case request
     [(name) "MrEd"]
     [(app-unit-library) "app.ss"]
@@ -7,4 +7,12 @@
 			   (build-path (collection-path "icons") "mred.gif"))]
     [(splash-max) 81]
     [(splash-depth) 6]
-    [else (error 'mred-info "Unknown request: ~s" request)]))
+    [(compile-prefix) '(begin (require-library "sig.ss" "mred")
+			      (require-library "wxs.ss" "system")
+			      (require-library "invsig.ss" "system")
+			      (require-library "debug.ss" "system")
+			      (require-library "cmdlines.ss")
+			      '(require-library "cores.ss"))]
+    [(compile-omit-files) (list "wxs.ss" "invsig.ss" "debug.ss")]
+    [else (failure)]))
+

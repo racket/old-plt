@@ -1,7 +1,13 @@
 (define mred:build-spidey-unit
   (lambda (output-file app-collection info)
-    (let ([app-unit-library (info 'app-unit-library)]
-	  [app-sig-library (info 'app-sig-library)])
+    (let ([app-unit-library (info 'app-unit-library
+				  (lambda ()
+				    (error 'mred:build-spidey-unit
+					   "no app-unit-library")))]
+	  [app-sig-library (info 'app-sig-library
+				 (lambda ()
+				   (error 'mred:build-spidey-unit
+					  "no app-sig-library")))])
       (call-with-output-file output-file
 	(lambda (port)
 	  (pretty-print

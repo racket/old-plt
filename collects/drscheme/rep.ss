@@ -275,22 +275,31 @@
 				[mzlib:pretty-print@:pretty-print-print-hook
 				 (lambda (x _ port) (this-result-write x))])
 		   (mzlib:pretty-print@:pretty-print v this-result)))))])
+	(private
+	  [get-case-sensitivity
+	   (lambda ()
+	     (if user-param
+		 ((in-parameterization user-param read-case-sensitive))
+		 (drscheme:language:setting-case-sensitive?
+		  (mred:get-preference 'drscheme:settings))))])
 	(public
 	  [process-edit/zodiac
 	   (lambda (edit f start end annotate?)
 	     (process/zodiac
-	      (zodiac:read (mred:read-snips/chars-from-buffer edit start end)
-			   (zodiac:make-location 0 0 start edit)
-			   #t 1 user-param)
+	      (parameterize ([read-case-sensitive (get-case-sensitivity)])
+		(zodiac:read (mred:read-snips/chars-from-buffer edit start end)
+			     (zodiac:make-location 0 0 start edit)
+			     #t 1))
 	      f
 	      annotate?))]
 	  [process-file/zodiac
 	   (lambda (filename f annotate?)
 	     (let ([port (open-input-file filename)])
 	       (process/zodiac
-		(zodiac:read port
-			     (zodiac:make-location 0 0 0 filename)
-			     #t 1 user-param)
+		(parameterize ([read-case-sensitive (get-case-sensitivity)])
+		  (zodiac:read port
+			       (zodiac:make-location 0 0 0 filename)
+			       #t 1 user-param))
 		(lambda (x r)
 		  (when (process-finish? x)
 		    (close-input-port port))
@@ -320,7 +329,9 @@
 							 (zodiac:interface:zodiac-exn-message exn))
 					   (lambda () (cleanup #t)))])
 			  (let/ec k
-			    (let ([zodiac-read (reader)])
+			    (let ([zodiac-read
+				   (parameterize ([read-case-sensitive (get-case-sensitivity)])
+				     (reader))])
 			      (if (zodiac:eof? zodiac-read)
 				  (lambda () (cleanup #f))
 				  (let* ([wait-on-scheme

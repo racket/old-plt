@@ -1,4 +1,4 @@
-(lambda (request)
+(lambda (request failure)
   (case request
     [(name) "Countdown"]
     [(app-unit-library) "link.ss"]
@@ -7,4 +7,4 @@
     [(splash-depth) 6]
     [(splash-image-path) (with-handlers ([void (lambda (x) "mred.gif")])
 			   (build-path (collection-path "countdwn") "button.gif"))]
-    [else (error 'countdown-info "Unknown request: ~s" request)]))
+    [else (failure)]))

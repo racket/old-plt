@@ -1,5 +1,5 @@
 ;;
-;; $Id: stdrs.ss,v 1.5 1997/12/04 21:25:15 mflatt Exp robby $
+;; $Id: stdrs.ss,v 1.6 1997/12/08 18:41:42 robby Exp robby $
 ;;
 ;; Helper functions for finding pieces of DrScheme console,
 ;; at least how I think it's put together.

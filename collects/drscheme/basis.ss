@@ -27,16 +27,18 @@
      'drscheme:library-file
      (lambda (p v)
        (with-handlers
-	   ((void (lambda (x)
-		    (mred:message-box (exn-message x) "Invalid Library")
-		    #f)))
+	   ([(lambda (x) #t)
+	     (lambda (x)
+	       (mred:message-box (exn-message x) "Invalid Library")
+	       #f)])
 	 (if v
-	     (let ([new-unit (and (file-exists? v)
-				  (load/cd v))])
+	     (let ([new-unit (load/cd v)])
 	       (if (unit/sig? new-unit)
 		   (set! library-unit new-unit)
 		   (begin
-		     (mred:message-box (format "Invalid Library: ~a" v) "Error")
+		     (mred:message-box 
+		      "Library file does not contain a unit"
+		      "Invalid Library")
 		     #f)))
 	     (set! library-unit #f)))))
     

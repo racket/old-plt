@@ -1,7 +1,8 @@
 ;;
-;; $Id: sig.ss,v 1.79 1997/10/22 15:36:03 robby Exp robby $
+;; $Id: sig.ss,v 1.80 1997/12/01 18:31:19 robby Exp $
 ;;
 
+(require-library "refer.ss")
 (require-library "cores.ss")
 (require-library "macro.ss")
 (require-library "match.ss")
@@ -396,3 +397,4 @@
    (open mred:graph^)
    (open mred:application^)
    (open mred:control^)))
+

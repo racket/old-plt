@@ -1,5 +1,5 @@
 ;;
-;; $Id: strun.ss,v 1.9 1997/12/04 21:24:35 mflatt Exp robby $
+;; $Id: strun.ss,v 1.10 1997/12/08 18:41:42 robby Exp robby $
 ;;
 ;; Run one fake action in the real handler thread.
 ;; This should be the only file that needs to worry about multiple

@@ -101,13 +101,16 @@
 	;; need to introduce parameter for constructor-style vs r4 style
 	(case (setting-printing pref)
 	  [(constructor-style)
+	   (whole/fractional-exact-numbers #t)
 	   (r4rs-style-printing #f)
 	   (constructor-style-printing #t)]
 	  [(quasi-style)
+	   (whole/fractional-exact-numbers #t)
 	   (r4rs-style-printing #f)
 	   (constructor-style-printing #f)
 	   (quasi-read-style-printing #f)]
 	  [(quasi-read-style)
+	   (whole/fractional-exact-numbers #f)
 	   (r4rs-style-printing #f)
 	   (constructor-style-printing #f)
 	   (quasi-read-style-printing #t)]
@@ -241,7 +244,7 @@
 	    (make-check-box set-setting-read-exact-numbers!
 			    setting-read-exact-numbers
 			    "Decimal numbers are read as exact numbers"
-			    dynamic-panel)]
+			    input-syntax-panel)]
 	   [printer-number->symbol
 	    (lambda (which)
 	      (case which

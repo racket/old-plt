@@ -1,5 +1,5 @@
 ;;
-;; $Id: testable.ss,v 1.4 1997/12/04 21:25:45 mflatt Exp robby $
+;; $Id: testable.ss,v 1.5 1997/12/08 18:41:42 robby Exp robby $
 ;;
 ;; Testable classes go between last wx: class and first mred: class.
 ;; Keep track of currently active frame and focused window.

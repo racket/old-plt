@@ -1,5 +1,5 @@
 ;;
-;; $Id: stsigs.ss,v 1.11 1997/08/15 22:36:39 krentel Exp krentel $
+;; $Id: stsigs.ss,v 1.12 1997/08/19 22:00:19 krentel Exp robby $
 ;;
 ;; Signatures for gui tester.
 ;;

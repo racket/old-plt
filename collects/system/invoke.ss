@@ -43,9 +43,17 @@
 	      (when (directory-exists? (unbox path-box))
 		(wx:set-afm-path (unbox path-box))))
 	    
-	    (require-library (info 'app-sig-library) collection)
+	    (require-library (info 'app-sig-library
+				   (lambda ()
+				     (error 'mred:startup-application
+					    "no app-sig-library in collection info")))
+			     collection)
 	    
-	    (let ([app (require-library (info 'app-unit-library) collection)])
+	    (let ([app (require-library (info 'app-unit-library
+					      (lambda ()
+						(error 'mred:startup-application
+						       "no app-unit-library in collection info")))
+					collection)])
 	      (mred:change-splash-message "Invoking...")
 	      (mred:shutdown-splash)
 	      (let ([argv (list->vector extra-args)])

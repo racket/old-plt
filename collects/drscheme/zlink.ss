@@ -12,14 +12,14 @@
 		   beginner-parameters pretty-print file)]
 	[intermediate-parameters : plt:parameters^
 				 ((unit/sig plt:parameters^ (import)
-				    (define check-syntax-level 'side-effecting)))]
+				    (define check-syntax-level 'structured)))]
 	[intermediate : zodiac:system^
 		      ((reference-library-unit/sig "link.ss" "zodiac")
 		       (interface : zodiac:interface^)
 		       intermediate-parameters pretty-print file)]
 	[advanced-parameters : plt:parameters^
 			     ((unit/sig plt:parameters^ (import)
-				(define check-syntax-level 'structured)))]
+				(define check-syntax-level 'side-effecting)))]
 	[advanced : zodiac:system^
 		  ((reference-library-unit/sig "link.ss" "zodiac")
 		   (interface : zodiac:interface^)

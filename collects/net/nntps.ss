@@ -1,3 +1,5 @@
+(require-library "macro.ss")
+
 (define-signature mzlib:nntp^
   ((struct communicator (sender receiver server port))
     connect-to-server disconnect-from-server

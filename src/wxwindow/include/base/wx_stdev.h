@@ -101,8 +101,8 @@ class wxScrollEvent: public wxEvent
 class wxMouseEvent: public wxEvent
 {
  public:
-  float x;
-  float y;
+  int x;
+  int y;
   Bool leftDown;
   Bool middleDown;
   Bool rightDown;
@@ -170,15 +170,15 @@ class wxMouseEvent: public wxEvent
   virtual Bool Leaving(void);
 
   // Find the position of the event
-  virtual void Position(float *x, float *y);
+  virtual void Position(int *x, int *y);
 };
 
 // Keyboard input event class
 class wxKeyEvent: public wxEvent
 {
  public:
-  float x ;
-  float y ;
+  int x ;
+  int y ;
   long keyCode;
   Bool controlDown;
   Bool shiftDown;
@@ -193,7 +193,7 @@ class wxKeyEvent: public wxEvent
   virtual Bool ShiftDown(void);
   virtual long KeyCode(void);
 
-  virtual void Position(float *x,float *y) ;
+  virtual void Position(int *x,int *y) ;
 };
 
 #endif // wxb_stdevh

@@ -299,7 +299,10 @@ enum _Virtual_keycodes {
  WXK_F23,
  WXK_F24,
  WXK_NUMLOCK,
- WXK_SCROLL 
+ WXK_SCROLL ,
+
+ WXK_WHEEL_UP,
+ WXK_WHEEL_DOWN
 };
 
 #endif // wxb_commonh

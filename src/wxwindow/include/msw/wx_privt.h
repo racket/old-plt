@@ -36,8 +36,8 @@ public:
     int yscroll_lines_per_page;
     int xscroll_position;
     int yscroll_position;
-    float last_x_pos;
-    float last_y_pos;
+    int last_x_pos;
+    int last_y_pos;
     int last_event;
     HWND handle;
     HMENU hMenu; // Menu, if any

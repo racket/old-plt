@@ -833,6 +833,26 @@ LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int dialo
       wnd->OnMouseMove(x, y, wParam);
       break;
     }
+#ifndef WM_MOUSEWHEEL
+# define WM_MOUSEWHEEL 0x020A
+# define WHEEL_DELTA 120
+#endif
+  case WM_MOUSEWHEEL:
+    {
+      int delta = ((short)HIWORD(wParam)) / WHEEL_DELTA;
+      while (delta) {
+	WORD code;
+	if (delta < 0) {
+	  code = WXK_WHEEL_DOWN;
+	  delta++;
+	} else {
+	  code = WXK_WHEEL_UP;
+	  delta--;
+	}
+	wnd->OnChar(code, lParam, 1);
+      }
+      break;
+    }
   case WM_DESTROY:
     {
       if (!wnd->OnDestroy())
@@ -998,8 +1018,8 @@ wxWnd::wxWnd(void)
   xscroll_position = 0;
   yscroll_position = 0;
 
-  last_x_pos = -1.0;
-  last_y_pos = -1.0;
+  last_x_pos = -1;
+  last_y_pos = -1;
   last_event = -1;
   is_canvas = FALSE;
   cdc = NULL;
@@ -1392,12 +1412,16 @@ void wxWnd::OnButton(int x, int y, UINT flags, int evttype)
 {
   wxMouseEvent *event = new wxMouseEvent(evttype);
 
+  /*
   float px = (float)x;
   float py = (float)y;
 
   DeviceToLogical(&px, &py);
 
   CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
+  */
+  event->x = x;
+  event->y = y;
 
   event->shiftDown = (flags & MK_SHIFT);
   event->controlDown = (flags & MK_CONTROL);
@@ -1527,12 +1551,16 @@ void wxWnd::OnMouseMove(int x, int y, UINT flags)
   }
 
   wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_MOTION);
+  /*
   float px = (float)x;
   float py = (float)y;
 
   DeviceToLogical(&px, &py);
 
   CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
+  */
+  event->x = x;
+  event->y = y;
 
   event->shiftDown = (flags & MK_SHIFT);
   event->controlDown = (flags & MK_CONTROL);
@@ -1569,6 +1597,7 @@ void wxWnd::OnMouseEnter(int x, int y, UINT flags)
 static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags)
 {
   wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_ENTER_WINDOW);
+  /*
   float px = (float)x;
   float py = (float)y;
 
@@ -1577,6 +1606,9 @@ static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags)
     wnd->DeviceToLogical(&px, &py);
     wnd->CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
   }
+  */
+  event->x = x;
+  event->y = y;
 
   event->shiftDown = (flags & MK_SHIFT);
   event->controlDown = (flags & MK_CONTROL);
@@ -1599,6 +1631,7 @@ void wxWnd::OnMouseLeave(int x, int y, UINT flags)
 static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags)
 {
   wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_LEAVE_WINDOW);
+  /*
   float px = (float)x;
   float py = (float)y;
 
@@ -1607,6 +1640,9 @@ static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags)
     wnd->DeviceToLogical(&px, &py);
     wnd->CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
   }
+  */
+  event->x = x;
+  event->y = y;
   
   event->shiftDown = (flags & MK_SHIFT);
   event->controlDown = (flags & MK_CONTROL);
@@ -1703,11 +1739,15 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
     GetWindowRect(handle,&rect);
     pt.x -= rect.left;
     pt.y -= rect.top;
+    /*
     float fx,fy;
     fx = (float)pt.x;
     fy = (float)pt.y;
     DeviceToLogical(&fx,&fy);
     CalcUnscrolledPosition((int)fx,(int)fy,&event->x,&event->y);
+    */
+    event->x = pt.x;
+    event->y = pt.y;
 
     if (!wx_window->CallPreOnChar(wx_window, event))
       if (!wx_window->IsGray())

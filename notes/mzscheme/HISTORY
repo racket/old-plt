@@ -1,6 +1,9 @@
 
 Version 102/11:
 
+ * Added `interface->ivar-names', which takes an interface and returns
+   a list of symbols for the interface's ivar names.
+
  * Added 'update to the set of flags for `open-output-file' et al.
    'update mode opens an existing file without truncating it, and
    allows overwriting of the file's existing data, especially in

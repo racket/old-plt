@@ -151,17 +151,15 @@
                (set! up-to-date? #f)
                (colorer-callback)))
             ((>= edit-start-pos invalid-tokens-start)
-             (printf "here1~n")
              (send invalid-tokens search! (- edit-start-pos invalid-tokens-start))
              (let-values (((tok-start tok-end valid-tree invalid-tree)
                            (send invalid-tokens split)))
                (set! invalid-tokens invalid-tree)
                (set! invalid-tokens-start (+ invalid-tokens-start tok-end change-length))))
             ((>= edit-start-pos current-pos)
-             (printf "here2~n")
              (set! invalid-tokens-start (+ change-length invalid-tokens-start)))
             (else
-             (printf "here3~n") 
+             (printf "here~n") 
              (send tokens search! (- edit-start-pos start-pos))
              (let-values (((tok-start tok-end valid-tree invalid-tree)
                            (send tokens split)))
@@ -257,11 +255,11 @@
       (define (get-match-color) (preferences:get 'framework:paren-match-color))
 
       (define (highlight start end caret-pos error?)
-        (let ([off (highlight-range start end
+        (let ([off (highlight-range (+ start-pos start) (+ start-pos end)
                                     (if error? mismatch-color (get-match-color))
                                     (and (send (icon:get-paren-highlight-bitmap) ok?)
                                          (icon:get-paren-highlight-bitmap))
-                                    (= caret-pos start))])
+                                    (= caret-pos (+ start-pos start)))])
           (set! clear-old-locations
                 (let ([old clear-old-locations])
                   (lambda ()
@@ -280,9 +278,10 @@
               (unless just-clear?
                 (let* ((here (get-start-position)))
                   (when (= here (get-end-position))
-                    (let-values (((start-f end-f error-f) (send parens match-forward here))
-                                 ((start-b end-b error-b) (send parens match-backward here)))
-                      (when (and start-f end-f)
+                    (let-values (((start-f end-f error-f) (send parens match-forward (- here start-pos)))
+                                 ((start-b end-b error-b) (send parens match-backward (- here start-pos))))
+                      (when (and start-f end-f
+                                 (not (and error-f (< (+ start-pos error-f) current-pos) (not up-to-date?))))
                         (highlight start-f end-f here error-f))
                       (when (and start-b end-b)
                         (highlight start-b end-b here error-b)))))))

@@ -8,12 +8,12 @@
     (class object%
 
       (init matches)
-      
+
       (define open-matches-table (make-hash-table))
       (for-each (lambda (x)
                   (hash-table-put! open-matches-table (car x) (cadr x)))
                 matches)
-
+      
       (define close-matches-table (make-hash-table))
       (for-each (lambda (x)
                   (hash-table-put! close-matches-table (cadr x) (car x)))
@@ -42,11 +42,12 @@
              (send tree split-before))
             (else
              (let-values (((first next) (send tree split-after)))
-               (send first add-to-root-length (- pos (send first get-root-end-position)))
-               (insert-first! next (new token-tree%
-                                        (length (- (send first get-root-end-position) pos))
-                                        (data (cons #f 0))))
-               (values first next))))))
+               (let ((first-end (send first get-root-end-position)))
+                 (send first add-to-root-length (- pos first-end))
+                 (insert-first! next (new token-tree%
+                                          (length (- first-end pos))
+                                          (data (cons #f 0))))
+                 (values first next)))))))
       
       (define/public (split-tree pos)
         (let-values (((l r) (split tree pos)))
@@ -90,11 +91,37 @@
                (end
                 (values pos end #f))
                (else
-                (send tree search! pos)
-                (values pos (+ pos (cdr (send tree get-root-data))) #t)))))
+                (send tree search-max!)
+                (let ((end (send tree get-root-end-position)))
+                  (send tree search! pos)
+                  (values pos (+ pos (cdr (send tree get-root-data))) end))))))
           (else
            (values #f #f #f))))
-        
+      
+      (define/public (match-backward pos)
+        (send tree search! (if (> pos 0) (sub1 pos) pos))
+        (cond
+          ((and (not (send tree is-empty?))
+                (is-close? (car (send tree get-root-data)))
+                (= (+ (cdr (send tree get-root-data))
+                      (send tree get-root-start-position))
+                   pos))
+           (let ((end
+                  (let/ec ret
+                    (do-match-backward (node-left (send tree get-root))
+                                       0
+                                       (list (car (send tree get-root-data)))
+                                       ret)
+                    #f)))
+             (cond
+               (end
+                (values end pos #f))
+               (else
+                (send tree search! pos)
+                (values (- pos (cdr (send tree get-root-data))) pos #t)))))
+          (else
+           (values #f #f #f))))
+      
       (define (do-match-forward node top-offset stack escape)
         (cond
           ((not node) stack)
@@ -116,8 +143,27 @@
                (else
                 (do-match-forward (node-right node) (+ start (node-token-length node)) new-stack escape)))))))
       
-      (define/public (match-backward pos)
-        (values #f #f #f))
+      (define (do-match-backward node top-offset stack escape)
+        (cond
+          ((not node) stack)
+          (else
+           (let* ((type (car (node-token-data node)))
+                  (right-stack (do-match-backward (node-right node)
+                                                  (+ top-offset (node-left-subtree-length node)
+                                                     (node-token-length node))
+                                                  stack escape))
+                  (new-stack
+                   (cond
+                     ((is-close? type) (cons type right-stack))
+                     ((and (is-open? type) (matches? type (car right-stack)))
+                      (cdr right-stack))
+                     ((is-open? type) (escape #f))
+                     (else right-stack))))
+             (cond
+               ((null? new-stack)
+                (escape (+ top-offset (node-left-subtree-length node))))
+               (else
+                (do-match-backward (node-left node) top-offset new-stack escape)))))))
       
       (define/public (print)
         (for-each (lambda (x) (display (cons (vector-ref x 0) (car (vector-ref x 2)))))

@@ -207,8 +207,7 @@
             0))
       
       (define/public (add-to-root-length inc)
-        (when root
-          (set-node-token-length! root (+ (node-token-length root) inc))))
+        (set-node-token-length! root (+ (node-token-length root) inc)))
       
       ;; search!: NAT ->
       ;; Moves the node at key-position to the root

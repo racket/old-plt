@@ -126,6 +126,8 @@ static int skip_whitespace_comments(Scheme_Object *port);
 #define local_vector_memory_size (PROCESS_FOR_LOCALS->vector_memory_size)
 #define local_vector_memory_count (PROCESS_FOR_LOCALS->vector_memory_count)
 
+#define local_rename_memory (PROCESS_FOR_LOCALS->rn_memory)
+
 #ifndef MZ_REAL_THREADS
 # define PROCESS_FOR_LOCALS scheme_current_process
 #else
@@ -1777,6 +1779,18 @@ static Scheme_Object *read_compact(CPort *port,
 	v = vec;
       }
       break;
+    case CPT_STX:
+      {
+	if (!local_rename_memory) {
+	  Scheme_Hash_Table *ht;
+	  ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+	  local_rename_memory = ht;
+	}
+
+	v = read_compact(port, ht, 1 CURRENTPROCARG);
+	v = scheme_datum_to_syntax(v, scheme_false, (Scheme_Object *)local_rename_memory);
+      }
+      break;
     case CPT_MARSHALLED:
       v = read_marshalled(read_compact_number(port), port, ht 
 			  CURRENTPROCARG);
@@ -2187,6 +2201,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   result = read_marshalled(scheme_compilation_top_type, rp, ht CURRENTPROCARG);
 
   local_vector_memory = NULL;
+  local_rename_memory = NULL;
 
 #if USE_BUFFERING_CPORT
 # ifdef MZ_PRECISE_GC

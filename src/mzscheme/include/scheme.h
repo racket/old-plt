@@ -698,6 +698,8 @@ typedef struct Scheme_Process {
   Scheme_Object **vector_memory;
   int vector_memory_size, vector_memory_count;
 
+  Scheme_Hash_Table *rn_memory;
+
   long block_start_sleep;
 
   int eof_on_error; /* For port operations */

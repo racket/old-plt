@@ -50,12 +50,18 @@ static void print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port,
 			  int notdisplay, long maxl, Scheme_Process *p,
 			  Scheme_Config *config);
 static int print(Scheme_Object *obj, int notdisplay, int compact, 
-		 Scheme_Hash_Table *ht, Scheme_Hash_Table *vht, Scheme_Process *p);
+		 Scheme_Hash_Table *ht,
+		 Scheme_Hash_Table *vht, Scheme_Hash_Table *rnht,
+		 Scheme_Process *p);
 static void print_string(Scheme_Object *string, int notdisplay, Scheme_Process *p);
 static void print_pair(Scheme_Object *pair, int notdisplay, int compact, 
-		       Scheme_Hash_Table *ht, Scheme_Hash_Table *vht, Scheme_Process *p);
+		       Scheme_Hash_Table *ht, 
+		       Scheme_Hash_Table *vht, Scheme_Hash_Table *rnht, 
+		       Scheme_Process *p);
 static void print_vector(Scheme_Object *vec, int notdisplay, int compact, 
-			 Scheme_Hash_Table *ht, Scheme_Hash_Table *vht, Scheme_Process *p);
+			 Scheme_Hash_Table *ht, 
+			 Scheme_Hash_Table *vht, Scheme_Hash_Table *rnht, 
+			 Scheme_Process *p);
 static void print_char(Scheme_Object *chobj, int notdisplay, Scheme_Process *p);
 static char *print_to_string(Scheme_Object *obj, long *len, int write,
 			     Scheme_Object *port, long maxl,
@@ -613,7 +619,7 @@ print_to_string(Scheme_Object *obj,
 
   if ((maxl <= PRINT_MAXLEN_MIN) 
       || !scheme_setjmp(p->print_escape))
-    print(obj, write, 0, ht, NULL, p);
+    print(obj, write, 0, ht, NULL, NULL, p);
 
   p->print_buffer[p->print_position] = '\0';
 
@@ -758,16 +764,18 @@ static Scheme_Object *print_k(void)
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p->ku.k.p2;
   Scheme_Hash_Table *vht = (Scheme_Hash_Table *)p->ku.k.p3;
+  Scheme_Hash_Table *rnht = (Scheme_Hash_Table *)p->ku.k.p4;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
+  p->ku.k.p4 = NULL;
 
   return print(o, 
 	       p->ku.k.i1, 
 	       p->ku.k.i2, 
 	       ht,
-	       vht,
+	       vht, rnht,
 	       p) 
     ? scheme_true : scheme_false;
 }
@@ -775,7 +783,8 @@ static Scheme_Object *print_k(void)
 
 static int
 print_substring(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
-		Scheme_Hash_Table *vht, Scheme_Process *p, char **result, long *rlen)
+		Scheme_Hash_Table *vht, Scheme_Hash_Table *rnht, 
+		Scheme_Process *p, char **result, long *rlen)
 {
   int closed;
   long save_alloc, save_pos, save_maxl;
@@ -801,7 +810,7 @@ print_substring(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Tab
   p->print_position = 0;
   p->print_port = NULL;
 
-  closed = print(obj, notdisplay, compact, ht, vht, p);
+  closed = print(obj, notdisplay, compact, ht, vht, rnht, p);
 
   if (result)
     *result = p->print_buffer;
@@ -822,7 +831,7 @@ static void print_escaped(Scheme_Process *p, int notdisplay,
   char *r;
   long len;
 
-  print_substring(obj, notdisplay, 0, ht, NULL, p, &r, &len);
+  print_substring(obj, notdisplay, 0, ht, NULL, NULL, p, &r, &len);
 
   print_compact(p, CPT_ESCAPE);
   print_compact_number(p, len);
@@ -859,7 +868,7 @@ static void print_named(Scheme_Object *obj, const char *kind,
 
 static int
 print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
-      Scheme_Hash_Table *vht, Scheme_Process *p)
+      Scheme_Hash_Table *vht, Scheme_Hash_Table *rnht, Scheme_Process *p)
 {
   int closed = 0;
 
@@ -1009,12 +1018,12 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SCHEME_PAIRP(obj))
     {
-      print_pair(obj, notdisplay, compact, ht, vht, p);
+      print_pair(obj, notdisplay, compact, ht, vht, rnht, p);
       closed = 1;
     }
   else if (SCHEME_VECTORP(obj))
     {
-      print_vector(obj, notdisplay, compact, ht, vht, p);
+      print_vector(obj, notdisplay, compact, ht, vht, rnht, p);
       closed = 1;
     }
   else if (p->quick_print_box && SCHEME_BOXP(obj))
@@ -1023,7 +1032,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_compact(p, CPT_BOX);
       else
 	print_this_string(p, "#&", 2);
-      closed = print(SCHEME_BOX_VAL(obj), notdisplay, compact, ht, vht, p);
+      closed = print(SCHEME_BOX_VAL(obj), notdisplay, compact, ht, vht, rnht, p);
     }
   else if (SAME_OBJ(obj, scheme_true))
     {
@@ -1074,7 +1083,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	    print_this_string(p, " ", 1);
 	  
 	  for (i = 0; i < count; i++) {
-	    no_sp_ok = print(((Scheme_Structure *)obj)->slots[i], notdisplay, compact, ht, vht, p);
+	    no_sp_ok = print(((Scheme_Structure *)obj)->slots[i], notdisplay, compact, ht, vht, rnht, p);
 	    if ((i < count - 1) && (!compact || !no_sp_ok))
 	      print_this_string(p, " ", 1);
 	  }
@@ -1125,7 +1134,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	Scheme_Closed_Compiled_Procedure *closure = (Scheme_Closed_Compiled_Procedure *)obj;
 	if (ZERO_SIZED(closure)) {
 	  /* Print original code: */
-	  compact = print(SCHEME_COMPILED_CLOS_CODE(closure), notdisplay, compact, ht, vht, p);
+	  compact = print(SCHEME_COMPILED_CLOS_CODE(closure), notdisplay, compact, ht, vht, rnht, p);
 	} else
 	  print_escaped(p, notdisplay, obj, ht);
       } else {
@@ -1154,8 +1163,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   else if (compact && SCHEME_STXP(obj))
     {
       print_compact(p, CPT_STX);
-      closed = print(SCHEME_STX_VAL(obj), notdisplay, 1, ht, vht, p);
-      
+      closed = print(scheme_syntax_to_datum(obj, 2, rnht), 
+		     notdisplay, 1, ht, vht, rnht, p);
     }
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_variable_type)
 	   && (((Scheme_Bucket_With_Flags *)obj)->flags & GLOB_HAS_REF_ID))
@@ -1199,7 +1208,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       }
 
       for (i = 0; i < app->num_args + 1; i++) {
-	closed = print(scheme_protect_quote(app->args[i]), notdisplay, 1, NULL, vht, p);
+	closed = print(scheme_protect_quote(app->args[i]), notdisplay, 1, NULL, vht, rnht, p);
       }
     }
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_quote_compilation_type))
@@ -1226,7 +1235,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 #endif
       }
 
-      compact = print(v, notdisplay, 1, q_ht, vht, p);
+      compact = print(v, notdisplay, 1, q_ht, vht, rnht, p);
     }
   else if (
 #if !NO_COMPACT
@@ -1317,24 +1326,28 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       }
 
       if (compact)
-	closed = print(v, notdisplay, 1, NULL, vht, p);
+	closed = print(v, notdisplay, 1, NULL, vht, rnht, p);
       else {
 	vht = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
 	vht->make_hash_indices = make_sym_vec_hash_indices;
 	vht->compare = compare_sym_vec;
 
+	rnht = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
+
 #if USE_BUFFERING_CPORT
 	/* "print" the string once to get a measurement */
-	print_substring(v, notdisplay, 1, NULL, vht, p, NULL, &slen);
+	print_substring(v, notdisplay, 1, NULL, vht, rnht, p, NULL, &slen);
 	print_compact_number(p, slen);
 
 	/* Make vht again to ensure the same results */
 	vht = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
 	vht->make_hash_indices = make_sym_vec_hash_indices;
 	vht->compare = compare_sym_vec;
+
+	rnht = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
 #endif
 
-	closed = print(v, notdisplay, 1, NULL, vht, p);
+	closed = print(v, notdisplay, 1, NULL, vht, rnht, p);
       }
     } 
   else 
@@ -1407,7 +1420,9 @@ print_string(Scheme_Object *string, int notdisplay, Scheme_Process *p)
 
 static void
 print_pair(Scheme_Object *pair, int notdisplay, int compact, 
-	   Scheme_Hash_Table *ht, Scheme_Hash_Table *vht, Scheme_Process *p)
+	   Scheme_Hash_Table *ht, 
+	   Scheme_Hash_Table *vht, Scheme_Hash_Table *rnht, 
+	   Scheme_Process *p)
 {
   Scheme_Object *cdr;
   int no_space_ok;
@@ -1450,7 +1465,7 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
   } else
     print_this_string(p, "(", 1);
 
-  no_space_ok = print(SCHEME_CAR(pair), notdisplay, compact, ht, vht, p);
+  no_space_ok = print(SCHEME_CAR(pair), notdisplay, compact, ht, vht, rnht, p);
 
   cdr = SCHEME_CDR (pair);
   while (SCHEME_PAIRP(cdr)) {
@@ -1459,7 +1474,7 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
 	/* This needs a tag */
 	if (!compact)
 	  print_this_string(p, " . ", 3);
-	(void)print(cdr, notdisplay, compact, ht, vht, p);
+	(void)print(cdr, notdisplay, compact, ht, vht, rnht, p);
 	if (!compact)
 	  print_this_string(p, ")", 1);
 	return;
@@ -1469,14 +1484,14 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
       print_compact(p, CPT_PAIR);
     if (!compact)
       print_this_string(p, " ", 1);
-    no_space_ok = print(SCHEME_CAR(cdr), notdisplay, compact, ht, vht, p);
+    no_space_ok = print(SCHEME_CAR(cdr), notdisplay, compact, ht, vht, rnht, p);
     cdr = SCHEME_CDR(cdr);
   }
 
   if (!SCHEME_NULLP(cdr)) {
     if (!compact)
       print_this_string(p, " . ", 3);
-    print(cdr, notdisplay, compact, ht, vht, p);
+    print(cdr, notdisplay, compact, ht, vht, rnht, p);
   } else if (compact && (super_compact < 1))
     print_compact(p, CPT_NULL);
 
@@ -1486,7 +1501,9 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
 
 static void
 print_vector(Scheme_Object *vec, int notdisplay, int compact, 
-	     Scheme_Hash_Table *ht, Scheme_Hash_Table *vht, Scheme_Process *p)
+	     Scheme_Hash_Table *ht, 
+	     Scheme_Hash_Table *vht, Scheme_Hash_Table *rnht, 
+	     Scheme_Process *p)
 {
   int i, no_space_ok, size, common = 0;
   Scheme_Object **elems;
@@ -1541,7 +1558,7 @@ print_vector(Scheme_Object *vec, int notdisplay, int compact,
   }
 
   for (i = 0; i < size; i++) {
-    no_space_ok = print(SCHEME_VEC_ELS(vec)[i], notdisplay, compact, ht, vht, p);
+    no_space_ok = print(SCHEME_VEC_ELS(vec)[i], notdisplay, compact, ht, vht, rnht, p);
     if (i < (size - 1))
       if (!compact)
 	print_this_string(p, " ", 1);

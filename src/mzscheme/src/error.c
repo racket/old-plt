@@ -1014,7 +1014,7 @@ void scheme_wrong_syntax(const char *where,
   if (form) {
     if (SCHEME_STXP(form)) {
       p = make_srcloc_string(form, &plen);
-      form = scheme_syntax_to_datum(form, 0);
+      form = scheme_syntax_to_datum(form, 0, NULL);
     }
     /* don't use error_write_to_string_w_max since this is code */
     v = scheme_write_to_string_w_max(form, &vlen, len);
@@ -1028,7 +1028,7 @@ void scheme_wrong_syntax(const char *where,
     if (SCHEME_STXP(detail_form)) {
       if (((Scheme_Stx *)form)->line >= 0)
 	p = make_srcloc_string(detail_form, &plen);
-      detail_form = scheme_syntax_to_datum(detail_form, 0);
+      detail_form = scheme_syntax_to_datum(detail_form, 0, NULL);
     }
     /* don't use error_write_to_string_w_max since this is code */
     dv = scheme_write_to_string_w_max(detail_form, &dvlen, len);

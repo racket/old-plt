@@ -47,6 +47,9 @@ static Scheme_Object *top_level_import_link(Scheme_Object *data, Link_Info *info
 static Scheme_Object *module_resolve(Scheme_Object *data, Resolve_Info *info);
 static Scheme_Object *top_level_import_resolve(Scheme_Object *data, Resolve_Info *info);
 
+static Scheme_Object *write_module(Scheme_Object *obj);
+static Scheme_Object *read_module(Scheme_Object *obj);
+
 #define cons scheme_make_pair
 
 static Scheme_Object *kernel_symbol;
@@ -123,6 +126,9 @@ void scheme_init_module(Scheme_Env *env)
   REGISTER_SO(module_begin_symbol);
   module_symbol = scheme_intern_symbol("module");
   module_begin_symbol = scheme_intern_symbol("#%module-begin");
+
+  scheme_install_type_writer(scheme_module_type, write_module);
+  scheme_install_type_reader(scheme_module_type, read_module);
 }
 
 void scheme_finish_kernel(Scheme_Env *env)
@@ -231,7 +237,7 @@ void scheme_import_from_original_env(Scheme_Env *env)
 
   rn = env->rename;
   if (!rn) {
-    rn = scheme_make_module_rename(env->phase);
+    rn = scheme_make_module_rename(env->phase, 1);
     env->rename = rn;
   }
 
@@ -257,7 +263,7 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
   if ((phase == 1) && scheme_sys_wraps1)
     return scheme_sys_wraps1;
 
-  rn = scheme_make_module_rename(phase);
+  rn = scheme_make_module_rename(phase, 0);
 
   /* Add a module mapping for all kernel syntax exports: */
   for (i = kernel->num_var_exports; i < kernel->num_exports; i++) {
@@ -610,8 +616,8 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   /* Expand the body of the module via `#%module-begin' */
   fm = scheme_make_pair(module_begin_symbol, fm);
 
-  rn = scheme_make_module_rename(0);
-  et_rn = scheme_make_module_rename(1);
+  rn = scheme_make_module_rename(0, 0);
+  et_rn = scheme_make_module_rename(1, 0);
 
   menv->rename = rn;
   menv->et_rename = et_rn;
@@ -1599,7 +1605,7 @@ top_level_import_execute(Scheme_Object *data)
 
   brn = env->rename;
   if (!brn) {
-    brn = scheme_make_module_rename(for_exp);
+    brn = scheme_make_module_rename(for_exp, 1);
     env->rename = brn;
   }
 
@@ -1650,7 +1656,7 @@ static Scheme_Object *do_import(Scheme_Object *form, Scheme_Comp_Env *env,
   /* Hash table is for checking duplicate names in import list: */
   ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
 
-  rn = scheme_make_module_rename(for_exp);
+  rn = scheme_make_module_rename(for_exp, 1);
 
   genv = env->genv;
   if (for_exp) {
@@ -1730,4 +1736,130 @@ export_indirect_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Sch
 {
   scheme_wrong_syntax("export-indirect", NULL, form, "not in module body");
   return NULL;
+}
+
+/**********************************************************************/
+/*                        marshal/unmarshal                           */
+/**********************************************************************/
+
+static Scheme_Object *write_module(Scheme_Object *obj)
+{
+  Scheme_Module *m = (Scheme_Module *)obj;
+  Scheme_Object *l, *v;
+  int i, count;
+
+  l = m->modname;
+
+  l = cons(m->et_imports, l);
+  l = cons(m->imports, l);
+
+  l = cons(m->body, l);
+  l = cons(m->et_body, l);
+
+  l = cons(scheme_make_integer(m->num_exports), l);
+  l = cons(scheme_make_integer(m->num_var_exports), l);
+
+  count = m->num_exports;
+
+  v = scheme_make_vector(count, NULL);
+  for (i = 0; i < count; i++) {
+    SCHEME_VEC_ELS(v)[i] = m->exports[i];
+  }
+  l = cons(v, l);
+  
+  v = scheme_make_vector(count, NULL);
+  for (i = 0; i < count; i++) {
+    SCHEME_VEC_ELS(v)[i] = m->export_srcs[i];
+  }
+  l = cons(v, l);
+  
+  v = scheme_make_vector(count, NULL);
+  for (i = 0; i < count; i++) {
+    SCHEME_VEC_ELS(v)[i] = m->export_src_names[i];
+  }
+  l = cons(v, l);
+  
+  l = cons(scheme_make_integer(m->num_indirect_exports), l);
+
+  count = m->num_indirect_exports;
+
+  v = scheme_make_vector(count, NULL);
+  for (i = 0; i < count; i++) {
+    SCHEME_VEC_ELS(v)[i] = m->indirect_exports[i];
+  }
+  l = cons(v, l);
+
+  return l;
+}
+
+static Scheme_Object *read_module(Scheme_Object *obj)
+{
+  Scheme_Module *m;
+  Scheme_Object *ie, *nie;
+  Scheme_Object *esn, *es, *e, *nve, *ne, **v;
+  int i, count;
+
+  m = MALLOC_ONE_TAGGED(Scheme_Module);
+  m->type = scheme_module_type;
+  
+  ie = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+  nie = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+  
+  count = SCHEME_INT_VAL(nie);
+
+  v = MALLOC_N(Scheme_Object *, count);
+  for (i = 0; i < count; i++) {
+    v[i] = SCHEME_VEC_ELS(ie)[i];
+  }
+  m->indirect_exports = v;
+  m->num_indirect_exports = count;
+
+  esn = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+  es = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+  e = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+  nve = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+  ne = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+
+  count = SCHEME_INT_VAL(ne);
+  m->num_exports = count;
+  m->num_var_exports = SCHEME_INT_VAL(nve);
+
+  v = MALLOC_N(Scheme_Object *, count);
+  for (i = 0; i < count; i++) {
+    v[i] = SCHEME_VEC_ELS(e)[i];
+  }
+  m->exports = v;
+
+  v = MALLOC_N(Scheme_Object *, count);
+  for (i = 0; i < count; i++) {
+    v[i] = SCHEME_VEC_ELS(es)[i];
+  }
+  m->export_srcs = v;
+
+  v = MALLOC_N(Scheme_Object *, count);
+  for (i = 0; i < count; i++) {
+    v[i] = SCHEME_VEC_ELS(esn)[i];
+  }
+  m->export_src_names = v;
+
+  m->et_body = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+  m->body = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+
+  m->imports = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+  m->et_imports = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+
+  m->modname = obj;
+
+  return (Scheme_Object *)m;
 }

@@ -677,7 +677,7 @@ quote_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *re
   v = SCHEME_STX_CAR(SCHEME_STX_CDR(form));
 
   if (SCHEME_STXP(v))
-    return scheme_syntax_to_datum(v, 0);
+    return scheme_syntax_to_datum(v, 0, NULL);
   else
     return v;
 }
@@ -2597,7 +2597,7 @@ static Scheme_Object *defmacro_link(Scheme_Object *data, Link_Info *info)
   scheme_prepare_exp_env(info);
   val = scheme_link_expr(val, info->exp_env);
 
-  name = scheme_global_keyword_bucket(name, info);
+  name = (Scheme_Object *)scheme_global_keyword_bucket(name, info);
   
   return scheme_make_syntax_linked(DEFINE_SYNTAX_EXPD, 
 				   cons(cons(name, (Scheme_Object *)info), val));

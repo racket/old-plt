@@ -1032,7 +1032,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
       if (!genv) {
 	scheme_wrong_syntax("import", NULL, srcsym, 
-			    "broken compiled code (stat-dist): cannot find prepared module");
+			    "broken compiled code (stat-dist): cannot find module");
 	return NULL;
       }
     }
@@ -1576,17 +1576,42 @@ id_macro(int argc, Scheme_Object *argv[])
 static Scheme_Object *write_variable(Scheme_Object *obj)
 {
   Scheme_Object *sym;
+  Scheme_Module *m;
 
   sym = (Scheme_Object *)(SCHEME_VAR_BUCKET(obj))->key;
+
+  m = ((Scheme_Bucket_With_Home *)obj)->home->module;
+
+  if (m)
+    sym = scheme_make_pair(m->modname, sym);
 
   return sym;
 }
 
 static Scheme_Object *read_variable(Scheme_Object *obj)
 {
-#define SCHEME_GLOBAL_REFERENCE (Scheme_Object *)scheme_global_bucket
+  Scheme_Env *env;
 
-  return SCHEME_GLOBAL_REFERENCE(obj, scheme_get_env(scheme_config));
+  env = scheme_get_env(scheme_config);
+
+  if (SCHEME_SYMBOLP(obj)) {
+    return (Scheme_Object *)scheme_global_bucket(obj, env);
+  } else {
+    /* Find variable from module: */
+    env = scheme_module_access(SCHEME_CAR(obj), env);
+    
+    if (!env) {
+      scheme_wrong_syntax("read", NULL, NULL, 
+			  "broken compiled code, no declaration for module"
+			  ": %S containing variable: %S",
+			  SCHEME_CAR(obj), SCHEME_CDR(obj));
+      return NULL;
+    }
+
+    scheme_check_accessible_in_module(env, SCHEME_CDR(obj), NULL);
+
+    return (Scheme_Object *)scheme_bucket_from_table(env->toplevel, (char *)SCHEME_CDR(obj));
+  }
 }
 
 static Scheme_Object *write_local(Scheme_Object *obj)

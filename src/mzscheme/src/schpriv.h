@@ -402,13 +402,14 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 
 Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx_src, 
 				      Scheme_Object *stx_wraps);
-Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks);
+Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks,
+				      Scheme_Hash_Table *renames);
 
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
 Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c);
 void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname);
-Scheme_Object *scheme_make_module_rename(long phase);
+Scheme_Object *scheme_make_module_rename(long phase, int nonmodule);
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);

@@ -203,7 +203,15 @@
 		   ast 
 		   (transform! (zodiac:define-values-form-val ast)))
 		  ast]
-
+		 
+		 ;;------------------------------------------------------------------
+		 ;; DEFINE-SYNTAX
+		 ;;
+		 [(zodiac:define-syntaxes-form? ast)
+		  (zodiac:set-define-syntaxes-form-expr! 
+		   ast 
+		   (transform! (zodiac:define-syntaxes-form-expr ast)))
+		  ast]
 		 
 		 ;;-----------------------------------------------------------------
 		 ;; APPLICATIONS

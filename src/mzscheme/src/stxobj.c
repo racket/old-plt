@@ -2353,12 +2353,12 @@ static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **ar
 
 static Scheme_Object *module_binding(int argc, Scheme_Object **argv)
 {
-  return do_module_binding("module-binding", argc, argv, 0);
+  return do_module_binding("identifier-binding", argc, argv, 0);
 }
 
 static Scheme_Object *module_trans_binding(int argc, Scheme_Object **argv)
 {
-  return do_module_binding("module-transformer-binding", argc, argv, 1);
+  return do_module_binding("identifier-transformer-binding", argc, argv, 1);
 }
 
 /**********************************************************************/

@@ -21,7 +21,8 @@
 ;; Constant let-bound variables are eliminated (unless they
 ;;   are improperly used in the let body).
 ;; Procedure applications are inlined.
-;; Compounding and invoking structures are computed.
+;; Syntax constants created, so quote-syntax turns into a
+;;   varref
 
 ;;; Annotatitons: ----------------------------------------------
 ;;    binding - `binding' structure: UPDATED occasionally:
@@ -33,6 +34,8 @@
 ;;    lambda - `procedure-code' structure
 ;;    with-continuation-mark - might set annotation to #f, which
 ;;         indicates that begin0-like handling is not needed
+;;    quote-syntax - zodiac:varref (global var containing a constructed 
+;;         constant)
 ;;; ------------------------------------------------------------
 
 (module analyze mzscheme
@@ -62,30 +65,62 @@
 	      compiler:driver^
 	      (mrspidey : compiler:mrspidey^))
       
+      (define-struct mod-glob (cname   ;; a made-up name that encodes module + var
+			       modname
+			       varname 
+			       exp-time?))
+
+      (define-struct module-info (globals
+				  et-globals
+				  modidx-const))
+
       (define compiler:global-symbols (make-hash-table))
       (define compiler:add-global-varref!
 	(case-lambda 
 	 [(varref) (compiler:add-global-varref!
 		    (zodiac:top-level-varref-module varref)
 		    (zodiac:varref-var varref)
-		    #t)]
-	 [(m v gen-ok?)
-	  (let ([t (hash-table-get compiler:global-symbols m
-				   (lambda ()
-				     (let ([t (make-hash-table)])
-				       (hash-table-put! compiler:global-symbols m t)
-				       t)))])
-	    (hash-table-get t v
+		    varref)]
+	 [(modname/phase varname ast)
+	  (let* ([modname (if (box? modname/phase) (unbox modname/phase) modname/phase)]
+		 [et? (and (box? modname/phase)
+			   ;; Just use run-time for #%kernel, since it's the same, and
+			   ;;  the compiler generates references to #%kernel names
+			   (not (eq? '#%kernel modname)))]
+		 [info (hash-table-get compiler:global-symbols modname
+				       (lambda ()
+					 (let ([p (make-module-info #f #f
+								    (if (module-path-index? modname)
+									(compiler:construct-const-code!
+									 (zodiac:make-read
+									  (datum->syntax-object
+									   #f
+									   modname
+									   (zodiac:zodiac-stx ast)))
+									 #t)
+									modname))])
+					   (hash-table-put! compiler:global-symbols modname p)
+					   p)))]
+		 [t (or ((if et? module-info-et-globals module-info-globals) info)
+			(let ([t (make-hash-table)])
+			  ((if et? set-module-info-et-globals! set-module-info-globals!) info t)
+			  t))])
+	    (hash-table-get t varname
 			    (lambda ()
 			      ;; vm->c function also generates a symbol constant:
-			      (let ([n (list* (vm->c:generate-modglob-name m v)
-					      m v)])
-				(unless gen-ok?
+			      (let ([n (make-mod-glob (vm->c:generate-modglob-name modname varname)
+						      modname varname et?)])
+				(unless ast
 				  (compiler:internal-error
 				   #f
-				   "unexpected global name generation"))
-				(hash-table-put! t v n)
+				   "unexpected global name generation for ~a (~a;~a)" 
+				   varname modname et?))
+				(hash-table-put! t varname n)
 				n))))]))
+
+      (define (compiler:get-module-path-constant modname)
+	(module-info-modidx-const (hash-table-get compiler:global-symbols modname void)))
+
       (define (compiler:get-global-symbols) compiler:global-symbols)
 
       (define compiler:primitive-refs empty-set)
@@ -119,6 +154,23 @@
 	(set! compiler:local-define-list 
 	      (cons def compiler:local-define-list)))
 
+      (define (compiler:finish-syntax-constants!)
+	(set! compiler:local-define-list null)
+	(set! compiler:local-per-load-define-list null)
+
+	(const:finish-syntax-constants!)
+
+	(unless (null? compiler:local-per-load-define-list)
+	  (set! compiler:define-list
+		(append! compiler:define-list 
+			 (reverse! compiler:local-define-list)))
+	  (set! compiler:per-load-define-list
+		(append! compiler:per-load-define-list 
+			 (reverse! compiler:local-per-load-define-list)))
+
+	  (set! compiler:local-define-list null)
+	  (set! compiler:local-per-load-define-list null)))
+      
       ;; Temporary structure used in building up case-lambda info
       (define-struct case-info 
 	(body case-code global-vars used-vars captured-vars max-arity return-multi))
@@ -713,6 +765,10 @@
 				ast))]))]
 		     
 		     [(zodiac:top-level-varref? ast)
+		      
+		      ;; A varref may need to generate module-index values.
+		      (set! compiler:local-define-list null)
+
 		      (cond
 		       [(varref:has-attribute? ast varref:primitive)
 			(compiler:add-primitive-varref! ast)]
@@ -723,6 +779,14 @@
 		       [else
 			(add-global-var! (compiler:add-global-varref! ast))])
 		      (compiler:add-global-varref! ast)
+
+		      ;; Was a module-index value generated?
+		      (unless (null? compiler:local-define-list)
+			(set! compiler:define-list
+			      (append! compiler:define-list 
+				       (reverse! compiler:local-define-list)))
+			(set! compiler:local-define-list null))
+
 		      ast]
 		     
 		     [else (compiler:internal-error 
@@ -754,6 +818,9 @@
 			    (append! compiler:per-load-define-list 
 				     (reverse! compiler:local-per-load-define-list)))
 		      
+		      (set! compiler:local-define-list null)
+		      (set! compiler:local-per-load-define-list null)
+
 		      ;; If this `constant' is mutable, register the per-load
 		      ;; statics pointer as a `global'
 		      (when (and (zodiac:top-level-varref? ret)
@@ -1171,6 +1238,18 @@
 		       (analyze!-ast (zodiac:define-values-form-val ast) env inlined))
 		      (values ast #f)]
 		     
+		     ;;----------------------------------------------------------
+		     ;; DEFINE-SYNTAX
+		     ;;
+		     [(zodiac:define-syntaxes-form? ast)
+		      (for-each (lambda (name)
+				  (compiler:get-symbol-const! #f (zodiac:varref-var name)))
+				(zodiac:define-syntaxes-form-names ast))
+		      (zodiac:set-define-syntaxes-form-expr!
+		       ast
+		       (analyze!-ast (zodiac:define-syntaxes-form-expr ast) env inlined))
+		      (values ast #f)]
+		     
 		     ;;-------------------------------------------------------------------
 		     ;; APPLICATIONS
 		     ;;   analyze all the parts.  replace with a compiler:app
@@ -1254,6 +1333,21 @@
 			      (add-local-var! var)))
 			
 			(values ast body-multi))]
+
+		     ;;-----------------------------------------------------------------
+		     ;; QUOTE-SYNTAX
+		     ;;
+		     ;; Construct constant.
+		     ;;
+		     [(zodiac:quote-syntax-form? ast)
+		      (let ([ret (const:make-syntax-constant (zodiac:quote-syntax-form-expr ast))])
+			;; Put a pointer to the constructed constant in the quote-form's backbox
+			(set-annotation! ast ret)
+
+			;; This variable is per-load:
+			(add-global-var! const:the-per-load-statics-table)
+			
+			(values ret #f))]
 		     
 		     [else (compiler:internal-error
 			    ast

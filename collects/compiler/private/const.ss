@@ -39,11 +39,14 @@
       (define const:inexact-table (make-hash-table))
       (define const:inexact-counter 0)
       (define const:number-table (make-hash-table))
+      (define const:string-table (make-hash-table))
+      (define const:string-counter 0)
 
       (define (const:get-symbol-table) const:symbol-table)
       (define (const:get-symbol-counter) const:symbol-counter)
       (define (const:get-inexact-table) const:inexact-table)
       (define (const:get-inexact-counter) const:inexact-counter)
+      (define (const:get-string-table) const:string-table)
 
       (define vector-table (make-hash-table))
 
@@ -59,9 +62,22 @@
 	(set! const:inexact-table (make-hash-table))
 	(set! const:inexact-counter 0)
 	(set! const:number-table (make-hash-table))
+	(set! const:string-table (make-hash-table))
+	(set! const:string-counter 0)
 	(set! compiler:static-list null)
 	(set! compiler:per-load-static-list null)
 	(set! vector-table (make-hash-table)))
+
+      (define (const:intern-string s)
+	(let ([sym (string->symbol s)])
+	  (hash-table-get 
+	   const:string-table
+	   sym
+	   (lambda ()
+	     (begin0
+	      const:string-counter
+	      (hash-table-put! const:string-table sym const:string-counter)
+	      (set! const:string-counter (add1 const:string-counter)))))))
 
       (define (compiler:add-per-load-static-list! var)
 	(set! compiler:per-load-static-list
@@ -239,7 +255,7 @@
 				  ast
 				  'box
 				  (list (compiler:construct-const-code!
-					 (zodiac:read-object ast)
+					 (zodiac:make-read (unbox (zodiac:read-object ast)))
 					 known-immutable?)))
 				 (if known-immutable?
 				     varref:static
@@ -278,14 +294,130 @@
 	   [(vector? (zodiac:read-object ast))
 	    (construct-vector-constant ast 'vector known-immutable?)]
 
-	   [(or (void? ast)
-		(void? (zodiac:read-object ast)))
+	   [(void? (zodiac:read-object ast))
 	    (zodiac:make-special-constant 'void)]
+
+	   ;; comes from module paths in analyze:
+	   [(module-path-index? (zodiac:read-object ast))
+	    (let-values ([(path base) (module-path-index-split (zodiac:read-object ast))]
+			 [(wrap) (lambda (v)
+				   (zodiac:make-read 
+				    (datum->syntax-object
+				     #f
+				     v
+				     (zodiac:zodiac-stx ast))))])
+	      (compiler:add-const! (compiler:make-const-constructor
+				    ast
+				    'module-path-index-join
+				    (list (compiler:construct-const-code!
+					   (wrap path)
+					   known-immutable?)
+					  (compiler:construct-const-code!
+					   (wrap base)
+					   known-immutable?)))
+				   (if known-immutable?
+				       varref:static
+				       varref:per-load-static)))]
 
 	   ;; other atomic constants that must be built
 	   [else
+	    (when (string? (zodiac:read-object ast))
+	      (const:intern-string (zodiac:read-object ast)))
 	    (compiler:add-const! (compiler:re-quote ast) 
-				 (if (and (string? (zodiac:read-object ast))
-					  (not known-immutable?))
-				     varref:per-load-static 
-				     varref:static))]))))))
+				 varref:static)])))
+
+      (define syntax-constants null)
+
+      (define (const:reset-syntax-constants!)
+	(set! syntax-constants null))
+
+      (define (const:make-syntax-constant stx)
+	;; Marhsall to a string constant, and read back out at run-time.
+	;;  For sharing of syntax info, put all syntax objects for a given
+	;;  top-level expression into one marshal step.
+	(let* ([var (gensym 'conststx)]
+	       [sv (zodiac:make-top-level-varref 
+		    stx
+		    (make-empty-box) 
+		    var
+		    #f
+		    (box '()))])
+	  (set! syntax-constants (cons (cons sv stx)
+				       syntax-constants))
+	  (set-annotation! sv (varref:empty-attributes))
+	  (varref:add-attribute! sv varref:static)
+	  (varref:add-attribute! sv varref:per-load-static) ;; actually, per-module-instance...
+	  (set! compiler:per-load-static-list
+		(cons var compiler:per-load-static-list))
+	  sv))
+
+      (define (const:finish-syntax-constants!)
+	(unless (null? syntax-constants)
+	  (let ([s (open-output-string)]
+		[c (compile `(quote-syntax ,(list->vector (map cdr syntax-constants))))])
+	    (display c s)
+	    (let ([syntax-string (get-output-string s)])
+	      (const:intern-string syntax-string)
+	      (let* ([strvar (compiler:add-const! (compiler:re-quote 
+						   (zodiac:make-read
+						    (datum->syntax-object
+						     #f
+						     syntax-string
+						     #f)))
+						  varref:static)]
+		     [vecvar (gensym 'conststxvec)]
+		     [sv (zodiac:make-top-level-varref 
+			  #f
+			  (make-empty-box) 
+			  vecvar
+			  #f
+			  (box '()))])
+
+		(set-annotation! sv (varref:empty-attributes))
+		(varref:add-attribute! sv varref:static)
+		(varref:add-attribute! sv varref:per-load-static) ;; actually, per-module-instance...
+		(set! compiler:per-load-static-list
+		      (cons vecvar compiler:per-load-static-list))
+
+		(compiler:add-local-per-load-define-list! ;; ..., per-module, ...
+		 (zodiac:make-define-values-form 
+		  #f
+		  (make-empty-box) (list sv)
+		  (compiler:re-quote 
+		   (zodiac:make-read
+		    (datum->syntax-object
+		     #f
+		     strvar ;; <------ HACK! See "HACK!" in vm2c.ss
+		     #f)))))
+
+		;; Create construction code for each
+		;;  syntax variable:
+		(let loop ([l syntax-constants]
+			   [pos 0])
+		  (unless (null? l)
+		    (let ([app (zodiac:make-app
+				(cdar l)
+				(make-empty-box) 
+				(zodiac:make-top-level-varref
+				 (cdar l)
+				 (make-empty-box) 
+				 'vector-ref
+				 '#%kernel
+				 (box '()))
+				(list
+				 sv
+				 (compiler:re-quote
+				  (zodiac:make-read
+				   (datum->syntax-object
+				    #f
+				    pos
+				    (cdar l))))))])
+		      (set-annotation! app (make-app #f #t 'vector-ref))
+		      (compiler:add-local-per-load-define-list! ;; ..., per-module, ...
+		       (zodiac:make-define-values-form 
+			(cdar l)
+			(make-empty-box) (list (caar l))
+			app))
+		      (loop (cdr l) (add1 pos))))))))
+	  (set! syntax-constants null))))))
+

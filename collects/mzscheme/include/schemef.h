@@ -232,6 +232,8 @@ Scheme_Object *scheme_do_eval(Scheme_Object *obj, int _num_rands, Scheme_Object 
 Scheme_Object *scheme_do_eval_w_thread(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val, Scheme_Thread *p);
 #endif
 
+Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *str, Scheme_Env *env);
+
 /*========================================================================*/
 /*                           memory management                            */
 /*========================================================================*/
@@ -528,16 +530,23 @@ Scheme_Object *scheme_lookup_global(Scheme_Object *symbol, Scheme_Env *env);
 
 Scheme_Bucket *scheme_global_bucket(Scheme_Object *symbol, Scheme_Env *env);
 Scheme_Bucket *scheme_global_keyword_bucket(Scheme_Object *symbol, Scheme_Env *env);
-
 Scheme_Bucket *scheme_module_bucket(Scheme_Object *mod, Scheme_Object *var, Scheme_Env *env);
+
+Scheme_Bucket *scheme_exptime_global_bucket(Scheme_Object *symbol, Scheme_Env *env);
+Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *mod, Scheme_Object *var, Scheme_Env *env);
 
 void scheme_set_global_bucket(char *proc, Scheme_Bucket *var, Scheme_Object *val,
 			      int set_undef);
+void scheme_install_macro(Scheme_Bucket *b, Scheme_Object *v);
 
 
 void scheme_save_initial_module_set(Scheme_Env *env);
 Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env);
 void scheme_finish_primitive_module(Scheme_Env *env);
+
+Scheme_Object *scheme_make_modidx(Scheme_Object *path, 
+				  Scheme_Object *base,
+				  Scheme_Object *resolved);
 
 /*========================================================================*/
 /*                                symbols                                 */

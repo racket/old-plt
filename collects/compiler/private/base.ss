@@ -153,6 +153,7 @@
       [REP : compiler:rep^ (rep@
 			    LIBRARY
 			    CSTRUCTS
+			    ANALYZE
 			    ZODIAC
 			    ZLAYER
 			    CONST

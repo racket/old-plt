@@ -88,6 +88,7 @@ EXPORTS
  scheme_temp_inc_mark_depth
  scheme_current_continuation_marks
  scheme_do_eval
+ scheme_eval_nice_compiled_string
  GC_malloc
  GC_malloc_atomic
  GC_malloc_stubborn
@@ -244,10 +245,14 @@ EXPORTS
  scheme_global_bucket
  scheme_global_keyword_bucket
  scheme_module_bucket
+ scheme_exptime_global_bucket
+ scheme_exptime_module_bucket
  scheme_set_global_bucket
+ scheme_install_macro
  scheme_save_initial_module_set
  scheme_primitive_module
  scheme_finish_primitive_module
+ scheme_make_modidx
  scheme_intern_symbol
  scheme_intern_exact_symbol
  scheme_make_symbol

@@ -277,7 +277,7 @@
 				 code)])
 	    
 	    ;; Splice lifted lambda definitions between statics and per-load statics;
-	    ;; Add par-load-lifted after static lifted
+	    ;; Add per-load-lifted after static lifted
 	    (let loop ([n number-of-true-constants]
 		       [l l][c (block-codes s:file-block)]
 		       [l-acc null][c-acc null])
@@ -632,6 +632,7 @@
 
 	      ; analyze top level expressions, cataloguing local variables
 	      (compiler:init-define-lists!)
+	      (const:reset-syntax-constants!)
 	      (let ([bnorm-thunk
 		     (lambda ()
 		       (let-values ([(new-source new-codes max-arity)
@@ -642,6 +643,8 @@
 			 (block:register-max-arity! s:file-block max-arity)
 			 (s:register-max-arity! max-arity))
 		       
+		       (compiler:finish-syntax-constants!)
+
 		       ; take constant construction code and place it in front of the 
 		       ; previously generated code. True constants first.
 		       (set! number-of-true-constants (length (compiler:get-define-list)))
@@ -655,7 +658,7 @@
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 
 	      ;;-----------------------------------------------------------------------
-	      ;; List static procedures
+	      ;; Lift static procedures
 	      ;;
 
 	      (when (compiler:option:verbose) 
@@ -923,6 +926,7 @@
 			    (vm->c:emit-struct-definitions! (compiler:get-structs) c-port)
 			    (vm->c:emit-symbol-declarations! c-port)
 			    (vm->c:emit-inexact-declarations! c-port)
+			    (vm->c:emit-string-declarations! c-port)
 			    (vm->c:emit-prim-ref-declarations! c-port)
 			    (vm->c:emit-static-declarations! c-port)
 			    

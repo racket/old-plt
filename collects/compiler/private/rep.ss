@@ -27,6 +27,7 @@
     (unit/sig compiler:rep^
       (import compiler:library^
 	      compiler:cstructs^
+	      compiler:analyze^
 	      (zodiac : zodiac^)
 	      compiler:zlayer^
 	      compiler:const^
@@ -177,7 +178,7 @@
 						     #f)
 						 (if (const:per-load-statics-table? global)
 						     global
-						     (car global))
+						     (mod-glob-cname global))
 						 ;; field-type
 						 (if (const:per-load-statics-table? global)
 						     (make-rep:atomic 'scheme-per-load-static)

@@ -34,16 +34,30 @@
 	(make-string vm->c:indent-by #\space))
 
       (define (vm->c:generate-modglob-name m s)
-	(when m
+	(when (symbol? m)
 	  (compiler:get-symbol-const! #f m)) ;; generates symbol const
 	(compiler:get-symbol-const! #f s) ;; generates symbol const
-	(let ([name (symbol-append 'GL (compiler:gensym) (or m '||) '_ s)])
-	  name))
+	(let ([mname (cond
+		      [(symbol? m) m]
+		      [(not m) '||]
+		      [else 
+		       ;; try to find a useful part of the module-path-index;
+		       ;; this is just for debugging.
+		       (let-values ([(path base) (module-path-index-split m)])
+			 (cond
+			  [(and (pair? path)
+				(eq? 'lib (car path))
+				(pair? (cdr path))
+				(string? (cadr path)))
+			   (string->symbol (cadr path))]
+			  [else (string->symbol "MoD")]))])])
+	  (let ([name (symbol-append 'GL (compiler:gensym) mname '_ s)])
+	    name)))
 
       (define vm->c:bucket-name
 	(lambda (mod var)
 	  ;; Shouldn't generate any new names:
-	  (car (compiler:add-global-varref! mod var #f))))
+	  (mod-glob-cname (compiler:add-global-varref! mod var #f))))
 
       (define (vm->c:SYMBOLS-name)
 	(if (compiler:multi-o-constant-pool)
@@ -52,6 +66,9 @@
 
       (define (vm->c:INEXACTS-name)
 	"INEXACTS")
+
+      (define (vm->c:STRING-name)
+	"STRINGS")
 
       (define (vm->c:make-symbol-const-string sc)
 	(format "~a[~a]" (vm->c:SYMBOLS-name) (zodiac:varref-var sc)))
@@ -95,6 +112,31 @@
 		   (vm->c:INEXACTS-name)
 		   (const:get-inexact-counter))))
 
+      (define (vm->c:emit-string-declarations! port)
+	(hash-table-for-each
+	 (const:get-string-table)
+	 (lambda (sym index)
+	   (let* ([str (symbol->string sym)]
+		  [len (string-length str)])
+	     (let ([friendly (substring str 0 (min len 24))])
+	       (fprintf port
+			"/* ~a */~n"
+			(list->string (map (lambda (i)
+					     (cond
+					      [(eq? i #\/) #\_]
+					      [(<= 32 (char->integer i) 121)
+					       i]
+					      [else #\_]))
+					   (string->list friendly)))))
+	     (fprintf port "static const char STRING_~a[~a] = {" index (add1 len))
+	     (let loop ([i 0])
+	       (unless (= i len)
+		 (when (zero? (modulo i 20))
+		   (fprintf port "~n    "))
+		 (fprintf port "~a, " (char->integer (string-ref str i)))
+		 (loop (add1 i)))))
+	   (fprintf port "0 }; /* end of STRING_~a */~n~n" index))))
+
       (define (vm->c:emit-symbol-definitions! port)
 	(unless (zero? (const:get-symbol-counter))
 	  (fprintf port "  int i;~n")
@@ -136,7 +178,7 @@
 
       (define vm->c:emit-struct-definitions!
 	(lambda (structs port)
-	  (fprintf port "/* compiler written structures */~n")
+	  (fprintf port "/* compiler-written structures */~n")
 	  (for-each (lambda (struct)
 		      (fprintf port "struct ~a~n{~n"
 			       (vm->c:convert-symbol
@@ -161,7 +203,7 @@
 
       (define (emit-static-variable-fields! port l)
 	(unless (null? l)
-	  (fprintf port "  /* Write fields as an array to help C comiplers */~n")
+	  (fprintf port "  /* Write fields as an array to help C compilers */~n")
 	  (fprintf port "  /* that don't like really big records. */~n")
 	  (fprintf port "  Scheme_Object * _consts_[~a];~n" (length l))
 	  (let svloop ([l l][n 0])
@@ -170,12 +212,12 @@
 		       (vm->c:convert-symbol (car l)) n)
 	      (svloop (cdr l) (add1 n))))))
 
-					; when statics have binding information, this will look more like 
-					; emit-local-variable-declarations!
+      ;; when statics have binding information, this will look more like 
+      ;; emit-local-variable-declarations!
       (define vm->c:emit-static-declarations!
 	(lambda (port)
 	  (unless (not (compiler:any-statics?))
-	    (fprintf port "/* compiler written static variables */~n")
+	    (fprintf port "/* compiler-written static variables */~n")
 	    (fprintf port "static struct {~n")
 	    (emit-static-variable-fields! port (compiler:get-static-list))
 	    (unless (null? (compiler:get-case-lambdas))
@@ -188,7 +230,7 @@
 	     (compiler:get-lifted-lambda-vars))
 	    (fprintf port "} S;~n~n"))
 
-	  (fprintf port "/* compiler written per-load static variables */~n")
+	  (fprintf port "/* compiler-written per-load static variables */~n")
 	  (fprintf port "typedef struct Scheme_Per_Load_Statics {~n")
 	  (if (null? (compiler:get-per-load-static-list))
 	      (fprintf port "  int dummy;~n")
@@ -200,7 +242,7 @@
 					; pointer declarations
       (define vm->c:emit-registration!
 	(lambda (port)
-	  (fprintf port "~a/* register compiler written static variables with GC */~n"
+	  (fprintf port "~a/* register compiler-written static variables with GC */~n"
 		   vm->c:indent-spaces)
 	  (let ([register
 		 (lambda (v)
@@ -261,7 +303,7 @@
 		     "~aScheme_Object * arg[~a];~n"
 		     vm->c:indent-spaces
 		     max-arity)
-	    (fprintf c-port "~aScheme_Process * pr = scheme_current_process;~n"     
+	    (fprintf c-port "~aScheme_Thread * pr = scheme_current_thread;~n"
 		     vm->c:indent-spaces)
 	    (fprintf c-port "~aScheme_Object ** tail_buf;~n"
 		     vm->c:indent-spaces))
@@ -346,7 +388,7 @@
 		  (loop (+ n 1)))))
 	    (when (> max-arity 0)
 					; tail-buffer-setup
-	      (fprintf port "~aScheme_Process * pr = scheme_current_process;~n"
+	      (fprintf port "~aScheme_Thread * pr = scheme_current_thread;~n"
 		       vm->c:indent-spaces)
 	      (fprintf port "~aScheme_Object ** tail_buf;~n"
 		       vm->c:indent-spaces)))
@@ -437,7 +479,7 @@
 			    indent))
 		 (fprintf port "~aScheme_Bucket * G~a;~n"
 			  indent
-			  (vm->c:convert-symbol (car var)))))
+			  (vm->c:convert-symbol (mod-glob-cname var)))))
 	   (set->list globals))))
 
       (define vm->c:emit-bucket-lookups!
@@ -445,15 +487,22 @@
 	  (for-each 
 	   (lambda (var)
 	     (unless (const:per-load-statics-table? var)
-	       (let ([name (vm->c:convert-symbol (car var))]
-		     [mod (cadr var)]
-		     [var (cddr var)])
-		 (fprintf port "~aG~a = scheme_~a_bucket(~a~a~a, SCHEME_CURRENT_ENV(pr));~n"
+	       (let ([name (vm->c:convert-symbol (mod-glob-cname var))]
+		     [mod (mod-glob-modname var)]
+		     [var (mod-glob-varname var)]
+		     [et? (mod-glob-exp-time? var)])
+		 (fprintf port "~aG~a = scheme_~a~a_bucket(~a~a~a, SCHEME_CURRENT_ENV(pr));~n"
 			  indent 
 			  name 
+			  (if et? "exptime_" "")
 			  (if mod "module" "global")
 			  (if mod
-			      (vm->c:make-symbol-const-string (compiler:get-symbol-const! #f mod))
+			      (if (symbol? mod)
+				  (vm->c:make-symbol-const-string (compiler:get-symbol-const! #f mod))
+				  (let ([v (compiler:get-module-path-constant mod)])
+				    (format
+				     "S.~a"
+				     (vm->c:convert-symbol (zodiac:varref-var v)))))
 			      "")
 			  (if mod ", " "")
 			  (vm->c:make-symbol-const-string (compiler:get-symbol-const! #f var))))))
@@ -476,8 +525,8 @@
 		 [(or normal? (not last?))
 		  (fprintf port "~a~a = " indent (get-dest n))
 		  (if (dest-boxed? n)
-					; if the binding is mutable, we need to make a box and fill it with
-					; the correct value
+		      ;; if the binding is mutable, we need to make a box and fill it with
+		      ;; the correct value
 		      (let ([rep (get-rep n)])
 			(fprintf port "~ascheme_malloc(sizeof(~a));~n" 
 				 (get-cast n #f)
@@ -647,7 +696,7 @@
 			      (if (compiler:option:unpack-environments)
 				  undefines
 				  (cons "PLS" undefines))))
-		      (let* ([vname (car var)]
+		      (let* ([vname (mod-glob-cname var)]
 			     [name (vm->c:convert-symbol vname)]
 			     [fname (rep:find-field (closure-code-rep code) vname)])
 			(fprintf port 
@@ -932,7 +981,7 @@
 			     [(eq? type target-type:lexical) 
 			      (process target indent-level #f #t)]
 			     [(eq? type target-type:global)
-			      (let ([bucket-name (vm->c:convert-symbol (car target))])
+			      (let ([bucket-name (vm->c:convert-symbol (mod-glob-cname target))])
 				(emit "G~a->val" bucket-name))]
 			     [else (compiler:internal-error 
 				    #f
@@ -943,7 +992,7 @@
 			    (if mode
 				(begin
 				  (emit "scheme_set_global_bucket(~s, " (car mode))
-				  (emit "G~a, " (vm->c:convert-symbol (car (cdr target))))
+				  (emit "G~a, " (vm->c:convert-symbol (mod-glob-cname (cdr target))))
 				  (if process-val? 
 				      (process val indent-level #f #t)
 				      (emit val))
@@ -958,7 +1007,7 @@
 		       [val (vm:set!-val ast)]
 		       [num-to-set (length vars)]
 		       [return-arity
-			(or (and (single-arity? ast)
+			(or (and (single-arity? val)
 				 1)
 			    (and (vm:apply? val) 
 				 (vm:apply-prim val)
@@ -995,8 +1044,50 @@
 			  ))))]
 	       
 	       
-	       ;; (set-global! x R)
-	       
+	       ;; (define-syntax! x R)
+	       [(vm:syntax!? ast)
+		(let* ([process-set!
+			(lambda (target val process-val?)
+			  (let ([sym
+				 (vm->c:make-symbol-const-string 
+				  (compiler:get-symbol-const! #f (zodiac:varref-var target)))])
+			    (emit "scheme_install_macro(scheme_global_keyword_bucket(~a, SCHEME_CURRENT_ENV(pr)), "
+				  sym)
+			    (if process-val? 
+				(process val indent-level #f #t)
+				(emit val))
+			    (emit ")")))]
+		       [vars (vm:syntax!-vars ast)]
+		       [val (vm:syntax!-val ast)]
+		       [num-to-set (length vars)]
+		       [return-arity (if (single-arity? val) 
+					 1
+					 #f)])
+		  (emit-indentation)
+		  (let ([return-arity-ok?
+			 (and return-arity
+			      (number? return-arity)
+			      (= return-arity num-to-set))])
+		    (if (= num-to-set 1)		      
+			
+			(process-set! (car vars) val #t)
+			
+			(begin
+			  (emit "{ Scheme_Object * res = ")
+			  (process val indent-level #f #t)
+			  (emit "; ")
+			  (unless return-arity-ok?
+			    (emit "CHECK_MULTIPLE_VALUES(res, ~a);" num-to-set))
+			  (emit "}")
+			  (if (not (null? vars))
+			      (emit "~n"))
+			  (let aloop ([vars vars] [n 0])
+			    (unless (null? vars)
+			      (emit-indentation)
+			      (process-set! (car vars) (format "scheme_multiple_array[~a]" n) #f)
+			      (emit ";~n")
+			      (aloop (cdr vars) (+ n 1))))
+			  ))))]
 
 	       ;; (%args A ...) -> arg[0] = A; ...
 	       [(vm:args? ast)
@@ -1018,9 +1109,9 @@
 			   [(eq? arg-type:register argtype) (emit "reg~a = (long)" n)]
 			   [else (compiler:internal-error 
 				  #f (format "vm->c: ~a unknown arg type" (vm:args-type ast)))]))
-					; (emit "DEBUG_CHECK(") ;; DEBUGGING
+			;; (emit "DEBUG_CHECK(") ;; DEBUGGING
 			(process (car args) indent-level #f #t)
-					; (emit ")") ;; DEBUGGING
+			;; (emit ")") ;; DEBUGGING
 			(unless (null? (cdr args))
 			  (emit ";~n"))
 			(arloop (add1 n) (cdr args)))))]
@@ -1100,7 +1191,7 @@
 	       [(vm:check-global? ast)
 		(emit-expr (format "CHECK_GLOBAL_BOUND(G~a)"
 				   (vm->c:convert-symbol
-				    (car (vm:check-global-var ast)))))]
+				    (mod-glob-cname (vm:check-global-var ast)))))]
 	       
 	       ;; with-continuation-mark
 	       [(vm:wcm-mark!? ast)
@@ -1185,13 +1276,13 @@
 	       [(vm:global-varref? ast)
 		(emit-expr "GLOBAL_VARREF(G~a)"
 			   (vm->c:convert-symbol
-			    (car (vm:global-varref-var ast))))]
+			    (mod-glob-cname (vm:global-varref-var ast))))]
 
 	       ;; (global-varref x) --> Gx
 	       [(vm:bucket? ast)
 		(emit-expr "G~a"
 			   (vm->c:convert-symbol
-			    (car (vm:bucket-var ast))))]
+			    (mod-glob-cname (vm:bucket-var ast))))]
 
 	       [(vm:per-load-statics-table? ast)
 		(emit-expr "PLS")]
@@ -1254,7 +1345,7 @@
 	       ;; (primitive-varref x) -> x->val
 	       [(vm:primitive-varref? ast)
 		(emit-expr "P.~a"
-			   (vm->c:convert-symbol (car (vm:primitive-varref-var ast))))]
+			   (vm->c:convert-symbol (mod-glob-cname (vm:primitive-varref-var ast))))]
 	       
 	       ;; (symbol-varref x) -> symbols[x]
 	       [(vm:symbol-varref? ast)
@@ -1315,8 +1406,8 @@
 		(let ([ast (vm:build-constant-text ast)])
 		  (cond
 		   [(string? (zodiac:read-object ast))
-		    (fprintf port "scheme_make_immutable_sized_string(~s, ~s, 0)" 
-			     (zodiac:read-object ast)
+		    (fprintf port "scheme_make_immutable_sized_string((char *)STRING_~a, ~a, 0)" 
+			     (const:intern-string (zodiac:read-object ast))
 			     (string-length (zodiac:read-object ast)))]
 		   [(symbol? (zodiac:read-object ast))
 		    (let ([s (symbol->string (zodiac:read-object ast))])
@@ -1352,6 +1443,12 @@
 
 		   [(void? (zodiac:read-object ast))
 		    (emit "scheme_void")]
+
+		   ;; HACK! - we have abused constants to pass through 
+		   ;;  a call to scheme_read_nice_compiled_string():
+		   [(zodiac:varref? (zodiac:read-object ast))
+		    (emit-expr "scheme_eval_compiled_stx_string(S.~a, SCHEME_CURRENT_ENV(pr))"
+			       (vm->c:convert-symbol (zodiac:varref-var (zodiac:read-object ast))))]
 		   
 		   [else (compiler:internal-error
 			  ast

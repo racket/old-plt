@@ -38,6 +38,10 @@ static Scheme_Object *namespace_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[]);
 
+static Scheme_Object *module_path_index_p(int argc, Scheme_Object *argv[]);
+static Scheme_Object *module_path_index_split(int argc, Scheme_Object *argv[]);
+static Scheme_Object *module_path_index_join(int argc, Scheme_Object *argv[]);
+
 static Scheme_Object *module_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *module_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 static Scheme_Object *module_begin_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
@@ -201,6 +205,23 @@ void scheme_init_module(Scheme_Env *env)
   scheme_add_global_constant("namespace-attach-module",
 			     scheme_make_prim_w_arity(namespace_attach_module,
 						      "namespace-attach-module",
+						      2, 2),
+			     env);
+
+  scheme_add_global_constant("module-path-index?",
+			     scheme_make_folding_prim(module_path_index_p,
+						      "module-path-index?",
+						      1, 1, 1),
+			     env);
+  scheme_add_global_constant("module-path-index-split",
+			     scheme_make_prim_w_arity2(module_path_index_split,
+						       "module-path-index-split",
+						       1, 1,
+						       2, 2),
+			     env);
+  scheme_add_global_constant("module-path-index-join",
+			     scheme_make_prim_w_arity(module_path_index_join,
+						      "module-path-index-join",
 						      2, 2),
 			     env);
 }
@@ -492,7 +513,8 @@ current_module_name_prefix(int argc, Scheme_Object *argv[])
 /*                            procedures                              */
 /**********************************************************************/
 
-static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[], int for_syntax)
+static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[], 
+				       int get_syntax, int get_bucket, int exp_time)
 {
   Scheme_Object *modname, *modidx;
   Scheme_Object *name, *srcname, *srcmname;
@@ -504,14 +526,22 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[], int for_
   name = argv[1];
 
   if (SCHEME_TRUEP(name) && !SCHEME_SYMBOLP(name)) {
-    scheme_wrong_type((for_syntax? "dynamic-require" : "dynamic-require-syntax"), "symbol or #f", 1, argc, argv);
+    scheme_wrong_type((get_syntax? "dynamic-require" : "dynamic-require-syntax"), "symbol or #f", 1, argc, argv);
     return NULL;
   }
 
-  modidx = scheme_make_modidx(modname, scheme_false, scheme_false);
+  if (SAME_TYPE(SCHEME_TYPE(modname), scheme_module_index_type))
+    modidx = modname;
+  else
+    modidx = scheme_make_modidx(modname, scheme_false, scheme_false);
+
   modname = scheme_module_resolve(modidx);
 
   env = scheme_get_env(scheme_config);
+  if (exp_time) {
+    scheme_prepare_exp_env(env);
+    env = env->exp_env;
+  }
 
   m = scheme_module_load(modname, env);
   srcm = m;
@@ -526,8 +556,8 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[], int for_
     count = srcm->num_provides;
     for (i = 0; i < count; i++) {
       if (SAME_OBJ(name, srcm->provides[i])) {
-	if ((for_syntax && (i >= srcm->num_var_provides))
-	    || (!for_syntax && (i < srcm->num_var_provides))) {
+	if ((get_syntax && (i >= srcm->num_var_provides))
+	    || (!get_syntax && (i < srcm->num_var_provides))) {
 	  srcmname = (srcm->provide_srcs ? srcm->provide_srcs[i] : scheme_false);
 	  if (SCHEME_FALSEP(srcmname))
 	    srcmname = srcm->modname;
@@ -536,8 +566,8 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[], int for_
 	} else {
 	  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
 			   "%s: name is provided as %s: %V by module: %V",
-			   (for_syntax? "dynamic-require" : "dynamic-require-syntax"),
-			   (for_syntax? "a variable" : "syntax"),
+			   (get_syntax? "dynamic-require" : "dynamic-require-syntax"),
+			   (get_syntax? "a variable" : "syntax"),
 			   name, srcm->modname);
 	  return NULL;
 	}
@@ -553,13 +583,13 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[], int for_
     if (i == count) {
       scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
 		       "%s: name is not provided: %V by module: %V",
-		       (for_syntax? "dynamic-require" : "dynamic-require-syntax"),
+		       (get_syntax? "dynamic-require" : "dynamic-require-syntax"),
 		       name, srcm->modname);
       return NULL;
     }
   }
 
-  if (for_syntax)
+  if (get_syntax)
     expstart_module(m, env, 0, modidx);
   else
     start_module(m, env, 0, modidx);
@@ -567,7 +597,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[], int for_
   if (SCHEME_SYMBOLP(name)) {
     menv = scheme_module_access(srcmname, env);
 
-    if (for_syntax) {
+    if (get_syntax) {
       Scheme_Object *v;
 
       v = scheme_module_syntax(srcmname, env, srcname);
@@ -580,7 +610,10 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[], int for_
 
       return SCHEME_PTR_VAL(v);
     } else {
-      return (Scheme_Object *)scheme_lookup_in_table(menv->toplevel, (const char *)srcname);
+      if (get_bucket)
+	return (Scheme_Object *)scheme_bucket_from_table(menv->toplevel, (const char *)srcname);
+      else
+	return (Scheme_Object *)scheme_lookup_in_table(menv->toplevel, (const char *)srcname);
     }
   } else
     return scheme_void;
@@ -588,12 +621,12 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[], int for_
 
 static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
 {
-  return _dynamic_require(argc, argv, 0);
+  return _dynamic_require(argc, argv, 0, 0, 0);
 }
 
 static Scheme_Object *dynamic_require_syntax(int argc, Scheme_Object *argv[])
 {
-  return _dynamic_require(argc, argv, 1);
+  return _dynamic_require(argc, argv, 1, 0, 0);
 }
 
 static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int for_exp)
@@ -813,6 +846,40 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
   }
 
   return scheme_void;
+}
+
+static Scheme_Object *module_path_index_p(int argc, Scheme_Object *argv[])
+{
+  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_module_index_type)
+	  ? scheme_true
+	  : scheme_false);
+}
+
+static Scheme_Object *module_path_index_split(int argc, Scheme_Object *argv[])
+{
+  Scheme_Modidx *modidx;
+  Scheme_Object *a[2];
+
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_module_index_type))
+    scheme_wrong_type("module-path-index-split", "module-path-index", 0, argc, argv);
+
+  modidx = (Scheme_Modidx *)argv[0];
+  a[0] = modidx->path;
+  a[1] = modidx->base;
+
+  return scheme_values(2, a);
+}
+
+static Scheme_Object *module_path_index_join(int argc, Scheme_Object *argv[])
+{
+  if (SCHEME_SYMBOLP(argv[0]))
+    scheme_wrong_type("module-path-index-join", "non-symbol", 0, argc, argv);
+
+  if (SCHEME_TRUEP(argv[1])
+      && !SAME_TYPE(SCHEME_TYPE(argv[1]), scheme_module_index_type))
+    scheme_wrong_type("module-path-index-join", "module-path-index or #f", 1, argc, argv);
+
+  return scheme_make_modidx(argv[0], argv[1], scheme_false);
 }
 
 /**********************************************************************/
@@ -1285,9 +1352,24 @@ void scheme_finish_primitive_module(Scheme_Env *env)
   env->running = 1;
 }
 
-Scheme_Bucket *scheme_module_bucket(Scheme_Object *mod, Scheme_Object *var, Scheme_Env *env)
+Scheme_Bucket *scheme_module_bucket(Scheme_Object *modname, Scheme_Object *var, Scheme_Env *env)
 {
-  return NULL;
+  Scheme_Object *a[2];
+
+  a[0] = modname;
+  a[1] = var;
+
+  return (Scheme_Bucket *)_dynamic_require(2, a, 0, 1, 0);
+}
+
+Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *modname, Scheme_Object *var, Scheme_Env *env)
+{
+  Scheme_Object *a[2];
+
+  a[0] = modname;
+  a[1] = var;
+
+  return (Scheme_Bucket *)_dynamic_require(2, a, 0, 1, 1);
 }
 
 /**********************************************************************/

@@ -160,7 +160,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_id_macro_type, "<id-macro>");
 
   set_name(scheme_module_type, "<module-code>");
-  set_name(scheme_module_index_type, "<module-index>");
+  set_name(scheme_module_index_type, "<module-path-index>");
 
   set_name(scheme_reserved_2_type, "<reserved2>");
   set_name(scheme_reserved_3_type, "<reserved3>");

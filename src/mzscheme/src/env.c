@@ -1591,6 +1591,13 @@ scheme_global_keyword_bucket(Scheme_Object *symbol, Scheme_Env *env)
   return scheme_bucket_from_table(env->syntax, (char *)symbol);
 }
 
+Scheme_Bucket *
+scheme_exptime_global_bucket(Scheme_Object *symbol, Scheme_Env *env)
+{
+  scheme_prepare_exp_env(env);
+  return scheme_global_bucket(symbol, env->exp_env);
+}
+
 Scheme_Object *scheme_make_envunbox(Scheme_Object *value)
 {
   Scheme_Object *obj;

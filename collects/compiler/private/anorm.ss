@@ -52,7 +52,7 @@
 	      (mrspidey : compiler:mrspidey^))
 
       (define compiler:a-value?
-	(one-of zodiac:quote-form? zodiac:varref?))
+	(one-of zodiac:quote-form? zodiac:varref? zodiac:quote-syntax-form?))
 
       (define a-normalize
 	(letrec ([linearize-let-values
@@ -295,6 +295,16 @@
 			  (zodiac:parsed-back ast)
 			  (zodiac:define-values-form-vars ast)
 			  (a-normalize (zodiac:define-values-form-val ast) identity)))]
+		     
+		     ;;----------------------------------------------------------
+		     ;; DEFINE-SYNTAX
+		     ;;
+		     [(zodiac:define-syntaxes-form? ast)
+		      (k (zodiac:make-define-syntaxes-form 
+			  (zodiac:zodiac-stx ast)
+			  (zodiac:parsed-back ast)
+			  (zodiac:define-syntaxes-form-names ast)
+			  (a-normalize (zodiac:define-syntaxes-form-expr ast) identity)))]
 		     
 		     ;;---------------------------------------------------------------
 		     ;; APPLICATIONS

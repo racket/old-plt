@@ -3455,6 +3455,31 @@ Scheme_Object *scheme_eval_linked_expr_multi(Scheme_Object *obj, int let_depth)
   return _eval(obj, NULL, 1, let_depth, 1, 1);
 }
 
+/* for mzc: */
+Scheme_Object *
+scheme_eval_nice_compiled_string(Scheme_Object *str, Scheme_Env *env)
+{
+  Scheme_Object *port, *expr;
+#ifdef MZ_REAL_THREADS
+  Scheme_Thread *p = scheme_current_thread;
+#endif
+
+  port = scheme_make_sized_string_input_port(SCHEME_STR_VAL(str), -SCHEME_STRLEN_VAL(str));
+
+  expr = scheme_internal_read(port, NULL, 1, scheme_config
+#ifdef MZ_REAL_THREADS
+			      , p
+#endif
+			      );
+
+  expr = _scheme_eval_compiled(expr, env);
+
+  /* Unwrap syntax once; */
+  expr = SCHEME_STX_VAL(expr);
+
+  return expr;
+}
+
 static void *expand_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;

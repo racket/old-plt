@@ -115,6 +115,7 @@
 #else
 #define scheme_do_eval_w_thread (scheme_extension_table->scheme_do_eval_w_thread)
 #endif
+#define scheme_eval_compiled_stx_string (scheme_extension_table->scheme_eval_compiled_stx_string)
 #ifndef SCHEME_NO_GC
 # ifndef SCHEME_NO_GC_PROTO
 #define GC_malloc (scheme_extension_table->GC_malloc)
@@ -306,10 +307,14 @@
 #define scheme_global_bucket (scheme_extension_table->scheme_global_bucket)
 #define scheme_global_keyword_bucket (scheme_extension_table->scheme_global_keyword_bucket)
 #define scheme_module_bucket (scheme_extension_table->scheme_module_bucket)
+#define scheme_exptime_global_bucket (scheme_extension_table->scheme_exptime_global_bucket)
+#define scheme_exptime_module_bucket (scheme_extension_table->scheme_exptime_module_bucket)
 #define scheme_set_global_bucket (scheme_extension_table->scheme_set_global_bucket)
+#define scheme_install_macro (scheme_extension_table->scheme_install_macro)
 #define scheme_save_initial_module_set (scheme_extension_table->scheme_save_initial_module_set)
 #define scheme_primitive_module (scheme_extension_table->scheme_primitive_module)
 #define scheme_finish_primitive_module (scheme_extension_table->scheme_finish_primitive_module)
+#define scheme_make_modidx (scheme_extension_table->scheme_make_modidx)
 #define scheme_intern_symbol (scheme_extension_table->scheme_intern_symbol)
 #define scheme_intern_exact_symbol (scheme_extension_table->scheme_intern_exact_symbol)
 #define scheme_make_symbol (scheme_extension_table->scheme_make_symbol)

@@ -162,6 +162,9 @@
      const:get-inexact-counter
      const:get-inexact-table
 
+     const:get-string-table
+     const:intern-string
+
      compiler:add-const!
      compiler:get-symbol-const!
      compiler:construct-const-code!
@@ -171,7 +174,12 @@
      
      compiler:add-per-load-static-list!
 
-     compiler:make-const-constructor))
+     compiler:make-const-constructor
+
+     const:make-syntax-constant
+
+     const:reset-syntax-constants!
+     const:finish-syntax-constants!))
 
   (provide compiler:rep^)
   (define-signature compiler:rep^
@@ -212,6 +220,11 @@
      compiler:add-local-per-load-define-list!
      
      (struct case-info (body case-code global-vars used-vars captured-vars max-arity))
+
+     (struct mod-glob (cname modname varname exp-time?))
+     compiler:get-module-path-constant
+
+     compiler:finish-syntax-constants!
 
      analyze-expression!))
 
@@ -275,6 +288,7 @@
      (struct vm:args (type vals))
      (struct vm:begin0-mark! (var val))
      (struct vm:begin0-setup! (var))
+     (struct vm:syntax! (vars val))
      
      (struct vm:alloc (type))
      (struct vm:build-constant (text))
@@ -379,6 +393,7 @@
      vm->c:emit-symbol-definitions!
      vm->c:emit-inexact-declarations!
      vm->c:emit-inexact-definitions!
+     vm->c:emit-string-declarations!
      vm->c:emit-prim-ref-declarations!
      vm->c:emit-prim-ref-definitions!
      vm->c:emit-struct-definitions!

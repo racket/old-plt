@@ -2113,12 +2113,16 @@
 					   (cddr s)
 					   #f)))])
 		       (and cols
+			    (andmap (lambda (x) (and (string? x) (relative-path? x))) cols)
 			    (let ([p (-find-col 'standard-module-name-resolver (car cols) (cdr cols))])
-			  (build-path p (cadr s)))))]
+			      (build-path p (cadr s)))))]
 		    [(eq? (car s) 'file)
 		     (and (= (length s) 2)
 			  (let ([p (cadr s)])
-			    (path->complete-path p (get-dir))))]
+			    (and (string? p)
+				 (or (relative-path? p)
+				     (absolute-path? p))
+				 (path->complete-path p (get-dir)))))]
 		    [else #f])])
 	      (unless filename
 		(if stx

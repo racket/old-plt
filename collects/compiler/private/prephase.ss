@@ -96,12 +96,15 @@
       ;; returns a true value if the symbol refers to a primitive function.
       (define prephase:primitive-name?
 	(lambda (ast)
-	  (eq? '#%kernel (zodiac:top-level-varref-module ast))))
+	  (let ([m (zodiac:top-level-varref-module ast)])
+	    (or (eq? '#%kernel m)
+		(and (box? m)
+		     (eq? '#%kernel (unbox m)))))))
 
       (define (preprocess:adhoc-app-optimization ast prephase-it)
 	(let ([fun (zodiac:app-fun ast)])
 	  (and (zodiac:top-level-varref? fun)
-	       (eq? '#%kernel (zodiac:top-level-varref-module fun))
+	       (prephase:primitive-name? fun)
 	       (let ([name (zodiac:varref-var fun)]
 		     [args (zodiac:app-args ast)]
 		     [new-fun (lambda (newname)
@@ -171,12 +174,6 @@
 		     ;; CONSTANTS
 		     ;;
 		     [(zodiac:quote-form? ast) ast]
-		     
-		     ;;----------------------------------------------------------
-		     ;; SYNTAX - FIXME, WRONG!!!!
-		     ;;
-		     [(zodiac:quote-syntax-form? ast)
-		      (zodiac:make-special-constant 'void)]
 		     
 		     ;;----------------------------------------------------------
 		     ;; VARIABLE REFERENCES
@@ -282,7 +279,7 @@
 			(when (and (zodiac:app? test)
 				   (zodiac:top-level-varref? (zodiac:app-fun test))
 				   (eq? 'not (zodiac:varref-var (zodiac:app-fun test)))
-				   (eq? '#%kernel (zodiac:top-level-varref-module (zodiac:app-fun test)))
+				   (prephase:primitive-name? (zodiac:app-fun test))
 				   (= 1 (length (zodiac:app-args test))))
 			  (let ([then (zodiac:if-form-then ast)]
 				[else (zodiac:if-form-else ast)])
@@ -447,11 +444,14 @@
 			    ast))]
 		     
 		     ;;----------------------------------------------------------
-		     ;; DEFINE-SYNTAX - FIXME, WRONG!!!!
+		     ;; DEFINE-SYNTAX
 		     ;;
 		     [(zodiac:define-syntaxes-form? ast)
-		      (zodiac:make-special-constant 'void)]
-		     
+		      (zodiac:make-define-syntaxes-form 
+		       (zodiac:zodiac-stx ast)
+		       (zodiac:parsed-back ast)
+		       (zodiac:define-syntaxes-form-names ast)
+		       (prephase! (zodiac:define-syntaxes-form-expr ast) #t (zodiac:define-syntaxes-form-names ast)))]
 		     
 		     ;;-----------------------------------------------------------
 		     ;; APPLICATIONS
@@ -533,6 +533,53 @@
 		       (prephase! (zodiac:with-continuation-mark-form-body ast) need-val? name))
 		      
 		      ast]
+
+		     ;;-----------------------------------------------------------
+		     ;; REQUIRE/PROVIDE
+		     ;;
+		     [(zodiac:require/provide-form? ast)
+		      ;; Change to namespace[-transformer]-require calls:
+		      (let-values ([(elems proc)
+				    (syntax-case (zodiac:zodiac-stx ast) (require require-for-syntax)
+				      [(require . elem)
+				       (values (syntax->list (syntax elem))
+					       'namespace-require)]
+				      [(require-for-syntax . elem)
+				       (values (syntax->list (syntax elem))
+					       'namespace-transformer-require)])])
+			(let ([proc (zodiac:make-top-level-varref
+				     (datum->syntax-object
+				      #f
+				      'namespace-require
+				      (zodiac:zodiac-stx ast))
+				     (make-empty-box)
+				     proc
+				     '#%kernel
+				     (box '()))])
+
+			  (prephase!
+			   (zodiac:make-begin-form
+			    (zodiac:zodiac-stx ast)
+			    (make-empty-box)
+			    (map (lambda (elem)
+				   (zodiac:make-app
+				    (zodiac:zodiac-stx ast)
+				    (make-empty-box)
+				    proc
+				    (list (zodiac:make-quote-form
+					   (zodiac:zodiac-stx ast)
+					   (make-empty-box)
+					   (zodiac:make-read
+					    elem)))))
+				 elems))
+			   need-val? name)))]
+
+		     ;;-----------------------------------------------------------
+		     ;; QUOTE-SYNTAX
+		     ;;
+		     [(zodiac:quote-syntax-form? ast)
+		      ast]
+		     
 
 		     ;;-----------------------------------------------------------
 		     ;; Unsupported forms

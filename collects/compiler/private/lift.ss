@@ -127,6 +127,12 @@
 		     [(zodiac:define-values-form? ast)
 		      (find! (zodiac:define-values-form-val ast))]
 		     
+		     ;;---------------------------------------------------------
+		     ;; DEFINE-SYNTAXES
+		     ;;
+		     [(zodiac:define-syntaxes-form? ast)
+		      (find! (zodiac:define-syntaxes-form-expr ast))]
+		     
 		     ;;-------------------------------------------------------------------
 		     ;; APPLICATIONS
 		     ;;  analyze all the parts, and note whether the rator is
@@ -470,6 +476,17 @@
 		      (zodiac:set-define-values-form-val! 
 		       ast
 		       (lift! (zodiac:define-values-form-val ast) code))
+		      
+		      ast]
+		     
+		     ;;---------------------------------------------------------
+		     ;; DEFINE-SYNTAXES
+		     ;;
+		     [(zodiac:define-syntaxes-form? ast)
+		      
+		      (zodiac:set-define-syntaxes-form-expr!
+		       ast
+		       (lift! (zodiac:define-syntaxes-form-expr ast) code))
 		      
 		      ast]
 		     

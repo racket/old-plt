@@ -463,6 +463,17 @@ void scheme_set_global_bucket(char *who, Scheme_Bucket *b, Scheme_Object *val,
   }
 }
 
+void scheme_install_macro(Scheme_Bucket *b, Scheme_Object *v)
+{
+  Scheme_Object *macro;
+
+  macro = scheme_alloc_small_object();
+  macro->type = scheme_macro_type;
+  SCHEME_PTR_VAL(macro) = v;
+
+  b->val = macro;
+}
+
 static Scheme_Object *
 define_execute(Scheme_Object *vars, Scheme_Object *vals, 
 	       int defmacro, Scheme_Env *dm_home)

@@ -459,6 +459,15 @@
 		       (analyze! (zodiac:define-values-form-val ast)))
 		      ast]
 		     
+		     ;;----------------------------------------------------------
+		     ;; DEFINE-SYNTAX
+		     ;;
+		     [(zodiac:define-syntaxes-form? ast)
+		      (zodiac:set-define-syntaxes-form-expr!
+		       ast
+		       (analyze! (zodiac:define-syntaxes-form-expr ast)))
+		      ast]
+		     
 		     ;;-------------------------------------------------------------------
 		     ;; APPLICATIONS
 		     ;;  analyze all the parts, and note whether the rator is
@@ -523,6 +532,14 @@
 		      (let ([var (get-annotation ast)])
 			(set-annotation! var (make-wcm-binding var)))
 		      
+		      ast]
+
+		     ;;-----------------------------------------------------------------
+		     ;; QUOTE-SYNTAX
+		     ;;
+		     ;; Construct constant.
+		     ;;
+		     [(zodiac:quote-syntax-form? ast)
 		      ast]
 		     
 		     [else (compiler:internal-error

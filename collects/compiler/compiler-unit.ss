@@ -82,7 +82,7 @@
 	(let ([f #f])
 	  (lambda (source-files destination-directory)
 	    (unless f
-	      (set! f ((make-compiler mode) '(import mzscheme))))
+	      (set! f ((make-compiler mode) '(void))))
 	    (f source-files destination-directory))))
 
       (define compile-extensions

@@ -29,7 +29,7 @@
   (define-signature test-case-box^ (test-case-box% phase1 phase2))
   (define test-case-box@
     (unit/sig test-case-box^
-      (import drscheme:tool^ text->syntax-object^)
+      (import drscheme:tool^ text->syntax-object^ print-to-text^)
       
       (define test-case:program-editor% false)
       

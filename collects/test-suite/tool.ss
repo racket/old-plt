@@ -13,7 +13,8 @@
    (lib "snip-lib.ss" "mrlib" "private" "aligned-pasteboard")
    "private/test-case-box.ss"
    "private/find-scheme-menu.ss"
-   "private/text-syntax-object.ss")
+   "private/text-syntax-object.ss"
+   "private/print-to-text.ss")
   
   (define-signature menu-extentions^ ())
   (define menu-extentions@
@@ -170,8 +171,9 @@
     (compound-unit/sig
      (import (TOOL : drscheme:tool^))
      (link (MENU   : menu-extentions^ (menu-extentions@ TOOL CASE))
-           (CASE   : test-case-box^ (test-case-box@ TOOL SYNTAX))
-           (SYNTAX : text->syntax-object^ (text->syntax-object@ TOOL)))
+           (CASE   : test-case-box^ (test-case-box@ TOOL SYNTAX PRINT))
+           (SYNTAX : text->syntax-object^ (text->syntax-object@ TOOL))
+           (PRINT  : print-to-text^ (print-to-text@ TOOL)))
      (export (var (CASE phase1))
              (var (CASE phase2)))))
   )

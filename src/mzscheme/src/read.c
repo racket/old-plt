@@ -267,7 +267,7 @@ void scheme_alloc_list_stack(Scheme_Thread *p)
 
 void scheme_clean_list_stack(Scheme_Thread *p)
 {
-  if (p->list_stack) {
+  if (0 && p->list_stack) {
     memset(p->list_stack + p->list_stack_pos, 0, 
 	   (NUM_CELLS_PER_STACK - p->list_stack_pos) * sizeof(Scheme_Object));
   }
@@ -1281,6 +1281,7 @@ read_vector (Scheme_Object *port,
 		    "read: vector length %ld is too small, "
 		    "%d values provided",
 		    requestLength, len);
+    return NULL;
   }
   if (requestLength < 0)
     requestLength = len;

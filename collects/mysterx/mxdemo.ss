@@ -1,5 +1,7 @@
 ;;; mxdemo.ss -- demo program for MysterX
 
+;;; requires Office 97 to be installed for Calendar Control to work
+
 (require-library "mysterx.ss" "mysterx")
 
 ; the document with the calendar

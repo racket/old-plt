@@ -21,8 +21,8 @@ static const char sccsid[] = "%W% %G%";
 #endif
 
 #ifdef OS_X
-#define PAD_X 6
-#define PAD_Y 6
+#define PAD_X 0
+#define PAD_Y 0
 #endif
 #define IC_BOX_SIZE 12
 #define IC_X_SPACE 3
@@ -80,7 +80,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
 	Rect boundsRect = {0, 0, 0, 0};
         OffsetRect(&boundsRect,SetOriginX + PAD_X,SetOriginY + PAD_Y);
 	wxMacString theMacLabel = label;
-	const Bool drawNow = FALSE; // WCH: use FALSE, then show after ChangeColour??
+	const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
 	const short offValue = 0;
 	const short minValue = 0;
 	const short maxValue = 1;
@@ -94,13 +94,11 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
         OSErr err;
         err = ::GetBestControlRect(cMacControl,&r,&baselineOffset);
         
-        fprintf(stderr,"err: %d, t: %d l: %d r: %d b: %d\n",err,r.top,r.left,r.right,r.bottom);
-        
         cWindowWidth = r.right - r.left + (2 * PAD_X);
         cWindowHeight = r.bottom - r.top + (2 * PAD_Y);
         
         ::SizeControl(cMacControl,r.right-r.left,r.bottom-r.top);
-        
+        ::ShowControl(cMacControl);
 #else
 
 	if (width <= 0 || height <= 0)
@@ -316,7 +314,7 @@ void wxCheckBox::Paint(void)
 	if (cHidden) return;
 	SetCurrentDC();
 	Rect r = { 0, 0, cWindowHeight, cWindowWidth};
-        OffsetRect(&r,SetOriginX,SetOriginY);
+        ::OffsetRect(&r,SetOriginX,SetOriginY);
 	if (cMacControl)
 	  ::Draw1Control(cMacControl);
 	else {
@@ -393,14 +391,31 @@ void wxCheckBox::DoShow(Bool show)
 }
 
 //-----------------------------------------------------------------------------
+void wxCheckBox::Enable(Bool enable)
+{
+	if ((enable != cEnable) && cActive && cMacControl) {
+		SetCurrentDC();
+		if (enable) {
+			::ActivateControl(cMacControl);
+		}
+		else {
+			::DeactivateControl(cMacControl);
+		}
+	}
+	wxWindow::Enable(enable);
+}
+
+//-----------------------------------------------------------------------------
 void wxCheckBox::ShowAsActive(Bool flag) // mac platform only
 {
-	if (flag) {
-		::ActivateControl(cMacControl);
-	}
-	else {
-		::DeactivateControl(cMacControl);
-		::HideControl(cMacControl);
+	if (cEnable && cMacControl) {
+		SetCurrentDC();
+		if (flag) {
+			::ActivateControl(cMacControl);
+		}
+		else {
+			::DeactivateControl(cMacControl);
+		}
 	}
 }
 
@@ -415,7 +430,7 @@ void wxCheckBox::OnEvent(wxMouseEvent *event) // mac platform only
 		int startV;
 		event->Position(&startH, &startV); // client c.s.
 	
-		Point startPt = {startV + SetOriginX, startH + SetOriginY}; // port c.s.
+		Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
 		int trackResult;
 		if (::StillDown()) {
 			if (cMacControl)

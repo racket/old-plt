@@ -1657,7 +1657,7 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
 
   ::InsertMenu(m, -1);
   ::CalcMenuSize(m);
-  Point pos = {(short)y, (short)x};
+  Point pos = {(short)y + SetOriginY, (short)x + SetOriginX};
   LocalToGlobal(&pos);
   long sel = ::PopUpMenuSelect(m, pos.v, pos.h, 0);
 

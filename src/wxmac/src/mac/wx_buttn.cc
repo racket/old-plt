@@ -113,25 +113,28 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	cBorderArea = new wxArea(this);
 	new wxButtonBorder(cBorderArea);
 
-    if (style & 1) OnSetDefault(TRUE);
-
 	SetCurrentMacDC();
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	Rect boundsRect = {0, 0, ClientArea()->Height(), ClientArea()->Width()};
         OffsetRect(&boundsRect,SetOriginX,SetOriginY);
 	wxMacString theMacTitle = label;
-	const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
+	const Bool drawNow = FALSE; // WCH: use FALSE, then show after ChangeColour??
 	const short offValue = 0;
 	const short minValue = 0;
 	const short maxValue = 1;
 	short refCon = 0;
 #ifdef OS_X
         ::InsetRect(&boundsRect,BUTTON_H_INSET,BUTTON_V_INSET);
-#endif        
+        CFStringRef title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
+        ::CreatePushButtonControl(GetWindowFromPort(theMacGrafPort), &boundsRect, title, &cMacControl);
+#else        
 	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacTitle(),
 			drawNow, offValue, minValue, maxValue, pushButProc + popupUseWFont, refCon);
 	CheckMemOK(cMacControl);
-	
+#endif        
+
+        if (style & 1) OnSetDefault(TRUE);
+
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
 }
@@ -314,20 +317,29 @@ void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
 { // WCH: the panel should invoke the default button to distinguish itself
 	if (buttonBitmap)
 		return;
-	if (flag)
-	{
+#ifdef OS_X
+        if (cMacControl) {
+            char byteFlag = (char)flag;
+            SetControlData(cMacControl,kControlEntireControl,kControlPushButtonDefaultTag,1,&byteFlag);
+        } else {
+#endif                
+            if (flag)
+            {
 		wxMargin margin(4);
 		cBorderArea->SetMargin(margin, Direction::wxAll,
 						cWindowWidth + 8, cWindowHeight + 8,
 						cWindowX - 4, cWindowY - 4);
-	}
-	else
-	{
+            }
+            else
+            {
 		wxMargin margin(0);
 		cBorderArea->SetMargin(margin, Direction::wxAll,
 						cWindowWidth - 8, cWindowHeight - 8,
 						cWindowX + 4, cWindowY + 4);
-	}
+            }
+#ifdef OS_X
+        }
+#endif
 }
 
 //-----------------------------------------------------------------------------

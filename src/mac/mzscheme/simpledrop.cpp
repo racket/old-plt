@@ -313,6 +313,8 @@ void Drop_GetArgs(int *argc, char ***argv)
 #endif
     }
   }
+#ifndef OS_X
   *argc = scheme_mac_argc;
   *argv = scheme_mac_argv;
+#endif  
 }

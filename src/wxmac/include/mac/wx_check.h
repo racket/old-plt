@@ -118,6 +118,7 @@ protected:
 	// Other methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	virtual void Paint(void);
+	virtual void Enable(Bool enable);
 	virtual void ShowAsActive(Bool flag);
 	virtual void OnEvent(wxMouseEvent *event); // mac platform only
 };

@@ -257,7 +257,9 @@ int wxChoice::Number(void)
 
 wxChoice::~wxChoice (void)
 {
+#ifndef OS_X
 	::DisposeMenu(hDynMenu);
+#endif        
 	delete[] sTitle;
 }
 // --------- Calculate the ValueRect based on the menu's strings ----
@@ -478,7 +480,18 @@ void wxChoice::DoShow(Bool show)
 //-----------------------------------------------------------------------------
 void wxChoice::ShowAsActive(Bool flag) // mac platform only
 {
+	if (cEnable && cMacControl) {
+		SetCurrentDC();
+		if (flag) {
+			::ActivateControl(cMacControl);
+		}
+		else {
+			::DeactivateControl(cMacControl);
+		}
+	}
 }
+
+//-----------------------------------------------------------------------------
 
 
 void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only

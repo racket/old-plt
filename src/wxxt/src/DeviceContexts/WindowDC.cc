@@ -695,14 +695,16 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	    c = new wxColour(0, 0, 0);
 	    img = XGetImage(wxAPP_DISPLAY, bpm, 0, 0, mw, mh, AllPlanes, ZPixmap);
 	    
+	    tmp->BeginGetPixelFast(0, 0, mw, mh);
 	    for (i = 0; i < mw; i++) {
 	      for (j = 0; j < mh; j++) {
-		tmp->GetPixel(i, j, c);
-		v = c->Red() + c->Green() + c->Blue();
-		v = v / 3;
+		int r_c, g_c, b_c;
+		tmp->GetPixelFast(i, j, &r_c, &g_c, &b_c);
+		v = (r_c + g_c + b_c) / 3;
 		XPutPixel(img, i, j, 255 - v);
 	      }
 	    }
+	    tmp->EndGetPixelFast();
 
 	    tmp->SelectObject(NULL);
 
@@ -783,6 +785,12 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
       if (!free_bmp) {
 	XRenderFreePicture(wxAPP_DISPLAY, maskp);
 	maskp = 0;
+      }
+# else
+      if (CURRENT_REG) {
+	XRenderPictureAttributes attribs;
+	attribs.clip_mask = None;
+	XRenderChangePicture(wxAPP_DISPLAY, destp, CPClipMask, &attribs);
       }
 # endif
 

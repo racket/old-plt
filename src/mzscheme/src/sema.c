@@ -1,6 +1,6 @@
 /*
   MzScheme
-  Copyright (c) 1995 Matthew Flatt
+  Copyright (c) 1995-99 Matthew Flatt
  
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -27,6 +27,11 @@ static Scheme_Object *hit_sema(int n, Scheme_Object **p);
 static Scheme_Object *block_sema_p(int n, Scheme_Object **p);
 static Scheme_Object *block_sema(int n, Scheme_Object **p);
 static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p);
+
+static Scheme_Object *make_channel(int n, Scheme_Object **p);
+static Scheme_Object *channelp(int n, Scheme_Object **p);
+static Scheme_Object *channel_get(int n, Scheme_Object **p);
+static Scheme_Object *channel_put(int n, Scheme_Object **p);
 
 void scheme_init_sema(Scheme_Env *env)
 {
@@ -59,6 +64,27 @@ void scheme_init_sema(Scheme_Env *env)
 			     scheme_make_prim_w_arity(block_sema_breakable, 
 						      "semaphore-wait/enable-break", 
 						      1, 1), 
+			     env);
+
+  scheme_add_global_constant("make-channel", 
+			     scheme_make_prim_w_arity(make_channel,
+						      "make-channel", 
+						      0, 0), 
+			     env);
+  scheme_add_global_constant("channel?", 
+			     scheme_make_folding_prim(channelp,
+						      "channel?", 
+						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant("channel-get", 
+			     scheme_make_prim_w_arity(channel_get, 
+						      "channel-get", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("channel-put", 
+			     scheme_make_prim_w_arity(channel_put, 
+						      "channel-put", 
+						      2, 2), 
 			     env);
 }
 
@@ -204,7 +230,18 @@ static void post_breakable_wait(void *data)
 # ifndef MZ_REAL_THREADS
 static int out_of_line(Scheme_Object *w)
 {
-  return !((Scheme_Sema_Waiter *)w)->in_line;
+  Scheme_Process *p;
+
+  /* Out of line? */
+  if (!((Scheme_Sema_Waiter **)w)[0]->in_line)
+    return 1;
+
+  /* Suspended break? */
+  p = ((Scheme_Process **)w)[1];
+  if (p->external_break && scheme_can_break(p, p->config))
+    return 1;
+
+  return 0;
 }
 # endif
 #endif
@@ -262,8 +299,14 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	w->next = NULL;
 
 	if (!scheme_current_process->next) {
-	  /* We're not allowed to suspend the main thread. */
-	  scheme_block_until(out_of_line, NULL, w, (float)0.0);
+	  void **a = MALLOC_N(void*, 2);
+	  /* We're not allowed to suspend the main thread. Delay
+	     breaks so we get a chance to clean up. */
+	  scheme_current_process->suspend_break = 1;
+	  a[0] = w;
+	  a[1] = scheme_current_process;
+	  scheme_block_until(out_of_line, NULL, a, (float)0.0);
+	  scheme_current_process->suspend_break = 0;
 	} else {
 	  /* Mark the thread to indicate that we need to clean up
 	     if the thread is killed. */
@@ -356,6 +399,107 @@ static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p)
   scheme_wait_sema(p[0], -1);
 
   return scheme_void;
+}
+
+typedef struct Channel_Object {
+  Scheme_Object *val;
+  struct Channel_Object *next;
+} Channel_Object;
+
+typedef struct {
+  Scheme_Type type;
+  Channel_Object *first, *last;
+#ifdef MZ_REAL_THREADS
+  void *change_mutex;
+#endif
+  Scheme_Object *wait_sem;
+} Scheme_Channel;
+
+static Scheme_Object *channel_get(int argc, Scheme_Object **argv)
+{
+  Scheme_Channel *ch;
+  Scheme_Object *result;
+
+  if (SCHEME_TYPE(argv[0]) != scheme_channel_type) {
+    scheme_wrong_type("channel-get", "channel", 0, argc, argv);
+    return NULL;
+  }
+
+  ch = (Scheme_Channel *)argv[0];
+
+  scheme_wait_sema(ch->wait_sem, 0);
+
+#ifdef MZ_REAL_THREADS
+  SCHEME_LOCK_MUTEX(ch->change_mutex);
+#endif
+
+  result = ch->first->val;
+  ch->first = ch->first->next;
+  if (!ch->first)
+    ch->last = NULL;
+
+#ifdef MZ_REAL_THREADS
+  SCHEME_UNLOCK_MUTEX(ch->change_mutex);
+#endif
+
+  return result;
+}
+
+static Scheme_Object *channel_put(int argc, Scheme_Object **argv)
+{
+  Scheme_Channel *ch;
+  Channel_Object *co;
+
+  if (SCHEME_TYPE(argv[0]) != scheme_channel_type) {
+    scheme_wrong_type("channel-put", "channel", 0, argc, argv);
+    return NULL;
+  }
+
+  ch = (Scheme_Channel *)argv[0];
+
+  co = MALLOC_ONE(Channel_Object);
+
+#ifdef MZ_REAL_THREADS
+  SCHEME_LOCK_MUTEX(ch->change_mutex);
+#endif
+
+  co->val = argv[1];
+  co->next = NULL;
+  if (ch->last)
+    ch->last->next = co;
+  else
+    ch->first = co;
+  ch->last = co;
+
+  scheme_post_sema(ch->wait_sem);
+
+#ifdef MZ_REAL_THREADS
+  SCHEME_UNLOCK_MUTEX(ch->change_mutex);
+#endif
+  
+  return scheme_void;
+}
+
+static Scheme_Object *make_channel(int argc, Scheme_Object **argv)
+{
+  Scheme_Channel *ch;
+
+  ch = MALLOC_ONE(Scheme_Channel);
+  ch->type = scheme_channel_type;
+  ch->first = ch->last = NULL;
+  ch->wait_sem = scheme_make_sema(0);
+#ifdef MZ_REAL_THREADS
+  pipe->change_mutex = SCHEME_MAKE_MUTEX();
+#endif
+
+  return (Scheme_Object *)ch;
+}
+
+static Scheme_Object *channelp(int n, Scheme_Object **p)
+{
+  return ((SCHEME_TYPE(p[0]) == scheme_channel_type) 
+	  ? scheme_true
+	  : scheme_false);
 }
 
 #endif

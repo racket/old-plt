@@ -179,7 +179,7 @@
 	(semaphore-wait s2) (semaphore-wait s2)
 	'ok))
 
-; Tests inspired by a question from Savid Tillman
+; Tests inspired by a question from David Tillman
 (define (read-line/expire1 port expiration)
   (with-handlers ([exn:misc:user-break? (lambda (exn) #f)])
     (let ([timer (thread (let ([id (current-thread)])
@@ -270,5 +270,47 @@
     (test '(2 0) 'queue l)
     (wait 3) (pause)
     (test '(3 2 0) 'queue l)))
+
+; Channels
+(define c (make-channel))
+(test #t channel? c)
+(test #f channel? 'not-a-channel)
+
+(test (void) channel-put c "apple")
+(test (void) channel-put c "banana")
+(test (void) channel-put c "coconut")
+
+(test "apple" channel-get c)
+(test "banana" channel-get c)
+(test "coconut" channel-get c)
+
+(test-block #t (lambda () (channel-get c)))
+
+(test (void) channel-put c 'a)
+(test 'a channel-get c)
+(test (void) channel-put c 'b)
+(test (void) channel-put c 'c)
+(test 'b channel-get c)
+(test (void) channel-put c 'd)
+(test 'c channel-get c)
+(test 'd channel-get c)
+
+(test-block #t (lambda () (channel-get c)))
+
+(define v1 #f)
+(define v2 #f)
+(thread (lambda () (set! v1 (channel-get c))))
+(thread (lambda () (set! v2 (channel-get c))))
+(sleep 0.1)
+(test (void) channel-put c 'first)
+(test (void) channel-put c 'second)
+(sleep 0.1)
+(test #t 'two-thread-channel (or (equal? (list v1 v2) '(first second))
+				 (equal? (list v1 v2) '(second first))))
+
+(arity-test make-channel 0 0)
+(arity-test channel? 1 1)
+(arity-test channel-get 1 1)
+(arity-test channel-put 2 2)
 
 (report-errs)

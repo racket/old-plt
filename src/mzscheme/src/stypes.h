@@ -83,10 +83,10 @@ enum {
   scheme_interface_type,
   scheme_manager_type,  /* 70 */
   scheme_random_state_type,
+  scheme_channel_type,
 
   /* These reserved types will let us add types
      without forcing recompilation of compiled MzScheme code */
-  scheme_reserved_2_type,
   scheme_reserved_3_type,
 
   /* more internal types: */

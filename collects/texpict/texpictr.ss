@@ -755,7 +755,7 @@
   (case-lambda
    [(x1 y1 x2 y2) (connect x1 y1 x2 y2 #f)]
    [(x1 y1 x2 y2 arrow?)
-    (if (or (use-old-connect) (draw-bezier-lines))
+    (if (not (or (use-old-connect) (draw-bezier-lines)))
 	(~connect 'r +inf.0 x1 y1 x2 y2 arrow?)
 	(let loop ([dd (if (draw-bezier-lines) 0 1)])
 	  (if (> dd (if (draw-bezier-lines) 0 4))
@@ -766,9 +766,9 @@
 			 [c (if (procedure? (draw-bezier-lines))
 				((draw-bezier-lines) (get-len))
 				#f)])
-		    `(qbezier ,c ,x1 ,y1 ,(quotient (+ x1 x2) 2) ,(quotient (+ y1 y2) 2) ,x2 ,y2))
+		    `((qbezier ,c ,x1 ,y1 ,(quotient (+ x1 x2) 2) ,(quotient (+ y1 y2) 2) ,x2 ,y2)))
 		  (let ([xd (- x2 x1)])
-		    `(put ,x1 ,y1 (line ,(if (negative? xd) -1 1) 0 ,(abs xd)))))
+		    `((put ,x1 ,y1 (line ,(if (negative? xd) -1 1) 0 ,(abs xd))))))
 	      (let-values ([(s l) (find-slope (- x2 x1) (- y2 y1) 
 					      (if (using-pict2e-package)
 						  +inf.0
@@ -776,7 +776,7 @@
 					      dd dd)])
 		(if s
 		    (let-values ([(lh lv ll) (parse-slope s l)])
-		      `(put ,x1 ,y1 (,(if arrow? 'vector 'line) ,lh ,lv ,ll)))
+		      `((put ,x1 ,y1 (,(if arrow? 'vector 'line) ,lh ,lv ,ll))))
 		    (loop (add1 dd)))))))]))
 
 (define ~connect 
@@ -853,19 +853,19 @@
 		  (error 'picture "bad command: ~a" c))
 	  (case (car c)
 	    [(connect) (loop rest
-			     (cons (apply connect (cdr c))
-				   translated)
+			     (append (apply connect (cdr c))
+				     translated)
 			     children)]
 	    [(dconnect) (loop rest
 			      (let ([x (cadr c)]
 				    [y (caddr c)]
 				    [dx (cadddr c)]
 				    [dy (list-ref c 4)])
-				(cons (connect x y (+ x dx) (+ y dy)
-					       (if (null? (list-tail c 5))
-						   #t
-						   (list-ref c 5)))
-				      translated))
+				(append (connect x y (+ x dx) (+ y dy)
+						 (if (null? (list-tail c 5))
+						     #t
+						     (list-ref c 5)))
+					translated))
 			      children)]
 	    [(connect~y) (loop rest
 			       (append (apply ~connect 'x (cdr c))

@@ -61,6 +61,9 @@ pretty-print: default display string handler is now the default
  port display handler instead of the display procedure
 Ported to BeOS
 Inside MzScheme: new built-in type: scheme_complex_izi_type
+Inside MzScheme: changed scheme_eval_string to raise an exception
+ if the expression returns multiple values, and added
+ scheme_eval_string_multi
 
 Version 53, July 25, 1998
 Changed file-modify-seconds to file-or-directory-modify-seconds

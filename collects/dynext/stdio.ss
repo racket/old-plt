@@ -29,7 +29,7 @@
 			   (unless (eof-object? t)
 				   (unless quiet? (fprintf (dest) "~a~n" t))
 				   (set-box! box (string-append (unbox box) 
-								(string #\newline #\space) t))
+								(string #\newline) t))
 				   (loop)))))))]
 	  [in-thread (make-collector in current-output-port collect-output)]
 	  [in-error-thread (make-collector in-error current-error-port collect-output)])

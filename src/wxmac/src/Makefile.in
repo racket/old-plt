@@ -337,9 +337,9 @@ wrffri.o : $(XPMDIR)/wrffri.cpp
 #             The A List               #
 ########################################
 
-# For some reason, gcc 3.1 for Mac OS X doesn't like -MMD; we use -MM
+# For some reason, gcc 3.1 for Mac OS X doesn't like -MMD; we use -MD
 ALISTDIR = $(srcdir)/../../a-list/a-list-1.1.9
-ALISTCCFLAGS = $(CFLAGS) -MM -DOS_X -DWX_CARBON -I$(ALISTDIR)/../c-headers -include $(srcdir)/../include/mac/alcarbon.h 
+ALISTCCFLAGS = $(CFLAGS) -MD -DOS_X -DWX_CARBON -I$(ALISTDIR)/../c-headers -include $(srcdir)/../include/mac/alcarbon.h 
 ALISTDEPS = $(ALISTDIR)/AListInternal.h
 
 ALBirthDeath.o : $(ALISTDEPS) $(ALISTDIR)/ALBirthDeath.c

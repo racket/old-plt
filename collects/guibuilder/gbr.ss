@@ -666,8 +666,8 @@
 	    (append (super-gb-get-class-defines)
 		    (list `[-:init-panel
 			    (lambda (c ha va)
-			      ((uq-ivar c ha))
-			      ((uq-ivar c va))
+			      ((ivar/proc c ha))
+			      ((ivar/proc c va))
 			      c)])))]
 	 [gb-wrap-instantiate
 	  (lambda (v)

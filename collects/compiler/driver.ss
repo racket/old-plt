@@ -609,13 +609,14 @@
 		       (lambda ()
 			 (set-block-source! 
 			  s:file-block
-			  (with-handlers ([void (lambda (x)
-						  (compiler:fatal-error
-						   #f
-						   (format "analysis died: ~a"
-							   (if (exn? x)
-							       (exn-message x)
-							       x))))])
+			  (with-handlers ([void 
+					   (lambda (x)
+					     (compiler:fatal-error
+					      #f
+					      (format "analysis died: ~a"
+						      (if (exn? x)
+							  (exn-message x)
+							  x))))])
 					 (mrspidey:analyze-program-sexps (block-source s:file-block)
 									 input-directory))))])
 		  (verbose-time spidey-thunk)	

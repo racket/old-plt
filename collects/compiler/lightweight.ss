@@ -817,19 +817,12 @@
 
 	  [(zodiac:compound-unit-form? ast)
 
-	   (let* ([imports (zodiac:compound-unit-form-imports ast)]
-		  [links (zodiac:compound-unit-form-links ast)]
-		  [unit-args (filter zodiac:lexical-varref? (map cddr links))]
-		  [linked-units (map cadr links)]
-		  [compound-unit-traverse
-		   (lambda (t)
-		     (rec-traverse-with-scope-binders t imports))])
+	   (let* ([links (zodiac:compound-unit-form-links ast)]
+		  [linked-units (map cadr links)])
 
 	     ((generic-compound-unit-form-action zactor) ast binders)
 
-	     (for-each rec-traverse imports)
-	     (for-each compound-unit-traverse unit-args)
-	     (for-each compound-unit-traverse linked-units))]
+	     (for-each rec-traverse linked-units))]
 
 	  [(zodiac:invoke-unit-form? ast)
 
@@ -1025,7 +1018,7 @@
       
       [(zodiac:begin0-form? ast)
 
-       ((generic-begin-form-folder zolder)
+       ((generic-begin0-form-folder zolder)
 	ast
 	(map do-zolder-traverse (zodiac:begin0-form-bodies ast)))]
       
@@ -1573,66 +1566,49 @@
 		asts)
 	       (outer-closure-loop)))))
 
- (define (escape-analyze ast)
+ (define (escape-analyze asts)
    (letrec ([done #f]
 	    [unit-init #f]
 	    [set-unknown-and-set-flag! 
 	     (lambda (a)
 	       (unless (unknown? a)
-		       (set-unknown! a #t)
-		       (set! done #f)))]
+		 (set-unknown! a #t)
+		 (set! done #f)))]
 	    [set-escape-and-set-flag! 
 	     (lambda (a)
 	       (unless (escape? a)
-		       (set-escape! a #t)
-		       (set! done #f)))]
-	    [pending-phi-closures '()]
-	    [compute-phi-closure-as-list!
-	     (lambda (a)
-	       (let* ([closed #f]
-		      [result (set->list (get-phi a))])
-		 (let phi-closure-loop ([new-ones result])
-		   (let ([body-lambdas
-			  (set->list
-			   (fold-sets
-			    (apply append 
-				   (map (lambda (bodies) 
-					  (map 
-					   (lambda (body)
-					     (cond
-					      [(phi-closure body)
-					       (phi-closure body)]
-					      [(memq body pending-phi-closures)
-					       (phi body)]
-					      [else 
-					       (set! pending-phi-closures
-						     (cons body pending-phi-closures))
-					       (compute-phi-closure-as-list! body)
-					       (phi-closure body)]))
-					   bodies))
-					(map zodiac:case-lambda-form-bodies 
-					     new-ones)))))]
-
-			 [new-this-iter '()])
+		 (set-escape! a #t)
+		 (set! done #f)))]
+	    [compute-phi-closure!
+	     (lambda (a top?)
+	       (or (phi-closure a)
+		   
+		   (begin
+		     (set-phi-closure! a 'cycle)
 		     
-		     (set! closed #t)
-
-		     (for-each
-		      (lambda (bl)
-			(when (not (memq bl result))
-			      (set! closed #f)
-			      (set! new-this-iter (cons bl new-this-iter))))
-		      body-lambdas)
-		     
-		     (set! result (append new-this-iter result))
-
-		     (if closed
-
-			 (begin 
-			   (set-phi-closure! a (list->set result))
-			   result)
-
-			 (phi-closure-loop new-this-iter))))))]
+		     (let* ([procs (set->list (phi a))]
+			    [bodies (apply append
+					   (map zodiac:case-lambda-form-bodies 
+						procs))]
+			    [phis (map (lambda (b) (compute-phi-closure! b #f)) bodies)])
+		       (let loop ([phis phis][r procs][saw-cycle? #f])
+			 (cond
+			  [(null? phis)
+			   (let ([set (list->set r)])
+			     (set-phi-closure!
+			      a 
+			      (and (or top? (not saw-cycle?))
+				   set))
+			     set)]
+			  [(eq? (car phis) 'cycle)
+			   (loop (cdr phis) r #t)]
+			  [else (let ploop ([r r][procs (set->list (car phis))])
+				  (cond
+				   [(null? procs)
+				    (loop (cdr phis) r saw-cycle?)]
+				   [(memq (car procs) r)
+				    (ploop r (cdr procs))]
+				   [else (ploop (cons (car procs) r) (cdr procs))]))]))))))]
 	    [mark-as-escaping!
 	     (lambda (a)
 	       (let ([arglists (zodiac:case-lambda-form-args a)])
@@ -1646,15 +1622,15 @@
 	    [init-unknown!
 	     (lambda (term)
 	       (unless (unknown? term)
-		       (set-unknown! term #t)
-		       (set! done #f)))]
+		 (set-unknown! term #t)
+		 (set! done #f)))]
 	    [prop-unknown 
 	     (lambda (from to)
 	       (let ([unknown-from (unknown? from)]
 		     [unknown-to (unknown? to)])
 		 (when (and unknown-from
 			    (not unknown-to))
-		       (set-unknown-and-set-flag! to))))]
+		   (set-unknown-and-set-flag! to))))]
 	    [escape-zolder
 	     (make-object
 	      (class zolder% ()
@@ -1709,29 +1685,27 @@
 					 a)))]
 		      [top-level-varref/bind-folder
 		       (lambda (a)
-			 (when (varref:has-attribute? a varref:primitive)
-			       (set-unknown-and-set-flag! a)))]
+			 (when (or (varref:has-attribute? a varref:primitive)
+				   (not (varref:has-attribute? a varref:static)))
+			   (set-unknown-and-set-flag! a)))]
 		      [varref-folder 
 		       (lambda (a)
 			 (when (zodiac:bound-varref? a)
 			       (let ([binder (zodiac:bound-varref-binding a)])
 				 (when binder 
-				       (prop-unknown binder a)
-				       (when (escape? binder)
-					     (for-each
-					      mark-as-escaping! 
-					      (set->list (get-phi a))))))))]
+				   (prop-unknown binder a)
+				   (when (escape? binder)
+				     (for-each
+				      mark-as-escaping! 
+				      (set->list (get-phi a))))))))]
 		      [case-lambda-form-folder
 		       (lambda (a _ __)
 			 (when (escape? a)
-			       (for-each
-				(lambda (body)
-				  (unless (phi-closure body)
-					  (let ([phi-cs (compute-phi-closure-as-list! body)])
-					    (for-each
-					     mark-as-escaping!
-					     phi-cs))))
-				(zodiac:case-lambda-form-bodies a))))]
+			   (for-each
+			    (lambda (body)
+			      (let ([phi-closure (compute-phi-closure! body #t)])
+				(for-each mark-as-escaping! (set->list phi-closure))))
+			    (zodiac:case-lambda-form-bodies a))))]
 		      [app-folder
 		       (lambda (a _ __)
 			 (let ([rator (zodiac:app-fun a)]
@@ -1740,12 +1714,12 @@
 			   ; anything passed to unknown rator is escaping
 
 			   (when (unknown? rator)
-				 (for-each
-				  (lambda (rand)
-				    (for-each 
-				     mark-as-escaping! 
-				     (set->list (get-phi rand))))
-				  rands))
+			     (for-each
+			      (lambda (rand)
+				(for-each 
+				 mark-as-escaping! 
+				 (set->list (get-phi rand))))
+			      rands))
 
 			   ; if the rator is unknown, so is the app
 
@@ -1817,9 +1791,12 @@
 		      )		    (sequence (super-init))))])
      (let escape-loop ()
        (set! done #t)
-       (traverse-ast-with-zolder ast escape-zolder)
+       (for-each
+	(lambda (ast)
+	  (traverse-ast-with-zolder ast escape-zolder))
+	asts)
        (unless done 
-	       (escape-loop)))))
+	 (escape-loop)))))
 
  (define (initialize-invariance-sets ast)
 
@@ -3230,9 +3207,9 @@
 
    (closure-analyze asts)
 
+   (escape-analyze asts)
    (for-each 
     (lambda (ast)
-      (escape-analyze ast)
       (initialize-invariance-sets ast)
       (initialize-protocol-eq-classes ast))
     asts)

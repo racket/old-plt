@@ -202,13 +202,27 @@
       
       (define-values (connect disconnect force-disconnect)
 	(let ([connection #f]
+	      [connection-custodian #f]
 	      [message-count 0]
 	      [next-uid 0])
 	  (values
 	   (letrec ([connect
 		     (case-lambda
                        [() (connect 'reuse)]
-                       [(mode)
+		       [(mode) (connect 'reuse void void)]
+                       [(mode break-bad break-ok)
+			
+			(define (with-disconnect-handler thunk)
+			  (with-handlers ([void (lambda (exn)
+						  (custodian-shutdown-all connection-custodian)
+						  (status "")
+						  (raise exn))])
+			    (break-ok)
+			    (begin0
+			     (thunk)
+			     (break-bad))))
+	  
+	  
                         (if connection
                             
                             ;; Already Connected
@@ -219,14 +233,20 @@
 			       ;;  my IMAP setup at cs.utah.edu. Don't know why,
 			       ;;  but I've spent too much time investigating, and
 			       ;;  SELECTing again works fine.
-                               (let-values ([(count new) (imap-reselect connection mailbox-name)]
-                                            [(uid-l) (imap-status connection mailbox-name '(uidnext uidvalidity))])
+                               (let-values ([(count new) (with-disconnect-handler
+							  (lambda ()
+							    (imap-reselect connection mailbox-name)))]
+                                            [(uid-l) (with-disconnect-handler
+						      (lambda ()
+							(imap-status connection mailbox-name '(uidnext uidvalidity))))])
 			         (check-validity (cadr uid-l) void)
                                  (set! message-count count)
                                  (set! next-uid (car uid-l))
                                  (values connection count new next-uid))]
 			      [(eq? mode 'next-uid)
-                               (let-values ([(uid-l) (imap-status connection mailbox-name '(uidnext uidvalidity))])
+                               (let-values ([(uid-l) (with-disconnect-handler
+						      (lambda ()
+							(imap-status connection mailbox-name '(uidnext uidvalidity))))])
 				 (check-validity (cadr uid-l) void)
                                  (set! next-uid (car uid-l))
                                  (values connection message-count 0 next-uid))]
@@ -246,21 +266,29 @@
 				(let*-values ([(imap count new) (let-values ([(server port-no)
 									      (parse-server-name (IMAP-SERVER)
 										(if (get-pref 'sirmail:use-ssl?) 993 143))])
-								  (if (get-pref 'sirmail:use-ssl?)
-								      (let ([c (ssl-make-client-context)])
-									(let ([cert (get-pref 'sirmail:server-certificate)])
-									  (when cert
-									    (ssl-set-verify! c #t)
-									    (ssl-load-verify-root-certificates! c cert)))
-									(let-values ([(in out) (ssl-connect server port-no c)])
-									  (imap-connect* in out (USERNAME) pw mailbox-name)))
-								      (parameterize ([imap-port-number port-no])
-									(imap-connect server (USERNAME) pw mailbox-name))))]
-					      [(uid-l) (imap-status imap mailbox-name '(uidnext uidvalidity))])
+								  (set! connection-custodian (make-custodian))
+								  (parameterize ([current-custodian connection-custodian])
+								    (with-disconnect-handler
+								     (lambda ()
+								       (if (get-pref 'sirmail:use-ssl?)
+									   (let ([c (ssl-make-client-context)])
+									     (let ([cert (get-pref 'sirmail:server-certificate)])
+									       (when cert
+										 (ssl-set-verify! c #t)
+										 (ssl-load-verify-root-certificates! c cert)))
+									     (let-values ([(in out) (ssl-connect server port-no c)])
+									       (imap-connect* in out (USERNAME) pw mailbox-name)))
+									   (parameterize ([imap-port-number port-no])
+									     (imap-connect server (USERNAME) pw mailbox-name)))))))]
+					      [(uid-l) (with-disconnect-handler
+							(lambda ()
+							  (imap-status imap mailbox-name '(uidnext uidvalidity))))])
                                   (unless (get-PASSWORD)
 				    (set-PASSWORD pw))
 				  (status "(Connected, ~a messages)" count)
-				  (check-validity (cadr uid-l) (lambda () (imap-disconnect imap)))
+				  (with-disconnect-handler
+				   (lambda ()
+				     (check-validity (cadr uid-l) (lambda () (imap-disconnect imap)))))
 				  (set! connection imap)
 				  (set! message-count count)
 				  (set! next-uid (car uid-l))
@@ -272,17 +300,18 @@
 	       (status "Disconnecting...")
 	       (as-background 
 		enable-main-frame
-		(lambda (break-bad break-ok) 
-		  (with-handlers ([void no-status-handler])
+		(lambda (break-bad break-ok)
+		  (with-handlers ([void (lambda (exn)
+					  (status "")
+					  (force-disconnect)
+					  (raise exn))])
+		    (break-ok)
 		    (imap-disconnect connection)))
 		close-frame)
 	       (status "")
 	       (set! connection #f)))
 	   (lambda ()
-	     (with-handlers ([void void])
-	       (disconnect))
-	     (with-handlers ([void void])
-	       (imap-force-disconnect connection))
+	     (custodian-shutdown-all connection-custodian)
 	     (set! connection #f)))))
       
       (define (check-validity v cleanup)
@@ -311,9 +340,9 @@
 	(hide-new-mail-msg))
 
       ;; Syncs `mailbox' with the server
-      (define (update-local)
+      (define (update-local break-bad break-ok)
 	(status "Updating ~a from ~a..." mailbox-name (IMAP-SERVER))
-	(let-values ([(imap count new next-uid) (connect 'reselect)])
+	(let-values ([(imap count new next-uid) (connect 'reselect break-bad break-ok)])
 	  (start-biff)
 	  (status "Getting message ids...")
 	  (let* ([positions (enumerate count)]
@@ -397,9 +426,9 @@
 			      (if (= 1 len) "" "s")))
 		    #t))))))
       
-      (define (check-for-new)
+      (define (check-for-new break-bad break-ok)
 	(status "Checking ~a at ~a..." mailbox-name (IMAP-SERVER))
-	(let-values ([(imap count new next-uid) (connect 'next-uid)])
+	(let-values ([(imap count new next-uid) (connect 'next-uid break-bad break-ok)])
 	  (set! new-messages? (not (= next-uid current-next-uid))))
 	(if new-messages?
 	    (begin
@@ -421,7 +450,7 @@
 	       (read-bytes (file-size file)))))))
       
       ;; gets cached body or downloads from server (and caches)
-      (define (get-body uid)
+      (define (get-body uid break-bad break-ok)
 	(let ([v (assoc uid mailbox)]
 	      [file (build-path mailbox-dir (format "~abody" uid))])
 	  (when (not v)
@@ -437,7 +466,7 @@
 					  main-frame))
 		  (status "")
 		  (error "Download aborted"))))
-	    (let*-values ([(imap count new next-uid) (connect)])
+	    (let*-values ([(imap count new next-uid) (connect 'reuse break-bad break-ok)])
 	      (let ([body (caar (imap-get-messages 
 				 imap 
 				 (list (message-position v))
@@ -1266,8 +1295,7 @@
 		   (let ([body (as-background 
 				enable-main-frame
 				(lambda (break-bad break-ok) 
-				  (with-handlers ([exn:break? (lambda (x) "<interrupted>")])
-				    (get-body uid)))
+				  (get-body uid break-bad break-ok))
 				close-frame)]
 			 [insert (lambda (body delta)
 				   (let ([start (send e last-position)])
@@ -1469,8 +1497,8 @@
 	      enable-main-frame
 	      (lambda (break-bad break-ok) 
 		(when (or (not initialized?)
-			  (check-for-new))
-		  (update-local)))
+			  (check-for-new break-bad break-ok))
+		  (update-local break-bad break-ok)))
 	      close-frame)))))
       
       (define (purge-marked/update-headers)
@@ -1560,7 +1588,7 @@
 	           (for-each (lambda (message)
 			       (let ([uid (message-uid message)])
 				 (break-bad)
-				 (get-body uid)
+				 (get-body uid break-bad break-ok)
 				 (break-ok)))
 			     mailbox))))
 	    close-frame))))
@@ -2347,7 +2375,7 @@
 		    (as-background
 		     enable-main-frame
 		     (lambda (break-bad break-ok) 
-		       (check-for-new))
+		       (check-for-new break-bad break-ok))
 		     close-frame)
 		    (when (and new-messages?
 			       (not (eq? old-new-messages? new-messages?)))
@@ -2493,7 +2521,7 @@
 	(when selected
 	  (let* ([uid (send selected user-data)]
 		 [h (get-header uid)]
-		 [body (get-body uid)])
+		 [body (get-body uid void void)])
 	    (start-new-mailer
 	     #f "" ""
 	     (let ([s (extract-field "Subject" h)])

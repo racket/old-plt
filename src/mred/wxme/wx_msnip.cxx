@@ -692,9 +692,8 @@ void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h,
 	   part of the snip itself is not viewed. */
 	float rw, rh;
 	
-	rw = rh = 0;
-	if (state.dc)
-	  snip->GetExtent(state.dc, 0, 0, &rw, &rh);
+	/* We want the internal, non-overridden method: */
+	snip->wxMediaSnip::GetExtent(state.dc, 0, 0, &rw, &rh);
 
 	/* remember: sx and sy are in snip coordinates */
 

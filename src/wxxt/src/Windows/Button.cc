@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Button.cc,v 1.6 1999/11/18 16:35:07 mflatt Exp $
+ * $Id: Button.cc,v 1.7 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: button panel item
  *
@@ -37,11 +37,6 @@
 //-----------------------------------------------------------------------------
 // create and destroy button
 //-----------------------------------------------------------------------------
-
-wxButton::wxButton(void) : wxItem()
-{
-    __type = wxTYPE_BUTTON;
-}
 
 wxButton::wxButton(wxPanel *panel, wxFunction function, char *label,
 		   int x, int y, int width, int height,

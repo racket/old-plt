@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Panel.cc,v 1.4 1999/11/18 16:35:07 mflatt Exp $
+ * $Id: Panel.cc,v 1.5 1999/11/23 17:29:57 mflatt Exp $
  *
  * Purpose: base class for all panels
  *
@@ -58,7 +58,7 @@ wxPanel::wxPanel(void) : wxWindow()
     v_line_extent = 0;
 }
 
-wxPanel::wxPanel(wxPanel *panel, int x, int y, int width, int height,
+wxPanel::wxPanel(wxWindow *panel, int x, int y, int width, int height,
 		 int style, char *name) : wxWindow()
 {
     __type = wxTYPE_PANEL;
@@ -72,7 +72,7 @@ wxPanel::wxPanel(wxPanel *panel, int x, int y, int width, int height,
     h_space = PANEL_HSPACING;
     v_space = PANEL_VSPACING;
     v_line_extent = 0;
-    Create(panel, x, y, width, height, style, name);
+    Create((wxPanel *)panel, x, y, width, height, style, name);
 }
 
 Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
@@ -270,34 +270,3 @@ void wxPanel::OnDefaultAction(wxItem *WXUNUSED(item))
   }
 }
 
-//-----------------------------------------------------------------------------
-// compatibility, I like the typesave constructor more
-//-----------------------------------------------------------------------------
-
-wxPanel::wxPanel(wxWindow *panel, int x, int y, int width, int height,
-		 int style, char *name) : wxWindow()
-{
-    __type = wxTYPE_PANEL;
-
-    default_item = NULL;
-    label_font = wxSYSTEM_FONT;
-    button_colour = label_colour = wxBLACK;
-    label_pos = wxHORIZONTAL;
-    cursor_x = PANEL_HMARGIN;
-    cursor_y = PANEL_VMARGIN;
-    h_space = PANEL_HSPACING;
-    v_space = PANEL_VSPACING;
-    v_line_extent = 0;
-    Create(panel, x, y, width, height, style, name);
-}
-
-Bool wxPanel::Create(wxWindow *panel, int x, int y, int width, int height,
-		     int style, char *name)
-{
-    if (!panel)
-	wxFatalError("wxPanel created without a parent!");
-    if (!wxSubType(__type, wxTYPE_PANEL))
-	wxFatalError("parent has to be a wxFrame, wxPanel, or any subtype", "wxPanel");
-
-    return Create((wxPanel*)panel, x, y, width, height, style, name);
-}

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.cc,v 1.13 1999/11/21 00:08:48 mflatt Exp $
+ * $Id: Canvas.cc,v 1.14 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -40,15 +40,7 @@
 // create and destroy canvas
 //-----------------------------------------------------------------------------
 
-wxCanvas::wxCanvas(void) : wxItem()
-{
-    __type = wxTYPE_CANVAS;
-
-    h_size = h_units = v_size = v_units = 1;
-    h_units_per_page = v_units_per_page = 50;
-}
-
-wxCanvas::wxCanvas(wxPanel *parent, int x, int y, int width, int height,
+wxCanvas::wxCanvas(wxWindow *parent, int x, int y, int width, int height,
 		   int style, char *name) : wxItem()
 {
     __type = wxTYPE_CANVAS;
@@ -56,7 +48,7 @@ wxCanvas::wxCanvas(wxPanel *parent, int x, int y, int width, int height,
     h_size = h_units = v_size = v_units = 1;
     h_units_per_page = v_units_per_page = 50;
 
-    Create(parent, x, y, width, height, style, name);
+    Create((wxPanel *)parent, x, y, width, height, style, name);
 }
 
 Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
@@ -390,39 +382,3 @@ void wxCanvas::OnChar(wxKeyEvent *event)
 	break;
     }
 }
-
-//-----------------------------------------------------------------------------
-// compatibility, I like the typesave constructor more
-//-----------------------------------------------------------------------------
-
-wxCanvas::wxCanvas(wxWindow *parent, int x, int y, int width, int height,
-		   int style, char *name) : wxItem()
-{
-    __type = wxTYPE_CANVAS;
-
-    h_size = h_units = v_size = v_units = 1;
-    h_units_per_page = v_units_per_page = 50;
-
-    Create(parent, x, y, width, height, style, name);
-}
-
-wxCanvas::wxCanvas(wxFrame *parent, int x, int y, int width, int height,
-		   int style, char *name) : wxItem()
-{
-    __type = wxTYPE_CANVAS;
-
-    h_size = h_units = v_size = v_units = 1;
-    h_units_per_page = v_units_per_page = 50;
-
-    Create((wxPanel *)parent, x, y, width, height, style, name);
-}
-
-Bool wxCanvas::Create(wxWindow *panel, int x, int y, int width, int height,
-		      int style, char *name)
-{
-  if (!wxSubType(panel->__type, wxTYPE_PANEL))
-    wxFatalError("parent has to be a wxFrame, wxPanel, or any subtype", "wxCanvas");
-
-  return Create((wxPanel*)panel, x, y, width, height, style, name);
-}
-

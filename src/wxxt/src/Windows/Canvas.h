@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.h,v 1.4 1999/11/04 17:25:37 mflatt Exp $
+ * $Id: Canvas.h,v 1.5 1999/11/18 16:35:07 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -40,22 +40,11 @@ class wxFrame;
 
 class wxCanvas : public wxItem {
 public:
-    wxCanvas(void); 
-    wxCanvas(wxPanel *parent,
-	    int x=-1, int y=-1, int width=-1, int height=-1,
-	    int style=0, char *name="canvas");
     wxCanvas(wxWindow *parent,
-	    int x=-1, int y=-1, int width=-1, int height=-1,
-	    int style=0, char *name="canvas");
-    /* MATTHEW: */
-    wxCanvas(wxFrame *parent,
 	    int x=-1, int y=-1, int width=-1, int height=-1,
 	    int style=0, char *name="canvas");
 
     Bool Create(wxPanel *parent,
-		int x=-1, int y=-1, int width=-1, int height=-1,
-		int style=0, char *name="canvas");
-    Bool Create(wxWindow *parent,
 		int x=-1, int y=-1, int width=-1, int height=-1,
 		int style=0, char *name="canvas");
 
@@ -64,10 +53,8 @@ public:
     void GetScrollUnitsPerPage(int *x, int *y)
 	{ *x = h_units; *y = v_units; };
     void GetVirtualSize(int *x, int *y);
-    Bool IsRetained(void)
-	{ return FALSE; };
     void Scroll(int x_pos, int y_pos);
-    void  ScrollPercent(float x_pos, float y_pos);
+    void ScrollPercent(float x_pos, float y_pos);
     virtual void SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,
 			       int x_page, int y_page, int x_pos=0, int y_pos=0,
 			       Bool setVirtualSize = TRUE);

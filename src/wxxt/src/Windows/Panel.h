@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Panel.h,v 1.3 1998/11/12 18:14:46 mflatt Exp $
+ * $Id: Panel.h,v 1.4 1999/11/04 17:25:38 mflatt Exp $
  *
  * Purpose: base class for all panels
  *
@@ -39,15 +39,10 @@ class wxItem;
 class wxPanel : public wxWindow {
 public:
     wxPanel(void); 
-    wxPanel(wxPanel *parent, int x=-1, int y=-1, int width=-1, int height=-1,
-	    int style=0, char *name="panel");
     wxPanel(wxWindow *parent, int x=-1, int y=-1, int width=-1, int height=-1,
 	    int style=0, char *name="panel");
     // panel creation
     Bool  Create(wxPanel *parent, 
-		 int x=-1, int y=-1, int width=-1, int height=-1,
-		 int style=0, char *name="panel");
-    Bool  Create(wxWindow *parent, 
 		 int x=-1, int y=-1, int width=-1, int height=-1,
 		 int style=0, char *name="panel");
     // resize/layout panel

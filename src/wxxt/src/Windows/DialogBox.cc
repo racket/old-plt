@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DialogBox.cc,v 1.6 1999/11/19 22:02:38 mflatt Exp $
+ * $Id: DialogBox.cc,v 1.7 1999/11/23 17:29:56 mflatt Exp $
  *
  * Purpose: dialog box
  *
@@ -40,7 +40,7 @@ wxDialogBox::wxDialogBox(void) : wxFrame()
   modal = modal_showing = FALSE;
 }
 
-wxDialogBox::wxDialogBox(wxFrame *parent, char *title, Bool _modal, int x,
+wxDialogBox::wxDialogBox(wxWindow *parent, char *title, Bool _modal, int x,
 			 int y, int width, int height, long style, char *name)
     : wxFrame()
 {
@@ -50,7 +50,7 @@ wxDialogBox::wxDialogBox(wxFrame *parent, char *title, Bool _modal, int x,
 
     modal = modal_showing = FALSE;
 
-    Create(parent, title, _modal, x, y, width, height, style, name);
+    Create((wxFrame *)parent, title, _modal, x, y, width, height, style, name);
 }
 
 Bool wxDialogBox::Create(wxFrame *parent, char *title, Bool _modal, int x,
@@ -131,27 +131,3 @@ Bool wxDialogBox::Show(Bool show)
     return TRUE;
 }
 
-//-----------------------------------------------------------------------------
-// compatibility, I like the typesave constructor more
-//-----------------------------------------------------------------------------
-
-wxDialogBox::wxDialogBox(wxWindow *parent, char *title, Bool modal, int x,
-			 int y, int width, int height, long style, char *name)
-    : wxFrame()
-{
-    __type = wxTYPE_DIALOG_BOX;
-
-    /* MATTHEW: */
-    modal_showing = FALSE;
-
-    Create(parent, title, modal, x, y, width, height, style, name);
-}
-
-Bool wxDialogBox::Create(wxWindow *parent, char *title, Bool modal, int x,
-			 int y, int width, int height, long style, char *name)
-{
-    if (!wxSubType(__type, wxTYPE_FRAME))
-	wxFatalError("parent has to be a wxFrame or any subtype", "wxDialogBox");
-
-    return Create((wxFrame*)parent, title, modal, x, y, width, height, style, name);
-}

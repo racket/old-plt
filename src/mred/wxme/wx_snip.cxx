@@ -555,7 +555,7 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
 #ifndef BROKEN_GET_TEXT_EXTENT 
     dc->SetFont(font);
 #endif
-    dc->GetTextExtent("X", &ex_w, &h, NULL, NULL);
+    dc->GetTextExtent("X", &ex_w, &h, NULL, NULL, font);
     
     w = 0;
     for (i = 0; i <= count; i++)

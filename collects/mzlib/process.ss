@@ -107,7 +107,7 @@
 					    (when (thread? t)
 					      (thread-wait t)))])
 			       (twait so)
-			       (twait si)
+			       ;; (twait si) - if the process didn't wait, we don't need to!
 			       (twait se)))
 			    ((interrupt) (subprocess-kill subp #f))
 			    ((kill) (subprocess-kill subp #t))

@@ -69,7 +69,7 @@
 		 [tcp-close tcp-close]
 		 [tcp-accept tcp-accept]
 		 [tcp-accept/enable-break tcp-accept/enable-break])
-      (let ([l (tcp-listen port-number)]
+      (let ([l (tcp-listen port-number 5 #t)]
 	    [can-break? (break-enabled)])
 	(dynamic-wind
 	    void

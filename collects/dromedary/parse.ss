@@ -325,23 +325,20 @@
 (define parse
   (parser
    (suppress)
-   (tokens Keywords Labels Ops ConstantConstructors Literals Errors Others)
-   (start ;<implementation>  ;; for implementation files
-	  ;<inteface>        ;; for interface files
-	  <toplevel_phrase>) ;; for interactive use
-	  ;<use_file>)       ;; for the #use directive
-   (end EOF SEMISEMI)
-   (precs ;(right <prec_let>)                      ;; let ... in ...
-	  ;(right <prec_type_def>)                 ;; = in type definitions
+   (tokens Keywords Labels Ops ConstantConstructors Literals Errors Others Precedences)
+   (start <program>)
+   (end EOF); SEMISEMI)
+   (precs (right <prec_let>)                      ;; let ... in ...
+	  (right <prec_type_def>)                 ;; = in type definitions
 	  (right SEMI)                          ;; e1; e2 (sequence)
-	  ;(right <prec_fun> <prec_match> <prec_try>)  ;; match ... with ...
-	  ;(right <prec_list>)                     ;; e1; e2 (list, array, record)
-	  ;(right <prec_if>)                       ;; if ... then ... else ...
+	  (right <prec_fun> <prec_match> <prec_try>)  ;; match ... with ...
+	  (right <prec_list>)                     ;; e1; e2 (list, array, record)
+	  (right <prec_if>)                       ;; if ... then ... else ...
 	  (right COLONEQUAL LESSMINUS)          ;; assignments
 	  (left AS)                             ;; as in patterns
 	  (left BAR)                            ;; | in patterns
 	  (left COMMA)                          ;; , in expressions, patterns, types
-	  ;(right <prec_type_arrow>)               ;; -> in type expressions
+	  (right <prec_type_arrow>)               ;; -> in type expressions
 	  (right OR BARBAR)                     ;; or
 	  (right AMPERSAND AMPERAMPER)          ;; &
 	  (left INFIXOP0 EQUAL LESS GREATER)    ;; = < > etc
@@ -350,9 +347,9 @@
 	  (left INFIXOP2 PLUS MINUS MINUSDOT)   ;; + -
 	  (left INFIXOP3 STAR)                  ;; * /
 	  (right INFIXOP4)                      ;; **
-	  ;(right <prec_unary_minus>)              ;; - unary
-	  ;(left <prec_appl>)                      ;; function application
-	  ;(right <prec_constr_appl>)              ;; constructor application
+	  (right <prec_unary_minus>)              ;; - unary
+	  (left <prec_appl>)                      ;; function application
+	  (right <prec_constr_appl>)              ;; constructor application
 	  (left SHARP)                          ;; method call 
 	  (left DOT)                            ;; record access, array access
 	  (right PREFIXOP))                     ;; ! 
@@ -369,12 +366,19 @@
 			      (syntax-span stx))))
    (src-pos)
    (grammar
+    (<program>
+     [(<implementation>) $1]  ;; for implementation files
+     ;[(<inteface>) $1]        ;; for interface files
+     [(<toplevel_phrase>) $1] ;; for interactive use
+     ;[(<use_file>) $1]      ;; for the #use directive
+     )
     ;; Entry points
-    ;(<implementation> [(<structure> EOF) $1])
+    (<implementation> 
+     [(<structure>) $1])
     ;(<interface> [(<signature> EOF) $1])
     (<toplevel_phrase>
-     [(<top_structure>) $1]
-     [(<seq_expr>) $1])
+     [(<top_structure> SEMISEMI) $1]
+     [(<seq_expr> SEMISEMI) $1])
 ;;     [(<toplevel_directive> SEMISEMI) $1])
     (<top_structure>
      [(<structure_item>) (list $1)]
@@ -382,6 +386,17 @@
 ;;    (<structure>
 ;;     [(<structure_tail>) $1]
 ;;     [(<seq_expr> <structure_tail>)
+    (<structure>
+     [(<structure_tail>) $1]
+     [(<seq_expr> <structure_tail>) (ast:make-structure_item (ast:make-pstr_eval (cons $1 $2)) (build-src 1))])
+
+    (<structure_tail>
+     [() null]
+     [(SEMISEMI) null]
+     [(SEMISEMI <seq_expr> <structure_tail>)
+      (ast:make-structure_item (ast:make-pstr_eval (cons $2 $3)) (build-src 2))]
+     [(SEMISEMI <structure_item> <structure_tail>) (cons $2 $3)]
+     [(<structure_item> <structure_tail>) (cons $1 $2)])
 
     (<structure_item>
      [(LET <rec_flag> <let_bindings>)
@@ -453,32 +468,32 @@
 
     (<expr>
      [(<simple_expr>) $1]
-     [(<simple_expr> <simple_labeled_expr_list>) ;(prec prec_appl)
+     [(<simple_expr> <simple_labeled_expr_list>) (prec <prec_appl>)
       (ast:make-expression (ast:make-pexp_apply $1 (reverse $2)) (build-src 1))]
-     [(LET <rec_flag> <let_bindings> IN <seq_expr>) ;(prec prec_let)
+     [(LET <rec_flag> <let_bindings> IN <seq_expr>) (prec <prec_let>)
       (ast:make-expression (ast:make-pexp_let $2 (reverse $3) $5) (build-src 1))]
-     ;[(LET MODULE UIDENT <module_binding> IN <seq_expr>) ;(prec prec_let)
+     ;[(LET MODULE UIDENT <module_binding> IN <seq_expr>) (prec <prec_let>)
      ; (ast:make-expression (ast:make-pexp_letmodule($3, $4, $6)))]
-     [(FUNCTION <opt_bar> <match_cases>) ;(prec prec_fun)
+     [(FUNCTION <opt_bar> <match_cases>) (prec <prec_fun>)
       (ast:make-expression (ast:make-pexp_function "" null (reverse $3)) (build-src 1))]
-     [(FUN <labeled_simple_pattern> <fun_def>) ;(prec prec_fun)
+     [(FUN <labeled_simple_pattern> <fun_def>) (prec <prec_fun>)
       (let ([pat $2])
 	(ast:make-expression (ast:make-pexp_function (car (car pat)) (cdr (car pat)) (list (cons (cdr pat) $3))) (build-src 1)))]
-     [(MATCH <seq_expr> WITH <opt_bar> <match_cases>) ;(prec prec_match)
+     [(MATCH <seq_expr> WITH <opt_bar> <match_cases>) (prec <prec_match>)
       (ast:make-expression (ast:make-pexp_match $2 (reverse $5)) (build-src 1))]
-     [(TRY <seq_expr> WITH <opt_bar> <match_cases>) ;(prec prec_try)
+     [(TRY <seq_expr> WITH <opt_bar> <match_cases>) (prec <prec_try>)
       (ast:make-expression (ast:make-pexp_try $2 (reverse $5)) (build-src 1))]
-     ;[(TRY <seq_expr> WITH <error>) ;(prec prec_try)
+     ;[(TRY <seq_expr> WITH <error>) (prec <prec_try>)
      ; (error)]
      [(<expr_comma_list>)
       (ast:make-expression (ast:make-pexp_tuple (reverse $1)) (build-src 1))]
-     [(<constr_longident> <simple_expr>) ;(prec prec_constr_appl)
+     [(<constr_longident> <simple_expr>) (prec <prec_constr_appl>)
       (ast:make-expression (ast:make-pexp_construct $1 $2 #f) (build-src 1))]
-     [(<name_tag> <simple_expr>) ;(prec prec_constr_appl)
+     [(<name_tag> <simple_expr>) (prec <prec_constr_appl>)
       (ast:make-expression (ast:make-pexp_variant $1 $2) (build-src 1))]
-     [(IF <seq_expr> THEN <expr> ELSE <expr>) ;(prec prec_if)
+     [(IF <seq_expr> THEN <expr> ELSE <expr>) (prec <prec_if>)
       (ast:make-expression (ast:make-pexp_ifthenelse $2 $4 $6) (build-src 1))]
-     [(IF <seq_expr> THEN <expr>) ;(prec prec_if)
+     [(IF <seq_expr> THEN <expr>) (prec <prec_if>)
       (ast:make-expression (ast:make-pexp_ifthenelse $2 $4 null) (build-src 1))]
      [(WHILE <seq_expr> DO <seq_expr> DONE)
       (ast:make-expression (ast:make-pexp_while $2 $4) (build-src 1))]
@@ -520,7 +535,7 @@
       (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "&&")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
      [(<expr> COLONEQUAL <expr>)
       (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident ":=")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
-     [(<subtractive> <expr>) ;(prec prec_unary_minus)
+     [(<subtractive> <expr>) (prec <prec_unary_minus>)
       (let ([type (ast:expression-pexp_desc $2)])
 	(if (and (ast:pexp_constant? type) (number? (ast:pexp_constant-const type)))
 	    (ast:make-expression (ast:make-pexp_constant (- (ast:pexp_constant-const type))) (build-src 1))
@@ -535,7 +550,7 @@
 ;;      (bigarray_set)]
      [(<label> LESSMINUS <expr>)
       (ast:make-expression (ast:make-pexp_setinstvar $1 $3) (build-src 1))]
-     [(ASSERT <simple_expr>) ;(prec prec_appl) 
+     [(ASSERT <simple_expr>) (prec <prec_appl>) 
       (ast:make-expression (let ([type (ast:expression-pexp_desc $2)])
 			     (if (and (ast:pexp_construct? type)
 				      (string=? (ast:pexp_construct-name type) "false")
@@ -543,7 +558,7 @@
 				      (not (ast:pexp_construct-bool)))
 				 (ast:make-pexp_assertfalse null)
 				 (ast:make-pexp_assert $2))) (build-src 1))]
-     [(LAZY <simple_expr>) ;(prec prec_appl)
+     [(LAZY <simple_expr>) (prec <prec_appl>)
       (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "Pervasive") "ref")) (build-src 1)) (list "" (ast:make-expression (ast:make-pexp_construct (ast:make-ldot (ast:make-lident "Lazy") "Delayed") (ast:make-expression (ast:make-pexp_function "" null (list (ast:make-pattern (ast:make-ppat_construct (ast:make-lident "()") null #f) (build-src 1)) $2)) (build-src 1)) #f) (build-src 1)))) (build-src 1))])
     (<simple_expr>
      [(<val_longident>)
@@ -635,13 +650,13 @@
     (<let_binding>
      [(<val_ident> <fun_binding>)
       (cons (ast:make-pattern (ast:make-ppat_var (syntax-object->datum $1)) (build-src 1 1)) $2)]
-     [(<pattern> EQUAL <seq_expr>) ;(prec prec_let)
+     [(<pattern> EQUAL <seq_expr>) (prec <prec_let>)
       (cons $1 $3)])
     
     (<fun_binding>
-     [(EQUAL <seq_expr>) ;(prec prec_let)
+     [(EQUAL <seq_expr>) (prec <prec_let>)
       $2]
-     [(<type_constraint> EQUAL <seq_expr>) ;(prec prec_let)
+     [(<type_constraint> EQUAL <seq_expr>) (prec <prec_let>)
       (let ([binding $1])
 	(ast:make-expression (ast:make-pexp_constraint $3 (car binding) (cdr binding)) (build-src 1)))]
      [(<labeled_simple_pattern> <fun_binding>)
@@ -675,21 +690,21 @@
       (cons null (reverse $1))])
 
     (<lbl_expr_list>
-     [(<label_longident> EQUAL <expr>) ;(prec prec_list)
+     [(<label_longident> EQUAL <expr>) (prec <prec_list>)
       (list (cons $1 $3))]
-     [(<lbl_expr_list> SEMI <label_longident> EQUAL <expr>) ;(prec prec_list)
+     [(<lbl_expr_list> SEMI <label_longident> EQUAL <expr>) (prec <prec_list>)
       (cons (cons $3 $5) $1)])
 
     (<field_expr_list>
-     [(<label> EQUAL <expr>) ;(prec prec_list)
+     [(<label> EQUAL <expr>) (prec <prec_list>)
       (list (cons $1 $3))]
-     [(<field_expr_list> SEMI <label> EQUAL <expr>) ;(prec prec_list)
+     [(<field_expr_list> SEMI <label> EQUAL <expr>) (prec <prec_list>)
       (cons (cons $3 $5) $1)])
     
     (<expr_semi_list>
-     [(<expr>) ;(prec prec_list) 
+     [(<expr>) (prec <prec_list>) 
       (list $1)]
-     [(<expr_semi_list> SEMI <expr>) ;(prec prec_list) 
+     [(<expr_semi_list> SEMI <expr>) (prec <prec_list>) 
       (cons $3 $1)])
 
     (<type_constraint>
@@ -708,9 +723,9 @@
       (ast:make-pattern (ast:make-ppat_alias $1 $3) (build-src 1))]
      [(<pattern_comma_list>)
       (ast:make-pattern (ast:make-ppat_tuple (reverse $1)) (build-src 1))]
-     [(<constr_longident> <pattern>) ;(prec prec_constr_appl)
+     [(<constr_longident> <pattern>) (prec <prec_constr_appl>)
       (ast:make-pattern (ast:make-ppat_construct $1 $2 #f) (build-src 1))]
-     [(<name_tag> <pattern>) ;(prec prec_constr_appl)
+     [(<name_tag> <pattern>) (prec <prec_constr_appl>)
       (ast:make-pattern (ast:make-ppat_variant $1 $2) (build-src 1))]
      [(<pattern> COLONCOLON <pattern>)
       (ast:make-pattern (ast:make-ppat_construct (ast:make-lident "::") (ast:make-pattern (ast:make-ppat_tuple (list $1 $3)) (build-src 1)) #f) (build-src 1))]
@@ -797,7 +812,7 @@
 
     (<type_kind>
      [() (cons (ast:make-ptype_abstract null) null)]
-     [(EQUAL <core_type>) ;(prec prec_type_def)
+     [(EQUAL <core_type>) (prec <prec_type_def>)
       (cons (ast:make-ptype_abstract null) $2)]
      [(EQUAL <constructor_declarations>)
       (cons (ast:make-ptype_variant (reverse $2)) null)]
@@ -805,9 +820,9 @@
       (cons (ast:make-ptype_variant (reverse $3)) null)]
      [(EQUAL LBRACE <label_declarations> <opt_semi> RBRACE)
       (cons (ast:make-ptype_record (reverse $3)) null)]
-     [(EQUAL <core_type> EQUAL <opt_bar> <constructor_declarations>) ;(prec prec_type_def)
+     [(EQUAL <core_type> EQUAL <opt_bar> <constructor_declarations>) (prec <prec_type_def>)
       (cons (ast:make-ptype_variant (reverse $5)) $2)]
-     [(EQUAL <core_type> EQUAL LBRACE <label_declarations> <opt_semi> RBRACE) ;(prec prec_type_def)
+     [(EQUAL <core_type> EQUAL LBRACE <label_declarations> <opt_semi> RBRACE) (prec <prec_type_def>)
       (cons (ast:make-ptype_record (reverse $5) $2))])
 
     (<type_parameters>
@@ -863,13 +878,13 @@
 
     (<core_type2>
      [(<simple_core_type_or_tuple>) $1]
-     [(QUESTION LIDENT COLON <core_type2> MINUSGREATER <core_type2>) ;(prec prec_type_arrow)
+     [(QUESTION LIDENT COLON <core_type2> MINUSGREATER <core_type2>) (prec <prec_type_arrow>)
       (ast:make-core_type (ast:make-ptyp_arrow (string-append "?" $2) (ast:make-core_type (ast:make-ptyp_constr (ast:make-lident "option") (list $4)) (ast:core_type-src $4)) $6) (build-src 1))]
-     [(OPTLABEL <core_type2> MINUSGREATER <core_type2>) ;(prec prec_type_arrow)
+     [(OPTLABEL <core_type2> MINUSGREATER <core_type2>) (prec <prec_type_arrow>)
       (ast:make-core_type (ast:make-ptyp_arrow (string-append "?" $1) (ast:make-core_type (ast:make-ptyp_constr (ast:make-lident "option") (list $2)) (ast:core_type-src $2)) $4) (build-src 1))]
-     [(LIDENT COLON <core_type2> MINUSGREATER <core_type2>) ;(prec prec_type_arrow)
+     [(LIDENT COLON <core_type2> MINUSGREATER <core_type2>) (prec <prec_type_arrow>)
       (ast:make-core_type (ast:make-ptyp_arrow $1 $3 $5) (build-src 1))]
-     [(<core_type2> MINUSGREATER <core_type2>) ;(prec prec_type_arrow)
+     [(<core_type2> MINUSGREATER <core_type2>) (prec <prec_type_arrow>)
       (ast:make-core_type (ast:make-ptyp_arrow "" $1 $3) (build-src 1))])
 
     (<simple_core_type>
@@ -888,9 +903,9 @@
       (ast:make-core_type (ast:make-ptyp_any null) (build-src 1))]
      [(<type_longident>)
       (ast:make-core_type (ast:make-ptyp_constr $1 null) (build-src 1))]
-     [(<simple_core_type2> <type_longident>) ;(prec prec_constr_appl)
+     [(<simple_core_type2> <type_longident>) (prec <prec_constr_appl>)
       (ast:make-core_type (ast:make-ptyp_constr $2 (list $1)) (build-src 1))]
-     [(LPAREN <core_type_comma_list> RPAREN <type_longident>) ;(prec prec_constr_appl)
+     [(LPAREN <core_type_comma_list> RPAREN <type_longident>) (prec <prec_constr_appl>)
       (ast:make-core_type (ast:make-ptyp_constr $4 (reverse $2)) (build-src 1))]
 ;;     [(LESS <meth_list> GREATER)
 ;;      (ast:make-core_type (ast:make-ptyp_object $2) (build-src 1))]

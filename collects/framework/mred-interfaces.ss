@@ -550,19 +550,19 @@
                           get-size-mult
                           set-delta-face
                           set-transparent-text-backing-off
-                          get-transparent-text-backing-off
                           set-face
                           set-family
                           set-delta
                           collapse
+                          get-transparent-text-backing-off
+                          set-transparent-text-backing-on
                           get-transparent-text-backing-on
                           set-delta-background
                           set-delta-foreground
                           copy
                           get-family
                           get-face
-                          equal?
-                          set-transparent-text-backing-on))
+                          equal?))
                       ($$string-snip<%>
                         (interface
                           ()
@@ -1699,7 +1699,6 @@
                           is-enabled?
                           get-top-level-window
                           get-graphical-min-size
-                          lazy-refresh
                           set-line-count
                           get-plain-label
                           accept-drop-files
@@ -1712,6 +1711,7 @@
                           on-subwindow-char
                           min-client-width
                           min-client-height
+                          lazy-refresh
                           get-client-size
                           on-drop-file
                           on-focus

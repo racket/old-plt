@@ -263,7 +263,29 @@
 	     (map (lambda (x) (mk x 'syntax-body))
 		  (body->list
 		   (zodiac:module-form-syntax-body m)))
-	     (list (mk (zodiac:make-special-constant 'void) 'constructor))))))
+	     (list (mk 
+		    ;; Construct constant expression for module construction info:
+		    (let ([q (zodiac:make-quote-form
+			      (zodiac:zodiac-stx m)
+			      (make-empty-box)
+			      (zodiac:make-read
+			       (datum->syntax-object
+				#f
+				(list (zodiac:module-form-name m)
+				      (zodiac:module-form-requires m)
+				      (zodiac:module-form-for-syntax-requires m)
+				      (filter (if (zodiac:module-form-kernel-reprovide-hint m)
+						  (lambda (x) (or (symbol? x)
+								  (not (eq? '#%kernel (car x)))))
+						  (lambda (x) #t))
+					      (zodiac:module-form-provides m))
+				      (zodiac:module-form-syntax-provides m)
+				      (and (zodiac:module-form-kernel-reprovide-hint m)
+					   #t))
+				(zodiac:zodiac-stx m))))])
+		      (set-annotation! q 'immutable)
+		      q)
+		    'constructor))))))
 
       ;; takes a list of a-normalized expressions and analyzes them
       ;; returns the analyzed code, a list of local variable lists, 
@@ -296,7 +318,9 @@
 		(begin
 		  (varref:current-invoke-module 
 		   (and (zodiac:module-form? (car sexps))
-			(module-info-invoke (get-annotation (car sexps)))))
+			(let ([info (get-annotation (car sexps))])
+			  (and (not (eq? (module-info-part info) 'constructor))
+			       (module-info-invoke info)))))
 
 		  (let-values ([(exp free-vars local-vars global-vars used-vars captured-vars
 				     children new-max-arity multi)
@@ -1061,6 +1085,9 @@
 								    c-port)
 					    (unless syntax? (loop #t)))
 					  (loop (add1 i))))]
+				   [_ (let loop ([i 0])
+					(unless (= i (get-num-module-invokes))
+					  (vm->c:emit-module-glue! c-port i)))]
 				   [top-level-count
 				    (vm->c:emit-top-levels! "top_level" #t #t -1
 							    (list-tail (block-source s:file-block) number-of-true-constants)

@@ -326,7 +326,7 @@
      (struct vm:wcm-remember! (var val))
      (struct vm:wcm-extract (var))
      (struct vm:check-global (var))
-     (struct vm:module-create (ast))
+     (struct vm:module-create (shape id))
 
      (struct vm:global-varref (var))
      (struct vm:bucket (var))
@@ -426,6 +426,7 @@
      vm->c:emit-registration!
      vm->c:emit-case-arities-definitions!
      vm->c:emit-top-levels!
+     vm->c:emit-module-glue!
      vm->c:emit-vehicle-prototype
      vm->c:emit-vehicle-declaration
      vm->c:emit-vehicle-header

@@ -393,6 +393,22 @@
 		      
 		      (loop (sub1 c) (add1 n) (cdr vml) (cdr ll) (cdr bl))))))))
 
+      (define (vm->c:emit-module-glue! port id)
+	(define (out syntax?)
+	  (fprintf port "static void module_invoke~a_~a(" 
+		   (if syntax? "_syntax" "") id)
+	  (fprintf port "Scheme_Env *env, long phase_shift, Scheme_Object *self_modidx, void *pls)~n")
+	  (fprintf port "{~n~aScheme_Per_Invoke_~aStatics_~a *PMIS;~n" 
+		   vm->c:indent-spaces (if syntax? "Syntax_" "") id)
+	  (fprintf port "~aPMIS = scheme_malloc(sizeof(Scheme_Per_Invoke_~aStatics_~a));~n" 
+		   vm->c:indent-spaces (if syntax? "Syntax_" "") id)
+	  (fprintf port "~amodule_~abody_~a_0(env, (Scheme_Per_Load_Statics *)pls, phase_shift, self_modidx, PMIS);~n"
+		   vm->c:indent-spaces (if syntax? "syntax_" "") id)
+	  (fprintf port "}~n~n"))
+
+	(out #f)
+	(out #t))
+
       (define vm->c:emit-vehicle-prototype
 	(lambda (port number)
 	  (let ([v (get-vehicle number)])
@@ -1284,7 +1300,11 @@
 				    (mod-glob-cname (vm:check-global-var ast)))))]
 	       
 	       [(vm:module-create? ast)
-		(emit-expr "MODULE_CREATE")]
+		(emit-expr "scheme_declare_module(")
+		(process (vm:module-create-shape ast) indent-level #f #f)
+		(emit ", module_invoke_~a,  module_invoke_syntax_~a, PLS"
+		      (vm:module-create-id ast) (vm:module-create-id ast))
+		(emit ")")]
 
 	       ;; with-continuation-mark
 	       [(vm:wcm-mark!? ast)

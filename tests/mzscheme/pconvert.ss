@@ -1,12 +1,11 @@
 
-(unless (defined? 'SECTION)
-  (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
 (SECTION 'pconvert)
 
-(import (lib "unit.ss"))
-(import (lib "class.ss"))
-(import (lib "pconvert.ss"))
+(require (lib "unit.ss"))
+(require (lib "class.ss"))
+(require (lib "pconvert.ss"))
 
 (constructor-style-printing #t)
 (quasi-read-style-printing #f)
@@ -348,10 +347,10 @@
   (test-not-shared #\a #\a)
   (test-not-shared 'x ''x)
   (test-shared (lambda (x) x) '(lambda (a1) ...))
-  (test-shared (make-promise (lambda () 1)) '(delay ...))
+  (test-shared (delay 1) '(delay ...))
   (test-shared (class object% ()) '(class ...))
   (test-shared (unit (import) (export)) '(unit ...))
-  (test-shared (make-object (class object% () (sequence (super-init)))) '(make-object (class ...) ...))
+  (test-shared (make-object (class object% (super-instantiate ()))) '(make-object (class ...) ...))
 
   (test-shared "abc" "abc")
   (test-shared (list 1 2 3) '(list 1 2 3))

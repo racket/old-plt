@@ -1,10 +1,9 @@
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
 (SECTION 'COMMAND-LINE)
 
-(import (lib "cmdline.ss"))
+(require (lib "cmdline.ss"))
 
 (define (r-append opt . rest)
   (append opt (list (list->vector rest))))

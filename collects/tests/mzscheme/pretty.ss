@@ -1,10 +1,9 @@
 
 ; Test pretty-print. Some of it relies on manual inspection of the results
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
-(import (lib "pretty.ss"))
+(require (lib "pretty.ss"))
 
 (define (pp-string v)
   (let ([p (open-output-string)])
@@ -63,8 +62,8 @@
      '(1 2 3)
      '(1 . 2)
      #(1 2 3 4 5)
-     (if (defined? 'in-drscheme?) 'skip (read (open-input-string "(#0=() . #0#)")))
-     (if (defined? 'in-drscheme?) 'skip (read (open-input-string "#1=(1 . #1#)")))
+     (read (open-input-string "(#0=() . #0#)"))
+     (read (open-input-string "#1=(1 . #1#)"))
      (map box (make #f))
      (make #f))))
 

@@ -3,12 +3,13 @@
 ;; structures. When/if equal? works for cyclic stuff, this
 ;; should be changed to equal? directly.
 
-(unless (defined? 'SECTION)
-  (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
 (SECTION 'shared)
 
-(require-library "shared.ss")
+(require (lib "shared.ss"))
+
+(require mzscheme)
 
 (let ()
   (define (gs v)
@@ -26,22 +27,11 @@
   (stest (box 1) '(shared ([x (box 1)]) x))
   (stest '(1 . 2) '(shared ([x (cons 1 2)]) x))
   
-  (stest '(1 2) '(shared ([x (#%list 1 2)]) x))
-  (stest #(1 2) '(shared ([x (#%vector 1 2)]) x))
-  (stest (box 1) '(shared ([x (#%box 1)]) x))
-  (stest '(1 . 2) '(shared ([x (#%cons 1 2)]) x))
-
   (stest '#1=(#1# 1) '(shared ([x (list x 1)]) x))
   (stest '#2=#(#2# 1) '(shared ([x (vector x 1)]) x))
   (stest '#3=#&#3# '(shared ([x (box x)]) x))
   (stest '#4=(#4# . 1) '(shared ([x (cons x 1)]) x))
   (stest '#5=(1 . #5#) '(shared ([x (cons 1 x)]) x))
-
-  (stest '#6=(#6# 1) '(shared ([x (#%list x 1)]) x))
-  (stest '#7=#(#7# 1) '(shared ([x (#%vector x 1)]) x))
-  (stest '#8=#&#8# '(shared ([x (#%box x)]) x))
-  (stest '#9=(#9# . 1) '(shared ([x (#%cons x 1)]) x))
-  (stest '#10=(1 . #10#) '(shared ([x (#%cons 1 x)]) x))
   
   (stest '#11=(#11#) '(shared ([x `(,x)]) x)))
   

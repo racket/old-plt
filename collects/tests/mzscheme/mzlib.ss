@@ -2,8 +2,7 @@
 ; Test MzLib
 ; See also pptest.ss and ztest.ss
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
 (load-relative "function.ss")
 
@@ -14,8 +13,6 @@
 (load-relative "pconvert.ss")
 
 (load-relative "pretty.ss")
-
-(load-relative "classd.ss")
 
 (load-relative "shared.ss")
 

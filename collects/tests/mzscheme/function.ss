@@ -1,10 +1,10 @@
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
 (SECTION 'function)
 
-(require-library "function.ss")
+(require (lib "list.ss"))
+(require (lib "etc.ss"))
 
 (test (list 1 2 3 4) foldl cons '() (list 4 3 2 1))
 (test (list 1 2 3 4) foldr cons '() (list 1 2 3 4))
@@ -33,28 +33,28 @@
 (test 'ok (compose (lambda () 'ok) (lambda (w) (values))) 5)
 (test-values '(1 2 3) (lambda () ((compose (lambda (x) (values x (add1 x) (+ x 2))) (lambda (y) y)) 1)))
 
-(error-test '(compose 5))
-(error-test '(compose add1 sub1 5))
-(error-test '(compose add1 5 sub1))
-(error-test '(compose 5 add1 sub1))
-(error-test '((compose add1 (lambda () (values 1 2)))) exn:application:arity?)
-(error-test '((compose add1 sub1)) exn:application:arity?)
-(error-test '((compose (lambda () 1) add1) 8) exn:application:arity?)
+(err/rt-test (compose 5))
+(err/rt-test (compose add1 sub1 5))
+(err/rt-test (compose add1 5 sub1))
+(err/rt-test (compose 5 add1 sub1))
+(err/rt-test ((compose add1 (lambda () (values 1 2)))) exn:application:arity?)
+(err/rt-test ((compose add1 sub1)) exn:application:arity?)
+(err/rt-test ((compose (lambda () 1) add1) 8) exn:application:arity?)
 
 (arity-test compose 1 -1)
 
 (test '(1 2 3) filter number? '(1 a 2 b 3 c d))
 (test '() filter string? '(1 a 2 b 3 c d))
-(error-test '(filter string? '(1 2 3 . 4)) exn:application:mismatch?)
-(error-test '(filter 2 '(1 2 3)))
-(error-test '(filter cons '(1 2 3)))
+(err/rt-test (filter string? '(1 2 3 . 4)) exn:application:mismatch?)
+(err/rt-test (filter 2 '(1 2 3)))
+(err/rt-test (filter cons '(1 2 3)))
 (arity-test filter 2 2)
 
 (test 0 assf add1 '(0 1 2))
 (test 0 assf number? '(a 0 1 2 c))
 (test "ok" assf string? '(a 0 1 "ok" 2 c))
-(error-test '(assf cons '(1 2 3)))
-(error-test '(assf string? '(1 2 3 . 4)) exn:application:mismatch?)
+(err/rt-test (assf cons '(1 2 3)))
+(err/rt-test (assf string? '(1 2 3 . 4)) exn:application:mismatch?)
 
 (test '("a" "b" "c" "c" "d" "e" "f")
       quicksort 

@@ -2,6 +2,8 @@
 (define mred:html@
   (unit/sig mred:html^
     (import [mred:debug : mred:debug^]
+	    [mred:url : mred:url^]
+	    mzlib:file^
 	    mzlib:string^)
 
     (mred:debug:printf 'invoke "mred:html@")
@@ -11,36 +13,6 @@
     (define cached-name (make-vector 10 ""))
     (define cached-use (make-vector 10 0))
 
-    ;; if the path is absolute, it just arbitrarily picks the first
-    ;; filesystem root.
-    (define unixpath->path
-      (letrec* ([r (regexp "([^/]*)/(.*)")]
-		[translate-dir
-		 (lambda (s)
-		   (cond
-		    [(string=? s "") 'same] ;; handle double slashes
-		    [(string=? s "..") 'up]
-		    [(string=? s ".") 'same]
-		    [else s]))]
-		[build-relative-path
-		 (lambda (s)
-		   (let ([m (regexp-match r s)])
-		     (cond
-		      [(string=? s "") 'same]
-		      [(not m) s]
-		      [else
-		       (build-path (translate-dir (cadr m))
-				   (build-relative-path (caddr m)))])))])
-	       (lambda (s)
-		 (let ([root (car (filesystem-root-list))])
-		   (cond
-		    [(string=? s "") ""]
-		    [(string=? s "/") root]
-		    [(char=? #\/ (string-ref s 0))
-		     (build-path root
-				 (build-relative-path (substring s 1 (string-length s))))]
-		    [else (build-relative-path s)])))))
-    
     (define cache-image
       (lambda (filename)
 	(if (null? filename)
@@ -55,9 +27,12 @@
 			       (loop (add1 n) (vector-ref cached-use n))))])
 		  (let loop ([n 0])
 		    (if (= (vector-ref cached-use n) m)
-			(let ([image  (make-object wx:image-snip%
-						   filename
-						   wx:const-bitmap-type-gif)])
+			(let ([image  (begin
+					'(printf "cache-image before building snip ~a~n" (normalize-path filename))
+					(make-object wx:image-snip%
+						   (normalize-path filename)
+						   wx:const-bitmap-type-gif))])
+			  '(printf "cache-image after building snip~n")
 			  (vector-set! cached n image)
 			  (vector-set! cached-name n filename)
 			  (vector-set! cached-use n 0)
@@ -66,158 +41,8 @@
 	       [(string=? filename (vector-ref cached-name n))
 		(vector-set! cached-use n (add1 (vector-ref cached-use n)))
 		(send (vector-ref cached n) copy)]
-	       [else (loop (add1 n))])))))
-
-    (define character-set-size 256)
-
-    (define marker-list
-      '(#\: #\? #\#))
-
-    (define default-port-number/http 80)
-    
-    (define ascii-marker-list
-      (map char->integer marker-list))
-
-    (define marker-locations
-      (make-vector character-set-size))
-
-    (define first-position-of-marker
-      (lambda (c)
-	(vector-ref marker-locations (char->integer c))))
-
-    (define parse-url
-      (lambda (url)
-	(let loop ((markers ascii-marker-list))
-	  (unless (null? markers)
-	    (vector-set! marker-locations (car markers) #f)
-	    (loop (cdr markers))))
-	(let loop ((chars (string->list url)) (index 0))
-	  (unless (null? chars)
-	    (let ((first (car chars)))
-	      (when (memq first marker-list)
-		(let ((posn (char->integer first)))
-		  (unless (vector-ref marker-locations posn)
-		    (vector-set! marker-locations posn index)))))
-	    (loop (cdr chars) (add1 index))))
-	(let
-	  ((first-colon (first-position-of-marker #\:))
-	    (first-question (first-position-of-marker #\?))
-	    (first-hash (first-position-of-marker #\#)))
-	  (let
-	    ((scheme-start (and first-colon 0))
-	      (path-start (if first-colon (add1 first-colon) 0))
-	      (search-start (and first-question (add1 first-question)))
-	      (fragment-start (and first-hash (add1 first-hash))))
-	    (let ((total-length (string-length url)))
-	      (let*
-		((scheme-finish (and scheme-start first-colon))
-		  (path-finish (if first-question first-question
-				 (if first-hash first-hash
-				   total-length)))
-		  (fragment-finish (and fragment-start total-length))
-		  (search-finish (and search-start
-				   (if first-hash first-hash
-				     total-length))))
-		(values
-		  (and scheme-start
-		    (cons scheme-start scheme-finish))
-		  (cons path-start path-finish)
-		  (and search-start
-		    (cons search-start search-finish))
-		  (and fragment-start
-		    (cons fragment-start fragment-finish)))))))))
-
-    (define decompose-path
-      (lambda (sub-url)
-	(let loop ((chars (string->list sub-url))
-		    (this-string '())
-		    (strings '()))
-	  (if (null? chars)
-	    (reverse
-	      (cons (list->string (reverse this-string)) strings))
-	    (if (char=? #\/ (car chars))
-	      (loop (cdr chars) '()
-		(cons (list->string (reverse this-string)) strings))
-	      (loop (cdr chars) (cons (car chars) this-string)
-		strings))))))
-
-    (define normalize-path
-      (lambda (paths)
-	(let loop ((paths paths) (result '()))
-	  (cond
-	    ((null? paths) (reverse result))
-	    ((string=? "" (car paths))
-	      (loop (cdr paths) result))
-	    ((string=? "." (car paths))
-	      (if (null? result)
-		(loop (cdr paths) (cons (car paths) result))
-		(loop (cdr paths) result)))
-	    ((string=? ".." (car paths))
-	      (if (null? result)
-		(loop (cdr paths) (cons (car paths) result))
-		(loop (cdr paths) (cdr result))))
-	    (else
-	      (loop (cdr paths) (cons (car paths) result)))))))
-
-    (define path->host/port/path
-      (lambda (boundaries url)
-	(let ((begin-point (+ 2 (car boundaries)))  ; skip over "//" after http:
-	       (end-point (cdr boundaries)))
-	  (let loop ((index begin-point)
-		      (first-colon #f)
-		      (first-slash #f))
-	    (cond
-	      ((>= index end-point)
-		(values #f #f (substring url begin-point end-point)))
-	      ((char=? #\: (string-ref url index))
-		(loop (add1 index) (or first-colon index) first-slash))
-	      ((char=? #\/ (string-ref url index))
-		(if first-colon
-		  (values
-		    (substring url begin-point first-colon)
-		    (string->number (substring url (add1 first-colon) index))
-		    (substring url index end-point))
-		  (values
-		    (substring url begin-point index)
-		    #f
-		    (substring url index end-point))))
-	      (else
-		(loop (add1 index) first-colon first-slash)))))))
-
-    (define get-ports-for-url
-      (lambda (url)
-	(let-values
-	  (((scheme path search fragment)
-	     (parse-url url)))
-	  (let-values
-	    (((hostname port-number access-path)
-	       (path->host/port/path path url)))
-	    (let-values
-	      (((input-port output-port)
-		 (let ((port-number (or port-number default-port-number/http)))
-		   (tcp-connect hostname port-number))))
-	      (fprintf output-port "GET ~a HTTP/1.0~n" access-path)
-	      (values input-port output-port))))))
-
-    (define print-text-at-url
-      (lambda (url)
-	(let-values
-	  (((server->client client->server)
-	     (get-ports-for-url url)))
-	  (newline client->server)
-	  (close-output-port client->server)
-	  (let* ((protocol (read server->client))
-		  (code (read server->client)))
-	    (let loop ()
-	      (let ((r (read-line server->client)))
-		(unless (string=? r "")
-		  (loop))))
-	    (let loop ()
-	      (let ((c (read-char server->client)))
-		(unless (eof-object? c)
-		  (display c)
-		  (loop))))
-	    (close-input-port server->client)))))
+	       [else
+		(loop (add1 n))])))))
 
     (define html-convert
       (lambda (p b)
@@ -311,7 +136,7 @@
 		  (let ([m (or (regexp-match re:quote-img s)
 			       (regexp-match re:img s))])
 		    (if m
-			(let ([s (unixpath->path (cadr m))])
+			(let ([s (mred:url:unixpath->path (cadr m))])
 			  (if (relative-path? s)
 			      (build-path base-path s)
 			      s))
@@ -567,7 +392,9 @@
 		      [(li dd) (break 1)]
 		      [(dt) (break 2)]
 		      [(img)
-		       (insert (cache-image (parse-image-source args)) pos)
+		       (let* ([a (parse-image-source args)]
+			      [b (cache-image a)])
+			 (insert b pos))
 		       (atomic-values (add1 pos) #f)]
 		      [else 
 		       (html-error "unimplemented (atomic) tag: ~a" tag)
@@ -633,11 +460,10 @@
 				    [(h2) (heading delta:h2)]
 				    [(h3) (heading delta:h3)]
 				    [(a) (let-values ([(name tag label) (parse-href args)])
-					   (printf "name ~s tag ~s label ~s~n" name tag label)
 					   (if (or name tag)
 					       (begin
 						 (add-link pos end-pos 
-							   (unixpath->path name)
+							   name
 							   (or tag "top")
 							   #t)
 						 (make-link-style pos end-pos))

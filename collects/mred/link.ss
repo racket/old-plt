@@ -71,15 +71,17 @@
 			 (mred:scheme-mode@ debug preferences application container
 					  mode match-cache paren scheme-paren icon
 					  handler keymap (core string@))]
+	    [url : mred:url^ (mred:url@)]
 	    [hyper-dialog : mred:hyper-dialog^ 
 			  (mred:hyper-dialog@ debug hyper-edit (core file@))]
 	    [hyper-edit : mred:hyper-edit^ 
-			(mred:hyper-edit@ debug edit hyper-dialog html
+			(mred:hyper-edit@ debug edit hyper-dialog html url
 					  (core file@) (core string@))]
 	    [hyper-frame : mred:hyper-frame^ 
 			 (mred:hyper-frame@ debug hyper-edit hyper-dialog container
 					  editor-frame canvas group handler)]
-	    [html : mred:html^ (mred:html@ debug (core string@))])
+	    [html : mred:html^ (mred:html@ debug url
+					   (core file@) (core string@))])
       (export (unit debug)
 	      (open constants)
 	      (open (exn : mred:exn-external^))

@@ -1,6 +1,12 @@
 (define-signature mred:html^
   (html-convert))
 
+(define-signature mred:url^
+  ([struct url (method path search fragment)]
+   unixpath->path
+   parse-url
+   call-with-input-url))
+
 (define-signature mred:exn^
   ((struct exn ())
    (struct exn:unknown-preference ())))

@@ -151,6 +151,7 @@
 	    [open-file 
 	     (opt-lambda (filename [tag #f])
 	       (send (active-canvas) set-the-tag tag)
+	       '(printf "super-open-file: ~a~n" filename)
 	       (super-open-file filename))])
 	  (sequence
 	    (super-init file-name #f (if group group hyper-frame-group)))

@@ -2,7 +2,7 @@
 
 (error-print-width 250)
 
-(define mred:debug:turned-on (box (list 'load 'startup 'invoke)))
+(define mred:debug:turned-on (box (list 'load 'startup 'invoke 'html)))
 
 (define mred:debug@
   (let* ([debug-env (getenv "MREDDEBUG")])
@@ -183,10 +183,10 @@
 		"autoload" "autosave" "canvas" "console" "contfram"
 		"contkids" "contpanl" "containr" "edframe"
 		"edit" "exit" "exn" "fileutil" "finder" "findstr" "frame"
-		"group" "guiutils" 
-		"handler" "icon" "keys" "mcache" "menu" "mode"
-		"paren" "prefs" "project" "sparen" "ssmode"
+		"group" "guiutils" "handler"
 		"html" "hypredit" "hyprfram" "hyprdial"
+		"icon" "keys" "mcache" "menu" "mode"
+		"paren" "prefs" "project" "sparen" "ssmode" "url"
 
 		;; linking code
 		"link"))

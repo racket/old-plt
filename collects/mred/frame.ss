@@ -1,8 +1,3 @@
-;;; Define the standard editing window class
-
-;; mini-panels must inheirit from wx:panel% and must provide a
-;; desired-height method that returns the desired height in pixels.
-
 (define mred:frame@
   (unit/sig mred:frame^
     (import [mred:debug : mred:debug^]
@@ -103,227 +98,148 @@
 
     (define make-standard-menus-frame%
       (lambda (super%)
-	(class-asi super%
-	  (inherit make-menu on-close show)
-	  (rename [super-make-menu-bar make-menu-bar])
-
-	  (public [file-menu 'file-menu-not-yet-set]
-		  [edit-menu 'file-menu-not-yet-set])
-
-	  (public
-	    [file-menu:new-string ""]
-	    [file-menu:new (lambda () (mred:handler:edit-file #f) #t)]
-	    [file-menu:new-id #f]
-	    [file-menu:new-help-string "Creates a new empty window for editing"]
-
-	    [file-menu:between-new-and-open (lambda (file-menu) (void))]
-
-	    [file-menu:open-string ""]
-	    [file-menu:open mred:handler:open-file]
-	    [file-menu:open-id #f]
-	    [file-menu:open-help-string "Opens a new file for editing"]
-
-	    [file-menu:between-open-and-save (lambda (file-menu) (send file-menu append-separator))]
-
-	    [file-menu:revert #f]
-	    [file-menu:revert-id #f]
-	    [file-menu:revert-help-string ""]
-
-	    [file-menu:save-string ""]
-	    [file-menu:save #f]
-	    [file-menu:save-id #f]
-	    [file-menu:save-help-string ""]
-
-	    [file-menu:save-as #f]
-	    [file-menu:save-as-id #f]
-	    [file-menu:save-as-help-string ""]
-
-	    [file-menu:between-save-and-print (lambda (file-menu) (send file-menu append-separator))]
-
-	    [file-menu:print-string ""]
-	    [file-menu:print #f]
-	    [file-menu:print-id #f]
-	    [file-menu:print-help-string ""]
-
-	    [file-menu:between-print-and-close (lambda (file-menu) (send file-menu append-separator))]
-
-	    [file-menu:close (lambda () (when (on-close) (show #f)) #t)]
-	    [file-menu:close-string ""]
-	    [file-menu:close-id #f]
-	    [file-menu:close-help-string ""]
-
-	    [file-menu:between-close-and-quit (lambda (file-menu) (void))]
-
-	    [file-menu:quit (lambda ()
-			      (mred:exit:exit)
-			      #t)]
-	    [file-menu:quit-id #f]
-	    [file-menu:quit-help-string "Exits MrEd"]
-
-	    [file-menu:after-quit (lambda (file-menu) (void))]
-
-	    [edit-menu:undo #f]
-	    [edit-menu:undo-id #f]
-	    [edit-menu:undo-help-string "Undoes the last action"]
-
-	    [edit-menu:redo #f]
-	    [edit-menu:redo-id #f]
-	    [edit-menu:redo-help-string "Redoes the last undone action"]
-
-	    [edit-menu:between-redo-and-cut (lambda (edit-menu) (send edit-menu append-separator))]
-
-	    [edit-menu:cut #f]
-	    [edit-menu:cut-id #f]
-	    [edit-menu:cut-help-string "Cuts the selection and copies it to the clipboard"]
-
-	    [edit-menu:copy #f]
-	    [edit-menu:copy-id #f]
-	    [edit-menu:copy-help-string "Copies the selection to the clipboard"]
-
-	    [edit-menu:between-copy-and-paste (lambda (edit-menu) (void))]
-
-	    [edit-menu:paste #f]
-	    [edit-menu:paste-id #f]
-	    [edit-menu:paste-help-string "Inserts contents of the clipboard at the caret"]
-
-	    [edit-menu:clear #f]
-	    [edit-menu:clear-id #f]
-	    [edit-menu:clear-help-string "Clears the selected text"]
-
-	    [edit-menu:select-all #f]
-	    [edit-menu:select-all-id #f]
-	    [edit-menu:select-all-help-string "Selects all of the current window"]
-
-	    [edit-menu:between-select-all-and-find (lambda (edit-menu) (send edit-menu append-separator))]
-
-	    [edit-menu:find (lambda () 
-			      (send this search)
-			      #t)]
-	    [edit-menu:find-id #f]
-	    [edit-menu:find-help-string "Search for a string in the buffer"]
-
-	    [edit-menu:replace #f]
-	    [edit-menu:replace-id #f]
-	    [edit-menu:replace-help-string "Search and replace in the buffer"]
-
-	    [edit-menu:between-replace-and-preferences
-	     (lambda (edit-menu) (send edit-menu append-separator))]
-
-	    [edit-menu:preferences mred:preferences:show-preferences-dialog]
-	    [edit-menu:preferences-id #f]
-	    [edit-menu:preferences-help-string "Displays the preferences dialog"]
-
-	    [edit-menu:after-standard-items (lambda (edit-menu) (void))]
-
-	    [make-menu-bar
+	(let ([join (opt-lambda (base special [suffix ""])
+		      (if (string=? special "")
+			  (string-append base suffix)
+			  (string-append base " " special suffix)))])
+	  (let-expansion-time 
+	   build-class-macro
+	   (let-struct between (menu name separator)
+	     (let-struct an-item (name help-string proc key menu-string-before menu-string-after)
+	       (letrec* ([build-id
+			  (lambda (name post)
+			    (let ([name-string (symbol->string name)])
+			      (string->symbol (string-append name-string post))))]
+			 [build-public-clause
+			  (opt-lambda (item)
+			    (let ([name (an-item-name item)]
+				  [help-string (an-item-help-string item)]
+				  [proc (an-item-proc item)])
+			      `(public 
+				 [,name ,proc]
+				 [,(build-id name "-id") #f]
+				 [,(build-id name "-string") ""]
+				 [,(build-id name "-help-string") ,help-string])))]
+			 [build-proc-clause
+			  (lambda (item)
+			    (let* ([name (an-item-name item)]
+				   [name-string (symbol->string name)]
+				   [menu-before-string (an-item-menu-string-before item)]
+				   [menu-after-string (an-item-menu-string-after item)]
+				   [key (an-item-key item)]
+				   [file-menu? (string=? (substring name-string 0 9) "file-menu")])
+			      `(when ,name
+				 (set! ,(build-id name "-id")
+				       (send ,(if file-menu? 'file-menu 'edit-menu) append-item 
+					     (join ,menu-before-string 
+						   ,(build-id name "-string")
+						   ,menu-after-string)
+					     ,name ,(build-id name "-help-string")
+					     #f ,key)))))]
+			 [build-between-ivar
+			  (lambda (between)
+			    (string->symbol 
+			     (string-append (symbol->string (between-menu between))
+					    ":"
+					    (symbol->string (between-name between)))))]
+			 [build-between-proc-clause
+			  (lambda (between)
+			    `(,(build-between-ivar between) ,(between-menu between)))]
+			 [build-between-public-clause
+			  (lambda (between)
+			    `(public
+			       [,(build-between-ivar between) 
+				,(if (between-separator between)
+				     '(lambda (m) (send m append-separator))
+				     '(lambda (x) (void)))]))]
+			 [build-make-menu-bar
+			  (lambda (items)
+			    (let ([mb (gensym "mb")])
+			      `(lambda ()
+				 (let ([,mb (super-make-menu-bar)])
+				   (set! file-menu (make-menu))
+				   (set! edit-menu (make-menu))
+				   (send* ,mb (append file-menu
+						      (if (eq? wx:platform 'windows)
+							  "&File" "F&ile"))
+				     (append edit-menu "&Edit"))
+				   ,@(map (lambda (x)
+					    (if (between? x)
+						(build-between-proc-clause x)
+						(build-proc-clause x)))
+					  items)
+				   ,mb))))]
+			 [items
+			  (list (make-an-item 'file-menu:new "Open a new file"
+					      '(lambda () (mred:handler:edit-file #f) #t)
+					      "n" "&New" "")
+				(make-between 'file-menu 'between-new-and-open #f)
+				(make-an-item 'file-menu:open "Open a file from disk"
+					      'mred:handler:open-file
+					      "n" "&Open" "...")
+				(make-between 'file-menu 'between-open-and-save #f)
+				(make-an-item 'file-menu:revert 
+					      "Revert this file to the copy on disk"
+					      #f #f "&Revert" "")
+				(make-an-item 'file-menu:save "" #f "s" "&Save" "")
+				(make-an-item 'file-menu:save-as "" #f "n" "Save" " &As...")
+				(make-between 'file-menu 'between-save-and-print #t)
+				(make-an-item 'file-menu:print "" #f "p" "&Print..." "")
+				(make-between 'file-menu 'between-print-and-close #t)
+				(make-an-item 'file-menu:close "" 
+					      '(lambda () (when (on-close) (show #f)) #t)
+					      "w" "&Close" "")
+				(make-between 'file-menu 'between-close-and-quit #f)
+				(make-an-item 'file-menu:quit "" '(lambda () (mred:exit:exit))
+					      (if (eq? 'wx:platform 'macintosh) "q" "x")
+					      (if (eq? wx:platform 'macintosh) "Quit" "E&xit") "")
+				(make-between 'file-menu 'after-quit #f)
+				
+				(make-an-item 'edit-menu:undo "" #f "z" "&Undo" "")
+				(make-an-item 'edit-menu:redo "" #f #f "&Redo" "")
+				(make-between 'edit-menu 'between-redo-and-cut #t)
+				(make-an-item 'edit-menu:cut "" #f "x" "Cu&t" "")
+				(make-between 'edit-menu 'between-cut-and-copy #f)
+				(make-an-item 'edit-menu:copy "" #f "c" "&Copy" "")
+				(make-between 'edit-menu 'between-copy-and-paste #f)
+				(make-an-item 'edit-menu:paste "" #f "v" "&Paste" "")
+				(make-between 'edit-menu 'between-paste-and-clear #f)
+				(make-an-item 'edit-menu:clear "" #f #f
+					      (if (eq? wx:platform 'macintosh)
+						  "Clear"
+						  "&Delete")
+					      "")
+				(make-between 'edit-menu 'between-clear-and-select-all #f)
+				(make-an-item 'edit-menu:select-all "" #f "z" "Select A&ll" "")
+				(make-between 'edit-menu 'between-select-all-and-find #t)
+				(make-an-item 'edit-menu:find "Search for a string in the buffer"
+					      '(lambda () (send this search))
+					      "z" "Find" "")
+				(make-an-item 'edit-menu:replace "Search and replace a string in the buffer"
+					      #f "z" "Replace" "")
+				(make-between 'edit-menu 'between-replace-and-preferences #t)
+				(make-an-item 'edit-menu:preferences ""
+					      '(lambda () (mred:preferences:show-preferences-dialog))
+					      #f "Preferences..." "")
+				(make-between 'edit-menu 'after-standard-items #f))])
+		 (lambda ()
+		   `(class-asi super%
+		      (inherit make-menu on-close show)
+		      (rename [super-make-menu-bar make-menu-bar])
+		      (public [file-menu 'file-menu-uninitialized]
+			      [edit-menu 'edit-menu-uninitialized])
+		      ,@(map (lambda (x)
+			       (if (between? x)
+				   (build-between-public-clause x)
+				   (build-public-clause x)))
+			     items)
+		      (public
+			[make-menu-bar
+			 ,(build-make-menu-bar items)]))))))
+	   (let-macro build-class
 	     (lambda ()
-	       (let ([mb (super-make-menu-bar)]
-		     [join (opt-lambda (base special [suffix ""])
-			     (if (string=? special "")
-				 (string-append base suffix)
-				 (string-append base " " special suffix)))])
-		 (set! file-menu (make-menu))
-		 (set! edit-menu (make-menu))
-		 (send mb append file-menu (if (eq? wx:platform 'windows) "&File" "F&ile"))
-		 (send mb append edit-menu "&Edit")
-		 
-		 (when file-menu:new
-		   (set! file-menu:new-id
-			 (send file-menu append-item (join "&New" file-menu:new-string)
-			       file-menu:new file-menu:new-help-string #f "n")))
-		 (file-menu:between-new-and-open file-menu)
-		 (when file-menu:open
-		   (set! file-menu:open-id
-			 (send file-menu append-item (join "&Open" file-menu:open-string "...")
-			       file-menu:open file-menu:open-help-string #f "o")))
-		 (file-menu:between-open-and-save file-menu)
-		 (when file-menu:revert
-		   (set! file-menu:revert-id
-			 (send file-menu append-item "&Revert"
-			       file-menu:revert file-menu:revert-help-string)))
-		 
-		 (when file-menu:save
-		   (set! file-menu:save-id
-			 (send file-menu append-item (join "&Save" file-menu:save-string)
-			       file-menu:save file-menu:save-help-string #f "s")))
-		 (when file-menu:save-as
-		   (set! file-menu:save-as-id
-			 (send file-menu append-item (join "Save" file-menu:save-string " &As...")
-			       file-menu:save-as)))
-		 (file-menu:between-save-and-print file-menu)
-		 (when file-menu:print
-		   (set! file-menu:print-id
-			 (send file-menu append-item (join "&Print" file-menu:print-string "...")
-			       file-menu:print file-menu:print-help-string #f "p")))
-		 (file-menu:between-print-and-close file-menu)
-		 (when file-menu:close
-		   (set! file-menu:close-id
-			 (send file-menu append-item (join "&Close" file-menu:close-string)
-			       file-menu:close file-menu:close-help-string #f "w")))
-		 (file-menu:between-close-and-quit file-menu)
-		 (when file-menu:quit
-		   (set! file-menu:quit-id
-			 (send file-menu append-item (if (eq? wx:platform 'macintosh)
-							 "Quit"
-							 "E&xit")
-			       file-menu:quit file-menu:quit-help-string #f "q")))
-		 (file-menu:after-quit file-menu)
-		 
-		 
-		 (when edit-menu:undo
-		   (set! edit-menu:undo-id
-			 (send edit-menu append-item "&Undo"
-			       edit-menu:undo edit-menu:undo-help-string #f "z")))
-			     
-		 (when edit-menu:redo
-		   (set! edit-menu:redo-id
-			 (send edit-menu append-item "&Redo"
-			       edit-menu:redo edit-menu:redo-help-string #f "y")))
-		 (edit-menu:between-redo-and-cut edit-menu)
-		 (when edit-menu:cut
-		   (set! edit-menu:cut-id
-			 (send edit-menu append-item "Cu&t"
-			       edit-menu:cut edit-menu:cut-help-string #f "x")))
-		 (when edit-menu:copy
-		   (set! edit-menu:copy-id
-			 (send edit-menu append-item "&Copy"
-			       edit-menu:copy edit-menu:copy-help-string #f "c")))
-		 (edit-menu:between-copy-and-paste edit-menu)
-		 (when edit-menu:paste
-		   (set! edit-menu:paste-id
-			 (send edit-menu append-item "&Paste"
-			       edit-menu:paste edit-menu:paste-help-string #f "v")))
-		 (when edit-menu:clear
-		   (set! edit-menu:clear-id
-			 (send edit-menu append-item (if (eq? wx:platform 'macintosh)
-							 "Clear"
-							 "&Delete")
-			       edit-menu:clear edit-menu:clear-help-string #f
-			       (lambda (wx:platform) (begin "del" #f)))))
-		 (when edit-menu:select-all
-		   (set! edit-menu:select-all-id
-			 (send edit-menu append-item "Select A&ll"
-			       edit-menu:select-all edit-menu:select-all-help-string #f "a")))
-		 (edit-menu:between-select-all-and-find edit-menu)
-
-		 (when edit-menu:find
-		   (set! edit-menu:find-id
-			 (send edit-menu append-item "Find" 
-			       edit-menu:find
-			       edit-menu:find-help-string
-			       #f "f")))
-		 (when edit-menu:replace
-		   (set! edit-menu:replace-id
-			 (send edit-menu append-item "Replace..." 
-			       edit-menu:replace
-			       edit-menu:replace-help-string)))
-		 (edit-menu:between-replace-and-preferences edit-menu)
-		 (when edit-menu:preferences
-		   (set! edit-menu:preferences-id
-			 (send edit-menu append-item "Prefere&nces..." edit-menu:preferences
-			       edit-menu:preferences-help-string)))
-		 (edit-menu:after-standard-items edit-menu)
-		 mb))]))))
+	       ((local-expansion-time-value 'build-class-macro)))
+	     (build-class))))))
 
     (define standard-menus-frame% (make-standard-menus-frame% menu-frame%))
 

@@ -8,9 +8,10 @@
 	    [mred:edit : mred:edit^]
 	    [mred:hyper-dialog : mred:hyper-dialog^]
 	    [mred:html : mred:html^]
+	    [mred:url : mred:url^]
 	    [mzlib:file : mzlib:file^]
 	    [mzlib:string : mzlib:string^])
-	    
+
     (mred:debug:printf 'invoke "mred:hyper-edit@")
 
     ; for cut and paste:
@@ -54,7 +55,7 @@
 		   begin-write-header-footer-to-file end-write-header-footer-to-file
 		   write-to-file set-filename get-file-format
 		   set-clickback  remove-clickback set-file-format
-		   get-frame insert-image)
+		   get-frame get-canvas insert-image)
 	  (rename [super-get-filename get-filename]
 		  [super-do-edit do-edit]
 		  [super-save-file save-file]
@@ -298,6 +299,7 @@
 	    [make-clickback-funct
 	     (lambda (filename tag)
 	       (lambda (edit start end)
+		 '(printf "make-clickback-funct filename: ~a~n" filename)
 		 (catch-errors 
 		  (lambda (err-msg)
 		    (show-message 
@@ -305,9 +307,11 @@
 			     tag err-msg)
 		     "Error"))
 		  (lambda () #f)
+		  '(printf "follow-on-click? ~a~n" follow-on-click?)
+		  '(printf "filename: ~a tag: ~a~n" (or filename (get-filename)) tag)
 		  (if follow-on-click?
-		      (let ([filename  
-			     (if (not filename) 
+		      (let ([filename
+			     (if (not filename)
 				 (get-filename)
 				 (mzlib:file:normalize-path filename directory))])
 			(send (get-frame) open-file filename tag))
@@ -413,21 +417,21 @@
 					    (make-clickback-funct filename tag))
 			     (cons new-link hyperlinks-list))
 			   (let insert-loop ([links-left hyperlinks-list])
-			     (if (null? links-left)
-				 (begin (set-clickback start end 
-						       (make-clickback-funct filename tag)) 
-					(cons new-link ()))
-				 (cond
-				  [(<= end (hyperlink-anchor-start(car links-left)))
-				   (cons (car links-left)(insert-loop (cdr links-left)))]
-				  [(>= start (hyperlink-anchor-end (car links-left)))
-				   (set-clickback  start end 
-						   (make-clickback-funct filename tag)) 
-				   (cons new-link links-left)]
-				  [else (show-message 
-					 "A new link cannot overlap with a current link"
-					 "Error") 
-					#f]))))])
+			     (cond
+			      [(null? links-left)
+			       (set-clickback start end 
+					      (make-clickback-funct filename tag)) 
+			       (list new-link)]
+			      [(<= end (hyperlink-anchor-start (car links-left)))
+			       (cons (car links-left) (insert-loop (cdr links-left)))]
+			      [(>= start (hyperlink-anchor-end (car links-left)))
+			       (set-clickback start end 
+					      (make-clickback-funct filename tag)) 
+			       (cons new-link links-left)]
+			      [else (show-message 
+				     "A new link cannot overlap with a current link"
+				     "Error") 
+				    #f])))])
 		 (if new-links-list
 		     (set! hyperlinks-list new-links-list))
 		 new-links-list))]
@@ -574,6 +578,7 @@
 		   (super-do-edit op)))]
 	    [load-file 
 	     (opt-lambda ([filename ()][format wx:const-media-ff-guess][relative? #f])
+	       '(printf "loading: ~a ~a ~a~n" filename format relative?)
 	       (set! hyperlinks-list ())
 	       (set! hypertags-list ())
 	       (lock #f)
@@ -581,32 +586,54 @@
 		       (if (or (null? filename)
 			       (not relative?))
 			   filename
-			   (build-path directory filename))])
-		 (if (if (and (string? filename)
-			      (regexp-match re:html filename)
-			      (file-exists? filename))
-			 (begin
-			   (let ([p (open-input-file filename)])
-			     (set! htmling? #t)
-			     (erase)
-			     (clear-undos)
-			     (set-filename filename)
-			     (dynamic-wind
-			      (lambda ()
-				(wx:begin-busy-cursor)
-				(begin-edit-sequence #f))
-			      (lambda ()
-				(mred:html:html-convert p this))
-			      (lambda ()
-				(end-edit-sequence)
-				(wx:end-busy-cursor)
-				(set! htmling? #f)
-				(close-input-port p)))
-			     (reverse-links)
-			     (set-modified #f)
-			     (lock #t)
-			     #t))
-			 (super-load-file filename format))
+			   (build-path directory filename))]
+		      [build-edit
+		       (lambda (p)
+			 (set! htmling? #t)
+			 (erase)
+			 (clear-undos)
+			 (set-filename filename)
+			 (dynamic-wind (lambda ()
+					 (wx:begin-busy-cursor)
+					 (begin-edit-sequence #f))
+				       (lambda ()
+					 (mred:html:html-convert p this))
+				       (lambda ()
+					 (end-edit-sequence)
+					 (wx:end-busy-cursor)
+					 (set! htmling? #f)
+					 (close-input-port p)))
+			 (reverse-links)
+			 (set-modified #f)
+			 (lock #t)
+			 #t)]
+		      [port-proc
+		       (let ([fallback 
+			      (lambda (f)
+				(super-load-file filename format))])
+			 (cond
+			   [(string? filename)
+			    (let* ([url (mred:url:parse-url filename)]
+				   [get-string
+				    (lambda (cons)
+				      (and cons
+					   (substring filename (car cons) (cdr cons))))]
+				   [url-method (get-string (mred:url:url-method url))]
+				   [url-path (get-string (mred:url:url-path url))])
+			      (begin0
+				(cond
+				  [(and url-method 
+					(not (string=? url-method "file")))
+				   (lambda (f) (mred:url:call-with-input-url url f))]
+				  [(and (or (not url-method)
+					    (string=? url-method "file"))
+					(regexp-match re:html url-path))
+				   (lambda (f)
+				     (call-with-input-file (mred:url:unixpath->path url-path)
+				       f))]
+				  [else fallback])))]
+			   [else fallback]))])
+		 (if (port-proc build-edit)
 		     (begin 
 		       (when keep-locked 
 			     (lock #t))

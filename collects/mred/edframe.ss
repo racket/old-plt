@@ -84,6 +84,7 @@
 	       ; filename = #f => no file, make untitled
 	       ; filename = <buffer> => use buffer
 	       ; otherwise, filename = name string
+	       '(printf "check-save?: ~a canvas: ~a~n" check-save? canvas)
 	       (if (or (not check-save?)
 		       (check-saved canvas))
 		   (let* ([filename
@@ -114,6 +115,9 @@
 			      #f)
 			     (else
 			      (send buffers find-buffer-by-name 'file filename)))])
+		     '(printf "final-filename: ~a edit: ~a exists: ~a dir: ~a~n"
+			     filename edit (file-exists? filename)
+			     (current-directory))
 		     ; If we didn't find a buffer, create one
 		     (if (not edit)
 			 (let ([edit (make-edit)])

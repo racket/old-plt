@@ -67,6 +67,8 @@
 		    ((z:bound-varref? id)
 		      (z:binding-orig-name
 			(z:bound-varref-binding id)))
+		    ((z:symbol? id)
+		      (z:read-object id))
 		    (else
 		      (z:interface:internal-error id
 			"Given in check-for-keyword")))))
@@ -275,13 +277,18 @@
 		    (z:interface:internal-error name-spec
 		      "given as name-spec for invoke-open-unit"))))]
 
-	    [(z:class*-form? expr)
-	      `(#%class* ,(z:binding-var (z:class*-form-this expr))
-		 ,(map (lambda (super-var super-val)
-			 (list (z:binding-var super-var)
-			   (annotate super-val)))
-		    (z:class*-form-super-names expr)
-		    (z:class*-form-super-exprs expr))
+	    [(z:interface-form? expr)
+	      (let ((vars (interface-form-variables expr)))
+		(map check-for-keyword vars)
+		`(#%interface ,(map annotate (interface-form-super-exprs expr))
+		   ,@(map read->raw vars)))]
+
+	    [(z:class*/names-form? expr)
+	      `(#%class*/names
+		 (,(z:binding-var (z:class*/names-form-this expr))
+		   ,(z:binding-var (z:class*/names-form-super-init expr)))
+		 ,(annotate (z:class*/names-form-super-expr expr))
+		 ,(map annotate (z:class*/names-form-interfaces expr))
 		 ,(paroptarglist->ilist (z:class*-form-init-vars expr))
 		 ,@(map
 		     (lambda (clause)

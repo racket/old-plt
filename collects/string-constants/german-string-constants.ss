@@ -41,7 +41,7 @@
  (bug-report-field-tools "Tools")		; Werkzeuge? (pbliE)
  (bug-report-field-docs-installed "Dokumente installiert")
  (bug-report-field-language "Sprache")		; DR Scheme language?
- (bug-report-field-teachpacks "Teachpacks")
+ (bug-report-field-teachpacks "TeachPacks")
  (bug-report-field-collections "Collections")
  (bug-report-field-human-language "Sprache")	;
  (bug-report-field-version "Version")
@@ -393,13 +393,12 @@
  
  ;;; exiting and quitting are you sure dialog
  ;;; (exit is used on windows, quit on macos. go figure)
- (exit-lc "beenden")
- (exit-cap "Beenden")
- (quit-lc "beenden")
- (quit-cap "Beenden")
+ (exit "Beenden")
+ (quit "Beenden")
  ;;; in are-you-sure-format, either exit or quit is filled in (from above)
  ;;; based on the platform drscheme is running on.
- (are-you-sure-format "Sind Sie sicher, dass Sie ~a wollen?")
+ (are-you-sure-exit "Sind Sie sicher, dass Sie beenden wollen?")
+ (are-you-sure-quit "Sind Sie sicher, dass Sie beenden wollen?")
  
  ;;; autosaving
  (error-autosaving "Fehler beim automatischen Abspeichern \"~a\".")
@@ -499,11 +498,11 @@
  (teachpack-dne/cant-read "Die TeachPack Datei ~a existiert nicht oder kann nicht gelesen werden.")
  (teachpack-didnt-load "Die TeachPack Datei ~a konnte nicht geladen werden.")
  (teachpack-error-invoke "Die TeachPack Datei ~a konnte nicht ausgeführt werden.")
- (add-teachpack-menu-item-label "Füge Teachpack hinzu...")
- (clear-all-teachpacks-menu-item-label "Lösche alle Teachpacks")
+ (add-teachpack-menu-item-label "Füge TeachPack hinzu...")
+ (clear-all-teachpacks-menu-item-label "Lösche alle TeachPacks")
  (teachpack-not-only-one-import "Die TeachPack unit/sig in ~a darf nur exakt eine Importdefinition besitzen.")
- (drscheme-teachpack-message-title "DrScheme Teachpack")
- (already-added-teachpack "~a Teachpack schon vorhanden")
+ (drscheme-teachpack-message-title "DrScheme TeachPack")
+ (already-added-teachpack "~a TeachPack schon vorhanden")
  
  ;;; Language dialog
  (introduction-to-language-dialog
@@ -559,7 +558,7 @@
  ;;; welcoming message in repl
  (language "Sprache")
  (custom "angepasst")	; adjective (might need to decline in German?)
- (teachpack "Teachpack")
+ (teachpack "TeachPack")
  (welcome-to "Willkommen bei")
  (version "Version")
  

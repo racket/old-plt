@@ -666,9 +666,17 @@
  (vc-update-dialog-title "PLT opdateringsstatus")
  (vc-need-update-string "En eller flere installerede PLT software-pakker behøver opdatering")
  (vc-no-update-string "Alle installerede softwarepakker fra PLT er up-to-date")
- 
+ (add-teachpack-menu-item-label "Tilføj undervisningspakke...")
+ (vc-current-format "~a v.~a (iteration ~a) er up-to-date")
+ (vc-details-format "~a~nDetaljer:~n~a")
+ (vc-details-text "Detaljer:~n")
+ (vc-error-format "Fejl: ~a")
+
  ;; large semi colon letters
  (insert-large-letters... "Indsæt store bogstaver...")
  (large-semicolon-letters "Store semikolon-bogstaver")
  (text-to-insert "Tekst til indsættelse")
+
+
+
  )

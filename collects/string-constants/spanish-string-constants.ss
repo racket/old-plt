@@ -370,13 +370,12 @@
  
  ;;; exiting and quitting are you sure dialog
  ;;; (exit is used on windows, quit on macos. go figure)
- (exit-lc "salir")
- (exit-cap "Salir")
- (quit-lc "abandonar")
- (quit-cap "Abandonar") ;; FIXME: Quit
+ (exit "Salir")
+ (quit "Abandonar") ;; FIXME: Quit
  ;;; in are-you-sure-format, either exit or quit is filled in (from above)
  ;;; based on the platform drscheme is running on.
- (are-you-sure-format "¿Estas seguro(a) que deseas ~a?")
+ (are-you-sure-exit "¿Estas seguro(a) que deseas salir?")
+ (are-you-sure-quit "¿Estas seguro(a) que deseas abandonar?") ;; FIXME: Quit
  
  ;;; autosaving
  (error-autosaving "Error al auto-salvar \"~a\".")

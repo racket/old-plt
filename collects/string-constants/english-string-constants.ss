@@ -50,7 +50,7 @@
  (bug-report-field-tools "Tools")
  (bug-report-field-docs-installed "Docs Installed")
  (bug-report-field-language "Language")
- (bug-report-field-teachpacks "Teachpacks")
+ (bug-report-field-teachpacks "TeachPacks")
  (bug-report-field-collections "Collections")
  (bug-report-field-human-language "Human Language")
  (bug-report-field-version "Version")
@@ -448,15 +448,13 @@
  ;;; help-desk-specific menus
  (new-help-desk "New Help Desk")
 
- ;;; exiting and quitting are you sure dialog
- ;;; (exit is used on windows, quit on macos. go figure)
- (exit-lc "exit")
- (exit-cap "Exit")
- (quit-lc "quit")
- (quit-cap "Quit")
- ;;; in are-you-sure-format, either exit or quit is filled in (from above)
- ;;; based on the platform drscheme is running on.
- (are-you-sure-format "Are you sure you want to ~a?")
+ ;;; exiting and quitting ``are you sure'' dialog
+ ;;; (exit is used on windows, quit on macos, in English. Other
+ ;;; languages probably use the same word on both platforms.
+ (exit "Exit")
+ (quit "Quit")
+ (are-you-sure-exit "Are you sure you want to exit?")
+ (are-you-sure-quit "Are you sure you want to quit?")
  
  ;;; autosaving
  (error-autosaving "Error autosaving \"~a\".")
@@ -567,11 +565,11 @@
  (teachpack-dne/cant-read "The TeachPack file ~a does not exist or is not readable.")
  (teachpack-didnt-load "The TeachPack file ~a did not load properly.")
  (teachpack-error-invoke "The TeachPack file ~a raised an error when invoked.")
- (add-teachpack-menu-item-label "Add Teachpack...")
- (clear-all-teachpacks-menu-item-label "Clear All Teachpacks")
+ (add-teachpack-menu-item-label "Add TeachPack...")
+ (clear-all-teachpacks-menu-item-label "Clear All TeachPacks")
  (teachpack-not-only-one-import "The TeachPack unit/sig in ~a must have exactly one import.")
- (drscheme-teachpack-message-title "DrScheme Teachpack")
- (already-added-teachpack "Already added ~a Teachpack")
+ (drscheme-teachpack-message-title "DrScheme TeachPack")
+ (already-added-teachpack "Already added ~a TeachPack")
  
  ;;; Language dialog
  (introduction-to-language-dialog
@@ -642,7 +640,7 @@
  ;;; welcoming message in repl
  (language "Language")
  (custom "custom")
- (teachpack "Teachpack")
+ (teachpack "TeachPack")
  (welcome-to "Welcome to")
  (version "version")
  

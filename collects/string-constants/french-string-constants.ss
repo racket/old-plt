@@ -55,7 +55,7 @@
  (bug-report-field-tools "Outils")
  (bug-report-field-docs-installed "Documentations installées")
  (bug-report-field-language "Language")
- (bug-report-field-teachpacks "Teachpacks")
+ (bug-report-field-teachpacks "TeachPacks")
  (bug-report-field-collections "Collections")
  (bug-report-field-human-language "Language humain")
  (bug-report-field-version "Version")
@@ -455,13 +455,12 @@
  
  ;;; exiting and quitting are you sure dialog
  ;;; (exit is used on windows, quit on macos. go figure)
- (exit-lc "quitter")
- (exit-cap "Quitter")
- (quit-lc "quitter")
- (quit-cap "Quitter")
+ (exit "Quitter")
+ (quit "Quitter")
  ;;; in are-you-sure-format, either exit or quit is filled in (from above)
  ;;; based on the platform drscheme is running on.
- (are-you-sure-format "Etes-vous certain de vouloir ~a ?")
+ (are-you-sure-exit "Etes-vous certain de vouloir quitter ?")
+ (are-you-sure-quit "Etes-vous certain de vouloir quitter ?")
  
  ;;; autosaving
  (error-autosaving "Erreur durant l'auto-sauvegarde de \"~a\".")
@@ -572,10 +571,10 @@
  (teachpack-dne/cant-read "Le fichier TeachPack ~a n'existe pas ou n'est pas lisible.")
  (teachpack-didnt-load "Le fichier TeachPack ~a n'a pas été correctement chargé.")
  (teachpack-error-invoke "Le fichier TeachPack ~a a produit une erreur au moment de son invocation.")
- (add-teachpack-menu-item-label "Ajouter un Teachpack...")
- (clear-all-teachpacks-menu-item-label "Enlever tous les Teachpacks")
+ (add-teachpack-menu-item-label "Ajouter un TeachPack...")
+ (clear-all-teachpacks-menu-item-label "Enlever tous les TeachPacks")
  (teachpack-not-only-one-import "La unit/sig du TeachPack dans ~a doit avoir exactement un import.")
- (drscheme-teachpack-message-title "DrScheme Teachpack")
+ (drscheme-teachpack-message-title "DrScheme TeachPack")
  (already-added-teachpack "Le TeachPack ~a a déjà été ajouté.")
  
  ;;; Language dialog

@@ -58,7 +58,7 @@
 
     (define-struct public-clause (exports internals exprs))
     (define-struct private-clause (internals exprs))
-    (define-struct inherit-clause (internals inheriteds))
+    (define-struct inherit-clause (internals imports))
     (define-struct (inherit-from-clause struct:inherit-clause) (super))
     (define-struct rename-clause (internals imports))
     (define-struct (rename-from-clause struct:rename-clause) (super))
@@ -108,8 +108,8 @@
     (define-struct ivar-entry (bindings))
     (define-struct (public-entry struct:ivar-entry) (exports exprs))
     (define-struct (private-entry struct:ivar-entry) (exprs))
-    (define-struct (inherit-entry struct:ivar-entry) (inheriteds))
-    (define-struct (inherit-from-entry struct:ivar-entry) (inheriteds super))
+    (define-struct (inherit-entry struct:ivar-entry) (imports))
+    (define-struct (inherit-from-entry struct:ivar-entry) (imports super))
     (define-struct (rename-entry struct:ivar-entry) (imports))
     (define-struct (rename-from-entry struct:ivar-entry) (imports super))
 
@@ -507,7 +507,7 @@
 					   (make-inherit-clause
 					     (map car
 					       (ivar-entry-bindings e))
-					     (inherit-entry-inheriteds e)))
+					     (inherit-entry-imports e)))
 					 ((inherit-from-entry? e)
 					   (flag-non-supervar
 					     (inherit-from-entry-super e)
@@ -515,7 +515,7 @@
 					   (make-inherit-from-clause
 					     (map car
 					       (ivar-entry-bindings e))
-					     (inherit-from-entry-inheriteds e)
+					     (inherit-from-entry-imports e)
 					     (car
 					       (expand-exprs
 						 (list
@@ -680,13 +680,13 @@
 			   ,@(map (lambda (internal inherited)
 				    `(,(p->r internal) ,(sexp->raw inherited)))
 			       (inherit-clause-internals clause)
-			       (inherit-clause-inheriteds clause))))
+			       (inherit-clause-imports clause))))
 		      ((inherit-clause? clause)
 			`(inherit
 			   ,@(map (lambda (internal inherited)
 				    `(,(p->r internal) ,(sexp->raw inherited)))
 			       (inherit-clause-internals clause)
-			       (inherit-clause-inheriteds clause))))
+			       (inherit-clause-imports clause))))
 		      ((rename-from-clause? clause)
 			`(rename-from
 			   ,(p->r (rename-from-clause-super clause))

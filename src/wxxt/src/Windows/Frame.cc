@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.19 1999/07/10 16:00:31 mflatt Exp $
+ * $Id: Frame.cc,v 1.20 1999/07/11 01:51:44 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -376,7 +376,7 @@ void wxFrame::CreateStatusLine(int number, char *)
 void wxFrame::SetStatusText(char *text, int number)
 {
     if (number < num_status)
-	status[number]->SetLabel(text ? text : "");
+	status[number]->SetLabel(text ? text : (char *)"");
 }
 
 Bool wxFrame::StatusLineExists(void)

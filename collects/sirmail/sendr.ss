@@ -13,7 +13,8 @@
 	   (lib "process.ss"))
 
   (require "sirmails.ss"
-	   "pref.ss")
+	   "pref.ss"
+           "spell.ss")
 
   (require (lib "imap-sig.ss" "net")
 	   (lib "smtp-sig.ss" "net")
@@ -324,7 +325,11 @@
 		      (delete-file t)))))))
 
 	(define c (make-object editor-canvas% (send mailer-frame get-area-container)))
-	(define message-editor (make-object (class (editor:backup-autosave-mixin text:standard-style-list%)
+        (define message-editor-super%
+          (color:text-mixin 
+           (editor:backup-autosave-mixin
+            text:standard-style-list%)))
+	(define message-editor (make-object (class message-editor-super%
 					      (rename [super-set-modified set-modified])
 					      (define/override (set-modified mod?)
 						(send mailer-frame modified mod?)
@@ -538,7 +543,10 @@
 	(send message-editor set-max-undo-history 5000) ;; Many undos!
 	(send c set-editor message-editor)
 
-	(if file
+        (activate-spelling message-editor)
+        
+        (send message-editor begin-edit-sequence)
+        (if file
             ;; Resume a composition...
 	    (send message-editor load-file file)
             ;; Build message skeleton
@@ -570,6 +578,8 @@
 
 	(send message-editor set-modified #f)
 	(send message-editor scroll-to-position 0)
+        (send message-editor end-edit-sequence)
+        
 	(send c focus)
 
 	(send mailer-frame create-status-line)

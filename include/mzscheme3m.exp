@@ -5,9 +5,6 @@ scheme_longjmpup
 scheme_reset_jmpup_buf
 scheme_clear_escape
 scheme_new_jmpupbuf_holder
-scheme_new_param
-scheme_param_config
-scheme_register_parameter
 scheme_current_config
 scheme_extend_config
 scheme_install_config
@@ -141,6 +138,7 @@ GC_malloc
 GC_malloc_atomic
 GC_malloc_one_tagged
 GC_malloc_atomic_uncollectable
+scheme_malloc_uncollectable
 GC_malloc_array_tagged
 scheme_malloc_eternal
 scheme_end_stubborn_change
@@ -221,6 +219,8 @@ scheme_make_integer_value
 scheme_make_integer_value_from_unsigned
 scheme_make_integer_value_from_long_long
 scheme_make_integer_value_from_unsigned_long_long
+scheme_make_integer_value_from_long_halves
+scheme_make_integer_value_from_unsigned_long_halves
 scheme_make_double
 scheme_make_char
 scheme_make_char_or_nul
@@ -233,6 +233,8 @@ scheme_make_channel
 scheme_make_channel_put_evt
 scheme_get_int_val
 scheme_get_unsigned_int_val
+scheme_get_long_long_val
+scheme_get_unsigned_long_long_val
 scheme_real_to_double
 scheme_make_cptr
 scheme_get_proc_name
@@ -250,6 +252,8 @@ short
 scheme_utf16_to_ucs4
 scheme_make_bignum
 scheme_make_bignum_from_unsigned
+scheme_make_bignum_from_long_long
+scheme_make_bignum_from_unsigned_long_long
 scheme_bignum_to_double
 scheme_bignum_from_double
 scheme_bignum_to_string

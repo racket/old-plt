@@ -8,9 +8,6 @@
 #endif
 #define scheme_clear_escape (scheme_extension_table->scheme_clear_escape)
 #define scheme_new_jmpupbuf_holder (scheme_extension_table->scheme_new_jmpupbuf_holder)
-#define scheme_new_param (scheme_extension_table->scheme_new_param)
-#define scheme_param_config (scheme_extension_table->scheme_param_config)
-#define scheme_register_parameter (scheme_extension_table->scheme_register_parameter)
 #define scheme_current_config (scheme_extension_table->scheme_current_config)
 #define scheme_extend_config (scheme_extension_table->scheme_extend_config)
 #define scheme_install_config (scheme_extension_table->scheme_install_config)
@@ -152,6 +149,7 @@
 #  ifdef MZ_PRECISE_GC
 #define GC_malloc_one_tagged (scheme_extension_table->GC_malloc_one_tagged)
 #define GC_malloc_atomic_uncollectable (scheme_extension_table->GC_malloc_atomic_uncollectable)
+#define scheme_malloc_uncollectable (scheme_extension_table->scheme_malloc_uncollectable)
 #define GC_malloc_array_tagged (scheme_extension_table->GC_malloc_array_tagged)
 #  else
 #define GC_malloc_stubborn (scheme_extension_table->GC_malloc_stubborn)
@@ -242,6 +240,8 @@
 #define scheme_make_integer_value_from_unsigned (scheme_extension_table->scheme_make_integer_value_from_unsigned)
 #define scheme_make_integer_value_from_long_long (scheme_extension_table->scheme_make_integer_value_from_long_long)
 #define scheme_make_integer_value_from_unsigned_long_long (scheme_extension_table->scheme_make_integer_value_from_unsigned_long_long)
+#define scheme_make_integer_value_from_long_halves (scheme_extension_table->scheme_make_integer_value_from_long_halves)
+#define scheme_make_integer_value_from_unsigned_long_halves (scheme_extension_table->scheme_make_integer_value_from_unsigned_long_halves)
 #define scheme_make_double (scheme_extension_table->scheme_make_double)
 #ifdef MZ_USE_SINGLE_FLOATS
 #define scheme_make_float (scheme_extension_table->scheme_make_float)
@@ -257,6 +257,8 @@
 #define scheme_make_channel_put_evt (scheme_extension_table->scheme_make_channel_put_evt)
 #define scheme_get_int_val (scheme_extension_table->scheme_get_int_val)
 #define scheme_get_unsigned_int_val (scheme_extension_table->scheme_get_unsigned_int_val)
+#define scheme_get_long_long_val (scheme_extension_table->scheme_get_long_long_val)
+#define scheme_get_unsigned_long_long_val (scheme_extension_table->scheme_get_unsigned_long_long_val)
 #define scheme_real_to_double (scheme_extension_table->scheme_real_to_double)
 #define scheme_make_cptr (scheme_extension_table->scheme_make_cptr)
 #define scheme_get_proc_name (scheme_extension_table->scheme_get_proc_name)
@@ -274,6 +276,8 @@
 #define scheme_utf16_to_ucs4 (scheme_extension_table->scheme_utf16_to_ucs4)
 #define scheme_make_bignum (scheme_extension_table->scheme_make_bignum)
 #define scheme_make_bignum_from_unsigned (scheme_extension_table->scheme_make_bignum_from_unsigned)
+#define scheme_make_bignum_from_long_long (scheme_extension_table->scheme_make_bignum_from_long_long)
+#define scheme_make_bignum_from_unsigned_long_long (scheme_extension_table->scheme_make_bignum_from_unsigned_long_long)
 #define scheme_bignum_to_double (scheme_extension_table->scheme_bignum_to_double)
 #define scheme_bignum_from_double (scheme_extension_table->scheme_bignum_from_double)
 #ifdef MZ_USE_SINGLE_FLOATS

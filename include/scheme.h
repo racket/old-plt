@@ -188,6 +188,19 @@ typedef int mzshort;
 typedef unsigned int mzchar;
 typedef int mzchar_int; /* includes EOF */
 
+#ifdef INT64_AS_LONG_LONG
+typedef _int64 mzlonglong;
+typedef unsigned _int64 mzlonglong;
+#else
+# if defined(NO_LONG_LONG_TYPE) || defined(SIXTY_FOUR_BIT_INTEGERS)
+typedef long mzlonglong;
+typedef unsigned long umzlonglong;
+# else
+typedef long long mzlonglong;
+typedef unsigned long long umzlonglong;
+# endif
+#endif
+
 /* MzScheme values have the type `Scheme_Object *'. The Scheme_Object
    structure declares just the header: a type tag and space for
    hashing or extra flags; actual object types will extend this
@@ -485,7 +498,7 @@ typedef struct Scheme_Vector {
 #define SCHEME_PLONG_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.ptr_long_val.pint)
 
 #define SCHEME_CPTR_VAL(obj) SCHEME_PTR1_VAL(obj)
-#define SCHEME_CPTR_TYPE(obj) ((char *)SCHEME_PTR2_VAL(obj))
+#define SCHEME_CPTR_TYPE(obj) ((Scheme_Object *)SCHEME_PTR2_VAL(obj))
 
 #define SCHEME_SET_IMMUTABLE(obj)  ((MZ_OPT_HASH_KEY((Scheme_Inclhash_Object *)(obj)) |= 0x1))
 #define SCHEME_SET_CHAR_STRING_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
@@ -1267,8 +1280,8 @@ void *scheme_malloc(size_t size);
 #  define scheme_malloc_stubborn scheme_malloc
 # else
 #  define scheme_malloc_stubborn GC_malloc_stubborn
+#  define scheme_malloc_uncollectable GC_malloc_uncollectable
 # endif
-# define scheme_malloc_uncollectable GC_malloc_uncollectable
 #endif
 
 #ifdef USE_MEMORY_TRACING
@@ -1426,6 +1439,14 @@ MZ_EXTERN void scheme_end_atomic_no_swap(void);
 MZ_EXTERN void (*scheme_on_atomic_timeout)(void);
 
 MZ_EXTERN void scheme_immediate_exit(int status);
+
+MZ_EXTERN int scheme_new_param(void);
+MZ_EXTERN Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
+					     int argc, Scheme_Object **argv,
+					     int arity,
+					     Scheme_Prim *check, char *expected,
+					     int isbool);
+MZ_EXTERN Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int which);
 
 #endif /* SCHEME_DIRECT_EMBEDDED */
 

@@ -513,6 +513,7 @@
 #ifdef _MSC_VER
 # if _MSC_VER < 1300
 #  define NAN_EQUALS_ANYTHING
+#  define INT64_AS_LONG_LONG
 # endif
 # define POW_HANDLES_INF_CORRECTLY
 # define SIN_COS_NEED_DEOPTIMIZE
@@ -1128,11 +1129,16 @@
  /* SIN_COS_NEED_DEOPTIMIZE disables optimization for calls to sin()
     and cos() (for MSVC) */
 
-  /**************/
- /* Byte Order */
-/**************/
+/******************************/
+ /* Byte Order and long long */
+/****************************/
 
  /* SCHEME_BIG_ENDIAN indicates that the process is big-endian */
+
+ /* INT64_AS_LONG_LONG indicates that long long is not supported, but
+    _int64 is */
+
+ /* NO_LONG_LONG_TYPE indicates that long long is not supported */
 
   /***********************/
  /* Stack Maniuplations */

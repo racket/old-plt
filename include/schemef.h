@@ -47,14 +47,6 @@ MZ_EXTERN Scheme_Jumpup_Buf_Holder *scheme_new_jmpupbuf_holder(void);
 /*                                parameters                              */
 /*========================================================================*/
 
-MZ_EXTERN int scheme_new_param(void);
-MZ_EXTERN Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
-					     int argc, Scheme_Object **argv,
-					     int arity,
-					     Scheme_Prim *check, char *expected,
-					     int isbool);
-MZ_EXTERN Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int which);
-
 MZ_EXTERN Scheme_Config *scheme_current_config(void);
 MZ_EXTERN Scheme_Config *scheme_extend_config(Scheme_Config *c, int pos, Scheme_Object *init_val);
 MZ_EXTERN void scheme_install_config(Scheme_Config *);
@@ -310,6 +302,7 @@ MZ_EXTERN void *GC_malloc_atomic(size_t size_in_bytes);
 #  ifdef MZ_PRECISE_GC
 MZ_EXTERN void *GC_malloc_one_tagged(size_t size_in_bytes);
 MZ_EXTERN void *GC_malloc_atomic_uncollectable(size_t size_in_bytes);
+MZ_EXTERN void *scheme_malloc_uncollectable(size_t size_in_bytes);
 MZ_EXTERN void *GC_malloc_array_tagged(size_t size_in_bytes);
 #  else
 MZ_EXTERN void *GC_malloc_stubborn(size_t size_in_bytes);
@@ -449,8 +442,10 @@ MZ_EXTERN Scheme_Object *scheme_append_char_string(Scheme_Object *, Scheme_Objec
 MZ_EXTERN Scheme_Object *scheme_make_vector(int size, Scheme_Object *fill);
 MZ_EXTERN Scheme_Object *scheme_make_integer_value(long i);
 MZ_EXTERN Scheme_Object *scheme_make_integer_value_from_unsigned(unsigned long i);
-MZ_EXTERN Scheme_Object *scheme_make_integer_value_from_long_long(unsigned long lowhalf, unsigned long hihalf);
-MZ_EXTERN Scheme_Object *scheme_make_integer_value_from_unsigned_long_long(unsigned long lowhalf, unsigned long hihalf);
+MZ_EXTERN Scheme_Object *scheme_make_integer_value_from_long_long(mzlonglong i);
+MZ_EXTERN Scheme_Object *scheme_make_integer_value_from_unsigned_long_long(umzlonglong i);
+MZ_EXTERN Scheme_Object *scheme_make_integer_value_from_long_halves(unsigned long lowhalf, unsigned long hihalf);
+MZ_EXTERN Scheme_Object *scheme_make_integer_value_from_unsigned_long_halves(unsigned long lowhalf, unsigned long hihalf);
 MZ_EXTERN Scheme_Object *scheme_make_double(double d);
 #ifdef MZ_USE_SINGLE_FLOATS
 MZ_EXTERN Scheme_Object *scheme_make_float(float f) ;
@@ -468,6 +463,8 @@ MZ_EXTERN Scheme_Object *scheme_make_channel_put_evt(Scheme_Object *ch, Scheme_O
 
 MZ_EXTERN int scheme_get_int_val(Scheme_Object *o, long *v);
 MZ_EXTERN int scheme_get_unsigned_int_val(Scheme_Object *o, unsigned long *v);
+MZ_EXTERN int scheme_get_long_long_val(Scheme_Object *o, mzlonglong *v);
+MZ_EXTERN int scheme_get_unsigned_long_long_val(Scheme_Object *o, umzlonglong *v);
 
 MZ_EXTERN double scheme_real_to_double(Scheme_Object *r);
 
@@ -517,6 +514,8 @@ MZ_EXTERN mzchar *scheme_utf16_to_ucs4(const unsigned short *text, int start, in
 
 MZ_EXTERN Scheme_Object *scheme_make_bignum(long v);
 MZ_EXTERN Scheme_Object *scheme_make_bignum_from_unsigned(unsigned long v);
+MZ_EXTERN Scheme_Object *scheme_make_bignum_from_long_long(mzlonglong v);
+MZ_EXTERN Scheme_Object *scheme_make_bignum_from_unsigned_long_long(umzlonglong v);
 MZ_EXTERN double scheme_bignum_to_double(const Scheme_Object *n);
 MZ_EXTERN Scheme_Object *scheme_bignum_from_double(double d);
 #ifdef MZ_USE_SINGLE_FLOATS

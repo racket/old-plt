@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.cc,v 1.5 1998/04/23 19:07:03 mflatt Exp $
+ * $Id: MenuBar.cc,v 1.6 1998/05/05 00:07:08 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -109,7 +109,7 @@ Bool wxMenuBar::Create(wxPanel *panel)
 
     // Panel width needed
     int ph, pw;
-    panel->GetSize(&ph, &pw);
+    panel->GetSize(&pw, &ph);
 
     // position menubar
     Dimension hh, ww;

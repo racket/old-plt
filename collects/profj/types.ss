@@ -175,18 +175,6 @@
       (type-exists? name path container-class src level type-recs)
       (make-ref-type name (if (null? path) (send type-recs lookup-path name (lambda () null)) path)))) 
   
-  ;type->contract: type -> sexp
-  (define (type->contract type)
-    (cond
-      ((symbol? type)
-       (case type
-         ((int short long byte) '(c:and/c number? exact?))
-         ((long float) '(c:and/c number? inexact?))
-         ((boolean) 'boolean?)
-         ((char) 'char?)
-         ((string) '(c:is-a?/c String))))
-      ((ref-type? type) '(c:is-a?/c ...))))
-  
   ;; type-exists: string (list string) (U (list string) #f) src symbol type-records -> (U record procedure)
   (define (type-exists? name path container-class src level type-recs)
     (send type-recs get-class-record (cons name path) container-class
@@ -255,8 +243,18 @@
   ;;(make-scheme-record string (list string) path (list scheme-val))
   (define-struct scheme-record (name path dir provides))
   
-  ;;(make-scheme-val symbol bool (U #f type))
+  ;;(make-scheme-val symbol bool (U #f type unknown-ref))
   (define-struct scheme-val (name dynamic? type))
+  
+  ;;(make-unknown-ref (list method-contract) (list field-contract))
+  (define-struct unknown-ref (methods fields))
+  
+  ;;(make-method-contract symbol type (list (U type #f)))
+  (define-struct method-contract (name ret args))
+  
+  ;;(make-field-contract symbol type)
+  (define-struct field-contract (name type))
+  
   
 ;                                                                                      
 ;                                                                            ;;        

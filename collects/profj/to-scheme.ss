@@ -24,6 +24,9 @@
   (define parent-name (make-parameter "Object"))
   (define module-name (make-parameter ""))
   (define module-require (make-parameter ""))
+  
+  ;Parameters for inforamtion about the types
+  (define types (make-parameter null))
     
   (define stx-for-original-property (read-syntax #f (open-input-string "original")))
   (define (stx-for-source) stx-for-original-property)
@@ -160,6 +163,7 @@
   (define (translate-interactions prog location type-recs)
     (loc location)
     (interactions? #t)
+    (types type-recs)
     (let ((reqs (send type-recs get-class-reqs))
           (syn (cond 
                  ((pair? prog)
@@ -191,6 +195,7 @@
   
   ;translate-program: package type-records -> (list compilation-unit) 
   (define (translate-program program type-recs)
+    (types type-recs)
     (interactions? #f)
     (let* ((package-path (if (package-name program)
                              (append (map id-string (name-path (package-name program)))
@@ -1444,6 +1449,31 @@
       (make-syntax #f
                    `(begin ,expr ,stmt)
                    (build-src src))))
+
+  ;------------------------------------------------------------------------------------------------------------------
+  ;translate-contract
+  ;translates types into contracts
+
+  ;type->contract: type -> sexp
+  (define (type->contract type)
+    (cond
+      ((symbol? type)
+       (case type
+         ((int short long byte) '(c:and/c number? exact?))
+         ((long float) '(c:and/c number? inexact?))
+         ((boolean) 'boolean?)
+         ((char) 'char?)
+         ((string) `(c:is-a?/c ,(if (send (types) require-prefix '("String" "java" "lang") (lambda () #f))
+                                    'java.lang.String 'String)))))
+      ((ref-type? type) 
+       (let ((class-name (cons (ref-type-class/iface type) (ref-type-path type))))
+       `(c:is-a?/c 
+         ,(build-identifier (if (send (types) require-prefix class-name (lambda () #f))
+                                (format "~a~a" (apply string-append (map (lambda (s) (string-append s "."))
+                                                                         (map id-string (ref-type-path type))))
+                                        (ref-type-class/iface type))
+                                (ref-type-class/iface type))))))
+      ))
   
   ;------------------------------------------------------------------------------------------------------------------------
   ;translate-expression
@@ -1548,67 +1578,72 @@
                             (error 'translate-literal (format "Translate literal given unknown type: ~s" type)))))
                    (build-src src))))
   
+  ;;make-is-test sym -> (type -> bool)
+  (define (make-is-test kind)
+    (lambda (type)
+      (if (scheme-val? type)
+        (eq? (scheme-val-type type) kind)
+        (eq? type kind))))
+  
   ;;is-string? type -> bool
-  (define is-string?
-    (lambda (type)
-      (eq? type 'string)))
+  (define is-string? (make-is-test 'string))
   ;;is-int? type -> bool
-  (define is-int?
-    (lambda (type)
-      (eq? type 'int)))
+  (define is-int? (make-is-test 'int))
   ;;is-char? type -> bool
-  (define is-char?
-    (lambda (type)
-      (eq? type 'char)))
+  (define is-char? (make-is-test 'char))
   
   ;Converted
   ;translate-bin-op: symbol syntax type syntax type src src type-> syntax
   (define (translate-bin-op op left left-type right right-type key src type)
-    (let ((source (build-src src))
-          (op-syntax (create-syntax #f op (build-src key)))
-          (left (if (is-char? left-type) 
-                    (make-syntax #f `(char->integer ,left) #f)
-                    left))
-          (right (if (is-char? right-type)
-                     (make-syntax #f `(char->integer ,right) #f)
-                     right)))
-      (case op
-        ;Mathematical operations
-        ;PROBLEM! + and - do not take into account the possibility of overflow
-        ((+)
-         (cond 
-           ((and (is-string-type? type) (is-string-type? left-type))
-            (make-syntax #f `(send ,left concat-java.lang.String (javaRuntime:convert-to-string ,right)) source))
-           ((and (is-string-type? type) (is-string-type? right-type))
-            (make-syntax #f `(send (javaRuntime:convert-to-string ,left) concat-java.lang.String ,right) source))
-           ((is-string-type? type)
-            (make-syntax #f 
-                         `(send (javaRuntime:convert-to-string ,left) concat-java.lang.String 
-                                (javaRuntime:convert-to-string ,right)) 
-                         source))
-           (else
-            (create-syntax #f `(,op-syntax ,left ,right) source))))
-        ((- *) (make-syntax #f `(,op-syntax ,left ,right) source))
-        ((/) (if (is-int? type)
-                 (make-syntax #f `(,(create-syntax #f 'javaRuntime:divide-int (build-src key)) ,left ,right) source)
-                 (make-syntax #f `(,(create-syntax #f 'javaRuntime:divide-float (build-src key)) ,left ,right) source)))
-        ((%) (make-syntax #f `(,(create-syntax #f 'javaRuntime:mod (build-src key)) ,left ,right) source))
-        ;Shift operations
-        ((<< >> >>>) (make-syntax #f `(,(create-syntax #f 'javaRuntime:shift (build-src key)) (quote ,op) ,left ,right) source))
-        ;comparisons
-        ((< > <= >=) (make-syntax #f `(,op-syntax ,left ,right) source))
-        ((==) 
-         (if (and (prim-numeric-type? left-type) (prim-numeric-type? right-type))
-             (make-syntax #f `(,(create-syntax #f '= (build-src key)) ,left ,right) source)
-             (make-syntax #f `(,(create-syntax #f 'eq? (build-src key)) ,left ,right) source)))
-        ((!=) (make-syntax #f `(,(create-syntax #f 'javaRuntime:not-equal (build-src key)) ,left ,right) source))
-        ;logicals
-        ((& ^ or) (make-syntax #f `(,(create-syntax #f 'javaRuntime:bitwise (build-src key)) (quote ,op) ,left ,right) source))
-        ;boolean
-        ((&&) (make-syntax #f `(,(create-syntax #f 'javaRuntime:and (build-src key)) ,left ,right) source))
-        ((oror) (make-syntax #f `(,(create-syntax #f 'javaRuntime:or (build-src key)) ,left ,right) source))
-        (else
-         (error 'translate-op (format "Translate op given unknown operation ~s" op))))))
+    (let* ((source (build-src src))
+           (op-syntax (create-syntax #f op (build-src key)))
+           (left (if (is-char? left-type)
+                     (make-syntax #f `(char->integer ,left) #f)
+                     left))
+           (right (if (is-char? right-type)
+                      (make-syntax #f `(char->integer ,right) #f)
+                      right))
+           (result
+            (case op
+              ;Mathematical operations
+              ;PROBLEM! + and - do not take into account the possibility of overflow
+              ((+)
+               (cond 
+                 ((and (is-string-type? type) (is-string-type? left-type))
+                  (make-syntax #f `(send ,left concat-java.lang.String (javaRuntime:convert-to-string ,right)) source))
+                 ((and (is-string-type? type) (is-string-type? right-type))
+                  (make-syntax #f `(send (javaRuntime:convert-to-string ,left) concat-java.lang.String ,right) source))
+                 ((is-string-type? type)
+                  (make-syntax #f 
+                               `(send (javaRuntime:convert-to-string ,left) concat-java.lang.String 
+                                      (javaRuntime:convert-to-string ,right)) 
+                               source))
+                 (else
+                  (create-syntax #f `(,op-syntax ,left ,right) source))))
+              ((- *) (make-syntax #f `(,op-syntax ,left ,right) source))
+              ((/) (if (is-int? type)
+                       (make-syntax #f `(,(create-syntax #f 'javaRuntime:divide-int (build-src key)) ,left ,right) source)
+                       (make-syntax #f `(,(create-syntax #f 'javaRuntime:divide-float (build-src key)) ,left ,right) source)))
+              ((%) (make-syntax #f `(,(create-syntax #f 'javaRuntime:mod (build-src key)) ,left ,right) source))
+              ;Shift operations
+              ((<< >> >>>) (make-syntax #f `(,(create-syntax #f 'javaRuntime:shift (build-src key)) (quote ,op) ,left ,right) source))
+              ;comparisons
+              ((< > <= >=) (make-syntax #f `(,op-syntax ,left ,right) source))
+              ((==) 
+               (if (and (prim-numeric-type? left-type) (prim-numeric-type? right-type))
+                   (make-syntax #f `(,(create-syntax #f '= (build-src key)) ,left ,right) source)
+                   (make-syntax #f `(,(create-syntax #f 'eq? (build-src key)) ,left ,right) source)))
+              ((!=) (make-syntax #f `(,(create-syntax #f 'javaRuntime:not-equal (build-src key)) ,left ,right) source))
+              ;logicals
+              ((& ^ or) (make-syntax #f `(,(create-syntax #f 'javaRuntime:bitwise (build-src key)) (quote ,op) ,left ,right) source))
+              ;boolean
+              ((&&) (make-syntax #f `(,(create-syntax #f 'javaRuntime:and (build-src key)) ,left ,right) source))
+              ((oror) (make-syntax #f `(,(create-syntax #f 'javaRuntime:or (build-src key)) ,left ,right) source))
+              (else
+               (error 'translate-op (format "Translate op given unknown operation ~s" op))))))
+      (if (scheme-val? type)
+          (make-syntax #f `(contract ,(type->contract (scheme-val-type type)) ,result 'scheme 'java) source)
+          result)))
 
   ;translate-access: (U field-access local-access) type src -> syntax
   (define (translate-access name type src)

@@ -104,6 +104,7 @@
   
   ;cast-primitive: value symbol int -> value
   (define (cast-primitive val type dim)
+    (printf "case-primitive ~a ~a ~n" val type)
     (if (> dim 0)
         (if (send val check-prim-type type dim)
             val
@@ -117,7 +118,8 @@
            val)
           ((byte short int long)
            (cond
-             ((and (number? val) (inexact? val)) (inexact->exact val))
+             ((and (number? val) (inexact? val)) (truncate (inexact->exact val)))
+             ((and (number? val) (exact? val) (rational? val)) (truncate val))
              ((and (number? val) (exact? val)) val)
              ((char? val) (char->integer val))
              (else (raise-class-cast (format "Cast to ~a failed for ~a"

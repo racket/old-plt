@@ -1,5 +1,6 @@
 ; first question: what character set shall we use? how to represent 6 umlauted vowels and sharp s (s-zed)
 ; the ones that Reini has translated look wrong on my PC. hmmm, copied and pasted from Mac. maybe my one fault.
+; (Latin-1 or better iso-8859-15 for the euro symbol: reini urban)
 ;
 (
 ;;; when translating this constant, substitue name of actual langauge for `English'
@@ -7,7 +8,7 @@
   "Ist Deutsch Ihre Muttersprache?")
 
  (are-you-sure-you-want-to-switch-languages
-  "Sind Sie sicher, dass Sie die Sprache der GUI wechseln wollen? (Wenn ja, muss DrScheme neugestartet werden)")
+  "Sind Sie sicher, dass Sie die Sprache des GUI wechseln wollen? (Wenn ja, muss DrScheme neugestartet werden)")
  
  ;;; general purpose (DrScheme is hereby a word in every language, by decree of Robby :)
  (plt "PLT")
@@ -19,39 +20,42 @@
  (warning "Warnung")
  (error "Fehler")
  (close "Schliessen") ;; as in, close an open window
+ (stop "Stop")   
+ (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
 
  ;;; bug report form
- (cancel-bug-report? "Bug Report abbrechen?")
+ (cancel-bug-report? "Fehlerreport abbrechen?")
  (are-you-sure-cancel-bug-report?
-  "Sind Sie sicher, dass Sie diesen Bug Report *nicht* abschicken wollen?")
- (bug-report-form "Bug Report Formular")
+  "Sind Sie sicher, dass Sie diesen Fehlerreport *nicht* abschicken wollen?")
+ (bug-report-form "Fehlerreport Formular")
  (bug-report-field-name "Name")
  (bug-report-field-email "Email")
  (bug-report-field-summary "Zusammenfassung")
- (bug-report-field-severity "Schweregrad")
+ (bug-report-field-severity "Schwierigkeitsgrad")
  (bug-report-field-class "Klasse")	; meaning what?
  (bug-report-field-priority "Priorität")
  (bug-report-field-description "Beschreibung")
  (bug-report-field-reproduce1 "Schritte, um das Problem zu")	; why in two pieces?
- (bug-report-field-reproduce2 "Reproduzieren")	; oder nachzuvollziehen
+ (bug-report-field-reproduce2 "reproduzieren")	; oder nachzuvollziehen
  (bug-report-field-environment "Environment")	; Umgebung? perhaps best left in English (pbliE :)
  (bug-report-field-tools "Tools")		; Werkzeuge? (pbliE)
  (bug-report-field-docs-installed "Dokumente installiert")
  (bug-report-field-language "Sprache")		; DR Scheme language?
  (bug-report-field-teachpacks "Teachpacks")
  (bug-report-field-collections "Collections")
- (bug-report-field-human-language "Menschensprache")	;
+ (bug-report-field-human-language "Sprache")	;
  (bug-report-field-version "Version")
- (bug-report-show-synthesized-info "Synthesized Info anzeigen")	; (an)zeigen
+ (bug-report-synthesized-information "Ermittelte Information")  ;; dialog title
+ (bug-report-show-synthesized-info "Ermittelte Informationen anzeigen")	; (an)zeigen
  (bug-report-submit "Abschicken")	
- (sending-bug-report "Bug Report wird gesendet")
- (error-sending-bug-report "Absenden des Bug Reports fehlgeschlagen")
- (error-sending-bug-report-expln "Ein Fehler ist beim Absenden des Bug Reports aufgetreten. Falls Ihre Internetverbindung sonst fehlerfrei funktioniert, besuchen Sie bitte:\n\n    http://bugs.plt-scheme.org/ \n\nund teilen Sie uns den Bug mit unserem Online-Formular mit. Wir bitten um Ihr Verständnis.\n\nDie Fehlermeldung lautet:\n~a")
- (bug-report-sent "Bug Report abgesendet")
- (bug-report-sent-detail "Wir danken für Ihren Bugreport. Sie sollten eine Bestätigung innerhalb der nächsten 30 Minuten per email bekommen; falls nicht, bitte sagen Sie uns hier bescheid: scheme@plt-scheme.org.")
- (illegal-bug-report "Illegaler Bug Report")
+ (sending-bug-report "Fehlerreport wird gesendet")
+ (error-sending-bug-report "Versenden des Fehlerreports fehlgeschlagen")
+ (error-sending-bug-report-expln "Ein Fehler ist beim Absenden des Fehlerreports aufgetreten. Falls Ihre Internetverbindung sonst fehlerfrei funktioniert, besuchen Sie bitte:\n\n    http://bugs.plt-scheme.org/ \n\nund teilen Sie uns den Bug mit unserem Online-Formular mit. Wir bitten um Ihr Verständnis.\n\nDie Fehlermeldung lautet:\n~a")
+ (bug-report-sent "Fehlerreport erfolgreich versendet")
+ (bug-report-sent-detail "Wir danken für Ihren Fehlerreport. Sie sollten eine Bestätigung innerhalb der nächsten 30 Minuten per Email bekommen. Falls nicht, bitte sagen Sie uns hier bescheid: scheme@plt-scheme.org.")
+ (illegal-bug-report "Ungültiger Fehlerreport")
  (pls-fill-in-field "Bitte auch das \"~a\" Feld ausfüllen!")
- (malformed-email-address "Ungültige email Adresse")
+ (malformed-email-address "Ungültige Email Adresse")
 
  ;;; check syntax
  (check-syntax "Syntax prüfen")
@@ -59,44 +63,44 @@
  (cs-bold "Fett")
  (cs-underline "Unterstrichen")
  (cs-change-color "Farbe verändern")
- (cs-tack/untack-arrow "Tack/Untack Arrow")	; i should learn what this means (islwtm :). mit Pfeil festnageln perhaps
+ (cs-tack/untack-arrow "Tack/Untack Pfeil") 	; i should learn what this means (islwtm :). mit Pfeil festnageln perhaps
  (cs-jump "Jump")	; islwtm
  (cs-error-message "Fehlermeldung")
  (cs-open-file "~a öffnen")
  (cs-rename-var "~a umbenennen")
  (cs-rename-id "Identifier umbenennen")
  (cs-rename-var-to "~a wie folgt umbenennen:")
- (cs-name-duplication-error "Der neugewählte Name, ~s, ist in diesem Scope schon vorhanden.")	; best German word for scope? i could use a German copy of SICP! :)
+ (cs-name-duplication-error "Der neugewählte Name, ~s, ist in dieser Umgebung schon vorhanden.")	; best German word for scope? i could use a German copy of SICP! : (There is none. Reini)
  
  ;;; info bar at botttom of drscheme frame
- (collect-button-label "Collect")	; islwtm
+ (collect-button-label "GC")	; islwtm
  (read-only "Schreibgeschützt")
- (read/write "Zum Lesen und Schreiben")
+ (read/write "Lese-/Schreibrechte")
  (auto-extend-selection "Auto-extend")	; islwtm
  (overwrite "Überschreiben")
- (running "Wird ausgeführt")
- (not-running "Wird nicht ausgeführt")
+ (running "Moment...")
+ (not-running "Inaktiv")
  
  ;;; misc
- (welcome-to-something "Wilkommen in ~a")	; hmmm, not sure of the best preposition. islwtm
+ (welcome-to-something "Willkommen bei ~a")	; hmmm, not sure of the best preposition. islwtm. "in", "bei" oder "zu", depends - ru
  
  ; this appears in the drscheme about box.
- (welcome-to-drscheme-version/language "Wilkommen! (DrScheme-Version ~a, ~a)")
+ (welcome-to-drscheme-version/language "Willkommen bei DrScheme! (Version ~a, ~a)")
 
  ; these appear on subsequent lines in the `Help|Welcome to DrScheme' dialog.
- (welcome-to-drscheme "Wilkommen bei DrScheme")
+ (welcome-to-drscheme "Willkommen bei DrScheme")
  (version/language "Version ~a, ~a")
 
- (goto-line "Gehe auf Zeile")	; no tilde a or the like? (in German it might be nice to place this inside the phrase)
-	; German might prefer the object as a tilde parameter -- GmpOa~ :)
+ (goto-line "Gehe zu Zeile")	; no tilde a or the like? (in German it might be nice to place this inside the phrase)
+	; German might prefer the object as a tilde parameter -- GmpOa~ :
  (goto-line-invalid-number
   "~a ist keine gültige Zeilennummer. (Erforderlich wäre eine ganze Zahl zwischen 1 und ~a)")
- (goto-position "Gehe auf Position")
+ (goto-position "Gehe zu Position")
  (no-full-name-since-not-saved
-  "Die Datei hat keinen Gesamtnamen, weil sie noch nicht abgespeichert wurde.")
+  "Die Datei ist noch unbenannt, weil sie noch nicht abgespeichert wurde.")
  (cannot-open-because-dne "Die Datei ~a kann nicht geöffnet werden, weil sie nicht existiert.")
  (interactions-out-of-sync
-  "WARNUNG: Das Interactions Fenster ist nicht mehr dem Stand des Definitionsfensters. Bitte 'Ausführen' anklicken.")
+  "WARNUNG: Das Interaktionsfenster ist nicht mehr mit dem Definitionsfensters synchron. Bitte 'Ausführen' anklicken.")
  (file-is-not-saved "Die Datei \"~a\" ist nicht abgespeichert.")
  (save "Abspeichern")
  (please-choose-either "Bitte entweder \"~a\" oder \"~a\" wählen")
@@ -107,42 +111,62 @@
  (open-url... "URL öffnen...")
  (open-url "URL öffnen")
  (browse... "Browsen...")	; pbliE
- (bad-url "Ungültiger URL")
- (bad-url:this "Ungültiger URL: ~a")
+ (bad-url "Ungültige URL")
+ (bad-url:this "Ungültige URL: ~a")
  
  ;; Help Desk
  (search-results "Suchergebnisse")
  (help-desk "Help Desk")	; pbliE. perhaps "Hilfe" ?
  (help-desk-n "Help Desk ~a")
- (about-help-desk "About Help Desk")
+ (about-help-desk "Über Help Desk")
  (help-desk-about-string
-  "Help Desk enthält ausführliche Informationen über PLT software, einschliesslich DrScheme, MzScheme, und MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT")
- (help-on-help "Hilfe zu Help Desk")
+  "Der Help Desk enthält ausführliche Informationen über PLT Software, einschliesslich DrScheme, MzScheme, und MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT")
+ (help-on-help "Hilfe zum Help Desk")
  (help-on-help-details "Um Hilfe darüber zu bekommen, wie man mit Help Desk umgeht, folgen Sie dem Link `How to use Help Desk' auf der Help Desk Startseite. (Um dahin zu kommen, drücken Sie den `Home' Knopf oben im Help Desk Fenster.)")
- (find-docs-for "Finde Dokumente über:")	; GmpOa~
+ (find-docs-for "Finde Dokumente:")	; GmpOa~
  (search "Suche")
  ; next 3 are popup menu choices at bottom of help desk window
- (search-for-keyword "für Keyword")
- (search-for-keyword-or-index "für Keyword oder Indexeintrag")
- (search-for-keyword-or-index-or-text "für Keyword, Indexeintrag, oder Text")
+ (search-for-keyword "nach Schlüsselwort")
+ (search-for-keyword-or-index "nach Schlüsselwort oder Indexeintrag")
+ (search-for-keyword-or-index-or-text "nach Schlüsselwort, Indexeintrag, oder Text")
  (exact-match "genauer Treffer")
  (containing-match "beinhaltet")
- (regexp-match "regexp match")
- (stop "Abbrechen")
+ (regexp-match "Regexp Treffer")
+ ;(stop "Abbrechen")
  (feeling-lucky "Feeling Lucky")	;pbliE
  (nothing-found-for-search-key "Nichts gefunden für \"~a\".")
  (searching "wird gesucht...")
  (search-stopped "(Suche abgebrochen.)")
- (search-stopped-too-many-matches "(Suche abgebrouchen -- zu viele Treffer gefunden.)")
+ (search-stopped-too-many-matches "(Suche abgebrochen -- zu viele Treffer gefunden.)")
  (reload "neu laden")
  (help "Hilfe")
  (searching... "es wird gesucht...")
  (nothing-found-for-empty-search "Nichts gefunden -- leere Suche")
  (nothing-found-for "Nichts für ~a gefunden")
  (and "und")
+
+ ;; browser
+ (rewind-in-browser-history "Zurück")
+ (forward-in-browser-history "Vorwärts")
+ (home "Home")
+ (browser "Browser")
+ (cannot-display-url "Kann URL ~s nicht anzeigen: ~a")
+ (install? "Installieren?")  ;; if a .plt file is found (title of dialog)
+ (you-have-selected-an-installable-package "Sie haben eine installierbares Paket eusgewählt.")
+ (do-you-want-to-install-it? "Wollen Sie es installieren?")
+ (paren-file-size "(Die Datei ist ~a Byte groß)")
+ (download-and-install "Download && Installation") ;; button label
+ (download "Download") ;; button label
+ (save-downloaded-file/size "Sichere Datei (~a byte) als") ;; label for get-file dialog
+ (save-downloaded-file "Sichere Datei als")  ;; label for get-file dialog
+ (downloading "Downladen") ;; dialog title
+ (downloading-file... "Lade Datei...")
+ (package-was-installed "Das Paket wurde erfolgreich installiert.")
+ (download-was-saved "Die Datei wurde erfolgreich abgespeichert.")
+ (getting-page "Getting Page") ;; dialog title
  
  ;; install plt file when opened in drscheme strings
- (install-plt-file "~a installieren oder zum editieren öffnen?")
+ (install-plt-file "~a installieren oder zum Editieren öffnen?")
  (install-plt-file/yes "Installieren")
  (install-plt-file/no "Editieren")	; aka redigieren
  
@@ -151,42 +175,42 @@
  (take-a-tour "Take a Tour!")	; pbliE
  (release-notes "Release Notes"); pbliE
  (parenthetical-last-version "(vorige Version ~a)")
- (parenthetical-last-language "(Vorige Sprache ~a)")
+ (parenthetical-last-language "(vorige Sprache ~a)")
  (parenthetical-last-version/language "(vorige Version ~a, Sprache ~a)")
  
  
  ;;; save file in particular format prompting.
- (save-as-plain-text "Diese Datei im Textformatt abspeichern?")
- (save-in-drs-format "Diese Datei in einem drscheme-spezifische nicht-text Formatt abspeichern?")
+ (save-as-plain-text "Diese Datei im Textformat abspeichern?")
+ (save-in-drs-format "Diese Datei in einem DrScheme-spezifischen (kein Text) Format abspeichern?")
  (yes "Ja")
  (no "Nein")
  
  ;;; preferences
- (preferences "Preferenzen")	; Vorlieben? :)
+ (preferences "Voreinstellungen")
  (preferences-category "Kategorie")
- (saving-preferences "Preferenzen werden gesichert")
- (error-unmarshalling "Error unmarshalling ~a preference")	;islwtm, pbliE! :)
- (error-saving-preferences "Fehler beim Abspeichern der Preferenzen: ~a")
- (error-reading-preferences "Fehler beim Lesen der Preferenzen")
- (found-bad-pref "Ungültige Preferenz in Datei \"~a\"")
+ (saving-preferences "Voreinstellungen werden gesichert")
+ (error-unmarshalling "Fehler beim Lesen der ~a Voreinstellung")	;islwtm, pbliE! :
+ (error-saving-preferences "Fehler beim Abspeichern der Voreinstellungen: ~a")
+ (error-reading-preferences "Fehler beim Lesen der Voreinstellungen")
+ (found-bad-pref "Ungültige Voreinstellung in Datei \"~a\"")
  (expected-list-of-length2 "Eine Liste der Länge 2 erwartet")
  (general-prefs-panel-label "Allgemein")
  (highlight-parens "zwischen entsprechenden Klammern Text hervorheben")
- (fixup-parens "Correct parens")	; verb correct or adjective? :)
- (flash-paren-match "bei abschliessender Klammer die Anfangsklammer leuchten lassen")
+ (fixup-parens "Korrigiere Klammern")	; verb correct or adjective? smiley
+ (flash-paren-match "bei abschliessender Klammer die Anfangsklammer ausleuchten")
  (auto-save-files "Dateien automatisch abspeichern")
- (map-delete-to-backspace "Löschtaste als Backspace verstehen")
+ (map-delete-to-backspace "Löschtaste als Backspace")
  (verify-exit "Beenden bestätigen")
- (ask-before-changing-format "Änderung des Dateiformatts vorher bestätigen")
- (wrap-words-in-editor-buffers "Zeilenumbruch in Editor")
+ (ask-before-changing-format "Änderung des Dateiformats vorher bestätigen")
+ (wrap-words-in-editor-buffers "Zeilenumbruch im Editor")
  (show-status-line "Statuszeile anzeigen")
- (count-from-one "Zeilen- und Spaltenzähler fangen bei eins an") 
+ (count-from-one "Zeilen- und Spaltenzähler beginnen bei Eins") 
  (display-line-numbers "Zeilenzahl in Puffer zählen, nicht Zeichenanzahl")
- (enable-keybindings-in-menus "Enable keybindings in menus")	; islwtm
+ (enable-keybindings-in-menus "Aktiviere Tastatureinstellungen im Menü")	; islwtm
  (automatically-to-ps "automatisch in eine Postscriptdatei drucken")	; islwtm
  (use-mdi "MDI Windows benutzen") ;;; ms windows only -- use that window in a window thingy
  (separate-dialog-for-searching "Getrenntes Dialogfenster für Suche benutzen")
- (default-fonts "Default Schriftarten")
+ (default-fonts "Vorgabe Schriftarten")
  
  ; should have entire alphabet
  (font-example-string "The quick brown fox jumped over the lazy dogs.") ; oops, have to look this up; there is a German analog
@@ -198,7 +222,7 @@
  (choose-a-new-font "Bitte eine neue \"~a\" Schriftart wählen")
 
  (font-size-slider-label "Größe")
- (restart-to-see-font-changes "Neustart um Schriftartänderungen zu sehen")
+ (restart-to-see-font-changes "Neustart um Änderungen der Schriftart zu sehen")
 
  (font-prefs-panel-title "Schriftart")
  (font-name "Schriftartname")
@@ -207,18 +231,18 @@
  (select-font-name "Schriftartnamen auswählen")
  (example-text "Beispieltext:")
  (general-ii "General II")	; islwtm
- (only-warn-once "Nur einmal warnen falls Execution- und Interaktionsfenster nicht synchron sind")
+ (only-warn-once "Nur einmal warnen falls Ausführungs- und Interaktionsfenster nicht synchron sind")
  
  ;;; indenting preferences panel
  (indenting-prefs-panel-label "Einzüge")
 
  ; filled with define, lambda, or begin
- (enter-new-keyword "Enter new ~a-like keyword:")	; islwtm
- (x-keyword "~a Keyword")
- (x-like-keywords "~a-like Keywords")
+ (enter-new-keyword "Eingabe ~a-ähnliches Schlüsselwort:")	; islwtm
+ (x-keyword "~a Schlüsselwort")
+ (x-like-keywords "~a-ähnliche Schlüsselworte")
 
  (expected-a-symbol "Symbol erwartet: ~a gefunden")
- (already-used-keyword "\"~a\" ist schon ein Keyword, das einen besondern Linkseinzug auslöst.")
+ (already-used-keyword "\"~a\" ist schon ein Schlüsselwort, das einen besonderen Linkseinzug auslöst.")
  (add-keyword "Hinzufügen")
  (remove-keyword "Entfernen")
  
@@ -226,9 +250,7 @@
  (find-and-replace "Suchen und Ersetzen")
  (find "Suchen")
  (replace "Ersetzen")
-; hmmm, different from this:  (separate-dialog-for-searching "Getrenntes Dialogfenster für Suche benutzen")  ?
-
- (use-separate-dialog-for-searching "Getrenntes Dialogfenster für Suche benutzen")
+ (use-separate-dialog-for-searching "Eigenes Dialogfenster für Suche benutzen")
  (replace&find-again "Ersetzen und nochmal suchen") ;;; need double & to get a single &
  (replace-to-end "Ab hier Alles ersetzen")
  (forward "Vorwärts")
@@ -287,6 +309,7 @@
 
  (open-info "Datei von der Festplatte öffnen")
  (open-menu-item "Ö&ffnen...")
+ (open-recent-menu-item "Öffne andere") ; not yet -ru
 
  (revert-info "Inhalt entsprechend der Datei zurücksetzen")
  (revert-menu-item "&Zurücksetzen")
@@ -315,10 +338,10 @@
  (redo-info "Die letzte rückgängig gemachte Aktion wieder machen")
  (redo-menu-item "&Wiederherstellen")
 
- (cut-info "Das Markierte löschen und in der Zwischenablage speichern")
+ (cut-info "Markierung löschen und in der Zwischenablage speichern")
  (cut-menu-item "A&usschneiden")
 
- (copy-info "Das Markierte auf die Zwischenablage kopieren")
+ (copy-info "Markierung in die Zwischenablage kopieren")
  (copy-menu-item "&Kopieren")
 
  (paste-info "Den Inhalt der Zwischenablage einfügen, ggf. anstelle des markierten Inhaltes.")
@@ -334,31 +357,34 @@
  (find-info "Nach einer Zeichenfolge suchen")
  (find-menu-item "Suchen...")
 
- (find-again-info "Wiederholte Suche nach dem gleichen String")
+ (find-again-info "Wiederholte Suche nach der gleichen Zeichenkette")
  (find-again-menu-item "Weitersuchen")
+ (mfs-multi-file-search-menu-item "Suche in Dateien...") ; not yet -ru
  
- (replace-and-find-again-info "Ersetze den aktuellen Text und suche nach dem gleichen String weiter")
- (replace-and-find-again-menu-item "Ersetzen && und weitersuchen")
+ (replace-and-find-again-info "Ersetze den aktuellen Text und suche nach der selben Zeichenkette weiter")
+ (replace-and-find-again-menu-item "Ersetzen und weitersuchen")
 
- (preferences-info "Preferenzen konfigurieren")
- (preferences-menu-item "Preferenzen...")
+ (preferences-info "Voreinstellungen konfigurieren")
+ (preferences-menu-item "Voreinstellungen...")
 
- (keybindings-info "Die jetzt aktiven Keybindings (Assoziation zwischen Tasten und Funktionen) anzeigen")
- (keybindings-menu-item "Keybindings")
- (keybindings-frame-title "Keybindings")
+ (keybindings-info "Die aktiven Tastatureinstellungen (Verknüpfung zwischen Tasten und Funktionen) anzeigen")
+ (keybindings-menu-item "Tastatureinstellungen")
+ (keybindings-frame-title "Tastatureinstellungen")
  (keybindings-sort-by-name "Nach Name sortieren")
  (keybindings-sort-by-key "Nach Schlüssel sortieren")
 
  (insert-text-box-item "Text Box einfügen")
  (insert-pb-box-item "Pasteboard Box einfügen")
- (insert-image-item "Image einfügen...")
- (wrap-text-item "Textitem umbrechen")
+ (insert-image-item "Bild einfügen...")
+ (wrap-text-item "In Textfeld umbrechen")
 
  (windows-menu-label "&Fenster")
- (bring-frame-to-front "Bring frame to front")       ;;; title of dialog
- (bring-frame-to-front... "Bring frame to front...") ;;; corresponding title of menu item
+ (bring-frame-to-front "Bringe Fenster nach vorne")       ;;; title of dialog
+ (bring-frame-to-front... "Bringe Fenster nach vorne...") ;;; corresponding title of menu item
  
  (show-menu-label "&Anzeigen")
+ (show-overview "Zeige Speedbar")
+ (hide-overview "Verstecke Speedbar")
 
  (help-menu-label "&Hilfe")
  (about-info "Autoren dieser Anwendung und andere Details")	; islwtm authors?
@@ -421,7 +447,7 @@
  (about-drscheme "Info DrScheme")
  (save-other "Speichere Andere")
  (save-definitions-as-text "Speichere Definitionen als Text...")
- (save-interactions "Speichere Interaktionen") ; fixme: besserer Begriff?
+ (save-interactions "Speichere Interaktionen") ; fixme: Interaktionen - besserer Begriff?
  (save-interactions-as "Speichere Interaktionen als...")
  (save-interactions-as-text "Speichere Interaktionen als Text...")
  (print-interactions "Drucke Interaktionen...")
@@ -441,15 +467,10 @@
  (break-menu-item-help-string "Abbruch des aktuellen Prozesses")
  (kill-menu-item-label "Prozess beenden")
  (kill-menu-item-help-string "Beende den aktuellen Prozess")
- (reindent-menu-item-label "&Neu einrücken") ; fixme: besserer Begriff	(ist besser als "links einzug neu berechnen", oder?)
+ (reindent-menu-item-label "&Neu einrücken") ; fixme: besserer Begriff	(ist besser als "links einzug neu berechnen", oder?. ja -ru)
  (reindent-all-menu-item-label "&Alles neu einrücken") ; fixme: besserer Begriff
  (comment-out-menu-item-label "&Auskommentieren")
  (uncomment-menu-item-label "Auskommentieren rückgängig")	;  (uncomment, not strip comments, i assume)
-
- ;; launcher
- (create-launcher-title "Erzeuge externes Startprogramm")
- (must-save-before-launcher "Sie müssen zuerst Ihr Programm abspeichern, bevor Sie das Startprogramm erzeugen können.")
- (save-a-launcher "Sichere ein externes Startprogramm")
 
  ;; buttons
  (execute-button-label "Ausführen") 
@@ -461,7 +482,7 @@
  (exact-lucky-search-help-desk-for "Exakte Suche im Help Desk nach \"~a\"")
  
  ;; collapsing and expanding sexpressions poup menu item label
- (collapse-sexp "Schrumpfen")
+ (collapse-sexp "Schrumpfen") ; blöder Ausdruck -ru
  (expand-sexp "Erweitern")
 
  ;; fraction dialog
@@ -486,22 +507,24 @@
  (already-added-teachpack "~a Teachpack schon vorhanden")
  
  ;;; Language dialog
+ (introduction-to-language-dialog
+  "Bitte wählen Sie eine Scheme Sprachversion. Studenten der meisten Einführungskurse sollten die Vorgabesprache verwenden.")
  (language-dialog-title "Sprache konfigurieren")
  (case-sensitive-label "Groß-/Kleinschreibung beachten")
  (output-style-label "Ausgabestil")
  (constructor-printing-style "Constructor") ; these are pretty special, I'd leave them
  (quasiquote-printing-style "Quasiquote")
  (write-printing-style "write") ; islwtm
- (sharing-printing-label "Show sharing in values") ; islwtm
- (use-pretty-printer-label "Insert newlines in printed values") ; Zeilenumbruchzeichen in Druckwerten einfügen ??
- (input-syntax "Input Syntax")
- (output-syntax "Output Syntax")
+ (sharing-printing-label "Zeige Sharing in Werten") ; islwtm
+ (use-pretty-printer-label "Füge Zeilenumbrüche in ausgegebenen Werten ein") ; Zeilenumbruchzeichen in Druckwerten einfügen ??
+ (input-syntax "Eingabe Syntax")
+ (output-syntax "Ausgabe Syntax")
  (whole/fractional-exact-numbers-label "Zahlen als Bruchzahlen ausgeben")	; really "print"? or "output"?
- (booleans-as-true/false-label "Boolesche Werte als Wahr und Falsch ausgeben")	; in contrast to #T, #F? are true and false translated? ; 
+ (booleans-as-true/false-label "Bool'sche Werte als Wahr und Falsch ausgeben")	; in contrast to #T, #F? are true and false translated? ; 
  (show-details-button-label "Details anzeigen")
  (hide-details-button-label "Details verstecken")
  (choose-language-menu-item-label "Sprache auswählen...")
- (revert-to-language-defaults "Default-Sprache wieder aktivieren")
+ (revert-to-language-defaults "Vorgabesprache wieder aktivieren")
 
  ;;; languages
  (beginning-student "Anfänger/in")
@@ -510,37 +533,66 @@
  (advanced-student "Fortgeschrittene/r")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS-like")          ; islwtm
- (mred-lang-name "Grafische Oberfläche ohne Debugging (MrEd)")
- (mzscheme-lang-name "Textoberfläche ohne Debugging (MzScheme)")
- (r5rs-lang-name "R5RS without debugging")  ; islwtm
+ (mred-lang-name "Grafische Oberfläche ohne Debugger (MrEd)")
+ (mzscheme-lang-name "Textoberfläche ohne Debugger (MzScheme)")
+ (r5rs-lang-name "R5RS ohne Debugger")  ; islwtm
  (unknown-debug-frame "[unbekannt]")
  
+ (bad-module-language-specs
+  "The drscheme-language-position and drscheme-language-modules specifications aren't correct. Expected (listof (cons string (listof string))) and (listof (listof string)) respectively, where the lengths drscheme-language-position and drscheme-language-module lists are the same. Got ~e and ~e")
+
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")
- (files-interactions "~a's interactions") ;; filled with a filename
- (stack-frame-in-current-interactions "interactions")
- (stack-frame-in-current-definitions "definitions")
- (mzscheme-w/debug "Textual (MzScheme)")
- (mred-w/debug "Graphical (MrEd)")
+ (files-interactions "~a's Interaktionen") ;; filled with a filename
+ (stack-frame-in-current-interactions "Interaktionen")
+ (stack-frame-in-current-definitions "Definitionen")
+ (mzscheme-w/debug "Text (MzScheme)")
+ (mred-w/debug "Graphisch (MrEd)")
  
  ;;; repl stuff
- (evaluation-terminated "Evaluation Terminated")	; pretty special. perhaps we should compare with German SICP?
+ (evaluation-terminated "Ausführung (eval) beendet")	; pretty special. perhaps we should compare with German SICP?
  (evaluation-terminated-explanation
-  "The evaluation thread is no longer running, so no evaluation can take place until the next execution.")
- (last-stack-frame "show the last stack frame")
- (last-stack-frames "show the last ~a stack frames")
- (next-stack-frames "show the next ~a stack frames")
+  "Der Evaluation Thread wird nicht länger ausgeführt, also kann keine Evaluation bis zur nächsten Ausführung stattfinden.")
+ (last-stack-frame "zeige den letzten Stackbereich")
+ (last-stack-frames "zeige die letzten ~a Stackbereiche")
+ (next-stack-frames "zeige die nächsten ~a Stackbereiche")
  
  ;;; welcoming message in repl
  (language "Sprache")
  (custom "angepasst")	; adjective (might need to decline in German?)
  (teachpack "Teachpack")
- (welcome-to "Willkommen zu")
+ (welcome-to "Willkommen bei")
  (version "Version")
  
  ;;; kill evaluation dialog
- (kill-evaluation? "Evaluation beenden?")
- (just-break "Nur Break")	; Break has a special meaning? Interrupt?
+ (kill-evaluation? "Ausführung (eval) beenden?")
+ (just-break "Nur Abbrechen")	; Break has a special meaning? Interrupt?
  (kill "Beenden")
  (kill? "Beenden?")
+
+ ;;; version checker
+ (vc-update-check "Prüfe Updates")
+ (vc-check-prompt "Prüfe PLT Software Updates übers Internet?")
+ (vc-please-wait "Bitte warten")
+ (vc-connecting-version-server "Baue Verbindung zu PLT Versions Server auf")
+ (vc-network-timeout "Netzwerk Timeout") 
+ (vc-cannot-connect  "Kann keine Verbindung zum PLT Versions Server aufbauen")
+ (vc-network-failure "Netzwerk Fehler")
+ (vc-old-binaries "Installierte Binaries für DrScheme (oder MzScheme) sind überholt")
+ (vc-binary-information-format "Installierte Binär Version: ~a (iteration ~a)")
+ (vc-update-format "~a v.~a (iteration ~a) muß auf v.~a (iteration ~a) upgedatet werden")
+ (vc-binary-name "Binär")
+ (vc-updates-available "Updates sind erhältich bei")
+ (vc-latest-binary-information-format "Letzte freigegebene Version: ~a (iteration ~a)")
+ (vc-update-dialog-title "PLT Update Status")
+ (vc-need-update-string "Eine oder mehrere installierte PLT Software Packete müssen upgedatet werden")
+ (vc-no-update-string "installierte PLT Software Packete sind aktuell")
+ 
+ ;; large semi colon letters
+ (insert-large-letters... "Einfüge Text als ASCII Grafik...")
+ (large-semicolon-letters "Große Semikolon Buchstaben")
+ (text-to-insert "Text zum Einfügen")
+
+;;missing translations
+
  )

@@ -449,11 +449,6 @@
  (comment-out-menu-item-label "&Comentar")
  (uncomment-menu-item-label "&Des-comentar")
  
- ;;; launcher
- (create-launcher-title "Crear acceso directo")
- (must-save-before-launcher "Debes salvar tu programa antes de crear un acceso directo.")
- (save-a-launcher "Salvar un acceso directo")
- 
  ;;; buttons
  (execute-button-label "Ejecutar") 
  (save-button-label "Salvar")

@@ -507,11 +507,6 @@
  (comment-out-menu-item-label "&Commenter")
  (uncomment-menu-item-label "&Décommenter")
  
- ;;; launcher
- (create-launcher-title "Créer un lanceur")
- (must-save-before-launcher "Vous devez sauver votre programme avant de créer un lanceur.")
- (save-a-launcher "Sauvegarder un lanceur")
- 
  ;;; buttons
  (execute-button-label "Exécuter") 
  (save-button-label "Sauvegarder")

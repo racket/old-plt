@@ -49,16 +49,16 @@ LIBS=
 ###### OSKit stuff #######
 
 if test "${enable_oskit}" = "yes" ; then
-  OSKHOME=${OSKHOME:-/usr/local}
+  OSKHOME=${OSKHOME:-/usr/local/oskit}
 
-  if test -d ${OSKHOME}/oskit/bin ; then
+  if test -d ${OSKHOME}/bin ; then
     SKIP_ME=
   else
     AC_MSG_ERROR(cannot find OSKit support; try defining OSKHOME)
   fi
 
   CC=`(ls ${OSKHOME}/bin/*-oskit-gcc | head -1) 2> /dev/null`
-  if [ ! -x "${CC}" ] ; then
+  if test ! -x "${CC}" ; then
     AC_MSG_ERROR(can't find *-oskit-gcc compiler script in ${OSKHOME}/bin)
   fi
 

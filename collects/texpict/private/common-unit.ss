@@ -458,7 +458,8 @@
 				       (andmap (lambda (b)
 						 (= (pict-height b)
 						    (+ (pict-ascent b) (pict-descent b))))
-					       boxes)))))))]
+					       boxes))
+				     boxes)))))]
 	      [norm (lambda (h a d ac dc) h)]
 	      [tbase (lambda (h a d ac dc) (+ a ac))] 
 	      [bbase (lambda (h a d ac dc) (+ d dc))] 
@@ -467,15 +468,26 @@
 	      [tline (lambda (m v md d mac a) (- mac (- v a)))]
 	      [bline (lambda (m v md d mac a) (- md d))]
 	      [c (lambda (m v . rest) (quotient* (- m v) 2))]
-	      [none (lambda (p a d one-line?) p)]
-	      [with-max-a (lambda (p a d one-line?)
+	      [none (lambda (p a d one-line? boxes) p)]
+	      [preserve (lambda (p a d one-line? boxes)
+			  (if (and (apply = (map pict-width boxes))
+				   (apply = (map pict-height boxes))
+				   (apply = (map pict-ascent boxes))
+				   (apply = (map pict-descent boxes)))
+			      (make-pict (pict-draw p)
+					 (pict-width p) (pict-height p)
+					 (pict-ascent (car boxes))
+					 (pict-descent (car boxes))
+					 (pict-children p))
+			      p))]
+	      [with-max-a (lambda (p a d one-line? boxes)
 			    (make-pict (pict-draw p)
 				       (pict-width p) (pict-height p)
 				       a (if (one-line?)
 					     (- (pict-height p) a)
 					     0)
 				       (pict-children p)))]
-	      [with-max-d (lambda (p a d one-line?)
+	      [with-max-d (lambda (p a d one-line? boxes)
 			    (make-pict (pict-draw p)
 				       (pict-width p) (pict-height p)
 				       (if (one-line?)
@@ -496,7 +508,7 @@
 	   (make-superimpose rt bline bbase with-max-d)
 	   (make-superimpose c rt norm none)
 	   (make-superimpose c lb norm none)
-	   (make-superimpose c c norm none)
+	   (make-superimpose c c norm preserve)
 	   (make-superimpose c tline tbase with-max-a)
 	   (make-superimpose c bline bbase with-max-d))))
 

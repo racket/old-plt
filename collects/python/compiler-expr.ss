@@ -1,6 +1,6 @@
 (module compiler-expr mzscheme
   (require (lib "class.ss")
-           (lib "list.ss")
+         ;  (lib "list.ss")
 	   "compiler.ss"
 	   "compiler-target.ss"
            "empty-context.ss"
@@ -355,7 +355,7 @@
         (send expression set-bindings! enclosing-scope)
         (send sub set-bindings! enclosing-scope))
       
-      ;;danie
+      ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
         (->orig-so `(,(py-so 'python-method-call) ,(send expression to-scheme)
@@ -529,7 +529,7 @@
                     (unless (symbol? x) (send x set-bindings! enclosing-scope)))
                   comps))
 
-      ;; scheme-op->python-op:  symbol -> symbol
+      ;; scheme-op->python-op:  symbol -> syntax-object
       (define (scheme-op->python-op oper)
         (py-so (case oper
                  [(>) 'py>]

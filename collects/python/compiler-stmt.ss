@@ -58,6 +58,15 @@
         (send expr1 set-bindings! enclosing-scope)
         (when expr2 (send expr2 set-bindings! enclosing-scope)))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(,(py-so 'py-if) (,(py-so 'py-not) ,(send expr1 to-scheme))
+                       (error ,(if expr2
+                                   `(format "AssertError: ~a"
+                                           (,(py-so 'py-object%->string) ,(send expr2 to-scheme)))
+                                   "AssertError")))))
+      
       (super-instantiate ())))
   
   ;; 6.3

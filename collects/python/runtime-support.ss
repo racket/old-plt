@@ -40,10 +40,9 @@
     (cond
       [(py-is-a? x py-number%) (not (zero? (py-number%->number x)))]
       [(py-is? x py-none) #f]
-      [else (raise "py-object%->bool only handles numbers so far")]))
+      [else (with-handlers ([exn:not-found? (lambda (exn) #t)])
+              (py-object%->bool (python-method-call x '__len__)))]))
   
-  (define (py-not x)
-    (bool->py-number% (not (py-object%->bool x))))
   
   (define (bool->py-number% x)
     (number->py-number% (if x 1 0)))
@@ -81,12 +80,20 @@
   (define-syntax py-if
     (lambda (stx)
       (syntax-case stx ()
-        [(_ test then else) #`(if (zero? (py-number%->number #,(syntax test)))
-                                  #,(syntax else)
-                                  #,(syntax then))]
-        [(_ test then) #`(unless (zero? (py-number%->number #,(syntax test)))
-                           #,(syntax then))])))
+        [(_ test then else) #`(if (let ([test-evald test])
+                                    (py-object%->bool test-evald))
+                                  then
+                                  else)]
+        [(_ test then) #`(when (let ([test-evald test])
+                                   (py-object%->bool test-evald))
+                           then)])))
   
+;  (define-syntax (py-not stx)
+;    (syntax-case stx ()
+;      [(_ expr) #`(py-if expr (number->py-number% 0) (number->py-number% 1))]))
+
+  (define (py-not x)
+    (bool->py-number% (not (py-object%->bool x))))
   
   (define-syntax (build-class-body stx)
       (datum->syntax-object

@@ -19,6 +19,8 @@
   (dprintf "1~n")
 
   
+  (define-struct (exn:not-found exn) () (make-inspector))
+  
   (define python-get-member
     (opt-lambda (obj member-name [wrap? #t] [orig-call? #t])
       (cond
@@ -38,9 +40,9 @@
                    (with-handlers ([symbol? (lambda (exn-sym)
                                                   (unless (eq? exn-sym 'member-not-found)
                                                     (raise exn-sym))
-                                                  (error (format "member ~a not found in ~a"
+                                                  (error (make-exn:not-found (format "member ~a not found in ~a"
                                                                  member-name
-                                                                 (py-object%->string obj))))])
+                                                                 (py-object%->string obj)))))])
                          (hash-table-get (python-node-dict o)
                                          member-name
                                          (lambda ()

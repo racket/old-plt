@@ -176,6 +176,14 @@ void wxCanvas::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 		Rect paintRect = {0, 0, clientHeight, clientWidth};
 		wx_dc->SetPaintRegion(&paintRect);
 	}
+	
+	if (cScroll && scrollAutomanaged
+	    && (requested_x_step_size > 0 || requested_y_step_size > 0))
+	  SetScrollbars(requested_x_step_size, requested_y_step_size,
+	                hExtent / max(1, requested_x_step_size), vExtent / max(1, requested_y_step_size),
+	                1, 1,
+	                cScroll->GetScrollData()->GetValue(wxWhatScrollData::wxPositionH),
+	                cScroll->GetScrollData()->GetValue(wxWhatScrollData::wxPositionV));
 }
 
 //-----------------------------------------------------------------------------
@@ -187,16 +195,59 @@ void wxCanvas::SetScrollbars(int horizontal, int vertical,
                              int x_length, int y_length,
                              int x_page, int y_page,
                              int x_pos, int y_pos,
-							 Bool automgmt
-							)
+			     Bool automgmt)
 {
-	if (!cScroll) 
-		return;
+    if (!cScroll) 
+      return;
 		
-    if (!(cStyle & wxHSCROLL))
+    if (!(cStyle & wxHSCROLL) || (x_length <= 0))
       horizontal = -1;
-    if (!(cStyle & wxVSCROLL))
+    if (!(cStyle & wxVSCROLL) || (y_length <= 0))
       vertical = -1;
+      
+     if (automgmt) {
+       if (horizontal >= 0) {
+         horizontal = max(horizontal, 1);
+         hExtent = horizontal * x_length;
+       } else
+         hExtent = 0;
+       if (vertical >= 0) {
+         vertical = max(vertical, 1);
+         vExtent = vertical * y_length;
+       } else
+         vExtent = 0;
+     } else {
+       hExtent = 0;
+       vExtent = 0;
+     }
+     
+    if (automgmt) {
+      requested_x_step_size = horizontal;
+      requested_y_step_size = vertical;
+      
+      int tw, th, w, h, dw, dh;
+      GetClientSize(&w, &h);
+      if (hExtent) {
+        tw = hExtent;
+        dw = tw - w;
+        if (dw <= 0) {
+          horizontal = -1;
+        } else {
+          x_length = ceil((double)dw / horizontal);
+          x_page = floor((double)w / horizontal);
+        }
+      }
+      if (vExtent) {
+        th = vExtent;
+        dh = th - h;
+        if (dh <= 0) {
+          vertical = -1;
+        } else {
+          y_length = ceil((double)dh / vertical);
+          y_page = floor((double)h / vertical);
+        }
+      }
+    }
 
 	scrollAutomanaged = automgmt; //mflatt
 
@@ -293,20 +344,24 @@ void wxCanvas::SetScrollData
 	if ((long)whatScrollData & wxWhatScrollData::wxPageH)
 		units_per_page_y = scrollData->GetValue(wxWhatScrollData::wxPageH);
 
+ 	wxDC* theDC = GetDC();
+
  	if (!scrollAutomanaged) {
- 	  // Scrollbars do not automatically change the canvas:
-	  wxCommandEvent *simulEvent = new wxCommandEvent(wxTYPE_EVENT);
- 	  OnScroll(*simulEvent);
+ 	  if (theDC) {
+ 	    theDC->device_origin_x = 0;
+	    theDC->device_origin_y = 0;
+	  }
+ 	  if (iniatorWindow) {
+ 	    // Scrollbars do not automatically change the canvas:
+	    wxCommandEvent *simulEvent = new wxCommandEvent(wxTYPE_EVENT);
+ 	    OnScroll(*simulEvent);
+ 	  }
           return;
  	}
 
- 	hExtent = horiz_units * units_x;
- 	vExtent = vert_units * units_y;
- 	wxDC* theDC = GetDC();
  	if (theDC)
 	{
 		int dH = 0;
-		if ((long)whatScrollData & wxWhatScrollData::wxPositionH)
 		{
 			int newH = scrollData->GetValue(wxWhatScrollData::wxPositionH) *
 						scrollData->GetValue(wxWhatScrollData::wxUnitW);
@@ -314,7 +369,6 @@ void wxCanvas::SetScrollData
 		}
 	
 		int dV = 0;
-		if ((long)whatScrollData & wxWhatScrollData::wxPositionV)
 		{
 			int newV = scrollData->GetValue(wxWhatScrollData::wxPositionV) *
 						scrollData->GetValue(wxWhatScrollData::wxUnitH);
@@ -334,10 +388,9 @@ void wxCanvas::SetScrollData
 			theDC->device_origin_y += -dV;
 			theDC->EndDrawing();
 			::DisposeRgn(theUpdateRgn);
-
-			wxFrame* rootFrame = GetRootFrame();
-			rootFrame->MacUpdateWindow(); // kludge, since update events not highest priority
 		}
+
+		Refresh();
 	}
 }
 
@@ -481,6 +534,8 @@ Bool wxCanvas::WantsFocus(void)
 // ----------------Modifications for wxMedia (mflatt) ----------------
 void wxCanvas::SetScrollPage(int dir, int val)
 {
+  if (scrollAutomanaged) return;
+
   wxCanvas::SetScrollbars(horiz_units, vert_units, 
 					units_x, units_y,
 					(dir == wxHORIZONTAL) ? val : units_per_page_x,
@@ -490,6 +545,8 @@ void wxCanvas::SetScrollPage(int dir, int val)
 
 void wxCanvas::SetScrollRange(int dir, int val)
 {
+  if (scrollAutomanaged) return;
+
   wxCanvas::SetScrollbars((dir == wxHORIZONTAL) ? (val > 0) : horiz_units,
 						(dir == wxVERTICAL) ? (val > 0) : vert_units,
 						(dir == wxHORIZONTAL) ? val : units_x,
@@ -500,6 +557,8 @@ void wxCanvas::SetScrollRange(int dir, int val)
 
 void wxCanvas::SetScrollPos(int dir, int val)
 {
+  if (scrollAutomanaged) return;
+
   wxCanvas::SetScrollbars(horiz_units, vert_units, 
 					units_x, units_y,
 					units_per_page_x, units_per_page_y,
@@ -510,6 +569,8 @@ void wxCanvas::SetScrollPos(int dir, int val)
 
 int wxCanvas::GetScrollPos(int dir)
 {
+  if (scrollAutomanaged) return 0;
+
   if (!cScroll) return 0;
   
   return cScroll->GetScrollData()->GetValue((dir == wxHORIZONTAL) ? wxWhatScrollData::wxPositionH
@@ -518,14 +579,20 @@ int wxCanvas::GetScrollPos(int dir)
 
 int wxCanvas::GetScrollPage(int dir)
 {
+  if (scrollAutomanaged) return 0;
+
   if (!cScroll) return 1;
+  
+  if (!GetScrollRange(dir)) return 0;
   
   return cScroll->GetScrollData()->GetValue((dir == wxHORIZONTAL) ? wxWhatScrollData::wxPageW
 												   : wxWhatScrollData::wxPageH);
 }
 int wxCanvas::GetScrollRange(int dir)
 {
- if (!cScroll) return 1;
+  if (scrollAutomanaged) return 0;
+
+ if (!cScroll) return 0;
   
  return cScroll->GetScrollData()->GetValue((dir == wxHORIZONTAL) ? wxWhatScrollData::wxSizeW
 												   : wxWhatScrollData::wxSizeH);

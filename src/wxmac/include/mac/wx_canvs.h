@@ -28,6 +28,7 @@ class wxCanvas: public wxbCanvas
 	int units_y ;
 	int hExtent;   // Actual extent of virtual scrolled canvas
 	int vExtent;
+	int requested_x_step_size, requested_y_step_size;
 	Bool hScrollingEnabled;
 	Bool vScrollingEnabled;
     Bool scrollAutomanaged;

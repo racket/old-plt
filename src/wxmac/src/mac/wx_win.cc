@@ -861,6 +861,8 @@ void wxWindow::GetClipRect(wxArea* area, Rect* clipRect) // mac platform only
 		int parentAreaY = parentAreaMargin.Offset(Direction::wxTop);
 		::OffsetRect(&parentClipRect, -parentAreaX, -parentAreaY); // area c.s.
 		::SectRect(&parentClipRect, clipRect, clipRect);
+		if (clipRect->top < 0) clipRect->top = 0;
+		if (clipRect->left < 0) clipRect->left = 0;
 	}
 }
 

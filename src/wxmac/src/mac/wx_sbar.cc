@@ -304,7 +304,7 @@ void wxScrollBar::OnEvent(wxMouseEvent& event) // mac platform only
 					wxWhatScrollData positionScrollData =
 						(horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
 					int newPosition = GetValue();
-					cScroll->SetScrollData(newPosition, positionScrollData, NULL);
+					cScroll->SetScrollData(newPosition, positionScrollData, this);
 				}
 			}
 			else
@@ -342,7 +342,8 @@ void wxScrollBar::TrackAction(short part) // mac platform only
 
 		wxWhatScrollData positionScrollData =
 			(horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
-		cScroll->SetScrollData(newPosition, positionScrollData, NULL);
+		SetValue(newPosition);
+		cScroll->SetScrollData(newPosition, positionScrollData, this);
 
 		SetCurrentDC(); // must reset cMacDC (kludge)
 	}

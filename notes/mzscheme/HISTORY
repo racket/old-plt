@@ -15,6 +15,9 @@ Added link-exists?
 Added copy-file
 Added path-list-string->path-list
 Added collection-path
+The delete-file and rename-file functions now reliably work
+ on links rather than the destination of the link (now fixed
+ for MacOS and documented this way)
 Fixed rename-file: works for directories too, but the
   destination file/directory cannot exist already.
 Changed initial setting of current-library-collection-paths
@@ -39,6 +42,7 @@ Changed storage of loaded-library table from built into the
  namespace
 Added require-relative-library
 Fixed error messages for +, -, etc. to show all arguments
+Added send-event, currently only supported for MacOS
 Changed MzLib's pconver.ss libraries; the print-convert-hook@
  unit was removed (along with the pchookr.ss library) and
  replaced with parameters defined in pconverr.ss for similar

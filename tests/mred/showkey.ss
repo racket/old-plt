@@ -26,7 +26,14 @@
 		      (send ev get-control-down)
 		      (send ev get-alt-down)
 		      (send ev get-shift-down)))]))])
-  (define f (make-object frame% "tests" #f 100 100))
+  (define f (make-object (class frame% ()
+                           (inherit accept-drop-files)
+                           (override
+                             [on-drop-file (lambda (file)
+                                             (printf "Dropped: ~a~n" file))])
+                           (sequence
+                             (super-init "tests" #f 100 100)
+                             (accept-drop-files #t)))))
   (define c (make-object c% f))
   (send c focus)
   (send f show #t))

@@ -88,10 +88,6 @@
        f-list)
       (cdr r-list))]))
     
-
-
-  
-
 ; copy a list of files to a given directory
 (define (copy-files lof dest)
   (for-each
@@ -102,11 +98,23 @@
    lof))
 
 (define zlibfiles 
-  (find-grep-filter (build-path wxdir "zlib") ".[h|c]$" 
-                    '("example.c" "maketree.c" "minigzip.c")))
+  (let 
+      ((zlib-path 
+        (cond 
+         [(directory-exists? (build-path here "src" "zlib"))   (build-path here "src" "zlib")]
+         [(directory-exists? (build-path wxdir "zlib")) (build-path wxdir "zlib")]
+         [else (error "Could not locate zlib src files")])))
+  (find-grep-filter zlib-path ".[h|c]$" 
+                    '("example.c" "maketree.c" "minigzip.c"))))
 
 (define pngfiles
-  (find-grep-filter (build-path wxdir "libpng") "\\.[h|c]$" '("example\\.c" "pngtest\\.c")))
+  (let
+      ((pngfiles-path
+        (cond
+          [(directory-exists? (build-path here "src" "png"))   (build-path here "src" "png")]
+          [(directory-exists? (build-path wxdir "libpng")) (build-path wxdir "libpng")]
+          [else (error "Could not locate png src files")])))
+  (find-grep-filter pngfiles-path "\\.[h|c]$" '("example\\.c" "pngtest\\.c"))))
 
 
 (define gdfiles 
@@ -123,12 +131,11 @@
              plplotfiles)                          
             (build-path here "src" "tmp"))
 
-; now fin just all the c files.. a bit redundent, but it's ok..
-
+; now find just all the c files..
 (define c-files
   (find-grep-filter tmp-dir "\\.c$"))
 
-; now munge it into a string..
+; now make a string
 (define c-files-string 
   (foldl (lambda (s c) (string-append c " " s)) "" c-files))
 

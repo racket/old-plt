@@ -80,35 +80,35 @@
 
   (define cmd-line (let ([l (vector->list (current-command-line-arguments))])
 		     (let ([l (cond
-			       [(string=? (car l) "--precompile")
+			       [(bytes=? (car l) #"--precompile")
 				(set! precompiling-header? #t)
 				(cdr l)]
-			       [(string=? (car l) "--xform")
+			       [(bytes=? (car l) #"--xform")
 				(cdr l)]
 			       [else l])])
 		       (let ([l (cond
-				 [(string=? (car l) "--precompiled")
+				 [(bytes=? (car l) #"--precompiled")
 				  (set! precompiled-header (cadr l))
 				  (cddr l)]
 				 [else l])])
-			 (let ([l (if (string=? (car l) "--notes")
+			 (let ([l (if (bytes=? (car l) #"--notes")
 				      (begin
 					(set! show-info? #t)
 					(cdr l))
 				      l)])
-			   (let ([l (if (string=? (car l) "--depends")
+			   (let ([l (if (bytes=? (car l) #"--depends")
 					(begin
 					  (set! output-depends-info? #t)
 					  (cdr l))
 					l)])
-			     (let ([l (if (string=? (car l) "--palm")
+			     (let ([l (if (bytes=? (car l) #"--palm")
 					  (begin
 					    (set! palm? #t)
 					    (set! pgc? #f)
 					    (set! pgc-really? #f)
 					    (cdr l))
 					  l)])
-			       (let ([l (if (string=? (car l) "--cgc")
+			       (let ([l (if (bytes=? (car l) #"--cgc")
 					    (begin
 					      (set! pgc-really? #f)
 					      (cdr l))
@@ -116,7 +116,7 @@
 				 l))))))))
   
   (define (filter-false s)
-    (if (string=? s "-")
+    (if (bytes=? s #"-")
 	#f
 	s))
 
@@ -127,10 +127,14 @@
 		       (cadddr cmd-line)
 		       #f))
 
-  (define source-is-c++? (regexp-match "([.]cc$)|([.]cxx$)" file-in))
+  (define source-is-c++? (regexp-match #rx"([.]cc$)|([.]cxx$)" file-in))
 
   (define (change-suffix filename new)
-    (regexp-replace "[.][^.]*$" filename new))
+    (regexp-replace #rx"[.][^.]*$" 
+		    (if (string? filename)
+			(string->bytes/utf8 filename)
+			filename)
+		    new))
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; "AST" structures
@@ -205,7 +209,7 @@
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (define (trans pattern)
-    (regexp (format "^(~a)" pattern)))
+    (byte-regexp (string->bytes/utf8 (format "^(~a)" pattern))))
 
   (define (translations . t)
     (let loop ([t t])
@@ -239,20 +243,19 @@
 
   (define (line-comment s p)
     (let loop ([p (add1 p)])
-      (let ([c (string-ref s p)])
-	(if (or (eq? c #\newline)
-		(eq? c #\return))
+      (let ([c (bytes-ref s p)])
+	(if (or (equal? c 10)
+		(equal? c 13))
 	    (add1 p)
 	    (loop (add1 p))))))
 
-  (define re:line (regexp (format "^#[^~a~a]* ([0-9]+) \"([^\"]*)\"" 
-				  #\newline #\return)))
-  (define re:pragma (regexp "^#pragma ([^\r\n]*)"))
+  (define re:line #rx#"^#[^\n\r]* ([0-9]+) \"([^\"]*)\"" )
+  (define re:pragma #rx#"^#pragma ([^\r\n]*)")
 
   (define (do-cpp s p)
     (let ([m (regexp-match re:line s p)])
       (when m
-	(set! source-line (string->number (cadr m)))
+	(set! source-line (string->number (bytes->string/utf8 (cadr m))))
 	(set! source-file (caddr m))))
     (let ([pragma (regexp-match re:pragma s p)])
       (if pragma
@@ -266,18 +269,18 @@
      source-line)) ; line
 
   (define (symbol s)
-    (result (string->symbol s)))
+    (result (string->symbol (bytes->string/utf8 s))))
 
-  (define re:octal (regexp "^0[0-9]+$"))
-  (define re:int (regexp "^[0-9]*$"))
+  (define re:octal #rx#"^0[0-9]+$")
+  (define re:int #rx#"^[0-9]*$")
   (define (number s)
     (result
      (cond
       [(regexp-match-positions re:octal s) 
-       (string->number s 8)]
+       (string->number (bytes->string/utf8 s) 8)]
       [(regexp-match-positions re:int s)
-       (string->number s)]
-      [else (string->symbol s)])))
+       (string->number (bytes->string/utf8 s))]
+      [else (string->symbol (bytes->string/utf8 s))])))
 
   (define (character s)
     (count-newlines s)
@@ -285,7 +288,7 @@
 
   (define (mk-string s)
     (count-newlines s)
-    (result (substring s 1 (sub1 (string-length s)))))
+    (result (bytes->string/utf8 (subbytes s 1 (sub1 (bytes-length s))))))
 
   (define (start s)
     'start)
@@ -294,9 +297,9 @@
     #f)
 
   (define (count-newlines s)
-    (let loop ([p (sub1 (string-length s))])
+    (let loop ([p (sub1 (bytes-length s))])
       (unless (= p -1)
-	(when (eq? #\newline (string-ref s p))
+	(when (= 10 (bytes-ref s p))
 	  (set! source-line (add1 source-line)))
 	(loop (sub1 p)))))
 
@@ -334,66 +337,66 @@
 	(loop (cddr l))
 	(let* ([pattern (car l)]
 	       [result (cadr l)]
-	       [n (char->integer (string-ref pattern 0))])
+	       [n (bytes-ref pattern 0)])
 	  (vector-set! simple-table
 		       n
 		       (cons
-			(list* pattern (string-length pattern) 
+			(list* pattern (bytes-length pattern) 
 			       result)
 			(or
 			 (vector-ref simple-table n)
 			 null)))))))
 
   (simple-translations
-   "#" symbol
-   "##" symbol
-   "..." symbol
-   ">>=" symbol
-   "<<=" symbol
-   "+=" symbol
-   "-=" symbol
-   "*=" symbol
-   "/=" symbol
-   "%=" symbol
-   "&=" symbol
-   "^=" symbol
-   "|=" symbol
-   ">>" symbol
-   "<<" symbol
-   "++" symbol
-   "--" symbol
-   "->" symbol
-   "&&" symbol
-   "||" symbol
-   "<=" symbol
-   ">=" symbol
-   "==" symbol
-   "!=" symbol
-   ";" symbol
-   "{" start
-   "}" stop
-   "," symbol
-   "::" symbol
-   ":" symbol
-   "=" symbol
-   "(" start
-   ")" stop
-   "[" start
-   "]" stop
-   "." #f ; => symbol/num
-   "&" symbol
-   "!" symbol
-   "~" symbol
-   "-" #f ; => symbol/num
-   "+" #f ; => symbol/num
-   "*" symbol
-   "/" symbol
-   "%" symbol
-   "<" symbol
-   ">" symbol
-   "^" symbol
-   "|" symbol
-   "?" symbol)
+   #"#" symbol
+   #"##" symbol
+   #"..." symbol
+   #">>=" symbol
+   #"<<=" symbol
+   #"+=" symbol
+   #"-=" symbol
+   #"*=" symbol
+   #"/=" symbol
+   #"%=" symbol
+   #"&=" symbol
+   #"^=" symbol
+   #"|=" symbol
+   #">>" symbol
+   #"<<" symbol
+   #"++" symbol
+   #"--" symbol
+   #"->" symbol
+   #"&&" symbol
+   #"||" symbol
+   #"<=" symbol
+   #">=" symbol
+   #"==" symbol
+   #"!=" symbol
+   #";" symbol
+   #"{" start
+   #"}" stop
+   #"," symbol
+   #"::" symbol
+   #":" symbol
+   #"=" symbol
+   #"(" start
+   #")" stop
+   #"[" start
+   #"]" stop
+   #"." #f ; => symbol/num
+   #"&" symbol
+   #"!" symbol
+   #"~" symbol
+   #"-" #f ; => symbol/num
+   #"+" #f ; => symbol/num
+   #"*" symbol
+   #"/" symbol
+   #"%" symbol
+   #"<" symbol
+   #">" symbol
+   #"^" symbol
+   #"|" symbol
+   #"?" symbol)
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -404,42 +407,42 @@
 
   (define (read-all p)
     (let loop ([l null])
-      (let ([s (read-string 4096 p)])
+      (let ([s (read-bytes 4096 p)])
 	(if (eof-object? s)
-	    (apply string-append (reverse! l))
+	    (apply bytes-append (reverse! l))
 	    (loop (cons s l))))))
 
   (define (tokenize)
     (let* ([s (read-all (current-input-port))]
-	   [len (string-length s)])
+	   [len (bytes-length s)])
       (let loop ([p 0][result null])
 	(if (= p len)
 	    (cons (reverse! result) p)
-	    (let ([char (string-ref s p)])
-	      (when (eq? char #\newline)
+	    (let ([char (bytes-ref s p)])
+	      (when (eq? char 10)
 		(set! source-line (add1 source-line)))
 	      (cond
-	       [(char-whitespace? char)
+	       [(char-whitespace? (integer->char char))
 		(loop (add1 p) result)]
-	       [(eq? char '#\#) ;; We assume only #-based preprocessor left
+	       [(eq? char (char->integer #\#)) ;; We assume only #-based preprocessor left
 		(let-values ([(pragma p) (do-cpp s p)])
 		  (if pragma
 		      (loop p (cons pragma result))
 		      (loop p result)))]
 	       [else
-		(let ([simple (let ([sl (vector-ref simple-table (char->integer char))])
+		(let ([simple (let ([sl (vector-ref simple-table char)])
 				(and sl
 				     (ormap 
 				      (lambda (t)
 					(and (or (= 1 (cadr t))
-						 (string=? (car t) (substring s p (+ p (cadr t)))))
+						 (bytes=? (car t) (subbytes s p (+ p (cadr t)))))
 					     (let ([f (cddr t)])
 					       (if f
 						   (cons (f (car t))
 							 (+ p (cadr t)))
 						   (let ([m (regexp-match-positions number-complex s p)])
 						     (if m
-							 (cons (number (substring s (caar m) (cdar m)))
+							 (cons (number (subbytes s (caar m) (cdar m)))
 							       (cdar m))
 							 (cons (symbol (car t))
 							       (+ p (cadr t)))))))))
@@ -450,25 +453,25 @@
 		     [(regexp-match-positions symbol-complex s p)
 		      => (lambda (m)
 			   (loop (cdar m)
-				 (cons (symbol (substring s (caar m) (cdar m)))
+				 (cons (symbol (subbytes s (caar m) (cdar m)))
 				       result)))]
 		     [(regexp-match-positions number-complex s p)
 		      => (lambda (m)
 			   (loop (cdar m)
-				 (cons (number (substring s (caar m) (cdar m)))
+				 (cons (number (subbytes s (caar m) (cdar m)))
 				       result)))]
 		     [(regexp-match-positions char-complex s p)
 		      => (lambda (m)
 			   (loop (cdar m)
-				 (cons (character (substring s (caar m) (cdar m)))
+				 (cons (character (subbytes s (caar m) (cdar m)))
 				       result)))]
 		     [(regexp-match-positions string-complex s p)
 		      => (lambda (m)
 			   (loop (cdar m)
-				 (cons (mk-string (substring s (caar m) (cdar m)))
+				 (cons (mk-string (subbytes s (caar m) (cdar m)))
 				       result)))]
 		     [else
-		      (error 'c-tokenize "strange: ~e ~e" p (substring s p (min len (+ p 100))))])]
+		      (error 'c-tokenize "strange: ~e ~e" p (subbytes s p (min len (+ p 100))))])]
 		   [(not (car simple))
 		    (cons (reverse! result) (cdr simple))]
 		   [(eq? (car simple) 'start)
@@ -476,7 +479,7 @@
 			  [sl source-line]
 			  [sub (loop (cdr simple) null)])
 		      (loop (cdr sub) (cons (make-a-seq
-					     (string-ref s p)
+					     (integer->char (bytes-ref s p))
 					     sf
 					     sl
 					     (car sub))
@@ -502,15 +505,16 @@
 	process))
 
   (define cpp-process
-    (process2 (format "~a~a~a ~a"
-		      cpp
-		      (if pgc?
-			  (if pgc-really? 
-			      " -DMZ_XFORM -DMZ_PRECISE_GC"
-			      " -DMZ_XFORM")
-			  "")
-		      (if callee-restore? " -DGC_STACK_CALLEE_RESTORE" "")
-		      file-in)))
+    (process2 (string->bytes/utf8
+	       (format "~a~a~a ~a"
+		       cpp
+		       (if pgc?
+			   (if pgc-really? 
+			       " -DMZ_XFORM -DMZ_PRECISE_GC"
+			       " -DMZ_XFORM")
+			   "")
+		       (if callee-restore? " -DGC_STACK_CALLEE_RESTORE" "")
+		       file-in))))
   (close-output-port (cadr cpp-process))
 
   (define (mk-error-thread proc)
@@ -531,11 +535,11 @@
 
   (define recorded-cpp-out
     (and precompiling-header?
-	 (open-output-file (change-suffix file-out ".e") 'truncate)))
+	 (open-output-file (change-suffix file-out #".e") 'truncate)))
   (define recorded-cpp-in
     (and precompiled-header
-	 (open-input-file (change-suffix precompiled-header ".e"))))
-  (define re:boring (regexp "^(()|(# .*)|(#line .*)|(#pragma implementation.*)|(#pragma interface.*))$"))
+	 (open-input-file (change-suffix precompiled-header #".e"))))
+  (define re:boring #rx#"^(()|(# .*)|(#line .*)|(#pragma implementation.*)|(#pragma interface.*))$")
   (define (skip-to-interesting-line p)
     (let ([l (read-line p 'any)])
       (cond
@@ -576,12 +580,11 @@
 		  (close-input-port (car cpp-process))
 		  (close-output-port local-ctok-write))
 		;; block copy:
-		(let ([s (make-string 4096)])
+		(let ([s (make-bytes 4096)])
 		  (let loop ()
-		    (let ([l (read-string-avail! s (car cpp-process))])
+		    (let ([l (read-bytes-avail! s (car cpp-process))])
 		      (unless (eof-object? l)
-			(let ([s (if (< l 4096) (substring s 0 l) s)])
-			  (display s local-ctok-write))
+			(write-bytes s local-ctok-write 0 l)
 			(loop))))
 		  (close-input-port (car cpp-process))
 		  (close-output-port local-ctok-write)))))
@@ -1026,7 +1029,7 @@
 			   (namespace-set-variable-value! (car v) (cdr v))))
     (namespace-set-variable-value! 'make-short-tok make-short-tok)
     ;; Load the pre-compiled-header-as-.zo:
-    (let ([l (load (change-suffix precompiled-header ".zo"))])
+    (let ([l (load (change-suffix precompiled-header #".zo"))])
       (for-each (lambda (x)
 		  (hash-table-put! used-symbols (car x) 
 				   (+
@@ -3711,7 +3714,7 @@
 	      (marshall pointer-types)
 	      (marshall non-pointer-types)
 	      (marshall struct-defs))])
-	(with-output-to-file (change-suffix file-out ".zo")
+	(with-output-to-file (change-suffix file-out #".zo")
 	  (lambda ()
 	    (write (compile e)))
 	  'truncate))))
@@ -3729,7 +3732,7 @@
     (error 'xform "Errors converting"))
 
   (when output-depends-info?
-    (with-output-to-file (change-suffix file-out ".sdep")
+    (with-output-to-file (change-suffix file-out #".sdep")
       (lambda ()
 	(write (hash-table-map depends-files (lambda (k v) k)))
 	(newline))

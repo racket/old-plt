@@ -366,7 +366,6 @@ static int fnl_weak_link_count;
 static int num_fnls;
 
 static int ran_final;
-static int re_gc_after_final_threshold = 20;
 static int running_finals;
 
 /******************** Misc ********************/
@@ -3312,10 +3311,6 @@ static void gcollect(int full)
   int compact;
   int i;
 
-#if 1
-  printf("pre-gc %ld\n", GC_get_memory_use(NULL));  
-#endif
-
   INITTIME();
   PRINTTIME((STDERR, "gc: << start with %ld [%d]: %ld\n", 
 	     memory_in_use, cycle_count + 1, GETTIMEREL()));
@@ -3895,10 +3890,6 @@ static void gcollect(int full)
 
     running_finals = 0;
   }
-
-#if 1
-  printf("gc %ld\n", GC_get_memory_use(NULL));  
-#endif
 }
 
 void *GC_resolve(void *p)

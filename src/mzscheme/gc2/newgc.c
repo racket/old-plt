@@ -2355,8 +2355,6 @@ static void garbage_collect(int force_full)
   static unsigned long number = 0;
   static unsigned int since_last_full = 0;
   static unsigned int running_finalizers = 0;
-  static int re_gc_after_final_threshold = 20;
-  int ran_final;
 
   /* determine if this should be a full collection or not */
   gc_full = force_full || !generations_available || 
@@ -2431,14 +2429,11 @@ static void garbage_collect(int force_full)
      if we run a finalizer after collection, and it triggers a collection,
      we should not run the next finalizer in the queue until the "current"
      finalizer completes its execution */
-  ran_final = 0;
   if(!running_finalizers) {
     running_finalizers = 1;
     while(run_queue) {
       struct finalizer *f;
       void **gcs;
-
-      ran_final++;
 
       f = run_queue; run_queue = run_queue->next;
       if(!run_queue) last_in_queue = NULL;

@@ -5,6 +5,7 @@
       determine_max_heap_size()
    Requires:
       TEST = 0
+      GENERATIONS --- zero or non-zero
       designate_modified --- when GENERATIONS is non-zero
       my_qsort (for alloc_cache.c)
    Optional:

@@ -35,11 +35,6 @@
 # if GENERATIONS
 #  undef GENERATIONS
 #  define GENERATIONS OS_X_GENERATIONS
-/* Under OS X, the SIGBUS handler seems not to receive the right
-   information about the fault. We figured out where the relevant
-   information is on the stack --- as an offset from the last argument
-   to the handler --- but it's quite a hack.  So we make it easy to
-   disable above. */
 # endif
 #endif
 
@@ -2966,37 +2961,10 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
 # define NEED_SIGWIN
 #endif
 
-/* ========== Mac OS X Darwin signal handler ========== */
-/*           Replaced by Mach-direct vm_osx.c           */
+/* ========== Mac OS X signal handler ========== */
 #if defined(OS_X)
-# if 1
-#  define NEED_OSX_MACH_HANDLER
-# else
-/* Note: sigaction with SA_SIGINFO doesn't work.  si->si_addr is
-   normally the faulting referenced address (on other platforms), but
-   it turns out to be the faulting instruction address in 10.2. So we
-   have to parse machine-code instructions and look at the
-   registers. */
-#  include <signal.h>
-#  include "osx_addr.inc"
-void fault_handler(int sn, siginfo_t *si, struct sigcontext *scp)
-{
-#  if 0
-  /* Old approach from CGC, doesn't seem to work in 10.2 because scp
-     is nonsense. */
-  unsigned int   instr = *((unsigned int *) scp->sc_ir);
-  unsigned int * regs = &((unsigned int *) scp->sc_regs)[2];
-  designate_modified(get_fault_addr(instr, regs));
-#  else
-  /* Hack: relevant context info seems to be 50 words deeper into the
-     stack than &scp */
-  unsigned int   instr = *(((unsigned int **)&scp)[50]);
-  unsigned int * regs = ((unsigned int *)&scp) + 52;
-  designate_modified(get_fault_addr(instr, regs));
-#  endif
-#  define NEED_OSX_SIGBUS
-}
-# endif
+/* Supplied by vm_osx.c: */
+# define NEED_OSX_MACH_HANDLER
 #endif
 
 #endif /* GENERATIONS */
@@ -3265,15 +3233,6 @@ static void init(void)
 # endif
 # ifdef NEED_OSX_MACH_HANDLER
     macosx_init_exception_handler();
-# endif
-# ifdef NEED_OSX_SIGBUS
-    {
-      struct sigaction act, oact;
-      act.sa_handler = fault_handler;
-      sigemptyset(&act.sa_mask);
-      act.sa_flags = SA_RESTART;
-      sigaction(SIGBUS, &act, &oact);
-    }
 # endif
 # ifdef NEED_SIGACTION
     {

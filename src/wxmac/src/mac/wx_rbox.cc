@@ -293,29 +293,6 @@ char* wxRadioBox::GetString(int N) // WCH: duplicates GetLabel; so delete this
 }
 
 //-----------------------------------------------------------------------------
-void wxRadioBox::Enable(Bool enable)
-{
-	int numberItems = cRadioButtons.Number();
-        for (int i = numberItems;i;i--) {
-		wxNode* node = cRadioButtons.Nth(i);
-		wxRadioButton* radioButton = (wxRadioButton*)node->Data();
-		radioButton->Enable(enable);
-	}
-}
-
-//-----------------------------------------------------------------------------
-void wxRadioBox::Enable(int item, Bool enable)
-{
-	int numberItems = cRadioButtons.Number();
-	if (0 <= item && item < numberItems)
-	{
-		wxNode* node = cRadioButtons.Nth(item);
-		wxRadioButton* radioButton = (wxRadioButton*)node->Data();
-		radioButton->Enable(enable);
-	}
-}
-
-//-----------------------------------------------------------------------------
 void wxRadioBox::DoShow(Bool show)
 {
 	if (!CanShow(show)) return;
@@ -331,6 +308,25 @@ void wxRadioBox::DoShow(Bool show)
 #endif
 }
 
+//-----------------------------------------------------------------------------
+
+void wxRadioBox::Enable(Bool enable)
+{
+    wxItem::Enable(enable);
+}
+
+//-----------------------------------------------------------------------------
+void wxRadioBox::Enable(int item, Bool enable)
+{
+      int numberItems = cRadioButtons.Number();
+      if (0 <= item && item < numberItems)
+      {
+              wxNode* node = cRadioButtons.Nth(item);
+              wxRadioButton* radioButton = (wxRadioButton*)node->Data();
+              radioButton->Enable(enable);
+      }
+}
+ 
 //-----------------------------------------------------------------------------
 void wxRadioBox::Show(int item, Bool show)
 {

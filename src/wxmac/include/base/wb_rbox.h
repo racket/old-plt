@@ -61,7 +61,6 @@ class wxbRadioBox: public wxItem
   virtual int Number(void);
   virtual char *GetString(int N) = 0;
   // Avoids compiler warning
-  inline void Enable(Bool enable) { wxWindow::Enable(enable) ; }
   virtual void Enable(int item, Bool enable) = 0; // Enable/disable specific item
   
   // Avoids compiler warning

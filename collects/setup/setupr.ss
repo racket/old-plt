@@ -32,6 +32,19 @@
   (setup-printf "PLT home directory is ~a" plthome)
   (setup-printf "Collection Paths are: ~a" (current-library-collection-paths))
 
+  (exit-handler
+   (let ([oh (exit-handler)])
+     (lambda (num)
+       (let ([error-log (build-path (collection-path "setup") "errors")])
+	 (if (zero? num)
+	     (when (file-exists? error-log)
+	       (delete-file error-log))
+	     (call-with-output-file error-log
+	       (lambda (port)
+		 (show-errors port))
+	       'truncate))
+	 (oh num)))))
+
   (define (warning s x)
     (setup-printf s
 		  (if (exn? x)
@@ -458,8 +471,21 @@
 				    (current-error-port)
 				    x)))
 			   (fprintf (current-error-port) "~s~n" x))
-		       (set! errors (cons (cons cc desc) errors)))])
+		       (set! errors (cons (list cc desc x) errors)))])
       (go)))
+  (define (show-errors port)
+    (for-each
+     (lambda (e)
+       (let ([cc (car e)]
+	     [desc (cadr e)]
+	     [x (caddr e)])
+	 (setup-fprintf port
+			" Error during ~a for ~a (~a)"
+			desc (cc-name cc) (cc-path cc))
+	 (if (exn? x)
+	     (setup-fprintf port "  ~a" (exn-message x))
+	     (setup-fprintf port "  ~s" x))))
+     errors))
 
   (define (make-it desc compile-collection)
     (for-each (lambda (cc)
@@ -544,13 +570,7 @@
   (done)
 
   (unless (null? errors)
-    (for-each
-     (lambda (e)
-       (let ([cc (car e)]
-	     [desc (cdr e)])
-	 (setup-fprintf (current-error-port) " Error during ~a for ~a (~a)"
-			desc (cc-name cc) (cc-path cc))))
-     errors)
+    (show-errors (current-error-port))
     (when (pause-on-errors)
       (fprintf (current-error-port)
 	       "INSTALLATION FAILED.~nPress Enter to continue...~n")

@@ -27,7 +27,7 @@
 		     (unless (eof-object? c)
 		       (write-char c op)
 		       (loop)))))))
-	    'replace)
+	    'truncate)
 	  (let* ([upath (mred:url:url-path url)]
 		 [kind (if (and (string? upath)
 				(regexp-match "xbm$" upath))

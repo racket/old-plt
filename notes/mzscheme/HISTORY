@@ -1,6 +1,9 @@
 
 Version 102/13:
 
+ * Changed `find-executable-path' to accept #f as its second argument,
+   and fixed the documentation.
+
  * Unix: Fixed 'truncate/replace flag to `open-output-file' et al.
    (Bug introduced in 102/10.)
 
@@ -10,15 +13,15 @@ Version 102/13:
  * Windows: MzScheme recognizes special filenames like "LPT1" as
    "files" that might block on I/O (except "NUL", which never
    blocks). The `file-exists?' primitive reports #t for all of these
-   "files" (which can be prefixed with any path - even a non-existent
+   "files", which can be prefixed with any path - even a non-existent
    one - and/or postfixed with any file extension or with a single
-   colon!!!)
+   colon!!!
 
  * Inside MzScheme: scheme_basic_env(), if called more than once,
    resets all threads, parameters, ports, namespaces, and
-   finalizations.
+   finalizations. (Useful to MzCOM.)
 
- * Inside MzScheme: split some source files, adding builtin.c,
+ * Code maintenance: split some source files, adding builtin.c,
    network.c, numarith.c, numcomp.c, numstr.c, objclass.c, portfun.c,
    and unitsig.c.
 
@@ -339,6 +342,8 @@ Changed default exit handler to return only results in 0 to 255
  as results to the OS, and everything else means 1
 Changed time-apply to return four values, and to take an argument
  list to provide to the timed procedure
+Change find-executable-path to accept #f as its second argument
+Change normal-case-path to remove spaces at the end of a path
 Changed angle on inexact zero (0 for 0.0, pi for -0.0)
 Fixed arithmetic-shift for a -32 shift
 Fixed angle on +nan.0

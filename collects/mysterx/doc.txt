@@ -2290,7 +2290,7 @@ _Remote COM servers_
 
   Sets the element's background-position-x using
   the string `bpx', which is either a CSS length,
-  a CSS percentage, or or one of '("left" "center"
+  a CSS percentage, or one of '("left" "center"
   "right").
 
 > background-position-y :: (send an-mx-element background-position-y)
@@ -2318,7 +2318,7 @@ _Remote COM servers_
 
   Sets the element's background-position-y using
   the string `bpy', which is either a CSS length,
-  a CSS percentage, or or one of '("top" "center"
+  a CSS percentage, or one of '("top" "center"
   "bottom").
 
 > letter-spacing :: (send an-mx-element letter-spacing)

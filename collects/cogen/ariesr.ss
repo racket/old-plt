@@ -275,13 +275,16 @@
 					   (z:app-args expr))))]
 	  
 	  [(z:struct-form? expr)
-	   `(#%struct
-	     ,(if (z:struct-form-super expr)
-		  (list (read->raw (z:struct-form-type expr))
-			(wrap (z:struct-form-super expr)
-			      (annotate/inner (z:struct-form-super expr))))
-		  (read->raw (z:struct-form-type expr)))
-	     ,(map read->raw (z:struct-form-fields expr)))]
+	   (let ([transformed
+		  `(#%struct
+		    ,(if (z:struct-form-super expr)
+			 (list (read->raw (z:struct-form-type expr))
+			       (annotate/inner (z:struct-form-super expr)))
+			 (read->raw (z:struct-form-type expr)))
+		    ,(map read->raw (z:struct-form-fields expr)))])
+	     (if (z:struct-form-super expr)
+		 (wrap expr transformed)
+		 transformed))]
 	  
 	  [(z:if-form? expr)
 	   (if (signal-not-boolean)
@@ -442,74 +445,77 @@
 			  (import ,@imports)
 			  (link ,@links)
 			  (export ,@exports))))
-		 e)))]
+		 (wrap expr e))))]
 	  
 	  [(z:invoke-unit-form? expr)
-	   `(#%invoke-unit ,(annotate/inner (z:invoke-unit-form-unit expr))
-	     ,@(map translate-bound-varref/lhs
-		    (z:invoke-unit-form-variables expr)))]
+	   (wrap expr
+		 `(#%invoke-unit ,(annotate/inner (z:invoke-unit-form-unit expr))
+				 ,@(map translate-bound-varref/lhs
+					(z:invoke-unit-form-variables expr))))]
 	  
 	  [(z:interface-form? expr)
 	   (let ((vars (z:interface-form-variables expr)))
 	     (for-each check-for-keyword vars)
-	     `(#%interface ,(map annotate/inner
-				 (z:interface-form-super-exprs expr))
-	       ,@(map read->raw vars)))]
+	     (wrap expr
+		   `(#%interface ,(map annotate/inner
+				       (z:interface-form-super-exprs expr))
+				 ,@(map read->raw vars))))]
 	  
 	  [(z:class*/names-form? expr)
-	   `(#%class*/names
-	     (,(get-binding-name (z:class*/names-form-this expr))
-	      ,(get-binding-name (z:class*/names-form-super-init expr)))
-	     ,(annotate/inner (z:class*/names-form-super-expr expr))
-	     ,(map annotate/inner (z:class*/names-form-interfaces expr))
-	     ,(paroptarglist->ilist (z:class*/names-form-init-vars expr))
-	     ,@(map
-		(lambda (clause)
-		  (cond
-		    ((z:public-clause? clause)
-		     `(public
-			,@(map (lambda (internal export expr)
-				 `((,(get-binding-name internal)
-				    ,(read->raw export))
-				   ,(annotate/inner expr)))
-			       (z:public-clause-internals clause)
-			       (z:public-clause-exports clause)
-			       (z:public-clause-exprs clause))))
-		    ((z:override-clause? clause)
-		     `(override
-		       ,@(map (lambda (internal export expr)
-				`((,(get-binding-name internal)
-				   ,(read->raw export))
-				  ,(annotate/inner expr)))
-			      (z:override-clause-internals clause)
-			      (z:override-clause-exports clause)
-			      (z:override-clause-exprs clause))))
-		    ((z:private-clause? clause)
-		     `(private
-			,@(map (lambda (internal expr)
-				 `(,(get-binding-name internal)
-				   ,(annotate/inner expr)))
-			       (z:private-clause-internals clause)
-			       (z:private-clause-exprs clause))))
-		    ((z:inherit-clause? clause)
-		     `(inherit
-			,@(map (lambda (internal inherited)
-				 `(,(get-binding-name internal)
-				   ,(read->raw inherited)))
-			       (z:inherit-clause-internals clause)
-			       (z:inherit-clause-imports clause))))
-		    ((z:rename-clause? clause)
-		     `(rename
-			,@(map (lambda (internal import)
-				 `(,(get-binding-name internal)
-				   ,(read->raw import)))
-			       (z:rename-clause-internals clause)
-			       (z:rename-clause-imports clause))))
-		    ((z:sequence-clause? clause)
-		     `(sequence
-			,@(map annotate/inner
-			       (z:sequence-clause-exprs clause))))))
-		(z:class*/names-form-inst-clauses expr)))]
+	   (wrap expr
+		 `(#%class*/names
+		   (,(get-binding-name (z:class*/names-form-this expr))
+		    ,(get-binding-name (z:class*/names-form-super-init expr)))
+		   ,(annotate/inner (z:class*/names-form-super-expr expr))
+		   ,(map annotate/inner (z:class*/names-form-interfaces expr))
+		   ,(paroptarglist->ilist (z:class*/names-form-init-vars expr))
+		   ,@(map
+		      (lambda (clause)
+			(cond
+			 ((z:public-clause? clause)
+			  `(public
+			     ,@(map (lambda (internal export expr)
+				      `((,(get-binding-name internal)
+					 ,(read->raw export))
+					,(annotate/inner expr)))
+				    (z:public-clause-internals clause)
+				    (z:public-clause-exports clause)
+				    (z:public-clause-exprs clause))))
+			 ((z:override-clause? clause)
+			  `(override
+			     ,@(map (lambda (internal export expr)
+				      `((,(get-binding-name internal)
+					 ,(read->raw export))
+					,(annotate/inner expr)))
+				    (z:override-clause-internals clause)
+				    (z:override-clause-exports clause)
+				    (z:override-clause-exprs clause))))
+			 ((z:private-clause? clause)
+			  `(private
+			     ,@(map (lambda (internal expr)
+				      `(,(get-binding-name internal)
+					,(annotate/inner expr)))
+				    (z:private-clause-internals clause)
+				    (z:private-clause-exprs clause))))
+			 ((z:inherit-clause? clause)
+			  `(inherit
+			    ,@(map (lambda (internal inherited)
+				     `(,(get-binding-name internal)
+				       ,(read->raw inherited)))
+				   (z:inherit-clause-internals clause)
+				   (z:inherit-clause-imports clause))))
+			 ((z:rename-clause? clause)
+			  `(rename
+			    ,@(map (lambda (internal import)
+				     `(,(get-binding-name internal)
+				       ,(read->raw import)))
+				   (z:rename-clause-internals clause)
+				   (z:rename-clause-imports clause))))
+			 ((z:sequence-clause? clause)
+			  `(sequence
+			     ,@(map annotate/inner
+				    (z:sequence-clause-exprs clause))))))
+		      (z:class*/names-form-inst-clauses expr))))]
 	  
 	  [else
 	   (print-struct #t)

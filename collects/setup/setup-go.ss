@@ -45,6 +45,7 @@
 
   (specific-collections x-specific-collections)
   (archives x-archives)
+  (specific-planet-dirs '())
 
   (require (lib "launcher-sig.ss" "launcher")
 	   (lib "launcher-unit.ss" "launcher")

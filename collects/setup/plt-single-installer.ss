@@ -14,12 +14,22 @@
 	   (lib "option-unit.ss" "compiler")
 	   (lib "compiler-unit.ss" "compiler"))
 
-  (provide run-single-installer)
+  (provide run-single-installer install-planet-package)
 
   ;; run-single-installer : string (-> string) -> void
+  ;; runs the instealler on the given package
+  (define (run-single-installer file get-target-dir)
+    (run-single-installer/internal file get-target-dir #f))
+  
+  ;; install-planet-package : path path (list string string nat nat) -> void
+  ;; unpacks and installs the given planet package into the given path
+  (define (install-planet-package file directory spec)
+    (run-single-installer/internal file (lambda () directory) (cons directory spec)))
+  
+  ;; run-single-installer : string (-> string) (list path string string nat nat) -> void
   ;; creates a separate thread, runs the installer in that thread,
   ;; returns when the thread completes
-  (define (run-single-installer file get-target-dir)
+  (define (run-single-installer/internal file get-target-dir planet-spec)
     (let ([cust (make-custodian)])
       (parameterize ([current-custodian cust]
                      [current-namespace (make-namespace)]
@@ -48,7 +58,11 @@
                                                 (archives (list file))
                                                 ;; Here's where we make get a directory:
                                                 (current-target-directory-getter
-                                                 get-target-dir))
+                                                 get-target-dir)
+                                                
+                                                (when planet-spec
+                                                  (specific-planet-dirs (list planet-spec)))
+                                                )
                                               soption
                                               compiler)]
                            [setup : () (setup@

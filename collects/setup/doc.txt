@@ -293,16 +293,31 @@ The _getinfo.ss_ module defines the following functions:
    result of the thunk in that case. If the name is not defined and no
    thunk is provided, then an exception is raised.
 
-> (find-relevant-collections list-of-sym) -> list-of-collection-names
+> (find-relevant-directories list-of-sym [mode]) -> list-of-path
 
-   Returns a list of list of strings identifying collections whose
-   "info.ss" file defines one or more of the given symbols. The result
-   is based on a cache that is computed by Setup PLT and stored in the
-   "info-domain" sub-directory of each collection directory (as
-   determined by the PLT_COLLECTION_PATHS environment variable, etc.).
+   Returns a list paths identifying installed directories (i.e., collections
+   and installed PLaneT packages) whose "info.ss" file defines one or more
+   of the given symbols. The result is based on a cache that is computed by 
+   Setup PLT and stored in the "info-domain" sub-directory of each collection
+   directory (as determined by the PLT_COLLECTION_PATHS environment variable, 
+   etc.) and the file "cache.ss" in the user addon dir.
 
-   The result is in a cannonical order (sorted
-   lexographically by the collection names).
+   The result is in a cannonical order (sorted lexographically by directory
+   name), and the paths it returns are suitable for providing to
+   get-info/full.
+
+   If mode is specified, it must be either 'preferred (the default) or
+   'all-available. If mode is 'all-available, find-relevant-collections
+   will return all installed directories whose info files contain the
+   specified symbols -- for instance, all installed PLaneT packages will
+   be searched if 'all-available is specified. If mode is 'preferred,
+   then only a subset of "preferred" packages will be searched, and in
+   particular only the directory containing the most recent version of
+   any PLaneT package will be returned.
+
+   No matter what mode is specified, if more than one collection has the
+   same name, find-relevant-directories will only search the one that 
+   occurs first in the PLT_COLLECTION_PATHS environment variable.
 
 _.plt_ Archive Internals
 ==========================================================

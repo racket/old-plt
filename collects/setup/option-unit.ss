@@ -24,6 +24,8 @@
       (define force-unpacks (make-parameter #f))
 
       (define specific-collections (make-parameter null))
+      (define specific-planet-dirs (make-parameter null))
+      
       (define archives (make-parameter null))
 
       (define current-target-directory-getter (make-parameter current-directory))

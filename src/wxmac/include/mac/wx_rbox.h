@@ -25,61 +25,62 @@ class wxList;
 class wxRadioBox: public wxbRadioBox
 {
  public:
-	wxPanel*	cRadioPanel;
-	wxPanel*	cButtonHolder;
-	wxMessage*	cRadioTitle;
-	wxList*   	cRadioButtons; // list of wxRadioButton items
+  wxPanel*	cRadioPanel;
+  wxPanel*	cButtonHolder;
+  wxMessage*	cRadioTitle;
+  wxList*   	cRadioButtons; // list of wxRadioButton items
+  int           focused_button;
 
-//=============================================================================
-// Public constructors
-//=============================================================================
-public:
+  //=============================================================================
+  // Public constructors
+  //=============================================================================
+ public:
 
-	wxRadioBox // Constructor (given parentPanel, label choices)
-	(
-		wxPanel*	parentPanel,
-		wxFunction	function,
-		char*		Title,
-		int 		x = -1,
-		int			y = -1,
-		int			width = -1,
-		int			height = -1,
-		int			N = 0,
-		char**		Choices = NULL,
-		int			majorDim = 0,
-		long		style = 0,
-		char*		windowName = "radioBox",
-		WXTYPE		objectType = wxTYPE_RADIO_BOX
-	);
+  wxRadioBox // Constructor (given parentPanel, label choices)
+    (
+     wxPanel*	parentPanel,
+     wxFunction	function,
+     char*		Title,
+     int 		x = -1,
+     int			y = -1,
+     int			width = -1,
+     int			height = -1,
+     int			N = 0,
+     char**		Choices = NULL,
+     int			majorDim = 0,
+     long		style = 0,
+     char*		windowName = "radioBox",
+     WXTYPE		objectType = wxTYPE_RADIO_BOX
+     );
 
-	wxRadioBox // Constructor (given parentPanel, bitmap choices)
-	(
-		wxPanel*	parentPanel,
-		wxFunction	function,
-		char*		Title,
-		int 		x = -1,
-		int			y = -1,
-		int			width = -1,
-		int			height = -1,
-		int			N = 0,
-		wxBitmap**	Choices = NULL,
-		int			majorDim = 0,
-		long		style = 0,
-		char*		windowName = "radioBox",
-		WXTYPE		objectType = wxTYPE_RADIO_BOX
-	);
+  wxRadioBox // Constructor (given parentPanel, bitmap choices)
+    (
+     wxPanel*	parentPanel,
+     wxFunction	function,
+     char*		Title,
+     int 		x = -1,
+     int			y = -1,
+     int			width = -1,
+     int			height = -1,
+     int			N = 0,
+     wxBitmap**	Choices = NULL,
+     int			majorDim = 0,
+     long		style = 0,
+     char*		windowName = "radioBox",
+     WXTYPE		objectType = wxTYPE_RADIO_BOX
+     );
 
-//=============================================================================
-// Public destructor
-//=============================================================================
-public:
+  //=============================================================================
+  // Public destructor
+  //=============================================================================
+ public:
 
   ~wxRadioBox(void);
 
-//=============================================================================
-// Public methods
-//=============================================================================
-public:
+  //=============================================================================
+  // Public methods
+  //=============================================================================
+ public:
 
   void SetSelection(int N);
   int GetSelection(void);
@@ -96,6 +97,9 @@ public:
   void ChangeColour(void);
   
   int ButtonFocus(int);
+
+  virtual void OnSetFocus();
+  virtual void OnKillFocus();
 
   virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY);
   virtual void MaybeMoveControls();

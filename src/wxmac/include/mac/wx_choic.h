@@ -74,12 +74,17 @@ class wxChoice: public wxbChoice
 
   virtual void OnEvent(wxMouseEvent *event);
 
+  virtual void OnSetFocus();
+  virtual void OnKillFocus();
+
   void DrawChoice(Bool flag);
   void ReCalcRect(void);
 
   virtual void InternalGray(int gray);
 
   virtual void MaybeMoveControls();
+
+  void OnChar(wxKeyEvent *e);
 
  protected:
   virtual void ChangeToGray(Bool gray);

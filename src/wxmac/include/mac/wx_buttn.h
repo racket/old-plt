@@ -31,87 +31,91 @@ class wxButton: public wxbButton
   int trackstate;
 
  public:
-	wxBitmap* buttonBitmap;
+  wxBitmap* buttonBitmap;
 
-//=============================================================================
-// Public constructors
-//=============================================================================
-public:
+  //=============================================================================
+  // Public constructors
+  //=============================================================================
+ public:
 
-	wxButton // Constructor (given parentPanel, label)
-	(
-		wxPanel*	parentPanel,
-		wxFunction	function,
-		char*		label,
-		int 		x = -1,
-		int			y = -1,
-		int			width = -1,
-		int			height = -1,
-		long		style = 0,
-		char*		windowName = "button",
-		WXTYPE		objectType = wxTYPE_BUTTON
-	);
+  wxButton // Constructor (given parentPanel, label)
+    (
+     wxPanel*	parentPanel,
+     wxFunction	function,
+     char*		label,
+     int 		x = -1,
+     int			y = -1,
+     int			width = -1,
+     int			height = -1,
+     long		style = 0,
+     char*		windowName = "button",
+     WXTYPE		objectType = wxTYPE_BUTTON
+     );
 
-	wxButton // Constructor (given parentPanel, bitmap)
-	(
-		wxPanel*	parentPanel,
-		wxFunction	function,
-		wxBitmap*	bitmap,
-		int 		x = -1,
-		int			y = -1,
-		int			width = -1,
-		int			height = -1,
-		long		style = 0,
-		char*		windowName = "button",
-		WXTYPE		objectType = wxTYPE_BUTTON
-	);
+  wxButton // Constructor (given parentPanel, bitmap)
+    (
+     wxPanel*	parentPanel,
+     wxFunction	function,
+     wxBitmap*	bitmap,
+     int 		x = -1,
+     int			y = -1,
+     int			width = -1,
+     int			height = -1,
+     long		style = 0,
+     char*		windowName = "button",
+     WXTYPE		objectType = wxTYPE_BUTTON
+     );
 
-    void Create // Constructor (given parentPanel, label)
-	(
-		wxPanel*	parentPanel,
-		wxFunction	function,
-		char*		label,
-		int 		x = -1,
-		int			y = -1,
-		int			width = -1,
-		int			height = -1,
-		long		style = 0,
-		char*		windowName = "button",
-		WXTYPE		objectType = wxTYPE_BUTTON
-	);
+  void Create // Constructor (given parentPanel, label)
+    (
+     wxPanel*	parentPanel,
+     wxFunction	function,
+     char*		label,
+     int 		x = -1,
+     int			y = -1,
+     int			width = -1,
+     int			height = -1,
+     long		style = 0,
+     char*		windowName = "button",
+     WXTYPE		objectType = wxTYPE_BUTTON
+     );
 
-//=============================================================================
-// Public destructor
-//=============================================================================
-public:
+  //=============================================================================
+  // Public destructor
+  //=============================================================================
+ public:
 
-	~wxButton(void);
+  ~wxButton(void);
 
-//=============================================================================
-// Public methods
-//=============================================================================
-public:
+  //=============================================================================
+  // Public methods
+  //=============================================================================
+ public:
 
-//=============================================================================
-// Window coordinate system transformation methods
-//=============================================================================
+  //=============================================================================
+  // Window coordinate system transformation methods
+  //=============================================================================
 
-	virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY); // mac platform only
-	void SetDefault(Bool flag = TRUE); // WCH wx_mac: original had void as argument
-	virtual void OnSetDefault(Bool flag = TRUE); // WCH wx_mac: addition to original
-	void SetLabel(char*);
-	void SetLabel(wxBitmap* bitmap);
-	char* GetLabel(void);
+  virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY); // mac platform only
+  void SetDefault(Bool flag = TRUE); // WCH wx_mac: original had void as argument
+  virtual void OnSetDefault(Bool flag = TRUE); // WCH wx_mac: addition to original
+  void SetLabel(char*);
+  void SetLabel(wxBitmap* bitmap);
+  char* GetLabel(void);
 
-	void ChangeColour(void);
+  void ChangeColour(void);
 
-	virtual void Paint(void);
-	virtual void DoShow(Bool show);
+  virtual void Paint(void);
+  virtual void DoShow(Bool show);
 
-	virtual void OnEvent(wxMouseEvent *event); // mac platform only
- 	virtual void Highlight(Bool flag); // mac platform only, to make items look "pressed".
+  virtual void OnEvent(wxMouseEvent *event); // mac platform only
+  virtual void Highlight(Bool flag); // mac platform only, to make items look "pressed".
+
+  virtual void OnSetFocus();
+  virtual void OnKillFocus();
+
  protected:
-   void ChangeToGray(Bool Gray);
+  void ChangeToGray(Bool Gray);
 };
 
 #endif // IN_CPROTO

@@ -43,6 +43,8 @@ class wxGauge: public wxbGauge
 
   virtual void DoShow(Bool s);
 
+  virtual Bool AcceptsExplicitFocus(void);
+
   virtual void InternalGray(int gray);
 };
 

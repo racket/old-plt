@@ -236,7 +236,8 @@ class wxWindow: public wxbWindow
   virtual void SetFocus(void);
   virtual void OnSetFocus(void);
   virtual void OnKillFocus(void);
-  virtual Bool WantsFocus(void); /* mac platform only */
+  virtual Bool WantsFocus(void);
+  virtual Bool AcceptsExplicitFocus(void);
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
   /* Quill methods */

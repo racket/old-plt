@@ -1588,7 +1588,7 @@ void wxWindow::AdjustMetalDragOk(int *metal_drag_ok)
 //-----------------------------------------------------------------------------
 void wxWindow::SetFocus(void)
 {
-  if (WantsFocus()) {
+  if (AcceptsExplicitFocus()) {
     /* Check that it's not hidden relative to the top-level frame: */
     wxWindow *win = this;
     wxFrame* rootFrame;
@@ -2239,6 +2239,11 @@ wxCursor *wxWindow::GetEffectiveCursor(void)
 }
 
 Bool wxWindow::GetsFocus()
+{
+  return AcceptsExplicitFocus();
+}
+
+Bool wxWindow::AcceptsExplicitFocus()
 {
   return WantsFocus();
 }

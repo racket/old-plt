@@ -191,6 +191,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     cTitle = NULL;
 
   ::EmbedControl(cMacControl, GetRootControl());
+  IgnoreKeyboardEvents();
 
   {
     wxWindow *p;
@@ -248,6 +249,35 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
     cTitle->cLabelText->OnClientAreaDSize(dW, dH, dX, dY);
 
   wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
+}
+
+//-----------------------------------------------------------------------------
+void wxChoice::OnChar(wxKeyEvent *event)
+{
+  int delta;
+
+  switch (event->KeyCode()) {
+  case WXK_UP:
+    delta = -1;
+    break;
+  case WXK_DOWN:
+    delta = 1;
+    break;
+  default:
+    delta = 0;
+    break;
+  }
+
+  if (delta) {
+    int s;
+    s = GetSelection();
+    SetSelection(s + delta);
+    if (s != GetSelection()) {
+      wxCommandEvent *event;
+      event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+      ProcessCommand(event);
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -313,6 +343,10 @@ void wxChoice::Append (char *Item)
   ::SetControlMinimum(cMacControl,1);
   ::SetControlMaximum(cMacControl,no_strings);
   RefreshIfUpdating();
+
+  /* this is needed, for some reason, when the menu item has focus */
+  if (cTitle)
+    cTitle->cLabelText->Refresh();
 }
 
 void wxChoice::Clear (void)
@@ -326,6 +360,10 @@ void wxChoice::Clear (void)
   ::SetControlMinimum(cMacControl,0);
   ::SetControlMaximum(cMacControl,0);        
   RefreshIfUpdating();
+
+  /* this is needed, for some reason, when the menu item has focus */
+  if (cTitle)
+    cTitle->cLabelText->Refresh();
 }
 
 
@@ -341,6 +379,10 @@ void wxChoice::SetSelection (int n)
 
   ::SetControlValue(cMacControl,n+1);
   selection = n;
+
+  /* this is needed, for some reason, when the menu item has focus */
+  if (cTitle)
+    cTitle->cLabelText->Refresh();
 }
 
 void wxChoice::SetBackgroundColour(wxColour*col)
@@ -384,13 +426,16 @@ void wxChoice::MaybeMoveControls()
   wxItem::MaybeMoveControls();
 }
 
-
-#if 0
-  /* Supporting focus will look something like this: */
-  ::ClearKeyboardFocus(GetWindowFromPort(cMacDC->macGrafPort()));
-  ::SetKeyboardFocus(GetWindowFromPort(cMacDC->macGrafPort()),
-		     cMacControl,
-		     kControlFocusNextPart);
+void wxChoice::OnSetFocus()
+{
+  wxItem::OnSetFocus();
   if (cTitle)
     cTitle->cLabelText->Refresh();
-#endif
+}
+
+void wxChoice::OnKillFocus()
+{
+  wxItem::OnKillFocus();
+  if (cTitle)
+    cTitle->cLabelText->Refresh();
+}

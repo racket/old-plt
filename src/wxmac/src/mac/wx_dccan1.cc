@@ -1097,6 +1097,9 @@ static AGLPixelFormat FindFormat(wxGLConfig *cfg, Bool offscreen)
   if (cfg && cfg->depth) {
     attrib[a++] = AGL_DEPTH_SIZE;
     attrib[a++] = cfg->depth;
+  } else if (!cfg) {
+    attrib[a++] = AGL_DEPTH_SIZE;
+    attrib[a++] = 1;
   }
 
   if (cfg && cfg->stencil) {

@@ -212,3 +212,9 @@ void wxGroupBox::OnEvent(wxMouseEvent *event)
     return;
   wxItem::OnEvent(event);
 }
+
+//-----------------------------------------------------------------------------
+Bool wxGroupBox::AcceptsExplicitFocus()
+{
+  return FALSE;
+}

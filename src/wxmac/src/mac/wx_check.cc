@@ -95,6 +95,8 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
   ::SizeControl(cMacControl,r.right-r.left,r.bottom-r.top);
 
   ::EmbedControl(cMacControl, GetRootControl());
+
+  IgnoreKeyboardEvents();
   
   {
     wxWindow*p;
@@ -314,11 +316,11 @@ void wxCheckBox::Paint(void)
       {
 	ThemeButtonDrawInfo state;
 
-	state.state = (trackState
+	state.state = ((trackState & 0x1)
 		       ? kThemeStatePressed
 		       : ((cEnable && cActive && !internal_gray) ? kThemeStateActive : kThemeStateInactive));
 	state.value = bitmapState ? kThemeButtonOn : kThemeButtonOff;
-	state.adornment = kThemeAdornmentNone;
+	state.adornment = ((trackState & 0x2) ? kThemeAdornmentFocus : kThemeAdornmentNone);
 	
 	DrawThemeButton(&r, kThemeCheckBox, &state, NULL, NULL /* erase */, NULL, NULL);
       }
@@ -328,7 +330,10 @@ void wxCheckBox::Paint(void)
 
 void wxCheckBox::Highlight(Bool on)
 {
-  trackState = on;
+  if (on)
+    trackState |= 0x1;
+  else
+    trackState -= (trackState & 0x1);
   Refresh();
 }
 
@@ -389,3 +394,19 @@ void wxCheckBox::ChangeToGray(Bool gray)
     Refresh();
 }
 
+//----------------------------------------
+void wxCheckBox::OnSetFocus()
+{
+  trackState |= 2;
+  wxItem::OnSetFocus();
+  if (!cMacControl)
+    Refresh();
+}
+
+void wxCheckBox::OnKillFocus()
+{
+  trackState -= (trackState & 0x2);
+  wxItem::OnKillFocus();
+  if (!cMacControl)
+    Refresh();
+}

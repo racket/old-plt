@@ -333,3 +333,9 @@ void wxGauge::InternalGray(int gray_amt)
   }
   wxItem::InternalGray(gray_amt);
 }
+
+//-----------------------------------------------------------------------------
+Bool wxGauge::AcceptsExplicitFocus()
+{
+  return FALSE;
+}

@@ -103,6 +103,8 @@ void wxButton::Create // Real constructor (given parentPanel, label)
   
   ::EmbedControl(cMacControl, GetRootControl());
 
+  IgnoreKeyboardEvents();
+
   if (style & 1) OnSetDefault(TRUE);
   
   {
@@ -295,7 +297,7 @@ void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
 }
 
 //-----------------------------------------------------------------------------
-static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Bool isgray)
+static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Bool focused, Bool isgray)
 {
   ThemeButtonDrawInfo state;
   
@@ -303,7 +305,7 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
 		 ? kThemeStatePressed
 		 : (!isgray ? kThemeStateActive : kThemeStateInactive));
   state.value = kThemeButtonOff;
-  state.adornment = kThemeAdornmentNone;
+  state.adornment = focused ?  kThemeAdornmentFocus : kThemeAdornmentNone;
   DrawThemeButton(r, kThemeRoundedBevelButton, &state, NULL, NULL /* erase */, NULL, NULL);
   
   buttonBitmap->DrawMac(IB_MARGIN_X, IB_MARGIN_Y, patOr);
@@ -319,7 +321,7 @@ void wxButton::Paint(void)
       ::SetRect(&r, 0, 0, cWindowWidth, cWindowHeight);
       OffsetRect(&r,SetOriginX,SetOriginY);
       isgray = IsGray();
-      PaintBitmapButton(&r, buttonBitmap, trackstate, isgray || !cActive);
+      PaintBitmapButton(&r, buttonBitmap, trackstate & 0x1, trackstate & 0x2, isgray || !cActive);
     }
     wxWindow::Paint();
   }
@@ -345,7 +347,10 @@ void wxButton::DoShow(Bool show)
 void wxButton::Highlight(Bool flag) // mac platform only
 {
   if (buttonBitmap) {
-    trackstate = flag;
+    if (flag)
+      trackstate |= 0x1;
+    else
+      trackstate -= (trackstate & 0x1);
     Refresh();
   } else if (cMacControl) {
     if (cEnable) {
@@ -418,4 +423,21 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
   
   if (dX || dY)
     MaybeMoveControls();
+}
+
+//----------------------------------------
+void wxButton::OnSetFocus()
+{
+  trackstate |= 0x2;
+  wxItem::OnSetFocus();
+  if (!cMacControl)
+    Refresh();
+}
+
+void wxButton::OnKillFocus()
+{
+  trackstate -= (trackstate & 0x2);
+  wxItem::OnKillFocus();
+  if (!cMacControl)
+    Refresh();
 }

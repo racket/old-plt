@@ -23,85 +23,88 @@ class wxBitmap;
 class wxRadioButton: public wxItem
 {
  public:
-	wxBitmap* buttonBitmap ;
-    short bitmapState;
-    short trackState;
-	char *labelString;
+  wxBitmap* buttonBitmap ;
+  short bitmapState;
+  short trackState;
+  char *labelString;
 
-//=============================================================================
-// Public constructors
-//=============================================================================
-public:
+  //=============================================================================
+  // Public constructors
+  //=============================================================================
+ public:
 
-	wxRadioButton // Constructor (given parentPanel, label)
-	(
-		wxPanel*	parentPanel,
-		wxFunction	function,
-		char*		label,
-		int 		x = -1,
-		int			y = -1,
-		int			width = -1,
-		int			height = -1,
-		long		style = 0,
-		char*		windowName = "radioButton",
-		WXTYPE		objectType = wxTYPE_ITEM // WCH: must use wxTYPE_RADIO_BUTTON
-	);
+  wxRadioButton // Constructor (given parentPanel, label)
+    (
+     wxPanel*	parentPanel,
+     wxFunction	function,
+     char*		label,
+     int 		x = -1,
+     int			y = -1,
+     int			width = -1,
+     int			height = -1,
+     long		style = 0,
+     char*		windowName = "radioButton",
+     WXTYPE		objectType = wxTYPE_ITEM // WCH: must use wxTYPE_RADIO_BUTTON
+     );
 
-	void Create // Constructor (given parentPanel, label)
-	(
-		wxPanel*	parentPanel,
-		wxFunction	function,
-		char*		label,
-		int 		x = -1,
-		int			y = -1,
-		int			width = -1,
-		int			height = -1,
-		long		style = 0,
-		char*		windowName = "radioButton",
-		WXTYPE		objectType = wxTYPE_ITEM // WCH: must use wxTYPE_RADIO_BUTTON
-	);
+  void Create // Constructor (given parentPanel, label)
+    (
+     wxPanel*	parentPanel,
+     wxFunction	function,
+     char*		label,
+     int 		x = -1,
+     int			y = -1,
+     int			width = -1,
+     int			height = -1,
+     long		style = 0,
+     char*		windowName = "radioButton",
+     WXTYPE		objectType = wxTYPE_ITEM // WCH: must use wxTYPE_RADIO_BUTTON
+     );
 
-	wxRadioButton // Constructor (given parentPanel, bitmap)
-	(
-		wxPanel*	parentPanel,
-		wxFunction	function,
-		wxBitmap*	bitmap,
-		int 		x = -1,
-		int			y = -1,
-		int			width = -1,
-		int			height = -1,
-		long		style = 0,
-		char*		windowName = "radioButton",
-		WXTYPE		objectType = wxTYPE_ITEM // WCH: must use wxTYPE_RADIO_BUTTON
-	);
+  wxRadioButton // Constructor (given parentPanel, bitmap)
+    (
+     wxPanel*	parentPanel,
+     wxFunction	function,
+     wxBitmap*	bitmap,
+     int 		x = -1,
+     int			y = -1,
+     int			width = -1,
+     int			height = -1,
+     long		style = 0,
+     char*		windowName = "radioButton",
+     WXTYPE		objectType = wxTYPE_ITEM // WCH: must use wxTYPE_RADIO_BUTTON
+     );
 
-//=============================================================================
-// Public destructor
-//=============================================================================
-public:
+  //=============================================================================
+  // Public destructor
+  //=============================================================================
+ public:
 
-	~wxRadioButton(void);
+  ~wxRadioButton(void);
 
-//=============================================================================
-// Public methods
-//=============================================================================
-public:
+  //=============================================================================
+  // Public methods
+  //=============================================================================
+ public:
 
-	virtual void SetValue(Bool);
-	virtual Bool GetValue(void);
-	void SetLabel(char*);
-	void SetLabel(wxBitmap* bitmap);
-	char* GetLabel(void) ;
+  virtual void SetValue(Bool);
+  virtual Bool GetValue(void);
+  void SetLabel(char*);
+  void SetLabel(wxBitmap* bitmap);
+  char* GetLabel(void) ;
 
-	void ChangeColour(void) ;
+  void ChangeColour(void) ;
 
-	virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY); // mac platform only
-	virtual void Paint(void);
-	virtual void DoShow(Bool show);
+  virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY); // mac platform only
+  virtual void Paint(void);
+  virtual void DoShow(Bool show);
 
-	virtual void OnEvent(wxMouseEvent *event); // mac platform only
+  virtual void OnEvent(wxMouseEvent *event); // mac platform only
 
-	virtual void Highlight(Bool flag);
+  virtual void Highlight(Bool flag);
+
+  virtual void OnSetFocus();
+  virtual void OnKillFocus();
 };
 
 #endif // IN_CPROTO

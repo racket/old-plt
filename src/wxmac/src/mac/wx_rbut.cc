@@ -91,6 +91,7 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
   ::SizeControl(cMacControl, boundsRect.right - boundsRect.left, boundsRect.bottom - boundsRect.top);
 
   ::EmbedControl(cMacControl, GetRootControl());
+  IgnoreKeyboardEvents();
 
   {
     wxWindow *p;
@@ -268,11 +269,11 @@ void wxRadioButton::Paint(void)
 	{
 	  ThemeButtonDrawInfo state;
 	  
-	  state.state = (trackState
+	  state.state = ((trackState & 0x1)
 			 ? kThemeStatePressed
 			 : ((cEnable && cActive && !internal_gray) ? kThemeStateActive : kThemeStateInactive));
 	  state.value = bitmapState ? kThemeButtonOn : kThemeButtonOff;
-	  state.adornment = kThemeAdornmentNone;
+	  state.adornment = ((trackState & 0x2) ? kThemeAdornmentFocus : kThemeAdornmentNone);
 	  
 	  DrawThemeButton(&r, kThemeRadioButton, &state, NULL, NULL /* erase */, NULL, NULL);
 	}
@@ -283,7 +284,10 @@ void wxRadioButton::Paint(void)
 
 void wxRadioButton::Highlight(Bool on)
 {
-  trackState = on;
+  if (on)
+    trackState |= 0x1;
+  else
+    trackState -= (trackState & 0x1);
   Refresh();
 }
 
@@ -353,4 +357,22 @@ void wxRadioButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac pla
   }
 
   wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
+}
+
+
+//----------------------------------------
+void wxRadioButton::OnSetFocus()
+{
+  trackState |= 0x2;
+  wxItem::OnSetFocus();
+  if (!cMacControl)
+    Refresh();
+}
+
+void wxRadioButton::OnKillFocus()
+{
+  trackState -= (trackState & 0x2);
+  wxItem::OnKillFocus();
+  if (!cMacControl)
+    Refresh();
 }

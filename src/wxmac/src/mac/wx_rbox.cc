@@ -63,6 +63,8 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
 {
   wxPanel *buttonHolder;
   int i;
+
+  focused_button = -1;
   
   cRadioButtons = new wxList(wxList::kNoDestroyData);
 
@@ -140,6 +142,8 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
 {
   int i;
   wxPanel *buttonHolder;
+
+  focused_button = -1;
 
   cRadioButtons = new wxList(wxList::kNoDestroyData);
 
@@ -356,9 +360,24 @@ void wxRadioBox::Show(int item, Bool show)
 
 //-----------------------------------------------------------------------------
 
-int wxRadioBox::ButtonFocus(int)
+int wxRadioBox::ButtonFocus(int n)
 {
-  return -1;
+  if (n < 0) {
+    if (focused_button < 0)
+      return (-focused_button) - 1;
+    else
+      return focused_button - 1;
+  } else {
+    if (focused_button > 0) {
+      OnKillFocus();
+      focused_button = -(n + 1);
+      OnSetFocus();
+    } else {
+      focused_button = -(n + 1);
+      SetFocus();
+    }
+    return n;
+  }
 }
 
 
@@ -391,3 +410,44 @@ void wxRadioBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 
   wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
 }
+
+//-----------------------------------------------------------------------------
+
+void wxRadioBox::OnSetFocus()
+{
+  int n;
+  wxNode *node;
+  wxRadioButton *radioButton;
+
+  n = cRadioButtons->Number();
+  
+  if (focused_button < 0) {
+    focused_button = -focused_button;
+
+    if (0 < focused_button && focused_button <= n) {
+      node = cRadioButtons->Nth(focused_button - 1);
+      radioButton = (wxRadioButton*)node->Data();
+      radioButton->OnSetFocus();
+    }
+  }
+}
+
+void wxRadioBox::OnKillFocus()
+{
+  int n;
+  wxNode *node;
+  wxRadioButton *radioButton;
+
+  n = cRadioButtons->Number();
+  
+  if (focused_button > 0) {
+    if (0 < focused_button && focused_button <= n) {
+      node = cRadioButtons->Nth(focused_button - 1);
+      radioButton = (wxRadioButton*)node->Data();
+      radioButton->OnKillFocus();
+    }
+    
+    focused_button = -focused_button;
+  }
+}
+

@@ -62,6 +62,9 @@ public:
   virtual void DoShow(Bool s);
   
   virtual void InternalGray(int gray);
+
+  virtual void OnSetFocus();
+  virtual void OnKillFocus();
   
   void TrackPart(int);
 protected:

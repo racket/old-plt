@@ -24,6 +24,7 @@
 #include "wx_item.h"
 #include "wx_gdi.h"
 
+extern Bool wx_ignore_key;
 
 wxItem::wxItem(void)
 : wxbItem()
@@ -193,4 +194,86 @@ void wxItem::MaybeMoveControls()
   }
 
   wxWindow::MaybeMoveControls();
+}
+
+//-----------------------------------------------------------------------------
+static ControlRef test_control;
+static WindowRef test_win;
+
+Bool wxItem::AcceptsExplicitFocus()
+{
+  if (WantsFocus())
+    return TRUE;
+
+  if (!test_control && !test_win) {
+    OSErr result;
+    Rect r = { 0 , 0, 100, 100 };
+
+    result = ::CreateNewWindow(kDocumentWindowClass, kWindowStandardDocumentAttributes, &r, &test_win);
+    if (result == noErr) {
+      Rect r2 = { 10 , 10, 90, 90 };
+      result = ::CreatePushButtonControl(test_win, &r2, CFSTR("Ok"), &test_control);
+      if (result == noErr) {
+	/* We have a test control for checking focus, now */
+      } else {
+	::DisposeWindow(test_win);
+	test_control = NULL;
+      }
+    }
+  }
+
+  if (test_control) {
+    ControlRef c;
+    ::ClearKeyboardFocus(test_win);
+    ::SetKeyboardFocus(test_win, test_control, kControlFocusNextPart);
+    ::GetKeyboardFocus(test_win, &c);
+    return (c == test_control);
+  } else
+    return FALSE;
+}
+
+//-----------------------------------------------------------------------------
+void wxItem::OnSetFocus()
+{
+  if (cMacControl) {
+    ::ClearKeyboardFocus(GetWindowFromPort(cMacDC->macGrafPort()));
+    ::SetKeyboardFocus(GetWindowFromPort(cMacDC->macGrafPort()),
+		       cMacControl,
+		       kControlFocusNextPart);
+  }
+}
+
+void wxItem::OnKillFocus()
+{
+  ::ClearKeyboardFocus(GetWindowFromPort(cMacDC->macGrafPort()));
+}
+
+static OSStatus myEventHandler(EventHandlerCallRef inHandlerCallRef, 
+			       EventRef inEvent, 
+			       void *inUserData)
+{
+  wx_ignore_key = TRUE;
+  return noErr;
+}
+
+void wxItem::IgnoreKeyboardEvents()
+{
+  if (cMacControl) {
+    EventHandlerRef ref;
+    EventTypeSpec evts[3];
+
+    evts[0].eventClass = kEventClassKeyboard;
+    evts[0].eventKind = kEventRawKeyDown;
+    evts[1].eventClass = kEventClassKeyboard;
+    evts[1].eventKind = kEventRawKeyRepeat;
+    evts[2].eventClass = kEventClassKeyboard;
+    evts[2].eventKind = kEventRawKeyUp;
+
+    ::InstallEventHandler(GetControlEventTarget(cMacControl), 
+			  myEventHandler,
+			  3,
+			  evts,
+			  NULL,
+			  &ref);
+  }
 }

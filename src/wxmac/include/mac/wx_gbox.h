@@ -35,6 +35,8 @@ class wxGroupBox : public wxItem
 
   virtual void OnEvent(wxMouseEvent *event);
 
+  virtual Bool AcceptsExplicitFocus(void);
+
 protected:
   virtual void ChangeToGray(Bool gray);
   virtual void Paint(void);

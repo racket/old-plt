@@ -361,3 +361,8 @@ void wxMessage::OnEvent(wxMouseEvent *event)
   wxbMessage::OnEvent(event);
 }
 
+//-----------------------------------------------------------------------------
+Bool wxMessage::AcceptsExplicitFocus()
+{
+  return FALSE;
+}

@@ -196,6 +196,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     cTitle = NULL;
          
   ::EmbedControl(cMacControl, GetRootControl());
+  IgnoreKeyboardEvents();
 
   if (!(windowStyle & (wxHORIZONTAL << 2)))
     CreatePaintControl();
@@ -497,4 +498,18 @@ void wxSlider::InternalGray(int gray_amt)
     w->InternalGray(gray_amt);
   }
   wxItem::InternalGray(gray_amt);
+}
+
+void wxSlider::OnSetFocus()
+{
+  wxItem::OnSetFocus();
+  if (cTitle)
+    cTitle->cLabelText->Refresh();
+}
+
+void wxSlider::OnKillFocus()
+{
+  wxItem::OnKillFocus();
+  if (cTitle)
+    cTitle->cLabelText->Refresh();
 }

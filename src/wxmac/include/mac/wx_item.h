@@ -19,50 +19,48 @@ typedef       void* wxItem ;
 
 class wxItem: public wxbItem
 {
-public:
-	wxItem(void);
-	// Constructor (given parentArea)
-	wxItem (wxArea*	parentArea, int x = -1, int y = -1, int width = -1, int height = -1,
-		long style = 0, char* windowName = "item");
-	// Constructor (given parentWindow)
-	wxItem (wxWindow*	parentWindow, int x = -1, int y = -1, int width = -1, int height = -1,
-		long		style = 0, char* windowName = "item");
-	// Constructor (given objectType; i.e., menu or menuBar)
-	wxItem (char* windowName);
+ public:
+  wxItem(void);
+  // Constructor (given parentArea)
+  wxItem (wxArea*	parentArea, int x = -1, int y = -1, int width = -1, int height = -1,
+	  long style = 0, char* windowName = "item");
+  // Constructor (given parentWindow)
+  wxItem (wxWindow*	parentWindow, int x = -1, int y = -1, int width = -1, int height = -1,
+	  long		style = 0, char* windowName = "item");
+  // Constructor (given objectType; i.e., menu or menuBar)
+  wxItem (char* windowName);
+  
+  ~wxItem(void);
 
-	~wxItem(void);
+  void SetLabel(char *label) {};	// This should be overridden in all subclasses
+  
+  virtual void SetBackgroundColour(wxColour* col);
+  virtual void SetLabelColour(wxColour* col);
+  virtual void SetButtonColour(wxColour* col);
+  virtual void ChangeColour(void);
+  
+  virtual void OnChar(wxKeyEvent *event); // mac platform only
+  
+  virtual void MaybeMoveControls();
 
-#if 0 // FIXME - these are from 16.1 below comes from msw, they should be virtual?
-	void GetSize(int *width, int *height);
-	void GetPosition(int *x, int *y);
-	void SetSize(int x, int y, int width, int height);
-	void SetClientSize(int width, int height);
-	void SetFocus(void);
-	char *GetLabel(void);
-#endif
-	void SetLabel(char *label) {};	// This should be overridden in all subclasses
+  virtual void Activate(Bool gray);
 
-	virtual void SetBackgroundColour(wxColour* col);
-	virtual void SetLabelColour(wxColour* col);
-	virtual void SetButtonColour(wxColour* col);
-	virtual void ChangeColour(void);
+  virtual void OnSetFocus();
+  virtual void OnKillFocus();
 
-	virtual void OnChar(wxKeyEvent *event); // mac platform only
-        
-    virtual void MaybeMoveControls();
+  virtual Bool AcceptsExplicitFocus(void);
 
-    virtual void Activate(Bool gray);
+  void IgnoreKeyboardEvents();
 
-protected:
-    virtual void ChangeToGray(Bool gray);
+ protected:
+  virtual void ChangeToGray(Bool gray);
     
-    // Under OS X, an inset is necessary because the OS draws outside of the control rectangle.
-    int padLeft; // C++ doesn't have class variables, does it?
-    int padRight;
-    int padTop;
-    int padBottom;
-
-        
+  // Under OS X, an inset is necessary because the OS draws outside of the control rectangle.
+  int padLeft;
+  int padRight;
+  int padTop;
+  int padBottom;
+       
 };
 
 char *wxItemStripLabel(char *label);

@@ -52,6 +52,8 @@ typedef struct EventFinderClosure {
 
 static int queue_size, max_queue_size;
 
+Bool wx_ignore_key; /* used in wxItem */
+
 void MrEdInitFirstContext(MrEdContext *)
 {
 }
@@ -332,8 +334,9 @@ int WNE(EventRecord *e, double sleep_secs)
 	 accent handling (so option-e e e doesn't produce an accent on
 	 the 2nd e), etc. */
       OSErr oe;
+      wx_ignore_key = FALSE;
       oe = SendEventToEventTarget(ref, GetEventDispatcherTarget());
-      if (oe != eventNotHandledErr) {
+      if ((oe != eventNotHandledErr) && !wx_ignore_key) {
 	/* The event was handled, so we don't need to handle it again */
 	ok = 0;
       }

@@ -12,17 +12,21 @@
 #include <stdio.h>
 #include <string.h>
 
-#define USE_MMAP 1
-#define GROW_FACTOR 2
-#define COMPACT_THRESHOLD 0.2
+#define GROW_FACTOR 1.9
+#define GROW_ADDITION 500000
 
 #define GENERATIONS 1
-#define USE_FREELIST 1
-#define COMPACTING SELECTIVELY_COMPACT
 
-#define ALWAYS_COMPACT 2
-#define SELECTIVELY_COMPACT 1
-#define NEVER_COMPACT 0
+#define USE_FREELIST 0
+
+/* When USE_FREELIST is on: */
+#define COMPACTING SELECTIVELY_COMPACT
+# define ALWAYS_COMPACT      2
+# define SELECTIVELY_COMPACT 1
+# define NEVER_COMPACT       0
+#define COMPACT_THRESHOLD 0.2
+
+#define USE_MMAP 1
 
 #if defined(sparc) || defined(__sparc) || defined(__sparc__)
 # define ALIGN_DOUBLES 1
@@ -46,7 +50,6 @@ typedef short Type_Tag;
 #define TIME 0
 #define SEARCH 0
 #define SAFETY 0
-#define RECYCLE_HEAP 0
 #define NOISY 0
 #define MARK_STATS 0
 
@@ -77,10 +80,10 @@ void **GC_variable_stack;
 
 static long page_allocations = 0;
 
-static long memory_in_use, gc_threshold = 32000;
+static long memory_in_use, gc_threshold = GROW_ADDITION, max_memory_use;
 #if USE_FREELIST
 static long on_free_list;
-# define FREE_LIST_DELTA on_free_list
+# define FREE_LIST_DELTA (on_free_list << 2)
 #else
 # define FREE_LIST_DELTA 0
 #endif
@@ -227,7 +230,7 @@ static char zero_sized[4];
 
 static void *park[2];
 
-static int cycle_count = 0;
+static int cycle_count = 0, compact_count = 0;
 static int skipped_pages, scanned_pages, young_pages, inited_pages;
 
 static long iterations;
@@ -307,14 +310,56 @@ void *malloc_pages(size_t len, size_t alignment)
   return r;
 }
 
+#define BLOCKFREE_CACHE_SIZE 10
+static void *blockfree_ptrs[BLOCKFREE_CACHE_SIZE];
+static long blockfree_sizes[BLOCKFREE_CACHE_SIZE];
+
 void free_pages(void *p, size_t len)
 {
+  int i;
+
   /* Round up to nearest page: */
   if (len & (page_size - 1))
     len += page_size - (len & (page_size - 1));
 
-  munmap(p, len);
   page_allocations -= len;
+
+  /* Try to free pages in larger blocks, since the OS may be slow. */
+
+  for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
+    if (p == blockfree_ptrs[i] + blockfree_sizes[i]) {
+      blockfree_sizes[i] += len;
+      return;
+    }
+    if (p + len == blockfree_ptrs[i]) {
+      blockfree_ptrs[i] = p;
+      blockfree_sizes[i] += len;
+      return;
+    }
+  }
+
+  for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
+    if (!blockfree_ptrs[i]) {
+      blockfree_ptrs[i] = p;
+      blockfree_sizes[i] = len;
+      return;
+    }
+  }
+
+  munmap(p, len);
+}
+
+void flush_freed_pages(void)
+{
+  int i;
+
+  for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
+    if (blockfree_ptrs[i]) {
+      munmap(blockfree_ptrs[i], blockfree_sizes[i]);
+      blockfree_ptrs[i] = NULL;
+      blockfree_sizes[i] = 0;
+    }
+  }
 }
 
 void protect_pages(void *p, size_t len, int writeable)
@@ -340,6 +385,10 @@ void *malloc_pages(size_t len, size_t alignment)
 void free_pages(void *p, size_t len)
 {
   free(p);
+}
+
+void flush_freed_pages(void)
+{
 }
 
 #endif
@@ -536,7 +585,8 @@ static int fixup_weak_array(void *p)
 
   data = a->data;
   for (i = a->count; i--; ) {
-    gcFIXUP(data[i]);
+    if (data[i])
+      gcFIXUP(data[i]);
   }
 
   return gcBYTES_TO_WORDS(sizeof(GC_Weak_Array) 
@@ -910,13 +960,18 @@ void GC_dump(void)
     fprintf(stderr, "\n");
   }
   
-
+  if (memory_in_use > max_memory_use)
+    max_memory_use = memory_in_use;
+  
+  fprintf(stderr, "Number of collections: %d  (%d compacting)\n", cycle_count, compact_count);
+  fprintf(stderr, "Memory high point: %ld\n", max_memory_use);
 
   fprintf(stderr, "Memory use: %ld\n", memory_in_use - FREE_LIST_DELTA);
-  fprintf(stderr, "Memory overhead: %ld (%f%%)   %ld on free list\n", 
+  fprintf(stderr, "Memory overhead: %ld (%.2f%%)   %ld (%.2f%%) on free list\n", 
 	  page_allocations - memory_in_use + FREE_LIST_DELTA,
 	  (100.0 * ((double)page_allocations - memory_in_use)) / memory_in_use,
-	  (long)FREE_LIST_DELTA);
+	  (long)FREE_LIST_DELTA,
+	  (100.0 * FREE_LIST_DELTA) / memory_in_use);
 }
 
 long GC_get_memory_use()
@@ -1212,7 +1267,6 @@ void GC_mark(const void *p)
 #endif
 
   if ((long)p & 0x1) return;
-
   g = ((unsigned long)p >> MAPS_SHIFT);
 
   map = mpage_maps[g];
@@ -1661,11 +1715,13 @@ static void do_bigblock(void **p, MPage *page, int fixup)
     
     if (fixup) {
       for (i = 0; i < size; i++, p++) {
-	gcFIXUP(*p);
+	if (*p)
+	  gcFIXUP(*p);
       }
     } else {
       for (i = 0; i < size; i++, p++) {
-	gcMARK(*p);
+	if (*p)
+	  gcMARK(*p);
       }
     }
   }
@@ -2490,6 +2546,8 @@ static void free_unused_mpages()
 	memory_in_use += MPAGE_SIZE;
     }
   }
+
+  flush_freed_pages();
 }
 
 void promote_all_ages()
@@ -2612,11 +2670,11 @@ void GC_mark_variable_stack(void **var_stack,
 			    long delta,
 			    void *limit)
 {
+  long size, count;
+  void ***p, **a;
+
   stack_depth = 0;
   while (var_stack) {
-    long size;
-    void ***p;
-
     var_stack = (void **)((char *)var_stack + delta);
     if (var_stack == limit)
       return;
@@ -2631,10 +2689,11 @@ void GC_mark_variable_stack(void **var_stack,
     p = (void ***)(var_stack + 2);
     
     while (size--) {
-      if (!*p) {
+      a = *p;
+      if (!a) {
 	/* Array */
-	long count = ((long *)p)[2];
-	void **a = ((void ***)p)[1];
+	count = ((long *)p)[2];
+	a = ((void ***)p)[1];
 	p += 2;
 	size -= 2;
 	a = (void **)((char *)a + delta);
@@ -2643,7 +2702,6 @@ void GC_mark_variable_stack(void **var_stack,
 	  a++;
 	}
       } else {
-	void **a = *p;
 	a = (void **)((char *)a + delta);
 	gcMARK(*a);
       }
@@ -2666,11 +2724,11 @@ void GC_fixup_variable_stack(void **var_stack,
 			     long delta,
 			     void *limit)
 {
+  long size, count;
+  void ***p, **a;
+
   stack_depth = 0;
   while (var_stack) {
-    long size;
-    void ***p;
-
     var_stack = (void **)((char *)var_stack + delta);
     if (var_stack == limit)
       return;
@@ -2680,10 +2738,11 @@ void GC_fixup_variable_stack(void **var_stack,
     p = (void ***)(var_stack + 2);
     
     while (size--) {
-      if (!*p) {
+      a = *p;
+      if (!a) {
 	/* Array */
-	long count = ((long *)p)[2];
-	void **a = ((void ***)p)[1];
+	count = ((long *)p)[2];
+	a = ((void ***)p)[1];
 	p += 2;
 	size -= 2;
 	a = (void **)((char *)a + delta);
@@ -2692,7 +2751,6 @@ void GC_fixup_variable_stack(void **var_stack,
 	  a++;
 	}
       } else {
-	void **a = *p;
 	a = (void **)((char *)a + delta);
 	gcFIXUP(*a);
       }
@@ -2807,6 +2865,9 @@ static void gcollect(int full)
 
   cycle_count++;
 
+  if (memory_in_use > max_memory_use)
+    max_memory_use = memory_in_use;
+
   if (!initialized) {
     GC_register_traversers(weak_box_tag, size_weak_box, mark_weak_box, fixup_weak_box);
     GC_register_traversers(gc_weak_array_tag, size_weak_array, mark_weak_array, fixup_weak_array);
@@ -2914,6 +2975,9 @@ static void gcollect(int full)
   compact = 0;
 # endif
 #endif
+
+  if (compact)
+    compact_count++;
 
   init_all_mpages(young);
 
@@ -3137,7 +3201,7 @@ static void gcollect(int full)
     data = wa->data;
     for (i = wa->count; i--; ) {
       void *p = data[i];
-      if (!is_marked(p))
+      if (p && !is_marked(p))
 	data[i] = wa->replace_val;
     }
     
@@ -3250,8 +3314,15 @@ static void gcollect(int full)
   free_unused_mpages();
 
   protect_old_mpages();
-  
-  gc_threshold = (long)(GROW_FACTOR * (memory_in_use - FREE_LIST_DELTA));
+
+#if (COMPACTING == NEVER_COMPACT)
+# define THRESH_FREE_LIST_DELTA (FREE_LIST_DELTA >> 2)
+#else
+# define THRESH_FREE_LIST_DELTA FREE_LIST_DELTA
+#endif
+
+  gc_threshold = (long)((GROW_FACTOR * (memory_in_use - THRESH_FREE_LIST_DELTA))
+			+ GROW_ADDITION);
 
   if (compact) {
     for (i = 0; i < (NUM_SETS - 1); i++) {

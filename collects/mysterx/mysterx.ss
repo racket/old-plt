@@ -2336,6 +2336,7 @@
 	    show 
 	    navigate
 	    navigate/status 
+	    go-back
 	    go-forward
 	    refresh
 	    iconize

@@ -67,12 +67,12 @@ STDINC=/usr/include
 if [ "$1" == '-n' ] ; then
   # No filesystem or ethernet support
   FS=""
+  shift
 else
   # Include filesystem and ethernet support
   FS="-DOSK_FILESYSTEMS_AND_ETHERNET"
   EXTRA_OSK_LIBS="-loskit_linux_fs -loskit_linux_dev -loskit_diskpart -loskit_freebsd_net"
   export EXTRA_OSK_LIBS
-  shift
 fi
 
 if [ "$1" = '-t' ] ; then

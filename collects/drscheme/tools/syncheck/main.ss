@@ -926,7 +926,6 @@
                                             (zodiac:struct-form-fields zodiac-ast))]
                                  
                                  [else (void)])))])
-		   (send definitions-text clear-annotations)
                    (let ([mod-flag (void)]) ; buffer modified before check-syntax run
                      (dynamic-wind
                       (lambda ()
@@ -936,9 +935,7 @@
                         (send definitions-text set-styles-fixed #f)
                         (send definitions-text begin-edit-sequence #f))
                       (lambda ()
-			;; reset all of the buffer to the default style
-			;; and clear out arrows
-                        (clear-highlighting)
+                        (send definitions-text clear-annotations)
                         (send definitions-text syncheck:init-arrows)
                         
 			;; color each exp

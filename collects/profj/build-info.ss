@@ -551,7 +551,7 @@
                                      (list (make-call #f #f #f (make-special-name #f #f "super") null #f)) #f)
                                     #f
                                     #f))
-               (rec (make-method-record (id-string name) `(public) 'ctor null null #f "")))
+               (rec (make-method-record (id-string name) `(public) 'ctor null null #f (list (id-string name)))))
            (set-def-members! class (cons method (def-members class)))
            (add-rec rec))))))
 

@@ -316,6 +316,7 @@
                                          (annotate/inner expr tail-bound #f #f must-mark? name))]
                   [non-tail-recur (lambda (expr) (annotate/inner expr null #f #f #f #f))]
                   [result-recur (lambda (expr) (annotate/inner expr null #f #f #f procedure-name-info))]
+                  [set!-rhs-recur (lambda (expr name) (annotate/inner expr null #f #f #f name))]
                   [let-rhs-recur (lambda (tail-bound)
                                    (lambda (expr bindings dyn-index-syms)
                                      (let* ([proc-name-info 
@@ -331,6 +332,7 @@
                                     (annotate/inner expr (binding-set-union tail-bound bindings) #f #f #t procedure-name-info))]
                   [cheap-wrap-recur (lambda (expr) (let-values ([(ann _) (tail-recur expr)]) ann))]
                   [no-enclosing-recur (lambda (expr) (annotate/inner expr 'all #f #f #t #f))]
+                  [class-rhs-recur (lambda (expr read-name) (annotate/inner expr 'all #f #f #t (utils:read->raw read-name)))]
                   [make-debug-info-normal (lambda (free-bindings)
                                             (make-debug-info expr tail-bound free-bindings null 'none foot-wrap?))]
                   [make-debug-info-app (lambda (tail-bound free-bindings label)
@@ -727,7 +729,9 @@
                     ([(var) (z:set!-form-var expr)]
                      [(v) (translate-varref var)]
                      [(annotated-body rhs-free-bindings)
-                      (non-tail-recur (z:set!-form-val expr))]
+                      (set!-rhs-recur (z:set!-form-val expr) (if (z:top-level-varref? var)
+                                                                 (z:varref-var var)
+                                                                 (z:binding-orig-name (z:bound-varref-binding var))))]
                      [(free-bindings) (binding-set-union (if (z:top-level-varref? var)
                                                              null
                                                              (list (z:bound-varref-binding var)))
@@ -944,7 +948,9 @@
                           (cond
                             [(z:public-clause? clause)
                              (let*-values ([(ann-exprs free-var-sets) 
-                                            (dual-map no-enclosing-recur (z:public-clause-exprs clause))])
+                                            (dual-map class-rhs-recur 
+                                                      (z:public-clause-exprs clause)
+                                                      (z:public-clause-exports clause))])
                                (values 
                                 `(public
                                    ,@(map (lambda (internal export expr)
@@ -958,7 +964,9 @@
                                 (apply binding-set-union free-var-sets)))]
                             [(z:override-clause? clause)
                              (let*-values ([(ann-exprs free-var-sets) 
-                                            (dual-map no-enclosing-recur (z:override-clause-exprs clause))])
+                                            (dual-map class-rhs-recur 
+                                                      (z:override-clause-exprs clause)
+                                                      (z:override-clause-exports clause))])
                                (values
                                 `(override
                                    ,@(map (lambda (internal export expr)

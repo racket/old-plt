@@ -248,11 +248,11 @@ scheme_init_symbol (Scheme_Env *env)
 						      "symbol->string", 
 						      1, 1), 
 			     env);
-  
+
   scheme_add_global_constant("gensym", 
 			     scheme_make_prim_w_arity(gensym,
 						      "gensym",
-						      0, 1), 
+						      0, 1),
 			     env);
 }
 
@@ -264,6 +264,7 @@ make_a_symbol(const char *name, int len)
   sym = (Scheme_Symbol *)scheme_malloc_atomic_tagged(sizeof(Scheme_Symbol) + len - 3);
   
   sym->type = scheme_symbol_type;
+  sym->keyex = 0;
   sym->len = len;
   memcpy(sym->s, name, len);
   sym->s[len] = 0;
@@ -516,21 +517,36 @@ symbol_to_string_prim (int argc, Scheme_Object *argv[])
 static Scheme_Object *gensym(int argc, Scheme_Object *argv[])
 {
   char buffer[100], *str;
+  Scheme_Object *r;
 
-  if (argc && !SCHEME_SYMBOLP(argv[0]) && !SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("gensym", "symbol/string", 0, argc, argv);
-  
   if (argc) {
-    if (SCHEME_STRINGP(argv[0]))
-      str = SCHEME_STR_VAL(argv[0]);
+    r = argv[0];
+    if (SCHEME_BOXP(r))
+      r = SCHEME_PTR_VAL(r);
+  } else
+    r = NULL;
+
+  if (r && !SCHEME_SYMBOLP(r) && !SCHEME_STRINGP(r))
+    scheme_wrong_type("gensym", "symbol, string, or boxed symbol or string", 0, argc, argv);
+  
+  if (r) {
+    if (SCHEME_STRINGP(r))
+      str = SCHEME_STR_VAL(r);
     else
-      str = SCHEME_SYM_VAL(argv[0]);      
+      str = SCHEME_SYM_VAL(r);
     sprintf(buffer, "%.80s%d", str, gensym_counter++);
     str = NULL; /* because it might be GC-misaligned */
   } else
     sprintf(buffer, "g%d", gensym_counter++);
 
-  return scheme_make_symbol(buffer);
+  r = scheme_make_symbol(buffer);
+
+  if (argc && SCHEME_BOXP(argv[0])) {
+    /* Make the symbol non-hygenic: */
+    SCHEME_SET_IMMUTABLE(r);
+  }
+
+  return r;
 }
 
 Scheme_Object *scheme_symbol_append(Scheme_Object *s1, Scheme_Object *s2)

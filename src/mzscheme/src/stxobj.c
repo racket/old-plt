@@ -1086,7 +1086,10 @@ int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *u
   if ((a == asym) || (b == bsym))
     return 1;
 
-  if (!uid)
+  /* Check for non-hygenic: */
+  if (SCHEME_IMMUTABLEP(asym))
+    uid = NULL;
+  else if (!uid)
     if (!same_marks(((Scheme_Stx *)a)->wraps, ((Scheme_Stx *)b)->wraps, 0))
       return 0;
 
@@ -2051,7 +2054,7 @@ static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv)
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 {
   if (!SCHEME_FALSEP(argv[0]) && !SCHEME_STXP(argv[0]))
-    scheme_wrong_type("datum->syntax-object", "syntax or #f", 1, argc, argv);
+    scheme_wrong_type("datum->syntax-object", "syntax or #f", 0, argc, argv);
   if (argc > 2)
     if (!SCHEME_FALSEP(argv[2]) && !SCHEME_STXP(argv[2]))
       scheme_wrong_type("datum->syntax-object", "syntax or #f", 2, argc, argv);

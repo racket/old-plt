@@ -941,11 +941,16 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
       int i, count;
       
       uid = env_frame_uid(env);
-      
+
+      /* IMMUTABLE flag is used to indicate non-hygenic names */
+
       count = 0;
-      count += COMPILE_DATA(env)->num_const;
+      for (i = COMPILE_DATA(env)->num_const; i--; ) {
+	if (SCHEME_MUTABLEP(SCHEME_STX_VAL(COMPILE_DATA(env)->const_names[i])))
+	  count++;
+      }
       for (i = env->num_bindings; i--; ) {
-	if (env->values[i])
+	if (env->values[i] && SCHEME_MUTABLEP(SCHEME_STX_VAL(env->values[i])))
 	  count++;
       }
       
@@ -957,10 +962,11 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 	  
 	  count = 0;
 	  for (i = COMPILE_DATA(env)->num_const; i--; ) {
-	    scheme_set_rename(rnm, count++, COMPILE_DATA(env)->const_names[i]);
+	    if (SCHEME_MUTABLEP(SCHEME_STX_VAL(COMPILE_DATA(env)->const_names[i])))
+	      scheme_set_rename(rnm, count++, COMPILE_DATA(env)->const_names[i]);
 	  }
 	  for (i = env->num_bindings; i--; ) {
-	    if (env->values[i])
+	    if (env->values[i] && SCHEME_MUTABLEP(SCHEME_STX_VAL(env->values[i])))
 	      scheme_set_rename(rnm, count++, env->values[i]);
 	  }
 	  

@@ -47,6 +47,12 @@ class wxTabChoice : public wxItem
 
   void Set(int N, char **Choices);
 
+  int ButtonFocus(int n);
+  virtual void OnSetFocus(void);
+  virtual void OnKillFocus(void);
+
+  int focused_button;
+
 protected:
   virtual void ChangeToGray(Bool gray);
   virtual void Paint(void);

@@ -93,6 +93,8 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
    
   CheckMemOK(cMacControl);
 
+  focused_button = 1;
+
 #if 0
   /* #^%$^&!!! GetBestControlRect doesn't work for tab widgets.
      And why should it? That would be entriely too helpful. */
@@ -123,6 +125,8 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
 		(style & wxBORDER) ? (cWindowHeight - padBottom) : TAB_CONTROL_HEIGHT);
 
   ::EmbedControl(cMacControl, GetRootControl());
+
+  IgnoreKeyboardEvents();
   
   {
     wxWindow*p;
@@ -226,6 +230,59 @@ void wxTabChoice::SetPhantomSize(int w, int h)
 {
   phantom_height = h;
 }
+
+int wxTabChoice::ButtonFocus(int n)
+{
+  if (n < 0) {
+    if (focused_button < 0)
+      return (-focused_button) - 1;
+    else
+      return focused_button - 1;
+  } else {
+    int i;
+
+    printf("tab set focus %d %d\n", n, focused_button);
+
+    if (focused_button < 0) {
+      SetFocus();
+    }
+
+    if (n > (focused_button - 1)) {
+      for (i = 1; i <= n; i++) {
+	::SetKeyboardFocus(GetWindowFromPort(cMacDC->macGrafPort()),
+			   cMacControl,
+			   kControlFocusNextPart);
+      }
+    } else {
+      for (i = focused_button; i > n; --i) {
+	::SetKeyboardFocus(GetWindowFromPort(cMacDC->macGrafPort()),
+			   cMacControl,
+			   kControlFocusPrevPart);
+      }
+    }
+
+    return n;
+  }
+}
+
+void wxTabChoice::OnSetFocus()
+{
+  if (focused_button < 0) {
+    wxItem::OnSetFocus();
+    focused_button = 1;
+    printf("tab focus %d\n", focused_button);
+  }
+}
+
+void wxTabChoice::OnKillFocus()
+{
+  if (focused_button > 0) {
+    wxItem::OnKillFocus();
+    focused_button = -focused_button;
+    printf("tab unfocus %d\n", focused_button);
+  }
+}
+
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Other methods
@@ -332,6 +389,8 @@ void wxTabChoice::Append(char *s, int new_sel)
   cMacControl = naya;
 
   ::EmbedControl(cMacControl, GetRootControl());
+
+  IgnoreKeyboardEvents();
 
   if (cHidden) {
     ::HideControl(cMacControl);

@@ -34,7 +34,7 @@
 
 /* globals */
 int scheme_locale_on;
-static char *current_locale_name = "";
+static const char *current_locale_name = "";
 
 /* locals */
 static Scheme_Object *make_string (int argc, Scheme_Object *argv[]);
@@ -45,12 +45,17 @@ static Scheme_Object *string_ref (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_set (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_eq (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_ci_eq (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_ci_eq (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_lt (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_lt (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_gt (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_gt (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_lt_eq (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_gt_eq (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_ci_lt (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_ci_lt (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_ci_gt (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_ci_gt (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_ci_lt_eq (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_ci_gt_eq (int argc, Scheme_Object *argv[]);
 static Scheme_Object *substring (int argc, Scheme_Object *argv[]);
@@ -153,14 +158,29 @@ scheme_init_string (Scheme_Env *env)
 						      "string-ci=?",
 						      2, -1),
 			     env);
+  scheme_add_global_constant("string-locale-ci=?", 
+			     scheme_make_prim_w_arity(string_locale_ci_eq,
+						      "string-locale-ci=?",
+						      2, -1),
+			     env);
   scheme_add_global_constant("string<?", 
 			     scheme_make_prim_w_arity(string_lt,
 						      "string<?",
 						      2, -1),
 			     env);
+  scheme_add_global_constant("string-locale<?", 
+			     scheme_make_prim_w_arity(string_locale_lt,
+						      "string-locale<?",
+						      2, -1),
+			     env);
   scheme_add_global_constant("string>?", 
 			     scheme_make_prim_w_arity(string_gt,
 						      "string>?",
+						      2, -1),
+			     env);
+  scheme_add_global_constant("string-locale>?", 
+			     scheme_make_prim_w_arity(string_locale_gt,
+						      "string-locale>?",
 						      2, -1),
 			     env);
   scheme_add_global_constant("string<=?", 
@@ -178,9 +198,19 @@ scheme_init_string (Scheme_Env *env)
 						      "string-ci<?",
 						      2, -1),
 			     env);
+  scheme_add_global_constant("string-locale-ci<?", 
+			     scheme_make_prim_w_arity(string_locale_ci_lt,
+						      "string-locale-ci<?",
+						      2, -1),
+			     env);
   scheme_add_global_constant("string-ci>?", 
 			     scheme_make_prim_w_arity(string_ci_gt,
 						      "string-ci>?",
+						      2, -1),
+			     env);
+  scheme_add_global_constant("string-locale-ci>?", 
+			     scheme_make_prim_w_arity(string_locale_ci_gt,
+						      "string-locale-ci>?",
 						      2, -1),
 			     env);
   scheme_add_global_constant("string-ci<=?", 
@@ -576,7 +606,7 @@ string_set (int argc, Scheme_Object *argv[])
 
 /* comparisons */
 
-#define GEN_STRING_COMP(name, scheme_name, comp, op, eq) \
+#define GEN_STRING_COMP(name, scheme_name, comp, op, ul) \
 static Scheme_Object * name (int argc, Scheme_Object *argv[]) \
 {  char *s, *prev; int i, sl, pl; int falz = 0;\
    if (!SCHEME_STRINGP(argv[0])) \
@@ -587,23 +617,30 @@ static Scheme_Object * name (int argc, Scheme_Object *argv[]) \
       scheme_wrong_type(scheme_name, "string", i, argc, argv); \
      s = SCHEME_STR_VAL(argv[i]); sl = SCHEME_STRTAG_VAL(argv[i]); \
      if (!falz) if (!(comp((unsigned char *)prev, pl, \
-                           (unsigned char *)s, sl, eq) op 0)) falz = 1; \
+                           (unsigned char *)s, sl, ul) op 0)) falz = 1; \
      prev = s; pl = sl; \
   } \
   return falz ? scheme_false : scheme_true; \
 }
 
-GEN_STRING_COMP(string_eq, "string=?", mz_strcmp, ==, 1)
+GEN_STRING_COMP(string_eq, "string=?", mz_strcmp, ==, 0)
 GEN_STRING_COMP(string_lt, "string<?", mz_strcmp, <, 0)
 GEN_STRING_COMP(string_gt, "string>?", mz_strcmp, >, 0)
 GEN_STRING_COMP(string_lt_eq, "string<=?", mz_strcmp, <=, 0)
 GEN_STRING_COMP(string_gt_eq, "string>=?", mz_strcmp, >=, 0)
 
-GEN_STRING_COMP(string_ci_eq, "string-ci=?", mz_strcmp_ci, ==, 1)
+GEN_STRING_COMP(string_ci_eq, "string-ci=?", mz_strcmp_ci, ==, 0)
 GEN_STRING_COMP(string_ci_lt, "string-ci<?", mz_strcmp_ci, <, 0)
 GEN_STRING_COMP(string_ci_gt, "string-ci>?", mz_strcmp_ci, >, 0)
 GEN_STRING_COMP(string_ci_lt_eq, "string-ci<=?", mz_strcmp_ci, <=, 0)
 GEN_STRING_COMP(string_ci_gt_eq, "string-ci>=?", mz_strcmp_ci, >=, 0)
+
+GEN_STRING_COMP(string_locale_lt, "string-locale<?", mz_strcmp, <, 1)
+GEN_STRING_COMP(string_locale_gt, "string-locale>?", mz_strcmp, >, 1)
+GEN_STRING_COMP(string_locale_ci_eq, "string-ci=?", mz_strcmp_ci, ==, 1)
+GEN_STRING_COMP(string_locale_ci_lt, "string-ci<?", mz_strcmp_ci, <, 1)
+GEN_STRING_COMP(string_locale_ci_gt, "string-ci>?", mz_strcmp_ci, >, 1)
+
 
 void scheme_get_substring_indices(const char *name, Scheme_Object *str, 
 				  int argc, Scheme_Object **argv, 
@@ -841,7 +878,7 @@ static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[])
     return s;
 }
 
-static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2, int eq)
+static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2, int use_locale)
 {
   int endres;
   
@@ -856,7 +893,7 @@ static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2, i
   }
 
 #ifndef DONT_USE_LOCALE
-  if (!eq && scheme_locale_on) {
+  if (use_locale && scheme_locale_on) {
     /* Walk back through the strings looking for
        nul characters. If we find one, compare
        the part after the null character to update
@@ -904,7 +941,7 @@ static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2, i
   return endres;
 }
 
-static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2, int eq)
+static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2, int use_locale)
 {
   int endres;
 
@@ -919,7 +956,7 @@ static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2
   }
 
 #ifndef DONT_USE_LOCALE
-  if (!eq && scheme_locale_on) {
+  if (use_locale && scheme_locale_on) {
 # define mzCASE_BUF 100
     unsigned char *cstr1, *cstr2;
     unsigned char buf1[mzCASE_BUF], buf2[mzCASE_BUF];
@@ -955,10 +992,8 @@ static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2
     
     a = *(str1++);
     b = *(str2++);
-    if ((a <= 127) ||scheme_locale_on)
-      a = toupper(a);
-    if ((b <= 127) || scheme_locale_on)
-      b = toupper(b);
+    a = mz_portable_toupper(a);
+    b = mz_portable_toupper(b);
 
     a = a - b;
     if (a)
@@ -1500,24 +1535,24 @@ void scheme_reset_locale(void)
 {
   Scheme_Object *v;
   const char *name;
-  int on;
 
   v = scheme_get_param(scheme_config, MZCONFIG_LOCALE);
-  on = SCHEME_TRUEP(v);
-  name = (on ? (SCHEME_STRINGP(v) ? SCHEME_STR_VAL(v) : "") : "C");
+  scheme_locale_on = SCHEME_TRUEP(v);
 
-  if ((on != scheme_locale_on)
-      || !((current_locale_name == name)
-	   || !strcmp(current_locale_name, name))) {
+  if (scheme_locale_on) {
+    name = SCHEME_STR_VAL(v);
+
+    if ((current_locale_name != name) && !strcmp(current_locale_name, name)) {
 #ifndef DONT_USE_LOCALE
-    /* We only need CTYPE and COLLATE; two calls seem to be much
-       faster than one call with ALL */
-    if (!setlocale(LC_CTYPE, name))
-      setlocale(LC_CTYPE, "C");
-    if (!setlocale(LC_COLLATE, name))
-      setlocale(LC_COLLATE, "C");
+      /* We only need CTYPE and COLLATE; two calls seem to be much
+	 faster than one call with ALL */
+      if (!setlocale(LC_CTYPE, name))
+	setlocale(LC_CTYPE, "C");
+      if (!setlocale(LC_COLLATE, name))
+	setlocale(LC_COLLATE, "C");
 #endif
-    scheme_locale_on = on;
+      current_locale_name = name;
+    }
   }
 }
 

@@ -194,6 +194,8 @@ Scheme_Env *scheme_basic_env()
 #endif
 
   scheme_init_stack_check();
+  scheme_init_portable_case();
+
 
   {
     int i, k;

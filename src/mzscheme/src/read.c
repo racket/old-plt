@@ -1171,10 +1171,10 @@ read_string(Scheme_Object *port,
       case 'x':
 	ch = scheme_getc_special_ok(port);
 	if (isxdigit(ch)) {
-	  n = ch<='9' ? ch-'0' : (toupper(ch)-'A'+10);
+	  n = ch<='9' ? ch-'0' : (mz_portable_toupper(ch)-'A'+10);
 	  ch = scheme_getc_special_ok(port);
 	  if (NOT_EOF_OR_SPECIAL(ch) && isxdigit(ch)) {
-	    n = n*16 + (ch<='9' ? ch-'0' : (toupper(ch)-'A'+10));
+	    n = n*16 + (ch<='9' ? ch-'0' : (mz_portable_toupper(ch)-'A'+10));
 	  } else {
 	    scheme_ungetc(ch, port);
 	  }
@@ -1407,8 +1407,8 @@ read_number_or_symbol(Scheme_Object *port,
       memcpy(buf, oldbuf, oldsize);
     }
 
-    if (!case_sens && !quoted && !running_quote && ((ch <= 127) || scheme_locale_on))
-      ch = tolower(ch);
+    if (!case_sens && !quoted && !running_quote)
+      ch = mz_portable_tolower(ch);
 
     buf[i++] = ch;
 
@@ -1533,7 +1533,7 @@ read_character(Scheme_Object *port,
 
     i = 1;
     buf = onstack;
-    buf[0] = tolower(ch);
+    buf[0] = mz_portable_tolower(ch);
     while ((ch = scheme_peekc_special_ok(port), NOT_EOF_OR_SPECIAL(ch) && isalpha(ch))) {
       scheme_getc(port); /* is alpha character */
       if (i >= size) {
@@ -1544,7 +1544,7 @@ read_character(Scheme_Object *port,
 	buf = (char *)scheme_malloc_atomic(size + 1);
 	memcpy(buf, oldbuf, oldsize);
       }
-      buf[i++] = tolower(ch);
+      buf[i++] = mz_portable_tolower(ch);
     }
     buf[i] = '\0';
     

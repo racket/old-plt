@@ -144,7 +144,7 @@ static Scheme_Object *read_special_number(const char *str, int pos)
     int i;
 
     for (i = 0; i < 6; i++) {
-      s[i] = tolower((unsigned char)str[i + pos]);
+      s[i] = mz_portable_tolower((unsigned char)str[i + pos]);
     }
     s[i] = 0;
 

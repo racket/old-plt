@@ -324,8 +324,7 @@ scheme_intern_symbol(const char *name)
     for (i = 0; i < len; i++) {
       int c = name[i];
 
-      if ((c <= 127) || scheme_locale_on)
-	c = tolower(c);
+      c = mz_portable_tolower(c);
 
       naya[i] = c;
     }
@@ -392,7 +391,8 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
       has_special = 1;
     else if (s[i] == '|')
       has_pipe = 1;
-    else if (isupper((unsigned char)s[i]))
+    else if ((((unsigned char)s[i]) >= 'A')
+	     && (((unsigned char)s[i]) <= 'Z'))
       has_upper = 1;
   }
 
@@ -443,7 +443,8 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
 	    || isSpecial(s[i]) 
 	    || ((s[i] == '|') && pipe_quote)
 	    || (!i && s[0] == '#')
-	    || (has_upper && (isupper((unsigned char)s[i]))))
+	    || (has_upper && ((((unsigned char)s[i]) >= 'A')
+			      && (((unsigned char)s[i]) <= 'Z'))))
 	  result[p++] = '\\';
 	result[p++] = s[i];
       }

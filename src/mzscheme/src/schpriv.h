@@ -111,6 +111,7 @@ extern unsigned long scheme_get_stack_base();
 
 extern int scheme_starting_up;
 
+void scheme_init_portable_case(void);
 void scheme_init_stack_check(void);
 #ifdef MZ_PRECISE_GC
 void scheme_register_traversers(void);
@@ -1900,5 +1901,10 @@ void scheme_reset_locale(void);
   scheme_make_folding_prim(prim, name, mina, maxa, 0)
 
 #define SCHEME_SYM_UNINTERNED(o) (((Scheme_Symbol *)o)->keyex & 0x1)
+
+extern unsigned char scheme_portable_upcase[256];
+extern unsigned char scheme_portable_downcase[256];
+#define mz_portable_toupper(c) scheme_portable_upcase[c]
+#define mz_portable_tolower(c) scheme_portable_downcase[c]
 
 #endif /* __mzscheme_private__ */

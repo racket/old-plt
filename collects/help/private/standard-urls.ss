@@ -4,8 +4,7 @@
            "internal-hp.ss"
            (lib "contract.ss"))
   
-  (provide home-page-url
-           prefix-with-server)
+  (provide home-page-url)
   
   (define (search-type? x)
     (member x '("keyword" "keyword-index" "keyword-index-text")))

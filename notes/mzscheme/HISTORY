@@ -11,6 +11,8 @@ Unix: fixed file-or-directory-permissions for group-based
  still includes the user)
 Windows: fixed directory-exists? et al. for UNC paths
 Added local-expand-body-expression
+Removed input-port-post-semaphore; this procedure can be
+ implemented using thread, peek-char, and semaphore-post
 Added link-exists?
 Added copy-file
 Added path-list-string->path-list
@@ -42,6 +44,10 @@ Changed storage of loaded-library table from built into the
  namespace
 Added require-relative-library
 Fixed error messages for +, -, etc. to show all arguments
+Fixed format, fprintf, and printf: "~~" allowed at the end
+ of the format string
+Fixed with-handlers: predicate procedures are evaluated
+ with the same exception handler as a handler procedure
 Added send-event, currently only supported for MacOS
 Changed MzLib's pconver.ss libraries; the print-convert-hook@
  unit was removed (along with the pchookr.ss library) and

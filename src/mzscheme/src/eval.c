@@ -4515,12 +4515,9 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 	       SAME_TYPE(SCHEME_TYPE(rhs), scheme_syntax_type) && (SCHEME_PINT_VAL(rhs) == BOXVAL_EXPD);
 	       rhs = SCHEME_CDDR((Scheme_Object *)SCHEME_IPTR_VAL(rhs))) {
 	    int j = SCHEME_INT_VAL(SCHEME_CAR((Scheme_Object *)SCHEME_IPTR_VAL(rhs)));
-	    int cnt = SCHEME_INT_VAL(SCHEME_CADR((Scheme_Object *)SCHEME_IPTR_VAL(rhs)));
 
 	    if (j == i) {
-	      while (cnt--) {
-		stack[p + cnt] = VALID_BOX;
-	      }
+	      stack[p] = VALID_BOX;
 	      break;
 	    }
 	  }

@@ -207,16 +207,8 @@
     (let* ([href (if (html-entry? path)
 		     (make-html-href page-label path)
 		     (make-text-href page-label path))])
-      ; can use refresh here, instead of Javscript here - no semicolon in URL
-      (send/finish 
-       `(HTML
-	 (HEAD
-	  (META ((HTTP-EQUIV "refresh")
-		 (CONTENT ,(format "0;URL=~a" href))))
-	  (TITLE "PLT Help Desk lucky search result"))
-	 (BODY
-	  "If this page does not refresh, "
-	  (A ((HREF ,href)) "click here") ".")))))
+      (send/finish
+       (redirect-to href))))
 
   (define (add-entry ekey label src path page-label key)
     (let* ([entry (if (html-entry? path)

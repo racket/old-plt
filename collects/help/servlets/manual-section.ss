@@ -17,15 +17,5 @@
 	 [url (format "/doc/~a/~a" 
 		      manual
 		      (finddoc-page-anchor manual section))])
-    `(HTML
-      (HEAD ,hd-css
-	    (TITLE "PLT manual section")
-	    (META ((HTTP-EQUIV "refresh")
-		   (CONTENT ,(format "0;URL=~a" url)))))
-
-      (BODY
-       "Click "
-       (A ((HREF ,url)) "here") 
-       " if this page does not refresh"))))
-
-
+    (send/finish
+     (redirect-to url))))

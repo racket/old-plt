@@ -2,7 +2,6 @@
 (module sendr mzscheme
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
-	   (lib "class100.ss")
 	   (lib "mred-sig.ss" "mred")
            (lib "framework.ss" "framework"))
 
@@ -164,37 +163,31 @@
 
       ;; new-mailer : ... -> frame[with send-message method]
       (define (new-mailer file to cc subject other-headers body enclosures)
-	(define f% (class100 frame% args
+	(define f% (class frame:basic%
 		     (inherit get-menu-bar set-icon)
-                     (public 
-                       [send-message 
-                        (lambda () 
-                          (send-msg))])
-                     (override
-		       [can-close?
-			(lambda ()
-			  (and (send (get-menu-bar) is-enabled?)
-			       (or (not (send message-editor is-modified?))
-				   (eq? 'yes
-					(confirm-box
-					 "Warning"
-					 "The message is not saved or sent. Close anyway?"
-					 this)))))]
-		       [on-close
-			(lambda () 
-                          (send message-editor on-close)
-                          (exit-sirmail))])
-		     (sequence
-		       (apply super-init args)
-		       (when send-icon
-			 (set-icon send-icon send-icon-mask)))))
-	(define f (make-object f% "Send Mail" #f FRAME-WIDTH FRAME-HEIGHT))
-	(define mb (make-object menu-bar% f))
+                     [define/public (send-message)
+                       (send-msg)]
+                     (define/override (can-close?)
+                       (and (send (get-menu-bar) is-enabled?)
+                            (or (not (send message-editor is-modified?))
+                                (eq? 'yes
+                                     (confirm-box
+                                      "Warning"
+                                      "The message is not saved or sent. Close anyway?"
+                                      this)))))
+                     (define/override (on-close)
+                       (send message-editor on-close)
+                       (exit-sirmail))
+                     (super-instantiate ())
+                     (when send-icon
+                       (set-icon send-icon send-icon-mask))))
+	(define mailer-frame (make-object f% "Send Mail" #f FRAME-WIDTH FRAME-HEIGHT))
+	(define mb (send mailer-frame get-menu-bar))
 	(define file-menu (make-object menu% "File" mb))
 	(define edit-menu (make-object menu% "Edit" mb))
 	(define composer-menu (and (USE-EXTERNAL-COMPOSER?)
 				   (make-object menu% "Composer" mb)))
-	(define button-pane (make-object horizontal-pane% f))
+	(define button-pane (make-object horizontal-pane% (send mailer-frame get-area-container)))
 	(define title-message (make-object message% "Compose message" button-pane)) 
 	(define button-pane-spacer (make-object vertical-pane%  button-pane))
 	(define cancel-button
@@ -241,12 +234,12 @@
 					 '(ok)))])
 		      (delete-file t)))))))
 
-	(define c (make-object editor-canvas% f))
+	(define c (make-object editor-canvas% (send mailer-frame get-area-container)))
 	(define message-editor (make-object (editor:backup-autosave-mixin text:basic%)))
-	(define enclosure-list (make-object hierarchical-list% f))
+	(define enclosure-list (make-object hierarchical-list% (send mailer-frame get-area-container)))
 
 	(define (enable on? refocus cancel-proc)
-	  (let ([w (send f get-focus-window)])
+	  (let ([w (send mailer-frame get-focus-window)])
 	    (set! cancel-button-todo cancel-proc)
 	    (send mb enable on?)
 	    (send c enable on?)
@@ -265,11 +258,11 @@
            (map (lambda (i) (send i user-data)) 
                 (send enclosure-list get-items))
            enable
-           (lambda () (send f set-status-text "Sending mail..."))
-           (lambda () (send f set-status-text ""))
+           (lambda () (send mailer-frame set-status-text "Sending mail..."))
+           (lambda () (send mailer-frame set-status-text ""))
            (lambda ()
-             (send f on-close)
-             (send f show #f))
+             (send mailer-frame on-close)
+             (send mailer-frame show #f))
            (lambda ()
              (let loop ()
                (when (eq? (message-box "Save?" "Save message before killing?" #f '(yes-no caution))
@@ -285,9 +278,9 @@
           (let ([filename (get-fresh-queue-filename)])
             (send message-editor save-file filename 'text))
           
-          (when (send f can-close?)
-            (send f on-close)
-            (send f show #f)))
+          (when (send mailer-frame can-close?)
+            (send mailer-frame on-close)
+            (send mailer-frame show #f)))
         
         ;; get-fresh-queue-filename : -> string
         (define (get-fresh-queue-filename)
@@ -296,13 +289,14 @@
         
 	(define external-composer (get-pref 'sirmail:external-composer))
 
+        (frame:reorder-menus mailer-frame)
         (send button-pane stretchable-height #f)
 	(send cancel-button enable #f)
 
 	(send enclosure-list stretchable-height #f)
 	(send enclosure-list min-height FORWARD-LIST-HEIGHT)
 	(when (null? enclosures)
-	  (send f delete-child enclosure-list))
+	  (send (send mailer-frame get-area-container) delete-child enclosure-list))
 	(for-each
 	 (lambda (enc)
 	   (let ([i (send enclosure-list new-item)])
@@ -353,7 +347,7 @@
 					 "Content Type"
 					 "Type of enclosure:"
 					 types
-					 f
+					 mailer-frame
 					 '(0))])
 			     (when type
 			       (let* ([encodings '("7bit"
@@ -363,7 +357,7 @@
 						 "Content Encoding"
 						 "Encoding for enclosure:"
 						 encodings
-						 f
+						 mailer-frame
 						 '(0))])
 				 (when encoding
 				   (let ([type (list-ref types (car type))]
@@ -392,8 +386,8 @@
 						     [(7bit) (lf->crlf content)])))])
 				       (send (send i get-editor) insert (enclosure-name enc))
 				       (send i user-data enc)
-				       (unless (memq enclosure-list (send f get-children))
-					 (send f add-child enclosure-list))))))))))))
+				       (unless (memq enclosure-list (send mailer-frame get-children))
+					 (send (send mailer-frame get-area-container) add-child enclosure-list))))))))))))
 	(make-object separator-menu-item% file-menu)
 	(make-object (class menu% 
 		       (inherit get-items)
@@ -415,9 +409,9 @@
 	(make-object separator-menu-item% file-menu)
 	(make-object menu-item% "Close" file-menu
 		     (lambda (i e) 
-		       (when (send f can-close?)
-			 (send f on-close)
-			 (send f show #f)))
+		       (when (send mailer-frame can-close?)
+			 (send mailer-frame on-close)
+			 (send mailer-frame show #f)))
 		     (if (eq? (system-type) 'windows) #f #\W))
 	(append-editor-operation-menu-items edit-menu #t)
 	;; Strip menu key bindings
@@ -485,10 +479,10 @@
 	(send message-editor scroll-to-position 0)
 	(send c focus)
 
-	(send f create-status-line)
+	(send mailer-frame create-status-line)
 
-	(send f show #t)
-        f)
+	(send mailer-frame show #t)
+        mailer-frame)
 
       
       ;; clean-filename : string -> string

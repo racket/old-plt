@@ -356,7 +356,7 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 		(loop (find-next-selected-snip s)))))])))
 
     (define frame%
-      (class drscheme:frame:frame% (fn [snip #f] [show? #t])
+      (class drscheme:frame:frame% (fn snip arg-group [show? #t])
 	(inherit show get-edit show-menu panel group)
 	(public
 	  [on-close
@@ -413,7 +413,7 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 	  [get-edit% (lambda () project-pasteboard%)])
 
 	(sequence
-	  (super-init filename snip))
+	  (super-init filename snip arg-group))
 	(private
 	  [eval-panel (make-object mred:vertical-panel% panel)]
 	  [eval-msg (make-object mred:message% eval-panel "Evaluation Order")]
@@ -426,7 +426,7 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 	  (send (get-edit) set-filename filename)
 	  (when (file-exists? filename)
 	    (send (get-edit) load-file filename))
-	  (send group insert this)
+	  (send group insert-frame this)
 	  (when show?
 	    (show #t)))))
 
@@ -461,7 +461,7 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 
     (mred:insert-format-handler "Compound Units"
 				(list "cut")
-				(opt-lambda ([name null] [group #f])
-				  (make-object frame% name group #f)))))
+				(opt-lambda (name group)
+				  (make-object frame% name #f group)))))
 
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.20 1998/11/17 13:11:51 mflatt Exp $
+ * $Id: Window.cc,v 1.21 1998/11/17 20:22:41 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -688,6 +688,18 @@ void wxWindow::ChangeToGray(Bool gray)
     XtSetSensitive(X->handle, !gray);
   if (XtIsSubclass(X->frame, xfwfEnforcerWidgetClass))
     XtVaSetValues(X->frame, XtNdrawgray, (Boolean)gray, NULL);
+
+  /* If disabling and this window has the focus, get rid of it: */
+  if (gray && (misc_flags & FOCUS_FLAG)) {
+    wxWindow *p = GetParent();
+    while (p) {
+      if (wxSubType(p->__type, wxTYPE_FRAME)) {
+	p->SetFocus();
+	break;
+      }
+      p = p->GetParent();
+    }
+  }
 }
 
 Bool wxWindow::IsGray(void)
@@ -966,6 +978,10 @@ Bool wxWindow::CallPreOnChar(wxWindow *win, wxKeyEvent *event)
       || wxSubType(win->__type, wxTYPE_MENU))
     return FALSE;
 
+  if (wxSubType(win->__type, wxTYPE_FRAME)
+      || wxSubType(win->__type, wxTYPE_DIALOG_BOX))
+    p = NULL;
+
   return ((p && CallPreOnChar(p, event)) || win->PreOnChar(this, event));
 }
 
@@ -976,6 +992,10 @@ Bool wxWindow::CallPreOnEvent(wxWindow *win, wxMouseEvent *event)
   if (wxSubType(win->__type, wxTYPE_MENU_BAR)
       || wxSubType(win->__type, wxTYPE_MENU))
     return FALSE;
+
+  if (wxSubType(win->__type, wxTYPE_FRAME)
+      || wxSubType(win->__type, wxTYPE_DIALOG_BOX))
+    p = NULL;
 
   return ((p && CallPreOnEvent(p, event)) || win->PreOnEvent(this, event));
 }

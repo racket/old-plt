@@ -7,12 +7,12 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 
 (define l (read))
 
-(define-struct ex (define string base doc args parent numtotal depth mark))
+(define-struct ex (define string base doc args parent parent-def numtotal depth mark))
 (define-struct fld (name type doc))
 
 (define max-exn-args 0)
 
-(define (make-an-ex sym parent parent-name totalargs args doc depth mark)
+(define (make-an-ex sym parent parent-def parent-name totalargs args doc depth mark)
   (let* ([s (symbol->string sym)]
 	 [name (string-append parent-name 
 			      (if (string=? "" parent-name) "" ":") 
@@ -37,6 +37,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 	     doc
 	     args
 	     parent
+	     parent-def
 	     count
 	     depth
 	     mark)))
@@ -47,7 +48,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
       (cons (make-fld (car args) (cadr args) (caddr args))
 	    (make-arg-list (cdddr args)))))
 
-(define (make-struct-list v parent parent-name totalargs depth)
+(define (make-struct-list v parent parent-def parent-name totalargs depth)
   (cond
    [(null? v) '()]
    [else
@@ -58,7 +59,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 			    (char=? #\+ c))
 			(values (string->symbol (substring s 1 (string-length s))) c)
 			(values (car v) #f)))]
-		 [(e) (make-an-ex s parent parent-name totalargs 
+		 [(e) (make-an-ex s parent parent-def parent-name totalargs 
 				  (make-arg-list (cadr v))
 				  (caddr v) depth mark)])
       (cons e
@@ -66,6 +67,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 	      (map
 	       (lambda (v)
 		 (make-struct-list v 
+				   e
 				   (ex-define e)
 				   (ex-string e)
 				   (ex-numtotal e)
@@ -73,6 +75,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 	       (cdddr v)))))]))
 
 (define l (make-struct-list l
+			    #f
 			    #f
 			    ""
 			    0
@@ -97,12 +100,31 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 		    (string-append "\\>"
 				   (loop (sub1 d)))]))])
 	   (display tab)
-	   (printf "\\exntype{~a}{~a} " 
+	   (printf "\\exntype{~a}{~a}{~a}{~a} " 
 		   (ex-base e)
+		   (ex-string e)
 		   (case (ex-mark e)
 		     ((#f) "$\\bullet$")
 		     ((#\+) "$\\bullet$")
-		     ((#\*) "$\\bullet$")))
+		     ((#\*) "$\\bullet$"))
+		   (let ([make-var (lambda (f)
+				     (let ([type (let ([s (fld-type f)])
+						   (if (string=? s "value")
+						       "v"
+						       s))]
+					   [name (fld-name f)])
+				       (cond
+					[(eq? name 'value) "v"]
+					[(regexp-match "port" type) type]
+					[else (format "~a-~a" name type)])))])
+		     (let loop ([e e][s #f])
+		       (let* ([p (ex-parent e)]
+			      [s (if p (loop p s) s)])
+			 (let loop ([l (ex-args e)][s s])
+			   (cond
+			    [(null? l) s]
+			    [s (loop (cdr l) (string-append s " " (make-var (car l))))]
+			    [else (loop (cdr l) (make-var (car l)))]))))))
 	   
 	   (if (eq? (ex-doc e) '-)
 	       (printf "\\exnusenone{~a} " tab)
@@ -112,8 +134,8 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 	   (let ([args (ex-args e)]
 		 [print-one
 		  (lambda (f)
-		    (printf "\\exnfield{~a} \\exnfuse{~s}{~a \\exnftype{~a}} " 
-			    (fld-name f) 
+		    (printf "\\exnfield{~a}{~a} \\exnfuse{~s}{~a \\exnftype{~a}} " 
+			    (fld-name f) (ex-string e)
 			    (- 5.4 (* 0.08 (symbol-length (fld-name f))) (* 0.25 (ex-depth e))) (fld-doc f) 
 			    (fld-type f)))])
 	     (unless (null? args)
@@ -202,7 +224,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
        (lambda (e)
 	 (printf "  SETUP_STRUCT(~a, ~a, ~s, ~a, ~a)~n"
 		 (ex-define e)
-		 (let ([p (ex-parent e)])
+		 (let ([p (ex-parent-def e)])
 		   (if p
 		       (format "EXN_PARENT(~a)" p)
 		       'NULL))

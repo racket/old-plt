@@ -9,15 +9,15 @@ strings are types/comments.
 |#
 
 (exn [message "string" "error message" 
-	      debug-info "anything" "value returned by the current debug info handler (called immediately after the error is detected)"] 
+	      debug-info "value" "value returned by the current debug info handler (called immediately after the error is detected)"] 
      -
      (user [] "raised by calling \\scmfirst{error}")
      
-     (variable [id "identifier" "the unbound variable's global identifier"]
+     (variable [id "symbol" "the unbound variable's global identifier"]
 	       "unbound global variable at run-time"
 	       (*keyword [] "attempt to change the binding of a global keyword"))
 
-     (application [value "error-specific" "the error-specific inappropriate value"] -
+     (application [value "value" "the error-specific inappropriate value"] -
 		  (arity [expected "arity" "the correct procedure arity as returned by \\scmfirst{arity}"]
 			 "application with the wrong number of arguments")
 		  (type [expected "symbol" "name of the expected type"]
@@ -37,7 +37,7 @@ strings are types/comments.
      (syntax [expr "S-expression" "illegal expression (or \\scm{\\#f} if unknown)"]
 	     "syntax error, but not a \\scmfirst{read} error")
      
-     (read [port "port" "port being read"] "\\scm{read} parsing error"
+     (read [port "input-port" "port being read"] "\\scm{read} parsing error"
 	   (eof [] "unexpected end-of-file"))
      
      (i/o [] -
@@ -46,7 +46,7 @@ strings are types/comments.
 		(write [] "error writing to a port")
 		(closed [] "attempt to operate on a closed port")
 		(*user [] "user-defined input port returned a non-character from the character-getting procedure"))
-	  (filesystem [pathname "string" "pathname"] "illegal pathname or error manipulating a filesystem object")
+	  (filesystem [pathname "path" "file or directory pathname"] "illegal pathname or error manipulating a filesystem object")
 	  (*tcp [] "TCP errors"))
 
      (misc [] "low-level or MzScheme-specific error"

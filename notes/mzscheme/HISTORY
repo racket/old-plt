@@ -56,6 +56,7 @@ MzLib cleanup:
  Removed from functio.ss: dynamic-wind/protect-break
  Added to thread.ss: dynamic-enable-break
  Moved MzLib's compat.ss out of the core
+file.ss library: added make-directory*
 pretty-print: default display string handler is now the default
  port display handler instead of the display procedure
 Ported to BeOS

@@ -198,16 +198,16 @@ int actual_main(int argc, char *argv[]);
 
 int main(int argc, char **argv)
 {
-  void *mzscheme_stack_start;
+  void *stack_start;
 
-  mzscheme_stack_start = (void *)&mzscheme_stack_start;
+  stack_start = (void *)&stack_start;
 
 #if defined(MZ_PRECISE_GC)
-  mzscheme_stack_start = (void *)&__gc_var_stack__;
+  stack_start = (void *)&__gc_var_stack__;
   GC_init_type_tags(_scheme_last_type_, scheme_weak_box_type);
 #endif
 
-  scheme_set_stack_base(mzscheme_stack_start, 1);
+  scheme_set_stack_base(stack_start, 1);
 
 #ifdef USE_MSVC_MD_LIBRARY
   GC_pre_init();

@@ -96,9 +96,11 @@ void scheme_set_stack_base(void *base, int no_auto_statics)
 
 extern unsigned long scheme_get_stack_base()
 {
+#if !defined(MZ_PRECISE_GC) && !defined(USE_SENORA_GC)
   if (GC_stackbottom)
     return (unsigned long)GC_stackbottom;
   else
+#endif
     return GC_get_stack_base();
 }
 

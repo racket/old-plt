@@ -47,6 +47,7 @@
 #define scheme_add_managed (scheme_extension_table->scheme_add_managed)
 #define scheme_remove_managed (scheme_extension_table->scheme_remove_managed)
 #define scheme_close_managed (scheme_extension_table->scheme_close_managed)
+#define scheme_add_atexit_closer (scheme_extension_table->scheme_add_atexit_closer)
 #define scheme_signal_error (scheme_extension_table->scheme_signal_error)
 #define scheme_raise_exn (scheme_extension_table->scheme_raise_exn)
 #define scheme_warning (scheme_extension_table->scheme_warning)

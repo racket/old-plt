@@ -33,7 +33,7 @@ FP_TYPE SCHEME_BIGNUM_TO_FLOAT_INFO(const Scheme_Object *n, int skip, int *_skip
   d = 0;
   while (nl--) {
     d *= (FP_TYPE)BIG_RADIX;
-    d += *(--na);
+    d += (unsigned)*(--na);
     if (IS_FLOAT_INF(d))
       break;
     --skipped;
@@ -57,14 +57,46 @@ FP_TYPE SCHEME_BIGNUM_TO_FLOAT(const Scheme_Object *n)
 END_XFORM_SKIP;
 #endif
 
+static void bignum_double_inplace(Scheme_Object **o)
+{
+  int carry, len;
+  
+  len = SCHEME_BIGLEN(*o);
+
+  if (len == 0)
+    return;
+  
+  carry = mpn_lshift(SCHEME_BIGDIG(*o), SCHEME_BIGDIG(*o), len, 1);
+
+  if (carry)
+    *o = bignum_copy(*o, carry);
+}
+
+static void bignum_add1_inplace(Scheme_Object **o)
+{
+  int carry, len;
+  
+  len = SCHEME_BIGLEN(*o);
+
+  if (len == 0)
+  {
+    *o = bignum_copy(*o, 1);
+    return;
+  }
+  carry = mpn_add_1(SCHEME_BIGDIG(*o), SCHEME_BIGDIG(*o), len, 1);
+
+  if (carry)
+    *o = bignum_copy(*o, carry);
+}
+
 Scheme_Object *SCHEME_BIGNUM_FROM_FLOAT(FP_TYPE d)
 {
-  Small_Bignum s1, s2, onesmall;
-  int negate, log, times, i, size = 0;
+  Small_Bignum s1, onesmall;
+  int negate, log, times, i;
   FP_TYPE r;
   Scheme_Object *n, *m, *one;
-  int toggle = 0;
-  bigdig *buffer;
+
+  r = 1;
 
   SCHEME_CHECK_FLOAT("inexact->exact", d, "integer");
 
@@ -77,7 +109,6 @@ Scheme_Object *SCHEME_BIGNUM_FROM_FLOAT(FP_TYPE d)
   if (d < 1.0)
     return scheme_make_integer(0);
 
-  r = 1;
   log = 0;
   while (r < d) {
     log++;
@@ -100,29 +131,26 @@ Scheme_Object *SCHEME_BIGNUM_FROM_FLOAT(FP_TYPE d)
 
   log++;
   while (log--) {
-    bignum_double_inplace(n, size);
+    bignum_double_inplace(&n);
     if (d >= r) {
       d -= r;
-      n = bignum_add(n, &buffer, &size, n, one, 0);
+      bignum_add1_inplace(&n);
     }
     r /= 2;
   }
 
   if (times) {
-    m = scheme_make_small_bignum(1, &onesmall);
+    m = scheme_make_bignum(1);
     while (times--) {
-      bignum_double_inplace(m, 0);      
+      bignum_double_inplace(&m);      
     }
-    n = bignum_multiply(toggle ? &s1 : &s2, n, m, 0);
-    toggle = !toggle;
+    n = bignum_multiply(n, m, 0);
   }
 
   if (negate)
-    bignum_negate_inplace(n);
+    SCHEME_BIGPOS(n) = !SCHEME_BIGPOS(n);
 
   n = scheme_bignum_normalize(n);
-  if (SCHEME_BIGNUMP(n))
-    n = bignum_copy(n, 0);
 
   return n;
 }

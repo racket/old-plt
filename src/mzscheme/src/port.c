@@ -144,13 +144,17 @@ typedef struct System_Child {
 #ifdef USE_FD_PORTS
 # include <fcntl.h>
 # include <sys/stat.h>
-# define MZPORT_FD_BUFFSIZE 2048
+# define MZPORT_FD_BUFFSIZE 4096
 typedef struct Scheme_FD {
   MZTAG_IF_REQUIRED
   int fd;
-  int bufcount, buffpos, flushing, regfile;
+  long bufcount, buffpos;
+  char flushing, regfile, flush;
   unsigned char *buffer;
 } Scheme_FD;
+#define MZ_FLUSH_NEVER 0
+#define MZ_FLUSH_BY_LINE 1
+#define MZ_FLUSH_ALWAYS 2
 #endif
 
 #ifdef SOME_FDS_ARE_NOT_SELECTABLE
@@ -214,7 +218,7 @@ static int external_event_fd, put_external_event_fd, event_fd_set;
 static int flush_fd(Scheme_Output_Port *op, 
 		    char * volatile bufstr, volatile int buflen, 
 		    volatile int offset, int immediate_only);
-static void flush_all_output_fds(void);
+static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data);
 #endif
 
 static Scheme_Object *sch_process(int c, Scheme_Object *args[]);
@@ -437,11 +441,7 @@ scheme_init_port (Scheme_Env *env)
 #endif
 			     );
 #ifdef USE_FD_PORTS
-# ifdef USE_ON_EXIT_FOR_ATEXIT
-  on_exit(flush_all_output_fds, NULL);
-# else
-  atexit(flush_all_output_fds);
-# endif
+  scheme_add_atexit_closer(flush_if_output_fds);
 #endif
 
 #if defined(FILES_HAVE_FDS)
@@ -3878,11 +3878,6 @@ static void flush_each_output_file(Scheme_Object *o, Scheme_Close_Custodian_Clie
 
 void force_exit(void)
 {
-#ifndef MZ_REAL_THREADS
-  scheme_start_atomic();
-#endif
-  scheme_do_close_managed(NULL, flush_each_output_file);
-
   _exit(scheme_exiting_result);
 }
 
@@ -3891,6 +3886,8 @@ void force_exit(void)
 void scheme_setup_forced_exit(void)
 {
 #ifdef USING_TESTED_OUTPUT_FILE
+  scheme_add_atexit_closer(flush_each_output_file);
+
   /* Arrange to skip the flushing of FILEs, because we don't want an
      exit to get tied up by blocking input (only blocked output). */
 
@@ -4148,12 +4145,16 @@ fd_write_string(char *str, long d, long len, Scheme_Output_Port *port)
     }
   }
 
-  while (len--) {
-    if (str[d] == '\n' || str[d] == '\r') {
-      flush_fd(port, NULL, 0, 0, 0);
-      break;
+  if (fop->flush == MZ_FLUSH_BY_LINE) {
+    while (len--) {
+      if (str[d] == '\n' || str[d] == '\r') {
+	flush_fd(port, NULL, 0, 0, 0);
+	break;
+      }
+      d++;
     }
-    d++;
+  } else if ((fop->flush == MZ_FLUSH_ALWAYS) && fop->bufcount) {
+    flush_fd(port, NULL, 0, 0, 0);
   }
 }
 
@@ -4195,6 +4196,8 @@ make_fd_output_port(int fd, int regfile)
   
   fop->regfile = regfile;
 
+  fop->flush = MZ_FLUSH_BY_LINE;
+
   return (Scheme_Object *)scheme_make_output_port(fd_output_port_type,
 						  fop,
 						  fd_write_string,
@@ -4210,14 +4213,6 @@ static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client 
       scheme_close_output_port(o);
     }
   }
-}
-
-static void flush_all_output_fds(void)
-{
-#ifndef MZ_REAL_THREADS
-  scheme_start_atomic();
-#endif
-  scheme_do_close_managed(NULL, flush_if_output_fds);
 }
 
 #endif

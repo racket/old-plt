@@ -543,6 +543,8 @@ typedef struct Scheme_Cont_Frame_Data {
 /*========================================================================*/
 
 typedef void Scheme_Close_Custodian_Client(Scheme_Object *o, void *data);
+typedef void (*Scheme_Exit_Closer_Func)(Scheme_Object *, Scheme_Close_Custodian_Client *, void *);
+
 #ifdef MZ_PRECISE_GC
 typedef struct Scheme_Object Scheme_Custodian_Reference;
 #else

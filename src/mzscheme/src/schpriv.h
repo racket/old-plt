@@ -299,8 +299,7 @@ struct Scheme_Custodian {
   Scheme_Custodian_Reference *children;
 };
 
-typedef void (*Closer_Func)(Scheme_Object *, Scheme_Close_Custodian_Client *, void *);
-Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Closer_Func f);
+Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_Func f);
 
 /*========================================================================*/
 /*                       hash tables and globals                          */

@@ -1,6 +1,6 @@
 /*
   MzScheme
-  Copyright (c) 1995-2001 Matthew Flatt
+  Copyright (c) 1995 Matthew Flatt
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -28,85 +28,53 @@
            Princeton University, Dept. of Computer Science
 */
 
-/* DANGER! DANGER! DANGER! DANGER! DANGER! DANGER! DANGER! DANGER!
-
-   This code is fragile, due to the Small_Bignum optimization, and
-   memory subtleties of bignums.
-
-   When allocating a bignum for a small integer, a Small_Bignum is
-   allocated. The Small_Bignum structure has room for one bigdig, and
-   sometimes it is allocated with room for two.
-
-   The digit array pointer of a Small_Bignum points into the (middle
-   of the) Small_Bignum record itself. This means:
-
-     1) For all collectors, the digit array point must not be copied
-        to another Scheme_Bignum record (because it points into the
-        middle of the Small_Bignum record, and interior pointers are
-        not allowed).
-
-     2) Since SCHEME_BIGDIG() can return an interior pointer, for
-        precise GC the code must be careful about putting
-        SCHEME_BIGDIG() results into local variables. In some cases, a
-        variable has to be zeroed out before calling a sub-procedure;
-        in other cases, the zeroing is skipped because we can provide
-        that it's never a digit array for a Small_Bignum.
-
-   In addition, the precise GC needs to distinguish Scheme_Bignum from
-   Small_Bignum for computing sizes; the allocated_inline flag does
-   that. 
-*/
+/* Precise GC warning: SCHEME_BIGDIG() can return an interior pointer,
+   if the bignum is a Small_Bignum */
 
 #include "schpriv.h"
 #include <ctype.h>
 #include <math.h>
+#include "gmp/gmp.h"
 
 #ifdef SIXTY_FOUR_BIT_INTEGERS
-# define BIG_MAX 0x3FFFFFFFFFFFFFFF
-# define BIG_RADIX 0x4000000000000000
-# define LOG_BIG_RADIX 62
-# define QUICK_DIV_MAX 0x7FFFFFFF
-
-/* Need to work with halves for mult & div: */
-# define BIG_LO_HALF 0x7FFFFFFF
-# define LOG_BIG_LO 31
-
-# define BIG_DIG_DEC_DIG 21
-# define SMALL_NUM_STR_LEN 20 /* conservatively low is OK */
-# define TRANS_DIG_DEC 100000000
-# define TRANS_DIG_DEC_DIG 9
+#define FIRST_BIT_MASK 0x8000000000000000
+#define SECOND_BIT_MASK 0x4000000000000000
+#define MAX_TWO_BIT_MASK 0xC000000000000000
+#define BIG_RADIX 0x10000000000000000
+#define ALL_ONES 0xFFFFFFFFFFFFFFFF
+#define WORD_SIZE 64
 #else
-# define BIG_MAX 0x3FFFFFFF
-# define BIG_RADIX 0x40000000
-# define LOG_BIG_RADIX 30
-# define QUICK_DIV_MAX 0x7FFF
-
-/* Need to work with halves for mult & div: */
-# define BIG_LO_HALF 0x7FFF
-# define LOG_BIG_LO 15
-
-# define BIG_DIG_DEC_DIG 10
-# define SMALL_NUM_STR_LEN 10 /* conservatively low is OK */
-# define TRANS_DIG_DEC 10000
-# define TRANS_DIG_DEC_DIG 5
+#define FIRST_BIT_MASK 0x80000000
+#define SECOND_BIT_MASK 0x40000000
+#define MAX_TWO_BIT_MASK 0xC0000000
+#define BIG_RADIX 0x100000000
+#define ALL_ONES 0xFFFFFFFF
+#define WORD_SIZE 32
 #endif
 
-static Scheme_Object *bignum_one = NULL;
-static Scheme_Object *bignum_negone = NULL;
-static Scheme_Object *decimal_digits[17];
+static Scheme_Object *bignum_one;
 
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
 #endif
 
+
+static int xor(int a, int b)
+{
+  return (a && !b) || (!a && b);
+}
+
 Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *o)
 {
   o->o.type = scheme_bignum_type;
+#if MZ_PRECISE_GC
+  o->o.allocated_inline = 1;
+#endif  
   SCHEME_BIGPOS(&o->o) = ((v >= 0) ? 1 : 0);
   if (v < 0)
     v = -v;
 
-  if (!v)
+  if (v == 0)
     SCHEME_BIGLEN(&o->o) = 0;
   else
     SCHEME_BIGLEN(&o->o) = 1;
@@ -124,132 +92,90 @@ END_XFORM_SKIP;
 
 Scheme_Object *scheme_make_bignum(long v)
 {
-  if (v <= BIG_MAX && v >= -BIG_MAX) {
-    Small_Bignum *r;
-    r = MALLOC_ONE_TAGGED(Small_Bignum);
-#if MZ_PRECISE_GC
-    r->o.allocated_inline = 1;
-#endif  
-    return scheme_make_small_bignum(v, r);
-  } else {
-    Small_Bignum *o;
-    int bad_neg = 0;
-
-    /* There's one negative number in twos complement without a
-       positive counterpart. In fact, if you take the negative of that
-       number, you get back the same number: */
-    if (v && (v == -v)) {
-      bad_neg = 1;
-      v++;
-    }
-
-    o = (Small_Bignum *)scheme_malloc_tagged(sizeof(Small_Bignum) + sizeof(bigdig));
-    o->o.type = scheme_bignum_type;
-#if MZ_PRECISE_GC
-    o->o.allocated_inline = 2;
-#endif  
-
-    SCHEME_BIGDIG(&o->o) = o->v;
-
-    SCHEME_BIGPOS(&o->o) = ((v >= 0) ? 1 : 0);
-    if (v < 0)
-      v = -v;
-    
-    o->v[0] = (v & BIG_MAX);
-    o->v[1] = (v >> LOG_BIG_RADIX);
-
-    SCHEME_BIGLEN(&o->o) = 2;
-
-    if (bad_neg) {
-      o->v[0]++;
-      o->v[1] += (o->v[0] >> LOG_BIG_RADIX);
-      o->v[0] = (o->v[0] & BIG_MAX);
-    }
-
-    return (Scheme_Object *)o;
-  }
+  Small_Bignum *r;
+  r = MALLOC_ONE_TAGGED(Small_Bignum);
+  return scheme_make_small_bignum(v, r);
 }
 
 Scheme_Object *scheme_make_bignum_from_unsigned(unsigned long v)
 {
-  if (v <= BIG_MAX) {
-    Small_Bignum *r;
-    r = MALLOC_ONE_TAGGED(Small_Bignum);
+  Small_Bignum *r;
+  r = MALLOC_ONE_TAGGED(Small_Bignum);
+  r->o.type = scheme_bignum_type;
 #if MZ_PRECISE_GC
-    r->o.allocated_inline = 1;
-#endif
-    return scheme_make_small_bignum(v, r);
-  } else {
-    Small_Bignum *o;
-
-    o = (Small_Bignum *)scheme_malloc_tagged(sizeof(Small_Bignum) + sizeof(bigdig));
-    o->o.type = scheme_bignum_type;
-#if MZ_PRECISE_GC
-    o->o.allocated_inline = 2;
+  r->o.allocated_inline = 1;
 #endif  
+  SCHEME_BIGPOS(&r->o) = 1;
+  if (v == 0)
+    SCHEME_BIGLEN(&r->o) = 0;
+  else
+    SCHEME_BIGLEN(&r->o) = 1;
 
-    SCHEME_BIGDIG(&o->o) = o->v;
+  SCHEME_BIGDIG(&r->o) = r->v;
+  
+  r->v[0] = v;
 
-    SCHEME_BIGPOS(&o->o) = 1;
-    
-    o->v[0] = (v & BIG_MAX);
-    o->v[1] = (v >> LOG_BIG_RADIX);
-
-    SCHEME_BIGLEN(&o->o) = 2;
-    
-    return (Scheme_Object *)o;
-  }
+  return (Scheme_Object*) r;
 }
 
+/*
+  Should only succeed if the bignum can fit into a signed 32/64 bit word.
+  This means that the bignum must have length 0 or 1 and the top bit
+  of its bigdig must be zero, unless it is -100...000.
+  
+*/
 int scheme_bignum_get_int_val(const Scheme_Object *o, long *v)
 {
-  long n;
-  bigdig *a;
 
-  if (SCHEME_BIGLEN(o) > 2)
+  if (SCHEME_BIGLEN(o) > 1)    /* won't fit in a tagged word */
     return 0;
-
-  a = SCHEME_BIGDIG(o);
-
-  if (a[1] > 0x1) {
-    if (!SCHEME_BIGPOS(o)) {
-      if ((a[1] == 0x2) && !a[0]) {
-	/* Special case: the one negative number whose negation
-	   doesn't fit in a long: */
-	unsigned long m;
-	m = (unsigned long)0x2 << LOG_BIG_RADIX;
-	*v = m;
-	return 1;
-      }
-    }
-    return 0;
+  else if (SCHEME_BIGLEN(o) == 0)
+  {
+    *v = 0;
+    return 1;
   }
-
-  n = (a[1] << LOG_BIG_RADIX) | a[0];
-  if (!SCHEME_BIGPOS(o))
-    n = -n;
-  *v = n;
-
-  return 1;
+  else if (SCHEME_BIGDIG(o)[0] == FIRST_BIT_MASK && !SCHEME_BIGPOS(o))
+  {
+    /* Special case for the most negative number representable in a signed word */
+    *v = SCHEME_BIGDIG(o)[0];
+    return 1;
+  }
+  else if ((SCHEME_BIGDIG(o)[0] & FIRST_BIT_MASK) != 0)/*Won't fit into a signed word */
+    return 0;
+  else if (SCHEME_BIGPOS(o)) 
+  {
+    *v = SCHEME_BIGDIG(o)[0];
+    return 1;
+  }
+  else
+  {
+    *v = -SCHEME_BIGDIG(o)[0];
+    return 1;
+  }
 }
 
+/* 
+   I'm going to guess that we want to return anything that will fit into a 
+   full 32/64 bit unsigned word.
+*/
 int scheme_bignum_get_unsigned_int_val(const Scheme_Object *o, unsigned long *v)
 {
-  bigdig *a;
-
-  if ((SCHEME_BIGLEN(o) > 2) || !SCHEME_BIGPOS(o))
+  if ((SCHEME_BIGLEN(o) > 1) || !SCHEME_BIGPOS(o))
+    /* Won't fit into word, or not positive */
     return 0;
-
-  a = SCHEME_BIGDIG(o);
-
-  if (a[1] > 0x3)
-    return 0;
-
-  *v = (a[1] << LOG_BIG_RADIX) | a[0];
-
-  return 1;
+  else if (SCHEME_BIGLEN(o) == 0)
+  {
+    *v = 0;
+    return 1;
+  }
+  else
+  {
+    *v = SCHEME_BIGDIG(o)[0];
+    return 1;
+  }
 }
 
+/* If the bignum fits into a scheme integer, return that instead */
 Scheme_Object *scheme_bignum_normalize(const Scheme_Object *o)
 {
   long v;
@@ -257,88 +183,104 @@ Scheme_Object *scheme_bignum_normalize(const Scheme_Object *o)
   if (!SCHEME_BIGNUMP(o))
     return (Scheme_Object *)o;
 
-  v = SCHEME_BIGLEN(o);
+  if (scheme_bignum_get_int_val(o, &v))
+  {
+    long t;
+    
+    t = v & MAX_TWO_BIT_MASK;
+    if (t == 0 || t == MAX_TWO_BIT_MASK)
+      return scheme_make_integer(v);
+    else
+      return (Scheme_Object*)o;
+  }
+  else
+    return (Scheme_Object*)o;
+}
 
-  if (v > 1)
-    return (Scheme_Object *)o;
+/* 
+   copy the bignum a, and if msd != 0, concat. it as the most significant
+   digit
+*/
+static Scheme_Object *bignum_copy(const Scheme_Object *a, long msd)
+{
+  Scheme_Object* o;
+  int c;
+  bigdig* o_digs;
 
-  if (!v)
-    return scheme_make_integer(0);
+  c = SCHEME_BIGLEN(a);
+  o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
 
-  v = SCHEME_BIGDIG(o)[0];
+  o->type = scheme_bignum_type;
+  SCHEME_BIGLEN(o) = c;
+  SCHEME_BIGPOS(o) = SCHEME_BIGPOS(a);
+  if (msd)
+    o_digs = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) * (c + 1));
+  else
+    o_digs = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) * c);
+  SCHEME_BIGDIG(o) = o_digs;
 
-  if (!SCHEME_BIGPOS(o))
-    v = -v;
+  memcpy(o_digs, SCHEME_BIGDIG(a), sizeof(bigdig) * c);
 
-  return scheme_make_integer(v);
+  if (msd)
+  {
+    o_digs[c] = msd;
+    SCHEME_BIGLEN(o) = SCHEME_BIGLEN(o) + 1;
+  }
+  return o;
 }
 
 int scheme_bignum_eq(const Scheme_Object *a, const Scheme_Object *b)
 {
-  int al, bl;
-  const bigdig *aa, *ba;
+  long a_len, b_len;
 
-  if (SCHEME_BIGPOS(a) != SCHEME_BIGPOS(b))
+  a_len = SCHEME_BIGLEN(a);
+  b_len = SCHEME_BIGLEN(b);
+
+  if (a_len == 0 && b_len == 0)
+    return 1;
+
+  if (a_len == b_len && SCHEME_BIGPOS(a) == SCHEME_BIGPOS(b))
+    return mpn_cmp(SCHEME_BIGDIG(a), SCHEME_BIGDIG(b), b_len) == 0;
+  else
     return 0;
+}
 
-  al = SCHEME_BIGLEN(a);
-  bl = SCHEME_BIGLEN(b);
-  if (al != bl)
+/* - if a < b, 0 if a == b, + if  a > b */
+static int bignum_abs_cmp(const Scheme_Object *a, const Scheme_Object *b)
+{
+  long a_len, b_len;
+
+  a_len = SCHEME_BIGLEN(a);
+  b_len = SCHEME_BIGLEN(b);
+ 
+  if (a_len > b_len)
+    return 1;
+  else if (a_len < b_len)
+    return -1;
+  else if (a_len == 0)
     return 0;
-
-  aa = SCHEME_BIGDIG(a);
-  ba = SCHEME_BIGDIG(b);
-  
-  /* Why is this code here? (How can al be negative?)
-     03/19/2000 */
-  if (al < 0)
-    al = -al;
-
-  while (al--) {
-    if (*(aa++) != *(ba++))
-      return 0;
-  }
-
-  return 1;
+  else
+    return (mpn_cmp(SCHEME_BIGDIG(a), SCHEME_BIGDIG(b), b_len));
 }
 
 int scheme_bignum_lt(const Scheme_Object *a, const Scheme_Object *b)
 {
-  int ap, bp, al, bl;
-  const bigdig *aa, *ba;
-  bigdig av, bv;
+  long a_pos, b_pos;
+  int res;
 
-  ap = SCHEME_BIGPOS(a);
-  bp = SCHEME_BIGPOS(b);
-  if (ap && !bp)
-    return 0;
-  if (!ap && bp)
-    return 1;
-
-  if (!ap) {
-    const Scheme_Object *save;
-
-    save = a;
-    a = b;
-    b = save;
-  }
-
-  al = SCHEME_BIGLEN(a);
-  bl = SCHEME_BIGLEN(b);
-  if (al != bl)
-    return (al < bl);
-
-  aa = SCHEME_BIGDIG(a) + al;
-  ba = SCHEME_BIGDIG(b) + al;
+  a_pos = SCHEME_BIGPOS(a);
+  b_pos = SCHEME_BIGPOS(b);
   
-  while (al--) {
-    av = *(--aa);
-    bv = *(--ba);
-    if (av != bv)
-      return (av < bv);
-  }
-
-  return 0;
+  if (!a_pos && b_pos)
+    return 1;
+  else if (a_pos && !b_pos)
+    return 0;
+  else 
+    res = bignum_abs_cmp(a, b);
+  if (!a_pos)
+    return (res > 0);
+  else
+    return (res < 0);
 }
 
 int scheme_bignum_gt(const Scheme_Object *a, const Scheme_Object *b)
@@ -356,189 +298,129 @@ int scheme_bignum_ge(const Scheme_Object *a, const Scheme_Object *b)
   return !scheme_bignum_lt(a, b);
 }
 
+/* 
+   The bignums share the digit array.  I hope this is ok, this is the 
+   code from before
+*/
 Scheme_Object *scheme_bignum_negate(const Scheme_Object *n)
 {
   Scheme_Object *o;
-  int len;
 
-  len = SCHEME_BIGLEN(n);
-
-  if (SCHEME_BIGDIG(n) == ((Small_Bignum *)n)->v) {
-    /* Can't share bigdig array */
-    o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Small_Bignum) + ((len - 1) * sizeof(bigdig)));
-#if MZ_PRECISE_GC
-    ((Scheme_Bignum *)o)->allocated_inline = len;
-#endif  
-    ((Small_Bignum *)o)->v[0] = SCHEME_BIGDIG(n)[0];
-    if (len > 1)
-      ((Small_Bignum *)o)->v[1] = SCHEME_BIGDIG(n)[1];
-    SCHEME_BIGDIG(o) = ((Small_Bignum *)o)->v;
-  } else {
-    o = (Scheme_Object *)MALLOC_ONE_TAGGED(Scheme_Bignum);
-    SCHEME_BIGDIG(o) = SCHEME_BIGDIG(n);
-  }
+  o = (Scheme_Object *)MALLOC_ONE_TAGGED(Scheme_Bignum);
 
   o->type = scheme_bignum_type;
   SCHEME_BIGPOS(o) = !SCHEME_BIGPOS(n);
-  SCHEME_BIGLEN(o) = len;
-
+  SCHEME_BIGLEN(o) = SCHEME_BIGLEN(n);
+  SCHEME_BIGDIG(o) = SCHEME_BIGDIG(n);
+ 
   return o;
 }
 
-static void bignum_negate_inplace(Scheme_Object *n)
+static bigdig* allocate_bigdig_array(int length)
 {
-  SCHEME_BIGPOS(n) = !SCHEME_BIGPOS(n);
+  int i;
+  bigdig* res;
+  res = (bigdig *)scheme_malloc_atomic(length * sizeof(bigdig));
+  for(i = 0; i < length; ++i)
+    res[i] = 0;
+  return res;
 }
 
-static Scheme_Object *bignum_copy(const Scheme_Object *n, int copy_array)
+/* We don't want to count leading digits of 0 in the bignum's length */
+static int bigdig_length(bigdig* array, int alloced)
+{
+  alloced--;
+  while (alloced >= 0 && array[alloced] == 0)
+    alloced--;
+  return alloced + 1;
+}
+
+/* if (sub) a - b else a + b */
+Scheme_Object *bignum_add_sub(const Scheme_Object *a, const Scheme_Object *b, int sub)
 {
   Scheme_Object *o;
-  int c;
+  long a_size, a_pos, b_size, b_pos, max_size;
+  bigdig *o_digs, *a_digs, *b_digs;
 
-  c = SCHEME_BIGLEN(n);
+  a_size = SCHEME_BIGLEN(a);
+  b_size = SCHEME_BIGLEN(b);
+  a_pos = SCHEME_BIGPOS(a);
+  b_pos = xor(SCHEME_BIGPOS(b), sub);
+  a_digs = SCHEME_BIGDIG(a);
+  b_digs = SCHEME_BIGDIG(b);
+
+  if (b_size == 0)
+    return scheme_bignum_normalize(bignum_copy(a, 0));
+  else if (a_size == 0)
+  {
+    o = bignum_copy(b, 0);
+    SCHEME_BIGPOS(o) = b_pos;
+    return scheme_bignum_normalize(o);
+  }
+  
 
   o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
-
   o->type = scheme_bignum_type;
-  SCHEME_BIGLEN(o) = c;
-  SCHEME_BIGPOS(o) = SCHEME_BIGPOS(n);
-  if (copy_array) {
-    bigdig *a;
-    a = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) 
-				       * (c + (copy_array - 1)));
-    SCHEME_BIGDIG(o) = a;
-    memcpy(a, SCHEME_BIGDIG(n), sizeof(bigdig) * c);
-  } else {
-    SCHEME_BIGDIG(o) = SCHEME_BIGDIG(n);
-  }
-
-  return o;
-}
-
-static Scheme_Object *bignum_add(Scheme_Object *o, bigdig **buffer, int *size,
-				 const Scheme_Object *a, const Scheme_Object *b, int norm)
-{
-  int ap, bp, vp;
-  int al, bl, vl, i, same;
-  long s, av, bv, carry;
-  bigdig *aa, *ba, *va;
-
-  al = SCHEME_BIGLEN(a);
-  bl = SCHEME_BIGLEN(b);
-  ap = SCHEME_BIGPOS(a);
-  bp = SCHEME_BIGPOS(b);
-
-  /* Because bignum calculations are not bounded: */
-  SCHEME_USE_FUEL(2 * al);
-
-  same = (ap == bp);
-
-  vl = ((al > bl) ? al : bl);
-
-  if (same)
-    vl++;
- 
-  if (buffer) {
-    if (*size < vl) {
-      bigdig *bufa;
-      *size = 2 * vl;
-      bufa = (bigdig *)scheme_malloc_atomic(*size * sizeof(bigdig));
-      *buffer = bufa;
-    }
-    va = *buffer;
-  } else
-    va = (bigdig *)scheme_malloc_atomic(vl * sizeof(bigdig));
-
-  if (!o) {
-    o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
-    o->type = scheme_bignum_type;
-  }
-
-  /* All allocation is done... can get aa and ba: */
-
-  aa = SCHEME_BIGDIG(a);
-  ba = SCHEME_BIGDIG(b);
   
-  if (!same) {
-    int reverse, sl, sp;
-    bigdig *sa;
+  o_digs = NULL; /* Get rid of erroneous gcc warning */
+  
+  max_size = (a_size > b_size) ? a_size : b_size;
 
-    if (al == bl) {
-      reverse = 0;
-      for (i = al; i--; ) {
-	if (aa[i] != ba[i]) {
-	  reverse = (aa[i] < ba[i]);
-	  break;
-	}
-      }
-    } else
-      reverse = (al < bl);
-    
-    if (reverse) {
-      sl = al;
-      al = bl;
-      bl = sl;
-      sa = aa;
-      aa = ba;
-      ba = sa;
-      sp = ap;
-      ap = bp;
-      bp = sp;
-    }
-  }
-    
-  carry = 0;
-  for (i = 0; i < vl; i++) {
-    av = (i >= al) ? 0 : aa[i];
-    bv = (i >= bl) ? 0 : ba[i];
-      
-    if (same)
-      s = (long)av + (long)bv + carry;
+  if (a_pos == b_pos) /* addition */
+  {
+    int carry;
+
+    o_digs = allocate_bigdig_array(max_size);
+    if (a_size > b_size)
+      carry = mpn_add(o_digs, a_digs, a_size, b_digs, b_size);
     else
-      s = (long)av - (long)bv + carry;
-    
-    if (s < 0) {
-      carry = -1;
-      s += BIG_RADIX;
-    } else {
-      carry = (s & BIG_RADIX) ? 1 : 0;
-      s = s & BIG_MAX;
+      carry = mpn_add(o_digs, b_digs, b_size, a_digs, a_size);
+    SCHEME_BIGPOS(o) = a_pos;
+    SCHEME_BIGLEN(o) = max_size;
+    SCHEME_BIGDIG(o) = o_digs;
+    if (carry)
+      o = bignum_copy(o, 1);
+  }
+  else /* subtraction */
+  {
+    int sw;
+    if (a_size > b_size)
+      sw = 0;
+    else if (b_size > a_size)
+      sw = 1;
+    else
+    {
+      int cmp;
+      cmp = mpn_cmp(a_digs, b_digs, a_size);
+      if (cmp == 0)
+	return scheme_make_integer(0);
+      else if (cmp > 0) /* a > b */
+	sw = 0;
+      else
+	sw = 1;
     }
-    
-    va[i] = s;
+    o_digs = allocate_bigdig_array(max_size);
+
+    if (sw)
+      mpn_sub(o_digs, b_digs, b_size, a_digs, a_size);
+    else
+      mpn_sub(o_digs, a_digs, a_size, b_digs, b_size);
+   
+    SCHEME_BIGPOS(o) = xor(sw, a_pos);
+    SCHEME_BIGLEN(o) = bigdig_length(o_digs, max_size);
+    SCHEME_BIGDIG(o) = o_digs;
   }
-
-  /* Get rid of leading zeros: */
-  for (i = vl; i--; ) {
-    if (va[i])
-      break;
-  }
-  vl = i + 1;
-
-  vp = ap;
- 
-  SCHEME_BIGPOS(o) = vp;
-  SCHEME_BIGLEN(o) = vl;
-  SCHEME_BIGDIG(o) = va;
-
-  /* In case a or b point to interior: */
-  aa = NULL;
-  ba = NULL;
-  
-  if (norm)
-    return scheme_bignum_normalize(o);
-  else
-    return o;
+  return scheme_bignum_normalize(o);
 }
 
 Scheme_Object *scheme_bignum_add(const Scheme_Object *a, const Scheme_Object *b)
 {
-  return bignum_add(NULL, NULL, NULL, a, b, 1);
+  return bignum_add_sub(a, b, 0);
 }
 
 Scheme_Object *scheme_bignum_subtract(const Scheme_Object *a, const Scheme_Object *b)
 {
-  return scheme_bignum_add(a, scheme_bignum_negate(b));
+  return bignum_add_sub(a, b, 1);
 }
 
 Scheme_Object *scheme_bignum_add1(const Scheme_Object *n)
@@ -548,740 +430,404 @@ Scheme_Object *scheme_bignum_add1(const Scheme_Object *n)
     bignum_one = scheme_make_bignum(1);
   }
 
-  return scheme_bignum_add(n, bignum_one);
+  return bignum_add_sub(n, bignum_one, 0);
 }
 
 Scheme_Object *scheme_bignum_sub1(const Scheme_Object *n)
 {
-  if (!bignum_negone) {
-    REGISTER_SO(bignum_negone);
-    bignum_negone = scheme_make_bignum(-1);
+  if (!bignum_one) {
+    REGISTER_SO(bignum_one);
+    bignum_one = scheme_make_bignum(1);
   }
 
-  return scheme_bignum_add(n, bignum_negone);
+  return bignum_add_sub(n, bignum_one, 1);
 }
 
-static void bignum_double_inplace(Scheme_Object *n, int bs)
+/* norm determines if we normalize the result */
+static Scheme_Object *bignum_multiply(const Scheme_Object *a, const Scheme_Object *b, int norm)
 {
-  int nl, i;
-  bigdig *na, *naya, carry;
-
-  nl = SCHEME_BIGLEN(n);
+  Scheme_Object *o;
+  long a_size, a_pos, b_size, b_pos, res_size;
+  bigdig* o_digs, *a_digs, *b_digs;
   
-  /* Because bignum calculations are not bounded: */
-  SCHEME_USE_FUEL(nl);
+  a_size = SCHEME_BIGLEN(a);
+  b_size = SCHEME_BIGLEN(b);
 
-  na = SCHEME_BIGDIG(n);
-
-  carry = 0;
-  for (i = 0; i < nl; i++) {
-    na[i] = (na[i] << 1) + carry;
-    carry = (na[i] & BIG_RADIX) ? 1 : 0;
-    if (carry)
-      na[i] = na[i] & BIG_MAX;
+  if (a_size == 0 || b_size == 0)
+  {
+    if (norm)
+      return scheme_make_integer(0);
+    else
+      return scheme_make_bignum(0);
   }
 
-  if (carry) {
-    if (bs < nl + 1) {
-      /* expand */
-      na = NULL; /* Might be a pointer into the middle of a small bignum */
-      /* [actually, n is currently required to not be small.] */
-      naya = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) * (nl + 1));
-      na = SCHEME_BIGDIG(n);
-
-      for (i = 0; i < nl; i++) {
-	naya[i] = na[i];
-      }
-      SCHEME_BIGDIG(n) = naya;
-    } else
-      naya = na;
-
-    naya[nl] = 1;
-
-    SCHEME_BIGLEN(n) = nl + 1;
-  }
-}
-
-static void bignum_half_inplace(Scheme_Object *n)
-{
-  int nl, i;
-  bigdig *na, carry, next;
+  a_pos = SCHEME_BIGPOS(a);
+  b_pos = SCHEME_BIGPOS(b);
+  a_digs = SCHEME_BIGDIG(a);
+  b_digs = SCHEME_BIGDIG(b);
   
-  nl = SCHEME_BIGLEN(n);
-  na = SCHEME_BIGDIG(n);
+  res_size = a_size + b_size;
   
-  carry = 0;
-  for (i = nl; i--; ) {
-    next = (na[i] & 1) ? (BIG_RADIX >> 1) : 0;
-    na[i] = (na[i] >> 1) + carry;
-    carry = next;
-  }
+  o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+  o->type = scheme_bignum_type;
+  
+  o_digs = allocate_bigdig_array(res_size);
 
-  if (nl && !na[nl - 1]) {
-    --nl;
-    SCHEME_BIGLEN(n) = nl;
-  }
-}
-
-static Scheme_Object *bignum_multiply(Small_Bignum *rsmall,
-				      const Scheme_Object *a, const Scheme_Object *b, 
-				      int norm)
-{
-  Scheme_Object *r;
-  int bl, al, i, k;
-  int size;
-  bigdig *ba, *aa, *buffer;
-  unsigned long carry;
-
-  bl = SCHEME_BIGLEN(b);
-  al = SCHEME_BIGLEN(a);
-
-  size = bl + al;
-  buffer = (bigdig *)scheme_malloc_atomic(size * sizeof(bigdig));
-
-  if (al < bl) {
-    const Scheme_Object *aux;
-    int sl;
-
-    aux = a;
-    a = b;
-    b = aux;
-    
-    sl = bl;
-    bl = al;
-    al = sl;
-  }
-
-  ba = SCHEME_BIGDIG(b);
-
-  if ((bl == 1) && (ba[0] < BIG_LO_HALF)) {
-    /* Fast simplified version */
-    unsigned long m = ba[0];
-
-    ba = NULL;
-    SCHEME_USE_FUEL(al);
-    aa = SCHEME_BIGDIG(a);
-
-    carry = 0;
-    for (i = 0; i < al; i++) {
-      unsigned long a, loa, mida;
-
-      a = aa[i];
-      loa = a & BIG_LO_HALF;
-      mida = a >> LOG_BIG_LO;
-
-      loa *= m;
-      mida *= m;
-      
-      loa += carry + ((mida & BIG_LO_HALF) << LOG_BIG_LO);
-      carry = mida >> LOG_BIG_LO;
-
-      if (loa > BIG_MAX) {
-	carry += (loa >> LOG_BIG_RADIX);
-	loa = loa & BIG_MAX;
-      }
-      
-      buffer[i] = loa;
-    }
-    buffer[al] = carry;
-  } else {
-    memset(buffer, 0, size * sizeof(bigdig));
-
-    for (i = 0; i < bl; i++) {
-      aa = ba = NULL;
-      SCHEME_USE_FUEL(al);
-      aa = SCHEME_BIGDIG(a);
-      ba = SCHEME_BIGDIG(b);
-
-      carry = 0;
-      for (k = 0; k < al; k++) {
-	long a, b, loa, lob, hia, hib;
-	unsigned long los, his, mids;
-	
-	a = aa[k];
-	loa = a & BIG_LO_HALF;
-	hia = a >> LOG_BIG_LO;
-	b = ba[i];
-	lob = b & BIG_LO_HALF;
-	hib = b >> LOG_BIG_LO;
-	
-	los = loa * lob;
-	his = hia * hib;
-	
-	mids = loa * hib + lob * hia;
-	
-	los += ((mids & BIG_LO_HALF) << LOG_BIG_LO) + carry + buffer[i + k];
-	his += (mids >> LOG_BIG_LO);
-	
-	if (los > BIG_MAX) {
-	  his += (los >> LOG_BIG_RADIX);
-	  los = los & BIG_MAX;
-	}
-	carry = his;
-	
-	buffer[i + k] = los;
-      }
-      buffer[i + k] = carry;
-    }
-  }
-
-  ba = aa = NULL; /* might be interior */
-
-  while (size && !buffer[size - 1]) {
-    --size;
-  }
-
-  if (rsmall)
-    r = (Scheme_Object *)rsmall;
+  if (a_size > b_size)
+    mpn_mul(o_digs, a_digs, a_size, b_digs, b_size);
   else
-    r = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
-  r->type = scheme_bignum_type;
-  SCHEME_BIGPOS(r) = ((SCHEME_BIGPOS(a) && SCHEME_BIGPOS(b))
-		      || (!SCHEME_BIGPOS(a) && !SCHEME_BIGPOS(b)));
-  SCHEME_BIGLEN(r) = size;
-  SCHEME_BIGDIG(r) = buffer;
+    mpn_mul(o_digs, b_digs, b_size, a_digs, a_size);
 
-  if (norm)
-    r = scheme_bignum_normalize(r);
+  SCHEME_BIGLEN(o) = bigdig_length(o_digs, res_size);
+  
+  SCHEME_BIGDIG(o) = o_digs;
 
-  return r;
+  SCHEME_BIGPOS(o) = !xor(a_pos, b_pos);
+
+  return (norm ? scheme_bignum_normalize(o) : o);
 }
 
 Scheme_Object *scheme_bignum_multiply(const Scheme_Object *a, const Scheme_Object *b)
 {
-  return bignum_multiply(NULL, a, b, 1);
+  return bignum_multiply(a, b, 1);
 }
 
 Scheme_Object *scheme_bignum_power(const Scheme_Object *a, const Scheme_Object *b)
 {
-  Small_Bignum s1, s2;
-  Scheme_Object *r;
-  int bl, i, toggle = 0;
-  bigdig v;
+  Scheme_Object *a_acc, *b_acc, *result, *two;
+  
+  a_acc = bignum_copy(a, 0);
+  b_acc = bignum_copy(b, 0);
+  result = scheme_make_bignum(1);
+  two = scheme_make_bignum(2);
 
-  if (!SCHEME_BIGPOS(b)) {
-    scheme_signal_error("positive bignum powers only");
+  while (SCHEME_BIGLEN(b_acc) > 0)
+  {
+    if (SCHEME_BIGDIG(b_acc)[0] & 0x1) /* if (odd?) */
+      result = bignum_multiply(a_acc, result, 0);
+    a_acc = bignum_multiply(a_acc, a_acc, 0);
+    scheme_bignum_divide(b_acc, two, &b_acc, NULL, 0);
   }
-  bl = SCHEME_BIGLEN(b);
-
-  r = scheme_make_small_bignum(1, &s1);
-  while (bl--) {
-    v = SCHEME_BIGDIG(b)[bl];
-
-    for (i = 0; i < LOG_BIG_RADIX; i++) {
-      r = bignum_multiply(toggle ? &s1 : &s2, r, r, 0);
-      toggle = !toggle;
-      v = v << 1;
-      if (v & BIG_RADIX) {
-	r = bignum_multiply(toggle ? &s1 : &s2, r, a, 0);
-	toggle = !toggle;
-      }
-    }
-  }
-
-  r = scheme_bignum_normalize(r);
-
-  if (SCHEME_BIGNUMP(r))
-    r = bignum_copy(r, 0);
-
-  return r;
+  return scheme_bignum_normalize(result);  
 }
 
 Scheme_Object *scheme_bignum_max(const Scheme_Object *a, const Scheme_Object *b)
 {
-  int lt;
-  lt = scheme_bignum_lt(a, b);
-  return scheme_bignum_normalize(lt ? b : a);
+  return scheme_bignum_normalize(scheme_bignum_lt(a, b) ? b : a);
 }
 
 Scheme_Object *scheme_bignum_min(const Scheme_Object *a, const Scheme_Object *b)
 {
-  int lt;
-  lt = scheme_bignum_lt(a, b);
-  return scheme_bignum_normalize(lt ? a : b);
+  return scheme_bignum_normalize(scheme_bignum_lt(a, b) ? a : b);
 }
 
-static int setup_binop(const Scheme_Object *a, const Scheme_Object *b,
-		       bigdig **nr_out, bigdig **no_out, 
-		       Scheme_Object **r_out)
+/* op = 0 : &
+   op = 1 : |
+   op = 2 : ^
+assumes len a >= len b */
+static Scheme_Object *do_bitop(const Scheme_Object *a, const Scheme_Object *b, int op)
 {
-  int al, bl, i, aneg, bneg, extra;
-  Scheme_Object *o;
-  bigdig *no;
-  bigdig *na;
+  long a_size, b_size, a_pos, b_pos, res_alloc, res_pos, i;
+  bigdig* a_digs, *b_digs, *res_digs;
+  int carry_out_a, carry_out_b, carry_out_res, carry_in_a, carry_in_b, carry_in_res;
+  Scheme_Object* o;
 
-  al = SCHEME_BIGLEN(a);
-  aneg = !SCHEME_BIGPOS(a);
-  bl = SCHEME_BIGLEN(b);
-  bneg = !SCHEME_BIGPOS(b);
+  a_size = SCHEME_BIGLEN(a);
+  b_size = SCHEME_BIGLEN(b);
+
+  if (a_size == 0) /* b_size == 0 too */
+  {
+    return scheme_make_integer(0); /* for all 3 ops */
+  }
+  else if (b_size == 0)
+  {
+    if (op == 0)
+      return scheme_make_integer(0);
+    else
+      return scheme_bignum_normalize(bignum_copy(a, 0));
+  }
+
+  a_pos = SCHEME_BIGPOS(a);
+  a_digs = SCHEME_BIGDIG(a);
+  b_pos = SCHEME_BIGPOS(b);
+  b_digs = SCHEME_BIGDIG(b);
+
+  if (op == 0)
+  {
+    res_pos = a_pos || b_pos;
+    res_alloc = (b_pos ? b_size : a_size);
+  }
+  else if (op == 1)
+  {
+    res_pos = a_pos && b_pos;
+    res_alloc = (b_pos ? a_size : b_size);
+  }
+  else
+  {
+    res_pos = !xor(a_pos, b_pos);
+    res_alloc = a_size;
+  }
   
-  if (al > bl) {
-    const Scheme_Object *aux;
-    int iaux;
+  res_digs = allocate_bigdig_array(res_alloc);
+  
+  carry_out_a = carry_out_b = carry_out_res = 1;  
+  carry_in_a = carry_in_b = carry_in_res = 0;  
+  
+  for (i = 0; i < res_alloc; ++i)
+  {
+    long a_val, b_val, res_val;
 
-    iaux = al;
-    al = bl;
-    bl = iaux;
-    aux = a;
-    a = b;
-    b = aux;
-    iaux = aneg;
-    aneg = bneg;
-    bneg = iaux;
-  }
+    a_val = a_digs[i];
+    if (!a_pos)
+    {
+      /* We have to do te operation on the 2's complement of a */
+      carry_in_a = carry_out_a;
+      carry_out_a = (carry_in_a == 1 && a_val == 0) ? 1 : 0;
+      a_val = ~a_val + carry_in_a;
+    }
 
-  o = bignum_copy(b, 2);
-
-  SCHEME_BIGPOS(o) = 1;
-  no = SCHEME_BIGDIG(o);
-  na = SCHEME_BIGDIG(a);
-
-  extra = -1;
-  for (i = 0; i < al; i++) {
-    no[i] = na[i];
-    if (aneg) {
-      no[i] = ~no[i] & BIG_MAX;
-      if (extra) {
-	if (no[i] < BIG_MAX) {
-	  no[i]++;
-	  extra = 0;
-	} else
-	  no[i] = 0;
+    if (i < b_size)
+    {
+      b_val = b_digs[i];
+      if (!b_pos)
+      {
+	carry_in_b = carry_out_b;
+	carry_out_b = (carry_in_b == 1 && b_val == 0) ? 1 : 0;
+	b_val = ~b_val + carry_in_b;
       }
     }
-  }
-  for (; i < bl; i++) {
-    if (aneg)
-      no[i] = BIG_MAX;
     else
-      no[i] = 0;
-  }
-
-  *nr_out = no;
-
-  if (bneg) {
-    no = na = NULL; /* might be interior */
-
-    b = bignum_copy(b, 1);
-
-    no = SCHEME_BIGDIG(b);
-
-    extra = -1;
-    for (i = 0; i < bl; i++) {
-      no[i] = ~no[i] & BIG_MAX;
-      if (extra) {
-	if (no[i] < BIG_MAX) {
-	  no[i]++;
-	  extra = 0;
-	} else
-	  no[i] = 0;
-      }
+    {
+      if (b_pos)
+	b_val = 0;
+      else
+	b_val = ALL_ONES;
     }
 
-    *no_out = no;
-  } else
-    *no_out = SCHEME_BIGDIG(b);
-
-  *r_out = o;
-
-  return bl;
-}
-
-static Scheme_Object *done_binop(Scheme_Object *r, bigdig *nr, int l)
-{
-  int i;
-
-  if (!SCHEME_BIGPOS(r)) {
-    int extra = 1;
-
-    /* 2's comp negative: get equiv positive */
-    for (i = 0; i < l; i++) {
-      nr[i] = ~nr[i] & BIG_MAX;
-      if (extra) {
-	if (nr[i] < BIG_MAX) {
-	  nr[i]++;
-	  extra = 0;
-	} else
-	  nr[i] = 0;
-      }
-    }
-    if (extra) {
-      nr[l] = 1;
-      l++;
-    }  
-  }
-
-  for (i = l; i--; ) {
-    if (!nr[i])
-      l--;
+    if (op == 0)
+      res_val = a_val & b_val;
+    else if (op == 1)
+      res_val = a_val | b_val;
     else
-      break;
+      res_val = a_val ^ b_val;
+
+    if (!res_pos)
+    {
+      carry_in_res = carry_out_res;
+      carry_out_res = (carry_in_res == 1 && res_val == 0) ? 1 : 0;
+      res_val = ~res_val + carry_in_res;
+    }
+    
+    res_digs[i] = res_val;
   }
 
-  SCHEME_BIGLEN(r) = l;
+  o = (Scheme_Object*)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+  o->type = scheme_bignum_type;
+  SCHEME_BIGPOS(o) = res_pos;
+  if (!res_pos && carry_out_res == 1) /* Overflow */
+  {
+    res_digs = allocate_bigdig_array(res_alloc + 1);
+    res_digs[res_alloc] = 1;
+    SCHEME_BIGLEN(o) = bigdig_length(res_digs, res_alloc + 1);
+  }
+  else
+    SCHEME_BIGLEN(o) = bigdig_length(res_digs, res_alloc);
 
-  return scheme_bignum_normalize(r);
+  SCHEME_BIGDIG(o) = res_digs;
+
+  return scheme_bignum_normalize(o);
 }
 
 Scheme_Object *scheme_bignum_and(const Scheme_Object *a, const Scheme_Object *b)
 {
-  int l, i;
-  bigdig *nr, *no;
-  Scheme_Object *r;
-
-  l = setup_binop(a, b, &nr, &no, &r);
-  SCHEME_BIGPOS(r) = !(!SCHEME_BIGPOS(a) && !SCHEME_BIGPOS(b));
-  for (i = l; i--; ) {
-    nr[i] &= no[i];
-  }
-
-  return done_binop(r, nr, l);
+  if (SCHEME_BIGLEN(a) > SCHEME_BIGLEN(b))
+    return do_bitop(a, b, 0);
+  else
+    return do_bitop(b, a, 0);    
 }
 
 Scheme_Object *scheme_bignum_or(const Scheme_Object *a, const Scheme_Object *b)
 {
-  int l, i;
-  bigdig *nr, *no;
-  Scheme_Object *r;
-
-  l = setup_binop(a, b, &nr, &no, &r);
-  SCHEME_BIGPOS(r) = !(!SCHEME_BIGPOS(a) || !SCHEME_BIGPOS(b));
-  for (i = 0; i < l; i++) {
-    nr[i] |= no[i];
-  }
-
-  return done_binop(r, nr, l);
+  if (SCHEME_BIGLEN(a) > SCHEME_BIGLEN(b))
+    return do_bitop(a, b, 1);
+  else
+    return do_bitop(b, a, 1);    
 }
 
 Scheme_Object *scheme_bignum_xor(const Scheme_Object *a, const Scheme_Object *b)
 {
-  int l, i;
-  bigdig *nr, *no;
-  Scheme_Object *r;
-
-  l = setup_binop(a, b, &nr, &no, &r);
-  SCHEME_BIGPOS(r) = !(!SCHEME_BIGPOS(a) ^ !SCHEME_BIGPOS(b));
-  for (i = l; i--; ) {
-    nr[i] ^= no[i];
-  }
-
-  return done_binop(r, nr, l);
+   if (SCHEME_BIGLEN(a) > SCHEME_BIGLEN(b))
+    return do_bitop(a, b, 2);
+  else
+    return do_bitop(b, a, 2);    
 }
 
 Scheme_Object *scheme_bignum_not(const Scheme_Object *a)
 {
-  int i, l;
-  bigdig *na;
+  Scheme_Object *o;
 
-  a = bignum_copy(a, 2);
+  o = scheme_bignum_add1(a);
 
-  l = SCHEME_BIGLEN(a);
-  na = SCHEME_BIGDIG(a);
-  
-  if (SCHEME_BIGPOS(a)) {
-    SCHEME_BIGPOS(a) = 0;
-    for (i = 0; i < l; i++) {
-      if (na[i] == BIG_MAX)
-	na[i] = 0;
-      else {
-	na[i]++;
-	break;
-      }
-    }
-    if (!na[l - 1]) {
-      na[l] = 1;
-      SCHEME_BIGLEN(a) = l + 1;
-    }
-  } else {
-    SCHEME_BIGPOS(a) = 1;
-    for (i = 0; i < l; i++) {
-      if (!na[i])
-	na[i] = BIG_MAX;
-      else {
-	--na[i];
-	break;
-      }
-    }
-    if (!na[l - 1])
-      SCHEME_BIGLEN(a) = l - 1;
-  }
-
-  na = NULL; /* might be interior */
-
-  return scheme_bignum_normalize(a);
+  SCHEME_BIGPOS(o) = !SCHEME_BIGPOS(a);
+  return scheme_bignum_normalize(o);
 }
 
 Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
 {
-  int nl, rl, i, loshift, hishift, offset;
-  bigdig *ra, *na;
-  Scheme_Object *r;
-  int subone = 0;
+  Scheme_Object* o;
+  bigdig* res_digs, *n_digs;
+  long res_alloc, shift_words, shift_bits, i, j, n_size, shift_out;
 
-  nl = SCHEME_BIGLEN(n);
+  n_size = SCHEME_BIGLEN(n);
+  if (n_size == 0)
+    return scheme_make_integer(0);
+  if (shift == 0) /* no shift */
+    return scheme_bignum_normalize(bignum_copy(n, 0));
 
-  if (shift < 0) {
+  o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+  o->type = scheme_bignum_type;
+
+  n_digs = SCHEME_BIGDIG(n);
+
+  if (shift < 0) /* right shift */
+  {
+    int shifted_off_one = 0;
+    
     shift = -shift;
+    shift_words = shift / WORD_SIZE;
+    shift_bits = shift % WORD_SIZE;
 
-    offset = (shift / LOG_BIG_RADIX);
-
-    if (offset >= nl) {
-      if (!SCHEME_BIGPOS(n))
-	return scheme_make_integer(-1);
-      else
+    if (shift_words >= n_size) {
+      if (SCHEME_BIGPOS(n))
 	return scheme_make_integer(0);
+      else
+	return scheme_make_integer(-1);
     }
 
-    loshift = (shift % LOG_BIG_RADIX);
-    hishift = (LOG_BIG_RADIX - loshift);
-
-    rl = nl - offset;
-    ra = MALLOC_N_ATOMIC(bigdig, rl);
+    res_alloc = n_size - shift_words;
+    if (shift_bits == 0 && !SCHEME_BIGPOS(n))
+      res_alloc++;   /* Very unlikely event of a carryout on the later add1 increasing the word size */
+    res_digs = allocate_bigdig_array(res_alloc);
     
-    na = SCHEME_BIGDIG(n);
-
-    for (i = rl - 1; i--; ) {
-      ra[i] = (na[i + offset] >> loshift) | ((na[i + offset + 1] << hishift) & BIG_MAX);
-    }
-    ra[rl - 1] = (na[rl - 1 + offset] >> loshift);
-
-    /* If n is negative and we dropped any bits, sub one from result (2's complement!): */
     if (!SCHEME_BIGPOS(n)) {
-      for (i = 0; i < offset; i++) {
-	if (na[i]) {
-	  subone = 1;
-	  break;
-	}
+      for(i = 0; i < shift_words; ++i) {
+	if (n_digs[i] != 0) {
+	  shifted_off_one = 1;
+	  break;  
+	}  
       }
-      if ((i == offset) && ((na[offset] << hishift) & BIG_MAX))
-	subone = 1;
     }
-  } else {
-    int top;
 
-    offset = (shift / LOG_BIG_RADIX);
-    hishift = (shift % LOG_BIG_RADIX);
-    loshift = (LOG_BIG_RADIX - hishift);
+    for(i = 0, j = shift_words; j < n_size; ++i, ++j) {
+      res_digs[i] = n_digs[j];
+    }
 
-    rl = nl + offset + 1;
-    ra = MALLOC_N_ATOMIC(bigdig, rl);
+    shift_out = mpn_rshift(res_digs, res_digs, res_alloc, shift_bits);
+
+    SCHEME_BIGPOS(o) = SCHEME_BIGPOS(n);
+    if (!SCHEME_BIGPOS(n) && (shifted_off_one || !shift_out == 0)) {
+      mpn_add_1(res_digs, res_digs, res_alloc, 1);
+    }
+    SCHEME_BIGLEN(o) = bigdig_length(res_digs, res_alloc);
+    SCHEME_BIGDIG(o) = res_digs;
+  }
+  else /* left shift */
+  {
+    shift_words = shift / WORD_SIZE;
+    shift_bits = shift % WORD_SIZE;
+    res_alloc = SCHEME_BIGLEN(n) + shift_words;
+    if (shift_bits != 0)
+      ++res_alloc;
+    res_digs = allocate_bigdig_array(res_alloc);
     
-    na = SCHEME_BIGDIG(n);
+    for(i = 0, j = shift_words; i < SCHEME_BIGLEN(n); ++i, ++j) {
+      res_digs[j] = n_digs[i];
+    }
 
-    top = rl - 1;
-    for (i = 0; i < offset; i++) {
-      ra[i] = 0;
-    }
-    for (i = offset + 1; i < top; i++) {
-      ra[i] = ((na[i - offset] << hishift) & BIG_MAX) | (na[i - offset - 1] >> loshift);
-    }
-    ra[rl - 1] = (na[rl - offset - 2] >> loshift);
-    ra[offset] = ((na[0] << hishift) & BIG_MAX);
+    if (shift_bits != 0)
+      mpn_lshift(res_digs + shift_words, res_digs + shift_words, res_alloc - shift_words, shift_bits);
+
   }
 
-  while (rl && !ra[rl - 1]) {
-    --rl;
-  }
-
-  na = NULL; /* might be pointer to interior of a small bignum */
-
-  r = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
-  r->type = scheme_bignum_type;
-  SCHEME_BIGPOS(r) = SCHEME_BIGPOS(n);
-  SCHEME_BIGLEN(r) = rl;
-  SCHEME_BIGDIG(r) = ra;
-
-  if (subone)
-    return scheme_bignum_sub1(r);
-  else
-    return scheme_bignum_normalize(r);
+  SCHEME_BIGDIG(o) = res_digs;
+  SCHEME_BIGLEN(o) = bigdig_length(res_digs, res_alloc);
+  SCHEME_BIGPOS(o) = SCHEME_BIGPOS(n);
+  return scheme_bignum_normalize(o);
 }
 
-static void 
-bignum_small_divide_in_place(Scheme_Object *n, bigdig d, bigdig *rp)
-/* d > 0, d <= QUICK_DIV_MAX */
-{
-  int nl, i;
-  long carry;
-  bigdig *na;
-
-  nl = SCHEME_BIGLEN(n);
-
-  /* Because bignum calculations are not bounded: */
-  SCHEME_USE_FUEL(nl);
-
-  na = SCHEME_BIGDIG(n);
-
-  carry = 0;
-  for (i = nl; i--; ) {
-    long lo, hi;
-
-    lo = na[i] & BIG_LO_HALF;
-    hi = na[i] >> LOG_BIG_LO;
-
-    carry = carry << LOG_BIG_LO;
-    carry += hi;
-    hi = carry / d;
-    carry %= d;
-
-    carry = carry << LOG_BIG_LO;
-    carry += lo;
-    lo = carry / d;
-    carry %= d;
-
-    na[i] = (hi << LOG_BIG_LO) + lo;
-  }
-
-  while (nl && !na[nl - 1]) {
-    --nl;
-  }
-
-  SCHEME_BIGLEN(n) = nl;
-
-  *rp = carry;
-}
-
-static char *scheme_bignum_to_string_10(const Scheme_Object *b)
-{
-  Scheme_Object *r;
-  int nl, sl, p, i;
-  char *s;
-  bigdig a;
-
-  nl = SCHEME_BIGLEN(b);
-  if (!nl)
-    return "0";
-  sl = nl * BIG_DIG_DEC_DIG;
-  s = (char *)scheme_malloc_atomic(sl + 1);
-  p = 0;
-
-  r = bignum_copy(b, 1);
-  while (SCHEME_BIGLEN(r)) {
-    bignum_small_divide_in_place(r, TRANS_DIG_DEC, &a);
-    
-    for (i = 0; i < TRANS_DIG_DEC_DIG - 1; i++) {
-      s[p++] = (a % 10) + '0';
-      a /= 10;
-    }
-  }
-
-  while (s[p - 1] == '0') {
-    --p;
-  }
-
-  if (!SCHEME_BIGPOS(r))
-    s[p++] = '-';
-
-  s[p] = 0;
-
-  /* reverse the string: */
-  --p;
-  for (i = 0; i < p; i++, --p) {
-    char k = s[i];
-    s[i] = s[p];
-    s[p] = k;
-  }
-
-  return s;
-}
 
 char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
 {
-  char *n, c;
-  int size, p, i, j;
-  int bl, dig, step, needed;
-  bigdig *ba, v;
+  
+  Scheme_Object *c;
+  unsigned char* str, *str2;
+  int i, slen, start;
 
   if (radix != 10 && radix != 2 && radix != 8 && radix != 16)
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_make_integer(radix),
 		     "bad bignum radix (%d)", radix);
 
-  if (!SCHEME_BIGLEN(b))
+  if (SCHEME_BIGLEN(b) == 0)
     return "0";
 
-  if (radix == 10)
-    return scheme_bignum_to_string_10(b);
-  else if (radix == 2)
-    step = 1;
+  c = bignum_copy(b, 1);  /* mpn_get_string may need a word of scratch space */
+
+  if (radix == 2)
+    slen = WORD_SIZE * SCHEME_BIGLEN(b) + 2;
   else if (radix == 8)
-    step = 3;
+    slen = ceil(WORD_SIZE * SCHEME_BIGLEN(b) / 3.0) + 2;
   else if (radix == 16)
-    step = 4;
-  else  {
-    return NULL; /* Doesn't get here */
-  }
+    slen = WORD_SIZE * SCHEME_BIGLEN(b) / 4 + 2;
+  else /* (radix == 10) */
+    slen = ceil(WORD_SIZE * SCHEME_BIGLEN(b) * 0.30102999566398115) + 1;
 
-  bl = SCHEME_BIGLEN(b);
+  str = (char*)scheme_malloc_atomic(sizeof(unsigned char) * slen);
+  
+  slen = mpn_get_str(str, radix, SCHEME_BIGDIG(c), SCHEME_BIGLEN(c) - 1);
 
-  size = (bl * ((LOG_BIG_RADIX + step) / step)) + 2;
-  n = (char *)scheme_malloc_atomic(size);
-  p = 0;
-
-  needed = step;
-  dig = 0;
-
-  ba = SCHEME_BIGDIG(b);
-
-  while (bl--) {
-    v = *(ba++);
-
-    for (j = 0; j < LOG_BIG_RADIX; j++) {
-      dig += (v & 0x1) << (step - needed);
-      v = v >> 1;
- 
-      if (!(--needed)) {
-	if (dig > 9)
-	  n[p] = 'a' + (dig - 10);
-	else
-	  n[p] = '0' + dig;
-	p++;
-	needed = step;
-	dig = 0;
-      }
-    }
-  }
-
-  if (dig > 9)
-    n[p] = 'a' + (dig - 10);
+  i = 0;
+  while (i < slen && str[i] == 0)
+    ++i;
+  
+  if (i == slen)
+    return "0";
   else
-    n[p] = '0' + dig;
+    slen = slen - i + 1 + (SCHEME_BIGPOS(b) ? 0 : 1);
 
-  for (i = p; i && (n[i] == '0'); --i) {}
-  p = i + 1;
+  str2 = (char*)scheme_malloc_atomic(sizeof(unsigned char) * slen);
 
-  if (!SCHEME_BIGPOS(b))
-    n[p++] = '-';
+  start = i;
 
-  /* Reverse the string: */
-  for (i = 0, j = p - 1; i < j; i++, --j) {
-    c = n[i];
-    n[i] = n[j];
-    n[j] = c;
+  if (!(SCHEME_BIGPOS(b))) {
+    i = 1;
+    start--;
+    str2[0] = '-';
+  } else
+    i = 0;
+  
+  for (; i < slen - 1; ++i) {
+    if (str[i + start] < 10)
+      str2[i] = str[i + start] + '0';
+    else
+      str2[i] = str[i + start] + 'a' - 10;
   }
+  
+  str2[slen - 1] = 0;
 
-  n[p] = 0;
-
-  return n;
+  return str2;
 }
 
 Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
 {
-  Small_Bignum s1, s2;
-  Scheme_Object *r;
-  int size = 0, read_valid;
-  int len, i, d, negate, stri;
-  bigdig *buffer;
+  int len, negate, stri, alloc, i, test;
+  Scheme_Object* o;
+  bigdig* digs;
+  char* istring;
 
-  if ((radix < 0) || (radix > 16))
+  if (radix < 0 || radix > 16) {
     return scheme_false;
-
-  if (!decimal_digits[0]) {
-    REGISTER_SO(decimal_digits);
-    for (i = 0; i < 17; i++) {
-      decimal_digits[i] = scheme_make_bignum(i);
-    }
   }
-
+  
   negate = 0;
   stri = offset;
   while ((str[stri] == '+') || (str[stri] == '-')) {
@@ -1289,58 +835,48 @@ Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
       negate = !negate;
     stri++;
   }
-
   len = strlen(str + stri);
 
-  if (radix == 10 && (len < SMALL_NUM_STR_LEN)) {
-    /* try simple fixnum read first */
-    long fx;
-    if (!str[stri])
-      return scheme_false;
-    for (fx = 0; str[stri]; stri++) {
-      if (str[stri] < '0' || str[stri] > '9')
-	return scheme_false;
-      fx = (fx * 10) + (str[stri] - '0');
-    }
-    if (negate)
-       fx = -fx;
-    return scheme_make_integer(fx);
-  }
+  if (len == 0)
+    return scheme_false;
+  
+  istring = (char*)scheme_malloc_atomic(sizeof(char) * len);
 
-  r = scheme_make_small_bignum(0, &s2);
-
-  read_valid = 0;
-
-  while (len--) {
-    d = str[stri++];
-    if (d >= '0' && d <= '9')
-      d -= '0';
-    else if (d >= 'a' && d <= 'z')
-      d -= 'a' - 10;
-    else if (d >= 'A' && d <= 'Z')
-      d -= 'A' - 10;
+  i = stri;
+  while(str[i] != 0) {
+    if (str[i] >= '0' && str[i] <= '9')
+      istring[i - stri] = str[i] - '0';
+    else if (str[i] >= 'a' && str[i] <= 'z')
+      istring[i - stri] = str[i] - 'a' + 10;
+    else if (str[i] >= 'A' && str[i] <= 'Z')
+      istring[i - stri] = str[i] - 'A' + 10;
     else
       return scheme_false;
-    if (d < 0 || d >= radix)
-      return scheme_false;
-    read_valid = 1;
-    r = bignum_multiply(&s1, r, decimal_digits[radix], 0);
-    r = bignum_add((Scheme_Object *)&s2, &buffer, &size, 
-		   r, decimal_digits[d], 0);
+
+    if (istring[i - stri] >= radix || istring[i - stri] < 0)
+      return scheme_false;    
+    ++i;
   }
 
-  if (!read_valid)
-    /* No digits */
-    return scheme_false;
+  o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+  o->type = scheme_bignum_type;
 
-  if (negate)
-    bignum_negate_inplace(r);
+  alloc = ceil(len * log(radix) / (32 * log(2)));
 
-  r = scheme_bignum_normalize(r);
-  if (SCHEME_BIGNUMP(r))
-    r = bignum_copy(r, 0);
+  digs = allocate_bigdig_array(alloc);
 
-  return r;
+  SCHEME_BIGPOS(o) = !negate;
+
+  test = mpn_set_str(digs, istring, len, radix);
+
+  if (test > alloc)
+    printf("error\n");
+
+  SCHEME_BIGLEN(o) = bigdig_length(digs, alloc);
+  SCHEME_BIGDIG(o) = digs;
+
+  return scheme_bignum_normalize(o);
+
 }
 
 #define USE_FLOAT_BITS 51
@@ -1371,175 +907,109 @@ Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
 # include "bgnfloat.inc"
 #endif
 
+
 void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
 			  Scheme_Object **qp, Scheme_Object **rp, int norm)
 {
-  Scheme_Object *m, *q, *r, *one;
-  int log, negate_q, rsize = 0, qsize = 0;
-  bigdig *rbuffer, *qbuffer;
+  int cmp;
+  
+  cmp = bignum_abs_cmp(n, d);
 
-  if ((SCHEME_BIGLEN(d) == 1) && (SCHEME_BIGDIG(d)[0] <= BIG_LO_HALF)) {
-    bigdig remain, div;
-
-    div = SCHEME_BIGDIG(d)[0];
-
-    q = bignum_copy(n, 1);
-    bignum_small_divide_in_place(q, div, &remain);
-
-    if (qp) {
-      if (!SCHEME_BIGPOS(d))
-	SCHEME_BIGPOS(q) = !SCHEME_BIGPOS(q);
-    
-      if (norm)
-	q = scheme_bignum_normalize(q);
-
-      *qp = q;
-    }
-
-    if (rp) {
-      if (!SCHEME_BIGPOS(d))
-	remain = -remain;
-
-      if (norm)
-	*rp = scheme_make_integer(remain);
-      else {
-	r = scheme_make_bignum(remain);
-	*rp = r;
-      }
-    }
-
-    return;
-  }
-
-  negate_q = 0;
-  if (!SCHEME_BIGPOS(n)) {
-    n = scheme_bignum_negate(n);
-    negate_q = !negate_q;
-  }
-  if (!SCHEME_BIGPOS(d)) {
-    d = scheme_bignum_negate(d);
-    negate_q = !negate_q;
-  }
-
-  if (scheme_bignum_gt(d, n)) {
-    if (qp) {
-      q = norm ? scheme_make_integer(0) : scheme_make_bignum(0);
-      *qp = q;
-    }
-    if (rp) {
-      r = norm ? scheme_bignum_normalize(n) : (Scheme_Object *)n;
-      *rp = r;
-    }
-    return;
-  }
-
-  log = 0;
-  m = bignum_copy(d, 1);
-  while (scheme_bignum_lt(m, n)) {
-    bignum_double_inplace(m, 0);
-    log++;
-  }
-
-  one = scheme_make_bignum(1);
-
-  q = scheme_make_bignum(0);
-#ifdef MZ_PRECISE_GC
-  /* Initial q will be a Small_Bignum,
-     q is passed as first argument to bignum_add,
-     and bignum_add modifies the digit array of
-     its first argument.
-     So the allocated_inline flag would be
-     wrong! */
-  q = bignum_copy(q, 1);
-#endif
-  r = bignum_copy(n, 1);
-  log++;
-  while (log--) {
+  if (cmp == -1) {
     if (qp)
-      bignum_double_inplace(q, qsize);
-    if (!scheme_bignum_lt(r, m)) {
-      bignum_negate_inplace(m);
-      r = bignum_add(r, &rbuffer, &rsize, r, m, 0);
-      bignum_negate_inplace(m);
-      if (qp) 
-	q = bignum_add(q, &qbuffer, &qsize, q, one, 0);
-    }
-    bignum_half_inplace(m);
-  }
+      *qp = (norm ? scheme_make_integer(0) : scheme_make_bignum(0));
+    if (rp)
+      *rp = (norm ? scheme_bignum_normalize(bignum_copy(n, 0)) : bignum_copy(n, 0));
+    return;
+  } else if (cmp == 0) {
+    int n_pos, d_pos, res;
 
-  if (qp) {
-    if (negate_q)
-      bignum_negate_inplace(q);
-    q = norm ? scheme_bignum_normalize(q) : q;
-    *qp = q;
-  }
-  if (rp) {
-    r = norm ? scheme_bignum_normalize(r) : r;
-    *rp = r;
+    n_pos = SCHEME_BIGPOS(n);
+    d_pos = SCHEME_BIGPOS(d);
+
+    res = (xor(n_pos, d_pos) ? -1 : 1);
+
+    if (qp)
+      *qp = (norm ? scheme_make_integer(res) : scheme_make_bignum(res));
+    if (rp)
+      *rp = (norm ? scheme_make_integer(0) : scheme_make_bignum(0));
+    return;
+  } else {    
+    long n_size, d_size, q_alloc, r_alloc, n_pos, d_pos;
+    bigdig *q_digs, *r_digs;
+    Scheme_Object *q, *r;
+
+    n_size = SCHEME_BIGLEN(n);
+    d_size = SCHEME_BIGLEN(d);
+
+    q = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+    r = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+    q->type = scheme_bignum_type;
+    r->type = scheme_bignum_type;
+    
+    q_alloc = n_size - d_size + 1;
+    r_alloc = d_size;
+
+    q_digs = allocate_bigdig_array(q_alloc);
+    r_digs = allocate_bigdig_array(r_alloc);
+
+
+    mpn_tdiv_qr(q_digs, r_digs, 0, SCHEME_BIGDIG(n), n_size,
+		SCHEME_BIGDIG(d), d_size);
+    
+    n_pos = SCHEME_BIGPOS(n);
+    d_pos = SCHEME_BIGPOS(d);
+    
+    if (rp) {
+      SCHEME_BIGDIG(r) = r_digs;
+      SCHEME_BIGLEN(r) = bigdig_length(r_digs, r_alloc);
+      SCHEME_BIGPOS(r) = n_pos;
+      *rp = (norm ? scheme_bignum_normalize(r) : r);
+    } if (qp) {
+      SCHEME_BIGDIG(q) = q_digs;
+      SCHEME_BIGLEN(q) = bigdig_length(q_digs, q_alloc);
+      SCHEME_BIGPOS(q) = !xor(n_pos, d_pos);
+      *qp = (norm ? scheme_bignum_normalize(q) : q);
+    }
   }
 }
 
+
 Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
 {
-  int len;
-  Scheme_Object *a, *b, *a_sq, *twice_a;
-  Scheme_Object *zero = scheme_make_integer(0);
-  Scheme_Object *two = scheme_make_integer(2);
+  Scheme_Object *o;
+  long n_size, res_alloc;
+  bigdig* res_digs, *sqr_digs;
 
-  /* First, find inital guess (too high, if anything):. */
-
-  /* Get length of binary number: */
-  {
-    bigdig v;
-
-    if (SCHEME_INTP(n)) {
-      len = 0;
-      v = SCHEME_INT_VAL(n);
-    } else {
-      Scheme_Bignum *b_n = (Scheme_Bignum *)n;
-      len = (b_n->len - 1) * LOG_BIG_RADIX;
-      v = b_n->digits[b_n->len - 1];
-    }
-    
-    while (v) {
-      v = v >> 1;
-      len++;
-    }
-
-    if (!len)
-      return zero;
+  if (SCHEME_INTP(n)) {
+    long t = SCHEME_INT_VAL(n);
+    if (t == 0)
+      return scheme_make_integer(0);
+    n_size = 1;
+    sqr_digs = allocate_bigdig_array(1);
+    sqr_digs[0] = t;
+  } else {
+    n_size = SCHEME_BIGLEN(n);
+    if (n_size == 0)
+      return scheme_make_integer(0);
+    sqr_digs = SCHEME_BIGDIG(n);
   }
 
-  /* We know that the square root is no bigger than
-     2^((len+1)/2). Pick that number as a. */
-  a = scheme_bignum_shift(scheme_make_bignum(1), (len + 1) >> 1);
-  
-  /* Now, refine the guess until we reach a fixpoint: */
+  if (n_size & 0x1)
+    res_alloc = (n_size + 1) >> 1;
+  else
+    res_alloc = n_size >> 1;
+  res_digs = allocate_bigdig_array(res_alloc);
 
-  while (1) {
-    /* Add a*a to x, divide by 2a: */
-    a_sq = scheme_bin_mult(a, a);
-    twice_a = scheme_bin_mult(two, a);
-
-    b = scheme_bin_quotient(scheme_bin_plus(n, a_sq), twice_a);
-
-    /* If b = a, we might be done: */
-    if (scheme_bin_eq(b, a)) {
-      if (scheme_bin_eq(a_sq, n))
-	return a;
-      break; 
-    }
-
-    /* If b is bigger, there's no exact root: */
-    if (scheme_bin_gt(b, a))
-      break;
-    
-    /* Otherwise, b is a better guess: */
-    a = b;
-  }
-
-  /* Return inexact root: */
-  {
+  if (mpn_sqrtrem(res_digs, NULL, sqr_digs, n_size) == 0) {
+    /* An integer result */
+    o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+    o->type = scheme_bignum_type;
+    SCHEME_BIGLEN(o) = bigdig_length(res_digs, res_alloc);
+    SCHEME_BIGDIG(o) = res_digs;
+    SCHEME_BIGPOS(o) = 1;
+    return scheme_bignum_normalize(o);
+  } else {
     double v;
     
     if (SCHEME_INTP(n))
@@ -1554,3 +1024,4 @@ Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
     return scheme_make_double(sqrt(v));
   }
 }
+

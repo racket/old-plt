@@ -203,6 +203,8 @@ static Scheme_Object *empty_symbol;
 
 static Scheme_Object *nested_exn_handler;
 
+static Scheme_Object *closers;
+
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -836,7 +838,7 @@ void scheme_remove_managed(Scheme_Custodian_Reference *mr, Scheme_Object *o)
   remove_managed(mr, o, NULL, NULL);
 }
 
-Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Closer_Func cf)
+Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_Func cf)
 {
   Scheme_Thread *kill_self = NULL, *ks;
   Scheme_Custodian *c, *next;
@@ -951,6 +953,42 @@ static Scheme_Object *current_custodian(int argc, Scheme_Object *argv[])
 			     scheme_make_integer(MZCONFIG_CUSTODIAN),
 			     argc, argv,
 			     -1, custodian_p, "custodian", 0);
+}
+
+
+static void run_closers(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data)
+{
+  Scheme_Object *l;
+
+  for (l = closers; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+    Scheme_Exit_Closer_Func cf;
+    cf = (Scheme_Exit_Closer_Func)SCHEME_CAR(l);
+    cf(o, f, data);
+  }
+}
+
+static void run_atexit_closers(void)
+{
+#ifndef MZ_REAL_THREADS
+  scheme_start_atomic();
+#endif
+  scheme_do_close_managed(NULL, run_closers);
+}
+
+void scheme_add_atexit_closer(Scheme_Exit_Closer_Func f)
+{
+  if (!closers) {
+#ifdef USE_ON_EXIT_FOR_ATEXIT
+    on_exit(run_atexit_closers, NULL);
+#else
+    atexit(run_atexit_closers);
+#endif
+
+    REGISTER_SO(closers);
+    closers = scheme_null;
+  }
+
+  closers = scheme_make_pair((Scheme_Object *)f, closers);
 }
 
 /*========================================================================*/

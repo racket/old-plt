@@ -23,6 +23,7 @@ OBJS =  salloc.o \
 	eval.o \
 	file.o \
 	fun.o \
+        gmp.o \
 	hash.o \
 	image.o \
 	list.o \
@@ -61,6 +62,7 @@ SRCS =  $(srcdir)/salloc.c \
 	$(srcdir)/eval.c \
 	$(srcdir)/file.c \
 	$(srcdir)/fun.c \
+	$(srcdir)/gmp/gmp.c \
 	$(srcdir)/hash.c \
 	$(srcdir)/image.c \
 	$(srcdir)/list.c \
@@ -154,6 +156,8 @@ file.o: $(srcdir)/file.c
 	$(CC) $(CFLAGS) -c $(srcdir)/file.c -o file.o
 fun.o: $(srcdir)/fun.c
 	$(CC) $(CFLAGS) -c $(srcdir)/fun.c -o fun.o
+gmp.o: $(srcdir)/gmp/gmp.c
+	$(CC) $(CFLAGS) -c $(srcdir)/gmp/gmp.c -o gmp.o
 hash.o: $(srcdir)/hash.c
 	$(CC) $(CFLAGS) -c $(srcdir)/hash.c -o hash.o
 image.o: $(srcdir)/image.c

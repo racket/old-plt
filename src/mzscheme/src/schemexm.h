@@ -94,6 +94,7 @@
 #define _scheme_apply_known_closed_prim_multi (scheme_extension_table->_scheme_apply_known_closed_prim_multi)
 #define _scheme_apply_closed_prim (scheme_extension_table->_scheme_apply_closed_prim)
 #define _scheme_apply_closed_prim_multi (scheme_extension_table->_scheme_apply_closed_prim_multi)
+#define scheme_wcm_apply (scheme_extension_table->scheme_wcm_apply)
 #define scheme_values (scheme_extension_table->scheme_values)
 #define scheme_check_one_value (scheme_extension_table->scheme_check_one_value)
 #define scheme_tail_apply (scheme_extension_table->scheme_tail_apply)

@@ -71,6 +71,7 @@ _scheme_apply_known_closed_prim
 _scheme_apply_known_closed_prim_multi
 _scheme_apply_closed_prim
 _scheme_apply_closed_prim_multi
+scheme_wcm_apply
 scheme_values
 scheme_check_one_value
 scheme_tail_apply

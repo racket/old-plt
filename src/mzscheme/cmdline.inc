@@ -501,7 +501,9 @@ static int run_from_cmd_line(int argc, char *argv[],
 	 ", prints version.\n"
 # endif
 	 "  -h, --help : Shows this information and exits; ignores other switches.\n"
-	 "  -R<file>, --restore <file> : restores an image; must be the only switch.\n"
+#ifdef UNIX_IMAGE_DUMPS
+	 "  -R<file>, --restore <file> : restores an image.\n"
+#endif
 	 "Multiple single-letter switches can be collapsed, with arguments placed\n"
 	 " after the collapsed switches; the first collapsed switch cannot be --.\n"
 	 " E.g.: `-vfme file expr' is the same as `-v -f file -m -e expr'.\n"

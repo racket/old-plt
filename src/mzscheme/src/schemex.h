@@ -172,6 +172,7 @@ Scheme_Object *(*_scheme_apply_closed_prim)(Scheme_Object *rator, int argc,
 					 Scheme_Object **argv);
 Scheme_Object *(*_scheme_apply_closed_prim_multi)(Scheme_Object *rator, int argc,
 					       Scheme_Object **argv);
+Scheme_Object *(*scheme_wcm_apply)(Scheme_Object *key, Scheme_Object *val, Scheme_Object *f, int tail);
 Scheme_Object *(*scheme_values)(int c, Scheme_Object **v);
 Scheme_Object *(*scheme_check_one_value)(Scheme_Object *v);
 /* Tail calls - only use these when you're writing new functions/syntax */

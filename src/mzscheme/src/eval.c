@@ -1603,6 +1603,105 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq,
   return build_sequence(seq, to_linked, opt);
 }
 
+Scheme_Object *scheme_wcm_apply(Scheme_Object *key, Scheme_Object *val, Scheme_Object *f, int tail)
+{
+  Scheme_Cont_Mark *cm = NULL, *find;
+  Scheme_Cont_Mark *old_cont_mark_stack;
+  Scheme_Process *p = scheme_current_process;
+  
+  if (tail)
+    old_cont_mark_stack = NULL;
+  else {
+    MZ_CONT_MARK_POS++;
+    old_cont_mark_stack = MZ_CONT_MARK_STACK;
+  }
+  
+  /* Find existing mark record for this key: */
+  find = MZ_CONT_MARK_STACK;
+  {
+    Scheme_Cont_Mark *limit = p->cont_mark_stack_start + p->cont_mark_stack_size;
+    Scheme_Saved_Cont_Mark_Stack *saved = NULL;
+    
+  retry:
+    while ((find < limit) && ((long)find->pos == (long)MZ_CONT_MARK_POS)) {
+      if (find->key == key) {
+	cm = find;
+	break;
+      }
+      find++;
+    }
+    
+    if (find == limit) {
+      if (saved)
+	saved = saved->prev;
+      else
+	saved = p->cont_mark_stack_saved;
+      
+      if (saved) {
+	limit = saved->cont_mark_stack_start + saved->cont_mark_stack_size;
+	find = saved->cont_mark_stack;
+	goto retry;
+      }
+    }
+  }
+
+  if (!cm) {
+    /* Allocate a new mark record: */
+    if (MZ_CONT_MARK_STACK == p->cont_mark_stack_start) {
+      /* Mark stack overflow */
+      Scheme_Object *v;
+      Scheme_Saved_Cont_Mark_Stack *saved = MALLOC_ONE(Scheme_Saved_Cont_Mark_Stack);
+      saved->prev = p->cont_mark_stack_saved;
+      saved->cont_mark_stack_size = p->cont_mark_stack_size;
+      saved->cont_mark_stack_start = p->cont_mark_stack_start;
+      saved->cont_mark_stack = MZ_CONT_MARK_STACK;
+      
+      p->cont_mark_stack_saved = saved;
+      
+      p->cont_mark_stack_size = SCHEME_CONT_MARK_STACK_SIZE;
+      p->cont_mark_stack_start = MALLOC_N(Scheme_Cont_Mark, SCHEME_CONT_MARK_STACK_SIZE);
+      MZ_CONT_MARK_STACK = p->cont_mark_stack_start + SCHEME_CONT_MARK_STACK_SIZE;
+      
+      cm = MZ_CONT_MARK_STACK - 1;  
+      cm->key = key;
+      cm->val = val;
+      cm->pos = MZ_CONT_MARK_POS;
+      MZ_CONT_MARK_STACK = cm;
+      
+      --MZ_CONT_MARK_POS;
+      v = _scheme_apply_multi(f, 0, NULL);
+      MZ_CONT_MARK_POS++;
+	      
+      p->cont_mark_stack_saved = saved->prev;
+      p->cont_mark_stack_size = saved->cont_mark_stack_size;
+      p->cont_mark_stack_start =  saved->cont_mark_stack_start;
+      MZ_CONT_MARK_STACK = saved->cont_mark_stack;
+      
+      return v;
+    } else {
+      cm = MZ_CONT_MARK_STACK - 1;  
+      MZ_CONT_MARK_STACK = cm;
+    }  
+  }
+  
+  cm->key = key;
+  cm->val = val;
+  cm->pos = MZ_CONT_MARK_POS;
+  
+  if (tail)
+    return _scheme_tail_apply(f, 0, NULL);
+  else {
+    Scheme_Object *v;
+
+    --MZ_CONT_MARK_POS;
+    v = _scheme_apply_multi(f, 0, NULL);
+
+    MZ_CONT_MARK_STACK = old_cont_mark_stack;
+
+    return v;
+  }
+}
+
 #ifndef STACK_SAFETY_MARGIN
 #define STACK_SAFETY_MARGIN 50000
 #endif

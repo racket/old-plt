@@ -2,7 +2,7 @@
 ;;
 ;; parser.ss
 ;; Richard Cobbe
-;; $Id: parser.ss,v 1.2 2004/08/03 17:03:06 cobbe Exp $
+;; $Id: parser.ss,v 1.3 2004/08/10 15:54:04 cobbe Exp $
 ;;
 ;; Implements the parser for the S-Expression based source syntax for
 ;; ClassicJava.
@@ -63,7 +63,7 @@
       (let ([table (make-hash-table)])
         (hash-table-put! table 'Object
                          (make-temp-class 'Object #f null null))
-        (let loop ([src src])
+        (recur loop ([src src])
           (cond
            [(null? (cdr src)) (values table (parse-expr (car src)))]
            [else

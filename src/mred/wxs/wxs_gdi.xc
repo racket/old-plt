@@ -238,8 +238,10 @@
 @SYM "cross" : wxCURSOR_CROSS
 @SYM "hand" : wxCURSOR_HAND
 @SYM "ibeam" : wxCURSOR_IBEAM
-@SYM "size-ns" : wxCURSOR_SIZENS
-@SYM "size-we" : wxCURSOR_SIZEWE
+@SYM "size-n/s" : wxCURSOR_SIZENS
+@SYM "size-e/w" : wxCURSOR_SIZEWE
+@SYM "size-ne/sw" : wxCURSOR_SIZENESW
+@SYM "size-nw/se" : wxCURSOR_SIZENWSE
 // @SYM "left-button" : wxCURSOR_LEFT_BUTTON
 // @SYM "magnifier" : wxCURSOR_MAGNIFIER
 // @SYM "middle-button" : wxCURSOR_MIDDLE_BUTTON
@@ -250,8 +252,6 @@
 // @SYM "point-right" : wxCURSOR_POINT_RIGHT
 // @SYM "question-arrow" : wxCURSOR_QUESTION_ARROW
 // @SYM "right-button" : wxCURSOR_RIGHT_BUTTON
-// @SYM "sizenesw" : wxCURSOR_SIZENESW
-// @SYM "sizenwse" : wxCURSOR_SIZENWSE
 // @SYM "sizing" : wxCURSOR_SIZING
 // @SYM "spraycan" : wxCURSOR_SPRAYCAN
 // @SYM "wait" : wxCURSOR_WAIT

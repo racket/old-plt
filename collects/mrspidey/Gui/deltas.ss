@@ -38,7 +38,7 @@
     (recur loop ()
       (let ([e (read p)])
         (unless (eof-object? e)
-          (apply (uq-ivar delta (car e)) (eval `(list ,@(cdr e)) delta-eval-namespace))
+          (apply (ivar/proc delta (car e)) (eval `(list ,@(cdr e)) delta-eval-namespace))
           (loop)))))))
 
 (define set-resource-delta

@@ -1,2 +1,2 @@
 
-(reference-relative-library "link.ss" "Sba")
+(require-relative-library "link.ss" "Sba")

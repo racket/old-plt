@@ -351,8 +351,8 @@
 	    [_ (with-parameterization p
 		 (lambda () 
 		   (current-namespace expander-namespace) 
-		   (reference-library "core.ss")
-		   (reference-library "macro.ss")
+		   (require-library "core.ss")
+		   (require-library "macro.ss")
 		   '(reference 
 		     (begin-elaboration-time
 		      (build-path

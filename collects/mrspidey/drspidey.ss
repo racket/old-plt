@@ -20,8 +20,8 @@
 
 ;;(printf "loading drspidey.ss (cd ~s)~n" (current-directory))
 
-(reference-relative-library "pltrc-co.ss")
-(reference-relative-library "macros.ss")
+(require-relative-library "pltrc-co.ss")
+(require-relative-library "macros.ss")
 
 #|
 (begin-elaboration-time

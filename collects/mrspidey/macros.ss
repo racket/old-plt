@@ -16,7 +16,7 @@
 ; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ; ----------------------------------------------------------------------
 
-(reference-library "defstruc.ss")
+(require-library "defstruc.ss")
 
 (begin-elaboration-time
   (if (not (defined? 'MRSPIDEY-DEBUGGING))

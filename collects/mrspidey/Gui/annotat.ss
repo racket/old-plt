@@ -291,7 +291,7 @@
         (lambda (ftype method . args)
           (pretty-debug-gui `(send-ftype ,(FlowType->pretty ftype)))
           (assert (symbol? method) 'send-ftype ftype method args)
-          (apply (uq-ivar (lookup-ftype ftype) method) args))]
+          (apply (ivar/proc (lookup-ftype ftype) method) args))]
 
       [flush-type-cache
         (lambda ()

@@ -431,7 +431,7 @@
                 (lambda (annotation-fn annotations)
                   (when annotation-fn
                     (for-each
-                      (let ([fn (uq-ivar edit annotation-fn)])
+                      (let ([fn (ivar/proc edit annotation-fn)])
                         (match-lambda
                           [(and annotation ($ annotation loc))
                             (when (string=? (zodiac:location-file loc)

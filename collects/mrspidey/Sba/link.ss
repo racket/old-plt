@@ -26,7 +26,7 @@
   (ZODIAC : zodiac:system^))
  (link
   [ZAUX : mrspidey:zodiac^ 
-	((reference-relative-library-unit/sig "zod-aux.ss")
+	((require-relative-library-unit/sig "zod-aux.ss")
 	 CDL ZODIAC)]
   [CDL : mrspidey:CDL^ 
        ((compound-unit/sig
@@ -38,25 +38,25 @@
 	  (STRING : mzlib:string^))
 	 (link
 	  [L : mrspidey:library^
-	     ((reference-relative-library-unit/sig "main.ss" "lib") 
+	     ((require-relative-library-unit/sig "main.ss" "lib") 
 	      I FUNCTION PRETTY-PRINT FILE STRING)]
 	  [C : mrspidey:config^
-	     ((reference-relative-library-unit/sig "config.ss") 
+	     ((require-relative-library-unit/sig "config.ss") 
 	      L FUNCTION PRETTY-PRINT FILE STRING)]
 	  [D : mrspidey:debugging^
-	     ((reference-relative-library-unit/sig "debug.ss")
+	     ((require-relative-library-unit/sig "debug.ss")
 	      L FUNCTION PRETTY-PRINT FILE STRING)])
 	 (export (open C) (open D) (open L)))
 	INTERACTION FUNCTION PRETTY-PRINT FILE STRING)]
   [LOADEXPAND : mrspidey:loadexpand^
-	      ((reference-relative-library-unit/sig "ldexpand.ss")
+	      ((require-relative-library-unit/sig "ldexpand.ss")
 	       CDL INTERACTION LANGUAGES ZODIAC ZAUX 
 	       FUNCTION PRETTY-PRINT FILE STRING)]
   [HASH : mrspidey:hash^
-	((reference-relative-library-unit/sig "hash.ss")
+	((require-relative-library-unit/sig "hash.ss")
 	 CDL INTERACTION FUNCTION PRETTY-PRINT FILE STRING)]
   [KERNEL : mrspidey:kernel^ 
-	  ((reference-relative-library-unit/sig "kernel.ss")
+	  ((require-relative-library-unit/sig "kernel.ss")
 	   CDL HASH KERNEL-AUX TEMPLATES)]
   [MIN : mrspidey:min^
        ((compound-unit/sig
@@ -72,102 +72,102 @@
 	  (STRING : mzlib:string^))
 	 (link
 	  [MIN : mrspidey:min^ 
-	       ((reference-relative-library-unit/sig "min.ss" "min")
+	       ((require-relative-library-unit/sig "min.ss" "min")
 		CDL INTERACTION KERNEL 
 		FIND LIVE FEW FAST)]
 	  [FIND : mrspidey:find-nonempty-tvars^
-		((reference-relative-library-unit/sig "nonempty.ss" "min")
+		((require-relative-library-unit/sig "nonempty.ss" "min")
 		 CDL KERNEL KERNEL-AUX LIVE TEMPLATES)]
 	  [LIVE : mrspidey:min-live^
-		((reference-relative-library-unit/sig "min-live.ss" "min")
+		((require-relative-library-unit/sig "min-live.ss" "min")
 		 CDL KERNEL KERNEL-AUX MIN TEMPLATES)]
 	  [FEW : mrspidey:min-live-few-e^
-	       ((reference-relative-library-unit/sig "livefewe.ss" "min")
+	       ((require-relative-library-unit/sig "livefewe.ss" "min")
 		CDL KERNEL KERNEL-AUX MIN LIVE)]
 	  [HOPCROFT : mrspidey:hopcroft^
-		    ((reference-relative-library-unit/sig "hopcroft.ss" "min")
+		    ((require-relative-library-unit/sig "hopcroft.ss" "min")
 		     CDL FUNCTION PRETTY-PRINT FILE STRING MIN)]
 	  [FAST : mrspidey:min-dfa-fast^
-		((reference-relative-library-unit/sig "min-dfa.ss" "min")
+		((require-relative-library-unit/sig "min-dfa.ss" "min")
 		 CDL KERNEL KERNEL-AUX MIN LIVE FEW HOPCROFT)])
 	 (export (open MIN)))
 	CDL INTERACTION KERNEL KERNEL-AUX 
 	TEMPLATES FUNCTION PRETTY-PRINT FILE STRING)]
   [TEMPLATES : mrspidey:templates^
-	     ((reference-relative-library-unit/sig "template.ss")
+	     ((require-relative-library-unit/sig "template.ss")
 	      CDL INTERACTION KERNEL)]
   [KERNEL-AUX : mrspidey:kernel-aux^
-	      ((reference-relative-library-unit/sig "kern-aux.ss")
+	      ((require-relative-library-unit/sig "kern-aux.ss")
 	       CDL INTERACTION KERNEL TEMPLATES ZODIAC ZAUX)]
   [ATYPE : mrspidey:atype^
-	 ((reference-relative-library-unit/sig "atype.ss")
+	 ((require-relative-library-unit/sig "atype.ss")
 	  CDL INTERACTION KERNEL KERNEL-AUX
 	  MIN TYPELANG TEMPLATES
 	  TYPE-ENV SDL ATLUNIT FUNCTION PRETTY-PRINT FILE STRING)]
   [TYPELANG :
 	    mrspidey:typelang^
-	    ((reference-relative-library-unit/sig "typelang.ss")
+	    ((require-relative-library-unit/sig "typelang.ss")
 	     CDL INTERACTION KERNEL KERNEL-AUX
 	     TEMPLATES TYPE-ENV ATYPE CONTAINED 
 	     FUNCTION PRETTY-PRINT FILE STRING ZODIAC ZAUX)]
   [CONTAINED : mrspidey:contained^
-	     ((reference-relative-library-unit/sig "contain.ss")
+	     ((require-relative-library-unit/sig "contain.ss")
 	      CDL KERNEL SDL)]
   [TYPE-ENV : mrspidey:type-env^
-	    ((reference-relative-library-unit/sig "type-env.ss")
+	    ((require-relative-library-unit/sig "type-env.ss")
 	     CDL INTERACTION KERNEL KERNEL-AUX
 	     TEMPLATES MIN ATYPE ZODIAC ZAUX)]
   [SDL : mrspidey:sdl^ 
-       ((reference-relative-library-unit/sig "sdl.ss")
+       ((require-relative-library-unit/sig "sdl.ss")
 	CDL KERNEL MIN TYPELANG KERNEL-AUX TEMPLATES ATYPE
 	FUNCTION PRETTY-PRINT FILE STRING)]
   [LANGUAGES : mrspidey:languages^
-	     ((reference-relative-library-unit/sig "language.ss")
+	     ((require-relative-library-unit/sig "language.ss")
 	      CDL INTERACTION KERNEL
 	      TEMPLATES KERNEL-AUX 
 	      ATYPE TYPE-ENV TYPELANG ATENV LOADEXPAND TRAVERSE
 	      FUNCTION PRETTY-PRINT FILE STRING ZODIAC ZAUX)]
   [ATENV : mrspidey:atenv^
-	 ((reference-relative-library-unit/sig "atenv.ss")
+	 ((require-relative-library-unit/sig "atenv.ss")
 	  CDL INTERACTION KERNEL KERNEL-AUX ATYPE
 	  ZODIAC ZAUX FUNCTION PRETTY-PRINT FILE STRING)]
   [TRAVERSE : mrspidey:traverse^
-	    ((reference-relative-library-unit/sig "traverse.ss")
+	    ((require-relative-library-unit/sig "traverse.ss")
 	     CDL INTERACTION KERNEL MIN
 	     LOADEXPAND
 	     TEMPLATES KERNEL-AUX TYPELANG TYPE-ENV
 	     LANGUAGES ATYPE ATLUNIT ATENV
 	     ZODIAC ZAUX FUNCTION PRETTY-PRINT FILE STRING)]
   [ATLUNIT : mrspidey:atlunit^
-	   ((reference-relative-library-unit/sig "atlunit.ss")
+	   ((require-relative-library-unit/sig "atlunit.ss")
 	    CDL INTERACTION KERNEL KERNEL-AUX
 	    MIN LOADEXPAND TYPE-ENV
 	    TEMPLATES LANGUAGES ATYPE ATENV TRAVERSE
 	    ZA ZODIAC ZAUX FUNCTION PRETTY-PRINT FILE STRING)]
   [ZA : mrspidey:za^ 
-      ((reference-relative-library-unit/sig "za.ss")
+      ((require-relative-library-unit/sig "za.ss")
        CDL INTERACTION KERNEL TEMPLATES 
        TYPE-ENV TYPELANG ATYPE FUNCTION PRETTY-PRINT FILE STRING)]
   [PROGRAM : mrspidey:program^
-	   ((reference-relative-library-unit/sig "program.ss")
+	   ((require-relative-library-unit/sig "program.ss")
 	    CDL INTERACTION 
 	    KERNEL KERNEL-AUX TYPE-ENV
 	    LOADEXPAND TRAVERSE
 	    TEMPLATES ATENV ATYPE LANGUAGES
 	    ZODIAC ZAUX FUNCTION PRETTY-PRINT FILE STRING)]
   [CHECKS : mrspidey:calc-checks^
-	  ((reference-relative-library-unit/sig "checks.ss")
+	  ((require-relative-library-unit/sig "checks.ss")
 	   CDL INTERACTION LOADEXPAND 
 	   KERNEL KERNEL-AUX
 	   TYPELANG TEMPLATES ATYPE SDL
 	   ZODIAC ZAUX FUNCTION PRETTY-PRINT FILE STRING)]
   [DRIVER : mrspidey:driver^
-	  ((reference-relative-library-unit/sig "driver.ss")
+	  ((require-relative-library-unit/sig "driver.ss")
 	   CDL INTERACTION KERNEL
 	   TEMPLATES TYPELANG TYPE-ENV ATYPE ATENV
 	   PROGRAM CHECKS LANGUAGES ZODIAC ZAUX)]
   [HYPER : mrspidey:hyper^
-	 ((reference-relative-library-unit/sig "hyper.ss")
+	 ((require-relative-library-unit/sig "hyper.ss")
 	  CDL INTERACTION LOADEXPAND
 	  PROGRAM CHECKS TEMPLATES KERNEL KERNEL-AUX ATYPE 
 	  FUNCTION PRETTY-PRINT FILE STRING)])

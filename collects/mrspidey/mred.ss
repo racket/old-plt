@@ -35,7 +35,7 @@
 		    base
 		    (current-directory)))])))))
 |#
-;(reference-library "sparams.ss" "backward")
+;(require-library "sparams.ss" "backward")
 
 ;; ------------------------------
 

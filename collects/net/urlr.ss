@@ -134,7 +134,7 @@
 	  (for-each (lambda (s)
 		      (display s client->server)
 		      (newline client->server))
-	    (cons (format "GET ~a HTTP/1.1" access-string)
+	    (cons (format "GET ~a HTTP/1.0" access-string)
 	      (cons (format "Host: ~a" (url-host url))
 		strings))))
 	(newline client->server)

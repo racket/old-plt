@@ -842,6 +842,8 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
   i = stype->num_slots;
   last_is_unknown = 0;
  
+  /* Precise GC >>> BEWARE <<<, array is not GC_aligned. */
+
   v = scheme_make_vector(m + 1, NULL);
   array = SCHEME_VEC_ELS(v);
   array[0] = SCHEME_STRUCT_NAME_SYM(s);
@@ -901,8 +903,9 @@ int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos)
     return 0;
   } else {
     /* Find struct containing position. */
-    while (p && (stype->parent_types[p - 1]->num_slots > pos))
+    while (p && (stype->parent_types[p - 1]->num_slots > pos)) {
       p--;
+    }
 
     return scheme_is_subinspector(stype->parent_types[p]->inspector, insp);
   }
@@ -1443,11 +1446,16 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
       /* Add new props: */
       for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	a = SCHEME_CAR(l);
+	if (scheme_lookup_in_table(ht, (char *)SCHEME_CAR(a))) {
+	  /* Property is already in the superstruct_type */
+	  break;
+	}
 	scheme_add_to_table(ht, (char *)SCHEME_CAR(a), SCHEME_CDR(a), 0);
       }
     } else {
       /* Make props array: */
       Scheme_Object **pa;
+      int j;
 
       i = struct_type->num_props;
       
@@ -1456,12 +1464,27 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
 
       for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l), i++) {
 	a = SCHEME_CAR(l);
+
+	/* Check whether already in table: */
+	for (j = 0; j < i; j++) {
+	  if (SAME_OBJ(SCHEME_CAR(pa[j]), SCHEME_CAR(a)))
+	    break;
+	}
+	if (j < i)
+	  break; /* already there */
+
 	a = scheme_make_pair(SCHEME_CAR(a), SCHEME_CDR(a));
 	pa[i] = a;
       }
       
       struct_type->num_props += num_props;
       struct_type->props = pa;
+    }
+
+    if (!SCHEME_NULLP(l)) {
+      /* SCHEME_CAR(l) is a duplicate */
+      a = SCHEME_CAR(l);
+      scheme_arg_mismatch("make-struct-type", "duplicate property binding", a);
     }
   }
 
@@ -1592,7 +1615,7 @@ static void register_traversers(void)
 {
   GC_REG_TRAV(scheme_structure_type, mark_struct_val);
   GC_REG_TRAV(scheme_struct_type_type, mark_struct_type_val);
-  GC_REG_TRAV(scheme_struct_property_type, mark_struct_prop_val);
+  GC_REG_TRAV(scheme_struct_property_type, mark_struct_property);
 
   GC_REG_TRAV(scheme_inspector_type, mark_inspector);
 

@@ -14,13 +14,13 @@
         initializes the primitive object, given initialization
         arguments v...
 
-      (primitive-class-prepare-struct-type! prim-class backbox-property)
-        prepares a class's struct-type, associating a backbox with the
-        type so that the user-level object system can keep
-        class-specific information there.
+      (primitive-class-prepare-struct-type! prim-class gen-property
+        gen-value) - prepares a class's struct-type for objects
+        generated C-side.
 
-      (primitive-class->struct prim-class) - returns a struct-type
-        for the primitive class.
+      (primitive-class->struct prim-class) - returns a struct-type for
+        the primitive class, to be used for instances generated
+        Scheme-side.
 
       (primitive-class->method-name-list prim-class) - gets a list of
         symbolic method names for the class.
@@ -79,6 +79,7 @@ typedef struct Scheme_Class {
   Scheme_Object **names;
   Scheme_Object **methods;
   Scheme_Object *cache_nl, *cache_mv;
+  Scheme_Object *gen_struct_type;
   Scheme_Object *struct_type;
 } Scheme_Class;
 
@@ -172,8 +173,7 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 				  object_struct, 
 				  NULL,
 				  0, 0, NULL,
-				  scheme_make_pair(scheme_make_pair(argv[1], 
-								    scheme_box(scheme_false)),
+				  scheme_make_pair(scheme_make_pair(argv[1], argv[2]),
 						   scheme_make_pair(scheme_make_pair(object_property, 
 										     argv[0]),
 								    scheme_null)));
@@ -190,15 +190,14 @@ static Scheme_Object *class_struct_type(int argc, Scheme_Object **argv)
   if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
     scheme_wrong_type("primitive-class->struct-type", "primitive-class", 0, argc, argv);
 
-  stype = ((Scheme_Class *)argv[0])->struct_type;
-
-  if (!stype) {
-    scheme_arg_mismatch("primitive-class->struct-type",
-			"struct-type not yet prepared for primitive-class: ",
-			argv[0]);
-    return NULL;
-  }
-
+  stype = scheme_make_struct_type(scheme_intern_symbol(((Scheme_Class *)argv[0])->name), 
+				  object_struct, 
+				  NULL,
+				  0, 0, NULL,
+				  scheme_make_pair(scheme_make_pair(object_property, 
+								    argv[0]),
+						   scheme_null));
+  
   return stype;
 }
 
@@ -481,7 +480,7 @@ void objscheme_init(Scheme_Env *env)
   scheme_install_xc_global("primitive-class-prepare-struct-type!",
 			   scheme_make_prim_w_arity(class_prepare_struct_type,
 						    "primitive-class-prepare-struct-type!",
-						    2, 2),
+						    3, 3),
 			   env);
   
   scheme_install_xc_global("primitive-class->struct-type",

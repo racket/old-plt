@@ -22,7 +22,7 @@
 			replace-indices     ;; override
 			init-new-indices    ;; inherit, override, public
 			go go-arity
-			struct:prim prop:dispatch
+			struct:prim prop:dispatch prim-methods
 			immediate-primitive?))
   ;; simplistic implementation for now:
   (define-struct interface (name supers public-ids class))
@@ -40,7 +40,7 @@
 				(let ([object%-init (lambda () (void))])
 				  object%-init))
 			      0
-			      #f #f #f))
+			      #f #f #f #f))
   (set-interface-class! object<%> object%)
   (vector-set! (class-supers object%) 0 object%)
   (define-values (struct:obj make-obj)
@@ -73,31 +73,33 @@
 	    (unbox b))
 	  v)))
 
-  (define (make-prim-class struct:prim prop:dispatch prim-init name super old-mnames new-mnames methods)
-    (compose-class name (or super object%) null
-		   null          ;; rename
-		   null          ;; inherit
-		   old-mnames    ;; override
-		   new-mnames    ;; public
-		   (let ([lazys
-			  (map make-lazy-prim-method
-			       methods)])
-		     (lambda (this super-init . pub-defines+pub-mutables)
-		       (lambda args
-			 (if super (super-init skip) (super-init))
-			 (unless (and (pair? args)
-				      (eq? (car args) skip))
-			   (apply prim-init this args))
-			 (unless (null? pub-defines+pub-mutables)
-			   ;; "define" all methods with lazy tokens:
-			   (let loop ([ms lazys]
-				      [l pub-defines+pub-mutables]) ; longer than ms
-			     (unless (null? ms)
-			       (let ([m (car ms)])
-				 (set-box! (car l) m))
-			       (loop (cdr ms) (cdr l))))))))
-		   (box 0)
-		   (list struct:prim prop:dispatch (list->vector methods))))
+  (define (make-prim-class struct:prim prim-side-box prop:dispatch prim-init name super old-mnames new-mnames methods)
+    (let ([c (compose-class name (or super object%) null
+			    null          ;; rename
+			    null          ;; inherit
+			    old-mnames    ;; override
+			    new-mnames    ;; public
+			    (let ([lazys
+				   (map make-lazy-prim-method
+					methods)])
+			      (lambda (this super-init . pub-defines+pub-mutables)
+				(lambda args
+				  (if super (super-init skip) (super-init))
+				  (unless (and (pair? args)
+					       (eq? (car args) skip))
+				    (apply prim-init this args))
+				  (unless (null? pub-defines+pub-mutables)
+				    ;; "define" all methods with lazy tokens:
+				    (let loop ([ms lazys]
+					       [l pub-defines+pub-mutables]) ; longer than ms
+				      (unless (null? ms)
+					(let ([m (car ms)])
+					  (set-box! (car l) m))
+					(loop (cdr ms) (cdr l))))))))
+			    (box 0)
+			    (list struct:prim prop:dispatch methods))])
+      (set-box! prim-side-box c)
+      c))
 
   (define-struct (exn:object struct:exn) ())
 
@@ -190,7 +192,12 @@
 	      [width (+ (class-width super) (length new-ids))]
 	      [prop:dispatch (or (and primitive (cadr primitive))
 				 (class-prop:dispatch super))]
-	      [methods (and primitive (caddr primitive))])
+	      [methods (and primitive 
+			    (list->vector
+			     (append (if (class-prim-methods super)
+					 (vector->list (class-prim-methods super))
+					 null)
+				     (caddr primitive))))])
 	  (let ([define-indices (get-indices (append replace-ids new-ids))]
 		[use-pre-indices (get-indices use-pre-ids)]
 		[use-final-indices (get-indices use-final-ids)]
@@ -263,7 +270,7 @@
 				  go (if (box? go-arity)
 					 (make-arity-at-least (unbox go-arity))
 					 go-arity)
-				  struct:prim prop:dispatch
+				  struct:prim prop:dispatch methods
 				  (and primitive #t))]
 		   [obj-name (if name 
 				 (string->symbol (format "object:~a" name))
@@ -278,24 +285,20 @@
 								0
 								width)
 							    'uninitialized-slot ;; anything for uninit val
-							    (if primitive
-								;; Existing backbox is the one we want to set,
-								;;  no dispatcher needed
-								null
-								(append
-								 (if struct:prim
-								     ;; Need dispatcher
-								     (list (cons prop:dispatch
-										 (lambda (ivar-name)
-										   (let ([pos (hash-table-get ht ivar-name)])
-										     (if (vector-ref method-prim-vec pos)
-											 #f
-											 (lambda (o . args)
-											   (apply (slot-ref o pos) args)))))))
-								     null)
-								 ;; Add/override backbox:
-								 (list
-								  (cons prop:object (box #f)))))
+							    (append
+							     (if (and struct:prim (not primitive))
+								 ;; Need dispatcher
+								 (list (cons prop:dispatch
+									     (lambda (ivar-name)
+									       (let ([pos (hash-table-get ht ivar-name)])
+										 (if (vector-ref method-prim-vec pos)
+										     #f
+										     (lambda (o . args)
+										       (apply (slot-ref o pos) args)))))))
+								 null)
+							     ;; Add/override backbox:
+							     (list
+							      (cons prop:object (box #f))))
 							    insp)])
 			      (values t
 				      make

@@ -2802,7 +2802,13 @@ int mark_struct_type_val_MARK(void *p) {
     gcMARK(t->parent_types[i]);
   }
   gcMARK(t->type_name);
+  gcMARK(t->name);
   gcMARK(t->inspector);
+  gcMARK(t->accessor);
+  gcMARK(t->mutator);
+  gcMARK(t->uninit_val);
+  gcMARK(t->props);
+  gcMARK(t->props_ht);
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
@@ -2817,41 +2823,17 @@ int mark_struct_type_val_FIXUP(void *p) {
     gcFIXUP(t->parent_types[i]);
   }
   gcFIXUP(t->type_name);
+  gcFIXUP(t->name);
   gcFIXUP(t->inspector);
+  gcFIXUP(t->accessor);
+  gcFIXUP(t->mutator);
+  gcFIXUP(t->uninit_val);
+  gcFIXUP(t->props);
+  gcFIXUP(t->props_ht);
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
 		    + (t->name_pos * sizeof(Scheme_Struct_Type *))));
-}
-
-
-int mark_struct_info_val_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Struct_Info));
-}
-
-int mark_struct_info_val_MARK(void *p) {
-  Struct_Info *i = (Struct_Info *)p;
-
-  gcMARK(i->name);
-  gcMARK(i->fields);
-  gcMARK(i->parent_type_expr);
-  gcMARK(i->memo_names);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Struct_Info));
-}
-
-int mark_struct_info_val_FIXUP(void *p) {
-  Struct_Info *i = (Struct_Info *)p;
-
-  gcFIXUP(i->name);
-  gcFIXUP(i->fields);
-  gcFIXUP(i->parent_type_expr);
-  gcFIXUP(i->memo_names);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Struct_Info));
 }
 
 
@@ -2898,6 +2880,26 @@ int mark_inspector_FIXUP(void *p) {
   gcFIXUP(i->superior);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
+}
+
+
+int mark_struct_property_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Struct_Property));
+}
+
+int mark_struct_property_MARK(void *p) {
+  Scheme_Struct_Property *i = (Scheme_Struct_Property *)p;
+  gcMARK(i->name);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Struct_Property));
+}
+
+int mark_struct_property_FIXUP(void *p) {
+  Scheme_Struct_Property *i = (Scheme_Struct_Property *)p;
+  gcFIXUP(i->name);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Struct_Property));
 }
 
 

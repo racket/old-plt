@@ -1241,24 +1241,17 @@ mark_struct_type_val {
     gcMARK(t->parent_types[i]);
   }
   gcMARK(t->type_name);
+  gcMARK(t->name);
   gcMARK(t->inspector);
+  gcMARK(t->accessor);
+  gcMARK(t->mutator);
+  gcMARK(t->uninit_val);
+  gcMARK(t->props);
+  gcMARK(t->props_ht);
 
  size:
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
 		    + (t->name_pos * sizeof(Scheme_Struct_Type *))));
-}
-
-mark_struct_info_val {
- mark:
-  Struct_Info *i = (Struct_Info *)p;
-
-  gcMARK(i->name);
-  gcMARK(i->fields);
-  gcMARK(i->parent_type_expr);
-  gcMARK(i->memo_names);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Struct_Info));
 }
 
 mark_struct_proc_info {
@@ -1278,6 +1271,14 @@ mark_inspector {
   gcMARK(i->superior);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
+}
+
+mark_struct_property {
+ mark:
+  Scheme_Struct_Property *i = (Scheme_Struct_Property *)p;
+  gcMARK(i->name);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Struct_Property));
 }
 
 END struct;

@@ -121,7 +121,7 @@ void wxCanvasDC::SetPixel(double x, double y, wxColour *col)
   
   SetCurrentDC();
 
-  SetPixelFast(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY,
+  SetPixelCore(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY,
 	       col->Red(), col->Green(), col->Blue());
 
   ReleaseCurrentDC();
@@ -143,9 +143,14 @@ void wxCanvasDC::EndSetPixelFast()
 
 void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
 {
-  RGBColor rgb;
-
   SetCurrentDC();  
+  SetPixelCore(i, j, r, g, b);
+  ReleaseCurrentDC();
+}
+
+void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
+{
+  RGBColor rgb;
 
   if (Colour) {
     rgb.red = r;
@@ -176,8 +181,6 @@ void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
 	ForeColor(blackColor);
     }
   }
-
-  ReleaseCurrentDC();
 }
 
 Bool wxCanvasDC::BeginGetPixelFast(int x, int y, int w, int h)

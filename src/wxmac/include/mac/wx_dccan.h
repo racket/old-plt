@@ -72,6 +72,7 @@ class wxCanvasDC: public wxbCanvasDC
   Bool BeginSetPixelFast(int x, int y, int w, int h);
   void EndSetPixelFast();
   void SetPixelFast(int i, int j, int r, int g, int b);
+  void SetPixelCore(int i, int j, int r, int g, int b);
 
   Bool BeginGetPixelFast(int x, int y, int w, int h);
   void EndGetPixelFast();

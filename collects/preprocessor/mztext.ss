@@ -261,6 +261,7 @@
 ;; Invocation
 
 (define (initialize)
+  (read-case-sensitive #t)
   (unless (command-marker) (command-marker "@"))
   (unless (paren-pairs)
     (paren-pairs '(("(" ")") ("[" "]") ("{" "}") ("<" ">"))))

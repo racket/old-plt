@@ -150,6 +150,7 @@
 
 (provide preprocess)
 (define (preprocess . files)
+  (read-case-sensitive #t)
   (namespace-require '(lib "mzpp.ss" "preprocessor"))
   (do-evals)
   (run files))

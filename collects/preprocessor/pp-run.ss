@@ -14,7 +14,6 @@
 
 (provide run)
 (define (run preprocess run-cmd output files)
-  (read-case-sensitive #t)
   (let ([files (map (lambda (f) (if (equal? f "-") (current-input-port) f))
                     (if (null? files) '("-") files))]
         [error? #f])

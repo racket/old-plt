@@ -1674,7 +1674,7 @@ static void
 print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p)
 {
   char *str, minibuf[8], *esc;
-  int len, a, i, v;
+  int len, a, i, v, utf8_leftover = 0;
 
   len = SCHEME_STRTAG_VAL(string);
   str = SCHEME_STR_VAL(string);
@@ -1697,19 +1697,42 @@ print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p)
       case '\v': esc = "\\v";  break;
       default:
 	v = ((unsigned char *)str)[i];
-	if ((v > 127) || ((v <= 127)
-			  && isprint(((unsigned char *)str)[i]))) {
+	if (v > 127) {
+	  if (utf8_leftover > 0) {
+	    esc = NULL;
+	  } else {
+	    /* Well-formed UTF-8 ? */
+	    long ipos;
+	    scheme_utf8_decode(str, i, len, 
+			       NULL, 0, -1,
+			       &ipos, 0, 0);
+	    if (ipos == i) {
+	      /* Bad UTF-8. Use octal. */
+	      esc = minibuf;
+	    } else {
+	      /* ipos characters are ok UTF-8, so
+		 print them directly. */
+	      utf8_leftover = (ipos - i);
+	      esc = NULL;
+	    }
+	  }
+	} else if (isprint(((unsigned char *)str)[i])) {
 	  esc = NULL;
 	} else {
-	  sprintf(minibuf,
-                  ((i+1>=len) || (str[i+1] < '0') || (str[i+1] > '7')) ? "\\%o" : "\\%03o",
-                  ((unsigned char *)str)[i]);
 	  esc = minibuf;
 	}
 	break;
       }
 
+      utf8_leftover--;
+
       if (esc) {
+	if (esc == minibuf) {
+	  sprintf(minibuf,
+                  ((i+1>=len) || (str[i+1] < '0') || (str[i+1] > '7')) ? "\\%o" : "\\%03o",
+                  ((unsigned char *)str)[i]);
+	}
+
         if (a < i)
 	  print_this_string(p, str, a, i-a);
         print_this_string(p, esc, 0, -1);

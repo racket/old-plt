@@ -144,7 +144,9 @@ static int mz_strcmp_ci(const char *who, unsigned char *str1, int l1, unsigned c
 
 static int utf8_decode_x(const unsigned char *s, int start, int end, 
 			 unsigned int *us, int dstart, int dend,
-			 long *ipos, long *jpos, char compact, char utf16, int permissive);
+			 long *ipos, long *jpos, 
+			 char compact, char utf16, char might_continue,
+			 int permissive);
 
 #define portable_isspace(x) (((x) < 128) && isspace(x))
 
@@ -2716,22 +2718,27 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
       status = utf8_decode_x((unsigned char *)instr, istart, ifinish, 
 			     (unsigned int *)r, ostart, ofinish,
 			     &amt_read, &amt_wrote, 
-			     1, 0, c->permissive);
+			     1, 0, 1, c->permissive);
       amt_read -= istart;
       amt_wrote -= ostart;
       if (status == -3) {
 	/* r is not NULL; ran out of room */
 	status = 1;
-      } else if (status > 0) {
-	status = 0;
-	if (!r) {
-	  /* Need to allocate, then do it again: */
-	  r = (char *)scheme_malloc_atomic(amt_wrote + 1);
-	  utf8_decode_x((unsigned char *)instr, istart, ifinish, 
-			(unsigned int *)r, ostart, ofinish,
-			&amt_read, &amt_wrote, 
-			1, 0, c->permissive);
-	}
+      } else {
+	if (amt_wrote) {
+	  if (!r) {
+	    /* Need to allocate, then do it again: */
+	    r = (char *)scheme_malloc_atomic(amt_wrote + 1);
+	    utf8_decode_x((unsigned char *)instr, istart, ifinish, 
+			  (unsigned int *)r, ostart, ofinish,
+			  &amt_read, &amt_wrote, 
+			  1, 0, 1, c->permissive);
+	    r[amt_wrote] = 0;
+	  }
+	} else if (!r)
+	  r = "";
+	if (status > 0)
+	  status = 0;
       }
     } else {
       r = "";
@@ -2750,13 +2757,18 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
   }
   
   if (status == 0) {
+    /* Converted all input without error */
     status_sym = complete_symbol;
   } else if (status == 1) {
+    /* Filled output, more input ready */
     status_sym = continues_symbol;
   } else if (status == -1) {
+    /* Input ends in the middle of an encoding */
     status_sym = aborts_symbol;
   } else {
     /* Assert: status == -2 */
+    /* Input has error (that won't be fixed by
+       adding more characters */
     status_sym = error_symbol;
   }
 
@@ -2854,7 +2866,9 @@ void scheme_reset_locale(void)
 
 static int utf8_decode_x(const unsigned char *s, int start, int end, 
 			 unsigned int *us, int dstart, int dend,
-			 long *ipos, long *jpos, char compact, char utf16, int permissive)
+			 long *ipos, long *jpos, 
+			 char compact, char utf16, char might_continue,
+			 int permissive)
 {
   int i, j, oki, failmode = -3;
   unsigned int sc;
@@ -2873,7 +2887,7 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
   if (dend < 0)
     dend = 0x7FFFFFFF;
 
-  if (!us && permissive) {
+  if (!us && permissive && !might_continue) {
     /* Fast path */
     for (i = start, j = dstart; ((i < end) && (j < dend)); i++) {
       if (!((s[i] & 0xC0) == 0x80))
@@ -2900,34 +2914,141 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
     } else {
       unsigned int v, checkmin;
       if ((sc & 0xE0) == 0xC0) {
-	if ((i + 1 < end) 
-	    && ((s[i + 1] & 0xC0) == 0x80)) {
-	  v = (((sc & 0x1F) << 6) 
-	       | (s[i+1] & 0x3F));
-	  checkmin = 0x80;
-	  i++;
-	} else if (permissive) {
-	  v = permissive;
-	  checkmin = 0;
-	} else {
-	  if ((i + 1) >= end)
-	    failmode = -1;
-	  else
+	/* 2-byte sequence */
+	if (i + 1 < end) {
+	  if ((s[i + 1] & 0xC0) == 0x80) {
+	    v = (((sc & 0x1F) << 6) 
+		 | (s[i+1] & 0x3F));
+	    checkmin = 0x80;
+	    i++;
+	  } else if (permissive) {
+	    v = permissive;
+	    checkmin = 0;
+	  } else {
 	    failmode = -2;
-	  break;
+	    break;
+	  }
+	} else {
+	  if (permissive && !might_continue) {
+	    v = permissive;
+	    checkmin = 0;
+	  } else {
+	    failmode = -1;
+	    break;
+	  }
 	}
-      } else if ((sc & 0xF0) == 0xE0) {
-	if ((i + 2 < end) 
-	    && ((s[i + 1] & 0xC0) == 0x80)
-	    && ((s[i + 2] & 0xC0) == 0x80)) {
-	  v = (((sc & 0xF) << 12) 
-	       | ((s[i+1] & 0x3F) << 6) 
-	       | (s[i+2] & 0x3F));
-	  checkmin = 0x800;
-	  if (((v >= 0xD800) && (v <= 0xDFFF))
-	      || (v == 0xFFFE)
-	      || (v == 0xFFFF)) {
-	    /* UTF-16 surrogates or other illegal code units */
+      } else {
+	/* 3- to 6-byte sequences */
+	int cnt;
+	if ((sc & 0xF0) == 0xE0) {
+	  cnt = 2;
+	} else if ((sc & 0xF8) == 0xF0) {
+	  cnt = 3;
+	} else if ((sc & 0xFC) == 0xF8) {
+	  cnt = 4;
+	} else if ((sc & 0xFE) == 0xFC) {
+	  cnt = 5;
+	} else {
+	  cnt = 0;
+	}
+
+	if (i + cnt >= end) {
+	  if (permissive && !might_continue) {
+	    v = permissive;
+	    checkmin = 0;
+	  } else {
+	    /* Could it continue? */
+	    int ccnt;
+	    cnt = end - i - 1;
+	    for (ccnt = 1; ccnt <= cnt; ccnt++) {
+	      if ((s[i + ccnt] & 0xC0) != 0x80)
+		break;
+	    }
+	    if (ccnt > cnt) {
+	      /* Could continue... */
+	      failmode = -1;
+	      break;
+	    } else {
+	      /* Can't continue */
+	      if (permissive) {
+		v = permissive;
+		checkmin = 0;
+	      } else {
+		failmode = -2;
+		break;
+	      }
+	    }
+	  }
+	} else {
+	  int ccnt;
+	  for (ccnt = 1; ccnt <= cnt; ccnt++) {
+	    if ((s[i + ccnt] & 0xC0) != 0x80)
+	      break;
+	  }
+
+	  if (ccnt > cnt) {
+	    switch (cnt) {
+	    case 0:
+	      if (sc >= 254) {
+		v = sc;
+		checkmin = 256;
+	      } else {
+		/* Corresponds to the middle of a char. We simply drop
+		   it, in all permissive modes. */
+		if (permissive) {
+		  j--;
+		  oki = i + 1;
+		  continue;
+		} else {
+		  /* Cause an error */
+		  v = 10;
+		  checkmin = 11;
+		}
+	      }
+	      break;
+	    case 2:
+	      v = (((sc & 0xF) << 12) 
+		   | ((s[i+1] & 0x3F) << 6) 
+		   | (s[i+2] & 0x3F));
+	      checkmin = 0x800;
+	      if (((v >= 0xD800) && (v <= 0xDFFF))
+		  || (v == 0xFFFE)
+		  || (v == 0xFFFF)) {
+		/* UTF-16 surrogates or other illegal code units;
+		   set checkmind too high so that it will report
+		   an error */
+		checkmin = 0x10000;
+	      }
+	      break;
+	    case 3:
+	      v = (((sc & 0x7) << 18) 
+		   | ((s[i+1] & 0x3F) << 12) 
+		   | ((s[i+2] & 0x3F) << 6) 
+		   | (s[i+3] & 0x3F));
+	      checkmin = 0x10000;
+	      break;
+	    case 4:
+	      v = (((sc & 0x7) << 24) 
+		   | ((s[i+1] & 0x3F) << 18) 
+		   | ((s[i+2] & 0x3F) << 12) 
+		   | ((s[i+3] & 0x3F) << 6) 
+		   | (s[i+4] & 0x3F));
+	      checkmin = 0x200000;
+	      break;
+	    default:
+	    case 5:
+	      v = (((sc & 0x1) << 30) 
+		   | ((s[i+1] & 0x3F) << 24) 
+		   | ((s[i+2] & 0x3F) << 18) 
+		   | ((s[i+3] & 0x3F) << 12) 
+		   | ((s[i+4] & 0x3F) << 6) 
+		   | (s[i+5] & 0x3F));
+	      checkmin = 0x4000000;
+	      break;
+	    }
+	    i += cnt;
+	  } else {
+	    /* Bad sequence */
 	    if (permissive) {
 	      v = permissive;
 	      checkmin = 0;
@@ -2935,105 +3056,10 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	      failmode = -2;
 	      break;
 	    }
-	  } else
-	    i += 2;
-	} else if (permissive) {
-	  v = permissive;
-	  checkmin = 0;
-	} else {
-	  if ((i + 2) >= end)
-	    failmode = -1;
-	  else
-	    failmode = -2;
-	  break;
-	}
-      } else if ((sc & 0xF8) == 0xF0) {
-	if ((i + 3 < end) 
-	    && ((s[i + 1] & 0xC0) == 0x80)
-	    && ((s[i + 2] & 0xC0) == 0x80)
-	    && ((s[i + 3] & 0xC0) == 0x80)) {
-	  v = (((sc & 0x7) << 18) 
-	       | ((s[i+1] & 0x3F) << 12) 
-	       | ((s[i+2] & 0x3F) << 6) 
-	       | (s[i+3] & 0x3F));
-	  checkmin = 0x10000;
-	  i += 3;
-	} else if (permissive) {
-	  v = permissive;
-	  checkmin = 0;
-	} else {
-	  if ((i + 3) >= end)
-	    failmode = -1;
-	  else
-	    failmode = -2;
-	  break;
-	}
-      } else if ((sc & 0xFC) == 0xF8) {
-	if ((i + 4 < end) 
-	    && ((s[i + 1] & 0xC0) == 0x80)
-	    && ((s[i + 2] & 0xC0) == 0x80)
-	    && ((s[i + 3] & 0xC0) == 0x80)
-	    && ((s[i + 4] & 0xC0) == 0x80)) {
-	  v = (((sc & 0x7) << 24) 
-	       | ((s[i+1] & 0x3F) << 18) 
-	       | ((s[i+2] & 0x3F) << 12) 
-	       | ((s[i+3] & 0x3F) << 6) 
-	       | (s[i+4] & 0x3F));
-	  checkmin = 0x200000;
-	  i += 4;
-	} else if (permissive) {
-	  v = permissive;
-	  checkmin = 0;
-	} else {
-	  if ((i + 4) >= end)
-	    failmode = -1;
-	  else
-	    failmode = -2;
-	  break;
-	}
-      } else if ((sc & 0xFE) == 0xFC) {
-	if ((i + 5 < end) 
-	    && ((s[i + 1] & 0xC0) == 0x80)
-	    && ((s[i + 2] & 0xC0) == 0x80)
-	    && ((s[i + 3] & 0xC0) == 0x80)
-	    && ((s[i + 4] & 0xC0) == 0x80)
-	    && ((s[i + 5] & 0xC0) == 0x80)) {
-	  v = (((sc & 0x1) << 30) 
-	       | ((s[i+1] & 0x3F) << 24) 
-	       | ((s[i+2] & 0x3F) << 18) 
-	       | ((s[i+3] & 0x3F) << 12) 
-	       | ((s[i+4] & 0x3F) << 6) 
-	       | (s[i+5] & 0x3F));
-	  checkmin = 0x4000000;
-	  i += 5;
-	} else if (permissive) {
-	  v = permissive;
-	  checkmin = 0;
-	} else {
-	  if ((i + 5) >= end)
-	    failmode = -1;
-	  else
-	    failmode = -2;
-	  break;
-	}
-      } else {
-	if (permissive) {
-	  if (sc >= 254) {
-	    v = permissive;
-	    checkmin = 0;
-	  } else {
-	    /* Corresponds to the middle of a char. We simply drop
-	       it. */
-	    j--;
-	    oki = i + 1;
-	    continue;
 	  }
-	} else {
-	  failmode = -2;
-	  break;
 	}
       }
-
+    
       if (v < checkmin) {
 	if (permissive) {
 	  v = permissive;
@@ -3097,12 +3123,12 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
 		       long *ipos, char utf16, int permissive)
 {
   return utf8_decode_x(s, start, end, us, dstart, dend, 
-		       ipos, NULL, utf16, utf16, permissive);
+		       ipos, NULL, utf16, utf16, 0, permissive);
 }
 
 int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, int permissive)
 {
-  return utf8_decode_x(s, 0, len, us, 0, -1, NULL, NULL, 0, 0, permissive);
+  return utf8_decode_x(s, 0, len, us, 0, -1, NULL, NULL, 0, 0, 0, permissive);
 }
 
 int scheme_utf8_encode(const unsigned int *us, int start, int end, 

@@ -42,7 +42,7 @@
            [doc-paths (map (lambda (doc) (string-append "/doc/" doc "/")) docs)]
            [get-name
 	    (lambda (doc-dir)
-	      (let ([ass (assoc short-path known-docs)])
+	      (let ([ass (assoc doc-dir known-docs)])
 		(if ass
 		    (cdr ass)
 		    (with-input-from-file 

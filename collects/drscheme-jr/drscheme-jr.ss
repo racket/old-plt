@@ -1,5 +1,7 @@
 (define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt"))
 
+(define annotate? (not (equal? (getenv "MZRICESKIPARIES") "yes")))
+
 ;; get stdin character positions right.
 
 ;; be sure to update the mzlib shell script if this changes
@@ -145,7 +147,9 @@
 		(lambda ()
 		  (let* ([expanded (zodiac:scheme-expand x parameterization)]
 			 [_ '(printf "expanded: ~a~n~n" expanded)]
-			 [annotated (aries:annotate expanded)]
+			 [annotated (if annontate?
+					(aries:annotate expanded)
+					(zodiac:parsed->raw expanded))]
 			 [_ '(printf "annotated: ~a~n~n" annotated)])
 		    annotated)))])
 	(primitive-eval annotated)))))

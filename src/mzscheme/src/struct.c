@@ -39,7 +39,6 @@ typedef struct {
 
 /* globals */
 Scheme_Object *scheme_arity_at_least, *scheme_date;
-Scheme_Object *scheme_waitable_property;
 
 /* locals */
 static Scheme_Object *make_inspector(int argc, Scheme_Object *argv[]);
@@ -73,6 +72,11 @@ static Scheme_Object *make_struct_proc(Scheme_Struct_Type *struct_type, char *fu
 
 static Scheme_Object *make_name(const char *pre, const char *tn, int tnl, const char *post1, 
 				const char *fn, int fnl, const char *post2, int sym);
+
+static Scheme_Object *waitable_property;
+static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static void waitable_struct_needs_wakeup(Scheme_Object *, void *);
+static int is_waitable_struct(Scheme_Object *);
 
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
@@ -159,15 +163,20 @@ scheme_init_struct (Scheme_Env *env)
   scheme_add_global_keyword_symbol(ts_names[ts_count - 1], ts_et, env);
 #endif
 
-  REGISTER_SO(scheme_waitable_property);
+  REGISTER_SO(waitable_property);
   {
     Scheme_Object *guard;
     guard = scheme_make_prim_w_arity(check_waitable_property_value_ok,
 				     "check-waitable-property-value-ok",
 				     2, 2);
-    scheme_waitable_property = scheme_make_struct_type_property_w_guard(scheme_intern_symbol("waitable"),
+    waitable_property = scheme_make_struct_type_property_w_guard(scheme_intern_symbol("waitable"),
 									guard);
-    scheme_add_global_constant("prop:waitable", scheme_waitable_property, env);
+    scheme_add_global_constant("prop:waitable", waitable_property, env);
+
+    scheme_add_waitable(scheme_structure_type,
+			waitable_struct_is_ready,
+			waitable_struct_needs_wakeup,
+			is_waitable_struct, 1);
   }
 
   /*** basic interface ****/
@@ -548,6 +557,63 @@ static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *
   }
 
   return v;
+}
+
+static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+{
+  Scheme_Object *v;
+
+  v = scheme_struct_type_property_ref(waitable_property, o);
+
+  if (SCHEME_INTP(v))
+    v = ((Scheme_Structure *)o)->slots[SCHEME_INT_VAL(v)];
+
+  if (scheme_is_waitable(v)) {
+    if (scheme_wait_on_waitable(v, 1, sinfo)) {
+      if (SCHEME_SEMAP(v))
+	scheme_post_sema(v);
+      return 1;
+    } else
+      return 0;
+  }
+
+  if (SCHEME_PROCP(v)) {
+    if (sinfo->false_positive_ok) {
+      sinfo->potentially_false_positive = 1;
+      return 1;
+    }
+
+    while (1) {
+      if (scheme_check_proc_arity(NULL, 0, 0, 1, &v)) {
+	v = _scheme_apply(v, 0, NULL);
+	
+	if (scheme_is_waitable(v)) {
+	  if (scheme_wait_on_waitable(v, 1, sinfo)) {
+	    if (SCHEME_SEMAP(v))
+	      scheme_post_sema(v);
+	    sinfo->target = NULL;
+	    /* loop to check the proc again */
+	  } else
+	    return 0;
+	} else
+	  return 1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+static void waitable_struct_needs_wakeup(Scheme_Object *s, void *fds)
+{
+  /* If there's an associated waitable that needs a wakeup, then we
+     shouldn't get here. The target use above should take care of
+     it. */
+}
+
+static int is_waitable_struct(Scheme_Object *o)
+{
+  return !!scheme_struct_type_property_ref(waitable_property, o);
 }
 
 /*========================================================================*/
@@ -1781,19 +1847,19 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
       if (parent_type)
 	p -= parent_type->num_slots;
 
-      if (ims[p]) {
-	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-			 immutable_pos_list,
-			 "make-struct-type: redundant immutable field index %V in list: %V", 
-			 a, immutable_pos_list);
-	return NULL;
-      }
-
       if (p >= struct_type->num_islots) {
 	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 			 immutable_pos_list,
 			 "make-struct-type: index %V for immutable field >= initialized-field count %d in list: %V", 
 			 a, struct_type->num_islots, immutable_pos_list);
+	return NULL;
+      }
+
+      if (ims[p]) {
+	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+			 immutable_pos_list,
+			 "make-struct-type: redundant immutable field index %V in list: %V", 
+			 a, immutable_pos_list);
 	return NULL;
       }
 

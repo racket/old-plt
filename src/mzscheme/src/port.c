@@ -1038,7 +1038,7 @@ static int waitable_output_port_p(Scheme_Object *p)
   return 1;
 }
 
-static int output_ready(Scheme_Object *port)
+static int output_ready(Scheme_Object *port, Scheme_Schedule_Info *sinfo)
 {
   Scheme_Output_Port *op;
 
@@ -1046,6 +1046,15 @@ static int output_ready(Scheme_Object *port)
 
   if (op->closed)
     return 1;
+
+  if (sinfo->false_positive_ok && SAME_OBJ(scheme_user_output_port_type, op->sub_type)) {
+    /* We can't call the normal ready because that might run Scheme
+       code, and this function is called by the scheduler when
+       false_pos_ok is true. So, in that case, we asume that if the
+       port's waitable is ready, then the port is ready. (After
+       all, false positives are ok in that mode.) */
+    return scheme_user_port_write_probably_ready(op, sinfo);
+  }
 
   if (op->ready_fun) {
     Scheme_Out_Ready_Fun rf;
@@ -1060,6 +1069,9 @@ static void output_need_wakeup (Scheme_Object *port, void *fds)
 {
   Scheme_Output_Port *op;
 
+  /* If this is a user output port and its waitable needs a wakeup, we
+     shouldn't get here. The target use above will take care of it. */
+
   op = (Scheme_Output_Port *)port;
   if (op->need_wakeup_fun) {
     Scheme_Need_Wakeup_Output_Fun f;
@@ -1068,16 +1080,17 @@ static void output_need_wakeup (Scheme_Object *port, void *fds)
   }
 }
 
-static int char_ready_or_user_port_ready(Scheme_Object *p)
+static int char_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info *sinfo)
 {
   Scheme_Input_Port *ip = (Scheme_Input_Port *)p;
 
-  if (SAME_OBJ(scheme_user_input_port_type, ip->sub_type)) {
+  if (sinfo->false_positive_ok && SAME_OBJ(scheme_user_input_port_type, ip->sub_type)) {
     /* We can't call the normal char_ready because that runs Scheme
-       code, and this function is called by the scheduler. So
-       We asume that if the port's waitable is ready, then the
-       port is ready. */
-    return scheme_user_port_char_probably_ready(ip);
+       code, and this function is called by the scheduler when
+       false_pos_ok is true. So, in that case, we asume that if the
+       port's waitable is ready, then the port is ready. (After
+       all, false positives are ok in that mode.) */
+    return scheme_user_port_char_probably_ready(ip, sinfo);
   } else
     return scheme_char_ready(p);
 }
@@ -1086,10 +1099,10 @@ static void register_port_wait()
 {
   scheme_add_waitable(scheme_input_port_type,
 		      char_ready_or_user_port_ready, scheme_need_wakeup, 
-		      waitable_input_port_p);
+		      waitable_input_port_p, 1);
   scheme_add_waitable(scheme_output_port_type,
 		      output_ready, output_need_wakeup, 
-		      waitable_output_port_p);
+		      waitable_output_port_p, 1);
 }
 
 static int pipe_char_count(Scheme_Object *p)
@@ -5050,7 +5063,9 @@ static Scheme_Object *subprocess_status(int argc, Scheme_Object **argv)
 static void register_subprocess_wait()
 {
 #if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES)
-  scheme_add_waitable(scheme_subprocess_type, subp_done, subp_needs_wakeup, NULL);
+  scheme_add_waitable(scheme_subprocess_type, 
+		      (Scheme_Ready_Fun_FPC)subp_done, 
+		      subp_needs_wakeup, NULL, 0);
 #endif
 }
 

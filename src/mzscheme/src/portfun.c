@@ -984,16 +984,21 @@ user_char_ready(Scheme_Input_Port *port)
     return 0;
 }
 
-int scheme_user_port_char_probably_ready(Scheme_Input_Port *ip)
+int scheme_user_port_char_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_Info *sinfo)
 {
   User_Input_Port *uip = (User_Input_Port *)ip->port_data;
   Scheme_Object *waitable;
 
+  if (uip->peeked)
+    return 1;
+
   waitable = uip->waitable;
   if (SCHEME_TRUEP(waitable)) {
-    if (scheme_wait_on_waitable(waitable, 1)) {
+    if (scheme_wait_on_waitable(waitable, 1, sinfo)) {
       if (SCHEME_SEMAP(waitable))
 	scheme_post_sema(waitable);
+      if (sinfo->false_positive_ok)
+	sinfo->potentially_false_positive = 1;
       return 1;
     } else
       return 0;
@@ -1041,8 +1046,7 @@ typedef struct User_Output_Port {
   int block_count;
 } User_Output_Port;
 
-static int
-user_write_ready(Scheme_Output_Port *port)
+int scheme_user_port_write_probably_ready(Scheme_Output_Port *port, Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *waitable;
   User_Output_Port *uop = (User_Output_Port *)port->port_data;
@@ -1052,10 +1056,25 @@ user_write_ready(Scheme_Output_Port *port)
 
   waitable = uop->waitable;
   if (SCHEME_TRUEP(waitable)) {
-    return scheme_wait_on_waitable(waitable, 1);
+    if (scheme_wait_on_waitable(waitable, 1, sinfo)) {
+      if (SCHEME_SEMAP(waitable))
+	scheme_post_sema(waitable);
+      return 1;
+    } else
+      return 0;
   }
 
   return 1;
+}
+
+static int
+user_write_ready(Scheme_Output_Port *port)
+{
+  Scheme_Schedule_Info *sinfo;
+  
+  sinfo = scheme_new_schedule_info(&sinfo, 0);
+
+  return scheme_user_port_write_probably_ready(port, sinfo);
 }
 
 static long

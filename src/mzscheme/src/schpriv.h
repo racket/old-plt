@@ -215,8 +215,6 @@ extern Scheme_Object *scheme_arity_at_least;
 
 extern Scheme_Object *scheme_write_proc, *scheme_display_proc, *scheme_print_proc;
 
-extern Scheme_Object *scheme_waitable_property;
-
 #ifdef TIME_SYNTAX
 extern Scheme_Object *scheme_date;
 #endif
@@ -1942,7 +1940,8 @@ Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 					   Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
 					   int must_close);
 
-int scheme_user_port_char_probably_ready(Scheme_Input_Port *ip);
+int scheme_user_port_char_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_Info *sinfo);
+int scheme_user_port_write_probably_ready(Scheme_Output_Port *op, Scheme_Schedule_Info *sinfo);
 
 #define CURRENT_INPUT_PORT(config) scheme_get_param(config, MZCONFIG_INPUT_PORT)
 #define CURRENT_OUTPUT_PORT(config) scheme_get_param(config, MZCONFIG_OUTPUT_PORT)

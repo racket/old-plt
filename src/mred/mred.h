@@ -37,6 +37,8 @@ class MrEdContextFrames {
 class MrEdFinalizedContext;
 class MrEd_Saved_Modal;
 
+#include "wxs/mrdispatch.h"
+
 typedef struct MrEdContext {
   Scheme_Type type;
   MZ_HASH_KEY_EX
@@ -62,8 +64,10 @@ typedef struct MrEdContext {
   MrEdEvent event;
 
   /* Alternate condition for nested event loop pending some condition */
-  int (*alternate)(void *);
+  wxDispatch_Check_Fun_FPC alternate;
+  wxDispatch_Needs_Wakeup_Fun alternate_wakeup;
   void *alt_data;
+  Scheme_Object *alt_target;
 
   /* Used to chain active contexts while reading events: */
   struct MrEdContext *next;

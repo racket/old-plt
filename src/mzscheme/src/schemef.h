@@ -106,14 +106,15 @@ MZ_EXTERN void scheme_schedule_custodian_close(Scheme_Custodian *c);
 MZ_EXTERN void scheme_add_atexit_closer(Scheme_Exit_Closer_Func f);
 
 MZ_EXTERN void scheme_add_waitable(Scheme_Type type,
-				   Scheme_Ready_Fun ready, 
+				   Scheme_Ready_Fun_FPC ready, 
 				   Scheme_Needs_Wakeup_Fun wakeup, 
-				   Scheme_Wait_Filter_Fun filter);
+				   Scheme_Wait_Filter_Fun filter,
+				   int can_redirect);
 MZ_EXTERN void scheme_add_waitable_through_sema(Scheme_Type type,
 						Scheme_Wait_Sema_Fun sema, 
 						Scheme_Wait_Filter_Fun filter);
 MZ_EXTERN int scheme_is_waitable(Scheme_Object *o);
-MZ_EXTERN int scheme_wait_on_waitable(Scheme_Object *o, int just_try);
+MZ_EXTERN int scheme_wait_on_waitable(Scheme_Object *o, int just_try, Scheme_Schedule_Info *sinfo);
 MZ_EXTERN void scheme_waitable_needs_wakeup(Scheme_Object *o, void *fds);
 MZ_EXTERN Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[]);
 
@@ -124,6 +125,8 @@ MZ_EXTERN int scheme_close_should_force_port_closed();
 
 MZ_EXTERN void scheme_push_kill_action(Scheme_Kill_Action_Func f, void *d);
 MZ_EXTERN void scheme_pop_kill_action();
+
+MZ_EXTERN Scheme_Schedule_Info *scheme_new_schedule_info(int false_pos_ok);
 
 /*========================================================================*/
 /*                              error handling                            */

@@ -2449,16 +2449,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
 
   if (!was_closed) {
     if (!tcp_check_accept(listener)) {
-      scheme_current_thread->block_descriptor = -1;
-      scheme_current_thread->blocker = listener;
-      scheme_current_thread->block_check = tcp_check_accept;
-      scheme_current_thread->block_needs_wakeup = tcp_accept_needs_wakeup;
-      do {
-	scheme_thread_block((float)0.0);
-      } while (!tcp_check_accept(listener));
-      scheme_current_thread->block_descriptor = NOT_BLOCKED;
-      scheme_current_thread->blocker = NULL;
-      scheme_current_thread->ran_some = 1;
+      scheme_block_until(tcp_check_accept, tcp_accept_needs_wakeup, listener, 0.0);
     }
     was_closed = LISTENER_WAS_CLOSED(listener);
   }
@@ -2549,8 +2540,8 @@ tcp_accept_break(int argc, Scheme_Object *argv[])
 static void register_tcp_listener_wait()
 {
 #ifdef USE_TCP
-  scheme_add_waitable(scheme_listener_type, tcp_check_accept, tcp_accept_needs_wakeup, NULL);
-  scheme_add_waitable(scheme_udp_waitable_type, udp_waitable_check_ready, udp_waitable_needs_wakeup, NULL);
+  scheme_add_waitable(scheme_listener_type, tcp_check_accept, tcp_accept_needs_wakeup, NULL, 0);
+  scheme_add_waitable(scheme_udp_waitable_type, udp_waitable_check_ready, udp_waitable_needs_wakeup, NULL, 0);
 #endif
 }
 

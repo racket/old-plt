@@ -14,6 +14,7 @@
 #include "wx_main.h"
 #include "wx_dcps.h"
 #include "wx_clipb.h"
+#include "mrdispatch.h"
 #include "wxsmred.h"
 
 #include "wxs_obj.h"
@@ -1584,14 +1585,15 @@ static Scheme_Object *queue_callback(int argc, Scheme_Object **argv)
   return scheme_void;
 }
 
-static int check_sema(void *s)
+static int check_sema(void *s, Scheme_Schedule_Info *sinfo)
 {
   if (!*(void **)s)
     return 1;
   else {
-    if (!scheme_wait_on_waitable(*(Scheme_Object **)s, 1))
+    if (!scheme_wait_on_waitable(*(Scheme_Object **)s, 1, sinfo))
       return 0;
-    *(void **)s = NULL;
+    if (!sinfo->potentially_false_positive)
+      *(void **)s = NULL;
     return 1;
   }
 }

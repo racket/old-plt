@@ -39,9 +39,9 @@
 (syntax-test #'(quote-syntax))
 (syntax-test #'(quote-syntax . 7))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; some syntax-case patterns
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (test 17 'syntax-case (syntax-case '(1 1 1) () [(1 ...) 17]))
 
@@ -576,6 +576,212 @@
 ;; Disappearing use:
 (test #t has-stx-property? (expand #'(let () (define-struct a (x)) (define-struct (b a) (z)) 10))
       #f 'a 'disappeared-use)
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; protected identifiers
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(module ++p mzscheme 
+  (define ++c 12)
+  (define-syntax (++goo stx) #'++c)
+  (provide ++goo))
+(module ++q mzscheme 
+  (require-for-syntax ++p)
+  (define ++d 11) 
+  (define-syntax (++o stx) #'++d)
+  (define-syntax (++s stx)
+    (syntax-case stx ()
+      [(_ id) #'(define-syntax (id stx) 
+		  (datum->syntax-object #'here (++goo)))]))
+  (define-syntax (++t stx) (syntax-case stx () [(_ id) #'(define-values (id) ++d)]))
+  (define-syntax (++t2 stx) #'(begin ++d))
+  (define-syntax (++t3 stx) (syntax-property #'(begin0 ++d) 'certify-mode 'transparent))
+  (define-syntax (++t4 stx) (syntax-case stx () [(_ id) #'(define id ++d)]))
+  (define-syntax (++v stx) #'(begin0 ++d))
+  (define-syntax (++v2 stx) #'(++d))
+  (define-syntax (++v3 stx) (syntax-property #'(begin ++d) 'certify-mode 'opaque))
+  (define-syntax ++ds 17)
+  (define-syntax (++check-val stx)
+    (syntax-case stx ()
+      [(_ id) (datum->syntax-object #'here (add1 (syntax-local-value #'id)))]))
+  (define-syntax (++o2 stx) #'(++check-val ++ds))
+  (define-syntax (++apply-to-ds stx) 
+    (syntax-case stx ()
+      [(_ id) #'(id ++ds)]))
+  (define-syntax (++apply-to-d stx) 
+    (syntax-case stx ()
+      [(_ id) #'(id ++d)]))
+  (provide ++o ++o2 ++s ++t ++t2 ++t3 ++t4 ++v ++v2 ++v3
+	   ++apply-to-d ++apply-to-ds))
+
+(require ++q)
+(++s ++ack)
+(test 12 values ++ack)
+(test 11 values ++v)
+(test 11 values ++o)
+(test 18 values ++o2)
+(test 13 values (let () (++t id) 13))
+
+(let-syntax ([goo (lambda (stx)
+		    (syntax-case stx ()
+		      [(_ id) (datum->syntax-object #'here (sub1 (syntax-local-value #'id)))]))])
+  (test 16 'goo (++apply-to-ds goo)))
+
+(test 11 eval-syntax (expand-syntax #'++o))
+
+(test 11 eval-syntax (syntax-case (expand-syntax #'++t2) ()
+		       [(_ x) #'x]))
+(test 11 eval-syntax (syntax-case (expand #'(++t z)) ()
+		       [(d-v (_) x) #'x]))
+(test 11 eval-syntax (syntax-case (expand-syntax #'++t3) ()
+		       [(_ x) #'x]))
+(test 11 eval-syntax (syntax-case (expand #'(++t4 z)) ()
+		       [(d-v (_) x) #'x]))
+
+(err/rt-test (teval (syntax-case (expand #'++v) ()
+		      [(_ x) #'x]))
+	     exn:fail:syntax?)
+(err/rt-test (teval (syntax-case (expand #'++v2) ()
+		      [(_ x) #'x]))
+	     exn:fail:syntax?)
+(err/rt-test (teval (syntax-case (expand #'++v3) ()
+		      [(_ x) #'x]))
+	     exn:fail:syntax?)
+
+(let ([expr (expand-syntax #'++v)])
+  (test #f syntax-recertify-constrained? expr #f (current-inspector))
+  (let ([ctx (syntax-extend-certificate-context expr #f)])
+    (test #t syntax-recertify-constrained? expr ctx (current-inspector))
+    (test expr syntax-recertify expr expr (current-inspector))
+    (let ([new (syntax-recertify #'no-marks expr (current-inspector))])
+      (test #t syntax? new)
+      (test 'no-marks syntax-e new))
+    (test #t syntax? (syntax-recertify (syntax-case expr ()
+					 [(beg id) #'beg])
+				       expr (current-inspector)))
+    (err/rt-test (syntax-recertify (syntax-case expr ()
+				     [(beg id) #'id])
+				   expr (current-inspector)))
+    (test #t syntax? (syntax-recertify (datum->syntax-object expr (syntax-e expr))
+				       expr (current-inspector)))
+    (err/rt-test (syntax-recertify (syntax-case expr ()
+				     [(beg id) #'(ack id)])
+				   expr (current-inspector)))))
+
+(let ([expr (expand-syntax #'(++apply-to-d ack))])
+  (test #f syntax-recertify-constrained? expr #f (current-inspector))
+  (let ([ctx (syntax-extend-certificate-context expr #f)])
+    (test #t syntax-recertify-constrained? expr ctx (current-inspector))
+    (test '(#%app (#%top . ack) ++d) syntax-object->datum expr)
+    (let ([try (lambda (cvt? other)
+		 (syntax-recertify (datum->syntax-object 
+				    expr
+				    (cons (car (syntax-e expr))
+					  ((if cvt?
+					       (lambda (x) (datum->syntax-object
+							    (cdr (syntax-e expr))
+							    x))
+					       values)
+					   (cons
+					    other
+					    (cdr (syntax-e (cdr (syntax-e expr))))))))
+				   expr
+				   (current-inspector)))])
+      (test #t syntax? (try #f #'other!))
+      (let ([new (try #t #'other!)])
+	(test #t syntax? new)
+	(test '(#%app other! ++d) syntax-object->datum new))
+      (err/rt-test (try #t (syntax-case expr ()
+			     [(ap _ d) #'d]))))))
+
+    
+;; ----------------------------------------
+
+(module ++m mzscheme 
+  (define ++x 10) 
+  (provide (protect ++x)))
+(module ++n mzscheme 
+  (require ++m) 
+  (define ++y ++x)
+  (define-syntax (++y-macro stx) #'++x)
+  (define-syntax (++y-macro2 stx) (datum->syntax-object stx '++x))
+  (define-syntax (++u-macro stx) #'++u)
+  (define-syntax ++u2 (make-rename-transformer #'++u))
+  (define ++u 8) ; unexported
+  (provide ++y ++y-macro ++y-macro2 ++u-macro ++u2))
+(require ++n)
+
+(test 10 values ++y)
+(test 10 values ++y-macro)
+(test 8 values ++u-macro)
+(test 8 values ++u2)
+
+(require ++m)
+
+(test 10 values ++x)
+(test 10 values ++y-macro2)
+
+(let ()
+  (define n (current-namespace))
+  (define n2 (make-namespace))
+  (define i (make-inspector))
+
+  (parameterize ([current-namespace n2])
+    (namespace-attach-module n '++n))
+
+  (parameterize ([current-code-inspector i]
+		 [current-namespace n2])
+    (teval '(require ++n))
+
+    (test 10 teval '++y)
+    (test 10 teval '++y-macro)
+    (test 8 teval '++u-macro)
+    (test 8 teval '++u2)
+
+    (err/rt-test (teval '++y-macro2) exn:fail:contract:variable?)
+    (err/rt-test (teval '++x) exn:fail:contract:variable?)
+
+    (teval '(require ++m))
+    (err/rt-test (teval '++x) exn:fail:syntax?)
+    (err/rt-test (teval '++y-macro2) exn:fail:syntax?)
+    
+    (teval '(module zrt mzscheme 
+	      (require ++n)
+	      (define (vy) ++y)
+	      (define (vy2) ++y-macro)
+	      (define (vu) ++u-macro)
+	      (define (vu2) ++u2)
+	      (provide vy vy2 vu vu2)))
+    (teval '(module zct mzscheme 
+	      (require-for-syntax ++n)
+	      (define-syntax (wy stx) (datum->syntax-object #'here ++y))
+	      (let-syntax ([goo ++y-macro]) 10)
+	      (define-syntax (wy2 stx) (datum->syntax-object #'here ++y-macro))
+	      (define-syntax (wu stx) (datum->syntax-object #'here ++u-macro))
+	      (provide wy wy2 wu)))
+
+    (teval '(require zct))
+
+    (test 10 teval 'wy)
+    (test 10 teval 'wy2)
+    (test 8 teval 'wu)
+
+    (teval '(require zrt))
+
+    (test 10 teval '(vy))
+    (test 10 teval '(vy2))
+    (test 8 teval '(vu))
+    (test 8 teval '(vu2)))
+  
+  (let ([old-insp (current-code-inspector)])
+    (parameterize ([current-code-inspector i]
+		   [current-namespace n2])
+      (namespace-unprotect-module old-insp '++m)))
+
+  (parameterize ([current-code-inspector i]
+		 [current-namespace n2])
+    (test 10 teval '++y-macro)
+    (test 10 teval '++y-macro2)))
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

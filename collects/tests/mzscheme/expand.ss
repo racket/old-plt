@@ -114,7 +114,7 @@
 
 (define datum->top-level-syntax-object
   (lambda (v)
-    (datum->syntax-object #'here v)))
+    (namespace-syntax-introduce (datum->syntax-object #f v))))
 
 (define now-expanding (make-parameter #f))
 

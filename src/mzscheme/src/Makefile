@@ -99,7 +99,7 @@ macro.inc : macro.ss sstoinc
 	if [ "$(PERL)" = '' ] ; then touch macro.inc ; else $(PERL) ./sstoinc < macro.ss > macro.inc ; fi
 
 unitsig.inc : unitsig.ss sstoinc
-	./sstoinc < unitsig.ss > unitsig.inc
+	if [ "$(PERL)" = '' ] ; then touch unitsig.inc ; else $(PERL) ./sstoinc < unitsig.ss > unitsig.inc ; fi
 
 schemex.h : schemef.h makex
 	if [ "$(PERL)" = '' ] ; then touch schemex.h ; else $(PERL) ./makex < schemef.h > schemex.h ; fi

@@ -166,16 +166,16 @@
 		(err/rt-test (struct-type-info typex) exn:application:mismatch?)
 		(err/rt-test (struct-type-info btype) exn:application:mismatch?)
 
-		(let-values ([(name size get put const super skipped?) (struct-type-info type)])
+		(let-values ([(name isize asize get put const super skipped?) (struct-type-info type)])
 		  (test 'bone get a-b 0)
 		  (put a-b 0 'ok)
 		  (test 'ok get a-b 0)
-		  (test (list 'a 3 null #f #f) list name size const super skipped?))
-		(let-values ([(name size get put const super skipped?) (struct-type-info btypex)])
+		  (test (list 'a 2 1 null #f #f) list name isize asize const super skipped?))
+		(let-values ([(name isize asize get put const super skipped?) (struct-type-info btypex)])
 		  (test 'byi get a-bx 0)
 		  (put a-bx 0 'yep)
 		  (test 'yep get a-bx 0)
-		  (test (list 'bx 6 null #f #t) list name size const super skipped?))
+		  (test (list 'bx 1 5 null #f #t) list name isize asize const super skipped?))
 
 		'...))))))))
 

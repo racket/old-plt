@@ -357,8 +357,6 @@
   (let* ([pos 0]
 	 [incpos! (lambda () (set! pos (add1 pos)))])
     (make-custom-input-port
-     ;; Waitable:
-     #f
      ;; Non-blocking read string:
      (lambda (str)
        (let loop ([s stream][p pos])

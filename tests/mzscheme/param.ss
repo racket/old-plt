@@ -163,8 +163,8 @@
 		      #f)
 
 		(list current-input-port
-		      (list (make-custom-input-port #f (lambda (s) (string-set! s 0 #\x) 1) #f void)
-			    (make-custom-input-port #f (lambda (s) (error 'bad)) #f void))
+		      (list (make-custom-input-port (lambda (s) (string-set! s 0 #\x) 1) #f void)
+			    (make-custom-input-port (lambda (s) (error 'bad)) #f void))
 		      '(read-char)
 		      exn:user?
 		      '("bad string"))

@@ -170,8 +170,8 @@
 (err/rt-test (file-position s 'one))
 (err/rt-test (file-position s -1))
 (err/rt-test (file-position s (expt 2 100)) exn:application:mismatch?)
-(err/rt-test (file-position (make-custom-input-port #f void #f void) 100) exn:application:mismatch?)
-(err/rt-test (file-position (make-custom-output-port #f void void void) 100) exn:application:mismatch?)
+(err/rt-test (file-position (make-custom-input-port void #f void) 100) exn:application:mismatch?)
+(err/rt-test (file-position (make-custom-output-port void void void) 100) exn:application:mismatch?)
 (arity-test file-position 1 2)
 
 (define (test-read-line r1 r2 s1 s2 flags sep)
@@ -516,27 +516,23 @@
 (err/rt-test (make-pipe (- (expt 2 40))))
 (err/rt-test (make-pipe "hello"))
 
-(test #t input-port? (make-custom-input-port #f void void void))
-(test #t input-port? (make-custom-input-port #f void #f void))
-(test #t input-port? (make-custom-input-port (make-semaphore) void #f void))
-(err/rt-test (read (make-custom-input-port #f void void void)))
-(err/rt-test (read-char (make-custom-input-port #f void void void)))
-(err/rt-test (peek-char (make-custom-input-port #f void void void)))
+(test #t input-port? (make-custom-input-port void void void))
+(test #t input-port? (make-custom-input-port void #f void))
+(err/rt-test (read (make-custom-input-port void void void)))
+(err/rt-test (read-char (make-custom-input-port void void void)))
+(err/rt-test (peek-char (make-custom-input-port void void void)))
 (arity-test make-custom-input-port 4 4)
-(err/rt-test (make-custom-input-port 8 void void void))
-(err/rt-test (make-custom-input-port void void void void))
-(err/rt-test (make-custom-input-port #f 8 void void))
-(err/rt-test (make-custom-input-port #f void 8 void))
-(err/rt-test (make-custom-input-port #f void void 8))
-(err/rt-test (make-custom-input-port #f cons void void))
-(err/rt-test (make-custom-input-port #f void add1 void))
-(err/rt-test (make-custom-input-port #f void void add1))
+(err/rt-test (make-custom-input-port 8 void void))
+(err/rt-test (make-custom-input-port void 8 void))
+(err/rt-test (make-custom-input-port void void 8))
+(err/rt-test (make-custom-input-port cons void void))
+(err/rt-test (make-custom-input-port void add1 void))
+(err/rt-test (make-custom-input-port void void add1))
 
 (test #t output-port? (make-custom-output-port #f void void void))
-(test #t output-port? (make-custom-output-port (make-semaphore) void void void))
+(test #t output-port? (make-custom-output-port void void void void))
 (arity-test make-custom-output-port 4 4)
 (err/rt-test (make-custom-output-port 8 void void void))
-(err/rt-test (make-custom-output-port void void void void))
 (err/rt-test (make-custom-output-port #f 8 void void))
 (err/rt-test (make-custom-output-port #f void 8 void))
 (err/rt-test (make-custom-output-port #f void void 8))
@@ -545,7 +541,6 @@
 (err/rt-test (make-custom-output-port #f void void add1))
 
 (let ([p (make-custom-input-port 
-	  #f
 	  (lambda (s) (string-set! s 0 #\a) 1)
 	  (lambda (s skip)
 	    (test 0 'skip-is-0 skip)
@@ -561,9 +556,18 @@
 
 (let* ([s (open-input-string "(apple \"banana\" [coconut])")]
        [p (make-custom-input-port 
-	   s
-	   (lambda (str) (string-set! str 0 (read-char s)) 1)
-	   (lambda (str skip) (string-set! str 0 (peek-char s)) 1)
+	   (lambda (str) (if (or (char-ready? s)
+				 (zero? (random 2)))
+			     (begin
+			       (string-set! str 0 (read-char s))
+			       1)
+			     s))
+	   (lambda (str skip) (if (or (char-ready? s)
+				      (zero? (random 2)))
+				  (begin
+				    (string-set! str 0 (peek-char s))
+				    1)
+				  s))
 	   void)])
   (test '(apple "banana" [coconut]) read p))
 
@@ -592,7 +596,7 @@
 (close-output-port test-file)
 (check-test-file "tmp2")
 
-(define ui (make-custom-input-port #f (lambda (s) (string-set! s 0 #\") 1) #f void))
+(define ui (make-custom-input-port (lambda (s) (string-set! s 0 #\") 1) #f void))
 (test "" read ui)
 (arity-test (port-read-handler ui) 1 3 '(2))
 (err/rt-test ((port-read-handler ui) 8))
@@ -820,7 +824,6 @@
 	       (set! extras null)
 	       (semaphore-post lock))]
 	 [p (make-custom-input-port
-	     ready-sema
 	     ;; read-string:
 	     (lambda (s)
 	       (if (semaphore-try-wait? lock)
@@ -832,7 +835,9 @@
 			    (string-set! s got (integer->char (+ 65 counter)))
 			    (set! counter (add1 counter))
 			    (loop (add1 got)))
-			  got))
+			  (if (zero? got)
+			      ready-sema
+			      got)))
 		    (semaphore-post lock))
 		   #f))
 	     (and supply-peek?
@@ -895,7 +900,6 @@
 	   l))]
       [pos 0])
   (let ([p (make-custom-input-port 
-	    #f
 	    (lambda (s) (let ([n (fill-a s pos)])
 			  (set! pos (+ pos n))
 			  n))
@@ -1052,7 +1056,6 @@
 (arity-test read-eval-print-loop 0 0)
 (test (void) 'r-e-p-l-return 
       (parameterize ([current-input-port (make-custom-input-port
-					  #f
 					  (lambda (s) eof)
 					  #f
 					  void)])

@@ -47,7 +47,6 @@
 	   [closing? #f]
 	   [count depth])
       (make-custom-input-port
-       #f
        (lambda (s)
 	 (string-set!
 	  s

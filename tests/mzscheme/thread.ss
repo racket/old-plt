@@ -227,26 +227,30 @@
 (define (go read-line/expire)
   (define p (let ([c 0]
 		  [nl-sema (make-semaphore 1)]
+		  [ready? #f]
 		  [nl? #f])
 	      (make-custom-input-port 
-	       nl-sema
 	       (lambda (s) 
 		 (let ([c (if nl?
-			      (if (semaphore-try-wait? nl-sema)
+			      (if ready?
 				  #\newline
-				  #f)
+				  nl-sema)
 			      (begin
 				(set! nl? #t)
+				(semaphore-try-wait? nl-sema)
+				(set! ready? #f)
 				(thread (lambda ()
 					  (sleep 0.4)
+					  (set! ready? #t)
 					  (semaphore-post nl-sema)))
 				(set! c (add1 c))
-				(semaphore-wait nl-sema)
 				(integer->char c)))])
 		   (if c
-		       (begin
-			 (string-set! s 0 c)
-			 1)
+		       (if (char? c)
+			   (begin
+			     (string-set! s 0 c)
+			     1)
+			   c)
 		       0)))
 	       #f
 	       void)))

@@ -751,7 +751,7 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
   }
 
 
-  if (!dialog) {
+  if (!dialog && tramp) {
     switch (message) {
     case WM_NCLBUTTONDOWN:
     case WM_NCRBUTTONDOWN:

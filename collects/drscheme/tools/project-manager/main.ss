@@ -394,6 +394,9 @@
 		   (loop (cdr frames))]
 		  [(cancel) #f]))]))))
 
+      (define (break-project) (send rep break))
+      (define (kill-project) (send rep kill-evaluation))
+
       (define (execute-project)
 	(when (offer-to-save-files)
 	  (reset-hierlist)
@@ -644,8 +647,7 @@
 ~n~
 ~n   ~a~
 ~n~
-~nShould this file be collection relative~
-~n(that is, loaded with require-library instead of load)?"
+~nShould this file be loaded with require-library instead of load?"
 			filename
 			collection
 			collection-dir))
@@ -1073,7 +1075,7 @@
       
       (define mb (get-menu-bar))
 
-      (define show-menu (make-object menu% "Show" mb))
+      (define show-menu (make-object menu% "&Show" mb))
       (define to-load-files-menu-item
         (make-object menu-item% "Hide Project Files" show-menu (lambda xxx (show/hide-to-load-files))))
       (define loaded-files-menu-item
@@ -1081,8 +1083,13 @@
       (define rep-menu-item
         (make-object menu-item% "Show Interactions" show-menu (lambda xxx (show/hide-rep))))
       
-      (define project-menu (make-object menu% "Project" mb))
-      (define execute-menu-item (make-object menu-item% "Execute" project-menu (lambda x (execute-project)) #\t))
+      (define project-menu (make-object menu% "&Project" mb))
+      (define execute-menu-item (make-object menu-item%
+				  "Execute"
+				  project-menu (lambda x (execute-project)) #\t))
+      (define break-menu-item (make-object menu-item% "Break" project-menu (lambda x (break-project)) #\b))
+      (define kill-menu-item (make-object menu-item% "Kill" project-menu (lambda x (kill-project)) #\k))
+      (make-object separator-menu-item% project-menu)
       (make-object menu-item% "Add Files..." project-menu (lambda x (add-files)))
       (make-object menu-item% "Choose Language..." project-menu (lambda x (configure-language)) #\l)
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
@@ -1094,7 +1101,9 @@
       (define rep (make-object localized-rep-text%))
       (define rep-canvas (make-object (canvas:wide-snip-mixin canvas:info%) rep-panel rep))
 
-      (define execute-button (make-object button% "Execute" top-panel (lambda x (execute-project))))
+      (define execute-button (make-object button%
+			       ((drscheme:unit:make-bitmap "execute") this)
+			       top-panel (lambda x (execute-project))))
 
       (define top-horizontal-panel (make-object horizontal-panel% top-panel))
 

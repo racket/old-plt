@@ -95,8 +95,7 @@ node-bundle-snip%
             [(is-a? contents-snip node-bundle-snip%)
              
              ;; set this snips position
-             (let* ([bundle (send contents-snip get-bundle)]
-                    [tree-width (send bundle get-tree-width)]
+             (let* ([tree-width (send contents-snip get-tree-width)]
                     [width (send contents-snip get-width)])
                (move-to contents-snip (+ x (/ (- tree-width width) 2)) y))
              

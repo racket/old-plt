@@ -1,5 +1,5 @@
 
-Tight loop creating weak hash table entries or wills accumulates
+A tight loop creating weak hash table entries or wills can accumulate
  memory indefinitely
 
 (let loop ([x 0]) (call/cc loop)) accumulates memory

@@ -45,7 +45,7 @@
       (set! user-doc-positions
 	    (cons (list man-sym weight)
 		  (filter (lambda (x)
-			    (not (eq? (car x)) man-sym))
+			    (not (eq? (car x) man-sym)))
 			  user-doc-positions)))))
 
   (define (reset-doc-positions!)

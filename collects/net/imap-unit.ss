@@ -318,7 +318,8 @@
 				[(!) "FLAGS.SILENT"]			    
 				[else (raise-type-error
 				       'imap-store
-				       "mode: '!, '+, or '-")])
+				       "mode: '!, '+, or '-"
+				       mode)])
 			      flags)
 		      void))))
 

@@ -7,9 +7,9 @@ manipulating images.
 
 These functions create basic shapes. The mode can be either
 <code>'solid</code>, meaning the shape is filled in, or
-<code>'outline</code>, meaning the shape is hollow. Colors
-can be either strings, symbols, or color structs (see
-below).
+<code>'outline</code>, meaning the shape is hollow. Image
+colors can be either strings, symbols, or color structs (see
+below for information about color structs).
 
 <menu>
 <li><code>{(idx rectangle)}</code> :  int int mode image-color -> image <br>
@@ -48,25 +48,37 @@ using the next two functions.
 <li><code>{(idx image-inside?)}</code> : image image -> boolean <br>
  to determine whether the pixels of the second image appear in the first
 <li><code>{(idx find-image)}</code> : image image -> posn <br>
- to determine where the pixels of the second image appear in the first
+ to determine where the pixels of the second image appear in the first, with
+ respect to the pinhole of the first image.
 </menu>
 
-The rest of this teachpack are supplementary functions for
-manipulating images and colors.
+These functions provide sizing information for an image.
 
 <menu>
-<li><code>{(idx image-color?)}</code> :  anything -> boolean <br>
- to determine if the input names a valid color.
-
 <li><code>{(idx image-width)}</code> :  image -> number <br>
  to obtain an image's width in pixels
 <li><code>{(idx image-height)}</code> :  image -> number <br>
  to obtain an image's height in pixels
+</menu>
  
+This function precisely specifies what a valid image color is.
+
+<menu>
+<li><code>{(idx image-color?)}</code> :  anything -> boolean <br>
+ to determine if the input is a valid image color
+</menu>
+
+The next functions separate an image into its consitiuent
+colors and combine pixels together to build an image.
+
+<menu>
 <li><code>{(idx image->color-list)}</code> : image -> list-of-color <br>
  to convert an image to a list of colors
+
 <li><code>{(idx color-list->image)}</code> : list-of-color int int int int -> image <br>
- to convert a list of colors to an image with the given width and height
+ to convert a list of colors to an image with the given
+ width and height, and pinhole coordinates (the pinhole
+ coordinates are with respect to the top-left of the image).
  
 <li><code>{(idx make-color)}</code> : int int int -> color <br>
  to construct a color
@@ -78,12 +90,20 @@ manipulating images and colors.
  to extract the green component of a color
 <li><code>{(idx color-blue)}</code> : color -> int <br>
  to extract the blue component of a color
+</menu>
  
+Like the last group of functions, these functions separate
+an image into its consitiuent colors and combine pixels
+together to build an image, but these provide alpha-channel
+information as well.
+
+<menu>
 <li><code>{(idx image->alpha-color-list)}</code> : image -> list-of-alpha-color <br>
  to convert an image to a list of alpha colors
-<li><code>{(idx alpha-color-list->image)}</code> : list-of-alpha-color int int -> image <br>
- to convert a list of alpha colors to an image with the given width and height"
-
+<li><code>{(idx alpha-color-list->image)}</code> : list-of-alpha-color int int int int -> image <br>
+ to convert a list of alpha colors to an image with the given
+ width and height, and pinhole coordinates (the pinhole
+ coordinates are with respect to the top-left of the image).
 <li><code>{(idx make-alpha-color)}</code> : int int int int -> color <br>
  to construct an alpha color
 <li><code>{(idx alpha-color?)}</code> : anything -> boolean <br>
@@ -97,6 +117,7 @@ manipulating images and colors.
 <li><code>{(idx alpha-color-blue)}</code> : color -> int <br>
  to extract the blue component of a color"
 </menu>
+
 
 {(include "foot.tinc")}
 

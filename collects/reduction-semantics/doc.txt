@@ -41,60 +41,7 @@ this tool:
   _threads.ss_: shows how non-deterministic choice can be
   modelled in a reduction semantics.
 
-  _iswim.ss_ : grammar and reductions from "Programming Languages
-               and Lambda Calculi" by Felleisen and Flatt.
-
-       Example S-expression forms of ISWIM expressions:
-         Book                     S-expr
-         ----                     ------
-         (lambda x . x)           ("lam" x x)
-         (+ '1` '2`)              ("+" 1 2)
-         ((lambda y y) '7`)       (("lam" y y) 7)
-
-       See "iswim.ss" for the reduction-semantics grammar.
-
-       The following are provided by "iswim.ss" (case-insensitively):
-               Grammar and substitution:
->                 iswim-grammar : compiled-lang?
->                 M? : (any? . -> . boolean?)
->                 V? : (M? . -> . boolean?)
->                 o1? : (M? . -> . boolean?)
->                 o2? : (M? . -> . boolean?)
->                 on? : (M? . -> . boolean?)
->                 iswim-subst : (M? symbol? M? . -> . M?)
-               Reductions:
->                 beta_v : red?
->                 delta : (listof red?)
->                 ->v : (listof red?)
->                 :->v : (listof red?)
-               Abbreviations:
->                 if0 : (M? M? M? . -> . M?)
->                 true : M?
->                 false : M?
->                 mkpair : M?
->                 fst : M?
->                 snd : M?
->                 Y_v : M?
->                 sum : M?
-               Helpers:
->                 delta*1 : (o1? V? . -> . (union false? V?))
-                     delta as a function for unary operations.
->                 delta*2 : (o2? V? V? . -> . (union false? V?))
-                     delta as a function for binary operations.
->                 delta*n : (on? (listof V?) . -> . (union false? V?))
-                     delta as a function for any operation.
->                 function-reduce* : ((listof red?)
-                                      any?
-                                      (any? . -> . boolean?)
-                                      . -> . (listof any?))
-                     First argument represents a set of reductions
-                     that define a function; the second argument is
-                     the starting expression; the last argument is
-                     a predicate to recognize ending expressions.
-                     The function applies the reductions repeatedly
-                     until an ending expression os found, or the
-                     reduction gets stuck. The result is the list of
-                     expressions leading to the endng expression.
+  iswim.ss : see further below.
 
 ======================================================================
 
@@ -493,3 +440,59 @@ Theses functions are the procedure-based interface to
 substitution that subst expands to and uses.
 
 ======================================================================
+
+The _iswim.ss_ module in the "examples" sub-collection defines a
+grammar and reductions from "Programming Languages and Lambda Calculi"
+by Felleisen and Flatt.
+
+       Example S-expression forms of ISWIM expressions:
+         Book                     S-expr
+         ----                     ------
+         (lambda x . x)           ("lam" x x)
+         (+ '1` '2`)              ("+" 1 2)
+         ((lambda y y) '7`)       (("lam" y y) 7)
+
+       See "iswim.ss" for the reduction-semantics grammar.
+
+       The following are provided by "iswim.ss" (case-insensitively):
+               Grammar and substitution:
+>                 iswim-grammar : compiled-lang?
+>                 M? : (any? . -> . boolean?)
+>                 V? : (M? . -> . boolean?)
+>                 o1? : (M? . -> . boolean?)
+>                 o2? : (M? . -> . boolean?)
+>                 on? : (M? . -> . boolean?)
+>                 iswim-subst : (M? symbol? M? . -> . M?)
+               Reductions:
+>                 beta_v : red?
+>                 delta : (listof red?)
+>                 ->v : (listof red?)
+>                 :->v : (listof red?)
+               Abbreviations:
+>                 if0 : (M? M? M? . -> . M?)
+>                 true : M?
+>                 false : M?
+>                 mkpair : M?
+>                 fst : M?
+>                 snd : M?
+>                 Y_v : M?
+>                 sum : M?
+               Helpers:
+>                 delta*1 : (o1? V? . -> . (union false? V?))
+                     delta as a function for unary operations.
+>                 delta*2 : (o2? V? V? . -> . (union false? V?))
+                     delta as a function for binary operations.
+>                 delta*n : (on? (listof V?) . -> . (union false? V?))
+                     delta as a function for any operation.
+>                 function-reduce* : ((listof red?)
+                                      any?
+                                      (any? . -> . boolean?)
+                                      . -> . (listof any?))
+                     First argument represents a set of reductions
+                     that define a function; the second argument is
+                     the starting expression; the last argument is
+                     a predicate to recognize ending expressions.
+                     The function applies the reductions repeatedly
+                     until an ending expression os found, or the
+                     reduction gets stuck. The result is the list of
+                     expressions leading to the endng expression.

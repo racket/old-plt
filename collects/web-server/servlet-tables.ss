@@ -4,34 +4,85 @@
            (lib "list.ss"))
   (provide (struct exn:servlet-instance ())
            (struct exn:servlet-continuation ())
-           (struct servlet-context (instance connection request suspend))
-           (struct servlet-instance (invoke-id k-table next-k-id mutex))
-           current-servlet-context)
+           (struct execution-context (connection request suspend))
+           (struct servlet-instance (id k-table custodian context mutex))
+           current-servlet-instance)
 
-  (define-struct servlet-context (instance connection request suspend))
-  (define-struct servlet-instance (invoke-id k-table next-k-id mutex))
+  ;; current-servlet-instance. The server will parameterize
+  ;; over the current-servlet-instance before invoking a servlet
+  ;; or invoking a continuation. The current-servlet-instance
+  ;; will be in affect for the entire dynamic extent of every
+  ;; continuation associated with that instance.
+  (define current-servlet-instance (make-parameter #f))
+  (define-struct servlet-instance (id k-table custodian context mutex))
+  (define-struct execution-context (connection request suspend))
+
+  ;; Notes:
+  ;; * The servlet-instance-id is the key used for finding the servlet-instance in
+  ;;   instance table.
+  ;; * The servlet-instance-k-table stores continuations that were created
+  ;;   during this instance.
+  ;; * The servlet-instance-execution-context stores the context in which the
+  ;;   instance is executing. The servlet-instance can have only one
+  ;;   execution-context at any particular time. The execution-context will be
+  ;;   updated whenever a continuation associated with this instance is
+  ;;   invoked.
+  ;; * The servlet-instance-mutex is used to guarentee mutual-exclusion in the
+  ;;   case when it is attempted to invoke multiple continuations
+  ;;   simultaneously.
 
   (provide/contract
    [continuation-url? (url? . -> . (union boolean? (list/c symbol? number?)))]
-   [embed-ids (symbol? number? url? . -> . string?)]
-   [create-new-instance! (hash-table? symbol? . -> . servlet-instance?)]
+   [store-continuation! (procedure? url? servlet-instance? . -> . string?)]
+   [create-new-instance! (hash-table? custodian? execution-context? semaphore?
+                                      . -> . servlet-instance?)]
+   [remove-instance! (hash-table? servlet-instance? . -> . any)]
    )
-
-  ;; The current-servlet-context parameter
-  (define current-servlet-context (make-thread-cell #f))
 
   ;; not found in the instance table
   (define-struct (exn:servlet-instance exn) ())
   ;; not found in the continuatin table
   (define-struct (exn:servlet-continuation exn) ())
 
+  (define-values (make-k-table get-k-id!)
+    (let ([id-slot 'next-k-id])
+      (values
 
-  ;; create-new-instance! args -> servlet-instance
-  (define (create-new-instance! instance-table invoke-id)
-    (let ([inst (make-servlet-instance invoke-id (make-hash-table) 0
-                                       (make-semaphore 0))])
-      (hash-table-put! instance-table invoke-id inst)
+       ;; make-k-table: -> (hash-table-of continuation)
+       ;; Create a continuation table with an initial value for the next
+       ;; continuation id.
+       (lambda ()
+         (let ([k-table (make-hash-table)])
+           (hash-table-put! k-table id-slot 0)
+           k-table))
+
+       ;; get-k-id!: hash-table -> number
+       ;; get the current-continuation id and increment the internal value
+       (lambda (k-table)
+         (let ([id (hash-table-get k-table id-slot)])
+           (hash-table-put! k-table id-slot (add1 id))
+           id)))))
+
+  ;; store-continuation!: continuation execution-context servlet-instance -> url-string
+  ;; store a continuation in a k-table for the provided servlet-instance
+  (define (store-continuation! k uri inst)
+    (let ([k-table (servlet-instance-k-table inst)])
+      (let ([next-k-id (get-k-id! k-table)])
+        (hash-table-put! k-table next-k-id k)
+        (embed-ids (servlet-instance-id inst) next-k-id uri))))
+
+  ;; create-new-instance! hash-table custodian execution-context semaphore-> servlet-instance
+  (define (create-new-instance! instance-table cust ctxt sema)
+    (let* ([inst-id (string->symbol (symbol->string (gensym 'id)))]
+           [inst
+            (make-servlet-instance
+             inst-id (make-k-table) cust ctxt sema)])
+      (hash-table-put! instance-table inst-id inst)
       inst))
+
+  ;; remove-instance!: hash-table servlet-instance -> void
+  (define (remove-instance! instance-table inst)
+    (hash-table-remove! instance-table (servlet-instance-id inst)))
 
   ;; ********************************************************************************
   ;; Parameter Embedding
@@ -42,10 +93,10 @@
 
   ;; embed-ids: number number url -> string
   ;; embedd the two numbers in a url
-  (define (embed-ids invoke-id k-id in-url)
+  (define (embed-ids inst-id k-id in-url)
     (insert-param
      in-url
-     (format "~a*~a" invoke-id k-id)))
+     (format "~a*~a" inst-id k-id)))
 
   ;; continuation-url?: url -> (union (list number number) #f)
   ;; determine if this url encodes a continuation and extract the instance id and

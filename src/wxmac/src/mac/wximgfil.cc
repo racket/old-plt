@@ -93,10 +93,11 @@ wxGIF::wxGIF( char * path)
     fp = fopen(path,"rb");
     if (!fp)
       return;
-    ReadHeader(fp);
-    Create(image.w, image.h, 8);
-    if (GetRawImage() != 0)
-      Extrae_imagen();
+    if (ReadHeader(fp)) {
+      Create(image.w, image.h, 8);
+      if (GetRawImage() != 0)
+	Extrae_imagen();
+    }
   }
   fclose(fp);
 }
@@ -138,7 +139,8 @@ BOOL wxGIF::ReadHeader(FILE *fp)
   ushort widlow, widhigh, hgtlow, hgthi, i;
   ushort index = 0;
   
-  fread((char*)&tstA[0],13,1,fp);
+  if (fread((char*)&tstA[0],13,1,fp) != 13)
+    return FALSE;
   
   for (i = 0; i < 6; i++) {
     dscgif.header[i] = tstA[index++];
@@ -173,13 +175,17 @@ BOOL wxGIF::ReadHeader(FILE *fp)
   single = 0;
   transparent_index = -1;
   while (1) {
-    fread((char *)&single, 1, 1, fp);
+    if (fread((char *)&single, 1, 1, fp) != 1)
+      return FALSE;
     if (single == 0x21) { /* extension */
-      fread(&eid,1,1,fp); /* function */
+      if (fread(&eid,1,1,fp) != 1) /* function */
+	return FALSE;
       while (1) {
-	fread(&single,1,1,fp); /* block size */
+	if (fread(&single,1,1,fp) != 1) /* block size */
+	  return FALSE;
 	if (single) {
-	  fread((char*)&tstA[0],single,1,fp);
+	  if (fread((char*)&tstA[0],single,1,fp) != single)
+	    return FALSE;
 	  if ((eid == 0xF9) && (single == 4)) {
 	    /* Transparent color index? */
 	    if (tstA[0] & 0x1) {
@@ -193,7 +199,8 @@ BOOL wxGIF::ReadHeader(FILE *fp)
       break;
   }
       
-  fread((char*)&tstA[0],9,1,fp);
+  if (fread((char*)&tstA[0],9,1,fp) != 9)
+    return FALSE;
   index = 0;
   image.sep = single;
   image.l = tstA[index++];
@@ -207,14 +214,14 @@ BOOL wxGIF::ReadHeader(FILE *fp)
   image.pf = tstA[index++];
 
   if (image.pf & 0x80) {
-    int len = (1 << ((image.pf & 7) + 1)), i, j = 0;
+    int len = (1 << ((image.pf & 7) + 1)), i, j = 0, amt;
     for (i = 0; i < len; i++) {
       if (j == 198)
 	j = 0;
       if (!j) {
-	fread((char*)&tstA[0], 
-	      (len - i > 66) ? 198 : (3 * (len - i)),
-	      1, fp);
+	amt = (len - i > 66) ? 198 : (3 * (len - i));
+	if (fread((char*)&tstA[0], amt, 1, fp) != amt)
+	  return FALSE;
       }
       TabCol.paleta[i].r = tstA[j++];
       TabCol.paleta[i].g = tstA[j++];

@@ -83,20 +83,6 @@
 #ifdef UNISTD_INCLUDE
 # include <unistd.h>
 #endif
-#if defined(MZ_USE_WIN32_THREADS)
-# include <windows.h>
-# include <process.h>
-#endif
-#ifdef MZ_USE_SOLARIS_THREADS
-# include <thread.h>
-# include <synch.h>
-#endif
-#ifdef MZ_USE_PTHREADS
-# include <semaphore.h>
-#endif
-#ifdef WIN32_THREADS
-# include <process.h>
-#endif
 
 #ifndef SIGNMZTHREAD
 # define SIGMZTHREAD SIGUSR2

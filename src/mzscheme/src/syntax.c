@@ -1439,7 +1439,7 @@ case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_
 /*                          implicit set!s                            */
 /**********************************************************************/
 
-/* A bangboxval step is inserted by the compilation of `lambda' forms
+/* A bangboxenv step is inserted by the compilation of `lambda' forms
    where an argument is set!ed in the function body. */
 
 Scheme_Object *bangboxenv_execute(Scheme_Object *data)

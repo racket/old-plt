@@ -84,6 +84,16 @@
         (set! selection (cons f selection))
         (gui:selection-added f))
       
+      ;; toggle-selection: (file U string) ->
+      (define (toggle-selection file)
+        (file-arg! file 'toggle-selection 0 file)
+        (cond
+          ((not (internal-remove-selection file))
+           (set! selection (cons file selection))
+           (gui:selection-added file))
+          (else
+           (gui:selection-removed file))))
+        
       ;; internal-remove-selection: file -> bool
       (define (internal-remove-selection f)
         (let ((found #f))
@@ -162,15 +172,16 @@
       ;; delete-file: (file U string) ->
       (define (delete-file f)
         (file-arg! f 'delete-file 0 f)
-        (let ((was-selected (internal-remove-selection f))
-              (was-copy-selected (internal-remove-copy-selection f)))
-          (with-handlers ((exn:i/o:filesystem? (lambda (ex)
-                                                 (if was-selected
-                                                     (set! selection (cons f selection)))
-                                                 (if was-copy-selected
-                                                     (set! selection (cons f copy-selection)))
-                                                 (raise ex))))
-            (fs:delete-file f))))
+        (if (gui:confirm (format "delete file ~a" (file-full-path f)))
+            (let ((was-selected (internal-remove-selection f))
+                  (was-copy-selected (internal-remove-copy-selection f)))
+              (with-handlers ((exn:i/o:filesystem? (lambda (ex)
+                                                     (if was-selected
+                                                         (set! selection (cons f selection)))
+                                                     (if was-copy-selected
+                                                         (set! selection (cons f copy-selection)))
+                                                     (raise ex))))
+                (fs:delete-file f)))))
         
       ;; new-file: string * (file U string) -> file
       (define (new-file name dir)

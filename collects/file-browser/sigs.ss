@@ -24,6 +24,7 @@
      change-dir
      add-window
      close-window
+     confirm
      toolbar-add
      toolbar-spacer))
   (define-signature script^ 
@@ -40,6 +41,7 @@
      clear-selection
      cons-selection
      remove-selection 
+     toggle-selection
      filter-selection
      map-selection
 
@@ -61,4 +63,4 @@
      close-dir-window
      toolbar-add
      toolbar-spacer))
-  (define-signature code-engine^ (user-eval get-user-value open-drscheme)))
+  (define-signature code-engine^ (user-eval user-eval-no-disable get-user-value open-drscheme)))

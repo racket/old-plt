@@ -4,6 +4,7 @@
            (lib "mred.ss" "mred")
            (lib "unitsig.ss")
            (lib "list.ss")
+           (lib "framework.ss" "framework")
            "sigs.ss"
            "weak-set.ss"
            "widgets.ss")
@@ -255,6 +256,9 @@
           (weak-set-add! new-window file-windows)
           (send state register-viewport new-window)))
       
+      (define (confirm msg)
+        (gui-utils:get-choice (string-append "Really " msg) "yes" "no" "Confirmation" #f))
+      
       (define toolbar #f)
           
       (define (toolbar-add label action)
@@ -297,4 +301,6 @@
                    (if c
                        (send c change-directory (script:file-dir (send c get-dir)))))))
              (set! window-pane (make-object tabbed-panel% frame)))
+           (user-eval-no-disable `(require (file ,(build-path (find-system-path 'pref-dir) ".file-browser.ss")))
+                      void)
            (send frame show #t)))))))

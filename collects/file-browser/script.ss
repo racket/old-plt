@@ -54,7 +54,9 @@
     (toolbar-add "cut" cut))
   (define (add-paste-button)
     (toolbar-add "paste" (lambda () (paste (get-current-dir)))))
-    
-           
+  (define (add-delete-button)
+    (toolbar-add "delete" (lambda () (map-selection delete-file))))
+  (define (add-clear-button)
+    (toolbar-add "clear" (lambda () (clear-selection))))
            
   )

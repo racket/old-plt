@@ -2,7 +2,6 @@
   (require (lib "class.ss")
            (lib "unitsig.ss")
            (lib "unit.ss")
-           (lib "list.ss")
            (lib "tool.ss" "drscheme")
            (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
@@ -44,10 +43,6 @@
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
-      
-      (define activate-bitmap
-        (drscheme:unit:make-bitmap "Browse Files"
-                                   (build-path (collection-path "icons") "file.gif")))
 
       (define frame #f)
       
@@ -99,6 +94,16 @@
                                  (send (get-interactions-text) get-user-namespace)))
                    (namespace-variable-value sym)))
                
+               (define (user-eval-no-disable code callback)
+                 (parameterize ((current-eventspace 
+                                 (send (get-interactions-text) get-user-eventspace)))
+                   (trace "in user-eval-no-disable")
+                   (queue-callback
+                    (lambda ()
+                      (trace "user callback running: ~a" code)
+                      (callback (eval code)))
+                    #t)))
+               
                (define (user-eval code callback)
                  (parameterize ((current-eventspace 
                                  (send (get-interactions-text) get-user-eventspace)))
@@ -107,7 +112,6 @@
                     (lambda ()
                       (trace "user callback running: ~a" code)
                       (disable-evaluation)
-                      (trace "disabled")
                       (with-handlers ((exn?
                                        (lambda (ex)
                                          (enable-evaluation)
@@ -124,20 +128,18 @@
 
            (rename (super-enable-evaluation enable-evaluation))
            (define/override (enable-evaluation)
-             (send button enable #t)
              (send (car (send container get-children)) enable #t)
              (super-enable-evaluation))
            
            (rename (super-disable-evaluation disable-evaluation))
            (define/override (disable-evaluation)
-             (send button enable #f)
              (send (car (send container get-children)) enable #f)
              (super-disable-evaluation))
            
            (rename (super-execute-callback execute-callback))
            (define/override (execute-callback)
-             (set! frame this)        ;; Relies on the face that executes are atomic with respect
-                                      ;; to other executes
+             (set! frame this)       ;; Relies on the fact that executes are atomic with respect
+                                     ;; to other executes
              (super-execute-callback))
            
            (rename (super-make-root-area-container make-root-area-container))
@@ -148,6 +150,22 @@
                    (super-make-root-area-container panel:vertical-dragable% parent))
              (let ((root (make-object % container)))
                root))
+           
+           
+           (define/override (file-menu:between-open-and-revert fm)
+             (make-object menu-item% "Open in file browser..."
+               fm
+               (lambda (a b)
+                 (let ((file (finder:get-file)))
+                   (new-file-window)
+                   (drscheme:unit:open-drscheme-window file)))))
+
+           (define/override (file-menu:between-new-and-open fm)
+             (make-object menu-item% "New file browser"
+               fm
+               (lambda (a b)
+                 (new-file-window)
+                 (drscheme:unit:open-drscheme-window))))
            
            (define start
              (cond
@@ -165,16 +183,8 @@
 
            (trace "super-frame start")
            (super-instantiate ())  ;; on-execute happens in here
-           (trace "super-frame finish")
+           (trace "super-frame finish")           
            
-           (define button
-             (make-object button% (activate-bitmap this) (get-button-panel)
-               (lambda (a b)
-                 (new-file-window)
-                 (drscheme:unit:open-drscheme-window))))
-           
-           (send (get-button-panel) change-children
-                 (lambda (x) (cons button (remq button x))))
            (cond
              (active?
               (send container begin-container-sequence)

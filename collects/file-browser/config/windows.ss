@@ -1,4 +1,4 @@
-(module windows (lib "mzrestricted.ss" "file-browser")
+(module .file-browser (lib "mzrestricted.ss" "file-browser")
   (require (lib "script.ss" "file-browser")
            (lib "process.ss"))
   (provide (all-defined))
@@ -39,4 +39,7 @@
   (add-copy-button)
   (add-cut-button)
   (add-paste-button)
+  
+  (open-dir-window (get-current-dir))
+  
   )

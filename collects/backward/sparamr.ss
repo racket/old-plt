@@ -16,4 +16,4 @@
       (with-handlers ((void (lambda (e) #t)))
 	(cond)
 	#f))
-    (define check-syntax-level 'none)))
+    (define check-syntax-level 'advanced)))

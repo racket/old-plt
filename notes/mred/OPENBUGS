@@ -3,9 +3,6 @@ MrEd Engine:
 
 * Motif: pre-on-char doesn't work for sliders
 
-* Windows: pre-on-char doesn't work for input that moves
-   the focus between controls (e.g., cursor keys)
-
 * MacOS needs way to control the 0-window menu bar
 
 * MacOS: bitmaps don't print with platform-specific printing

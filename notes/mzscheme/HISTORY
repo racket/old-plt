@@ -23,9 +23,8 @@ Removes dynamic-enable-break (no long needed since dynamic-wind
  post thunks can't be broken), but moved it to MzLib's thread.ss
 Renamed call-with-escaping-continution procedure to
  call-with-escape-continution (call/ec unchanged)
-Cut down the exn hierarchy to about 1/4 of its previous size,
- which minor renaming on the remainder; see the manual for
- details
+Cut the exn hierarchy to about 1/4 of its previous size, with
+ minor renaming on the remainder; see the manual for details
 Added raise-mismatch-error
 MacOS: getenv and putenv work within MzScheme; in a file called
  "Environment" resides in MzScheme's folder, it provides the
@@ -43,7 +42,6 @@ Changed handling of inexact can complex numbers towards compliance
    that (sqrt -4.0) is 0+2.0i
   Complex numbers can have a +nan.0 real/imaginary part with
    an imaginary/real part that is not +nan.0
-  Numbers with an inexact imaginary part are never real
 All zero-length vectors are eq
 MzLib cleanup:
  Removed `@' suffix for embedded units in mzlib:core@ and mzlib@

@@ -2047,12 +2047,13 @@ BOOL schemeValueFitsElemDesc(Scheme_Object *val,ELEMDESC *pElemDesc) {
   // if default available, check value has appropriate type
   
   flags = pElemDesc->paramdesc.wParamFlags;
-  if ((flags & PARAMFLAG_FOPT) && (flags & PARAMFLAG_FHASDEFAULT))  {
+  if (flags & PARAMFLAG_FOPT) {
     if (val == mx_omit_obj) {
       return TRUE;
     }
-    
-    return schemeValueFitsVarType(val,pElemDesc->paramdesc.pparamdescex->varDefaultValue.vt);
+    if (flags & PARAMFLAG_FHASDEFAULT)  {
+      return schemeValueFitsVarType(val,pElemDesc->paramdesc.pparamdescex->varDefaultValue.vt);
+    }
   }
   
   // if array, check we have a vector of proper dimension and contained types 
@@ -2095,6 +2096,12 @@ VARTYPE schemeValueToVarType(Scheme_Object *obj) {
   
   if (SCHEME_VOIDP(obj)) {
     return VT_NULL;
+  }
+  
+  // handle fixnums
+
+  if (SCHEME_INTP(obj)) {
+    return VT_I4;
   }
   
   // otherwise, dispatch on value type
@@ -2362,10 +2369,14 @@ void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
   case VT_VARIANT | VT_BYREF :
     
     // pass boxed value of almost-arbitrary type
+
+    Scheme_Object *boxedVal;
+
+    boxedVal = SCHEME_BOX_VAL(val);
     
     pVariantArg->pvarVal = (VARIANTARG *)allocParamMemory(sizeof(VARIANTARG));
-    pVariantArg->pvarVal->vt = schemeValueToVarType(val);
-    marshallSchemeValue(SCHEME_BOX_VAL(val),pVariantArg->pvarVal);
+    pVariantArg->pvarVal->vt = schemeValueToVarType(boxedVal);
+    marshallSchemeValue(boxedVal,pVariantArg->pvarVal);
     break;
     
   case VT_UNKNOWN :

@@ -111,7 +111,7 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 
 @MACRO makeSizedString = (r ? scheme_make_sized_byte_string(r, _x0 - 1, 0) : XC_SCHEME_NULL)
 
-@ "get-string" : nbstring/makeSizedString GetString(-long*);
+@ "get-bytes" : nbstring/makeSizedString GetString(-long*);
 
 @END
 

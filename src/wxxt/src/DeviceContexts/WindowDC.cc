@@ -2071,7 +2071,7 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
 			       Bool combine, Bool isUnicode, int dt)
 {
   wxFont *font_to_use;
-  int         ascent, descent;
+  int         ascent, descent, space = 0;
   long        textlen;
   XFontStruct *fontinfo;
 #ifdef WX_USE_XFT
@@ -2154,6 +2154,7 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
 
     ascent = xfontinfo->ascent;
     descent = xfontinfo->descent;
+    space = xfontinfo->height - xfontinfo->ascent - xfontinfo->descent;
   } else
 #endif
     {
@@ -2174,7 +2175,7 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
     *_descent = d;
   }
   if (_topspace)
-    *_topspace = 0.0;
+    *_topspace = space;
 }
 
 Bool wxWindowDC::GlyphAvailable(int c, wxFont *font)

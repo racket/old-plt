@@ -486,52 +486,25 @@ static Scheme_Object *os_wxClipboardGetClipboardString(int n,  Scheme_Object *p[
 static Scheme_Object *os_wxClipboardSetClipboardString(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, p);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxClipboard_class, "set-clipboard-string in clipboard<%>", n, p);
-  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL))) {
-    string x0 INIT_NULLED_OUT;
-    ExactLong x1;
+  string x0 INIT_NULLED_OUT;
+  ExactLong x1;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(2);
-    VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, x0);
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
 
-    
-    if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("set-clipboard-string in clipboard<%> (string case)", POFFSET+2, POFFSET+2, n, p, 1));
-    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-clipboard-string in clipboard<%> (string case)"));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+1], "set-clipboard-string in clipboard<%> (string case)"));
+  
+  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-clipboard-string in clipboard<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+1], "set-clipboard-string in clipboard<%>"));
 
-    
-    WITH_VAR_STACK(((wxClipboard *)((Scheme_Class_Object *)p[0])->primdata)->SetClipboardString(x0, x1));
+  
+  WITH_VAR_STACK(((wxClipboard *)((Scheme_Class_Object *)p[0])->primdata)->SetClipboardString(x0, x1));
 
-    
-    
-    READY_TO_PRE_RETURN;
-  } else  {
-    bstring x0 INIT_NULLED_OUT;
-    ExactLong x1;
-
-    SETUP_VAR_STACK_PRE_REMEMBERED(2);
-    VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, x0);
-
-    
-    if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("set-clipboard-bytes in clipboard<%> (byte string case)", POFFSET+2, POFFSET+2, n, p, 1));
-    x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "set-clipboard-bytes in clipboard<%> (byte string case)"));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+1], "set-clipboard-bytes in clipboard<%> (byte string case)"));
-
-    
-    WITH_VAR_STACK(((wxClipboard *)((Scheme_Class_Object *)p[0])->primdata)->SetClipboardString(x0, x1));
-
-    
-    
-    READY_TO_PRE_RETURN;
-  }
-
+  
+  
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -573,8 +546,8 @@ void objscheme_setup_wxClipboard(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-bitmap" " method", (Scheme_Method_Prim *)os_wxClipboardGetClipboardBitmap, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-bitmap" " method", (Scheme_Method_Prim *)os_wxClipboardSetClipboardBitmap, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-data" " method", (Scheme_Method_Prim *)os_wxClipboardGetClipboardData, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-bytes" " method", (Scheme_Method_Prim *)os_wxClipboardGetClipboardString, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-bytes" " method", (Scheme_Method_Prim *)os_wxClipboardSetClipboardString, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-string" " method", (Scheme_Method_Prim *)os_wxClipboardGetClipboardString, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-string" " method", (Scheme_Method_Prim *)os_wxClipboardSetClipboardString, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-client" " method", (Scheme_Method_Prim *)os_wxClipboardSetClipboardClient, 2, 2));
 
 

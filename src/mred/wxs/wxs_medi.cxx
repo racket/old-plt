@@ -568,7 +568,7 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void OnSaveFile(epathname x0, int x1);
   Bool CanSaveFile(epathname x0, int x1);
   class wxSnip* OnNewBox(int x0);
-  class wxImageSnip* OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3);
+  class wxImageSnip* OnNewImageSnip(nxpathname x0, int x1, Bool x2, Bool x3);
   void InvalidateBitmapCache(float x0 = 0.0, float x1 = 0.0, float x2 = -1.0, float x3 = -1.0);
   void OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float x4, float x5, float x6, float x7, int x8);
   Bool WriteFootersToFile(class wxMediaStreamOut* x0);
@@ -1022,7 +1022,7 @@ class wxSnip* os_wxMediaBuffer::OnNewBox(int x0)
   }
 }
 
-class wxImageSnip* os_wxMediaBuffer::OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3)
+class wxImageSnip* os_wxMediaBuffer::OnNewImageSnip(nxpathname x0, int x1, Bool x2, Bool x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1045,7 +1045,7 @@ class wxImageSnip* os_wxMediaBuffer::OnNewImageSnip(nstring x0, int x1, Bool x2,
     READY_TO_RETURN; return ASSELF wxMediaBuffer::OnNewImageSnip(x0, x1, x2, x3);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_bitmapType(x1));
   p[POFFSET+2] = (x2 ? scheme_true : scheme_false);
   p[POFFSET+3] = (x3 ? scheme_true : scheme_false);
@@ -4285,7 +4285,7 @@ static Scheme_Object *os_wxMediaBufferOnNewImageSnip(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   class wxImageSnip* r;
   objscheme_check_valid(os_wxMediaBuffer_class, "on-new-image-snip in editor<%>", n, p);
-  nstring x0 INIT_NULLED_OUT;
+  nxpathname x0 INIT_NULLED_OUT;
   int x1;
   Bool x2;
   Bool x3;
@@ -4295,7 +4295,7 @@ static Scheme_Object *os_wxMediaBufferOnNewImageSnip(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "on-new-image-snip in editor<%>"));
+  x0 = (nxpathname)WITH_VAR_STACK(objscheme_unbundle_nullable_xpathname(p[POFFSET+0], "on-new-image-snip in editor<%>"));
   x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "on-new-image-snip in editor<%>"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "on-new-image-snip in editor<%>"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+3], "on-new-image-snip in editor<%>"));

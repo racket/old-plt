@@ -479,7 +479,7 @@ general functions to help make .plt archives:
   relative to the plt installation directory. The default is #f.
 
 > (std-filter p) - returns #t unless `p' matches one of the following
-  regular expressions: "CVS$", "compiled$", "~$", "^#.*#$", or
+  regular expressions: "CVS$", "compiled$", "~$", "^#.*#$", "^[.]#", or
   "[.]plt$".
 
 > (mztar path output filter file-mode) - called by `pack' to write one

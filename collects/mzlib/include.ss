@@ -102,48 +102,21 @@
 		    `(begin ,@lexed-content)
 		    orig-stx))))))]))
     
-    (define (check-fn-form fn stx)
-      ;; Check form of fn:
-      (syntax-case* fn (build-path lib) module-or-top-identifier=?
-	[fn
-	 (string? (syntax-e (syntax fn)))
-	 'ok]
-	[(build-path elem1 elem ...)
-	 (andmap
-	  (lambda (e)
-	    (or (path-string? (syntax-e e))
-		(and (identifier? e)
-		     (or
-		      (module-identifier=? e (quote-syntax up))
-		      (module-identifier=? e (quote-syntax same))))))
-	  (syntax->list (syntax (elem1 elem ...))))
-	 'ok]
-	[(lib filename ...)
-	 (andmap
-	  (lambda (e)
-	    (path-string? (syntax-e e)))
-	  (syntax->list (syntax (filename ...))))
-	 'ok]
-	[_else (raise-syntax-error #f "bad syntax" stx fn)]))
-
     (define (include/proc stx)
       (syntax-case stx ()
 	[(_ fn)
-	 (check-fn-form (syntax fn) stx)
 	 (with-syntax ([_stx stx])
 	   (syntax/loc stx (do-include _stx _stx _stx fn #f)))]))
 
     (define (include-at/relative-to/proc stx)
       (syntax-case stx ()
 	[(_ ctx loc fn)
-	 (check-fn-form (syntax fn) stx)
 	 (with-syntax ([_stx stx])
 	   (syntax/loc stx (do-include _stx ctx loc fn #f)))]))
       
     (define (include/reader/proc stx)
       (syntax-case stx ()
 	[(_ fn reader)
-	 (check-fn-form (syntax fn) stx)
 	 ;; Expand to do-include:
 	 (with-syntax ([_stx stx])
 	   (syntax/loc stx 
@@ -157,7 +130,6 @@
     (define (include-at/relative-to/reader/proc stx)
       (syntax-case stx ()
 	[(_ ctx loc fn reader)
-	 (check-fn-form (syntax fn) stx)
 	 (with-syntax ([_stx stx])
 	   (syntax/loc stx 
 	     (do-include _stx ctx loc fn 

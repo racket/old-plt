@@ -67,7 +67,7 @@
 @ Z "on-paint" : void OnPaint(bool,wxDC!,float,float,float,float,float,float,SYM[caret]);  : : /CHECKDCOK[1.METHODNAME("editor<%>","on-paint")]
 @ Y "invalidate-bitmap-cache" : void InvalidateBitmapCache(float=0.0,float=0.0,nnfs[end]=-1.0,nnfs[end]=-1.0);
 
-@ Z "on-new-image-snip" : wxImageSnip! OnNewImageSnip(nstring,SYM[bitmapType],bool,bool);
+@ Z "on-new-image-snip" : wxImageSnip! OnNewImageSnip(nxpathname,SYM[bitmapType],bool,bool);
 @ Z "on-new-box" : wxSnip! OnNewBox(SYM[bufferType]);
 
 @ Z "can-save-file?" : bool CanSaveFile(epathname,SYM[fileType]);

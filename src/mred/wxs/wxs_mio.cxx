@@ -1222,7 +1222,7 @@ static Scheme_Object *os_wxMediaStreamOutStringBaseGetString(int n,  Scheme_Obje
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   nbstring r;
-  objscheme_check_valid(os_wxMediaStreamOutStringBase_class, "get-string in editor-stream-out-bytes-base%", n, p);
+  objscheme_check_valid(os_wxMediaStreamOutStringBase_class, "get-bytes in editor-stream-out-bytes-base%", n, p);
   long _x0;
   long* x0 = &_x0;
 
@@ -1279,7 +1279,7 @@ void objscheme_setup_wxMediaStreamOutStringBase(Scheme_Env *env)
 
   os_wxMediaStreamOutStringBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out-bytes-base%", "editor-stream-out-base%", (Scheme_Method_Prim *)os_wxMediaStreamOutStringBase_ConstructScheme, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutStringBase_class, "get-string" " method", (Scheme_Method_Prim *)os_wxMediaStreamOutStringBaseGetString, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutStringBase_class, "get-bytes" " method", (Scheme_Method_Prim *)os_wxMediaStreamOutStringBaseGetString, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMediaStreamOutStringBase_class));

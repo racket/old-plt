@@ -2218,6 +2218,14 @@ extern void wxsRememberDisplay(char *str)
 }
 #endif
 
+static Scheme_Object *append_path(Scheme_Object *a, Scheme_Object *b)
+{
+  Scheme_Object *s;
+  s = scheme_append_byte_string(a, b);
+  s->type = scheme_path_type;
+  return s;
+}
+
 Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 {
   int which;
@@ -2239,25 +2247,21 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     Scheme_Object *home;
     int ends_in_slash;
 
-# ifdef wx_mac
-    home = scheme_make_byte_string(scheme_expand_filename("~/Library/Preferences", 2, NULL, NULL, 0));
-# else
-    home = scheme_make_byte_string(scheme_expand_filename("~/", 2, NULL, NULL, 0));
-# endif
+    home = scheme_make_path(scheme_expand_filename("~/", 2, NULL, NULL, 0));
     
     ends_in_slash = (SCHEME_BYTE_STR_VAL(home))[SCHEME_BYTE_STRTAG_VAL(home) - 1] == '/';
     
     if (which == id_init_file)
-      return scheme_append_byte_string(home,
-				  scheme_make_byte_string("/.mredrc" + ends_in_slash));
+      return append_path(home,
+			 scheme_make_path("/.mredrc" + ends_in_slash));
     if (which == id_setup_file)
-      return scheme_append_byte_string(home,
-				       scheme_make_byte_string("/.mred.resources" + ends_in_slash));
+      return append_path(home,
+			 scheme_make_path("/.mred.resources" + ends_in_slash));
 
     if (which == id_x_display) {
 # if defined(wx_x)
       if (x_display_str)
-	return scheme_make_byte_string(x_display_str);
+	return scheme_make_path(x_display_str);
 # endif
       return scheme_false;
     }
@@ -2269,17 +2273,17 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     Scheme_Object *home;
     int ends_in_slash;
     
-    home = scheme_make_byte_string_without_copying(win_find_home());
+    home = scheme_make_path_without_copying(win_find_home());
     
     ends_in_slash = (SCHEME_BYTE_STR_VAL(home))[SCHEME_BYTE_STRTAG_VAL(home) - 1];
     ends_in_slash = ((ends_in_slash == '/') || (ends_in_slash == '\\'));
     
     if (which == id_init_file)
-      return scheme_append_byte_string(home,
-				       scheme_make_byte_string("\\mredrc.ss" + ends_in_slash));
+      return append_path(home,
+			 scheme_make_path("\\mredrc.ss" + ends_in_slash));
     if (which == id_setup_file)
-      return scheme_append_byte_string(home,
-				       scheme_make_byte_string("\\mred.ini" + ends_in_slash));  
+      return append_path(home,
+			 scheme_make_path("\\mred.ini" + ends_in_slash));  
     
     if (which == id_x_display)
       return scheme_false;
@@ -2307,22 +2311,22 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 
   if (!FindFolder(kOnSystemDisk, t, kCreateFolder, &vRefNum, &dirID) == noErr) {
     FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
-    home = scheme_make_byte_string(scheme_mac_spec_to_path(&spec));
+    home = scheme_make_path(scheme_mac_spec_to_path(&spec));
   } else if (wxmac_startup_directory) {
-    home = scheme_make_byte_string(wxmac_startup_directory);
+    home = scheme_make_path(wxmac_startup_directory);
   } else {
-    home = scheme_make_byte_string(scheme_os_getcwd(NULL, 0, NULL, 1));
+    home = scheme_make_path(scheme_os_getcwd(NULL, 0, NULL, 1));
   }
   
   int ends_in_colon;
   ends_in_colon = (SCHEME_BYTE_STR_VAL(home))[SCHEME_BYTE_STRTAG_VAL(home) - 1] == ':';
 
   if (which == id_init_file)
-    return scheme_append_byte_string(home,
-				     scheme_make_byte_string(":mredrc.ss" + ends_in_colon));
+    return append_path(home,
+		       scheme_make_path(":mredrc.ss" + ends_in_colon));
   if (which == id_setup_file)
-    return scheme_append_byte_string(home,
-				     scheme_make_byte_string(":mred.fnt" + ends_in_colon));  
+    return append_path(home,
+		       scheme_make_path(":mred.fnt" + ends_in_colon));  
 #endif
 
   return scheme_void;
@@ -2336,9 +2340,9 @@ char *wxsFileDialog(char *message, char *default_path,
   
   a[0] = !message ? scheme_false : scheme_make_utf8_string(message);
   a[1] = !parent ? scheme_false : objscheme_bundle_wxWindow(parent);
-  a[2] = !default_path ? scheme_false : scheme_make_byte_string(default_path);
-  a[3] = !default_filename ? scheme_false : scheme_make_byte_string(default_filename);
-  a[4] = !default_extension ? scheme_false : scheme_make_byte_string(default_extension);
+  a[2] = !default_path ? scheme_false : scheme_make_path(default_path);
+  a[3] = !default_filename ? scheme_false : scheme_make_path(default_filename);
+  a[4] = !default_extension ? scheme_false : scheme_make_utf8_string(default_extension);
   a[5] = scheme_null;
 
   r = scheme_apply(is_put ? put_file : get_file, 6, a);

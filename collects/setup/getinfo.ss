@@ -7,7 +7,7 @@
   (provide get-info)
 
   (define (get-info coll-path)
-    (let* ([coll-path (map path->string coll-path)]
+    (let* ([coll-path (map (lambda (x) (if (path? x) (path->string x) x)) coll-path)]
 	   [dir (apply collection-path coll-path)]
 	   [file (build-path dir "info.ss")])
       (if (file-exists? file)

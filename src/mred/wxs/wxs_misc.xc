@@ -78,10 +78,8 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 
 @ "set-clipboard-client" : void SetClipboardClient(wxClipboardClient!,ExactLong);
 @ "set-clipboard-string" : void SetClipboardString(string,ExactLong); <> string
-@ "set-clipboard-bytes" : void SetClipboardString(bstring,ExactLong); <> byte string
 // @ "get-clipboard-client" : wxClipboardClient^ GetClipboardClient();
 @ "get-clipboard-string" : nstring GetClipboardString(ExactLong);
-@ "get-clipboard-bytes" : nbstring GetClipboardString(ExactLong);
 @ "get-clipboard-data" : nbstring/makeSizedString[1] GetClipboardData(string,-long*,ExactLong);
 
 @ "set-clipboard-bitmap" : void SetClipboardBitmap(wxBitmap!,ExactLong);

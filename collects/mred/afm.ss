@@ -5,7 +5,9 @@
   (provide afm-draw-text
 	   afm-get-text-extent
 	   afm-expand-name
-	   afm-glyph-exists?)
+	   afm-glyph-exists?
+	   current-ps-afm-file-paths
+	   current-ps-cmap-file-paths)
 
   (define orig-err (current-error-port))
   (define (report-exn exn)
@@ -22,15 +24,29 @@
   ;; ------------------------------------------------------------
   ;; Paths
 
+  (define (check-paths who)
+    (lambda (l)
+      (unless (and (list? l)
+		   (andmap path-string? l))
+	(raise-type-error who "list of paths/strings" l))
+      (apply list-immutable
+	     (map (lambda (i)
+		    (if (string? i) (string->path i) i))
+		  l))))
+
   ;; Paths that users can set
   ;;  Location of .afm files:
-  (define afm-dirs (path-list-string->path-list 
-		    (or (getenv "PLTAFMDIR") "")
-		    (list (collection-path "afm"))))
+  (define current-ps-afm-file-paths
+    (make-parameter (path-list-string->path-list 
+		     (or (getenv "PLTAFMPATHS") "")
+		     (list (collection-path "afm")))
+		    (check-paths 'current-post-script-afm-file-paths)))
   ;;  Location of CMap files (for CID fonts)
-  (define cmap-dirs (path-list-string->path-list 
-		     (or (getenv "PLTCMAPDIR") "")
-		     (list (collection-path "afm" "CMap"))))
+  (define current-ps-cmap-file-paths
+    (make-parameter (path-list-string->path-list 
+		     (or (getenv "PLTCMAPPATHS") "")
+		     (list (collection-path "afm" "CMap")))
+		    (check-paths 'current-post-script-cmap-file-paths)))
 
   (define (find-path l f)
     (or (ormap (lambda (d)
@@ -57,7 +73,7 @@
     (let ([ht (make-hash-table 'equal)])
       (with-handlers ([not-break-exn? report-exn])
 	(call-with-input-file* 
-	 (find-path afm-dirs gl.txt)
+	 (find-path (current-ps-afm-file-paths) gl.txt)
 	 (lambda (i)
 	   (let loop ()
 	     (let ([l (read-bytes-line i)])
@@ -152,7 +168,7 @@
   (define (read-cns->unicode!)
     (set! cns->unicode-table
 	  (read-cmap
-	   (find-path cmap-dirs "UniCNS-UTF32-H")
+	   (find-path (current-ps-cmap-file-paths) "UniCNS-UTF32-H")
 	   #f)))
   
   (define cmap-table (make-hash-table 'equal))
@@ -164,7 +180,7 @@
      name
      (lambda ()
        (let ([t (read-cmap
-		 (find-path cmap-dirs (bytes->path name))
+		 (find-path (current-ps-cmap-file-paths) (bytes->path name))
 		 cns->unicode-table)])
 	 (hash-table-put! cmap-table name t)
 	 t))))
@@ -260,7 +276,7 @@
 							       (report-exn exn)
 							       #f)])
 					 (parse-afm 
-					  (find-path afm-dirs
+					  (find-path (current-ps-afm-file-paths)
 						     (format "~a.afm" name)))))
 		      (get-font name))))
 
@@ -277,7 +293,7 @@
 					  (filter (lambda (s)
 						    (regexp-match #rx"[.][aA][fF][mM]$" (path->string s)))
 						  (directory-list dir))))
-				   afm-dirs)))
+				   (current-ps-afm-file-paths))))
 	  font-list)))
 
   ;; ----------------------------------------

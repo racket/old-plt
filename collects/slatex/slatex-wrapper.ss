@@ -8,7 +8,10 @@
   (provide slatex latex pdf-slatex pdf-latex slatex/no-latex)
 
   (define (add-suffix p s)
-    (bytes->path (bytes-append (path->bytes p) s)))
+    (path->string
+     (bytes->path 
+      (bytes-append 
+       (path->bytes (if (string? p) (string->path p) p)) s))))
 
   (define (filename->latex-filename input-file)
     (let ([norm (normalize-path input-file)])

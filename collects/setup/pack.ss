@@ -154,7 +154,8 @@
 	       (regexp-match #rx"compiled$" path)
 	       (regexp-match #rx"~$" path)
 	       (regexp-match #rx"^#.*#$" path)
-	       (regexp-match #rx"[.]plt$" path)))))
+	       (regexp-match #rx"[.]plt$" path)
+	       (regexp-match #rx"^[.]#" path)))))
 
   (define pack-collections
     (opt-lambda (output name collections replace? extra-setup-collections [file-filter std-filter] [plt-home-relative? #f])

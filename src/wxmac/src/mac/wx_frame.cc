@@ -76,9 +76,9 @@ wxFrame::wxFrame // Constructor (for frame window)
   
   if (cStyle & wxMDI_CHILD) { // hack : MDI_CHILD means dialog box
 #ifdef OS_X
-    if (parentFrame) {
+    if (parentFrame && parentFrame->GetSheetParent()) {
       WXGC_IGNORE(this, cSheetParent);
-      cSheetParent = parentFrame;
+      cSheetParent = parentFrame->GetSheetParent();
       windowClass = kSheetWindowClass;
     } else
 #endif
@@ -462,18 +462,8 @@ void wxFrame::wxMacRecalcNewSize(Bool resize)
     cWindowHeight = theStrucRect.bottom - theStrucRect.top;
   }
 
-  if (sheets) {
-    wxChildNode* childWindowNode;
-    wxFrame* sheet;
-    childWindowNode = sheets->First();
-    while (childWindowNode) {
-      sheet = (wxFrame*)childWindowNode->Data();
-      if (sheet) {
-	sheet->wxMacRecalcNewSize(FALSE);
-	childWindowNode = childWindowNode->Next();
-      }
-    }
-  }
+  if (sheet)
+    sheet->wxMacRecalcNewSize(FALSE);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -777,7 +767,7 @@ void wxFrame::Show(Bool show)
   WindowPtr theMacWindow;
   wxChildList *tlw;
 
-  if (show == IsVisible()) {
+  if (!show == cUserHidden) {
     if (show) {
       CGrafPtr graf;
       graf = cMacDC->macGrafPort();
@@ -811,13 +801,8 @@ void wxFrame::Show(Bool show)
       graf = cSheetParent->cMacDC->macGrafPort();
       pwin = GetWindowFromPort(graf);
       ::ShowSheetWindow(theMacWindow, pwin);
-      if (!cSheetParent->sheets) {
-	cSheetParent->sheets = new wxChildList();
-      }
-      if (!cSheetParent->sheets->Number())
-	ChangeWindowAttributes(pwin, 0, kWindowCloseBoxAttribute);
-      cSheetParent->sheets->Append(this);
-      // Showing a sheet picks a place for the sheet:
+      cSheetParent->sheet = this;
+      ChangeWindowAttributes(pwin, 0, kWindowCloseBoxAttribute);
       wxMacRecalcNewSize(FALSE); // recalc new position only
     } else
 #endif
@@ -836,18 +821,15 @@ void wxFrame::Show(Bool show)
     }
 #ifdef OS_X
     if (cSheetParent) {
-      int cnt;
-      ::HideSheetWindow(theMacWindow);
-      cSheetParent->sheets->DeleteObject(this);
-      cnt = cSheetParent->sheets->Number();
-      if (!cnt) {
-	WindowPtr pwin;
-	CGrafPtr graf;
+      WindowPtr pwin;
+      CGrafPtr graf;
 
-	graf = cSheetParent->cMacDC->macGrafPort();
-	pwin = GetWindowFromPort(graf);
-	ChangeWindowAttributes(pwin, kWindowCloseBoxAttribute, 0);
-      }
+      ::HideSheetWindow(theMacWindow);
+      cSheetParent->sheet = NULL;
+
+      graf = cSheetParent->cMacDC->macGrafPort();
+      pwin = GetWindowFromPort(graf);
+      ChangeWindowAttributes(pwin, kWindowCloseBoxAttribute, 0);
     } else
 #endif
       {
@@ -856,6 +838,16 @@ void wxFrame::Show(Bool show)
   }
 
   /* Paint(); */
+}
+
+wxFrame *wxFrame::GetSheetParent()
+{
+#ifdef OS_X
+  if (cSheetParent)
+    return NULL; /* No nested sheets */
+  else
+#endif
+    return this;
 }
 
 //-----------------------------------------------------------------------------

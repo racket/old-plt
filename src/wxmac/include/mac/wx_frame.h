@@ -41,7 +41,7 @@ class wxFrame: public wxbFrame
   Bool		cIsModal;
 
   wxFrame*      cSheetParent;
-  wxChildList*  sheets;	/* child sheets */
+  wxFrame*      sheet;	/* child sheet */
 
   /*============================================================================= */
   /* Public methods */
@@ -142,6 +142,8 @@ class wxFrame: public wxbFrame
   virtual ControlHandle GetRootControl(void);
 
   WindowPtr macWindow(void);
+
+  wxFrame *GetSheetParent(); /* cSheetParent or self */
 
   /*============================================================================= */
   /* Protected methods */

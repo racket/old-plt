@@ -474,12 +474,16 @@ char *wxFileSelector(char *message, char *default_path,
 #ifdef OS_X
     if (parent) {
       wxFrame *f;
+
       if (wxSubType(parent->__type, wxTYPE_FRAME)) {
 	f = (wxFrame *)parent;
       } else if (wxSubType(parent->__type, wxTYPE_DIALOG_BOX)) {
 	f = (wxFrame *)parent->GetParent();
       } else
 	f = NULL;
+
+      if (f)
+	f = f->GetSheetParent();
 
       if (f) {
 	CGrafPtr graf;

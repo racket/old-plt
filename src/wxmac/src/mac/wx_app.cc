@@ -265,7 +265,39 @@ void wxApp::doMacMouseDown(void)
 {
   WindowPtr window;
   short windowPart;
+
   windowPart = FindWindow(cCurrentEvent.where, &window);
+
+  /* Check whether this window is blocked by a modal dialog: */
+  {
+    wxFrame *f;
+    
+    f = findMacWxFrame(window);
+    if (f) {
+      wxFrame *modal;
+      
+      modal = (wxFrame *)wxGetModalWindow(f);
+      if (modal && (modal != f)) {
+	/* Make sure the modal window is frontmost: */
+	WindowPtr w;
+
+	w = modal->macWindow();
+	if (w != FrontWindow()) {
+	  ::SelectWindow(w);
+	}
+
+	/* It's possible that the modal window is a sheet
+	   in f... allow move operations. */
+	if (((windowPart == inDrag) || (windowPart == inCollapseBox))
+	    && (f->sheet == modal))
+	  modal = NULL;
+
+	if (modal)
+	  return;
+      }
+    }
+  }
+
   switch (windowPart)
     {
     case inMenuBar:
@@ -289,13 +321,17 @@ void wxApp::doMacMouseDown(void)
       }
       break;
     case inContent:
-      doMacInContent(window); break;
+      doMacInContent(window); 
+      break;
     case inDrag:
-      doMacInDrag(window); break;
+      doMacInDrag(window); 
+      break;
     case inGrow:
-      doMacInGrow(window); break;
+      doMacInGrow(window);
+      break;
     case inGoAway:
-      doMacInGoAway(window); break;
+      doMacInGoAway(window);
+      break;
     case inCollapseBox:
       {
 	if ((!StillDown()) || (TrackBox(window, cCurrentEvent.where, inCollapseBox)))
@@ -303,7 +339,8 @@ void wxApp::doMacMouseDown(void)
       }
     case inZoomIn:
     case inZoomOut:
-      doMacInZoom(window, windowPart); break;
+      doMacInZoom(window, windowPart); 
+      break;
     default:
       break;
     }
@@ -944,11 +981,7 @@ void wxApp::doMacInContent(WindowPtr window)
 	  wxFrame* frontFrame;
 	  frontFrame = findMacWxFrame(FrontWindow());
 	  if (!frontFrame) wxFatalError("No wxFrame for frontWindow.");
-	  if (0 && !frontFrame->IsModal()) {
-	    ::SelectWindow(window); //WCH : should I be calling some wxMethod?
-	  } else {
-	    ::SysBeep(3);
-	  }
+	  ::SysBeep(3);
 	}
       else
 	{

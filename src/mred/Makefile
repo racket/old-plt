@@ -1,4 +1,5 @@
 
+# !!! Don't forget to use gnumake or gmake !!!
 ifdef PLTWXDIR
  WXDIR=$(shell pwd)/../$(PLTWXDIR)
 else

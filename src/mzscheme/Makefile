@@ -289,8 +289,6 @@ repatriate:
 	rmdir $(HIDEDIR)/dynsrc_objects
 	mv $(HIDEDIR)/mzscheme_collects/lib ../collects/mzscheme/lib
 	rmdir $(HIDEDIR)/mzscheme_collects
-	/bin/ln -s /home/scheme/plt/collects/mzlib/RCS ../collects/mzlib/RCS
-	/bin/ln -s /home/scheme/plt/tests/mzscheme/RCS tests/RCS
 
 # Doesn't install binaries, only support files:
 install:

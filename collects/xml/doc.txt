@@ -1,6 +1,9 @@
 _XML_ Library
 =============
 
+Files: xml.ss xmlr.ss xmls.ss
+Signature: xml^
+
 Basic XML Data Types
 ====================
 

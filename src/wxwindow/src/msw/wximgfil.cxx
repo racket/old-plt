@@ -342,7 +342,7 @@ void wxGIF::InitInterlaceRow(int linewidth)
       IterImage = RawImage + (linewidth * (lpos * 8 + 4));
     } else {
       lpos -= (count + 1);
-      count = ((Height - 1) / 4);
+      count = ((Height - 3) / 4);
       if (lpos <= count) {
         IterImage = RawImage + (linewidth * (lpos * 4 + 2));
       } else {

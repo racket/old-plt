@@ -108,14 +108,16 @@
                   signal-stale?
                   signal-thunk
                   signal-depth
+                  signal-continuation-marks
                   set-signal-value!
                   set-signal-dependents!
                   set-signal-stale?!
                   set-signal-thunk!
-                  set-signal-depth!)
+                  set-signal-depth!
+                  set-signal-continuation-marks!)
     (let-values ([(desc make-signal signal? acc mut)
                   (make-struct-type
-                   'signal #f 5 0 #f null frtime-inspector
+                   'signal #f 6 0 #f null frtime-inspector
                    (lambda (fn . args)
                      (unregister #f fn) ; clear out stale dependencies from previous apps
                      (let* ([cur-fn (value-now fn)]
@@ -131,16 +133,16 @@
                        (set-signal-thunk! ret thunk)
                        (set-signal-value! ret (thunk))
                        ret)))]
-                 [(field-name-symbols) (list 'value 'dependents 'stale? 'thunk 'depth)]
-                 [(0->4) (build-list 5 identity)])
+                 [(field-name-symbols) (list 'value 'dependents 'stale? 'thunk 'depth 'continuation-marks)])
       (apply values
              desc
              make-signal
              signal?
-             (append (map (lambda (idx name) (make-struct-field-accessor acc idx name))
-                          0->4 field-name-symbols)
-                     (map (lambda (idx name) (make-struct-field-mutator mut idx name))
-                          0->4 field-name-symbols)))))
+             (append
+              (build-list (length field-name-symbols)
+                          (lambda (i) (make-struct-field-accessor acc i (list-ref field-name-symbols i))))
+              (build-list (length field-name-symbols)
+                          (lambda (i) (make-struct-field-mutator mut i (list-ref field-name-symbols i))))))))
   
   (define-struct event-cons (head tail))
   (define econs make-event-cons)
@@ -172,7 +174,8 @@
     (let ([sig (make-signal
                 undefined empty #f thunk
                 (add1 (apply max 0 (map safe-signal-depth
-                                        producers))))])
+                                        producers)))
+                (current-continuation-marks))])
       (when (cons? producers)
         (register sig producers))
       (set-signal-value! sig (safe-eval (thunk)))
@@ -394,12 +397,12 @@
              (first streams))
          (fix-streams (rest streams) (rest args)))))
   
-  (define-syntax (event-filter stx)
+  (define-syntax (event-processor stx)
     (syntax-case stx ()
-      [(src-event-filter proc args)
-       (with-syntax ([emit (datum->syntax-object (syntax src-event-filter) 'emit)]
+      [(src-event-processor proc args)
+       (with-syntax ([emit (datum->syntax-object (syntax src-event-processor) 'emit)]
                      [the-event (datum->syntax-object
-                                 (syntax src-event-filter) 'the-event)])
+                                 (syntax src-event-processor) 'the-event)])
          (syntax (let* ([out (econs undefined undefined)]
                         [emit (lambda (val)
                                 (set-erest! out (econs val undefined))
@@ -446,13 +449,13 @@
   
   ; event* -> event
   (define (merge-e . args)
-    (event-filter
+    (event-processor
      (emit the-event)
      args))
   
   (define (once-e e)
     (let ([b true])
-      (event-filter
+      (event-processor
        (when b
          (set! b false)
          (emit the-event))
@@ -465,7 +468,7 @@
      b))
   
   (define (event-forwarder sym evt f+l)
-    (event-filter
+    (event-processor
      (for-each (lambda (tid) (! tid (list 'remote-evt sym the-event))) (rest f+l))
      (list evt)))
   
@@ -487,13 +490,13 @@
   
   ; ==> : event[a] (a -> b) -> event[b]
   (define (e . ==> . f)
-    (event-filter
+    (event-processor
      (emit ((value-now f) the-event))
      (list e)))
   
   #|
   (define (e . =>! . f)
-    (event-filter
+    (event-processor
      ((value-now f) the-event)
      (list e)))
   |#
@@ -505,7 +508,7 @@
   
   ; =#> : event[a] (a -> bool) -> event[a]
   (define (e . =#> . p)
-    (event-filter
+    (event-processor
      (when (p the-event)
        (emit the-event))
      (list e)))
@@ -516,7 +519,7 @@
 
   ; =#=> : event[a] (a -> b U nothing) -> event[b]
   (define (e . =#=> . f)
-    (event-filter
+    (event-processor
      (let ([x (f the-event)])
        (unless (nothing? x)
          (emit x)))
@@ -531,7 +534,7 @@
   
   ; event[a] b (a b -> b) -> event[b]
   (define (collect-e e init trans)
-    (event-filter
+    (event-processor
      (let ([ret (trans the-event init)])
        (set! init ret)
        (emit ret))
@@ -539,7 +542,7 @@
   
   ; event[(a -> a)] a -> event[a]
   (define (accum-e e init)
-    (event-filter
+    (event-processor
      (let ([ret (the-event init)])
        (set! init ret)
        (emit ret))
@@ -567,15 +570,47 @@
   
   ; event[a] signal[b]* -> event[(list a b*)]
   (define (snapshot-e e . bs)
-    (event-filter
+    (event-processor
      (emit (cons the-event (map value-now bs)))
      (list e)))
   
   ; (a b* -> c) event[a] signal[b]* -> event[c]
   (define (snapshot-map-e fn ev . bs)
-    (event-filter
+    (event-processor
      (emit (apply fn the-event (map value-now bs)))
      (list ev)))
+
+  (define-syntax (event-loop-help stx)
+    (syntax-case stx ()
+      [(_ ([name expr] ...)
+          [e => body] ...)
+       (with-syntax ([args #'(name ...)])
+         #'(accum-e
+            (merge-e
+             (e . ==> . (lambda (v)
+                          (lambda (state)
+                            (apply
+                             (lambda args (body v))
+                             state)))) ...)
+            (list expr ...)))]))
+  
+  (define-syntax (event-loop stx)
+    
+    (define (add-arrow clause)
+      (syntax-case clause (=>)
+        [(e => body) #'(e => body)]
+        [(e body) #'(e => (lambda (_) body))]))
+    
+    
+    (syntax-case stx ()
+      [(_ ([name expr] ...)
+          clause ...)
+       (with-syntax ([(new-clause ...)
+                      (map add-arrow (syntax->list #'(clause ...)))])
+         #'(event-loop-help
+            ([name expr] ...)
+            new-clause ...)
+         )]))
 
   (define update
     (case-lambda
@@ -695,9 +730,12 @@
        (let outer ()
          (with-handlers ([exn?
                           (lambda (exn)
-                            (iq-enqueue (list exceptions (list exn cur-beh)))
-                            (when (behavior? cur-beh)
-                              (undef cur-beh))
+                            ;(fprintf (current-error-port) "message: ~a~n" (exn-message exn))
+                            (when cur-beh
+                              (set-exn-continuation-marks! exn (signal-continuation-marks cur-beh))
+                              (iq-enqueue (list exceptions (list exn cur-beh)))
+                              (when (behavior? cur-beh)
+                                (undef cur-beh)))
                             (outer))])
            (let inner ()
              

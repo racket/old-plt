@@ -93,7 +93,6 @@ Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
   retval->released = FALSE;
 
   mx_register_com_object((Scheme_Object *)retval,pIDispatch);
-  pIDispatch->AddRef();
 
   return (Scheme_Object *)retval;
 }
@@ -109,7 +108,6 @@ Scheme_Object *mx_make_iunknown(IUnknown *pIUnknown) {
   retval->pIUnknown = pIUnknown;
 
   mx_register_simple_com_object((Scheme_Object *)retval,pIUnknown);
-  pIUnknown->AddRef();
 
   return (Scheme_Object *)retval;
 }

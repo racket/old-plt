@@ -518,22 +518,33 @@
 								    (with-input-from-file p
 								      read))
 								  null))])
-						     ;; Convert list to hash table:
-						     (let ([t (make-hash-table 'equal)])
+						     ;; Convert list to hash table, but only if the collection
+						     ;;  exists
+						     (let ([t (make-hash-table 'equal)]
+							   [all-ok? #f])
 						       (when (list? l)
+							 (set! all-ok? #t)
 							 (for-each (lambda (i)
-								     (when (and (list? i)
-										(= 2 (length i)))
-								       (let ([a (car i)]
-									     [b (cadr i)])
-									 (when (and (list? a)
+								     (if (and (list? i)
+									      (= 2 (length i)))
+									 (let ([a (car i)]
+									       [b (cadr i)])
+									   (if (and (list? a)
 										    (andmap path-string? a)
 										    (list? b)
-										    (andmap symbol? b))
-									   (hash-table-put! t a b)))))
+										    (andmap symbol? b)
+										    (file-exists? (build-path
+												   (apply build-path 
+													  (cc-root-dir cc)
+													  a)
+												   "info.ss")))
+									       (hash-table-put! t a b)
+									       (set! all-ok? #f)))
+									 (set! all-ok? #f)))
 								   l))
 						       (hash-table-put! ht (cc-root-dir cc) t)
-						       (hash-table-put! ht-orig (cc-root-dir cc) (hash-table-copy t))
+						       (hash-table-put! ht-orig (cc-root-dir cc) 
+									(and all-ok? (hash-table-copy t)))
 						       t))))])
 			  (hash-table-put! t (map (lambda (s) (if (path? s)
 								  (path->string s)

@@ -277,6 +277,11 @@ void wxButton::ChangeToGray(Bool gray)
   }
 }
 
+void wxButton::SetBorder(Bool on)
+{
+  XtVaSetValues(X->frame, XtNframeType, on ? XfwfSunken : XfwfNothing, NULL);
+}
+
 //-----------------------------------------------------------------------------
 // do the same as if button was clicked
 //-----------------------------------------------------------------------------

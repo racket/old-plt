@@ -62,6 +62,8 @@ public:
 
     virtual void ChangeToGray(Bool gray);
 
+    void SetBorder(Bool on);
+
 private:
 #   ifdef Have_Xt_Types
     static void EventCallback(Widget w, XtPointer clientData, XtPointer ptr);

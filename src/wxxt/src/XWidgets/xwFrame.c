@@ -738,6 +738,8 @@ void XfwfDrawFrame(self,x,y,w,h,tp,t,lightgc,darkgc,fggc)Widget self;int  x;int 
         XfwfDrawFrame(self, x+t/2, y+t/2, w-2*(int)(t/2), h-2*(int)(t/2),
                   XfwfRaised, t/2, lightgc, darkgc, NULL);
         break;
+    case XfwfNothing:
+        break;
     }
 
 }

@@ -99,7 +99,7 @@ possible types of borders are enumerated in |Frame3dType| (see the
 introduction).
 
         @type FrameType = enum {
-            XfwfRaised, XfwfSunken, XfwfChiseled, XfwfLedged, XfwfPlain }
+            XfwfRaised, XfwfSunken, XfwfChiseled, XfwfLedged, XfwfPlain, XfwfNothing }
 
 @ The shadow scheme can be used to choose colors, pixmaps or automatic
 shadows.
@@ -164,6 +164,8 @@ the rectangle |(x, y, x+w-1, y+h-1)|.
         XfwfDrawFrame($, x, y, w, h, XfwfSunken, t/2, lightgc, darkgc, NULL);
         XfwfDrawFrame($, x+t/2, y+t/2, w-2*(int)(t/2), h-2*(int)(t/2),
                   XfwfRaised, t/2, lightgc, darkgc, NULL);
+        break;
+    case XfwfNothing:
         break;
     }
 

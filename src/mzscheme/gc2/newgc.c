@@ -2781,7 +2781,7 @@ void GC_free_immobile_box(void **b) {
 }
 
 // add an account hook
-void GC_set_account_hook(int type, void *cust, unsigned long b, void *f) {
+int GC_set_account_hook(int type, void *cust, unsigned long b, void *f) {
   AccountHook *work = (AccountHook*)malloc(sizeof(AccountHook));
   work->type = type;
   work->owner = current_owner();
@@ -2792,6 +2792,7 @@ void GC_set_account_hook(int type, void *cust, unsigned long b, void *f) {
   account_hooks = work;
   if(type == MZACCT_REQUIRE)
     total_requires += b;
+  return 1;
 }
 
 // Add a finalizer to the system. See README for details

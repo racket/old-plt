@@ -15,7 +15,7 @@
 #define GROW_FACTOR 1.5
 #define GROW_ADDITION 500000
 
-#define GENERATIONS 0
+#define GENERATIONS 1
 
 #define USE_FREELIST 0
 
@@ -4010,12 +4010,15 @@ void GC_gcollect()
   gcollect(1);
 }
 
-long GC_get_memory_use(void *)
+long GC_get_memory_use(void *c)
 {
   return memory_in_use;
 }
 
-void GC_set_account_hook(int type, void *cust, unsigned long b, void *f) {}
+int GC_set_account_hook(int type, void *cust, unsigned long b, void *f) 
+{
+  return 0;
+}
 
 unsigned long GC_get_stack_base(void)
 {

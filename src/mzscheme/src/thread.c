@@ -507,25 +507,22 @@ void scheme_init_thread(Scheme_Env *env)
 						      0, 0), 
 			     env);
   scheme_add_global_constant("current-memory-use", 
-#ifdef MZ_PRECISE_GC
-			     // ACW: Changed to allow the extra parameter
 			     scheme_make_prim_w_arity(current_memory_use, 
 						      "current-memory-use",
-						      0, 1), env);
-#else
-                              scheme_make_prim_w_arity(current_memory_use,
-						      "current-memory-use",
-						      0, 0), env);
-#endif
+						      0, 1),
+			     env);
+
   scheme_add_global_constant("custodian-require-memory",
 			     scheme_make_prim_w_arity(custodian_require_mem,
 						      "custodian-require-memory",
-						      2, 2), env);
+						      2, 2),
+			     env);
   scheme_add_global_constant("custodian-limit-memory",
-			   scheme_make_prim_w_arity(custodian_limit_mem,
-						    "custodian-limit-memory",
-						    3, 3), env);
-
+			     scheme_make_prim_w_arity(custodian_limit_mem,
+						      "custodian-limit-memory",
+						      3, 3),
+			     env);
+  
   REGISTER_SO(namespace_options);
 
 #ifdef MZ_REAL_THREADS
@@ -551,24 +548,22 @@ static Scheme_Object *collect_garbage(int c, Scheme_Object *p[])
 
 static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[])
 {
-#ifdef MZ_PRECISE_GC
+  Scheme_Object *cust = NULL;
   long retval = 0;
 
-  if(argc) {
-    // ACW: FIXME: This is the wrong way to call scheme_wrong_type,
-    // I'm pretty sure
-    if(NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_custodian_type))
+  if (argc) {
+    if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_custodian_type))
       scheme_wrong_type("current-memory-use", "custodian", 0, argc, args);
-
-    retval = GC_get_memory_use(args[0]);
-  } else {
-    retval = GC_get_memory_use(NULL);
+    cust = args[0];
   }
 
-  return scheme_make_integer(retval);
+#ifdef MZ_PRECISE_GC
+  retval = GC_get_memory_use(args[0]);    
 #else
-  return scheme_make_integer(GC_get_memory_use());
+  retval = GC_get_memory_use();
 #endif
+  
+  return scheme_make_integer(retval);
 }
 
 
@@ -576,46 +571,56 @@ static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[])
 /*                              custodians                                */
 /*========================================================================*/
 
-// ACW: the new accounting hooks
-static Scheme_Object *custodian_require_mem(int argc, Scheme_Object *args[]) {
-#ifndef MZ_PRECISE_GC
-  scheme_raise_exn(MZEXN_VARIABLE, 
-		   args[0],
-		   "reference to undefined identifier: %S",
-		   scheme_make_string("custodian-require-memory"));
-#else
-  if(!SCHEME_INTP(args[0])) {
-    scheme_wrong_type("custodian-require-memory", "number", 0, argc, args);
+static Scheme_Object *custodian_require_mem(int argc, Scheme_Object *args[])
+{
+  long lim;
+
+  if (SCHEME_INTP(args[0]) && (SCHEME_INT_VAL(args[0]) > 0)) {
+    lim = SCHEME_INT_VAL(args[0]);
+  } else if (SCHEME_BIGNUMP(args[0]) && SCHEME_BIGPOS(args[0])) {
+    lim = 0x3fffffff; /* more memory than we actually have */
+  } else {
+    scheme_wrong_type("custodian-require-memory", "positive exact integer", 0, argc, args);
   }
-  if(!SCHEME_PROCP(args[1])) {
-    scheme_wrong_type("custodian-require-memory", "procedure", 1, argc, args);
-  }
+
   scheme_check_proc_arity("custodian-require-memory", 0, 1, argc, args);
-  GC_set_account_hook(MZACCT_REQUIRE, NULL, SCHEME_INT_VAL(args[0]), args[1]);
+
+#ifdef MZ_PRECISE_GC
+  if (GC_set_account_hook(MZACCT_REQUIRE, NULL, lim, args[1]))
+    return scheme_void;
 #endif
-  return scheme_void;
+
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "custodian-require-memory: not supported");
+  return NULL; /* doesn't get here */
 }
 
-static Scheme_Object *custodian_limit_mem(int argc, Scheme_Object *args[]) {
-#ifndef MZ_PRECISE_GC
-  scheme_raise_exn(MZEXN_VARIABLE, 
-		   args[0],
-		   "reference to undefined identifier: %S",
-		   scheme_make_string("custodian-limit-memory"));
-#else
-  if(NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_custodian_type)) {
+static Scheme_Object *custodian_limit_mem(int argc, Scheme_Object *args[])
+{
+  long lim;
+  
+  if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_custodian_type)) {
     scheme_wrong_type("custodian-limit-memory", "custodian", 0, argc, args);
   }
-  if(!SCHEME_INTP(args[1])) {
-    scheme_wrong_type("custodian-limit-memory", "number", 1, argc, args);
+
+  if (SCHEME_INTP(args[1]) && (SCHEME_INT_VAL(args[1]) > 0)) {
+    lim = SCHEME_INT_VAL(args[1]);
+  } else if (SCHEME_BIGNUMP(args[1]) && SCHEME_BIGPOS(args[1])) {
+    lim = 0x3fffffff; /* more memory than we actually have */
+  } else {
+    scheme_wrong_type("custodian-limit-memory", "positive exact integer", 1, argc, args);
   }
-  if(!SCHEME_PROCP(args[2])) {
-    scheme_wrong_type("custodian-limit-memory", "procedure", 2, argc, args);
-  }
+
   scheme_check_proc_arity("custodian-limit-memory", 0, 2, argc, args);
-  GC_set_account_hook(MZACCT_LIMIT, args[0], SCHEME_INT_VAL(args[1]), args[2]);
+
+#ifdef MZ_PRECISE_GC
+  if (GC_set_account_hook(MZACCT_LIMIT, args[0], SCHEME_INT_VAL(args[1]), args[2]))
+    return scheme_void;
 #endif
-  return scheme_void;
+
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "custodian-limit-memory: not supported");
+  return NULL; /* doesn't get here */
 }
 
 static void ensure_custodian_space(Scheme_Custodian *m, int k)

@@ -2703,6 +2703,19 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       if (mrn->kind == mzMOD_RENAME_MARKED) {
 	/* Not useful if there's no marked names. */
 	redundant = !mrn->marked_names->count;
+	if (!redundant) {
+	  /* Otherwise, watch out for multiple instances of the same rename. */
+	  WRAP_POS l;
+	
+	  WRAP_POS_COPY(l,w);
+	  
+	  for (; !WRAP_POS_END_P(l); WRAP_POS_INC(l)) {
+	    if (SAME_OBJ(a, WRAP_POS_FIRST(l))) {
+	      redundant = 1;
+	      break;
+	    }
+	  }
+	}
       } else {
 	/* Check for later [non]module rename at the same phase: */
 	long shift = 0;	

@@ -3600,8 +3600,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	
 	if (fst && SCHEME_STX_SYMBOLP(fst) && scheme_stx_module_eq(scheme_begin_stx, fst, 0)) {
 	  fm = SCHEME_STX_CDR(fm);
-	  /* e = scheme_add_rename(e, post_ex_rn); */
-	  /* e = scheme_add_rename(e, post_ex_et_rn); */
+	  e = scheme_add_rename(e, post_ex_rn);
+	  e = scheme_add_rename(e, post_ex_et_rn);
 	  fm = scheme_flatten_begin(e, fm);
 	  if (SCHEME_STX_NULLP(fm)) {
 	    e = NULL;

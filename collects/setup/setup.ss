@@ -1,7 +1,12 @@
 
-;; Because setup is used to rebuild .zos, we may need to turn off the
-;; use of compiled code or install cm before we do anything.
-;; This startup stub parses the command line.
+;; Because Setup PLT is used to rebuild .zos, we may need to turn off
+;; the use of compiled code or install cm before we do anything. This
+;; startup stub parses the command line and either disables .zos or
+;; installs cm for loading Setup PLT.
+
+;; Note that this file is listed in "info.ss" so that it never gets a
+;; .zo file. Do not `require' this module from anywhere, otherwise it
+;; could get a .zo anyway.
 
 (module setup mzscheme
 

@@ -1,5 +1,6 @@
 #cs(module typecheck mzscheme
 	   (require "prims.ss"
+		    "error-msgs.ss"
 		    (prefix ast: "ast.ss")
 		    (lib "match.ss")
 		    (lib "pretty.ss")
@@ -25,7 +26,7 @@
 	   (define current-compile-context (make-parameter #f))
 
 ;;;; Stolen from Kathy Section
-	   (define loc #f)
+	   (define loc (make-parameter #f))
 
 	   (define stx-for-original-property (read-syntax #f (open-input-string "original")))
 ;;;; End stolen from Kathy Section
@@ -33,7 +34,7 @@
 	   (define (typecheck-all stmt location)
 	     (begin	       
 	       (set! cur-var #\a)
-	       (set! loc location)
+	       (loc location)
 	       (let ([progtype (typecheck-ml stmt (empty-context))])
 		 (begin ;(pretty-print (format "initial progtype: ~a" progtype))
 		 (if (list? progtype)
@@ -70,7 +71,11 @@
 		    [($ ast:structure_item desc src)
 		     (typecheck-structure desc src context)]
 		    [else
-		     (raise-syntax-error #f (format "Cannot typecheck: ~a" stmt) (at stmt (ast:make-src 1 1 1 1)))]))
+		     (raise-error #f
+				  (loc)
+				  (format "Cannot typecheck: ~a" stmt)
+				  stmt
+				  #f)]))
 
 	   (define (newboundtypes tdlist)
 ;	     (pretty-print (format "current newboundtype: ~a" (car tdlist)))
@@ -81,9 +86,14 @@
 		   (syntax-object->datum (car (car tdlist))) 
 		   (let ([tkind (ast:type_declaration-kind (cdr (car tdlist)))])
 		     (cond
-		      [(ast:ptype_abstract? tkind) (syntax-object->datum (car (car tdlist)))]
+		      [(ast:ptype_abstract? tkind)
+		       (make-tconstructor (car (convert-list (map make-tvar (ast:type_declaration-params (cdr (car tdlist)))) null null)) (syntax-object->datum (car (car tdlist))))]
 		      [(ast:ptype_variant? tkind) (make-usertype (syntax-object->datum (car (car tdlist))) (car (convert-list (map make-tvar (ast:type_declaration-params (cdr (car tdlist)))) null null)))]
-		      [else (raise-syntax-error "Bad kind: ~a" tkind)])))
+		      [else (raise-error #f
+					 (loc)
+					 (format "Bad kind: ~a" tkind)
+					 tkind
+					 (ast:type_declaration-loc (cdr (car tdlist))))])))
 		  (newboundtypes (cdr tdlist)))))
 
 ;		 (cons (cons (syntax-object->datum (car (car tdlist))) (make-usertype (syntax-object->datum (car (car tdlist))) (car (convert-list (map make-tvar (ast:type_declaration-params (cdr (car tdlist)))) null null)))) (newboundtypes (cdr tdlist)))))
@@ -100,10 +110,10 @@
 ;		     (begin (pretty-print "Typecheck-ml called for pstr_eval from typecheck-structure")
 		     (typecheck-ml expr context)]
 		    [($ ast:pstr_exception name decl)
-		     (let ([nconst (make-tconstructor (make-<tuple> (map typecheck-type decl (repeat null (length decl)))) "exception")])
+		     (let ([nconst (make-tconstructor (make-<tuple> (map typecheck-type decl (repeat null (length decl)) (repeat null (length decl)))) "exception")])
 		       (begin
 			 (hash-table-put! <constructors> (syntax-object->datum name) (cons (make-tconstructor 
-											    (let ([args (map typecheck-type decl (repeat null (length decl)))])
+											    (let ([args (map typecheck-type decl (repeat null (length decl)) (repeat null (length decl)))])
 											      (cond 
 											       [(null? args) null]
 											       [(= (length args) 1) (car args)]
@@ -111,7 +121,11 @@
 			 (make-mlexn (syntax-object->datum name) nconst)))]
 		       
 		    [else
-		     (raise-syntax-error #f (format "Unrecognized structure: ~a") (at desc src))]))
+		     (raise-error #f
+				  (loc)
+				  (format "Unrecognized structure: ~a" desc)
+				  desc
+				  src)]))
 
 		     
 	   (define (typecheck-expr desc context src)
@@ -124,29 +138,24 @@
 
 		    [($ ast:pexp_array xlist)
 		     (let ([xtypes (map typecheck-ml xlist (repeat context (length xlist)))])
-		       (if (same-types? xtypes (map at (map ast:expression-pexp_desc xlist) (map ast:expression-pexp_src xlist)))
-			   (make-tarray (car xtypes))
-			   (raise-syntax-error #f "Not all same types" #f)))]
+		       (when (same-types? xtypes (map at (map ast:expression-pexp_desc xlist) (map ast:expression-pexp_src xlist)))
+			   (make-tarray (car xtypes))))]
 
 		    [($ ast:pexp_ident name)
 		     ;(pretty-print (format "Looking up pexp_ident: ~a" (unlongident name)))
 		     (let ([type (get-type (unlongident name) context)])
 		       (begin ;(pretty-print (format "pexp_ident type: ~a" type))
-		       (if type
-			   (let ([itype (instantiate type)])
-			     itype)
-			   (let ([rtype (lookup-ident name (at desc src))])
-			     (begin ;(pretty-print (format "pexp_ident rtype: ~a" rtype))
-			     (if rtype
-				 (let ([fres (car (convert-tvars rtype null))])
-				   (begin
-				     ;(pretty-print (format "pexp_ident fres: ~a" fres))
-				     fres))
-				 (raise-syntax-error #f (format "No type found for ~a" name) (at name src)))
-			     )
-)
-			   ))
- )]
+			 (if type
+			     (let ([itype (instantiate type)])
+			       itype)
+			     (let* ([rtype (lookup-ident name src)]
+				    [fres (car (convert-tvars rtype null))])
+			       fres)
+			     
+			     
+		       
+		       
+			     )))]
 
 
 			   
@@ -160,12 +169,11 @@
 			   [elseexpsrc (if (null? elseexp)
 					   (at ifexp (ast:expression-pexp_src ifexp))
 					   (at elseexp (ast:expression-pexp_src elseexp)))])
-		       (if (unify "bool" testt (at test (ast:expression-pexp_src test)))
-			   (if (unify ifexpt elseexpt elseexpsrc)
-			       ifexpt
-			       (raise-syntax-error #f (format "Expected type ~a but found ~a" ifexpt elseexpt) elseexpsrc))
+		       (when (unify "bool" testt (at test (ast:expression-pexp_src test)))
+			   (when (unify ifexpt elseexpt elseexpsrc)
+			       ifexpt)
 			   
-			   (raise-syntax-error #f "Test wasn't boolean" (at ifexp (ast:expression-pexp_src ifexp)))))]
+			   ))]
 		    
 		    [($ ast:pexp_match expr pelist)
 		     (let ([totest (typecheck-ml expr context)])
@@ -195,34 +203,47 @@
 			       (if (null? (tconstructor-argtype constructor))
 				   (if (null? expr)
 				       (tconstructor-result constructor)
-				       (raise-syntax-error #f "Wrong number of arguments for constructor" (at expr (ast:expression-pexp_src expr))))
+				       (raise-error #f
+						    (loc)
+						    (format "The constructor ~a expects 0 arguments but was given ~a" (unlongident name) 
+							    (match (ast:expression-pexp_desc expr)
+								   [($ ast:pexp_constant const) "1 argument"]
+								   [($ ast:pexp_tuple el) (format "~a arguments" (length el))]
+								   [else (format "something I don't understand: ~a" expr)]))
+						    (string->symbol (unlongident name))
+						    src))
 				   (begin
 				     ;(pretty-print (format "tconstructor-argtype is: ~a" (tconstructor-argtype constructor)))
-				   (if (unify (tconstructor-argtype constructor) (typecheck-ml expr context) (at expr (ast:expression-pexp_src expr)))
-				       (tconstructor-result constructor)
+				     (when (unify (tconstructor-argtype constructor) (typecheck-ml expr context) (at expr (ast:expression-pexp_src expr)))
+					   (tconstructor-result constructor)
 				       )
-				   )
+				     )
 				   )
 			       constructor)
-			   (raise-syntax-error #f (format "Constructor not found: ~a" (unlongident name) ) name)))]
+			   
+			   (raise-error #f
+					(loc)
+					(format "Unbound constructor: ~a" (unlongident name) )
+					(string->symbol (unlongident name))
+					(longident->src name))))]
 			   
 		    [($ ast:pexp_try tryexp pelist)
 		     (let ([tryt (typecheck-ml tryexp context)]
 			   [exnt (typecheck-match pelist "exception" context)])
-		       (if (unify tryt exnt (at pelist src))
+		       (when (unify tryt exnt (at pelist src))
 			   tryt))]
 
 		    [($ ast:pexp_while testexpr bodyexpr)
 		     (let ([testt (typecheck-ml testexpr context)]
 			   [bodyt (typecheck-ml bodyexpr context)])
-		       (if (and (unify "bool" testt (at testexpr (ast:expression-pexp_src testexpr))) (unify "unit" bodyt (at bodyexpr (ast:expression-pexp_src bodyexpr))))
+		       (when (and (unify "bool" testt (at testexpr (ast:expression-pexp_src testexpr))) (unify "unit" bodyt (at bodyexpr (ast:expression-pexp_src bodyexpr))))
 			   "unit"))]
 
 		    [($ ast:pexp_for var init test up body)
 		     (let ([initt (typecheck-ml init context)]
 			   [testt (typecheck-ml test context)])
-		       (if (and (unify "int" initt (at init (ast:expression-pexp_src init))) (unify "int" testt (at test (ast:expression-pexp_src test))))
-			   (if (unify "unit" 
+		       (when (and (unify "int" initt (at init (ast:expression-pexp_src init))) (unify "int" testt (at test (ast:expression-pexp_src test))))
+			   (when (unify "unit" 
                                       (typecheck-ml body (update (syntax-object->datum var) (cons "int" null) context))
                                       (at body (ast:expression-pexp_src body)))
 			       "unit")))]
@@ -232,31 +253,45 @@
 		       ;; Warn if type of firstt is not unit
 		       restt)]
 		    [else
-		     (raise-syntax-error #f (format "Cannot typecheck expression: ~a" desc) (at desc src))]) )
+		     (raise-error #f
+				  (loc)
+				  (format "Cannot typecheck this expression: ~a" desc)
+				  desc
+				  src)]))
 
 
-
+	   (define (print-boundlist item rest)
+	     (format "(~a . ~a) ~a" (car item) (print-type (car (unconvert-tvars (cdr item) null))) rest))
 		       
 	   (define (typecheck-typedecl td boundlist)
-	     (let ([name (syntax-object->datum (car td))]
-		   [typedecl (cdr td)])
+;	     (pretty-print (format "typecheck-typedecl: ~a ~a" td (foldl print-boundlist "" boundlist)))
+	     (let* ([name (syntax-object->datum (car td))]
+		    [typedecl (cdr td)]
+		    [params (map syntax-object->datum (ast:type_declaration-params typedecl))])
 	       (match (ast:type_declaration-kind typedecl)
 		      [($ ast:ptype_abstract dummy)
-		       (let ([rtype (typecheck-type (ast:type_declaration-manifest typedecl) boundlist)])
+		       (let ([rtype (typecheck-type (ast:type_declaration-manifest typedecl) boundlist params)])
 			 (begin
 			   (hash-table-put! <constructors> name (cons rtype "some error"))
-			   (format "type ~a ~a = ~a" (if (not (null? (ast:type_declaration-params typedecl)))
-							 (map typecheck-type (ast:type_declaration-params typedecl))
+			   (format "type ~a ~a = ~a" (if (not (null? params))
+							 (map format (repeat "'~a" (length params)) params)
 							 "") name rtype)))]
 		      [($ ast:ptype_variant scll)
-		       (let* ([name-type (make-usertype name (map make-tvar (map syntax-object->datum (ast:type_declaration-params typedecl))))]
-			      [tscll (typecheck-scll name-type (ast:type_declaration-params typedecl) scll boundlist)]
-			      [ntv (make-tvariant name (map syntax-object->datum (map car scll)) tscll)])
+		       (let* ([name-type (make-usertype name (usertype-params (get-type name boundlist)))]
+			      [tscll (typecheck-scll name-type params scll boundlist)]
+			      [ntv (car (unconvert-tvars (make-tvariant name (if (null? params)
+							   null
+							   (usertype-params (get-type name boundlist)))
+							   (map syntax-object->datum (map car scll)) tscll) null))])
 			 (begin
 			   (hash-table-put! <constructors> name (cons name-type "some error"))
 			   ntv))]
 		      [else
-		       (raise-syntax-error #f (format "Unkown typedecl found: ~a" td))]
+		       (raise-error #f
+				    (loc)
+				    (format "Unkown typedecl found: ~a" td)
+				    td
+				    (ast:type_declaration-loc td))]
 		       )))
 
 	   (define (create-mapping params mapping)
@@ -296,7 +331,11 @@
 			      (cond
 			       [(syntax? f) (syntax-object->datum f)]
 			       [(string? f) f]
-			       [else (raise-syntax-error #f (format "Bad ptyp_var: ~a" f))])]
+			       [else (raise-error #f 
+						   (loc)
+						   (format "Bad ptyp_var: ~a" f)
+						   f
+						   (ast:core_type-src (car type-mapping)))])]
 			     [result (get-type varname (cdr type-mapping))])
 			(if result
 			    (cons (ast:make-core_type (ast:make-ptyp_var result) (ast:core_type-src (car type-mapping))) (cdr type-mapping))
@@ -312,7 +351,7 @@
 		 (let* ([current (car scll)]
 			[name (syntax-object->datum (car current))]
 			[sname-type sname]
-			[ttypes (map typecheck-type (cdr current) (repeat boundlist (length (cdr current))))]
+			[ttypes (map typecheck-type (cdr current) (repeat boundlist (length (cdr current))) (repeat params (length (cdr current))))]
 )
 		   (begin
 		     (hash-table-put! <constructors> name (cond
@@ -342,10 +381,10 @@
 							       result)
 							     (typecheckem (cdr exp) (cdr envs)))))])
 			     (typecheckem (map cdr pelist) patenvs))])
-	       (if (same-types? expts (map at (map cdr pelist) (map ast:expression-pexp_src (map cdr pelist))))
+	       (when (same-types? expts (map at (map cdr pelist) (map ast:expression-pexp_src (map cdr pelist))))
 ;; Should also be checking that the patterns are exhaustive for t and don't overlap
-		   (car expts)
-		   (raise-syntax-error #f "Not all same types" #f))))
+		   (car expts))))
+
 
 	   (define (typecheck-defines rec bindings context)
 	     ;(pretty-print "typecheckdefines called")
@@ -381,7 +420,7 @@
 							     (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car cur-bind)))
 							     (car cur-bind))]
 						   [tf (if constraint
-							   (typecheck-type (car (convert-ttypes (ast:ppat_constraint-type (ast:pattern-ppat_desc (car cur-bind))))) null)
+							   (typecheck-type (car (convert-ttypes (ast:ppat_constraint-type (ast:pattern-ppat_desc (car cur-bind))))) null #f)
 							   (make-arrow (list (fresh-type-var)) (fresh-type-var)))])
 					      (update (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc rpat))) (cons tf null) (bind-vars (cdr bindings))))))])
 			  (let ([cprime (bind-vars bindings)])
@@ -415,7 +454,11 @@
 			 (if (unify tf te (at (cdr binding) (ast:expression-pexp_src (cdr binding))))
 			     (cons (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc rpat))) tf))
 			 )
-		       (raise-syntax-error #f "This kind of expression is not allowed as right-hand side of 'let rec'" (at (cdr binding) (ast:expression-pexp_src (cdr binding)))))
+		       (raise-error #f 
+				    (loc)
+				    "This kind of expression is not allowed as right-hand side of 'let rec'" 
+				    (string->symbol "let rec")
+				    (ast:expression-pexp_src (cdr binding))))
 		   (begin ;(pretty-print "not rec in typecheck-binding")
 		   (let* ([btype (typecheck-ml (cdr binding) context)]
 			  [newcont
@@ -445,38 +488,55 @@
 				  ;(pretty-print (format "env after funvarenv ~a" (cdr (car funvarenvs))))
 				  (map typecheck-ml (map cdr pelist) (map cdr funvarenvs)))])
 	     
-	       (if (and (same-types? (map car funvarenvs) (map grab-syntax pelist)) (same-types? expts (map at (map cdr pelist) (map ast:expression-pexp_src (map cdr pelist)))))
+	       (when (and (same-types? (map car funvarenvs) (map grab-syntax pelist)) (same-types? expts (map at (map cdr pelist) (map ast:expression-pexp_src (map cdr pelist)))))
 ;; Should also be checking that the patterns are exhaustive for t and don't overlap
 ;		   (begin (pretty-print (format "argument: ~a, result: ~a" (car (car funvarenvs)) (car expts)))
 		   (make-arrow (list (car (car funvarenvs))) (car expts))
-		   (raise-syntax-error #f "Not all same types" #f)))
-	     )
+	     )))
 
 	   (define (grab-syntax pe)
 	     (at (car pe) (ast:pattern-ppat_src (car pe))))
 
 
+	   (define (typecheck-constraint asttype boundlist)
+	     (typecheck-type asttype boundlist #f))
 
-	   (define (typecheck-type asttype boundlist)
+;	   (define (typecheck-decl asttype boundlist)
+;	     (typecheck-type asttype boudnlist #t))
+
+	   (define (typecheck-type asttype boundlist decl?)
 ;	     (pretty-print (format "typecheck-type ~a ~a" asttype boundlist))
 	     (match (ast:core_type-desc asttype)
 		    [($ ast:ptyp_any dummy)
 		     (make-tvar (box null))]
 		    [($ ast:ptyp_var f)
-		     (make-tvar (cond 
-				 [(syntax? f)  (syntax-object->datum f)]
-				 [(string? f) f]
-				 [(box? f) f]
-				 [else (raise-syntax-error #f (format "Bad ptyp_var: ~a" f))]))]
+		     (let ([content (cond
+				     [(syntax? f) (syntax-object->datum f)]
+				     [(or (string? f) (box? f)) f]
+				     [else (raise-error #f 
+						     (loc)
+						     (format "Bad ptyp_var: ~a" f)
+						     f
+						     (ast:core_type-src asttype))])])
+		       (if (and decl? (null? (filter (lambda (var)
+						       (equal? var content))
+						     decl?)))
+			   (raise-error #f
+					(loc)
+					(format "Unbound type parameter '~a" content)
+					(string->symbol content)
+					(ast:core_type-src asttype))
+			   (make-tvar content)))]
 		    [($ ast:ptyp_arrow label ct1 ct2)
-		     (make-arrow (list (typecheck-type ct1 boundlist)) (typecheck-type ct2 boundlist))]
+		     (make-arrow (list (typecheck-type ct1 boundlist decl?)) (typecheck-type ct2 boundlist decl?))]
 		    [($ ast:ptyp_tuple ctlist)
-		     (make-<tuple> (map typecheck-type ctlist (repeat boundlist (length ctlist))))]
+		     (make-<tuple> (map typecheck-type ctlist (repeat boundlist (length ctlist)) (repeat decl? (length ctlist))))]
 		    [($ ast:ptyp_constr name ctlist)
 ;		     (pretty-print (format "ptyp_constr ~a ~a" (unlongident name) ctlist))
 		     (let* ([cexists (get-type (unlongident name) boundlist)]
 			    [fconstructor (if cexists
-					      (car (convert-tvars cexists null))
+					      ;(car (convert-tvars cexists null))
+					      cexists
 					      (constructor-lookup (unlongident name)))]
 ;			    [foobar (pretty-print (format "constructor-lookup: ~a" (unlongident name)))]
 			    )
@@ -488,7 +548,7 @@
 				 (if (null? ctlist)
 				     (tconstructor-result fconstructor)
 				     (raise-syntax-error #f (format "Constructor expects no arguments but got:~a" ctlist) (at asttype (ast:core_type-src asttype))) )
-				 (if (unify (tconstructor-argtype) (typecheck-type (car ctlist) boundlist) (at (car ctlist) (ast:core_type-src (car ctlist))))
+				 (if (unify (tconstructor-argtype) (typecheck-type (car ctlist) boundlist decl?) (at (car ctlist) (ast:core_type-src (car ctlist))))
 				     (tconstructor-result fconstructor)))]
 				       
 
@@ -497,15 +557,15 @@
 				 (if (null? ctlist)
 				     fconstructor
 				     (raise-syntax-error #f (format "Constructor ~a(~a) expects no arguments but got:~a" (usertype-name fconstructor) (usertype-params fconstructor) ctlist) (at asttype (ast:core_type-src asttype))))
-				 (if (andmap unify (usertype-params fconstructor) (car (convert-list (map typecheck-type ctlist (repeat boundlist (length ctlist))) null null)) (repeat (at (car ctlist) (ast:core_type-src (car ctlist))) (length ctlist)))
+				 (if (andmap unify (usertype-params fconstructor) (car (convert-list (map typecheck-type ctlist (repeat boundlist (length ctlist)) (repeat decl? (length ctlist))) null null)) (repeat (at (car ctlist) (ast:core_type-src (car ctlist))) (length ctlist)))
 				     fconstructor))]
 			    [(equal? (unlongident name) "list")
 			       
-			       (make-tlist (typecheck-type (car ctlist) boundlist))]
+			       (make-tlist (typecheck-type (car ctlist) boundlist decl?))]
 			    [(equal? (unlongident name) "ref")
-			     (make-ref (typecheck-type (car ctlist) boundlist))]
+			     (make-ref (typecheck-type (car ctlist) boundlist decl?))]
 			    [(equal? (unlongident name) "array")
-			     (make-tarray (typecheck-type (car ctlist) boundlist))]
+			     (make-tarray (typecheck-type (car ctlist) boundlist decl?))]
 			    [(null? ctlist)
 			     fconstructor
 			       ]
@@ -855,7 +915,7 @@
 			   #t)))
 		 (unify (unbox tbox) type syn)))
 
-	   (define (lookup-ident uname syntax)
+	   (define (lookup-ident uname src)
 	     (match uname
 		    [($ ast:lident name)
 		     (let* ([rname (cond
@@ -864,27 +924,35 @@
 			    [result (hash-table-get built-in-and-user-funcs rname (lambda () #f))])
 		       (if result
 			   (car result)
-			   (begin
-;			     (+ 1 #f)
-			     (raise-syntax-error #f (format "Error: Unbound variable ~a" rname) (if syntax
-												   syntax
-												   uname ))
-			     #f)))]
+			   (raise-error #f
+					(loc)
+					(format "Unbound value: ~a" rname)
+					(string->symbol rname)
+					src)
+			   ))]
+		    
 		    [($ ast:ldot longident name)
 
-		     (if (ast:lident? longident)
-			 (let ([lib-map (hash-table-get <library-names> (syntax-object->datum (ast:lident-name longident)) (lambda () #f))])
+		     (when (ast:lident? longident)
+			 (let* ([lib-name (syntax-object->datum (ast:lident-name longident))]
+				[lib-map (hash-table-get <library-names> lib-name (lambda () #f))])
 			   (if lib-map
 			       (let ([function (hash-table-get lib-map (syntax-object->datum name) (lambda () #f))])
 				 (if function
 				     (car function)
-				     (begin
-				       (raise-syntax-error #f (format "Error: ~a not found in ~a" (syntax-object->datum name) (syntax-object->datum (ast:lident-name longident))) uname)
-				       (if syntax syntax uname))))
-			       (begin
-				 (raise-syntax-error #f (format "Error: Library ~a not found" (syntax-object->datum (ast:lident-name longident))) (ast:lident-name longident))
+				     (raise-error #f
+						  (loc)
+						  (format "Value ~a not found in library ~a" (syntax-object->datum name) lib-name)
+						  (string->symbol (syntax-object->datum name))
+						  name)))
 
-				 (if syntax syntax uname)))))]))
+			       (raise-error #f
+					    (loc)
+					    (format "Unknown libaray: ~a" lib-name)
+					    (string->symbol lib-name)
+					    (ast:lident-name longident))
+				)))]))
+			       
 
 	   (define (convert-tvars type mappings)
 	     (cond
@@ -922,7 +990,9 @@
 	     (cond
 	      [(value-set? type) (let ([nmap (unconvert-tvars (value-set-type type) mappings)])
 				   (cons (make-value-set (value-set-name type) (car nmap)) (cdr nmap)))]
-	      [(tvariant? type) (cons type mappings)]
+	      [(tvariant? type) (let* ([nparams (unconvert-list (tvariant-params type) mappings null)]
+				       [ntlist (unconvert-list (tvariant-variantlist type) (cdr nparams) null)])
+				  (cons (make-tvariant (tvariant-name type) (reverse (car nparams)) (tvariant-varnames type) (reverse (car ntlist))) (cdr ntlist)))]
 	      [(usertype? type) (let ([tlist (unconvert-list (usertype-params type) mappings null)])
 				  (cons (make-usertype (usertype-name type) (reverse (car tlist))) (cdr tlist)))]
 	      [(list? type) (map unconvert-tvars type (repeat null (length type)))]
@@ -944,6 +1014,9 @@
 						(cons null mappings)
 						(unconvert-tvars (tconstructor-argtype (mlexn-types type)) mappings))])
 			       (cons (make-mlexn (mlexn-name type) (make-tconstructor (car newtypes) (tconstructor-result (mlexn-types type)))) (cdr newtypes)))]
+	      [(tconstructor? type) (let* ([atype (unconvert-tvars (tconstructor-argtype type) mappings)]
+					   [rtype (unconvert-tvars (tconstructor-result type) (cdr atype))])
+				      (cons (make-tconstructor (car atype) (car rtype)) (cdr rtype)))]
 	      [(tvar? type) (let ([dbox (tvar-tbox type)])
 			      (cond
 			       [(string? dbox) (cons type mappings)]
@@ -1131,12 +1204,13 @@
 			[($ ast:ppat_construct longident pat bool) (longident-location longident)]
 			[($ ast:ppat_constraint pat type) (pat-location pat)])))
 
+
 	   (define (print-type type)
 	     (cond
 ;	      [(value-set? type) (let ([nmap (unconvert-tvars (value-set-type type) mappings)])
 ;				   (cons (make-value-set (value-set-name type) (car nmap)) (cdr nmap)))]
 	      [(tvariant? type) (tvariant-name type)]
-	      [(usertype? type) (format "~a(~a)" (usertype-name type) (length (usertype-params type)))]
+	      [(usertype? type) (format "~a(~a)" (usertype-name type) (map print-type (usertype-params type)))]
 	      [(list? type) (map print-type type)]
 	      [(string? type) type]
 	      [(<tuple>? type) (format "tuple of ~a" (print-type (<tuple>-list type)))]

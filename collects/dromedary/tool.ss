@@ -24,6 +24,7 @@
       
       (define current-type '("unit"))
 
+      ;; format-typevalue: scheme-value -> string
       (define (format-typevalue value)
 	(let ([firsttype (car current-type)])
 	  (begin
@@ -34,7 +35,8 @@
 		    (format "~a~n" (ml-tstyle firsttype)))
 		(format "~a = ~a~n" (ml-tstyle firsttype) (ml-style value))))))
 
-
+      
+      ;; ml-tstyle: ml-type -> string
       (define (ml-tstyle type)
 	(cond
 	 [(mlexn? type)
@@ -46,13 +48,25 @@
 	 [(ref? type)
 	  (format "~a ref" (ml-tstyle (ref-type type)))]
 	 [(tvariant? type)
-	  (format "type ~a = ~a" (tvariant-name type)
+	  (format "type ~a~a = ~a" (tvariant-name type)
+		  (if (null? (tvariant-params type))
+		      ""
+		      (let ([nparams (map ml-tstyle (tvariant-params type))])
+			(printf "~a" (tvariant-params type))
+			(printf "~a" nparams)
+		      (format " ~a" nparams)))
 		  (letrec ([vtypes (lambda (varlist)
 				     (if (null? varlist)
 					 ""
 					 (if (null? (cdr varlist))
-					     (ml-tstyle (car varlist))
-					     (format "~a * ~a" (ml-tstyle (car varlist)) (vtypes (cdr varlist))))))]
+					     (format (if (<tuple>? (car varlist))
+							 "(~a)"
+							 "~a")
+					     (ml-tstyle (car varlist)))
+					     (format (if (<tuple>? (car varlist))
+							 "(~a) * ~a"
+							 "~a * ~a")
+							 (ml-tstyle (car varlist)) (vtypes (cdr varlist))))))]
 			   [vars (lambda (names variants)
 				   (if (null? names)
 				       ""
@@ -96,11 +110,23 @@
 	 [(tvar? type)
 	  (tvar-tbox type)]
 	 [(usertype? type)
-	  (usertype-name type)]
+	  (let ([n (usertype-name type)])
+	    (cond
+	     [(null? (usertype-params type)) n]
+	     [(= 1 (length (usertype-params type))) (format "~a ~a" (car (usertype-params type)) n)]
+	     [else (format "(~a) ~a" 
+			   (letrec ([writelist (lambda (alist)
+						 (if (null? (cdr alist))
+						     (format "~a" (ml-style (car alist)))
+						     (string-append (format "~a, " (ml-tstyle (car alist)))
+								    (writelist (cdr alist)))))])
+			     (writelist (usertype-params type)))
+			   n)]))]
 	 [(syntax? type)
 	  "Why the hell is a type a sytnax object?"]
 	 [else type]))
 
+      ;; ml-style: scheme-value -> string
       (define (ml-style value)
 	(cond
 	 [(<user-type>? value)
@@ -109,9 +135,9 @@
 			[(ftype) (acc-proc value 0)])
 		       (string-append (format "~a" name-sym)
 				      (cond
-				       [(<tuple>? ftype) (format " (~a) " (ml-style ftype))]
+;				       [(<tuple>? ftype) (format " (~a)" (ml-style ftype))]
 				       [(not ftype) ""]
-				       [else (format " ~a" (ml-style ftype))])))]
+				       [else (format " (~a)" (ml-style ftype))])))]
 			
 	 [(|Some|? value) (format "Some ~a" (let [(ns (ml-style (|Some|-tlist value)))]
 					      (if (<tuple>? (|Some|-tlist value))

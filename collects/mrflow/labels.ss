@@ -5,7 +5,7 @@
   ; the contracts once the types are extracted from cgp.ss
   
   (provide
-   (struct label (type-var trace prim? term set edges)) 
+   (struct label (parents children type-var trace prim? term set edges)) 
    (struct label-cst (value))
    (struct label-cons (car cdr))
    (struct label-vector (element))
@@ -40,7 +40,10 @@
   ; another label, using the first label as the source, or transform the graph accordingly (if
   ; the inflowing label is a function pseudo-label and the label into which it flows corresponds
   ; to the operator in an application, for example).
-  (define-struct label (type-var trace prim? term set edges))
+  ; parent and children are used to memoize the parent and children arrows for all the values
+  ; in the label's value set.  Computing these when the code contains huge amounts of macro-
+  ; generated recurisve code is quite expensive.
+  (define-struct label (parents children type-var trace prim? term set edges))
   
   ; a constant...
   (define-struct (label-cst label) (value))

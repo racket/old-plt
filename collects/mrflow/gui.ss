@@ -192,6 +192,7 @@
                 (lambda (button event)
                   (let ([start-time (current-milliseconds)]
                         [definitions-text (get-definitions-text)]
+                        [drs-eventspace (current-eventspace)]
                         [interactions-text (get-interactions-text)]
                         [language-settings
                          (fw:preferences:get
@@ -282,20 +283,24 @@
                                void
                                (lambda (syntax-object-or-eof iter)
                                  (if (eof-object? syntax-object-or-eof)
-                                     (begin
-                                       (let ([sba-end-time (current-milliseconds)])
-                                         ;(printf "sba time: ~a ms~n" (- (current-milliseconds) start-time))
-                                         (sba:check-primitive-types sba-state)
-                                         ;(printf "check time: ~a ms~n" (- (current-milliseconds) sba-end-time))
-                                         )
-                                       ; color everything right before re-enabling buttons
-                                       (send definitions-text color-registered-labels)
-                                       (enable-evaluation)
-                                       )
-                                     (begin
-                                       ;(printf "syntax: ~a~n" (syntax-object->datum syntax-object-or-eof))
-                                       (sba:create-label-from-term sba-state syntax-object-or-eof '() #f)
-                                       (iter))))))
+                                     (parameterize ([current-eventspace drs-eventspace])
+                                       (queue-callback
+                                        (lambda () ; =drs=
+                                          (let ([sba-end-time (current-milliseconds)])
+                                            ;(printf "sba time: ~a ms~n" (- (current-milliseconds) start-time))
+                                            (sba:check-primitive-types sba-state)
+                                            ;(printf "check time: ~a ms~n" (- (current-milliseconds) sba-end-time))
+                                            )
+                                          ; color everything right before re-enabling buttons
+                                          (send definitions-text color-registered-labels)
+                                          (enable-evaluation)
+                                          )))
+                                     (parameterize ([current-eventspace drs-eventspace])
+                                       (queue-callback
+                                        (lambda () ; =drs=
+                                          ;(printf "syntax: ~a~n" (syntax-object->datum syntax-object-or-eof))
+                                          (sba:create-label-from-term sba-state syntax-object-or-eof '() #f)
+                                          (iter))))))))
                             ; get-mrflow-primitives-filename defaults to R5RS
                             ; (see mrflow-default-implementation-mixin above), so if we arrive here,
                             ; we know we are in trouble because it means no primitive table is

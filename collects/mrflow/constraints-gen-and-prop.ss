@@ -10,8 +10,9 @@
            (prefix string: (lib "string.ss"))
            
            "labels.ss"
+           "types.ss"
            "set-hash.ss"
-           "assoc-set-hash.ss"
+           (prefix hc: "hashcons.ss")
            (prefix cst: "constants.ss")
            ;(prefix types: "types.ss")
            (prefix err: "sba-errors.ss")
@@ -37,47 +38,47 @@
   ; debug XXX
   ;read-and-analyze label-case-lambda-exps label-set label-term)
   
-;  (define-syntax debug1
-;    (let ([counter 1])
-;      (lambda (stx)
-;        (syntax-case stx ()
-;          [(_ args ...)
-;           (begin
-;             (printf "debug counter: ~a~n" counter)
-;             (let* ([stx-args (syntax (args ...))]
-;                    [stx-args-list (syntax-e stx-args)]
-;                    [stx-out (datum->syntax-object
-;                              stx-args
-;                              `(#%app debug2 ,counter ,@stx-args-list))])
-;               (set! counter (add1 counter))
-;               stx-out))]))))
-;  
-;  (define (debug2 n . args)
-;    ;(when (and (label-cst? (cadr args))
-;    ;           (number? (label-cst-value (cadr args)))
-;    ;           (= 7 (label-cst-value (cadr args))))
-;    (printf "debug: ~a args: ~a~n" n args)
-;    ;  )
-;    (apply (car args) (cdr args)))
-;    
-;  (define-syntax debug1
-;    (let ([counter 1])
-;      (lambda (stx)
-;        (syntax-case stx ()
-;          [(_ args ...)
-;           (begin
-;             (printf "debug counter: ~a~n" counter)
-;             (let* ([stx-args (syntax (args ...))]
-;                    [stx-args-list (syntax-e stx-args)]
-;                    [stx-out (datum->syntax-object
-;                              stx-args
-;                              `(begin
-;                                 (printf "debug: ~a~n" ,counter)
-;                                 ,stx-args))])
-;               (set! counter (add1 counter))
-;               stx-out))]))))
-    
-
+  ;  (define-syntax debug1
+  ;    (let ([counter 1])
+  ;      (lambda (stx)
+  ;        (syntax-case stx ()
+  ;          [(_ args ...)
+  ;           (begin
+  ;             (printf "debug counter: ~a~n" counter)
+  ;             (let* ([stx-args (syntax (args ...))]
+  ;                    [stx-args-list (syntax-e stx-args)]
+  ;                    [stx-out (datum->syntax-object
+  ;                              stx-args
+  ;                              `(#%app debug2 ,counter ,@stx-args-list))])
+  ;               (set! counter (add1 counter))
+  ;               stx-out))]))))
+  ;  
+  ;  (define (debug2 n . args)
+  ;    ;(when (and (label-cst? (cadr args))
+  ;    ;           (number? (label-cst-value (cadr args)))
+  ;    ;           (= 7 (label-cst-value (cadr args))))
+  ;    (printf "debug: ~a args: ~a~n" n args)
+  ;    ;  )
+  ;    (apply (car args) (cdr args)))
+  ;    
+  ;  (define-syntax debug1
+  ;    (let ([counter 1])
+  ;      (lambda (stx)
+  ;        (syntax-case stx ()
+  ;          [(_ args ...)
+  ;           (begin
+  ;             (printf "debug counter: ~a~n" counter)
+  ;             (let* ([stx-args (syntax (args ...))]
+  ;                    [stx-args-list (syntax-e stx-args)]
+  ;                    [stx-out (datum->syntax-object
+  ;                              stx-args
+  ;                              `(begin
+  ;                                 (printf "debug: ~a~n" ,counter)
+  ;                                 ,stx-args))])
+  ;               (set! counter (add1 counter))
+  ;               stx-out))]))))
+  
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MISC
   
   (define-struct arrows (in out tunnel) (make-inspector))
@@ -97,6 +98,8 @@
                             type-var-counter
                             ; (hash-tableof (cons symbol type-scheme))
                             primitive-types-table
+                            ; hashcons-table
+                            hashcon-tbl
                             ))
   
   (set! make-sba-state
@@ -109,9 +112,10 @@
                                  (make-hash-table)
                                  (make-hash-table)
                                  0
-                                 (make-hash-table)))))
+                                 (make-hash-table)
+                                 (hc:make-hashcons-table)))))
   
-    
+  
   ; length of list composed of label-cons
   (define (label-list-length start-label)
     (letrec ([count-length
@@ -314,7 +318,7 @@
                                                     cst:id
                                                     (lambda (inflowing-label)
                                                       (let ([label (make-label-cst
-                                                                    #f #f #f
+                                                                    #f #f #f #f #f
                                                                     (label-term inflowing-label)
                                                                     (make-hash-table)
                                                                     (make-hash-table)
@@ -342,7 +346,7 @@
                                                     cst:id
                                                     (lambda (inflowing-label)
                                                       (let ([label (make-label-cst
-                                                                    #f #f #f
+                                                                    #f #f #f #f #f
                                                                     (label-term inflowing-label)
                                                                     (make-hash-table)
                                                                     (make-hash-table)
@@ -623,12 +627,12 @@
   ; create simple, basic label. Used directly during graph reconstruction for primitives, since
   ; only the outer label will be associated with the term position, not all the internal labels.
   (define (create-simple-label sba-state term)
-    (let ([label (make-label #f #f #f term (make-hash-table) (make-hash-table))])
+    (let ([label (make-label #f #f #f #f #f term (make-hash-table) (make-hash-table))])
       ((sba-state-register-label-with-gui sba-state) label)
       label))
   
   (define (create-dummy-label term)
-    (make-label #f #f #f term (make-hash-table) (make-hash-table)))
+    (make-label #f #f #f #f #f term (make-hash-table) (make-hash-table)))
   
   ; create-simple-label is seldom used in the graph reconstruction from primitive type part
   ; of the code but used a lot in the graph derivation code, so rather than add a second
@@ -637,7 +641,7 @@
   ; Note that such a label has prim? set to #t and that the associated term will, in practice,
   ; be the term into which the primitive label will initially flow.
   (define (create-simple-prim-label term)
-    (make-label #f #f #t term (make-hash-table) (make-hash-table)))
+    (make-label #f #f #f #f #t term (make-hash-table) (make-hash-table)))
   
   ; label -> void
   ; put a label in it's own set, for terms that are value sources
@@ -760,7 +764,7 @@
                                                             (if (null? args-labels-around)
                                                                 (let ([null-label
                                                                        (make-label-cst
-                                                                        #f #f #t
+                                                                        #f #f #f #f #t
                                                                         rest-arg-term
                                                                         (make-hash-table)
                                                                         (make-hash-table)
@@ -772,7 +776,7 @@
                                                                   null-label)
                                                                 (let ([cons-label
                                                                        (make-label-cons
-                                                                        #f #f #t
+                                                                        #f #f #f #f #t
                                                                         rest-arg-term
                                                                         (make-hash-table)
                                                                         (make-hash-table)
@@ -842,7 +846,7 @@
                                                             (if (null? args-labels-in)
                                                                 (let ([null-label
                                                                        (make-label-cst
-                                                                        #f #f #t
+                                                                        #f #f #f #f #t
                                                                         rest-arg-term
                                                                         (make-hash-table)
                                                                         (make-hash-table)
@@ -1101,7 +1105,7 @@
                                                                 (car args-labels-around)
                                                                 (let ([cons-label
                                                                        (make-label-cons
-                                                                        #f #f #t
+                                                                        #f #f #f #f #t
                                                                         rest-arg-term
                                                                         (make-hash-table)
                                                                         (make-hash-table)
@@ -1275,7 +1279,7 @@
            ; is because mzscheme treats it as a first class value and have it bound
            ; to struct:blablabla, so it needs to be a label to be able to flow...
            [struct-type-label (make-label-struct-type
-                               #f #f #t
+                               #f #f #f #f #t
                                term
                                (make-hash-table)
                                (make-hash-table)
@@ -1292,18 +1296,18 @@
            [access-edge (create-simple-edge access-label)]
            [mutate-label (create-simple-prim-label term)]
            [mutate-edge (create-simple-edge mutate-label)]
-           [null-label (make-label-cst #f #f #t term (make-hash-table) (make-hash-table) '())]
-           [cons-label1 (make-label-cons #f #f #t term (make-hash-table) (make-hash-table)
+           [null-label (make-label-cst #f #f #f #f #t term (make-hash-table) (make-hash-table) '())]
+           [cons-label1 (make-label-cons #f #f #f #f #t term (make-hash-table) (make-hash-table)
                                          mutate-label null-label)]
-           [cons-label2 (make-label-cons #f #f #t term (make-hash-table) (make-hash-table)
+           [cons-label2 (make-label-cons #f #f #f #f #t term (make-hash-table) (make-hash-table)
                                          access-label cons-label1)]
-           [cons-label3 (make-label-cons #f #f #t term (make-hash-table) (make-hash-table)
+           [cons-label3 (make-label-cons #f #f #f #f #t term (make-hash-table) (make-hash-table)
                                          pred-label cons-label2)]
-           [cons-label4 (make-label-cons #f #f #t term (make-hash-table) (make-hash-table)
+           [cons-label4 (make-label-cons #f #f #f #f #t term (make-hash-table) (make-hash-table)
                                          maker-label cons-label3)]
-           [cons-label5 (make-label-cons #f #f #t term (make-hash-table) (make-hash-table)
+           [cons-label5 (make-label-cons #f #f #f #f #t term (make-hash-table) (make-hash-table)
                                          struct-type-label cons-label4)]
-           [values-label (make-label-values #f #f #t term (make-hash-table) (make-hash-table)
+           [values-label (make-label-values #f #f #f #f #t term (make-hash-table) (make-hash-table)
                                             cons-label5)]
            [name-label (create-simple-prim-label term)]
            [name-edge
@@ -1448,7 +1452,7 @@
                        (let* ([total-fields-nbr (label-struct-type-total-fields-nbr struct-type-label)]
                               ; maker
                               [maker-body-label (make-label-struct-value
-                                                 #f #f #t
+                                                 #f #f #f #f #t
                                                  term
                                                  (make-hash-table)
                                                  (make-hash-table)
@@ -1457,7 +1461,7 @@
                                                                  (lambda (_)
                                                                    (create-simple-prim-label term))))]
                               [maker-case-lambda-label (make-label-case-lambda
-                                                        #f #f #t
+                                                        #f #f #f #f #t
                                                         term
                                                         (make-hash-table)
                                                         (make-hash-table)
@@ -1469,12 +1473,12 @@
                                                         (list maker-body-label)
                                                         (list cst:dummy-thunk))]
                               ; pred
-                              [pred-true-label (make-label-cst #f #f #t
+                              [pred-true-label (make-label-cst #f #f #f #f #t
                                                                term
                                                                (make-hash-table)
                                                                (make-hash-table)
                                                                #t)]
-                              [pred-false-label (make-label-cst #f #f #t
+                              [pred-false-label (make-label-cst #f #f #f #f #t
                                                                 term
                                                                 (make-hash-table)
                                                                 (make-hash-table)
@@ -1488,7 +1492,7 @@
                                                            pred-true-label pred-false-label
                                                            pred-body-edge)]
                               [pred-case-lambda-label (make-label-case-lambda
-                                                       #f #f #t
+                                                       #f #f #f #f #t
                                                        term
                                                        (make-hash-table)
                                                        (make-hash-table)
@@ -1511,7 +1515,7 @@
                               [access-first-arg-label (create-simple-prim-label term)]
                               [access-second-arg-label (create-simple-prim-label term)]
                               [access-case-lambda-label (make-label-case-lambda
-                                                         #f #f #t
+                                                         #f #f #f #f #t
                                                          term
                                                          (make-hash-table)
                                                          (make-hash-table)
@@ -1527,7 +1531,7 @@
                               [mutate-second-arg-label (create-simple-prim-label term)]
                               [mutate-third-arg-label (create-simple-prim-label term)]
                               [mutate-case-lambda-label (make-label-case-lambda
-                                                         #f #f #t
+                                                         #f #f #f #f #t
                                                          term
                                                          (make-hash-table)
                                                          (make-hash-table)
@@ -1571,7 +1575,7 @@
                      #f)))
              (gensym))]
            [make-struct-type-label (make-label-case-lambda
-                                    #f #f #t term (make-hash-table) (make-hash-table) #f
+                                    #f #f #f #f #t term (make-hash-table) (make-hash-table) #f
                                     (list #f)
                                     (list 7)
                                     (list (list name-label
@@ -1743,7 +1747,7 @@
                                         #f)))
                                 (gensym))]
                               [accessor-case-lambda-label (make-label-case-lambda
-                                                           #f #f #t term (make-hash-table) (make-hash-table) #f
+                                                           #f #f #f #f #t term (make-hash-table) (make-hash-table) #f
                                                            (list #f)
                                                            (list 1)
                                                            (list (list accessor-arg-label))
@@ -1778,7 +1782,7 @@
                    #f))
              (gensym))]
            [make-struct-field-accessor-label (make-label-case-lambda
-                                              #f #f #t term (make-hash-table) (make-hash-table) #f
+                                              #f #f #f #f #t term (make-hash-table) (make-hash-table) #f
                                               (list #f)
                                               (list 3)
                                               (list (list first-arg-label
@@ -1948,7 +1952,7 @@
                    #f))
              (gensym))]
            [make-struct-field-mutator-label (make-label-case-lambda
-                                             #f #f #t term (make-hash-table) (make-hash-table) #f
+                                             #f #f #f #f #t term (make-hash-table) (make-hash-table) #f
                                              (list #f)
                                              (list 3)
                                              (list (list first-arg-label
@@ -1970,7 +1974,7 @@
                                 accessor-first-arg accessor-second-arg
                                 error-first-arg error-second-arg
                                 term)
-    (let* ([void-label (make-label-cst #f #f #f
+    (let* ([void-label (make-label-cst #f #f #f #f #f
                                        term
                                        (make-hash-table)
                                        (make-hash-table)
@@ -2022,7 +2026,7 @@
                      #f)))
              (gensym))]
            [mutator-case-lambda-label (make-label-case-lambda
-                                       #f #f #t term (make-hash-table) (make-hash-table) #f
+                                       #f #f #f #f #t term (make-hash-table) (make-hash-table) #f
                                        (list #f)
                                        (list 2)
                                        (list (list mutator-first-arg-label
@@ -2046,7 +2050,7 @@
                                 accessor-first-arg accessor-third-arg
                                 error-first-arg error-second-arg error-third-arg
                                 term)
-    (let* ([void-label (make-label-cst #f #f #f
+    (let* ([void-label (make-label-cst #f #f #f #f #f
                                        term
                                        (make-hash-table)
                                        (make-hash-table)
@@ -2117,7 +2121,7 @@
                      #f)))
              (gensym))]
            [mutator-case-lambda-label (make-label-case-lambda
-                                       #f #f #t term (make-hash-table) (make-hash-table) #f
+                                       #f #f #f #f #t term (make-hash-table) (make-hash-table) #f
                                        (list #f)
                                        (list 3)
                                        (list (list mutator-first-arg-label
@@ -2140,7 +2144,7 @@
   ; syntax-object (listof (cons symbol label)) -> case-lambda-label
   (define (create-case-lambda-label sba-state argss expss term gamma)
     (let* ([label (make-label-case-lambda
-                   #f #f #f
+                   #f #f #f #f #f
                    term
                    (make-hash-table)
                    (make-hash-table)
@@ -2273,7 +2277,7 @@
            (if (null? sexp-e)
                (let ([null-label
                       (make-label-cst
-                       #f #f #t
+                       #f #f #f #f #t
                        quoted-term
                        (make-hash-table)
                        (make-hash-table)
@@ -2282,7 +2286,7 @@
                  null-label)
                (let ([cons-label
                       (make-label-cons
-                       #f #f #t
+                       #f #f #f #f #t
                        quoted-term
                        (make-hash-table)
                        (make-hash-table)
@@ -2293,7 +2297,7 @@
         [(pair? sexp-e)
          (let ([cons-label
                 (make-label-cons
-                 #f #f #t
+                 #f #f #f #f #t
                  quoted-term
                  (make-hash-table)
                  (make-hash-table)
@@ -2302,7 +2306,7 @@
            (initialize-label-set-for-value-source cons-label)
            cons-label)]
         [else (let ([label (make-label-cst
-                            #f #f #f
+                            #f #f #f #f #f
                             quoted-term
                             (make-hash-table)
                             (make-hash-table)
@@ -2310,7 +2314,7 @@
                 (initialize-label-set-for-value-source label)
                 ((sba-state-register-label-with-gui sba-state) label)
                 label)])))
-
+  
   ; sba-state syntax-object (listof (cons symbol label)) label (listof label) -> label
   ; gamma is the binding-variable-name-to-label environment
   ; enclosing-lambda-label is the label for the enclosing lambda, if any. We
@@ -2375,7 +2379,7 @@
         app-label)]
      [(#%datum . datum)
       (let ([label (make-label-cst
-                    #f #f #f
+                    #f #f #f #f #f
                     term
                     (make-hash-table)
                     (make-hash-table)
@@ -2392,7 +2396,7 @@
              [exp-label (create-label-from-term sba-state (syntax exp) gamma enclosing-lambda-label)]
              [vars-labels (map (lambda (term) (create-simple-label sba-state term)) vars)]
              [define-label (make-label-cst
-                            #f #f #f
+                            #f #f #f #f #f
                             term
                             (make-hash-table)
                             (make-hash-table)
@@ -2618,7 +2622,7 @@
              [varss-stx (map syntax-e (syntax-e (syntax (vars ...))))]
              [varss-labelss (map (lambda (single-clause-vars-stx)
                                    (map (lambda (var-stx)
-                                          (let ([undefined-label (make-label-cst #f #f #f
+                                          (let ([undefined-label (make-label-cst #f #f #f #f #f
                                                                                  var-stx
                                                                                  (make-hash-table)
                                                                                  (make-hash-table)
@@ -2757,7 +2761,7 @@
       (let* ([test-label (create-label-from-term sba-state (syntax test) gamma enclosing-lambda-label)]
              [then-label (create-label-from-term sba-state (syntax then) gamma enclosing-lambda-label)]
              [else-label (let ([void-label (make-label-cst
-                                            #f #f #t
+                                            #f #f #f #f #t
                                             term
                                             (make-hash-table)
                                             (make-hash-table)
@@ -2812,7 +2816,7 @@
               (create-label-from-term sba-state (syntax exp) gamma enclosing-lambda-label)]
              [set!-label (create-simple-label sba-state term)]
              [set!-edge (create-simple-edge set!-label)]
-             [void-label (make-label-cst #f #f #f
+             [void-label (make-label-cst #f #f #f #f #f
                                          term
                                          (make-hash-table)
                                          (make-hash-table)
@@ -2974,39 +2978,6 @@
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; TYPES
   
-  (define-struct type () (make-inspector))
-  
-  ; (make-type-empty) is the same as (make-type-cst 'bottom) for now. The reason we
-  ; *never* use (make-type-cst 'bottom) is because it would trigger the propagation of
-  ; bottom everywhere, thus slowing down the analysis. There's two solutions to that:
-  ; - not use initialize-label-set-for-value-source when using (make-type-cst 'bottom)
-  ; - use a separate (make-type-empty), which is more correct anyway (note that there's
-  ;   currently no way to define the type for a primitive that returns the symbol 'bottom
-  ;   (or 'number, or 'null, etc...))
-  (define-struct (type-empty type) () (make-inspector))
-  
-  (define-struct (type-cst type) (type) (make-inspector))
-  (define-struct (type-cons type) (car cdr) (make-inspector))
-  (define-struct (type-vector type) (element) (make-inspector))
-  (define-struct (type-case-lambda type) (rest-arg?s req-args argss exps) (make-inspector))
-  (define-struct (type-var type) (name recur) (make-inspector))
-  (define-struct (type-union type) (elements) (make-inspector))
-  (define-struct (type-rec type) (vars types body) (make-inspector))
-  (define-struct (type-values type) (type) (make-inspector))
-  (define-struct (type-flow-var type) (name) (make-inspector))
-  (define-struct (type-promise type) (value) (make-inspector))
-  (define-struct (type-scheme type) (flow-vars type^Cs type) (make-inspector))
-  
-  ; note: we have to keep the type label around, because that's the only thing
-  ; that allows us to differentiate structurally equivalent structure that have
-  ; the same name (i.e. the only way to have subtyping work in the presence of generative
-  ; structures). The reason for type-struct-type is because structure types are first
-  ; class values in mzscheme. Also, by keeping the type-label around, we avoid the need
-  ; to duplicate the type hierarchy all the way up to the root each time we compute the
-  ; type of a structure.
-  (define-struct (type-struct-value type) (type-label types))
-  (define-struct (type-struct-type type) (type-label))
-  
   ; each entry is of the form (type-name (listof direct-subtypes) scheme-predicate)
   ; top should appear first (see the subtype function below)
   ; note also that exact? and inexact? can only be used for numbers, so we have to do
@@ -3102,7 +3073,7 @@
              (eq? (car sexp) 'forall))
         (if (= (length sexp) 3)
             (let ([delta-flow (make-hash-table)]
-                  [flow-vars&type^Cs (cadr sexp)]
+                  [flow-vars&type^cs (cadr sexp)]
                   [type (caddr sexp)])
               (for-each
                (lambda (flow-var&type^C)
@@ -3124,7 +3095,7 @@
                        (hash-table-put! delta-flow
                                         flow-var
                                         (cons (list #t #t (make-type-flow-var flow-var))
-                                              ; type^Cs do not contain flow vars, so we give an
+                                              ; type^cs do not contain flow vars, so we give an
                                               ; empty delta. If this function returns, we know
                                               ; the result is a constant type.
                                               (parse&check-type type^C
@@ -3136,7 +3107,7 @@
                       'parse&check-type-scheme
                       (format "malformed type scheme clause for primitive ~a in file ~a: expected (symbol type), got ~a"
                               primitive-name filename flow-var&type^C))))
-               flow-vars&type^Cs)
+               flow-vars&type^cs)
               (let ([type (parse&check-type type delta-flow '() #t primitive-name filename)])
                 (hash-table-for-each
                  delta-flow
@@ -3160,7 +3131,7 @@
                          (format "no covariant out-flow for flow variable ~a in type scheme for primitive ~a in file ~a"
                                  flow-var primitive-name filename))]
                        [else #t]))))
-                (if (null? flow-vars&type^Cs)
+                (if (null? flow-vars&type^cs)
                     type
                     (make-type-scheme
                      (hash-table-map delta-flow (lambda (flow-var type-info) (caddar type-info)))
@@ -3282,7 +3253,7 @@
                                            'parse&check-type
                                            (format "recursive type variable ~a used twice or conflicts with flow variable name in type scheme for primitive ~a in file ~a"
                                                    type-var-name primitive-name filename))
-                                          (cons type-var-name (make-type-var type-var-name #f))))))
+                                          (cons type-var-name (make-type-var type-var-name #f #f))))))
                               clauses)]
                             [all-type-vars (append clauses-type-vars-names&types delta-type)]
                             [clauses-types
@@ -3359,7 +3330,7 @@
                                                    primitive-name filename)])
                         (parse&check-type
                          `(case-lambda [,(cons 'rest (set-list-tail-cdr! list-head rest-sexp))
-                                        ,exp-sexp])
+                                         ,exp-sexp])
                          delta-flow delta-type covariant? primitive-name filename))]
                      [else
                       (raise-syntax-error
@@ -3491,7 +3462,7 @@
                           ;(associate-label-with-type label type^C)
                           (add-flow-var-to-env delta-flow flow-var (cons label type^C))))
                       (type-scheme-flow-vars type)
-                      (type-scheme-type^Cs type))
+                      (type-scheme-type^cs type))
             (reconstruct-graph-from-type sba-state (type-scheme-type type) delta-flow '() label term #t #f))
           (reconstruct-graph-from-type sba-state type delta-flow '() label term #t #f))))
   
@@ -3541,7 +3512,7 @@
                     (type-case-lambda-argss type)
                     (type-case-lambda-exps type))]
                   [label (make-label-case-lambda
-                          #f #f #t
+                          #f #f #f #f #t
                           term
                           (make-hash-table)
                           (make-hash-table)
@@ -3556,7 +3527,7 @@
              label)]
           [(type-cons? type)
            (let ([label (make-label-cons
-                         #f #f #t
+                         #f #f #f #f #t
                          term
                          (make-hash-table)
                          (make-hash-table)
@@ -3570,7 +3541,7 @@
              label)]
           [(type-vector? type)
            (let ([label (make-label-vector
-                         #f #f #t
+                         #f #f #f #f #t
                          term
                          (make-hash-table)
                          (make-hash-table)
@@ -3581,7 +3552,7 @@
              label)]
           [(type-promise? type)
            (let ([label (make-label-promise
-                         #f #f #t
+                         #f #f #f #f #t
                          term
                          (make-hash-table)
                          (make-hash-table)
@@ -3596,7 +3567,7 @@
            (cdr (assq type delta-type))]
           [(type-cst? type)
            (let ([label (make-label-cst
-                         #f #f #t
+                         #f #f #f #f #t
                          term
                          (make-hash-table)
                          (make-hash-table)
@@ -3623,7 +3594,7 @@
                                          sba-state
                                          (type-values-type type) delta-flow delta-type label term #t #f)]
                   [values-label (make-label-values
-                                 #f #f #t
+                                 #f #f #f #f #t
                                  term
                                  (make-hash-table)
                                  (make-hash-table)
@@ -3694,7 +3665,7 @@
                              (lambda (arg-label other-args)
                                (if (null? other-args)
                                    ; rest arg => listof
-                                   (let ([fake-type-var (make-type-var (gensym) #f)])
+                                   (let ([fake-type-var (make-type-var (gensym) #f #f)])
                                      (cons (make-type-rec
                                             (list fake-type-var)
                                             (list (make-type-union
@@ -3880,7 +3851,7 @@
            (cdr (assq type delta-type))]
           [(type-cst? type)
            (let* ([cst-label (make-label-cst
-                              #f #f #t
+                              #f #f #f #f #t
                               term
                               (make-hash-table)
                               (make-hash-table)
@@ -3918,12 +3889,12 @@
                               ; is unique and equivalent to (values x). So we simulate that. Note
                               ; that multiple values are in fact label-lists of labels inside a
                               ; values label, so we have to simulate the label-list part...
-                              (let* ([null-label (make-label-cst #f #f #t
+                              (let* ([null-label (make-label-cst #f #f #f #f #t
                                                                  term
                                                                  (make-hash-table)
                                                                  (make-hash-table)
                                                                  '())]
-                                     [cons-label (make-label-cons #f #f #t
+                                     [cons-label (make-label-cons #f #f #f #f #t
                                                                   term
                                                                   (make-hash-table)
                                                                   (make-hash-table)
@@ -3941,12 +3912,12 @@
                               (add-edge-and-propagate-set-through-edge
                                (label-values-label inflowing-label)
                                values-content-edge)
-                              (let* ([null-label (make-label-cst #f #f #t
+                              (let* ([null-label (make-label-cst #f #f #f #f #t
                                                                  term
                                                                  (make-hash-table)
                                                                  (make-hash-table)
                                                                  '())]
-                                     [cons-label (make-label-cons #f #f #t
+                                     [cons-label (make-label-cons #f #f #f #f #t
                                                                   term
                                                                   (make-hash-table)
                                                                   (make-hash-table)
@@ -4059,7 +4030,6 @@
   
   ; sba-state label type (hash-table-of type-flow-var (cons label type)) -> void
   (define (associate-label-with-type sba-state label type delta-flow)
-    ;(printf "~a ~a~n" (syntax-object->datum (label-term label)) type)
     (hash-table-put! (sba-state-label->types sba-state) label (cons type delta-flow)))
   
   ; sba-state -> void
@@ -4145,18 +4115,18 @@
                                                           (list-head t2-args t1-req-arg))
                                                   ; contravariant
                                                   (let ([t1-rest-arg (list-ref t1-args t1-req-arg)]
-                                                        [fake-type-var (make-type-var (gensym) #f)])
+                                                        [fake-type-var (make-type-var (gensym) #f #f)])
                                                     (and
                                                      (andmap (lambda (t2-arg)
                                                                (subt sba-state (make-type-rec ; faked list
-                                                                      (list fake-type-var)
-                                                                      (list (make-type-union
-                                                                             (list
-                                                                              (make-type-cst '())
-                                                                              (make-type-cons
-                                                                               t2-arg
-                                                                               fake-type-var))))
-                                                                      fake-type-var)
+                                                                                (list fake-type-var)
+                                                                                (list (make-type-union
+                                                                                       (list
+                                                                                        (make-type-cst '())
+                                                                                        (make-type-cons
+                                                                                         t2-arg
+                                                                                         fake-type-var))))
+                                                                                fake-type-var)
                                                                      t1-rest-arg
                                                                      t2-env t1-env delta-flow trace))
                                                              (list-head
@@ -4180,7 +4150,7 @@
                                                           (list-head t1-args t2-req-arg)
                                                           (list-head t2-args t2-req-arg))
                                                   (let ([t2-rest-arg (list-ref t2-args t2-req-arg)]
-                                                        [fake-type-var (make-type-var (gensym) #f)])
+                                                        [fake-type-var (make-type-var (gensym) #f #f)])
                                                     (and
                                                      (andmap (lambda (t1-arg)
                                                                (subt sba-state t2-rest-arg
@@ -4213,8 +4183,8 @@
                                                       (list-head t2-args t1-req-arg))
                                               ; contravariant
                                               (subt sba-state (list:foldr make-type-cons
-                                                                (make-type-cst '())
-                                                                (list-tail t2-args t1-req-arg))
+                                                                          (make-type-cst '())
+                                                                          (list-tail t2-args t1-req-arg))
                                                     (list-ref t1-args t1-req-arg) ; rest arg
                                                     t2-env t1-env delta-flow trace))))
                                    (type-case-lambda-rest-arg?s t2)
@@ -4236,7 +4206,7 @@
                                                       (list-head t2-args t2-req-arg))
                                               ; contravariant
                                               (let ([t2-rest-arg (list-ref t2-args t2-req-arg)]
-                                                    [fake-type-var (make-type-var (gensym) #f)])
+                                                    [fake-type-var (make-type-var (gensym) #f #f)])
                                                 (andmap (lambda (t1-arg)
                                                           (subt sba-state t2-rest-arg
                                                                 (make-type-rec ; faked list
@@ -4370,7 +4340,7 @@
                          (list label)
                          gravity
                          message))
-
+  
   ; sba-state label -> (listof sba-error)
   ; extracts error messages.
   (define (get-errors-from-label sba-state label)
@@ -4380,162 +4350,126 @@
   (define (get-source-from-label label)
     (syntax-source (label-term label)))
   
-  ;; (make-hash-tableof label (cons type-var type))
-  ;(define rec-types 'uninitialized)
+  ; label sba-state -> (set-of label)
+  ; reachable lables from a given label
+  (define (reachable-labels-from-label label sba-state)
+    (letrec ([reach (lambda (label)
+                      (if (label-type-var label)
+                          (let ([type-var (label-type-var label)])
+                            (unless (type-var-reach type-var)
+                              (set-type-var-reach! type-var (set-make))))
+                          (set-label-type-var! label
+                                               (make-type-var (create-type-var-name sba-state)
+                                                              (set-make)
+                                                              #f)))
+                      (let ([set (type-var-reach (label-type-var label))])
+                        (unless (set-in? set label)
+                          ; the label itself
+                          (set-set set label)
+                          ; either the label is for a constructor, in which case its set only
+                          ; contains itself and there's no need to look at it since the label
+                          ; itself has already been added to the set, or the label is a simple
+                          ; label and we just need to look at its set without worrying about
+                          ; possible sub-components (being a simple label).
+                          ; label-cst? and label-struct-type? don't do anything in the cond
+                          ; because typeT below doesn't use label-type-var in those two cases.
+                          (cond
+                            [(label-cst? label) cst:void]
+                            [(label-cons? label) (begin (set-union set (reach (label-cons-car label)) 'first)
+                                                        (set-union set (reach (label-cons-cdr label)) 'first))]
+                            [(label-vector? label) (set-union set (reach (label-vector-element label)) 'first)]
+                            [(label-promise? label) (set-union set (reach (label-promise-value label)) 'first)]
+                            [(label-values? label) (set-union set (reach (label-values-label label)) 'first)]
+                            [(label-case-lambda? label) (for-each (lambda (args-labels exp-label)
+                                                                    (for-each (lambda (arg-label)
+                                                                                (set-union set (reach arg-label) 'first))
+                                                                              args-labels)
+                                                                    (set-union set (reach exp-label) 'first))
+                                                                  (label-case-lambda-argss label)
+                                                                  (label-case-lambda-exps label))]
+                            [(label-struct-value? label) (begin (set-union set (reach (label-struct-value-type label)) 'first)
+                                                                (for-each (lambda (label)
+                                                                            (set-union set (reach label) 'first))
+                                                                          (label-struct-value-fields label)))]
+                            [(label-struct-type? label) cst:void]
+                            [else (hash-table-for-each (label-set label)
+                                                       (lambda (value-label arrows)
+                                                         (set-union set (reach value-label) 'first)))]))
+                        set))])
+      (reach label)))
   
+;  ; XXX the following two functions don't work with make-struct-type, I don't know why.
+;  ; The version of get-type-from-label below works though.
+;  ; label -> type
+;  (define (typeT label)
+;    (cond
+;      [(label-cst? label) (make-type-cst (label-cst-value label))]
+;      [(label-cons? label) (make-type-cons (label-type-var (label-cons-car label))
+;                                           (label-type-var (label-cons-cdr label)))]
+;      [(label-vector? label) (make-type-vector (label-type-var (label-vector-element label)))]
+;      [(label-promise? label) (make-type-promise (label-type-var (label-promise-value label)))]
+;      [(label-values? label) (make-type-values (label-type-var (label-values-label label)))]
+;      [(label-case-lambda? label) (make-type-case-lambda (label-case-lambda-rest-arg?s label)
+;                                                         (label-case-lambda-req-args label)
+;                                                         (map (lambda (args)
+;                                                                (map label-type-var args))
+;                                                              (label-case-lambda-argss label))
+;                                                         (map label-type-var (label-case-lambda-exps label)))]
+;      [(label-struct-value? label) (make-type-struct-value (label-struct-value-type label)
+;                                                           (map label-type-var (label-struct-value-fields label)))]
+;      [(label-struct-type? label) (make-type-struct-type label)]
+;      [else (let* ([union-content (hash-table-map (label-set label)
+;                                                  (lambda (label arrows)
+;                                                    (label-type-var label)))]
+;                   [union-length (length union-content)])
+;              (cond
+;                ;[(= union-length 0) (make-type-empty)]
+;                ;[(= union-length 1) (car union-content)] ; XXX taken care of by type simplifaction?
+;                [else (make-type-union union-content)]))]))
+;  
+;  ; sba-state label -> type
+;  ; computes type for label
+;  (define (get-type-from-label sba-state label)
+;    (let ([reachable-labels (set-map (reachable-labels-from-label label sba-state) cst:id)])
+;      (make-type-rec (map label-type-var reachable-labels)
+;                     (map typeT reachable-labels)
+;                     (label-type-var label))))
+
   ; sba-state label -> type
-  ; computes type for label and wraps a rec-type around if necessary
+  ; computes type for label
   (define (get-type-from-label sba-state label)
-    ;(set! rec-types (make-hash-table))
-    ; let* to enforce sequentiality
-    (let* ([rec-types (make-hash-table)]
-           [non-rec-type (get-non-rec-type sba-state label rec-types)]
-           [rec-type-clauses (hash-table-map rec-types
-                                             (lambda (label rec-type-clause-value)
-                                               rec-type-clause-value))])
-      (if (> (length rec-type-clauses) 0)
-          (let ([all-rec-type-clauses
-                 ; (list (cons x y)) -> (cons (list x) (list y)) ...
-                 (list:foldr
-                  (lambda (rec-type-clause other-rec-type-clauses)
-                    (let ([rec-type-var (car rec-type-clause)]
-                          [rec-type-type (cdr rec-type-clause)]
-                          [other-rec-type-vars (car other-rec-type-clauses)]
-                          [other-rec-type-types (cdr other-rec-type-clauses)])
-                      (cons (cons rec-type-var other-rec-type-vars)
-                            (cons rec-type-type other-rec-type-types))))
-                  (cons '() '())
-                  rec-type-clauses)])
-            (make-type-rec (car all-rec-type-clauses)
-                           (cdr all-rec-type-clauses)
-                           non-rec-type))
-          non-rec-type)))
+    (let ([reachable-labels (set-map (reachable-labels-from-label label sba-state) cst:id)])
+      (letrec ([type (lambda (label)
+                       (make-type-rec (map label-type-var reachable-labels)
+                                      (map typeU reachable-labels)
+                                      (label-type-var label)))]
+               [typeU (lambda (label)
+                        (let ([union-content (hash-table-map (label-set label) (lambda (label arrows) (typeT label)))])
+                              ;[union-length (length union-content)])
+                          (cond
+                            ;[(= union-length 0) (make-type-empty)]
+                            ;[(= union-length 1) (car union-content)] ; XXX taken care of by type simplifaction?
+                            [else (make-type-union union-content)])))]
+               [typeT (lambda (label)
+                        (cond
+                          [(label-cst? label) (make-type-cst (label-cst-value label))]
+                          [(label-cons? label) (make-type-cons (label-type-var (label-cons-car label))
+                                                               (label-type-var (label-cons-cdr label)))]
+                          [(label-vector? label) (make-type-vector (label-type-var (label-vector-element label)))]
+                          [(label-promise? label) (make-type-promise (label-type-var (label-promise-value label)))]
+                          [(label-values? label) (make-type-values (label-type-var (label-values-label label)))]
+                          [(label-case-lambda? label) (make-type-case-lambda (label-case-lambda-rest-arg?s label)
+                                                                             (label-case-lambda-req-args label)
+                                                                             (map (lambda (args)
+                                                                                    (map label-type-var args))
+                                                                                  (label-case-lambda-argss label))
+                                                                             (map label-type-var (label-case-lambda-exps label)))]
+                          [(label-struct-value? label) (make-type-struct-value (label-struct-value-type label)
+                                                                               (map label-type-var (label-struct-value-fields label)))]
+                          [(label-struct-type? label) (make-type-struct-type label)]
+                          [else (error 'typeT "unknown label: ~a" label)]))])
+        (type label))))
 
-  ; sba-state label -> type
-  ; reconstructs the type for a label
-  ; a lot of things are done imperatively: the trace is used to detect cycles in the graph,
-  ; and recur in the type var is used to know when to add a rec-type to the list of rec-types
-  ; to wrap around the final type (the list actually being done imperatively using a hash
-  ; table, because doing it functionaly using merge-lists and by returning multiple values
-  ; (both a type and a list of rec-types) becomes an horrible mess when you reach the
-  ; case-lambda case because you have to merge everything at once from all the different args
-  ; and bodies types)
-  (define (get-non-rec-type sba-state label rec-types)
-    (if (label-trace label)
-        ; we have a recursive type
-        (let ([type-var (label-type-var label)])
-          (if type-var
-              ; found some join point that was used during a previous recursion or a previous
-              ; part of the same recursion => mark the join point and re-use the same variable name
-              (begin
-                (set-type-var-recur! type-var #t)
-                type-var)
-              ; never saw this join point before, so create a type variable for it.
-              ; We set recur to #t to mark that we must create a rec-type when
-              ; seeing this label again on the way up.
-              (let ([type-var (make-type-var (create-type-var-name sba-state) #t)])
-                (set-label-type-var! label type-var)
-                type-var)))
-        ; non-recursive type (yet), update trace and recursively compute type for label
-        (begin
-          (set-label-trace! label #t)
-          (let* ([type-union-elements
-                  (hash-table-map (label-set label)
-                                  (lambda (label arrows)
-                                    (cond
-                                      [(label-cst? label)
-                                       (make-type-cst (label-cst-value label))]
-                                      [(label-cons? label)
-                                       (make-type-cons (get-non-rec-type sba-state (label-cons-car label) rec-types)
-                                                       (get-non-rec-type sba-state (label-cons-cdr label) rec-types))]
-                                      [(label-vector? label)
-                                       (make-type-vector (get-non-rec-type
-                                                          sba-state
-                                                          (label-vector-element label)
-                                                          rec-types))]
-                                      [(label-promise? label)
-                                       (make-type-promise (get-non-rec-type
-                                                           sba-state
-                                                           (label-promise-value label)
-                                                           rec-types))]
-                                      [(label-values? label)
-                                       (make-type-values (get-non-rec-type
-                                                          sba-state
-                                                          (label-values-label label)
-                                                          rec-types))]
-                                      [(label-case-lambda? label)
-                                       (let ([all-types
-                                              (list:foldr
-                                               (lambda (args-labels exp-label other-clauses-types)
-                                                 (let ([argss-typess (car other-clauses-types)]
-                                                       [exps-types (cdr other-clauses-types)])
-                                                   (cons (cons (map (lambda (arg-label)
-                                                                      (get-non-rec-type
-                                                                       sba-state arg-label rec-types))
-                                                                    args-labels)
-                                                               argss-typess)
-                                                         (cons (get-non-rec-type
-                                                                sba-state exp-label rec-types)
-                                                               exps-types))))
-                                               (cons '() '())
-                                               (label-case-lambda-argss label)
-                                               (label-case-lambda-exps label))])
-                                         (make-type-case-lambda (label-case-lambda-rest-arg?s label)
-                                                                (label-case-lambda-req-args label)
-                                                                (car all-types)
-                                                                (cdr all-types)))]
-                                      [(label-struct-value? label)
-                                       (make-type-struct-value
-                                        (label-struct-value-type label)
-                                        (map (lambda (label)
-                                               (get-non-rec-type sba-state label rec-types))
-                                             (label-struct-value-fields label)))]
-                                      [(label-struct-type? label)
-                                       (make-type-struct-type label)]
-                                      [else (error 'get-non-rec-type "unknown label: ~a" label)])))]
-                 ; XXX is this usefull? everything in a set is a flat value, not a union
-                 [type-union-elements-flattened
-                  (let loop ([cur-types type-union-elements])
-                    (if (null? cur-types)
-                        '()
-                        (let ([cur-type (car cur-types)])
-                          (if (type-union? cur-type)
-                              (append (type-union-elements cur-type)
-                                      (loop (cdr cur-types)))
-                              (cons cur-type
-                                    (loop (cdr cur-types)))))))]
-                 [type-union-length (length type-union-elements-flattened)]
-                 [final-type (cond
-                               [(= type-union-length 0) (make-type-empty)]
-                               [(= type-union-length 1) (car type-union-elements-flattened)]
-                               [else (make-type-union type-union-elements-flattened)])]
-                 ; now compute this one *after* the recursion, to see if it was modified
-                 [type-var (label-type-var label)])
-            ; recursion is done, so we can reset the trace for this label
-            (set-label-trace! label #f)
-            ; now check whether we have to create a new rec-type or not
-            (if (and (type-var? type-var) (type-var-recur type-var))
-                ; join point found on the way up in the recursion
-                ; We don't touch the variable name in the label, so we'll re-use the same name
-                ; in another future recursion, if any; we clear the mark, add a rec-type to our
-                ; hash table of rec-types, and just return the type variable.
-                (begin
-                  (set-type-var-recur! type-var #f)
-                  (unless (hash-table-get rec-types label cst:thunk-false)
-                    (hash-table-put! rec-types label (cons type-var final-type)))
-                  type-var)
-                ;                 (make-type-rec (list type-var)
-                ;                                (list final-type)
-                ;                                type-var))
-                ; note: we can't memoize here, because this part of the graph might be part
-                ; of a cycle that we are currently analyzing, and if we memoize the result and
-                ; this part of the graph happens to be also part of another cycle, we'll have
-                ; the type variable for the first cycle appear in the type for the second
-                ; cycle, without any corresponding rec-type.
-                final-type)))))
-
-  ; (define get-type-from-label get-non-rec-type)
-  
   ; type (union (hash-table-of type-flow-var (cons label type)) symbol) -> string
   ; type pretty printer
   ; delta-flow is the flow variable environment, or a symbol if no flow environment
@@ -4704,56 +4638,85 @@
         ">")]
       [else (error 'pp-type "unknown type: ~a" type)]))
   
-  ; ((cons (listof label) (listof label)) -> (listof label)) -> (label (listof label) -> (listof label))
-  ; returns list of labels from which label went in or out, depending on selector
+  ; label (listof label) -> (listof label)
+  ; returns list of labels from which labels in label's set went in
   ; the trace is necessary to prevent the search for original parents to loop forever when
   ; inside recursive code generated by a macro. Despite that the search might still use
   ; exponential time when only using the trace because it explores all possibles paths at
   ; all possible labels when exploring the graph recursively. The running time is tremendously
   ; helped by adding the memoization: we compute the result set for a given label only once
   ; and always reuse that result in the future without ever searching the piece of graph
-  ; behind the label again.  Note that in practice there's two separate instances of the
-  ; memoization table, once for parents and one for children, since get-parents/children
-  ; is called twice.
-  (define (get-parents/children selector)
-    (letrec ([memo (assoc-set-make)]
-             [get (lambda (label trace)
-                    (if (assoc-set-in? memo label)
-                        (assoc-set-get memo label)
-                        (if (memq label trace)
-                            '()
-                            (let ([result (set-make)])
-                              (for-each
-                               (lambda (unfiltered-parents-for-current-set-element)
-                                 (let* ([direct-parents-without-primitive-labels
-                                         (list:filter (lambda (label)
-                                                        (not (label-prim? label)))
-                                                      unfiltered-parents-for-current-set-element)]
-                                        [direct-or-indirect-original-parents
-                                         (list:foldr
-                                          (lambda (direct-parent original-parents-so-far)
-                                            (if (syntax-original? (label-term direct-parent))
-                                                (cons direct-parent original-parents-so-far)
-                                                (merge-lists (get direct-parent (cons label trace))
-                                                             original-parents-so-far)))
-                                          '()
-                                          direct-parents-without-primitive-labels)])
-                                   (for-each (lambda (parent)
-                                               (set-set result parent #f))
-                                             direct-or-indirect-original-parents)))
-                               (hash-table-map (label-set label)
-                                               (lambda (label arrows)
-                                                 (selector arrows))))
-                              (let ([final-result (set-map result cst:id)])
-                                (assoc-set-set memo label final-result)
-                                final-result)))))])
-      get))
+  ; behind the label again.
+  ; Note: could probably be made even faster if the trace was a set and we kept it around
+  ; until the final result is computed, so as not to re-explore pieces of graphs we have
+  ; just seen but are reaching through another path.  Should be good enough for noe since
+  ; we memoize the final result anyway.
+  (define (get-parents-from-label label trace)
+    (if (label-parents label)
+        (label-parents label)
+        (if (memq label trace)
+            '()
+            (let ([result (set-make)])
+              (for-each
+               (lambda (unfiltered-parents-for-current-set-element)
+                 (let* ([direct-parents-without-primitive-labels
+                         (list:filter (lambda (label)
+                                        (not (label-prim? label)))
+                                      unfiltered-parents-for-current-set-element)]
+                        [direct-or-indirect-original-parents
+                         (list:foldr
+                          (lambda (direct-parent original-parents-so-far)
+                            (if (syntax-original? (label-term direct-parent))
+                                (cons direct-parent original-parents-so-far)
+                                (merge-lists (get-parents-from-label direct-parent (cons label trace))
+                                             original-parents-so-far)))
+                          '()
+                          direct-parents-without-primitive-labels)])
+                   (for-each (lambda (parent)
+                               (set-set result parent #f))
+                             direct-or-indirect-original-parents)))
+               (hash-table-map (label-set label)
+                               (lambda (label arrows)
+                                 (arrows-in arrows))))
+              (let ([final-result (set-map result cst:id)])
+                (set-label-parents! label final-result)
+                final-result)))))
   
   ; label -> (listof label)
-  (define get-parents-from-label (get-parents/children arrows-in))
+  ; should be abstracted with the above...
+  ; differences are arrows-in vs arrows-out and
+  ; label-parents/set-label-parents! vs label-children/set-label-children!
+  (define (get-children-from-label label trace)
+    (if (label-children label)
+        (label-children label)
+        (if (memq label trace)
+            '()
+            (let ([result (set-make)])
+              (for-each
+               (lambda (unfiltered-children-for-current-set-element)
+                 (let* ([direct-children-without-primitive-labels
+                         (list:filter (lambda (label)
+                                        (not (label-prim? label)))
+                                      unfiltered-children-for-current-set-element)]
+                        [direct-or-indirect-original-children
+                         (list:foldr
+                          (lambda (direct-child original-children-so-far)
+                            (if (syntax-original? (label-term direct-child))
+                                (cons direct-child original-children-so-far)
+                                (merge-lists (get-children-from-label direct-child (cons label trace))
+                                             original-children-so-far)))
+                          '()
+                          direct-children-without-primitive-labels)])
+                   (for-each (lambda (child)
+                               (set-set result child #f))
+                             direct-or-indirect-original-children)))
+               (hash-table-map (label-set label)
+                               (lambda (label arrows)
+                                 (arrows-out arrows))))
+              (let ([final-result (set-map result cst:id)])
+                (set-label-children! label final-result)
+                final-result)))))
   
-  ; label -> (listof label)
-  (define get-children-from-label (get-parents/children arrows-out))
   
   ; (listof label) -> (listof (list label label string))
   ; not really fast but good enough for now.
@@ -4788,7 +4751,7 @@
                                   (or (not (eq? elt-s (car other-elt)))
                                       (not (eq? elt-e (cadr other-elt)))))
                                 (cdr l))))))))
-                 
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; DRIVER
   
   ;    ; port value -> void

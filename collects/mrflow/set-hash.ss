@@ -74,9 +74,10 @@
   
   ; set value -> boolean
   (define set-in? 
-    (let ([sym (gensym)])
+    (let* ([sym (gensym)]
+           [sym-thunk (lambda () sym)])
       (lambda (set value)
-        (not (eq? sym (hash-table-get (set-table set) value (lambda () sym)))))))
+        (not (eq? sym (hash-table-get (set-table set) value sym-thunk))))))
   
   ; set value (opt boolean) -> set
   (define set-remove

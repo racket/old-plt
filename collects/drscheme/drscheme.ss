@@ -34,6 +34,7 @@
       (when (or graphical-debug? textual-debug?)
         (queue-callback 
          (lambda ()
+	   (exit-handler (lambda ___ (custodian-shutdown-all drscheme-custodian)))
            (invoke-unit (require-library "errortracer.ss" "errortrace")))))
       (queue-callback start-drscheme))))
 

@@ -13,7 +13,7 @@
     (require-relative-library "drsig.ss")
     (let ([unit (require-relative-library "link.ss")])
       (shutdown-splash)
-      (global-define-values/invoke-unit/sig ((unit fw : framework^))
+      (global-define-values/invoke-unit/sig framework^
 		unit
 		#f
 		(program argv))

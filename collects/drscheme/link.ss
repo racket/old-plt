@@ -60,7 +60,7 @@
   (export (unit init)
 	  (unit mzlib)
 	  (unit mred)
-	  (unit framework fw)
+	  (open framework)
 	  (unit print-convert)
 	  (unit prefs drscheme:prefs)
 	  (unit aries drscheme:aries)

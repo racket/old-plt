@@ -1,10 +1,12 @@
 #|
 
 A bundle-anchor% is an anchor class. It keeps track of an instance
-of a Bundle Contents and the views associated with that instance.
+of a Bundle and the views associated with that instance.
 It supports two methods:
-  create-view : (-> void)
-    constructs a Bundle-view appropriate for this kind of bundle
+  create-view : ((snip -> void) -> void)
+    constructs a snip that displays the Bundle that this anchor
+    manages. Calls its argument with the snip, which must insert
+    the snip into an editor%.
   
   bundle-changed : (-> void)
     notifies all views of this bundle to update themselves.
@@ -16,17 +18,43 @@ using the interpreter pattern:
 
             bundle%
               |
-      +---------------+
-      |               |
- bundle-node%   leaf-bundle%
+       +--------------+
+       |              |
+ node-bundle%   leaf-bundle%
   
 
  bundle% supports:
    
     set-bundle-anchor : (bundle-anchor<%> -> void)
-      sets the anchor (used for 2
- 
-|#
+      sets the anchor (used to notify views of modifications)
+
+    traverse : ((bundle A -> A) A -> A)
+      visits the entire tree (leaves and nodes) by calling the function argument
+      at each node. The second argument is used as the initial second argument to
+      the function argument, after that the result of one call to the function is used
+      as the input for the next call to the function.
+
+  bundle-leaf% supports:
+  
+     get-names : (-> (list-of symbol))
+     set-names : ((list-of symbol) -> void)
+
+  bundle-node% supports:
+    
+    get-label     : (-> symbol)
+    set-label     : (symbol -> void)
+    set-children  : ((list-of bundle%) -> void)
+    get-children  : (-> (list-of bundle%))
+    add-child     : (bundle% -> void)
+     
+--
+
+bundle-pasteboard%
+
+leaf-bundle-snip%
+node-bundle-snip%
+    
+ |#
 
 (invoke-unit/sig
  (unit/sig ()
@@ -181,8 +209,7 @@ using the interpreter pattern:
    (define bundle<%>
      (interface ()
        set-bundle-anchor
-       traverse ; ((bundle A -> A) A -> A)
-       ))
+       traverse))
    
    (define bundle%
      (class* object% (bundle<%>) ()
@@ -214,8 +241,13 @@ using the interpreter pattern:
        (sequence
 	 (super-init))))
    
+   (define leaf-bundle<%>
+     (interface (bundle<%>)
+       get-names
+       set-names))
+   
    (define leaf-bundle%
-     (class bundle% (_names)
+     (class* bundle% (leaf-bundle%) (_names)
        (private
 	 [names _names])
        (override
@@ -237,8 +269,16 @@ using the interpreter pattern:
 	 (super-init)
 	 (set-names _names))))
    
+   (define node-bundle<%>
+     (interface (bundle<%>)
+       get-label
+       set-label
+       set-children
+       get-children
+       add-child))
+   
    (define node-bundle%
-     (class bundle% (_label _bundle)
+     (class bundle% (_label _children)
        (override
 	[traverse
 	 (lambda (f init)
@@ -259,32 +299,32 @@ using the interpreter pattern:
 	 [get-label
 	  (lambda ()
 	    label)]
-	 [get-bundle
-	  (lambda ()
-	    bundle)]
-	 [set-bundle
-	  (lambda (bc)
-	    (unless (and (list? bc)
-			 (andmap (lambda (x) (is-a? x bundle<%>)) bc))
-	      (error 'set-names "expected a list of bundle<%> objects, got: ~e" bc))
-	    (set! bundle bc))]
 	 [set-label
 	  (lambda (s)
 	    (unless (symbol? s)
 	      (error 'set-names "expected a list of symbols, got: ~e"
 		     s))
-	    (set! label s))])
+	    (set! label s))]
+         [get-children
+	  (lambda ()
+	    children)]
+	 [set-children
+	  (lambda (chils)
+	    (unless (and (list? chils)
+			 (andmap (lambda (x) (is-a? x bundle<%>)) chils))
+	      (error 'set-names "expected a list of bundle<%> objects, got: ~e" bc))
+	    (set! children chils))])
 
        (inherit get-bundle-anchor)
        (public
 	 [add-child
 	  (lambda (c)
-	    (set! bundle (cons c bundle))
+	    (set! children (cons c children))
 	    (send (get-bundle-anchor) bundle-changed))])
        (sequence
 	 (super-init)
 	 (set-label _label)
-	 (set-bundle _bundle))))
+	 (set-children _children))))
    
    (define bundle-pasteboard%
      (class pasteboard% ()
@@ -313,7 +353,11 @@ using the interpreter pattern:
 	    (let ([yb (box 0)])
 	      (get-snip-location snip #f yb #t)
 	      (unbox yb)))])
+       (inherit invalidate-bitmap-cache)
        (override
+	[after-move-to
+	 (lambda (snip x y dragging)
+	   (invalidate-bitmap-cache))]
 	[on-paint
 	 (lambda (before? dc left top right bottom dx dy draw-caret)
 	   (when (and contents-snip

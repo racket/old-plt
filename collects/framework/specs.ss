@@ -34,6 +34,7 @@
          (and (identifier? (syntax name))
               (identifier? (syntax neg-blame))
               (identifier? (syntax pos-blame)))
+         
          (syntax-case (syntax type) (-> number union boolean interface tst)
            [(-> funs ...)
             (with-syntax ([(doms ...) (all-but-last (syntax->list (syntax (funs ...))))]

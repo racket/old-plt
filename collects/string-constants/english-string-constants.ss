@@ -288,6 +288,9 @@
  (open-info "Open a file from disk")
  (open-menu-item "&Open...")
 
+ (open-recent-info "A list of the recently opened files")
+ (open-recent-menu-item "Open recent")
+ 
  (revert-info "Revert this file to the copy on disk")
  (revert-menu-item "&Revert")
 

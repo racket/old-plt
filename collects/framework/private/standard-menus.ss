@@ -20,6 +20,12 @@
     file-menu:open-help-string
     file-menu:open-on-demand
     file-menu:create-open?
+    file-menu:open-recent-callback
+    file-menu:get-open-recent-item
+    file-menu:open-recent-string
+    file-menu:open-recent-help-string
+    file-menu:open-recent-on-demand
+    file-menu:create-open-recent?
     file-menu:between-open-and-revert
     file-menu:revert-callback
     file-menu:get-revert-item
@@ -210,6 +216,23 @@
    (define file-menu:open-help-string (lambda () (string-constant open-info)))
    (define file-menu:open-on-demand (lambda (menu-item) (void)))
    (define file-menu:create-open? (lambda () #t))
+   (public
+    file-menu:open-recent-callback
+    file-menu:get-open-recent-item
+    file-menu:open-recent-string
+    file-menu:open-recent-help-string
+    file-menu:open-recent-on-demand
+    file-menu:create-open-recent?)
+   (define file-menu:open-recent-callback (lambda (x y) (void)))
+   (define file-menu:get-open-recent-item
+     (lambda () file-menu:open-recent-item))
+   (define file-menu:open-recent-string
+     (lambda () (string-constant open-recent-menu-item)))
+   (define file-menu:open-recent-help-string
+     (lambda () (string-constant open-recent-info)))
+   (define file-menu:open-recent-on-demand
+     (lambda (menu) (handler:install-recent-items menu)))
+   (define file-menu:create-open-recent? (lambda () #t))
    (public file-menu:between-open-and-revert)
    (define file-menu:between-open-and-revert (lambda (menu) (void)))
    (public
@@ -663,6 +686,17 @@
             (help-string (file-menu:open-help-string))
             (demand-callback
               (lambda (menu-item) (file-menu:open-on-demand menu-item))))))
+   (define file-menu:open-recent-item
+     (and (file-menu:create-open-recent?)
+          (instantiate
+            menu%
+            ()
+            (label (file-menu:open-recent-string))
+            (parent file-menu)
+            (help-string (file-menu:open-recent-help-string))
+            (demand-callback
+              (lambda (menu-item)
+                (file-menu:open-recent-on-demand menu-item))))))
    (file-menu:between-open-and-revert (get-file-menu))
    (define file-menu:revert-item
      (and (file-menu:create-revert?)

@@ -63,7 +63,7 @@
 	    [handler : framework:handler^
 		     (handler@ mred gui-utils finder group text preferences frame)] 
 	    [keymap : framework:keymap^
-		    (keymap@ mred preferences finder handler scheme-paren frame)]
+		    (keymap@ mred preferences finder handler scheme-paren frame editor)]
 	    [match-cache : framework:match-cache^ (match-cache@)]
 	    [paren : framework:paren^ (paren@)]
 	    [scheme-paren : framework:scheme-paren^ (scheme-paren@ paren)]

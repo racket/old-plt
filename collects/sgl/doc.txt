@@ -355,6 +355,8 @@ pass-through
 perspective
 pick-matrix
 pixel-store
+point-parameter
+point-parameter-v
 point-size
 polygon-mode
 polygon-offset

@@ -500,9 +500,9 @@
         (raise-type-error 'light-model "real number" 1 pname param))
       (cond
         ((and (exact? param) (integer? param))
-         (glLightModeliv v param))
+         (glLightModeli v param))
         (else
-         (glLightModelfv v param)))))
+         (glLightModelf v param)))))
       
   (define (light-model-v pname params)
     (let ((v (light-model-table pname 'light-model-v))
@@ -537,10 +537,38 @@
 
   ;; 3.3 
   (_provide (rename glPointSize point-size)
-            ;; point-parameter
-            ;; point-parameter-v
-            )
-  
+            point-parameter point-parameter-v)
+  (make-enum-table point-parameter-table
+                   GL_POINT_SIZE_MIN GL_POINT_SIZE_MAX
+                   GL_POINT_DISTANCE_ATTENUATION
+                   GL_POINT_FADE_THRESHOLD_SIZE)
+  (define (point-parameter pname param)
+    (let ((v (point-parameter-table pname 'point-parameter)))
+      (when (= GL_POINT_DISTANCE_ATTENUATION v)
+        (error 'point-parameter "does not accept ~a, use point-parameter-v instead" pname))
+      (unless (real? param)
+        (raise-type-error 'point-parameter "real number" 1 pname param))
+      (cond
+        ((and (exact? param) (integer? param))
+         (glPointParameteri v param))
+        (else
+         (glPointParameterf v param)))))
+  (define (point-parameter-v pname params)
+    (let ((v (point-parameter-table pname 'point-parameter))
+          (f (cond
+               ((gl-int-vector? params) glPointParameteriv)
+               ((gl-float-vector? params) glPointParameterfv)
+               (else
+                (raise-type-error 'point-parameter-v
+                                  "gl-int-vector or gl-float-vector"
+                                  1 pname params)))))
+      (cond
+        ((= GL_POINT_DISTANCE_ATTENUATION v)
+         (check-length 'point-parameter-v 3 pname))
+        (else 
+         (check-length 'light-model-v 1 pname)))
+      (f v params)))
+
   ;; 3.4
   (_provide (rename glLineWidth line-width))
   

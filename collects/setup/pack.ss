@@ -13,6 +13,8 @@
    [(dest name paths collections filter encode?)
     (pack dest name paths collections filter encode? 'file)]
    [(dest name paths collections filter encode? file-mode)
+    (pack dest name paths collections filter encode? file-mode #f)]
+   [(dest name paths collections filter encode? file-mode unpack-unit)
     (let*-values ([(file) (open-output-file dest 'truncate/replace)]
 		  [(fileout thd)
 		   (if encode?
@@ -89,11 +91,12 @@
        fileout)
       (newline fileout)
       (write
-       `(unit 
-	 (import plthome mzuntar)
-	 (export)
-	 (mzuntar void)
-	 (quote ,collections))
+       (or unpack-unit
+	   `(unit 
+	      (import plthome mzuntar)
+	      (export)
+	      (mzuntar void)
+	      (quote ,collections)))
        fileout)
       (newline fileout)
       (for-each

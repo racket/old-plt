@@ -648,6 +648,26 @@ add struct contracts for immutable structs?
       (((contract-proc a-contract) pos-blame neg-blame src-info (contract-name a-contract))
        name)))
     
+  (define-values (make-exn:fail:contract2 
+                  exn:fail:contract2?
+                  exn:fail:contract2-srclocs)
+    (let-values ([(exn:fail:contract2 
+                   make-exn:fail:contract2 
+                   exn:fail:contract2?
+                   get
+                   set)
+                  (parameterize ([current-inspector (make-inspector)])
+                    (make-struct-type 'exn:fail:contract2
+                                      struct:exn:fail
+                                      1
+                                      0
+                                      #f
+                                      (list (cons prop:exn:srclocs (lambda (x) (exn:fail:contract2-srclocs x))))))])
+      (values
+       make-exn:fail:contract2 
+       exn:fail:contract2?
+       (lambda (x) (get x 0)))))
+  
   ;; raise-contract-error : (union syntax #f) symbol symbol string string args ... -> alpha
   ;; doesn't return
   (define (raise-contract-error src-info to-blame other-party contract-sexp fmt . args)
@@ -666,7 +686,7 @@ add struct contracts for immutable structs?
 		 (format "broke ~a's contract:" datum)
 		 "failed contract"))])
       (raise
-       (make-exn:fail
+       (make-exn:fail:contract2
         (string->immutable-string
          (string-append (format "~a~a: ~a ~a ~a"
                                 blame-src
@@ -675,7 +695,15 @@ add struct contracts for immutable structs?
                                 specific-blame
                                 formatted-contract-sexp)
                         (apply format fmt args)))
-        (current-continuation-marks)))))
+        (current-continuation-marks)
+        (if src-info
+            (list (make-srcloc 
+                   (syntax-source src-info)
+                   (syntax-line src-info)
+                   (syntax-column src-info)
+                   (syntax-position src-info)
+                   (syntax-span src-info)))
+            '())))))
   
   ;; src-info-as-string : (union syntax #f) -> string
   (define (src-info-as-string src-info)

@@ -618,7 +618,7 @@
  (mred-lang-name "Graphical without debugging (MrEd)")
  (mzscheme-lang-name "Textual without debugging (MzScheme)")
  (r5rs-lang-name "Standard (R5RS)")
- (r5rs-one-line-summary "R5RS, with no extra frills")
+ (r5rs-one-line-summary "R5RS, with no frills")
  (unknown-debug-frame "[unknown]")
  
  (module-language-one-line-summary "Language with module as the only construct")

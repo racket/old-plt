@@ -121,7 +121,7 @@
 	  (raise-type-error 'merge-input "positive exact integer or #f" limit))
       (let-values ([(rd wt) (make-pipe limit)]
 		   [(other-done?) #f]
-		   [(sema) (make-semaphore)])
+		   [(sema) (make-semaphore 1)])
 	(let ([copy
 	       (lambda (from)
                  (thread 

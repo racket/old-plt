@@ -3257,7 +3257,7 @@
 					     (raise
 					      (make-exn:fail
 					       (string->immutable-string
-						(format "load-extension: expected module declaration for `~a', found ~a through loader: ~~e"
+						(format "load-extension: expected module declaration for `~a', found ~a through loader: ~e"
 							expect-module
 							(if modname 
 							    (format "module declaration for `~a'" modname)

@@ -3248,6 +3248,12 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
 	  saw_dot = 0;
 	}
       }
+      /* One more possibility: ends with just ".": */
+      if (len > 1
+	  && (s[len - 1] == '.')
+	  && (IS_A_SEP(s[len - 2])))
+	i = -0;
+      
       if (i == len)
 	return path;
     }

@@ -382,7 +382,10 @@
                               (- (unbox bottom-box) (unbox top-box))))]
                          [max-height (apply max (map get-snip-height (list before-snip after-snip)))])
                     (send vert-separator set-height! (- max-height 4))
-                    (needs-update vert-separator 0 0 0 0)))])
+                    (let ([w-box (box 0)]
+                          [h-box (box 0)])
+                      (send vert-separator get-extent #f 0 0 w-box h-box #f #f #f #f)
+                      (needs-update vert-separator 0 0 (unbox w-box) (unbox h-box)))))])
       
       
 

@@ -693,6 +693,8 @@ static int wc_strlen(const wchar_t *ws)
 }
 
 wchar_t *scheme_convert_to_wchar(const char *s, int do_copy)
+     /* This function uses '\t' in place of invalid UTF-8 encoding
+	bytes, because '\t' is not a legal filename under Windows. */
 {
   long len, l;
   wchar_t *ws;
@@ -700,7 +702,7 @@ wchar_t *scheme_convert_to_wchar(const char *s, int do_copy)
   l = strlen(s);
   len = scheme_utf8_decode(s, 0, l,
 			   NULL, 0, -1,
-			   NULL, 1/*UTF-16*/, '?');
+			   NULL, 1/*UTF-16*/, '\t');
 
   if (!do_copy && (len < (WC_BUFFER_SIZE-1)))
     ws = wc_buffer;
@@ -708,7 +710,7 @@ wchar_t *scheme_convert_to_wchar(const char *s, int do_copy)
     ws = (wchar_t *)scheme_malloc_atomic(sizeof(wchar_t) * (len + 1));
   scheme_utf8_decode(s, 0, l,
 		     (unsigned int *)ws, 0, -1,
-		     NULL, 1/*UTF-16*/, '?');
+		     NULL, 1/*UTF-16*/, '\t');
   ws[len] = 0;
   return ws;
 }

@@ -24,7 +24,7 @@ static void ErrorBox(char *s) {
 }
 
 static Scheme_Object *_apply_thunk_catch_exceptions(Scheme_Object *f,
-						    Scheme_Object **exn) {
+                                                    Scheme_Object **exn) {
   Scheme_Object *v;
 
   v = _scheme_apply(exn_catching_apply,1,&f);
@@ -78,7 +78,7 @@ OLECHAR *wideStringFromSchemeObj(Scheme_Object *obj,char *fmt,int fmtlen) {
   OLECHAR *wideString;
   int len;
 
-  s = scheme_format(fmt,fmtlen,1,&obj,NULL);
+  s = scheme_format_utf8(fmt,fmtlen,1,&obj,NULL);
   len = strlen(s);
   wideString = (OLECHAR *)scheme_malloc((len + 1) * sizeof(OLECHAR));
   MultiByteToWideChar(CP_ACP,(DWORD)0,s,len,wideString,len + 1);
@@ -89,7 +89,7 @@ OLECHAR *wideStringFromSchemeObj(Scheme_Object *obj,char *fmt,int fmtlen) {
 void exitHandler(int) {
   ReleaseSemaphore(exitSem,1,NULL);
   ExitThread(0);
-} 
+}
 
 void setupSchemeEnv(void) {
   char *wrapper;
@@ -97,7 +97,7 @@ void setupSchemeEnv(void) {
   static BOOL registered;
 
   if (!registered) {
-    scheme_register_static(&env,sizeof(env)); 
+    scheme_register_static(&env,sizeof(env));
     scheme_register_static(&exn_catching_apply,sizeof(exn_catching_apply));
     scheme_register_static(&exn_p,sizeof(exn_p));
     scheme_register_static(&exn_message,sizeof(exn_message));
@@ -109,15 +109,15 @@ void setupSchemeEnv(void) {
   if (env == NULL) {
     ErrorBox("Can't create Scheme environment");
     ExitThread(0);
-  } 
+  }
 
   // set up exception trapping
-  
-  wrapper = 
+
+  wrapper =
     "(lambda (thunk) "
     "(with-handlers ([void (lambda (exn) (cons #f exn))]) "
     "(cons #t (thunk))))";
-  
+
   exn_catching_apply = scheme_eval_string(wrapper,env);
   exn_p = scheme_builtin_value("exn?");
   exn_message = scheme_builtin_value("exn-message");
@@ -126,12 +126,12 @@ void setupSchemeEnv(void) {
 
   GetModuleFileName(GetModuleHandle("mzcom.exe"),exeBuff,sizeof(exeBuff));
 
-  scheme_add_global("mzcom-exe",scheme_make_string(exeBuff),env);
+  scheme_add_global("mzcom-exe",scheme_make_utf8_string(exeBuff),env);
   scheme_set_exec_cmd(exeBuff);
 
   {
     Scheme_Object *clcp, *flcp, *a[1];
-    
+
     clcp = scheme_builtin_value("current-library-collection-paths");
     flcp = scheme_builtin_value("find-library-collection-paths");
 
@@ -171,7 +171,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
   pTg = (THREAD_GLOBALS *)args;
 
   ppInput = pTg->ppInput;
-  pOutput = pTg->pOutput; 
+  pOutput = pTg->pOutput;
   pHr = pTg->pHr;
   readSem = pTg->readSem;
   writeSem = pTg->writeSem;
@@ -185,44 +185,44 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
     while (doEval == FALSE) {
       waitVal = MsgWaitForMultipleObjects(2,evalLoopSems,FALSE,
-					  5,QS_ALLINPUT);
+                                          5,QS_ALLINPUT);
 
       switch (waitVal) {
 
       case WAIT_TIMEOUT :
 
-	scheme_apply(sleepFun,0,NULL);
-	break;
+        scheme_apply(sleepFun,0,NULL);
+        break;
 
       case WAIT_OBJECT_0 + 1:
 
-	// reset semaphore signalled
+        // reset semaphore signalled
 
-	setupSchemeEnv();
-	ReleaseSemaphore(resetDoneSem,1,NULL);
+        setupSchemeEnv();
+        ReleaseSemaphore(resetDoneSem,1,NULL);
 
-	break;
+        break;
 
       case WAIT_OBJECT_0 + 2:
 
-	// Windows msg
+        // Windows msg
 
-	while (PeekMessage(&msg,NULL,0x400,0x400,PM_REMOVE)) {
-	  TranslateMessage(&msg);
-	  DispatchMessage(&msg);
-	}
+        while (PeekMessage(&msg,NULL,0x400,0x400,PM_REMOVE)) {
+          TranslateMessage(&msg);
+          DispatchMessage(&msg);
+        }
 
-	scheme_apply(sleepFun,0,NULL);
+        scheme_apply(sleepFun,0,NULL);
 
-	break;
+        break;
 
       default :
 
-	// got string to eval
+        // got string to eval
 
-	doEval = TRUE;
+        doEval = TRUE;
 
-	break;
+        break;
       }
     }
 
@@ -230,18 +230,18 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
     narrowInput = (char *)scheme_malloc(len + 1);
 
-    scheme_dont_gc_ptr(narrowInput); 
+    scheme_dont_gc_ptr(narrowInput);
 
     WideCharToMultiByte(CP_ACP,(DWORD)0,
-			**ppInput,len,
-			narrowInput,len + 1,
-			NULL,NULL);
+                        **ppInput,len,
+                        narrowInput,len + 1,
+                        NULL,NULL);
 
     narrowInput[len] = '\0';
 
     outputObj = eval_string_or_get_exn_message(narrowInput);
 
-    scheme_gc_ptr_ok(narrowInput); 
+    scheme_gc_ptr_ok(narrowInput);
 
     if (*pErrorState) {
       wideError = wideStringFromSchemeObj(outputObj,"MzScheme error: ~a",18);
@@ -291,35 +291,35 @@ CMzObj::CMzObj(void) {
 
   if (readSem == NULL) {
     ErrorBox("Can't create read semaphore");
-    return; 
+    return;
   }
 
   writeSem = CreateSemaphore(NULL,0,1,NULL);
 
   if (writeSem == NULL) {
     ErrorBox("Can't create write semaphore");
-    return; 
+    return;
   }
 
   exitSem = CreateSemaphore(NULL,0,1,NULL);
 
   if (exitSem == NULL) {
     ErrorBox("Can't create exit semaphore");
-    return; 
+    return;
   }
 
   resetSem = CreateSemaphore(NULL,0,1,NULL);
 
   if (resetSem == NULL) {
     ErrorBox("Can't create reset semaphore");
-    return; 
+    return;
   }
 
   resetDoneSem = CreateSemaphore(NULL,0,1,NULL);
 
   if (resetSem == NULL) {
     ErrorBox("Can't create reset-done semaphore");
-    return; 
+    return;
   }
 
   evalLoopSems[0] = readSem;
@@ -375,14 +375,14 @@ void CMzObj::RaiseError(const OLECHAR *msg) {
 
   bstr = SysAllocString(msg);
 
-  if (CreateErrorInfo(&pICreateErrorInfo) == S_OK && 
+  if (CreateErrorInfo(&pICreateErrorInfo) == S_OK &&
       pICreateErrorInfo != NULL) {
     pICreateErrorInfo->SetGUID(IID_IMzObj);
     pICreateErrorInfo->SetDescription((LPOLESTR)msg);
     pICreateErrorInfo->SetSource((LPOLESTR)L"MzCOM.MzObj");
     if (pICreateErrorInfo->QueryInterface(IID_IErrorInfo,
-					  (void **)&pIErrorInfo) == S_OK &&
-	pIErrorInfo != NULL) {
+                                          (void **)&pIErrorInfo) == S_OK &&
+        pIErrorInfo != NULL) {
       SetErrorInfo(0,pIErrorInfo);
     }
   }
@@ -399,7 +399,7 @@ BOOL CMzObj::testThread(void) {
     return FALSE;
   }
 
-  if (GetExitCodeThread(threadHandle,&threadStatus) == 0) { 
+  if (GetExitCodeThread(threadHandle,&threadStatus) == 0) {
     RaiseError(L"Evaluator may be terminated");
   }
 
@@ -445,10 +445,10 @@ BOOL WINAPI dlgProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM) {
   switch(msg) {
   case WM_INITDIALOG :
     SetDlgItemText(hDlg,MZCOM_URL,
-		   "http://www.cs.rice.edu/CS/PLT/packages/mzcom/");
+                   "http://www.cs.rice.edu/CS/PLT/packages/mzcom/");
     return TRUE;
   case WM_COMMAND :
-    switch (LOWORD(wParam)) { 
+    switch (LOWORD(wParam)) {
     case IDOK :
     case IDCANCEL :
       EndDialog(hDlg,0);

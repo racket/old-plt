@@ -971,13 +971,8 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 		      -1, p);
 	} else {
 	  print_this_string(p, "#<", 2);
-	  if (SCHEME_GENERICP(obj)) {
-	    print_this_string(p, "generic-procedure", -1);
-	  } else {
-	    print_string_in_angle(p, ((Scheme_Closed_Primitive_Proc *)obj)->name, 
-				  "primitive:", -1);
-	  }
-	  
+	  print_string_in_angle(p, ((Scheme_Closed_Primitive_Proc *)obj)->name, 
+				SCHEME_GENERICP(obj) ? "" : "primitive:", -1);
 	  PRINTADDRESS(p, obj);
 	  print_this_string(p, ">", 1);
 	}

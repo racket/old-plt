@@ -1225,7 +1225,18 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_promise_type: 
     s = sizeof(Scheme_Promise);
 #if FORCE_KNOWN_SUBPARTS
-    e = COUNT(((Scheme_Promise *)root)->val);
+    {
+      Scheme_Promise *p = (Scheme_Promise *)root;
+      Scheme_Object *v = p->val;
+
+      if (p->forced && SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)) {
+	int i = p->multi_count;
+	e = 0;
+	while (i--)
+	  e += COUNT(p->multi_array[i]);
+      } else
+	e = COUNT(v);
+    }
 #endif
     break;
   case scheme_box_type:

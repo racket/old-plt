@@ -3183,26 +3183,31 @@ static Scheme_Object *DoGeneric(Generic_Data *data,
 
 static Scheme_Object *MakeGeneric(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *data;
+  Scheme_Object *data, *src;
   Scheme_Object *prim;
+  const char *s;
+  char *gname;
+  int len;
 
-  if (!SCHEME_CLASSP(argv[0]) && !SCHEME_INTERFACEP(argv[0]))
+  src = argv[0];
+
+  if (!SCHEME_CLASSP(src) && !SCHEME_INTERFACEP(src))
     scheme_wrong_type(MAKE_GENERIC, "class or interface", 0, argc, argv);
   if (!SCHEME_SYMBOLP(argv[1]))
     scheme_wrong_type(MAKE_GENERIC, "symbol", 1, argc, argv);
 
-  data = scheme_get_generic_data(argv[0], argv[1]);
+  data = scheme_get_generic_data(src, argv[1]);
 
   if (!data) {
-    const char *s;
-
-    if (SCHEME_CLASSP(argv[0]))
-      s = get_class_name(argv[0], " in class: ");
+    if (SCHEME_CLASSP(src))
+      s = get_class_name(src, " in class: ");
     else
-      s = get_class_name(argv[0], " in interface: ");
-
-    scheme_raise_exn(MZEXN_OBJECT_CLASS_IVAR,
-		     argv[0],
+      s = get_interface_name(src, " in interface: ");
+  
+    scheme_raise_exn(SCHEME_CLASSP(src)
+		     ? MZEXN_OBJECT_CLASS_IVAR
+		     : MZEXN_OBJECT_INTERFACE_IVAR,
+		     src,
 		     argv[1],
 		     MAKE_GENERIC ": can't find instance variable: %s%s",
 		     scheme_symbol_name(argv[1]),
@@ -3211,9 +3216,20 @@ static Scheme_Object *MakeGeneric(int argc, Scheme_Object *argv[])
     return NULL;
   }
 
-  prim = scheme_make_closed_prim((Scheme_Closed_Prim *)DoGeneric, (void *)data);
+  if (SCHEME_CLASSP(src))
+    s = scheme_get_class_name(src, &len);
+  else
+    s = scheme_get_interface_name(src, &len);
+  
+  gname = (char *)scheme_malloc_atomic(len + 30);
+  strcpy(gname, "generic-procedure for ");
+  strcat(gname, s);
 
-  ((Scheme_Closed_Primitive_Proc *)prim)->name = "generic";
+  prim = scheme_make_closed_prim_w_arity((Scheme_Closed_Prim *)DoGeneric, (void *)data,
+					 gname,
+					 1, 1);
+  
+  ((Scheme_Closed_Primitive_Proc *)prim)->name = gname;
   ((Scheme_Closed_Primitive_Proc *)prim)->flags |= SCHEME_PRIM_IS_GENERIC;
 
   return prim;

@@ -64,6 +64,25 @@
       
       (define first-string-constant-set (car available-string-constant-sets))
       
+      ;; env-var-set? : symbol -> boolean
+      ;; returns #t if the user has requested this langage info.
+      ;; If the environment variable is set to something that
+      ;; isn't well-formed according to `read' you get all output
+      ;; If the environment variable is set to a symbol (according to read)
+      ;; you get that language. If it is set to a list of symbols
+      ;; (again, according to read) you get those langauges.
+      ;; if it is set to anything else, you get all langauges.
+      (define (env-var-set? lang)
+	(let ([var (or (getenv "PLTSTRINGCONSTANTS")
+		       (getenv "STRINGCONSTANTS"))])
+	  (and var
+	       (with-handlers ([exn:read? (lambda (x) #t)])
+		 (let ([specific (read (open-input-string var))])
+		   (cond
+		     [(symbol? specific) (eq? lang specific)]
+		     [(list? specific) (memq lang specific)]
+		     [else #t]))))))
+
       (define dummy
         (let* ([already-printed #&#f]
 	       [warning-table null]
@@ -79,7 +98,8 @@
                                 (cons (sc-language-name sc1) (sc-language-name sc2))])
 			   (hash-table-put! ht2 constant value)
 			   (unless (unbox already-printed)
-                             (when (getenv "STRINGCONSTANTS")
+                             (when (or (env-var-set? (sc-language-name sc1))
+				       (env-var-set? (sc-language-name sc2)))
                                (cond
                                  [(memf (lambda (x) (equal? (car x) no-warning-cache-key)) warning-table)
                                   =>

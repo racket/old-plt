@@ -1,6 +1,17 @@
 
 (unit/sig launcher-maker^
-  (import mzlib:file^)
+  (import mzlib:file^
+          [c : dynext:compile^]
+          [l : dynext:link^])
+
+  ;; NOTE: evil name dependencies here:
+  
+  (define mz-app-ppc "MzScheme PPC")
+  (define mz-app-68k "MzScheme 68k")
+  (define mr-app-ppc "MrEd PPC")
+  (define mr-app-68k "MrEd 68k")
+  
+  ;; END of evil name dependencies
   
   (define plthome
     (with-handlers ([(lambda (x) #t) (lambda (x) #f)])
@@ -267,7 +278,70 @@
 	  (write-magic p str pos-command len-command)   
 	  (close-output-port p)))))
   
+  ;; lazy install-aliases code for mac added by jbc 2000-6:
+  
+  (define (maybe-install-aliases)
+    (let* ([mz-ppc (build-path plthome mz-app-ppc)]
+           [mz-68k (build-path plthome mz-app-68k)]
+           [mr-ppc (build-path plthome mr-app-ppc)]
+           [mr-68k (build-path plthome mr-app-68k)]
+           [mz-app (cond [(file-exists? mz-ppc) mz-ppc]
+                         [(file-exists? mz-68k) mz-68k]
+                         [else (error 'maybe-install-aliases "cannot find ppc or 68k MzScheme application in plthome.")])]
+           [mr-app (cond [(file-exists? mr-ppc) mr-ppc]
+                         [(file-exists? mr-68k) mr-68k]
+                         [else (error 'maybe-install-aliases "cannot find ppc or 68k MrEd application in plthome.")])]
+           [launcher-path (collection-path "launcher")]
+           [extension-source-file (build-path launcher-path "starter-setup.c")]
+           [extension (build-path launcher-path "starter-setup.so")]
+           [gomz (build-path launcher-path "gomz")]
+           [gomr (build-path launcher-path "gomr")]
+           [marker-file (build-path launcher-path "marker-file")])
+      (unless (andmap file-exists? (list gomz gomr))
+        (error 'install-aliases "startup templates GoMz and GoMr are missing."))
+      (when (or (not (file-exists? extension))                             ; extension is missing altogether, or
+                (and (file-exists? extension-source-file)                  ; extension source file is newer than extension
+                     (> (file-or-directory-modify-seconds extension-source-file)
+                        (file-or-directory-modify-seconds extension))))
+        (unless (file-exists? extension-source-file)
+          (error 'maybe-install-aliases "need startup-setup.c to compile startup-setup.so extension"))
+        (let ([obj-file (build-path launcher-path "startup-setup.o")])
+          (c:compile-extension (not (compiler:option:verbose))
+                               extension-source-file
+                               obj-file
+                               null)
+          (l:link-extension (not (compiler:option:verbose))
+                            (list obj-file)
+                            extension)))
+      (when (or (not (file-exists? marker-file)) ; marker file is missing, or older than any of (gomz, gomr, extension)
+                (let ([marker-file-date (file-or-directory-modify-seconds marker-file)])
+                  (ormap (lambda (file) (> (file-or-directory-modify-seconds file) marker-file-date))
+                         (list extension gomz gomr))))
+        (let ([installation-result ((load-extension extension)
+                                    (build-path plthome mz-app)
+                                    (build-path plthome mr-app)
+                                    gomz
+                                    gomr)])
+          (unless installation-result
+            (error 'maybe-install-aliases "installing aliases failed"))
+          (with-output-to-file marker-file
+            (lambda () (printf "aliases successfully installed~n"))
+            'truncate/replace)))))
+  
+  ; how to test:
+  ; 1. try with all combinations of mzscheme/mred ppc/68k/missing (6 total) (error)
+  ; 2. try with missing gomz and gomr (error)
+  ; 3. try with missing extension (success, reinstalls)
+  ; 4. try with missing extension and source file (error)
+  ; 5. try with source file newer than extension (success, recompiles extension, reinstalls)
+  ; 6. try with missing marker file (success, reinstalls)
+  ; 7. try with marker file older than any of (gomz, gomr) (success, reinstalls)
+  ; 8. try with everything all set (success, no action taken)
+  
+  ;; end of lazy install-aliases code for mac added by jbc 2000-6
+  
   (define (make-macos-launcher kind flags dest)
+    (maybe-install-aliases)
     (install-template dest kind "GoMz" "GoMr")
     (let ([p (open-output-file dest 'truncate)])
       (display (str-list->sh-str flags) p)

@@ -332,7 +332,15 @@ Scheme_Object *scheme_rational_min(const Scheme_Object *a, const Scheme_Object *
 
 Scheme_Object *scheme_rational_divide(const Scheme_Object *n, const Scheme_Object *d)
 { 
-  Scheme_Rational *rd = (Scheme_Rational *)d, d_inv;
+  Scheme_Rational *rd = (Scheme_Rational *)d, *rn = (Scheme_Rational *)n, d_inv;
+
+  if ((SCHEME_INTP(rn->num) && SCHEME_INT_VAL(rn->num) == 1)
+      && (SCHEME_INTP(rn->denom) && SCHEME_INT_VAL(rn->denom) == 1)) {
+    /* inverse, which is easy */
+    if ((SCHEME_INTP(rd->num) && SCHEME_INT_VAL(rd->num) == 1))
+      return rd->denom;
+    return make_rational(rd->denom, rd->num, 0);
+  }
   
   d_inv.type = scheme_rational_type;
   d_inv.denom = rd->num;

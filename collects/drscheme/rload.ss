@@ -5,17 +5,46 @@
 	 (define file-ht (make-hash-table))
 	 (define value-ht (make-hash-table))
 	 (define mods-ht (make-hash-table))
+	 
+	 (define loading-frame (make-object frame% "Loading message"))
+	 (define loading-messages 
+	   (list (make-object message% 
+			      (apply string-append
+				     (let loop ([n (if (eq? (system-type) 'macos) 6 4)])
+				       (cond
+					 [(zero? n) null]
+					 [else (cons "abcdefghijklmnopqrstuvwxyz" (loop (- n 1)))])))
+			      loading-frame)))
+	 
 	 (define (check-cache/force filename)
 	   (let* ([sym (string->symbol filename)]
 		  [load/save
 		   (lambda (filename reason)
-		     (hash-table-put! mods-ht (string->symbol filename)
-				      (file-or-directory-modify-seconds filename))
-		     (send loading-message set-label (format "loading: ~a because ~a" filename reason))
-		     (let ([anss (call-with-values (lambda () (ol filename)) list)])
-		       (send loading-message set-label "")
-		       (hash-table-put! value-ht sym anss)
-		       (apply values anss)))]
+		     
+		     (unless (<= (length file-stack)
+				 (length loading-messages))
+		       (let ([new-msg (make-object message% "" loading-frame)])
+			 (send new-msg stretchable-width #t)
+			 (yield)
+			 (set! loading-messages
+			       (append loading-messages (list new-msg)))))
+
+		     (hash-table-put! mods-ht (string->symbol filename) (file-or-directory-modify-seconds filename))
+
+		     (let* ([loading-message #f]
+			    [old-message #f])
+		       (dynamic-wind
+			(lambda ()
+			  (set! loading-message  (list-ref loading-messages (- (length file-stack) 1)))
+			  (set! old-message (send loading-message get-label))
+			  (send loading-message set-label (format "loading: ~a because ~a" filename reason)))
+			(lambda ()
+			  (let ([anss (call-with-values (lambda () (ol filename)) list)])
+			    (hash-table-put! value-ht sym anss)
+			    (apply values anss)))
+		       (lambda ()
+			 (send loading-message set-label old-message)))))]
+
 		  [hash-table-maps?
 		   (lambda (ht value)
 		     (let/ec k
@@ -38,19 +67,11 @@
 		    (if reason
 			(load/save filename (format "~a was modified" reason))
 			(apply values (hash-table-get value-ht sym))))
-		  (load/save filename "never before loaded")))))
-
-	 (define loading-frame (make-object frame% "Loading message"))
-	 (define loading-message (make-object message% 
-				   (apply string-append
-					  (let loop ([n (if (eq? (system-type) 'macos) 6 4)])
-					    (cond
-					     [(zero? n) null]
-					     [else (cons "abcdefghijklmnopqrstuvwxyz" (loop (- n 1)))])))
-				   loading-frame))]
+		  (load/save filename "never before loaded")))))]
 
    (send loading-frame set-alignment 'left 'center)
    (send loading-frame show #t)
+   (send (car loading-messages) set-label "")
 
    (lambda (fn)
      (unless (file-exists? fn)

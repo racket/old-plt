@@ -382,13 +382,25 @@
 		 (send edit end-edit-sequence))))]
 	  [generic-close (lambda () (void))]
 	  
+	  [queue/skip-after-execute
+	   (lambda (thunk high-priority?)
+	     (let ([this-eventspace user-eventspace]
+		   [semaphore (make-semaphore 0)])
+	       (mred:queue-callback
+		(lambda ()
+		  (when (eq? this-eventspace user-eventspace)
+		    (thunk))
+		  (semaphore-post semaphore))
+		high-priority?)
+	       (semaphore-wait semaphore)))]
+	  
 	  [saved-newline? #f]
 
 	  [this-result-write 
 	   (lambda (s)
 	     (system
 	      (lambda ()
-		(mred:queue-callback
+		(queue/skip-after-execute
 		 (lambda ()
 		   (generic-write this
 				  s 
@@ -400,7 +412,7 @@
 	   (lambda (s)
 	     (system
 	      (lambda ()
-		(mred:queue-callback
+		(queue/skip-after-execute
 		 (lambda ()
 		   (init-transparent-io #f)
 		   (let* ([old-saved-newline? saved-newline?]
@@ -432,7 +444,7 @@
 	   (lambda (s)
 	     (system
 	      (lambda ()
-		(mred:queue-callback
+		(queue/skip-after-execute
 		 (lambda ()
 		   (cleanup-transparent-io)
 		   (generic-write this

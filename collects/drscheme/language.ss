@@ -73,17 +73,15 @@
 			(list language-panel when-message ok-panel)))))]
 	 [language-choice (make-object mred:choice%
 			    "Language"
-			    (append language-levels (list "Custom"))
+			    language-levels
 			    language-panel
 			    (lambda (choice evt)
 			      (let ([which (send choice get-selection)]
 				    [len (length basis:settings)])
-				(when (= which len)
-				  (show-specifics #t))
-				(when (< which len)
-				  (fw:preferences:set
-				   'drscheme:settings
-				   (basis:copy-setting (vector-ref (list-ref basis:settings which) 1)))))))]
+				(fw:preferences:set
+				 'drscheme:settings
+				 (basis:copy-setting (vector-ref (list-ref basis:settings which) 1))))))]
+	 [custom-message (make-object mred:message% "Custom" language-panel)]
 	 [_2 (make-object mred:horizontal-panel% language-panel)]
 	 [right-align
 	  (opt-lambda (mo panel)
@@ -104,34 +102,21 @@
 		     (set-setting! s i)
 		     (fw:preferences:set 'drscheme:settings s)))))
 	     panel))]
-	 [vocab (right-align 
-		 (lambda (hp)
-		   (make-object mred:choice%
-		     "Vocabulary"
-		     language-levels
-		     hp
-		     (lambda (vocab evt)
-		       (let* ([pos (send vocab get-selection)]
-			      [s (fw:preferences:get 'drscheme:settings)]
-			      [level-sym (list-ref basis:level-symbols pos)])
-			 (basis:set-setting-vocabulary-symbol! s level-sym)
-			 (basis:set-setting-use-zodiac?! s (basis:zodiac-vocabulary? level-sym))
-			 (fw:preferences:set 'drscheme:settings s)))))
-		 input-syntax-panel)]
+
+;; keepers
+;  - Signal undefined variables when first referenced
+; - Unmatched cond/case is an error
+; - Case sensitive
+; - Output Style
+; - Show sharing in values
+; - Print rationals in whole/part notation
+
+
+	 
 	 [case-sensitive? (make-check-box basis:set-setting-case-sensitive?!
 					  basis:setting-case-sensitive?
 					  "Case sensitive"
 					  input-syntax-panel)]
-	 [allow-improper-lists?
-	  (make-check-box basis:set-setting-allow-improper-lists?!
-			  basis:setting-allow-improper-lists?
-			  "Allow improper lists"
-			  dynamic-panel)]
-	 [allow-set!-on-undefined?
-	  (make-check-box basis:set-setting-allow-set!-on-undefined?!
-			  basis:setting-allow-set!-on-undefined?
-			  "Allow set! on undefined identifiers"
-			  dynamic-panel)]
 	 [unmatched-cond/case-is-error?
 	  (make-check-box basis:set-setting-unmatched-cond/case-is-error?!
 			  basis:setting-unmatched-cond/case-is-error?
@@ -142,28 +127,6 @@
 			  basis:setting-signal-undefined
 			  "Signal undefined variables when first referenced"
 			  dynamic-panel)]
-	 [signal-not-boolean
-	  (make-check-box basis:set-setting-signal-not-boolean!
-			  basis:setting-signal-not-boolean
-			  "Conditionals must evaluate to either #t or #f"
-			  dynamic-panel)]
-	 [eq?-only-compares-symbols?
-	  (make-check-box basis:set-setting-eq?-only-compares-symbols?!
-			  basis:setting-eq?-only-compares-symbols?
-			  "Eq? only compares symbols"
-			  dynamic-panel)]
-	 [<=-at-least-two-args
-	  (make-check-box basis:set-setting-<=-at-least-two-args!
-			  basis:setting-<=-at-least-two-args
-			  "comparison operators require at least two arguments"
-			  dynamic-panel)]
-#|
-	 [disallow-untagged-inexact-numbers
-	  (make-check-box basis:set-setting-disallow-untagged-inexact-numbers!
-			  basis:setting-disallow-untagged-inexact-numbers
-			  "Inexact numbers require #i"
-			  input-syntax-panel)]
-|#
 	 [printer-number->symbol
 	  (lambda (which)
 	    (case which
@@ -189,20 +152,10 @@
 		   (basis:set-setting-printing! setting symbol-which)
 		   (fw:preferences:set 'drscheme:settings setting)))))
 	   output-syntax-panel)]
-	 [abbreviate-cons-as-list?
-	  (make-check-box basis:set-setting-abbreviate-cons-as-list?!
-			  abbreviate-cons-as-list?
-			  "Abbreviate multiples cons's with list"
-			  output-syntax-panel)]
 	 [sharing-printing?
 	  (make-check-box basis:set-setting-sharing-printing?!
 			  basis:setting-sharing-printing?
 			  "Show sharing in values"
-			  output-syntax-panel)]
-	 [print-tagged-inexact-numbers
-	  (make-check-box basis:set-setting-print-tagged-inexact-numbers!
-			  basis:setting-print-tagged-inexact-numbers
-			  "Print inexact numbers with #i"
 			  output-syntax-panel)]
 	 [whole/fractional-exact-numbers
 	  (make-check-box basis:set-setting-whole/fractional-exact-numbers!
@@ -242,91 +195,48 @@
 			   [ss (selector setting)])
 		       (equal? (not cbv)
 			       (not ss))))])
-	      (and (compare-check-box case-sensitive? basis:setting-case-sensitive?)
-		   (compare-check-box allow-set!-on-undefined? basis:setting-allow-set!-on-undefined?)
+	      (and (eq? (basis:setting-vocabulary-symbol setting)
+			(list-ref basis:level-symbols (send language-choice get-selection)))
+		   (compare-check-box case-sensitive? basis:setting-case-sensitive?)
 		   (compare-check-box unmatched-cond/case-is-error? basis:setting-unmatched-cond/case-is-error?)
 		   (compare-check-box signal-undefined basis:setting-signal-undefined)
-		   (compare-check-box signal-not-boolean basis:setting-signal-not-boolean)
-		   (compare-check-box eq?-only-compares-symbols? basis:setting-eq?-only-compares-symbols?)
-		   (compare-check-box <=-at-least-two-args basis:setting-<=-at-least-two-args)
-		   ; (compare-check-box disallow-untagged-inexact-numbers basis:setting-disallow-untagged-inexact-numbers)
-		   (compare-check-box allow-improper-lists? basis:setting-allow-improper-lists?)
 		   (compare-check-box sharing-printing? basis:setting-sharing-printing?)
-		   (compare-check-box print-tagged-inexact-numbers basis:setting-print-tagged-inexact-numbers)
 		   (compare-check-box whole/fractional-exact-numbers basis:setting-whole/fractional-exact-numbers)
-		   (compare-check-box abbreviate-cons-as-list? basis:setting-abbreviate-cons-as-list?)
 		   (eq? (printer-number->symbol (send printing get-selection))
-			(basis:setting-printing setting))
-		   (if (= (send vocab get-selection)
-			  (length basis:level-symbols))
-		       (not (basis:setting-use-zodiac? setting))
-		       (= (basis:level->number (basis:setting-vocabulary-symbol setting))
-			  (send vocab get-selection))))))]
+			(basis:setting-printing setting)))))]
 	 [reset-choice
 	  (lambda ()
-	    (when (andmap (lambda (name-setting)
-			    (let ([name (vector-ref name-setting 0)]
-				  [setting (vector-ref name-setting 1)])
-			      (if (compare-setting-to-gui setting)
-				  (begin
-				    (send language-choice set-selection
-					  (basis:level->number
-					   (basis:setting-vocabulary-symbol setting)))
-				    #f)
-				  #t)))
-			  basis:settings)
-	      (send language-choice set-selection
-		    (length basis:level-symbols))))]
+	    (send language-panel
+		  change-children
+		  (lambda (l)
+		    (if (ormap (lambda (name-setting)
+				 (let ([name (vector-ref name-setting 0)]
+				       [setting (vector-ref name-setting 1)])
+				   (compare-setting-to-gui setting)))
+			       basis:settings)
+			(list language-choice custom-message)
+			(list language-choice)))))]
 	 [update-to
 	  (lambda (v)
-	    (send allow-set!-on-undefined? show (basis:has-set!? (basis:setting-vocabulary-symbol v)))
 	    (let ([zodiac? (basis:setting-use-zodiac? v)])
-	      (send vocab set-selection (basis:level->number (basis:setting-vocabulary-symbol v)))
 	      (unless zodiac?
-		(basis:set-setting-allow-improper-lists?! v #t)
-		(basis:set-setting-signal-undefined! v #f)
-		(basis:set-setting-signal-not-boolean! v #f))
-	      (for-each (lambda (control) (send control enable zodiac?))
-			(list allow-improper-lists?
-			      signal-undefined
-			      signal-not-boolean)))
+		(basis:set-setting-signal-undefined! v #f))
+	      (send signal-undefined enable zodiac?))
+	    
 	    (send printing set-selection
 		  (get-printer-style-number (basis:setting-printing v)))
 	    (let ([r4rs-style? (eq? 'r4rs-style (basis:setting-printing v))])
-	      (send abbreviate-cons-as-list? show (not r4rs-style?))
-	      (send print-tagged-inexact-numbers enable (not r4rs-style?))
 	      (send whole/fractional-exact-numbers enable (not r4rs-style?))
 	      (when r4rs-style?
-		(basis:set-setting-whole/fractional-exact-numbers! v #f)
-		(basis:set-setting-print-tagged-inexact-numbers! v #f)))
+		(basis:set-setting-whole/fractional-exact-numbers! v #f)))
 
 	    (map (lambda (get check-box) (send check-box set-value (get v)))
 		 (list basis:setting-case-sensitive?
-		       basis:setting-allow-set!-on-undefined?
-		       basis:setting-unmatched-cond/case-is-error?
-		       basis:setting-signal-undefined
-		       basis:setting-signal-not-boolean
-		       ; basis:setting-disallow-untagged-inexact-numbers
-		       basis:setting-eq?-only-compares-symbols?
-		       basis:setting-<=-at-least-two-args
-		       basis:setting-allow-improper-lists?
 		       basis:setting-sharing-printing?
-		       basis:setting-print-tagged-inexact-numbers
-		       basis:setting-whole/fractional-exact-numbers
-		       basis:setting-abbreviate-cons-as-list?)
+		       basis:setting-whole/fractional-exact-numbers)
 		 (list case-sensitive? 
-		       allow-set!-on-undefined? 
-		       unmatched-cond/case-is-error?
-		       signal-undefined
-		       signal-not-boolean
-		       ; disallow-untagged-inexact-numbers
-		       eq?-only-compares-symbols?
-		       <=-at-least-two-args
-		       allow-improper-lists?
 		       sharing-printing?
-		       print-tagged-inexact-numbers
-		       whole/fractional-exact-numbers
-		       abbreviate-cons-as-list?))
+		       whole/fractional-exact-numbers))
 	    (reset-choice))]
 	 [unregister-callback
 	  (fw:preferences:add-callback 'drscheme:settings 
@@ -342,7 +252,6 @@
       (send f stretchable-height #f)
       (send language-choice stretchable-width #f)
       (send printing stretchable-width #f)
-      (send vocab stretchable-width #f)
       (update-to (fw:preferences:get 'drscheme:settings))
       (show-specifics (not (ormap (lambda (x) (compare-setting-to-gui (vector-ref x 1))) basis:settings)))
       (for-each (lambda (x) (send x stretchable-height #f))

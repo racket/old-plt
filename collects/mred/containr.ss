@@ -789,7 +789,7 @@
 		  (error 'insert-panel
 		    "Expected a mred:panel% descendant; got ~s"
 		    new-panel))
-		(unless (eq? this (send panel get-parent))
+		(unless (eq? this (send new-panel get-parent))
 		  (error 'insert-panel
 		    "Added panel ~s to a frame (~s) not its parent"
 		    new-panel this))

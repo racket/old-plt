@@ -395,6 +395,24 @@
 				       (unless (memq enclosure-list (send f get-children))
 					 (send f add-child enclosure-list))))))))))))
 	(make-object separator-menu-item% file-menu)
+	(make-object (class menu% 
+		       (inherit get-items)
+		       (define/override (on-demand)
+			 (for-each (lambda (i) (send i delete)) (get-items))
+			 (let ([server (SMTP-SERVER)]
+			       [servers (SMTP-SERVERS)])
+			   (for-each
+			    (lambda (s)
+			      (let ([i (make-object checkable-menu-item% s this
+						    (lambda (i e)
+						      (for-each (lambda (i) (send i check #f)) (get-items))
+						      (set-SMTP-SERVER! s)
+						      (send i check #t)))])
+				(when (string=? s server)
+				  (send i check #t))))
+			    servers)))
+		       (super-make-object "SMTP Server" file-menu)))
+	(make-object separator-menu-item% file-menu)
 	(make-object menu-item% "Close" file-menu
 		     (lambda (i e) 
 		       (when (send f can-close?)

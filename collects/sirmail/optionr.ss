@@ -1,6 +1,7 @@
 
 (module optionr mzscheme
-  (require (lib "unitsig.ss"))
+  (require (lib "unitsig.ss")
+	   (lib "string.ss"))
 
   (require (lib "imap-sig.ss" "net")
            (lib "mred-sig.ss" "mred")
@@ -33,9 +34,18 @@
       (define (USERNAME) (get-pref 'sirmail:username))
       (define (DEFAULT-DOMAIN) (get-pref 'sirmail:default-to-domain))
       (define (IMAP-SERVER) (get-pref 'sirmail:imap-server))
-      (define (SMTP-SERVER) (get-pref 'sirmail:smtp-server))
       (define (LOCAL-DIR) (get-pref 'sirmail:local-directory))
       (define (SAVE-SENT) (get-pref 'sirmail:sent-directory))
+
+      (define (SMTP-SERVERS) (let ([s (get-pref 'sirmail:smtp-server)])
+			       (regexp-split ", *" s)))
+      (define current-SMTP-SERVER (car (SMTP-SERVERS)))
+      (define (SMTP-SERVER) (let ([l (SMTP-SERVERS)])
+			      (if (member current-SMTP-SERVER l)
+				  current-SMTP-SERVER
+				  (car l))))
+      (define (set-SMTP-SERVER! s) (set! current-SMTP-SERVER s))
+
 
       (define PASSWORD (get-pref 'sirmail:password))
       (define (get-PASSWORD) (or PASSWORD shared-password))

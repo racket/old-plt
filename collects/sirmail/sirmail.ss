@@ -54,7 +54,7 @@
     (semaphore-wait exit-sema)
     (set! exit-count (sub1 exit-count))
     (when (zero? exit-count)
-      (preferences:save)
+      (save-prefs)
       (prim-exit 0))
     (semaphore-post exit-sema))
 

@@ -3,9 +3,14 @@
   (require (lib "class.ss")
 	   (lib "framework.ss" "framework")
 	   (lib "mred.ss" "mred")
-	   (lib "list.ss"))
+	   (lib "list.ss")
+	   (lib "string.ss")
+	   (lib "head.ss" "net"))
 
-  (provide get-pref put-pref
+  ;; IMPORTANT! All preferences operations outside this
+  ;; file should go through the following exports.
+  ;; DO NOT use preferences:... elsewhere.
+  (provide get-pref put-pref save-prefs
 	   show-pref-dialog
 	   add-preferences-menu-items)
 
@@ -114,6 +119,9 @@
     (in-preferences-eventspace (lambda ()
 				 (preferences:set id val))))
 
+  (define (save-prefs)
+    (in-preferences-eventspace preferences:save))
+
   (define (add-preferences-menu-items edit-menu)
     (make-object separator-menu-item% edit-menu)
     (make-object menu-item% "Preferences" edit-menu
@@ -130,7 +138,16 @@
   ;;  Preference Dialog                                      ;;
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define (make-text-field label panel width-num pref optional?)
+  (define needs-check null)
+
+  
+  (define (set-hilite e on?)
+    (send e change-style 
+	  (send (make-object style-delta%) set-delta-background (if on? "yellow" "white"))
+	  0 (send e last-position)))
+
+
+  (define (make-text-field label panel width-num pref optional? check-value)
     (define p0 (and optional?
 		    (instantiate horizontal-panel% (panel) [stretchable-height #f])))
     (define e (and optional?
@@ -143,26 +160,37 @@
 				     (and on?
 					  (send t get-value))))))))
 
-    (define t (make-object (class text-field% 
-			     (inherit get-value)
-			     (define/override (on-focus on?)
-			       (unless on?
-				 (preferences:set pref (get-value))))
-			     (super-make-object
-			      (if optional? #f label) (or p0 panel)
-			      void
-			      (make-string width-num #\space)))))
+    (define t (make-object text-field% 
+			   (if optional? #f label) (or p0 panel)
+			   (lambda (t e)
+			     (let* ([s (send t get-value)])
+			       (if (check-value #f s)
+				   (preferences:set pref s)
+				   (begin
+				     (set! needs-check (cons (list t label check-value) needs-check))
+				     (set-hilite (send t get-editor) #t)))))
+			   (make-string width-num #\space)))
     (send t set-value (or (preferences:get pref) ""))
     (when optional?
       (send e set-value (preferences:get pref)))
     (when e
       (send t enable (send e get-value)))
     (preferences:add-callback pref (lambda (name val)
+				     (set-hilite (send t get-editor) #f)
 				     (when e
 				       (send e set-value val)
 				       (send t enable val))
 				     (when val
-				       (send t set-value val)))))
+				       (unless (equal? val (send t get-value))
+					 (send t set-value val))))))
+
+  (define (check-unsaved-pref?)
+    (and (andmap (lambda (a)
+		   ((caddr a) (cadr a) (send (car a) get-value)))
+		 needs-check)
+	 (begin
+	   (set! needs-check null)
+	   #t)))
 	     
   (define make-file/directory-button
     (lambda (dir? button-label parent pref enabler)
@@ -219,6 +247,72 @@
 					    (set-it v)))))
       p))
 
+  (define (is-host-address? s)
+    (regexp-match "^([-a-zA-Z0-9]+[.])*[-a-zA-Z0-9]+$" s))
+
+  (define (is-host-address+port? s)
+    (or (is-host-address? s)
+	(let ([m (regexp-match "^(.*):([0-9]+)$" s)])
+	  (and m
+	       (<= 1 (string->number (caddr m)) 65535)
+	       (is-host-address? (cadr m))))))
+
+  (define (is-host-address+port-list? s)
+    (let ([l (regexp-split ", *" s)])
+      (andmap is-host-address+port? l)))
+
+  (define (check-address ok? who s port-ok? multi?)
+    (or (ok? s)
+	(begin
+	  (when who
+	    (message-box
+	     "Preference Error"
+	     (format (string-append
+		      "The ~a value must be a~a host IP address~a~a~a.\n"
+		      "An IP address is an string containing a combination of "
+		      "period (.), dash (-), A-Z, a-Z, and 0-9. "
+		      "Also the period cannot appear at the very beginning or end.\n"
+		      "~a"
+		      "You provided\n\n  ~a\n\nwhich is not legal.")
+		     who 
+		     (if multi? " comma-separated list of" "")
+		     (if multi? " es" "")
+		     (if (and multi? port-ok?) " each" "")
+		     (if port-ok? " with an optional port number" "")
+		     (if port-ok? 
+			 (string-append
+			  "An optional port number is specified by adding a "
+			  "colon (:) followed by a number between 1 and 65535.\n")
+			 "")
+		     s)
+	     #f
+	     '(ok stop)))
+	  #f)))
+			
+  (define (check-host-address who s)
+    (check-address is-host-address? who s #f #f))
+  (define (check-host-address/port who s)
+    (check-address is-host-address+port? who s #t #f))
+  (define (check-host-address/port/multi who s)
+    (check-address is-host-address+port-list? who s #t #t))
+
+  (define (check-user-address who s)
+    (with-handlers ([not-break-exn? 
+		     (lambda (x)
+		       (when who
+			 (message-box
+			  "Preference Error"
+			  (format "The ~a value you provided is not a legal mail address: ~a"
+				  who s)
+			  #f
+			  '(ok stop)))
+		       #f)])
+      (unless (= 1 (length (extract-addresses s 'all)))
+	(error "multiple addresses"))
+      #t))
+
+  (define (check-id who s) #t)
+      
   (define (make-text-list label parent pref)
     (let ([p (make-object vertical-panel% parent)])
       (define l (make-object list-box% label (or (preferences:get pref) null) p
@@ -261,15 +355,15 @@
   (define (make-addresses-preferences-panel parent)
     (let ([p (instantiate vertical-panel% (parent))])
       
-      (make-text-field "Mail From" p 20 'sirmail:mail-from #f)
-      (make-text-field "SMTP Server" p 20 'sirmail:smtp-server #f)
+      (make-text-field "Mail From" p 20 'sirmail:mail-from #f check-user-address)
+      (make-text-field "SMTP Server" p 20 'sirmail:smtp-server #f check-host-address/port/multi)
 
       (make-file/directory-button #t #f p
 				  'sirmail:sent-directory
 				  "Save Sent Files")
 
 
-      (make-text-field "Default To Domain" p 20 'sirmail:default-to-domain #f)
+      (make-text-field "Default To Domain" p 20 'sirmail:default-to-domain #f check-host-address)
       (make-file/directory-button #f #f p
 				  'sirmail:aliases-file
 				  "Aliases File")
@@ -281,15 +375,15 @@
   (define (make-mbox-preferences-panel parent)
     (let ([p (instantiate vertical-panel% (parent))])
       
-      (make-text-field "Username" p 10 'sirmail:username #f)
-      (make-text-field "IMAP Server" p 20 'sirmail:imap-server #f)
+      (make-text-field "Username" p 10 'sirmail:username #f check-id)
+      (make-text-field "IMAP Server" p 20 'sirmail:imap-server #f check-host-address/port)
 
 	
       (make-file/directory-button #t "Local Directory" p
 				  'sirmail:local-directory
 				  #f)
 
-      (make-text-field "Folder List Root" p 20 'sirmail:root-mailbox-folder #t)
+      (make-text-field "Folder List Root" p 20 'sirmail:root-mailbox-folder #t void)
 		       
 
       (make-file/directory-button #f #f p
@@ -300,10 +394,10 @@
 
       p))
 
-
   (in-preferences-eventspace
    (lambda ()
      (preferences:add-panel "Reading" make-mbox-preferences-panel)
      (preferences:add-panel "Sending" make-addresses-preferences-panel)
-     (preferences:add-editor-checkbox-panel))))
+     (preferences:add-editor-checkbox-panel)
+     (preferences:add-can-close-dialog-callback check-unsaved-pref?))))
 

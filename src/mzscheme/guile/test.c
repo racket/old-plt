@@ -12,7 +12,7 @@ void real_main(int argc, char *argv[])
   int done;
   char input_str[1000];
      
-  gh_eval_str("(display \"hello guile\n\")");
+  gh_eval_str("(display \"hello guile: try square, factorial, of c_{factorial,sin,vector_test}\n\")");
      
   gh_eval_str("(define (square x) (* x x))");
   gh_eval_str("(define (factorial n) (if (= n 1) 1 (* n (factorial (- n 1)))))");

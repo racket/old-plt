@@ -62,8 +62,7 @@ oe:
 	cd dynsrc; $(MAKE) oe
 
 aixdl:
-	cd aixdlfcn; $(MAKE) CC='$(CC)'
-	$(MAKE) $(LIBDIR)/libdl.a
+	cd aixdlfcn; $(MAKE)
 
 cygwin-dll-setup:
 	cd src; $(MAKE) mzheaders
@@ -98,9 +97,6 @@ libgc.a: @GCDIR@/gc.a
 # Irix sproc, only
 sproc.o: @GCDIR@/sproc.o
 	cp @GCDIR@/sproc.o sproc.o
-
-libdl.a: aixdlfcn/libdl.a
-	cp aixdlfcn/libdl.a libdl.a
 
 mzscheme: libmzscheme.a libgc.a main.o $(SPECIALIZINGOBJECTS)
 	$(CC) -o mzscheme main.o $(SPECIALIZINGOBJECTS) -L. -lmzscheme -lgc @LIBS@
@@ -202,7 +198,7 @@ clean:
 	/bin/rm -rf tmp[123456789] tests/tmp[123456789] tests/sub[123]
 	/bin/rm -f tests/*~
 	/bin/rm -f *.o core
-	/bin/rm -f aixdlfcn/dlfcn.o aixdlfcn/libdl.a 
+	/bin/rm -f aixdlfcn/dlfcn.o
 	/bin/rm -f mzdyn.o libgc.a libmzscheme.a libdl.a mzscheme mzscheme.multiboot
 	cd gc; $(MAKE) clean
 	cd sgc; $(MAKE) clean

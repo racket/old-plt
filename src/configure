@@ -2200,8 +2200,8 @@ fi
   # If we're using gcc and including X11/Intrinsic doesn't work
   #  then try adding -fpermissive
   if test "$CC" = "gcc" ; then
-    echo $ac_n "checking whether need to use -fpermissive"?"""... $ac_c" 1>&6
-echo "configure:2205: checking whether need to use -fpermissive"?"" >&5
+    echo $ac_n "checking whether need to use -fpermissive""... $ac_c" 1>&6
+echo "configure:2205: checking whether need to use -fpermissive" >&5
     cat > conftest.$ac_ext <<EOF
 #line 2207 "configure"
 #include "confdefs.h"
@@ -2272,7 +2272,8 @@ makefiles="Makefile
            mzscheme/Makefile
              mzscheme/src/Makefile mzscheme/dynsrc/Makefile
              mzscheme/gc/Makefile mzscheme/sgc/Makefile
-             mzscheme/gc2/Makefile"
+             mzscheme/gc2/Makefile mzscheme/guile/Makefile
+             mzscheme/aixdlfcn/Makefile"
 
 if test "${enable_mred}" = "yes" ; then
   makefiles="$makefiles

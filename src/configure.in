@@ -217,7 +217,7 @@ if test "${enable_mred}" = "yes" ; then
   # If we're using gcc and including X11/Intrinsic doesn't work
   #  then try adding -fpermissive
   if test "$CC" = "gcc" ; then
-    AC_MSG_CHECKING(whether need to use -fpermissive"?")
+    AC_MSG_CHECKING(whether need to use -fpermissive)
     AC_TRY_COMPILE([#]include "X11/Intrinsic.h", , addperm=no, addperm=yes)
     if test "$addperm" = "yes" ; then
       MROPTIONS="$MROPTIONS  -fpermissive"
@@ -271,7 +271,8 @@ makefiles="Makefile
            mzscheme/Makefile
              mzscheme/src/Makefile mzscheme/dynsrc/Makefile
              mzscheme/gc/Makefile mzscheme/sgc/Makefile
-             mzscheme/gc2/Makefile"
+             mzscheme/gc2/Makefile mzscheme/guile/Makefile
+             mzscheme/aixdlfcn/Makefile"
 
 if test "${enable_mred}" = "yes" ; then
   makefiles="$makefiles

@@ -1,0 +1,19 @@
+
+srcdir = @srcdir@
+
+CFLAGS = @CFLAGS@
+RANLIB = @RANLIB@
+
+TARGET = ../libdl.a
+
+all: $(TARGET)
+
+dlfcn.o:	dlfcn.h
+	$(CC) $(CFLAGS) -o $@ $(srcdir)/dlfcn.c
+
+$(TARGET): dlfcn.o
+	$(AR) ruv $(TARGET) dlfcn.o
+	$(RANLIB) $(TARGET)
+
+clean:
+	rm -f core *.o

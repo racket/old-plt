@@ -169,7 +169,8 @@ string=? ; exec /home/mflatt/bin/mzscheme -rg $0 "$@"
 
 (with-output-to-file "gh.h"
   (lambda ()
-    (with-input-from-file "ghbase.h"
+    (with-input-from-file 
+	(build-path (current-load-relative-directory) "ghbase.h")
       (lambda ()
 	(let loop ()
 	  (let ([v (read-line)])
@@ -185,36 +186,36 @@ string=? ; exec /home/mflatt/bin/mzscheme -rg $0 "$@"
   (cond
    [(pair? b)
     (case (car b)
-      [begin (display "(")
+      [(begin) (display "(")
 	     (write-body (cadr b))
 	     (for-each (lambda (e)
 			 (printf ", ")
 			 (write-body e))
 		       (cddr b))
 	     (display ")")]
-      [begin-with
+      [(begin-with)
        (printf "~s ~s;~n" (caadr b) (cadadr b))
        (write-body (cons 'begin (cddr b)))]
-      [= (write-bin " = " b)]
-      [>= (write-bin " >= " b)]
-      [+ (write-bin " + " b)]
-      [@ (write-body (cadr b))
-	 (display "[")
-	 (write-body (caddr b))
-	 (display "]")]
-      [if (display "if (")
-	  (write-body (cadr b))
-	 (display ") { ")
-	 (write-body (caddr b))
-	 (display "; } {")
-	 (write-body (cadddr b))
-	 (display "; }")]
-      [? (write-body (cadr b))
-	 (display " ? ")
-	 (write-body (caddr b))
-	 (display " : ")
-	 (write-body (cadddr b))]
-      [void (void)]
+      [(=) (write-bin " = " b)]
+      [(>=) (write-bin " >= " b)]
+      [(+) (write-bin " + " b)]
+      [(@) (write-body (cadr b))
+	   (display "[")
+	   (write-body (caddr b))
+	   (display "]")]
+      [(if) (display "if (")
+	    (write-body (cadr b))
+	    (display ") { ")
+	    (write-body (caddr b))
+	    (display "; } {")
+	    (write-body (cadddr b))
+	    (display "; }")]
+      [(?) (write-body (cadr b))
+	   (display " ? ")
+	   (write-body (caddr b))
+	   (display " : ")
+	   (write-body (cadddr b))]
+      [(void) (void)]
       [else (write-body (car b))
 	    (display "(")
 	    (unless (null? (cdr b))

@@ -22,10 +22,10 @@ prompt-and-read part of MzScheme's read-eval-print loop.
 I put the following in my ~/.mzschemerc so that MzScheme always starts
 with readline support:
 
- (require-library "rep.ss" "readline")
+ (require (lib "rep.ss" "readline"))
 
-The readline history is stored across invocations in ~/.mzrl.history,
-assuming MzScheme exits normally.
+The readline history is stored across invocations in MzScheme's
+preferences file, assuming MzScheme exits normally.
 
 
 Direct bindings for readline hackers
@@ -49,6 +49,3 @@ crash (I'm not sure which one).
 
 
                                                    mflatt@cs.utah.edu
-
-Note to self: pack with
- (pack "readline.plt" "readline" '("collects/readline") '(("readline")))

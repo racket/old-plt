@@ -29,8 +29,6 @@
       (define debug (make-parameter #f))
       (define test (make-parameter #f))
       (define clean-intermediate-files (make-parameter #t))
-      (define zo-compiler-flags (make-parameter '(strip-macro-definitions
-						  ignore-require-library)))
 
       (define max-exprs-per-top-level-set (make-parameter 25))
       

@@ -737,7 +737,7 @@ PROCEDURES -----------------------------------------------------------
 
 EXAMPLE --------------------------------------------------------------
 
- > (require-library "pop3.ss" "net")
+ > (require (lib "pop3.ss" "net"))
  > (define c (pop3:connect-to-server "cs.rice.edu"))
  > (pop3:authenticate/plain-text "scheme" "********" c)
  > (pop3:get-mailbox-status c)

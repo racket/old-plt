@@ -7,58 +7,56 @@ services:
 
  * Compiling and setting up all collections: When Setup PLT is run
    without any arguments, it finds all of the current collections
-   (using the PLTHOME and PLTCOLLECTS environment variable)
-   and compiles all collections with an info-table.ss library that
-   indicates how the collection is compiled (see the
-   --collection-zos flag for mzc).
+   (using the PLTHOME and PLTCOLLECTS environment variables) and
+   compiles all collections with an info.ss library that indicates how
+   the collection is compiled (see the mzc manual).
 
-   The --clean (or -c) flag to Setup PLT causes it to delete
-   all existing .zo and extension files, thus ensuring a clean
-   build from the source files. (Exactly which files are deleted
-   is controlled by the info-table.ss file. See below for more info.)
+   The --clean (or -c) flag to Setup PLT causes it to delete all
+   existing .zo and extension files, thus ensuring a clean build from
+   the source files. The exact set of deleted files can be controlled
+   by the info.ss file; see below for more info.
 
-   The -l flag takes one or more collection names and restricts 
-   Setup PLT's action to those collections.
+   The -l flag takes one or more collection names and restricts Setup
+   PLT's action to those collections.
 
-   In addition to compilation, a collection's info-table.ss library
-   can specify executables to be installed in the plt directory
-   (plt/bin under Unix) or other installation actions.
+   In addition to compilation, a collection's info.ss library can
+   specify executables to be installed in the "plt" directory
+   ("plt/bin" under Unix) or other installation actions.
 
  * Unpacking _.plt_ files: A .plt file is a platform-indepedent
-   distribution archive for MzScheme- and MrEd-based software.
-   When one or more file names are provided as the command line
-   arguments to Setup PLT, the files contained in the .plt
-   archive are unpacked (according to specifications embedded in
-   the .plt file; see below) and only the collections specified
-   by the plt file are compiled and setup.
+   distribution archive for MzScheme- and MrEd-based software.  When
+   one or more file names are provided as the command line arguments
+   to Setup PLT, the files contained in the .plt archive are unpacked
+   (according to specifications embedded in the .plt file; see below)
+   and only the collections specified by the plt file are compiled and
+   setup.
 
  Compiling and Setting Up Collections
  ------------------------------------
 
 Setup PLT attempts to compile and set up any collection that:
 
- * has an info-table.ss library;
+ * has an info.ss library;
  
- * is a top-level collection (not a sub-collection; top-level
-   collections can specify subcollections to be compiled and
-   set up with the `compile-subcollections' info-table.ss field);
-   and
+ * has the 'name' info.ss field;
 
- * has the 'name info-table.ss field.
+ * is eiter a top-level collection or a sub-collection of a compilable
+   collection.
 
 Collections meeting this criteria are compiled using the
-`compile-collection-zos' procedure described above. If the -e or
---extension flag is specified, then the collections are also compiled
-using the `compile-collection-extension' procedure described above.
+`compile-collection-zos' procedure described in the "compiler"
+colelction. If the -e or --extension flag is specified, then the
+collections are also compiled using the `compile-collection-extension'
+procedure from "compiler".
 
-Additional info-table.ss fields trigger additional setup actions:
+Additional info.ss fields trigger additional setup actions:
 
 >  mzscheme-launcher-names - a list of executable names to be
-   installed in plt (or plt/bin) to run MzScheme programs implemented
-   by the collection. A parallel list of library names must be
-   provided by `mzscheme-launcher-libraries'. For each name, a
+   installed in "plt" (or "plt/bin") to run MzScheme programs
+   implemented by the collection. A parallel list of library names
+   must be provided by `mzscheme-launcher-libraries'. For each name, a
    launching executable is set up using the launcher collection's
-   `make-mzscheme-launcher'. The arguments are "-mve-" and 
+   `make-mzscheme-launcher'. The arguments are "-mve-" and
 
       (format "~s" `(require (lib <file> <colls> ...)))
 
@@ -82,7 +80,7 @@ Additional info-table.ss fields trigger additional setup actions:
 >  mred-launcher-libraries - a list of library names in
    parallel to `mred-launcher-names'.
 
-> install-collection - a string for a library module relative to the
+>  install-collection - a string for a library module relative to the
    collection. The module must provide `installer' as a procedure that
    accepts a directory path argument (the path to the collection) and
    performs collection-specific installation work.  This procedure
@@ -107,13 +105,15 @@ The extension ".plt" is not required for a distribution archive; this
 convention merely helps users identify the purpose of a distribution
 file.
 
-The raw format of a distribution file is described below. This format
+mzc can be used to create .plt files; see the mzc manual for details.
+
+The raw format of a distribution file is described below.  This format
 is uncompressed and sensitive to communication modes (text
 vs. binary), so the distribution format is derived from the raw format
 by first compressing the file using gzip, then encoding the gzipped
 file with the MIME base64 standard (which relies only the characters
-A-Z, a-z, 0-9, +, /, and =; all other characters are ignored when
-a base64-encoded file is decoded).
+A-Z, a-z, 0-9, +, /, and =; all other characters are ignored when a
+base64-encoded file is decoded).
 
 The raw format is
 
@@ -204,8 +204,9 @@ An unpackable is one of the following:
  Making .plt archives
  --------------------
 
-The setup collection's pack.ss library provides functions to help
-make .plt archives, especially under Unix:
+mzc supports the creation of simple .plt files (see the mzc manual for
+details) but the setup collection's _pack.ss_ library provides more
+general functions to help make .plt archives:
 
 > (pack dest name paths collections [filter encode? file-mode]) -
   Creates the .plt file specified by the pathname `dest', using the
@@ -266,20 +267,20 @@ on-installer-run thunk is run after a .plt file is installed.
  Setup PLT as a Unit
  -------------------
 
-The _setupr.ss_ library in the setup collection contains a signed
-unit that imports
+The _setup-unit.ss_ library in the setup collection exports a _setup@_
+signed unit that imports
 
   setup-option^ - described below
-  mzlib:file^
-  compiler^ - from sig.ss in the compiler collection
-  compiler:option^  - from sig.ss in the compiler collection
-  launcher-maker^ - from launchers.ss in the `launcher' collection
+  compiler^ - from "sig.ss" in the "compiler" collection
+  compiler:option^  - from "sig.ss" in the "compiler" collection
+  launcher-maker^ - from "launcher-sig.ss" in the "launcher" collection
 
-Invoking this unit starts the setup process. The _setupsig.ss_ library
-defines the
+Invoking this unit starts the setup process. The _option-sig.ss_
+library in "setup" defines the
 >      setup-option^
-signature, which is implemented by the unit in _setup-optionr.ss_. It
-defines the following parameters that control the setup process:
+signature, which is implemented by the _setup:option@_ unit in
+_option-unit.ss_. It imports nothing and exports the following
+parameters that control the setup process:
 
 > verbose - #t => prints message from `make' to stderr [default: #f]
 > make-verbose - #t => verbose `make' [default: #f]
@@ -308,13 +309,9 @@ initialized between them, e.g.:
     (compound-unit/sig
       ...
       (link ...
-            [OPTIONS : setup-option^ 
-                       ((require-library "setup-optionr.ss" "setup"))]
-            [MY-CODE : ()
-                       ((require-library "init-options.ss") OPTIONS)]
-            [SETUP : ()
-                     ((require-library "setupr.ss" "setup")
-                      OPTIONS ...)])
+            [OPTIONS : setup-option^ (setup:option@)]
+            [MY-CODE : () (my-init-options@ OPTIONS)]
+            [SETUP : () (setup@ OPTIONS ...)])
       ...)
 
 

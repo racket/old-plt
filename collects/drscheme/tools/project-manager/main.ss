@@ -328,6 +328,10 @@
       ;;                (cons 'build-path (listof string)))
       (define files null)
 
+      ;; files : (union (cons 'require-library (listof string))
+      ;;                (cons 'build-path (listof string)))
+      (define elaboration-files null)
+
       (define language-settings 
         (let ([re:mred (regexp "MrEd")])
           (let loop ([settings drscheme:basis:settings])
@@ -929,11 +933,13 @@
 				   all))
 		(error 'bad-format))
 	      (let ([loaded-files (assoc 'files all)]
+                    [elaboration-files (assoc 'elaboration-files all)]
 		    [loaded-language-settings (assoc 'settings all)]
 		    [loaded-open-table (assoc 'open-table all)]
 		    [loaded-collection-paths (assoc 'collection-paths all)]
 		    [loaded-to-load-files-shown? (assoc 'to-load-files-shown? all)]
 		    [loaded-loaded-files-shown? (assoc 'loaded-files-shown? all)]
+		    [loaded-elaboration-files-shown? (assoc 'loaded-files-shown? all)]
                     [loaded-rep-shown? (assoc 'rep-shown? all)])
 
 		(if (and loaded-language-settings
@@ -946,6 +952,9 @@
 		     (format "Resetting language settings to default; saved language settings are from old version")))
 
 		;; need to update the gui at this point...
+                (when loaded-elaboration-files-shown? 
+                  (set! loaded-elaboration-files-shown? (function:second loaded-elaboration-files-shown?)))
+                (update-elaboration-files-shown)
 		(when loaded-loaded-files-shown?
 		  (set! loaded-files-shown? (function:second loaded-loaded-files-shown?)))
 		(update-loaded-files-shown)
@@ -956,17 +965,19 @@
                   (set! rep-shown? (function:second loaded-rep-shown?)))
                 (update-rep-shown)
 
-		(when loaded-files
-		  (set! files (map (lambda (x)
-				     (cond
-				      [(string? x) `(build-path ,@(my-explode-path
-								   (file:normalize-path
-								    x)))]
-				      [(and (pair? x)
-					    (andmap string? x))
-				       `(require-library ,@x)]
-				      [else x]))
-				   (function:second loaded-files))))
+                (let ([translate-file
+                       (lambda (x)
+                         (cond
+                           [(string? x) `(build-path ,@(my-explode-path
+                                                        (file:normalize-path
+                                                         x)))]
+                           [(and (pair? x) (andmap string? x))
+                            `(require-library ,@x)]
+                           [else x]))])
+                  (when loaded-files
+                    (set! files (map translate-file (function:second loaded-files))))
+                  (when elaboration-files
+                    (set! elaboration-files (map translate-file (function:second elaboration-files)))))
 
 		(when loaded-open-table
 		  (set! open-table (make-hash-table))
@@ -990,6 +1001,7 @@
 	       (newline port)
 	       (fprintf port "; save data~n")
 	       (write `'((loaded-files-shown? ,loaded-files-shown?)
+                         (elaboration-files-shown? ,elaboration-files-shown?)
 			 (to-load-files-shown? ,to-load-files-shown?)
                          (rep-shown? ,rep-shown?)
 			 (collection-paths ,collection-paths)
@@ -1012,6 +1024,31 @@
 			 files))
 	     'truncate 'text))))
 
+      (define elaboration-files-shown? #f)
+      (define (update-elaboration-files-shown)
+	(send elaboration-files-menu-item set-label
+	      (if elaboration-files-shown?
+		  "Hide Elaboration Files"
+		  "Show Elaboration Files"))
+	(send elaboration-files-outer-panel change-children
+	      (lambda (l)
+		(if loaded-files-shown?
+		    (list elaboration-files-panel)
+		    null)))
+	(send elaboration-files-outer-panel stretchable-height elaboration-files-shown?)
+	(send elaboration-files-outer-panel stretchable-width elaboration-files-shown?)
+	(send top-horizontal-panel stretchable-width (or elaboration-files-shown? to-load-files-shown? loaded-files-shown?))
+	(send top-horizontal-panel stretchable-height (or elaboration-files-shown? to-load-files-shown? loaded-files-shown?)))
+      (define (show/hide-elaboration-files)
+        (set! elaboration-files-shown? (not elaboration-files-shown?))
+        (is-changed)
+        (update-elaboration-files-shown)
+        (unless (or elaboration-files-shown?
+                    to-load-files-shown?
+                    loaded-files-shown?
+                    rep-shown?)
+          (show/hide-rep)))
+
       (define loaded-files-shown? #f)
       (define (update-loaded-files-shown)
 	(send loaded-files-menu-item set-label
@@ -1025,17 +1062,18 @@
 		    null)))
 	(send loaded-files-outer-panel stretchable-height loaded-files-shown?)
 	(send loaded-files-outer-panel stretchable-width loaded-files-shown?)
-	(send top-horizontal-panel stretchable-width (or to-load-files-shown? loaded-files-shown?))
-	(send top-horizontal-panel stretchable-height (or to-load-files-shown? loaded-files-shown?)))
+	(send top-horizontal-panel stretchable-width (or elaboration-files-shown? to-load-files-shown? loaded-files-shown?))
+	(send top-horizontal-panel stretchable-height (or elaboration-files-shown? to-load-files-shown? loaded-files-shown?)))
       (define (show/hide-loaded-files)
         (set! loaded-files-shown? (not loaded-files-shown?))
         (is-changed)
         (update-loaded-files-shown)
-        (unless (or to-load-files-shown?
+        (unless (or elaboration-files-shown?
+                    to-load-files-shown?
                     loaded-files-shown?
                     rep-shown?)
           (show/hide-rep)))
-
+      
       (define to-load-files-shown? #t)
       (define (update-to-load-files-shown)
         (send to-load-files-menu-item set-label
@@ -1049,13 +1087,14 @@
 		    null)))
 	(send to-load-files-outer-panel stretchable-height to-load-files-shown?)
 	(send to-load-files-outer-panel stretchable-width to-load-files-shown?)
-	(send top-horizontal-panel stretchable-width (or to-load-files-shown? loaded-files-shown?))
-	(send top-horizontal-panel stretchable-height (or to-load-files-shown? loaded-files-shown?)))
+	(send top-horizontal-panel stretchable-width (or elaboration-files-shown? to-load-files-shown? loaded-files-shown?))
+	(send top-horizontal-panel stretchable-height (or elaboration-files-shown? to-load-files-shown? loaded-files-shown?)))
       (define (show/hide-to-load-files)
 	(set! to-load-files-shown? (not to-load-files-shown?))
         (is-changed)
         (update-to-load-files-shown)
-        (unless (or to-load-files-shown?
+        (unless (or elaboration-files-shown?
+                    to-load-files-shown?
                     loaded-files-shown?
                     rep-shown?)
           (show/hide-rep)))
@@ -1081,7 +1120,8 @@
 	    (set! rep-shown? new-value)
 	    (is-changed)
 	    (update-rep-shown)
-	    (unless (or to-load-files-shown?
+	    (unless (or elaboration-files-shown?
+                        to-load-files-shown?
 			loaded-files-shown?
 			rep-shown?)
 	      (show/hide-loaded-files)))]))
@@ -1280,6 +1320,8 @@
         (make-object menu-item% "Hide Project Files" show-menu (lambda xxx (show/hide-to-load-files))))
       (define loaded-files-menu-item
         (make-object menu-item% "Show Loaded Files" show-menu (lambda xxx (show/hide-loaded-files))))
+      (define elaboration-files-menu-item
+        (make-object menu-item% "Show Elaboration Files" show-menu (lambda xxx (show/hide-elaboration-files))))
       (define rep-menu-item
         (make-object menu-item% "Show Interactions" show-menu (lambda xxx (show/hide-rep))))
       
@@ -1337,12 +1379,22 @@
 					    (files-list-box-callback
 					     (send evt get-event-type)))
 					  '(single)))
+
       (define to-load-button-panel (make-object vertical-panel% to-load-files-panel))
       (define up-button (make-object button% "Up" to-load-button-panel (lambda x (move-file-up))))
       (define down-button (make-object button% "Down" to-load-button-panel (lambda x (move-file-down))))
       (let ([spacer (make-object horizontal-panel% to-load-button-panel)])
         (send spacer stretchable-height #f)
         (send spacer min-height 16))
+
+
+      (define elaboration-files-outer-panel (make-object vertical-panel% top-horizontal-panel))
+      (define elaboration-files-panel (make-object horizontal-panel% elaboration-files-outer-panel))
+      (define elaboration-files-list-box (make-object list-box% #f null elaboration-files-panel
+                                           (lambda (lb evt)
+                                             '(-list-box-callback (send evt get-event-type)))
+                                           '(single)))
+      (send elaboration-files-outer-panel change-children (lambda (l) null))
 
       (define open-button (make-object button% "Open" to-load-button-panel (lambda x (open-file)) '(border)))
       (define remove-button (make-object button% "Remove" to-load-button-panel (lambda x (remove-file))))

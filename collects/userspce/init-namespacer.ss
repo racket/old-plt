@@ -100,7 +100,7 @@
 	      (cond
 	       [(null? teachpack-strings) (reverse link-clauses)]
 	       [else
-		(let ([unit (build-single-teachpack-unit (car teachpack-strings) #t)])
+		(let ([unit (build-single-teachpack-unit (car teachpack-strings))])
 		  (if unit
 		      (begin
 			(set! tagn (+ tagn 1))

@@ -185,6 +185,7 @@
 	    bottom-panel
 	    (lambda (_1 _2)
 	      (send frame show #f)))
+          (make-object mred:grow-box-spacer-pane% bottom-panel)
 	  (send frame show #t)
 	  (set! current-test-suite-frame frame))))
 

@@ -347,6 +347,8 @@ If you put a single wild card, it works as before my modification.
     msw_flags |= OFN_OVERWRITEPROMPT;
   if (flags & wxHIDE_READONLY)
     msw_flags |= OFN_HIDEREADONLY;
+  if (default_path)
+    msw_flags |= OFN_NOCHANGEDIR;
   of->Flags = msw_flags;
 //  of.Flags = msw_flags|OFN_ENABLEHOOK;
 //  of.lpfnHook = wxFileHook ;

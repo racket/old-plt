@@ -38,7 +38,7 @@ case $OS in
     fi
     ;;
   FreeBSD)
-    gmake 'CC=gcc' $GCOPTS "$@"
+    gmake 'CC=gcc' PERL=/usr/bin/perl $GCOPTS "$@"
     ;;
   IRIX)
     if [ "${USEIRIXSPROC}" = "yes" ] ; then

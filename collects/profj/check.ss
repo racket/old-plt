@@ -1912,8 +1912,9 @@
   ;check-instanceof type type-spec src symbol (list string) type-records -> type
   (define (check-instanceof exp-type inst-type src level current-class type-recs)
     (let ((type (type-spec-to-type inst-type current-class level type-recs)))
-      (unless (equal? (car current-class) (ref-type-class/iface type))
-        (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
+      (when (ref-type? type)
+        (unless (equal? (car current-class) (ref-type-class/iface type))
+          (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type)))))
       (cond 
         ((and (ref-type? exp-type) (ref-type? type) 
               (or (is-eq-subclass? exp-type type type-recs)
@@ -1923,7 +1924,16 @@
         ((ref-type? exp-type)
          (instanceof-error 'not-class type exp-type src))
         (else
-         (instanceof-error 'not-ref type exp-type src)))))
+         (cond
+           ((memq level '(beginner intermediate)) (instanceof-error 'not-ref type exp-type src))
+           ((and (array-type? exp-type) (array-type? type)
+                 (= (array-type-dim exp-type) (array-type-dim type))
+                 (or (assignment-conversion exp-type type type-recs))) 'boolean)
+           ((and (array-type? exp-type) (array-type? type))
+            (instanceof-error 'not-related-array type exp-type src))
+           ((array-type? exp-type)
+            (instanceof-error 'not-array type exp-type src))
+           (else (instanceof-error 'not-reforarray type exp-type src)))))))
   
   ;; 15.26
   ;; SKIP - doing the check for compound assignment
@@ -2518,7 +2528,15 @@
            i))
          ((not-ref)
           (format "instanceof requires the expression, compared to ~a, to be a class or interface: Given ~a"
-                  i e)))
+                  i e))
+         ((not-related-array)
+          (let ((line1 "instanceof requires that its expression be related to the given type")
+                (line2 (format "~a is not a subtype of ~a, and ~a is not a subtype of ~a" e i i e)))
+            (format "~a~n~a" line1 line2)))
+         ((not-array)
+          (format "instancof requires its expression to be an array when compared to ~a. Given ~a" i e))
+         ((not-reforarray)
+          (format "instanceof requires the expression, compared to ~a, to be a class, interface or array: Given ~a" i e)))
        'instanceof src)))
   
   ;;Assignment errors

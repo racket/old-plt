@@ -128,6 +128,13 @@
               ((float double) (inexact? val)))
             (is-a? val (runtime-type-type rt))))
       
+      (define/public (check-prim-type type dim)
+        (and (eq? (runtime-type-type rt) type)
+             #;(= dim (runtime-type-dim rt))))
+      (define/public (check-ref-type type dim)
+        (and (eq? (runtime-type-type rt) type)
+             #;(= dim (runtime-type-dim rt))))
+      
       (define/private (default-val) 
         (if (symbol? (runtime-type-type rt))
             (case (runtime-type-type rt)

@@ -16,7 +16,7 @@
            (lib "NullPointerException.ss" "profj" "libs" "java" "lang"))
   
   (provide convert-to-string shift not-equal bitwise mod divide-int 
-           divide-float and or cast-primitive cast-reference nullError)
+           divide-float and or cast-primitive cast-reference instanceof-array nullError)
   
   ;convert-to-string: (U string int real bool char Object) -> string
   (define (convert-to-string data)
@@ -94,40 +94,61 @@
                                     (send exn ClassCastException-constructor-java.lang.String msg))
                                   (current-continuation-marks))))
   
-  ;cast-primitive: value symbol -> value
-  (define (cast-primitive val type)
-    (case type
-      ((boolean) 
-       (unless (boolean? val)
-         (raise-class-cast (format "Cast to boolean failed for ~a" 
-                                   (send (convert-to-string val) get-mzscheme-string))))
-       val)
-      ((byte short int long)
-       (cond
-         ((and (number? val) (inexact? val)) (inexact->exact val))
-         ((and (number? val) (exact? val)) val)
-         ((char? val) (char->integer val))
-         (else (raise-class-cast (format "Cast to ~a failed for ~a"
-                                         type
-                                         (send (convert-to-string val) get-mzscheme-string))))))
-      ((char)
-       (cond
-         ((char? val) val)
-         ((and (number? val) (exact? val)) (integer->char val))
-         (else (raise-class-cast (format "Cast to character failed for ~a"
-                                         (send (convert-to-string val) get-mzscheme-string))))))
-      ((float double)
-       (cond
-         ((number? val) val)
-         ((char? val) (char->integer val))
-         (else (raise-class-cast (format "Cast to ~a failed for ~a" type
-                                         (send (convert-to-string val) get-mzscheme-string))))))))
+  (define (make-brackets dim)
+    (if (= 0 dim)
+        ""
+        (string-append "[]" (make-brackets (sub1 dim)))))
   
-  ;cast-reference: value class symbol-> value
-  (define (cast-reference val type name)
-    (if (is-a? val type)
-        val
-        (raise-class-cast (format "Cast to ~a failed for ~a" name (send val my-name)))))
+  ;cast-primitive: value symbol int -> value
+  (define (cast-primitive val type dim)
+    (if (> dim 0)
+        (if (send val check-prim-type type dim)
+            val
+            (raise-class-cast 
+             (format "Cast to ~a~a failed for ~a" type (make-brackets dim) (send (convert-to-string val) get-mzscheme-string))))
+        (case type
+          ((boolean)
+           (unless (boolean? val)
+             (raise-class-cast (format "Cast to boolean failed for ~a" 
+                                       (send (convert-to-string val) get-mzscheme-string))))
+           val)
+          ((byte short int long)
+           (cond
+             ((and (number? val) (inexact? val)) (inexact->exact val))
+             ((and (number? val) (exact? val)) val)
+             ((char? val) (char->integer val))
+             (else (raise-class-cast (format "Cast to ~a failed for ~a"
+                                             type
+                                             (send (convert-to-string val) get-mzscheme-string))))))
+          ((char)
+           (cond
+             ((char? val) val)
+             ((and (number? val) (exact? val)) (integer->char val))
+             (else (raise-class-cast (format "Cast to character failed for ~a"
+                                             (send (convert-to-string val) get-mzscheme-string))))))
+          ((float double)
+           (cond
+             ((number? val) val)
+             ((char? val) (char->integer val))
+             (else (raise-class-cast (format "Cast to ~a failed for ~a" type
+                                             (send (convert-to-string val) get-mzscheme-string)))))))))
+  
+  ;cast-reference: value class int symbol-> value
+  (define (cast-reference val type dim name)
+    (if (> dim 0)
+        (if (send val check-ref-type type dim)
+            val
+            (raise-class-cast
+             (format "Cast to ~a~a failed for ~a" name (make-brackets dim) (send (convert-to-string val) get-mzscheme-string))))
+        (if (is-a? val type)
+            val
+            (raise-class-cast (format "Cast to ~a failed for ~a" name (send val my-name))))))
+  
+  ;instanceof-array: bool val (U class sym) int -> bool
+  (define (instanceof-array prim? val type dim)
+    (if prim?
+        (send val check-prim-type type dim)
+        (send val check-ref-type type dim)))
   
   ;nullError: symbol -> void
   (define (nullError kind)

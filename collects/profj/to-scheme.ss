@@ -1751,15 +1751,22 @@
   ;translate-cast: type-spec syntax src
   (define (translate-cast type expr src)
     (if (symbol? (type-spec-name type))
-        (make-syntax #f `(javaRuntime:cast-primitive ,expr (quote ,(type-spec-name type))) (build-src src))
-        (make-syntax #f `(javaRuntime:cast-reference ,expr ,(get-class-name type) (quote ,(get-class-name type)))
+        (make-syntax #f `(javaRuntime:cast-primitive ,expr (quote ,(type-spec-name type)) ,(type-spec-dim type))
+                     (build-src src))
+        (make-syntax #f `(javaRuntime:cast-reference ,expr ,(get-class-name type) 
+                                                     ,(type-spec-dim type) 
+                                                     (quote ,(get-class-name type)))
                      (build-src src))))
   
-  ;converted
   ;translate-instanceof: syntax type-spec src -> syntax
-  (define translate-instanceof
-    (lambda (expr type src)
-      (make-syntax #f `(is-a? ,expr ,(get-class-name type)) (build-src src))))
+  (define (translate-instanceof expr type src)
+    (if (> (type-spec-dim type) 0)
+        (make-syntax #f
+                     (if (symbol? (type-spec-name type))
+                         `(javaRuntime:instanceof-array #t ,expr (quote ,(type-spec-name type)) ,(type-spec-dim type))
+                         `(javaRuntime:instanceof-array #f ,expr ,(get-class-name type) ,(type-spec-dim type)))
+                     (build-src src))
+        (make-syntax #f `(is-a? ,expr ,(get-class-name type)) (build-src src))))
   
   ;converted
   ;translate-assignment: (U access array-access) symbol syntax expression ?? src src -> syntax

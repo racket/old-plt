@@ -1,6 +1,7 @@
 
   (unit/sig mred:autosave^
-    (import [mred:constants : mred:constants^]
+    (import [wx : mred:wx^]
+	    [mred:constants : mred:constants^]
 	    [mred:exit : mred:exit^]
 	    [mred:preferences : mred:preferences^])
 	    

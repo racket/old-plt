@@ -1,6 +1,7 @@
 
   (unit/sig mred:path-utils^
-    (import [mred:constants : mred:constants^])
+    (import [wx : mred:wx^]
+	    [mred:constants : mred:constants^])
 	    
     (mred:debug:printf 'invoke "mred:path-utils@")
 

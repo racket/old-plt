@@ -2,7 +2,8 @@
 ; Scheme parenthesis wrappers around the general routines
 
   (unit/sig mred:scheme-paren^
-    (import [mred:constants : mred:constants^]
+    (import [wx : mred:wx^]
+	    [mred:constants : mred:constants^]
 	    [mred:paren : mred:paren^])
 	    
     (mred:debug:printf 'invoke "mred:scheme-paren@")

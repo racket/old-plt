@@ -1,5 +1,6 @@
   (unit/sig mred:project^
-    (import [mred:constants : mred:constants^]
+    (import [wx : mred:wx^]
+	    [mred:constants : mred:constants^]
 	    [mred:group : mred:group^]
 	    [mred:container : mred:container^]
 	    [mred:gui-utils : mred:gui-utils^]

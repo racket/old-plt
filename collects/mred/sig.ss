@@ -1,3 +1,8 @@
+(begin-elaboration-time
+ (if mred:explicit-wx?
+     `(reference "wxs.ss")
+     `(define-signature mred:wx^ ())))
+
 (define-signature mred:connections^
   (connections-frame%
    connections-dialog-box%

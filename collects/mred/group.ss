@@ -1,6 +1,7 @@
 
   (unit/sig mred:group^
-    (import [mred:constants : mred:constants^]
+    (import [wx : mred:wx^]
+	    [mred:constants : mred:constants^]
 	    [mred:preferences : mred:preferences^]
 	    [mred:editor-frame : mred:editor-frame^]
 	    [mred:gui-utils : mred:gui-utils^]

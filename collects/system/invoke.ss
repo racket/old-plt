@@ -10,13 +10,16 @@
 	(lambda (port)
 	  (pretty-print
 	   `(begin-elaboration-time
+	     (define mred:explicit-wx? #t)
 	     (define plt:home-directory ,plt:home-directory)
 	     (define mred:plt-home-directory ,mred:plt-home-directory)
 	     (current-library-path ,(current-library-path)))
 	   port)
 
 	  (pretty-print `(reference-library "match.ss") port)
+	  (pretty-print `(begin-elaboration-time (reference-library "match.ss")) port)
 	  (pretty-print `(reference-library "macro.ss") port)
+	  (pretty-print `(begin-elaboration-time (reference-library "macro.ss")) port)
 	  (pretty-print `(reference ,(build-path mred:plt-home-directory
 						 "mred" "system" "debug.ss"))
 			port)

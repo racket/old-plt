@@ -1,6 +1,7 @@
 
   (unit/sig mred:menu^
-    (import [mred:constants : mred:constants^]
+    (import [wx : mred:wx^]
+	    [mred:constants : mred:constants^]
 	    [mzlib:function : mzlib:function^])
 	    
     (mred:debug:printf 'invoke "mred:menu@")

@@ -1,7 +1,8 @@
 ; Modes
 
   (unit/sig mred:mode^
-    (import [mred:constants : mred:constants^]
+    (import [wx : mred:wx^]
+	    [mred:constants : mred:constants^]
 	    [mred:keymap : mred:keymap^])
     
     (mred:debug:printf 'invoke "mred:mode@")

@@ -2,7 +2,8 @@
 ;  Implemented as a splay tree
 
   (unit/sig mred:match-cache^
-    (import [mred:constants : mred:constants^])
+    (import [wx : mred:wx^]
+	    [mred:constants : mred:constants^])
 	    
     (mred:debug:printf 'invoke "mred:mcache@")
 

@@ -5,7 +5,8 @@
 ; BALANCER ASSUMES THAT QUOTED STRINGS DO NOT SPAN LINES
 
   (unit/sig mred:paren^
-    (import [mred:constants : mred:constants^])
+    (import [wx : mred:wx^]
+	    [mred:constants : mred:constants^])
 	    
     (mred:debug:printf 'invoke "mred:paren@")
 

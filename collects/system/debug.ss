@@ -16,6 +16,7 @@
 		[else (printf "WARNING: environment variable MREDDEBUG expected to evaluate to a list or a symbol got: ~a~n" r)
 		      null])))
 	    null)))))
+
  (define mred:constants:debug-on-backup mred:constants:debug-on)
 
  (define-values (mred:debug:printf

@@ -22,7 +22,8 @@
 ; text-window%
 
     (unit/sig mred:container-children^
-      (import [mred:constants : mred:constants^]
+      (import [wx : mred:wx^]
+	      [mred:constants : mred:constants^]
 	      [mred:connections : mred:connections^]
 	      mred:container-frames^
 	      mred:container-panels^)

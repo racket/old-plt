@@ -1,5 +1,6 @@
   (unit/sig mred:version^
-    (import [mred:constants : mred:constants^]
+    (import [wx : mred:wx^]
+	    [mred:constants : mred:constants^]
 	    mzlib:function^
 	    mzlib:string^)
 

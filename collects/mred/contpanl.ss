@@ -9,7 +9,8 @@
 ; child-info
 
     (unit/sig mred:container-panels^
-      (import [mred:constants : mred:constants^]
+      (import [wx : mred:wx^]
+	      [mred:constants : mred:constants^]
 	      [mred:connections : mred:connections^]
 	      [mzlib:function : mzlib:function^]
 	      mred:container-children^)

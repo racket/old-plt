@@ -5,6 +5,8 @@
 (when (getenv "MREDCOMPILE")
   (load "compsys.ss"))
 
+(define mred:explicit-wx? #f)
+
 (define mred:original-output-port (current-output-port))
 
 ; Remember this directory

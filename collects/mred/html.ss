@@ -1,6 +1,7 @@
 
   (unit/sig mred:html^
-    (import [mred:constants : mred:constants^]
+    (import [wx : mred:wx^]
+	    [mred:constants : mred:constants^]
 	    [mred:url : mred:url^]
 	    mzlib:file^
 	    mzlib:string^)

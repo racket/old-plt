@@ -40,7 +40,7 @@ wxbFont::~wxbFont ()
 char *wxbFont::GetFaceString(void)
 {
   /* If it's one of the portable faceless fonts, return NULL */
-  switch (GetFamily())
+  switch (fontid)
   {
   case wxDECORATIVE:
   case wxROMAN:

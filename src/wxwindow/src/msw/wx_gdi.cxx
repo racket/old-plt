@@ -309,13 +309,13 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont, double angle)
     break;
   case wxTELETYPE:
   case wxMODERN:
-  case wxSYMBOL:
     ff_family = FF_MODERN;
     break;
   case wxSWISS: 
     ff_family = FF_SWISS;
     break;
   case wxDEFAULT:
+  case wxSYMBOL:
   default: 
     ff_family = FF_DONTCARE;
   }

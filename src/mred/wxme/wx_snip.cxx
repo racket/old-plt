@@ -503,6 +503,8 @@ wxSnip *TextSnipClass::Read(wxTextSnip *snip, wxMediaStreamIn *f)
 # define NON_BREAKING_SPACE 0xA0
 #endif
 
+static int dont_shrink_alloc_size;
+
 wxTextSnip::wxTextSnip(long allocsize) 
 {
   Init(allocsize);
@@ -524,8 +526,9 @@ void wxTextSnip::Init(long allocsize)
 
   w = -1.0;
 
-  if (allocsize > 5000)
-    allocsize = 5000;
+  if (!dont_shrink_alloc_size)
+    if (allocsize > 5000)
+      allocsize = 5000;
 
   allocated = (allocsize > 0) ? 2 * allocsize : 20;
   buffer = STRALLOC(allocated + 1);
@@ -744,7 +747,9 @@ void wxTextSnip::Split(long position, wxSnip **first, wxSnip **second)
   if (position < 0 || position > count)
     return;
 
+  dont_shrink_alloc_size = 1;
   snip = new wxTextSnip(position);
+  dont_shrink_alloc_size = 0;
 
   w = -1.0;
 

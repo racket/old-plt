@@ -1,8 +1,11 @@
 #!/bin/sh
+# This script was created by make-mzscheme-launcher
 
-if [ "$PLTHOME" = "" ] ; then
+if [ "$PLTHOME" = '' ] ; then
   PLTHOME=/usr/local/lib/plt
   export PLTHOME
 fi
 
-exec $PLTHOME/bin/mzscheme -mvqe '(require-library "go.ss" "drscheme-jr")' -- ${1+"$@"}
+SYS=`${PLTHOME}/bin/archsys`
+
+exec ${PLTHOME}/.bin/${SYS}/mzscheme '-mqvL' 'go.ss' 'drscheme-jr' '--'   ${1+"$@"}

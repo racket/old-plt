@@ -80,35 +80,35 @@
 
   (define cmd-line (let ([l (vector->list (current-command-line-arguments))])
 		     (let ([l (cond
-			       [(bytes=? (car l) #"--precompile")
+			       [(equal? (car l) "--precompile")
 				(set! precompiling-header? #t)
 				(cdr l)]
-			       [(bytes=? (car l) #"--xform")
+			       [(equal? (car l) "--xform")
 				(cdr l)]
 			       [else l])])
 		       (let ([l (cond
-				 [(bytes=? (car l) #"--precompiled")
+				 [(equal? (car l) "--precompiled")
 				  (set! precompiled-header (cadr l))
 				  (cddr l)]
 				 [else l])])
-			 (let ([l (if (bytes=? (car l) #"--notes")
+			 (let ([l (if (equal? (car l) "--notes")
 				      (begin
 					(set! show-info? #t)
 					(cdr l))
 				      l)])
-			   (let ([l (if (bytes=? (car l) #"--depends")
+			   (let ([l (if (equal? (car l) "--depends")
 					(begin
 					  (set! output-depends-info? #t)
 					  (cdr l))
 					l)])
-			     (let ([l (if (bytes=? (car l) #"--palm")
+			     (let ([l (if (equal? (car l) "--palm")
 					  (begin
 					    (set! palm? #t)
 					    (set! pgc? #f)
 					    (set! pgc-really? #f)
 					    (cdr l))
 					  l)])
-			       (let ([l (if (bytes=? (car l) #"--cgc")
+			       (let ([l (if (equal? (car l) "--cgc")
 					    (begin
 					      (set! pgc-really? #f)
 					      (cdr l))
@@ -116,7 +116,7 @@
 				 l))))))))
   
   (define (filter-false s)
-    (if (bytes=? s #"-")
+    (if (equal? s "-")
 	#f
 	s))
 
@@ -132,7 +132,7 @@
   (define (change-suffix filename new)
     (regexp-replace #rx"[.][^.]*$" 
 		    (if (string? filename)
-			(string->bytes/utf8 filename)
+			(string->bytes/utf-8 filename)
 			filename)
 		    new))
 
@@ -209,7 +209,7 @@
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (define (trans pattern)
-    (byte-regexp (string->bytes/utf8 (format "^(~a)" pattern))))
+    (byte-regexp (string->bytes/utf-8 (format "^(~a)" pattern))))
 
   (define (translations . t)
     (let loop ([t t])
@@ -255,7 +255,7 @@
   (define (do-cpp s p)
     (let ([m (regexp-match re:line s p)])
       (when m
-	(set! source-line (string->number (bytes->string/utf8 (cadr m))))
+	(set! source-line (string->number (bytes->string/utf-8 (cadr m))))
 	(set! source-file (caddr m))))
     (let ([pragma (regexp-match re:pragma s p)])
       (if pragma
@@ -269,7 +269,7 @@
      source-line)) ; line
 
   (define (symbol s)
-    (result (string->symbol (bytes->string/utf8 s))))
+    (result (string->symbol (bytes->string/utf-8 s))))
 
   (define re:octal #rx#"^0[0-9]+$")
   (define re:int #rx#"^[0-9]*$")
@@ -277,10 +277,10 @@
     (result
      (cond
       [(regexp-match-positions re:octal s) 
-       (string->number (bytes->string/utf8 s) 8)]
+       (string->number (bytes->string/utf-8 s) 8)]
       [(regexp-match-positions re:int s)
-       (string->number (bytes->string/utf8 s))]
-      [else (string->symbol (bytes->string/utf8 s))])))
+       (string->number (bytes->string/utf-8 s))]
+      [else (string->symbol (bytes->string/utf-8 s))])))
 
   (define (character s)
     (count-newlines s)
@@ -288,7 +288,7 @@
 
   (define (mk-string s)
     (count-newlines s)
-    (result (bytes->string/utf8 (subbytes s 1 (sub1 (bytes-length s))))))
+    (result (bytes->string/utf-8 (subbytes s 1 (sub1 (bytes-length s))))))
 
   (define (start s)
     'start)
@@ -505,16 +505,15 @@
 	process))
 
   (define cpp-process
-    (process2 (string->bytes/utf8
-	       (format "~a~a~a ~a"
-		       cpp
-		       (if pgc?
-			   (if pgc-really? 
-			       " -DMZ_XFORM -DMZ_PRECISE_GC"
-			       " -DMZ_XFORM")
-			   "")
-		       (if callee-restore? " -DGC_STACK_CALLEE_RESTORE" "")
-		       file-in))))
+    (process2 (format "~a~a~a ~a"
+		      cpp
+		      (if pgc?
+			  (if pgc-really? 
+			      " -DMZ_XFORM -DMZ_PRECISE_GC"
+			      " -DMZ_XFORM")
+			  "")
+		      (if callee-restore? " -DGC_STACK_CALLEE_RESTORE" "")
+		      file-in)))
   (close-output-port (cadr cpp-process))
 
   (define (mk-error-thread proc)

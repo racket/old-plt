@@ -3148,7 +3148,7 @@
 	    (let ([filename
 		   ;; Non-string result represents an error
 		   (cond
-		    [(or (string? s) (path? s))
+		    [(string? s)
 		     (let ([s (cond
 			       [(path? s) (path->bytes s)]
 			       [(string? s) (string->bytes/utf-8 s)])])
@@ -3169,6 +3169,7 @@
 			    (string-append
 			     " (relative string form must contain only a-z, A-Z, 0-9, -, _, ., /, and "
 			     "space, with no leading or trailing /)"))))]
+		    [(path? s) s]
 		    [(or (not (pair? s))
 			 (not (list? s)))
 		     #f]

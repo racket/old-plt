@@ -160,6 +160,7 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object *argv[]
 static Scheme_Object *byte_string_close_converter(int argc, Scheme_Object *argv[]);
 static Scheme_Object *byte_string_convert(int argc, Scheme_Object *argv[]);
 static Scheme_Object *byte_string_convert_end(int argc, Scheme_Object *argv[]);
+static Scheme_Object *byte_converter_p(int argc, Scheme_Object *argv[]);
 
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
@@ -409,6 +410,11 @@ scheme_init_string (Scheme_Env *env)
 			     env);
 
 
+  scheme_add_global_constant("bytes-converter?",
+			     scheme_make_prim_w_arity(byte_converter_p,
+						      "bytes-converter?",
+						      1, 1),
+			     env);
   scheme_add_global_constant("bytes-convert",
 			     scheme_make_prim_w_arity2(byte_string_convert,
 						       "bytes-convert",
@@ -550,7 +556,7 @@ scheme_init_string (Scheme_Env *env)
   scheme_add_global_constant("bytes-utf-8-length",
 			     scheme_make_prim_w_arity(byte_string_utf8_length,
 						      "bytes-utf-8-length",
-						      1, 1),
+						      1, 3),
 			     env);
   scheme_add_global_constant("bytes-utf-8-ref",
 			     scheme_make_prim_w_arity(byte_string_utf8_ref,
@@ -2993,10 +2999,49 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
   }
   
   if (argc > opos) {
-    if (!SCHEME_MUTABLE_BYTE_STRINGP(argv[opos]))
-      scheme_wrong_type(who, "mutable byte string", opos, argc, argv);  
-    r = SCHEME_BYTE_STR_VAL(argv[opos]);
-    scheme_get_substring_indices(who, argv[opos], argc, argv, opos + 1, opos + 2, &ostart, &ofinish);
+    if (SCHEME_TRUEP(argv[opos])) {
+      if (!SCHEME_MUTABLE_BYTE_STRINGP(argv[opos]))
+	scheme_wrong_type(who, "mutable byte string", opos, argc, argv);  
+      r = SCHEME_BYTE_STR_VAL(argv[opos]);
+      scheme_get_substring_indices(who, argv[opos], argc, argv, opos + 1, opos + 2, &ostart, &ofinish);
+    } else {
+      int ip;
+      r = NULL;
+      for (ip = opos + 1; ip <= opos + 2; ip++) {
+	if (argc > ip) {
+	  int ok = 0;
+	  if (SCHEME_INTP(argv[ip]))
+	    ok = SCHEME_INT_VAL(argv[ip]) >= 0;
+	  else if (SCHEME_BIGNUMP(argv[ip]))
+	    ok = SCHEME_BIGPOS(argv[ip]);
+	  else if ((ip == opos + 2) && SCHEME_FALSEP(argv[ip]))
+	    ok = 1;
+	  if (!ok)
+	    scheme_wrong_type(who, 
+			      ((ip == opos + 2)
+			       ? "non-negative exact integer or #f"
+			       : "non-negative exact integer"),
+			      ip, argc, argv);
+	}
+      }
+      if ((argc > opos + 2) && SCHEME_TRUEP(argv[opos + 2])) {
+	Scheme_Object *delta;
+	if (scheme_bin_lt(argv[opos + 2], argv[opos + 1])) {
+	  scheme_arg_mismatch(who,
+			      "ending index is less than the starting index: ",
+			      argv[opos + 2]);
+	}
+	delta = scheme_bin_minus(argv[opos + 2], argv[opos + 1]);
+	if (SCHEME_BIGNUMP(delta))
+	  ofinish = -1;
+	else
+	  ofinish = SCHEME_INT_VAL(delta);
+	ostart = 0;
+      } else {
+	ostart = 0;
+	ofinish = -1;
+      }
+    }
   } else {
     r = NULL;
     ostart = 0;
@@ -3105,6 +3150,13 @@ static Scheme_Object *byte_string_close_converter(int argc, Scheme_Object **argv
   return scheme_void;
 }
 
+static Scheme_Object *
+byte_converter_p(int argc, Scheme_Object *argv[])
+{
+  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_string_converter_type)
+	  ? scheme_true 
+	  : scheme_false);
+}
 
 /**********************************************************************/
 /*                         utf8 converter                             */

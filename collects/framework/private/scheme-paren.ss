@@ -1,5 +1,12 @@
 ; Scheme parenthesis wrappers around the general routines
 
+(module scheme-paren mzscheme
+  (require (lib "unitsig.ss")
+	   "sig"
+	   (lib "mred-sig.ss" "mred"))
+
+  (provide scheme-paren@)
+  (define scheme-paren@
 (unit/sig framework:scheme-paren^
   (import [paren : framework:paren^])
 
@@ -53,4 +60,4 @@
 			    comments
 			    #t
 			    cache)]
-     [(edit start end) (backward-containing-sexp edit start end #f)])))
+     [(edit start end) (backward-containing-sexp edit start end #f)])))))

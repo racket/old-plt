@@ -1,6 +1,9 @@
 (module exn mzscheme
   (require (lib "unitsig.ss")
-	   "../sig.ss")
+	   "sig.ss"
+	   (lib "mred-sig.ss" "mred"))
+
+  (provie exn@)
 
   (define exn@
     (unit/sig framework:exn^

@@ -2,6 +2,14 @@
 ; originally by Dan Grossman: 6/19/95
 ; rewitten by Matthew: 1/28/98
 
+(module paren mzscheme 
+  (require (lib "unitsig.ss")
+	   "sig"
+	   (lib "mred-sig.ss" "mred"))
+
+  (provide paren@)
+
+  (define paren@
 (unit/sig framework:paren^
   (import)
   
@@ -321,4 +329,4 @@
 		  [(eq? next-match 'bad-match) #f]
 		  [(not next-match) last-match]
 		  [else (loop last-match next-match)])))
-	    (match pos #f))))))
+	    (match pos #f))))))))

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.114 1997/08/11 22:20:00 shriram Exp $
+; $Id: scm-main.ss,v 1.115 1997/08/11 22:26:15 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1149,7 +1149,7 @@
   (define-struct cond-clause (text question answer else? =>? or?))
 
   (define cond-clause-vocab
-    (create-vocabulary 'cond-clause-vocab scheme-vocabulary
+    (create-vocabulary 'cond-clause-vocab #f
       "Symbol cannot be a cond question-answer pair"
       "Literal cannot be a cond question-answer pair"
       "List cannot be a cond question-answer pair"
@@ -1222,37 +1222,41 @@
 			       (expand-expr e env attributes
 				 cond-clause-vocab))
 			  bodies)))
-		  (expand-expr
-		    (structurize-syntax
-		      (let loop ((exps exp-bodies))
-			(if (null? exps)
-			  (if (compile-allow-cond-fallthrough)
-			    '(#%void)
-			    '(#%raise (#%make-exn:else
-					"no matching else clause"
-					((debug-info-handler)))))
-			  (let ((first (car exps))
-				 (rest (cdr exps)))
-			    (cond
-			      ((cond-clause-=>? first)
-				`(let ((test ,(cond-clause-question first)))
-				   (if test
-				     (,(cond-clause-answer first) test)
-				     ,(loop rest))))
-			      ((cond-clause-else? first)
-				(if (null? rest)
-				  (cond-clause-answer first)
-				  (static-error (cond-clause-text first)
-				    "else allowed only in last position")))
-			      ((cond-clause-or? first)
-				`(or ,(cond-clause-question first)
-				   ,(loop rest)))
-			      (else
-				`(if ,(cond-clause-question first)
-				   ,(cond-clause-answer first)
-				   ,(loop rest)))))))
-		      expr)
-		    env attributes vocab)))))
+		  (let ((had-no-clauses? (null? exp-bodies)))
+		    (expand-expr
+		      (structurize-syntax
+			(let loop ((exps exp-bodies))
+			  (if (null? exps)
+			    (if (compile-allow-cond-fallthrough)
+			      '(#%void)
+			      `(#%raise
+				 (#%make-exn:else
+				   ,(if had-no-clauses?
+				      "cond must contain at least one clause"
+				      "no matching else clause")
+				   ((debug-info-handler)))))
+			    (let ((first (car exps))
+				   (rest (cdr exps)))
+			      (cond
+				((cond-clause-=>? first)
+				  `(let ((test ,(cond-clause-question first)))
+				     (if test
+				       (,(cond-clause-answer first) test)
+				       ,(loop rest))))
+				((cond-clause-else? first)
+				  (if (null? rest)
+				    (cond-clause-answer first)
+				    (static-error (cond-clause-text first)
+				      "else allowed only in last position")))
+				((cond-clause-or? first)
+				  `(or ,(cond-clause-question first)
+				     ,(loop rest)))
+				(else
+				  `(if ,(cond-clause-question first)
+				     ,(cond-clause-answer first)
+				     ,(loop rest)))))))
+			expr)
+		      env attributes vocab))))))
 	  (else
 	    (static-error expr "Malformed cond"))))))
 

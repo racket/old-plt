@@ -110,7 +110,7 @@ $(MRFW) : $(MZSCHEME) $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB)
 	$(MREDLINKER) $(MREDLDFLAGS) -dynamiclib -o $(MRFW) -F../mzscheme -framework PLT_MzScheme $(@WXLIBS@) $(GUILIBS_@WXVARIANT@) @X_EXTRA_LIBS@
 
 MrEd.app/Contents/MacOS/MrEd: $(MRFWRES) $(MRFW) mrmain.@LTO@ 
-	$(MREDLINKER) -o MrEd.app/Contents/MacOS/MrEd mrmain.@LTO@ -F. -F../mzscheme -framework PLT_MrEd -framework Carbon -framework PLT_MzScheme
+	$(MREDLINKER) -o MrEd.app/Contents/MacOS/MrEd mrmain.@LTO@ -F. -F../mzscheme -framework PLT_MrEd -framework Carbon -framework PLT_MzScheme @PROFFLAGS@
 
 $(MRFWRES): $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
 	rm -rf PLT_MrEd.framework/Resources PLT_MrEd.framework/PLT_MrEd

@@ -1525,7 +1525,7 @@ Bool wxMediaEdit::CheckFlow(float maxw, wxDC *dc, float Y,
   noChangeIfStartOfSnip = FALSE;
   theFirstSnip = TRUE;
   firstUnderflow = FALSE;
-  deletedANewline = TRUE;
+  deletedANewline = FALSE;
 
   for (snip = start; 
        snip && !(snip->flags & wxSNIP_HARD_NEWLINE); 

@@ -654,7 +654,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   process->runstack_start = MALLOC_N(Scheme_Object*, INIT_SCHEME_STACK_SIZE);
   process->runstack = process->runstack_start + INIT_SCHEME_STACK_SIZE;
   process->runstack_saved = NULL;
-  process->cont_mark_pos = (MZ_MARK_POS_TYPE)0;
+  process->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
 #ifdef RUNSTACK_IS_GLOBAL
   if (!prefix) {
     REGISTER_SO(MZ_RUNSTACK);

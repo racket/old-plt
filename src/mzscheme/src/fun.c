@@ -205,7 +205,7 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("current-continuation-marks", 
 			     scheme_make_prim_w_arity(cc_marks,  
 						      "current-continuation-marks", 
-						      1, 1),
+						      1, 2),
 			     env);
 
   scheme_add_global_constant("void", scheme_void_func, env);  
@@ -1834,21 +1834,32 @@ cc_marks(int argc, Scheme_Object *argv[])
 #ifndef RUNSTACK_IS_GLOBAL
   Scheme_Process *p = scheme_current_process;
 #endif
-  Scheme_Object *first = scheme_null, *last = NULL, *key, *frame_key = NULL;
+  Scheme_Object *first = scheme_null, *last = NULL, *key, *frame_key = NULL, *skip;
   Scheme_Object **s;
 
   key = argv[0];
+  skip = (argc > 1) ? argv[1] : NULL;
   s = MZ_CONT_MARK_CHAIN;
 
-  while(s) {
+  while (s) {
     if (SAME_OBJ(key, s[1])) {
       if (NOT_SAME_OBJ(frame_key, s[3])) {
 	Scheme_Object *pr = scheme_make_pair(s[2], scheme_null);
+
+	if (frame_key && skip) {
+	  if ((long)s[3] < ((long)frame_key) - 1) {
+	    Scheme_Object *pr = scheme_make_pair(skip, scheme_null);
+	    SCHEME_CDR(last) = pr;
+	    last = pr;
+	  }
+	}
+
 	if (last)
 	  SCHEME_CDR(last) = pr;
 	else
 	  first = pr;
 	last = pr;
+
 	frame_key = s[3];
       }
     }

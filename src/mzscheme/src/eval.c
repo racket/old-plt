@@ -2650,8 +2650,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  RUNSTACK[0] = (Scheme_Object *)MZ_CONT_MARK_CHAIN;
 	  RUNSTACK[1] = key;
 	  RUNSTACK[2] = val;
-	  RUNSTACK[3] = (Scheme_Object *)old_runstack;
-	  /* old_runstack is effectively a key for this `frame' */
+	  RUNSTACK[3] = (Scheme_Object *)MZ_CONT_MARK_POS;
 	  MZ_CONT_MARK_CHAIN = RUNSTACK;
 
 	  obj = wcm->body;

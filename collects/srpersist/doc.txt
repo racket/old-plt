@@ -40,11 +40,11 @@
  Serious run-time errors are still possible, such as when a too-small 
  buffer is bound to a column.  
 
- We are considering ways in which to build a higher-level layer 
- on top of SrPersist, to avoid some of the low-level details 
- of ODBC.  We would welcome ideas and contributions from users  
- of SrPersist in this area.  Please contact us via email at
- scheme@cs.rice.edu.
+ Francisco Solsona has built a higher-level layer, SchemeQL,
+ currently in beta, that uses SrPersist as a substrate.
+ A SchemeQL programmer avoids the low-level details 
+ of ODBC.  You can download SchemeQL at 
+ ftp://abulafia.fciencias.unam.mx/pub/solsona/schemeql.tgz.
 
  Loading
  -------

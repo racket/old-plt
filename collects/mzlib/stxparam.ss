@@ -73,8 +73,30 @@
   ;; ----------------------------------------
 
   (require "private/stxparamkey.ss")
-  (provide syntax-parameter-value)
+  (provide syntax-parameter-value
+	   make-parameter-rename-transformer)
 
+  (define (make-parameter-rename-transformer id)
+    (make-set!-transformer
+     (lambda (stx)
+       (let ([v (syntax-parameter-value (syntax-local-introduce id))])
+	 (cond
+	  [(set!-transformer? v) ((set!-transformer-procedure v) stx)]
+	  [(and (procedure? v)
+		(procedure-arity-includes? v 1))
+	   (syntax-case stx (set!)
+	     [(set! id _) (raise-syntax-error
+			  #f
+			  "cannot mutate syntax identifier"
+			  stx
+			  #'id)]
+	     [else (v stx)])]
+	  [else
+	   (raise-syntax-error
+	    #f
+	    "bad syntax"
+	    stx
+	    #f)])))))
 
   (define (syntax-parameter-value id)
     (let* ([v (syntax-local-value id (lambda () #f))]

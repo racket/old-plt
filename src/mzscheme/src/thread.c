@@ -722,6 +722,7 @@ void scheme_init_parameterization(Scheme_Env *env)
 						      0, 0), 
 			     newenv);
 
+
   scheme_finish_primitive_module(newenv);
 }
 
@@ -5030,6 +5031,7 @@ Scheme_Thread_Cell_Table *scheme_inherit_cells(Scheme_Thread_Cell_Table *cells)
   
   t = scheme_make_bucket_table(20, SCHEME_hash_weak_ptr);
   
+  
   for (i = cells->size; i--; ) {
     bucket = cells->buckets[i];
     if (bucket && bucket->val && bucket->key) {
@@ -5093,8 +5095,12 @@ static Scheme_Config *do_extend_config(Scheme_Config *c, Scheme_Object *key, Sch
      `parameterize' is still on the stack (or, at least, difficult to
      imagine that it matters). */
 
+  if (c->depth > 50)
+    scheme_flatten_config(c);
+
   naya = MALLOC_ONE_TAGGED(Scheme_Config);
   naya->so.type = scheme_config_type;
+  naya->depth = c->depth + 1;
   naya->key = key;
   naya->cell = cell; /* could be just a value */
   naya->next = c;
@@ -5173,7 +5179,7 @@ void scheme_set_param(Scheme_Config *c, int pos, Scheme_Object *o)
 			 scheme_current_thread->cell_values, o);
 }
 
-Scheme_Parameterization *flatten_config(Scheme_Config *orig_c)
+void scheme_flatten_config(Scheme_Config *orig_c)
 {
   int pos, i;
   Scheme_Parameterization *paramz, *paramz2;
@@ -5227,19 +5233,18 @@ Scheme_Parameterization *flatten_config(Scheme_Config *orig_c)
 
 	if (paramz2->extensions) {
 	  if (!paramz->extensions) {
-	    Scheme_Bucket_Table *t;
-	    t = scheme_make_bucket_table(20, SCHEME_hash_weak_ptr);
-	    paramz->extensions = t;
-	  }
-	  
-	  for (i = paramz2->extensions->size; i--; ) {
-	    b = paramz2->extensions->buckets[i];
-	    if (b && b->val && b->key) {
-	      key = (Scheme_Object *)HT_EXTRACT_WEAK(b->key);
-	      if (key) {
-		b2 = scheme_bucket_from_table(paramz->extensions, (const char *)key);
-		if (!b2->val)
-		  b2->val = b->val;
+	    /* Re-use the old hash table */
+	    paramz->extensions = paramz2->extensions;
+	  } else {
+	    for (i = paramz2->extensions->size; i--; ) {
+	      b = paramz2->extensions->buckets[i];
+	      if (b && b->val && b->key) {
+		key = (Scheme_Object *)HT_EXTRACT_WEAK(b->key);
+		if (key) {
+		  b2 = scheme_bucket_from_table(paramz->extensions, (const char *)key);
+		  if (!b2->val)
+		    b2->val = b->val;
+		}
 	      }
 	    }
 	  }
@@ -5253,8 +5258,6 @@ Scheme_Parameterization *flatten_config(Scheme_Config *orig_c)
     orig_c->key = NULL;
     orig_c->next = NULL;
   }
-    
-  return (Scheme_Parameterization *)orig_c->cell;
 }
 
 static Scheme_Object *parameterization_p(int argc, Scheme_Object **argv)
@@ -5278,7 +5281,9 @@ static Scheme_Object *extend_parameterization(int argc, Scheme_Object *argv[])
 
   c = (Scheme_Config *)argv[0];
 
-  if (SCHEME_CONFIGP(c) && (argc & 1)) {
+  if (argc < 2) {
+    scheme_flatten_config(c);
+  } else if (SCHEME_CONFIGP(c) && (argc & 1)) {
     for (i = 1; i < argc; i += 2) {
       if (!SCHEME_PARAMETERP(argv[i])) {
 	scheme_wrong_type("parameterize", "parameter", i, argc, argv);

@@ -2264,7 +2264,7 @@
 " expr1"
 " expr ...)))))))))"
 "(define(current-parameterization)"
-"(continuation-mark-set-first #f parameterization-key))"
+"(extend-parameterization(continuation-mark-set-first #f parameterization-key)))"
 "(define(call-with-parameterization paramz thunk)"
 "(unless(parameterization? paramz)"
 " (raise-type-error 'call-with-parameterization \"parameterization\" 0 paramz thunk))"

@@ -352,10 +352,13 @@ struct Scheme_Config {
   Scheme_Object so;
   Scheme_Object *key;
   Scheme_Object *cell;
+  int depth;
   struct Scheme_Config *next;
 };
 
 extern Scheme_Object *scheme_parameterization_key;
+
+extern void scheme_flatten_config(Scheme_Config *c);
 
 extern Scheme_Object *scheme_apply_thread_thunk(Scheme_Object *rator);
 

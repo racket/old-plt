@@ -350,6 +350,7 @@ MZ_EXTERN void scheme_change_in_table(Scheme_Bucket_Table *table, const char *ke
 MZ_EXTERN void *scheme_lookup_in_table(Scheme_Bucket_Table *table, const char *key);
 MZ_EXTERN Scheme_Bucket *scheme_bucket_from_table(Scheme_Bucket_Table *table, const char *key);
 MZ_EXTERN int scheme_bucket_table_equal(Scheme_Bucket_Table *t1, Scheme_Bucket_Table *t2);
+MZ_EXTERN Scheme_Bucket_Table *scheme_clone_bucket_table(Scheme_Bucket_Table *bt);
 
 MZ_EXTERN Scheme_Hash_Table *scheme_make_hash_table(int type);
 MZ_EXTERN Scheme_Hash_Table *scheme_make_hash_table_equal();

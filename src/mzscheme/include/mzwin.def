@@ -147,6 +147,7 @@ EXPORTS
  scheme_lookup_in_table
  scheme_bucket_from_table
  scheme_bucket_table_equal
+ scheme_clone_bucket_table
  scheme_make_hash_table
  scheme_make_hash_table_equal
  scheme_hash_set

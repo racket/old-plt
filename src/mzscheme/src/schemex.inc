@@ -183,6 +183,7 @@
   scheme_extension_table->scheme_lookup_in_table = scheme_lookup_in_table;
   scheme_extension_table->scheme_bucket_from_table = scheme_bucket_from_table;
   scheme_extension_table->scheme_bucket_table_equal = scheme_bucket_table_equal;
+  scheme_extension_table->scheme_clone_bucket_table = scheme_clone_bucket_table;
   scheme_extension_table->scheme_make_hash_table = scheme_make_hash_table;
   scheme_extension_table->scheme_make_hash_table_equal = scheme_make_hash_table_equal;
   scheme_extension_table->scheme_hash_set = scheme_hash_set;

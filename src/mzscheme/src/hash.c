@@ -334,6 +334,36 @@ scheme_make_bucket_table (int size, int type)
   return table;
 }
 
+Scheme_Bucket_Table *scheme_clone_bucket_table(Scheme_Bucket_Table *bt)
+{
+  Scheme_Bucket_Table *table;
+  size_t asize;
+
+  table = MALLOC_ONE_TAGGED(Scheme_Bucket_Table);
+  table->so.type = scheme_bucket_table_type;
+  table->size = bt->size;
+  table->count = bt->count;
+  table->step = bt->step;
+  table->weak = bt->weak;
+  table->with_home = 0;
+  table->make_hash_indices = bt->make_hash_indices;
+  table->compare = bt->compare;
+  if (bt->mutex) {
+    Scheme_Object *sema;
+    sema = scheme_make_sema(1);
+    table->mutex = sema;
+  }
+  {
+    Scheme_Bucket **ba;
+    asize = (size_t)table->size * sizeof(Scheme_Bucket *);
+    ba = (Scheme_Bucket **)scheme_malloc(asize);
+    table->buckets = ba;
+    memcpy(ba, bt->buckets, asize);
+  }
+
+  return table;
+}
+
 static Scheme_Bucket *
 get_bucket (Scheme_Bucket_Table *table, const char *key, int add, Scheme_Bucket *b)
 {

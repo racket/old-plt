@@ -2357,6 +2357,8 @@ call_cc (int argc, Scheme_Object *argv[])
 
   scheme_zero_unneeded_rands(p);
 
+  scheme_flatten_config(scheme_current_config());
+
   if (scheme_setjmpup(&cont->buf, cont, p->next ? p->stack_start : p->o_start)) {
     /* We arrive here when the continuation is applied */
     MZ_MARK_STACK_TYPE copied_cms = 0;

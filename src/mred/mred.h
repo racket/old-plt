@@ -57,6 +57,10 @@ typedef struct MrEdContext {
 
   int busyState;
 
+#ifdef wx_msw
+  struct LeaveEvent *queued_leaves;
+#endif
+
   struct Context_Manager_Hop *mr_hop;
   Scheme_Manager_Reference *mref;
 } MrEdContext;

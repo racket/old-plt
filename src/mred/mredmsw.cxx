@@ -24,6 +24,14 @@ extern long last_msg_time;
 
 extern void wxDoPreGM(void);
 extern void wxDoPostGM(void);
+extern int wxCheckMousePosition();
+extern void wxDoLeaveEvent(wxWindow *w, int x, int y, int flags);
+
+typedef struct LeaveEvent {
+  wxWindow *wnd;
+  int x, y, flags;
+  struct LeaveEvent *next;
+} LeaveEvent;
 
 void MrEdInitFirstContext(MrEdContext *c)
 {
@@ -86,8 +94,18 @@ static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
 
   c = GetContext(wnd);
 
-  if ((!info->c && (!c || c->ready))
-      || (info->c == c)) {
+  if ((!info->c && (!c || c->ready)) || (info->c == c)) {
+    if (c && c->queued_leaves) {
+      if (info->remove) {
+	info->wnd = wnd;
+	info->c_return = c;
+	info->msg->message = WM_USER + 1;
+	info->msg->lParam = (long)c->queued_leaves;
+	c->queued_leaves = c->queued_leaves->next;
+      }
+      return FALSE;
+    }
+    
     if (PeekMessage(info->msg, wnd, NULL, NULL, 
                     info->remove ? PM_REMOVE : PM_NOREMOVE)) {
       info->wnd = wnd;
@@ -125,17 +143,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
 {
   MrEdContext *c;
 
-#if 0
-  /* Test code: (doesn't work with modal dialogs!) */
-  if (!current_only && PeekMessage(event, NULL, NULL, NULL, 
-			   check_only ? PM_NOREMOVE : PM_REMOVE)) {
-    if (which)
-       *which = NULL;
-     return TRUE;
-  } else
-    return FALSE;
-#endif
-
   if (which)
     *which = NULL;
 
@@ -144,134 +151,23 @@ int MrEdGetNextEvent(int check_only, int current_only,
   else
     c = NULL;
 
+  wxCheckMousePosition();
+
   return FindReady(c, event, !check_only, which);
-
-#if 0
-  if (current_only) {
-    c = MrEdGetContext();
-    if (FindReady(c, event, !check_only)) {
-      if (which)
-	*which = c;
-      return TRUE;
-    }
-
-    return FALSE;
-  }
-
-#if 0
-  if (AnyPopup()) {
-    if (PeekMessage(event, NULL, NULL, NULL, 
-	            check_only ? PM_NOREMOVE : PM_REMOVE)) {
-      if (which)
-	*which = c;
-      return TRUE;
-    }
-  }
-#endif
-
-  for (c = mred_contexts; c; c = c->next) {
-    if (c->ready && FindReady(c, event, !check_only)) {
-      if (which)
-	*which = c;
-      return TRUE;
-    }
-  }
-
-  return FALSE;
-#endif
 }
 
 void MrEdDispatchEvent(MSG *msg)
 {
-  if (!wxTheApp->ProcessMessage(msg)) {
+  if (msg->message == WM_USER + 1) {
+    /* Queued leave event */
+    LeaveEvent *e = (LeaveEvent *)msg->lParam;
+    wxDoLeaveEvent(e->wnd, e->x, e->y, e->flags);
+  } else if (!wxTheApp->ProcessMessage(msg)) {
     TranslateMessage(msg);
     last_msg_time = msg->time;
     DispatchMessage(msg);
   }
 }
-
-static void SaveMsg(int& msgs_count, int& msgs_size, 
-		    MSG*& msgs, MSG&msg)
-{
-  if (msgs_count == msgs_size) {
-    MSG *save = msgs;
-
-    msgs_size = (msgs_size ? 2 * msgs_size : 10);
-    msgs = new MSG[msgs_size];
-
-    memcpy(msgs, save, msgs_count * sizeof(MSG));
-
-    delete[] save;
-  }
-  memcpy(msgs + (msgs_count++), &msg, sizeof(MSG));
-}
-
-#if 0
-int MrEdCheckForBreak(void)
-{ 
-  MSG msg;
-  MSG *msgs = NULL, *omsgs = NULL;
-  int msgs_size = 0, msgs_count = 0;
-  int omsgs_size = 0, omsgs_count = 0;
-  int i, retval = FALSE;
-  Bool ctlDown = FALSE;
-#if BREAKING_REQUIRES_SHIFT
-  Bool shiftDown = FALSE;
-#endif
-  MrEdContext *lc = MrEdGetContext();
-
-  if (!::PeekMessage(&msg, NULL, WM_KEYDOWN, WM_KEYDOWN, PM_NOREMOVE))
-    return FALSE;
-
-  // To search all the messages, we have to Peek them all and then
-  // Post them back. This will mess up the timing and locations of
-  // these events.
-  //
-  // Is there a better way to do this???
-
-  while (::PeekMessage(&msg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_REMOVE)) {
-    if (GetContext(msg.hwnd) == lc) {
-      if (msg.message == WM_KEYDOWN) {
-	if (msg.wParam == VK_CONTROL)
-	  ctlDown = TRUE;
-#if BREAKING_REQUIRES_SHIFT
-	else if (msg.wParam == VK_SHIFT)
-	  shiftDown = TRUE;
-#endif
-	else if (ctlDown 
-#if BREAKING_REQUIRES_SHIFT
-		 && shiftDown
-#endif
-		 && (msg.wParam == 'C')) {
-	  delete[] msgs;
-	  retval = TRUE;
-	  msgs_count = 0;
-	}
-      } else if (msg.message == WM_KEYUP) {
-	if (msg.wParam == VK_CONTROL)
-	  ctlDown = FALSE;
-#if BREAKING_REQUIRES_SHIFT
-	else if (msg.wParam == VK_SHIFT)
-	  shiftDown = FALSE;
-#endif
-      }
-      SaveMsg(msgs_count, msgs_size, msgs, msg);
-    } else
-      SaveMsg(omsgs_count, omsgs_size, omsgs, msg);
-  }
-
-  for (i = 0; i < msgs_count; i++)
-    ::PostMessage(msgs[i].hwnd, msgs[i].message, 
-		  msgs[i].wParam, msgs[i].lParam);
-  for (i = 0; i < omsgs_count; i++)
-    ::PostMessage(omsgs[i].hwnd, omsgs[i].message, 
-		  omsgs[i].wParam, omsgs[i].lParam);
-
-  delete[] msgs;
-
-  return retval;
-}
-#endif
 
 int MrEdCheckForBreak(void)
 {
@@ -315,7 +211,10 @@ static HANDLE wait_msg_thread = NULL;
 void MrEdMSWSleep(float secs, void *fds)
 {
   win_extended_fd_set *r, *w, *e;
-  
+ 
+  if (wxCheckMousePosition())
+    return;
+ 
   if (fds) {
     r = (win_extended_fd_set *)fds;
     w = ((win_extended_fd_set *)fds) + 1;
@@ -399,4 +298,25 @@ void MrEdMSWSleep(float secs, void *fds)
     if (secs)
       KillTimer(NULL, id);
   }
+}
+
+void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags)
+{
+  MrEdContext *c = (MrEdContext *)ctx;
+  LeaveEvent *e = new LeaveEvent(), *prev, *n;
+
+  e->wnd = wnd;
+  e->x = x;
+  e->y = y;
+  e->flags = flags;
+  e->next = NULL;
+
+  prev = NULL;
+  for (n = c->queued_leaves; n; n = n->next)
+    prev = n;
+
+  if (prev)
+    prev->next = e;
+  else
+    c->queued_leaves = e;
 }

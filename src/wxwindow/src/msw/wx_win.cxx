@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.18 1998/10/20 18:51:03 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.19 1998/11/05 22:18:32 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -82,8 +82,15 @@ Bool wxShiftDown = FALSE;
 Bool wxControlDown = FALSE;
 
 wxMenu *wxCurrentPopupMenu = NULL;
+static wxWindow *current_mouse_wnd = NULL;
+static void *current_mouse_context = NULL;
+
+extern void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags);
 
 extern long last_msg_time; /* MATTHEW: timeStamp implementation */
+
+static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags);
+static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags);
 
 // Find an item given the MS Windows id
 wxWindow *wxWindow::FindItem(int id)
@@ -214,6 +221,9 @@ wxWindow::wxWindow(void)
 // Destructor
 wxWindow::~wxWindow(void)
 {
+  if (current_mouse_wnd == this)
+    current_mouse_wnd = NULL;
+
   if (window_parent)
     window_parent->RemoveChild(this);
 
@@ -449,13 +459,20 @@ HCURSOR wxMSWSetCursor(HCURSOR c)
   return SetCursor(c);
 }
 
-void wxResetCurrentCursor(void)
+static wxWnd *wxCurrentWindow(int in_content)
 {
-  POINT pos;
-  if (!GetCursorPos(&pos)) return;
+  HWND hwnd;
 
-  HWND hwnd = WindowFromPoint(pos);
-  if (!hwnd) return;
+  hwnd = GetCapture();
+  if (!hwnd) {
+    POINT pos;
+    if (!GetCursorPos(&pos))
+      return NULL;
+    
+    hwnd = WindowFromPoint(pos);
+  }
+  if (!hwnd)
+    return NULL;
 
   wxWnd *wnd = NULL;
   while (hwnd) {
@@ -465,8 +482,28 @@ void wxResetCurrentCursor(void)
     else
       hwnd = GetParent(hwnd);
   }
+
+  if (in_content && wnd) {
+    /* Check content vs. non-content area: */
+    POINT pos;
+    GetCursorPos(&pos);
+    ScreenToClient(wnd->handle, &pos);
+
+    RECT wind;
+    GetClientRect(wnd->handle, &wind);
+
+    if (!PtInRect(&wind, pos))
+      return NULL;
+  }
+
+  return wnd;
+}
+
+void wxResetCurrentCursor(void)
+{
+  wxWnd *wnd = wxCurrentWindow(0);
   if (!wnd) return;
-  
+
   wxWindow *w = wnd->wx_window;
   if (!w) return;
 
@@ -1668,8 +1705,6 @@ wxWnd::wxWnd(void)
   cdc = NULL;
   ldc = NULL ;
   dc_count = 0;
-
-  mouse_in_window = FALSE;
 }
 
 wxWnd::~wxWnd(void)
@@ -2538,81 +2573,94 @@ void wxWnd::OnRButtonDClick(int x, int y, UINT flags)
       wx_window->GetEventHandler()->OnEvent(event);
 }
 
+static wxWindow *el_PARENT(wxWindow *w)
+{
+  /* Don't follow frame-parent hierarchy: */
+  if (wxSubType(w->__type, wxTYPE_FRAME)
+      || wxSubType(w->__type, wxTYPE_DIALOG_BOX))
+    return NULL;
+
+  return w->GetParent();
+}
+
+int wxCheckMousePosition()
+{
+  if (current_mouse_wnd && !wxCurrentWindow(1)) {
+    wxWindow *imw;
+
+    for (imw = current_mouse_wnd; imw; imw = el_PARENT(imw))
+      wxQueueLeaveEvent(current_mouse_context, imw, -10, -10, 0);
+
+    current_mouse_wnd = NULL;
+    current_mouse_context = NULL;
+
+    return 1;
+  }
+
+  return 0;
+}
+
+void wxDoLeaveEvent(wxWindow *w, int x, int y, int flags)
+{
+  wxDoOnMouseLeave(w, x, y, flags);
+}
+
+extern void wxEntered(wxWindow *mw, int x, int y, int flags)
+{
+  wxWindow *imw, *join, *nextw;
+  void *curr_context = wxGetContextForFrame();
+  POINT glob, pos;
+
+  glob.x = x;
+  glob.y = y;
+  ::ClientToScreen(mw->GetHWND(), &glob);
+  
+  join = current_mouse_wnd;
+  while (join) {
+    for (imw = mw; imw; imw = el_PARENT(imw)) {
+      if (join == imw)
+	break;
+    }
+    if (join == imw)
+      break;
+    join = el_PARENT(join);
+  }
+  
+  /* Leave old window(s) */
+  for (imw = current_mouse_wnd; imw != join; imw = el_PARENT(imw)) {
+    pos = glob;
+    ::ScreenToClient(imw->GetHWND(), &pos);
+    if (current_mouse_context == curr_context)
+      wxDoOnMouseLeave(imw, pos.x, pos.y, flags);
+    else
+      wxQueueLeaveEvent(current_mouse_context, imw, pos.x, pos.y, flags);
+  }
+  
+  /* Enter new window(s) - outside to inside */
+  while (join != mw) {
+    imw = mw;
+    for (nextw = el_PARENT(imw); nextw != join; nextw = el_PARENT(nextw)) {
+      imw = nextw;
+    }
+    pos = glob;
+    ::ScreenToClient(imw->GetHWND(), &pos);
+    wxDoOnMouseEnter(imw, pos.x, pos.y, flags);
+    join = imw;
+  }
+  
+  current_mouse_wnd = mw;
+  current_mouse_context = curr_context;
+}
+
 void wxWnd::OnMouseMove(int x, int y, UINT flags)
 {
-  // Don't do the Leave/Enter fix if we've captured the window,
-  // or SetCapture won't work properly.
-  if (wx_window && !wx_window->winCaptured) {
-    HWND hunder;
-    POINT pt;
-    // See if we Leave/Enter the window.
-    GetCursorPos(&pt);
-    hunder = WindowFromPoint(pt);
-    if (hunder==handle) {
-      // I'm in the Window, but perhaps in NC area.
-      RECT wind;
-      RECT nc;
-      GetClientRect(handle,&wind);
-      GetWindowRect(handle,&nc);
-      pt.x -= nc.left;
-      pt.y -= nc.top;
-      wind.left    += WINDOW_MARGIN ; // to be able to 'see' leave
-      wind.top     += WINDOW_MARGIN ; // to be able to 'see' leave
-      wind.right   -= WINDOW_MARGIN ; // to be able to 'see' leave
-      wind.bottom  -= WINDOW_MARGIN ; // to be able to 'see' leave
-      
-      if (!PtInRect(&wind,pt))
-        hunder = NULL ; // So, I can simulate a Leave event...
-    }
-
-    if (hunder != handle) {
-      if (mouse_in_window) {
-        mouse_in_window = FALSE;
-        OnMouseLeave(x, y, flags);
-        return;
-      }
-      // We never want to see Enter or Motion in this part of the Window...
-      return;
-    } else {
-      // Event was triggered while I'm really into my client area.
-      // Do an Enter if not done.
-      if (!mouse_in_window) {
-        mouse_in_window = TRUE;
-        // Set cursor, but only if we're not in 'busy' mode
-	if (wxIsBusy())
-	  wxMSWSetCursor(wxHOURGLASS_CURSOR->ms_cursor);
-	else {
-	  wxWindow *w = wx_window;
-	  wxCursor *cursor = wxSTANDARD_CURSOR;
-	  while (w) {
-	    if (w->wx_cursor) {
-	      cursor = w->wx_cursor;
-	      break;
-	    }
-	    w = w->GetParent();
-	  }
-	  wxMSWSetCursor(cursor->ms_cursor);
-	  OnMouseEnter(x, y, flags);
-	  return;
-	}
-      }
-    }
-  }
-    
-  // 'normal' move event...
-  // Set cursor, but only if we're not in 'busy' mode
   if (wxIsBusy())
     wxMSWSetCursor(wxHOURGLASS_CURSOR->ms_cursor);
-  else {
-    wxWindow *w = wx_window;
-    while (w) {
-      if (w->wx_cursor) {
-	wxMSWSetCursor(w->wx_cursor->ms_cursor);
-	break;
-      }
-      w = w->GetParent();
-    }
-  }
+  else
+    wxResetCurrentCursor();
+
+  /* Check mouse-position based stuff */
+  wxEntered(wx_window, x, y, flags);
 
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_MOTION);
   wxMouseEvent &event = *_event;
@@ -2650,20 +2698,22 @@ void wxWnd::OnMouseMove(int x, int y, UINT flags)
 
 void wxWnd::OnMouseEnter(int x, int y, UINT flags)
 {
-//wxDebugMsg("Client 0x%08x Enter %d,%d\n",this,x,y) ;
+  if (wx_window)
+    wxDoOnMouseEnter(wx_window, x, y, flags);
+}
 
-  // Set cursor, but only if we're not in 'busy' mode
-  if (wx_window->wx_cursor && !wxIsBusy())
-    wxMSWSetCursor(wx_window->wx_cursor->ms_cursor);
-
+static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags)
+{
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_ENTER_WINDOW);
   wxMouseEvent &event = *_event;
   float px = (float)x;
   float py = (float)y;
 
-  DeviceToLogical(&px, &py);
-
-  CalcUnscrolledPosition((int)px, (int)py, &event.x, &event.y);
+  if (wx_window->handle) {
+    wxWnd *wnd = (wxWnd *)wx_window->handle;
+    wnd->DeviceToLogical(&px, &py);
+    wnd->CalcUnscrolledPosition((int)px, (int)py, &event.x, &event.y);
+  }
 
   event.shiftDown = (flags & MK_SHIFT);
   event.controlDown = (flags & MK_CONTROL);
@@ -2672,30 +2722,29 @@ void wxWnd::OnMouseEnter(int x, int y, UINT flags)
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
-  last_event = wxEVENT_TYPE_ENTER_WINDOW;
-  last_x_pos = event.x; last_y_pos = event.y;
-  if (wx_window) 
-    if (!wx_window->CallPreOnEvent(wx_window, &event))
-      wx_window->GetEventHandler()->OnEvent(event);
+  if (!wx_window->CallPreOnEvent(wx_window, &event))
+    wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnMouseLeave(int x, int y, UINT flags)
 {
-//wxDebugMsg("Client 0x%08x Leave %d,%d\n",this,x,y) ;
+  if (wx_window)
+    wxDoOnMouseLeave(wx_window, x, y, flags);
+}
 
-  // Set cursor, but only if we're not in 'busy' mode
-  if (wx_window->wx_cursor && !wxIsBusy())
-    wxMSWSetCursor(wx_window->wx_cursor->ms_cursor);
-
+static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags)
+{
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_LEAVE_WINDOW);
   wxMouseEvent &event = *_event;
   float px = (float)x;
   float py = (float)y;
 
-  DeviceToLogical(&px, &py);
-
-  CalcUnscrolledPosition((int)px, (int)py, &event.x, &event.y);
-
+  if (wx_window->handle) {
+    wxWnd *wnd = (wxWnd *)wx_window->handle;
+    wnd->DeviceToLogical(&px, &py);
+    wnd->CalcUnscrolledPosition((int)px, (int)py, &event.x, &event.y);
+  }
+  
   event.shiftDown = (flags & MK_SHIFT);
   event.controlDown = (flags & MK_CONTROL);
   event.leftDown = (flags & MK_LBUTTON);
@@ -2703,11 +2752,8 @@ void wxWnd::OnMouseLeave(int x, int y, UINT flags)
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
-  last_event = wxEVENT_TYPE_LEAVE_WINDOW;
-  last_x_pos = event.x; last_y_pos = event.y;
-  if (wx_window) 
-    if (!wx_window->CallPreOnEvent(wx_window, &event))
-      wx_window->GetEventHandler()->OnEvent(event);
+  if (!wx_window->CallPreOnEvent(wx_window, &event))
+    wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)

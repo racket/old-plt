@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_item.cxx,v 1.9 1998/10/12 03:27:56 mflatt Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.10 1998/10/19 03:49:54 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -26,6 +26,8 @@ FARPROC wxGenericControlSubClassProc = 0;
 
 wxNonlockingHashTable *wxControlHandleList = NULL;
 wxNonlockingHashTable *wxItemIdList = NULL;
+
+extern void wxEntered(wxWindow *w, int x, int y, int flags);
 
 extern HCURSOR wxMSWSetCursor(HCURSOR c);
 
@@ -343,6 +345,8 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	event.middleDown = (flags & MK_MBUTTON);
 	event.rightDown = (flags & MK_RBUTTON);
 	event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+
+	wxEntered(item, x, y, wParam);
 
 	if (item->CallPreOnEvent(item, &event))
 	  return 0;

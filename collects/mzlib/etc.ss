@@ -36,7 +36,9 @@
            
            hash-table
 
-	   begin-with-definitions)
+	   begin-with-definitions
+
+	   begin-lifted)
   
   (define true #t)
   (define false #f)
@@ -553,4 +555,9 @@
 			      prev-defns))
 		       null)]
 		[else
-		 (loop (cdr exprs) prev-defns (cons (car exprs) prev-exprs))]))))))
+		 (loop (cdr exprs) prev-defns (cons (car exprs) prev-exprs))])))))
+
+  (define-syntax (begin-lifted stx)
+    (syntax-case stx ()
+      [(_ expr0 expr ...)
+       (syntax-local-lift-expression #'(begin expr0 expr ...))])))

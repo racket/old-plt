@@ -433,6 +433,9 @@
       (read-char r)
       (try-all-blocked)
 	  
+      ;; pipe write always available, since no limit:
+      (test w object-wait-multiple #f s t l r w)
+
       (semaphore-post s)
       (test s object-wait-multiple #f s t l r)
       (try-all-blocked)
@@ -461,11 +464,26 @@
 	  (test cr object-wait-multiple #f s t l sr cr)
 	  (read-char cr)
 	  (try-all-blocked)
+	  (test sw object-wait-multiple #f s t l sr cr sw)
 	  
 	  (display #\z cw)
 	  (test sr object-wait-multiple #f s t l sr cr)
 	  (read-char sr)
 	  (try-all-blocked)
+	  (test cw object-wait-multiple #f s t l sr cr cw)
+
+	  (let loop ()
+	    (when (and (object-wait-multiple 0 sw)
+			 (= 4096 (write-string-avail (make-string 4096 #\x) sw)))
+	      (loop)))
+	  (test #f object-wait-multiple 0 sw sr)
+	  (test cr object-wait-multiple 0 sw sr cr)
+	  ;; Flush cr:
+	  (let ([s (make-string 4096)])
+	    (let loop ()
+	      (when (and (char-ready? cr)
+			 (= 4096 (read-string-avail! s cr)))
+		(loop))))
 
 	  (close-output-port sw)
 	  (test cr object-wait-multiple #f s t l sr cr)
@@ -474,5 +492,25 @@
 	  (close-output-port cw)
 	  (test sr object-wait-multiple #f s t l sr))))
     (tcp-close l)))
+
+;; Test limited pipe output waiting:
+(let-values ([(r w) (make-pipe 5000)])
+  (test #f object-wait-multiple 0 r)
+  (test w object-wait-multiple 0 r w)
+  (display (make-string 4999 #\x) w)
+  (test w object-wait-multiple 0 w)
+  (display #\y w)
+  (test #f object-wait-multiple 0 w)
+  (test r object-wait-multiple 0 r w)
+  (read-char r)
+  (test w object-wait-multiple 0 w)
+  (display #\z w)
+  (test #f object-wait-multiple 0 w)
+  (read-string 5000 r)
+  (test #f object-wait-multiple 0 r)
+  (test w object-wait-multiple 0 r w)
+  (display (make-string 5000 #\x) w)
+  (test r object-wait-multiple 0 r w)
+  (test #f object-wait-multiple 0 w))
 
 (report-errs)

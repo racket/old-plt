@@ -1,5 +1,5 @@
 ;;
-;; $Id$
+;; $Id: strun.ss,v 1.1 1997/07/02 21:23:24 krentel Exp krentel $
 ;;
 ;; Run fake events in single or multiple threads.
 ;; run-single/multiple returns value from last action.
@@ -7,7 +7,9 @@
 
 (unit/sig mred:test:run^
   
-  (import [mred:test : mred:test:global^])
+  (import 
+    [mred:test : mred:test:struct^]
+    [mred:test : mred:test:globals^])
   
   (define run-error error)
   

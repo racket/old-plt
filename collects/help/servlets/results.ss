@@ -153,7 +153,7 @@ is stored in a module top-level and that's namespace-specific.
                 (hexify-string (make-caption maybe-coll))
                 maybe-coll))]
             [else ; manual, so have absolute path
-             (get-help-url anchored-path)])))
+             (get-help-url path page-label)])))
       
       ;; make-anchored-path : string path -> string
       ; page-label is #f or a bytes that labels an HTML anchor

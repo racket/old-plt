@@ -214,7 +214,7 @@
 				    (lambda (s l) 
 				      (print-hook s display? port)
 				      #t)
-				    (print-graph) (print-struct)
+				    (print-graph) (print-struct) (print-hash-table)
 				    (and (not display?) (print-vector-length))
 				    (pretty-print-depth)
 				    (lambda (o display?)
@@ -236,7 +236,7 @@
    (define-struct mark (str def))
 
    (define (generic-write obj display? width output output-hooked 
-			  print-graph? print-struct? print-vec-length?
+			  print-graph? print-struct? print-hash-table? print-vec-length?
 			  depth size-hook print-line
 			  pre-print post-print)
 
@@ -484,6 +484,26 @@
 						 (print-struct p-s))
 					       (get-output-string p))
 					     col)))
+		    ((hash-table? obj)  (if (and print-hash-table?
+						 (not (and depth
+							   (zero? depth))))
+					    (check-expr-found
+					     obj #t col
+					     #f #f
+					     (lambda (col)
+					       (wr-lst (hash-table-map obj cons)
+						       (out "#hash" col) #f
+						       depth)))
+					    (out
+					     (let ([p (open-output-string)]
+						   [p-s (print-hash-table)])
+					       (when p-s
+						 (print-hash-table #f))
+					       ((if display? display write) obj p)
+					       (when p-s
+						 (print-hash-table p-s))
+					       (get-output-string p))
+					     col)))
 
 		    ((boolean? obj)     (out (if obj "#t" "#f") col))
 		    ((number? obj)
@@ -544,7 +564,9 @@
 	 (define (pr obj col extra pp-pair depth)
 	   ; may have to split on multiple lines
 	   (let* ([can-multi (or (pair? obj) (vector? obj) 
-				 (box? obj) (and (struct? obj) print-struct?))]
+				 (box? obj) 
+				 (and (struct? obj) print-struct?)
+				 (and (hash-table? obj) print-hash-table?))]
 		  [ref (if can-multi
 			   (and found (hash-table-get found obj (lambda () #f)))
 			   #f)])
@@ -612,6 +634,9 @@
 			     [(struct? obj)
 			      (pp-list (vector->list (struct->vector obj))
 				       (out "#" col) extra pp-expr #f depth)]
+			     [(hash-table? obj)
+			      (pp-list (hash-table-map obj cons)
+				       (out "#hash" col) extra pp-expr #f depth)]
 			     [(box? obj)
 			      (pr (unbox obj) (out "#&" col) extra pp-pair depth)])
 			    (post-print obj))))))

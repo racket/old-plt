@@ -469,9 +469,9 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 				  double start_x, double start_y, double ddx, double ddy, int with_start)
 {
   ATSUTextLayout layout;
-  UniCharCount ulen;
+  UniCharCount ulen, one_ulen, delta;
   UniChar *unicode;
-  double result = 0;
+  double result = 0, one_res = 0;
   int need_convert;
 #define JUSTDELTA(v, s, d) (need_convert ? v : ((v - d) / s))
 #define COORDCONV(v, s, d) (need_convert ? ((v * s) + d) : v)
@@ -481,6 +481,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   Rect portRect;
   RGBColor eraseColor;
   ATSUStyle style;
+  Point start;
   int use_cgctx = (always_use_atsu 
 		   && ((smoothing != wxSMOOTHING_PARTIAL) || (scale_x != scale_y)));
 # define xOS_X_ONLY(x) x
@@ -508,17 +509,14 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     }
 
     ulen = theStrlen + extra;
-    if (qd_spacing)
-      alloc_ulen = ulen + 1;
-    else
-      alloc_ulen = ulen;
+    alloc_ulen = ulen;
     if (alloc_ulen > QUICK_UBUF_SIZE)
       unicode = new WXGC_ATOMIC UniChar[alloc_ulen];
     else
       unicode = u_buf;
     
     /* UCS-4 -> UTF-16 conversion */
-    for (i = 0, extra = qd_spacing ? 1 : 0; i < theStrlen; i++) {
+    for (i = 0, extra = 0; i < theStrlen; i++) {
       v = ((unsigned int *)text)[d+i];
       if (v > 0xFFFF) {
 	v -= 0x10000;
@@ -535,42 +533,15 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     ulen = scheme_utf8_decode((unsigned char *)text, d, 
 			      theStrlen, NULL, 0, -1, 
 			      NULL, 1 /*UTF-16*/, '?');
-    if (qd_spacing)
-      alloc_ulen = ulen + 1; 
-    else
-      alloc_ulen = ulen;
+    alloc_ulen = ulen;
     if (alloc_ulen > QUICK_UBUF_SIZE)
       unicode = new WXGC_ATOMIC UniChar[alloc_ulen];
     else
       unicode = u_buf;
     ulen = scheme_utf8_decode((unsigned char *)text, d, theStrlen, 
-			      (unsigned int *)unicode, qd_spacing ? 1 : 0, -1, 
+			      (unsigned int *)unicode, 0, -1, 
 			      NULL, 1 /*UTF-16*/, '?');
   }
-
-  /* In qd_spacing mode, prevent all sorts of glyph combinations */
-  if (qd_spacing) {
-    unsigned int i, j = 0;
-    /* start with left-to-right override: */
-    ulen++;
-    unicode[0] = 0x202D;
-    /* remove other control characters: */
-    for (i = 1; i < ulen; i++) {
-      if (scheme_iscontrol(unicode[i])) {
-	j++;
-      } else {
-	unicode[i - j] = unicode[i];
-      }
-    }
-    ulen -= j;
-
-    /* On other platforms, we add ZWNJ to prevent other
-       combinations. But I think it would be redundant here, because
-       other attributes (in the style or layout) disable
-       combinations, and adding ZWNJ seems to slow
-       text measuring by a factor of 3 or 4. */
-  }
-  
 
   if (is_sym == wxSYMBOL) {
     unsigned int i;
@@ -658,12 +629,14 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   /* Don't GC until the text layout is destroyed, otherwise the */
   /* unicode string could move.                                 */
 
+  one_ulen = (qd_spacing ? 1 : ulen);
+
   ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)unicode,
 				  kATSUFromTextBeginning,
 				  kATSUToTextEnd,
-				  ulen,
+				  one_ulen,
 				  1,
-				  &ulen,
+				  &one_ulen,
 				  &style,
 				  &layout);
 
@@ -704,143 +677,178 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   }
 
   ATSUSetTransientFontMatching(layout, TRUE);
-
+      
   if (angle != 0.0) {
     GC_CAN_IGNORE ATSUAttributeTag  r_theTags[] = { kATSULineRotationTag };
     GC_CAN_IGNORE ByteCount    r_theSizes[] = { sizeof(Fixed) };
     ATSUAttributeValuePtr r_theValues[1];
     Fixed deg_angle;
-
+	
     deg_angle = DoubleToFixed(angle * 180 / 3.14159);
     r_theValues[0] = &deg_angle;
     ATSUSetLayoutControls(layout, 1, r_theTags, r_theSizes, r_theValues); 
   }
 
-  END_TIME(layout);
-  START_TIME;
+  delta = 0;
+  start.h = start.v = 0;
 
+  while (1) {
+    if (delta >= ulen)
+      break;
 
-  {
-    ATSTrapezoid bounds;
-    ItemCount actual;
-
-    ATSUGetGlyphBounds(layout,
-		       0, 0,
-		       kATSUFromTextBeginning,
-		       kATSUToTextEnd,
-		       kATSUseDeviceOrigins,
-		       1,
-		       &bounds,
-		       &actual);
-    
-    result = (Fix2X(bounds.upperRight.x) - Fix2X(bounds.upperLeft.x));
-    if (result < 0)
-      result = 0;
-    if (!use_cgctx && !just_meas) {
-      result = result / scale_y;
+    if (delta) {
+      if (0)
+      ATSUSetTextPointerLocation(layout, 
+				 ((UniCharArrayPtr)unicode) + delta,
+				 kATSUFromTextBeginning,
+				 kATSUToTextEnd,
+				 1);
     }
-  }
+      
+    END_TIME(layout);
+    START_TIME;
 
-  END_TIME(measure);
-  START_TIME;
+    {
+      ATSTrapezoid bounds;
+      ItemCount actual;
 
-  if (!just_meas) {
-    GrafPtr iGrafPtr;
-    Point start;
+      ATSUGetGlyphBounds(layout,
+			 0, 0,
+			 kATSUFromTextBeginning,
+			 kATSUToTextEnd,
+			 kATSUseDeviceOrigins,
+			 1,
+			 &bounds,
+			 &actual);
+    
+      one_res = (Fix2X(bounds.upperRight.x) - Fix2X(bounds.upperLeft.x));
+      if (one_res < 0)
+	one_res = 0;
+      if (!use_cgctx && !just_meas) {
+	one_res = one_res / scale_y;
+      }
+      result += one_res;
+    }
+
+    END_TIME(measure);
+    START_TIME;
+
+    if (!just_meas) {
+      GrafPtr iGrafPtr;
 
 #ifdef OS_X
-    iGrafPtr = qdp;
+      iGrafPtr = qdp;
 #else    
-    GetPort(&iGrafPtr);
+      GetPort(&iGrafPtr);
 #endif
+
+      if (!with_start && !delta) {
+	GetPen(&start);
+	start_x = start.h;
+	start_y = start.v;
+	ddx = 0;
+	ddy = 0;
+	need_convert = 0;
+      } else {
+	need_convert = 1;
+      }
+    
+      if ((angle == 0.0) && (GetPortTextMode(iGrafPtr) == srcCopy)) {
+	static FontInfo fontInfo;
+	if (!delta)
+	  ::GetFontInfo(&fontInfo);
+#ifdef OS_X
+	if (use_cgctx) {
+	  CGRect cgr;
+	  double rt, rl, rr, rb;
+
+	  rl = JUSTDELTA(start_x, scale_x, ddx) + (use_pen_delta ? pen_delta : 0.0);
+	  rt = JUSTDELTA(start_y, scale_y, ddy) - fontInfo.ascent;
+	  rb = JUSTDELTA(start_y, scale_y, ddy) + fontInfo.descent;
+	  rr = rl + one_res;
+
+	  cgr.origin.x = rl;
+	  cgr.origin.y = -rb;
+	  cgr.size.width = rr - rl;
+	  cgr.size.height = rb - rt;
+
+	  CGContextSetRGBFillColor(cgctx, 
+				   (double)eraseColor.red / 65535.0,
+				   (double)eraseColor.green / 65535.0,
+				   (double)eraseColor.blue / 65535.0,
+				   1.0);
+	  CGContextFillRect(cgctx, cgr);
+	} else
+#endif
+	  {
+	    Rect theRect;
+	    double rt, rl, rr, rb;
+	  
+	    rl = COORDCONV(start_x, scale_x, ddx) + (use_pen_delta ? (pen_delta * scale_x) : 0.0);
+	    rt = COORDCONV(start_y, scale_y, ddy) - (fontInfo.ascent * scale_y);
+	    rb = COORDCONV(start_y, scale_y, ddy) + (fontInfo.descent * scale_y);
+	    rr = rl + (one_res * scale_x);
+
+	    theRect.left = (int)floor(rl);
+	    theRect.top = (int)floor(rt);
+	    theRect.right = (int)floor(rr);
+	    theRect.bottom = (int)floor(rb);
+	    EraseRect(&theRect);
+	  }
+      }
+    
+      {
+	Fixed sx, sy;
+
+	if (use_cgctx) {
+	  double isx;
+	  isx = JUSTDELTA(start_x, scale_x, ddx) + (use_pen_delta ? pen_delta : 0.0);
+	  sx = DoubleToFixed(isx);
+	} else if (with_start) {
+	  double isx;
+	  isx = COORDCONV(start_x, scale_x, ddx) + (use_pen_delta ? (pen_delta * scale_x) : 0.0);
+	  sx = DoubleToFixed(isx);
+	} else {
+	  sx = kATSUUseGrafPortPenLoc;
+	}
+
+	if (use_cgctx) {
+	  double isy;
+	  isy = -JUSTDELTA(start_y, scale_y, ddy);
+	  sy = DoubleToFixed(isy);
+	} else if (with_start) {
+	  double isy;
+	  isy = COORDCONV(start_y, scale_y, ddy);
+	  sy = DoubleToFixed(isy);
+	} else {
+	  sy = kATSUUseGrafPortPenLoc;
+	}
+
+	ATSUDrawText(layout, 
+		     kATSUFromTextBeginning,
+		     kATSUToTextEnd,
+		     sx, sy);
+      }
+    }
 
     if (!with_start) {
-      GetPen(&start);
-      start_x = start.h;
-      start_y = start.v;
-      ddx = 0;
-      ddy = 0;
-      need_convert = 0;
+      /* Make sure start is scaled for further iterations */
+      start_x = scale_x * start_x;
+      start_y = scale_y * start_y;
+    }
+    if (angle == 0.0) {
+      start_x += one_res;
     } else {
-      need_convert = 1;
-    }
-    
-    if ((angle == 0.0) && (GetPortTextMode(iGrafPtr) == srcCopy)) {
-      FontInfo fontInfo;
-      ::GetFontInfo(&fontInfo);
-#ifdef OS_X
-      if (use_cgctx) {
-	CGRect cgr;
-	double rt, rl, rr, rb;
-
-	rl = JUSTDELTA(start_x, scale_x, ddx) + (use_pen_delta ? pen_delta : 0.0);
-	rt = JUSTDELTA(start_y, scale_y, ddy) - fontInfo.ascent;
-	rb = JUSTDELTA(start_y, scale_y, ddy) + fontInfo.descent;
-	rr = rl + result;
-
-	cgr.origin.x = rl;
-	cgr.origin.y = -rb;
-	cgr.size.width = rr - rl;
-	cgr.size.height = rb - rt;
-
-	CGContextSetRGBFillColor(cgctx, 
-				 (double)eraseColor.red / 65535.0,
-				 (double)eraseColor.green / 65535.0,
-				 (double)eraseColor.blue / 65535.0,
-				 1.0);
-	CGContextFillRect(cgctx, cgr);
-      } else
-#endif
-	{
-	  Rect theRect;
-	  double rt, rl, rr, rb;
-	  
-	  rl = COORDCONV(start_x, scale_x, ddx) + (use_pen_delta ? (pen_delta * scale_x) : 0.0);
-	  rt = COORDCONV(start_y, scale_y, ddy) - (fontInfo.ascent * scale_y);
-	  rb = COORDCONV(start_y, scale_y, ddy) + (fontInfo.descent * scale_y);
-	  rr = rl + (result * scale_x);
-
-	  theRect.left = (int)floor(rl);
-	  theRect.top = (int)floor(rt);
-	  theRect.right = (int)floor(rr);
-	  theRect.bottom = (int)floor(rb);
-	  EraseRect(&theRect);
-	}
-    }
-    
-    {
-      Fixed sx, sy;
-
-      if (use_cgctx) {
-	double isx;
-	isx = JUSTDELTA(start_x, scale_x, ddx) + (use_pen_delta ? pen_delta : 0.0);
-	sx = DoubleToFixed(isx);
-      } else if (with_start) {
-	double isx;
-	isx = COORDCONV(start_x, scale_x, ddx) + (use_pen_delta ? (pen_delta * scale_x) : 0.0);
-	sx = DoubleToFixed(isx);
-      } else {
-	sx = kATSUUseGrafPortPenLoc;
-      }
-
-      if (use_cgctx) {
-	double isy;
-	isy = -JUSTDELTA(start_y, scale_y, ddy);
-	sy = DoubleToFixed(isy);
-      } else if (with_start) {
-	double isy;
-	isy = COORDCONV(start_y, scale_y, ddy);
-	sy = DoubleToFixed(isy);
-      } else {
-	sy = kATSUUseGrafPortPenLoc;
-      }
-
-      ATSUDrawText(layout, 
-		   kATSUFromTextBeginning,
-		   kATSUToTextEnd,
-		   sx, sy);
+      start_x += one_res * cos(angle);
+      start_y += one_res * sin(angle);
     }
 
+    delta += one_ulen;
+  }
+
+  ATSUDisposeTextLayout(layout);
+
+  if (!just_meas) {
 #ifdef OS_X
     if (use_cgctx) {
       /* I don't think this flush is supposed to be
@@ -863,8 +871,6 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     }
 #endif
   }
-
-  ATSUDisposeTextLayout(layout);
 
   /********************* END NO-GC RANGE **********************/
 

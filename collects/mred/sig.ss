@@ -10,6 +10,9 @@
    connections-media-pasteboard%
    connections-media-canvas%
    connections-panel%
+
+   active-frame
+
    make-connections-frame%
    make-connections-media-buffer%
    make-connections-media-canvas%
@@ -88,7 +91,11 @@
 (define-signature mred:debug^ (printf exit? on?))
 
 (define-signature mred:constants^
-  (debug-on debug-param plt-home-directory))
+  (debug-on
+   debug-param
+   plt-home-directory
+   original-input-port
+   original-output-port))
 
 (define-signature mred:exn-external^
   (exn? exn:unknown-preference? exn:during-preferences? exn:url?))

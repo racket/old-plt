@@ -137,6 +137,18 @@
 	 main-panel)))
 
     (define scheme-mode-style-list (make-object wx:style-list%))
+    (define scheme-mode-standard-style-delta
+      (let ([delta (make-object wx:style-delta% wx:const-change-normal)])
+	(send delta set-delta wx:const-change-family wx:const-modern)
+	delta))
+    (let ([style (send scheme-mode-style-list find-named-style "Standard")])
+      (if (null? style)
+	  (send scheme-mode-style-list new-named-style "Standard"
+		(send scheme-mode-style-list find-or-create-style
+		      (send scheme-mode-style-list
+			    find-named-style "Basic")
+		      scheme-mode-standard-style-delta))
+	  (send style set-delta scheme-mode-standard-style-delta)))
 
     (define make-scheme-mode% 
       (lambda (super%)
@@ -699,10 +711,7 @@
 			    (end-edit-sequence))
 		     (wx:bell))
 		 #t))]
-	    [standard-style-delta
-	     (let ([delta (make-object wx:style-delta% wx:const-change-normal)])
-	       (send delta set-delta wx:const-change-family wx:const-modern)
-	       delta)]
+	    [standard-style-delta scheme-mode-standard-style-delta]
 	    [file-format wx:const-media-ff-text]
 	    [install
 	     (lambda (edit)

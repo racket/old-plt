@@ -8,6 +8,9 @@
 (define mred:explicit-wx? #f)
 
 (define mred:original-output-port (current-output-port))
+(define mred:original-output-port-backup mred:original-output-port)
+(define mred:original-input-port (current-input-port))
+(define mred:original-input-port-backup mred:original-output-port)
 
 ; Remember this directory
 (define mred:system-source-directory (current-directory))

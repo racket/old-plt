@@ -50,8 +50,9 @@
 	   newline-indent-string
 	   "libscheme (c) 1994 Brent Benson."
 	   newline-indent-string
-	   "conservative GC (c) 1988, 1989 Hans-J. Boehm, Alan J. Demers"
-	   " (c) 1991-1994 Xerox Corp."
+	   "conservative GC (c) 1988-89 Hans-J. Boehm, Alan J. Demers,"
+	   " (c) 1991-96 Xerox Corp,"
+	   " (c) 1996 Silicon Graphics."
 	   newline-indent-string
 	   "C++ GC extension by Jesse Hull and John Ellis"
 	   " (c) 1994 Xerox Corp."

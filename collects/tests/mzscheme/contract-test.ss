@@ -119,6 +119,7 @@
   
   (test/no-error '(opt-> (integer?) (integer?) integer?))
   (test/no-error '(opt-> ((flat-contract integer?)) ((flat-contract integer?)) (flat-contract integer?)))
+  (test/no-error '(opt-> ((flat-contract integer?)) ((flat-contract integer?)) any))
   (test/no-error '(opt->* (integer?) (integer?) (integer?)))
   (test/no-error '(opt->* ((flat-contract integer?)) ((flat-contract integer?)) ((flat-contract integer?))))
   (test/no-error '(opt->* (integer?) (integer?) any))

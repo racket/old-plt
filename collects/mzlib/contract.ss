@@ -783,6 +783,8 @@ add struct contracts for immutable structs?
     
     (define (make-opt->/proc method-proc? stx)
       (syntax-case stx (any)
+        [(_ (reqs ...) (opts ...) any)
+         (make-opt->*/proc method-proc? (syntax (opt->* (reqs ...) (opts ...) any)))]
         [(_ (reqs ...) (opts ...) res)
          (make-opt->*/proc method-proc? (syntax (opt->* (reqs ...) (opts ...) (res))))]))
   

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.10 1998/11/17 13:11:48 mflatt Exp $
+ * $Id: Frame.cc,v 1.11 1998/12/30 19:14:05 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -115,12 +115,14 @@ static void wxFrameMapProc(Widget w, XtPointer clientData,
   }
 }
 
+extern "C" void *scheme_current_process;
+
 Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 		     int x, int y, int width, int height,
 		     int _style, char *name)
 {
   context = wxGetContextForFrame();
-  WXGC_IGNORE(context);
+  /* WXGC_IGNORE(context);  - NO, context itself is not finalized */
 
     Widget parent_widget;
 
@@ -409,6 +411,8 @@ static void ForceFocus(Widget frame)
   }
 }
 
+extern "C" long scheme_get_milliseconds(void);
+
 Bool wxFrame::Show(Bool show)
 {
   if (parent)
@@ -432,10 +436,17 @@ Bool wxFrame::Show(Bool show)
     XtMapWidget(X->frame);
     XRaiseWindow(XtDisplay(X->frame), XtWindow(X->frame));
     ForceFocus(X->frame);
+    last_shown_time = scheme_get_milliseconds();
   } else {
-    /* XWithdrawWindow does the right thing for iconified windows */
-    XWithdrawWindow(XtDisplay(X->frame), XtWindow(X->frame), 
-		    XScreenNumberOfScreen(XtScreen(X->frame)));
+    /* XWithdrawWindow tells the window manager to get rid of icons
+       for iconified windows. Unfortunately, it also destroys the
+       window under some (unknown) circumstances with CTWM - which is
+       what I like to use. If we have waited a little while, CTWM
+       seems happy. Solution: just don't call XWidthdrawWindow if the
+       window was shown recently - the user hasn't had time to iconize
+       it, anyway. */
+    if (last_shown_time + 1000 < scheme_get_milliseconds())
+      XWithdrawWindow(XtDisplay(X->frame), XtWindow(X->frame), XScreenNumberOfScreen(XtScreen(X->frame)));
     XtUnmapWidget(X->frame);
   }
 

@@ -32,8 +32,7 @@
     (define create-private-binding+marks
       (create-binding+marks make-private-binding))
     (define create-inherit-binding+marks
-      (create-binding+marks make-inherit-binding
-	(lambda (v) (z:read-object v))))
+      (create-binding+marks make-inherit-binding))
     (define create-rename-binding+marks
       (create-binding+marks make-rename-binding))
 
@@ -59,7 +58,7 @@
 
     (define-struct public-clause (exports internals exprs))
     (define-struct private-clause (internals exprs))
-    (define-struct inherit-clause (inheriteds))
+    (define-struct inherit-clause (internals inheriteds))
     (define-struct (inherit-from-clause struct:inherit-clause) (super))
     (define-struct rename-clause (internals imports))
     (define-struct (rename-from-clause struct:rename-clause) (super))
@@ -109,8 +108,8 @@
     (define-struct ivar-entry (bindings))
     (define-struct (public-entry struct:ivar-entry) (exports exprs))
     (define-struct (private-entry struct:ivar-entry) (exprs))
-    (define-struct (inherit-entry struct:ivar-entry) ())
-    (define-struct (inherit-from-entry struct:ivar-entry) (super))
+    (define-struct (inherit-entry struct:ivar-entry) (inheriteds))
+    (define-struct (inherit-from-entry struct:ivar-entry) (inheriteds super))
     (define-struct (rename-entry struct:ivar-entry) (imports))
     (define-struct (rename-from-entry struct:ivar-entry) (imports super))
 
@@ -254,7 +253,28 @@
 
     (add-sym-micro inherit-ivar-decl-entry-parser-vocab
       (lambda (expr env attributes vocab)
-	(create-inherit-binding+marks expr)))
+	(cons
+	  (create-inherit-binding+marks expr)
+	  expr)))
+
+    (add-list-micro inherit-ivar-decl-entry-parser-vocab
+      (let* ((kwd '())
+	      (in-pattern '(internal-var var))
+	      (m&e (pat:make-match&env in-pattern '())))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((internal-var (pat:pexpand 'internal-var p-env kwd))
+		       (var (pat:pexpand 'var p-env kwd)))
+		  (valid-syntactic-id? internal-var)
+		  (valid-syntactic-id? var)
+		  (cons
+		    (create-inherit-binding+marks internal-var)
+		    var))))
+	    (else
+	      (static-error expr "Invalid ivar declaration"))))))
 
     (let* ((kwd '(inherit))
 	    (in-pattern '(inherit ivar-decl ...))
@@ -271,7 +291,8 @@
 				 inherit-ivar-decl-entry-parser-vocab))
 			  (pat:pexpand '(ivar-decl ...) p-env kwd))))
 		  (make-inherit-entry
-		    decls))))
+		    (map car decls)
+		    (map cdr decls)))))
 	    (else
 	      (static-error expr "Invalid inherit clause"))))))
 
@@ -291,7 +312,8 @@
 				(pat:pexpand '(ivar-decl ...) p-env kwd))))
 		  (valid-syntactic-id? super)
 		  (make-inherit-from-entry
-		    decls
+		    (map car decls)
+		    (map cdr decls)
 		    super))))
 	    (else
 	      (static-error expr "Invalid inherit-from clause"))))))
@@ -484,7 +506,8 @@
 					 ((inherit-entry? e)
 					   (make-inherit-clause
 					     (map car
-					       (ivar-entry-bindings e))))
+					       (ivar-entry-bindings e))
+					     (inherit-entry-inheriteds e)))
 					 ((inherit-from-entry? e)
 					   (flag-non-supervar
 					     (inherit-from-entry-super e)
@@ -492,6 +515,7 @@
 					   (make-inherit-from-clause
 					     (map car
 					       (ivar-entry-bindings e))
+					     (inherit-from-entry-inheriteds e)
 					     (car
 					       (expand-exprs
 						 (list
@@ -653,13 +677,15 @@
 		      ((inherit-from-clause? clause)
 			`(inherit-from
 			   ,(p->r (inherit-from-clause-super clause))
-			   ,@(map (lambda (inherited)
-				    (p->r inherited))
+			   ,@(map (lambda (internal inherited)
+				    `(,(p->r internal) ,(sexp->raw inherited)))
+			       (inherit-clause-internals clause)
 			       (inherit-clause-inheriteds clause))))
 		      ((inherit-clause? clause)
 			`(inherit
-			   ,@(map (lambda (inherited)
-				    (p->r inherited))
+			   ,@(map (lambda (internal inherited)
+				    `(,(p->r internal) ,(sexp->raw inherited)))
+			       (inherit-clause-internals clause)
 			       (inherit-clause-inheriteds clause))))
 		      ((rename-from-clause? clause)
 			`(rename-from

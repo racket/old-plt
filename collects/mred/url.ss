@@ -1,6 +1,3 @@
-(define-signature mred:url^
-  (parse-url get-port-for-url))
-
 (define mred:url@
   (unit/sig mred:url^
     (import ()

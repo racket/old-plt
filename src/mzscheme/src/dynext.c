@@ -1,6 +1,6 @@
 /*
   MzScheme
-  Copyright (c) 1995-2001 Matthew Flatt
+  Copyright (c) 1995-2002 Matthew Flatt
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -27,7 +27,11 @@
 #include "schgc.h"
 
 #ifdef UNIX_DYNAMIC_LOAD
-# include <dlfcn.h>
+# ifdef OS_X
+#  include "dlcompat.inc"
+# else
+#  include <dlfcn.h>
+# endif
 #endif
 #if defined(WINDOWS_DYNAMIC_LOAD)
 # include <windows.h>

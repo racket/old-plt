@@ -376,7 +376,7 @@
     ((r rb) (open-input-file filename))
     ((w wb) (open-output-file filename))
     (else (slib:error 'open-file 'mode? modes))))
-(define (port? obj) (or (input-port? port) (output-port? port)))
+(define (port? port) (or (input-port? port) (output-port? port)))
 (define (call-with-open-ports . ports)
   (define proc (car ports))
   (cond ((procedure? proc) (set! ports (cdr ports)))

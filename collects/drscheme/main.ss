@@ -9,6 +9,7 @@
 	  [basis : userspace:basis^]
 	  mzlib:function^)
 
+
   (fw:finder:default-extension "scm")
 
   ;; add the graphical settings

@@ -28,25 +28,8 @@
 
   (define (add-common-project-menu-items project-menu)
     (local [(define new-project-item (make-object menu-item% "New Project" project-menu (lambda x (new-project))))
-	    (define open-project-item (make-object menu-item% "Open Project" project-menu (lambda x (open-project))))
-	    (define collection-projects (make-object menu% "Collection Projects" project-menu))]
-      (for-each
-       (lambda (collection)
-	 (let ([info (and (file-exists? (build-path (collection-path collection) "info.ss"))
-			  (require-library/proc "info.ss" collection))])
-	   (when info
-	     (let* ([raw-project-file (info 'project-filename (lambda () #f))]
-		    [project-file (and raw-project-file
-				       (if (relative-path? raw-project-file)
-					   (build-path (collection-path collection) raw-project-file)
-					   raw-project-file))])
-	       (when project-file
-		 (make-object menu-item%
-		   collection
-		   collection-projects
-		   (lambda xxx
-		     (open-project project-file))))))))
-       (all-collections))))
+	    (define open-project-item (make-object menu-item% "Open Project" project-menu (lambda x (open-project))))]
+      (void)))
   
   (define project-aware-frame<%>
     (interface ()

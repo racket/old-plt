@@ -17,7 +17,7 @@
                             (reverse
                              (filter identifier? (list-ref info 3)))])
                (syntax
-                (lambda (s)
+                (λ (s)
                   (vector (accessor s) ...))))
              (raise-syntax-error
               #f
@@ -26,12 +26,12 @@
               (syntax name))))]))
   
   (define-syntax mixin
-    (lambda (stx)
+    (λ (stx)
       (syntax-case stx ()
 	[(_ (from ...) (to ...) clauses ...)
          (let ([extract-renamed-names
-                (lambda (x)
-                  (map (lambda (x) (syntax-case x ()
+                (λ (x)
+                  (map (λ (x) (syntax-case x ()
                                      [(internal-name external-name) (syntax external-name)]
                                      [else x]))
                        (syntax->list x)))])
@@ -83,7 +83,7 @@
 	       ;; Now build mixin proc, again to give it a good src location:
 	       (with-syntax ([mixin-expr
 			      (syntax/loc stx
-			        (lambda (super%)
+			        (λ (super%)
 				  (unless (class? super%)
 				    (error mixin-name "argument ~a not a class" super%))
 				  (unless (implementation? super% from-ids)
@@ -113,7 +113,7 @@
 				  all-to)) ...)
 		       
 		       (let ([ensure-interface-has?
-			      (lambda (x)
+			      (λ (x)
 				(unless (or (method-in-interface? x from-ids) ...)
 				  (error 'mixin
 					 "method `~a' not in any of ~a, but was referenced in definition"

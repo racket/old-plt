@@ -10,14 +10,14 @@
   
   (define (encode-module in-filename out-filename)
     (call-with-input-file in-filename
-      (lambda (port)
+      (λ (port)
         (let ([mod (read port)])
           (unless (eof-object? (read port))
             (error 'encode-module "found an extra expression"))
           (match mod 
             [`(module ,m mzscheme ,@(bodies ...))
              (call-with-output-file out-filename
-               (lambda (oport)
+               (λ (oport)
                  (write `(module ,m mzscheme
                            (require (lib "encode-decode.ss" "framework" "private"))
                            (decode ,(encode-sexp `(begin ,@bodies))))
@@ -31,13 +31,13 @@
        (apply 
         string-append
         (map
-         (lambda (x) 
+         (λ (x) 
            (to-hex (char->integer x)))
          (string->list string)))))
     
     (define (to-hex n)
       (let ([digit->hex
-             (lambda (d)
+             (λ (d)
                (cond
                  [(<= d 9) d]
                  [else (integer->char (+ d -10 (char->integer #\a)))]))])
@@ -86,6 +86,6 @@
           (decode-sexp 
            (apply 
             string-append
-            (map (lambda (x) (symbol->string (syntax-e x)))
+            (map (λ (x) (symbol->string (syntax-e x)))
                  (syntax->list (syntax (arg ...))))))
           stx))])))

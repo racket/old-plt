@@ -913,7 +913,7 @@
   
   (drscheme:language:extend-language-interface
    (interface?
-    ((implementation?/c drscheme:language:language<%>) . ->d . (lambda (%) (subclass?/c %)))
+    ((implementation?/c drscheme:language:language<%>) . ->d . (λ (%) (subclass?/c %)))
     . -> .
     void?)
    (interface default-implementation)
@@ -933,7 +933,7 @@
    ".")
   
   (drscheme:language:get-default-mixin
-   (-> ((implementation?/c drscheme:language:language<%>) . ->d . (lambda (%) (subclass?/c %))))
+   (-> ((implementation?/c drscheme:language:language<%>) . ->d . (λ (%) (subclass?/c %))))
    ()
    
    "\\phase{2}"
@@ -975,8 +975,8 @@
   (drscheme:language:create-executable-gui
    ((union false/c (is-a?/c top-level-window<%>))
     (union false/c string?)
-    (union (lambda (x) (eq? x #t)) (symbols 'launcher 'standalone))
-    (union (lambda (x) (eq? x #t)) (symbols 'mzscheme 'mred))
+    (union (λ (x) (eq? x #t)) (symbols 'launcher 'standalone))
+    (union (λ (x) (eq? x #t)) (symbols 'mzscheme 'mred))
     . -> .
     (union false/c
            (list/c (symbols 'no-show 'launcher 'stand-alone)

@@ -1667,7 +1667,9 @@
       
       (define sizing-panel (make-object panel:vertical-dragable% (send main-frame get-area-container)))
       (define top-half (make-object vertical-panel% sizing-panel))
-      (define button-panel (make-object horizontal-panel% top-half))
+      (define button-panel (new horizontal-panel% 
+                                (parent top-half)
+                                (stretchable-height #f)))
       (define sorting-list (instantiate sorting-list% ()
                              (parent top-half)
                              (stretchable-height #f)
@@ -1722,7 +1724,6 @@
       
       (define no-status-handler (lambda (x) (status "") (raise x)))
             
-      (send button-panel stretchable-height #f)
       (define disable-button-panel (make-object horizontal-panel% button-panel))
       (define mailbox-message (make-object message% (format "~a: XXXXX" mailbox-name) disable-button-panel))
       (define (display-message-count n)

@@ -38,7 +38,7 @@
       (define (set-teachpack-cache-filenames! teachpack-cache filenames)
         (set-teachpack-cache-tps!
          teachpack-cache
-         (map (lambda (filename) (make-cache-entry filename))
+         (map (λ (filename) (make-cache-entry filename))
               filenames)))
       
       ;; install-teachpacks : teachpack-cache -> void
@@ -59,7 +59,7 @@
       (define (install-teachpack cache-entry)
         (let ([filename (cache-entry-filename cache-entry)])
           (with-handlers ([exn:fail?
-                           (lambda (exn)
+                           (λ (exn)
                              (set-cache-entry-filename! cache-entry #f)
                              (show-teachpack-error filename exn))])
             (verify-no-new-exports filename)
@@ -71,9 +71,9 @@
         (let ([exports (extract-provided-variables-from-module filename)]
               [ns-contents (namespace-mapped-symbols)]
               [ht (make-hash-table)])
-          (for-each (lambda (ns-sym) (hash-table-put! ht ns-sym #t)) ns-contents)
-          (for-each (lambda (expt)
-                      (when (hash-table-get ht expt (lambda () #f))
+          (for-each (λ (ns-sym) (hash-table-put! ht ns-sym #t)) ns-contents)
+          (for-each (λ (expt)
+                      (when (hash-table-get ht expt (λ () #f))
                         (error 'teachpack "export of ~a from ~s conflicts with already existing definitions"
                                expt filename)))
                     exports)))
@@ -97,7 +97,7 @@
                                       (read-accept-dot #t)
                                       (read-accept-quasiquote #t)]
                          (call-with-input-file filename 
-                           (lambda (port) (read-syntax filename port))))))))]
+                           (λ (port) (read-syntax filename port))))))))]
                [var-prop (get-exported-names (syntax-property module-stx 'module-variable-provides))]
                [mac-prop (get-exported-names (syntax-property module-stx 'module-syntax-provides))])
           (append var-prop mac-prop)))
@@ -105,7 +105,7 @@
       ;; get-exported-names : module-variable-provides / module-syntax-provides info (see mz manual) -> (listof symbol)
       (define (get-exported-names names)
         (if names
-            (map (lambda (x)
+            (map (λ (x)
                    (cond
                      [(symbol? x) x]
                      [(symbol? (cdr x)) (car x)]
@@ -115,14 +115,14 @@
         
       ;; marshall-teachpack-cache : teachpack-cache -> writable
       (define (marshall-teachpack-cache cache)
-        (map (lambda (x) (path->bytes (cache-entry-filename x))) (teachpack-cache-tps cache)))
+        (map (λ (x) (path->bytes (cache-entry-filename x))) (teachpack-cache-tps cache)))
       
       ;; unmarshall-teachpack-cache : writable -> teachpack-cache
       (define (unmarshall-teachpack-cache lof)
         (make-teachpack-cache
          (if (and (list? lof)
                   (andmap bytes? lof))
-             (map (lambda (x) (make-cache-entry (bytes->path x))) lof)
+             (map (λ (x) (make-cache-entry (bytes->path x))) lof)
              null)))
       
       ;; teachpack-cache-filenames : teachpack-cache -> (listof string)
@@ -131,7 +131,7 @@
 
       ;; teachpack-cache-filenames : teachpack-cache -> (listof string)
       (define (teachpack-cache-require-specs cache)
-        (map (lambda (x) (cache-entry-require-spec x))
+        (map (λ (x) (cache-entry-require-spec x))
              (teachpack-cache-tps cache)))
       
       ;; launcher-init-code : teachpack-cache -> sexp
@@ -140,7 +140,7 @@
       (define (launcher-init-code cache)
         `(begin
            (void)
-           ,@(map (lambda (ce)
+           ,@(map (λ (ce)
                     (let ([req-spec (cache-entry-require-spec ce)])
                       (if (path? req-spec)
                           `(namespace-require (bytes->path ,(path->bytes req-spec)))
@@ -150,7 +150,7 @@
       ;; launcher-modules-to-embed : teachpack-cache -> (listof module-spec)
       ;; the modules to embed in a stand-alone executable.
       (define (launcher-modules-to-embed cache)
-        (map (lambda (ce) (cache-entry-require-spec ce))
+        (map (λ (ce) (cache-entry-require-spec ce))
              (teachpack-cache-tps cache)))
 
       ;; show-teachpack-error : string TST -> void

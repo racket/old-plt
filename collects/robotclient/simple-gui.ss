@@ -1,7 +1,8 @@
 (module simple-gui mzscheme
 
   (require (lib "mred.ss" "mred")
-           (lib "class.ss"))
+           (lib "class.ss")
+           "client-parameters.ss")
 
   (provide gui% parse-input)
   
@@ -73,38 +74,43 @@
       (init-field board width height)
 
       (define f (instantiate frame% ("Simple Gui" #f 400 400)))
-      (define c (instantiate editor-canvas% (f)))
-      (define t (instantiate text% ()))
-      (send c set-editor t)
+      (define p (make-object vertical-pane% f))
+      (define map-text (instantiate text% ()))
+      (send (instantiate editor-canvas% (p)) set-editor map-text)
+      (define log-text (instantiate text% ()))
+      (send (instantiate editor-canvas% (p)) set-editor log-text)
       (send f show #t)
 
       (define (display-board b)
         (let* ((snips (map (lambda (b) (make-object string-snip% b)) b)))
-          (send t begin-edit-sequence)
-          (send t select-all)
-          (send t delete)
+          (send map-text begin-edit-sequence)
+          (send map-text select-all)
+          (send map-text delete)
           (for-each
            (lambda (snip)
-             (send t insert snip)
-             (send t insert #\newline))
+             (send map-text insert snip)
+             (send map-text insert #\newline))
            snips)
-          (send t select-all)
+          (send map-text select-all)
           (let ((d (make-object style-delta%)))
             (send d set-face "-misc-fixed")
-            (send t change-style d))
-          (send t set-position 0 'same)
-          (send t end-edit-sequence)))
+            (send map-text change-style d))
+          (send map-text set-position 0 'same)
+          (send map-text end-edit-sequence)))
       
       (define/public (end) (send f show #t))
       
       (define/public (set-robots l)
-        ;;(sleep/yield .25)
+        (sleep/yield .05)
         (let ((b (list->vector (map string-copy board))))
           (for-each
            (lambda (robot)
              (string-set! (vector-ref b (sub1 (caddr robot)))
                           (sub1 (cadr robot))
-                          (string-ref (number->string (car robot) 16) 0)))
+                          (cond
+                            ((= (car robot) (player-id)) #\u)
+                            (else #\r))))
+                          
            l)
           (display-board (reverse (vector->list b)))))
       (super-instantiate ())))

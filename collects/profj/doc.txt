@@ -1,10 +1,56 @@
 _professorj_
 
-This is preliminary documentation for a preliminary version of ProfessorJ,
-including information about the constructs allowed at different
-language levels, and known bugs. If a bug is listed in known bugs,
-please do not report it, it will be fixed at some point. Otherwise,
-please for now, report bugs directly to me at kathyg@cs.utah.eud
+This is preliminary documentation for a preliminary version of ProfessorJ.
+
+To use the interactions window for statements and variable declarations, you
+must use Alt+Enter instead of Enter
+
+Below is a list of known bugs. If you encounter a bug that is not listed here,
+please send e-mail directly to me at kathyg@cs.utah.edu 
+After known bugs the different language levels are outlined
+
+_Known Bugs as of May 21, 2003
+
+switch statement: Does not work. Programs that contain this statement won't
+ even compile
+ - Full language level only
+
+synchronized statements: Does not work as expected, will compile.
+ - Full language level only
+
+breaking or continuing to a label: Does not work as expected, will compile.
+ - Full language level only
+
+native methods: No support at the moment. Unknown if native methods will 
+ compile, they do pass the type-checker
+ - Full language level only
+
+class and object initialization statements are more permissive than required
+ by Java
+ - Full and Advanced language levels
+
+Methods may have dead code
+ - Intermediate, Advanced, and Full language levels
+
+Changing final variables will pass the type checker, but might cause errors
+ from mzscheme identifier not found, and can sometimes be done.
+ - All language levels
+
+Advanced cannot use static fields and methods, except statics of its own class
+ - Advanced language level only
+
+Parse errors report a general location for the parse error, but nothing 
+ specific
+ - All language levels
+
+Recursive functions are slow
+ - All language levels
+
+Editor indents as if the program were written in Scheme
+ - All language levels
+
+Language level information
+
 
 Changed: as of Apr 15, 2003
 drj is now ProfessorJ (dir profj)
@@ -242,6 +288,7 @@ Language Specification
 Known bugs
 
 Same as Advanced
+
 
 
 

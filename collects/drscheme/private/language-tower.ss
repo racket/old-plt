@@ -170,7 +170,9 @@
         ;; must call the resolver before setting the namespace
         (dynamic-require module-spec #f)
         (let ([orig-namespace (current-namespace)]
-              [lang-name ((current-module-name-resolver) module-spec #f #f)])
+              [lang-name (if (symbol? module-spec)
+			     module-spec
+			     ((current-module-name-resolver) module-spec #f #f))])
           (run-in-user-thread
            (lambda ()
              (namespace-attach-module orig-namespace lang-name)

@@ -156,7 +156,7 @@ wxTabChoice::~wxTabChoice(void)
 void wxTabChoice::SetSelection(Bool value)
 {
   if (cMacControl) {
-    ::SetControlValue(cMacControl, value - 1);
+    ::SetControlValue(cMacControl, value + 1);
   }
 }
 

@@ -10,7 +10,7 @@ if not "%PLTDIR%"=="" goto FoundPLTDIR
 
 rem  %~dp0 didn't work -- try to hack into our own directory
 cd "%0\.."
-if not exist "install.bat" goto NoPathFound
+if not exist "install" goto NoPathFound
 set PLTDIR=.
 goto FoundPLTDIR
 

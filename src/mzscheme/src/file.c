@@ -3517,6 +3517,7 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
       tried_cwd = 1;
     }
 #  endif
+    else if (errno != EINTR)
       break;
   }
 # endif

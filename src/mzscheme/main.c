@@ -603,7 +603,7 @@ int main(int argc, char **argv)
 #if defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
   void *mzscheme_stack_start;
 #endif
-#if defined(MZ_STACK_START_HACK) || defined(USE_SENORA_GC)
+#if defined(MZ_STACK_START_HACK) || defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
   long start2;
 
   mzscheme_stack_start = (void *)&start2;

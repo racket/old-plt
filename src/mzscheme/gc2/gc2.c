@@ -14,6 +14,9 @@ void (*GC_collect_end_callback)(void);
 void (*GC_custom_finalize)(void);
 void (*GC_out_of_memory)(void);
 
+void **GC_variable_stack;
+int GC_variable_count;
+
 void GC_add_roots(void *start, void *end)
 {
   
@@ -48,21 +51,63 @@ void GC_gcollect(void)
 {
 }
 
+#if 0
+void *prev;
+
+int check_all()
+{
+  void *m = prev;
+  int c = 0;
+
+  while (m) {
+    long size = ((long *)m)[0];
+    if (size < 0)
+      printf("bad size: %lx %d", m, size);
+    if (((long *)m)[2] != 0xd5d5d5d5)
+      printf("bad start marker: %lx %d", m, ((long *)m)[2]);
+    if (*((long *)(m + size + 12)) != 0xd5d5d5d5)
+      printf("bad end marker: %lx %d", m, *((long *)(m + size + 12)));
+    
+    c++;
+
+    m = ((void **)m)[1];
+  }
+
+  return c;
+}
+#endif
+
 /* Array of pointers: */
 void *GC_malloc(size_t size_in_bytes)
 {
-  return malloc(size_in_bytes);
+#if 0
+  void *m = malloc(12 + size_in_bytes + 4);
+
+  memset(m + 12, 0, size_in_bytes);
+  ((long *)m)[0] = size_in_bytes;
+  ((void **)m)[1] = prev;
+  ((long *)m)[2] = 0xd5d5d5d5;
+  *((long *)(m + size_in_bytes + 12)) = 0xd5d5d5d5;
+  
+  prev = m;
+
+  return m + 12;
+#else
+  void *m = malloc(size_in_bytes);
+  memset(m, 0, size_in_bytes);
+  return m;
+#endif
 }
 
 /* Tagged item: */
 void *GC_malloc_one_tagged(size_t s)
 {
-  return malloc(s);
+  return GC_malloc(s);
 }
 
 void *GC_malloc_array_tagged(size_t s)
 {
-  return malloc(s);
+  return GC_malloc(s);
 }
 
 /* Pointerless */
@@ -74,7 +119,7 @@ void *GC_malloc_atomic(size_t size_in_bytes)
 /* Plain malloc: */
 void *GC_malloc_atomic_uncollectable(size_t size_in_bytes)
 {
-  return malloc(size_in_bytes);
+  return GC_malloc_atomic(size_in_bytes);
 }
 
 void GC_free(void *s) /* noop */

@@ -64,8 +64,8 @@ void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *da
 				 void **olddata);
 void GC_unregister_disappearing_link(void **p);
 
-void **GC_prepare_stack_frame(int size);
-void GC_set_stack_frame(void **v);
+extern void **GC_variable_stack;
+extern int GC_variable_count;
 
 # ifdef __cplusplus
 };

@@ -241,7 +241,16 @@ h_symbol()
 
 number()
 {
-  return symbol();
+  /* Check for octal: */
+  int i;
+  for (i = 0; yytext[i]; i++)
+    if (!isdigit(yytext[i]))
+      break;
+  if (!yytext[i] && (yytext[0] == '0')) {
+    printf("(#o%s", yytext);
+    print_rest(1);
+  } else
+    return symbol();
 }
 
 character()

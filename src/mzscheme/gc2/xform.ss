@@ -30,10 +30,10 @@
 ;; Header:
 (printf "#define FUNCCALL(x) x~n")
 (printf "#define FUNCCALL_EMPTY(x) x~n")
-(printf "#define PREPARE_VAR_STACK(size) void **__gc_var_stack__ = GC_prepare_stack_frame(size)~n")
-(printf "#define SETUP(x) GC_set_stack_frame(__gc_var_stack__ + (x))~n")
-(printf "#define PUSH(v, x) (__gc_var_stack__[x] = (void *)&(v))~n")
-(printf "#define PUSHARRAY(v, l, x) (__gc_var_stack__[x] = (void *)0, __gc_var_stack__[x+1] = (void *)&(v), __gc_var_stack__[x+2] = (void *)l)")
+(printf "#define PREPARE_VAR_STACK(size) void *__gc_var_stack__[size+2]; __gc_var_stack__[0] = GC_variable_stack; __gc_var_stack__[1] = (void *)GC_variable_count;~n")
+(printf "#define SETUP(x) (GC_variable_stack = __gc_var_stack__, GC_variable_count = x)~n")
+(printf "#define PUSH(v, x) (__gc_var_stack__[x+2] = (void *)&(v))~n")
+(printf "#define PUSHARRAY(v, l, x) (__gc_var_stack__[x+2] = (void *)0, __gc_var_stack__[x+3] = (void *)&(v), __gc_var_stack__[x+4] = (void *)l)~n")
 
 (define-struct tok (n line col file))
 (define-struct (seq struct:tok) (close in))
@@ -462,6 +462,8 @@
 		       [(body-x live-vars)
 			(let loop ([body body])
 			  (if (null? body)
+			      ;; Start with 0 maxlive in case we want to check whether anything
+			      ;;  was pushed in the block
 			      (values null (make-live-var-info 0 (live-var-info-vars live-vars)))
 			      (let*-values ([(rest live-vars) (loop (cdr body))]
 					    [(e live-vars)
@@ -480,12 +482,7 @@
 					(list (make-note 'note #f #f #f (format "PREPARE_VAR_STACK(~a);" 
 										(live-var-info-maxlive live-vars))))
 					null)))
-		      body-x
-		      (if (or setup-stack?
-			      (null? local-vars)
-			      (zero? (live-var-info-maxlive live-vars)))
-			  null
-			  (list (list (make-note 'note #f #f #f "SETUP(0);"))))))
+		      body-x))
 		    (make-live-var-info (max orig-maxlive
 					     (live-var-info-maxlive live-vars))
 					(live-var-info-vars live-vars))))))))
@@ -690,6 +687,8 @@
 	a
 	(let-values ([(sube e) (get-one e comma-sep?)])
 	  (loop e (f sube a))))))
+
+; (print-it e 0 #t) (exit)
 
 (foldl-statement
  e

@@ -3260,10 +3260,14 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
   FILE *fp;
   int e_set = 0, m_set = 0, i;
   int existsok = 0, namelen;
-  char mode[2] = {'w', 'b'}, *filename;
+  char *filename;
+  char mode[2];
 #ifdef MAC_FILE_SYSTEM
   int creating = 1;
 #endif
+
+  mode[0] = 'w';
+  mode[1] = 'b';
   
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type(name, "string", 0, argc, argv);

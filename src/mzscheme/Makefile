@@ -280,9 +280,9 @@ zo:
 	rm -f ../collects/mzlib/compiled/*/*.so
 	$(MZSCHEME) -qf mkmzlib.ss -e '(make-zo)' -e '(exit)'
 
-mzscheme2:
+mzscheme2k:
 	cd src; $(XMAKE) all
-	cd gc2; $(XMAKE) mzscheme2
+	cd gc2; $(XMAKE) mzscheme2k
 
 depend:
 	cd src; $(XMAKE) -e depend 

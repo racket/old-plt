@@ -189,9 +189,12 @@ function helps with a few:
    * finding non-standard libraries and header files,
 
    * taming to some degree the differing conventions of Unix and
-     Windows, and
+     Windows, 
 
-   * setting up suitable dependencies on MzScheme headers.
+   * setting up suitable dependencies on MzScheme headers, and
+
+   * using a pre-compiled binary when a "precompiled" directory
+     is present.
 
 Many extension installers will have to sort out addition platform
 issues manually, however. For example, the "readline" installer picks
@@ -222,7 +225,13 @@ The arguments are as follows:
     while building.
 
   * file.c --- the name of the source file (relative to
-    `collection-dir').
+    `collection-dir'). The output file will be the same, except with a
+    ".c" suffix replaced with ".so" or ".dll" (depending on the
+    platform) and the path changed to "compiled/native/<platform>".
+
+    If "precompiled/native/<platform>/file.{so,dll} exists", then
+    `file.c' is not used at all, and the file in the "precompiled"
+    directory is simply copied.
 
   * default-lib-dir --- a default directory for finding supporting
     libraries, often a subdirectory of `collection-dir'. The user

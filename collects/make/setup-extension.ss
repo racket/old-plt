@@ -20,17 +20,49 @@
 			      flags)])
 	 body0 body ...)]))
 
-  (define (pre-install plthome
-		       collection-dir
-		       file.c
-		       default-lib-dir
-		       include-subdirs
-		       find-unix-libs
-		       find-windows-libs
-		       unix-libs
-		       windows-libs
-		       extra-depends
-		       last-chance-k)
+  (define (extract-base-filename file.c)
+    (let-values ([(base name dir?) (split-path (extract-base-filename/c file.c 'pre-install))])
+      name))
+
+  (define (pre-install plthome collection-dir file.c . rest)
+    (let* ([base-dir (build-path collection-dir
+				 "precompiled"
+				 "native"
+				 (system-library-subpath))]
+	   [variant-dir (case (link-variant)
+			  [(3m) (build-path base-dir "3m")]
+			  [else base-dir])]
+	   [base-file (extract-base-filename file.c)]
+	   [file.so (build-path variant-dir (append-extension-suffix base-file))])
+      (if (file-exists? file.so)
+	  ;; Just copy pre-compiled file:
+	  (let* ([base-dir (build-path collection-dir
+				       "compiled"
+				       "native"
+				       (system-library-subpath))]
+		 [variant-dir (case (link-variant)
+				[(3m) (build-path base-dir "3m")]
+				[else base-dir])]
+		 [dest-file.so (build-path variant-dir (append-extension-suffix base-file))])
+	    (make-directory* variant-dir)
+	    (printf "  Copying ~a to ~s~n" file.so dest-file.so)
+	    (when (file-exists? dest-file.so) 
+	      (delete-file dest-file.so))
+	    (copy-file file.so dest-file.so))
+	  ;; Normal build...
+	  (apply pre-install/normal plthome collection-dir file.c rest))))
+
+  (define (pre-install/normal plthome
+			      collection-dir
+			      file.c
+			      default-lib-dir
+			      include-subdirs
+			      find-unix-libs
+			      find-windows-libs
+			      unix-libs
+			      windows-libs
+			      extra-depends
+			      last-chance-k)
     (parameterize ([current-directory collection-dir])
       (define mach-id (string->symbol (system-library-subpath)))
       (define is-win? (eq? mach-id 'win32\\i386))
@@ -91,8 +123,7 @@
 		      (case (link-variant)
 			[(3m) (build-path std "3m")]
 			[else std])))
-	(define base-file (let-values ([(base name dir?) (split-path (extract-base-filename/c file.c 'pre-install))])
-			    name))
+	(define base-file (extract-base-filename file.c))
 	(define file.so (build-path dir (append-extension-suffix base-file)))
 	(define file.o (build-path dir (append-object-suffix base-file)))
 

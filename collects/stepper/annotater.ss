@@ -162,8 +162,8 @@
          
          (define (make-break kind)
            `(#%lambda returned-value-list
-             (,break (continuation-mark-set->list
-                      (current-continuation-marks) 
+             (,break (,continuation-mark-set->list
+                      (,current-continuation-marks) 
                       (#%quote ,debug-key))
                      (#%quote ,kind)
                      returned-value-list)))

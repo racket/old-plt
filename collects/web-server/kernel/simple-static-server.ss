@@ -3,7 +3,7 @@
            (lib "unitsig.ss")
            (lib "tcp-sig.ss" "net")
            "request-parsing.ss"
-           "response-encoding.ss"
+           "response.ss"
            "util.ss"
            "connection-manager.ss"
            "server.ss")
@@ -35,8 +35,7 @@
   (define (serve-file conn path)
     (cond
      [(file-exists? path)
-      (output-file path (file-size path) 'get
-                   (get-mime-type path) conn)]
+      (output-file conn path 'get (get-mime-type path))]
      [else (do-404-error conn 'get)]))
 
 
@@ -51,16 +50,17 @@
   ;; do-404-error: connection symbol -> void
   ;; report that the file was not found
   (define (do-404-error conn method)
-    (output-page/port
+    (output-response/method
      conn
      (make-response/full
-      404 "File not found" (current-seconds) "text/html" '()
-      (if (eqv? method 'head) '()
-          (list (xexpr->string
-                 `(html (head (title "File not found"))
-                        (body
-                         (p "The file referred to by this url was not
-                         found")))))))))
+      404 "File not found" '() (current-seconds) "text/html"
+      (list (xexpr->string
+             `(html (head (title "File not found"))
+                    (body
+                     (p "The file referred to by"
+                        "this url was not found"))))))
+     method))
+
 
   (define my-config@
     (unit/sig server-config^
@@ -75,9 +75,10 @@
       ;; respond to the next request and return #t if the conneciton should be
       ;; closed
       (define (serve-connection conn)
-        (let ([req (read-request (connection-i-port conn))])
+        (let-values ([(req close?) (read-request (connection-i-port conn))])
           (serve/url conn (request-uri req))
-          (request-close? req)))
+          (set-connection-close?! conn close?)
+          close?))
       ))
 
 

@@ -1,3 +1,5 @@
+;; I believe this file is dead now.
+;; should require response.ss instead
 (require (lib "list.ss")
          (lib "xml.ss" "xml")
          (lib "port.ss")

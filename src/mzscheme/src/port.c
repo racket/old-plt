@@ -2185,8 +2185,15 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 				    (SCHEME_GUARD_FILE_WRITE
 				     | ((existsok && (existsok != -1))
 					? SCHEME_GUARD_FILE_DELETE
+					: 0)
+				     /* append mode: */
+				     | ((mode[0] == 'a')
+					? SCHEME_GUARD_FILE_READ
+					: 0)
+				     /* update mode: */
+				     | ((existsok > 1)
+					? SCHEME_GUARD_FILE_READ
 					: 0)));
-					
 
 #ifdef USE_FD_PORTS
   /* Note: assuming there's no difference between text and binary mode */

@@ -3352,7 +3352,7 @@ void scheme_security_check_file(const char *who, char *filename, int guards)
       l = scheme_make_pair(read_symbol, l);
 
     a[0] = scheme_intern_symbol(who);
-    a[1] = scheme_make_immutable_sized_string(filename, -1, 1);
+    a[1] = (filename ? scheme_make_immutable_sized_string(filename, -1, 1) : scheme_false);
     a[2] = l;
 
     while (sg->parent) {

@@ -1853,7 +1853,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
   else
     backlog = 4;
 
-  scheme_security_check_network("tcp-connect", NULL, origid);
+  scheme_security_check_network("tcp-listen", NULL, origid);
 
 #ifdef USE_TCP
   /* Set id in network order: */

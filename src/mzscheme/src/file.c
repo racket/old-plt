@@ -1077,9 +1077,12 @@ static char *get_drive_part(const char *wds, int wdlen)
 
 char *scheme_getdrive()
 {
+  scheme_security_check_file("current-drive", NULL, SCHEME_GUARD_FILE_EXISTS);
 #ifdef DOS_FILE_SYSTEM
-  Scheme_Object *wd = CURRENT_WD();
-  return get_drive_part(SCHEME_STR_VAL(wd), SCHEME_STRTAG_VAL(wd));
+  {
+    Scheme_Object *wd = CURRENT_WD();
+    return get_drive_part(SCHEME_STR_VAL(wd), SCHEME_STRTAG_VAL(wd));
+  }
 #else
   return "";
 #endif
@@ -2267,6 +2270,7 @@ static char *do_path_to_complete_path(char *filename, long ilen, const char *wrt
       Scheme_Object *wd = CURRENT_WD();
       wrt = SCHEME_STR_VAL(wd);
       wlen = SCHEME_STRTAG_VAL(wd);
+      scheme_security_check_file("path->complete-path", NULL, SCHEME_GUARD_FILE_EXISTS);
     }
 
 #ifdef DOS_FILE_SYSTEM
@@ -3111,8 +3115,11 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 				      "directory-list",
 				      NULL,
 				      SCHEME_GUARD_FILE_READ);
-  else
+  else {
     filename = SCHEME_STR_VAL(CURRENT_WD());
+    scheme_security_check_file("directory-list", NULL, SCHEME_GUARD_FILE_EXISTS);
+    scheme_security_check_file("directory-list", filename, SCHEME_GUARD_FILE_READ);
+  }
 
   if (filename && !scheme_directory_exists(filename))
     scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
@@ -3127,8 +3134,10 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     filename = SCHEME_STR_VAL(argv[0]);
     if (has_null(filename, SCHEME_STRTAG_VAL(argv[0])))
       raise_null_error("directory-list", argv[0], "");
-  } else
+  } else {
     filename = SCHEME_STR_VAL(CURRENT_WD());
+    scheme_security_check_file("directory-list", NULL, SCHEME_GUARD_FILE_EXISTS);
+  }
   scheme_security_check_file("directory-list", filename, SCHEME_GUARD_FILE_READ);
 
   if (!find_mac_file(filename, 0, &dir, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
@@ -3263,6 +3272,8 @@ static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[])
   HParamBlockRec rec;
   int i;
 #endif
+
+  scheme_security_check_file("filesystem-root-list", NULL, SCHEME_GUARD_FILE_EXISTS);
 
 #ifdef UNIX_FILE_SYSTEM 
   first = scheme_make_pair(scheme_make_string("/"), scheme_null);
@@ -3728,6 +3739,9 @@ static Scheme_Object *cwd_check(int argc, Scheme_Object **argv)
 
 static Scheme_Object *current_directory(int argc, Scheme_Object **argv)
 {
+  if (!argc)
+    scheme_security_check_file("current-directory", NULL, SCHEME_GUARD_FILE_EXISTS);
+
   return scheme_param_config("current-directory",
 			     scheme_make_integer(MZCONFIG_CURRENT_DIRECTORY),
 			     argc, argv,
@@ -3852,6 +3866,8 @@ find_system_path(int argc, Scheme_Object **argv)
 		      0, argc, argv);
     return NULL;
   }
+
+  scheme_security_check_file("find-system-path", NULL, SCHEME_GUARD_FILE_EXISTS);
 
 #ifdef UNIX_FILE_SYSTEM
   if (which == id_sys_dir) {
@@ -4014,13 +4030,13 @@ find_system_path(int argc, Scheme_Object **argv)
     }
     else {
       if (which == id_temp_dir)
-		home = CURRENT_WD();
+	home = CURRENT_WD();
       else {
-		/* Everything else uses system current directory if there's no prefs folder */
-		home = scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1));
-		if (!home)
-		  /* disaster strikes; use Scheme CWD */
-		  home = CURRENT_WD();
+	/* Everything else uses system current directory if there's no prefs folder */
+	home = scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1));
+	if (!home)
+	  /* disaster strikes; use Scheme CWD */
+	  home = CURRENT_WD();
       }
     }
   

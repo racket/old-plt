@@ -116,8 +116,33 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep);
 void wxmac_reg_globs(void);
 #endif
 
-#ifdef wx_msw
+#if defined(wx_msw) || defined(wx_mac)
+# define NEED_HET_PARAM
+#endif
+
+#ifdef NEED_HET_PARAM
+# ifdef wx_msw
+#  define HET_TIMER_T UINT
+# else
+#  define HET_TIMER_T long
+# endif
+class HiEventTramp {
+public:
+  int (*f)(void *);
+  void *data;
+  int val;
+  int in_progress;
+  int progress_is_resumed;
+  Scheme_Object *old_param;
+  void *progress_base_addr;
+  mz_jmp_buf progress_base;
+  Scheme_Jumpup_Buf progress_cont;
+  int timer_on;
+  HET_TIMER_T timer_id;
+};
+int mred_het_run_some(void);
 extern int mred_het_param;
+int wxHiEventTrampoline(int (*f)(void *), void *data);
 #endif
 
 typedef void *(*ForEachFrameProc)(wxObject *, void *);

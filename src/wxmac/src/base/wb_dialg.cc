@@ -39,11 +39,11 @@
 static char *
 wxDefaultFileSelector(Bool load, const char *what, char *extension, char *default_name)
 {
-  char prompt[50];
+  char *prompt;
   char wild[60];
 
-  sprintf(prompt, load ? "Get File" : "Save File", what);
-
+  prompt = (load ? "Get File" : "Save File");
+  
   sprintf(wild, "*.%s", extension);
   return wxFileSelector (prompt, NULL, default_name, (char *)extension, wild, load ? wxOPEN : wxSAVE);
 }

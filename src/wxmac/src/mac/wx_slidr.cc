@@ -11,7 +11,7 @@
 #include "wx_messg.h"
 #include "wx_utils.h"
 #include "wx_slidr.h"
-
+#include "wx_het.h"
 
 // Slider
 /* 
@@ -342,10 +342,10 @@ void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
     if (StillDown()) {
       if (part) {
 	if (part == kControlIndicatorPart) {
-	  if (::TrackControl(cMacControl, pt, SCTrackActionProcUPP))
+	  if (::wxHETTrackControl(cMacControl, pt, SCTrackActionProcUPP))
 	    TrackPart(part);
 	} else {
-	  ::TrackControl(cMacControl, pt, SCTrackActionProcUPP);
+	  ::wxHETTrackControl(cMacControl, pt, SCTrackActionProcUPP);
 	}
       }
     }
@@ -356,6 +356,8 @@ void wxSlider::TrackPart(int part)
 {
   int oldval;
   wxCommandEvent *commandEvent;
+
+  /* Must queue callbacks only; don't run Scheme code directly: */
 
   oldval = ::GetControlValue(cMacControl);
 
@@ -389,6 +391,8 @@ void wxSlider::TrackPart(int part)
   }
  
   commandEvent = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
+
+  /* Must queue callbacks only: */
   ProcessCommand(commandEvent);
 	
   // So update happens correctly as we return...
@@ -402,8 +406,12 @@ pascal void SCTrackActionProc(ControlHandle theControl, short thePart)
   void *rc;
   rc = (void *)GetControlReference(theControl);
   slider = (wxSlider*)GET_SAFEREF(rc);
-  if (slider) 
+  if (slider) {
+    /* Queue callbacks only; don't run Scheme code directly: */
     slider->TrackPart(thePart);
+  }
+
+  while (wxHETYield() && ::StillDown()) { }
 }
 
 // --------------------- Client API ---------------------

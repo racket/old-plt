@@ -348,6 +348,9 @@ void wxCanvas::SetScrollData
 {
   wxDC* theDC;
 
+  /* This function must not call Scheme directly when evnt is
+     non-NULL.  Instead, queue callbacks. */
+
   // if (iniatorWindow == this) return;
 
   if ((long)whatScrollData & wxWhatScrollData::wxSizeW) {
@@ -382,6 +385,7 @@ void wxCanvas::SetScrollData
       theDC->device_origin_y = 0;
     }
     if (evnt) {
+      /* OnScroll must queue the callback: */
       OnScroll(evnt);
     }
     return;

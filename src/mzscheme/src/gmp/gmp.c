@@ -40,10 +40,6 @@ static const int __gmp_0 = 0;
 static int __gmp_junk;
 static int gmp_errno = 0;
 
-/* FIXME: when a thread dies or escapes during bignum_use_fuel(), the
-   allocator should be reset accordingly. Otherwise, we leak when
-   alloca is not available. */
-
 #define SCHEME_BIGNUM_USE_FUEL(n) scheme_bignum_use_fuel(n)
 extern void scheme_bignum_use_fuel(long n);
 

@@ -1162,7 +1162,11 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
   if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxWndProc))
     return res;
 
-  return WindowProc(hWnd, message, wParam, lParam, 0, tramp);
+  scheme_start_atomic();
+  res = WindowProc(hWnd, message, wParam, lParam, 0, tramp);
+  scheme_end_atomic();
+
+  return res;
 }
 
 // Dialog window proc
@@ -1177,7 +1181,11 @@ LONG APIENTRY wxDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxDlgProc))
     return res;
 
-  return WindowProc(hWnd, message, wParam, lParam, 1, tramp);
+  scheme_start_atomic();
+  res = WindowProc(hWnd, message, wParam, lParam, 1, tramp);
+  scheme_end_atomic();
+
+  return res;
 }
 
 wxNonlockingHashTable *wxWinHandleList = NULL;

@@ -219,7 +219,7 @@ Scheme_Type mred_eventspace_type;
 static Scheme_Type mred_eventspace_hop_type;
 static Scheme_Object *def_dispatch;
 int mred_ps_setup_param;
-#ifdef wx_msw
+#ifdef NEED_HET_PARAM
 int mred_het_param;
 #endif
 
@@ -660,7 +660,7 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   if (!config) {
     config = (Scheme_Config *)scheme_branch_config();
     scheme_set_param(config, mred_eventspace_param, (Scheme_Object *)c);
-#ifdef wx_msw
+#ifdef NEED_HET_PARAM
     scheme_set_param(config, mred_het_param, NULL);
 #endif
   }
@@ -1062,8 +1062,8 @@ void MrEdDoNextEvent(MrEdContext *c,
   Scheme_Schedule_Info sinfo;
   int restricted = 0;
 
-#ifdef wx_msw
-  /* see mredmsw.cxx for info on mred_het_param: */
+#ifdef NEED_HET_PARAM
+  /* see wxHiEventTrampoline for info on mred_het_param: */
   if (scheme_get_param(scheme_config, mred_het_param))
     restricted = 1;
 #endif
@@ -1128,14 +1128,14 @@ int MrEdEventReady(MrEdContext *c)
 {
   int restricted = 0;
 
-#ifdef wx_msw
-  /* see mredmsw.cxx for info on mred_het_param: */
+#ifdef NEED_HET_PARAM
+  /* see wxHiEventTrampoline for info on mred_het_param: */
   if (scheme_get_param(scheme_config, mred_het_param))
     restricted = 1;
 #endif
 
   return (TimerReady(c) || (!restricted && MrEdGetNextEvent(1, 1, NULL, NULL))
-	  || (! restricted && check_q_callbacks(2, MrEdSameContext, c, 1))
+	  || (!restricted && check_q_callbacks(2, MrEdSameContext, c, 1))
 	  || check_q_callbacks(1, MrEdSameContext, c, 1)
 	  || check_q_callbacks(0, MrEdSameContext, c, 1));
 }
@@ -2822,7 +2822,7 @@ wxFrame *MrEdApp::OnInit(void)
   mred_eventspace_param = scheme_new_param();
   mred_event_dispatch_param = scheme_new_param();
   mred_ps_setup_param = scheme_new_param();
-#ifdef wx_msw
+#ifdef NEED_HET_PARAM
   mred_het_param = scheme_new_param();
 #endif
 
@@ -3105,6 +3105,176 @@ void wxFlushDisplay(void)
 extern "C" {
  void __pure_virtual(void) {  }
 }
+#endif
+
+/****************************************************************************/
+/*                            wxHiEventTrampoline                           */
+/****************************************************************************/
+
+#ifdef NEED_HET_PARAM
+
+/* In certain Windows and Mac OS modes (e.g., to implement scrolling),
+   we run Scheme code atomically to avoid copying part of the stack
+   that belongs to the system. We run arbitrary code, however, the
+   code does not run to completion. Instead, we suspend the
+   continuation after a while, and then try to continue on the next OS
+   stop point (e.g., an WM_XSCROLL message). Hopefully, a timer
+   ensures that a suspended continuation gets to continue soon when
+   nothing else is going on.  During this special mode, other messages
+   that can call into Scheme are ignored (e.g., WM_ACTIVATE). After
+   the OS mode ends (e.g., the scroller returns), any pending
+   continuation is finished, but in non-atomic mode, and things are
+   generally back to normal. */
+
+static unsigned long get_deeper_base();
+
+static void pre_het(void *d)
+{
+  HiEventTramp *het = (HiEventTramp *)d;
+
+  het->old_param = scheme_get_param(scheme_config, mred_het_param);
+  scheme_set_param(scheme_config, mred_het_param, (Scheme_Object *)het);
+}
+
+static Scheme_Object *act_het(void *d)
+{
+  HiEventTramp * het = (HiEventTramp *)d;
+
+  het->val = het->f(het->data);
+
+  return scheme_void;
+}
+
+static void post_het(void *d)
+{
+  HiEventTramp *het = (HiEventTramp *)d;
+
+  scheme_set_param(scheme_config, mred_het_param, het->old_param);
+}
+
+int wxHiEventTrampoline(int (*f)(void *), void *data)
+{
+  HiEventTramp *het;
+
+  het = new HiEventTramp;
+  het->f = f;
+  het->data = data;
+  het->val = 0;
+
+  scheme_init_jmpup_buf(&het->progress_cont);
+
+  scheme_dynamic_wind(pre_het, act_het, post_het, NULL, het);
+
+  if (het->timer_on) {
+    het->timer_on = 0;
+# ifdef wx_msw
+    KillTimer(NULL, het->timer_id);
+# endif
+  }
+
+  if (het->in_progress) {
+    /* we have leftover work; jump and finish it (non-atomically) */
+    het->in_progress = 0;
+    het->progress_is_resumed = 1;
+    if (!scheme_setjmp(het->progress_base)) {
+      scheme_longjmpup(&het->progress_cont);    
+    }
+  }
+
+  return het->val;
+}
+
+static void suspend_het_progress(void)
+{
+  HiEventTramp * volatile het;
+
+  het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
+  
+  scheme_on_atomic_timeout = NULL;
+
+  het->in_progress = 1;
+  if (scheme_setjmpup(&het->progress_cont, (void *)&het, het->progress_base_addr)) {
+    /* we're back */
+    scheme_reset_jmpup_buf(&het->progress_cont);
+  } else {
+    /* we're leaving */
+    scheme_longjmp(het->progress_base, 1);
+  }
+}
+
+static void het_run_new(HiEventTramp * volatile het)
+{
+  /* We're willing to start new work that is specific to this thread */
+  het->progress_is_resumed = 0;
+
+  if (!scheme_setjmp(het->progress_base)) {
+    scheme_start_atomic();
+    scheme_on_atomic_timeout = suspend_het_progress;
+    wxYield(); /* due to het param, work will be restricted */
+  }
+
+  if (het->progress_is_resumed) {
+    /* we've already returned once; jump out to new progress base */
+    scheme_longjmp(het->progress_base, 1);
+  } else {
+    scheme_on_atomic_timeout = NULL;
+    scheme_end_atomic_no_swap();
+  }
+}
+
+static void het_do_run_new(HiEventTramp * volatile het, int *iteration)
+{
+  int new_iter[32];
+
+  if (iteration[0] == 3) {
+    het->progress_base_addr = (void *)new_iter;
+    het_run_new(het);
+  } else {
+    new_iter[0] = iteration[0] + 1;
+    het_do_run_new(het, new_iter);
+  }
+}
+
+int mred_het_run_some()
+{
+  HiEventTramp * volatile het;
+  int more = 0;
+
+  het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
+  if (het) {
+    if (het->in_progress) {
+      /* We have work in progress. */
+      if ((unsigned long)het->progress_base_addr < get_deeper_base()) {
+	/* We have stack space to resume the old work: */
+	het->in_progress = 0;
+	het->progress_is_resumed = 1;
+	scheme_start_atomic();
+	scheme_on_atomic_timeout = suspend_het_progress;
+	if (!scheme_setjmp(het->progress_base)) {
+	  scheme_longjmpup(&het->progress_cont);
+	} else {
+	  scheme_on_atomic_timeout = NULL;
+	  scheme_end_atomic_no_swap();
+	}
+      }
+    } else {
+      int iter[1];
+      iter[0] = 0;
+      het_do_run_new(het, iter);
+    }
+    
+    more = het->in_progress;
+  }
+
+  return more;
+}
+
+static unsigned long get_deeper_base()
+{
+  long here;
+  return (unsigned long)&here;
+}
+
 #endif
 
 /****************************************************************************/

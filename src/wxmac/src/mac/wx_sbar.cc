@@ -16,17 +16,13 @@
 #include "wx_stdev.h"
 #include "wx_area.h"
 #include "wx_frame.h"
-#ifndef WX_CARBON
-# include <Windows.h>
-#endif
-
-static pascal void TrackActionProc(ControlHandle theControl,short partCode);
+#include "wx_het.h"
 
 //	Functions which are called from external scope, but in turn invoke
 //	DocWindow methods. These really could be moved t
 
-static ControlActionUPP
-TrackActionProcUPP = NewControlActionUPP(TrackActionProc);
+static pascal void TrackActionProc(ControlHandle theControl, short thePart);
+static ControlActionUPP TrackActionProcUPP = NewControlActionUPP(TrackActionProc);
 
 
 //=============================================================================
@@ -280,7 +276,12 @@ static pascal void TrackActionProc(ControlHandle theControl, short thePart)
 
   rc = (void *)GetControlReference(theControl);
   scrollBar = (wxScrollBar*)GET_SAFEREF(rc);
-  if (scrollBar) scrollBar->TrackAction(thePart);
+  if (scrollBar) {
+    /* Must queue callbacks only: */
+    scrollBar->TrackAction(thePart);
+  }
+
+  while (wxHETYield() && ::StillDown()) { }
 }
 
 //-----------------------------------------------------------------------------
@@ -299,8 +300,11 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
     startPt.h = startH + SetOriginX;
     thePart = ::TestControl(cMacControl, startPt);
     if (thePart) {
+      int down;
+      down = StillDown();
+	
       if (thePart == kControlIndicatorPart) {
-	if (!StillDown() || TrackControl(cMacControl, startPt, TrackActionProcUPP)) {
+	if (!down || wxHETTrackControl(cMacControl, startPt, TrackActionProcUPP)) {
 	  Bool horizontal = cStyle & wxHSCROLL;
 	  wxWhatScrollData positionScrollData =
 	    (horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
@@ -316,10 +320,8 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
 	  cScroll->SetScrollData(newPosition, positionScrollData, e);
 	}
       } else {
-	int down;
-	down = StillDown();
 	if (down) {
-	  ::TrackControl(cMacControl, startPt, TrackActionProcUPP);
+	  ::wxHETTrackControl(cMacControl, startPt, TrackActionProcUPP);
 	}
       }
     }
@@ -329,6 +331,8 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
 //-----------------------------------------------------------------------------
 void wxScrollBar::TrackAction(short part) // mac platform only
 {
+  /* This code must not call Scheme. */
+
   if (part && cScroll) {
     Bool horizontal = cStyle & wxHSCROLL;
     wxScrollData* scrollData;
@@ -367,6 +371,8 @@ void wxScrollBar::TrackAction(short part) // mac platform only
     e->direction = (horizontal ? wxHORIZONTAL : wxVERTICAL);
     e->pos = GetValue();
     e->moveType = mtype;
+    /* This code must not call Scheme, either, though it can
+       install callbacks: */
     cScroll->SetScrollData(newPosition, positionScrollData, e);
 
     SetCurrentDC(); // must reset cMacDC (kludge)
@@ -381,6 +387,8 @@ void wxScrollBar::SetScrollData // adjust scrollBar to match scroll data setting
  wxScrollEvent*		e
  )
 {
+  /* This function must not call Scheme. */
+
   // if (this == iniatorWindow) return;
   Bool horizontal = cStyle & wxHSCROLL;
   wxWhatScrollData sizeScrollData;

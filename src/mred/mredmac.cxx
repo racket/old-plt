@@ -16,6 +16,7 @@
 #include "wx_media.h"
 #include "scheme.h"
 #include "wx_macevents.h"
+#include "wx_het.h"
 
 #include "mred.h"
 
@@ -2043,3 +2044,87 @@ done:
   return retval;
 }
 
+
+/**********************************************************************/
+/*          Generic control tracking with callbacks                   */
+/**********************************************************************/
+
+#if 1
+
+static RgnHandle clipRgn;
+
+class wxTC_Closure {
+public:
+  ControlRef ctl;
+  Point start;
+  ControlActionUPP proc;
+};
+
+static int call_tc(void *_c)
+{
+  wxTC_Closure *c;
+
+  c = (wxTC_Closure *)_c;
+
+  return TrackControl(c->ctl, c->start, c->proc);
+}
+
+ControlPartCode wxHETTrackControl(ControlRef theControl, Point startPoint, ControlActionUPP actionProc)
+{
+  wxTC_Closure *c;
+  int v;
+
+  c = new wxTC_Closure;
+  c->ctl = theControl;
+  c->start = startPoint;
+  c->proc = actionProc;
+
+  scheme_start_atomic();
+  v = wxHiEventTrampoline(call_tc, (void *)c);
+  scheme_end_atomic();
+
+  return v;
+}
+
+int wxHETYield(void)
+{
+  CGrafPtr savep;
+  GDHandle savegd;
+  ThemeDrawingState s;
+  int more;
+
+  if (!clipRgn)
+    clipRgn = NewRgn();
+
+  ::GetGWorld(&savep, &savegd);  
+  GetThemeDrawingState(&s);
+  GetClip(clipRgn);
+
+  more = mred_het_run_some();
+
+  ::SetGWorld(savep, savegd);
+  SetThemeDrawingState(s, TRUE);
+  SetClip(clipRgn);
+
+  return more;
+}
+
+#else
+
+ControlPartCode wxHETTrackControl(ControlRef theControl, Point startPoint, ControlActionUPP actionProc)
+{
+  int v;
+
+  v = TrackControl(theControl, startPoint, actionProc);
+
+  return v;
+}
+
+void wxHETYield(void)
+{
+  printf("start\n");
+  wxYield();
+  printf("end\n");
+}
+
+#endif

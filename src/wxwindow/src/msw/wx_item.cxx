@@ -496,7 +496,11 @@ LONG APIENTRY _EXPORT
   if (!wxDoItemPres(item, hWnd, message, wParam, lParam, &r, tramp))
     return r;
 
-  return CallWindowProc((WNDPROC)item->oldWndProc, hWnd, message, wParam, lParam);
+  scheme_start_atomic();
+  res = CallWindowProc((WNDPROC)item->oldWndProc, hWnd, message, wParam, lParam);
+  scheme_end_atomic();
+
+  return res;
 }
 
 wxItem *wxFindControlFromHandle(HWND hWnd)

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.12 1999/07/22 12:11:57 mflatt Exp $
+ * RCS_ID:      $Id: wx_dialg.cxx,v 1.13 1999/07/25 00:53:39 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -383,9 +383,7 @@ Bool wxDialogBox::Show(Bool show)
 
       wxPushModalWindow(this, this);
       
-      wxList *disabled_windows;
       wxChildNode *cnode;
-      wxNode *node;
 
       disabled_windows = new wxList();
       
@@ -399,18 +397,22 @@ Bool wxDialogBox::Show(Bool show)
       
       wxDispatchEventsUntil(CheckDialogShowing, (void *)this);
 
+    } else {
       wxPopModalWindow(this, this);
+
+      wxNode *node;
 
       for (node = disabled_windows->First(); node; node = node->Next()) {
 	wxWindow *w = (wxWindow *)node->Data();
 	w->InternalEnable(TRUE);
       } 
+      disabled_windows = NULL;
 
       ShowWindow(dialog->handle, SW_HIDE);
 
       if (GetParent())
 	wxwmBringWindowToTop(GetParent()->GetHWND());
-    } else {
+
       modal_showing = FALSE;
     }
   } else {

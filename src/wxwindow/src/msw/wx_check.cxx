@@ -11,12 +11,15 @@
 
 #include "wx.h"
 
-BOOL wxCheckBox::MSWCommand(UINT WXUNUSED(param), WORD WXUNUSED(id))
+BOOL wxCheckBox::MSWCommand(UINT param, WORD WXUNUSED(id))
 {
-  wxCommandEvent *event;
-  event = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
-  ProcessCommand(event);
-  return TRUE;
+  if (param == BN_CLICKED)
+  {
+    wxCommandEvent *event;
+    event = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
+    ProcessCommand(event);
+    return TRUE;
+  }
 }
 
 // Single check box item

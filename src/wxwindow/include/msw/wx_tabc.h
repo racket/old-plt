@@ -29,6 +29,11 @@ class wxTabChoice : public wxItem
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
 
   BOOL MSWCommand(UINT param, WORD id);
+
+  Bool Show(Bool show);
+
+  HWND bgStatic;
+  int orig_height;
 };
 
 #endif // wx_tabch

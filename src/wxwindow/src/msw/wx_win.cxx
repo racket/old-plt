@@ -524,7 +524,6 @@ void wxResetCurrentCursor(void)
     return;
 
   wxWindow *w = wnd->wx_window;
-  if (!w) return;
 
   wxCursor *cursor = wxSTANDARD_CURSOR;
   while (w) {

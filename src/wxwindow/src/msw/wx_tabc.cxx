@@ -72,8 +72,13 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
 			 WS_CHILD | WS_CLIPSIBLINGS,
 			 0, 0, width ? width : 40, height,
 			 cparent->handle, (HMENU)windows_id, wxhInstance, NULL);
- 
-  // Add tabs for each day of the week. 
+
+  /* For comctl32 version6, makes the panel background gray: */
+  bgStatic = wxwmCreateWindowEx(0, STATIC_CLASS, "",
+				STATIC_FLAGS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE,
+				0, 0, 200, 200, hwndTab, (HMENU)NewId(this),
+				wxhInstance, NULL);
+
   tie.mask = TCIF_TEXT;
  
   if (n) {
@@ -116,12 +121,11 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
 
   panel->AdvanceCursor(this);
   Callback(func);
-
-  
 }
+
 wxTabChoice::~wxTabChoice()
 {
-  
+  wxwmDestroyWindow(bgStatic);
 }
 
 int wxTabChoice::GetSelection(void) {
@@ -167,7 +171,11 @@ void wxTabChoice::SetSize(int x, int y, int width, int height, int WXUNUSED(size
     height += 4;
   }
 
+  if (!orig_height)
+    orig_height = height;
+
   MoveWindow((HWND)ms_handle, x, y, width, height, TRUE);
+  MoveWindow((HWND)bgStatic, 2, orig_height-4, width-5, height-orig_height, TRUE);
 
   OnSize(width, height);
 }
@@ -198,4 +206,10 @@ void wxTabChoice::Delete(int i)
 {
   if ((i >= 0) && (i < Number()))
     TabCtrl_DeleteItem((HWND)ms_handle, i);
+}
+
+Bool wxTabChoice::Show(Bool show) 
+{
+  wxWindow::Show(show);
+  return TRUE;
 }

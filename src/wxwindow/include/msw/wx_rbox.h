@@ -18,8 +18,6 @@
 class wxBitmap;
 class wxRadioBox: public wxbRadioBox
 {
- private:
-  HWND static_label;
  public:
   Bool selected;
   HWND *radioButtons;

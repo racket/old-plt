@@ -507,9 +507,16 @@
 		  (gw s1)))))]
 
 	  [this-err-write/exn
-	   (let ([fallthru-regexp (regexp "^()([a-z:-]*): ")]
-		 [class-regexp (regexp "^(.*[^a-z:-])([a-z:-]+(<%>|%))")]
-		 [ivar-regexp (regexp "^(ivar: instance variable not found: )([a-z:-]*)")])
+	   (let* ([raw-symbol-chars "a-z/*!>:-"]
+		  [symbol-chars (format "[~a]" raw-symbol-chars)]
+		  [not-symbol-chars (format "[^~a]" raw-symbol-chars)]
+		  [fallthru-regexp (regexp (format "^()(~a*): " symbol-chars))]
+		  [class-regexp (regexp (format "^(.*~a)(~a+(<%>|%)).*$"
+						not-symbol-chars symbol-chars))]
+		  [ivar-regexp (regexp
+				(format
+				 "^(ivar: instance variable not found: )(~a*)"
+				 symbol-chars))])
 	     (lambda (s exn)
 	       (queue-io
 		(lambda ()
@@ -533,21 +540,25 @@
 					      (drscheme:frame:help-desk var))))))]
 		      [else
 		       (let ([bind-to-help
-			      (lambda (regexp)
+			      (lambda (regexp s)
 				(let ([match (regexp-match regexp s)])
-				  (when match
-				    (let* ([prefix (cadr match)]
-					   [var (caddr match)]
-					   [var-start (+ start (string-length prefix))]
-					   [var-end (+ var-start (string-length var))])
-				      (change-style click-delta var-start var-end)
-				      (set-clickback
-				       var-start var-end
-				       (lambda x
-					 (drscheme:frame:help-desk var)))))))])
-			 (bind-to-help fallthru-regexp)
-			 (bind-to-help class-regexp)
-			 (bind-to-help ivar-regexp))])))))))]
+				  (if match
+				      (let* ([prefix (cadr match)]
+					     [var (caddr match)]
+					     [var-start (+ start (string-length prefix))]
+					     [var-end (+ var-start (string-length var))])
+					(change-style click-delta var-start var-end)
+					(set-clickback
+					 var-start var-end
+					 (lambda x
+					   (drscheme:frame:help-desk var)))
+					prefix)
+				      #f)))])
+			 (let loop ([s s])
+			   (when s
+			     (loop (bind-to-help class-regexp s))))
+			 (bind-to-help ivar-regexp s)
+			 (bind-to-help fallthru-regexp s))])))))))]
 	  [this-err-write
 	   (lambda (s)
 	     (this-err-write/exn s #f))]

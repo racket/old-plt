@@ -118,7 +118,7 @@
 	       "Output Style"
 	       (list "Constructor"
 		     "Quasiquote"
-		     "R4RS")
+		     "write")
 	       main
 	       (lambda (box evt)
 		 (let* ([which (send box get-selection)]

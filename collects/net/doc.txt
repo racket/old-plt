@@ -204,7 +204,7 @@ PROCEDURES -----------------------------------------------------------
   the empty string, or it will be a string matching the following
   regexp:
 
-      #rx"^HTTP/.*?((\r\n)|\n)((\r\n)|\n)"
+      #rx"^HTTP/.*?((\r\n\r\n)|(\n\n)|(\r\r))"
 
 > (call/input-url url url->port-proc port->X-proc [list-of-strings]) -> X
 

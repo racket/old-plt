@@ -403,7 +403,7 @@
       ;; purify-port : in-port -> header-string
       (define purify-port
         (lambda (port)
-	  (let ([m (regexp-match-peek-positions #rx"^HTTP/.*?((\r\n)|\n|\r)((\r\n)|\n|\r)" port)])
+	  (let ([m (regexp-match-peek-positions #rx"^HTTP/.*?((\r\n\r\n)|(\n\n)|(\r\r))" port)])
 	    (if m
 		(read-string (cdar m) port)
 		""))))

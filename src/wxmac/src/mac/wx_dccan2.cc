@@ -148,7 +148,7 @@ void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
   ReleaseCurrentDC();
 }
 
-void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
+void wxCanvasDC::SetPixelCore(int i, int j, int r, int g, int b)
 {
   RGBColor rgb;
 

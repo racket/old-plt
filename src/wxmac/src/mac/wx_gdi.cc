@@ -1235,7 +1235,7 @@ void wxBitmap::DrawMac(int x, int y, int mode)
 	&& (mask->GetHeight() == GetHeight())) {
       const BitMap *maskbm;
       maskbm = GetPortBitMapForCopyBits(mask->x_pixmap);
-      ::CopyDeepMask(srcbm, maskbm, dstbm, &sbounds, &sbounds, &dounds, srcCopy, NULL);
+      ::CopyDeepMask(srcbm, maskbm, dstbm, &sbounds, &sbounds, &dbounds, srcCopy, NULL);
     } else {
       ::CopyBits(srcbm, dstbm, &sbounds, &dbounds, srcCopy, NULL);
     }

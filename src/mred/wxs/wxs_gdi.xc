@@ -65,7 +65,7 @@
 @ "get-weight" : SYM[weight] GetWeight();
 @ "get-smoothing" : SYM[smoothing] GetSmoothing();
 @ "get-underlined" : bool GetUnderlined();
-@ "get-size-in-pixels?" : bool GetSizeInPixels();
+@ "get-size-in-pixels" : bool GetSizeInPixels();
 
 @ "get-font-id" : int GetFontId();
 

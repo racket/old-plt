@@ -208,8 +208,6 @@ static wxBitmap *ScaleBitmap(wxBitmap *src,
     sw = (int)w;
   if (sh > h)
     sh = (int)h;
-  sw -= xs;
-  sh -= ys;
 
   scale_x = (float)tw / sw;
   scale_y = (float)th / sh;
@@ -240,7 +238,7 @@ static wxBitmap *ScaleBitmap(wxBitmap *src,
       for (tj = 0; tj < th; tj++) {
 	i = (int)(ti / scale_x);
 	j = (int)(tj / scale_y);
-	pixel = XGetPixel(simg, i + xs, j + ys);
+	pixel = XGetPixel(simg, i, j);
 	if (forceMono) {
 	  if (pixel == whiteVal)
 	    pixel = 0;
@@ -549,7 +547,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
       src->selectedTo->EndSetPixel();
     if (mask && mask->selectedTo)
       mask->selectedTo->EndSetPixel();
-    
+
 #ifdef WX_USE_XRENDER
     /* Decide whether to use Xrender before scaling...
 
@@ -581,18 +579,14 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     tx = (int)XLOG2DEV(xdest);
     ty = (int)YLOG2DEV(ydest);
 
-    {
-      float ww, hh;
+    w = ((src->GetWidth()  < w) ? src->GetWidth() : w);
+    h = ((src->GetHeight() < h) ? src->GetHeight() : h);
 
-      ww = src->GetWidth()  < w ? src->GetWidth() : w;
-      hh = src->GetHeight() < h ? src->GetHeight() : h;
-
-      scaled_width = (int)XLOG2DEV(xdest + w) - tx;
-      scaled_height = (int)YLOG2DEV(ydest + h) - ty;
-    }
+    scaled_width = (int)XLOG2DEV(xdest + w) - tx;
+    scaled_height = (int)YLOG2DEV(ydest + h) - ty;
 
     /* Handle scaling by creating a new, temporary bitmap: */
-    if ((scaled_width != w) || (scaled_height != h)) {
+    if ((scaled_width != (int)w) || (scaled_height != (int)h)) {
       int retval;
       src = ScaleBitmap(src, scaled_width, scaled_height, xsrc, ysrc, w, h, DPY, &tmp, &retval, 0, 0);
       if (!src)
@@ -605,6 +599,10 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	  return retval;
 	}
       }
+
+      /* Temp bitmaps use only the relevant section: */
+      xsrc = 0;
+      ysrc = 0;
     }
 
     xsrc = floor(xsrc);

@@ -454,7 +454,7 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
 
 static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
 				    int weight, Bool underlined, 
-				    int si_try_again, float angle)
+				    int si_try_again, Bool sip, float angle)
 {
   char *buffer;
   char *name;
@@ -477,11 +477,32 @@ static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
       else if (name[i + 1] == 'd') {
 	if (found)
 	  return NULL;
-	found = 1;
+	found = i + 1;
       } else
 	return NULL;
     }
   }
+
+  /* If the size is in pixels, try to change
+     ...-*-%d-... to ...-%d-*-... */
+  if (sip && found) {
+    if ((found > 4) 
+	&& (name[found+1] == '-')
+	&& (name[found-2] == '-')
+	&& (name[found-3] == '*')
+	&& (name[found-4] == '-')) {
+      char *rename;
+      rename = new char[len + 1];
+      memcpy(rename, name, len + 1);
+      name = rename;
+      name[found-3] = '%';
+      name[found-2] = 'd';
+      name[found-1] = '-';
+      name[found] = '*';
+    } else
+      sip = 0;
+  } else
+    sip = 0;
 
   if (found && (angle != 0.0)) {
     /* Replace %d with %s: */
@@ -515,7 +536,7 @@ static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
     
     sprintf(buffer, rename, matrix_str);
   } else {
-    sprintf(buffer, name, point_size);
+    sprintf(buffer, name, sip ? point_size/10 : point_size);
   }
 
   s = XLoadQueryFont(wxAPP_DISPLAY, buffer);
@@ -524,7 +545,7 @@ static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
     /* Try slant/italic instead of italic/slant: */
     s = wxLoadQueryFont(point_size, fontid, 
 			(style == wxSLANT) ? wxITALIC : wxSLANT, 
-			weight, underlined, 0, angle);
+			weight, underlined, 0, sip, angle);
   }
   
   return s;
@@ -539,7 +560,7 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid, int famil
 
   while (1) {
 
-    font = wxLoadQueryFont(point_size, fontid, style, weight, underlined, 1, angle);
+    font = wxLoadQueryFont(point_size, fontid, style, weight, underlined, 1, sip, angle);
 
     if (!font) {
       // search up and down by stepsize 10
@@ -548,19 +569,19 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid, int famil
       int i;
 
       // Try plain style
-      font = wxLoadQueryFont(point_size, fontid, wxNORMAL, wxNORMAL_WEIGHT, underlined, 1, angle);
+      font = wxLoadQueryFont(point_size, fontid, wxNORMAL, wxNORMAL_WEIGHT, underlined, 1, sip, angle);
 
       // Search for smaller size (approx.)
       for (i=point_size-10; !font && i >= 10 && i >= min_size; i -= 10) {
-	font = wxLoadQueryFont(i, fontid, style, weight, underlined, 1, angle);
+	font = wxLoadQueryFont(i, fontid, style, weight, underlined, 1, sip, angle);
 	if (!font)
-	  font = wxLoadQueryFont(i, fontid,  wxNORMAL, wxNORMAL_WEIGHT, underlined, 1, angle);
+	  font = wxLoadQueryFont(i, fontid,  wxNORMAL, wxNORMAL_WEIGHT, underlined, 1, sip, angle);
       }
       // Search for larger size (approx.)
       for (i=point_size+10; !font && i <= max_size; i += 10) {
-	font = wxLoadQueryFont(i, fontid, style, weight, underlined, 1, angle);
+	font = wxLoadQueryFont(i, fontid, style, weight, underlined, 1, sip, angle);
 	if (!font)
-	  font = wxLoadQueryFont(i, fontid,  wxNORMAL, wxNORMAL_WEIGHT, underlined, 1, angle);
+	  font = wxLoadQueryFont(i, fontid,  wxNORMAL, wxNORMAL_WEIGHT, underlined, 1, sip, angle);
       }
     }
     

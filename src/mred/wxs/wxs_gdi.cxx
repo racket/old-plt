@@ -329,7 +329,7 @@ static Scheme_Object *os_wxFontGetSizeInPixels(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(os_wxFont_class, "get-size-in-pixels? in font%", n, p);
+  objscheme_check_valid(os_wxFont_class, "get-size-in-pixels in font%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
@@ -622,7 +622,7 @@ void objscheme_setup_wxFont(Scheme_Env *env)
   os_wxFont_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font%", "object%", (Scheme_Method_Prim *)os_wxFont_ConstructScheme, 9));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-font-id" " method", (Scheme_Method_Prim *)os_wxFontGetFontId, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-size-in-pixels?" " method", (Scheme_Method_Prim *)os_wxFontGetSizeInPixels, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-size-in-pixels" " method", (Scheme_Method_Prim *)os_wxFontGetSizeInPixels, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-underlined" " method", (Scheme_Method_Prim *)os_wxFontGetUnderlined, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-smoothing" " method", (Scheme_Method_Prim *)os_wxFontGetSmoothing, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-weight" " method", (Scheme_Method_Prim *)os_wxFontGetWeight, 0, 0));

@@ -135,6 +135,7 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
     smoothingOn = wxBASE;
     smoothingOff = wxBASE;
     underlinedOn = underlinedOff = FALSE;
+    sipOn = sipOff = FALSE;
     transparentTextBackingOn = transparentTextBackingOff = FALSE;
     foregroundMult = new wxMultColour;
     foregroundMult->Set(1, 1, 1);
@@ -162,6 +163,10 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
   case wxCHANGE_UNDERLINE:
     underlinedOn = param;
     underlinedOff = !param;
+    break;
+  case wxCHANGE_SIP:
+    sipOn = param;
+    sipOff = !param;
     break;
   case wxCHANGE_SIZE:
     sizeMult = 0;
@@ -199,6 +204,10 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
     underlinedOn = TRUE;
     underlinedOff = TRUE;
     break;
+  case wxCHANGE_TOGGLE_SIP:
+    sipOn = TRUE;
+    sipOff = TRUE;
+    break;
   case wxCHANGE_BIGGER:
     sizeMult = 1;
     sizeAdd = param;
@@ -220,6 +229,8 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
     smoothingOff = wxBASE;
     underlinedOn = FALSE;
     underlinedOff = TRUE;
+    sipOn = FALSE;
+    sipOff = TRUE;
     alignmentOn = wxALIGN_BOTTOM;
     alignmentOff = wxBASE;
     /* fall through ... */
@@ -349,6 +360,14 @@ Bool wxStyleDelta::Collapse(wxStyleDelta *deltaIn)
 	|| (!underlinedOff && underlinedOn)))
     return FALSE;
 
+  if (!((sipOn == deltaIn->sipOn
+	 && sipOff == deltaIn->sipOff)
+	|| (!sipOn && !sipOff)
+	|| (!deltaIn->sipOn && !deltaIn->sipOff)
+	|| (!sipOn && sipOff)
+	|| (!sipOff && sipOn)))
+    return FALSE;
+
   if (!((transparentTextBackingOn == deltaIn->transparentTextBackingOn
 	 && transparentTextBackingOff == deltaIn->transparentTextBackingOff)
 	|| (!transparentTextBackingOn && !transparentTextBackingOff)
@@ -422,6 +441,13 @@ Bool wxStyleDelta::Collapse(wxStyleDelta *deltaIn)
     if (deltaIn->underlinedOn && deltaIn->underlinedOff)
       underlinedOn = underlinedOff = FALSE;
   }
+  if (!sipOn && !sipOff) {
+    sipOn = deltaIn->sipOn;
+    sipOff = deltaIn->sipOff;
+  } else if (sipOn && sipOff) {
+    if (deltaIn->sipOn && deltaIn->sipOff)
+      sipOn = sipOff = FALSE;
+  }
   if (!transparentTextBackingOn && !transparentTextBackingOff) {
     transparentTextBackingOn = deltaIn->transparentTextBackingOn;
     transparentTextBackingOff = deltaIn->transparentTextBackingOff;
@@ -462,6 +488,8 @@ Bool wxStyleDelta::Equal(wxStyleDelta *deltaIn)
 	  && styleOff == deltaIn->styleOff
 	  && underlinedOn == deltaIn->underlinedOn
 	  && underlinedOff == deltaIn->underlinedOff
+	  && sipOn == deltaIn->sipOn
+	  && sipOff == deltaIn->sipOff
 	  && transparentTextBackingOn == deltaIn->transparentTextBackingOn
 	  && transparentTextBackingOff == deltaIn->transparentTextBackingOff
 	  && amfr == bmfr && amfb == bmfb && amfg == bmfg
@@ -487,6 +515,8 @@ void wxStyleDelta::Copy(wxStyleDelta *in)
   DCOPY(styleOff);
   DCOPY(underlinedOn);
   DCOPY(underlinedOff);
+  DCOPY(sipOn);
+  DCOPY(sipOff);
   DCOPY(transparentTextBackingOn);
   DCOPY(transparentTextBackingOff);
   DCOPY(foregroundMult->r);
@@ -552,7 +582,7 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
   short rp, gp, bp; 
   Bool match;
   wxNode *node;
-  Bool underlined;
+  Bool underlined, sip;
   wxStyle *base;
 
   base = baseStyle;
@@ -651,9 +681,19 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
   else
     underlined = base->font->GetUnderlined();
   
+  if (nonjoin_delta->sipOff && nonjoin_delta->sipOn)
+    sip = !base->font->GetSizeInPixels();
+  else if (nonjoin_delta->sipOff)
+    sip = FALSE;
+  else if (nonjoin_delta->sipOn)
+    sip = TRUE;
+  else
+    sip = base->font->GetSizeInPixels();
+  
   target->font = wxTheFontList->FindOrCreateFont(size, fontid,
 						 style, weight, 
-						 underlined, smoothing);
+						 underlined, smoothing,
+						 sip);
 
   target->textMetricDC = NULL;
 
@@ -742,6 +782,11 @@ int wxStyle::GetSmoothing()
 Bool wxStyle::GetUnderlined()
 {
   return font->GetUnderlined();
+}
+
+Bool wxStyle::GetSizeInPixels()
+{
+  return font->GetSizeInPixels();
 }
 
 Bool wxStyle::GetTransparentTextBacking()
@@ -1663,6 +1708,15 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
       }
       f->Get(&num); delta->underlinedOn = num;
       f->Get(&num); delta->underlinedOff = num;
+      if (WXME_VERSION_ONE(f) || WXME_VERSION_TWO(f)
+	  || WXME_VERSION_THREE(f) || WXME_VERSION_FOUR(f)
+	  || WXME_VERSION_FIVE(f)) {
+	delta->sipOn = FALSE;
+	delta->sipOff = FALSE;
+      } else {
+	f->Get(&num); delta->sipOn = num;
+	f->Get(&num); delta->sipOff = num;
+      }
       if (WXME_VERSION_ONE(f) || WXME_VERSION_TWO(f)) {
 	delta->transparentTextBackingOn = FALSE;
 	delta->transparentTextBackingOff = FALSE;
@@ -1794,6 +1848,8 @@ Bool wxmbWriteStylesToFile(wxStyleList *styleList, wxMediaStreamOut *f)
       f->Put(SmoothingThisToStandard(delta->smoothingOff));
       f->Put(delta->underlinedOn);
       f->Put(delta->underlinedOff);
+      f->Put(delta->sipOn);
+      f->Put(delta->sipOff);
       f->Put(delta->transparentTextBackingOn);
       f->Put(delta->transparentTextBackingOff);
 

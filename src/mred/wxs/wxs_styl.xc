@@ -80,6 +80,7 @@
 @SYM "change-bold" : wxCHANGE_BOLD
 @SYM "change-italic" : wxCHANGE_ITALIC
 @SYM "change-toggle-underline" : wxCHANGE_TOGGLE_UNDERLINE
+@SYM "change-toggle-size-in-pixels" : wxCHANGE_TOGGLE_SIP
 @SYM "change-normal-color" : wxCHANGE_NORMAL_COLOUR
 @ENDSYMBOLS
 @BEGINSYMBOLS changeFam > ONE > BUNDLE
@@ -99,6 +100,9 @@
 @ENDSYMBOLS
 @BEGINSYMBOLS changeUnderline > ONE > BUNDLE
 @SYM "change-underline" : wxCHANGE_UNDERLINE
+@ENDSYMBOLS
+@BEGINSYMBOLS changeSizeInPixels > ONE > BUNDLE
+@SYM "change-size-in-pixels" : wxCHANGE_SIP
 @ENDSYMBOLS
 @BEGINSYMBOLS changeSize > ONE > BUNDLE
 @SYM "change-size" : wxCHANGE_SIZE
@@ -123,6 +127,8 @@
 @IVAR "style-off" : SYM[style] styleOff
 @IVAR "underlined-on" : bool underlinedOn
 @IVAR "underlined-off" : bool underlinedOff
+@IVAR "size-in-pixels-on" : bool sipOn
+@IVAR "size-in-pixels-off" : bool sipOff
 @IVAR "transparent-text-backing-on" : bool transparentTextBackingOn
 @IVAR "transparent-text-backing-off" : bool transparentTextBackingOff
 @IVAR r "foreground-mult" : wxMultColour! foregroundMult
@@ -138,6 +144,7 @@
 @CREATORX (SYM[changeWeight],SYM[weight]); <> weight
 @CREATORX (SYM[changeSmoothing],SYM[smoothing]); <> smoothing
 @CREATORX (SYM[changeUnderline],bool); <> underline
+@CREATORX (SYM[changeSizeInPixels],bool); <> size in pixels
 @CREATORX (SYM[changeSize],rint[0|255]); <> size
 @CREATORX (SYM[changeAlign],SYM[align]); <> size
 
@@ -151,6 +158,7 @@
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeWeight],SYM[weight]); <> weight
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeSmoothing],SYM[smoothing]); <> smoothing
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeUnderline],bool); <> underline
+@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeSizeInPixels],bool); <> size in pixels
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeSize],rint[0|255]); <> size
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeAlign],SYM[align]); <> size
 
@@ -180,6 +188,7 @@
 @ "get-style" : SYM[style] GetStyle();
 @ "get-smoothing" : SYM[style] GetSmoothing();
 @ "get-underlined" : bool GetUnderlined();
+@ "get-size-in-pixels" : bool GetSizeInPixels();
 @ "get-font" : wxFont! GetFont();
 @ "get-foreground" : wxColour! GetForeground();
 @ "get-background" : wxColour! GetBackground();

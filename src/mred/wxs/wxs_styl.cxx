@@ -843,6 +843,7 @@ static Scheme_Object *changeNoArg_wxCHANGE_NORMAL_sym = NULL;
 static Scheme_Object *changeNoArg_wxCHANGE_BOLD_sym = NULL;
 static Scheme_Object *changeNoArg_wxCHANGE_ITALIC_sym = NULL;
 static Scheme_Object *changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym = NULL;
+static Scheme_Object *changeNoArg_wxCHANGE_TOGGLE_SIP_sym = NULL;
 static Scheme_Object *changeNoArg_wxCHANGE_NORMAL_COLOUR_sym = NULL;
 
 static void init_symset_changeNoArg(void) {
@@ -857,6 +858,8 @@ static void init_symset_changeNoArg(void) {
   changeNoArg_wxCHANGE_ITALIC_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("change-italic"));
   wxREGGLOB(changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym);
   changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("change-toggle-underline"));
+  wxREGGLOB(changeNoArg_wxCHANGE_TOGGLE_SIP_sym);
+  changeNoArg_wxCHANGE_TOGGLE_SIP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("change-toggle-size-in-pixels"));
   wxREGGLOB(changeNoArg_wxCHANGE_NORMAL_COLOUR_sym);
   changeNoArg_wxCHANGE_NORMAL_COLOUR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("change-normal-color"));
 }
@@ -871,6 +874,7 @@ static int unbundle_symset_changeNoArg(Scheme_Object *v, const char *where) {
   else if (v == changeNoArg_wxCHANGE_BOLD_sym) { READY_TO_RETURN; return wxCHANGE_BOLD; }
   else if (v == changeNoArg_wxCHANGE_ITALIC_sym) { READY_TO_RETURN; return wxCHANGE_ITALIC; }
   else if (v == changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym) { READY_TO_RETURN; return wxCHANGE_TOGGLE_UNDERLINE; }
+  else if (v == changeNoArg_wxCHANGE_TOGGLE_SIP_sym) { READY_TO_RETURN; return wxCHANGE_TOGGLE_SIP; }
   else if (v == changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) { READY_TO_RETURN; return wxCHANGE_NORMAL_COLOUR; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeNoArg symbol", -1, 0, &v));
   READY_TO_RETURN;
@@ -1038,6 +1042,36 @@ static int istype_symset_changeUnderline(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == changeUnderline_wxCHANGE_UNDERLINE_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeUnderline symbol", -1, 0, &v));
+  READY_TO_RETURN;
+  return 0;
+}
+
+static Scheme_Object *changeSizeInPixels_wxCHANGE_SIP_sym = NULL;
+
+static void init_symset_changeSizeInPixels(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(changeSizeInPixels_wxCHANGE_SIP_sym);
+  changeSizeInPixels_wxCHANGE_SIP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("change-size-in-pixels"));
+}
+
+static int unbundle_symset_changeSizeInPixels(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!changeSizeInPixels_wxCHANGE_SIP_sym) WITH_VAR_STACK(init_symset_changeSizeInPixels());
+  if (0) { }
+  else if (v == changeSizeInPixels_wxCHANGE_SIP_sym) { READY_TO_RETURN; return wxCHANGE_SIP; }
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeSizeInPixels symbol", -1, 0, &v));
+  READY_TO_RETURN;
+  return 0;
+}
+
+static int istype_symset_changeSizeInPixels(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!changeSizeInPixels_wxCHANGE_SIP_sym) WITH_VAR_STACK(init_symset_changeSizeInPixels());
+  if (0) { }
+  else if (v == changeSizeInPixels_wxCHANGE_SIP_sym) { READY_TO_RETURN; return 1; }
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeSizeInPixels symbol", -1, 0, &v));
   READY_TO_RETURN;
   return 0;
 }
@@ -1456,6 +1490,26 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
       WITH_VAR_STACK(scheme_wrong_count_m("set-delta in style-delta% (underline case)", POFFSET+2, POFFSET+2, n, p, 1));
     x0 = WITH_VAR_STACK(unbundle_symset_changeUnderline(p[POFFSET+0], "set-delta in style-delta% (underline case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "set-delta in style-delta% (underline case)"));
+
+    
+    r = WITH_VAR_STACK(((wxStyleDelta *)((Scheme_Class_Object *)p[0])->primdata)->SetDelta(x0, x1));
+
+    
+    
+    READY_TO_PRE_RETURN;
+  } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeSizeInPixels(p[POFFSET+0], NULL))) {
+    int x0;
+    Bool x1;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, r);
+
+    
+    if (n != (POFFSET+2)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta in style-delta% (size in pixels case)", POFFSET+2, POFFSET+2, n, p, 1));
+    x0 = WITH_VAR_STACK(unbundle_symset_changeSizeInPixels(p[POFFSET+0], "set-delta in style-delta% (size in pixels case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "set-delta in style-delta% (size in pixels case)"));
 
     
     r = WITH_VAR_STACK(((wxStyleDelta *)((Scheme_Class_Object *)p[0])->primdata)->SetDelta(x0, x1));
@@ -1938,6 +1992,74 @@ static Scheme_Object *objscheme_wxStyleDelta_SetunderlinedOff(int n,  Scheme_Obj
   return scheme_void;
 }
 
+static Scheme_Object *objscheme_wxStyleDelta_GetsipOn(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
+  Bool v;
+  REMEMBER_VAR_STACK();
+
+  objscheme_check_valid(os_wxStyleDelta_class, "get-size-in-pixels-on in style-delta%", n, p);
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-size-in-pixels-on in style-delta%", POFFSET, POFFSET, n, p, 1));
+  cobj = (Scheme_Class_Object *)p[0];
+  if (cobj->primflag)
+    v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::sipOn;
+  else
+    v = ((wxStyleDelta *)cobj->primdata)->sipOn;
+
+  return (v ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *objscheme_wxStyleDelta_SetsipOn(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
+  Bool v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
+
+  WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-size-in-pixels-on in style-delta%", n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-size-in-pixels-on in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
+
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET], "set-size-in-pixels-on in style-delta%"));
+  ((wxStyleDelta *)cobj->primdata)->sipOn = v;
+
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxStyleDelta_GetsipOff(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
+  Bool v;
+  REMEMBER_VAR_STACK();
+
+  objscheme_check_valid(os_wxStyleDelta_class, "get-size-in-pixels-off in style-delta%", n, p);
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-size-in-pixels-off in style-delta%", POFFSET, POFFSET, n, p, 1));
+  cobj = (Scheme_Class_Object *)p[0];
+  if (cobj->primflag)
+    v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::sipOff;
+  else
+    v = ((wxStyleDelta *)cobj->primdata)->sipOff;
+
+  return (v ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *objscheme_wxStyleDelta_SetsipOff(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
+  Bool v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
+
+  WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-size-in-pixels-off in style-delta%", n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-size-in-pixels-off in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
+
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET], "set-size-in-pixels-off in style-delta%"));
+  ((wxStyleDelta *)cobj->primdata)->sipOff = v;
+
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *objscheme_wxStyleDelta_GettransparentTextBackingOn(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj INIT_NULLED_OUT;
@@ -2194,6 +2316,29 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
     
     
     READY_TO_PRE_RETURN;
+  } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeSizeInPixels(p[POFFSET+0], NULL))) {
+    int x0;
+    Bool x1;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, realobj);
+
+    
+    if (n != (POFFSET+2)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in style-delta% (size in pixels case)", POFFSET+2, POFFSET+2, n, p, 1));
+    x0 = WITH_VAR_STACK(unbundle_symset_changeSizeInPixels(p[POFFSET+0], "initialization in style-delta% (size in pixels case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "initialization in style-delta% (size in pixels case)"));
+
+    
+    realobj = WITH_VAR_STACK(new os_wxStyleDelta CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxStyleDelta(x0, x1));
+#endif
+    realobj->__gc_external = (void *)p[0];
+    
+    
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeUnderline(p[POFFSET+0], NULL))) {
     int x0;
     Bool x1;
@@ -2348,7 +2493,7 @@ void objscheme_setup_wxStyleDelta(Scheme_Env *env)
 
   wxREGGLOB(os_wxStyleDelta_class);
 
-  os_wxStyleDelta_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style-delta%", "object%", (Scheme_Method_Prim *)os_wxStyleDelta_ConstructScheme, 43));
+  os_wxStyleDelta_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style-delta%", "object%", (Scheme_Method_Prim *)os_wxStyleDelta_ConstructScheme, 47));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "copy" " method", (Scheme_Method_Prim *)os_wxStyleDeltaCopy, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "collapse" " method", (Scheme_Method_Prim *)os_wxStyleDeltaCollapse, 1, 1));
@@ -2382,6 +2527,10 @@ void objscheme_setup_wxStyleDelta(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"set-underlined-on" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_SetunderlinedOn, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"get-underlined-off" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_GetunderlinedOff, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"set-underlined-off" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_SetunderlinedOff, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"get-size-in-pixels-on" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_GetsipOn, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"set-size-in-pixels-on" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_SetsipOn, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"get-size-in-pixels-off" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_GetsipOff, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"set-size-in-pixels-off" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_SetsipOff, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"get-transparent-text-backing-on" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_GettransparentTextBackingOn, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"set-transparent-text-backing-on" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_SettransparentTextBackingOn, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"get-transparent-text-backing-off" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_GettransparentTextBackingOff, 0, 0));
@@ -2877,6 +3026,27 @@ static Scheme_Object *os_wxStyleGetFont(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
 }
 
+static Scheme_Object *os_wxStyleGetSizeInPixels(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(os_wxStyle_class, "get-size-in-pixels in style<%>", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxStyle *)((Scheme_Class_Object *)p[0])->primdata)->GetSizeInPixels());
+
+  
+  
+  READY_TO_RETURN;
+  return (r ? scheme_true : scheme_false);
+}
+
 static Scheme_Object *os_wxStyleGetUnderlined(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3053,7 +3223,7 @@ void objscheme_setup_wxStyle(Scheme_Env *env)
   wxREGGLOB(os_wxStyle_class);
   wxREGGLOB(os_wxStyle_interface);
 
-  os_wxStyle_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style%", "object%", NULL, 25));
+  os_wxStyle_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style%", "object%", NULL, 26));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "switch-to" " method", (Scheme_Method_Prim *)os_wxStyleSwitchTo, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "set-shift-style" " method", (Scheme_Method_Prim *)os_wxStyleSetShiftStyle, 1, 1));
@@ -3072,6 +3242,7 @@ void objscheme_setup_wxStyle(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-background" " method", (Scheme_Method_Prim *)os_wxStyleGetBackground, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-foreground" " method", (Scheme_Method_Prim *)os_wxStyleGetForeground, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-font" " method", (Scheme_Method_Prim *)os_wxStyleGetFont, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-size-in-pixels" " method", (Scheme_Method_Prim *)os_wxStyleGetSizeInPixels, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-underlined" " method", (Scheme_Method_Prim *)os_wxStyleGetUnderlined, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-smoothing" " method", (Scheme_Method_Prim *)os_wxStyleGetSmoothing, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-style" " method", (Scheme_Method_Prim *)os_wxStyleGetStyle, 0, 0));

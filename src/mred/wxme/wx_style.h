@@ -49,7 +49,10 @@ enum {
 
   wxCHANGE_NORMAL,
 
-  wxCHANGE_NORMAL_COLOUR
+  wxCHANGE_NORMAL_COLOUR,
+
+  wxCHANGE_SIP,
+  wxCHANGE_TOGGLE_SIP,
 };
 
 class wxMultColour : public wxObject
@@ -95,6 +98,8 @@ class wxStyleDelta : public wxObject
   int smoothingOff;
   Bool underlinedOn;
   Bool underlinedOff;
+  Bool sipOn;
+  Bool sipOff;
   Bool transparentTextBackingOn;
   Bool transparentTextBackingOff;
   wxMultColour *foregroundMult, *backgroundMult;
@@ -165,6 +170,7 @@ class wxStyle : public wxObject
   int GetStyle();
   int GetSmoothing();
   Bool GetUnderlined();
+  Bool GetSizeInPixels();
   wxFont *GetFont();
   wxColour *GetForeground();
   wxColour *GetBackground();

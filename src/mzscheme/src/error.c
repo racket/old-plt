@@ -496,20 +496,22 @@ void scheme_init_error_config(void)
 }
 
 static void
-scheme_inescapeable_error(const char *a, const char *b)
+scheme_inescapeable_error(const char *a, const char *b, const char *c)
 {
-  int al, bl;
+  int al, bl, cl;
   char *t;
 
   al = strlen(a);
   bl = strlen(b);
-  t = scheme_malloc_atomic(al + bl + 2);
+  cl = strlen(c);
+  t = scheme_malloc_atomic(al + bl + cl + 2);
   memcpy(t, a, al);
-  memcpy(t + al, b, bl + 1);
-  t[al + bl] = '\n';
-  t[al + bl + 1] = 0;
-
-  scheme_console_output(t, al + bl + 1);
+  memcpy(t + al, b, bl);
+  memcpy(t + al + bl, c, cl);
+  t[al + bl + cl] = '\n';
+  t[al + bl + cl + 1] = 0;
+  
+  scheme_console_output(t, al + bl + cl + 1);
 }
 
 #define RAISE_RETURNED "exception handler did not escape"
@@ -519,14 +521,33 @@ call_error(char *buffer, int len, Scheme_Object *exn)
 {
   Scheme_Object *p[2];
   mz_jmp_buf savebuf;
+  char *s;
+
+  // initialize s with the error message
+  if (SAME_TYPE(SCHEME_TYPE(exn), scheme_structure_type)
+      && scheme_is_struct_instance(exn_table[MZEXN].type, exn)) {
+    Scheme_Object *str = ((Scheme_Structure *)exn)->slots[0];
+    if (SCHEME_STRINGP(str)) {
+      s = SCHEME_STR_VAL(str);
+    } else
+      s = "[message field is not a string]";
+  } else {
+    char *v;
+
+    v = scheme_make_provided_string(exn, 1, &len);
+    s = scheme_malloc_atomic(len + 21);
+    memcpy(s, "uncaught exception: ", 20);
+    memcpy(s + 20, v, len + 1);
+  }
+
 
   if (scheme_current_thread->error_invoked == 5) {
     scheme_longjmp (scheme_error_buf, 1);
   } else if (scheme_current_thread->error_invoked == 1) {
-    scheme_inescapeable_error("error trying to display error: ", buffer);
+    scheme_inescapeable_error("error trying to display error: ", buffer, s);
     scheme_longjmp (scheme_error_buf, 1);
   } else if (scheme_current_thread->error_invoked == 2) {
-    scheme_inescapeable_error("error trying to escape from error: ", buffer);
+    scheme_inescapeable_error("error trying to escape from error: ", buffer, s);
     scheme_longjmp(scheme_error_buf, 1);
   } else {
     scheme_current_thread->error_invoked = 1;
@@ -543,7 +564,7 @@ call_error(char *buffer, int len, Scheme_Object *exn)
       /* Typically jumps out of here */
       scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_ESCAPE_HANDLER), 0, NULL);
       /* Uh-oh; record the error fall back to the default escaper */
-      scheme_inescapeable_error("error escape handler did not escape; calling the default error escape handler", "");
+      scheme_inescapeable_error("error escape handler did not escape; calling the default error escape handler", "", "");
       scheme_current_thread->error_invoked = 0;
       scheme_longjmp(savebuf, 1); /* force an exit */
     }

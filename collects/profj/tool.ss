@@ -320,15 +320,20 @@
             (set! execute-types (create-type-record))
             (let-values ([(port name)
                           (let ([text (drscheme:language:text/pos-text input)])
-                            (parse-error-port (lambda () (open-input-string (send text get-text
-                                                                                  (drscheme:language:text/pos-start input)
-                                                                                  (drscheme:language:text/pos-end input)))))
+                            (parse-error-port (lambda () (open-input-text-editor text 
+                                                                                 (drscheme:language:text/pos-start input)
+                                                                                 (drscheme:language:text/pos-end input))))
+                                                ;(open-input-string (send text get-text
+                                                ;                         (drscheme:language:text/pos-start input)
+                                                ;                         (drscheme:language:text/pos-end input)))))
                             (values
-                             (open-input-string
-                              (send text
-                                    get-text
-                                    (drscheme:language:text/pos-start input)
-                                    (drscheme:language:text/pos-end input)))
+                             (open-input-text-editor text 
+                                                     (drscheme:language:text/pos-start input)
+                                                     (drscheme:language:text/pos-end input))
+;                              (send text
+;                                    get-text
+;                                    (drscheme:language:text/pos-start input)
+;                                    (drscheme:language:text/pos-end input)))
                              text))])              
               (let ((main-mod #f)
                     (require? #f)
@@ -370,16 +375,22 @@
             (let-values ([(port name)
                           (let ([text (drscheme:language:text/pos-text input)])
                             (parse-error-port (lambda ()
-                                                (open-input-string
-                                                 (send text get-text 
-                                                       (drscheme:language:text/pos-start input)
-                                                       (drscheme:language:text/pos-end input)))))
+                                                (open-input-text-editor text 
+                                                     (drscheme:language:text/pos-start input)
+                                                     (drscheme:language:text/pos-end input))))
+;                                                (open-input-string
+;                                                 (send text get-text 
+;                                                       (drscheme:language:text/pos-start input)
+;                                                       (drscheme:language:text/pos-end input)))))
                             (values
-                             (open-input-string
-                              (send text
-                                    get-text
-                                    (drscheme:language:text/pos-start input)
-                                    (drscheme:language:text/pos-end input)))
+                             (open-input-text-editor text 
+                                                     (drscheme:language:text/pos-start input)
+                                                     (drscheme:language:text/pos-end input))
+;                             (open-input-string
+;                              (send text
+;                                    get-text
+;                                    (drscheme:language:text/pos-start input)
+;                                    (drscheme:language:text/pos-end input)))
                              text))])
               (interactions-offset (drscheme:language:text/pos-start input))
               (lambda ()

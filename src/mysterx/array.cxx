@@ -15,9 +15,107 @@
 
 #include "mysterx.h"
 
+Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *theArray,
+					      long *lDimension) {
+  HRESULT hr;
+  VARTYPE vt;
+	
+  hr = SafeArrayGetVartype(theArray,&vt);
+
+  if (hr != S_OK) {
+    codedComError("Can't get array type",hr);
+  }
+
+  switch(vt) {
+    
+  case VT_EMPTY :
+  case VT_NULL :
+    
+    return scheme_void;
+    
+  case VT_UI1 :
+    char cArg;
+    SafeArrayGetElement(theArray,lDimension,&cArg);
+    return scheme_make_character(cArg);
+    
+  case VT_I2  | VT_ARRAY:
+    int iArg;
+    SafeArrayGetElement(theArray,lDimension, &iArg);
+    return scheme_make_integer(iArg);
+    
+  case VT_I4 | VT_ARRAY :
+    long lArg;
+    SafeArrayGetElement(theArray,lDimension, &lArg);
+    return scheme_make_integer_value(lArg);
+    
+  case VT_R4 | VT_ARRAY :
+    double dArg;
+#ifdef MZ_USE_SINGLE_FLOATS
+    float fArg;
+    SafeArrayGetElement(theArray,lDimension, &fArg);
+    return scheme_make_float(fArg);
+#else
+    SafeArrayGetElement(theArray,lDimension, &dArg);
+    return scheme_make_double((double)(dArg));
+#endif
+    
+  case VT_R8 :
+    SafeArrayGetElement(theArray,lDimension,&dArg);
+    return scheme_make_double((double)(dArg));
+    
+  case VT_BSTR :
+    BSTR bArg;
+    SafeArrayGetElement(theArray,lDimension,&bArg);
+    return BSTRToSchemeString((unsigned short *)bArg);
+    
+  case VT_ERROR :
+    SCODE scodeArg;
+    SafeArrayGetElement(theArray,lDimension,&scodeArg);
+    return mx_make_scode(scodeArg);
+    
+  case VT_CY :
+    CY cyArg;
+    SafeArrayGetElement(theArray,lDimension,&cyArg);
+    return mx_make_cy(&cyArg);
+    
+  case VT_DATE :
+    DATE dateArg;
+    SafeArrayGetElement(theArray,lDimension,&dateArg);
+    return mx_make_date(&dateArg);
+    
+  case VT_DISPATCH :
+    IDispatch * pIDispatch;
+    SafeArrayGetElement(theArray,lDimension,&pIDispatch);
+    return mx_make_idispatch(pIDispatch);
+    
+  case VT_UNKNOWN :
+    IUnknown *pIUnknown;
+    SafeArrayGetElement(theArray,lDimension,&pIUnknown);
+    return mx_make_iunknown(pIUnknown);
+
+  case VT_BOOL :
+    VARIANT_BOOL boolArg;
+    SafeArrayGetElement(theArray,lDimension,&boolArg);
+    return boolArg ? scheme_true : scheme_false;
+    
+  case VT_VARIANT :
+    VARIANT variant;
+    SafeArrayGetElement(theArray,lDimension,&variant);
+    return variantToSchemeObject(&variant);
+    
+  default :
+    
+    scheme_signal_error("Can't make Scheme value from array element with type %X",
+			vt);
+    
+  }
+  
+  return NULL;
+}
+
 Scheme_Object *buildVectorFromArray(SAFEARRAY *theArray,
 				    long numDims,long currDim,
-				    long *allIndices,long *currNdx,UINT type) {
+				    long *allIndices,long *currNdx) {
   Scheme_Object *vec;
   long low,high,vecSize;
   long i;
@@ -28,25 +126,26 @@ Scheme_Object *buildVectorFromArray(SAFEARRAY *theArray,
 
   vec = scheme_make_vector(vecSize,scheme_void);
 
-  if (currDim < numDims - 1) {
+  if (currDim < numDims) {
     for (i = 0; i < vecSize; i++) {
       currNdx[0] = i;
       SCHEME_VEC_ELS(vec)[i] = 
 	buildVectorFromArray(theArray,numDims,currDim + 1,
-			     allIndices,currNdx + 1,type);
+			     allIndices,currNdx - 1);
     }
   }
   else {
     for (i = 0; i < vecSize; i++) {
+      currNdx[0] = i;
       SCHEME_VEC_ELS(vec)[i] = 
-	safeArrayElementToSchemeObject(theArray,allIndices,type);
+	safeArrayElementToSchemeObject(theArray,allIndices);
     }
   }
 
   return vec;
 }
 
-Scheme_Object *safeArrayToSchemeVector(SAFEARRAY *theArray,UINT type) {
+Scheme_Object *safeArrayToSchemeVector(SAFEARRAY *theArray) {
   long numDims;
   long *indices;
   
@@ -54,69 +153,8 @@ Scheme_Object *safeArrayToSchemeVector(SAFEARRAY *theArray,UINT type) {
 
   indices = (long *)scheme_malloc(numDims * sizeof(long));
 
-  return buildVectorFromArray(theArray,numDims,1,indices,indices,type);
+  return buildVectorFromArray(theArray,numDims,1,indices,indices + numDims - 1);
   
-}
-
-Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *arr,long *lDimension, 
-				UINT type) {
-  
-  switch(type) {
-    
-  case VT_EMPTY | VT_ARRAY :
-  case VT_NULL	| VT_ARRAY:
-    
-    return scheme_void;
-    
-  case VT_UI1  | VT_ARRAY:
-    char carg;
-    SafeArrayGetElement(arr, lDimension, &carg);
-    return scheme_make_character(carg);
-    
-  case VT_I2  | VT_ARRAY:
-    int iarg;
-    SafeArrayGetElement(arr, lDimension, &iarg);
-    return scheme_make_integer(iarg);
-    
-  case VT_I4 | VT_ARRAY :
-    long larg;
-    SafeArrayGetElement(arr, lDimension, &larg);
-    return scheme_make_integer_value(larg);
-    
-  case VT_R4 | VT_ARRAY :
-    
-#ifdef MZ_USE_SINGLE_FLOATS
-    float farg;
-    SafeArrayGetElement(arr, lDimension, &farg);
-    return scheme_make_float(farg);
-#else
-    double darg;
-    SafeArrayGetElement(arr, lDimension, &darg);
-    return scheme_make_double((double)(darg));
-#endif
-    
-  case VT_R8 | VT_ARRAY :
-    SafeArrayGetElement(arr, lDimension, &darg);
-    return scheme_make_double((double)(darg));
-    
-  case VT_BSTR | VT_ARRAY :
-    unsigned short *barg;
-    SafeArrayGetElement(arr, lDimension, &barg);
-    return BSTRToSchemeString((unsigned short *)barg);
-    
-  case VT_VARIANT | VT_ARRAY :
-    VARIANT var;
-    SafeArrayGetElement(arr, lDimension, &var);
-    return variantToSchemeObject(&var);
-    
-  default :
-    
-    scheme_signal_error("Can't make Scheme value from VARIANT %X",
-			type);
-    
-  }
-  
-  return NULL;
 }
 
 int getSchemeVectorDims(Scheme_Object *vec) {
@@ -216,24 +254,25 @@ void doSetArrayElts(Scheme_Object *vec,SAFEARRAY *theArray,long *allIndices,long
     for (i = 0; i < len; i++) {
       elt = SCHEME_VEC_ELS(vec)[i];
       currNdx[0] = i;
-      doSetArrayElts(elt,theArray,allIndices,currNdx + 1);
+      doSetArrayElts(elt,theArray,allIndices,currNdx - 1);
     }
   }
   else {
     for (i = 0; i < len; i++) {
       elt = SCHEME_VEC_ELS(vec)[i];
+      currNdx[0] = i;
       marshallSchemeValueToVariant(elt,&variant);
       SafeArrayPutElement(theArray,allIndices,&variant);
     }
   }
 }
 
-void setArrayElts(Scheme_Object *vec,SAFEARRAY *theArray) {
+void setArrayElts(Scheme_Object *vec,SAFEARRAY *theArray,long numDims) {
   long indices[MAXARRAYDIMS];
 
   memset(indices,0,sizeof(indices));
 
-  doSetArrayElts(vec,theArray,indices,indices);
+  doSetArrayElts(vec,theArray,indices,indices + numDims - 1);
 }
 
 SAFEARRAY *schemeVectorToSafeArray(Scheme_Object *vec) {
@@ -266,7 +305,7 @@ SAFEARRAY *schemeVectorToSafeArray(Scheme_Object *vec) {
 
   theArray = SafeArrayCreate(VT_VARIANT,numDims,rayBounds);
 
-  setArrayElts(vec,theArray);
+  setArrayElts(vec,theArray,numDims);
 
   return theArray;
   

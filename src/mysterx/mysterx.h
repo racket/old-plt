@@ -471,8 +471,5 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *);
 
 // array procedures
 
-Scheme_Object *safeArrayToSchemeVector(SAFEARRAY *,UINT);
-Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *,long *,UINT);
+Scheme_Object *safeArrayToSchemeVector(SAFEARRAY *);
 SAFEARRAY *schemeVectorToSafeArray(Scheme_Object *);
-
-

@@ -61,7 +61,7 @@ static char *objectAttributes[] = { "InprocServer", "InprocServer32",
 static char *controlAttributes[] = { "Control", NULL };
 
 static MX_PRIM mxPrims[] = {
-  
+
   // COM reflection
   
   { mx_com_invoke,"com-invoke",2,-1}, 
@@ -1959,9 +1959,7 @@ void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
   
   if (pVariantArg->vt & VT_ARRAY) {
     pVariantArg->parray = schemeVectorToSafeArray(val);
-    
   }
-  
   
   switch (pVariantArg->vt) {
     
@@ -2123,7 +2121,7 @@ void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
 Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
   
   if (pVariantArg->vt & VT_ARRAY) {
-    return safeArrayToSchemeVector(pVariantArg->parray,pVariantArg->vt);
+    return safeArrayToSchemeVector(pVariantArg->parray);
   }
   
   switch(pVariantArg->vt) {
@@ -3513,4 +3511,5 @@ BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {
   
   return TRUE;
 }
+
 

@@ -1329,7 +1329,8 @@ static Scheme_Object *fail_ok_sym;
  * The arguments can be specified in any order at all since they are all
  * different types, the only requirement is for a size, either a number of
  * bytes or a type.  If no mode is specified, then scheme_malloc will be used
- * when the type is _scheme and scheme_malloc_atomic is used otherwise. */
+ * when the type is _pointer or _scheme, otherwise scheme_malloc_atomic is
+ * used. */
 #undef MYNAME
 #define MYNAME "malloc"
 static Scheme_Object *foreign_malloc(int argc, Scheme_Object *argv[])
@@ -1372,7 +1373,9 @@ static Scheme_Object *foreign_malloc(int argc, Scheme_Object *argv[])
   if ((num == 0) && (size == 0)) scheme_signal_error(MYNAME": no size given");
   size = ((size==0) ? 1 : size) * ((num==0) ? 1 : num);
   if (mode == NULL)
-    mf = (base != NULL && CTYPE_PRIMLABEL(base) == FOREIGN_scheme)
+    mf = (base != NULL
+          && (CTYPE_PRIMLABEL(base) == FOREIGN_scheme
+              || CTYPE_PRIMLABEL(base) == FOREIGN_pointer))
       ? scheme_malloc : scheme_malloc_atomic;
   else if (SAME_OBJ(mode, nonatomic_sym))     mf = scheme_malloc;
   else if (SAME_OBJ(mode, atomic_sym))        mf = scheme_malloc_atomic;

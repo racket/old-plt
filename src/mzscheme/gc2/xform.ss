@@ -44,7 +44,8 @@
 	      (let ([l (read-line (list-ref proc 3) 'any)])
 		(unless (eof-object? l)
 		  (fprintf (current-error-port) "~a~n" l)
-		  (loop)))))))
+		  (loop))))
+	    (close-input-port (list-ref proc 3)))))
 
 (define cpp-error-thread (mk-error-thread cpp-process))
 (define ctok-error-thread (mk-error-thread ctok-process))
@@ -69,7 +70,8 @@
      (with-handlers ([void (lambda (x)
 			     (set! e-raw x))])
        (parameterize ([read-case-sensitive #t])
-	 (set! e-raw (read (car ctok-process))))))))
+	 (set! e-raw (read (car ctok-process))))
+       (close-input-port (car ctok-process))))))
 
 ((list-ref cpp-process 4) 'wait)
 (thread-wait cpp-error-thread)

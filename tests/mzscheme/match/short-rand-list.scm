@@ -1,5 +1,5 @@
-(load-relative (build-path 'up "loadtest.ss"))
-(SECTION 'MATCH-PERFORMANCE-short-rand-list)
+(load-relative "../loadtest.ss")
+(SECTION 'MATCH-PERFORMANCE)
 
 (require (lib "pretty.ss"))
 (require-for-syntax (lib "pretty.ss"))
@@ -7,8 +7,6 @@
 (require (lib "plt-match.ss"))
 
 (include "match-compile-perf.scm")
-(include "drom-algol-structs.scm")
-(include "misc-structs.scm")
 
 (match-performance-test
  (file
@@ -22,13 +20,13 @@
   ;; onlly one of the following options is allowed
   ;; write-new   ;; uncomment to write an new test database 
                  ;; (this requires the whole-list display option below)
-  add-results ;; uncomment to append the results of the current test
+  ;; add-results ;; uncomment to append the results of the current test
                  ;; to the database
   )
  (tag
   ;; only one option is allowed 
   ;; this is the name of the tag placed on data generted by this test
-  memoize-up-count-size
+  currnet
   ;; other options are 
   ;; date ;; to tag new date with a date
   ;; time ;; to tag new date with a time
@@ -39,7 +37,7 @@
   ;; positive-change       ;; displays increases in node counts
   ;; other options are:
   ;; negative-change    ;; displays decreases in node counts
-   percent-change             ;; to display any change in node count
+  percent-change             ;; to display any change in node count
   ;; rt-positive-change ;; same as above but for real compile time
   ;; rt-negative-change
   ;; rt-change

@@ -1,6 +1,7 @@
-(load-relative (build-path 'up "loadtest.ss"))
+(load-relative "../loadtest.ss")
 (SECTION 'MATCH)
 (require  (lib "match.ss"))
+;(require  "../match.ss")
 
 (define-syntax test-mac
   (syntax-rules ()
@@ -34,8 +35,6 @@
     (syntax-case stx ()
       ((_ t result)
        #`(test #t #,(syntax/loc stx (lambda () (test-mac t result)))))))) 
-
-
 
 
   (define-struct test-struct (a b c d))

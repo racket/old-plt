@@ -1,4 +1,4 @@
-(load-relative (build-path 'up "loadtest.ss"))
+(load-relative "../loadtest.ss")
 (SECTION 'MATCH-PERFORMANCE)
 
 (require (lib "pretty.ss"))

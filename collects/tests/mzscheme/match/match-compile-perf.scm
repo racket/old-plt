@@ -40,8 +40,7 @@
              (lambda ()
                (if write-new
                    #`'()
-                   #`(with-input-from-file (build-path (current-load-relative-directory)
-						       file-name)
+                   #`(with-input-from-file file-name
                        (lambda ()
                          (read))))))
             (add-results (member
@@ -49,8 +48,7 @@
             (write-new-table
              (lambda ()
                (if (or write-new add-results)
-                   #`(call-with-output-file (build-path (current-load-relative-directory) 
-							file-name)
+                   #`(call-with-output-file file-name
                        (lambda (port)
                          (pretty-print old-table port))
                        'replace)

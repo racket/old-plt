@@ -1,8 +1,11 @@
-(load-relative (build-path 'up "loadtest.ss"))
+(load-relative "../loadtest.ss")
 (SECTION 'PLT-MATCH)
 
+
 (require (lib "plt-match.ss"))
+;(require "../plt-match.ss")
 (require (lib "list.ss"))
+(require (lib "pregexp.ss"))
 
 (define-syntax test-mac
   (syntax-rules ()
@@ -65,6 +68,60 @@
 
 ;;
 
+(mytest (match "hello"
+               ((pregex (pregexp "hello")) #t)
+               (else #f))
+        #t)
+  
+(mytest (match 123
+                ((pregex "123") #t)
+                (else #f))
+        #f)
+(mytest (match 123
+                ((regex "123") #t)
+                (else #f))
+        #f)
+(mytest (match 123
+                ((pregex "123" (list a ...)) #t)
+                (else #f))
+        #f)
+(mytest (match 123
+               ((regex "123" (list a ...)) #t)
+               (else #f))
+        #f)
+
+(mytest (match "hello"
+           ((regex "hello") #t)
+           (else #f))
+        #t)
+
+(mytest (match "frank"
+           ((regex "hello") #t)
+           ((regex "frank") 2)
+           (else #f))
+        2)
+
+(mytest (match "frank"
+           ((pregex "hello") #t)
+           ((pregex "frank") 2)
+           (else #f))
+        2)
+
+(mytest (match "frank"
+           ((regex "hello") #t)
+           (else #f))
+        #f)
+
+(mytest (match "hello"
+           ((regex "(hel)lo" (list whol a rest ...)) a)
+           (else #f))
+        "hel")
+
+(mytest (match "hello"
+           ((pregex "(hel)lo" (list whole a rest ...)) a)
+           (else #f))
+        "hel")
+
 (mytest (match (list (cons "a" "b"))
          [(list) ""]
          [(list (list-rest name value))
@@ -79,6 +136,33 @@
                          (alist->form-urlencoded rest))])
         "a=b")
 
+(mytest (match '(case->)
+               [(list 'case-> types ...) 1]
+               [(list '->) 2]
+               [(list '-> types ...) 3]
+               [else 4])
+        1)
+
+(mytest (match '(->)
+               [(list 'case-> types ...) 1]
+               [(list '->) 2]
+               [(list '-> types ...) 3]
+               [else 4])
+        2)
+
+(mytest (match '(-> a b)
+               [(list 'case-> types ...) 1]
+               [(list '->) 2]
+               [(list '-> types ...) 3]
+               [else 4])
+        3)
+
+(mytest (match 'x
+               [(list 'case-> types ...) 1]
+               [(list '->) 2]
+               [(list '-> types ...) 3]
+               [else 4])
+        4)
 
 (mytest (match '((r a)) 
                ((list (and (list 'a) (list 'b)) ...) 1)

@@ -1,14 +1,15 @@
-(load-relative (build-path 'up "loadtest.ss"))
-(SECTION 'MATCH-PERFORMANCE-RAND-VEC)
+(load-relative "../loadtest.ss")
+(SECTION 'MATCH-PERFORMANCE)
 
 (require (lib "pretty.ss"))
 (require-for-syntax (lib "pretty.ss"))
 (require (lib "include.ss"))
 (require (lib "plt-match.ss"))
 
+
 (include "match-compile-perf.scm")
-(include "drom-algol-structs.scm")
-(include "misc-structs.scm")
+
+
 
 (match-performance-test
  (file
@@ -28,7 +29,7 @@
  (tag
   ;; only one option is allowed 
   ;; this is the name of the tag placed on data generted by this test
-  backtrack
+  current
   ;; other options are 
   ;; date ;; to tag new date with a date
   ;; time ;; to tag new date with a time
@@ -39,12 +40,12 @@
   ;; positive-change       ;; displays increases in node counts
   ;; other options are:
   ;; negative-change    ;; displays decreases in node counts
-  ;; percent-change             ;; to display any change in node count
+  percent-change             ;; to display any change in node count
   ;; rt-positive-change ;; same as above but for real compile time
   ;; rt-negative-change
   ;; rt-change
   ;; whole-list         ;; display whole database line with current test appended
-  last-two ;; display only the current result with the previous result
+  ;; last-two ;; display only the current result with the previous result
   )
  (patterns
  (pattern

@@ -3,7 +3,7 @@
 	   "sig.ss"
 	   (lib "mred-sig.ss" "mred"))
 
-  (provie exn@)
+  (provide exn@)
 
   (define exn@
     (unit/sig framework:exn^

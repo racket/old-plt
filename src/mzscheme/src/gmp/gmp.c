@@ -30,6 +30,7 @@ extern void free(void *);
 #define MALLOC malloc
 #define FREE(p, s) free(p)
 
+#include "../../sconfig.h"
 #include "gmp.h"
 #include "gmp-impl.h"
 #include "gmplonglong.h"
@@ -4638,5 +4639,12 @@ __gmp_tmp_free (mark)
     }
   current->alloc_point = mark->alloc_point;
 }
+
+#endif
+
+/****************************************/
+
+#if defined (__alpha) && (W_TYPE_SIZE == 64) && defined (__GNUC__)
+
 
 #endif

@@ -61,7 +61,7 @@ void scheme_bignum_use_fuel(long n);
 #define FIRST_BIT_MASK 0x8000000000000000
 #define SECOND_BIT_MASK 0x4000000000000000
 #define MAX_TWO_BIT_MASK 0xC000000000000000
-#define BIG_RADIX 0x10000000000000000
+#define BIG_RADIX 18446744073709551616.0 /* = 0x10000000000000000 */
 #define ALL_ONES 0xFFFFFFFFFFFFFFFF
 #define WORD_SIZE 64
 #define SMALL_NUM_STR_LEN 20 /* conservatively low is OK */
@@ -69,7 +69,7 @@ void scheme_bignum_use_fuel(long n);
 #define FIRST_BIT_MASK 0x80000000
 #define SECOND_BIT_MASK 0x40000000
 #define MAX_TWO_BIT_MASK 0xC0000000
-#define BIG_RADIX 0x100000000
+#define BIG_RADIX 4294967296.0 /* = 0x100000000 */
 #define ALL_ONES 0xFFFFFFFF
 #define WORD_SIZE 32
 #define SMALL_NUM_STR_LEN 10 /* conservatively low is OK */
@@ -1024,7 +1024,7 @@ Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
   o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
   o->type = scheme_bignum_type;
 
-  alloc = ceil(len * log(radix) / (32 * log(2)));
+  alloc = ceil(len * log((double)radix) / (32 * log((double)2)));
 
   digs = PROTECT_RESULT(alloc);
 

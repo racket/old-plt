@@ -3017,18 +3017,19 @@ do_letrec_syntaxes(const char *where, int normal,
       if (!SCHEME_STX_PAIRP(a)
 	  || !SCHEME_STX_PAIRP(SCHEME_STX_CDR(a)))
 	v = NULL;
-
-      if (normal) {
-	for (l = SCHEME_STX_CAR(a); SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
-	  if (!SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(l)))
-	    break;
+      else {
+	if (normal) {
+	  for (l = SCHEME_STX_CAR(a); SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
+	    if (!SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(l)))
+	      break;
+	  }
+	  if (!SCHEME_STX_NULLP(l))
+	    v = NULL;
+	} else {
+	  l = SCHEME_STX_CAR(a);
+	  if (!SCHEME_STX_SYMBOLP(l))
+	    v = NULL;
 	}
-	if (!SCHEME_STX_NULLP(l))
-	  v = NULL;
-      } else {
-	l = SCHEME_STX_CAR(a);
-	if (!SCHEME_STX_SYMBOLP(l))
-	  v = NULL;
       }
 
       if (v) {

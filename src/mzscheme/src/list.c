@@ -952,7 +952,7 @@ reverse_bang_prim (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])
 {
-  int i, k;
+  long i, k;
   Scheme_Object *lst, *index, *bnindex;
 
   if (SCHEME_BIGNUMP(argv[1])) {

@@ -1958,6 +1958,7 @@ void wxPostScriptDC::SetUserScale (float x, float y)
 {
   user_scale_x = x;
   user_scale_y = y;
+  resetFont |= RESET_FONT;
 }
 
 float wxPostScriptDC::DeviceToLogicalX(int x)

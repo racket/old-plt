@@ -230,7 +230,7 @@ public:
     void  SetLogicalOrigin(float x, float y);
     void  SetLogicalScale(float xs, float ys);
     void  SetMapMode(int mode);
-    void  SetUserScale(float xs, float ys);
+    virtual void  SetUserScale(float xs, float ys);
 
     void GetUserScale(float *xs, float *ys)
       { *xs = user_scale_x; *ys = user_scale_y; }

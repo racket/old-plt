@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Net.cc,v 1.3 2000/05/22 15:21:21 mflatt Exp $
+ * $Id: Net.cc,v 1.4 2001/05/05 16:03:47 mflatt Exp $
  *
  * Purpose: host and user net info
  *
@@ -39,54 +39,57 @@ extern int gethostname(char *, int);
 Bool wxGetHostName(char *buf, int sz)
 {
 #if defined(SVR4) && !defined(__sgi)
-    return (sysinfo(SI_HOSTNAME, buf, maxSize) != -1);
+  return (sysinfo(SI_HOSTNAME, buf, maxSize) != -1);
 #else /* BSD Sockets */
-    char name[255];
-    // Get hostname
-    if ((gethostname(name, sizeof(name)/sizeof(char)-1)) == -1)
-	return FALSE;
-    strncpy(buf, name, sz-1);
-    return TRUE;
+  char name[255];
+  // Get hostname
+  if ((gethostname(name, sizeof(name)/sizeof(char)-1)) == -1)
+    return FALSE;
+  strncpy(buf, name, sz-1);
+  buf[sz-1] = 0;
+  return TRUE;
 #endif
 }
 
 Bool wxGetEmailAddress(char *address, int maxSize)
 {
-    char host[65];
-    char user[65];
-    char tmp[130];
+  char host[65];
+  char user[65];
+  char tmp[130];
 
-    if (wxGetHostName(host, 64) == FALSE)
-	return FALSE;
-    if (wxGetUserId(user, 64) == FALSE)
-	return FALSE;
+  if (wxGetHostName(host, 64) == FALSE)
+    return FALSE;
+  if (wxGetUserId(user, 64) == FALSE)
+    return FALSE;
 
-    strcpy(tmp, user);
-    strcat(tmp, "@");
-    strcat(tmp, host);
-    strncpy(address, tmp, maxSize - 1);
-    address[maxSize-1] = '\0';
-    return TRUE;
+  strcpy(tmp, user);
+  strcat(tmp, "@");
+  strcat(tmp, host);
+  strncpy(address, tmp, maxSize - 1);
+  address[maxSize-1] = '\0';
+  return TRUE;
 }
 
 Bool wxGetUserId(char *buf, int sz)
 {
-    struct passwd *who;
-
-    if ((who = getpwuid(getuid ())) != NULL) {
-	strncpy (buf, who->pw_name, sz-1);
-	return TRUE;
-    }
-    return FALSE;
+  struct passwd *who;
+  
+  if ((who = getpwuid(getuid ())) != NULL) {
+    strncpy (buf, who->pw_name, sz-1);
+    buf[sz - 1]= 0;
+    return TRUE;
+  }
+  return FALSE;
 }
 
 Bool wxGetUserName(char *buf, int sz)
 {
-    struct passwd *who;
-
-    if ((who = getpwuid (getuid ())) != NULL) {
-	strncpy (buf, who->pw_gecos, sz - 1);
-	return TRUE;
-    }
-    return FALSE;
+  struct passwd *who;
+  
+  if ((who = getpwuid (getuid ())) != NULL) {
+    strncpy (buf, who->pw_gecos, sz - 1);
+    buf[sz - 1]= 0;
+    return TRUE;
+  }
+  return FALSE;
 }

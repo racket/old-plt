@@ -242,8 +242,9 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	} else
 	  retval = 0;
 
-	XDestroyImage(simg);
-	XDestroyImage(timg);
+	/* Resultof XGetImage isn't supposed to be destroyed? */
+	/* XDestroyImage(simg); */
+	/* XDestroyImage(timg); */
 
 	xsrc = ysrc = 0;
 	src = tmp;

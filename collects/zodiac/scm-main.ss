@@ -545,7 +545,10 @@
 			(lambda (handler)
 			  (lambda (expr env attributes vocab)
 			    (unless (at-top-level? attributes)
-			      (static-error expr "Not at top-level"))
+			      (static-error expr
+				(if (language<=? 'structured)
+				  "Not at top-level"
+				  "Invalid position for internal definition")))
 			    (cond
 			      ((pat:match-against m&e-1 expr env)
 				=>

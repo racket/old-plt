@@ -101,6 +101,10 @@ void scheme_reset_finalizations(void);
 
 extern unsigned long scheme_get_stack_base();
 
+#ifndef MZ_PRECISE_GC
+# define HIDE_FROM_XFORM(x) x
+#endif
+
 /*========================================================================*/
 /*                             initialization                             */
 /*========================================================================*/

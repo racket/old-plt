@@ -254,6 +254,7 @@
   (printf "#define NULLED_OUT 0~n")
   (printf "#define NULL_OUT_ARRAY(a) memset(a, 0, sizeof(a))~n")
   (printf "#define GC_CAN_IGNORE /**/~n")
+  (printf "#define HIDE_FROM_XFORM(x) x~n")
   ;; In case a conversion is unnecessary where we have this annotation:
   (printf "#define START_XFORM_SKIP /**/~n")
   (printf "#define END_XFORM_SKIP /**/~n")
@@ -1967,6 +1968,14 @@
 		 (not (null? (cddr e-)))
 		 (memq (tok-n (caddr e-)) '(if while for))))))
 
+(define (ignored-stuff? e-)
+  ;; e- is a reversed expression
+  (and (pair? e-)
+       (parens? (car e-))
+       ;; Something precedes
+       (not (null? (cdr e-)))
+       (eq? (tok-n (cadr e-)) '|HIDE_FROM_XFORM|)))
+
 (define (cast-or-call e- cast-k call-k)
   ;; Looks like a function call, although we don't know the
   ;; function yet.  (The parens may be preceded by an
@@ -2217,6 +2226,8 @@
     (let loop ([e- e-][result null][live-vars live-vars])
       (cond
        [(null? e-) (values result live-vars)]
+       [(ignored-stuff? e-)
+	(loop (cdr e-) (cons (car e-) result) live-vars)]
        [(looks-like-call? e-)
 	;; Looks like a function call, maybe a cast:
 	(cast-or-call

@@ -27,6 +27,8 @@
 # include <windows.h>
 #endif
 
+#define mzVA_ARG(x, y) HIDE_FROM_XFORM(va_arg(x, y))
+
 /* globals */
 void (*scheme_console_printf)(char *str, ...);
 void (*scheme_console_output)(char *str, long len);
@@ -155,35 +157,35 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 
       switch (type) {
       case 'c':	  
-	ints[ip++] = va_arg(args, int);
+	ints[ip++] = mzVA_ARG(args, int);
 	break;
       case 'd':	  
       case 'o':
-	ints[ip++] = va_arg(args, int);
+	ints[ip++] = mzVA_ARG(args, int);
 	break;
       case 'l':
-	ints[ip++] = va_arg(args, long);
+	ints[ip++] = mzVA_ARG(args, long);
 	break;
       case 'f':
-	dbls[dp++] = va_arg(args, double);
+	dbls[dp++] = mzVA_ARG(args, double);
 	break;
       case 'L':	  
-	ints[ip++] = va_arg(args, long);
+	ints[ip++] = mzVA_ARG(args, long);
 	break;
       case 'e':	  
       case 'E':
-	ints[ip++] = va_arg(args, int);
+	ints[ip++] = mzVA_ARG(args, int);
 	break;
       case 'S':
       case 'V':
       case 'T':
       case 'Q':
-	ptrs[pp++] = va_arg(args, Scheme_Object*);
+	ptrs[pp++] = mzVA_ARG(args, Scheme_Object*);
 	break;
       default:
-	ptrs[pp++] = va_arg(args, char*);
+	ptrs[pp++] = mzVA_ARG(args, char*);
 	if (type == 't') {
-	  ints[ip++] = va_arg(args, long);
+	  ints[ip++] = mzVA_ARG(args, long);
 	}
       }
     }
@@ -876,8 +878,8 @@ void scheme_case_lambda_wrong_count(const char *name,
     short mina, maxa;
     Scheme_Object *av;
 
-    mina = va_arg(args, int);
-    maxa = va_arg(args, int);
+    mina = mzVA_ARG(args, int);
+    maxa = mzVA_ARG(args, int);
     
     if (is_method) {
       mina -= 1;
@@ -1937,10 +1939,10 @@ scheme_raise_exn(int id, ...)
     c = exn_table[id].args;
 
   for (i = 2; i < c; i++) {
-    eargs[i] = va_arg(args, Scheme_Object*);
+    eargs[i] = mzVA_ARG(args, Scheme_Object*);
   }
 
-  msg = va_arg(args, char*);
+  msg = mzVA_ARG(args, char*);
 
   alen = sch_vsprintf(buffer, prepared_buf_len, msg, args);
   va_end(args);

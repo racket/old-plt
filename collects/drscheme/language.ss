@@ -327,8 +327,8 @@
 		    (collection-path "mzlib")
 		    'up 'up "lib")])
       (if (directory-exists? lib-dir)
-	  (set! the-dir lib-dir)
-	  (set! the-dir null))))
+	  lib-dir
+	  null)))
 
   (define (fill-language-menu language-menu)
     (send* language-menu 

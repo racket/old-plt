@@ -367,7 +367,7 @@
       (parameterize ([current-output-port port]
 		     [mzlib:pretty-print:pretty-print-columns 'infinity])
 	(drscheme-print/void x))
-      (let ([long-string (get-output-string port)])
+      (let* ([long-string (get-output-string port)])
 	(close-output-port port)
 	(if (<= (string-length long-string) n)
 	    long-string

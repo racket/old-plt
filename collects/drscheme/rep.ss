@@ -361,7 +361,7 @@
 	[breakable-thread #f]
 	[break (lambda ()
 		 (cond
-		  [(or (not in-evaluation?)
+		  [(or ;(not in-evaluation?)
 		       (not breakable-thread))
 		   (wx:bell)]
 		  [ask-about-kill? 
@@ -520,14 +520,41 @@
 			 (set! eval-thread-thunks (cdr eval-thread-thunks))
 			 (semaphore-post eval-thread-state-sema)
 			 (dynamic-wind
-			  (lambda () (send (get-frame) running))
+			  (lambda ()
+			    (semaphore-wait running-semaphore)
+			    (set! evaluation-running #t)
+			    (semaphore-post running-semaphore)
+			    (update-running))
 			  (lambda ()
 			    (with-parameterization drscheme:init:system-parameterization
 			      (lambda ()
 				(thunk))))
-			  (lambda () (send (get-frame) not-running))))
+			  (lambda ()
+			    (semaphore-wait running-semaphore)
+			    (set! evaluation-running #f)
+			    (semaphore-post running-semaphore)
+			    (update-running))))
 		       (loop))))))
 	       (semaphore-post dummy-s))))])
+
+	(private
+	  [running-semaphore (make-semaphore 1)]
+	  [running-on? #f]
+	  [running-events 0]
+	  [evaluation-running #f]
+	  [update-running
+	   (lambda ()
+	     (semaphore-wait running-semaphore)
+	     (if (or (> running-events 0)
+		     evaluation-running)
+		 (unless running-on?
+		   (set! running-on? #t)
+		   (send (get-frame) running))
+		 (when running-on?
+		   (set! running-on? #f)
+		   (send (get-frame) not-running)))
+	     (semaphore-post running-semaphore))])
+
 
       (private 
 	[insert-delta
@@ -553,6 +580,9 @@
 	     (shutdown-user-custodian)
 	     (cleanup-transparent-io)
 	     (set! should-collect-garbage? #t)
+
+	     (set! running-on? #f)
+	     (set! running-events 0)
 
 	     ;; in case the last evaluation thread will killed, clean up some state.
 	     (lock #f)
@@ -736,10 +766,10 @@
 		   (let* ([user-eventspace #f]
 			  [primitive-dispatch-handler (wx:event-dispatch-handler)]
 			  [frame (get-frame)]
-			  [semaphore (make-semaphore 1)]
-			  [set-running-flag? #t]
 			  [running-flag-on? #f]
 			  [event-semaphore (make-semaphore 0)]
+
+			  [ht (make-hash-table-weak)] ;; maps eventspaces to depth of nested wx:yields (ints)
 
 			  [first-box (box #t)]
 
@@ -748,42 +778,41 @@
 		     (thread (rec f
 				  (lambda ()
 				    (semaphore-wait event-semaphore)
-				    (sleep 1/10)
-				    (semaphore-wait semaphore)
-				    (when (and set-running-flag?
-					       (not running-flag-on?))
-				      (set! running-flag-on? #t)
-				      (send frame running))
-				    (semaphore-post semaphore)
+				    ;(sleep 1/10)
+				    (update-running)
 				    (f))))
 
 		     (wx:event-dispatch-handler
 		      (rec drscheme-event-dispatch-handler
 			   (lambda (eventspace)
-			     (when (and (eq? eventspace user-eventspace)
-					(not (unbox first-box)))
-			       (mred:debug:printf 'console-threading "drscheme-event-dispatch-handler")
+			     (mzlib:function@:dynamic-disable-break
+			      (lambda ()
+				(when (and (eq? eventspace user-eventspace)
+					   (not (unbox first-box)))
+				  (mred:debug:printf 'console-threading "drscheme-event-dispatch-handler")
 
-			       (semaphore-wait semaphore)
-			       (set! set-running-flag? #t)
-			       (semaphore-post semaphore)
-			       (semaphore-post event-semaphore)
+				  (semaphore-wait running-semaphore)
+				  (hash-table-put! ht eventspace (+ 1 (hash-table-get ht eventspace (lambda () 0))))
+				  (when (= 1 (hash-table-get ht eventspace))
+				    (set! running-events (+ 1 running-events))
+				    (reset-break-state)
+				    (semaphore-post event-semaphore))
+				  (semaphore-post running-semaphore)
 
-			       (reset-break-state)
 
-			       (protect-user-evaluation
-				void
-				(lambda ()
-				  (dynamic-enable-break
+				  (protect-user-evaluation
+				   void
 				   (lambda ()
-				     (primitive-dispatch-handler eventspace)))))
+				     (dynamic-enable-break
+				      (lambda ()
+					(primitive-dispatch-handler eventspace)))))
 
-			       (semaphore-wait semaphore)
-			       (set! set-running-flag? #f)
-			       (when running-flag-on?
-				 (set! running-flag-on? #f)
-				 (send frame not-running))
-			       (semaphore-post semaphore)))))
+				  (semaphore-wait running-semaphore)
+				  (hash-table-put! ht eventspace (max 0 (- (hash-table-get ht eventspace (lambda () 0)) 1)))
+				  (when (= 0 (hash-table-get ht eventspace))
+				    (set! running-events (- running-events 1)))
+				  (semaphore-post running-semaphore)
+				  (update-running)))))))
 
 		     (set! user-eventspace (wx:make-eventspace))
 		     (wx:current-eventspace user-eventspace)

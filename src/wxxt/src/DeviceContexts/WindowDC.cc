@@ -674,7 +674,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 # ifdef WX_OLD_XFT
       destp = wxMakeXrenderPicture(DRAWABLE, Colour);
 # else
-      if (!PICTURE)
+      if (!X->picture)
 	InitPicture();
       destp = PICTURE;
 # endif

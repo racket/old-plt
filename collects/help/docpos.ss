@@ -10,7 +10,8 @@
     [(mzscheme) 1]
     [(mred) 2]
     [(framework) 4]
-    [(misclib) 5]
+    [(mrspidey) 5]
+    [(misclib) 6]
     [(teach) 8]
     [(mzc) 10]
     [(tools) 30]
@@ -22,6 +23,7 @@
    ("mzscheme" . "PLT MzScheme: Language Manual")
    ("mred" . "PLT MrEd: Graphical Toolbox Manual")
    ("framework" . "PLT Framework: GUI Application Framework")
+   ("mrspidey" . "PLT MrSpidey: Static Debugger Manual")
    ("misclib" . "PLT Miscellaneous Libraries: Reference Manual")
    ("mzc" . "PLT mzc: MzScheme Compiler Manual")
    ("insidemz" . "Inside PLT MzScheme")

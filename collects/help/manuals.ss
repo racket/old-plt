@@ -76,8 +76,11 @@
 	       (append
 		(map
 		 (lambda (doc-pair)
-		   (format "<LI> <A HREF=\"file:~a\">~a</A>"
+		   (format "<LI> <A HREF=\"file:~a\">~a</A>~a"
 			   (build-path d (car doc-pair) "index.htm")
-			   (cdr doc-pair)))
+			   (cdr doc-pair)
+			   (if (file-exists? (build-path d (car doc-pair) "hdindex"))
+			       " (index installed)"
+			       "")))
 		 uninstalled)
 		(list "</UL>"))))))))))

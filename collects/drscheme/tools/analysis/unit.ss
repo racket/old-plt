@@ -22,8 +22,7 @@
 		  mzlib:core^
 		  mzlib:print-convert^
 		  (drscheme : drscheme:export^)
-		  zodiac:system^
-		  plt:parameters^))
+		  zodiac:system^))
 	   (invoke-spidey frame)))))
 
     (define spidey-bitmap

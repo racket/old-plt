@@ -55,7 +55,7 @@ public:
 
     // popup menu (used by wxWindow);
 #   ifdef Have_Xt_Types
-    Bool  PopupMenu(Widget in_w, int root_x, int root_y);
+    Bool  PopupMenu(Widget in_w, int root_x, int root_y, Bool for_choice = FALSE, int top_extra = 0);
 #   endif
 
     int Number(void);

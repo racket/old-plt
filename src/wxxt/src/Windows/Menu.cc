@@ -143,19 +143,14 @@ static void FreeSaferef(Widget WXUNUSED(w), wxMenu** menup,
 END_XFORM_SKIP;
 #endif
 
-int wxPopupForChoice;
-
-Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
+Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y, Bool forChoice, int top_extra)
 {
     Widget wgt;
     Position x, y, new_root_x, new_root_y;
     int rx, ry;
     GC_CAN_IGNORE XEvent xevent;
     String a[1];
-    Bool forChoice = wxPopupForChoice;
     void *saferef;
-
-    wxPopupForChoice = 0;
 
     if (X)
       return FALSE;
@@ -186,6 +181,7 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 	 XtNhighlightPixel,  wxCTL_HIGHLIGHT_PIXEL,
 	 XtNforChoice,  forChoice,
 	 XtNrequestedWidth, requested_width,
+	 XtNextraTop, top_extra,
 	 NULL);
     X->menu = wgt;
     XtRealizeWidget(X->shell);

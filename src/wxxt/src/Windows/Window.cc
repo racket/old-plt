@@ -819,7 +819,7 @@ void wxWindow::Enable(Bool enable)
     ChangeToGray(!enable);
 }
 
-Bool wxWindow::PopupMenu(wxMenu *menu, double x, double y)
+Bool wxWindow::PopupMenu(wxMenu *menu, double x, double y, Bool for_choice, int top_extra)
 {
   int dev_x = (int)x;
   int dev_y = (int)y;
@@ -828,7 +828,7 @@ Bool wxWindow::PopupMenu(wxMenu *menu, double x, double y)
     return FALSE;
 
   ClientToScreen(&dev_x, &dev_y);
-  menu->PopupMenu(X->frame, dev_x, dev_y);
+  menu->PopupMenu(X->frame, dev_x, dev_y, for_choice, top_extra);
   return TRUE;
 }
 

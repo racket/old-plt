@@ -104,6 +104,15 @@ static XtResource MenuResources[] =
     {XtNindicatorSize, XtCIndicatorSize, XtRDimension, sizeof(Dimension),
         offset(menu.indicator_size), XtRImmediate, (XtPointer)0},
 
+    {XtNextraLeft, XtCExtraLeft, XtRDimension, sizeof(Dimension),
+       offset(menu.extra_left), XtRImmediate, (XtPointer)0},
+    {XtNextraTop, XtCExtraTop, XtRDimension, sizeof(Dimension),
+       offset(menu.extra_top), XtRImmediate, (XtPointer)0},
+    {XtNextraRight, XtCExtraRight, XtRDimension, sizeof(Dimension),
+       offset(menu.extra_right), XtRImmediate, (XtPointer)0},
+    {XtNextraBottom, XtCExtraBottom, XtRDimension, sizeof(Dimension),
+       offset(menu.extra_bottom), XtRImmediate, (XtPointer)0},
+
     {XtNhighlightPixel, XtCHighlightPixel, XtRPixel, sizeof(Pixel),
          offset(menu.highlight_pixel), XtRImmediate, (XtPointer)-1},
 
@@ -154,17 +163,20 @@ static Boolean MenuSetValues();
 static void Start();
 static void Drag();
 static void Select();
+static void Motion();
 static void Key();
 
 static XtActionsRec MenuActionsList [] = {
     {"start",	Start  },
     {"drag",	Drag   },
     {"select",	Select },
+    {"motion",	Motion },
     {"key",	Key }
 };
 
 static char MenuTranslations [] = 
 "<BtnDown>:		start()\n\
+<Motion>:	        motion()\n\
 Button1 <Motion>:	drag()\n\
 Button2 <Motion>:	drag()\n\
 Button3 <Motion>:	drag()\n\
@@ -532,7 +544,7 @@ static void DoSelect(w, time, force)
     for (ms=mw->menu.state; ms->prev!=NULL; ms=ms->prev)
 	;
     UnhighlightItem(mw, ms, ms->selected);
-    ms->selected = NULL; /* MATTHEW */
+    ms->selected = NULL;
     ms->delta = 0;
     if (mw->menu.popped_up) {
 	mw->menu.popped_up = FALSE;
@@ -563,9 +575,23 @@ static void Select(w, event, params, num_params)
 
   mw->menu.moused_out = 0;
 
-  force = !HandleMotionEvent(mw, ev) || mw->menu.moused_out;
+  force = !HandleMotionEvent(mw, ev);
+  if (!force)
+    force = mw->menu.moused_out;
   
   DoSelect(w, event ? event->xmotion.time : 0L, force);
+}
+
+static void Motion(w, event, params, num_params)
+    Widget    w;
+    XEvent    *event;
+    String    *params;
+    Cardinal  *num_params;
+{
+  MenuWidget  mw = (MenuWidget)w;
+
+  if (mw->menu.grabbed)
+    Drag(w, event, params, num_params);
 }
 
 static void Key(w, event, params, num_params)
@@ -1458,7 +1484,7 @@ static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
     menu_item  *item = NULL;
     Dimension  pushright = 0;
     Boolean    foundone = 0;
-    int        scroll = 0;
+    int        scroll = 0, in_extra_region = 0;
 
     if (mw->menu.state->timer) {
       FreeTimer(mw->menu.state->timer);
@@ -1495,11 +1521,30 @@ static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
 	  }
 	  break;
 	}
+      }      
+    }
+
+    {
+      menu_state *tms = NULL;
+      for (tms = mw->menu.state; tms && tms->prev; tms = tms->prev) {
+      }
+      if (tms && ev) {
+	if (!(tms->x <= ev->x_root 
+	      && ev->x_root <= tms->x + tms->w
+	      && tms->y <= ev->y_root 
+	      && ev->y_root <= tms->y + tms->h)) {
+	  if (tms->x - mw->menu.extra_left <= ev->x_root 
+	      && ev->x_root <= tms->x + tms->w + mw->menu.extra_right
+	      && tms->y - mw->menu.extra_top <= ev->y_root 
+	      && ev->y_root <= tms->y + tms->h + mw->menu.extra_bottom) {
+	    in_extra_region = 1;
+	  }
+	}
       }
     }
     
     if (!foundone)
-      mw->menu.moused_out = 1;
+      mw->menu.moused_out = !in_extra_region;
 
     if (!item) { /* if pointer not on menu_item unhighlight last selected */
       UnhighlightItem(mw, mw->menu.state, mw->menu.state->selected);
@@ -1530,7 +1575,7 @@ static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
 				      100, timer_callback, mw, (Widget)mw);
 	}
       }
-      return 0;
+      return in_extra_region;
     }
     if (item == ms->selected) /* pointer on the same item */
       return 1;

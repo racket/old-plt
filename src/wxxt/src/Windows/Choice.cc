@@ -335,8 +335,6 @@ void wxChoice::ChangeToGray(Bool gray)
 // callback for commandWidgetClass
 //-----------------------------------------------------------------------------
 
-extern int wxPopupForChoice;
-
 void wxChoice::EventCallback(Widget WXUNUSED(w),
 			     XtPointer clientData, XtPointer WXUNUSED(ptr))
 {
@@ -352,8 +350,7 @@ void wxChoice::EventCallback(Widget WXUNUSED(w),
 
     choice->choice_menu->SetWidth(ww);
 
-    wxPopupForChoice = 1;
-    choice->PopupMenu(choice->choice_menu, 0, (int)hh - 2);
+    choice->PopupMenu(choice->choice_menu, 0, (int)hh - 2, TRUE, (int)hh);
 
 #ifdef MZ_PRECISE_GC
     XFORM_RESET_VAR_STACK;

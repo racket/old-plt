@@ -91,6 +91,15 @@ SOFTWARE.
 #define XtNindicatorSize        "indicatorSize"
 #define XtCIndicatorSize        "IndicatorSize"
 
+#define XtNextraLeft            "extraLeft"
+#define XtCExtraLeft            "ExtraLeft"
+#define XtNextraTop             "extraRight"
+#define XtCExtraTop             "ExtraRight"
+#define XtNextraRight           "extraTop"
+#define XtCExtraRight           "ExtraTop"
+#define XtNextraBottom          "extraBottom"
+#define XtCExtraBottom          "ExtraBottom"
+
 #define XtNhighlightPixel       "highlightPixel"
 #define XtCHighlightPixel       "HighlightPixel"
 

@@ -139,7 +139,7 @@ public:
     virtual Bool  GetUserEditMode(void) { return user_edit_mode; }
     virtual long  GetWindowStyleFlag(void) { return style; }
     virtual void  Paint(void) { OnPaint(); }
-    virtual Bool  PopupMenu(wxMenu *menu, double x, double y);
+    virtual Bool  PopupMenu(wxMenu *menu, double x, double y, Bool for_choice = 0, int top_extra = 0);
     virtual void  Refresh(void);
     virtual void  ReleaseMouse(void);
     virtual void  SetFocus(void);

@@ -67,6 +67,7 @@ typedef struct _MenuPart {
     Boolean         forChoice;      /* Means extra left and right space */
     Dimension	    hmargin;	    /* margins around menu items */
     Dimension	    indicator_size; /* data for toggle, radio and cascade */
+    Dimension       extra_left, extra_top, extra_right, extra_bottom;
     Pixel           indicator_pixel;
     Pixmap          indicator_pxmap;
     int             indicator_contrast;

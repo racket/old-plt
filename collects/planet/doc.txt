@@ -261,6 +261,7 @@ io             Input/Output and Filesystem
 scientific     Mathematical and Scientific
 system         Hardware/Operating System-Specific Tools
 ui             Textual and Graphical User Interface
+metaprogramming Metaprogramming Tools
 planet         PLaneT-Related
 misc           Miscellaneous
 

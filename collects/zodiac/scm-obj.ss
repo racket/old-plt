@@ -1,0 +1,904 @@
+; See also mzlib/macro.ss
+
+(define zodiac:scheme-objects@
+  (unit/sig zodiac:scheme-objects^
+    (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
+      zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
+      zodiac:expander^ zodiac:interface^)
+
+    (define-struct (class*-form struct:parsed)
+      (super-names super-exprs init-vars inst-clauses))
+
+    (define create-class*-form
+      (lambda (super-names super-exprs init-vars inst-clauses source)
+	(make-class*-form (z:zodiac-origin source)
+	  (z:zodiac-start source) (z:zodiac-finish source)
+	  (make-empty-back-box)
+	  super-names super-exprs init-vars inst-clauses)))
+
+    (define-struct (supervar-binding struct:binding) ())
+    (define-struct (superinit-binding struct:binding) ())
+    (define-struct (public-binding struct:binding) ())
+    (define-struct (private-binding struct:binding) ())
+    (define-struct (local-binding struct:binding) ())
+    (define-struct (inherit-binding struct:binding) ())
+    (define-struct (share-binding struct:binding) ())
+    (define-struct (rename-binding struct:binding) ())
+
+    (define create-supervar-binding+marks
+      (create-binding+marks make-supervar-binding))
+    (define create-superinit-binding+marks
+      (create-binding+marks make-superinit-binding
+	(lambda (v) (z:read-object v))))
+    (define create-public-binding+marks
+      (create-binding+marks make-public-binding))
+    (define create-private-binding+marks
+      (create-binding+marks make-private-binding))
+    (define create-local-binding+marks
+      (create-binding+marks make-local-binding))
+    (define create-inherit-binding+marks
+      (create-binding+marks make-inherit-binding
+	(lambda (v) (z:read-object v))))
+    (define create-share-binding+marks
+      (create-binding+marks make-share-binding))
+    (define create-rename-binding+marks
+      (create-binding+marks make-rename-binding))
+
+    (define-struct (supervar-varref struct:bound-varref) ())
+    (define-struct (superinit-varref struct:bound-varref) ())
+    (define-struct (public-varref struct:bound-varref) ())
+    (define-struct (private-varref struct:bound-varref) ())
+    (define-struct (local-varref struct:bound-varref) ())
+    (define-struct (inherit-varref struct:bound-varref) ())
+    (define-struct (share-varref struct:bound-varref) ())
+    (define-struct (rename-varref struct:bound-varref) ())
+
+    (define create-supervar-varref
+      (create-bound-varref make-supervar-varref))
+    (define create-superinit-varref
+      (create-bound-varref make-superinit-varref))
+    (define create-public-varref
+      (create-bound-varref make-public-varref))
+    (define create-private-varref
+      (create-bound-varref make-private-varref))
+    (define create-local-varref
+      (create-bound-varref make-local-varref))
+    (define create-inherit-varref
+      (create-bound-varref make-inherit-varref))
+    (define create-share-varref
+      (create-bound-varref make-share-varref))
+    (define create-rename-varref
+      (create-bound-varref make-rename-varref))
+
+    (define-struct public-clause (exports internals exprs))
+    (define-struct private-clause (internals exprs))
+    (define-struct local-clause (exports internals exprs))
+    (define-struct inherit-clause (inheriteds))
+    (define-struct inherit-from-clause (super inheriteds))
+    (define-struct rename-clause (internals inheriteds))
+    (define-struct rename-from-clause (super internals inheriteds))
+    (define-struct share-clause (exports internals inheriteds))
+    (define-struct share-from-clause (super exports internals inheriteds))
+    (define-struct sequence-clause (exprs))
+
+    ; ----------------------------------------------------------------------
+
+    (add-sym-micro scheme-vocabulary
+      (lambda (expr env attributes vocab)
+	(let ((r (resolve expr env vocab)))
+	  (cond
+	    ((lexical-binding? r)
+	      (create-lexical-varref r expr))
+	    ((top-level-resolution? r)
+	      (create-top-level-varref (z:read-object expr) expr))
+	    ((public-binding? r)
+	      (create-public-varref r expr))
+	    ((private-binding? r)
+	      (create-private-varref r expr))
+	    ((local-binding? r)
+	      (create-local-varref r expr))
+	    ((inherit-binding? r)
+	      (create-inherit-varref r expr))
+	    ((share-binding? r)
+	      (create-share-varref r expr))
+	    ((rename-binding? r)
+	      (create-rename-varref r expr))
+	    ((supervar-binding? r)
+	      (create-supervar-varref r expr))
+	    ((superinit-binding? r)
+	      (create-superinit-varref r expr))
+	    ((or (macro-resolution? r) (micro-resolution? r))
+	      (static-error expr
+		"Invalid use of keyword ~s" (z:symbol-orig-name expr)))
+	    (else
+	      (internal-error expr "Invalid resolution ~s" r))))))
+
+    ; ----------------------------------------------------------------------
+
+    (define-struct ivar-entry (bindings))
+    (define-struct (public-entry struct:ivar-entry) (exports exprs))
+    (define-struct (private-entry struct:ivar-entry) (exprs))
+    (define-struct (local-entry struct:ivar-entry) (exports exprs))
+    (define-struct (inherit-entry struct:ivar-entry) ())
+    (define-struct (inherit-from-entry struct:ivar-entry) (super))
+    (define-struct (rename-entry struct:ivar-entry) (inheriteds))
+    (define-struct (rename-from-entry struct:ivar-entry) (inheriteds super))
+    (define-struct (share-entry struct:ivar-entry) (exports inheriteds))
+    (define-struct (share-from-entry struct:ivar-entry)
+      (exports inheriteds super))
+
+    (define-struct sequence-entry (exprs))
+
+    ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+    (define make-void-init-expr
+      (lambda (expr)
+	(structurize-syntax '(#%void) expr '(-1))))
+
+    ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+    (define ivar-decls-vocab (make-vocabulary))
+
+    (define public-ivar-decl-entry-parser-vocab (make-vocabulary))
+
+    (add-sym-micro public-ivar-decl-entry-parser-vocab
+      (lambda (expr env attributes vocab)
+	(list
+	  (create-public-binding+marks expr)
+	  expr
+	  (make-void-init-expr expr))))
+
+    (add-list-micro public-ivar-decl-entry-parser-vocab
+      (let* ((kwd '())
+	      (in-pattern-1 '((internal-var var) expr))
+	      (in-pattern-2 '(var expr))
+	      (in-pattern-3 '(var))
+	      (m&e-1 (pat:make-match&env in-pattern-1 '()))
+	      (m&e-2 (pat:make-match&env in-pattern-2 '()))
+	      (m&e-3 (pat:make-match&env in-pattern-3 '())))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e-1 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((internal-var (pat:pexpand 'internal-var p-env kwd))
+		       (var (pat:pexpand 'var p-env kwd))
+		       (expr (pat:pexpand 'expr p-env kwd)))
+		  (valid-syntactic-id? internal-var)
+		  (valid-syntactic-id? var)
+		  (list (create-public-binding+marks internal-var) var expr))))
+	    ((pat:match-against m&e-2 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((var (pat:pexpand 'var p-env kwd))
+		       (expr (pat:pexpand 'expr p-env kwd)))
+		  (valid-syntactic-id? var)
+		  (list (create-public-binding+marks var) var expr))))
+	    ((pat:match-against m&e-3 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((var (pat:pexpand 'var p-env kwd)))
+		  (valid-syntactic-id? var)
+		  (list
+		    (create-public-binding+marks var)
+		    var
+		    (make-void-init-expr expr)))))
+	    (else
+	      (static-error expr "Invalid ivar declaration"))))))
+
+    (let* ((kwd '(public))
+	    (in-pattern '(public ivar-decl ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-micro-form 'public ivar-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((decls
+			(map (lambda (decl)
+			       (expand-expr decl env attributes
+				 public-ivar-decl-entry-parser-vocab))
+			  (pat:pexpand '(ivar-decl ...) p-env kwd))))
+		  (make-public-entry
+		    (map car decls)
+		    (map cadr decls)
+		    (map caddr decls)))))
+	    (else
+	      (static-error expr "Invalid public clause"))))))
+
+    ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+    (define private-ivar-decl-entry-parser-vocab (make-vocabulary))
+
+    (add-sym-micro private-ivar-decl-entry-parser-vocab
+      (lambda (expr env attributes vocab)
+	(cons (create-private-binding+marks expr)
+	  (make-void-init-expr expr))))
+
+    (add-list-micro private-ivar-decl-entry-parser-vocab
+      (let* ((kwd '())
+	      (in-pattern-1 '(var expr))
+	      (in-pattern-2 '(var))
+	      (m&e-1 (pat:make-match&env in-pattern-1 '()))
+	      (m&e-2 (pat:make-match&env in-pattern-2 '())))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e-1 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((var (pat:pexpand 'var p-env kwd))
+		       (expr (pat:pexpand 'expr p-env kwd)))
+		  (valid-syntactic-id? var)
+		  (cons (create-private-binding+marks var) expr))))
+	    ((pat:match-against m&e-2 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((var (pat:pexpand 'var p-env kwd)))
+		  (valid-syntactic-id? var)
+		  (cons (create-private-binding+marks var)
+		    (make-void-init-expr expr)))))
+	    (else
+	      (static-error expr "Invalid ivar declaration"))))))
+
+    (let* ((kwd '(private))
+	    (in-pattern '(private ivar-decl ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-micro-form 'private ivar-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((decls
+			(map (lambda (decl)
+			       (expand-expr decl env attributes
+				 private-ivar-decl-entry-parser-vocab))
+			  (pat:pexpand '(ivar-decl ...) p-env kwd))))
+		  (make-private-entry
+		    (map car decls)
+		    (map cdr decls)))))
+	    (else
+	      (static-error expr "Invalid private clause"))))))
+
+    ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+    (define local-ivar-decl-entry-parser-vocab (make-vocabulary))
+
+    (add-sym-micro local-ivar-decl-entry-parser-vocab
+      (lambda (expr env attributes vocab)
+	(list
+	  (create-local-binding+marks expr)
+	  expr
+	  (make-void-init-expr expr))))
+
+    (add-list-micro local-ivar-decl-entry-parser-vocab
+      (let* ((kwd '())
+	      (in-pattern-1 '((internal-var var) expr))
+	      (in-pattern-2 '(var expr))
+	      (in-pattern-3 '(var))
+	      (m&e-1 (pat:make-match&env in-pattern-1 '()))
+	      (m&e-2 (pat:make-match&env in-pattern-2 '()))
+	      (m&e-3 (pat:make-match&env in-pattern-3 '())))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e-1 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((internal-var (pat:pexpand 'internal-var p-env kwd))
+		       (var (pat:pexpand 'var p-env kwd))
+		       (expr (pat:pexpand 'expr p-env kwd)))
+		  (valid-syntactic-id? internal-var)
+		  (valid-syntactic-id? var)
+		  (list (create-local-binding+marks internal-var) var expr))))
+	    ((pat:match-against m&e-2 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((var (pat:pexpand 'var p-env kwd))
+		       (expr (pat:pexpand 'expr p-env kwd)))
+		  (valid-syntactic-id? var)
+		  (list (create-local-binding+marks var) var expr))))
+	    ((pat:match-against m&e-3 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((var (pat:pexpand 'var p-env kwd)))
+		  (valid-syntactic-id? var)
+		  (list
+		    (create-local-binding+marks var)
+		    var
+		    (make-void-init-expr expr)))))
+	    (else
+	      (static-error expr "Invalid ivar declaration"))))))
+
+    (let* ((kwd '(local))
+	    (in-pattern '(local ivar-decl ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-micro-form 'local ivar-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((decls
+			(map (lambda (decl)
+			       (expand-expr decl env attributes
+				 local-ivar-decl-entry-parser-vocab))
+			  (pat:pexpand '(ivar-decl ...) p-env kwd))))
+		  (make-local-entry
+		    (map car decls)
+		    (map cadr decls)
+		    (map caddr decls)))))
+	    (else
+	      (static-error expr "Invalid local clause"))))))
+
+    ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+    (define inherit-ivar-decl-entry-parser-vocab (make-vocabulary))
+
+    (add-sym-micro inherit-ivar-decl-entry-parser-vocab
+      (lambda (expr env attributes vocab)
+	(create-inherit-binding+marks expr)))
+
+    (let* ((kwd '(inherit))
+	    (in-pattern '(inherit ivar-decl ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-micro-form 'inherit ivar-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((decls
+			(map (lambda (decl)
+			       (expand-expr decl env attributes
+				 inherit-ivar-decl-entry-parser-vocab))
+			  (pat:pexpand '(ivar-decl ...) p-env kwd))))
+		  (make-inherit-entry
+		    decls))))
+	    (else
+	      (static-error expr "Invalid inherit clause"))))))
+
+    (let* ((kwd '(inherit-from))
+	    (in-pattern '(inherit-from super ivar-decl ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-micro-form 'inherit-from ivar-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((super (pat:pexpand 'super p-env kwd))
+		       (decls (map (lambda (decl)
+				     (expand-expr decl env attributes
+				       inherit-ivar-decl-entry-parser-vocab))
+				(pat:pexpand '(ivar-decl ...) p-env kwd))))
+		  (make-inherit-from-entry
+		    decls
+		    super))))
+	    (else
+	      (static-error expr "Invalid inherit-from clause"))))))
+
+    ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+    (define rename-ivar-decl-entry-parser-vocab (make-vocabulary))
+
+    (add-list-micro rename-ivar-decl-entry-parser-vocab
+      (let* ((kwd '())
+	      (in-pattern-1 '(var inherited-var))
+	      (m&e-1 (pat:make-match&env in-pattern-1 '())))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e-1 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((var (pat:pexpand 'var p-env kwd))
+		       (inherited-var (pat:pexpand 'inherited-var p-env kwd)))
+		  (valid-syntactic-id? var)
+		  (valid-syntactic-id? inherited-var)
+		  (cons (create-rename-binding+marks var) inherited-var))))
+	    (else
+	      (static-error expr "Invalid ivar declaration"))))))
+
+    (let* ((kwd '(rename))
+	    (in-pattern '(rename ivar-decl ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-micro-form 'rename ivar-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((decls
+			(map (lambda (decl)
+			       (expand-expr decl env attributes
+				 rename-ivar-decl-entry-parser-vocab))
+			  (pat:pexpand '(ivar-decl ...) p-env kwd))))
+		  (make-rename-entry
+		    (map car decls)
+		    (map cdr decls)))))
+	    (else
+	      (static-error expr "Invalid rename clause"))))))
+
+    (let* ((kwd '(rename-from))
+	    (in-pattern '(rename-from super ivar-decl ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-micro-form 'rename-from ivar-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((super (pat:pexpand 'super p-env kwd))
+		       (decls (map (lambda (decl)
+				     (expand-expr decl env attributes
+				       rename-ivar-decl-entry-parser-vocab))
+				(pat:pexpand '(ivar-decl ...) p-env kwd))))
+		  (make-rename-from-entry
+		    (map car decls)
+		    (map cdr decls)
+		    super))))
+	    (else
+	      (static-error expr "Invalid rename-from clause"))))))
+
+    ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+    (define share-ivar-decl-entry-parser-vocab (make-vocabulary))
+
+    (add-list-micro share-ivar-decl-entry-parser-vocab
+      (let* ((kwd '())
+	      (in-pattern-1 '((internal-var var) inherited-var))
+	      (in-pattern-2 '(var inherited-var))
+	      (m&e-1 (pat:make-match&env in-pattern-1 '()))
+	      (m&e-2 (pat:make-match&env in-pattern-2 '())))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e-1 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((internal-var (pat:pexpand 'internal-var p-env kwd))
+		       (var (pat:pexpand 'var p-env kwd))
+		       (inherited-var (pat:pexpand 'inherited-var p-env kwd)))
+		  (valid-syntactic-id? internal-var)
+		  (valid-syntactic-id? var)
+		  (valid-syntactic-id? inherited-var)
+		  (list (create-share-binding+marks internal-var)
+		    var inherited-var))))
+	    ((pat:match-against m&e-2 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((var (pat:pexpand 'var p-env kwd))
+		       (inherited-var (pat:pexpand 'inherited-var p-env kwd)))
+		  (valid-syntactic-id? var)
+		  (valid-syntactic-id? inherited-var)
+		  (list (create-share-binding+marks var)
+		    var inherited-var))))
+	    (else
+	      (static-error expr "Invalid ivar declaration"))))))
+
+    (let* ((kwd '(share))
+	    (in-pattern '(share ivar-decl ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-micro-form 'share ivar-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((decls
+			(map (lambda (decl)
+			       (expand-expr decl env attributes
+				 share-ivar-decl-entry-parser-vocab))
+			  (pat:pexpand '(ivar-decl ...) p-env kwd))))
+		  (make-share-entry
+		    (map car decls)
+		    (map cadr decls)
+		    (map caddr decls)))))
+	    (else
+	      (static-error expr "Invalid share clause"))))))
+
+    (let* ((kwd '(share-from))
+	    (in-pattern '(share-from super ivar-decl ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-micro-form 'share-from ivar-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((super (pat:pexpand 'super p-env kwd))
+		       (decls (map (lambda (decl)
+				     (expand-expr decl env attributes
+				       share-ivar-decl-entry-parser-vocab))
+				(pat:pexpand '(ivar-decl ...) p-env kwd))))
+		  (make-share-from-entry
+		    (map car decls)
+		    (map cadr decls)
+		    (map caddr decls)
+		    super))))
+	    (else
+	      (static-error expr "Invalid share-from clause"))))))
+
+    ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+    (let* ((kwd '(sequence))
+	    (in-pattern '(sequence expr ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (add-micro-form 'sequence ivar-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(make-sequence-entry
+		  (pat:pexpand '(expr ...) p-env kwd))))
+	    (else
+	      (static-error expr "Invalid sequence clause"))))))
+
+    ; ----------------------------------------------------------------------
+
+    (define flag-non-supervar
+      (lambda (super env)
+	(unless (supervar-binding?
+		  (resolve-in-env (z:read-object super)
+		    (z:symbol-marks super) env))
+	  (static-error super "Not a superclass reference"))))
+
+    (add-micro-form 'class* scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern `(class* ((super-name super-expr) ...)
+			     ,optarglist-pattern
+			     inst-vars ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((kwd-pos (pat:pexpand 'class* p-env kwd))
+		       (in:supervars (pat:pexpand '(super-name ...) p-env kwd))
+		       (in:supervals (pat:pexpand '(super-expr ...) p-env kwd))
+		       (in:initvars (pat:pexpand `,optarglist-pattern
+				      p-env kwd))
+		       (in:ivars (pat:pexpand '(inst-vars ...) p-env kwd)))
+		  (let* ((proc:supervars (map create-supervar-binding+marks
+					   in:supervars))
+			  (proc:superinits (map
+					     (lambda (var+marks)
+					       (introduce-bound-id
+						 make-supervar-binding
+						 (lambda (s)
+						   (symbol-append s "-init"))
+						 (car var+marks)
+						 (cdr var+marks)))
+					     proc:supervars))
+			  (proc:supervals (map
+					    (lambda (e)
+					      (expand-expr e env
+						attributes vocab))
+					    in:supervals))
+			  (proc:this (create-lexical-binding+marks
+				       (introduce-fresh-identifier
+					 'this kwd-pos)))
+			  (proc:initvar-info
+			    (expand-expr in:initvars env attributes
+			      optarglist-decls-vocab))
+			  (proc:ivar-info
+			    (map (lambda (iv-decl)
+				   (expand-expr iv-decl env attributes
+				     ivar-decls-vocab))
+			      in:ivars)))
+		    (let ((proc:initvars (map optarglist-entry-var+marks
+					   (optarglist-vars
+					     proc:initvar-info)))
+			   (proc:ivars (apply append
+					 (map (lambda (i)
+						(if (ivar-entry? i)
+						  (ivar-entry-bindings i)
+						  '()))
+					   proc:ivar-info))))
+		      (let ((extensions
+			      (cons proc:this
+				(append proc:supervars proc:superinits
+				  proc:ivars))))
+			(let* ((new-names (map car extensions))
+				(parsed-supervals
+				  (map (lambda (e)
+					 (expand-expr e env attributes vocab))
+				    in:supervals))
+				(parsed-initvars
+				  (make-optargument-list proc:initvar-info
+				    env attributes vocab)))
+			  (distinct-valid-id/s? new-names)
+			  (extend-env extensions env)
+			  (let
+			    ((result
+			       (create-class*-form
+				 (map car proc:supervars)
+				 parsed-supervals
+				 parsed-initvars
+				 (let ((expand-exprs
+					 (lambda (exprs)
+					   (map (lambda (expr)
+						  (expand-expr expr env
+						    attributes vocab))
+					     exprs))))
+				   (map
+				     (lambda (e)
+				       (cond
+					 ((public-entry? e)
+					   (make-public-clause
+					     (public-entry-exports e)
+					     (map car (ivar-entry-bindings e))
+					     (expand-exprs
+					       (public-entry-exprs e))))
+					 ((private-entry? e)
+					   (make-private-clause
+					     (map car (ivar-entry-bindings e))
+					     (expand-exprs
+					       (private-entry-exprs e))))
+					 ((local-entry? e)
+					   (make-local-clause
+					     (local-entry-exports e)
+					     (map car (ivar-entry-bindings e))
+					     (expand-exprs
+					       (local-entry-exprs e))))
+					 ((inherit-entry? e)
+					   (make-inherit-clause
+					     (map car
+					       (ivar-entry-bindings e))))
+					 ((inherit-from-entry? e)
+					   (flag-non-supervar
+					     (inherit-from-entry-super e)
+					     env)
+					   (make-inherit-from-clause
+					     (car
+					       (expand-exprs
+						 (list
+						   (inherit-from-entry-super e))))
+					     (map car
+					       (ivar-entry-bindings e))))
+					 ((rename-entry? e)
+					   (make-rename-clause
+					     (map car (ivar-entry-bindings e))
+					     (rename-entry-inheriteds e)))
+					 ((rename-from-entry? e)
+					   (flag-non-supervar
+					     (rename-from-entry-super e)
+					     env)
+					   (make-rename-from-clause
+					     (car
+					       (expand-exprs
+						 (list
+						   (rename-from-entry-super e))))
+					     (map car (ivar-entry-bindings e))
+					     (rename-from-entry-inheriteds e)))
+					 ((share-entry? e)
+					   (make-share-clause
+					     (share-entry-exports e)
+					     (map car (ivar-entry-bindings e))
+					     (share-entry-inheriteds e)))
+					 ((share-from-entry? e)
+					   (flag-non-supervar
+					     (share-from-entry-super e)
+					     env)
+					   (make-share-from-clause
+					     (car
+					       (expand-exprs
+						 (list
+						   (share-from-entry-super e))))
+					     (share-from-entry-exports e)
+					     (map car (ivar-entry-bindings e))
+					     (share-from-entry-inheriteds e)))
+					 ((sequence-entry? e)
+					   (make-sequence-clause
+					     (expand-exprs
+					       (sequence-entry-exprs e))))
+					 (else
+					   (internal-error e
+					     "Invalid entry in class* maker"))))
+				     proc:ivar-info))
+				 expr)))
+			    (retract-env (append
+					   (map car proc:initvars)
+					   new-names)
+			      env)
+			    result))))))))
+	    (else
+	      (static-error expr "Malformed class*"))))))
+
+    (add-micro-form 'class scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern `(class super-expr
+			     ,optarglist-pattern
+			     inst-vars ...))
+	      (out-pattern `(class* ((super super-expr))
+			      ,optarglist-pattern
+			      inst-vars ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let* ((kwd-pos (pat:pexpand 'class p-env kwd))
+			(captured-super (introduce-identifier 'super kwd-pos))
+			(new-p-env (pat:extend-penv 'super
+				     captured-super p-env)))
+		  (expand-expr
+		    (structurize-syntax
+		      (pat:pexpand out-pattern new-p-env kwd)
+		      expr '(-1))
+		    env attributes vocab))))
+	    (else
+	      (static-error expr "Malformed class"))))))
+
+    '(add-micro-form 'class-asi* scheme-vocabulary
+      (let* ((kwd '())
+	      (in-pattern '(class-asi* ((supervar superval) ...) body ...))
+	      (m&e (pat:make-match&env in-pattern kwd))
+	      (out-pattern '(class* ((supervar superval) ...) args
+			      body ...
+			      (sequence
+				(apply super-init args)
+				...))))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let* ((kwd-pos (pat:pexpand 'class-asi* p-env kwd))
+			(captured-super-inits
+			  (map (lambda (i)
+				 (introduce-identifier
+				   (symbol-append (z:read-object i) "-init")
+				   kwd-pos))
+			    (pat:pexpand '(supervar ...) p-env kwd))))
+		  ...)))
+	    (else
+	      (static-error "Malformed class-asi*"))))))
+
+    ; ----------------------------------------------------------------------
+
+    (add-micro-form 'ivar scheme-vocabulary
+      (let* ((kwd '(ivar))
+	      (in-pattern-1 '(ivar class object name))
+	      (in-pattern-2 '(ivar object name))
+	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e-1 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((class (pat:pexpand 'class p-env kwd))
+		       (object (pat:pexpand 'object p-env kwd))
+		       (name (pat:pexpand 'name p-env kwd)))
+		  (valid-syntactic-id? name)
+		  (expand-expr
+		    (structurize-syntax
+		      `(#%uq-ivar ,class ,object (quote ,name))
+		      expr)
+		    env attributes vocab))))
+	    ((pat:match-against m&e-2 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((object (pat:pexpand 'object p-env kwd))
+		       (name (pat:pexpand 'name p-env kwd)))
+		  (valid-syntactic-id? name)
+		  (expand-expr
+		    (structurize-syntax
+		      `(#%uq-ivar ,object (quote ,name))
+		      expr)
+		    env attributes vocab))))
+	    (else
+	      (static-error expr "Malformed ivar"))))))
+
+    (add-macro-form 'send scheme-vocabulary
+      (let* ((kwd '(send))
+	      (in-pattern '(send object name arg ...))
+	      (out-pattern '((ivar object name) arg ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env)
+	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	    (static-error expr "Malformed send")))))
+
+    (add-macro-form 'send* scheme-vocabulary
+      (let* ((kwd '(send*))
+	      (in-pattern '(send* object (n0 a0 ...) ...))
+	      (m&e (pat:make-match&env in-pattern kwd))
+	      (out-pattern '(begin
+			      (send object n0 a0 ...)
+			      ...)))
+	(lambda (expr env)
+	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	    (static-error expr "Malformed send*")))))
+
+    (add-macro-form 'make-generic scheme-vocabulary
+      (let* ((kwd '(make-generic))
+	      (in-pattern '(make-generic class name))
+	      (m&e (pat:make-match&env in-pattern kwd))
+	      (out-pattern '(#%uq-make-generic class (quote name))))
+	(lambda (expr env)
+	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	    (static-error expr "Malformed make-generic")))))
+
+    ; ----------------------------------------------------------------------
+
+    (extend-parsed->raw class*-form?
+      (lambda (expr p->r)
+	`(class* ,(map (lambda (super-var super-val)
+			 (list (p->r super-var) (p->r super-val)))
+		    (class*-form-super-names expr)
+		    (class*-form-super-exprs expr))
+	   ,(p->r (class*-form-init-vars expr))
+	   ,@(map (lambda (clause)
+		    (cond
+		      ((public-clause? clause)
+			`(public
+			   ,@(map (lambda (internal export expr)
+				    `((,(p->r internal) ,(sexp->raw export))
+				       ,(p->r expr)))
+			       (public-clause-internals clause)
+			       (public-clause-exports clause)
+			       (public-clause-exprs clause))))
+		      ((private-clause? clause)
+			`(private
+			   ,@(map (lambda (internal expr)
+				    `(,(p->r internal) ,(p->r expr)))
+			       (private-clause-internals clause)
+			       (private-clause-exprs clause))))
+		      ((local-clause? clause)
+			`(local
+			   ,@(map (lambda (internal export expr)
+				    `((,(p->r internal) ,(sexp->raw export))
+				       ,(p->r expr)))
+			       (local-clause-internals clause)
+			       (local-clause-exports clause)
+			       (local-clause-exprs clause))))
+		      ((inherit-clause? clause)
+			`(inherit
+			   ,@(map (lambda (inherited)
+				    (p->r inherited))
+			       (inherit-clause-inheriteds clause))))
+		      ((inherit-from-clause? clause)
+			`(inherit-from
+			   ,(p->r (inherit-from-clause-super clause))
+			   ,@(map (lambda (inherited)
+				    (p->r inherited))
+			       (inherit-from-clause-inheriteds clause))))
+		      ((rename-clause? clause)
+			`(rename
+			   ,@(map (lambda (internal inherited)
+				    `(,(p->r internal) ,(sexp->raw inherited)))
+			       (rename-clause-internals clause)
+			       (rename-clause-inheriteds clause))))
+		      ((rename-from-clause? clause)
+			`(rename-from
+			   ,(p->r (rename-from-clause-super clause))
+			   ,@(map (lambda (internal inherited)
+				    `(,(p->r internal) ,(sexp->raw inherited)))
+			       (rename-from-clause-internals clause)
+			       (rename-from-clause-inheriteds clause))))
+		      ((share-clause? clause)
+			`(share
+			   ,@(map (lambda (internal export inherited)
+				    `((,(p->r internal) ,(sexp->raw export))
+				       ,(sexp->raw inherited)))
+			       (share-clause-internals clause)
+			       (share-clause-exports clause)
+			       (share-clause-inheriteds clause))))
+		      ((share-from-clause? clause)
+			`(share-from
+			   ,(p->r (share-from-clause-super clause))
+			   ,@(map (lambda (internal export inherited)
+				    `((,(p->r internal) ,(sexp->raw export))
+				       ,(sexp->raw inherited)))
+			       (share-from-clause-internals clause)
+			       (share-from-clause-exports clause)
+			       (share-from-clause-inheriteds clause))))
+		      ((sequence-clause? clause)
+			`(sequence
+			   ,@(map p->r (sequence-clause-exprs clause))))))
+	       (class*-form-inst-clauses expr)))))
+
+    ))

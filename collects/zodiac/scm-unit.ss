@@ -1,0 +1,651 @@
+(define zodiac:scheme-units@
+  (unit/sig zodiac:scheme-units^
+    (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
+      zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
+      zodiac:scheme-main^
+      zodiac:expander^ zodiac:interface^)
+
+    (define-struct (unit-form struct:parsed)
+      (imports exports clauses))
+
+    (define-struct (compound-unit-form struct:parsed)
+      (imports links exports))
+
+    (define-struct (invoke-unit-form struct:parsed)
+      (unit variables))
+
+    (define-struct (invoke-open-unit-form struct:parsed)
+      (unit name-specifier variables))
+
+    (define create-unit-form
+      (lambda (imports exports clauses source)
+	(make-unit-form (z:zodiac-origin source)
+	  (z:zodiac-start source) (z:zodiac-finish source)
+	  (make-empty-back-box)
+	  imports exports clauses)))
+
+    (define create-compound-unit-form
+      (lambda (imports links exports source)
+	(make-compound-unit-form (z:zodiac-origin source)
+	  (z:zodiac-start source) (z:zodiac-finish source)
+	  (make-empty-back-box)
+	  imports links exports)))
+
+    (define create-invoke-unit-form
+      (lambda (unit variables source)
+	(make-invoke-unit-form (z:zodiac-origin source)
+	  (z:zodiac-start source) (z:zodiac-finish source)
+	  (make-empty-back-box)
+	  unit variables)))
+
+    (define create-invoke-open-unit-form
+      (lambda (unit name-specifier variables source)
+	(make-invoke-open-unit-form (z:zodiac-origin source)
+	  (z:zodiac-start source) (z:zodiac-finish source)
+	  (make-empty-back-box)
+	  unit name-specifier variables)))
+
+    ; --------------------------------------------------------------------
+
+    (define make-vars-attribute
+      (lambda (attributes)
+	(put-attribute attributes 'unit-vars
+	  (cons (make-hash-table)
+	    (get-attribute attributes 'unit-vars (lambda () '()))))))
+
+    (define get-vars-attribute
+      (lambda (attributes)
+	(car (get-attribute attributes 'unit-vars))))
+
+    (define remove-vars-attribute
+      (lambda (attributes)
+	(put-attribute attributes 'unit-vars
+	  (cdr (get-attribute attributes 'unit-vars)))))
+
+    (define make-unresolved-attribute
+      (lambda (attributes)
+	(put-attribute attributes 'unresolved-unit-vars
+	  (cons '()
+	    (get-attribute attributes
+	      'unresolved-unit-vars (lambda () '()))))))
+
+    (define get-unresolved-attribute
+      (lambda (attributes)
+	(car (get-attribute attributes 'unresolved-unit-vars))))
+
+    (define update-unresolved-attribute
+      (lambda (attributes new-value)
+	(let ((current (get-attribute attributes 'unresolved-unit-vars)))
+	  (put-attribute attributes 'unresolved-unit-vars
+	    (cons
+	      (cons new-value (car current))
+	      (cdr current))))))
+
+    (define remove-unresolved-attribute
+      (lambda (attributes)
+	(put-attribute attributes 'unresolved-unit-vars
+	  (cdr (get-attribute attributes 'unresolved-unit-vars)))))
+
+    ; --------------------------------------------------------------------
+
+    (define-struct import-id (id))
+    (define-struct export-id (id))
+    (define-struct internal-id (id))
+    (define-struct link-id (id))
+
+    (define register-links
+      (lambda (ids attributes)
+	(map
+	  (lambda (id)
+	    (let ((id-table (get-vars-attribute attributes))
+		   (id-name (z:read-object id)))
+	      (let ((entry (hash-table-get id-table id-name
+			     (lambda () #f))))
+		(cond
+		  ((not entry)
+		    (hash-table-put! id-table id-name
+		      (make-link-id id)))
+		  ((link-id? entry)
+		    (static-error id "Duplicate link name"))
+		  (else
+		    (internal-error entry "Invalid in register-links"))))))
+	  ids)))
+
+    (define check-link
+      (lambda (id attributes)
+	(let ((id-table (get-vars-attribute attributes))
+	       (id-name (z:read-object id)))
+	  (let ((entry (hash-table-get id-table id-name
+			 (lambda () #f))))
+	    (link-id? entry)))))
+
+    (define check-import
+      (lambda (id attributes)
+	(let ((id-table (get-vars-attribute attributes))
+	       (id-name (z:read-object id)))
+	  (let ((entry (hash-table-get id-table id-name
+			 (lambda () #f))))
+	    (import-id? entry)))))
+
+    (define register-import
+      (lambda (id attributes)
+	(let ((id-table (get-vars-attribute attributes))
+	       (id-name (z:read-object id)))
+	  (let ((entry (hash-table-get id-table id-name
+			 (lambda () #f))))
+	    (cond
+	      ((not entry)
+		(hash-table-put! id-table id-name
+		  (make-import-id id)))
+	      ((import-id? entry)
+		(static-error id "Duplicate import identifier"))
+	      ((export-id? entry)
+		(static-error id "Exported identifier being imported"))
+	      ((internal-id? entry)
+		(static-error id
+		  "Defined identifier being imported"))
+	      (else
+		(internal-error entry
+		  "Invalid in register-import/export")))))))
+    
+    (define register-definitions
+      (lambda (ids attributes)
+	(map
+	  (lambda (id)
+	    (let ((id-table (get-vars-attribute attributes))
+		   (id-name (z:read-object id)))
+	      (let ((entry (hash-table-get id-table id-name
+			     (lambda () #f))))
+		(cond
+		  ((not entry)
+		    (hash-table-put! id-table id-name
+		      (make-internal-id id)))
+		  ((import-id? entry)
+		    (static-error id "Redefined imported identifier"))
+		  ((export-id? entry)
+		    'do-nothing)
+		  ((internal-id? entry)
+		    (static-error id "Duplicate internal definition"))
+		  (else
+		    (internal-error entry
+		      "Invalid entry in register-definition"))))))
+	  ids)))
+
+    (define register-export
+      (lambda (id attributes)
+	(let ((id-table (get-vars-attribute attributes))
+	       (id-name (z:read-object id)))
+	  (let ((entry (hash-table-get id-table id-name
+			 (lambda () #f))))
+	    (cond
+	      ((not entry)
+		(static-error id "Exported identifier not defined"))
+	      ((import-id? entry)
+		(static-error id "Imported identifier being exported"))
+	      ((export-id? entry)
+		(static-error id "Duplicate export identifier"))
+	      ((internal-id? entry)
+		(hash-table-put! id-table id-name
+		  (make-export-id id)))
+	      (else
+		(internal-error entry
+		  "Invalid in register-import/export")))))))
+
+    (define check-unresolved-vars
+      (lambda (attributes)
+	(let ((id-table (get-vars-attribute attributes))
+	       (unresolveds (get-unresolved-attribute attributes)))
+	  (map (lambda (uid)
+		 (let ((entry (hash-table-get id-table
+				(z:read-object uid) (lambda () #f))))
+		   (cond
+		     ((or (internal-id? entry) (export-id? entry))
+		       'do-nothing)
+		     ((not entry)
+		       (static-error uid "Reference to undefined identifier"))
+		     (else
+		       (internal-error entry
+			 "Invalid in check-unresolved-vars")))))
+	    unresolveds))))
+
+    ; ----------------------------------------------------------------------
+
+    (define c/imports-vocab (make-vocabulary))
+
+    (add-sym-micro c/imports-vocab
+      (lambda (expr env attributes vocab)
+	(register-import expr attributes)
+	(create-lexical-binding+marks expr)))
+
+    ; ----------------------------------------------------------------------
+
+    (define unit-exports-vocab (make-vocabulary))
+
+    (add-sym-micro unit-exports-vocab
+      (lambda (expr env attributes vocab)
+	(register-export expr attributes)
+	(cons expr expr)))
+
+    (add-list-micro unit-exports-vocab
+      (let* ((kwd '())
+	      (in-pattern '(internal-id external-id))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((internal (pat:pexpand 'internal-id p-env kwd))
+		       (external (pat:pexpand 'external-id p-env kwd)))
+		  (valid-syntactic-id? internal)
+		  (valid-syntactic-id? external)
+		  (register-export internal attributes)
+		  (cons internal external))))
+	    (else
+	      (static-error expr "Malformed export declaration"))))))
+
+    (add-micro-form 'unit scheme-vocabulary
+      (let* ((kwd '(unit import export))
+	      (in-pattern '(unit
+			     (import imports ...)
+			     (export exports ...)
+			     clauses ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((in:imports (pat:pexpand '(imports ...) p-env kwd))
+		       (in:exports (pat:pexpand '(exports ...) p-env kwd))
+		       (in:clauses (pat:pexpand '(clauses ...) p-env kwd)))
+		  (make-vars-attribute attributes)
+		  (make-unresolved-attribute attributes)
+		  (let*
+		    ((proc:imports (map (lambda (e)
+					   (expand-expr e env
+					     attributes c/imports-vocab))
+				      in:imports))
+		      (_ (extend-env proc:imports env))
+		      (proc:clauses (map (lambda (e)
+					   (expand-expr e env
+					     attributes
+					     unit-clauses-vocab))
+				      in:clauses))
+		      (proc:exports (map (lambda (e)
+					   (expand-expr e env
+					     attributes
+					     unit-exports-vocab))
+				      in:exports))
+		      (_ (retract-env (map car proc:imports) env)))
+		    (check-unresolved-vars attributes)
+		    (remove-vars-attribute attributes)
+		    (remove-unresolved-attribute attributes)
+		    (create-unit-form
+		      (map car proc:imports)
+		      proc:exports
+		      proc:clauses expr)))))
+	    (else
+	      (static-error expr "Malformed unit"))))))
+
+    ; ----------------------------------------------------------------------
+
+    (define c-unit-link-import-vocab (make-vocabulary))
+
+    (add-sym-micro c-unit-link-import-vocab
+      (lambda (expr env attributes vocab)
+	(if (check-import expr attributes)
+	  (list (expand-expr expr env attributes scheme-vocabulary))
+	  (static-error expr "Not an imported identifier"))))
+
+    (add-list-micro c-unit-link-import-vocab
+      (let* ((kwd '())
+	      (in-pattern '(tag id0 id1 ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((tag (pat:pexpand 'tag p-env kwd))
+		       (ids (pat:pexpand '(id0 id1 ...) p-env kwd)))
+		  (map (lambda (id) (cons tag id)) ids))))
+	    (else
+	      (static-error expr "Invalid link syntax"))))))
+
+    (define c-unit-link-body-vocab (make-vocabulary))
+
+    (add-list-micro c-unit-link-body-vocab
+      (let* ((kwd '())
+	      (in-pattern '(sub-unit-expr imported-var ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((sub-unit-expr (pat:pexpand 'sub-unit-expr p-env kwd))
+		       (imported-vars
+			 (pat:pexpand '(imported-var ...) p-env kwd)))
+		  (cons (expand-expr sub-unit-expr env attributes
+			  scheme-vocabulary)
+		    (map (lambda (imported-var)
+			   (expand-expr imported-var env attributes
+			     c-unit-link-import-vocab))
+		      imported-vars)))))
+	    (else
+	      (static-error expr "Invalid linkage body"))))))
+
+    (define c-unit-exports-vocab (make-vocabulary))
+
+    (add-sym-micro c-unit-exports-vocab
+      (lambda (expr env attributes vocab)
+	(cons expr expr)))
+
+    (add-list-micro c-unit-exports-vocab
+      (let* ((kwd '())
+	      (in-pattern '(internal-id external-id))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((internal-id (pat:pexpand 'internal-id p-env kwd))
+		       (external-id (pat:pexpand 'external-id p-env kwd)))
+		  (valid-syntactic-id? internal-id)
+		  (valid-syntactic-id? external-id)
+		  (cons internal-id external-id))))
+	    (else
+	      (static-error expr "Invalid export clause"))))))
+
+    (define c-unit-export-clause-vocab (make-vocabulary))
+
+    (add-list-micro c-unit-export-clause-vocab
+      (let* ((kwd '())
+	      (in-pattern '(tag exports ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((tag (pat:pexpand 'tag p-env kwd))
+		       (exports (pat:pexpand '(exports ...) p-env kwd)))
+		  (valid-syntactic-id? tag)
+		  (if (check-link tag attributes)
+		    (cons tag
+		      (map (lambda (e)
+			     (expand-expr e env attributes
+			       c-unit-exports-vocab))
+			exports))
+		    (static-error tag "Not a valid tag")))))
+	    (else
+	      (static-error expr "Invalid export clause"))))))
+
+    (add-micro-form 'compound-unit scheme-vocabulary
+      (let* ((kwd '(compound-unit import link export))
+	      (in-pattern '(compound-unit
+			     (import imports ...)
+			     (link
+			       (link-tag link-body) ...)
+			     (export export-clause ...)))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((in:imports (pat:pexpand '(imports ...) p-env kwd))
+		       (in:link-tags (pat:pexpand '(link-tag ...) p-env kwd))
+		       (in:link-bodies
+			 (pat:pexpand '(link-body ...) p-env kwd))
+		       (in:export-clauses
+			 (pat:pexpand '(export-clause ...) p-env kwd)))
+		  (make-vars-attribute attributes)
+		  (let*
+		    ((proc:imports (map (lambda (e)
+					   (expand-expr e env
+					     attributes c/imports-vocab))
+				      in:imports))
+		      (_ (extend-env proc:imports env))
+		      (_ (register-links in:link-tags attributes))
+		      (proc:link-clauses
+			(map (lambda (link-tag link-body)
+			       (let ((expanded-body
+				       (expand-expr link-body env
+					 attributes
+					 c-unit-link-body-vocab)))
+				 (let ((unit-expr (car expanded-body))
+					(unit-args (apply append
+						     (cdr expanded-body)))
+					(this-tag (z:read-object link-tag)))
+				   (let loop ((args unit-args))
+				     (if (null? args)
+				       (cons link-tag
+					 (cons unit-expr unit-args))
+				       (if (and (pair? (car args))
+					     (eq? this-tag
+					       (z:read-object (caar args))))
+					 (static-error (caar args)
+					   "Self-import not allowed")
+					 (loop (cdr args))))))))
+			  in:link-tags in:link-bodies))
+		      (proc:export-clauses
+			(map (lambda (e)
+			       (expand-expr e env
+				 attributes c-unit-export-clause-vocab))
+			  in:export-clauses))
+		      (_ (retract-env (map car proc:imports) env)))
+		    (remove-vars-attribute attributes)
+		    (create-compound-unit-form
+		      (map car proc:imports)
+		      proc:link-clauses
+		      proc:export-clauses
+		      expr)))))
+	    (else
+	      (static-error expr "Malformed compound-unit"))))))
+
+    ; --------------------------------------------------------------------
+
+    (add-micro-form 'invoke-unit scheme-vocabulary
+      (let* ((kwd '(invoke-unit))
+	      (in-pattern '(invoke-unit unit vars ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((unit (pat:pexpand 'unit p-env kwd))
+		       (vars (pat:pexpand '(vars ...) p-env kwd)))
+		  (valid-syntactic-id/s? vars)
+		  (create-invoke-unit-form
+		    (expand-expr unit env attributes vocab)
+		    (map (lambda (e)
+			   (expand-expr e env attributes vocab))
+		      vars)
+		    expr))))
+	    (else
+	      (static-error expr "Malformed invoke-unit"))))))
+
+    (add-micro-form 'invoke-open-unit scheme-vocabulary
+      (let* ((kwd '(invoke-open-unit))
+	      (in-pattern-1 '(invoke-open-unit unit))
+	      (in-pattern-2 '(invoke-open-unit unit name-spec vars ...))
+	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e-1 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((unit (pat:pexpand 'unit p-env kwd))
+		       (name-spec (pat:pexpand 'name-spec p-env kwd)))
+		  (create-invoke-open-unit-form
+		    (expand-expr unit env attributes vocab)
+		    '() '() expr))))
+	    ((pat:match-against m&e-2 expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((unit (pat:pexpand 'unit p-env kwd))
+		       (name-spec (pat:pexpand 'name-spec p-env kwd))
+		       (vars (pat:pexpand '(vars ...) p-env kwd)))
+		  (valid-syntactic-id/s? vars)
+		  (create-invoke-open-unit-form
+		    (expand-expr unit env attributes vocab)
+		    (if (or (z:symbol? name-spec)
+			  (and (z:boolean? name-spec)
+			    (not (z:read-object name-spec))))
+		      (z:read-object name-spec)
+		      (static-error name-spec "Invalid name specifier"))
+		    (map (lambda (v)
+			   (expand-expr v env attributes vocab))
+		      vars)
+		    expr))))
+	    (else
+	      (static-error expr "Malformed invoke-open-unit"))))))
+
+    ; --------------------------------------------------------------------
+
+    (extend-parsed->raw unit-form?
+      (lambda (expr p->r)
+	`(unit (import ,@(map p->r (unit-form-imports expr)))
+	   (export ,@(map (lambda (e)
+			    `(,(sexp->raw (car e)) ,(sexp->raw (cdr e))))
+		       (unit-form-exports expr)))
+	   ,@(map p->r (unit-form-clauses expr)))))
+
+    (extend-parsed->raw compound-unit-form?
+      (lambda (expr p->r)
+	`(compound-unit
+	   (import ,@(map p->r (compound-unit-form-imports expr)))
+	   (link
+	     ,@(map (lambda (link-clause)
+		      (let ((tag (car link-clause))
+			     (sub-unit (cadr link-clause))
+			     (imports (map (lambda (import)
+					     (if (lexical-varref? import)
+					       (p->r import)
+					       `(,(sexp->raw (car import))
+						  ,(sexp->raw (cdr import)))))
+					(cddr link-clause))))
+			`(,(sexp->raw tag)
+			   (,(p->r sub-unit)
+			     ,@imports))))
+		 (compound-unit-form-links expr)))
+	   (export
+	     ,@(map (lambda (export-clause)
+		      (let ((tag (car export-clause))
+			     (exports (map (lambda (export)
+					     `(,(sexp->raw (car export))
+						,(sexp->raw (cdr export))))
+					(cdr export-clause))))
+			`(,(sexp->raw tag) ,@exports)))
+		 (compound-unit-form-exports expr))))))
+
+    (extend-parsed->raw invoke-unit-form?
+      (lambda (expr p->r)
+	`(invoke-unit ,(p->r (invoke-unit-form-unit expr))
+	   ,@(map p->r (invoke-unit-form-variables expr)))))
+
+    (extend-parsed->raw invoke-open-unit-form?
+      (lambda (expr p->r)
+	(if (null? (invoke-open-unit-form-name-specifier expr))
+	  `(invoke-open-unit ,(p->r (invoke-open-unit-form-unit expr)))
+	  `(invoke-open-unit ,(p->r (invoke-open-unit-form-unit expr))
+	     ,(invoke-open-unit-form-name-specifier expr)
+	     ,@(map p->r (invoke-open-unit-form-variables expr))))))
+
+    ; ----------------------------------------------------------------------
+
+    (define unit-clauses-vocab 'undefined-unit-clauses-vocab)
+
+    (define unit-clauses-vocab-delta (make-vocabulary))
+
+    (let* ((kwd '(define-values))
+	    (in-pattern-1 '(define-values (var ...) val))
+	    (m&e-1 (pat:make-match&env in-pattern-1 kwd)))
+      (let ((define-values-helper
+	      (lambda (handler)
+		(lambda (expr env attributes vocab)
+		  (cond
+		    ((pat:match-against m&e-1 expr env)
+		      =>
+		      (lambda (p-env)
+			(let* ((vars (pat:pexpand '(var ...) p-env kwd))
+				(_ (map valid-syntactic-id? vars)))
+			  (handler expr env attributes vocab p-env vars))))
+		    (else (static-error expr "Malformed define-values")))))))
+	(add-micro-form 'define-values unit-clauses-vocab-delta
+	  (define-values-helper
+	    (lambda (expr env attributes vocab p-env vars)
+	      (register-definitions vars attributes)
+	      (let* ((id-exprs (map (lambda (v)
+				      (expand-expr v env attributes
+					define-values-id-parse-vocab))
+				 vars))
+		      (expr-expr (expand-expr
+				   (pat:pexpand 'val p-env kwd)
+				   env attributes vocab)))
+		(create-define-values-form id-exprs expr-expr expr)))))))
+
+    (define define-values-id-parse-vocab (make-vocabulary))
+    
+    (add-sym-micro define-values-id-parse-vocab
+      (lambda (expr env attributes vocab)
+	(let ((r (resolve expr env vocab)))
+	  (cond
+	    ((or (macro-resolution? r) (micro-resolution? r))
+	      (static-error expr
+		"Invalid use of keyword ~s" (z:symbol-orig-name expr)))
+	    ((lexical-binding? r)
+	      (create-lexical-varref r expr))
+	    ((top-level-resolution? r)
+	      (let ((name (z:read-object expr)))
+		(create-top-level-varref name expr)))
+	    (else
+	      (internal-error expr "Invalid resolution ~s" r))))))
+
+    (add-micro-form 'set! unit-clauses-vocab-delta
+      (let* ((kwd '(set!))
+              (in-pattern '(set! var val))
+              (m&e (pat:make-match&env in-pattern kwd)))
+        (lambda (expr env attributes vocab)
+          (let ((p-env (pat:match-against m&e expr env)))
+            (if p-env
+              (let* ((var-p (pat:pexpand 'var p-env kwd))
+                      (_ (valid-syntactic-id? var-p))
+                      (id-expr (expand-expr var-p env attributes vocab))
+                      (expr-expr (expand-expr
+                                   (pat:pexpand 'val p-env kwd)
+                                   env attributes vocab)))
+                (when (check-import var-p attributes)
+                  (static-error var-p "Mutating imported identifier"))
+                (create-set!-form id-expr expr-expr expr))
+              (static-error expr "Malformed set!"))))))
+
+    (add-sym-micro unit-clauses-vocab-delta
+      (lambda (expr env attributes vocab)
+	(let ((r (resolve expr env vocab)))
+	  (cond
+	    ((or (macro-resolution? r) (micro-resolution? r))
+	      (static-error expr
+		"Invalid use of keyword ~s" (z:symbol-orig-name expr)))
+	    ((lexical-binding? r)
+	      (create-lexical-varref r expr))
+	    ((top-level-resolution? r)
+	      (let ((name (z:read-object expr)))
+		(if (built-in-name name)
+		  (create-top-level-varref name expr)
+		  (begin
+		    (update-unresolved-attribute attributes expr)
+		    (create-top-level-varref name expr)))))
+	    (else
+	      (internal-error expr "Invalid resolution ~s" r))))))
+
+    (set! unit-clauses-vocab
+      (merge-vocabulary (copy-vocabulary scheme-vocabulary)
+	unit-clauses-vocab-delta))
+
+    ))

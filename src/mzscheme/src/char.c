@@ -64,7 +64,7 @@ void scheme_init_char (Scheme_Env *env)
       (Scheme_Object **)scheme_malloc_eternal(256 * sizeof(Scheme_Object*));
     
     for (i = 0; i < 256; i++) {
-      Scheme_Object *sc = scheme_alloc_eternal_small_object ();
+      Scheme_Object *sc = scheme_alloc_eternal_small_object();
       sc->type = scheme_char_type;
       SCHEME_CHAR_VAL(sc) = i;
       

@@ -59,8 +59,6 @@ static int regexec(regexp *, char *);
 # define MZREGISTER register
 #endif
 
-static Scheme_Type regexp_type;
-
 /*
  * The "internal use only" fields in regexp.h are present to pass info from
  * compile to execute that permits the execute phase to run lots faster on
@@ -256,7 +254,7 @@ regcomp(char *exp)
   if (r == NULL)
     FAIL("out of space");
   
-  r->type = regexp_type;
+  r->type = scheme_regexp_type;
   
   r->nsubexp = regnpar;
   r->startp = (char **)scheme_malloc_atomic(regnpar * sizeof(char *));
@@ -1303,7 +1301,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
   char *s, *full_s, save;
   int offset = 0, endset;
   
-  if (SCHEME_TYPE(argv[0]) != regexp_type
+  if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_STRINGP(argv[0]))
     scheme_wrong_type(name, "regexp-or-string", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
@@ -1389,7 +1387,7 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
   char *source, *prefix = NULL;
   int prefix_len = 0;
 
-  if (SCHEME_TYPE(argv[0]) != regexp_type
+  if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("regexp-replace", "regexp-or-string", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
@@ -1479,15 +1477,11 @@ static Scheme_Object *replace_star(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *regexp_p(int argc, Scheme_Object *argv[])
 {
-  return (SCHEME_TYPE(argv[0]) == regexp_type) ? scheme_true : scheme_false;
+  return (SCHEME_TYPE(argv[0]) == scheme_regexp_type) ? scheme_true : scheme_false;
 }
 
 void scheme_regexp_initialize(Scheme_Env *env)
 {
-  if (scheme_starting_up) {
-    regexp_type = scheme_make_type("<regexp>");
-  }
-
   scheme_add_global_constant("regexp", 
 			     scheme_make_prim_w_arity(make_regexp, 
 						      "regexp", 

@@ -38,7 +38,8 @@ void *GC_malloc_array_tagged(size_t);
 
 /* Pointerless */
 void *GC_malloc_atomic(size_t size_in_bytes);
-#define GC_malloc_atomic_tagged GC_malloc_atomic
+
+#define GC_malloc_atomic_tagged GC_malloc_one_tagged
 
 /* Plain malloc: */
 void *GC_malloc_atomic_uncollectable(size_t size_in_bytes);
@@ -66,6 +67,10 @@ void GC_unregister_disappearing_link(void **p);
 
 extern void **GC_variable_stack;
 extern int GC_variable_count;
+
+typedef void *(*Mark_Proc)(void *);
+typedef int (*Traverse_Proc)(void *, Mark_Proc);
+void GC_register_traverser(Scheme_Type tag, Traverse_Proc proc);
 
 # ifdef __cplusplus
 };

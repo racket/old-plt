@@ -550,6 +550,10 @@ scheme_make_linked_closure(Scheme_Process *p,
   closure->type = scheme_linked_closure_type;
   SCHEME_COMPILED_CLOS_CODE(closure) = linked_code;
 
+#ifdef MZ_PRECISE_GC
+  closure->closure_size = i;
+#endif
+
   if (!close || !i)
     return (Scheme_Object *)closure;
 

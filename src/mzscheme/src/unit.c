@@ -2654,7 +2654,7 @@ static Scheme_Object *do_unitsig(void *which, int argc, Scheme_Object **argv)
   if (!unitsig_macros)
     init_unitsig();
 
-  return _scheme_apply(SCHEME_VEC_ELS(unitsig_macros)[(int)which],
+  return _scheme_apply(SCHEME_VEC_ELS(unitsig_macros)[SCHEME_INT_VAL(which)],
 		       argc, argv);
 }
 
@@ -2662,7 +2662,7 @@ static Scheme_Object *make_unitsig_macro(int pos)
 {
   Scheme_Object *macro, *proc;
 
-  proc = scheme_make_closed_prim_w_arity(do_unitsig, (void *)pos,
+  proc = scheme_make_closed_prim_w_arity(do_unitsig, scheme_make_integer(pos),
 					 "unitsig", 0, -1);
 
   macro = scheme_alloc_stubborn_small_object();

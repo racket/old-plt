@@ -130,6 +130,9 @@ typedef struct Scheme_Closure_Compilation_Data
 
 typedef struct {
   Scheme_Type type;
+#ifdef MZ_PRECISE_GC
+  short closure_size;
+#endif
   Scheme_Object *code;
   Scheme_Object *vals[1];
 } Scheme_Closed_Compiled_Procedure;

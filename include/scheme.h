@@ -568,8 +568,8 @@ typedef long mz_pre_jmp_buf[8];
 #ifdef MZ_PRECISE_GC
 typedef struct {
   mz_pre_jmp_buf jb;
-  void **gcvs;
-  void *gcvs_cnt;
+  long gcvs; /* declared as `long' so it isn't pushed when on the stack! */
+  long gcvs_cnt;
 } mz_jmp_buf;
 #else
 # define mz_jmp_buf mz_pre_jmp_buf
@@ -713,6 +713,9 @@ typedef struct Scheme_Thread {
   Scheme_Object **tail_buffer;
   int tail_buffer_size;
 
+  /* values_buffer is used to avoid allocating for `values'
+     calls. When ku.multiple.array is not the same as
+     values_buffer, then it can be zeroed at GC points. */
   Scheme_Object **values_buffer;
   int values_buffer_size;
 
@@ -1073,11 +1076,12 @@ MZ_EXTERN Scheme_Object *scheme_eval_waiting;
 #endif
 
 #ifdef MZ_PRECISE_GC
-# define scheme_longjmp(b, v) (GC_variable_stack = (b).gcvs, \
-                               (GC_variable_stack ? (GC_variable_stack[1] = (b).gcvs_cnt) : 0), \
+/* Need to make sure that a __gc_var_stack__ is always available where
+   setjmp & longjmp are used. */
+# define scheme_longjmp(b, v) (((long *)((b).gcvs))[1] = (b).gcvs_cnt, \
                                scheme_mz_longjmp((b).jb, v))
-# define scheme_setjmp(b)     ((b).gcvs = GC_variable_stack, \
-                               (b).gcvs_cnt = (GC_variable_stack ? GC_variable_stack[1] : 0), \
+# define scheme_setjmp(b)     ((b).gcvs = (long)__gc_var_stack__, \
+                               (b).gcvs_cnt = (long)(__gc_var_stack__[1]), \
                                scheme_mz_setjmp((b).jb))
 #else
 # define scheme_longjmp(b, v) scheme_mz_longjmp(b, v)

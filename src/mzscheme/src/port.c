@@ -281,6 +281,7 @@ static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client 
 
 static Scheme_Object *subprocess(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_status(int c, Scheme_Object *args[]);
+static Scheme_Object *subprocess_kill(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_pid(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_p(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_wait(int c, Scheme_Object *args[]);
@@ -520,6 +521,11 @@ scheme_init_port (Scheme_Env *env)
 			     scheme_make_prim_w_arity(subprocess_status, 
 						      "subprocess-status", 
 						      1, 1), 
+			     env);
+  scheme_add_global_constant("subprocess-kill", 
+			     scheme_make_prim_w_arity(subprocess_kill, 
+						      "subprocess-kill", 
+						      2, 2),
 			     env);
   scheme_add_global_constant("subprocess-pid", 
 			     scheme_make_prim_w_arity(subprocess_pid, 
@@ -4585,7 +4591,7 @@ static void init_sigchld(void)
 
 static int subp_done(Scheme_Object *sp)
 {
-  Scheme_Object *sci = ((Scheme_Subprocess *)sp)->handle;
+  void *sci = ((Scheme_Subprocess *)sp)->handle;
 
 #if defined(UNIX_PROCESSES)
   System_Child *sc = (System_Child *)sci;
@@ -4606,10 +4612,8 @@ static int subp_done(Scheme_Object *sp)
 static void subp_needs_wakeup(Scheme_Object *sp, void *fds)
 {
 #ifdef WINDOWS_PROCESSES
-# ifndef NO_STDIO_THREADS
-  Scheme_Object *sci = ((Scheme_Subprocess *)sp)->handle;
+  void *sci = ((Scheme_Subprocess *)sp)->handle;
   scheme_add_fd_handle((void *)(HANDLE)sci, fds, 0);
-# endif
 #endif
 }
 
@@ -4684,6 +4688,60 @@ static Scheme_Object *subprocess_wait(int argc, Scheme_Object **argv)
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
                  "%s: not supported on this platform",
                  "subprocess-wait");
+#endif
+}
+
+static Scheme_Object *subprocess_kill(int argc, Scheme_Object **argv)
+{
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_subprocess_type))
+    scheme_wrong_type("subprocess-kill", "subprocess", 0, argc, argv);
+
+#if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES)
+  {
+    Scheme_Subprocess *sp = (Scheme_Subprocess *)argv[0];
+
+#if defined(UNIX_PROCESSES)
+    {
+      System_Child *sc = (System_Child *)sp->handle;
+      
+      while (1) {
+	if (sc->done)
+	  return scheme_void;
+
+	if (!kill(sp->pid, SCHEME_TRUEP(argv[1]) ? SIGINT : SIGKILL))
+	  return scheme_void;
+	
+	if (errno != EINTR)
+	  break;
+	/* Otherwise we were interrupted. Try `kill' again. */
+      }
+    }
+#else
+    if (SCHEME_TRUEP(argv[1])) {
+      DWORD w;
+
+      if (!sp->handle)
+	return scheme_void;
+      
+      if (GetExitCodeProcess((HANDLE)sp->handle, &w)) {
+	if (w != STILL_ACTIVE)
+	  return scheme_void;
+	if (TerminateProcess((HANDLE)sp->handle, 1))
+	  return scheme_void;
+      }
+      errno = GetLastError();
+    } else
+      return scheme_void;
+#endif
+
+    scheme_raise_exn(MZEXN_MISC, "subprocess-kill: failed (%E)", errno);
+    
+    return NULL;
+  }
+#else
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "%s: not supported on this platform",
+		   "subprocess-wait");
 #endif
 }
 

@@ -1276,9 +1276,7 @@
 
  /* NO_NEED_FOR_BEGINTHREAD indicates that the C library used for
     Windows is always thread-ready and there's no need use the
-    _beginthreadex() function instead of CreateThread(). This is only
-    used when stdin and process ports are tested in a separate thread
-    (see NO_STDIO_TREADS). */
+    _beginthreadex() function instead of CreateThread(). */
 
  /* WIN32S_HACK uses a special hack to implement threads under Win32s
     with some compilers. Obsolete. */

@@ -25,6 +25,7 @@
    ("framework" . "PLT Framework: GUI Application Framework")
    ("mrspidey" . "PLT MrSpidey: Static Debugger Manual")
    ("misclib" . "PLT Miscellaneous Libraries: Reference Manual")
+   ("match" . "PLT Match: Pattern Matching for Scheme Manual")
    ("mzc" . "PLT mzc: MzScheme Compiler Manual")
    ("insidemz" . "Inside PLT MzScheme")
    ("tools" . "PLT Tools: DrScheme Extension Manual")))

@@ -94,7 +94,7 @@
       (if (z:zodiac? read)
 	  (z:sexp->raw read)
 	  read)))
-  
+    
   ; divined notes about the structure of an arglist.  Evidently, an arglist can
   ; take one of three forms:
   ; list-arglist : this arglist represents a simple list of arguments

@@ -100,7 +100,7 @@
 
   (define (translate-bound-varref/lhs expr)
     ; Right now, translate-bound-varref adds no annotation
-    ;  if the seconrd argument is #f.
+    ;  if the second argument is #f.
     (translate-bound-varref expr #f))
 
   ; mark lexical variables that are known never to be undefined, an

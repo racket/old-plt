@@ -194,7 +194,7 @@
 	      (make-check-box set-setting-unmatched-cond/case-is-error?!
 			      setting-unmatched-cond/case-is-error?
 			      "Unmatched cond/case is an error?"
-			      "on restart"
+			      "next interaction"
 			      dynamic-panel)]
 	     [signal-undefined?
 	      (make-check-box set-setting-signal-undefined?!

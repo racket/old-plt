@@ -2675,7 +2675,7 @@ static Scheme_Object *object_wait(int argc, Scheme_Object *argv[])
   }
 
   if ((argc == 2) && SCHEME_FALSEP(argv[0]))
-    ws= qws;
+    ws = qws;
   else
     ws = MALLOC_N(Waitable*, argc-1);
 
@@ -2702,7 +2702,7 @@ static Scheme_Object *object_wait(int argc, Scheme_Object *argv[])
   }
 
   /* Special case: one argument, no timeout */
-  if ((argc == 1) && SCHEME_FALSEP(argv[0])) {
+  if ((argc == 2) && SCHEME_FALSEP(argv[0])) {
     w = ws[0];
     if (w->ready) {
       scheme_block_until(w->ready, w->needs_wakeup, argv[1], 0.0);

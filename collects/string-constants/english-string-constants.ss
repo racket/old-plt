@@ -638,6 +638,7 @@
  (advanced-student "Advanced Student")
  (advanced-one-line-summary "Intermediate plus lambda and mutation")
  (full-language "Full") ;; also in the HtDP languages section
+ (pretty-big-scheme "Pretty Big Scheme")
  (htdp-full-one-line-summary "Advanced, plus PLT extensions and GUI library")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS-like")

@@ -69,8 +69,9 @@
 	  compiler:known^
 	  compiler:analyze^
 	  compiler:const^
-	  compiler:closure^
+	  compiler:lift^
 	  compiler:lightweight^
+	  compiler:closure^
 	  compiler:vehicle^
 	  compiler:rep^
 	  compiler:vmstructs^
@@ -240,14 +241,16 @@
 	(if (null? sexps)
 	    (values (reverse! source-acc)
 		    (map (lambda (loc glob used cap children)
-			   (make-code empty-set
-				      loc
-				      glob
-				      used
-				      cap
-				      #f
-				      #f
-				      children))
+			   (let ([c (make-code empty-set
+					       loc
+					       glob
+					       used
+					       cap
+					       #f
+					       #f
+					       children)])
+			     (for-each (lambda (child) (set-code-parent! child c)) children)
+			     c))
 			 (reverse! locals-acc)
 			 (reverse! globals-acc)
 			 (reverse! used-acc)
@@ -264,6 +267,62 @@
 		    (cons captured-vars captured-acc)
 		    (cons children children-acc)
 		    (max max-arity new-max-arity)))))))
+
+  ;; Lift static procedures
+  (define s:lift
+    (lambda ()
+      (compiler:init-lifted-lambda-list!)
+      (compiler:init-once-closure-lists!)
+
+      (let ([l (map lift-lambdas! (block-source s:file-block))]
+	    [reset-globals (lambda (code globals)
+			     (set-code-global-vars! code globals)
+			     code)])
+	
+	;; Splice lifted lambda definitions between statics and per-load statics;
+	;; Add par-load-lifted after static lifted
+	(let loop ([n number-of-true-constants]
+		   [l l][c (block-codes s:file-block)]
+		   [l-acc null][c-acc null])
+	  (if (zero? n)
+	      (begin
+		(set-block-source! 
+		 s:file-block
+		 (append (reverse l-acc) compiler:lifted-lambdas compiler:once-closures-list (map car l)))
+		(set-block-codes!
+		 s:file-block 
+		 (append (reverse c-acc) 
+			 (map
+			  (lambda (ll)
+			    (make-code empty-set
+				       empty-set
+				       empty-set ; no globals
+				       empty-set
+				       empty-set
+				       #f #f
+				       (list 
+					(get-annotation 
+					 (zodiac:define-values-form-val ll)))))
+			  compiler:lifted-lambdas)
+			 (map (lambda (ll globs) 
+				(make-code empty-set
+					   empty-set
+					   globs
+					   empty-set
+					   empty-set
+					   #f #f
+					   (list
+					    (get-annotation 
+					     (zodiac:define-values-form-val ll)))))
+			      compiler:once-closures-list
+			      compiler:once-closures-globals-list)
+			 (map reset-globals c (map cdr l)))))
+	      (loop (sub1 n) (cdr l) (cdr c) 
+		    (cons (caar l) l-acc) (cons (reset-globals (car c) (cdar l)) c-acc)))))
+      
+      ;; Lifted lambdas are true constants:
+      (set! number-of-true-constants (+ number-of-true-constants
+					(length compiler:lifted-lambdas)))))
 
   (define s:append-block-sources!
     (lambda (file-block l)
@@ -488,6 +547,7 @@
       (random-seed (compiler:option:seed))
       (set! compiler:messages null)
       (const:init-tables!)
+      (compiler:init-closure-lists!)
       ; process the input string - try to open the input file
       (let-values ([(input-path c-output-path constant-pool-output-path obj-output-path dll-output-path setup-suffix)
 		    (s:process-filenames input-name dest-directory c?)])
@@ -689,22 +749,35 @@
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 
 	      ;;-----------------------------------------------------------------------
+	      ;; List static procedures
+	      ;;
+
+	      (when (compiler:option:verbose) 
+		(printf " finding static procedures~n"))
+	      (when (compiler:option:debug)
+		(debug " = LIFT =~n"))
+
+	      (let ([lift-thunk s:lift])
+		(verbose-time lift-thunk))
+	      (compiler:report-messages! #t)
+	      
+	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
+
+	      ;;-----------------------------------------------------------------------
 	      ;; Lightweight closure transformation
 	      ;;
 
-	      (when (and (compiler:option:lightweight)
-			 (or (compiler:option:use-mrspidey)
-			     (compiler:option:use-mrspidey-for-units)))
+	      (when (compiler:option:lightweight)
 
-		    (when (compiler:option:verbose) 
-			  (printf " lightweight closure transformation~n"))
-
-		    (let ([lightweight-thunk
-			   (lambda ()
-			     (lightweight-analyze-and-transform 
-			      (block-source s:file-block)))])
-		      (verbose-time lightweight-thunk)
-		      (compiler:report-messages! #t)))
+		(when (compiler:option:verbose) 
+		  (printf " lightweight closure transformation~n"))
+		
+		(let ([lightweight-thunk
+		       (lambda ()
+			 (lightweight-analyze-and-transform 
+			  (block-source s:file-block)))])
+		  (verbose-time lightweight-thunk)
+		  (compiler:report-messages! #t)))
 
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 
@@ -717,37 +790,9 @@
 	      
 	      (let ([closure-thunk
 		     (lambda ()
-		       ;; While converting closures, some `static' closures (nothing to
-		       ;; close over but gloabls and per-load-constants) may be created.
-		       ;; Merge them into s:file-block just before the top-level expression
-		       ;; that the closure is a part of.
-		       (compiler:init-closure-lists!)
-		       (let loop ([el (block-source s:file-block)]
-				  [cl (block-codes s:file-block)]
-				  [e-acc null]
-				  [c-acc null])
-			 (if (null? el)
-			     (begin
-			       (set-block-source! s:file-block (reverse e-acc))
-			       (set-block-codes! s:file-block (reverse c-acc)))
-			     (begin
-			       (compiler:init-once-closure-lists!)
-			       (let ([s (closure-expression! (car el))])
-				 (loop (cdr el) (cdr cl)
-				       (append (list s)
-					       compiler:once-closures-list
-					       e-acc)
-				       (append (list (car cl))
-					       (map (lambda (globs) 
-						      (make-code empty-set
-								 empty-set
-								 globs
-								 empty-set
-								 empty-set
-								 #f #f null))
-						    compiler:once-closures-globals-list)
-					       c-acc)))))))])
-	      
+		       (set-block-source! 
+			s:file-block
+			(map closure-expression! (block-source s:file-block))))])
 		(verbose-time closure-thunk))
 
 	      ;;-----------------------------------------------------------------------

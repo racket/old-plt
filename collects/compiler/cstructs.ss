@@ -167,6 +167,8 @@
      ; single-case lambdas, this is #f
      ; because the arity information is
      ; inlined.
+     liftable
+     ;; top-level-varref => procedure is lifted
      ))
 
   (define-struct (case-code struct:code)

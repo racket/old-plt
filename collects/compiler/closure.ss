@@ -32,32 +32,47 @@
      (set! compiler:closure-list
 	   (cons l compiler:closure-list))))
 
- ;; adds a one-time closure-creation to be performed at startup
+ (define-struct (top-level-varref/bind-from-lift zodiac:struct:top-level-varref/bind) (lambda pls?))
+
+ ;; fully lifted lambdas (i.e., really static, not per-load)
+ (define compiler:lifted-lambda-vars null) 
+ (define compiler:lifted-lambdas null) 
+ ;; one-time closure-creation to be performed per-load
  (define compiler:once-closures-list null)
  (define compiler:once-closures-globals-list null)
- (define compiler:add-static-closure!
-   (lambda (code globals)
-     (let* ([var (gensym 'const)]
-	    [sv (zodiac:make-top-level-varref/bind
-		 (zodiac:zodiac-origin code)
-		 (zodiac:zodiac-start code)
-		 (zodiac:zodiac-finish code)
+
+ (define compiler:add-lifted-lambda!
+   (lambda (lam pls?)
+     ;; Set the closure's liftable field to a new top-level-varref
+     (let* ([code (get-annotation lam)]
+	    [var (gensym (if pls? 'pllifted 'lifted))]
+	    [sv (make-top-level-varref/bind-from-lift
+		 (zodiac:zodiac-origin lam)
+		 (zodiac:zodiac-start lam)
+		 (zodiac:zodiac-finish lam)
 		 (make-empty-box)
 		 var
-		 (box '()))]
+		 (box '())
+		 lam
+		 pls?)]
 	    [def (zodiac:make-define-values-form 
-		  (zodiac:zodiac-origin code)
-		  (zodiac:zodiac-start code)
-		  (zodiac:zodiac-finish code)
+		  (zodiac:zodiac-origin lam)
+		  (zodiac:zodiac-start lam)
+		  (zodiac:zodiac-finish lam)
 		  (make-empty-box)
-		  (list sv) code)])
+		  (list sv) lam)])
        (set-annotation! sv (varref:empty-attributes))
        (varref:add-attribute! sv varref:static)
-       (varref:add-attribute! sv varref:per-load-static)
-       (compiler:add-per-load-static-list! var)
-       (set! compiler:once-closures-list (cons def compiler:once-closures-list))
-       (set! compiler:once-closures-globals-list (cons globals compiler:once-closures-globals-list))
-       sv)))
+       (set-procedure-code-liftable! code sv)
+       (if pls?
+	   (begin
+	     (varref:add-attribute! sv varref:per-load-static)
+	     (compiler:add-per-load-static-list! var)
+	     (set! compiler:once-closures-list (cons def compiler:once-closures-list))
+	     (set! compiler:once-closures-globals-list (cons (code-global-vars code) compiler:once-closures-globals-list)))
+	   (begin
+	     (set! compiler:lifted-lambda-vars (cons sv compiler:lifted-lambda-vars))
+	     (set! compiler:lifted-lambdas (cons def compiler:lifted-lambdas)))))))
  
  (define (compiler:init-once-closure-lists!)
    (set! compiler:once-closures-list null)
@@ -65,8 +80,13 @@
  
  (define (compiler:init-closure-lists!)
    (set! compiler:closure-list null)
-   (compiler:init-once-closure-lists!))
+   (set! compiler:lifted-lambda-vars null)
+   (compiler:init-once-closure-lists!)
+   (compiler:init-lifted-lambda-list!))
  
+ (define (compiler:init-lifted-lambda-list!)
+   (set! compiler:lifted-lambdas null))
+
  (define closure-expression!
    (letrec
        ([transform-closure!
@@ -81,10 +101,7 @@
 			       (zodiac:zodiac-finish ast)
 			       ast free args
 			       name)])
-	     (if (and (set-empty? free) (null? args))
-		 ;; Closes over nothing and uses no arguments, so make closure once at startup time
-		 (compiler:add-static-closure! mk-closure (code-global-vars code))
-		 mk-closure)))]
+	     mk-closure))]
 	[transform!
 	 (lambda (ast)
 	   (cond

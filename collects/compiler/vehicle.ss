@@ -257,7 +257,8 @@
 	    [(zodiac:app? ast)
 	     (let ([f (zodiac:app-fun ast)])
 	       (cond
-		[(zodiac:bound-varref? f)
+		[(or (zodiac:bound-varref? f)
+		     (top-level-varref/bind-from-lift? f))
 		 (let ([known (extract-varref-known-val f)])
 		   (and known
 			(when (zodiac:case-lambda-form? known)

@@ -48,6 +48,7 @@
 	  compiler:known^
 	  compiler:const^
 	  compiler:rep^
+	  compiler:closure^
 	  compiler:driver^
 	  mzlib:function^
 	  (mrspidey : compiler:mrspidey^))
@@ -252,17 +253,19 @@
 	     (varref:has-attribute? ast varref:static))))
 
   (define (extract-varref-known-val v)
-    (let loop ([v v])
-      (let ([binding (if (zodiac:binding? v)
-			 (get-annotation v)
-			 (get-annotation (zodiac:bound-varref-binding v)))])
-	(and binding
-	     (binding-known? binding)
-	     (let ([v (binding-val binding)])
-	       (if v
-		   (if (zodiac:bound-varref? v)
-		       (loop v)
-		       v)))))))
+    (if (top-level-varref/bind-from-lift? v)
+	(top-level-varref/bind-from-lift-lambda v)
+	(let loop ([v v])
+	  (let ([binding (if (zodiac:binding? v)
+			     (get-annotation v)
+			     (get-annotation (zodiac:bound-varref-binding v)))])
+	    (and binding
+		 (binding-known? binding)
+		 (let ([v (binding-val binding)])
+		   (if v
+		       (if (zodiac:bound-varref? v)
+			   (loop v)
+			   v))))))))
 
   (define (or-multi a-multi b-multi)
     (case a-multi
@@ -450,8 +453,8 @@
      ast))
 
   (define (check-for-inlining ast env inlined tail? inline dont-inline)
-    (if (or tail? (>= inlined (compiler:option:max-inline-size)))
-	(dont-inline "tail or depth")
+    (if (>= inlined (compiler:option:max-inline-size))
+	(dont-inline "depth")
 	(let ([c (zodiac:app-fun ast)])
 	  (if (not (zodiac:bound-varref? c))
 	      (dont-inline `(format "not a varref: ~a" ,c))
@@ -470,7 +473,11 @@
 			;;  scope of the source, and simple enough
 			(let* ([body (car bodies)]
 			       [orig-vars (zodiac:arglist-vars (car argses))]
-			       [new-size (expression-inline-cost body (append orig-vars env) inlined)])
+			       [new-size (expression-inline-cost 
+					  body (append orig-vars env) 
+					  (if tail?
+					      (max 5 inlined)
+					      inlined))])
 			  (if (< new-size (compiler:option:max-inline-size))
 			      (let* ([vars (map copy-inlined-binding orig-vars)]
 				     [vals (zodiac:app-args ast)]
@@ -560,14 +567,8 @@
 		      (set-union (set-minus (code-free-vars code)
 					    local-vars)
 				 captured-vars))
-		
-		; If there are no free vars, this closure will be lifted
-		; out of the current expression, so don't add global
-		; vars in that case, but do add const:the-per-load-statics-table
-		(if (and can-lift? (set-empty? (code-free-vars code)))
-		    (add-global-var! const:the-per-load-statics-table)
-		    (set! global-vars
-			  (set-union (code-global-vars code) global-vars))))]
+		(set! global-vars
+		      (set-union (code-global-vars code) global-vars)))]
 	     [analyze-code-body!
 	      (lambda (ast locals env tail? code)
 		(add-child-code! code)
@@ -835,9 +836,10 @@
 		 [(zodiac:case-lambda-form? ast)
 		  (let* ([code
 			  (make-procedure-code empty-set empty-set empty-set empty-set empty-set
-					       'unknown-parent #f null
+					       'unknown-proc-parent #f null
 					       #f #f #f #f 0 #f (get-annotation ast) ; ann. = name
-					       'unknown-case-infos #f)]
+					       'unknown-case-infos #f 
+					       'unknown-liftable)]
 			 [case-infos
 			  (map
 			   (lambda (args body)

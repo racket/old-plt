@@ -39,24 +39,34 @@
  ;  from the case-code's parent procedure-code (if appropriate).
  (define (remove-code-free-vars! code vars)
    (set-code-free-vars! code (set-minus (code-free-vars code) vars))
+   (set-code-captured-vars! code (set-minus (code-captured-vars code) vars))
    (let ([code (if (case-code? code)
 		   ; If this is just a case, recalculate the parent's free,
 		   ;  which is the free set for the real closure
 		   (let ([code (code-parent code)])
 		     (let loop ([fv empty-set]
+				[cv empty-set]
 				[cases (procedure-code-case-codes code)])
 		       (if (null? cases)
-			   (set-code-free-vars! fv)
+			   (begin
+			     (set-code-free-vars! code fv)
+			     (set-code-captured-vars! code cv))
 			   (loop (set-union (code-free-vars (car cases)) fv)
+				 (set-union (code-captured-vars (car cases)) cv)
 				 (cdr cases))))
 		     code)
 		   code)])
-     ; At this point, we could look at code's parents and
-     ;  try to adjust the captured variable information.
-     ; For now, it's ok to be "conservative" and let the
-     ;  parent continue to think that the variables are
-     ;  captured.
-     (void)))
+     ; At this point, we go the code's parent and
+     ;   adjust the free/captured variable information.
+     (let ([pcode (or (code-case-parent code)
+		      (code-parent code))])
+       (when pcode
+	 (let ([children (code-children pcode)])
+	   (unless (ormap (lambda (child)
+			    (not (set-empty? (set-intersect vars (code-free-vars code)))))
+			  children)
+	     ;; No other child uses the variable
+	     (remove-code-free-vars! pcode vars)))))))
 
  ;; Notes on some other possible functions:
  ;;   add-code-global-vars - add to all [case-]ancestors

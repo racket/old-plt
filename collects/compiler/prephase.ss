@@ -850,7 +850,7 @@
 		     ; annotate this dude
 		     (set-annotation! ast (make-unit-code
 					   empty-set empty-set empty-set empty-set empty-set
-					   'unknown-parent #f null
+					   'unknown-unit-parent #f null
 					   #f #f #f #f
 					   0 'possible name
 					   defined-bindings
@@ -1007,7 +1007,7 @@
 		   (set-annotation! ast
 				    (make-class-code
 				     empty-set empty-set empty-set empty-set empty-set
-				     'unknown-parent #f null
+				     'unknown-class-parent #f null
 				     #f #f #f #f
 				     0 'possible name
 				     public-lookup-bindings

@@ -12,6 +12,7 @@
 	 compiler:analyze^
 	 compiler:const^
 	 compiler:rep^
+	 compiler:closure^
 	 compiler:vehicle^
 	 compiler:vmstructs^
 	 compiler:driver^)
@@ -161,7 +162,8 @@
 	    (null? compiler:total-unit-exports)
 	    (null? compiler:compounds)
 	    (null? compiler:classes)
-	    (null? compiler:interfaces))))
+	    (null? compiler:interfaces)
+	    (null? compiler:lifted-lambda-vars))))
 
 (define (emit-static-variable-fields! port l)
   (fprintf port "  /* Write fields as an array to help C comiplers */~n")
@@ -195,6 +197,11 @@
        (unless (null? compiler:interfaces)
 	       (fprintf port "  struct Scheme_Interface_Assembly *interfaceAssemblies[~a];~n"
 			(length compiler:interfaces)))
+       (for-each
+	(lambda (ll)
+	  (fprintf port "  Scheme_Object * ~a;~n" 
+		   (vm->c:convert-symbol (zodiac:varref-var ll))))
+	compiler:lifted-lambda-vars)
        (fprintf port "} S;~n~n"))
 
     (fprintf port "/* compiler written per-load static variables */~n")
@@ -217,6 +224,8 @@
 		      vm->c:indent-spaces v v))])
       (unless (or (zero? const:symbol-counter) compiler:multi-o-constant-pool?)
 	  (register "SYMBOLS"))
+      (unless (zero? const:inexact-counter)
+	  (register "INEXACTS"))
       (unless (set-empty? compiler:primitive-refs)
 	  (register "P"))
       (unless (not (compiler:any-statics?))
@@ -1703,14 +1712,15 @@
 		   [(member num  (list +NaN.0 +inf.0 -inf.0)) 
 		    (emit-expr "scheme_eval_string(\"~a\", env)" num)]
 		   ; complex numbers
-		   [(and (complex? num) (not (zero? (imag-part num))))
+		   [(not (real? num))
 		    (emit-expr "scheme_make_complex(")
 		    (process (real-part num))
 		    (emit ", ")
 		    (process (imag-part num))
 		    (emit ")")]
 		   ; floating point numbers
-		   [(inexact? num) (emit-expr "scheme_make_double(~a)" num)]
+		   [(inexact? num)
+		    (emit-expr "scheme_make_double(~a)" num)]
 		   ; integers (fixnums & bignums)
 		   [(integer? num)
 		    (if (vm:fixnum? num) 

@@ -57,10 +57,13 @@
 		       [closure-label
 			(let loop ([closure closure])
 			  (cond
-			   [(vm:local-varref? closure)
+			   [(or (vm:local-varref? closure)
+				(vm:static-varref-from-lift? closure))
 			    (let ([known 
-				   (extract-varref-known-val 
-				    (vm:local-varref-binding closure))])
+				    (if (vm:local-varref? closure)
+					(extract-varref-known-val 
+					 (vm:local-varref-binding closure))
+					(vm:static-varref-from-lift-lambda closure))])
 			      (and known
 				   (zodiac:case-lambda-form? known)
 				   (begin (set! L known) #t)

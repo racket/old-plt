@@ -99,7 +99,7 @@
 				     return-multi ; #f, #t, or 'possible
 				     name))
 
-   (struct procedure-code (case-codes case-arities))
+   (struct procedure-code (case-codes case-arities liftable))
 
    (struct case-code (has-continue?))
 
@@ -267,15 +267,25 @@
 
    analyze-expression!))
 
+(define-signature compiler:lift^
+  (lift-lambdas!))
+
 (define-signature compiler:lightweight^
   (lightweight-analyze-and-transform))
 
 (define-signature compiler:closure^
   (compiler:closure-list
+
    compiler:once-closures-list
    compiler:once-closures-globals-list
+   compiler:lifted-lambdas
+   compiler:lifted-lambda-vars
    compiler:init-closure-lists!
    compiler:init-once-closure-lists!
+   compiler:init-lifted-lambda-list!
+   compiler:add-lifted-lambda!
+   (struct top-level-varref/bind-from-lift (lambda pls?))
+
    closure-expression!))
 
 (define-signature compiler:vehicle^
@@ -339,6 +349,7 @@
 
    (struct vm:local-varref (var binding))
    (struct vm:static-varref (var))
+   (struct vm:static-varref-from-lift (lambda))
    (struct vm:per-load-static-varref ())
    (struct vm:primitive-varref (var))
    (struct vm:symbol-varref (var))

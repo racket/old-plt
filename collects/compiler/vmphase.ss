@@ -19,6 +19,7 @@
 	 compiler:const^
 	 compiler:vmstructs^
 	 compiler:rep^
+	 compiler:closure^
 	 compiler:vehicle^
 	 compiler:driver^
 	 mzlib:function^)
@@ -965,21 +966,28 @@
 	   ;; will change when representations can be chosen 
 	   ;; for static variables
 	   [(zodiac:top-level-varref? ast)
-	    (let ([maker 
-		   (cond
-		    [(varref:has-attribute? ast varref:per-load-static)
-		     make-vm:per-load-static-varref]
-		    [(varref:has-attribute? ast varref:primitive)
-		     make-vm:primitive-varref]
-		    [(varref:has-attribute? ast varref:symbol)
-		     make-vm:symbol-varref]
-		    [(varref:has-attribute? ast varref:inexact)
-		     make-vm:inexact-varref]
-		    [(varref:has-attribute? ast varref:static)
-		     make-vm:static-varref]
-		    [else
-		     make-vm:global-varref])])
-	      (let ([ref (maker #f #f #f (zodiac:varref-var ast))])
+	    (let* ([ignore-ast (lambda (maker)
+				 (lambda (a b c d ast)
+				   (maker a b c d)))]
+		   [maker 
+		    (cond
+		     [(varref:has-attribute? ast varref:per-load-static)
+		      (ignore-ast make-vm:per-load-static-varref)]
+		     [(varref:has-attribute? ast varref:primitive)
+		      (ignore-ast make-vm:primitive-varref)]
+		     [(varref:has-attribute? ast varref:symbol)
+		      (ignore-ast make-vm:symbol-varref)]
+		     [(varref:has-attribute? ast varref:inexact)
+		      (ignore-ast make-vm:inexact-varref)]
+		     [(top-level-varref/bind-from-lift? ast)
+		      (lambda (a b c d ast)
+			(make-vm:static-varref-from-lift
+			 a b c d (top-level-varref/bind-from-lift-lambda ast)))]
+		     [(varref:has-attribute? ast varref:static)
+		      (ignore-ast make-vm:static-varref)]
+		     [else
+		      (ignore-ast make-vm:global-varref)])])
+	      (let ([ref (maker #f #f #f (zodiac:varref-var ast) ast)])
 		(if tail-pos
 		    (leaf (tail-pos ref))
 		    (leaf ref))))]

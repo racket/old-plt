@@ -63,6 +63,7 @@
   ;; l-values (locations in memory)
   (define-struct (vm:local-varref zodiac:struct:zodiac) (var binding))
   (define-struct (vm:static-varref zodiac:struct:zodiac) (var))
+  (define-struct (vm:static-varref-from-lift struct:vm:static-varref) (lambda))
   (define-struct (vm:per-load-static-varref struct:vm:static-varref) ())
   (define-struct (vm:primitive-varref zodiac:struct:zodiac) (var))
   (define-struct (vm:symbol-varref zodiac:struct:zodiac) (var))

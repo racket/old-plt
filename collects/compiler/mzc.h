@@ -108,7 +108,7 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 	int count;
 
 	if (super && !SAME_TYPE(SCHEME_TYPE(super), scheme_struct_type_type))
-	  scheme_raise_exn(MZEXN_STRUCT, super,
+	  scheme_raise_exn(MZEXN_STRUCT,
 			   "struct: supertype expression returned "
 			   "a value that is not a struct type value");
 

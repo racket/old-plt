@@ -96,9 +96,22 @@
 				KNOWN
 				CONST
 				REP
+				CLOSURE
 				DRIVER
 				FUNCTION
 				SPIDEY)]
+  [LIFT : compiler:lift^ ((require-relative-library-unit/sig "lift.ss")
+			  OPTIONS
+			  LIBRARY
+			  CSTRUCTS
+			  ZODIAC
+			  ZLAYER
+			  ANALYZE
+			  TOP-LEVEL
+			  CONST
+			  CLOSURE
+			  DRIVER
+			  FUNCTION)]
   [CLOSURE : compiler:closure^ ((require-relative-library-unit/sig "closure.ss")
 				OPTIONS
 				LIBRARY
@@ -141,6 +154,7 @@
 				CONST
 				VMSTRUCTS
 				REP
+				CLOSURE
 				VEHICLE
 				DRIVER
 				FUNCTION)]
@@ -165,6 +179,7 @@
 			  ANALYZE
 			  CONST
 			  REP
+			  CLOSURE
 			  VEHICLE
 			  VMSTRUCTS
 			  DRIVER)]
@@ -182,9 +197,10 @@
 			      KNOWN
 			      ANALYZE
 			      CONST
+			      LIFT
+			      LIGHTWEIGHT
 			      CLOSURE
-                              LIGHTWEIGHT
-			      VEHICLE
+                              VEHICLE
 			      REP
 			      VMSTRUCTS
 			      VMPHASE

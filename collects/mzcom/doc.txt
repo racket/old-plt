@@ -15,7 +15,10 @@ line, run
 
 Under Windows 95/98, REGSVR32 is in the Windows 
 System directory.  Under Windows NT/2000, REGSVR32
-is in the directory WINNT\System32.
+is in the directory WINNT\System32.  If you move 
+mzcom.dll, you'll also need to set the Windows 
+environment variables PLTHOME or PLTCOLLECTS for 
+MzCOM to find collections.
 
 Loading MzCOM
 -------------
@@ -82,12 +85,19 @@ that explains the error.
 Collections
 -----------
 
-To access collections from MzCOM, you should 
-set either the PLTHOME or PLTCOLLECTS environment
-variables before loading MzCOM.  By default,
-MzCOM looks for collections in
+If mzcom.dll is installed to its default location,
+MzCOM is able to find other PLT collections. 
+When setting up the collection paths, MzCOM adds 
+the variable
 
-  C:\Program Files\PLT\collects
+> mzcom-dll
+
+to the global environment.  That variable is bound 
+to a string containing the full pathname for mzcom.dll.
+
+If mzcom.dll is moved to another location, you should 
+set either the PLTHOME or PLTCOLLECTS environment 
+variables before loading MzCOM.
 
 Evaluation thread
 -----------------

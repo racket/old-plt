@@ -8,7 +8,11 @@ generate-temporaries produces identifiers that are
  being expanded (if any)
 Added syntax-local-module-introduce, which is used
  by generate-temporaries
-
+Non-constant syntax pairs generated from templates
+ (in syntax-case, with-syntax, quasisyntax, etc.)
+ keep source-location and context information,
+ instead of acquiring the context and location of
+ the generator expression as a whole
 
 Version 205, August 2003
 Extended regexp language with "(?:...)"

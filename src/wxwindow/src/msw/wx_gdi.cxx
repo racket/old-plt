@@ -42,7 +42,7 @@ wxFont::wxFont(void)
 {
   COUNT_P(font_count);
 
-  Create(12, wxDEFAULT, wxNORMAL, wxNORMAL, FALSE, wxSMOOTHING_DEFAULT);
+  Create(12, wxDEFAULT, wxNORMAL, wxNORMAL, FALSE, wxSMOOTHING_DEFAULT, FALSE);
 }
 
 /* Constructor for a font. Note that the real construction is done
@@ -1013,6 +1013,19 @@ void wxDisplaySize(int *width, int *height, int flags)
     *width = GetDeviceCaps(dc, HORZRES);
     *height = GetDeviceCaps(dc, VERTRES);
     ReleaseDC(NULL, dc);
+  }
+}
+
+void wxDisplayOrigin(int *x, int *y)
+{
+  RECT r;
+
+  if (SystemParametersInfo(SPI_GETWORKAREA, 0, &r, 0)) {
+    *x = r.left;
+    *y = r.top;
+  } else {
+    *x = 0;
+    *y = 0;
   }
 }
 

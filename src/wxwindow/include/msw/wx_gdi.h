@@ -28,7 +28,7 @@ class wxFont: public wxbFont
 	 Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE);
   ~wxFont(void);
   Bool Create(int PointSize, int Family, int Style, int Weight, Bool underlined,
-	      int smoothing);
+	      int smoothing, Bool sip);
   HFONT BuildInternalFont(HDC dc, Bool screen_font = TRUE);
   inline HFONT GetInternalFont(HDC dc) { return BuildInternalFont(dc, TRUE); }
 };

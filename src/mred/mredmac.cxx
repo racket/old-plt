@@ -368,6 +368,9 @@ int WNE(EventRecord *e, double sleep_secs)
     }
 #endif
 
+    if (GetEventClass(ref) == kEventClassMouse)
+      wxUnhideCursor();
+
     ok = ConvertEventRefToEventRecord(ref, e);
 
     if (!ok) {

@@ -1,5 +1,5 @@
 { (define LIBNAME "Animated Images")
-  (define FILENAME "image.ss")
+  (define FILENAME "world.ss")
   (include "head.tinc") }
 
 The teachpack provides two kinds of functions. The first four allow

@@ -1678,7 +1678,7 @@ Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd)
   if (!errid) {
     /* Warning: we assume that dev_t and ino_t fit in a long. */
     devi = (unsigned long)buf.st_dev;
-    inon = (unsigned long)buf.st_ino;
+    inoi = (unsigned long)buf.st_ino;
     shift = sizeof(dev_t);
   }
 #endif

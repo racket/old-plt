@@ -147,7 +147,8 @@ _struct.ss_: generating the same names as `define-struct'
   The default src-stx is #f; it is used to provide a source location
   to the generated identifiers.
 
-> (build-struct-generation name-id field-ids omit-sel? omit-set? [super-type prop-value-list immutable-k-list]) -
+> (build-struct-generation name-id field-ids omit-sel? omit-set? 
+                          [super-type prop-value-list immutable-k-list]) -
   takes the same arguments as `build-struct-names' and generates an
   S-expression for code using `make-struct-type' to generate the
   structure type and return values for the identifiers created by
@@ -155,7 +156,13 @@ _struct.ss_: generating the same names as `define-struct'
   and `immutable-k-list' parameters take s-expression values that are
   used as the corresponding arguments to `make-struct-type'.
 
-> (build-struct-expand-info name-id field-ids omit-sel? omit-set? base-name base-getters base-setters) - 
+> (build-struct-generation* all-name-ids name-id field-ids omit-sel? omit-set? 
+                            [super-type prop-value-list immutable-k-list]) -
+  like `build-struct-generation', but given the names produced by
+  `build-struct-names', instead of re-generating them.
+
+> (build-struct-expand-info name-id field-ids omit-sel? omit-set?
+                            base-name base-getters base-setters) - 
   takes the same arguments as `build-struct-names', plus a parent
   identifier/#t/#f and a list of accessor and mutator identifiers
   (possibly ending in #f) for a parent type, and generates an
@@ -163,6 +170,11 @@ _struct.ss_: generating the same names as `define-struct'
   the structure name. A #t for the base-name means no super-type, #f
   means that the super-type (if any) is unknown, and an identifier
   indicates the super-type identifier.
+
+> (build-struct-expand-info* all-name-ids name-id field-ids omit-sel? omit-set?
+                            base-name base-getters base-setters) - 
+  like `build-struct-expand-info, but given the names produced by
+  `build-struct-names', instead of re-generating them.
 
 > (struct-declaration-info? v) - returns #t if `x' has the shape of
   expansion-time information for structure type declarations, #f

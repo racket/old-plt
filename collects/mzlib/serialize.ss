@@ -5,10 +5,12 @@
 	   (lib "list.ss"))
 
   (provide define-serializable-struct
+	   define-serializable-struct/versions
 
 	   ;; For implementors of other `define-struct'-like forms:
 	   prop:serializable
 	   make-serialize-info
+	   make-deserialize-info
 
 	   ;; Checks whether a value is seriliazable:
 	   serializable?
@@ -17,8 +19,8 @@
 	   serialize
 	   deserialize)
 
-  (define-struct serialize-info (vectorizer deserialize-id dir))
-  (define-struct deserialize-info (maker graph-maker))
+  (define-struct serialize-info (vectorizer deserialize-id can-cycle? dir))
+  (define-struct deserialize-info (maker cycle-maker))
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; define-serializable-struct
@@ -69,6 +71,11 @@
 						  (quote-syntax
 						   #,((syntax-local-certifier)
 						      deserialize-id))
+						  ;; Can handle cycles? --------------------
+						  ;;  Yes, as long as we have mutators for the
+						  ;;  superclass.
+						  #,(or (not super-info)
+							(andmap values (list-ref super-info 4)))
 						  ;; Directory for last-ditch resolution --------------------
 						  (or (current-load-relative-directory) 
 						      (current-directory))))
@@ -117,101 +124,226 @@
 					       #,inspector-stx)])
 	      (values type maker pred access mutate))))))
     
-  (define-syntax define-serializable-struct
+  (define-syntaxes (define-serializable-struct define-serializable-struct/versions)
     (let ()
       (define expected-ids
 	"expected an identifier or parenthesized sequence of struct identifier and parent identifier")
       (define expected-fields
 	"expected parenthesized sequence of field identifiers")
+      (define expected-version
+	"expected a version (literal, exact, non-negative integer)")
+      (define (after-name id/sup-stx)
+	(if (identifier? id/sup-stx)
+	    " after struct identifier"
+	    " after sequence of struct and parent identifiers"))
+      (define version-conflicts
+	"version number for other-version deserializer conflicts with")
+      
+      (define (context-check stx)
+	(unless (memq (syntax-local-context) '(top-level module))
+	  (raise-syntax-error
+	   #f
+	   "allowed only at the top level or within a module top level"
+	   stx)))
 
+      (define (ok-version? v)
+	(and (number? v)
+	     (integer? v)
+	     (v . >= . 0)
+	     (exact? v)))
+
+      ;; ------------------------------
+      ;;  Main parsing
+      
       ;; Check high-level syntax, then dispatch to parsing parts
       (define main
 	(lambda (stx)
 	  (syntax-case stx ()
 	    [(_ id/sup fields)
-	     (parse stx #'id/sup #'fields #'(current-inspector))]
+	     (parse stx #'id/sup #'0 #'fields #'() #'(current-inspector))]
 	    [(_ id/sup fields inspector-expr)
-	     (parse stx #'id/sup #'fields #'inspector-expr)]
+	     (parse stx #'id/sup #'0 #'fields #'() #'inspector-expr)]
 	    [(_ id/sup)
-	     (parse stx #'id/sup #f #f)]
+	     (parse stx #'id/sup #'0 #f #f #f)]
 	    [(_)
 	     (raise-syntax-error
 	      #f
 	      expected-ids
 	      stx)])))
 
+      ;; Check high-level syntax with versions, then dispatch to parsing parts
+      (define main/versions
+	(lambda (stx)
+	  (syntax-case stx ()
+	    [(_ id/sup version-num fields other-versions)
+	     (parse stx #'id/sup #'version-num #'fields #'other-versions #'(current-inspector))]
+	    [(_ id/sup version-num fields other-versions inspector-expr)
+	     (parse stx #'id/sup #'version-num #'fields #'other-versions #'inspector-expr)]
+	    [(_ id/sup)
+	     (parse stx #'id/sup #f #f #f #f)]
+	    [(_ id/sup version-num)
+	     (parse stx #'id/sup #'version-num #f #f #f)]
+	    [(_ id/sup version-num fields)
+	     (parse stx #'id/sup #'version-num #'fields #f #f)]
+	    [(_)
+	     (raise-syntax-error
+	      #f
+	      expected-ids
+	      stx)])))
+      
+      ;; ------------------------------
+      ;;  Part parsing
+
       ;; Parse parts, then dispatch to result generation
-      (define (parse stx id/sup-stx fields-stx inspector-stx)
+      (define (parse stx id/sup-stx version-num-stx fields-stx other-versions-stx inspector-stx)
 	;; First, check id or id+super:
-	(let-values ([(id super-id)
-		      (syntax-case id/sup-stx ()
-			[id
-			 (identifier? #'id)
-			 (values #'id #f)]
-			[(id sup-id)
-			 (and (identifier? #'id)
-			      (identifier? #'sup-id))
-			 (values #'id #'sup-id)]
-			[(id other)
-			 (identifier? #'id)
-			 (raise-syntax-error
-			  #f
-			  "expected identifier for parent struct type"
-			  stx
-			  #'other)]
-			[else
-			 (raise-syntax-error
-			  #f
-			  expected-ids
-			  stx
-			  id/sup-stx)])])
-	  ;; Now check fields; #f means no fields in oirignal expression
-	  (unless fields-stx
+	(let-values ([(id super-id) (parse-id+super stx id/sup-stx)])
+	  (let* ([version-num (parse-version stx id/sup-stx version-num-stx)]
+		 [field-ids (parse-fields stx id/sup-stx version-num-stx fields-stx)]
+		 [other-versions (parse-other-versions stx version-num other-versions-stx)])
+	    ;; Input syntax is ok! Generate the results
+	    #`(begin
+		#,(generate-main-result stx id super-id field-ids inspector-stx version-num)
+		#,@(map (lambda (other-version)
+			  (generate-other-result stx id other-version))
+			other-versions)))))
+
+      ;; id+super
+      (define (parse-id+super stx id/sup-stx)
+	(syntax-case id/sup-stx ()
+	  [id
+	   (identifier? #'id)
+	   (values #'id #f)]
+	  [(id sup-id)
+	   (and (identifier? #'id)
+		(identifier? #'sup-id))
+	   (values #'id #'sup-id)]
+	  [(id other)
+	   (identifier? #'id)
+	   (raise-syntax-error
+	    #f
+	    "expected identifier for parent struct type"
+	    stx
+	    #'other)]
+	  [else
+	   (raise-syntax-error
+	    #f
+	    expected-ids
+	    stx
+	    id/sup-stx)]))
+
+      ;; version
+      (define (parse-version stx id/sup-stx version-num-stx)
+	;; Check version; #f means no version in original expression
+	(unless version-num-stx
+	  (raise-syntax-error
+	   #f
+	   (string-append expected-version
+			  (after-name id/sup-stx))
+	   stx))
+	(let ([v (syntax-e version-num-stx)])
+	  (unless (ok-version? v)
 	    (raise-syntax-error
 	     #f
-	     (string-append expected-fields
-			    (if (identifier? id/sup-stx)
-				" after struct identifier"
-				" after sequence of struct and parent identifiers"))
-	     stx))
-	  (let ([field-ids (syntax-case fields-stx ()
-			     [(field ...)
-			      (let ([field-ids (syntax->list #'(field ...))])
-				(for-each (lambda (id)
-					    (unless (identifier? id)
+	     (string-append expected-version
+			    (after-name id/sup-stx))
+	     stx
+	     version-num-stx))
+	  v))
+
+      ;; fields
+      (define (parse-fields stx id/sup-stx version-num-stx fields-stx)
+	;; Now check fields; #f means no fields in oirignal expression
+	(unless fields-stx
+	  (raise-syntax-error
+	   #f
+	   (string-append expected-fields
+			  (cond
+			   [version-num-stx
+			    " after version number"]
+			   [else (after-name id/sup-stx)]))
+	   stx))
+	(let ([field-ids (syntax-case fields-stx ()
+			   [(field ...)
+			    (let ([field-ids (syntax->list #'(field ...))])
+			      (for-each (lambda (id)
+					  (unless (identifier? id)
 					      (raise-syntax-error
 					       #f
 					       "expected a field identifier"
 					       stx
 					       id)))
-					  field-ids)
-				field-ids)]
-			     [else
+					field-ids)
+			      field-ids)]
+			   [else
+			    (raise-syntax-error
+			     #f
+			     expected-fields
+			     stx
+			     fields-stx)])])
+	  ;; Fields are all identifiers, so check for distinct fields
+	  (let ([dup (check-duplicate-identifier field-ids)])
+	    (when dup
+	      (raise-syntax-error
+	       #f
+	       "duplicate field identifier"
+	       stx
+	       dup)))
+	  field-ids))
+
+      ;; Other-version deserializers
+      (define (parse-other-versions stx main-version-num other-versions-stx)
+	(when (or (not other-versions-stx)
+		  (not (syntax->list other-versions-stx)))
+	  (raise-syntax-error
+	   #f
+	   "expected a parenthesized sequence of other-version deserializers after field sequence"
+	   stx
+	   other-versions-stx))
+	(let* ([ht (make-hash-table 'equal)]
+	       [other-versions
+		(map (lambda (other-stx)
+		       (syntax-case other-stx ()
+			 [(version-num maker-expr cycle-maker-expr)
+			  (let ([v (syntax-e #'version-num)])
+			    (unless (ok-version? v)
 			      (raise-syntax-error
 			       #f
-			       expected-fields
+			       (string-append expected-version
+					      " for other-version deserializer")
 			       stx
-			       fields-stx)])])
-	    ;; Fields are all identifiers, so check for distinct fields
-	    (let ([dup (check-duplicate-identifier field-ids)])
-	      (when dup
-		(raise-syntax-error
-		 #f
-		 "duplicate field identifier"
-		 stx
-		 dup)))
-	    ;; Input syntax is ok! Generate the result.
-	    (generate-result stx id super-id field-ids inspector-stx))))
+			       #'version-num))
+			    (when (= v main-version-num)
+			      (raise-syntax-error
+			       #f
+			       (string-append version-conflicts " the main version")
+			       stx
+			       other-stx))
+			    (when (hash-table-get ht v (lambda () #f))
+			      (raise-syntax-error
+			       #f
+			       (string-append version-conflicts " another deserializer")
+			       stx
+			       other-stx))
+			    (hash-table-put! ht v #t)
+			    (list v #'maker-expr #'cycle-maker-expr))]
+			 [else
+			  (raise-syntax-error
+			   #f
+			   "expected a deserializer for another version: version number, constructor, and cycle constructor"
+			   stx
+			   other-stx)]))
+		     (syntax->list other-versions-stx))])
+	  other-versions))
+
+      ;; ------------------------------
+      ;;  Generate result
 
       ;; Generate the result expression. This is complicated
       ;; by the fact that super-id information may or may not be
       ;; immediately available, so we also need continue-define-...
-      (define (generate-result stx id super-id field-ids inspector-stx)
-	(with-syntax ([deserializer-id (datum->syntax-object
-					id
-					(string->symbol
-					 (format "deserializer:~a" (syntax-e id)))
-					id)]
+      (define (generate-main-result stx id super-id field-ids inspector-stx version-num)
+	(with-syntax ([deserializer-id (make-deserialize-name id version-num)]
 		      [struct-type-id (datum->syntax-object
 				       id
 				       (string->symbol
@@ -229,17 +361,40 @@
 					(make-deserialize-info
 					 ((car l))
 					 (cadr l))))
-	      #,@(if (eq? 'top-level (syntax-local-context))
-		     null
-		     (list #'(provide deserializer-id))))))
+	      #,@(make-deserialize-provide stx #'deserializer-id))))
 
-      (lambda (stx)
-	(unless (memq (syntax-local-context) '(top-level module))
-	  (raise-syntax-error
-	   #f
-	   "allowed only at the top level or within a module top level"
-	   stx))
-	(main stx))))
+      (define (generate-other-result stx id other-version)
+	(with-syntax ([deserializer-id (make-deserialize-name id (car other-version))])
+	  #`(begin
+	      (define deserializer-id (make-deserialize-info #,(cadr other-version)
+							     #,(caddr other-version)))
+	      #,@(make-deserialize-provide stx #'deserializer-id))))
+
+      (define (make-deserialize-name id version-num)
+	(datum->syntax-object
+	 id
+	 (string->symbol
+	  (format "deserialize-info:~a-v~a" 
+		  (syntax-e id) 
+		  version-num))
+	 id))
+
+      (define (make-deserialize-provide stx deserializer-id-stx)
+	(if (eq? 'top-level (syntax-local-context))
+	    null
+	    (list (quasisyntax/loc stx
+		    (provide #,deserializer-id-stx)))))
+
+      ;; ------------------------------
+      ;;  The transformers
+
+      (values
+       (lambda (stx)
+	 (context-check stx)
+	 (main stx))
+       (lambda (stx)
+	 (context-check stx)
+	 (main/versions stx)))))
 
   (define-syntax (continue-define-serializable-struct stx)
     (generate-delayed-struct-declaration stx make-make-make-struct-type))
@@ -276,14 +431,16 @@
        (lambda ()
 	 (let ([id
 		(let ([path+name
-		       (cons
-			(let ([b (identifier-binding deserialize-id)])
+		       (let ([b (identifier-binding deserialize-id)])
+			 (cons
 			  (and (list? b)
 			       (collapse-module-path-index 
-				(car b)
+				(caddr b)
 				`(file ,(build-path (serialize-info-dir info)
-						    "here.ss")))))
-			(syntax-e deserialize-id))])
+						    "here.ss"))))
+			  (if (list? b)
+			      (cadddr b)
+			      (syntax-e deserialize-id))))])
 		  (hash-table-get 
 		   mod-map path+name
 		   (lambda ()
@@ -442,7 +599,7 @@
 	      ((serial #t) (unbox v)))]
        [(hash-table? v)
 	(list* 'h
-	       (if (immutable? v) '_ '!)
+	       (if (immutable? v) '- '!)
 	       (append
 		(if (hash-table? v 'equal) '(equal) null)
 		(if (hash-table? v 'weak) '(weak) null))
@@ -548,11 +705,9 @@
 	  [(?) (vector-ref share (cdr v))]
 	  [(void) (void)]
 	  [(u) (let ([x (cdr v)])
-		 (if (immutable? x)
-		     (cond
-		      [(string? x) (string-copy x)]
-		      [(bytes? x) (bytes-copy x)])
-		     x))]
+		 (cond
+		  [(string? x) (string-copy x)]
+		  [(bytes? x) (bytes-copy x)]))]
 	  [(p) (bytes->path (cdr v))]
 	  [(c) (cons-immutable (loop (cadr v)) (loop (cddr v)))]
 	  [(c!) (cons (loop (cadr v)) (loop (cddr v)))]
@@ -580,7 +735,7 @@
      [(number? v)
       ;; Struct instance
       (let* ([info (vector-ref mod-map v)])
-	(let-values ([(obj fix) ((deserialize-info-graph-maker info))])
+	(let-values ([(obj fix) ((deserialize-info-cycle-maker info))])
 	  (vector-set! fixup n fix)
 	  obj))]
      [(pair? v)

@@ -544,7 +544,7 @@
 	   [arrow
 	    (drawing "robby:arrow"
 		     (get-w/h/d/s/l/r #t)
-		     (lambda (dc x y) (draw-arrow dc x y #t #t)))]
+		     (lambda (dc x y) (draw-arrow dc x y #t)))]
 	   [b-arrow
 	    (drawing "robby:b-arrow"
 		     (get-w/h/d/s/l/r #f)

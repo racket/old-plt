@@ -1064,12 +1064,6 @@ static void DisplayMenu(MenuWidget mw, menu_state *ms)
     x = y = mw->menu.shadow_width;
     item = ms->menu;
     if (ms->too_tall) {
-      for (s = ms->scrolled; s--; ) {
-	if (item)
-	  item = item->next;
-      }
-      final = (ms->h - (TOO_TALL_SCROLL_HEIGHT + mw->menu.shadow_width)) - ms->delta;
-
       if (ms->scrolled) {
 	Xaw3dDrawArrow(XtDisplay((Widget)mw), ms->win,
 		       mw->menu.top_shadow_GC,
@@ -1084,6 +1078,13 @@ static void DisplayMenu(MenuWidget mw, menu_state *ms)
 		       0);
       }
       y += TOO_TALL_SCROLL_HEIGHT;
+      for (s = ms->scrolled; s--; ) {
+	if (item) {
+	  y = item->end + ms->delta;
+	  item = item->next;
+	}
+      }
+      final = (ms->h - (TOO_TALL_SCROLL_HEIGHT + mw->menu.shadow_width)) - ms->delta;
     } else
       final = 35000;
     for (; item && (item->end < final); item=item->next) {
@@ -1097,9 +1098,8 @@ static void DisplayMenu(MenuWidget mw, menu_state *ms)
 	    } else
 		x = item->end;
 	} else {
-	    y = item->end + ms->delta;
+	  y = item->end + ms->delta;
 	}
-	s--;
     }
 
     ms->arrow_start = y;

@@ -243,8 +243,11 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
     if (_style & wxNO_RESIZE_BORDER) {
       /* Copied off a newsgroup somewhere: */
       Atom WM_HINTS;
-      Display *display = XtDisplay(X->frame);
-      Window window = XtWindow(X->frame);
+      Display *display;
+      Window window;
+
+      display = XtDisplay(X->frame);
+      window = XtWindow(X->frame);
 
       /* First try to set MWM hints */
       WM_HINTS = XInternAtom(display, "_MOTIF_WM_HINTS", True);

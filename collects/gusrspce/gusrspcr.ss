@@ -2,11 +2,11 @@
 			   [params : plt:userspace:params^])
   (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
 	[mred : mred^ ((reference-library-unit/sig "link.ss" "mred") core)]
+	[wx : wx^ (wx@)]
 	[rice : ricedefs^ ((reference-library-unit/sig "ricedefr.ss" "userspce")
 			   params)]
 	[graphics : graphics^ ((reference-library-unit/sig "graphicr.ss" "graphics")
-			       (core file@)
-                               mred)]
+			       wx (core file@) mred)]
 	[create-window : turtle:create-window^
 		       ((unit/sig turtle:create-window^
 			  (import [drscheme:init : drscheme:init^])
@@ -16,6 +16,7 @@
 				(make-object % title width height)))))
 			init)]
 	[turtle : turtle^ ((reference-library-unit/sig "turtlmr.ss" "graphics")
+			   wx 
 			   (core function@)
 			   create-window)])
   (export (open (core pretty-print@))

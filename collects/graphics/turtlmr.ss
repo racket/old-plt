@@ -1,7 +1,8 @@
 (let ([turtles:window #f]
       [turtles:shown? #f])
 (unit/sig turtle^
-  (import mzlib:function^
+  (import [wx : wx^]
+	  mzlib:function^
 	  turtle:create-window^)
   
   (define plot-window%

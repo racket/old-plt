@@ -1,5 +1,6 @@
   (unit/sig drscheme:basis^
-    (import [drscheme:init : drscheme:init^]
+    (import [wx : wx^]
+	    [drscheme:init : drscheme:init^]
 	    [drscheme:language : drscheme:language^]
 	    [mred : mred^]
 	    [zodiac : drscheme:zodiac^])

@@ -1,5 +1,6 @@
 (unit/sig drscheme:main^
-  (import [I : mred:application-imports^]
+  (import [wx : wx^]
+	  [I : mred:application-imports^]
 	  [mred : mred^]
 	  [print-convert : mzlib:print-convert^]
 	  [drscheme:unit : drscheme:unit^]

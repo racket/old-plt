@@ -321,7 +321,7 @@
 		   ;styles-fixed?
 		   set-styles-fixed
 		   change-style split-snip
-		   scroll-to-position locked? lock
+		   scroll-to-position locked? ;lock
 		   last-position get-start-position get-end-position
 		   get-text get-snip-position
 		   get-character find-snip find-string
@@ -566,13 +566,13 @@
 	    [on-edit-sequence
 	     (lambda ()
 	       (and (super-on-edit-sequence)
-		    (begin '(fprintf mred:constants:original-output-port "on-edit-sequence ~a~n" edit-sequence-count)
+		    (begin (fprintf mred:constants:original-output-port "on-edit-sequence ~a~n" edit-sequence-count)
 			   (set! edit-sequence-count (add1 edit-sequence-count))
 			   #t)))]
 	    [after-edit-sequence
 	     (lambda ()
 	       (set! edit-sequence-count (sub1 edit-sequence-count))
-	       '(fprintf mred:constants:original-output-port "after-edit-sequence ~a~n" edit-sequence-count)
+	       (fprintf mred:constants:original-output-port "after-edit-sequence ~a~n" edit-sequence-count)
 	       (update-highlighted-prompt)
 	       (super-after-edit-sequence))]
 	    [after-set-position
@@ -587,6 +587,13 @@
 			    (last-str (cdr l))))]
 	    [timer-on #f]
 	    [timer-sema (make-semaphore 1)])
+	  
+	  (rename [super-lock lock])
+	  (public
+	    [lock (lambda (x) 
+		    (fprintf mred:constants:original-output-port "lock ~a~n" x)
+		    (super-lock x))])
+
 	  (public
 	    [MAX-CACHE-TIME 4000]
 	    [MIN-CACHE-TIME 100]
@@ -602,14 +609,17 @@
 			   (lambda ()
 			     (let ([start (last-position)]
 				   [c-locked? locked?])
+			       (fprintf mred:constants:original-output-port "handling insertion ~s~n" s)
+			       (begin-edit-sequence)
 			       (lock #f)
 			       (insert (if (is-a? s wx:snip%)
 					   (send s copy)
 					   s))
-			       (let ((end (last-position)))
-				 (change-style () start end)
+			       (let ([end (last-position)])
+				 (change-style null start end)
 				 (style-func start end)
-				 (lock c-locked?))))])
+				 (lock c-locked?))
+			       (end-edit-sequence)))])
 		      (if first-time?
 			  (begin
 			    (set! first-time? #f)
@@ -687,15 +697,16 @@
 		(lambda ()
 		  (parameterize ([current-output-port orig-stdout]
 				 [current-error-port orig-stderr])
+		    (begin-edit-sequence)
 		    (init-transparent-io #f)
 		    (send transparent-edit 
 			  generic-write s 
 			  (lambda (start end)
 			    (send* transparent-edit
 			      (begin-edit-sequence #f)
-			      (change-style output-delta 
-					    start end)
-			      (end-edit-sequence))))))))]
+			      (change-style output-delta start end)
+			      (end-edit-sequence))))
+		    (end-edit-sequence)))))]
 	    [this-err-write
 	     (lambda (s)
 	       (mzlib:function:dynamic-disable-break
@@ -732,7 +743,8 @@
 		 (set! transparent-edit (make-object transparent-io-edit%))
 		 (send transparent-edit enable-autoprompt #f)
 		 (dynamic-wind
-		  (lambda () (begin-edit-sequence #f))
+		  (lambda () (begin-edit-sequence #f)
+		    (send transparent-edit begin-edit-sequence))
 		  (lambda ()		  
 		    (when starting-at-prompt-mode?
 		      (set! prompt-mode? #f)
@@ -751,6 +763,7 @@
 		    (when starting-at-prompt-mode?
 		      (insert-prompt)))
 		  (lambda () 
+		    (send transparent-edit end-edit-sequence)
 		    (end-edit-sequence)))
 		 (set! prompt-position (last-position))))]
 	    [init-transparent-io
@@ -1224,7 +1237,7 @@
 	     (lambda ()
 	       (flush-console-output)
 	       (set! shutdown? #t)
-	       (lock #t))]
+	       '(lock #t))]
 	    [consumed-delta 
 	     (make-object wx:style-delta% wx:const-change-bold)]
 	    [mark-consumed

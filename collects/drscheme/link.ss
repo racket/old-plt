@@ -1,5 +1,6 @@
 (compound-unit/sig (import [I : mred:application-imports^])
-  (link [init : drscheme:init^ ((reference-unit/sig "init.ss") mred)]
+  (link [wx : wx^ (wx@)]
+	[init : drscheme:init^ ((reference-unit/sig "init.ss") wx mred)]
 	[mzlib : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
 	[mred : mred^ ((reference-library-unit/sig "link.ss" "mred") mzlib)]
 	[print-convert : mzlib:print-convert^
@@ -10,13 +11,13 @@
 	[prefs : drscheme:prefs^ ((reference-unit/sig "prefs.ss") mred)]
 	[basis : drscheme:basis^
 	       ((reference-unit/sig "basis.ss")
-		init language mred drzodiac)]
+		wx init language mred drzodiac)]
 	[aries : plt:aries^ ((reference-library-unit/sig "ariesr.ss" "cogen")
 			     (drzodiac : zodiac:system^)
 			     (interface : zodiac:interface^))]
 	[language : drscheme:language^
 		  ((reference-unit/sig "language.ss")
-		   mred basis aries drzodiac
+		   wx mred basis aries drzodiac
 		   (mzlib function@) print-convert)]
 	[interface : drscheme:interface^
 		   ((reference-unit/sig "intrface.ss") 
@@ -32,23 +33,24 @@
 		   (mzlib file@))]
 	[edit : drscheme:edit^ ((reference-unit/sig "edit.ss") 
 				mred aries drzodiac)]
-	[setup : drscheme:setup^ ((reference-unit/sig "setup.ss") mred mzlib)]
-	[snip : drscheme:snip^ ((reference-unit/sig "snip.ss") mred)]
+	[setup : drscheme:setup^ ((reference-unit/sig "setup.ss") wx mred mzlib)]
+	[snip : drscheme:snip^ ((reference-unit/sig "snip.ss") wx mred)]
 	[export : drscheme:export^ ((reference-unit/sig "export.ss")
-				    mred mzlib print-convert app
+				    wx mred mzlib print-convert app
 				    basis edit language setup snip
 				    init interface face
 				    aries drzodiac)]
 	[tool : () 
 	      ((reference-unit/sig "tool.ss")
-	       mred mzlib print-convert 
+	       wx mred mzlib print-convert 
 	       drzodiac
 	       export)]
 	[app : drscheme:app^ ((reference-unit/sig "app.ss")
+			      wx
 			      mred
 			      mzlib)]
 	[main : drscheme:main^ ((reference-unit/sig "main.ss")
-				I
+				wx I
 				mred
 				print-convert
 				(export unit)

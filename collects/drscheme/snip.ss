@@ -1,6 +1,7 @@
 
   (unit/sig drscheme:snip^
-    (import [mred : mred^])
+    (import [wx : wx^]
+	    [mred : mred^])
 
     (mred:debug:printf 'invoke "drscheme:snip@")
 

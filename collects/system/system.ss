@@ -1,8 +1,20 @@
 ;; dont open a spash screen if the splash image is #f
 
-;(load-relative "loader.ss")
+(load-relative "loader.ss")
 
 (error-print-width 250)
+
+(define-macro min
+  (let ([min min]
+	[counter 0])
+    (lambda args
+      (set! counter (+ counter 1))
+      (printf "min.~a~n" counter)
+      (let ([gs (map (lambda (x) (gensym)) args)])
+	`(let ,(map (lambda (g arg) `[,g ,arg]) gs args)
+	   (unless (andmap number? (list ,@gs))
+	     (error 'min "min.~a got args ~a~n" ,counter (list ,@gs)))
+	   (,min ,@gs))))))  
 
 (when (getenv "MREDCOMPILE")
   (load-relative "compsys.ss"))

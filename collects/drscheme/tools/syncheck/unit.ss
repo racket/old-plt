@@ -6,7 +6,8 @@
 ;; syntax checker, that should be unbound.
 
   (unit/sig ()
-    (import [mred : mred^]
+    (import [wx : wx^]
+	    [mred : mred^]
 	    [mzlib : mzlib:core^]
 	    [print-convert : mzlib:print-convert^]
 	    [drscheme : drscheme:export^]

@@ -5,7 +5,8 @@
 	      (import)
 	      (define (create-turtle-window % title width height)
 		(make-object % title width height))))]
+	[wx : wx^ (wx@)]
 	[T : turtle^ ((reference-library-unit/sig "turtlmr.ss" "graphics")
-		      M I)])
+		      wx M I)])
   (export (open T)))
    

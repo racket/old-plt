@@ -1,5 +1,6 @@
 (unit/sig drscheme:rep^
-  (import [mred : mred^]
+  (import [wx : wx^]
+	  [mred : mred^]
 	  [mzlib : mzlib:core^]
 	  [print-convert : mzlib:print-convert^]
 	  [aries : plt:aries^]

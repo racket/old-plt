@@ -1,4 +1,5 @@
-(compound-unit/sig (import [mred : mred^]
+(compound-unit/sig (import [wx : wx^]
+			   [mred : mred^]
 			   [mzlib : mzlib:core^]
 			   [print-convert : mzlib:print-convert^]
 			   [app : drscheme:app^]
@@ -14,26 +15,26 @@
 			   [zodiac : drscheme:zodiac^])
   (link [rep : drscheme:rep^
 	     ((reference-relative-library-unit/sig "rep.ss")
-	      mred mzlib print-convert aries zodiac
+	      wx mred mzlib print-convert aries zodiac
 	      interface init snip language app basis edit)]
 	[frame : drscheme:frame^
 	       ((reference-relative-library-unit/sig "frame.ss")
-		mred mzlib basis
+		wx mred mzlib basis
 		setup unit
 		compound-unit app zodiac)]
 	[unit : drscheme:unit^
 	  ((reference-relative-library-unit/sig "unit.ss")
-	   mred mzlib app setup compound-unit frame edit rep
+	   wx mred mzlib app setup compound-unit frame edit rep
 	   language get/extend face)]
 	[compound-unit : drscheme:compound-unit^
 	  ((reference-relative-library-unit/sig "cunit.ss")
-	   mred mzlib unit frame face)]
+	   wx mred mzlib unit frame face)]
 	[signature : drscheme:signature^ ((reference-relative-library-unit/sig "sig.ss")
 					  mred)]
 	[program : drscheme:program^ ((reference-relative-library-unit/sig "prog.ss"))]
 	[get/extend : drscheme:get/extend^
 		    ((reference-relative-library-unit/sig "params.ss") 
-		     mred unit frame rep mzlib)])
+		     wx mred unit frame rep mzlib)])
   (export (unit frame)
 	  (unit unit)
 	  (unit compound-unit)

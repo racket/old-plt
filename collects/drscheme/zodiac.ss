@@ -6,7 +6,7 @@
 			    `',(global-expansion-time-value ',name) 
 			    x))])
 	     e))]
-	[all-names (get-signature 'zodiac:system^)]
+	[all-names (vector->list (get-signature 'zodiac:system^))]
 	[non-function-names
 	 '(scheme-vocabulary
 	   arglist-decls-vocab

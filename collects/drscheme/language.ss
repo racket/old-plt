@@ -1,5 +1,6 @@
 (unit/sig drscheme:language^
-  (import [mred : mred^]
+  (import [wx : wx^]
+	  [mred : mred^]
 	  [drscheme:basis : drscheme:basis^]
 	  [aries : plt:aries^]
 	  [zodiac : drscheme:zodiac^]

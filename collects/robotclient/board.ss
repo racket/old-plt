@@ -150,50 +150,50 @@
         ((or (eof-object? in) (eq? '^ in)) null)
         (else (cons next (loop (read in)))))))
   
-  (define (read-response s)
-    (let loop ((next (read s)))
-      (cond
-        ((eof-object? next) null)
-        (else
-         (let* ((id (read s))
-                (command (read s)))
-           (case command
-             ((N S E W) (cons (make-response id command #f)
-                              (loop (read s))))
-             ((P D) (cons (make-response id command (read-num-list s))
-                          (loop '^)))
-             ((X) 
-              (cons
-               (let ((x (read s)))
-                 (read s)
-                 (make-response id 'X (cons x (read-num-list s))))
-               (loop (read s))))))))))
-         
+  (define (read-response in)
+    (let ((s (open-input-string (regexp-replace "#" (read-line in) " ^ "))))
+      (let loop ((next (read s)))
+        (cond
+          ((eof-object? next) null)
+          (else
+           (let* ((id (read s))
+                  (command (read s)))
+             (case command
+               ((N S E W) (cons (make-response id command #f)
+                                (loop (read s))))
+               ((P D) (cons (make-response id command (read-num-list s))
+                            (loop '^)))
+               ((X) 
+                (cons
+                 (let ((x (read s)))
+                   (read s)
+                   (make-response id 'X (cons x (read-num-list s))))
+                 (loop (read s)))))))))))
+    
   
   (define (read-initial-response! in init-gui)
-    (let ((s (open-input-string (regexp-replace "#" (read-line in) " ^ "))))
-      (let* ((responses
-              (filter (lambda (x)
-                        (eq? 'X (response-name x)))
-                      (read-response s)))
-             (robots
-              (let loop ((responses responses))
-                (cond
-                  ((null? responses) null)
-                  (else
-                   (cons (make-robot (response-id (car responses))
-                                     (car (response-arg (car responses)))
-                                     (cdr (response-arg (car responses))))
-                         (loop (cdr responses))))))))
-        (for-each (lambda (robot)
-                    (let ((x (robot-x robot))
-                          (y (robot-y robot)))
-                      (set-spot (board) x y (set-robot (get-spot (board) x y))))
-                    (hash-table-put! (robot-table) (robot-id robot) robot))
-                  robots)
-        (init-gui (board-width) (board-height) (board)
-                  robots)
-        (robot-indexes (map robot-id robots)))))
+    (let* ((responses
+            (filter (lambda (x)
+                      (eq? 'X (response-name x)))
+                    (read-response in)))
+           (robots
+            (let loop ((responses responses))
+              (cond
+                ((null? responses) null)
+                (else
+                 (cons (make-robot (response-id (car responses))
+                                   (car (response-arg (car responses)))
+                                   (cdr (response-arg (car responses))))
+                       (loop (cdr responses))))))))
+      (for-each (lambda (robot)
+                  (let ((x (robot-x robot))
+                        (y (robot-y robot)))
+                    (set-spot (board) x y (set-robot (get-spot (board) x y))))
+                  (hash-table-put! (robot-table) (robot-id robot) robot))
+                robots)
+      (init-gui (board-width) (board-height) (board)
+                robots)
+      (robot-indexes (map robot-id robots))))
     
   (define (find-dead alive all)
     (cond
@@ -205,90 +205,89 @@
              (find-dead alive (cdr all))))))
   
   (define (read-response! packages in gui-update)
-    (let ((s (open-input-string (regexp-replace "#" (read-line in) " ^ "))))
-      (let* ((responses (read-response s))
-             (alive-robots (map response-id responses))
-             (dead-robots
-              (find-dead (mergesort alive-robots <)
-                         (mergesort (robot-indexes) <)))
-             (package-table (make-hash-table)))
-        (gui-update (map (lambda (r)
-                           (list (response-id r)
-                                 0
-                                 (case (response-name r)
-                                   ((n s w e) (response-name r))
-                                   ((p) (list 'pick (response-arg r)))
-                                   ((d) (list 'drop (response-arg r))))))
-                         responses))
-        (for-each
-         (lambda (p)
-           (hash-table-put! package-table
-                            (package-id p)
-                            p))
-         packages)
-        (for-each
-         (lambda (id)
-           (let* ((r (hash-table-get (robot-table) id))
-                  (x (robot-x r))
-                  (y (robot-y r)))
-             (set-spot (board) x y (set-robot-empty (get-spot (board) x y)))
-             (hash-table-remove! (robot-table) id)))
-         dead-robots)
-        (begin0
-          (map
-           (lambda (r)
-             (let* ((old-robot (hash-table-get (robot-table) (response-id r)))
-                    (new-robot
-                     (make-robot
-                      (robot-id old-robot)
-                      (robot-x old-robot)
-                      (robot-y old-robot))))
-               (case (response-name r)
-                 ((P)
-                  (cond
-                    ((= (response-id r) (player-id))
+    (let* ((responses (read-response in))
+           (alive-robots (map response-id responses))
+           (dead-robots
+            (find-dead (mergesort alive-robots <)
+                       (mergesort (robot-indexes) <)))
+           (package-table (make-hash-table)))
+      (gui-update (map (lambda (r)
+                         (list (response-id r)
+                               0
+                               (case (response-name r)
+                                 ((n s w e) (response-name r))
+                                 ((p) (list 'pick (response-arg r)))
+                                 ((d) (list 'drop (response-arg r))))))
+                       responses))
+      (for-each
+       (lambda (p)
+         (hash-table-put! package-table
+                          (package-id p)
+                          p))
+       packages)
+      (for-each
+       (lambda (id)
+         (let* ((r (hash-table-get (robot-table) id))
+                (x (robot-x r))
+                (y (robot-y r)))
+           (set-spot (board) x y (set-robot-empty (get-spot (board) x y)))
+           (hash-table-remove! (robot-table) id)))
+       dead-robots)
+      (begin0
+        (map
+         (lambda (r)
+           (let* ((old-robot (hash-table-get (robot-table) (response-id r)))
+                  (new-robot
+                   (make-robot
+                    (robot-id old-robot)
+                    (robot-x old-robot)
+                    (robot-y old-robot))))
+             (case (response-name r)
+               ((P)
+                (cond
+                  ((= (response-id r) (player-id))
+                   (packages-held
+                    (append
+                     (map
+                      (lambda (id)
+                        (hash-table-get package-table id))
+                      (response-arg r))
+                     (packages-held))))))
+               ((D)
+                (cond
+                  ((= (response-id r) (player-id))
+                   (let ((drops (make-hash-table)))
+                     (for-each
+                      (lambda (d)
+                        (hash-table-put! drops d #t)))
                      (packages-held
-                      (append
-                       (map
-                        (lambda (id)
-                          (hash-table-get package-table id))
-                        (response-arg r))
-                       (packages-held))))))
-                 ((D)
-                  (cond
-                    ((= (response-id r) (player-id))
-                     (let ((drops (make-hash-table)))
-                       (for-each
-                        (lambda (d)
-                          (hash-table-put! drops d #t)))
-                       (packages-held
-                        (filter (lambda (p)
-                                  (not (hash-table-get drops (package-id p)
-                                                       (lambda () #f))))
-                                (packages-held)))))))
-                 ((N) (set-robot-y! new-robot (add1 (robot-y new-robot))))
-                 ((S) (set-robot-y! new-robot (sub1 (robot-y new-robot))))
-                 ((E) (set-robot-x! new-robot (add1 (robot-x new-robot))))
-                 ((W) (set-robot-x! new-robot (sub1 (robot-x new-robot))))
-                 ((X)
-                  (set-robot-x! new-robot (car (response-arg r)))
-                  (set-robot-y! new-robot (cdr (response-arg r)))))
-               (set-spot (board)
-                         (robot-x old-robot)
-                         (robot-y old-robot)
-                         (set-robot-empty (get-spot (board)
-                                                    (robot-x old-robot)
-                                                    (robot-y old-robot))))
-               (set-spot (board)
-                         (robot-x new-robot)
-                         (robot-y new-robot)
-                         (set-robot (get-spot (board)
-                                              (robot-x new-robot)
-                                              (robot-y new-robot))))
-               (hash-table-put! (robot-table) (robot-id new-robot) new-robot)
-               old-robot))
-           responses)
-          (robot-indexes alive-robots)))))
+                      (filter (lambda (p)
+                                (not (hash-table-get drops (package-id p)
+                                                     (lambda () #f))))
+                              (packages-held)))))))
+               ((N) (set-robot-y! new-robot (add1 (robot-y new-robot))))
+               ((S) (set-robot-y! new-robot (sub1 (robot-y new-robot))))
+               ((E) (set-robot-x! new-robot (add1 (robot-x new-robot))))
+               ((W) (set-robot-x! new-robot (sub1 (robot-x new-robot))))
+               ((X)
+                (set-robot-x! new-robot (car (response-arg r)))
+                (set-robot-y! new-robot (cdr (response-arg r)))))
+             (set-spot (board)
+                       (robot-x old-robot)
+                       (robot-y old-robot)
+                       (set-robot-empty (get-spot (board)
+                                                  (robot-x old-robot)
+                                                  (robot-y old-robot))))
+             (set-spot (board)
+                       (robot-x new-robot)
+                       (robot-y new-robot)
+                       (set-robot (get-spot (board)
+                                            (robot-x new-robot)
+                                            (robot-y new-robot))))
+             (hash-table-put! (robot-table) (robot-id new-robot) new-robot)
+             old-robot))
+         responses)
+        (robot-indexes alive-robots))))
         
   (define (read-board! input init-gui)
     (board-width (read input))

@@ -50,6 +50,7 @@
   (define (do-turn baseline? gui? in out)
     (let loop ((packages (read-packages in))
                (robots null))
+      (printf "here~n")
       (cond
         ((null? packages) (fix-home!)))
       (cond
@@ -57,7 +58,7 @@
         (else
          (send-command (compute-move packages robots) out)))
       (let ((robots (read-response! packages in (cond
-                                                  (gui? (dynamic-require "gui-client.ss" 'update))
+                                                  ;(gui? (dynamic-require "gui-client.ss" 'update))
                                                   (else void)))))
         (loop (read-packages in) robots))))
   )

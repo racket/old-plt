@@ -1,4 +1,3 @@
-
 (define-macro define-constructor
   (lambda args '(#%void)))
 
@@ -13,3 +12,6 @@
 
 (define-macro polymorphic
   (lambda (arg) arg))
+
+(define-macro type:
+  (lambda (type) `(#%void)))

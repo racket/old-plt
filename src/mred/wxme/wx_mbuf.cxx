@@ -2040,13 +2040,15 @@ void wxMediaBuffer::OnDisplaySize(void)
 char *wxMediaBuffer::GetFile(char *path)
 {
   return wxFileSelector("Choose a file", path, NULL,
-			NULL, WILDCARD, wxOPEN);
+			NULL, WILDCARD, wxOPEN, 
+			NULL, 0, 0);
 }
  
 char *wxMediaBuffer::PutFile(char *path, char *suggested_name)
 {
   return wxFileSelector("Save file as", path,
-			suggested_name, NULL, WILDCARD, wxSAVE);
+			suggested_name, NULL, WILDCARD, wxSAVE, 
+			NULL, 0, 0);
 }
 
 void wxMediaBuffer::SetLoadOverwritesStyles(Bool b)

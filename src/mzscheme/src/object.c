@@ -2441,6 +2441,7 @@ Scheme_Object* scheme_class_to_interface(Scheme_Object *c, char *name)
 Scheme_Class_Assembly *
 scheme_make_class_assembly(const char *name, int num_interfaces,
 			   int n_public, Scheme_Object **publics,
+			   int n_override, Scheme_Object **overrides,
 			   int n_inh, Scheme_Object **inheriteds,
 			   int n_ren, Scheme_Object **renames,
 			   int mina, int maxa,
@@ -2461,6 +2462,17 @@ scheme_make_class_assembly(const char *name, int num_interfaces,
 
     v->vartype = varPUBLIC;
     v->name = publics[i];
+    v->u.value = scheme_undefined;
+    v->next = last;
+
+    last = v;
+  }
+
+  for (i = 0; i < n_override; i++) {
+    v = MALLOC_ONE(ClassVariable);
+
+    v->vartype = varOVERRIDE;
+    v->name = overrides[i];
     v->u.value = scheme_undefined;
     v->next = last;
 

@@ -1,10 +1,4 @@
 #ifndef WXS_SETUP_ONLY
-extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
-extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
-extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
-extern Scheme_Object *objscheme_bundle_wxColour(class wxColour *);
-extern Scheme_Object *objscheme_bundle_wxColour(class wxColour *);
-extern Scheme_Object *objscheme_bundle_wxColour(class wxColour *);
 extern class wxCommandEvent *objscheme_unbundle_wxCommandEvent(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxItem(void *env);

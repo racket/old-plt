@@ -15,17 +15,14 @@
 
 @ "command" : void Command(wxCommandEvent%);
 
-@INCLUDE wxs_icol.xci
+// @INCLUDE wxs_icol.xci
 
 @ "get-label" : nstring GetLabel();
 @ "set-label" : void SetLabel(string);
 
-@ "get-char-height" : float GetCharHeight();
-@ "get-char-width" : float GetCharWidth();
-
-@ "set-background-colour" : void SetBackgroundColour(wxColour!);
-@ "set-label-colour" : void SetLabelColour(wxColour!);
-@ "set-button-colour" : void SetButtonColour(wxColour!);
+// @ "set-background-colour" : void SetBackgroundColour(wxColour!);
+// @ "set-label-colour" : void SetLabelColour(wxColour!);
+// @ "set-button-colour" : void SetButtonColour(wxColour!);
 
 @END
 

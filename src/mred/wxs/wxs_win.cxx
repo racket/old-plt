@@ -149,6 +149,8 @@ static Scheme_Object *bundle_symset_direction(int v) {
 
 
 
+// @ "get-char-height" : float GetCharHeight();
+// @ "get-char-width" : float GetCharWidth();
 
 
 
@@ -759,40 +761,6 @@ static Scheme_Object *os_wxWindowClientToScreen(Scheme_Object *obj, int n,  Sche
 }
 
 #pragma argsused
-static Scheme_Object *os_wxWindowGetCharWidth(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  float r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetCharWidth();
-
-  
-  
-  return scheme_make_double(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxWindowGetCharHeight(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  float r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetCharHeight();
-
-  
-  
-  return scheme_make_double(r);
-}
-
-#pragma argsused
 static Scheme_Object *os_wxWindowDragAcceptFiles(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1085,7 +1053,7 @@ void objscheme_setup_wxWindow(void *env)
 if (os_wxWindow_class) {
     objscheme_add_global_class(os_wxWindow_class, "window%", env);
 } else {
-  os_wxWindow_class = objscheme_def_prim_class(env, "window%", "object%", NULL, 31);
+  os_wxWindow_class = objscheme_def_prim_class(env, "window%", "object%", NULL, 29);
 
  scheme_add_method_w_arity(os_wxWindow_class, "on-drop-file", os_wxWindowOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxWindow_class, "pre-on-event", os_wxWindowPreOnEvent, 2, 2);
@@ -1103,8 +1071,6 @@ if (os_wxWindow_class) {
  scheme_add_method_w_arity(os_wxWindow_class, "refresh", os_wxWindowRefresh, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "screen-to-client", os_wxWindowScreenToClient, 2, 2);
  scheme_add_method_w_arity(os_wxWindow_class, "client-to-screen", os_wxWindowClientToScreen, 2, 2);
- scheme_add_method_w_arity(os_wxWindow_class, "get-char-width", os_wxWindowGetCharWidth, 0, 0);
- scheme_add_method_w_arity(os_wxWindow_class, "get-char-height", os_wxWindowGetCharHeight, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "drag-accept-files", os_wxWindowDragAcceptFiles, 1, 1);
  scheme_add_method_w_arity(os_wxWindow_class, "enable", os_wxWindowEnable, 1, 1);
  scheme_add_method_w_arity(os_wxWindow_class, "get-position", os_wxWindowGetPosition, 2, 2);

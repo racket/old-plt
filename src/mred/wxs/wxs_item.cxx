@@ -22,11 +22,12 @@
 
 
 
+// @INCLUDE wxs_icol.xci
 
 
-
-
-
+// @ "set-background-colour" : void SetBackgroundColour(wxColour!);
+// @ "set-label-colour" : void SetLabelColour(wxColour!);
+// @ "set-button-colour" : void SetButtonColour(wxColour!);
 
 class os_wxItem : public wxItem {
  public:
@@ -39,94 +40,6 @@ Scheme_Object *os_wxItem_class;
 os_wxItem::~os_wxItem()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxItemSetButtonColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxColour* x0;
-
-  
-  x0 = objscheme_unbundle_wxColour(p[0], "set-button-colour in item%", 0);
-
-  
-  ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->SetButtonColour(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxItemSetLabelColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxColour* x0;
-
-  
-  x0 = objscheme_unbundle_wxColour(p[0], "set-label-colour in item%", 0);
-
-  
-  ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->SetLabelColour(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxItemSetBackgroundColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxColour* x0;
-
-  
-  x0 = objscheme_unbundle_wxColour(p[0], "set-background-colour in item%", 0);
-
-  
-  ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->SetBackgroundColour(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxItemGetCharWidth(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  float r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->GetCharWidth();
-
-  
-  
-  return scheme_make_double(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxItemGetCharHeight(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  float r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->GetCharHeight();
-
-  
-  
-  return scheme_make_double(r);
 }
 
 #pragma argsused
@@ -165,57 +78,6 @@ static Scheme_Object *os_wxItemGetLabel(Scheme_Object *obj, int n,  Scheme_Objec
 }
 
 #pragma argsused
-static Scheme_Object *os_wxItemGetBackgroundColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxColour* r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->GetBackgroundColour();
-
-  
-  
-  return objscheme_bundle_wxColour(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxItemGetLabelColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxColour* r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->GetLabelColour();
-
-  
-  
-  return objscheme_bundle_wxColour(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxItemGetButtonColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxColour* r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->GetButtonColour();
-
-  
-  
-  return objscheme_bundle_wxColour(r);
-}
-
-#pragma argsused
 static Scheme_Object *os_wxItemCommand(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -238,18 +100,10 @@ void objscheme_setup_wxItem(void *env)
 if (os_wxItem_class) {
     objscheme_add_global_class(os_wxItem_class, "item%", env);
 } else {
-  os_wxItem_class = objscheme_def_prim_class(env, "item%", "window%", NULL, 11);
+  os_wxItem_class = objscheme_def_prim_class(env, "item%", "window%", NULL, 3);
 
- scheme_add_method_w_arity(os_wxItem_class, "set-button-colour", os_wxItemSetButtonColour, 1, 1);
- scheme_add_method_w_arity(os_wxItem_class, "set-label-colour", os_wxItemSetLabelColour, 1, 1);
- scheme_add_method_w_arity(os_wxItem_class, "set-background-colour", os_wxItemSetBackgroundColour, 1, 1);
- scheme_add_method_w_arity(os_wxItem_class, "get-char-width", os_wxItemGetCharWidth, 0, 0);
- scheme_add_method_w_arity(os_wxItem_class, "get-char-height", os_wxItemGetCharHeight, 0, 0);
  scheme_add_method_w_arity(os_wxItem_class, "set-label", os_wxItemSetLabel, 1, 1);
  scheme_add_method_w_arity(os_wxItem_class, "get-label", os_wxItemGetLabel, 0, 0);
- scheme_add_method_w_arity(os_wxItem_class, "get-background-colour", os_wxItemGetBackgroundColour, 0, 0);
- scheme_add_method_w_arity(os_wxItem_class, "get-label-colour", os_wxItemGetLabelColour, 0, 0);
- scheme_add_method_w_arity(os_wxItem_class, "get-button-colour", os_wxItemGetButtonColour, 0, 0);
  scheme_add_method_w_arity(os_wxItem_class, "command", os_wxItemCommand, 1, 1);
 
 

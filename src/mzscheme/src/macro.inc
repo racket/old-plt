@@ -1157,7 +1157,7 @@
 );
   JUST_DEFINED_KEY(begin-elaboration-time);
   EVAL_ONE_STR(
-"(#%define-values(report-environment null-environment)"
+"(#%define-values(scheme-report-environment null-environment)"
 "(#%let*((debug debug-info-handler)"
 "(r4-syntax '(quasiquote unquote unquote-splicing "
 " if let and or"
@@ -1219,8 +1219,8 @@
 "((debug)))))"
 " (else (#%raise-type-error who \"positive integer\" n)))))))"
 "(#%values"
-"(make-maker 'report-environment '() r4-syntax '())"
-"(make-maker 'null-environment r5(append r4-syntax r4) #%r4))))"
+"(make-maker 'scheme-report-environment r5(append r4-syntax r4) #%r4)"
+"(make-maker 'null-environment '() r4-syntax '()))))"
 );
   JUST_DEFINED_FUNC(report-environment);
   JUST_DEFINED_FUNC(null-environment);

@@ -2139,7 +2139,6 @@ void wxMediaPasteboard::Cut(Bool extend, long time)
 void wxMediaPasteboard::DoCopy(long time, Bool extend)
 {
   wxSnip *snip, *asnip;
-  wxNode *node;
   wxSnipLocation *loc;
   wxStyleList *sl;
 

@@ -84,8 +84,8 @@ static int wxSchemeWindowGetY(wxWindow *w)
 
 @ "drag-accept-files" : void DragAcceptFiles(bool);
 
-@ "get-char-height" : float GetCharHeight();
-@ "get-char-width" : float GetCharWidth();
+// @ "get-char-height" : float GetCharHeight();
+// @ "get-char-width" : float GetCharWidth();
 @ "client-to-screen" : void ClientToScreen(int*, int*);
 @ "screen-to-client" : void ScreenToClient(int*,int*);
 @ "refresh" : void Refresh();

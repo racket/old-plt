@@ -42,7 +42,7 @@
 @ "get-label-position" : SYM[orientation] GetLabelPosition();
 
 @INCLUDE wxs_ifnt.xci
-@INCLUDE wxs_icol.xci
+// @INCLUDE wxs_icol.xci
 
 @END
 

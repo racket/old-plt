@@ -78,7 +78,7 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env);
 
 static Scheme_Object *setup_file_symbol, *init_file_symbol;
 
-static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box;
+static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box, *execute;
 
 #define INSTALL_COUNT 520
 
@@ -103,6 +103,7 @@ static void wxScheme_Invoke(Scheme_Env *env)
     put_file = scheme_lookup_global(scheme_intern_symbol("put-file"), env);
     get_ps_setup_from_user = scheme_lookup_global(scheme_intern_symbol("get-ps-setup-from-user"), env);
     message_box = scheme_lookup_global(scheme_intern_symbol("message-box"), env);
+    execute = scheme_lookup_global(scheme_intern_symbol("process"), env);
   }
 }
 
@@ -1215,7 +1216,26 @@ int wxsMessageBox(char *message, char *caption, long style, wxWindow *parent)
   return wxNO;
 }
 
-static void wxScheme_Install(Scheme_Env *env, void *global_env)
+void wxsExecute(char **argv)
+{
+  int i, c;
+  Scheme_Object *a[1], *s;
+
+  for (i = 0; argv[i]; i++);
+
+  c = i;
+
+  s = scheme_make_string("");
+  for (i = 0; i < c; i++) {
+    s = scheme_append_string(s, scheme_make_string(argv[i]));
+    s = scheme_append_string(s, scheme_make_string(" "));
+  }
+
+  a[0] = s;
+  scheme_apply(execute, 1, a);
+}
+
+static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
 {
   static int installed = 0;
 

@@ -441,6 +441,7 @@ Scheme_Object *(*scheme_class_to_interface)(Scheme_Object *cl, char *name);
 /* NEW class-making interface */
 struct Scheme_Class_Assembly *(*scheme_make_class_assembly)(const char *name, int n_interfaces,
 							 int n_public, Scheme_Object **names,
+							 int n_override, Scheme_Object **onames,
 							 int n_inh, Scheme_Object **inheritd,
 							 int n_ren, Scheme_Object **renames,
 							 int mina, int maxa,

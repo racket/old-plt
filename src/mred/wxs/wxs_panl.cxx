@@ -139,8 +139,7 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 
 
 
-
-
+// @INCLUDE wxs_icol.xci
 
 class os_wxPanel : public wxPanel {
  public:
@@ -513,111 +512,6 @@ wxPanel::OnKillFocus();
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
   }
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelSetBackgroundColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxColour* x0;
-
-  
-  x0 = objscheme_unbundle_wxColour(p[0], "set-background-colour in panel%", 0);
-
-  
-  ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetBackgroundColour(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelGetBackgroundColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxColour* r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->GetBackgroundColour();
-
-  
-  
-  return objscheme_bundle_wxColour(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelSetLabelColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxColour* x0;
-
-  
-  x0 = objscheme_unbundle_wxColour(p[0], "set-label-colour in panel%", 0);
-
-  
-  ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetLabelColour(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelGetLabelColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxColour* r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->GetLabelColour();
-
-  
-  
-  return objscheme_bundle_wxColour(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelSetButtonColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxColour* x0;
-
-  
-  x0 = objscheme_unbundle_wxColour(p[0], "set-button-colour in panel%", 0);
-
-  
-  ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetButtonColour(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelGetButtonColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxColour* r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->GetButtonColour();
-
-  
-  
-  return objscheme_bundle_wxColour(r);
 }
 
 #pragma argsused
@@ -1090,14 +984,8 @@ void objscheme_setup_wxPanel(void *env)
 if (os_wxPanel_class) {
     objscheme_add_global_class(os_wxPanel_class, "panel%", env);
 } else {
-  os_wxPanel_class = objscheme_def_prim_class(env, "panel%", "canvas%", os_wxPanel_ConstructScheme, 24);
+  os_wxPanel_class = objscheme_def_prim_class(env, "panel%", "canvas%", os_wxPanel_ConstructScheme, 18);
 
- scheme_add_method_w_arity(os_wxPanel_class, "set-background-colour", os_wxPanelSetBackgroundColour, 1, 1);
- scheme_add_method_w_arity(os_wxPanel_class, "get-background-colour", os_wxPanelGetBackgroundColour, 0, 0);
- scheme_add_method_w_arity(os_wxPanel_class, "set-label-colour", os_wxPanelSetLabelColour, 1, 1);
- scheme_add_method_w_arity(os_wxPanel_class, "get-label-colour", os_wxPanelGetLabelColour, 0, 0);
- scheme_add_method_w_arity(os_wxPanel_class, "set-button-colour", os_wxPanelSetButtonColour, 1, 1);
- scheme_add_method_w_arity(os_wxPanel_class, "get-button-colour", os_wxPanelGetButtonColour, 0, 0);
  scheme_add_method_w_arity(os_wxPanel_class, "get-label-font", os_wxPanelGetLabelFont, 0, 0);
  scheme_add_method_w_arity(os_wxPanel_class, "set-label-font", os_wxPanelSetLabelFont, 1, 1);
  scheme_add_method_w_arity(os_wxPanel_class, "get-button-font", os_wxPanelGetButtonFont, 0, 0);

@@ -183,7 +183,7 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 
   noloop = FALSE;
 
-  SetBackground(wxTheBrushList->FindOrCreateBrush("white", wxSOLID));
+  SetBackgroundColour(new wxColour("white"));
 
   admin = new wxCanvasMediaAdmin(this);
   admin->standard = 1;
@@ -251,7 +251,7 @@ void wxMediaCanvas::OnSize(int w, int h)
 #ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
   DestroyClippingRegion();
 #endif
-  Clear();
+  GetDC()->Clear();
 #endif
 
 #ifdef NO_GET_CLIPPING_REGION
@@ -472,7 +472,7 @@ void wxMediaCanvas::OnPaint(void)
       Redraw(x, y, w, h);
     }
   } else
-    Clear();
+    GetDC()->Clear();
   
   wxCanvas::OnPaint();
 }
@@ -840,7 +840,7 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
       hnumScrolls = vnumScrolls = 0;
       vspp = hspp = 1;
       if (!media)
-	Clear();
+	GetDC()->Clear();
     }    
 
     if (scrollWidth != hnumScrolls || scrollHeight != vnumScrolls

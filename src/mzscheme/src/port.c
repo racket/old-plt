@@ -5785,15 +5785,19 @@ static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
     dir = scheme_normal_path_case(dir, &nplen);
 
     memset(&se, 0, sizeof(se));
-    se.fMask = SEE_MASK_NOCLOSEPROCESS;
+    se.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_DDEWAIT;
     se.cbSize = sizeof(se);
     se.lpVerb = (SCHEME_FALSEP(argv[0]) ? NULL : SCHEME_STR_VAL(argv[0]));
     se.lpFile = SCHEME_STR_VAL(argv[1]);
     se.lpParameters = SCHEME_STR_VAL(argv[2]);
     se.lpDirectory = dir;
     se.nShow = show;
+    se.hwnd = NULL;
 
-    if (ShellExecuteEx(&se)) {
+    /* Used to use ShellExecuteEx(&se) here. Not sure why it doesn't work,
+       and the problem was intermittent (e.g., worked for opening a URL
+       with IE as the default browser, but failed with Netscape). */
+    if (ShellExecute(se.hwnd, se.lpVerb, se.lpFile, se.lpParameters, se.lpDirectory, se.nShow)) {
       if (se.hProcess) {
 	Scheme_Subprocess *subproc;
 

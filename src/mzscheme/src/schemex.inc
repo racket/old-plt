@@ -240,6 +240,8 @@
   scheme_extension_table->scheme_make_integer_value_from_unsigned = scheme_make_integer_value_from_unsigned;
   scheme_extension_table->scheme_make_integer_value_from_long_long = scheme_make_integer_value_from_long_long;
   scheme_extension_table->scheme_make_integer_value_from_unsigned_long_long = scheme_make_integer_value_from_unsigned_long_long;
+  scheme_extension_table->scheme_make_integer_value_from_long_halves = scheme_make_integer_value_from_long_halves;
+  scheme_extension_table->scheme_make_integer_value_from_unsigned_long_halves = scheme_make_integer_value_from_unsigned_long_halves;
   scheme_extension_table->scheme_make_double = scheme_make_double;
 #ifdef MZ_USE_SINGLE_FLOATS
   scheme_extension_table->scheme_make_float = scheme_make_float;
@@ -255,6 +257,8 @@
   scheme_extension_table->scheme_make_channel_put_evt = scheme_make_channel_put_evt;
   scheme_extension_table->scheme_get_int_val = scheme_get_int_val;
   scheme_extension_table->scheme_get_unsigned_int_val = scheme_get_unsigned_int_val;
+  scheme_extension_table->scheme_get_long_long_val = scheme_get_long_long_val;
+  scheme_extension_table->scheme_get_unsigned_long_long_val = scheme_get_unsigned_long_long_val;
   scheme_extension_table->scheme_real_to_double = scheme_real_to_double;
   scheme_extension_table->scheme_make_cptr = scheme_make_cptr;
   scheme_extension_table->scheme_get_proc_name = scheme_get_proc_name;
@@ -272,6 +276,8 @@
   scheme_extension_table->scheme_utf16_to_ucs4 = scheme_utf16_to_ucs4;
   scheme_extension_table->scheme_make_bignum = scheme_make_bignum;
   scheme_extension_table->scheme_make_bignum_from_unsigned = scheme_make_bignum_from_unsigned;
+  scheme_extension_table->scheme_make_bignum_from_long_long = scheme_make_bignum_from_long_long;
+  scheme_extension_table->scheme_make_bignum_from_unsigned_long_long = scheme_make_bignum_from_unsigned_long_long;
   scheme_extension_table->scheme_bignum_to_double = scheme_bignum_to_double;
   scheme_extension_table->scheme_bignum_from_double = scheme_bignum_from_double;
 #ifdef MZ_USE_SINGLE_FLOATS

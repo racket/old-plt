@@ -1023,6 +1023,8 @@ char *scheme_number_to_string(int radix, Scheme_Object *obj);
 
 int scheme_bignum_get_int_val(const Scheme_Object *o, long *v);
 int scheme_bignum_get_unsigned_int_val(const Scheme_Object *o, unsigned long *v);
+int scheme_bignum_get_long_long_val(const Scheme_Object *o, mzlonglong *v);
+int scheme_bignum_get_unsigned_long_long_val(const Scheme_Object *o, umzlonglong *v);
 
 int scheme_bignum_eq(const Scheme_Object *a, const Scheme_Object *b);
 int scheme_bignum_lt(const Scheme_Object *a, const Scheme_Object *b);

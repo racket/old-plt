@@ -240,6 +240,8 @@
 #define scheme_make_integer_value_from_unsigned (scheme_extension_table->scheme_make_integer_value_from_unsigned)
 #define scheme_make_integer_value_from_long_long (scheme_extension_table->scheme_make_integer_value_from_long_long)
 #define scheme_make_integer_value_from_unsigned_long_long (scheme_extension_table->scheme_make_integer_value_from_unsigned_long_long)
+#define scheme_make_integer_value_from_long_halves (scheme_extension_table->scheme_make_integer_value_from_long_halves)
+#define scheme_make_integer_value_from_unsigned_long_halves (scheme_extension_table->scheme_make_integer_value_from_unsigned_long_halves)
 #define scheme_make_double (scheme_extension_table->scheme_make_double)
 #ifdef MZ_USE_SINGLE_FLOATS
 #define scheme_make_float (scheme_extension_table->scheme_make_float)
@@ -255,6 +257,8 @@
 #define scheme_make_channel_put_evt (scheme_extension_table->scheme_make_channel_put_evt)
 #define scheme_get_int_val (scheme_extension_table->scheme_get_int_val)
 #define scheme_get_unsigned_int_val (scheme_extension_table->scheme_get_unsigned_int_val)
+#define scheme_get_long_long_val (scheme_extension_table->scheme_get_long_long_val)
+#define scheme_get_unsigned_long_long_val (scheme_extension_table->scheme_get_unsigned_long_long_val)
 #define scheme_real_to_double (scheme_extension_table->scheme_real_to_double)
 #define scheme_make_cptr (scheme_extension_table->scheme_make_cptr)
 #define scheme_get_proc_name (scheme_extension_table->scheme_get_proc_name)
@@ -272,6 +276,8 @@
 #define scheme_utf16_to_ucs4 (scheme_extension_table->scheme_utf16_to_ucs4)
 #define scheme_make_bignum (scheme_extension_table->scheme_make_bignum)
 #define scheme_make_bignum_from_unsigned (scheme_extension_table->scheme_make_bignum_from_unsigned)
+#define scheme_make_bignum_from_long_long (scheme_extension_table->scheme_make_bignum_from_long_long)
+#define scheme_make_bignum_from_unsigned_long_long (scheme_extension_table->scheme_make_bignum_from_unsigned_long_long)
 #define scheme_bignum_to_double (scheme_extension_table->scheme_bignum_to_double)
 #define scheme_bignum_from_double (scheme_extension_table->scheme_bignum_from_double)
 #ifdef MZ_USE_SINGLE_FLOATS

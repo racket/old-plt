@@ -360,8 +360,10 @@ Scheme_Object *(*scheme_append_char_string)(Scheme_Object *, Scheme_Object *);
 Scheme_Object *(*scheme_make_vector)(int size, Scheme_Object *fill);
 Scheme_Object *(*scheme_make_integer_value)(long i);
 Scheme_Object *(*scheme_make_integer_value_from_unsigned)(unsigned long i);
-Scheme_Object *(*scheme_make_integer_value_from_long_long)(unsigned long lowhalf, unsigned long hihalf);
-Scheme_Object *(*scheme_make_integer_value_from_unsigned_long_long)(unsigned long lowhalf, unsigned long hihalf);
+Scheme_Object *(*scheme_make_integer_value_from_long_long)(mzlonglong i);
+Scheme_Object *(*scheme_make_integer_value_from_unsigned_long_long)(umzlonglong i);
+Scheme_Object *(*scheme_make_integer_value_from_long_halves)(unsigned long lowhalf, unsigned long hihalf);
+Scheme_Object *(*scheme_make_integer_value_from_unsigned_long_halves)(unsigned long lowhalf, unsigned long hihalf);
 Scheme_Object *(*scheme_make_double)(double d);
 #ifdef MZ_USE_SINGLE_FLOATS
 Scheme_Object *(*scheme_make_float)(float f) ;
@@ -377,6 +379,8 @@ Scheme_Object *(*scheme_make_channel)();
 Scheme_Object *(*scheme_make_channel_put_evt)(Scheme_Object *ch, Scheme_Object *v);
 int (*scheme_get_int_val)(Scheme_Object *o, long *v);
 int (*scheme_get_unsigned_int_val)(Scheme_Object *o, unsigned long *v);
+int (*scheme_get_long_long_val)(Scheme_Object *o, mzlonglong *v);
+int (*scheme_get_unsigned_long_long_val)(Scheme_Object *o, umzlonglong *v);
 double (*scheme_real_to_double)(Scheme_Object *r);
 Scheme_Object *(*scheme_make_cptr)(void *cptr, Scheme_Object *typetag);
 const char *(*scheme_get_proc_name)(Scheme_Object *p, int *len, int for_error);
@@ -416,6 +420,8 @@ mzchar *(*scheme_utf16_to_ucs4)(const unsigned short *text, int start, int end,
 /*========================================================================*/
 Scheme_Object *(*scheme_make_bignum)(long v);
 Scheme_Object *(*scheme_make_bignum_from_unsigned)(unsigned long v);
+Scheme_Object *(*scheme_make_bignum_from_long_long)(mzlonglong v);
+Scheme_Object *(*scheme_make_bignum_from_unsigned_long_long)(umzlonglong v);
 double (*scheme_bignum_to_double)(const Scheme_Object *n);
 Scheme_Object *(*scheme_bignum_from_double)(double d);
 #ifdef MZ_USE_SINGLE_FLOATS

@@ -188,6 +188,19 @@ typedef int mzshort;
 typedef unsigned int mzchar;
 typedef int mzchar_int; /* includes EOF */
 
+#ifdef INT64_AS_LONG_LONG
+typedef _int64 mzlonglong;
+typedef unsigned _int64 mzlonglong;
+#else
+# if defined(NO_LONG_LONG_TYPE) || defined(SIXTY_FOUR_BIT_INTEGERS)
+typedef long mzlonglong;
+typedef unsigned long umzlonglong;
+# else
+typedef long long mzlonglong;
+typedef unsigned long long umzlonglong;
+# endif
+#endif
+
 /* MzScheme values have the type `Scheme_Object *'. The Scheme_Object
    structure declares just the header: a type tag and space for
    hashing or extra flags; actual object types will extend this

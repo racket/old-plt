@@ -190,15 +190,107 @@ Scheme_Object *scheme_make_bignum_from_unsigned(unsigned long v)
   return (Scheme_Object*) mzALIAS r;
 }
 
+Scheme_Object *scheme_make_bignum_from_long_long(mzlonglong v)
+{
+#if defined(SIXTY_FOUR_BIT_INTEGERS)
+  return scheme_make_bignum(v);
+#else
+  if (v < 0) {
+    mzlonglong v2;
+    
+    v2 = -v;
+    if (v2 == v) {
+      /* This is 0xFFFFFFFFFFFFFFFFLL */
+      Scheme_Object *o;
+      bigdig *o_digs;
+      int len;
+#if defined(USE_LONG_LONG_FOR_BIGDIG)
+      len = 2;
+#else
+      len = 3;
+#endif
+
+      o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));      
+      o->type = scheme_bignum_type;
+      SCHEME_BIGLEN(o) = len;
+      SCHEME_SET_BIGPOS(o, 0);
+      o_digs = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) * len);
+      SCHEME_BIGDIG(o) = o_digs;
+
+      o_digs[0] = 0;
+      o_digs[1] = 0;
+      o_digs[len] = 1;
+      
+      return (Scheme_Object *)o;      
+    } else {
+      Scheme_Object *o;
+      o = scheme_make_bignum_from_unsigned_long_long((umzlonglong)v2);
+      SCHEME_SET_BIGPOS(o, 0);
+      return o;
+    }
+  } else {
+    return scheme_make_bignum_from_unsigned_long_long((umzlonglong)v);
+  }
+#endif
+}
+
+Scheme_Object *scheme_make_bignum_from_unsigned_long_long(umzlonglong v)
+{
+#if defined(SIXTY_FOUR_BIT_INTEGERS)
+  return scheme_make_bignum_from_unsigned(v);
+#else
+  int just_one;
+
+#if defined(USE_LONG_LONG_FOR_BIGDIG)
+  just_one = 1;
+#else
+  just_one = !((v >> 32) & 0xFFFFFFFF);
+#endif
+
+  if (just_one) {
+    Small_Bignum *r;
+    r = MALLOC_ONE_TAGGED(Small_Bignum);
+#if MZ_PRECISE_GC
+    SCHEME_SET_BIGINLINE(&r->o, 1);
+#endif
+    r->o.iso.so.type = scheme_bignum_type;
+    SCHEME_SET_BIGPOS(&r->o, 1);
+    SCHEME_BIGLEN(&r->o) = 1;
+    
+    SCHEME_BIGDIG(&r->o) = r->v;
+    
+    r->v[0] = (bigdig)v;
+
+    return (Scheme_Object*) mzALIAS r;
+  } else {
+    Scheme_Object *o;
+    bigdig *o_digs;
+    
+    o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+    
+    o->type = scheme_bignum_type;
+    SCHEME_BIGLEN(o) = 2;
+    SCHEME_SET_BIGPOS(o, 1);
+    o_digs = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) * 2);
+    SCHEME_BIGDIG(o) = o_digs;
+
+    o_digs[1] = (bigdig)((v >> 32) & 0xFFFFFFFF);
+    o_digs[0] = (bigdig)(v & 0xFFFFFFFF);
+    
+    return (Scheme_Object *)o;
+  }
+#endif
+}
+
 /*
-  Should only succeed if the bignum can fit into a signed 32/64 bit word.
+  Should only succeed if the bignum can fit into a signed long.
   This means that the bignum must have length 0 or 1 and the top bit
   of its bigdig must be zero, unless it is -100...000.
 
 */
 int scheme_bignum_get_int_val(const Scheme_Object *o, long *v)
 {
-  if (SCHEME_BIGLEN(o) > 1) {    /* won't fit in a tagged word */
+  if (SCHEME_BIGLEN(o) > 1) {    /* won't fit in a signed long */
     return 0;
   } else if (SCHEME_BIGLEN(o) == 0) {
     *v = 0;
@@ -211,7 +303,7 @@ int scheme_bignum_get_int_val(const Scheme_Object *o, long *v)
     /* Special case for the most negative number representable in a signed word */
     *v = SCHEME_BIGDIG(o)[0];
     return 1;
-  } else if ((SCHEME_BIGDIG(o)[0] & FIRST_BIT_MASK) != 0) { /* Won't fit into a signed word */
+  } else if ((SCHEME_BIGDIG(o)[0] & FIRST_BIT_MASK) != 0) { /* Won't fit into a signed long */
     return 0;
   } else if (SCHEME_BIGPOS(o)) {
     *v = (long)SCHEME_BIGDIG(o)[0];
@@ -237,6 +329,64 @@ int scheme_bignum_get_unsigned_int_val(const Scheme_Object *o, unsigned long *v)
 #endif
   } else {
     *v = SCHEME_BIGDIG(o)[0];
+    return 1;
+  }
+}
+
+#ifdef USE_LONG_LONG_FOR_BIGDIG
+# define MAX_BN_SIZE_FOR_LL 1
+#else
+# define MAX_BN_SIZE_FOR_LL 2
+#endif
+
+int scheme_bignum_get_long_long_val(const Scheme_Object *o, mzlonglong *v)
+{
+  if (SCHEME_BIGLEN(o) > MAX_BN_SIZE_FOR_LL) { /* won't fit in a signed long long */
+    return 0;
+  } else if (SCHEME_BIGLEN(o) == 0) {
+    *v = 0;
+    return 1;
+  } else if (SCHEME_BIGDIG(o)[MAX_BN_SIZE_FOR_LL -1] == FIRST_BIT_MASK 
+#ifndef USE_LONG_LONG_FOR_BIGDIG
+	     && !SCHEME_BIGDIG(o)[0]
+#endif
+	     && !SCHEME_BIGPOS(o)) {
+    /* Special case for the most negative number representable in a signed long long */
+    mzlonglong v2;
+    v2 = 1;
+    v2 = (v2 << 63);
+    return 1;
+  } else if ((SCHEME_BIGDIG(o)[MAX_BN_SIZE_FOR_LL - 1] & FIRST_BIT_MASK) != 0) { /* Won't fit into a signed long long */
+    return 0;
+  } else {
+    mzlonglong v2;
+    v2 = SCHEME_BIGDIG(o)[0];
+    if (SCHEME_BIGLEN(o)) {
+      v2 |= ((mzlonglong)SCHEME_BIGDIG(o)[1]) << 32;
+    }
+    if (!SCHEME_BIGPOS(o)) {
+      v2 = -v2;
+    }
+    *v = v2;
+    return 1;
+  }
+}
+
+int scheme_bignum_get_unsigned_long_long_val(const Scheme_Object *o, umzlonglong *v)
+{
+  if ((SCHEME_BIGLEN(o) > MAX_BN_SIZE_FOR_LL) || !SCHEME_BIGPOS(o))
+    /* Won't fit into word, or not positive */
+    return 0;
+  else if (SCHEME_BIGLEN(o) == 0) {
+    *v = 0;
+    return 1;
+  } else {
+    umzlonglong v2;
+    v2 = SCHEME_BIGDIG(o)[0];
+    if (SCHEME_BIGLEN(o)) {
+      v2 |= ((umzlonglong)SCHEME_BIGDIG(o)[1]) << 32;
+    }
+    *v = v2;
     return 1;
   }
 }

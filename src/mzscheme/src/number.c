@@ -445,45 +445,87 @@ scheme_make_integer_value_from_unsigned(unsigned long i)
     return scheme_make_bignum_from_unsigned(i);
 }
 
-static Scheme_Object * fixnum_expt (int x, int y);
+Scheme_Object *scheme_make_integer_value_from_long_long(mzlonglong i)
+{
+#if defined(SIXTY_FOUR_BIT_INTEGERS)
+  return scheme_make_integer_value(i);
+#else
+  if (i < 0) {
+    if (!(((i >> 32) & 0xFFFFFFFF) ^ 0xFFFFFFFF))
+      return scheme_make_integer_value((long)i);
+    else
+      return scheme_make_bignum_from_long_long(i);
+  } else {
+    return scheme_make_integer_value_from_unsigned_long_long(i);
+  }
+#endif
+}
+
+Scheme_Object *scheme_make_integer_value_from_unsigned_long_long(umzlonglong i)
+{
+#if defined(SIXTY_FOUR_BIT_INTEGERS)
+  return scheme_make_integer_value_from_unsigned(i);
+#else
+  if (!((i >> 32) & 0xFFFFFFFF))
+    return scheme_make_integer_value_from_unsigned((long)i);
+  else
+    return scheme_make_bignum_from_unsigned_long_long(i);
+#endif
+}
 
 Scheme_Object *
-scheme_make_integer_value_from_unsigned_long_long(unsigned long lowhalf,
-                                                  unsigned long hihalf)
+scheme_make_integer_value_from_unsigned_long_halves(unsigned long lowhalf,
+						    unsigned long hihalf)
 {
+#ifdef NO_LONG_LONG_TYPE
   /*  Paste the two halves together by 
       hihalf * (2 ** 32) + lowhalf
-
+      
       There may be a more efficient way to do this, but this way
       does not depend upon the representation of bignums.
   */
-
+  
   return
-      scheme_bin_plus
-        (scheme_make_integer_value_from_unsigned (lowhalf),
-         scheme_bin_mult (scheme_make_integer_value_from_unsigned (hihalf),
-                          fixnum_expt (2, 32)));
+    scheme_bin_plus
+    (scheme_make_integer_value_from_unsigned (lowhalf),
+     scheme_bin_mult (scheme_make_integer_value_from_unsigned (hihalf),
+		      fixnum_expt (2, 32)));
+#else
+  umzlonglong v;
+
+  v = ((umzlonglong)lowhalf) | ((umzlonglong)hihalf << 32);
+
+  return scheme_make_integer_value_from_unsigned_long_long(v);
+#endif
 }
 
 Scheme_Object *
-scheme_make_integer_value_from_long_long (unsigned long lowhalf,
-                                          unsigned long hihalf)
+scheme_make_integer_value_from_long_halves(unsigned long lowhalf,
+					   unsigned long hihalf)
 {
-    /* hihalf and lowhalf form the two halves of a 64bit 
-       number in 2's complement form.  This means that if the 
-       topmost bit in hihalf is set, the number is actually 
-       the negative version of the complement plus one.
-    */
+#ifdef NO_LONG_LONG_TYPE
+  /* hihalf and lowhalf form the two halves of a 64bit 
+     number in 2's complement form.  This means that if the 
+     topmost bit in hihalf is set, the number is actually 
+     the negative version of the complement plus one.
+  */
+  
+  return (hihalf < 0x80000000L
+	  ? scheme_make_integer_value_from_unsigned_long_long (lowhalf, hihalf)
+	  : scheme_bin_minus
+	  (scheme_make_integer (0),
+	   scheme_make_integer_value_from_unsigned_long_long
+	   ((lowhalf ^ 0xFFFFFFFFL) + 1,
+	    (hihalf  ^ 0xFFFFFFFFL) + (lowhalf == 0))));
+#else
+  mzlonglong v;
 
-  return
-      hihalf < 0x80000000L
-      ? scheme_make_integer_value_from_unsigned_long_long (lowhalf, hihalf)
-      : scheme_bin_minus
-          (scheme_make_integer (0),
-           scheme_make_integer_value_from_unsigned_long_long
-             ((lowhalf ^ 0xFFFFFFFFL) + 1,
-              (hihalf  ^ 0xFFFFFFFFL) + (lowhalf == 0)));
+  v = (mzlonglong)lowhalf | ((mzlonglong)hihalf << 32);
+
+  return scheme_make_integer_value_from_long_long(v);
+#endif
 }
+
 
 int scheme_get_int_val(Scheme_Object *o, long *v)
 {
@@ -506,6 +548,31 @@ int scheme_get_unsigned_int_val(Scheme_Object *o, unsigned long *v)
     return 1;
   } else if (SCHEME_BIGNUMP(o))
     return scheme_bignum_get_unsigned_int_val(o, v);
+  else
+    return 0;
+}
+
+int scheme_get_long_long_val(Scheme_Object *o, mzlonglong *v)
+{
+  if (SCHEME_INTP(o)) {
+    *v = SCHEME_INT_VAL(o);
+    return 1;
+  } else if (SCHEME_BIGNUMP(o))
+    return scheme_bignum_get_long_long_val(o, v);
+  else
+    return 0;
+}
+
+int scheme_get_unsigned_long_long_val(Scheme_Object *o, umzlonglong *v)
+{
+  if (SCHEME_INTP(o)) {
+    long i = SCHEME_INT_VAL(o);
+    if (i < 0)
+      return 0;
+    *v = i;
+    return 1;
+  } else if (SCHEME_BIGNUMP(o))
+    return scheme_bignum_get_unsigned_long_long_val(o, v);
   else
     return 0;
 }

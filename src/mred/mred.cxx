@@ -2921,6 +2921,9 @@ void wxFlushDisplay(void)
   XFlush(d);
   XSync(d, FALSE);
 #endif
+#ifdef wx_mac
+  wxFlushMacDisplay();
+#endif
 }
 
 #ifdef DEFINE_DUMMY_PURE_VIRTUAL

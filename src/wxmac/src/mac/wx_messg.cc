@@ -198,6 +198,8 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
 
     //FIXME CJC	SetClientSize(sBitmap->GetWidth(), sBitmap->GetHeight());
     sBitmap->DrawMac();
+
+    FlushDisplay();
   }
 }
 
@@ -209,6 +211,7 @@ void wxMessage::SetLabel(char* label)
   cMessage = macCopyString0(wxItemStripLabel(label));
   if (!cHidden) {
     Paint();
+    FlushDisplay();
   }
 }
 

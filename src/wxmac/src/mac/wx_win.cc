@@ -1499,6 +1499,14 @@ int wxWindow::Track(Point p)
   return PtInRect(p, &r);
 }
 
+void wxWindow::FlushDisplay()
+{
+  if (cMacDC) {
+    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+    QDFlushPortBuffer(theMacGrafPort, NULL);
+  }
+}
+
 //-----------------------------------------------------------------------------
 void wxWindow::AddWhiteRgn(RgnHandle r)
 {
@@ -1834,4 +1842,10 @@ void wxWindow::MaybeMoveControls()
 wxWindow *wxWindow::EnterLeaveTarget()
 {
   return this;
+}
+
+
+void wxFlushMacDisplay(void)
+{
+  QDFlushPortBuffer(wxGetGrafPtr(), NULL);  
 }

@@ -356,6 +356,8 @@ class wxWindow: public wxbWindow
   virtual wxWindow *EnterLeaveTarget();
 
   ControlHandle GetRootControl(void);
+
+  void FlushDisplay(void);
 	
  protected:
   /* ChildrenInternalGray is a local abstraction which calls
@@ -391,6 +393,8 @@ class wxWindow: public wxbWindow
 
   friend class wxArea;
 };
+
+void wxFlushMacDisplay(void);
 
 #endif /* IN_CPROTO */
 #endif

@@ -697,6 +697,9 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
 
   ::SetGWorld(savep, savegd);
   
+  if (canvas)
+    canvas->FlushDisplay();
+
   return ok;
 }
 

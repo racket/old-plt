@@ -19,7 +19,7 @@
     (class* wx-canvas%  (wx-group-box<%>)
       (init mred proxy style parent label style-again _font)
 
-      (define font (or _font normal-control-font))
+      (define font (or _font small-control-font))
       
       (inherit get-dc get-client-size get-mred
 	       set-min-width set-min-height

@@ -11,8 +11,14 @@
   
 
   ;; add the new settings
-  (basis:add-setting 'MrEd (basis:copy-setting (basis:find-setting-named 'MzScheme)))
-  (basis:add-setting '|MrEd Debug| (basis:copy-setting (basis:find-setting-named '|MzScheme Debug|)))
+  (basis:add-setting 
+   (let ([s (basis:copy-setting (basis:find-setting-named "MzScheme"))])
+     (basis:set-setting-name! s "MrEd")
+     s))
+  (basis:add-setting 
+   (let ([s (basis:copy-setting (basis:find-setting-named "MzScheme Debug"))])
+     (basis:set-setting-name! s "MrEd Debug")
+     s))
 
   (fw:application:current-app-name "DrScheme")
   (fw:version:add-spec 'd 1)
@@ -22,9 +28,6 @@
   (fw:preferences:set-default 'drscheme:settings
 			       (basis:get-default-setting)
 			       basis:setting?)
-  (fw:preferences:set-default 'drscheme:setting-name
-			       (basis:get-default-setting-name)
-			       symbol?)
   (fw:preferences:set-un/marshall 'drscheme:settings
 				  (compose cdr vector->list struct->vector)
 				  (lambda (x) 

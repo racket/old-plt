@@ -26,16 +26,9 @@
 		     
 		     (unless (<= (length file-stack)
 				 (length loading-messages))
-		       (let ([new-msg (make-object message% "" loading-frame)])
-			 (printf "width: ~a height: ~a~n" 
-				 (send new-msg min-width)
-				 (send new-msg min-height))
+		       (let ([new-msg (make-object message% " " loading-frame)])
 			 (send new-msg stretchable-width #t)
-			 (yield) (sleep) (yield) (sleep) (yield) (sleep)
-			 (yield) (sleep) (yield) (sleep) (yield) (sleep)
-			 (yield) (sleep) (yield) (sleep) (yield) (sleep)
-			 (yield) (sleep) (yield) (sleep) (yield) (sleep)
-			 (yield) (sleep) (yield) (sleep) (yield) (sleep)
+			 (yield)
 			 (set! loading-messages
 			       (append loading-messages (list new-msg)))))
 
@@ -56,13 +49,6 @@
 			 (set! old-message (send (list-ref loading-messages index) get-label))
 			 (send (list-ref loading-messages index) set-label
 			       (format "loading: ~a because ~a" filename reason))
-			 (printf "~a: ~s~n" index (format "loading: ~a because ~a" filename reason))
-			 (yield) (sleep) (yield) (sleep) (yield) (sleep)
-			 (yield) (sleep) (yield) (sleep) (yield) (sleep)
-			 (yield) (sleep) (yield) (sleep) (yield) (sleep)
-			 (yield) (sleep) (yield) (sleep) (yield) (sleep)
-			 (yield) (sleep) (yield) (sleep) (yield) (sleep)
-			 
 			 (let ([anss (call-with-values (lambda () (ol filename)) list)])
 			   (hash-table-put! (get-value-ht) sym anss)
 			   (send (list-ref loading-messages index) set-label old-message)
@@ -95,8 +81,6 @@
 			(load/save filename (format "~a was modified" reason))
 			(apply values (hash-table-get (get-value-ht) sym))))
 		  (load/save filename "never before loaded")))))]
-
-   (global-defined-value 'f loading-frame)
 
    (send loading-frame set-alignment 'left 'center)
    (send loading-frame show #t)

@@ -8,25 +8,6 @@
   ((flip-solid-rectangle vp) (make-posn 10 10) 80 80)
   (viewport->snip vp))
 
-(let ([v (open-viewport "Color Tester" 100 200)])
-  ((draw-solid-rectangle v) (make-posn 10 10) 80 80 (make-rgb 1 0 0))
-  ((draw-solid-ellipse v) (make-posn 10 10) 80 80 (make-rgb 0 1 0))
-  ((draw-line v) (make-posn 10 10) (make-posn 90 90) (make-rgb 0 0 1))
-  ((draw-string v) (make-posn 10 100) "red rectangle")
-  ((draw-string v) (make-posn 10 120) "green ellipse")
-  ((draw-string v) (make-posn 10 140) "blue line")
-  (get-mouse-click v)
-
-  ((draw-viewport v) (make-rgb 1 0 0))
-  ((draw-string v) (make-posn 10 100) "solid red")
-  (get-mouse-click v)
-
-  ((draw-viewport v))
-  ((clear-string v) (make-posn 10 100) "solid black")
-  (get-mouse-click v)
-
-  (close-viewport v))
-
 (let ([v (open-viewport "Tester" 200 200)])
   ((draw-string v) (make-posn 0 20) "Reversed X; click to continue")
   ((draw-string v) (make-posn 0 40) "(busy-waiting right now!)")
@@ -90,7 +71,26 @@
   (get-mouse-click v)
 
   (close-viewport v))
-  
+
+(let ([v (open-viewport "Color Tester" 100 200)])
+  ((draw-solid-rectangle v) (make-posn 10 10) 80 80 (make-rgb 1 0 0))
+  ((draw-solid-ellipse v) (make-posn 10 10) 80 80 (make-rgb 0 1 0))
+  ((draw-line v) (make-posn 10 10) (make-posn 90 90) (make-rgb 0 0 1))
+  ((draw-string v) (make-posn 10 100) "red rectangle")
+  ((draw-string v) (make-posn 10 120) "green ellipse")
+  ((draw-string v) (make-posn 10 140) "blue line")
+  (get-mouse-click v)
+
+  ((draw-viewport v) (make-rgb 1 0 0))
+  ((draw-string v) (make-posn 10 100) "solid red")
+  (get-mouse-click v)
+
+  ((draw-viewport v))
+  ((clear-string v) (make-posn 10 100) "solid black")
+  (get-mouse-click v)
+
+  (close-viewport v))
+
 (local [(define width 500)
 	(define height 500)
 	(define pixmap-filename (build-path (collection-path "icons") "plt.gif"))

@@ -1,7 +1,7 @@
 (unit/sig drscheme:face^
   (import [mred : mred-interfaces^])
   
-  (define unitI (interface ()
+  (define unit<%> (interface ()
 		  get-filename
 		  get-collections
 
@@ -23,12 +23,12 @@
 		  remove-export))
 
   
-  (define snipInfoI (interface ()
+  (define snipInfo<%> (interface ()
 		      get-name))
 
-  (define compound-unitI (interface (unitI)))
+  (define compound-unit<%> (interface (unit<%>)))
   
-  (define unit-displayI (interface ()
+  (define unit-display<%> (interface ()
 			  after-change-name
 			  after-remove-import
 			  after-remove-export
@@ -36,8 +36,8 @@
 			  after-add-export
 			  get-unit))
 
-  (define unit-frameI (interface (unit-displayI)))
-  (define unit-snipI (interface (unit-displayI)))
-  (define compound-unit-frameI (interface (unit-frameI)))
-  (define compound-unit-snipI (interface (unit-snipI))))
+  (define unit-frame<%> (interface (unit-display<%>)))
+  (define unit-snip<%> (interface (unit-display<%>)))
+  (define compound-unit-frame<%> (interface (unit-frame<%>)))
+  (define compound-unit-snip<%> (interface (unit-snip<%>))))
 				

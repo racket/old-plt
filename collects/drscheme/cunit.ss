@@ -63,7 +63,7 @@
      fw:frame:pasteboard-info%))
   
   (define frame%
-    (class* super-frame% (drscheme:face:compound-unit-frameI) (unit)
+    (class* super-frame% (drscheme:face:compound-unit-frame<%>) (unit)
       (inherit show show-menu get-area-container get-editor)
       (rename [super-on-close on-close])
       (override
@@ -146,7 +146,7 @@
 	(show #t))))
   
   (define snip%
-    (class* drscheme:graph:node-snip% (drscheme:face:compound-unit-snipI) (unit)
+    (class* drscheme:graph:node-snip% (drscheme:face:compound-unit-snip<%>) (unit)
       (inherit width height set-width set-height invalidate-to)
       (rename [super-draw draw])
       (override
@@ -231,7 +231,7 @@
   (define compound-unit%
     (let ([f% frame%]
 	  [s% snip%])
-      (class* drscheme:unit:unit% (drscheme:face:compound-unitI) (fn . cn)
+      (class* drscheme:unit:unit% (drscheme:face:compound-unit<%>) (fn . cn)
 	(override
 	  [buffer% project-pasteboard%]
 	  [frame% f%]

@@ -81,12 +81,12 @@
 		  (f (make-posn (- (posn-x p) r) (- (posn-y p) r)) d d c)))
 	      x))))
   
-  (define (start WIDTH HEIGHT)
-    (check-arg 'start (and (integer? WIDTH) (> WIDTH 0)) "positive integer" "first" WIDTH)
-    (check-arg 'start (and (integer? HEIGHT) (> HEIGHT 0)) "positive integer" "second" HEIGHT)
+  (define (start width height)
+    (check-arg 'start (and (integer? width) (> width 0)) "positive integer" "first" width)
+    (check-arg 'start (and (integer? height) (> height 0)) "positive integer" "second" height)
     ;; --- 
     (open-graphics)
-    (let ((current-window (open-viewport "Canvas" WIDTH HEIGHT)))
+    (let ((current-window (open-viewport "Canvas" width height)))
       (set! @VP current-window)
       (set! %clear-all (clear-viewport current-window))
       ;; --- 

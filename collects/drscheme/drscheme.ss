@@ -41,7 +41,7 @@
      (parameterize ([current-eventspace (make-eventspace)])
        (start-help-desk)))))
 
-(define (U)
+(define (u)
   (when drscheme-custodian (custodian-shutdown-all drscheme-custodian))
   (set! drscheme-custodian (make-custodian))
   (parameterize ([current-custodian drscheme-custodian]
@@ -57,5 +57,5 @@
    (require-library "rep.ss" "readline")
    (read-eval-print-loop)]
   [else
-   (U)
+   (u)
    (yield (make-semaphore 0))])

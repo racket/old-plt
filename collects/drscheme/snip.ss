@@ -54,7 +54,7 @@
 				"BLACK" 0 'solid)]
 		[body-brush (send mred:the-brush-list find-or-create-brush
 				  "BLACK" 'solid)])
-	   (lambda (dc x y left top right bottom dx dy drawCaret)
+	   (lambda (dc x y left top right bottom dx dy draw-caret)
 	     (let ([orig-pen (send dc get-pen)]
 		   [orig-brush (send dc get-brush)])
 	       (send dc set-pen body-pen)
@@ -142,7 +142,7 @@
 			    "GRAY" 0 'solid)
 		      (send mred:the-brush-list find-or-create-brush
 			    "GRAY" 'solid)))])
-	     (lambda (dc x y left top right bottom dx dy drawCaret)
+	     (lambda (dc x y left top right bottom dx dy draw-caret)
 	       (let* ([shadow-size (max 1 (floor (/ allowed-size 10)))]
 		      [size (-  allowed-size shadow-size)]
 		      [line-width (/ size 3)]

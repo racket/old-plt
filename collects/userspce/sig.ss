@@ -45,7 +45,6 @@
    get-default-setting-name
 
    zodiac-vocabulary?
-   has-set!?
    
    error-display/debug-handler
    current-vocabulary
@@ -55,9 +54,9 @@
 
    drscheme-print
 
-   INITIAL-LINE
-   INITIAL-COLUMN
-   INITIAL-OFFSET
+   initial-line
+   initial-column
+   initial-offset
    
    format-source-loc
    
@@ -75,9 +74,10 @@
 
    (struct process-finish (error?))
 
-   level->number
-   number->level
-   (struct setting (vocabulary-symbol
+   setting-name->number
+   number->setting
+   (struct setting (name
+		    vocabulary-symbol
 		    case-sensitive?
 		    allow-set!-on-undefined?
 		    unmatched-cond/case-is-error?

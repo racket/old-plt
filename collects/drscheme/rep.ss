@@ -44,18 +44,18 @@
 ;    (define global-scheme-interaction-mode-keymap (make-object mred:keymap%))
 ;    (setup-global-scheme-interaction-mode-keymap global-scheme-interaction-mode-keymap)
 
-  (define WELCOME-DELTA (make-object mred:style-delta% 'change-family 'decorative))
-  (define CLICK-DELTA (make-object mred:style-delta%))
-  (define RED-DELTA (make-object mred:style-delta%))
-  (send* CLICK-DELTA
-    (copy WELCOME-DELTA)
+  (define welcome-delta (make-object mred:style-delta% 'change-family 'decorative))
+  (define click-delta (make-object mred:style-delta%))
+  (define red-delta (make-object mred:style-delta%))
+  (send* click-delta
+    (copy welcome-delta)
     (set-delta-foreground "BLUE")
     (set-delta 'change-underline #t))
-  (send* RED-DELTA
-    (copy WELCOME-DELTA)
+  (send* red-delta
+    (copy welcome-delta)
     (set-delta-foreground "RED"))
-  (define WARNING-STYLE-DELTA (make-object mred:style-delta% 'change-bold))
-  (send* WARNING-STYLE-DELTA
+  (define warning-style-delta (make-object mred:style-delta% 'change-bold))
+  (send* warning-style-delta
     (set-delta-foreground "BLACK")
     (set-delta-background "YELLOW"))
 
@@ -220,9 +220,10 @@
      'mred:console-previous-exprs
      marshall unmarshall))
   
-  (define (setting-has-mred? name)
-    (or (eq? 'MrEd name)
-	(eq? '|MrEd Debug| name)))
+  (define (setting-has-mred? setting)
+    (let ([name (basis:setting-name setting)])
+      (or (string=? "MrEd" name)
+	  (string=? "MrEd Debug" name))))
 
   (define (make-edit% super%)
     (class super% args
@@ -604,7 +605,7 @@
 	      "WARNING: Interactions window is out of sync with the definitions window. Click Execute."
 	      start start)
 	     (let ([end (last-position)])
-	       (change-style WARNING-STYLE-DELTA start end)))
+	       (change-style warning-style-delta start end)))
 	   (end-edit-sequence))])
       (override
 	[do-eval
@@ -661,7 +662,6 @@
 	    [else
 	     (set! in-evaluation? #t)
 	     (semaphore-post in-evaluation-semaphore)
-	     (printf "do many buffer evals~n")
 	     (send (get-top-level-window) disable-evaluation)
 	     (reset-break-state)
 	     (cleanup-transparent-io)
@@ -776,7 +776,6 @@
 		(lambda () 
 		  (set! killed-callback saved-killed-callback)
 		  (set! error-escape-k saved-error-escape-k)
-		  (printf "running cleanup~n")
 		  (cleanup)))))
 
 	   (semaphore-wait in-evaluation-semaphore)
@@ -836,12 +835,10 @@
 	   (lambda (thunk)
 	     (dynamic-wind
 	      (lambda ()
-		(printf "calling update-running.3~n")
 		(update-running #t))
 	      (lambda ()
 		(thunk))
 	      (lambda ()
-		(printf "calling update-running.4~n")
 		(update-running #f))))]
 
 	  [start-callback? #f]
@@ -924,11 +921,10 @@
       (private
 	[initialize-parameters
 	 (lambda ()
-	   (let ([setting (fw:preferences:get 'drscheme:settings)]
-		 [setting-name (fw:preferences:get 'drscheme:setting-name)])
+	   (let ([setting (fw:preferences:get 'drscheme:settings)])
 	     (basis:initialize-parameters
 	      user-custodian
-	      (if (setting-has-mred? setting-name)
+	      (if (setting-has-mred? setting)
 		  (list 'mred)
 		  (list))
 	      setting)
@@ -974,9 +970,9 @@
 				 'string)))
 		       (if (and (basis:zodiac-vocabulary? user-setting)
 				(let* ([p (open-input-file filename)]
-				       [loc (zodiac:make-location basis:INITIAL-LINE
-								  basis:INITIAL-COLUMN
-								  basis:INITIAL-OFFSET
+				       [loc (zodiac:make-location basis:initial-line
+								  basis:initial-column
+								  basis:initial-offset
 								  filename)]
 				       [chars (begin0
 					       (list (read-char p) (read-char p) (read-char p) (read-char p))
@@ -1047,24 +1043,19 @@
 			    (cond
 			     [(and (= depth 1)
 				   (not in-evaluation?))
-			      (printf "event-dispatch-handler.1 in-evaluation? ~a depth ~a~n" in-evaluation? depth)
 			      (system
 			       (lambda ()
 				 (reset-break-state)
 				 (running-callback-start)
 				 (set! depth (+ depth 1))))
 
-			      (printf "event-dispatch-handler.2 started running callback~n")
 			      (protect-user-evaluation
 			       (lambda ()
 				 (system
 				  (lambda ()
-				    (printf "event-dispatch-handler.4 finished handling event~n")
 				    (running-callback-stop)
-				    (printf "event-dispatch-handler.5 stopped running~n")
 				    (set! depth (- depth 1)))))
 			       (lambda ()
-				 (printf "event-dispatch-handler.3 handling event~n")
 				 (mzlib:thread:dynamic-enable-break
 				  (lambda ()
 				    (primitive-dispatch-handler eventspace)))))]
@@ -1091,15 +1082,14 @@
 	   (set-prompt-mode #f)
 	   (set-resetting #f)
 	   (set-position (last-position) (last-position))
-	   (insert-delta "Language: " WELCOME-DELTA)
+	   (insert-delta "Language: " welcome-delta)
 	   (let ([setting (fw:preferences:get 'drscheme:settings)])
-	     (insert-delta 
-	      (symbol->string (fw:preferences:get 'drscheme:setting-name))
-	      RED-DELTA)
-	     (unless (equal? (basis:find-setting-named (fw:preferences:get 'drscheme:setting-name))
-			     (fw:preferences:get 'drscheme:settings))
-	       (insert-delta " Custom" RED-DELTA)))
-	   (insert-delta (format ".~n") WELCOME-DELTA)
+	     (insert-delta (basis:setting-name setting) red-delta)
+	     (unless (equal? (basis:find-setting-named
+			      (basis:setting-name setting))
+			     setting)
+		     (insert-delta " Custom" red-delta)))
+	   (insert-delta (format ".~n") welcome-delta)
 	   (set! repl-initially-active? #t)
 	   (end-edit-sequence)
 
@@ -1112,20 +1102,20 @@
 	 (lambda ()
 	   (super-initialize-console)
 	   
-	   (insert-delta "Welcome to " WELCOME-DELTA)
+	   (insert-delta "Welcome to " welcome-delta)
 	   (let-values ([(before after)
-			 (insert-delta "DrScheme" CLICK-DELTA)])
+			 (insert-delta "DrScheme" click-delta)])
 	     (insert-delta (format ", version ~a.~n" (fw:version:version))
-			   WELCOME-DELTA)
+			   welcome-delta)
 	     (set-clickback before after 
 			    (lambda args (drscheme:app:about-drscheme))
-			    CLICK-DELTA))
+			    click-delta))
 	 
 	   (if (or (fw:preferences:get 'drscheme:repl-always-active)
 		   (not (send (ivar (get-top-level-window) interactions-edit) get-filename)))
 	       (reset-console)
 	       (begin 
-		 (insert-delta "Execute has not been clicked." WARNING-STYLE-DELTA)
+		 (insert-delta "Execute has not been clicked." warning-style-delta)
 		 (lock #t))))])
       (sequence
 	(apply super-init args))))

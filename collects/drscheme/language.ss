@@ -28,7 +28,7 @@
 			 (when (procedure? unregister-callback)
 			   (unregister-callback)))])
 		    (sequence (super-init name)))]
-	 [language-levels (map (lambda (x) (symbol->string (vector-ref x 0))) basis:settings)]
+	 [language-levels (map basis:setting-name basis:settings)]
 	 [f (make-object dialog% "Language")]
 	 [main (make-object mred:vertical-pane% f)]
 	 [language-panel (make-object mred:horizontal-panel% main '(border))]
@@ -65,14 +65,10 @@
 			    language-panel
 			    (lambda (choice evt)
 			      (fw:preferences:set
-			       'drscheme:setting-name
-			       (string->symbol (send choice get-string-selection)))
-			      (fw:preferences:set
 			       'drscheme:settings
 			       (basis:copy-setting
-				(basis:find-setting-named
-				 (basis:number->level
-				  (send choice get-selection)))))))]
+				(basis:number->setting
+				 (send choice get-selection))))))]
 	 [custom-message (make-object mred:message% "Custom" language-panel)]
 	 [right-align
 	  (opt-lambda (mo panel)
@@ -190,9 +186,8 @@
 		  (lambda (l)
 		    (let ([not-custom?
 			   (compare-setting-to-gui
-			    (basis:find-setting-named
-			     (basis:number->level
-			      (send language-choice get-selection))))])
+			    (basis:number->setting
+			     (send language-choice get-selection)))])
 		      (if not-custom?
 			  (list language-choice)
 			  (list language-choice custom-message))))))]
@@ -240,7 +235,7 @@
       (send language-choice stretchable-width #f)
       (send printing stretchable-width #f)
       (update-to (fw:preferences:get 'drscheme:settings))
-      (show-specifics (not (ormap (lambda (x) (compare-setting-to-gui (vector-ref x 1))) basis:settings)))
+      (show-specifics (not (ormap compare-setting-to-gui basis:settings)))
       (for-each (lambda (x) (send x stretchable-height #f))
 		(list language-panel ok-panel main))
       (send language-panel set-alignment 'center 'center)

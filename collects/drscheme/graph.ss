@@ -4,12 +4,12 @@
 	  [mzlib:string : mzlib:string^]
 	  [mzlib:function : mzlib:function^])
 	  
-  (define WHITE-BRUSH (send mred:the-brush-list find-or-create-brush "WHITE" 'solid))
-  (define RED-BRUSH (send mred:the-brush-list find-or-create-brush "RED" 'solid))
-  (define BLACK-PEN (send mred:the-pen-list find-or-create-pen "BLACK" 1 'solid))
-  (define XOR-PEN (send mred:the-pen-list find-or-create-pen "BLACK" 1 'xor))
-  (define BLACK (make-object mred:color% "BLACK"))
-  (define WHITE (make-object mred:color% "WHITE"))
+  (define white-brush (send mred:the-brush-list find-or-create-brush "WHITE" 'solid))
+  (define red-brush (send mred:the-brush-list find-or-create-brush "RED" 'solid))
+  (define black-pen (send mred:the-pen-list find-or-create-pen "BLACK" 1 'solid))
+  (define xor-pen (send mred:the-pen-list find-or-create-pen "BLACK" 1 'xor))
+  (define black (make-object mred:color% "BLACK"))
+  (define white (make-object mred:color% "WHITE"))
 
   (define pasteboard<%> (interface (fw:editor:basic<%>)))
 
@@ -170,7 +170,7 @@
 		 (lambda ()
 		   (let ([dc (get-dc)])
 		     (save-dc)
-		     (send dc set-pen XOR-PEN)
+		     (send dc set-pen xor-pen)
 		     (send dc draw-line from-x from-y last-x last-y)
 		     (set! from-x #f)
 		     (set! from-y #f)
@@ -194,7 +194,7 @@
 		     (set! last-y y)))]
 		[(and from-x (send evt dragging?))
 		 (save-dc)
-		 (send dc set-pen XOR-PEN)
+		 (send dc set-pen xor-pen)
 		 (send dc draw-line from-x from-y last-x last-y)
 		 (set! last-x x)
 		 (set! last-y y)
@@ -338,8 +338,8 @@
 		     (void))])
 	   (lambda (before dc left top right bottom dx dy draw-caret)
 	     (unless before
-	       (send dc set-pen BLACK-PEN)
-	       (send dc set-brush RED-BRUSH)
+	       (send dc set-pen black-pen)
+	       (send dc set-brush red-brush)
 	       (let* ([draw-children
 		       (lambda (snip)
 			 (let*-values ([(sl st sr sb) (get-rectangle snip)]
@@ -513,10 +513,10 @@
 			      [(old-brush) (send dc get-brush)]
 			      [(old-text-foreground) (send dc get-text-foreground)]
 			      [(old-text-background) (send dc get-text-background)])
-		   (send dc set-pen BLACK-PEN)
-		   (send dc set-brush WHITE-BRUSH)
-		   (send dc set-text-foreground BLACK)
-		   (send dc set-text-background WHITE)
+		   (send dc set-pen black-pen)
+		   (send dc set-brush white-brush)
+		   (send dc set-text-foreground black)
+		   (send dc set-text-background white)
 		   (if (< old-width 0)
 		       (send dc set-clipping-region x y width height)
 		       (let* ([old-right (+ left old-width)]

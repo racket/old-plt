@@ -11,9 +11,9 @@
 	  [mzlib:pretty-print : mzlib:pretty-print^]
 	  [mzlib:function : mzlib:function^])
 
-  (define INITIAL-LINE 1)
-  (define INITIAL-COLUMN 1)
-  (define INITIAL-OFFSET 0)
+  (define initial-line 1)
+  (define initial-column 1)
+  (define initial-offset 0)
 
   (define original-output-port (current-output-port))
   (define (printf . args)
@@ -30,7 +30,8 @@
   (define this-program (with-handlers ([void (lambda (x) "mzscheme")])
 			 (global-defined-value 'program)))
 
-  (define-struct/parse setting (vocabulary-symbol
+  (define-struct/parse setting (name
+				vocabulary-symbol
 				case-sensitive?
 				allow-set!-on-undefined?
 				unmatched-cond/case-is-error?
@@ -48,116 +49,121 @@
 				printing
 				define-argv?))
 
-  ;; settings : (list-of (vector symbol setting))
+  ;; settings : (list-of setting)
   (define settings
-    (list (vector 'Beginner (make-setting/parse
-			     `((vocabulary-symbol beginner)
-			       (case-sensitive? #t)
-			       (allow-set!-on-undefined? #f)
-			       (unmatched-cond/case-is-error? #t)
-			       (allow-improper-lists? #f)
-			       (allow-reader-quasiquote? #f)
-			       (sharing-printing? #f)
-			       (abbreviate-cons-as-list? #f)
-			       (signal-undefined #t)
-			       (signal-not-boolean #t)
-			       (eq?-only-compares-symbols? #t)
-			       (<=-at-least-two-args #t)
-			       (disallow-untagged-inexact-numbers #f)
-			       (print-tagged-inexact-numbers #t)
-			       (whole/fractional-exact-numbers #f)
-			       (printing constructor-style)
-			       (define-argv? #f))))
-	  (vector 'Intermediate (make-setting/parse
-				 `((vocabulary-symbol intermediate)
-				   (case-sensitive? #t)
-				   (allow-set!-on-undefined? #f)
-				   (unmatched-cond/case-is-error? #t)
-				   (allow-improper-lists? #f)
-				   (allow-reader-quasiquote? #f)
-				   (sharing-printing? #f)
-				   (abbreviate-cons-as-list? #t)
-				   (signal-undefined #t)
-				   (signal-not-boolean #t)
-				   (eq?-only-compares-symbols? #t)
-				   (<=-at-least-two-args #t)
-				   (disallow-untagged-inexact-numbers #f)
-				   (print-tagged-inexact-numbers #t)
-				   (whole/fractional-exact-numbers #f)
-				   (printing constructor-style)
-				   (define-argv? #f))))
-	  (vector 'Advanced (make-setting/parse
-			     `((vocabulary-symbol advanced)
-			       (case-sensitive? #t)
-			       (allow-set!-on-undefined? #f)
-			       (unmatched-cond/case-is-error? #t)
-			       (allow-improper-lists? #f)
-			       (allow-reader-quasiquote? #t)
-			       (sharing-printing? #t)
-			       (abbreviate-cons-as-list? #t)
-			       (signal-undefined #t)
-			       (signal-not-boolean #f)
-			       (eq?-only-compares-symbols? #f)
-			       (<=-at-least-two-args #t)
-			       (disallow-untagged-inexact-numbers #f)
-			       (print-tagged-inexact-numbers #t)
-			       (whole/fractional-exact-numbers #f)
-			       (printing constructor-style)
-			       (define-argv? #f))))
-	  (vector 'MzScheme (make-setting/parse
-			     `((vocabulary-symbol mzscheme)
-			       (case-sensitive? #f)
-			       (allow-set!-on-undefined? #f)
-			       (unmatched-cond/case-is-error? #f)
-			       (allow-improper-lists? #t)
-			       (allow-reader-quasiquote? #t)
-			       (sharing-printing? #f)
-			       (abbreviate-cons-as-list? #t)
-			       (signal-undefined #f)
-			       (signal-not-boolean #f)
-			       (eq?-only-compares-symbols? #f)
-			       (<=-at-least-two-args #f)
-			       (disallow-untagged-inexact-numbers #f)
-			       (print-tagged-inexact-numbers #f)
-			       (whole/fractional-exact-numbers #f)
-			       (printing r4rs-style)
-			       (define-argv? #t))))
-	  (vector '|MzScheme Debug| (make-setting/parse
-				     `((vocabulary-symbol mzscheme-debug)
-				       (case-sensitive? #f)
-				       (allow-set!-on-undefined? #f)
-				       (unmatched-cond/case-is-error? #f)
-				       (allow-improper-lists? #t)
-				       (allow-reader-quasiquote? #t)
-				       (sharing-printing? #f)
-				       (abbreviate-cons-as-list? #t)
-				       (signal-undefined #f)
-				       (signal-not-boolean #f)
-				       (eq?-only-compares-symbols? #f)
-				       (<=-at-least-two-args #f)
-				       (disallow-untagged-inexact-numbers #f)
-				       (print-tagged-inexact-numbers #f)
-				       (whole/fractional-exact-numbers #f)
-				       (printing r4rs-style)
-				       (define-argv? #t))))))
+    (list (make-setting/parse
+	   `((name "Beginner")
+	     (vocabulary-symbol beginner)
+	     (case-sensitive? #t)
+	     (allow-set!-on-undefined? #f)
+	     (unmatched-cond/case-is-error? #t)
+	     (allow-improper-lists? #f)
+	     (allow-reader-quasiquote? #f)
+	     (sharing-printing? #f)
+	     (abbreviate-cons-as-list? #f)
+	     (signal-undefined #t)
+	     (signal-not-boolean #t)
+	     (eq?-only-compares-symbols? #t)
+	     (<=-at-least-two-args #t)
+	     (disallow-untagged-inexact-numbers #f)
+	     (print-tagged-inexact-numbers #t)
+	     (whole/fractional-exact-numbers #f)
+	     (printing constructor-style)
+	     (define-argv? #f)))
+	  (make-setting/parse
+	   `((name "Intermediate")
+	     (vocabulary-symbol intermediate)
+	     (case-sensitive? #t)
+	     (allow-set!-on-undefined? #f)
+	     (unmatched-cond/case-is-error? #t)
+	     (allow-improper-lists? #f)
+	     (allow-reader-quasiquote? #f)
+	     (sharing-printing? #f)
+	     (abbreviate-cons-as-list? #t)
+	     (signal-undefined #t)
+	     (signal-not-boolean #t)
+	     (eq?-only-compares-symbols? #t)
+	     (<=-at-least-two-args #t)
+	     (disallow-untagged-inexact-numbers #f)
+	     (print-tagged-inexact-numbers #t)
+	     (whole/fractional-exact-numbers #f)
+	     (printing constructor-style)
+	     (define-argv? #f)))
+	  (make-setting/parse
+	   `((name "Advanced")
+	     (vocabulary-symbol advanced)
+	     (case-sensitive? #t)
+	     (allow-set!-on-undefined? #f)
+	     (unmatched-cond/case-is-error? #t)
+	     (allow-improper-lists? #f)
+	     (allow-reader-quasiquote? #t)
+	     (sharing-printing? #t)
+	     (abbreviate-cons-as-list? #t)
+	     (signal-undefined #t)
+	     (signal-not-boolean #f)
+	     (eq?-only-compares-symbols? #f)
+	     (<=-at-least-two-args #t)
+	     (disallow-untagged-inexact-numbers #f)
+	     (print-tagged-inexact-numbers #t)
+	     (whole/fractional-exact-numbers #f)
+	     (printing constructor-style)
+	     (define-argv? #f)))
+	  (make-setting/parse
+	   `((name "MzScheme")
+	     (vocabulary-symbol mzscheme)
+	     (case-sensitive? #f)
+	     (allow-set!-on-undefined? #f)
+	     (unmatched-cond/case-is-error? #f)
+	     (allow-improper-lists? #t)
+	     (allow-reader-quasiquote? #t)
+	     (sharing-printing? #f)
+	     (abbreviate-cons-as-list? #t)
+	     (signal-undefined #f)
+	     (signal-not-boolean #f)
+	     (eq?-only-compares-symbols? #f)
+	     (<=-at-least-two-args #f)
+	     (disallow-untagged-inexact-numbers #f)
+	     (print-tagged-inexact-numbers #f)
+	     (whole/fractional-exact-numbers #f)
+	     (printing r4rs-style)
+	     (define-argv? #t)))
+	  (make-setting/parse
+	   `((name "MzScheme Debug")
+	     (vocabulary-symbol mzscheme-debug)
+	     (case-sensitive? #f)
+	     (allow-set!-on-undefined? #f)
+	     (unmatched-cond/case-is-error? #f)
+	     (allow-improper-lists? #t)
+	     (allow-reader-quasiquote? #t)
+	     (sharing-printing? #f)
+	     (abbreviate-cons-as-list? #t)
+	     (signal-undefined #f)
+	     (signal-not-boolean #f)
+	     (eq?-only-compares-symbols? #f)
+	     (<=-at-least-two-args #f)
+	     (disallow-untagged-inexact-numbers #f)
+	     (print-tagged-inexact-numbers #f)
+	     (whole/fractional-exact-numbers #f)
+	     (printing r4rs-style)
+	     (define-argv? #t)))))
 
   (define (snoc x y) (append y (list x)))
 
   ;; add-setting : (symbol setting -> void)
-  (define (add-setting name setting)
-    (set! settings (snoc (vector name setting) settings)))
+  (define (add-setting setting)
+    (set! settings (snoc setting settings)))
 
-  ;; find-setting-named : symbol -> setting
+  ;; find-setting-named : string -> setting
   ;; effect: raises an exception if no setting named by the symbol exists
   (define (find-setting-named name)
-    (unless (symbol? name)
+    (unless (string? name)
       (error 'find-setting-named "expected symbol, got ~e" name))
     (let loop ([settings settings])
       (cond
 	[(null? settings) (error 'find-setting-named "no setting named ~e" name)]
-	[else (let ([setting (car settings)])
-		(if (eq? name (vector-ref setting 0))
-		    (vector-ref setting 1)
+	[else (let* ([setting (car settings)])
+		(if (string=? name (setting-name setting))
+		    setting
 		    (loop (cdr settings))))])))
 		    
 
@@ -169,37 +175,30 @@
       (apply make-setting (cdr (vector->list (struct->vector x))))))
   
   ;; get-default-setting : (-> setting)
-  (define (get-default-setting) (copy-setting (vector-ref (car settings) 1)))
+  (define (get-default-setting) (copy-setting (car settings)))
 
   ;; get-default-setting-name : (-> symbol)
-  (define (get-default-setting-name) (vector-ref (car settings) 0))
+  (define (get-default-setting-name) (setting-name (get-default-setting)))
 
-  ;; level->number : symbol -> int
-  (define level->number
+  ;; setting-name->number : string -> int
+  (define setting-name->number
     (lambda (name)
       (let loop ([n 0]
 		 [settings settings])
 	(cond
 	 [(null? settings) (error 'level->number "unexpected level: ~a" name)]
 	 [else (let ([setting (car settings)])
-		 (if (eq? name (vector-ref setting 0))
+		 (if (string=? name (setting-name setting))
 		     n
 		     (loop (+ n 1)
 			   (cdr settings))))]))))
 
-  ;; number->level : (int -> symbol)
-  (define number->level
-    (lambda (n)
-      (vector-ref (list-ref settings n) 0)))
+  ;; number->setting : (int -> symbol)
+  (define number->setting (lambda (n) (list-ref settings n)))
 
   ;; zodiac-vocabulary? : setting -> boolean
   (define (zodiac-vocabulary? setting)
     (not (eq? (setting-vocabulary-symbol setting) 'mzscheme)))
-
-  ;; has-set!? : symbol -> boolean
-  (define (has-set!? sym)
-    (not (or (eq? sym 'Intermediate)
-	     (eq? sym 'Beginner))))
 
   ;; r4rs-style-printing? : setting -> boolean
   (define (r4rs-style-printing? setting)
@@ -248,9 +247,9 @@
        (lambda ()
 	 (process/zodiac
 	  (zodiac:read port
-		       (zodiac:make-location INITIAL-LINE
-					     INITIAL-COLUMN
-					     INITIAL-OFFSET
+		       (zodiac:make-location initial-line
+					     initial-column
+					     initial-offset
 					     (path->complete-path filename))
 		       #t 1)
 	  f
@@ -460,7 +459,9 @@
 	       (eq? (current-namespace) (current-zodiac-namespace)))
 	  (let* ([z (let ([continuation-stack (current-continuation-marks aries:w-c-m-key)])
 		      (if (null? continuation-stack)
-			  (let ([loc (zodiac:make-location INITIAL-LINE INITIAL-COLUMN INITIAL-OFFSET 'eval)])
+			  (let ([loc (zodiac:make-location 
+				      initial-line initial-column initial-offset
+				      'eval)])
 			    (zodiac:make-zodiac 'mzrice-eval loc loc))
 			  (car continuation-stack)))]
 		 [answer (list (void))]

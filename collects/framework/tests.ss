@@ -17,6 +17,7 @@
    close-top-level-window
    
    button-push
+   set-radio-box!
    set-check-box!
    set-choice!
    keystroke  

@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.19 1999/03/10 04:07:08 robby Exp $
+;; $Id: testr.ss,v 1.20 1999/03/16 04:51:40 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -328,6 +328,23 @@
      'check-box 
      (find-object mred:original:check-box% in-cb)
      (lambda (cb) (send cb set-value state))))
+
+;; 
+;; RADIO-BOX 
+;;
+
+  (define (set-radio-box! in-cb state) 
+    (control-action
+     'test:set-radio-box!
+     'check-box 
+     (find-object mred:original:radio-box% in-cb)
+     (lambda (rb) 
+       (cond
+	[(string? state) (send rb set-string-selection state)]
+	[(number? state) (send rb set-selection state)]
+	[else (error 'test:set-radio-box!
+		     "expected a string or a number as second arg, got: ~e (other arg: ~e)"
+		     state in-cb)]))))
 
 ;;; CHOICE 
 

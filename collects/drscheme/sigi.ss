@@ -1,14 +1,14 @@
-(define bundleI
+(define bundle<%>
   (interface () insert-tree))
 
-(define bundle-namesI
-  (interface (bundleI) get-names))
+(define bundle-names<%>
+  (interface (bundle<%>) get-names))
 
-(define bundle-joinI
-  (interface (bundleI) get-children))
+(define bundle-join<%>
+  (interface (bundle<%>) get-children))
 
 (define bundle-names%
-  (class* unattached-nonsnip% (bundle-namesI) names
+  (class* unattached-nonsnip% (bundle-names<%>) names
     (inherit insert-into)
     (private
       [width 10]
@@ -43,7 +43,7 @@
       (super-init))))
 
 (define bundle-join%
-  (class* unattached-nonsnip% (bundle-joinI) children
+  (class* unattached-nonsnip% (bundle-join<%>) children
     (private
       [width 10]
       [height 10])

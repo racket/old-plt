@@ -31,7 +31,12 @@
 ;;;  Created and released initial version.
 
 (require-library "colors.ss" "html-generate")
+(require-library "mime.ss" "html-generate") ; added JBC 4/99
 (require-library "string.ss")
+
+; safe-html : takes a symbol or string or number and replaces all occurrences
+; of the dangerous characters with their HTML equivalents
+; ((union string symbol number) -> (union string number))
 
 (define safe-html
   (let ((translation-table '((#\< "&lt;")

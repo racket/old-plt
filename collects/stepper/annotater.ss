@@ -27,58 +27,6 @@
   
   (define if-temp (gensym "if-temp-"))
    
-  ; make-debug-info takes a list of variables and an expression and
-  ; creates a thunk closed over the expression and (if bindings-needed is true) 
-  ; the following information for each variable in kept-vars:
-  ; 1) the name of the variable (could actually be inferred)
-  ; 2) the value of the variable
-  ; 3) a mutator for the variable, if it appears in mutated-vars.
-  ; (The reason for the third of these is actually that it can be used
-  ;  in the stepper to determine which bindings refer to the same location,
-  ;  as per Matthew's suggestion.)
-  ; 
-  ; as an optimization:
-  ; note that the mutators are needed only for the bindings which appear in
-  ; closures; no location ambiguity can occur in the 'currently-live' bindings,
-  ; since at most one location can exist for any given stack binding.  That is,
-  ; using the source, I can tell whether variables referenced directly in the
-  ; continuation chain refer to the same location.
-  
-  ; okay, things have changed a bit.  For this iteration, I'm simply not going to 
-  ; store mutators.  later, I'll add them in.
- 
-  #| (define (make-debug-info vars bindings-needed source)
-    (let* ([kept-vars (if bindings-needed vars null)]
-	   [var-clauses (map (lambda (x) 
-			       (let ([var (varref-var x)])
-				 `(cons (#%quote ,var)
-					(cons ,var
-					      ,(if (varref-mutated? x)
-						   `(lambda (,mutator-gensym)
-						      (set! ,var ,mutator-gensym))
-						   `null)))))
-			     kept-vars)])
-      `(#%lambda () (list ,source ,@var-clauses)))) |#
-  
-  ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
-  ; a source expression (in the parsed zodiac format) and a set of varref/value pairs.
-  ; the varref contains a name and a boolean indicating whether the binding is 
-  ; top-level.  
-  
-  ; make-debug-info : ((list-of varref) bool z:zodiac (list-of varref) -> sexp)
-  
-  (define (make-debug-info vars bindings-needed source special-vars)
-    (let* ([kept-vars (append special-vars (if bindings-needed vars null))]
-           ; the reason I don't need var-set-union here is that these sets are guaranteed
-           ; not to overlap.
-	   [var-clauses (map (lambda (x) 
-			       (let ([var (varref-var x)])
-				 `(cons ,var
-					(cons ,x
-					      null))))
-			     kept-vars)])
-      `(#%lambda () (list ,source ,@var-clauses))))
-    
   ; var-set-union takes some lists of varrefs where no element appears twice in one list, and 
   ; forms a new list which is the union of the sets.  the elements are 
   ; compared using the first element of the varref
@@ -199,6 +147,69 @@
   (define (current-def-setter num)
     `(#%set! ,current-def-sym ,num))
            
+  ; debug-key: this key will be used as a key for the continuation marks.
+  
+  (define debug-key (gensym "debug-key-"))
+  
+  ; wrap creates the w-c-m expression.
+  
+  (define (wrap debug-info expr)
+    (let ([with-break `(#%begin (,break) ,expr)])
+      `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,with-break)))
+  
+  ; make-debug-info takes a list of variables and an expression and
+  ; creates a thunk closed over the expression and (if bindings-needed is true) 
+  ; the following information for each variable in kept-vars:
+  ; 1) the name of the variable (could actually be inferred)
+  ; 2) the value of the variable
+  ; 3) a mutator for the variable, if it appears in mutated-vars.
+  ; (The reason for the third of these is actually that it can be used
+  ;  in the stepper to determine which bindings refer to the same location,
+  ;  as per Matthew's suggestion.)
+  ; 
+  ; as an optimization:
+  ; note that the mutators are needed only for the bindings which appear in
+  ; closures; no location ambiguity can occur in the 'currently-live' bindings,
+  ; since at most one location can exist for any given stack binding.  That is,
+  ; using the source, I can tell whether variables referenced directly in the
+  ; continuation chain refer to the same location.
+  
+  ; okay, things have changed a bit.  For this iteration, I'm simply not going to 
+  ; store mutators.  later, I'll add them in.
+  
+  #| (define (make-debug-info vars bindings-needed expr)
+       (let* ([kept-vars (if bindings-needed vars null)]
+              [var-clauses (map (lambda (x) 
+                                  (let ([var (varref-var x)])
+                                    `(cons (#%quote ,var)
+                                           (cons ,var
+                                                 ,(if (varref-mutated? x)
+                                                      `(lambda (,mutator-gensym)
+                                                         (set! ,var ,mutator-gensym))
+                                                      `null)))))
+                                kept-vars)])
+         `(#%lambda () (list ,source ,@var-clauses)))) |#
+  
+  ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
+  ; a source expression (in the parsed zodiac format) and a set of varref/value pairs.
+  ; the varref contains a name and a boolean indicating whether the binding is 
+  ; top-level.  
+  
+  ; make-debug-info : ((list-of varref) bool z:zodiac (list-of varref) -> sexp)
+  
+  (define (make-debug-info vars bindings-needed source special-vars)
+    (let* ([kept-vars (append special-vars (if bindings-needed vars null))]
+           ; the reason I don't need var-set-union here is that these sets are guaranteed
+           ; not to overlap.
+           [var-clauses (map (lambda (x) 
+                               (let ([var (varref-var x)])
+                                 `(cons ,var
+                                        (cons ,x
+                                              null))))
+                             kept-vars)])
+      `(#%lambda () (list ,source ,@var-clauses))))
+  
+  
   ; How do we know which bindings we need?  For every lambda body, there is a
   ; `tail-spine' of expressions which is the smallest set including:
   ; a) the body itself
@@ -219,12 +230,32 @@
   (define (annotate text break)
     (local
 	(
-	 ; wrap creates the w-c-m expression.
-	 
-	 (define (wrap debug-info expr)
-	   (let ([with-break `(#%begin (,break) ,expr)])
-	     `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,with-break)))
-	 
+         (define read-exprs (read-exprs text))
+         
+         (define (find-read-expr offset)
+           (let search-exprs ([exprs read-exprs])
+             (let ([expr 
+                    (car (filter 
+                          (lambda (expr) 
+                            (< offset (z:location-offset (z:zodiac-finish expr))))
+                          exprs))])
+               (if (= offset (z:location-offset (z:zodiac-start expr)))
+                   expr
+                   (cond
+                     ((z:scalar? expr) (e:static-error "starting offset inside scalar:" offset))
+                     ((z:sequence? expr) 
+                      (let ([object (z:read-object expr)])
+                        (cond
+                          ((z:list? expr) (search-exprs object))
+                          ((z:vector? expr) 
+                           (search-exprs (vector->list object))) ; can source exprs be here?
+                          ((z:improper-list? expr)
+                           (search-exprs (search-exprs object))) ; can source exprs be here?
+                          (else (e:static-error "unknown expression type in sequence" expr)))))
+                     (else (e:static-error "unknown read type" expr)))))))
+  
+         (define parsed-exprs (map z:scheme-expand read-exprs))  
+         
 	 ; annotate/inner takes an expression to annotate and a boolean
 	 ; indicating whether this expression lies on the evaluation spine.  It returns two things;
 	 ; an annotated expression, and a list of varref's.	 
@@ -254,6 +285,9 @@
 					  v)])
 		      (values (wrap debug-info annotated) free-vars)))])
 	     
+             ; find the source expression and associate it with the parsed expression
+             
+             (set-expr-read! expr (find-read-expr expr))
 	     
 	     (cond
 	       
@@ -386,19 +420,18 @@
 		(e:internal-error
 		 expr
 		 (format "stepper:annotate/inner: unknown object to annotate, ~a~n" expr))])))
+         
+         ; body of local
+         
+         (let* ([annotated-exprs (map (lambda (expr) (annotate/inner expr #t)) parsed-exprs)]
+                [top-defines (top-defs parsed-exprs)]
+                [current-def-setters (build-list (length exprs) current-def-setter)]
+                [top-annotated-exprs (foldr (lambda (setter expr built)
+                                              (cons setter (cons expr built)))
+                                            current-def-setters
+                                            parsed-exprs)])
+           (append top-defines top-annotated-exprs)))))
       
-      ; body of local
-      
-      (let ([exprs (read-exprs text)]
-            [annotated-exprs (map (lambda (expr) (annotate/inner expr #t)) exprs)]
-            [top-defines (top-defs exprs)]
-            [current-def-setters (build-list (length exprs) current-def-setter)]
-            [top-annotated-exprs (foldr (lambda (setter expr built)
-                                          (cons setter (cons expr built)))
-                                        current-def-setters
-                                        exprs)])
-        (append top-defines top-annotated-exprs)))
-            
   
 	 
   )

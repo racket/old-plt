@@ -415,7 +415,7 @@
   (define (check-cond kind)
     (lambda (cond cond-src)
       (unless (eq? 'boolean cond)
-        (raise-statement-error cond cond-src kind (statement-cond-not-bool kind)))))
+        (kind-condition-error kind cond cond-src))))
         
   ;check-ifS: type src -> void
   (define check-ifS (check-cond 'if))
@@ -425,10 +425,10 @@
     (cond
       ((or (not (ref-type? exp-type))
            (not (is-subclass? exp-type throw-type type-recs)))
-       (raise-statement-error exp-type src 'throw throw-not-throwable))
+       (throw-error 'not-throwable exp-type src))
       ((not (is-subclass? exp-type runtime-exn-type type-recs))
        (unless (lookup-exn exp-type env type-recs)
-         (raise-statement-error exp-type src 'throw thrown-not-declared)))
+         (throw-error 'not-declared exp-type src)))
       (else
        (send type-recs add-req (make-req "Throwable" (list "java" "lang"))))))
 
@@ -438,11 +438,11 @@
       ((and ret-expr (not (eq? 'void return)))
        (let ((ret-type (check ret-expr)))
          (unless (assignment-conversion return ret-type type-recs)
-           (raise-statement-error (list ret-type return) (expr-src ret-expr) 'return return-not-match))))
+           (return-error 'not-equal ret-type return src))))
       ((and ret-expr (eq? 'void return))
-       (raise-statement-error return (expr-src ret-expr) 'return return-on-void))
+       (return-error 'void #f return src))
       ((and (not ret-expr) (not (eq? 'void return)))
-       (raise-statement-error return src 'return no-val-to-return))))
+       (return-error 'val #f return src))))
   
   ;check-while: type src -> void
   (define check-while (check-cond 'while))
@@ -469,6 +469,7 @@
         (check-for-vars (cdr vars) 
                         (check-local-var (car vars) env check-e types) types)))
   
+  ;Need to allow shadowing of field names
   ;check-local-var: field env (expression -> type) type-records -> env
   (define (check-local-var local env check-e type-recs)
     (let* ((is-var-init? (var-init? local))
@@ -476,13 +477,12 @@
            (sym-name (string->symbol name))
            (type (type-spec-to-type (field-type local) type-recs)))
       (when (lookup-var-in-env name env)
-        (raise-statement-error name (field-src local) sym-name name-already-defined))
+        (illegal-redefinition (field-name local) (field-src local)))
       (when is-var-init?
         (let ((new-type (check-var-init (var-init-init local) check-e type sym-name type-recs)))
           (unless (assignment-conversion type new-type type-recs)
-            (raise-statement-error (list new-type type) (var-init-src local) sym-name incompatible-type))))
-      (add-var-to-env name type #t #f env)))  
-  
+            (variable-type-error (field-name local) new-type type (var-init-src local)))))
+      (add-var-to-env name type #t #f env)))   
 
   ;check-try: statement (list catch) (U #f statement) env (statement env -> void) type-records -> void
   (define (check-try body catches finally env check-s type-recs)
@@ -501,7 +501,7 @@
                   (let* ((field (catch-cond catch))
                          (name (id-string (field-name field))))
                     (if (lookup-var-in-env name env)
-                        (raise-statement-error name (field-src field) (string->symbol name) name-already-defined)
+                        (illegal-redefinition (field-name field) (field-src field))
                         (check-s (catch-body catch) 
                                  (add-var-to-env name (field-type field) #t #f env)))))
                 catches)
@@ -564,30 +564,56 @@
     (unless (reference-type? e-type)
       (raise-statement-error e-type e-src 'synchronized synch-wrong-exp)))  
   
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;Statement error messages
-  
-  (define (statement-cond-not-bool kind)
-    (lambda (given)
-      (format "condition for ~a must be boolean, given ~a" kind given)))
-  
-  (define (throw-not-throwable given)
-    (format "throw expression must be a subtype of class Throwable: given ~a" given))
-  (define (thrown-not-declared given)
-    (format "thrown type ~a must be declared in the throws clause or in a catch clause of the surrounding try block"
-            given))
 
-  (define (return-not-match given expected)
-    (format "type ~a of returned expression must be equal to or a subclass of declared return ~a"
-            given expected))
-  (define (return-on-void given)
-    "No value is expected to be returned from void method. Value found")
-  (define (no-val-to-return expected)
-    (format "Expected a return value of type ~a, no value was given" expected))
+  ;make-condition-error: symbol type src -> void
+  (define (kind-condition-error kind cond src)
+    (raise-error kind
+                 (format "~a condition must be a boolean: Given ~a" 
+                         kind (type->ext-name cond))
+                 kind src))
+    
+  ;throw-error: symbol type src -> void
+  (define (throw-error kind thrown src)
+    (let ((t (type->ext-name thrown)))
+      (raise-error 'throw
+                   (case kind
+                     ((not-throwable)
+                      (format "Expression for throw must be a subtype of Throwable: given ~a" t))
+                     ((not-caught)
+                      (format "Thrown type ~a must be declared as thrown or caught" t)))
+                   'throw src)))
   
-  (define (name-already-defined given)
-    (format "Redefinition of ~a is not allowed. Another name must be chosen" given))
-  (define (incompatible-type given expected)
-    (format "Variable declared to be of type ~a, which is incompatible with given type ~a" expected given))
+  ;return-error: symbol type type src -> void
+  (define (return-error kind given expected src)
+    (let ((g (type->ext-name given))
+          (e (type->ext-name expected)))
+      (raise-error 'return
+                   (case kind
+                     ((not-equal)
+                      (format "type of returned expression must be equal to or a subclass of ~a: given ~a"
+                              e g))
+                     ((void) "No value should be returned from void method.")
+                     ((val)
+                      (format "Expected a return value assignable to ~a. No value was given" e)))
+                     'return src)))
+
+  ;illegal-redefinition: id src -> void
+  (define (illegal-redefinition field src)
+    (let ((f (id->ext-name field)))
+      (raise-error f
+                   (format "Variable ~a already exists. Another name must be chosen" f)
+                   f src)))
+  
+  ;variable-type-error: id type type src -> void
+  (define (variable-type-error field given expt src)
+    (let ((f (id->ext-name field)))
+      (raise-error f
+                   (format "Variable ~a declared to be ~a, which is incompatible with the initial value type of ~a"
+                           f (type->ext-name expt) (type->ext-name given))
+                   f src)))
+  
   
   (define (init-incompatible given expected)
     (format "types of all expressions in array initialization must be compatible with declared type. 
@@ -900,23 +926,22 @@
         (cdr accesses)))))
   
   ;;find-static-class: (list access) type-recs -> (list class-record (list access))
-  (define find-static-class 
-    (lambda (accs type-recs)
-      (let ((path (send type-recs lookup-path (id-string (car accs)) (lambda () #f))))
-        (if path
-            (list (let* ((name (cons (id-string (car accs)) path))
-                         (record (get-record 
-                                  (send type-recs get-class-record name 
-                                        ((get-importer type-recs) name type-recs 'full))
-                                             type-recs)))
-                    record)
-                  (cdr accs))
-            (let ((found? (find-static (list (car accs)) (cdr accs))))
-              (if (car found?)
-                  (list (get-record (send type-recs get-class-record (car found?)) type-recs)
-                        (cdr found?))
-                  (raise-error (list (id-src (car accs)) (cadr found?)) class-lookup-failed)))))))
-  
+  (define (find-static-class accs type-recs)
+    (let ((path (send type-recs lookup-path (id-string (car accs)) (lambda () #f))))
+      (if path
+          (list (let* ((name (cons (id-string (car accs)) path))
+                       (record (get-record 
+                                (send type-recs get-class-record name 
+                                      ((get-importer type-recs) name type-recs 'full))
+                                type-recs)))
+                  record)
+                (cdr accs))
+          (let ((found? (find-static (list (car accs)) (cdr accs))))
+            (if (car found?)
+                (list (get-record (send type-recs get-class-record (car found?)) type-recs)
+                      (cdr found?))
+                (class-lookup-error (cadr found?) (id-src (car accs))))))))
+    
   ;find-static: (list id) (list id) -> (list (U #f (list id)) (list string)))
   (define (find-static test-path remainder)
     (let ((string-path (map id-string test-path)))
@@ -1122,7 +1147,7 @@
       (for-each (lambda (e)
                   (let ((t (check-sub-exp e)))
                     (unless (prim-integral-type? t)
-                      (raise-error (list (expr-src e) 'array-alloc t) array-alloc-not-int))))
+                      (array-size-error type t (expr-src e)))))
                 exps)
       (make-array-type type (+ (length exps) dim))))
   
@@ -1130,7 +1155,7 @@
   ;check-cond-expr: type type type src src type-records -> type
   (define (check-cond-expr test then else-t src test-src type-recs)
     (unless (eq? 'boolean test)
-      (raise-error (list test-src '? test) cond-not-bool))
+      (condition-error test test-src))
     (cond
       ((and (eq? 'boolean then) (eq? 'boolean else-t)) 'boolean)
       ((and (prim-numeric-type? then) (prim-numeric-type? else-t))
@@ -1143,17 +1168,17 @@
            then
            (if (assignment-conversion else-t then type-recs)
                else-t)))
-      (else (raise-error (list src then else-t '?) cond-type-mismatch))))
+      (else (condition-mismatch-error then else-t src))))
 
   ;; 15.13
   ;check-array-access: type type src -> type
   (define (check-array-access ref-type idx-type src type-recs)
     (send type-recs add-req (make-req 'array null))
     (unless (array-type? ref-type)
-      (raise-error (list src 'access ref-type) array-ac-non-array))
+      (illegal-array-access ref-type src))
     (when (or (not (prim-integral-type? idx-type))
               (not (eq? 'int (unary-promotion idx-type))))
-      (raise-error (list src idx-type 'int) array-ac-idx))
+      (array-access-error ref-type idx-type src))
     (if (= 1 (array-type-dim ref-type))
         (array-type-type ref-type)
         (make-array-type (array-type-type ref-type)
@@ -1165,7 +1190,7 @@
   (define (check-pre-post-expr type op src)
     (if (prim-numeric-type? type)
         type
-        (raise-error (list src type op 'num) unary-error)))
+        (unary-error op 'num type src)))
   
   ;; 15.15
   ;check-unary: type symbol src -> type
@@ -1174,15 +1199,15 @@
       ((+ -)
        (if (prim-numeric-type? expr-type)
            (unary-promotion expr-type)
-           (raise-error (list src expr-type op 'num) unary-error)))
+           (unary-error op 'num expr-type src)))
       ((~)
        (if (prim-integral-type? expr-type)
            (unary-promotion expr-type)
-           (raise-error (list src expr-type op 'int) unary-error)))
+           (unary-error op 'int expr-type src)))
       ((!)
        (if (eq? 'boolean expr-type)
            'boolean
-           (raise-error (list src expr-type op 'bool) unary-error)))))
+           (unary-error op 'bool expr-type src)))))
     
   ;; 15.16
   ;check-cast: type type-spec src (list string) type-records -> type
@@ -1194,9 +1219,9 @@
         ((and (reference-type? exp-type) (reference-type? type)) type)
         ((and (not (reference-type? exp-type)) (not (reference-type? type))) type)
         ((reference-type? exp-type)
-         (raise-error (list src exp-type type 'cast) cast-ref-prim))
+         (cast-error 'from-prim exp-type type src))
         (else
-         (raise-error (list src exp-type type 'cast) cast-prim-ref)))))
+         (cast-error 'from-ref exp-type type src)))))
 
   ;; 15.20.2
   ;check-instanceof type type-spec src (list string) type-records -> type
@@ -1207,11 +1232,11 @@
       (cond 
         ((and (ref-type? exp-type) (ref-type? type) (is-subclass? exp-type type type-recs)) 'boolean)
         ((and (ref-type? exp-type) (ref-type? type))
-         (raise-error (list src type exp-type 'instanceof) instance-not-subtype))
+         (instanceof-error 'not-subtype type exp-type src))
         ((ref-type? exp-type)
-         (raise-error (list (type-spec-src inst-type) 'instanceof type) instance-type-not-ref))
+         (instanceof-error 'not-class type exp-type src))
         (else
-         (raise-error (list src 'instanceof exp-type) instance-exp-not-ref)))))     
+         (instanceof-error 'not-ref type exp-type src)))))
   
   ;; 15.26
   ;; SKIP - worrying about final - doing the check for compound assignment
@@ -1219,12 +1244,12 @@
   (define (check-assignment op ltype rtype src constructor? level type-recs)
     (when (eq? level 'beginner)
       (unless constructor?
-        (raise-error (list op src) illegal-beginner-assignment)))
+        (illegal-assignment src)))
     (case op
       ((=)
        (if (assignment-conversion ltype rtype type-recs)
            ltype
-           (raise-error (list src 'dummy ltype rtype op) assignment-convert-fail)))
+           (assignment-error op ltype rtype src)))
       ((+= *= /= %= -= <<= >>= >>>= &= ^= or=)
        (check-bin-op op ltype rtype src level type-recs)
        ltype)))
@@ -1486,46 +1511,97 @@
                    n src)))
   
   ;;Array Alloc error
-  (define (array-alloc-not-int type)
-    (format "allocation of an array requires an integer for the size: given ~a" type))
-  
+  ;array-size-error: type type src -> void
+  (define (array-size-error array dim src)
+    (let ((a (type->ext-name array))
+          (d (type->ext-name dim)))
+      (raise-error a
+                   (format "Allocation of array of ~a requires an integer for the size. Given ~a"
+                           a d)
+                   a src)))
+    
   ;;Conditional Expression errors
-  (define (cond-not-bool type)
-    (format "conditional expression requires the first expression be a boolean, given ~a" type))
-  ;wrong-code: (list src type type)
-  (define (cond-type-mismatch then else)
-    (format "conditional expression requires then and else branch have equivalent types: given ~a and ~a"
-            then else))
-  
+
+  ;condition-error: type src -> void
+  (define (condition-error type src)
+    (let ((t (type->ext-name type)))
+      (raise-error '?
+                   (format "? requires that the first expression have type boolean. Given ~a" t)
+                   '? src)))
+
+  ;condition-mismatch-error: type type src -> void
+  (define (condition-mismatch-error then else src)
+    (raise-error '?
+                 (format "? requires that the then and else branches have equivalent types: given ~a and ~a"
+                         (type->ext-name then) (type->ext-name else))
+                 '? src))
+    
   ;;Array Access errors
-  (define (array-ac-non-array ref-type)
-    (format "array access expects an array, given ~a" ref-type))
-  ;wrong-code: (list src type symbol)
-  (define (array-ac-idx expt idx-type)
-    (format "array access expects a ~a as index, given ~a" expt idx-type))
+  ;illegal-array-access: type src -> void
+  (define (illegal-array-access type src)
+    (let ((n (type->ext-name type)))
+      (raise-error n
+                   (format "Expression of type ~a accessed as if it were an array" n)
+                   n src)))
+  
+  ;array-access-error: type type src -> void
+  (define (array-access-error array idx src)
+    (let ((n (type->ext-name array))
+          (i (type->ext-name idx)))
+      (raise-error n
+                   (format "~a should be indexed with an integer, given ~a" n i)
+                   n src)))
   
   ;;Unary error
-  (define (unary-error op expt type)
-    (format "~a expects a ~a, given ~a" op expt type))
+  ;unary-error: symbol symbol type src -> void
+  (define (unary-error op expect type src)
+    (raise-error op
+                 (format "~a expects a ~a, given ~a"
+                         op (get-expected expect) (type->ext-name type))
+                 op src))
   
   ;;Cast errors
-  (define (cast-msg from to)
-    (lambda (exp-type cast-type)
-      (format "Illegal cast from ~a type, ~a, to ~a type, ~a" from to exp-type cast-type)))
-  (define cast-ref-prim (cast-msg "primitive" "class or interface"))
-  (define cast-prim-ref (cast-msg "class or interface" "primitive"))
+  ;cast-error: symbol type type src -> void
+  (define (cast-error kind cast exp src)
+    (raise-error 'cast
+                 (case kind
+                   ((from-prim) 
+                    (format "Illegal cast from primitive, ~a, to class or interface ~a"
+                            (type->ext-name exp) (type->ext-name cast)))
+                   ((from-ref)
+                    (format "Illegal cast from class or interface ~a to primitive, ~a"
+                            (type->ext-name exp) (type->ext-name cast))))
+                 'cast src))
   
   ;;Instanceof errors
-  (define (instance-not-subtype inst-type exp-type)
-    (format "instanceof requires that ~a, type of the expression, be a subtype of ~a, given type" 
-            exp-type inst-type))
-  (define (instance-type-not-ref inst-type)
-    (format "instanceof requires that ~a, the given type, be a class or interface type"
-            inst-type))
-  (define (instance-exp-not-ref exp-type)
-    (format "instanceof require that ~a, the expression type, be a class or interface type" exp-type)) 
-
+  ;instanceof-error: symbol type type src -> void
+  (define (instanceof-error kind inst exp src)
+    (let ((i (type->ext-name inst))
+          (e (type->ext-name exp)))
+      (raise-error 
+       'instanceof
+       (case kind
+         ((not-subtype)
+          (format "instanceof requires that its expression be a subtype of the given type: ~a is not a subtype of ~a"
+                  e i))
+         ((not-class)
+          (format "instance of requires the expression to be compared to a class or interface: Given ~a" i))
+         ((not-ref)
+          (format "instance of requires the expression, compared to ~a, to be a class or interface: Given ~a"
+                  i e)))
+       'instanceof src)))
+  
   ;;Assignment errors
+  ;illegal-assignment: src -> void
+  (define (illegal-assignment src)
+    (raise-error '= "Assignment is only allowed in the constructor" '= src)) 
+
+  (define (assignment-error op ltype rtype src)
+    (raise-error op
+                 (format "~a requires that the right hand type be equivalent to or a subtype of ~a: given ~a"
+                         op (type->ext-name ltype) (type->ext-name rtype))
+                 op src))
+  
   (define (illegal-beginner-assignment)
     "Assignment expressions are only allowed in constructors")
   (define (assignment-convert-fail op d ltype rtype)
@@ -1533,78 +1609,13 @@
             op ltype rtype))
 
   ;implicit import error
-  (define (class-lookup-failed class)
-    (format "Implicit import of class ~a failed as this class does not exist at the specified location"
-            class))
-  
-  (define (old-raise-error wrong-code make-msg)
-    (match wrong-code
-      ;Covers bin-op-* assignment-convert-fail
-      ;src symbol type type symbol
-      [(src expected ltype rtype op) 
-       (raise-syntax-error #f (make-msg op (get-expected expected)
-                                        (type->ext-name ltype)
-                                        (type->ext-name rtype))
-                           (make-so op src))]
-
-      ;Covers illegal-beginner-assignment
-      ;symbol src
-      [((? symbol? op) src) (raise-syntax-error #f (make-msg) (make-so op src))]
-
-      ;Covers instance-not-subtype cast-*
-      [(src (? type? type1) (? type? type2) (? symbol? op)) 
-       (raise-syntax-error #f (make-msg (type->ext-name type1)
-                                        (type->ext-name type2))
-                              (make-so op src))]
-
-      ;Covers instance-*-not-* array-ac-non* cond* array-alloc-not-int class-alloc-*
-      [(src (? symbol? op) (? type? type)) 
-       (raise-syntax-error #f (make-msg (type->ext-name type))
-                           (make-so op src))]
-      ;Covers unary-error
-      [(src (? type? type) (? symbol? op) (? symbol? expt)) 
-       (raise-syntax-error #f
-                           (make-msg op (get-expected expt) (type->ext-name type))
-                           (make-so op src))] 
-      ;Covers prim-call
-      [(src (? type? type) (? level? level))
-       (raise-syntax-error #f (make-msg (type->ext-name type) level) 
-                           (make-so 'call src))]
-      ;Covers array-ac-idx
-      [(src (? type? type) (? symbol? expt)) 
-       (raise-syntax-error #f
-                           (make-msg (get-expected expt) (type->ext-name type))
-                           (make-so 'index src))]
-      ;Covers super-meth-* local-meth-* *-meth-called ctor-not-ctor special* variable-not-found
-      ;       class-lookup-failed
-      [(src (? string? name))
-       (raise-syntax-error #f (make-msg name) (make-so (string->symbol name) src))]
-      ;Covers call-arg-error
-      [(src (? string? name) (? number? num))
-       (raise-syntax-error #f (make-msg name num) (make-so (string->symbol name) src))]
-      ;Covers call-conflict
-      [(src (? string? name) (? list? args))
-       (raise-syntax-error #f (make-msg name (map type->ext-name args)) (make-so (string->symbol name) src))]
-      ;Covers meth-not-found
-      [(src (? string? name) (? type? type))
-       (raise-syntax-error #f (make-msg (type->ext-name type) name)
-                           (make-so (string->symbol name) src))]
-      ;Covers field-not-found array-field
-      [(src (? type? type) (? string? name))
-       (raise-syntax-error #f (make-msg (type->ext-name type) name) 
-                           (make-so (string->symbol name) src))]
-      
-      ;Covers prim-field-acc
-      [(src (? type? type))
-       (raise-syntax-error #f (make-msg type) (make-so 'field-access src))]
-
-      [_ 
-       (error 'type-error "This file has a type error in the statements but more likely expressions")]))
-      
-  ;level?: ~a -> bool
-  (define (level? l)
-    (memq l '(beginner intermediate advanced full)))
-  
+  ;class-lookup-error: string src -> void
+  (define (class-lookup-error class src)
+    (raise-error class
+                 (format "Implicit import of class ~a failed as this class does not exist at the specified location"
+                         class)
+                 class src))
+         
   ;type?: ~a -> bool
   (define (type? t)
     (or (reference-type? t)

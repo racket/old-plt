@@ -522,31 +522,26 @@
                  (new-tabs (+ num-tabs (string-length st)))
                  (fields ""))
             (let loop ((current (retrieve-fields)))
-              (when current
-                (set! fields 
-                      (string-append fields 
-                                     (format "~a~a = ~a,~a" 
-                                             (if newline? 
-                                                 (if (equal? fields "")
-                                                     ""
-                                                     (get-n-spaces new-tabs)) "")
-                                             (car current)
-                                             (if (memq (cadr current) already-printed)
-                                                 (format-java (cadr current) full-print? 'type already-printed #f 0)
-                                                 (format-java (cadr current) full-print? style 
-                                                              (cons value already-printed)
-                                                              newline?
-                                                              (if newline? 
+              (let ((next (retrieve-fields)))
+                (when current
+                  (set! fields 
+                        (string-append fields 
+                                       (format "~a~a = ~a~a~a" 
+                                               (if newline? (if (equal? fields "") "" (get-n-spaces new-tabs)) "")
+                                               (car current)
+                                               (if (memq (cadr current) already-printed)
+                                                   (format-java (cadr current) full-print? 'type already-printed #f 0)
+                                                   (format-java (cadr current) full-print? style 
+                                                                (cons value already-printed) newline?
+                                                                (if newline? 
                                                                   (+ new-tabs (string-length (car current)) 3)
                                                                   num-tabs)))
-                                             (if newline? (format "~n") ""))))
-                (loop (retrieve-fields))))
+                                               (if next "," "")
+                                               (if newline? (format "~n") " "))))
+                  (loop next))))
             (string-append st 
-                           ;(if newline? (format "~n") "")
                            (if (> (string-length fields) 1) 
-                               (substring fields 0 (if newline? 
-                                                       (- (string-length fields) 2)
-                                                       (sub1 (string-length fields)))) "") ")")))
+                               (substring fields 0 (sub1 (string-length fields))) "") ")")))
          (else (send value my-name))))
       (else (format "~a" value))))
   

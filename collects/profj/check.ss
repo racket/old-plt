@@ -1360,10 +1360,10 @@
            
              (when (and protected? (not (or (equal? c-class field-class)
                                             (is-subclass? c-class (make-ref-type (car field-class) (cdr field-class)) type-recs)
-                                            (package-members? c-class field-class))))
+                                            (package-members? c-class field-class type-recs))))
                (illegal-field-access 'protected (string->symbol fname) level (car field-class) src))
                           
-             (when (and (not private?) (not protected?) (not public?) (not (package-members? c-class field-class)))
+             (when (and (not private?) (not protected?) (not public?) (not (package-members? c-class field-class type-recs)))
                (illegal-field-access 'package (string->symbol fname) level (car field-class) src))
            
              
@@ -1461,9 +1461,14 @@
            (set-access-name! exp new-acc)
            (check-sub-expr exp))))))
   
-  ;package-members? (list string) (list string) -> bool
-  (define (package-members? class1 class2)
-    (equal? (cdr class1) (cdr class2)))
+  ;package-members? (list string) (list string) type-records -> bool
+  (define (package-members? class1 class2 type-recs)
+    (cond
+      ((equal? (car class1) "scheme-interactions") 
+       (equal? (send type-recs get-interactions-package) (cdr class2)))
+      ((equal? (car class2) "scheme-interactions")
+       (equal? (send type-recs get-interactions-package) (cdr class1)))
+      (else (equal? (cdr class1) (cdr class2)))))
   
   ;; field-lookup: string type expression src symbol type-records -> field-record
   (define (field-lookup fname obj-type obj src level type-recs)
@@ -1710,7 +1715,7 @@
                 
         (when (and (memq 'protected mods) (reference-type? exp-type) 
                    (or (not (is-eq-subclass? this exp-type))
-                       (not (package-members? (cdr c-class) (ref-type-path exp-type)))))
+                       (not (package-members? (cdr c-class) (ref-type-path exp-type) type-recs))))
           (call-access-error 'pro level name exp-type src))
         (when (and (memq 'private mods)
                    (reference-type? exp-type)
@@ -1720,7 +1725,7 @@
                        (not (eq? this (send type-recs get-class-record exp-type)))))
           (call-access-error 'pri level name exp-type src))
         (when (and (not (memq 'private mods)) (not (memq 'public mods)) (not (memq 'protected mods))
-                   (package-members? (cdr c-class) (ref-type-path exp-type)))
+                   (package-members? (cdr c-class) (ref-type-path exp-type) type-recs))
           (call-access-error 'pac level name exp-type src))
         (when (eq? level 'full)
           (for-each (lambda (thrown)
@@ -1792,10 +1797,10 @@
         (when (and (memq 'private mods) (not (eq? class-record this)))
           (class-access-error 'pri level type src))
         (when (and (memq 'protected mods) (or (not (is-eq-subclass? this type)) 
-                                              (package-members? (cdr c-class) (ref-type-path type))))
+                                              (package-members? (cdr c-class) (ref-type-path type) type-recs)))
           (class-access-error 'pro level type src))
         (when (and (not (memq 'private mods)) (not (memq 'protected mods)) (not (memq 'public mods))
-                   (package-members? (cdr c-class) (ref-type-path type)))
+                   (package-members? (cdr c-class) (ref-type-path type) type-recs))
           (class-access-error 'pac level type src))
         ((if (class-alloc? exp) set-class-alloc-ctor-record! set-inner-alloc-ctor-record!)exp const)
         type)))

@@ -74,6 +74,9 @@
       (for-each (lambda (def) (add-def-info def pname type-recs current-loc (null? args) level)) 
                 (package-defs prog))
 
+      ;Set the package of the interactions window to that of the definitions window
+      (when execution? (send type-recs set-interactions-package pname))
+      
       ;All further definitions do not come from the execution window
       (execution? #f)
       

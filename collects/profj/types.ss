@@ -199,36 +199,6 @@
       ;add-to-records: (list string) ( -> 'a) -> void
       (define/public (add-to-records key thunk)
         (hash-table-put! records key thunk))
-
-      ;; get-class-record: (U type (list string) 'string) (U (list string) #f) ( -> 'a) -> (U class-record procedure)
-      (define old-get-class-record 
-        (opt-lambda (ctype [container #f] [fail (lambda () null)]) 
-          (let* ((key (cond
-                        ((eq? ctype 'string) `("String" "java" "lang"))
-                        ((ref-type? ctype) (cons (ref-type-class/iface ctype) (ref-type-path ctype)))
-                        (else ctype)))
-                 (key-inner (when (cons? container) (string-append (car container) "." (car key))))
-                 (outer-record (when (cons? container) (get-class-record container))))
-            (cond
-              ((and container 
-                    (not (null? outer-record))
-                    (not (eq? outer-record 'in-progress))
-                    (member (car key) (map inner-record-name (class-record-inners (get-record outer-record this)))))
-               (hash-table-get records (cons key-inner (cdr container)) fail))
-              ((and container
-                    (not (null? outer-record))
-                    (eq? outer-record 'in-progress))
-               (let ((res (hash-table-get records (cons key-inner 
-                                                        (if (null? (cdr key))
-                                                            (lookup-path key-inner (lambda () null))
-                                                            (cdr key)))
-                                          (lambda () #f))))
-                 (if res
-                     res
-                     (hash-table-get records (if (null? (cdr key)) (cons (car key) (lookup-path (car key) fail)) key)
-                                     fail))))
-              (else (hash-table-get records (if (null? (cdr key)) (cons (car key) (lookup-path (car key) fail)) key)
-                                    fail))))))
       
       ;; get-class-record: (U type (list string) 'string) (U (list string) #f) ( -> 'a) -> (U class-record procedure)
       (define/public get-class-record
@@ -354,13 +324,11 @@
                       (equal? (req-path req) (req-path (car reqs))))
                  (member-req req (cdr reqs)))))
 
-      (define/public (set-compilation-location loc dir)
-        (hash-table-put! compilation-location loc dir))
+      (define/public (set-compilation-location loc dir)  (hash-table-put! compilation-location loc dir))
       (define/public (get-compilation-location)
         (hash-table-get compilation-location location 
                         (lambda () (error 'get-compilation-location "Internal error: location not found"))))
-      (define/public (set-composite-location name dir)
-        (hash-table-put! compilation-location name dir))
+      (define/public (set-composite-location name dir) (hash-table-put! compilation-location name dir))
       (define/public (get-composite-location name)
         (hash-table-get compilation-location name 
                         (lambda () (error 'get-composite-location "Internal error: name not found"))))
@@ -374,13 +342,11 @@
       (define/public (set-location! l) (set! location l))
       (define/public (get-location) location)
 
-      (define interaction-package 'default)
+      (define interaction-package null)
       (define interaction-fields null)
       
-      (define/public (set-interactions-package p)
-        (set! interaction-package p))
-      (define/public (get-interactions-package)
-        interaction-package)
+      (define/public (set-interactions-package p) (set! interaction-package p))
+      (define/public (get-interactions-package) interaction-package)
       (define/public (add-interactions-field rec)
         (set! interaction-fields (cons rec interaction-fields)))
       (define/public (get-interactions-fields)

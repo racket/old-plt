@@ -194,11 +194,13 @@
                       (cons (car l) (loop (cdr l)))]
                      [else (loop (cdr l))]))]
 	   [compare-docs (lambda (a b)
-			   (let ([ap (standard-html-doc-position a)]
-				 [bp (standard-html-doc-position b)])
-			     (cond
-			      [(= ap bp) (string<? a b)]
-			      [else (< ap bp)])))]
+                           (let-values ([(_1 a-short _2) (split-path a)]
+                                        [(_3 b-short _4) (split-path b)])
+                             (let ([ap (standard-html-doc-position a-short)]
+                                   [bp (standard-html-doc-position b-short)])
+                               (cond
+                                 [(= ap bp) (string<? a b)]
+                                 [else (< ap bp)]))))]
            [docs (quicksort docs compare-docs)]
            [names (map get-doc-name docs)]
 	   [names+paths (map cons names docs)]
@@ -241,16 +243,18 @@
                                                 (build-path doc-path index-file)))))
 				     "</FONT>")
 				    ""))))]
-	   [break-between (lambda (re l)
+	   [para-mark "<P>"]
+           [break-between (lambda (re l)
 			    (if (null? l)
 				l
 				(if (regexp-match re (car l))
 				    (let loop ([l l])
 				      (cond 
 				       [(null? l) null]
-				       [(regexp-match re (car l))
+				       [(or (equal? para-mark (car l))
+                                            (regexp-match re (car l)))
 					(cons (car l) (loop (cdr l)))]
-				       [else (cons "<P>" l)]))
+				       [else (cons para-mark l)]))
 				    l)))])
       (let-values ([(collections-doc-files collection-names) (colldocs)])
         (apply
@@ -274,7 +278,11 @@
 	  
 	  (list "<H3>Languages</H3>"
 		"<UL>")
-	  (break-between "Student" (map mk-link lang-doc-paths lang-names))
+	  (break-between 
+           #rx"(ProfessorJ)|(Student)"
+           (break-between
+            #rx"Student"
+            (map mk-link lang-doc-paths lang-names)))
 	  (list "</UL>"
 		"<H3>Tools, Libraries, and Extensions</H3>"
 		"<UL>")

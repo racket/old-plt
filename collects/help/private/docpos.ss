@@ -1,42 +1,28 @@
 (module docpos mzscheme
-  (require (lib "list.ss"))
+  (require (lib "list.ss")
+           (lib "contract.ss"))
 
-  (provide standard-html-doc-position 
-           user-defined-doc-position
+  (provide/contract
+   [standard-html-doc-position (string? . -> . number?)])
+  
+  (provide user-defined-doc-position
            set-doc-position!
 	   reset-doc-positions!
 	   known-docs)
   
   ;; Define an order on the standard docs.
   (define (standard-html-doc-position d)
-    (case (string->symbol d)
-  
-      [(beginning) -20]
-      [(beginning-abbr) -19]
-      [(intermediate) -17]
-      [(intermediate-lambda) -16]
-      [(advanced) -15]
-
-      [(help) 0]
-      [(drscheme) 1]
-
-      [(r5rs) 2]
-      [(mzscheme) 3]
-      [(mzlib) 4]
-      [(misclib) 5]
-      [(mred) 6]
-      [(framework) 7]
-      [(teach) 8]
-      [(mzc) 10]
-      [(tools) 30]
-      [(insidemz) 50]
-      [(tour) 90]
-
-      [else 100]))
+    (if (string=? d "help")
+        -1
+        (let ([line (assoc d docs-and-positions)])
+          (if line
+              (caddr line)
+              100))))
 
   (define user-doc-positions '())
 
   (define (set-doc-position! manual weight)
+    (printf "set-doc-position! ~s ~s\n" manual weight)
     (let ([man-sym (string->symbol manual)])
       (unless (assoc manual known-docs)
 	      (error 
@@ -54,31 +40,42 @@
   (define (user-defined-doc-position manual)
     (let ([result (assoc (string->symbol manual) user-doc-positions)])
       (and result (cadr result))))
+  
+  ;; (listof (list string string number))
+  ;; the first string is the collection name
+  ;; the second string is the title of the the manual
+  ;; the number determines the sorting order for the manuals in the manuals page
+  (define docs-and-positions
+    '(("beginning" "Beginning Student Language" -19)
+      ("beginning-abbr" "Beginning Student with List Abbreviations Language" -18)
+      ("intermediate" "Intermediate Student Language" -17)
+      ("intermediate-lambda" "Intermediate Student with Lambda Language" -16)
+      ("advanced" "Advanced Student Language" -15)
+      ("teachpack" "Teachpacks for How to Design Programs" -16)
+      
+      ("profj-beginner" "ProfessorJ Beginner Language" -10)
+      ("profj-intermediate" "ProfessorJ Intermediate Language" -9)
+      ("profj-advanced" "ProfessorJ Advanced Language" -8)
+      
+      ("tour" "A Brief Tour of DrScheme version 205" 0)
+      ("drscheme" "PLT DrScheme: Programming Environment Manual" 1)
+      
+      ("r5rs" "Revised^5 Report on the Algorithmic Language Scheme" 2)
+      ("srfi" "SRFI documents inside PLT" 3)
+      ("mzscheme" "PLT MzScheme: Language Manual" 4)
+      ("mzlib" "PLT MzLib: Libraries Manual" 5)
+      ("misclib" "PLT Miscellaneous Libraries: Reference Manual" 6)
+      ("mred" "PLT MrEd: Graphical Toolbox Manual" 7)
+      ("framework" "PLT Framework: GUI Application Framework" 8)
 
+      ("mzc" "PLT mzc: MzScheme Compiler Manual" 10)
+      
+      ("tools" "PLT Tools: DrScheme Extension Manual" 30)
+      ("insidemz" "Inside PLT MzScheme" 50)
+      
+      
+      ("t-y-scheme" "Teach Yourself Scheme in Fixnum Days" 100)
+      ("tex2page" "TeX2page" 101)))
+  
   ; known-docs: (listof (cons string[subdir-of-doc-dir] string[title]))
-  (define known-docs
-    '(("beginning" . "Beginning Student Language")
-      ("beginning-abbr" . "Beginning Student with List Abbreviations Language")
-      ("advanced" . "Advanced Student Language")
-      ("insidemz" . "Inside PLT MzScheme")
-      ("intermediate" . "Intermediate Student Language")
-      ("intermediate-lambda" . "Intermediate Student with Lambda Language")
-      ("drscheme" . "PLT DrScheme: Programming Environment Manual")
-      ("r5rs" . "Revised^5 Report on the Algorithmic Language Scheme")
-      ("mzscheme" . "PLT MzScheme: Language Manual")
-      ("mzlib" . "PLT MzLib: Libraries Manual")
-      ("mred" . "PLT MrEd: Graphical Toolbox Manual")
-      ("framework" . "PLT Framework: GUI Application Framework")
-      ("misclib" . "PLT Miscellaneous Libraries: Reference Manual")
-      ("mzc" . "PLT mzc: MzScheme Compiler Manual")
-      ("srfi" . "SRFI documents inside PLT")
-      ("teachpack" . "Teachpacks for How to Design Programs")
-      ("tools" . "PLT Tools: DrScheme Extension Manual")
-      ("tour" . "A Brief Tour of DrScheme version 205")
-      ("t-y-scheme" . "Teach Yourself Scheme in Fixnum Days")
-      ("tex2page" . "TeX2page")
-      ("profj-beginner" . "ProfessorJ Beginner Language")
-      ("profj-intermediate" . "ProfessorJ Intermediate Language")
-      ("profj-advanced" . "ProfessorJ Advanced Language")))
-
-  )
+  (define known-docs (map (lambda (x) (cons (car x) (cadr x))) docs-and-positions)))

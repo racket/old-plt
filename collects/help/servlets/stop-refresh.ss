@@ -1,5 +1,6 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
+         (lib "servlet-helpers.ss" "web-server")
          (lib "string-constant.ss" "string-constants"))
 
 (require "private/refresh-util.ss")

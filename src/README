@@ -29,10 +29,15 @@ Please report bugs via one of the following:
  Compiling for Windows
 ========================================================================
 
-Read the instructions in plt\src\worksp\README.
+To compile with Microsoft Visual C, read the instructions in
+plt\src\worksp\README.
 
 To compile MzScheme with Cygwin tools, follow the Unix instructions
 below.
+
+To support Borland-built extensions (after compiling MzScheme with
+MSVC or Cygwin), cd to plt\src\mzscheme\dynsrc and run mkbordyn.bat.
+The mkbordyn.bat script requires bcc23.exe.
 
 ========================================================================
  Compiling for MacOS

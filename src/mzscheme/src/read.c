@@ -48,6 +48,7 @@ static Scheme_Object *read_accept_pipe_quote(int, Scheme_Object *[]);
 static Scheme_Object *print_graph(int, Scheme_Object *[]);
 static Scheme_Object *print_struct(int, Scheme_Object *[]);
 static Scheme_Object *print_box(int, Scheme_Object *[]);
+static Scheme_Object *print_vec_shorthand(int, Scheme_Object *[]);
 
 #ifndef MZ_REAL_THREADS
 #define CURRENTPROCPRM /* empty */
@@ -200,6 +201,11 @@ void scheme_init_read(Scheme_Env *env)
 						       "print-box",
 						       MZCONFIG_PRINT_BOX), 
 			     env);
+  scheme_add_global_constant("print-vector-length", 
+			     scheme_register_parameter(print_vec_shorthand, 
+						       "print-vector-length",
+						       MZCONFIG_PRINT_VEC_SHORTHAND), 
+			     env);
 }
 
 void scheme_alloc_list_stack(Scheme_Process *process)
@@ -270,6 +276,12 @@ static Scheme_Object *
 print_box(int argc, Scheme_Object *argv[])
 {
   DO_CHAR_PARAM("print-box", MZCONFIG_PRINT_BOX);
+}
+
+static Scheme_Object *
+print_vec_shorthand(int argc, Scheme_Object *argv[])
+{
+  DO_CHAR_PARAM("print-vector-length", MZCONFIG_PRINT_VEC_SHORTHAND);
 }
 
 #ifdef DO_STACK_CHECK

@@ -35,10 +35,6 @@
 #define USE_BUFFERING_CPORT 1
 /* Companion to USE_BUFFERING_CPORT in read.c */
 
-/* Use Chez-style vector printing when saving is more than this
-   number: */
-#define VECTOR_ABBREV_WHEN_SAVING_N 0
-
 #define PRINT_MAXLEN_MIN 3
 
 /* locals */
@@ -47,6 +43,7 @@
 #define quick_print_struct quick_can_read_compiled
 #define quick_print_graph quick_can_read_graph
 #define quick_print_box quick_can_read_box
+#define quick_print_vec_shorthand quick_square_brackets_are_parens
 /* Don't use can_read_pipe_quote! */
 
 static void print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, 
@@ -439,6 +436,7 @@ print_to_string(Scheme_Object *obj, long *len, int write,
   p->quick_print_graph = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_GRAPH));
   p->quick_print_box = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_BOX));
   p->quick_print_struct = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_STRUCT));
+  p->quick_print_vec_shorthand = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_VEC_SHORTHAND));
   p->quick_can_read_pipe_quote = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE));
 
   if (p->quick_print_graph || check_cycles(obj, p)) {
@@ -1339,7 +1337,7 @@ print_vector(Scheme_Object *vec, int escaped, int compact,
       if (!i || (elems[i] != elems[i - 1]))
 	break;
     
-    if (escaped && (common >= VECTOR_ABBREV_WHEN_SAVING_N)) {
+    if (escaped && p->quick_print_vec_shorthand) {
       char buffer[100];
       sprintf(buffer, "#%d(", size);
       print_this_string(p, buffer, -1);

@@ -2565,6 +2565,7 @@ static Scheme_Config *make_initial_config(void)
   scheme_set_param(config, MZCONFIG_PRINT_GRAPH, scheme_false);
   scheme_set_param(config, MZCONFIG_PRINT_STRUCT, scheme_false);
   scheme_set_param(config, MZCONFIG_PRINT_BOX, scheme_true);
+  scheme_set_param(config, MZCONFIG_PRINT_VEC_SHORTHAND, scheme_true);
 
   scheme_set_param(config, MZCONFIG_CASE_SENS, (scheme_case_sensitive ? scheme_true : scheme_false));
   scheme_set_param(config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS, (scheme_square_brackets_are_parens

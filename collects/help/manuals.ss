@@ -5,6 +5,8 @@
 
   (provide find-manuals)
  
+  (define re:title (regexp "<[tT][iI][tT][lL][eE]>(.*)</[tT][iI][tT][lL][eE]>"))
+
   (define (find-manuals)
     (let* ([doc-collection-path (with-handlers ([void (lambda (x) #f)])
                                   (collection-path "doc"))]
@@ -36,7 +38,17 @@
 			    (let ([r (read-line)])
 			      (cond
 			       [(eof-object? r) "(Unknown title)"]
-			       [(regexp-match "<[tT][iI][tT][lL][eE]>(.*)</[tT][iI][tT][lL][eE]>" r) => cadr]
+			       [(regexp-match re:title r) => cadr]
+			       [(regexp-match "<[tT][iI][tT][lL][eE]>(.*)$" r)
+				;; Append lines until we find it 
+				(let aloop ([r r])
+				  (let ([a (read-line)])
+				    (cond
+				     [(eof-object? a) (loop)] ; give up
+				     [else (let ([r (string-append r a)])
+					     (cond
+					      [(regexp-match re:title r) => cadr]
+					      [else (aloop r)]))])))]
 			       [else (loop)])))))))))]
 	   [names (map get-name doc-paths)]
 	   [names+paths (map cons names doc-paths)]

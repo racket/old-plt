@@ -1,6 +1,6 @@
 #!/bin/sh
 
-string=? ; exec $PLTHOME/bin/mzscheme -qr $0 "$@"
+string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
 
 (require (lib "cmdline.ss")
 	 (lib "process.ss"))

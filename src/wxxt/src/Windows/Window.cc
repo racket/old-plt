@@ -1629,7 +1629,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	  static int handle_alt = 0;
 
 	  if (!handle_alt) {
-	    if (!wxGetPreference("altUpSelectsMenu", &handle_alt))
+	    if (!wxGetBoolPreference("altUpSelectsMenu", &handle_alt))
 	      handle_alt = 0;
 	    handle_alt = !handle_alt ? -1 : 1;
 	  }

@@ -681,7 +681,7 @@ static void ForceFocus(Widget frame)
   static int force_focus = 0;
 
   if (!force_focus) {
-    if (!wxGetPreference("forceFocus", &force_focus))
+    if (!wxGetBoolPreference("forceFocus", &force_focus))
       force_focus = 0;
     force_focus = !force_focus ? -1 : 1;
   }

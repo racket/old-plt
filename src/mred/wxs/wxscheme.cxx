@@ -2851,6 +2851,21 @@ int wxGetPreference(const char *name, int *res)
   return 0;
 }
 
+int wxGetBoolPreference(const char *name, int *res)
+{
+  char buf[20];
+
+  if (wxGetPreference(name, buf, 20)) {    
+    if (!strcmp(buf, "#f"))
+      *res = 0;
+    else
+      *res = 1;
+    return 1;
+  }
+
+  return 0;
+}
+
 /***********************************************************************/
 /*                            initialization                           */
 /***********************************************************************/

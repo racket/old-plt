@@ -2032,7 +2032,7 @@ void wxMediaEdit::Redraw(wxDC *dc, double starty, double endy,
   Bool wl;
 
   if (!show_outline_for_inactive) {
-    if (!wxGetPreference("outlineInactiveSelection", &show_outline_for_inactive))
+    if (!wxGetBoolPreference("outlineInactiveSelection", &show_outline_for_inactive))
       show_outline_for_inactive = 0;
     show_outline_for_inactive = !show_outline_for_inactive ? -1 : 1;
   }

@@ -91,7 +91,7 @@ void wxInitClipboard(void)
     wxTheSelection->is_sel = 1;
     wxTheSelection->frame = selection_frame;
 
-    if (!wxGetPreference("selectionAsClipboard", &cts))
+    if (!wxGetBoolPreference("selectionAsClipboard", &cts))
       cts = 0;
 
     if (cts) {

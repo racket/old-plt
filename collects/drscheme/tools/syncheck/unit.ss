@@ -882,7 +882,7 @@
 						   [drscheme:basis:error-display/debug-handler
 						    (lambda (m d x)
 						      (set! msg m)
-						      (set! debug d)
+						      (set! debug (if (null? d) #f (car d)))
 						      (set! error x)
 						      (set! error-raised? #t)
 						      (semaphore-post semaphore))]

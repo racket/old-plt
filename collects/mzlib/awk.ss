@@ -8,17 +8,17 @@
     (lambda (stx)
       (syntax-case stx ()
 	[(_ next-record
-	    (record first field ...)
+	    (record field ...)
 	    counter
 	    ((state-variable init-expr) ...)
 	    continue
 	    clause ...)
-	 (and (identifier? (syntax counter-variable))
-	      (identifier? (syntax continue-variable)))
+	 (and (identifier? (syntax counter))
+	      (identifier? (syntax continue)))
 	 (let ([clauses (syntax->list (syntax (clause ...)))]
 	       [initvars null])
 	   (with-syntax ([(local-state ...) (generate-temporaries
-					     (syntax (state-variable ...)))])
+					     (syntax->list (syntax (state-variable ...))))])
 	     (letrec ([get-after-clauses
 		       (lambda ()
 			 (let loop ([l clauses][afters null])
@@ -27,7 +27,8 @@
 					   (syntax ((values state-variable ...)))
 					   afters)]
 			    [(syntax-case (car l) (after)
-			       [(after . rest) (syntax rest)])
+			       [(after . rest) (syntax rest)]
+			       [_else #f])
 			     => (lambda (rest)
 				  (with-syntax ([(after ...) afters])
 				    (loop (cdr l) (syntax (after ... .  rest)))))]
@@ -40,7 +41,7 @@
 			    (with-syntax ([body (wrap-state (syntax ((f arg))))])
 			      (syntax (=> (lambda (arg)
 					    . body))))]
-			   [else
+			   [body
 			    (syntax
 			     ((call-with-values (lambda () . body)
 				(lambda (local-state ... . extras)
@@ -72,16 +73,23 @@
 					(set! on? (not t2))))
 				    (when check
 				      . body))
-				  . rest))))]))]
+				  . rest))))]
+			   [_else (raise-syntax-error
+				   (quote-syntax awk)
+				   "bad range"
+				   stx
+				   body)]))]
 		      [make-test
 		       (lambda (test expr)
 			 (cond
 			  [(string? test)
-			   (with-syntax ([g (car (generate-temporaries '(1)))])
+			   (with-syntax ([g (car (generate-temporaries '(1)))]
+					 [expr expr])
 			     (set! initvars (cons (syntax (g (regexp expr))) initvars))
-			     (syntax (regexp-exec g first)))]
+			     (syntax (regexp-exec g record)))]
 			  [(number? test)
-			   (syntax (= expr counter))]
+			   (with-syntax ([expr expr])
+			     (syntax (= expr counter)))]
 			  [else expr]))]
 		      [get-testing-clauses
 		       (lambda ()
@@ -95,7 +103,7 @@
 					  [body (syntax (body ...))])
 				      (cond
 				       [(or (string? test) (number? test))
-					(with-syntax ([t (make-test test (syntax text-expr))]
+					(with-syntax ([t (make-test test (syntax test-expr))]
 						      [body (wrap-state body)])
 					  (syntax
 					   ((cond [t . body]
@@ -119,35 +127,47 @@
 					(syntax rest)]
 				       [(eq? test '/)
 					(with-syntax ([g (car (generate-temporaries '(1)))])
-					  (syntax-case body (/)
-					    [(/ re / (var ...) . body)
+					  (syntax-case* body (/) (lambda (a b)
+								  (eq? (syntax-e a)
+								       (syntax-e b)))
+					    [(re / (var ...) . body)
 					     (and (string? (syntax-e (syntax re)))
 						  (andmap (lambda (x) (or (identifier? x)
 									  (not (syntax-e x))))
 							  (syntax->list (syntax (var ...)))))
 					     (with-syntax ([(var ...)
-							    (for-each (lambda (x)
-									(if (identifier? x)
-									    x
-									    (car (generate-temporaries '(1)))))
-								      (syntax->list (syntax (var ...))))]
+							    (map (lambda (x)
+								   (if (identifier? x)
+								       x
+								       (car (generate-temporaries '(1)))))
+								 (syntax->list (syntax (var ...))))]
 							   [body (wrap-state (syntax body))])
 					       (set! initvars (cons (syntax (g (regexp re))) initvars))
 					       (syntax
 						((cond
-						  [(regexp-match re first)
+						  [(regexp-match re record)
 						   => (lambda (arg)
 							(apply
 							 (lambda (var ...) . body)
 							 arg))]
 						  [else (void)])
-						 rest)))]))]
+						 . rest)))]
+					    [_else (raise-syntax-error
+						    (quote-syntax awk)
+						    "bad / ... / clause"
+						    stx
+						    (car l))]))]
 				       [else
 					(with-syntax ([body (wrap-state (syntax body))])
 					  (syntax
 					   ((cond [test-expr . body]
 						  [else (void)])
-					    . rest)))])))]))))])
+					    . rest)))])))]
+				 [_else (raise-syntax-error
+					 (quote-syntax awk)
+					 "bad clause"
+					 stx
+					 (car l))]))))])
 	       (with-syntax ([testing-clauses (get-testing-clauses)]
 			     [after-clauses (get-after-clauses)]
 			     [initvars initvars])
@@ -155,9 +175,9 @@
 		  (let ((state-variable init-expr) ...
 			. initvars)
 		    (let loop ([counter 1]) 
-		      (call-with-values (lambda () get-next-record)
-			(lambda (first field ...)
-			  (if (eof-object? first)
+		      (call-with-values (lambda () next-record)
+			(lambda (record field ...)
+			  (if (eof-object? record)
 			      (begin
 				. after-clauses)
 			      (let ([else-ready? #t])
@@ -181,7 +201,7 @@
 	       (record field-variable ...)
 	       counter-variable
 	       ((state-variable init-expr) ...)
-	       continue-variable
+	       continue
 	       clause ...))]
 	;; Left out counter...
 	[(_ next-record
@@ -193,7 +213,7 @@
 	 (syntax
 	  (awk next-record
 	       (record field-variable ...)
-	       counter-variable
+	       counter
 	       ((state-variable init-expr) ...)
 	       continue-variable
 	       clause ...))]
@@ -205,9 +225,9 @@
 	 (syntax
 	  (awk next-record
 	       (record field-variable ...)
-	       counter-variable
+	       counter
 	       ((state-variable init-expr) ...)
-	       continue-variable
+	       continue
 	       clause ...))])))
 
   (define-struct match (s a))

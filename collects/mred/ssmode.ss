@@ -673,8 +673,6 @@
 	    [standard-style-delta
 	     (let ([delta (make-object wx:style-delta% wx:const-change-normal)])
 	       (send delta set-delta wx:const-change-family wx:const-modern)
-	       (when (eq? wx:platform 'macintosh)
-		     (send delta set-delta wx:const-change-size 9))
 	       delta)]
 	    [file-format wx:const-media-ff-text]
 	    [install

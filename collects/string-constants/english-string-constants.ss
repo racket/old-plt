@@ -126,28 +126,36 @@
  (bad-url:this "Bad URL: ~a")
  
  ;; Help Desk
- (search-results "Search Results")
+ (search-results "Search results")
  (help-desk "Help Desk")
  (help-desk-n "Help Desk ~a")
  (about-help-desk "About Help Desk")
  (help-desk-about-string
-  "Help Desk is a complete source of information about PLT software, including DrScheme, MzScheme, and MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT")
+  "Help Desk is a complete source of information about PLT software, including DrScheme, MzScheme, and MrEd.\n\nVersion ~a\nCopyright (c) 1995-2002 PLT")
  (help-on-help "Help on Help")
  (help-on-help-details "For help on using Help Desk, follow the `How to use Help Desk' link on Help Desk's home page. (To get to the home page if you're not already there, click the `Home' button at the top of the Help Desk window.)")
  (find-docs-for "Find docs for:")
  (search "Search")
- ; next 3 are popup menu choices at bottom of help desk window
- (search-for-keyword "for Keyword")
- (search-for-keyword-or-index "for Keyword or Index Entry")
- (search-for-keyword-or-index-or-text "for Keyword, Index Entry, or Text")
+ (search-for "Search for")
+ (lucky "Lucky!")
+ (options "Options") 
+ (configure-hd "Configure")
+ (hd-home "Help Desk home") 
+ (show-manuals "Show manuals") 
+ (send-bug-report "Send bug report")
+ (query-bug-reports "Query bug report")
+ ; next 3 are popup menu choices in help desk search frame
+ (search-for-keyword "Keyword entry")
+ (search-for-keyword-or-index "Keyword or index entry")
+ (search-for-keyword-or-index-or-text "Keyword, index entry, or text")
  (exact-match "exact match")
  (containing-match "containing match")
  (regexp-match "regexp match")
  (feeling-lucky "Feeling Lucky")
  (nothing-found-for-search-key "Nothing found for \"~a\".")
  (searching "Searching...")
- (search-stopped "(Search stopped.)")
- (search-stopped-too-many-matches "(Search stopped - found too many matches.)")
+ (search-stopped "[Search stopped.]")
+ (search-stopped-too-many-matches "[Search aborted: too many matches]")
  (reload "Reload")
  (help "Help")
  (searching... "Searching...")
@@ -155,6 +163,8 @@
  (nothing-found-for "Nothing found for ~a")
  (and "and")
  (error-finding-docs "Could not find documentation.\n\n~a")
+ (refresh "refresh")
+ (refresh-all-manuals "refresh all manuals")
  (manual-installed-date "(installed ~a)")
 
  ;; refreshing manuals
@@ -480,7 +490,7 @@
  (new-window "New Window")
 
  ;;; exiting and quitting ``are you sure'' dialog
- ;;; (exit is used on windows, quit on macos, in English. Other
+ ;;; exit is used on windows, quit on macos, in English. Other
  ;;; languages probably use the same word on both platforms.
  (exit "Exit")
  (quit "Quit")

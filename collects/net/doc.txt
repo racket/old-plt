@@ -1,4 +1,4 @@
-Time-stamp: <99/02/07 12:26:01 mflatt>
+Time-stamp: <99/10/22 12:42:59 shriram>
 
 The `net' collection contains libraries that provide access to the
 following _Internet_ (quasi-)protocols:
@@ -15,6 +15,8 @@ following _Internet_ (quasi-)protocols:
 
 Shriram Krishnamurthi
 shriram@cs.rice.edu
+Matthew Flatt
+mflatt@cs.utah.edu
 
 ==========================================================================
 _URL_ posting, _web clients_, _WWW_
@@ -114,12 +116,13 @@ PROCEDURES -----------------------------------------------------------
 
 EXAMPLE --------------------------------------------------------------
 
- (invoke-open-unit/sig mzlib:url@ #f)
+ (require-library "url.ss" "net")
  (define url:cs (string->url "http://www.cs.rice.edu/"))
  (define url:me (string->url "http://www.cs.rice.edu/~shriram/"))
  (define comb combine-url/relative)
  (define (test url)
    (call/input-url url get-pure-port display-pure-port))
+ (test url:cs)
 
 ==========================================================================
 _CGI_ backends, _WWW_

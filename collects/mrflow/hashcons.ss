@@ -601,6 +601,7 @@
                                            (let*-values ([(ty) (make-type-rec (map (lambda (v) (make-type-var v #f #f)) scc)
                                                                               (map (lambda (v) (hash-table-get bindings v)) scc)
                                                                               (make-type-var (car scc) #f #f))]
+                                                         [(ty) (subst-handles/vars-if-possible ty env)]                                                         
                                                          [(ty) (hashcons-acyclic-subtrees tbl ty)]
                                                          [(dfa binder-states)
                                                           (create-dfa-from-type ty env)]

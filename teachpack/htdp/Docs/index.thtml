@@ -1,4 +1,4 @@
-#define LIBNAME Teachpack for How to Design Programs
+#define LIBNAME Teachpacks for How to Design Programs
 #include head.tinc
 <UL>
 <LI> <A HREF="master.html">Mastermind</A>

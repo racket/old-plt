@@ -1,3 +1,10 @@
+;; make sure these load
+(parameterize ([current-namespace (make-namespace 'mred)])
+  (require-library "graphicss.ss" "graphics")
+  (require-library "graphicr.ss" "graphics")
+  (require-library "graphicspr.ss" "graphics"))
+
+;; load the graphics
 (require-library "graphics.ss" "graphics")
 (require-library "macro.ss")
 (open-graphics)
@@ -140,19 +147,6 @@
                   (unmarshall-color color-expected))))))
     (close-viewport v)))
 
-;; test scaling
-(define (scale-test)
-  (let* ([v (open-viewport "Scale Test" 200 200)]
-         [f (lambda ()
-              ((draw-line v) (make-posn 0 0) (make-posn 200 200))
-              ((draw-string v) (make-posn 10 100) "click to scale to 1/2"))])
-    (f)
-    (get-mouse-click v)
-    (set-viewport-scale v 1/2)
-    (f)
-    (get-mouse-click v)
-    (close-viewport v)))
-  
 (define (snip-test)
   ;; test snips
   (let ([vp (open-pixmap "snip test" 100 100)])
@@ -247,7 +241,6 @@
 (struct-test)
 (basic-test)
 (pixel-test)
-(scale-test)
 (color-test)
 (snip-test)
 (pixmap-test)

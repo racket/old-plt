@@ -1226,7 +1226,7 @@ void wxImageSnip::Write(wxMediaStreamOut &f)
 {
   int writeBm = 0, writePm = 0;
 
-  f << (filename ? filename : "");
+  f << (filename ? filename : (char *)"");
   if (filename)
     f << filetype;
   else {

@@ -656,7 +656,7 @@ scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info)
 
 Scheme_Object *
 scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code, 
-				Scheme_Compile_Info *rec)
+				Scheme_Compile_Info *rec, int drec)
 {
   Scheme_Object *allparams, *params, *forms, *param;
   Scheme_Closure_Compilation_Data *data;
@@ -698,21 +698,21 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   if (SCHEME_NULLP(forms))
     scheme_wrong_syntax("lambda", NULL, code, "bad syntax (empty body)");
 
-  data->name = rec->value_name;
+  data->name = rec[drec].value_name;
 
-  scheme_compile_rec_done_local(rec);
+  scheme_compile_rec_done_local(rec, drec);
 
-  scheme_init_lambda_rec(rec, &lam);
+  scheme_init_lambda_rec(rec, drec, &lam, 0);
 
   {
     Scheme_Object *datacode;
     datacode = scheme_compile_sequence(forms, 
 				       scheme_no_defines(frame), 
-				       &lam);
+				       &lam, 0);
     data->code = datacode;
   }
 
-  scheme_merge_lambda_rec(rec, &lam);
+  scheme_merge_lambda_rec(rec, drec, &lam, 0);
 
   cl = MALLOC_ONE_RT(Closure_Info);
 #ifdef MZTAG_REQUIRED
@@ -825,7 +825,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	  pp->overflow_reply = NULL; /* means "continue the error" */
 	} else {
 	  void *p1, *p2, *p3, *p4;
-	  int i1, i2;
+	  int i1, i2, i3;
 	
 	  p1 = pp->ku.k.p1;
 	  p2 = pp->ku.k.p2;
@@ -833,6 +833,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	  p4 = pp->ku.k.p4;
 	  i1 = pp->ku.k.i1;
 	  i2 = pp->ku.k.i2;
+	  i3 = pp->ku.k.i3;
 	
 	  /* stack overflow is a lot of work; force a sleep */
 	  scheme_process_block(0);
@@ -843,6 +844,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	  pp->ku.k.p4 = p4;
 	  pp->ku.k.i1 = i1;
 	  pp->ku.k.i2 = i2;
+	  pp->ku.k.i3 = i3;
 	
 	  {
 	    Overflow_K_Proc f = scheme_overflow_k;

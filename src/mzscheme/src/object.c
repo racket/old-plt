@@ -636,7 +636,8 @@ static void CompileItemList(Scheme_Object *form,
 			    ClassVariable *cvars,
 			    Scheme_Comp_Env *env, 
 			    Class_Data *data,
-			    Scheme_Compile_Info *rec)
+			    Scheme_Compile_Info *rec,
+			    int drec)
 {
   int alias, count;
   ClassVariable *classvar;
@@ -649,14 +650,14 @@ static void CompileItemList(Scheme_Object *form,
   }
 
   recs = MALLOC_N_RT(Scheme_Compile_Info, count);
-  scheme_init_compile_recs(rec, recs, count);
+  scheme_init_compile_recs(rec, drec, recs, count);
 
   for (count = 0, classvar = cvars; classvar; classvar = classvar->next) {
     alias = isref(classvar);
 
     if (!alias && !classvar->u.value) {
       Scheme_Object *cv;
-      cv = scheme_compiled_void(rec->can_optimize_constants);
+      cv = scheme_compiled_void(rec[drec].can_optimize_constants);
       classvar->u.value = cv;
     }
 
@@ -666,14 +667,14 @@ static void CompileItemList(Scheme_Object *form,
       recs[count].value_name = IVAR_EXT_NAME(classvar);
       {
 	Scheme_Object *ce;
-	ce = scheme_compile_expr(classvar->u.value, env, recs + count);
+	ce = scheme_compile_expr(classvar->u.value, env, recs, count);
 	classvar->u.value = ce;
       }
       count++;
     }
   }
 
-  scheme_merge_compile_recs(rec, recs, count);
+  scheme_merge_compile_recs(rec, drec, recs, count);
 }
 
 #define check_MustPair 0x1
@@ -1214,11 +1215,11 @@ static Scheme_Object *Interface_Link(Scheme_Object *form, Link_Info *info)
 }
 
 static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
-				   Scheme_Compile_Info *rec, int depth)
+				   Scheme_Compile_Info *rec, int drec, int depth)
 {
   int i, num_supers, num_names;
   Scheme_Object *l, *sl, **supers, *nl;
-  DupCheckRecord *r, drec;
+  DupCheckRecord *r, dcrec;
 
   l = SCHEME_CDR(form);
   
@@ -1250,8 +1251,8 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
   l = SCHEME_CDR(l);
   nl = l;
 
-  drec.scheck_size = 0;
-  r = scheme_begin_dup_symbol_check(&drec);
+  dcrec.scheck_size = 0;
+  r = scheme_begin_dup_symbol_check(&dcrec);
 
   num_names = 0;
   while (SCHEME_PAIRP(l)) {
@@ -1289,8 +1290,8 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
     data = MALLOC_ONE_TAGGED(Interface_Data);
     data->type = scheme_interface_data_type;
 
-    data->defname = rec->value_name;
-    scheme_compile_rec_done_local(rec);
+    data->defname = rec[drec].value_name;
+    scheme_compile_rec_done_local(rec, drec);
 
     data->num_names = num_names;
     {
@@ -1309,15 +1310,15 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
 	  (Compare_Proc)CompareObjectPtrs); 
 
     recs = MALLOC_N_RT(Scheme_Compile_Info, num_supers);
-    scheme_init_compile_recs(rec, recs, num_supers);
+    scheme_init_compile_recs(rec, drec, recs, num_supers);
 
     for (i = 0; i < num_supers; i++) {
       Scheme_Object *ce;
-      ce = scheme_compile_expr(supers[i], env, recs + i);
+      ce = scheme_compile_expr(supers[i], env, recs, i);
       supers[i] = ce;
     }
 
-    scheme_merge_compile_recs(rec, recs, num_supers);
+    scheme_merge_compile_recs(rec, drec, recs, num_supers);
 
     data->num_supers = num_supers;
     data->super_exprs = supers;
@@ -1328,15 +1329,15 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
 }
 
 static Scheme_Object *Interface(Scheme_Object *form, Scheme_Comp_Env *env,
-				Scheme_Compile_Info *rec)
+				Scheme_Compile_Info *rec, int drec)
 {
-  return Do_Interface(form, env, rec, 0);
+  return Do_Interface(form, env, rec, drec, 0);
 }
 
 static Scheme_Object *Interface_expand(Scheme_Object *form, Scheme_Comp_Env *env,
 				       int depth)
 {
-  return Do_Interface(form, env, NULL, depth);
+  return Do_Interface(form, env, NULL, 0, depth);
 }
 
 
@@ -1819,11 +1820,11 @@ static void InitData(Class_Data *data)
 }
 
 static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
-				     Scheme_Compile_Info *rec, int depth)
+				     Scheme_Compile_Info *rec, int drec, int depth)
 {
 #define BAD_MSG ": bad syntax in class definition"
 
-  DupCheckRecord *r, *er, drec, erec;
+  DupCheckRecord *r, *er, dcrec, erec;
   Scheme_Object *l, *superclass, *vars, *tag;
   Scheme_Object *superinitname, **interfaces;
   Scheme_Object *pub, *priv, *ref, *objl;
@@ -1834,7 +1835,7 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
   ClassVariable *item;
   int num_args, num_required_args, num_arg_vars, num_interfaces;
 
-  drec.scheck_size = 0;
+  dcrec.scheck_size = 0;
   erec.scheck_size = 0;
 
   l = SCHEME_CDR(form);
@@ -2020,7 +2021,7 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
   GetNames(ivars, 0, 0, 1, refenv);
 
   /* Initialize distinct name checks with ivars: */
-  r = scheme_begin_dup_symbol_check(&drec);
+  r = scheme_begin_dup_symbol_check(&dcrec);
   er = scheme_begin_dup_symbol_check(&erec);
   item = ivars;
   while (item) {
@@ -2148,16 +2149,16 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
     data = MALLOC_ONE_TAGGED(Class_Data);
     data->type = scheme_class_data_type;
 
-    data->defname = rec->value_name;
-    scheme_compile_rec_done_local(rec);
+    data->defname = rec[drec].value_name;
+    scheme_compile_rec_done_local(rec, drec);
 
     recs = MALLOC_N_RT(Scheme_Compile_Info, num_interfaces + 1);
-    scheme_init_compile_recs(rec, recs, num_interfaces + 1);
+    scheme_init_compile_recs(rec, drec, recs, num_interfaces + 1);
 
     data->super_init_name = superinitname;
     {
       Scheme_Object *cs;
-      cs = scheme_compile_expr(superclass, env, recs);
+      cs = scheme_compile_expr(superclass, env, recs, 0);
       data->super_expr = cs;
     }
     
@@ -2165,7 +2166,7 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
       int i;
       for (i = 0; i < num_interfaces; i++) {
 	Scheme_Object *ci;
-	ci = scheme_compile_expr(interfaces[i], env, recs + i + 1);
+	ci = scheme_compile_expr(interfaces[i], env, recs, i + 1);
 	interfaces[i] = ci;
       }
     }
@@ -2173,13 +2174,13 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
     data->num_interfaces = num_interfaces;
     data->interface_exprs = interfaces;
 
-    scheme_merge_compile_recs(rec, recs, num_interfaces + 1);
+    scheme_merge_compile_recs(rec, drec, recs, num_interfaces + 1);
 
-    scheme_init_lambda_rec(rec, &lam);
+    scheme_init_lambda_rec(rec, drec, &lam, 0);
   
-    CompileItemList(form, ivars, objenv, data, &lam);
+    CompileItemList(form, ivars, objenv, data, &lam, 0);
 
-    scheme_merge_lambda_rec(rec, &lam);
+    scheme_merge_lambda_rec(rec, drec, &lam, 0);
 
     data->ivars = ivars;
 
@@ -2204,15 +2205,15 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
 }
 
 static Scheme_Object *DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
-				  Scheme_Compile_Info *rec)
+				  Scheme_Compile_Info *rec, int drec)
 {
-  return Do_DefineClass(form, env, rec, 0);
+  return Do_DefineClass(form, env, rec, drec, 0);
 }
 
 static Scheme_Object *DefineClass_expand(Scheme_Object *form, Scheme_Comp_Env *env,
 					 int depth)
 {
-  return Do_DefineClass(form, env, NULL, depth);
+  return Do_DefineClass(form, env, NULL, 0, depth);
 }
 
 /**********************************************************************/
@@ -3061,7 +3062,8 @@ static void BuildObjectFrame(Internal_Object *obj,
 			     Init_Object_Rec *irec,
 			     Scheme_Class *oclass,
 			     Scheme_Class *sclass,
-			     Init_Frame *frame,
+			     Init_Frame *frames,
+			     int framepos,
 			     Scheme_Object **slots)
 {
   /* Called when object is created (before initialization) for each class,
@@ -3074,13 +3076,13 @@ static void BuildObjectFrame(Internal_Object *obj,
     ivars = MALLOC_N(Scheme_Object*, sclass->num_ivar);
   else
     ivars = NULL;
-  frame->ivars = ivars;
+  frames[framepos].ivars = ivars;
   
   if (sclass->num_ref)
     refs = MALLOC_N(Scheme_Object*, sclass->num_ref);
   else
     refs = NULL;
-  frame->refs = refs;
+  frames[framepos].refs = refs;
 
   /* Find all rename boxes, then make public boxes */
 
@@ -3126,7 +3128,7 @@ static Init_Object_Rec *CreateObjectFrames(Internal_Object *obj, Scheme_Class *s
   irec->init_level = sclass->pos + 1;
 
   for (i = 0; i <= sclass->pos; i++) {
-    BuildObjectFrame(obj, irec, sclass, sclass->heritage[i], frames + i, slots);
+    BuildObjectFrame(obj, irec, sclass, sclass->heritage[i], frames, i, slots);
   }
 
   return irec;

@@ -635,7 +635,7 @@ typedef struct Scheme_Process {
     } multiple;
     struct {
       void *p1, *p2, *p3, *p4;
-      long i1, i2;
+      long i1, i2, i3;
     } k;
   } ku;
 

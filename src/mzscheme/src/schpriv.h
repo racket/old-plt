@@ -994,7 +994,7 @@ typedef struct Link_Info
 
 typedef struct Scheme_Object *
 (Scheme_Syntax)(struct Scheme_Object *form, struct Scheme_Comp_Env *env,
-		struct Scheme_Compile_Info *rec);
+		struct Scheme_Compile_Info *rec, int drec);
 
 typedef struct Scheme_Object *
 (Scheme_Syntax_Expander)(struct Scheme_Object *form, struct Scheme_Comp_Env *env,
@@ -1051,13 +1051,14 @@ void scheme_check_identifier(const char *formname, Scheme_Object *id,
 
 Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first, 
 					    Scheme_Comp_Env *env, 
-					    Scheme_Compile_Info *rec, 
+					    Scheme_Compile_Info *rec,
+					    int drec,
 					    int depth,
 					    Scheme_Object **current_val);
 
 Scheme_Object *scheme_compile_expand_macro_app(Scheme_Object *macro,
 					       Scheme_Object *form, Scheme_Comp_Env *env,
-					       Scheme_Compile_Info *rec, int depth);
+					       Scheme_Compile_Info *rec, int drec, int depth);
 Scheme_Object *scheme_apply_macro_to_list(Scheme_Object *f, Scheme_Object *argss,
 					  Scheme_Object *code);
 
@@ -1115,29 +1116,29 @@ Scheme_Object *scheme_make_compiled_syntax(Scheme_Syntax *syntax,
 					   Scheme_Syntax_Expander *exp);
 
 Scheme_Object *scheme_compile_expr(Scheme_Object *form, Scheme_Comp_Env *env,
-				   Scheme_Compile_Info *rec);
+				   Scheme_Compile_Info *rec, int drec);
 Scheme_Object *scheme_compile_sequence(Scheme_Object *forms, Scheme_Comp_Env *env,
-			      Scheme_Compile_Info *rec);
+			      Scheme_Compile_Info *rec, int drec);
 Scheme_Object *scheme_compile_block(Scheme_Object *forms, Scheme_Comp_Env *env,
-			      Scheme_Compile_Info *rec);
+			      Scheme_Compile_Info *rec, int drec);
 Scheme_Object *scheme_compile_list(Scheme_Object *form, Scheme_Comp_Env *env,
-			      Scheme_Compile_Info *rec);
+			      Scheme_Compile_Info *rec, int drec);
 
-void scheme_default_compile_rec(Scheme_Compile_Info *src);
-void scheme_compile_rec_done_local(Scheme_Compile_Info *src);
-void scheme_init_compile_recs(Scheme_Compile_Info *src, 
+void scheme_default_compile_rec(Scheme_Compile_Info *src, int drec);
+void scheme_compile_rec_done_local(Scheme_Compile_Info *src, int drec);
+void scheme_init_compile_recs(Scheme_Compile_Info *src, int drec,
 			      Scheme_Compile_Info *dest, int n);
-void scheme_merge_compile_recs(Scheme_Compile_Info *src, 
+void scheme_merge_compile_recs(Scheme_Compile_Info *src, int drec, 
 			       Scheme_Compile_Info *dest, int n);
-void scheme_init_lambda_rec(Scheme_Compile_Info *src,
-			    Scheme_Compile_Info *lam);
-void scheme_merge_lambda_rec(Scheme_Compile_Info *src,
-			    Scheme_Compile_Info *lam);
+void scheme_init_lambda_rec(Scheme_Compile_Info *src, int drec,
+			    Scheme_Compile_Info *lam, int dlrec);
+void scheme_merge_lambda_rec(Scheme_Compile_Info *src, int drec,
+			    Scheme_Compile_Info *lam, int dlrec);
 
 
 Scheme_Object *scheme_make_closure_compilation(Scheme_Comp_Env *env,
 					       Scheme_Object *uncompiled_code,
-					       Scheme_Compile_Info *rec);
+					       Scheme_Compile_Info *rec, int drec);
 Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *compiled_list,
 						int to_linked, int strip_values);
 

@@ -47,7 +47,7 @@ typedef struct {
 Scheme_Object *scheme_arity_at_least, *scheme_date;
 
 /* locals */
-static Scheme_Object *struct_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *struct_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *struct_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
@@ -800,7 +800,7 @@ struct_link(Scheme_Object *expr, Link_Info *info)
 
 static Scheme_Object *
 do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env, 
-		  Scheme_Compile_Info *in_rec, int depth)
+		  Scheme_Compile_Info *in_rec, int drec, int depth)
 {
   Struct_Info *info;
   Scheme_Object *base_symbol, *field_symbols, *l, *form, *parent_expr;
@@ -826,14 +826,14 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
       return NULL;
     }
     if (in_rec)
-      parent_expr = scheme_compile_expr(SCHEME_CAR(parent_expr), env, in_rec);
+      parent_expr = scheme_compile_expr(SCHEME_CAR(parent_expr), env, in_rec, drec);
     else
       parent_expr = scheme_expand_expr(SCHEME_CAR(parent_expr), env, depth);
   } else {
     parent_expr = NULL;
 
     if (in_rec)
-      in_rec->max_let_depth = 0;
+      in_rec[drec].max_let_depth = 0;
   }
 
   if (!SCHEME_SYMBOLP(base_symbol))
@@ -864,7 +864,7 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
   if (in_rec) {
     info->num_fields = count;
 
-    if (in_rec->can_optimize_constants) {
+    if (in_rec[drec].can_optimize_constants) {
       Scheme_Object **sa;
       sa = scheme_make_struct_names(info->name,
 				    info->fields,
@@ -889,15 +889,15 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
 
 static Scheme_Object *
 struct_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-		   Scheme_Compile_Info *rec)
+		   Scheme_Compile_Info *rec, int drec)
 {
-  return do_struct_syntax(form, env, rec, 0);
+  return do_struct_syntax(form, env, rec, drec, 0);
 }
 
 static Scheme_Object *
 struct_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
-  return do_struct_syntax(form, env, NULL, depth);
+  return do_struct_syntax(form, env, NULL, 0, depth);
 }
 
 static Scheme_Object *

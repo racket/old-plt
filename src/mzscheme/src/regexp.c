@@ -1331,7 +1331,7 @@ char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, 
   dest = (char *)scheme_malloc_atomic(destalloc + 1);
 	
 
-  if (prog == NULL || source == NULL || dest == NULL) {
+  if (prog == NULL || src == NULL || dest == NULL) {
     regerror("NULL parm to regsub");
     return "";
   }

@@ -1136,7 +1136,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
   SCHEME_USE_FUEL(flen);
 
   if (start < i) {
-    scheme_write_string((char *)format, start, i - start, port);
+    scheme_write_offset_string((char *)format, start, i - start, port);
   }
 }
 

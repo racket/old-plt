@@ -387,10 +387,10 @@ static Scheme_Object *unit_varlist(BodyExpr *e,
 	c = e->u.def.count;
 	vs = e->u.def.vars;
 	for (i = 0; i < c; i++) {
-	  if (vs[i]->exported == exported) {
+	  if (vs[i].exported == exported) {
 	    Scheme_Object *name;
 	    
-	    name = vs[i]->id;
+	    name = vs[i].id;
 	    name = cons(name, scheme_null);
 	    if (last)
 	      SCHEME_CDR(last) = name;
@@ -411,11 +411,11 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 		      UnitIds *exports,
 		      int *num_params,
 		      BodyExprs *body,
-		      Scheme_Compile_Info *rec,
+		      Scheme_Compile_Info *rec, int drec,
 		      int depth)
 {
   Scheme_Comp_Env *indirect_env;
-  DupCheckRecord drec;
+  DupCheckRecord dcrec;
   Scheme_Object *l = SCHEME_CDR(form), *export, *params, *bodystack;
   Scheme_Object *indirect_first = scheme_null, *indirect_last = NULL;
   UnitId *id;
@@ -427,7 +427,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   
   expand_env = env;
 
-  drec.scheck_size = 0;
+  dcrec.scheck_size = 0;
 
   init_ids(exports);
 
@@ -448,7 +448,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   export = SCHEME_CAR(l);
   l = SCHEME_CDR(l);
 
-  params = check_params(MAKE_UNIT, params, form, env, &drec, 1, 0);
+  params = check_params(MAKE_UNIT, params, form, env, &dcrec, 1, 0);
 
   import_count = scheme_list_length(params);
   *num_params = import_count;
@@ -462,11 +462,11 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 			"expected `export' keyword");
   check_id_list(MAKE_UNIT, SCHEME_CDR(export), form, env, exports, NULL, 1);
 
-  check_ext_ids_unique(&drec, exports, MAKE_UNIT, form);
+  check_ext_ids_unique(&dcrec, exports, MAKE_UNIT, form);
 
   /* Check for aliases: */
-  check_int_ids_unique(exports, MAKE_UNIT, form, &drec, 0, 0, "exported internal");
-  check_params(MAKE_UNIT, params, form, NULL, &drec, 0, 1);
+  check_int_ids_unique(exports, MAKE_UNIT, form, &dcrec, 0, 0, "exported internal");
+  check_params(MAKE_UNIT, params, form, NULL, &dcrec, 0, 1);
 
   {
     /* Make list of internal names for exported variables, then extend the
@@ -499,7 +499,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
       Scheme_Object *gval;
 
       /* Check for macro expansion, which could mask the real define-values */
-      expr = scheme_check_immediate_macro(expr, expand_env, rec, depth, &gval);
+      expr = scheme_check_immediate_macro(expr, expand_env, rec, drec, depth, &gval);
 
       if (SAME_OBJ(gval, scheme_begin_syntax)) {
 	Scheme_Object *cl;
@@ -655,14 +655,14 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   }
 
   /* Check that imported ids are not redefined: */
-  check_params(MAKE_UNIT, params, form, NULL, &drec, 0, 0);
+  check_params(MAKE_UNIT, params, form, NULL, &dcrec, 0, 0);
   for (e = body->first; e; e = e->next) {
     if (e->btype == mm_body_def) {
       int i, c = e->u.def.count;
       BodyVar *vs = e->u.def.vars;
 
       for (i = 0; i < c; i++) {
-	scheme_dup_symbol_check(&drec, MAKE_UNIT, vs[i].id, "internal", form, 0);
+	scheme_dup_symbol_check(&dcrec, MAKE_UNIT, vs[i].id, "internal", form, 0);
       }
     }
   }
@@ -691,7 +691,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 
   if (rec) {
     recs = MALLOC_N_RT(Scheme_Compile_Info, expr_count);
-    scheme_init_compile_recs(rec, recs, expr_count);
+    scheme_init_compile_recs(rec, drec, recs, expr_count);
     expr_count = 0;
   } else
     recs = NULL;
@@ -734,7 +734,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 	
 	recs[expr_count].value_name = s;
       }
-      expr = scheme_compile_expr(expr, env, recs + expr_count);
+      expr = scheme_compile_expr(expr, env, recs, expr_count);
       expr_count++;
     }
 
@@ -745,8 +745,8 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   }
 
   if (rec) {
-    scheme_merge_compile_recs(rec, recs, expr_count);
-    rec->max_let_depth += (indirect_env->num_bindings + env->num_bindings);
+    scheme_merge_compile_recs(rec, drec, recs, expr_count);
+    rec[drec].max_let_depth += (indirect_env->num_bindings + env->num_bindings);
   }
 
   return count;
@@ -756,16 +756,16 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 				 UnitIds *withs, 
 				 UnitIds *exports,
 				 int *num_params,
-				 Scheme_Compile_Info *rec,
+				 Scheme_Compile_Info *rec, int drec,
 				 int depth)
 {
-  DupCheckRecord drec;
+  DupCheckRecord dcrec;
   Scheme_Object *l = SCHEME_CDR(form), *with, *export, *params;
   int c, num_withs = 0;
   UnitId *id;
   Scheme_Compile_Info *recs;
 
-  drec.scheck_size = 0;
+  dcrec.scheck_size = 0;
 
   init_ids(withs);
   init_ids(exports);
@@ -784,7 +784,7 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   l = SCHEME_CDR(l);
   export = SCHEME_CAR(l);
 
-  params = check_params(MAKE_COMPOUND_UNIT, params, form, env, &drec, 1, 0);
+  params = check_params(MAKE_COMPOUND_UNIT, params, form, env, &dcrec, 1, 0);
   c = scheme_list_length(params);
   *num_params = c;
 
@@ -802,23 +802,23 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 			"expected `export' keyword");
   check_tagged(MAKE_COMPOUND_UNIT, SCHEME_CDR(export), form, env, 1, exports, 1, 0, 0, NULL);
 
-  check_tags_unique(withs, MAKE_COMPOUND_UNIT, form, &drec, 0, 0, 0);
+  check_tags_unique(withs, MAKE_COMPOUND_UNIT, form, &dcrec, 0, 0, 0);
   /* Check that export tags were defined by withs: */
-  check_tags_unique(exports, MAKE_COMPOUND_UNIT, form, &drec, 0, 1, 1);
+  check_tags_unique(exports, MAKE_COMPOUND_UNIT, form, &dcrec, 0, 1, 1);
 
 #if 0
   /* Check that standalone tags used just once (and not also un-standalone): */
-  check_tags_unique(exports, MAKE_COMPOUND_UNIT, form, &drec, 1, 0, 0);
-  check_tags_unique(exports, MAKE_COMPOUND_UNIT, form, &drec, -1, 0, 1);
+  check_tags_unique(exports, MAKE_COMPOUND_UNIT, form, &dcrec, 1, 0, 0);
+  check_tags_unique(exports, MAKE_COMPOUND_UNIT, form, &dcrec, -1, 0, 1);
 #endif
 
   /* Check uses of tags in links: */
-  check_tags_unique(withs, MAKE_COMPOUND_UNIT, form, &drec, 0, 0, 0);
+  check_tags_unique(withs, MAKE_COMPOUND_UNIT, form, &dcrec, 0, 0, 0);
   for (id = withs->first; id; id = id->next) {
     UnitIds tmp;
     tmp.first = (UnitId *)id->ext_id;
 
-    check_tags_unique(&tmp, MAKE_COMPOUND_UNIT, form, &drec, 0, 1, 1);
+    check_tags_unique(&tmp, MAKE_COMPOUND_UNIT, form, &dcrec, 0, 1, 1);
   }
 
   /* Lookup use of imported in withs */
@@ -854,11 +854,11 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
     }
   }
 
-  check_ext_ids_unique(&drec, exports, MAKE_COMPOUND_UNIT, form);
+  check_ext_ids_unique(&dcrec, exports, MAKE_COMPOUND_UNIT, form);
 
   if (rec) {
     recs = MALLOC_N_RT(Scheme_Compile_Info, num_withs);
-    scheme_init_compile_recs(rec, recs, num_withs);
+    scheme_init_compile_recs(rec, drec, recs, num_withs);
   } else
     recs = NULL;
 
@@ -870,13 +870,13 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
       id->int_id = ee;
     } else {
       Scheme_Object *ce;
-      ce = scheme_compile_expr(id->int_id, env, rec);
+      ce = scheme_compile_expr(id->int_id, env, recs, c);
       id->int_id = ce;
     }
   }
 
   if (rec)
-    scheme_merge_compile_recs(rec, recs, num_withs);
+    scheme_merge_compile_recs(rec, drec, recs, num_withs);
 
   return c;
 }
@@ -1015,7 +1015,7 @@ static Scheme_Object *link_unit(Scheme_Object *o, Link_Info *info)
 
 static Scheme_Object *make_unit_syntax(Scheme_Object *form,
 				       Scheme_Comp_Env *env,
-				       Scheme_Compile_Info *rec)
+				       Scheme_Compile_Info *rec, int drec)
 {
   UnitIds exports;
   BodyExprs body;
@@ -1026,18 +1026,18 @@ static Scheme_Object *make_unit_syntax(Scheme_Object *form,
   Scheme_Compile_Info lam;
   Scheme_Object *defname;
 
-  defname = rec->value_name;
-  scheme_compile_rec_done_local(rec);
+  defname = rec[drec].value_name;
+  scheme_compile_rec_done_local(rec, drec);
 
   cenv = scheme_new_compilation_frame(0, SCHEME_LAMBDA_FRAME, env);
 
-  scheme_init_lambda_rec(rec, &lam);
+  scheme_init_lambda_rec(rec, drec, &lam, 0);
 
-  count = check_unit(form, cenv, &exports, &num_params, &body, &lam, 0);
+  count = check_unit(form, cenv, &exports, &num_params, &body, &lam, 0, 0);
 
-  scheme_merge_lambda_rec(rec, &lam);
+  scheme_merge_lambda_rec(rec, drec, &lam, 0);
 
-  scheme_default_compile_rec(rec);
+  scheme_default_compile_rec(rec, drec);
 
   label = MALLOC_ONE_TAGGED(BodyData);
 
@@ -1066,7 +1066,7 @@ static Scheme_Object *make_unit_expand(Scheme_Object *form,
   BodyExpr *e;
   Scheme_Object *first = scheme_null, *last = NULL;
 
-  (void)check_unit(form,  env, &exports, &num_params, &body, NULL, depth);
+  (void)check_unit(form,  env, &exports, &num_params, &body, NULL, 0, depth);
 
   /* Rebuild the expression: */
 
@@ -1315,17 +1315,18 @@ static Scheme_Object *link_compound_unit(Scheme_Object *o, Link_Info *info)
 
 static Scheme_Object *make_compound_unit_syntax(Scheme_Object *form,
 						Scheme_Comp_Env *env,
-						Scheme_Compile_Info *rec)
+						Scheme_Compile_Info *rec,
+						int drec)
 {
   UnitIds withs, exports;
   int num_imports, count;
   Scheme_Object *m, *defname;
 
-  defname = rec->value_name;
-  scheme_compile_rec_done_local(rec);
+  defname = rec[drec].value_name;
+  scheme_compile_rec_done_local(rec, drec);
 
   count = check_compound_unit(form, env, &withs, &exports, &num_imports,
-			      rec, 0);
+			      rec, drec, 0);
   
   m = make_compound_unit_record(count, withs.first, exports.first,
 				NULL, num_imports, form, defname, 0);
@@ -1447,7 +1448,7 @@ static Scheme_Object *make_compound_unit_expand(Scheme_Object *form,
   Scheme_Object *first = scheme_null, *last = NULL, *l;
 
   count = check_compound_unit(form, env, &withs, &exports, &num_params,
-				NULL, depth);
+				NULL, 0, depth);
 
   l = SCHEME_CDR(SCHEME_CAR(SCHEME_CDR(SCHEME_CDR(form))));
   for (id = withs.first; id; id = id->next) {
@@ -1536,7 +1537,8 @@ static Scheme_Object *link_invoke_unit(Scheme_Object *o, Link_Info *info)
 static Scheme_Object *do_invoke_unit_syntax(char *where,
 					    Scheme_Object *form,
 					    Scheme_Comp_Env *env,
-					    Scheme_Compile_Info *rec)
+					    Scheme_Compile_Info *rec,
+					    int drec)
 {
   Scheme_Object *l;
   int c, i;
@@ -1548,11 +1550,11 @@ static Scheme_Object *do_invoke_unit_syntax(char *where,
   data->type = scheme_invoke_unit_data_type;
   data->num_exports = c;
 
-  scheme_compile_rec_done_local(rec);
+  scheme_compile_rec_done_local(rec, drec);
 
   {
     Scheme_Object *ce;
-    ce = scheme_compile_expr(SCHEME_CADR(form), env, rec);
+    ce = scheme_compile_expr(SCHEME_CADR(form), env, rec, drec);
     data->expr = ce;
   }
 
@@ -1576,7 +1578,7 @@ static Scheme_Object *do_invoke_unit_syntax(char *where,
 			       SCHEME_MUST_INDRECT
 			       + SCHEME_GLOB_ALWAYS_REFERENCE
 			       + SCHEME_LINKING_REF
-			       + (rec->dont_mark_local_use 
+			       + (rec[drec].dont_mark_local_use 
 				  ? SCHEME_DONT_MARK_USE 
 				  : 0));
 
@@ -1610,9 +1612,10 @@ static Scheme_Object *do_invoke_unit_expand(char *where,
 
 static Scheme_Object *invoke_unit_syntax(Scheme_Object *form,
 					 Scheme_Comp_Env *env,
-					 Scheme_Compile_Info *rec)
+					 Scheme_Compile_Info *rec,
+					 int drec)
 {
-  return do_invoke_unit_syntax(INVOKE_UNIT, form, env, rec);
+  return do_invoke_unit_syntax(INVOKE_UNIT, form, env, rec, drec);
 }
 
 static Scheme_Object *invoke_unit_expand(Scheme_Object *form,

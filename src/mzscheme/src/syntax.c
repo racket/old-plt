@@ -29,51 +29,51 @@ Scheme_Object *scheme_compiled_void_code;
 Scheme_Object scheme_undefined[1];
 
 /* locals */
-static Scheme_Object *lambda_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *lambda_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *define_values_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *define_values_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *define_values_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *quote_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *quote_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *quote_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *if_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *if_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *if_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 static Scheme_Object *set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *set_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
-static Scheme_Object *case_lambda_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *set_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *case_lambda_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 static Scheme_Object *let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *let_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
-static Scheme_Object *let_star_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
-static Scheme_Object *letrec_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
-static Scheme_Object *let_values_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
-static Scheme_Object *let_star_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
-static Scheme_Object *letrec_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
-static Scheme_Object *begin_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *let_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *let_star_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *letrec_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *let_values_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *let_star_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *letrec_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *begin_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *begin_expand (Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *begin0_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *begin0_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *begin0_expand (Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 
-static Scheme_Object *empty_cond_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *empty_cond_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *empty_cond_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 
-static Scheme_Object *unquote_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *unquote_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *unquote_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 
-static Scheme_Object *with_cont_mark_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *with_cont_mark_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *with_cont_mark_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 
 /* non-standard */
-static Scheme_Object *defmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *defmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *defmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *def_id_macro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *def_id_macro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *def_id_macro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *def_exp_time_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *def_exp_time_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *def_exp_time_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *letmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *letmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *letmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *let_id_macro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *let_id_macro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *let_id_macro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *let_exp_time_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *let_exp_time_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *let_exp_time_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 
 static Scheme_Object *define_values_execute(Scheme_Object *data);
@@ -90,7 +90,7 @@ static Scheme_Object *bangboxvalue_execute(Scheme_Object *data);
 
 
 static Scheme_Object *named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-					Scheme_Compile_Info *rec, int depth);
+					Scheme_Compile_Info *rec, int drec, int depth);
 
 static Scheme_Object *write_let_value(Scheme_Object *obj);
 static Scheme_Object *read_let_value(Scheme_Object *obj);
@@ -468,7 +468,7 @@ static void lambda_check_args(char *who, Scheme_Object *args, Scheme_Object *for
 }
 
 static Scheme_Object *
-lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   Scheme_Object *args;
   
@@ -477,7 +477,7 @@ lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *r
   args = SCHEME_CAR(SCHEME_CDR(form));
   lambda_check_args("lambda", args, form);
 
-  return scheme_make_closure_compilation(env, form, rec);
+  return scheme_make_closure_compilation(env, form, rec, drec);
 }
 
 static Scheme_Object *
@@ -627,7 +627,7 @@ static void define_values_parse(Scheme_Object *form,
 }
 
 static Scheme_Object *
-define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   Scheme_Object *var, *val, *first = scheme_null, *last = NULL, *variables;
   Scheme_Env *globals;
@@ -653,11 +653,11 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
     var = SCHEME_CDR(var);
   }  
 
-  scheme_compile_rec_done_local(rec);
+  scheme_compile_rec_done_local(rec, drec);
   if (SCHEME_PAIRP(first) && SCHEME_NULLP(SCHEME_CDR(first)))
     rec->value_name = SCHEME_CAR(variables);
 
-  val = scheme_compile_expr(val, env, rec);
+  val = scheme_compile_expr(val, env, rec, drec);
 
   return scheme_make_syntax_compile(define_values_link, cons(first, val));
 }
@@ -677,7 +677,7 @@ define_values_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 }
 
 static Scheme_Object *
-quote_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+quote_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   Scheme_Object *v;
 
@@ -685,12 +685,12 @@ quote_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *re
 	&& SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(form)))))
     scheme_wrong_syntax("quote", NULL, form, "bad syntax (wrong number of parts)");
 
-  scheme_compile_rec_done_local(rec);
-  scheme_default_compile_rec(rec);
+  scheme_compile_rec_done_local(rec, drec);
+  scheme_default_compile_rec(rec, drec);
   
   v = SCHEME_CAR(SCHEME_CDR(form));
 
-  if (rec->can_optimize_constants)
+  if (rec[drec].can_optimize_constants)
     return v;
   else {
     Scheme_Object *q;
@@ -712,7 +712,7 @@ quote_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 }
 
 static Scheme_Object *
-if_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+if_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   int len, opt;
   Scheme_Object *test, *thenp, *elsep, *name;
@@ -722,23 +722,23 @@ if_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
   if (!(((len == 3) || (len == 4))))
     bad_form(form, "if", len);
 
-  name = rec->value_name;
-  scheme_compile_rec_done_local(rec);
+  name = rec[drec].value_name;
+  scheme_compile_rec_done_local(rec, drec);
 
   test = SCHEME_CAR(SCHEME_CDR(form));
   thenp = SCHEME_CAR(SCHEME_CDR(SCHEME_CDR(form)));
   if (len == 4)
     elsep = SCHEME_CAR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(form))));
   else
-    elsep = scheme_compiled_void(rec->can_optimize_constants);
+    elsep = scheme_compiled_void(rec[drec].can_optimize_constants);
 
-  scheme_init_compile_recs(rec, recs, 3);
+  scheme_init_compile_recs(rec, drec, recs, 3);
   recs[1].value_name = name;
   recs[2].value_name = name;
 
   env = scheme_no_defines(env);
 
-  test = scheme_compile_expr(test, env, &recs[0]);
+  test = scheme_compile_expr(test, env, recs, 0);
 
   if (SAME_TYPE(SCHEME_TYPE(test), scheme_quote_compilation_type))
     test = SCHEME_PTR_VAL(test);
@@ -758,16 +758,16 @@ if_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
 
     /* compile other branch only to get syntax checking: */
     recs[2].dont_mark_local_use = 1;
-    scheme_compile_expr(exp, env, &recs[2]);
+    scheme_compile_expr(exp, env, recs, 2);
 
-    test = scheme_compile_expr(comp, env, &recs[1]);
+    test = scheme_compile_expr(comp, env, recs, 1);
   } else {
     opt = 0;
-    thenp = scheme_compile_expr(thenp, env, &recs[1]);
-    elsep = scheme_compile_expr(elsep, env, &recs[2]);
+    thenp = scheme_compile_expr(thenp, env, recs, 1);
+    elsep = scheme_compile_expr(elsep, env, recs, 2);
   }
 
-  scheme_merge_compile_recs(rec, recs, opt ? 2 : 3);
+  scheme_merge_compile_recs(rec, drec, recs, opt ? 2 : 3);
 
   if (opt)
     return test;
@@ -797,7 +797,7 @@ if_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 }
 
 static Scheme_Object *
-with_cont_mark_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+with_cont_mark_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   Scheme_Object *key, *val, *expr, *name;
   Scheme_Compile_Info recs[3];
@@ -816,17 +816,17 @@ with_cont_mark_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
   val = SCHEME_CAR(form);
   expr = SCHEME_CADR(form);
 
-  name = rec->value_name;
-  scheme_compile_rec_done_local(rec);
+  name = rec[drec].value_name;
+  scheme_compile_rec_done_local(rec, drec);
 
-  scheme_init_compile_recs(rec, recs, 3);
+  scheme_init_compile_recs(rec, drec, recs, 3);
   recs[2].value_name = name;
 
-  key = scheme_compile_expr(key, env, &recs[0]);
-  val = scheme_compile_expr(val, env, &recs[1]);
-  expr = scheme_compile_expr(expr, env, &recs[2]);
+  key = scheme_compile_expr(key, env, recs, 0);
+  val = scheme_compile_expr(val, env, recs, 1);
+  expr = scheme_compile_expr(expr, env, recs, 2);
 
-  scheme_merge_compile_recs(rec, recs, 3);
+  scheme_merge_compile_recs(rec, drec, recs, 3);
 
   wcm = MALLOC_ONE_TAGGED(Scheme_With_Continuation_Mark);
   wcm->type = scheme_with_cont_mark_type;
@@ -921,7 +921,7 @@ set_link(Scheme_Object *data, Link_Info *link)
 }
 
 static Scheme_Object *
-set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   Scheme_Object *var, *val, *name, *body;
   int l, set_undef;
@@ -935,20 +935,20 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
   
   scheme_check_identifier("set!", name, NULL, env, form);
 
-  scheme_compile_rec_done_local(rec);
-  rec->value_name = name;
+  scheme_compile_rec_done_local(rec, drec);
+  rec[drec].value_name = name;
 
   var = scheme_static_distance(name, env, 
 			       SCHEME_SETTING 
 			       + SCHEME_GLOB_ALWAYS_REFERENCE
-			       + (rec->can_optimize_constants 
+			       + (rec[drec].can_optimize_constants 
 				  ? SCHEME_ELIM_CONST 
 				  : 0)
-			       + (rec->dont_mark_local_use 
+			       + (rec[drec].dont_mark_local_use 
 				  ? SCHEME_DONT_MARK_USE 
 				  : 0));
 
-  val = scheme_compile_expr(body, scheme_no_defines(env), rec);
+  val = scheme_compile_expr(body, scheme_no_defines(env), rec, drec);
 
   /* check for (set! x x) */
   if (SAME_TYPE(SCHEME_TYPE(var), SCHEME_TYPE(val))) {
@@ -956,7 +956,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
 	|| SAME_TYPE(SCHEME_TYPE(var), scheme_local_unbox_type)) {
       /* local */
       if (SCHEME_LOCAL_POS(var) == SCHEME_LOCAL_POS(val))
-	return scheme_compiled_void(rec->can_optimize_constants);
+	return scheme_compiled_void(rec[drec].can_optimize_constants);
     } else {
       /* global; can't do anything b/c var might be undefined or constant */
     }
@@ -1072,7 +1072,7 @@ static void case_lambda_check_line(Scheme_Object *line, Scheme_Object *form)
 
 static Scheme_Object *
 case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-		    Scheme_Compile_Info *rec)
+		    Scheme_Compile_Info *rec, int drec)
 {
   Scheme_Object *list, *last, *c, *orig_form = form, *name;
   Scheme_Case_Lambda *cl;
@@ -1087,10 +1087,10 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 
     form->type = scheme_case_lambda_sequence_type;
     ((Scheme_Case_Lambda *)form)->count = 0;
-    ((Scheme_Case_Lambda *)form)->name = rec->value_name;
+    ((Scheme_Case_Lambda *)form)->name = rec[drec].value_name;
 
-    scheme_compile_rec_done_local(rec);
-    scheme_default_compile_rec(rec);
+    scheme_compile_rec_done_local(rec, drec);
+    scheme_default_compile_rec(rec, drec);
 
     return scheme_make_syntax_compile(case_lambda_link, form);
   }
@@ -1101,11 +1101,11 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
     case_lambda_check_line(SCHEME_CAR(form), orig_form);
     
     return lambda_syntax(scheme_make_pair(lambda_symbol,
-					  SCHEME_CAR(form)), env, rec);
+					  SCHEME_CAR(form)), env, rec, drec);
   }
 
-  name = rec->value_name;
-  scheme_compile_rec_done_local(rec);
+  name = rec[drec].value_name;
+  scheme_compile_rec_done_local(rec, drec);
 
   list = last = NULL;
   while (SCHEME_PAIRP(form)) {
@@ -1134,19 +1134,19 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   cl->count = count;
   cl->name = name;
 
-  scheme_compile_rec_done_local(rec);
+  scheme_compile_rec_done_local(rec, drec);
   recs = MALLOC_N_RT(Scheme_Compile_Info, count);
-  scheme_init_compile_recs(rec, recs, count);
+  scheme_init_compile_recs(rec, drec, recs, count);
 
   for (i = 0; i < count; i++, list = SCHEME_CDR(list)) {
     Scheme_Object *ce;
-    ce = scheme_compile_expr(SCHEME_CAR(list), env, recs + i);
+    ce = scheme_compile_expr(SCHEME_CAR(list), env, recs, i);
     cl->array[i] = ce;
   }
 
   scheme_end_stubborn_change((void *)cl);
 
-  scheme_merge_compile_recs(rec, recs, count);
+  scheme_merge_compile_recs(rec, drec, recs, count);
 
   return scheme_make_syntax_compile(case_lambda_link, (Scheme_Object *)cl);
 }
@@ -1478,7 +1478,7 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
 
 static Scheme_Object *
 gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
-		int star, int recursive, int multi, Scheme_Compile_Info *rec)
+		int star, int recursive, int multi, Scheme_Compile_Info *rec, int drec)
 {
   Scheme_Object *bindings, *l, *binding, *name, **names, *forms, *defname;
   int num_clauses, num_bindings, i, j, k, m, pre_k;
@@ -1501,7 +1501,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
 
   if (!num_clauses) {
     env = scheme_no_defines(env);
-    return scheme_compile_sequence(forms, env, rec);
+    return scheme_compile_sequence(forms, env, rec, drec);
   }
   
   if (multi) {
@@ -1539,9 +1539,9 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
 
   recs = MALLOC_N_RT(Scheme_Compile_Info, (num_clauses + 1));
 
-  defname = rec->value_name;
-  scheme_compile_rec_done_local(rec);
-  scheme_init_compile_recs(rec, recs, num_clauses + 1);
+  defname = rec[drec].value_name;
+  scheme_compile_rec_done_local(rec, drec);
+  scheme_init_compile_recs(rec, drec, recs, num_clauses + 1);
 
   
   if (!star) {
@@ -1602,7 +1602,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
 
     if (!recursive) {
       Scheme_Object *ce;
-      ce = scheme_compile_expr(SCHEME_CADR(binding), env, &recs[i]);
+      ce = scheme_compile_expr(SCHEME_CADR(binding), env, recs, i);
       lv->value = ce;
     } else
       lv->value = SCHEME_CADR(binding);
@@ -1626,7 +1626,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
     lv = (Scheme_Compiled_Let_Value *)first;
     for (i = 0; i < num_clauses; i++, lv = (Scheme_Compiled_Let_Value *)lv->body) {
       Scheme_Object *ce;
-      ce = scheme_compile_expr(lv->value, env, &recs[i]);
+      ce = scheme_compile_expr(lv->value, env, recs, i);
       lv->value = ce;
     }
   }
@@ -1634,7 +1634,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
   recs[num_clauses].value_name = defname;
   {
     Scheme_Object *cs;
-    cs = scheme_compile_sequence(forms, env, recs + num_clauses);
+    cs = scheme_compile_sequence(forms, env, recs, num_clauses);
     last->body = cs;
   }
 
@@ -1659,11 +1659,11 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
     first = (Scheme_Object *)head;
   }
   
-  scheme_merge_compile_recs(rec, recs, num_clauses + 1);
+  scheme_merge_compile_recs(rec, drec, recs, num_clauses + 1);
 
   scheme_end_stubborn_change((void *)names);
 
-  rec->max_let_depth += num_bindings;
+  rec[drec].max_let_depth += num_bindings;
 
   return first;
 }
@@ -1711,7 +1711,7 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
   named = !multi && !letrec && !letstar && SCHEME_PAIRP(vars) && SCHEME_SYMBOLP(SCHEME_CAR(vars));
   
   if (named)
-    return named_let_syntax(form, env, NULL, depth);
+    return named_let_syntax(form, env, NULL, 0, depth);
 
   if (!SCHEME_PAIRP(vars))
     scheme_wrong_syntax(formname, vars, form, NULL);
@@ -1840,48 +1840,48 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 }
 
 static Scheme_Object *
-let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   if (!SCHEME_PAIRP(SCHEME_CDR(form)))
     scheme_wrong_syntax("let", NULL, form, "bad syntax (" IMPROPER_LIST_FORM ")");
 
   if (SCHEME_SYMBOLP (SCHEME_CAR (SCHEME_CDR (form))))
-    return named_let_syntax (form, env, rec, 0);
+    return named_let_syntax (form, env, rec, drec, 0);
   
-  return gen_let_syntax(form, env, "let", 0, 0, 0, rec);
+  return gen_let_syntax(form, env, "let", 0, 0, 0, rec, drec);
 }
 
 static Scheme_Object *
 let_star_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-		 Scheme_Compile_Info *rec)
+		 Scheme_Compile_Info *rec, int drec)
 {
-  return gen_let_syntax(form, env, "let*", 1, 0, 0, rec);
+  return gen_let_syntax(form, env, "let*", 1, 0, 0, rec, drec);
 }
 
 static Scheme_Object *
-letrec_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+letrec_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
-  return gen_let_syntax(form, env, "letrec", 0, 1, 0, rec);
+  return gen_let_syntax(form, env, "letrec", 0, 1, 0, rec, drec);
 }
 
 static Scheme_Object *
 let_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-		   Scheme_Compile_Info *rec)
+		   Scheme_Compile_Info *rec, int drec)
 {
-  return gen_let_syntax(form, env, "let-values", 0, 0, 1, rec);
+  return gen_let_syntax(form, env, "let-values", 0, 0, 1, rec, drec);
 }
 
 static Scheme_Object *
 let_star_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-		 Scheme_Compile_Info *rec)
+		 Scheme_Compile_Info *rec, int drec)
 {
-  return gen_let_syntax(form, env, "let*-values", 1, 0, 1, rec);
+  return gen_let_syntax(form, env, "let*-values", 1, 0, 1, rec, drec);
 }
 
 static Scheme_Object *
-letrec_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+letrec_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
-  return gen_let_syntax(form, env, "letrec-values", 0, 1, 1, rec);
+  return gen_let_syntax(form, env, "letrec-values", 0, 1, 1, rec, drec);
 }
 
 static Scheme_Object *nl_car(Scheme_Object *l, Scheme_Object *form)
@@ -1914,7 +1914,7 @@ static Scheme_Object *nl_cadr(Scheme_Object *l, Scheme_Object *form)
 
 static Scheme_Object *
 named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-		  Scheme_Compile_Info *rec, int depth)
+		  Scheme_Compile_Info *rec, int drec, int depth)
 {
   Scheme_Object *name, *bindings, *vars, *vals, *forms;
   Scheme_Object *proc, *app, *letrec;
@@ -1942,7 +1942,7 @@ named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   app = cons(letrec, vals);
 
   if (rec)
-    return scheme_compile_expr(app, env, rec);
+    return scheme_compile_expr(app, env, rec, drec);
   else {
     --depth;
     if (!depth)
@@ -1954,22 +1954,22 @@ named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 
 Scheme_Object *scheme_compile_sequence(Scheme_Object *forms,
 				       Scheme_Comp_Env *env, 
-				       Scheme_Compile_Info *rec)
+				       Scheme_Compile_Info *rec, int drec)
 {
   if (SCHEME_PAIRP(forms) && SCHEME_NULLP(SCHEME_CDR(forms))) {
     /* If it's a begin, we have to check some more... */
     Scheme_Object *first = SCHEME_CAR(forms), *val;
 
     if (SCHEME_PAIRP(first)) {
-      first = scheme_check_immediate_macro(first, env, rec, -1, &val);
+      first = scheme_check_immediate_macro(first, env, rec, drec, -1, &val);
       
       if (SAME_OBJ(val, scheme_begin_syntax)) {
 	if (scheme_proper_list_length(SCHEME_CDR(first)) > 0)
-	  return scheme_compile_sequence(SCHEME_CDR(first), env, rec);
+	  return scheme_compile_sequence(SCHEME_CDR(first), env, rec, drec);
       }
     }
 
-    return scheme_compile_expr(first, env, rec);
+    return scheme_compile_expr(first, env, rec, drec);
   } else {
     if (scheme_proper_list_length(forms) < 0) {
       scheme_wrong_syntax("begin", NULL, cons(begin_symbol, forms), 
@@ -1977,8 +1977,8 @@ Scheme_Object *scheme_compile_sequence(Scheme_Object *forms,
       return NULL;
     } else {
       Scheme_Object *body;
-      body = scheme_compile_block(forms, env, rec);
-      return scheme_make_sequence_compilation(body, rec->can_optimize_constants, 1);
+      body = scheme_compile_block(forms, env, rec, drec);
+      return scheme_make_sequence_compilation(body, rec[drec].can_optimize_constants, 1);
     }
   }
 }
@@ -2044,7 +2044,7 @@ begin0_link (Scheme_Object *obj, Link_Info *info)
 
 static Scheme_Object *
 do_begin_syntax (char *name,
-		 Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
+		 Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec, 
 		 int zero)
 {
   Scheme_Object *forms, *body;
@@ -2053,7 +2053,7 @@ do_begin_syntax (char *name,
   
   if (SCHEME_NULLP(forms)) {
     if (!zero && scheme_is_toplevel(env))
-      return scheme_compiled_void(rec->can_optimize_constants);
+      return scheme_compiled_void(rec[drec].can_optimize_constants);
     scheme_wrong_syntax(name, NULL, form, "bad syntax (empty form)");
     return NULL;
   }
@@ -2064,7 +2064,7 @@ do_begin_syntax (char *name,
     env = scheme_no_defines(env);
 
   if (SCHEME_NULLP(SCHEME_CDR(forms)))
-    return scheme_compile_expr(SCHEME_CAR(forms), env, rec);
+    return scheme_compile_expr(SCHEME_CAR(forms), env, rec, drec);
 
   if (!scheme_is_toplevel(env)) {
     /* Not at top-level */
@@ -2073,25 +2073,25 @@ do_begin_syntax (char *name,
       Scheme_Compile_Info recs[2];
       Scheme_Object *first, *rest, *vname;
 
-      vname = rec->value_name;
-      scheme_compile_rec_done_local(rec);
+      vname = rec[drec].value_name;
+      scheme_compile_rec_done_local(rec, drec);
 
-      scheme_init_compile_recs(rec, recs, 2);
+      scheme_init_compile_recs(rec, drec, recs, 2);
       recs[0].value_name = vname;
 
-      first = scheme_compile_expr(SCHEME_CAR(forms), env, recs);
-      rest = scheme_compile_list(SCHEME_CDR(forms), env, recs + 1);
+      first = scheme_compile_expr(SCHEME_CAR(forms), env, recs, 0);
+      rest = scheme_compile_list(SCHEME_CDR(forms), env, recs, 1);
       
-      scheme_merge_compile_recs(rec, recs, 2);
+      scheme_merge_compile_recs(rec, drec, recs, 2);
 
       body = cons(first, rest);
     } else 
-      body = scheme_compile_list(forms, env, rec);
+      body = scheme_compile_list(forms, env, rec, drec);
   } else
     /* Top level */
-    body = scheme_compile_list(forms, env, rec);
+    body = scheme_compile_list(forms, env, rec, drec);
 
-  forms = scheme_make_sequence_compilation(body, rec->can_optimize_constants, 
+  forms = scheme_make_sequence_compilation(body, rec[drec].can_optimize_constants, 
 					   zero ? -1 : 1);
 
   if (!zero || (NOT_SAME_TYPE(SCHEME_TYPE(forms), scheme_begin0_sequence_type)))
@@ -2101,15 +2101,15 @@ do_begin_syntax (char *name,
 }
 
 static Scheme_Object *
-begin_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+begin_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
-  return do_begin_syntax("begin", form, env, rec, 0);
+  return do_begin_syntax("begin", form, env, rec, drec, 0);
 }
 
 static Scheme_Object *
-begin0_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+begin0_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
-  return do_begin_syntax("begin0", form, env, rec, 1);
+  return do_begin_syntax("begin0", form, env, rec, drec, 1);
 }
 
 static Scheme_Object *
@@ -2173,7 +2173,7 @@ empty_cond_execute (Scheme_Object *expr)
 }
 
 static Scheme_Object *
-empty_cond_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+empty_cond_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   if (SCHEME_FALSEP(scheme_get_param(scheme_config, MZCONFIG_COND_AUTO_ELSE)))
     if (SCHEME_NULLP(SCHEME_CDR(form))) {
@@ -2181,7 +2181,7 @@ empty_cond_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info
     }
 
   return scheme_compile_expand_macro_app(nonempty_cond,
-					 form, env, rec, 1);
+					 form, env, rec, drec, 1);
 }
 
 static Scheme_Object *
@@ -2192,18 +2192,18 @@ empty_cond_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
       return form;
 
   return scheme_compile_expand_macro_app(nonempty_cond,
-					 form, env, NULL, depth);
+					 form, env, NULL, 0, depth);
 }
 
 
 static Scheme_Object *
-unquote_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+unquote_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   int len;
   char *who;
 
   if (rec)
-    scheme_compile_rec_done_local(rec);
+    scheme_compile_rec_done_local(rec, drec);
 
   who = scheme_symbol_val(SCHEME_CAR(form));
 
@@ -2218,7 +2218,7 @@ unquote_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *r
 static Scheme_Object *
 unquote_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
-  return unquote_syntax(form, env, NULL);
+  return unquote_syntax(form, env, NULL, 0);
 }
 
 
@@ -2287,7 +2287,7 @@ static Scheme_Object *do_def_link(Scheme_Syntax_Executer *exec,
 static Scheme_Object *
 do_def_syntax(char *where,
 	      Scheme_Object *form, Scheme_Comp_Env *env, 
-	      Scheme_Compile_Info *rec,
+	      Scheme_Compile_Info *rec, int drec,
 	      Scheme_Syntax_Linker *link)
 {
   Scheme_Object *name, *code;
@@ -2296,11 +2296,11 @@ do_def_syntax(char *where,
   if (!scheme_is_toplevel(env))
     scheme_wrong_syntax(where, NULL, form, "illegal use (not at top-level)");
   
-  scheme_compile_rec_done_local(rec);
+  scheme_compile_rec_done_local(rec, drec);
 
   do_def_parse(where, form, &name, &code, env);
 
-  val = scheme_compile_expr(code, env, rec);
+  val = scheme_compile_expr(code, env, rec, drec);
   name = (Scheme_Object *)scheme_global_bucket(name, scheme_min_env(env));
 
   return scheme_make_syntax_compile(link, scheme_make_pair(name, val));
@@ -2337,9 +2337,9 @@ defmacro_link(Scheme_Object *form, Link_Info *info)
 
 static Scheme_Object *
 defmacro_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-		 Scheme_Compile_Info *rec)
+		 Scheme_Compile_Info *rec, int drec)
 {
-  return do_def_syntax("define-macro", form, env, rec,
+  return do_def_syntax("define-macro", form, env, rec, drec,
 		       defmacro_link);
 }
 
@@ -2363,9 +2363,9 @@ def_id_macro_link(Scheme_Object *form, Link_Info *info)
 
 static Scheme_Object *
 def_id_macro_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-		     Scheme_Compile_Info *rec)
+		     Scheme_Compile_Info *rec, int drec)
 {
-  return do_def_syntax("define-id-macro", form, env, rec,
+  return do_def_syntax("define-id-macro", form, env, rec, drec,
 		       def_id_macro_link);
 }
 
@@ -2391,9 +2391,9 @@ def_exp_time_link(Scheme_Object *form, Link_Info *info)
 
 static Scheme_Object *
 def_exp_time_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-		      Scheme_Compile_Info *rec)
+		      Scheme_Compile_Info *rec, int drec)
 {
-  return do_def_syntax("define-expansion-time", form, env, rec,
+  return do_def_syntax("define-expansion-time", form, env, rec, drec,
 		       def_exp_time_link);
 }
 
@@ -2408,7 +2408,7 @@ def_exp_time_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 static Scheme_Object *
 do_letmacro(char *where, Scheme_Object *formname,
 	    Scheme_Object *forms, Scheme_Comp_Env *env, 
-	    Scheme_Compile_Info *rec, int depth,
+	    Scheme_Compile_Info *rec, int drec, int depth,
 	    Scheme_Type type, int anything)
 {
   Scheme_Object *form, *name, *body, *cl, *clf, *v;
@@ -2450,8 +2450,8 @@ do_letmacro(char *where, Scheme_Object *formname,
   scheme_push_constant(name, macro, env);
 
   if (rec) {
-    v = scheme_compile_block(body, env, rec);
-    v = scheme_make_sequence_compilation(v, rec->can_optimize_constants, 1);
+    v = scheme_compile_block(body, env, rec, drec);
+    v = scheme_make_sequence_compilation(v, rec[drec].can_optimize_constants, 1);
   } else {
     v = scheme_expand_block(body, env, depth);
     if (depth >= 0)
@@ -2471,47 +2471,47 @@ do_letmacro(char *where, Scheme_Object *formname,
 
 static Scheme_Object *
 letmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
-		Scheme_Compile_Info *rec)
+		Scheme_Compile_Info *rec, int drec)
 {
   return do_letmacro("let-macro", NULL,
-		     form, env, rec, 0, scheme_macro_type, 0);
+		     form, env, rec, drec, 0, scheme_macro_type, 0);
 }
 
 static Scheme_Object *
 letmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
   return do_letmacro("let-macro", let_macro_symbol, 
-		     form, env, NULL, depth, scheme_macro_type, 0);
+		     form, env, NULL, 0, depth, scheme_macro_type, 0);
 }
 
 static Scheme_Object *
 let_id_macro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
-		Scheme_Compile_Info *rec)
+		Scheme_Compile_Info *rec, int drec)
 {
   return do_letmacro("let-id-macro", NULL,
-		     form, env, rec, 0, scheme_id_macro_type, 1);
+		     form, env, rec, drec, 0, scheme_id_macro_type, 1);
 }
 
 static Scheme_Object *
 let_id_macro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
   return do_letmacro("let-id-macro", let_id_macro_symbol, 
-		     form, env, NULL, depth, scheme_id_macro_type, 1);
+		     form, env, NULL, 0, depth, scheme_id_macro_type, 1);
 }
 
 static Scheme_Object *
 let_exp_time_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
-		     Scheme_Compile_Info *rec)
+		     Scheme_Compile_Info *rec, int drec)
 {
   return do_letmacro("let-expansion-time", NULL,
-		     form, env, rec, 0, scheme_exp_time_type, 1);
+		     form, env, rec, drec, 0, scheme_exp_time_type, 1);
 }
 
 static Scheme_Object *
 let_exp_time_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
   return do_letmacro("let-expansion-time", let_expansion_time_symbol, 
-		     form, env, NULL, depth, scheme_exp_time_type, 1);
+		     form, env, NULL, 0, depth, scheme_exp_time_type, 1);
 }
 
 static Scheme_Object *void_execute(Scheme_Object *expr)

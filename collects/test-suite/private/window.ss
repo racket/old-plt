@@ -7,6 +7,7 @@
    (lib "unitsig.ss")
    (lib "class.ss")
    (lib "etc.ss")
+   (lib "mred.ss" "mred")
    (lib "framework.ss" "framework")
    (lib "tool.ss" "drscheme")
    "signatures.ss"
@@ -18,6 +19,8 @@
     (unit/sig window^
       (import drscheme:tool^ model^)
       (define window%
+        ;maybe i should use frame:editor-mixin here but I wouldn't
+        ;have a reference to the window in editor itself.
         (class* frame:standard-menus% (test-suite:window<%>)
           
           (init
@@ -76,16 +79,16 @@
           ;; sets the labelof the window
           (rename [super-set-label set-label])
           (define/override (set-label l)
-            (super-set-label (string-append l " - Test Suite"))
+            (super-set-label l)
             (send (group:get-the-frame-group) frame-label-changed this))
           
           (super-instantiate ()
-            (label "Untitled - Test Suite"))
+            (label (gui-utils:next-untitled-name)))
           
           (when program (send model set-program program))
           ;;why doesn't this line work? sending filename as an init
           ;;field yields an undefined class
-          (when filename (send model load-file filename))
+          (when filename (load-file filename))
           ))
       ))
   )

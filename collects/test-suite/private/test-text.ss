@@ -19,61 +19,6 @@
   
   (define *disable-color* "AliceBlue")
   
-  (define (aligned-snip-mixin super%)
-    (class* super% (aligned-snip<%>)
-      (inherit get-editor get-margin)
-      
-      (init
-       (stretchable-width true)
-       (stretchable-height true))
-      
-      (field
-       (stretchable-width-field stretchable-width)
-       (stretchable-height-field stretchable-height))
-      
-      (public (stretchable-width-method stretchable-width)
-              (stretchable-height-method stretchable-height))
-      
-      ;; stretchable-width (case-> (Boolean . -> . (void)) (-> Boolean))
-      ;; get or set the stretchablity of the pasteboards width
-      (define stretchable-width-method
-        (case-lambda
-          [(value) (set! stretchable-width-field value)]
-          [() stretchable-width-field]))
-      
-      ;; stretchable-height (case-> (Boolean . -> .(void)) (-> Boolean))
-      ;; get or set the stretchablity of the pasteboards height
-      (define stretchable-height-method
-        (case-lambda
-          [(value) (set! stretchable-height-field value)]
-          [() stretchable-height-field]))
-      
-      ;; get-aligned-min-width (-> number?)
-      ;; the minimum width of the snip based on the children
-      (define/public (get-aligned-min-width)
-        (let ([left (box 0)]
-              [top (box 0)]
-              [right (box 0)]
-              [bottom (box 0)])
-          (get-margin left top right bottom)
-          (+ (unbox left) (unbox right))))
-      
-      ;; get-aligned-min-height (-> number?)
-      ;; the minimum height of the snip based on the children
-      (define/public (get-aligned-min-height)
-        (let ([left (box 0)]
-              [top (box 0)]
-              [right (box 0)]
-              [bottom (box 0)]
-              [editor (get-editor)])
-          (get-margin left top right bottom)
-          (+ (unbox top) (unbox bottom)
-             (* (send editor line-location 0 false)
-                (add1 (send editor last-line))))))
-      
-      (super-instantiate ())
-      ))
-  
   (define (grey-editor-snip-mixin super%)
     (class super%
       (rename [super-draw draw])
@@ -90,7 +35,9 @@
             (send dc set-brush (send the-brush-list find-or-create-brush *disable-color* 'solid))
             
             ;; should be use inset instead of 1 and 2
-            (send dc draw-rectangle (+ x 1) (+ y 1) (- (unbox wb) 2) (- (unbox hb) 2)) 
+            (send dc draw-rectangle (+ x 1) (+ y 1)
+                  (max 0 (- (unbox wb) 2))
+                  (max 0 (- (unbox hb) 2)))
             
             (send dc set-pen old-pen)
             (send dc set-brush old-brush)))

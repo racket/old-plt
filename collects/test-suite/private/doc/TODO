@@ -1,12 +1,13 @@
+-------------------
+Give better error message on bad file loading.(message box?)
+disallow newlines in program to file box
+-------------------
+override on-default-event of the pasteboard if it's not needed
+so that all the funny selection and movement doesn't happen.
+-------------------
 On Mon, Nov 18, 2002 at 03:03:49PM -0600, Robert Bruce Findler wrote:
 > Make deletion actually set the focus to another one of the snips, so I
 > can keep deleting.
--------------------
-I think that there is too much whitespace around the boxes, too. It'd           
-be nicer to use color to separate the lines and get back some screen
-"real estate".                                 
-                                          
-Robby                                             
 -------------------
 > Also, it may look better to remove the outer box entirely and just have
 > lines between the test case items (or even not, if you can figure out
@@ -30,8 +31,6 @@ Scroll to off screen test cases when tabbing
   i.e. when I mouse select a snip that is partially visible it does
   not come into view.
 -------------------
-Don't unset the caret from a test case when a new case is inserted.
--------------------
 - add a button next to browse that opens the tested file in DrScheme
   (handler:open-file or finder:open-file in the framework does
   everying for you)
@@ -45,14 +44,12 @@ Some suggestions after playing a little while:
    keyboard focus to the "Browse" area, go away for an hour, come back,
    and click "Delete".
 
- * The window title should be more informative. (Remember that it will
-   show up in the "Windows" list.)
-
  * There's a problem with handling mouse-button releases. They seem to
    be handled like clicks. For example, drag a selection in "Expected",
    but release the mouse in "Call". The selection will move to "Call".
 
 Matthew
 -------------------
-give the language menu a serpator so it looks just like the drscheme
+give the language menu a separtor so it looks just like the drscheme
 window menu
+-------------------

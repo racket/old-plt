@@ -26,8 +26,8 @@
       (define (phase1) (void))
       (define (phase2) (void))))
   
-  (define drscheme-extentions@
-    (unit/sig drscheme-extentions^
+  (define test-suite-menu-items@
+    (unit/sig test-suite-menu-items^
       (import drscheme:tool^ window^)
       
       ;; test-suite:frame-basics-mixin mixin-contract?
@@ -50,7 +50,7 @@
                          (program (send (get-definitions-text) get-filename)))
                        show true))))
             (super-file-menu:between-new-and-open file-menu))
-          
+
           ;; file-menu:between-open-and-revert ((is-a?/c file-menu%) . -> . void?)
           ;; called when contructing the menu between open and revert
           (rename [super-file-menu:between-open-and-revert
@@ -64,8 +64,16 @@
                  (let ([f (get-file false this)])
                    (when f
                      (let ([w (instantiate window% ())])
-                       (send w load-file f)
-                       (send w show true)))))))
+                       (if (file-exists? f)
+                           (with-handlers
+                               ([exn? (lambda (exn?)
+                                        (message-box "Error" "Not a valid test-suite")
+                                        (send w close))])
+                             (send w load-file f)
+                             (send w show true))
+                           (begin
+                             (message-box "Error" "That file does not exist")
+                             (send w close)))))))))
             (super-file-menu:between-open-and-revert file-menu))
           
           (super-instantiate ())
@@ -73,12 +81,12 @@
       
       (drscheme:get/extend:extend-unit-frame test-suite:frame-basics-mixin)
       ))
-  
+    
   (define tool@
     (compound-unit/sig
       (import (TOOL : drscheme:tool^))
       (link (PHASES          : tool-phases^ (tool-phases@))
-            (EXTENTIONS      : drscheme-extentions^ (drscheme-extentions@ TOOL WINDOW-LANGUAGE))
+            (MENU-ITEMS      : test-suite-menu-items^ (test-suite-menu-items@ TOOL WINDOW-LANGUAGE))
             
             (WINDOW          : window^ (window@ TOOL MODEL))
             (WINDOW-LAYOUT   : window^ (window-layout@ TOOL WINDOW))
@@ -87,14 +95,13 @@
             
             (MODEL           : model^ (model@ TOOL CASE-SNIPCLASS DEF EXPAND-PROGRAM))
             
-            (CASE            : case^ (case@))
+            (CASE            : case^ (case@ TOOL))
             (CASE-LAYOUT     : case^ (case-layout@ CASE))
             (CASE-TAB        : case^ (case-tab@ CASE-LAYOUT))
             (CASE-SNIPCLASS  : case^ (case-snipclass@ CASE-TAB))
             
             (DEF             : def^ (def@))
-            (EXPAND-PROGRAM  : expand-program^ (expand-program@ TOOL))
-            )
+            (EXPAND-PROGRAM  : expand-program^ (expand-program@ TOOL)))
       (export (var (PHASES phase1))
               (var (PHASES phase2)))
       ))

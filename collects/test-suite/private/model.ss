@@ -79,9 +79,11 @@
           ;; insert-case (-> void?)
           ;; adds a new test case to the test-suite
           (define/public (insert-case)
-            (insert (instantiate case% ()
-                      (test-showing? tests-showing?))
-                    false))
+            (let ([new-case
+                   (instantiate case% ()
+                     (test-showing? tests-showing?))])
+              (insert new-case false)
+              (send new-case focus-first)))
           
           ;; delete-case (-> void?)
           ;; removes the case that currently has focus
@@ -117,7 +119,8 @@
                     (language language)
                     (teachpacks teachpacks)
                     (error-handler (send window get-error-handler))
-                    (clean-up post-execute-cleanup))))
+                    (clean-up post-execute-cleanup)
+                    (load-path (path-only (send program get-text))))))
           
           ;; reset-cases (-> void?)
           ;; reset all the test cases to unknown state
@@ -196,20 +199,18 @@
           ;; save the file
           (rename [super-save-file save-file])
           (define/override save-file
-            (opt-lambda ((filename "") (format 'guess) (show-errors? true))
-              (super-save-file filename format show-errors?)
-              (send window set-label
-                    (file-name-from-path (get-filename)))))
+            (opt-lambda ((filename false) (format 'guess) (show-errors? true))
+              (when (super-save-file filename format show-errors?)
+                (send window set-label (file-name-from-path (get-filename))))))
           
           ;; load-file ((union string? false?) (symbols guess standard text text-force-cr same copy)
           ;;            boolean? . -> . void?)
           ;; load the file
           (rename [super-load-file load-file])
           (define/override load-file
-            (opt-lambda ((filename "") (format 'guess) (show-errors? true))
-              (super-load-file filename format show-errors?)
-              (send window set-label
-                    (file-name-from-path (get-filename)))))
+            (opt-lambda ((filename false) (format 'guess) (show-errors? true))
+              (when (super-load-file filename format show-errors?)
+                (send window set-label (file-name-from-path (get-filename))))))
           
           ;; set-modified (boolean . -> . void?)
           ;; called when the editor is modified

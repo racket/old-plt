@@ -19,6 +19,47 @@
            (inherit get-menu-bar)
            (inherit-field new delete execute break save-as save show-tests)
       
+          ;; file-menu:between-new-and-open ((is-a?/c file-menu%) . -> . void?)
+          ;; called when contructing the menu between new and open
+           ;; status: this code is duplicated in the test-suite-tool
+          (rename [super-file-menu:between-new-and-open
+                   file-menu:between-new-and-open])
+          (define/override (file-menu:between-new-and-open file-menu)
+            (instantiate menu-item% ()
+              (label "New Test Suite")
+              (parent file-menu)
+              (callback
+               (lambda (menu event)
+                 (send (instantiate window% ())
+                       show true))))
+            (super-file-menu:between-new-and-open file-menu))
+
+           ;; file-menu:between-open-and-revert ((is-a?/c file-menu%) . -> . void?)
+           ;; called when contructing the menu between open and revert
+           ;; status: this code is duplicated in the test-suite-tool
+           (rename [super-file-menu:between-open-and-revert
+                    file-menu:between-open-and-revert])
+           (define/override (file-menu:between-open-and-revert file-menu)
+             (instantiate menu-item% ()
+               (label "Open Test Suite...")
+               (parent file-menu)
+               (callback
+                (lambda (menu event)
+                  (let ([f (get-file false this)])
+                    (when f
+                      (let ([w (instantiate super:window% ())])
+                        (if (file-exists? f)
+                            (with-handlers
+                                ([exn? (lambda (exn?)
+                                         (message-box "Error" "Not a valid test-suite")
+                                         (send w close))])
+                              (send w load-file f)
+                              (send w show true))
+                            (begin
+                              (message-box "Error" "That file does not exist")
+                              (send w close)))))))))
+             (super-file-menu:between-open-and-revert file-menu))
+           
            ;; file-menu:create-save? (-> boolean?)
            ;; called to check whether the save menu should be created
            (define/override (file-menu:create-save?)

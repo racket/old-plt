@@ -6,6 +6,7 @@
    (lib "unitsig.ss")
    (lib "mred.ss" "mred")
    (lib "etc.ss")
+   (lib "file.ss")
    "signatures.ss")
   
   (provide expand-program@)
@@ -20,7 +21,8 @@
            language
            teachpacks
            error-handler
-           clean-up)
+           clean-up
+           (load-path #f))
           
           (field
            [drscheme-eventspace (current-eventspace)]
@@ -34,6 +36,7 @@
              language
              false
              (lambda () ; =user-eventspace=
+               (current-load-relative-directory load-path)
                (error-display-handler error-handler)
                (set! user-thread (current-thread))
                (set! user-custodian (current-custodian))
@@ -100,15 +103,20 @@
           ;; evaluate the syntax in the users eventspace
           (define/public (eval-syntax syntax-object next) ; =drscheme-eventspace=
             (queue-to-user
-             (lambda () ; = user-eventspace=
+             (lambda () ; =user-eventspace=
                (let ([value (eval syntax-object)])
                  (queue-to-drscheme
                   (lambda () ; =drscheme-eventspace=
                     (next value)))))))
-
+          
+          ;; get-language (-> language?)
+          ;; the language being used by the execution
+          (define/public (get-language)
+            language)
+          
           ;; filename->text/pos (string? ((is-a?/c text%) . -> . void?) . -> . void?)
           ;; a text/pos containing the text from the given file
-          (define/private (filename->text/pos filename next) ; =drscheme-eventspace
+          (define/private (filename->text/pos filename next) ; =drscheme-eventspace=
             (queue-to-user
              (lambda () ;=user-eventspace=
                (let ([t (instantiate text% ())])

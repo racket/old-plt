@@ -18,14 +18,14 @@
   (define *unknown* (build-path (collection-path "test-suite") "private" "icons" "question-mark.jpeg"))
   (define *success* (build-path (collection-path "test-suite") "private" "icons" "check-mark.jpeg"))
   (define *failure* (build-path (collection-path "test-suite") "private" "icons" "cross.jpeg"))
-  (define *error* (build-path (collection-path "icons") "bug09.gif"))
+  ;(define *error* (build-path (collection-path "icons") "bug09.gif"))
   
   (define case@
     (unit/sig case^
-      (import)
+      (import drscheme:tool^)
       (define case%
         (class* aligned-editor-snip% (test-suite:item<%>)
-          (inherit next)
+          (inherit next get-admin)
           
           (init-field [test-showing? false])
           
@@ -41,25 +41,40 @@
           ;; reset (-> void?)
           ;; resets the result of the test case
           (define/public (reset)
-            (set-actual "")
+            (send actual erase)
             (send pass load-file *unknown*))
           
-          ;; set-actual (string? . -> . void?)
-          ;; set the text in the actual field to the string given
-          (define (set-actual string)
+          ;; set-actual ((is-a?/c expand-program%) any? . -> . void?)
+          ;; set the text in the actual field to the value given
+          (define/private (set-actual expander value)
             (send* actual
               (lock false)
-              (erase)
-              (insert string)
+              (begin-edit-sequence)
+              (erase))
+            (send (send (get-admin) get-editor) begin-edit-sequence)
+            (let ([lang (send expander get-language)])
+              (send (drscheme:language-configuration:language-settings-language lang)
+                    render-value/format
+                    value
+                    (drscheme:language-configuration:language-settings-settings lang)
+                    (make-custom-output-port
+                     false
+                     (lambda (s start end block?)
+                       (send actual insert s)
+                       (string-length s))
+                     void void)
+                    (lambda (snip)
+                      (send actual insert snip))
+                    false))
+            (send (send (get-admin) get-editor) end-edit-sequence)
+            (send* actual
+              (end-edit-sequence)
               (lock true)))
           
           ;; set-icon (boolean? . -> . void?)
           ;; set the image of the icon to either pass or fail
           (define/private (set-icon pass?)
-            (send pass load-file
-                  (if pass?
-                      *success*
-                      *failure*)))
+            (send pass load-file (if pass? *success* *failure*)))
           
           ;; clear-highlighting (-> void?)
           ;; clear any highlighting from the text boxes
@@ -97,14 +112,14 @@
                                  (send expander eval-syntax
                                        (with-syntax ([call call-syntax]
                                                      [expected expected-syntax]
-                                                     [test test-syntax]
-                                                     [set-actual set-actual])
+                                                     [test test-syntax])
                                          (syntax
                                           (let ([call-value call])
-                                            (set-actual (format "~v" call-value))
-                                            (#%app test call-value expected))))
-                                       (lambda (test-value) ; =drscheme-eventspace=
-                                         (set-icon test-value)
+                                            (cons call-value
+                                                  (#%app test call-value expected)))))
+                                       (lambda (call/test-value) ; =drscheme-eventspace=
+                                         (set-actual expander (car call/test-value))
+                                         (set-icon (cdr call/test-value))
                                          (let ([next-case (next)])
                                            (if next-case
                                                (send next-case execute expander continue)

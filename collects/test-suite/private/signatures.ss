@@ -3,7 +3,7 @@
    (lib "unitsig.ss"))
   (provide
    tool-phases^
-   drscheme-extentions^
+   test-suite-menu-items^
    window^
    model^
    case^
@@ -11,7 +11,7 @@
    expand-program^)
   
   (define-signature tool-phases^ (phase1 phase2))
-  (define-signature drscheme-extentions^ ())
+  (define-signature test-suite-menu-items^ (test-suite:frame-basics-mixin))
   
   (define-signature window^ (window%))
   (define-signature model^ (model%))

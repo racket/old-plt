@@ -10,11 +10,17 @@ procedures described below. It is intended for use with the textbook
 Differences from the book:
 
  * Datatypes must be defined before they are used in `cases'
-   expressions. This constraint enables better (earlier) error
+   expressions. This constraint enables better and earlier error
    reporting.
 
+   Some examples in the book's code (or at least the code dstributed
+   for the book) must be changed by moving datatype definitions
+   earlier.
+
  * The sllgen: functions have been changed to syntactic forms. This
-   change is also related to better error reporting.
+   change is also related to better error reporting. 
+  
+   All examples in the book work work with the sllgen: forms.
 
 ----------------------------------------
 
@@ -54,7 +60,7 @@ Differences from the book:
 
 > sllgen:make-rep-loop
 
-  Defined in the EoPL textbook's Appendix A.
+  Defined in the EoPL textbook's Appendix A (and still a function).
 
 > eopl:error
 
@@ -64,10 +70,6 @@ Differences from the book:
 > eopl:pretty-print
 
   Same as MzScheme's `printf' and `pretty-print'.
-
-> eopl:error-stop
-
-  A function that takes no arguments and aborts.
 
 > list-of
 > always?
@@ -85,7 +87,7 @@ Differences from the book:
 
 > (collect-garbage)
 
-  Performs a garbage collection (useful for repeatable timings)
+  Performs a garbage collection (useful for repeatable timings).
 
 > (trace id ...)
 > (untrace id ...)
@@ -102,4 +104,10 @@ Differences from the book:
   Useful only with a module that uses _(lib "eopl.ss" "eopl")_ as a
   language: exports identifiers from the module. See the MzScheme
   manual for information on `provided-spec'.
+
+> eopl:error-stop
+
+  Defined only in the top-level namespace (i.e., not in a module);
+  mutate this varable to install an exception-handling
+  thunk. Typically, the handler thunk escapes through a continuation.
 

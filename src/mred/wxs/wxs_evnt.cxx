@@ -270,9 +270,19 @@ static Scheme_Object *bundle_symset_commandType(int v) {
 }
 
 
+bool CommandEventIsDoubleClick(wxCommandEvent *ce)
+{
+   return (ce->extraLong == 2);
+}
 
 
 
+
+
+// These will be removed in the next version
+#define __commandInt commandInt
+#define __commandString commandString
+#define __extraLong extraLong
 
 class os_wxCommandEvent : public wxCommandEvent {
  public:
@@ -294,6 +304,23 @@ os_wxCommandEvent::os_wxCommandEvent(Scheme_Object * o, int x0)
 os_wxCommandEvent::~os_wxCommandEvent()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxCommandEventCommandEventIsDoubleClick(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = CommandEventIsDoubleClick(((wxCommandEvent *)((Scheme_Class_Object *)obj)->primdata));
+
+  
+  
+  return (r ? scheme_true : scheme_false);
 }
 
 #pragma argsused
@@ -328,40 +355,6 @@ static Scheme_Object *os_wxCommandEventChecked(Scheme_Object *obj, int n,  Schem
   
   
   return (r ? scheme_true : scheme_false);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCommandEventGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  nstring r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxCommandEvent *)((Scheme_Class_Object *)obj)->primdata)->GetString();
-
-  
-  
-  return objscheme_bundle_string((char *)r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCommandEventGetSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  int r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxCommandEvent *)((Scheme_Class_Object *)obj)->primdata)->GetSelection();
-
-  
-  
-  return scheme_make_integer(r);
 }
 
 static Scheme_Object *objscheme_wxCommandEvent_GeteventType(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -400,7 +393,7 @@ static Scheme_Object *objscheme_wxCommandEvent_GetextraLong(Scheme_Object *obj, 
   long v;
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-extra-long", 0, 0, n, p);
+  if (n) scheme_wrong_count("get-selection-type", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
     v = ((os_wxCommandEvent *)cobj->primdata)->wxCommandEvent::extraLong;
@@ -416,9 +409,9 @@ static Scheme_Object *objscheme_wxCommandEvent_SetextraLong(Scheme_Object *obj, 
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
   long v;
 
-  if (n != 1) scheme_wrong_count("set-extra-long", 1, 1, n, p);
+  if (n != 1) scheme_wrong_count("set-selection-type", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:command-event%::extra-long");
+  v = objscheme_unbundle_integer(p[0], "wx:command-event%::selection-type");
   ((wxCommandEvent *)cobj->primdata)->extraLong = v;
 
   return scheme_void;
@@ -430,7 +423,7 @@ static Scheme_Object *objscheme_wxCommandEvent_GetcommandInt(Scheme_Object *obj,
   int v;
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-command-int", 0, 0, n, p);
+  if (n) scheme_wrong_count("get-selection", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
     v = ((os_wxCommandEvent *)cobj->primdata)->wxCommandEvent::commandInt;
@@ -446,9 +439,9 @@ static Scheme_Object *objscheme_wxCommandEvent_SetcommandInt(Scheme_Object *obj,
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
   int v;
 
-  if (n != 1) scheme_wrong_count("set-command-int", 1, 1, n, p);
+  if (n != 1) scheme_wrong_count("set-selection", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:command-event%::command-int");
+  v = objscheme_unbundle_integer(p[0], "wx:command-event%::selection");
   ((wxCommandEvent *)cobj->primdata)->commandInt = v;
 
   return scheme_void;
@@ -460,7 +453,7 @@ static Scheme_Object *objscheme_wxCommandEvent_GetcommandString(Scheme_Object *o
   nstring v;
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-command-string", 0, 0, n, p);
+  if (n) scheme_wrong_count("get-string", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
     v = ((os_wxCommandEvent *)cobj->primdata)->wxCommandEvent::commandString;
@@ -476,10 +469,100 @@ static Scheme_Object *objscheme_wxCommandEvent_SetcommandString(Scheme_Object *o
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
   nstring v;
 
+  if (n != 1) scheme_wrong_count("set-string", 1, 1, n, p);
+
+  v = (nstring)objscheme_unbundle_nullable_string(p[0], "wx:command-event%::string");
+  ((wxCommandEvent *)cobj->primdata)->commandString = v;
+
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxCommandEvent_Get__commandInt(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj;
+  int v;
+
+  objscheme_check_valid(obj);
+  if (n) scheme_wrong_count("get-command-int", 0, 0, n, p);
+  cobj = (Scheme_Class_Object *)obj;
+  if (cobj->primflag)
+    v = ((os_wxCommandEvent *)cobj->primdata)->wxCommandEvent::__commandInt;
+  else
+    v = ((wxCommandEvent *)cobj->primdata)->__commandInt;
+
+  return scheme_make_integer(v);
+}
+
+static Scheme_Object *objscheme_wxCommandEvent_Set__commandInt(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  objscheme_check_valid(obj);
+  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  int v;
+
+  if (n != 1) scheme_wrong_count("set-command-int", 1, 1, n, p);
+
+  v = objscheme_unbundle_integer(p[0], "wx:command-event%::command-int");
+  ((wxCommandEvent *)cobj->primdata)->__commandInt = v;
+
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxCommandEvent_Get__commandString(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj;
+  nstring v;
+
+  objscheme_check_valid(obj);
+  if (n) scheme_wrong_count("get-command-string", 0, 0, n, p);
+  cobj = (Scheme_Class_Object *)obj;
+  if (cobj->primflag)
+    v = ((os_wxCommandEvent *)cobj->primdata)->wxCommandEvent::__commandString;
+  else
+    v = ((wxCommandEvent *)cobj->primdata)->__commandString;
+
+  return objscheme_bundle_string((char *)v);
+}
+
+static Scheme_Object *objscheme_wxCommandEvent_Set__commandString(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  objscheme_check_valid(obj);
+  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  nstring v;
+
   if (n != 1) scheme_wrong_count("set-command-string", 1, 1, n, p);
 
   v = (nstring)objscheme_unbundle_nullable_string(p[0], "wx:command-event%::command-string");
-  ((wxCommandEvent *)cobj->primdata)->commandString = v;
+  ((wxCommandEvent *)cobj->primdata)->__commandString = v;
+
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxCommandEvent_Get__extraLong(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj;
+  long v;
+
+  objscheme_check_valid(obj);
+  if (n) scheme_wrong_count("get-extra-long", 0, 0, n, p);
+  cobj = (Scheme_Class_Object *)obj;
+  if (cobj->primflag)
+    v = ((os_wxCommandEvent *)cobj->primdata)->wxCommandEvent::__extraLong;
+  else
+    v = ((wxCommandEvent *)cobj->primdata)->__extraLong;
+
+  return scheme_make_integer(v);
+}
+
+static Scheme_Object *objscheme_wxCommandEvent_Set__extraLong(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  objscheme_check_valid(obj);
+  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  long v;
+
+  if (n != 1) scheme_wrong_count("set-extra-long", 1, 1, n, p);
+
+  v = objscheme_unbundle_integer(p[0], "wx:command-event%::extra-long");
+  ((wxCommandEvent *)cobj->primdata)->__extraLong = v;
 
   return scheme_void;
 }
@@ -559,23 +642,28 @@ void objscheme_setup_wxCommandEvent(void *env)
 if (os_wxCommandEvent_class) {
     objscheme_add_global_class(os_wxCommandEvent_class,  "wx:command-event%", env);
 } else {
-  os_wxCommandEvent_class = objscheme_def_prim_class(env, "wx:command-event%", "wx:event%", os_wxCommandEvent_ConstructScheme, 13);
+  os_wxCommandEvent_class = objscheme_def_prim_class(env, "wx:command-event%", "wx:event%", os_wxCommandEvent_ConstructScheme, 18);
 
   scheme_add_method_w_arity(os_wxCommandEvent_class,"get-class-name",objscheme_classname_os_wxCommandEvent, 0, 0);
 
+ scheme_add_method_w_arity(os_wxCommandEvent_class, "is-double-click?", os_wxCommandEventCommandEventIsDoubleClick, 0, 0);
  scheme_add_method_w_arity(os_wxCommandEvent_class, "is-selection?", os_wxCommandEventIsSelection, 0, 0);
  scheme_add_method_w_arity(os_wxCommandEvent_class, "checked?", os_wxCommandEventChecked, 0, 0);
- scheme_add_method_w_arity(os_wxCommandEvent_class, "get-string", os_wxCommandEventGetString, 0, 0);
- scheme_add_method_w_arity(os_wxCommandEvent_class, "get-selection", os_wxCommandEventGetSelection, 0, 0);
 
   scheme_add_method_w_arity(os_wxCommandEvent_class,"get-event-type", objscheme_wxCommandEvent_GeteventType, 0, 0);
   scheme_add_method_w_arity(os_wxCommandEvent_class,"set-event-type", objscheme_wxCommandEvent_SeteventType, 1, 1);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-extra-long", objscheme_wxCommandEvent_GetextraLong, 0, 0);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-extra-long", objscheme_wxCommandEvent_SetextraLong, 1, 1);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-command-int", objscheme_wxCommandEvent_GetcommandInt, 0, 0);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-command-int", objscheme_wxCommandEvent_SetcommandInt, 1, 1);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-command-string", objscheme_wxCommandEvent_GetcommandString, 0, 0);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-command-string", objscheme_wxCommandEvent_SetcommandString, 1, 1);
+  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-selection-type", objscheme_wxCommandEvent_GetextraLong, 0, 0);
+  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-selection-type", objscheme_wxCommandEvent_SetextraLong, 1, 1);
+  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-selection", objscheme_wxCommandEvent_GetcommandInt, 0, 0);
+  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-selection", objscheme_wxCommandEvent_SetcommandInt, 1, 1);
+  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-string", objscheme_wxCommandEvent_GetcommandString, 0, 0);
+  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-string", objscheme_wxCommandEvent_SetcommandString, 1, 1);
+  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-command-int", objscheme_wxCommandEvent_Get__commandInt, 0, 0);
+  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-command-int", objscheme_wxCommandEvent_Set__commandInt, 1, 1);
+  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-command-string", objscheme_wxCommandEvent_Get__commandString, 0, 0);
+  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-command-string", objscheme_wxCommandEvent_Set__commandString, 1, 1);
+  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-extra-long", objscheme_wxCommandEvent_Get__extraLong, 0, 0);
+  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-extra-long", objscheme_wxCommandEvent_Set__extraLong, 1, 1);
 
   scheme_made_class(os_wxCommandEvent_class);
 
@@ -800,6 +888,7 @@ static int istype_symset_keyCode(Scheme_Object *v, const char *where) {
 static Scheme_Object *bundle_symset_keyCode(int v) {
   return scheme_make_integer(v);
 }
+
 
 
 
@@ -1097,7 +1186,7 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(Scheme_Object *obj, int n,  
   if (n != 0) 
     scheme_wrong_count("wx:key-event%::initialization", 0, 0, n, p);
 
-  
+  x0=wxEVENT_TYPE_CHAR;
   realobj = new os_wxKeyEvent(obj, x0);
   
   

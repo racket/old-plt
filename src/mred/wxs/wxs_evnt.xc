@@ -44,19 +44,31 @@
 @SYM "event-type-scroll-thumbtrack" : wxEVENT_TYPE_SCROLL_THUMBTRACK
 @ENDSYMBOLS
 
+bool CommandEventIsDoubleClick(wxCommandEvent *ce)
+{
+   return (ce->extraLong == 2);
+}
+
 @CLASSBASE wxCommandEvent "wx:command-event":"wx:event"
 
 @CREATOR (int)
 
-@ "get-selection" : int GetSelection();
-@ "get-string" : nstring GetString();
 @ "checked?" : bool Checked();
 @ "is-selection?" : bool IsSelection();
+@ m "is-double-click?" : bool CommandEventIsDoubleClick();
 
 @IVAR "event-type" : SYM[commandType] eventType
-@IVAR "extra-long" : long extraLong
-@IVAR "command-int" : int commandInt
-@IVAR "command-string" : nstring commandString
+@IVAR "selection-type" : long extraLong
+@IVAR "selection" : int commandInt
+@IVAR "string" : nstring commandString
+
+// These will be removed in the next version
+#define __commandInt commandInt
+#define __commandString commandString
+#define __extraLong extraLong
+@IVAR "command-int" : int __commandInt
+@IVAR "command-string" : nstring __commandString
+@IVAR "extra-long" : long __extraLong
 
 @END
 
@@ -138,7 +150,9 @@
 
 @CLASSBASE wxKeyEvent "wx:key-event":"wx:event"
 
-@CREATOR (-int=wxEVENT_TYPE_CHAR);
+@MACRO SETX0 = x0=wxEVENT_TYPE_CHAR;
+
+@CREATOR (-int=wxEVENT_TYPE_CHAR); : : /SETX0
 
 @ "key-code" : long KeyCode();
 

@@ -1017,6 +1017,11 @@
 		 (queue-system-callback/sync user-thread cleanup-interaction))))))])
       (private
 	[shutdown-user-custodian ; =Kernel=, =Handler=
+	 ; Use this procedure to shutdown when in the middle of other cleanup
+	 ;  operations, such as when the user clicks "Execute".
+	 ; Don't use it to kill a thread where other, external cleanup
+	 ;  actions must occur (e.g., the exit handler for the user's
+	 ;  thread). In that case, shut down user-custodian directly.
 	 (lambda ()
 	   (custodian-shutdown-all user-custodian)
 	   (set! user-thread #f)
@@ -1026,7 +1031,7 @@
 	   (semaphore-post io-semaphore))])
       (public
 	[reset-break-state (lambda () (set! ask-about-kill? #f))]
-	[break (lambda ()
+	[break (lambda () ; =Kernel=, =Handler=
 		 (cond
 		  [(not in-evaluation?)
 		   (mred:bell)]
@@ -1037,8 +1042,8 @@
 			"Kill"
 			"Kill?")
 		       (break-thread user-thread)
-		       (shutdown-user-custodian))]
-		  [else 
+		       (custodian-shutdown-all user-custodian))]
+		  [else
 		   (break-thread user-thread)
 		   (set! ask-about-kill? #t)]))])
       (public
@@ -1307,7 +1312,8 @@
 			    drscheme:init:first-dir)))])
 	       (current-directory directory))
 	     
-	     (exit-handler (lambda (arg) (shutdown-user-custodian)))
+	     (exit-handler (lambda (arg) ; =User=
+			     (custodian-shutdown-all user-custodian)))
 	     
 	     (invoke-library)
 	     

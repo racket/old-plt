@@ -158,6 +158,7 @@
                        [(packages-here)
                         (filter (lambda (p)
                                   (and (= rx (sub1 (pkg-x p))) (= ry (sub1 (pkg-y p)))
+                                       (pkg-weight p) ; make sure weight is known
                                        (not (member (pkg-id p) (bot-packages r)))))
                                 packages)]
                        [(packages-can-lift)

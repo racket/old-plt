@@ -13,11 +13,13 @@
   (define server-port 4004)
 
   (define num-players 2)
-  (define board-file "~/tmp/map")  ; maps available at the contest web site
-  (define package-file "~/tmp/packs") ; pkg configuartions available there, too
+  
+  (define board-file (build-path (collection-path "icfp-robot-gui") "map"))
+  (define package-file (build-path (collection-path "icfp-robot-gui") "packs"))
+  ; maps & packages available at the contest web site
   
   (define robot-capacity 100)
-  (define start-money 100)
+  (define start-money 500)
   
   (command-line
    "plt-robot-server"
@@ -33,9 +35,9 @@
        (if (and n (exact? n) (integer? n) (positive? n))
            (set! num-players n)
            (error 'command-line "given <num> is not a positive exact integer: ~e" num)))]
-    [("-m") map-file "sets the map file; default is ~/tmp/map"
+    [("-m") map-file "sets the map file; default is \"map\" in collection"
      (set! board-file map-file)]
-    [("-k") pack-file "sets the package file; default is ~/tmp/packs"
+    [("-k") pack-file "sets the package file; default is \"packs\" in collection"
      (set! package-file pack-file)]
     [("-f") fuel "sets the fuel for each player, between 1 and 1000000000"
      (let ([n (string->number fuel)])

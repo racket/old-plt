@@ -2,6 +2,40 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.8
+Added an err-char argument to bytes-utf-8-length, bytes-utf-8-index,
+ and bytes-utf-8-ref; the new optional argument is before the optional
+ start-index argument
+Changed make-input-port again, replacing peek and read events
+ with progress events and commits
+Removed read-bytes-avail!-evt and peek-bytes-avail!-evt
+Added port-progress-evt, port-commit-peeked, and
+ port-provides-progress-evts?
+Added an optional progress-event argument to peek-bytes-avail!,
+ etc., before the port argument
+Added an optional progress-event argument to regexp-match-peek
+ and regexp-match-peek-positions
+Peeking from a limited pipe effectively increases its capacity,
+ temporarily
+
+Version 299.7
+Case-sensitivity is enabled by default (for `read' and when reading
+ modules)
+The break-enabled procedure no longer corresponds to a parameter
+Added parameterize-break, current-break-parameterization, and
+ call-with-break-parameterization
+A with-handlers handler is not called in tail position with
+ respect to the with-handlers form
+The with-handlers* form is like with-handlers, but breaks are
+ not disabled for a handler, and a handle is tail-called
+Changed object-wait-multiple to sync, "waitable" to "evt", etc.
+Added call-with-semaphore and call-with-semaphore/enable-break
+Moved most of (lib "thread.ss") to (lib "port.ss"), and many
+ remaining useless procedures (such as dynamic-enable-break)
+ were removed
+Changed make-custom-input-port to make-input-port
+Changed make-custom-output-port to make-output-port
+
 Version 299.6
 An exception handler or dynamic-wind pre/post thunk can
  re-enable breaks through the break-enabled parameter

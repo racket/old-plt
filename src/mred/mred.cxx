@@ -2448,7 +2448,7 @@ static void break_console_reading_threads()
 
 static long mrconsole_get_string(Scheme_Input_Port *ip,
 				 char *buffer, long offset, long size,
-				 int nonblock)
+				 int nonblock, Scheme_Object *unless)
 {
   long result;
   Scheme_Object *pipe = (Scheme_Object *)ip->port_data;
@@ -2485,10 +2485,10 @@ static Scheme_Object *MrEdMakeStdIn(void)
   ip = scheme_make_input_port(scheme_make_port_type("mred-console-input-port"),
 			      readp,
 			      scheme_intern_symbol("mred-console"),
-			      scheme_get_evt_via_get,
 			      CAST_GS mrconsole_get_string,
-			      scheme_peek_evt_via_peek,
 			      NULL,
+			      scheme_progress_evt_via_get,
+			      scheme_peeked_read_via_get,
 			      CAST_IREADY mrconsole_char_ready,
 			      CAST_ICLOSE mrconsole_close,
 			      NULL,

@@ -460,9 +460,19 @@
 					(channel-put-evt ch result))
 				    input-port)
 		result]
+	       [(and (eof-object? eof)
+		     (zero? pos)
+		     (not (sync/timeout 0 progress-evt)))
+		;; Must be a true end-of-file
+		(let ([result (combo bstr eof)])
+		  (if poll?
+		      result
+		      (channel-put-evt ch result)))]
 	       [poll? #f]
 	       [else (try-again 0 orig-bstr)]))]))))
-    (poll-or-spawn go))
+    (if (zero? (bytes-length orig-bstr))
+	(convert-evt always-evt (lambda (x) 0))
+	(poll-or-spawn go)))
   
   (define (read-bytes-avail!-evt bstr input-port)
     (read-at-least-bytes!-evt bstr input-port 
@@ -493,44 +503,46 @@
 	     v)))))
 	   
   (define (read-string-evt goal input-port)
-    (let ([bstr (make-bytes goal)]
-	  [c (bytes-open-converter "UTF-8-permissive" "UTF-8")])
-      (convert-evt
-       (read-at-least-bytes!-evt bstr input-port 
-				 (lambda (bstr v)
-				   (if (= v (bytes-length bstr))
-				       ;; We can't easily use bytes-utf-8-length here,
-				       ;; because we may need more bytes to figure out
-				       ;; the true role of the last byte. The
-				       ;; `bytes-convert' function lets us deal with
-				       ;; the last byte properly.
-				       (let-values ([(bstr2 used status) 
-						     (bytes-convert c bstr 0 v)])
-					 (let ([got (bytes-utf-8-length bstr2)])
-					   (if (= got goal)
-					       ;; Done:
-					       #f 
-					       ;; Need more bytes:
-					       (let ([bstr2 (make-bytes (+ v (- goal got)))])
-						 (bytes-copy! bstr2 0 bstr)
-						 bstr2))))
-				       ;; Need more bytes in bstr:
-				       bstr))
-				 (lambda (bstr v)
-				   ;; We may need one less than v,
-				   ;; because we may have had to peek
-				   ;; an extra byte to discover an
-				   ;; error in the stream.
-				   (if ((bytes-utf-8-length bstr #\? 0 v) . > . goal)
-				       (sub1 v)
-				       v))
-				 cons)
-       (lambda (bstr+v)
-	 (let ([bstr (car bstr+v)]
-	       [v (cdr bstr+v)])
-	   (if (number? v)
-	       (bytes->string/utf-8 bstr #\? 0 v)
-	       v))))))
+    (if (zero? goal)
+	(convert-evt always-evt (lambda (x) ""))
+	(let ([bstr (make-bytes goal)]
+	      [c (bytes-open-converter "UTF-8-permissive" "UTF-8")])
+	  (convert-evt
+	   (read-at-least-bytes!-evt bstr input-port 
+				     (lambda (bstr v)
+				       (if (= v (bytes-length bstr))
+					   ;; We can't easily use bytes-utf-8-length here,
+					   ;; because we may need more bytes to figure out
+					   ;; the true role of the last byte. The
+					   ;; `bytes-convert' function lets us deal with
+					   ;; the last byte properly.
+					   (let-values ([(bstr2 used status) 
+							 (bytes-convert c bstr 0 v)])
+					     (let ([got (bytes-utf-8-length bstr2)])
+					       (if (= got goal)
+						   ;; Done:
+						   #f 
+						   ;; Need more bytes:
+						   (let ([bstr2 (make-bytes (+ v (- goal got)))])
+						     (bytes-copy! bstr2 0 bstr)
+						     bstr2))))
+					   ;; Need more bytes in bstr:
+					   bstr))
+				     (lambda (bstr v)
+				       ;; We may need one less than v,
+				       ;; because we may have had to peek
+				       ;; an extra byte to discover an
+				       ;; error in the stream.
+				       (if ((bytes-utf-8-length bstr #\? 0 v) . > . goal)
+					   (sub1 v)
+					   v))
+				     cons)
+	   (lambda (bstr+v)
+	     (let ([bstr (car bstr+v)]
+		   [v (cdr bstr+v)])
+	       (if (number? v)
+		   (bytes->string/utf-8 bstr #\? 0 v)
+		   v)))))))
 
   (define (read-string!-evt str input-port)
     (convert-evt
@@ -572,6 +584,10 @@
 				    bstr)))
 			   m)])
 	      (cond
+	       [(and (zero? (cdar m))
+		     (or poll?
+			 (channel-put ch m2)))
+		m2]
 	       [(port-commit-peeked (cdar m) 
 				    progress-evt 
 				    (if poll?

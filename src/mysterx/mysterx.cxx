@@ -3236,7 +3236,7 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
 	      mx_fun_string(invKind),
 	      inv_kind_string(invKind),
 	      SCHEME_STR_VAL(argv[1]));
-      scheme_wrong_count(errBuff,numParamsPassed+1,-1,argc,argv);
+      scheme_wrong_count(errBuff,numParamsPassed-1,-1,argc-2,argv+2);
     }
   }
   else {
@@ -3251,7 +3251,7 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
 	      mx_fun_string(invKind),
 	      inv_kind_string(invKind),
 	      SCHEME_STR_VAL(argv[1]));
-      scheme_wrong_count(errBuff,numParamsPassed-numOptParams+2,numParamsPassed+2,argc,argv);
+      scheme_wrong_count(errBuff,numParamsPassed-numOptParams,numParamsPassed,argc-2,argv+2);
     }
   }
   

@@ -228,7 +228,7 @@ int main(int argc, char **argv)
   GC_pre_init();
 #endif
 
-#if defined(OSKIT) && !defined(OSKIT_TEST)
+#if defined(OSKIT) && !defined(OSKIT_TEST) && !KNIT
   oskit_prepare(&argc, &argv);
 #endif
 

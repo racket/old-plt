@@ -1382,7 +1382,7 @@ wxClickback *wxMediaEdit::FindClickback(long start, float y)
   if (!clickbacks)
     return NULL;
 
-  for (node = clickbacks->First(); node; node = node->Next()) {
+  for (node = clickbacks->Last(); node; node = node->Previous()) {
     click = (wxClickback *)node->Data();
     if (click->start <= start && click->end > start) {
       /* We're in the right horizontal region, but maybe the mouse

@@ -1,4 +1,4 @@
-#if defined(OSKIT) && !defined(OSKIT_TEST)
+#if defined(OSKIT) && !defined(OSKIT_TEST) && !KNIT
 
 #  include <oskit/clientos.h>
 #  include <oskit/dev/osenv.h>

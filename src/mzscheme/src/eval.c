@@ -488,6 +488,14 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
   Scheme_Saved_Stack *saved;
   void *v;
 
+  /* We might have come from apply where rands == p->tail_buffer. */
+  {
+    GC_CAN_IGNORE Scheme_Object **tb;
+    p->tail_buffer = NULL; /* so args aren't zeroed */
+    tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
+    p->tail_buffer = tb;
+  }
+
   saved = MALLOC_ONE_RT(Scheme_Saved_Stack);
 
 #ifdef MZTAG_REQUIRED
@@ -2386,6 +2394,16 @@ static void unbound_global(Scheme_Object *obj)
   scheme_unbound_global((Scheme_Bucket *)tmp);
 }
 
+static void make_tail_buffer_safe()
+{
+  Scheme_Thread *p = scheme_current_thread;
+
+  GC_CAN_IGNORE Scheme_Object **tb;
+  p->tail_buffer = NULL; /* so args aren't zeroed */
+  tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
+  p->tail_buffer = tb;
+}
+
 #ifdef REGISTER_POOR_MACHINE
 # define USE_LOCAL_RUNSTACK 0
 # define DELAY_THREAD_RUNSTACK_UPDATE 0
@@ -2514,18 +2532,10 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
        (Otherwise, they'll be zeroed.) One way to make things safe for
        GC is to let rands have the buffer and create a new one. */
 
-# define MAKE_TAIL_BUFFER_SAFE()                               \
-       {                                                       \
-	  GC_CAN_IGNORE Scheme_Object **tb;                    \
-	  p->tail_buffer = NULL; /* so args aren't zeroed */   \
-	  tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size); \
-	  p->tail_buffer = tb;                                 \
-	}
-
     if (SCHEME_INTP(obj)) {
       UPDATE_THREAD_RSPTR();
       if (rands == p->tail_buffer)
-	MAKE_TAIL_BUFFER_SAFE();
+	make_tail_buffer_safe();
       scheme_wrong_rator(obj, num_rands, rands);
       return NULL; /* doesn't get here */
     }
@@ -2549,7 +2559,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  rands = quick_rands;
 	} else {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
-	  MAKE_TAIL_BUFFER_SAFE();
+	  make_tail_buffer_safe();
 	}
       } 
 
@@ -2573,14 +2583,14 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       GC_CAN_IGNORE Scheme_Object **stack, **src;
       int i, has_rest, num_params;
       
-      DO_CHECK_FOR_BREAK(p, UPDATE_THREAD_RSPTR_FOR_GC(););
+      DO_CHECK_FOR_BREAK(p, UPDATE_THREAD_RSPTR_FOR_GC(); if (rands == p->tail_buffer) make_tail_buffer_safe(););
       
       data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(obj);
 
       if ((RUNSTACK - RUNSTACK_START) < data->max_let_depth) {
 	if (rands == p->tail_buffer) {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
-	  MAKE_TAIL_BUFFER_SAFE();
+	  make_tail_buffer_safe();
 	}
 
 	p->ku.k.p1 = (void *)obj;
@@ -2605,6 +2615,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 	  if (num_rands < (num_params - 1)) {
 	    UPDATE_THREAD_RSPTR_FOR_ERROR();
+	    /* note: scheme_wrong_count_m handles rands == p->tail_buffer */
 	    scheme_wrong_count_m(scheme_get_proc_name(obj, NULL, 1), 
 				 num_params - 1, -1,
 				 num_rands, rands,
@@ -2666,6 +2677,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	} else {
 	  if (num_rands != num_params) {
 	    UPDATE_THREAD_RSPTR_FOR_ERROR();
+	    /* note: scheme_wrong_count_m handles rands == p->tail_buffer */
 	    scheme_wrong_count_m(scheme_get_proc_name(obj, NULL, 1), 
 				 num_params, num_params,
 				 num_rands, rands,
@@ -2687,6 +2699,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       } else {
 	if (num_rands) {
 	  UPDATE_THREAD_RSPTR_FOR_ERROR();
+	  /* note: scheme_wrong_count handles rands == p->tail_buffer */
 	  scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1),
 			     0, 0, num_rands, rands);
 	  return NULL; /* Doesn't get here */
@@ -2715,7 +2728,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
     } else if (type == scheme_closed_prim_type) {
       GC_CAN_IGNORE Scheme_Closed_Primitive_Proc *prim;
       
-      DO_CHECK_FOR_BREAK(p, UPDATE_THREAD_RSPTR_FOR_GC(););
+      DO_CHECK_FOR_BREAK(p, UPDATE_THREAD_RSPTR_FOR_GC(); if (rands == p->tail_buffer) make_tail_buffer_safe(););
       
       if (rands == p->tail_buffer) {
 	if (num_rands < TAIL_COPY_THRESHOLD) {
@@ -2731,7 +2744,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  rands = quick_rands;
 	} else {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
-	  MAKE_TAIL_BUFFER_SAFE();
+	  make_tail_buffer_safe();
 	}
       }
 
@@ -2769,6 +2782,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       }
       
       UPDATE_THREAD_RSPTR_FOR_ERROR();
+      /* note: scheme_wrong_count handles rands == p->tail_buffer */
       scheme_wrong_count((char *)seq, -1, -1, num_rands, rands);
 
       return NULL; /* Doesn't get here. */
@@ -2784,7 +2798,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	UPDATE_THREAD_RSPTR_FOR_GC();
 
 	if (rands == p->tail_buffer)
-	  MAKE_TAIL_BUFFER_SAFE();
+	  make_tail_buffer_safe();
 
 	vals = MALLOC_N(Scheme_Object *, num_rands);
 	for (i = num_rands; i--; ) {
@@ -2858,7 +2872,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 	UPDATE_THREAD_RSPTR_FOR_GC();
 	if (rands == p->tail_buffer)
-	  MAKE_TAIL_BUFFER_SAFE();
+	  make_tail_buffer_safe();
 
 	vals = MALLOC_N(Scheme_Object *, num_rands);
 	for (i = num_rands; i--; ) {
@@ -2896,6 +2910,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       scheme_longjmp(MZTHREADELEM(p, error_buf), 1);
     } else {
       UPDATE_THREAD_RSPTR_FOR_ERROR();
+      if (rands == p->tail_buffer)
+	make_tail_buffer_safe();
       scheme_wrong_rator(obj, num_rands, rands);
       return NULL; /* Doesn't get here. */
     }
@@ -3816,6 +3832,7 @@ Scheme_Object **scheme_push_prefix(Scheme_Env *genv, Resolve_Prefix *rp,
 
   rs -= rp->num_stxes;
   MZ_RUNSTACK = rs;
+  for (i = 0; i < rp->num_stxes; i++) { rs[i] = NULL; } /* for GC */
   for (i = 0; i < rp->num_stxes; i++) {
     v = scheme_stx_phase_shift(rp->stxes[i], now_phase - src_phase, src_modidx, now_modidx);
     rs[i] = v;
@@ -3834,8 +3851,6 @@ Scheme_Object **scheme_push_prefix(Scheme_Env *genv, Resolve_Prefix *rp,
       a[i] = v;
     }
   }
-
-  MZ_RUNSTACK = rs;
 
   return rs_save;
 }

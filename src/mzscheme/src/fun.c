@@ -1070,11 +1070,11 @@ scheme_tail_apply (Scheme_Object *rator, int num_rands, Scheme_Object **rands)
   if (num_rands) {
     Scheme_Object **a;
     if (num_rands > p->tail_buffer_size) {
-      p->tail_buffer_size = num_rands;
       {
 	Scheme_Object **tb;
 	tb = MALLOC_N(Scheme_Object *, num_rands);
 	p->tail_buffer = tb;
+	p->tail_buffer_size = num_rands;
       }
     }
     a = p->tail_buffer;

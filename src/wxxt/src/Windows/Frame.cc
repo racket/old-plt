@@ -578,7 +578,7 @@ static void ForceFocus(Widget frame)
 
   if (!force_focus) {
     if (!wxGetResource(wxAPP_CLASS, "forceFocus", &force_focus))
-      force_focus = 1;
+      force_focus = 0;
     force_focus = !force_focus ? -1 : 1;
   }
 

@@ -52,6 +52,8 @@ strings are types/comments.
      
      (thread [] "raised by \\scmfirst{call-with-custodian}")
 
+     (module [] "raised by \\scmkfirst{module}, \\scmkfirst{require}, etc.")
+
      (break [continuation "continuation" "a continuation that resumes from the break"] "asynchronous thread break")
      
      (misc [] "low-level or MzScheme-specific error"

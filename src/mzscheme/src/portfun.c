@@ -2201,8 +2201,6 @@ static Scheme_Object *do_load_handler(void *data)
 
       /* If d is NULL, shape was wrong */
       if (!d) {
-	Scheme_Stx_Srcloc *loc = ((Scheme_Stx *)obj)->srcloc;
-
 	if (!other)
 	  other = scheme_make_string("something else");
 	else {
@@ -2222,12 +2220,11 @@ static Scheme_Object *do_load_handler(void *data)
 	  other = scheme_make_sized_string(s, len + slen + 1, 0);
 	}
 
-	scheme_read_err(port, 
-			loc->src, loc->line, loc->col, loc->pos, loc->span,
-			0, 
-			"default-load-handler: expected a `module' declaration for `%S', found %T",
-			lhd->expected_module,
-			other);
+	scheme_raise_exn(MZEXN_MODULE,
+			 "default-load-handler: expected a `module' declaration for `%S', found: %T in: %q",
+			 lhd->expected_module,
+			 other,
+			 ((Scheme_Input_Port *)port)->name);
 
 	return NULL;
       }
@@ -2235,13 +2232,11 @@ static Scheme_Object *do_load_handler(void *data)
       /* Check no more expressions: */
       d = scheme_internal_read(port, lhd->stxsrc, 1, config);
       if (!SCHEME_EOFP(d)) {
-	Scheme_Stx_Srcloc *loc = ((Scheme_Stx *)d)->srcloc;
-
-	scheme_read_err(port, 
-			loc->src, loc->line, loc->col, loc->pos, loc->span,
-			0, 
-			"default-load-handler: expected only a `module' declaration for `%S', but found an extra expression",
-			lhd->expected_module);
+	scheme_raise_exn(MZEXN_MODULE,
+			 "default-load-handler: expected only a `module' declaration for `%S', but found an extra expression in: %q",
+			 lhd->expected_module,
+			 ((Scheme_Input_Port *)port)->name);
+	
 	return NULL;
       }
 
@@ -2274,11 +2269,11 @@ static Scheme_Object *do_load_handler(void *data)
   }
 
   if (SCHEME_SYMBOLP(lhd->expected_module) && !got_one) {
-    scheme_read_err(port, 
-		    NULL, -1, -1, -1, -1,
-		    EOF, 
-		    "default-load-handler: expected a `module' declaration for `%S', found end-of-file",
-		    lhd->expected_module);
+    scheme_raise_exn(MZEXN_MODULE,
+		     "default-load-handler: expected a `module' declaration for `%S', but found end-of-file in: %q",
+		     lhd->expected_module,
+		     ((Scheme_Input_Port *)port)->name);
+    
     return NULL;
   }
 

@@ -1509,8 +1509,8 @@ struct Scheme_Env {
   /* Per-instance: */
   long phase;
   Scheme_Object *link_midx;
-  short running;
-  short lazy_syntax;
+  Scheme_Object *require_names, *et_require_names; /* for namespace-attach */
+  char running, et_running, lazy_syntax, attached;
 
   Scheme_Bucket_Table *toplevel;
   Scheme_Object *modchain; /* Vector of:

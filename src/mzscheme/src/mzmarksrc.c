@@ -611,6 +611,8 @@ namespace_val {
   gcMARK(e->shadowed_syntax);
 
   gcMARK(e->link_midx);
+  gcMARK(e->require_names);
+  gcMARK(e->et_require_names);
 
   gcMARK(e->toplevel);
   gcMARK(e->modchain);

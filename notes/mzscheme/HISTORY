@@ -2,6 +2,32 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.25:
+
+ * Fixed a serious set of GC+tail-call+thread-or-exception bugs in the
+   core interpreter. These bugs are old, and they could strike at any
+   time (leading to a seg fault); I'm puzzled that they escaped
+   undetected for so long.
+
+ * The prefix in `current-module-name-prefix' is applied only when a
+   `module' declaration is evaluated, not when it is compiled or
+   loaded (which was strange).
+
+ * Plugged some safety/security holes related to module re-definition.
+   
+     - A module declared in a namespace via `namespace-attach-module'
+       cannot be redeclared (and this restriction subsumes the old
+       hack on #% names). Otherwise, a DrScheme client program could
+       crash DrScheme be redefining the `class' module, for example.
+
+     - Cyclic module imports are detected late --- at instantiation
+       time, instead of at compile time. (There's no potential problem
+       at compile time anyway.)
+
+ * Added an `exn:module' exception type for various exceptions,
+   including bad redefinitions, cyclic imports, and
+   expected-a-module-that's-not-there on file loads.
+
 Version 199.24:
 
  * Changed the way references to top-level and module-top-level

@@ -547,5 +547,8 @@ Scheme_Object *scheme_symbol_append(Scheme_Object *s1, Scheme_Object *s2)
   s = MALLOC_N_ATOMIC(char, SCHEME_SYM_LEN(s1) + SCHEME_SYM_LEN(s2) + 1);
   memcpy(s, SCHEME_SYM_VAL(s1), SCHEME_SYM_LEN(s1));
   memcpy(s + SCHEME_SYM_LEN(s1), SCHEME_SYM_VAL(s2), SCHEME_SYM_LEN(s2) + 1);
-  return scheme_intern_exact_symbol(s, SCHEME_SYM_LEN(s1) + SCHEME_SYM_LEN(s2));
+  if (SCHEME_SYM_UNINTERNED(s1) || SCHEME_SYM_UNINTERNED(s2))
+    return scheme_make_exact_symbol(s, SCHEME_SYM_LEN(s1) + SCHEME_SYM_LEN(s2));
+  else
+    return scheme_intern_exact_symbol(s, SCHEME_SYM_LEN(s1) + SCHEME_SYM_LEN(s2));
 }

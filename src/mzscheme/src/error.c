@@ -787,6 +787,15 @@ void scheme_wrong_count_m(const char *name, int minc, int maxc,
   Scheme_Object *v;
   char *s;
   long len;
+  Scheme_Thread *p = scheme_current_thread;
+
+  if (argv == p->tail_buffer) {
+    /* See calls in scheme_do_eval: */
+    GC_CAN_IGNORE Scheme_Object **tb;
+    p->tail_buffer = NULL; /* so args aren't zeroed */
+    tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
+    p->tail_buffer = tb;
+  }
 
   /* minc = 1 -> name is really a case-lambda proc */
 
@@ -841,6 +850,7 @@ void scheme_wrong_count_m(const char *name, int minc, int maxc,
 void scheme_wrong_count(const char *name, int minc, int maxc, int argc,
 			Scheme_Object **argv)
 {
+  /* don't allocate here, in case rands == p->tail_buffer */
   scheme_wrong_count_m(name, minc, maxc, argc, argv, 0);
 }
 

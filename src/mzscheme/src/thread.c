@@ -3388,7 +3388,7 @@ static void get_ready_for_GC()
 
 	for (saved = p->runstack_saved; saved; saved = saved->prev) {
 	  o = saved->runstack_start;
-	  e = saved->runstack_start;
+	  e = saved->runstack;
 	  RUNSTACK_TUNE( size += saved->runstack_size; );
 	  while (o < e) {
 	    *(o++) = NULL;

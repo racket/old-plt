@@ -1439,6 +1439,8 @@ int namespace_val_MARK(void *p) {
   gcMARK(e->shadowed_syntax);
 
   gcMARK(e->link_midx);
+  gcMARK(e->require_names);
+  gcMARK(e->et_require_names);
 
   gcMARK(e->toplevel);
   gcMARK(e->modchain);
@@ -1464,6 +1466,8 @@ int namespace_val_FIXUP(void *p) {
   gcFIXUP(e->shadowed_syntax);
 
   gcFIXUP(e->link_midx);
+  gcFIXUP(e->require_names);
+  gcFIXUP(e->et_require_names);
 
   gcFIXUP(e->toplevel);
   gcFIXUP(e->modchain);

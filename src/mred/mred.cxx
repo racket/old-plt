@@ -613,7 +613,7 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 
 #ifdef MZ_PRECISE_GC
   GC_set_finalizer(gcOBJ_TO_PTR(c->finalized),
-		   1, 0,
+		   0, 0,
 		   CollectingContext, NULL,
 		   NULL, NULL);
 #else

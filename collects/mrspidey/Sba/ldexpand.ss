@@ -298,7 +298,7 @@
 
   (define (file-time file)
     (or (lookup-or-#f file-time-cache file)
-	(let* ([n (or (file-modify-seconds file) (current-seconds))])
+	(let* ([n (or (and (file-exists? file) (file-or-directory-modify-seconds file)) (current-seconds))])
 	  (extend-file-time-cache! file n)
 	  n)))
 

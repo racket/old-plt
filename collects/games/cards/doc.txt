@@ -142,6 +142,9 @@ Table methods: [in addition to standard frame% methods]
         (cdr cards)) is called. If `cards' is empty or contains only
         one card, no action is taken.
 
+> card-location :: (send t card-location card) - returns the position
+        of the given card; an exception is raised if the card is not
+        on the table.
 
 > table-width :: (send t table-width) - returns the width of the table
         in pixels.

@@ -1522,7 +1522,7 @@ int wxsGetImageType(char *fn)
 
   f = fopen(fn, "r");
   if (f) {
-    switch (fgetc(f)) {
+    switch ((unsigned)fgetc(f)) {
     case 'B':
       expect = "M";
       type = wxBITMAP_TYPE_BMP;
@@ -1538,6 +1538,9 @@ int wxsGetImageType(char *fn)
     case 'G':
       expect = "IF8";
       type = wxBITMAP_TYPE_GIF;
+      break;
+    case 0xFF:
+      type = 0x04000; /* JPEG */
       break;
     default:
       type = 0;

@@ -11,10 +11,11 @@ typedef struct {
 #define COLOR_CACHE_SIZE 100
 
 static ColorCache cache[COLOR_CACHE_SIZE];
+static int cache_end;
 
-long alloc_size;
-long alloc_count;
-unsigned long *alloced;
+static long alloc_size;
+static long alloc_count;
+static unsigned long *alloced;
 
 extern Screen *wxAPP_SCREEN;
 
@@ -49,13 +50,17 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
     return OK;
   }
 
+  ri = c->red;
+  gi = c->green;
+  bi = c->blue;
+
   /* Check in cache: */ 
   min_weight_pos = 0;
   min_weight = cache[0].weight;
-  for (i = 0; i < COLOR_CACHE_SIZE; i++) {
-    if (cache[i].red_in == c->red
-	&& cache[i].green_in == c->green
-	&& cache[i].blue_in == c->blue) {
+  for (i = 0; i < cache_end; i++) {
+    if (cache[i].red_in == ri
+	&& cache[i].green_in == gi
+	&& cache[i].blue_in == bi) {
       c->red = cache[i].red_out;
       c->green = cache[i].green_out;
       c->blue = cache[i].blue_out;
@@ -71,16 +76,15 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
     }
   }
 
-  /* Degrade weights: */
-  if (cache[COLOR_CACHE_SIZE - 1].pixel) {
-    for (i = 0; i < COLOR_CACHE_SIZE; i++) 
-      if (cache[i].weight)
-	--cache[i].weight;
-  }
-
-  ri = c->red;
-  gi = c->green;
-  bi = c->blue;
+  if (cache_end == COLOR_CACHE_SIZE) {
+    /* Degrade weights: */
+    if (cache[COLOR_CACHE_SIZE - 1].pixel) {
+      for (i = 0; i < cache_end; i++) 
+	if (cache[i].weight)
+	  --cache[i].weight;
+    }
+  } else
+    min_weight_pos = cache_end++;
 
   status = XAllocColor(d, cm, c);
 

@@ -35,10 +35,10 @@ LDFLAGS = $(XLIB)
 # system name for installation
 INSTALLSYS = `$(srcdir)/../../bin/archsys`
 
-MREDLDFLAGS = -L../wxxt/utils/image/src  -L../wxxt/contrib/xpm/lib $(LDFLAGS) -L../mzscheme -Lwxs -Lwxme -L../wxxt/src
-MREDLDLIBS = -lmzscheme -lgc -lwxscheme -lwxme -lwx_xt -lXpm -limage_xt $(LDLIBS) $(LDNONSTATICLIBS)
+MREDLDFLAGS = -L../wxxt/utils/image/src  -L../wxxt/contrib/xpm/lib $(LDFLAGS) -L../mzscheme -Lwxs -Lwxme -L../wxxt/src -L../wxcommon/jpeg
+MREDLDLIBS = -lmzscheme -lgc -lwxscheme -lwxme -lwx_xt -lXpm -limage_xt -ljpeg $(LDLIBS) $(LDNONSTATICLIBS)
 
-MREDOBJECTS = mred.o mredx.o wxGC.o
+MREDOBJECTS = mred.o mredx.o wxGC.o wxJPEG.o
 
 MZSCHEME = ../mzscheme/libmzscheme.a ../mzscheme/libgc.a
 WXSCHEME = wxs/libwxscheme.a
@@ -75,6 +75,7 @@ mred : $(WXME) $(WXSCHEME) $(MZSCHEME) $(MREDOBJECTS) \
           ../wxxt/src/libwx_xt.a \
           ../wxxt/utils/image/src/libimage_xt.a \
           ../wxxt/contrib/xpm/lib/libXpm.a \
+          ../wxcommon/jpeg/libjpeg.a \
           $(MRSTATIC_STUB)
 	$(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o mred $(MREDOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) $(SGILINKHACK)
 
@@ -115,6 +116,9 @@ mredx.o : $(srcdir)/mredx.cxx $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/m
 wxGC.o : $(srcdir)/../wxcommon/wxGC.cxx $(srcdir)/../wxcommon/wxGC.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/../wxcommon/wxGC.cxx -o wxGC.o
 
+wxJPEG.o : $(srcdir)/../wxcommon/wxJPEG.cxx $(srcdir)/../wxcommon/wxGC.h
+	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -I$(srcdir)/../wxcommon/jpeg -c $(srcdir)/../wxcommon/wxJPEG.cxx -o wxJPEG.o
+
 dl_stub.o: $(srcdir)/misc/dl_stub.c
 	$(CC) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/misc/dl_stub.c -o dl_stub.o
 
@@ -123,6 +127,9 @@ sgilinkhack.o:
 
 $(WXDIR)/libwx_xt.a:
 	$(MAKE) wx
+
+../wxcommon/jpeg/libjpeg.a:
+	cd ../wxcommon/jpeg; $(MAKE) libjpeg.a
 
 clean:
 	cd ../wxxt/src/x; $(MAKE) clean

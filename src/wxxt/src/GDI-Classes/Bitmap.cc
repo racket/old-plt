@@ -41,6 +41,8 @@
 #endif
 #include <X11/cursorfont.h>
 
+extern int read_JPEG_file(char * filename, wxBitmap *bm);
+
 // hints for what to free in wxBitmap::Destroy()
 enum {
     __BITMAP_NORMAL,	// <-- no special data
@@ -320,6 +322,11 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
 	    DELETE_OBJ Xbitmap;
 	    Xbitmap = NULL;
 	}
+    }
+    else if (flags == 0x04000) {
+      if (!read_JPEG_file(fname, this)) {
+	Destroy();
+      }
     }
 #if USE_XPM
     else if (flags & wxBITMAP_TYPE_XPM) { // XPM file format

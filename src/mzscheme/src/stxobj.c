@@ -901,7 +901,8 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs,
   while (!SCHEME_NULLP(w)) {
     a = SCHEME_CAR(w);
     if (SCHEME_NUMBERP(a)) {
-      stack = scheme_make_pair(a, stack);
+      /* Mark numbers change to parenthesized */
+      stack = scheme_make_pair(scheme_make_pair(a, scheme_null), stack);
     } else if (SCHEME_VECTORP(a)) {
       Scheme_Object *local_key;
 
@@ -938,7 +939,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs,
 	local_key = scheme_make_integer(rns->count);
 	scheme_add_to_table(rns, 
 			    (const char *)a, 
-			    scheme_make_pair(local_key, scheme_null), 
+			    local_key,
 			    0);
 
 	SCHEME_VEC_ELS(vec)[1+(3 * c)] = local_key;
@@ -998,7 +999,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs,
 	    local_key = scheme_make_integer(rns->count);
 	    scheme_add_to_table(rns, 
 				(const char *)a,
-				scheme_make_pair(local_key, scheme_null), 
+				local_key,
 				0);
 
 	    l = scheme_make_pair(scheme_make_integer(mrn->phase), l);
@@ -1188,7 +1189,20 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
   while (!SCHEME_NULLP(w)) {
     a = SCHEME_CAR(w);
     if (SCHEME_NUMBERP(a)) {
+      /* Re-use rename table or env rename */
+      a = scheme_lookup_in_table(rns, (const char *)a);
+      if (!a) {
+	scheme_raise_exn(MZEXN_READ,
+			 scheme_false, /* FIXME? should be port, but exn shouldn't happen. */
+			 "read (compiled): unknown rename table index: %d",
+			 SCHEME_INT_VAL(a));
+      }
+    } else if (SCHEME_PAIRP(a) 
+	       && SCHEME_NULLP(SCHEME_CDR(a))
+	       && SCHEME_NUMBERP(SCHEME_CAR(a))) {
       Scheme_Object *n;
+
+      a = SCHEME_CAR(a);
 
       if (SCHEME_INTP(a))
 	a = scheme_make_integer(-SCHEME_INT_VAL(a));
@@ -1246,58 +1260,47 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
            - (<exname> . (<modname> . <defname>))
       */
       Scheme_Object *local_key;
-
+      Module_Renames *mrn;
+      Scheme_Object *p, *key;
+      int plus_kernel;
+      long phase;
+      
       local_key = SCHEME_CAR(a);
       a = SCHEME_CDR(a);
-      if (SCHEME_NULLP(a)) {
-	/* Re-use table */
-	a = scheme_lookup_in_table(rns, (const char *)local_key); /* might be env rename */
-	if (!a) {
-	  scheme_raise_exn(MZEXN_READ,
-			   scheme_false, /* FIXME? should be port, but exn shouldn't happen. */
-			   "read (compiled): unknown rename table index: %d",
-			   SCHEME_INT_VAL(local_key));
-	}
-      } else {
-	Module_Renames *mrn;
-	Scheme_Object *p, *key;
-	int plus_kernel;
-	long phase;
-
-	/* Convert list to rename table: */
-
-	if (SCHEME_BOOLP(SCHEME_CAR(a))) {
-	  plus_kernel = 1;
-	  a = SCHEME_CDR(a);
-	} else
-	  plus_kernel = 0;
-
-	phase = SCHEME_INT_VAL(SCHEME_CAR(a));
+      
+      /* Convert list to rename table: */
+      
+      if (SCHEME_BOOLP(SCHEME_CAR(a))) {
+	plus_kernel = 1;
 	a = SCHEME_CDR(a);
+      } else
+	plus_kernel = 0;
 
-	mrn = (Module_Renames *)scheme_make_module_rename(phase, 0);
-	mrn->plus_kernel = plus_kernel;
+      phase = SCHEME_INT_VAL(SCHEME_CAR(a));
+      a = SCHEME_CDR(a);
 
-	for (; !SCHEME_NULLP(a) ; a = SCHEME_CDR(a)) {
-	  p = SCHEME_CAR(a);
+      mrn = (Module_Renames *)scheme_make_module_rename(phase, 0);
+      mrn->plus_kernel = plus_kernel;
+
+      for (; !SCHEME_NULLP(a) ; a = SCHEME_CDR(a)) {
+	p = SCHEME_CAR(a);
 	  
-	  if (SCHEME_SYMBOLP(SCHEME_CDR(p))) {
-	    key = SCHEME_CDR(p);
-	  } else {
-	    key = SCHEME_CAR(p);
-	    p = SCHEME_CDR(p);
-	  }
-	  
-	  scheme_add_to_table(mrn->ht, (const char *)key, p, 0);
+	if (SCHEME_SYMBOLP(SCHEME_CDR(p))) {
+	  key = SCHEME_CDR(p);
+	} else {
+	  key = SCHEME_CAR(p);
+	  p = SCHEME_CDR(p);
 	}
-
-	scheme_add_to_table(rns, 
-			    (const char *)local_key, 
-			    mrn,
-			    0);
-	a = (Scheme_Object *)mrn;
+	  
+	scheme_add_to_table(mrn->ht, (const char *)key, p, 0);
       }
-      stack = scheme_make_pair(a, stack);
+
+      scheme_add_to_table(rns, 
+			  (const char *)local_key, 
+			  mrn,
+			  0);
+
+      stack = scheme_make_pair((Scheme_Object *)mrn, stack);
     } else if (SCHEME_TRUEP(a)) {
       /* current env rename */
       Scheme_Env *env = (Scheme_Env *)scheme_get_param(scheme_current_process->config, MZCONFIG_ENV);

@@ -822,6 +822,11 @@
 			(check-not-pattern p proto-r)
 			`(lambda (r) (quote-syntax ,p)))))
 		(list p)))]
+       [(null? p) 
+	;; Not syntax, so avoid useless syntax info
+	(if proto-r 
+	    `(lambda (r) null)
+	    null)]
        [else (if proto-r 
 		 `(lambda (r) (quote-syntax ,p))
 		 null)]))
@@ -842,7 +847,8 @@
 				   (raise-syntax-error
 				    'syntax
 				    "incompatible ellipsis match counts"
-				    (quote-syntax ,p)))))))
+				    ; (quote-syntax ,p) ;; << embedding syntax is expensive
+				    ))))))
 			   (lambda ()
 			     (let ([v ,main])
 			       (lambda () v)))
@@ -874,9 +880,11 @@
     (if (and (pair? h)
 	     (eq? (car h) 'quote-syntax)
 	     (eq? (cadr h) (stx-car p))
-	     (pair? t)
-	     (eq? (car t) 'quote-syntax)
-	     (eq? (cadr t) (stx-cdr p)))
+	     (or (eq? t 'null)
+		 (and
+		  (pair? t)
+		  (eq? (car t) 'quote-syntax)
+		  (eq? (cadr t) (stx-cdr p)))))
 	`(quote-syntax ,p)
 	`(cons ,h ,t)))
 

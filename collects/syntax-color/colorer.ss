@@ -102,7 +102,6 @@
                                             (+ buffer-start orig-token-start)
                                             (+ buffer-start orig-token-start)))))))
           (channel-get sync)
-          (printf "~a~n" (to-list tokens))
           (begin-edit-sequence #f)
           (color)
           (end-edit-sequence)))

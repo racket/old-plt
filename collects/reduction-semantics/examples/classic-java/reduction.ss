@@ -2,7 +2,7 @@
 ;;
 ;; reduction.ss
 ;; Richard Cobbe
-;; $Id: reduction.ss,v 1.3 2004/08/31 19:49:03 cobbe Exp $
+;; $Id: reduction.ss,v 1.4 2004/09/10 15:38:54 cobbe Exp $
 ;;
 ;; Contains the definition of ClassicJava for PLT Redex
 ;;
@@ -15,7 +15,7 @@
            (lib "contract.ss")
            (lib "list.ss")
            (lib "etc.ss")
-           (lib "plt-match.ss")
+           (lib "match.ss")
 
            "utils.ss"
            "ast.ss"
@@ -39,7 +39,7 @@
             (unless (class-type? c)
               (error 'make-instance "expected class-type, got ~a" c))
             (unless (match f
-                      [(list (? ivar? _) ...) #t]
+                      [((? ivar? _) ...) #t]
                       [else #f])
               (error 'make-instance "expected field list, got ~a" f))
             (orig-ctor c f))))
@@ -142,7 +142,8 @@
   (define cj-subst
     (subst
      ['null (constant)]
-     [(? boolean?) (constant)]
+     ['true (constant)]
+     ['false (constant)]
      [(? number?) (constant)]
      [(? cj-id?) (variable)]
      ['this (variable)]
@@ -158,12 +159,12 @@
       (subterm '() rhs)]
      [('send obj md args ...)
       (all-vars '())
-      (build (lambda (vars obj . args) `(send ,obj ,md ,@(args))))
+      (build (lambda (vars obj . args) `(send ,obj ,md ,@args)))
       (subterm '() obj)
       (subterms '() args)]
      [('super obj type md args ...)
       (all-vars '())
-      (build (lambda (vars obj . args) `(super ,obj ,type ,md ,@(args))))
+      (build (lambda (vars obj . args) `(super ,obj ,type ,md ,@args)))
       (subterm '() obj)
       (subterms '() args)]
      [('cast type obj)
@@ -172,7 +173,7 @@
       (subterm '() obj)]
      [('let id rhs body)
       (all-vars (list id))
-      (build (lambda (vars rhs body) `(let ,@(vars) ,rhs ,body)))
+      (build (lambda (vars rhs body) `(let ,@vars ,rhs ,body)))
       (subterm '() rhs)
       (subterm (list id) body)]
      [((? binary-prim-name? prim) rand1 rand2)
@@ -196,27 +197,27 @@
   ;; rules can parse.
   (define texpr->rexpr
     (match-lambda
-      [(struct new (type)) `(new ,(class-type-name type))]
-      [(struct var-ref (var)) var]
-      [(struct nil ()) 'null]
-      [(struct tagged-ref (obj class field))
+      [($ new type) `(new ,(class-type-name type))]
+      [($ var-ref var) var]
+      [($ nil) 'null]
+      [($ tagged-ref obj class field)
        `(ref ,(texpr->rexpr obj) ,(class-type-name class) ,field)]
-      [(struct tagged-set (obj class field rhs))
+      [($ tagged-set obj class field rhs)
        `(set ,(texpr->rexpr obj) ,(class-type-name class) ,field
              ,(texpr->rexpr rhs))]
-      [(struct send (obj md args))
+      [($ send obj md args)
        `(send ,(texpr->rexpr obj) ,md ,@(map texpr->rexpr args))]
-      [(struct tagged-super (c md args))
+      [($ tagged-super c md args)
        `(super this ,(class-type-name c) ,md ,@(map texpr->rexpr args))]
-      [(struct cast (c obj)) `(cast ,(class-type-name c) ,(texpr->rexpr obj))]
-      [(struct cj-let (lhs rhs body))
+      [($ cast c obj) `(cast ,(class-type-name c) ,(texpr->rexpr obj))]
+      [($ cj-let lhs rhs body)
        `(let ,lhs ,(texpr->rexpr rhs) ,(texpr->rexpr body))]
-      [(struct num-lit (val)) val]
-      [(struct bool-lit (val)) val]
-      [(struct unary-prim (rator rand)) `(,rator ,(texpr->rexpr rand))]
-      [(struct binary-prim (rator rand1 rand2))
+      [($ num-lit val) val]
+      [($ bool-lit val) (bool->rexp val)]
+      [($ unary-prim rator rand) `(,rator ,(texpr->rexpr rand))]
+      [($ binary-prim rator rand1 rand2)
        `(,rator ,(texpr->rexpr rand1) ,(texpr->rexpr rand2))]
-      [(struct if-expr (test then else))
+      [($ if-expr test then else)
        `(if ,(texpr->rexpr test)
             ,(texpr->rexpr then)
             ,(texpr->rexpr else))]
@@ -228,12 +229,12 @@
 
      ;; [new]
      [reduction cj-lang
-                (program_ store_ (inhole context_ (new class-name_)))
+                (program_ store_ (in-hole context_ (new class-name_)))
                 (let*-values ([(new-instance)
                                (create-instance (term program_)
                                                 (term class-name_))]
-                              [(new-store addr)
-                               (store-alloc (new-instance))])
+                              [(addr new-store)
+                               (store-alloc (term store_) new-instance)])
                   (term (program_ ,new-store
                                   ,(replace (term context_) (term hole)
                                             addr))))]
@@ -243,10 +244,10 @@
       cj-lang
       (side-condition (program_
                        store_
-                       (inhole context_
-                               (ref value_obj
-                                    id_class
-                                    id_field)))
+                       (in-hole context_
+                                (ref value_obj
+                                     id_class
+                                     id_field)))
                       (not (eq? (term value_obj) 'null)))
       (let ([instance (store-ref (term store_) (term value_obj))])
         (term (program_
@@ -260,11 +261,11 @@
      [reduction
       cj-lang
       (side-condition
-       (program_ store_ (inhole context_
-                                (set value_obj
-                                     id_class
-                                     id_field
-                                     value_rhs)))
+       (program_ store_ (in-hole context_
+                                 (set value_obj
+                                      id_class
+                                      id_field
+                                      value_rhs)))
        (not (eq? (term value_obj) 'null)))
       (let ([instance (store-ref (term store_) (term value_obj))])
         (term (program_
@@ -280,8 +281,8 @@
      [reduction
       cj-lang
       (side-condition
-       (program_ store_ (inhole context_
-                                (send value_obj id_meth value_arg ...)))
+       (program_ store_ (in-hole context_
+                                 (send value_obj id_meth value_arg ...)))
        (not (eq? (term value_obj) 'null)))
       (let* ([inst (store-ref (term store_) (term value_obj))]
              [class-type (instance-class inst)]
@@ -299,28 +300,28 @@
      ;; [super]
      [reduction
       cj-lang
-      (program_ store_ (inhole context_
-                               (super value_obj
-                                      class-name_
-                                      id_method
-                                      value_arg ...)))
+      (program_ store_ (in-hole context_
+                                (super value_obj
+                                       class-name_
+                                       id_method
+                                       value_arg ...)))
       (let* ([class (find-class (term program_)
                                 (make-class-type (term class-name_)))]
              [method (find-method class (term id_method))])
-      (term (program_
-             store_
-             ,(replace (term context_) (term hole)
-                       (subst-args (method-body method)
-                                   (cons (term value_obj)
-                                         (term (value_arg ...)))
-                                   (cons 'this
-                                         (method-arg-names method)))))))]
+        (term (program_
+               store_
+               ,(replace (term context_) (term hole)
+                         (subst-args (method-body method)
+                                     (cons (term value_obj)
+                                           (term (value_arg ...)))
+                                     (cons 'this
+                                           (method-arg-names method)))))))]
 
      ;; [cast]
      [reduction
       cj-lang
       (side-condition
-       (program_ store_ (inhole context_ (cast class-name_ value_obj)))
+       (program_ store_ (in-hole context_ (cast class-name_ value_obj)))
        (and (not (eq? (term value_obj) 'null))
             (let ([instance (store-ref (term store_) (term value_obj))])
               (type<=? (term program_)
@@ -333,7 +334,7 @@
      ;; [let]
      [reduction
       cj-lang
-      (program_ store_ (inhole context_ (let id_ value_rhs expr_body)))
+      (program_ store_ (in-hole context_ (let id_ value_rhs expr_body)))
       (term (program_
              store_
              ,(replace (term context_) (term hole)
@@ -344,7 +345,7 @@
      [reduction
       cj-lang
       (side-condition
-       (program_ store_ (inhole context_ (cast class-name_ value_obj)))
+       (program_ store_ (in-hole context_ (cast class-name_ value_obj)))
        (and (not (eq? (term value_obj) 'null))
             (let ([instance (store-ref (term store_) (term value_obj))])
               (not (type<=? (term program_)
@@ -357,7 +358,7 @@
      ;; [ncast]
      [reduction
       cj-lang
-      (program_ store_ (inhole context_ (cast class-name_ null)))
+      (program_ store_ (in-hole context_ (cast class-name_ null)))
       (term (program_
              store_
              (replace (term context_) (term hole) 'null)))]
@@ -365,7 +366,7 @@
      ;; [nget]
      [reduction
       cj-lang
-      (program_ store_ (inhole context_ (ref null id id)))
+      (program_ store_ (in-hole context_ (ref null id id)))
       (term (program_
              store_
              "error: dereferenced null"))]
@@ -373,7 +374,7 @@
      ;; [nset]
      [reduction
       cj-lang
-      (program_ store_ (inhole context_ (set null id id value)))
+      (program_ store_ (in-hole context_ (set null id id value)))
       (term (program_
              store_
              "error: dereferenced null"))]
@@ -381,7 +382,7 @@
      ;; [uprim]
      [reduction
       cj-lang
-      (program_ store_ (inhole context_ (unop_ value_)))
+      (program_ store_ (in-hole context_ (unop_ value_)))
       (term (program_
              store_
              ,(replace (term context_) (term hole) (delta-1 (term unop_)
@@ -390,7 +391,7 @@
      ;; [bprim]
      [reduction
       cj-lang
-      (program_ store_ (inhole context_ (unop_ value_1 value_2)))
+      (program_ store_ (in-hole context_ (unop_ value_1 value_2)))
       (term (program_
              store_
              ,(replace (term context_) (term hole)
@@ -399,33 +400,33 @@
      ;; [and-true]
      [reduction
       cj-lang
-      (program_ store_ (inhole context_ (and true expr_)))
+      (program_ store_ (in-hole context_ (and true expr_)))
       (term (program_ store_
                       ,(replace (term context_) (term hole) (term expr_))))]
 
      ;; [and-false]
      [reduction
       cj-lang
-      (program_ store_ (inhole context_ (and false expr_)))
+      (program_ store_ (in-hole context_ (and false expr_)))
       (term (program_ store_ ,(replace (term context_) (term hole) false)))]
 
      ;; [or-true]
      [reduction
       cj-lang
-      (program_ store_ (inhole context_ (or true expr_)))
+      (program_ store_ (in-hole context_ (or true expr_)))
       (term (program_ store_ ,(replace (term context_) (term hole) true)))]
 
      ;; [or-false]
      [reduction
       cj-lang
-      (program_ store_ (inhole (context_ (or false expr_))))
+      (program_ store_ (in-hole (context_ (or false expr_))))
       (term (program_ store_
                       ,(replace (term context_) (term hole) (term expr_))))]
 
      ;; [if-true]
      [reduction
       cj-lang
-      (program_ store_ (inhole context_ (if true expr_1 expr_2)))
+      (program_ store_ (in-hole context_ (if true expr_1 expr_2)))
       (term (program_
              store_
              ,(replace (term context_) (term hole) (term expr_1))))]
@@ -433,7 +434,7 @@
      ;; [if-false]
      [reduction
       cj-lang
-      (program_ store_ (inhole context_ (if false expr_1 expr_2)))
+      (program_ store_ (in-hole context_ (if false expr_1 expr_2)))
       (term (program_
              store_
              ,(replace (term context_) (term hole) (term expr_2))))]))
@@ -502,9 +503,7 @@
                     [cj-expr? predicate?]
                     [subst-args (-> tagged-expr? (listof cj-value?)
                                     (listof cj-id?) cj-expr?)]
-                    [cj-subst (-> cj-id? cj-expr? cj-expr?)]
+                    [cj-subst (-> cj-id? cj-expr? cj-expr? cj-expr?)]
                     [texpr->rexpr (-> tagged-expr? cj-expr?)]
-                    [cj-reductions (listof red?)]
-
-
+                    [cj-reductions (listof red?)])
   )

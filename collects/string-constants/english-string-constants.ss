@@ -627,4 +627,9 @@
  (vc-update-dialog-title "PLT update status")
  (vc-need-update-string "One or more installed PLT software packages needs updating")
  (vc-no-update-string "All installed PLT software packages are up-to-date")
+ 
+ ;; large semi colon letters
+ (insert-large-semicolon-letters... "Insert Large Letters...")
+ (large-semicolon-letters "Large Semicolon Letters")
+ (text-to-insert "Text to insert")
  )

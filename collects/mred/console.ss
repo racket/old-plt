@@ -8,7 +8,7 @@
 	    [mzlib:function mzlib:function^] [mzlib:string mzlib:string^]
 	    [mzlib:pretty-print mzlib:pretty-print^] [mzlib:trigger mzlib:trigger^])
 
-    (mred:debug:printf "mred:console@~n")
+    (mred:debug:printf "mred:console@")
 
     (define newline-string (string #\newline))
 

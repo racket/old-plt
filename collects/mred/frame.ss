@@ -13,7 +13,7 @@
 	    [mred:gui-utils mred:gui-utils^]
 	    [mzlib:function mzlib:function^] [mzlib:file mzlib:file^])
 
-    (mred:debug:printf "mred:frame@~n")
+    (mred:debug:printf "mred:frame@")
 
     (define frame-name "MrEd")
 

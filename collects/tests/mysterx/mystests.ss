@@ -5,7 +5,12 @@
 
 (define errors? #f)
 
-(define wb (make-object mx-browser% "MysTest" 230 250))
+(define wb 
+  (instantiate mx-browser% ()
+	       (label "MysTest")
+	       (width 230)
+	       (height 250)))
+
 (define doc (send wb current-document))
 
 (define ctrl (send doc insert-object-from-coclass "TestControl Class" 95 95 'percent))

@@ -10,8 +10,12 @@
 
 (current-inspector insp)
 
-(define wb (make-object mx-browser% "DHTML tests" 300 300 
-			'default 'default '(maximize)))
+(define wb 
+	(instantiate mx-browser% ()
+		     (label "DHTML tests")
+		     (width 300)
+		     (height 300) 
+		     (style-options '(maximize))))
 
 (define doc (send wb current-document))
 

@@ -1,4 +1,3 @@
-
 The `net' collection contains libraries that provide access to the
 following _Internet_ (quasi-)protocols:
 

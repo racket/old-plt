@@ -783,6 +783,10 @@ long scheme_equal_hash_key2(Scheme_Object *o)
 {
   Scheme_Type t;
   static int hash_counter = HASH_COUNT_START;
+#ifdef MZ_PRECISE_GC
+  if ((unsigned long)*__gc_var_stack__ <= (unsigned long)__gc_var_stack__)
+    abort();
+#endif
 
  top:
   t = SCHEME_TYPE(o);
@@ -803,13 +807,17 @@ long scheme_equal_hash_key2(Scheme_Object *o)
   } else if (t == scheme_rational_type) {
     return scheme_equal_hash_key2(scheme_rational_numerator(o));
   } else if ((t == scheme_complex_type) || (t == scheme_complex_izi_type)) {
+    long v1, v2;
     Scheme_Complex *c = (Scheme_Complex *)o;
-    return (scheme_equal_hash_key2(c->r)
-	    + scheme_equal_hash_key2(c->i));
+    v1 = scheme_equal_hash_key2(c->r);
+    v2 = scheme_equal_hash_key2(c->i);
+    return v1 + v2;
   } else if (t == scheme_pair_type) {
+    long v1, v2;
 #   include "mzhashchk.inc"
-    return (scheme_equal_hash_key2(SCHEME_CAR(o))
-	    + scheme_equal_hash_key2(SCHEME_CDR(o)));
+    v1 = scheme_equal_hash_key2(SCHEME_CAR(o));
+    v2 = scheme_equal_hash_key2(SCHEME_CDR(o));
+    return v1 + v2;
   } else if (t == scheme_vector_type) {
     int len = SCHEME_VEC_SIZE(o), i;
     long k = 0;

@@ -861,8 +861,8 @@ static int mark_weak_array(void *p)
     data = a->data;
     for (i = a->count; i--; ) {
       if (data[i] 
-	  && (*(short *)(data[i]) != 39)
-	  && (*(short *)(data[i]) != 48))
+	  && (*(short *)(data[i]) != 41)
+	  && (*(short *)(data[i]) != 50))
 	CRASH();
     }
   }
@@ -1742,6 +1742,13 @@ static void propagate_array_mpage(void **bottom, MPage *page)
 
     size = *(long *)p + 1;
 	
+#if CHECKS
+    if ((size < 2) || (size > MPAGE_WORDS)) {
+      CRASH();
+    }
+    prev_ptr = p;
+#endif
+
     v = OFFSET_COLOR_UNMASKED(offsets, offset);
     if (v & MFLAG_GRAY) {
       int i;
@@ -1755,13 +1762,19 @@ static void propagate_array_mpage(void **bottom, MPage *page)
       v |= MFLAG_BLACK;
       OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
       
-      for (i = 1; i <= size; i++) {
+      for (i = 1; i < size; i++) {
 	gcMARK(p[i]);
       }
     }
     
     p += size;
     offset += size;
+
+#if CHECKS
+    if ((p > bottom + MPAGE_WORDS + 1) || (p < bottom)) {
+      CRASH();
+    }
+#endif
   }
 }
 

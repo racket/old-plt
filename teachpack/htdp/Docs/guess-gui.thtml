@@ -18,4 +18,11 @@
      <br> displays frame 
 </menu>
 
+<p>Example:
+<pre>
+(connect (lambda (e b)
+           (printf "0th digit: ~s~n" (control 0))
+           (view (control 0))))
+</pre>
+
 #include foot.tinc

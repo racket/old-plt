@@ -17,4 +17,21 @@
      <br> to connect four controllers with the four directions in the arrow window
 </menu>
 
+
+<p>Example: 
+<pre>
+> (define (make-model dir)
+   (lambda (b e)
+     (printf (format "~a" (control)))
+     (view dir)))
+
+> (connect
+   (make-model "west")
+   (make-model "east")
+   (make-model "north")
+   (make-model "south"))  
+</pre>
+Now click on the four arrows. The message field will contain the current
+direction, the print-out the prior contents of the message field. 
+
 #include foot.tinc

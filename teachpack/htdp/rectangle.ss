@@ -1,5 +1,5 @@
-(reference-file "big-draw.ss")
 (require-library "error.ss" "htdp")
+(require-library "draw.ss" "htdp")
 
 (define-signature rectangleS (show))
 

@@ -1,5 +1,5 @@
 (require-library "error.ss" "htdp")
-(reference-file "draw.ss")
+(require-library "draw.ss" "htdp")
 
 (define-signature hangmanS (hangman hangman-list-repl))
 

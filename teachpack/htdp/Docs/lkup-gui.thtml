@@ -18,4 +18,12 @@
      <br> displays frame 
 </menu>
 
+<p>Example: 
+<pre>
+(connect 
+ (lambda (e b)
+   (view (control))))
+</pre>
+This example simply mirrors what the user types in to the message field. 
+
 #include foot.tinc

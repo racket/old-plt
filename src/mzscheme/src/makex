@@ -1,5 +1,7 @@
 #!/usr/local/bin/perl -s
 
+$gcalert = 1 if ($list);
+
 $list = 1 if ($assign);
 $list = 1 if ($setupassign);
 $list = 1 if ($exports);
@@ -156,6 +158,12 @@ if ($list) {
 	    }
 	}
     }
+}
+
+if ($gcalert) {
+  print "#ifdef MZ_PRECISE_GC\n";
+  print "#pragma GC_VARIABLE_SATCK_THOUGH_TABLE\n"
+  print "#endif\n";
 }
 
 sub Unbalanced {

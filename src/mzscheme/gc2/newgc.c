@@ -881,7 +881,7 @@ int scheme_alias_tracking_val(void *val1, void *val2)
   return 1;
 }
 
-unsigned long scheme_get_tracking_val_memory(void *val)
+unsigned long get_tracking_val_memory(void *val)
 {
   int i, j, man_owner = -1;
   unsigned long total_memuse = 0;
@@ -1214,10 +1214,14 @@ long GC_get_memory_use(void *custodian)
 {
   unsigned long retval = 0;
 
-  if(custodian) {
+  if(custodian && SCHEME_CUSTODIANP((Scheme_Object*)custodian)) {
 #if defined(NEWGC_PRECISE_ACCOUNT) || defined(NEWGC_BTC_ACCOUNT)
     retval = custodian_get_memory(custodian, 0);
 #endif
+  } else if(custodian && SCHEME_PROCP((Scheme_Object*)custodian)) {
+#if defined(NEWGC_MANUAL_ACCOUNT)
+    retval = get_tracking_val_memory(custodian);
+#endif    
   } else {
     struct mpage *page;
     unsigned short i, j;
@@ -1732,7 +1736,10 @@ static int repair_weak_box(void *p)
     if(wb->secondary_erase) 
       *(wb->secondary_erase + wb->soffset) = NULL;
     wb->secondary_erase = NULL;
-  } else gcFIXUP(wb->val);
+  } else { 
+    gcFIXUP(wb->val);
+    GC_DEBUG("Keeping weak box %p (reference %p)\n", wb, wb->val);
+  }
   return gcBYTES_TO_WORDS(sizeof(struct weak_box));
 }
 

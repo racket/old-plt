@@ -102,64 +102,71 @@
 
   (define (help-desk-navigate hd-cookie url)
     (when (semaphore-try-wait? nav-mutex)
-	  (set! navigate? #t)
-	  (let* ([nav-sem (make-semaphore 0)]
-		 [start-exn #f]
-		 [debug? (get-preference 'plt:help-debug (lambda () '#f))]
-		 [frame #f]	
-		 [debug-msg void])
-	       (when debug?
-		     (set! frame (get-debug-frame))
-		     (set! debug-msg (lambda (s) 
-				       (send frame add-message s)))
-		     (send frame show #t))
-	       (letrec
-		   ([timer browser-timeout]
-		    [monitor-thread
-		     (thread
-		      (lambda ()
-			(debug-msg "Starting browser-connect thread")
-			(wait-start-semaphore)
-			(debug-msg "Browser connected")
-			(kill-thread timer-thread)
-			(debug-msg "Killed timer thread")
-			(semaphore-post nav-sem)))]
-		    [timer-thread
-		     (thread
-		      (lambda ()
-			(debug-msg "Starting timer thread")
-			(let loop ([n 0])
-			  (when (< n timer)
-				(sleep 1)
-				(loop (add1 n))))
-			(debug-msg "Timer expired")
-			(when (prompt-for-browser-switch hd-cookie start-exn)
-                          (set-plt-browser!)
-                          (debug-msg "Shutting down external server")
-                          ((hd-cookie->exit-proc hd-cookie))
-                          (debug-msg "Starting internal server")
-                          (update-existing-cookie 
-                           hd-cookie 
-                           (internal-start-help-server
-                            (hd-cookie->browser-mixin hd-cookie)))
-                          (debug-msg "Starting internal browser")
-                          ; should never fail, so no handler
-                          (start-help-desk-browser url hd-cookie))
-			(kill-thread monitor-thread)
-			(semaphore-post nav-sem)))])
-		 (debug-msg "Starting Help Desk browser")
-		 (with-handlers 
-		  ([(lambda _ #t) (lambda (exn)
-				    (debug-msg 
-				     "Starting Help Desk browser raised an exception")
-				    (set! start-exn exn)
-				    (set! timer 0))])
-		  (start-help-desk-browser (build-dispatch-url hd-cookie url)
-					   hd-cookie))
-		 (yield nav-sem)
-		 (set! navigate? #f)
-		 (semaphore-post nav-mutex)))))
-  
+      (set! navigate? #t)
+      (let ([debug? (get-preference 'plt:help-debug (lambda () '#f))]
+	    [frame #f]	
+	    [debug-msg void])
+	(when debug?
+	      (set! frame (get-debug-frame))
+	      (set! debug-msg (lambda (s) 
+				(send frame add-message s)))
+	      (send frame show #t))
+	(if (use-plt-browser?)
+	    (begin
+	      (debug-msg "Starting internal browser")
+	      (start-help-desk-browser url hd-cookie)
+	      (set! navigate? #f)
+	      (semaphore-post nav-mutex))
+	    (let* ([nav-sem (make-semaphore 0)]
+		   [start-exn #f])
+	      (letrec
+		  ([timer browser-timeout]
+		   [monitor-thread
+		    (thread
+		     (lambda ()
+		       (debug-msg "Starting browser-connect thread")
+		       (wait-start-semaphore)
+		       (debug-msg "Browser connected")
+		       (kill-thread timer-thread)
+		       (debug-msg "Killed timer thread")
+		       (semaphore-post nav-sem)))]
+		   [timer-thread
+		    (thread
+		     (lambda ()
+		       (debug-msg "Starting timer thread")
+		       (let loop ([n 0])
+			 (when (< n timer)
+			       (sleep 1)
+			       (loop (add1 n))))
+		       (debug-msg "Timer expired")
+		       (when (prompt-for-browser-switch hd-cookie start-exn)
+			     (set-plt-browser!)
+			     (debug-msg "Shutting down external server")
+			     ((hd-cookie->exit-proc hd-cookie))
+			     (debug-msg "Starting internal server")
+			     (update-existing-cookie 
+			      hd-cookie 
+			      (internal-start-help-server
+			       (hd-cookie->browser-mixin hd-cookie)))
+			     (debug-msg "Starting internal browser")
+					; should never fail, so no handler
+			     (start-help-desk-browser url hd-cookie))
+		       (kill-thread monitor-thread)
+		       (semaphore-post nav-sem)))])
+		(debug-msg "Starting external browser")
+		(with-handlers 
+		 ([(lambda _ #t) (lambda (exn)
+				   (debug-msg 
+				    "Starting external browser raised an exception")
+				   (set! start-exn exn)
+				   (set! timer 0))])
+		 (start-help-desk-browser (build-dispatch-url 
+					   hd-cookie url)
+					  hd-cookie))
+		(yield nav-sem)
+		(set! navigate? #f)	
+		(semaphore-post nav-mutex)))))))
+
   ;; update-existing-cookie : hd-cookie hd-cookie -> void
   ;; sets orig-cookie to contain the same info as new-cookie;
   ;; used when the orig-cookie failed -- new-cookie is always

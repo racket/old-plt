@@ -137,7 +137,7 @@
             (send stack-frame show #t)
             (current-load
              (lambda (fn module)
-               (set! stack (cons fn stack))
+               (set! stack (cons (path->string fn) stack))
                (update-messages)
                (begin0 (ol fn module)
                        (set! stack (cdr stack))

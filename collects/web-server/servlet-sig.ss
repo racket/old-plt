@@ -16,7 +16,7 @@
      server-loop add-new-instance gen-send/suspend gen-resume-next-request make-config))
   
   (define-signature servlet^
-    (initial-request send/suspend send/finish adjust-timeout!))
+    (initial-request send/suspend send/finish send/back send/forward adjust-timeout!))
   
   ; more here - these should really have a common super type, but I don't want to break
   ; the existing interface.

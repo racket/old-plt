@@ -21,6 +21,8 @@
   
       (define send/suspend the-send/suspend)
       (define send/finish the-send/finish)
+      (define send/back the-send/back)
+      (define send/forward the-send/forward)
       (define initial-request the-initial-request)
       (define adjust-timeout! the-adjust-timeout!)))
   
@@ -83,7 +85,7 @@
   (define uri (string->url (format "http://127.0.0.1:~a/servlets/" port)))
   (define invoke-id (string->symbol (symbol->string (gensym "id"))))
   
-  ; : (str -> page) -> (values Method Url Bindings Bindings)
+  ; : (str -> response) -> request
   (define the-send/suspend
     (let ((s/s (gen-send/suspend uri invoke-id instances output-page resume-next-request)))
       (lambda (k->page)
@@ -94,6 +96,19 @@
                           "a function that produces a response" "1st"
                           page))
                  page))))))
+
+  ; : (response -> doesn't)
+  (define (the-send/back page)
+    (the-send/suspend (lambda (not-used-k-url) page)))
+
+  ; : (str -> response) -> request
+  (define (the-send/forward page-maker)
+    ;(set-servlet-instance-cont-table!
+    ; (hash-table-get invoke-id instances)
+    ; (make-hash-table))
+    (set! instances (make-hash-table))
+    (add-new-instance invoke-id instances)
+    (the-send/suspend page-maker))
   
   (define the-initial-request
     (make-request 'post uri null null "127.0.0.1" "127.0.0.1"))

@@ -926,7 +926,7 @@
 "(lambda(x) `(lambda(e) ,x))"
 "(lambda(x) `(lambda(e)(list ,x))))))"
 "(if id-is-rest?"
-"(wrap '(datum->syntax-object cap e))"
+"(wrap '(datum->syntax-object cap e cap))"
 "(wrap 'e)))"
 " #t"
 " id-is-rest?)))))"

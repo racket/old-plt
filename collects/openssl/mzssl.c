@@ -710,12 +710,17 @@ void sslout_close(Scheme_Output_Port *port)
 
     while (!ssl->close_out) {
       int status;
-      int err;
+      int err, tries = 0;
 
       while (1) {
 	status = SSL_shutdown(ssl->ssl);
-	if (status < 0)
+	if (status < 1)
 	  err = SSL_get_error(ssl->ssl, status);
+	/* Note: SSL_ERROR_SYSCALL may be erroneous if status was 0.
+	   Indeed 0 seems to be the result in many cases because the socket
+	   is non-blocking, and then neither of the WANTs is returned.
+	   We address this by simply trying 10 times and then giving
+	   up. The two-step shutdown is optional, anyway. */
 
 	if ((status < 0) && !scheme_close_should_force_port_closed()
 	    /* if an eof occurs, let's agree that it's shut down */
@@ -736,13 +741,16 @@ void sslout_close(Scheme_Output_Port *port)
 	  scheme_block_until(shutdown_ready, 
 			     shutdown_need_wakeup,
 			     (void *)ssl, (float)0.0);      
-	} else if (status) {
+	} else if (status || (tries > 10)) {
 	  ssl->close_out = 1;
 	  if (ssl->close_in) {
 	    SSL_free(ssl->ssl);
 	  }
 	  break;
-	}  
+	} else {
+	  tries++;
+	  scheme_thread_block(0.0);
+	}
       }
     }
   }

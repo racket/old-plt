@@ -1189,9 +1189,20 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
     end = -end;
     
     if (SetCairoBrush()) {
+      double xx = x, yy = y, ww = w, hh = h;
+      
+      if ((anti_alias == 2)
+	  && (scale_x == 1.0)
+	  && (scale_y == 1.0)) {
+	xx += 1;
+	yy += 1;
+	ww -= 2;
+	hh -= 2;
+      }
+      
       cairo_save(CAIRO_DEV);
-      cairo_translate(CAIRO_DEV, x, y);
-      cairo_scale(CAIRO_DEV, w, h);
+      cairo_translate(CAIRO_DEV, xx, yy);
+      cairo_scale(CAIRO_DEV, ww, hh);
       cairo_new_path(CAIRO_DEV);
       cairo_move_to(CAIRO_DEV, 0.5, 0.5);
       cairo_arc_negative(CAIRO_DEV, 0.5, 0.5, 0.5, start, end);
@@ -1202,12 +1213,22 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
     pw = SetCairoPen();
     if (pw) {
       cairo_matrix_t *m;
-      if (anti_alias < 2)
-	pw = 0;
+      double xx = x, yy = y, ww = w, hh = h;
+      
+      if ((anti_alias == 2)
+	  && (scale_x == 1.0)
+	  && (scale_y == 1.0)
+	  && (pw <= 1.0)) {
+	xx += 0.5;
+	yy += 0.5;
+	ww -= 1;
+	hh -= 1;
+      }
+      
       m = cairo_matrix_create();
       cairo_current_matrix (CAIRO_DEV, m);
-      cairo_translate(CAIRO_DEV, x + pw / 2, y + pw / 2);
-      cairo_scale(CAIRO_DEV, w - pw, h - pw);
+      cairo_translate(CAIRO_DEV, xx, yy);
+      cairo_scale(CAIRO_DEV, ww, hh);
       cairo_new_path(CAIRO_DEV);
       cairo_arc_negative(CAIRO_DEV, 0.5, 0.5, 0.5, start, end);
       cairo_set_matrix(CAIRO_DEV, m);
@@ -1288,19 +1309,25 @@ void wxWindowDC::DrawLine(double x1, double y1, double x2, double y2)
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
 #ifdef WX_USE_CAIRO
       if (anti_alias) {
-	double pw;
+	double xx1 = x1, yy1 = y1, xx2 = x2, yy2 = y2, pw;
 
 	InitCairoDev();
 	
 	pw = SetCairoPen();
-	if (anti_alias < 2)
-	  pw = 0;
-	else if (pw > 1)
-	  pw = 1;
+
+	if ((anti_alias == 2)
+	    && (scale_x == 1.0)
+	    && (scale_y == 1.0)
+	    && (pw <= 1.0)) {
+	  xx1 += 0.5;
+	  yy1 += 0.5;
+	  xx2 += 0.5;
+	  yy2 += 0.5;
+	}
 
 	cairo_new_path(CAIRO_DEV);
-	cairo_move_to(CAIRO_DEV, x1 + pw / 2, y1 + pw / 2);
-	cairo_line_to(CAIRO_DEV, x2 + pw / 2, y2 + pw / 2);
+	cairo_move_to(CAIRO_DEV, xx1, yy1);
+	cairo_line_to(CAIRO_DEV, xx2, yy2);
 	cairo_stroke(CAIRO_DEV);
       } else
 #endif
@@ -1330,16 +1357,19 @@ void wxWindowDC::DrawLines(int n, wxPoint pts[], double xoff, double yoff)
   
 #if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
   if (anti_alias) {
-    int i;
     double pw;
+    int i;
 
     InitCairoDev();
+    
     pw = SetCairoPen();
-    if (anti_alias == 2) {
-      if (pw > 1)
-	pw = 1;
-      xoff += pw / 2;
-      yoff += pw / 2;
+
+    if ((anti_alias == 2)
+	&& (scale_x == 1.0)
+	&& (scale_y == 1.0)
+	&& (pw <= 1.0)) {
+      xoff += 0.5;
+      yoff += 0.5;
     }
 
     cairo_new_path(CAIRO_DEV);
@@ -1392,28 +1422,36 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
     double pw;
 
     InitCairoDev();
+
     if (SetCairoBrush()) {
       int i;     
+
+      if (fill == wxODDEVEN_RULE)
+	cairo_set_fill_rule(CAIRO_DEV, CAIRO_FILL_RULE_EVEN_ODD);
       
       cairo_new_path(CAIRO_DEV);
       cairo_move_to(CAIRO_DEV, pts[0].x + xoff, pts[0].y + yoff);
       for (i = 1; i < n; i++) {
 	cairo_line_to(CAIRO_DEV, pts[i].x + xoff, pts[i].y + yoff);
       }
-      cairo_fill(CAIRO_DEV);    
+      cairo_fill(CAIRO_DEV); 
+
+      if (fill == wxODDEVEN_RULE)
+	cairo_set_fill_rule(CAIRO_DEV, CAIRO_FILL_RULE_WINDING);
     }
 
     pw = SetCairoPen();
     if (pw) {
       int i;
 
-      if (anti_alias == 2) {
-	if (pw > 1)
-	  pw = 1;
-      	xoff += pw / 2;
-	yoff += pw / 2;
+      if ((anti_alias == 2)
+	  && (scale_x == 1.0)
+	  && (scale_y == 1.0)
+	  && (pw <= 1.0)) {
+	xoff += 0.5;
+	yoff += 0.5;
       }
-      
+    
       cairo_new_path(CAIRO_DEV);
       cairo_move_to(CAIRO_DEV, pts[0].x + xoff, pts[0].y + yoff);
       for (i = 1; i < n; i++) {
@@ -1472,14 +1510,22 @@ void wxWindowDC::DrawRectangle(double x, double y, double w, double h)
 
       pw = SetCairoPen();
       if (pw) {
-	if (anti_alias < 2)
-	  pw = 0;
-
+	double xx = x, yy = y, ww = w, hh = h;
+	if ((anti_alias == 2)
+	    && (scale_x == 1.0)
+	    && (scale_y == 1.0)
+	    && (pw <= 1.0)) {
+	  xx += 0.5;
+	  yy += 0.5;
+	  ww -= 1.0;
+	  hh -= 1.0;
+	}
+	
 	cairo_new_path(CAIRO_DEV);
-	cairo_move_to(CAIRO_DEV, x + pw / 2, y + pw / 2);
-	cairo_line_to(CAIRO_DEV, x+w - pw/2, y + pw/2);
-	cairo_line_to(CAIRO_DEV, x+w - pw/2, y+h - pw/2);
-	cairo_line_to(CAIRO_DEV, x + pw/2, y+h - pw/2);
+	cairo_move_to(CAIRO_DEV, xx, yy);
+	cairo_line_to(CAIRO_DEV, xx+ww, yy);
+	cairo_line_to(CAIRO_DEV, xx+ww, yy+hh);
+	cairo_line_to(CAIRO_DEV, xx, yy+hh);
 	cairo_close_path(CAIRO_DEV);
 	cairo_stroke(CAIRO_DEV);
       }
@@ -1519,31 +1565,42 @@ void wxWindowDC::DrawRoundedRectangle(double x, double y, double w, double h,
 
 #ifdef WX_USE_CAIRO
     if (anti_alias) {
-      double pw;
+      double xx = x, yy = y, ww = w, hh = h, pw;
+
+      if ((anti_alias == 2)
+	  && (scale_x == 1.0)
+	  && (scale_y == 1.0)) {
+	xx += 0.5;
+	yy += 0.5;
+	ww -= 1.0;
+	hh -= 1.0;
+      }
       
       InitCairoDev();
       if (SetCairoBrush()) {
-	cairo_move_to(CAIRO_DEV, x, y + radius);
-	cairo_line_to(CAIRO_DEV, x, y + h - radius);
-	cairo_arc_negative(CAIRO_DEV, x + radius, y + h - radius, radius, wxPI, 0.5 * wxPI);
-	cairo_line_to(CAIRO_DEV, x + w - radius, y + h);
-	cairo_arc_negative(CAIRO_DEV, x + w - radius, y + h - radius, radius, 0.5 * wxPI, 0);
-	cairo_line_to(CAIRO_DEV, x + w, y + radius);
-	cairo_arc_negative(CAIRO_DEV, x + w - radius, y + radius, radius, 2 * wxPI, 1.5 * wxPI);
-	cairo_line_to(CAIRO_DEV, x + radius, y);
-	cairo_arc_negative(CAIRO_DEV, x + radius, y + radius, radius, 1.5 * wxPI, wxPI);
-	cairo_line_to(CAIRO_DEV, x, y + radius);
+	cairo_move_to(CAIRO_DEV, xx, yy + radius);
+	cairo_line_to(CAIRO_DEV, xx, yy + hh - radius);
+	cairo_arc_negative(CAIRO_DEV, xx + radius, yy + hh - radius, radius, wxPI, 0.5 * wxPI);
+	cairo_line_to(CAIRO_DEV, xx + ww - radius, yy + hh);
+	cairo_arc_negative(CAIRO_DEV, xx + ww - radius, yy + hh - radius, radius, 0.5 * wxPI, 0);
+	cairo_line_to(CAIRO_DEV, xx + w, yy + radius);
+	cairo_arc_negative(CAIRO_DEV, xx + ww - radius, yy + radius, radius, 2 * wxPI, 1.5 * wxPI);
+	cairo_line_to(CAIRO_DEV, xx + radius, y);
+	cairo_arc_negative(CAIRO_DEV, xx + radius, yy + radius, radius, 1.5 * wxPI, wxPI);
+	cairo_line_to(CAIRO_DEV, xx, yy + radius);
 	cairo_fill(CAIRO_DEV);    
       }
 
       pw = SetCairoPen();
       if (pw) {
-	double xx = x, yy = y, ww = w, hh = h;
-	if (anti_alias == 2) {
-	  xx += pw/2;
-	  yy += pw/2;
-	  ww -= pw;
-	  hh -= pw;
+	if ((anti_alias == 2)
+	    && (scale_x == 1.0)
+	    && (scale_y == 1.0)
+	    && (pw > 1.0)) {
+	  xx -= 0.5;
+	  yy -= 0.5;
+	  ww += 1.0;
+	  hh += 1.0;
 	}
 
 	cairo_move_to(CAIRO_DEV, xx, yy + radius);
@@ -3429,12 +3486,21 @@ void wxWindowDC::ReleaseCairoDev()
   }
 }
 
+static double cairo_dotted[] = {2, 5, /* offset */ 2};
+static double cairo_short_dashed[] = {4, 4, /* offset */ 2};
+static double cairo_long_dashed[] = {4, 8, /* offset */ 2};
+static double cairo_dotted_dashed[] = {6, 6, 2, 6, /* offset */ 4};
+
+
 double wxWindowDC::SetCairoPen()
 {
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
     wxColour *c;
     double pw;
     int cs, js;
+    double *dashes;
+    int ndash;
+    double offset;
     
     c = current_pen->GetColour();
     cairo_set_rgb_color(CAIRO_DEV, c->Red() / 255.0, c->Green() / 255.0, c->Blue() / 255.0);
@@ -3453,6 +3519,36 @@ double wxWindowDC::SetCairoPen()
 
     js = current_pen->GetJoin();
     cairo_set_line_join(CAIRO_DEV, c_join_style[js]);
+
+    switch (current_pen->GetStyle ()) {
+    case wxDOT:
+      dashes = cairo_dotted;
+      ndash = (sizeof(cairo_dotted) / sizeof(double)) - 1;
+      break;
+    case wxSHORT_DASH:
+      dashes = cairo_short_dashed;
+      ndash = (sizeof(cairo_short_dashed) / sizeof(double)) - 1;
+      break;
+    case wxLONG_DASH:
+      dashes = cairo_long_dashed;
+      ndash = (sizeof(cairo_long_dashed) / sizeof(double)) - 1;
+      break;
+    case wxDOT_DASH:
+      dashes = cairo_dotted_dashed;
+      ndash = (sizeof(cairo_dotted_dashed) / sizeof(double)) - 1;
+      break;
+    case wxSOLID:
+    case wxTRANSPARENT:
+    default:
+      dashes = NULL;
+      ndash = 0;
+      break;
+    }
+    if (ndash)
+      offset = dashes[ndash];
+    else
+      offset = 0;
+    cairo_set_dash(CAIRO_DEV, dashes, ndash, offset);
 
     return pw;
   } else

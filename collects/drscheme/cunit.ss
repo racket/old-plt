@@ -60,7 +60,7 @@
 	    [project-extension "spj"]
 	    [group% scheme-project-frame-group%]
 	    
-	    [console-edit (make-object drscheme:edit:console-edit%)])
+	    [console-edit (make-object drscheme:aries:console-edit%)])
 	  
 	  (public
 	    

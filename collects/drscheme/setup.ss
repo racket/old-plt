@@ -27,7 +27,6 @@
     (mred:set-preference-default 'drscheme:mzscheme-type 'mred)
 
     ; Mode flags:
-    (mred:set-preference-default 'drscheme:allow-execute? #t)
     (mred:set-preference-default 'drscheme:start-show-mode 'both)
 
     ; Startup files:

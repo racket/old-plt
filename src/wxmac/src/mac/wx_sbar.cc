@@ -225,10 +225,10 @@ void wxScrollBar::Enable(Bool enable)
   if ((enable != cEnable) && cActive && cMacControl) {
     SetCurrentDC();
     if (enable) {
-      ::ActivateControl(cMacControl);
+      ActivateControl(cMacControl);
     }
     else {
-      ::DeactivateControl(cMacControl);
+      DeactivateControl(cMacControl);
     }
   }
   wxWindow::Enable(enable);
@@ -241,8 +241,7 @@ void wxScrollBar::ShowAsActive(Bool flag)
     SetCurrentDC();
     if (flag) {
       ActivateControl(cMacControl);
-    }
-    else {
+    } else {
       DeactivateControl(cMacControl);
     }
   }
@@ -259,78 +258,71 @@ pascal void TrackActionProc(ControlHandle theControl, short thePart)
 //-----------------------------------------------------------------------------
 void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
 {
-  if (event->LeftDown())
-    {
-      SetCurrentDC();
-      
-      int startH, startV;
-      event->Position(&startH, &startV); // frame c.s.
-
-      Point startPt = {startV + SetOriginY, startH + SetOriginX}; // frame c.s.
-      int thePart = ::TestControl(cMacControl, startPt);
-      if (thePart)
-	{
-	  if (thePart == kControlIndicatorPart)
-	    {
-	      if (::TrackControl(cMacControl, startPt, NULL))
-		{
-		  Bool horizontal = cStyle & wxHSCROLL;
-		  wxWhatScrollData positionScrollData =
-		    (horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
-		  int newPosition = GetValue();
-		  wxScrollEvent *e = new wxScrollEvent();
-		  e->direction = (horizontal ? wxHORIZONTAL : wxVERTICAL);
-		  e->pos = GetValue();
-		  e->moveType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
-		  
-		  cScroll->SetScrollData(newPosition, positionScrollData, e);
-		}
-	    }
-	  else
-	    {
-	      ::TrackControl(cMacControl, startPt, TrackActionProcUPP);
-	    }
+  if (event->LeftDown()) {
+    SetCurrentDC();
+    
+    int startH, startV;
+    event->Position(&startH, &startV); // frame c.s.
+    
+    Point startPt = {startV + SetOriginY, startH + SetOriginX}; // frame c.s.
+    int thePart = ::TestControl(cMacControl, startPt);
+    if (thePart) {
+      if (thePart == kControlIndicatorPart) {
+	if (!StillDown() || TrackControl(cMacControl, startPt, NULL)) {
+	  Bool horizontal = cStyle & wxHSCROLL;
+	  wxWhatScrollData positionScrollData =
+	    (horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
+	  int newPosition = GetValue();
+	  wxScrollEvent *e = new wxScrollEvent();
+	  e->direction = (horizontal ? wxHORIZONTAL : wxVERTICAL);
+	  e->pos = GetValue();
+	  e->moveType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
+	  
+	  cScroll->SetScrollData(newPosition, positionScrollData, e);
 	}
+      } else {
+	::TrackControl(cMacControl, startPt, TrackActionProcUPP);
+      }
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxScrollBar::TrackAction(short part) // mac platform only
 {
-  if (part && cScroll)
-    {
-      Bool horizontal = cStyle & wxHSCROLL;
+  if (part && cScroll) {
+    Bool horizontal = cStyle & wxHSCROLL;
 
-      wxScrollData* scrollData = cScroll->GetScrollData();
-      int scrollsPerPage = scrollData->GetValue
-	(horizontal ? wxWhatScrollData::wxPageW : wxWhatScrollData::wxPageH);
-      int maxv = GetMaxValue();
-      int mtype = 0;
-      
-      int delta = 0;
-      switch (part)
-	{
-	case kControlUpButtonPart: delta = -1; mtype = wxEVENT_TYPE_SCROLL_LINEUP; break;
-	case kControlDownButtonPart: delta = 1; mtype = wxEVENT_TYPE_SCROLL_LINEDOWN; break;
-	case kControlPageUpPart: delta = -scrollsPerPage; mtype = wxEVENT_TYPE_SCROLL_PAGEUP; break;
-	case kControlPageDownPart: delta = scrollsPerPage; mtype = wxEVENT_TYPE_SCROLL_PAGEDOWN; break;
-	}
+    wxScrollData* scrollData = cScroll->GetScrollData();
+    int scrollsPerPage = scrollData->GetValue
+      (horizontal ? wxWhatScrollData::wxPageW : wxWhatScrollData::wxPageH);
+    int maxv = GetMaxValue();
+    int mtype = 0;
+    
+    int delta = 0;
+    switch (part)
+      {
+      case kControlUpButtonPart: delta = -1; mtype = wxEVENT_TYPE_SCROLL_LINEUP; break;
+      case kControlDownButtonPart: delta = 1; mtype = wxEVENT_TYPE_SCROLL_LINEDOWN; break;
+      case kControlPageUpPart: delta = -scrollsPerPage; mtype = wxEVENT_TYPE_SCROLL_PAGEUP; break;
+      case kControlPageDownPart: delta = scrollsPerPage; mtype = wxEVENT_TYPE_SCROLL_PAGEDOWN; break;
+      }
 
-      int newPosition = GetValue() + delta;
-      if (newPosition < 0) newPosition = 0;
-      if (newPosition > maxv) newPosition = maxv;
+    int newPosition = GetValue() + delta;
+    if (newPosition < 0) newPosition = 0;
+    if (newPosition > maxv) newPosition = maxv;
 
-      wxWhatScrollData positionScrollData =
-	(horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
-      SetValue(newPosition);
-      wxScrollEvent *e = new wxScrollEvent();
-      e->direction = (horizontal ? wxHORIZONTAL : wxVERTICAL);
-      e->pos = GetValue();
-      e->moveType = mtype;
-      cScroll->SetScrollData(newPosition, positionScrollData, e);
+    wxWhatScrollData positionScrollData =
+      (horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
+    SetValue(newPosition);
+    wxScrollEvent *e = new wxScrollEvent();
+    e->direction = (horizontal ? wxHORIZONTAL : wxVERTICAL);
+    e->pos = GetValue();
+    e->moveType = mtype;
+    cScroll->SetScrollData(newPosition, positionScrollData, e);
 
-      SetCurrentDC(); // must reset cMacDC (kludge)
-    }
+    SetCurrentDC(); // must reset cMacDC (kludge)
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -387,37 +379,14 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
   dX = bounds.left - SetOriginX;
   dY = bounds.top - SetOriginY;
 
-#ifndef WX_CARBON
-  Bool hideToPreventFlicker = (IsControlVisible(cMacControl) && (dX || dY) && (dW || dH));
-  if (hideToPreventFlicker) ::HideControl(cMacControl);
-#endif
-
-  if (dW || dH)
-    {
-      int clientWidth, clientHeight;
-      GetClientSize(&clientWidth, &clientHeight);
-      ::SizeControl(cMacControl, clientWidth, clientHeight);
-    }
+  if (dW || dH) {
+    int clientWidth, clientHeight;
+    GetClientSize(&clientWidth, &clientHeight);
+    ::SizeControl(cMacControl, clientWidth, clientHeight);
+  }
 
   if (dX || dY)
-    {
-      cMacDC->setCurrentUser(NULL); // macDC no longer valid
-      SetCurrentDC(); // put new origin at (SetOriginX,SetOriginY)
-      ::MoveControl(cMacControl, SetOriginX, SetOriginY);
-    }
-
-#ifndef WX_CARBON
-  if (hideToPreventFlicker) ::ShowControl(cMacControl);
-
-  if (!cHidden && (dW || dH || dX || dY))
-    {
-      int clientWidth, clientHeight;
-      GetClientSize(&clientWidth, &clientHeight);
-      Rect clientRect = {0, 0, clientHeight, clientWidth};
-      OffsetRect(&clientRect,SetOriginX,SetOriginY);
-      ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
-    }
-#endif
+    ::MoveControl(cMacControl, SetOriginX, SetOriginY);
 }
 
 

@@ -227,7 +227,6 @@ wxArea* wxFrame::ControlArea(void) { return cControlArea; } // mac platform only
 //-----------------------------------------------------------------------------
 void wxFrame::DoSetSize(int x, int y, int width, int height)
 {
-  // tom: to avoid unnecessary calculations!
   if (x==-1) 
     x= cWindowX;
   if (y==-1) 
@@ -724,12 +723,6 @@ void wxFrame::MacUpdateWindow(void)
     ::BeginUpdate(theMacWindow);
 
     Paint();
-
-#ifndef WX_CARBON
-    // Draw the grow box
-    if (!(cStyle & wxNO_RESIZE_BORDER))
-      MacDrawGrowIcon();
-#endif 				
 
     ::EndUpdate(theMacWindow);
   }

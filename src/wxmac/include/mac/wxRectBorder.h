@@ -58,6 +58,8 @@ public:
 	virtual void Paint(void);
 
 	virtual void DoShow(Bool on);
+ protected:
+   void ChangeToGray(Bool Gray);
 };
 
 #endif // IN_CPROTO

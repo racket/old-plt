@@ -244,3 +244,10 @@ void wxMessage::DoShow(Bool show)
 {
   wxWindow::DoShow(show);
 }
+
+//-----------------------------------------------------------------------------
+void wxMessage::ChangeToGray(Bool gray) 
+{
+  Refresh();
+  wxWindow::ChangeToGray(gray);
+}

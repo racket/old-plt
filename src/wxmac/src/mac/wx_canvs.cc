@@ -244,7 +244,7 @@ void wxCanvas::SetScrollbars(int horizontal, int vertical,
   if (x_pos > x_length) x_pos = x_length;
   if (y_pos > y_length) y_pos = y_length;
 
-  scrollAutomanaged = automgmt; //mflatt
+  scrollAutomanaged = automgmt;
 
   wxWhatScrollData whatScrollData; // track what scrolldata changes
   wxScrollData* oldScrollData = cScroll->GetScrollData();
@@ -345,7 +345,6 @@ void wxCanvas::SetScrollData
     if (theDC) {
       theDC->device_origin_x = 0;
       theDC->device_origin_y = 0;
-      // ((wxCanvasDC *)theDC)->SetCanvasClipping();
     }
     if (evnt) {
       OnScroll(evnt);
@@ -353,43 +352,39 @@ void wxCanvas::SetScrollData
     return;
   }
 
-  if (theDC)
+  if (theDC) {
+    int dH = 0;
     {
-      int dH = 0;
-      {
-	int newH = scrollData->GetValue(wxWhatScrollData::wxPositionH) *
-	  scrollData->GetValue(wxWhatScrollData::wxUnitW);
-	dH = (int)(newH - (-theDC->device_origin_x));
-      }
-      
-      int dV = 0;
-      {
-	int newV = scrollData->GetValue(wxWhatScrollData::wxPositionV) *
-	  scrollData->GetValue(wxWhatScrollData::wxUnitH);
-	dV = (int)(newV - (-theDC->device_origin_y));
-      }
-      
-      if (dH != 0 || dV != 0)
-	{
-	  wxArea* clientArea = ClientArea();
-	  RgnHandle theUpdateRgn = ::NewRgn();
-	  CheckMemOK(theUpdateRgn);
-	  theDC->BeginDrawing();
-	  if (!IsHidden()) {
-	    Rect scrollRect = {0, 0, clientArea->Height(), clientArea->Width()};
-	    OffsetRect(&scrollRect,SetOriginX,SetOriginY);
-	    ::ScrollRect(&scrollRect, -dH, -dV, theUpdateRgn);
-	    ::InvalWindowRgn(GetWindowFromPort(cMacDC->macGrafPort()),theUpdateRgn);
-	  }
-	  theDC->device_origin_x += -dH;
-	  theDC->device_origin_y += -dV;
-	  // ((wxCanvasDC *)theDC)->SetCanvasClipping();
-	  theDC->EndDrawing();
-	  ::DisposeRgn(theUpdateRgn);
-	}
-
-      Refresh();
+      int newH = scrollData->GetValue(wxWhatScrollData::wxPositionH) *
+	scrollData->GetValue(wxWhatScrollData::wxUnitW);
+      dH = (int)(newH - (-theDC->device_origin_x));
     }
+    
+    int dV = 0;
+    {
+      int newV = scrollData->GetValue(wxWhatScrollData::wxPositionV) *
+	scrollData->GetValue(wxWhatScrollData::wxUnitH);
+      dV = (int)(newV - (-theDC->device_origin_y));
+    }
+    
+    if (dH != 0 || dV != 0) {
+      wxArea* clientArea = ClientArea();
+      RgnHandle theUpdateRgn = ::NewRgn();
+      CheckMemOK(theUpdateRgn);
+      SetCurrentDC();
+      if (!IsHidden()) {
+	Rect scrollRect = {0, 0, clientArea->Height(), clientArea->Width()};
+	OffsetRect(&scrollRect,SetOriginX,SetOriginY);
+	::ScrollRect(&scrollRect, -dH, -dV, theUpdateRgn);
+	::InvalWindowRgn(GetWindowFromPort(cMacDC->macGrafPort()),theUpdateRgn);
+      }
+      theDC->device_origin_x += -dH;
+      theDC->device_origin_y += -dV;
+      ::DisposeRgn(theUpdateRgn);
+    }
+
+    Refresh();
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -547,13 +542,12 @@ void wxCanvas::ClientToLogical(int* x, int* y) // mac platform only; testing
 { // Transform point from client c.s. to logical c.s. (virtual canvas, scrolling)
   // trying without all this gunk:
   wxDC* theDC = GetDC();
-  if (theDC)
-    {
-      float fX = theDC->DeviceToLogicalX(*x);
-      float fY = theDC->DeviceToLogicalY(*y);
-      *x = (int)fX;
-      *y = (int)fY;
-    }
+  if (theDC) {
+    float fX = theDC->DeviceToLogicalX(*x);
+    float fY = theDC->DeviceToLogicalY(*y);
+    *x = (int)fX;
+    *y = (int)fY;
+  }
 }
 
 Bool wxCanvas::WantsFocus(void)

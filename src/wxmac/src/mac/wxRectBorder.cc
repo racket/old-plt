@@ -95,3 +95,37 @@ void wxRectBorder::Paint(void)
     }
   }
 }
+
+
+//-----------------------------------------------------------------------------
+void wxRectBorder::ChangeToGray(Bool gray) 
+{
+  if (SetCurrentMacDC()) {
+    RgnHandle rgn, rgn2;
+    int margin;
+
+    int clientWidth, clientHeight;
+    GetClientSize(&clientWidth, &clientHeight);
+    Rect clientRect = {0, 0, clientHeight, clientWidth};
+    OffsetRect(&clientRect,SetOriginX,SetOriginY);
+
+    /* We should really get all 4 margins... */
+    margin = ParentArea()->Margin().Offset(Direction::wxTop);
+    
+    rgn = NewRgn();
+    if (rgn) {
+      RectRgn(rgn, &clientRect);
+      rgn2 = NewRgn();
+      if (rgn2) {
+	InsetRect(&clientRect, margin, margin);
+	RectRgn(rgn2, &clientRect);
+	DiffRgn(rgn, rgn2, rgn);
+	DisposeRgn(rgn2);
+      }
+      InvalWindowRgn(GetWindowFromPort(cMacDC->macGrafPort()), rgn);
+      DisposeRgn(rgn);
+    }
+  }
+
+  wxWindow::ChangeToGray(gray);
+}

@@ -1383,15 +1383,17 @@ void wxWindow::Enable(Bool Flag)
      /* Disabling blocks mouse and keyboard events, not update events. */
      /* I.e., like Windows, not like X-Windows */
 {
-  Bool current = OS_Active();
+  if (!cEnable != !Flag) {
+    Bool current = OS_Active();
   
-  cEnable = Flag;
-  
-  ChildrenInternalGray(Flag);
-  
-  if (current != OS_Active()) {
-    ChangeToGray(!OS_Active());
-  } 
+    cEnable = Flag;
+    
+    ChildrenInternalGray(Flag);
+    
+    if (current != OS_Active()) {
+      ChangeToGray(!OS_Active());
+    } 
+  }
 }
 
 void wxWindow::InternalGray(Bool gray)
@@ -1424,10 +1426,9 @@ void wxWindow::ChangeToGray(Bool gray)
 
   if (gray) {
     wxFrame* frame = GetRootFrame();
-    if (this == frame->GetFocusWindow())
-      {
-	frame->SetFocusWindow(NULL);
-      }
+    if (this == frame->GetFocusWindow()) {
+      frame->SetFocusWindow(NULL);
+    }
   }
 }
 
@@ -1558,14 +1559,11 @@ void wxWindow::DoShow(Bool v)
 
   if (cHidden) {
     /* Check for focus */
-    wxWindow *p;
-    p = window_parent;
-    while (p && !wxSubType(p->__type, wxTYPE_FRAME))
-      p = p->window_parent;
-    if (p) {
-      wxWindow *f = ((wxFrame *)p)->GetFocusWindow();
-      if (f && (f == this))
-	((wxFrame *)p)->SetFocusWindow(NULL);
+    wxFrame* frame = GetRootFrame();
+    if (frame) {
+      wxWindow *f = frame->GetFocusWindow();
+      if (f == this)
+	frame->SetFocusWindow(NULL);
     }
   }
   

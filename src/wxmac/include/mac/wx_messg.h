@@ -111,6 +111,9 @@ public:
 	virtual void DoShow(Bool show); // mac platform only
 
 	void ChangeColour(void) ;
+ protected:
+   void ChangeToGray(Bool Gray);
+
 };
 
 #endif // IN_CPROTO

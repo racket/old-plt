@@ -108,7 +108,7 @@
 	    (insert is)
 	    (insert es))
 	  (send* ie 
-	    (insert welcome-message)
+	    (insert (welcome-message))
 	    (insert #\newline)
 	    (insert "See the license agreement or "))
 	  (let ([start (send ie get-start-position)])

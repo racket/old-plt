@@ -38,8 +38,8 @@ This gives you the following syntatic forms:
    also bound in the action (hiding any outside binding).
    > (get-start-pos) returns a position struct for the first character 
       matched 
-   > (get-end-pos) returns a position struct for the last character
-      matched 
+   > (get-end-pos) returns a position struct for the first character not
+      matched
    > (get-lexeme) returns the matched string
    > lex-buf is the lex-buf being processed (this is useful for
       matching input with multiple lexers, see example below)
@@ -50,6 +50,10 @@ This gives you the following syntatic forms:
    executed to handle the error situation as desired, only consuming
    the first character from the input buffer.
 
+> (lexer-src-pos (re action) ...) like a lexer, but the return of each
+   match is (list action-result start-pos end-pos) instead of simple
+   action-result.
+   
 > (define-tokens group-name (token-name ...)) which binds group-name
    to the group of tokens being defined.  For each token-name, t, a
    function (token-t expr) is created, which constructs a token with

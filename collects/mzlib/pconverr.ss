@@ -212,9 +212,6 @@
 		       [quasi-read-style
 			(lambda ()
 			  (cond
-			    [(or (void? expr) (regexp? expr)
-				 (object? expr) (class? expr))
-			     expr]
 			    [(box? expr) (box (recur (unbox expr)))]
 			    [(vector? expr) (apply vector (map recur (vector->list expr)))]
 			    [else (quasi-style)]))]

@@ -598,8 +598,11 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 				   vector_length);
 		  return scheme_void;
 		}
-	      } else
-		*ht = scheme_hash_table(100, SCHEME_hash_ptr, 0, 0);
+	      } else {
+		Scheme_Hash_Table *tht;
+		tht = scheme_hash_table(100, SCHEME_hash_ptr, 0, 0);
+		*ht = tht;
+	      }
 	      ph = scheme_alloc_small_object();
 	      ph->type = scheme_placeholder_type;
 	      

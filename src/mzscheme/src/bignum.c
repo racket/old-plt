@@ -417,8 +417,10 @@ static Scheme_Object *bignum_add(Scheme_Object *o, bigdig **buffer, int *size,
     
   if (buffer) {
     if (*size < vl) {
+      bigdig *bufa;
       *size = 2 * vl;
-      *buffer = (bigdig *)scheme_malloc_atomic(*size * sizeof(bigdig));
+      bufa = (bigdig *)scheme_malloc_atomic(*size * sizeof(bigdig));
+      *buffer = bufa;
     }
     va = *buffer;
   } else
@@ -1312,8 +1314,10 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
 
       if (norm)
 	*rp = scheme_make_integer(remain);
-      else
-	*rp = scheme_make_bignum(remain);
+      else {
+	r = scheme_make_bignum(remain);
+	*rp = r;
+      }
     }
 
     return;
@@ -1330,10 +1334,14 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
   }
 
   if (scheme_bignum_gt(d, n)) {
-    if (qp)
-      *qp = norm ? scheme_make_integer(0) : scheme_make_bignum(0);
-    if (rp)
-      *rp = norm ? scheme_bignum_normalize(n) : (Scheme_Object *)n;
+    if (qp) {
+      q = norm ? scheme_make_integer(0) : scheme_make_bignum(0);
+      *qp = q;
+    }
+    if (rp) {
+      r = norm ? scheme_bignum_normalize(n) : (Scheme_Object *)n;
+      *rp = r;
+    }
     return;
   }
 
@@ -1363,10 +1371,13 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
   if (qp) {
     if (negate_q)
       bignum_negate_inplace(q);
-    *qp = norm ? scheme_bignum_normalize(q) : q;
+    q = norm ? scheme_bignum_normalize(q) : q;
+    *qp = q;
   }
-  if (rp)
-    *rp = norm ? scheme_bignum_normalize(r) : r;
+  if (rp) {
+    r = norm ? scheme_bignum_normalize(r) : r;
+    *rp = r;
+  }
 }
 
 Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)

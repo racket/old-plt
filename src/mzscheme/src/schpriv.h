@@ -1232,6 +1232,10 @@ typedef struct {
 
 void scheme_reset_prepared_error_buffer(void);
 
+#ifdef UNIX_PROCESSES
+void scheme_block_child_signals(int block);
+#endif
+
 #ifdef MZ_PRECISE_GC
 # define WEAKIFY(x) scheme_make_weak_box(x)
 # define WEAKIFIED(x) SCHEME_WEAK_BOX_VAL(x)

@@ -111,6 +111,7 @@ static void user_break_hit(int ignore)
   MZ_SIGSET(SIGINT, user_break_hit);
 #  endif
 #  ifdef MZ_PRECISE_GC
+  /* Restore variable stack: */
   GC_variable_stack = (void **)__gc_var_stack__[0];
 #  endif
 }

@@ -2645,7 +2645,7 @@ static void gcollect(int full)
 	      /* Not yet marked. Mark content. */
 	      Type_Tag tag = *(Type_Tag *)f->p;
 #if SAFETY
-	      if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
+	      if ((tag < 0) || (tag >= _num_tags_) || !mark_table[tag]) {
 		CRASH();
 	      }
 #endif

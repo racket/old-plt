@@ -5115,6 +5115,19 @@ static int MyPipe(int *ph) {
 
 # define WAITANY(s) waitpid((pid_t)-1, s, WNOHANG)
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
+void scheme_block_child_signals(int block)
+{
+  sigset_t sigs;
+
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGCHLD);
+  sigprocmask(block ? SIG_BLOCK : SIG_UNBLOCK, &sigs, NULL);
+}
+
 static void child_done(int ingored)
 {
   pid_t result;
@@ -5151,11 +5164,13 @@ static void child_done(int ingored)
   } while (result > 0);
 
 # ifdef SIGSET_NEEDS_REINSTALL
-  START_XFORM_SKIP;
   MZ_SIGSET(SIGCHLD, child_done);
-  END_XFORM_SKIP;
 # endif
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 #endif
 
@@ -5570,8 +5585,6 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     flush_orig_outputs();
 
   if (as_child || !def_exit_on) {
-    sigset_t sigs;
-
     {
       static int sigchld_installed = 0;
       if (!sigchld_installed) {
@@ -5590,9 +5603,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     sc->id = 0;
     sc->done = 0;
 
-    sigemptyset(&sigs);
-    sigaddset(&sigs, SIGCHLD);
-    sigprocmask(SIG_BLOCK, &sigs, NULL);
+    scheme_block_child_signals(1);
 
     pid = fork();
 
@@ -5602,7 +5613,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       sc->id = pid;
     }
 
-    sigprocmask(SIG_UNBLOCK, &sigs, NULL);
+    scheme_block_child_signals(0);
   } else {
     sc = NULL;
     pid = 0;

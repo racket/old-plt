@@ -253,7 +253,7 @@ gc2/$(OBJDIR)/%.o: gc2/xsrc/%.cc
 gc2/$(OBJDIR)/%.o: gc2/xsrc/%.c
 	$(CC) -DGC2_JUST_MACROS -include ../mzscheme/gc2/gc2.h -c $(CFLAGS) -o $@ $<
 
-gc2/$(OBJDIR)/wxGC.o: ../wxcommon/wxGC.cxx $(XFORMDEP)
+gc2/$(OBJDIR)/wxGC.o: ../wxcommon/wxGC.cxx ../mzscheme/gc2/gc2.h
 	$(CXX) -DMZ_PRECISE_GC -I../mzscheme/gc2/ $(CPPFLAGS) -c -o $@ $<
 
 XSRCS = gc2/xsrc/Window.cc \

@@ -1901,6 +1901,9 @@ static void get_ready_for_GC()
 #ifdef WINDOWS_PROCESSES
   scheme_suspend_remembered_threads();
 #endif
+#ifdef UNIX_PROCESSES
+  scheme_block_child_signals(1);
+#endif
 
   delayed_break_ready = 0;
   delay_breaks = 1;
@@ -1917,6 +1920,9 @@ static void done_with_GC()
 #endif
 #ifdef WINDOWS_PROCESSES
   scheme_resume_remembered_threads();
+#endif
+#ifdef UNIX_PROCESSES
+  scheme_block_child_signals(1);
 #endif
 
   delay_breaks = 0;

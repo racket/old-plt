@@ -3411,7 +3411,11 @@ static Scheme_Class_Object *allocate_object(Scheme_Class *sclass, Init_Object_Re
   obj->o.type = scheme_object_type;
   obj->o.sclass = (Scheme_Object *)sclass;
 
-  *irec = CreateObjectFrames(obj, sclass);
+  {
+    Init_Object_Rec *ii;
+    ii = CreateObjectFrames(obj, sclass);
+    *irec = ii;
+  }
   
   return (Scheme_Class_Object *)obj;
 }

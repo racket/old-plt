@@ -1610,8 +1610,10 @@ void wxMediaBuffer::FreeOldCopies(void)
   copyRingPos++;
   if (copyRingMax < copyRingPos)
     copyRingMax = copyRingPos;
-  if (copyRingPos > copyRingSize)
+  if (copyRingPos >= copyRingSize)
     copyRingPos = 0;
+  if (copyRingMax >= copyRingSize)
+    copyRingMax = 0;
 }
 
 void wxMediaBuffer::InstallCopyBuffer(long time, wxStyleList *sl)

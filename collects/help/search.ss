@@ -306,7 +306,7 @@
       (if (= 0 hit-count)
 	  (apply
 	   string-append
-	   "nothing found for "
+	   "Nothing found for "
 	   (cond
 	    [(null? string-finds) (list "the empty search.")]
 	    [else

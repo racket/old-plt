@@ -38,8 +38,8 @@ static Scheme_Object *string_to_number (int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[]);
 static Scheme_Object *integer_to_bytes (int argc, Scheme_Object *argv[]);
-static Scheme_Object *bytes_to_rational (int argc, Scheme_Object *argv[]);
-static Scheme_Object *rational_to_bytes (int argc, Scheme_Object *argv[]);
+static Scheme_Object *bytes_to_real (int argc, Scheme_Object *argv[]);
+static Scheme_Object *real_to_bytes (int argc, Scheme_Object *argv[]);
 static Scheme_Object *system_big_endian_p (int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *random_seed(int argc, Scheme_Object *argv[]);
@@ -86,14 +86,14 @@ void scheme_init_numstr(Scheme_Env *env)
 						      "integer->integer-byte-string", 
 						      3, 5),
 			     env);
-  scheme_add_global_constant("floating-point-byte-string->rational", 
-			     scheme_make_folding_prim(bytes_to_rational,
-						      "floating-point-byte-string->rational",
+  scheme_add_global_constant("floating-point-byte-string->real", 
+			     scheme_make_folding_prim(bytes_to_real,
+						      "floating-point-byte-string->real",
 						      1, 2, 1),
 			     env);
-  scheme_add_global_constant("rational->floating-point-byte-string",
-			     scheme_make_prim_w_arity(rational_to_bytes,
-						      "rational->floating-point-byte-string",
+  scheme_add_global_constant("real->floating-point-byte-string",
+			     scheme_make_prim_w_arity(real_to_bytes,
+						      "real->floating-point-byte-string",
 						      2, 4),
 			     env);
   scheme_add_global_constant("system-big-endian?",
@@ -1623,7 +1623,7 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
   if (size != SCHEME_STRLEN_VAL(s)) {
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     s,
-		     "integer->integer-byte-string: string size %d does not match indicated %d bytes: %V",
+		     "integer->integer-byte-string: string size %d does not match indicated %d-byte length: %V",
 		     SCHEME_STRLEN_VAL(s), size, s);
     return NULL;
   }
@@ -1700,18 +1700,114 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
       str[i] = buf[i];
   }
 
-
   return s;
 }
 
-static Scheme_Object *bytes_to_rational (int argc, Scheme_Object *argv[])
+static Scheme_Object *bytes_to_real (int argc, Scheme_Object *argv[])
 {
-  return scheme_false;
+  int slen;
+  char *str, buf[8];
+  int bigend = SCHEME_BIG_ENDIAN;
+
+  if (!SCHEME_STRINGP(argv[0]))
+    slen = 0;
+  else
+    slen = SCHEME_STRLEN_VAL(argv[0]);
+
+  if ((slen != 4) && (slen != 8))
+    scheme_wrong_type("floating-point-byte-string->real", "string (4 or 8 characters)", 0, argc, argv);
+
+  str = SCHEME_STR_VAL(argv[0]);
+
+  if (argc > 1)
+    bigend = SCHEME_TRUEP(argv[1]);
+
+  if (bigend != SCHEME_BIG_ENDIAN) {
+    int i;
+    for (i = 0; i < slen; i++)
+      buf[slen - i - 1] = str[i];
+    str = (char *)buf;
+  }
+
+  switch(slen) {
+  case 4:
+    {
+      float f;
+      f = *(float *)str;
+#ifdef MZ_USE_SINGLE_FLOATS
+      return scheme_make_float(f);
+#else
+      return scheme_make_double(f);
+#endif
+    }
+    break;
+  default:
+    {
+      double d;
+      d = *(double *)str;
+      return scheme_make_double(d);
+    }
+    break;
+  }
 }
 
-static Scheme_Object *rational_to_bytes (int argc, Scheme_Object *argv[])
+static Scheme_Object *real_to_bytes (int argc, Scheme_Object *argv[])
 {
-  return scheme_false;
+  Scheme_Object *n, *s;
+  int size;
+  int bigend = SCHEME_BIG_ENDIAN;
+  double d;
+
+  n = argv[0];
+  if (!SCHEME_REALP(n))
+    scheme_wrong_type("real->floating-point-byte-string", "real number", 0, argc, argv);
+
+  if (SCHEME_INTP(argv[1]))
+    size = SCHEME_INT_VAL(argv[1]);
+  else
+    size = 0;
+  if ((size != 2) && (size != 4) &&(size != 8))
+    scheme_wrong_type("real->floating-point-byte-string", "exact 4 or 8", 1, argc, argv);
+
+  if (argc > 2)
+    bigend = SCHEME_TRUEP(argv[2]);
+
+  if (argc > 3)
+    s = argv[3];
+  else
+    s = scheme_make_sized_string("12345678", size, 1);
+  
+  if (!SCHEME_MUTABLE_STRINGP(s))
+    scheme_wrong_type("real->floating-point-byte-string", "mutable string", 3, argc, argv);
+
+  if (size != SCHEME_STRLEN_VAL(s)) {
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+		     s,
+		     "real->floating-point-byte-string: string size %d does not match indicated %d-byte length: %V",
+		     SCHEME_STRLEN_VAL(s), size, s);
+    return NULL;
+  }
+
+  d = scheme_get_val_as_double(n);
+  
+  if (size == 4)
+    *(float *)(SCHEME_STR_VAL(s)) = d;
+  else
+    *(double *)(SCHEME_STR_VAL(s)) = d;
+
+  if (bigend != SCHEME_BIG_ENDIAN) {
+    int i;
+    char buf[8], *str;
+
+    str = SCHEME_STR_VAL(s);
+    
+    for (i = 0; i < size; i++)
+      buf[size - i - 1] = str[i];
+    for (i = 0; i < size; i++)
+      str[i] = buf[i];
+  }
+
+  return s;
 }
 
 static Scheme_Object *system_big_endian_p (int argc, Scheme_Object *argv[])

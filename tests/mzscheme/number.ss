@@ -2238,4 +2238,39 @@
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Used for comparison after loss of precision in 4-byte conversion
+(define (close? a b)
+  (or (equal? a b)
+      (if (negative? a)
+	  (>= (* b 0.999) a (* b 1.001))
+	  (<= (* b 0.999) a (* b 1.001)))
+      (and (= b +inf.0)
+	   (> a 1e38))
+      (and (= b -inf.0)
+	   (< a -1e38))))
+
+(map (lambda (n)
+       (test #t close? n (floating-point-byte-string->real (real->floating-point-byte-string n 4 #t) #t))
+       (test #t close? n (floating-point-byte-string->real (real->floating-point-byte-string n 4 #f) #f))
+       (test n floating-point-byte-string->real (real->floating-point-byte-string n 8 #t) #t)
+       (test n floating-point-byte-string->real (real->floating-point-byte-string n 8 #f) #f))
+     (append
+      (list 0.0
+	    -0.0
+	    +inf.0
+	    -inf.0
+	    +nan.0
+	    1.0
+	    0.1
+	    1e10)
+      (let loop ([n 50])
+	(if (zero? n)
+	    null
+	    (cons (* (if (= 1 (random 2)) 1 -1)
+		     (sqrt (/ (random 3000) 3000.0))
+		     (expt 2.0 (random 300)))
+		  (loop (sub1 n)))))))
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (report-errs)

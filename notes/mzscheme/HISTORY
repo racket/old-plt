@@ -5,21 +5,37 @@ See MzScheme_200.txt for information on major changes in MzScheme
 Version 199.23:
 
  * Changed the first argument of `raise-syntax-error' so that syntax
-   objects are not allowed. Also changed the calculation of the form
-   name for the error message, and the values of the `form' and
-   `module' fields of the `exn:syntax' exception structure. The
-   `module' field now can be a module path index (or symbol or #f).
+   objects are not allowed, but a more general specification is
+   supported. Also changed the calculation of the form name for the
+   error message, and the values of the `form' and `module' fields of
+   the `exn:syntax' exception structure. The `module' field now can be
+   a module path index (or symbol or #f).
+
+   The consequences are:
+
+     - `raise-syntax-error' should almost always be called with
+       a #f argument.
+
+     - the third argument should be supplied almost always, and it
+       should be the source form whose transformer is reporting the
+       error.
+
+     - assuming guidelines such as the above are followed, the form
+       name and module in an exn:syntax exception indicate the source
+       of the transformer from the programmer's perspective; thus, the
+       exception information is reliable for finding relevant
+       documentation.
 
  * Added `namespace-require/copy', which is like `namespace-require'
-   except that new top-level variables are created in the namespace
-   for the module's exported values. This function is useful for
-   creatng namespaces, such as the initial one in MzScheme, with a
-   traditional semantics for redefitions of built-in names.
+   except that new top-level variables are created in the namespace for
+   the module's exported values. This function is useful for creating
+   namespaces, such as the initial one in MzScheme, with a traditional
+   semantics for redefitions of built-in names.
 
  * Fixed `module' to gracefully handle definitions where the name is
-   an uninterned symbol (so that it's generally hidden).
+   an uninterned symbol (so that the name is hidden).
 
- * Fixed miscellaneous bugs.
+ * Fixed miscellaneous bugs related to syntax.
 
 Version 199.22:
 

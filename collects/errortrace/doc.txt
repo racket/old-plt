@@ -14,7 +14,7 @@ Quick instructions
   0) Throw away .zo versions of your source
 
   1) Prefix your program with
-      (import (lib "errortrace.ss" "errortrace"))
+      (require (lib "errortrace.ss" "errortrace"))
      or start MzScheme with the -M flag:
       mzscheme -M errortrace
 
@@ -26,6 +26,10 @@ The errortrace module is odd; don't import it into another
 module. Instead, the errortrace module is meant to be invoked from the
 top-level, so that it can install an evaluation handler, exception
 handler, etc.
+
+To reuse parts of the code of errortrace, import
+_errortrace-lib.ss_. It contains all of the names here but
+does not set the eval-handler or the error-display-handler.
 
 Exception Information
 ---------------------

@@ -151,8 +151,8 @@
 		(bytes? s))
       (raise-type-error 'regexp-replace-quote "string or byte string" s))
     (if (bytes? s)
-	(regexp-replace* #rx"&" (regexp-replace* #rx"\\\\" s "\\\\\\\\") "\\\\&")
-	(regexp-replace* #rx#"&" (regexp-replace* #rx#"\\\\" s #"\\\\\\\\") #"\\\\&")))
+	(regexp-replace* #rx#"&" (regexp-replace* #rx#"\\\\" s #"\\\\\\\\") #"\\\\&")
+	(regexp-replace* #rx"&" (regexp-replace* #rx"\\\\" s "\\\\\\\\") "\\\\&")))
 
   (define regexp-match/fail-without-reading
     (opt-lambda (pattern input-port [start-k 0] [end-k #f] [out #f])

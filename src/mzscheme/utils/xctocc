@@ -398,7 +398,7 @@ sub DoPrintClass
 	}
 	print "\n";
 
-	print "  ${newclass}_class = objscheme_def_prim_class(env, ";
+	print "  ${newclass}_class = WITH_VAR_STACK(objscheme_def_prim_class(env, ";
 	print "${classstring}, ";
 	if ($parentstring ne '') {
 	    print "${parentstring}";
@@ -411,7 +411,7 @@ sub DoPrintClass
 	} else {
 	    print "NULL";
 	}
-	print ", ${nmethod})";
+	print ", ${nmethod}))";
 	print ";\n\n";
 
 	@funcs = ();

@@ -157,7 +157,7 @@
 
 (define c++-classes null)
 
-(define show-info? #t)
+(define show-info? #f)
 
 (define semi '|;|)
 (define START_XFORM_SKIP (string->symbol "START_XFORM_SKIP"))
@@ -1554,6 +1554,15 @@
 			   (get-c++-class-member (tok-n (caddr seql)) c++-class)))))]
 	    [else #f])))))
 
+(define (extract-resolvable-record-var v)
+  (and (parens? v)
+       (let ([seql (seq->list (seq-in v))])
+	 (= 3 (length seql))
+	 (eq? '-> (tok-n (cadr seql)))
+	 (if (parens? (car seql))
+	     (extract-resolvable-record-var (car seql))
+	     (car seql)))))
+
 (define (lift-out-calls args live-vars c++-class)
   (let ([e (seq->list (seq-in args))])
     (if (null? e)
@@ -1720,6 +1729,23 @@
 	       [else
 		(loop (cdr el) (cons (car el) new-args) setups new-vars ok-calls #t live-vars)])))))))
 
+(define (check-special-live-vars rest- vars live-vars)
+  (cond
+   [(and (pair? rest-)
+	 (eq? '= (tok-n (car rest-)))
+	 (pair? (cdr rest-))
+	 (extract-resolvable-record-var (cadr rest-)))
+    => (lambda (v)
+	 (if (and (assq (tok-n v) vars)
+		  (not (assq (tok-n v) (live-var-info-vars live-vars))))
+	     ;; Add a live variable:
+	     (replace-live-vars live-vars 
+				(cons (assq (tok-n v) vars)
+				      (live-var-info-vars live-vars)))
+	     ;; Already there, or not pushable:
+	     live-vars))]
+   [else live-vars]))
+
 (define (convert-function-calls e vars c++-class live-vars complain-not-in)
   ;; e is a single statement
   ;; Reverse to calculate live vars as we go.
@@ -1772,7 +1798,11 @@
 	     ;; MzScheme source code must live with this change to C's semantics.)
 	     ;; Calls are replaced by varaibles, and setup code generated that
 	     ;; assigns to the variables.
-	     (let*-values ([(orig-live-vars) live-vars]
+	     (let*-values ([(live-vars)
+			    ;; Check for special form (XXX -> ivar) = call, which will
+			    ;; get re-arranged to (newvar = call, (XXX -> ivar) = newvar)
+			    (check-special-live-vars rest- vars live-vars)]
+			   [(orig-live-vars) live-vars]
 			   [(setups args new-vars ok-calls live-vars)
 			    ;; Split args into setup (calls) and args.
 			    ;; List newly-created vars (in order) in new-vars.
@@ -1865,7 +1895,8 @@
 	      (replace-live-vars live-vars vars))]
        [(eq? '= (tok-n (car e-)))
 	;; Check for assignments where the LHS can move due to
-	;; a function call on the RHS
+	;; a function call on the RHS. [Note that special support
+	;;  in the function call case is necessary.]
 	(if (> (live-var-info-num-calls live-vars) orig-num-calls)
 	    (let ([assignee (cdr e-)])
 	      ;; Special case: (YYY -> ivar) = XXX;
@@ -2026,13 +2057,18 @@
 		 result)
 		(filter-live-vars live-vars)))]
        [(seq? (car e-))
-	;; Do nested body:
-	(let-values ([(v live-vars)
-		      (convert-seq-interior (car e-) (parens? (car e-)) 
-					    vars c++-class live-vars 
-					    (or complain-not-in 
-						(brackets? (car e-))))])
-	  (loop (cdr e-) (cons v result) live-vars))]
+	;; Do nested body.
+	;; For (v = new x, ...) parens, check for special conversion
+	;;  on (XXX -> ivar) = (v = new x, ...)
+	(let ([live-vars (if (creation-parens? (car e-))
+			     (check-special-live-vars (cdr e-) vars live-vars)
+			     live-vars)])
+	  (let-values ([(v live-vars)
+			(convert-seq-interior (car e-) (parens? (car e-)) 
+					      vars c++-class live-vars 
+					      (or complain-not-in 
+						  (brackets? (car e-))))])
+	    (loop (cdr e-) (cons v result) live-vars)))]
        [(and (assq (tok-n (car e-)) vars)
 	     (not (assq (tok-n (car e-)) (live-var-info-vars live-vars))))
 	;; Add a live variable:

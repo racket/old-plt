@@ -141,6 +141,11 @@ _MysterX_
   not shown.  Returns a string that is the actual URL 
   navigated to.
 
+> refresh :: (send an-mx-browser refresh)
+
+  Refreshes the document in the browser.  Returns #t
+  if the refresh is successful, #f otherwise.
+
 > current-url :: (send an-mx-browser current-url)
 
   Returns a string indicating the currently displayed URL. 

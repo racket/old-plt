@@ -1,11 +1,12 @@
 (module planet-web-page mzscheme
   
-  (require "../util.ss"
+  (require "planet-shared.ss"
            "planet-getinfo.ss"
            "../server-config.ss"
-           (file "/usr/local/iplt/web/common/layout.ss")
+           (file "/home/jacobm/iplt/web/common/layout.ss")
            (lib "xml.ss" "xml")
-           (lib "list.ss"))
+           (lib "list.ss")
+           (lib "file.ss"))
   
   (provide build-web-page-file)
   
@@ -49,12 +50,36 @@
        (make-tall-page-section "Available Packages: Detail")
        (tree->xexprs tree))))
   
+  ; owner ::= (make-owner string (listof package))
   (define-struct owner (name packages))
+  ; package ::= (make-package string string nat nat (listof xexpr) (string | #f) string
   (define-struct package (owner-name name maj min blurb doc.txt primary-file))
+  
+  ; pkg->anchor : package -> string
+  ; gets an anchor link for the given package
   (define pkg->anchor package-name)
   
+  
+  ;; ------------------------------------------------------------
+  ;; this should go elsewhere
+  (define (current-repository-contents)
+    (define id (lambda (x) x))
+    (apply list
+           (cdr
+            (tree->list
+             (filter-tree-by-pattern
+              (directory->tree (planet-server-repository) 
+                               (lambda (x) 
+                                 (let ((filename (file-name-from-path x)))
+                                   (not (memv filename (list "CVS" (metainfo-file)))))))
+              (list id id id id string->number string->number))))))
+  ;; ------------------------------------------------------------
+  
+  ;; archive-as-tree : string -> listof owner
+  ;; produces a tree suitable for generating the web page
   (define (archive-as-tree webroot)
     
+    ; owner-line->owner : list -> owner
     (define (owner-line->owner owner)
       (make-owner
        (owner->name owner)
@@ -64,6 +89,7 @@
          (owner->packages owner))
         (lambda (a b) (string<? (package-name a) (package-name b))))))
     
+    ; package-line->package : list string -> package
     (define (package-line->package pkg owner-name)
       
       (define metainfo-file-path (build-path (PLANET-SERVER-REPOSITORY) 

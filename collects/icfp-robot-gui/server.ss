@@ -12,11 +12,11 @@
   (define server-port 4004)
 
   (define num-players 2)
-  (define board-file "~/tmp/map3")  ; maps available at the contest web site
-  (define pack-file "~/tmp/packs3") ; pkg configuartions available there, too
+  (define board-file "~/tmp/map")  ; maps available at the contest web site
+  (define pack-file "~/tmp/packs") ; pkg configuartions available there, too
   
   (define robot-capacity 100)
-  (define start-money 1000)
+  (define start-money 10)
   
   ;; -----------------------------------
   
@@ -76,66 +76,102 @@
 
   (define bottom (instantiate horizontal-panel% (f) [alignment '(center top)]))
 
-  (define replay-panel (instantiate horizontal-panel% (bottom) [alignment '(center top)]))
-  (define replay-left (instantiate vertical-panel% (replay-panel) [alignment '(right top)]))
-  (define replay-right (instantiate vertical-panel% (replay-panel) [stretchable-width #f]))
-  (define backward-button (make-object button% "<<" replay-left (lambda (b e)
+  (define replay-panel (instantiate vertical-panel% (bottom)))
+  (define replay-top (instantiate horizontal-panel% (replay-panel)))
+  (define backward-button (make-object button% "<<" replay-top (lambda (b e)
                                                                   (set! state-index (sub1 state-index))
                                                                   (refresh-state #f))))
+  (make-object vertical-pane% replay-top)
+  (define forward-button (make-object button% ">>" replay-top (lambda (b e)
+                                                                  (set! state-index (add1 state-index))
+                                                                  (refresh-state #t))))
   (define replay-slider #f)
   (define (set-slider! v)
     (when replay-slider
       (send replay-slider show #t)
       (send (send replay-slider get-parent) delete-child replay-slider))
     (set! replay-slider
-          (make-object slider% #f 0 v replay-left 
+          (make-object slider% #f 0 v replay-panel
             (lambda (s e)
               (set! state-index (send s get-value))
               (refresh-state #f))
             v)))
-  (set-slider! 10)
-  (define forward-button (make-object button% ">>" replay-right (lambda (b e)
-                                                                  (if (< state-index (length past-states))
-                                                                      (begin
-                                                                        (set! state-index (add1 state-index))
-                                                                        (refresh-state #t))
-                                                                      (begin
-                                                                        (set! running? #t)
-                                                                        (set! current-internal-state #f)
-                                                                        (send replay-panel enable #f)
-                                                                        (send pause enable #t)
-                                                                        (let ([sema resume-sema])
-                                                                          (set! resume-sema #f)
-                                                                          (semaphore-post sema)))))))
+  (set-slider! 0)
   
-  (define pause (make-object button% "Pause" bottom (lambda (b e)
-                                                      (set! running? #f)
-                                                      (send pause enable #f))))
+  (define running-old? #f)
+  (define pause/play-panel (instantiate vertical-panel% (bottom) [stretchable-width #f]))
+  (define pause-button (make-object button% "Pause" pause/play-panel
+                         (lambda (b e)
+                           (if running-old?
+                               (set! running-old? #f)
+                               (set! running? #f))
+                           (send pause-button enable #f))))
+  (define play-button (make-object button% "Play" pause/play-panel
+                        (lambda (b e)
+                          (let ([len (length past-states)])
+                            (set! running-old? #t)
+                            (unless (= state-index len)
+                              (send play-button enable #f)
+                              (send replay-panel enable #f)
+                              (send pause-button enable #t)
+                              (let loop ()
+                                (unless (or (not running-old?)
+                                            (= state-index len))
+                                  (set! state-index (add1 state-index))
+                                  (refresh-state #t)
+                                  (loop)))
+                              (unless running-old?
+                                (send pause-button enable #f)
+                                (send replay-panel enable #t)
+                                (send play-button enable #t)))
+                            (when running-old?
+                              (set! running-old? #f)
+                              (unless game-over?
+                                (set! running? #t)
+                                (set! current-internal-state #f)
+                                (send replay-panel enable #f)
+                                (send play-button enable #f)
+                                (send pause-button enable #t)
+                                (let ([sema resume-sema])
+                                  (set! resume-sema #f)
+                                  (semaphore-post sema))))))))
+
+  (send play-button enable #f)
   (send replay-panel enable #f)
   
   (define running? #t)
   (define resume-sema #f)
+  
+  (define game-over? #f)
 
   (define state-index 0)
 
   (define current-internal-state #f)
   
   (define (setup-replay-panel)
+    (send pause-button enable #f) ;; already done, unless this is for end-of-game
     (set! state-index (length past-states))
     (set! current-internal-state (send drawn get-internal-state))
     (set-slider! state-index)
     (send backward-button enable #t)
+    (send play-button enable #t)
     (send replay-panel enable #t))
   
-  (define (refresh-state forward?)
-    (send backward-button enable (> state-index 1))
+  (define (refresh-state forward?)    
     (send replay-slider set-value state-index)
-    (let ([s (if (= state-index (length past-states))
-                 current-internal-state
-                 (list-ref past-states (- (length past-states) state-index 1)))])
+    (let* ([last? (= state-index (length past-states))]
+           [s (if last?
+                  current-internal-state
+                  (list-ref past-states (- (length past-states) state-index 1)))])
       (when forward?
-        (send drawn apply-queued-actions))
-      (send drawn set-internal-state s)))
+        (send replay-panel enable #f)
+        (send play-button enable #f)
+        (send drawn apply-queued-actions)
+        (send play-button enable #t)
+        (send replay-panel enable #t))
+      (send drawn set-internal-state s)
+      (send backward-button enable (> state-index 0))
+      (send forward-button enable (not last?))))
   
   (send f show #t)
   
@@ -252,6 +288,9 @@
           [sema (make-semaphore)])
       (queue-callback (lambda ()
                         (set! continue? (update-state!?))
+                        (unless continue?
+                          (set! game-over? #t)
+                          (set! running? #f))
                         (if running?
                             (semaphore-post sema)
                             (begin

@@ -223,8 +223,7 @@
         (map (lambda (i) (send hlist delete-item i)) (send hlist get-items))
         (map (lambda (r) (let* ([i (send hlist new-list)]
                                 [e (send i get-editor)])
-                           (send e insert (make-object image-snip% (car (robot-icon r))))
-                           (send e insert (format " ~a" (robot-id r)))
+                           (send e insert (make-object icon-snip% (car (robot-icon r)) (format "~a" (robot-id r))))
                            (send i user-data r)
                            (send i new-item)
                            (send i new-item)
@@ -288,8 +287,7 @@
         (map (lambda (i) (send hlist delete-item i)) (send hlist get-items))
         (map (lambda (p) (let* ([i (send hlist new-list)]
                                 [e (send i get-editor)])
-                           (send e insert (make-object image-snip% (car (pack-icon p))))
-                           (send e insert (format " ~a" (pack-id p)))
+                           (send e insert (make-object icon-snip% (car (pack-icon p)) (format "~a" (pack-id p))))
                            (send i user-data p)
                            (send i new-item)
                            (send i new-item)
@@ -390,13 +388,13 @@
         (when (ormap pack-home? packages)
           (set! packages (filter (lambda (r) (not (pack-home? r))) packages)))
         ;; Terminate over-bidders:
-        (when (ormap (lambda (r)
-                       (and (> (robot-bid r) (robot-money r))
-                            (set-robot-dead?! r #t)
-                            (set-robot-motion! r #f)
-                            (set-robot-drop! r #f)
-                            (set-robot-grab! r #f)))
-                     robots)
+        (when (ormap values (map (lambda (r)
+                                   (and (> (robot-bid r) (robot-money r))
+                                        (set-robot-dead?! r #t)
+                                        (set-robot-motion! r #f)
+                                        (set-robot-drop! r #f)
+                                        (set-robot-grab! r #f)))
+                                 robots))
           (update))
         ;; Run actions:
         (for-each (lambda (r)
@@ -562,26 +560,32 @@
                              (pack-weight p)))
                      (filter (lambda (p) (not (pack-home? p))) packages))))
       
+      (define/private (copy-robot r)
+        (make-robot
+         (thing-x r) (thing-y r) #f
+         (robot-icon r) (robot-dead-icon r) (robot-id r) (robot-packages r) 
+         (robot-money r) (robot-max-lift r) (robot-motion r) (robot-drop r)
+         (robot-grab r) (robot-dead? r) (robot-moving? r) (robot-bid r) 
+         (robot-bid-index r) (robot-score r) (robot-pos r) (robot-activity r)))
+      
+      (define/private (copy-package p)
+        (make-pack
+         (thing-x p) (thing-y p) #f
+         (pack-icon p) (pack-pen p) (pack-id p) 
+         (pack-dest-x p) (pack-dest-y p) (pack-weight p) 
+         (pack-owner p) (pack-home? p)))
+    
       (define/private (copy-robots&packages&actions robots packages actions)
         ;; Copy records, since we mutate them:
         (for-each (lambda (r)
                     (set-thing-copy!
                      r
-                     (make-robot
-                      (thing-x r) (thing-y r) #f
-                      (robot-icon r) (robot-dead-icon r) (robot-id r) (robot-packages r) 
-                      (robot-money r) (robot-max-lift r) (robot-motion r) (robot-drop r)
-                      (robot-grab r) (robot-dead? r) (robot-moving? r) (robot-bid r) 
-                      (robot-bid-index r) (robot-score r) (robot-pos r) (robot-activity r))))
+                     (copy-robot r)))
                   robots)
         (for-each (lambda (p)
                     (set-thing-copy!
                      p
-                     (make-pack
-                      (thing-x p) (thing-y p) #f
-                      (pack-icon p) (pack-pen p) (pack-id p) 
-                      (pack-dest-x p) (pack-dest-y p) (pack-weight p) 
-                      (pack-owner p) (pack-home? p))))
+                     (copy-package p)))
                   packages)
         (let ([new-robots (map thing-copy robots)]
               [new-packages (map thing-copy packages)])
@@ -605,11 +609,17 @@
         (let-values ([(new-robots new-packages new-actions)
                       (copy-robots&packages&actions robots packages actions)])
           (let-values ([(robot-list pack-list) (apply values (get-status-lists))])
-            (list new-robots new-packages (map thing-copy actions)
-                  (map (lambda (i) (thing-copy (send i user-data)))
-                       (send robot-list get-items))
-                  (map (lambda (i) (thing-copy (send i user-data)))
-                       (send pack-list get-items))))))
+            (begin0
+              (list new-robots new-packages (map thing-copy actions)
+                    (map (lambda (i) (or (thing-copy (send i user-data))
+                                         (copy-robot (send i user-data))))
+                         (send robot-list get-items))
+                    (map (lambda (i) (or (thing-copy (send i user-data))
+                                         (copy-package (send i user-data))))
+                         (send pack-list get-items)))
+              ;; Clear out copy pointers:
+              (map (lambda (r) (set-thing-copy! r #f)) robots)
+              (map (lambda (p) (set-thing-copy! p #f)) packages)))))
                   
       
       (define/public (set-internal-state state)
@@ -619,12 +629,19 @@
           (set! packages new-packages)
           (set! actions new-actions)
           (let-values ([(robot-list pack-list) (apply values (get-status-lists))])
-            (for-each (lambda (i r) (send i user-data r))
+            (for-each (lambda (i r) (send i user-data
+                                          (or (thing-copy r)
+                                              (copy-robot r))))
                       (send robot-list get-items)
-                      new-robots)
-            (for-each (lambda (i r) (send i user-data r))
+                      (list-ref state 3))
+            (for-each (lambda (i p) (send i user-data 
+                                          (or (thing-copy p)
+                                              (copy-package p))))
                       (send pack-list get-items)
-                      new-packages))
+                      (list-ref state 4)))
+          ;; Clear out copy pointers:
+          (map (lambda (r) (set-thing-copy! r #f)) (car state))
+          (map (lambda (p) (set-thing-copy! p #f)) (cadr state))
           (update)))
       
       (define/public (get-dead-robot-scores)
@@ -727,13 +744,11 @@
                          [pos 0])
                 (unless (null? items)
                   (let ([r (send (car items) user-data)])
-                    (when (and (robot-dead? r)
-                               (not (eq? 'really (robot-dead? r))))
-                      (let ([e (send (car items) get-editor)])
-                        (send e delete 0 1)
-                        (send e set-position 0)
-                        (send e insert (make-object image-snip% (car (robot-dead-icon r)))))
-                      (set-robot-dead?! r 'really))
+                    (let ([snip (send (send (car items) get-editor) find-first-snip)])
+                      (send snip set-label (if (robot-dead? r)
+                                               (car (robot-dead-icon r))
+                                               (car (robot-icon r)))
+                            (format "~a" (robot-id r))))
                     (set-robot-pos! r pos)
                     (set-robot-info r (car items)))
                   (loop (cdr items) (add1 pos))))

@@ -6,7 +6,8 @@
            make-package-icons
            make-unknown-package-color
            make-robot-colors
-           make-robot-icons)
+           make-robot-icons
+           icon-snip%)
   
   (define transparent-pen (make-object pen% "black" 1 'transparent))
   (define black-pen (make-object pen% "black" 1 'solid))
@@ -168,4 +169,65 @@
   (define (make-robot-icons size colors)
     (map (lambda (color)
            (mk-robot color size))
-         colors)))
+         colors))
+  
+  
+  (define icon-snip%
+    (class snip%
+      (inherit get-admin set-count get-style)
+      (define w 0)
+      (define h 0)
+      (define text-h 0)
+      (init-field bm)
+      (init-field label)
+      (public*
+        [set-label (lambda (b lbl)
+                     (unless (and (eq? bm b) (string=? label lbl))
+                       (set! bm b)
+                       (set! label lbl)
+                       (set! text-h #f)
+                       (send (get-admin) resized this #t)))])
+      (override*
+        [size-cache-invalid (lambda () (set! text-h #f))]
+	[get-extent  ; called by an editor to get the snip's size
+	 (lambda (dc x y wbox hbox descentbox spacebox lspacebox rspacebox)
+           (unless text-h
+             (let-values ([(tw th d a) (send dc get-text-extent label (send (get-style) get-font))])
+               (set! text-h th)
+               (set! h (max text-h (send bm get-height)))
+               (set! w (+ tw (send bm get-width) 1))))
+	   (when hbox
+	     (set-box! hbox h))
+	   (when wbox
+	     (set-box! wbox w))
+	   (when descentbox
+	     (set-box! descentbox 0))
+	   (when spacebox
+	     (set-box! spacebox 0))
+	   (when rspacebox
+	     (set-box! rspacebox 0))
+	   (when lspacebox
+	     (set-box! lspacebox 0)))]
+	[draw  ; called by an editor to draw the snip
+	 (lambda (dc x y . other)
+           (when bm
+             (send dc draw-bitmap bm x (+ y (/ (- h (send bm get-height)) 2)))
+             (send dc draw-text
+                   label
+                   (+ x (send bm get-width) 1)
+                   (+ y (/ (- h (or text-h 0)) 2)))))]
+	[write  ; marshals the snip to a text stream
+	 (lambda (stream)
+	   (send stream << w)
+	   (send stream << h))]
+	[resize  ; called by a pasetboard editor to resize the snip
+	 (lambda (w-in h-in)
+	   (set! w w-in)
+	   (set! h h-in)
+	   ;; send resize notification to the editor containing the snip
+	   (let ([admin (get-admin)])
+	     (when admin
+	       (send admin resized this #t)))
+	   #t)])
+      (super-instantiate ())
+      (set-count 1))))

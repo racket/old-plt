@@ -380,7 +380,8 @@ void wxMediaEdit::EndStreaks(int exception)
 
   typingStreak = FALSE;
   deletionStreak = FALSE;
-  vcursorStreak = FALSE;  
+  vcursorStreak = FALSE;
+  extendStreak = FALSE;
   if (anchorStreak && !keepAnchorStreak)
     SetAnchor(FALSE);
 

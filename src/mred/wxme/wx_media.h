@@ -417,6 +417,7 @@ class wxMediaEdit : public wxMediaBuffer
   TF_Flag( vcursorStreak );
   TF_Flag( killStreak );
   TF_Flag( anchorStreak );
+  TF_Flag( extendStreak );
   TF_Flag( insertForceStreak );
   TF_Flag( deleteForceStreak );
 
@@ -460,7 +461,8 @@ class wxMediaEdit : public wxMediaBuffer
   long len; /* Total length in "characters" == number of positions - 1 */
 
   long startpos, endpos;
-  float startloc, endloc; /* for vcursorStreak */
+  long extendstartpos, extendendpos; /* for extendstreak */
+  float vcursorloc; /* for vcursorStreak */
 
   wxMediaFlashTimer *flashTimer;
   long flashstartpos, flashendpos;

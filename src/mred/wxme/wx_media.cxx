@@ -822,11 +822,12 @@ void wxMediaEdit::GetVisibleLineRange(long *start, long *end)
 }
 
 void wxMediaEdit::MovePosition(long code, Bool extendSelection,
-					 int kind)
+			       int kind)
 {
   long i, start, end, extendstart, extendend;
   Bool ateol, vcursor, anchor, extend, kas;
   float h, w, y;
+  int leftshrink, rightshrink;
 
   if (flowLocked)
     return;
@@ -837,14 +838,24 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
   anchor = anchorStreak;
   vcursor = vcursorStreak;
 
+  if (extendStreak || anchorStreak) {
+    extendend = extendendpos;
+    extendstart = extendstartpos;
+  } else {
+    extendend = endpos;
+    extendstart = startpos;
+  }
+
   kas = keepAnchorStreak;
   keepAnchorStreak = anchorStreak;
 
   EndStreaks(wxSTREAK_EXCEPT_DELAYED);
 
-  extendend = endpos;
-  extendstart = startpos;
   extend = anchor || extendSelection;
+
+  /* rightshrink: motion to right shrinks the selected region */
+  rightshrink = (extend && (startpos < extendstart));
+  leftshrink = (extend && (endpos > extendend));
 
   if (code == WXK_PRIOR) {
     code = WXK_UP;
@@ -854,58 +865,100 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
     kind = wxMOVE_PAGE;
   }
 
-  if (code == WXK_HOME)
-    SetPositionBiasScroll(-1, 0, extend ? extendend : 0);
-  else if (code == WXK_END)
-    SetPositionBiasScroll(1, extend ? extendstart : len, len);
-  else if (code == WXK_LEFT) {
-    if (kind == wxMOVE_WORD) {
-      start = startpos;
-      FindWordbreak(&start, NULL, wxBREAK_FOR_CARET);
-      end = (extend ? extendend : start);
-      SetPositionBiasScroll(-2, start, end);
-    } else if (kind == wxMOVE_LINE) {
-      start = LineStartPosition(PositionLine(startpos, posateol));
-      end = extend ? extendend : start;
-      SetPositionBiasScroll(-2, start, end);
+  if (code == WXK_HOME) {
+    if (leftshrink)
+      SetPositionBiasScroll(-2, extendstart, extendend);
+    else
+      SetPositionBiasScroll(-2, 0, extend ? extendend : 0);
+  } else if (code == WXK_END) {
+    if (rightshrink)
+      SetPositionBiasScroll(2, extendstart, extendend);
+    else
+      SetPositionBiasScroll(2, extend ? extendstart : len, len);
+  } else if (code == WXK_LEFT) {
+    if ((kind != wxMOVE_LINE)
+	&& (kind != wxMOVE_WORD)
+	&& !extend
+	&& (startpos != endpos)) {
+      SetPosition(startpos);
     } else {
-      if (!extend && startpos == endpos)
-	SetPositionBiasScroll(0, startpos - 1);
-      else if (extend)
-	SetPositionBiasScroll(-2, startpos - 1, extendend);
+      /* Pick a starting place */
+      if (leftshrink)
+	start = endpos;
       else
-	SetPosition(startpos);
+	start = startpos;
+
+      if (kind == wxMOVE_WORD)
+	FindWordbreak(&start, NULL, wxBREAK_FOR_CARET);
+      else if (kind == wxMOVE_LINE)
+	start = LineStartPosition(PositionLine(start, posateol));
+      else
+	--start;
+
+      if (extend) {
+	if (leftshrink) {
+	  if (start < extendend)
+	    start = extendend; /* collapse to original */
+	  end = start;
+	  start = startpos;
+	} else {
+	  end = endpos;
+	}
+      } else
+	end = start;
+
+      SetPositionBiasScroll(-2, start, end);
     }
   } else if (code == WXK_RIGHT) {
-    if (kind == wxMOVE_WORD) {
-      end = endpos;
-      FindWordbreak(NULL, &end, wxBREAK_FOR_CARET);
-      start = (extend ? extendstart : end);
-      SetPositionBiasScroll(1, start, end);
-    } else if (kind == wxMOVE_LINE) {
-      end = LineEndPosition(PositionLine(endpos, posateol));
-      start = extend ? extendstart : end;
-      SetPositionBiasScroll(2, start, end, TRUE);
+    if ((kind != wxMOVE_LINE)
+	&& (kind != wxMOVE_WORD)
+	&& !extend
+	&& (startpos != endpos)) {
+      SetPosition(endpos, endpos, TRUE);
     } else {
-      if (!extend && startpos == endpos)
-	SetPositionBiasScroll(0, startpos + 1, startpos + 1, TRUE);
-      else if (extend)
-	SetPositionBiasScroll(2, extendstart, endpos + 1, TRUE);
+      /* Pick a starting place */
+      if (rightshrink)
+	end = startpos;
       else
-	SetPosition(endpos, endpos, TRUE);
+	end = endpos;
+
+      if (kind == wxMOVE_WORD)
+	FindWordbreak(NULL, &end, wxBREAK_FOR_CARET);
+      else if (kind == wxMOVE_LINE)
+	end = LineEndPosition(PositionLine(end, posateol));
+      else
+	end++;
+
+      if (extend) {
+	if (rightshrink) {
+	  if (end > extendstart)
+	    end = extendstart; /* collapse to original */
+	  start = end;
+	  end = endpos;
+	} else {
+	  start = startpos;
+	}
+      } else
+	start = end;
+      
+      SetPositionBiasScroll(2, start, end);
     }
   } else if ((code == WXK_UP) || (code == WXK_DOWN)) {
-    int cline;
+    int cline, bias;
     /* Used when paging: */
     int scrollFar = 0;
     Bool specialScroll = (kind == wxMOVE_PAGE);
 
-    if (!vcursor) {
-      PositionLocation(startpos, &startloc, NULL, TRUE, posateol, TRUE);
-      PositionLocation(endpos, &endloc, NULL, TRUE, posateol, TRUE);
-    }
     if (code == WXK_UP) {
-      cline = PositionLine(startpos, posateol);
+      if (leftshrink)
+	start = endpos;
+      else
+	start = startpos;
+
+      if (!vcursor)
+	PositionLocation(start, &vcursorloc, NULL, TRUE, posateol, TRUE);
+
+      cline = PositionLine(start, posateol);
       if (kind == wxMOVE_PAGE) {
 	long top, bottom, diff;
 	GetVisibleLineRange(&top, &bottom);
@@ -922,17 +975,45 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
       } else
 	i = cline - 1;
       if (i >= 0)
-	start = FindPositionInLine(i, startloc, &ateol);
+	start = FindPositionInLine(i, vcursorloc, &ateol);
       else {
 	start = 0;
 	ateol = FALSE;
       }
-      if (!extend)
+
+      if (extend) {
+	if (leftshrink) {
+	  if (start < extendend) {
+	    if ((kind != wxMOVE_PAGE) && (start < extendstart)) {
+	      /* Inversion! */
+	      end = extendend;
+	    } else {
+	      /* collapse to original */
+	      end = extendend;
+	      start = startpos;
+	      specialScroll = 0;
+	    }
+	  } else {
+	    end = start;
+	    start = startpos;
+	  }
+	} else {
+	  end = endpos;
+	} 
+      } else
 	end = start;
-      else
-	end = extendend;
+
+      bias = leftshrink ? 2 : -2;
     } else {
-      cline = PositionLine(endpos, posateol);
+      if (rightshrink)
+	end = startpos;
+      else
+	end = endpos;
+
+      if (!vcursor)
+	PositionLocation(end, &vcursorloc, NULL, TRUE, posateol, TRUE);
+
+      cline = PositionLine(end, posateol);
       if (kind == wxMOVE_PAGE) {
 	long top, bottom, diff;
 	GetVisibleLineRange(&top, &bottom);
@@ -949,28 +1030,48 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
       } else
 	i = cline + 1;
       if (i <= numValidLines - 1)
-	end = FindPositionInLine(i, endloc, &ateol);
+	end = FindPositionInLine(i, vcursorloc, &ateol);
       else
 	end = len;
-      if (!extend)
+
+      if (extend) {
+	if (rightshrink) {
+	  if (end > extendstart) {
+	    if ((kind != wxMOVE_PAGE) && (end > extendend)) {
+	      /* Inversion! */
+	      start = extendstart;
+	    } else {
+	      /* collapse to original */
+	      start = extendstart;
+	      end = endpos;
+	      specialScroll = 0;
+	    }
+	  } else {
+	    start = end;
+	    end = endpos;
+	  }
+	} else {
+	  start = startpos;
+	}
+      } else
 	start = end;
-      else
-	start = extendstart;
+
+      bias = rightshrink ? -2 : 2;
     }
 
     if (specialScroll)
       BeginEditSequence();
 
     /* Scroll only if !specialScroll */
-    SetPositionBiasScroll((code == WXK_UP) ? -2 : 2, start, end, ateol, 
+    SetPositionBiasScroll(bias, start, end, ateol, 
 			  !specialScroll);
     if (specialScroll)
       /* Special scrolling intructions: */
-      ScrollToPosition((code == WXK_UP) ? scrollFar : start,
+      ScrollToPosition((bias < 0) ? scrollFar : start,
 		       FALSE, 
-		       (code == WXK_UP) ? end : scrollFar,
-		       (code == WXK_UP) ? -1 : 1);
-
+		       (bias < 0) ? end : scrollFar,
+		       (bias < 0) ? -1 : 1);
+    
     if (specialScroll)
       EndEditSequence();
 
@@ -978,11 +1079,25 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
   }
 
   keepAnchorStreak = kas;
+  if (extend)
+    extendStreak = TRUE;
+
+  if (extendStreak || anchorStreak) {
+    extendendpos = extendend;
+    extendstartpos = extendstart;
+  }
 }
 
 void wxMediaEdit::SetAnchor(Bool on)
 {
+  int wason = anchorStreak;
+
   anchorStreak = on;
+
+  if (on && !wason) {
+    extendendpos = endpos;
+    extendstartpos = startpos;
+  }
 }
 
 Bool wxMediaEdit::GetAnchor(void)

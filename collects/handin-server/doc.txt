@@ -31,12 +31,6 @@ the server includes setting the list of currently active assignments
 The handin process uses SSL, so it is effectively as secure as the
 server and each user's password.
 
-  NOTE: The handin tool works only with openssl, which is part of
-  DrScheme v206.  If you use v205 then students will have to install
-  the "OpenSSL" extension before installing a handing client. The
-  OpenSSL extension is available at
-             http://www.plt-scheme.org/software/openssl/
-
 
 Quick Start for a Test Drive:
 ============================================

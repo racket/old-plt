@@ -45,7 +45,7 @@
 
 (define *use-closing-p-tag?* #t)
 
-(define *tex2page-version* "4p10")
+(define *tex2page-version* "4p11")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -332,6 +332,8 @@
 (define *unresolved-xrefs* #f)
 
 (define *using-chapters?* #f)
+
+(define *verb-display?* #f)
 
 (define *verb-port* #f)
 
@@ -728,7 +730,8 @@
 
 (define emit (lambda (s) (display s *html*)))
 
-(define emit-newline (lambda () (newline *html*)))
+(define emit-newline
+  (lambda () (when *verb-display?* (emit "&nbsp;")) (newline *html*)))
 
 (define invisible-space? (lambda (x) (eq? x *invisible-space*)))
 
@@ -4783,13 +4786,15 @@
 (define do-braced-verb
   (lambda ()
     (get-actual-char)
-    (let ((in-text? (not (munched-a-newline?))))
-      (if in-text?
+    (let ((display? (munched-a-newline?)))
+      (if (not display?)
         (emit "<code class=verbatim>")
         (begin (do-end-para) (emit "<pre class=verbatim>")))
       (bgroup)
       (fluid-let
-        ((*esc-char* *esc-char-verb*) (*tex-extra-letters* '()))
+        ((*verb-display?* display?)
+         (*esc-char* *esc-char-verb*)
+         (*tex-extra-letters* '()))
         (let loop ((nesting 0))
           (let ((c (get-actual-char)))
             (cond
@@ -4810,21 +4815,26 @@
               (unless (= nesting 0) (emit #\}) (loop (- nesting 1))))
              (else (emit-html-char c) (loop nesting))))))
       (egroup)
-      (if in-text? (emit "</code>") (begin (emit "</pre>") (do-para))))))
+      (if (not display?) (emit "</code>") (begin (emit "</pre>") (do-para))))))
 
 (define do-latex-verb
   (lambda ()
-    (let* ((d (get-actual-char)) (in-text? (not (munched-a-newline?))))
-      (if in-text?
-        (emit "<code class=verbatim>")
-        (begin (do-end-para) (emit "<pre class=verbatim>")))
-      (let loop ()
-        (let ((c (get-actual-char)))
-          (cond
-           ((eof-object? c) (terror 'do-latex-verb "Eof inside verbatim"))
-           ((char=? c d) 'done)
-           (else (emit-html-char c) (loop)))))
-      (if in-text? (emit "</code>") (begin (emit "</pre>") (do-para))))))
+    (let* ((d (get-actual-char)))
+      (let ((display? (munched-a-newline?)))
+        (if (not display?)
+          (emit "<code class=verbatim>")
+          (begin (do-end-para) (emit "<pre class=verbatim>")))
+        (fluid-let
+          ((*verb-display?* display?))
+          (let loop ()
+            (let ((c (get-actual-char)))
+              (cond
+               ((eof-object? c) (terror 'do-latex-verb "Eof inside verbatim"))
+               ((char=? c d) 'done)
+               (else (emit-html-char c) (loop))))))
+        (if (not display?)
+          (emit "</code>")
+          (begin (emit "</pre>") (do-para)))))))
 
 (define do-verb
   (lambda ()
@@ -5046,7 +5056,7 @@
 (define scm-emit-html-char
   (lambda (c)
     (unless (eof-object? c)
-      (if *scm-dribbling?* (write-char c *scm-port*))
+      (when *scm-dribbling?* (write-char c *scm-port*))
       (emit-html-char c))))
 
 (define scm-output-next-chunk
@@ -5234,16 +5244,16 @@
 (define do-scm-with-brace
   (lambda (result?)
     (get-actual-char)
-    (let ((in-text? (not (munched-a-newline?))))
+    (let ((display? (munched-a-newline?)))
       (cond
-       (in-text?
+       ((not display?)
         (emit "<code class=scheme")
         (when result? (emit "response"))
         (emit ">"))
        (else (do-end-para) (emit "<pre class=scheme>")))
       (bgroup)
       (fluid-let
-        ((*esc-char* *esc-char-verb*))
+        ((*esc-char* *esc-char-verb*) (*verb-display?* display?))
         (let loop ((nesting 0))
           (let ((c (snoop-actual-char)))
             (cond
@@ -5270,20 +5280,21 @@
                 (loop (- nesting 1))))
              (else (scm-output-next-chunk) (loop nesting))))))
       (egroup)
-      (if in-text? (emit "</code>") (begin (emit "</pre>") (do-para))))))
+      (if (not display?) (emit "</code>") (begin (emit "</pre>") (do-para))))))
 
 (define do-scm-with-delim
   (lambda (result?)
     (let ((d (get-actual-char)))
-      (let ((in-text? (not (munched-a-newline?))))
+      (let ((display? (munched-a-newline?)))
         (cond
-         (in-text?
+         ((not display?)
           (emit "<code class=scheme")
           (when result? (emit "response"))
           (emit ">"))
          (else (do-end-para) (emit "<pre class=scheme>")))
         (fluid-let
-          ((*scm-token-delims* (cons d *scm-token-delims*)))
+          ((*verb-display?* display?)
+           (*scm-token-delims* (cons d *scm-token-delims*)))
           (let loop ()
             (let ((c (snoop-actual-char)))
               (cond
@@ -5291,7 +5302,9 @@
                 (terror 'do-scm-with-delim "Eof inside verbatim"))
                ((char=? c d) (get-actual-char))
                (else (scm-output-next-chunk) (loop))))))
-        (if in-text? (emit "</code>") (begin (emit "</pre>") (do-para)))))))
+        (if (not display?)
+          (emit "</code>")
+          (begin (emit "</pre>") (do-para)))))))
 
 (define do-scm
   (lambda (result?)
@@ -5379,14 +5392,14 @@
           (in-table?
             (and (not (null? *tabular-stack*))
                  (memv (car *tabular-stack*) '(block figure table)))))
+      (cond (display? (do-end-para)) (in-table? (emit "</td><td>")))
+      (munched-a-newline?)
+      (bgroup)
+      (emit "<div align=left><pre class=scheme")
+      (when result? (emit "response"))
+      (emit ">")
       (fluid-let
-        ((*ligatures?* #f) (*not-processing?* #t))
-        (munched-a-newline?)
-        (cond (display? (do-end-para)) (in-table? (emit "</td><td>")))
-        (bgroup)
-        (emit "<div align=left><pre class=scheme")
-        (when result? (emit "response"))
-        (emit ">")
+        ((*ligatures?* #f) (*verb-display?* #t) (*not-processing?* #t))
         (let loop ()
           (let ((c (snoop-actual-char)))
             (cond
@@ -5418,10 +5431,10 @@
                           (scm-output-token "}"))
                         (loop)))))
                  (else (scm-output-token x) (loop)))))
-             (else (scm-output-next-chunk) (loop)))))
-        (emit "</pre></div>")
-        (egroup)
-        (cond (display? (do-para)) (in-table? (emit "</td><td>")))))))
+             (else (scm-output-next-chunk) (loop))))))
+      (emit "</pre></div>")
+      (egroup)
+      (cond (display? (do-para)) (in-table? (emit "</td><td>"))))))
 
 (define string-is-all-dots?
   (lambda (s)
@@ -7689,6 +7702,7 @@
        (*tracingmacros?* #f)
        (*unresolved-xrefs* '())
        (*using-chapters?* #f)
+       (*verb-display?* #f)
        (*verb-port* #f))
       (set! *main-tex-file* (actual-tex-filename tex-file))
       (when (file-exists? *main-tex-file*)

@@ -529,11 +529,31 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
 		SetCurrentMacDCNoMargin(); // put newClientRect at (SetOriginX,SetOriginY)
 		MacSetBackground();
         OffsetRect(&newWindowRect,SetOriginX,SetOriginY);
+        // TEMPORARY
         fprintf(stderr,"Invalidating region, top = %d, left = %d, right = %d, bottom = %d\n",newWindowRect.top,
         	newWindowRect.left,newWindowRect.right,newWindowRect.bottom);
+        fprintf(stderr,"for window: %X\n",(long)GetWindowFromPort(cMacDC->macGrafPort()));
+		RgnHandle temp = NewRgn();
+		GetWindowRegion(GetWindowFromPort(cMacDC->macGrafPort()),kWindowUpdateRgn,temp);
+		Point testPt = {50,10};
+		if (PtInRgn(testPt,temp)) {
+			fprintf(stderr,"(10,50) is in the old update region.\n");
+		} else {
+			fprintf(stderr,"(10,50) is not in the old update region.\n");
+		}
+        
+        
         ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&newWindowRect); // force redraw of window
 		::ClipRect(&newWindowRect);
 		::EraseRect(&newWindowRect); /* MATTHEW: [5] */
+		
+		// TEMPORARY
+		GetWindowRegion(GetWindowFromPort(cMacDC->macGrafPort()),kWindowUpdateRgn,temp);
+		if (PtInRgn(testPt,temp)) {
+			fprintf(stderr,"(10,50) is in the new update region.\n");
+		} else {
+			fprintf(stderr,"(10,50) is not in the new update region.\n");
+		}
 	}
 }
 

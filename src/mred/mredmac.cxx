@@ -755,10 +755,43 @@ void MrEdDispatchEvent(EventRecord *e)
       if ((q->event.what == updateEvt)
 	  && (w == ((WindowPtr)q->event.message))) {
 	rgn = q->rgn;
+	fprintf(stderr,"removing update event from queue: %X\n",(long)q);
 	MrDequeue(q);
 	break;
       }
     }
+    
+    // TEMPORARY
+    RgnHandle temp = NewRgn();
+    GetWindowRegion(w,kWindowUpdateRgn,temp);
+    if (EmptyRgn(temp)) {
+    	fprintf(stderr,"region is empty before addition of update region.\n");
+    } else {
+    	fprintf(stderr,"region is non-empty before addition of update region.\n");
+    	Point testPt = {50, 10};
+    	if (PtInRgn(testPt,temp)) {
+    		fprintf(stderr,"(10,50) is in the region.\n");
+    	} else {
+    		fprintf(stderr,"(10,50) is not in the region.\n");
+    	}
+    	Rect tempBounds;
+    	GetRegionBounds(temp,&tempBounds);
+    	fprintf(stderr,"bounds of update region: left = %d, top = %d, right = %d, bottom = %d\n",
+    		tempBounds.left,tempBounds.top,tempBounds.right,tempBounds.bottom);
+    	SetRect(&tempBounds,-1,-1,20,100);
+    	InvalWindowRect(w,&tempBounds);
+    	GetWindowRegion(w,kWindowUpdateRgn,temp);
+    	GetRegionBounds(temp,&tempBounds);
+    	fprintf(stderr,"bounds of update region after top-left addition: left = %d, top = %d, right = %d, bottom = %d\n",
+    		tempBounds.left,tempBounds.top,tempBounds.right,tempBounds.bottom);
+        fprintf(stderr,"for window: %X\n",w);
+    	if (PtInRgn(testPt,temp)) {
+    		fprintf(stderr,"(10,50) is in the region.\n");
+    	} else {
+    		fprintf(stderr,"(10,50) is not in the region.\n");
+    	}
+    }
+    
 
 #ifdef OS_X
     RgnHandle copied = NewRgn();

@@ -991,12 +991,9 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
 #ifdef wx_mac
   FSSpec spec;
   short osErr;
-  long type;
   short resRefNum;
   Movie theMovie;
   Handle soundHandle = NULL;
-  Track myTrack;
-  long trackCount;
   
   if (! movieInitialized) {
     MovieInitialize();
@@ -1526,6 +1523,25 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 #endif
 
 #ifdef wx_mac
+# ifdef OS_X
+  {
+    Scheme_Object *home;
+    int ends_in_slash;
+    
+    home = scheme_make_string(scheme_expand_filename("~/Library/Preferences", 2, NULL, NULL));
+    
+    ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == '/';
+    
+    if (which == id_init_file)
+      return scheme_append_string(home,
+				  scheme_make_string("/.mredrc" + ends_in_slash));
+    
+    if (which == id_setup_file)
+      return scheme_append_string(home,
+				  scheme_make_string("/.mred.resources" + ends_in_slash));
+  }
+# else
+
   OSType t;
   FSSpec spec;
   Scheme_Object *home;
@@ -1563,6 +1579,7 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   if (which == id_setup_file)
     return scheme_append_string(home,
 				scheme_make_string(":mred.fnt" + ends_in_colon));  
+# endif				
 #endif
 
   return scheme_void;

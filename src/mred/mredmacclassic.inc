@@ -41,15 +41,21 @@ static int QueueTransferredEvent(EventRecord *e)
     for (q = first; q; q = q->next) {
       if ((q->event.what == updateEvt)
 	  && (w == ((WindowPtr)q->event.message))) {
+	    fprintf(stderr,"adding update region to event: %X\n",(long)q);
 #ifdef OS_X	  
         RgnHandle updateRegionHandle = NewRgn();
         GetWindowRegion(w,kWindowUpdateRgn,updateRegionHandle);	
+    	Rect boundingRect;
+    	GetRegionBounds(updateRegionHandle,&boundingRect);
+    	fprintf(stderr,"update event region bounds added, left = %d, top = %d, right = %d, bottom = %d\n",
+    		boundingRect.left,boundingRect.top,boundingRect.right,boundingRect.bottom);
         UnionRgn(updateRegionHandle, q->rgn, q->rgn);
 #else		
         UnionRgn(((WindowRecord *)w)->updateRgn, q->rgn, q->rgn);
 #endif		
         BeginUpdate(w);
         EndUpdate(w);
+        fprintf(stderr,"update region cleared for window: %X because event ADDED.\n",(long)w);
         done = 1;
       }
     }
@@ -77,16 +83,23 @@ static int QueueTransferredEvent(EventRecord *e)
     if (e->what == updateEvt) {
       WindowPtr w = (WindowPtr)e->message;
       q->rgn = NewRgn();
-      
+      fprintf(stderr,"new update event entering queue: %X\n",(long)q);
 #ifdef OS_X
         RgnHandle updateRegion = NewRgn();
-        GetWindowRegion(w,kWindowUpdateRgn,updateRegion);	
+        GetWindowRegion(w,kWindowUpdateRgn,updateRegion);
+        // TEMPORARY
+    	Rect boundingRect;
+    	GetRegionBounds(updateRegion,&boundingRect);
+    	fprintf(stderr,"update event region bounds, left = %d, top = %d, right = %d, bottom = %d\n",
+    		boundingRect.left,boundingRect.top,boundingRect.right,boundingRect.bottom);
         CopyRgn(updateRegion,q->rgn);
 #else      
       CopyRgn(((WindowRecord *)w)->updateRgn, q->rgn);
 #endif      
       BeginUpdate(w);
       EndUpdate(w);
+      // TEMPORARY
+      fprintf(stderr,"update region cleared for window: %X because event transferred.\n",(long)w);
     } else if ((e->what == osEvt)
 	       && ((e->message >> 24) & 0x0ff) == suspendResumeMessage) {
 #ifdef SELF_SUSPEND_RESUME

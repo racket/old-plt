@@ -92,7 +92,7 @@ void wxBorder::ShowAsActive(Bool flag) // mac platform only
 		::CopyRgn(outerRgn, innerRgn); InsetRgn(innerRgn, margin, margin);
 		::DiffRgn(outerRgn, innerRgn, outerRgn);
                 ::OffsetRgn(outerRgn,SetOriginX,SetOriginY);
-		//::ValidRgn(outerRgn);
+		::ValidRgn(outerRgn);
 		::DisposeRgn(outerRgn);
 		::DisposeRgn(innerRgn);
 	}

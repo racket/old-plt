@@ -761,7 +761,7 @@ void wxFrame::MacUpdateWindow(void)
 #endif 				
 		}
 		::EndUpdate(theMacWindow);
-		fprintf(stderr,"Ending update.\n");
+		fprintf(stderr,"Ending update normally. Update region cleared.\n");
 	}
 }
 

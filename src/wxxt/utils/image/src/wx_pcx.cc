@@ -1,3 +1,5 @@
+#if 0
+
 /*
  * xvpcx.c - load routine for PCX format pictures
  *
@@ -332,3 +334,4 @@ static int pcxError(char *fname, char *st)
   return 0;
 }
 
+#endif

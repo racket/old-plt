@@ -103,12 +103,12 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
   unsigned int biBitCount, biCompression, biSizeImage, biXPelsPerMeter;
   unsigned int biYPelsPerMeter, biClrUsed, biClrImportant;
   char         *cmpstr;
-  byte         *pic24, *pic8;
+  byte         *_pic24, *pic8;
   char          buf[512];
 
   /* returns '1' on success */
 
-  pic8 = pic24 = (byte *) NULL;
+  pic8 = _pic24 = (byte *) NULL;
 
   fp=fopen(fname,"r");
   if (!fp) return (bmpError(fname, "couldn't open file"));
@@ -179,7 +179,7 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
   
   /* skip ahead to colormap, using biSize */
   c = biSize - 40;    /* 40 bytes read from biSize to biClrImportant */
-  for (i=0; i<c; i++) getc(fp);
+  for (i=0; i<c; i++) { getc(fp); }
 
 
   /* load up colormap, if any */
@@ -192,9 +192,13 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
       cmaplen = 1 << biBitCount;
     numcols = cmaplen;
     for (i=0; i<cmaplen; i++) {
-      pinfo->b[i] = getc(fp);
-      pinfo->g[i] = getc(fp);
-      pinfo->r[i] = getc(fp);
+      int ac;
+      ac = getc(fp);
+      pinfo->b[i] = ac;
+      ac = getc(fp);
+      pinfo->g[i] = ac;
+      ac = getc(fp);
+      pinfo->r[i] = ac;
       // JACS code to fit in with old xv
       r[i] = rorg[i] = pinfo->r[i];
       b[i] = borg[i] = pinfo->b[i];
@@ -219,8 +223,8 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
   /* create pic8 or pic24 */
 
   if (biBitCount==24) {
-    pic24 = (byte *) calloc(biWidth * biHeight * 3, 1);
-    if (!pic24) {
+    _pic24 = (byte *) calloc(biWidth * biHeight * 3, 1);
+    if (!_pic24) {
       fclose(fp);
       return (bmpError(fname, "couldn't malloc 'pic24'"));
     }
@@ -239,7 +243,7 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
 					  biCompression);
   else if (biBitCount == 8) rv = loadBMP8(fp,pic8,biWidth,biHeight,
 					  biCompression);
-  else                      rv = loadBMP24(fp,pic24,biWidth,biHeight);
+  else                      rv = loadBMP24(fp,_pic24,biWidth,biHeight);
 
   if (rv) bmpError(fname, "File appears truncated.  Winging it.\n");
 
@@ -247,7 +251,7 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
 
 
   if (biBitCount == 24) {
-    pinfo->pic  = pic24;
+    pinfo->pic  = _pic24;
     pinfo->type = PIC24;
   }
   else {
@@ -348,8 +352,9 @@ static int loadBMP4(FILE *fp, byte *pic8, int w, int h, int comp)
 
       if (c) {                                   /* encoded mode */
 	c1 = getc(fp);
-	for (i=0; i<c; i++,x++,pp++) 
+	for (i=0; i<c; i++,x++,pp++) {
 	  *pp = (i&1) ? (c1 & 0x0f) : ((c1>>4)&0x0f);
+	}
       }
 
       else {    /* c==0x00  :  escape codes */
@@ -421,7 +426,7 @@ static int loadBMP8(FILE *fp, byte *pic8, int w, int h, int comp)
 
       if (c) {                                   /* encoded mode */
 	c1 = getc(fp);
-	for (i=0; i<c; i++,x++,pp++) *pp = c1;
+	for (i=0; i<c; i++,x++,pp++) { *pp = c1; }
       }
 
       else {    /* c==0x00  :  escape codes */
@@ -475,12 +480,16 @@ static int loadBMP24(FILE *fp, byte *pic24, int w, int h)
     pp = pic24 + (i * w * 3);
     
     for (j=0; j<w; j++) {
-      *pp++ = getc(fp);   /* red   */
-      *pp++ = getc(fp);   /* green */
-      *pp++ = getc(fp);   /* blue  */
+      int ac;
+      ac = getc(fp);   /* red   */
+      *pp++ = ac;
+      ac = getc(fp);   /* green */
+      *pp++ = ac;
+      ac = getc(fp);   /* blue  */
+      *pp++ = ac;
     }
 
-    for (j=0; j<padb; j++) getc(fp);
+    for (j=0; j<padb; j++) { getc(fp); }
 
     if (ferror(fp)) break;
   }
@@ -574,7 +583,7 @@ int wxImage::WriteBMP(FILE *fp, byte *pic824, int ptype, int w, int h, byte *rma
       *dp = MONO(sp[0],sp[1],sp[2]);
     }
 
-    for (i=0; i<256; i++) graymap[i] = i;
+    for (i=0; i<256; i++) { graymap[i] = i; }
     rmap = gmap = bmap = graymap;
     numcols = 256;
     ptype = PIC8;
@@ -752,8 +761,8 @@ static void writeBMP8(FILE *fp, byte *pic8, int w, int h)
   for (i=h-1; i>=0; i--) {
     pp = pic8 + (i * w);
 
-    for (j=0; j<w; j++) putc(pc2nc[*pp++], fp);
-    for ( ; j<padw; j++) putc(0, fp);
+    for (j=0; j<w; j++) { putc(pc2nc[*pp++], fp); }
+    for ( ; j<padw; j++) { putc(0, fp); }
   }
 }  
 
@@ -775,7 +784,7 @@ static void writeBMP24(FILE *fp, byte *pic24, int w, int h)
       putc(*pp++, fp);
     }
 
-    for (j=0; j<padb; j++) putc(0, fp);
+    for (j=0; j<padb; j++) { putc(0, fp); }
   }
 }  
 

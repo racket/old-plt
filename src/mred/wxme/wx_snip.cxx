@@ -146,7 +146,11 @@ void wxSnip::Init(void)
   next = prev = NULL;
   line = NULL;
 
-  admin_ptr = new (wxSnipAdmin*);
+#ifdef MZ_PRECISE_GC
+  admin_ptr = (wxSnipAdmin **)GC_malloc(sizeof(wxSnipAdmin*));
+#else
+  admin_ptr = new wxSnipAdmin*;
+#endif
   *admin_ptr = NULL;
 
   style = wxTheStyleList->BasicStyle();

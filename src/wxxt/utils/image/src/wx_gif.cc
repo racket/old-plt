@@ -122,7 +122,9 @@ int wxImage::LoadGIF(char *fname, int /* nc */)
   
   /* the +256's are so we can read truncated GIF files without fear of 
      segmentation violation */
-  if (!(ptr = RawGIF = (byte *) malloc(filesize+256))) {
+  ptr = (byte *) malloc(filesize+256);
+  RawGIF = ptr;
+  if (!ptr) {
     fclose(fp);
     return( GifError("not enough memory to read gif file") );
   }
@@ -305,7 +307,8 @@ int wxImage::LoadGIF(char *fname, int /* nc */)
   /* Allocate the 'pic' */
   pWIDE = Width;  pHIGH = Height;
   maxpixels = Width*Height;
-  picptr = pic = (byte *) malloc(maxpixels);
+  picptr = (byte *) malloc(maxpixels);
+  pic = picptr;
   if (!pic) {
     fclose(fp);
     return( GifError("not enough memory for 'pic'") );
@@ -379,8 +382,11 @@ int wxImage::LoadGIF(char *fname, int /* nc */)
       if (npixels + OutCount > maxpixels) OutCount = maxpixels-npixels;
 	
       npixels += OutCount;
-      if (!Interlace) for (i=OutCount-1; i>=0; i--) *picptr++ = OutCode[i];
-                else  for (i=OutCount-1; i>=0; i--) DoInterlace(OutCode[i]);
+      if (!Interlace) { 
+	for (i=OutCount-1; i>=0; i--) { *picptr++ = OutCode[i]; }
+      } else { 
+	for (i=OutCount-1; i>=0; i--) { DoInterlace(OutCode[i]); } 
+      }
       OutCount = 0;
 
       /* Build the hash table on-the-fly. No table is stored in the file. */

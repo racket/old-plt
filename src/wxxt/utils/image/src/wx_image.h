@@ -137,7 +137,9 @@ class wxImage: public wxObject
 
   /*************************** XVMISC.C ***************************/
 
+#if 0
   void Rotate(int);
+#endif
   void SortColormap(void);
   void AllocColors(void);
   void AllocRWColors(void);
@@ -167,16 +169,20 @@ class wxImage: public wxObject
   int LoadGIF(char *, int);
   int WriteGIF(FILE *fp, byte *pic, int w, int h, byte *rmap, byte *gmap, byte *bmap, int numcols, int colorstyle);
 
+#if 0
   /**************************** XVPM.C ****************************/
   int LoadPM(char *, int);
   int WritePM(FILE *, byte *, int, int, byte *, byte *, byte *, int, int);
+#endif
 
+#if 0
   /**************************** XVPBM.C ***************************/
   int LoadPBM(char *, int);
   int WritePBM(FILE *, byte *, int, int, byte *, byte *, byte *, int, int, int);
   int loadpbm(FILE *fp, int w, int h, int raw);
   int loadpgm(FILE *fp, int w, int h, int maxv, int raw);
   int loadppm(FILE *fp, int w, int h, int maxv, int raw, int nc);
+#endif
 
   /**************************** XVXBM.C ***************************/
   int LoadXBM(char *, int);
@@ -186,11 +192,15 @@ class wxImage: public wxObject
   int LoadBMP(char *fname, PICINFO *pinfo);
   int WriteBMP(FILE *fp, byte *pic824, int ptype, int w, int h, byte *rmap, byte *gmap, byte *bmap, int numcols, int colorstyle);
 
+#if 0
   /* xvpcx.c */
   int LoadPCX(char *fname, PICINFO *pinfo);
+#endif
 
    /* Taken from xvmisc.c */
+#if 0
   void RotatePic(byte *, unsigned int *, unsigned int *, int);
+#endif
   void FloydDitherize8(byte *);
   void FloydDitherize1(XImage *);
   void FreeMostResources(void);

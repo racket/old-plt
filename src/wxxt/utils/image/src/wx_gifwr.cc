@@ -85,8 +85,10 @@ int wxImage::WriteGIF(FILE *fp, byte *pic, int w, int h, byte *rmap, byte *gmap,
   Background = 0;
 
   /* figure out 'BitsPerPixel' */
-  for (i=1; i<8; i++)
-    if ( (1<<i) >= numcols) break;
+  for (i=1; i<8; i++) {
+    if ( (1<<i) >= numcols)
+      break;
+  }
   
   BitsPerPixel = i;
 
@@ -306,8 +308,9 @@ static void compress(int init_bits, FILE *outfile, byte *data, int len)
   ent = *data++;  len--;
 
   hshift = 0;
-  for ( fcode = (long) hsize;  fcode < 65536L; fcode *= 2L )
+  for ( fcode = (long) hsize;  fcode < 65536L; fcode *= 2L ) {
     hshift++;
+  }
   hshift = 8 - hshift;                /* set hash code range bound */
 
   hsize_reg = hsize;
@@ -488,8 +491,9 @@ static void cl_hash(register count_int hsize)          /* reset code table */
     htab_p -= 16;
   } while ((i -= 16) >= 0);
 
-  for ( i += 16; i > 0; i-- )
+  for ( i += 16; i > 0; i-- ) {
     *--htab_p = m1;
+  }
 }
 
 

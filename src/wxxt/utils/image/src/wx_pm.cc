@@ -1,3 +1,5 @@
+#if 0
+
 /*
  * xvpm.c - load routine for 'pm' format pictures
  *
@@ -344,5 +346,4 @@ static void flipl(byte *p)
   t = p[1];  p[1]=p[2];  p[2] = t;
 }
 
-
-
+#endif

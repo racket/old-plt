@@ -162,8 +162,9 @@ static void spline(int *x,int *y,int n,float *y2)
   qn = un = 0.0;
 
   y2[n-1] = (un-qn*u[n-2]) / (qn*y2[n-2]+1.0);
-  for (k=n-2; k>=0; k--)
+  for (k=n-2; k>=0; k--) {
     y2[k] = y2[k]*y2[k+1]+u[k];
+  }
 }
 
 
@@ -202,7 +203,7 @@ void wxImage::GammifyColors()
 void wxImage::HSVgamma()
 {
   int    i, vi, j;
-  double rd, gd, bd, h, s, v, max, min, del, rc, gc, bc;
+  double rd, gd, bd, h, s, v, max, min, del, rc, agc, bc;
   double f, p, q, t;
 
   for (i=0; i<numcols; i++) {
@@ -227,12 +228,12 @@ void wxImage::HSVgamma()
     h = NOHUE;
     if (s != 0.0) {
       rc = (max - rd) / del;
-      gc = (max - gd) / del;
+      agc = (max - gd) / del;
       bc = (max - bd) / del;
 
-      if      (rd==max) h = bc - gc;
+      if      (rd==max) h = bc - agc;
       else if (gd==max) h = 2 + rc - bc;
-      else if (bd==max) h = 4 + gc - rc;
+      else if (bd==max) h = 4 + agc - rc;
 
       h = h * 60;
       if (h<0) h += 360;

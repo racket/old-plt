@@ -265,6 +265,22 @@ gc2/String.cc: $(WXDIR)/src/Utilities/String.cc
 gc2/TempFile.cc: $(WXDIR)/src/Utilities/TempFile.cc
 	$(XFORM) $< $@
 
+gc2/wx_image.cc: $(WXDIR)/utils/image/src/wx_image.cc
+	$(XFORM) $< $@
+gc2/wx_img.cc: $(WXDIR)/utils/image/src/wx_img.cc
+	$(XFORM) $< $@
+gc2/wx_24to8.cc: $(WXDIR)/utils/image/src/wx_24to8.cc
+	$(XFORM) $< $@
+gc2/wx_bmp.cc: $(WXDIR)/utils/image/src/wx_bmp.cc
+	$(XFORM) $< $@
+gc2/wx_gam.cc: $(WXDIR)/utils/image/src/wx_gam.cc
+	$(XFORM) $< $@
+gc2/wx_gif.cc: $(WXDIR)/utils/image/src/wx_gif.cc
+	$(XFORM) $< $@
+gc2/wx_gifwr.cc: $(WXDIR)/utils/image/src/wx_gifwr.cc
+	$(XFORM) $< $@
+gc2/wx_xbm.cc: $(WXDIR)/utils/image/src/wx_xbm.cc
+	$(XFORM) $< $@
 
 gc2/wx_media.cc: wxme/wx_media.cxx
 	$(XFORM) $< $@
@@ -361,6 +377,15 @@ XSRCS = gc2/Window.cc \
   gc2/Resources.cc \
   gc2/String.cc \
   gc2/TempFile.cc \
+\
+  gc2/wx_image.cc \
+  gc2/wx_img.cc \
+  gc2/wx_24to8.cc \
+  gc2/wx_bmp.cc \
+  gc2/wx_gam.cc \
+  gc2/wx_gif.cc \
+  gc2/wx_gifwr.cc \
+  gc2/wx_xbm.cc \
 \
   gc2/wx_media.cc \
   gc2/wx_mpriv.cc \

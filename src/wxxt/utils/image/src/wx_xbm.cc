@@ -116,7 +116,11 @@ int wxImage::LoadXBM(char *fname, int /* nc */)
 
 //  SetISTR(ISTR_FORMAT,"X11 Bitmap  (%ld bytes)", filesize);
 
-  pic = (byte *) calloc(w*h,1);
+  {
+    byte *ba;
+    ba = (byte *) calloc(w*h,1);
+    pic = ba;
+  }
   if (!pic) FatalError("couldn't malloc 'pic'");
 
   pWIDE = w;  pHIGH = h;
@@ -128,14 +132,14 @@ int wxImage::LoadXBM(char *fname, int /* nc */)
 
   /* initialize the 'hex' array for zippy ASCII-hex -> int conversion */
 
-  for (i=0; i<256; i++) hex[i]=0;
-  for (i='0'; i<='9'; i++) hex[i] = i - '0';
-  for (i='a'; i<='f'; i++) hex[i] = i + 10 - 'a';
-  for (i='A'; i<='F'; i++) hex[i] = i + 10 - 'A';
+  for (i=0; i<256; i++) { hex[i]=0; }
+  for (i='0'; i<='9'; i++) { hex[i] = i - '0'; }
+  for (i='a'; i<='f'; i++) { hex[i] = i + 10 - 'a'; }
+  for (i='A'; i<='F'; i++) { hex[i] = i + 10 - 'A'; }
 
   /* read/convert the image data */
 
-  for (i=0, pix=pic; i<h; i++)
+  for (i=0, pix=pic; i<h; i++) {
     for (j=0,bit=0; j<w; j++, pix++, bit = ++bit&7) {
 
       if (!bit) {
@@ -157,6 +161,7 @@ int wxImage::LoadXBM(char *fname, int /* nc */)
       *pix = (k&1) ? 1 : 0;
       k = k >> 1;
     }
+  }
 
   fclose(fp);
 

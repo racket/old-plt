@@ -1,3 +1,5 @@
+#if 0
+
 /*
  * xvpbm.c - load routine for 'pm' format pictures
  *
@@ -433,9 +435,4 @@ int wxImage::WritePBM(FILE *fp,byte *pic,int w,int h,byte *rmap,byte *gmap,byte 
   return 0;
 }
 
-
-	  
-	  
-
-
-
+#endif

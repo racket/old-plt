@@ -82,9 +82,6 @@ static long int   def_int;
 wxImage::wxImage(void)
 {
 //  cMap = new wxColourMap;
-  cMap = NULL;
-  filetype = wxUNKNOWN;
-
   int   imap, ctrlmap, gmap, clrroot;
   char *display, *fname, *whitestr, *blackstr, 
        *infogeom, *fgstr, *bgstr, *ctrlgeom, *gamgeom;
@@ -92,6 +89,9 @@ wxImage::wxImage(void)
 
   XColor ecdef;
   nfcols = 0;
+
+  cMap = NULL;
+  filetype = wxUNKNOWN;
 
   /*****************************************************/
   /*** variable Initialization                       ***/
@@ -368,14 +368,14 @@ int wxImage::openPic(char *fullname)
    * if successful, returns 1
    */
   PICINFO pinfo;
-  xvbzero((char *) &pinfo, sizeof(PICINFO));
-
   int   i,okay,freename, nw, nh;
   char *tmp;
   FILE *fp;
   char  filename[256], /* full name of the file to be loaded (could be /tmp) */
         basename[128], /* just the name of the original file. No path */
         magicno[8];    /* first 8 bytes of file */
+
+  xvbzero((char *) &pinfo, sizeof(PICINFO));
   
   normaspect = defaspect;
 
@@ -395,11 +395,11 @@ int wxImage::openPic(char *fullname)
      (and it's not the special case '<stdin>') prepend 'initpath' to it */
   freename = 0;
   if (fullname[0] != '/' && strcmp(fullname,STDINSTR)!=0) {
-    char *tmp;
-    tmp = (char *) malloc(strlen(fullname) + strlen(initpath) + 2);
-    if (!tmp) FatalError("malloc 'filename' failed");
-    sprintf(tmp,"%s/%s", initpath, fullname);
-    fullname = tmp;
+    char *atmp;
+    atmp = (char *) malloc(strlen(fullname) + strlen(initpath) + 2);
+    if (!atmp) FatalError("malloc 'filename' failed");
+    sprintf(atmp,"%s/%s", initpath, fullname);
+    fullname = atmp;
     freename = 1;
   }
     
@@ -419,15 +419,15 @@ int wxImage::openPic(char *fullname)
 
   /* if the file is stdio, write it out to a temp file */
   if (strcmp(filename,STDINSTR)==0) {
-    FILE *fp;
-
     strcpy(filename,"/tmp/xvXXXXXX");
     mktemp(filename);
 
     fp = fopen(filename,"w");
     if (!fp) FatalError("can't write /tmp/xv****** file");
     
-    while ( (i=getchar()) != EOF) putc(i,fp);
+    while ( (i=getchar()) != EOF) {
+      putc(i,fp);
+    }
     fclose(fp);
   }
 
@@ -468,9 +468,12 @@ int wxImage::openPic(char *fullname)
   i = 1;
   switch (filetype) {
   case GIF: i = LoadGIF(filename,ncols); break;
+#if 0
   case PM:  i = LoadPM (filename,ncols); break;
   case PBM: i = LoadPBM(filename,ncols); break;
+#endif
   case XBM: i = LoadXBM(filename,ncols); break;
+#if 0
   case PCX: 
     {
       i = !(LoadPCX(filename, &pinfo));
@@ -479,6 +482,7 @@ int wxImage::openPic(char *fullname)
       pHIGH = pinfo.h;
       break;
     }
+#endif
   case BMP: 
     {
       i = !(LoadBMP(filename, &pinfo));
@@ -503,8 +507,15 @@ int wxImage::openPic(char *fullname)
   normFact = 1;  nw = pWIDE;  nh = pHIGH;
 
   // expand:  if expansion is negative, treat it as a reciprocal
-  if (expand<0) { eWIDE = pWIDE/abs(expand);  eHIGH = pHIGH/abs(expand); }
-           else { eWIDE = pWIDE * expand;     eHIGH = pHIGH * expand; }
+  if (expand < 0) { 
+    int ae;
+    ae = abs(expand);
+    eWIDE = pWIDE/ae;
+    eHIGH = pHIGH/ae;
+  } else { 
+    eWIDE = pWIDE * expand; 
+    eHIGH = pHIGH * expand;
+  }
 
   cpic = pic;  cWIDE = pWIDE;  cHIGH = pHIGH;  cXOFF = cYOFF = 0;
 
@@ -668,16 +679,19 @@ int wxImage::rd_flag(char *name)
  */
 Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap)
 {
-  wxImage *tempImage = new wxImage;
+  wxImage *tempImage;
+  tempImage = new wxImage;
   if (FileExists(filename) && tempImage->Load(filename))
   {
     Pixmap pm;
+    Display *dpy;
+    GC agc;
+    int err;
+    wxColourMap *tempColourMap;
 
     if (!bitmap->Create(tempImage->eWIDE, tempImage->eHIGH, 
 			tempImage->dispDEEP))
       return FALSE;
-
-    wxColourMap *tempColourMap;
 
     if (!tempImage->numcols)
       tempColourMap = NULL;
@@ -693,9 +707,9 @@ Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap)
 
     pm = *(Pixmap *)bitmap->GetHandle();
 
-    Display *dpy = tempImage->theDisp;
-    GC gc = XCreateGC(dpy, pm, (unsigned long )NULL, NULL);
-
+    dpy = tempImage->theDisp;
+    agc = XCreateGC(dpy, pm, (unsigned long )NULL, NULL);
+    
 #if 0
     bitmap -> free_colors_num = tempImage -> nfcols;
     bitmap -> free_colors = new unsigned long [bitmap -> free_colors_num];
@@ -710,15 +724,15 @@ Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap)
        }
 #endif
 
-    int err = XPutImage(dpy,pm,gc,tempImage->theImage,
-              0,0,
-              0,0,
-              tempImage->eWIDE,tempImage->eHIGH);
+    err = XPutImage(dpy,pm,agc,tempImage->theImage,
+		    0,0,
+		    0,0,
+		    tempImage->eWIDE,tempImage->eHIGH);
 
     // Get rid of compiler warning
     err = 0;
 
-    XFreeGC(dpy, gc);
+    XFreeGC(dpy, agc);
 
     // bitmap->SetOk(TRUE);
 

@@ -89,7 +89,11 @@ int wxImage::Conv24to8(byte *p, int w, int h, int nc)
   /* allocate pic immediately, so that if we can't allocate it, we don't
      waste time running this algorithm */
 
-  pic = (byte *) malloc(WIDE * HIGH);
+  {
+    byte *ba;
+    ba = (byte *) malloc(WIDE * HIGH);
+    pic = ba;
+  }
   if (pic == NULL) {
     fprintf(stderr,"Conv24to8() - failed to allocate picture\n");
     return(1);
@@ -104,10 +108,13 @@ int wxImage::Conv24to8(byte *p, int w, int h, int nc)
   if (mono || nc==0) {
     byte *pp, *p24;
 
-    for (i=0; i<256; i++) r[i]=g[i]=b[i]=i;   /* greyscale colormap */
+    for (i=0; i<256; i++) {
+      r[i]=g[i]=b[i]=i;   /* greyscale colormap */
+    }
     pp = pic;  p24 = pic24;
-    for (i=WIDE*HIGH; i>0; i--, pp++, p24+=3) 
+    for (i=WIDE*HIGH; i>0; i--, pp++, p24+=3) {
       *pp = (p24[0]*11 + p24[1]*16 + p24[2]*5) >> 5;  /* pp=.33R+.5G+.17B */
+    }
 
     return(0);
   }
@@ -123,7 +130,8 @@ int wxImage::Conv24to8(byte *p, int w, int h, int nc)
   /**** STEP 1:  create empty boxes ****/
 
   usedboxes = NULL;
-  box_list = freeboxes = (CBOX *) malloc(num_colors * sizeof(CBOX));
+  freeboxes = (CBOX *) malloc(num_colors * sizeof(CBOX));
+  box_list = freeboxes;
 
   if (box_list == NULL) {
     return(1);
@@ -207,11 +215,11 @@ void wxImage::get_histogram(CBOX *box)
 
   /* zero out histogram */
   ptr = &histogram[0][0][0];
-  for (i=B_LEN*B_LEN*B_LEN; i>0; i-- )  *ptr++ = 0;
+  for (i=B_LEN*B_LEN*B_LEN; i>0; i-- ) { *ptr++ = 0; }
 
   /* calculate histogram */
   p = pic24;
-  for (i=0; i<HIGH; i++)
+  for (i=0; i<HIGH; i++) {
     for (j=0; j<WIDE; j++) {
       r = (*p++) >> (COLOR_DEPTH-B_DEPTH);
       g = (*p++) >> (COLOR_DEPTH-B_DEPTH);
@@ -227,6 +235,7 @@ void wxImage::get_histogram(CBOX *box)
       if (b > box->bmax) box->bmax = b;
       histogram[r][g][b]++;
     }
+  }
 }
 
 
@@ -348,7 +357,8 @@ void wxImage::splitbox(CBOX *ptr)
     histp = &hist2[first];
     sum = 0;
         
-    for (i=first; i<=last && (sum += *histp++)<sum2; i++);
+    for (i=first; i<=last && (sum += *histp++)<sum2; i++) {
+    }
     if (i==first) i++;
   }
 
@@ -368,9 +378,9 @@ void wxImage::splitbox(CBOX *ptr)
     
     histp = &hist2[first];
     sum1 = 0;
-    for (j = first; j < i; ++j) sum1 += *histp++;
+    for (j = first; j < i; ++j) { sum1 += *histp++; }
     sum2 = 0;
-    for (j = i; j <= last; ++j) sum2 += *histp++;
+    for (j = i; j <= last; ++j) { sum2 += *histp++; }
     new_cbox->total = sum1;
     ptr->total = sum2;
   }
@@ -403,60 +413,69 @@ void wxImage::shrinkbox(CBOX *box)
   bmin = box->bmin;  bmax = box->bmax;
 
   if (rmax>rmin) {
-    for (ir=rmin; ir<=rmax; ir++)
+    for (ir=rmin; ir<=rmax; ir++) {
       for (ig=gmin; ig<=gmax; ig++) {
 	histp = &histogram[ir][ig][bmin];
-	for (ib=bmin; ib<=bmax; ib++)
+	for (ib=bmin; ib<=bmax; ib++) {
 	  if (*histp++ != 0) {
 	    box->rmin = rmin = ir;
 	    goto have_rmin;
 	  }
+	}
       }
+    }
 
   have_rmin:
     if (rmax>rmin)
-      for (ir=rmax; ir>=rmin; --ir)
+      for (ir=rmax; ir>=rmin; --ir) {
 	for (ig=gmin; ig<=gmax; ig++) {
 	  histp = &histogram[ir][ig][bmin];
-	  for (ib=bmin; ib<=bmax; ib++)
+	  for (ib=bmin; ib<=bmax; ib++) {
 	    if (*histp++ != 0) {
 	      box->rmax = rmax = ir;
 	      goto have_rmax;
 	    }
+	  }
 	}
+      }
   }
 
 
  have_rmax:
 
   if (gmax>gmin) {
-    for (ig=gmin; ig<=gmax; ig++)
+    for (ig=gmin; ig<=gmax; ig++) {
       for (ir=rmin; ir<=rmax; ir++) {
 	histp = &histogram[ir][ig][bmin];
-	for (ib=bmin; ib<=bmax; ib++)
+	for (ib=bmin; ib<=bmax; ib++) {
 	  if (*histp++ != 0) {
 	    box->gmin = gmin = ig;
 	    goto have_gmin;
 	  }
+	}
       }
+    }
+
   have_gmin:
     if (gmax>gmin)
-      for (ig=gmax; ig>=gmin; --ig)
+      for (ig=gmax; ig>=gmin; --ig) {
 	for (ir=rmin; ir<=rmax; ir++) {
 	  histp = &histogram[ir][ig][bmin];
-	  for (ib=bmin; ib<=bmax; ib++)
+	  for (ib=bmin; ib<=bmax; ib++) {
 	    if (*histp++ != 0) {
 	      box->gmax = gmax = ig;
 	      goto have_gmax;
 	    }
+	  }
 	}
+      }
   }
 
 
  have_gmax:
 
   if (bmax>bmin) {
-    for (ib=bmin; ib<=bmax; ib++)
+    for (ib=bmin; ib<=bmax; ib++) {
       for (ir=rmin; ir<=rmax; ir++) {
 	histp = &histogram[ir][gmin][ib];
 	for (ig=gmin; ig<=gmax; ig++) {
@@ -467,9 +486,11 @@ void wxImage::shrinkbox(CBOX *box)
 	  histp += B_LEN;
 	}
       }
+    }
+
   have_bmin:
     if (bmax>bmin)
-      for (ib=bmax; ib>=bmin; --ib)
+      for (ib=bmax; ib>=bmin; --ib) {
 	for (ir=rmin; ir<=rmax; ir++) {
 	  histp = &histogram[ir][gmin][ib];
 	  for (ig=gmin; ig<=gmax; ig++) {
@@ -480,6 +501,7 @@ void wxImage::shrinkbox(CBOX *box)
 	    histp += B_LEN;
 	  }
 	}
+      }
   }
 
  have_bmax: return;
@@ -526,7 +548,7 @@ CCELL *create_colorcell(int r1, int g1, int b1)
   mindist = 99999999;
 
   rp=r;  gp=g;  bp=b;
-  for (i=0; i<num_colors; i++,rp++,gp++,bp++)
+  for (i=0; i<num_colors; i++,rp++,gp++,bp++) {
     if( *rp>>(COLOR_DEPTH-C_DEPTH) == ir  &&
         *gp>>(COLOR_DEPTH-C_DEPTH) == ig  &&
         *bp>>(COLOR_DEPTH-C_DEPTH) == ib) {
@@ -549,12 +571,12 @@ CCELL *create_colorcell(int r1, int g1, int b1)
 
       if (dist < mindist) mindist = dist;
     }
-
+  }
 
   /* step 3: find all points within that distance to box */
 
   rp=r;  gp=g;  bp=b;
-  for (i=0; i<num_colors; i++,rp++,gp++,bp++)
+  for (i=0; i<num_colors; i++,rp++,gp++,bp++) {
     if (*rp >> (COLOR_DEPTH-C_DEPTH) != ir  ||
 	*gp >> (COLOR_DEPTH-C_DEPTH) != ig  ||
 	*bp >> (COLOR_DEPTH-C_DEPTH) != ib) {
@@ -576,7 +598,7 @@ CCELL *create_colorcell(int r1, int g1, int b1)
 	++ptr->num_ents;
       }
     }
-
+  }
 
   /* sort color cells by distance, use cheap exchange sort */
   {
@@ -613,8 +635,8 @@ static void map_colortable()
   CCELL *cell;
 
   histp  = &histogram[0][0][0];
-  for (ir=0; ir<B_LEN; ir++)
-    for (ig=0; ig<B_LEN; ig++)
+  for (ir=0; ir<B_LEN; ir++) {
+    for (ig=0; ig<B_LEN; ig++) {
       for (ib=0; ib<B_LEN; ib++) {
 	if (*histp==0) *histp = -1;
 	else {
@@ -644,6 +666,8 @@ static void map_colortable()
 	}
 	histp++;
       }
+    }
+  }
 }
 
 
@@ -675,8 +699,9 @@ int wxImage::quant_fsdither()
   outptr = (byte *) pic;
 
   /* get first line of picture */
-  for (j=WIDE * 3, tmpptr=nextline, tmpbptr=inptr; j; j--) 
+  for (j=WIDE * 3, tmpptr=nextline, tmpbptr=inptr; j; j--) {
     *tmpptr++ = (int) *tmpbptr++;
+  }
 
   for (i=0; i<HIGH; i++) {
     /* swap thisline and nextline */
@@ -684,8 +709,9 @@ int wxImage::quant_fsdither()
     lastline = (i==imax);
 
     /* read in next line */
-    for (j=WIDE * 3, tmpptr=nextline; j; j--) 
+    for (j=WIDE * 3, tmpptr=nextline; j; j--) {
       *tmpptr++ = (int) *inptr++;
+    }
 
     /* dither this line and put it into the output picture */
     thisptr = thisline;  nextptr = nextline;
@@ -806,14 +832,15 @@ int wxImage::Quick24to8(byte *p24, int w, int h)
     }
 
   /* get first line of picture */
-  for (j=pwide3, tmpptr=nextline; j; j--) *tmpptr++ = (int) *p24++;
+  for (j=pwide3, tmpptr=nextline; j; j--) { *tmpptr++ = (int) *p24++; }
 
   for (i=0; i<h; i++) {
     tmpptr = thisline;  thisline = nextline;  nextline = tmpptr;   /* swap */
 
     if (i!=imax)   /* get next line */
-      for (j=pwide3, tmpptr=nextline; j; j--)
+      for (j=pwide3, tmpptr=nextline; j; j--) {
 	*tmpptr++ = (int) *p24++;
+      }
 
     for (j=0, thisptr=thisline, nextptr=nextline; j<w; j++,pp++) {
       r1 = *thisptr++;  g1 = *thisptr++;  b1 = *thisptr++;

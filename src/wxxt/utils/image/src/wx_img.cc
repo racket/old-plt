@@ -73,7 +73,11 @@ void wxImage::Resize(int w, int h)
 
     /* create a new epic of the appropriate size */
     eWIDE = w;  eHIGH = h;
-    epic = (byte *) malloc(w*h);
+    {
+      byte *ba;
+      ba = (byte *)malloc(w*h);
+      epic = ba;
+    }
     if (epic==NULL) {
       sprintf(wxBuffer,"unable to malloc a %dx%d image\n",w,h);
       FatalError(wxBuffer);
@@ -87,15 +91,18 @@ void wxImage::Resize(int w, int h)
 
     cxarr = (int *) malloc(eWIDE * sizeof(int));
     if (!cxarr) FatalError("unable to allocate cxarr");
-    for (ex=0; ex < (int)eWIDE; ex++) cxarr[ex] = (cWIDE * ex) / eWIDE;
+    for (ex=0; ex < (int)eWIDE; ex++) {
+      cxarr[ex] = (cWIDE * ex) / eWIDE;
+    }
 
     elptr = epptr = epic;
     for (ey=0;  ey < (int)eHIGH;  ey++, elptr+=eWIDE) {
       cy = (cHIGH * ey) / eHIGH;
       epptr = elptr;
       clptr = cpic + (cy * cWIDE);
-      for (ex=0, cxarrp = cxarr;  ex < (int)eWIDE;  ex++, epptr++) 
+      for (ex=0, cxarrp = cxarr;  ex < (int)eWIDE;  ex++, epptr++) {
 	*epptr = clptr[*cxarrp++];
+      }
     }
     free(cxarr);
   }
@@ -122,6 +129,7 @@ static int CMAPcompare(CMAPENT *a,CMAPENT *b)
   return (b->use - a->use);
 }
 
+typedef int (*image_Compare_Proc)(const void *, const void *);
 
 /***********************************/
 void wxImage::SortColormap()
@@ -135,14 +143,20 @@ void wxImage::SortColormap()
   if (ncols == 0) { numcols = 256; return; }
   
   /* initialize histogram and compute it */
-  for (i=0; i<256; i++) hist[i]=0;
-  for (i=pWIDE*pHIGH, p=pic; i; i--, p++) hist[*p]++;
+  for (i=0; i<256; i++) {
+    hist[i]=0;
+  }
+  for (i=pWIDE*pHIGH, p=pic; i; i--, p++) {
+    hist[*p]++;
+  }
   
   if (imgDEBUG>1) {
     fprintf(stderr,"Desired colormap\n");
-    for (i=0; i<256; i++) 
-      if (hist[i]) fprintf(stderr,"(%3d  %02x,%02x,%02x)     ",
-			   i,r[i],g[i],b[i]);
+    for (i=0; i<256; i++) {
+      if (hist[i]) 
+	fprintf(stderr,"(%3d  %02x,%02x,%02x)     ",
+		i,r[i],g[i],b[i]);
+    }
     fprintf(stderr,"\n\n");
   }
   
@@ -202,18 +216,20 @@ void wxImage::SortColormap()
   }
   
   /* tack rest of colors onto colormap in decreasing order of use */
-/*  qsort((char *) c,numcols,sizeof(CMAPENT),CMAPcompare); */
- qsort((char *) c,numcols,sizeof(CMAPENT),
-        (int (*)(const void *, const void *))CMAPcompare);
+  qsort((char *)c, numcols, sizeof(CMAPENT), (image_Compare_Proc)CMAPcompare);
 
   memcpy(&c1[i], c, (numcols - i) * sizeof(CMAPENT));
 
 
   /* build translation table */
-  for (i=0; i<numcols; i++) trans[ c1[i].oldindex ] = i;
+  for (i=0; i<numcols; i++) {
+    trans[ c1[i].oldindex ] = i;
+  }
   
   /* modify 'pic' to reflect the new colormap */
-  for (i=pWIDE*pHIGH, p=pic; i; i--, p++) *p = trans[*p];
+  for (i=pWIDE*pHIGH, p=pic; i; i--, p++) {
+    *p = trans[*p];
+  }
   
   /* and copy the new colormap into *the* colormap */
   for (i=0; i<numcols; i++) {
@@ -222,13 +238,15 @@ void wxImage::SortColormap()
   
   if (imgDEBUG>1) {
     fprintf(stderr,"Result of sorting colormap\n");
-    for (i=0; i<numcols; i++) 
+    for (i=0; i<numcols; i++) {
       fprintf(stderr,"(%3d  %02x,%02x,%02x)     ",i,r[i],g[i],b[i]);
+    }
     fprintf(stderr,"\n\n");
     
     fprintf(stderr,"Translate table\n");
-    for (i=0; i<numcols; i++) 
+    for (i=0; i<numcols; i++) {
       fprintf(stderr,"%3d->%3d  ",i,trans[i]);
+    }
     fprintf(stderr,"\n\n");
   }
   
@@ -270,7 +288,9 @@ void wxImage::AllocColors()
      because when I say 'allocate me 32 colors' I want it to allocate
      32 different colors, not 32 instances of the same 4 shades... */
   
-  for (i=0; i<numcols; i++) cols[i] = NOPIX;
+  for (i=0; i<numcols; i++) {
+    cols[i] = NOPIX;
+  }
   
   cmap = theCmap;
   for (i=0; i<numcols && unique<ncols; i++) {
@@ -285,7 +305,8 @@ void wxImage::AllocColors()
       pixel = cols[i] = defs[i].pixel;
       
       /* see if the newly allocated color is new and different */
-      for (j=0, fcptr=freecols; j<nfcols && *fcptr!=pixel; j++,fcptr++);
+      for (j=0, fcptr=freecols; j<nfcols && *fcptr!=pixel; j++,fcptr++) {
+      }
       if (j==nfcols) unique++;
       
       fc2pcol[nfcols] = i;
@@ -330,11 +351,13 @@ void wxImage::AllocColors()
 
   /* read entire colormap (or first 256 entries) into 'ctab' */
   dc = (ncells<256) ? ncells : 256;
-  for (i=0; i<dc; i++) ctab[i].pixel = (unsigned long) i;
+  for (i=0; i<dc; i++) {
+    ctab[i].pixel = (unsigned long) i;
+  }
 
   XQueryColors(theDisp, cmap, ctab, dc);
 
-  for (i=0; i<numcols && unique<ncols; i++)
+  for (i=0; i<numcols && unique<ncols; i++) {
     if (cols[i]==NOPIX) {  /* an unallocated pixel */
       int           d, mdist, close;
       unsigned long ri,gi,bi;
@@ -359,7 +382,7 @@ void wxImage::AllocColors()
 	unique++;
       }
     }
-
+  }
 
 
   /* THIRD PASS COLOR ALLOCATION:
@@ -423,7 +446,9 @@ void wxImage::AllocRWColors()
 
   cmap = theCmap;
 
-  for (i=0; i<numcols; i++) cols[i] = NOPIX;
+  for (i=0; i<numcols; i++) {
+    cols[i] = NOPIX;
+  }
 
   for (i=0; i<numcols && i<ncols; i++) {
     unsigned long pmr[1], pix[1];
@@ -464,7 +489,7 @@ void wxImage::AllocRWColors()
 	return;
       }
 	
-      for (i=0; i<numcols; i++)
+      for (i=0; i<numcols; i++) {
 	if (cols[i]==NOPIX) {  /* an unallocated pixel */
 	  int           k, d, mdist, close;
 	  unsigned long ri,gi,bi;
@@ -482,6 +507,7 @@ void wxImage::AllocRWColors()
 	  if (close<0) FatalError("This Can't Happen! (How reassuring.)");
 	  cols[i] = defs[close].pixel;
 	}
+      }
     }
 
   /* load up the allocated colorcells */
@@ -512,8 +538,9 @@ void wxImage::DoMonoAndRV()
   }
 
   if (mono || ncols==0)  /* if monochrome, mono-ify the desired colormap */
-    for (i=0; i<numcols; i++)
+    for (i=0; i<numcols; i++) {
       r[i] = g[i] = b[i] = MONO(r[i],g[i],b[i]);
+    }
 
   if (revvideo)  /* reverse the desired colormaps */
     for (i=0; i<numcols; i++) {
@@ -522,6 +549,7 @@ void wxImage::DoMonoAndRV()
 }
 
 /***********************************/
+#if 0
 void wxImage::Rotate(int dir)
 {
   int i;
@@ -555,9 +583,11 @@ void wxImage::Rotate(int dir)
   CreateXImage();
 //  WRotate();
 }
+#endif
 
 
 /************************/
+#if 0
 void wxImage::RotatePic(byte *pic, unsigned int *wp, unsigned int *hp, int dir)
 {
   /* rotates a w*h array of bytes 90 deg clockwise (dir=0) 
@@ -573,14 +603,18 @@ void wxImage::RotatePic(byte *pic, unsigned int *wp, unsigned int *hp, int dir)
 
   /* do the rotation */
   if (dir==0) {
-    for (i=0; i < (int)w; i++)        /* CW */
-      for (j=h-1, pix=pic+(h-1)*w + i; j>=0; j--, pix1++, pix-=w) 
+    for (i=0; i < (int)w; i++) {        /* CW */
+      for (j=h-1, pix=pic+(h-1)*w + i; j>=0; j--, pix1++, pix-=w) {
 	*pix1 = *pix;
+      }
+    }
   }
   else {
-    for (i=w-1; i>=0; i--)     /* CCW */
-      for (j=0, pix=pic+i; j < (int)h; j++, pix1++, pix+=w) 
+    for (i=w-1; i>=0; i--) {     /* CCW */
+      for (j=0, pix=pic+i; j < (int)h; j++, pix1++, pix+=w) {
 	*pix1 = *pix;
+      }
+    }
   }
 
 
@@ -592,7 +626,7 @@ void wxImage::RotatePic(byte *pic, unsigned int *wp, unsigned int *hp, int dir)
   /* swap w and h */
   *wp = h;  *hp = w;
 }
-
+#endif
   
 
 /************************/
@@ -643,7 +677,9 @@ void wxImage::FloydDitherize1(XImage * /* ximage */)
   
   /* copy r[epic] into dithpic so that we can run the algorithm */
   pp = epic;  dp = dithpic;
-  for (i=eHIGH * eWIDE; i>0; i--) *dp++ = fsgamcr[r[*pp++]];
+  for (i=eHIGH * eWIDE; i>0; i--) {
+    *dp++ = fsgamcr[r[*pp++]];
+  }
 
   dp = dithpic;
   pp = image;
@@ -727,8 +763,9 @@ void wxImage::FSDither(byte *inpic, int w, int h, byte *outpic)
 
   /* first thing to do is build rgb[], which will hold the B/W intensity
      of the colors in the r,g,b arrays */
-  for (i=0; i<256; i++)
+  for (i=0; i<256; i++) {
     rgb[i] = MONO(r[i], g[i], b[i]);
+  }
 
 
   dithpic = (short *) malloc(w*h * sizeof(short));
@@ -738,7 +775,9 @@ void wxImage::FSDither(byte *inpic, int w, int h, byte *outpic)
 
   /* copy rgb[inpic] into dithpic so that we can run the algorithm */
   pp = inpic;  dp = dithpic;
-  for (i=w*h; i>0; i--) *dp++ = fsgamcr[rgb[*pp++]];
+  for (i=w*h; i>0; i--) {
+    *dp++ = fsgamcr[rgb[*pp++]];
+  }
 
   dp = dithpic;  pp = outpic;
   for (i=0; i<h; i++) {
@@ -871,11 +910,12 @@ void wxImage::CreateXImage()
 	FloydDitherize8(dith);
 
 	if (theImage->bits_per_pixel == 4) {
-	  for (i=0, pp=dith, lip=imagedata; i < (int)eHIGH; i++, lip+=bperline)
+	  for (i=0, pp=dith, lip=imagedata; i < (int)eHIGH; i++, lip+=bperline) {
 	    for (j=0, ip=lip, half=0; j < (int)eWIDE; j++,pp++,half++) {
 	      if (half&1) { *ip = *ip + ((*pp&0x0f)<<4);  ip++; }
 	      else *ip = *pp&0x0f;
 	    }
+	  }
 	}
 	else if (theImage->bits_per_pixel == 8)
 	  memcpy(imagedata, dith, eWIDE*eHIGH);
@@ -952,32 +992,39 @@ void wxImage::CreateXImage()
 
   theImage = XCreateImage(theDisp, theVisual, dispDEEP, ZPixmap, 0,
 			  NULL, eWIDE, eHIGH, 8, 0);
-  theImage->data = (char *)malloc(eHIGH * theImage->bytes_per_line);
-  
-  byte *pp = epic;
-  int i, j;
-  unsigned long white = WhitePixelOfScreen(DefaultScreenOfDisplay(theDisp));
-  
-  for (j = 0; j < (int)eHIGH; j++) {
-    for (i = 0; i < (int)eWIDE; i++, pp++) {
-      unsigned long pixel;
-      if (numcols)
-	pixel = cols[*pp];
-      else {
-	XColor c;
+  {
+    char *data;
+    data = (char *)malloc(eHIGH * theImage->bytes_per_line);
+    theImage->data = data;
+  }
 
-	c.red   = (*pp++)<<8;
-	c.green = (*pp++)<<8;
-	c.blue  = (*pp)<<8;
-	c.flags = DoRed | DoGreen | DoBlue;
+  {
+    byte *pp = epic;
+    int i, j;
+    unsigned long wite;
+    wite = WhitePixelOfScreen(DefaultScreenOfDisplay(theDisp));
+    
+    for (j = 0; j < (int)eHIGH; j++) {
+      for (i = 0; i < (int)eWIDE; i++, pp++) {
+	unsigned long pixel;
+	if (numcols)
+	  pixel = cols[*pp];
+	else {
+	  XColor c;
+
+	  c.red   = (*pp++)<<8;
+	  c.green = (*pp++)<<8;
+	  c.blue  = (*pp)<<8;
+	  c.flags = DoRed | DoGreen | DoBlue;
 	
-	if (wxAllocColor(theDisp, theCmap, &c))
-	  pixel = c.pixel;
-	else
-	  pixel = white;
-      }
+	  if (wxAllocColor(theDisp, theCmap, &c))
+	    pixel = c.pixel;
+	  else
+	    pixel = wite;
+	}
 
-      XPutPixel(theImage, i, j, pixel);
+	XPutPixel(theImage, i, j, pixel);
+      }
     }
   }
 }
@@ -1018,5 +1065,7 @@ void xvDestroyImage(XImage *image)
 
 void xvbzero(char *s, int len)
 {
-  for ( ; len>0; len--) *s++ = 0;
+  for ( ; len>0; len--) {
+    *s++ = 0;
+  }
 }

@@ -1,5 +1,8 @@
 Version 204
 
+Method and property invocation use COM direct 
+ interfaces when possible, instead of 
+ IDispatch::Invoke()
 Methods and properties in inherited COM classes 
  now reported by com-methods, com-get-properties,
  com-set-properties, and used properly by com-invoke,

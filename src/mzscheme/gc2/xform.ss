@@ -37,20 +37,14 @@
 ;;   e means a list of tokens, often ending in a '|;| token
 ;;   -e means a reversed list of tokens
 
-;; Simplifies build (no need to install non-3m first):
-(use-compiled-file-paths null)
+;; Setup an xform-collects tree for running xform.
+;; Delete existing xform-collects tree if it's for an old version
+(unless (and (file-exists? "xform-collects/version.ss")
+	     (equal? (version)
+		     (with-input-from-file "xform-collects/version.ss" read)))
+  (load-relative "setup.ss"))
 
-;; Make sure we can find MzLib:
-(unless (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
-	  (collection-path "mzlib"))
-  (let ([p (build-path (current-load-relative-directory)
-		       'up
-		       'up
-		       'up
-		       "collects")])
-    (printf "Setting collection path: ~s~n" p)
-    (current-library-collection-paths 
-     (list p))))
+(current-library-collection-paths (list (build-path (current-directory) "xform-collects")))
 
 (error-print-width 100)
 

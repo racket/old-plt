@@ -3737,6 +3737,8 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   
   pIUnknown->QueryInterface(IID_IDHTMLPage,(void **)&pIDHTMLPage);
   
+  pIUnknown->Release();
+
   if (pIDHTMLPage == NULL) {
     scheme_signal_error("Can't get document interface");
   }
@@ -3759,6 +3761,8 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   pIStream = NULL;
   pIDHTMLPage->marshalEventQueueToStream(&pIStream);
   
+  pIDHTMLPage->Release();
+
   if (pIStream == NULL) {
     scheme_signal_error("Can't get stream for event queue");
   }
@@ -3803,9 +3807,6 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   }
   
   pIEventQueue->set_extension_table((int)scheme_extension_table); 
-  
-  pIHTMLDocument2->AddRef();
-  pIEventQueue->AddRef();
 
   doc->pIHTMLDocument2 = pIHTMLDocument2;
   doc->pIEventQueue = pIEventQueue;

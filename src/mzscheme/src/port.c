@@ -23,9 +23,9 @@
 
 /* This file implements the most platform-specific aspects of MzScheme
    port types, which means it deals with all the messy FILE and fie
-   descriptor issues, as well as implementing TCP. Also,
-   system/process/execute are implemented here, since much of the work
-   has to do with ports. */
+   descriptor issues, as well as implementing TCP. Also, `subprocess'
+   is implemented here, since much of the work has to do with
+   ports. */
 
 #include "schpriv.h"
 #ifdef UNISTD_INCLUDE
@@ -471,7 +471,7 @@ scheme_init_port (Scheme_Env *env)
 			     scheme_make_prim_w_arity2(subprocess, 
 						       "subprocess", 
 						       4, -1,
-						       5, 5), 
+						       4, 4), 
 			     env);
   scheme_add_global_constant("subprocess-status", 
 			     scheme_make_prim_w_arity(subprocess_status, 

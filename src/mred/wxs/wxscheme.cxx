@@ -82,7 +82,7 @@ static void wxScheme_Install(Scheme_Env *global_env);
 
 static Scheme_Object *setup_file_symbol, *init_file_symbol;
 
-static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box, *execute;
+static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box, *find_exe, *execute;
 
 static Scheme_Object *make_media_edit, *make_media_pasteboard, *make_media_snip, *none_symbol;
 
@@ -99,8 +99,10 @@ void wxsScheme_setup(Scheme_Env *env)
   wxREGGLOB(get_ps_setup_from_user);
   wxREGGLOB(message_box);
   wxREGGLOB(execute);
+  wxREGGLOB(find_exe);
 
-  execute = scheme_lookup_global(scheme_intern_symbol("process"), env);
+  find_exe = scheme_lookup_global(scheme_intern_symbol("find-executable-path"), env);
+  execute = scheme_lookup_global(scheme_intern_symbol("subprocess"), env);
 
   env = scheme_primitive_module(scheme_intern_symbol("#%mred-kernel"), env);
 
@@ -1625,27 +1627,42 @@ int wxsGetImageType(char *fn)
 void wxsExecute(char **argv)
 {
   int i, c;
-  Scheme_Object *a[1], *s, *p;
+  Scheme_Object *b[2], *exe, **a, *in, *out, *err;
+
+  b[0] = scheme_make_string(argv[0]);
+  b[1] = scheme_false;
+  
+  exe = scheme_apply_multi(find_exe, 2, b);
+  if (SCHEME_FALSEP(exe))
+    return;
 
   for (i = 0; argv[i]; i++) {
   }
 
   c = i;
 
-  s = scheme_make_string("");
-  for (i = 0; i < c; i++) {
-    s = scheme_append_string(s, scheme_make_string(argv[i]));
-    s = scheme_append_string(s, scheme_make_string(" "));
+  a = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * (c + 3));
+
+  for (i = 1; i < c; i++) {
+    a[i + 3] = scheme_make_string(argv[i]);
   }
 
-  a[0] = s;
-  p = scheme_apply(execute, 1, a);
+  a[0] = scheme_false;
+  a[1] = scheme_false;
+  a[2] = scheme_false;
+  a[3] = exe;
+
+  (void *)scheme_apply_multi(execute, c + 3, a);
+
+  /* Multiple-value-return. */
+  in = scheme_multiple_array[1];
+  out = scheme_multiple_array[2];
+  err = scheme_multiple_array[3];
 
   /* Close all the ports */
-  scheme_close_input_port(SCHEME_CAR(p));
-  scheme_close_output_port(SCHEME_CADR(p));
-  p = SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(p)));
-  scheme_close_input_port(SCHEME_CAR(p));
+  scheme_close_input_port(in);
+  scheme_close_output_port(out);
+  scheme_close_input_port(err);
 }
 
 static void wxScheme_Install(Scheme_Env *global_env)

@@ -366,12 +366,10 @@ static int check_cycles(Scheme_Object *obj, Scheme_Process *p, Scheme_Hash_Table
       return 1;
   } else if (SCHEME_VECTORP(obj)) {
     int i, len;
-    Scheme_Object **array;
 
     len = SCHEME_VEC_SIZE(obj);
-    array = SCHEME_VEC_ELS(obj);
     for (i = 0; i < len; i++) {
-      if (check_cycles(array[i], p, ht)) {
+      if (check_cycles(SCHEME_VEC_ELS(obj)[i], p, ht)) {
 	return 1;
       }
     }
@@ -427,13 +425,11 @@ static int check_cycles_fast(Scheme_Object *obj, Scheme_Process *p)
     obj->type = t;
   } else if (SCHEME_VECTORP(obj)) {
     int i, len;
-    Scheme_Object **array;
 
     obj->type = -t;
     len = SCHEME_VEC_SIZE(obj);
-    array = SCHEME_VEC_ELS(obj);
     for (i = 0; i < len; i++) {
-      cycle = check_cycles_fast(array[i], p);
+      cycle = check_cycles_fast(SCHEME_VEC_ELS(obj)[i], p);
       if (cycle)
 	break;
     }
@@ -485,12 +481,10 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
     setup_graph_table(SCHEME_BOX_VAL(obj), ht, counter, p);
   } else if (SCHEME_VECTORP(obj)) {
     int i, len;
-    Scheme_Object **array;
 
     len = SCHEME_VEC_SIZE(obj);
-    array = SCHEME_VEC_ELS(obj);
     for (i = 0; i < len; i++) {
-      setup_graph_table(array[i], ht, counter, p);
+      setup_graph_table(SCHEME_VEC_ELS(obj)[i], ht, counter, p);
     }
   } else if (p->quick_print_struct 
 	   && SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)) {
@@ -1451,14 +1445,16 @@ print_vector(Scheme_Object *vec, int escaped, int compact,
   Scheme_Object **elems;
 
   size = SCHEME_VEC_SIZE(vec);
-  elems = SCHEME_VEC_ELS(vec);
 
   if (compact) {
     if (vht) {
+      elems = SCHEME_VEC_ELS(vec);
       for (i = size; i--; ) {
 	if (!SCHEME_INTP(elems[i]) && !SCHEME_SYMBOLP(elems[i]))
 	  break;
       }
+      elems = NULL; /* Precise GC: because VEC_ELS is not aligned */
+
       if (i < 0) {
 	/* It's a symbol vector */
 	Scheme_Object *o;
@@ -1481,10 +1477,12 @@ print_vector(Scheme_Object *vec, int escaped, int compact,
     print_compact(p, CPT_VECTOR);
     print_compact_number(p, size);
   } else {
+    elems = SCHEME_VEC_ELS(vec);
     for (i = size; i--; common++) {
       if (!i || (elems[i] != elems[i - 1]))
 	break;
     }
+    elems = NULL; /* Precise GC: because VEC_ELS is not aligned */
     
     if (escaped && p->quick_print_vec_shorthand) {
       char buffer[100];
@@ -1496,7 +1494,7 @@ print_vector(Scheme_Object *vec, int escaped, int compact,
   }
 
   for (i = 0; i < size; i++) {
-    no_space_ok = print(elems[i], escaped, compact, ht, vht, p);
+    no_space_ok = print(SCHEME_VEC_ELS(vec)[i], escaped, compact, ht, vht, p);
     if (i < (size - 1))
       if (!compact)
 	print_this_string(p, " ", 1);

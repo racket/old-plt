@@ -158,7 +158,7 @@ vector (int argc, Scheme_Object *argv[])
   int i;
 
   vec = scheme_make_vector (argc, 0);
-  for ( i=0 ; i<argc ; ++i ) {
+  for (i = 0; i < argc ; i++) {
     SCHEME_VEC_ELS(vec)[i] = argv[i];
   }
 
@@ -256,7 +256,7 @@ scheme_vector_to_list (Scheme_Object *vec)
   len = SCHEME_VEC_SIZE (vec);
   first = last = scheme_null;
   for (i = 0; i < len ; i++) {
-    pair = scheme_make_pair (SCHEME_VEC_ELS(vec)[i], scheme_null);
+    pair = scheme_make_pair(SCHEME_VEC_ELS(vec)[i], scheme_null);
     if (SCHEME_NULLP(first))
       first = last = pair;
     else {
@@ -292,7 +292,7 @@ scheme_list_to_vector (Scheme_Object *list)
   vec = scheme_make_vector (len, 0);
   i = 0;
   while (SCHEME_PAIRP(list)) {
-    SCHEME_VEC_ELS(vec)[i] = SCHEME_CAR (list);
+    SCHEME_VEC_ELS(vec)[i] = SCHEME_CAR(list);
     i++;
     list = SCHEME_CDR (list);
   }
@@ -308,7 +308,7 @@ vector_fill (int argc, Scheme_Object *argv[])
   if (!SCHEME_VECTORP(argv[0]))
     scheme_wrong_type("vector-fill!", "vector", 0, argc, argv);
 
-  for ( i=0 ; i<SCHEME_VEC_SIZE (argv[0]) ; ++i ) {
+  for (i = 0; i < SCHEME_VEC_SIZE(argv[0]) ; i++) {
     SCHEME_VEC_ELS(argv[0])[i] = argv[1];
   }
 

@@ -230,7 +230,7 @@ void set_copy(void *s_c, void *c)
 # define GC_VAR_STACK_ARG      /* empty */
 #endif
 
-static void copy_stack(Scheme_Jumpup_Buf *b, void *start GC_VAR_STACK_ARG_DECL)
+static void copy_stack(Scheme_Jumpup_Buf *b, void *base, void *start GC_VAR_STACK_ARG_DECL)
 {
   long size;
   void *here;
@@ -256,7 +256,16 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start GC_VAR_STACK_ARG_DECL)
     b->stack_copy = copy;
     set_copy(b->stack_copy, MALLOC_STACK(size));
 #else
+    /* b is a pointer into the middle of `base'; bad for precise gc: */
+    unsigned long diff;
+    diff = (unsigned long)b - (unsigned long)base;
+    b = NULL;
+
     copy = MALLOC_STACK(size);
+
+    /* Restore b: */
+    b = (Scheme_Jumpup_Buf *)(base + diff);
+
     set_copy(b->stack_copy, copy);
 #endif
     b->stack_max_size = size;
@@ -330,8 +339,8 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
   scheme_longjmp(b->buf, 1);
 }
 
-int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void * volatile start, 
-			     Scheme_Jumpup_Buf *c)
+int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *base,
+			     void * volatile start, Scheme_Jumpup_Buf *c)
 {
   int local;
 
@@ -350,7 +359,7 @@ int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void * volatile start,
       }
     } else
       b->cont = NULL;
-    copy_stack(b, start GC_VAR_STACK_ARG);
+    copy_stack(b, base, start GC_VAR_STACK_ARG);
     return 0;
   }
 

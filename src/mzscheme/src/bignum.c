@@ -28,6 +28,9 @@
            Princeton University, Dept. of Computer Science
 */
 
+/* Precise GC warning: SCHEME_BIGDIG() can return an interior pointer,
+   if the bignum is a Small_Bignum */
+
 #include "schpriv.h"
 #include <ctype.h>
 #include <math.h>
@@ -383,13 +386,34 @@ static Scheme_Object *bignum_add(Scheme_Object *o, bigdig **buffer, int *size,
   /* Because bignum calculations are not bounded: */
   SCHEME_USE_FUEL(2 * al);
 
-  aa = SCHEME_BIGDIG(a);
-  ba = SCHEME_BIGDIG(b);
-  
   same = (ap == bp);
 
   vl = ((al > bl) ? al : bl);
+
+  if (same)
+    vl++;
  
+  if (buffer) {
+    if (*size < vl) {
+      bigdig *bufa;
+      *size = 2 * vl;
+      bufa = (bigdig *)scheme_malloc_atomic(*size * sizeof(bigdig));
+      *buffer = bufa;
+    }
+    va = *buffer;
+  } else
+    va = (bigdig *)scheme_malloc_atomic(vl * sizeof(bigdig));
+
+  if (!o) {
+    o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+    o->type = scheme_bignum_type;
+  }
+
+  /* All allocation is done... can get aa and ba: */
+
+  aa = SCHEME_BIGDIG(a);
+  ba = SCHEME_BIGDIG(b);
+  
   if (!same) {
     int reverse, sl, sp;
     bigdig *sa;
@@ -416,20 +440,8 @@ static Scheme_Object *bignum_add(Scheme_Object *o, bigdig **buffer, int *size,
       ap = bp;
       bp = sp;
     }
-  } else
-    vl++;
+  }
     
-  if (buffer) {
-    if (*size < vl) {
-      bigdig *bufa;
-      *size = 2 * vl;
-      bufa = (bigdig *)scheme_malloc_atomic(*size * sizeof(bigdig));
-      *buffer = bufa;
-    }
-    va = *buffer;
-  } else
-    va = (bigdig *)scheme_malloc_atomic(vl * sizeof(bigdig));
-  
   carry = 0;
   for (i = 0; i < vl; i++) {
     av = (i >= al) ? 0 : aa[i];
@@ -460,10 +472,6 @@ static Scheme_Object *bignum_add(Scheme_Object *o, bigdig **buffer, int *size,
 
   vp = ap;
   
-  if (!o) {
-    o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
-    o->type = scheme_bignum_type;
-  }
   SCHEME_BIGPOS(o) = vp;
   SCHEME_BIGLEN(o) = vl;
   SCHEME_BIGDIG(o) = va;
@@ -526,7 +534,10 @@ static void bignum_double_inplace(Scheme_Object *n, int bs)
   if (carry) {
     if (bs < nl + 1) {
       /* expand */
+      na = NULL; /* Might be a pointer into the middle of a small bignum */
       naya = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) * (nl + 1));
+      na = SCHEME_BIGDIG(n);
+
       for (i = 0; i < nl; i++) {
 	naya[i] = na[i];
       }
@@ -590,14 +601,15 @@ static Scheme_Object *bignum_multiply(Small_Bignum *rsmall,
     al = sl;
   }
 
-  aa = SCHEME_BIGDIG(a);
   ba = SCHEME_BIGDIG(b);
 
   if ((bl == 1) && (ba[0] < BIG_LO_HALF)) {
     /* Fast simplified version */
     unsigned long m = ba[0];
 
+    ba = NULL;
     SCHEME_USE_FUEL(al);
+    aa = SCHEME_BIGDIG(a);
 
     carry = 0;
     for (i = 0; i < al; i++) {
@@ -625,7 +637,11 @@ static Scheme_Object *bignum_multiply(Small_Bignum *rsmall,
     memset(buffer, 0, size * sizeof(bigdig));
 
     for (i = 0; i < bl; i++) {
+      aa = ba = NULL;
       SCHEME_USE_FUEL(al);
+      aa = SCHEME_BIGDIG(a);
+      ba = SCHEME_BIGDIG(b);
+
       carry = 0;
       for (k = 0; k < al; k++) {
 	long a, b, loa, lob, hia, hib;
@@ -688,18 +704,16 @@ Scheme_Object *scheme_bignum_power(const Scheme_Object *a, const Scheme_Object *
   Small_Bignum s1, s2;
   Scheme_Object *r;
   int bl, i, toggle = 0;
-  bigdig *ba, v;
+  bigdig v;
 
   if (!SCHEME_BIGPOS(b)) {
     scheme_signal_error("positive bignum powers only");
   }
   bl = SCHEME_BIGLEN(b);
-  ba = SCHEME_BIGDIG(b);
-  ba += bl;
 
   r = scheme_make_small_bignum(1, &s1);
   while (bl--) {
-    v = *(--ba);
+    v = SCHEME_BIGDIG(b)[bl];
 
     for (i = 0; i < LOG_BIG_RADIX; i++) {
       r = bignum_multiply(toggle ? &s1 : &s2, r, r, 0);
@@ -793,6 +807,8 @@ static int setup_binop(const Scheme_Object *a, const Scheme_Object *b,
   *nr_out = no;
 
   if (bneg) {
+    no = na = NULL;
+
     b = bignum_copy(b, 1);
 
     no = SCHEME_BIGDIG(b);
@@ -947,7 +963,6 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
   Scheme_Object *r;
   int subone = 0;
 
-  na = SCHEME_BIGDIG(n);
   nl = SCHEME_BIGLEN(n);
 
   if (shift < 0) {
@@ -968,6 +983,8 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
     rl = nl - offset;
     ra = MALLOC_N_ATOMIC(bigdig, rl);
     
+    na = SCHEME_BIGDIG(n);
+
     for (i = rl - 1; i--; ) {
       ra[i] = (na[i + offset] >> loshift) | ((na[i + offset + 1] << hishift) & BIG_MAX);
     }
@@ -994,6 +1011,8 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
     rl = nl + offset + 1;
     ra = MALLOC_N_ATOMIC(bigdig, rl);
     
+    na = SCHEME_BIGDIG(n);
+
     top = rl - 1;
     for (i = 0; i < offset; i++) {
       ra[i] = 0;
@@ -1008,6 +1027,8 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
   while (rl && !ra[rl - 1]) {
     --rl;
   }
+
+  na = NULL; /* might be pointer to interior of a small bignum */
 
   r = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
   r->type = scheme_bignum_type;
@@ -1030,10 +1051,11 @@ bignum_small_divide_in_place(Scheme_Object *n, bigdig d, bigdig *rp)
   bigdig *na;
 
   nl = SCHEME_BIGLEN(n);
-  na = SCHEME_BIGDIG(n);
 
   /* Because bignum calculations are not bounded: */
   SCHEME_USE_FUEL(nl);
+
+  na = SCHEME_BIGDIG(n);
 
   carry = 0;
   for (i = nl; i--; ) {
@@ -1135,7 +1157,6 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
   }
 
   bl = SCHEME_BIGLEN(b);
-  ba = SCHEME_BIGDIG(b);
 
   size = (bl * ((LOG_BIG_RADIX + step) / step)) + 2;
   n = (char *)scheme_malloc_atomic(size);
@@ -1143,6 +1164,8 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
 
   needed = step;
   dig = 0;
+
+  ba = SCHEME_BIGDIG(b);
 
   while (bl--) {
     v = *(ba++);
@@ -1186,12 +1209,12 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
   return n;
 }
 
-Scheme_Object *scheme_read_bignum(const char *str, int radix)
+Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
 {
   Small_Bignum s1, s2;
   Scheme_Object *r;
   int size = 0, read_valid;
-  int len, i, d, negate, stri = 0;
+  int len, i, d, negate, stri;
   bigdig *buffer;
 
   if ((radix < 0) || (radix > 16))
@@ -1205,8 +1228,8 @@ Scheme_Object *scheme_read_bignum(const char *str, int radix)
   }
 
   negate = 0;
-  /* Why would we skip spaces? */
-  while (/* isspace(str[stri]) || */ (str[stri] == '+') || (str[stri] == '-')) {
+  stri = offset;
+  while ((str[stri] == '+') || (str[stri] == '-')) {
     if (str[stri] == '-')
       negate = !negate;
     stri++;

@@ -121,6 +121,7 @@ typedef struct Scheme_Full_Comp_Env {
 } Scheme_Full_Comp_Env;
 static void init_compile_data(Scheme_Comp_Env *env);
 
+/* Precise GC WARNING: this macro produces unaligned pointers: */
 #define COMPILE_DATA(e) (&((Scheme_Full_Comp_Env *)e)->data)
 
 #ifdef MZ_REAL_THREADS
@@ -896,12 +897,13 @@ static void init_compile_data(Scheme_Comp_Env *env)
   Compile_Data *data;
   int i, c, *use;
 
+  c = env->num_bindings;
+  use = MALLOC_N_ATOMIC(int, c);
+
   data = COMPILE_DATA(env);
 
   data->stat_dists = NULL;
   data->sd_depths = NULL;
-  c = env->num_bindings;
-  use = MALLOC_N_ATOMIC(int, c);
   data->use = use;
   for (i = 0; i < c; i++) {
     use[i] = 0;
@@ -983,7 +985,6 @@ scheme_add_compilation_binding(int index, Scheme_Object *val, Scheme_Comp_Env *f
 void scheme_push_constant(Scheme_Object *name, Scheme_Object *val,
 			  Scheme_Comp_Env *env)
 {
-  Compile_Data *data = COMPILE_DATA(env);
   Constant_Binding *b;
   
   b = MALLOC_ONE_RT(Constant_Binding);
@@ -991,12 +992,12 @@ void scheme_push_constant(Scheme_Object *name, Scheme_Object *val,
   b->type = scheme_rt_constant_binding;
 #endif
 
-  b->next = data->constants;
+  b->next = COMPILE_DATA(env)->constants;
   b->name = name;
   b->val = val;
   b->before = env->num_bindings;
 
-  data->constants = b;
+  COMPILE_DATA(env)->constants = b;
 }
 
 void scheme_pop_constant(Scheme_Comp_Env *env)
@@ -1079,29 +1080,29 @@ Scheme_Object *scheme_make_local(Scheme_Type type, int pos)
   return alloc_local(type, pos);
 }
 
-static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame, Compile_Data *data,
+static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame,
 				   int i, int j, int p, int flags)
 {
-  data->use[i] |= (((flags & (SCHEME_APP_POS | SCHEME_SETTING))
-		    ? CONSTRAINED_USE
-		    : ARBITRARY_USE)
-		   | ((flags & (SCHEME_SETTING | SCHEME_LINKING_REF))
-		      ? WAS_SET_BANGED
-		      : 0));
+  COMPILE_DATA(frame)->use[i] |= (((flags & (SCHEME_APP_POS | SCHEME_SETTING))
+				   ? CONSTRAINED_USE
+				   : ARBITRARY_USE)
+				  | ((flags & (SCHEME_SETTING | SCHEME_LINKING_REF))
+				     ? WAS_SET_BANGED
+				     : 0));
   
-  if (!data->stat_dists) {
+  if (!COMPILE_DATA(frame)->stat_dists) {
     int k, *ia;
     char **ca;
     ca = MALLOC_N(char*, frame->num_bindings);
-    data->stat_dists = ca;
+    COMPILE_DATA(frame)->stat_dists = ca;
     ia = MALLOC_N_ATOMIC(int, frame->num_bindings);
-    data->sd_depths = ia;
+    COMPILE_DATA(frame)->sd_depths = ia;
     for (k = frame->num_bindings; k--; ) {
-      data->sd_depths[k] = 0;
+      COMPILE_DATA(frame)->sd_depths[k] = 0;
     }
   }
   
-  if (data->sd_depths[i] <= j) {
+  if (COMPILE_DATA(frame)->sd_depths[i] <= j) {
     char *naya, *a;
     int k;
     
@@ -1109,16 +1110,16 @@ static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame, Compile_Data *data,
     for (k = j + 1; k--; ) {
       naya[k] = 0;
     }
-    a = data->stat_dists[i];
-    for (k = data->sd_depths[i]; k--; ) {
+    a = COMPILE_DATA(frame)->stat_dists[i];
+    for (k = COMPILE_DATA(frame)->sd_depths[i]; k--; ) {
       naya[k] = a[k];
     }
     
-    data->stat_dists[i] = naya;
-    data->sd_depths[i] = j + 1;
+    COMPILE_DATA(frame)->stat_dists[i] = naya;
+    COMPILE_DATA(frame)->sd_depths[i] = j + 1;
   }
 
-  data->stat_dists[i][j] = 1;
+  COMPILE_DATA(frame)->stat_dists[i][j] = 1;
 
   return (Scheme_Local *)scheme_make_local(scheme_local_type, p + i);
 }
@@ -1135,8 +1136,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   frame = env;
   for (frame = env; frame->next != NULL; frame = frame->next) {
     int i;
-    Compile_Data *data = COMPILE_DATA(frame);
-    Constant_Binding *c = data->constants;
+    Constant_Binding *c = COMPILE_DATA(frame)->constants;
     
     if (frame->flags & SCHEME_LAMBDA_FRAME)
       j++;
@@ -1151,14 +1151,14 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
       }
 
       if (SAME_OBJ(symbol, frame->values[i])) {
-	if ((flags & SCHEME_SETTING) && (data->use[i] & NOT_SETTABLE))
+	if ((flags & SCHEME_SETTING) && (COMPILE_DATA(frame)->use[i] & NOT_SETTABLE))
 	  scheme_wrong_syntax("set!", NULL, symbol,
 			      "imported/inherited variable cannot be mutated");
 
 	if (flags & SCHEME_DONT_MARK_USE)
 	  return scheme_make_local(scheme_local_type, 0);
 	else
-	  return (Scheme_Object *)get_frame_loc(frame, data, i, j, p, flags);
+	  return (Scheme_Object *)get_frame_loc(frame, i, j, p, flags);
       }
     }
 
@@ -1230,6 +1230,8 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_ma
     }
   }
 
+  data = NULL; /* Clear unaligned pointer */
+
   size = pos;
   *_size = size;
   map = MALLOC_N_ATOMIC(short, size);
@@ -1263,11 +1265,10 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_ma
 
 int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count)
 {
-  Compile_Data *data = COMPILE_DATA(frame);
   int *v, i;
   
   v = MALLOC_N_ATOMIC(int, count);
-  memcpy(v, data->use + start, sizeof(int) * count);
+  memcpy(v, COMPILE_DATA(frame)->use + start, sizeof(int) * count);
 
   for (i = count; i--; ) {
     int old;

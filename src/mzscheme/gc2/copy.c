@@ -329,6 +329,7 @@ typedef struct GC_Weak_Box {
   void *val;
   /* The rest is up to us: */
   void **secondary_erase;
+  int soffset;
   struct GC_Weak_Box *next;
 } GC_Weak_Box;
 
@@ -358,7 +359,7 @@ static int fixup_weak_box(void *p)
   return gcBYTES_TO_WORDS(sizeof(GC_Weak_Box));
 }
 
-void *GC_malloc_weak_box(void *p, void **secondary)
+void *GC_malloc_weak_box(void *p, void **secondary, int soffset)
 {
   GC_Weak_Box *w;
 
@@ -376,6 +377,7 @@ void *GC_malloc_weak_box(void *p, void **secondary)
   w->type = weak_box_tag;
   w->val = p;
   w->secondary_erase = secondary;
+  w->soffset = soffset;
 
   return w;
 }
@@ -619,6 +621,41 @@ void *find_start(void *p)
     return p;
 }
 
+#ifdef SAFETY
+static void middle(unsigned long p, long delta, unsigned long where)
+{
+  fprintf(stderr, "Middle!: 0x%lx d: %ld at 0x%lx\n", p, delta, where);
+}
+
+static void check_interior_pointer(void **pp)
+{
+  void *p = *pp;
+
+  if (!((long)p & 0x1)
+      && (p >= GC_alloc_space)
+      && (p <= GC_alloc_top)) {
+    long diff = ((char *)p - (char *)GC_alloc_space) >> 2;
+    
+    if (((long)p & 0x3) || !(alloc_bitmap[diff >> 3] & (1 << (diff & 0x7)))) {
+      long diff1 = ((char *)p - (char *)GC_alloc_space);
+      
+      while (!(alloc_bitmap[diff >> 3] & (1 << (diff & 0x7)))) {
+	diff--;
+      }
+      
+      diff <<= 2;
+      
+      if (((diff + (char *)GC_alloc_space) > (char *)tagged_high)
+	  && ((*(long *)(diff + (char *)GC_alloc_space - 4) & 0x20000000))) {
+	/* Middle is ok. */
+      } else {
+	middle((unsigned long)p, diff1 - diff, (unsigned long)pp);
+      }
+    }
+  }
+}
+#endif
+
 static void *mark(void *p)
 {
   long diff = ((char *)p - (char *)GC_alloc_space) >> 2;
@@ -637,14 +674,16 @@ static void *mark(void *p)
       
     diff <<= 2;
 
-    if (((diff + (char *)GC_alloc_space) > tagged_high)
+#ifdef SAFETY
+    if (((diff + (char *)GC_alloc_space) > (char *)tagged_high)
 	&& ((*(long *)(diff + (char *)GC_alloc_space - 4) & 0x20000000)
 	    || (!(*(long *)(diff + (char *)GC_alloc_space - 4))
 		&& (*(long **)(diff + (char *)GC_alloc_space))[-1] & 0x20000000))) {
       /* Middle is ok. */
     } else {
-      fprintf(stderr, "Middle!: %lx d: %ld\n", p, diff1 - diff);
+      middle((unsigned long)p, diff1 - diff, 0);
     }
+#endif
 
     return (void *)((char *)mark(diff + (char *)GC_alloc_space) + (diff1 - diff));
   } else {
@@ -784,9 +823,10 @@ void GC_mark_variable_stack(void **var_stack,
   /* Not used. */
 }
 
-void GC_fixup_variable_stack(void **var_stack,
+void GC_trace_variable_stack(void **var_stack,
 			     long delta,
-			     void *limit)
+			     void *limit,
+			     int just_check)
 {
   int stack_depth;
 
@@ -815,22 +855,30 @@ void GC_fixup_variable_stack(void **var_stack,
 	size -= 2;
 	a = (void **)((char *)a + delta);
 	while (count--) {
-	  gcFIXUP(*a);
+#ifdef SAFETY
+	  if (just_check) {
+	    check_interior_pointer(a);
+	  } else 
+#endif
+	    { gcFIXUP(*a); }
 	  a++;
 	}
       } else {
 	void **a = *p;
 	a = (void **)((char *)a + delta);
-	gcFIXUP(*a);
+#ifdef SAFETY
+	if (just_check) {
+	  check_interior_pointer(a);
+	} else
+#endif
+	  { gcFIXUP(*a); }
       }
       p++;
     }
 
-#if 0
-    if (*var_stack && ((unsigned long)*var_stack < (unsigned long)var_stack)) {
-      printf("bad %d\n", stack_depth);
+#if SAFETY
+    if (*var_stack && ((unsigned long)*var_stack <= (unsigned long)var_stack))
       *(int *)0x0 = 1;
-    }
 #endif
 
     var_stack = *var_stack;
@@ -838,10 +886,20 @@ void GC_fixup_variable_stack(void **var_stack,
   }
 }
 
+void GC_fixup_variable_stack(void **var_stack,
+			     long delta,
+			     void *limit)
+{
+  GC_trace_variable_stack(var_stack, delta, limit, 0);
+}
+
 #if SAFETY
 void check_variable_stack()
 {
   void **limit, **var_stack;
+
+  if (!alloc_bitmap)
+    return;
 
   limit = (void **)(GC_get_thread_stack_base
 		    ? GC_get_thread_stack_base()
@@ -849,15 +907,7 @@ void check_variable_stack()
 
   var_stack = GC_variable_stack;
 
-  while (var_stack) {
-    if (var_stack == limit)
-      return;
-
-    if (*var_stack && ((unsigned long)*var_stack <= (unsigned long)var_stack))
-      *(int *)0x0 = 1;
-
-    var_stack = *var_stack;
-  }
+  GC_trace_variable_stack(var_stack, 0, limit, 1);
 }
 #endif
 
@@ -951,81 +1001,6 @@ void gcollect(int needsize)
       abort();
     }
   }
-
-  /******************** Make bitmap image: ****************************/
-
-  {
-    alloc_bitmap = bitmap = (char *)malloc((alloc_size >> 5) + 1);
-    memset(bitmap, 0, (alloc_size >> 5) + 1);
-  }
-
-  p = (long *)untagged_low;
-  diff = (((char *)p - (char *)GC_alloc_space) + 4) >> 2;
-  top = (long *)GC_alloc_top;
-  while (p < top) {
-    long size;
-
-#if KEEP_FROM_PTR
-    diff++;
-    p++;
-#endif
-
-    size = (*p & 0x1FFFFFFF) + 1;
-
-    bitmap[diff >> 3] |= (1 << (diff & 0x7));
-
-    p += size;
-    diff += size;
-  }
-
-  p = ((long *)GC_alloc_space);
-  diff = ((char *)p - (char *)GC_alloc_space) >> 2;
-  while (p < (long *)tagged_high) {
-    Type_Tag tag;
-    long size;
-      
-#if KEEP_FROM_PTR
-    diff++;
-    p++;
-#endif
-    tag = *(Type_Tag *)p;
-
-#if ALIGN_DOUBLES
-    if (tag == SKIP) {
-      p++;
-      diff++;
-    } else {
-#endif
-      bitmap[diff >> 3] |= (1 << (diff & 0x7));
-
-#if SEARCH
-      if (cycle_count == detail_cycle)
-	printf("tag: %lx =  %d\n", (long)p, tag);
-#endif
-
-#if SAFETY
-      if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
-	fflush(NULL);
-	*(int *)0x0 = 1;
-      }
-      prev_ptr = p;
-      prev_var_stack = GC_variable_stack;
-#endif
-      size = size_table[tag](p);
-#if SAFETY
-      if (prev_var_stack != GC_variable_stack) {
-	*(int *)0x0 = 1;
-      }
-#endif
-      
-      p += size;
-      diff += size;
-#if ALIGN_DOUBLES
-    }
-#endif
-  }
-
-  PRINTTIME((STDERR, "gc: bitmap: %ld\n", GETTIMEREL()));
 
   /******************** Update Weak Offsets ****************************/
 
@@ -1363,7 +1338,7 @@ void gcollect(int needsize)
       if (v == wb->val) {
 	wb->val = NULL;
 	if (wb->secondary_erase) {
-	  *(wb->secondary_erase) = NULL;
+	  *(wb->secondary_erase + wb->soffset) = NULL;
 	  wb->secondary_erase = NULL;
 	}
       } else
@@ -1446,6 +1421,81 @@ void gcollect(int needsize)
     long *p = (long *)untagged_low;
     while (p-- > (long *)tagged_high)
       *p = 0;
+  }
+
+  PRINTTIME((STDERR, "gc: restored: %ld\n", GETTIMEREL()));
+
+  /******************** Make initial bitmap image: ****************************/
+
+  {
+    alloc_bitmap = bitmap = (char *)malloc((alloc_size >> 5) + 1);
+    memset(bitmap, 0, (alloc_size >> 5) + 1);
+  }
+
+  p = (long *)untagged_low;
+  diff = (((char *)p - (char *)GC_alloc_space) + 4) >> 2;
+  top = (long *)GC_alloc_top;
+  while (p < top) {
+    long size;
+
+#if KEEP_FROM_PTR
+    diff++;
+    p++;
+#endif
+
+    size = (*p & 0x1FFFFFFF) + 1;
+
+    bitmap[diff >> 3] |= (1 << (diff & 0x7));
+
+    p += size;
+    diff += size;
+  }
+
+  p = ((long *)GC_alloc_space);
+  diff = ((char *)p - (char *)GC_alloc_space) >> 2;
+  while (p < (long *)tagged_high) {
+    Type_Tag tag;
+    long size;
+      
+#if KEEP_FROM_PTR
+    diff++;
+    p++;
+#endif
+    tag = *(Type_Tag *)p;
+
+#if ALIGN_DOUBLES
+    if (tag == SKIP) {
+      p++;
+      diff++;
+    } else {
+#endif
+      bitmap[diff >> 3] |= (1 << (diff & 0x7));
+
+#if SEARCH
+      if (cycle_count == detail_cycle)
+	printf("tag: %lx =  %d\n", (long)p, tag);
+#endif
+
+#if SAFETY
+      if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
+	fflush(NULL);
+	*(int *)0x0 = 1;
+      }
+      prev_ptr = p;
+      prev_var_stack = GC_variable_stack;
+#endif
+      size = size_table[tag](p);
+#if SAFETY
+      if (prev_var_stack != GC_variable_stack) {
+	*(int *)0x0 = 1;
+      }
+#endif
+      
+      p += size;
+      diff += size;
+#if ALIGN_DOUBLES
+    }
+#endif
   }
 
   PRINTTIME((STDERR, "gc: done (t=%d, u=%d): %ld\n", 
@@ -1576,6 +1626,12 @@ static void *malloc_tagged(size_t size_in_bytes)
   }
 #endif
 
+  {
+    long diff = ((char *)m - (char *)GC_alloc_space) >> 2;
+
+    alloc_bitmap[diff >> 3] |= (1 << (diff & 0x7));
+  }
+
   return m;
 }
 
@@ -1659,6 +1715,12 @@ static void *malloc_untagged(size_t size_in_bytes, unsigned long nonatomic)
     stop();
   }
 #endif
+
+  {
+    long diff = ((char *)(naya + 1) - (char *)GC_alloc_space) >> 2;
+
+    alloc_bitmap[diff >> 3] |= (1 << (diff & 0x7));
+  }
 
   return naya + 1;
 }

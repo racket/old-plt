@@ -1849,7 +1849,12 @@
 				       ;; Add newly-created vars for lifting to declaration set
 				       (cons (append (prototype-type (cdr p-m))
 						     (list
-						      (make-tok new-var #f #f)
+						      (make-tok new-var #f #f))
+						     (if (prototype-for-pointer? p-m)
+							 (list (make-tok '= #f #f)
+							       (make-tok NULLED_OUT #f #f))
+							 null)
+						     (list
 						      (make-tok semi #f #f)))
 					     (live-var-info-new-vars live-vars))
 				       (live-var-info-pushed-vars live-vars)
@@ -2319,7 +2324,7 @@
        [else 
 	(when (and check-arith? (not memcpy?)
 		   (positive? (live-var-info-num-calls live-vars)))
-	  (when (and (memq (tok-n (car e-)) '(+ - ++ --))
+	  (when (and (memq (tok-n (car e-)) '(+ - ++ -- += -=))
 		     (let ([assignee (cdr e-)])
 		       ;; Special case: (YYY -> ivar) + ...;
 		       (let ([special-case-type (and (not (null? assignee))

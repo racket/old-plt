@@ -921,7 +921,7 @@ typedef void Scheme_Instance_Init_Proc(Scheme_Object **init_boxes,
 #define scheme_multiple_count (scheme_current_process->ku.multiple.count)
 #define scheme_multiple_array (scheme_current_process->ku.multiple.array)
 
-#define scheme_setjmpup(b, s) scheme_setjmpup_relative(b, s, NULL)
+#define scheme_setjmpup(b, base, s) scheme_setjmpup_relative(b, base, s, NULL)
 
 #ifdef MZ_REAL_THREADS
 #define scheme_do_eval(r,n,e,f) scheme_do_eval_w_process(r,n,e,f,scheme_current_process)

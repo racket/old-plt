@@ -1996,13 +1996,11 @@ begin0_execute(Scheme_Object *obj)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *v, **mv;
-  Scheme_Object **array;
-  int i, mc;
+  int i, mc, apos;
   
   i = ((Scheme_Sequence *)obj)->count;
-  array = ((Scheme_Sequence *)obj)->array;
 
-  v = _scheme_eval_compiled_expr_multi_wp(*(array++), p);
+  v = _scheme_eval_compiled_expr_multi_wp(((Scheme_Sequence *)obj)->array[0], p);
   i--;
   if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)) {
     mv = p->ku.multiple.array;
@@ -2012,8 +2010,9 @@ begin0_execute(Scheme_Object *obj)
     mc = 0; /* makes compilers happy */
   }
 
+  apos = 1;
   while (i--) {
-    (void)_scheme_eval_compiled_expr_multi_wp(*(array++), p);
+    (void)_scheme_eval_compiled_expr_multi_wp(((Scheme_Sequence *)obj)->array[apos++], p);
   }
 
   if (mv) {
@@ -2027,16 +2026,14 @@ begin0_execute(Scheme_Object *obj)
 static Scheme_Object *
 begin0_link (Scheme_Object *obj, Link_Info *info)
 {
-  Scheme_Object **array;
   int i;
   
   i = ((Scheme_Sequence *)obj)->count;
-  array = ((Scheme_Sequence *)obj)->array;
 
   while (i--) {
     Scheme_Object *le;
-    le = scheme_link_expr(array[i], info);
-    array[i] = le;
+    le = scheme_link_expr(((Scheme_Sequence *)obj)->array[i], info);
+    ((Scheme_Sequence *)obj)->array[i] = le;
   }
 
   return scheme_make_syntax_link(begin0_execute, obj);

@@ -721,22 +721,20 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
     SCHEME_BOX_VAL(obj) = rr;
   } else if (SCHEME_VECTORP(obj)) {
     int i, len;
-    Scheme_Object **array;
     Scheme_Object *prev_rr, *prev_v;
 
     prev_v = prev_rr = NULL;
     len = SCHEME_VEC_SIZE(obj);
-    array = SCHEME_VEC_ELS(obj);
     for (i = 0; i < len; i++) {
       Scheme_Object *rr;
-      if (array[i] == prev_v) {
+      if (SCHEME_VEC_ELS(obj)[i] == prev_v) {
 	rr = prev_rr;
       } else {
-	prev_v = array[i];
+	prev_v = SCHEME_VEC_ELS(obj)[i];
 	rr = resolve_references(prev_v, port, ht);
 	prev_rr = rr;
       }
-      array[i] = rr;
+      SCHEME_VEC_ELS(obj)[i] = rr;
     }
   }
 
@@ -998,7 +996,7 @@ read_vector (Scheme_Object *port, char closer,
       els[i] = obj;
     }
   }
-  return (vec);
+  return vec;
 }
 
 typedef int (*Getc_Fun)(Scheme_Object *port);
@@ -1493,19 +1491,11 @@ static Scheme_Object *read_compact(CPort *port,
 
 	len = read_compact_number(port);
 
-#if USE_BUFFERING_CPORT
-# ifdef MZ_PRECISE_GC
-	if (port->pos & 0x1) {
-	  /* Can't pass unaligned pointer to read_compact_chars */
-	  s = scheme_malloc_atomic(len);
-	  memcpy(s, port->start + port->pos, len);
-	} else
-# endif
-	  s = (char *)port->start + port->pos;
-
-	port->pos += len;
+#if defined(MZ_PRECISE_GC) || !defined(USE_BUFFERING_CPORT)
+	s = read_compact_chars(port, buffer, BLK_BUF_SIZE, len);
 #else
-	s = read_compact_chars(port, NULL, 0, len);
+	s = (char *)port->start + port->pos;
+	port->pos += len;
 #endif
 
 	ep = scheme_make_sized_string_input_port(s, len);
@@ -1569,17 +1559,16 @@ static Scheme_Object *read_compact(CPort *port,
       break;
     case CPT_VECTOR: 
       {
-	Scheme_Object *vec, **els;
+	Scheme_Object *vec;
 	int i;
 
 	l = read_compact_number(port);
 	vec = scheme_make_vector(l, NULL);
-	els = SCHEME_VEC_ELS(vec);
       
 	for (i = 0; i < l; i++) {
 	  Scheme_Object *cv;
 	  cv = read_compact(port, ht, 0 CURRENTPROCARG);
-	  els[i] = cv;
+	  SCHEME_VEC_ELS(vec)[i] = cv;
 	}
 
 	v = vec;

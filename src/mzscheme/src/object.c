@@ -2145,6 +2145,7 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
     /* Compiling: */
     Scheme_Compile_Info lam;
     Scheme_Compile_Info *recs;
+    short dcs, *dcm;
 
     data = MALLOC_ONE_TAGGED(Class_Data);
     data->type = scheme_class_data_type;
@@ -2197,7 +2198,9 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
 			   + data->num_ref
 			   + 2); /* this + super-init = 2 */
 
-    scheme_env_make_closure_map(firstenv, &data->closure_size, &data->closure_map);
+    scheme_env_make_closure_map(firstenv, &dcs, &dcm);
+    data->closure_size = dcs;
+    data->closure_map = dcm;
 
     return scheme_make_syntax_compile(DefineClass_Link, 
 				      (Scheme_Object *)data);

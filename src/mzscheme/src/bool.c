@@ -237,7 +237,6 @@ int scheme_equal (Scheme_Object *obj1, Scheme_Object *obj2)
 static int vector_equal(Scheme_Object *vec1, Scheme_Object *vec2)
 {
   int i, len;
-  Scheme_Object **vl1, **vl2;
 
   len = SCHEME_VEC_SIZE(vec1);
   if (len != SCHEME_VEC_SIZE(vec2))
@@ -245,11 +244,8 @@ static int vector_equal(Scheme_Object *vec1, Scheme_Object *vec2)
 
   SCHEME_USE_FUEL(len);
 
-  vl1 = SCHEME_VEC_ELS(vec1);
-  vl2 = SCHEME_VEC_ELS(vec2);  
-
   for (i = 0; i < len; i++) {
-    if (!scheme_equal(vl1[i], vl2[i]))
+    if (!scheme_equal(SCHEME_VEC_ELS(vec1)[i], SCHEME_VEC_ELS(vec2)[i]))
       return 0;
   }
 

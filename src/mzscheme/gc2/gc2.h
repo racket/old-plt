@@ -167,9 +167,9 @@ void GC_free(void *);
    Lets the collector optionally reverse an allocation immediately.
    [Generally a noop.] */
 
-void *GC_malloc_weak_box(void *p, void **secondary);
+void *GC_malloc_weak_box(void *p, void **secondary, int soffset);
 /* 
-   Allocate a weak box. A weak box must have the following initial
+   Allocate a weak box. A weak box will have the following initial
    structure:
 
      struct {
@@ -190,12 +190,14 @@ void *GC_malloc_weak_box(void *p, void **secondary);
    keep an object from being collected. However, if `val' can be
    moved, it must point to the beginning of the allocated object.
 
-   The `secondary' argument points to an auxilliary address (probably
-   in the middle of a collectable object) that should be zeroed
-   whenever `val' is zeroed. The memory referenced by `secondary' is
-   kept live as long as it isn't zeroed by its registration in the
-   weak box, but when the content of `secondary' is zeroed, the
-   `secondary' pointer itself should be dropped. */
+   If the `secondary' argument is not NULL, it points to an auxilliary
+   address that should be zeroed at whenever `val' is zeroed. To allow
+   zeroing in the interior of an allocated pointer, the zero-out
+   address is determined by `secondary + soffset'. The memory
+   referenced by `secondary' is kept live as long as it isn't zeroed
+   by its registration in the weak box, but when the content of
+   `secondary' is zeroed, the `secondary' pointer itself should be
+   dropped. */
 
 void *GC_weak_box_val(void *wb);
 void GC_set_weak_box_val(void *wb, void *v);

@@ -1318,7 +1318,7 @@ START_XFORM_ARITH;
    - regsub - perform substitutions after a regexp match
    */
 static 
-char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, unsigned long srcbase, char **startp, char **endp)
+char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, long iso, unsigned long srcbase, char **startp, char **endp)
 {
   char *dest;
   MZREGISTER char c;
@@ -1377,7 +1377,7 @@ char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, 
 	dest = (char *)scheme_malloc_atomic(destalloc + 1);
 	memcpy(dest, old, destlen);
       }
-      memcpy(dest + destlen, insrc + ((unsigned long)startp[no] - srcbase), len);
+      memcpy(dest + destlen, insrc + iso + ((unsigned long)startp[no] - srcbase), len);
       destlen += len;
     }
   }
@@ -1448,6 +1448,8 @@ static Scheme_Object *gen_compare(char *name, int pos,
   if (regexec(r, s, endset - offset, startp, endp)) {
     int i;
     Scheme_Object *l = scheme_null;
+
+    s = NULL; /* Cleart mis-aligned pointer */
 
     /* GC may happen now. But startp[*], endp[*], and srcbase are atomic */
 
@@ -1524,7 +1526,7 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
       
       /* GC may happen now. But startp[*], endp[*], and srcbase are atomic */
 
-      insert = regsub(r, SCHEME_STR_VAL(argv[2]), SCHEME_STRTAG_VAL(argv[2]), &len, source + srcoffset, srcbase, startp, endp);
+      insert = regsub(r, SCHEME_STR_VAL(argv[2]), SCHEME_STRTAG_VAL(argv[2]), &len, source, srcoffset, srcbase, startp, endp);
       
       end = SCHEME_STRTAG_VAL(argv[1]);
       

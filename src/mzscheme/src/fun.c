@@ -664,6 +664,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   Scheme_Comp_Env *frame;
   Closure_Info *cl;
   int i;
+  short dcs, *dcm;
 
   data  = MALLOC_ONE_TAGGED(Scheme_Closure_Compilation_Data);
 
@@ -726,7 +727,9 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   }
 
   /* Remembers positions of used vars (and unsets usage for this level) */
-  scheme_env_make_closure_map(frame, &data->closure_size, &cl->real_closure_map);
+  scheme_env_make_closure_map(frame, &dcs, &dcm);
+  data->closure_size = dcs;
+  cl->real_closure_map = dcm;
 
   data->closure_map = (short *)cl;
 
@@ -1879,7 +1882,7 @@ call_cc (int argc, Scheme_Object *argv[])
 
   scheme_zero_unneeded_rands(p);
 
-  if (scheme_setjmpup(&cont->buf, p->cc_start)) {
+  if (scheme_setjmpup(&cont->buf, cont, p->cc_start)) {
     Scheme_Object *result = cont->value;
     cont->value = NULL;
 

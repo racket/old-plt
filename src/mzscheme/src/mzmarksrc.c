@@ -301,6 +301,8 @@ bignum_obj {
  mark:
   if (!b->allocated_inline)
     gcMARK(b->digits);
+  else
+    b->digits = ((Small_Bignum *)b)->v;
 
  size:
   ((!b->allocated_inline)

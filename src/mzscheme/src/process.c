@@ -285,7 +285,7 @@ static Scheme_NSO *namespace_options = NULL;
 # define LONGJMP(p) 0
 # define RESETJMP(p)
 #else /* not USE_REAL_THREADS */
-# define SETJMP(p) scheme_setjmpup(&p->jmpup_buf, p->stack_start)
+# define SETJMP(p) scheme_setjmpup(&p->jmpup_buf, p, p->stack_start)
 # define LONGJMP(p) scheme_longjmpup(&p->jmpup_buf)
 # define RESETJMP(p) scheme_reset_jmpup_buf(&p->jmpup_buf)
 #endif

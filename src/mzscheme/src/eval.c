@@ -286,7 +286,7 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
   scheme_overflow_k = k;
   scheme_init_jmpup_buf(&scheme_overflow_cont);
   scheme_zero_unneeded_rands(scheme_current_process);
-  if (scheme_setjmpup(&scheme_overflow_cont, 
+  if (scheme_setjmpup(&scheme_overflow_cont, scheme_current_process,
 		      scheme_current_process->cc_start)) {
     scheme_init_jmpup_buf(&scheme_overflow_cont);
     if (!scheme_overflow_reply) {
@@ -332,8 +332,7 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
 {
   Scheme_Object *o, *tmp[20], ** volatile linked;
   Scheme_App_Rec *app, *orig;
-  char *evals;
-  int i, nv, size;
+  int i, nv, size, devals;
   volatile int n;
 
   orig = (Scheme_App_Rec *)orig_app;
@@ -426,8 +425,7 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
 
   app->num_args = n - 1;
 
-  evals = (((char *)app) + sizeof(Scheme_App_Rec) 
-	   + (app->num_args * sizeof(Scheme_Object *)));
+  devals = sizeof(Scheme_App_Rec) + (app->num_args * sizeof(Scheme_Object *));
 
   if (linked) {
     for (i = 0; i < n; i++) {
@@ -443,7 +441,7 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
     for (i = 0; i < n; i++) {
       char etype;
       etype = scheme_get_eval_type(app->args[i]);
-      evals[i] = etype;
+      ((char *)app + devals)[i] = etype;
     }
 
     scheme_end_stubborn_change((void *)app);
@@ -455,13 +453,11 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
 static Scheme_Object *link_application(Scheme_Object *o, Link_Info *info)
 {
   Scheme_App_Rec *app;
-  char *evals;
-  int i, n;
+  int i, n, devals;
 
   app = (Scheme_App_Rec *)o;
 
-  evals = (((char *)app) + sizeof(Scheme_App_Rec) 
-	   + (app->num_args * sizeof(Scheme_Object *)));
+  devals = sizeof(Scheme_App_Rec) + (app->num_args * sizeof(Scheme_Object *));
   
   n = app->num_args + 1;
 
@@ -476,7 +472,7 @@ static Scheme_Object *link_application(Scheme_Object *o, Link_Info *info)
   for (i = 0; i < n; i++) {
     char et;
     et = scheme_get_eval_type(app->args[i]);
-    evals[i] = et;
+    ((char *)app + devals)[i] = et;
   }
 
   return o;

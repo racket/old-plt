@@ -472,6 +472,7 @@ typedef struct GC_Weak_Box {
   void *val;
   /* The rest is up to us: */
   void **secondary_erase;
+  int soffset;
   struct GC_Weak_Box *next;
 } GC_Weak_Box;
 
@@ -506,7 +507,7 @@ static int fixup_weak_box(void *p)
   return gcBYTES_TO_WORDS(sizeof(GC_Weak_Box));
 }
 
-void *GC_malloc_weak_box(void *p, void **secondary)
+void *GC_malloc_weak_box(void *p, void **secondary, int soffset)
 {
   GC_Weak_Box *w;
 
@@ -524,6 +525,7 @@ void *GC_malloc_weak_box(void *p, void **secondary)
   w->type = weak_box_tag;
   w->val = p;
   w->secondary_erase = secondary;
+  w->soffset = soffset;
 
   return w;
 }
@@ -1218,7 +1220,7 @@ void GC_mark(const void *p)
 static void propagate_tagged_mpage(void **bottom, MPage *page)
 {
   OffsetTy offset, *offsets;
-  void **p, **graybottom;
+  void **p, **graytop;
 
   offsets = page->u.offsets;
 
@@ -1235,46 +1237,33 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
     mark_one++;
 #endif
   } else {
-    offset = page->gray_end + 1;
+    offset = page->gray_start;
     p = bottom + offset;
-    graybottom = bottom + page->gray_start;
+    graytop = bottom + page->gray_end;
 
-    while (p > graybottom) {
+    while (p < graytop) {
       OffsetTy v;
-      
-      v = offsets[offset] & OFFSET_MASK;
-      
-      p -= v;
-      offset -= v;
-      
-      v = offsets[offset];
-      if (v & GRAY_BIT) {
-	offsets[offset] = BLACK_BIT;
+      Type_Tag tag;
+      long size;
 
-	{
-	  Type_Tag tag;
-	  tag = *(Type_Tag *)p;
+#if ALIGN_DOUBLES
+      if (tag != SKIP) {
+#endif
+      
+	v = offsets[offset];
+	if (v & GRAY_BIT) {
+	  offsets[offset] = BLACK_BIT;
+	  size = mark_table[tag](p);
+	} else
+	  size = size_table[tag](p);
 	
 #if ALIGN_DOUBLES
-	  if (tag != SKIP) {
+      } else
+	size = 1;
 #endif
-	  
-#if SAFETY
-	    if ((tag < 0) || (tag >= _num_tags_) || !mark_table[tag]) {
-	      CRASH();
-	    }
-#endif
-	  
-	    mark_table[tag](p);
-	  
-#if ALIGN_DOUBLES
-	  }
-#endif
-	}
-      }
-      
-      --p;
-      --offset;
+
+      p += size;
+      offset += size;
     }
 
 #if MARK_STATS
@@ -1324,38 +1313,32 @@ static void propagate_tagged_whole_mpage(void **p, MPage *page)
 static void propagate_array_mpage(void **bottom, MPage *page)
 {
   OffsetTy offset = 0, *offsets;
-  void **p;
+  void **p, **top;
 
-  offset = page->gray_end + 1;
+  offset = page->gray_start;
   p = bottom + offset;
-  bottom += page->gray_start;
+  top = bottom + page->gray_end;
   offsets = page->u.offsets;
 
-  while (p > bottom) {
+  while (p < top) {
     OffsetTy v;
-    
-    v = offsets[offset] & OFFSET_MASK;
+    long size;
 
-    p -= v;
-    offset -= v;
-
+    size = *(long *)p;
+	
     v = offsets[offset];
     if (v & GRAY_BIT) {
+      int i;
+
       offsets[offset] = BLACK_BIT;
-
-      {
-	long size, i;
-
-	size = *(long *)p;
-	
-	for (i = 1; i <= size; i++) {
-	  gcMARK(p[i]);
-	}
+      
+      for (i = 1; i <= size; i++) {
+	gcMARK(p[i]);
       }
     }
     
-    --p;
-    --offset;
+    p += size;
+    offset += size;
   }
 }
 
@@ -1385,32 +1368,30 @@ static void propagate_array_whole_mpage(void **p, MPage *page)
 static void propagate_tagged_array_mpage(void **bottom, MPage *page)
 {
   OffsetTy offset = 0, *offsets;
-  void **p;
+  void **p, **top;
 
-  offset = page->gray_end + 1;
+  offset = page->gray_start;
   p = bottom + offset;
-  bottom += page->gray_start;
+  top = bottom + page->gray_end;
   offsets = page->u.offsets;
 
-  while (p > bottom) {
+  while (p < top) {
     OffsetTy v;
+    int size;
     
-    v = offsets[offset] & OFFSET_MASK;
-
-    p -= v;
-    offset -= v;
+    size = *(long *)p + 1;
 
     v = offsets[offset];
     if (v & GRAY_BIT) {
       offsets[offset] = BLACK_BIT;
 
       {
-	int i, elem_size, size;
+	int i, elem_size;
 	void **mp = p + 1;
 	Type_Tag tag;
 	Mark_Proc traverse;
 	
-	size = *(long *)p;
+	size--;
 	tag = *(Type_Tag *)mp;
 
 	traverse = mark_table[tag];
@@ -1418,11 +1399,13 @@ static void propagate_tagged_array_mpage(void **bottom, MPage *page)
 	mp += elem_size;
 	for (i = elem_size; i < size; i += elem_size, mp += elem_size)
 	  traverse(mp);
+
+	size++;
       }
     }
     
-    --p;
-    --offset;
+    p += size;
+    offset += size;
   }
 }
 
@@ -2796,7 +2779,7 @@ static void gcollect(int full)
     if (!is_marked(wb->val)) {
       wb->val = NULL;
       if (wb->secondary_erase) {
-	*(wb->secondary_erase) = NULL;
+	*(wb->secondary_erase + wb_soffset) = NULL;
 	wb->secondary_erase = NULL;
       }
     }

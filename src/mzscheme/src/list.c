@@ -1326,7 +1326,7 @@ static Scheme_Object *hash_table_for_each(int argc, Scheme_Object *argv[])
 Scheme_Object *scheme_make_weak_box(Scheme_Object *v)
 {
 #ifdef MZ_PRECISE_GC
-  return (Scheme_Object *)GC_malloc_weak_box(v, NULL);
+  return (Scheme_Object *)GC_malloc_weak_box(v, NULL, 0);
 #else
   Scheme_Small_Object *obj;
 

@@ -726,6 +726,8 @@ int bignum_obj_MARK(void *p) {
 
   if (!b->allocated_inline)
     gcMARK(b->digits);
+  else
+    b->digits = ((Small_Bignum *)b)->v;
 
   return
   ((!b->allocated_inline)
@@ -740,6 +742,8 @@ int bignum_obj_FIXUP(void *p) {
 
   if (!b->allocated_inline)
     gcFIXUP(b->digits);
+  else
+    b->digits = ((Small_Bignum *)b)->v;
 
   return
   ((!b->allocated_inline)

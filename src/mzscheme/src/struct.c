@@ -609,6 +609,11 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
   if (!(flags & SCHEME_STRUCT_NO_SET))
     count += fcount;
 
+  if (count_out) {
+    *count_out = count;
+    count_out = NULL; /* Might be an interior pointer. */
+  }
+
   names = MALLOC_N_STUBBORN(Scheme_Object *, count);
 
 #ifdef MEMORY_COUNTING_ON
@@ -663,9 +668,6 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
   }
 
   scheme_end_stubborn_change((void *)names);
-
-  if (count_out)
-    *count_out = count;
 
   return names;
 }

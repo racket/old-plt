@@ -28,8 +28,8 @@
 /*========================================================================*/
 
 void scheme_init_jmpup_buf(Scheme_Jumpup_Buf *b);
-int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *start, 
-			     Scheme_Jumpup_Buf *cont);
+int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *base, 
+			     void *start, Scheme_Jumpup_Buf *cont);
 void scheme_longjmpup(Scheme_Jumpup_Buf *b);
 void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b);
 
@@ -358,7 +358,7 @@ Scheme_Object *scheme_bignum_from_float(float d);
 # define scheme_bignum_from_float scheme_bignum_from_double
 #endif
 char *scheme_bignum_to_string(const Scheme_Object *n, int radix);
-Scheme_Object *scheme_read_bignum(const char *str, int radix);
+Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix);
 Scheme_Object *scheme_bignum_normalize(const Scheme_Object *n);
 
 long scheme_double_to_int(const char *where, double d) ;

@@ -1025,6 +1025,7 @@ static Scheme_Object *make_unit_syntax(Scheme_Object *form,
   int count, num_params;
   Scheme_Compile_Info lam;
   Scheme_Object *defname;
+  short lcs, *lcm;
 
   defname = rec[drec].value_name;
   scheme_compile_rec_done_local(rec, drec);
@@ -1047,7 +1048,9 @@ static Scheme_Object *make_unit_syntax(Scheme_Object *form,
   label->max_let_depth = lam.max_let_depth;
   label->defname = defname;
 
-  scheme_env_make_closure_map(cenv, &label->closure_size, &label->closure_map);
+  scheme_env_make_closure_map(cenv, &lcs, &lcm);
+  label->closure_size = lcs;
+  label->closure_map = lcm;
 
   m = InitCompiledUnitRec(exports.first, num_params, 1);
 
@@ -2799,16 +2802,14 @@ static Scheme_Object *make_unitsig_macro(int pos)
 static int hash_sig(Scheme_Object *src_sig, Scheme_Hash_Table *table)
 {
   int i, c;
-  Scheme_Object **sv;
 
   if (!SCHEME_VECTORP(src_sig))
     return 0;
 
   c = SCHEME_VEC_SIZE(src_sig);
-  sv = SCHEME_VEC_ELS(src_sig);
 
   for (i = 0; i < c; i++) {
-    Scheme_Object *s = sv[i];
+    Scheme_Object *s = SCHEME_VEC_ELS(src_sig)[i];
 
     if (SCHEME_SYMBOLP(s)) {
       Scheme_Bucket *b;
@@ -2870,16 +2871,14 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
 			   int exact, Scheme_Object *who, Scheme_Object *src_context, Scheme_Object *dest_context)
 {
   int i, c;
-  Scheme_Object **sv;
 
   if (!SCHEME_VECTORP(sig))
     return 0;
 
   c = SCHEME_VEC_SIZE(sig);
-  sv = SCHEME_VEC_ELS(sig);
 
   for (i = 0; i < c; i++) {
-    Scheme_Object *s = sv[i];
+    Scheme_Object *s = SCHEME_VEC_ELS(sig)[i];
     
     if (SCHEME_SYMBOLP(s)) {
       Scheme_Bucket *b;

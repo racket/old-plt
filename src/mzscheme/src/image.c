@@ -295,7 +295,7 @@ static Scheme_Object *dump_image(char *filename)
   buf = (Scheme_Jumpup_Buf *)scheme_malloc(sizeof(Scheme_Jumpup_Buf));
   scheme_init_jmpup_buf(buf);
 
-  if (!scheme_setjmpup(buf, (void *)stack_base)) {
+  if (!scheme_setjmpup(buf, buf, (void *)stack_base)) {
     unsigned long current_brk = (unsigned long)sbrk(0);
     int fd;
 
@@ -583,6 +583,7 @@ static Scheme_Object *load_image(char *filename, Scheme_Object *argvec)
   for (i = count; i--; ) {
     l += SCHEME_STRTAG_VAL(a[i]);
   }
+  a = NULL;
 
   if (l > MAX_ARGLEN)
     scheme_raise_exn(MZEXN_MISC,

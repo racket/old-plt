@@ -6,16 +6,16 @@
    (lib "mred.ss" "mred")
    (lib "unitsig.ss")
    (lib "tool.ss" "drscheme")
-   "signatures.ss"
-   "window.ss"
-   "window-layout.ss"
-   "window-menus.ss"
-   "window-language.ss"
-   "model.ss"
-   "case.ss"
-   "case-layout.ss"
-   "def.ss"
-   "expand-program.ss")
+   "private/signatures.ss"
+   "private/window.ss"
+   "private/window-layout.ss"
+   "private/window-menus.ss"
+   "private/window-language.ss"
+   "private/model.ss"
+   "private/case.ss"
+   "private/case-layout.ss"
+   "private/def.ss"
+   "private/expand-program.ss")
   
   (provide tool@)
   

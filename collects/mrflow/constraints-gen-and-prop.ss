@@ -28,21 +28,24 @@
  ; debug XXX
  ;read-and-analyze label-case-lambda-exps label-set label-term)
  
-; (define-syntax mycar
+; (define-syntax debug1
 ;   (let ([counter 1])
 ;     (lambda (stx)
 ;       (syntax-case stx ()
-;         [(_ x)
+;         [(_ args ...)
 ;          (begin
-;            (printf "counter: ~a~n" counter)
-;            (let ([stx-out (datum->syntax-object (syntax x)
-;                                                 `(#%app mycar2 ,counter ,(syntax x)))])
+;            (printf "debug counter: ~a~n" counter)
+;            (let* ([stx-args (syntax (args ...))]
+;                   [stx-args-list (syntax-e stx-args)]
+;                   [stx-out (datum->syntax-object
+;                             stx-args
+;                             `(#%app debug2 ,counter ,@stx-args-list))])
 ;              (set! counter (add1 counter))
 ;              stx-out))]))))
 ; 
-; (define (mycar2 n x)
-;   (printf "car: ~a~n" n)
-;   (label-term x))
+; (define (debug2 n . args)
+;   (printf "debug: ~a args: ~a~n" n args)
+;   (apply car args))
 
  ; XXX perf analysis
  (define ast-nodes 0)
@@ -192,7 +195,7 @@
      (if (label-prim? in-label)
          (case-lambda
           [(out-label inflowing-label)
-           ; initialize tunnel entrance when entering tunnel...
+           ; entering tunnel => initialize tunnel entrance
            (unless (label-tunnel? inflowing-label)
              (set-label-tunnel?! inflowing-label out-label))
            ; Note: we assume that primitives don't have internal cycles, so we
@@ -585,7 +588,8 @@
                                                        (if (null? actual-args-labels)
                                                            (let ([null-label
                                                                   (make-label-cst
-                                                                   #f #f #f #f
+                                                                   #f #f #f
+                                                                   (label-prim? inflowing-label)
                                                                    rest-arg-term
                                                                    (make-hash-table)
                                                                    '()
@@ -598,7 +602,8 @@
                                                              null-label)
                                                            (let ([cons-label
                                                                   (make-label-cons
-                                                                   #f #f #f #f
+                                                                   #f #f #f
+                                                                   (label-prim? inflowing-label)
                                                                    rest-arg-term
                                                                    (make-hash-table)
                                                                    '()
@@ -698,8 +703,10 @@
      (let* (; scheme list of syntax objects
             [vars (syntax-e (syntax vars))]
             [vars-length (length vars)]
-            [vars-labels (map add-top-level-name vars)]
+            ; the order of the following two lines is important: don't add to top level
+            ; before analysing the value, otherwise (define x x) will work.
             [exp-label (create-label-from-term (syntax exp) gamma enclosing-lambda-label)]
+            [vars-labels (map add-top-level-name vars)]
             [define-label (make-label-cst
                            #f #f #f #f
                            term
@@ -796,6 +803,7 @@
                        [vars (syntax-e vars)]
                        [vars-length (length vars)]
                        [vars-labels (map create-simple-pos-associated-label vars)]
+                       ; analyse exp of clause in gamma, not gamma-extended...
                        [exp-label (create-label-from-term exp gamma enclosing-lambda-label)])
                   ; We must be able to take care of all the following different cases:
                   ; (let-values ([(x) a] ...) ...)
@@ -1031,25 +1039,29 @@
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; TYPES
  
- (define-struct type ())
- (define-struct (type-empty type) ())
- (define-struct (type-cst type) (type))
- (define-struct (type-cons type) (car cdr))
- (define-struct (type-case-lambda type) (rest-arg?s req-args argss exps))
- (define-struct (type-var type) (name recur))
- (define-struct (type-union type) (elements))
- (define-struct (type-rec type) (vars types body))
- (define-struct (type-values type) (types))
- (define-struct (type-flow-var type) (name))
- (define-struct (type-scheme type) (flow-vars type^Cs type))
+ (define-struct type () (make-inspector))
+ (define-struct (type-empty type) () (make-inspector))
+ (define-struct (type-cst type) (type) (make-inspector))
+ (define-struct (type-cons type) (car cdr) (make-inspector))
+ (define-struct (type-case-lambda type) (rest-arg?s req-args argss exps) (make-inspector))
+ (define-struct (type-var type) (name recur) (make-inspector))
+ (define-struct (type-union type) (elements) (make-inspector))
+ (define-struct (type-rec type) (vars types body) (make-inspector))
+ (define-struct (type-values type) (types) (make-inspector))
+ (define-struct (type-flow-var type) (name) (make-inspector))
+ (define-struct (type-scheme type) (flow-vars type^Cs type) (make-inspector))
  
  ; XXX
  (define *basic-types* '(top bottom
                              void
                              boolean char symbol string char
-                             integer rational real complex number
+                             integer exact-integer inexact-integer
+                             rational exact-rational inexact-rational
+                             real exact-real inexact-real
+                             complex exact-complex inexact-complex
+                             number exact-number inexact-number
                              ))
- (define *type-constructors* '(forall cons listof case-lambda void -> *->))
+ (define *type-constructors* '(forall cons listof case-lambda -> *-> void union))
  (define *all-type-keywords* (append *basic-types* *type-constructors*))
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PRIMITIVE TYPE PARSER AND LOOKUP
@@ -1219,9 +1231,10 @@
                                ; single simple rest argument
                                (vector (cons #t rest-arg?s)
                                        (cons 0 req-args)
-                                       (cons (parse&check-type args delta
-                                                               (not covariant?)
-                                                               primitive-name filename))
+                                       (cons (list (parse&check-type args delta
+                                                                     (not covariant?)
+                                                                     primitive-name filename))
+                                             argss-typess)
                                        (cons exp-type exps-types))]
                               [else
                                ; improper list with a rest argument, so convert to proper list
@@ -1266,31 +1279,46 @@
                  'parse&check-type
                  (format "malformed void type in type scheme primitive ~a in file ~a: ~a"
                          primitive-name filename sexp)))]
+           [(eq? type-kw 'union)
+            (make-type-union (map (lambda (elt-sexp)
+                                    (parse&check-type
+                                     elt-sexp delta covariant?
+                                     primitive-name filename))
+                                  (cdr sexp)))]
            [else
-            (let ([sexp-length (length sexp)])
+            (let* ([sexp-length (length sexp)]
+                   [sexp-length-1 (sub1 sexp-length)]
+                   [sexp-length-2 (sub1 sexp-length-1)]
+                   [sexp-length-3 (sub1 sexp-length-2)])
               (cond
-                [(and (>= sexp-length 2)
-                      (eq? (list-ref sexp (- sexp-length 2)) '->))
-                 (let ([exp-sexp (list-ref sexp (sub1 sexp-length))]
-                       [list-head (list-head! sexp (- sexp-length 2)
-                                              primitive-name filename)])
-                   (parse&check-type
-                    `(case-lambda [,list-head ,exp-sexp])
-                    delta covariant? primitive-name filename))]
-                [(and (>= sexp-length 3)
-                      (eq? (list-ref sexp (- sexp-length 2)) '*->))
-                 (let* ([exp-sexp (list-ref sexp (sub1 sexp-length))]
-                        [rest-sexp (list-ref sexp (- sexp-length 3))]
-                         [list-head (list-head! sexp (- sexp-length 3)
-                                               primitive-name filename)]
-                        [whole-list (set-list-tail-cdr! list-head rest-sexp)])
-                   ; whole list is either an improper list with the rest arg type at the end,
-                   ; or directly the (possible complex) rest arg type. the parser will know 
-                   ; the difference because one is improper and the other one start with a
-                   ; constructor name.
-                   (parse&check-type
-                    `(case-lambda [,whole-list ,exp-sexp])
-                    delta covariant? primitive-name filename))]
+                [(and (>= sexp-length-2 0)
+                      (eq? (list-ref sexp sexp-length-2) '->))
+                 (let ([exp-sexp (list-ref sexp sexp-length-1)])
+                   (make-type-case-lambda (list #f)
+                                          (list sexp-length-2)
+                                          (list (map (lambda (arg-sexp)
+                                                       (parse&check-type
+                                                        arg-sexp delta (not covariant?)
+                                                        primitive-name filename))
+                                                     (list-head! sexp sexp-length-2
+                                                                 primitive-name filename)))
+                                          (list (parse&check-type
+                                                 exp-sexp delta covariant?
+                                                 primitive-name filename))))]
+                [(and (>= sexp-length-3 0)
+                      (eq? (list-ref sexp sexp-length-2) '*->))
+                 (let ([exp-sexp (list-ref sexp sexp-length-1)])
+                   (make-type-case-lambda (list #t)
+                                          (list sexp-length-3)
+                                          (list (map (lambda (arg-sexp)
+                                                       (parse&check-type
+                                                        arg-sexp delta (not covariant?)
+                                                        primitive-name filename))
+                                                     (list-head! sexp sexp-length-2
+                                                                 primitive-name filename)))
+                                          (list (parse&check-type
+                                                 exp-sexp delta covariant?
+                                                 primitive-name filename))))]
                 [else
                  (raise-syntax-error
                   'parse&check-type
@@ -1333,30 +1361,17 @@
  ; returns first n elements of l. We know from the way the function is called that we
  ; must always have n >= 0 and (length l) >= n.
  (define (list-head! l n primitive-name filename)
-   (letrec ([chop (lambda (l n)
-                    (if (= n 1)
-                        (set-cdr! l '())
-                        (chop (cdr l) (sub1 n))))])
+   (letrec ([chopchop (lambda (l n)
+                        (if (= n 1)
+                            (set-cdr! l '())
+                            (chopchop (cdr l) (sub1 n))))])
      (cond
        [(zero? n) '()]
-       [(>= n 1) (chop l n) l]
+       [(>= n 1) (chopchop l n) l]
        [else (raise-syntax-error
               'list-head!
               (format "internal error in type scheme for primitive ~a in file ~a"
                       primitive-name filename))])))
- 
- ; (listof top) top -> improper-list
- ; glues rest-sexp as the cdr of the last element of list-head
- (define (set-list-tail-cdr! list-head rest-sexp)
-   (letrec ([glue (lambda (l)
-                    (if (null? (cdr l))
-                        (set-cdr! l rest-sexp)
-                        (glue (cdr l))))])
-     (if (null? list-head)
-         rest-sexp
-         (begin
-           (glue list-head)
-           list-head))))
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; POST ANALYSIS TYPE CHECKING FOR PRIMITIVES
  
@@ -1455,8 +1470,8 @@
                          (type-case-lambda-req-args type)
                          (car all-labels)
                          (cdr all-labels)
-                         (list null)
-                         (list *dummy-thunk*))])
+                         (map (lambda (_) '()) all-labels)
+                         (map (lambda (_) *dummy-thunk*) all-labels))])
             (initialize-label-set-for-value-source label)
             label)]
          [(type-cons? type)
@@ -1496,6 +1511,13 @@
          [else (error 'reconstruct-graph-from-type "unknown covariant type: ~a" type)]
          )
        ; contravariant cases
+       ;
+       ; WARNING: all sink edges must reset the tunneling of the inflowing label, because
+       ; otherwise it's going to look like the inflowing label never exited the tunnel (and
+       ; in fact it never does), which is going to screw up the arrows for the next reference
+       ; to the same inflowing label: it's going to look like the parent of the next reference
+       ; is the entrance of the tunnel. Scary scary.
+       ;
        (cond
          [(type-cons? type)
           (let* ([car-label (reconstruct-graph-from-type (type-cons-car type) delta term #f)]
@@ -1508,6 +1530,8 @@
                     (case-lambda
                      [(out-label inflowing-label)
                       ; cons sink => no use for out-label here
+                      ; must reset tunneling for inflowing-label
+                      (set-label-tunnel?! inflowing-label #f)
                       (if (label-cons? inflowing-label)
                           (begin
                             (add-edge-and-propagate-set-through-edge

@@ -1280,7 +1280,7 @@ Bool wxPostScriptGlyphExists(const char *fontname, int c)
     v = scheme_make_sized_offset_utf8_string((char *)fontname, 0, -1);
     a[0] = v;
     a[1] = scheme_make_integer_value(c);
-    v = scheme_apply(ps_expand_name, 2, a);
+    v = scheme_apply(ps_glyph_exists, 2, a);
     return SCHEME_TRUEP(v);
   }
   return TRUE;

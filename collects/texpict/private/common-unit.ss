@@ -724,6 +724,28 @@
 	  `(place 0 0 ,p)
 	  commands)))
 
+      (define (place-it who base dx dy target)
+	(let-values ([(dx dy)
+		      (cond
+		       [(and (number? dx) (number? dy))
+			(values dx (- (pict-height base) dy))]
+		       [(and (pict? dx) (procedure? dy)
+			     (procedure-arity-includes? dy 2))
+			(dy base dx)]
+		       [else
+			(error who
+			       "expects two numbers or a sub-pict and a find procedure")])])
+	  (cons-picture*
+	   base
+	   `((place ,dx ,(- dy (pict-height target)) ,target)))))
+
+      (define (place-over base dx dy target)
+	(place-it 'place-over base dx dy target))
+      (define (place-under base dx dy target)
+	(cc-superimpose
+	 (place-it 'place-under (ghost base) dx dy target)
+	 base))
+
       (define black-and-white
 	(make-parameter #f
 			(lambda (x)

@@ -91,6 +91,9 @@
 
      cons-picture  ; pict command-list -> pict
      cons-picture* ; pict command-list -> pict
+
+     place-over
+     place-under
      ))
 
   (provide texpict-common-setup^)

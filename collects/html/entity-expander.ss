@@ -1,6 +1,6 @@
 ;; copyright by Paul Graunke June 2000 AD
-(unit/sig entity-expander^
-  (import)
+(module entity-expander mzscheme
+  (provide empty-entity-expander extend-entity-expander expand-entities)
   ;; warning - this is a really inefficient implementation of a nice interface.
   ;; building one dfa would be much better
   

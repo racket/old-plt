@@ -1,6 +1,10 @@
 ;; copyright by Paul Graunke June 2000 AD
-(unit/sig dtd-ast^
-  (import)
+(module dtd-ast mzscheme
+  (provide (struct dtd-item ())
+           (struct element-def (name start-optional stop-optional content))
+           (struct att-list (name junk))
+           (struct entity-def (name value))
+           (struct thingy (uh whatever)))
   
   
   ;; Dtd ::= (listof Dtd-item)

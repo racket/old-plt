@@ -15,7 +15,7 @@
   (define runcheck@
     (unit/sig empty^
 
-      (import check-frame^ defs^)
+      (import extra-params^ defs^)
 
       ; temp!!!! until string-constant stuff works with MzScheme
       (define strings-port 
@@ -40,6 +40,8 @@
 	
       (define star "*")
       (define dialog-title (string-constant 'vc-update-dialog-title))
+
+      (define sync-sem (make-semaphore 0))
 
       (define rv-sym 'release-version)
       (define no-info-sym 'no-info-file)
@@ -124,7 +126,6 @@
 			      (inner-loop (cdr dirs)))))))))))
 
       (define (go)
-
 	(let* ([wait-dialog #f]
 	       [dialog-sem (make-semaphore 0)]
 	       [got-cancel? #f] 
@@ -136,8 +137,9 @@
 			  (when wait-dialog
 				(hide-wait-dialog wait-dialog))
 			  ; will force exception on pending read
-			  (when the-port
-				(close-input-port the-port))
+			  (if the-port
+				(close-input-port the-port)
+				(set! got-cancel? #t))
 			  (run-thunk
 			   (lambda () 
 			     (show-ok (string-constant 'vc-network-timeout)
@@ -292,7 +294,9 @@
 			  'updates-available)
 			 " "
 			 download-url-string)
-			folded-string))))))))
+			folded-string)))))))
+	(when sync?
+	      (semaphore-post sync-sem)))
 
       ; exceptions are used to report errors elsewhere
       ; just ignore here
@@ -300,5 +304,10 @@
       (run-thunk 
        (lambda ()
 	 (with-handlers
-	  ((void void))
-	  (go)))))))
+	  ((void 
+	    (lambda _ (when sync?
+			    (semaphore-post sync-sem)))))
+	  (go))))
+
+      (when sync?
+	    (semaphore-wait sync-sem)))))

@@ -9,4 +9,5 @@
   (define (check-version)
     (go-check 
 	#f ; parent frame
+	#f ; sync -- always synchronous, anyway
 	text-defs@)))

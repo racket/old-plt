@@ -1,13 +1,14 @@
 (module checksigs mzscheme
   (require (lib "unitsig.ss"))	
 
-  (provide empty^ check-frame^ defs^)
+  (provide empty^ extra-params^ defs^)
 
   (define-signature empty^
     ())
 
-  (define-signature check-frame^
-    (check-frame))
+  (define-signature extra-params^
+    (check-frame
+     sync?))
 	
   (define-signature defs^
     (run-thunk

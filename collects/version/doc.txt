@@ -45,7 +45,13 @@ For check-text.ss, the procedure is called with
 
 For check-gui.ss, the procedure is called with 
 
-> (check-version [frame]) 
+> (check-version [frame] [sync?]) 
 
 where the optional argument `frame' is either 
-a frame% instance or #f, the default.
+a frame% instance or #f, the default.  The optional
+`sync?' argument is any Scheme value, #f by default.
+If `sync?' is #f, the procedure returns immediately;
+otherwise, it returns after the user clicks OK on the
+dialog box that appears (or when an error occurs).
+
+

@@ -7,17 +7,18 @@
 
   (provide go-check)
 
-  (define (go-check frame defs@)
-    (let ([check-frame@ 
+  (define (go-check frame the-sync defs@)
+    (let ([extra-params@ 
 	   (unit/sig 
-	    check-frame^
+	    extra-params^
 	    (import)
-	    (define check-frame frame))])
+	    (define check-frame frame)
+	    (define sync? the-sync))])
       (invoke-unit/sig
        (compound-unit/sig
 	(import)
 	(link
-         [CFRAME : check-frame^ (check-frame@)]
+         [CFRAME : extra-params^ (extra-params@)]
 	 [DEFS : defs^ (defs@)]
 	 [RUNCHECK : empty^ (runcheck@ (CFRAME) (DEFS))])
 	(export))))))

@@ -9,10 +9,18 @@
      [()
       (go-check 
        #f ; no parent frame
+       #f ; async
        gui-defs@)]
      [(parent-frame)
       (go-check 
        parent-frame
+       #f ; async
+       gui-defs@)]
+     [(parent-frame sync?)
+      (go-check 
+       parent-frame
+       sync?
        gui-defs@)])))
+
 
 

@@ -353,7 +353,8 @@ This function calls gui/pred with the predicate
   reductions : (listof reduction)
   exprs : (listof sexp)
   pred : (sexp -> boolean)
-  pp : (any port number (is-a?/c text%) -> void)
+  pp : (any -> string)
+     | (any port number (is-a?/c text%) -> void)
 
 This function opens a new window and inserts each
 expr. Then, reduces the terms until either
@@ -367,11 +368,14 @@ property. If the function returns #t, the term is displayed
 normally. If it returns #f, the term is displayed with a
 red border.
 
-The pp function renders its first argument into the port
-(its second argument) with width at most given by the
-number. The final argument is the text where the port is
-connected -- characters written to the port go to the end of
-the editor. The default pp uses mzlib's pretty-print
+If the pp function accepts one argument, it must return a
+string which the GUI will use as a representation of the
+given expression for display. If it takes four arguments, it
+renders its first argument into the port (its second
+argument) with width at most given by the number. The final
+argument is the text where the port is connected --
+characters written to the port go to the end of the
+editor. The default pp uses mzlib's pretty-print
 function. See the ho-contracts for an example use of this
 argument.
 

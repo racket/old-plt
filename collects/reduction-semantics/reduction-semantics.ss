@@ -167,7 +167,8 @@
                    (identifier? (syntax sym))
                    (loop (syntax pat1)
                          (loop (syntax pat2)
-                               (cons (make-id/depth (syntax sym) depth) names))
+                               (cons (make-id/depth (syntax sym) depth) names)
+                               depth)
                          depth)]
                   [(in-hole pat1 pat2)
                    (loop (syntax pat1)

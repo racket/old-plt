@@ -96,31 +96,35 @@
                                            (blank-value)
                                            0)
                                        (* (next-water-value) (next-to-water? (board) x y))
-                                       (let loop ([dist 0]
-                                                  [counter 0])
-                                         (cond [(> (dest-squares) dist) counter]
-                                               [else (let ([toadd (if (package-away-goal? dist x y (search-player-packages (player-cur)))
-                                                                      (* (destination-value) (if (geometric)
-                                                                                                 (expt falloff dist)
-                                                                                                 (let ([arith (* (- falloff) dist)])
-                                                                                                   (if (< arith 0)
-                                                                                                       0
-                                                                                                       arith))))
-                                                                      0)])
-                                                       (loop (+ 1 dist) (+ counter toadd)))]))
+                                       (if (null? (search-player-packages (player-cur)))
+                                                  0
+                                                  (let loop ([dist 0]
+                                                             [counter 0])
+                                                    (cond [(> (dest-squares) dist) counter]
+                                                          [else (let ([toadd (if (package-away-goal? dist x y (search-player-packages (player-cur)))
+                                                                                 (* (destination-value) (if (dest-geometric)
+                                                                                                            (expt (dest-falloff) dist)
+                                                                                                            (let ([arith (* (- (dest-falloff)) dist)])
+                                                                                                              (if (< arith 0)
+                                                                                                                  0
+                                                                                                                  arith))))
+                                                                                 0)])
+                                                                  (loop (+ 1 dist) (+ counter toadd)))])))
                                        
-                                       (let loop ([dist 0]
-                                                  [counter 0])
-                                         (cond [(> (dest-squares) dist) counter]
-                                               [else (let ([toadd (if (home-away-goal? dist x y (home-list))
-                                                                      (* (home-value) (if (geometric)
-                                                                                          (expt falloff dist)
-                                                                                          (let ([arith (* (- falloff) dist)])
-                                                                                            (if (< arith 0)
-                                                                                                0
-                                                                                                arith))))
-                                                                      0)])
-                                                       (loop (+ 1 dist) (+ counter toadd)))])))])
+                                       (if (null? (search-player-packages (player-cur)))
+                                           (let loop ([dist 0]
+                                                      [counter 0])
+                                             (cond [(> (dest-squares) dist) counter]
+                                                   [else (let ([toadd (if (home-away-goal? dist x y (home-list))
+                                                                          (* (home-value) (if (home-geometric)
+                                                                                              (expt (home-falloff) dist)
+                                                                                              (let ([arith (* (- (home-falloff)) dist)])
+                                                                                                (if (< arith 0)
+                                                                                                    0
+                                                                                                    arith))))
+                                                                          0)])
+                                                           (loop (+ 1 dist) (+ counter toadd)))]))
+                                           0))])
 ;				(* (destination-value) (destination? x y (search-player-packages (player-cur))))
 ;				(* (one-destination-value) (one-away-destination? (board) x y (search-player-packages (player-cur))))
 ;				(* (two-destination-value) (two-away-destination? (board) x y (search-player-packages (player-cur))))

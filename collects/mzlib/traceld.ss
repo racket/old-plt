@@ -1,4 +1,10 @@
 
+(define-macro time
+  (lambda (expr)
+    `(begin0
+      ,expr
+      (fprintf (current-output-port) "done ~a~n" (current-process-milliseconds)))))
+
 (let ([load (current-load)]
       [load-extension (current-load-extension)]
       [tab ""])
@@ -14,11 +20,11 @@
 		 (lambda () (set! tab (string-append " " tab)))
 		 (lambda () 
 		   (if (regexp-match "_loader" filename)
-		       (let ([f (load filename)])
+		       (let ([f (time (load filename))])
 			 (lambda (sym)
 			   (fprintf (current-error-port)
 				    "~atrying ~a~n" tab sym)
-			   (let ([loader (f sym)])
+			   (let ([loader (time (f sym))])
 			     (and loader
 				  (lambda ()
 				    (fprintf (current-error-port)

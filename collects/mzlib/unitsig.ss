@@ -311,6 +311,7 @@
 	   invoke-unit/sig
 	   unit->unit/sig
 	   signature->symbols
+	   verify-linkage-signature-match
 
 	   (struct unit/sig (unit imports exports))
 	   

@@ -248,7 +248,7 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
 
   static double pi;
   if (!pi)
-    pi = 2 * asin(1);
+    pi = 2 * asin((double)1.0);
 
   start = fmod(start, 2*pi);
   end = fmod(end, 2*pi);
@@ -490,8 +490,8 @@ void wxRegion::BoundingBox(float *x, float *y, float *w, float *h)
 #ifdef wx_mac
     *x = (*rgn)->rgnBBox.left;
     *y = (*rgn)->rgnBBox.top;
-    *w = (*rgn)->rgnBBox.bottom - *x;
-    *y = (*rgn)->rgnBBox.right - *x;
+    *w = (*rgn)->rgnBBox.right - *x;
+    *h = (*rgn)->rgnBBox.bottom - *y;
 #endif
     
     *x = dc->DeviceToLogicalX(*x);

@@ -1,5 +1,6 @@
 
-MZC=/home/dsilva/plt/bin/mzc
+#MZC=/home/dsilva/plt/bin/mzc
+MZC=mzc
 CC=$(MZC)
 #CFLAGS=++ccf -I. ++ccf -g ++ccf -finline-functions ++ccf -foptimize-sibling-calls ++ccf -mtail-call --cc
 CFLAGS=++ccf -I. ++ccf -g --cc

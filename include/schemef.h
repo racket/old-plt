@@ -72,12 +72,12 @@ MZ_EXTERN volatile int *scheme_fuel_counter_ptr;
 
 MZ_EXTERN void scheme_out_of_fuel(void);
 
-#ifndef NO_SCHEME_THREADS
 MZ_EXTERN Scheme_Object *scheme_thread(Scheme_Object *thunk, Scheme_Config *config);
 MZ_EXTERN Scheme_Object *scheme_thread_w_custodian(Scheme_Object *thunk, Scheme_Config *config,
 						   Scheme_Custodian *mgr);
+MZ_EXTERN Scheme_Object *scheme_thread_w_custodian_killkind(Scheme_Object *thunk, Scheme_Config *config,
+							    Scheme_Custodian *mgr, int normal_kill);
 MZ_EXTERN void scheme_kill_thread(Scheme_Thread *p);
-#endif
 MZ_EXTERN void scheme_break_thread(Scheme_Thread *p);
 
 MZ_EXTERN void scheme_thread_block(float sleep_time);
@@ -360,12 +360,10 @@ MZ_EXTERN Scheme_Object *scheme_make_double(double d);
 MZ_EXTERN Scheme_Object *scheme_make_float(float f) ;
 #endif
 MZ_EXTERN Scheme_Object *scheme_make_char(char ch);
-#ifndef NO_SCHEME_THREADS
 MZ_EXTERN Scheme_Object *scheme_make_sema(long v);
 MZ_EXTERN void scheme_post_sema(Scheme_Object *o);
 MZ_EXTERN void scheme_post_sema_all(Scheme_Object *o);
 MZ_EXTERN int scheme_wait_sema(Scheme_Object *o, int just_try);
-#endif
 MZ_EXTERN Scheme_Object **scheme_char_constants;
 
 MZ_EXTERN Scheme_Object *scheme_make_channel();

@@ -223,6 +223,7 @@ static Scheme_Object *sch_thread_nokill(int argc, Scheme_Object *args[]);
 static Scheme_Object *sch_sleep(int argc, Scheme_Object *args[]);
 static Scheme_Object *thread_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *thread_running_p(int argc, Scheme_Object *args[]);
+static Scheme_Object *thread_dead_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *thread_wait(int argc, Scheme_Object *args[]);
 static Scheme_Object *sch_current(int argc, Scheme_Object *args[]);
 static Scheme_Object *kill_thread(int argc, Scheme_Object *args[]);
@@ -376,6 +377,11 @@ void scheme_init_thread(Scheme_Env *env)
   scheme_add_global_constant("thread-running?",
 			     scheme_make_prim_w_arity(thread_running_p,
 						      "thread-running?",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("thread-dead?",
+			     scheme_make_prim_w_arity(thread_dead_p,
+						      "thread-dead?",
 						      1, 1),
 			     env);
   scheme_add_global_constant("thread-wait",
@@ -1813,7 +1819,21 @@ static Scheme_Object *thread_running_p(int argc, Scheme_Object *args[])
 
   running = ((Scheme_Thread *)args[0])->running;
 
-  return MZTHREAD_STILL_RUNNING(running) ? scheme_true : scheme_false;
+  return ((MZTHREAD_STILL_RUNNING(running) && !(running & MZTHREAD_USER_SUSPENDED))
+	  ? scheme_true 
+	  : scheme_false);
+}
+
+static Scheme_Object *thread_dead_p(int argc, Scheme_Object *args[])
+{
+  int running;
+
+  if (!SCHEME_THREADP(args[0]))
+    scheme_wrong_type("thread-running?", "thread", 0, argc, args);
+
+  running = ((Scheme_Thread *)args[0])->running;
+
+  return MZTHREAD_STILL_RUNNING(running) ? scheme_false : scheme_true;
 }
 
 static int thread_wait_done(Scheme_Object *p)

@@ -60,12 +60,12 @@ Scheme_Thread **scheme_current_thread_ptr;
 volatile int *scheme_fuel_counter_ptr;
 #endif
 void (*scheme_out_of_fuel)(void);
-#ifndef NO_SCHEME_THREADS
 Scheme_Object *(*scheme_thread)(Scheme_Object *thunk, Scheme_Config *config);
 Scheme_Object *(*scheme_thread_w_custodian)(Scheme_Object *thunk, Scheme_Config *config,
 						   Scheme_Custodian *mgr);
+Scheme_Object *(*scheme_thread_w_custodian_killkind)(Scheme_Object *thunk, Scheme_Config *config,
+							    Scheme_Custodian *mgr, int normal_kill);
 void (*scheme_kill_thread)(Scheme_Thread *p);
-#endif
 void (*scheme_break_thread)(Scheme_Thread *p);
 void (*scheme_thread_block)(float sleep_time);
 void (*scheme_swap_thread)(Scheme_Thread *process);
@@ -293,12 +293,10 @@ Scheme_Object *(*scheme_make_double)(double d);
 Scheme_Object *(*scheme_make_float)(float f) ;
 #endif
 Scheme_Object *(*scheme_make_char)(char ch);
-#ifndef NO_SCHEME_THREADS
 Scheme_Object *(*scheme_make_sema)(long v);
 void (*scheme_post_sema)(Scheme_Object *o);
 void (*scheme_post_sema_all)(Scheme_Object *o);
 int (*scheme_wait_sema)(Scheme_Object *o, int just_try);
-#endif
 Scheme_Object **scheme_char_constants;
 Scheme_Object *(*scheme_make_channel)();
 int (*scheme_get_int_val)(Scheme_Object *o, long *v);

@@ -22,11 +22,10 @@
 #define scheme_fuel_counter_ptr (scheme_extension_table->scheme_fuel_counter_ptr)
 #endif
 #define scheme_out_of_fuel (scheme_extension_table->scheme_out_of_fuel)
-#ifndef NO_SCHEME_THREADS
 #define scheme_thread (scheme_extension_table->scheme_thread)
 #define scheme_thread_w_custodian (scheme_extension_table->scheme_thread_w_custodian)
+#define scheme_thread_w_custodian_killkind (scheme_extension_table->scheme_thread_w_custodian_killkind)
 #define scheme_kill_thread (scheme_extension_table->scheme_kill_thread)
-#endif
 #define scheme_break_thread (scheme_extension_table->scheme_break_thread)
 #define scheme_thread_block (scheme_extension_table->scheme_thread_block)
 #define scheme_swap_thread (scheme_extension_table->scheme_swap_thread)
@@ -189,12 +188,10 @@
 #define scheme_make_float (scheme_extension_table->scheme_make_float)
 #endif
 #define scheme_make_char (scheme_extension_table->scheme_make_char)
-#ifndef NO_SCHEME_THREADS
 #define scheme_make_sema (scheme_extension_table->scheme_make_sema)
 #define scheme_post_sema (scheme_extension_table->scheme_post_sema)
 #define scheme_post_sema_all (scheme_extension_table->scheme_post_sema_all)
 #define scheme_wait_sema (scheme_extension_table->scheme_wait_sema)
-#endif
 #define scheme_char_constants (scheme_extension_table->scheme_char_constants)
 #define scheme_make_channel (scheme_extension_table->scheme_make_channel)
 #define scheme_get_int_val (scheme_extension_table->scheme_get_int_val)

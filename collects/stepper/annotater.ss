@@ -65,9 +65,7 @@
 					      null))))
 			     kept-vars)])
       `(#%lambda () (list ,(z:offset (z:start source)) ,label ,@var-clauses))))
-  
-  ;; ADD LABEL ARGUMENT TO EVERY CALL TO MAKE-DEBUG-INFO
-  
+    
   ; var-set-union takes some lists of varrefs where no element appears twice in one list, and 
   ; forms a new list which is the union of the sets.  the elements are 
   ; compared using the first element of the varref
@@ -157,6 +155,39 @@
        (lambda (parsed) (getter (z:parsed-back parsed)))
        (lambda (parsed) (setter (z:parsed-back parsed) #t)))))
 
+  ; expr-source-offset : take a parsed expression and find its offset in the source
+  ; (z:zodiac -> num)
+  
+  (define (expr-source-offset expr)
+    (z:location-offset (z:zodiac-start expr)))
+  
+  ; locate-cond-clause: take a cond expression's start location
+  ; and a test expression's start location and figure out 
+  ; which clause of the cond the test comes from.
+  
+  (define (locate-cond-clause cond-expr test-expr)
+    (let* ([target-offset (expr-source-offset test-expr)]
+	   [cond-source (find-source-expr (expr-source-offset cond-expr))]
+	   [cond-clauses (cdr (z:read-object cond-source))]
+	   [test-exprs (map car (z:read-object cond-clauses))])
+      (let loop ([test-exprs test-exprs] [index 0])
+	(if (null? test-exprs)
+	    (e:static-error test-location "test expression not found in cond expression")
+	    (if (= target-offset (z:location-offset (z:zodiac-start (car test-exprs))))
+		index
+		(loop (cdr test-exprs) (+ index 1)))))))
+  
+  ; comes-from-cond : determines whether an expression is expanded from a cond in the source
+  
+  (define (comes-from-cond? expr)
+    (let ([read (find-source-expr (expr-source-offset expr))]
+    (and (z:sequence? read)
+	 (z:list? read)
+	 (let ([first (car (z:read-object read))])
+	   (and (z:scalar? first)
+		(z:symbol? first)
+		(eq? (z:symbol-orig-name first) 'cond)))))
+  
   
   ; How do we know which bindings we need?  For every lambda body, there is a
   ; `tail-spine' of expressions which is the smallest set including:
@@ -186,28 +217,7 @@
 	       (if (z:eof? new-expr)
 		   ()
 		   (cons new-expr (read-loop (reader)))))))
-
-	 ; locate-cond-clause: take a cond expression's start location
-	 ; and a test expression's start location and figure out 
-	 ; which clause of the cond the test comes from.
-	 
-	 (define (locate-cond-clause cond-location test-location)
-	   (let* ([target-offset (z:location-offset (z:zodiac-start test-location))]
-		  [cond-source (find-source-expr cond-location)]
-		  [cond-clauses (cdr (z:read-object cond-source))]
-		  [test-exprs (map car (z:read-object cond-clauses))])
-	     (let loop ([test-exprs test-exprs] [index 0])
-	       (if (null? test-exprs)
-		   (e:static-error test-location "test expression not found in cond expression")
-		   (if (= target-offset (z:location-offset (z:zodiac-start (car test-exprs))))
-		       index
-		       (loop (cdr test-exprs) (+ index 1)))))))
 			
-	   
-	 
-	 
-	 ; annotate:
-
 	 ; debug-key: this key will be used to register the source expr with reconstructr.ss
 	 ; and as a key for the continuation marks.
 	 
@@ -237,7 +247,7 @@
 				       (z:binding-orig-name
 					(z:bound-varref-binding expr)))]
 			   [free-vars (list (make-varref v top-level?))]
-			   [debug-info (make-debug-info free-vars on-spine? expr)]
+			   [debug-info (make-debug-info free-vars on-spine? expr 'none)]
 			   [annotated (if (and maybe-undef? (signal-undefined))
 					  `(#%if (#%eq? ,v ,the-undefined-value)
 					    (#%raise (,make-undefined
@@ -280,9 +290,9 @@
 		  [val set!-list (map (lambda (arg-symbol annotated-sub-expr)
 					`(#%set! ,arg-symbol ,annotated-sub-expr))
 				      arg-sym-list annotated-sub-exprs)]
-		  [val app-debug-info (make-debug-info arg-sym-list on-spine? expr)]
+		  [val app-debug-info (make-debug-info arg-sym-list on-spine? expr 'none)]
 		  [val final-app (wrap app-debug-info arg-sym-list)]
-		  [val debug-info (make-debug-info (var-set-union arg-sym-list free-vars) on-spine? expr)]
+		  [val debug-info (make-debug-info (var-set-union arg-sym-list free-vars) on-spine? expr 'none)]
 		  [val let-body (wrap debug-info `(#%begin ,@set!-list ,final-app))])
 		 (values `(#%let ,let-clauses ,let-body) free-vars))]
 	       
@@ -320,6 +330,8 @@
 					      ((#%debug-info-handler))
 					      ,if-temp))))]
 		  [val free-vars (var-set-union free-vars-test free-vars-then free-vars-else)]
+		  [val label (if (comes-from-cond? expr)
+				 (find-
 		  [val debug-info (make-debug-info free-vars on-spine? expr)])
 		 (values (wrap debug-info annotated) free-vars))]
 	       

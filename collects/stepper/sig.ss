@@ -13,7 +13,9 @@
    get-arg-symbol
    (define-struct varref (var top-level?))
    register-source
-   find-source-expr))
+   find-source-expr
+   (define-struct label ())
+   (define-struct cond-label (clause-num))))
 
 (define-signature stepper:annotate^
   (annotate))

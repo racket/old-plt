@@ -102,8 +102,11 @@ $(MZFW): libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ $(SPECIALIZINGOBJECTS)
 	rm -f PLT_MzScheme.framework/PLT_MzScheme
 	ln -s Versions/$(FWVERSION)/PLT_MzScheme PLT_MzScheme.framework/PLT_MzScheme
 
+LDFLAGS_@OSX@=-framework PLT_MzScheme
+LDFLAGS_@NOT_OSX@=
+
 mzscheme@OSX@: $(MZFW) main.o
-	$(CC) -o mzscheme main.o -F. -framework PLT_MzScheme
+	$(CC) -o mzscheme main.o -F. LDFLAGS_@OSX@
 
 # OSKit-based MzScheme
 mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o
@@ -117,10 +120,10 @@ mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o
 		@OSKHOME@/lib/oskit/crtn.o
 
 main.o: $(srcdir)/main.c $(srcdir)/include/scheme.h $(srcdir)/sconfig.h $(srcdir)/src/stypes.h $(srcdir)/cmdline.inc $(srcdir)/oskglue.inc
-	$(CC) @CFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/include -c $(srcdir)/main.c -o main.o
+	$(CC) @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/include -c $(srcdir)/main.c -o main.o
 
 main_ee.o: main.o
-	$(CC) @CFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/include -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/main.c -o main_ee.o
+	$(CC) @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/include -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/main.c -o main_ee.o
 
 ee-main:
 	$(MAKE) main_ee.o
@@ -241,7 +244,10 @@ normal-install:
 	cd ..; $(ICP) mzscheme/libmzgc.@LIBSFX@ $(LIBIDIR)/libmzgc.@LIBSFX@
 	cd ..; $(ICP) mzscheme/libmzscheme.@LIBSFX@ $(LIBIDIR)/libmzscheme.@LIBSFX@
 	cd ..; echo 'CC=@CC@' > $(BUILDINFO)
-	cd ..; echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(BUILDINFO)
+	cd ..; echo 'CFLAGS=@CFLAGS@ @PREFLAGS@ @COMPFLAGS@' >> $(BUILDINFO)
+	cd ..; echo 'OPTIONS=@OPTIONS@' >> $(BUILDINFO)
+	cd ..; echo 'MZOPTIONS=@MZOPTIONS@' >> $(BUILDINFO)
+	cd ..; echo "LDFLAGS=$(LDFLAGS_)" >> $(BUILDINFO)
 	cd ..; echo 'LIBS=@LIBS@' >> $(BUILDINFO)
 
 MZFWDIR = @FRAMEWORK_INSTALL_DIR@/PLT_MzScheme.framework

@@ -28,9 +28,8 @@ WXINC_wx_mac = -I$(PLTSRCDIR)/wxmac/include/base -I$(PLTSRCDIR)/wxmac/include/ma
 WXINC = $(WXINC_@WXVARIANT@)
 NOGCINC = $(WXINC) -I$(PLTSRCDIR)/mred/wxme/ -I$(PLTSRCDIR)/mzscheme/include/
 INC = -I$(PLTSRCDIR)/mzscheme/$(GCDIRECTORY) $(NOGCINC)
-CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
-CPPFLAGS = $(CXXFLAGS)
-CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
+CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) @COMPFLAGS@ @PROFFLAGS@ @CXXFLAGS@ @PREFLAGS@
+CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) @COMPFLAGS@ @PROFFLAGS@ @CFLAGS@ @PREFLAGS@
 LDFLAGS = $(XLIB)
 ###########################
 
@@ -74,7 +73,7 @@ LOCALFLAGS_wx_xt = @WX_MMD_FLAG@
 LOCALFLAGS_wx_mac = -MMD -DWX_CARBON
 LOCALFLAGS = $(LOCALFLAGS_@WXVARIANT@)
 
-MCC = $(CXX) @USE_WXPRECOMP@ $(CPPFLAGS) $(LOCALFLAGS) -c
+MCC = $(CXX) @USE_WXPRECOMP@ $(CXXFLAGS) $(LOCALFLAGS) -c
 
 wx_media.o : $(srcdir)/wx_media.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h \
                        $(srcdir)/wx_mpriv.h $(srcdir)/wx_mline.h

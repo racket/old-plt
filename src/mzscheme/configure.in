@@ -4,6 +4,20 @@
 # by autoconf.                                                  #
 #################################################################
 
+# Remember:
+#  CFLAGS - C compilation only
+#  CXXFLAGS - C++ compilation only
+#  CPPFLAGS - C and C++ pre-processing and compilation for configure-time testing ONLY
+#  COMPFLAGS - C and C++ compilation, but not configure-time tests
+#  PREFLAGS - C and C++ preprocessing, but not configure-time tests
+#  OPTIONS - C and C++ flags, not needed for configure-time tests
+#  MZOPTIONS - MzScheme-only flags
+#  MROPTIONS - MrEd-only flags
+#
+# Note: we use CPPFLAGS for configure-time testing only because
+# it needs to include C++ flags that we don't want for MzScheme.
+# hence PREFLAGS, which is initialized to the original CPPFLAGS.
+
 AC_INIT(mzscheme/src/bignum.c)
 
 AC_ARG_ENABLE(mred, [  --enable-mred           compile MrEd as well as MzScheme (enabled by default)], , enable_mred=yes )
@@ -156,8 +170,8 @@ if test "${enable_oskit}" = "yes" ; then
     AC_MSG_ERROR(can't find *-oskit-gcc compiler script in ${OSKHOME}/bin)
   fi
 
-  CFLAGS="-nostdinc -I${OSKHOME}/include/oskit -I${OSKHOME}/include/oskit/freebsd "
-  CFLAGS="$CFLAGS -I${OSKHOME}/include/oskit/c -I${OSKHOME}/include -I/usr/include"
+  PREFLAGS="-nostdinc -I${OSKHOME}/include/oskit -I${OSKHOME}/include/oskit/freebsd "
+  PREFLAGS="$PREFLAGS -I${OSKHOME}/include/oskit/c -I${OSKHOME}/include -I/usr/include"
 
   GCDIR=sgc
   OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0"
@@ -187,6 +201,8 @@ fi
 
 ###### Autoconfigure #######
 
+COMPFLAGS=""
+
 if test "${enable_oskit}" = "no" ; then
   AC_PROG_CC
   AC_PROG_CPP
@@ -209,7 +225,7 @@ fi
 
 # If using gcc, we want all warnings:
 if test "$CC" = "gcc" ; then 
-  CFLAGS="$CFLAGS -Wall"
+  COMPFLAGS="$COMPFLAGS -Wall"
 
   # Use -MMD when we have gcc and gnumake:
   is_gmake=`make -v 2>&1 | grep "GNU Make"`
@@ -335,16 +351,16 @@ case $OS in
     ;;
   OSF1)
     if test "$CC" = "cc" ; then 
-      CFLAGS="$CFLAGS -ieee_with_inexact -assume noaligned_objects"
+      COMPFLAGS="$COMPFLAGS -ieee_with_inexact -assume noaligned_objects"
     elif test "$CC" = "gcc" ; then 
       EXTRA_GMP_OBJ="gmp_alpha_gcc.o"
     fi
     ;;
   HP-UX)
     if test "$CC" = "gcc"; then
-      CFLAGS="$CFLAGS -fPIC"
+      COMPFLAGS="$COMPFLAGS -fPIC"
     else
-      CFLAGS="$CFLAGS -Wp,-H,64000 -Aa -D_HPUX_SOURCE +Z"
+      COMPFLAGS="$COMPFLAGS -Wp,-H,64000 -Aa -D_HPUX_SOURCE +Z"
     fi
     LIBS="$LIBS -Wl,-E"
     # For Xaw and Xmu:
@@ -368,7 +384,7 @@ case $OS in
     ;;
   Darwin)
 
-    CFLAGS="$CFLAGS -DOS_X"
+    COMPFLAGS="$COMPFLAGS -DOS_X"
 
     # zlib comes with the OS
     ZLIB_A=""
@@ -395,7 +411,7 @@ case $OS in
       WXVARIANT="wx_mac"
       MROPTIONS="$MROPTIONS -fpascal-strings"
       INCLUDEDEP="-include"
-      CFLAGS="$CFLAGS -fno-common"
+      COMPFLAGS="$COMPFLAGS -fno-common"
       OSX=""
       NOT_OSX=".other"
       MZINSTALLTARGET=osx-install
@@ -406,7 +422,7 @@ case $OS in
         FRAMEWORK_INSTALL_DIR=~/Library/Frameworks
       fi
     else
-      CFLAGS="$CFLAGS -DXONX "
+      COMPFLAGS="$COMPFLAGS -DXONX "
       X_EXTRA_LIBS="$X_EXTRA_LIBS -lz"
     fi
     ;;
@@ -471,9 +487,10 @@ fi
 
 ############## C++ grunge ################
 
+PREFLAGS="$CPPFLAGS"
+
 if test "${enable_mred}" = "yes" ; then
-  CXXFLAGS="$CXXFLAGS $X_CFLAGS"
-  CPPFLAGS="$CXXFLAGS"
+  CPPFLAGS="$CPPFLAGS $X_CFLAGS"
   AC_LANG_CPLUSPLUS 
 
 [ msg="whether new and new[] are different"   ]
@@ -497,7 +514,7 @@ if test "${enable_mred}" = "yes" ; then
     AC_MSG_CHECKING(whether need to use -fpermissive)
     AC_TRY_COMPILE([#]include "X11/Intrinsic.h", , addperm=no, addperm=yes)
     if test "$addperm" = "yes" ; then
-      MROPTIONS="$MROPTIONS  -fpermissive"
+      CXXFLAGS="$CXXFLAGS -fpermissive"
     fi
     AC_MSG_RESULT($addperm) 
   fi
@@ -527,6 +544,7 @@ fi
 if test "${enable_noopt}" = "yes" ; then
   AWKPRG='BEGIN { FS = "(^| )-O(0|1|2|3|4|5|6|7|8|9|())( |$)" } /.*/ { for (i = 1; i < NF; i++) printf "%s ", $i; print $NF }'
   CFLAGS=`echo "$CFLAGS" | awk "$AWKPRG"`
+  CXXFLAGS=`echo "$CXXFLAGS" | awk "$AWKPRG"`
 fi
 
 ############## libtool ################
@@ -571,7 +589,7 @@ if test "${enable_gl}" = "yes" ; then
     if test "${GL_NEEDS_PTHREAD}" = "yes" ; then
       AC_CHECK_LIB(GL, glXChooseVisual, GL_PTHREAD="yes", GL_PTHREAD="no", $X_LIBS -lX11 -lXext -pthread)
       if test "${GL_PTHREAD}" = "yes" ; then
-        CFLAGS="$CFLAGS -D_THREAD_SAFE"
+        PREFLAGS="$PREFLAGS -D_THREAD_SAFE"
         X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -pthread"
         MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576 -DDONT_ITIMER"
         GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"
@@ -650,7 +668,8 @@ if test "${enable_xft}" = "yes" ; then
     xft_libs=`xft-config --libs`
     echo "Xft flags: $xft_cflags"
     echo "Xft libs: $xft_libs"
-    MROPTIONS="$MROPTIONS -DWX_USE_XFT $xft_cflags"
+    MROPTIONS="$MROPTIONS -DWX_USE_XFT"
+    X_CFLAGS="$X_CFLAGS $xft_cflags"
     X_EXTRA_LIBS="$X_EXTRA_LIBS $xft_libs"
   fi
 fi
@@ -709,6 +728,9 @@ LIBS="$LIBS $EXTRALIBS"
 
 AC_SUBST(CC)
 AC_SUBST(CFLAGS)
+AC_SUBST(CXXFLAGS)
+AC_SUBST(PREFLAGS)
+AC_SUBST(COMPFLAGS)
 AC_SUBST(PROFFLAGS)
 AC_SUBST(CPP)
 AC_SUBST(PERL)

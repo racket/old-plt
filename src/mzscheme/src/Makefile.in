@@ -11,7 +11,7 @@ XMAKE = $(MAKE) $(EXPORT)
 
 MZSRC = $(srcdir)
 
-CFLAGS = @CFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/../include
+CFLAGS = @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/../include
 
 OBJS =  salloc.o \
 	bignum.o \

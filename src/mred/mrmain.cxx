@@ -273,9 +273,9 @@ int main(int argc, char *argv[])
 
 #ifdef wx_mac
   /* initialize Mac stuff */
-#ifdef WX_CARBON
+# ifdef WX_CARBON
   ::MoreMasterPointers(4);
-#else
+# else
   ::MaxApplZone();
   ::InitWindows();
   ::InitGraf(&qd.thePort);		
@@ -286,18 +286,19 @@ int main(int argc, char *argv[])
   for (int i=0; i<4; i++) {
     ::MoreMasters();
   }
-#endif
+# endif
 
-#ifdef OS_X
+# ifdef OS_X
   wx_original_argv_zero = argv[0];
-#endif
+# endif
 
   Drop_GetArgs(&argc, &argv, &wx_in_terminal);
 
-#ifndef OS_X
+# ifndef OS_X
   wx_original_argv_zero = argv[0];
-#endif
+# endif
 
+# ifndef OS_X
   { 
     KeyMap keys;
     GetKeys(keys);
@@ -342,6 +343,7 @@ int main(int argc, char *argv[])
       }
     }
   }
+# endif
 #endif
 
   scheme_actual_main = CAST_ACTUAL_MAIN actual_main;

@@ -20,7 +20,6 @@ RANLIB = @RANLIB@
 AR = @AR@
 ARFLAGS = @ARFLAGS@
 OPTIONS = @OPTIONS@ @MROPTIONS@
-COMPFLAGS = @CFLAGS@
 XINCLUDE = @X_CFLAGS@
 XLIB = @X_LIBS@
 LDLIBS = @X_PRE_LIBS@ -lXaw -lXmu -lXt -lX11 -lXext @X_EXTRA_LIBS@ @LIBS@
@@ -34,9 +33,8 @@ WXINC_wx_mac = -I$(PLTSRCDIR)/wxmac/include/base -I$(PLTSRCDIR)/wxmac/include/ma
 WXINC = $(WXINC_@WXVARIANT@)
 NOGCINC = $(WXINC) -I$(PLTSRCDIR)/mred/wxme/ -I$(PLTSRCDIR)/mzscheme/include/
 INC = -I$(PLTSRCDIR)/mzscheme/$(GCDIRECTORY) $(NOGCINC)
-CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
-CPPFLAGS = $(CXXFLAGS)
-CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
+CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) @COMPFLAGS@ @PROFFLAGS@ @CXXFLAGS@ @PREFLAGS@
+CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) @COMPFLAGS@ @PROFFLAGS@ @CFLAGS@ @PREFLAGS@
 LDFLAGS = $(XLIB)
 ###########################
 
@@ -53,7 +51,7 @@ MZMMM_wx_xt = ../../mzscheme/mzscheme3m
 MZMMM_wx_mac = env DYLD_FRAMEWORK_PATH="`pwd`/../../mzscheme" ../../mzscheme/mzscheme3m
 MZMMM = $(MZMMM_@WXVARIANT@)
 
-XFORM = $(MZMMM) -rq $(srcdir)/../../mzscheme/gc2/xform.ss "$(CC) -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) $(XFORM_INC_@WXVARIANT@) @JPEG_INC@ @ZLIB_INC@"
+XFORM = $(MZMMM) -rq $(srcdir)/../../mzscheme/gc2/xform.ss "$(CC) -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) @PREFLAGS@ $(XFORM_INC_@WXVARIANT@) @JPEG_INC@ @ZLIB_INC@"
 XFORMDEP = $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/gc2.h
 
 WXBDIR=../../wxxt
@@ -859,7 +857,7 @@ xcglue.o: xsrc/xcglue.c
 
 wxGC.o: $(srcdir)/../../wxcommon/wxGC.cxx $(srcdir)/../../wxcommon/wxGC.h \
             $(srcdir)/../../mzscheme/gc2/gc2.h $(srcdir)/../../mzscheme/src/stypes.h
-	$(CXX) -DMZ_PRECISE_GC -I$(srcdir)/../../mzscheme/gc2/ $(CPPFLAGS) -c -o wxGC.o $(srcdir)/../../wxcommon/wxGC.cxx
+	$(CXX) -DMZ_PRECISE_GC -I$(srcdir)/../../mzscheme/gc2/ $(CXXFLAGS) -c -o wxGC.o $(srcdir)/../../wxcommon/wxGC.cxx
 
 wx_xt_XSRCS = \
   xsrc/Window.cc \

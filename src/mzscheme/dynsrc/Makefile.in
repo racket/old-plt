@@ -11,7 +11,7 @@ prefix = @prefix@
 MZSRC = $(srcdir)/../src
 
 CC = @CC@
-CFLAGS = @CFLAGS@ -I$(srcdir)/../include -I$(srcdir)/../src @MZOPTIONS@
+CFLAGS = @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ -I$(srcdir)/../include -I$(srcdir)/../src @MZOPTIONS@
 
 dynlib:
 	$(MAKE) ../mzdyn.o

@@ -264,7 +264,7 @@ install:
 	$(MAKE) install_@WXVARIANT@
 	cd ..; echo 'CXX=@CXX@' >> $(BUILDINFO)
 	cd ..; echo 'CXXFLAGS=@CXXFLAGS@ @PREFLAGS@ @COMPFLAGS@' >> $(BUILDINFO)
-	cd ..; echo 'MROPTIONS=@OPTIONS@' >> $(BUILDINFO)
+	cd ..; echo 'MROPTIONS=@MROPTIONS@' >> $(BUILDINFO)
 	cd ..; echo 'X_CFLAGS=@X_CFLAGS@' >> $(BUILDINFO)
 	cd ..; echo 'X_LIB=@X_LIBS@' >> $(BUILDINFO)
 	cd ..; echo "MRLDFLAGS=$(MREDLDFLAGS)" >> $(BUILDINFO)

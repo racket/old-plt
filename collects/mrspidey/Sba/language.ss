@@ -683,6 +683,7 @@
     (add-constructor! 'will-executor)
     (add-constructor! 'tcp-listener)
     (add-constructor! 'unit)
+    (add-constructor! 'unit/sig)
 
     (add-default-primitives!
      `(
@@ -918,9 +919,9 @@
        (ivar/proc             (forall (i) ((all-ivars i) _ -> i)))
 
        ;; ------ units
-       (unit/sig->unit         (forall (a) (a -> a)))
+       (unit/sig->unit         (_ -> unit))
        (unit?                  (_ -> bool))
-       (unit/sig?              (_ -> bool) (predicate unit))	
+       (unit/sig?              (_ -> bool) (predicate unit/sig))
 
        ;; ------ threads and namespaces
        ;; ---- threads

@@ -94,6 +94,7 @@
 	   v))
        (lambda () (close-input-port p)))))
   
+  (define-struct (exn:get-module-code exn) ())
   (define (get-module-code path)
     (unless (and (string? path) (or (relative-path? path) (absolute-path? path)))
       (raise-type-error 'get-module-code "pathname string" path))
@@ -133,13 +134,18 @@
 	       (let ([getter (load-extension _loader-so)])
 		 (getter (string->symbol (regexp-replace re:suffix file "")))))
 	  => (lambda (loader)
-	       (error 'get-module-code "cannot use _loader file: ~e" _loader-so))]
+	       (raise (make-exn:get-module-code (format "get-module-code: cannot use _loader file: ~e"
+                                                        _loader-so)
+                                                (current-continuation-marks))))]
 	 [(date>=? so path-d)
-	  (with-dir (lambda () (error 'get-module-code "cannot use extension file; ~e" so)))]
+	  (with-dir (lambda () (raise (make-exn:get-module-code 
+                                       (format "get-module-code: cannot use extension file; ~e" so)
+                                       (current-continuation-marks)))))]
 	 [(date>=? zo path-d)
 	  (read-one zo #f)]
 	 [(not path-d)
-	  (error 'get-module-code "no such file: ~e" path)]
+	  (raise (make-exn:get-module-code (format "get-module-code: no such file: ~e" path)
+                                           (current-continuation-marks)))]
 	 [else 
 	  (with-dir (lambda () (compile (read-one path #t))))]))))
 
@@ -301,7 +307,10 @@
   (provide check-module-form
 
 	   get-module-code
-
+           exn:get-module-code
+           exn:get-module-code?
+           make-exn:get-module-code
+           
 	   resolve-module-path
 	   resolve-module-path-index
 

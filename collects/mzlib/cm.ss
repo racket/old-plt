@@ -67,13 +67,14 @@
 	  (begin
 	    (with-handlers ((not-break-exn? void))
               (delete-file zo-name))
-            (with-handlers ((exn:user? (lambda (ex) (compilation-failure path zo-name))))
+            (with-handlers ((exn:get-module-code? (lambda (ex) (compilation-failure path zo-name))))
               (let ((code (get-module-code path))
                     (code-dir (get-code-dir path)))
-                (with-handlers ((not-break-exn? (lambda (ex) (compilation-failure path zo-name))))
-                  (if (not (directory-exists? code-dir))
-                      (make-directory code-dir))
-                  (let ((out (open-output-file zo-name 'replace)))
+                (if (not (directory-exists? code-dir))
+                    (make-directory code-dir))
+                (let ((out (open-output-file zo-name 'replace)))
+                  (with-handlers ((exn:application:type?
+                                   (lambda (ex) (compilation-failure path zo-name))))
                     (dynamic-wind void
                                   (lambda () (write code out))
                                   (lambda () (close-output-port out)))))
@@ -95,29 +96,35 @@
       (let ((stamp (and up-to-date
 			(hash-table-get up-to-date path (lambda () #f)))))
 	(cond
-	 (stamp stamp)
-	 (else
-	  ((trace) (format "~achecking: ~a" (indent) path))
-	  (with-handlers ((exn:i/o:filesystem? (lambda (ex)
-						 ((trace) (format "~a~a does not exist" (indent) path))
-						 +inf.0)))
-	    (let ((path-zo-time (get-compiled-time path))
-		  (path-time (file-or-directory-modify-seconds path)))
-	      (cond
-	       ((> path-time path-zo-time) (compile-zo path))
-	       (else
-		(let ((deps (with-handlers ((exn:i/o:filesystem? (lambda (ex) #f)))
-			      (call-with-input-file (string-append (get-compilation-path path) ".dep")
-				read))))
-		  (cond
-		   ((or (not (pair? deps))
-			(not (equal? (version) (car deps))))
-		    (compile-zo path))
-		   ((> (apply my-max (map (lambda (d) (compile-root d up-to-date)) (cdr deps))) path-zo-time)
-		    (compile-zo path)))))))
-	    (let ((stamp (get-compiled-time path)))
-	      (hash-table-put! up-to-date path stamp)
-	      stamp)))))))
+          (stamp stamp)
+          (else
+           ((trace) (format "~achecking: ~a" (indent) path))
+           (let ((path-zo-time (get-compiled-time path))
+                 (path-time 
+                  (with-handlers ((exn:i/o:filesystem? 
+                                   (lambda (ex)
+                                     ((trace) (format "~a~a does not exist" (indent) path))
+                                     #f)))
+                    (file-or-directory-modify-seconds path))))
+             (cond
+               ((not path-time) +inf.0)
+               (else
+                (cond
+                  ((> path-time path-zo-time) (compile-zo path))
+                  (else
+                   (let ((deps (with-handlers ((exn:i/o:filesystem? (lambda (ex) #f)))
+                                 (call-with-input-file (string-append (get-compilation-path path) ".dep")
+                                   read))))
+                     (cond
+                       ((or (not (pair? deps))
+                            (not (equal? (version) (car deps))))
+                        (compile-zo path))
+                       ((> (apply my-max (map (lambda (d) (compile-root d up-to-date)) (cdr deps)))
+                           path-zo-time)
+                        (compile-zo path))))))
+                (let ((stamp (get-compiled-time path)))
+                  (hash-table-put! up-to-date path stamp)
+                  stamp)))))))))
   
   (define (managed-compile-zo zo)
     (parameterize ([current-load/use-compiled (make-compilation-manager-load/use-compiled-handler)])

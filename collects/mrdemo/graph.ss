@@ -1,4 +1,6 @@
 
+(require-library "string.ss")
+
 ; This demonstrates adding your own snip classes to print arbitary
 ;  graphic objects in editor windows. In particular, when the result
 ;  of a scheme evalution in the console is a snip, then MrEd uses the
@@ -11,25 +13,25 @@
 ; size. Try (make-object draw-snip 100 100) and you should get
 ; an empty box (100 pixels x 100 pixles) as the result
 (define draw-snip%
-  (class wx:snip% (w-in h-in)
+  (class snip% (w-in h-in)
     (inherit get-admin set-snipclass set-count)
     (public h w)
-    (public
+    (override
       (get-extent
        (lambda (dc x y wbox hbox descentbox spacebox
 		   lspacebox rspacebox)
-	 (if (not (null? hbox))
-	     (set-box! hbox h))
-	 (if (not (null? wbox))
-	     (set-box! wbox w))
-	 (if (not (null? descentbox))
-	     (set-box! descentbox 0))
-	 (if (not (null? spacebox))
-	     (set-box! spacebox 0))
-	 (if (not (null? rspacebox))
-	     (set-box! rspacebox 0))
-	 (if (not (null? lspacebox))
-	     (set-box! lspacebox 0))))
+	 (when hbox
+	   (set-box! hbox h))
+	 (when wbox
+	   (set-box! wbox w))
+	 (when descentbox
+	   (set-box! descentbox 0))
+	 (when spacebox
+	   (set-box! spacebox 0))
+	 (when rspacebox
+	   (set-box! rspacebox 0))
+	 (when lspacebox
+	   (set-box! lspacebox 0))))
       (draw
        (lambda (dc x y . other)
 	 (let* ((xw (sub1 (+ x w)))
@@ -47,34 +49,35 @@
        (lambda (stream)
 	 (send stream << w)
 	 (send stream << h)))
-      (refresh
-       (lambda ()
-	 (let ([admin (get-admin)])
-	   (unless (null? admin)
-	     (send admin needs-update this 0 0 w h)))))
-      (resized
-       (lambda ()
-	 (let ([admin (get-admin)])
-	   (unless (null? admin)
-	     (send admin resized this #t)))))
       (resize 
        (lambda (w-in h-in)
 	 (set! w w-in)
 	 (set! h h-in)
 	 (resized)
 	 #t)))
+    (public
+      (resized
+       (lambda ()
+	 (let ([admin (get-admin)])
+	   (when admin
+	     (send admin resized this #t)))))
+      (refresh
+       (lambda ()
+	 (let ([admin (get-admin)])
+	   (when admin
+	     (send admin needs-update this 0 0 w h))))))
     (sequence
       (super-init)
-      (set-snipclass (send (wx:get-the-snip-class-list) find "emptydrawbox"))
+      (set-snipclass (send (get-the-snip-class-list) find "emptydrawbox"))
       (set-count 1)
       (set! h h-in)
       (set! w w-in))))
 
 (define draw-snip-class
   (make-object 
-   (class wx:snip-class% ()
+   (class snip-class% ()
      (inherit set-classname)
-     (public
+     (override
        [read
 	(lambda (stream)
 	  (let ([w-box (box 0)]
@@ -86,7 +89,7 @@
        (super-init)
        (set-classname "emptydrawbox")))))
 
-(send (wx:get-the-snip-class-list) add  draw-snip-class)
+(send (get-the-snip-class-list) add  draw-snip-class)
 
 ; Here's a snip class derived from draw-snip. It plots a function.
 ; There's a lot of code that tries to find the right part of the
@@ -95,7 +98,7 @@
 ; a function on the unit square. (Say, (lambda (x) (* x x)).)
 
 (define graph-snip%
-  (class draw-snip% ([fs '()] [xaxes '()] [size '()]
+  (class draw-snip% ([fs #f] [xaxes '()] [size '()]
 		     [yaxes '()] [ss '()])
     (inherit w h refresh resized set-snipclass)
     (rename [super-draw draw])
@@ -109,10 +112,9 @@
 	    [tmargin 5] [bmargin 5]
 	    [x-num-grid-lines 0]
 	    [y-num-grid-lines 0]
-	    [shade-brush
-	     (send wx:the-brush-list find-or-create-brush
-		   "BLACK" wx:const-cross-hatch)])
-    (public
+	    [shade-brush (send the-brush-list find-or-create-brush
+			       "BLACK" 'cross-hatch)])
+    (override
       (draw
        (lambda (dc x y . other)
 	 (super-draw dc x y)
@@ -203,7 +205,7 @@
 				 [y2 (y-to-pos (cdr change-2))]
 				 [start-on (not (f x-start y-start))]
 				 [pt (lambda (x y)
-				       (make-object wx:point% x y))])
+				       (make-object point% x y))])
 			     (send dc draw-line x1 y1 x2 y2)
 			     (let ([end-time (if start-on 
 						 change-1-time
@@ -243,24 +245,6 @@
 			(send dc draw-polygon points)
 			(send dc set-brush old-brush))))))
 	    shades))))
-      (set-domain
-       (opt-lambda (s [e x-end])
-	 (set! x-start s)
-	 (set! x-end e)
-	 (refresh)))
-      (set-range
-       (opt-lambda (s [e y-end])
-	 (set! y-start s)
-	 (set! y-end e)
-	 (refresh)))
-      (plot
-       (lambda (f)
-	 (set! functions (cons f functions))
-	 (refresh)))
-      (affine-shade
-       (lambda (f)
-	 (set! shades (cons f shades))
-	 (refresh)))
       (copy
        (lambda ()
 	 (make-object graph-snip%
@@ -287,16 +271,35 @@
 	   (send stream << (FLOAT y-start))
 	   (send stream << (FLOAT y-end))
 	   (send stream << (expr->string shades))))))
+    (public
+      (set-domain
+       (lambda (s e)
+	 (set! x-start s)
+	 (set! x-end e)
+	 (refresh)))
+      (set-range
+       (lambda (s y-end)
+	 (set! y-start s)
+	 (set! y-end e)
+	 (refresh)))
+      (plot
+       (lambda (f)
+	 (set! functions (cons f functions))
+	 (refresh)))
+      (affine-shade
+       (lambda (f)
+	 (set! shades (cons f shades))
+	 (refresh))))
     (sequence
       (let* ((h (car-try size 200))
 	     (w (cdr-try size 200)))
 	(super-init h w)
-	(set-snipclass (send (wx:get-the-snip-class-list) find "graph"))
+	(set-snipclass (send (get-the-snip-class-list) find "graph"))
 	(set! functions fs)
 	(set! shades ss)
 	(set! x-start (car-try xaxes 0))
 	(set! x-end (cdr-try xaxes 1))
-	(let ([f (if (null? fs)
+	(let ([f (if fs
 		     (lambda (x) x)
 		     (eval (car fs)))])
 	  (set! y-start (car-try yaxes (f x-start)))
@@ -312,9 +315,9 @@
 
 (define graph-snip-class
   (make-object 
-   (class wx:snip-class% ()
+   (class snip-class% ()
      (inherit set-classname)
-     (public
+     (override
        [read
 	(lambda (stream)
 	  (let ([get-string
@@ -348,7 +351,7 @@
        (super-init)
        (set-classname "graph")))))
 
-(send (wx:get-the-snip-class-list) add graph-snip-class)
+(send (get-the-snip-class-list) add graph-snip-class)
 
 ; Here's a helper function that will make the object for
 ; you. Try (graph (lambda (x) (* x x))).

@@ -55,7 +55,7 @@
 #define scheme_close_should_force_port_closed (scheme_extension_table->scheme_close_should_force_port_closed)
 #define scheme_push_kill_action (scheme_extension_table->scheme_push_kill_action)
 #define scheme_pop_kill_action (scheme_extension_table->scheme_pop_kill_action)
-#define scheme_new_schedule_info (scheme_extension_table->scheme_new_schedule_info)
+#define scheme_init_schedule_info (scheme_extension_table->scheme_init_schedule_info)
 #define scheme_signal_error (scheme_extension_table->scheme_signal_error)
 #define scheme_raise_exn (scheme_extension_table->scheme_raise_exn)
 #define scheme_warning (scheme_extension_table->scheme_warning)
@@ -193,6 +193,7 @@
 #define scheme_make_sema (scheme_extension_table->scheme_make_sema)
 #define scheme_post_sema (scheme_extension_table->scheme_post_sema)
 #define scheme_wait_sema (scheme_extension_table->scheme_wait_sema)
+#define scheme_wait_semas (scheme_extension_table->scheme_wait_semas)
 #endif
 #define scheme_char_constants (scheme_extension_table->scheme_char_constants)
 #define scheme_get_int_val (scheme_extension_table->scheme_get_int_val)

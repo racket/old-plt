@@ -632,10 +632,11 @@ typedef struct Scheme_Custodian Scheme_Custodian;
 typedef struct {
 #ifdef MZTAG_REQUIRED
   Scheme_Type type;
-#endif  
-  int false_positive_ok;
-  int potentially_false_positive;
-  Scheme_Object *target;
+#endif
+  int false_positive_ok;  /* non-zero => return 1 to swap in thread rather than running Scheme code */
+  int potentially_false_positive; /* => returning 1 to swap thread in, but truth may be 0 */
+  Scheme_Object *target; /* with 0 result => won't return 1 until this target unblocks */
+  int spin; /* with 0 result => don't sleep; the ready-tester is spin-blocking */
 } Scheme_Schedule_Info;
 
 typedef int (*Scheme_Ready_Fun)(Scheme_Object *o);

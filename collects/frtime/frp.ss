@@ -1,69 +1,78 @@
+; Ideas:
+;  make smart 'if'
+;  tag impure and imperative signals (pure vs. stateful vs. effectful)
+;
 ; To do:
+; exception-handling mechanism
 ; generalize and improve notion of time
 ;  (e.g., combine seconds & milliseconds,
-;  give user general "timer : number -> behavior (event?)"
+;  give user general "timer : number -> signal (event?)"
 ;  'loose' timers that don't exactly measure real time
 ;   (e.g., during garbage-collection)
 ; completely restructure:
 ;  eliminate alarms, give processes timeouts
-;  make special constructor behaviors (?)
+;  make special constructor signals (?)
 ;   (have tried and achieved unencouraging results)
-;  separate behavior and event structures (?)
-;    - could make event a substructure of behavior,
+;  separate signal and event structures (?)
+;    - could make event a substructure of signal,
 ;      but this could be problematic for letrec
 ;    - better option seems to be explicit tag
 ; partial-order based evaluation:
-;  - add a 'depth' field to behavior structure (DONE)
+;  - add a 'depth' field to signal structure (DONE)
 ;  - make 'register' responsible for maintaining consistency
 ;  - 'switch' can result in cycle, in which case consistent
 ;    depths cannot be assigned
 ;  - should perhaps tag delay, integral nodes
 ; selective evaluation (?)
 ; replace #%app macro with #%top macro, define macros,
-;   hash-table; make behaviors applicable as functions
+;   hash-table; make signals applicable as functions
 ;   (have tried and achieved unencouraging results)
-; remove #%app, lambda, and define macros; lift all
-;   primitives, redefine higher-order procedures
-;   macro to automate definition of lifted primitives
-;   make behaviors directly applicable
 ; consider adding placeholders again, this time as part
 ;   of the FRP system
-;   (probably not necessary, since behaviors can serve
+;   (probably not necessary, since signals can serve
 ;    in this role)
 ; consider whether any other syntax should be translated
 ;   (e.g. 'begin')
 ; consider 'strict structure'
 ;
 ; Done:
-; mutual dependencies between behaviors (sort of ...)
+; mutual dependencies between signals (sort of ...)
 ; fix delay bug
-; allow delay to take a time behavior (sort of ...)
+; allow delay to take a time signal (sort of ...)
 ; events:
-;   use behavior structs where value is tail of stream
+;   use signal structs where value is tail of stream
 ;   interface with other libraries (e.g. graphics), other threads
-;   hold : event * val -> behavior
-;   changes : behavior -> event
+;   hold : event * val -> signal
+;   changes : signal -> event
 ;   map-e : event[a] * (a -> b) -> event[b]
 ;   merge-e : event[a1] * event[a2] * ... -> event[a1 U a2 U ...]
 ;   filter-e : event[a] * (a -> bool) -> event[a]
 ;   accum : event[a] * b * (a -> b -> b) -> event[b]
 ; modify graphics library to send messages for events
-; behavior manager's priority queue should
+; signal manager's priority queue should
 ;   - maintain weak boxes
 ;   - check stale flag before enqueuing for update
 ; delete dead weak references
 ; fix letrec-b macro to use switch
-; - allow fn behaviors
+; - allow fn signals
 ; eliminate letrec-b, make appropriate letrec macro
 ;  ('undefined' value) (probably)
 ; rewrite lift
 ; - provide specialized lift for 0-3 (?) arguments
 ; fix subtle concurrency issue between
-;  behavior creation outside manager thread
+;  signal creation outside manager thread
 ;  and activities of manager, particularly
 ;  involving registration/deregistration
 ;  (solution: send reg/unreg requests to manager if necessary)
 ; make separate library for graphics
+;
+; need to get rid of #%app macro, explicitly lift procedures, usually
+; bottom-strictly
+;
+; remove #%app, lambda, and define macros; lift all
+;   primitives, redefine higher-order procedures
+;   macro to automate definition of lifted primitives
+;   make signals directly applicable
 ;
 
 (module frp mzscheme
@@ -75,32 +84,84 @@
            (lib "string.ss")
            "erl.ss"
            (lib "match.ss")
+           "heap.ss"
            "treap.scm")
   
-  ; also models events, where 'value' is all the events that
-  ; haven't yet occurred (more specifically, a cons cell whose
-  ; tail is *undefined*)
-  (define-struct behavior (value dependents stale? thunk depth))
+  (require-for-syntax (lib "list.ss"))
   
-  (define (safe-behavior-depth v)
-    (if (behavior? v)
-        (behavior-depth v)
+  ; also models events, where 'value' is all the events that
+  ; haven't yet occurred (more specifically, an event-cons cell whose
+  ; tail is *undefined*)
+  (define-values (make-signal
+                  signal?
+                  signal-value
+                  signal-dependents
+                  signal-stale?
+                  signal-thunk
+                  signal-depth
+                  set-signal-value!
+                  set-signal-dependents!
+                  set-signal-stale?!
+                  set-signal-thunk!
+                  set-signal-depth!)
+    (let-values ([(desc make-signal signal? acc mut)
+                  (make-struct-type
+                   'signal #f 5 0 #f null (make-inspector)
+                   (lambda (fn . args)
+                     (unregister #f fn) ; clear out stale dependencies from previous apps
+                     (let* ([cur-fn (get-value fn)]
+                            [cur-app (safe-eval (apply cur-fn args))]
+                            [ret (proc->signal void fn cur-app)]
+                            [thunk (lambda ()
+                                     (when (not (eq? cur-fn (get-value fn)))
+                                       (unregister ret cur-app)
+                                       (set! cur-fn (get-value fn))
+                                       (set! cur-app (safe-eval (apply cur-fn args)))
+                                       (register ret cur-app))
+                                     (get-value cur-app))])
+                       (set-signal-thunk! ret thunk)
+                       (set-signal-value! ret (thunk))
+                       ret)))]
+                 [(field-name-symbols) (list 'value 'dependents 'stale? 'thunk 'depth)]
+                 [(0->4) (build-list 5 identity)])
+      (apply values
+             make-signal
+             signal?
+             (append (map (lambda (idx name) (make-struct-field-accessor acc idx name))
+                          0->4 field-name-symbols)
+                     (map (lambda (idx name) (make-struct-field-mutator mut idx name))
+                          0->4 field-name-symbols)))))
+  
+  (define-struct event-cons (head tail))
+  (define econs make-event-cons)
+  (define efirst event-cons-head)
+  (define erest event-cons-tail)
+  (define econs? event-cons?)
+  (define set-efirst! set-event-cons-head!)
+  (define set-erest! set-event-cons-tail!)
+  
+  (define (event-source? v)
+    (and (signal? v) (event-cons? (signal-value v))))
+  
+  (define (behavior? v)
+    (and (signal? v) (not (event-cons? (signal-value v)))))
+  
+  (define (safe-signal-depth v)
+    (if (signal? v)
+        (signal-depth v)
         0))
   
-  (define proc->behavior
-    (opt-lambda ([thunk void] [value (thunk)] . producers)
-      (register
-       (make-behavior
-        value
-        empty
-        #f
-        thunk
-        ; temporary: this logic should move to 'register'
-        (add1 (apply max 0 (map safe-behavior-depth
-                                producers))))
-       producers)))
+  (define (proc->signal thunk . producers)
+    (let ([sig (make-signal
+                undefined empty #f thunk
+                (add1 (apply max 0 (map safe-signal-depth
+                                        producers))))])
+      (when (cons? producers)
+        (register sig producers))
+      (set-signal-value! sig (safe-eval (thunk)))
+      sig))
   
-  ; messages for behavior manager; we now ensure that
+  ; messages for signal manager; we now ensure that
   ; only the manager manipulates the dependency graph
   (define-struct reg (inf sup ret))
   (define-struct unreg (inf sup))
@@ -108,53 +169,39 @@
   ; an external event; val is passed to recip's thunk
   (define-struct event (val recip))
   
-  ; update the given behavior at the given time
-  (define-struct alarm (time behavior))
-  
-  (define-values (struct:behavior-proc
-                  make-behavior-proc
-                  behavior-proc?
-                  bp-ref
-                  bp-set!)
-    (make-struct-type 'behavior-proc #f 1 0 #f null #f 0))
-  
-  (define-syntax frp:lambda
-    (syntax-rules ()
-      [(_ formals expr ...) (make-behavior-proc
-                             (lambda formals expr ...))]))
-  
-  (define-syntax frp:case-lambda
-    (syntax-rules ()
-      [(_ (formals expr ...) ...) (make-behavior-proc
-                                   (case-lambda (formals expr ...) ...))]))
-  
-  (define-syntax frp:define
-    (syntax-rules ()
-      [(_ (fn . args) expr ...) (define fn
-                                  (frp:lambda args expr ...))]
-      [(_ var expr ...) (define var expr ...)]))
-  ;                               (set-cell! var (begin expr ...)))]))
+  ; update the given signal at the given time
+  (define-struct alarm (time signal))
   
   (define (frp:if-helper test then-thunk else-thunk)
-    (let ([if-fun (lambda (b) (if b
-                                  (then-thunk)
-                                  (else-thunk)))])
+    (let ([if-fun (lambda (b)
+                    (cond
+                      [(undefined? b) undefined]
+                      [b (then-thunk)]
+                      [else (else-thunk)]))])
       (if (behavior? test)
           (switch
            (if-fun (get-value test))
            ((changes test) . ==> .
-            if-fun))
+                           if-fun))
           (if-fun test))))
+  
+  (define (weakly-cache thunk)
+    (let ([cache (make-weak-box #f)])
+      (lambda ()
+        (cond
+          [(weak-box-value cache) => identity]
+          [else (let ([result (thunk)])
+                  (set! cache (make-weak-box result))
+                  result)]))))
   
   (define-syntax frp:if
     (syntax-rules ()
-      [(_ test then) (frp:if-helper test
-                                    (lambda () then)
-                                    (void))]
-      [(_ test then else) (frp:if-helper test
-                                         (lambda () then)
-                                         (lambda () else))]))
+      [(_ test then)
+       (frp:if-helper test (weakly-cache (lambda () then)) void)]
+      [(_ test then else)
+       (frp:if-helper test (weakly-cache (lambda () then)) (weakly-cache (lambda () else)))]))
   
+#|
   (define-syntax frp:cond
     (syntax-rules (else =>)
       [(_ [else result1 result2 ...])
@@ -197,18 +244,17 @@
                           (frp:if v
                                   v
                                   (frp:or exps ...)))]))
-  
-  ; get-value : behavior[a] -> a
-  (define get-value
-    (frp:lambda (val)
-      (if (behavior? val)
-          (behavior-value val)
-          val)))
+|#  
+  ; get-value : signal[a] -> a
+  (define (get-value val)
+    (if (behavior? val)
+        (signal-value val)
+        val))
   
   ;   (define get-value/copy
   ;     (frp:lambda (val)
   ;       (match val
-  ;         [($ behavior value _ _ _) (cond
+  ;         [($ signal value _ _ _) (cond
   ;                                     [(cons? value)
   ;                                      (cons (first value) (rest value))]
   ;                                     [(posn? value)
@@ -226,48 +272,39 @@
   ; If there is a cycle, then 'inf' has (and retains) a lower depth than 'sup' (?), which
   ; indicates the cycle.  Importantly, 'propagate' uses the external message queue whenever
   ; a dependency crosses an inversion of depth.
-  (define register
-    (frp:lambda (inf sup)
-      (if (eq? (self) man)
-          (match sup
-            [(and (? behavior?)
-                  (= behavior-dependents dependents))
-             (set-behavior-dependents!
-              sup
-              (cons (make-weak-box inf) dependents))]
-            [(? list?) (for-each (lambda (sup1) (register inf sup1)) sup)]
-            [_ (void)])
-          (begin
-            (! man (make-reg inf sup (self)))
-            (receive [(? (lambda (v) (eq? v man))) (void)])))
-      inf))
+  (define (register inf sup)
+    (if (eq? (self) man)
+        (match sup
+          [(and (? signal?)
+                (= signal-dependents dependents))
+           (set-signal-dependents!
+            sup
+            (cons (make-weak-box inf) dependents))]
+          [(? list?) (for-each (lambda (sup1) (register inf sup1)) sup)]
+          [_ (void)])
+        (begin
+          (! man (make-reg inf sup (self)))
+          (receive [(? (lambda (v) (eq? v man))) (void)])))
+    inf)
+    
+  (define (unregister inf sup)
+    (if (eq? (self) man)
+        (match sup
+          [(and (? signal?)
+                (= signal-dependents dependents))
+           (set-signal-dependents!
+            sup
+            (filter (lambda (a)
+                      (let ([v (weak-box-value a)])
+                        (nor (eq? v inf)
+                             (eq? v #f))))
+                    dependents))]
+          [_ (void)])
+        (! man (make-unreg inf sup))))
   
-  (define (remove-by p l)
-    (match l
-      [() empty]
-      [(a . d) (if (p a)
-                   (remove-by p d)
-                   (cons a (remove-by p d)))]))
-  
-  (define unregister
-    (frp:lambda (inf sup)
-      (if (eq? (self) man)
-          (match sup
-            [(and (? behavior?)
-                  (= behavior-dependents dependents))
-             (set-behavior-dependents!
-              sup
-              (remove-by (lambda (a)
-                           (let ([v (weak-box-value a)])
-                             (or (eq? v inf)
-                                 (eq? v #f))))
-                         dependents))]
-            [_ (void)])
-          (! man (make-unreg inf sup)))))
-  
-  (define-struct *undefined* ())
-  (define undefined (make-*undefined*))
-    ;(string->uninterned-symbol "*undefined*"))
+  ;(define-struct *undefined* ())
+  (define undefined ;(make-*undefined*))
+    (string->uninterned-symbol "*undefined*"))
   (define (undefined? x)
     (eq? x undefined))
   
@@ -284,44 +321,41 @@
   
   ; could use special treatment for constructors
   ; to avoid making lots of garbage (?)
+  (define create-strict-thunk
+    (case-lambda
+      [(fn) fn]
+      [(fn arg1) (lambda () (if (undefined? arg1)
+                                undefined
+                                (fn (get-value arg1))))]
+      [(fn arg1 arg2) (lambda () (if (or (undefined? arg1) (undefined? arg2))
+                                     undefined
+                                     (fn (get-value arg1) (get-value arg2))))]
+      [(fn arg1 arg2 arg3) (lambda () (if (or (undefined? arg1) (undefined? arg2) (undefined? arg3))
+                                          undefined
+                                          (fn (get-value arg1)
+                                              (get-value arg2)
+                                              (get-value arg3))))]
+      [(fn . args) (lambda () (if (ormap undefined? args)
+                                  undefined
+                                  (apply fn (map get-value args))))]))
+  
   (define create-thunk
-    (frp:case-lambda
+    (case-lambda
       [(fn) fn]
       [(fn arg1) (lambda () (fn (get-value arg1)))]
       [(fn arg1 arg2) (lambda () (fn (get-value arg1) (get-value arg2)))]
       [(fn arg1 arg2 arg3) (lambda () (fn (get-value arg1)
-                                          (get-value arg2)
-                                          (get-value arg3)))]
+                                              (get-value arg2)
+                                              (get-value arg3)))]
       [(fn . args) (lambda () (apply fn (map get-value args)))]))
-  
-  (define lift
-    (frp:lambda (fn . args)
-      (cond
-        [(behavior? fn)
-         (unregister #f fn) ; clear out stale dependencies from previous apps
-         (let* ([cur-fn (get-value fn)]
-                [cur-app (safe-eval (apply lift cur-fn args))])
-           (rec ret (proc->behavior
-                     (lambda ()
-                       (when (not (eq? cur-fn (get-value fn)))
-                         (unregister ret cur-app)
-                         (set! cur-fn (get-value fn))
-                         (set! cur-app (safe-eval (apply lift cur-fn args)))
-                         (register ret cur-app))
-                       (get-value cur-app))
-                     (get-value cur-app)
-                     ; deps
-                     fn cur-app)))]
-        [(and (not (behavior-proc? fn))
-              (ormap behavior? args)
-              (not (member fn behavior-consumers)))
-         (let* ([thunk (apply create-thunk fn args)])
-           (apply
-            proc->behavior
-            thunk
-            (safe-eval (thunk))
-            args))]
-        [else (apply fn args)])))
+
+  (define (lift strict? fn . args)
+    (if (ormap behavior? args)
+        (apply
+         proc->signal
+         (apply (if strict? create-strict-thunk create-thunk) fn args)
+         args)
+        (apply fn args)))
   
   (define (last)
     (let ([prev #f])
@@ -333,20 +367,19 @@
   (define (extract k evs)
     (if (cons? evs)
         (let ([ev (first evs)])
-          (if (or (eq? ev undefined) (undefined? (rest ev)))
+          (if (or (eq? ev undefined) (undefined? (erest ev)))
               (extract k (rest evs))
               (begin
-                (let ([val (cadr ev)])
-                  (set-first! evs (rest ev))
+                (let ([val (efirst (erest ev))])
+                  (set-first! evs (erest ev))
                   (k val)))))))
   
   ; until : behavior behavior -> behavior
-  (frp:define (b1 . until . b2)
-    (proc->behavior
+  (define (b1 . until . b2)
+    (proc->signal
      (lambda () (if (undefined? (get-value b2))
                     (get-value b1)
                     (get-value b2)))
-     (get-value b1)
      ; deps
      b1 b2))
   
@@ -355,12 +388,12 @@
         empty
         (cons
          (if (undefined? (first streams))
-             (let ([stream (get-value (first args))])
+             (let ([stream (signal-value (first args))])
                (if (undefined? stream)
                    stream
-                   (if (equal? stream (cons undefined undefined))
+                   (if (equal? stream (econs undefined undefined))
                        stream
-                       (cons undefined stream))))
+                       (econs undefined stream))))
              (first streams))
          (fix-streams (rest streams) (rest args)))))
   
@@ -370,73 +403,69 @@
        (with-syntax ([emit (datum->syntax-object (syntax src-event-filter) 'emit)]
                      [the-event (datum->syntax-object
                                  (syntax src-event-filter) 'the-event)])
-         (syntax (let* ([out (cons undefined undefined)]
+         (syntax (let* ([out (econs undefined undefined)]
                         [emit (lambda (val)
-                                (set-rest! out (cons val undefined))
-                                (set! out (rest out)))]
-                        [streams (map get-value args)]
+                                (set-erest! out (econs val undefined))
+                                (set! out (erest out)))]
+                        [streams (map signal-value args)]
                         [thunk (lambda ()
                                  (when (ormap undefined? streams)
-                                   (printf "had an undefined stream~n")
+                                   (fprintf (current-error-port) "had an undefined stream~n")
                                    (set! streams (fix-streams streams args)))
                                  (let loop ()
                                    (extract (lambda (the-event) proc (loop))
                                             streams))
                                  out)])
-                   (apply proc->behavior thunk out args))))]))
+                   (apply proc->signal thunk args))))]))
   
   (define-syntax (event-producer stx)
     (syntax-case stx ()
-      [(src-event-producer expr ...)
+      [(src-event-producer expr dep ...)
        (with-syntax ([emit (datum->syntax-object (syntax src-event-producer) 'emit)]
                      [the-args (datum->syntax-object
                                 (syntax src-event-producer) 'the-args)])
-         (syntax (let* ([out (cons undefined undefined)]
+         (syntax (let* ([out (econs undefined undefined)]
                         [emit (lambda (val)
-                                (set-rest! out (cons val undefined))
-                                (set! out (rest out)))])
-                   (proc->behavior (lambda the-args expr ... out) out))))]))
+                                (set-erest! out (econs val undefined))
+                                (set! out (erest out)))])
+                   (proc->signal (lambda the-args expr out) dep ...))))]))
   
-  ; switch : event[behavior] -> behavior
-  (define switch
-    (frp:lambda (init e)
-      (let ([e-b (hold init e)])
-        (rec ret (proc->behavior
-                  (case-lambda
-                    [()
-                     (when (not (eq? init (get-value e-b)))
-                       (unregister ret init)
-                       (set! init (get-value e-b))
-                       (register ret init))
-                     (get-value init)]
-                    [(msg) e])
-                  (get-value init)
-                  ; deps
-                  e-b init)))))
+  ; switch : behavior event[behavior] -> behavior
+  (define (switch init e)
+    (let ([e-b (hold init e)])
+      (rec ret
+        (proc->signal
+         (case-lambda
+           [()
+            (when (not (eq? init (get-value e-b)))
+              (unregister ret init)
+              (set! init (get-value e-b))
+              (register ret init)
+              (set-signal-depth! ret (max (signal-depth ret)
+                                          (add1 (safe-signal-depth init)))))
+            (get-value init)]
+           [(msg) e])
+         e-b init))))
   
   ; event* -> event
-  (define merge-e
-    (frp:lambda args
-      (event-filter
-       (emit the-event)
-       args)))
+  (define (merge-e . args)
+    (event-filter
+     (emit the-event)
+     args))
   
-  (define once-e
-    (frp:lambda (e)
-      (let ([b true])
-        (event-filter
-         (when b
-           (set! b false)
-           (emit the-event))
-         (list e)))))
+  (define (once-e e)
+    (let ([b true])
+      (event-filter
+       (when b
+         (set! b false)
+         (emit the-event))
+       (list e))))
   
   ; behavior[a] -> event[a]
-  (define changes
-    (frp:lambda (b)
-      (register
-       (event-producer
-        (emit (get-value b)))
-       b)))
+  (define (changes b)
+    (event-producer
+     (emit (get-value b))
+     b))
   
   (define (event-forwarder sym evt f+l)
     (event-filter
@@ -450,47 +479,41 @@
        (emit (first the-args)))))
   
   ; when-e : behavior[bool] -> event
-  (define when-e
-    (frp:lambda (b)
-      (let* ([last (get-value b)])
-        (register
-         (event-producer
-          (let ([current (get-value b)])
-            (when (and (not last) current)
-              (emit current))
-            (set! last current)))
-         b))))
+  (define (when-e b)
+    (let* ([last (get-value b)])
+      (event-producer
+       (let ([current (get-value b)])
+         (when (and (not last) current)
+           (emit current))
+         (set! last current))
+       b)))
   
   ; ==> : event[a] (a -> b) -> event[b]
-  (define ==>
-    (frp:lambda (e f)
-      (event-filter
-       (emit ((get-value f) the-event))
-       (list e))))
+  (define (e . ==> . f)
+    (event-filter
+     (emit ((get-value f) the-event))
+     (list e)))
   
   ; -=> : event[a] b -> event[b]
-  (define -=>
-    (frp:lambda (e v)
-      (e . ==> . (lambda (_) v))))
+  (define (e . -=> . v)
+    (e . ==> . (lambda (_) v)))
   
   ; =#> : event[a] (a -> bool) -> event[a]
-  (define =#>
-    (frp:lambda (e p)
-      (event-filter
-       (if (p the-event)
-           (emit the-event))
-       (list e))))
+  (define (e . =#> . p)
+    (event-filter
+     (when (p the-event)
+       (emit the-event))
+     (list e)))
   
   (define nothing (string->uninterned-symbol "nothing"))
   
   ; =#=> : event[a] (a -> b U nothing) -> event[b]
-  (define =#=>
-    (frp:lambda (e f)
-      (event-filter
-       (let ([x (f the-event)])
-         (if (not (eq? x nothing))
-             (emit x)))
-       (list e))))
+  (define (e . =#=> . f)
+    (event-filter
+     (let ([x (f the-event)])
+       (when (not (eq? x nothing))
+         (emit x)))
+     (list e)))
   
   (define map-e ==>)
   (define map-const-e -=>)
@@ -498,54 +521,50 @@
   (define filter-map-e =#=>)
   
   ; event[a] b (a b -> b) -> event[b]
-  (define collect-e
-    (frp:lambda (e init trans)
-      (event-filter
-       (let ([ret (trans the-event init)])
-         (set! init ret)
-         (emit ret))
-       (list e))))
+  (define (collect-e e init trans)
+    (event-filter
+     (let ([ret (trans the-event init)])
+       (set! init ret)
+       (emit ret))
+     (list e)))
   
   ; event[(a -> a)] a -> event[a]
-  (define accum-e
-    (frp:lambda (e init)
-      (event-filter
-       (let ([ret (the-event init)])
-         (set! init ret)
-         (emit ret))
-       (list e))))
+  (define (accum-e e init)
+    (event-filter
+     (let ([ret (the-event init)])
+       (set! init ret)
+       (emit ret))
+     (list e)))
   
-  ; event[a] behavior[b]* -> event[(list a b*)]
-  (define snapshot-e
-    (frp:lambda (e . bs)
-      (event-filter
-       (emit (cons the-event (map get-value bs)))
-       (list e))))
+  ; event[a] signal[b]* -> event[(list a b*)]
+  (define (snapshot-e e . bs)
+    (event-filter
+     (emit (cons the-event (map get-value bs)))
+     (list e)))
   
-  ; (a b* -> c) event[a] behavior[b]* -> event[c]
-  (define snapshot-map-e
-    (frp:lambda (fn ev . bs)
-      (event-filter
-       (emit (apply fn the-event (map get-value bs)))
-       (list ev))))
+  ; (a b* -> c) event[a] signal[b]* -> event[c]
+  (define (snapshot-map-e fn ev . bs)
+    (event-filter
+     (emit (apply fn the-event (map get-value bs)))
+     (list ev)))
   
-  ; event[a] b (a b -> b) -> behavior[b]
-  (define collect-b
-    (frp:lambda (ev init trans)
-      (hold init (collect-e ev init trans))))
+  ; event[a] b (a b -> b) -> signal[b]
+  (define (collect-b ev init trans)
+    (hold init (collect-e ev init trans)))
   
-  ; event[(a -> a)] a -> behavior[a]
-  (define accum-b
-    (frp:lambda (ev init)
-      (hold init (accum-e ev init))))
+  ; event[(a -> a)] a -> signal[a]
+  (define (accum-b ev init)
+    (hold init (accum-e ev init)))
   
-  ; hold : a event[a] -> behavior[a]
-  (define hold
-    (frp:lambda (v e)
-      (proc->behavior
-       (lambda () (first (get-value e)))
-       v
-       e)))
+  ; hold : a event[a] -> signal[a]
+  (define (hold v e)
+    (proc->signal
+     (let ([b true])
+       (lambda ()
+         (if b
+             (begin (set! b false) v)
+             (efirst (signal-value e)))))
+     e))
   
   (define update
     (case-lambda
@@ -553,15 +572,26 @@
       [(b a) (update1 b a)]))
   
   (define-values (iq-enqueue iq-dequeue iq-empty?)
-    (let* ([treap (make-treap -)]
-           [enq (treap 'enqueue)])
+    (let ([heap (make-heap
+                 (lambda (b1 b2)
+                   (< (signal-depth b1)
+                      (signal-depth b2)))
+                 eq?)])
       (values
-       (lambda (b)
-         (enq (behavior-depth b) b))
-       (lambda ()
-         (treap 'dequeue))
-       (lambda ()
-         (treap 'empty?)))))
+       (lambda (b) (heap-insert heap b))
+       (lambda () (heap-pop heap))
+       (lambda () (heap-empty? heap)))))
+  
+;  (define-values (iq-enqueue iq-dequeue iq-empty?)
+;    (let* ([treap (make-treap -)]
+;           [enq (treap 'enqueue)])
+;      (values
+;       (lambda (b)
+;         (enq (signal-depth b) b))
+;       (lambda ()
+;         (treap 'dequeue))
+;       (lambda ()
+;         (treap 'empty?)))))
   
 ;  (define-values (iq-enqueue iq-dequeue iq-empty?)
 ;    (let* ([treap (make-treap -)]
@@ -570,7 +600,7 @@
 ;      (values
 ;       (let ([cell (cons #f empty)])
 ;         (lambda (b)
-;           (let ([depth (behavior-depth b)])
+;           (let ([depth (signal-depth b)])
 ;             (put depth (cons b (rest (get depth (lambda () cell))))))))
 ;       (lambda ()
 ;         (let* ([depth&bhvrs (treap 'get-min)]
@@ -585,66 +615,66 @@
   ; *** will have to change ... ***
   (define (propagate b)
     (let ([empty-boxes 0]
-          [dependents (behavior-dependents b)]
-          [depth (behavior-depth b)])
+          [dependents (signal-dependents b)]
+          [depth (signal-depth b)])
       (for-each
        (lambda (wb)
          (match (weak-box-value wb)
-           [(and dep (? behavior?) (= behavior-stale? #f))
-            (set-behavior-stale?! dep #t)
+           [(and dep (? signal?) (= signal-stale? #f))
+            (set-signal-stale?! dep #t)
             ; If I'm crossing a "back" edge (one potentially causing a cycle),
             ; then I send a message.  Otherwise, I add to the internal
             ; priority queue.
-            (if (< depth (behavior-depth dep))
+            (if (< depth (signal-depth dep))
                 (iq-enqueue dep)
                 (! man dep))]
            [_
             (set! empty-boxes (add1 empty-boxes))]))
        dependents)
       (when (> empty-boxes 9)
-        (set-behavior-dependents!
+        (set-signal-dependents!
          b
          (filter weak-box-value dependents)))))
   
   (define (update0 b)
     (match b
-      [(and (? behavior?)
-            (= behavior-value value)
-            (= behavior-thunk thunk))
-       (set-behavior-stale?! b #f)
+      [(and (? signal?)
+            (= signal-value value)
+            (= signal-thunk thunk))
+       (set-signal-stale?! b #f)
        (let ([new-value (thunk)])
          ; consider modifying this test in order to support, e.g., mutable structs
          (when (not (equal? value new-value))
-           (set-behavior-value! b new-value)
+           (set-signal-value! b new-value)
            (propagate b)))]
       [_ (void)]))
   
   (define (update1 b a)
     (match b
-      [(and (? behavior?)
-            (= behavior-value value)
-            (= behavior-thunk thunk))
-       (set-behavior-stale?! b #f)
+      [(and (? signal?)
+            (= signal-value value)
+            (= signal-thunk thunk))
+       (set-signal-stale?! b #f)
        (let ([new-value (thunk a)])
          ; consider modifying this test in order to support, e.g., mutable structs
          (when (not (equal? value new-value))
-           (set-behavior-value! b new-value)
+           (set-signal-value! b new-value)
            (propagate b)))]
       [_ (void)]))
   
   (define (undef b)
     (match b
-      [(and (? behavior?)
-            (= behavior-value value))
-       (set-behavior-stale?! b #f)
-       (when (not (eq? value undefined))
-         (set-behavior-value! b undefined)
+      [(and (? signal?)
+            (= signal-value value))
+       (set-signal-stale?! b #f)
+       (when (not (undefined? value))
+         (set-signal-value! b undefined)
          (propagate b))]
       [_ (void)]))
   
   (define named-dependents (make-hash-table))
   
-  (frp:define (bind sym evt)
+  (define (bind sym evt)
     (! man (list 'bind sym evt))
     evt)
   
@@ -656,7 +686,7 @@
                         (! tid (list 'remote-reg man sym))
                         ret))))
   
-  ; the manager of all behaviors and event streams
+  ; the manager of all signals and event streams
   (define man
     (spawn/name
      'frp-man
@@ -666,14 +696,9 @@
        (let outer ()
          (with-handlers ([exn?
                           (lambda (exn)
-                            (cond
-                              [(and (exn:application:type? exn)
-                                    (undefined? (exn:application-value exn)))]
-;                              [(exn:application:divide-by-zero? exn)]
-                              [else ;(thread (lambda () (raise exn)))
-                                    (fprintf (current-error-port) "~a~n" (exn-message exn))])
-                            (undef cur-beh)
-                            ;(sleep 2)
+                            (! (self) (make-event (cons exn cur-beh) exceptions))
+                            (when (behavior? cur-beh)
+                              (undef cur-beh))
                             (outer))])
            (let loop ()
              ; should rewrite this entire block:
@@ -697,19 +722,19 @@
                              (for-each
                               (lambda (wb)
                                 (let ([beh (weak-box-value wb)])
-                                  (when (and beh (not (behavior-stale? beh)))
-                                    (set-behavior-stale?! beh #t)
+                                  (when (and beh (not (signal-stale? beh)))
+                                    (set-signal-stale?! beh #t)
                                     (iq-enqueue beh))))
                               (rest next))
                              (inner)))))]
-                    [(? behavior? b)
+                    [(? signal? b)
                      (set! cur-beh b)
-                     (update b)
+                     (update0 b)
                      (set! cur-beh #f)]
                     [($ event val recip)
                      ; should this really be here?
                      (set! cur-beh recip)
-                     (update recip val)
+                     (update1 recip val)
                      (set! cur-beh #f)]
                     [($ alarm ms beh)
                      (when (> ms 1073741824)
@@ -740,11 +765,14 @@
                    (set! cur-beh #f)))
              (loop)))))))
   
+  (define exceptions
+    (event-receiver))
+  
   (define dummy
-    (proc->behavior))
+    (proc->signal void))
   
   (define (silly)
-    (letrec ([res (proc->behavior
+    (letrec ([res (proc->signal
                    (let ([x 0]
                          [init (current-milliseconds)])
                      (lambda ()
@@ -753,83 +781,82 @@
                              (set! x (+ x 1)))
                            (begin
                              (printf "time = ~a~n" (- (current-milliseconds) init))
-                             (set-behavior-dependents! res empty)))
+                             (set-signal-dependents! res empty)))
                        x)))])
-      (set-behavior-dependents! res (cons (make-weak-box res) empty))
+      (set-signal-dependents! res (cons (make-weak-box res) empty))
       (! man res)
       res))
   
   (define (simple-b fn)
-    (let ([ret (proc->behavior)])
-      (set-behavior-thunk! ret (fn ret))
-      (set-behavior-value! ret ((behavior-thunk ret)))
+    (let ([ret (proc->signal void)])
+      (set-signal-thunk! ret (fn ret))
+      (set-signal-value! ret ((signal-thunk ret)))
       ret))
   
   (define (make-time-b ms)
-    (let ([ret (proc->behavior)])
-      (set-behavior-thunk! ret
+    (let ([ret (proc->signal void)])
+      (set-signal-thunk! ret
                            (lambda ()
                              (let ([t (current-milliseconds)])
                                (! man (make-alarm (+ ms t) ret))
                                t)))
-      (set-behavior-value! ret ((behavior-thunk ret)))
+      (set-signal-value! ret ((signal-thunk ret)))
       ret))
   
   (define milliseconds (make-time-b 20))
   (define time-b milliseconds)
   
   (define seconds
-    (let ([ret (proc->behavior)])
-      (set-behavior-thunk! ret
+    (let ([ret (proc->signal void)])
+      (set-signal-thunk! ret
                            (lambda ()
                              (let ([s (current-seconds)]
                                    [t (current-milliseconds)])
                                (! man (make-alarm (* 1000 (add1 (floor (/ t 1000)))) ret))
                                s)))
-      (set-behavior-value! ret ((behavior-thunk ret)))
+      (set-signal-value! ret ((signal-thunk ret)))
       ret))
   
   ; general efficiency fix for delay
-  ; behavior[a] behavior[num] -> behavior[a]
-  (define delay-by
-    (frp:lambda (beh ms-b)
-      (if (and (number? ms-b) (<= ms-b 0))
-          beh
-          (let* ([last (cons (cons undefined
-                                   (current-milliseconds))
-                             empty)]
-                 [head last]
-                 [ret (proc->behavior)]
-                 [thunk (lambda () (let* ([now (current-milliseconds)]
-                                          [new (get-value beh)]
-                                          [ms (get-value ms-b)])
-                                     (when (not (equal? new (caar last)))
-                                       (set-rest! last (cons (cons new now)
-                                                             empty))
-                                       (set! last (rest last))
-                                       (! man (make-alarm
-                                               (+ now ms) ret)))
-                                     (let loop ()
-                                       (if (or (empty? (rest head))
-                                               (< now (+ ms (cdadr head))))
-                                           (caar head)
-                                           (begin
-                                             (set! head (rest head))
-                                             (loop))))))])
-            (set-behavior-thunk! ret thunk)
-            (set-behavior-value! ret (thunk))
-            (register ret (list beh ms-b))))))
+  ; signal[a] signal[num] -> signal[a]
+  (define (delay-by beh ms-b)
+    (if (and (number? ms-b) (<= ms-b 0))
+        beh
+        (let* ([last (cons (cons undefined
+                                 (current-milliseconds))
+                           empty)]
+               [head last]
+               [ret (proc->signal void)]
+               [thunk (lambda () (let* ([now (current-milliseconds)]
+                                        [new (get-value beh)]
+                                        [ms (get-value ms-b)])
+                                   (when (not (equal? new (caar last)))
+                                     (set-rest! last (cons (cons new now)
+                                                           empty))
+                                     (set! last (rest last))
+                                     (! man (make-alarm
+                                             (+ now ms) ret)))
+                                   (let loop ()
+                                     (if (or (empty? (rest head))
+                                             (< now (+ ms (cdadr head))))
+                                         (caar head)
+                                         (begin
+                                           (set! head (rest head))
+                                           (loop))))))])
+          (set-signal-thunk! ret thunk)
+          (set-signal-value! ret (thunk))
+          (register ret (list beh ms-b)))))
   
   ; fix to take arbitrary monotonically increasing number
   ; (instead of milliseconds)
-  ; integral : behavior[num] behavior[num] -> behavior[num]
+  ; integral : signal[num] signal[num] -> signal[num]
   (define integral
-    (frp:case-lambda
+    (case-lambda
       [(b) (integral b 20)]
       [(b ms-b) (let* ([accum 0]
                        [last-time (current-milliseconds)]
                        [last-val (get-value b)]
-                       [ret (proc->behavior)]
+                       [ret (proc->signal void)]
                        [last-alarm 0]
                        [thunk (lambda ()
                                 (let ([now (current-milliseconds)])
@@ -852,55 +879,47 @@
                                         (set! last-alarm (+ now 20))
                                         (! man (make-alarm last-alarm ret))))
                                   accum))])
-                  (set-behavior-thunk! ret thunk)
-                  (set-behavior-value! ret (thunk))
+                  (set-signal-thunk! ret thunk)
+                  (set-signal-value! ret (thunk))
                   (register ret (list b ms-b)))]))
   
   ; fix for accuracy
-  ; derivative : behavior[num] -> behavior[num]
-  (define derivative
-    (frp:lambda (b)
-      (let* ([last-value (get-value b)]
-             [last-time (current-milliseconds)]
-             [thunk (lambda ()
-                      (let* ([new-value (get-value b)]
-                             [new-time (current-milliseconds)]
-                             [result (if (or (eq? new-value last-value)
-                                             (eq? new-time last-time)
-                                             (> new-time
-                                                (+ 500 last-time))
-                                             (not (number? last-value))
-                                             (not (number? new-value)))
-                                         0
-                                         (/ (- new-value last-value)
-                                            (- new-time last-time)))])
-                        (set! last-value new-value)
-                        (set! last-time new-time)
-                        result))])
-        (proc->behavior thunk 0 b))))
+  ; derivative : signal[num] -> signal[num]
+  (define (derivative b)
+    (let* ([last-value (get-value b)]
+           [last-time (current-milliseconds)]
+           [thunk (lambda ()
+                    (let* ([new-value (get-value b)]
+                           [new-time (current-milliseconds)]
+                           [result (if (or (= new-value last-value)
+                                           (= new-time last-time)
+                                           (> new-time
+                                              (+ 500 last-time))
+                                           (not (number? last-value))
+                                           (not (number? new-value)))
+                                       0
+                                       (/ (- new-value last-value)
+                                          (- new-time last-time)))])
+                      (set! last-value new-value)
+                      (set! last-time new-time)
+                      result))])
+      (proc->signal thunk b)))
   
-  ; new-cell : a -> behavior[a] (cell)
-  (frp:define (new-cell init)
+  ; new-cell : behavior[a] -> behavior[a] (cell)
+  (define (new-cell init)
     (switch init (event-receiver)))
   
   ; set-cell! : cell[a] a -> void
-  (frp:define (set-cell! ref beh)
-    (! man (make-event beh ((behavior-thunk ref) #t))))
+  (define (set-cell! ref beh)
+    (! man (make-event beh ((signal-thunk ref) #t))))
   
-  (frp:define (send-event rcvr evt)
+  (define (send-event rcvr evt)
     (! man (make-event evt rcvr)))
   
   (define c-v get-value)
   
-  (define cur-vals
-    (frp:lambda args
-      (apply values (map get-value args))))
-  
-  (define behavior-consumers (list behavior?
-                                   behavior-dependents
-                                   behavior-depth
-                                   make-unreg
-                                   values))
+  (define (cur-vals . args)
+    (apply values (map get-value args)))
   
   (define (curried-apply fn)
     (lambda (lis) (apply fn lis)))
@@ -923,7 +942,7 @@
   
   (define-syntax match-b
     (syntax-rules ()
-      [(_ expr clause ...) (lift (match-lambda clause ...) expr)]))
+      [(_ expr clause ...) (lift #t (match-lambda clause ...) expr)]))
   
   (define (geometric)
     (- (log (/ (random 2147483647) 2147483647.0))))
@@ -947,25 +966,43 @@
                     (set! cur (- 1 cur))
                     cur)))))
   
+  (define drs-eventspace #f)
+  
+  (define (set-eventspace evspc)
+    (set! drs-eventspace evspc))
+  
   (define value-snip-copy%
     (class string-snip%
       (init-field current parent)
       (inherit get-admin)
       (define/public (set-current c)
-        (set! current c)
-        (let ([admin (get-admin)])
-          (when admin
-            (send admin needs-update this 0 0 1000 100))))
+        (parameterize ([current-eventspace drs-eventspace])
+          (queue-callback
+           (lambda ()
+             (set! current c)
+             (let ([admin (get-admin)])
+               (when admin
+                 (send admin needs-update this 0 0 1000 100)))))))
       (define/override (draw dc x y left top right bottom dx dy draw-caret)
         (send current draw dc x y left top right bottom dx dy draw-caret))
       (super-instantiate (" "))))
+  
+  (define (make-snip bhvr)
+    (make-object string-snip%
+      (let ([tmp (if (signal? bhvr)
+                     (signal-value bhvr)
+                     bhvr)])
+        (cond
+          [(econs? tmp) (format "#<event (last: ~a)>" (efirst tmp))]
+          [(undefined? tmp) "#<undefined>"]
+          [else (expr->string tmp)]))))
   
   (define value-snip%
     (class string-snip%
       (init-field bhvr)
       (field [copies empty]
-             [loc-bhvr (proc->behavior (lambda () (update)) (void) bhvr)]
-             [current (make-object string-snip% (expr->string (get-value bhvr)))])
+             [loc-bhvr (proc->signal (lambda () (update)) bhvr)]
+             [current (make-snip bhvr)])
       
       (rename [std-copy copy])
       (define/override (copy)
@@ -974,46 +1011,141 @@
           ret))
       
       (define/public (update)
-        (set! current (make-object string-snip% (expr->string (get-value bhvr))))
+        (set! current (make-snip bhvr))
         (for-each (lambda (copy) (send copy set-current current)) copies))
       
       (super-instantiate (" "))))
   
-  (frp:define (watch beh)
-    (if (behavior? beh)
-        (if (and (cons? (get-value beh))
-                 (undefined? (rest (get-value beh))))
-            '<event>
-            (make-object value-snip% beh))
-        beh))
+  (define (watch beh)
+    (cond
+      [(undefined? beh)
+       (make-object string-snip% "#<undefined>")]
+      [(signal? beh) (make-object value-snip% beh)]
+      [else beh]))
   
-  (provide (rename #%app app-prim)
-           (rename if if-prim)
-           (rename cond cond-prim)
-           (rename and and-prim)
-           (rename or or-prim)
-           (rename lambda lambda-prim)
-           (rename case-lambda case-lambda-prim)
-           (rename define define-prim)
-           (rename letrec letrec-prim)
-           (rename rec rec-prim)
-           (rename frp:app #%app)
-           (rename frp:if if)
-           (rename frp:cond cond)
-           (rename frp:and and)
-           (rename frp:or or)
-           (rename frp:lambda lambda)
-           (rename frp:case-lambda case-lambda)
-           (rename frp:define define)
+  (define-syntax (lift-procs stx)
+    (syntax-case stx ()
+      [(src-lift-procs . ids)
+       (with-syntax ([(old-name ...) (syntax ids)]
+                     [(new-name ...) (generate-temporaries (syntax ids))])
+         (syntax
+          (begin
+            (define-values (new-name ...)
+              (values
+               (lambda args (apply lift #f old-name args)) ...))
+            (provide (rename new-name old-name) ...))))]))
+
+  (define-syntax (frp:provide stx)
+    (syntax-case stx ()
+      [(_ . clauses)
+       (foldl
+        (lambda (c prev)
+          (syntax-case prev ()
+            [(begin clause ...)
+             (syntax-case c (lift lift/strict)
+               [(lift . ids)
+                (with-syntax ([(fun-name ...) (syntax ids)]
+                              [(tmp-name ...)
+                               (map (lambda (id)
+                                      (datum->syntax-object stx (syntax-object->datum id)))
+                                    (generate-temporaries (syntax ids)))])
+                  (syntax
+                   (begin
+                     clause ...
+                     (define (tmp-name . args)
+                        (apply lift false fun-name args))
+                     ...
+                     (provide (rename tmp-name fun-name) ...))))]
+               [(lift/strict . ids)
+                (with-syntax ([(fun-name ...) (syntax ids)]
+                              [(tmp-name ...)
+                               (map (lambda (id)
+                                      (datum->syntax-object stx (syntax-object->datum id)))
+                                    (generate-temporaries (syntax ids)))])
+                  (syntax
+                   (begin
+                     clause ...
+                     (define (tmp-name . args)
+                        (apply lift true fun-name args))
+                     ...
+                     (provide (rename tmp-name fun-name) ...))))]
+               [provide-spec
+                (syntax (begin clause ... (provide provide-spec)))])]))
+        (syntax (begin))
+        (syntax->list (syntax clauses)))]))  
+
+  (define-syntax (frp:require stx)
+    (syntax-case stx ()
+      [(_ . clauses)
+       (foldl
+        (lambda (c prev)
+          (syntax-case prev ()
+            [(begin clause ...)
+             (syntax-case c (lift lift/strict as-is)
+               [(lift module . ids)
+                (with-syntax ([(fun-name ...) (syntax ids)]
+                              [(tmp-name ...)
+                               (map (lambda (id)
+                                      (datum->syntax-object stx (syntax-object->datum id)))
+                                    (generate-temporaries (syntax ids)))])
+                  (syntax
+                   (begin
+                     clause ...
+                     (require (rename module tmp-name fun-name) ...)
+                     (define (fun-name . args)
+                        (apply lift false tmp-name args))
+                     ...)))]
+               [(lift/strict module . ids)
+                (with-syntax ([(fun-name ...) (syntax ids)]
+                              [(tmp-name ...)
+                               (map (lambda (id)
+                                      (datum->syntax-object stx (syntax-object->datum id)))
+                                    (generate-temporaries (syntax ids)))])
+                  (syntax
+                   (begin
+                     clause ...
+                     (require (rename module tmp-name fun-name) ...)
+                     (define (fun-name . args)
+                        (apply lift true tmp-name args))
+                     ...)))]
+               [(as-is module id ...)
+                (syntax (begin clause ... (require (rename module id id) ...)))]
+               [require-spec
+                (syntax (begin clause ... (require require-spec)))])]))
+        (syntax (begin))
+        (syntax->list (syntax clauses)))]))
+  
+  (lift-procs undefined?)
+  
+  (provide (rename frp:if if)
+           (rename frp:require require)
+           (rename frp:provide provide)
            (rename frp:letrec letrec)
            (rename frp:rec rec)
            (rename match-b match)
            (rename get-value cur-val)
-           start-network
-           ; !
-           make-tid
-           (all-defined-except)
-           (all-from-except (lib "list.ss"))
-           (all-from-except (lib "etc.ss") rec)
-           (all-from-except (lib "string.ss"))
-           (all-from-except mzscheme define if #%app lambda case-lambda letrec and or cond)))
+           module
+           #%app
+           #%top
+           #%datum
+           #%plain-module-begin
+           #%module-begin
+           lambda
+           case-lambda
+           define-values
+           define
+           let
+           let-values
+           let*
+           begin
+           begin0
+           quote
+           quasiquote
+           unquote
+           values
+           (all-defined-except undefined?
+                               frp:if
+                               frp:require
+                               frp:provide
+                               frp:letrec
+                               frp:rec)))

@@ -1,8 +1,11 @@
-(module demo7 (lib "animation.ss" "frtime")
+(module demo7 (lib "frtime.ss" "frtime")
   
-  (require (all-except (lib "match.ss") match))
+  (require
+   (lib "animation.ss" "frtime")
+   (lib "erl.ss" "frtime")
+   (all-except (lib "match.ss") match))
   
-  (define remote-machine (new-cell 'olympia.cs.brown.edu))
+  (define slave (new-cell (make-tid 1179 'frp-man)))
   
   (define pos1
     (let ([paddle-radius 20]
@@ -14,7 +17,7 @@
                                             (lambda (dummy)
                                               (hold (make-posn 30 200)
                                                     ((remote-reg
-                                                      (make-tid (get-value remote-machine) 'frp-man)
+                                                      (get-value slave)
                                                       'paddle1-pos)
                                                      . ==> .
                                                      (lambda (l) (make-posn (first l) (second l))))))))]

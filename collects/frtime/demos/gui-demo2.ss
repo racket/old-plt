@@ -1,32 +1,26 @@
-(module gui-demo2 (lib "frp.ss" "frtime")
+(module gui-demo2 (lib "frtime.ss" "frtime")
   
-  (require (lib "gui.scm" "frtime"))
+  (require (lib "gui.scm" "frtime")
+           (lift (lib "etc.ss") identity))
   
-  (define (make-op op)
-    (lambda-prim (x y)
-                 (if (and (number? x) (number? y))
-                     (number->string (op x y))
-                     "Err")))
+  (define op-names (list "+" "-" "*" "/"))
+  (define ops (list + - * /))
   
-  (define plus (make-op +))
-  (define minus (make-op -))
-  (define times (make-op *))
-  (define-prim (divide x y)
-    (if (and (number? x) (number? y) (not (zero? y)))
-        (number->string (/ x y))
-        "Err"))
-  
-  (define op-names (list '+ '- '* '/))
-  (define ops (list plus minus times divide))
+  (define (str->num s)
+    (cond
+      [(string->number s) => identity]
+      [else 0]))
   
   (define x
-    (string->number (make-text "First number:")))
+    (str->num (make-text "First number:")))
   
   (define op
-    (make-choice "Op:" (map symbol->string op-names)))
+    (make-choice "Op:" op-names))
   
   (define y
-    (string->number (make-text "Second number:")))
+    (str->num (make-text "Second number:")))
   
   (make-message
-   (string-append "Result = " ((list-ref ops op) x y))))
+   (format "Result = ~a" ((list-ref ops op) x y)))
+  
+  (provide (all-defined-except)))

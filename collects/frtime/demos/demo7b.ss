@@ -1,6 +1,10 @@
-(module demo7b (lib "animation.ss" "frtime")
+(module demo7b (lib "frtime.ss" "frtime")
+
+  (require (lib "animation.ss" "frtime")
+           (lib "list.ss" "frtime")
+           (lib "erl.ss" "frtime"))
   
-  (define remote-machine (new-cell 'quickstep.cs.brown.edu))
+  (define master (make-tid 1178 'frp-man))
   
   (define pos1
     (let* ([paddle-radius 20]
@@ -11,7 +15,7 @@
                           . ==> .
                           (lambda (dummy)
                             (hold (list 300 300 100 100 0 0)
-                                  (remote-reg (make-tid (c-v remote-machine) 'frp-man) 'pong)))))]
+                                  (remote-reg (get-value master) 'pong)))))]
            [paddle2-pos (make-posn (first pong) (second pong))]
            [pos1 (make-posn (third pong) (fourth pong))]
            [p1-score (list-ref pong 4)]

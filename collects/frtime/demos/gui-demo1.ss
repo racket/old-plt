@@ -1,4 +1,4 @@
-(module gui-demo1 (lib "frp.ss" "frtime")
+(module gui-demo1 (lib "frtime.ss" "frtime")
   
   (require (lib "gui.scm" "frtime"))
   
@@ -22,6 +22,6 @@
          (snapshot-map-e
           (lambda (_ c k s)
             (string-append c " ordered a "
-                           (list-ref sizes s) "-sized, "
-                           (list-ref kinds k) "-style pizza."))
+                           (list-ref sizes s) " "
+                           (list-ref kinds k) " pizza."))
           button-event customer kind size))))

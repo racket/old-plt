@@ -575,6 +575,7 @@
 # define REGISTER_POOR_MACHINE
 
 # define WINDOWS_UNICODE_SUPPORT
+# define USE_ICONV_DLL
 
 # define FLAGS_ALREADY_SET
 
@@ -1267,6 +1268,9 @@
  /* MACOS_UNICODE_SUPPORT and WINDOWS_UNICODE_SUPPORT indicate that
     platform-native functions should be used for string comparisons
     in the default locale. */
+
+ /* USE_ICONV_DLL loads iconv.dll lazily for string conversion; no
+    headers necessary. */
 
  /* NO_INLINE_KEYWORD indicates that the C compiler doesn't recognize
     C's `inline' keyword. */

@@ -27,8 +27,10 @@
 #include <ctype.h>
 #ifndef DONT_USE_LOCALE
 # include <locale.h>
-# include <iconv.h>
-# include <langinfo.h>
+# ifndef USE_ICONV_DLL
+#  include <iconv.h>
+#  include <langinfo.h>
+# endif
 # include <wchar.h>
 # include <wctype.h>
 # include <errno.h>
@@ -42,6 +44,17 @@
 
 #ifndef SCHEME_PLATFORM_LIBRARY_SUBPATH
 # include "schsys.h"
+#endif
+
+#ifdef USE_ICONV_DLL
+typedef long iconv_t;
+static char *(*nl_langinfo)(int which);
+static size_t (*iconv)(iconv_t cd,
+		       char **inbuf, size_t *inbytesleft,
+		       char **outbuf, size_t *outbytesleft);
+static iconv_t (*iconv_open)(const char *tocode, const char *fromcode);
+static void (*iconv_close)(iconv_t cd);
+# define CODESET 0
 #endif
 
 typedef struct Scheme_Converter {
@@ -1257,12 +1270,14 @@ static char *do_convert(iconv_t cd,
   *oolen = 0;
 
   if (cd == (iconv_t)-1) {
-    if (!from_e)
-      from_e = nl_langinfo(CODESET);
-    if (!to_e)
-      to_e = nl_langinfo(CODESET);
-    cd = iconv_open(to_e, from_e);
-    close_it = 1;
+    if (iconv_open) {
+      if (!from_e)
+	from_e = nl_langinfo(CODESET);
+      if (!to_e)
+	to_e = nl_langinfo(CODESET);
+      cd = iconv_open(to_e, from_e);
+      close_it = 1;
+    }
   }
 
   if (cd == (iconv_t)-1) {
@@ -2518,6 +2533,9 @@ static Scheme_Object *string_open_converter(int argc, Scheme_Object **argv)
 
   from_e = SCHEME_STR_VAL(argv[0]);
   to_e = SCHEME_STR_VAL(argv[1]);
+
+  if (!iconv_open)
+    return scheme_false;
 
   if (!*from_e)
     from_e = nl_langinfo(CODESET);

@@ -219,6 +219,9 @@ int MAIN(int argc, MAIN_char **MAIN_argv)
 {
   void *stack_start;
   int rval;
+#ifdef WINDOWS_UNICODE_SUPPORT
+  char **argv;
+#endif
 
   stack_start = (void *)&stack_start;
 
@@ -242,7 +245,7 @@ int MAIN(int argc, MAIN_char **MAIN_argv)
 
 #ifdef WINDOWS_UNICODE_SUPPORT
  {
-   char **argv, *a;
+   char *a;
    int i, j, l;
    argv = (char **)malloc(sizeof(char*)*argc);
    for (i = 0; i < argc; i++) {

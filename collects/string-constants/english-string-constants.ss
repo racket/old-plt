@@ -290,7 +290,7 @@
  (open-menu-item "&Open...")
 
  (open-recent-info "A list of the recently opened files")
- (open-recent-menu-item "Open recent")
+ (open-recent-menu-item "Open Recent")
  
  (revert-info "Revert this file to the copy on disk")
  (revert-menu-item "&Revert")
@@ -359,8 +359,8 @@
  (wrap-text-item "Wrap Text")
 
  (windows-menu-label "&Windows")
- (bring-frame-to-front "Bring frame to front")       ;;; title of dialog
- (bring-frame-to-front... "Bring frame to front...") ;;; corresponding title of menu item
+ (bring-frame-to-front "Bring Frame to Front")       ;;; title of dialog
+ (bring-frame-to-front... "Bring Frame to Front...") ;;; corresponding title of menu item
 
  (show-menu-label "&Show")
  (show-overview "Show Contour") 

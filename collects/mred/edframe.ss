@@ -264,12 +264,14 @@
 	    [edit-menu:clear (edit-menu:do wx:const-edit-clear)]
 	    [edit-menu:copy (edit-menu:do wx:const-edit-copy)]
 	    [edit-menu:paste (edit-menu:do wx:const-edit-paste)]
-	    [edit-menu:select-all
-	     (lambda ()
-	       (send (active-edit) set-position
-		     0 (send (active-edit) last-position)))]
+	    [edit-menu:select-all (edit-menu:do wx:const-edit-select-all)]
+	    [edit-menu:replace (lambda ()
+				 (mred:find-string:find-string
+				  (active-canvas)
+				  (active-edit)
+				  -1 -1 (list 'replace 'ignore-case)))]
 
-	    [edit-menu:between-find-and-preferences
+	    [edit-menu:between-replace-and-preferences
 	     (lambda (edit-menu)
 	       (send edit-menu append-separator)
 	       (send edit-menu append-item "Insert Text Box"

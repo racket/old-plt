@@ -518,12 +518,18 @@
 
 	    [file-menu:revert #f]
 	    [file-menu:close
-	     (if close-item?
-		 (lambda ()
-		   (when (on-close)
-		     (send (active-edit) release-output)
-		     (show #f)))
-		 #f)]
+	     (cond
+	       [close-item?
+		(lambda ()
+		  (when (on-close)
+		    (send (active-edit) release-output)
+		    (show #f)))]
+	       [mred:debug:on?
+		(lambda ()
+		  (send (active-edit) release-output)
+		  (show #f))]
+	       [else #f])]
+	    [file-menu:close-string "DEBUG"]
 	    [file-menu:between-open-and-save
 	     (lambda (file-menu)
 	       (send file-menu append-item "&Load Scheme File..."
@@ -549,11 +555,13 @@
 	    [edit-menu:copy (edit-menu:do wx:const-edit-copy)]
 	    [edit-menu:paste (edit-menu:do wx:const-edit-paste)]
 	    [edit-menu:clear (edit-menu:do wx:const-edit-clear)]
-	    [edit-menu:select-all
-	     (lambda ()
-	       (send (active-edit) set-position
-		     0 (send (active-edit) last-position)))]
-	    [edit-menu:between-find-and-preferences
+	    [edit-menu:select-all (edit-menu:do wx:const-edit-select-all)]
+
+	    [edit-menu:replace (lambda ()
+				 (mred:find-string:find-string
+				  canvas edit -1 -1
+				  (list 'replace 'ignore-case)))]
+	    [edit-menu:between-replace-and-preferences
 	     (let ()
 	       (lambda (edit-menu)
 		 (send edit-menu append-separator)

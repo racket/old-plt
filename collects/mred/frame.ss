@@ -216,6 +216,7 @@
 	    [file-menu:between-print-and-close (lambda (file-menu) (send file-menu append-separator))]
 
 	    [file-menu:close (lambda () (when (on-close) (show #f)))]
+	    [file-menu:close-string ""]
 	    [file-menu:close-id #f]
 	    [file-menu:close-help-string ""]
 
@@ -235,21 +236,23 @@
 	    [edit-menu:redo-id #f]
 	    [edit-menu:redo-help-string "Redoes the last undone action"]
 
-	    [edit-menu:cut (lambda () (void))]
+	    [edit-menu:between-redo-and-cut (lambda (edit-menu) (send edit-menu append-separator))]
+
+	    [edit-menu:cut #f]
 	    [edit-menu:cut-id #f]
 	    [edit-menu:cut-help-string "Cuts the selection and copies it to the clipboard"]
 
-	    [edit-menu:copy (lambda () (void))]
+	    [edit-menu:copy #f]
 	    [edit-menu:copy-id #f]
 	    [edit-menu:copy-help-string "Copies the selection to the clipboard"]
 
 	    [edit-menu:between-copy-and-paste (lambda (edit-menu) (void))]
 
-	    [edit-menu:paste (lambda () (void))]
+	    [edit-menu:paste #f]
 	    [edit-menu:paste-id #f]
 	    [edit-menu:paste-help-string "Inserts contents of the clipboard at the caret"]
 
-	    [edit-menu:clear (lambda () (void))]
+	    [edit-menu:clear #f]
 	    [edit-menu:clear-id #f]
 	    [edit-menu:clear-help-string "Clears the selected text"]
 
@@ -259,13 +262,15 @@
 
 	    [edit-menu:between-select-all-and-find (lambda (edit-menu) (send edit-menu append-separator))]
 
-	    [edit-menu:find 
-	     (lambda () 
-	       (send this search))]
+	    [edit-menu:find (lambda () (send this search))]
 	    [edit-menu:find-id #f]
 	    [edit-menu:find-help-string "Search for a string in the buffer"]
 
-	    [edit-menu:between-find-and-preferences (lambda (edit-menu) (send edit-menu append-separator))]
+	    [edit-menu:replace #f]
+	    [edit-menu:replace-id #f]
+	    [edit-menu:replace-help-string "Search and replace in the buffer"]
+
+	    [edit-menu:between-replace-and-preferences (lambda (edit-menu) (send edit-menu append-separator))]
 
 	    [edit-menu:preferences mred:preferences:show-preferences-dialog]
 	    [edit-menu:preferences-id #f]
@@ -316,7 +321,7 @@
 		 (file-menu:between-print-and-close file-menu)
 		 (when file-menu:close
 		   (set! file-menu:close-id
-			 (send file-menu append-item "&Close"
+			 (send file-menu append-item (join "&Close" file-menu:close-string)
 			       file-menu:close file-menu:close-help-string #f "w")))
 		 (file-menu:between-close-and-quit file-menu)
 		 (when file-menu:quit
@@ -337,34 +342,45 @@
 		   (set! edit-menu:redo-id
 			 (send edit-menu append-item "&Redo"
 			       edit-menu:redo edit-menu:redo-help-string #f "y")))
-		 (send edit-menu append-separator)
-		 (set! edit-menu:cut-id
-		       (send edit-menu append-item "Cu&t"
-			     edit-menu:cut edit-menu:cut-help-string #f "x"))
-		 (set! edit-menu:copy-id
-		       (send edit-menu append-item "&Copy"
-			     edit-menu:copy edit-menu:copy-help-string #f "c"))
+		 (edit-menu:between-redo-and-cut edit-menu)
+		 (when edit-menu:cut
+		   (set! edit-menu:cut-id
+			 (send edit-menu append-item "Cu&t"
+			       edit-menu:cut edit-menu:cut-help-string #f "x")))
+		 (when edit-menu:copy
+		   (set! edit-menu:copy-id
+			 (send edit-menu append-item "&Copy"
+			       edit-menu:copy edit-menu:copy-help-string #f "c")))
 		 (edit-menu:between-copy-and-paste edit-menu)
-		 (set! edit-menu:paste-id
-		       (send edit-menu append-item "&Paste"
-			     edit-menu:paste edit-menu:paste-help-string #f "v"))
-		 (set! edit-menu:clear-id
-		       (send edit-menu append-item (if (eq? wx:platform 'macintosh)
-						       "Clear"
-						       "&Delete")
-			     edit-menu:clear edit-menu:clear-help-string #f
-			     (lambda (wx:platform) (begin "del" #f))))
-		 (set! edit-menu:select-all-id
-		       (send edit-menu append-item "Select A&ll"
-			     edit-menu:select-all edit-menu:select-all-help-string #f "a"))
+		 (when edit-menu:paste
+		   (set! edit-menu:paste-id
+			 (send edit-menu append-item "&Paste"
+			       edit-menu:paste edit-menu:paste-help-string #f "v")))
+		 (when edit-menu:clear
+		   (set! edit-menu:clear-id
+			 (send edit-menu append-item (if (eq? wx:platform 'macintosh)
+							 "Clear"
+							 "&Delete")
+			       edit-menu:clear edit-menu:clear-help-string #f
+			       (lambda (wx:platform) (begin "del" #f)))))
+		 (when edit-menu:select-all
+		   (set! edit-menu:select-all-id
+			 (send edit-menu append-item "Select A&ll"
+			       edit-menu:select-all edit-menu:select-all-help-string #f "a")))
 		 (edit-menu:between-select-all-and-find edit-menu)
+
 		 (when edit-menu:find
 		   (set! edit-menu:find-id
 			 (send edit-menu append-item "Find" 
 			       edit-menu:find
 			       edit-menu:find-help-string
 			       #f "f")))
-		 (edit-menu:between-find-and-preferences edit-menu)
+		 (when edit-menu:replace
+		   (set! edit-menu:replace-id
+			 (send edit-menu append-item "Replace" 
+			       edit-menu:replace
+			       edit-menu:replace-help-string)))
+		 (edit-menu:between-replace-and-preferences edit-menu)
 		 (when edit-menu:preferences
 		   (set! edit-menu:preferences-id
 			 (send edit-menu append-item "Prefere&nces..." edit-menu:preferences

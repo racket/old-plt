@@ -1,7 +1,9 @@
 #!/bin/sh
 
+# This script should not be moved from the plt/bin directory
 if [ "$PLTHOME" = '' ] ; then
-  PLTHOME=/usr/local/lib/plt
+  PLTHOME="`dirname \"$0\"`"
+  PLTHOME="`cd \"$PLTHOME\"; cd ..; pwd`"
   export PLTHOME
 fi
 

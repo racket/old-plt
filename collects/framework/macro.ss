@@ -56,43 +56,55 @@
                          [mixin-name (or (with-syntax ([tmp (syntax-local-name)])
                                            (syntax (quote tmp)))
                                          (syntax (quote mixin)))])
-             (syntax
-              (let ([from-ids from] ...)
-                (let ([to-ids to] ...)
-                  
-                  (let ([all-from (list from-ids ...)])
-                    (void)
-                    (unless (interface? from-ids)
-                      (error 'mixin
-                             "expected interfaces for from, got: ~e, others ~e"
-                             from-ids
-                             all-from)) ...)
-                  
-                  (let ([all-to (list to-ids ...)])
-                    (void)
-                    (unless (interface? to-ids)
-                      (error 'mixin
-                             "expected interfaces for to, got: ~e, others ~e"
-                             to-ids
-                             all-to)) ...)
-                  
-                  (let ([ensure-interface-has?
-                         (lambda (x)
-                           (unless (or (method-in-interface? x from-ids) ...)
-                             (error 'mixin
-                                    "method `~a' not in any of ~a, but was referenced in definition"
-                                    x (list from-ids ...))))])
-                    (void)
-                    (ensure-interface-has? (quote super-vars)) ...)
-                  
-                  (lambda (super%)
-                    (unless (class? super%)
-                      (error mixin-name "argument ~a not a class" super%))
-                    (begin
-                      (void)
-                      (unless (implementation? super% from-ids)
-                        (error mixin-name "argument ~s does not implement ~s" super% from-ids))
-                      ...)
-                    
-                    (class*/names (this super-instantiate super-make-object) super% (to-ids ...)
-                      clauses ...)))))))]))))
+	     
+	     ;; Build the class expression first, to give it a good src location:
+	     (with-syntax ([class-expr
+			    (syntax/loc stx
+			      (class*/names (this super-instantiate super-make-object) super% (to-ids ...)
+					    clauses ...))])
+
+	       ;; Now build mixin proc, again to give it a good src location:
+	       (with-syntax ([mixin-expr
+			      (syntax/loc stx
+				(lambda (super%)
+				  (unless (class? super%)
+				    (error mixin-name "argument ~a not a class" super%))
+				  (begin
+				    (void)
+				    (unless (implementation? super% from-ids)
+				      (error mixin-name "argument ~s does not implement ~s" super% from-ids))
+				    ...)
+				  
+				  class-expr))])
+
+		 ;; Finally, build the complete mixin expression:
+		 (syntax/loc stx
+		   (let ([from-ids from] ...)
+		     (let ([to-ids to] ...)
+		       
+		       (let ([all-from (list from-ids ...)])
+			 (void)
+			 (unless (interface? from-ids)
+			   (error 'mixin
+				  "expected interfaces for from, got: ~e, others ~e"
+				  from-ids
+				  all-from)) ...)
+		       
+		       (let ([all-to (list to-ids ...)])
+			 (void)
+			 (unless (interface? to-ids)
+			   (error 'mixin
+				  "expected interfaces for to, got: ~e, others ~e"
+				  to-ids
+				  all-to)) ...)
+		       
+		       (let ([ensure-interface-has?
+			      (lambda (x)
+				(unless (or (method-in-interface? x from-ids) ...)
+				  (error 'mixin
+					 "method `~a' not in any of ~a, but was referenced in definition"
+					 x (list from-ids ...))))])
+			 (void)
+			 (ensure-interface-has? (quote super-vars)) ...)
+
+		       mixin-expr)))))))]))))

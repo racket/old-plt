@@ -1253,6 +1253,8 @@ mark_udp_evt {
   Scheme_UDP_Evt *uw = (Scheme_UDP_Evt *)p;
 
   gcMARK(uw->udp);
+  gcMARK(uw->str);
+  gcMARK(uw->from_addr);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Evt));

@@ -64,6 +64,7 @@ static Scheme_Object *defined(int argc, Scheme_Object *argv[]);
 static Scheme_Object *global_defined_value(int, Scheme_Object *[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_bound_p(int argc, Scheme_Object *argv[]);
+static Scheme_Object *id_macro(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *current_loaded_library_table(int argc, Scheme_Object *argv[]);
 
@@ -426,6 +427,12 @@ static void make_init_env(void)
 						      "expansion-time-bound?",
 						      1, 1),
 			     env);  
+
+  scheme_add_global_constant("identifier-expander", 
+			     scheme_make_prim_w_arity(id_macro,
+						      "identifier-expander",
+						      1, 1),
+			     env);
 
   DONE_TIME(env);
 
@@ -1085,6 +1092,37 @@ static Scheme_Object *env_frame_uid(Scheme_Comp_Env *env)
   return env->uid;
 }
 
+Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env, 
+				      Scheme_Comp_Env *upto)
+{
+  if (!SCHEME_STXP(stx)) {
+    scheme_signal_error("internal error: not syntax");
+    return NULL;
+  }
+
+  while (env != upto) {
+    Scheme_Object *uid;
+    Constant_Binding *c = COMPILE_DATA(env)->constants;
+    int i;
+
+    uid = env_frame_uid(env);
+
+    while (c) {
+      stx = scheme_add_rename(stx, c->name, uid);
+      c = c->next;
+    }
+    
+    for (i = env->num_bindings; i--; ) {
+      if (env->values[i])
+	stx = scheme_add_rename(stx, env->values[i], uid);
+    }
+
+    env = env->next;
+  }
+
+  return stx;
+}
+
 static Scheme_Object *alloc_local(short type, int pos)
 {
   Scheme_Object *v;
@@ -1164,30 +1202,29 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   frame = env;
   for (frame = env; frame->next != NULL; frame = frame->next) {
     int i;
+    Scheme_Object *uid;
     Constant_Binding *c = COMPILE_DATA(frame)->constants;
     
     if (frame->flags & SCHEME_LAMBDA_FRAME)
       j++;
 
+    uid = env_frame_uid(frame);
+
     for (i = frame->num_bindings; i--; ) {
       while (c && (c->before > i)) {
-	if (scheme_stx_bound_eq(symbol, c->name)) {
+	if (scheme_stx_env_bound_eq(symbol, c->name, uid)) {
 	  val = c->val;
-	  if (flags & SCHEME_GET_FRAME_ID)
-	    return env_frame_uid(frame);
 	  goto found_const;
 	}
 	c = c->next;
       }
 
-      if (scheme_stx_bound_eq(symbol, frame->values[i])) {
+      if (frame->values[i] && scheme_stx_env_bound_eq(symbol, frame->values[i], uid)) {
 	if ((flags & SCHEME_SETTING) && (COMPILE_DATA(frame)->use[i] & NOT_SETTABLE))
 	  scheme_wrong_syntax("set!", NULL, symbol,
 			      "imported/inherited variable cannot be mutated");
 
-	if (flags & SCHEME_GET_FRAME_ID)
-	  return env_frame_uid(frame);
-	else if (flags & SCHEME_DONT_MARK_USE)
+	if (flags & SCHEME_DONT_MARK_USE)
 	  return scheme_make_local(scheme_local_type, 0);
 	else
 	  return (Scheme_Object *)get_frame_loc(frame, i, j, p, flags);
@@ -1195,10 +1232,8 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     }
 
     while (c) {
-      if (scheme_stx_bound_eq(symbol, c->name)) {
+      if (scheme_stx_env_bound_eq(symbol, c->name, uid)) {
 	val = c->val;
-	if (flags & SCHEME_GET_FRAME_ID)
-	  return env_frame_uid(frame);
 	goto found_const;
       }
       c = c->next;
@@ -1206,9 +1241,6 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
     p += frame->num_bindings;
   }
-
-  if (flags & SCHEME_GET_FRAME_ID)
-    return scheme_false;
 
   globals = get_globals(scheme_min_env(env));
   b = scheme_bucket_from_table(globals, (char *)SCHEME_STX_SYM(symbol));
@@ -1235,8 +1267,12 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     return NULL;
   }
   if (!(flags & SCHEME_ENV_CONSTANTS_OK)) {
-    scheme_wrong_syntax("set!", NULL, symbol,
-			"local syntax identifier cannot be mutated");
+    if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)
+	|| SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(val)), scheme_id_macro_type))
+      return val;
+    else
+      scheme_wrong_syntax("set!", NULL, symbol,
+			  "local syntax identifier cannot be mutated");
     return NULL;
   }
   return val;
@@ -1624,6 +1660,21 @@ local_exp_time_bound_p(int argc, Scheme_Object *argv[])
   else
     return scheme_true;
 }
+
+static Scheme_Object *
+id_macro(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *v;
+
+  scheme_check_proc_arity("identifier-expander", 1, 0, argc, argv);
+
+  v = scheme_alloc_small_object();
+  v->type = scheme_id_macro_type;
+  SCHEME_PTR_VAL(v) = argv[0];
+
+  return v;
+}
+
 
 /*********************************************************************/
 

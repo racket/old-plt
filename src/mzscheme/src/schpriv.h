@@ -372,7 +372,7 @@ typedef struct Scheme_Stx {
   long line, col;
   Scheme_Object *src;
   Scheme_Object *xtra;
-  Scheme_Object *marks;
+  Scheme_Object *wraps;
 } Scheme_Stx;
 
 Scheme_Object *scheme_make_stx(Scheme_Object *val, 
@@ -383,14 +383,16 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 
 Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx);
 Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks);
-Scheme_Object *scheme_quote_syntax(Scheme_Object *o, struct Scheme_Comp_Env *env);
 
 Scheme_Object *scheme_new_mark();
-void scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
+Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
+Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *oldname, 
+				 Scheme_Object *newname);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b);
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b);
+int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid);
 
 int scheme_stx_list_length(Scheme_Object *list);
 int scheme_stx_proper_list_length(Scheme_Object *list);
@@ -1205,6 +1207,9 @@ Scheme_Comp_Env *scheme_add_compilation_frame(Scheme_Object *vals,
 Scheme_Object *scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env,
 				      int flags);
 
+Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env, 
+				      Scheme_Comp_Env *upto);
+
 void scheme_unsettable_variable(Scheme_Comp_Env *env, int which);
 
 void scheme_add_local_syntax(Scheme_Object *name, Scheme_Comp_Env *env);
@@ -1315,7 +1320,6 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_MUST_INDRECT 32
 #define SCHEME_LINKING_REF 64
 #define SCHEME_DONT_MARK_USE 128
-#define SCHEME_GET_FRAME_ID 256
 
 Scheme_Env *scheme_min_env(Scheme_Comp_Env *);
 Scheme_Hash_Table *scheme_map_constants_to_globals(void);

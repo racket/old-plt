@@ -1192,7 +1192,8 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 
   *current_val = val;
 
-  if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)) {
+  if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)
+      || SAME_TYPE(SCHEME_TYPE(val), scheme_id_macro_type)) {
     /* Yep, it's a macro; expand once */
     first = scheme_expand_expr(first, env, 1);
   } else {
@@ -1227,10 +1228,11 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					   SCHEME_DONT_MARK_USE 
 					   + SCHEME_ENV_CONSTANTS_OK);
 	    if (SAME_TYPE(SCHEME_TYPE(sdval), scheme_macro_type)
+		|| SAME_TYPE(SCHEME_TYPE(sdval), scheme_id_macro_type)
 		|| SAME_TYPE(SCHEME_TYPE(sdval), scheme_syntax_compiler_type)) {
 	      scheme_wrong_syntax("define-values (in unit or internal)",
 				  binding, orig,
-				  "unit/internal binding cannot shadow syntax or macro names");
+				  "unit/internal binding cannot shadow syntax names");
 	      return NULL;
 	    }
 	  }
@@ -1261,7 +1263,9 @@ scheme_compile_expand_macro_app(Scheme_Object *macro,
 
   xformer = (Scheme_Object *)SCHEME_PTR_VAL(macro);
 
-  if (!scheme_check_proc_arity(NULL, 1, 0, -1, &xformer)) {
+  if (SAME_TYPE(SCHEME_TYPE(xformer), scheme_id_macro_type)) {
+    xformer = SCHEME_PTR_VAL(xformer);
+  } else if (!scheme_check_proc_arity(NULL, 1, 0, -1, &xformer)) {
     const char *name;
 
     if (SCHEME_STX_SYMBOLP(form))
@@ -1407,7 +1411,8 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type))
 	scheme_wrong_syntax("compile", NULL, form, 
 			    "illegal use of a syntactic form name");
-      else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type))
+      else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
+	       || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type))
 	return scheme_compile_expand_macro_app(var, form, env, rec, drec, depth);
 
 
@@ -1445,7 +1450,8 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	|| SAME_TYPE(SCHEME_TYPE(var), scheme_local_unbox_type)) {
       /* apply to local variable: compile it normally */
     } else {
-      if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
+      if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
+	  || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type)) {
 	return scheme_compile_expand_macro_app(var, form, env, rec, drec, depth);
       } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
 	if (rec) {

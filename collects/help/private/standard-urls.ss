@@ -6,6 +6,7 @@
 	   (lib "contracts.ss"))
   
   (provide make-results-url
+	   make-relative-results-url
            make-home-page-url
            prefix-with-server)
   
@@ -35,6 +36,8 @@
   (define results-url-prefix
     "http://127.0.0.1:~a/servlets/results.ss?")
   
+  (define relative-results-url-prefix "/servlets/results.ss?")
+
   (define (make-home-page-url port)
     (format "http://127.0.0.1:~a/servlets/home.ss" port))
   
@@ -45,6 +48,18 @@
             (hexify-string name)
             (hexify-string link)))
   
+  (define (make-relative-results-url search-string search-type match-type lucky?)
+    (format 
+     (string-append relative-results-url-prefix
+                    "search-string=~a&"
+                    "search-type=~a&"
+                    "match-type=~a&"
+                    "lucky=~a")
+     (hexify-string search-string)
+     search-type
+     match-type
+     (if lucky? "true" "false")))
+
   (define (make-results-url port search-string search-type match-type lucky?)
     (format 
      (string-append results-url-prefix

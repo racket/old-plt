@@ -494,7 +494,7 @@
  
  ;;; Language dialog
  (introduction-to-language-dialog
-  "Veuillez sélectionner un language. Un étudiant dans un cours d'introduction préférera le language par defaut.")
+  "Veuillez sélectionner un language. Un étudiant dans un cours d'introduction préférera le language par défaut.")
  (language-dialog-title "Configurer le language")
  (case-sensitive-label "Différentier les lettres majuscules des minuscules.")
  (output-style-label "Style d'impression des résultats")

@@ -1331,10 +1331,15 @@
       (for-each
        (lambda (i)
 	 (when (and (is-a? i labelled-menu-item<%>)
-		    (member (send i get-plain-label) '("Undo" "Redo" "Clear")))
-	   (send i enable #f)))
+		    (member (send i get-plain-label) '("Undo" "Redo" "Paste" "Cut" "Clear")))
+	   (send i delete)))
        (send edit-menu get-items))
-
+      ;; If there's a leftover top or bottom separator, drop it
+      (let ([items (send edit-menu get-items)])
+	(when ((car items) . is-a? . separator-menu-item%)
+	  (send (car items) delete))
+	(when ((car (last-pair items)) . is-a? . separator-menu-item%)
+	  (send (car (last-pair items)) delete)))
       
       (define no-status-handler (lambda (x) (status "") (raise x)))
       

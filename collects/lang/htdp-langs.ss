@@ -62,7 +62,7 @@ to the original stdout of DrScheme.
              'repeating-decimal
              (get-sharing-printing)
              #t
-             #f))
+             'none))
           
           (rename [super-config-panel config-panel])
           (inherit get-allow-sharing? get-use-function-output-syntax? 
@@ -180,7 +180,7 @@ to the original stdout of DrScheme.
                 [(1) 'repeating-decimal])
               (and allow-sharing-config? (send show-sharing get-value))
               (send insert-newlines get-value)
-              #f)]
+              'none)]
             [(settings)
              (send case-sensitive set-value (drscheme:language:simple-settings-case-sensitive settings))
              (send output-style set-selection

@@ -65,6 +65,22 @@
   "Hides the backtrace window.")
 
 
+(drscheme:debug:add-prefs-panel
+ (-> void?)
+ ()
+ "Adds the profiling preferences panel.")
+
+(drscheme:debug:profiling-enabled
+ (case-> (boolean? . -> . void?)
+	 (-> boolean?))
+ ((enabled?) ())
+ "A parameter that controls if profiling information is recorded."
+ ""
+ "Defaults to \\scm{\\#f}."
+ ""
+ "Only applies if"
+ "@flink drscheme:debug:make-debug-eval-handler"
+ "has been added to the eval handler.")
 
 
                             
@@ -309,12 +325,11 @@
 
 (drscheme:get/extend:extend-interactions-text
  (case->
-  ((make-mixin-contract/% drscheme:rep:text%) . -> . void?)
-  ((make-mixin-contract/% drscheme:rep:text%) boolean? . -> . void?))
+  ((make-mixin-contract/% drscheme:get/extend:base-interactions-text%) . -> . void?)
+  ((make-mixin-contract/% drscheme:get/extend:base-interactions-text%) boolean? . -> . void?))
  ((mixin) (mixin before?))
 
-"The unextended class is \\iscmclass{drscheme:rep:text}. This text is used"
-"in the bottom window of drscheme frames."
+"This text is used in the bottom window of drscheme frames."
 ""
 "The argument, \\var{before}, controls if the mixin is applied before or"
 "after already installed mixins."
@@ -330,12 +345,11 @@
 
 (drscheme:get/extend:extend-definitions-text
  (case->
-  ((class? . ->d . (lambda (%) (subclass?/c %))) . -> . void?)
-  ((class? . ->d . (lambda (%) (subclass?/c %))) boolean? . -> . void?))
+  ((make-mixin-contract/% drscheme:get/extend:base-definitions-text%) . -> . void?)
+  ((make-mixin-contract/% drscheme:get/extend:base-definitions-text%) boolean? . -> . void?))
  ((mixin) (mixin before?))
 
-"The unextended class is \\iscmclass{text:backup-autosave}. This text"
-"is used in the top window of drscheme frames."
+"This text is used in the top window of drscheme frames."
 ""
 "The argument, \\var{before}, controls if the mixin is applied before or"
 "after already installed mixins."
@@ -351,12 +365,11 @@
 
 (drscheme:get/extend:extend-interactions-canvas
  (case->
-  ((class? . ->d . (lambda (%) (subclass?/c %))) . -> . void?)
-  ((class? . ->d . (lambda (%) (subclass?/c %))) boolean? . -> . void?))
+  ((make-mixin-contract/% drscheme:get/extend:base-interactions-canvas%) . -> . void?)
+  ((make-mixin-contract/% drscheme:get/extend:base-interactions-canvas%) boolean? . -> . void?))
  ((mixin) (mixin before?))
 
-"The unextended class is \\iscmclass{canvas:wide-snip}. This canvas is used"
-"in the bottom window of drscheme frames."
+"This canvas is used in the bottom window of drscheme frames."
 ""
 "The argument, \\var{before}, controls if the mixin is applied before or"
 "after already installed mixins."
@@ -372,13 +385,11 @@
 
 (drscheme:get/extend:extend-definitions-canvas
  (case->
-  ((class? . ->d . (lambda (%) (subclass?/c %))) . -> . void?)
-  ((class? . ->d . (lambda (%) (subclass?/c %))) boolean? . -> . void?))
+  ((make-mixin-contract/% drscheme:get/extend:base-definitions-canvas%) . -> . void?)
+  ((make-mixin-contract/% drscheme:get/extend:base-definitions-canvas%) boolean? . -> . void?))
  ((mixin) (mixin before?))
 
-"The unextended class is"
-"\\iscmclass{drscheme:unit:definitions-canvas}. This canvas is used in"
-"the top window of drscheme frames."
+"This canvas is used in the top window of drscheme frames."
 
 "The argument, \\var{before}, controls if the mixin is applied before or"
 "after already installed mixins."
@@ -394,12 +405,11 @@
 
 (drscheme:get/extend:extend-unit-frame
  (case->
-  ((class? . ->d . (lambda (%) (subclass?/c %))) . -> . void?)
-  ((class? . ->d . (lambda (%) (subclass?/c %))) boolean? . -> . void?))
+  ((make-mixin-contract/% drscheme:get/extend:base-unit-frame%) . -> . void?)
+  ((make-mixin-contract/% drscheme:get/extend:base-unit-frame%) boolean? . -> . void?))
  ((mixin) (mixin before?))
 
-"The unextended class is \\iscmclass{drscheme:unit:frame}. This is the"
-"frame that implements the main drscheme window."
+"This is the frame that implements the main drscheme window."
 ""
 "The argument, \\var{before}, controls if the mixin is applied before or"
 "after already installed mixins."
@@ -733,10 +743,10 @@
 
 "Extracts the insert-newline setting from a simple-settings.")
 
-(drscheme:language:simple-settings-debugging
+(drscheme:language:simple-settings-annotations
  (drscheme:language:simple-settings?
   . -> .
-  boolean?)
+  (symbols 'none 'debug 'debug/profile))
  (simple-settings)
 
 "Extracts the debugging setting from a simple-settings.")
@@ -753,7 +763,7 @@
   (symbols 'mixed-fraction 'mixed-fraction-e 'repeating-decimal 'repeating-decimal-e)
   boolean?
   boolean?
-  boolean?
+  (symbols 'none 'debug 'debug/profile)
   . -> .
   drscheme:language:simple-settings?)
  (case-sensitive

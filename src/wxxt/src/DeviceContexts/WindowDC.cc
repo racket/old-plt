@@ -2600,9 +2600,10 @@ void wxGL::Reset(long d, int offscreen)
 void wxGL::SwapBuffers(void)
 {
   if (GLctx) {
-    glXSwapBuffers(wxAPP_DISPLAY, (Drawable)draw_to);
     if (glx_pm)
       glXWaitGL();
+    else
+      glXSwapBuffers(wxAPP_DISPLAY, (Drawable)draw_to);
   }
 }
 

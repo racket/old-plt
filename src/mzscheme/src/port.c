@@ -4341,25 +4341,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
   if (ports) {
     if (SCHEME_TRUEP(args[0])) {
-      inport = args[0];
-      if (SCHEME_INPORTP(inport) && scheme_file_stream_port_p(1, &inport)) {
-#ifdef PROCESS_FUNCTION
-	Scheme_Input_Port *ip = (Scheme_Input_Port *)inport;
-
-	if (SAME_OBJ(ip->sub_type, file_input_port_type))
-	  to_subprocess[0] = MSC_IZE(fileno)(((Scheme_Input_File *)ip->port_data)->f);
-# ifdef USE_FD_PORTS
-	else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
-	  to_subprocess[0] = ((Scheme_FD *)ip->port_data)->fd;
-# endif
-#endif
-      } else
-	scheme_wrong_type(name, "file-stream-input-port", 0, c, args);
-    } else
-      inport = NULL;
-
-    if (SCHEME_TRUEP(args[1])) {
-      outport = args[1];
+      outport = args[0];
       if (SCHEME_OUTPORTP(outport) && scheme_file_stream_port_p(1, &outport)) {
 #ifdef PROCESS_FUNCTION
 	Scheme_Output_Port *op = (Scheme_Output_Port *)outport;
@@ -4372,9 +4354,27 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 # endif
 #endif
       } else
-	scheme_wrong_type(name, "file-stream-output-port", 1, c, args);
+	scheme_wrong_type(name, "file-stream-output-port", 0, c, args);
     } else
       outport = NULL;
+
+    if (SCHEME_TRUEP(args[1])) {
+      inport = args[1];
+      if (SCHEME_INPORTP(inport) && scheme_file_stream_port_p(1, &inport)) {
+#ifdef PROCESS_FUNCTION
+	Scheme_Input_Port *ip = (Scheme_Input_Port *)inport;
+
+	if (SAME_OBJ(ip->sub_type, file_input_port_type))
+	  to_subprocess[0] = MSC_IZE(fileno)(((Scheme_Input_File *)ip->port_data)->f);
+# ifdef USE_FD_PORTS
+	else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
+	  to_subprocess[0] = ((Scheme_FD *)ip->port_data)->fd;
+# endif
+#endif
+      } else
+	scheme_wrong_type(name, "file-stream-input-port", 1, c, args);
+    } else
+      inport = NULL;
 
     if (SCHEME_TRUEP(args[2])) {
       errport = args[2];
@@ -4407,7 +4407,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     argv = NULL;
     command = SCHEME_STR_VAL(args[offset]);
   } else  {
-    argv = MALLOC_N(char *, c + 1);
+    argv = MALLOC_N(char *, c - offset + 1);
     {
       char *ef;
       ef = scheme_expand_filename(SCHEME_STR_VAL(args[offset]),
@@ -4427,9 +4427,9 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     for (i = 1 + offset; i < c; i++) { 
       if (!SCHEME_STRINGP(args[i]) || scheme_string_has_null(args[i]))
 	scheme_wrong_type(name, STRING_W_NO_NULLS, i, c, args);
-      argv[i - offset] = SCHEME_STR_VAL(args[i - offset]);
+      argv[i - offset] = SCHEME_STR_VAL(args[i]);
     }
-    argv[c] = NULL;
+    argv[c - offset] = NULL;
 
     command = argv[0];
   }
@@ -4709,14 +4709,14 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   if (!synchonous) {
     if (!inport) {
       MSC_IZE(close)(to_subprocess[0]);
-      in = NULL;
-    } else
-      in = scheme_false;
-    if (!outport) {
-      MSC_IZE(close)(from_subprocess[1]);
       out = NULL;
     } else
       out = scheme_false;
+    if (!outport) {
+      MSC_IZE(close)(from_subprocess[1]);
+      in = NULL;
+    } else
+      in = scheme_false;
     if (!errport) {
       MSC_IZE(close)(err_subprocess[1]);
       err = NULL;

@@ -48,6 +48,7 @@
 	     [get-filename (ivar b get-filename)]
 	     [modified? (ivar b modified?)]
 	     [set-modified (ivar b set-modified)]
+	     [lock (ivar b lock)]
 
 	     [reverse-links (ivar b reverse-links)]
 
@@ -406,6 +407,7 @@
 	  (let ([m? (modified?)])
 	    (dynamic-wind
 	     (lambda ()
+	       (lock #f)
 	       (begin-edit-sequence #f))
 	     (lambda ()
 	       (add-tag "top" 0)
@@ -418,6 +420,7 @@
 	     (lambda ()
 	       (reverse-links)
 	       (end-edit-sequence)
+	       (lock #t)
 	       (unless m? 
 		       (set-modified #f))))))))))
 

@@ -183,7 +183,6 @@
 					       (bytes-length mailbox-name)
 					       0)]
                       [get-child-mailbox-name (lambda (item) (second item))]
-                      [_ (printf "~s\n" (list 'imap-list-child-mailboxes imap mailbox-name))]
                       [child-mailboxes (imap-list-child-mailboxes imap mailbox-name)])
                   (map (lambda (item)
                          (let* ([child-mailbox-name (get-child-mailbox-name item)]

@@ -207,7 +207,7 @@
                 (qp-decode-stream input output)))
              ((base64)
               (lambda (output)
-                (base64-decode-stream input output)))
+		(base64-decode-stream input output)))
              (else ;; 7bit, 8bit, binary
               (lambda (output)
                 (copy-port input output)))))))

@@ -43,7 +43,9 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
   BSTR idAttr;
   IHTMLElement *pSrcElement,*pFromElement,*pToElement;
   VARIANT variant;
-  VARIANT_BOOL altPressed,ctrlPressed,shiftPressed;
+  VARIANT_BOOL altPressed;
+  VARIANT_BOOL ctrlPressed;
+  VARIANT_BOOL shiftPressed;
   long mouseButton;
   long x,y;
 
@@ -177,19 +179,9 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
 	       eventEntry->eventType == keypress || 
 	       eventEntry->eventType == keyup) {
       long keycode;
-      VARIANT_BOOL key;
 
       pIHTMLEventObj->get_keyCode(&keycode);
       pEvent->put_keyCode(keycode);
-
-      pIHTMLEventObj->get_shiftKey(&key);
-      pEvent->put_shiftPressed(key);
-
-      pIHTMLEventObj->get_ctrlKey(&key);
-      pEvent->put_ctrlPressed(key);
-
-      pIHTMLEventObj->get_altKey(&key);
-      pEvent->put_altPressed(key);
     }
 
     SysFreeString(idAttr);

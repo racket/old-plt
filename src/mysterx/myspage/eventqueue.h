@@ -5,7 +5,7 @@
 
 #include "resource.h"       // main symbols
 
-#define MAXQUEUELENGTH 25
+#define MAXQUEUELENGTH 8192
 
 void failureBox(const char *s);
 

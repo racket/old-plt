@@ -162,7 +162,7 @@ STDMETHODIMP CEvent::put_altPressed(VARIANT_BOOL newVal) {
 
 STDMETHODIMP CEvent::get_ctrlPressed(VARIANT_BOOL *pVal) {
   
-  *pVal = altPressed;
+  *pVal = ctrlPressed;
   
   return S_OK;
 }
@@ -176,7 +176,7 @@ STDMETHODIMP CEvent::put_ctrlPressed(VARIANT_BOOL newVal) {
 
 STDMETHODIMP CEvent::get_shiftPressed(VARIANT_BOOL *pVal) {
   
-  *pVal = altPressed;
+  *pVal = shiftPressed;
   
   return S_OK;
 }

@@ -1166,6 +1166,8 @@ void wxStyleList::StyleWasChanged(wxStyle *which)
   }
 }
 
+extern "C" void scheme_weak_reference(void **p);
+
 long wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
 {
   NotificationRec *rec, *orec;

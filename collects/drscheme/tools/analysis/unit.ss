@@ -12,30 +12,32 @@
 				 "mrspidey"
 				 "drspidey.ss"))
 
+    (define invoke-spidey
+      (lambda (frame)
+	(mred:show-busy-cursor
+	 (lambda ()
+	   (load/use-compiled (build-path filename))
+	   (set! invoke-spidey
+		 (invoke-open-unit/sig
+		  (global-defined-value 'tool@) 
+		  mrspidey
+		  (mred : mred^)
+		  mzlib:core^
+		  mzlib:print-convert^
+		  (drscheme : drscheme:export^)
+		  zodiac:system^
+		  plt:parameters^))
+	   (invoke-spidey frame)))))
+
     (define spidey-frame%
-      (letrec ([t 
-		(lambda (frame)
-		  (mred:show-busy-cursor
-		   (lambda ()
-		     (load/use-compiled (build-path filename))
-		     (set! t
-			   (invoke-open-unit/sig
-			    (global-defined-value 'tool@) 
-			    mrspidey
-			    (mred : mred^)
-			    mzlib:core^
-			    mzlib:print-convert^
-			    (drscheme : drscheme:export^)
-			    zodiac:system^
-			    plt:parameters^))
-		     (t frame))))])
+      (letrec ()
 	(class (drscheme:parameters:current-frame%) args
 	  (inherit button-panel)
 	  (sequence (apply super-init args))
 	  (private
 	    [button (make-object mred:button%
 				 button-panel
-				 (lambda (button evt) (t this))
+				 (lambda (button evt) (invoke-spidey this))
 				 (drscheme:unit:make-bitmap
 				  (build-path mred:constants:plt-home-directory
 					      "icons"

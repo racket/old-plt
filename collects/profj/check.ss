@@ -193,8 +193,8 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Member checking methods
   
-  ;check-members: (list member) env symbol type-records (list string) bool bool -> void
-  (define (check-members members env level type-recs c-class iface? abst-class?)
+  ;check-members: (list member) env symbol type-records (list string) bool bool src-> void
+  (define (check-members members env level type-recs c-class iface? abst-class?); extend-src)
     (let* ((class-record (lookup-this type-recs env))
            (fields (class-record-fields class-record))
            (field-env (create-field-env fields env (car c-class)))
@@ -202,7 +202,12 @@
                                (consolidate-throws 
                                 (get-constructors (class-record-methods class-record)) field-env)))
            (static-env (get-static-fields-env field-env))
-           (setting-fields null))
+           (setting-fields null)
+           (inherited-fields null))
+;      (when (eq? level 'beginner)
+;        (let ((parent (send type-recs get-class-record (car (class-record-parent class-record)))))
+;          (when (memq 'abstract (class-record-modifiers parent))
+;            (
       (let loop ((rest members) (statics empty-env) (fields env))
         (unless (null? rest)
           (let ((member (car rest)))

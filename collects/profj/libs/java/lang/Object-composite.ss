@@ -179,11 +179,24 @@
         (set! rt type)
         (set! array (make-vector size default-val)))
       
+      (define/public (make-uninit-multi type sizes)
+        (set! rt type)
+        (set! array 
+              (if (null? (cdr sizes))
+                  (make-vector (car sizes) (default-val))
+                  (let ((vec (make-vector (car sizes))))
+                    (let loop ((idx 0))
+                      (unless (>= idx (car sizes))
+                        (vector-set! vec idx (make-java-array type (cdr sizes) null))
+                        (loop (add1 idx))))
+                    vec))))
+      
       (super-instantiate ())))
   
   (define (make-java-array type size vals)
     (let ((array (make-object java-array)))
       (cond
+        ((list? size) (send array make-uninit-multi type size))
         ((null? vals) (send array make-uninitialized size type))
         ((list? vals) (send array make-initialized type vals))
         (else (send array make-multi-dimension type size vals)))

@@ -1521,7 +1521,7 @@
         ((null? (cdr sizes))
          (make-syntax #f `(make-java-array ,type ,(car sizes) null) (build-src src)))
         (else
-         (make-syntax #f `(make-java-array ,type ,(car sizes) ,(create-array (cdr sizes) type src)) (build-src src))))))
+         (make-syntax #f `(make-java-array ,type (list ,@sizes) null) (build-src src))))))
   
   ;converted
   ;translate-type-spec: type-spec -> syntax

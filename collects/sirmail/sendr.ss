@@ -345,10 +345,48 @@
            (editor:backup-autosave-mixin
             text:standard-style-list%)))
 	(define message-editor (make-object (class message-editor-super%
-					      (rename [super-set-modified set-modified])
+					      (rename [super-set-modified set-modified]
+						      [super-can-insert? can-insert?]
+						      [super-on-insert on-insert]
+						      [super-can-delete? can-delete?]
+						      [super-on-delete on-delete])
+					      (inherit reset-region)
+					      
+					      (define immutable-start 0)
+					      (define immutable-end 0)
+					      
 					      (define/override (set-modified mod?)
 						(send mailer-frame modified mod?)
 						(super-set-modified mod?))
+					      (define/public (set-no-change-region start end)
+						(set! immutable-start start)
+						(set! immutable-end end)
+						(reset-region end 'end))
+
+					      (define/override (can-insert? start len)
+						(and (super-can-insert? start len)
+						     (or (<= (+ start len) immutable-start)
+							 (>= start immutable-end))))
+					      (define/override (on-insert start len)
+						(super-on-insert start len)
+						(if (<= start immutable-start)
+						    (begin
+						      (set! immutable-start (+ immutable-start len))
+						      (set! immutable-end (+ immutable-end len))
+						      (reset-region immutable-end 'end))))
+					      
+					      (define/override (can-delete? start len)
+						(and (super-can-delete? start len)
+						     (or (<= (+ start len) immutable-start)
+							 (>= start immutable-end))))
+					      (define/override (on-delete start len)
+						(super-on-delete start len)
+						(if (<= start immutable-start)
+						    (begin
+						      (set! immutable-start (- immutable-start len))
+						      (set! immutable-end (- immutable-end len))
+						      (reset-region immutable-end 'end))))
+					      
 					      (super-new))))
 	(define enclosure-list (make-object hierarchical-list% (send mailer-frame get-area-container)))
 
@@ -582,10 +620,13 @@
 	      (send message-editor insert " (")
 	      (send message-editor insert (path->string (system-library-subpath)))
 	      (send message-editor insert ")")
-	      (send message-editor insert #\newline)
-	      (send message-editor insert SEPARATOR)
-	      (send message-editor insert #\newline)
-              (send message-editor reset-region (send message-editor last-position) 'end)
+	      (let ([start-no-change (send message-editor last-position)])
+		(send message-editor insert #\newline)
+		(send message-editor insert SEPARATOR)
+		(send message-editor insert #\newline)
+		(send message-editor set-no-change-region 
+		      start-no-change
+		      (send message-editor last-position)))
 	      (let ([message-start (send message-editor last-position)])
 		(send message-editor insert body)
 		(if (string=? to "")

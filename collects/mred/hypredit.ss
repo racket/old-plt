@@ -471,7 +471,7 @@
 	     (lambda ()
 	       (let* ([result 'cancel])
 		 (make-object
-		  (make-class wx:dialog-box%
+		  (class wx:dialog-box% ()
 			      (inherit show new-line fit)
 			      (private
 				[NAME-WIDTH 250]
@@ -487,7 +487,7 @@
 				 (lambda args
 				   (set! result 'cancel)
 				   (show #f))])
-			      (lambda ()
+			      (sequence
 				(super-init () "Link to File" #t)
 				(set! where-toggle
 				      (make-object wx:radio-box% this

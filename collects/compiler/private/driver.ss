@@ -240,6 +240,7 @@
 			       expr #f
 			       (zodiac:module-form-provides m)
 			       (zodiac:module-form-syntax-provides m)
+			       (zodiac:module-form-indirect-provides m)
 			       (zodiac:module-form-kernel-reprovide-hint m)
 			       (zodiac:module-form-self-path-index m))])
 		     (set-annotation! 

@@ -3503,6 +3503,7 @@ Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *str, Scheme_Env *e
   if (modidx) {
     int i, len = SCHEME_VEC_SIZE(expr);
     Scheme_Object *orig = SCHEME_VEC_ELS(expr)[len - 1], *s;
+    orig = SCHEME_STX_VAL(orig);
     for (i = 0; i < len - 1; i++) {
       s = scheme_stx_phase_shift(SCHEME_VEC_ELS(expr)[i], shift, orig, modidx);
       SCHEME_VEC_ELS(expr)[i] = s;

@@ -80,10 +80,10 @@
 	   table
 	   (lambda (sym b)
 	     (vector-set! v (string->number (symbol->string (zodiac:varref-var b))) sym)))
-	  (for-each
-	   (lambda (s)
-	     (fprintf port "  ~s~a~n" (-symbol->string s) comma))
-	   (vector->list v))))
+	  (let loop ([i 0])
+	    (unless (= i (vector-length v))
+	      (fprintf port "  ~s~a /* ~a */~n" (-symbol->string (vector-ref v i)) comma i)
+	      (loop (add1 i))))))
 
       (define (vm->c:emit-symbol-list! port comma)
 	(vm->c:emit-list! port comma (const:get-symbol-table) (const:get-symbol-counter) symbol->string))

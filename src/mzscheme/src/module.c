@@ -1693,7 +1693,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 			       scheme_intern_symbol("module-kernel-reprovide-hint"),
 			       SCHEME_CAR(hints));
       fm = scheme_stx_property(fm, 
-			       scheme_intern_symbol("module-self-index-path"),
+			       scheme_intern_symbol("module-self-path-index"),
 			       self_modidx);
     }
 
@@ -1716,13 +1716,20 @@ module_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Objec
   return do_module(form, env, NULL, 0, depth, boundname);
 }
 
+static Scheme_Object *mk_req(Scheme_Object *path, Scheme_Object *self)
+{
+  if (SCHEME_SYMBOLP(path))
+    return path;
+  else
+    return scheme_make_modidx(path, self, scheme_false);
+}
+
 /* The mzc interface: */
-void
-scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc ivk, Scheme_Invoke_Proc sivk, 
-		      void *data, Scheme_Env *env)
+Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc ivk, Scheme_Invoke_Proc sivk, 
+				     void *data, Scheme_Env *env)
 {
   Scheme_Module *m;
-  Scheme_Object *name, *prefix, *a;
+  Scheme_Object *name, *prefix, *a, *self_modidx;
   Scheme_Object *requires, *et_requires, *kernel_exclusion;
   Scheme_Object *var_provides, *syntax_provides, *ind_provides, **exs, **exss, **exns;
   int nvar, nsyntax, i;
@@ -1749,6 +1756,11 @@ scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc ivk, Scheme_Invok
     name = scheme_symbol_append(prefix, name);
   
   m->modname = name;
+
+  self_modidx = scheme_make_modidx(scheme_false, scheme_false, m->modname);
+
+  requires = scheme_named_map_1(NULL, mk_req, requires, self_modidx);
+  et_requires = scheme_named_map_1(NULL, mk_req, et_requires, self_modidx);
 
   m->requires = requires;
   m->et_requires = et_requires;
@@ -1806,10 +1818,11 @@ scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc ivk, Scheme_Invok
   m->indirect_provides = exs;
   m->num_indirect_provides = nvar;
 
-  a = scheme_make_modidx(scheme_false, scheme_false, m->modname);
-  m->self_modidx = a;
+  m->self_modidx = self_modidx;
 
   scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);
+
+  return scheme_void;
 }
 
 /**********************************************************************/

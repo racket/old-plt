@@ -102,7 +102,7 @@
 		    (make-empty-box)
 		    #f #f #f
 		    def #f
-		    #f #f #f #f)])
+		    #f #f #f #f #f)])
 	  (set-annotation! 
 	   def 
 	   (make-module-info mi 

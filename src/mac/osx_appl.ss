@@ -33,7 +33,8 @@ exit 1
 (module osx_appl mzscheme
 
   (require (lib "plist.ss" "xml")
-	   (lib "process.ss"))
+	   (lib "process.ss")
+	   (lib "file.ss"))
 
   (define rez-path (or (getenv "REZ")
 		       "/Developer/Tools/Rez"))
@@ -57,7 +58,9 @@ exit 1
   (define (realize-template path template-tree)
     (let* ([head-path (build-path path (car template-tree))])
       (when (file-exists? head-path)
-	    (error 'realize-template "Can't create directory ~s because there's a file with that name" head-path))
+	    (error 'realize-template 
+		   "Can't create directory ~s because there's a file with that name" 
+		   head-path))
       (unless (directory-exists? head-path)
 	      (printf "Creating directory: ~s~n" head-path)
 	      (make-directory head-path))
@@ -79,9 +82,9 @@ exit 1
 	'truncate)))
 
   (define (create-app dest-path app-name pkg-info-string info-plist)
-    (let* ([app-path (build-path dest-path (string-append app-name ".app"))])
-      (unless (directory-exists? app-path)
-	      (make-directory app-path))
+    (let* ([app-path (build-path dest-path 
+				 (string-append app-name ".app"))])
+      (make-directory* app-path)
       (realize-template app-path app-template-tree)
       (let* ([pkg-info-path (build-path app-path "Contents" "PkgInfo")])
 	(printf "writing file ~s~n" pkg-info-path)
@@ -98,9 +101,11 @@ exit 1
 		  (copy-file icns-src icns-dest))))))
   
   (define (create-fw dest-path fw-name info-plist)
-    (let* ([fw-path (build-path dest-path (string-append fw-name ".framework"))])
-      (unless (directory-exists? fw-path)
-	(make-directory fw-path))
+    (let* ([fw-path (build-path dest-path 
+				(string-append fw-name ".framework")
+				"Versions"
+				(version))])
+      (make-directory* fw-path)
       (realize-template fw-path fw-template-tree)
       (write-info (build-path fw-path "Resources") info-plist)
       ;; maybe someday we'll have Contents/Resources/English.lproj ?

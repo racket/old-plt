@@ -94,15 +94,22 @@ mred : $(MZSCHEME) mrmain.o $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB)
 libmred.@LIBSFX@: $(WXLIBSNORM)
 	$(AR) $(ARFLAGS) libmred.@LIBSFX@ $(WXLIBSNORM)
 
-PLT_MrEd.framework/PLT_MrEd : $(MZSCHEME) $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB)
-	$(MREDLINKER) $(MREDLDFLAGS) -dynamiclib -o PLT_MrEd.framework/PLT_MrEd -F../mzscheme -F@FRAMEWORK_INSTALL_DIR@ -framework PLT_MzScheme $(@WXLIBS@) $(GUILIBS_@WXVARIANT@)
+@INCLUDEDEP@ @srcdir@/../mac/version.mak
 
-MrEd.app/Contents/MacOS/MrEd: PLT_MrEd.framework/Resources/PLT_MrEd.rsrc PLT_MrEd.framework/PLT_MrEd mrmain.o 
+MRFW = PLT_MrEd.framework/Versions/$(FWVERSION)/PLT_MrEd
+MRFWRES = PLT_MrEd.framework/Versions/$(FWVERSION)/Resources/PLT_MrEd.rsrc
+
+$(MRFW) : $(MZSCHEME) $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB)
+	$(MREDLINKER) $(MREDLDFLAGS) -dynamiclib -o $(MRFW) -F../mzscheme -F@FRAMEWORK_INSTALL_DIR@ -framework PLT_MzScheme $(@WXLIBS@) $(GUILIBS_@WXVARIANT@)
+
+MrEd.app/Contents/MacOS/MrEd: $(MRFWRES) $(MRFW) mrmain.o 
 	$(MREDLINKER) -o MrEd.app/Contents/MacOS/MrEd mrmain.o -F. -F../mzscheme -F@FRAMEWORK_INSTALL_DIR@ -framework PLT_MrEd -framework Carbon -framework PLT_MzScheme
 
-PLT_MrEd.framework/Resources/PLT_MrEd.rsrc: $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
+$(MRFWRES): $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
+	rm -rf PLT_MrEd.framework/Resources PLT_MrEd.framework/PLT_MrEd
 	$(srcdir)/../mac/osx_appl.ss $(srcdir)/..
-
+	ln -s Versions/$(FWVERSION)/PLT_MrEd PLT_MrEd.framework/PLT_MrEd
+	ln -s Versions/$(FWVERSION)/Resources PLT_MrEd.framework/Resources
 
 ee-app: mred mred_ee.o
 	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(MREDLINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(EEAPP) mred_ee.o mredx.o $(EEOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) ; fi
@@ -201,11 +208,23 @@ install_wx_xt:
 	cd ..; $(ICP) mred/mred $(prefix)/bin/
 	$(MAKE) @MRLIBINSTALL@
 
+MRFWDIR = "@FRAMEWORK_INSTALL_DIR@"/PLT_MrEd.framework
+
 install_wx_mac:
-	cd ..; rm -rf $(prefix)/MrEd.app @FRAMEWORK_INSTALL_DIR@/PLT_MrEd.framework
+	rm -f $(MRFWDIR)/Versions/$(FWVERSION)/PLT_MrEd
+	rm -rf $(MRFWDIR)/Versions/$(FWVERSION)/Resources
+	rm -f $(MRFWDIR)/PLT_MrEd
+	rm -rf $(MRFWDIR)/Resources
+	if [ ! -d "@FRAMEWORK_INSTALL_DIR@" ] ; then mkdir "@FRAMEWORK_INSTALL_DIR@" ; fi
+	if [ ! -d $(MRFWDIR) ] ; then mkdir $(MRFWDIR) ; fi
+	if [ ! -d $(MRFWDIR)/Versions ] ; then mkdir $(MRFWDIR)/Versions ; fi
+	if [ ! -d $(MRFWDIR)/Versions/$(FWVERSION) ] ; then mkdir $(MRFWDIR)/Versions/$(FWVERSION) ; fi
 	cd ..; rm -rf $(prefix)/collects/launcher/Starter.app
 	cd ..; $(ICP) -r mred/MrEd.app $(prefix)/.
-	cd ..; $(ICP) -r mred/PLT_MrEd.framework @FRAMEWORK_INSTALL_DIR@
+	$(ICP) PLT_MrEd.framework/Versions/$(FWVERSION)/PLT_MrEd $(MRFWDIR)/Versions/$(FWVERSION)/PLT_MrEd
+	$(ICP) -r PLT_MrEd.framework/Versions/$(FWVERSION)/Resources $(MRFWDIR)/Versions/$(FWVERSION)/Resources
+	ln -s Versions/$(FWVERSION)/PLT_MrEd $(MRFWDIR)/
+	ln -s Versions/$(FWVERSION)/Resources $(MRFWDIR)/
 	cd ..; $(ICP) -r mred/Starter.app $(prefix)/collects/launcher/.
 	if [ ! -e $(prefix)/bin/mred ] ; then cp $(srcdir)/../mac/mred.sh $(prefix)/bin/mred ; chmod a+x $(prefix)/bin/mred ; fi
 

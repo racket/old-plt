@@ -87,7 +87,7 @@ sproc.o: @GCDIR@/sproc.o
 mzscheme@NOT_OSX@: libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o $(SPECIALIZINGOBJECTS)
 	$(CC) -o mzscheme main.o $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LIBS@
 
-@INCLUDDEP@ @srcdir@/../mac/version.mak
+@INCLUDEDEP@ @srcdir@/../mac/version.mak
 
 MZFW = PLT_MzScheme.framework/Versions/$(FWVERSION)/PLT_MzScheme
 
@@ -232,11 +232,18 @@ normal-install:
 	cd ..; echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(BUILDINFO)
 	cd ..; echo 'LIBS=@LIBS@' >> $(BUILDINFO)
 
+MZFWDIR = "@FRAMEWORK_INSTALL_DIR@"/PLT_MzScheme.framework
+
 osx-install:
 	$(MAKE) normal-install
-	rm -rf @FRAMEWORK_INSTALL_DIR@/PLT_MzScheme.framework
-	if [ ! -d @FRAMEWORK_INSTALL_DIR@ ] ; then mkdir @FRAMEWORK_INSTALL_DIR@ ; fi
-	cp -r PLT_MzScheme.framework @FRAMEWORK_INSTALL_DIR@
+	rm -f $(MZFWDIR)/Versions/$(FWVERSION)/PLT_MzScheme
+	rm -f $(MZFWDIR)/PLT_MzScheme
+	if [ ! -d "@FRAMEWORK_INSTALL_DIR@" ] ; then mkdir "@FRAMEWORK_INSTALL_DIR@" ; fi
+	if [ ! -d $(MZFWDIR) ] ; then mkdir $(MZFWDIR) ; fi
+	if [ ! -d $(MZFWDIR)/Versions ] ; then mkdir $(MZFWDIR)/Versions ; fi
+	if [ ! -d $(MZFWDIR)/Versions/$(FWVERSION) ] ; then mkdir $(MZFWDIR)/Versions/$(FWVERSION) ; fi
+	cp $(MZFW) $(MZFWDIR)/Versions/$(FWVERSION)/
+	ln -s Versions/$(FWVERSION)/PLT_MzScheme $(MZFWDIR)/
 
 WLIBIDIR=$(prefix)/lib
 WBUILDINFO=$(WLIBIDIR)/buildinfo

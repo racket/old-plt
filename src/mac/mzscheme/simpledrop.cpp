@@ -358,7 +358,7 @@ void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
       fwBundle = CFBundleGetBundleWithIdentifier(CFSTR("org.plt-scheme.PLT_MrEd"));
       if (fwBundle) {
 	SInt16 refNum;
-	SInt16 localizedRefNum;
+	SInt16 lRefNum;
 	CFBundleOpenBundleResourceFiles(fwBundle, &refNum, &lRefNum);
       }
     }

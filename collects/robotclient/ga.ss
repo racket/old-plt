@@ -5,19 +5,22 @@
   (define GREATEST-POSSIBLE-INTEGER 10000)
   (define LOWEST-POSSIBLE-INTEGER  -10000)
   
+  (define (start-client _ __ ___ ____) (random 10))
   (define print-every-n-generations 2)
   (define run-n-generations 10)
   (define output-port (current-output-port))
   (define boards '((3 "board1" "packages1")
                    (3 "board2" "packages1")
-                   ;;		 (5 "board3" "packages2")
-                   (4 "board4" "packages2")))
-  ;;		 (10 "board5" "packages3")))
+                   ;(5 "board3" "packages2")
+                   (4 "board4" "packages3")
+                   (4 "board5" "packages4")))
   (define initial-set
-    `((-10 -100 -20 -200 -1000 -500 100 2000 200 10 500 10 1 -10000 -10000 100 -10 75 50 25 1000 750 500 250 5 200 2000 0.6 1 0.7 0.1 0.75 0.2 1 -1)
-      (10 10 10 100 -1000 50 10 2000 10 50 2000 50 1 -10000 -10000 100 -1 50 25 10 900 500 250 100 1 150 1800 0.8 1 0.9 0.5 1 0.6 3 -0.5)
-	
-      (-100 -1000 -500 -500 -3000 -1000 500 5000 200 -10 0 -10 1 -10000 -10000 200 -50 150 100 50 1500 1000 500 300 8 250 2500 1 1 1 0 1 1 5 -0.75)))
+    `((-10 -100 -20 -200 -1000 -500 100 2000 200 10 500 10 1 -10000 -10000 100 -10 75 50
+           25 1000 750 500 250 5 200 2000 0.6 1 0.7 0.1 0.75 0.2 1 -1)
+      (10 10 10 100 -1000 50 10 2000 10 50 2000 50 1 -10000 -10000 100 -1 50 25 10 900 
+          500 250 100 1 150 1800 0.8 1 0.9 0.5 1 0.6 3 -0.5)
+      (-100 -1000 -500 -500 -3000 -1000 500 5000 200 -10 0 -10 1 -10000 -10000 200 -50 
+            150 100 50 1500 1000 500 300 8 250 2500 1 1 1 0 1 1 5 -0.75)))
   
   (define parameter-list
     (list wall-threat-value 
@@ -57,7 +60,7 @@
           step-weight))
   
   ;; set-parameter-values! : gene-seq -> void
-  (define (set-parameter-values sequence)
+  (define (set-parameter-values! sequence)
     (for-each (lambda (param value)
                 (param value))
               parameter-list sequence))
@@ -75,9 +78,9 @@
   
   ;; breed : gene-seq gene-seq -> gene-seq
   (define (breed gs1 gs2)
-    (let ([base (map (lambda (x y) (ceiling (/ (+ x y) 2))) gs1 gs2)])
+    (let ([base (map (lambda (x y) (/ (+ x y) 2)) gs1 gs2)])
       (map (lambda (x)
-             (let* ([mutation (* (- (random 20) 10) (mutation-factor))]
+             (let* ([mutation (* (- (random 21) 10) (mutation-factor))]
                     [newval (+ x mutation)])
                (if (or (>= newval GREATEST-POSSIBLE-INTEGER)
                        (<= newval LOWEST-POSSIBLE-INTEGER))
@@ -105,12 +108,24 @@
   (define (play-board scoreboard board packages player-vec players)
     (let ([board-file (string-append "boards/" board)]
           [packages-file (string-append "boards/" packages)])
-      ;; play the board, get the results in 'results'
-      (let ([results players])
-        (for-each (lambda (player score)
-                    (vector-set! scoreboard player
-                                 (+ (vector-ref scoreboard player) score)))
-                  players results))))
+      (let-values ([(subproc stdout stdin stderr) 
+                    (subprocess #f #f #f "./Simulator" (format "-p 4000 -m ~a -k ~a"
+                                                               board packages))])
+        (let ([threads (map (lambda (player-num)
+                              (let ([genes (vector-ref player-vec player-num)])
+                                (thread (lambda ()
+                                          (set-parameter-values! genes)
+                                          (let ([score (start-client #f #f 
+                                                                     "localhost" 4000)])
+                                            (vector-set! scoreboard player-num 
+                                                         (+ (vector-ref scoreboard
+                                                                        player-num)
+                                                            score))))))) players)])
+          (for-each thread-wait threads)
+          (close-input-port stdout)
+          (close-input-port stderr)
+          (close-output-port stdin)
+          (subprocess-kill subproc #t)))))
   
   ;; generate-results : list-of-gene-seqs -> list-of-gene-seqs
   (define (generate-results ls)

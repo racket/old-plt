@@ -755,7 +755,7 @@
 	       (dynamic-wind
 		html-wait
 		(lambda ()
-		  (append-html (coclass->html object))
+		  (mxprims:document-append-html doc (coclass->html object))
 		  (car (last-pair (mxprims:document-objects doc))))
 		html-post))]
 	    [handle-events 
@@ -797,13 +797,9 @@
 
 	     (super-init)
 
-	     (thread 
+	     (thread 	
 	      (lambda () 
 		(let loop ()	
 		  (mxprims:document-pump-msgs doc)
-		  (sleep 0.1)
+		  (sleep)
 		  (loop))))))))
-		    
-	
-
-

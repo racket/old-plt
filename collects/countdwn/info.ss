@@ -5,13 +5,8 @@
     [(app-sig-library) "sig.ss"]
     [(splash-max) 84]
     [(splash-depth) 6]
-    [(compile-prefix) '(require-library "sig.ss" "countdwn")]
-    [(compile-omit-files) (list "sig.ss"
-				"remind.ss"
-				"link.ss"
-				"during.ss"
-				"before.ss"
-				"after.ss")]
+    [(compile-prefix) '(begin (require-library "sig.ss" "mred") (require-library "sig.ss" "countdwn"))]
+    [(compile-omit-files) null]
     [(compile-elaboration-zos) (list "sig.ss")]
 
     [(install-collection)

@@ -3526,6 +3526,37 @@ int mark_struct_property_FIXUP(void *p) {
 
 /**********************************************************************/
 
+#ifdef MARKS_FOR_READ_C
+
+int mark_cport_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(CPort));
+}
+
+int mark_cport_MARK(void *p) {
+  CPort *cp = (CPort *)p;
+  gcMARK(cp->start);
+  gcMARK(cp->orig_port);
+  return
+  gcBYTES_TO_WORDS(sizeof(CPort));
+}
+
+int mark_cport_FIXUP(void *p) {
+  CPort *cp = (CPort *)p;
+  gcFIXUP(cp->start);
+  gcFIXUP(cp->orig_port);
+  return
+  gcBYTES_TO_WORDS(sizeof(CPort));
+}
+
+#define mark_cport_IS_ATOMIC 0
+#define mark_cport_IS_CONST_SIZE 1
+
+
+#endif  /* READ */
+
+/**********************************************************************/
+
 #ifdef MARKS_FOR_REGEXP_C
 
 int mark_regexp_SIZE(void *p) {

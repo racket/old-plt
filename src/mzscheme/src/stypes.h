@@ -167,6 +167,7 @@ enum {
   scheme_rt_comp_prefix,
   scheme_rt_user_input,
   scheme_rt_user_output,
+  scheme_rt_compact_port,
 #endif
 
   _scheme_last_type_

@@ -141,6 +141,10 @@ typedef struct {
 # define USE_LISTSTACK(x) x
 #endif
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
 static Scheme_Object *quote_symbol;
 static Scheme_Object *quasiquote_symbol;
 static Scheme_Object *unquote_symbol;
@@ -178,6 +182,10 @@ void scheme_init_read(Scheme_Env *env)
   unsyntax_symbol = scheme_intern_symbol("unsyntax");
   unsyntax_splicing_symbol = scheme_intern_symbol("unsyntax-splicing");
   quasisyntax_symbol = scheme_intern_symbol("quasisyntax");
+
+#ifdef MZ_PRECISE_GC
+  register_traversers();
+#endif
 
   scheme_add_global_constant("read-case-sensitive", 
 			     scheme_register_parameter(read_case_sensitive, 
@@ -1732,6 +1740,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc)
 #define RANGE_CHECK_GETS(x) RANGE_CHECK(x, <= port->size - port->pos)
 
 typedef struct CPort {
+  MZTAG_IF_REQUIRED  
   long pos, size;
   unsigned char *start;
   long symtab_size;
@@ -1862,8 +1871,6 @@ static Scheme_Object *read_compact_svector(CPort *port, int l)
 }
 
 static int cpt_branch[256];
-
-static int delayit = 41000;
 
 static Scheme_Object *read_compact(CPort *port, 
 				   Scheme_Hash_Table **ht,
@@ -2510,11 +2517,19 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   size = read_compact_number_from_port(port);
   rp = MALLOC_ONE_RT(CPort);
 #ifdef MZ_PRECISE_GC
-  fix me!;
+  rp->type = scheme_rt_compact_port;
 #endif
-  rp->start = (unsigned char *)scheme_malloc_atomic(size);
+  {
+    unsigned char *st;
+    st = (unsigned char *)scheme_malloc_atomic(size);
+    rp->start = st;
+  }
   rp->pos = 0;
-  rp->base = scheme_tell(port);
+  {
+    long base; 
+    base = scheme_tell(port);
+    rp->base = base;
+  }
   rp->orig_port = port;
   rp->size = size;
   if ((got = scheme_get_chars(port, size, (char *)rp->start, 0)) != size)
@@ -2544,3 +2559,23 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 
   return result;
 }
+
+/*========================================================================*/
+/*                         precise GC traversers                          */
+/*========================================================================*/
+
+#ifdef MZ_PRECISE_GC
+
+START_XFORM_SKIP;
+
+#define MARKS_FOR_READ_C
+#include "mzmark.c"
+
+static void register_traversers(void)
+{
+  GC_REG_TRAV(scheme_rt_compact_port, mark_cport);
+}
+
+END_XFORM_SKIP;
+
+#endif

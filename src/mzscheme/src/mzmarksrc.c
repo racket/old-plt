@@ -1415,6 +1415,21 @@ END syntax;
 
 /**********************************************************************/
 
+START read;
+
+mark_cport {
+ mark:
+  CPort *cp = (CPort *)p;
+  gcMARK(cp->start);
+  gcMARK(cp->orig_port);
+ size:
+  gcBYTES_TO_WORDS(sizeof(CPort));
+}
+
+END read;
+
+/**********************************************************************/
+
 START regexp;
 
 mark_regexp {

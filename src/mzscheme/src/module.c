@@ -65,6 +65,9 @@ static Scheme_Object *top_level_require_execute(Scheme_Object *data);
 static Scheme_Object *module_resolve(Scheme_Object *data, Resolve_Info *info);
 static Scheme_Object *top_level_require_resolve(Scheme_Object *data, Resolve_Info *info);
 
+static void module_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
+static void top_level_require_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
+
 static Scheme_Object *write_module(Scheme_Object *obj);
 static Scheme_Object *read_module(Scheme_Object *obj);
 
@@ -168,9 +171,11 @@ void scheme_init_module(Scheme_Env *env)
 {
   Scheme_Object *o;
 
-  scheme_register_syntax(MODULE_EXPD, module_resolve, 
+  scheme_register_syntax(MODULE_EXPD, 
+			 module_resolve, module_validate, 
 			 module_execute, 1);
-  scheme_register_syntax(REQUIRE_EXPD, top_level_require_resolve, 
+  scheme_register_syntax(REQUIRE_EXPD, 
+			 top_level_require_resolve, top_level_require_validate, 
 			 top_level_require_execute, 1);
 
   scheme_add_global_keyword("module", 
@@ -2067,6 +2072,11 @@ module_execute(Scheme_Object *data)
   }
 
   return scheme_void;
+}
+
+static void module_validate(Scheme_Object *data, Mz_CPort *port, char *stack, 
+			    int depth, int delta, int num_toplevels)
+{
 }
 
 static Scheme_Object *
@@ -4038,6 +4048,11 @@ top_level_require_execute(Scheme_Object *data)
   scheme_append_module_rename(rn, brn);
 
   return scheme_void;
+}
+
+static void top_level_require_validate(Scheme_Object *data, Mz_CPort *port, char *stack, 
+				       int depth, int delta, int num_toplevels)
+{
 }
 
 static Scheme_Object *

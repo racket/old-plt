@@ -37,6 +37,7 @@ Scheme_Object *scheme_compiled_void_code;
 Scheme_Object scheme_undefined[1];
 
 Scheme_Syntax_Resolver scheme_syntax_resolvers[_COUNT_EXPD_];
+Scheme_Syntax_Validater scheme_syntax_validaters[_COUNT_EXPD_];
 Scheme_Syntax_Executer scheme_syntax_executers[_COUNT_EXPD_];
 int scheme_syntax_protect_afters[_COUNT_EXPD_];
 
@@ -99,6 +100,14 @@ static Scheme_Object *set_resolve(Scheme_Object *data, Resolve_Info *info);
 static Scheme_Object *define_syntaxes_resolve(Scheme_Object *expr, Resolve_Info *info);
 static Scheme_Object *case_lambda_resolve(Scheme_Object *expr, Resolve_Info *info);
 static Scheme_Object *begin0_resolve(Scheme_Object *data, Resolve_Info *info);
+
+static void define_values_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
+static void set_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
+static void define_syntaxes_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
+static void case_lambda_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
+static void begin0_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
+static void bangboxenv_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
+static void bangboxvalue_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
 
 static Scheme_Object *named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
 					Scheme_Compile_Info *rec, int drec, int depth, Scheme_Object *boundname);
@@ -175,20 +184,27 @@ scheme_init_syntax (Scheme_Env *env)
 
   begin_symbol = scheme_intern_symbol("begin");
   
-  scheme_register_syntax(DEFINE_VALUES_EXPD, define_values_resolve, 
+  scheme_register_syntax(DEFINE_VALUES_EXPD, 
+			 define_values_resolve, define_values_validate, 
 			 define_values_execute, 1);
-  scheme_register_syntax(SET_EXPD, set_resolve,
+  scheme_register_syntax(SET_EXPD,
+			 set_resolve, set_validate,
 			 set_execute, 1);
-  scheme_register_syntax(DEFINE_SYNTAX_EXPD, define_syntaxes_resolve,
+  scheme_register_syntax(DEFINE_SYNTAX_EXPD, 
+			 define_syntaxes_resolve, define_syntaxes_validate,
 			 define_syntaxes_execute, 1);
-  scheme_register_syntax(CASE_LAMBDA_EXPD, case_lambda_resolve,
+  scheme_register_syntax(CASE_LAMBDA_EXPD, 
+			 case_lambda_resolve, case_lambda_validate,
 			 case_lambda_execute, 1);
-  scheme_register_syntax(BEGIN0_EXPD, begin0_resolve,
+  scheme_register_syntax(BEGIN0_EXPD, 
+			 begin0_resolve, begin0_validate,
 			 begin0_execute, 1);
 
-  scheme_register_syntax(BOXENV_EXPD, NULL,
+  scheme_register_syntax(BOXENV_EXPD, 
+			 NULL, bangboxenv_validate,
 			 bangboxenv_execute, 1);
-  scheme_register_syntax(BOXVAL_EXPD, NULL,
+  scheme_register_syntax(BOXVAL_EXPD, 
+			 NULL, bangboxvalue_validate,
 			 bangboxvalue_execute, 1);
 
   scheme_install_type_writer(scheme_let_value_type, write_let_value);
@@ -579,6 +595,27 @@ define_values_execute(Scheme_Object *data)
   return define_execute(SCHEME_CAR(data), SCHEME_CDR(data), 0, NULL, NULL);
 }
 
+static void define_values_validate(Scheme_Object *data, Mz_CPort *port, 
+				   char *stack, int depth, int delta, int num_toplevels)
+{
+  Scheme_Object *vars, *val;
+
+  if (!SCHEME_PAIRP(data))
+    scheme_ill_formed_code(port);
+
+  vars = SCHEME_CAR(data);
+  val = SCHEME_CDR(data);  
+    
+  for (; SCHEME_PAIRP(vars); vars = SCHEME_CDR(vars)) {
+    scheme_validate_toplevel(SCHEME_CAR(vars), port, stack, depth, delta, num_toplevels);
+  }
+  
+  if (!SCHEME_NULLP(vars))
+    scheme_ill_formed_code(port);
+
+  scheme_validate_expr(port, val, stack, depth, delta, num_toplevels);
+}
+
 static Scheme_Object *
 define_values_resolve(Scheme_Object *data, Resolve_Info *rslv)
 {
@@ -947,16 +984,33 @@ set_execute (Scheme_Object *data)
   set_undef = SCHEME_CAR(data);
   data = SCHEME_CDR(data);
   
-  val = SCHEME_STX_CDR(data);
+  val = SCHEME_CDR(data);
   val = _scheme_eval_linked_expr(val);
 
-  tl = SCHEME_STX_CAR(data);
+  tl = SCHEME_CAR(data);
   toplevels = (Scheme_Object **)MZ_RUNSTACK[SCHEME_TOPLEVEL_DEPTH(tl)];
   var = (Scheme_Bucket *)toplevels[SCHEME_TOPLEVEL_POS(tl)];
   
   scheme_set_global_bucket("set!", var, val, SCHEME_TRUEP(set_undef));
 
   return scheme_void;
+}
+
+static void set_validate(Scheme_Object *data, Mz_CPort *port, 
+			 char *stack, int depth, int delta, int num_toplevels)
+{
+  Scheme_Object *val, *tl;
+
+  if (!SCHEME_PAIRP(data)
+      || !SCHEME_PAIRP(SCHEME_CDR(data)))
+    scheme_ill_formed_code(port);
+  
+  data = SCHEME_CDR(data);
+  tl = SCHEME_CAR(data);
+  val = SCHEME_CDR(data);
+
+  scheme_validate_expr(port, val, stack, depth, delta, num_toplevels);
+  scheme_validate_toplevel(tl,  port, stack, depth, delta, num_toplevels);
 }
 
 static Scheme_Object *
@@ -1157,6 +1211,17 @@ case_lambda_execute(Scheme_Object *expr)
   return (Scheme_Object *)seqout;
 }
 
+static void case_lambda_validate(Scheme_Object *data, Mz_CPort *port, char *stack, 
+				 int depth, int delta, int num_toplevels)
+{
+  Scheme_Case_Lambda *seq = (Scheme_Case_Lambda *)data;
+  int i;
+
+  for (i = 0; i < seq->count; i++) { 
+    scheme_validate_expr(port, seq->array[i], stack, depth, delta, num_toplevels);
+  }
+}
+
 static Scheme_Object *
 case_lambda_resolve(Scheme_Object *expr, Resolve_Info *rslv)
 {
@@ -1354,6 +1419,9 @@ case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_
 /*                          implicit set!s                            */
 /**********************************************************************/
 
+/* A bangboxval step is inserted by the compilation of `lambda' forms
+   where an argument is set!ed in the function body. */
+
 Scheme_Object *bangboxenv_execute(Scheme_Object *data)
 {
   int pos = SCHEME_INT_VAL(SCHEME_CAR(data));
@@ -1370,13 +1438,29 @@ Scheme_Object *bangboxenv_execute(Scheme_Object *data)
   return _scheme_tail_eval(data);
 }
 
+static void bangboxenv_validate(Scheme_Object *data, Mz_CPort *port, 
+				char *stack, int depth, int delta, int num_toplevels)
+{
+  if (!SCHEME_PAIRP(data))
+    scheme_ill_formed_code(port);
+    
+  scheme_validate_boxenv(SCHEME_INT_VAL(SCHEME_CAR(data)), port, stack, depth, delta);
+
+  scheme_validate_expr(port, SCHEME_CDR(data), stack, depth, delta, num_toplevels);
+}
+
+
+
+/* A bangboxval step is inserted by the compilation of `let' forms
+   where the RHS is bound to a variable that will be set!ed. */
+
 static Scheme_Object *
 bangboxvalue_execute(Scheme_Object *data)
 {
   int pos;
   Scheme_Object *val;
 
-  pos = SCHEME_INT_VAL(SCHEME_STX_CAR(data));
+  pos = SCHEME_INT_VAL(SCHEME_CAR(data));
 
   data = SCHEME_CDR(data);
   
@@ -1406,6 +1490,16 @@ bangboxvalue_execute(Scheme_Object *data)
     val = scheme_make_envunbox(val);
 
   return val;
+}
+
+static void bangboxvalue_validate(Scheme_Object *data, Mz_CPort *port, 
+				  char *stack, int depth, int delta, int num_toplevels)
+{
+  if (!SCHEME_PAIRP(data)
+      || (SCHEME_INT_VAL(SCHEME_CAR(data)) < 0))
+    scheme_ill_formed_code(port);
+      
+  scheme_validate_expr(port, SCHEME_CDR(data), stack, depth, delta, num_toplevels);
 }
 
 /**********************************************************************/
@@ -1629,6 +1723,7 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
 	if (!recbox
 	    && (scheme_resolve_info_flags(linfo, opos + j) & SCHEME_INFO_BOXED)) {
 	  Scheme_Object *sl;
+	  /* See bangboxval... */
 	  sl = scheme_make_syntax_resolved(BOXVAL_EXPD, 
 					   cons(scheme_make_integer(j),
 						lv->value));
@@ -2376,6 +2471,17 @@ begin0_execute(Scheme_Object *obj)
   return v;
 }
 
+static void begin0_validate(Scheme_Object *data, Mz_CPort *port, char *stack, 
+			    int depth, int delta, int num_toplevels)
+{
+  Scheme_Sequence *seq = (Scheme_Sequence *)data;
+  int i;
+
+  for (i = 0; i < seq->count; i++) { 
+    scheme_validate_expr(port, seq->array[i], stack, depth, delta, num_toplevels);
+  }
+}
+
 static Scheme_Object *
 begin0_resolve(Scheme_Object *obj, Resolve_Info *info)
 {
@@ -2635,6 +2741,45 @@ define_syntaxes_execute(Scheme_Object *form)
 
   scheme_on_next_top(NULL, NULL, scheme_false);
   return define_execute(SCHEME_CAR(form), SCHEME_CDR(form), 1, rp, dummy);
+}
+
+static void define_syntaxes_validate(Scheme_Object *data, Mz_CPort *port, 
+				     char *stack, int depth, int delta, int num_toplevels)
+{
+  Resolve_Prefix *rp;
+  Scheme_Object *names, *val, *base_stack_depth, *dummy;
+  int sdepth;
+
+  if (!SCHEME_PAIRP(data)
+      || !SCHEME_PAIRP(SCHEME_CDR(data)))
+    scheme_ill_formed_code(port);
+
+  rp = (Resolve_Prefix *)SCHEME_CAR(data);
+  base_stack_depth = SCHEME_CADR(data);
+  sdepth = SCHEME_INT_VAL(base_stack_depth);
+
+  data = SCHEME_CDDR(data);
+  if (!SCHEME_PAIRP(data)
+      || !SCHEME_PAIRP(SCHEME_CDR(data))
+      || !SAME_TYPE(rp->type, scheme_resolve_prefix_type)
+      || (sdepth < 0))
+    scheme_ill_formed_code(port);
+
+  dummy = SCHEME_CAR(data);
+  data = SCHEME_CDR(data);
+  names = SCHEME_CAR(data);
+  val = SCHEME_CDR(data);
+
+  for (; SCHEME_PAIRP(names); names = SCHEME_CDR(names)) {
+    if (!SCHEME_SYMBOLP(SCHEME_CAR(names)))
+      scheme_ill_formed_code(port);
+  }
+  if (!SCHEME_NULLP(names))
+    scheme_ill_formed_code(port);
+
+  scheme_validate_toplevel(dummy,  port, stack, depth, delta, num_toplevels);
+
+  scheme_validate_code(port, val, sdepth, rp->num_toplevels, rp->num_stxes);
 }
 
 static Scheme_Object *define_syntaxes_resolve(Scheme_Object *data, Resolve_Info *info)

@@ -1230,6 +1230,12 @@ typedef struct Scheme_Object *
 			 int depth, Scheme_Object *boundname);
 
 typedef struct Scheme_Object *(*Scheme_Syntax_Resolver)(Scheme_Object *data, Resolve_Info *info);
+
+typedef struct CPort Mz_CPort;
+
+typedef void (*Scheme_Syntax_Validater)(Scheme_Object *data, Mz_CPort *port, 
+					char *stack, int depth, int delta, int num_toplevels);
+
 typedef struct Scheme_Object *(*Scheme_Syntax_Executer)(struct Scheme_Object *data);
 
 typedef struct Scheme_Closure_Compilation_Data
@@ -1338,10 +1344,13 @@ Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env
 #define REQUIRE_EXPD       8
 #define _COUNT_EXPD_       9
 
-#define scheme_register_syntax(i, fr, fe, pa) \
+#define scheme_register_syntax(i, fr, fv, fe, pa) \
      (scheme_syntax_resolvers[i] = fr, \
-      scheme_syntax_executers[i] = fe, scheme_syntax_protect_afters[i] = pa)
+      scheme_syntax_executers[i] = fe, \
+      scheme_syntax_validaters[i] = fv, \
+      scheme_syntax_protect_afters[i] = pa)
 extern Scheme_Syntax_Resolver scheme_syntax_resolvers[_COUNT_EXPD_];
+extern Scheme_Syntax_Validater scheme_syntax_validaters[_COUNT_EXPD_];
 extern Scheme_Syntax_Executer scheme_syntax_executers[_COUNT_EXPD_];
 extern int scheme_syntax_protect_afters[_COUNT_EXPD_];
 
@@ -1496,6 +1505,16 @@ void scheme_pop_prefix(Scheme_Object **rs);
 
 Scheme_Object *scheme_make_environment_dummy(Scheme_Comp_Env *env);
 Scheme_Env *scheme_environment_from_dummy(Scheme_Object *dummy);
+
+void scheme_validate_code(Mz_CPort *port, Scheme_Object *code, int depth,
+			  int num_toplevels, int num_stxes);
+void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, 
+			  char *stack, int depth, int delta, int num_toplevels);
+void scheme_validate_toplevel(Scheme_Object *expr, Mz_CPort *port,
+			      char *stack, int depth, int delta, int num_toplevels);
+void scheme_validate_boxenv(int pos, Mz_CPort *port,
+			    char *stack, int depth, int delta);
+void scheme_ill_formed_code(Mz_CPort *port);
 
 /*========================================================================*/
 /*                         namespaces and modules                         */

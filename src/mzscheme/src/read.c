@@ -1803,7 +1803,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc)
 /*                               .zo reader                               */
 /*========================================================================*/
 
-#define ZO_CHECK(x) if (!(x)) ill_formed_code(port);
+#define ZO_CHECK(x) if (!(x)) scheme_ill_formed_code(port);
 #define RANGE_CHECK(x, y) ZO_CHECK (x y)
 #define RANGE_CHECK_GETS(x) RANGE_CHECK(x, <= port->size - port->pos)
 
@@ -1829,7 +1829,7 @@ static Scheme_Object *read_compact_quote(CPort *port,
 					 Scheme_Object **symtab,
 					 int embedded);
 
-static void ill_formed_code(CPort *port)
+void scheme_ill_formed_code(struct CPort *port)
 {
   scheme_read_err(port->orig_port, NULL, -1, -1, CP_TELL(port), -1, 0,
 		  "read (compiled): ill-formed code");
@@ -2286,7 +2286,7 @@ static Scheme_Object *read_compact(CPort *port,
     default:
       {
 	v = NULL;
-	ill_formed_code(port);
+	scheme_ill_formed_code(port);
       }
     }
 
@@ -2418,12 +2418,12 @@ static Scheme_Object *read_marshalled(int type,
   reader = scheme_type_readers[type];
 
   if (!reader)
-    ill_formed_code(port);
+    scheme_ill_formed_code(port);
   
   l = reader(l);
 
   if (!l)
-    ill_formed_code(port);
+    scheme_ill_formed_code(port);
 
   return l;
 }
@@ -2543,6 +2543,19 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   result = read_marshalled(scheme_compilation_top_type, rp, ht, symtab);
 
   local_rename_memory = NULL;
+
+  if (SAME_TYPE(SCHEME_TYPE(result), scheme_compilation_top_type)) {
+    Scheme_Compilation_Top *top = (Scheme_Compilation_Top *)result;
+    
+#if 0
+    scheme_validate_code(rp, top->code, 
+			 top->max_let_depth,
+			 top->prefix->num_toplevels,
+			 top->prefix->num_stxes);
+#endif
+    /* If no exception, the the resulting code is ok. */
+  } else
+    scheme_ill_formed_code(rp);
 
 # ifdef MZ_PRECISE_GC
   rp = &cp; /* Ensures that cp is known to be alive. */

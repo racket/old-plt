@@ -12,7 +12,12 @@
   
   (provide (all-defined))
   
-  (define (py-so x) (datum->syntax-object #'here x)); (lambda (x) x))
+  (define (py-so x) ;(datum->syntax-object #'here x)
+                    ;(lambda (x) x)
+                    ;x
+;                    (datum->syntax-object #f x)
+                    (datum->syntax-object (current-runtime-support-context) x)
+                    )
   ; program identifiers should search the top level
 ;  (define program-context ;empty-context)
 ;                          #f)
@@ -225,7 +230,7 @@
       ;;daniel
       (inherit ->orig-so ->lex-so)
       (define/override (to-scheme)
-            (->lex-so (get-symbol) program-context))
+            (->lex-so (get-symbol) (current-toplevel-context)))
       
       (super-instantiate ())))
   

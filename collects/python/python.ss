@@ -3,7 +3,7 @@
           ; (lib "list.ss")
           ; (lib "etc.ss")
           ; "compiler.ss"
-          ; "python-node.ss"
+           "python-node.ss"
          ;  "primitives.ss" ;; need py-object%->string
           ; "read-python.ss"
            "compile-python.ss"
@@ -36,7 +36,9 @@
   
   (define (render-python-value value port port-write)
     (unless (none? value)
-      (let ([to-render (convert-value value)])
+      (let ([to-render (if (python-node? value)
+                           (convert-value value)
+                           value)])
         ;(if (python-node? value)
         ;   (format "~a" (py-object%->string value))
         ;   value)])

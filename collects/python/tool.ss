@@ -11,6 +11,7 @@
            "python.ss"
            "compile-python.ss"
            ;"base.ss"
+           "get-base.ss"
            "runtime-support.ss"
            "primitives.ss"
            "python-import.ss")
@@ -31,6 +32,8 @@
   
   (define cpcn create-python-cache-namespace)
   
+  (define outer-namespace (current-namespace))
+  (define pn (make-python-namespace))
     
   (define tool@
     (unit/sig drscheme:tool-exports^
@@ -69,7 +72,7 @@
               [(x) (void)]))
           (define/public (default-settings) null)
           (define/public (default-settings? x) #t)
-          (define/public (front-end/complete-program input settings)
+          (define/public (front-end input settings)
             (let-values ([(port name)
                           (if (string? input)
                               (values (open-input-file input) (path->complete-path input))
@@ -86,11 +89,16 @@
                 (lambda ()
                   (if (null? ast-list)
                       eof
-                      (begin0 (compile-python-ast (car ast-list))
+                      (begin0 (parameterize ([current-runtime-support-context base-importing-stx]
+                                             [current-toplevel-context base-importing-stx])
+                                (compile-python-ast (car ast-list)))
                               (set! ast-list (cdr ast-list))))))))
+
+          (define/public (front-end/complete-program input settings teachpack-cache)
+            (front-end input settings))
           
-          (define/public (front-end/interaction input settings)
-            (front-end/complete-program input settings))
+          (define/public (front-end/interaction input settings teachpack-cache)
+            (front-end input settings))
           
           (define/public (get-style-delta) #f)
           (define/public (get-language-position) (list (string-constant experimental-languages) "Python"))
@@ -105,15 +113,40 @@
             ; (lambda ()
             ;   (toggle-python-cache-namespace! #t)
             ;   (set-python-cache-namespace! (current-namespace))))
-            (run-in-user-thread
-             (lambda ()
-               (error-display-handler 
-                (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
-               (current-eval 
-                ;(add-annotation (drscheme:debug:make-debug-eval-handler (current-eval))))
-                (drscheme:debug:make-debug-eval-handler (current-eval)))
-               ;(drscheme:debug:test-coverage-enabled #t)
-               (init-python-namespace (current-namespace)))))
+            (dynamic-require '(lib "base.ss" "python") #f)
+            (let ([path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
+                  [outer-namespace (current-namespace)])
+              (run-in-user-thread
+               (lambda ()
+                 (error-display-handler 
+                  (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
+                 (current-eval 
+                  ;(add-annotation (drscheme:debug:make-debug-eval-handler (current-eval))))
+                  (drscheme:debug:make-debug-eval-handler (current-eval)))
+                                                          ;(let ([pn pn];(make-python-namespace)]
+                                                          ;      [outer outer-namespace]);(current-namespace)])
+                                                          ;  (lambda (x)
+                                                          ;    (parameterize ([current-namespace pn])
+                                                          ;      (namespace-attach-module outer 'mzscheme)
+                                                          ;      (namespace-require 'mzscheme)
+                                                          ;      ((current-eval) x))))))
+                 ;(drscheme:debug:test-coverage-enabled #t)
+                 ;(current-namespace (make-python-namespace))
+;                 (namespace-attach-module outer-namespace 'mzscheme)
+;                 (namespace-transformer-require 'mzscheme)
+;                 (namespace-require 'mzscheme)
+               ;  (dynamic-require-for-syntax 'mzscheme #f)
+               ;  (dynamic-require 'mzscheme #f)
+                 ;(eval '(map (lambda (x) x) (list 1 2 3)))
+                 (with-handlers ([void (lambda (x)
+                                         (printf "~a~n"
+                                                 (exn-message x)))])
+                   (namespace-attach-module outer-namespace path)
+                   (namespace-transformer-require path)
+                   (namespace-require path))
+                 ;(parameterize ([current-namespace outer-namespace])
+                 ;  (init-python-namespace (current-namespace)))
+                 ))))
 ;            (dynamic-require '(lib "base.ss" "python") #f)
 ;            (let ([path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
 ;                  [n (current-namespace)])

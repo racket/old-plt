@@ -160,7 +160,8 @@
   ; returns an initialized python namespace (empty namespace + python base)
   (define make-python-namespace
     (opt-lambda ([new-cache? #f])
-    (let ([p-n (make-namespace 'initial)])
+    (let ([p-n ;(null-environment 5)])
+               (make-namespace 'initial)])
                                ;'empty)])
       ;(let ([caller (current-namespace)])
       ;  (parameterize ([current-namespace p-n])
@@ -177,14 +178,40 @@
   ; see on-execute in the drscheme extension manual
   (define (init-python-namespace python-namespace)
     (my-dynamic-require python-namespace '(lib "base.ss" "python"))
-    (my-dynamic-require python-namespace '(lib "runtime-support.ss" "python"))
+    ;(my-dynamic-require python-namespace '(lib "runtime-support.ss" "python"))
     ;(my-dynamic-require python-namespace '(lib "python-import.ss" "python"))
-    (my-dynamic-require python-namespace '(lib "primitives.ss" "python"))
+    ;(my-dynamic-require python-namespace '(lib "primitives.ss" "python"))
+   ; (my-dynamic-require/syntax python-namespace '(lib "export-top.ss" "python"))
+  ;  (let ([top (namespace-variable-value '#%top)])
+  ;    (parameterize ([current-namespace python-namespace])
+  ;      (namespace-set-variable-value! '#%top top)))
     )
+  
+  (define outside (current-namespace))
   
   (define (my-dynamic-require dest-namespace spec)
     ;(parameterize ([current-namespace dest-namespace])
     ;  (namespace-require spec)))
+      (dynamic-require spec #f)
+    (let (;[cache (get-cache-namespace)]
+          ;[path (lookup-cached-mzscheme-module spec)]
+          [path2 ((current-module-name-resolver) spec #f #f)]
+          [caller-namespace (current-namespace)])
+      (parameterize ([current-namespace dest-namespace])
+        (with-handlers ([exn:application:mismatch? (lambda (e)
+                                                     (printf "FAILURE. spec: ~a path: ~a exn: ~a~n" spec path2 e))])
+;          (namespace-attach-module cache path)
+         ; (printf "SUCCESS. spec: ~a  path: ~a~n" spec path)
+          (namespace-attach-module caller-namespace path2)
+          ;(namespace-attach-module outside 'mzscheme)
+          ;(namespace-require 'mzscheme)
+      ;(dynamic-require spec #f)
+       ; (namespace-transformer-require spec)
+        (namespace-require spec)
+          )
+        )))
+
+    (define (my-dynamic-require/syntax dest-namespace spec)
     (let ([cache (get-cache-namespace)]
           [path (lookup-cached-mzscheme-module spec)]
           [caller-namespace (current-namespace)])
@@ -192,12 +219,14 @@
         (with-handlers ([exn:application:mismatch? (lambda (e)
                                                      (printf "FAILURE. spec: ~a path: ~a exn: ~a~n" spec path e))])
           (namespace-attach-module cache path)
-        ;  (printf "SUCCESS. spec: ~a  path: ~a~n" spec path)
+        (namespace-transformer-require spec)
+        (namespace-require spec)
           )
         (namespace-transformer-require spec)
-        (namespace-require spec) ;path)
+        (namespace-require spec)
         )))
-    
+
+  
   (define cache-namespace #f)
   (define use-cache-namespace? #t)
   

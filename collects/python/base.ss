@@ -1,6 +1,6 @@
 (module base "empty-base.ss" ;mzscheme
   (#%require ;(lib "list.ss")
-           ;  (all-except mzscheme sqrt map)
+             (all-except mzscheme sqrt map)
            (lib "etc.ss")
            "primitives.ss"
 	   "runtime-support.ss"
@@ -10,13 +10,13 @@
         ;   "built-in-exceptions.ss")
            ;"built-in-os.ss")
            )
-
-  (#%provide ; (all-from mzscheme)
+;
+  (#%provide  (all-from mzscheme)
            ;(all-from (lib "list.ss"))
            (all-from "empty-base.ss")
           ; (all-from (lib "etc.ss"))
 
-          ; #%top
+           ;#%top
            opt-lambda
 	   (all-from "primitives.ss")
            (all-from "runtime-support.ss")

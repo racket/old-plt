@@ -115,6 +115,7 @@
        stx stx))
   
 
-  (define runtime-support-context #'here)
+  (define current-runtime-support-context (make-parameter #f))
+  (define current-toplevel-context (make-parameter #f))
  
   )

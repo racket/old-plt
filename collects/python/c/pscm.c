@@ -42,7 +42,7 @@ Scheme_Object* scheme_initialize(Scheme_Env* env)
 
   //initspam();
   m = Py_InitModule("pstring", module_methods);
-  PyModule_AddObject(m, "String", pystr_type);
+  PyModule_AddObject(m, "PString", pystr_type);
   return scheme_void;
 }
 

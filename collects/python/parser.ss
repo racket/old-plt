@@ -3,7 +3,7 @@
            (lib "yacc.ss" "parser-tools")
            (lib "readerr.ss" "syntax")
            (lib "class.ss")
-           (lib "contracts.ss")
+           (lib "contract.ss")
           ; (lib "mred.ss" "mred") ;; for text% in a contract.. :P
 	   "compiler.ss"
            "compiler-expr.ss"

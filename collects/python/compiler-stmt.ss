@@ -4,10 +4,11 @@
            (lib "etc.ss") ; build-list
 	   "compiler.ss"
 	   "compiler-expr.ss"
-           "compiler-target.ss")
+           "compiler-target.ss"
           ; "primitives.ss"
-          ; "runtime-context.ss"
-          ; "empty-context.ss")
+           "runtime-support.ss"
+          ; "empty-context.ss"
+           )
 
   (provide (all-defined-except bindings-mixin))
     
@@ -118,9 +119,10 @@
       (define (assignment-so target rhs)
         (->orig-so
          (cond
-           [(is-a? target tidentifier%) `(,(if (def-targ? target)
-                                               'define
-                                               'set!) ,(send target to-scheme) ,rhs)]
+           [(is-a? target tidentifier%) (let ([target-so (send target to-scheme)])
+                                          (if (def-targ? target)
+                                              `(namespace-set-variable-value! #cs(quote ,target-so) ,rhs)
+                                              `(set! ,target-so ,rhs)))]
            [(is-a? target tattribute-ref%) (let* ([expr (send ((class-field-accessor tattribute-ref%
                                                                                      expression) target)
                                                               to-scheme)]
@@ -178,12 +180,12 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (let* ([rhs (datum->syntax-object #f (gensym 'rhs) #f #f)]
+        (let* ([rhs (datum->syntax-object (current-toplevel-context) (gensym 'rhs) #f #f)]
                [body (map (lambda (t)
                             (assignment-so t rhs))
                           targets)])
           (->orig-so (if (top?)
-                         `(begin (define ,rhs ,(send expression to-scheme))
+                         `(begin (namespace-set-variable-value! ',rhs ,(send expression to-scheme))
                                  ,@body)
                          `(begin (let ([,rhs ,(send expression to-scheme)])
                                    ,@body))))))
@@ -523,13 +525,16 @@
                           (cond
                             [(is-a? s assignment%) 
                              (if (free-identifier=? (first so-l)
-                                                    (datum->syntax-object runtime-context
-                                                                          'define))
-                                 (list 'field (second so-l) (third so-l))
+                                                    (datum->syntax-object (current-runtime-support-context)
+                                                                          'namespace-set-variable-value!))
+                                 (list 'field (second (second so-l)) (third so-l))
                                  (list 'field
                                        (second (syntax->list (third (syntax->list (second so-l)))))
                                        (second (syntax->list (first (syntax->list (second (syntax->list (second so-l)))))))))]
-                            [(is-a? s function-definition%) (list 'method (second so-l) (third so-l))]
+                            [(is-a? s function-definition%) (list 'method
+                                                                  (let ([quoted-name-so (second so-l)])
+                                                                    (second (syntax->list quoted-name-so)))
+                                                                  (third so-l))]
                             [else so])))))
 ;                              (if so-l
 ;                                       ;;;; either when defining or mutating a class field
@@ -956,7 +961,7 @@
        (inherit ->orig-so)
        (define/override (to-scheme)
          (->orig-so (let ([proc-name (send name to-scheme)])
-                      `(define ,proc-name
+                      `(namespace-set-variable-value! #cs',proc-name
                          ,(generate-py-lambda proc-name
                                               parms
                                               (send body to-scheme return-symbol #t)
@@ -1016,11 +1021,11 @@
        (define/override (to-scheme)
          (let ([class-name (send name to-scheme)]
                [inherit-list (map (lambda (i) (send i to-scheme)) inherit-expr)])
-         (->orig-so `(define ,class-name
+         (->orig-so `(namespace-set-variable-value! #cs(quote ,class-name)
                        (,(py-so 'python-method-call) ,(py-so 'py-type%) '__call__
                         (list (,(py-so 'symbol->py-string%) #cs',class-name)
                               (,(py-so 'list->py-tuple%) (list ,@(if (empty? inherit-list)
-                                                                     `(,(->lex-so 'object program-context))
+                                                                     `(,(->lex-so 'object (current-runtime-support-context)))
                                                                      inherit-list)))
                         ,(let* ([exprs null]
                                 [keys null]
@@ -1028,7 +1033,7 @@
                                  (map (lambda (def)
                                         (begin0
                                           `(lambda (this-class)
-                                             (list #cs',(second def)
+                                             (list #cs(quote ,(second def))
                                                    ,(if (or (null? keys)
                                                             (eq? 'method (first def)))
                                                         (third def)
@@ -1036,7 +1041,7 @@
                                                                        (values ,@(map (lambda (key)
                                                                                         `(,(py-so 'python-get-member)
                                                                                           this-class
-                                                                                          #cs',key
+                                                                                          #cs(quote ,key)
                                                                                           #f))
                                                                                       keys))])
                                                            ,(third def)))))

@@ -47,6 +47,23 @@ def f(x):
 
 f.__call__
 
+a = 3
+
+def g(x):
+    return x + 2
+
+class C:
+    def m(this):
+        return 8
+    
+    x = 2
+    y = 3
+    y = 4
+
+c = C()
+print c.m()
+print c.x
+print c.y
 
 
 #x = 3

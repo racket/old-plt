@@ -1012,7 +1012,7 @@ static wxTimer *TimerReady(MrEdContext *c)
 static void DoTimer(wxTimer *timer)
 {
   int once;
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *save, newbuf;
 
   if (timer->interval == -1)
     return;
@@ -1020,11 +1020,12 @@ static void DoTimer(wxTimer *timer)
   once = timer->one_shot;
   timer->one_shot = -1;
 
-  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-  if (!scheme_setjmp(scheme_error_buf))
+  save = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
+  if (!scheme_setjmp(newbuf))
     timer->Notify();
   scheme_clear_escape();
-  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+  scheme_current_thread->error_buf = save;
 
   if (!once && (timer->one_shot == -1) && (timer->interval != -1)
       && !((MrEdContext *)timer->context)->killed)
@@ -1072,15 +1073,16 @@ static void GoAhead(MrEdContext *c)
     DoTimer(timer);
   } else {
     GC_CAN_IGNORE MrEdEvent e;
-    mz_jmp_buf savebuf;
+    mz_jmp_buf *save, newbuf;
 
     memcpy(&e, &c->event, sizeof(MrEdEvent));
 
-    memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-    if (!scheme_setjmp(scheme_error_buf))
+    save = scheme_current_thread->error_buf;
+    scheme_current_thread->error_buf = &newbuf;
+    if (!scheme_setjmp(newbuf))
       MrEdDispatchEvent(&e);
     scheme_clear_escape();
-    memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+    scheme_current_thread->error_buf = save;
   }
 }
 
@@ -1111,15 +1113,16 @@ static void DoTheEvent(MrEdContext *c)
   p = scheme_get_param(scheme_current_config(), mred_event_dispatch_param);
   if (p != def_dispatch) {
     Scheme_Object *a[1];
-    mz_jmp_buf savebuf;
+    mz_jmp_buf *save, newbuf;
 
     a[0] = (Scheme_Object *)c;
 
-    memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-    if (!scheme_setjmp(scheme_error_buf))
+    save = scheme_current_thread->error_buf;
+    scheme_current_thread->error_buf = &newbuf;
+    if (!scheme_setjmp(newbuf))
       scheme_apply_multi(p, 1, a);
     scheme_clear_escape();
-    memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+    scheme_current_thread->error_buf = save;
 
 #if 0
     if (c->ready_to_go)
@@ -1343,6 +1346,7 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
 {
   MrEdContext *c = (MrEdContext *)cx;
   Scheme_Thread *this_thread;
+  mz_jmp_buf newbuf;
 
 #if SGC_STD_DEBUGGING
   fprintf(stderr, "new thread\n");
@@ -1360,7 +1364,8 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
   c->suspended = 0;
   c->ready = 0;
 
-  if (!scheme_setjmp(scheme_error_buf)) {
+    scheme_current_thread->error_buf = &newbuf;
+  if (!scheme_setjmp(newbuf)) {
     if (!TheMrEdApp->initialized)
       TheMrEdApp->RealInit();
     else {
@@ -1847,13 +1852,14 @@ static void remove_q_callback(Q_Callback_Set *cs, Q_Callback *cb)
 
 static void call_one_callback(Q_Callback * volatile  cb)
 {
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *save, newbuf;
 
-  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+  save = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
   if (!scheme_setjmp(scheme_error_buf))
     scheme_apply_multi(cb->callback, 0, NULL);
   scheme_clear_escape();
-  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+  scheme_current_thread->error_buf = save;
 }
 
 static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdContext *),
@@ -3603,11 +3609,12 @@ static unsigned long get_deeper_base()
 void Drop_Runtime(char **argv, int argc)
 {
   int i;
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *save, newbuf;
 
-  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+  save = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
 
-  if (scheme_setjmp(scheme_error_buf)) {
+  if (scheme_setjmp(newbuf)) {
     /* give up on rest */
     scheme_clear_escape();
   } else {
@@ -3618,24 +3625,25 @@ void Drop_Runtime(char **argv, int argc)
     }
   }
 
-  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+  scheme_current_thread->error_buf = save;
 }
 #endif
 
 #ifdef wx_mac
 static void wxDo(Scheme_Object *proc)
 {
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *save, newbuf;
 
-  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+  save = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
 
-  if (scheme_setjmp(scheme_error_buf)) {
+  if (scheme_setjmp(newbuf)) {
     scheme_clear_escape();
   } else {
     scheme_apply(proc, 0, NULL);
   }
 
-  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+  scheme_current_thread->error_buf = save;
 }
 
 void Drop_Quit()

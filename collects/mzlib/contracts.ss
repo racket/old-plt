@@ -818,7 +818,7 @@
     
     (define (class-contract/proc stx)
       (syntax-case stx ()
-        [(_ (method-specifier meth-name meth-contract) ...)
+        [(form (method-specifier meth-name meth-contract) ...)
          (and 
           (andmap method-specifier? (syntax->list (syntax (method-specifier ...))))
           (andmap identifier? (syntax->list (syntax (meth-name ...)))))
@@ -856,7 +856,11 @@
                                                                         (make-override-method-contract-declaration meth-name meth-contract-var)))
                                                                   val-meth-names
                                                                   val-meth-contract-vars
-                                                                  val-publics?)])
+                                                                  val-publics?)]
+                         [this (datum->syntax-object (syntax form) 'this stx)]
+                         [super-init (datum->syntax-object (syntax form) 'super-instantiate stx)]
+                         [super-make (datum->syntax-object (syntax form) 'super-make-object stx)])
+             
              (syntax/loc stx
                (let ([meth-contract-var meth-contract] ...)
                  (make-contract
@@ -882,13 +886,13 @@
                               (error 'class-contract "method ~a is declared as a public method in ~e, but isn't" 'meth-name val))))
                       ...)
                     
-                    (class val
+                    (class*/names-sneaky (this super-init super-make) val ()
                       
                       method-contract-declarations ...
                       
                       (rename [super-meth-name meth-name] ...)
                       method ...
-                      (super-instantiate ())))
+                      (super-init ())))
                   (lambda x (error 'impl-contract "unimplemented")))))))]
         [(_ (meth-specifier meth-name meth-contract) ...)
          (for-each (lambda (specifier name)

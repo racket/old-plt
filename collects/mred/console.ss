@@ -23,8 +23,9 @@
       (string-append
        "Welcome to MrEd version "
        (version)
-       ", Copyright (c) 1995-96 PLT, Rice University. "
-       "Based on the following:"
+       ", Copyright (c) 1995-96 PLT, Rice University."
+       newline-string
+       "Based on the following: "
        newline-string
        " wxWindows (c) 1994 Artificial Intelligence"
        " Applications Institute, The University of Edinburgh."

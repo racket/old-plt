@@ -2759,7 +2759,7 @@ void marshallSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
     return;
   }
   
-  scheme_signal_error("Unable to inject Scheme value into VARIANT");
+  scheme_signal_error("Unable to inject Scheme value %V into VARIANT",val);
   
 }
 

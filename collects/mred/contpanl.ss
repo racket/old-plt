@@ -30,7 +30,7 @@
     ; that can hold items and reposition them as necessary.  Note that a
     ; panel can contain other panels.
     (define panel%
-      (class-asi (make-item% wx:panel% #t #t list)
+      (class (make-item% wx:panel% #t #t list) args
 	(inherit
 	  object-ID
 	  get-x
@@ -334,7 +334,22 @@
 	       (mred:debug:printf 'container-panel-redraw
 		 "container-panel-redraw: Redrawing panel's children")
 	       (redraw-helper children
-		 (place-children (get-children-info) width height))))])))
+		 (place-children (get-children-info) width height))))])
+	(sequence
+	  (apply super-init
+		 (apply 
+		  (opt-lambda (parent
+			       [x const-default-posn]
+			       [y const-default-posn]
+			       [w const-default-size]
+			       [h const-default-size]
+			       [style 0] . args)
+		    (list* parent x y w h
+			   (if (debug-borders)
+			       (bitwise-ior style wx:const-border)
+			       style)
+			   args))
+		    args)))))
     
     ; make-get-size: creates a function which returns the minimum possible
     ;   size for a horizontal-panel% or vertical-panel% object.

@@ -95,7 +95,8 @@
 	;  browser-param
 	  (parameterize
 	   ([external-browser browser-param])
-	   (send-url url #t))
+	   (send-url url #t)
+           (semaphore-post nav-mutex))
 	  (begin
             ; should be no-op, except in Unix
 	    (unless (or (eq? (help-browser-preference) 'plt)
@@ -131,10 +132,12 @@
 					 (string-append
 					  "Help Desk browser failed.~n")))])
 	       (send-url (build-dispatch-url hd-cookie url))
+	       (set! browser-param (external-browser))
 	       (yield nav-sem)
 	       (semaphore-post nav-mutex)))))))
   
   (define (help-desk-browser hd-cookie)
+    (printf "starting help desk browser~n") 
     (help-desk-navigate hd-cookie 
 			(format home-page-format 
 				(hd-cookie->port hd-cookie)))))

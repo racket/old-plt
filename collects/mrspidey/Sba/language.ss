@@ -661,7 +661,6 @@
     (add-constructor! 'weak-box #f)
     (add-constructor! 'regexp)
     (add-constructor! 'arity-at-least #f)
-    (add-constructor! 'parameterization)
     (add-constructor! 'semaphore)
     (add-constructor! 'type-symbol)
     (add-constructor! 'namespace)
@@ -933,7 +932,6 @@
        (semaphore-callback     (semaphore (-> _) -> void))
        (input-port-post-semaphore (iport semaphore -> void))
 
-       ;; ---- parameterization
        ;; -- built-in parameters
        ;; loading
        (current-load-relative-directory (union str false))
@@ -966,21 +964,6 @@
 				  -> (optional i -> (union x void)))))
        (parameter?            (_ -> bool))
        (parameter-procedure=? (_ _ -> bool))
-
-       ;; -- parameterization utilities
-       (make-parameterization (parameterization -> parameterization))
-       (current-parameterization
-	(case->
-	 (parameterization -> void)
-	 (-> parameterization)))
-       (parameterization?     (-> bool) (predicate parameterization))
-       (in-parameterization   (forall (param)
-				      (parameterization
-				       param
-				       -> param)))
-       (with-parameterization (parameterization (-> result) -> result))
-       (with-new-parameterization ((-> result) -> result))
-       (parameterization-branch-handler (-> parameterization))
 
        ;; ---- custodians
        (make-custodian         (custodian -> custodian))

@@ -2,9 +2,7 @@
   (case request
     [(name) "MrSpidey"]
     [(compile-prefix) '(begin
-			 (read-case-sensitive #t)
 			 (require-library "refer.ss")
-			 (require-library "wxs.ss" "system")
 			 (require-library "sig.ss" "mred")
 			 (require-library "sigs.ss" "mrspidey" "Sba")
 			 (require-library "sigs.ss" "mrspidey" "Gui"))]

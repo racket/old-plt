@@ -345,30 +345,17 @@
 
   (define (my-scheme-expand-program defs needs-expand?)
     ;;(printf "my-scheme-expand-program defs=~s~n" defs)
-    (let* ( [p (make-parameterization)]
-	    [_ (with-parameterization p
-		 (lambda () 
-		   (current-namespace expander-namespace) 
-		   (require-library "core.ss")
-		   (require-library "macro.ss")
-		   '(reference 
-		     (begin-elaboration-time
-		      (build-path
-		       mred:plt-home-directory "mred" "system" "sig.ss")))
-		   '(eval '(unit/sig () (import  mred^) 1))
-		   ;;(printf "np=~s~n" normalize-path)
-		   ))]
-	    ;          [defs2 (zodiac:expand-program
-	    ;                   defs attributes zodiac:mrspidey-vocabulary p)]
-	    [defs2 (if needs-expand?
-		       (zodiac:expand-program defs
-					      attributes
-					      zodiac:mrspidey-vocabulary)
-		       defs)]
-	    ; (parameterization: p))]
-	    [defs2 (zodiac:inline-begins defs2)]
-	    [_ (zodiac:initialize-mutated defs2)]
-	    [free (zodiac:free-vars-defs defs2)])
+    (parameterize ([current-namespace expander-namespace])
+      (require-library "core.ss")
+      (require-library "macro.ss"))
+    (let* ([defs2 (if needs-expand?
+		      (zodiac:expand-program defs
+					     attributes
+					     zodiac:mrspidey-vocabulary)
+		      defs)]
+	   [defs2 (zodiac:inline-begins defs2)]
+	   [_ (zodiac:initialize-mutated defs2)]
+	   [free (zodiac:free-vars-defs defs2)])
       (set! g:prog defs2)
       ;;(pretty-print defs2)
       '(when debugging

@@ -58,7 +58,16 @@
     (let ([sub-items (send item get-items)])
       (fill (car sub-items) "Score" (robot-score r))
       (fill (cadr sub-items) "Money" (robot-money r))
-      (fill (caddr sub-items) "Bid" (robot-bid r))))
+      (fill (caddr sub-items) "Bid" (robot-bid r))
+      (fill (cadddr sub-items) "Capacity" (robot-max-lift r))
+      (fill (cadddr (cdr sub-items)) "Load" (apply + (map pack-weight (robot-packages r))))))
+  
+  (define (set-pack-info p item)
+    (let ([sub-items (send item get-items)])
+      (fill (car sub-items) "Weight" (or (pack-weight p) 'unknown))
+      (fill (cadr sub-items) "Owner" (if (pack-owner p) 
+                                         (robot-id (pack-owner p))
+                                         'none))))
   
   (define board-panel%
     (class horizontal-panel%
@@ -209,6 +218,8 @@
                            (send i new-item)
                            (send i new-item)
                            (send i new-item)
+                           (send i new-item)
+                           (send i new-item)
                            (set-robot-info r i)))
              robots)
         (update))
@@ -267,7 +278,10 @@
                                 [e (send i get-editor)])
                            (send e insert (make-object image-snip% (car (pack-icon p))))
                            (send e insert (format " ~a" (pack-id p)))
-                           (send i user-data p)))
+                           (send i user-data p)
+                           (send i new-item)
+                           (send i new-item)
+                           (set-pack-info p i)))
              packages))
       
       (define/public (queue-robot-actions orig-actions)
@@ -431,7 +445,11 @@
                                                                             (not (pack-home? pkg))
                                                                             (= (pack-x pkg) (robot-x r))
                                                                             (= (pack-y pkg) (robot-y r))
-                                                                            (>= (robot-max-lift r) (pack-weight pkg)))
+                                                                            (>= (robot-max-lift r) 
+                                                                                (+ (pack-weight pkg)
+                                                                                   (apply
+                                                                                    +
+                                                                                    (map pack-weight (robot-packages r))))))
                                                                    (set-robot-activity! r
                                                                                         (cons `(|P| ,(pack-id pkg))
                                                                                               (robot-activity r)))
@@ -638,7 +656,12 @@
                     (set-robot-pos! r pos)
                     (set-robot-info r (car items)))
                   (loop (cdr items) (add1 pos))))
-              (send (send robot-list get-editor) end-edit-sequence)))))
+              (send (send robot-list get-editor) end-edit-sequence)
+              (send (send pack-list get-editor) begin-edit-sequence)
+              (for-each (lambda (i)
+                          (set-pack-info (send i user-data) i))
+                        (send pack-list get-items))
+              (send (send pack-list get-editor) end-edit-sequence)))))
           
       (define/override (on-paint)
         (send (get-dc) draw-bitmap offscreen-bm 0 0))

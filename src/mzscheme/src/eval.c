@@ -1352,8 +1352,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	if (SAME_OBJ(define_values_symbol, var))
 	  break;
 
+      define_try_again:
 	if (!SCHEME_NULLP(result)) {
-	define_try_again:
 	  first = SCHEME_CAR(result);
 	  if (SCHEME_PAIRP(first)) {
 	    first = scheme_check_immediate_macro(first, env, rec, depth, &gval);

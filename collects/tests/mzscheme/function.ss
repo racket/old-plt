@@ -56,4 +56,14 @@
 (error-test '(assf cons '(1 2 3)))
 (error-test '(assf string? '(1 2 3 . 4)) exn:application:mismatch?)
 
+(test '("a" "b" "c" "c" "d" "e" "f")
+      quicksort 
+      '("d" "f" "e" "c" "a" "c" "b")
+      string<?)
+(let ([s (let loop ([n 1000])
+	   (if (zero? n)
+	       '()
+	       (cons (random 1000) (loop (sub1 n)))))])
+  (test (quicksort s <) mergesort s <))
+
 (report-errs)

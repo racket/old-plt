@@ -782,6 +782,12 @@
 		(define define 5)
 		define))
 
+(syntax-test '(lambda () (define x 10) (begin)))
+(syntax-test '(lambda () (define x 10) (begin) (begin)))
+(syntax-test '(lambda () (define x 10) (begin) (begin x) (begin)))
+
+(test 87 (lambda () (define x 87) (begin) (begin x)))
+
 (SECTION 4 2 4)
 (test '#(0 1 2 3 4) 'do (do ((vec (make-vector 5))
 			     (i 0 (+ i 1)))

@@ -545,9 +545,10 @@ regatom(int *flagp)
 	  while (regparse != regparse_end && *regparse != ']') {
 	    if (*regparse == '-') {
 	      regparse++;
-	      if (*regparse == ']' || regparse == regparse_end)
+	      if (*regparse == ']' || regparse == regparse_end) {
 		regc('-');
-	      else {
+		len++;
+	      } else {
 		xclass = UCHARAT(regparse-2)+1;
 		classend = UCHARAT(regparse);
 		if (xclass > classend+1)

@@ -930,6 +930,8 @@
 (test '("--34" "-34") regexp-match r "a-12--345b" 2 8)
 (test '((4 . 9) (5 . 9)) regexp-match-positions r "a-12--345b" 2)
 (test '((4 . 8) (5 . 8)) regexp-match-positions r "a-12--345b" 2 8)
+(test '("a-b") regexp-match "a[-c]b" "a-b")
+(test '("a-b") regexp-match "a[c-]b" "a-b")
 (test #f regexp-match "x+" "12345")
 (test "su casa" regexp-replace "mi" "mi casa" "su")
 (define r2 (regexp "([Mm])i ([a-zA-Z]*)"))

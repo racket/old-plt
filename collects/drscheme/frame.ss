@@ -1,5 +1,4 @@
 
-(define drscheme:frame@
   (unit/sig drscheme:frame^
     (import [mred : mred^]
 	    [mzlib : mzlib:core^]
@@ -142,4 +141,4 @@
 			       (update-imports))])
 	(sequence
 	  (update-imports)
-	  (send imports-panel stretchable-in-y #f))))))
+	  (send imports-panel stretchable-in-y #f)))))

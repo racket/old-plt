@@ -1,49 +1,25 @@
-(define drscheme:zodiac-interface@
-  (unit/sig zodiac:interface^
+  (unit/sig drscheme:interface^
     (import [zodiac : zodiac:system^]
 	    [mred : mred^])
 
     (mred:debug:printf 'invoke "drscheme:zodiac-interface@")
+
+    (define-struct (zodiac-exn struct:exn) (start-location end-location type))
 
     (define dispatch-report
       (lambda (type string start-location end-location)
 	(let* ([start (zodiac:location-offset start-location)]
 	       [finish (add1 (zodiac:location-offset end-location))]
 	       [file (zodiac:location-file start-location)])
-	  (cond
-	   [(is-a? file wx:media-edit%)
-	    (let* ([frame (send file get-frame)]
-		   [console-edit (ivar frame interactions-edit)]
-		   [console-end-position (send console-edit get-end-position)]
-		   [escape (send console-edit get-escape)])
-	      (send frame ensure-interactions-shown)
-	      (send console-edit this-err-write string)
-	      (send (send file get-canvas) set-focus)
-	      (send file set-position start finish)
-	      (send file scroll-to-position start #f (send file last-position) -1)
-	      (if escape
-		  (escape)
-		  ((error-escape-handler))))]
-	   [else
-	    (mred:message-box
-	     (format "~a: ~a.~a-~a.~a: ~a" file
-			   (zodiac:location-line start-location)
-			   (zodiac:location-column start-location)
-			   (zodiac:location-line end-location)
-			   (zodiac:location-column end-location)
-			   string)
-	     "Error")
-	    ((error-escape-handler))]))))
+	  (raise (make-zodiac-exn string ((debug-info-handler))
+				  start-location end-location type)))))
 
     (define report-error
       (lambda (type)
 	(lambda (z s . args)
-	  (let ([string (apply format (if (or mred:debug:on?
-					      (eq? type 'internal))
-					  (string-append
-					   (symbol->string type)
-					   " error: "
-					   s)
+	  (let ([string (apply format (if (eq? type 'internal)
+					  (string-append "Internal error: "
+							 s)
 					  s)
 			       args)])
 	    (cond
@@ -55,4 +31,4 @@
 
     (define static-error (report-error 'static))
     (define dynamic-error (report-error 'dynamic))
-    (define internal-error (report-error 'internal))))
+    (define internal-error (report-error 'internal)))

@@ -1,5 +1,4 @@
 
-(define drscheme:compound-unit@
   (unit/sig drscheme:compound-unit^
     (import [mred : mred^]
 	    [mzlib : mzlib:core^]
@@ -462,6 +461,6 @@ is-button? ~a  leaving? ~a  moving?~a~n"
     (mred:insert-format-handler "Compound Units"
 				(list "cut")
 				(opt-lambda (name group)
-				  (make-object frame% name #f group)))))
+				  (make-object frame% name #f group))))
 
 

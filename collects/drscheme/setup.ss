@@ -1,5 +1,4 @@
 
-(define drscheme:setup@
   (unit/sig drscheme:setup^
     (import [mred : mred^]
 	    [mzlib : mzlib:core^])
@@ -94,4 +93,4 @@
 				       (string #\newline)
 				       "or perhaps there a file with that name.")))
 		   (wx:message-box
-		    (string-append "No setup material for " name)))))))))))
+		    (string-append "No setup material for " name))))))))))

@@ -1,6 +1,5 @@
 ;; set! on unbound identifiers is always allowed now. 
 
-(define drscheme:language@
   (unit/sig drscheme:language^
     (import [mred : mred^]
 	    [drscheme:basis : drscheme:basis^]
@@ -20,7 +19,7 @@
     (define settings
       (list (list 'Beginner (make-setting 'core #t #f #t #f #f 'constructor-style))
 	    (list 'Intermediate (make-setting 'structured #t #f #t #f #f 'constructor-style))
-	    (list 'Advanced (make-setting 'side-effects #t #f #t #f #t 'constructor-style))
+	    (list 'Advanced (make-setting 'side-effecting #t #f #t #f #t 'constructor-style))
 	    (list 'Quasi-R4RS (make-setting 'advanced #t #t #t #t #f 'r4rs-style))))
 
     (define copy-setting
@@ -62,7 +61,7 @@
 	(set! allow-set!-on-undefined? (setting-allow-set!-on-undefined? pref))
 	(set! unmatched-cond/case-is-error? (setting-unmatched-cond/case-is-error? pref))
 	(set! allow-improper-lists? (setting-allow-improper-lists? pref))
-	(set! check-syntax-level (drscheme:basis:level->number (setting-vocabulary-symbol pref)))))
+	(set! check-syntax-level (setting-vocabulary-symbol pref))))
     (callback (mred:get-preference 'drscheme:settings))
     (mred:add-preference-callback 'drscheme:settings (lambda (p v) (callback v)))
 
@@ -72,6 +71,15 @@
 	       [f (make-object mred:dialog-box% '() "Language" #t)]
 	       [main (make-object mred:vertical-panel% f)]
 	       [language-panel (make-object mred:horizontal-panel% main -1 -1 -1 -1 wx:const-border)]
+	       [make-sub-panel
+		(lambda (name)
+		  (let* ([p (make-object mred:vertical-panel% main)]
+			 [message (make-object mred:message% p name)])
+		    (make-object mred:vertical-panel% p -1 -1 -1 -1 wx:const-border)))]
+	       [input-syntax-panel (make-sub-panel "Input Syntax")]
+	       [dynamic-panel (make-sub-panel "Dynamic Properties")]
+	       [output-syntax-panel (make-sub-panel "Output Syntax")]
+			 
 	       [_ (make-object mred:horizontal-panel% language-panel)]
 	       [language-choice (make-object mred:choice% language-panel
 					     (lambda (choice evt)
@@ -85,17 +93,16 @@
 					     (append language-levels (list "Custom")))]
 	       [_ (make-object mred:horizontal-panel% language-panel)]
 	       [right-align
-		(opt-lambda (mo [warning #f])
-		  (let* ([hp (make-object mred:horizontal-panel% main)])
+		(opt-lambda (mo panel [warning #f])
+		  (let* ([hp (make-object mred:horizontal-panel% panel)])
 		    (begin0
 		      (mo hp)
 		      (make-object mred:horizontal-panel% hp)
 		      (when warning
-			(make-object mred:message%
-			  hp
-			  "vocabulary changes effective on restart of DrScheme")))))]
+			(make-object mred:message% hp
+				     (string-append "changes effective " warning))))))]
 	       [make-check-box
-		(lambda (set-setting! setting name)
+		(lambda (set-setting! setting name warning panel)
 		  (right-align
 		   (lambda (hp)
 		     (make-object mred:check-box% hp
@@ -105,7 +112,9 @@
 				      (set-setting! s i)
 				      (mred:set-preference 'drscheme:settings
 							   s)))
-				  name))))]
+				  name))
+		   panel
+		   warning))]
 	       [vocab (right-align 
 		       (lambda (hp)
 			 (make-object mred:choice% hp
@@ -118,12 +127,37 @@
 				      "Vocabulary"
 				      -1 -1 -1 -1
 				      language-levels))
-		       #t)]
-	       [case-sensitive? (make-check-box set-setting-case-sensitive?! setting-case-sensitive? "Case sensitive?")]
-	       [allow-set!-on-undefined? (make-check-box set-setting-allow-set!-on-undefined?! setting-allow-set!-on-undefined? "Allow set! on undefined identifiers?")]
-	       [unmatched-cond/case-is-error? (make-check-box set-setting-unmatched-cond/case-is-error?! setting-unmatched-cond/case-is-error? "Unmatched cond/case is an error?")]
-	       [allow-improper-lists? (make-check-box set-setting-allow-improper-lists?! setting-allow-improper-lists? "Allow improper lists?")]
-	       [sharing-printing? (make-check-box set-setting-sharing-printing?! setting-sharing-printing? "Show sharing in values?")]
+		       input-syntax-panel
+		       "on restart")]
+	       [case-sensitive? (make-check-box set-setting-case-sensitive?!
+						setting-case-sensitive?
+						"Case sensitive?"
+						"next interaction"
+						input-syntax-panel)]
+	       [allow-improper-lists?
+		(make-check-box set-setting-allow-improper-lists?!
+				setting-allow-improper-lists?
+				"Allow improper lists?"
+				"next execution"
+				dynamic-panel)]
+	       [allow-set!-on-undefined?
+		(make-check-box set-setting-allow-set!-on-undefined?!
+				setting-allow-set!-on-undefined?
+				"Allow set! on undefined identifiers?"
+				"next interaction"
+				dynamic-panel)]
+	       [unmatched-cond/case-is-error?
+		(make-check-box set-setting-unmatched-cond/case-is-error?!
+				setting-unmatched-cond/case-is-error?
+				"Unmatched cond/case is an error?"
+				"next interaction"
+				dynamic-panel)]
+	       [sharing-printing?
+		(make-check-box set-setting-sharing-printing?!
+				setting-sharing-printing?
+				"Show sharing in values?"
+				"next interaction"
+				output-syntax-panel)]
 	       [printer-number->symbol
 		(lambda (which)
 		  (case which
@@ -135,20 +169,20 @@
 	       [printing
 		(right-align
 		 (lambda (main)
-		   (make-object mred:radio-box% main
+		   (make-object mred:choice% main
 				(lambda (box evt)
 				  (let ([which (send evt get-command-int)]
 					[settings (mred:get-preference 'drscheme:settings)])
 				    (set-setting-printing!
 				     settings (printer-number->symbol which))
 				    (mred:set-preference 'drscheme:settings settings)))
-				"Printing"
-				-1 -1 -1 -1
+				null -1 -1 -1 -1
 				(list "Constructor Style Printing"
 				      "Quasiquote lists only"
 				      "Quasiquote with read syntax"
-				      "R4RS Printing")
-				0 wx:const-vertical)))]
+				      "R4RS Printing")))
+		 output-syntax-panel
+		 "next interaction")]
 	       [ok-panel (make-object mred:horizontal-panel% main)]
 	       [_ (make-object mred:horizontal-panel% ok-panel)]
 	       [cancel-button (make-object mred:button% ok-panel (lambda (button evt) 
@@ -208,6 +242,9 @@
 			     allow-improper-lists?
 			     sharing-printing?))
 		  (reset-choice))])
+	  (send language-choice stretchable-in-x #f)
+	  (send printing stretchable-in-x #f)
+	  (send vocab stretchable-in-x #f)
 	  (update-to (mred:get-preference 'drscheme:settings))
 	  (mred:add-preference-callback 'drscheme:settings (lambda (p v) (update-to v)))
 	  (for-each (lambda (x) (send x stretchable-in-y #f))
@@ -266,4 +303,4 @@
 			       "Exit")
 			(mred:exit)))))
 		(drscheme:basis:level->number
-		 (mred:get-preference 'drscheme:scheme-level))))))))
+		 (mred:get-preference 'drscheme:scheme-level)))))))

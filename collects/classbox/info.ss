@@ -1,0 +1,5 @@
+(module info (lib "infotab.ss" "setup")
+  (define name "Test Suite")
+  (define tools '(("tool.ss")))
+  (define tool-names (list "Java Class Box"))
+  )

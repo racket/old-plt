@@ -1768,15 +1768,15 @@
                                (generic ent)]))]
                   [(image) 
                    (generic ent)
-                   (when (memq (mime:entity-subtype ent) '(jpeg jpg gif bmp pict))
-                     (let ([tmp-file (make-temporary-file "sirmail-mime-image-~a")])
-                       (call-with-output-file tmp-file
-                         (lambda (port)
-                           (display (slurp ent) port))
-                         'truncate)
-                       (let ([img (make-object image-snip% tmp-file)])
-                         (insert img void)
-                         (delete-file tmp-file))))]
+                   (let ([tmp-file (make-temporary-file "sirmail-mime-image-~a")])
+                     (call-with-output-file tmp-file
+                       (lambda (port)
+                         (display (slurp ent) port))
+                       'truncate)
+                     (let ([bitmap (make-object bitmap% tmp-file)])
+                       (when (send bitmap ok?)
+                         (insert (make-object image-snip% bitmap) void))
+                       (delete-file tmp-file)))]
 		  [(multipart message)
 		   (map (lambda (msg)
 			  (unless (eq? (mime:entity-type ent) 'message)

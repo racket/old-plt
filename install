@@ -43,7 +43,7 @@ exec "$mz" -qC "$0" "$@"
 exit 1
 |#
 
-(use-compiled-file-paths null)
+(use-compiled-file-kinds 'none)
 
 (define plthome #f)
 (define this-script #f)
@@ -57,7 +57,7 @@ exit 1
                 (split-path
                  (resolve-path
                   (path->complete-path (simplify-path (resolve-path this)))))])
-    (unless (path? dir) (error 'install "Bad pathname for install: ~s" this))
+    (unless (string? dir) (error 'install "Bad pathname for install: ~s" this))
     (current-directory dir)
     (current-directory ".") ; avoid a "/" suffix
     (set! plthome (current-directory))
@@ -65,10 +65,10 @@ exit 1
       (error 'install
              "Can't find the PLT installation this script (~a) is part of"
              this))
-    (set! this-script (path->string name))))
+    (set! this-script name)))
 
 (define (setup-environment)
-  (putenv "PLTHOME" (path->string plthome))
+  (putenv "PLTHOME" plthome)
   (putenv "PLTCOLLECTS" "")
   (current-library-collection-paths (list (build-path plthome "collects"))))
 
@@ -97,6 +97,8 @@ exit 1
 
 ;; Set up GUI if we're using MrEd
 (when (namespace-variable-value 'make-eventspace #t (lambda () #f))
+  ;; no console input
+  (current-input-port (open-input-string ""))
   (let ([evt (make-eventspace)] [orig-exit (exit-handler)])
     (parameterize ([current-eventspace evt])
       (define (do-callback thunk)
@@ -167,7 +169,7 @@ exit 1
          ;; including ones we've already loaded.  We also need to re-enable
          ;; compiled files, since cm.ss checks on that flag.
          [current-namespace (make-namespace)]
-         [use-compiled-file-paths '("compiled")]
+         [use-compiled-file-kinds 'all]
          [current-command-line-arguments
           (list->vector
            (append (if install-mode? '("-n" "--trust-zos" "--no-install") '())

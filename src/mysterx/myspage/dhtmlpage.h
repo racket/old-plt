@@ -107,6 +107,7 @@ public:
  IEventQueue *pIEventQueue;
  LRESULT OnCreate(UINT,WPARAM,LPARAM,BOOL&);
  STDMETHOD(AtAnyEvent)(void);
+ STDMETHOD(SuppressCtxMenu)(IDispatch *);
 };
 
 #endif //__DHTMLPAGE_H_

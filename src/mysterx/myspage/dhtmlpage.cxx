@@ -32,6 +32,50 @@ int eventSearchCmp(const void *s1,const void *s2) {
   return wcscmp((const WCHAR *)s1,((const EVENT_MAP *)s2)->name);
 }
 
+HRESULT CDHTMLPage::SuppressCtxMenu(IDispatch *pDocDispatch) {
+  HRESULT hr;
+  CComObject<CWrapperUIHandler> *pUIHandlerWrapper;
+  IDispatch *pContDisp;
+  ICustomDoc *pCustomDoc;
+  IDocHostUIHandler *pUIHandler;
+
+  // setup custom UI handler to block context menu
+
+  hr = ((IWebBrowser2 *)(m_spBrowser))->get_Container(&pContDisp);
+  if (hr != S_OK || pContDisp == NULL) {
+    ::failureBox("Can't get container from browser");
+    return S_OK;
+  }
+
+  hr = pContDisp->QueryInterface(IID_IDocHostUIHandler,
+				 (void **)&pUIHandler);
+  if (hr != S_OK || pUIHandler == NULL) {
+    ::failureBox("Can't get UI handler from browser container");
+    return S_OK;
+  }
+
+  hr = pDocDispatch->QueryInterface(IID_ICustomDoc,(void **)&pCustomDoc);
+  if (hr != FALSE || pCustomDoc == NULL) {
+    ::failureBox("Can't get custom document from document");
+    return S_OK;
+  }
+  
+  hr = pUIHandlerWrapper->CreateInstance(&pUIHandlerWrapper);
+  if (hr != FALSE) {
+    ::failureBox("Can't create UI wrapper for DHTML control");
+    return S_OK;
+  }
+
+  pUIHandlerWrapper->SetUIHandler(pUIHandler); // never fails 
+  hr = pCustomDoc->SetUIHandler(pUIHandlerWrapper);
+  if (hr != S_OK) {
+    ::failureBox("Can't set UI handler for DHTML control");
+    return S_OK;
+  }
+
+  return S_OK;
+}
+
 HRESULT CDHTMLPage::AtAnyEvent(void) {
   HRESULT hr;
   static IHTMLWindow2 *pTopWindow;
@@ -60,6 +104,8 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
          ::failureBox("Can't get document on event trap");
          return S_OK;
       }
+
+      SuppressCtxMenu(pDocDispatch);
       
       pDocDispatch->QueryInterface(IID_IHTMLDocument2,(void **)&pIHTMLDocument2);
 

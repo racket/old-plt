@@ -1,3 +1,5 @@
+;; This is a wrapper around `winvers-change.ss' to patch binary files with the
+;; current version number.
 (module winvers mzscheme
   (require (lib "file.ss"))
   
@@ -29,70 +31,9 @@
         (build-path vers "mzscheme.exe"))))
 
   (define (patch-files)
-    (define new-version (substring
-			 (regexp-replace*
-			  "alpha"
-			  (format "~a_000000000" (version))
-			  "a")
-			 0
-			 7))
-    (make-directory* (build-path plthome "lib" "msvc"))
-    (for-each (lambda (lib)
-		(let ([name (format "~axxxxxxx.lib" lib)])
-		  (let ([src (build-path plthome "src" "worksp" lib "release" name)]
-			[dest (build-path plthome "lib" "msvc" name)])
-		    (when (file-exists? src)
-		      (when (file-exists? dest)
-			(delete-file dest))
-		      (copy-file src dest)))))
-	      '("libmzgc"
-		"libmzsch"))
-    (for-each (lambda (f)
-                (let ([p (build-path plthome f)]
-		      [re:xxxx (if (regexp-match "lib$" f)
-				   #rx"xxxxxxx" ; even more dangerous?
-				   #rx"xxxxxxx[.]dll")])
-		  (when (file-exists? p)
-		    (let ([i (open-input-file p)]
-			  [o (open-output-file p 'append)])
-		      (let loop ()
-			(file-position i 0)
-			;; This is a poor technique for updating the files, but
-			;;  it works well enough. I wasn't able to parse
-			;;  the file format properly (I expected to find
-			;;  DLL imports in an ".idata" section, but there
-			;;  isn't one.)
-			(let ([m (regexp-match-positions re:xxxx i)])
-			  (when m
-			    (file-position o (caar m))
-			    (display new-version o)
-			    (loop))))
-		      (close-input-port i)
-		      (close-output-port o)))))
-              '("mzscheme.exe"
-                "mred.exe"
-		"mzcom.exe"
-                "libmzschxxxxxxx.dll"
-                "libmzgcxxxxxxx.dll"
-                "libmredxxxxxxx.dll"
-		"lib/msvc/libmzgcxxxxxxx.lib"
-		"lib/msvc/libmzschxxxxxxx.lib"))
-    (for-each (lambda (b suffix)
-		(let ([src (build-path plthome (string-append b "xxxxxxx" suffix))]
-		      [dest (build-path plthome (string-append b new-version suffix))])
-		  (when (file-exists? src)
-		    (when (file-exists? dest) 
-		      (delete-file dest))
-		    (rename-file-or-directory src dest))))
-	      '("libmzsch"
-		"libmzgc"
-		"libmred"
-		"lib/msvc/libmzgc"
-		"lib/msvc/libmzsch")
-	      '(".dll" ".dll" ".dll"
-		".lib" ".lib")))
-					  
-  
+    (parameterize ((current-command-line-arguments (vector plthome)))
+      (dynamic-require `(lib "winvers-change.ss" "setup") #f)))
+
   (let ([argv (current-command-line-arguments)])
     (cond
       [(equal? argv #())
@@ -100,7 +41,7 @@
          (putenv "PLTHOME" plthome)
          (printf "re-launching first time...~n")
          (subprocess (current-output-port)
-                     (current-input-port)                     
+                     (current-input-port)
                      (current-error-port)
                      exe
                      "-mvqL-"

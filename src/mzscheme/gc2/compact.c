@@ -3115,18 +3115,11 @@ static void designate_modified(void *p)
 /* Linux signal handler: */
 #if defined(linux)
 # include <signal.h>
-void fault_handler(int sn, struct sigcontext sc)
+void fault_handler(int sn, struct siginfo *si, void *ctx)
 {
-# if (defined(powerpc) || defined(__powerpc__))
-  /* PowerPC */
-  designate_modified((void *)sc.regs->dar);
-# else
-  /* x86 */
-  designate_modified((void *)sc.cr2);
-# endif
-  signal(SIGSEGV, (void (*)(int))fault_handler);
+  designate_modified(si->si_addr);
 }
-# define NEED_SIGSEGV
+# define NEED_SIGACTION
 #endif
 
 /* FreeBSD signal handler: */

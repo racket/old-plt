@@ -942,11 +942,6 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 		|| (home == tagged_atomic)
 		|| (home == tagged_uncollectable)
 		|| (home == tagged_eternal))) {
-#if 0
-	  type = scheme_get_type_name(SCHEME_TYPE((Scheme_Object *)v));
-	  if (*type)
-	    sep = ":";
-#else
 	  long len;
 	  type = scheme_write_to_string_w_max((Scheme_Object *)v, &len, max_w);
 	  if (!strncmp(type, "#<thread", 8)) {
@@ -971,7 +966,6 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 	    type = t2;
 	  }
 	  sep = "=";
-#endif
 	} else if (scheme_external_dump_type) {
 	  type = scheme_external_dump_type(v);
 	  if (*type)
@@ -997,6 +991,13 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 
     scheme_console_printf("End Paths\n");
   }
+
+  scheme_console_printf("Begin Help\n");
+  scheme_console_printf(" (dump-memory-stats 'type) - prints paths to instances of type.\n");
+  scheme_console_printf("   Examples: (dump-memory-stats '<pair>), (dump-memory-stats 'frame).\n");
+  scheme_console_printf("   If 'type is 'stack, prints paths to thread stacks.\n");
+  scheme_console_printf(" (dump-memory-stats #t) - tries harder to find bad data.\n");
+  scheme_console_printf("End Help\n");
 #endif
 
   scheme_console_printf("End Dump\n");

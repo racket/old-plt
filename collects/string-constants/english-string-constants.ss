@@ -539,6 +539,7 @@
  (autosave-delete-title "Delete")
  (autosave-deleted "Deleted")
  (autosave-done "Done")
+ (autosave-restore-to-where? "Choose a place to save the autosave file.")
 
  ;;; file modified warning
  (file-has-been-modified

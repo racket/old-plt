@@ -6931,7 +6931,7 @@
 " no-other?)"
 "(cond((and no-this?"
 " no-other?)"
-" 0)"
+" 14)"
 "(no-this?"
 " canvas-default-size)"
 "(else"

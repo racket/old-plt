@@ -327,8 +327,10 @@ void wxMediaCanvas::BlinkCaret()
   if (focuson) {
     wxCanvasMediaAdmin *oldadmin;
     
-    if (PTRNE((oldadmin = (wxCanvasMediaAdmin *)media->GetAdmin()), admin)) {
-      media->SetAdmin(admin);
+    if (media) {
+      if (PTRNE((oldadmin = (wxCanvasMediaAdmin *)media->GetAdmin()), admin)) {
+	media->SetAdmin(admin);
+      }
     }
 
     if (media)
@@ -336,8 +338,10 @@ void wxMediaCanvas::BlinkCaret()
     if (focuson)
       blinkTimer->Start(BLINK_DELAY, 1);
 
-    if (PTRNE(oldadmin, admin)) {
-      media->SetAdmin(oldadmin);
+    if (media) {
+      if (PTRNE(oldadmin, admin)) {
+	media->SetAdmin(oldadmin);
+      }
     }
   }
 }

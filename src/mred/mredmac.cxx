@@ -264,6 +264,7 @@ static void GetSleepTime(int *sleep_time, int *delay_time)
 #endif
 }
 
+static int no_modifiers_last_time = 1;
 static int last_was_option_down;
 
 /* WNE: a replacement for WaitNextEvent so we can get things like
@@ -285,18 +286,26 @@ int WNE(EventRecord *e, double sleep_ticks)
       
       switch (modifiers & (shiftKey | cmdKey | controlKey | optionKey)) {
       case optionKey:
-	last_was_option_down = 1;
+	if (no_modifiers_last_time)
+	  last_was_option_down = 1;
 	break;
       case 0:
+	no_modifiers_last_time = 1;
 	if (last_was_option_down) {
 	  last_was_option_down = 0;
 	  need_click = TRUE;
 	}
-      default: /* fallthrough */
 	last_was_option_down = 0;
+	break;
+      default:
+	no_modifiers_last_time = 0;
+	last_was_option_down = 0;
+	break;
       } 
-    } else
+    } else {
+      no_modifiers_last_time = 0;
       last_was_option_down = 0;
+    }
 
     ok = ConvertEventRefToEventRecord(ref, e);
 
@@ -333,9 +342,6 @@ int WNE(EventRecord *e, double sleep_ticks)
 	  ok = TRUE;
 	}
       }
-
-      if (!ok)
-	SendEventToEventTarget(ref, GetEventDispatcherTarget());
     }
     ReleaseEvent(ref);
 
@@ -345,6 +351,9 @@ int WNE(EventRecord *e, double sleep_ticks)
       GetCurrentProcess(&psn);
       SetFrontProcess(&psn);
     }
+
+    if (ok)
+      no_modifiers_last_time = !(e->modifiers & (shiftKey | cmdKey | controlKey | optionKey));
 
     return ok;
   }

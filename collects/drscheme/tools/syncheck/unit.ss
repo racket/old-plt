@@ -88,7 +88,7 @@
       (mred:set-preference-default 'mzprizm:primitive
 				   (let ([s (make-object wx:style-delta%)])
 				     (when (< (wx:display-depth) 8)
-				       (send s set-delta wx:const-change bold 1))
+				       (send s set-delta wx:const-change-bold 1))
 				     (send s set-delta-foreground "FIREBRICK")
 				     s)
 				   style-delta?)

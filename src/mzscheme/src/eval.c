@@ -4465,6 +4465,8 @@ static void *expand_k(void)
       Scheme_Object *l;
       l = scheme_frame_get_lifts(env);
       if (SCHEME_PAIRP(l)) {
+	if (rename && !just_to_top)
+	  obj = scheme_add_mark_barrier(obj);
 	obj = scheme_append(l, scheme_make_immutable_pair(obj, scheme_null));
 	obj = icons(scheme_datum_to_syntax(begin_symbol, scheme_false, scheme_sys_wraps(env), 0, 0),
 		    obj);

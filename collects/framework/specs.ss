@@ -22,13 +22,21 @@
     (syntax-case provide-stx ()
       [(_ (id ctrct) ...)
        (andmap identifier? (syntax->list (syntax (id ...))))
-       (with-syntax ([(id-rename ...) (generate-temporaries (syntax (id ...)))]
+       (with-syntax ([(id-rename ...)
+		      (map (lambda (x)
+                             (datum->syntax-object
+                              provide-stx
+                              (string->symbol
+                               (format "provide/contract-id-~a-ACK-DONT_USE_ME"
+				       (syntax-object->datum x)))))
+                           (syntax->list (syntax (id ...))))]
 		     [(contract-id ...)
                       (map (lambda (x)
                              (datum->syntax-object
                               provide-stx
                               (string->symbol
-                               (format "provide/contract-id-~a-ACK" (syntax-object->datum x)))))
+                               (format "provide/contract-contract-id-~a-ACK-DONT_USE_ME"
+				       (syntax-object->datum x)))))
                            (syntax->list (syntax (id ...))))]
                      [pos-blame-stx (datum->syntax-object provide-stx 'here)]
                      [module-source-as-symbol (datum->syntax-object provide-stx 'module-source-as-symbol)])

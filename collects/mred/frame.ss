@@ -258,7 +258,7 @@
       (make-menu-frame% simple-frame%))
 
     ; This defines the standard editing window.
-    (define make-frame%
+    (define make-editor-frame%
       (lambda (super%)
 	(class super% ([filename #f][show? #t][frameset mred:group:frames])
 	       (inherit active-edit active-canvas make-menu make-edit
@@ -551,14 +551,14 @@
 	       (public
 		[edit (active-edit)]))))
 
-    (define frame% (make-frame% simple-menu-frame%))
+    (define editor-frame% (make-editor-frame% simple-menu-frame%))
 
     (define make-pasteboard-frame%
       (lambda (super%)
 	(class-asi super%
 		   (public
 		    [edit% mred:edit:pasteboard%]))))
-    (define pasteboard-frame% (make-pasteboard-frame% frame%))
+    (define pasteboard-frame% (make-pasteboard-frame% editor-frame%))
 
     (define make-status-frame%
       (lambda (super%)

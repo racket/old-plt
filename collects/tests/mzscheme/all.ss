@@ -13,6 +13,7 @@
 (load-relative "unit.ss")
 (load-relative "unitsig.ss")
 (load-relative "thread.ss")
+(load-relative "contmark.ss")
 (unless (or (defined? 'read/zodiac)
 	    (defined? 'in-drscheme?))
   (load-relative "namespac.ss"))

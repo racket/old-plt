@@ -681,6 +681,8 @@
 (syntax-test '(let () (define x 2)))
 (syntax-test '(letrec () (define x 2)))
 (syntax-test '(lambda () (define x 2)))
+(syntax-test '(lambda () (void (define x 2)) 1))
+(syntax-test '(let () (begin (define x 10)) x))
 
 ; Unfortunately, there's no good way to test this for mzc:
 (unless (defined? 'building-flat-tests)

@@ -6,14 +6,14 @@ _MysterX_
  applications from ActiveX and COM components,
  using Scheme as glue code.  Dynamic HTML is used
  for component presentation and event-handling.
- MysterX requires Internet Explorer 4 or 5 (IE) to
+ MysterX requires Internet Explorer 4, 5, or 6 (IE) to
  be installed.  Distributed COM (DCOM) for your
  version of Windows is also required.  Windows NT
  comes with DCOM, while versions of DCOM for
  Windows 95 and 98 are made available separately.
  IE is available for download from Microsoft at
 
-   http://www.microsoft.com/windows/ie/download/windows.htm
+   http://www.microsoft.com/windows/ie/downloads/default.asp
 
  while DCOM is available at
 

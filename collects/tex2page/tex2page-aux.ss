@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2005-02-27")
+(define *tex2page-version* "2005-02-28")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -3895,7 +3895,7 @@
 (define do-start
   (lambda ()
     (set! *footnote-list* '())
-    (output-html-preamble #t)
+    (output-html-preamble)
     (output-navigation-bar 'top)
     (do-para)))
 

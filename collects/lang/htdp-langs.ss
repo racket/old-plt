@@ -259,8 +259,11 @@ not to forget: teachpakcs
                                             (cons result (loop)))))]
                                    [language-module (get-module)]
                                    [(require-specs ...) 
-                                    (drscheme:teachpack:teachpack-cache-require-specs 
-                                     (send (drscheme:rep:current-rep) get-user-teachpack-cache))])
+                                    (let ([rep (drscheme:rep:current-rep)])
+                                      (if rep
+                                          (drscheme:teachpack:teachpack-cache-require-specs 
+                                           (send rep get-user-teachpack-cache))
+                                          '()))])
                        (set! state 'require)
                        (let ([mod (expand (syntax (module #%htdp language-module 
                                                     (require require-specs ...)

@@ -1091,9 +1091,26 @@
                                 ;                          
                                                            
 
-
 (drscheme:teachpack:install-teachpacks
- (-> any? void?)
+ (drscheme:teachpack:teachpack-cache? . -> . void?)
  (teachpack-cache)
- "Docs Here")
+ "Installs the teachpack cache in the current namespace."
+ "Passing \\scheme{'drscheme:teachpacks} to"
+ "@flink preferences:get"
+ "returns the user's currently selected TeachPacks.")
 
+(drscheme:teachpack:teachpack-cache?
+ (any? . -> . boolean?)
+ (val)
+ "Determines if \\var{val} is a teachpack"
+ "cache or not.")
+
+(drscheme:teachpack:teachpack-cache-filenames
+ (drscheme:teachpack:teachpack-cache? . -> . (listof string?))
+ (teachpack-cache)
+ "Returns the list of filenames for the teachpacks"
+ "in \\var{teachpack-cache}."
+ ""
+ "See also"
+ "@flink drscheme:teachpack:install-teachpacks %"
+ ".")

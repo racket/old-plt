@@ -776,6 +776,7 @@
                         (syncheck:clear-highlighting)
                         (cleanup)
                         (custodian-shutdown-all user-custodian))]
+                     [teachpacks (fw:preferences:get 'drscheme:teachpacks)]
                      [init-proc
                       (lambda () ; =user=
                         (set-breakables (current-thread) (current-custodian))
@@ -786,6 +787,7 @@
                            (lambda (exn)
                              (uncaught-exception-raised)
                              (oh exn))))
+                        (drscheme:teachpack:install-teachpacks teachpacks)
                         (set! user-custodian (current-custodian))
 			(set! user-directory (current-directory)) ;; set by set-directory above
                         (set! user-namespace (current-namespace)))])

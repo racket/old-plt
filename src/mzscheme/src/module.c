@@ -763,7 +763,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     
     if (SCHEME_SYMBOLP(prefix)) {
       char *s;
-      s = MALLOC_N_ATOMIC(char, SCHEME_SYM_LEN(prefix) + SCHEME_SYM_LEN(prefix) + 1);
+      s = MALLOC_N_ATOMIC(char, SCHEME_SYM_LEN(prefix) + SCHEME_SYM_LEN(modname) + 1);
       memcpy(s, SCHEME_SYM_VAL(prefix), SCHEME_SYM_LEN(prefix));
       memcpy(s + SCHEME_SYM_LEN(prefix), SCHEME_SYM_VAL(modname), SCHEME_SYM_LEN(modname) + 1);
       modname = scheme_intern_exact_symbol(s, SCHEME_SYM_LEN(prefix) + SCHEME_SYM_LEN(modname));
@@ -819,7 +819,8 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     if (iim->reexport_kernel) {
       exs = kernel->exports;
       for (i = kernel->num_exports; i--; ) {
-	scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i]);
+	if (!SAME_OBJ(iim->kernel_exclusion, exs[i]))
+	  scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i]);
       } 
     }
   }
@@ -928,7 +929,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *reexported;      /* list of (list modidx syntax except-name ...) */
   Scheme_Hash_Table *exported_indirect; /* exname -> stx */
   void *tables[4], *et_tables[4];
-  Scheme_Object **exs, **exsns, **exss, **exis;
+  Scheme_Object **exs, **exsns, **exss, **exis, *exclude_hint = scheme_false;
   int excount, exvcount, exicount;
   int num_to_compile;
   int reexport_kernel;
@@ -988,12 +989,14 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       exs = kernel->exports;
       numvals = kernel->num_var_exports;
       for (i = kernel->num_exports; i--; ) {
-	vec = scheme_make_vector(4, NULL);
-	SCHEME_VEC_ELS(vec)[0] = nmidx;
-	SCHEME_VEC_ELS(vec)[1] = kernel_symbol;
-	SCHEME_VEC_ELS(vec)[2] = exs[i];
-	SCHEME_VEC_ELS(vec)[3] = ((i < numvals) ? scheme_true : scheme_false);
-	scheme_add_to_table(imported, (const char *)exs[i], vec, 0);
+	if (!SAME_OBJ(iim->kernel_exclusion, exs[i])) {
+	  vec = scheme_make_vector(4, NULL);
+	  SCHEME_VEC_ELS(vec)[0] = nmidx;
+	  SCHEME_VEC_ELS(vec)[1] = kernel_symbol;
+	  SCHEME_VEC_ELS(vec)[2] = exs[i];
+	  SCHEME_VEC_ELS(vec)[3] = ((i < numvals) ? scheme_true : scheme_false);
+	  scheme_add_to_table(imported, (const char *)exs[i], vec, 0);
+	}
       } 
     }
   }
@@ -1437,7 +1440,11 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    
 	    ree = SCHEME_CDR(SCHEME_CAR(rx));
 
-	    for (exns = SCHEME_CDR(ree); !SCHEME_STX_NULLP(exns); exns = SCHEME_STX_CDR(exns)) {
+	    exns = SCHEME_CDR(ree);
+	    if (SAME_OBJ(modidx, kernel_symbol))
+	      exclude_hint = exns;
+	    
+	    for (; !SCHEME_STX_NULLP(exns); exns = SCHEME_STX_CDR(exns)) {
 	      /* Make sure excluded name was imported: */
 	      Scheme_Object *a;
 	      a = SCHEME_STX_VAL(SCHEME_STX_CAR(exns));
@@ -1463,8 +1470,29 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
   /* Re-exporting all of the kernel without prefixing? */
   if (reexport_kernel) {
-    if (reexport_kernel != kernel->num_exports)
+    if ((reexport_kernel == (kernel->num_exports - 1))
+	&& exclude_hint) {
+      if (SCHEME_STX_PAIRP(exclude_hint) && SCHEME_NULLP(SCHEME_STX_CDR(exclude_hint))) {
+	Scheme_Object *n;
+
+	exclude_hint = SCHEME_STX_CAR(exclude_hint);
+	exclude_hint = SCHEME_STX_VAL(exclude_hint);
+	n = scheme_lookup_in_table(exported, (const char *)exclude_hint);
+	if (n) {
+	  /* may be a single shadowed exclusion, now bound to exclude_hint... */
+	  n = scheme_lookup_in_table(imported, (const char *)n);
+	  if (n && !SAME_OBJ(SCHEME_VEC_ELS(n)[1], kernel_symbol)) {
+	    /* there is a single shadowed exclusion. */
+	  } else
+	    reexport_kernel = 0;
+	} else
+	  reexport_kernel = 0;
+      } else
+	reexport_kernel = 0;
+    } else if (reexport_kernel != kernel->num_exports)
       reexport_kernel = 0;
+    else
+      exclude_hint = scheme_false;
   }
   /* If reexport_kernel is non-zero, we re-exporting all of it */
 
@@ -1480,8 +1508,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	count++;
     }
     
-    if (reexport_kernel)
-      count -= kernel->num_exports;
+    count -= reexport_kernel;
 
     exs = MALLOC_N(Scheme_Object *, count);
     exsns = MALLOC_N(Scheme_Object *, count);
@@ -1630,6 +1657,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     env->genv->module->export_srcs = exss;
 
     env->genv->module->reexport_kernel = reexport_kernel;
+    env->genv->module->kernel_exclusion = exclude_hint;
 
     env->genv->module->indirect_exports = exis;
     env->genv->module->num_indirect_exports = exicount;
@@ -1803,6 +1831,9 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
       exsns = m->export_src_names;
       exss = m->export_srcs;
       var_count = m->num_var_exports;
+
+      if (prefix)
+	prefix = SCHEME_STX_VAL(prefix);
       
       for (j = m->num_exports; j--; ) {
 	Scheme_Object *modidx;
@@ -1811,19 +1842,32 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 	  if (!SAME_OBJ(ename, exs[j]))
 	    continue;  /* we don't want this one. */
 	} else if (exns) {
-	  Scheme_Object *l;
-	  for (l = exns; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
-	    if (SAME_OBJ(SCHEME_STX_VAL(SCHEME_STX_CAR(l)), exs[j]))
-	      break;
+	  if (SCHEME_STX_PAIRP(exns)) {
+	    Scheme_Object *l;
+	    for (l = exns; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
+	      if (SAME_OBJ(SCHEME_STX_VAL(SCHEME_STX_CAR(l)), exs[j]))
+		break;
+	    }
+	    if (!SCHEME_STX_NULLP(l))
+	      continue; /* we don't want this one. */
+	  } else {
+	    if (SAME_OBJ(exns, exs[j]))
+	      continue; /* we don't want this one. */
 	  }
-	  if (!SCHEME_STX_NULLP(l))
-	    continue; /* we don't want this one. */
 	}
 	
 	modidx = (exss && !SCHEME_FALSEP(exss[j])) ? exss[j] : idx;
       
 	if (!iname)
 	  iname = exs[j];
+
+	if (prefix) {
+	  char *s;
+	  s = MALLOC_N_ATOMIC(char, SCHEME_SYM_LEN(prefix) + SCHEME_SYM_LEN(iname) + 1);
+	  memcpy(s, SCHEME_SYM_VAL(prefix), SCHEME_SYM_LEN(prefix));
+	  memcpy(s + SCHEME_SYM_LEN(prefix), SCHEME_SYM_VAL(iname), SCHEME_SYM_LEN(iname) + 1);
+	  iname = scheme_intern_exact_symbol(s, SCHEME_SYM_LEN(prefix) + SCHEME_SYM_LEN(iname));
+	}
 	
 	ck(iname, idx, modidx, exsns[j], (j < var_count), data, i);
 	
@@ -1848,11 +1892,11 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 
       if (m->reexport_kernel) {
 	idx = kernel_symbol;
+	exns = m->kernel_exclusion;
 	m = kernel;
 	is_kern = 1;
 	iname = NULL;
 	ename = NULL;
-	exns = NULL;
 	prefix = NULL;
       } else
 	break;
@@ -2062,6 +2106,7 @@ static Scheme_Object *write_module(Scheme_Object *obj)
   l = cons(v, l);
 
   l = cons(m->reexport_kernel ? scheme_true : scheme_false, l);
+  l = cons(m->kernel_exclusion, l);
 
   l = cons(m->self_modidx, l);
   l = cons(m->modname, l);
@@ -2090,6 +2135,8 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   obj = SCHEME_CDR(obj);
   SCHEME_PTR2_VAL(m->self_modidx) = m->modname;
 
+  m->kernel_exclusion = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
   m->reexport_kernel = SCHEME_TRUEP(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
 

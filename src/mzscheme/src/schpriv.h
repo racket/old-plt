@@ -1457,7 +1457,9 @@ typedef struct Scheme_Module
   Scheme_Object **export_src_names; /* symbols (original internal names) */
   int num_exports;
   int num_var_exports;              /* non-syntax listed first in exports */
+
   int reexport_kernel;              /* if true, extend exports with kernel's */
+  Scheme_Object *kernel_exclusion;  /* we allow one exn, but it must be shadowed */
 
   Scheme_Object **indirect_exports; /* symbols (internal names) */
   int num_indirect_exports;

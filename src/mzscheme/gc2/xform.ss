@@ -157,7 +157,10 @@
 	  (if (null? (call-live v))
 	      (display/indent v "FUNCCALL_EMPTY((")
 	      (begin
-		(display/indent v (format "FUNCCALL((SETUP(~a), " (length (call-live v))))
+		(display/indent v (format "FUNCCALL((SETUP(~a), " 
+					  (apply + (map (lambda (x)
+							  (get-variable-size (cdr x)))
+							(call-live v)))))
 		(let loop ([l (call-live v)][n 0])
 		  (unless (null? l)
 		    (loop (cdr l)

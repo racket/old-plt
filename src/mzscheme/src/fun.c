@@ -742,7 +742,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   return (Scheme_Object *)data;
 }
 
-typdef Scheme_Object *(*Overflow_K_Proc)(void);
+typedef Scheme_Object *(*Overflow_K_Proc)(void);
 
 void *scheme_top_level_do(void *(*k)(void), int eb)
 {

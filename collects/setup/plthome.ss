@@ -17,12 +17,18 @@
   ;; .dep files still work.  `plthome-ify' uses `plthome' with a hard-wired "/"
   ;; suffix, so it will not work properly if there is a different separator or
   ;; if the input path uses a directory that is equivalent to plthome but not
-  ;; equal? to it -- that's fine as long as it works when we prepare a
-  ;; distribution tree using a proper PLTHOME env variable.  Otherwise, things
-  ;; will continue to work fine and .dep files will just contain absolute path
-  ;; names.  They work on dep elements -- either a pathname or a pair with a
+  ;; equal? to it.  The only processing that is performed is replacing all
+  ;; backslashes with slashes on Windows.  It is generally fine if this still
+  ;; misses some usages, as long as it works when we prepare a distribution
+  ;; tree using a proper PLTHOME env variable.  Otherwise, things will continue
+  ;; to work fine and .dep files will just contain absolute path names.  These
+  ;; functions work on dep elements -- either a pathname or a pair with a
   ;; pathname in its cdr, the plthome-ified pathname will itself be a pair.
-  (define plthome/ (regexp-replace "/?$" plthome "/"))
+  (define plthome/ (let* ([plthome (splify-path plthome)]
+                          [plthome (if (eq? 'windows (system-type))
+                                     (regexp-replace* #rx"\\\\" plthome "/")
+                                     plthome)])
+                     (regexp-replace #rx"/?$" plthome "/")))
   (define plthome/-len (string-length plthome/))
   (define (maybe-cdr-op f)
     (lambda (x)

@@ -170,7 +170,7 @@ exit 1
          [use-compiled-file-kinds 'all]
          [current-command-line-arguments
           (list->vector
-           (append (if install-mode? '("--trust-zos" "--no-install") '())
+           (append (if install-mode? '("-n" "--trust-zos" "--no-install") '())
                    (setup-flags)))]
          ;; setup will use `exit' when done, so catch these, and stop if
          ;; non-zero

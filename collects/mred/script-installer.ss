@@ -4,8 +4,8 @@
   (provide installer)
   (require (lib "launcher.ss" "launcher"))
 
-  (define installer
-    (lambda (path)   
+  (define post-installer
+    (lambda (path)
       (when (eq? 'macosx (system-type))	
 	(let ([install
 	       (lambda (variant)
@@ -16,5 +16,3 @@
 	  (install 'script)
 	  (when (memq 'script-3m (available-mred-variants))
 	    (install 'script-3m)))))))
-
-	

@@ -138,13 +138,13 @@ class wxCursor: public wxObject
  public:
   wxCursor(void);
   wxCursor(char bits[], int width, int height, int depth = 1);
+  wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY);
   wxCursor(char *name);
   wxCursor(int cursor_type);
   ~wxCursor(void);
 
   Bool Ok(void);
 
- protected:
   CursHandle cMacCursor;
   CursPtr cMacCustomCursor; // i.e., locally allocated
 };

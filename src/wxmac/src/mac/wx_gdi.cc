@@ -418,12 +418,11 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
 {
   int w, h, bw, bh, i, j, delta, bit, s;
   unsigned char r, g, b;
-  unsigned char *cursor, *mask;
   wxColour *c;
-  wxMemoryDC *mask_dc;
+  wxMemoryDC *mask_dc, *bitmap_dc;
 
   __type = wxTYPE_CURSOR;
-  ok = FALSE;
+  cMacCursor = NULL;
   cMacCustomCursor = NULL;
 
   /* Get the allowed size for cursors: */
@@ -438,29 +437,22 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   if ((bw > w) || (bh > h))
     return;
 
-  /* Make read-only DCs for reading bits from the bitmaps: */
-  if (!temp_mdc) {
-    //wxREGGLOB(temp_mdc);
-    //wxREGGLOB(temp_mask_mdc);
-    temp_mdc = new wxMemoryDC(1);
-    temp_mask_mdc = new wxMemoryDC(1);
-  }
-
-  temp_mdc->SelectObject(bm);
+  bitmap_dc = new wxMemoryDC(1);
+  bitmap_dc->SelectObject(bm);
   /* Might fail, so we double-check: */
-  if (!temp_mdc->GetObject())
+  if (!bitmap_dc->GetObject())
     return;
-  /* If bm and mask arethe same, use one DC (since re-selecting
+  /* If bm and mask are the same, use one DC (since re-selecting
      will fail, anyway). */
   if (mask == bm) {
-    mask_dc = temp_mdc;
+    mask_dc = bitmap_dc;
   } else {
-    temp_mask_mdc->SelectObject(mask);
-    if (!temp_mask_mdc->GetObject()) {
-      temp_mdc->SelectObject(NULL);
+    mask_dc = new wxMemoryDC(1);
+    mask_dc->SelectObject(mask);
+    if (!mask_dc->GetObject()) {
+      bitmap_dc->SelectObject(NULL);
       return;
     }
-    mask_dc = temp_mask_mdc;
   }
 
   c = new wxColour(); /* to recieve bit values */
@@ -481,7 +473,7 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
       if (i < bw) {
       
         // transfer bm pixel
-        temp_mdc->GetPixel(i, j, c);
+        bitmap_dc->GetPixel(i, j, c);
 	c->Get(&r, &g, &b);
 
         if (r || g || b) {
@@ -489,7 +481,7 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
         }
         
         mask_dc->GetPixel(i, j, c);
-        c->get(&r, &g, &b);
+        c->Get(&r, &g, &b);
         
         if (r || g || b) {
             cMacCustomCursor->mask[delta] += bit;
@@ -507,10 +499,9 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   cMacCustomCursor->hotSpot.v = hotSpotY;
   
   /* Clean up */
-  temp_mdc->SelectObject(NULL);
-  temp_mask_mdc->SelectObject(NULL);
+  bitmap_dc->SelectObject(NULL);
+  mask_dc->SelectObject(NULL);
 
-  ok = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -638,7 +629,7 @@ wxCursor::~wxCursor(void)
 //-----------------------------------------------------------------------------
 Bool wxCursor::Ok(void)
 {
-  return !!cMacCursor;
+  return (!!cMacCursor || !!cMacCustomCursor);
 }
 
 //-----------------------------------------------------------------------------
@@ -652,7 +643,7 @@ void wxSetCursor(wxCursor *cursor)
       /* 0x1 is the arrow cursor */
       if (cursor) {
           if (cursor->cMacCustomCursor) {
-                ::SetCursor(cMacCustomCursor);
+                ::SetCursor(cursor->cMacCustomCursor);
           } else {
 	    if (cursor->cMacCursor && (cursor->cMacCursor != (Cursor **)0x1))
 	  	  ::SetCursor(*(cursor->cMacCursor));

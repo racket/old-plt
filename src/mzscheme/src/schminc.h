@@ -1,4 +1,3 @@
-
 /* 
    The cstartup.inc file is not, as distributed, compatible with
    omissions from or additions to the set of built-in identifiers.

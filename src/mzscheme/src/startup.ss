@@ -2197,12 +2197,14 @@
 							  bindings))])
 			(cond
 			 [(pair? l)
-			  (if (and (stx-pair? (car l))
-				   (let ([a (stx-car (car l))])
-				     (and (identifier? a)
-					  (or (module-identifier=? a (quote-syntax unsyntax))
-					      (module-identifier=? a (quote-syntax unsyntax-splicing))
-					      (module-identifier=? a (quote-syntax quasisyntax))))))
+			  (if (let ([a (car l)])
+				(or (and (identifier? a)
+					 (or (module-identifier=? a (quote-syntax unsyntax))
+					     (module-identifier=? a (quote-syntax quasisyntax))))
+				    (and (stx-pair? a)
+					 (let ([a (stx-car a)])
+					   (and (identifier? a)
+						(module-identifier=? a (quote-syntax unsyntax)))))))
 			      ;; Found something important, like `unsyntax'; stop the special
 			      ;; handling for pairs
 			      (loop (datum->syntax-object #f l #f) depth

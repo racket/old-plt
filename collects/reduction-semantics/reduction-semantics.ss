@@ -8,7 +8,8 @@
   (provide reduction
            reduction/context
            language
-           replace)
+           replace
+	   compiled-lang? red?)
   
   (provide/contract
    (match-pattern (compiled-pattern any? . -> . (union false? (listof bindings?))))

@@ -44,35 +44,35 @@ this tool:
   _iswim.ss_ : grammar and reductions from "Programming Languages
                and Lambda Calculi" by Felleisen and Flatt.
 
-       Example S-expression form of ISWIM expressions
+       Example S-expression forms of ISWIM expressions:
          Book                     S-expr
          ----                     ------
          (lambda x . x)           ("lam" x x)
          (+ '1` '2`)              ("+" 1 2)
          ((lambda y y) '7`)       (("lam" y y) 7)
 
-       See "iswim.ss" for the grammar.
+       See "iswim.ss" for the reduction-semantics grammar.
 
-       Provided by "iswim.ss", where `any?' below typically
-       indicates an expression:
+       The following are provided by "iswim.ss":
                Grammar and substitution:
 >                 iswim-grammar : compiled-lang?
->                 is-in-V? : (any? . -> . boolean?)
->                 iswim-subst : (any? symbol? any? . -> . any?)
+>                 M? : (any? . -> . boolean?)
+>                 V? : (M? . -> . boolean?)
+>                 iswim-subst : (M? symbol? M? . -> . M?)
                Reductions:
 >                 beta_v : red?
 >                 delta : (listof red?)
 >                 ->v : (listof red?)
 >                 :->v : (listof red?)
                Abbreviations:
->                 if0 : (any? any? any? . -> . any?)
->                 true : any?
->                 false : any?
->                 mkpair : any?
->                 fst : any?
->                 snd : any?
->                 Y_v : any?
->                 sum : any?
+>                 if0 : (M? M? M? . -> . M?)
+>                 true : M?
+>                 false : M?
+>                 mkpair : M?
+>                 fst : M?
+>                 snd : M?
+>                 Y_v : M?
+>                 sum : M?
                Helper:
 >                 function-reduce* : ((listof red?)
                                       any?
@@ -155,7 +155,7 @@ before. Ellipses may be placed anywhere inside the row of
 patterns, except in the first position or after another
 ellipses. Multiple ellispes are allowed.
 
-> (language (non-terminal pattern ...) ...)
+> (language (non-terminal pattern ...) ...)     SYNTAX
 
 This form defines a context-free language. As an example,
 this is the lambda calculus:
@@ -171,7 +171,7 @@ this is the lambda calculus:
 with non-terminals e for the expression language, c for the
 evaluation contexts and v for values.
 
-> (reduction language pattern bodies ...)
+> (reduction language pattern bodies ...)       SYNTAX
 
 This form defines a reduction. The first position must
 evaluate to a language defined by the `language' form. The
@@ -209,7 +209,7 @@ evaluating the last argument to reduction. See `replace'
 below and lc-subst is defined by using the subst.ss library
 below.
 
-> (reduction/context language context pattern bodies ...)
+> (reduction/context language context pattern bodies ...)   SYNTAX
 
 reduction/context is a short-hand form of reduction. It
 automatically adds the `in-hole' pattern and the call to
@@ -336,7 +336,7 @@ where terms are displayed (measured in characters)
 
 The _subst.ss_ library provides these names:
 
-> (subst (match-pattern subst-rhs ...) ...)
+> (subst (match-pattern subst-rhs ...) ...)      SYNTAX
 
 The result of this form is a function that performs capture
 avoiding substition for a particular (sexp-based)

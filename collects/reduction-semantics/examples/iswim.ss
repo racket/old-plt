@@ -1,18 +1,8 @@
 (module iswim mzscheme
   (require (lib "reduction-semantics.ss" "reduction-semantics")
-           (lib "subst.ss" "reduction-semantics"))
+           (lib "subst.ss" "reduction-semantics")
+	   (lib "contract.ss"))
   
-  (provide iswim-grammar
-           is-in-V?
-           iswim-subst
-           beta_v delta
-           ->v :->v
-	   function-reduce*
-
-           if0 true false
-           mkpair fst snd
-           Y_v sum)
-
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Expression grammar:
   
@@ -37,9 +27,14 @@
 		 (o2 E M)
 		 (o2 V E))))
 
-  (define is-in-V?
-    ;; to check whether an expression is in V, apply a reduction that
-    ;; matches only Vs, and see whether it generates any results
+  (define M?
+    ;; to check whether an expression is in M, apply a reduction that
+    ;; matches only Ms, and see whether it generates any results
+    (let ([m-to-7 (list (reduction iswim-grammar M 7))])
+      (lambda (a)
+        (pair? (reduce m-to-7 a)))))
+
+  (define V?
     (let ([v-to-7 (list (reduction iswim-grammar V 7))])
       (lambda (M)
         (pair? (reduce v-to-7 M)))))
@@ -85,7 +80,7 @@
   ;; beta_v reduction
   (define beta_v
     (reduction iswim-grammar
-               ((lambda (name X1 variable) (name M1 M)) (name V1 V))
+               (("lam" (name X1 variable) (name M1 M)) (name V1 V))
                (iswim-subst M1 X1 V1)))
   
   
@@ -104,7 +99,7 @@
   
   ;; ->v
   (define ->v (map (lambda (red)
-                     (compatible-closure red iswim-grammar 'E))
+                     (compatible-closure red iswim-grammar 'M))
                    (cons beta_v delta)))
   
   ;; :->v
@@ -127,7 +122,7 @@
 	    [(= 1 (length l))
 	     (function-reduce* reds (car l) done?)]
 	    [else
-	     (error 'functon-reduce* 
+	     (error 'function-reduce* 
 		    "found ~a possible steps from ~e"
 		    (length l)
 		    expr)])))))
@@ -154,4 +149,26 @@
   (define mksum `("lam" s
 		  ("lam" x 
 		   ,(if0 'x 0 '("+" x (s ("sub1" x)))))))
-  (define sum `(,Y_v ,mksum)))
+  (define sum `(,Y_v ,mksum))
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Exports:
+  
+  (provide/contract (iswim-grammar compiled-lang?)
+		    (M? (any? . -> . boolean?))
+		    (V? (M? . -> . boolean?))
+		    (iswim-subst (M? symbol? M? . -> . M?))
+		    (beta_v red?)
+		    (delta (listof red?))
+		    (->v (listof red?))
+		    (:->v (listof red?))
+		    (function-reduce* ((listof red?) any? (any? . -> . boolean?) 
+				       . -> . (listof any?)))
+		    (if0 (M? M? M? . -> . M?))
+		    (true M?)
+		    (false M?)
+		    (mkpair M?)
+		    (fst M?)
+		    (snd M?)
+		    (Y_v M?)
+		    (sum M?)))

@@ -2,8 +2,8 @@
   
   ;; the parse function that builds an ast.
   
-  (require "structs.ss"
-	   (lib "list.ss"))
+  (require "structs.ss")
+
   (provide parse)
   
   ;; The input should be a syntax object which conforms to:

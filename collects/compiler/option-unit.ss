@@ -4,9 +4,10 @@
 
   (import "sig.ss")
 
-  (export compiler:options:unit)
-  (define compiler:options:unit
-    (unit/sig compiler:options^
+  (export compiler:option@)
+
+  (define compiler:option@
+    (unit/sig compiler:option^
       (import)
       
       (define use-mrspidey (make-parameter #f))

@@ -67,8 +67,11 @@
       (if (profiling-enabled)
           (let ([key (gensym)])
             (hash-table-put! profile-info key (list (box #f) 0 0 (and name (syntax-e name)) expr null))
-	    (with-syntax ([key (datum->syntax key #f #f)]
-			  [start (datum->syntax (gensym) #f #f)])
+	    (with-syntax ([key (datum->syntax key (quote-syntax here) #f)]
+			  [start (datum->syntax (gensym) (quote-syntax here) #f)]
+			  [profile-key (datum->syntax profile-key (quote-syntax here) #f)]
+			  [register-profile-start register-profile-start]
+			  [register-profile-done register-profile-done])
 	      (with-syntax ([rest 
 			     (insert-at-tail*
 			      (syntax (register-profile-done 'key start))
@@ -76,10 +79,8 @@
 			      trans?)])
 		(syntax
 		 ((let ([start (register-profile-start 'key)])
-		    (with-continuation-mark
-		     profile-key
-		     'key
-		     (begin . rest))))))))
+		    (with-continuation-mark 'profile-key 'key
+		      (begin . rest))))))))
           body)))
   
   (define (insert-at-tail* e exprs trans?)

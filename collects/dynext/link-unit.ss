@@ -5,9 +5,9 @@
 
   (import "link-sig.ss")
 
-  (export dynext:link:unit)
+  (export dynext:link@)
 
-  (define dynext:link:unit
+  (define dynext:link@
     (unit/sig dynext:link^
       (import)
       

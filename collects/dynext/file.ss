@@ -6,6 +6,6 @@
   (import "file-unit.ss")
 
   (define-values/invoke-unit/sig dynext:file^
-    dynext:file:unit)
+    dynext:file@)
 
   (export-signature-elements dynext:file^))

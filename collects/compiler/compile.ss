@@ -17,9 +17,9 @@
   (import "compiler-unit.ss")
 
   (define-values/invoke-unit/sig compiler^
-    compiler:unit
+    compiler@
     #f
-    compiler:options^
+    compiler:option^
     dynext:compile^
     dynext:link^
     dynext:file^)

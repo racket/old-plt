@@ -4,9 +4,9 @@
   
   (import "make-sig.ss")
 
-  (export make:unit)
+  (export make@)
 
-  (define make:unit
+  (define make@
     (unit/sig make^
       (import)
 

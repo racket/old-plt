@@ -5,9 +5,9 @@
 
   (import "compile-sig.ss")
 
-  (export dynext:compile:unit)
+  (export dynext:compile@)
 
-  (define dynext:compile:unit
+  (define dynext:compile@
     (unit/sig dynext:compile^ 
       (import)
       

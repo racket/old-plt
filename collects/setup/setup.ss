@@ -8,7 +8,7 @@
   (import "option-unit.ss")
 
   (define-values/invoke-unit/sig setup-option^
-    setup:option:unit)
+    setup:option@)
 
   (define-values (x-specific-collections x-archives)
     (command-line
@@ -66,17 +66,17 @@
   (invoke-unit/sig
    (compound-unit/sig
     (import (SOPTION : setup-option^))
-    (link [launcher : launcher-maker^ (launcher:unit dcompile dlink)]
-	  [dcompile : dynext:compile^ (dynext:compile:unit)]
-	  [dlink : dynext:link^ (dynext:link:unit)]
-	  [dfile : dynext:file^ (dynext:file:unit)]
-	  [option : compiler:options^ (compiler:options:unit)]
-	  [compiler : compiler^ (compiler:unit
+    (link [launcher : launcher-maker^ (launcher@ dcompile dlink)]
+	  [dcompile : dynext:compile^ (dynext:compile@)]
+	  [dlink : dynext:link^ (dynext:link@)]
+	  [dfile : dynext:file^ (dynext:file@)]
+	  [option : compiler:option^ (compiler:option@)]
+	  [compiler : compiler^ (compiler@
 				 option
 				 dcompile
 				 dlink
 				 dfile)]
-	  [setup : () (setup:unit
+	  [setup : () (setup@
 		       SOPTION
 		       compiler
 		       option

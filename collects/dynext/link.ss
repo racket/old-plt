@@ -6,6 +6,6 @@
   (import "link-unit.ss")
 
   (define-values/invoke-unit/sig dynext:link^
-    dynext:link:unit)
+    dynext:link@)
 
   (export-signature-elements dynext:link^))

@@ -156,6 +156,11 @@
 
 (err/rt-test (parse-command-line "test" #() null (lambda (x y) null) null) exn:user?)
 
+(test (void) 'cmdline (command-line "something" #("-ab")
+				    (once-each
+				     [("-a") "ok" 5]
+				     [("-b" "--more") "Help" 7])))
+
 (syntax-test #'(command-line))
 (syntax-test #'(command-line "hello"))
 (syntax-test #'(command-line 'hello #("ok")))

@@ -23,12 +23,12 @@
   (import (lib "compile.ss")) ; gets compile-file
   (import (lib "get-info.ss" "setup"))
 
-  (export compiler:unit)
+  (export compiler@)
 
-  ;;;;;;;;;; ----- The main compiler unit ------ ;;;;;;;;;;
-  (define compiler:unit
+  ;; ;;;;;;;; ----- The main compiler unit ------ ;;;;;;;;;;
+  (define compiler@
     (unit/sig compiler^
-      (import compiler:options^
+      (import compiler:option^
 	      dynext:compile^
 	      dynext:link^
 	      dynext:file^)
@@ -40,7 +40,7 @@
 					    (use-mrspidey-for-units))
 					"spidey-unit.ss"
 					"nospidey-unit.ss")
-				   'spidey-compiler:unit))]
+				   'spidey-compiler@))]
 	      [init (unit/sig ()
 		      (import compiler:inner^)
 		      (eval-compile-prefix prefix)
@@ -56,17 +56,17 @@
 	    (import (COMPILE : dynext:compile^)
 		    (LINK : dynext:link^)
 		    (DFILE : dynext:file^)
-		    (OPTIONS : compiler:options^))
+		    (OPTION : compiler:option^))
 	    (link [COMPILER : compiler:inner^ (u COMPILE
 						 LINK
 						 DFILE
-						 OPTIONS)] 
+						 OPTION)] 
 		  [INIT : () (init COMPILER)])
 	    (export))
 	   dynext:compile^
 	   dynext:link^
 	   dynext:file^
-	   compiler:options^)))
+	   compiler:option^)))
 
       (define (make-compiler mode) 
 	(lambda (prefix)
@@ -99,7 +99,7 @@
 	(make-unprefixed-compiler 'compile-c-extension-part))
 
       (define (link/glue-extension-parts link? source-files destination-directory)
-	(let ([u (dynamic-import '(lib "ldr.ss" "compiler") 'ld:unit)]
+	(let ([u (dynamic-import '(lib "ld-unit.ss" "compiler") 'ld@)]
 	      [init (unit/sig ()
 		      (import compiler:linker^)
 		      (if link?
@@ -110,17 +110,17 @@
 		     (import (COMPILE : dynext:compile^)
 			     (LINK : dynext:link^)
 			     (DFILE : dynext:file^)
-			     (OPTIONS : compiler:options^))
+			     (OPTION : compiler:option^))
 		     (link [LINKER : compiler:linker^ (u COMPILE 
 							 LINK
 							 DFILE
-							 OPTIONS)]
+							 OPTION)]
 			   [INIT : () (init LINKER)])
 		     (export))
 		    dynext:compile^
 		    dynext:link^
 		    dynext:file^
-		    compiler:options^)])
+		    compiler:option^)])
 	    (f source-files destination-directory))))
 
       (define (link-extension-parts source-files destination-directory)
@@ -151,8 +151,8 @@
 	     source-files file-bases))))
 
       (define (compile-collection cp zos?)
-	(let ([make (dynamic-import '(lib "make-unit.ss" "make") 'make:unit)]
-	      [coll (dynamic-import '(lib "collection-unit.ss" "make") 'make:collection:unit)]
+	(let ([make (dynamic-import '(lib "make-unit.ss" "make") 'make@)]
+	      [coll (dynamic-import '(lib "collection-unit.ss" "make") 'make:collection@)]
 	      [init (unit/sig ()
 		      (import make:collection^)
 		      make-collection)])
@@ -160,17 +160,17 @@
 		 (invoke-unit/sig
 		  (compound-unit/sig
 		   (import (DFILE : dynext:file^)
-			   (OPTIONS : compiler:options^)
+			   (OPTION : compiler:option^)
 			   (COMPILER : compiler^))
 		   (link [MAKE : make^ (make)]
 			 [COLL : make:collection^ (coll MAKE
 							DFILE
-							OPTIONS
+							OPTION
 							COMPILER)]
 			 [INIT : () (init COLL)])
 		   (export))
 		  dynext:file^
-		  compiler:options^
+		  compiler:option^
 		  compiler^)])
 	    (let ([dir (apply collection-path cp)]
 		  [orig (current-directory)]

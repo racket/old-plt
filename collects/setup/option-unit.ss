@@ -4,9 +4,9 @@
 
   (import "sig.ss")
 
-  (export setup:option:unit)
+  (export setup:option@)
 
-  (define setup:option:unit
+  (define setup:option@
     (unit/sig setup-option^
       (import)
 

@@ -5,9 +5,9 @@
 
   (import "file-sig.ss")
 
-  (export dynext:file:unit)
+  (export dynext:file@)
 
-  (define dynext:file:unit
+  (define dynext:file@
     (unit/sig dynext:file^
       (import)
 

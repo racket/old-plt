@@ -6,7 +6,7 @@
   (import "option-unit.ss")
 
   (define-values/invoke-unit/sig
-    compiler:options^
-    compiler:options:unit)
+    compiler:option^
+    compiler:option@)
 
-  (export-signature-elements compiler:options^))
+  (export-signature-elements compiler:option^))

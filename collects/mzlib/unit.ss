@@ -236,17 +236,27 @@
 						[var 
 						 (set!-expander
 						  (lambda (sstx)
-						    (syntax-case sstx (set!)
-						      [vr (identifier? (syntax vr))
-							  (syntax (unbox loc))]
-						      [(set! vr val)
-						       (raise-syntax-error
-							'unit
-							"cannot set! imported or exported variables"
-							sstx)]
-						      [(vr . args) (syntax ((unbox loc) . args))])))])))
-					   (syntax->list (syntax ((ivar iloc) ... 
-									      (expname eloc) ...))))]
+						    ;; Avoiding syntax-case and other complex macros
+						    ;; here is a useful optimization, because
+						    ;; the expression below is expanded for every
+						    ;; imported and exported identifier.
+						    (cond
+						     [(identifier? sstx) (quote-syntax (unbox loc))]
+						     [(module-identifier=? 
+						       (quote-syntax set!)
+						       (car (syntax-e sstx)))
+						      (raise-syntax-error
+						       'unit
+						       "cannot set! imported or exported variables"
+						       sstx)]
+						     [else
+						      (datum->syntax
+						       (cons (quote-syntax (unbox loc))
+							     (cdr (syntax-e sstx)))
+						       sstx
+						       (quote-syntax here))])))])))
+					   (syntax->list 
+					    (syntax ((ivar iloc) ... (expname eloc) ...))))]
 					 [num-imports (datum->syntax 
 						       (length (syntax->list (syntax (iloc ...))))
 						       #f (quote-syntax here))])

@@ -10,14 +10,14 @@
   (import (lib "sig.ss" "compiler")
 	  (lib "file-sig.ss" "dynext"))
 
-  (export make:collection:unit)
+  (export make:collection@)
 
-  (define make:collection:unit
+  (define make:collection@
     (unit/sig
 	make:collection^
       (import make^
 	      dynext:file^
-	      (compiler:option : compiler:options^)
+	      (compiler:option : compiler:option^)
 	      compiler^)
 
       (define (make-collection

@@ -7,9 +7,9 @@
 
   (import "launcher-sig.ss")
 
-  (export launcher:unit)
+  (export launcher@)
 
-  (define launcher:unit
+  (define launcher@
     (unit/sig launcher-maker^
       (import [c : dynext:compile^]
 	      [l : dynext:link^])

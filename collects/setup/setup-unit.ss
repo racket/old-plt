@@ -16,13 +16,13 @@
   (import (lib "inflate.ss"))
   (import (lib "base64.ss" "net"))
 
-  (export setup:unit)
+  (export setup@)
 
-  (define setup:unit
+  (define setup@
     (unit/sig ()
       (import setup-option^
 	      compiler^
-	      (compiler:option : compiler:options^)
+	      (compiler:option : compiler:option^)
 	      launcher-maker^)
       
       (define plthome
@@ -417,7 +417,7 @@
 		(lambda ()
 		  (unless printed?
 		    (set! printed? #t)
-		    (setup-printf "Deleting files for ~a." (cc-name cc))))])
+		    (setup-printf "Deleting files for ~a at ~a" (cc-name cc) (cc-path cc))))])
 	  (for-each (lambda (path)
 		      (let ([full-path (build-path (cc-path cc) path)])
 			(cond

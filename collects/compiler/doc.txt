@@ -166,65 +166,65 @@ libray _option.ss_.  (This library is automatically loaded by
 compile.ss, but it can also be loaded earlier.) Options are set by
 the following parameters:
 
-> compiler:option:verbose - #t causes the compiler to print
+> verbose - #t causes the compiler to print
      verbose messages about its operations.  Default = #f.
 
-> compiler:option:setup-prefix - a string to embed in public names.
+> setup-prefix - a string to embed in public names.
      This is used mainly for compiling extensions with the collection
      name so that cross-extension conflicts are less likely in
      architectures that expose the public names of loaded extensions.
      Note that `compile-collection' handles prefixing automatically
      (by setting this option).  Default = "".
 
-> compiler:option:clean-intermediate-files - #t keeps intermediate
+> clean-intermediate-files - #t keeps intermediate
      .c/.o files.  Default = #f.
 
-> compiler:option:compile-subcollections - #t uses info.ss's
+> compile-subcollections - #t uses info.ss's
      'compile-subcollections for compiling collections. Default = #t.
 
-> compiler:option:compile-for-embedded - #t creates .c files and
+> compile-for-embedded - #t creates .c files and
      object files to be linked directly with an embedded MzScheme
      run-time system, instead of .c files and object files to
      be dynamically loaded into MzScheme as an extension.
      Default = #f.
 
-> compiler:option:propagate-constants - #t improves the code by
+> propagate-constants - #t improves the code by
      propogating constants.  Default = #t.
 
-> compiler:option:assume-primitives - #t equates X with #%X when
+> assume-primitives - #t equates X with #%X when
      #%X exists.  This is useful only with non-unitized code.
      Default = #f.
 
-> compiler:option:stupid - Allow obvious non-syntactic errors; e.g.:
+> stupid - Allow obvious non-syntactic errors; e.g.:
     ((lambda () 0) 1 2 3).  Default = #f.
 
-> compiler:option:vehicles - Controls how closures are compiled.  The
+> vehicles - Controls how closures are compiled.  The
     possible values are: 'vehicles:automatic - auto-groups
                          'vehicles:functions - groups by procedue
                          'vechicles:units - groups by unit
                          'vehicles:monolithic - groups randomly
     Default = 'vehicles:automatic.
 
-> compiler:option:vehicles:monoliths - Sets the number of random
+> vehicles:monoliths - Sets the number of random
     groups for 'vehicles:monolithic.
 
-> compiler:option:seed - Sets the randomizer seed for
+> seed - Sets the randomizer seed for
     'vehicles:monolithic.
 
-> compiler:option:max-exprs-per-top-level-set - Sets the number of
+> max-exprs-per-top-level-set - Sets the number of
     top-level Scheme expressions crammed into one C function.  Default
     = 25.
 
-> compiler:option:unpack-environments - #f might help for
+> unpack-environments - #f might help for
     register-poor architectures.  Default = #t.
 
-> compiler:option:debug - #t creates debug.txt debugging file.  Default
+> debug - #t creates debug.txt debugging file.  Default
     = #f.
 
-> compiler:option:test - #t ignores top-level expressions with syntax
+> test - #t ignores top-level expressions with syntax
    errors.  Default = #f.
 
-> compiler:option:zo-compiler-flags - a list of symbol flags for compiling
+> zo-compiler-flags - a list of symbol flags for compiling
    .zo files. Default = '(strip-macro-definitions ignore-require-library).
 
 More options are defined by the compile.ss and link.ss libraries in
@@ -232,10 +232,9 @@ the `dynext' collection . Those options control the actual C compiler
 and linker that are used. See doc.txt in the `dynext' collection for
 more information about those options.
 
-The _optionr.ss_ library is a unit/sig matching the signature
+The _option-unit.ss_ library is a unit/sig matching the signature
 >    compiler:option^
-which contains these options.  (The unitized option names do not have
-the `compiler:option:' prefix.) The _sig.ss_ library defines the
+which contains these options. The _sig.ss_ library defines the
 `compiler:option^' signature.
 
 ---------------------------------------------------------------------------
@@ -251,13 +250,7 @@ _sig.ss_ library.
 
 The compiler.ss signed unit requires the following imports:
 
-   compiler:option^ - from optionr.ss or option.ss (the latter
-                      uses a `compiler:option:' prefix)
-   mzlib:function^
-   mzlib:pretty-print^
-   mzlib:file^
-   mzlib:compile^
-   setup:get-info^ - from the `setup' collection
+   compiler:option^ - From sig.ss
    dynext:compile^ - From the `dynext' collection
    dynext:link^
    dynext:file^

@@ -6,7 +6,7 @@
   (import "compile-unit.ss")
 
   (define-values/invoke-unit/sig dynext:compile^
-    dynext:compile:unit)
+    dynext:compile@)
 
   (export-signature-elements dynext:compile^))
 

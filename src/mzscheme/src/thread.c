@@ -4843,6 +4843,7 @@ static int syncing_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 	    syncing->disable_break->suspend_break++;
 	  if (syncing->reposts && syncing->reposts[i])
 	    scheme_post_sema(o);
+	  scheme_post_syncing_nacks(syncing);
 	  result = 1;
 	  goto set_sleep_end_and_return;
 	} else {
@@ -4984,24 +4985,27 @@ Scheme_Object *scheme_make_evt_set(int argc, Scheme_Object **argv)
   return (Scheme_Object *)make_evt_set("internal-make-evt-set", argc, argv, 0);
 }
 
-static void post_syncing_nacks(Syncing *syncing)
+void scheme_post_syncing_nacks(Syncing *syncing)
      /* Also removes channel-syncers */
 {
   int i, c;
   Scheme_Object *l;
 
-  c = syncing->set->argc;
-  
-  for (i = 0; i < c; i++) {
-    if (SAME_TYPE(SCHEME_TYPE(syncing->set->argv[i]), scheme_channel_syncer_type))
-      scheme_get_outof_line((Scheme_Channel_Syncer *)syncing->set->argv[i]);
-    if (syncing->nackss) {
-      if ((i + 1) != syncing->result) {
-	l = syncing->nackss[i];
-	if (l) {
-	  for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-	    scheme_post_sema_all(SCHEME_CAR(l));
+  if (syncing->set) {
+    c = syncing->set->argc;
+    
+    for (i = 0; i < c; i++) {
+      if (SAME_TYPE(SCHEME_TYPE(syncing->set->argv[i]), scheme_channel_syncer_type))
+	scheme_get_outof_line((Scheme_Channel_Syncer *)syncing->set->argv[i]);
+      if (syncing->nackss) {
+	if ((i + 1) != syncing->result) {
+	  l = syncing->nackss[i];
+	  if (l) {
+	    for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	      scheme_post_sema_all(SCHEME_CAR(l));
+	    }
 	  }
+	  syncing->nackss[i] = NULL;
 	}
       }
     }
@@ -5100,12 +5104,13 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
     syncing->disable_break = scheme_current_thread;
   }
 
-  BEGIN_ESCAPEABLE(post_syncing_nacks, syncing);
+  BEGIN_ESCAPEABLE(scheme_post_syncing_nacks, syncing);
   scheme_block_until((Scheme_Ready_Fun)syncing_ready, syncing_needs_wakeup, 
 		     (Scheme_Object *)syncing, timeout);
   END_ESCAPEABLE();
 
-  post_syncing_nacks(syncing);
+  if (!syncing->result)
+    scheme_post_syncing_nacks(syncing);
 
   if (with_break) {
     scheme_pop_break_enable(&cframe, 0);

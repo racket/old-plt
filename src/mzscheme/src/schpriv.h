@@ -964,6 +964,7 @@ Scheme_Object *scheme_poll_evt(int argc, Scheme_Object *argv[]);
 extern Scheme_Object *scheme_always_ready_evt;
 
 void scheme_get_outof_line(Scheme_Channel_Syncer *ch_w);
+void scheme_post_syncing_nacks(Syncing *syncing);
 
 /*========================================================================*/
 /*                                 numbers                                */

@@ -410,6 +410,21 @@
 	   (choice-evt (make-semaphore) (make-semaphore)))))
   (test (void) sync/timeout 0 v))
 
+(let ([ch (make-channel)]
+      [n #f])
+  (let ([t (thread
+	    (lambda ()
+	      (sync
+	       (nack-guard-evt
+		(lambda (nack)
+		  (set! n nack)
+		  never-evt))
+	       (channel-put-evt ch 10))))])
+    (sleep)
+    (test 10 channel-get ch)
+    (test (void) sync/timeout 0 n)))
+	       
+
 ;; ----------------------------------------
 ;; Poll waitables
 

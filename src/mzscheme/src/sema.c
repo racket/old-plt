@@ -241,6 +241,7 @@ void scheme_post_sema(Scheme_Object *o)
 	  w->syncing->result = w->syncing_i + 1;
 	  if (w->syncing->disable_break)
 	    w->syncing->disable_break->suspend_break++;
+	  scheme_post_syncing_nacks(w->syncing);
 	  if (!w->syncing->reposts || !w->syncing->reposts[w->syncing_i]) {
 	    t->value -= 1;
 	    consumed = 1;
@@ -445,12 +446,14 @@ static int try_channel(Scheme_Sema *sema, Syncing *syncing, int pos, Scheme_Obje
 	  w->syncing->result = w->syncing_i + 1;
 	  if (w->syncing->disable_break)
 	    w->syncing->disable_break->suspend_break++;
+	  scheme_post_syncing_nacks(w->syncing);
 	  if (result)
 	    *result = chp->val;
 	  if (syncing && (pos >= 0)) {
 	    syncing->result = pos + 1;
 	    if (syncing->disable_break)
 	      syncing->disable_break->suspend_break++;
+	    scheme_post_syncing_nacks(syncing);
 	    syncing->set->argv[pos] = chp->val;
 	  }
 	  picked = 1;
@@ -484,10 +487,12 @@ static int try_channel(Scheme_Sema *sema, Syncing *syncing, int pos, Scheme_Obje
 	  w->syncing->result = w->syncing_i + 1;
 	  if (w->syncing->disable_break)
 	    w->syncing->disable_break->suspend_break++;
+	  scheme_post_syncing_nacks(w->syncing);
 	  if (syncing && (pos >= 0)) {
 	    syncing->result = pos + 1;
 	    if (syncing->disable_break)
 	      syncing->disable_break->suspend_break++;
+	    scheme_post_syncing_nacks(syncing);
 	  }
 	  picked = 1;
 	  scheme_weak_resume_thread(w->p);

@@ -2895,8 +2895,11 @@ local_get_shadower(int argc, Scheme_Object *argv[])
   }
 
   if (!uid) {
-    /* No lexical shadower, but strip module context in sym, if any. */
-    return scheme_stx_strip_module_context(sym);
+    /* No lexical shadower, but strip module context and mark barriers, if any. */
+    sym = scheme_stx_strip_module_context(sym);
+    /* Add current module context, if any. */
+    sym = local_module_introduce(1, &sym);
+    return sym;
   }
 
   {

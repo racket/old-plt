@@ -16,8 +16,6 @@
 (define non-empty-names 
   (apply append (map car (filter (compose not empty-name?) html-spec))))
 
-(define names (append empty-names non-empty-names))
-
 ;; generate-structs : -> Void
 (define (generate-structs)
   (let ([file (build-path (collection-path "html") "html-structs.ss")])
@@ -51,11 +49,16 @@
             (cond
               [(element? x)
                (cons (case (element-name x)
-                       ,@(map (lambda (name)
-                                `[(,name) (,(string->symbol (string-append "make-" (symbol->string name)))
-                                           (element-attributes x)
-                                           (xml-contents->html (element-content x)))])
-                              names))
+                       ,@(append
+                          (map (lambda (name)
+                                 `[(,name) (,(string->symbol (string-append "make-" (symbol->string name)))
+                                            (element-attributes x))])
+                               empty-names)
+                          (map (lambda (name)
+                                 `[(,name) (,(string->symbol (string-append "make-" (symbol->string name)))
+                                            (element-attributes x)
+                                            (xml-contents->html (element-content x)))])
+                               non-empty-names)))
                      acc)]
               [(or (pcdata? x) (entity? x)) (cons x acc)]
               [else acc]))

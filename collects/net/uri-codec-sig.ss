@@ -8,4 +8,5 @@
      form-urlencoded-encode
      form-urlencoded-decode
      alist->form-urlencoded
-     form-urlencoded->alist)))
+     form-urlencoded->alist
+     current-alist-separator-mode)))

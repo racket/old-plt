@@ -208,8 +208,9 @@
       ;; http://www.w3.org/TR/html401/appendix/notes.html#ampersands-in-uris
       ;; listof (cons symbol string) -> string
       (define alist->form-urlencoded
-        (opt-lambda (args [mode 'semi])
-          (let* ([format-one
+        (opt-lambda (args)
+          (let* ([mode (current-alist-separator-mode)]
+		 [format-one
                   (lambda (arg)
                     (let* ([name (car arg)]
                            [value (cdr arg)])
@@ -222,20 +223,20 @@
                            [(null? args) null]
                            [(null? (cdr args)) (list (format-one (car args)))]
                            [else (list* (format-one (car args))
-                                        (if (eq? mode 'semi)
-					    ";"
-					    "&")
+                                        (if (eq? mode 'amp)
+					    "&"
+					    ";")
                                         (loop (cdr args)))]))])
             (apply string-append strs))))
 
       ;; string -> listof (cons string string)  
       ;; http://www.w3.org/TR/html401/appendix/notes.html#ampersands-in-uris
       (define form-urlencoded->alist
-	(opt-lambda (str [mode 'both])
+	(opt-lambda (str)
 	  (define key-regexp (regexp "[^=]*"))
-	  (define value-regexp (case mode
+	  (define value-regexp (case (current-alist-separator-mode)
 				 [(semi) (regexp "[^;]*")]
-				 [(ampm) (regexp "[^&]*")]
+				 [(amp) (regexp "[^&]*")]
 				 [else (regexp "[^&;]*")]))
 	  (define (next-key str start)
 	    (if (>= start (string-length str))
@@ -274,6 +275,14 @@
 		[#(pair next-start)
 		 (loop next-start end (lambda (x) (make-alist (cons pair x))))]
 		[#f (make-alist '())])]))))
+
+      (define current-alist-separator-mode
+	(make-parameter 'amp-or-semi (lambda (s)
+				       (unless (memq s '(amp semi amp-or-semi))
+					 (raise-type-error 'current-alist-separator-mode
+							   "'amp, 'semi, or 'amp-or-semi"
+							   s))
+				       s)))
 
       ))
   )

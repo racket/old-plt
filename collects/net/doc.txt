@@ -40,8 +40,8 @@ TYPES ----------------------------------------------------------------
 
   The basic structure for all URLs.
 
-  http://sk@www.cs.brown.edu:80/cgi-bin/finger;xyz?name=shriram&host=nw#top
-    1     2      3           4    5            6       7                8
+  http://sky@www.cs.brown.edu:801/cgi-bin/finger;xyz?name=shriram;host=nw#top
+  {-1}   {2} {----3---------} {4}{---5---------} {6} {----7-------------} {8}
 
   1 = scheme, 2 = user, 3 = host, 4 = port,
   5 = path,  6 = param, 7 = query, 8 = fragment
@@ -56,11 +56,15 @@ TYPES ----------------------------------------------------------------
   an instance of the path/param struct. Otherwise, it is
   just represented as a string.
 
-  The strings inside the fields user, path, query, and
-  fragment are represented directly as Scheme strings, ie
-  there is no url-syntax-specific quoting in there. The
-  procedures string->url and url->string take to translate
-  things like %20 into spaces and back again.
+  The strings inside the fields user, path, query, and fragment are
+  represented directly as Scheme strings, ie without
+  url-syntax-specific quoting. The procedures `string->url' and
+  `url->string' translate things like %20 into spaces and back again.
+
+  By default, query associations are parsed with either ";" or "&" as
+  a separator, and they are generated with ";" as a separtor. The
+  `current-alist-separator-mode' parameter for "uri-codec.ss" adjusts
+  this default.
 
   An empty string at the end of the list of paths
   corresponds to a url that ends in a slash. For example,
@@ -94,8 +98,10 @@ PROCEDURES -----------------------------------------------------------
 
 > (string->url string) -> url
 
-  Parses the url specified by the string into a url struct.
-  string->url uses form-urlencoded->alist when parsing the query.
+  Parses the url specified by the string into a url struct. The
+  `string->url' procedure uses `form-urlencoded->alist' when parsing
+  the query, so it is sensitive to the `current-alist-separator-mode'
+  parameter for determining the association separtor.
 
 > (combine-url/relative url string) -> url
 
@@ -149,7 +155,13 @@ PROCEDURES -----------------------------------------------------------
 > (url->string url) -> string
 
   Generates a string corresponding to the contents of the url struct.
-  url->string uses alist->form-urlencoded when formatting the query.
+
+  The `url->string' procedure uses `alist->form-urlencoded' when
+  formatting the query, so it it sensitive to the
+  `current-alist-separator-mode' parameter for determining the
+  association separtor. In particular, the default is to separate
+  associations with ";" (based on modern recommendations) instead of
+  "&".
 
 > (decode-some-url-parts url) -> url
 
@@ -2194,8 +2206,8 @@ PROCEDURES -----------------------------------------------------------
   Decode a string encoded using the application/x-www-form-urlencoded
   encoding rules.
 
-> (alist->form-urlencoded alist [separator-mode-sym])
-  : alist [symbol] -> String
+> (alist->form-urlencoded alist)
+  : alist -> String
 
   Encode an alist of key/value pairs using the
   application/x-www-form-urlencoded encoding rules.
@@ -2213,3 +2225,29 @@ PROCEDURES -----------------------------------------------------------
 
   The `separator-mode-sym' argument must be either 'amp, 'semi, or
   'both to select the separator. The default is 'both.
+
+> (current-alist-separator-mode)
+> (current-alist-separator-mode mode-sym)
+
+  A parameter that determines the separator used/recognized between
+  alist pairs in `form-urlencoded->alist', `alist->form-urlencoded',
+  `url->string', and `string->url'. The possible mode symbols are
+  'amp, 'semi, and 'amp-or-semi.
+
+  The default value is 'amp-or-semi, which means that both "&" and ";"
+  are treated as separators when parsing, and ";" is used as a
+  separator when encoding. The other modes use/recognize only of the
+  separators.
+
+  Exmaples for '((name . "shriram") (host "nw")):
+
+    Mode                     Parse                    Generate
+   ------             --------------------      --------------------
+
+   'amp               name=shriram&host=nw      name=shriram&host=nw
+
+   'semi              name=shriram;host=nw      name=shriram;host=nw
+
+   'amp-or-semi       name=shriram&host=nw      name=shriram;host=nw
+                               or
+                      name=shriram;host=nw

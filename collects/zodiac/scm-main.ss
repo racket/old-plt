@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.178 1999/03/15 14:43:42 mflatt Exp $
+; $Id: scm-main.ss,v 1.179 1999/03/15 14:48:27 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1664,7 +1664,7 @@
 		     (body (pat:pexpand body p-env kwd))
 		     (pzs (map generate-name params))
 		     (saves (map generate-name params))
-		     (swap (generate-name)))
+		     (swap (generate-name (structurize-syntax 'swap expr '(-1)))))
 		(expand-expr
 		 (structurize-syntax
 		  (if (null? params)

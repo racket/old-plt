@@ -296,19 +296,19 @@
 				    [(macintosh) (string-append "New" tab "Cmd+N")]
 				    [else "&New"])]
 
-	    [file-menu:revert (lambda () (void))]
+	    [file-menu:revert #f]
 	    [file-menu:revert-string (case wx:platform
 				       [(windows) "&Revert"]
 				       [(macintosh) "Revert"]
 				       [else "&Revert"])]
 
-	    [file-menu:save (lambda () (void))]
+	    [file-menu:save #f]
 	    [file-menu:save-string (case wx:platform
 				     [(windows) "&Save"]
 				     [(macintosh) (string-append "Save" tab "Cmd+S")]
 				     [else (string-append "&Save" tab "Ctl+x Ctl+s")])]
 
-	    [file-menu:save-as (lambda () (void))]
+	    [file-menu:save-as #f]
 	    [file-menu:save-as-string (case wx:platform
 					[(windows) "Save &As..."]
 					[else "Save &As..."])]
@@ -319,7 +319,7 @@
 				      [(macintosh) (string-append "Print..." tab "Cmd+P")]
 				      [else "&Print..."])]
 
-	    [file-menu:close (lambda () (void))]
+	    [file-menu:close #f]
 	    [file-menu:close-string (case wx:platform
 				     [(windows) "&Close"]
 				     [(macintosh) (string-append "Close" tab "Cmd+W")]
@@ -342,11 +342,11 @@
 				     [(macintosh) "Redo"]
 				     [else "&Redo"])]
 
-	    [edit-menu:clear (lambda () (void))]
-	    [edit-menu:clear-string (case wx:platform
-				     [(windows) "&Delete"]
-				     [(macintosh) "Clear"]
-				     [else (string-append "Clear" tab "Del")])]
+	    [edit-menu:cut (lambda () (void))]
+	    [edit-menu:cut-string (case wx:platform
+				     [(windows) "Cu&t"]
+				     [(macintosh) (string-append "Cut" tab "Cmd+X")]
+				     [else (string-append "Cu&t" tab "Ctl+w")])]
 
 	    [edit-menu:copy (lambda () (void))]
 	    [edit-menu:copy-string (case wx:platform
@@ -354,11 +354,7 @@
 				     [(macintosh) (string-append "Copy" tab "Cmd+C")]
 				     [else (string-append "&Copy" tab "Alt+w")])]
 
-	    [edit-menu:cut (lambda () (void))]
-	    [edit-menu:cut-string (case wx:platform
-				     [(windows) "Cu&t"]
-				     [(macintosh) (string-append "Cut" tab "Cmd+X")]
-				     [else (string-append "Cu&t" tab "Ctl+w")])]
+	    [edit-menu:between-copy-and-paste (lambda (edit-menu) (void))]
 
 	    [edit-menu:paste (lambda () (void))]
 	    [edit-menu:paste-string (case wx:platform
@@ -366,13 +362,19 @@
 				     [(macintosh) (string-append "Paste" tab "Cmd+V")]
 				     [else (string-append "&Paste" tab "Ctl+y")])]
 
-	    [edit-menu:select-all (lambda () (void))]
+	    [edit-menu:clear (lambda () (void))]
+	    [edit-menu:clear-string (case wx:platform
+				     [(windows) "&Delete"]
+				     [(macintosh) "Clear"]
+				     [else (string-append "Clear" tab "Del")])]
+
+	    [edit-menu:select-all #f]
 	    [edit-menu:select-all-string (case wx:platform
 					   [(windows) "Select A&ll"]
 					   [(macintosh) (string-append "Select All" tab "Cmd+A")]
 					   [else "Select A&ll"])]
 
-	    [edit-menu:before-preferences
+	    [edit-menu:between-select-all-and-preferences
 	     (lambda (edit-menu)
 	       (send edit-menu append-separator))]
 	    [edit-menu:preferences mred:preferences:show-preferences-dialog]
@@ -408,10 +410,11 @@
 		 (send edit-menu append-separator)
 		 (send edit-menu append-item edit-menu:cut-string edit-menu:cut)
 		 (send edit-menu append-item edit-menu:copy-string edit-menu:copy)
+		 (edit-menu:between-copy-and-paste edit-menu)
 		 (send edit-menu append-item edit-menu:paste-string edit-menu:paste)
 		 (send edit-menu append-item edit-menu:clear-string edit-menu:clear)
 		 (send edit-menu append-item edit-menu:select-all-string edit-menu:select-all)
-		 (edit-menu:before-preferences edit-menu)
+		 (edit-menu:between-select-all-and-preferences edit-menu)
 		 (when edit-menu:preferences
 		   (send edit-menu append-item edit-menu:preferences-string edit-menu:preferences))
 		 (edit-menu:after-std-items edit-menu)

@@ -3350,8 +3350,6 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
     scheme_gc_ptr_ok(methodArguments.rgvarg);
   }  
   
-puts("7");
-
   if (invKind == INVOKE_PROPERTYPUT) {
     return scheme_void;
   }

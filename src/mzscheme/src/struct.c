@@ -1164,7 +1164,8 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
 {
   Scheme_Structure *s;
   Scheme_Struct_Type *stype;
-  Scheme_Object *v, **array, *name;
+  Scheme_Object *v, *name;
+  GC_CAN_IGNORE Scheme_Object **array;
   int i, m, p, n, last_is_unknown;
 
   if (!unknown_val)
@@ -1198,7 +1199,8 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
  
   name = TYPE_NAME((char *)SCHEME_STRUCT_NAME_SYM(s), -1);
 
-  /* Precise GC >>> BEWARE <<<, array is not GC_aligned. */
+  /* Precise GC >>> BEWARE <<<, array is not GC_aligned,
+     and is therefore marked with GC_CAN_IGNORE. */
 
   v = scheme_make_vector(m + 1, NULL);
   array = SCHEME_VEC_ELS(v);

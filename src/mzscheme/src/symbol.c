@@ -80,7 +80,7 @@ extern long scheme_hash_primes[];
 
 /* Special hashing for symbols: */
 static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
-				    const char *key, unsigned int length,
+				    GC_CAN_IGNORE const char *key, unsigned int length,
 				    Scheme_Object *naya)
 {
   hash_v_t h, h2;

@@ -42,7 +42,7 @@
 	    (A ((HREF "/servlets/releaseinfo.ss")) "Release") ","
 	    ,(manual-entry "drscheme"
 			   "frequently asked questions"
-			   "FAQ")
+			   "FAQ") ","
 	    "...")))
     (UL
      (LI

@@ -27,7 +27,7 @@
 		 "Libraries")) 
 	   ": From PLT and contributors")
       (LI  (B (A ((HREF "resources/maillist.ss")) 
-		 "Mailing List")) ": How to subscribe"))
+		 "Mailing Lists")) ": How to subscribe"))
      (P)
      "Also, the Schemers.org Web site provides links for "
      "many Scheme resources, including books, implementations, "

@@ -250,7 +250,8 @@
 		       ((let/ec escape
 			  ;; Try to see if this is a link to missing documentation.
 			  ;; Many things can go wrong; give up if anything does...
-			  (with-handlers ([void void])
+			  (with-handlers ([(lambda (x) #t)
+					   (lambda (x) (void))])
 			    (let ([start (send (send (get-canvas) get-editor) get-url)])
 			      (when (or (not start)
 					(string=? "file" (url-scheme start)))

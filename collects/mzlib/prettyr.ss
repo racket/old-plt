@@ -30,8 +30,9 @@
 ;  pretty-print-columns - parameter for the default number of columns
 ;    initial setting: 79
 ;
-;  pretty-print-indentation - parameter for the number of spaces
-;    printed before each line; defaults to 0
+;  pretty-print-print-line - parameter of a procedure that prints
+;   to separate each line; 0 indicate before the first line, #f after the
+;   last line
 ;
 ;  pretty-print-depth - parameter for the default print depth
 ;    initial setting: #f (= infinity)
@@ -123,14 +124,16 @@
 				x))
 		       x)))
 
-   (define pretty-print-indentation
-     (make-parameter 0
+   (define pretty-print-print-line
+     (make-parameter (lambda (line port width)
+		       (if (or (and (not line) (number? width)) 
+			       (positive? line))
+			   (write-char #\newline port)))
 		     (lambda (x)
-		       (unless (and (integer? x)
-				    (>= 0))
+		       (unless (can-accept-n? 3 x)
 			       (raise-type-error 
-				'pretty-print-indentation
-				"non-negative integer"
+				'pretty-print-print-line
+				"procedure of 3 arguments"
 				x))
 		       x)))
 
@@ -139,23 +142,23 @@
        (letrec ([pretty-print
 		 (case-lambda 
 		  ([obj port width print-graph? print-struct? depth size-hook print-hook]
-		   (generic-write obj display?
-				  (if width width (pretty-print-columns))
-				  (let ([display (pretty-print-display-string-handler)])
-				    (lambda (s)
-				      (display s port)
-				      #t))
-				  (lambda (s l) 
-				    (print-hook s display? port)
-				    #t)
-				  print-graph? print-struct? depth
-				  (lambda (o display?)
-				    (size-hook o display? port))
-				  (if (number? width)
-				      (min (sub1 width)
-					   (pretty-print-indentation))
-				      (pretty-print-indentation)))
-		   (void))
+		   (let ([width (if width width (pretty-print-columns))])
+		     (generic-write obj display?
+				    width
+				    (let ([display (pretty-print-display-string-handler)])
+				      (lambda (s)
+					(display s port)
+					#t))
+				    (lambda (s l) 
+				      (print-hook s display? port)
+				      #t)
+				    print-graph? print-struct? depth
+				    (lambda (o display?)
+				      (size-hook o display? port))
+				    (let ([print-line (pretty-print-print-line)])
+				      (lambda (line)
+					(print-line line port width))))
+		     (void)))
 		  ([obj port width print-graph? print-struct? depth size-hook] 
 		   (pretty-print obj port width print-graph? print-struct? depth 
 				 size-hook (pretty-print-print-hook)))
@@ -178,7 +181,9 @@
 
    (define (generic-write obj display? width output output-hooked 
 			  print-graph? print-struct? 
-			  depth size-hook indentation)
+			  depth size-hook print-line)
+
+     (define line-number 0)
 
      (define table (make-hash-table)) ; Hash table for looking for loops
 
@@ -246,6 +251,7 @@
 			 (sub1 d)
 			 #f)))
 
+     (print-line 0)
 
      (let generic-write ([obj obj] [display? display?] 
 				   [width width] 
@@ -436,7 +442,11 @@
 	 (define (indent to col)
 	   (and col
 		(if (< to col)
-		    (and (out (make-string 1 #\newline) col) (spaces to 0))
+		    (and col
+			 (begin 
+			   (set! line-number (add1 line-number))
+			   (print-line line-number)
+			   (spaces to 0)))
 		    (spaces (- to col) col))))
 
 	 (define (pr obj col extra pp-pair depth)
@@ -650,12 +660,11 @@
 
 	 (pr obj col 0 pp-expr depth))
 
-       (let ([indentation (if (zero? indentation)
-			      0
-			      (out (make-string indentation #\space) 0))])
-	 (if (and width (not (eq? width 'infinity)))
-	     (out (make-string 1 #\newline) (pp obj indentation depth))
-	     (wr obj indentation depth)))))
+       (if (and width (not (eq? width 'infinity)))
+	   (pp obj 0 depth)
+	   (wr obj 0 depth)))
+
+     (print-line #f))
 
    (define pretty-print-handler
      (lambda (v)

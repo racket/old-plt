@@ -27,26 +27,20 @@
 		   [break-enabled #f])
       (thunk)))
   
-  ;; keymap stuff that now must be here
-;    (define setup-global-scheme-interaction-mode-keymap
-;      (lambda (keymap)
-;	(fw:keymap:set-keymap-error-handler keymap)
-;	(fw:keymap:set-keymap-implied-shifts keymap)
-	
-;	(send keymap chain-to-keymap (fw:keymap:get-global) #f)
-	
-;	(send keymap add-key-function "put-previous-sexp"
-;	      (lambda (edit event) 
-;		(send edit copy-prev-previous-expr)))
-;	(send keymap add-key-function "put-next-sexp"
-;	      (lambda (edit event) 
-;		(send edit copy-next-previous-expr)))
-	
-;	(fw:keymap:send-map-function-meta keymap "p" "put-previous-sexp")
-;	(fw:keymap:send-map-function-meta keymap "n" "put-next-sexp")))
+  (define setup-scheme-interaction-mode-keymap
+    (lambda (keymap)
+      (send keymap add-function "put-previous-sexp"
+	    (lambda (edit event) 
+	      (send edit copy-prev-previous-expr)))
+      (send keymap add-function "put-next-sexp"
+	    (lambda (edit event) 
+	      (send edit copy-next-previous-expr)))
 
-;    (define global-scheme-interaction-mode-keymap (make-object mred:keymap%))
-;    (setup-global-scheme-interaction-mode-keymap global-scheme-interaction-mode-keymap)
+      (fw:keymap:send-map-function-meta keymap "p" "put-previous-sexp")
+      (fw:keymap:send-map-function-meta keymap "n" "put-next-sexp")))
+
+  (define scheme-interaction-mode-keymap (make-object mred:keymap%))
+  (setup-scheme-interaction-mode-keymap scheme-interaction-mode-keymap)
 
   (define welcome-delta (make-object mred:style-delta% 'change-family 'decorative))
   (define click-delta (make-object mred:style-delta%))
@@ -360,6 +354,44 @@
 	  (send result-delta set-delta-foreground (make-object mred:color% 0 0 175))
 	  (send output-delta set-delta-foreground (make-object mred:color% 150 0 150)))
 
+	(private
+	  [io-collected-callback-queued? #f]
+	  [io-collected-thunks null]
+	  [io-collected-edits null]
+	  [io-semaphore #f]
+	  [run-io-collected-thunks
+	   (lambda ()
+
+	     ;; also need to start edit-sequence in any affected
+	     ;; transparent io boxes.
+	     (begin-edit-sequence)
+	     (for-each (lambda (t) (t)) (reverse io-collected-thunks))
+	     (end-edit-sequence)
+
+	     (set! io-collected-thunks null)
+	     (set! io-collected-edits null)
+	     (semaphore-post io-semaphore)
+	     (set! io-semaphore #f))]
+	  [wait-for-io-to-complete
+	   (lambda ()
+	     (when (and (thread? user-thread)
+			(thread-running? user-thread)
+			io-semaphore)
+	       (semaphore-wait io-semaphore)))]
+	  [queue-io
+	   (lambda (thunk)
+	     (let ([this-eventspace user-eventspace])
+	       (set! io-collected-thunks
+		     (cons
+		      (lambda ()
+			(when (eq? this-eventspace user-eventspace)
+			  (thunk)))
+		      io-collected-thunks)))
+		
+	     (unless io-semaphore
+	       (set! io-semaphore (make-semaphore 0))
+	       (mred:queue-callback run-io-collected-thunks)))])
+
 	(public
 	  [generic-write
 	   (lambda (edit s style-func)
@@ -379,24 +411,12 @@
 		     start
 		     #f)
 	       (let ([end (send edit last-position)])
-					;(send edit change-style null start end) ; wx
-		 (send edit set-prompt-position end)
-		 (style-func start end))
+		 ;(send edit change-style null start end) ; wx
+		 (style-func start end)
+		 (send edit set-prompt-position end))
 	       (send edit lock c-locked?)
 	       (send edit end-edit-sequence)))]
 	  [generic-close (lambda () (void))]
-	  
-	  [queue/skip-after-execute
-	   (lambda (thunk high-priority?)
-	     (let ([this-eventspace user-eventspace]
-		   [semaphore (make-semaphore 0)])
-	       (mred:queue-callback
-		(lambda ()
-		  (when (eq? this-eventspace user-eventspace)
-		    (thunk))
-		  (semaphore-post semaphore))
-		high-priority?)
-	       (semaphore-wait semaphore)))]
 	  
 	  [saved-newline? #f]
 
@@ -404,19 +424,19 @@
 	   (lambda (s)
 	     (system
 	      (lambda ()
-		(queue/skip-after-execute
+		(queue-io
 		 (lambda ()
+		   (cleanup-transparent-io)
 		   (generic-write this
 				  s
 				  (lambda (start end)
 				    (change-style result-delta
-						  start end))))
-		 #f))))]
+						  start end))))))))]
 	  [this-out-write
 	   (lambda (s)
 	     (system
 	      (lambda ()
-		(queue/skip-after-execute
+		(queue-io
 		 (lambda ()
 		   (init-transparent-io #f)
 		   (let* ([old-saved-newline? saved-newline?]
@@ -442,21 +462,19 @@
 					change-style output-delta start end)))))])
 		     (when old-saved-newline?
 		       (gw (string #\newline)))
-		     (gw s1)))
-		 #f))))]
+		     (gw s1)))))))]
 	  [this-err-write
 	   (lambda (s)
 	     (system
 	      (lambda ()
-		(queue/skip-after-execute
+		(queue-io
 		 (lambda ()
 		   (cleanup-transparent-io)
 		   (generic-write this
 				  s
 				  (lambda (start end)
 				    (change-style error-delta 
-						  start end))))
-		 #f))))]
+						  start end))))))))]
 	  
 	  [this-err (make-output-port this-err-write generic-close)]
 	  [this-out (make-output-port this-out-write generic-close)]
@@ -632,6 +650,7 @@
 	 (lambda ()
 	   (system
 	    (lambda ()
+	      (wait-for-io-to-complete)
 	      (mred:end-busy-cursor)
 	      (cleanup-transparent-io)
 	      (send (get-top-level-window) enable-evaluation)
@@ -1133,7 +1152,6 @@
 		 begin-edit-sequence
 		 end-edit-sequence
 		 run-after-edit-sequence
-		 ;styles-fixed?
 		 set-styles-fixed
 		 change-style split-snip
 		 scroll-to-position locked? lock
@@ -1149,12 +1167,17 @@
 	(private
 	  [edit-sequence-count 0])
 	(public
-	  [styles-fixed? #f]
 	  [orig-stdout (current-output-port)]
 	  [orig-stderr (current-error-port)])
 	(public
 	  [normal-delta #f])
 	
+	(rename [super-get-keymaps get-keymaps])
+	(override
+	 [get-keymaps
+	  (lambda ()
+	    (cons scheme-interaction-mode-keymap (super-get-keymaps)))])
+
 	(rename [super-on-insert on-insert]
 		[super-after-insert after-insert]
 		
@@ -1169,7 +1192,6 @@
 		
 		[super-after-set-position after-set-position])
 	(private
-
 	  ;; used to highlight the prompt that the caret is "in the range of".
 	  ;; not currently used at all.
 	  [find-which-previous-sexp
@@ -1186,13 +1208,12 @@
 					     (<= left y right))
 					(values left right)
 					(loop tl)))]))))]
-	  [on-something
-	   (opt-lambda (super start len [attend-to-styles-fixed? #f])
+	  [can-something
+	   (opt-lambda (super start len)
 	     (cond
 	       [(or resetting?
 		    (not (number? prompt-position))
-		    (>= start prompt-position)
-		    (and attend-to-styles-fixed? styles-fixed?))
+		    (>= start prompt-position))
 		(super start len)]
 	       [else #f]))]
 	  [after-something
@@ -1204,15 +1225,15 @@
 	  [resetting? #f]
 	  [set-resetting (lambda (v) (set! resetting? v))])
 	(override
-	  [on-insert
+	  [can-insert?
 	   (lambda (start len)
-	     (on-something super-on-insert start len))]
-	  [on-delete
+	     (can-something super-on-insert start len))]
+	  [can-delete?
 	   (lambda (start len)
-	     (on-something super-on-delete start len))]
-	  [on-change-style
+	     (can-something super-on-delete start len))]
+	  [can-change-style?
 	   (lambda (start len)
-	     (on-something super-on-change-style start len #t))]
+	     (can-something super-on-change-style start len))]
 	  [after-insert
 	   (lambda (start len)
 	     (after-something + start len)

@@ -89,8 +89,7 @@
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
 			ConfigurationType="4"
-			CharacterSet="2"
-			WholeProgramOptimization="TRUE">
+			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
@@ -105,7 +104,6 @@
 				BufferSecurityCheck="FALSE"
 				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="0"
-				ObjectFile=""
 				ProgramDataBaseFileName=""
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"

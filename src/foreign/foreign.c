@@ -345,7 +345,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
   long ulen;
   mzchar *res;
   int end;
-  for (end=0; utf[end] != 0; end++) /**/ ;
+  for (end=0; utf[end] != 0; end++) { /**/ }
   res = scheme_utf16_to_ucs4(utf, 0, end, NULL, -1, &ulen, 0);
   return scheme_make_sized_char_string(res, ulen, 0);
 }
@@ -1047,19 +1047,19 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
     case FOREIGN_void:
       scheme_wrong_type("Scheme->C", "non-void-C-type", 0, 1, &(type));
     case FOREIGN_int8:
-      if (SCHEME_INTP(val)) (((int8_t*)dst)[0]) = (int8_t)(SCHEME_INT_VAL(val));
+      if (SCHEME_INTP(val)) { int8_t tmp; tmp = (int8_t)(SCHEME_INT_VAL(val)); (((int8_t*)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "int8", 0, 1, &(val));
       return NULL;
     case FOREIGN_uint8:
-      if (SCHEME_INTP(val)) (((uint8_t*)dst)[0]) = (uint8_t)(SCHEME_UINT_VAL(val));
+      if (SCHEME_INTP(val)) { uint8_t tmp; tmp = (uint8_t)(SCHEME_UINT_VAL(val)); (((uint8_t*)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "uint8", 0, 1, &(val));
       return NULL;
     case FOREIGN_int16:
-      if (SCHEME_INTP(val)) (((int16_t*)dst)[0]) = (int16_t)(SCHEME_INT_VAL(val));
+      if (SCHEME_INTP(val)) { int16_t tmp; tmp = (int16_t)(SCHEME_INT_VAL(val)); (((int16_t*)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "int16", 0, 1, &(val));
       return NULL;
     case FOREIGN_uint16:
-      if (SCHEME_INTP(val)) (((uint16_t*)dst)[0]) = (uint16_t)(SCHEME_UINT_VAL(val));
+      if (SCHEME_INTP(val)) { uint16_t tmp; tmp = (uint16_t)(SCHEME_UINT_VAL(val)); (((uint16_t*)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "uint16", 0, 1, &(val));
       return NULL;
     case FOREIGN_int32:
@@ -1075,11 +1075,11 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (!(scheme_get_unsigned_long_long_val(val,&(((uint64_t*)dst)[0])))) scheme_wrong_type("Scheme->C", "uint64", 0, 1, &(val));
       return NULL;
     case FOREIGN_fixint:
-      if (SCHEME_INTP(val)) (((int32_t*)dst)[0]) = (int32_t)(SCHEME_INT_VAL(val));
+      if (SCHEME_INTP(val)) { int32_t tmp; tmp = (int32_t)(SCHEME_INT_VAL(val)); (((int32_t*)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "fixint", 0, 1, &(val));
       return NULL;
     case FOREIGN_ufixint:
-      if (SCHEME_INTP(val)) (((uint32_t*)dst)[0]) = (uint32_t)(SCHEME_UINT_VAL(val));
+      if (SCHEME_INTP(val)) { uint32_t tmp; tmp = (uint32_t)(SCHEME_UINT_VAL(val)); (((uint32_t*)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "ufixint", 0, 1, &(val));
       return NULL;
     case FOREIGN_long:
@@ -1089,51 +1089,51 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (!(scheme_get_unsigned_int_val(val,&(((unsigned long*)dst)[0])))) scheme_wrong_type("Scheme->C", "ulong", 0, 1, &(val));
       return NULL;
     case FOREIGN_fixnum:
-      if (SCHEME_INTP(val)) (((long*)dst)[0]) = (long)(SCHEME_INT_VAL(val));
+      if (SCHEME_INTP(val)) { long tmp; tmp = (long)(SCHEME_INT_VAL(val)); (((long*)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "fixnum", 0, 1, &(val));
       return NULL;
     case FOREIGN_ufixnum:
-      if (SCHEME_INTP(val)) (((unsigned long*)dst)[0]) = (unsigned long)(SCHEME_UINT_VAL(val));
+      if (SCHEME_INTP(val)) { unsigned long tmp; tmp = (unsigned long)(SCHEME_UINT_VAL(val)); (((unsigned long*)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "ufixnum", 0, 1, &(val));
       return NULL;
     case FOREIGN_float:
-      if (SCHEME_FLTP(val)) (((float*)dst)[0]) = (float)(SCHEME_FLT_VAL(val));
+      if (SCHEME_FLTP(val)) { float tmp; tmp = (float)(SCHEME_FLT_VAL(val)); (((float*)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "float", 0, 1, &(val));
       return NULL;
     case FOREIGN_double:
-      if (SCHEME_DBLP(val)) (((double*)dst)[0]) = (double)(SCHEME_DBL_VAL(val));
+      if (SCHEME_DBLP(val)) { double tmp; tmp = (double)(SCHEME_DBL_VAL(val)); (((double*)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "double", 0, 1, &(val));
       return NULL;
     case FOREIGN_bool:
-      if (1) (((int*)dst)[0]) = (int)(SCHEME_TRUEP(val));
+      if (1) { int tmp; tmp = (int)(SCHEME_TRUEP(val)); (((int*)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "bool", 0, 1, &(val));
       return NULL;
     case FOREIGN_string_ucs_4:
-      if (SCHEME_CHAR_STRINGP(val)) (((mzchar**)dst)[0]) = (mzchar*)(SCHEME_CHAR_STR_VAL(val));
+      if (SCHEME_CHAR_STRINGP(val)) { mzchar* tmp; tmp = (mzchar*)(SCHEME_CHAR_STR_VAL(val)); (((mzchar**)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "string/ucs-4", 0, 1, &(val));
       return NULL;
     case FOREIGN_string_utf_16:
-      if (SCHEME_CHAR_STRINGP(val)) (((unsigned short**)dst)[0]) = (unsigned short*)(ucs4_string_to_utf16_pointer(val));
+      if (SCHEME_CHAR_STRINGP(val)) { unsigned short* tmp; tmp = (unsigned short*)(ucs4_string_to_utf16_pointer(val)); (((unsigned short**)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "string/utf-16", 0, 1, &(val));
       return NULL;
     case FOREIGN_bytes:
-      if (SCHEME_FALSEP(val)||SCHEME_BYTE_STRINGP(val)) (((char**)dst)[0]) = (char*)(SCHEME_FALSEP(val)?NULL:SCHEME_BYTE_STR_VAL(val));
+      if (SCHEME_FALSEP(val)||SCHEME_BYTE_STRINGP(val)) { char* tmp; tmp = (char*)(SCHEME_FALSEP(val)?NULL:SCHEME_BYTE_STR_VAL(val)); (((char**)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "bytes", 0, 1, &(val));
       return NULL;
     case FOREIGN_path:
-      if (SCHEME_FALSEP(val)||SCHEME_PATH_STRINGP(val)) (((char**)dst)[0]) = (char*)(SCHEME_FALSEP(val)?NULL:SCHEME_PATH_VAL(val));
+      if (SCHEME_FALSEP(val)||SCHEME_PATH_STRINGP(val)) { char* tmp; tmp = (char*)(SCHEME_FALSEP(val)?NULL:SCHEME_PATH_VAL(val)); (((char**)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "path", 0, 1, &(val));
       return NULL;
     case FOREIGN_symbol:
-      if (SCHEME_SYMBOLP(val)) (((char**)dst)[0]) = (char*)(SCHEME_SYM_VAL(val));
+      if (SCHEME_SYMBOLP(val)) { char* tmp; tmp = (char*)(SCHEME_SYM_VAL(val)); (((char**)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "symbol", 0, 1, &(val));
       return NULL;
     case FOREIGN_pointer:
-      if (SCHEME_FFIANYPTRP(val)) (((void**)dst)[0]) = (void*)(SCHEME_FFIANYPTR_VAL(val));
+      if (SCHEME_FFIANYPTRP(val)) { void* tmp; tmp = (void*)(SCHEME_FFIANYPTR_VAL(val)); (((void**)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "pointer", 0, 1, &(val));
       return NULL;
     case FOREIGN_scheme:
-      if (1) (((Scheme_Object**)dst)[0]) = (Scheme_Object*)(val);
+      if (1) { Scheme_Object* tmp; tmp = (Scheme_Object*)(val); (((Scheme_Object**)dst)[0]) = tmp; }
       else scheme_wrong_type("Scheme->C", "scheme", 0, 1, &(val));
       return NULL;
     case FOREIGN_fmark:

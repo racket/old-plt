@@ -464,7 +464,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
   long ulen;
   mzchar *res;
   int end;
-  for (end=0; utf[end] != 0; end++) /**/ ;
+  for (end=0; utf[end] != 0; end++) { /**/ }
   res = scheme_utf16_to_ucs4(utf, 0, end, NULL, -1, &ulen, 0);
   return scheme_make_sized_char_string(res, ulen, 0);
 }
@@ -1033,7 +1033,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
                  [f (lambda (p)
                       (if (string? p) (concat p"(val)") (p "val" x)))])
             (if s->c
-              (~ "  if ("(f pred)") "x" = ("ctype")("(f s->c)");" \\
+              (~ "  if ("(f pred)") { "ctype" tmp; tmp = ("ctype")("(f s->c)"); "x" = tmp; }" \\
                  "  else "(wrong-type "val" stype))
               (~ "  if (!("(pred "val" x)")) "(wrong-type "val" stype)))
             (~ "  return NULL;"))

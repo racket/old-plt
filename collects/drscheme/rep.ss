@@ -205,27 +205,20 @@
 		 (let* ([z (or (unbox aries:error-box)
 			       (let ([loc (zodiac:make-location 0 0 0 'eval)])
 				 (zodiac:make-zodiac 'mzrice-eval loc loc)))]
-			[_ (mred:debug:printf 'zodiac
-					      "zodiac eval; sexp: ~a~n" sexp)]
-			[structurized (zodiac:structurize-syntax sexp z)]
-			[_ (mred:debug:printf 'zodiac
-					      "zodiac eval; structurized: ~a~n" structurized)]
-			[_ (mred:debug:printf 'zodiac
-					      "zodiac eval; unsexp: ~a~n" (zodiac:sexp->raw structurized))]
-			[expanded (call/nal zodiac:scheme-expand/nal
-					    zodiac:scheme-expand
-					    (expression: structurized)
-					    (parameterization: param))]
-			[_ (mred:debug:printf 'zodiac
-					      "zodiac eval; expanded: ~a~n" expanded)]
-			[_ (mred:debug:printf 'zodiac
-					      "zodiac eval; unparsed: ~a~n" (zodiac:parsed->raw expanded))]
-			[annotated (aries:annotate expanded)]
-			[_ (mred:debug:printf 'zodiac
-					      "zodiac eval; annotated: ~a~n" annotated)])		     
-		   (with-parameterization param
-		     (lambda ()
-		       (primitive-eval annotated)))))))]
+			[reader
+			 (let ([gone #f])
+			   (lambda ()
+			     (if gone
+				 (zodiac:make-eof z)
+				 (begin (set! gone #t)
+					(zodiac:structurize-syntax sexp z)))))]
+			[f
+			 (lambda (annotated recur)
+			   (with-parameterization param
+			     (lambda ()
+			       (primitive-eval annotated)))
+			   (recur))])
+		   (process/zodiac reader f #t)))))]
 	  [display-result
 	   (lambda (v)
 	     (unless (void? v)

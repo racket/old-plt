@@ -232,6 +232,10 @@ static int run_from_cmd_line(int argc, char *argv[],
 # endif
 #endif
 
+#ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT
+  DllMain(NULL, DLL_PROCESS_ATTACH, NULL);
+#endif
+
   /* Avoid exiting problems under Windows: */
   scheme_setup_forced_exit();
 

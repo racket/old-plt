@@ -229,10 +229,6 @@ int main(int argc, char **argv)
   GC_pre_init();
 #endif
 
-#ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT
-  DllMain(NULL, DLL_PROCESS_ATTACH, NULL);
-#endif
-
 #if defined(OSKIT) && !defined(OSKIT_TEST)
   oskit_prepare(&argc, &argv);
 #endif

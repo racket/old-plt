@@ -29,7 +29,7 @@
   (send* RED-DELTA
     (copy WELCOME-DELTA)
     (set-delta-foreground "RED"))
-  (define WARNING-STYLE-DELTA (make-object wx:style-delta% wx:const-change-bold 0))
+  (define WARNING-STYLE-DELTA (make-object wx:style-delta% wx:const-change-bold))
   (send* WARNING-STYLE-DELTA
     (set-delta-foreground "BLACK")
     (set-delta-background "YELLOW"))

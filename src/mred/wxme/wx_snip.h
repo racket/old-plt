@@ -212,6 +212,8 @@ class wxTextSnip : public wxInternalSnip
 
   void GetTextExtent(wxDC *dc, int count, float *wo);
 
+  void Init(long allocsize);
+
  public:
   char *text;
   char *buffer;
@@ -219,6 +221,7 @@ class wxTextSnip : public wxInternalSnip
   long allocated;
 
   wxTextSnip(long allocsize = 0); 
+  wxTextSnip(char *initstring, long len); 
   ~wxTextSnip(); 
 
   virtual void SizeCacheInvalid(void);

@@ -339,7 +339,6 @@ void os_wxButton::OnKillFocus()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxButtonSetLabel(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -389,7 +388,6 @@ static Scheme_Object *os_wxButtonSetLabel(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxButtonOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -416,7 +414,6 @@ static Scheme_Object *os_wxButtonOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxButtonPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -447,7 +444,6 @@ static Scheme_Object *os_wxButtonPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxButtonPreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -478,7 +474,6 @@ static Scheme_Object *os_wxButtonPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxButtonOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -506,7 +501,6 @@ static Scheme_Object *os_wxButtonOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxButtonOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -530,7 +524,6 @@ static Scheme_Object *os_wxButtonOnSetFocus(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxButtonOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -554,7 +547,6 @@ static Scheme_Object *os_wxButtonOnKillFocus(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);

@@ -2291,33 +2291,43 @@ void wxStandardSnipAdmin::GetView(float *x, float *y, float *w, float *h, wxSnip
 Bool wxStandardSnipAdmin::ScrollTo(wxSnip *s, float localx, float localy, 
 				   float w, float h, Bool refresh, int bias)
 {
-  return media->ScrollTo(s, localx, localy, w, h, refresh, bias);
+  if (s->GetAdmin() == this)
+    return media->ScrollTo(s, localx, localy, w, h, refresh, bias);
+  else
+    return FALSE;
 }
 
 void wxStandardSnipAdmin::SetCaretOwner(wxSnip *s, int dist)
 {
-  media->SetCaretOwner(s, dist);
+  if (s->GetAdmin() == this)
+    media->SetCaretOwner(s, dist);
 }
  
 void wxStandardSnipAdmin::Resized(wxSnip *s, Bool redraw_now)
 {
-  media->Resized(s, redraw_now);
+  if (s->GetAdmin() == this)
+    media->Resized(s, redraw_now);
 }
 
 Bool wxStandardSnipAdmin::Recounted(wxSnip *s, Bool redraw_now)
 {
-  return media->Recounted(s, redraw_now);
+  if (s->GetAdmin() == this)
+    return media->Recounted(s, redraw_now);
 }
 
 void wxStandardSnipAdmin::NeedsUpdate(wxSnip *s, float localx, float localy, 
 				      float w, float h)
 {
-  media->NeedsUpdate(s, localx, localy, w, h);
+  if (s->GetAdmin() == this)
+    media->NeedsUpdate(s, localx, localy, w, h);
 }
 
 Bool wxStandardSnipAdmin::ReleaseSnip(wxSnip *snip)
 {
-  return media->ReleaseSnip(snip);
+  if (snip->GetAdmin() == this)
+    return media->ReleaseSnip(snip);
+  else
+    return FALSE;
 }
 
 void wxStandardSnipAdmin::UpdateCursor()

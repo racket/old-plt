@@ -96,7 +96,6 @@ static Scheme_Object *objscheme_wxEvent_SettimeStamp(Scheme_Object *obj, int n, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -341,7 +340,6 @@ static Scheme_Object *objscheme_wxCommandEvent_SeteventType(Scheme_Object *obj, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCommandEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -518,7 +516,6 @@ static Scheme_Object *objscheme_wxPopupEvent_SetmenuId(Scheme_Object *obj, int n
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPopupEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -848,7 +845,6 @@ static Scheme_Object *objscheme_wxScrollEvent_Setpos(Scheme_Object *obj, int n, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxScrollEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1578,7 +1574,6 @@ static Scheme_Object *objscheme_wxKeyEvent_Sety(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeyEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1831,7 +1826,6 @@ os_wxMouseEvent::~os_wxMouseEvent()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMouseEventMoving(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1853,7 +1847,6 @@ static Scheme_Object *os_wxMouseEventMoving(Scheme_Object *obj, int n,  Scheme_O
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMouseEventLeaving(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1875,7 +1868,6 @@ static Scheme_Object *os_wxMouseEventLeaving(Scheme_Object *obj, int n,  Scheme_
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMouseEventEntering(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1897,7 +1889,6 @@ static Scheme_Object *os_wxMouseEventEntering(Scheme_Object *obj, int n,  Scheme
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMouseEventDragging(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1919,7 +1910,6 @@ static Scheme_Object *os_wxMouseEventDragging(Scheme_Object *obj, int n,  Scheme
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMouseEventButtonUp(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1946,7 +1936,6 @@ static Scheme_Object *os_wxMouseEventButtonUp(Scheme_Object *obj, int n,  Scheme
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMouseEventButtonDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1973,7 +1962,6 @@ static Scheme_Object *os_wxMouseEventButtonDown(Scheme_Object *obj, int n,  Sche
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMouseEventButton(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2330,7 +2318,6 @@ static Scheme_Object *objscheme_wxMouseEvent_Sety(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMouseEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

@@ -55,10 +55,12 @@
 
 @END
 
+@MACRO SetLength = x1 = SCHEME_STRLEN_VAL(p[0]);
 
 @CLASSBASE wxTextSnip "string-snip":"snip"
 
-@CREATOR (nnlong=0);
+@CREATOR (nnlong=0); <> initial size
+@CREATOR (string,-long); : : /SetLength <> initial string
 
 @CLASSID wxTYPE_TEXT_SNIP
 

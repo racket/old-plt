@@ -1,7 +1,6 @@
 
 Version 102/4:
 
-
  * Fixed number reader to allow +inf.0, -inf.0, and +nan.0 in complex
    constants. For example, +inf.0-inf.0i is now a legal constant.  To
    some degree, this fix was necessary to ensure that all printable
@@ -9,12 +8,10 @@ Version 102/4:
 
  * To simplify (in a way) MzScheme's number syntax, fixed bugs in
    number reader for hexadecimal numbers containing `.'  and/or
-   `s'/`l'-based exponents. (Actually, the fix applies to any input
-   radix between 11 and 16, inclusive, when using `string->number'.)
-   Prompted by PR 823.
+   `s'/`l'-based exponents. Prompted by PR 823.
 
-   This change supports some interesting numbers, to say the
-   least. One of my favorites is `#e#x+e.s+e@-e.l-e'.
+   This change supports some interesting number representations, to
+   say the least. One of my favorites is `#e#x+e.s+e@-e.l-e'.
 
  * Found and fixed some subtle bugs in detecting exact-zero cases
    (such as 0@7.0) and in reporting divide-by-zero cases (such as
@@ -41,13 +38,15 @@ Version 102/1:
    default is #t, which means parse as inexact (normal behavior). #f
    means parse as exact.
 
-Version 101, ??
+Version 102, ??
 Added read-decimal-as-inexact parameter
 Fixed number reader to allow +inf.0, -inf.0, and +nan.0 in
  complex constants
 Fixed bugs in number reader for hexadecimal numbers containing `.'
  and/or `s'/`l'-based exponents; note that `#e#x+e.s+e@-e.l-e'
  is a legal number(!)
+Fixed reading from special devices, such as /dev/null and /dev/zero,
+ in Solaris and HP/UX.
 Inside MzScheme: scheme_basic_env() initializes break-enabled
  to #f instead of #t
 

@@ -251,6 +251,7 @@ static void WordbreakCallbackToScheme(wxMediaEdit *,long*,long*,int,Scheme_Objec
 
 @ "set-clickback" : void SetClickback(nnlong,nnlong,wxClickbackFunc//ubCallback2/cCallback2//spCallback2/nopush,-unknown#void*//ubData2,wxStyleDelta^=NULL,bool=FALSE);
 @ "remove-clickback" : void RemoveClickback(nnlong,nnlong);
+@ "call-clickback" : void CallClickback(nnlong,nnlong);
 
 static void WordbreakCallbackToScheme(wxMediaEdit *media,
 				      long *start, long *end,

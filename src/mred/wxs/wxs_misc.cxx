@@ -110,7 +110,6 @@ void os_wxTimer::Notify()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxTimerStop(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -131,7 +130,6 @@ static Scheme_Object *os_wxTimerStop(Scheme_Object *obj, int n,  Scheme_Object *
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxTimerStart(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -159,7 +157,6 @@ static Scheme_Object *os_wxTimerStart(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxTimerNotify(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -183,7 +180,6 @@ static Scheme_Object *os_wxTimerNotify(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxTimerInterval(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -205,7 +201,6 @@ static Scheme_Object *os_wxTimerInterval(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxTimer_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -373,7 +368,6 @@ os_wxClipboard::~os_wxClipboard()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxClipboardGetClipboardData(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -402,7 +396,6 @@ static Scheme_Object *os_wxClipboardGetClipboardData(Scheme_Object *obj, int n, 
   return (r ? scheme_make_sized_string(r, _x1, 1) : XC_SCHEME_NULL);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxClipboardGetClipboardString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -426,7 +419,6 @@ static Scheme_Object *os_wxClipboardGetClipboardString(Scheme_Object *obj, int n
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxClipboardGetClipboardClient(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -448,7 +440,6 @@ static Scheme_Object *os_wxClipboardGetClipboardClient(Scheme_Object *obj, int n
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxClipboardClient(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxClipboardSetClipboardString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -474,7 +465,6 @@ static Scheme_Object *os_wxClipboardSetClipboardString(Scheme_Object *obj, int n
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxClipboardSetClipboardClient(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -686,7 +676,6 @@ void os_wxClipboardClient::BeingReplaced()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxClipboardClientGetTypes(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -708,7 +697,6 @@ static Scheme_Object *os_wxClipboardClientGetTypes(Scheme_Object *obj, int n,  S
   return r;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxClipboardClientAddType(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -732,7 +720,6 @@ static Scheme_Object *os_wxClipboardClientAddType(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxClipboardClientGetData(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -762,7 +749,6 @@ static Scheme_Object *os_wxClipboardClientGetData(Scheme_Object *obj, int n,  Sc
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxClipboardClientBeingReplaced(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -786,7 +772,6 @@ static Scheme_Object *os_wxClipboardClientBeingReplaced(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxClipboardClient_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1001,7 +986,6 @@ os_wxPrintSetupData::~os_wxPrintSetupData()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDatacopy(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1025,7 +1009,6 @@ static Scheme_Object *os_wxPrintSetupDatacopy(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetEditorMargin(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1050,7 +1033,6 @@ static Scheme_Object *os_wxPrintSetupDataSetEditorMargin(Scheme_Object *obj, int
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetLevel2(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1073,7 +1055,6 @@ static Scheme_Object *os_wxPrintSetupDataSetLevel2(Scheme_Object *obj, int n,  S
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetAFMPath(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1097,7 +1078,6 @@ static Scheme_Object *os_wxPrintSetupDataSetAFMPath(Scheme_Object *obj, int n,  
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetPaperName(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1121,7 +1101,6 @@ static Scheme_Object *os_wxPrintSetupDataSetPaperName(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetPrinterTranslation(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1146,7 +1125,6 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterTranslation(Scheme_Object *ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetPrinterScaling(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1171,7 +1149,6 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterScaling(Scheme_Object *obj, i
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetPrinterOptions(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1195,7 +1172,6 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterOptions(Scheme_Object *obj, i
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetPrinterOrientation(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1218,7 +1194,6 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterOrientation(Scheme_Object *ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetPrinterMode(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1241,7 +1216,6 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterMode(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetPrintPreviewCommand(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1265,7 +1239,6 @@ static Scheme_Object *os_wxPrintSetupDataSetPrintPreviewCommand(Scheme_Object *o
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetPrinterFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1289,7 +1262,6 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterFile(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataSetPrinterCommand(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1313,7 +1285,6 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterCommand(Scheme_Object *obj, i
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataGetEditorMargin(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1345,7 +1316,6 @@ static Scheme_Object *os_wxPrintSetupDataGetEditorMargin(Scheme_Object *obj, int
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataGetLevel2(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1367,7 +1337,6 @@ static Scheme_Object *os_wxPrintSetupDataGetLevel2(Scheme_Object *obj, int n,  S
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataGetAFMPath(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1389,7 +1358,6 @@ static Scheme_Object *os_wxPrintSetupDataGetAFMPath(Scheme_Object *obj, int n,  
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataGetPaperName(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1411,7 +1379,6 @@ static Scheme_Object *os_wxPrintSetupDataGetPaperName(Scheme_Object *obj, int n,
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataGetPrinterTranslation(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1443,7 +1410,6 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterTranslation(Scheme_Object *ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataGetPrinterScaling(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1475,7 +1441,6 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterScaling(Scheme_Object *obj, i
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataGetPrinterOptions(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1497,7 +1462,6 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterOptions(Scheme_Object *obj, i
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataGetPrinterOrientation(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1519,7 +1483,6 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterOrientation(Scheme_Object *ob
   return WITH_REMEMBERED_STACK(bundle_symset_psOrientation(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataGetPrinterMode(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1541,7 +1504,6 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterMode(Scheme_Object *obj, int 
   return WITH_REMEMBERED_STACK(bundle_symset_psMode(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataGetPrintPreviewCommand(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1563,7 +1525,6 @@ static Scheme_Object *os_wxPrintSetupDataGetPrintPreviewCommand(Scheme_Object *o
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataGetPrinterFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1585,7 +1546,6 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterFile(Scheme_Object *obj, int 
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupDataGetPrinterCommand(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1607,7 +1567,6 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterCommand(Scheme_Object *obj, i
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPrintSetupData_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

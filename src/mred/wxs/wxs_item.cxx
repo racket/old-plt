@@ -65,7 +65,6 @@ os_wxItem::~os_wxItem()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxItemSetLabel(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -89,7 +88,6 @@ static Scheme_Object *os_wxItemSetLabel(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxItemGetLabel(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -111,7 +109,6 @@ static Scheme_Object *os_wxItemGetLabel(Scheme_Object *obj, int n,  Scheme_Objec
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxItemCommand(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -470,7 +467,6 @@ void os_wxMessage::OnKillFocus()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -520,7 +516,6 @@ static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMessageOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -547,7 +542,6 @@ static Scheme_Object *os_wxMessageOnDropFile(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMessagePreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -578,7 +572,6 @@ static Scheme_Object *os_wxMessagePreOnEvent(Scheme_Object *obj, int n,  Scheme_
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMessagePreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -609,7 +602,6 @@ static Scheme_Object *os_wxMessagePreOnChar(Scheme_Object *obj, int n,  Scheme_O
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMessageOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -637,7 +629,6 @@ static Scheme_Object *os_wxMessageOnSize(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMessageOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -661,7 +652,6 @@ static Scheme_Object *os_wxMessageOnSetFocus(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMessageOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -685,7 +675,6 @@ static Scheme_Object *os_wxMessageOnKillFocus(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);

@@ -62,7 +62,6 @@ os_wxObject::~os_wxObject()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxObject_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

@@ -499,6 +499,17 @@ wxSnip *TextSnipClass::Read(wxTextSnip *snip, wxMediaStreamIn *f)
 
 wxTextSnip::wxTextSnip(long allocsize) 
 {
+  Init(allocsize);
+}
+
+wxTextSnip::wxTextSnip(char *initstring, long len) 
+{
+  Init(len + 2);
+  Insert(initstring, len, 0);
+}
+
+void wxTextSnip::Init(long allocsize) 
+{
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_TEXT_SNIP;
 #endif

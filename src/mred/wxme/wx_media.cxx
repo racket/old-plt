@@ -1022,7 +1022,14 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 	  y = ScrollLineLocation(top - 1);
 	}
 
-	i = FindLine(y);
+	if (y == vy) {
+	  /* Must be at the top: */
+	  i = FindLine(y);
+	} else {
+	  i = FindLine(y + scrollHeight);
+	  if (LineLocation(i - 1) > y)
+	    i--;
+	}
 	scrollTop = y;
       } else
 	i = cline - 1;
@@ -2348,6 +2355,23 @@ void wxMediaEdit::RemoveClickback(long start, long end)
     if (click->start == start && click->end == end) {
       DELETE_OBJ click;
       clickbacks->DeleteNode(node);
+    }
+  }
+}
+
+void wxMediaEdit::CallClickback(long start, long end)
+{
+  wxNode *node;
+  wxClickback *click;
+
+  if (start > end)
+    return;
+
+  for (node = clickbacks->First(); node; node = node->Next()) {
+    click = (wxClickback *)node->Data();
+    if (click->start <= start && click->end >= end) {
+      click->f(this, click->start, click->end, click->data);
+      return;
     }
   }
 }

@@ -59,7 +59,6 @@ os_wxMultColour::~os_wxMultColour()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMultColourSet(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -86,7 +85,6 @@ static Scheme_Object *os_wxMultColourSet(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMultColourGet(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -336,7 +334,6 @@ os_wxAddColour::~os_wxAddColour()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxAddColourSet(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -363,7 +360,6 @@ static Scheme_Object *os_wxAddColourSet(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxAddColourGet(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1042,7 +1038,6 @@ os_wxStyleDelta::~os_wxStyleDelta()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleDeltaCopy(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1066,7 +1061,6 @@ static Scheme_Object *os_wxStyleDeltaCopy(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleDeltaCollapse(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1091,7 +1085,6 @@ static Scheme_Object *os_wxStyleDeltaCollapse(Scheme_Object *obj, int n,  Scheme
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleDeltaEqual(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1116,7 +1109,6 @@ static Scheme_Object *os_wxStyleDeltaEqual(Scheme_Object *obj, int n,  Scheme_Ob
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleDeltaSetDeltaForeground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1167,7 +1159,6 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaForeground(Scheme_Object *obj, int 
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyleDelta(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleDeltaSetDeltaBackground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1218,7 +1209,6 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaBackground(Scheme_Object *obj, int 
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyleDelta(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleDeltaSetDeltaFace(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1248,7 +1238,6 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaFace(Scheme_Object *obj, int n,  Sc
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyleDelta(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleDeltaSetDelta(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1928,7 +1917,6 @@ static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOff(Scheme_Object *obj,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);
@@ -2262,7 +2250,6 @@ os_wxStyle::~os_wxStyle()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleSwitchTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2289,7 +2276,6 @@ static Scheme_Object *os_wxStyleSwitchTo(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleSetShiftStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2313,7 +2299,6 @@ static Scheme_Object *os_wxStyleSetShiftStyle(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetShiftStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2335,7 +2320,6 @@ static Scheme_Object *os_wxStyleGetShiftStyle(Scheme_Object *obj, int n,  Scheme
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleIsJoin(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2357,7 +2341,6 @@ static Scheme_Object *os_wxStyleIsJoin(Scheme_Object *obj, int n,  Scheme_Object
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleSetDelta(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2381,7 +2364,6 @@ static Scheme_Object *os_wxStyleSetDelta(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetDelta(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2405,7 +2387,6 @@ static Scheme_Object *os_wxStyleGetDelta(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleSetBaseStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2429,7 +2410,6 @@ static Scheme_Object *os_wxStyleSetBaseStyle(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetBaseStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2451,7 +2431,6 @@ static Scheme_Object *os_wxStyleGetBaseStyle(Scheme_Object *obj, int n,  Scheme_
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetTextWidth(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2476,7 +2455,6 @@ static Scheme_Object *os_wxStyleGetTextWidth(Scheme_Object *obj, int n,  Scheme_
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetTextSpace(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2501,7 +2479,6 @@ static Scheme_Object *os_wxStyleGetTextSpace(Scheme_Object *obj, int n,  Scheme_
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetTextDescent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2526,7 +2503,6 @@ static Scheme_Object *os_wxStyleGetTextDescent(Scheme_Object *obj, int n,  Schem
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetTextHeight(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2551,7 +2527,6 @@ static Scheme_Object *os_wxStyleGetTextHeight(Scheme_Object *obj, int n,  Scheme
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetTransparentTextBacking(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2573,7 +2548,6 @@ static Scheme_Object *os_wxStyleGetTransparentTextBacking(Scheme_Object *obj, in
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetAlignment(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2595,7 +2569,6 @@ static Scheme_Object *os_wxStyleGetAlignment(Scheme_Object *obj, int n,  Scheme_
   return WITH_REMEMBERED_STACK(bundle_symset_align(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetBackground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2617,7 +2590,6 @@ static Scheme_Object *os_wxStyleGetBackground(Scheme_Object *obj, int n,  Scheme
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetForeground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2639,7 +2611,6 @@ static Scheme_Object *os_wxStyleGetForeground(Scheme_Object *obj, int n,  Scheme
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2661,7 +2632,6 @@ static Scheme_Object *os_wxStyleGetFont(Scheme_Object *obj, int n,  Scheme_Objec
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetUnderlined(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2683,7 +2653,6 @@ static Scheme_Object *os_wxStyleGetUnderlined(Scheme_Object *obj, int n,  Scheme
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2705,7 +2674,6 @@ static Scheme_Object *os_wxStyleGetStyle(Scheme_Object *obj, int n,  Scheme_Obje
   return WITH_REMEMBERED_STACK(bundle_symset_style(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetWeight(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2727,7 +2695,6 @@ static Scheme_Object *os_wxStyleGetWeight(Scheme_Object *obj, int n,  Scheme_Obj
   return WITH_REMEMBERED_STACK(bundle_symset_weight(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2749,7 +2716,6 @@ static Scheme_Object *os_wxStyleGetSize(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetFace(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2771,7 +2737,6 @@ static Scheme_Object *os_wxStyleGetFace(Scheme_Object *obj, int n,  Scheme_Objec
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetFamily(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2793,7 +2758,6 @@ static Scheme_Object *os_wxStyleGetFamily(Scheme_Object *obj, int n,  Scheme_Obj
   return WITH_REMEMBERED_STACK(bundle_symset_family(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleGetName(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2966,7 +2930,6 @@ os_wxStyleList::~os_wxStyleList()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleListForgetNotification(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2990,7 +2953,6 @@ static Scheme_Object *os_wxStyleListForgetNotification(Scheme_Object *obj, int n
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleListNotifyOnChange(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3017,7 +2979,6 @@ static Scheme_Object *os_wxStyleListNotifyOnChange(Scheme_Object *obj, int n,  S
   return ((Scheme_Object *)r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleListStyleToIndex(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3042,7 +3003,6 @@ static Scheme_Object *os_wxStyleListStyleToIndex(Scheme_Object *obj, int n,  Sch
   return ((r < 0) ? scheme_false : scheme_make_integer(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleListIndexToStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3066,7 +3026,6 @@ static Scheme_Object *os_wxStyleListIndexToStyle(Scheme_Object *obj, int n,  Sch
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleListConvert(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3091,7 +3050,6 @@ static Scheme_Object *os_wxStyleListConvert(Scheme_Object *obj, int n,  Scheme_O
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleListReplaceNamedStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3119,7 +3077,6 @@ static Scheme_Object *os_wxStyleListReplaceNamedStyle(Scheme_Object *obj, int n,
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleListNewNamedStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3147,7 +3104,6 @@ static Scheme_Object *os_wxStyleListNewNamedStyle(Scheme_Object *obj, int n,  Sc
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleListFindNamedStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3172,7 +3128,6 @@ static Scheme_Object *os_wxStyleListFindNamedStyle(Scheme_Object *obj, int n,  S
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleListFindOrCreateJoinStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3200,7 +3155,6 @@ static Scheme_Object *os_wxStyleListFindOrCreateJoinStyle(Scheme_Object *obj, in
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleListFindOrCreateStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3228,7 +3182,6 @@ static Scheme_Object *os_wxStyleListFindOrCreateStyle(Scheme_Object *obj, int n,
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleListNumber(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3250,7 +3203,6 @@ static Scheme_Object *os_wxStyleListNumber(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleListBasicStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3272,7 +3224,6 @@ static Scheme_Object *os_wxStyleListBasicStyle(Scheme_Object *obj, int n,  Schem
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxStyleList_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

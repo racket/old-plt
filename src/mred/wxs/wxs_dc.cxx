@@ -383,7 +383,6 @@ os_wxDC::~os_wxDC()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCEndPage(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -404,7 +403,6 @@ static Scheme_Object *os_wxDCEndPage(Scheme_Object *obj, int n,  Scheme_Object *
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCEndDoc(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -425,7 +423,6 @@ static Scheme_Object *os_wxDCEndDoc(Scheme_Object *obj, int n,  Scheme_Object *p
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCStartPage(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -446,7 +443,6 @@ static Scheme_Object *os_wxDCStartPage(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCStartDoc(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -471,7 +467,6 @@ static Scheme_Object *os_wxDCStartDoc(Scheme_Object *obj, int n,  Scheme_Object 
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCOk(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -493,7 +488,6 @@ static Scheme_Object *os_wxDCOk(Scheme_Object *obj, int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCMyGetSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -515,7 +509,6 @@ static Scheme_Object *os_wxDCMyGetSize(Scheme_Object *obj, int n,  Scheme_Object
   return (Scheme_Object*)r;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCdcGetTextForeground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -537,7 +530,6 @@ static Scheme_Object *os_wxDCdcGetTextForeground(Scheme_Object *obj, int n,  Sch
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCdcGetTextBackground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -559,7 +551,6 @@ static Scheme_Object *os_wxDCdcGetTextBackground(Scheme_Object *obj, int n,  Sch
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCGetPen(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -581,7 +572,6 @@ static Scheme_Object *os_wxDCGetPen(Scheme_Object *obj, int n,  Scheme_Object *p
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxPen(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCGetFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -603,7 +593,6 @@ static Scheme_Object *os_wxDCGetFont(Scheme_Object *obj, int n,  Scheme_Object *
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCGetBrush(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -625,7 +614,6 @@ static Scheme_Object *os_wxDCGetBrush(Scheme_Object *obj, int n,  Scheme_Object 
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBrush(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCGetBackgroundMode(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -647,7 +635,6 @@ static Scheme_Object *os_wxDCGetBackgroundMode(Scheme_Object *obj, int n,  Schem
   return WITH_REMEMBERED_STACK(bundle_symset_textMode(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCGetBackground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -669,7 +656,6 @@ static Scheme_Object *os_wxDCGetBackground(Scheme_Object *obj, int n,  Scheme_Ob
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCSetDeviceOrigin(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -694,7 +680,6 @@ static Scheme_Object *os_wxDCSetDeviceOrigin(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCSetUserScale(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -719,7 +704,6 @@ static Scheme_Object *os_wxDCSetUserScale(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCSetBackgroundMode(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -742,7 +726,6 @@ static Scheme_Object *os_wxDCSetBackgroundMode(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCTryColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -769,7 +752,6 @@ static Scheme_Object *os_wxDCTryColour(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCDrawBitmap(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -809,7 +791,6 @@ static Scheme_Object *os_wxDCDrawBitmap(Scheme_Object *obj, int n,  Scheme_Objec
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCDrawBitmapRegion(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -857,7 +838,6 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(Scheme_Object *obj, int n,  Scheme
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCGetCharWidth(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -879,7 +859,6 @@ static Scheme_Object *os_wxDCGetCharWidth(Scheme_Object *obj, int n,  Scheme_Obj
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCGetCharHeight(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -901,7 +880,6 @@ static Scheme_Object *os_wxDCGetCharHeight(Scheme_Object *obj, int n,  Scheme_Ob
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCMyTextExtent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -937,7 +915,6 @@ static Scheme_Object *os_wxDCMyTextExtent(Scheme_Object *obj, int n,  Scheme_Obj
   return (Scheme_Object*)r;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCSetTextForeground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -961,7 +938,6 @@ static Scheme_Object *os_wxDCSetTextForeground(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCSetTextBackground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -985,7 +961,6 @@ static Scheme_Object *os_wxDCSetTextBackground(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCSetPen(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1009,7 +984,6 @@ static Scheme_Object *os_wxDCSetPen(Scheme_Object *obj, int n,  Scheme_Object *p
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCSetFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1033,7 +1007,6 @@ static Scheme_Object *os_wxDCSetFont(Scheme_Object *obj, int n,  Scheme_Object *
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCSetBrush(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1057,7 +1030,6 @@ static Scheme_Object *os_wxDCSetBrush(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCSetBackground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1081,7 +1053,6 @@ static Scheme_Object *os_wxDCSetBackground(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCGetClippingRegion(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1103,7 +1074,6 @@ static Scheme_Object *os_wxDCGetClippingRegion(Scheme_Object *obj, int n,  Schem
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxRegion(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCSetClippingRegion(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1127,7 +1097,6 @@ static Scheme_Object *os_wxDCSetClippingRegion(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCSetClippingRect(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1156,7 +1125,6 @@ static Scheme_Object *os_wxDCSetClippingRect(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCDrawPolygon(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1196,7 +1164,6 @@ static Scheme_Object *os_wxDCDrawPolygon(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCDrawLines(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1231,7 +1198,6 @@ static Scheme_Object *os_wxDCDrawLines(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCDrawEllipse(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1260,7 +1226,6 @@ static Scheme_Object *os_wxDCDrawEllipse(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCDrawArc(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1293,7 +1258,6 @@ static Scheme_Object *os_wxDCDrawArc(Scheme_Object *obj, int n,  Scheme_Object *
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCDrawText(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1326,7 +1290,6 @@ static Scheme_Object *os_wxDCDrawText(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCDrawSpline(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1359,7 +1322,6 @@ static Scheme_Object *os_wxDCDrawSpline(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCDrawRoundedRectangle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1393,7 +1355,6 @@ static Scheme_Object *os_wxDCDrawRoundedRectangle(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCDrawRectangle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1422,7 +1383,6 @@ static Scheme_Object *os_wxDCDrawRectangle(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCDrawPoint(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1447,7 +1407,6 @@ static Scheme_Object *os_wxDCDrawPoint(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCDrawLine(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1476,7 +1435,6 @@ static Scheme_Object *os_wxDCDrawLine(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDCClear(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1652,7 +1610,6 @@ os_wxMemoryDC::~os_wxMemoryDC()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMemoryDCGetObject(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1674,7 +1631,6 @@ static Scheme_Object *os_wxMemoryDCGetObject(Scheme_Object *obj, int n,  Scheme_
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBitmap(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMemoryDCSelectObject(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1698,7 +1654,6 @@ static Scheme_Object *os_wxMemoryDCSelectObject(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMemoryDCSetPixel(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1726,7 +1681,6 @@ static Scheme_Object *os_wxMemoryDCSetPixel(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMemoryDCGetPixel(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1755,7 +1709,6 @@ static Scheme_Object *os_wxMemoryDCGetPixel(Scheme_Object *obj, int n,  Scheme_O
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMemoryDC_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1900,7 +1853,6 @@ os_wxPostScriptDC::~os_wxPostScriptDC()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPostScriptDC_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -2082,7 +2034,6 @@ os_basePrinterDC::~os_basePrinterDC()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_basePrinterDC_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

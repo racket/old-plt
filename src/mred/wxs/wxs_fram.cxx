@@ -471,7 +471,6 @@ void os_wxFrame::OnActivate(Bool x0)
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -498,7 +497,6 @@ static Scheme_Object *os_wxFrameOnDropFile(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFramePreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -529,7 +527,6 @@ static Scheme_Object *os_wxFramePreOnEvent(Scheme_Object *obj, int n,  Scheme_Ob
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFramePreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -560,7 +557,6 @@ static Scheme_Object *os_wxFramePreOnChar(Scheme_Object *obj, int n,  Scheme_Obj
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -588,7 +584,6 @@ static Scheme_Object *os_wxFrameOnSize(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -612,7 +607,6 @@ static Scheme_Object *os_wxFrameOnSetFocus(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -636,7 +630,6 @@ static Scheme_Object *os_wxFrameOnKillFocus(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameOnMenuCommand(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -662,7 +655,6 @@ static Scheme_Object *os_wxFrameOnMenuCommand(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameOnClose(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -687,7 +679,6 @@ static Scheme_Object *os_wxFrameOnClose(Scheme_Object *obj, int n,  Scheme_Objec
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameOnActivate(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -713,7 +704,6 @@ static Scheme_Object *os_wxFrameOnActivate(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameframeMenu(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -734,7 +724,6 @@ static Scheme_Object *os_wxFrameframeMenu(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameCreateStatusLine(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -766,7 +755,6 @@ static Scheme_Object *os_wxFrameCreateStatusLine(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameMaximize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -789,7 +777,6 @@ static Scheme_Object *os_wxFrameMaximize(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameStatusLineExists(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -811,7 +798,6 @@ static Scheme_Object *os_wxFrameStatusLineExists(Scheme_Object *obj, int n,  Sch
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameIconized(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -833,7 +819,6 @@ static Scheme_Object *os_wxFrameIconized(Scheme_Object *obj, int n,  Scheme_Obje
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameSetStatusText(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -858,7 +843,6 @@ static Scheme_Object *os_wxFrameSetStatusText(Scheme_Object *obj, int n,  Scheme
 }
 
 #if  HAS_GET_MENU_BAR
-#pragma argsused
 static Scheme_Object *os_wxFrameGetMenuBar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -885,7 +869,6 @@ static Scheme_Object *os_wxFrameGetMenuBar(Scheme_Object *obj, int n,  Scheme_Ob
 }
 #endif
 
-#pragma argsused
 static Scheme_Object *os_wxFrameSetMenuBar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -909,7 +892,6 @@ static Scheme_Object *os_wxFrameSetMenuBar(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameSetIcon(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -944,7 +926,6 @@ static Scheme_Object *os_wxFrameSetIcon(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameIconize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -967,7 +948,6 @@ static Scheme_Object *os_wxFrameIconize(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFrameSetTitle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1010,7 +990,6 @@ static Scheme_Object *objscheme_wxFrame_Getwx_menu_bar(Scheme_Object *obj, int n
 }
 #endif
 
-#pragma argsused
 static Scheme_Object *os_wxFrame_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

@@ -351,7 +351,6 @@ void os_wxsGauge::OnKillFocus()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsGaugeGetValue(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -373,7 +372,6 @@ static Scheme_Object *os_wxsGaugeGetValue(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsGaugeSetValue(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -396,7 +394,6 @@ static Scheme_Object *os_wxsGaugeSetValue(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsGaugeGetRange(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -418,7 +415,6 @@ static Scheme_Object *os_wxsGaugeGetRange(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsGaugeSetRange(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -441,7 +437,6 @@ static Scheme_Object *os_wxsGaugeSetRange(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsGaugeOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -468,7 +463,6 @@ static Scheme_Object *os_wxsGaugeOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsGaugePreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -499,7 +493,6 @@ static Scheme_Object *os_wxsGaugePreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsGaugePreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -530,7 +523,6 @@ static Scheme_Object *os_wxsGaugePreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsGaugeOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -558,7 +550,6 @@ static Scheme_Object *os_wxsGaugeOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsGaugeOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -582,7 +573,6 @@ static Scheme_Object *os_wxsGaugeOnSetFocus(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsGaugeOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -606,7 +596,6 @@ static Scheme_Object *os_wxsGaugeOnKillFocus(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsGauge_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

@@ -1053,7 +1053,7 @@ sub PrintFunction
 	&OIStart;
     }
 
-    print "#pragma argsused\n";
+    # print "#pragma argsused\n";
 
     if ($iscreator) {
 	print "static Scheme_Object *${newclass}_ConstructScheme(${scheme_args})";

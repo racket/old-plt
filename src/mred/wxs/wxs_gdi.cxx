@@ -314,7 +314,6 @@ os_wxFont::~os_wxFont()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontGetFontId(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -336,7 +335,6 @@ static Scheme_Object *os_wxFontGetFontId(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontGetUnderlined(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -358,7 +356,6 @@ static Scheme_Object *os_wxFontGetUnderlined(Scheme_Object *obj, int n,  Scheme_
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontGetWeight(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -380,7 +377,6 @@ static Scheme_Object *os_wxFontGetWeight(Scheme_Object *obj, int n,  Scheme_Obje
   return WITH_REMEMBERED_STACK(bundle_symset_weight(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontGetPointSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -402,7 +398,6 @@ static Scheme_Object *os_wxFontGetPointSize(Scheme_Object *obj, int n,  Scheme_O
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontGetStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -424,7 +419,6 @@ static Scheme_Object *os_wxFontGetStyle(Scheme_Object *obj, int n,  Scheme_Objec
   return WITH_REMEMBERED_STACK(bundle_symset_style(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontGetFaceString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -446,7 +440,6 @@ static Scheme_Object *os_wxFontGetFaceString(Scheme_Object *obj, int n,  Scheme_
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontGetFamily(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -468,7 +461,6 @@ static Scheme_Object *os_wxFontGetFamily(Scheme_Object *obj, int n,  Scheme_Obje
   return WITH_REMEMBERED_STACK(bundle_symset_family(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);
@@ -687,7 +679,6 @@ os_wxFontList::~os_wxFontList()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -765,7 +756,6 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontList_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -932,7 +922,6 @@ os_wxColour::~os_wxColour()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxColourBlue(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -954,7 +943,6 @@ static Scheme_Object *os_wxColourBlue(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxColourGreen(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -976,7 +964,6 @@ static Scheme_Object *os_wxColourGreen(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxColourRed(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -998,7 +985,6 @@ static Scheme_Object *os_wxColourRed(Scheme_Object *obj, int n,  Scheme_Object *
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxColourSet(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1025,7 +1011,6 @@ static Scheme_Object *os_wxColourSet(Scheme_Object *obj, int n,  Scheme_Object *
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxColourOk(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1047,7 +1032,6 @@ static Scheme_Object *os_wxColourOk(Scheme_Object *obj, int n,  Scheme_Object *p
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxColourCopyFrom(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1072,7 +1056,6 @@ static Scheme_Object *os_wxColourCopyFrom(Scheme_Object *obj, int n,  Scheme_Obj
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);
@@ -1280,7 +1263,6 @@ os_wxColourDatabase::~os_wxColourDatabase()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxColourDatabaseFindColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1496,7 +1478,6 @@ static Scheme_Object *objscheme_wxPoint_Sety(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);
@@ -1760,7 +1741,6 @@ os_wxBrush::~os_wxBrush()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBrushSetStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1783,7 +1763,6 @@ static Scheme_Object *os_wxBrushSetStyle(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBrushGetStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1805,7 +1784,6 @@ static Scheme_Object *os_wxBrushGetStyle(Scheme_Object *obj, int n,  Scheme_Obje
   return WITH_REMEMBERED_STACK(bundle_symset_brushStyle(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBrushSetStipple(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1829,7 +1807,6 @@ static Scheme_Object *os_wxBrushSetStipple(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBrushGetStipple(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1851,7 +1828,6 @@ static Scheme_Object *os_wxBrushGetStipple(Scheme_Object *obj, int n,  Scheme_Ob
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBitmap(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1922,7 +1898,6 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBrushGetColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1944,7 +1919,6 @@ static Scheme_Object *os_wxBrushGetColour(Scheme_Object *obj, int n,  Scheme_Obj
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);
@@ -2143,7 +2117,6 @@ os_wxBrushList::~os_wxBrushList()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBrushListFindOrCreateBrush(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2198,7 +2171,6 @@ static Scheme_Object *os_wxBrushListFindOrCreateBrush(Scheme_Object *obj, int n,
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBrush(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBrushList_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -2515,7 +2487,6 @@ os_wxPen::~os_wxPen()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenSetStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2538,7 +2509,6 @@ static Scheme_Object *os_wxPenSetStyle(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenGetStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2560,7 +2530,6 @@ static Scheme_Object *os_wxPenGetStyle(Scheme_Object *obj, int n,  Scheme_Object
   return WITH_REMEMBERED_STACK(bundle_symset_penStyle(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenSetStipple(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2584,7 +2553,6 @@ static Scheme_Object *os_wxPenSetStipple(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenGetStipple(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2606,7 +2574,6 @@ static Scheme_Object *os_wxPenGetStipple(Scheme_Object *obj, int n,  Scheme_Obje
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBitmap(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2677,7 +2644,6 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenGetColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2699,7 +2665,6 @@ static Scheme_Object *os_wxPenGetColour(Scheme_Object *obj, int n,  Scheme_Objec
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenSetJoin(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2722,7 +2687,6 @@ static Scheme_Object *os_wxPenSetJoin(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenGetJoin(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2744,7 +2708,6 @@ static Scheme_Object *os_wxPenGetJoin(Scheme_Object *obj, int n,  Scheme_Object 
   return WITH_REMEMBERED_STACK(bundle_symset_join(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenSetCap(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2767,7 +2730,6 @@ static Scheme_Object *os_wxPenSetCap(Scheme_Object *obj, int n,  Scheme_Object *
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenGetCap(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2789,7 +2751,6 @@ static Scheme_Object *os_wxPenGetCap(Scheme_Object *obj, int n,  Scheme_Object *
   return WITH_REMEMBERED_STACK(bundle_symset_cap(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenSetWidth(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2812,7 +2773,6 @@ static Scheme_Object *os_wxPenSetWidth(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenGetWidth(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2834,7 +2794,6 @@ static Scheme_Object *os_wxPenGetWidth(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);
@@ -3044,7 +3003,6 @@ os_wxPenList::~os_wxPenList()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3103,7 +3061,6 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxPen(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPenList_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -3327,7 +3284,6 @@ os_wxCursor::~os_wxCursor()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCursorOk(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3349,7 +3305,6 @@ static Scheme_Object *os_wxCursorOk(Scheme_Object *obj, int n,  Scheme_Object *p
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);
@@ -3672,7 +3627,6 @@ os_wxRegion::~os_wxRegion()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRegionEmpty(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3694,7 +3648,6 @@ static Scheme_Object *os_wxRegionEmpty(Scheme_Object *obj, int n,  Scheme_Object
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRegionRgnBoundingBox(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3716,7 +3669,6 @@ static Scheme_Object *os_wxRegionRgnBoundingBox(Scheme_Object *obj, int n,  Sche
   return ((Scheme_Object *)r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRegionSubtract(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3740,7 +3692,6 @@ static Scheme_Object *os_wxRegionSubtract(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRegionIntersect(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3764,7 +3715,6 @@ static Scheme_Object *os_wxRegionIntersect(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRegionUnion(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3788,7 +3738,6 @@ static Scheme_Object *os_wxRegionUnion(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRegionSetArc(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3821,7 +3770,6 @@ static Scheme_Object *os_wxRegionSetArc(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRegionSetPolygon(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3861,7 +3809,6 @@ static Scheme_Object *os_wxRegionSetPolygon(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRegionSetEllipse(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3890,7 +3837,6 @@ static Scheme_Object *os_wxRegionSetEllipse(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRegionSetRoundedRectangle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3924,7 +3870,6 @@ static Scheme_Object *os_wxRegionSetRoundedRectangle(Scheme_Object *obj, int n, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRegionSetRectangle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3953,7 +3898,6 @@ static Scheme_Object *os_wxRegionSetRectangle(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRegionGetDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3975,7 +3919,6 @@ static Scheme_Object *os_wxRegionGetDC(Scheme_Object *obj, int n,  Scheme_Object
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxDC(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRegion_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -4133,7 +4076,6 @@ os_wxFontNameDirectory::~os_wxFontNameDirectory()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontNameDirectoryIdentity(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4157,7 +4099,6 @@ static Scheme_Object *os_wxFontNameDirectoryIdentity(Scheme_Object *obj, int n, 
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontNameDirectoryFindOrCreateFontId(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4184,7 +4125,6 @@ static Scheme_Object *os_wxFontNameDirectoryFindOrCreateFontId(Scheme_Object *ob
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontNameDirectoryGetFamily(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4208,7 +4148,6 @@ static Scheme_Object *os_wxFontNameDirectoryGetFamily(Scheme_Object *obj, int n,
   return WITH_REMEMBERED_STACK(bundle_symset_family(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontNameDirectoryGetFontName(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4232,7 +4171,6 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontName(Scheme_Object *obj, int 
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontNameDirectoryGetFontId(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4259,7 +4197,6 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontId(Scheme_Object *obj, int n,
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontNameDirectorySetPostScriptName(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4289,7 +4226,6 @@ static Scheme_Object *os_wxFontNameDirectorySetPostScriptName(Scheme_Object *obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontNameDirectorySetScreenName(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4319,7 +4255,6 @@ static Scheme_Object *os_wxFontNameDirectorySetScreenName(Scheme_Object *obj, in
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontNameDirectoryGetPostScriptName(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4347,7 +4282,6 @@ static Scheme_Object *os_wxFontNameDirectoryGetPostScriptName(Scheme_Object *obj
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxFontNameDirectoryGetScreenName(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)

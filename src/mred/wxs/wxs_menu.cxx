@@ -117,7 +117,6 @@ os_wxMenu::~os_wxMenu()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenumenuSelect(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -138,7 +137,6 @@ static Scheme_Object *os_wxMenumenuSelect(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuSetTitle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -162,7 +160,6 @@ static Scheme_Object *os_wxMenuSetTitle(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuSetLabel(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -188,7 +185,6 @@ static Scheme_Object *os_wxMenuSetLabel(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuSetHelpString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -214,7 +210,6 @@ static Scheme_Object *os_wxMenuSetHelpString(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuNumber(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -236,7 +231,6 @@ static Scheme_Object *os_wxMenuNumber(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuEnable(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -261,7 +255,6 @@ static Scheme_Object *os_wxMenuEnable(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuCheck(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -286,7 +279,6 @@ static Scheme_Object *os_wxMenuCheck(Scheme_Object *obj, int n,  Scheme_Object *
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuChecked(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -310,7 +302,6 @@ static Scheme_Object *os_wxMenuChecked(Scheme_Object *obj, int n,  Scheme_Object
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuAppendSeparator(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -331,7 +322,6 @@ static Scheme_Object *os_wxMenuAppendSeparator(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuDeleteByPosition(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -355,7 +345,6 @@ static Scheme_Object *os_wxMenuDeleteByPosition(Scheme_Object *obj, int n,  Sche
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -379,7 +368,6 @@ static Scheme_Object *os_wxMenuDelete(Scheme_Object *obj, int n,  Scheme_Object 
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuAppend(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -453,7 +441,6 @@ static Scheme_Object *os_wxMenuAppend(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -648,7 +635,6 @@ os_wxMenuBar::~os_wxMenuBar()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuBarSetLabelTop(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -674,7 +660,6 @@ static Scheme_Object *os_wxMenuBarSetLabelTop(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuBarNumber(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -696,7 +681,6 @@ static Scheme_Object *os_wxMenuBarNumber(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuBarEnableTop(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -721,7 +705,6 @@ static Scheme_Object *os_wxMenuBarEnableTop(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuBarDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -751,7 +734,6 @@ static Scheme_Object *os_wxMenuBarDelete(Scheme_Object *obj, int n,  Scheme_Obje
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuBarAppend(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -778,7 +760,6 @@ static Scheme_Object *os_wxMenuBarAppend(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -972,7 +953,6 @@ os_wxsMenuItem::~os_wxsMenuItem()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsMenuItemId(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -994,7 +974,6 @@ static Scheme_Object *os_wxsMenuItemId(Scheme_Object *obj, int n,  Scheme_Object
   return WITH_REMEMBERED_STACK(scheme_make_integer_value(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxsMenuItem_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1103,7 +1082,6 @@ class wxsMenuItem *objscheme_unbundle_wxsMenuItem(Scheme_Object *obj, const char
 
 
 
-#pragma argsused
 static Scheme_Object *wxsMenuItemGlobalwxsIdToMenuItem(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)

@@ -370,7 +370,6 @@ long os_wxMediaStreamInBase::Tell()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInBaseRead(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -399,7 +398,6 @@ static Scheme_Object *os_wxMediaStreamInBaseRead(Scheme_Object *obj, int n,  Sch
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInBaseBad(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -424,7 +422,6 @@ static Scheme_Object *os_wxMediaStreamInBaseBad(Scheme_Object *obj, int n,  Sche
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInBaseSkip(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -450,7 +447,6 @@ static Scheme_Object *os_wxMediaStreamInBaseSkip(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInBaseSeek(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -476,7 +472,6 @@ static Scheme_Object *os_wxMediaStreamInBaseSeek(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInBaseTell(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -501,7 +496,6 @@ static Scheme_Object *os_wxMediaStreamInBaseTell(Scheme_Object *obj, int n,  Sch
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -771,7 +765,6 @@ long os_wxMediaStreamOutBase::Tell()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutBaseWrite(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -799,7 +792,6 @@ static Scheme_Object *os_wxMediaStreamOutBaseWrite(Scheme_Object *obj, int n,  S
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutBaseBad(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -824,7 +816,6 @@ static Scheme_Object *os_wxMediaStreamOutBaseBad(Scheme_Object *obj, int n,  Sch
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutBaseSeek(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -850,7 +841,6 @@ static Scheme_Object *os_wxMediaStreamOutBaseSeek(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutBaseTell(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -875,7 +865,6 @@ static Scheme_Object *os_wxMediaStreamOutBaseTell(Scheme_Object *obj, int n,  Sc
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1018,7 +1007,6 @@ os_wxMediaStreamInStringBase::~os_wxMediaStreamInStringBase()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1161,7 +1149,6 @@ os_wxMediaStreamOutStringBase::~os_wxMediaStreamOutStringBase()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutStringBaseGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1185,7 +1172,6 @@ static Scheme_Object *os_wxMediaStreamOutStringBaseGetString(Scheme_Object *obj,
   return (r ? scheme_make_sized_string(r, _x0 - 1, 0) : XC_SCHEME_NULL);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1346,7 +1332,6 @@ os_wxMediaStreamIn::~os_wxMediaStreamIn()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInOk(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1368,7 +1353,6 @@ static Scheme_Object *os_wxMediaStreamInOk(Scheme_Object *obj, int n,  Scheme_Ob
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInJumpTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1391,7 +1375,6 @@ static Scheme_Object *os_wxMediaStreamInJumpTo(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInTell(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1413,7 +1396,6 @@ static Scheme_Object *os_wxMediaStreamInTell(Scheme_Object *obj, int n,  Scheme_
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInSkip(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1436,7 +1418,6 @@ static Scheme_Object *os_wxMediaStreamInSkip(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInRemoveBoundary(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1457,7 +1438,6 @@ static Scheme_Object *os_wxMediaStreamInRemoveBoundary(Scheme_Object *obj, int n
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInSetBoundary(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1480,7 +1460,6 @@ static Scheme_Object *os_wxMediaStreamInSetBoundary(Scheme_Object *obj, int n,  
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInGET(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1537,7 +1516,6 @@ static Scheme_Object *os_wxMediaStreamInGET(Scheme_Object *obj, int n,  Scheme_O
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaStreamIn(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInGetInexact(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1559,7 +1537,6 @@ static Scheme_Object *os_wxMediaStreamInGetInexact(Scheme_Object *obj, int n,  S
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInGetExact(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1581,7 +1558,6 @@ static Scheme_Object *os_wxMediaStreamInGetExact(Scheme_Object *obj, int n,  Sch
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInGetFixed(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1609,7 +1585,6 @@ static Scheme_Object *os_wxMediaStreamInGetFixed(Scheme_Object *obj, int n,  Sch
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaStreamIn(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1643,7 +1618,6 @@ static Scheme_Object *os_wxMediaStreamInGetString(Scheme_Object *obj, int n,  Sc
   return (r ? scheme_make_sized_string(r, _x0 - 1, 0) : XC_SCHEME_NULL);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamInGet(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1700,7 +1674,6 @@ static Scheme_Object *os_wxMediaStreamInGet(Scheme_Object *obj, int n,  Scheme_O
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaStreamIn(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1859,7 +1832,6 @@ os_wxMediaStreamOut::~os_wxMediaStreamOut()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutOk(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1881,7 +1853,6 @@ static Scheme_Object *os_wxMediaStreamOutOk(Scheme_Object *obj, int n,  Scheme_O
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutJumpTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1904,7 +1875,6 @@ static Scheme_Object *os_wxMediaStreamOutJumpTo(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutTell(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1926,7 +1896,6 @@ static Scheme_Object *os_wxMediaStreamOutTell(Scheme_Object *obj, int n,  Scheme
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutPUT(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1993,7 +1962,6 @@ static Scheme_Object *os_wxMediaStreamOutPUT(Scheme_Object *obj, int n,  Scheme_
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaStreamOut(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutPutFixed(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2017,7 +1985,6 @@ static Scheme_Object *os_wxMediaStreamOutPutFixed(Scheme_Object *obj, int n,  Sc
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaStreamOut(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOutPut(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2104,7 +2071,6 @@ static Scheme_Object *os_wxMediaStreamOutPut(Scheme_Object *obj, int n,  Scheme_
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaStreamOut(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

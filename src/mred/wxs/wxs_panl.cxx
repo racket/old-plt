@@ -378,7 +378,6 @@ void os_wxPanel::OnKillFocus()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelGetLabelFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -400,7 +399,6 @@ static Scheme_Object *os_wxPanelGetLabelFont(Scheme_Object *obj, int n,  Scheme_
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelSetLabelFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -424,7 +422,6 @@ static Scheme_Object *os_wxPanelSetLabelFont(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelGetButtonFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -446,7 +443,6 @@ static Scheme_Object *os_wxPanelGetButtonFont(Scheme_Object *obj, int n,  Scheme
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelSetButtonFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -470,7 +466,6 @@ static Scheme_Object *os_wxPanelSetButtonFont(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelGetLabelPosition(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -492,7 +487,6 @@ static Scheme_Object *os_wxPanelGetLabelPosition(Scheme_Object *obj, int n,  Sch
   return WITH_REMEMBERED_STACK(bundle_symset_orientation(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelSetLabelPosition(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -515,7 +509,6 @@ static Scheme_Object *os_wxPanelSetLabelPosition(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -539,7 +532,6 @@ static Scheme_Object *os_wxPanelOnChar(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -563,7 +555,6 @@ static Scheme_Object *os_wxPanelOnEvent(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelOnPaint(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -584,7 +575,6 @@ static Scheme_Object *os_wxPanelOnPaint(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -611,7 +601,6 @@ static Scheme_Object *os_wxPanelOnDropFile(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -642,7 +631,6 @@ static Scheme_Object *os_wxPanelPreOnEvent(Scheme_Object *obj, int n,  Scheme_Ob
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelPreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -673,7 +661,6 @@ static Scheme_Object *os_wxPanelPreOnChar(Scheme_Object *obj, int n,  Scheme_Obj
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -701,7 +688,6 @@ static Scheme_Object *os_wxPanelOnSize(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -725,7 +711,6 @@ static Scheme_Object *os_wxPanelOnSetFocus(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -749,7 +734,6 @@ static Scheme_Object *os_wxPanelOnKillFocus(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelSetItemCursor(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -774,7 +758,6 @@ static Scheme_Object *os_wxPanelSetItemCursor(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanelGetCursor(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -806,7 +789,6 @@ static Scheme_Object *os_wxPanelGetCursor(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);
@@ -1441,7 +1423,6 @@ void os_wxDialogBox::OnActivate(Bool x0)
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDialogBoxdialogMenu(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1462,7 +1443,6 @@ static Scheme_Object *os_wxDialogBoxdialogMenu(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDialogBoxSetTitle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1486,7 +1466,6 @@ static Scheme_Object *os_wxDialogBoxSetTitle(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDialogBoxOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1513,7 +1492,6 @@ static Scheme_Object *os_wxDialogBoxOnDropFile(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDialogBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1544,7 +1522,6 @@ static Scheme_Object *os_wxDialogBoxPreOnEvent(Scheme_Object *obj, int n,  Schem
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDialogBoxPreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1575,7 +1552,6 @@ static Scheme_Object *os_wxDialogBoxPreOnChar(Scheme_Object *obj, int n,  Scheme
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDialogBoxOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1603,7 +1579,6 @@ static Scheme_Object *os_wxDialogBoxOnSize(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDialogBoxOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1627,7 +1602,6 @@ static Scheme_Object *os_wxDialogBoxOnSetFocus(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDialogBoxOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1651,7 +1625,6 @@ static Scheme_Object *os_wxDialogBoxOnKillFocus(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDialogBoxOnClose(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1676,7 +1649,6 @@ static Scheme_Object *os_wxDialogBoxOnClose(Scheme_Object *obj, int n,  Scheme_O
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDialogBoxOnActivate(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1702,7 +1674,6 @@ static Scheme_Object *os_wxDialogBoxOnActivate(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

@@ -504,7 +504,6 @@ void os_wxMediaCanvas::OnKillFocus()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -531,7 +530,6 @@ static Scheme_Object *os_wxMediaCanvasOnChar(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -558,7 +556,6 @@ static Scheme_Object *os_wxMediaCanvasOnEvent(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasOnPaint(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -582,7 +579,6 @@ static Scheme_Object *os_wxMediaCanvasOnPaint(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -609,7 +605,6 @@ static Scheme_Object *os_wxMediaCanvasOnDropFile(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -640,7 +635,6 @@ static Scheme_Object *os_wxMediaCanvasPreOnEvent(Scheme_Object *obj, int n,  Sch
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasPreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -671,7 +665,6 @@ static Scheme_Object *os_wxMediaCanvasPreOnChar(Scheme_Object *obj, int n,  Sche
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -699,7 +692,6 @@ static Scheme_Object *os_wxMediaCanvasOnSize(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -723,7 +715,6 @@ static Scheme_Object *os_wxMediaCanvasOnSetFocus(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -747,7 +738,6 @@ static Scheme_Object *os_wxMediaCanvasOnKillFocus(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasCallAsPrimaryOwner(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -774,7 +764,6 @@ static Scheme_Object *os_wxMediaCanvasCallAsPrimaryOwner(Scheme_Object *obj, int
   return (Scheme_Object*)r;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasSetLazyRefresh(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -797,7 +786,6 @@ static Scheme_Object *os_wxMediaCanvasSetLazyRefresh(Scheme_Object *obj, int n, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasGetLazyRefresh(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -819,7 +807,6 @@ static Scheme_Object *os_wxMediaCanvasGetLazyRefresh(Scheme_Object *obj, int n, 
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasScrollWithBottomBase(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -842,7 +829,6 @@ static Scheme_Object *os_wxMediaCanvasScrollWithBottomBase(Scheme_Object *obj, i
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasAllowScrollToLast(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -865,7 +851,6 @@ static Scheme_Object *os_wxMediaCanvasAllowScrollToLast(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasForceDisplayFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -888,7 +873,6 @@ static Scheme_Object *os_wxMediaCanvasForceDisplayFocus(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasIsFocusOn(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -910,7 +894,6 @@ static Scheme_Object *os_wxMediaCanvasIsFocusOn(Scheme_Object *obj, int n,  Sche
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasGetMedia(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -932,7 +915,6 @@ static Scheme_Object *os_wxMediaCanvasGetMedia(Scheme_Object *obj, int n,  Schem
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaBuffer(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvasSetMedia(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -961,7 +943,6 @@ static Scheme_Object *os_wxMediaCanvasSetMedia(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaCanvas_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1493,7 +1474,6 @@ class wxDC* os_wxMediaAdmin::GetDC(float* x0, float* x1)
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaAdminDelayRefresh(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1518,7 +1498,6 @@ static Scheme_Object *os_wxMediaAdminDelayRefresh(Scheme_Object *obj, int n,  Sc
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaAdminUpdateCursor(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1542,7 +1521,6 @@ static Scheme_Object *os_wxMediaAdminUpdateCursor(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaAdminNeedsUpdate(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1574,7 +1552,6 @@ static Scheme_Object *os_wxMediaAdminNeedsUpdate(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaAdminResized(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1600,7 +1577,6 @@ static Scheme_Object *os_wxMediaAdminResized(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaAdminGrabCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1629,7 +1605,6 @@ static Scheme_Object *os_wxMediaAdminGrabCaret(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaAdminScrollTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1672,7 +1647,6 @@ static Scheme_Object *os_wxMediaAdminScrollTo(Scheme_Object *obj, int n,  Scheme
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaAdminGetMaxView(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1734,7 +1708,6 @@ static Scheme_Object *os_wxMediaAdminGetMaxView(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaAdminGetView(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1796,7 +1769,6 @@ static Scheme_Object *os_wxMediaAdminGetView(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaAdminGetDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1844,7 +1816,6 @@ static Scheme_Object *os_wxMediaAdminGetDC(Scheme_Object *obj, int n,  Scheme_Ob
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxDC(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaAdmin_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1987,7 +1958,6 @@ os_wxMediaSnipMediaAdmin::~os_wxMediaSnipMediaAdmin()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaSnipMediaAdminGetSnip(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2512,7 +2482,6 @@ class wxMediaBuffer* os_wxSnipAdmin::GetMedia()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipAdminUpdateCursor(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2536,7 +2505,6 @@ static Scheme_Object *os_wxSnipAdminUpdateCursor(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipAdminReleaseSnip(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2564,7 +2532,6 @@ static Scheme_Object *os_wxSnipAdminReleaseSnip(Scheme_Object *obj, int n,  Sche
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipAdminNeedsUpdate(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2599,7 +2566,6 @@ static Scheme_Object *os_wxSnipAdminNeedsUpdate(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipAdminRecounted(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2629,7 +2595,6 @@ static Scheme_Object *os_wxSnipAdminRecounted(Scheme_Object *obj, int n,  Scheme
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipAdminResized(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2658,7 +2623,6 @@ static Scheme_Object *os_wxSnipAdminResized(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipAdminSetCaretOwner(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2687,7 +2651,6 @@ static Scheme_Object *os_wxSnipAdminSetCaretOwner(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipAdminScrollTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2730,7 +2693,6 @@ static Scheme_Object *os_wxSnipAdminScrollTo(Scheme_Object *obj, int n,  Scheme_
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipAdminGetView(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2793,7 +2755,6 @@ static Scheme_Object *os_wxSnipAdminGetView(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipAdminGetViewSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2834,7 +2795,6 @@ static Scheme_Object *os_wxSnipAdminGetViewSize(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipAdminGetDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2859,7 +2819,6 @@ static Scheme_Object *os_wxSnipAdminGetDC(Scheme_Object *obj, int n,  Scheme_Obj
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxDC(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipAdminGetMedia(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2884,7 +2843,6 @@ static Scheme_Object *os_wxSnipAdminGetMedia(Scheme_Object *obj, int n,  Scheme_
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaBuffer(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipAdmin_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -3199,7 +3157,6 @@ class wxSnip* os_wxSnipClass::Read(class wxMediaStreamIn* x0)
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipClassWriteDone(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3223,7 +3180,6 @@ static Scheme_Object *os_wxSnipClassWriteDone(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipClassWriteHeader(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3251,7 +3207,6 @@ static Scheme_Object *os_wxSnipClassWriteHeader(Scheme_Object *obj, int n,  Sche
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipClassReadDone(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3275,7 +3230,6 @@ static Scheme_Object *os_wxSnipClassReadDone(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipClassReadHeader(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3303,7 +3257,6 @@ static Scheme_Object *os_wxSnipClassReadHeader(Scheme_Object *obj, int n,  Schem
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipClassRead(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3397,7 +3350,6 @@ static Scheme_Object *objscheme_wxSnipClass_Setversion(Scheme_Object *obj, int n
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipClass_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -3541,7 +3493,6 @@ os_wxSnipClassList::~os_wxSnipClassList()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipClassListReadingVersion(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3566,7 +3517,6 @@ static Scheme_Object *os_wxSnipClassListReadingVersion(Scheme_Object *obj, int n
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipClassListNth(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3590,7 +3540,6 @@ static Scheme_Object *os_wxSnipClassListNth(Scheme_Object *obj, int n,  Scheme_O
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnipClass(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipClassListNumber(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3612,7 +3561,6 @@ static Scheme_Object *os_wxSnipClassListNumber(Scheme_Object *obj, int n,  Schem
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipClassListAdd(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3636,7 +3584,6 @@ static Scheme_Object *os_wxSnipClassListAdd(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipClassListFindPosition(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3661,7 +3608,6 @@ static Scheme_Object *os_wxSnipClassListFindPosition(Scheme_Object *obj, int n, 
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxSnipClassListFind(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3892,7 +3838,6 @@ Bool os_wxKeymap::HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent* x1)
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapRemoveChainedKeymap(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3916,7 +3861,6 @@ static Scheme_Object *os_wxKeymapRemoveChainedKeymap(Scheme_Object *obj, int n, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapChainToKeymap(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3942,7 +3886,6 @@ static Scheme_Object *os_wxKeymapChainToKeymap(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapSetBreakSequenceCallback(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3967,7 +3910,6 @@ static Scheme_Object *os_wxKeymapSetBreakSequenceCallback(Scheme_Object *obj, in
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapCallFunction(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4003,7 +3945,6 @@ static Scheme_Object *os_wxKeymapCallFunction(Scheme_Object *obj, int n,  Scheme
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapRemoveGrabMouseFunction(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4024,7 +3965,6 @@ static Scheme_Object *os_wxKeymapRemoveGrabMouseFunction(Scheme_Object *obj, int
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapSetGrabMouseFunction(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4049,7 +3989,6 @@ static Scheme_Object *os_wxKeymapSetGrabMouseFunction(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapRemoveGrabKeyFunction(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4070,7 +4009,6 @@ static Scheme_Object *os_wxKeymapRemoveGrabKeyFunction(Scheme_Object *obj, int n
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapSetGrabKeyFunction(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4095,7 +4033,6 @@ static Scheme_Object *os_wxKeymapSetGrabKeyFunction(Scheme_Object *obj, int n,  
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapAddFunction(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4123,7 +4060,6 @@ static Scheme_Object *os_wxKeymapAddFunction(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapMapFunction(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4150,7 +4086,6 @@ static Scheme_Object *os_wxKeymapMapFunction(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapBreakSequence(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4171,7 +4106,6 @@ static Scheme_Object *os_wxKeymapBreakSequence(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapHandleMouseEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4202,7 +4136,6 @@ static Scheme_Object *os_wxKeymapHandleMouseEvent(Scheme_Object *obj, int n,  Sc
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapHandleKeyEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4233,7 +4166,6 @@ static Scheme_Object *os_wxKeymapHandleKeyEvent(Scheme_Object *obj, int n,  Sche
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapSetDoubleClickInterval(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4256,7 +4188,6 @@ static Scheme_Object *os_wxKeymapSetDoubleClickInterval(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymapGetDoubleClickInterval(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4278,7 +4209,6 @@ static Scheme_Object *os_wxKeymapGetDoubleClickInterval(Scheme_Object *obj, int 
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxKeymap_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -4560,7 +4490,6 @@ os_wxMediaWordbreakMap::~os_wxMediaWordbreakMap()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaWordbreakMapGetMap(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4584,7 +4513,6 @@ static Scheme_Object *os_wxMediaWordbreakMapGetMap(Scheme_Object *obj, int n,  S
   return WITH_REMEMBERED_STACK(bundle_symset_breakType(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaWordbreakMapSetMap(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4609,7 +4537,6 @@ static Scheme_Object *os_wxMediaWordbreakMapSetMap(Scheme_Object *obj, int n,  S
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaWordbreakMap_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

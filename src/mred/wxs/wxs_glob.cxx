@@ -133,7 +133,6 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 
 
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxsFillPrivateColor(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -158,7 +157,6 @@ static Scheme_Object *wxsGlobalwxsFillPrivateColor(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxFlushDisplay(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -177,7 +175,6 @@ static Scheme_Object *wxsGlobalwxFlushDisplay(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -202,7 +199,6 @@ static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -272,7 +268,6 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -349,7 +344,6 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxStripMenuCodes_Scheme(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -372,7 +366,6 @@ static Scheme_Object *wxsGlobalwxStripMenuCodes_Scheme(int n,  Scheme_Object *p[
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -402,7 +395,6 @@ static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxBell(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -421,7 +413,6 @@ static Scheme_Object *wxsGlobalwxBell(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxEndBusyCursor(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -440,7 +431,6 @@ static Scheme_Object *wxsGlobalwxEndBusyCursor(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxIsBusy(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -460,7 +450,6 @@ static Scheme_Object *wxsGlobalwxIsBusy(int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxBeginBusyCursor(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -479,7 +468,6 @@ static Scheme_Object *wxsGlobalwxBeginBusyCursor(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxMakeMetaFilePlaceable(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -512,7 +500,6 @@ static Scheme_Object *wxsGlobalwxMakeMetaFilePlaceable(int n,  Scheme_Object *p[
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxDisplayDepth(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -532,7 +519,6 @@ static Scheme_Object *wxsGlobalwxDisplayDepth(int n,  Scheme_Object *p[])
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxColourDisplay(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -552,7 +538,6 @@ static Scheme_Object *wxsGlobalwxColourDisplay(int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)

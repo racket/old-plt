@@ -183,7 +183,6 @@ os_wxBitmap::~os_wxBitmap()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBitmapSaveFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -210,7 +209,6 @@ static Scheme_Object *os_wxBitmapSaveFile(Scheme_Object *obj, int n,  Scheme_Obj
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBitmapLoadFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -240,7 +238,6 @@ static Scheme_Object *os_wxBitmapLoadFile(Scheme_Object *obj, int n,  Scheme_Obj
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBitmapIsColor(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -262,7 +259,6 @@ static Scheme_Object *os_wxBitmapIsColor(Scheme_Object *obj, int n,  Scheme_Obje
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBitmapOk(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -284,7 +280,6 @@ static Scheme_Object *os_wxBitmapOk(Scheme_Object *obj, int n,  Scheme_Object *p
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBitmapGetWidth(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -306,7 +301,6 @@ static Scheme_Object *os_wxBitmapGetWidth(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBitmapGetHeight(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -328,7 +322,6 @@ static Scheme_Object *os_wxBitmapGetHeight(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBitmapGetDepth(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -350,7 +343,6 @@ static Scheme_Object *os_wxBitmapGetDepth(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);

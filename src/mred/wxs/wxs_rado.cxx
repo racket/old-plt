@@ -541,7 +541,6 @@ void os_wxRadioBox::OnKillFocus()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxButtonFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -565,7 +564,6 @@ static Scheme_Object *os_wxRadioBoxButtonFocus(Scheme_Object *obj, int n,  Schem
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxEnable(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -615,7 +613,6 @@ static Scheme_Object *os_wxRadioBoxEnable(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -639,7 +636,6 @@ static Scheme_Object *os_wxRadioBoxGetString(Scheme_Object *obj, int n,  Scheme_
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxSetSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -662,7 +658,6 @@ static Scheme_Object *os_wxRadioBoxSetSelection(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxSetStringSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -686,7 +681,6 @@ static Scheme_Object *os_wxRadioBoxSetStringSelection(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxNumber(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -708,7 +702,6 @@ static Scheme_Object *os_wxRadioBoxNumber(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxGetStringSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -730,7 +723,6 @@ static Scheme_Object *os_wxRadioBoxGetStringSelection(Scheme_Object *obj, int n,
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxGetSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -752,7 +744,6 @@ static Scheme_Object *os_wxRadioBoxGetSelection(Scheme_Object *obj, int n,  Sche
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxFindString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -777,7 +768,6 @@ static Scheme_Object *os_wxRadioBoxFindString(Scheme_Object *obj, int n,  Scheme
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -804,7 +794,6 @@ static Scheme_Object *os_wxRadioBoxOnDropFile(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -835,7 +824,6 @@ static Scheme_Object *os_wxRadioBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxPreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -866,7 +854,6 @@ static Scheme_Object *os_wxRadioBoxPreOnChar(Scheme_Object *obj, int n,  Scheme_
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -894,7 +881,6 @@ static Scheme_Object *os_wxRadioBoxOnSize(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -918,7 +904,6 @@ static Scheme_Object *os_wxRadioBoxOnSetFocus(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBoxOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -942,7 +927,6 @@ static Scheme_Object *os_wxRadioBoxOnKillFocus(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);

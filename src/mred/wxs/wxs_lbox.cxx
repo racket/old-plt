@@ -484,7 +484,6 @@ void os_wxListBox::OnKillFocus()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxSetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -510,7 +509,6 @@ static Scheme_Object *os_wxListBoxSetString(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -534,7 +532,6 @@ static Scheme_Object *os_wxListBoxGetString(Scheme_Object *obj, int n,  Scheme_O
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxSetStringSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -559,7 +556,6 @@ static Scheme_Object *os_wxListBoxSetStringSelection(Scheme_Object *obj, int n, 
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxSetFirstItem(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -582,7 +578,6 @@ static Scheme_Object *os_wxListBoxSetFirstItem(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxSet(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -607,7 +602,6 @@ static Scheme_Object *os_wxListBoxSet(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxGetSelectionList(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -629,7 +623,6 @@ static Scheme_Object *os_wxListBoxGetSelectionList(Scheme_Object *obj, int n,  S
   return ((Scheme_Object *)r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxGetFirstItem(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -651,7 +644,6 @@ static Scheme_Object *os_wxListBoxGetFirstItem(Scheme_Object *obj, int n,  Schem
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxNumberOfVisibleItems(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -673,7 +665,6 @@ static Scheme_Object *os_wxListBoxNumberOfVisibleItems(Scheme_Object *obj, int n
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxNumber(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -695,7 +686,6 @@ static Scheme_Object *os_wxListBoxNumber(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxGetSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -717,7 +707,6 @@ static Scheme_Object *os_wxListBoxGetSelection(Scheme_Object *obj, int n,  Schem
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxFindString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -742,7 +731,6 @@ static Scheme_Object *os_wxListBoxFindString(Scheme_Object *obj, int n,  Scheme_
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxSetClientData(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -768,7 +756,6 @@ static Scheme_Object *os_wxListBoxSetClientData(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxGetClientData(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -792,7 +779,6 @@ static Scheme_Object *os_wxListBoxGetClientData(Scheme_Object *obj, int n,  Sche
   return ((r) ? ((Scheme_Object *)r) : XC_SCHEME_NULL);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxGetStringSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -814,7 +800,6 @@ static Scheme_Object *os_wxListBoxGetStringSelection(Scheme_Object *obj, int n, 
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxSelected(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -838,7 +823,6 @@ static Scheme_Object *os_wxListBoxSelected(Scheme_Object *obj, int n,  Scheme_Ob
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxSetOneSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -861,7 +845,6 @@ static Scheme_Object *os_wxListBoxSetOneSelection(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxSetSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -889,7 +872,6 @@ static Scheme_Object *os_wxListBoxSetSelection(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -912,7 +894,6 @@ static Scheme_Object *os_wxListBoxDelete(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxClear(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -933,7 +914,6 @@ static Scheme_Object *os_wxListBoxClear(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxAppend(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -986,7 +966,6 @@ static Scheme_Object *os_wxListBoxAppend(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1013,7 +992,6 @@ static Scheme_Object *os_wxListBoxOnDropFile(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1044,7 +1022,6 @@ static Scheme_Object *os_wxListBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme_
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxPreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1075,7 +1052,6 @@ static Scheme_Object *os_wxListBoxPreOnChar(Scheme_Object *obj, int n,  Scheme_O
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1103,7 +1079,6 @@ static Scheme_Object *os_wxListBoxOnSize(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1127,7 +1102,6 @@ static Scheme_Object *os_wxListBoxOnSetFocus(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBoxOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1151,7 +1125,6 @@ static Scheme_Object *os_wxListBoxOnKillFocus(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

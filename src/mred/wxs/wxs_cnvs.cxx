@@ -493,7 +493,6 @@ void os_wxCanvas::OnPaint()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -520,7 +519,6 @@ static Scheme_Object *os_wxCanvasOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -551,7 +549,6 @@ static Scheme_Object *os_wxCanvasPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasPreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -582,7 +579,6 @@ static Scheme_Object *os_wxCanvasPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -610,7 +606,6 @@ static Scheme_Object *os_wxCanvasOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -634,7 +629,6 @@ static Scheme_Object *os_wxCanvasOnSetFocus(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -658,7 +652,6 @@ static Scheme_Object *os_wxCanvasOnKillFocus(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasOnScroll(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -685,7 +678,6 @@ static Scheme_Object *os_wxCanvasOnScroll(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasSetScrollPage(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -710,7 +702,6 @@ static Scheme_Object *os_wxCanvasSetScrollPage(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasSetScrollRange(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -735,7 +726,6 @@ static Scheme_Object *os_wxCanvasSetScrollRange(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasSetScrollPos(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -760,7 +750,6 @@ static Scheme_Object *os_wxCanvasSetScrollPos(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasGetScrollPage(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -784,7 +773,6 @@ static Scheme_Object *os_wxCanvasGetScrollPage(Scheme_Object *obj, int n,  Schem
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasGetScrollRange(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -808,7 +796,6 @@ static Scheme_Object *os_wxCanvasGetScrollRange(Scheme_Object *obj, int n,  Sche
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasGetScrollPos(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -832,7 +819,6 @@ static Scheme_Object *os_wxCanvasGetScrollPos(Scheme_Object *obj, int n,  Scheme
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasScrollPercent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -857,7 +843,6 @@ static Scheme_Object *os_wxCanvasScrollPercent(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasWarpPointer(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -882,7 +867,6 @@ static Scheme_Object *os_wxCanvasWarpPointer(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasViewStart(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -914,7 +898,6 @@ static Scheme_Object *os_wxCanvasViewStart(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasSetScrollbars(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -962,7 +945,6 @@ static Scheme_Object *os_wxCanvasSetScrollbars(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasGetVirtualSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -994,7 +976,6 @@ static Scheme_Object *os_wxCanvasGetVirtualSize(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasGetDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1016,7 +997,6 @@ static Scheme_Object *os_wxCanvasGetDC(Scheme_Object *obj, int n,  Scheme_Object
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxDC(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasPopupMenu(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1044,7 +1024,6 @@ static Scheme_Object *os_wxCanvasPopupMenu(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1071,7 +1050,6 @@ static Scheme_Object *os_wxCanvasOnChar(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1098,7 +1076,6 @@ static Scheme_Object *os_wxCanvasOnEvent(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasOnPaint(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1122,7 +1099,6 @@ static Scheme_Object *os_wxCanvasOnPaint(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvasAllowDoubleClick(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1145,7 +1121,6 @@ static Scheme_Object *os_wxCanvasAllowDoubleClick(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxCanvas_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

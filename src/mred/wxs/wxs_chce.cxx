@@ -411,7 +411,6 @@ void os_wxChoice::OnKillFocus()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -435,7 +434,6 @@ static Scheme_Object *os_wxChoiceGetString(Scheme_Object *obj, int n,  Scheme_Ob
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceSetStringSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -460,7 +458,6 @@ static Scheme_Object *os_wxChoiceSetStringSelection(Scheme_Object *obj, int n,  
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceSetSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -483,7 +480,6 @@ static Scheme_Object *os_wxChoiceSetSelection(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceGetStringSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -505,7 +501,6 @@ static Scheme_Object *os_wxChoiceGetStringSelection(Scheme_Object *obj, int n,  
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceGetSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -527,7 +522,6 @@ static Scheme_Object *os_wxChoiceGetSelection(Scheme_Object *obj, int n,  Scheme
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceFindString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -552,7 +546,6 @@ static Scheme_Object *os_wxChoiceFindString(Scheme_Object *obj, int n,  Scheme_O
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceNumber(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -574,7 +567,6 @@ static Scheme_Object *os_wxChoiceNumber(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceClear(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -595,7 +587,6 @@ static Scheme_Object *os_wxChoiceClear(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceAppend(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -619,7 +610,6 @@ static Scheme_Object *os_wxChoiceAppend(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -646,7 +636,6 @@ static Scheme_Object *os_wxChoiceOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoicePreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -677,7 +666,6 @@ static Scheme_Object *os_wxChoicePreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoicePreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -708,7 +696,6 @@ static Scheme_Object *os_wxChoicePreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -736,7 +723,6 @@ static Scheme_Object *os_wxChoiceOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -760,7 +746,6 @@ static Scheme_Object *os_wxChoiceOnSetFocus(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoiceOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -784,7 +769,6 @@ static Scheme_Object *os_wxChoiceOnKillFocus(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

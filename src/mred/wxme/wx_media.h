@@ -291,6 +291,7 @@ class wxMediaEdit : public wxMediaBuffer
   void SetClickback(long start, long end, wxClickbackFunc, void *,
 		    wxStyleDelta *hiliteDelta = NULL, Bool callOnDown = FALSE);
   void RemoveClickback(long start, long end);
+  void CallClickback(long start, long end);
 
   void SetClickback(wxClickback *); /* Used by undo record only */
 

@@ -2774,7 +2774,6 @@ class wxMediaBuffer* os_wxMediaPasteboard::CopySelf()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardSetScrollStep(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2797,7 +2796,6 @@ static Scheme_Object *os_wxMediaPasteboardSetScrollStep(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardGetScrollStep(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2819,7 +2817,6 @@ static Scheme_Object *os_wxMediaPasteboardGetScrollStep(Scheme_Object *obj, int 
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardSetSelectionVisible(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2842,7 +2839,6 @@ static Scheme_Object *os_wxMediaPasteboardSetSelectionVisible(Scheme_Object *obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardGetSelectionVisible(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2864,7 +2860,6 @@ static Scheme_Object *os_wxMediaPasteboardGetSelectionVisible(Scheme_Object *obj
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardSetDragable(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2887,7 +2882,6 @@ static Scheme_Object *os_wxMediaPasteboardSetDragable(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardGetDragable(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2909,7 +2903,6 @@ static Scheme_Object *os_wxMediaPasteboardGetDragable(Scheme_Object *obj, int n,
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardAfterInteractiveResize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2936,7 +2929,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterInteractiveResize(Scheme_Object *
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnInteractiveResize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2963,7 +2955,6 @@ static Scheme_Object *os_wxMediaPasteboardOnInteractiveResize(Scheme_Object *obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCanInteractiveResize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2991,7 +2982,6 @@ static Scheme_Object *os_wxMediaPasteboardCanInteractiveResize(Scheme_Object *ob
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardAfterInteractiveMove(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3018,7 +3008,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterInteractiveMove(Scheme_Object *ob
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnInteractiveMove(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3045,7 +3034,6 @@ static Scheme_Object *os_wxMediaPasteboardOnInteractiveMove(Scheme_Object *obj, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCanInteractiveMove(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3073,7 +3061,6 @@ static Scheme_Object *os_wxMediaPasteboardCanInteractiveMove(Scheme_Object *obj,
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustResize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3111,7 +3098,6 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustResize(Scheme_Object 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMove(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3149,7 +3135,6 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMove(Scheme_Object *o
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMouse(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3184,7 +3169,6 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMouse(Scheme_Object *
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnDoubleClick(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3214,7 +3198,6 @@ static Scheme_Object *os_wxMediaPasteboardOnDoubleClick(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardAfterSelect(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3243,7 +3226,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterSelect(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnSelect(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3272,7 +3254,6 @@ static Scheme_Object *os_wxMediaPasteboardOnSelect(Scheme_Object *obj, int n,  S
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCanSelect(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3302,7 +3283,6 @@ static Scheme_Object *os_wxMediaPasteboardCanSelect(Scheme_Object *obj, int n,  
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardAfterResize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3335,7 +3315,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterResize(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnResize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3366,7 +3345,6 @@ static Scheme_Object *os_wxMediaPasteboardOnResize(Scheme_Object *obj, int n,  S
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCanResize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3398,7 +3376,6 @@ static Scheme_Object *os_wxMediaPasteboardCanResize(Scheme_Object *obj, int n,  
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardAfterMoveTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3431,7 +3408,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterMoveTo(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnMoveTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3464,7 +3440,6 @@ static Scheme_Object *os_wxMediaPasteboardOnMoveTo(Scheme_Object *obj, int n,  S
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCanMoveTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3498,7 +3473,6 @@ static Scheme_Object *os_wxMediaPasteboardCanMoveTo(Scheme_Object *obj, int n,  
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardAfterDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3525,7 +3499,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterDelete(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3552,7 +3525,6 @@ static Scheme_Object *os_wxMediaPasteboardOnDelete(Scheme_Object *obj, int n,  S
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCanDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3580,7 +3552,6 @@ static Scheme_Object *os_wxMediaPasteboardCanDelete(Scheme_Object *obj, int n,  
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardAfterInsert(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3614,7 +3585,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterInsert(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnInsert(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3648,7 +3618,6 @@ static Scheme_Object *os_wxMediaPasteboardOnInsert(Scheme_Object *obj, int n,  S
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCanInsert(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3683,7 +3652,6 @@ static Scheme_Object *os_wxMediaPasteboardCanInsert(Scheme_Object *obj, int n,  
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardFindNextSelectedSnip(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3708,7 +3676,6 @@ static Scheme_Object *os_wxMediaPasteboardFindNextSelectedSnip(Scheme_Object *ob
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardIsSelected(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3733,7 +3700,6 @@ static Scheme_Object *os_wxMediaPasteboardIsSelected(Scheme_Object *obj, int n, 
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardFindSnip(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3759,7 +3725,6 @@ static Scheme_Object *os_wxMediaPasteboardFindSnip(Scheme_Object *obj, int n,  S
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardGetCenter(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3791,7 +3756,6 @@ static Scheme_Object *os_wxMediaPasteboardGetCenter(Scheme_Object *obj, int n,  
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardRemoveSelected(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3815,7 +3779,6 @@ static Scheme_Object *os_wxMediaPasteboardRemoveSelected(Scheme_Object *obj, int
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardNoSelected(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3836,7 +3799,6 @@ static Scheme_Object *os_wxMediaPasteboardNoSelected(Scheme_Object *obj, int n, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardAddSelected(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3891,7 +3853,6 @@ static Scheme_Object *os_wxMediaPasteboardAddSelected(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardSetSelected(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3915,7 +3876,6 @@ static Scheme_Object *os_wxMediaPasteboardSetSelected(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardChangeStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3992,7 +3952,6 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardSetAfter(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4019,7 +3978,6 @@ static Scheme_Object *os_wxMediaPasteboardSetAfter(Scheme_Object *obj, int n,  S
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardSetBefore(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4046,7 +4004,6 @@ static Scheme_Object *os_wxMediaPasteboardSetBefore(Scheme_Object *obj, int n,  
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardLower(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4070,7 +4027,6 @@ static Scheme_Object *os_wxMediaPasteboardLower(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardRaise(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4094,7 +4050,6 @@ static Scheme_Object *os_wxMediaPasteboardRaise(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardResize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4123,7 +4078,6 @@ static Scheme_Object *os_wxMediaPasteboardResize(Scheme_Object *obj, int n,  Sch
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardMove(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4178,7 +4132,6 @@ static Scheme_Object *os_wxMediaPasteboardMove(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardMoveTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4206,7 +4159,6 @@ static Scheme_Object *os_wxMediaPasteboardMoveTo(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardRemove(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4230,7 +4182,6 @@ static Scheme_Object *os_wxMediaPasteboardRemove(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardErase(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4251,7 +4202,6 @@ static Scheme_Object *os_wxMediaPasteboardErase(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardDoPaste(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4277,7 +4227,6 @@ static Scheme_Object *os_wxMediaPasteboardDoPaste(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardDoCopy(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4305,7 +4254,6 @@ static Scheme_Object *os_wxMediaPasteboardDoCopy(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4352,7 +4300,6 @@ static Scheme_Object *os_wxMediaPasteboardDelete(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4452,7 +4399,6 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardGetFlattenedText(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4476,7 +4422,6 @@ static Scheme_Object *os_wxMediaPasteboardGetFlattenedText(Scheme_Object *obj, i
   return scheme_make_sized_string(r, _x0, 0);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardPutFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4507,7 +4452,6 @@ static Scheme_Object *os_wxMediaPasteboardPutFile(Scheme_Object *obj, int n,  Sc
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardGetFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4535,7 +4479,6 @@ static Scheme_Object *os_wxMediaPasteboardGetFile(Scheme_Object *obj, int n,  Sc
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardAfterEditSequence(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4559,7 +4502,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterEditSequence(Scheme_Object *obj, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnEditSequence(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4583,7 +4525,6 @@ static Scheme_Object *os_wxMediaPasteboardOnEditSequence(Scheme_Object *obj, int
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardAfterLoadFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4609,7 +4550,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterLoadFile(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnLoadFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4638,7 +4578,6 @@ static Scheme_Object *os_wxMediaPasteboardOnLoadFile(Scheme_Object *obj, int n, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCanLoadFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4668,7 +4607,6 @@ static Scheme_Object *os_wxMediaPasteboardCanLoadFile(Scheme_Object *obj, int n,
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardAfterSaveFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4694,7 +4632,6 @@ static Scheme_Object *os_wxMediaPasteboardAfterSaveFile(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnSaveFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4723,7 +4660,6 @@ static Scheme_Object *os_wxMediaPasteboardOnSaveFile(Scheme_Object *obj, int n, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCanSaveFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4753,7 +4689,6 @@ static Scheme_Object *os_wxMediaPasteboardCanSaveFile(Scheme_Object *obj, int n,
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnNewBox(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4780,7 +4715,6 @@ static Scheme_Object *os_wxMediaPasteboardOnNewBox(Scheme_Object *obj, int n,  S
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnNewImageSnip(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4814,7 +4748,6 @@ static Scheme_Object *os_wxMediaPasteboardOnNewImageSnip(Scheme_Object *obj, int
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxImageSnip(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardInvalidateBitmapCache(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4858,7 +4791,6 @@ static Scheme_Object *os_wxMediaPasteboardInvalidateBitmapCache(Scheme_Object *o
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnPaint(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4901,7 +4833,6 @@ static Scheme_Object *os_wxMediaPasteboardOnPaint(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardWriteFootersToFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4929,7 +4860,6 @@ static Scheme_Object *os_wxMediaPasteboardWriteFootersToFile(Scheme_Object *obj,
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardWriteHeadersToFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4957,7 +4887,6 @@ static Scheme_Object *os_wxMediaPasteboardWriteHeadersToFile(Scheme_Object *obj,
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardReadFooterFromFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4988,7 +4917,6 @@ static Scheme_Object *os_wxMediaPasteboardReadFooterFromFile(Scheme_Object *obj,
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardReadHeaderFromFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5019,7 +4947,6 @@ static Scheme_Object *os_wxMediaPasteboardReadHeaderFromFile(Scheme_Object *obj,
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardWriteToFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5044,7 +4971,6 @@ static Scheme_Object *os_wxMediaPasteboardWriteToFile(Scheme_Object *obj, int n,
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardReadFromFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5074,7 +5000,6 @@ static Scheme_Object *os_wxMediaPasteboardReadFromFile(Scheme_Object *obj, int n
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardSetFilename(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5106,7 +5031,6 @@ static Scheme_Object *os_wxMediaPasteboardSetFilename(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardReleaseSnip(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5134,7 +5058,6 @@ static Scheme_Object *os_wxMediaPasteboardReleaseSnip(Scheme_Object *obj, int n,
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardSetModified(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5160,7 +5083,6 @@ static Scheme_Object *os_wxMediaPasteboardSetModified(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardSetSnipData(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5190,7 +5112,6 @@ static Scheme_Object *os_wxMediaPasteboardSetSnipData(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardGetSnipData(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5218,7 +5139,6 @@ static Scheme_Object *os_wxMediaPasteboardGetSnipData(Scheme_Object *obj, int n,
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBufferData(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardNeedsUpdate(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5253,7 +5173,6 @@ static Scheme_Object *os_wxMediaPasteboardNeedsUpdate(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardResized(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5282,7 +5201,6 @@ static Scheme_Object *os_wxMediaPasteboardResized(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardSetCaretOwner(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5314,7 +5232,6 @@ static Scheme_Object *os_wxMediaPasteboardSetCaretOwner(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardScrollTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5357,7 +5274,6 @@ static Scheme_Object *os_wxMediaPasteboardScrollTo(Scheme_Object *obj, int n,  S
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnDisplaySize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5381,7 +5297,6 @@ static Scheme_Object *os_wxMediaPasteboardOnDisplaySize(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnChange(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5405,7 +5320,6 @@ static Scheme_Object *os_wxMediaPasteboardOnChange(Scheme_Object *obj, int n,  S
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5431,7 +5345,6 @@ static Scheme_Object *os_wxMediaPasteboardOnFocus(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnDefaultChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5458,7 +5371,6 @@ static Scheme_Object *os_wxMediaPasteboardOnDefaultChar(Scheme_Object *obj, int 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnDefaultEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5485,7 +5397,6 @@ static Scheme_Object *os_wxMediaPasteboardOnDefaultEvent(Scheme_Object *obj, int
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnLocalChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5512,7 +5423,6 @@ static Scheme_Object *os_wxMediaPasteboardOnLocalChar(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnLocalEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5539,7 +5449,6 @@ static Scheme_Object *os_wxMediaPasteboardOnLocalEvent(Scheme_Object *obj, int n
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardFindFirstSnip(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5561,7 +5470,6 @@ static Scheme_Object *os_wxMediaPasteboardFindFirstSnip(Scheme_Object *obj, int 
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardSizeCacheInvalid(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5585,7 +5493,6 @@ static Scheme_Object *os_wxMediaPasteboardSizeCacheInvalid(Scheme_Object *obj, i
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardBlinkCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5609,7 +5516,6 @@ static Scheme_Object *os_wxMediaPasteboardBlinkCaret(Scheme_Object *obj, int n, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOwnCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5635,7 +5541,6 @@ static Scheme_Object *os_wxMediaPasteboardOwnCaret(Scheme_Object *obj, int n,  S
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardRefresh(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5669,7 +5574,6 @@ static Scheme_Object *os_wxMediaPasteboardRefresh(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardAdjustCursor(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5697,7 +5601,6 @@ static Scheme_Object *os_wxMediaPasteboardAdjustCursor(Scheme_Object *obj, int n
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxCursor(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5724,7 +5627,6 @@ static Scheme_Object *os_wxMediaPasteboardOnChar(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5751,7 +5653,6 @@ static Scheme_Object *os_wxMediaPasteboardOnEvent(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCopySelfTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5778,7 +5679,6 @@ static Scheme_Object *os_wxMediaPasteboardCopySelfTo(Scheme_Object *obj, int n, 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCopySelf(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5803,7 +5703,6 @@ static Scheme_Object *os_wxMediaPasteboardCopySelf(Scheme_Object *obj, int n,  S
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaBuffer(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardKill(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5829,7 +5728,6 @@ static Scheme_Object *os_wxMediaPasteboardKill(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardPaste(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5855,7 +5753,6 @@ static Scheme_Object *os_wxMediaPasteboardPaste(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCopy(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5886,7 +5783,6 @@ static Scheme_Object *os_wxMediaPasteboardCopy(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardCut(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5917,7 +5813,6 @@ static Scheme_Object *os_wxMediaPasteboardCut(Scheme_Object *obj, int n,  Scheme
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboard_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);

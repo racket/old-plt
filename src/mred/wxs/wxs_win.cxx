@@ -366,7 +366,6 @@ void os_wxWindow::OnKillFocus()
   }
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -393,7 +392,6 @@ static Scheme_Object *os_wxWindowOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -424,7 +422,6 @@ static Scheme_Object *os_wxWindowPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowPreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -455,7 +452,6 @@ static Scheme_Object *os_wxWindowPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -483,7 +479,6 @@ static Scheme_Object *os_wxWindowOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -507,7 +502,6 @@ static Scheme_Object *os_wxWindowOnSetFocus(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -531,7 +525,6 @@ static Scheme_Object *os_wxWindowOnKillFocus(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowwxSchemeWindowGetY(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -553,7 +546,6 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetY(Scheme_Object *obj, int n,  
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowwxSchemeWindowGetX(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -575,7 +567,6 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetX(Scheme_Object *obj, int n,  
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowwxSchemeWindowGetWidth(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -597,7 +588,6 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetWidth(Scheme_Object *obj, int 
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowwxSchemeWindowGetHeight(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -619,7 +609,6 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetHeight(Scheme_Object *obj, int
   return scheme_make_integer(r);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowCenter(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -645,7 +634,6 @@ static Scheme_Object *os_wxWindowCenter(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -713,7 +701,6 @@ static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowGetParent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -735,7 +722,6 @@ static Scheme_Object *os_wxWindowGetParent(Scheme_Object *obj, int n,  Scheme_Ob
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxWindow(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowRefresh(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -756,7 +742,6 @@ static Scheme_Object *os_wxWindowRefresh(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowScreenToClient(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -788,7 +773,6 @@ static Scheme_Object *os_wxWindowScreenToClient(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowClientToScreen(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -820,7 +804,6 @@ static Scheme_Object *os_wxWindowClientToScreen(Scheme_Object *obj, int n,  Sche
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowDragAcceptFiles(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -843,7 +826,6 @@ static Scheme_Object *os_wxWindowDragAcceptFiles(Scheme_Object *obj, int n,  Sch
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowEnable(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -866,7 +848,6 @@ static Scheme_Object *os_wxWindowEnable(Scheme_Object *obj, int n,  Scheme_Objec
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowGetPosition(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -898,7 +879,6 @@ static Scheme_Object *os_wxWindowGetPosition(Scheme_Object *obj, int n,  Scheme_
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowGetClientSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -930,7 +910,6 @@ static Scheme_Object *os_wxWindowGetClientSize(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowGetSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -962,7 +941,6 @@ static Scheme_Object *os_wxWindowGetSize(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowFit(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -983,7 +961,6 @@ static Scheme_Object *os_wxWindowFit(Scheme_Object *obj, int n,  Scheme_Object *
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowIsShown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1005,7 +982,6 @@ static Scheme_Object *os_wxWindowIsShown(Scheme_Object *obj, int n,  Scheme_Obje
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowShow(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1028,7 +1004,6 @@ static Scheme_Object *os_wxWindowShow(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowSetCursor(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1053,7 +1028,6 @@ static Scheme_Object *os_wxWindowSetCursor(Scheme_Object *obj, int n,  Scheme_Ob
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxCursor(r));
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowMove(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1078,7 +1052,6 @@ static Scheme_Object *os_wxWindowMove(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowSetSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1112,7 +1085,6 @@ static Scheme_Object *os_wxWindowSetSize(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1133,7 +1105,6 @@ static Scheme_Object *os_wxWindowSetFocus(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowGetsFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1155,7 +1126,6 @@ static Scheme_Object *os_wxWindowGetsFocus(Scheme_Object *obj, int n,  Scheme_Ob
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
 static Scheme_Object *os_wxWindowCentre(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)

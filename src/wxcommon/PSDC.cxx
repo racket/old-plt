@@ -1623,7 +1623,7 @@ static void printhex(PSStream *pstream, int v)
 Bool wxPostScriptDC::
 Blit (float xdest, float ydest, float fwidth, float fheight,
       wxMemoryDC *src, float xsrc, float ysrc, int rop, wxColour *dcolor,
-      wxBitmap *mask)
+      wxMemoryDC *mask)
 {
   int mono;
   long j, i;
@@ -1649,6 +1649,8 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
   x = (long)floor(xsrc);
   y = (long)floor(ysrc);
 
+  c = new wxColour;
+
   /* Since we want a definition, may need to start a dictionary: */
   if (rop >= 0) {
     pstream->Out("1 dict begin\n");
@@ -1668,7 +1670,54 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
   if (rop >= 0) {
     pstream->Out(XSCALE(xdest)); pstream->Out(" "); pstream->Out(YSCALE(ydest) - fheight); pstream->Out(" translate\n");
   }
+
+  /* Mask => clip */
+  if (mask) {
+    int red, green, blue;
+    int skip_start, skip;
+    
+    pstream->Out("newpath\n");
+    for (i = 0; i < width; i++) {
+      skip = 0;
+      skip_start = 0;
+      for (j = 0; j < height + 1; j++) {
+	mask->GetPixel(i, j, c);
+	
+	if (j == height) {
+	  red = green = blue = 255;
+	} else {
+	  red = c->Red();
+	  green = c->Green();
+	  blue = c->Blue();
+	}
+
+	if ((red < 255) || (green < 255) || (blue < 255)) {
+	  skip++;
+	} else {
+	  if (skip) {
+	    float si, sip, ss, ssk;
+	    si = XSCALEREL(i);
+	    sip = XSCALEREL(i+1);
+	    ss = fheight - YSCALEREL(skip_start);
+	    ssk = fheight - YSCALEREL(skip_start + skip);
+	    pstream->Out(si); pstream->Out(" "); pstream->Out(ss); pstream->Out(" moveto\n");
+	    pstream->Out(sip); pstream->Out(" "); pstream->Out(ss); pstream->Out(" lineto\n");
+	    pstream->Out(sip); pstream->Out(" "); pstream->Out(ssk); pstream->Out(" lineto\n");
+	    pstream->Out(si); pstream->Out(" "); pstream->Out(ssk); pstream->Out(" lineto\n");
+	  }
+
+	  skip = 0;
+	  skip_start = j + 1;
+	}
+      }
+    }
+    pstream->Out("clip\n");
+  }
+
+  /* Image scale */
   pstream->Out(fwidth); pstream->Out(" "); pstream->Out(fheight); pstream->Out(" scale\n");
+
+  /* Image matrix */
   pstream->Out(width); pstream->Out(" "); pstream->Out(height); pstream->Out(" 8 [ ");
   pstream->Out(width); pstream->Out(" 0 0 "); pstream->Out((-height)); pstream->Out(" 0 "); pstream->Out(height);
   pstream->Out(" ]\n");
@@ -1704,13 +1753,12 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
   } else
     pr = pg = pb = 0;
 
-  c = new wxColour;
   for (j = 0; j < height; j++) {
     for (i = 0; i < width; i++) {
       int red, green, blue;
 
       source->GetPixel(i, j, c);
-
+      
       red = c->Red();
       green = c->Green();
       blue = c->Blue();
@@ -1761,26 +1809,41 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
   return TRUE;
 }
 
-static wxMemoryDC *temp_mdc;
+static wxMemoryDC *temp_mdc, *temp_mask_mdc;
 
 Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight,
       wxBitmap *bm, float xsrc, float ysrc, int rop, wxColour *c, wxBitmap *mask)
 {
   Bool v;
+  wxMemoryDC *mask_dc = NULL;
 
   if (!temp_mdc) {
     wxREGGLOB(temp_mdc);
     temp_mdc = new wxMemoryDC(1);
   }
+  if (mask) {
+   if (!temp_mask_mdc) {
+     wxREGGLOB(temp_mask_mdc);
+     temp_mask_mdc = new wxMemoryDC(1);
+   } 
+   temp_mask_mdc->SelectObject(mask);
+   if (temp_mask_mdc->GetObject()) {
+     mask_dc = temp_mask_mdc;
+   }
+  }
   
   temp_mdc->SelectObject(bm);
   /* Might fail, so we double-check: */
-  if (temp_mdc->GetObject()) {
+   if (temp_mdc->GetObject()) {
     v = Blit(xdest, ydest, fwidth, fheight,
-	     temp_mdc, xsrc, ysrc, rop, c);
+	     temp_mdc, xsrc, ysrc, rop, c, mask_dc);
     temp_mdc->SelectObject(NULL);
   } else
     v = FALSE;
+
+  if (mask_dc) {
+    mask_dc->SelectObject(NULL);
+  }
 
   return v;
 }

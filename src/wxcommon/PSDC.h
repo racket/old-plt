@@ -159,7 +159,7 @@ class wxPostScriptDC: public wxDC
   Bool Blit(float xdest, float ydest, float width, float height,
             wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL, wxBitmap *mask=NULL);
   Bool Blit(float xdest, float ydest, float width, float height,
-            wxMemoryDC *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL, wxBitmap *mask=NULL);
+            wxMemoryDC *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL, wxMemoryDC *mask=NULL);
   inline Bool CanGetTextExtent(void) { return USE_AFM_FOR_POSTSCRIPT; }
   inline Bool CanDrawBitmap(void) { return TRUE; }
 

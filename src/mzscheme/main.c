@@ -458,6 +458,12 @@ int gethostname(char *s, int len)
   return 0;
 }
 
+static void reset_console_input(void)
+{
+  /* So the "press any key to reboot" works: */
+  direct_cons_set_flags(0);
+}
+
 /*    *********** OSKIT filesystem/ethernet START *****************    */
 # ifdef OSK_FILESYSTEMS_AND_ETHERNET
 
@@ -473,17 +479,16 @@ int gethostname(char *s, int len)
 
 static oskit_principal_t *cur_principal;
 static oskit_filesystem_t *main_fs;
-static oskit_dir_t *main_fs_root;
 
 static void unmount(void)
 {
-  if (main_fs_root) {
+  if (main_fs) {
+    printf(">> Flushing and unmounting filesystem\n");
     fflush(NULL);
-    /* Probably missing a release: */
-    oskit_dir_release(main_fs_root);
+    oskit_clientos_setfsnamespace(NULL);
     oskit_filesystem_sync(main_fs, 1);
     oskit_filesystem_release(main_fs);
-    main_fs_root = NULL;
+    main_fs = NULL;
   }
 }
 
@@ -543,8 +548,12 @@ int start_linux_fs(char *diskname, char *partname, int net)
   CHECK("fsnamespace", oskit_create_fsnamespace(root, root, &fsnamespace)); 
   CHECK("setfsnamespace",oskit_clientos_setfsnamespace(fsnamespace));
   
+  /* fs has root: */
+  oskit_dir_release(root);
+  /* clientos has namespace: */
+  oskit_fsnamespace_release(fsnamespace);
+
   main_fs = fs;
-  main_fs_root = root;
   atexit(unmount);
 
   return 1;
@@ -706,6 +715,7 @@ int main(int argc, char **argv)
 # ifdef USE_OSKIT_CONSOLE
   /* We talk to console directly */
   direct_cons_set_flags(DC_NONBLOCK | DC_RAW);
+  atexit(reset_console_input);
 # else
   /* C library handles console; needs liboskit_freebsd_dev.a. */
   /* (Initialization here conflicts with OSK_FILESYSTEMS_AND_ETHERNET). */

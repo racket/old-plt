@@ -7,7 +7,9 @@
 #endif
 
 #ifdef OS_X
-  #include <Carbon/HIToolbox/Events.h>
+  #define char_p ADSFLKJASDLFK
+  #include <Carbon/Carbon.h>
+  #undef char_p
 #else
 
   #if defined(__powerc)

@@ -110,16 +110,16 @@
 	    (let* ([ss-file (string-append x ".ss")]
 		   [zo-file (string-append x ".zo")]
 		   [file (cond
-			  [(and (not (file-exists? ss-file))
-				(not (file-exists? zo-file)))
-			   (printf "system: cannot find: ~a or ~a. exiting.~n" ss-file zo-file)
-			   (wx:exit)]
-			  [(not (file-exists? ss-file)) zo-file]
-			  [(not (file-exists? zo-file)) ss-file]
-			  [(<= (file-modify-seconds ss-file)
-			       (file-modify-seconds zo-file))
-			   zo-file]
-			  [else ss-file])])
+			   [(and (not (file-exists? ss-file))
+				 (not (file-exists? zo-file)))
+			    (printf "system: cannot find: ~a or ~a. exiting.~n" ss-file zo-file)
+			    (wx:exit)]
+			   [(not (file-exists? ss-file)) zo-file]
+			   [(not (file-exists? zo-file)) ss-file]
+			   [(<= (file-modify-seconds ss-file)
+				(file-modify-seconds zo-file))
+			    zo-file]
+			   [else ss-file])])
 	      (mred:debug:printf 'startup "Loading ~a..." file)
 	      (load/cd file)))
 	  (list "sig" "prefs" "exn" "containr"
@@ -127,7 +127,10 @@
 		"fileutil" "finder" "findstr" "frame" "group" "guiutils" 
 		"handler" "icon" "keys" "mcache" "menu" "mode"
 		"paren" "project" "sparen" "ssmode"
-		(build-relative-path "hyper" "hyper")))
+		(build-relative-path "hyper" "hypersig")
+		(build-relative-path "hyper" "hypredit")
+		(build-relative-path "hyper" "hyprfram")
+		(build-relative-path "hyper" "hyprdial")))
 
 (mred:debug:printf 'startup "Loaded.")
 
@@ -161,7 +164,7 @@
 		  [exit : mred:exit^ (mred:exit@ debug)]
 		  [mode : mred:mode^ (mred:mode@ debug keymap)]
 		  [handler : mred:handler^ (mred:handler@ debug group frame finder (core file@))] 
-		  [keymap : mred:keymap^ (mred:keymap@ debug preferences finder handler find-string scheme-paren)]
+		  [keymap : mred:keymap^ (mred:keymap@ debug preferences finder handler find-string scheme-paren gui-utils)]
 		  [match-cache : mred:match-cache^ (mred:match-cache@ debug)]
 		  [scheme-paren : mred:scheme-paren^ (mred:scheme-paren@ debug paren)]
 		  [paren : mred:paren^ (mred:paren@ debug)]
@@ -250,6 +253,10 @@
     (when mred:load-user-setup?
       (mred:user-setup))))
 
+(define mred:startup
+  (lambda ()
+    (make-object mred:console-frame%)))
+
 ;; called with the initialization arguments
 (define mred:initialize
   (let ([files-to-open null])
@@ -300,14 +307,14 @@
 				(if (eq? wx:platform 'windows)
 				    "mredrc.ss"
 				    ".mredrc"))])
+      (mred:debug:printf 'startup "user-setup; loading ~a..." file)
       (if (file-exists? file)
 	  (let ([orig-escape (error-escape-handler)])
-	  (catch-errors
-	   (lambda (s)
-	     (wx:message-box s "Error"))
-	   (lambda ()
-	     (orig-escape))
-	   (load-with-cd file)))))))
+	    (catch-errors (lambda (s)
+			    (wx:message-box s "Error"))
+			  (lambda ()
+			    (orig-escape))
+			  (load-with-cd file)))))))
 
 (when (eq? wx:platform 'unix)
   (let* ([default-path "/usr/local/transcript-4.0/lib/"]

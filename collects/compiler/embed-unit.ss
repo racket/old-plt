@@ -76,7 +76,7 @@
 
       ;; Find the magic point in the binary:
       (define (find-cmdline)
-	(let ([m (regexp-match-positions "\\[Replace me for EXE hack" (current-input-port))])
+	(let ([m (regexp-match-positions #"\\[Replace me for EXE hack" (current-input-port))])
 	  (if m
 	      (caar m)
 	      (error 

@@ -1,5 +1,5 @@
 
-(use-compiled-file-kinds 'none)
+(use-compiled-file-paths null)
 
 (require (lib "restart.ss")
 	 (lib "process.ss"))

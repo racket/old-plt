@@ -479,7 +479,7 @@ static int parse_command_line(char ***_command, char *buf)
       if (*parse== '"') {
 	findquote = !findquote;
       } else if (*parse== '\\') {
-	unsigned char *next;
+	GC_CAN_IGNORE unsigned char *next;
 	for (next = parse; *next == '\\'; next++) { }
 	if (*next == '"') {
 	  /* Special handling: */
@@ -520,7 +520,7 @@ static int parse_command_line(char ***_command, char *buf)
   return count;
 }
 
-char *CreateUniqueName()
+static char *CreateUniqueName()
 {
   char desktop[MAX_PATH], session[32], *together;
   int dlen, slen;
@@ -539,6 +539,7 @@ char *CreateUniqueName()
   }
 
   {
+#if 0
     // Name should be session unique, so add current session id
     HANDLE hToken = NULL;
     // Try to open the token (fails on Win9x) and check necessary buffer size
@@ -562,6 +563,7 @@ char *CreateUniqueName()
 	session[0] = 0;
       }
     } else
+#endif
       session[0] = 0;
   }
 

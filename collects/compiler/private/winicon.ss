@@ -7,7 +7,7 @@
 	   build-icon)
 
   (define (byte->integer p)
-    (char->integer (read-char p)))
+    (read-byte p))
   (define (word->integer p)
     (integer-bytes->integer (read-bytes 2 p) #f #f))
   (define (dword->integer p)

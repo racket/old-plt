@@ -102,28 +102,35 @@
       
       (define (re-tokenize prefix get-token)
         (let-values (((type data new-token-start new-token-end) (get-token in)))
-          (unless (eq? 'eof type)
-            (let ((len (- new-token-end new-token-start)))
-              (set! current-pos (+ len current-pos))
-              (sync-invalid)
-              (set! colors (cons
-                            (lambda ()
-                              (change-style
-                               (preferences:get (string->symbol (format "syntax-coloring:~a:~a"
-                                                                        prefix
-                                                                        type)))
-                               (sub1 (+ input-port-start-pos new-token-start))
-                               (sub1 (+ input-port-start-pos new-token-end))
-                               #f))
-                            colors))
-              (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
-              (cond
-                ((and invalid-tokens (= invalid-tokens-start current-pos))
-                 (set! tokens (insert-after! tokens (search-min! invalid-tokens null)))
-                 (set! invalid-tokens #f)
-                 (set! invalid-tokens-start #f))
-                (else
-                 (re-tokenize prefix get-token)))))))
+          (let ((old-breaks (break-enabled)))
+            (break-enabled #f)
+            (cond
+              ((eq? 'eof type)
+               (let ((len (- new-token-end new-token-start)))
+                 (set! current-pos (+ len current-pos))
+                 (sync-invalid)
+                 (set! colors (cons
+                               (lambda ()
+                                 (change-style
+                                  (preferences:get (string->symbol (format "syntax-coloring:~a:~a"
+                                                                           prefix
+                                                                           type)))
+                                  (sub1 (+ input-port-start-pos new-token-start))
+                                  (sub1 (+ input-port-start-pos new-token-end))
+                                  #f))
+                               colors))
+                 (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
+                 (cond
+                   ((and invalid-tokens (= invalid-tokens-start current-pos))
+                    (set! tokens (insert-after! tokens (search-min! invalid-tokens null)))
+                    (set! invalid-tokens #f)
+                    (set! invalid-tokens-start #f)
+                    (break-enabled old-breaks))
+                  (else
+                   (break-enabled old-breaks)
+                   (re-tokenize prefix get-token)))))
+              (else
+               (break-enabled old-breaks))))))
     
       (define/public (do-insert/delete prefix get-token port-wrapper edit-start-pos change-length)
         (when should-color?
@@ -140,14 +147,7 @@
                                     this
                                     input-port-start-pos
                                     end-pos))))
-          (channel-put
-           sync
-           (lambda ()
-             (re-tokenize prefix get-token)))
-          (channel-get sync)
-          (begin-edit-sequence #f)
-          (color)
-          (end-edit-sequence)))
+          (colorer-callback)))
       
       (define/public (start prefix get-token port-wrapper)
         (reset)
@@ -170,12 +170,22 @@
         (change-style (send (get-style-list) find-named-style "Standard")
                       start-pos end-pos #f)
         (reset))
-  
-      (define (background-colorer)
-        (with-handlers ((void void))
-          ((channel-get sync)))
+
+      
+      (define (colorer-callback)
         (channel-put sync #f)
-        (background-colorer))
+        (channel-get sync)
+        (begin-edit-sequence #f)
+        (color)
+        (end-edit-sequence))
+      
+
+      (define (background-colorer prefix get-token)
+        (channel-get sync)
+        (with-handlers ((void void))
+          (re-tokenize prefix get-token))
+        (channel-put sync #f)
+        (background-colorer prefix get-token))
   
       (super-instantiate ())))
   

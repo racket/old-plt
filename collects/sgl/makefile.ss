@@ -26,7 +26,15 @@
       (delete-file x)))
 
   (define (get-precompiled-path file.so)
-    (regexp-replace "(compiled)" file.so "precompiled"))
+    (printf "~a~n" file.so)
+    (let*-values (((path name _) (split-path file.so))
+                  ((path d1 _) (split-path path))
+                  ((path d2 _) (split-path path))
+                  ((path c _) (split-path path)))
+      (build-path (cond
+                    ((eq? 'relative path) 'same)
+                    (else path))
+                  "precompiled" d2 d1 name)))
   
   (define (do-copy file.so)
     (let ([pre-compiled (get-precompiled-path file.so)])

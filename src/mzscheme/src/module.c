@@ -2791,6 +2791,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	  while (SCHEME_STX_PAIRP(vars)) {
 	    Scheme_Object *name;
+
 	    name = SCHEME_STX_CAR(vars);
 
 	    /* Check that the name doesn't have a foreign source: */
@@ -3425,12 +3426,15 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     /* Do non-syntax first. */
     for (count = 0, i = provided->size; i--; ) {
       if (provided->vals[i]) {
-	Scheme_Object *name, *v;
-	  
+	Scheme_Object *name, *orig_name, *v;
+	
 	name = provided->vals[i];
 
-	if (SCHEME_STXP(name))
+	if (SCHEME_STXP(name)) {
+	  orig_name = SCHEME_STX_VAL(name);
 	  name = scheme_tl_id_sym(env->genv, name, 0);
+	} else
+	  orig_name = name;
 
 	if (scheme_lookup_in_table(env->genv->toplevel, (const char *)name)) {
 	  /* Defined locally */
@@ -3457,7 +3461,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  }
 	} else {
 	  /* Not defined! */
-	  scheme_wrong_syntax("module", name, form, "provided identifier not defined or imported");
+	  scheme_wrong_syntax("module", orig_name, form, "provided identifier not defined or imported");
 	}
       }
     }

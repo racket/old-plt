@@ -85,7 +85,7 @@
   ;; create a list of strings that represent the abstract class of a union 
   ;; center the strings with respect to width, add a "recursion" arrow (needed?)
   (define/contract abstract-to-string
-    (string? Fields natural-number? boolean?
+    (string? Fields natural-number/c boolean?
              . ->d . 
              (lambda (_1 _2 n _3)
                (lambda (out) (= (string-length (car out)) n))))

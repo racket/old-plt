@@ -14,9 +14,9 @@
   
   (provide/contract
    [get-class-info (->* []
-                        [boolean? (union false? (list/p Class boolean? boolean?))])]
+                        [boolean? (union false/c (list/c Class boolean? boolean?))])]
    [get-union-info (->* []
-		        [boolean? (union false? (list/p Union boolean? boolean?))])])
+		        [boolean? (union false/c (list/c Union boolean? boolean?))])])
   
   (define CLASS-WIZARD "The Class Wizard")
   (define UNION-WIZARD "The Union Wizard")

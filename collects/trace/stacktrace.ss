@@ -25,7 +25,9 @@
       (define (top-level-expr-iterator stx)
         (kernel-syntax-case stx #f
           [(module identifier name (#%plain-module-begin . module-level-exprs))
-           #`(module identifier name (#%plain-module-begin #,@(map module-level-expr-iterator (syntax->list #'module-level-exprs))))]
+           #`(module identifier name
+               (#%plain-module-begin 
+                #,@(map module-level-expr-iterator (syntax->list #'module-level-exprs))))]
           [else-stx
            (general-top-level-expr-iterator stx)]))
       
@@ -69,12 +71,22 @@
                   (kernel-syntax-case clause #f
                     [(arglist . bodies)
                      (let-values ([(arglist-proper improper?) (arglist-flatten #'arglist)])
-                       #`(arglist (with-continuation-mark 
-                                   #,calltrace-key
-                                   'unimportant
-                                   (begin (let ([call-depth (length (continuation-mark-set->list (current-continuation-marks) #,calltrace-key))])
-                                            (#,print-call-trace #,name-guess (#,stx-protector-stx #,(make-stx-protector stx)) (list #,@arglist-proper) #,improper? call-depth))
-                                          #,@(recur-on-sequence (syntax->list #'bodies))))))]
+                       (if name-guess
+                           #`(arglist (with-continuation-mark 
+                                          #,calltrace-key
+                                        'unimportant
+                                        (begin (let ([call-depth (length (continuation-mark-set->list
+                                                                          (current-continuation-marks)
+                                                                          #,calltrace-key))])
+                                                 (#,print-call-trace 
+                                                    (quote-syntax #,name-guess)
+                                                    #,(syntax-original? name-guess)
+                                                    (#,stx-protector-stx #,(make-stx-protector stx))
+                                                    (list #,@arglist-proper)
+                                                    #,improper?
+                                                    call-depth))
+                                               #,@(recur-on-sequence (syntax->list #'bodies)))))
+                           #`(arglist #,@(recur-on-sequence (syntax->list #'bodies)))))]
                     [else
                      (error 'expr-syntax-object-iterator 
                             "unexpected (case-)lambda clause: ~a" 
@@ -87,10 +99,13 @@
                              (lambda (vars rhs)
                                (let ([var-list (syntax->list vars)])
                                  (cond [(= (length var-list) 1) 
-                                        #`(#,vars (recur-with-name rhs (car var-list)))]
+                                        #`(#,vars #,(recur-with-name rhs (car var-list)))]
                                        [else
-                                        #`(#,vars (recur-non-tail rhs))])))])
-                       (with-syntax ([(new-clause ...) (map clause-fn (syntax->list #`((variable ...) ...)) (syntax->list #`(rhs ...)))])
+                                        #`(#,vars #,(recur-non-tail rhs))])))])
+                       (with-syntax ([(new-clause ...)
+                                      (map clause-fn
+                                           (syntax->list #`((variable ...) ...))
+                                           (syntax->list #`(rhs ...)))])
                          #`(kwd (new-clause ...) #,@(recur-on-sequence (syntax->list #'bodies)))))]
                     [else
                      (error 'expr-syntax-object-iterator 
@@ -149,10 +164,10 @@
           [()
            (values (reverse so-far) #f)]
           [var
-           (identifier? #'var)
+           (identifier? (syntax var))
            (values (reverse (cons #'var so-far)) #t)]
           [(var . rest)
            (loop #'rest (cons #'var so-far))])))
       
       
-      (define annotate top-level-expr-iterator))))
+      (define (annotate x) (top-level-expr-iterator x)))))

@@ -1752,6 +1752,8 @@ public:
       GetClientSize(&x, &y);
       if (display)
 	display->SetSize(0, 0, x, y);
+      if (media && (x > 30))
+	media->SetMaxWidth(x - 30);
     }
 
   Bool OnClose(void) 

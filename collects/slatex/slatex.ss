@@ -21,14 +21,15 @@
 	  [(macos)
 	   (system "OTEX")
 
-           ;; boy, wouldn't it be great if the "actv" version worked?!?!?
+           ;; boy, wouldn't it be great if the "actv" appleevent worked for OTEX?
 	   ;(send-event "OTEX" "misc" "acvt")
            (let ([oztex-location (build-path (car (filesystem-root-list))
                                              "Applications"
                                              "OzTeX"
                                              "OzTeX")])
              (when (file-exists? oztex-location)
-               (send-event "MACS" "aevt" "odoc" (vector 'file oztex-location))))
+               (with-handlers ([void void]) ;; mzscheme cannot handle result
+                 (send-event "MACS" "aevt" "odoc" (vector 'file oztex-location)))))
              
 	   (send-event "OTEX" "aevt" "odoc" (vector 'file file))]
 	   [(windows unix)

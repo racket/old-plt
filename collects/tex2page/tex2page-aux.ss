@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2004-09-05")
+(define *tex2page-version* "2004-09-06")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -34,7 +34,8 @@
     ((windows)
      (or (ormap
           (lambda (f) (and (file-exists? f) f))
-          '("g:\\cygwin\\bin\\gs.exe"
+          '("c:\\cygwin\\bin\\gs.exe"
+            "g:\\cygwin\\bin\\gs.exe"
             "c:\\aladdin\\gs6.01\\bin\\gswin32c.exe"
             "d:\\aladdin\\gs6.01\\bin\\gswin32c.exe"
             "d:\\gs\\gs8.00\\bin\\gswin32.exe"
@@ -49,7 +50,12 @@
 (define *use-closing-p-tag?* #t)
 
 (define *metapost*
-  (case *operating-system* ((unix) "mpost") ((windows) "mp") (else "mpost")))
+  (case *operating-system*
+    ((unix) "mpost")
+    ((windows)
+     (let ((term (getenv "TERM")))
+       (if (and (string? term) (string=? term "cygwin")) "mpost" "mp")))
+    (else "mpost")))
 
 (define *navigation-sentence-begin* "Go to ")
 

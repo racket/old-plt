@@ -91,7 +91,7 @@
 				(send font-name get-string-selection))))]
 	       [else
 		(make-object button%
-		  "Font Name"
+		  "Set Font"
 		  options-panel
 		  (lambda xxx
 		    (let ([choice (get-choices-from-user

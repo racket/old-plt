@@ -610,9 +610,7 @@
               (call-in-nested-thread
                (lambda ()
                  (break-enabled #f)
-                 (begin0
-                   (proc ut)
-                   (break-enabled #t))) ; in case a break was queued
+                 (proc ut))
                drscheme:init:system-custodian))))
         
         (define queue-system-callback

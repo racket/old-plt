@@ -3,42 +3,37 @@ _parser-tools_
 This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.
 
-CHANGE: added support for custom input-ports that return non-character data (via (special), (special-comment) and (special-error)).
 
-CHANGE: token-name, token-value and token? functions are now exported from lex.ss.
+CHANGE: The lexer uses a new back-end based on derivatives
+(``Derivatives of Regular Expressions'',
+ Janusz A. Brzozowski, JACM, Vol 11, No. 4 (October 1964))
+and can now support intersection and negation of arbitrary regular
+expressions!
 
-CHANGE: Regular expression of the form (symbol) are no longer valid and symbol
-regular expressions always refer to abbreviations and do not match the string of
-characters in the symbol anymore.
+CHANGE: (eof) is no longer treated as a character, but as a 
+ special.  This means that (eof) cannot appear except as the
+ whole regular expression in a lex rule.
 
-CHANGE: Parsers can now specify multiple start symbols.  A parser with
-only one start symbol behaves as before.  When multiple start symbols
-are present, a list of functions is created by the parser form, one
-for parsing starting with each start symbol.
-
-
-CHANGE: Tokens defined with define-empty-tokens no longer have $n
-bound in the action.
 
 _lex.ss_
-A regular expression is one of the following
-symbol                             expand the lex abbreviation whose name 
-                                    is symbol
-character                          match the given character
-                                    beware of mzscheme converting the 
-                                    symbol to all lower case
-string                             match its sequence of characters
-(eof)				   match end of file
-(* re)                             match 0 or more occurrences of re
-(+ re)                             match 1 or more occurrences of re
-(? re)                             match 0 or 1 occurrence of re
-(: re ...1)                        match one of the listed re (alternation)
-(@ re ...)                         match each re in succession (concatenation)
-(- char char)                      match any character between two (inclusive)
-                                    (a single character symbol or string can
-                                    be used as a character here)
-(^ char_or_range ...1)             match any character not listed
-(the null concatenation `(@) and the empty string "" both mean epsilon)
+A regular expression is one of the following:
+ symbol                      expand the lex abbreviation whose name 
+                               is symbol
+ character                   match the given character
+ string                      match its sequence of characters
+ (epsilon)                   match the empty string
+ (* re)                      match 0 or more
+ (+ s-re)                    match 1 or more
+ (? s-re)                    match 0 or 1
+ (: s-re ...)                match one of the sub-expressions
+ (@ s-re ...)                match each sub-expression in succession
+ (- char char)               match any character between two (inclusive)
+                              (A single character string can be used here)
+ (^ char_or_range ...1)      match any character not listed
+
+ (The null concatenation `(@) means epsilon as does "".
+  The null "or" `(:) means match nothing.
+  The null carat `(^) means match any character.)
 
 To use the _lexer generator_ you must (require (lib "lex.ss" "parser-tools")).
 This gives you the following syntactic forms:
@@ -86,14 +81,19 @@ This gives you the following syntactic forms:
    executed to handle the error situation as desired, only consuming
    the first character from the input buffer.
 
-   The lexer treats the rules ((special) action), ((special-comment)
-   action) and ((special-error) action specially.  In addition to
-   returning characters and eof-objects, custom input ports can return
-   arbitrary values (specials), raise an exception to indicate a
-   non-textual comment (special-comments) or raise an exception to
-   indicate a malformed special (special-error).  Specials,
-   special-comments and special-errors can never be part of a lexeme
-   with surrounding characters.
+   The lexer treats the rules ((eof) action), ((special) action),
+   ((special-comment) action) and ((special-error) action) specially.
+   In addition to returning characters, input ports can return
+   eof-objects and custom input ports can return arbitrary values
+   (specials), raise an exception to indicate a non-textual comment
+   (special-comments) or raise an exception to indicate a malformed
+   special (special-error).  Eofs, specials, special-comments and
+   special-errors can never be part of a lexeme with surrounding
+   characters.
+
+   The eof rule is matched when the input port returns an eof value.
+   Its action works the same as actions for the usual regular
+   expressions.
 
    The special rule is matched when the input port returns a value
    other than a character or eof-object.  The identifier "special" is

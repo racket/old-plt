@@ -480,11 +480,9 @@
 		 (set! reset-console-start-location
 		       (line-location (position-line reset-console-start-position) #f)))
 	       (when (and reset-console-start-location reset-console-end-location)
-		 (wx:message-box "2")
 		 (invalidate-bitmap-cache 0 reset-console-start-location
 					  -1 (- reset-console-end-location
-						reset-console-start-location))		 
-		 (wx:message-box "2")))])
+						reset-console-start-location))))])
 	  (public
 	    [set-last-header-position
 	     (lambda (p)
@@ -529,10 +527,8 @@
 			[y (+ dy reset-console-start-location)]
 			[width (begin (get-extent #1=#&0 null)
 				      (unbox #1#))]
-			[_ (wx:message-box "1")]
 			[height  (- reset-console-end-location
 				    reset-console-start-location)])
-		   (wx:message-box "1")
 		   (send brush set-stipple mred:icon:reset-console-bitmap)
 		   (send dc set-pen pen)
 		   (send dc set-brush brush)

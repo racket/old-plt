@@ -113,6 +113,7 @@ Quickref:
     ---           ---     ------------------
     'source       ...     yes
     'reader       ...     yes
+    'duplicate    ...     no
     'micro        expr    iff expr is src
     'macro        expr    iff expr is src
     'non-source   ...     no
@@ -120,15 +121,26 @@ Quickref:
 Details:
 
 Although there is not a unique mapping from elaborated expressions to
-source expressions, the mapping is unique when restricted to
-elaborated expressions that have a source-who field of 'source or
-'reader. When a source expression is duplicated by elaboration (e.g.,
-the `loop' in `(let loop () (loop))' => `(letrec ([loop (lambda ()
-(loop))]) (loop))'), all but the first instance get a 'duplcate
-source-who annotation. (The source-how field contains the original
-source record.)
+source expressions, Zodiac gurantess that the mapping is unique when
+restricted to elaborated expressions that have a source-who field of
+'source or 'reader. When a source expression is duplicated by
+elaboration (e.g., the `loop' in `(let loop () (loop))' => `(letrec
+([loop (lambda () (loop))]) (loop))'), all but the first instance get
+a 'duplcate source-who annotation. (The source-how field contains the
+original source record.)
 
 When an expression is dervied from a macro or micro expansion, the
 source-who field contains 'micro or 'macro. The source-how field
 contains the expression that was macro- or micro-expanded to produce
-the expression.
+the expression. Thus, the result of a macro or micro-expansion
+corresponds to a particular source expression iff the source-how field
+contains an expression that corresponds to a particular source
+expression.
+
+The 'non-source value for the who field indicates that there is no
+source expression that is equivalent to the expanded expression.  In
+this case, a macro or micro must have manufactured the syntax; for
+example, the `this' binding intoroduced by class* -> class*/names has
+source-who value 'non-source. Of course, the location field of
+"non-source" syntax still matches the syntax to a particular source
+expression.

@@ -873,6 +873,19 @@ int scheme_alias_tracking_val(void *val1, void *val2)
   return 1;
 }
 
+inline static void repair_tracking_vals(void)
+{
+  int i;
+
+  for(i = 1; i < manual_alias_table_top; i++) {
+    if(manual_alias_table[i] && ((unsigned long)manual_alias_table[i] != 1)) {
+      if(marked(manual_alias_table[i])) {
+	gcFIXUP(manual_alias_table[i]);
+      } else manual_alias_table[i] = (void*)1;
+    }
+  }
+}
+
 unsigned long scheme_get_tracking_val_memory(void *val)
 {
   int i, j, man_owner = -1;
@@ -881,11 +894,12 @@ unsigned long scheme_get_tracking_val_memory(void *val)
   struct mpage *page;
 
   if(SCHEME_INTP(val)) man_owner = SCHEME_INT_VAL(val); else {
-    for(i = 0; i < manual_alias_table_top; i++)
+    for(i = 0; i < manual_alias_table_top; i++) {
       if(manual_alias_table[i] == val) {
 	man_owner = i;
 	break;
       }
+    }
   }
 
   if(man_owner == -1) 
@@ -893,9 +907,10 @@ unsigned long scheme_get_tracking_val_memory(void *val)
 
   for(i = 1; i < GENERATIONS; i++) 
     for(j = 0; j < MPAGE_TYPES; j++) 
-      for(page = pages[i][j]; page; page = page->next)
+      for(page = pages[i][j]; page; page = page->next) {
 	if(page->man_owner == man_owner)
 	  total_memuse += page->size;
+      }
   start = gen0_alloc_region + PAGE_WORD_OVERHEAD;  end = gen0_alloc_current;
   while(start < end) {
     struct objhead *info = (struct objhead *)start;
@@ -912,9 +927,7 @@ inline static int get_current_manual_owner(void)
     /* this stuff is pulled from fun.c, around line 2310 (continuation_mark) */
     Scheme_Thread *p = scheme_current_thread;
     Scheme_Cont *cont = NULL;
-    Scheme_Cont_Mark_Set *set;
     long findpos = (long)MZ_CONT_MARK_STACK;
-    long cmpos = (long)MZ_CONT_MARK_POS;
 
     while(findpos--) {
       Scheme_Cont_Mark *find;
@@ -1372,7 +1385,7 @@ inline static struct mpage *find_page(void *p)
 #ifdef NEWGC_MANUAL_ACCOUNT
 # define MANUAL_SET_OWNER(info) info->owner = get_current_manual_owner()
 # define MANUAL_SET_BIGPAGE_OWNER(p) p->man_owner = get_current_manual_owner()
-# define MANUAL_SET_COPYPAGE_OWNER(p,o) p->man_owner = 0
+# define MANUAL_SET_COPYPAGE_OWNER(p,o) p->man_owner = o
 # define OWNER_OK(p,i) (p->man_owner == ((struct objhead *)i)->owner)
 #else
 # define MANUAL_SET_OWNER(i) /* */
@@ -2397,6 +2410,12 @@ inline static void prepare_pages_for_collection(void)
     }
 }
 
+#if defined(NEWGC_MANUAL_ACCOUNT)
+# define REPAIR_MANUAL_ALIAS_TABLE() repair_tracking_vals()
+#else 
+# define REPAIR_MANUAL_ALIAS_TABLE() /* */
+#endif
+
 #if defined(NEWGC_PRECISE_ACCOUNT)
 inline static void mark_all_roots(void)
 {
@@ -2456,6 +2475,7 @@ inline static void repair_all_roots(void)
 				  ? GC_get_thread_stack_base()
 				  : (unsigned long)stack_base));
   repair_owner_table();
+  REPAIR_MANUAL_ALIAS_TABLE();
 }
 #endif
 
@@ -2548,6 +2568,7 @@ inline static void repair_all_roots(void)
 			  (void*)(GC_get_thread_stack_base
 				  ? GC_get_thread_stack_base()
 				  : (unsigned long)stack_base));
+  REPAIR_MANUAL_ALIAS_TABLE();
 }
 #endif
 
@@ -2579,6 +2600,7 @@ inline static void repair_all_roots(void)
                           (void*)(GC_get_thread_stack_base
                                   ? GC_get_thread_stack_base()
                                   : (unsigned long)stack_base));
+  REPAIR_MANUAL_ALIAS_TABLE();
 }
 #endif
 

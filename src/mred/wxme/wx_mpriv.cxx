@@ -185,7 +185,7 @@ void wxMediaEdit::_SetPosition(Bool setflash, int bias, long start, long end,
 
   if (needRefresh) {
     if (hiliteOn && admin && (admin->standard > 0) && !delayRefresh 
-	&& oldstart == oldend && start == end && caretOn
+	&& oldstart == oldend && start == end && (caretOn || caretBlinked)
 	&& caretLocationX >= 0 && !flash) {
       /* Try to take a shortcut */
       if (caretBlinked || CaretOff()) {
@@ -198,6 +198,7 @@ void wxMediaEdit::_SetPosition(Bool setflash, int bias, long start, long end,
     }
 
     if (needRefresh) {
+      caretBlinked = FALSE;
       if (start >= oldend || end <= oldstart || needFullRefresh) {
 	/* No overlap: */
 	NeedRefresh(oldstart, oldend);
@@ -2309,11 +2310,13 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
   if (!dc)
     return;
 
+  if (caretBlinked && show_caret) {
+    /* Maintain caretBlinked invariant */
+    show_caret = 0;
+  }
+
   caretLocationX = -1;
   caretOn = FALSE;
-  /* (Actually, we assume that the caret's not blinked, otherwise the
-      refresh could be wrong.) */
-  caretBlinked = FALSE;
 
   if (ReadyOffscreen(width, height))
     drawCachedInBitmap = FALSE;

@@ -270,7 +270,7 @@ void wxMediaPasteboard::OnEvent(wxMouseEvent &event)
 
   if (caretSnip && PTREQ(snip, caretSnip)) {
     loc = SnipLoc(caretSnip);
-    caretSnip->OnEvent(dc, loc->x, loc->y, x - scrollx, y - scrolly, event);
+    caretSnip->OnEvent(dc, loc->x - scrollx, loc->y - scrolly, loc->x, loc->y, event);
     return;
   }
 
@@ -352,6 +352,7 @@ void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
 	if (!loc->selected) {
 	  if (!event.shiftDown)
 	    NoSelected();
+	  SetCaretOwner(NULL);
 	  AddSelected(snip);
 	  InitDragging(&event);
 	} else {
@@ -2423,8 +2424,6 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
     return FALSE;
   }
 
-  SetFilename(file, FALSE);
-
   FILE *f = fopen(wxmeExpandFilename(file), "rb");
   
   if (!f) {
@@ -2439,6 +2438,9 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
   BeginEditSequence();
 
   Erase();
+
+  if (PTRNE(file, filename))
+    SetFilename(file, FALSE);
 
   Bool ok = InsertFile(f, loadoverwritesstyles, showErrors);
 

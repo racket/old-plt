@@ -92,16 +92,12 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big, int offset)
 
   a[0] = a[1] = a[2] = a[3] = NULL;
 
-  if (!dc->Ok()) {
-    a[0] = a[1] = a[2] = a[3] = WITH_VAR_STACK(scheme_make_double(0.0));
-  } else {
-    WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big, offset));
+  WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big, offset));
     
-    a[0] = WITH_VAR_STACK(scheme_make_double(w));
-    a[1] = WITH_VAR_STACK(scheme_make_double(h));
-    a[2] = WITH_VAR_STACK(scheme_make_double(d));
-    a[3] = WITH_VAR_STACK(scheme_make_double(asc));
-  }
+  a[0] = WITH_VAR_STACK(scheme_make_double(w));
+  a[1] = WITH_VAR_STACK(scheme_make_double(h));
+  a[2] = WITH_VAR_STACK(scheme_make_double(d));
+  a[3] = WITH_VAR_STACK(scheme_make_double(asc));
 
   return WITH_VAR_STACK(scheme_values(4, a));
 }
@@ -216,9 +212,9 @@ static void dcSetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char
 @INCLUDE wxs_draw.xci
 
 // Also in wxWindow:
-@ m "get-text-extent" : void[]/CastToSO//spAnything MyTextExtent(string,wxFont^=NULL,bool=FALSE,nnint=0); : : /CheckStringIndex["get-text-extent".0.3]|CheckOk[METHODNAME("dc<%>","get-text-extent")]
-@ Q "get-char-height" : float GetCharHeight(); : : /CheckOk[METHODNAME("dc<%>","get-char-height")]
-@ Q "get-char-width" : float GetCharWidth(); : : /CheckOk[METHODNAME("dc<%>","get-char-width")]
+@ m "get-text-extent" : void[]/CastToSO//spAnything MyTextExtent(string,wxFont^=NULL,bool=FALSE,nnint=0); : : /CheckStringIndex["get-text-extent".0.3]
+@ Q "get-char-height" : float GetCharHeight();
+@ Q "get-char-width" : float GetCharWidth();
 
 @MACRO rZERO = return 0;
 @MACRO rFALSE = return FALSE;

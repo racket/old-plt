@@ -187,16 +187,12 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big, int offset)
 
   a[0] = a[1] = a[2] = a[3] = NULL;
 
-  if (!dc->Ok()) {
-    a[0] = a[1] = a[2] = a[3] = WITH_VAR_STACK(scheme_make_double(0.0));
-  } else {
-    WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big, offset));
+  WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big, offset));
     
-    a[0] = WITH_VAR_STACK(scheme_make_double(w));
-    a[1] = WITH_VAR_STACK(scheme_make_double(h));
-    a[2] = WITH_VAR_STACK(scheme_make_double(d));
-    a[3] = WITH_VAR_STACK(scheme_make_double(asc));
-  }
+  a[0] = WITH_VAR_STACK(scheme_make_double(w));
+  a[1] = WITH_VAR_STACK(scheme_make_double(h));
+  a[2] = WITH_VAR_STACK(scheme_make_double(d));
+  a[3] = WITH_VAR_STACK(scheme_make_double(asc));
 
   return WITH_VAR_STACK(scheme_values(4, a));
 }
@@ -973,7 +969,7 @@ static Scheme_Object *os_wxDCGetCharWidth(int n,  Scheme_Object *p[])
 
   
 
-  DO_OK_CHECK(METHODNAME("dc<%>","get-char-width"))
+  
   r = WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->GetCharWidth());
 
   
@@ -993,7 +989,7 @@ static Scheme_Object *os_wxDCGetCharHeight(int n,  Scheme_Object *p[])
 
   
 
-  DO_OK_CHECK(METHODNAME("dc<%>","get-char-height"))
+  
   r = WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->GetCharHeight());
 
   
@@ -1032,7 +1028,7 @@ static Scheme_Object *os_wxDCMyTextExtent(int n,  Scheme_Object *p[])
   } else
     x3 = 0;
 
-  if (x3 > SCHEME_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","get-text-extent"), "string index too large: ", p[POFFSET+3]));DO_OK_CHECK(METHODNAME("dc<%>","get-text-extent"))
+  if (x3 > SCHEME_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","get-text-extent"), "string index too large: ", p[POFFSET+3]));
   r = WITH_VAR_STACK(MyTextExtent(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3));
 
   

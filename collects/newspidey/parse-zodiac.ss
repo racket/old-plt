@@ -542,6 +542,16 @@
      (error "add-constraints-for-abstract-value: Expected type, got"
             ty)]))
 
+(define get-top-level-var 
+  (let ([top-level-vars (make-hash-table)])
+    (lambda (var)
+      (hash-table-get top-level-vars var
+                      (lambda ()
+                        (let ([set-var (gen-set-var)])
+                          (printf "adding new: ~s~n" var)
+                          (hash-table-put! top-level-vars var set-var)
+                          set-var))))))
+
 (define (derive-top-term-constraints Gamma term)
   (let ([alpha (gen-set-var)])
     (associate-set-var-and-term (Set-var-name alpha) term)
@@ -553,6 +563,14 @@
               [set-var (lookup-in-env Gamma name)])
          ;;(printf "set-var: ~a~nGamma: ~a~nterm: ~a~n" set-var Gamma (zodiac:binding-orig-name (zodiac:bound-varref-binding term)))
          (add-constraint-with-bounds set-var alpha #t))]
+      [(zodiac:define-values-form? term)
+       (unless (= 1 (length (zodiac:define-values-form-vars term)))
+         (error 'derive-top-term-constraints "define-values forms may only contain a single var"))
+       (let ([var (car (zodiac:define-values-form-vars term))]
+             [lhs-var (get-top-level-var (zodiac:varref-var var))]
+             [rhs-var (derive-top-term-constraints Gamma (zodiac:define-values-form-val term))])
+         (associate-set-var-and-term lhs-var var)
+         (add-constraint-with-bounds rhs-var lhs-var #t))]
       [(zodiac:top-level-varref/bind/unit? term)
        (let* ([name (zodiac:varref-var term)]
               [type (lookup-prim-type name)]
@@ -561,7 +579,7 @@
              (begin
                (add-constraint-with-bounds label alpha #t)
                (add-constraints-from-type type alpha #t (make-hash-table)))
-             (error name "unbound variable")))]
+             (add-constraint-with-bounds (get-top-level-var name) alpha #t)))]
       [(zodiac:case-lambda-form? term)
        (let* (;;[xs-l (map (lambda (l) (map zodiac:binding-orig-name (zodiac:arglist-vars l))) (zodiac:case-lambda-form-args term))]
               [xs-l (zodiac:case-lambda-form-args term)]

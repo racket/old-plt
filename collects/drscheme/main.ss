@@ -11,7 +11,7 @@
 
   (fw:finder:default-extension "scm")
 
-  ;; add the new settings
+  ;; add the graphical settings
   (basis:add-setting 
    (let ([s (basis:copy-setting (basis:find-setting-named
 				 "Textual Full Scheme without Debugging (MzScheme)"))])

@@ -52,20 +52,25 @@
               (begin-edit-sequence)
               (erase))
             (send (send (get-admin) get-editor) begin-edit-sequence)
-            (let ([lang (send expander get-language)])
-              (send (drscheme:language-configuration:language-settings-language lang)
-                    render-value/format
-                    value
-                    (drscheme:language-configuration:language-settings-settings lang)
-                    (make-custom-output-port
-                     false
-                     (lambda (s start end block?)
-                       (send actual insert s)
-                       (string-length s))
-                     void void)
-                    (lambda (snip)
-                      (send actual insert snip))
-                    false))
+            (unless (equal? value (void))
+              (let ([lang (send expander get-language)]
+                    [last false])
+                (send (drscheme:language-configuration:language-settings-language lang)
+                      render-value/format
+                      value
+                      (drscheme:language-configuration:language-settings-settings lang)
+                      (make-custom-output-port
+                       false
+                       (lambda (s start end block?)
+                         (when last (send actual insert last))
+                         (set! last s)
+                         (string-length s))
+                       void void)
+                      (lambda (snip)
+                        (send actual insert snip))
+                      false)
+                (unless (equal? "\n" last)
+                  (send actual insert last))))
             (send (send (get-admin) get-editor) end-edit-sequence)
             (send* actual
               (end-edit-sequence)

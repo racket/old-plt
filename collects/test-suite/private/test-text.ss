@@ -17,10 +17,7 @@
    base-snip%
    actual-snip%)
   
-  (define *disable-color*
-    (case (system-type)
-      [(macosx) (make-object color% 215 215 255)]
-      [else "LightCyan"]))
+  (define *disable-color* (make-object color% 235 235 255))
   
   (define (grey-editor-snip-mixin super%)
     (class super%
@@ -94,10 +91,10 @@
       ;; clear-highlighting
       ;; globally clear highlighting
       (define/private (clear-highlighting)
-          (let ([editor 
-                 (with-handlers ([exn? (lambda (exn) false)])
-                   (send (send case get-admin) get-editor))])
-            (when editor (send editor clear-highlighting))))
+        (let ([editor 
+               (with-handlers ([exn? (lambda (exn) false)])
+                 (send (send case get-admin) get-editor))])
+          (when editor (send editor clear-highlighting))))
       
       ;; get-keymaps (-> (listof keymap%))
       ;; the list of keymaps associated with this text

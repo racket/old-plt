@@ -212,12 +212,16 @@
 				 (zodiac:make-eof z)
 				 (begin (set! gone #t)
 					(zodiac:structurize-syntax sexp z)))))]
+			[answer (void)]
 			[f
 			 (lambda (annotated recur)
-			   (with-parameterization param
-			     (lambda ()
-			       (primitive-eval annotated)))
-			   (recur))])
+			   (if (process/zodiac-finish? annotated)
+			       answer
+			       (begin (set! answer
+					    (with-parameterization param
+					      (lambda ()
+						(primitive-eval annotated))))
+				      (recur))))])
 		   (process/zodiac reader f #t)))))]
 	  [display-result
 	   (lambda (v)

@@ -23,6 +23,10 @@
 static FILE *log;
 #endif
 
+#ifndef MZ_PRECISE_GC
+# define HIDE_FROM_XFORM(x) x
+#endif
+
 void mred_log_msg(const char *msg, ...);
 
 #define OS_SEMAPHORE_TYPE HANDLE
@@ -1029,16 +1033,16 @@ void DeleteRegisteredGDIObject(HANDLE x)
 void mred_log_msg(const char *msg, ...)
 {
   long len;
-  va_list args;
+  GC_CAN_IGNORE va_list args;
   FILE *f;
 
   f = fopen("mredlog", "a");
 
   fprintf(f, "0x%lx ", scheme_current_thread);
 
-  va_start(args, msg);
+  HIDE_FROM_XFORM(va_start(args, msg));
   len = vfprintf(f, msg, args);
-  va_end(args);
+  HIDE_FROM_XFORM(va_end(args));
 
   fclose(f);
 }

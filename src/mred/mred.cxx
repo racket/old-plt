@@ -2303,7 +2303,7 @@ static FILE *mrerr = NULL;
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
 static void MrEdSchemeMessages(char *msg, ...)
 {
-  va_list args;
+  GC_CAN_IGNORE va_list args;
 
   scheme_start_atomic();
 
@@ -2347,7 +2347,7 @@ static void MrEdSchemeMessages(char *msg, ...)
   }
 #endif
 
-  va_start(args, msg);
+  HIDE_FROM_XFORM(va_start(args, msg));
 #if WINDOW_STDIO
   if (wx_in_terminal) {
     vfprintf(stderr, msg, args);
@@ -2410,7 +2410,7 @@ static void MrEdSchemeMessages(char *msg, ...)
 
   scheme_end_atomic_no_swap();
 
-  va_end(args);
+  HIDE_FROM_XFORM(va_end(args));
 }
 
 static void MrEdSchemeMessagesOutput(char *s, long l)

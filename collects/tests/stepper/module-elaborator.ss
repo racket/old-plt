@@ -8,19 +8,21 @@
   
   (define (wrap-in-module exps language-module-spec)
     (let ([new-module-id (gensym "-htdp")])
-      (list (let ([mod (expand #`(module #,new-module-id #,language-module-spec 
+      (list (let ([mod (expand-syntax #`(module #,new-module-id #,language-module-spec 
                                    ; we don't handle teachpacks at  this point ...
                                    ;(require require-specs ...)
                                    #,@exps))])
               (rewrite-module mod))
-            #`(let ([done-already? #f])
-                (dynamic-wind
-                 void
-                 (lambda () (dynamic-require '#,new-module-id #f))
-                 (lambda () 
-                   (unless done-already?
-                     (set! done-already? #t)
-                     (current-namespace (module->namespace '#,new-module-id)))))))))
+            #`(require #,new-module-id)
+;            #`(let ([done-already? #f])
+;                (dynamic-wind
+;                 void
+;                 (lambda () (dynamic-require '#,new-module-id #f))
+;                 (lambda () 
+;                   (unless done-already?
+;                     (set! done-already? #t)
+;                     (current-namespace (module->namespace '#,new-module-id))))))
+            )))
   
   ;; rewrite-module : syntax -> syntax
   ;; rewrites te module to provide all definitions and 

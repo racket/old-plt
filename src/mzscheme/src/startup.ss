@@ -2271,13 +2271,13 @@
 				'standard-module-name-resolver
 				"cycle in loading at ~e: ~e"
 				filename
-				l)))
+				(reverse (cons s l)))))
 			   l))
-			(hash-table-put! ht modname #t)
 			(let ([prefix (string->symbol abase)])
 			  (with-continuation-mark -loading-filename filename
 			    (parameterize ([current-module-name-prefix prefix])
-			      (load/use-compiled filename)))))
+			      (load/use-compiled filename))))
+			(hash-table-put! ht modname #t))
 		      ;; Result is the module name:
 		      modname))))))
 	  ;; Just register relto as loaded

@@ -1115,7 +1115,6 @@ extern int scheme_defining_primitives;
 extern int scheme_case_sensitive; /* Defaults to 0 */
 extern int scheme_no_keywords; /* Defaults to 0 */
 extern int scheme_allow_set_undefined; /* Defaults to 0 */
-extern int scheme_escape_continuations_only; /* Defaults to 0 */
 extern int scheme_square_brackets_are_parens; /* Defaults to 1 */
 extern int scheme_curly_braces_are_parens; /* Defaults to 1 */
 extern int scheme_hash_percent_syntax_only; /* Defaults to 0 */

@@ -1262,20 +1262,19 @@ START struct;
 
 mark_struct_val {
   Scheme_Structure *s = (Scheme_Structure *)p;
-  Scheme_Struct_Type *stype = (Scheme_Struct_Type *)GC_resolve(s->stype);
+  int num_slots = ((Scheme_Struct_Type *)GC_resolve(s->stype))->num_slots;
 
  mark:
   int i;
 
   gcFIXUP_TYPED_NOW(Scheme_Struct_Type *, s->stype);
-  stype = s->stype; /* In case we just moved it */
 
-  for(i = stype->num_slots; i--; )
+  for(i = num_slots; i--; )
     gcMARK(s->slots[i]);
 
  size:
   gcBYTES_TO_WORDS((sizeof(Scheme_Structure) 
-		    + ((stype->num_slots - 1) * sizeof(Scheme_Object *))));
+		    + ((num_slots - 1) * sizeof(Scheme_Object *))));
 }
 
 mark_struct_type_val {

@@ -1501,6 +1501,8 @@ int stx_val_MARK(void *p) {
   gcMARK(stx->srcloc);
   gcMARK(stx->wraps);
   gcMARK(stx->props);
+  if (!(stx->hash_code & STX_SUBSTX_FLAG))
+    gcMARK(stx->u.modinfo_cache);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
 }
@@ -1511,6 +1513,8 @@ int stx_val_FIXUP(void *p) {
   gcFIXUP(stx->srcloc);
   gcFIXUP(stx->wraps);
   gcFIXUP(stx->props);
+  if (!(stx->hash_code & STX_SUBSTX_FLAG))
+    gcFIXUP(stx->u.modinfo_cache);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
 }
@@ -2846,45 +2850,43 @@ int mark_sema_waiter_FIXUP(void *p) {
 
 int mark_struct_val_SIZE(void *p) {
   Scheme_Structure *s = (Scheme_Structure *)p;
-  Scheme_Struct_Type *stype = (Scheme_Struct_Type *)GC_resolve(s->stype);
+  int num_slots = ((Scheme_Struct_Type *)GC_resolve(s->stype))->num_slots;
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Structure) 
-		    + ((stype->num_slots - 1) * sizeof(Scheme_Object *))));
+		    + ((num_slots - 1) * sizeof(Scheme_Object *))));
 }
 
 int mark_struct_val_MARK(void *p) {
   Scheme_Structure *s = (Scheme_Structure *)p;
-  Scheme_Struct_Type *stype = (Scheme_Struct_Type *)GC_resolve(s->stype);
+  int num_slots = ((Scheme_Struct_Type *)GC_resolve(s->stype))->num_slots;
 
   int i;
 
   gcMARK( s->stype);
-  stype = s->stype; /* In case we just moved it */
 
-  for(i = stype->num_slots; i--; )
+  for(i = num_slots; i--; )
     gcMARK(s->slots[i]);
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Structure) 
-		    + ((stype->num_slots - 1) * sizeof(Scheme_Object *))));
+		    + ((num_slots - 1) * sizeof(Scheme_Object *))));
 }
 
 int mark_struct_val_FIXUP(void *p) {
   Scheme_Structure *s = (Scheme_Structure *)p;
-  Scheme_Struct_Type *stype = (Scheme_Struct_Type *)GC_resolve(s->stype);
+  int num_slots = ((Scheme_Struct_Type *)GC_resolve(s->stype))->num_slots;
 
   int i;
 
   gcFIXUP_TYPED_NOW(Scheme_Struct_Type *, s->stype);
-  stype = s->stype; /* In case we just moved it */
 
-  for(i = stype->num_slots; i--; )
+  for(i = num_slots; i--; )
     gcFIXUP(s->slots[i]);
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Structure) 
-		    + ((stype->num_slots - 1) * sizeof(Scheme_Object *))));
+		    + ((num_slots - 1) * sizeof(Scheme_Object *))));
 }
 
 

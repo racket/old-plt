@@ -3122,9 +3122,6 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
   SCHEME_LOCK_MUTEX(make_namespace_mutex);
 #endif
 
-  save_ec_only = scheme_escape_continuations_only;
-  scheme_escape_continuations_only = 0;
-
   if (argc) {
     if (SAME_OBJ(argv[0], empty_symbol))
       empty = 1;
@@ -3137,8 +3134,6 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
     /* Copy from initial namespace: */
     scheme_install_initial_module_set(env);
   }
-
-  scheme_escape_continuations_only = save_ec_only;
 
 #ifdef MZ_REAL_THREADS
   SCHEME_UNLOCK_MUTEX(make_namespace_mutex);

@@ -5,9 +5,6 @@
 
 #define GDESC "Identifiers and symbols are initially case-sensitive.\n"
 #define SDESC "Set! works on undefined identifiers.\n"
-#define EDESC "Call/cc is replaced with call/ec.\n"
-#define ADESC "Fall-through cond or case is an error.\n"
-#define NDESC "Keywords are not enforced.\n"
 
 char *cmdline_exe_hack = "[Replace me for EXE hack                                       ]";
 
@@ -341,8 +338,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
       argv[0] = "-l";
     else if (!strcmp("--case-sens", argv[0]))
       argv[0] = "-g";
-    else if (!strcmp("--esc-cont", argv[0]))
-      argv[0] = "-c";
     else if (!strcmp("--set-undef", argv[0]))
       argv[0] = "-s";
     else if (!strcmp("--script", argv[0]))
@@ -390,9 +385,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  break;
 	case 'g':
 	  scheme_case_sensitive = 1;
-	  break;
-	case 'c':
-	  scheme_escape_continuations_only = 1;
 	  break;
 	case 's':
 	  scheme_allow_set_undefined = 1;
@@ -586,8 +578,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #ifdef MZSCHEME_CMD_LINE  
     if (scheme_case_sensitive)
       PRINTF(GDESC);
-    if (scheme_escape_continuations_only)
-      PRINTF(EDESC);
     if (scheme_allow_set_undefined)
       PRINTF(SDESC);
 # ifdef DOS_FILE_SYSTEM
@@ -690,7 +680,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -q, --no-init-file : Does not try to load " INIT_FILENAME ".\n"
 	 " Language setting switches:\n"
 	 "  -g, --case-sens : " GDESC
-	 "  -c, --esc-cont : " EDESC
 	 "  -s, --set-undef : " SDESC
 	 " Miscellaneous switches:\n"
 	 "  -- : No argument following this switch is used as a switch.\n"

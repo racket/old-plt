@@ -45,7 +45,6 @@
 
 /* globals */
 int scheme_allow_set_undefined;
-int scheme_escape_continuations_only = 0; 
 
 int scheme_starting_up;
 

@@ -53,7 +53,7 @@ typedef short Type_Tag;
 /* Debugging and performance tools: */
 #define TIME 0
 #define SEARCH 0
-#define CHECKS 0
+#define CHECKS 1
 #define NOISY 0
 #define MARK_STATS 0
 #define ALLOC_GC_PHASE 0
@@ -299,6 +299,8 @@ static char zero_sized[4];
 static void *park[2];
 
 static int during_gc;
+
+static int resolve_for_fixup = 0;
 
 static MPage *find_page(void *p);
 
@@ -3498,6 +3500,8 @@ static void gcollect(int full)
 
   /******************************************************/
 
+  resolve_for_fixup = 1;
+
   if (compact) {
     scanned_pages = 0;
     
@@ -3513,6 +3517,8 @@ static void gcollect(int full)
 	       post.ru_minflt - pre.ru_minflt, post.ru_majflt - pre.ru_majflt,
 	       GETTIMEREL()));
   }
+
+  resolve_for_fixup = 0;
 
   /******************************************************/
   
@@ -3577,7 +3583,11 @@ static void gcollect(int full)
 
 void *GC_resolve(void *p)
 {
-  return p;
+  if (resolve_for_fixup) {
+    GC_fixup(&p);
+    return p;
+  } else
+    return p;
 }
 
 /******************************************************************************/

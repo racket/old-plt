@@ -90,6 +90,7 @@ Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
 
   retval->type = mx_com_object_type;
   retval->pIDispatch = pIDispatch;
+  retval->clsId = emptyClsId;
   retval->pITypeInfo = NULL;
   retval->pEventTypeInfo = NULL;
   retval->pIConnectionPoint = NULL;

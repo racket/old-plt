@@ -36,6 +36,7 @@ typedef struct _scheme_com_obj_ {
   IDispatch *pIDispatch;
   ITypeInfo *pITypeInfo;
   ITypeInfo *pEventTypeInfo;
+  CLSID clsId;
   IConnectionPoint *pIConnectionPoint;
   DWORD connectionCookie;
   ISink *pISink;
@@ -45,6 +46,7 @@ typedef struct _scheme_com_type_ {
   Scheme_Type type;
   BOOL released;
   ITypeInfo *pITypeInfo;
+  CLSID clsId; // of coclass
 } MX_COM_Type;
 
 typedef struct _scheme_mx_event_ { 
@@ -159,6 +161,7 @@ typedef struct _managed_obj_ {
 #define MX_COM_OBJ_VAL(o) (((MX_COM_Object *)o)->pIDispatch)
 #define MX_COM_OBJ_CONNECTIONPOINT(o) (((MX_COM_Object *)o)->pIConnectionPoint)
 #define MX_COM_OBJ_TYPEINFO(o) (((MX_COM_Object *)o)->pITypeInfo)
+#define MX_COM_OBJ_CLSID(o) (((MX_COM_Object *)o)->clsId)
 #define MX_COM_OBJ_EVENTTYPEINFO(o) (((MX_COM_Object *)o)->pEventTypeInfo)
 #define MX_COM_OBJ_EVENTSINK(o) (((MX_COM_Object *)o)->pISink)
 
@@ -191,6 +194,8 @@ typedef struct _managed_obj_ {
 
 #define MX_IUNKNOWNP(o) TYPE_PRED(o,mx_com_iunknown_type)
 #define MX_IUNKNOWN_VAL(o) (((MX_COM_Data_Object *)o)->pIUnknown)
+
+extern const CLSID emptyClsId;
 
 extern Scheme_Type mx_com_object_type; 
 extern Scheme_Type mx_com_type_type; 
@@ -275,6 +280,10 @@ MX_PRIM_DECL(mx_com_set_property_type);
 MX_PRIM_DECL(mx_com_event_type);
 MX_PRIM_DECL(mx_cocreate_instance_from_coclass);
 MX_PRIM_DECL(mx_cocreate_instance_from_progid);
+MX_PRIM_DECL(mx_coclass);
+MX_PRIM_DECL(mx_coclass_as_progid);
+MX_PRIM_DECL(mx_set_coclass);
+MX_PRIM_DECL(mx_set_coclass_from_progid);
 MX_PRIM_DECL(mx_com_object_eq);
 MX_PRIM_DECL(mx_com_object_pred);
 MX_PRIM_DECL(mx_com_register_object);

@@ -48,6 +48,8 @@ HANDLE browserHwndMutex;
 HANDLE createHwndSem;
 HANDLE eventSinkMutex;
 
+const CLSID emptyClsId;
+
 static Scheme_Unit *mx_unit;  /* the unit returned by the extension */
 
 static Scheme_Object *mx_omit_obj; /* omitted argument placeholder */
@@ -97,6 +99,10 @@ static MX_PRIM mxPrims[] = {
   
   { mx_cocreate_instance_from_coclass,"cocreate-instance-from-coclass",1,1 },
   { mx_cocreate_instance_from_progid,"cocreate-instance-from-progid",1,1 },
+  { mx_coclass,"coclass",1,1 },
+  { mx_coclass_as_progid,"coclass-as-progid",1,1 },
+  { mx_set_coclass,"set-coclass!",2,2 },
+  { mx_set_coclass_from_progid,"set-coclass-from-progid!",2,2 },
   { mx_com_object_pred,"com-object?",1,1 },
   { mx_com_object_eq,"com-object-eq?",2,2 },
   { mx_com_register_object,"com-register-object",1,1 },  
@@ -350,6 +356,15 @@ static MX_PRIM mxPrims[] = {
 
   { mx_release_type_table,"release-type-table",0,0},
 };
+
+BOOL isEmptyClsId(CLSID clsId) {
+  if (memcmp(&clsId,&emptyClsId,sizeof(CLSID)) == 0) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
 
 void scheme_release_typedesc(void *p,void *) {
   MX_TYPEDESC *pTypeDesc;
@@ -671,6 +686,7 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name) {
   com_object->type = mx_com_object_type; 
   com_object->pIDispatch = pIDispatch;
   com_object->pITypeInfo = NULL;
+  com_object->clsId = clsId;
   com_object->pEventTypeInfo = NULL;
   com_object->pIConnectionPoint = NULL;
   com_object->pISink = NULL;
@@ -696,32 +712,232 @@ Scheme_Object *mx_cocreate_instance_from_coclass(int argc,Scheme_Object **argv) 
   return do_cocreate_instance(clsId,coclass);
 }  
 
-Scheme_Object *mx_cocreate_instance_from_progid(int argc,
-						 Scheme_Object **argv) {
+CLSID schemeProgIdToCLSID(Scheme_Object *obj,char *fname) {
   HRESULT hr;
   char *progId;
   CLSID clsId;
   BSTR wideProgId;
 
-  if (SCHEME_STRINGP(argv[0]) == FALSE) {
-    scheme_wrong_type("cocreate-instance-from-progid","string",0,argc,argv);
-  }
-
-  progId = SCHEME_STR_VAL(argv[0]);
+  progId = SCHEME_STR_VAL(obj);
   
-  wideProgId = schemeStringToBSTR(argv[0]);
+  wideProgId = schemeStringToBSTR(obj);
 
   hr = CLSIDFromProgID(wideProgId,&clsId);
 
   if (hr != S_OK) {
     char errBuff[2048];
-    sprintf(errBuff,"cocreate-instance-from-progid: Error retrieving CLSID from ProgID %s",
-	    progId);
+    sprintf(errBuff,"%s: Error retrieving CLSID from ProgID %s",
+	    fname,progId);
     codedComError(errBuff,hr);
   }
 
-  return do_cocreate_instance(clsId,progId);
+  return clsId;
+}
+
+Scheme_Object *mx_cocreate_instance_from_progid(int argc,
+						Scheme_Object **argv) {
+  CLSID clsId;
+
+  if (SCHEME_STRINGP(argv[0]) == FALSE) {
+    scheme_wrong_type("cocreate-instance-from-progid","string",0,argc,argv);
+  }
+
+  clsId = schemeProgIdToCLSID(argv[0],"cocreate-instance-from-progid");
+
+  return do_cocreate_instance(clsId,SCHEME_STR_VAL(argv[0]));
 }  
+
+
+Scheme_Object *mx_set_coclass(int argc,Scheme_Object **argv) {
+  CLSID clsId;
+
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("set-coclass!","com-object",0,argc,argv);
+  }
+
+  if (SCHEME_STRINGP(argv[1]) == FALSE) {
+    scheme_wrong_type("set-coclass!","string",1,argc,argv);
+  }
+
+  clsId = getCLSIDFromCoClass(SCHEME_STR_VAL(argv[1]));
+
+  MX_COM_OBJ_CLSID(argv[0]) = clsId;
+
+  return scheme_void;
+}
+
+Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  HKEY hkey,hsubkey;
+  LONG result;
+  FILETIME fileTime;
+  unsigned long keyIndex;
+  TCHAR clsIdBuffer[256];
+  OLECHAR oleClsIdBuffer[256];
+  DWORD clsIdBufferSize;
+  DWORD dataType;
+  BYTE dataBuffer[256];
+  DWORD dataBufferSize;
+  CLSID clsId,registryClsId;
+  int count;
+  Scheme_Object *retval;
+  
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("coclass","com-object",0,argc,argv);
+  }
+
+  clsId = MX_COM_OBJ_CLSID(argv[0]);
+
+  if (isEmptyClsId(clsId)) {
+    scheme_signal_error("coclass: No coclass for object");
+  }
+
+  // use CLSID to rummage through Registry to find coclass
+  
+  result = RegOpenKeyEx(HKEY_CLASSES_ROOT,
+			"CLSID",
+			(DWORD)0,
+			KEY_READ,
+			&hkey);
+  
+  
+  if (result != ERROR_SUCCESS) {
+    scheme_signal_error("Error while searching Windows registry");
+  }	    
+  
+  // enumerate subkeys until we find the one we want
+  
+  // really, should call RegQueryInfoKey to find size needed for buffers
+  
+  keyIndex = 0;
+  
+  retval = NULL;
+
+  while (1) {
+    
+    // get next subkey
+    
+    clsIdBufferSize = sizeof(clsIdBuffer);
+    
+    result = RegEnumKeyEx(hkey,keyIndex++,
+			  clsIdBuffer,
+			  &clsIdBufferSize,
+			  0,NULL,NULL,
+			  &fileTime);
+    
+    if (result == ERROR_NO_MORE_ITEMS) {
+      break;
+    }		
+    
+    if (result != ERROR_SUCCESS) {
+      scheme_signal_error("Error enumerating subkeys in Windows registry");
+    }
+    
+    if (strlen(clsIdBuffer) != 38) { // not a CLSID -- bogus entry
+      continue;
+    }
+
+    count = MultiByteToWideChar(CP_ACP,(DWORD)0,
+				clsIdBuffer,strlen(clsIdBuffer) + 1,
+				oleClsIdBuffer,sizeray(oleClsIdBuffer));
+	    
+    if (count == 0) {
+      scheme_signal_error("Error translating CLSID to Unicode");
+    }
+	    
+    hr = CLSIDFromString(oleClsIdBuffer,&registryClsId);
+
+    if (hr != NOERROR) {
+      scheme_signal_error("coclass: Error obtaining coclass CLSID");
+    }
+
+    if (registryClsId != clsId) {
+      continue;
+    }
+      
+    // open subkey
+    
+    result = RegOpenKeyEx(hkey,clsIdBuffer,
+			  (DWORD)0,
+			  KEY_READ,&hsubkey);
+    
+    if (result != ERROR_SUCCESS) {
+      scheme_signal_error("coclass: Error obtaining coclass value");
+    }	    
+    
+    dataBufferSize = sizeof(dataBuffer);
+    
+    RegQueryValueEx(hsubkey,"",0,&dataType,dataBuffer,&dataBufferSize);
+    
+    RegCloseKey(hsubkey);
+
+    if (dataType == REG_SZ) {
+      retval = scheme_make_string((char *)dataBuffer);
+      break;
+    }
+  }
+
+  RegCloseKey(hkey);  
+
+  if (retval == NULL) {
+    scheme_signal_error("coclass: object's coclass not found in Registry");
+  }
+
+  return retval;
+}
+
+Scheme_Object *mx_coclass_as_progid(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  LPOLESTR wideProgId;
+  CLSID clsId;
+  char *buff;
+  unsigned int len;
+
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("coclass-as-progid","com-object",0,argc,argv);
+  }
+
+  clsId = MX_COM_OBJ_CLSID(argv[0]);
+
+  if (isEmptyClsId(clsId)) {
+    scheme_signal_error("coclass-as-progid: No coclass for object");
+  }
+
+  hr = ProgIDFromCLSID(clsId,&wideProgId);
+  
+  if (hr != S_OK) {
+    scheme_signal_error("coclass-as-progid: Error finding coclass");
+  }
+
+  len = wcslen(wideProgId);
+
+  buff = (char *)scheme_malloc(len + 1);
+
+  WideCharToMultiByte(CP_ACP,(DWORD)0,
+		      wideProgId,len + 1,
+		      buff,len,
+		      NULL,NULL);
+
+  return scheme_make_string(buff);
+}
+
+Scheme_Object *mx_set_coclass_from_progid(int argc,Scheme_Object **argv) {
+  CLSID clsid;
+
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("set-coclass-from-progid!","com-object",0,argc,argv);
+  }
+
+  if (SCHEME_STRINGP(argv[1]) == FALSE) {
+    scheme_wrong_type("set-coclass-from-progid!","string",1,argc,argv);
+  }
+
+  clsid = schemeProgIdToCLSID(argv[1],"set-coclass-from-progid!");
+
+  MX_COM_OBJ_CLSID(argv[0]) = clsid;
+
+  return scheme_void;
+}
 
 ITypeInfo *typeInfoFromComObject(MX_COM_Object *obj) {
   HRESULT hr;
@@ -757,18 +973,21 @@ ITypeInfo *typeInfoFromComObject(MX_COM_Object *obj) {
 Scheme_Object *mx_com_get_object_type(int argc,Scheme_Object **argv) {
   ITypeInfo *pITypeInfo;
   MX_COM_Type *retval;
+  MX_COM_Object *obj;
 
   if (MX_COM_OBJP(argv[0]) == FALSE) {
     scheme_wrong_type("com-object-type","com-object",0,argc,argv);
   }
 
-  pITypeInfo = typeInfoFromComObject((MX_COM_Object *)argv[0]);
+  obj = (MX_COM_Object *)argv[0];
+  pITypeInfo = typeInfoFromComObject(obj);
 
   retval = (MX_COM_Type *)scheme_malloc(sizeof(MX_COM_Type));
 
   retval->type = mx_com_type_type;
   retval->released = FALSE;
   retval->pITypeInfo = pITypeInfo;
+  retval->clsId = obj->clsId;
 
   pITypeInfo->AddRef();
 
@@ -1358,7 +1577,7 @@ Scheme_Object *mx_com_set_properties(int argc,Scheme_Object **argv) {
   return mx_do_get_methods(argc,argv,INVOKE_PROPERTYPUT);
 }
 
-ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo) {
+ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo,CLSID clsId) {
   HRESULT hr;
   ITypeLib *pITypeLib;
   ITypeInfo *pCoclassTypeInfo;
@@ -1368,8 +1587,9 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo) {
   HREFTYPE hRefType;
   UINT ndx;
   UINT typeInfoCount;
-  BOOL foundCoclass;
+  UINT coclassCount;
   UINT typeCount;
+  UINT coclassNdx;
   UINT i,j;
 
   hr = pITypeInfo->GetContainingTypeLib(&pITypeLib,&ndx);
@@ -1378,11 +1598,31 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo) {
     scheme_signal_error("Can't get dispatch type library");
   }
 
+  // first try using explicit clsId
+
+  if (!isEmptyClsId(clsId)) {
+    hr = pITypeLib->GetTypeInfoOfGuid(clsId,&pCoclassTypeInfo);
+
+    pITypeLib->Release();
+
+    if (hr != S_OK || pCoclassTypeInfo == NULL) {
+      codedComError("Error getting type info for coclass",hr);
+      return NULL;
+    }
+  
+    return pCoclassTypeInfo;
+  } 
+
+  // if no CLSID, search for coclass implementing supplied 
+  // interface
+
   typeInfoCount = pITypeLib->GetTypeInfoCount();
 
-  foundCoclass = FALSE;
+  coclassCount = 0;
 
-  for (i = 0; foundCoclass == FALSE && i < typeInfoCount; i++) {
+  // check for ambiguity
+
+  for (i = 0; i < typeInfoCount; i++) {
     
     pITypeLib->GetTypeInfoType(i,&typeKind);
 
@@ -1391,12 +1631,15 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo) {
       hr = pITypeLib->GetTypeInfo(i,&pCoclassTypeInfo);
 
       if (hr != S_OK || pCoclassTypeInfo == NULL) {
+	pITypeLib->Release();
 	codedComError("Error getting type info for coclass",hr);
       }
-  
+
       hr = pCoclassTypeInfo->GetTypeAttr(&pTypeAttr);
 	
       if (hr != S_OK || pTypeAttr == NULL) {
+	pCoclassTypeInfo->Release();
+	pITypeLib->Release();
 	codedComError("Error getting coclass type attributes",hr);
       }
   
@@ -1404,36 +1647,53 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo) {
   
       pCoclassTypeInfo->ReleaseTypeAttr(pTypeAttr);
   
-      for (j = 0; foundCoclass == FALSE && j < typeCount; j++) {
+      for (j = 0; j < typeCount; j++) {
 	hr = pCoclassTypeInfo->GetRefTypeOfImplType(j,&hRefType);
 	  
 	if (hr != S_OK) {
+	  pCoclassTypeInfo->Release();
+	  pITypeLib->Release();
 	  codedComError("Error retrieving type info handle",hr);
 	}
   
 	hr = pCoclassTypeInfo->GetRefTypeInfo(hRefType,&pCandidateTypeInfo);
 
 	if (hr != S_OK || pCandidateTypeInfo == NULL) {
+	  pCoclassTypeInfo->Release();
+	  pITypeLib->Release();
 	  codedComError("Error retrieving candidate type info",hr);
 	}
 
 	if (typeInfoEq(pCandidateTypeInfo,pITypeInfo)) {
-	  foundCoclass = TRUE;
+	  coclassNdx = i;
+	  if (++coclassCount >= 2) {
+	    pCandidateTypeInfo->Release();
+	    pCoclassTypeInfo->Release();
+	    pITypeLib->Release();
+	    scheme_signal_error("Ambiguous coclass for object");
+	  }
 	}
 
 	pCandidateTypeInfo->Release();
+
       }
 
-      if (foundCoclass == FALSE) {
-	pCoclassTypeInfo->Release();
-      }
+      pCoclassTypeInfo->Release();
+
     }
   }
 
+  if (coclassCount == 0) {
+    pITypeLib->Release();
+    return NULL;
+  }
+
+  hr = pITypeLib->GetTypeInfo(coclassNdx,&pCoclassTypeInfo);
+
   pITypeLib->Release();
 
-  if (foundCoclass == FALSE) {
-    return NULL;
+  if (hr != S_OK || pCoclassTypeInfo == NULL) {
+    codedComError("Error getting type info for coclass",hr);
   }
 
   return pCoclassTypeInfo;
@@ -1513,7 +1773,8 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
 
   /* preferred mechanism for finding coclass ITypeInfo */
 
-  hr = pIDispatch->QueryInterface(IID_IProvideClassInfo,(void **)&pIProvideClassInfo);
+  hr = pIDispatch->QueryInterface(IID_IProvideClassInfo,
+				  (void **)&pIProvideClassInfo);
   
   if (hr == S_OK && pIProvideClassInfo != NULL) {
 
@@ -1534,7 +1795,8 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
       codedComError("Can't get dispatch type information",hr);
     }
 
-    pCoclassTypeInfo = coclassTypeInfoFromTypeInfo(pDispatchTypeInfo);
+    pCoclassTypeInfo = coclassTypeInfoFromTypeInfo(pDispatchTypeInfo,
+						   obj->clsId);
     pDispatchTypeInfo->Release();
 
     if (pCoclassTypeInfo == NULL) {
@@ -1565,7 +1827,8 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
 ITypeInfo *eventTypeInfoFromComType(MX_COM_Type *obj) {
   ITypeInfo *pCoclassTypeInfo,*pEventTypeInfo;
 
-  pCoclassTypeInfo = coclassTypeInfoFromTypeInfo(obj->pITypeInfo);
+  pCoclassTypeInfo = coclassTypeInfoFromTypeInfo(obj->pITypeInfo,
+						 obj->clsId);
 
   if (pCoclassTypeInfo == NULL) {
     scheme_signal_error("Error getting coclass type information");
@@ -3264,7 +3527,7 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   
   hr = pDocument->get_body(&pBody);
   
-  if (hr == NULL || pBody == NULL) {
+  if (hr != S_OK || pBody == NULL) {
     codedComError("document-objects: Can't find document BODY",hr);
   }
   
@@ -3284,6 +3547,7 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
     
     com_object->type = mx_com_object_type; 
     com_object->pIDispatch = pObjectDispatch;
+    com_object->clsId = emptyClsId;
     com_object->pITypeInfo = NULL;
     com_object->pEventTypeInfo = NULL;
     com_object->pIConnectionPoint = NULL;
@@ -3370,20 +3634,20 @@ CLSID getCLSIDFromCoClass(const char *name) {
   LONG result;
   FILETIME fileTime;
   unsigned long keyIndex;
-  TCHAR clsidBuffer[256];
-  OLECHAR oleClsidBuffer[256];
-  DWORD clsidBufferSize;
+  TCHAR clsIdBuffer[256];
+  OLECHAR oleClsIdBuffer[256];
+  DWORD clsIdBufferSize;
   DWORD dataType;
   BYTE dataBuffer[256];
   DWORD dataBufferSize;
-  CLSID clsid;
+  CLSID clsId;
   BOOL loopFlag;
   int count;
   char **p;
   
   // dummy entry
   
-  memset(&clsid,0,sizeof(clsid));
+  clsId = emptyClsId;
   
   // get HKEY to Interfaces listing in Registry
   
@@ -3408,11 +3672,11 @@ CLSID getCLSIDFromCoClass(const char *name) {
     
     // get next subkey
     
-    clsidBufferSize = sizeof(clsidBuffer);
+    clsIdBufferSize = sizeof(clsIdBuffer);
     
     result = RegEnumKeyEx(hkey,keyIndex++,
-			  clsidBuffer,
-			  &clsidBufferSize,
+			  clsIdBuffer,
+			  &clsIdBufferSize,
 			  0,NULL,NULL,
 			  &fileTime);
     
@@ -3424,18 +3688,18 @@ CLSID getCLSIDFromCoClass(const char *name) {
       scheme_signal_error("Error enumerating subkeys in Windows registry");
     }
     
-    if (strlen(clsidBuffer) != 38) { // not a CLSID -- bogus entry
+    if (strlen(clsIdBuffer) != 38) { // not a CLSID -- bogus entry
       continue;
     }
     
     // open subkey
     
-    result = RegOpenKeyEx(hkey,clsidBuffer,
+    result = RegOpenKeyEx(hkey,clsIdBuffer,
 			  (DWORD)0,
 			  KEY_READ,&hsubkey);
     
     if (result != ERROR_SUCCESS) {
-      return clsid;
+      return clsId;
     }	    
     
     dataBufferSize = sizeof(dataBuffer);
@@ -3476,14 +3740,14 @@ CLSID getCLSIDFromCoClass(const char *name) {
 	while (*p) {
 	  if (stricmp(subkeyBuffer,*p) == 0) {
 	    count = MultiByteToWideChar(CP_ACP,(DWORD)0,
-					clsidBuffer,strlen(clsidBuffer) + 1,
-					oleClsidBuffer,sizeray(oleClsidBuffer));
+					clsIdBuffer,strlen(clsIdBuffer) + 1,
+					oleClsIdBuffer,sizeray(oleClsIdBuffer));
 	    
 	    if (count == 0) {
 	      scheme_signal_error("Error translating CLSID to Unicode",name);
 	    }
 	    
-	    CLSIDFromString(oleClsidBuffer,&clsid);
+	    CLSIDFromString(oleClsIdBuffer,&clsId);
 	    loopFlag = FALSE;
 	    break; // *p loop
 	  }
@@ -3497,8 +3761,12 @@ CLSID getCLSIDFromCoClass(const char *name) {
   }
   
   RegCloseKey(hkey);  
+
+  if (isEmptyClsId(clsId)) {
+    scheme_signal_error("Coclass %s not found",name);
+  }
   
-  return clsid;
+  return clsId;
 }
 
 Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
@@ -3618,12 +3886,11 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
 
 Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
   char *controlName;
-  LPOLESTR clsidString;
+  LPOLESTR clsIdString;
   char widthBuff[20];
   char heightBuff[20];
   char buff[512];
-  CLSID clsid;
-  static CLSID emptyClsid;
+  CLSID clsId;
   char *format; 
   int i;
 
@@ -3662,17 +3929,17 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
   sprintf(widthBuff,format,SCHEME_INT_VAL(argv[1]));
   sprintf(heightBuff,format,SCHEME_INT_VAL(argv[2]));
 
-  clsid = getCLSIDFromCoClass(controlName);
+  clsId = getCLSIDFromCoClass(controlName);
   
-  if (memcmp(&clsid,&emptyClsid,sizeof(CLSID)) == 0) {
+  if (isEmptyClsId(clsId)) {
     scheme_signal_error("Control not found");  
   }
   
-  StringFromCLSID(clsid,&clsidString);
+  StringFromCLSID(clsId,&clsIdString);
   
-  *(clsidString + wcslen(clsidString) - 1) = L'\0'; 
+  *(clsIdString + wcslen(clsIdString) - 1) = L'\0'; 
   
-  if (clsidString == NULL) {
+  if (clsIdString == NULL) {
     scheme_signal_error("Can't convert control CLSID to string");
   }
   
@@ -3681,7 +3948,7 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
 	  "</OBJECT>",
 	  controlName,		    
 	  widthBuff,heightBuff,
-	  clsidString + 1);
+	  clsIdString + 1);
   
   return (Scheme_Object *)scheme_make_string(buff);
 }

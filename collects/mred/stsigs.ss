@@ -1,5 +1,5 @@
 ;;
-;; $Id: stsigs.ss,v 1.15 1998/02/26 23:54:57 steck Exp $
+;; $Id: stsigs.ss,v 1.16 1998/05/12 03:10:21 robby Exp $
 ;;
 ;; Signatures for gui tester.
 ;;
@@ -46,19 +46,10 @@
    mouse-click
    new-window))
 
-(define-signature mred:test:drscheme^
-  (get-defns-canvas 
-   get-repl-canvas
-   get-save-button
-   get-check-syntax-button
-   get-execute-button))
-
 (define-signature mred:self-test^
   ((open mred:test:run^)
-   (open mred:test:primitives^)
-   (unit drs : mred:test:drscheme^)))
+   (open mred:test:primitives^)))
 
 (define-signature mred:self-test-export^
   ((open mred:test:run-export^)
-   (open mred:test:primitives^)
-   (unit drs : mred:test:drscheme^)))
+   (open mred:test:primitives^)))

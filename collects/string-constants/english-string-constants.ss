@@ -160,14 +160,15 @@
  ; Help Desk configuration
 			     
  (hd-configuration "PLT Help Desk configuration")
- (hd-search-frame-options "Search frame options")
+ (hd-use-html-frames "Use HTML frames")
+ (hd-search-pane-options "Search pane options")
  (hd-height "Height")
  (hd-bg-color "Background color")
  (hd-pixels "pixels")
  (hd-text-color "Text color")
  (hd-link-color "Link color")
- (hd-text-sample "Search frame text appears in this color")
- (hd-link-sample "Search frame links appear in this color")
+ (hd-text-sample "Search pane text appears in this color")
+ (hd-link-sample "Search pane links appear in this color")
  (hd-save-changes "Save changes")
  (hd-reset "Reset")
  (hd-defaults "Defaults")

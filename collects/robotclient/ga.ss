@@ -7,9 +7,9 @@
 (define output-port (current-output-port))
 (define boards '((3 "board1" "packages1")
 		 (3 "board2" "packages1")
-		 (5 "board3" "packages2")
-		 (4 "board4" "packages2")
-		 (10 "board5" "packages3")))
+;		 (5 "board3" "packages2")
+		 (4 "board4" "packages2")))
+;		 (10 "board5" "packages3")))
 (define initial-set
   `((0 0 0 0 0 0 0 0 0 0 0 0)
     (1 1 1 1 1 1 1 1 1 1 1 1)
@@ -59,13 +59,14 @@
   (let ([board-file (string-append "boards/" board)]
 	[packages-file (string-append "boards/" packages)])
     ;; play the board, get the results in 'results'
-    (for-each (lambda (player score)
-		(vector-set! scoreboard player
-		  (+ (vector-ref scoreboard player) score)))
-      players results)))
+    (let ([results players])
+      (for-each (lambda (player score)
+                  (vector-set! scoreboard player
+                               (+ (vector-ref scoreboard player) score)))
+                players results))))
 
 ;; generate-results : list-of-gene-seqs -> list-of-gene-seqs
-(define (generate-results ls boards)
+(define (generate-results ls)
   (let ([scoreboard (make-vector (length ls) 0)]
 	[players (list->vector ls)]
 	[num-players (length ls)])

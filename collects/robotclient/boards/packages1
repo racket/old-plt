@@ -1,0 +1,48 @@
+[
+((11,11),
+[
+Mk {uid=0, dest=(4,11), weight=11},
+Mk {uid=1, dest=(4,11), weight=11},
+Mk {uid=2, dest=(4,11), weight=11},
+Mk {uid=3, dest=(4,11), weight=11},
+Mk {uid=4, dest=(4,11), weight=11},
+Mk {uid=5, dest=(4,11), weight=11},
+Mk {uid=6, dest=(4,11), weight=11},
+Mk {uid=7, dest=(4,11), weight=11},
+Mk {uid=8, dest=(4,11), weight=11},
+Mk {uid=9, dest=(4,11), weight=11},
+
+Mk {uid=10, dest=(11,4), weight=11},
+Mk {uid=11, dest=(11,4), weight=11},
+Mk {uid=12, dest=(11,4), weight=11},
+Mk {uid=13, dest=(11,4), weight=11},
+Mk {uid=14, dest=(11,4), weight=11},
+Mk {uid=15, dest=(11,4), weight=11},
+Mk {uid=16, dest=(11,4), weight=11},
+Mk {uid=17, dest=(11,4), weight=11},
+Mk {uid=18, dest=(11,4), weight=11},
+Mk {uid=19, dest=(11,4), weight=11},
+
+Mk {uid=20, dest=(19,11), weight=11},
+Mk {uid=21, dest=(19,11), weight=11},
+Mk {uid=22, dest=(19,11), weight=11},
+Mk {uid=23, dest=(19,11), weight=11},
+Mk {uid=24, dest=(19,11), weight=11},
+Mk {uid=25, dest=(19,11), weight=11},
+Mk {uid=26, dest=(19,11), weight=11},
+Mk {uid=27, dest=(19,11), weight=11},
+Mk {uid=28, dest=(19,11), weight=11},
+Mk {uid=29, dest=(19,11), weight=11},
+
+Mk {uid=30, dest=(11,19), weight=11},
+Mk {uid=31, dest=(11,19), weight=11},
+Mk {uid=32, dest=(11,19), weight=11},
+Mk {uid=33, dest=(11,19), weight=11},
+Mk {uid=34, dest=(11,19), weight=11},
+Mk {uid=35, dest=(11,19), weight=11},
+Mk {uid=36, dest=(11,19), weight=11},
+Mk {uid=37, dest=(11,19), weight=11},
+Mk {uid=38, dest=(11,19), weight=11},
+Mk {uid=39, dest=(11,19), weight=11}
+])
+]

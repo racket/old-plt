@@ -15,7 +15,9 @@
         (file-menu:new
          (lambda (item evt) (handler:edit-file #f (lambda _ (new-document #f)))))
         (file-menu:between-print-and-close void))
-      (sequence (super-init filename))
+      (sequence
+        (super-init filename)
+        (fix-parens (send defs get-keymap)))
       (private
         (can% (get-canvas%))
         (repl% (repl-text-mixin base-editor%))
@@ -44,6 +46,7 @@
                                           (cons (car kids) (pos can (cdr kids))))))))
                           key)))))
       (sequence
+        (fix-parens (send repl get-keymap))
         (send defs set-file-format 'text)
         (add-parts
          (get-area-container)
@@ -78,6 +81,28 @@
          (lambda (forwardee)
            (set! forward-to forwardee))))
       (sequence (super-init))))
+  
+  ;; fix-parens : Keymap% -> Void
+  (define fix-parens
+    (let ([fname "flash-paren-match"])
+    (lambda (keymap)
+      (send keymap add-function fname
+            (lambda (edit event)
+              (send edit on-default-char event)
+              (let ([pos (paren:backward-match 
+                          edit
+                          (send edit get-start-position)
+                          0
+                          parens quotes comments #f #f)])
+                (when pos
+                  (send edit flash-on pos (+ 1 pos))))
+              #t))
+      (map (lambda (x) (send keymap map-function (cdr x) fname))
+           parens))))
+  
+  (define parens '(("(" . ")") ("[" . "]") ("{" . "}")))
+  (define quotes '(("'" . "'") ("\"" . "\"") ("/*" . "*/")))
+  (define comments '("//"))
   
   ;; new-document : (U String #f) -> Void
   (define (new-document name)

@@ -369,6 +369,7 @@ if test "${enable_dynlib}" = "yes" ; then
   WXLIBS=WXLIBSDYN
   WXDEPS=WXDEPSDYN
 else
+  LIBSFX=a
   MREDLINKER="$CXX"
   WXLIBS=WXLIBSNORM
   WXDEPS=WXDEPSNORM

@@ -5,12 +5,6 @@ improve method arity mismatch contract violation error messages?
 
 add struct contracts for immutable structs?
 
-->r checklist:
- - test suites for any, (values ...) should include lots of other tests
-   - negative reversed properly, values bound, etc (all tests should be duplicated)
- - add in multi-arity ->r with any, values
- - test object contract with ->r and any, values.
-
 |#
 
 (module contract mzscheme
@@ -2543,7 +2537,7 @@ add struct contracts for immutable structs?
        (let printable? ([x x])
 	 (or (symbol? x)
 	     (string? x)
-	     (bytes? x)
+	     ;(bytes? x) ;; no bytes in 206
 	     (boolean? x)
 	     (char? x)
 	     (null? x)

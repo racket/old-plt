@@ -66,15 +66,14 @@ _collection.ss_
 The collection.ss library in the make collection provides a
 `make-collection' procedure.
 
-> (make-collection collection-name et-expr collection-files argv)
-constructs and performs a make to compile a collection of Scheme files
-into a multi-file extension. `collection-name' is used as a name that
-is embedded into publicly visible names in the extension (choosing a
+> (make-collection collection-name collection-files argv) constructs
+and performs a make to compile a collection of Scheme files into a
+multi-file extension. `collection-name' is used as a name that is
+embedded into publicly visible names in the extension (choosing a
 unique `collection-name' for each extension helps avoid conflicts
-among different extensions for certain operating systems). The
-`et-expr' expression is used as an ealboration-time initialization
-expression for the compiler. `collection-files' is a list of Scheme
-source files to be compiled. `argv' is passed on to `make'.
+among different extensions for certain operating
+systems). `collection-files' is a list of Scheme source files to be
+compiled. `argv' is passed on to `make'.
 
 The resulting extension "_loader" is compiled to the current
 directory's "compiled/native/PLATFORM" subdirectory, where `PLATFORM'

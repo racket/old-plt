@@ -22,7 +22,6 @@
 
       (define (make-collection
 	       collection-name
-	       header-expr
 	       collection-files
 	       argv)
 	(printf "building collection ~a: ~a~n" collection-name collection-files)
@@ -65,7 +64,7 @@
 		       `(,zo (,ss)
 			     ,(lambda ()
 				(unless zo-compiler
-				  (set! zo-compiler (compile-zos header-expr)))
+				  (set! zo-compiler (compile-zos #f)))
 				(zo-compiler (list ss) "compiled"))))
 		     sses zos)]
 	       [ss->c-list
@@ -73,7 +72,7 @@
 		       `(,c (,ss)
 			    ,(lambda ()
 			       (unless ext-compiler
-				 (set! ext-compiler (compile-extension-parts-to-c header-expr)))
+				 (set! ext-compiler (compile-extension-parts-to-c #f)))
 			       (parameterize ([compiler:option:setup-prefix 
 					       (string-append "_" collection-name)])
 				 (ext-compiler (list ss) (build-path "compiled" "native"))))))

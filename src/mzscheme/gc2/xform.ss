@@ -1,6 +1,8 @@
 
-; No calls of the form (f)(...)
-; Pass the address of arrays, records, and non-pointers only
+;; Assumptions:
+;;  No calls of the form (f)(...)
+;;  For arrays, records, and non-pointers, pass by address only
+;;  No gc-triggering code in .h files
 
 (define cmd-line (vector->list argv))
 
@@ -13,10 +15,8 @@
 (define file-in (cadr cmd-line))
 (define file-out (filter-false (caddr cmd-line)))
 
-(define checking-c++-only? (not cpp))
-
 (require-library "function.ss")
-;(require-library "errortrace.ss" "errortrace")
+(require-library "errortrace.ss" "errortrace")
 
 (when cpp
   (unless (system (format "~a -DMZ_PRECISE_GC ~a ~a | ctok > xtmp"
@@ -45,9 +45,13 @@
        (delete-file file-out))
      (eh))))
 
-(when checking-c++-only?
-  (fprintf (current-error-port) "**********************************************************************~n")
-  (fprintf (current-error-port) "Checking ~a:~n" file-in))
+(define exit-with-error? #f)
+
+(define (log-error format . args)
+  (fprintf (current-error-port) "xform ERROR: ")
+  (apply fprintf (current-error-port) format args)
+  (newline (current-error-port))
+  (set! exit-with-error? #t))
 
 ;; Header:
 (printf "#define FUNCCALL(x) x~n")
@@ -111,10 +115,10 @@
        asm __asm __asm__ __volatile __volatile__ volatile __extension__
        
        ;; The following are functions, but they don't trigger GC, and
-       ;; they're either single-argument or no argument is a pointer.
+       ;; they either take one argument or no pointer arguments.
        ;; So we can ignore them:
 
-       strcpy strlen cos sin exp pow log sqrt atan2
+       strlen cos sin exp pow log sqrt atan2 isnan isinf
        floor ceil round fmod fabs __maskrune
        isalpha isdigit isspace tolower toupper
        fread fwrite socket fcntl setsockopt connect send recv close
@@ -124,11 +128,25 @@
        scheme_rational_to_double scheme_bignum_to_double
        scheme_rational_to_float scheme_bignum_to_float))
 
-(define non-allocating-functions
-  ;; The following don't trigger GC, but we need to check for
+(define non-gcing-functions
+  ;; The following don't need wrappers, but we need to check for
   ;;  nested function calls:
-  '(strcmp memcpy strcat printf sprintf vsprintf vprintf
-	   strncmp scheme_strncmp))
+  '(memcpy
+    strcmp strcpy strcat memset
+    printf sprintf vsprintf vprintf
+    strncmp scheme_strncmp
+    
+    scheme_make_small_bignum scheme_make_small_rational scheme_make_small_complex 
+    ))
+
+(define non-returning-functions
+  ;; The following functions never return, so the wrappers
+  ;; don't need to push any variables:
+  '(exit
+    scheme_wrong_type scheme_wrong_number scheme_wrong_syntax
+    scheme_raise_exn scheme_signal_error
+    scheme_raise_out_of_memory
+    ))
 
 (define (get-constructor v)
   (cond
@@ -197,7 +215,7 @@
 			 (not (braces? (cadr e)))))
 		(newline/indent (+ indent 2))
 		(display/indent v " "))]
-	   [else (error "unknown brace: ~a" (caar v))])]
+	   [else (error 'xform "unknown brace: ~a" (caar v))])]
 	 [(note? v)
 	  (display/indent v (note-s v))
 	  (newline/indent indent)]
@@ -215,7 +233,9 @@
 			  (let push-var ([full-name (caar l)][vtype (cdar l)][n n])
 			    (cond
 			     [(union-type? vtype)
-			      (error 'xform "Hoffa lives: can't push union ~a." full-name)]
+			      (log-error "Can't push union onto mark stack: ~a." full-name)
+			      (printf "PUSHUNION(~a, ~a), " full-name n)
+			      (add1 n)]
 			     [(array-type? vtype)
 			      (printf "PUSHARRAY(~a, ~a, ~a), " full-name (array-type-count vtype) n)
 			      (+ 3 n)]
@@ -259,7 +279,7 @@
 
 (define skipping? #f)
 
-(define (top-level e)
+(define (top-level e where)
   (cond
    [(end-skip? e)
     (set! skipping? #f)
@@ -287,20 +307,18 @@
    [(function? e)
     (let ([name (register-proto-information e)])
       (when label? (printf "/* FUNCTION ~a */~n" name)))
-    (if (or checking-c++-only?
-	    (assq Scheme_Object pointer-types))
-	(convert-function e)
+    (if (and where (regexp-match "[.]h$" where))
 	;; Still in headers; probably an inlined function
-	e)]
+	e
+	(convert-function e))]
    [(var-decl? e)
     (when label? (printf "/* VAR */~n"))
     e]
 
-   ;; C++:
    [(and (>= (length e) 3)
 	 (eq? (tok-n (car e)) 'extern)
 	 (equal? (tok-n (cadr e)) "C"))
-    ;; skip
+    ;; FIXME: skip
     e]
 
    [else (print-struct #t)
@@ -384,7 +402,8 @@
     (set! pointer-types (append vars pointer-types))))
 
 (define (get-pointer-vars e comment union-ok?)
-  (let* ([base (tok-n (car e))]
+  (let* ([e (filter (lambda (x) (not (eq? 'volatile (tok-n x)))) e)]
+	 [base (tok-n (car e))]
 	 [base-is-ptr?
 	  (assq base pointer-types)]
 	 [base-struct
@@ -446,8 +465,8 @@
 				[struct-array? (and base-struct (not pointer?) (number? array-size))])
 			   (when (and struct-array?
 				      (> array-size 5))
-			     (error 'xform "Large array of structures? Gimme a break. ~a in line ~a in ~a."
-				    name (tok-line v) (tok-file v)))
+			     (log-error "Large array of structures at ~a in line ~a in ~a."
+					name (tok-line v) (tok-file v)))
 			   (when (and (not union-ok?)
 				      (not pointer?)
 				      (or union?
@@ -575,10 +594,9 @@
 	       [vars (begin
 		       (ormap (lambda (var)
 				(when (assq (car var) extra-vars)
-				  (error 'xform 
-					 "No es bueno: pointerful variable ~a shadowed in decls at line ~a in ~a"
-					 (car var)
-					 (tok-line (caar decls)) (tok-file (caar decls)))))
+				  (log-error "Pointerful variable ~a shadowed in decls at line ~a in ~a"
+					     (car var)
+					     (tok-line (caar decls)) (tok-file (caar decls)))))
 			      
 			      local-vars)
 		       (append extra-vars local-vars))])
@@ -722,8 +740,7 @@
 			  [call-args (cdr call-form)]
 			  [p-m (and must-convert?
 				    call-func
-				    (assq (tok-n call-func) prototyped)
-				    (not (memq (tok-n call-func) non-allocating-functions)))])
+				    (assq (tok-n call-func) prototyped))])
 		     (if p-m
 			 (let ([new-var (gensym '__funcarg)])
 			   (loop (cdr el)
@@ -809,16 +826,9 @@
 	     (when (and complain-not-in
 			(or (not (pair? complain-not-in))
 			    (not (memq args complain-not-in))))
-	       (let ([err-stuff
-		      (list "Bu xiang hua. Bad place for function call, line ~a in ~a, starting tok is ~s."
-			    (tok-line (car func)) (tok-file (car func))
-			    (tok-n (car func)))])
-		 (if checking-c++-only? ; <= #t to get multiple errors at once as warnings
-		     (begin
-		       (display "Warning [CALL]: " (current-error-port))
-		       (apply fprintf (current-error-port) err-stuff)
-		       (newline (current-error-port)))
-		     (apply error 'xform err-stuff))))
+	       (log-error "Bad place for function call, line ~a in ~a, starting tok is ~s."
+			  (tok-line (car func)) (tok-file (car func))
+			  (tok-n (car func))))
 	     ;; Lift out function calls as arguments. (Can re-order code.
 	     ;; MzScheme source code must live with this change to C's semantics.)
 	     ;; Calls are replaced by varaibles, and setup code generated that
@@ -871,14 +881,25 @@
 	       ;; Put everything back together. Lifted out calls go into a sequence
 	       ;;  before the main function call.
 	       (loop rest-
-		     (let ([call (make-call
-				  "func call"
-				  #f
-				  #f
-				  #f
-				  func
-				  args
-				  (live-var-info-vars orig-live-vars))])
+		     (let ([call (if (and (null? (cdr func))
+					  (memq (tok-n (car func)) non-gcing-functions))
+				     ;; Call without pointer pushes
+				     (make-parens
+				      "(" #f #f #f ")"
+				      (append func (list args)))
+				     ;; Call with pointer pushes
+				     (make-call
+				      "func call"
+				      #f
+				      #f
+				      #f
+				      func
+				      args
+				      (if (and (null? (cdr func))
+					       (memq (tok-n (car func)) non-returning-functions))
+					  ;; non-returning -> don't need to push vars
+					  null
+					  (live-var-info-vars orig-live-vars))))])
 		       (cons (if (null? setups)
 				 call
 				 (make-parens
@@ -935,13 +956,11 @@
 		      ;; do/while/for: we'll need a fixpoint for live-vars
 		      ;;  (We'll get the fixpoint by poing things twice)
 		      [(do?) (and (not (null? (cdr e-)))
-				  (memq (tok-n (cadr e-)) '(do))
-				  (not checking-c++-only?))]
+				  (memq (tok-n (cadr e-)) '(do)))]
 		      [(while?) (and (not (null? (cdr e-)))
 				     (parens? (cadr e-))
 				     (not (null? (cddr e-)))
-				     (memq (tok-n (caddr e-)) '(for while))
-				     (not checking-c++-only?))]
+				     (memq (tok-n (caddr e-)) '(for while)))]
 		      [(orig-new-vars) (live-var-info-new-vars live-vars)]
 		      ;; Proc to convert body once
 		      [(convert-brace-body) 
@@ -1028,10 +1047,10 @@
 		(not (braces? (cadr result)))]
 	       [(while)
 		(not (or (eq? semi (tok-n (cadr result)))
-			 (braces? (cadr result))))])
-	     (not checking-c++-only?))
-	(error 'xform "Achtung! while/do/for with body not in braces. Line ~a in ~a."
-	       (tok-line (car e-)) (tok-file (car e-)))]
+			 (braces? (cadr result))))]))
+	(log-error "while/do/for with body not in braces. Line ~a in ~a."
+		   (tok-line (car e-)) (tok-file (car e-)))
+	(loop (cdr e-) (cons (car e-) result) live-vars)]
        [else (loop (cdr e-) (cons (car e-) result) live-vars)]))))
 
 (define (convert-seq-interior v comma-sep? vars live-vars complain-not-in)
@@ -1058,37 +1077,34 @@
   (convert-seq-interior v #t vars live-vars complain-not-in))
 
 (define (split-decls el)
-  (if checking-c++-only?
-      (values null el)
-
-      (let loop ([el el][decls null])
-	(if (null? el)
-	    (values (reverse! decls) null)
-	    (let ([e (car el)])
-	      (if (or 
-		   ;; These keywords appear only in decls:
-		   (memq (tok-n (car e)) '(union struct static))
-		   ;; Otherwise try harder:
-		   (and
-		    ;; Decl needs at least three parts:
-		    (< 2 (length e))
-		    ;; Decl ends in seimicolon
-		    (eq? semi (tok-n (list-ref e (sub1 (length e)))))
-		    ;; Doesn't start with a star, decrement, or increment
-		    (not (memq (tok-n (car e)) '(* -- ++)))
-		    ;; Not an assignemnt
-		    (not (memq (tok-n (cadr e)) '(= += -=)))
-		    ;; Not a return, case
-		    (not (memq (tok-n (car e)) '(return case)))
-		    ;; Not a label, field lookup, pointer deref
-		    (not (memq (tok-n (cadr e)) '(: |.| ->)))
-		    ;; No parens/braces in first two parts
-		    (not (seq? (car e)))
-		    (not (seq? (cadr e)))))
-		  ;; Looks like a decl
-		  (loop (cdr el) (cons e decls))
-		  ;; Not a decl
-		  (values (reverse! decls) el)))))))
+  (let loop ([el el][decls null])
+    (if (null? el)
+	(values (reverse! decls) null)
+	(let ([e (car el)])
+	  (if (or 
+	       ;; These keywords appear only in decls:
+	       (memq (tok-n (car e)) '(union struct static))
+	       ;; Otherwise try harder:
+	       (and
+		;; Decl needs at least three parts:
+		(< 2 (length e))
+		;; Decl ends in seimicolon
+		(eq? semi (tok-n (list-ref e (sub1 (length e)))))
+		;; Doesn't start with a star, decrement, or increment
+		(not (memq (tok-n (car e)) '(* -- ++)))
+		;; Not an assignemnt
+		(not (memq (tok-n (cadr e)) '(= += -=)))
+		;; Not a return, case
+		(not (memq (tok-n (car e)) '(return case)))
+		;; Not a label, field lookup, pointer deref
+		(not (memq (tok-n (cadr e)) '(: |.| ->)))
+		;; No parens/braces in first two parts
+		(not (seq? (car e)))
+		(not (seq? (cadr e)))))
+	      ;; Looks like a decl
+	      (loop (cdr el) (cons e decls))
+	      ;; Not a decl
+	      (values (reverse! decls) el))))))
 
 (define (get-one e comma-sep?)
   (let loop ([e e][result null][first #f])
@@ -1119,7 +1135,13 @@
 (foldl-statement
  e
  #f
- (lambda (sube v)
-   (let ([sube (top-level sube)])
-     (print-it sube 0 #t)))
- (void))
+ (lambda (sube where)
+   (let* ([where (or (tok-file (car sube))
+		     where)]
+	  [sube (top-level sube where)])
+     (print-it sube 0 #t)
+     where))
+ #f)
+
+(when exit-with-error?
+  (exit -1))

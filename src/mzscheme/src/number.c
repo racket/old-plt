@@ -3312,7 +3312,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       /* Can't pass mis-aligned pointer to scheme_read_number. */
       int slen = len - (has_at + 1) + 1;
       second = (char *)scheme_malloc_atomic(slen);
-      memcpy(second, str + has_at + 1, slen);
+      memcpy((char *)second, str + has_at + 1, slen);
     }
 #else
     second = str + has_at + 1;

@@ -1,18 +1,25 @@
 ;; copyright by Paul Graunke June 2000 AD
-(require-library "htmls.ss" "html")
-(require-library "function.ss")
-(require-library "file.ss")
-(require-library "xml.ss" "xml")
 
-(define-values/invoke-unit/sig
- html^
- (compound-unit/sig
-   (import (f : mzlib:function^) (file : mzlib:file^) [x : xml^])
-   (link
-    [s : sgml-reader^ ((require-library "sgml-reader.ss" "html") (x : xml-structs^) f)]
-    [h : html^ ((require-library "htmlr.ss" "html") x s f file)])
-   (export (open h)))
- html
- mzlib:function^
- mzlib:file^
- xml^)
+(module html mzscheme
+  (require (lib "unitsig.ss")
+	   "html-sig.ss" 
+	   "html-unit.ss"
+	   "sgml-reader-sig.ss"
+	   "sgml-reader-unit.ss"
+	   (lib "xml.ss" "xml")
+	   (lib "xml-sig.ss" "xml")
+	   (lib "sig.ss" "xml" "private")
+	   (lib "xml-unit.ss" "xml"))
+
+  (define-values/invoke-unit/sig
+    html^
+    (compound-unit/sig
+     (import [x : xml^])
+     (link
+      [s : sgml-reader^ (sgml-reader@ (x : xml-structs^))]
+      [h : html^ (html@ x s)])
+     (export (open h)))
+    #f
+    xml^)
+
+  (provide-signature-elements html^))

@@ -4,9 +4,10 @@
 	  [new-param (make-parameterization)])
       (with-parameterization new-param
 	(lambda ()
-	  (let-values ([(mred:change-splash-message mred:shutdown-splash mred:close-splash)
+	  (let-values ([(mred:change-splash-message 
+			 mred:shutdown-splash 
+			 mred:close-splash)
 			(mred:splash info)])
-
 
 	    (current-will-executor (make-will-executor))
 	    (current-namespace (make-namespace 'wx))
@@ -19,14 +20,6 @@
 	    (require-library "invsig.ss" "system")
 	    (require-library "debug.ss" "system")
 	    (require-library "refer.ss")
-	    
-	    (when (and (eq? wx:platform 'windows))
-	      (let ([hd (getenv "HOMEDRIVE")]
-		    [hp (getenv "HOMEPATH")])
-		(when (and hd hp)
-		  (let ([path (build-path hd hp)])
-		    (when (directory-exists? path)
-		      (current-directory path))))))
 	    
 	    (let* ([default-path (with-handlers ([void (lambda (x) #f)])
 				   (collection-path "afm"))]
@@ -52,3 +45,6 @@
 		;; the non unitized approach relies on this being invoke-open
 		(invoke-open-unit/sig app #f mred:application-imports^)))
 	    (mred:close-splash)))))))
+
+
+

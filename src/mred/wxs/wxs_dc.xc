@@ -342,7 +342,7 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 			 wxBitmap *mask)
 {
   double xs, ys, r, g, b, t, dx, dy, wt, si, sj, a;
-  int i, j, starti, endi, startj, endj, p, xi, xj;
+  int i, j, starti, endi, startj, endj, p, xi, xj, sji, sii;
   int sbmw, sbmh, w, h, w2, h2, ispan, jspan;
   unsigned char *s = NULL, *s2 = NULL, *mask_s = NULL;
   wxMemoryDC *srcdc = NULL;
@@ -456,19 +456,21 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 
   for (j = 0; j < h2; j++) {
     sj = (double)j / ys;
-    startj = (int)floor(sj) - (jspan >> 1);
+    sji = (int)sj;
+    startj = sji - (jspan >> 1);
     if (startj < 0)
       startj = 0;
-    endj = (int)ceil(sj) + (jspan - (jspan >> 1));
+    endj = sji + (jspan - (jspan >> 1)) + (((double)sji == sj) ? 0 : 1);
     if (endj >= h)
       endj = h - 1;
     
     for (i = 0; i < w2; i++) {
       si = (double)i / xs;
-      starti = (int)floor(si) - (ispan >> 1);
+      sii = (int)si;
+      starti = sii - (ispan >> 1);
       if (starti < 0)
 	starti = 0;
-      endi = (int)ceil(si) + (ispan - (ispan >> 1));
+      endi = sii + (ispan - (ispan >> 1)) + (((double)sii == si) ? 0 : 1);
       if (endi >= w)
 	endi = w - 1;
 

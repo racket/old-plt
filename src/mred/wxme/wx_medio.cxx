@@ -367,14 +367,14 @@ void wxMediaStreamIn::Typecheck(char WX_TYPESAFE_USED(v))
 
   if (boundcount && (f->Tell() >= boundaries[boundcount - 1])) {
     bad = TRUE;
-    wxmeError("media-stream-in%: overread (caused by file corruption?)");
+    wxmeError("editor-stream-in%: overread (caused by file corruption?)");
     return;
   }
 
   bad = f->Bad();
 
   if (bad) {
-    wxmeError("media-stream-in%: stream error");
+    wxmeError("editor-stream-in%: stream error");
     return;
   }
 
@@ -384,14 +384,14 @@ void wxMediaStreamIn::Typecheck(char WX_TYPESAFE_USED(v))
   f->Read(&t, 1);
 
   if (bad = f->Bad()) {
-    wxmeError("media-stream-in%: stream error");
+    wxmeError("editor-stream-in%: stream error");
     return;
   }
 
   bad = (t != v);
 
   if (bad)
-    wxmeError("media-stream-in%: type safety error");
+    wxmeError("editor-stream-in%: type safety error");
 #endif
 }
 
@@ -450,7 +450,7 @@ char *wxMediaStreamIn::GetString(long *n)
 
   r = (char *)wxMallocAtomicIfPossible(m);
   if (!r) {
-    wxmeError("media-stream-in%: string too large (out of memory) while reading stream");
+    wxmeError("editor-stream-in%: string too large (out of memory) while reading stream");
     bad = 1;
     if (n)
       *n = 0;
@@ -693,7 +693,7 @@ void wxMediaStreamOut::Typeset(char WX_TYPESAFE_USED(v))
   bad = f->Bad();
 
   if (bad) {
-    wxmeError("media-stream-out%: stream error");
+    wxmeError("editor-stream-out%: stream error");
     return;
   }
 

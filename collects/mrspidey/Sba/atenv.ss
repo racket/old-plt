@@ -256,23 +256,23 @@
                   n)))
             (list n c f u b)))])))
 
-'(defmacro check-atenv-fn-ok (fn)
-  (let ( [old-fn (gensym)])
-    `(begin
-       (define ,old-fn ,fn)
-       (define ,fn
-         (let ([env-ok atenv:ok?])
-           (lambda (env . rest)
-             ;;(printf "Entering ~s~n" (quote ,fn))
-             (unless (env-ok env)
-               (pretty-print env)
-               (error (quote ,fn) "Bad env on entry"))
-             (let ([r (apply ,old-fn env rest)])
-               ;;(printf "exiting ~s~n" (quote ,fn))
-               (unless (env-ok env)
-                 (error (quote ,fn) "Bad env on exit"))
-               r)))))))
-
+;(defmacro check-atenv-fn-ok (fn)
+;  (let ( [old-fn (gensym)])
+;    `(begin
+;       (define ,old-fn ,fn)
+;       (define ,fn
+;         (let ([env-ok atenv:ok?])
+;           (lambda (env . rest)
+;             ;;(printf "Entering ~s~n" (quote ,fn))
+;             (unless (env-ok env)
+;               (pretty-print env)
+;               (error (quote ,fn) "Bad env on entry"))
+;             (let ([r (apply ,old-fn env rest)])
+;               ;;(printf "exiting ~s~n" (quote ,fn))
+;               (unless (env-ok env)
+;                 (error (quote ,fn) "Bad env on exit"))
+;               r)))))))
+;
 ;(check-atenv-fn-ok atenv:extend)
 ;(check-atenv-fn-ok atenv:extend*)
 ;(check-atenv-fn-ok atenv:extend-voids)

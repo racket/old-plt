@@ -23,8 +23,10 @@
     (let*-vals 
       ( [sexps (zodiac:read* (open-code-file file) file)]
         [(defs free-names)
-          (dynamic-let ([current-directory (path-only file)])
-            (top-level-parse-defs sexps))]
+          (with-directory 
+	   (path-only file)
+	   (lambda ()
+            (top-level-parse-defs sexps)))]
         [prims-refd (map zodiac:bound-var free-names)]
         [_ (pretty-debug-topo `(prims-refd ,prims-refd))]
         [prim-sexps
@@ -52,8 +54,10 @@
         [_ (pretty-debug-topo `(prim-sexps ,(map zodiac:stripper prim-sexps)))]
         [all-sexps (append prim-sexps sexps)]
         [(defs free-names)
-          (dynamic-let ([current-directory (path-only file)])
-            (top-level-parse-defs all-sexps))]
+	 (with-directory 
+	  (path-only file)
+	  (lambda ()
+	    (top-level-parse-defs all-sexps)))]
         [def->di
           (lambda (def)
             (let ([di (make-def-info def '() '() '() '() #f)])

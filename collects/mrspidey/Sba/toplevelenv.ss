@@ -5,7 +5,7 @@
 ;; Primitive environments: symbol -> priminfo
 ;; First a helper fn
 
-(define-structure (priminfo sym type domain-filters predicate-fn))
+(define-struct priminfo (sym type domain-filters predicate-fn))
 
 ;; filter-domains is a list of filters for various args,
 ;; if no error raised

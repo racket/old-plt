@@ -17,7 +17,12 @@
 ; ----------------------------------------------------------------------
 ;; ----------------------------------------------------------------------
 
-(require-library "drsig.ss" "drscheme")
+(begin-elaboration-time
+ (require-library "sparams.ss" "backward"))
+(begin-elaboration-time
+ (require-library "zsigs.ss" "zodiac"))
+(begin-elaboration-time
+ (require-library "sigs.ss" "zodiac"))
 
 (define-signature mzlib:unprefixed-core^
   ; Not really much of mzlib:function^, just the part we need to avoid conflicts:
@@ -556,7 +561,7 @@
 ; ----------------------------------------------------------------------
 
 (define-signature mrspidey:typelang^
-  ( absUnion absunion absIntersect absintersect
+  ( abs-Union absunion abs-Intersect absintersect
     init-output-type-expander! install-output-type-expander!
     init-input-type-expander! 
     install-input-type-expander!

@@ -434,8 +434,10 @@
 
             [port-for-included-unit
               (lambda ()
-                (dynamic-let ([current-directory file-directory])
-                  (open-code-file file)))]
+                (with-directory 
+		 file-directory
+		 (lambda ()
+		   (open-code-file file))))]
 
             [traverse-included-unit
               ;; (zodiac:parsed -> (union atunit atlunit))
@@ -446,9 +448,10 @@
                     [_ (extend-file-time-cache! path+file t-N)]
                     [exps (zodiac:read* (port-for-included-unit) path+file)]
                     [(parsed-exps free-names) 
-                      (dynamic-let
-                        ([current-directory file-directory])
-                        (my-scheme-expand-program exps))]
+                      (with-directory
+		       file-directory
+		       (lambda ()
+			 (my-scheme-expand-program exps)))]
                     [_ (unless (= (length parsed-exps) 1)
                          (mrspidey:error 
                            (format

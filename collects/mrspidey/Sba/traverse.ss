@@ -605,7 +605,7 @@
                                   (set! edges (cons (cons from to) edges))
                                   (orig-new-edge! from to))))]
                           [(env refs tvar)
-                            (dynamic-let
+                            (parameterize
                               ([new-edge-para capture-edge!])
                               (let*-vals 
                                 ( [(ftype env refs) (traverse-exp exp env)]

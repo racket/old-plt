@@ -501,7 +501,7 @@
       
 (define (FlowType->SDL-text ftype)
   (let ([type-port (open-output-string)])
-    (dynamic-let
+    (parameterize
      ([pretty-print-columns (st:pretty-type-width)])
      (pretty-print (FlowType->SDL ftype) type-port))
     (begin0

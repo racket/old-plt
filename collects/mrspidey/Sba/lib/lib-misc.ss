@@ -146,5 +146,12 @@
     (lambda (y)
       (eq? x y))))
 
+(define (with-directory d f)
+  (let ([cd (current-directory)])
+    (dynamic-wind
+     (lambda () (current-directory d))
+     f
+     (lambda () (current-directory cd)))))
+
 ;; ----------------------------------------------------------------------
 

@@ -203,16 +203,16 @@
 (define (diff-times files)
   (diff-counters
    (lambda ()
-     (dynamic-let ([st:analysis 'sba]) (tsal files)))
+     (parameterize ([st:analysis 'sba]) (tsal files)))
    (lambda ()
-     (dynamic-let ([st:analysis 'za-reanalyze]) (tsal files)))))
+     (parameterize ([st:analysis 'za-reanalyze]) (tsal files)))))
 
 (define (diff-times2 files)
   (diff-counters
    (lambda ()
-     (dynamic-let ([st:unit-simplify 'live]) (tsal files)))
+     (parameterize ([st:unit-simplify 'live]) (tsal files)))
    (lambda ()
-     (dynamic-let ([st:unit-simplify 'dfa-min]) (tsal files)))))
+     (parameterize ([st:unit-simplify 'dfa-min]) (tsal files)))))
 
 ;; ======================================================================
 ;; Check correctness of seperate analysis
@@ -221,7 +221,7 @@
 (define sep-types '())
 
 (define (test-seperate-same files)
-  (dynamic-let 
+  (parameterize 
    ([st:type-compression '(basic-types . tidy)]
     [st:primitive-types 'inferred])
    (let ([def-types
@@ -235,11 +235,11 @@
               (printf " done~n")))])
      (diff-counters
       (lambda ()
-        (dynamic-let ([st:analysis 'sba]) 
+        (parameterize ([st:analysis 'sba]) 
                       (tsal files)
                       (set! ord-types (def-types))))
       (lambda ()
-        (dynamic-let ([st:analysis 'za-reanalyze])
+        (parameterize ([st:analysis 'za-reanalyze])
                       (tsal files)
                       (set! sep-types (def-types)))))
      (printf "Comparing types ... ~n")
@@ -259,7 +259,7 @@
           (error 'test-seperate-same "Tvar-containment? bad"))
         (unless (and (Tvar-containment? def1 def2)
                      (Tvar-containment? def2 def1))
-          (dynamic-let ([st:type-compression '(first-order . none)])
+          (parameterize ([st:type-compression '(first-order . none)])
                         (printf "Ordinary type~n")
                         (pretty-print (Tvar->SDL def1))
                         (printf "Seperate type~n")
@@ -302,7 +302,7 @@
 
 (define (test-scaling-file files)
   (printf "TEST-SCALING-FILE ~s~n" files)
-  (dynamic-let 
+  (parameterize 
    ([st:analysis 'sba])
    (analyze-and-write-results files)))
 
@@ -468,7 +468,7 @@
 
 (define (compare-analyzes-files files)
   (let ([size
-         (dynamic-let 
+         (parameterize 
           ([st:analysis 'sba])
           (printf "~nCOMPARE-ANALYZES 'sba ~s~n" files)
           (tsal files)
@@ -478,11 +478,11 @@
     (for-each 
      (lambda (a)
        (printf "~nCOMPARE-ANALYZES '~s ~s~n" a files)
-       (dynamic-let 
+       (parameterize 
         ([st:analysis a])
         (if (memq a '(precompress za-reanalyze))
             (for-each (lambda (c)
-                        (dynamic-let
+                        (parameterize
                          ([st:unit-simplify c])
                          (tsal files)
                          (write-results files size)))
@@ -685,10 +685,10 @@
 ;; ======================================================================
 
 (define (st:tybe . args)
-  (dynamic-let
+  (parameterize
    ([st:type-compression '(higher-order . live-few-e)])
    (pretty-print (apply st:type-fn args)))
-  (dynamic-let
+  (parameterize
    ([st:type-compression '(higher-order . dfa-min)])
    (apply st:type-fn args)))
 
@@ -721,7 +721,7 @@
     (write-results files size)))
 
 (define (make-compare-poly-file files)
-  `(dynamic-let 
+  `(parameterize 
     ([st:topo-sort #t]
      [st:library-prims #t])
     (begin 
@@ -747,7 +747,7 @@
   `(begin ,@(map make-compare-poly-file wright-files)))
 
 (define wright-ok
-  '(begin (dynamic-let ([st:topo-sort #t]
+  '(begin (parameterize ([st:topo-sort #t]
                       [st:library-prims #t])
          (begin (begin (st:polymorphism 'none)
                        (compare-poly-file-one "~/Spidey/wright/boyer.scm"))
@@ -762,7 +762,7 @@
                        (compare-poly-file-one "~/Spidey/wright/boyer.scm"))
                 (begin (st:polymorphism 'reanalyze)
                        (compare-poly-file-one "~/Spidey/wright/boyer.scm"))))
-       (dynamic-let ([st:topo-sort #t] [st:library-prims #t])
+       (parameterize ([st:topo-sort #t] [st:library-prims #t])
          (begin (begin (st:polymorphism 'none)
                        (compare-poly-file-one "~/Spidey/wright/graphs.scm"))
                 (begin (st:polymorphism 'compress)
@@ -776,7 +776,7 @@
                        (compare-poly-file-one "~/Spidey/wright/graphs.scm"))
                 (begin (st:polymorphism 'reanalyze)
                        (compare-poly-file-one "~/Spidey/wright/graphs.scm"))))
-       (dynamic-let ([st:topo-sort #t] [st:library-prims #t])
+       (parameterize ([st:topo-sort #t] [st:library-prims #t])
          (begin (begin (st:polymorphism 'none)
                        (compare-poly-file-one "~/Spidey/wright/lattice.scm"))
                 (begin (st:polymorphism 'compress)
@@ -790,7 +790,7 @@
                        (compare-poly-file-one "~/Spidey/wright/lattice.scm"))
                 (begin (st:polymorphism 'reanalyze)
                        (compare-poly-file-one "~/Spidey/wright/lattice.scm"))))
-       (dynamic-let ([st:topo-sort #t] [st:library-prims #t])
+       (parameterize ([st:topo-sort #t] [st:library-prims #t])
          (begin (begin (st:polymorphism 'none)
                        (compare-poly-file-one "~/Spidey/wright/matrix.scm"))
                 (begin (st:polymorphism 'compress)
@@ -804,7 +804,7 @@
                        (compare-poly-file-one "~/Spidey/wright/matrix.scm"))
                 (begin (st:polymorphism 'reanalyze)
                        (compare-poly-file-one "~/Spidey/wright/matrix.scm"))))
-       (dynamic-let ([st:topo-sort #t] [st:library-prims #t])
+       (parameterize ([st:topo-sort #t] [st:library-prims #t])
          (begin (begin (st:polymorphism 'none)
                        (compare-poly-file-one "~/Spidey/wright/maze.scm"))
                 (begin (st:polymorphism 'compress)
@@ -818,7 +818,7 @@
                        (compare-poly-file-one "~/Spidey/wright/maze.scm"))
                 (begin (st:polymorphism 'reanalyze)
                        (compare-poly-file-one "~/Spidey/wright/maze.scm"))))
-       (dynamic-let ([st:topo-sort #t] [st:library-prims #t])
+       (parameterize ([st:topo-sort #t] [st:library-prims #t])
          (begin (begin (st:polymorphism 'none)
                        (compare-poly-file-one "~/Spidey/wright/nbody.scm"))
                 (begin (st:polymorphism 'compress)
@@ -832,7 +832,7 @@
                        (compare-poly-file-one "~/Spidey/wright/nbody.scm"))
                 (begin (st:polymorphism 'reanalyze)
                        (compare-poly-file-one "~/Spidey/wright/nbody.scm"))))
-       (dynamic-let ([st:topo-sort #t] [st:library-prims #t])
+       (parameterize ([st:topo-sort #t] [st:library-prims #t])
          (begin (begin (st:polymorphism 'none)
                        (compare-poly-file-one "~/Spidey/wright/splay.scm"))
                 (begin (st:polymorphism 'compress)
@@ -846,7 +846,7 @@
                        (compare-poly-file-one "~/Spidey/wright/splay.scm"))
                 (begin (st:polymorphism 'reanalyze)
                        (compare-poly-file-one "~/Spidey/wright/splay.scm"))))
-       (dynamic-let ([st:topo-sort #t] [st:library-prims #t])
+       (parameterize ([st:topo-sort #t] [st:library-prims #t])
          (begin (begin (st:polymorphism 'none)
                        (compare-poly-file-one "~/Spidey/wright/browse.scm"))
                 (begin (st:polymorphism 'compress)
@@ -860,7 +860,7 @@
                        (compare-poly-file-one "~/Spidey/wright/browse.scm"))
                 (begin (st:polymorphism 'reanalyze)
                        (compare-poly-file-one "~/Spidey/wright/browse.scm"))))
-       (dynamic-let ([st:topo-sort #t] [st:library-prims #t])
+       (parameterize ([st:topo-sort #t] [st:library-prims #t])
          (begin (begin (st:polymorphism 'none)
                        (compare-poly-file-one "~/Spidey/wright/check.scm"))
                 (begin (st:polymorphism 'compress)
@@ -874,7 +874,7 @@
                        (compare-poly-file-one "~/Spidey/wright/check.scm"))
                 (begin (st:polymorphism 'reanalyze)
                        (compare-poly-file-one "~/Spidey/wright/check.scm"))))
-       (dynamic-let ([st:topo-sort #t] [st:library-prims #t])
+       (parameterize ([st:topo-sort #t] [st:library-prims #t])
          (begin (begin (st:polymorphism 'none)
                        (compare-poly-file-one "~/Spidey/wright/nucleic.scm"))
                 (begin (st:polymorphism 'compress)
@@ -888,7 +888,7 @@
                        (compare-poly-file-one "~/Spidey/wright/nucleic.scm"))
                 '(begin (st:polymorphism 'reanalyze)
                        (compare-poly-file-one "~/Spidey/wright/nucleic.scm"))))
-       (dynamic-let ([st:topo-sort #t] [st:library-prims #t])
+       (parameterize ([st:topo-sort #t] [st:library-prims #t])
          (begin '(begin (st:polymorphism 'none)
                        (compare-poly-file-one "~/Spidey/wright/nucleic-2.scm"))
                 (begin (st:polymorphism 'compress)
@@ -902,7 +902,7 @@
                        (compare-poly-file-one "~/Spidey/wright/nucleic-2.scm"))
                 '(begin (st:polymorphism 'reanalyze)
                        (compare-poly-file-one "~/Spidey/wright/nucleic-2.scm"))))
-       (dynamic-let ([st:topo-sort #t] [st:library-prims #t])
+       (parameterize ([st:topo-sort #t] [st:library-prims #t])
          (begin (begin (st:polymorphism 'none)
                        (compare-poly-file-one "~/Spidey/wright/dynamic.scm"))
                 (begin (st:polymorphism 'compress)

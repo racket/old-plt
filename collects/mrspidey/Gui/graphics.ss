@@ -19,7 +19,7 @@
 ; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ; ----------------------------------------------------------------------
 
-(define-structure (graphic pos* locs->thunks draw-fn click-fn))
+(define-struct graphic (pos* locs->thunks draw-fn click-fn))
 
 (define graphics:media-edit%
   (class spidey:dynamic+margin-edit% args

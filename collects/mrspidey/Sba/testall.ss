@@ -160,7 +160,7 @@
 ; ----------------------------------------------------------------------
 ; define-structure
 
-(define-structure (Triple a b c))
+(define-struct Triple (a b c))
 
 (let ([x (: (make-Triple 1 'a #\c) (exact (structure:Triple num sym char)))])
   (: (Triple-a x) (exact num))

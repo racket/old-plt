@@ -21,19 +21,15 @@
 (load-relative "handlers.ss")
 (load-relative "macros.ss")
 
-(load/use-compiled
-  (let ([p (build-path (current-load-relative-directory) "Zodiac" "load.ss")])
-    (if (file-exists? p)
-      p
-      (build-path (current-load-relative-directory) ".." "zodiac" "load.ss"))))
-(load-relative "Sba/load.ss")
-(load-relative "Sba/test-sba.ss")
-;;(load-relative "Sba/devel.ss")
+(require-library "load.ss" "zodiac")
+
+(require-relative-library "load.ss" "Sba")
+;; (load-relative "Sba/test-sba.ss")
+;; (load-relative "Sba/devel.ss")
 
 (printf "~nmrspidey-text loaded~n")
 
 ;; --- Pull up a default language
-(st:language 'DrScheme)
+(st:language 'MzScheme)
 
-(define (t) (st: "/home/cormac/Spidey/Test/t.ss"))
 

@@ -34,7 +34,7 @@
       [nuTvar
         (let*-vals
           ([(live-Tvar cvt) 
-             (dynamic-let
+             (parameterize
                ([st:minimize-respect-assignable-part-of-fields
                   (st:show-assignable-part-of-fields)])
                (pretty-debug-sdl2
@@ -291,13 +291,13 @@
                 (atomify-Tvar! tvar)
                 (sexpify-Tvar! tvar)
                 (classify-objectify-Tvar! tvar))
-              (absUnion
+              (abs-Union
                 (map
                   (lambda (AV) (ref-nt (chk-AV-U AV)))
                   (get-Tvar-objs tvar)))]
             [($ NT (? Tvar? tvar) 'L)
               (absintersect
-                (absIntersect
+                (abs-Intersect
                   (recur loop ([con* (filter con? (Tvar-constraints tvar))])
                     (match con*
                       [() '()]
@@ -316,7 +316,7 @@
                                con*)]
                             [ref-i+
                               (lambda (i)
-                                (absIntersect
+                                (abs-Intersect
                                   (filter-map
                                     (match-lambda
                                       [(j-s . tvar2) 
@@ -327,7 +327,7 @@
                                     i-s-tvar*)))]
                             [ref-i-
                               (lambda (i)
-                                (absUnion
+                                (abs-Union
                                   (filter-map
                                     (match-lambda
                                       [(j-s . tvar2) 
@@ -363,14 +363,14 @@
                                       (filter number? (vector->list ref))))])])
 
                           (cons this (loop rest)))])))
-                (absIntersect
+                (abs-Intersect
                   (filter-map
                     (match-lambda
                       [($ con-filter _ _ tvar2)
                         (ref-nt (chk-Tvar-L tvar2))]
                       [_ #f])
                     (Tvar-constraints tvar)))
-                (absIntersect
+                (abs-Intersect
                   (map
                     (lambda (tvar2) (ref-nt (chk-Tvar-L tvar2)))
                     (Tvar-edgeto tvar))))]

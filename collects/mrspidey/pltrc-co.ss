@@ -69,42 +69,11 @@
 
 ;; ----------------------------------------------------------------------
 
-(#%define-macro dynamic-let
-  (#%let ([make-exn make-exn:syntax]
-	  [debug debug-info-handler])
-    (#%lambda (params . body)
-     (#%let ([fail
-	      (#%lambda (msg)
-	       (#%raise (make-exn msg ((debug))
-				  (#%list* 'dynamic-let params body))))])
-      (#%if (#%null? body) (fail "dynamic-let: bad syntax (empty body)"))
-      (#%if (#%null? params)
-        `(#%begin ,@body)
-	(#%if (#%or (#%not (#%pair? params))
-		    (#%not (#%pair? (#%car params)))
-		    (#%not (#%pair? (#%cdar params)))
-		    (#%not (#%null? (#%cddar params))))
-	      (fail "dynamic-let: bad syntax")
-	      (#%let ([param (#%caar params)]
-		      [orig (#%gensym)]
-		      [pz (#%gensym)])
-		 `(#%let* ([param ,param]
-                           [,pz (if (parameter? param)
-                                    (#%in-parameterization 
-                                     (#%current-parameterization) ,param)
-                                    param)]
-			   [,orig (,pz)])
-		     (#%dynamic-wind
-		        (#%lambda () (,pz ,(#%cadar params)))
-		        (#%lambda () (dynamic-let ,(cdr params) ,@body))
-			(#%lambda () (,pz ,orig)))))))))))
-
-;; ----------------------------------------------------------------------
-
 (define cout 0)
 (define wh-cout (box '()))
 
-(defmacro let*-vals args
+(define-macro let*-vals 
+  (lambda args
   (match args
     [(([varss exps] ...) . body)
       (set! cout (add1 cout))
@@ -122,9 +91,10 @@
              (begin            
                (set-box! (global-defined-value 'wh-cout)
                  (cdr (unbox (global-defined-value 'wh-cout))))
-               . ,body))))]))
+               . ,body))))])))
 
-(defmacro let*-vals args
+(define-macro let*-vals 
+  (lambda args
   (match args
     [(([varss exps] ...) . body)
       (let* ([varss (map (lambda (vars) 
@@ -133,9 +103,10 @@
                              (if (symbol? vars) (list vars) vars)))
                       varss)]
               [binds (map list varss exps)])
-        `(let*-values ,binds . ,body))]))
+        `(let*-values ,binds . ,body))])))
 
-(defmacro for args
+(define-macro for 
+  (lambda args
   (match args
     [(var base limit . body)
      (let ([loop (gensym)][l (gensym)])
@@ -143,11 +114,12 @@
           (recur ,loop ([,var ,base])
                  (when (< ,var ,l)
                    ,@body
-                   (,loop (add1 ,var))))))]))
+                   (,loop (add1 ,var))))))])))
 
-(define assert-on (make-parameter #t (lambda (x) x)))
+(define assert-on (make-parameter #f (lambda (x) x)))
 
-(defmacro assert args
+(define-macro assert 
+ (lambda args
   (match args     
     [(exp . rest)
      (if (assert-on)
@@ -155,10 +127,7 @@
             ,@(apply append
                      (map (lambda (r) `((display ,r) (newline))) rest))
             (error 'assert "Assertion failed: ~s" ',exp))
-         `(void))]))
-
-(defmacro eval-at-compile-time args
-  (apply eval args))
+         `(void))])))
 
 ;; ----------------------------------------------------------------------
 

@@ -306,17 +306,17 @@
 ; ======================================================================
 ; Non-Terminals
 
-(define-typed-structure NT (tvar type rhs*))
+(define-struct NT (tvar type rhs*))
 
 (define mk-Tvar-NTs!
   (lambda (Tvar)
-    (set-Tvar-L!  Tvar (make-NT Tvar 'L '()))
-    (set-Tvar-U!  Tvar (make-NT Tvar 'U '()))
+    (set-Tvar-L!  Tvar (create-NT Tvar 'L '()))
+    (set-Tvar-U!  Tvar (create-NT Tvar 'U '()))
     ))
 
 (define mk-AV-NTs!
   (lambda (AV)
-    (set-AV-U!  AV (make-NT AV 'U '()))
+    (set-AV-U!  AV (create-NT AV 'U '()))
     ))
 
 (define (chk-Tvar-L tvar)

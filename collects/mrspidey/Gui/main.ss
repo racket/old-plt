@@ -17,7 +17,7 @@
 ; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ; ----------------------------------------------------------------------
 
-(define-structure (fileinfo filename frame thunk-port annotations))
+(define-struct fileinfo (filename frame thunk-port annotations))
 ;; annotations may also be (-> zodiac:parsed)
 
 (define NUM-EXTRA-LINES 20)

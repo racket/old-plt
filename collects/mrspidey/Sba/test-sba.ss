@@ -56,9 +56,9 @@
     (doit "../test/trivia/trivia-unit.ss" 0 1)
 
     ;; --- Units
-    (dynamic-let ([st:system-expand #t])
-      (dynamic-let ([st:fo-units #t]) (doit "test-unit.ss" 0))
-      (dynamic-let ([st:fo-units #f]) (doit "test-unit.ss" 0))
+    (parameterize ([st:system-expand #t])
+      (parameterize ([st:fo-units #t]) (doit "test-unit.ss" 0))
+      (parameterize ([st:fo-units #f]) (doit "test-unit.ss" 0))
       ;;(doit  "test-fo-units.ss" 0)
       )
     (doit "../test/trivia/trivia-unit.ss" 0 1)
@@ -205,7 +205,7 @@
 
 (define (for-each-parameter para thunk)
   (for-each
-   (lambda (p) (dynamic-let ([para p]) (thunk p)))
+   (lambda (p) (parameterize ([para p]) (thunk p)))
    (map car (para '?))))
 
 (define (for-each-parameters para-list thunk)
@@ -242,14 +242,14 @@
                    [options (map car (para '?))]
                    [default (car options)])
               ;; --- First don't change
-              (dynamic-let 
+              (parameterize 
                ([para default])
                (loop rest (cons `(,p ,default) d) n))
               ;; Now change
               (unless (zero? n)
                 (for-each
                  (lambda (v) 
-                   (dynamic-let
+                   (parameterize
                     ([para v]) 
                     (loop rest (cons `(,p ,v) d) (sub1 n))))
                  (cdr options))))]))))
@@ -428,7 +428,7 @@
   (st: f)
   (let* ([l list-ftype]
           [len (length l)])
-    (dynamic-let ([st:primitive-types 'inferred])
+    (parameterize ([st:primitive-types 'inferred])
       (smart-for-each-quoted-parameters
         '(st:type-compression
            st:naming-strategy )
@@ -444,7 +444,7 @@
                     [(_ Tvar->nutvar)
                       (minimize-constraints 'live '() (list Tvar))]
                     [tvar-live (Tvar->nutvar Tvar)]
-                    [sdl (dynamic-let
+                    [sdl (parameterize
                            ([st:listify-etc #f])
                            (Tvar->SDL tvar-live))]
                     [tvar2 (mk-Tvar 'check-SDL3)])
@@ -528,7 +528,7 @@
        )))
 
 (define (fig6-file file)
-  (dynamic-let ( [st:compare-min-algs #t]
+  (parameterize ( [st:compare-min-algs #t]
                  [st:unit-read-za #f]
                  [st:unit-write-za #f]
                  [st:use-fo-ftype #f]
@@ -582,7 +582,7 @@
      (reanalyze none)))
 
 (define (fig7-file-alg a b file)
-  (dynamic-let ( [st:polymorphism (if (eq? a 'traverse) 'none a)]
+  (parameterize ( [st:polymorphism (if (eq? a 'traverse) 'none a)]
                  [st:type-compression-poly b]
                  [st:use-fo-ftype #f]
                  [st:if-split #f]
@@ -649,7 +649,7 @@
 (define (test-scalable-alg alg file)
   (printf "--------------------------------------------------------~n")
   (printf "FILE: ~s SIMPLIFICATION ~s~n" file alg)
-  (dynamic-let ( [st:unit-simplify (if (eq? alg 'traverse) 'none alg)]
+  (parameterize ( [st:unit-simplify (if (eq? alg 'traverse) 'none alg)]
                  [st:use-fo-ftype #f]
                  [st:if-split #f]
                  [st:flow-sensitive #f]
@@ -707,13 +707,12 @@
   (printf "--------------------------------------------------------~n")
   (printf "FILE: ~s SIMPLIFICATION ~s ~s~n" file alg read-za)
   (let ([files '()])
-    (dynamic-let 
+    (parameterize 
       ( [st:unit-simplify (if (eq? alg 'traverse) 'none alg)]
         [st:use-fo-ftype #f]
         [st:if-split #f]
         [st:flow-sensitive #f]
         [keep-S-closed (if (eq? alg 'traverse) #f (keep-S-closed))]
-        [st:unit-separate-S #t]
         [st:unit-read-za read-za]
         [st:unit-write-za #t]
         [st:unit-separate-S #t]

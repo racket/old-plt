@@ -29,7 +29,7 @@
 ;; ======================================================================
 ; Union, Intersect etc
 
-(define absUnion
+(define abs-Union
   (lambda (exps)
     (match 
         (apply append
@@ -45,9 +45,9 @@
       [(e) e]
       [exps `(union ,@exps)])))
 
-(define absunion (lambda exps (absUnion exps)))
+(define absunion (lambda exps (abs-Union exps)))
 
-(define absIntersect
+(define abs-Intersect
   (lambda (exps)
     (match 
         (apply append
@@ -61,7 +61,7 @@
       [(e) e]
       [exps `(intersect ,@exps)])))
 
-(define absintersect (lambda exps (absIntersect exps)))
+(define absintersect (lambda exps (abs-Intersect exps)))
 
 ;; ======================================================================
 

@@ -12,10 +12,10 @@
 ; Non-Terminalss
 
 ; x is an AVS
-(define-structure (L  x))
-(define-structure (LI x))
-(define-structure (U  x))
-(define-structure (UI x))
+(define-struct L  (x))
+(define-struct LI (x))
+(define-struct U  (x))
+(define-struct UI (x))
 
 (define eq-nt?
   (match-lambda*
@@ -92,10 +92,10 @@
 ; ======================================================================
 ; Right hand side of a production
 
-(define-structure (rhs* grsym nts))
+(define-struct rhs* (grsym nts))
 (define (make-rhs grsym nt) (make-rhs* grsym (list nt)))
 
-(define-structure (grsym ineq fn sign template field-no))
+(define-struct grsym (ineq fn sign template field-no))
 ;; ineq is '<= or '>=
 ;; fn   is 'inj, 'inj-tst or 'ext
 ;; sign is #t (monotonic) or #f (antimonotonic)

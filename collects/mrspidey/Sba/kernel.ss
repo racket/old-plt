@@ -468,7 +468,7 @@
 ;; ------------------------------------------------------------
 
 (define (really-check-kernel-ok)
-  (dynamic-let 
+  (parameterize
     ([st:check-kernel #t]) 
     (check-kernel-ok)))
 
@@ -622,10 +622,10 @@
 
  ;; ------------------------------------------------------------
 
-(define-structure (kernel-state
-                    num-ftype list-ftype num-edge 
-                    num-con num-AV num-AV-in-Tvar 
-                    closed? new-edge! hash-table-state))
+(define-struct kernel-state
+  (num-ftype list-ftype num-edge 
+	     num-con num-AV num-AV-in-Tvar 
+	     closed? new-edge! hash-table-state))
                     
 (define (save-kernel-state)
   (make-kernel-state
@@ -688,7 +688,8 @@
 
 ;; ----------------------------------------------------------------------
 
-(define-structure (prompt-kernel-state saved-state prompt-hash-state ftypes))
+(define-struct prompt-kernel-state 
+  (saved-state prompt-hash-state ftypes))
 
 (define (prompt-kernel-state)
   (make-prompt-kernel-state

@@ -18,84 +18,75 @@
 
 (reference-library "defstruc.ss")
 
-(eval-at-compile-time
-  (if (defined? '__NO_DEBUGGING)
+(begin-elaboration-time
+  (if (not (defined? 'MRSPIDEY-DEBUGGING))
     (begin
-      (printf "Debugging off~n")
-      (defmacro pretty-debug args           '(void))
-      (defmacro pretty-debug-traverse args  '(void))
-      (defmacro pretty-debug-object args    '(void))
-      (defmacro pretty-debug-front args     '(void))
-      (defmacro pretty-debug-min args       '(void))
-      (defmacro pretty-debug-min2 args      '(void))
-      (defmacro pretty-debug-check args     '(void))
-      (defmacro pretty-debug-atenv args     '(void))
-      (defmacro pretty-debug-atype args     '(void))
-      (defmacro pretty-debug-few args       '(void))
-      (defmacro pretty-debug-gram args      '(void))
-      (defmacro pretty-debug-sdl args       '(void))
-      (defmacro pretty-debug-sdl2 args      '(void))
-      (defmacro pretty-debug-dfa-min args   '(void))
-      (defmacro pretty-debug-min-table args '(void))
-      (defmacro pretty-debug-traverse-small args '(void))
-      (defmacro pretty-debug-unit args      '(void))
-      (defmacro pretty-debug-gui args       '(void))
-      (defmacro assert args                 '(void))
+      ; (printf "Debugging off~n")
+      (define-macro pretty-debug (lambda args           '(#%void)))
+      (define-macro pretty-debug-traverse (lambda args  '(#%void)))
+      (define-macro pretty-debug-object (lambda args    '(#%void)))
+      (define-macro pretty-debug-front (lambda args     '(#%void)))
+      (define-macro pretty-debug-min (lambda args       '(#%void)))
+      (define-macro pretty-debug-min2 (lambda args      '(#%void)))
+      (define-macro pretty-debug-check (lambda args     '(#%void)))
+      (define-macro pretty-debug-atenv (lambda args     '(#%void)))
+      (define-macro pretty-debug-atype (lambda args     '(#%void)))
+      (define-macro pretty-debug-few (lambda args       '(#%void)))
+      (define-macro pretty-debug-gram (lambda args      '(#%void)))
+      (define-macro pretty-debug-sdl (lambda args       '(#%void)))
+      (define-macro pretty-debug-sdl2 (lambda args      '(#%void)))
+      (define-macro pretty-debug-dfa-min (lambda args   '(#%void)))
+      (define-macro pretty-debug-min-table (lambda args '(#%void)))
+      (define-macro pretty-debug-traverse-small (lambda args '(#%void)))
+      (define-macro pretty-debug-unit (lambda args      '(#%void)))
+      (define-macro pretty-debug-gui (lambda args       '(#%void)))
+      (define-macro assert (lambda args                 '(#%void)))
     
       )
   
     (begin
-      (defmacro pretty-debug args
-        `(when debugging (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-traverse args
-        `(when debugging-traverse (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-object args
-        `(when debugging-object (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-front args
-        `(when debugging-front (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-min args
-        `(when debugging-min (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-min2 args
-        `(when debugging-min2 (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-check args
-        `(when debugging-check (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-atenv args
-        `(when debugging-atenv (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-atype args
-        `(when debugging-atype (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-few args
-        `(when debugging-few (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-gram args 
-        `(when debugging-gram (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-sdl args
-        `(when debugging-sdl (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-sdl2 args
-        `(when (or debugging-sdl2 debugging-sdl) (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-dfa-min args
-        `(when debugging-dfa-min (pretty-print-debug ,@args)))
-      (defmacro pretty-debug-min-table args
-        `(when debugging-min-table (pretty-print ,@args)))
-      (defmacro pretty-debug-gui args
-        `(when debugging-gui (pretty-print ,@args)))
+      (define-macro pretty-debug (lambda args
+        `(when debugging (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-traverse (lambda args
+        `(when debugging-traverse (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-object (lambda args
+        `(when debugging-object (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-front (lambda args
+        `(when debugging-front (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-min (lambda args
+        `(when debugging-min (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-min2 (lambda args
+        `(when debugging-min2 (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-check (lambda args
+        `(when debugging-check (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-atenv (lambda args
+        `(when debugging-atenv (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-atype (lambda args
+        `(when debugging-atype (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-few (lambda args
+        `(when debugging-few (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-gram (lambda args 
+        `(when debugging-gram (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-sdl (lambda args
+        `(when debugging-sdl (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-sdl2 (lambda args
+        `(when (or debugging-sdl2 debugging-sdl) (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-dfa-min (lambda args
+        `(when debugging-dfa-min (pretty-print-debug ,@args))))
+      (define-macro pretty-debug-min-table (lambda args
+        `(when debugging-min-table (pretty-print ,@args))))
+      (define-macro pretty-debug-gui (lambda args
+        `(when debugging-gui (pretty-print ,@args))))
 
-      (defmacro pretty-debug-traverse-small args
+      (define-macro pretty-debug-traverse-small (lambda args
         `(when debugging-traverse 
-           (dynamic-let ([pretty-print-depth 4]) (pretty-print-debug ,@args))))
+           (dynamic-let ([pretty-print-depth 4]) (pretty-print-debug ,@args)))))
 
-      (defmacro pretty-debug-unit args
+      (define-macro pretty-debug-unit (lambda args
         (match args
           [(arg) `(when debugging-unit (pretty-print-debug ,arg))]
           [(arg depth)
             `(when debugging-unit
-               (dynamic-let ([pretty-print-depth ,depth]) (pretty-print-debug ,arg)))]))
+               (dynamic-let ([pretty-print-depth ,depth]) (pretty-print-debug ,arg)))])))
       )))
 
-;; ----------------------------------------------------------------------
-
-
-(defmacro trace-time-lambda args
-  (match args
-    [(timer args . body)
-     `(lambda ,args (record-time ,timer (lambda () ,@body)))]))
-
-;; ----------------------------------------------------------------------

@@ -17,16 +17,16 @@
 ; ----------------------------------------------------------------------
 
 (define (open-code-file filename)
-  (let ([filename (normalize-path filename)]
-         [cd (current-directory)])
-    (dynamic-let 
-      ([current-directory (path-only filename)])
+  (let ([filename (normalize-path filename)])
+    (with-directory
+     (path-only filename)
+     (lambda ()
       (unless (file-exists? filename)
         (mrspidey:error (format "Can't open file ~s, current directory ~s"
                           filename (current-directory))))
       (let* ( [p (open-input-file filename 'text)]
               [p (system-expand-if-necy p)])
-        p))))
+        p)))))
 
 (define (zodiac:read* port filename)
   (let* ( [default-loc (zodiac:make-location 1 1 0 filename)]                      
@@ -209,16 +209,16 @@
                         (let ([filename (normalize-path (expander-eval exp))])
                           (unless (file-exists? filename)
                             (mrspidey:error (format "Can't load ~s" filename)))
-                          (dynamic-let 
-                            ([current-directory 
-                               (if (memq (car e) '(load/cd #%load/cd))
-                                 (path-only filename)
-                                 (current-directory))])
-                            (let* ([p (open-input-file filename 'text)])
+                          (with-directory
+			   (if (memq (car e) '(load/cd #%load/cd))
+			       (path-only filename)
+			       (current-directory))
+			   (lambda ()
+			     (let* ([p (open-input-file filename 'text)])
                               (printf "[File:~s " (file-name-from-path filename))
                               (loop p)
                               (printf "done]")
-                              (close-input-port p))))]
+                              (close-input-port p)))))]
                       [('load-recent s) 
                         (process `(load ,(string-append s ".ss")))]
                       [(or '(void) (? void?)) (void)]
@@ -255,22 +255,24 @@
           (expand-file infile outfile)))]
     [(infile outfile)
       (when (file-exists? outfile) (delete-file outfile))
-      (dynamic-let ( [st:system-expand #t]
-                     [current-directory (path-only  (normalize-path infile))])
-        (let* ( [p (open-input-file infile 'text)]
-                [p2 (system-expand-if-necy p)]
-                [p3 (open-output-file outfile 'text)])
-          (printf "~nCopying:")
-          (recur loop ()
-            (let ([e (read p2)])
-              (unless (eof-object? e)
-                (pretty-print e p3)
-                (printf ".") (flush-output)
-                (loop))))
-          (newline)
-          (close-input-port p2)
-          (close-output-port p3)
-          outfile))]))
+      (parameterize ( [st:system-expand #t] )
+        (with-directory
+	 (path-only  (normalize-path infile))
+	 (lambda ()
+	   (let* ( [p (open-input-file infile 'text)]
+		   [p2 (system-expand-if-necy p)]
+		   [p3 (open-output-file outfile 'text)])
+	     (printf "~nCopying:")
+	     (recur loop ()
+		    (let ([e (read p2)])
+		      (unless (eof-object? e)
+			      (pretty-print e p3)
+			      (printf ".") (flush-output)
+			      (loop))))
+	     (newline)
+	     (close-input-port p2)
+	     (close-output-port p3)
+	     outfile))))]))
 
 ; ----------------------------------------------------------------------
 

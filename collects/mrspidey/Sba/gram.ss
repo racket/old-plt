@@ -10,15 +10,19 @@
 ; ======================================================================
 ; Non-Terminals
 
-(define-structure (NT AVS type) 
-  ([rhs* '()][prop #f][tag #f][sources #f][num #f][edgefrom '()]))
+(define-struct NT (AVS type rhs* prop tag sources num edgefrom))
+
+(define create-NT
+  (case-lambda
+   [(AVS type) (create-NT AVS type null)]
+   [(AVC type rhs*) (make-NT AVS type rhs* #f #f #f #f null)]))
 
 (define mk-AVS-NTs!
   (lambda (AVS)
-    (set-AVS-L!  AVS (make-NT AVS 'L ))
-    (set-AVS-U!  AVS (make-NT AVS 'U ))
-    (set-AVS-LI! AVS (make-NT AVS 'LI))
-    (set-AVS-UI! AVS (make-NT AVS 'UI))))
+    (set-AVS-L!  AVS (create-NT AVS 'L ))
+    (set-AVS-U!  AVS (create-NT AVS 'U ))
+    (set-AVS-LI! AVS (create-NT AVS 'LI))
+    (set-AVS-UI! AVS (create-NT AVS 'UI))))
 
 (define same-nt-type?
   (match-lambda*
@@ -26,7 +30,7 @@
 
 (define nt-chg-AVS
   (match-lambda*
-   [(f ($ NT x type)) (make-NT (f x) type)]))
+   [(f ($ NT x type)) (create-NT (f x) type)]))
 
 (define drop-I
   (match-lambda
@@ -46,10 +50,10 @@
 ; ======================================================================
 ; Right hand side of a production
 
-(define-structure (rhs* grsym misc nts))
+(define-struct rhs* (grsym misc nts))
 (define (make-rhs grsym nt) (make-rhs* grsym '() (list nt)))
 
-(define-structure (grsym ineq fn sign template field-no))
+(define-struct grsym (ineq fn sign template field-no))
 ;; ineq is '<= or '>=
 ;; fn   is 'inj, 'inj-tst or 'ext
 ;; sign is #t (monotonic) or #f (antimonotonic)
@@ -101,9 +105,9 @@
 ; ======================================================================
 ; Parameters for creating grammar
 
-(define-structure 
-  (parameters-grammar 
-   interp-sign                          ; applied to sign of each field
+(define-struct 
+   parameters-grammar 
+  (interp-sign                          ; applied to sign of each field
    prims                                ; #t => treat prims as constants
    filters                              ; #t => filters are not epsilon edges
    assignable-fields                    ; #t => assignable fields in grammar

@@ -814,7 +814,7 @@
 (make-srfi-4 s64 _int64)
 (make-srfi-4 u64 _uint64)
 (make-srfi-4 f32 _float)
-(make-srfi-4 f64 _double)
+(make-srfi-4 f64 _double*)
 (define-srfi-4-provider provide-srfi-4)
 (provide provide-srfi-4)
 

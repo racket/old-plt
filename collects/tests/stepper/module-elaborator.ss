@@ -6,18 +6,12 @@
   
   ;; full-on COPIED from plt/collects/lang/htdp-langs.ss
   
-  (define (wrap-in-module reader language-module-spec)
-    (list (with-syntax ([(body-exp ...) 
-                          (let loop ()
-                            (let ([result (reader)])
-                              (if (eof-object? result)
-                                  null
-                                  (cons result (loop)))))])
-             (let ([mod (expand #`(module #%htdp #,language-module-spec 
-                                          ; we don't handle teachpacks at  this point ...
-                                          ;(require require-specs ...)
-                                          body-exp ...))])
-               (rewrite-module mod)))
+  (define (wrap-in-module exps language-module-spec)
+    (list (let ([mod (expand #`(module #%htdp #,language-module-spec 
+                                 ; we don't handle teachpacks at  this point ...
+                                 ;(require require-specs ...)
+                                 #,@exps))])
+            (rewrite-module mod))
           (syntax (require #%htdp))))
   
   ;; rewrite-module : syntax -> syntax

@@ -1,6 +1,6 @@
 (require-library "errortrace.ss" "errortrace")
 
-(require-relative-library "help-raw-sig.ss")
+(require-relative-library "help-raw-sigs.ss")
 (require-library "cmdlines.ss")
 
 (require-library "file.ss")

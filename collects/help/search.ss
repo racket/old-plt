@@ -185,11 +185,13 @@
        (string->list s)))))
   
   (define (do-search given-find search-level regexp? exact? ckey maxxed-out)
-    (let ([hit-count 0]
-	  [finds (cond
+    (let* ([hit-count 0]
+	   [string-finds (list given-find)]
+	   [finds (cond
 		   [exact? (list given-find)]
 		   [regexp? (list (regexp given-find))]
 		   [else (let ([wl (split-words given-find)])
+			   (set! string-finds wl)
 			   (map regexp (map non-regexp wl)))])])
       (for-each
        (lambda (doc doc-name doc-kind)
@@ -300,4 +302,17 @@
 					    ckey)))
 			    (loop))))))))
 	      files))))
-       docs doc-names doc-kinds))))
+       docs doc-names doc-kinds)
+      (if (= 0 hit-count)
+	  (apply
+	   string-append
+	   "nothing found for "
+	   (cond
+	    [(null? string-finds) (list "the empty search.")]
+	    [else
+	     (append
+	      (cons (format "~s" (car string-finds))
+		    (map (lambda (i) (format " and ~s" i))
+			 (cdr string-finds)))
+	      (list "."))]))
+	  #f))))

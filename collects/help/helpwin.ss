@@ -331,7 +331,8 @@
 	   [regexp? (= 2 (send exact get-selection))]
 	   [exact? (= 0 (send exact get-selection))]
 	   [maxxed-out? #f]
-	   [ckey (gensym)])
+	   [ckey (gensym)]
+	   [result #f])
       (with-handlers ([exn:misc:user-break?
 		       (lambda (x)
 			 (queue-callback
@@ -356,14 +357,15 @@
 	 (lambda ()
 	   (semaphore-post break-sema)
 	   (send stop show #t)
-	   (do-search given-find
-		      search-level
-		      regexp?
-		      exact?
-		      ckey 
-		      (lambda ()
-			(set! maxxed-out? #t)
-			(break-thread (current-thread))))
+	   (set! result
+		 (do-search given-find
+			    search-level
+			    regexp?
+			    exact?
+			    ckey 
+			    (lambda ()
+			      (set! maxxed-out? #t)
+			      (break-thread (current-thread)))))
 	   (semaphore-wait break-sema)) ; turn off breaks...
 	 (lambda ()
 	   (semaphore-post break-sema) ; breaks ok now because they have no effect
@@ -376,9 +378,9 @@
 	(queue-callback
 	 (lambda ()
 	   (when (eq? cycle-key ckey)
-	     (when (zero? (send editor last-position))
+	     (when result
 	       (send editor lock #f)
-	       (send editor insert (format "Found nothing for \"~a\"." given-find))
+	       (send editor insert result)
 	       (send editor lock #t))))
 	    #f))))
   

@@ -4,7 +4,7 @@
 	  help:search^)
   
   (define html-prefix "http://www.cs.rice.edu/CS/PLT/unreleased/")
-  (define collects-prefix "http://www.cs.rice.edu/CS/PLT/unreleased/plt/collects/")
+  (define collects-prefix "http://www.cs.rice.edu/~robby/plt/")
 
   (define re:html (regexp "^.*plt/collects/doc/(.*)$"))
   (define re:collects (regexp "^.*plt/collects/(.*)$"))
@@ -21,11 +21,15 @@
 	   (lambda (prefix after)
 	     (if (and after
 		      (not (string=? after "")))
-		 (format "~a~a#~a" collects-prefix after label)
-		 (format "~a~a" collects-prefix after)))])
+		 (format "~a~a#~a" prefix after label)
+		 (format "~a~a" prefix after)))])
       (cond
-	[(regexp-match re:html page) => (lambda (m) (join html-prefix (cadr m)))]
-	[(regexp-match re:collects page) => (lambda (m) (join collects-prefix (cadr m)))]
+	[(regexp-match re:html page)
+	 =>
+	 (lambda (m) (join html-prefix (cadr m)))]
+	[(regexp-match re:collects page)
+	 =>
+	 (lambda (m) (join collects-prefix (cadr m)))]
 	[else page])))
 
   (define (find-start key name)
@@ -47,7 +51,7 @@
 			 key
 			 (substring name end (string-length name)))))])
 
-      (printf "<a href=\"~a\">~a</a> in ~a<br>~n"
+      (printf "<tt><a href=\"~a\">~a</a></tt> in ~a<br>~n"
 	      (build-url page label)
 	      bold-name
 	      title)))
@@ -87,14 +91,15 @@
    '("search string"))
 
   (let/ec k
-    (do-search
-     given-find
-     search-level
-     regexp?
-     exact?
-     (gensym)
-     (lambda ()
-       (output "(maximum searches reached)")
-       (k (void))))
-    (unless found-something?
-      (printf "(nothing found)~n"))))
+    (let ([err-msg (do-search
+		    given-find
+		    search-level
+		    regexp?
+		    exact?
+		    (gensym)
+		    (lambda ()
+		      (output "(maximum searches reached)")
+		      (k (void))))])
+      (when err-msg
+	(display err-msg)
+	(newline)))))

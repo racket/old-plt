@@ -60,7 +60,6 @@
            (define (step-through-expression expanded expand-next-expression)
              (let* ([annotated (annotate-top-level expanded)])
                (set! current-expr expanded)
-               (current-breakpoint-handler break)
                (let ([expression-result
                       (parameterize ([current-eval basic-eval])
                         (eval annotated))])
@@ -71,14 +70,16 @@
            
            (define (err-display-handler message exn)
              (queue-result (make-error-breakpoint-info message))))
-
-        (parameterize ([current-custodian user-custodian])
-          (program-expander
-           (lambda ()
-             (error-display-handler 4) ; should cause error
-             (error-display-handler err-display-handler)
-             (current-breakpoint-handler break)) ; init
-           (lambda (expanded continue-thunk) ; iter
-             (unless (eof-object? expanded)
-               (step-through-expression expanded continue-thunk)))))))))
+        
+        (let ([ns (current-namespace)]
+              [break-module-name ((current-module-name-resolver) '(lib "break.ss" "stepper") #f #f)])
+          (parameterize ([current-custodian user-custodian])
+            (program-expander
+             (lambda ()
+               (namespace-attach-module ns break-module-name)
+               (error-display-handler err-display-handler)
+               (current-breakpoint-handler break)) ; init
+             (lambda (expanded continue-thunk) ; iter
+               (unless (eof-object? expanded)
+                 (step-through-expression expanded continue-thunk))))))))))
 

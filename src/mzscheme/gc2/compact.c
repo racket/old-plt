@@ -287,10 +287,8 @@ void *malloc_pages(size_t len, size_t alignment)
 
   r = mmap(NULL, len + extra, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
 
-  if (r  == (void *)-1) {
-    printf("mmap failed: %s\n", strerror(errno));
-    exit(-1);
-  }
+  if (r  == (void *)-1)
+    return NULL;
 
   if (extra) {
     /* We allocated too large so we can choose the alignment. */

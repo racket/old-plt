@@ -6,17 +6,6 @@
 
   (provide run-robot run-robots)
   
-  (define (match-up steps possible-moves possible-dests)
-    (if (null? steps)
-        ;; pick random move if no recommended step:
-        (list-ref possible-moves (random (length possible-moves)))
-        ;; pick a random step
-        (let ([step (list-ref steps (random (length steps)))])
-          (ormap (lambda (m d)
-                   (and (equal? d step) m))
-                 possible-moves
-                 possible-dests))))
-
   (define (run-robots n server port)
     (if (<= n 1)
         (run-robot server port)
@@ -29,6 +18,47 @@
      (let ([width (vector-length (vector-ref board 0))]
            [height (vector-length board)])
        
+       (define (get-cell/wall i j)
+         (if (and (< -1 i width)
+                  (< -1 j height))
+             (get-cell board i j)
+             'wall))
+       
+       (define (dangerous cell opposite)
+         (and (eq? cell 'water)
+              (memq opposite '(plain base))))
+       
+       (define (random-step dests)
+         ;; Avoid spaces that can be pushed into water, 
+         ;; if possible
+         (let ([safe-dests (filter
+                            (lambda (dest)
+                              (let ([x (car dest)]
+                                    [y (car dest)])
+                                (let ([e (get-cell/wall (+ x 1) y)]
+                                      [w (get-cell/wall (- x 1) y)]
+                                      [s (get-cell/wall x (- y 1))]
+                                      [n (get-cell/wall x (+ y 1))])
+                                  (not (or (dangerous e w)
+                                           (dangerous w e)
+                                           (dangerous n s)
+                                           (dangerous s n))))))
+                            dests)])
+           (let ([dests (if (null? safe-dests) dests safe-dests)])
+             (list-ref dests (random (length dests))))))
+  
+       (define (match-up steps possible-moves possible-dests)
+         (let ([step (if (pair? steps)
+                         ;; pick a "random" step
+                         (random-step steps)
+                         ;; pick random move if no recommended step:
+                         (random-step possible-dests))])
+           (ormap (lambda (m d)
+                    (and (equal? d step) m))
+                  possible-moves
+                  possible-dests)))
+       
+  
        (define bases
          (let iloop ([i 0])
            (if (= i width)

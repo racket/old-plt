@@ -1,5 +1,6 @@
 (module string-constant mzscheme
-  (require-for-syntax (lib "etc.ss"))
+  (require-for-syntax (lib "etc.ss")
+		      (lib "list.ss"))
   (require (lib "mred.ss" "mred"))
 
   (provide string-constant string-constants this-language all-languages set-language-pref)
@@ -58,36 +59,66 @@
       (define first-string-constant-set (car available-string-constant-sets))
       
       (define dummy
-        (let ([check-one-way
-               (lambda (sc1 sc2)
-                 (let ([ht1 (sc-constants sc1)]
-                       [ht2 (sc-constants sc2)]
-                       [already-warned #&()])
-                   (hash-table-for-each
-                    ht1
-                    (lambda (constant value)
-                      (unless (hash-table-get ht2 constant (lambda () #f))
-                        (let ([unknown-word (string-append "UNK" value)]
-                              [no-warning-cache-key (cons (sc-language-name sc1) (sc-language-name sc2))])
-                          (hash-table-put! ht2 constant unknown-word)
-                          (unless (member no-warning-cache-key (unbox already-warned))
-                            (set-box! already-warned (cons no-warning-cache-key (unbox already-warned)))
-                            
-                            ;; in some cases, the printf may raise an exception because the error port
-                            ;; is gone. If so, just don't display the warning.
-                            (with-handlers ([not-break-exn?
-                                             (lambda (x) (void))])
-                              (fprintf
-                               (current-error-port)
-                               "WARNING: language ~a defines ~a, but\n         language ~a does not, substituting:\n         \"~a\"\n         other words may be substituted without warning.\n"
-                               (sc-language-name sc1)
-                               constant
-                               (sc-language-name sc2)
-                               unknown-word)))))))))])
+        (let* ([already-printed #&#f]
+	       [warning-table null]
+	       [check-one-way
+		(lambda (sc1 sc2)
+		  (let ([ht1 (sc-constants sc1)]
+			[ht2 (sc-constants sc2)])
+		    (hash-table-for-each
+		     ht1
+		     (lambda (constant value)
+		       (unless (hash-table-get ht2 constant (lambda () #f))
+			 (let ([unknown-word (string-append "UNK" value)]
+			       [no-warning-cache-key (cons (sc-language-name sc1) (sc-language-name sc2))])
+			   (hash-table-put! ht2 constant unknown-word)
+			   (unless (unbox already-printed)
+			     (cond
+			       [(memf (lambda (x) (equal? (car x) no-warning-cache-key)) warning-table)
+				=>
+				(lambda (x)
+				  (let ([ent (car x)])
+				    (set-car! (cdr ent) (+ (cadr ent) 1))))]
+			       [else
+				(set! warning-table (cons (list no-warning-cache-key
+								0
+								(sc-language-name sc1)
+								constant
+								(sc-language-name sc2)
+								unknown-word)
+							  warning-table))]))))))))])
+
           (for-each (lambda (x) 
                       (check-one-way x first-string-constant-set)
                       (check-one-way first-string-constant-set x))
-                    (cdr available-string-constant-sets))))
+                    (cdr available-string-constant-sets))
+	  		    
+	  ;; in some cases, the printf may raise an exception because the error port
+	  ;; is gone. If so, just don't display the warning.
+	  (unless (unbox already-printed)
+	    (with-handlers ([not-break-exn?
+			     (lambda (x) (void))])
+	      (set-box! already-printed #t)
+	      (for-each
+	       (lambda (bad)
+		 (let ([lang1-name (third bad)]
+		       [constant (fourth bad)]
+		       [lang2-name (fifth bad)]
+		       [unknown-word (sixth bad)]
+		       [count (second bad)])
+		   (fprintf
+		    (current-error-port)
+		    "WARNING: language ~a defines ~a, but\n         language ~a does not, substituting:\n         \"~a\"\n"
+		    lang1-name
+		    constant
+		    lang2-name
+		    unknown-word)
+		   (unless (zero? count)
+		     (fprintf
+		      (current-error-port)
+		      "         ~a other words were substituted without warning.\n"
+		      count))))
+	       warning-table)))))
            
       (define (string-constant stx)
         (syntax-case stx ()

@@ -66,7 +66,7 @@
  (cs-name-duplication-error "The new name you have chosen, ~s, conflicts with an already established name in this scope.")
  
  ;;; info bar at botttom of drscheme frame
- (collect-button-label "Collect")
+ (collect-button-label "GC")
  (read-only "Read only")
  (read/write "Read/Write")
  (auto-extend-selection "Auto-extend Selection")

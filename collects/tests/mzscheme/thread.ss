@@ -139,4 +139,59 @@
 (semaphore-wait s)
 (test 26 'thread-loop result)
 
+
+; Tests inspired by a question from Savid Tillman
+(define (read-line/expire1 port expiration)
+  (with-handlers ([exn:misc:user-break? (lambda (exn) #f)])
+    (let ([timer (thread (let ([id (current-thread)])
+			   (lambda () 
+			     (sleep expiration)
+			     (break-thread id))))])
+      (dynamic-wind
+       void
+       (lambda () (read-line port))
+       (lambda () (kill-thread timer))))))
+(define (read-line/expire2 port expiration)
+  (let ([done (make-semaphore 0)]
+	[result #f])
+    (let ([t1 (thread (lambda () 
+			(set! result (read-line port))
+			(semaphore-post done)))]
+	  [t2 (thread (lambda () 
+			(sleep expiration)
+			(semaphore-post done)))])
+      (semaphore-wait done)
+      (kill-thread t1)
+      (kill-thread t2)
+      result)))
+
+(define (go read-line/expire)
+  (define p (let ([c 0]
+		  [nl-sleep? #f]
+		  [nl? #f])
+	      (make-input-port (lambda () 
+				 (when nl-sleep?
+				       (sleep 0.4)
+				       (set! nl-sleep? #f))
+				 (if nl?
+				     (begin
+				       (set! nl? #f)
+				       #\newline)
+				     (begin
+				       (set! nl? #t)
+				       (set! nl-sleep? #t)
+				       (set! c (add1 c))
+				       (integer->char c))))
+			       (lambda ()
+				 (when nl-sleep?
+				       (sleep 0.4)
+				       (set! nl-sleep? #f))
+				 #t)
+			       void)))
+  (test #f read-line/expire p 0.2) ; should get char but not newline
+  (test "" read-line/expire p 0.6)) ; picks up newline
+
+(go read-line/expire1)
+(go read-line/expire2)
+
 (report-errs)

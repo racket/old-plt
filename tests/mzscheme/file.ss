@@ -418,6 +418,7 @@
 
 (SECTION 'PRINTF)
 (define (test-format format format-name)
+  (test "~" format "~~")
   (test "hello---~---there" format "~a---~~---~a" "hello" 'there)
   (test "\"hello\"---~---there" format "~s---~~---~s" "hello" 'there)
   (test "\"hello\"---~---there" format "~v---~~---~v" "hello" 'there)
@@ -472,6 +473,8 @@
   
   (error-test `(,@format-name 9))
   (error-test `(,@format-name "apple~"))
+  (error-test `(,@format-name "~"))
+  (error-test `(,@format-name "~~~"))
   (error-test `(,@format-name "~o") exn:application:fprintf:no-argument?)
   (error-test `(,@format-name "~o" 1 2) exn:application:fprintf:extra-arguments?)
   (error-test `(,@format-name "~c" 1) exn:application:fprintf:argument-type?)

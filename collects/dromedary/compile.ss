@@ -361,7 +361,9 @@
 		      (let ([constructor (hash-table-get <constructors> (unlongident name) (lambda () #f))])
 			(if constructor
 			    ;; Best way I can think of to do this is specail case
-			    (if (equal? (hash-table-get <constructors> (unlongident name)) cons)
+			    (begin
+;			      (pretty-print (format "constructor found: ~a" constructor))
+			    (if (equal? (cdr constructor) <cons>)
 				;; The pattern should be a <tuple> of two
 				(if (ast:ppat_tuple? (ast:pattern-ppat_desc pat))
 				    (let ([head (get-varpat (car (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))))]
@@ -369,6 +371,7 @@
 				      #`(#,head . #,tail))
 				    (pretty-print (list "Not a tuple: " (ast:pattern-ppat_desc pat))))
 				#`($ #,(string->symbol (syntax-object->datum (ast:lident-name name))) #,(if (null? pat) pat (get-varpat pat))))
+			    )
 			    #`($ #,(string->symbol (unlongident name)) #,(if (null? pat) #'dummy (get-varpat pat)))))]
 		     [else (pretty-print (list "Unknown construct: " name pat bool))])]
 	      [else
@@ -391,7 +394,7 @@
 		      (hash-table-get <constructors> name)]
 		     [(not bool)
 		      ;; Best way I can think of to do this is specail case
-		      (if (equal? (hash-table-get <constructors> name) cons)
+		      (if (equal? (hash-table-get <constructors> name) <cons>)
 			  ;; The pattern should be a <tuple> of two
 			  (if (ast:ppat_tuple? (ast:pattern-ppat_desc pat))
 			      (let ([head (compile-test (car (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))) context)]

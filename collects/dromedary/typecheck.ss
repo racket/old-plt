@@ -37,15 +37,18 @@
 	       (let ([progtype (typecheck-ml stmt (empty-context))])
 		 (begin ;(pretty-print (format "initial progtype: ~a" progtype))
 		 (if (list? progtype)
-		     (letrec ([ucvert (lambda (ttlist)
-					(if (null? ttlist)
-					    null
-					    (if (list? (car ttlist))
-						(append (ucvert (car ttlist)) (ucvert (cdr ttlist)))
-						(cons (car (unconvert-tvars (car ttlist) null)) (ucvert (cdr ttlist))))))])
-		       (<flatten> (ucvert progtype)))
+		     (let ([fprogtype (<flatten> progtype)])
+		       (map car (map unconvert-tvars fprogtype (repeat null (length fprogtype)))))
+;		     (letrec ([ucvert (lambda (ttlist)
+;					(if (null? ttlist)
+;					    null
+;					    (if (list? (car ttlist))
+;						(append (ucvert (car ttlist)) (ucvert (cdr ttlist)))
+;						(cons (car (unconvert-tvars (car ttlist) null)) (ucvert (cdr ttlist))))))])
+;		       (<flatten> (ucvert progtype)))
 ;		     (map car (map unconvert-tvars progtype (repeat null (length progtype))))
-		     (<flatten> (list (car (unconvert-tvars progtype null)))))))))
+		     (list (car (unconvert-tvars progtype null))))))))
+;)
 
 	   (define (typecheck-ml stmt context)
 ;	     (pretty-print (format "typecheck-ml ~a" stmt))
@@ -110,13 +113,22 @@
 
 		    [($ ast:pexp_ident name)
 		     (let ([type (get-type (unlongident name) context)])
+		       (begin ;(pretty-print (format "pexp_ident type: ~a" type))
 		       (if type
 			   (let ([itype (instantiate type)])
 			     itype)
 			   (let ([rtype (lookup-ident name (at desc src))])
+			     (begin ;(pretty-print (format "pexp_ident rtype: ~a" rtype))
 			     (if rtype
-				 (car (convert-tvars rtype null))
-				 (raise-syntax-error #f (format "No type found for ~a" name) (at name src))))) )]
+				 (let ([fres (car (convert-tvars rtype null))])
+				   (begin
+				     ;(pretty-print (format "pexp_ident fres: ~a" fres))
+				     fres))
+				 (raise-syntax-error #f (format "No type found for ~a" name) (at name src)))
+			     )
+))
+		       )
+ )]
 
 
 			   
@@ -164,7 +176,8 @@
 					 (tconstructor-result constructor)
 					 (raise-syntax-error #f "Wrong number of arguments for constructor" (at expr (ast:expression-pexp_src expr))))
 				     (if (unify (tconstructor-argtype constructor) (typecheck-ml expr context) (at expr (ast:expression-pexp_src expr)))
-					 (tconstructor-result constructor)))
+					 (tconstructor-result constructor)
+					 ))
 				 constructor))
 			   )
 				 ;; Special case for cons
@@ -262,7 +275,8 @@
 		    [expts (map typecheck-ml (map cdr pelist) patenvs)])
 	       (if (same-types? expts (map at (map cdr pelist) (map ast:expression-pexp_src (map cdr pelist))))
 ;; Should also be checking that the patterns are exhaustive for t and don't overlap
-		   (car expts))))
+		   (car expts)
+		   (raise-syntax-error #f "Not all same types" #f))))
 
 	   (define (typecheck-defines rec bindings context)
 	     ;(pretty-print "typecheckdefines called")
@@ -273,10 +287,16 @@
 		 (let ([definedtypes (reverse (map car (map unconvert-tvars (map car (map cdr contextwithbindings)) (repeat null (length contextwithbindings)))))])
 		   (begin
 		     (for-each (lambda (name type)
-				 (hash-table-put! built-in-and-user-funcs name (cons type (string->symbol name))))
+				 (when name
+				     (hash-table-put! built-in-and-user-funcs name (cons type (string->symbol name)))))
 			       (reverse (map car contextwithbindings))
 			       definedtypes)
-		     (map make-value-set (reverse (map car contextwithbindings)) definedtypes))))))
+		     (map make<maybe>-value-set (reverse (map car contextwithbindings)) definedtypes))))))
+
+	   (define (make<maybe>-value-set name type)
+	     (if name
+		 (make-value-set name type)
+		 type))
 
 	   (define (typecheck-bindings rec bindings context)
 	     
@@ -328,10 +348,12 @@
 			 )
 		       (raise-syntax-error #f "This kind of expression is not allowed as right-hand side of 'let rec'" (at (cdr binding) (ast:expression-pexp_src (cdr binding)))))
 		   (begin ;(pretty-print "not rec in typecheck-binding")
-		   (let ([newcont
-			  (patcheck context (typecheck-ml (cdr binding) context) rpat)])
-		     (begin
+		   (let* ([btype (typecheck-ml (cdr binding) context)]
+			  [newcont
+			  (patcheck context btype rpat)])
+		     (if (null? newcont)
 		       ;(pretty-print (format "patcheck result in typecheck-binding ~a" newcont))
+			 `(,(cons #f (cons btype #f)))
 		       newcont))))))
 
 ;; Note, I should be checking for no duplicate binding
@@ -356,7 +378,8 @@
 	       (if (and (same-types? (map car funvarenvs) (map grab-syntax pelist)) (same-types? expts (map at (map cdr pelist) (map ast:expression-pexp_src (map cdr pelist)))))
 ;; Should also be checking that the patterns are exhaustive for t and don't overlap
 ;		   (begin (pretty-print (format "argument: ~a, result: ~a" (car (car funvarenvs)) (car expts)))
-		   (make-arrow (list (car (car funvarenvs))) (car expts))))
+		   (make-arrow (list (car (car funvarenvs))) (car expts))
+		   (raise-syntax-error #f "Not all same types" #f)))
 	     )
 
 	   (define (grab-syntax pe)
@@ -406,7 +429,9 @@
 			       (unlongident name)
 			       (raise-syntax-error #f (format "Unknown constructor: ~a" (unlongident name)) (at asttype (ast:core_type-src asttype))))) )]
 		    [($ ast:ptyp_variant rfl abool ll)
-		     'comeslater]
+		     'comeslater
+		     ;; Need to implement this!!!
+]
 		    [else
 		     (raise-syntax-error #f (format "Cannot handle type: ~a" asttype) (at asttype (ast:core_type-src asttype)))]))
 
@@ -417,14 +442,19 @@
 	     (if (unify (make-arrow (list (fresh-type-var)) (fresh-type-var)) funt funsyn)
 		 (let ([arglist (get-arglist funt)])
 		   (if (= (length arglist) (length argst))
+		       (begin
+;			 (pretty-print (format "arglist: ~a argst: ~a" arglist argst))
 		       (if (andmap unify arglist argst argssyn)
-			   (get-result funt))
+			   (get-result funt)
+			   (raise-syntax-error #f "Arguments do not match types" #f))
+		       )
 		       (if (> (length argst) (length arglist))
 			   (foldl uncurry (if (unify (car (get-arglist funt)) (car argst) (car argssyn))
 					      (get-result funt)) 
 				  (cdr argst)
 				  (cdr argssyn))
-			   (raise-syntax-error #f (format "Expected ~a arguments but found ~a" (length arglist) (length argst)) funsyn))))) )
+			   (raise-syntax-error #f (format "Expected ~a arguments but found ~a" (length arglist) (length argst)) funsyn))))
+		 (raise-syntax-error #f "Failed to unify application" #f)) )
 
 
 	   (define (uncurry nextt argsyn init)
@@ -682,7 +712,8 @@
 	       (cond
 		[(ref? t2) (unify (ref-type t1) (ref-type t2) syn)]
 		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
-		[else (raise-syntax-error #f "Expected an option type" syn)])]))
+		[else (raise-syntax-error #f "Expected an option type" syn)])]
+	      [else (raise-syntax-error #f "Bad type to unify" syn)]))
 
 	   (define (unify-var type tbox syn)
 	     (if (null? (unbox tbox))
@@ -782,22 +813,26 @@
 						(unconvert-tvars (tconstructor-argtype (mlexn-types type)) mappings))])
 			       (cons (make-mlexn (mlexn-name type) (make-tconstructor (car newtypes) (tconstructor-result (mlexn-types type)))) (cdr newtypes)))]
 	      [(tvar? type) (let ([dbox (tvar-tbox type)])
-			      (if (null? (unbox dbox))
-				  (letrec ([tfunc (lambda (maplist)
-						    (if (null? maplist)
-							#f
-							(if (eqv? (caar maplist) dbox)
-							    (cdar maplist)
-							    (tfunc (cdr maplist)))))])
-				    (let ([res (tfunc mappings)])
-				      (if res
-					  (cons res mappings)
+			      (cond
+			       [(string? dbox) (cons type mappings)]
+			       [(null? (unbox dbox))
+				(letrec ([tfunc (lambda (maplist)
+						  (if (null? maplist)
+						      #f
+						      (if (eqv? (caar maplist) dbox)
+							  (cdar maplist)
+							  (tfunc (cdr maplist)))))])
+				  (let ([res (tfunc mappings)])
+				    (if res
+					  (cons (make-tvar res) mappings)
 					  (begin
 					    (set! cur-var (integer->char (+ 1 (char->integer cur-var))))
 					    (let ([old-var (format "'~a" (integer->char (- (char->integer cur-var) 1)))])
-					      (cons old-var (cons (cons dbox old-var) mappings)))))))
-				  (unconvert-tvars (unbox dbox) mappings)))]
-	      [else (raise-syntax-error #f (format "Bad type: ~a" type) type)]))
+					      (cons (make-tvar old-var) (cons (cons dbox old-var) mappings)))))))]
+			       [else
+				  (unconvert-tvars (unbox dbox) mappings)]))]
+	      [else ;(cons type mappings)]))
+	       (raise-syntax-error #f (format "Bad type: ~a" type) type)]))
 	   
 	   (define (unconvert-list tlist mappings results)
 	     (if (null? tlist)

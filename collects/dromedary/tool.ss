@@ -72,8 +72,8 @@
 	  (if (> (length (arrow-arglist type)) 1)
 	      "Bad function!"
 	      (if (arrow? (car (arrow-arglist type)))
-		  (format "(~e) -> ~e" (car (arrow-arglist type)) (arrow-result type))
-		  (format "~e -> ~e" (car (arrow-arglist type)) (arrow-result type))))]
+		  (format "(~e) -> ~e" (ml-tstyle (car (arrow-arglist type))) (ml-tstyle (arrow-result type)))
+		  (format "~e -> ~e" (ml-tstyle (car (arrow-arglist type))) (ml-tstyle (arrow-result type)))))]
 	 [(<tuple>? type)
 	  (letrec ([<tuple>format (lambda (tlist)
 				  (let ([fstring (if (<tuple>? (car tlist))

@@ -2,7 +2,7 @@
 	(require (lib "list.ss")
 		 (lib "match.ss")
 		 (lib "pretty.ss"))
-	(provide <library-names> user-types built-in-and-user-funcs <constructors> <flatten>
+	(provide <library-names> user-types built-in-and-user-funcs <constructors> <flatten> <cons>
 		 (struct <tuple> (list))
 		 (struct arrow (arglist result))
 		 (struct tvar (tbox))
@@ -200,6 +200,9 @@
 
 	(define (any? n) #t)
 
+	(define (<cons> tuple)
+	  (cons (car (<tuple>-list tuple)) (cadr (<tuple>-list tuple))))
+
 	(define user-types (make-hash-table 'equal))
 	(hash-table-put! user-types "int" integer?)
 	(hash-table-put! user-types "float" float?)
@@ -214,7 +217,7 @@
 	(hash-table-put! <constructors> "[]" (cons (make-tlist (make-tvar "'a")) null))
 	(hash-table-put! <constructors> "()" (cons "unit" (make-<unit> #f)))
 ;	(hash-table-put! <constructors> "::" (cons (make-arrow (list (make-<tuple> (list (make-tvar "'a") (make-tlist (make-tvar "'a"))))) (make-tlist (make-tvar "'a"))) cons))
-	(hash-table-put! <constructors> "::" (cons (make-tconstructor (make-<tuple> (list (make-tvar "'a") (make-tlist (make-tvar "'a")))) (make-tlist (make-tvar "'a"))) cons))
+	(hash-table-put! <constructors> "::" (cons (make-tconstructor (make-<tuple> (list (make-tvar "'a") (make-tlist (make-tvar "'a")))) (make-tlist (make-tvar "'a"))) <cons>))
 	(hash-table-put! <constructors> "list" (cons (make-tlist (make-tvar "'a")) "some error"))
 	(hash-table-put! <constructors> "float" (cons "float" "some error"))
 	(hash-table-put! <constructors> "int" (cons "int" "some error"))

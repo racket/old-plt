@@ -3491,7 +3491,7 @@ static Waiting *make_waiting(Waitable_Set *waitable_set, float timeout, long sta
   waiting->timeout = timeout;
   waiting->start_time = start_time;
 
-  if (waitable_set->argc) {
+  if (waitable_set->argc > 1) {
     pos = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_SCHEDULER_RANDOM_STATE));
     waiting->start_pos = (pos % waitable_set->argc);
   }
@@ -3681,7 +3681,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 
       yep = ready(o, &r_sinfo);
 
-      if ((i < r_sinfo.w_i) && sinfo->false_positive_ok) {
+      if ((i > r_sinfo.w_i) && sinfo->false_positive_ok) {
 	/* There was a redirection. Assert: !yep. 
 	   Give up if we've chained too much. */
 	redirections++;
@@ -3718,7 +3718,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
       
       sema = get_sema(o, &repost);
       set_wait_target(waiting, i, sema, o, NULL, repost);
-      j--; i--; /* try again with this sema */
+      j--; /* try again with this sema */
     }
   }
 

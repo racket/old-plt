@@ -516,12 +516,16 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
   } else {
     int start_pos;
 
-    if (waiting)
-      start_pos = waiting->start_pos;
-    else
-      start_pos = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_SCHEDULER_RANDOM_STATE));
-    
+    if (n > 1) {
+      if (waiting)
+	start_pos = waiting->start_pos;
+      else
+	start_pos = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_SCHEDULER_RANDOM_STATE));
+    } else
+      start_pos = 0;
+
     /* Initial poll */
+    i = 0;
     for (ii = 0; ii < n; ii++) {
       /* Randomized start position for poll ensures fairness: */
       i = (start_pos + ii) % n;
@@ -598,6 +602,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	if (!waiting) {
 	  /* Poster can't be sure that we really will get it,
 	     so we have to decrement the sema count here. */
+	  i = 0;
 	  for (ii = 0; ii < n; ii++) {
 	    i = (start_pos + ii) % n;
 	    if (ws[i]->picked) {

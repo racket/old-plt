@@ -226,7 +226,7 @@
   
   (define (no-user-evaluation-message frame)
     (mred:message-box
-     "Warning"
+     "Evaluation Terminated"
      (format "The evaluation thread is no longer running, ~
               so no evaluation can take place until ~
               the next execution.")

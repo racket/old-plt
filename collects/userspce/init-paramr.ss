@@ -1,7 +1,6 @@
 (unit/sig plt:init-params^
   (import [import : plt:basis-import^]
 	  [init-namespace : plt:init-namespace^]
-	  [params : plt:userspace:params^]
 	  [zodiac : zodiac:system^]
 	  [zodiac:interface : drscheme:interface^]
 	  [aries : plt:aries^]
@@ -668,9 +667,6 @@
 		   [current-output-port port])
       (drscheme-print/void value)))
   
-  (define ricedefs@ (require-library "ricedefr.ss" "userspce"))
-  
-
   (define (teaching-level? setting)
     (let* ([name (setting-name setting)]
 	   [ans (or (equal? name "Beginning Student")
@@ -752,20 +748,7 @@
       ;; Allow ` , and ,@ ? - FIXME!
       (zodiac:allow-reader-quasiquote (setting-allow-reader-quasiquote? setting))
       (zodiac:disallow-untagged-inexact-numbers (setting-disallow-untagged-inexact-numbers setting))
-      
-      ;; ricedefs
-      (let ([improper-lists?
-             (or (not (zodiac-vocabulary? setting))
-                 (setting-allow-improper-lists? setting))])
-        (zodiac:allow-improper-lists improper-lists?)
-        (params:allow-improper-lists improper-lists?))
-      (params:eq?-only-compares-symbols (setting-eq?-only-compares-symbols? setting))
-      (params:<=-at-least-two-args (setting-<=-at-least-two-args setting))
-      (params:error-sym/string-only (setting-error-sym/string-only setting))
-      (when (teaching-level? setting)
-        (global-define-values/invoke-unit/sig ricedefs^ ricedefs@ #f (params : plt:userspace:params^)))
-      ;; end ricedefs
-      
+            
       (compile-allow-set!-undefined (setting-allow-set!-on-undefined? setting))
       (compile-allow-cond-fallthrough (not (setting-unmatched-cond/case-is-error? setting)))
       

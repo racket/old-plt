@@ -132,6 +132,7 @@
 		    signal-not-boolean
 		    eq?-only-compares-symbols?
 		    <=-at-least-two-args
+                    error-sym/string-only
 		    disallow-untagged-inexact-numbers
 		    print-tagged-inexact-numbers
 		    whole/fractional-exact-numbers
@@ -140,6 +141,8 @@
 		    use-pretty-printer?))
    make-setting/parse
 
+   teaching-level?
+   
    find-setting-named
    add-setting
    copy-setting

@@ -11,7 +11,6 @@
    [init-params : plt:init-params^ ((require-relative-library "init-paramr.ss")
 				    import
 				    init-namespace
-				    params
 				    zodiac
 				    zodiac:interface
 				    aries
@@ -23,6 +22,8 @@
 					  import
 					  init-params
 					  prims
+                                          params
+                                          zodiac
 					  (mzlib function))])
   (export
    (open init-params)

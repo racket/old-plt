@@ -2,11 +2,14 @@
   (import plt:basis-import^
 	  [init-params : plt:init-params^]
 	  [prims : plt:prims^]
+          [params : plt:userspace:params^]
+          [zodiac : zodiac:system^]
 	  mzlib:function^)
 
   (define (init-namespace)
     (teachpack-thunk)
-    (setup-primitives))
+    (setup-primitives)
+    (make-keywords))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;                                               ;;;
@@ -168,10 +171,12 @@
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;                                               ;;;
-  ;;;              Clear out names                  ;;;
+  ;;;          Clear out / add new names            ;;;
   ;;;                                               ;;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+  (define ricedefs@ (require-library "ricedefr.ss" "userspce"))
 
   (define (make-prims-to-remove prims)
     (let ([ht (make-hash-table)])
@@ -213,16 +218,41 @@
 	     to-remove-from-intermediate]
 	    [(advanced)
 	     to-remove-from-advanced]
-	    [else #f])])
-      (when to-remove
-        (for-each undefine to-remove)
-        (for-each (lambda (x)
-                    (let ([name (car x)]
-                          [str-name (symbol->string (car x))])
-                      (when (or (syntax? (global-defined-value name))
-                                (and (>= (string-length str-name) 2)
-                                     (string=? (substring str-name 0 2)
-                                               "#%")))
-                        (keyword-name name))))
-                  (make-global-value-list))))))
+	    [else null])])
+      (for-each undefine to-remove)
+      
+      ;; ricedefs
+      (let* ([setting (init-params:current-setting)]
+             [improper-lists?
+              (or (not (init-params:zodiac-vocabulary? setting))
+                  (init-params:setting-allow-improper-lists? setting))])
+        (zodiac:allow-improper-lists improper-lists?)
+        (params:allow-improper-lists improper-lists?)
+        (params:eq?-only-compares-symbols (init-params:setting-eq?-only-compares-symbols? setting))
+        (params:<=-at-least-two-args (init-params:setting-<=-at-least-two-args setting))
+        (params:error-sym/string-only (init-params:setting-error-sym/string-only setting))
+        (when (init-params:teaching-level? setting)
+          (global-define-values/invoke-unit/sig ricedefs^ ricedefs@ #f (params : plt:userspace:params^))))))
+  
+  
+  
+  (define keyword-languages '(beginner intermediate advanced))
+
+  (define (make-keywords)
+    (when (memq (init-params:setting-primitives (init-params:current-setting))
+                keyword-languages)
+              ;; this makes all names keywords (better error checking)
+      (for-each (lambda (x) (keyword-name (car x))) (make-global-value-list))
+      
+        ;; this only make #% names and syntax names 
+        ;; be keywords (the minimum)
+      '(for-each (lambda (x)
+                   (let ([name (car x)]
+                         [str-name (symbol->string (car x))])
+                     (when (or (syntax? (global-defined-value name))
+                               (and (>= (string-length str-name) 2)
+                                    (string=? (substring str-name 0 2)
+                                              "#%")))
+                       (keyword-name name))))
+                 (make-global-value-list)))))
 

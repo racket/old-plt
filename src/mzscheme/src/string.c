@@ -315,17 +315,29 @@ scheme_alloc_string(int size, char fill)
   return str;
 }
 
-static void out_of_string_range(const char *name, const char *which, Scheme_Object *i, 
+static void out_of_string_range(const char *name, const char *which, 
+				Scheme_Object *i, Scheme_Object *s, 
 				long start, long len)
 {
-  scheme_raise_exn(MZEXN_APPLICATION_RANGE_BOUNDS_STRING,
-		   scheme_make_integer(i),
-		   scheme_make_integer(start),
-		   scheme_make_integer(len),
-		   "%s: %sindex %s out of range [%d, %d]",
-		   name, which,
-		   scheme_make_provided_string(i, 0, NULL), 
-		   start, len);
+  if (SCHEME_STRTAG_VAL(s)) {
+    scheme_raise_exn(MZEXN_APPLICATION_RANGE_BOUNDS_STRING,
+		     scheme_make_integer(i),
+		     scheme_make_integer(start),
+		     scheme_make_integer(len),
+		     "%s: %sindex %s out of range [%d, %d] for string: %s",
+		     name, which,
+		     scheme_make_provided_string(i, 2, NULL), 
+		     start, len,
+		     scheme_make_provided_string(s, 2, NULL));
+  } else {
+    scheme_raise_exn(MZEXN_APPLICATION_RANGE_BOUNDS_STRING,
+		     scheme_make_integer(i),
+		     scheme_make_integer(start),
+		     scheme_make_integer(len),
+		     "%s: %sindex %s out of range for empty string",
+		     name, which,
+		     scheme_make_provided_string(i, 0, NULL));
+  }
 }
 
 long scheme_extract_index(const char *name, int pos, int argc, Scheme_Object **argv, long top)
@@ -424,7 +436,7 @@ string_ref (int argc, Scheme_Object *argv[])
   i = scheme_extract_index("string-ref", 1, argc, argv, len);
 
   if (i >= len) {
-    out_of_string_range("string-ref", "", argv[1], 0, len - 1);
+    out_of_string_range("string-ref", "", argv[1], argv[0], 0, len - 1);
     return NULL;
   }
 
@@ -449,7 +461,7 @@ string_set (int argc, Scheme_Object *argv[])
     scheme_wrong_type("string-set!", "character", 2, argc, argv);
 
   if (i >= len) {
-    out_of_string_range("string-set!", "", argv[1], 0, len - 1);
+    out_of_string_range("string-set!", "", argv[1], argv[0], 0, len - 1);
     return NULL;
   }
 
@@ -506,11 +518,11 @@ substring (int argc, Scheme_Object *argv[])
   finish = scheme_extract_index("substring", 2, argc, argv, len + 1);
 
   if (!(start <= len)) {
-    out_of_string_range("substring", "first ", argv[1], 0, len);
+    out_of_string_range("substring", "first ", argv[1], argv[0], 0, len);
     return NULL;
   }
   if (!(finish >= start && finish <= len)) {
-    out_of_string_range("substring", "second ", argv[2], start, len);
+    out_of_string_range("substring", "second ", argv[2], argv[0], start, len);
     return NULL;
   }
 

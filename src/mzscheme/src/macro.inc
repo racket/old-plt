@@ -1132,3 +1132,14 @@
 "(#%define(port? x)(#%or(#%input-port? x)(#%output-port? x)))"
 );
   JUST_DEFINED_FUNC(port?);
+  EVAL_ONE_STR(
+"(#%define-macro #%begin-elaboration-time "
+"(#%lambda body"
+"(#%if(#%or(#%null? body)"
+"(#%not(#%list? body)))"
+"(#%raise-syntax-error 'begin-elaboration-time "
+" \"empty or ill-formed body\""
+"(#%cons 'begin-elaboration-time body))"
+"(#%eval `(#%begin ,@body)))))"
+);
+  JUST_DEFINED_KEY(begin-elaboration-time);

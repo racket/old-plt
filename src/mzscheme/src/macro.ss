@@ -1137,3 +1137,14 @@
 (#%define (port? x) (#%or (#%input-port? x) (#%output-port? x)))
 
 > fstop port? <
+
+(#%define-macro #%begin-elaboration-time 
+  (#%lambda body
+    (#%if (#%or (#%null? body)
+		(#%not (#%list? body)))
+	  (#%raise-syntax-error 'begin-elaboration-time 
+				"empty or ill-formed body"
+				(#%cons 'begin-elaboration-time  body))
+	  (#%eval `(#%begin ,@body)))))
+
+> kstop begin-elaboration-time <

@@ -841,7 +841,7 @@ void GC_finalize_all()
       GC_enqueue_all_finalizers();
       UNLOCK();
       ENABLE_SIGNALS();
-      GC_invoke_finalizers();
+      GC_INVOKE_FINALIZERS();
       DISABLE_SIGNALS();
       LOCK();
     }
@@ -852,15 +852,16 @@ void GC_finalize_all()
 
 /* Invoke finalizers for all objects that are ready to be finalized.	*/
 /* Should be called without allocation lock.				*/
-void GC_invoke_finalizers()
+int GC_invoke_finalizers()
 {
     static int doing = 0; /* MATTHEW */
     register struct finalizable_object * curr_fo;
+    register int count = 0;
     DCL_LOCK_STATE;
 
     /* MATTHEW: don't allow nested finalizations */
     if (doing)
-      return;
+      return 0;
     doing++;
     
     while (GC_finalize_now != 0) {
@@ -881,6 +882,7 @@ void GC_invoke_finalizers()
     	(*(curr_fo -> fo_fn))((ptr_t)(curr_fo -> fo_hidden_base),
     			      curr_fo -> fo_client_data);
     	curr_fo -> fo_client_data = 0;
+	++count;
 #	ifdef UNDEFINED
 	    /* This is probably a bad idea.  It throws off accounting if */
 	    /* nearly all objects are finalizable.  O.w. it shouldn't	 */
@@ -890,6 +892,8 @@ void GC_invoke_finalizers()
     }
 
     doing--; /* MATTHEW */
+
+    return count;
 }
 
 # ifdef __STDC__

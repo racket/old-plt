@@ -23,6 +23,19 @@
 
 #include "scheme.h"
 
+/* #define STANDALONE_WITH_EMBEDDED_EXTENSION */
+/*    STANDALONE_WITH_EMBEDDED_EXTENSION builds an executable with
+      built-in extensions. The extension is initialized by calling
+      scheme_initialize(env), where `env' is the initial environment.
+      By default, command-line parsing, the REP, and initilization
+      file loading are turned off. */
+
+#ifdef STANDALONE_WITH_EMBEDDED_EXTENSION
+# define DONT_PARSE_COMMAND_LINE
+# define DONT_RUN_REP
+# define DONT_LOAD_INIT_FILE
+#endif
+
 #ifdef FILES_HAVE_FDS
 # include <sys/types.h>
 # include <sys/time.h>
@@ -160,6 +173,7 @@ void Drop_Quit()
 }
 #endif
 
+#ifndef DONT_PARSE_COMMAND_LINE
 static int is_number_arg(const char *s)
 {
   while (*s) {
@@ -205,8 +219,9 @@ static char *make_require_lib(const char *file, const char *coll)
   strcat(s, "\")");
   return s;
 }
+#endif /* DONT_PARSE_COMMAND_LINE */
 
-#ifdef SPECIALIZE_STANDALONE
+#ifdef STANDALONE_WITH_EMBEDDED_EXTENSION
 extern Scheme_Object *scheme_initialize(Scheme_Env *env);
 #endif
 
@@ -217,17 +232,24 @@ extern int GC_free_space_divisor;
 int actual_main(int argc, char *argv[])
 {
   Scheme_Env *global_env;
-  char *prog, **evals_and_loads, *real_switch = NULL;
-  int *is_load, num_enl;
-  int i;
-  int no_more_switches = 0;
-  int script_mode = 0;
-  int no_rep = 0;
-  int no_init_file = 0;
-  int no_lib_path = 0;
-  int mute_banner = 0;
+  char *prog;
   Scheme_Object *sch_argv;
+  int i;
+#ifndef DONT_PARSE_COMMAND_LINE
+  char **evals_and_loads, *real_switch = NULL;
+  int *is_load, num_enl;
+  int no_more_switches = 0;
+  int mute_banner = 0;
+#endif
+#if !defined(DONT_RUN_REP) || !defined(DONT_PARSE_COMMAND_LINE)
+  int no_rep = 0;
+  int script_mode = 0;
+#endif
+#if !defined(DONT_LOAD_INIT_FILE) || !defined(DONT_PARSE_COMMAND_LINE)
   char *filename;
+  int no_init_file = 0;
+#endif
+  int no_lib_path = 0;
   int exit_val = 0;
 
 #ifdef NO_GCING
@@ -304,6 +326,7 @@ int actual_main(int argc, char *argv[])
 
 #ifdef DOS_FILE_SYSTEM
   {
+    /* Make sure the .exe extension is present for consistency */
     int l = strlen(prog);
     if (l <= 4 || strcmp(prog + l - 4, ".exe")) {
       char *s = scheme_malloc_atomic(l + 4 + 1);
@@ -314,6 +337,7 @@ int actual_main(int argc, char *argv[])
   }
 #endif
 
+#ifndef DONT_PARSE_COMMAND_LINE
   if (argc && (!strcmp(argv[0], "--restore")
 	       || ((argv[0][0] == '-') && (argv[0][1] == 'R')))) {
     printf("Image loading (with --restore or -R<file>) is not supported.\n");
@@ -547,6 +571,7 @@ int actual_main(int argc, char *argv[])
 #endif
 #endif
   }
+#endif /* DONT_PARSE_COMMAND_LINE */
   
   global_env = scheme_basic_env();
 
@@ -580,8 +605,9 @@ int actual_main(int argc, char *argv[])
 		          ")) #%null)))",
 		       global_env);
   }
-#endif
+#endif /* NO_FILE_SYSTEM_UTILS */
 
+#ifndef DONT_LOAD_INIT_FILE
   if (!no_init_file) {
 #ifdef EXPAND_FILENAME_TILDE
     filename = "~/.mzschemerc";
@@ -592,7 +618,9 @@ int actual_main(int argc, char *argv[])
     if (scheme_file_exists(filename))
       scheme_load(filename);
   }
+#endif /* DONT_LOAD_INIT_FILE */
 
+#ifndef DONT_PARSE_COMMAND_LINE
   for (i = 0; i < num_enl; i++) {
     if (is_load[i]) {
       if (!scheme_load(evals_and_loads[i])) {
@@ -606,9 +634,20 @@ int actual_main(int argc, char *argv[])
       break;
     }
   }
+#endif /* DONT_PARSE_COMMAND_LINE */
 
-#ifdef SPECIALIZE_STANDALONE
-  scheme_initialize(global_env);
+#ifdef STANDALONE_WITH_EMBEDDED_EXTENSION
+  {
+    Scheme_Object *f, *a[1];
+    if (!scheme_setjmp(scheme_error_buf)) {
+      f = scheme_initialize(global_env);
+      a[0] = scheme_true;
+      f = _scheme_apply(f, 1, a);
+      _scheme_apply(f, 0, NULL);
+    } else {
+      exit_val = -1;
+    }
+  }
 #endif
 
 #ifndef MACINTOSH_EVENTS
@@ -617,24 +656,28 @@ int actual_main(int argc, char *argv[])
   scheme_check_for_break = check_break_flag;
 #endif
 
+
+#ifndef DONT_RUN_REP
   if (!no_rep && !script_mode) {
-#ifndef NO_USER_BREAK_HANDLER
-#ifdef MACINTOSH_EVENTS
+# ifndef NO_USER_BREAK_HANDLER
+#  ifdef MACINTOSH_EVENTS
     scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, scheme_true);
     
     orig_evaluator = scheme_get_param(scheme_config, MZCONFIG_EVAL_HANDLER);
     scheme_set_param(scheme_config, MZCONFIG_EVAL_HANDLER, scheme_make_prim(adjust_break_flag_and_eval));
-#endif
-#endif
+#  endif
+# endif
 
     /* enter read-eval-print loop */
     scheme_rep();
     printf("\n");
     exit_val = 0;
   }
+#endif /* DONT_PARSE_COMMAND_LINE */
 
   return exit_val;
 
+#ifndef DONT_PARSE_COMMAND_LINE
  show_help:
   printf("%s Startup file and expression switches:\n"
 	 "  -e <expr> : Evaluates <expr> after MzScheme starts.\n"
@@ -730,6 +773,7 @@ int actual_main(int argc, char *argv[])
  show_need_help:
   printf("Use the --help or -h flag for help.\n");
   return -1;
+#endif
 }
 
 int main(int argc, char **argv)
@@ -751,3 +795,11 @@ int main(int argc, char **argv)
 
   return scheme_image_main(argc, argv);
 }
+
+#if 0
+/* For testing STANDALONE_WITH_EMBEDDED_EXTENSION */
+Scheme_Object *scheme_initialize(Scheme_Env *env)
+{
+  return scheme_eval_string("(lambda (v) (and (eq? v #t) (lambda () (printf \"These were the args: ~a~n\" argv))))", env);
+}
+#endif

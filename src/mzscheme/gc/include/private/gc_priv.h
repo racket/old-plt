@@ -57,7 +57,7 @@ typedef GC_signed_word signed_word;
 #   if defined(_SGI_SOURCE) && !defined(_BOOL)
 	typedef int bool;
 #   endif
-#   if defined(__SUNPRO_CC) && __SUNPRO_CC <= 0x410
+#   if defined(__SUNPRO_CC) && __SUNPRO_CC <= 0x420
 	typedef int bool;
 #   endif
 #   if defined(__cplusplus) && defined(_MSC_VER) && _MSC_VER <= 1020
@@ -91,8 +91,8 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #ifdef AMIGA
 #   define GC_FAR __far
 #else
-# if defined(__MC68K__)
 /* MATTHEW: Always put this as far data for Mac 68k */
+# if defined(__MC68K__)
 #    define GC_FAR far
 # else
 #    define GC_FAR
@@ -177,6 +177,12 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 
 #if defined(PRINTSTATS) && !defined(GATHERSTATS)
 #   define GATHERSTATS
+#endif
+
+#ifdef FINALIZE_ON_DEMAND
+#   define GC_INVOKE_FINALIZERS()
+#else
+#   define GC_INVOKE_FINALIZERS() (void)GC_invoke_finalizers()
 #endif
 
 #define MERGE_SIZES /* Round up some object sizes, so that fewer distinct */
@@ -1188,10 +1194,7 @@ extern void (*GC_start_call_back)(/* void */);
 void GC_push_regs();	/* Push register contents onto mark stack.	*/
 void GC_remark();	/* Mark from all marked objects.  Used	*/
 		 	/* only if we had to drop something.	*/
-void GC_push_one(/*p*/);	/* If p points to an object, mark it	*/
-				/* and push contents on the mark stack	*/
-/* Ivan Demakov: Watcom C error'ed without this */
-# if defined(MSWIN32) && defined(__WATCOMC__)
+# if defined(MSWIN32)
   void __cdecl GC_push_one();
 # else
   void GC_push_one(/*p*/);    /* If p points to an object, mark it    */
@@ -1384,8 +1387,6 @@ void GC_finalize();	/* Perform all indicated finalization actions	*/
 			/* Unreachable finalizable objects are enqueued	*/
 			/* for processing by GC_invoke_finalizers.	*/
 			/* Invoked with lock.				*/
-void GC_invoke_finalizers(); 	/* Run eligible finalizers.	*/
-				/* Invoked without lock.	*/	
 			
 void GC_add_to_heap(/*p, bytes*/);
 			/* Add a HBLKSIZE aligned chunk to the heap.	*/
@@ -1432,7 +1433,12 @@ void GC_print_static_roots();
 void GC_dump();
 
 /* Make arguments appear live to compiler */
-GC_API void GC_noop();
+# ifdef __WATCOMC__
+  void GC_noop(void*, ...);
+# else
+  GC_API void GC_noop();
+# endif
+
 void GC_noop1(/* word arg */);
 
 /* Logging and diagnostic output: 	*/

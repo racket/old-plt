@@ -429,7 +429,12 @@
 
 # ifdef POWERPC
 #   define MACH_TYPE "POWERPC"
-#   define ALIGNMENT 2
+          /* MATTHEW: 4-byte alignment */
+#   ifdef USE_POWERPC_FOUR_BYTE_ALIGN
+#      define ALIGNMENT 4
+#   else
+#      define ALIGNMENT 2
+#   endif
 #   ifdef MACOS
 #     ifndef __LOWMEM__
 #     include <LowMem.h>
@@ -493,6 +498,10 @@
 #       endif
 #	define PROC_VDB
 #	define HEURISTIC1
+#	include <unistd.h>
+#       define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
+		/* getpagesize() appeared to be missing from at least one */
+		/* Solaris 5.4 installation.  Weird.			  */
 #   endif
 #   ifdef SUNOS4
 #	define OS_TYPE "SUNOS4"
@@ -572,15 +581,18 @@
 #	define MPROTECT_VDB
 #       ifdef __ELF__
 #            define DYNAMIC_LOADING
-#       endif
-#       ifdef __ELF__
-#            define DYNAMIC_LOADING
 #	     ifdef UNDEFINED	/* includes ro data */
 	       extern int _etext;
 #              define DATASTART ((ptr_t)((((word) (&_etext)) + 0xfff) & ~0xfff))
 #	     endif
-    	     extern char **__environ;
-#            define DATASTART ((ptr_t)(&__environ))
+#	     include <linux/version.h>
+#	     include <features.h>
+#	     if LINUX_VERSION_CODE >= 0x20000 && defined(__GLIBC__) && __GLIBC__ >= 2
+		 extern int __data_start;
+#		 define DATASTART ((ptr_t)(&__data_start))
+#	     else
+     	         extern char **__environ;
+#                define DATASTART ((ptr_t)(&__environ))
 			      /* hideous kludge: __environ is the first */
 			      /* word in crt0.o, and delimits the start */
 			      /* of the data segment, no matter which   */
@@ -589,6 +601,7 @@
 			      /* would include .rodata, which may       */
 			      /* contain large read-only data tables    */
 			      /* that we'd rather not scan.		*/
+#	     endif
 	     extern int _end;
 #	     define DATAEND (&_end)
 #	else
@@ -740,7 +753,8 @@
 #   define ALIGNMENT 4
 #   define DATASTART ((ptr_t)0x20000000)
     extern int errno;
-#   define STACKBOTTOM ((ptr_t)((ulong)&errno + 2*sizeof(int)))
+/* MATTHEW: just use &errno */
+#   define STACKBOTTOM ((ptr_t)((ulong)&errno))
 #   define DYNAMIC_LOADING
 	/* For really old versions of AIX, this may have to be removed. */
 # endif
@@ -767,6 +781,7 @@
 #   define DYNAMIC_LOADING
 #   include <unistd.h>
 #   define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
+	/* They misspelled the Posix macro?	*/
 # endif
 
 # ifdef ALPHA
@@ -852,14 +867,14 @@
 # endif
 
 # if defined(SVR4) && !defined(GETPAGESIZE)
-# include <unistd.h>
-  int
-  GC_getpagesize()
-  {
-    return sysconf(_SC_PAGESIZE);
-  }
+#    include <unistd.h>
+#    define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
 # endif
+
 # ifndef GETPAGESIZE
+#   if defined(SUNOS5) || defined(IRIX5)
+#	include <unistd.h>
+#   endif
 #   define GETPAGESIZE() getpagesize()
 # endif
 

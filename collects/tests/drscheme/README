@@ -48,6 +48,10 @@ the function, all tests will be run.
 
    Runs the language-level specific drscheme-jr tests.
 
+|# teachpack.ss #|
+
+   Tests the teachpacks
+
 ----------------------------------
 --------  MANUAL TESTS  ----------
 ----------------------------------

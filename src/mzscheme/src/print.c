@@ -664,9 +664,9 @@ static void print_this_string(Scheme_Thread *p, const char *str, int offset, int
   long len;
   char *oldstr;
 
-  if (!autolen)
+  if (!autolen) {
     return;
-  else if (autolen > 0)
+  } else if (autolen > 0)
     len = autolen;
   else
     len = strlen(str + offset);

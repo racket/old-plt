@@ -54,8 +54,9 @@ static int unbundle_symset_checkboxStyle(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "checkboxStyle symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -72,8 +73,9 @@ static int istype_symset_checkboxStyle(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "checkboxStyle symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -189,7 +191,7 @@ void os_wxCheckBox::OnDropFile(pathname x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCheckBox_class, "on-drop-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxCheckBox::OnDropFile(x0);
+    READY_TO_RETURN; ASSELF wxCheckBox::OnDropFile(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
@@ -199,6 +201,7 @@ void os_wxCheckBox::OnDropFile(pathname x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -234,7 +237,12 @@ Bool os_wxCheckBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in check-box%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in check-box%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -270,7 +278,12 @@ Bool os_wxCheckBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in check-box%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in check-box%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -293,7 +306,7 @@ void os_wxCheckBox::OnSize(int x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCheckBox_class, "on-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxCheckBox::OnSize(x0, x1);
+    READY_TO_RETURN; ASSELF wxCheckBox::OnSize(x0, x1);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -304,6 +317,7 @@ void os_wxCheckBox::OnSize(int x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -326,7 +340,7 @@ void os_wxCheckBox::OnSetFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCheckBox_class, "on-set-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxCheckBox::OnSetFocus();
+    READY_TO_RETURN; ASSELF wxCheckBox::OnSetFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -335,6 +349,7 @@ void os_wxCheckBox::OnSetFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -357,7 +372,7 @@ void os_wxCheckBox::OnKillFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCheckBox_class, "on-kill-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxCheckBox::OnKillFocus();
+    READY_TO_RETURN; ASSELF wxCheckBox::OnKillFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -366,6 +381,7 @@ void os_wxCheckBox::OnKillFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -393,6 +409,7 @@ static Scheme_Object *os_wxCheckBoxSetLabel(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     string x0 INIT_NULLED_OUT;
 
@@ -410,6 +427,7 @@ static Scheme_Object *os_wxCheckBoxSetLabel(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return scheme_void;
@@ -433,6 +451,7 @@ static Scheme_Object *os_wxCheckBoxSetValue(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -453,6 +472,7 @@ static Scheme_Object *os_wxCheckBoxGetValue(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -478,6 +498,7 @@ static Scheme_Object *os_wxCheckBoxOnDropFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -507,6 +528,7 @@ static Scheme_Object *os_wxCheckBoxPreOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -536,6 +558,7 @@ static Scheme_Object *os_wxCheckBoxPreOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -562,6 +585,7 @@ static Scheme_Object *os_wxCheckBoxOnSize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -584,6 +608,7 @@ static Scheme_Object *os_wxCheckBoxOnSetFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -606,6 +631,7 @@ static Scheme_Object *os_wxCheckBoxOnKillFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -672,6 +698,7 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     realobj->callback_closure = p[POFFSET+cb_pos];
+    READY_TO_PRE_RETURN;
   } else  {
     class wxPanel* x0 INIT_NULLED_OUT;
     wxFunction x1;
@@ -729,6 +756,7 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     realobj->callback_closure = p[POFFSET+cb_pos];
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -760,6 +788,7 @@ void objscheme_setup_wxCheckBox(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxCheckBox_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxCheckBox(Scheme_Object *obj, const char *stop, int nullOK)
@@ -791,7 +820,7 @@ Scheme_Object *objscheme_bundle_wxCheckBox(class wxCheckBox *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxCheckBox_class));
 
   obj->primdata = realobj;
@@ -799,6 +828,7 @@ Scheme_Object *objscheme_bundle_wxCheckBox(class wxCheckBox *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -849,4 +879,6 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
     WITH_VAR_STACK(scheme_apply_multi(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p));
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  READY_TO_RETURN;
 }

@@ -29,4 +29,6 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
     WITH_VAR_STACK(scheme_apply_multi(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p));
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  READY_TO_RETURN;
 }

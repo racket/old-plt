@@ -66,6 +66,8 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
     last = p;
   }
   
+  READY_TO_RETURN;
+
   return first;
 }
 

@@ -108,8 +108,9 @@ static int unbundle_symset_fileSelMode(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fileSelMode symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -133,8 +134,9 @@ static int istype_symset_fileSelMode(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fileSelMode symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -183,6 +185,7 @@ static char *wxStripMenuCodes_Scheme(char *in)
   }
 
   WITH_VAR_STACK(wxStripMenuCodes(in, buffer));
+  READY_TO_RETURN;
   return buffer;
 }
 
@@ -231,6 +234,7 @@ static Scheme_Object *wxsGlobalwxsFillPrivateColor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -249,6 +253,7 @@ static Scheme_Object *wxsGlobalwxFlushDisplay(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -274,6 +279,7 @@ static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (Scheme_Object *)r;
 }
 
@@ -313,6 +319,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     string x0 INIT_NULLED_OUT;
     string x1 INIT_NULLED_OUT;
@@ -341,6 +348,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return (r ? scheme_true : scheme_false);
@@ -385,6 +393,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     if (n > (0+2))
       { Scheme_Object *sbv_ = WITH_VAR_STACK(objscheme_bundle_string((char *)_x2)); WITH_VAR_STACK(objscheme_set_box(p[0+2], sbv_)); } 
     
+    READY_TO_PRE_RETURN;
   } else  {
     string x0 INIT_NULLED_OUT;
     string x1 INIT_NULLED_OUT;
@@ -417,6 +426,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     if (n > (0+2))
       { Scheme_Object *sbv_ = scheme_make_integer(_x2); WITH_VAR_STACK(objscheme_set_box(p[0+2], sbv_)); } 
     
+    READY_TO_PRE_RETURN;
   }
 
   return (r ? scheme_true : scheme_false);
@@ -441,6 +451,7 @@ static Scheme_Object *wxsGlobalwxStripMenuCodes_Scheme(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -470,6 +481,7 @@ static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
   if (n > (0+1))
     { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[0+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -488,6 +500,7 @@ static Scheme_Object *wxsGlobalwxBell(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -506,6 +519,7 @@ static Scheme_Object *wxsGlobalwxEndBusyCursor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -525,6 +539,7 @@ static Scheme_Object *wxsGlobalwxIsBusy(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -543,6 +558,7 @@ static Scheme_Object *wxsGlobalwxBeginBusyCursor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -575,6 +591,7 @@ static Scheme_Object *wxsGlobalwxMakeMetaFilePlaceable(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -594,6 +611,7 @@ static Scheme_Object *wxsGlobalwxDisplayDepth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -613,6 +631,7 @@ static Scheme_Object *wxsGlobalwxColourDisplay(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -677,6 +696,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -715,5 +735,6 @@ void objscheme_setup_wxsGlobal(Scheme_Env *env)
   WITH_VAR_STACK(scheme_install_xc_global("is-color-display?", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxFileSelector, "file-selector", 1, 9));
   WITH_VAR_STACK(scheme_install_xc_global("file-selector", functmp, env));
+  READY_TO_RETURN;
 }
 

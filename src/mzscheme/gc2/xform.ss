@@ -614,13 +614,24 @@
 
   (when (and pgc? (not precompiled-header))
     ;; Declare stack-registration record of a particular size:
-    (printf "#define PREPARE_VAR_STACK(size) void *__gc_var_stack__[size+2]; __gc_var_stack__[0] = GC_variable_stack;~n")
+    (printf (string-append
+	     "#define PREPARE_VAR_STACK(size) void *__gc_var_stack__[size+2]; __gc_var_stack__[0] = GC_variable_stack;"
+	     (if callee-restore?
+		 " GC_variable_stack = __gc_var_stack__;"
+		 "")
+	     "~n"))
+
     ;; Same, but in a function where the number of registered variables
     ;;  never changes within the procedure (i.e., in nested blocks):
     (printf "#define PREPARE_VAR_STACK_ONCE(size) PREPARE_VAR_STACK(size); __gc_var_stack__[1] = (void *)size;~n")
 
     ;; Full setup to use before a function call, normally used with FUNCCALL:
-    (printf "#define SETUP(x) (GC_variable_stack = __gc_var_stack__, __gc_var_stack__[1] = (void *)x)~n")
+    (printf (string-append 
+	     "#define SETUP(x) ("
+	     (if callee-restore?
+		 ""
+		 "GC_variable_stack = __gc_var_stack__, ")
+	     "__gc_var_stack__[1] = (void *)x)~n"))
 
     ;; Call a function where the number of registered variables can change in
     ;;  nested blocks:
@@ -660,13 +671,13 @@
 		"#define RET_VALUE_START return (__ret__val__ = ~n"
 		"#define RET_VALUE_START return~n"))
     (printf (if callee-restore?
-		"#define RET_VALUE_END , GC_variable_stack = __gc_var_stack__[0], __ret__val__)~n"
+		"#define RET_VALUE_END , GC_variable_stack = (void **)__gc_var_stack__[0], __ret__val__)~n"
 		"#define RET_VALUE_END ~n"))
     ;; Wrap a return where the value is produced by a FUNCCALL_EMPTY expression:
     (printf "#define RET_VALUE_EMPTY_START return~n")
     (printf "#define RET_VALUE_EMPTY_END ~n")
     ;; Replacement for non-value return:
-    (printf "#define RET_NOTHING { GC_variable_stack = __gc_var_stack__[0]; return; }~n")
+    (printf "#define RET_NOTHING { GC_variable_stack = (void **)__gc_var_stack__[0]; return; }~n")
     ;; A non-value return inserted at the end of a void-returning function:
     (printf "#define RET_NOTHING_AT_END RET_NOTHING~n")
     
@@ -697,7 +708,9 @@
     (printf "#define NEW_PTR_ARRAY(t, array) (new t* array)~n")
     (printf "#define DELETE(x) (delete x)~n")
     (printf "#define DELETE_ARRAY(x) (delete[] x)~n")
-    (printf "#define XFORM_RESET_VAR_STACK GC_variable_stack = (void **)__gc_var_stack__[0];~n")
+    (printf (if callee-restore?
+		"#define XFORM_RESET_VAR_STACK /* empty */~n"
+		"#define XFORM_RESET_VAR_STACK GC_variable_stack = (void **)__gc_var_stack__[0];~n"))
     (printf "~n"))
 
   (when (and pgc? precompiled-header)
@@ -1483,12 +1496,13 @@
   (define (register-proto-information e)
     (parse-proto-information
      e
-     (lambda (name type args static?)
-       (prototyped (cons (cons name (make-prototype 
-				     type
-				     (seq->list (seq-in args))
-				     static? #f #f))
-			 (prototyped)))
+     (lambda (name class-name type args static?)
+       (unless class-name
+	 (prototyped (cons (cons name (make-prototype 
+				       type
+				       (seq->list (seq-in args))
+				       static? #f #f))
+			   (prototyped))))
        name)))
 
   (define (parse-proto-information e k)
@@ -1499,16 +1513,25 @@
        [(parens? (cadr e))
 	(let ([name (tok-n (car e))]
 	      [type (let loop ([t (reverse type)])
-		      (if (pair? t)
-			  (if (memq (tok-n (car t)) '(extern static inline virtual __stdcall __cdecl))
-			      (loop (cdr t))
-			      (cons (car t) (loop (cdr t))))
-			  t))]
+		       (if (pair? t)
+			   (if (memq (tok-n (car t)) '(extern static inline virtual __stdcall __cdecl))
+			       (loop (cdr t))
+			       (cons (car t) (loop (cdr t))))
+			   t))]
 	      [static? (ormap (lambda (t) (eq? (tok-n t) 'static)) type)])
-	  (k name
-	     type
-	     (cadr e)
-	     static?))]
+	  (let-values ([(type class-name)
+			(if (and (list? type)
+				 ((length type) . >= . 2))
+			    (let ([rev-type (reverse type)])
+			      (if (eq? ':: (tok-n (car rev-type)))
+				  (values (reverse (cddr rev-type)) (cadr rev-type))
+				  (values type #f)))
+			    (values type #f))])
+	    (k name
+	       class-name
+	       type
+	       (cadr e)
+	       static?)))]
        [else
 	(loop (cdr e) (cons (car e) type))])))
 
@@ -2132,7 +2155,7 @@
 				     ;; Add PREPARE_VAR_STACK and ensure result return:
 				     (parse-proto-information
 				      e
-				      (lambda (name type args static?)
+				      (lambda (name class-name type args static?)
 					type)))])
 	   (if (and (not important-conversion?)
 		    (not (and function-name
@@ -2620,8 +2643,9 @@
 			  body-x
 			  (if setup-stack-return-type
 			      (list (append
-				     (if (and (= 1 (length setup-stack-return-type))
-					      (eq? 'void (tok-n (car setup-stack-return-type))))
+				     (if (or (null? setup-stack-return-type)
+					     (and (= 1 (length setup-stack-return-type))
+						  (eq? 'void (tok-n (car setup-stack-return-type)))))
 					 (list (make-tok RET_NOTHING_AT_END #f #f)
 					       (make-tok semi #f #f))
 					 null)

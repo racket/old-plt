@@ -73,15 +73,16 @@ static int unbundle_symset_family(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!family_wxSYMBOL_sym) WITH_VAR_STACK(init_symset_family());
   if (0) { }
-  else if (v == family_wxDEFAULT_sym) { return wxDEFAULT; }
-  else if (v == family_wxDECORATIVE_sym) { return wxDECORATIVE; }
-  else if (v == family_wxROMAN_sym) { return wxROMAN; }
-  else if (v == family_wxSCRIPT_sym) { return wxSCRIPT; }
-  else if (v == family_wxSWISS_sym) { return wxSWISS; }
-  else if (v == family_wxMODERN_sym) { return wxMODERN; }
-  else if (v == family_wxSYSTEM_sym) { return wxSYSTEM; }
-  else if (v == family_wxSYMBOL_sym) { return wxSYMBOL; }
+  else if (v == family_wxDEFAULT_sym) { READY_TO_RETURN; return wxDEFAULT; }
+  else if (v == family_wxDECORATIVE_sym) { READY_TO_RETURN; return wxDECORATIVE; }
+  else if (v == family_wxROMAN_sym) { READY_TO_RETURN; return wxROMAN; }
+  else if (v == family_wxSCRIPT_sym) { READY_TO_RETURN; return wxSCRIPT; }
+  else if (v == family_wxSWISS_sym) { READY_TO_RETURN; return wxSWISS; }
+  else if (v == family_wxMODERN_sym) { READY_TO_RETURN; return wxMODERN; }
+  else if (v == family_wxSYSTEM_sym) { READY_TO_RETURN; return wxSYSTEM; }
+  else if (v == family_wxSYMBOL_sym) { READY_TO_RETURN; return wxSYMBOL; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "family symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -90,15 +91,16 @@ static int istype_symset_family(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!family_wxSYMBOL_sym) WITH_VAR_STACK(init_symset_family());
   if (0) { }
-  else if (v == family_wxDEFAULT_sym) { return 1; }
-  else if (v == family_wxDECORATIVE_sym) { return 1; }
-  else if (v == family_wxROMAN_sym) { return 1; }
-  else if (v == family_wxSCRIPT_sym) { return 1; }
-  else if (v == family_wxSWISS_sym) { return 1; }
-  else if (v == family_wxMODERN_sym) { return 1; }
-  else if (v == family_wxSYSTEM_sym) { return 1; }
-  else if (v == family_wxSYMBOL_sym) { return 1; }
+  else if (v == family_wxDEFAULT_sym) { READY_TO_RETURN; return 1; }
+  else if (v == family_wxDECORATIVE_sym) { READY_TO_RETURN; return 1; }
+  else if (v == family_wxROMAN_sym) { READY_TO_RETURN; return 1; }
+  else if (v == family_wxSCRIPT_sym) { READY_TO_RETURN; return 1; }
+  else if (v == family_wxSWISS_sym) { READY_TO_RETURN; return 1; }
+  else if (v == family_wxMODERN_sym) { READY_TO_RETURN; return 1; }
+  else if (v == family_wxSYSTEM_sym) { READY_TO_RETURN; return 1; }
+  else if (v == family_wxSYMBOL_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "family symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -137,10 +139,11 @@ static int unbundle_symset_weight(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!weight_wxBOLD_sym) WITH_VAR_STACK(init_symset_weight());
   if (0) { }
-  else if (v == weight_wxNORMAL_sym) { return wxNORMAL; }
-  else if (v == weight_wxLIGHT_sym) { return wxLIGHT; }
-  else if (v == weight_wxBOLD_sym) { return wxBOLD; }
+  else if (v == weight_wxNORMAL_sym) { READY_TO_RETURN; return wxNORMAL; }
+  else if (v == weight_wxLIGHT_sym) { READY_TO_RETURN; return wxLIGHT; }
+  else if (v == weight_wxBOLD_sym) { READY_TO_RETURN; return wxBOLD; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "weight symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -174,10 +177,11 @@ static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!style_wxSLANT_sym) WITH_VAR_STACK(init_symset_style());
   if (0) { }
-  else if (v == style_wxNORMAL_sym) { return wxNORMAL; }
-  else if (v == style_wxITALIC_sym) { return wxITALIC; }
-  else if (v == style_wxSLANT_sym) { return wxSLANT; }
+  else if (v == style_wxNORMAL_sym) { READY_TO_RETURN; return wxNORMAL; }
+  else if (v == style_wxITALIC_sym) { READY_TO_RETURN; return wxITALIC; }
+  else if (v == style_wxSLANT_sym) { READY_TO_RETURN; return wxSLANT; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "style symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -273,6 +277,7 @@ static Scheme_Object *os_wxFontGetFontId(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -293,6 +298,7 @@ static Scheme_Object *os_wxFontGetUnderlined(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -313,6 +319,7 @@ static Scheme_Object *os_wxFontGetWeight(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_weight(r));
 }
 
@@ -333,6 +340,7 @@ static Scheme_Object *os_wxFontGetPointSize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -353,6 +361,7 @@ static Scheme_Object *os_wxFontGetStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_style(r));
 }
 
@@ -373,6 +382,7 @@ static Scheme_Object *os_wxFontGetFaceString(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -393,6 +403,7 @@ static Scheme_Object *os_wxFontGetFamily(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_family(r));
 }
 
@@ -436,6 +447,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+0], NULL))) {
     int x0;
     int x1;
@@ -467,6 +479,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else  {
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
@@ -485,6 +498,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -514,6 +528,7 @@ void objscheme_setup_wxFont(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxFont_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxFont(Scheme_Object *obj, const char *stop, int nullOK)
@@ -545,7 +560,7 @@ Scheme_Object *objscheme_bundle_wxFont(class wxFont *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxFont_class));
 
   obj->primdata = realobj;
@@ -553,6 +568,7 @@ Scheme_Object *objscheme_bundle_wxFont(class wxFont *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -643,6 +659,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     int x0;
     cstring x1 INIT_NULLED_OUT;
@@ -674,6 +691,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
@@ -702,6 +720,7 @@ static Scheme_Object *os_wxFontList_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -723,6 +742,7 @@ void objscheme_setup_wxFontList(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxFontList_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxFontList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -754,7 +774,7 @@ Scheme_Object *objscheme_bundle_wxFontList(class wxFontList *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxFontList_class));
 
   obj->primdata = realobj;
@@ -762,6 +782,7 @@ Scheme_Object *objscheme_bundle_wxFontList(class wxFontList *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -856,6 +877,7 @@ static Scheme_Object *os_wxColourBlue(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -876,6 +898,7 @@ static Scheme_Object *os_wxColourGreen(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -896,6 +919,7 @@ static Scheme_Object *os_wxColourRed(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -921,6 +945,7 @@ static Scheme_Object *os_wxColourSet(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -941,6 +966,7 @@ static Scheme_Object *os_wxColourOk(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -964,6 +990,7 @@ static Scheme_Object *os_wxColourCopyFrom(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
@@ -994,6 +1021,7 @@ static Scheme_Object *os_wxColour_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+0], NULL))) {
     ubyte x0;
     ubyte x1;
@@ -1018,6 +1046,7 @@ static Scheme_Object *os_wxColour_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else  {
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
@@ -1036,6 +1065,7 @@ static Scheme_Object *os_wxColour_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -1064,6 +1094,7 @@ void objscheme_setup_wxColour(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxColour_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxColour(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1095,7 +1126,7 @@ Scheme_Object *objscheme_bundle_wxColour(class wxColour *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxColour_class));
 
   obj->primdata = realobj;
@@ -1103,6 +1134,7 @@ Scheme_Object *objscheme_bundle_wxColour(class wxColour *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -1178,6 +1210,7 @@ static Scheme_Object *os_wxColourDatabaseFindColour(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
@@ -1200,6 +1233,7 @@ void objscheme_setup_wxColourDatabase(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxColourDatabase_interface, "color-database" "<%>", env));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxColourDatabase(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1231,7 +1265,7 @@ Scheme_Object *objscheme_bundle_wxColourDatabase(class wxColourDatabase *realobj
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxColourDatabase_class));
 
   obj->primdata = realobj;
@@ -1239,6 +1273,7 @@ Scheme_Object *objscheme_bundle_wxColourDatabase(class wxColourDatabase *realobj
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -1334,6 +1369,7 @@ static Scheme_Object *objscheme_wxPoint_Setx(int n,  Scheme_Object *p[])
   v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-x in point%"));
   ((wxPoint *)cobj->primdata)->x = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1367,6 +1403,7 @@ static Scheme_Object *objscheme_wxPoint_Sety(int n,  Scheme_Object *p[])
   v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-y in point%"));
   ((wxPoint *)cobj->primdata)->y = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1398,6 +1435,7 @@ static Scheme_Object *os_wxPoint_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else  {
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
@@ -1416,6 +1454,7 @@ static Scheme_Object *os_wxPoint_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -1441,6 +1480,7 @@ void objscheme_setup_wxPoint(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxPoint_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxPoint(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1472,13 +1512,14 @@ Scheme_Object *objscheme_bundle_wxPoint(class wxPoint *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxPoint_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -1541,18 +1582,19 @@ static int unbundle_symset_brushStyle(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!brushStyle_wxPANEL_PATTERN_sym) WITH_VAR_STACK(init_symset_brushStyle());
   if (0) { }
-  else if (v == brushStyle_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
-  else if (v == brushStyle_wxSOLID_sym) { return wxSOLID; }
-  else if (v == brushStyle_wxSTIPPLE_sym) { return wxSTIPPLE; }
-  else if (v == brushStyle_wxXOR_sym) { return wxXOR; }
-  else if (v == brushStyle_wxBDIAGONAL_HATCH_sym) { return wxBDIAGONAL_HATCH; }
-  else if (v == brushStyle_wxCROSSDIAG_HATCH_sym) { return wxCROSSDIAG_HATCH; }
-  else if (v == brushStyle_wxFDIAGONAL_HATCH_sym) { return wxFDIAGONAL_HATCH; }
-  else if (v == brushStyle_wxCROSS_HATCH_sym) { return wxCROSS_HATCH; }
-  else if (v == brushStyle_wxHORIZONTAL_HATCH_sym) { return wxHORIZONTAL_HATCH; }
-  else if (v == brushStyle_wxVERTICAL_HATCH_sym) { return wxVERTICAL_HATCH; }
-  else if (v == brushStyle_wxPANEL_PATTERN_sym) { return wxPANEL_PATTERN; }
+  else if (v == brushStyle_wxTRANSPARENT_sym) { READY_TO_RETURN; return wxTRANSPARENT; }
+  else if (v == brushStyle_wxSOLID_sym) { READY_TO_RETURN; return wxSOLID; }
+  else if (v == brushStyle_wxSTIPPLE_sym) { READY_TO_RETURN; return wxSTIPPLE; }
+  else if (v == brushStyle_wxXOR_sym) { READY_TO_RETURN; return wxXOR; }
+  else if (v == brushStyle_wxBDIAGONAL_HATCH_sym) { READY_TO_RETURN; return wxBDIAGONAL_HATCH; }
+  else if (v == brushStyle_wxCROSSDIAG_HATCH_sym) { READY_TO_RETURN; return wxCROSSDIAG_HATCH; }
+  else if (v == brushStyle_wxFDIAGONAL_HATCH_sym) { READY_TO_RETURN; return wxFDIAGONAL_HATCH; }
+  else if (v == brushStyle_wxCROSS_HATCH_sym) { READY_TO_RETURN; return wxCROSS_HATCH; }
+  else if (v == brushStyle_wxHORIZONTAL_HATCH_sym) { READY_TO_RETURN; return wxHORIZONTAL_HATCH; }
+  else if (v == brushStyle_wxVERTICAL_HATCH_sym) { READY_TO_RETURN; return wxVERTICAL_HATCH; }
+  else if (v == brushStyle_wxPANEL_PATTERN_sym) { READY_TO_RETURN; return wxPANEL_PATTERN; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "brushStyle symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -1650,6 +1692,7 @@ static Scheme_Object *os_wxBrushSetStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1670,6 +1713,7 @@ static Scheme_Object *os_wxBrushGetStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_brushStyle(r));
 }
 
@@ -1692,6 +1736,7 @@ static Scheme_Object *os_wxBrushSetStipple(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1712,6 +1757,7 @@ static Scheme_Object *os_wxBrushGetStipple(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBitmap(r));
 }
 
@@ -1739,6 +1785,7 @@ static Scheme_Object *os_wxBrushSetColour(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL))) {
     string x0 INIT_NULLED_OUT;
 
@@ -1756,6 +1803,7 @@ static Scheme_Object *os_wxBrushSetColour(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     ubyte x0;
     ubyte x1;
@@ -1776,6 +1824,7 @@ static Scheme_Object *os_wxBrushSetColour(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return scheme_void;
@@ -1798,6 +1847,7 @@ static Scheme_Object *os_wxBrushGetColour(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
@@ -1830,6 +1880,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[POFFSET+0], NULL, 0))) {
     class wxColour* x0 INIT_NULLED_OUT;
     int x1;
@@ -1853,6 +1904,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else  {
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
@@ -1871,6 +1923,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -1899,6 +1952,7 @@ void objscheme_setup_wxBrush(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxBrush_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxBrush(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1930,7 +1984,7 @@ Scheme_Object *objscheme_bundle_wxBrush(class wxBrush *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxBrush_class));
 
   obj->primdata = realobj;
@@ -1938,6 +1992,7 @@ Scheme_Object *objscheme_bundle_wxBrush(class wxBrush *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -2020,6 +2075,7 @@ static Scheme_Object *os_wxBrushListFindOrCreateBrush(int n,  Scheme_Object *p[]
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     string x0 INIT_NULLED_OUT;
     int x1;
@@ -2040,6 +2096,7 @@ static Scheme_Object *os_wxBrushListFindOrCreateBrush(int n,  Scheme_Object *p[]
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBrush(r));
@@ -2068,6 +2125,7 @@ static Scheme_Object *os_wxBrushList_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -2089,6 +2147,7 @@ void objscheme_setup_wxBrushList(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxBrushList_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxBrushList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2120,7 +2179,7 @@ Scheme_Object *objscheme_bundle_wxBrushList(class wxBrushList *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxBrushList_class));
 
   obj->primdata = realobj;
@@ -2128,6 +2187,7 @@ Scheme_Object *objscheme_bundle_wxBrushList(class wxBrushList *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -2190,18 +2250,19 @@ static int unbundle_symset_penStyle(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!penStyle_wxXOR_DOT_DASH_sym) WITH_VAR_STACK(init_symset_penStyle());
   if (0) { }
-  else if (v == penStyle_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
-  else if (v == penStyle_wxSOLID_sym) { return wxSOLID; }
-  else if (v == penStyle_wxXOR_sym) { return wxXOR; }
-  else if (v == penStyle_wxDOT_sym) { return wxDOT; }
-  else if (v == penStyle_wxLONG_DASH_sym) { return wxLONG_DASH; }
-  else if (v == penStyle_wxSHORT_DASH_sym) { return wxSHORT_DASH; }
-  else if (v == penStyle_wxDOT_DASH_sym) { return wxDOT_DASH; }
-  else if (v == penStyle_wxXOR_DOT_sym) { return wxXOR_DOT; }
-  else if (v == penStyle_wxXOR_LONG_DASH_sym) { return wxXOR_LONG_DASH; }
-  else if (v == penStyle_wxXOR_SHORT_DASH_sym) { return wxXOR_SHORT_DASH; }
-  else if (v == penStyle_wxXOR_DOT_DASH_sym) { return wxXOR_DOT_DASH; }
+  else if (v == penStyle_wxTRANSPARENT_sym) { READY_TO_RETURN; return wxTRANSPARENT; }
+  else if (v == penStyle_wxSOLID_sym) { READY_TO_RETURN; return wxSOLID; }
+  else if (v == penStyle_wxXOR_sym) { READY_TO_RETURN; return wxXOR; }
+  else if (v == penStyle_wxDOT_sym) { READY_TO_RETURN; return wxDOT; }
+  else if (v == penStyle_wxLONG_DASH_sym) { READY_TO_RETURN; return wxLONG_DASH; }
+  else if (v == penStyle_wxSHORT_DASH_sym) { READY_TO_RETURN; return wxSHORT_DASH; }
+  else if (v == penStyle_wxDOT_DASH_sym) { READY_TO_RETURN; return wxDOT_DASH; }
+  else if (v == penStyle_wxXOR_DOT_sym) { READY_TO_RETURN; return wxXOR_DOT; }
+  else if (v == penStyle_wxXOR_LONG_DASH_sym) { READY_TO_RETURN; return wxXOR_LONG_DASH; }
+  else if (v == penStyle_wxXOR_SHORT_DASH_sym) { READY_TO_RETURN; return wxXOR_SHORT_DASH; }
+  else if (v == penStyle_wxXOR_DOT_DASH_sym) { READY_TO_RETURN; return wxXOR_DOT_DASH; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "penStyle symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -2243,10 +2304,11 @@ static int unbundle_symset_join(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!join_wxJOIN_ROUND_sym) WITH_VAR_STACK(init_symset_join());
   if (0) { }
-  else if (v == join_wxJOIN_BEVEL_sym) { return wxJOIN_BEVEL; }
-  else if (v == join_wxJOIN_MITER_sym) { return wxJOIN_MITER; }
-  else if (v == join_wxJOIN_ROUND_sym) { return wxJOIN_ROUND; }
+  else if (v == join_wxJOIN_BEVEL_sym) { READY_TO_RETURN; return wxJOIN_BEVEL; }
+  else if (v == join_wxJOIN_MITER_sym) { READY_TO_RETURN; return wxJOIN_MITER; }
+  else if (v == join_wxJOIN_ROUND_sym) { READY_TO_RETURN; return wxJOIN_ROUND; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "join symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -2280,10 +2342,11 @@ static int unbundle_symset_cap(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!cap_wxCAP_BUTT_sym) WITH_VAR_STACK(init_symset_cap());
   if (0) { }
-  else if (v == cap_wxCAP_ROUND_sym) { return wxCAP_ROUND; }
-  else if (v == cap_wxCAP_PROJECTING_sym) { return wxCAP_PROJECTING; }
-  else if (v == cap_wxCAP_BUTT_sym) { return wxCAP_BUTT; }
+  else if (v == cap_wxCAP_ROUND_sym) { READY_TO_RETURN; return wxCAP_ROUND; }
+  else if (v == cap_wxCAP_PROJECTING_sym) { READY_TO_RETURN; return wxCAP_PROJECTING; }
+  else if (v == cap_wxCAP_BUTT_sym) { READY_TO_RETURN; return wxCAP_BUTT; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "cap symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -2375,6 +2438,7 @@ static Scheme_Object *os_wxPenSetStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2395,6 +2459,7 @@ static Scheme_Object *os_wxPenGetStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_penStyle(r));
 }
 
@@ -2417,6 +2482,7 @@ static Scheme_Object *os_wxPenSetStipple(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2437,6 +2503,7 @@ static Scheme_Object *os_wxPenGetStipple(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBitmap(r));
 }
 
@@ -2464,6 +2531,7 @@ static Scheme_Object *os_wxPenSetColour(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL))) {
     string x0 INIT_NULLED_OUT;
 
@@ -2481,6 +2549,7 @@ static Scheme_Object *os_wxPenSetColour(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     ubyte x0;
     ubyte x1;
@@ -2501,6 +2570,7 @@ static Scheme_Object *os_wxPenSetColour(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return scheme_void;
@@ -2523,6 +2593,7 @@ static Scheme_Object *os_wxPenGetColour(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
@@ -2544,6 +2615,7 @@ static Scheme_Object *os_wxPenSetJoin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2564,6 +2636,7 @@ static Scheme_Object *os_wxPenGetJoin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_join(r));
 }
 
@@ -2585,6 +2658,7 @@ static Scheme_Object *os_wxPenSetCap(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2605,6 +2679,7 @@ static Scheme_Object *os_wxPenGetCap(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_cap(r));
 }
 
@@ -2626,6 +2701,7 @@ static Scheme_Object *os_wxPenSetWidth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2646,6 +2722,7 @@ static Scheme_Object *os_wxPenGetWidthF(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -2680,6 +2757,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[POFFSET+0], NULL, 0))) {
     class wxColour* x0 INIT_NULLED_OUT;
     float x1;
@@ -2705,6 +2783,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else  {
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
@@ -2723,6 +2802,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -2757,6 +2837,7 @@ void objscheme_setup_wxPen(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxPen_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxPen(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2788,7 +2869,7 @@ Scheme_Object *objscheme_bundle_wxPen(class wxPen *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxPen_class));
 
   obj->primdata = realobj;
@@ -2796,6 +2877,7 @@ Scheme_Object *objscheme_bundle_wxPen(class wxPen *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -2881,6 +2963,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     string x0 INIT_NULLED_OUT;
     float x1;
@@ -2903,6 +2986,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxPen(r));
@@ -2931,6 +3015,7 @@ static Scheme_Object *os_wxPenList_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -2952,6 +3037,7 @@ void objscheme_setup_wxPenList(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxPenList_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxPenList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2983,7 +3069,7 @@ Scheme_Object *objscheme_bundle_wxPenList(class wxPenList *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxPenList_class));
 
   obj->primdata = realobj;
@@ -2991,6 +3077,7 @@ Scheme_Object *objscheme_bundle_wxPenList(class wxPenList *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -3064,17 +3151,18 @@ static int unbundle_symset_cursor(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!cursor_wxCURSOR_WATCH_sym) WITH_VAR_STACK(init_symset_cursor());
   if (0) { }
-  else if (v == cursor_wxCURSOR_ARROW_sym) { return wxCURSOR_ARROW; }
-  else if (v == cursor_wxCURSOR_BULLSEYE_sym) { return wxCURSOR_BULLSEYE; }
-  else if (v == cursor_wxCURSOR_CROSS_sym) { return wxCURSOR_CROSS; }
-  else if (v == cursor_wxCURSOR_HAND_sym) { return wxCURSOR_HAND; }
-  else if (v == cursor_wxCURSOR_IBEAM_sym) { return wxCURSOR_IBEAM; }
-  else if (v == cursor_wxCURSOR_SIZENS_sym) { return wxCURSOR_SIZENS; }
-  else if (v == cursor_wxCURSOR_SIZEWE_sym) { return wxCURSOR_SIZEWE; }
-  else if (v == cursor_wxCURSOR_SIZENESW_sym) { return wxCURSOR_SIZENESW; }
-  else if (v == cursor_wxCURSOR_SIZENWSE_sym) { return wxCURSOR_SIZENWSE; }
-  else if (v == cursor_wxCURSOR_WATCH_sym) { return wxCURSOR_WATCH; }
+  else if (v == cursor_wxCURSOR_ARROW_sym) { READY_TO_RETURN; return wxCURSOR_ARROW; }
+  else if (v == cursor_wxCURSOR_BULLSEYE_sym) { READY_TO_RETURN; return wxCURSOR_BULLSEYE; }
+  else if (v == cursor_wxCURSOR_CROSS_sym) { READY_TO_RETURN; return wxCURSOR_CROSS; }
+  else if (v == cursor_wxCURSOR_HAND_sym) { READY_TO_RETURN; return wxCURSOR_HAND; }
+  else if (v == cursor_wxCURSOR_IBEAM_sym) { READY_TO_RETURN; return wxCURSOR_IBEAM; }
+  else if (v == cursor_wxCURSOR_SIZENS_sym) { READY_TO_RETURN; return wxCURSOR_SIZENS; }
+  else if (v == cursor_wxCURSOR_SIZEWE_sym) { READY_TO_RETURN; return wxCURSOR_SIZEWE; }
+  else if (v == cursor_wxCURSOR_SIZENESW_sym) { READY_TO_RETURN; return wxCURSOR_SIZENESW; }
+  else if (v == cursor_wxCURSOR_SIZENWSE_sym) { READY_TO_RETURN; return wxCURSOR_SIZENWSE; }
+  else if (v == cursor_wxCURSOR_WATCH_sym) { READY_TO_RETURN; return wxCURSOR_WATCH; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "cursor symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -3083,17 +3171,18 @@ static int istype_symset_cursor(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!cursor_wxCURSOR_WATCH_sym) WITH_VAR_STACK(init_symset_cursor());
   if (0) { }
-  else if (v == cursor_wxCURSOR_ARROW_sym) { return 1; }
-  else if (v == cursor_wxCURSOR_BULLSEYE_sym) { return 1; }
-  else if (v == cursor_wxCURSOR_CROSS_sym) { return 1; }
-  else if (v == cursor_wxCURSOR_HAND_sym) { return 1; }
-  else if (v == cursor_wxCURSOR_IBEAM_sym) { return 1; }
-  else if (v == cursor_wxCURSOR_SIZENS_sym) { return 1; }
-  else if (v == cursor_wxCURSOR_SIZEWE_sym) { return 1; }
-  else if (v == cursor_wxCURSOR_SIZENESW_sym) { return 1; }
-  else if (v == cursor_wxCURSOR_SIZENWSE_sym) { return 1; }
-  else if (v == cursor_wxCURSOR_WATCH_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_ARROW_sym) { READY_TO_RETURN; return 1; }
+  else if (v == cursor_wxCURSOR_BULLSEYE_sym) { READY_TO_RETURN; return 1; }
+  else if (v == cursor_wxCURSOR_CROSS_sym) { READY_TO_RETURN; return 1; }
+  else if (v == cursor_wxCURSOR_HAND_sym) { READY_TO_RETURN; return 1; }
+  else if (v == cursor_wxCURSOR_IBEAM_sym) { READY_TO_RETURN; return 1; }
+  else if (v == cursor_wxCURSOR_SIZENS_sym) { READY_TO_RETURN; return 1; }
+  else if (v == cursor_wxCURSOR_SIZEWE_sym) { READY_TO_RETURN; return 1; }
+  else if (v == cursor_wxCURSOR_SIZENESW_sym) { READY_TO_RETURN; return 1; }
+  else if (v == cursor_wxCURSOR_SIZENWSE_sym) { READY_TO_RETURN; return 1; }
+  else if (v == cursor_wxCURSOR_WATCH_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "cursor symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -3161,6 +3250,7 @@ static Scheme_Object *os_wxCursorOk(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3204,6 +3294,7 @@ static Scheme_Object *os_wxCursor_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     int x0;
 
@@ -3224,6 +3315,7 @@ static Scheme_Object *os_wxCursor_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -3247,6 +3339,7 @@ void objscheme_setup_wxCursor(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxCursor_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxCursor(Scheme_Object *obj, const char *stop, int nullOK)
@@ -3278,7 +3371,7 @@ Scheme_Object *objscheme_bundle_wxCursor(class wxCursor *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxCursor_class));
 
   obj->primdata = realobj;
@@ -3286,6 +3379,7 @@ Scheme_Object *objscheme_bundle_wxCursor(class wxCursor *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -3309,6 +3403,7 @@ static void *RgnBoundingBox(wxRegion *r)
 {
   float x, y, w, h;
   Scheme_Object *a[4];
+  void *rt;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 4);
 
@@ -3319,7 +3414,9 @@ static void *RgnBoundingBox(wxRegion *r)
   a[1] = WITH_VAR_STACK(scheme_make_double(y));
   a[2] = WITH_VAR_STACK(scheme_make_double(w));
   a[3] = WITH_VAR_STACK(scheme_make_double(h));
-  return WITH_VAR_STACK(scheme_values(4, a));
+  rt = WITH_VAR_STACK(scheme_values(4, a));
+  READY_TO_RETURN;
+  return rt;
 }
 
 #undef l_ADDRESS
@@ -3371,6 +3468,8 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
     cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
+  READY_TO_RETURN;
+
   return cdr;
 }
 
@@ -3390,8 +3489,10 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
   if (c) *c = len;
 
-  if (!(len + l_EXTRA))
+  if (!(len + l_EXTRA)) {
+    READY_TO_RETURN;
     return NULL;
+  }
 
 #if l_DIRECTMALLOC
   f = (l_TYPE l_POINT *)WITH_VAR_STACK(GC_malloc_atomic(sizeof(l_TYPE l_POINT) * (len + l_EXTRA)));
@@ -3402,6 +3503,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
       WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
+      READY_TO_RETURN;
       return NULL;
     }
 
@@ -3417,6 +3519,8 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
     l = SCHEME_CDR(l);
   }
   l_TERMINATE
+
+  READY_TO_RETURN;
 
   return f;
 }
@@ -3439,9 +3543,10 @@ static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!fillKind_wxWINDING_RULE_sym) WITH_VAR_STACK(init_symset_fillKind());
   if (0) { }
-  else if (v == fillKind_wxODDEVEN_RULE_sym) { return wxODDEVEN_RULE; }
-  else if (v == fillKind_wxWINDING_RULE_sym) { return wxWINDING_RULE; }
+  else if (v == fillKind_wxODDEVEN_RULE_sym) { READY_TO_RETURN; return wxODDEVEN_RULE; }
+  else if (v == fillKind_wxWINDING_RULE_sym) { READY_TO_RETURN; return wxWINDING_RULE; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fillKind symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -3505,6 +3610,7 @@ static Scheme_Object *os_wxRegionEmpty(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3525,6 +3631,7 @@ static Scheme_Object *os_wxRegionRgnBoundingBox(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return ((Scheme_Object *)r);
 }
 
@@ -3547,6 +3654,7 @@ static Scheme_Object *os_wxRegionSubtract(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3569,6 +3677,7 @@ static Scheme_Object *os_wxRegionIntersect(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3591,6 +3700,7 @@ static Scheme_Object *os_wxRegionUnion(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3622,6 +3732,7 @@ static Scheme_Object *os_wxRegionSetArc(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3660,6 +3771,7 @@ static Scheme_Object *os_wxRegionSetPolygon(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3687,6 +3799,7 @@ static Scheme_Object *os_wxRegionSetEllipse(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3719,6 +3832,7 @@ static Scheme_Object *os_wxRegionSetRoundedRectangle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3746,6 +3860,7 @@ static Scheme_Object *os_wxRegionSetRectangle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3766,6 +3881,7 @@ static Scheme_Object *os_wxRegionGetDC(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxDC(r));
 }
 
@@ -3795,6 +3911,7 @@ static Scheme_Object *os_wxRegion_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -3826,6 +3943,7 @@ void objscheme_setup_wxRegion(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxRegion_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxRegion(Scheme_Object *obj, const char *stop, int nullOK)
@@ -3857,7 +3975,7 @@ Scheme_Object *objscheme_bundle_wxRegion(class wxRegion *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxRegion_class));
 
   obj->primdata = realobj;
@@ -3865,6 +3983,7 @@ Scheme_Object *objscheme_bundle_wxRegion(class wxRegion *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -3941,6 +4060,7 @@ static Scheme_Object *os_wxFontNameDirectoryIdentity(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -3966,6 +4086,7 @@ static Scheme_Object *os_wxFontNameDirectoryFindOrCreateFontId(int n,  Scheme_Ob
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -3988,6 +4109,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFamily(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_family(r));
 }
 
@@ -4010,6 +4132,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontName(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -4035,6 +4158,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontId(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -4063,6 +4187,7 @@ static Scheme_Object *os_wxFontNameDirectorySetPostScriptName(int n,  Scheme_Obj
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4091,6 +4216,7 @@ static Scheme_Object *os_wxFontNameDirectorySetScreenName(int n,  Scheme_Object 
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4117,6 +4243,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetPostScriptName(int n,  Scheme_Obj
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -4143,6 +4270,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetScreenName(int n,  Scheme_Object 
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -4173,6 +4301,7 @@ void objscheme_setup_wxFontNameDirectory(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxFontNameDirectory_interface, "font-name-directory" "<%>", env));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxFontNameDirectory(Scheme_Object *obj, const char *stop, int nullOK)
@@ -4204,7 +4333,7 @@ Scheme_Object *objscheme_bundle_wxFontNameDirectory(class wxFontNameDirectory *r
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxFontNameDirectory_class));
 
   obj->primdata = realobj;
@@ -4212,6 +4341,7 @@ Scheme_Object *objscheme_bundle_wxFontNameDirectory(class wxFontNameDirectory *r
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -4274,6 +4404,7 @@ static Scheme_Object *wxGDIGlobalwxGetTheFontNameDirectory(int n,  Scheme_Object
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxFontNameDirectory(r));
 }
 
@@ -4293,6 +4424,7 @@ static Scheme_Object *wxGDIGlobalwxGetTheFontList(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxFontList(r));
 }
 
@@ -4312,6 +4444,7 @@ static Scheme_Object *wxGDIGlobalwxGetThePenList(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxPenList(r));
 }
 
@@ -4331,6 +4464,7 @@ static Scheme_Object *wxGDIGlobalwxGetTheBrushList(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBrushList(r));
 }
 
@@ -4350,6 +4484,7 @@ static Scheme_Object *wxGDIGlobalwxGetTheColourDatabase(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColourDatabase(r));
 }
 
@@ -4368,5 +4503,6 @@ void objscheme_setup_wxGDIGlobal(Scheme_Env *env)
   WITH_VAR_STACK(scheme_install_xc_global("get-the-brush-list", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGDIGlobalwxGetTheColourDatabase, "get-the-color-database", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-color-database", functmp, env));
+  READY_TO_RETURN;
 }
 

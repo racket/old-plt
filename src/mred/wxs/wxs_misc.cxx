@@ -105,7 +105,7 @@ void os_wxTimer::Notify()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTimer_class, "notify", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTimer::Notify();
+    READY_TO_RETURN; ASSELF wxTimer::Notify();
   } else {
   
   
@@ -114,6 +114,7 @@ void os_wxTimer::Notify()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -133,6 +134,7 @@ static Scheme_Object *os_wxTimerStop(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -159,6 +161,7 @@ static Scheme_Object *os_wxTimerStart(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -181,6 +184,7 @@ static Scheme_Object *os_wxTimerNotify(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -201,6 +205,7 @@ static Scheme_Object *os_wxTimerInterval(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -227,6 +232,7 @@ static Scheme_Object *os_wxTimer_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -251,6 +257,7 @@ void objscheme_setup_wxTimer(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxTimer_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxTimer(Scheme_Object *obj, const char *stop, int nullOK)
@@ -282,7 +289,7 @@ Scheme_Object *objscheme_bundle_wxTimer(class wxTimer *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxTimer_class));
 
   obj->primdata = realobj;
@@ -290,6 +297,7 @@ Scheme_Object *objscheme_bundle_wxTimer(class wxTimer *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -339,6 +347,8 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
     last = p;
   }
   
+  READY_TO_RETURN;
+
   return first;
 }
 
@@ -393,6 +403,7 @@ static Scheme_Object *os_wxClipboardGetClipboardBitmap(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBitmap(r));
 }
 
@@ -417,6 +428,7 @@ static Scheme_Object *os_wxClipboardSetClipboardBitmap(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -444,6 +456,7 @@ static Scheme_Object *os_wxClipboardGetClipboardData(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_make_sized_string(r, _x1, 1) : XC_SCHEME_NULL);
 }
 
@@ -466,6 +479,7 @@ static Scheme_Object *os_wxClipboardGetClipboardString(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -490,6 +504,7 @@ static Scheme_Object *os_wxClipboardSetClipboardString(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -514,6 +529,7 @@ static Scheme_Object *os_wxClipboardSetClipboardClient(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -541,6 +557,7 @@ void objscheme_setup_wxClipboard(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxClipboard_interface, "clipboard" "<%>", env));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxClipboard(Scheme_Object *obj, const char *stop, int nullOK)
@@ -572,7 +589,7 @@ Scheme_Object *objscheme_bundle_wxClipboard(class wxClipboard *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxClipboard_class));
 
   obj->primdata = realobj;
@@ -580,6 +597,7 @@ Scheme_Object *objscheme_bundle_wxClipboard(class wxClipboard *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -620,6 +638,7 @@ static Scheme_Object *wxClipboardGlobalwxGetTheClipboard(int n,  Scheme_Object *
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxClipboard(r));
 }
 
@@ -630,6 +649,7 @@ void objscheme_setup_wxClipboardGlobal(Scheme_Env *env)
   VAR_STACK_PUSH(0, env);
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxClipboardGlobalwxGetTheClipboard, "get-the-clipboard", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-clipboard", functmp, env));
+  READY_TO_RETURN;
 }
 
 
@@ -703,7 +723,12 @@ nstring os_wxClipboardClient::GetData(string x0, long* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   if (SCHEME_STRINGP(v)) (*x1) = SCHEME_STRTAG_VAL(v);
   
-  return (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(v, "get-data in clipboard-client%"", extracting return value"));
+  {
+     nstring resval;
+     resval = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(v, "get-data in clipboard-client%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -726,7 +751,7 @@ void os_wxClipboardClient::BeingReplaced()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxClipboardClient_class, "on-replaced", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   
@@ -735,6 +760,7 @@ void os_wxClipboardClient::BeingReplaced()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -755,6 +781,7 @@ static Scheme_Object *os_wxClipboardClientGetTypes(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return r;
 }
 
@@ -777,6 +804,7 @@ static Scheme_Object *os_wxClipboardClientAddType(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -805,6 +833,7 @@ static Scheme_Object *os_wxClipboardClientGetData(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -827,6 +856,7 @@ static Scheme_Object *os_wxClipboardClientBeingReplaced(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -853,6 +883,7 @@ static Scheme_Object *os_wxClipboardClient_ConstructScheme(int n,  Scheme_Object
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -877,6 +908,7 @@ void objscheme_setup_wxClipboardClient(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxClipboardClient_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxClipboardClient(Scheme_Object *obj, const char *stop, int nullOK)
@@ -908,7 +940,7 @@ Scheme_Object *objscheme_bundle_wxClipboardClient(class wxClipboardClient *realo
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxClipboardClient_class));
 
   obj->primdata = realobj;
@@ -916,6 +948,7 @@ Scheme_Object *objscheme_bundle_wxClipboardClient(class wxClipboardClient *realo
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -955,10 +988,11 @@ static int unbundle_symset_psMode(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!psMode_PS_PRINTER_sym) WITH_VAR_STACK(init_symset_psMode());
   if (0) { }
-  else if (v == psMode_PS_PREVIEW_sym) { return PS_PREVIEW; }
-  else if (v == psMode_PS_FILE_sym) { return PS_FILE; }
-  else if (v == psMode_PS_PRINTER_sym) { return PS_PRINTER; }
+  else if (v == psMode_PS_PREVIEW_sym) { READY_TO_RETURN; return PS_PREVIEW; }
+  else if (v == psMode_PS_FILE_sym) { READY_TO_RETURN; return PS_FILE; }
+  else if (v == psMode_PS_PRINTER_sym) { READY_TO_RETURN; return PS_PRINTER; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "psMode symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -989,9 +1023,10 @@ static int unbundle_symset_psOrientation(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!psOrientation_PS_LANDSCAPE_sym) WITH_VAR_STACK(init_symset_psOrientation());
   if (0) { }
-  else if (v == psOrientation_PS_PORTRAIT_sym) { return PS_PORTRAIT; }
-  else if (v == psOrientation_PS_LANDSCAPE_sym) { return PS_LANDSCAPE; }
+  else if (v == psOrientation_PS_PORTRAIT_sym) { READY_TO_RETURN; return PS_PORTRAIT; }
+  else if (v == psOrientation_PS_LANDSCAPE_sym) { READY_TO_RETURN; return PS_LANDSCAPE; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "psOrientation symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -1077,6 +1112,7 @@ static Scheme_Object *os_wxPrintSetupDatacopy(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1100,6 +1136,7 @@ static Scheme_Object *os_wxPrintSetupDataSetMargin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1123,6 +1160,7 @@ static Scheme_Object *os_wxPrintSetupDataSetEditorMargin(int n,  Scheme_Object *
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1144,6 +1182,7 @@ static Scheme_Object *os_wxPrintSetupDataSetLevel2(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1166,6 +1205,7 @@ static Scheme_Object *os_wxPrintSetupDataSetAFMPath(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1188,6 +1228,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPaperName(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1211,6 +1252,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterTranslation(int n,  Scheme_Ob
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1234,6 +1276,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterScaling(int n,  Scheme_Object
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1255,6 +1298,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterOrientation(int n,  Scheme_Ob
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1276,6 +1320,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterMode(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1298,6 +1343,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrintPreviewCommand(int n,  Scheme_O
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1320,6 +1366,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterFile(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1342,6 +1389,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterCommand(int n,  Scheme_Object
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1372,6 +1420,7 @@ static Scheme_Object *os_wxPrintSetupDataGetMargin(int n,  Scheme_Object *p[])
   if (n > (POFFSET+1))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1402,6 +1451,7 @@ static Scheme_Object *os_wxPrintSetupDataGetEditorMargin(int n,  Scheme_Object *
   if (n > (POFFSET+1))
     { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1422,6 +1472,7 @@ static Scheme_Object *os_wxPrintSetupDataGetLevel2(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1442,6 +1493,7 @@ static Scheme_Object *os_wxPrintSetupDataGetAFMPath(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -1462,6 +1514,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPaperName(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -1492,6 +1545,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterTranslation(int n,  Scheme_Ob
   if (n > (POFFSET+1))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1522,6 +1576,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterScaling(int n,  Scheme_Object
   if (n > (POFFSET+1))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1542,6 +1597,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterOrientation(int n,  Scheme_Ob
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_psOrientation(r));
 }
 
@@ -1562,6 +1618,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterMode(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_psMode(r));
 }
 
@@ -1582,6 +1639,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrintPreviewCommand(int n,  Scheme_O
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -1602,6 +1660,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterFile(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -1622,6 +1681,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterCommand(int n,  Scheme_Object
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -1648,6 +1708,7 @@ static Scheme_Object *os_wxPrintSetupData_ConstructScheme(int n,  Scheme_Object 
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -1693,6 +1754,7 @@ void objscheme_setup_wxPrintSetupData(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxPrintSetupData_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxPrintSetupData(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1724,7 +1786,7 @@ Scheme_Object *objscheme_bundle_wxPrintSetupData(class wxPrintSetupData *realobj
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxPrintSetupData_class));
 
   obj->primdata = realobj;
@@ -1732,6 +1794,7 @@ Scheme_Object *objscheme_bundle_wxPrintSetupData(class wxPrintSetupData *realobj
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 

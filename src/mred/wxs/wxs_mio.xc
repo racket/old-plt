@@ -42,6 +42,7 @@ static char *VectorToArray(char *r, Scheme_Object *vec, long *len)
     r[i] = SCHEME_CHAR_VAL(a[i]);
   }
 
+  READY_TO_RETURN;
   return r;
 }
 
@@ -62,6 +63,8 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
   
   for (a = SCHEME_VEC_ELS(vec), i = 0; i < len; i++)
     a[i] = WITH_VAR_STACK(scheme_make_char(r[i]));
+
+  READY_TO_RETURN;
 
   return vec;
 }

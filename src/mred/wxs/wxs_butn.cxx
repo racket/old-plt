@@ -58,8 +58,9 @@ static int unbundle_symset_buttonStyle(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "buttonStyle symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -177,7 +178,7 @@ void os_wxButton::OnDropFile(pathname x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxButton_class, "on-drop-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxButton::OnDropFile(x0);
+    READY_TO_RETURN; ASSELF wxButton::OnDropFile(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
@@ -187,6 +188,7 @@ void os_wxButton::OnDropFile(pathname x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -222,7 +224,12 @@ Bool os_wxButton::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in button%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in button%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -258,7 +265,12 @@ Bool os_wxButton::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in button%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in button%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -281,7 +293,7 @@ void os_wxButton::OnSize(int x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxButton_class, "on-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxButton::OnSize(x0, x1);
+    READY_TO_RETURN; ASSELF wxButton::OnSize(x0, x1);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -292,6 +304,7 @@ void os_wxButton::OnSize(int x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -314,7 +327,7 @@ void os_wxButton::OnSetFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxButton_class, "on-set-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxButton::OnSetFocus();
+    READY_TO_RETURN; ASSELF wxButton::OnSetFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -323,6 +336,7 @@ void os_wxButton::OnSetFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -345,7 +359,7 @@ void os_wxButton::OnKillFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxButton_class, "on-kill-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxButton::OnKillFocus();
+    READY_TO_RETURN; ASSELF wxButton::OnKillFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -354,6 +368,7 @@ void os_wxButton::OnKillFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -381,6 +396,7 @@ static Scheme_Object *os_wxButtonSetLabel(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     string x0 INIT_NULLED_OUT;
 
@@ -398,6 +414,7 @@ static Scheme_Object *os_wxButtonSetLabel(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return scheme_void;
@@ -425,6 +442,7 @@ static Scheme_Object *os_wxButtonOnDropFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -454,6 +472,7 @@ static Scheme_Object *os_wxButtonPreOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -483,6 +502,7 @@ static Scheme_Object *os_wxButtonPreOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -509,6 +529,7 @@ static Scheme_Object *os_wxButtonOnSize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -531,6 +552,7 @@ static Scheme_Object *os_wxButtonOnSetFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -553,6 +575,7 @@ static Scheme_Object *os_wxButtonOnKillFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -619,6 +642,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     realobj->callback_closure = p[POFFSET+cb_pos];
+    READY_TO_PRE_RETURN;
   } else  {
     class wxPanel* x0 INIT_NULLED_OUT;
     wxFunction x1;
@@ -676,6 +700,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     realobj->callback_closure = p[POFFSET+cb_pos];
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -706,6 +731,7 @@ void objscheme_setup_wxButton(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxButton, wxTYPE_BUTTON));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxButton(Scheme_Object *obj, const char *stop, int nullOK)
@@ -737,7 +763,7 @@ Scheme_Object *objscheme_bundle_wxButton(class wxButton *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_BUTTON) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxButton_class));
 
   obj->primdata = realobj;
@@ -745,6 +771,7 @@ Scheme_Object *objscheme_bundle_wxButton(class wxButton *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -795,4 +822,6 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
     WITH_VAR_STACK(scheme_apply_multi(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p));
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  READY_TO_RETURN;
 }

@@ -219,6 +219,7 @@ static Bool KMCallbackToScheme(UNKNOWN_OBJ media, wxEvent *event,
 			       KeymapCallbackToSchemeRec *data)
 {
   Scheme_Object *p[2], *obj = NULL;
+  Bool r;
   SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, p[0]);
   VAR_STACK_PUSH(1, p[1]);
@@ -231,7 +232,9 @@ static Bool KMCallbackToScheme(UNKNOWN_OBJ media, wxEvent *event,
   p[1] = WITH_VAR_STACK(objscheme_bundle_wxEvent(event));
 
   obj = WITH_VAR_STACK(scheme_apply(kctsr(data), 2, p));
-  return WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme key callback"));
+  r = WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme key callback"));
+  READY_TO_RETURN;
+  return r;
 }
 
 static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
@@ -239,6 +242,7 @@ static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
 				    KeymapCallbackToSchemeRec *data)
 {
   Scheme_Object *p[4], *obj = NULL;
+  Bool r;
   SETUP_VAR_STACK(6);
   VAR_STACK_PUSH_ARRAY(0, p, 4);
   VAR_STACK_PUSH(3, obj);
@@ -257,7 +261,9 @@ static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
   p[3] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(event));
 
   obj = WITH_VAR_STACK(scheme_apply(kctsr(data), 4, p));
-  return WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme grab-key callback"));
+  r = WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme grab-key callback"));
+  READY_TO_RETURN;
+  return r;
 }
 
 static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
@@ -265,6 +271,7 @@ static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
 				      KeymapCallbackToSchemeRec *data)
 {
   Scheme_Object *p[4], *obj = NULL;
+  Bool r;
   SETUP_VAR_STACK(6);
   VAR_STACK_PUSH_ARRAY(0, p, 4);
   VAR_STACK_PUSH(3, obj);
@@ -283,7 +290,9 @@ static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
   p[3] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(event));
 
   obj = WITH_VAR_STACK(scheme_apply(kctsr(data), 4, p));
-  return WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme grab-mouse callback"));
+  r = WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme grab-mouse callback"));
+  READY_TO_RETURN;
+  return r;
 }
 
 static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)

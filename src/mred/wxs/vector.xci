@@ -49,6 +49,8 @@ static Scheme_Object *l_MAKE_VECTOR(l_TYPE l_POINT *f, int c)
     obj = WITH_VAR_STACK(l_VECTOR_ITEM_BUNDLE(l_ADDRESS f[c]));
     SCHEME_VEC_ELS(vec)[c] = obj;
   }
+
+  READY_TO_RETURN;
   
   return vec;
 }
@@ -66,8 +68,10 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, int *c)
   len = SCHEME_VEC_SIZE(l);
   if (c) *c = len;
 
-  if (!(len + l_EXTRA))
+  if (!(len + l_EXTRA)) {
+    READY_TO_RETURN;
     return NULL;
+  }
 
   f = WITH_VAR_STACK(new l_TYPE l_POINT[len + l_EXTRA]);
 
@@ -76,6 +80,8 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, int *c)
 						           "make-array" l_TEST));
   }
   l_TERMINATE
+
+  READY_TO_RETURN;
 
   return f;
 }

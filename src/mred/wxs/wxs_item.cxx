@@ -89,6 +89,7 @@ static Scheme_Object *os_wxItemSetLabel(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -109,6 +110,7 @@ static Scheme_Object *os_wxItemGetLabel(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -131,6 +133,7 @@ static Scheme_Object *os_wxItemCommand(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -152,6 +155,7 @@ void objscheme_setup_wxItem(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxItem, wxTYPE_ITEM));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxItem(Scheme_Object *obj, const char *stop, int nullOK)
@@ -183,7 +187,7 @@ Scheme_Object *objscheme_bundle_wxItem(class wxItem *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_ITEM) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxItem_class));
 
   obj->primdata = realobj;
@@ -191,6 +195,7 @@ Scheme_Object *objscheme_bundle_wxItem(class wxItem *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -231,8 +236,9 @@ static int unbundle_symset_messageStyle(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "messageStyle symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -249,8 +255,9 @@ static int istype_symset_messageStyle(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "messageStyle symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -274,10 +281,11 @@ static int unbundle_symset_iconID(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!iconID_wxMSGICON_ERROR_sym) WITH_VAR_STACK(init_symset_iconID());
   if (0) { }
-  else if (v == iconID_wxMSGICON_APP_sym) { return wxMSGICON_APP; }
-  else if (v == iconID_wxMSGICON_WARNING_sym) { return wxMSGICON_WARNING; }
-  else if (v == iconID_wxMSGICON_ERROR_sym) { return wxMSGICON_ERROR; }
+  else if (v == iconID_wxMSGICON_APP_sym) { READY_TO_RETURN; return wxMSGICON_APP; }
+  else if (v == iconID_wxMSGICON_WARNING_sym) { READY_TO_RETURN; return wxMSGICON_WARNING; }
+  else if (v == iconID_wxMSGICON_ERROR_sym) { READY_TO_RETURN; return wxMSGICON_ERROR; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "iconID symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -286,10 +294,11 @@ static int istype_symset_iconID(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!iconID_wxMSGICON_ERROR_sym) WITH_VAR_STACK(init_symset_iconID());
   if (0) { }
-  else if (v == iconID_wxMSGICON_APP_sym) { return 1; }
-  else if (v == iconID_wxMSGICON_WARNING_sym) { return 1; }
-  else if (v == iconID_wxMSGICON_ERROR_sym) { return 1; }
+  else if (v == iconID_wxMSGICON_APP_sym) { READY_TO_RETURN; return 1; }
+  else if (v == iconID_wxMSGICON_WARNING_sym) { READY_TO_RETURN; return 1; }
+  else if (v == iconID_wxMSGICON_ERROR_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "iconID symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -381,7 +390,7 @@ void os_wxMessage::OnDropFile(pathname x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMessage_class, "on-drop-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMessage::OnDropFile(x0);
+    READY_TO_RETURN; ASSELF wxMessage::OnDropFile(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
@@ -391,6 +400,7 @@ void os_wxMessage::OnDropFile(pathname x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -426,7 +436,12 @@ Bool os_wxMessage::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in message%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in message%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -462,7 +477,12 @@ Bool os_wxMessage::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in message%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in message%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -485,7 +505,7 @@ void os_wxMessage::OnSize(int x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMessage_class, "on-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMessage::OnSize(x0, x1);
+    READY_TO_RETURN; ASSELF wxMessage::OnSize(x0, x1);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -496,6 +516,7 @@ void os_wxMessage::OnSize(int x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -518,7 +539,7 @@ void os_wxMessage::OnSetFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMessage_class, "on-set-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMessage::OnSetFocus();
+    READY_TO_RETURN; ASSELF wxMessage::OnSetFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -527,6 +548,7 @@ void os_wxMessage::OnSetFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -549,7 +571,7 @@ void os_wxMessage::OnKillFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMessage_class, "on-kill-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMessage::OnKillFocus();
+    READY_TO_RETURN; ASSELF wxMessage::OnKillFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -558,6 +580,7 @@ void os_wxMessage::OnKillFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -585,6 +608,7 @@ static Scheme_Object *os_wxMessageSetLabel(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     string x0 INIT_NULLED_OUT;
 
@@ -602,6 +626,7 @@ static Scheme_Object *os_wxMessageSetLabel(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return scheme_void;
@@ -629,6 +654,7 @@ static Scheme_Object *os_wxMessageOnDropFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -658,6 +684,7 @@ static Scheme_Object *os_wxMessagePreOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -687,6 +714,7 @@ static Scheme_Object *os_wxMessagePreOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -713,6 +741,7 @@ static Scheme_Object *os_wxMessageOnSize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -735,6 +764,7 @@ static Scheme_Object *os_wxMessageOnSetFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -757,6 +787,7 @@ static Scheme_Object *os_wxMessageOnKillFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -810,6 +841,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[POFFSET+0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[POFFSET+1], NULL, 0))) {
     class wxPanel* x0 INIT_NULLED_OUT;
     class wxBitmap* x1 INIT_NULLED_OUT;
@@ -855,6 +887,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     class wxPanel* x0 INIT_NULLED_OUT;
     string x1 INIT_NULLED_OUT;
@@ -900,6 +933,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -929,6 +963,7 @@ void objscheme_setup_wxMessage(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxMessage_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxMessage(Scheme_Object *obj, const char *stop, int nullOK)
@@ -960,7 +995,7 @@ Scheme_Object *objscheme_bundle_wxMessage(class wxMessage *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMessage_class));
 
   obj->primdata = realobj;
@@ -968,6 +1003,7 @@ Scheme_Object *objscheme_bundle_wxMessage(class wxMessage *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 

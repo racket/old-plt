@@ -220,6 +220,7 @@ int actual_main(int argc, char **argv)
 
 int main(int argc, char *argv[])
 {
+  int rval;
   void *stack_start;
 
   stack_start = (void *)&stack_start;
@@ -347,7 +348,12 @@ int main(int argc, char *argv[])
   mred_run_from_cmd_line = run_from_cmd_line;
   mred_finish_cmd_line_run = finish_cmd_line_run;
 
-  return scheme_image_main(argc, argv);
+  rval = scheme_image_main(argc, argv);
+
+  /* This line ensures that __gc_var_stack__ is the
+     val of GC_variable_stack in scheme_image_main. */
+  argv = NULL;
+  return rval;
 }
 
 

@@ -208,9 +208,9 @@ void wxMediaBuffer::OnLocalEvent(wxMouseEvent *event)
       edit = objscheme_bundle_wxMediaBuffer(this);
     else
       edit = NULL; /* could happen in Mac or Windows with -Z */
-    if (map->HandleMouseEvent(edit, event))
+    if (map->HandleMouseEvent(edit, event)) {
       return;
-    else if (!event->Moving())
+    } else if (!event->Moving())
       map->BreakSequence();
   }
 
@@ -225,9 +225,9 @@ void wxMediaBuffer::OnLocalChar(wxKeyEvent *event)
       edit = objscheme_bundle_wxMediaBuffer(this);
     else
       edit = NULL; /* could happen in Mac or Windows with -Z */
-    if (map->HandleKeyEvent(edit, event))
+    if (map->HandleKeyEvent(edit, event)) {
       return;
-    else
+    } else
       map->BreakSequence();
   }
 

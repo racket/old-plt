@@ -36,6 +36,7 @@ START_XFORM_SKIP;
 static void *wxbBufferToDC(wxMediaBuffer *b, float x, float y)
 {
   Scheme_Object *a[2];
+  void *r;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 2);
 
@@ -46,12 +47,15 @@ static void *wxbBufferToDC(wxMediaBuffer *b, float x, float y)
   a[0] = WITH_VAR_STACK(objscheme_bundle_double(x));
   a[1] = WITH_VAR_STACK(objscheme_bundle_double(y));
 
-  return WITH_VAR_STACK(scheme_values(2, a));
+  r = WITH_VAR_STACK(scheme_values(2, a));
+  READY_TO_RETURN;
+  return r;
 }
 
 static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 {
   Scheme_Object *a[2];
+  void *r;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 2);
 
@@ -62,7 +66,9 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
   a[0] = WITH_VAR_STACK(objscheme_bundle_double(x));
   a[1] = WITH_VAR_STACK(objscheme_bundle_double(y));
 
-  return WITH_VAR_STACK(scheme_values(2, a));
+  r = WITH_VAR_STACK(scheme_values(2, a));
+  READY_TO_RETURN;
+  return r;
 }
 
 
@@ -84,9 +90,10 @@ static int unbundle_symset_bufferType(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!bufferType_wxPASTEBOARD_BUFFER_sym) WITH_VAR_STACK(init_symset_bufferType());
   if (0) { }
-  else if (v == bufferType_wxEDIT_BUFFER_sym) { return wxEDIT_BUFFER; }
-  else if (v == bufferType_wxPASTEBOARD_BUFFER_sym) { return wxPASTEBOARD_BUFFER; }
+  else if (v == bufferType_wxEDIT_BUFFER_sym) { READY_TO_RETURN; return wxEDIT_BUFFER; }
+  else if (v == bufferType_wxPASTEBOARD_BUFFER_sym) { READY_TO_RETURN; return wxPASTEBOARD_BUFFER; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bufferType symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -128,13 +135,14 @@ static int unbundle_symset_fileType(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!fileType_wxMEDIA_FF_COPY_sym) WITH_VAR_STACK(init_symset_fileType());
   if (0) { }
-  else if (v == fileType_wxMEDIA_FF_GUESS_sym) { return wxMEDIA_FF_GUESS; }
-  else if (v == fileType_wxMEDIA_FF_STD_sym) { return wxMEDIA_FF_STD; }
-  else if (v == fileType_wxMEDIA_FF_TEXT_sym) { return wxMEDIA_FF_TEXT; }
-  else if (v == fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym) { return wxMEDIA_FF_TEXT_FORCE_CR; }
-  else if (v == fileType_wxMEDIA_FF_SAME_sym) { return wxMEDIA_FF_SAME; }
-  else if (v == fileType_wxMEDIA_FF_COPY_sym) { return wxMEDIA_FF_COPY; }
+  else if (v == fileType_wxMEDIA_FF_GUESS_sym) { READY_TO_RETURN; return wxMEDIA_FF_GUESS; }
+  else if (v == fileType_wxMEDIA_FF_STD_sym) { READY_TO_RETURN; return wxMEDIA_FF_STD; }
+  else if (v == fileType_wxMEDIA_FF_TEXT_sym) { READY_TO_RETURN; return wxMEDIA_FF_TEXT; }
+  else if (v == fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym) { READY_TO_RETURN; return wxMEDIA_FF_TEXT_FORCE_CR; }
+  else if (v == fileType_wxMEDIA_FF_SAME_sym) { READY_TO_RETURN; return wxMEDIA_FF_SAME; }
+  else if (v == fileType_wxMEDIA_FF_COPY_sym) { READY_TO_RETURN; return wxMEDIA_FF_COPY; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fileType symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -172,10 +180,11 @@ static int unbundle_symset_focus(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!focus_wxFOCUS_GLOBAL_sym) WITH_VAR_STACK(init_symset_focus());
   if (0) { }
-  else if (v == focus_wxFOCUS_IMMEDIATE_sym) { return wxFOCUS_IMMEDIATE; }
-  else if (v == focus_wxFOCUS_DISPLAY_sym) { return wxFOCUS_DISPLAY; }
-  else if (v == focus_wxFOCUS_GLOBAL_sym) { return wxFOCUS_GLOBAL; }
+  else if (v == focus_wxFOCUS_IMMEDIATE_sym) { READY_TO_RETURN; return wxFOCUS_IMMEDIATE; }
+  else if (v == focus_wxFOCUS_DISPLAY_sym) { READY_TO_RETURN; return wxFOCUS_DISPLAY; }
+  else if (v == focus_wxFOCUS_GLOBAL_sym) { READY_TO_RETURN; return wxFOCUS_GLOBAL; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "focus symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -212,10 +221,11 @@ static int unbundle_symset_bias(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!bias_Sym_END_sym) WITH_VAR_STACK(init_symset_bias());
   if (0) { }
-  else if (v == bias_Sym_START_sym) { return Sym_START; }
-  else if (v == bias_Sym_NONE_sym) { return Sym_NONE; }
-  else if (v == bias_Sym_END_sym) { return Sym_END; }
+  else if (v == bias_Sym_START_sym) { READY_TO_RETURN; return Sym_START; }
+  else if (v == bias_Sym_NONE_sym) { READY_TO_RETURN; return Sym_NONE; }
+  else if (v == bias_Sym_END_sym) { READY_TO_RETURN; return Sym_END; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bias symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -250,10 +260,11 @@ static int unbundle_symset_caret(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) WITH_VAR_STACK(init_symset_caret());
   if (0) { }
-  else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { return wxSNIP_DRAW_NO_CARET; }
-  else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { return wxSNIP_DRAW_SHOW_CARET; }
-  else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { return wxSNIP_DRAW_SHOW_INACTIVE_CARET; }
+  else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { READY_TO_RETURN; return wxSNIP_DRAW_NO_CARET; }
+  else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { READY_TO_RETURN; return wxSNIP_DRAW_SHOW_CARET; }
+  else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { READY_TO_RETURN; return wxSNIP_DRAW_SHOW_INACTIVE_CARET; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "caret symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -314,18 +325,19 @@ static int unbundle_symset_editOp(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!editOp_wxEDIT_SELECT_ALL_sym) WITH_VAR_STACK(init_symset_editOp());
   if (0) { }
-  else if (v == editOp_wxEDIT_UNDO_sym) { return wxEDIT_UNDO; }
-  else if (v == editOp_wxEDIT_REDO_sym) { return wxEDIT_REDO; }
-  else if (v == editOp_wxEDIT_CLEAR_sym) { return wxEDIT_CLEAR; }
-  else if (v == editOp_wxEDIT_CUT_sym) { return wxEDIT_CUT; }
-  else if (v == editOp_wxEDIT_COPY_sym) { return wxEDIT_COPY; }
-  else if (v == editOp_wxEDIT_PASTE_sym) { return wxEDIT_PASTE; }
-  else if (v == editOp_wxEDIT_KILL_sym) { return wxEDIT_KILL; }
-  else if (v == editOp_wxEDIT_INSERT_TEXT_BOX_sym) { return wxEDIT_INSERT_TEXT_BOX; }
-  else if (v == editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym) { return wxEDIT_INSERT_GRAPHIC_BOX; }
-  else if (v == editOp_wxEDIT_INSERT_IMAGE_sym) { return wxEDIT_INSERT_IMAGE; }
-  else if (v == editOp_wxEDIT_SELECT_ALL_sym) { return wxEDIT_SELECT_ALL; }
+  else if (v == editOp_wxEDIT_UNDO_sym) { READY_TO_RETURN; return wxEDIT_UNDO; }
+  else if (v == editOp_wxEDIT_REDO_sym) { READY_TO_RETURN; return wxEDIT_REDO; }
+  else if (v == editOp_wxEDIT_CLEAR_sym) { READY_TO_RETURN; return wxEDIT_CLEAR; }
+  else if (v == editOp_wxEDIT_CUT_sym) { READY_TO_RETURN; return wxEDIT_CUT; }
+  else if (v == editOp_wxEDIT_COPY_sym) { READY_TO_RETURN; return wxEDIT_COPY; }
+  else if (v == editOp_wxEDIT_PASTE_sym) { READY_TO_RETURN; return wxEDIT_PASTE; }
+  else if (v == editOp_wxEDIT_KILL_sym) { READY_TO_RETURN; return wxEDIT_KILL; }
+  else if (v == editOp_wxEDIT_INSERT_TEXT_BOX_sym) { READY_TO_RETURN; return wxEDIT_INSERT_TEXT_BOX; }
+  else if (v == editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym) { READY_TO_RETURN; return wxEDIT_INSERT_GRAPHIC_BOX; }
+  else if (v == editOp_wxEDIT_INSERT_IMAGE_sym) { READY_TO_RETURN; return wxEDIT_INSERT_IMAGE; }
+  else if (v == editOp_wxEDIT_SELECT_ALL_sym) { READY_TO_RETURN; return wxEDIT_SELECT_ALL; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "editOp symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -364,9 +376,10 @@ static int unbundle_symset_printMethod(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!printMethod_1_sym) WITH_VAR_STACK(init_symset_printMethod());
   if (0) { }
-  else if (v == printMethod_0_sym) { return 0; }
-  else if (v == printMethod_1_sym) { return 1; }
+  else if (v == printMethod_0_sym) { READY_TO_RETURN; return 0; }
+  else if (v == printMethod_1_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "printMethod symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -424,16 +437,17 @@ static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!bitmapType_wxBITMAP_TYPE_MASK_sym) WITH_VAR_STACK(init_symset_bitmapType());
   if (0) { }
-  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
-  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
-  else if (v == bitmapType_wxBITMAP_TYPE_GIF_MASK_sym) { return wxBITMAP_TYPE_GIF_MASK; }
-  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
-  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
-  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
-  else if (v == bitmapType_wxBITMAP_TYPE_JPEG_sym) { return wxBITMAP_TYPE_JPEG; }
-  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
-  else if (v == bitmapType_wxBITMAP_TYPE_MASK_sym) { return wxBITMAP_TYPE_MASK; }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_BMP; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_GIF; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_MASK_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_GIF_MASK; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_XBM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_XPM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_PICT; }
+  else if (v == bitmapType_wxBITMAP_TYPE_JPEG_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_JPEG; }
+  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_UNKNOWN; }
+  else if (v == bitmapType_wxBITMAP_TYPE_MASK_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_MASK; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -623,7 +637,7 @@ nstring os_wxMediaBuffer::PutFile(nstring x0, nstring x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "put-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaBuffer::PutFile(x0, x1);
+    READY_TO_RETURN; return ASSELF wxMediaBuffer::PutFile(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -634,7 +648,12 @@ nstring os_wxMediaBuffer::PutFile(nstring x0, nstring x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(v, "put-file in editor<%>"", extracting return value"));
+  {
+     nstring resval;
+     resval = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(v, "put-file in editor<%>"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -658,7 +677,7 @@ nstring os_wxMediaBuffer::GetFile(nstring x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "get-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaBuffer::GetFile(x0);
+    READY_TO_RETURN; return ASSELF wxMediaBuffer::GetFile(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -668,7 +687,12 @@ nstring os_wxMediaBuffer::GetFile(nstring x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(v, "get-file in editor<%>"", extracting return value"));
+  {
+     nstring resval;
+     resval = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(v, "get-file in editor<%>"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -691,7 +715,7 @@ void os_wxMediaBuffer::AfterEditSequence()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "after-edit-sequence", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::AfterEditSequence();
+    READY_TO_RETURN; ASSELF wxMediaBuffer::AfterEditSequence();
   } else {
   
   
@@ -700,6 +724,7 @@ void os_wxMediaBuffer::AfterEditSequence()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -722,7 +747,7 @@ void os_wxMediaBuffer::OnEditSequence()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-edit-sequence", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::OnEditSequence();
+    READY_TO_RETURN; ASSELF wxMediaBuffer::OnEditSequence();
   } else {
   
   
@@ -731,6 +756,7 @@ void os_wxMediaBuffer::OnEditSequence()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -753,7 +779,7 @@ void os_wxMediaBuffer::AfterLoadFile(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "after-load-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::AfterLoadFile(x0);
+    READY_TO_RETURN; ASSELF wxMediaBuffer::AfterLoadFile(x0);
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -763,6 +789,7 @@ void os_wxMediaBuffer::AfterLoadFile(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -786,7 +813,7 @@ void os_wxMediaBuffer::OnLoadFile(string x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-load-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::OnLoadFile(x0, x1);
+    READY_TO_RETURN; ASSELF wxMediaBuffer::OnLoadFile(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -797,6 +824,7 @@ void os_wxMediaBuffer::OnLoadFile(string x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -820,7 +848,7 @@ Bool os_wxMediaBuffer::CanLoadFile(string x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "can-load-file?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaBuffer::CanLoadFile(x0, x1);
+    READY_TO_RETURN; return ASSELF wxMediaBuffer::CanLoadFile(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -831,7 +859,12 @@ Bool os_wxMediaBuffer::CanLoadFile(string x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-load-file? in editor<%>"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-load-file? in editor<%>"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -854,7 +887,7 @@ void os_wxMediaBuffer::AfterSaveFile(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "after-save-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::AfterSaveFile(x0);
+    READY_TO_RETURN; ASSELF wxMediaBuffer::AfterSaveFile(x0);
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -864,6 +897,7 @@ void os_wxMediaBuffer::AfterSaveFile(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -887,7 +921,7 @@ void os_wxMediaBuffer::OnSaveFile(string x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-save-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::OnSaveFile(x0, x1);
+    READY_TO_RETURN; ASSELF wxMediaBuffer::OnSaveFile(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -898,6 +932,7 @@ void os_wxMediaBuffer::OnSaveFile(string x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -921,7 +956,7 @@ Bool os_wxMediaBuffer::CanSaveFile(string x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "can-save-file?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaBuffer::CanSaveFile(x0, x1);
+    READY_TO_RETURN; return ASSELF wxMediaBuffer::CanSaveFile(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -932,7 +967,12 @@ Bool os_wxMediaBuffer::CanSaveFile(string x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-save-file? in editor<%>"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-save-file? in editor<%>"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -955,7 +995,7 @@ class wxSnip* os_wxMediaBuffer::OnNewBox(int x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-new-box", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaBuffer::OnNewBox(x0);
+    READY_TO_RETURN; return ASSELF wxMediaBuffer::OnNewBox(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_bufferType(x0));
@@ -965,7 +1005,12 @@ class wxSnip* os_wxMediaBuffer::OnNewBox(int x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "on-new-box in editor<%>"", extracting return value", 0));
+  {
+     class wxSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "on-new-box in editor<%>"", extracting return value", 0));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -989,7 +1034,7 @@ class wxImageSnip* os_wxMediaBuffer::OnNewImageSnip(nstring x0, int x1, Bool x2,
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-new-image-snip", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaBuffer::OnNewImageSnip(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxMediaBuffer::OnNewImageSnip(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -1002,7 +1047,12 @@ class wxImageSnip* os_wxMediaBuffer::OnNewImageSnip(nstring x0, int x1, Bool x2,
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxImageSnip(v, "on-new-image-snip in editor<%>"", extracting return value", 0));
+  {
+     class wxImageSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxImageSnip(v, "on-new-image-snip in editor<%>"", extracting return value", 0));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1025,7 +1075,7 @@ void os_wxMediaBuffer::InvalidateBitmapCache(float x0, float x1, float x2, float
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "invalidate-bitmap-cache", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -1038,6 +1088,7 @@ void os_wxMediaBuffer::InvalidateBitmapCache(float x0, float x1, float x2, float
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1061,7 +1112,7 @@ void os_wxMediaBuffer::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, floa
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-paint", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
+    READY_TO_RETURN; ASSELF wxMediaBuffer::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -1079,6 +1130,7 @@ void os_wxMediaBuffer::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, floa
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+9, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1102,7 +1154,7 @@ Bool os_wxMediaBuffer::WriteFootersToFile(class wxMediaStreamOut* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "write-footers-to-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaBuffer::WriteFootersToFile(x0);
+    READY_TO_RETURN; return ASSELF wxMediaBuffer::WriteFootersToFile(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
@@ -1112,7 +1164,12 @@ Bool os_wxMediaBuffer::WriteFootersToFile(class wxMediaStreamOut* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "write-footers-to-file in editor<%>"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "write-footers-to-file in editor<%>"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1136,7 +1193,7 @@ Bool os_wxMediaBuffer::WriteHeadersToFile(class wxMediaStreamOut* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "write-headers-to-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaBuffer::WriteHeadersToFile(x0);
+    READY_TO_RETURN; return ASSELF wxMediaBuffer::WriteHeadersToFile(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
@@ -1146,7 +1203,12 @@ Bool os_wxMediaBuffer::WriteHeadersToFile(class wxMediaStreamOut* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "write-headers-to-file in editor<%>"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "write-headers-to-file in editor<%>"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1171,7 +1233,7 @@ Bool os_wxMediaBuffer::ReadFooterFromFile(class wxMediaStreamIn* x0, string x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "read-footer-from-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaBuffer::ReadFooterFromFile(x0, x1);
+    READY_TO_RETURN; return ASSELF wxMediaBuffer::ReadFooterFromFile(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(x0));
@@ -1182,7 +1244,12 @@ Bool os_wxMediaBuffer::ReadFooterFromFile(class wxMediaStreamIn* x0, string x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "read-footer-from-file in editor<%>"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "read-footer-from-file in editor<%>"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1207,7 +1274,7 @@ Bool os_wxMediaBuffer::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "read-header-from-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaBuffer::ReadHeaderFromFile(x0, x1);
+    READY_TO_RETURN; return ASSELF wxMediaBuffer::ReadHeaderFromFile(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(x0));
@@ -1218,7 +1285,12 @@ Bool os_wxMediaBuffer::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "read-header-from-file in editor<%>"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "read-header-from-file in editor<%>"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1242,7 +1314,7 @@ void os_wxMediaBuffer::SetFilename(nstring x0, Bool x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "set-filename", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -1253,6 +1325,7 @@ void os_wxMediaBuffer::SetFilename(nstring x0, Bool x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1286,7 +1359,12 @@ Bool os_wxMediaBuffer::ReleaseSnip(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "release-snip in editor<%>"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "release-snip in editor<%>"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1310,7 +1388,7 @@ void os_wxMediaBuffer::OnSnipModified(class wxSnip* x0, Bool x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-snip-modified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::OnSnipModified(x0, x1);
+    READY_TO_RETURN; ASSELF wxMediaBuffer::OnSnipModified(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -1321,6 +1399,7 @@ void os_wxMediaBuffer::OnSnipModified(class wxSnip* x0, Bool x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1343,7 +1422,7 @@ void os_wxMediaBuffer::SetModified(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "set-modified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::SetModified(x0);
+    READY_TO_RETURN; ASSELF wxMediaBuffer::SetModified(x0);
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -1353,6 +1432,7 @@ void os_wxMediaBuffer::SetModified(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1377,7 +1457,7 @@ void os_wxMediaBuffer::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "set-snip-data", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -1388,6 +1468,7 @@ void os_wxMediaBuffer::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1421,7 +1502,12 @@ class wxBufferData* os_wxMediaBuffer::GetSnipData(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxBufferData(v, "get-snip-data in editor<%>"", extracting return value", 1));
+  {
+     class wxBufferData* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxBufferData(v, "get-snip-data in editor<%>"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1445,7 +1531,7 @@ void os_wxMediaBuffer::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "needs-update", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -1459,6 +1545,7 @@ void os_wxMediaBuffer::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1482,7 +1569,7 @@ void os_wxMediaBuffer::Resized(class wxSnip* x0, Bool x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "resized", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -1493,6 +1580,7 @@ void os_wxMediaBuffer::Resized(class wxSnip* x0, Bool x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1516,7 +1604,7 @@ void os_wxMediaBuffer::SetCaretOwner(class wxSnip* x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "set-caret-owner", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -1527,6 +1615,7 @@ void os_wxMediaBuffer::SetCaretOwner(class wxSnip* x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1566,7 +1655,12 @@ Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+7, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "scroll-to in editor<%>"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "scroll-to in editor<%>"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1589,7 +1683,7 @@ void os_wxMediaBuffer::OnDisplaySize()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-display-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::OnDisplaySize();
+    READY_TO_RETURN; ASSELF wxMediaBuffer::OnDisplaySize();
   } else {
   
   
@@ -1598,6 +1692,7 @@ void os_wxMediaBuffer::OnDisplaySize()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1620,7 +1715,7 @@ void os_wxMediaBuffer::OnChange()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-change", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   
@@ -1629,6 +1724,7 @@ void os_wxMediaBuffer::OnChange()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1651,7 +1747,7 @@ void os_wxMediaBuffer::OnFocus(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::OnFocus(x0);
+    READY_TO_RETURN; ASSELF wxMediaBuffer::OnFocus(x0);
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -1661,6 +1757,7 @@ void os_wxMediaBuffer::OnFocus(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1684,7 +1781,7 @@ void os_wxMediaBuffer::OnDefaultChar(class wxKeyEvent* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-default-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
@@ -1694,6 +1791,7 @@ void os_wxMediaBuffer::OnDefaultChar(class wxKeyEvent* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1717,7 +1815,7 @@ void os_wxMediaBuffer::OnDefaultEvent(class wxMouseEvent* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-default-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
@@ -1727,6 +1825,7 @@ void os_wxMediaBuffer::OnDefaultEvent(class wxMouseEvent* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1750,7 +1849,7 @@ void os_wxMediaBuffer::OnLocalChar(class wxKeyEvent* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-local-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::OnLocalChar(x0);
+    READY_TO_RETURN; ASSELF wxMediaBuffer::OnLocalChar(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
@@ -1760,6 +1859,7 @@ void os_wxMediaBuffer::OnLocalChar(class wxKeyEvent* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1783,7 +1883,7 @@ void os_wxMediaBuffer::OnLocalEvent(class wxMouseEvent* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-local-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaBuffer::OnLocalEvent(x0);
+    READY_TO_RETURN; ASSELF wxMediaBuffer::OnLocalEvent(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
@@ -1793,6 +1893,7 @@ void os_wxMediaBuffer::OnLocalEvent(class wxMouseEvent* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1815,7 +1916,7 @@ void os_wxMediaBuffer::BlinkCaret()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "blink-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   
@@ -1824,6 +1925,7 @@ void os_wxMediaBuffer::BlinkCaret()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1846,7 +1948,7 @@ void os_wxMediaBuffer::OwnCaret(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "own-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -1856,6 +1958,7 @@ void os_wxMediaBuffer::OwnCaret(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1878,7 +1981,7 @@ void os_wxMediaBuffer::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "refresh", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -1892,6 +1995,7 @@ void os_wxMediaBuffer::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1925,7 +2029,12 @@ class wxCursor* os_wxMediaBuffer::AdjustCursor(class wxMouseEvent* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxCursor(v, "adjust-cursor in editor<%>"", extracting return value", 1));
+  {
+     class wxCursor* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxCursor(v, "adjust-cursor in editor<%>"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1949,7 +2058,7 @@ void os_wxMediaBuffer::OnChar(class wxKeyEvent* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
@@ -1959,6 +2068,7 @@ void os_wxMediaBuffer::OnChar(class wxKeyEvent* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1982,7 +2092,7 @@ void os_wxMediaBuffer::OnEvent(class wxMouseEvent* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
@@ -1992,6 +2102,7 @@ void os_wxMediaBuffer::OnEvent(class wxMouseEvent* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2015,7 +2126,7 @@ void os_wxMediaBuffer::CopySelfTo(class wxMediaBuffer* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "copy-self-to", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaBuffer(x0));
@@ -2025,6 +2136,7 @@ void os_wxMediaBuffer::CopySelfTo(class wxMediaBuffer* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2056,7 +2168,12 @@ class wxMediaBuffer* os_wxMediaBuffer::CopySelf()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxMediaBuffer(v, "copy-self in editor<%>"", extracting return value", 0));
+  {
+     class wxMediaBuffer* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxMediaBuffer(v, "copy-self in editor<%>"", extracting return value", 0));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2081,6 +2198,7 @@ static Scheme_Object *os_wxMediaBufferwxbDCToBuffer(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return ((Scheme_Object *)r);
 }
 
@@ -2105,6 +2223,7 @@ static Scheme_Object *os_wxMediaBufferwxbBufferToDC(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return ((Scheme_Object *)r);
 }
 
@@ -2126,6 +2245,7 @@ static Scheme_Object *os_wxMediaBufferSetInactiveCaretThreshold(int n,  Scheme_O
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2146,6 +2266,7 @@ static Scheme_Object *os_wxMediaBufferGetInactiveCaretThreshold(int n,  Scheme_O
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_caret(r));
 }
 
@@ -2166,6 +2287,7 @@ static Scheme_Object *os_wxMediaBufferGetFocusSnip(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -2191,6 +2313,7 @@ static Scheme_Object *os_wxMediaBufferEndWriteHeaderFooterToFile(int n,  Scheme_
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -2223,6 +2346,7 @@ static Scheme_Object *os_wxMediaBufferBeginWriteHeaderFooterToFile(int n,  Schem
   if (n > (POFFSET+2))
     { Scheme_Object *sbv_ = scheme_make_integer(_x2); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -2268,6 +2392,7 @@ static Scheme_Object *os_wxMediaBufferPrint(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2308,6 +2433,7 @@ static Scheme_Object *os_wxMediaBufferInsertImage(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2332,6 +2458,7 @@ static Scheme_Object *os_wxMediaBufferInsertBox(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2365,6 +2492,7 @@ static Scheme_Object *os_wxMediaBufferGetFilename(int n,  Scheme_Object *p[])
   if (n > (POFFSET+0) && !XC_SCHEME_NULLP(p[POFFSET+0]))
     { Scheme_Object *sbv_ = (_x0 ? scheme_true : scheme_false); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -2385,6 +2513,7 @@ static Scheme_Object *os_wxMediaBufferModified(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -2405,6 +2534,7 @@ static Scheme_Object *os_wxMediaBufferIsLocked(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -2426,6 +2556,7 @@ static Scheme_Object *os_wxMediaBufferLock(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2453,6 +2584,7 @@ static Scheme_Object *os_wxMediaBufferSetCursor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2473,6 +2605,7 @@ static Scheme_Object *os_wxMediaBufferGetPasteTextOnly(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -2494,6 +2627,7 @@ static Scheme_Object *os_wxMediaBufferSetPasteTextOnly(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2514,6 +2648,7 @@ static Scheme_Object *os_wxMediaBufferGetLoadOverwritesStyles(int n,  Scheme_Obj
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -2535,6 +2670,7 @@ static Scheme_Object *os_wxMediaBufferSetLoadOverwritesStyles(int n,  Scheme_Obj
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2557,6 +2693,7 @@ static Scheme_Object *os_wxMediaBufferSetStyleList(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2577,6 +2714,7 @@ static Scheme_Object *os_wxMediaBufferGetStyleList(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyleList(r));
 }
 
@@ -2597,6 +2735,7 @@ static Scheme_Object *os_wxMediaBufferGetKeymap(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxKeymap(r));
 }
 
@@ -2622,6 +2761,7 @@ static Scheme_Object *os_wxMediaBufferSetKeymap(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2649,6 +2789,7 @@ static Scheme_Object *os_wxMediaBufferCanEdit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -2680,6 +2821,7 @@ static Scheme_Object *os_wxMediaBufferDoEdit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2700,6 +2842,7 @@ static Scheme_Object *os_wxMediaBufferGetMaxUndoHistory(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -2721,6 +2864,7 @@ static Scheme_Object *os_wxMediaBufferSetMaxUndoHistory(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2743,6 +2887,7 @@ static Scheme_Object *os_wxMediaBufferAddSchemeUndo(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2762,6 +2907,7 @@ static Scheme_Object *os_wxMediaBufferClearUndos(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2781,6 +2927,7 @@ static Scheme_Object *os_wxMediaBufferRedo(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2800,6 +2947,7 @@ static Scheme_Object *os_wxMediaBufferUndo(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2819,6 +2967,7 @@ static Scheme_Object *os_wxMediaBufferSelectAll(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2838,6 +2987,7 @@ static Scheme_Object *os_wxMediaBufferClear(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2874,6 +3024,7 @@ static Scheme_Object *os_wxMediaBufferGetViewSize(int n,  Scheme_Object *p[])
   if (n > (POFFSET+1) && !XC_SCHEME_NULLP(p[POFFSET+1]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2894,6 +3045,7 @@ static Scheme_Object *os_wxMediaBufferGetDC(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxDC(r));
 }
 
@@ -2930,6 +3082,7 @@ static Scheme_Object *os_wxMediaBufferLocalToGlobal(int n,  Scheme_Object *p[])
   if (n > (POFFSET+1) && !XC_SCHEME_NULLP(p[POFFSET+1]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2966,6 +3119,7 @@ static Scheme_Object *os_wxMediaBufferGlobalToLocal(int n,  Scheme_Object *p[])
   if (n > (POFFSET+1) && !XC_SCHEME_NULLP(p[POFFSET+1]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2988,6 +3142,7 @@ static Scheme_Object *os_wxMediaBufferSetAdmin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3008,6 +3163,7 @@ static Scheme_Object *os_wxMediaBufferGetAdmin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaAdmin(r));
 }
 
@@ -3030,6 +3186,7 @@ static Scheme_Object *os_wxMediaBufferPrintToDC(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3052,6 +3209,7 @@ static Scheme_Object *os_wxMediaBufferFindScrollLine(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -3072,6 +3230,7 @@ static Scheme_Object *os_wxMediaBufferNumScrollLines(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -3094,6 +3253,7 @@ static Scheme_Object *os_wxMediaBufferScrollLineLocation(int n,  Scheme_Object *
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -3145,6 +3305,7 @@ static Scheme_Object *os_wxMediaBufferGetSnipLocation(int n,  Scheme_Object *p[]
   if (n > (POFFSET+2) && !XC_SCHEME_NULLP(p[POFFSET+2]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x2)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3165,6 +3326,7 @@ static Scheme_Object *os_wxMediaBufferRefreshDelayed(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3184,6 +3346,7 @@ static Scheme_Object *os_wxMediaBufferEndEditSequence(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3208,6 +3371,7 @@ static Scheme_Object *os_wxMediaBufferBeginEditSequence(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3230,6 +3394,7 @@ static Scheme_Object *os_wxMediaBufferStyleHasChanged(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3253,6 +3418,7 @@ static Scheme_Object *os_wxMediaBufferWriteToFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3281,6 +3447,7 @@ static Scheme_Object *os_wxMediaBufferReadFromFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3302,6 +3469,7 @@ static Scheme_Object *os_wxMediaBufferSetMinHeight(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3323,6 +3491,7 @@ static Scheme_Object *os_wxMediaBufferSetMaxHeight(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3343,6 +3512,7 @@ static Scheme_Object *os_wxMediaBufferGetMinHeight(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_float(r, "none"));
 }
 
@@ -3363,6 +3533,7 @@ static Scheme_Object *os_wxMediaBufferGetMaxHeight(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_float(r, "none"));
 }
 
@@ -3384,6 +3555,7 @@ static Scheme_Object *os_wxMediaBufferSetMinWidth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3405,6 +3577,7 @@ static Scheme_Object *os_wxMediaBufferSetMaxWidth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3425,6 +3598,7 @@ static Scheme_Object *os_wxMediaBufferGetMinWidth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_float(r, "none"));
 }
 
@@ -3445,6 +3619,7 @@ static Scheme_Object *os_wxMediaBufferGetMaxWidth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_float(r, "none"));
 }
 
@@ -3465,6 +3640,7 @@ static Scheme_Object *os_wxMediaBufferGetSpace(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -3485,6 +3661,7 @@ static Scheme_Object *os_wxMediaBufferGetDescent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -3521,6 +3698,7 @@ static Scheme_Object *os_wxMediaBufferGetExtent(int n,  Scheme_Object *p[])
   if (n > (POFFSET+1) && !XC_SCHEME_NULLP(p[POFFSET+1]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3540,6 +3718,7 @@ static Scheme_Object *os_wxMediaBufferNoInsertFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3559,6 +3738,7 @@ static Scheme_Object *os_wxMediaBufferNoLoadFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3592,6 +3772,7 @@ static Scheme_Object *os_wxMediaBufferInsertPort(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_fileType(r));
 }
 
@@ -3628,6 +3809,7 @@ static Scheme_Object *os_wxMediaBufferSaveFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3650,6 +3832,7 @@ static Scheme_Object *os_wxMediaBufferGetFlattenedText(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return WITH_VAR_STACK(scheme_make_sized_string(r, _x0, 0));
 }
 
@@ -3679,6 +3862,7 @@ static Scheme_Object *os_wxMediaBufferPutFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -3705,6 +3889,7 @@ static Scheme_Object *os_wxMediaBufferGetFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -3727,6 +3912,7 @@ static Scheme_Object *os_wxMediaBufferAfterEditSequence(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3749,6 +3935,7 @@ static Scheme_Object *os_wxMediaBufferOnEditSequence(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3773,6 +3960,7 @@ static Scheme_Object *os_wxMediaBufferAfterLoadFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3800,6 +3988,7 @@ static Scheme_Object *os_wxMediaBufferOnLoadFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3828,6 +4017,7 @@ static Scheme_Object *os_wxMediaBufferCanLoadFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3852,6 +4042,7 @@ static Scheme_Object *os_wxMediaBufferAfterSaveFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3879,6 +4070,7 @@ static Scheme_Object *os_wxMediaBufferOnSaveFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3907,6 +4099,7 @@ static Scheme_Object *os_wxMediaBufferCanSaveFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3932,6 +4125,7 @@ static Scheme_Object *os_wxMediaBufferOnNewBox(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -3964,6 +4158,7 @@ static Scheme_Object *os_wxMediaBufferOnNewImageSnip(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxImageSnip(r));
 }
 
@@ -4006,6 +4201,7 @@ static Scheme_Object *os_wxMediaBufferInvalidateBitmapCache(int n,  Scheme_Objec
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4047,6 +4243,7 @@ static Scheme_Object *os_wxMediaBufferOnPaint(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4073,6 +4270,7 @@ static Scheme_Object *os_wxMediaBufferWriteFootersToFile(int n,  Scheme_Object *
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -4099,6 +4297,7 @@ static Scheme_Object *os_wxMediaBufferWriteHeadersToFile(int n,  Scheme_Object *
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -4128,6 +4327,7 @@ static Scheme_Object *os_wxMediaBufferReadFooterFromFile(int n,  Scheme_Object *
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -4157,6 +4357,7 @@ static Scheme_Object *os_wxMediaBufferReadHeaderFromFile(int n,  Scheme_Object *
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -4187,6 +4388,7 @@ static Scheme_Object *os_wxMediaBufferSetFilename(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4213,6 +4415,7 @@ static Scheme_Object *os_wxMediaBufferReleaseSnip(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -4240,6 +4443,7 @@ static Scheme_Object *os_wxMediaBufferOnSnipModified(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4264,6 +4468,7 @@ static Scheme_Object *os_wxMediaBufferSetModified(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4292,6 +4497,7 @@ static Scheme_Object *os_wxMediaBufferSetSnipData(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4318,6 +4524,7 @@ static Scheme_Object *os_wxMediaBufferGetSnipData(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBufferData(r));
 }
 
@@ -4351,6 +4558,7 @@ static Scheme_Object *os_wxMediaBufferNeedsUpdate(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4378,6 +4586,7 @@ static Scheme_Object *os_wxMediaBufferResized(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4408,6 +4617,7 @@ static Scheme_Object *os_wxMediaBufferSetCaretOwner(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4449,6 +4659,7 @@ static Scheme_Object *os_wxMediaBufferScrollTo(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -4471,6 +4682,7 @@ static Scheme_Object *os_wxMediaBufferOnDisplaySize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4493,6 +4705,7 @@ static Scheme_Object *os_wxMediaBufferOnChange(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4517,6 +4730,7 @@ static Scheme_Object *os_wxMediaBufferOnFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4542,6 +4756,7 @@ static Scheme_Object *os_wxMediaBufferOnDefaultChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4567,6 +4782,7 @@ static Scheme_Object *os_wxMediaBufferOnDefaultEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4592,6 +4808,7 @@ static Scheme_Object *os_wxMediaBufferOnLocalChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4617,6 +4834,7 @@ static Scheme_Object *os_wxMediaBufferOnLocalEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4637,6 +4855,7 @@ static Scheme_Object *os_wxMediaBufferFindFirstSnip(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -4659,6 +4878,7 @@ static Scheme_Object *os_wxMediaBufferBlinkCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4683,6 +4903,7 @@ static Scheme_Object *os_wxMediaBufferOwnCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4715,6 +4936,7 @@ static Scheme_Object *os_wxMediaBufferRefresh(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4741,6 +4963,7 @@ static Scheme_Object *os_wxMediaBufferAdjustCursor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxCursor(r));
 }
 
@@ -4766,6 +4989,7 @@ static Scheme_Object *os_wxMediaBufferOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4791,6 +5015,7 @@ static Scheme_Object *os_wxMediaBufferOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4816,6 +5041,7 @@ static Scheme_Object *os_wxMediaBufferCopySelfTo(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4839,6 +5065,7 @@ static Scheme_Object *os_wxMediaBufferCopySelf(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaBuffer(r));
 }
 
@@ -4863,6 +5090,7 @@ static Scheme_Object *os_wxMediaBufferKill(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4887,6 +5115,7 @@ static Scheme_Object *os_wxMediaBufferPaste(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4916,6 +5145,7 @@ static Scheme_Object *os_wxMediaBufferCopy(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4945,6 +5175,7 @@ static Scheme_Object *os_wxMediaBufferCut(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4967,6 +5198,7 @@ static Scheme_Object *os_wxMediaBufferInsert(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4989,6 +5221,7 @@ static Scheme_Object *os_wxMediaBufferChangeStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5127,6 +5360,7 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxMediaBuffer_interface, "editor" "<%>", env));
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaBuffer, wxTYPE_MEDIA_BUFFER));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxMediaBuffer(Scheme_Object *obj, const char *stop, int nullOK)
@@ -5158,13 +5392,14 @@ Scheme_Object *objscheme_bundle_wxMediaBuffer(class wxMediaBuffer *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_MEDIA_BUFFER) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaBuffer_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -5206,6 +5441,7 @@ static Scheme_Object *wxMediaGlobalwxGetTheBufferDataClassList(int n,  Scheme_Ob
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBufferDataClassList(r));
 }
 
@@ -5225,6 +5461,7 @@ static Scheme_Object *wxMediaGlobalwxGetTheSnipClassList(int n,  Scheme_Object *
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnipClassList(r));
 }
 
@@ -5245,6 +5482,7 @@ static Scheme_Object *wxMediaGlobalwxMediaSetXSelectionMode(int n,  Scheme_Objec
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5266,6 +5504,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaPasteboardFunctions(int n,  Scheme_
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5287,6 +5526,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaEditorFunctions(int n,  Scheme_Obje
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5308,6 +5548,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaBufferFunctions(int n,  Scheme_Obje
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5330,6 +5571,7 @@ static Scheme_Object *wxMediaGlobalwxWriteMediaGlobalFooter(int n,  Scheme_Objec
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -5352,6 +5594,7 @@ static Scheme_Object *wxMediaGlobalwxWriteMediaGlobalHeader(int n,  Scheme_Objec
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -5374,6 +5617,7 @@ static Scheme_Object *wxMediaGlobalwxReadMediaGlobalFooter(int n,  Scheme_Object
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -5396,6 +5640,7 @@ static Scheme_Object *wxMediaGlobalwxReadMediaGlobalHeader(int n,  Scheme_Object
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -5418,6 +5663,7 @@ static Scheme_Object *wxMediaGlobalwxSetMediaPrintMargin(int n,  Scheme_Object *
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5453,6 +5699,7 @@ static Scheme_Object *wxMediaGlobalwxGetMediaPrintMargin(int n,  Scheme_Object *
   if (n > (0+1) && !XC_SCHEME_NULLP(p[0+1]))
     { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[0+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5485,6 +5732,7 @@ void objscheme_setup_wxMediaGlobal(Scheme_Env *env)
   WITH_VAR_STACK(scheme_install_xc_global("set-editor-print-margin", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxMediaGlobalwxGetMediaPrintMargin, "get-editor-print-margin", 2, 2));
   WITH_VAR_STACK(scheme_install_xc_global("get-editor-print-margin", functmp, env));
+  READY_TO_RETURN;
 }
 
 

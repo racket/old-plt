@@ -55,6 +55,8 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
     cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
+  READY_TO_RETURN;
+
   return cdr;
 }
 
@@ -74,8 +76,10 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
   if (c) *c = len;
 
-  if (!(len + l_EXTRA))
+  if (!(len + l_EXTRA)) {
+    READY_TO_RETURN;
     return NULL;
+  }
 
 #if l_DIRECTMALLOC
   f = (l_TYPE l_POINT *)WITH_VAR_STACK(GC_malloc_atomic(sizeof(l_TYPE l_POINT) * (len + l_EXTRA)));
@@ -86,6 +90,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
       WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
+      READY_TO_RETURN;
       return NULL;
     }
 
@@ -101,6 +106,8 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
     l = SCHEME_CDR(l);
   }
   l_TERMINATE
+
+  READY_TO_RETURN;
 
   return f;
 }

@@ -86,6 +86,7 @@ static Scheme_Object *os_wxMultColourSet(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -121,6 +122,7 @@ static Scheme_Object *os_wxMultColourGet(int n,  Scheme_Object *p[])
   if (n > (POFFSET+2))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x2)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -154,6 +156,7 @@ static Scheme_Object *objscheme_wxMultColour_Setr(int n,  Scheme_Object *p[])
   v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-r in mult-color%"));
   ((wxMultColour *)cobj->primdata)->r = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -187,6 +190,7 @@ static Scheme_Object *objscheme_wxMultColour_Setg(int n,  Scheme_Object *p[])
   v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-g in mult-color%"));
   ((wxMultColour *)cobj->primdata)->g = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -220,6 +224,7 @@ static Scheme_Object *objscheme_wxMultColour_Setb(int n,  Scheme_Object *p[])
   v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-b in mult-color%"));
   ((wxMultColour *)cobj->primdata)->b = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -249,6 +254,7 @@ void objscheme_setup_wxMultColour(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxMultColour_interface, "mult-color" "<%>", env));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxMultColour(Scheme_Object *obj, const char *stop, int nullOK)
@@ -280,13 +286,14 @@ Scheme_Object *objscheme_bundle_wxMultColour(class wxMultColour *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMultColour_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -359,6 +366,7 @@ static Scheme_Object *os_wxAddColourSet(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -394,6 +402,7 @@ static Scheme_Object *os_wxAddColourGet(int n,  Scheme_Object *p[])
   if (n > (POFFSET+2))
     { Scheme_Object *sbv_ = scheme_make_integer(_x2); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -427,6 +436,7 @@ static Scheme_Object *objscheme_wxAddColour_Setr(int n,  Scheme_Object *p[])
   v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET], -1000, 1000, "set-r in add-color%"));
   ((wxAddColour *)cobj->primdata)->r = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -460,6 +470,7 @@ static Scheme_Object *objscheme_wxAddColour_Setg(int n,  Scheme_Object *p[])
   v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET], -1000, 1000, "set-g in add-color%"));
   ((wxAddColour *)cobj->primdata)->g = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -493,6 +504,7 @@ static Scheme_Object *objscheme_wxAddColour_Setb(int n,  Scheme_Object *p[])
   v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET], -1000, 1000, "set-b in add-color%"));
   ((wxAddColour *)cobj->primdata)->b = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -522,6 +534,7 @@ void objscheme_setup_wxAddColour(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxAddColour_interface, "add-color" "<%>", env));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxAddColour(Scheme_Object *obj, const char *stop, int nullOK)
@@ -553,13 +566,14 @@ Scheme_Object *objscheme_bundle_wxAddColour(class wxAddColour *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxAddColour_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -616,16 +630,17 @@ static int unbundle_symset_family(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!family_wxSYMBOL_sym) WITH_VAR_STACK(init_symset_family());
   if (0) { }
-  else if (v == family_wxBASE_sym) { return wxBASE; }
-  else if (v == family_wxDEFAULT_sym) { return wxDEFAULT; }
-  else if (v == family_wxDECORATIVE_sym) { return wxDECORATIVE; }
-  else if (v == family_wxROMAN_sym) { return wxROMAN; }
-  else if (v == family_wxSCRIPT_sym) { return wxSCRIPT; }
-  else if (v == family_wxSWISS_sym) { return wxSWISS; }
-  else if (v == family_wxMODERN_sym) { return wxMODERN; }
-  else if (v == family_wxSYSTEM_sym) { return wxSYSTEM; }
-  else if (v == family_wxSYMBOL_sym) { return wxSYMBOL; }
+  else if (v == family_wxBASE_sym) { READY_TO_RETURN; return wxBASE; }
+  else if (v == family_wxDEFAULT_sym) { READY_TO_RETURN; return wxDEFAULT; }
+  else if (v == family_wxDECORATIVE_sym) { READY_TO_RETURN; return wxDECORATIVE; }
+  else if (v == family_wxROMAN_sym) { READY_TO_RETURN; return wxROMAN; }
+  else if (v == family_wxSCRIPT_sym) { READY_TO_RETURN; return wxSCRIPT; }
+  else if (v == family_wxSWISS_sym) { READY_TO_RETURN; return wxSWISS; }
+  else if (v == family_wxMODERN_sym) { READY_TO_RETURN; return wxMODERN; }
+  else if (v == family_wxSYSTEM_sym) { READY_TO_RETURN; return wxSYSTEM; }
+  else if (v == family_wxSYMBOL_sym) { READY_TO_RETURN; return wxSYMBOL; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "family symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -668,11 +683,12 @@ static int unbundle_symset_weight(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!weight_wxBOLD_sym) WITH_VAR_STACK(init_symset_weight());
   if (0) { }
-  else if (v == weight_wxBASE_sym) { return wxBASE; }
-  else if (v == weight_wxNORMAL_sym) { return wxNORMAL; }
-  else if (v == weight_wxLIGHT_sym) { return wxLIGHT; }
-  else if (v == weight_wxBOLD_sym) { return wxBOLD; }
+  else if (v == weight_wxBASE_sym) { READY_TO_RETURN; return wxBASE; }
+  else if (v == weight_wxNORMAL_sym) { READY_TO_RETURN; return wxNORMAL; }
+  else if (v == weight_wxLIGHT_sym) { READY_TO_RETURN; return wxLIGHT; }
+  else if (v == weight_wxBOLD_sym) { READY_TO_RETURN; return wxBOLD; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "weight symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -710,11 +726,12 @@ static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!style_wxSLANT_sym) WITH_VAR_STACK(init_symset_style());
   if (0) { }
-  else if (v == style_wxBASE_sym) { return wxBASE; }
-  else if (v == style_wxNORMAL_sym) { return wxNORMAL; }
-  else if (v == style_wxITALIC_sym) { return wxITALIC; }
-  else if (v == style_wxSLANT_sym) { return wxSLANT; }
+  else if (v == style_wxBASE_sym) { READY_TO_RETURN; return wxBASE; }
+  else if (v == style_wxNORMAL_sym) { READY_TO_RETURN; return wxNORMAL; }
+  else if (v == style_wxITALIC_sym) { READY_TO_RETURN; return wxITALIC; }
+  else if (v == style_wxSLANT_sym) { READY_TO_RETURN; return wxSLANT; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "style symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -752,11 +769,12 @@ static int unbundle_symset_align(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!align_wxALIGN_CENTER_sym) WITH_VAR_STACK(init_symset_align());
   if (0) { }
-  else if (v == align_wxBASE_sym) { return wxBASE; }
-  else if (v == align_wxALIGN_TOP_sym) { return wxALIGN_TOP; }
-  else if (v == align_wxALIGN_BOTTOM_sym) { return wxALIGN_BOTTOM; }
-  else if (v == align_wxALIGN_CENTER_sym) { return wxALIGN_CENTER; }
+  else if (v == align_wxBASE_sym) { READY_TO_RETURN; return wxBASE; }
+  else if (v == align_wxALIGN_TOP_sym) { READY_TO_RETURN; return wxALIGN_TOP; }
+  else if (v == align_wxALIGN_BOTTOM_sym) { READY_TO_RETURN; return wxALIGN_BOTTOM; }
+  else if (v == align_wxALIGN_CENTER_sym) { READY_TO_RETURN; return wxALIGN_CENTER; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "align symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -800,13 +818,14 @@ static int unbundle_symset_changeNoArg(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) WITH_VAR_STACK(init_symset_changeNoArg());
   if (0) { }
-  else if (v == changeNoArg_wxCHANGE_NOTHING_sym) { return wxCHANGE_NOTHING; }
-  else if (v == changeNoArg_wxCHANGE_NORMAL_sym) { return wxCHANGE_NORMAL; }
-  else if (v == changeNoArg_wxCHANGE_BOLD_sym) { return wxCHANGE_BOLD; }
-  else if (v == changeNoArg_wxCHANGE_ITALIC_sym) { return wxCHANGE_ITALIC; }
-  else if (v == changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym) { return wxCHANGE_TOGGLE_UNDERLINE; }
-  else if (v == changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) { return wxCHANGE_NORMAL_COLOUR; }
+  else if (v == changeNoArg_wxCHANGE_NOTHING_sym) { READY_TO_RETURN; return wxCHANGE_NOTHING; }
+  else if (v == changeNoArg_wxCHANGE_NORMAL_sym) { READY_TO_RETURN; return wxCHANGE_NORMAL; }
+  else if (v == changeNoArg_wxCHANGE_BOLD_sym) { READY_TO_RETURN; return wxCHANGE_BOLD; }
+  else if (v == changeNoArg_wxCHANGE_ITALIC_sym) { READY_TO_RETURN; return wxCHANGE_ITALIC; }
+  else if (v == changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym) { READY_TO_RETURN; return wxCHANGE_TOGGLE_UNDERLINE; }
+  else if (v == changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) { READY_TO_RETURN; return wxCHANGE_NORMAL_COLOUR; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeNoArg symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -823,8 +842,9 @@ static int unbundle_symset_changeFam(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!changeFam_wxCHANGE_FAMILY_sym) WITH_VAR_STACK(init_symset_changeFam());
   if (0) { }
-  else if (v == changeFam_wxCHANGE_FAMILY_sym) { return wxCHANGE_FAMILY; }
+  else if (v == changeFam_wxCHANGE_FAMILY_sym) { READY_TO_RETURN; return wxCHANGE_FAMILY; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeFam symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -833,8 +853,9 @@ static int istype_symset_changeFam(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!changeFam_wxCHANGE_FAMILY_sym) WITH_VAR_STACK(init_symset_changeFam());
   if (0) { }
-  else if (v == changeFam_wxCHANGE_FAMILY_sym) { return 1; }
+  else if (v == changeFam_wxCHANGE_FAMILY_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeFam symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -854,9 +875,10 @@ static int unbundle_symset_changeStyle(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!changeStyle_wxCHANGE_TOGGLE_STYLE_sym) WITH_VAR_STACK(init_symset_changeStyle());
   if (0) { }
-  else if (v == changeStyle_wxCHANGE_STYLE_sym) { return wxCHANGE_STYLE; }
-  else if (v == changeStyle_wxCHANGE_TOGGLE_STYLE_sym) { return wxCHANGE_TOGGLE_STYLE; }
+  else if (v == changeStyle_wxCHANGE_STYLE_sym) { READY_TO_RETURN; return wxCHANGE_STYLE; }
+  else if (v == changeStyle_wxCHANGE_TOGGLE_STYLE_sym) { READY_TO_RETURN; return wxCHANGE_TOGGLE_STYLE; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeStyle symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -865,9 +887,10 @@ static int istype_symset_changeStyle(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!changeStyle_wxCHANGE_TOGGLE_STYLE_sym) WITH_VAR_STACK(init_symset_changeStyle());
   if (0) { }
-  else if (v == changeStyle_wxCHANGE_STYLE_sym) { return 1; }
-  else if (v == changeStyle_wxCHANGE_TOGGLE_STYLE_sym) { return 1; }
+  else if (v == changeStyle_wxCHANGE_STYLE_sym) { READY_TO_RETURN; return 1; }
+  else if (v == changeStyle_wxCHANGE_TOGGLE_STYLE_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeStyle symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -887,9 +910,10 @@ static int unbundle_symset_changeWeight(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) WITH_VAR_STACK(init_symset_changeWeight());
   if (0) { }
-  else if (v == changeWeight_wxCHANGE_WEIGHT_sym) { return wxCHANGE_WEIGHT; }
-  else if (v == changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) { return wxCHANGE_TOGGLE_WEIGHT; }
+  else if (v == changeWeight_wxCHANGE_WEIGHT_sym) { READY_TO_RETURN; return wxCHANGE_WEIGHT; }
+  else if (v == changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) { READY_TO_RETURN; return wxCHANGE_TOGGLE_WEIGHT; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeWeight symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -898,9 +922,10 @@ static int istype_symset_changeWeight(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) WITH_VAR_STACK(init_symset_changeWeight());
   if (0) { }
-  else if (v == changeWeight_wxCHANGE_WEIGHT_sym) { return 1; }
-  else if (v == changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) { return 1; }
+  else if (v == changeWeight_wxCHANGE_WEIGHT_sym) { READY_TO_RETURN; return 1; }
+  else if (v == changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeWeight symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -917,8 +942,9 @@ static int unbundle_symset_changeUnderline(Scheme_Object *v, const char *where) 
   VAR_STACK_PUSH(0, v);
   if (!changeUnderline_wxCHANGE_UNDERLINE_sym) WITH_VAR_STACK(init_symset_changeUnderline());
   if (0) { }
-  else if (v == changeUnderline_wxCHANGE_UNDERLINE_sym) { return wxCHANGE_UNDERLINE; }
+  else if (v == changeUnderline_wxCHANGE_UNDERLINE_sym) { READY_TO_RETURN; return wxCHANGE_UNDERLINE; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeUnderline symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -927,8 +953,9 @@ static int istype_symset_changeUnderline(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!changeUnderline_wxCHANGE_UNDERLINE_sym) WITH_VAR_STACK(init_symset_changeUnderline());
   if (0) { }
-  else if (v == changeUnderline_wxCHANGE_UNDERLINE_sym) { return 1; }
+  else if (v == changeUnderline_wxCHANGE_UNDERLINE_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeUnderline symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -951,10 +978,11 @@ static int unbundle_symset_changeSize(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!changeSize_wxCHANGE_SMALLER_sym) WITH_VAR_STACK(init_symset_changeSize());
   if (0) { }
-  else if (v == changeSize_wxCHANGE_SIZE_sym) { return wxCHANGE_SIZE; }
-  else if (v == changeSize_wxCHANGE_BIGGER_sym) { return wxCHANGE_BIGGER; }
-  else if (v == changeSize_wxCHANGE_SMALLER_sym) { return wxCHANGE_SMALLER; }
+  else if (v == changeSize_wxCHANGE_SIZE_sym) { READY_TO_RETURN; return wxCHANGE_SIZE; }
+  else if (v == changeSize_wxCHANGE_BIGGER_sym) { READY_TO_RETURN; return wxCHANGE_BIGGER; }
+  else if (v == changeSize_wxCHANGE_SMALLER_sym) { READY_TO_RETURN; return wxCHANGE_SMALLER; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeSize symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -963,10 +991,11 @@ static int istype_symset_changeSize(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!changeSize_wxCHANGE_SMALLER_sym) WITH_VAR_STACK(init_symset_changeSize());
   if (0) { }
-  else if (v == changeSize_wxCHANGE_SIZE_sym) { return 1; }
-  else if (v == changeSize_wxCHANGE_BIGGER_sym) { return 1; }
-  else if (v == changeSize_wxCHANGE_SMALLER_sym) { return 1; }
+  else if (v == changeSize_wxCHANGE_SIZE_sym) { READY_TO_RETURN; return 1; }
+  else if (v == changeSize_wxCHANGE_BIGGER_sym) { READY_TO_RETURN; return 1; }
+  else if (v == changeSize_wxCHANGE_SMALLER_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeSize symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -983,8 +1012,9 @@ static int unbundle_symset_changeAlign(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!changeAlign_wxCHANGE_ALIGNMENT_sym) WITH_VAR_STACK(init_symset_changeAlign());
   if (0) { }
-  else if (v == changeAlign_wxCHANGE_ALIGNMENT_sym) { return wxCHANGE_ALIGNMENT; }
+  else if (v == changeAlign_wxCHANGE_ALIGNMENT_sym) { READY_TO_RETURN; return wxCHANGE_ALIGNMENT; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeAlign symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -993,8 +1023,9 @@ static int istype_symset_changeAlign(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!changeAlign_wxCHANGE_ALIGNMENT_sym) WITH_VAR_STACK(init_symset_changeAlign());
   if (0) { }
-  else if (v == changeAlign_wxCHANGE_ALIGNMENT_sym) { return 1; }
+  else if (v == changeAlign_wxCHANGE_ALIGNMENT_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeAlign symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -1058,6 +1089,7 @@ static Scheme_Object *os_wxStyleDeltaCopy(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1081,6 +1113,7 @@ static Scheme_Object *os_wxStyleDeltaCollapse(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1104,6 +1137,7 @@ static Scheme_Object *os_wxStyleDeltaEqual(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1133,6 +1167,7 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaForeground(int n,  Scheme_Object *p
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     class wxColour* x0 INIT_NULLED_OUT;
 
@@ -1151,6 +1186,7 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaForeground(int n,  Scheme_Object *p
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyleDelta(r));
@@ -1182,6 +1218,7 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaBackground(int n,  Scheme_Object *p
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     class wxColour* x0 INIT_NULLED_OUT;
 
@@ -1200,6 +1237,7 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaBackground(int n,  Scheme_Object *p
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyleDelta(r));
@@ -1230,6 +1268,7 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaFace(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyleDelta(r));
 }
 
@@ -1260,6 +1299,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeStyle(p[POFFSET+0], NULL))) {
     int x0;
     int x1;
@@ -1279,6 +1319,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeWeight(p[POFFSET+0], NULL))) {
     int x0;
     int x1;
@@ -1298,6 +1339,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeUnderline(p[POFFSET+0], NULL))) {
     int x0;
     Bool x1;
@@ -1317,6 +1359,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeSize(p[POFFSET+0], NULL))) {
     int x0;
     int x1;
@@ -1336,6 +1379,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeAlign(p[POFFSET+0], NULL))) {
     int x0;
     int x1;
@@ -1355,6 +1399,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     int x0;
     int x1;
@@ -1376,6 +1421,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyleDelta(r));
@@ -1411,6 +1457,7 @@ static Scheme_Object *objscheme_wxStyleDelta_Setfamily(int n,  Scheme_Object *p[
   v = WITH_VAR_STACK(unbundle_symset_family(p[POFFSET], "set-family in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->family = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1444,6 +1491,7 @@ static Scheme_Object *objscheme_wxStyleDelta_Setface(int n,  Scheme_Object *p[])
   v = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET], "set-face in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->face = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1477,6 +1525,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetsizeMult(int n,  Scheme_Object *
   v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-size-mult in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->sizeMult = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1510,6 +1559,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetsizeAdd(int n,  Scheme_Object *p
   v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET], 0, 255, "set-size-add in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->sizeAdd = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1543,6 +1593,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetweightOn(int n,  Scheme_Object *
   v = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET], "set-weight-on in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->weightOn = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1576,6 +1627,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetweightOff(int n,  Scheme_Object 
   v = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET], "set-weight-off in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->weightOff = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1609,6 +1661,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetstyleOn(int n,  Scheme_Object *p
   v = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET], "set-style-on in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->styleOn = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1642,6 +1695,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetstyleOff(int n,  Scheme_Object *
   v = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET], "set-style-off in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->styleOff = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1675,6 +1729,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetunderlinedOn(int n,  Scheme_Obje
   v = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET], "set-underlined-on in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->underlinedOn = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1708,6 +1763,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetunderlinedOff(int n,  Scheme_Obj
   v = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET], "set-underlined-off in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->underlinedOff = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1741,6 +1797,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SettransparentTextBackingOn(int n, 
   v = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET], "set-transparent-text-backing-on in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->transparentTextBackingOn = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1774,6 +1831,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SettransparentTextBackingOff(int n,
   v = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET], "set-transparent-text-backing-off in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->transparentTextBackingOff = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1875,6 +1933,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOn(int n,  Scheme_Objec
   v = WITH_VAR_STACK(unbundle_symset_align(p[POFFSET], "set-alignment-on in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->alignmentOn = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1908,6 +1967,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOff(int n,  Scheme_Obje
   v = WITH_VAR_STACK(unbundle_symset_align(p[POFFSET], "set-alignment-off in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->alignmentOff = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1939,6 +1999,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeSize(p[POFFSET+0], NULL))) {
     int x0;
     int x1;
@@ -1961,6 +2022,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeUnderline(p[POFFSET+0], NULL))) {
     int x0;
     Bool x1;
@@ -1983,6 +2045,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeWeight(p[POFFSET+0], NULL))) {
     int x0;
     int x1;
@@ -2005,6 +2068,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeStyle(p[POFFSET+0], NULL))) {
     int x0;
     int x1;
@@ -2027,6 +2091,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeFam(p[POFFSET+0], NULL))) {
     int x0;
     int x1;
@@ -2049,6 +2114,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     int x0;
     int x1;
@@ -2073,6 +2139,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -2134,6 +2201,7 @@ void objscheme_setup_wxStyleDelta(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxStyleDelta, wxTYPE_STYLE_DELTA));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxStyleDelta(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2165,13 +2233,14 @@ Scheme_Object *objscheme_bundle_wxStyleDelta(class wxStyleDelta *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_STYLE_DELTA) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxStyleDelta_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -2250,6 +2319,7 @@ static Scheme_Object *os_wxStyleSwitchTo(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2272,6 +2342,7 @@ static Scheme_Object *os_wxStyleSetShiftStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2292,6 +2363,7 @@ static Scheme_Object *os_wxStyleGetShiftStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
@@ -2312,6 +2384,7 @@ static Scheme_Object *os_wxStyleIsJoin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -2334,6 +2407,7 @@ static Scheme_Object *os_wxStyleSetDelta(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2356,6 +2430,7 @@ static Scheme_Object *os_wxStyleGetDelta(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2378,6 +2453,7 @@ static Scheme_Object *os_wxStyleSetBaseStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2398,6 +2474,7 @@ static Scheme_Object *os_wxStyleGetBaseStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
@@ -2421,6 +2498,7 @@ static Scheme_Object *os_wxStyleGetTextWidth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -2444,6 +2522,7 @@ static Scheme_Object *os_wxStyleGetTextSpace(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -2467,6 +2546,7 @@ static Scheme_Object *os_wxStyleGetTextDescent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -2490,6 +2570,7 @@ static Scheme_Object *os_wxStyleGetTextHeight(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -2510,6 +2591,7 @@ static Scheme_Object *os_wxStyleGetTransparentTextBacking(int n,  Scheme_Object 
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -2530,6 +2612,7 @@ static Scheme_Object *os_wxStyleGetAlignment(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_align(r));
 }
 
@@ -2550,6 +2633,7 @@ static Scheme_Object *os_wxStyleGetBackground(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
@@ -2570,6 +2654,7 @@ static Scheme_Object *os_wxStyleGetForeground(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
@@ -2590,6 +2675,7 @@ static Scheme_Object *os_wxStyleGetFont(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
 }
 
@@ -2610,6 +2696,7 @@ static Scheme_Object *os_wxStyleGetUnderlined(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -2630,6 +2717,7 @@ static Scheme_Object *os_wxStyleGetStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_style(r));
 }
 
@@ -2650,6 +2738,7 @@ static Scheme_Object *os_wxStyleGetWeight(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_weight(r));
 }
 
@@ -2670,6 +2759,7 @@ static Scheme_Object *os_wxStyleGetSize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -2690,6 +2780,7 @@ static Scheme_Object *os_wxStyleGetFace(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -2710,6 +2801,7 @@ static Scheme_Object *os_wxStyleGetFamily(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_family(r));
 }
 
@@ -2730,6 +2822,7 @@ static Scheme_Object *os_wxStyleGetName(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -2776,6 +2869,7 @@ void objscheme_setup_wxStyle(Scheme_Env *env)
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxStyle_interface, "style" "<%>", env));
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxStyle, wxTYPE_STYLE));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxStyle(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2807,13 +2901,14 @@ Scheme_Object *objscheme_bundle_wxStyle(class wxStyle *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_STYLE) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxStyle_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -2902,6 +2997,7 @@ static Scheme_Object *os_wxStyleListForgetNotification(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2927,6 +3023,7 @@ static Scheme_Object *os_wxStyleListNotifyOnChange(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return ((Scheme_Object *)r);
 }
 
@@ -2950,6 +3047,7 @@ static Scheme_Object *os_wxStyleListStyleToIndex(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return ((r < 0) ? scheme_false : scheme_make_integer(r));
 }
 
@@ -2972,6 +3070,7 @@ static Scheme_Object *os_wxStyleListIndexToStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
@@ -2995,6 +3094,7 @@ static Scheme_Object *os_wxStyleListConvert(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
@@ -3021,6 +3121,7 @@ static Scheme_Object *os_wxStyleListReplaceNamedStyle(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
@@ -3047,6 +3148,7 @@ static Scheme_Object *os_wxStyleListNewNamedStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
@@ -3070,6 +3172,7 @@ static Scheme_Object *os_wxStyleListFindNamedStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
@@ -3096,6 +3199,7 @@ static Scheme_Object *os_wxStyleListFindOrCreateJoinStyle(int n,  Scheme_Object 
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
@@ -3122,6 +3226,7 @@ static Scheme_Object *os_wxStyleListFindOrCreateStyle(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
@@ -3142,6 +3247,7 @@ static Scheme_Object *os_wxStyleListNumber(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -3162,6 +3268,7 @@ static Scheme_Object *os_wxStyleListBasicStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyle(r));
 }
 
@@ -3188,6 +3295,7 @@ static Scheme_Object *os_wxStyleList_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   ((Scheme_Class_Object *)p[0])->primflag = 1;
   return scheme_void;
@@ -3220,6 +3328,7 @@ void objscheme_setup_wxStyleList(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxStyleList, wxTYPE_STYLE_LIST));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxStyleList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -3251,13 +3360,14 @@ Scheme_Object *objscheme_bundle_wxStyleList(class wxStyleList *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_STYLE_LIST) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxStyleList_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -3288,6 +3398,8 @@ static void NotifyCallbackToScheme(wxStyle *s, Scheme_Object *f)
   p[0] = s ? WITH_VAR_STACK(objscheme_bundle_wxStyle(s)) : scheme_false;
 
   WITH_VAR_STACK(scheme_apply_multi(f, 1, p));
+
+  READY_TO_RETURN;
 }
 
 static wxStyleList* wxGetTheStyleList()
@@ -3311,6 +3423,7 @@ static Scheme_Object *wxGlobalStyleListwxGetTheStyleList(int n,  Scheme_Object *
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyleList(r));
 }
 
@@ -3321,5 +3434,6 @@ void objscheme_setup_wxGlobalStyleList(Scheme_Env *env)
   VAR_STACK_PUSH(0, env);
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGlobalStyleListwxGetTheStyleList, "get-the-style-list", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-style-list", functmp, env));
+  READY_TO_RETURN;
 }
 

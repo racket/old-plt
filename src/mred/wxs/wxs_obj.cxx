@@ -90,6 +90,7 @@ static Scheme_Object *os_wxObject_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -110,6 +111,7 @@ void objscheme_setup_wxObject(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxObject_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxObject(Scheme_Object *obj, const char *stop, int nullOK)
@@ -141,7 +143,7 @@ Scheme_Object *objscheme_bundle_wxObject(class wxObject *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxObject_class));
 
   obj->primdata = realobj;
@@ -149,6 +151,7 @@ Scheme_Object *objscheme_bundle_wxObject(class wxObject *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 

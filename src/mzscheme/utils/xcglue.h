@@ -184,23 +184,48 @@ typedef float nnfloat;
 #endif
 
 #ifdef MZ_PRECISE_GC
-# define _SETUP_VAR_STACK(var, n, vs)    void *var[n + 2]; \
-                                         var[0] = vs; \
-                                         var[1] = (void *)n
-# define SETUP_VAR_STACK(n)              _SETUP_VAR_STACK(__gc_var_stack__, n, GC_variable_stack)
-# define SETUP_VAR_STACK_REMEMBERED(n)   _SETUP_VAR_STACK(__gc_var_stack__, n, __remembered_vs__)
-# define SETUP_VAR_STACK_PRE_REMEMBERED(n)  _SETUP_VAR_STACK(__gc_var_stack__, n, __remembered_vs__[0])
-# define SETUP_PRE_VAR_STACK(n)          _SETUP_VAR_STACK(__gc_pre_var_stack__, n, GC_variable_stack); \
-                                         GC_variable_stack = __gc_pre_var_stack__
-# define VAR_STACK_PUSH(p, var)          __gc_var_stack__[p+2] = &(var)
-# define VAR_STACK_PUSH_ARRAY(p, var, n) __gc_var_stack__[p+2] = 0; \
-                                         __gc_var_stack__[p+3] = &(var); \
-                                         __gc_var_stack__[p+4] = (void *)(n)
-# define PRE_VAR_STACK_PUSH(p, var)      __gc_pre_var_stack__[p+2] = &(var)
-# define SET_VAR_STACK()                 GC_variable_stack = __gc_var_stack__
-# define WITH_VAR_STACK(x)               (SET_VAR_STACK(), x)
-# define REMEMBER_VAR_STACK()            void **__remembered_vs__ = GC_variable_stack
-# define WITH_REMEMBERED_STACK(x)        (GC_variable_stack = __remembered_vs__, x)
+# ifndef GC_STACK_CALLEE_RESTORE
+#  define _SETUP_VAR_STACK(var, n, vs)    void *var[n + 2]; \
+                                          var[0] = vs; \
+                                          var[1] = (void *)n
+#  define SETUP_VAR_STACK(n)              _SETUP_VAR_STACK(__gc_var_stack__, n, GC_variable_stack)
+#  define SETUP_VAR_STACK_REMEMBERED(n)   _SETUP_VAR_STACK(__gc_var_stack__, n, __remembered_vs__)
+#  define SETUP_VAR_STACK_PRE_REMEMBERED(n)  _SETUP_VAR_STACK(__gc_var_stack__, n, __remembered_vs__[0])
+#  define SETUP_PRE_VAR_STACK(n)          _SETUP_VAR_STACK(__gc_pre_var_stack__, n, GC_variable_stack); \
+                                          GC_variable_stack = __gc_pre_var_stack__
+#  define VAR_STACK_PUSH(p, var)          __gc_var_stack__[p+2] = &(var)
+#  define VAR_STACK_PUSH_ARRAY(p, var, n) __gc_var_stack__[p+2] = 0; \
+                                          __gc_var_stack__[p+3] = &(var); \
+                                          __gc_var_stack__[p+4] = (void *)(n)
+#  define PRE_VAR_STACK_PUSH(p, var)      __gc_pre_var_stack__[p+2] = &(var)
+#  define SET_VAR_STACK()                 GC_variable_stack = __gc_var_stack__
+#  define WITH_VAR_STACK(x)               (SET_VAR_STACK(), x)
+#  define REMEMBER_VAR_STACK()            void **__remembered_vs__ = GC_variable_stack
+#  define WITH_REMEMBERED_STACK(x)        (GC_variable_stack = __remembered_vs__, x)
+#  define READY_TO_RETURN                  /* empty */
+#  define READY_TO_PRE_RETURN              /* empty */
+# else
+#  define _SETUP_VAR_STACK(var, n, vs)    void *var[n + 2]; \
+                                          var[0] = vs; \
+                                          var[1] = (void *)n; \
+                                          GC_variable_stack = var
+#  define SETUP_VAR_STACK(n)              _SETUP_VAR_STACK(__gc_var_stack__, n, GC_variable_stack)
+#  define SETUP_VAR_STACK_REMEMBERED(n)   SETUP_VAR_STACK(n)
+#  define SETUP_VAR_STACK_PRE_REMEMBERED(n) _SETUP_VAR_STACK(__gc_var_stack__, n, __gc_pre_var_stack__[0])
+#  define SETUP_PRE_VAR_STACK(n)          _SETUP_VAR_STACK(__gc_pre_var_stack__, n, GC_variable_stack)
+#  define VAR_STACK_PUSH(p, var)          __gc_var_stack__[p+2] = &(var)
+#  define VAR_STACK_PUSH_ARRAY(p, var, n) __gc_var_stack__[p+2] = 0; \
+                                          __gc_var_stack__[p+3] = &(var); \
+                                          __gc_var_stack__[p+4] = (void *)(n)
+#  define PRE_VAR_STACK_PUSH(p, var)      __gc_pre_var_stack__[p+2] = &(var)
+#  define SET_VAR_STACK()                 /* empty */
+#  define WITH_VAR_STACK(x)               x
+#  define REMEMBER_VAR_STACK()            /* empty */
+#  define WITH_REMEMBERED_STACK(x)        x
+#  define READY_TO_RETURN                 GC_variable_stack = (void **)__gc_var_stack__[0]
+#  define READY_TO_PRE_RETURN             READY_TO_RETURN
+# endif
+
 # define CONSTRUCTOR_ARGS(x)             ()
 # define CONSTRUCTOR_INIT(x)             /* empty */
 # define ASSELF                          sElF->
@@ -219,6 +244,8 @@ typedef float nnfloat;
 # define WITH_VAR_STACK(x)               x
 # define REMEMBER_VAR_STACK()            /* empty */
 # define WITH_REMEMBERED_STACK(x)        x
+# define READY_TO_RETURN                 /* empty */
+# define READY_TO_PRE_RETURN             /* empty */
 # define CONSTRUCTOR_ARGS(x)             x
 # define CONSTRUCTOR_INIT(x)             x
 # define ASSELF                          /* empty */

@@ -74,10 +74,11 @@ static int unbundle_symset_kind(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!kind_wxEXTENDED_sym) WITH_VAR_STACK(init_symset_kind());
   if (0) { }
-  else if (v == kind_wxSINGLE_sym) { return wxSINGLE; }
-  else if (v == kind_wxMULTIPLE_sym) { return wxMULTIPLE; }
-  else if (v == kind_wxEXTENDED_sym) { return wxEXTENDED; }
+  else if (v == kind_wxSINGLE_sym) { READY_TO_RETURN; return wxSINGLE; }
+  else if (v == kind_wxMULTIPLE_sym) { READY_TO_RETURN; return wxMULTIPLE; }
+  else if (v == kind_wxEXTENDED_sym) { READY_TO_RETURN; return wxEXTENDED; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "kind symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -111,8 +112,9 @@ static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "style symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -199,6 +201,8 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
     cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
+  READY_TO_RETURN;
+
   return cdr;
 }
 
@@ -218,8 +222,10 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
   if (c) *c = len;
 
-  if (!(len + l_EXTRA))
+  if (!(len + l_EXTRA)) {
+    READY_TO_RETURN;
     return NULL;
+  }
 
 #if l_DIRECTMALLOC
   f = (l_TYPE l_POINT *)WITH_VAR_STACK(GC_malloc_atomic(sizeof(l_TYPE l_POINT) * (len + l_EXTRA)));
@@ -230,6 +236,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
       WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
+      READY_TO_RETURN;
       return NULL;
     }
 
@@ -245,6 +252,8 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
     l = SCHEME_CDR(l);
   }
   l_TERMINATE
+
+  READY_TO_RETURN;
 
   return f;
 }
@@ -328,7 +337,7 @@ void os_wxListBox::OnDropFile(pathname x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxListBox_class, "on-drop-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxListBox::OnDropFile(x0);
+    READY_TO_RETURN; ASSELF wxListBox::OnDropFile(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
@@ -338,6 +347,7 @@ void os_wxListBox::OnDropFile(pathname x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -373,7 +383,12 @@ Bool os_wxListBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in list-box%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in list-box%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -409,7 +424,12 @@ Bool os_wxListBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in list-box%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in list-box%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -432,7 +452,7 @@ void os_wxListBox::OnSize(int x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxListBox_class, "on-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxListBox::OnSize(x0, x1);
+    READY_TO_RETURN; ASSELF wxListBox::OnSize(x0, x1);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -443,6 +463,7 @@ void os_wxListBox::OnSize(int x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -465,7 +486,7 @@ void os_wxListBox::OnSetFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxListBox_class, "on-set-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxListBox::OnSetFocus();
+    READY_TO_RETURN; ASSELF wxListBox::OnSetFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -474,6 +495,7 @@ void os_wxListBox::OnSetFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -496,7 +518,7 @@ void os_wxListBox::OnKillFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxListBox_class, "on-kill-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxListBox::OnKillFocus();
+    READY_TO_RETURN; ASSELF wxListBox::OnKillFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -505,6 +527,7 @@ void os_wxListBox::OnKillFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -529,6 +552,7 @@ static Scheme_Object *os_wxListBoxSetString(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -551,6 +575,7 @@ static Scheme_Object *os_wxListBoxGetString(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -574,6 +599,7 @@ static Scheme_Object *os_wxListBoxSetStringSelection(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -595,6 +621,7 @@ static Scheme_Object *os_wxListBoxSetFirstItem(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -618,6 +645,7 @@ static Scheme_Object *os_wxListBoxSet(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -638,6 +666,7 @@ static Scheme_Object *os_wxListBoxGetSelectionList(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return ((Scheme_Object *)r);
 }
 
@@ -658,6 +687,7 @@ static Scheme_Object *os_wxListBoxGetFirstItem(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -678,6 +708,7 @@ static Scheme_Object *os_wxListBoxNumberOfVisibleItems(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -698,6 +729,7 @@ static Scheme_Object *os_wxListBoxNumber(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -718,6 +750,7 @@ static Scheme_Object *os_wxListBoxGetSelection(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -741,6 +774,7 @@ static Scheme_Object *os_wxListBoxFindString(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -765,6 +799,7 @@ static Scheme_Object *os_wxListBoxSetClientData(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -787,6 +822,7 @@ static Scheme_Object *os_wxListBoxGetClientData(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return ((r) ? ((Scheme_Object *)r) : XC_SCHEME_NULL);
 }
 
@@ -807,6 +843,7 @@ static Scheme_Object *os_wxListBoxGetStringSelection(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -829,6 +866,7 @@ static Scheme_Object *os_wxListBoxSelected(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -850,6 +888,7 @@ static Scheme_Object *os_wxListBoxSetOneSelection(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -876,6 +915,7 @@ static Scheme_Object *os_wxListBoxSetSelection(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -897,6 +937,7 @@ static Scheme_Object *os_wxListBoxDelete(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -916,6 +957,7 @@ static Scheme_Object *os_wxListBoxClear(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -946,6 +988,7 @@ static Scheme_Object *os_wxListBoxAppend(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     string x0 INIT_NULLED_OUT;
 
@@ -963,6 +1006,7 @@ static Scheme_Object *os_wxListBoxAppend(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return scheme_void;
@@ -990,6 +1034,7 @@ static Scheme_Object *os_wxListBoxOnDropFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1019,6 +1064,7 @@ static Scheme_Object *os_wxListBoxPreOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1048,6 +1094,7 @@ static Scheme_Object *os_wxListBoxPreOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1074,6 +1121,7 @@ static Scheme_Object *os_wxListBoxOnSize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1096,6 +1144,7 @@ static Scheme_Object *os_wxListBoxOnSetFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1118,6 +1167,7 @@ static Scheme_Object *os_wxListBoxOnKillFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1195,6 +1245,7 @@ static Scheme_Object *os_wxListBox_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   delete[] x9;
   realobj->callback_closure = p[POFFSET+cb_pos];
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -1242,6 +1293,7 @@ void objscheme_setup_wxListBox(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxListBox, wxTYPE_LIST_BOX));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxListBox(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1273,7 +1325,7 @@ Scheme_Object *objscheme_bundle_wxListBox(class wxListBox *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_LIST_BOX) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxListBox_class));
 
   obj->primdata = realobj;
@@ -1281,6 +1333,7 @@ Scheme_Object *objscheme_bundle_wxListBox(class wxListBox *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -1331,4 +1384,6 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
     WITH_VAR_STACK(scheme_apply_multi(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p));
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  READY_TO_RETURN;
 }

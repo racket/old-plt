@@ -242,6 +242,8 @@ static void NotifyCallbackToScheme(wxStyle *s, Scheme_Object *f)
   p[0] = s ? WITH_VAR_STACK(objscheme_bundle_wxStyle(s)) : scheme_false;
 
   WITH_VAR_STACK(scheme_apply_multi(f, 1, p));
+
+  READY_TO_RETURN;
 }
 
 static wxStyleList* wxGetTheStyleList()

@@ -207,6 +207,7 @@ int actual_main(int argc, char *argv[]);
 int main(int argc, char **argv)
 {
   void *stack_start;
+  int rval;
 
   stack_start = (void *)&stack_start;
 
@@ -228,7 +229,12 @@ int main(int argc, char **argv)
 
   scheme_actual_main = actual_main;
 
-  return scheme_image_main(argc, argv); /* calls actual_main */
+  rval = scheme_image_main(argc, argv); /* calls actual_main */
+
+  /* This line ensures that __gc_var_stack__ is the
+     val of GC_variable_stack in scheme_image_main. */
+  argv = NULL;
+  return rval;
 }
 
 

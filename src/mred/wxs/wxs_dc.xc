@@ -46,6 +46,7 @@ static wxColour* dcGetTextBackground(wxDC *dc)
 #endif
   bg = WITH_VAR_STACK(dc->GetTextBackground());
   WITH_VAR_STACK(c->CopyFrom(bg));
+  READY_TO_RETURN;
   return c;
 }
 
@@ -62,11 +63,13 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 #endif
   fg = WITH_VAR_STACK(dc->GetTextForeground());
   WITH_VAR_STACK(c->CopyFrom(fg));
+  READY_TO_RETURN;
   return c;
 }
 
 static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c, wxBitmap* mask)
 {
+  Bool r;
   REMEMBER_VAR_STACK();
   if (bm->Ok()) {
     return WITH_REMEMBERED_STACK(dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c, mask));
@@ -87,6 +90,7 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big, int offset)
 {
   float w, h, d, asc;
   Scheme_Object *a[4];
+  void *r;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 4);
 
@@ -99,13 +103,18 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big, int offset)
   a[2] = WITH_VAR_STACK(scheme_make_double(d));
   a[3] = WITH_VAR_STACK(scheme_make_double(asc));
 
-  return WITH_VAR_STACK(scheme_values(4, a));
+  r = WITH_VAR_STACK(scheme_values(4, a));
+
+  READY_TO_RETURN;
+
+  return r;
 }
 
 static void* MyGetSize(wxDC *dc)
 {
   float w, h;
   Scheme_Object *a[2];
+  void *r;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 2);
 
@@ -116,13 +125,18 @@ static void* MyGetSize(wxDC *dc)
   a[0] = WITH_VAR_STACK(scheme_make_double(w));
   a[1] = WITH_VAR_STACK(scheme_make_double(h));
 
-  return WITH_VAR_STACK(scheme_values(2, a));
+  r = WITH_VAR_STACK(scheme_values(2, a));
+
+  READY_TO_RETURN;
+
+  return r;
 }
 
 static void* MyGetScale(wxDC *dc)
 {
   float w, h;
   Scheme_Object *a[2];
+  void *r;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 2);
 
@@ -133,13 +147,18 @@ static void* MyGetScale(wxDC *dc)
   a[0] = WITH_VAR_STACK(scheme_make_double(w));
   a[1] = WITH_VAR_STACK(scheme_make_double(h));
 
-  return WITH_VAR_STACK(scheme_values(2, a));
+  r = WITH_VAR_STACK(scheme_values(2, a));
+
+  READY_TO_RETURN;
+
+  return r;
 }
 
 static void* MyGetOrigin(wxDC *dc)
 {
   float w, h;
   Scheme_Object *a[2];
+  void *r;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 2);
 
@@ -150,7 +169,11 @@ static void* MyGetOrigin(wxDC *dc)
   a[0] = WITH_VAR_STACK(scheme_make_double(w));
   a[1] = WITH_VAR_STACK(scheme_make_double(h));
 
-  return WITH_VAR_STACK(scheme_values(2, a));
+  r = WITH_VAR_STACK(scheme_values(2, a));
+
+  READY_TO_RETURN;
+
+  return r;
 }
 
 static void dcGetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char *s)
@@ -176,6 +199,8 @@ static void dcGetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char
       ss[p++] = c->Blue();
     }
   }
+
+  READY_TO_RETURN;
 }
 
 static void dcSetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char *s)
@@ -199,6 +224,8 @@ static void dcSetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char
       p += 4;
     }
   }
+
+  READY_TO_RETURN;
 }
 
 @MACRO CheckStringIndex[n.s.i] = if (x<i> > SCHEME_STRLEN_VAL(p[POFFSET+<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), "string index too large: ", p[POFFSET+<i>]));

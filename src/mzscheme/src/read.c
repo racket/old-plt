@@ -1695,10 +1695,11 @@ read_vector (Scheme_Object *port,
     els[i] = SCHEME_CAR(obj);
     obj = SCHEME_CDR(obj);
   }
+  els = NULL;
   STACK_END(r);
   if (i < requestLength) {
     if (len)
-      obj = els[len - 1];
+      obj = SCHEME_VEC_ELS(vec)[len - 1];
     else {
       obj = scheme_make_integer(0);
       if (stxsrc)
@@ -1713,9 +1714,11 @@ read_vector (Scheme_Object *port,
 	obj = scheme_make_graph_stx(obj, -1, -1, -1);
     }
 
+    els = SCHEME_VEC_ELS(vec);
     for (; i < requestLength; i++) {
       els[i] = obj;
     }
+    els = NULL;
   }
 
   if (stxsrc) {

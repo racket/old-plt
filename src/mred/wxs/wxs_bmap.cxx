@@ -78,16 +78,17 @@ static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!bitmapType_wxBITMAP_TYPE_MASK_sym) WITH_VAR_STACK(init_symset_bitmapType());
   if (0) { }
-  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
-  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
-  else if (v == bitmapType_wxBITMAP_TYPE_GIF_MASK_sym) { return wxBITMAP_TYPE_GIF_MASK; }
-  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
-  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
-  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
-  else if (v == bitmapType_wxBITMAP_TYPE_JPEG_sym) { return wxBITMAP_TYPE_JPEG; }
-  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
-  else if (v == bitmapType_wxBITMAP_TYPE_MASK_sym) { return wxBITMAP_TYPE_MASK; }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_BMP; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_GIF; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_MASK_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_GIF_MASK; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_XBM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_XPM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_PICT; }
+  else if (v == bitmapType_wxBITMAP_TYPE_JPEG_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_JPEG; }
+  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_UNKNOWN; }
+  else if (v == bitmapType_wxBITMAP_TYPE_MASK_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_MASK; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -132,11 +133,12 @@ static int unbundle_symset_saveBitmapType(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!saveBitmapType_wxBITMAP_TYPE_PICT_sym) WITH_VAR_STACK(init_symset_saveBitmapType());
   if (0) { }
-  else if (v == saveBitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
-  else if (v == saveBitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
-  else if (v == saveBitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
-  else if (v == saveBitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
+  else if (v == saveBitmapType_wxBITMAP_TYPE_BMP_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_BMP; }
+  else if (v == saveBitmapType_wxBITMAP_TYPE_XBM_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_XBM; }
+  else if (v == saveBitmapType_wxBITMAP_TYPE_XPM_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_XPM; }
+  else if (v == saveBitmapType_wxBITMAP_TYPE_PICT_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_PICT; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "saveBitmapType symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -224,6 +226,7 @@ static Scheme_Object *os_wxBitmapSetMask(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -244,6 +247,7 @@ static Scheme_Object *os_wxBitmapGetMask(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBitmap(r));
 }
 
@@ -269,6 +273,7 @@ static Scheme_Object *os_wxBitmapSaveFile(int n,  Scheme_Object *p[])
 
   if (1) WITH_VAR_STACK(scheme_thread_block(0.0));
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -297,6 +302,7 @@ static Scheme_Object *os_wxBitmapLoadFile(int n,  Scheme_Object *p[])
 
   if (r) WITH_VAR_STACK(scheme_thread_block(0.0));
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -317,6 +323,7 @@ static Scheme_Object *os_wxBitmapIsColor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -337,6 +344,7 @@ static Scheme_Object *os_wxBitmapOk(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -357,6 +365,7 @@ static Scheme_Object *os_wxBitmapGetWidth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -377,6 +386,7 @@ static Scheme_Object *os_wxBitmapGetHeight(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -397,6 +407,7 @@ static Scheme_Object *os_wxBitmapGetDepth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -433,6 +444,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+1], NULL))) {
     string x0 INIT_NULLED_OUT;
     int x1;
@@ -458,6 +470,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     pathname x0 INIT_NULLED_OUT;
     int x1;
@@ -484,6 +497,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     if (realobj->Ok()) WITH_VAR_STACK(scheme_thread_block(0.0));
     
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -515,6 +529,7 @@ void objscheme_setup_wxBitmap(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxBitmap_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxBitmap(Scheme_Object *obj, const char *stop, int nullOK)
@@ -546,7 +561,7 @@ Scheme_Object *objscheme_bundle_wxBitmap(class wxBitmap *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxBitmap_class));
 
   obj->primdata = realobj;
@@ -554,6 +569,7 @@ Scheme_Object *objscheme_bundle_wxBitmap(class wxBitmap *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 

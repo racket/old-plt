@@ -79,8 +79,9 @@ static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "style symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -105,10 +106,11 @@ static int unbundle_symset_focus(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!focus_wxFOCUS_GLOBAL_sym) WITH_VAR_STACK(init_symset_focus());
   if (0) { }
-  else if (v == focus_wxFOCUS_IMMEDIATE_sym) { return wxFOCUS_IMMEDIATE; }
-  else if (v == focus_wxFOCUS_DISPLAY_sym) { return wxFOCUS_DISPLAY; }
-  else if (v == focus_wxFOCUS_GLOBAL_sym) { return wxFOCUS_GLOBAL; }
+  else if (v == focus_wxFOCUS_IMMEDIATE_sym) { READY_TO_RETURN; return wxFOCUS_IMMEDIATE; }
+  else if (v == focus_wxFOCUS_DISPLAY_sym) { READY_TO_RETURN; return wxFOCUS_DISPLAY; }
+  else if (v == focus_wxFOCUS_GLOBAL_sym) { READY_TO_RETURN; return wxFOCUS_GLOBAL; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "focus symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -145,10 +147,11 @@ static int unbundle_symset_bias(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!bias_Sym_END_sym) WITH_VAR_STACK(init_symset_bias());
   if (0) { }
-  else if (v == bias_Sym_START_sym) { return Sym_START; }
-  else if (v == bias_Sym_NONE_sym) { return Sym_NONE; }
-  else if (v == bias_Sym_END_sym) { return Sym_END; }
+  else if (v == bias_Sym_START_sym) { READY_TO_RETURN; return Sym_START; }
+  else if (v == bias_Sym_NONE_sym) { READY_TO_RETURN; return Sym_NONE; }
+  else if (v == bias_Sym_END_sym) { READY_TO_RETURN; return Sym_END; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bias symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -257,7 +260,7 @@ void os_wxMediaCanvas::OnChar(class wxKeyEvent* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaCanvas::OnChar(x0);
+    READY_TO_RETURN; ASSELF wxMediaCanvas::OnChar(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
@@ -267,6 +270,7 @@ void os_wxMediaCanvas::OnChar(class wxKeyEvent* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -290,7 +294,7 @@ void os_wxMediaCanvas::OnEvent(class wxMouseEvent* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaCanvas::OnEvent(x0);
+    READY_TO_RETURN; ASSELF wxMediaCanvas::OnEvent(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
@@ -300,6 +304,7 @@ void os_wxMediaCanvas::OnEvent(class wxMouseEvent* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -322,7 +327,7 @@ void os_wxMediaCanvas::OnPaint()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-paint", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaCanvas::OnPaint();
+    READY_TO_RETURN; ASSELF wxMediaCanvas::OnPaint();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -331,6 +336,7 @@ void os_wxMediaCanvas::OnPaint()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -354,7 +360,7 @@ void os_wxMediaCanvas::OnDropFile(pathname x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-drop-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaCanvas::OnDropFile(x0);
+    READY_TO_RETURN; ASSELF wxMediaCanvas::OnDropFile(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
@@ -364,6 +370,7 @@ void os_wxMediaCanvas::OnDropFile(pathname x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -399,7 +406,12 @@ Bool os_wxMediaCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in editor-canvas%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in editor-canvas%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -435,7 +447,12 @@ Bool os_wxMediaCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in editor-canvas%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in editor-canvas%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -458,7 +475,7 @@ void os_wxMediaCanvas::OnSize(int x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaCanvas::OnSize(x0, x1);
+    READY_TO_RETURN; ASSELF wxMediaCanvas::OnSize(x0, x1);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -469,6 +486,7 @@ void os_wxMediaCanvas::OnSize(int x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -491,7 +509,7 @@ void os_wxMediaCanvas::OnSetFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-set-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaCanvas::OnSetFocus();
+    READY_TO_RETURN; ASSELF wxMediaCanvas::OnSetFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -500,6 +518,7 @@ void os_wxMediaCanvas::OnSetFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -522,7 +541,7 @@ void os_wxMediaCanvas::OnKillFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-kill-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaCanvas::OnKillFocus();
+    READY_TO_RETURN; ASSELF wxMediaCanvas::OnKillFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -531,6 +550,7 @@ void os_wxMediaCanvas::OnKillFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -566,7 +586,12 @@ class wxMenu* os_wxMediaCanvas::PopupForMedia(class wxMediaBuffer* x0, void* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxMenu(v, "popup-for-editor in editor-canvas%"", extracting return value", 1));
+  {
+     class wxMenu* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxMenu(v, "popup-for-editor in editor-canvas%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -592,6 +617,7 @@ static Scheme_Object *os_wxMediaCanvasOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -617,6 +643,7 @@ static Scheme_Object *os_wxMediaCanvasOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -639,6 +666,7 @@ static Scheme_Object *os_wxMediaCanvasOnPaint(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -664,6 +692,7 @@ static Scheme_Object *os_wxMediaCanvasOnDropFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -693,6 +722,7 @@ static Scheme_Object *os_wxMediaCanvasPreOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -722,6 +752,7 @@ static Scheme_Object *os_wxMediaCanvasPreOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -748,6 +779,7 @@ static Scheme_Object *os_wxMediaCanvasOnSize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -770,6 +802,7 @@ static Scheme_Object *os_wxMediaCanvasOnSetFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -792,6 +825,7 @@ static Scheme_Object *os_wxMediaCanvasOnKillFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -821,6 +855,7 @@ static Scheme_Object *os_wxMediaCanvasPopupForMedia(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMenu(r));
 }
 
@@ -846,6 +881,7 @@ static Scheme_Object *os_wxMediaCanvasCallAsPrimaryOwner(int n,  Scheme_Object *
 
   
   
+  READY_TO_RETURN;
   return (Scheme_Object*)r;
 }
 
@@ -867,6 +903,7 @@ static Scheme_Object *os_wxMediaCanvasSetYMargin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -888,6 +925,7 @@ static Scheme_Object *os_wxMediaCanvasSetXMargin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -908,6 +946,7 @@ static Scheme_Object *os_wxMediaCanvasGetYMargin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -928,6 +967,7 @@ static Scheme_Object *os_wxMediaCanvasGetXMargin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -963,6 +1003,7 @@ static Scheme_Object *os_wxMediaCanvasScrollTo(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -984,6 +1025,7 @@ static Scheme_Object *os_wxMediaCanvasSetLazyRefresh(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1004,6 +1046,7 @@ static Scheme_Object *os_wxMediaCanvasGetLazyRefresh(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1025,6 +1068,7 @@ static Scheme_Object *os_wxMediaCanvasScrollWithBottomBase(int n,  Scheme_Object
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1046,6 +1090,7 @@ static Scheme_Object *os_wxMediaCanvasAllowScrollToLast(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1067,6 +1112,7 @@ static Scheme_Object *os_wxMediaCanvasForceDisplayFocus(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1087,6 +1133,7 @@ static Scheme_Object *os_wxMediaCanvasIsFocusOn(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1107,6 +1154,7 @@ static Scheme_Object *os_wxMediaCanvasGetMedia(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaBuffer(r));
 }
 
@@ -1134,6 +1182,7 @@ static Scheme_Object *os_wxMediaCanvasSetMedia(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1167,6 +1216,7 @@ static Scheme_Object *objscheme_wxMediaCanvas_Setwheel_amt(int n,  Scheme_Object
   v = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET], "set-wheel-step in editor-canvas%"));
   ((wxMediaCanvas *)cobj->primdata)->wheel_amt = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1238,6 +1288,7 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(int n,  Scheme_Object *p[
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -1285,6 +1336,7 @@ void objscheme_setup_wxMediaCanvas(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaCanvas, wxTYPE_MEDIA_CANVAS));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxMediaCanvas(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1316,7 +1368,7 @@ Scheme_Object *objscheme_bundle_wxMediaCanvas(class wxMediaCanvas *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_MEDIA_CANVAS) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaCanvas_class));
 
   obj->primdata = realobj;
@@ -1324,6 +1376,7 @@ Scheme_Object *objscheme_bundle_wxMediaCanvas(class wxMediaCanvas *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -1411,7 +1464,7 @@ void os_wxMediaAdmin::Modified(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "modified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -1421,6 +1474,7 @@ void os_wxMediaAdmin::Modified(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1452,7 +1506,12 @@ Bool os_wxMediaAdmin::DelayRefresh()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "refresh-delayed? in editor-admin%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "refresh-delayed? in editor-admin%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1488,7 +1547,12 @@ Bool os_wxMediaAdmin::PopupMenu(void* x0, float x1, float x2)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "popup-menu in editor-admin%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "popup-menu in editor-admin%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1511,7 +1575,7 @@ void os_wxMediaAdmin::UpdateCursor()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "update-cursor", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   
@@ -1520,6 +1584,7 @@ void os_wxMediaAdmin::UpdateCursor()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1542,7 +1607,7 @@ void os_wxMediaAdmin::NeedsUpdate(float x0, float x1, nnfloat x2, nnfloat x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "needs-update", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -1555,6 +1620,7 @@ void os_wxMediaAdmin::NeedsUpdate(float x0, float x1, nnfloat x2, nnfloat x3)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1577,7 +1643,7 @@ void os_wxMediaAdmin::Resized(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "resized", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -1587,6 +1653,7 @@ void os_wxMediaAdmin::Resized(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1609,7 +1676,7 @@ void os_wxMediaAdmin::GrabCaret(int x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "grab-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_focus(x0));
@@ -1619,6 +1686,7 @@ void os_wxMediaAdmin::GrabCaret(int x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1656,7 +1724,12 @@ Bool os_wxMediaAdmin::ScrollTo(float x0, float x1, nnfloat x2, nnfloat x3, Bool 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "scroll-to in editor-admin%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "scroll-to in editor-admin%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1684,7 +1757,7 @@ void os_wxMediaAdmin::GetMaxView(float* x0, float* x1, nnfloat* x2, nnfloat* x3,
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "get-max-view", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = ((x0) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x0))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
@@ -1702,6 +1775,7 @@ void os_wxMediaAdmin::GetMaxView(float* x0, float* x1, nnfloat* x2, nnfloat* x3,
   if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-max-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-max-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
   if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-max-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-max-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1729,7 +1803,7 @@ void os_wxMediaAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bo
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "get-view", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = ((x0) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x0))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
@@ -1747,6 +1821,7 @@ void os_wxMediaAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bo
   if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
   if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1786,7 +1861,12 @@ class wxDC* os_wxMediaAdmin::GetDC(float* x0, float* x1)
   if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-dc in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-dc in editor-admin%"", extracting return value via box"", extracting boxed argument")));
   if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-dc in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-dc in editor-admin%"", extracting return value via box"", extracting boxed argument")));
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxDC(v, "get-dc in editor-admin%"", extracting return value", 1));
+  {
+     class wxDC* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxDC(v, "get-dc in editor-admin%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1811,6 +1891,7 @@ static Scheme_Object *os_wxMediaAdminModified(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1834,6 +1915,7 @@ static Scheme_Object *os_wxMediaAdminDelayRefresh(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1864,6 +1946,7 @@ static Scheme_Object *os_wxMediaAdminPopupMenu(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1886,6 +1969,7 @@ static Scheme_Object *os_wxMediaAdminUpdateCursor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1916,6 +2000,7 @@ static Scheme_Object *os_wxMediaAdminNeedsUpdate(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1940,6 +2025,7 @@ static Scheme_Object *os_wxMediaAdminResized(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1967,6 +2053,7 @@ static Scheme_Object *os_wxMediaAdminGrabCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2008,6 +2095,7 @@ static Scheme_Object *os_wxMediaAdminScrollTo(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -2068,6 +2156,7 @@ static Scheme_Object *os_wxMediaAdminGetMaxView(int n,  Scheme_Object *p[])
   if (n > (POFFSET+3) && !XC_SCHEME_NULLP(p[POFFSET+3]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x3)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+3], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2128,6 +2217,7 @@ static Scheme_Object *os_wxMediaAdminGetView(int n,  Scheme_Object *p[])
   if (n > (POFFSET+3) && !XC_SCHEME_NULLP(p[POFFSET+3]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x3)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+3], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2175,6 +2265,7 @@ static Scheme_Object *os_wxMediaAdminGetDC(int n,  Scheme_Object *p[])
   if (n > (POFFSET+1) && !XC_SCHEME_NULLP(p[POFFSET+1]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxDC(r));
 }
 
@@ -2201,6 +2292,7 @@ static Scheme_Object *os_wxMediaAdmin_ConstructScheme(int n,  Scheme_Object *p[]
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   ((Scheme_Class_Object *)p[0])->primflag = 1;
   return scheme_void;
@@ -2232,6 +2324,7 @@ void objscheme_setup_wxMediaAdmin(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaAdmin, wxTYPE_MEDIA_ADMIN));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxMediaAdmin(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2263,13 +2356,14 @@ Scheme_Object *objscheme_bundle_wxMediaAdmin(class wxMediaAdmin *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_MEDIA_ADMIN) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaAdmin_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -2336,6 +2430,7 @@ static Scheme_Object *os_wxMediaSnipMediaAdminGetSnip(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaSnip(r));
 }
 
@@ -2359,6 +2454,7 @@ void objscheme_setup_wxMediaSnipMediaAdmin(Scheme_Env *env)
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxMediaSnipMediaAdmin_interface, "editor-snip-editor-admin" "<%>", env));
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaSnipMediaAdmin, wxTYPE_MEDIA_SNIP_MEDIA_ADMIN));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxMediaSnipMediaAdmin(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2390,13 +2486,14 @@ Scheme_Object *objscheme_bundle_wxMediaSnipMediaAdmin(class wxMediaSnipMediaAdmi
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_MEDIA_SNIP_MEDIA_ADMIN) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaSnipMediaAdmin_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -2485,7 +2582,7 @@ void os_wxSnipAdmin::Modified(class wxSnip* x0, Bool x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "modified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -2496,6 +2593,7 @@ void os_wxSnipAdmin::Modified(class wxSnip* x0, Bool x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2533,7 +2631,12 @@ Bool os_wxSnipAdmin::PopupMenu(void* x0, class wxSnip* x1, float x2, float x3)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "popup-menu in snip-admin%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "popup-menu in snip-admin%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2556,7 +2659,7 @@ void os_wxSnipAdmin::UpdateCursor()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "update-cursor", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   
@@ -2565,6 +2668,7 @@ void os_wxSnipAdmin::UpdateCursor()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2598,7 +2702,12 @@ Bool os_wxSnipAdmin::ReleaseSnip(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "release-snip in snip-admin%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "release-snip in snip-admin%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2622,7 +2731,7 @@ void os_wxSnipAdmin::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "needs-update", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -2636,6 +2745,7 @@ void os_wxSnipAdmin::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2670,7 +2780,12 @@ Bool os_wxSnipAdmin::Recounted(class wxSnip* x0, Bool x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "recounted in snip-admin%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "recounted in snip-admin%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2694,7 +2809,7 @@ void os_wxSnipAdmin::Resized(class wxSnip* x0, Bool x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "resized", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -2705,6 +2820,7 @@ void os_wxSnipAdmin::Resized(class wxSnip* x0, Bool x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2728,7 +2844,7 @@ void os_wxSnipAdmin::SetCaretOwner(class wxSnip* x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "set-caret-owner", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -2739,6 +2855,7 @@ void os_wxSnipAdmin::SetCaretOwner(class wxSnip* x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2778,7 +2895,12 @@ Bool os_wxSnipAdmin::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+7, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "scroll-to in snip-admin%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "scroll-to in snip-admin%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2807,7 +2929,7 @@ void os_wxSnipAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, cla
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "get-view", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = ((x0) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x0))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
@@ -2825,6 +2947,7 @@ void os_wxSnipAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, cla
   if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-view in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view in snip-admin%"", extracting return value via box"", extracting boxed argument")));
   if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-view in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view in snip-admin%"", extracting return value via box"", extracting boxed argument")));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2850,7 +2973,7 @@ void os_wxSnipAdmin::GetViewSize(nnfloat* x0, nnfloat* x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "get-view-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return;
+    { READY_TO_RETURN; return; }
   } else {
   
   p[POFFSET+0] = ((x0) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x0))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
@@ -2863,6 +2986,7 @@ void os_wxSnipAdmin::GetViewSize(nnfloat* x0, nnfloat* x1)
   if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view-size in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view-size in snip-admin%"", extracting return value via box"", extracting boxed argument")));
   if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view-size in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view-size in snip-admin%"", extracting return value via box"", extracting boxed argument")));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2894,7 +3018,12 @@ class wxDC* os_wxSnipAdmin::GetDC()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxDC(v, "get-dc in snip-admin%"", extracting return value", 1));
+  {
+     class wxDC* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxDC(v, "get-dc in snip-admin%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2926,7 +3055,12 @@ class wxMediaBuffer* os_wxSnipAdmin::GetMedia()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxMediaBuffer(v, "get-editor in snip-admin%"", extracting return value", 1));
+  {
+     class wxMediaBuffer* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxMediaBuffer(v, "get-editor in snip-admin%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2954,6 +3088,7 @@ static Scheme_Object *os_wxSnipAdminModified(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2987,6 +3122,7 @@ static Scheme_Object *os_wxSnipAdminPopupMenu(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3009,6 +3145,7 @@ static Scheme_Object *os_wxSnipAdminUpdateCursor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3035,6 +3172,7 @@ static Scheme_Object *os_wxSnipAdminReleaseSnip(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3068,6 +3206,7 @@ static Scheme_Object *os_wxSnipAdminNeedsUpdate(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3096,6 +3235,7 @@ static Scheme_Object *os_wxSnipAdminRecounted(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3123,6 +3263,7 @@ static Scheme_Object *os_wxSnipAdminResized(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3150,6 +3291,7 @@ static Scheme_Object *os_wxSnipAdminSetCaretOwner(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3191,6 +3333,7 @@ static Scheme_Object *os_wxSnipAdminScrollTo(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3252,6 +3395,7 @@ static Scheme_Object *os_wxSnipAdminGetView(int n,  Scheme_Object *p[])
   if (n > (POFFSET+3) && !XC_SCHEME_NULLP(p[POFFSET+3]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x3)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+3], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3291,6 +3435,7 @@ static Scheme_Object *os_wxSnipAdminGetViewSize(int n,  Scheme_Object *p[])
   if (n > (POFFSET+1) && !XC_SCHEME_NULLP(p[POFFSET+1]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3314,6 +3459,7 @@ static Scheme_Object *os_wxSnipAdminGetDC(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxDC(r));
 }
 
@@ -3337,6 +3483,7 @@ static Scheme_Object *os_wxSnipAdminGetMedia(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaBuffer(r));
 }
 
@@ -3363,6 +3510,7 @@ static Scheme_Object *os_wxSnipAdmin_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   ((Scheme_Class_Object *)p[0])->primflag = 1;
   return scheme_void;
@@ -3396,6 +3544,7 @@ void objscheme_setup_wxSnipAdmin(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxSnipAdmin, wxTYPE_MEDIA_SNIP_ADMIN));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxSnipAdmin(Scheme_Object *obj, const char *stop, int nullOK)
@@ -3427,13 +3576,14 @@ Scheme_Object *objscheme_bundle_wxSnipAdmin(class wxSnipAdmin *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_MEDIA_SNIP_ADMIN) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxSnipAdmin_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -3514,7 +3664,7 @@ Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipClass_class, "write-header", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnipClass::WriteHeader(x0);
+    READY_TO_RETURN; return ASSELF wxSnipClass::WriteHeader(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
@@ -3524,7 +3674,12 @@ Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "write-header in snip-class%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "write-header in snip-class%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -3548,7 +3703,7 @@ Bool os_wxSnipClass::ReadHeader(class wxMediaStreamIn* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipClass_class, "read-header", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnipClass::ReadHeader(x0);
+    READY_TO_RETURN; return ASSELF wxSnipClass::ReadHeader(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(x0));
@@ -3558,7 +3713,12 @@ Bool os_wxSnipClass::ReadHeader(class wxMediaStreamIn* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "read-header in snip-class%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "read-header in snip-class%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -3592,7 +3752,12 @@ class wxSnip* os_wxSnipClass::Read(class wxMediaStreamIn* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "read in snip-class%"", extracting return value", 1));
+  {
+     class wxSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "read in snip-class%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -3616,6 +3781,7 @@ static Scheme_Object *os_wxSnipClassReadingVersion(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -3642,6 +3808,7 @@ static Scheme_Object *os_wxSnipClassWriteHeader(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3668,6 +3835,7 @@ static Scheme_Object *os_wxSnipClassReadHeader(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3694,6 +3862,7 @@ static Scheme_Object *os_wxSnipClassRead(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -3727,6 +3896,7 @@ static Scheme_Object *objscheme_wxSnipClass_Setclassname(int n,  Scheme_Object *
   v = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET], "set-classname in snip-class%"));
   ((wxSnipClass *)cobj->primdata)->classname = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3760,6 +3930,7 @@ static Scheme_Object *objscheme_wxSnipClass_Setversion(int n,  Scheme_Object *p[
   v = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET], "set-version in snip-class%"));
   ((wxSnipClass *)cobj->primdata)->version = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3786,6 +3957,7 @@ static Scheme_Object *os_wxSnipClass_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -3815,6 +3987,7 @@ void objscheme_setup_wxSnipClass(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxSnipClass, wxTYPE_SNIP_CLASS));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxSnipClass(Scheme_Object *obj, const char *stop, int nullOK)
@@ -3846,7 +4019,7 @@ Scheme_Object *objscheme_bundle_wxSnipClass(class wxSnipClass *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_SNIP_CLASS) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxSnipClass_class));
 
   obj->primdata = realobj;
@@ -3854,6 +4027,7 @@ Scheme_Object *objscheme_bundle_wxSnipClass(class wxSnipClass *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -3923,6 +4097,7 @@ static Scheme_Object *os_wxSnipClassListNth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnipClass(r));
 }
 
@@ -3943,6 +4118,7 @@ static Scheme_Object *os_wxSnipClassListNumber(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -3965,6 +4141,7 @@ static Scheme_Object *os_wxSnipClassListAdd(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3988,6 +4165,7 @@ static Scheme_Object *os_wxSnipClassListFindPosition(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -4011,6 +4189,7 @@ static Scheme_Object *os_wxSnipClassListFind(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnipClass(r));
 }
 
@@ -4038,6 +4217,7 @@ void objscheme_setup_wxSnipClassList(Scheme_Env *env)
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxSnipClassList_interface, "snip-class-list" "<%>", env));
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxSnipClassList, wxTYPE_SNIP_CLASS_LIST));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxSnipClassList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -4069,7 +4249,7 @@ Scheme_Object *objscheme_bundle_wxSnipClassList(class wxSnipClassList *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_SNIP_CLASS_LIST) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxSnipClassList_class));
 
   obj->primdata = realobj;
@@ -4077,6 +4257,7 @@ Scheme_Object *objscheme_bundle_wxSnipClassList(class wxSnipClassList *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -4170,7 +4351,7 @@ Bool os_wxKeymap::HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent* x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxKeymap_class, "handle-mouse-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxKeymap::HandleMouseEvent(x0, x1);
+    READY_TO_RETURN; return ASSELF wxKeymap::HandleMouseEvent(x0, x1);
   } else {
   
   p[POFFSET+0] = ((Scheme_Object *)x0);
@@ -4181,7 +4362,12 @@ Bool os_wxKeymap::HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "handle-mouse-event in keymap%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "handle-mouse-event in keymap%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4206,7 +4392,7 @@ Bool os_wxKeymap::HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent* x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxKeymap_class, "handle-key-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxKeymap::HandleKeyEvent(x0, x1);
+    READY_TO_RETURN; return ASSELF wxKeymap::HandleKeyEvent(x0, x1);
   } else {
   
   p[POFFSET+0] = ((Scheme_Object *)x0);
@@ -4217,7 +4403,12 @@ Bool os_wxKeymap::HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "handle-key-event in keymap%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "handle-key-event in keymap%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4240,6 +4431,7 @@ static Scheme_Object *os_wxKeymapRemoveChainedKeymap(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4264,6 +4456,7 @@ static Scheme_Object *os_wxKeymapChainToKeymap(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4287,6 +4480,7 @@ static Scheme_Object *os_wxKeymapSetBreakSequenceCallback(int n,  Scheme_Object 
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4321,6 +4515,7 @@ static Scheme_Object *os_wxKeymapCallFunction(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -4340,6 +4535,7 @@ static Scheme_Object *os_wxKeymapRemoveGrabMouseFunction(int n,  Scheme_Object *
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4363,6 +4559,7 @@ static Scheme_Object *os_wxKeymapSetGrabMouseFunction(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4382,6 +4579,7 @@ static Scheme_Object *os_wxKeymapRemoveGrabKeyFunction(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4405,6 +4603,7 @@ static Scheme_Object *os_wxKeymapSetGrabKeyFunction(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4431,6 +4630,7 @@ static Scheme_Object *os_wxKeymapAddFunction(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4456,6 +4656,7 @@ static Scheme_Object *os_wxKeymapMapFunction(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4475,6 +4676,7 @@ static Scheme_Object *os_wxKeymapBreakSequence(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4504,6 +4706,7 @@ static Scheme_Object *os_wxKeymapHandleMouseEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -4533,6 +4736,7 @@ static Scheme_Object *os_wxKeymapHandleKeyEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -4554,6 +4758,7 @@ static Scheme_Object *os_wxKeymapSetDoubleClickInterval(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4574,6 +4779,7 @@ static Scheme_Object *os_wxKeymapGetDoubleClickInterval(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -4600,6 +4806,7 @@ static Scheme_Object *os_wxKeymap_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   ((Scheme_Class_Object *)p[0])->primflag = 1;
   return scheme_void;
@@ -4635,6 +4842,7 @@ void objscheme_setup_wxKeymap(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxKeymap, wxTYPE_KEYMAP));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxKeymap(Scheme_Object *obj, const char *stop, int nullOK)
@@ -4666,13 +4874,14 @@ Scheme_Object *objscheme_bundle_wxKeymap(class wxKeymap *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_KEYMAP) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxKeymap_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -4696,6 +4905,7 @@ static Bool KMCallbackToScheme(UNKNOWN_OBJ media, wxEvent *event,
 			       KeymapCallbackToSchemeRec *data)
 {
   Scheme_Object *p[2], *obj = NULL;
+  Bool r;
   SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, p[0]);
   VAR_STACK_PUSH(1, p[1]);
@@ -4708,7 +4918,9 @@ static Bool KMCallbackToScheme(UNKNOWN_OBJ media, wxEvent *event,
   p[1] = WITH_VAR_STACK(objscheme_bundle_wxEvent(event));
 
   obj = WITH_VAR_STACK(scheme_apply(kctsr(data), 2, p));
-  return WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme key callback"));
+  r = WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme key callback"));
+  READY_TO_RETURN;
+  return r;
 }
 
 static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
@@ -4716,6 +4928,7 @@ static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
 				    KeymapCallbackToSchemeRec *data)
 {
   Scheme_Object *p[4], *obj = NULL;
+  Bool r;
   SETUP_VAR_STACK(6);
   VAR_STACK_PUSH_ARRAY(0, p, 4);
   VAR_STACK_PUSH(3, obj);
@@ -4734,7 +4947,9 @@ static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
   p[3] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(event));
 
   obj = WITH_VAR_STACK(scheme_apply(kctsr(data), 4, p));
-  return WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme grab-key callback"));
+  r = WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme grab-key callback"));
+  READY_TO_RETURN;
+  return r;
 }
 
 static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
@@ -4742,6 +4957,7 @@ static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
 				      KeymapCallbackToSchemeRec *data)
 {
   Scheme_Object *p[4], *obj = NULL;
+  Bool r;
   SETUP_VAR_STACK(6);
   VAR_STACK_PUSH_ARRAY(0, p, 4);
   VAR_STACK_PUSH(3, obj);
@@ -4760,7 +4976,9 @@ static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
   p[3] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(event));
 
   obj = WITH_VAR_STACK(scheme_apply(kctsr(data), 4, p));
-  return WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme grab-mouse callback"));
+  r = WITH_VAR_STACK(objscheme_unbundle_bool(obj, "Scheme grab-mouse callback"));
+  READY_TO_RETURN;
+  return r;
 }
 
 static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)
@@ -4806,8 +5024,9 @@ static int unbundle_symset_breakType(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "breakType symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -4879,6 +5098,7 @@ static Scheme_Object *os_wxMediaWordbreakMapGetMap(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_breakType(r));
 }
 
@@ -4902,6 +5122,7 @@ static Scheme_Object *os_wxMediaWordbreakMapSetMap(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -4928,6 +5149,7 @@ static Scheme_Object *os_wxMediaWordbreakMap_ConstructScheme(int n,  Scheme_Obje
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -4951,6 +5173,7 @@ void objscheme_setup_wxMediaWordbreakMap(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaWordbreakMap, wxTYPE_WORDBREAK_MAP));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxMediaWordbreakMap(Scheme_Object *obj, const char *stop, int nullOK)
@@ -4982,7 +5205,7 @@ Scheme_Object *objscheme_bundle_wxMediaWordbreakMap(class wxMediaWordbreakMap *r
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_WORDBREAK_MAP) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaWordbreakMap_class));
 
   obj->primdata = realobj;
@@ -4990,6 +5213,7 @@ Scheme_Object *objscheme_bundle_wxMediaWordbreakMap(class wxMediaWordbreakMap *r
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -5030,6 +5254,7 @@ static Scheme_Object *wxGlobalMediaWordbreakMapwxGetTheMediaWordbreakMap(int n, 
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaWordbreakMap(r));
 }
 
@@ -5040,6 +5265,7 @@ void objscheme_setup_wxGlobalMediaWordbreakMap(Scheme_Env *env)
   VAR_STACK_PUSH(0, env);
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGlobalMediaWordbreakMapwxGetTheMediaWordbreakMap, "get-the-editor-wordbreak-map", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-editor-wordbreak-map", functmp, env));
+  READY_TO_RETURN;
 }
 
 

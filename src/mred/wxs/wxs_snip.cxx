@@ -53,10 +53,11 @@ static int unbundle_symset_caret(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) WITH_VAR_STACK(init_symset_caret());
   if (0) { }
-  else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { return wxSNIP_DRAW_NO_CARET; }
-  else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { return wxSNIP_DRAW_SHOW_CARET; }
-  else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { return wxSNIP_DRAW_SHOW_INACTIVE_CARET; }
+  else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { READY_TO_RETURN; return wxSNIP_DRAW_NO_CARET; }
+  else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { READY_TO_RETURN; return wxSNIP_DRAW_SHOW_CARET; }
+  else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { READY_TO_RETURN; return wxSNIP_DRAW_SHOW_INACTIVE_CARET; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "caret symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -133,8 +134,9 @@ static int unbundle_symset_flags(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "flags symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -201,18 +203,19 @@ static int unbundle_symset_editOp(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!editOp_wxEDIT_SELECT_ALL_sym) WITH_VAR_STACK(init_symset_editOp());
   if (0) { }
-  else if (v == editOp_wxEDIT_UNDO_sym) { return wxEDIT_UNDO; }
-  else if (v == editOp_wxEDIT_REDO_sym) { return wxEDIT_REDO; }
-  else if (v == editOp_wxEDIT_CLEAR_sym) { return wxEDIT_CLEAR; }
-  else if (v == editOp_wxEDIT_CUT_sym) { return wxEDIT_CUT; }
-  else if (v == editOp_wxEDIT_COPY_sym) { return wxEDIT_COPY; }
-  else if (v == editOp_wxEDIT_PASTE_sym) { return wxEDIT_PASTE; }
-  else if (v == editOp_wxEDIT_KILL_sym) { return wxEDIT_KILL; }
-  else if (v == editOp_wxEDIT_INSERT_TEXT_BOX_sym) { return wxEDIT_INSERT_TEXT_BOX; }
-  else if (v == editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym) { return wxEDIT_INSERT_GRAPHIC_BOX; }
-  else if (v == editOp_wxEDIT_INSERT_IMAGE_sym) { return wxEDIT_INSERT_IMAGE; }
-  else if (v == editOp_wxEDIT_SELECT_ALL_sym) { return wxEDIT_SELECT_ALL; }
+  else if (v == editOp_wxEDIT_UNDO_sym) { READY_TO_RETURN; return wxEDIT_UNDO; }
+  else if (v == editOp_wxEDIT_REDO_sym) { READY_TO_RETURN; return wxEDIT_REDO; }
+  else if (v == editOp_wxEDIT_CLEAR_sym) { READY_TO_RETURN; return wxEDIT_CLEAR; }
+  else if (v == editOp_wxEDIT_CUT_sym) { READY_TO_RETURN; return wxEDIT_CUT; }
+  else if (v == editOp_wxEDIT_COPY_sym) { READY_TO_RETURN; return wxEDIT_COPY; }
+  else if (v == editOp_wxEDIT_PASTE_sym) { READY_TO_RETURN; return wxEDIT_PASTE; }
+  else if (v == editOp_wxEDIT_KILL_sym) { READY_TO_RETURN; return wxEDIT_KILL; }
+  else if (v == editOp_wxEDIT_INSERT_TEXT_BOX_sym) { READY_TO_RETURN; return wxEDIT_INSERT_TEXT_BOX; }
+  else if (v == editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym) { READY_TO_RETURN; return wxEDIT_INSERT_GRAPHIC_BOX; }
+  else if (v == editOp_wxEDIT_INSERT_IMAGE_sym) { READY_TO_RETURN; return wxEDIT_INSERT_IMAGE; }
+  else if (v == editOp_wxEDIT_SELECT_ALL_sym) { READY_TO_RETURN; return wxEDIT_SELECT_ALL; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "editOp symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -328,7 +331,7 @@ void os_wxSnip::SetUnmodified()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "set-unmodified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxSnip::SetUnmodified();
+    READY_TO_RETURN; ASSELF wxSnip::SetUnmodified();
   } else {
   
   
@@ -337,6 +340,7 @@ void os_wxSnip::SetUnmodified()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -359,7 +363,7 @@ nnfloat os_wxSnip::GetScrollStepOffset(nnlong x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "get-scroll-step-offset", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnip::GetScrollStepOffset(x0);
+    READY_TO_RETURN; return ASSELF wxSnip::GetScrollStepOffset(x0);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -369,7 +373,12 @@ nnfloat os_wxSnip::GetScrollStepOffset(nnlong x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(v, "get-scroll-step-offset in snip%"", extracting return value"));
+  {
+     nnfloat resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(v, "get-scroll-step-offset in snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -392,7 +401,7 @@ nnlong os_wxSnip::FindScrollStep(float x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "find-scroll-step", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnip::FindScrollStep(x0);
+    READY_TO_RETURN; return ASSELF wxSnip::FindScrollStep(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -402,7 +411,12 @@ nnlong os_wxSnip::FindScrollStep(float x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "find-scroll-step in snip%"", extracting return value"));
+  {
+     nnlong resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "find-scroll-step in snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -425,7 +439,7 @@ nnlong os_wxSnip::GetNumScrollSteps()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "get-num-scroll-steps", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnip::GetNumScrollSteps();
+    READY_TO_RETURN; return ASSELF wxSnip::GetNumScrollSteps();
   } else {
   
   
@@ -434,7 +448,12 @@ nnlong os_wxSnip::GetNumScrollSteps()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "get-num-scroll-steps in snip%"", extracting return value"));
+  {
+     nnlong resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "get-num-scroll-steps in snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -458,7 +477,7 @@ void os_wxSnip::SetAdmin(class wxSnipAdmin* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "set-admin", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxSnip::SetAdmin(x0);
+    READY_TO_RETURN; ASSELF wxSnip::SetAdmin(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnipAdmin(x0));
@@ -468,6 +487,7 @@ void os_wxSnip::SetAdmin(class wxSnipAdmin* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -490,7 +510,7 @@ Bool os_wxSnip::Resize(nnfloat x0, nnfloat x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "resize", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnip::Resize(x0, x1);
+    READY_TO_RETURN; return ASSELF wxSnip::Resize(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -501,7 +521,12 @@ Bool os_wxSnip::Resize(nnfloat x0, nnfloat x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "resize in snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "resize in snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -525,7 +550,7 @@ void os_wxSnip::Write(class wxMediaStreamOut* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "write", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxSnip::Write(x0);
+    READY_TO_RETURN; ASSELF wxSnip::Write(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
@@ -535,6 +560,7 @@ void os_wxSnip::Write(class wxMediaStreamOut* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -558,7 +584,7 @@ Bool os_wxSnip::Match(class wxSnip* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "match?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnip::Match(x0);
+    READY_TO_RETURN; return ASSELF wxSnip::Match(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -568,7 +594,12 @@ Bool os_wxSnip::Match(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -591,7 +622,7 @@ Bool os_wxSnip::CanEdit(int x0, Bool x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "can-do-edit-operation?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnip::CanEdit(x0, x1);
+    READY_TO_RETURN; return ASSELF wxSnip::CanEdit(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
@@ -602,7 +633,12 @@ Bool os_wxSnip::CanEdit(int x0, Bool x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -625,7 +661,7 @@ void os_wxSnip::DoEdit(int x0, Bool x1, long x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "do-edit-operation", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxSnip::DoEdit(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxSnip::DoEdit(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
@@ -637,6 +673,7 @@ void os_wxSnip::DoEdit(int x0, Bool x1, long x2)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -660,7 +697,7 @@ void os_wxSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "blink-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxSnip::BlinkCaret(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxSnip::BlinkCaret(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -672,6 +709,7 @@ void os_wxSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -694,7 +732,7 @@ void os_wxSnip::OwnCaret(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "own-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxSnip::OwnCaret(x0);
+    READY_TO_RETURN; ASSELF wxSnip::OwnCaret(x0);
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -704,6 +742,7 @@ void os_wxSnip::OwnCaret(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -728,7 +767,7 @@ class wxCursor* os_wxSnip::AdjustCursor(class wxDC* x0, float x1, float x2, floa
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "adjust-cursor", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; return ASSELF wxSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -743,7 +782,12 @@ class wxCursor* os_wxSnip::AdjustCursor(class wxDC* x0, float x1, float x2, floa
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxCursor(v, "adjust-cursor in snip%"", extracting return value", 1));
+  {
+     class wxCursor* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxCursor(v, "adjust-cursor in snip%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -768,7 +812,7 @@ void os_wxSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, c
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxSnip::OnChar(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; ASSELF wxSnip::OnChar(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -783,6 +827,7 @@ void os_wxSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, c
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -807,7 +852,7 @@ void os_wxSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxSnip::OnEvent(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; ASSELF wxSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -822,6 +867,7 @@ void os_wxSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -844,7 +890,7 @@ void os_wxSnip::SizeCacheInvalid()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "size-cache-invalid", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxSnip::SizeCacheInvalid();
+    READY_TO_RETURN; ASSELF wxSnip::SizeCacheInvalid();
   } else {
   
   
@@ -853,6 +899,7 @@ void os_wxSnip::SizeCacheInvalid()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -875,7 +922,7 @@ class wxSnip* os_wxSnip::Copy()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "copy", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnip::Copy();
+    READY_TO_RETURN; return ASSELF wxSnip::Copy();
   } else {
   
   
@@ -884,7 +931,12 @@ class wxSnip* os_wxSnip::Copy()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "copy in snip%"", extracting return value", 0));
+  {
+     class wxSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "copy in snip%"", extracting return value", 0));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -907,7 +959,7 @@ string os_wxSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "get-text", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnip::GetText(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxSnip::GetText(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -919,7 +971,12 @@ string os_wxSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
-  return (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in snip%"", extracting return value"));
+  {
+     string resval;
+     resval = (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -943,7 +1000,7 @@ class wxSnip* os_wxSnip::MergeWith(class wxSnip* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "merge-with", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnip::MergeWith(x0);
+    READY_TO_RETURN; return ASSELF wxSnip::MergeWith(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -953,7 +1010,12 @@ class wxSnip* os_wxSnip::MergeWith(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "merge-with in snip%"", extracting return value", 1));
+  {
+     class wxSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "merge-with in snip%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -979,7 +1041,7 @@ void os_wxSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "split", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxSnip::Split(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxSnip::Split(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -993,6 +1055,7 @@ void os_wxSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "split in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in snip%"", extracting return value via box"", extracting boxed argument", 0)));
   if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+2], "split in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in snip%"", extracting return value via box"", extracting boxed argument", 0)));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1016,7 +1079,7 @@ void os_wxSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, flo
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "draw", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
+    READY_TO_RETURN; ASSELF wxSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -1035,6 +1098,7 @@ void os_wxSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, flo
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+10, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1058,7 +1122,7 @@ float os_wxSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "partial-offset", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxSnip::PartialOffset(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxSnip::PartialOffset(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -1071,7 +1135,12 @@ float os_wxSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_float(v, "partial-offset in snip%"", extracting return value"));
+  {
+     float resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_float(v, "partial-offset in snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -1102,7 +1171,7 @@ void os_wxSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nnflo
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "get-extent", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
+    READY_TO_RETURN; ASSELF wxSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -1126,6 +1195,7 @@ void os_wxSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nnflo
   if (x7) *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+7], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
   if (x8) *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+8], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -1146,6 +1216,7 @@ static Scheme_Object *os_wxSnipPrevious(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -1166,6 +1237,7 @@ static Scheme_Object *os_wxSnipNext(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -1188,6 +1260,7 @@ static Scheme_Object *os_wxSnipSetUnmodified(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1213,6 +1286,7 @@ static Scheme_Object *os_wxSnipGetScrollStepOffset(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -1238,6 +1312,7 @@ static Scheme_Object *os_wxSnipFindScrollStep(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -1261,6 +1336,7 @@ static Scheme_Object *os_wxSnipGetNumScrollSteps(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -1286,6 +1362,7 @@ static Scheme_Object *os_wxSnipSetAdmin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1313,6 +1390,7 @@ static Scheme_Object *os_wxSnipResize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1338,6 +1416,7 @@ static Scheme_Object *os_wxSnipWrite(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1364,6 +1443,7 @@ static Scheme_Object *os_wxSnipMatch(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1394,6 +1474,7 @@ static Scheme_Object *os_wxSnipCanEdit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1428,6 +1509,7 @@ static Scheme_Object *os_wxSnipDoEdit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1457,6 +1539,7 @@ static Scheme_Object *os_wxSnipBlinkCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1481,6 +1564,7 @@ static Scheme_Object *os_wxSnipOwnCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1518,6 +1602,7 @@ static Scheme_Object *os_wxSnipAdjustCursor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxCursor(r));
 }
 
@@ -1554,6 +1639,7 @@ static Scheme_Object *os_wxSnipOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1590,6 +1676,7 @@ static Scheme_Object *os_wxSnipOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1612,6 +1699,7 @@ static Scheme_Object *os_wxSnipSizeCacheInvalid(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1635,6 +1723,7 @@ static Scheme_Object *os_wxSnipCopy(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -1669,6 +1758,7 @@ static Scheme_Object *os_wxSnipGetText(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
 }
 
@@ -1695,6 +1785,7 @@ static Scheme_Object *os_wxSnipMergeWith(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -1730,6 +1821,7 @@ static Scheme_Object *os_wxSnipSplit(int n,  Scheme_Object *p[])
   if (n > (POFFSET+2))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(objscheme_bundle_wxSnip(_x2)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1773,6 +1865,7 @@ static Scheme_Object *os_wxSnipDraw(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1805,6 +1898,7 @@ static Scheme_Object *os_wxSnipPartialOffset(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -1901,6 +1995,7 @@ static Scheme_Object *os_wxSnipGetExtent(int n,  Scheme_Object *p[])
   if (n > (POFFSET+8) && !XC_SCHEME_NULLP(p[POFFSET+8]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x8)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+8], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1921,6 +2016,7 @@ static Scheme_Object *os_wxSnipReleaseFromOwner(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1941,6 +2037,7 @@ static Scheme_Object *os_wxSnipIsOwned(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -1963,6 +2060,7 @@ static Scheme_Object *os_wxSnipSetStyle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1984,6 +2082,7 @@ static Scheme_Object *os_wxSnipSetFlags(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2005,6 +2104,7 @@ static Scheme_Object *os_wxSnipSetCount(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2025,6 +2125,7 @@ static Scheme_Object *os_wxSnipGetAdmin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnipAdmin(r));
 }
 
@@ -2109,6 +2210,7 @@ static Scheme_Object *objscheme_wxSnip_Setsnipclass(int n,  Scheme_Object *p[])
   v = WITH_VAR_STACK(objscheme_unbundle_wxSnipClass(p[POFFSET], "set-snipclass in snip%", 1));
   ((wxSnip *)cobj->primdata)->snipclass = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -2135,6 +2237,7 @@ static Scheme_Object *os_wxSnip_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   ((Scheme_Class_Object *)p[0])->primflag = 1;
   return scheme_void;
@@ -2191,6 +2294,7 @@ void objscheme_setup_wxSnip(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxSnip, wxTYPE_SNIP));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxSnip(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2222,13 +2326,14 @@ Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_SNIP) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxSnip_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -2347,7 +2452,7 @@ void os_wxTextSnip::SetUnmodified()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "set-unmodified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTextSnip::SetUnmodified();
+    READY_TO_RETURN; ASSELF wxTextSnip::SetUnmodified();
   } else {
   
   
@@ -2356,6 +2461,7 @@ void os_wxTextSnip::SetUnmodified()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2378,7 +2484,7 @@ nnfloat os_wxTextSnip::GetScrollStepOffset(nnlong x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "get-scroll-step-offset", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTextSnip::GetScrollStepOffset(x0);
+    READY_TO_RETURN; return ASSELF wxTextSnip::GetScrollStepOffset(x0);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -2388,7 +2494,12 @@ nnfloat os_wxTextSnip::GetScrollStepOffset(nnlong x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(v, "get-scroll-step-offset in string-snip%"", extracting return value"));
+  {
+     nnfloat resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(v, "get-scroll-step-offset in string-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2411,7 +2522,7 @@ nnlong os_wxTextSnip::FindScrollStep(float x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "find-scroll-step", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTextSnip::FindScrollStep(x0);
+    READY_TO_RETURN; return ASSELF wxTextSnip::FindScrollStep(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -2421,7 +2532,12 @@ nnlong os_wxTextSnip::FindScrollStep(float x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "find-scroll-step in string-snip%"", extracting return value"));
+  {
+     nnlong resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "find-scroll-step in string-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2444,7 +2560,7 @@ nnlong os_wxTextSnip::GetNumScrollSteps()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "get-num-scroll-steps", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTextSnip::GetNumScrollSteps();
+    READY_TO_RETURN; return ASSELF wxTextSnip::GetNumScrollSteps();
   } else {
   
   
@@ -2453,7 +2569,12 @@ nnlong os_wxTextSnip::GetNumScrollSteps()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "get-num-scroll-steps in string-snip%"", extracting return value"));
+  {
+     nnlong resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "get-num-scroll-steps in string-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2477,7 +2598,7 @@ void os_wxTextSnip::SetAdmin(class wxSnipAdmin* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "set-admin", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTextSnip::SetAdmin(x0);
+    READY_TO_RETURN; ASSELF wxTextSnip::SetAdmin(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnipAdmin(x0));
@@ -2487,6 +2608,7 @@ void os_wxTextSnip::SetAdmin(class wxSnipAdmin* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2509,7 +2631,7 @@ Bool os_wxTextSnip::Resize(nnfloat x0, nnfloat x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "resize", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTextSnip::Resize(x0, x1);
+    READY_TO_RETURN; return ASSELF wxTextSnip::Resize(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -2520,7 +2642,12 @@ Bool os_wxTextSnip::Resize(nnfloat x0, nnfloat x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "resize in string-snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "resize in string-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2544,7 +2671,7 @@ void os_wxTextSnip::Write(class wxMediaStreamOut* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "write", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTextSnip::Write(x0);
+    READY_TO_RETURN; ASSELF wxTextSnip::Write(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
@@ -2554,6 +2681,7 @@ void os_wxTextSnip::Write(class wxMediaStreamOut* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2577,7 +2705,7 @@ Bool os_wxTextSnip::Match(class wxSnip* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "match?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTextSnip::Match(x0);
+    READY_TO_RETURN; return ASSELF wxTextSnip::Match(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -2587,7 +2715,12 @@ Bool os_wxTextSnip::Match(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in string-snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in string-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2610,7 +2743,7 @@ Bool os_wxTextSnip::CanEdit(int x0, Bool x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "can-do-edit-operation?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTextSnip::CanEdit(x0, x1);
+    READY_TO_RETURN; return ASSELF wxTextSnip::CanEdit(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
@@ -2621,7 +2754,12 @@ Bool os_wxTextSnip::CanEdit(int x0, Bool x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in string-snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in string-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2644,7 +2782,7 @@ void os_wxTextSnip::DoEdit(int x0, Bool x1, long x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "do-edit-operation", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTextSnip::DoEdit(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxTextSnip::DoEdit(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
@@ -2656,6 +2794,7 @@ void os_wxTextSnip::DoEdit(int x0, Bool x1, long x2)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2679,7 +2818,7 @@ void os_wxTextSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "blink-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTextSnip::BlinkCaret(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxTextSnip::BlinkCaret(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -2691,6 +2830,7 @@ void os_wxTextSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2713,7 +2853,7 @@ void os_wxTextSnip::OwnCaret(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "own-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTextSnip::OwnCaret(x0);
+    READY_TO_RETURN; ASSELF wxTextSnip::OwnCaret(x0);
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -2723,6 +2863,7 @@ void os_wxTextSnip::OwnCaret(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2747,7 +2888,7 @@ class wxCursor* os_wxTextSnip::AdjustCursor(class wxDC* x0, float x1, float x2, 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "adjust-cursor", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTextSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; return ASSELF wxTextSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -2762,7 +2903,12 @@ class wxCursor* os_wxTextSnip::AdjustCursor(class wxDC* x0, float x1, float x2, 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxCursor(v, "adjust-cursor in string-snip%"", extracting return value", 1));
+  {
+     class wxCursor* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxCursor(v, "adjust-cursor in string-snip%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2787,7 +2933,7 @@ void os_wxTextSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTextSnip::OnChar(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; ASSELF wxTextSnip::OnChar(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -2802,6 +2948,7 @@ void os_wxTextSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2826,7 +2973,7 @@ void os_wxTextSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTextSnip::OnEvent(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; ASSELF wxTextSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -2841,6 +2988,7 @@ void os_wxTextSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2863,7 +3011,7 @@ void os_wxTextSnip::SizeCacheInvalid()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "size-cache-invalid", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTextSnip::SizeCacheInvalid();
+    READY_TO_RETURN; ASSELF wxTextSnip::SizeCacheInvalid();
   } else {
   
   
@@ -2872,6 +3020,7 @@ void os_wxTextSnip::SizeCacheInvalid()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -2894,7 +3043,7 @@ class wxSnip* os_wxTextSnip::Copy()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "copy", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTextSnip::Copy();
+    READY_TO_RETURN; return ASSELF wxTextSnip::Copy();
   } else {
   
   
@@ -2903,7 +3052,12 @@ class wxSnip* os_wxTextSnip::Copy()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "copy in string-snip%"", extracting return value", 0));
+  {
+     class wxSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "copy in string-snip%"", extracting return value", 0));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2926,7 +3080,7 @@ string os_wxTextSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "get-text", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTextSnip::GetText(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxTextSnip::GetText(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -2938,7 +3092,12 @@ string os_wxTextSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
-  return (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in string-snip%"", extracting return value"));
+  {
+     string resval;
+     resval = (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in string-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2962,7 +3121,7 @@ class wxSnip* os_wxTextSnip::MergeWith(class wxSnip* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "merge-with", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTextSnip::MergeWith(x0);
+    READY_TO_RETURN; return ASSELF wxTextSnip::MergeWith(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -2972,7 +3131,12 @@ class wxSnip* os_wxTextSnip::MergeWith(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "merge-with in string-snip%"", extracting return value", 1));
+  {
+     class wxSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "merge-with in string-snip%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -2998,7 +3162,7 @@ void os_wxTextSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "split", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTextSnip::Split(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxTextSnip::Split(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -3012,6 +3176,7 @@ void os_wxTextSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "split in string-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in string-snip%"", extracting return value via box"", extracting boxed argument", 0)));
   if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+2], "split in string-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in string-snip%"", extracting return value via box"", extracting boxed argument", 0)));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -3035,7 +3200,7 @@ void os_wxTextSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4,
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "draw", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTextSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
+    READY_TO_RETURN; ASSELF wxTextSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -3054,6 +3219,7 @@ void os_wxTextSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4,
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+10, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -3077,7 +3243,7 @@ float os_wxTextSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "partial-offset", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTextSnip::PartialOffset(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxTextSnip::PartialOffset(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -3090,7 +3256,12 @@ float os_wxTextSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_float(v, "partial-offset in string-snip%"", extracting return value"));
+  {
+     float resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_float(v, "partial-offset in string-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -3121,7 +3292,7 @@ void os_wxTextSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, n
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "get-extent", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTextSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
+    READY_TO_RETURN; ASSELF wxTextSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -3145,6 +3316,7 @@ void os_wxTextSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, n
   if (x7) *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+7], "get-extent in string-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument")));
   if (x8) *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+8], "get-extent in string-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument")));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -3169,6 +3341,7 @@ static Scheme_Object *os_wxTextSnipRead(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3198,6 +3371,7 @@ static Scheme_Object *os_wxTextSnipInsert(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3220,6 +3394,7 @@ static Scheme_Object *os_wxTextSnipSetUnmodified(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3245,6 +3420,7 @@ static Scheme_Object *os_wxTextSnipGetScrollStepOffset(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -3270,6 +3446,7 @@ static Scheme_Object *os_wxTextSnipFindScrollStep(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -3293,6 +3470,7 @@ static Scheme_Object *os_wxTextSnipGetNumScrollSteps(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -3318,6 +3496,7 @@ static Scheme_Object *os_wxTextSnipSetAdmin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3345,6 +3524,7 @@ static Scheme_Object *os_wxTextSnipResize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3370,6 +3550,7 @@ static Scheme_Object *os_wxTextSnipWrite(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3396,6 +3577,7 @@ static Scheme_Object *os_wxTextSnipMatch(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3426,6 +3608,7 @@ static Scheme_Object *os_wxTextSnipCanEdit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -3460,6 +3643,7 @@ static Scheme_Object *os_wxTextSnipDoEdit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3489,6 +3673,7 @@ static Scheme_Object *os_wxTextSnipBlinkCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3513,6 +3698,7 @@ static Scheme_Object *os_wxTextSnipOwnCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3550,6 +3736,7 @@ static Scheme_Object *os_wxTextSnipAdjustCursor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxCursor(r));
 }
 
@@ -3586,6 +3773,7 @@ static Scheme_Object *os_wxTextSnipOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3622,6 +3810,7 @@ static Scheme_Object *os_wxTextSnipOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3644,6 +3833,7 @@ static Scheme_Object *os_wxTextSnipSizeCacheInvalid(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3667,6 +3857,7 @@ static Scheme_Object *os_wxTextSnipCopy(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -3701,6 +3892,7 @@ static Scheme_Object *os_wxTextSnipGetText(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
 }
 
@@ -3727,6 +3919,7 @@ static Scheme_Object *os_wxTextSnipMergeWith(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -3762,6 +3955,7 @@ static Scheme_Object *os_wxTextSnipSplit(int n,  Scheme_Object *p[])
   if (n > (POFFSET+2))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(objscheme_bundle_wxSnip(_x2)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3805,6 +3999,7 @@ static Scheme_Object *os_wxTextSnipDraw(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3837,6 +4032,7 @@ static Scheme_Object *os_wxTextSnipPartialOffset(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -3933,6 +4129,7 @@ static Scheme_Object *os_wxTextSnipGetExtent(int n,  Scheme_Object *p[])
   if (n > (POFFSET+8) && !XC_SCHEME_NULLP(p[POFFSET+8]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x8)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+8], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -3964,6 +4161,7 @@ static Scheme_Object *os_wxTextSnip_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     nnlong x0;
 
@@ -3987,6 +4185,7 @@ static Scheme_Object *os_wxTextSnip_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -4034,6 +4233,7 @@ void objscheme_setup_wxTextSnip(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxTextSnip, wxTYPE_TEXT_SNIP));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxTextSnip(Scheme_Object *obj, const char *stop, int nullOK)
@@ -4065,13 +4265,14 @@ Scheme_Object *objscheme_bundle_wxTextSnip(class wxTextSnip *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_TEXT_SNIP) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxTextSnip_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -4179,7 +4380,7 @@ void os_wxTabSnip::SetUnmodified()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "set-unmodified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTabSnip::SetUnmodified();
+    READY_TO_RETURN; ASSELF wxTabSnip::SetUnmodified();
   } else {
   
   
@@ -4188,6 +4389,7 @@ void os_wxTabSnip::SetUnmodified()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -4210,7 +4412,7 @@ nnfloat os_wxTabSnip::GetScrollStepOffset(nnlong x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "get-scroll-step-offset", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTabSnip::GetScrollStepOffset(x0);
+    READY_TO_RETURN; return ASSELF wxTabSnip::GetScrollStepOffset(x0);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -4220,7 +4422,12 @@ nnfloat os_wxTabSnip::GetScrollStepOffset(nnlong x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(v, "get-scroll-step-offset in tab-snip%"", extracting return value"));
+  {
+     nnfloat resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(v, "get-scroll-step-offset in tab-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4243,7 +4450,7 @@ nnlong os_wxTabSnip::FindScrollStep(float x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "find-scroll-step", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTabSnip::FindScrollStep(x0);
+    READY_TO_RETURN; return ASSELF wxTabSnip::FindScrollStep(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -4253,7 +4460,12 @@ nnlong os_wxTabSnip::FindScrollStep(float x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "find-scroll-step in tab-snip%"", extracting return value"));
+  {
+     nnlong resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "find-scroll-step in tab-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4276,7 +4488,7 @@ nnlong os_wxTabSnip::GetNumScrollSteps()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "get-num-scroll-steps", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTabSnip::GetNumScrollSteps();
+    READY_TO_RETURN; return ASSELF wxTabSnip::GetNumScrollSteps();
   } else {
   
   
@@ -4285,7 +4497,12 @@ nnlong os_wxTabSnip::GetNumScrollSteps()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "get-num-scroll-steps in tab-snip%"", extracting return value"));
+  {
+     nnlong resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "get-num-scroll-steps in tab-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4309,7 +4526,7 @@ void os_wxTabSnip::SetAdmin(class wxSnipAdmin* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "set-admin", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTabSnip::SetAdmin(x0);
+    READY_TO_RETURN; ASSELF wxTabSnip::SetAdmin(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnipAdmin(x0));
@@ -4319,6 +4536,7 @@ void os_wxTabSnip::SetAdmin(class wxSnipAdmin* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -4341,7 +4559,7 @@ Bool os_wxTabSnip::Resize(nnfloat x0, nnfloat x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "resize", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTabSnip::Resize(x0, x1);
+    READY_TO_RETURN; return ASSELF wxTabSnip::Resize(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -4352,7 +4570,12 @@ Bool os_wxTabSnip::Resize(nnfloat x0, nnfloat x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "resize in tab-snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "resize in tab-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4376,7 +4599,7 @@ void os_wxTabSnip::Write(class wxMediaStreamOut* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "write", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTabSnip::Write(x0);
+    READY_TO_RETURN; ASSELF wxTabSnip::Write(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
@@ -4386,6 +4609,7 @@ void os_wxTabSnip::Write(class wxMediaStreamOut* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -4409,7 +4633,7 @@ Bool os_wxTabSnip::Match(class wxSnip* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "match?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTabSnip::Match(x0);
+    READY_TO_RETURN; return ASSELF wxTabSnip::Match(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -4419,7 +4643,12 @@ Bool os_wxTabSnip::Match(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in tab-snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in tab-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4442,7 +4671,7 @@ Bool os_wxTabSnip::CanEdit(int x0, Bool x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "can-do-edit-operation?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTabSnip::CanEdit(x0, x1);
+    READY_TO_RETURN; return ASSELF wxTabSnip::CanEdit(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
@@ -4453,7 +4682,12 @@ Bool os_wxTabSnip::CanEdit(int x0, Bool x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in tab-snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in tab-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4476,7 +4710,7 @@ void os_wxTabSnip::DoEdit(int x0, Bool x1, long x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "do-edit-operation", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTabSnip::DoEdit(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxTabSnip::DoEdit(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
@@ -4488,6 +4722,7 @@ void os_wxTabSnip::DoEdit(int x0, Bool x1, long x2)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -4511,7 +4746,7 @@ void os_wxTabSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "blink-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTabSnip::BlinkCaret(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxTabSnip::BlinkCaret(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -4523,6 +4758,7 @@ void os_wxTabSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -4545,7 +4781,7 @@ void os_wxTabSnip::OwnCaret(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "own-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTabSnip::OwnCaret(x0);
+    READY_TO_RETURN; ASSELF wxTabSnip::OwnCaret(x0);
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -4555,6 +4791,7 @@ void os_wxTabSnip::OwnCaret(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -4579,7 +4816,7 @@ class wxCursor* os_wxTabSnip::AdjustCursor(class wxDC* x0, float x1, float x2, f
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "adjust-cursor", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTabSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; return ASSELF wxTabSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -4594,7 +4831,12 @@ class wxCursor* os_wxTabSnip::AdjustCursor(class wxDC* x0, float x1, float x2, f
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxCursor(v, "adjust-cursor in tab-snip%"", extracting return value", 1));
+  {
+     class wxCursor* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxCursor(v, "adjust-cursor in tab-snip%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4619,7 +4861,7 @@ void os_wxTabSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTabSnip::OnChar(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; ASSELF wxTabSnip::OnChar(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -4634,6 +4876,7 @@ void os_wxTabSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -4658,7 +4901,7 @@ void os_wxTabSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTabSnip::OnEvent(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; ASSELF wxTabSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -4673,6 +4916,7 @@ void os_wxTabSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -4695,7 +4939,7 @@ void os_wxTabSnip::SizeCacheInvalid()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "size-cache-invalid", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTabSnip::SizeCacheInvalid();
+    READY_TO_RETURN; ASSELF wxTabSnip::SizeCacheInvalid();
   } else {
   
   
@@ -4704,6 +4948,7 @@ void os_wxTabSnip::SizeCacheInvalid()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -4726,7 +4971,7 @@ class wxSnip* os_wxTabSnip::Copy()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "copy", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTabSnip::Copy();
+    READY_TO_RETURN; return ASSELF wxTabSnip::Copy();
   } else {
   
   
@@ -4735,7 +4980,12 @@ class wxSnip* os_wxTabSnip::Copy()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "copy in tab-snip%"", extracting return value", 0));
+  {
+     class wxSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "copy in tab-snip%"", extracting return value", 0));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4758,7 +5008,7 @@ string os_wxTabSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "get-text", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTabSnip::GetText(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxTabSnip::GetText(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -4770,7 +5020,12 @@ string os_wxTabSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
-  return (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in tab-snip%"", extracting return value"));
+  {
+     string resval;
+     resval = (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in tab-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4794,7 +5049,7 @@ class wxSnip* os_wxTabSnip::MergeWith(class wxSnip* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "merge-with", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTabSnip::MergeWith(x0);
+    READY_TO_RETURN; return ASSELF wxTabSnip::MergeWith(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -4804,7 +5059,12 @@ class wxSnip* os_wxTabSnip::MergeWith(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "merge-with in tab-snip%"", extracting return value", 1));
+  {
+     class wxSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "merge-with in tab-snip%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4830,7 +5090,7 @@ void os_wxTabSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "split", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTabSnip::Split(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxTabSnip::Split(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -4844,6 +5104,7 @@ void os_wxTabSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "split in tab-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in tab-snip%"", extracting return value via box"", extracting boxed argument", 0)));
   if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+2], "split in tab-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in tab-snip%"", extracting return value via box"", extracting boxed argument", 0)));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -4867,7 +5128,7 @@ void os_wxTabSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "draw", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTabSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
+    READY_TO_RETURN; ASSELF wxTabSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -4886,6 +5147,7 @@ void os_wxTabSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+10, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -4909,7 +5171,7 @@ float os_wxTabSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "partial-offset", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxTabSnip::PartialOffset(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxTabSnip::PartialOffset(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -4922,7 +5184,12 @@ float os_wxTabSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_float(v, "partial-offset in tab-snip%"", extracting return value"));
+  {
+     float resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_float(v, "partial-offset in tab-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -4953,7 +5220,7 @@ void os_wxTabSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nn
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "get-extent", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxTabSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
+    READY_TO_RETURN; ASSELF wxTabSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -4977,6 +5244,7 @@ void os_wxTabSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nn
   if (x7) *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+7], "get-extent in tab-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument")));
   if (x8) *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+8], "get-extent in tab-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument")));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -4999,6 +5267,7 @@ static Scheme_Object *os_wxTabSnipSetUnmodified(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5024,6 +5293,7 @@ static Scheme_Object *os_wxTabSnipGetScrollStepOffset(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -5049,6 +5319,7 @@ static Scheme_Object *os_wxTabSnipFindScrollStep(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -5072,6 +5343,7 @@ static Scheme_Object *os_wxTabSnipGetNumScrollSteps(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -5097,6 +5369,7 @@ static Scheme_Object *os_wxTabSnipSetAdmin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5124,6 +5397,7 @@ static Scheme_Object *os_wxTabSnipResize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -5149,6 +5423,7 @@ static Scheme_Object *os_wxTabSnipWrite(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5175,6 +5450,7 @@ static Scheme_Object *os_wxTabSnipMatch(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -5205,6 +5481,7 @@ static Scheme_Object *os_wxTabSnipCanEdit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -5239,6 +5516,7 @@ static Scheme_Object *os_wxTabSnipDoEdit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5268,6 +5546,7 @@ static Scheme_Object *os_wxTabSnipBlinkCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5292,6 +5571,7 @@ static Scheme_Object *os_wxTabSnipOwnCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5329,6 +5609,7 @@ static Scheme_Object *os_wxTabSnipAdjustCursor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxCursor(r));
 }
 
@@ -5365,6 +5646,7 @@ static Scheme_Object *os_wxTabSnipOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5401,6 +5683,7 @@ static Scheme_Object *os_wxTabSnipOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5423,6 +5706,7 @@ static Scheme_Object *os_wxTabSnipSizeCacheInvalid(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5446,6 +5730,7 @@ static Scheme_Object *os_wxTabSnipCopy(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -5480,6 +5765,7 @@ static Scheme_Object *os_wxTabSnipGetText(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
 }
 
@@ -5506,6 +5792,7 @@ static Scheme_Object *os_wxTabSnipMergeWith(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -5541,6 +5828,7 @@ static Scheme_Object *os_wxTabSnipSplit(int n,  Scheme_Object *p[])
   if (n > (POFFSET+2))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(objscheme_bundle_wxSnip(_x2)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5584,6 +5872,7 @@ static Scheme_Object *os_wxTabSnipDraw(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5616,6 +5905,7 @@ static Scheme_Object *os_wxTabSnipPartialOffset(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -5712,6 +6002,7 @@ static Scheme_Object *os_wxTabSnipGetExtent(int n,  Scheme_Object *p[])
   if (n > (POFFSET+8) && !XC_SCHEME_NULLP(p[POFFSET+8]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x8)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+8], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -5738,6 +6029,7 @@ static Scheme_Object *os_wxTabSnip_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   ((Scheme_Class_Object *)p[0])->primflag = 1;
   return scheme_void;
@@ -5781,6 +6073,7 @@ void objscheme_setup_wxTabSnip(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxTabSnip, wxTYPE_TAB_SNIP));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxTabSnip(Scheme_Object *obj, const char *stop, int nullOK)
@@ -5812,13 +6105,14 @@ Scheme_Object *objscheme_bundle_wxTabSnip(class wxTabSnip *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_TAB_SNIP) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxTabSnip_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -5884,16 +6178,17 @@ static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!bitmapType_wxBITMAP_TYPE_MASK_sym) WITH_VAR_STACK(init_symset_bitmapType());
   if (0) { }
-  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
-  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
-  else if (v == bitmapType_wxBITMAP_TYPE_GIF_MASK_sym) { return wxBITMAP_TYPE_GIF_MASK; }
-  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
-  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
-  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
-  else if (v == bitmapType_wxBITMAP_TYPE_JPEG_sym) { return wxBITMAP_TYPE_JPEG; }
-  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
-  else if (v == bitmapType_wxBITMAP_TYPE_MASK_sym) { return wxBITMAP_TYPE_MASK; }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_BMP; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_GIF; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_MASK_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_GIF_MASK; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_XBM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_XPM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_PICT; }
+  else if (v == bitmapType_wxBITMAP_TYPE_JPEG_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_JPEG; }
+  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_UNKNOWN; }
+  else if (v == bitmapType_wxBITMAP_TYPE_MASK_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_MASK; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -6019,7 +6314,7 @@ void os_wxImageSnip::SetUnmodified()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "set-unmodified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxImageSnip::SetUnmodified();
+    READY_TO_RETURN; ASSELF wxImageSnip::SetUnmodified();
   } else {
   
   
@@ -6028,6 +6323,7 @@ void os_wxImageSnip::SetUnmodified()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -6050,7 +6346,7 @@ nnfloat os_wxImageSnip::GetScrollStepOffset(nnlong x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "get-scroll-step-offset", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxImageSnip::GetScrollStepOffset(x0);
+    READY_TO_RETURN; return ASSELF wxImageSnip::GetScrollStepOffset(x0);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -6060,7 +6356,12 @@ nnfloat os_wxImageSnip::GetScrollStepOffset(nnlong x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(v, "get-scroll-step-offset in image-snip%"", extracting return value"));
+  {
+     nnfloat resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(v, "get-scroll-step-offset in image-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -6083,7 +6384,7 @@ nnlong os_wxImageSnip::FindScrollStep(float x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "find-scroll-step", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxImageSnip::FindScrollStep(x0);
+    READY_TO_RETURN; return ASSELF wxImageSnip::FindScrollStep(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -6093,7 +6394,12 @@ nnlong os_wxImageSnip::FindScrollStep(float x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "find-scroll-step in image-snip%"", extracting return value"));
+  {
+     nnlong resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "find-scroll-step in image-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -6116,7 +6422,7 @@ nnlong os_wxImageSnip::GetNumScrollSteps()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "get-num-scroll-steps", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxImageSnip::GetNumScrollSteps();
+    READY_TO_RETURN; return ASSELF wxImageSnip::GetNumScrollSteps();
   } else {
   
   
@@ -6125,7 +6431,12 @@ nnlong os_wxImageSnip::GetNumScrollSteps()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "get-num-scroll-steps in image-snip%"", extracting return value"));
+  {
+     nnlong resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "get-num-scroll-steps in image-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -6149,7 +6460,7 @@ void os_wxImageSnip::SetAdmin(class wxSnipAdmin* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "set-admin", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxImageSnip::SetAdmin(x0);
+    READY_TO_RETURN; ASSELF wxImageSnip::SetAdmin(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnipAdmin(x0));
@@ -6159,6 +6470,7 @@ void os_wxImageSnip::SetAdmin(class wxSnipAdmin* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -6181,7 +6493,7 @@ Bool os_wxImageSnip::Resize(nnfloat x0, nnfloat x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "resize", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxImageSnip::Resize(x0, x1);
+    READY_TO_RETURN; return ASSELF wxImageSnip::Resize(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -6192,7 +6504,12 @@ Bool os_wxImageSnip::Resize(nnfloat x0, nnfloat x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "resize in image-snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "resize in image-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -6216,7 +6533,7 @@ void os_wxImageSnip::Write(class wxMediaStreamOut* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "write", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxImageSnip::Write(x0);
+    READY_TO_RETURN; ASSELF wxImageSnip::Write(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
@@ -6226,6 +6543,7 @@ void os_wxImageSnip::Write(class wxMediaStreamOut* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -6249,7 +6567,7 @@ Bool os_wxImageSnip::Match(class wxSnip* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "match?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxImageSnip::Match(x0);
+    READY_TO_RETURN; return ASSELF wxImageSnip::Match(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -6259,7 +6577,12 @@ Bool os_wxImageSnip::Match(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in image-snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in image-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -6282,7 +6605,7 @@ Bool os_wxImageSnip::CanEdit(int x0, Bool x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "can-do-edit-operation?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxImageSnip::CanEdit(x0, x1);
+    READY_TO_RETURN; return ASSELF wxImageSnip::CanEdit(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
@@ -6293,7 +6616,12 @@ Bool os_wxImageSnip::CanEdit(int x0, Bool x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in image-snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in image-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -6316,7 +6644,7 @@ void os_wxImageSnip::DoEdit(int x0, Bool x1, long x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "do-edit-operation", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxImageSnip::DoEdit(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxImageSnip::DoEdit(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
@@ -6328,6 +6656,7 @@ void os_wxImageSnip::DoEdit(int x0, Bool x1, long x2)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -6351,7 +6680,7 @@ void os_wxImageSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "blink-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxImageSnip::BlinkCaret(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxImageSnip::BlinkCaret(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -6363,6 +6692,7 @@ void os_wxImageSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -6385,7 +6715,7 @@ void os_wxImageSnip::OwnCaret(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "own-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxImageSnip::OwnCaret(x0);
+    READY_TO_RETURN; ASSELF wxImageSnip::OwnCaret(x0);
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -6395,6 +6725,7 @@ void os_wxImageSnip::OwnCaret(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -6419,7 +6750,7 @@ class wxCursor* os_wxImageSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "adjust-cursor", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxImageSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; return ASSELF wxImageSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -6434,7 +6765,12 @@ class wxCursor* os_wxImageSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxCursor(v, "adjust-cursor in image-snip%"", extracting return value", 1));
+  {
+     class wxCursor* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxCursor(v, "adjust-cursor in image-snip%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -6459,7 +6795,7 @@ void os_wxImageSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxImageSnip::OnChar(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; ASSELF wxImageSnip::OnChar(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -6474,6 +6810,7 @@ void os_wxImageSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -6498,7 +6835,7 @@ void os_wxImageSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxImageSnip::OnEvent(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; ASSELF wxImageSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -6513,6 +6850,7 @@ void os_wxImageSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -6535,7 +6873,7 @@ void os_wxImageSnip::SizeCacheInvalid()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "size-cache-invalid", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxImageSnip::SizeCacheInvalid();
+    READY_TO_RETURN; ASSELF wxImageSnip::SizeCacheInvalid();
   } else {
   
   
@@ -6544,6 +6882,7 @@ void os_wxImageSnip::SizeCacheInvalid()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -6566,7 +6905,7 @@ class wxSnip* os_wxImageSnip::Copy()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "copy", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxImageSnip::Copy();
+    READY_TO_RETURN; return ASSELF wxImageSnip::Copy();
   } else {
   
   
@@ -6575,7 +6914,12 @@ class wxSnip* os_wxImageSnip::Copy()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "copy in image-snip%"", extracting return value", 0));
+  {
+     class wxSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "copy in image-snip%"", extracting return value", 0));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -6598,7 +6942,7 @@ string os_wxImageSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "get-text", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxImageSnip::GetText(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxImageSnip::GetText(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -6610,7 +6954,12 @@ string os_wxImageSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
-  return (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in image-snip%"", extracting return value"));
+  {
+     string resval;
+     resval = (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in image-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -6634,7 +6983,7 @@ class wxSnip* os_wxImageSnip::MergeWith(class wxSnip* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "merge-with", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxImageSnip::MergeWith(x0);
+    READY_TO_RETURN; return ASSELF wxImageSnip::MergeWith(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -6644,7 +6993,12 @@ class wxSnip* os_wxImageSnip::MergeWith(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "merge-with in image-snip%"", extracting return value", 1));
+  {
+     class wxSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "merge-with in image-snip%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -6670,7 +7024,7 @@ void os_wxImageSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "split", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxImageSnip::Split(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxImageSnip::Split(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -6684,6 +7038,7 @@ void os_wxImageSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "split in image-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in image-snip%"", extracting return value via box"", extracting boxed argument", 0)));
   if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+2], "split in image-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in image-snip%"", extracting return value via box"", extracting boxed argument", 0)));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -6707,7 +7062,7 @@ void os_wxImageSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "draw", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxImageSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
+    READY_TO_RETURN; ASSELF wxImageSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -6726,6 +7081,7 @@ void os_wxImageSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+10, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -6749,7 +7105,7 @@ float os_wxImageSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "partial-offset", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxImageSnip::PartialOffset(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxImageSnip::PartialOffset(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -6762,7 +7118,12 @@ float os_wxImageSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_float(v, "partial-offset in image-snip%"", extracting return value"));
+  {
+     float resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_float(v, "partial-offset in image-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -6793,7 +7154,7 @@ void os_wxImageSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "get-extent", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxImageSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
+    READY_TO_RETURN; ASSELF wxImageSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -6817,6 +7178,7 @@ void os_wxImageSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, 
   if (x7) *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+7], "get-extent in image-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument")));
   if (x8) *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+8], "get-extent in image-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument")));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -6840,6 +7202,7 @@ static Scheme_Object *os_wxImageSnipSetOffset(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -6868,6 +7231,7 @@ static Scheme_Object *os_wxImageSnipSetBitmap(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -6888,6 +7252,7 @@ static Scheme_Object *os_wxImageSnipGetFiletype(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(bundle_symset_bitmapType(r));
 }
 
@@ -6921,6 +7286,7 @@ static Scheme_Object *os_wxImageSnipGetFilename(int n,  Scheme_Object *p[])
   if (n > (POFFSET+0) && !XC_SCHEME_NULLP(p[POFFSET+0]))
     { Scheme_Object *sbv_ = (_x0 ? scheme_true : scheme_false); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
@@ -6958,6 +7324,7 @@ static Scheme_Object *os_wxImageSnipLoadFile(int n,  Scheme_Object *p[])
 
   if (x0) WITH_VAR_STACK(scheme_thread_block(0.0));
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -6980,6 +7347,7 @@ static Scheme_Object *os_wxImageSnipSetUnmodified(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -7005,6 +7373,7 @@ static Scheme_Object *os_wxImageSnipGetScrollStepOffset(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -7030,6 +7399,7 @@ static Scheme_Object *os_wxImageSnipFindScrollStep(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -7053,6 +7423,7 @@ static Scheme_Object *os_wxImageSnipGetNumScrollSteps(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -7078,6 +7449,7 @@ static Scheme_Object *os_wxImageSnipSetAdmin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -7105,6 +7477,7 @@ static Scheme_Object *os_wxImageSnipResize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -7130,6 +7503,7 @@ static Scheme_Object *os_wxImageSnipWrite(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -7156,6 +7530,7 @@ static Scheme_Object *os_wxImageSnipMatch(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -7186,6 +7561,7 @@ static Scheme_Object *os_wxImageSnipCanEdit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -7220,6 +7596,7 @@ static Scheme_Object *os_wxImageSnipDoEdit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -7249,6 +7626,7 @@ static Scheme_Object *os_wxImageSnipBlinkCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -7273,6 +7651,7 @@ static Scheme_Object *os_wxImageSnipOwnCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -7310,6 +7689,7 @@ static Scheme_Object *os_wxImageSnipAdjustCursor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxCursor(r));
 }
 
@@ -7346,6 +7726,7 @@ static Scheme_Object *os_wxImageSnipOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -7382,6 +7763,7 @@ static Scheme_Object *os_wxImageSnipOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -7404,6 +7786,7 @@ static Scheme_Object *os_wxImageSnipSizeCacheInvalid(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -7427,6 +7810,7 @@ static Scheme_Object *os_wxImageSnipCopy(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -7461,6 +7845,7 @@ static Scheme_Object *os_wxImageSnipGetText(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
 }
 
@@ -7487,6 +7872,7 @@ static Scheme_Object *os_wxImageSnipMergeWith(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -7522,6 +7908,7 @@ static Scheme_Object *os_wxImageSnipSplit(int n,  Scheme_Object *p[])
   if (n > (POFFSET+2))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(objscheme_bundle_wxSnip(_x2)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -7565,6 +7952,7 @@ static Scheme_Object *os_wxImageSnipDraw(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -7597,6 +7985,7 @@ static Scheme_Object *os_wxImageSnipPartialOffset(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -7693,6 +8082,7 @@ static Scheme_Object *os_wxImageSnipGetExtent(int n,  Scheme_Object *p[])
   if (n > (POFFSET+8) && !XC_SCHEME_NULLP(p[POFFSET+8]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x8)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+8], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -7729,6 +8119,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     nstring x0 INIT_NULLED_OUT;
     int x1;
@@ -7768,6 +8159,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
     realobj->__gc_external = (void *)p[0];
     if (x0) WITH_VAR_STACK(scheme_thread_block(0.0));
     
+    READY_TO_PRE_RETURN;
   }
 
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
@@ -7818,6 +8210,7 @@ void objscheme_setup_wxImageSnip(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxImageSnip, wxTYPE_IMAGE_SNIP));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxImageSnip(Scheme_Object *obj, const char *stop, int nullOK)
@@ -7849,13 +8242,14 @@ Scheme_Object *objscheme_bundle_wxImageSnip(class wxImageSnip *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_IMAGE_SNIP) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxImageSnip_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -7967,7 +8361,7 @@ void os_wxMediaSnip::SetUnmodified()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "set-unmodified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaSnip::SetUnmodified();
+    READY_TO_RETURN; ASSELF wxMediaSnip::SetUnmodified();
   } else {
   
   
@@ -7976,6 +8370,7 @@ void os_wxMediaSnip::SetUnmodified()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -7998,7 +8393,7 @@ nnfloat os_wxMediaSnip::GetScrollStepOffset(nnlong x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "get-scroll-step-offset", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaSnip::GetScrollStepOffset(x0);
+    READY_TO_RETURN; return ASSELF wxMediaSnip::GetScrollStepOffset(x0);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -8008,7 +8403,12 @@ nnfloat os_wxMediaSnip::GetScrollStepOffset(nnlong x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(v, "get-scroll-step-offset in editor-snip%"", extracting return value"));
+  {
+     nnfloat resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(v, "get-scroll-step-offset in editor-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -8031,7 +8431,7 @@ nnlong os_wxMediaSnip::FindScrollStep(float x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "find-scroll-step", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaSnip::FindScrollStep(x0);
+    READY_TO_RETURN; return ASSELF wxMediaSnip::FindScrollStep(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -8041,7 +8441,12 @@ nnlong os_wxMediaSnip::FindScrollStep(float x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "find-scroll-step in editor-snip%"", extracting return value"));
+  {
+     nnlong resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "find-scroll-step in editor-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -8064,7 +8469,7 @@ nnlong os_wxMediaSnip::GetNumScrollSteps()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "get-num-scroll-steps", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaSnip::GetNumScrollSteps();
+    READY_TO_RETURN; return ASSELF wxMediaSnip::GetNumScrollSteps();
   } else {
   
   
@@ -8073,7 +8478,12 @@ nnlong os_wxMediaSnip::GetNumScrollSteps()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "get-num-scroll-steps in editor-snip%"", extracting return value"));
+  {
+     nnlong resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(v, "get-num-scroll-steps in editor-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -8097,7 +8507,7 @@ void os_wxMediaSnip::SetAdmin(class wxSnipAdmin* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "set-admin", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaSnip::SetAdmin(x0);
+    READY_TO_RETURN; ASSELF wxMediaSnip::SetAdmin(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnipAdmin(x0));
@@ -8107,6 +8517,7 @@ void os_wxMediaSnip::SetAdmin(class wxSnipAdmin* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -8129,7 +8540,7 @@ Bool os_wxMediaSnip::Resize(nnfloat x0, nnfloat x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "resize", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaSnip::Resize(x0, x1);
+    READY_TO_RETURN; return ASSELF wxMediaSnip::Resize(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -8140,7 +8551,12 @@ Bool os_wxMediaSnip::Resize(nnfloat x0, nnfloat x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "resize in editor-snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "resize in editor-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -8164,7 +8580,7 @@ void os_wxMediaSnip::Write(class wxMediaStreamOut* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "write", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaSnip::Write(x0);
+    READY_TO_RETURN; ASSELF wxMediaSnip::Write(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
@@ -8174,6 +8590,7 @@ void os_wxMediaSnip::Write(class wxMediaStreamOut* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -8197,7 +8614,7 @@ Bool os_wxMediaSnip::Match(class wxSnip* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "match?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaSnip::Match(x0);
+    READY_TO_RETURN; return ASSELF wxMediaSnip::Match(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -8207,7 +8624,12 @@ Bool os_wxMediaSnip::Match(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in editor-snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in editor-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -8230,7 +8652,7 @@ Bool os_wxMediaSnip::CanEdit(int x0, Bool x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "can-do-edit-operation?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaSnip::CanEdit(x0, x1);
+    READY_TO_RETURN; return ASSELF wxMediaSnip::CanEdit(x0, x1);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
@@ -8241,7 +8663,12 @@ Bool os_wxMediaSnip::CanEdit(int x0, Bool x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in editor-snip%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in editor-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -8264,7 +8691,7 @@ void os_wxMediaSnip::DoEdit(int x0, Bool x1, long x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "do-edit-operation", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaSnip::DoEdit(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxMediaSnip::DoEdit(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
@@ -8276,6 +8703,7 @@ void os_wxMediaSnip::DoEdit(int x0, Bool x1, long x2)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -8299,7 +8727,7 @@ void os_wxMediaSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "blink-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaSnip::BlinkCaret(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxMediaSnip::BlinkCaret(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -8311,6 +8739,7 @@ void os_wxMediaSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -8333,7 +8762,7 @@ void os_wxMediaSnip::OwnCaret(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "own-caret", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaSnip::OwnCaret(x0);
+    READY_TO_RETURN; ASSELF wxMediaSnip::OwnCaret(x0);
   } else {
   
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -8343,6 +8772,7 @@ void os_wxMediaSnip::OwnCaret(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -8367,7 +8797,7 @@ class wxCursor* os_wxMediaSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "adjust-cursor", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; return ASSELF wxMediaSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -8382,7 +8812,12 @@ class wxCursor* os_wxMediaSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxCursor(v, "adjust-cursor in editor-snip%"", extracting return value", 1));
+  {
+     class wxCursor* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxCursor(v, "adjust-cursor in editor-snip%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -8407,7 +8842,7 @@ void os_wxMediaSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaSnip::OnChar(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; ASSELF wxMediaSnip::OnChar(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -8422,6 +8857,7 @@ void os_wxMediaSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -8446,7 +8882,7 @@ void os_wxMediaSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaSnip::OnEvent(x0, x1, x2, x3, x4, x5);
+    READY_TO_RETURN; ASSELF wxMediaSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -8461,6 +8897,7 @@ void os_wxMediaSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -8483,7 +8920,7 @@ void os_wxMediaSnip::SizeCacheInvalid()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "size-cache-invalid", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaSnip::SizeCacheInvalid();
+    READY_TO_RETURN; ASSELF wxMediaSnip::SizeCacheInvalid();
   } else {
   
   
@@ -8492,6 +8929,7 @@ void os_wxMediaSnip::SizeCacheInvalid()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -8514,7 +8952,7 @@ class wxSnip* os_wxMediaSnip::Copy()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "copy", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaSnip::Copy();
+    READY_TO_RETURN; return ASSELF wxMediaSnip::Copy();
   } else {
   
   
@@ -8523,7 +8961,12 @@ class wxSnip* os_wxMediaSnip::Copy()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "copy in editor-snip%"", extracting return value", 0));
+  {
+     class wxSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "copy in editor-snip%"", extracting return value", 0));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -8546,7 +8989,7 @@ string os_wxMediaSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "get-text", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaSnip::GetText(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxMediaSnip::GetText(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -8558,7 +9001,12 @@ string os_wxMediaSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
   
-  return (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in editor-snip%"", extracting return value"));
+  {
+     string resval;
+     resval = (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in editor-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -8582,7 +9030,7 @@ class wxSnip* os_wxMediaSnip::MergeWith(class wxSnip* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "merge-with", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaSnip::MergeWith(x0);
+    READY_TO_RETURN; return ASSELF wxMediaSnip::MergeWith(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
@@ -8592,7 +9040,12 @@ class wxSnip* os_wxMediaSnip::MergeWith(class wxSnip* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "merge-with in editor-snip%"", extracting return value", 1));
+  {
+     class wxSnip* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxSnip(v, "merge-with in editor-snip%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -8618,7 +9071,7 @@ void os_wxMediaSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "split", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaSnip::Split(x0, x1, x2);
+    READY_TO_RETURN; ASSELF wxMediaSnip::Split(x0, x1, x2);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -8632,6 +9085,7 @@ void os_wxMediaSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "split in editor-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in editor-snip%"", extracting return value via box"", extracting boxed argument", 0)));
   if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+2], "split in editor-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in editor-snip%"", extracting return value via box"", extracting boxed argument", 0)));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -8655,7 +9109,7 @@ void os_wxMediaSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "draw", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
+    READY_TO_RETURN; ASSELF wxMediaSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -8674,6 +9128,7 @@ void os_wxMediaSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+10, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -8697,7 +9152,7 @@ float os_wxMediaSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "partial-offset", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxMediaSnip::PartialOffset(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxMediaSnip::PartialOffset(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -8710,7 +9165,12 @@ float os_wxMediaSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_float(v, "partial-offset in editor-snip%"", extracting return value"));
+  {
+     float resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_float(v, "partial-offset in editor-snip%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -8741,7 +9201,7 @@ void os_wxMediaSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "get-extent", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxMediaSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
+    READY_TO_RETURN; ASSELF wxMediaSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
@@ -8765,6 +9225,7 @@ void os_wxMediaSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, 
   if (x7) *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+7], "get-extent in editor-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument")));
   if (x8) *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+8], "get-extent in editor-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument")));
   
+     READY_TO_RETURN;
   }
 }
 
@@ -8805,6 +9266,7 @@ static Scheme_Object *os_wxMediaSnipGetInset(int n,  Scheme_Object *p[])
   if (n > (POFFSET+3))
     { Scheme_Object *sbv_ = scheme_make_integer(_x3); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+3], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -8832,6 +9294,7 @@ static Scheme_Object *os_wxMediaSnipSetInset(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -8872,6 +9335,7 @@ static Scheme_Object *os_wxMediaSnipGetMargin(int n,  Scheme_Object *p[])
   if (n > (POFFSET+3))
     { Scheme_Object *sbv_ = scheme_make_integer(_x3); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+3], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -8899,6 +9363,7 @@ static Scheme_Object *os_wxMediaSnipSetMargin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -8919,6 +9384,7 @@ static Scheme_Object *os_wxMediaSnipBorderVisible(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -8940,6 +9406,7 @@ static Scheme_Object *os_wxMediaSnipShowBorder(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -8961,6 +9428,7 @@ static Scheme_Object *os_wxMediaSnipSetAlignTopLine(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -8981,6 +9449,7 @@ static Scheme_Object *os_wxMediaSnipGetAlignTopLine(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -9002,6 +9471,7 @@ static Scheme_Object *os_wxMediaSnipSetTightTextFit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9022,6 +9492,7 @@ static Scheme_Object *os_wxMediaSnipGetTightTextFit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -9042,6 +9513,7 @@ static Scheme_Object *os_wxMediaSnipGetMinHeight(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_float(r, "none"));
 }
 
@@ -9062,6 +9534,7 @@ static Scheme_Object *os_wxMediaSnipGetMinWidth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_float(r, "none"));
 }
 
@@ -9083,6 +9556,7 @@ static Scheme_Object *os_wxMediaSnipSetMinHeight(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9104,6 +9578,7 @@ static Scheme_Object *os_wxMediaSnipSetMinWidth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9124,6 +9599,7 @@ static Scheme_Object *os_wxMediaSnipGetMaxHeight(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_float(r, "none"));
 }
 
@@ -9144,6 +9620,7 @@ static Scheme_Object *os_wxMediaSnipGetMaxWidth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_float(r, "none"));
 }
 
@@ -9165,6 +9642,7 @@ static Scheme_Object *os_wxMediaSnipSetMaxHeight(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9186,6 +9664,7 @@ static Scheme_Object *os_wxMediaSnipSetMaxWidth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9208,6 +9687,7 @@ static Scheme_Object *os_wxMediaSnipSetUnmodified(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9233,6 +9713,7 @@ static Scheme_Object *os_wxMediaSnipGetScrollStepOffset(int n,  Scheme_Object *p
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -9258,6 +9739,7 @@ static Scheme_Object *os_wxMediaSnipFindScrollStep(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -9281,6 +9763,7 @@ static Scheme_Object *os_wxMediaSnipGetNumScrollSteps(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -9306,6 +9789,7 @@ static Scheme_Object *os_wxMediaSnipSetAdmin(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9333,6 +9817,7 @@ static Scheme_Object *os_wxMediaSnipResize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -9358,6 +9843,7 @@ static Scheme_Object *os_wxMediaSnipWrite(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9384,6 +9870,7 @@ static Scheme_Object *os_wxMediaSnipMatch(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -9414,6 +9901,7 @@ static Scheme_Object *os_wxMediaSnipCanEdit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -9448,6 +9936,7 @@ static Scheme_Object *os_wxMediaSnipDoEdit(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9477,6 +9966,7 @@ static Scheme_Object *os_wxMediaSnipBlinkCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9501,6 +9991,7 @@ static Scheme_Object *os_wxMediaSnipOwnCaret(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9538,6 +10029,7 @@ static Scheme_Object *os_wxMediaSnipAdjustCursor(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxCursor(r));
 }
 
@@ -9574,6 +10066,7 @@ static Scheme_Object *os_wxMediaSnipOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9610,6 +10103,7 @@ static Scheme_Object *os_wxMediaSnipOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9632,6 +10126,7 @@ static Scheme_Object *os_wxMediaSnipSizeCacheInvalid(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9655,6 +10150,7 @@ static Scheme_Object *os_wxMediaSnipCopy(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -9689,6 +10185,7 @@ static Scheme_Object *os_wxMediaSnipGetText(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
 }
 
@@ -9715,6 +10212,7 @@ static Scheme_Object *os_wxMediaSnipMergeWith(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
@@ -9750,6 +10248,7 @@ static Scheme_Object *os_wxMediaSnipSplit(int n,  Scheme_Object *p[])
   if (n > (POFFSET+2))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(objscheme_bundle_wxSnip(_x2)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9793,6 +10292,7 @@ static Scheme_Object *os_wxMediaSnipDraw(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9825,6 +10325,7 @@ static Scheme_Object *os_wxMediaSnipPartialOffset(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
@@ -9921,6 +10422,7 @@ static Scheme_Object *os_wxMediaSnipGetExtent(int n,  Scheme_Object *p[])
   if (n > (POFFSET+8) && !XC_SCHEME_NULLP(p[POFFSET+8]))
     { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x8)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+8], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9943,6 +10445,7 @@ static Scheme_Object *os_wxMediaSnipSetMedia(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -9963,6 +10466,7 @@ static Scheme_Object *os_wxMediaSnipGetThisMedia(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaBuffer(r));
 }
 
@@ -10060,6 +10564,7 @@ static Scheme_Object *os_wxMediaSnip_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   ((Scheme_Class_Object *)p[0])->primflag = 1;
   return scheme_void;
@@ -10123,6 +10628,7 @@ void objscheme_setup_wxMediaSnip(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaSnip, wxTYPE_MEDIA_SNIP));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxMediaSnip(Scheme_Object *obj, const char *stop, int nullOK)
@@ -10154,13 +10660,14 @@ Scheme_Object *objscheme_bundle_wxMediaSnip(class wxMediaSnip *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_MEDIA_SNIP) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaSnip_class));
 
   obj->primdata = realobj;
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -10249,7 +10756,12 @@ class wxBufferData* os_wxBufferDataClass::Read(class wxMediaStreamIn* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_wxBufferData(v, "read in editor-data-class%"", extracting return value", 1));
+  {
+     class wxBufferData* resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_wxBufferData(v, "read in editor-data-class%"", extracting return value", 1));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -10276,6 +10788,7 @@ static Scheme_Object *os_wxBufferDataClassRead(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBufferData(r));
 }
 
@@ -10309,6 +10822,7 @@ static Scheme_Object *objscheme_wxBufferDataClass_Setclassname(int n,  Scheme_Ob
   v = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET], "set-classname in editor-data-class%"));
   ((wxBufferDataClass *)cobj->primdata)->classname = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -10335,6 +10849,7 @@ static Scheme_Object *os_wxBufferDataClass_ConstructScheme(int n,  Scheme_Object
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -10359,6 +10874,7 @@ void objscheme_setup_wxBufferDataClass(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxBufferDataClass, wxTYPE_BUFFER_DATA_CLASS));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxBufferDataClass(Scheme_Object *obj, const char *stop, int nullOK)
@@ -10390,7 +10906,7 @@ Scheme_Object *objscheme_bundle_wxBufferDataClass(class wxBufferDataClass *realo
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_BUFFER_DATA_CLASS) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxBufferDataClass_class));
 
   obj->primdata = realobj;
@@ -10398,6 +10914,7 @@ Scheme_Object *objscheme_bundle_wxBufferDataClass(class wxBufferDataClass *realo
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -10466,6 +10983,7 @@ static Scheme_Object *os_wxBufferDataClassListNth(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBufferDataClass(r));
 }
 
@@ -10486,6 +11004,7 @@ static Scheme_Object *os_wxBufferDataClassListNumber(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -10508,6 +11027,7 @@ static Scheme_Object *os_wxBufferDataClassListAdd(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -10531,6 +11051,7 @@ static Scheme_Object *os_wxBufferDataClassListFindPosition(int n,  Scheme_Object
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -10554,6 +11075,7 @@ static Scheme_Object *os_wxBufferDataClassListFind(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBufferDataClass(r));
 }
 
@@ -10581,6 +11103,7 @@ void objscheme_setup_wxBufferDataClassList(Scheme_Env *env)
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxBufferDataClassList_interface, "editor-data-class-list" "<%>", env));
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxBufferDataClassList, wxTYPE_BUFFER_DATA_CLASS_LIST));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxBufferDataClassList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -10612,7 +11135,7 @@ Scheme_Object *objscheme_bundle_wxBufferDataClassList(class wxBufferDataClassLis
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_BUFFER_DATA_CLASS_LIST) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxBufferDataClassList_class));
 
   obj->primdata = realobj;
@@ -10620,6 +11143,7 @@ Scheme_Object *objscheme_bundle_wxBufferDataClassList(class wxBufferDataClassLis
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -10720,7 +11244,12 @@ Bool os_wxBufferData::Write(class wxMediaStreamOut* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "write in editor-data%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "write in editor-data%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -10743,6 +11272,7 @@ static Scheme_Object *os_wxBufferDataSetNextNoCycle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -10769,6 +11299,7 @@ static Scheme_Object *os_wxBufferDataWrite(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -10802,6 +11333,7 @@ static Scheme_Object *objscheme_wxBufferData_Setdataclass(int n,  Scheme_Object 
   v = WITH_VAR_STACK(objscheme_unbundle_wxBufferDataClass(p[POFFSET], "set-dataclass in editor-data%", 1));
   ((wxBufferData *)cobj->primdata)->dataclass = v;
 
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -10845,6 +11377,7 @@ static Scheme_Object *os_wxBufferData_ConstructScheme(int n,  Scheme_Object *p[]
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -10871,6 +11404,7 @@ void objscheme_setup_wxBufferData(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxBufferData, wxTYPE_BUFFER_DATA));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxBufferData(Scheme_Object *obj, const char *stop, int nullOK)
@@ -10902,7 +11436,7 @@ Scheme_Object *objscheme_bundle_wxBufferData(class wxBufferData *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_BUFFER_DATA) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxBufferData_class));
 
   obj->primdata = realobj;
@@ -10910,6 +11444,7 @@ Scheme_Object *objscheme_bundle_wxBufferData(class wxBufferData *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 

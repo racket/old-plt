@@ -263,6 +263,7 @@ static void *RgnBoundingBox(wxRegion *r)
 {
   float x, y, w, h;
   Scheme_Object *a[4];
+  void *rt;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 4);
 
@@ -273,7 +274,9 @@ static void *RgnBoundingBox(wxRegion *r)
   a[1] = WITH_VAR_STACK(scheme_make_double(y));
   a[2] = WITH_VAR_STACK(scheme_make_double(w));
   a[3] = WITH_VAR_STACK(scheme_make_double(h));
-  return WITH_VAR_STACK(scheme_values(4, a));
+  rt = WITH_VAR_STACK(scheme_values(4, a));
+  READY_TO_RETURN;
+  return rt;
 }
 
 @SET TYPE = wxPoint

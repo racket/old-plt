@@ -1120,6 +1120,7 @@ MZ_EXTERN Scheme_Object *scheme_eval_waiting;
 /* Need to make sure that a __gc_var_stack__ is always available where
    setjmp & longjmp are used. */
 # define scheme_longjmp(b, v) (((long *)((b).gcvs))[1] = (b).gcvs_cnt, \
+                               GC_variable_stack = (void **)(b).gcvs, \
                                scheme_mz_longjmp((b).jb, v))
 # define scheme_setjmp(b)     ((b).gcvs = (long)__gc_var_stack__, \
                                (b).gcvs_cnt = (long)(__gc_var_stack__[1]), \

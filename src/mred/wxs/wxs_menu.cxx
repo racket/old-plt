@@ -139,6 +139,7 @@ static Scheme_Object *os_wxMenumenuSelect(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -161,6 +162,7 @@ static Scheme_Object *os_wxMenuSetTitle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -185,6 +187,7 @@ static Scheme_Object *os_wxMenuSetLabel(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -209,6 +212,7 @@ static Scheme_Object *os_wxMenuSetHelpString(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -229,6 +233,7 @@ static Scheme_Object *os_wxMenuNumber(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -252,6 +257,7 @@ static Scheme_Object *os_wxMenuEnable(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -275,6 +281,7 @@ static Scheme_Object *os_wxMenuCheck(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -297,6 +304,7 @@ static Scheme_Object *os_wxMenuChecked(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -316,6 +324,7 @@ static Scheme_Object *os_wxMenuAppendSeparator(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -338,6 +347,7 @@ static Scheme_Object *os_wxMenuDeleteByPosition(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -360,6 +370,7 @@ static Scheme_Object *os_wxMenuDelete(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -398,6 +409,7 @@ static Scheme_Object *os_wxMenuAppend(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   } else  {
     ExactLong x0;
     string x1 INIT_NULLED_OUT;
@@ -428,6 +440,7 @@ static Scheme_Object *os_wxMenuAppend(int n,  Scheme_Object *p[])
 
     
     
+    READY_TO_PRE_RETURN;
   }
 
   return scheme_void;
@@ -467,6 +480,7 @@ static Scheme_Object *os_wxMenu_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   realobj->callback_closure = p[POFFSET+cb_pos];
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -499,6 +513,7 @@ void objscheme_setup_wxMenu(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxMenu_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxMenu(Scheme_Object *obj, const char *stop, int nullOK)
@@ -530,7 +545,7 @@ Scheme_Object *objscheme_bundle_wxMenu(class wxMenu *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMenu_class));
 
   obj->primdata = realobj;
@@ -538,6 +553,7 @@ Scheme_Object *objscheme_bundle_wxMenu(class wxMenu *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -588,6 +604,8 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
     WITH_VAR_STACK(scheme_apply_multi(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p));
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  READY_TO_RETURN;
 }
 
 // wxMenuBar is really derived from wxItem
@@ -650,6 +668,7 @@ static Scheme_Object *os_wxMenuBarSetLabelTop(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -670,6 +689,7 @@ static Scheme_Object *os_wxMenuBarNumber(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -693,6 +713,7 @@ static Scheme_Object *os_wxMenuBarEnableTop(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -721,6 +742,7 @@ static Scheme_Object *os_wxMenuBarDelete(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -746,6 +768,7 @@ static Scheme_Object *os_wxMenuBarAppend(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -772,6 +795,7 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -797,6 +821,7 @@ void objscheme_setup_wxMenuBar(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxMenuBar_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxMenuBar(Scheme_Object *obj, const char *stop, int nullOK)
@@ -828,7 +853,7 @@ Scheme_Object *objscheme_bundle_wxMenuBar(class wxMenuBar *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMenuBar_class));
 
   obj->primdata = realobj;
@@ -836,6 +861,7 @@ Scheme_Object *objscheme_bundle_wxMenuBar(class wxMenuBar *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -961,6 +987,7 @@ static Scheme_Object *os_wxsMenuItemId(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(scheme_make_integer_value(r));
 }
 
@@ -987,6 +1014,7 @@ static Scheme_Object *os_wxsMenuItem_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -1008,6 +1036,7 @@ void objscheme_setup_wxsMenuItem(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxsMenuItem_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxsMenuItem(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1039,7 +1068,7 @@ Scheme_Object *objscheme_bundle_wxsMenuItem(class wxsMenuItem *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxsMenuItem_class));
 
   obj->primdata = realobj;
@@ -1047,6 +1076,7 @@ Scheme_Object *objscheme_bundle_wxsMenuItem(class wxsMenuItem *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 
@@ -1087,6 +1117,7 @@ static Scheme_Object *wxsMenuItemGlobalwxsIdToMenuItem(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxsMenuItem(r));
 }
 
@@ -1097,5 +1128,6 @@ void objscheme_setup_wxsMenuItemGlobal(Scheme_Env *env)
   VAR_STACK_PUSH(0, env);
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsMenuItemGlobalwxsIdToMenuItem, "id-to-menu-item", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("id-to-menu-item", functmp, env));
+  READY_TO_RETURN;
 }
 

@@ -73,6 +73,7 @@ static char *wxStripMenuCodes_Scheme(char *in)
   }
 
   WITH_VAR_STACK(wxStripMenuCodes(in, buffer));
+  READY_TO_RETURN;
   return buffer;
 }
 

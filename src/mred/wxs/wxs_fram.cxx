@@ -92,8 +92,9 @@ static int unbundle_symset_frameStyle(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "frameStyle symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -117,10 +118,11 @@ static int unbundle_symset_iconKind(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!iconKind_2_sym) WITH_VAR_STACK(init_symset_iconKind());
   if (0) { }
-  else if (v == iconKind_0_sym) { return 0; }
-  else if (v == iconKind_1_sym) { return 1; }
-  else if (v == iconKind_2_sym) { return 2; }
+  else if (v == iconKind_0_sym) { READY_TO_RETURN; return 0; }
+  else if (v == iconKind_1_sym) { READY_TO_RETURN; return 1; }
+  else if (v == iconKind_2_sym) { READY_TO_RETURN; return 2; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "iconKind symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -214,7 +216,7 @@ void os_wxFrame::OnDropFile(pathname x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxFrame_class, "on-drop-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxFrame::OnDropFile(x0);
+    READY_TO_RETURN; ASSELF wxFrame::OnDropFile(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
@@ -224,6 +226,7 @@ void os_wxFrame::OnDropFile(pathname x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -259,7 +262,12 @@ Bool os_wxFrame::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in frame%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in frame%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -295,7 +303,12 @@ Bool os_wxFrame::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in frame%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in frame%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -318,7 +331,7 @@ void os_wxFrame::OnSize(int x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxFrame_class, "on-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxFrame::OnSize(x0, x1);
+    READY_TO_RETURN; ASSELF wxFrame::OnSize(x0, x1);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -329,6 +342,7 @@ void os_wxFrame::OnSize(int x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -351,7 +365,7 @@ void os_wxFrame::OnSetFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxFrame_class, "on-set-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxFrame::OnSetFocus();
+    READY_TO_RETURN; ASSELF wxFrame::OnSetFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -360,6 +374,7 @@ void os_wxFrame::OnSetFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -382,7 +397,7 @@ void os_wxFrame::OnKillFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxFrame_class, "on-kill-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxFrame::OnKillFocus();
+    READY_TO_RETURN; ASSELF wxFrame::OnKillFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -391,6 +406,7 @@ void os_wxFrame::OnKillFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -413,7 +429,7 @@ void os_wxFrame::OnMenuClick()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxFrame_class, "on-menu-click", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxFrame::OnMenuClick();
+    READY_TO_RETURN; ASSELF wxFrame::OnMenuClick();
   } else {
   
   
@@ -422,6 +438,7 @@ void os_wxFrame::OnMenuClick()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -444,7 +461,7 @@ void os_wxFrame::OnMenuCommand(ExactLong x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxFrame_class, "on-menu-command", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxFrame::OnMenuCommand(x0);
+    READY_TO_RETURN; ASSELF wxFrame::OnMenuCommand(x0);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_integer_value(x0));
@@ -454,6 +471,7 @@ void os_wxFrame::OnMenuCommand(ExactLong x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -476,7 +494,7 @@ Bool os_wxFrame::OnClose()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxFrame_class, "on-close", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return ASSELF wxFrame::OnClose();
+    READY_TO_RETURN; return ASSELF wxFrame::OnClose();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 0; }
@@ -485,7 +503,12 @@ Bool os_wxFrame::OnClose()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "on-close in frame%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "on-close in frame%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -508,7 +531,7 @@ void os_wxFrame::OnActivate(Bool x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxFrame_class, "on-activate", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxFrame::OnActivate(x0);
+    READY_TO_RETURN; ASSELF wxFrame::OnActivate(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = (x0 ? scheme_true : scheme_false);
@@ -518,6 +541,7 @@ void os_wxFrame::OnActivate(Bool x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -543,6 +567,7 @@ static Scheme_Object *os_wxFrameOnDropFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -572,6 +597,7 @@ static Scheme_Object *os_wxFramePreOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -601,6 +627,7 @@ static Scheme_Object *os_wxFramePreOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -627,6 +654,7 @@ static Scheme_Object *os_wxFrameOnSize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -649,6 +677,7 @@ static Scheme_Object *os_wxFrameOnSetFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -671,6 +700,7 @@ static Scheme_Object *os_wxFrameOnKillFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -693,6 +723,7 @@ static Scheme_Object *os_wxFrameOnMenuClick(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -717,6 +748,7 @@ static Scheme_Object *os_wxFrameOnMenuCommand(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -740,6 +772,7 @@ static Scheme_Object *os_wxFrameOnClose(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -764,6 +797,7 @@ static Scheme_Object *os_wxFrameOnActivate(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -783,6 +817,7 @@ static Scheme_Object *os_wxFrameframeMenu(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -813,6 +848,7 @@ static Scheme_Object *os_wxFrameCreateStatusLine(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -834,6 +870,7 @@ static Scheme_Object *os_wxFrameMaximize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -854,6 +891,7 @@ static Scheme_Object *os_wxFrameStatusLineExists(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -874,6 +912,7 @@ static Scheme_Object *os_wxFrameIconized(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -896,6 +935,7 @@ static Scheme_Object *os_wxFrameSetStatusText(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -916,6 +956,7 @@ static Scheme_Object *os_wxFrameGetTheMenuBar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMenuBar(r));
 }
 
@@ -938,6 +979,7 @@ static Scheme_Object *os_wxFrameSetMenuBar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -971,6 +1013,7 @@ static Scheme_Object *os_wxFrameSetIcon(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -992,6 +1035,7 @@ static Scheme_Object *os_wxFrameIconize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1014,6 +1058,7 @@ static Scheme_Object *os_wxFrameSetTitle(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1077,6 +1122,7 @@ static Scheme_Object *os_wxFrame_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -1119,6 +1165,7 @@ void objscheme_setup_wxFrame(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxFrame, wxTYPE_FRAME));
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxFrame(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1150,7 +1197,7 @@ Scheme_Object *objscheme_bundle_wxFrame(class wxFrame *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((realobj->__type != wxTYPE_FRAME) && (sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxFrame_class));
 
   obj->primdata = realobj;
@@ -1158,6 +1205,7 @@ Scheme_Object *objscheme_bundle_wxFrame(class wxFrame *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 

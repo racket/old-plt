@@ -112,8 +112,9 @@ static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   else { break; } 
   l = SCHEME_CDR(l);
   }
-  if (SCHEME_NULLP(l)) return result;
+  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "canvasStyle symbol list", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -135,9 +136,10 @@ static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
   VAR_STACK_PUSH(0, v);
   if (!orientation_wxHORIZONTAL_sym) WITH_VAR_STACK(init_symset_orientation());
   if (0) { }
-  else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
-  else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
+  else if (v == orientation_wxVERTICAL_sym) { READY_TO_RETURN; return wxVERTICAL; }
+  else if (v == orientation_wxHORIZONTAL_sym) { READY_TO_RETURN; return wxHORIZONTAL; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "orientation symbol", -1, 0, &v));
+  READY_TO_RETURN;
   return 0;
 }
 
@@ -235,7 +237,7 @@ void os_wxCanvas::OnDropFile(pathname x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-drop-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxCanvas::OnDropFile(x0);
+    READY_TO_RETURN; ASSELF wxCanvas::OnDropFile(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
@@ -245,6 +247,7 @@ void os_wxCanvas::OnDropFile(pathname x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -280,7 +283,12 @@ Bool os_wxCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in canvas%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in canvas%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -316,7 +324,12 @@ Bool os_wxCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
-  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in canvas%"", extracting return value"));
+  {
+     Bool resval;
+     resval = WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in canvas%"", extracting return value"));
+     READY_TO_RETURN;
+     return resval;
+  }
   }
 }
 
@@ -339,7 +352,7 @@ void os_wxCanvas::OnSize(int x0, int x1)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxCanvas::OnSize(x0, x1);
+    READY_TO_RETURN; ASSELF wxCanvas::OnSize(x0, x1);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -350,6 +363,7 @@ void os_wxCanvas::OnSize(int x0, int x1)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
+     READY_TO_RETURN;
   }
 }
 
@@ -372,7 +386,7 @@ void os_wxCanvas::OnSetFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-set-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxCanvas::OnSetFocus();
+    READY_TO_RETURN; ASSELF wxCanvas::OnSetFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -381,6 +395,7 @@ void os_wxCanvas::OnSetFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -403,7 +418,7 @@ void os_wxCanvas::OnKillFocus()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-kill-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxCanvas::OnKillFocus();
+    READY_TO_RETURN; ASSELF wxCanvas::OnKillFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -412,6 +427,7 @@ void os_wxCanvas::OnKillFocus()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -435,7 +451,7 @@ void os_wxCanvas::OnScroll(class wxScrollEvent* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-scroll", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxCanvas::OnScroll(x0);
+    READY_TO_RETURN; ASSELF wxCanvas::OnScroll(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxScrollEvent(x0));
@@ -445,6 +461,7 @@ void os_wxCanvas::OnScroll(class wxScrollEvent* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -468,7 +485,7 @@ void os_wxCanvas::OnChar(class wxKeyEvent* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxCanvas::OnChar(x0);
+    READY_TO_RETURN; ASSELF wxCanvas::OnChar(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
@@ -478,6 +495,7 @@ void os_wxCanvas::OnChar(class wxKeyEvent* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -501,7 +519,7 @@ void os_wxCanvas::OnEvent(class wxMouseEvent* x0)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxCanvas::OnEvent(x0);
+    READY_TO_RETURN; ASSELF wxCanvas::OnEvent(x0);
   } else {
   mz_jmp_buf savebuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
@@ -511,6 +529,7 @@ void os_wxCanvas::OnEvent(class wxMouseEvent* x0)
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -533,7 +552,7 @@ void os_wxCanvas::OnPaint()
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-paint", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    ASSELF wxCanvas::OnPaint();
+    READY_TO_RETURN; ASSELF wxCanvas::OnPaint();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -542,6 +561,7 @@ void os_wxCanvas::OnPaint()
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
+     READY_TO_RETURN;
   }
 }
 
@@ -567,6 +587,7 @@ static Scheme_Object *os_wxCanvasOnDropFile(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -596,6 +617,7 @@ static Scheme_Object *os_wxCanvasPreOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -625,6 +647,7 @@ static Scheme_Object *os_wxCanvasPreOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
 }
 
@@ -651,6 +674,7 @@ static Scheme_Object *os_wxCanvasOnSize(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -673,6 +697,7 @@ static Scheme_Object *os_wxCanvasOnSetFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -695,6 +720,7 @@ static Scheme_Object *os_wxCanvasOnKillFocus(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -714,6 +740,7 @@ static Scheme_Object *os_wxCanvaswxSetBackgroundToGray(int n,  Scheme_Object *p[
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -733,6 +760,7 @@ static Scheme_Object *os_wxCanvaswxThisContextCurrent(int n,  Scheme_Object *p[]
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -752,6 +780,7 @@ static Scheme_Object *os_wxCanvaswxSwapBuffers(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -777,6 +806,7 @@ static Scheme_Object *os_wxCanvasOnScroll(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -800,6 +830,7 @@ static Scheme_Object *os_wxCanvasSetScrollPage(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -823,6 +854,7 @@ static Scheme_Object *os_wxCanvasSetScrollRange(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -846,6 +878,7 @@ static Scheme_Object *os_wxCanvasSetScrollPos(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -868,6 +901,7 @@ static Scheme_Object *os_wxCanvasGetScrollPage(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -890,6 +924,7 @@ static Scheme_Object *os_wxCanvasGetScrollRange(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -912,6 +947,7 @@ static Scheme_Object *os_wxCanvasGetScrollPos(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_make_integer(r);
 }
 
@@ -935,6 +971,7 @@ static Scheme_Object *os_wxCanvasScrollPercent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -958,6 +995,7 @@ static Scheme_Object *os_wxCanvasWarpPointer(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -988,6 +1026,7 @@ static Scheme_Object *os_wxCanvasViewStart(int n,  Scheme_Object *p[])
   if (n > (POFFSET+1))
     { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1034,6 +1073,7 @@ static Scheme_Object *os_wxCanvasSetScrollbars(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1064,6 +1104,7 @@ static Scheme_Object *os_wxCanvasGetVirtualSize(int n,  Scheme_Object *p[])
   if (n > (POFFSET+1))
     { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1084,6 +1125,7 @@ static Scheme_Object *os_wxCanvasGetDC(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxDC(r));
 }
 
@@ -1109,6 +1151,7 @@ static Scheme_Object *os_wxCanvasOnChar(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1134,6 +1177,7 @@ static Scheme_Object *os_wxCanvasOnEvent(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1156,6 +1200,7 @@ static Scheme_Object *os_wxCanvasOnPaint(int n,  Scheme_Object *p[])
 
   
   
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -1216,6 +1261,7 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(int n,  Scheme_Object *p[])
   realobj->__gc_external = (void *)p[0];
   
   
+  READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
@@ -1261,6 +1307,7 @@ void objscheme_setup_wxCanvas(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxCanvas_class));
 
 
+  READY_TO_RETURN;
 }
 
 int objscheme_istype_wxCanvas(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1292,7 +1339,7 @@ Scheme_Object *objscheme_bundle_wxCanvas(class wxCanvas *realobj)
   VAR_STACK_PUSH(1, realobj);
 
   if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
-    return sobj;
+    { READY_TO_RETURN; return sobj; }
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxCanvas_class));
 
   obj->primdata = realobj;
@@ -1300,6 +1347,7 @@ Scheme_Object *objscheme_bundle_wxCanvas(class wxCanvas *realobj)
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
   return (Scheme_Object *)obj;
 }
 

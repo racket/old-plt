@@ -958,7 +958,7 @@ sub DoPrintClass
 		print "(($oldclass *)cobj->primdata)->${ivarname}";
 		print " = v;\n\n";
 	    }
-	    print "  return scheme_void;\n}\n";
+	    print "  READY_TO_RETURN;\n  return scheme_void;\n}\n";
 	}
 	&OIEnd;
 	print "\n";
@@ -1207,6 +1207,7 @@ sub DoPrintClass
 	print SOUT "  (define-constant $sym)\n";
     }
 
+    print "  READY_TO_RETURN;\n";
     print "}\n\n";
 
     if (!$global) {
@@ -1246,7 +1247,7 @@ sub DoPrintClass
 	    }
 	    print "(sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, ";
 	    print "realobj->${idfield}))))\n";
-	    print "    return sobj;\n";
+	    print "    { READY_TO_RETURN; return sobj; }\n";
 	}
 	print "  obj = (Scheme_Class_Object *)";
 	print "WITH_VAR_STACK(scheme_make_uninited_object(${newclass}_class));\n\n";
@@ -1257,6 +1258,7 @@ sub DoPrintClass
 	print "  obj->primflag = 0;\n\n";
 	print "  realobj->__gc_external = (void *)obj;\n";
 	# print "  objscheme_note_creation((Scheme_Object *)obj);\n";
+	print "  READY_TO_RETURN;\n";
 	print "  return (Scheme_Object *)obj;\n}\n\n";
 
 	# Unbundle function
@@ -1321,6 +1323,7 @@ sub PrintFailureHandling
     local($callback) = @_;
 
     if (($exception eq 'SUPER') && !$virtualonly) {
+	print "READY_TO_RETURN; ";
 	print "return " if ($returntype ne 'void');
 	if ($callback) {
 	    print "obj->";
@@ -1331,7 +1334,7 @@ sub PrintFailureHandling
     } elsif ($exception ne '' && $exception ne 'SUPER') {
 	print &ApplyMacros($exception);
     } else {
-	print "return;";
+	print "{ READY_TO_RETURN; return; }";
     }
 }
 
@@ -1528,9 +1531,15 @@ sub PrintMethod
     # print "  COPY_JMPBUF(scheme_error_buf, savebuf);\n\n";
     
     if ($returntype ne 'void') {
-	print "  return ";
+	print "  {\n";
+	print "     " . &NormalType($returntype) . " resval;\n";
+	print "     resval = ";
 	&PrintUnbundleVar("v", $returntype, $returnunbundle, 1, &GetMethod(1) . "\", extracting return value\"");
 	print ";\n";
+	print "     READY_TO_RETURN;\n";
+	print "     return resval;\n  }\n";
+    } else {
+	print "     READY_TO_RETURN;\n";
     }
     print "  }\n}\n";
 
@@ -1698,6 +1707,7 @@ sub PrintFunction
 	    $justonemax{$func} = &CalcNumPossible(1);
 	}
 	&PrintSpecificFunction("", $iscreator, !$iscreator, "", $pre_var_stack, $returnptr);
+	print "  READY_TO_RETURN;\n";
     } else {
 	print "  ";
 
@@ -1770,6 +1780,7 @@ sub PrintFunction
 		$casename = " ($casename case)";
 	    }
 	    &PrintSpecificFunction("  ", $iscreator, 0, $casename, $pre_var_stack, $returnptr);
+	    print "    READY_TO_" . $pre_var_stack . "RETURN;\n";
 	    print "  } else ";
 	}
 
@@ -1799,6 +1810,7 @@ sub PrintFunction
 
 	print " {\n";
 	&PrintSpecificFunction("  ", $iscreator, 0, $casename, $pre_var_stack, $returnptr);
+	print "    READY_TO_" . $pre_var_stack . "RETURN;\n";
 	print "  }";
 	print "\n\n";
     }
@@ -2895,12 +2907,12 @@ sub PrintSymSet
 		$donepost = "";
 	    } else {
 		$vv = "v";
-		$donepre = "return ";
+		$donepre = "READY_TO_RETURN; return ";
 		$donepost = "";
 	    }
 	    print "  if (0) { }\n";
 	    if ($char) {
-		print "  else if (SCHEME_CHARP(v)) { return ";
+		print "  else if (SCHEME_CHARP(v)) { READY_TO_RETURN; return ";
 		if ($mode eq 'unbundle') {
 		    print "SCHEME_CHAR_VAL(v)";
 		} else {
@@ -2925,9 +2937,10 @@ sub PrintSymSet
 		print "  else { break; } \n";
 		print "  l = SCHEME_CDR(l);\n";
 		print "  }\n";
-		print "  if (SCHEME_NULLP(l)) return result;\n";
+		print "  if (SCHEME_NULLP(l)) { READY_TO_RETURN; return result; }\n";
 	    }
 	    print "  if (where) WITH_VAR_STACK(scheme_wrong_type(where, \"$name symbol${lname}\", -1, 0, &v));\n";
+	    print "  READY_TO_RETURN;\n";
 	    print "  return 0;\n";
 	    print "}\n\n";
 	}

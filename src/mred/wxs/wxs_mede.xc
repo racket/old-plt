@@ -289,6 +289,8 @@ static void WordbreakCallbackToScheme(wxMediaEdit *media,
       *start = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(scheme_unbox(s)), "Scheme wordbreak callback"));
     if (end)
       *end = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(scheme_unbox(e)), "Scheme wordbreak callback"));
+
+    READY_TO_RETURN;
 }
 
 static void ClickbackToScheme(wxMediaEdit *media,
@@ -307,6 +309,8 @@ static void ClickbackToScheme(wxMediaEdit *media,
   p[2] = WITH_VAR_STACK(objscheme_bundle_integer(end));
 
   WITH_VAR_STACK(scheme_apply_multi(f, 3, p));
+
+  READY_TO_RETURN;
 }
 
 @END

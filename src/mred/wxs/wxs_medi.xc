@@ -10,6 +10,7 @@
 static void *wxbBufferToDC(wxMediaBuffer *b, float x, float y)
 {
   Scheme_Object *a[2];
+  void *r;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 2);
 
@@ -20,12 +21,15 @@ static void *wxbBufferToDC(wxMediaBuffer *b, float x, float y)
   a[0] = WITH_VAR_STACK(objscheme_bundle_double(x));
   a[1] = WITH_VAR_STACK(objscheme_bundle_double(y));
 
-  return WITH_VAR_STACK(scheme_values(2, a));
+  r = WITH_VAR_STACK(scheme_values(2, a));
+  READY_TO_RETURN;
+  return r;
 }
 
 static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 {
   Scheme_Object *a[2];
+  void *r;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 2);
 
@@ -36,7 +40,9 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
   a[0] = WITH_VAR_STACK(objscheme_bundle_double(x));
   a[1] = WITH_VAR_STACK(objscheme_bundle_double(y));
 
-  return WITH_VAR_STACK(scheme_values(2, a));
+  r = WITH_VAR_STACK(scheme_values(2, a));
+  READY_TO_RETURN;
+  return r;
 }
 
 @MACRO rNULL = return NULL;

@@ -27,7 +27,7 @@
      collapse-whitespace
      (struct exn:xml (locs))))
 
-  (define-signature xexpr^ (xml->xexpr xexpr->xml xexpr->string xexpr-drop-empty-attributes))
+  (define-signature xexpr^ (xml->xexpr xexpr->xml xexpr->string xexpr-drop-empty-attributes xexpr? xexpr-attribute? listof?))
   (define-signature extra-xexpr^ ((open xexpr^) assoc-sort bcompose attribute->srep))
   (define-signature space^ (eliminate-whitespace))
 

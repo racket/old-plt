@@ -1837,7 +1837,7 @@ static void flush_fd(Scheme_Output_Port *op, char *bufstr, int buflen)
 
       if (len < 0) {
 	if (errno == EAGAIN) {
-	  scheme_block_until(fd_write_ready, fd_write_need_wakeup, (Scheme_Object *)op, NULL);
+	  scheme_block_until(fd_write_ready, fd_write_need_wakeup, (Scheme_Object *)op, 0.0);
 	} else {
 	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 			   op,

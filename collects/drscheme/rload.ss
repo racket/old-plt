@@ -26,7 +26,6 @@
 	    [normal-termination? #f]
 	    [load/save
 	     (lambda (filename reason)
-	       
 	       (unless (<= (length file-stack)
 			   (length loading-messages))
 		 (let ([new-msg (make-object message% " " loading-frame)])
@@ -35,7 +34,8 @@
 		   (set! loading-messages
 			 (append loading-messages (list new-msg)))))
 	       
-	       (hash-table-put! (get-mods-ht) (string->symbol filename) (file-or-directory-modify-seconds filename))
+	       (hash-table-put! (get-mods-ht) (string->symbol filename)
+				(file-or-directory-modify-seconds filename))
 	       
 	       (dynamic-wind
 		(lambda () 

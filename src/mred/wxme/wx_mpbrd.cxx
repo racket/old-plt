@@ -2311,34 +2311,36 @@ void wxMediaPasteboard::DoPaste(long time)
   if (admin && PTRNE(snips, start)) {
     dc = GetDC();
 
-    /* Get top/left/bottom/right of pasted group: */
-    for (snip = snips; PTRNE(snip, start); snip = snip->next) {
-      loc = SnipLoc(snip);      
-      if (loc->needResize)
-	loc->Resize(dc);
-      if (PTREQ(snip, snips)) {
-	left = loc->x;
-	top = loc->y;
-	right = loc->r;
-	bottom = loc->b;
-      } else {
-	if (loc->x < left)
+    if (dc) {
+      /* Get top/left/bottom/right of pasted group: */
+      for (snip = snips; PTRNE(snip, start); snip = snip->next) {
+	loc = SnipLoc(snip);      
+	if (loc->needResize)
+	  loc->Resize(dc);
+	if (PTREQ(snip, snips)) {
 	  left = loc->x;
-	if (loc->y < top)
 	  top = loc->y;
-	if (loc->r > right)
 	  right = loc->r;
-	if (loc->b > bottom)
 	  bottom = loc->b;
+	} else {
+	  if (loc->x < left)
+	    left = loc->x;
+	  if (loc->y < top)
+	    top = loc->y;
+	  if (loc->r > right)
+	    right = loc->r;
+	  if (loc->b > bottom)
+	    bottom = loc->b;
+	}
+	AddSelected(snip);
       }
-      AddSelected(snip);
-    }
 
-    dx = cx - (left + right) / 2;
-    dy = cy - (top + bottom) / 2;
+      dx = cx - (left + right) / 2;
+      dy = cy - (top + bottom) / 2;
     
-    /* Shift the pasted group to center: */
-    Move(dx, dy);
+      /* Shift the pasted group to center: */
+      Move(dx, dy);
+    }
   } else {
     /* Just select them: */
     for (snip = snips; PTRNE(snip, start); snip = snip->next) {

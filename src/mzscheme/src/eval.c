@@ -2487,12 +2487,14 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 			 "continuation application: attempted to apply foreign escape continuation"
 			 " (created in another thread)");
       }
+#if 0
       if (SCHEME_CONT_OK(obj) && !*SCHEME_CONT_OK(obj)) {
 	UPDATE_THREAD_RSPTR_FOR_ERROR();
 	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 obj,
 			 "continuation application: attempted to cross an escape continuation boundary");
       }
+#endif
       p->cjs.u.val = value;
       p->cjs.jumping_to_continuation = (Scheme_Escaping_Cont *)obj;
       scheme_longjmp(MZTHREADELEM(p, error_buf), 1);

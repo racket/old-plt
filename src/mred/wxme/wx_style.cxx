@@ -539,8 +539,23 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
 
   if (join_shiftStyle) {
     if (styleList)
-      if (!PTREQ(join_shiftStyle, styleList->BasicStyle()))
+      if (!PTREQ(join_shiftStyle, styleList->BasicStyle())) {
 	join_shiftStyle->Update(base, target, FALSE, topLevel);
+      } else {
+	target->alignment = base->alignment;
+	target->font = base->font;
+	target->pen = base->pen;
+	target->brush = base->brush;
+	target->textMetricDC = NULL;
+	target->foreground->CopyFrom(base->foreground);
+	target->background->CopyFrom(base->background);
+
+	if (styleList) {
+	  styleList->StyleWasChanged(target);
+	  if (topLevel)
+	    styleList->StyleWasChanged(NULL);
+	}
+      }
     return;
   }
 

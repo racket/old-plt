@@ -72,10 +72,7 @@
     (lambda (expr)
       (lambda (mark-set key break-kind returned-value-list)
         (let ([mark-list (continuation-mark-set->list mark-set key)])
-          (printf "break-kind: ~e returned-value-list: ~e expr: ~e\n" 
-                  break-kind returned-value-list (syntax-object->datum (mark-source (car mark-list)))) ; TEMP
           (unless (reconstruct:skip-step? break-kind mark-list)
-            (printf "made it past skip-step\n")
             (case break-kind
               ((normal-break)
                (collector #t (list expr mark-list break-kind returned-value-list)))
@@ -132,136 +129,126 @@
   (test-sequence source-list result-list beginner-namespace)
   (set-fake-beginner-mode #f))
 
-;(test-mz-sequence "(+ 3 4)"
-;                  `(((,highlight-placeholder) ((+ 3 4)))
-;                    ((,highlight-placeholder) (7))))
-;
-;(test-mz-sequence "((lambda (x) (+ x 3)) 4)"
-;                  `(((,highlight-placeholder) (((lambda (x) (+ x 3)) 4)))
-;                    ((,highlight-placeholder) ((+ 4 3)))
-;                    ((,highlight-placeholder) ((+ 4 3)))
-;                    ((,highlight-placeholder) (7))))
-;
-;(test-mz-sequence "(if 3 4 5)"
-;                  `(((,highlight-placeholder) ((if 3 4 5)))
+(test-mz-sequence "(+ 3 4)"
+                  `(((,highlight-placeholder) ((+ 3 4)))
+                    ((,highlight-placeholder) (7))))
+
+(test-mz-sequence "((lambda (x) (+ x 3)) 4)"
+                  `(((,highlight-placeholder) (((lambda (x) (+ x 3)) 4)))
+                    ((,highlight-placeholder) ((+ 4 3)))
+                    ((,highlight-placeholder) ((+ 4 3)))
+                    ((,highlight-placeholder) (7))))
+
+(test-mz-sequence "(if 3 4 5)"
+                  `(((,highlight-placeholder) ((if 3 4 5)))
+                    ((,highlight-placeholder) (4))))
+
+(test-mz-sequence "((lambda (x) x) 3)"
+                  `(((,highlight-placeholder) (((lambda (x) x) 3)))
+                    ((,highlight-placeholder) (3))))
+
+; 'begin' not yet supported by reconstruct
+;(test-mz-sequence "((lambda (x) x) (begin (+ 3 4) (+ 4 5)"))
+;                  `((((begin ,highlight-placeholder (+ 4 5))) ((+ 3 4)))
+;                    (((begin ,highlight-placeholder (+ 4 5))) (7))
+;                    ((,highlight-placeholder) ((begin 7 (+ 4 5))))
+;                    ((,highlight-placeholder) ((+ 4 5)))
+;                    ((,highlight-placeholder) ((+ 4 5)))
+;                    ((,highlight-placeholder) (9))))
+
+(test-mz-sequence "((lambda (a) (lambda (b) (+ a b))) 14)"
+                  `(((,highlight-placeholder) (((lambda (a) (lambda (b) (+ a b))) 14)))
+                    ((,highlight-placeholder) ((lambda (b) (+ 14 b))))))
+
+(test-mz-sequence "((case-lambda ((a) 3) ((b c) (+ b c))) 5 6)"
+                  `(((,highlight-placeholder) (((case-lambda ((a) 3) ((b c) (+ b c))) 5 6)))
+                    ((,highlight-placeholder) ((+ 5 6)))
+                    ((,highlight-placeholder) ((+ 5 6)))
+                    ((,highlight-placeholder) (11))))
+
+; reconstruct does not handle one-armed if's:
+;(test-mz-sequence "(if 3 4)"
+;                  `(((,highlight-placeholder) ((if 3 4)))
 ;                    ((,highlight-placeholder) (4))))
-;
-;(test-mz-sequence "((lambda (x) x) 3)"
-;                  `(((,highlight-placeholder) (((lambda (x) x) 3)))
-;                    ((,highlight-placeholder) (3))))
-;
-;; 'begin' not yet supported by reconstruct
-;;(test-mz-sequence "((lambda (x) x) (begin (+ 3 4) (+ 4 5)"))
-;;                  `((((begin ,highlight-placeholder (+ 4 5))) ((+ 3 4)))
-;;                    (((begin ,highlight-placeholder (+ 4 5))) (7))
-;;                    ((,highlight-placeholder) ((begin 7 (+ 4 5))))
-;;                    ((,highlight-placeholder) ((+ 4 5)))
-;;                    ((,highlight-placeholder) ((+ 4 5)))
-;;                    ((,highlight-placeholder) (9))))
-;
-;(test-mz-sequence "((lambda (a) (lambda (b) (+ a b))) 14)"
-;                  `(((,highlight-placeholder) (((lambda (a) (lambda (b) (+ a b))) 14)))
-;                    ((,highlight-placeholder) ((lambda (b) (+ 14 b))))))
-;
-;(test-mz-sequence "((case-lambda ((a) 3) ((b c) (+ b c))) 5 6)"
-;                  `(((,highlight-placeholder) (((case-lambda ((a) 3) ((b c) (+ b c))) 5 6)))
-;                    ((,highlight-placeholder) ((+ 5 6)))
-;                    ((,highlight-placeholder) ((+ 5 6)))
-;                    ((,highlight-placeholder) (11))))
-;
-;; reconstruct does not handle one-armed if's:
-;;(test-mz-sequence "(if 3 4)"
-;;                  `(((,highlight-placeholder) ((if 3 4)))
-;;                    ((,highlight-placeholder) (4))))
-;
-;; reconstruct does not handle begin0
-;
-;;(test-mz-sequence "(let ([a 3]) 4)"
-;;                  `(((,highlight-placeholder) ((let-values ([(a) 3]) 4)) (,highlight-placeholder ,highlight-placeholder) ((define-values (a_0) 3) (begin 4)))
-;;                    (((define a_0 3))))) 
-;;
-;;(test-mz-sequence "(let ([a (+ 4 5)] [b (+ 9 20)]) (+ a b))"
-;;                  `(((,highlight-placeholder) ((let-values ([(a) (+ 4 5)] [(b) (+ 9 20)]) (+ a b))) 
-;;                     (,highlight-placeholder ,highlight-placeholder ,highlight-placeholder) 
-;;                     ((define-values (a_0) (+ 4 5)) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))))
-;;                    (((define-values (a_0) ,highlight-placeholder) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))) ((+ 4 5)))
-;;                    (((define-values (a_0) ,highlight-placeholder) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))) (9))
-;;                    (((define a_0 9) (define-values (b_1) ,highlight-placeholder) (begin (+ a_0 b_1))) ((+ 9 20)))
-;;                    (((define a_0 9) (define-values (b_1) ,highlight-placeholder) (begin (+ a_0 b_1))) (29))
-;;                    (((define a_0 9) (define b_1 29)))
-;;                    (((+ ,highlight-placeholder b_1)) (a_0))
-;;                    (((+ ,highlight-placeholder b_1)) (9))
-;;                    (((+ 9 ,highlight-placeholder)) (b_1))
-;;                    (((+ 9 ,highlight-placeholder)) (29))
-;;                    ((,highlight-placeholder) ((+ 9 29)))
-;;                    ((,highlight-placeholder) (38))))
-;
-;(test-mz-sequence "((call-with-current-continuation call-with-current-continuation) (call-with-current-continuation call-with-current-continuation))"
-;                  `((((,highlight-placeholder (call-with-current-continuation call-with-current-continuation))) ((call-with-current-continuation call-with-current-continuation)))
-;                    (((,highlight-placeholder (call-with-current-continuation call-with-current-continuation))) ((lambda args ...)))
-;                    ((((lambda args ...) ,highlight-placeholder)) ((call-with-current-continuation call-with-current-continuation)))
-;                    ((((lambda args ...) ,highlight-placeholder)) ((lambda args ...)))))
-;
-;;(test-mz-sequence '(begin (define g 3) g)
-;;                  `(((,highlight-placeholder) (g))
-;;                    ((,highlight-placeholder) 3)))
-;
-;;(syntax-object->datum (cadr (annotate-expr test2 'mzscheme 0 (lambda (x) x))))
-;
-;(test-beginner-sequence "(+ 4 129)"
-;                        `(((,highlight-placeholder) ((+ 4 129)))
-;                          ((,highlight-placeholder) (133))))
-;                        
-;(test-beginner-sequence "(if true 3 4)"
-;                        `(((,highlight-placeholder) ((if true 3 4)))
-;                          ((,highlight-placeholder) (3))))
-;
-;(test-beginner-sequence "(cond [false 4] [false 5] [true 3])"
-;               `(((,highlight-placeholder) ((cond (false 4) (false 5) (true 3))))
-;                 ((,highlight-placeholder) ((cond (false 5) (true 3))))
-;                 ((,highlight-placeholder) ((cond (false 5) (true 3))))
-;                 ((,highlight-placeholder) ((cond (true 3))))
-;                 ((,highlight-placeholder) ((cond (true 3))))
-;                 ((,highlight-placeholder) (3))))
-;
-;(test-beginner-sequence "(cond [false 4] [else 9])"
-;               `(((,highlight-placeholder) ((cond [false 4] [else 9])))
-;                 ((,highlight-placeholder) (9))))
-;
-;(test-beginner-sequence "(or false true false)"
-;                        `(((,highlight-placeholder) ((or false true false)))
-;                          ((,highlight-placeholder) ((or true false)))
-;                          ((,highlight-placeholder) ((or true false)))
-;                          ((,highlight-placeholder) (true))))
-;
-;(test-beginner-sequence "(and true false true)"
-;                        `(((,highlight-placeholder) ((and true false true)))
-;                          ((,highlight-placeholder) ((and false true)))
-;                          ((,highlight-placeholder) ((and false true)))
-;                          ((,highlight-placeholder) (false))))
-;
-;(test-beginner-sequence "(define a +) a"
-;                        `(((,highlight-placeholder) (a))
-;                          ((,highlight-placeholder) (+))))
-;
-;(define result (cadr (map eval (annotate-exprs "(define (b x) (+ x 13)) b" (lambda (x y) 3)))))
-;
-;(test-beginner-sequence "(define (f123 x) (+ x 13)) f123"
-;                        `())
-;
-;(test-beginner-sequence "(define (b x) (+ x 13)) (b 9)"
-;                        `(((,highlight-placeholder) ((b 9)))
-;                          ((,highlight-placeholder) ((+ 9 13)))
-;                          ((,highlight-placeholder) ((+ 9 13)))
-;                          ((,highlight-placeholder) (22))))
 
-(define stx
- (parameterize ([current-namespace beginner-namespace])
-   (expand '(define-struct mambar (aoe ueo)))))
+; reconstruct does not handle begin0
 
-(syntax-object->datum stx)
+;(test-mz-sequence "(let ([a 3]) 4)"
+;                  `(((,highlight-placeholder) ((let-values ([(a) 3]) 4)) (,highlight-placeholder ,highlight-placeholder) ((define-values (a_0) 3) (begin 4)))
+;                    (((define a_0 3))))) 
+;
+;(test-mz-sequence "(let ([a (+ 4 5)] [b (+ 9 20)]) (+ a b))"
+;                  `(((,highlight-placeholder) ((let-values ([(a) (+ 4 5)] [(b) (+ 9 20)]) (+ a b))) 
+;                     (,highlight-placeholder ,highlight-placeholder ,highlight-placeholder) 
+;                     ((define-values (a_0) (+ 4 5)) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))))
+;                    (((define-values (a_0) ,highlight-placeholder) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))) ((+ 4 5)))
+;                    (((define-values (a_0) ,highlight-placeholder) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))) (9))
+;                    (((define a_0 9) (define-values (b_1) ,highlight-placeholder) (begin (+ a_0 b_1))) ((+ 9 20)))
+;                    (((define a_0 9) (define-values (b_1) ,highlight-placeholder) (begin (+ a_0 b_1))) (29))
+;                    (((define a_0 9) (define b_1 29)))
+;                    (((+ ,highlight-placeholder b_1)) (a_0))
+;                    (((+ ,highlight-placeholder b_1)) (9))
+;                    (((+ 9 ,highlight-placeholder)) (b_1))
+;                    (((+ 9 ,highlight-placeholder)) (29))
+;                    ((,highlight-placeholder) ((+ 9 29)))
+;                    ((,highlight-placeholder) (38))))
 
-(syntax-property stx 'stepper-skip-completely)
+(test-mz-sequence "((call-with-current-continuation call-with-current-continuation) (call-with-current-continuation call-with-current-continuation))"
+                  `((((,highlight-placeholder (call-with-current-continuation call-with-current-continuation))) ((call-with-current-continuation call-with-current-continuation)))
+                    (((,highlight-placeholder (call-with-current-continuation call-with-current-continuation))) ((lambda args ...)))
+                    ((((lambda args ...) ,highlight-placeholder)) ((call-with-current-continuation call-with-current-continuation)))
+                    ((((lambda args ...) ,highlight-placeholder)) ((lambda args ...)))))
+
+;(test-mz-sequence '(begin (define g 3) g)
+;                  `(((,highlight-placeholder) (g))
+;                    ((,highlight-placeholder) 3)))
+
+;(syntax-object->datum (cadr (annotate-expr test2 'mzscheme 0 (lambda (x) x))))
+
+(test-beginner-sequence "(+ 4 129)"
+                        `(((,highlight-placeholder) ((+ 4 129)))
+                          ((,highlight-placeholder) (133))))
+                        
+(test-beginner-sequence "(if true 3 4)"
+                        `(((,highlight-placeholder) ((if true 3 4)))
+                          ((,highlight-placeholder) (3))))
+
+(test-beginner-sequence "(cond [false 4] [false 5] [true 3])"
+               `(((,highlight-placeholder) ((cond (false 4) (false 5) (true 3))))
+                 ((,highlight-placeholder) ((cond (false 5) (true 3))))
+                 ((,highlight-placeholder) ((cond (false 5) (true 3))))
+                 ((,highlight-placeholder) ((cond (true 3))))
+                 ((,highlight-placeholder) ((cond (true 3))))
+                 ((,highlight-placeholder) (3))))
+
+(test-beginner-sequence "(cond [false 4] [else 9])"
+               `(((,highlight-placeholder) ((cond [false 4] [else 9])))
+                 ((,highlight-placeholder) (9))))
+
+(test-beginner-sequence "(or false true false)"
+                        `(((,highlight-placeholder) ((or false true false)))
+                          ((,highlight-placeholder) ((or true false)))
+                          ((,highlight-placeholder) ((or true false)))
+                          ((,highlight-placeholder) (true))))
+
+(test-beginner-sequence "(and true false true)"
+                        `(((,highlight-placeholder) ((and true false true)))
+                          ((,highlight-placeholder) ((and false true)))
+                          ((,highlight-placeholder) ((and false true)))
+                          ((,highlight-placeholder) (false))))
+
+(test-beginner-sequence "(define a +) a"
+                        `(((,highlight-placeholder) (a))
+                          ((,highlight-placeholder) (+))))
+
+(test-beginner-sequence "(define (f123 x) (+ x 13)) f123"
+                        `())
+
+(test-beginner-sequence "(define (b x) (+ x 13)) (b 9)"
+                        `(((,highlight-placeholder) ((b 9)))
+                          ((,highlight-placeholder) ((+ 9 13)))
+                          ((,highlight-placeholder) ((+ 9 13)))
+                          ((,highlight-placeholder) (22))))
 
 (test-beginner-sequence "(define-struct mamba (rhythm tempo)) (mamba-rhythm (make-mamba 24 2))"
                         `(((,highlight-placeholder) ((mamba-rhythm (make-mamba 24 2))))

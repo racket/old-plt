@@ -690,7 +690,6 @@
 
 # define SIGSET_IS_SIGNAL
 
-# define MACROMAN_CHAR_SET
 # ifdef MPW_C
 #  define NO_INLINE_KEYWORD
 # endif

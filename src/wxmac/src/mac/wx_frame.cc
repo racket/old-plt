@@ -844,8 +844,10 @@ void wxFrame::Paint(void)
 {
   if (SetCurrentDC()) {
     RgnHandle rgn, subrgn;
-    if ((rgn = NewRgn())) {
-      if ((subrgn = NewRgn())) {
+    rgn = NewRgn();
+    if (rgn) {
+      subrgn = NewRgn();
+      if (subrgn) {
 	SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1);
 	AddWhiteRgn(subrgn);
 	DiffRgn(rgn, subrgn, rgn);

@@ -51,20 +51,6 @@ wxRectBorder::~wxRectBorder(void)
 
 void wxRectBorder::DoShow(Bool on)
 {
-  if (!CanShow(on)) return;
-  
-  if (!on) {
-    if (SetCurrentDC()) {
-      int clientWidth, clientHeight;
-      GetClientSize(&clientWidth, &clientHeight);
-      Rect clientRect = {0, 0, clientHeight, clientWidth};
-      OffsetRect(&clientRect,SetOriginX,SetOriginY);
-      
-      ::EraseRect(&clientRect);
-      ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
-    }
-  }
-  
   wxWindow::DoShow(on);
 }
 

@@ -21,17 +21,10 @@
 #endif
 #include "wxButtonBorder.h"
 
-# define MIN_BUTTON_WIDTH 58
-# ifdef WX_CARBON
+#define MIN_BUTTON_WIDTH 58
 // Under OS X, an inset is necessary because the OS draws outside of the control rectangle.
-#  define PAD_X 5
-#  define PAD_Y 5
-# else
-#  define PAD_X 0
-#  define PAD_Y 0
-#  define BUTTON_H_SPACE 12
-#  define BUTTON_V_SPACE 4
-# endif
+#define PAD_X 5
+#define PAD_Y 5
 
 #define IB_MARGIN_X 3
 #define IB_MARGIN_Y 3
@@ -226,34 +219,27 @@ void wxButton::SetLabel(wxBitmap* bitmap)
 
 //-----------------------------------------------------------------------------
 void wxButton::SetDefault(Bool flag) // WCH : modification of original (see below too)
-{ // WCH: a panel method should be swapping default buttons
-  // WCH: we would then have: void wxPanel::SetDefault(wxItem* item), NULL item allowed
+{ 
   wxPanel* panel = (wxPanel*) GetParent();
-  if (!panel) wxFatalError("No panel for wxButton::SetDefault.");
-  wxButton* currentDefault = panel->defaultItem; // WCH: let any wxItem be a default item ?
+  wxButton* currentDefault = panel->defaultItem;
 
-  if (flag) // this becoming default item
-    {
-      if (currentDefault != this)
-	{
-	  if (currentDefault) currentDefault->OnSetDefault(FALSE);
-	  panel->defaultItem = this;
-	  OnSetDefault(TRUE);
-	}
+  if (flag) {
+    if (currentDefault != this) {
+      if (currentDefault) currentDefault->OnSetDefault(FALSE);
+      panel->defaultItem = this;
+      OnSetDefault(TRUE);
     }
-  else // this no longer default item
-    {
-      if (currentDefault == this)
-	{
-	  currentDefault->OnSetDefault(FALSE);
-	  panel->defaultItem = NULL;
-	}
+  } else {
+    if (currentDefault == this) {
+      currentDefault->OnSetDefault(FALSE);
+      panel->defaultItem = NULL;
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
-{ // WCH: the panel should invoke the default button to distinguish itself
+{
   if (cMacControl) {
     char byteFlag = (char)flag;
     SetCurrentDC();
@@ -261,20 +247,17 @@ void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
   } else {
     if (buttonBitmap)
       return;
-    if (flag)
-      {
-	wxMargin margin(4);
-	cBorderArea->SetMargin(margin, Direction::wxAll,
-			       cWindowWidth + 8, cWindowHeight + 8,
-			       cWindowX - 4, cWindowY - 4);
-      }
-    else
-      {
-	wxMargin margin(0);
-	cBorderArea->SetMargin(margin, Direction::wxAll,
-			       cWindowWidth - 8, cWindowHeight - 8,
-			       cWindowX + 4, cWindowY + 4);
-      }
+    if (flag) {
+      wxMargin margin(4);
+      cBorderArea->SetMargin(margin, Direction::wxAll,
+			     cWindowWidth + 8, cWindowHeight + 8,
+			     cWindowX - 4, cWindowY - 4);
+    } else {
+      wxMargin margin(0);
+      cBorderArea->SetMargin(margin, Direction::wxAll,
+			     cWindowWidth - 8, cWindowHeight - 8,
+			     cWindowX + 4, cWindowY + 4);
+    }
   }
 }
 
@@ -361,16 +344,12 @@ void wxButton::Paint(void)
 {
   if (cHidden) return;
   if (SetCurrentDC()) {
-    Rect r = { 0, 0, cWindowHeight, cWindowWidth };
-    OffsetRect(&r,SetOriginX,SetOriginY);
     if (buttonBitmap) {
+      Rect r = { 0, 0, cWindowHeight, cWindowWidth };
+      OffsetRect(&r,SetOriginX,SetOriginY);
       PaintBitmapButton(&r, buttonBitmap, 0, IsGray(), cColour);
     } else if (cMacControl) {
-      if (!IsControlVisible(cMacControl)) {
-	::EraseRect(&r);
-      } else {
-	::Draw1Control(cMacControl);
-      }
+      ::Draw1Control(cMacControl);
     }
     wxWindow::Paint();
   }

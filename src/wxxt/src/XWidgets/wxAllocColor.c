@@ -123,7 +123,6 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
     c->green = n_bits(c->green, g_length);
     c->blue = n_bits(c->blue, b_length);
 
-    /* c->pixel = rrrrrggggggbbbbb */
     c->pixel = ((c->red << r_start)
 		| (c->green << g_start)
 		| (c->blue << b_start));

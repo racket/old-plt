@@ -41,7 +41,7 @@
        "Analyze"
        (build-path (collection-path "icons") "mrspidey.bmp")))
 
-    (drscheme:get/extend:extend-unit-frame%
+    (drscheme:get/extend:extend-unit-frame
      (lambda (super%)
        (class super% args
 	 (inherit button-panel)

@@ -35,7 +35,7 @@
      "Step"
      (build-path (collection-path "icons") "foot.bmp")))
   
-  (drscheme:get/extend:extend-unit-frame%
+  (drscheme:get/extend:extend-unit-frame
    (lambda (super%)
      (class super% args
        (inherit button-panel)

@@ -136,7 +136,7 @@
 	  (send frame show #t)
 	  (set! current-test-suite-frame frame))))
 
-  (drscheme:get/extend:extend-unit-frame%
+  (drscheme:get/extend:extend-unit-frame
    (lambda (super%)
      (class super% args
        (inherit button-panel)

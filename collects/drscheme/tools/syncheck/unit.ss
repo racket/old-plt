@@ -343,7 +343,7 @@
 	    (lambda (start len)
 	      (super-after-insert start len)
 	      (syncheck:clear-arrows))]
-	   
+
 	   [on-paint
 	    (lambda (before dc left top right bottom dx dy draw-caret)
 	      (super-on-paint before dc left top right bottom dx dy draw-caret)
@@ -940,6 +940,6 @@
 		(drscheme:basis:zodiac-vocabulary? user-setting)))])))
   
   
-  (drscheme:get/extend:extend-definitions-text% make-graphics-text%)
-  (drscheme:get/extend:extend-unit-frame% make-new-unit-frame%)
-  (drscheme:get/extend:extend-interactions-text% make-syncheck-interactions-text%))
+  (drscheme:get/extend:extend-definitions-text make-graphics-text%)
+  (drscheme:get/extend:extend-unit-frame make-new-unit-frame%)
+  (drscheme:get/extend:extend-interactions-text make-syncheck-interactions-text%))

@@ -113,7 +113,8 @@
    extract/single      ; Symbol Response -> Answer
    extract             ; Symbol Response -> (listof Answer)
 
-   inform              ; Srtring String *-> true 
+   inform              ; String String *-> true 
+   inform/html         ; (listof Xexpr) -> true
    final-page          ; String String *-> true
    
    string->number
@@ -132,9 +133,33 @@
  ; ; ;  ;   ;    ;    ;   ;      ; 
  ;   ;  ;   ;    ;    ;   ;  ;   ; 
 ;;; ;;;  ;;; ; ;;;;; ;;;  ;;  ;;;  
-                                   
 
+  ; posing questions ----------------------------------------------------------
 
+  ; FormElement -> Answer
+  ; to pose one question, receive one answer 
+  (define (single-query fe)
+    (check-arg 'single-query (form-element? fe) "form element" "first" fe)
+    (car (queries (list fe))))
+
+  ; (listof FormElement) -> (listof Answer)
+  ; to ask N questions and to get N answers
+  ; assert: (lambda (result) (= (length fes) (length result)))
+  (define (queries fes)
+    (check-arg 'queries (and (list? fes) (andmap form-element? fes))
+               "list of form elements" "first" fes)
+    (conduct-query "Web Query" (map list (make-keys fes) fes)))
+
+  ; Form -> Bindings 
+  ; to ask N questions with tags, receive N answers 
+  ; assert: (lambda (result) (set-equal? (map car aloss) (map car result)))
+  (define (form-query f)
+    (check-arg 'form-query (form? f) "form" "first" f)
+    (map list (map first f)
+         (conduct-query "Web Query" (map list (make-keys f) (map second f)))))
+
+  ; extracting values from forms ----------------------------------------------
+  
   ; extract : Symbol Response -> (listof Answer)
   ; extract all answers associated with a tag 
   (define (extract tag r)
@@ -150,76 +175,26 @@
              (error 'extract/single "~e contains no tag ~e" r tag)]
             [else 
              (error 'extract/single "~e contains more than one tag ~e" r tag)]))))
-      
 
-
-  ; Form -> Bindings 
-  ; to ask N questions with tags, receive N answers 
-  ; assert: (lambda (result) (set-equal? (map car aloss) (map car result)))
-  (define (form-query aloss)
-    (check-arg 'form-query (form? aloss) "form" "first" aloss)
-    (let ([keys (map car aloss)])
-      (map list keys 
-           (conduct-query "Web Query" 
-                          (map (lambda (x)
-                                 (cons (symbol->string (car x)) (cdr x)))
-                               aloss)))))
+  ; echoing responses ---------------------------------------------------------
   
   ; Response -> true
   ; to display a response on a web page 
   (define (echo-response form)
-    (send/suspend
-     (lambda (url)
-       `(html
-         (title "Echoed Response")
-         (body ([bgcolor "white"])
-               (br)
-               (table 
-                ,@(map (lambda (tag answer)
-                         `(tr (td ,(symbol->string tag))
-                              (td ,(answer->string answer))))
-                       (map first form)
-                       (map second form)))
-               (br)
-               (a ([href ,url]) "Continue")))))
-    #t)
-
-  ; (listof FormElement) -> (listof Answer)
-  ; to ask N questions and to get <= N answers
-  ; assert: (lambda (result) (= (length fes) (length result)))
-  (define (queries fes)
-    (check-arg 'queries (and (list? fes) (andmap form-element? fes))
-               "list of form elements" "first" fes)
-    (let* ([counter 0]
-           [keys (map (lambda (x) 
-                        (set! counter (+ counter 1))
-                        (format "tag~a" counter))
-                      fes)])
-      (conduct-query "Web Query" (map list keys fes))))
-
+    (make-echo-page
+     (map (lambda (tag answer)
+            `(tr (td ,(symbol->string tag))
+                 (td ,(answer->string answer))))
+          (map first form)
+          (map second form))))
+  
   ; (listof Answer) -> true
   ; to display a list of answers on a web page
   (define (echo-answers form)
-    (send/suspend
-     (lambda (url)
-       `(html
-         (title "Echoed Answers")
-         (body ([bgcolor "white"])
-               (br)
-               (table 
-                ,@(map (lambda (answer)
-                         `(tr (td ,(answer->string answer))))
-                       form))
-               (br)
-               (a ([href ,url]) "Continue")))))
-    #t)
-
-  ; FormElement -> Answer
-  ; to pose one question via a form, receive one answer 
-  (define (single-query fe)
-    (check-arg 'single-query (form-element? fe) "form element" 
-               "first" fe)
-    (car (queries (list fe))))
+    (make-echo-page 
+     (map (lambda (answer) `(tr (td ,(answer->string answer)))) form)))
+  
+  ; displaying information ----------------------------------------------------
   
   ; String String *-> true
   ; to deliver an intermediate message and a link to continue
@@ -239,6 +214,19 @@
                (a ([href ,url]) "Continue")))))
     #t)
 
+  ; (listof Xexpr) -> true 
+  (define (inform/html stuff)
+    (send/suspend 
+     (lambda (url)
+       `(html 
+         (title "Information")
+         (body ([bgcolor "white"])
+               (hr)
+               (div ,@stuff)
+               (hr)
+               (a ([href ,url]) "Continue")))))
+    #t)
+    
   ; String String *-> true
   ; to deliver a final web page and terminate the web dialog
   (define (final-page title . paragraph)
@@ -399,10 +387,34 @@
       [(boolean? a) (if a "true" "false")]
       [else (format "~a" a)]))
 
+  ; ---------------------------------------------------------------------------
+  ; (listof X) -> (listof String)
+  ; make unique, readable string/tags for a list of queries 
+  (define make-keys
+    (let ([counter 0])
+      (lambda (fes)
+        (map (lambda (x) 
+               (set! counter (+ counter 1))
+               (format "tag~a" counter))
+             fes))))
+
+  ; ---------------------------------------------------------------------------
+  ; (listof Xexpr[tr]) -> true 
+  ; echo stuff, wait for click on continue link
+  (define (make-echo-page stuff)
+    (send/suspend
+     (lambda (url)
+       `(html
+         (title "Echoed Answers")
+         (body ([bgcolor "white"])
+               (br)
+               (table 
+                ,@stuff)
+               (br)
+               (a ([href ,url]) "Continue")))))
+    #t)
+
   ; constants -----------------------------------------------------------------
-  (define T "true")
-  (define F "false")
-  
   (define SUBMIT-BUTTON '(input ([type "submit"][value "Submit"])))
 
   )

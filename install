@@ -78,7 +78,7 @@ exit 1
       (display "This is the PLT installer.\nUsage: ")
       (display help)
       (exit 0)))
-  (command-line "install" (current-command-line-arguments)
+  (command-line this-script (current-command-line-arguments)
     (once-each
      (("-i")
       "Install mode.\n\

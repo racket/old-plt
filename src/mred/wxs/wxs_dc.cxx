@@ -276,6 +276,8 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
+// @ q "begin-drawing" : void BeginDrawing(); : : /CheckOk
+// @ q "end-drawing" : void EndDrawing(); : : /CheckOk
 
 
 
@@ -1248,45 +1250,13 @@ static Scheme_Object *os_wxDCClear(Scheme_Object *obj, int n,  Scheme_Object *p[
   return scheme_void;
 }
 
-#pragma argsused
-static Scheme_Object *os_wxDCEndDrawing(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-
-  
-
-  DO_OK_CHECK(scheme_void)
-  ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->EndDrawing();
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxDCBeginDrawing(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-
-  
-
-  DO_OK_CHECK(scheme_void)
-  ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->BeginDrawing();
-
-  
-  
-  return scheme_void;
-}
-
 void objscheme_setup_wxDC(void *env)
 {
 if (os_wxDC_class) {
     objscheme_add_global_class(os_wxDC_class, "dc%", env);
     objscheme_add_global_interface(os_wxDC_interface, "dc" "<%>", env);
 } else {
-  os_wxDC_class = objscheme_def_prim_class(env, "dc%", "object%", NULL, 44);
+  os_wxDC_class = objscheme_def_prim_class(env, "dc%", "object%", NULL, 42);
 
  scheme_add_method_w_arity(os_wxDC_class, "end-page", os_wxDCEndPage, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "end-doc", os_wxDCEndDoc, 0, 0);
@@ -1330,8 +1300,6 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "draw-point", os_wxDCDrawPoint, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "draw-line", os_wxDCDrawLine, 4, 4);
  scheme_add_method_w_arity(os_wxDC_class, "clear", os_wxDCClear, 0, 0);
- scheme_add_method_w_arity(os_wxDC_class, "end-drawing", os_wxDCEndDrawing, 0, 0);
- scheme_add_method_w_arity(os_wxDC_class, "begin-drawing", os_wxDCBeginDrawing, 0, 0);
 
 
   scheme_made_class(os_wxDC_class);

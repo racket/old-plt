@@ -127,6 +127,14 @@ wxSnip::wxSnip(Bool cleanup) : wxObject(WXGC_CLEANUP_ARG(cleanup))
   Init();
 }
 
+wxInternalSnip::wxInternalSnip() : wxSnip()
+{
+}
+
+wxInternalSnip::wxInternalSnip(Bool cleanup) : wxSnip(cleanup)
+{
+}
+
 void wxSnip::Init(void)
 {
 #if USE_OLD_TYPE_SYSTEM
@@ -196,6 +204,11 @@ void wxSnip::SetCount(long new_count)
     if (!(*admin_ptr)->Recounted(this, TRUE))
       count = old_count;
   }
+}
+
+void wxInternalSnip::SetCount(long new_count)
+{
+  /* reject change */
 }
 
 void wxSnip::SetFlags(long new_flags)
@@ -483,7 +496,6 @@ wxSnip *TextSnipClass::Read(wxTextSnip *snip, wxMediaStreamIn &f)
 /***************************************************************/
 
 wxTextSnip::wxTextSnip(long allocsize) 
-: wxSnip()
 {
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_TEXT_SNIP;
@@ -1093,7 +1105,8 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn &f)
 
 /***************************************************************/
 
-wxImageSnip::wxImageSnip(char *name, long type, Bool relative, Bool inlineImg) : wxSnip(TRUE)
+wxImageSnip::wxImageSnip(char *name, long type, Bool relative, Bool inlineImg)
+  : wxInternalSnip(TRUE)
 {
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_IMAGE_SNIP;

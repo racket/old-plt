@@ -4,8 +4,8 @@
 
 @MACRO CheckRgn[p] = if (x<p> && (x<p>->GetDC() != ((wxDC *)((Scheme_Class_Object *)obj)->primdata))) scheme_arg_mismatch(METHODNAME("dc<%>","set-clipping-region"), "provided a different dc's region: ", p[<p>]);
 
-@ q "begin-drawing" : void BeginDrawing(); : : /CheckOk
-@ q "end-drawing" : void EndDrawing(); : : /CheckOk
+// @ q "begin-drawing" : void BeginDrawing(); : : /CheckOk
+// @ q "end-drawing" : void EndDrawing(); : : /CheckOk
 
 @ Q "clear" : void Clear(); : : /CheckOk
 

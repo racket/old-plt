@@ -197,7 +197,15 @@ class wxSnip : public wxObject
   void Copy(wxSnip *); /* Copy basic values into given snip */
 };
 
-class wxTextSnip : public wxSnip
+class wxInternalSnip : public wxSnip
+{
+ public:
+  wxInternalSnip();
+  wxInternalSnip(Bool cleanup);
+  void SetCount(long count);
+};
+
+class wxTextSnip : public wxInternalSnip
 {
  protected:
   float w; /* < 0 => need to recalc size */
@@ -260,7 +268,7 @@ class wxTabSnip : public wxTextSnip
   virtual wxSnip *Copy();
 };
 
-class wxImageSnip : public wxSnip
+class wxImageSnip : public wxInternalSnip
 {
  private:
   Bool userbm;
@@ -339,7 +347,7 @@ class wxSnipAdmin : public wxObject
 #define wxMSNIPBOX_XINSET 1
 #define wxMSNIPBOX_YINSET 1
 
-class wxMediaSnip : public wxSnip
+class wxMediaSnip : public wxInternalSnip
 {
   friend class wxMediaSnipMediaAdmin;
 

@@ -234,7 +234,7 @@ void wxMediaStreamOutStringBase::Write(char *data, long l)
   if (l + pos > alloc) {
     char *old = string;
 
-    alloc *= 2;
+    alloc = (alloc * 2) + l;
     string = new char[alloc];
     memcpy(string, old, len);
     delete[] old;

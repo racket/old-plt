@@ -35,7 +35,6 @@ wxMediaSnip::wxMediaSnip(wxMediaBuffer *useme,
 			 int lm, int tm, int rm, int bm,
 			 int li, int ti, int ri, int bi,
 			 float w, float W, float h, float H)
-: wxSnip()
 {
   Bool istemp;
 

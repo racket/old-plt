@@ -2560,7 +2560,7 @@ static Scheme_Object *os_wxStyleListNotifyOnChange(Scheme_Object *obj, int n,  S
 
   
   x0 = (wxStyleNotifyFunc)NotifyCallbackToScheme;
-  x1 = p[0];
+  x1 = (scheme_check_proc_arity(METHODNAME("style-list%","notify-on-change"), 1, 0, 0, p), p[0]);
 
   
   r = ((wxStyleList *)((Scheme_Class_Object *)obj)->primdata)->NotifyOnChange(x0, x1);

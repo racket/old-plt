@@ -218,7 +218,7 @@
 static void NotifyCallbackToScheme(wxStyle *, Scheme_Object *f);
 
 @MACRO ubCallback = (wxStyleNotifyFunc)NotifyCallbackToScheme
-@MACRO ubData = p[0]
+@MACRO ubData = (scheme_check_proc_arity(METHODNAME("style-list%","notify-on-change"), 1, 0, 0, p), p[0])
 @MACRO spCallback = (wxStyle-object-or-#f -> void)
 
 @MACRO bAnythingFromLong = ((Scheme_Object *){x})

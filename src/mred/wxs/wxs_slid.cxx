@@ -553,7 +553,7 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
   } else
     x10 = "slider";
 
-  if (x3 < x4 || x5 < x3) scheme_arg_mismatch(METHODNAME("slider%","initialization"), "minimum, value, and maximum must be increasing; maximum: ", p[4]);if (x6 <= 0) x6 = 1;
+  if (x3 < x4 || x5 < x3) scheme_arg_mismatch(METHODNAME("slider%","initialization"), "minimum, value, and maximum must be increasing; given minimum: ", p[4]);if (x6 <= 0) x6 = 1;
   realobj = new os_wxSlider(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10);
   
   realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);

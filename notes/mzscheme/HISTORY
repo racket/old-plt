@@ -2,18 +2,16 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
-- According to rfc2396, params of a url (uri, really) can appear
-  attached to any part of the path, so the data definitions have
-  changed correspondingly.
 
-- url/user is gone. All url structs have users (it may be #f as with
-  other fields in a url).
-
-- There is no extra encoding/decoding required once a url has been
-  parsed anymore (I also got rid of decode-some-url-parts). For
-  example, url->params may return a string with a space in it. That
-  happens when there is a %20 in the original url (as a string). The
-  %20 is restored when calling url->string.
+Version 299.5
+Changed object-name for input ports and output ports
+Changed read-syntax to make the source name optional (defaults
+ to the port's name)
+Added write-special and write-special*
+Extended make-custom-input-port to accept an optional port name
+Extended make-custom-output-port to accept an optional write-special
+ proc and an optional port name
+A location-offset lists for a port read handler can contain #f
 
 Version 299.4
 Changed use-compiled-file-kinds to use-compiled-file-paths
@@ -26,6 +24,17 @@ Simplified the built-in exn hierarchy; the built-in exn structures
 Added construct-time field guards to structure types
 Changes raise-syntax-error so that it no longer accepts a list
  as its first argument
+"net" collection:
+ - According to rfc2396, params of a url (uri, really) can appear
+   attached to any part of the path, so the data definitions have
+   changed correspondingly.
+ - url/user is gone. All url structs have users (it may be #f as with
+   other fields in a url).
+ - There is no extra encoding/decoding required once a url has been
+   parsed anymore (so decode-some-url-parts is gone). For example,
+   url->params may return a string with a space in it if a %20 appears
+   in the original url (as a string). The %20 is restored when calling
+   url->string.
 
 Version 299.2
 Changed continuations to allow a thread to invoke a continuation
@@ -55,7 +64,6 @@ Renamed all of the number "byte-string" functions to "bytes"
 Regexp grammar changed to match docs with respect to "-"
 Changed pref dir (all platforms) and pref file name
  (except Windows)
-
 
 Version 206, January 2004
 A shut-down custodian is no longer allowed to manage new

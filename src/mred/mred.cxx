@@ -2542,8 +2542,9 @@ static Scheme_Object *MrEdMakeStdErr(void)
   errtype = scheme_make_port_type("stderr");
 
   return (Scheme_Object *)scheme_make_output_port(errtype, NULL,
+						  scheme_intern_symbol("mred-console"),
 						  CAST_WS stderr_write,
-						  NULL, NULL, NULL, 0);
+						  NULL, NULL, NULL, NULL, 0);
 }
 #endif
 

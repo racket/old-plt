@@ -1056,7 +1056,7 @@ regrepeat(char *p)
   opnd = OPERAND(p);
   switch (OP(p)) {
   case ANY:
-    count = scan - reginput_start;
+    count = reginput_end - scan;
     scan += count;
     break;
   case EXACTLY:

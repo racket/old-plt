@@ -1,16 +1,16 @@
 (module module-elaborator mzscheme
   
-  (require (lib "list.ss"))
+  (require (lib "list.ss")
+           (lib "contract.ss"))
 
-  (provide wrap-in-module)
+  (provide/contract [wrap-in-module ((listof syntax?) any? (listof any?) . -> . (listof syntax?))] )
   
   ;; full-on COPIED from plt/collects/lang/htdp-langs.ss
   
-  (define (wrap-in-module exps language-module-spec)
+  (define (wrap-in-module exps language-module-spec teachpack-specs)
     (let ([new-module-id (gensym "-htdp")])
       (list (let ([mod (expand-syntax #`(module #,new-module-id #,language-module-spec 
-                                   ; we don't handle teachpacks at  this point ...
-                                   ;(require require-specs ...)
+                                   (require #,@teachpack-specs)
                                    #,@exps))])
               (rewrite-module mod))
             #`(require #,new-module-id)
@@ -27,6 +27,7 @@
   ;; rewrite-module : syntax -> syntax
   ;; rewrites te module to provide all definitions and 
   ;; print out all results.
+  
   (define (rewrite-module stx)
     (syntax-case stx (module #%plain-module-begin)
       [(module name lang (#%plain-module-begin bodies ...))

@@ -22,7 +22,7 @@
 
 #include "schpriv.h"
 
-/* Got this working for MSVC8 non-optimized. I'm too lazy to get it
+/* Got this working for MSVC non-optimized. I'm too lazy to get it
    right with optimization. */
 #pragma optimize("", off)
 

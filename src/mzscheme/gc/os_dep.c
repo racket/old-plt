@@ -380,12 +380,19 @@ word GC_get_writable_length(ptr_t p, ptr_t *base)
 
 ptr_t GC_get_stack_base()
 {
+    /* MATTHEW: set page size if it's not ready (so I can use this
+	   function before a GC happens). */
+	if (!GC_page_size) GC_setpagesize();
+	{
+
     int dummy;
     ptr_t sp = (ptr_t)(&dummy);
     ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_page_size - 1));
     word size = GC_get_writable_length(trunc_sp, 0);
    
     return(trunc_sp + size);
+
+	}
 }
 
 

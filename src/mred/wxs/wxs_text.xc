@@ -26,7 +26,7 @@
 @ "set-value" : void SetValue(string);
 
 @ "copy" : void Copy();
-@ "cut" : void Cut();
+@ "cut" : void Cut()
 @ "paste" : void Paste();
 @ "set-editable" : void SetEditable(bool);
 

@@ -28,7 +28,7 @@
 
 @ "append" : void Append(string);
 @ "clear" : void Clear();
-@ "number" : int Number();
+@ "number" : int Number()
 @ "find-string" : int FindString(string);
 @ "get-selection" : int GetSelection();
 @ "get-string-selection" : string GetStringSelection();

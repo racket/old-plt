@@ -18,7 +18,7 @@
 
 @INCLUDE wxs_item.xci
 
-@ "get-value" : bool GetValue();
+@ "get-value" : bool GetValue()
 @ "set-value" : void SetValue(bool);
 @ "set-label" : void SetLabel(wxBitmap!); : : /CHECKOK[0."wx:check-box%::set-label"] <> bitmap label
 @ "set-label" : void SetLabel(string); <> string label

@@ -20,7 +20,7 @@
 
 @INCLUDE wxs_item.xci
 
-@ "get-value" : int GetValue();
+@ "get-value" : int GetValue()
 @ "set-value" : void SetValue(int);
 
 @END

@@ -41,7 +41,7 @@
 @ "find-string" : int FindString(string);
 @ "get-selection" : int GetSelection();
 @ "get-string-selection" : nstring GetStringSelection();
-@ "number" : int Number();
+@ "number" : int Number()
 @ "set-string-selection" : void SetStringSelection(string);
 @ "set-selection" : void SetSelection(int); : : /RANGE[0]
 @ "get-string" : string GetString(int);  : : /RANGERET[0.scheme_null]

@@ -492,6 +492,7 @@
   
   ;;; indenting preferences panel
   (indenting-prefs-panel-label "Indentation")
+  (indenting-prefs-extra-regexp "Regexp extra") ; Expression régulière supplémentaire est trop long
   
   ; filled with define, lambda, or begin
   (enter-new-keyword "Entrez un nouveau mot clef ressemblant à ~a :")

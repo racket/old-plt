@@ -208,6 +208,13 @@ sub-directories:
     and return "tests" if the string is a test-suite submission or
     "program" if it is not.
 
+  * log.ss (created if not present, appended otherwise) --- records
+    connections and actions, where each entry is of the form
+        (id time-str msg-str)
+    and `id' is an integer reprsenting the connection (numbered
+    consecutively from 1 when the server starts) or 0 for a message
+    for server without a connection.
+
 The server can be run within either MzScheme or MrEd, but "utils.ss"
 requires MrEd (which means that `checker' modules will likely require
 the server to run under MrEd).

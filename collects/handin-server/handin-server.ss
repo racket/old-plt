@@ -1,8 +1,21 @@
-
+#cs
 (module handin-server mzscheme
   (require (lib "thread.ss")
 	   (lib "mzssl.ss" "openssl")
-	   (lib "file.ss"))
+	   (lib "file.ss")
+	   (lib "date.ss"))
+
+  (define log-port (open-output-file "log.ss" 'append))
+
+  (define current-session (make-parameter 0))
+
+  (define (LOG str . args)
+    (fprintf log-port
+	     "(~a ~s ~s)~n"
+	     (current-session)
+	     (parameterize ([date-display-format 'iso-8601])
+	       (date->string (seconds->date (current-seconds)) #t))
+	     (apply format str args)))
 
   (define (get-config which default)
     (get-preference which 
@@ -25,13 +38,16 @@
     (when (file-exists? (format "~a0" part))
       (when (file-exists? (format "~a~a" part MAX-UPLOAD-KEEP))
 	(delete-file (format "~a~a" part MAX-UPLOAD-KEEP)))
-      (let loop ([n MAX-UPLOAD-KEEP])
+      (let loop ([n MAX-UPLOAD-KEEP][log? #t])
 	(unless (zero? n)
-	  (when (file-exists? (format "~a~a" part (sub1 n)))
-	    (rename-file-or-directory 
-	     (format "~a~a" part (sub1 n))
-	     (format "~a~a" part n)))
-	  (loop (sub1 n)))))
+	  (let ([exists? (file-exists? (format "~a~a" part (sub1 n)))])
+	    (when exists?
+	      (when log?
+		(LOG "shifting ~a" (sub1 n)))
+	      (rename-file-or-directory 
+	       (format "~a~a" part (sub1 n))
+	       (format "~a~a" part n)))
+	    (loop (sub1 n) (not exists?))))))
     (with-output-to-file (format "~a0" part)
       (lambda () (display s))))
 
@@ -60,6 +76,7 @@
 		     "error uploading (got ~s, expected ~s bytes)"
 		     (if (string? s) (string-length s) s)
 		     len))
+	    (LOG "checking ~a for ~a" assignment user)
 	    (let ([part
 		   (let ([checker (build-path 'up "checker.ss")])
 		     (if (file-exists? checker)
@@ -71,6 +88,7 @@
 	      (let ([v (read (make-limited-input-port r 50))])
 		(if (eq? v 'check)
 		    (begin
+		      (LOG "saving ~a for ~a" assignment user)
 		      (save-submission s part)
 		      (fprintf w "done\n"))
 		    (error 'handin "upload not confirmed: ~s" v)))))))))
@@ -120,6 +138,7 @@
   
   (define (change-user-passwd username r-safe w old-user-data)
     (let ([new-passwd (read r-safe)])
+      (LOG "change passwd for ~a" username)
       (unless (string? new-passwd)
 	(error 'handin "bad password-change request"))
       (put-user (string->symbol username)
@@ -143,10 +162,13 @@
 	    (error 'handin "username already exists: ~a" username))
 	  (unless ALLOW-NEW-USERS?
 	    (error 'handin "new users not allowed: ~a" username))
+	  (LOG "create user: ~a" username)
 	  (add-new-user username r-safe w)]
 	 [(and user-data
 	       (equal? passwd (car user-data)))
+	  (LOG "login: ~a" username)
 	  (let ([assignment (read r-safe)])
+	    (LOG "assignment for ~a: ~a" username assignment)
 	    (if (eq? assignment 'change)
 		(change-user-passwd username r-safe w user-data)
 		(if (member assignment active-assignments)
@@ -155,39 +177,53 @@
 		      (accept-specific-submission username assignment r r-safe w))
 		    (error 'handin "not an active assignment: ~a" assignment))))]
 	 [else
+	  (LOG "failed login: ~a" username)
 	  (error 'handin "bad username or password for ~a" username)]))))
   
   (define assignment-list
     (directory-list "active"))
-  
-  (run-server
-   7979
-   (lambda (r w)
-     (let ([r-safe (make-limited-input-port r 1024)])
-       (fprintf w "handin\n")
-       ;; Check protocol:
-       (with-handlers ([not-break-exn?
-			(lambda (exn)
-			  (fprintf w "(server error: ~s)\n"
-				   (if (exn? exn)
-				       (exn-message exn)
-				       (format "~e" exn))))])
-	 (let ([protocol (read r-safe)])
-	   (if (eq? protocol 'original)
-	       (fprintf w "original\n")
-	       (error 'handin "unknown protocol: ~s" protocol)))
-	 (accept-submission-or-update assignment-list r r-safe w))))
-   SESSION-TIMEOUT
-   (lambda (exn)
-     (printf "~a~n" (if (exn? exn)
-			(exn-message exn)
-			exn)))
-   (lambda (port-k)
-     (let ([l (ssl-listen port-k 5 #t)])
-       (ssl-load-certificate-chain! l "server-cert.pem")
-       (ssl-load-private-key! l "private-key.pem")
-       l))
-   ssl-close
-   ssl-accept
-   ssl-accept/enable-break))
 
+  (LOG "server started ------------------------------")
+  
+  (define session-count 0)
+
+  (parameterize ([error-display-handler
+		  (lambda (msg exn)
+		    (LOG msg))])
+    (run-server
+     7979
+     (lambda (r w)
+       (parameterize ([current-session (begin
+					 (set! session-count (add1 session-count))
+					 session-count)])
+	 (let-values ([(here there) (ssl-addresses r)])
+	   (LOG "connect from ~a" there))
+	 (let ([r-safe (make-limited-input-port r 1024)])
+	   (fprintf w "handin\n")
+	   ;; Check protocol:
+	   (with-handlers ([not-break-exn?
+			    (lambda (exn)
+			      (let ([msg (if (exn? exn)
+					     (exn-message exn)
+					     (format "~e" exn))])
+				(LOG "ERROR: ~a" msg)
+				(fprintf w "(server error: ~s)\n" msg)))])
+	     (let ([protocol (read r-safe)])
+	       (if (eq? protocol 'original)
+		   (fprintf w "original\n")
+		   (error 'handin "unknown protocol: ~s" protocol)))
+	     (accept-submission-or-update assignment-list r r-safe w)
+	     (LOG "normal exit")))))
+     SESSION-TIMEOUT
+     (lambda (exn)
+       (printf "~a~n" (if (exn? exn)
+			  (exn-message exn)
+			  exn)))
+     (lambda (port-k)
+       (let ([l (ssl-listen port-k 5 #t)])
+	 (ssl-load-certificate-chain! l "server-cert.pem")
+	 (ssl-load-private-key! l "private-key.pem")
+	 l))
+     ssl-close
+     ssl-accept
+     ssl-accept/enable-break)))

@@ -195,8 +195,9 @@
 	   (let ([name (build-path tmpdir (format template (format "~a~a" s ms)))])
 	     (with-handlers ([exn:i/o:filesystem? (lambda (x) 
 						    (if (file-exists? name)
-							;; too slow
-							(loop s (add1 ms))
+							;; try again with a new name
+							(loop (- s (random 10))
+							      (+ ms (random 10)))
 							;; It's something else; give up
 							(raise x)))])
 	       (close-output-port (open-output-file name))

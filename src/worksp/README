@@ -25,10 +25,11 @@ plt\src\worksp\X\X.dsw with MSVC, or go into plt\src\worksp\X\ and
 execute `nmake -f X.mak' (assuming the MSVC programs are in your
 path).
 
- NOTE: The makefiles as distributed do not contain dependencies. Thus,
- if you modify a header file and recompile using `nmake', some files
- may not be recompiled as they should be. To get makefiles with
- dependencies, open the X.dsw files in MSVC and export new makefiles.
+ NOTE: The makefiles as distributed do not contain dependencies (which
+ are kept in .dep files). Thus, if you modify a header file and
+ recompile using `nmake', some files may not be recompiled as they
+ should be. To get makefiles with dependencies, open the X.dsw files
+ in MSVC and export new makefiles.
 
 To build MzScheme, make the MzScheme project in
    plt\src\worksp\mzscheme - makes plt\mzscheme.exe

@@ -110,11 +110,11 @@
 			    null
 			    (list (insert-at-tail e (cadddr expr)))))]
 	      [(#%cond) (#%cond)] ; it's an error, so nevermind
-	      [(#%invoke-unit)
+	      [(#%invoke-unit #%invoke-open-unit)
 	       (let ([u (gensym)])
 		 `(#%let ([,u ,(cadr expr)])
 		    ,e
-		    (#%invoke-unit ,u ,@(cddr expr))))]
+		    (,(car expr) ,u ,@(cddr expr))))]
 	      [else
 	       ;; application; exploit guaranteed left-to-right evaluation
 	       (insert-at-tail* e expr)])]))
@@ -145,6 +145,8 @@
 						  (caadr expr))
 					     (caddr expr)
 					     env))))]
+	[(and (pair? expr) (eq? (car expr) '#%quote))
+	 expr]
 	[(pair? expr)
 	 (with-mark
 	  expr

@@ -58,6 +58,8 @@ STDMETHODIMP CEventQueue::QueueEvent(IEvent *pEvent) {
 }
 
 STDMETHODIMP CEventQueue::GetEvent(IEvent **ppEvent) {
+  WaitForSingleObject(readSem,INFINITE); 
+
   WaitForSingleObject(mutex,INFINITE);
 
   *ppEvent = theQueue[readerNdx];
@@ -71,6 +73,12 @@ STDMETHODIMP CEventQueue::GetEvent(IEvent **ppEvent) {
 }
  
 STDMETHODIMP CEventQueue::get_EventAvailable(VARIANT_BOOL *pVal) {
+  MSG msg;
+
+  while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
+  }
 
   WaitForSingleObject(mutex,INFINITE);
   
@@ -87,20 +95,9 @@ STDMETHODIMP CEventQueue::GetReaderSemaphore(int *pReadSem) {
   return S_OK;
 }
 
-STDMETHODIMP CEventQueue::ProcessWinEvents(void) {
-  MSG msg;
-
-  while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
-  }
-
-  return S_OK;
-}
-
-STDMETHODIMP CEventQueue::set_extension_table(int p)
-{
+STDMETHODIMP CEventQueue::set_extension_table(int p) {
   scheme_extension_table = (Scheme_Extension_Table *)p;
   return S_OK;
 }
+
 

@@ -1494,7 +1494,7 @@ void wxDoEvents()
   if (!TheMrEdApp->initialized) {
     MrEdContext *c;
 #if WINDOW_STDIO
-    Scheme_Custodian *m, *oldm;
+    Scheme_Custodian *m;
     if (!wx_in_terminal) {
       oldm = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
       m = scheme_make_custodian(oldm);
@@ -3328,7 +3328,7 @@ int wxHiEventTrampoline(int (*wha_f)(void *), void *wha_data)
 # endif
   }
 
-  scheme_end_atomic();
+  scheme_end_atomic_no_swap();
 
   if (het->in_progress) {
     /* we have leftover work; jump and finish it (non-atomically) */

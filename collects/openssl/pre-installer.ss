@@ -19,7 +19,14 @@
 		   ;; unix libs
 		   (list "ssl" "crypto")
 		   ;; windows libs
-		   (list "libeay32" "ssleay32")
+		   (let ([lib (build-path (collection-path "openssl") 
+					  "openssl"
+					  "lib")])
+		     (if (and (file-exists? (build-path lib "libeay32xxxxxxx.lib"))
+			      (file-exists? (build-path lib "libeay32xxxxxxx.lib")))
+			 ;; Use mangleable names:
+			 (list "libeay32xxxxxxx" "ssleay32xxxxxxx")
+			 (list "libeay32" "ssleay32")))
 		   ;; unix extra libs (assume always there)
 		   null
 		   ;; Windows extra libs (assume always there)
@@ -56,6 +63,32 @@
 			      (build-path 3m-dir "mzssl.c")))
 			    void)
 	  (parameterize ([link-variant '3m])
-	    (go (build-path 3m-dir "mzssl.c")))))))
+	    (go (build-path 3m-dir "mzssl.c"))))))
+
+    ;; Under windows, put "{lib,sll}eay32" into the system folder when
+    ;; they're in a "precompiled" dir.
+    (when (eq? 'windows (system-type))
+	  (let ([dir (build-path (collection-path "openssl")
+				 "precompiled"
+				 "native"
+				 (system-library-subpath))])
+	    (when (directory-exists? dir)
+		  (let ([l (directory-list dir)])
+		    (let ([libeay (ormap (lambda (f)
+					   (regexp-match #rx"^libeay32.*[.]dll$" f))
+					 l)]
+			  [ssleay (ormap (lambda (f)
+					   (regexp-match #rx"^ssleay32.*[.]dll$" f))
+					 l)])
+		      (when (and libeay ssleay)
+			    (let ([sys-dir (find-system-path 'sys-dir)])
+			      (let ([move-over
+				     (lambda (f)
+				       (unless (file-exists? (build-path sys-dir f))
+					       (printf "  Installing ~a into system directory~n" f)
+					       (copy-file (build-path dir f)
+							  (build-path sys-dir f))))])
+				(move-over (car libeay))
+				(move-over (car ssleay)))))))))))
 
   (provide pre-installer))

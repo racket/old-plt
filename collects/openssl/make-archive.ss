@@ -11,6 +11,8 @@
 
   (make-directory work-dir)
 
+  (printf "Working in ~a~n" work-dir)
+
   (define ssl-target-dir (build-path work-dir "collects" "openssl"))
 
   (make-directory* ssl-target-dir)
@@ -31,7 +33,7 @@
   (unless (eq? (system-type) 'unix)
     (let ()
       (define pre-dir (build-path ssl-target-dir "precompiled" "native" (system-library-subpath)))
-      
+
       (make-directory* pre-dir)
       
       (copy-files (build-path (collection-path "openssl")
@@ -44,9 +46,50 @@
 		      #rx"[.]so$"))
       
       (when (eq? (system-type) 'windows)
-	(error 'make-archive
-	       "windows still needs ssl dlls..."))
-      
+	;; Assume that the xxxx-ized versions of the DLLs are in
+	;; the plt directory:
+	(let* ([new-version (substring
+			     (regexp-replace*
+			      "alpha"
+			      (format "~a_000000000" (version))
+			      "a")
+			     0
+			     7)]
+	       [target-name
+		(lambda (x)
+		  (format "~aeay32~a.dll" x new-version))]
+	       [move-dll
+		(lambda (x)
+		  (copy-file (build-path (collection-path "openssl")
+					 'up 'up
+					 (format "~aeay32xxxxxxx.dll" x))
+			     (build-path pre-dir 
+					 (target-name x))))])
+	  (move-dll "lib")
+	  (move-dll "ssl")
+
+	  ;; Mangle xxxxxxxx to a version:
+	  (let ([fixup
+		 (lambda (f)
+		   (let ([p (build-path pre-dir f)])
+		     (let ([i (open-input-file p)]
+			   [o (open-output-file p 'append)])
+		       (let loop ()
+			 (file-position i 0)
+			 ;; This is a poor technique for updating the files, but
+			 ;;  it works well enough.
+			 (let ([m (regexp-match-positions #rx"eay32xxxxxxx" i)])
+			   (when m
+				 (file-position o (caar m))
+				 (display "eay32" o)
+				 (display new-version o)
+				 (loop))))
+		       (close-input-port i)
+		       (close-output-port o))))])
+	    (fixup "mzssl.dll")
+	    (fixup (target-name "lib"))
+	    (fixup (target-name "ssl")))))
+
       'done))
 
   (parameterize ([current-directory work-dir])
@@ -71,6 +114,6 @@
     (delete-file dest))
   (copy-file (build-path work-dir "openssl.plt") dest)
 
-  (delete-directory/files work-dir)
+  ;(delete-directory/files work-dir)
 
   (printf "Output to ~a~n" dest))

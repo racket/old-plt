@@ -9,6 +9,11 @@
 #include <string.h>
 #include <ctype.h>
 
+#if !defined(WIN32) && !defined(__MAC_OS__)
+/* must be some UNIX flavor */
+#include <unistd.h>
+#endif
+
 #ifdef WIN32
 #include <io.h>
 #include <windows.h>

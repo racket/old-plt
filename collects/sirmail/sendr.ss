@@ -3,7 +3,8 @@
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
 	   (lib "class100.ss")
-	   (lib "mred-sig.ss" "mred"))
+	   (lib "mred-sig.ss" "mred")
+           (lib "framework.ss" "framework"))
 
   (require (lib "list.ss"))
 
@@ -180,7 +181,9 @@
 					 this
 					 '(yes-no))))))]
 		       [on-close
-			(lambda () (exit-sirmail))])
+			(lambda () 
+                          (send message-editor on-close)
+                          (exit-sirmail))])
 		     (sequence
 		       (apply super-init args)
 		       (when send-icon
@@ -197,7 +200,7 @@
 		       (lambda (b e) (cancel-button-todo))))
 	(define cancel-button-todo void)
 	(define c (make-object editor-canvas% f))
-	(define message-editor (make-object text%))
+	(define message-editor (make-object (editor:backup-autosave-mixin text:basic%)))
 	(define enclosure-list (make-object hierarchical-list% f))
 
 	(define (enable on? refocus cancel-proc)

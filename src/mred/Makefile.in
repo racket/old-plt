@@ -207,7 +207,7 @@ install_wx_mac:
 	cd ..; $(ICP) -r mred/MrEd.app $(prefix)/.
 	cd ..; $(ICP) -r mred/PLT_MrEd.framework @FRAMEWORK_INSTALL_DIR@
 	cd ..; $(ICP) -r mred/Starter.app $(prefix)/collects/launcher/.
-	if [ ! -e $(prefix)/bin/mred ] ; then ln -s ../MrEd.app/Contents/MacOS/MrEd $(prefix)/bin/mred ; fi
+	if [ ! -e $(prefix)/bin/mred ] ; then cp $(srcdir)/../mac/mred.sh $(prefix)/bin/mred ; chmod a+x $(prefix)/bin/mred ; fi
 
 install:
 	$(MAKE) install_@WXVARIANT@

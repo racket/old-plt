@@ -5,27 +5,40 @@
 
  (define number-regexp (regexp "^[-+][0-9]*(|[.][0-9]*)$"))
 
+ (define print-args
+   (lambda (port l f)
+     (let loop ([l l][a (let ([a (arity f)])
+			  (if (number? a)
+			      (sub1 a)
+			      (sub1 (arity-at-least-value a))))])
+       (unless (null? l)
+	       (fprintf port " <~a>" (car l))
+	       (unless (positive? a)
+		       (fprintf port " ..."))
+	       (loop (cdr l) (sub1 a))))))
+
  (define parse-command-line
    (case-lambda
-    [(program arguments table finish)
-     (parse-command-line program arguments table finish
+    [(program arguments table finish finish-help)
+     (parse-command-line program arguments table finish finish-help
 			 (lambda (s)
 			   (display s)
 			   (exit 0)))]
-    [(program arguments table finish help)
-     (parse-command-line program arguments table finish help
+    [(program arguments table finish finish-help help)
+     (parse-command-line program arguments table finish finish-help help
 			 (lambda (flag)
 			   (error (string->symbol program) "unknown flag: ~s" flag)))]
-    [(program arguments table finish help unknown-flag)
+    [(program arguments table finish finish-help help unknown-flag)
      (unless (string? program)
-	     (raise-type-error 'parse-command-line "string" program))
-     (unless (vector? arguments)
-	     (raise-type-error 'parse-command-line "vector" arguments))
+	     (raise-type-error 'parse-command-line "program name string" program))
+     (unless (and (vector? arguments)
+		  (andmap string? (vector->list arguments)))
+	     (raise-type-error 'parse-command-line "argument vector of strings" arguments))
      (unless (and (list? table)
 		  (let ([bad-table
 			 (lambda (reason)
 			   (raise-type-error 'parse-command-line 
-					     (format "list of flag-list/procedure pairs (~a)" 
+					     (format "table as a list of flag-list/procedure pairs (~a)" 
 						     reason)
 					     table))])
 		    (andmap (lambda (spec)
@@ -74,15 +87,20 @@
 						      (bad-table (format "spec-line help list strings must match procedure arguments")))))
 					   (cdr spec))))
 			    table)))
-	     (raise-type-error 'parse-command-line "list of flag-procedure pairs (~a)" table))
-     (unless (and (procedure? finish) (procedure-arity-includes? finish 2))
-	     (raise-type-error 'parse-command-line "procedure of arity 2" finish))
+	     (raise-type-error 'parse-command-line "table of spec sets" table))
+     (unless (and (procedure? finish)
+		  (let ([a (arity unknown-flag)])
+		    (or (and (number? a) (>= a 1))
+			(arity-at-least? a))))
+	     (raise-type-error 'parse-command-line "finish procedure of simple arity 1 or more" finish))
+     (unless (and (list? finish-help) (andmap string? finish-help))
+	     (raise-type-error 'parse-command-line "argument help list of strings" finish-help))
      (unless (and (procedure? help) (procedure-arity-includes? help 1))
-	     (raise-type-error 'parse-command-line "procedure of arity 1" help))
+	     (raise-type-error 'parse-command-line "help procedure of arity 1" help))
      (unless (and (procedure? unknown-flag) (procedure-arity-includes? unknown-flag 1)
 		  (let ([a (arity unknown-flag)])
 		    (or (number? a) (arity-at-least? a))))
-	     (raise-type-error 'parse-command-line "procedure of simple arity, accepting 1 argument (at least)" unknown-flag))
+	     (raise-type-error 'parse-command-line "unknown-flag procedure of simple arity, accepting 1 argument (an perhaps more)" unknown-flag))
      (let* ([once-spec-set
 	     (lambda (lines)
 	       (let ([set (cons #f (apply append (map car lines)))])
@@ -95,7 +113,13 @@
 	      (list
 	       (list #f (list "--help" "-h")
 		     (lambda (f)
-		       (let ([sp (open-output-string)])
+		       (let* ([sp (open-output-string)])
+			 (fprintf sp "~a~a" program
+				  (if (null? table)
+				      ""
+				      " [ <flag> ... ]"))
+			 (print-args sp finish-help finish)
+			 (fprintf sp "~n where <flag> is one of~n ")
 			 (for-each
 			  (lambda (set)
 			    (for-each
@@ -103,13 +127,11 @@
 			       (let loop ([flags (car line)])
 				 (let ([flag (car flags)])
 				   (fprintf sp " ~a" flag)
-				   (for-each
-				    (lambda (arg) (fprintf sp " <~a>" arg))
-				    (cdaddr line)))
+				   (print-args sp (cdaddr line) (cadr line)))
 				 (unless (null? (cdr flags))
 					 (fprintf sp ",")
 					 (loop (cdr flags))))
-			       (fprintf sp " : ~a~n" (caaddr line)))
+			       (fprintf sp " : ~a~n " (caaddr line)))
 			     (cdr set)))
 			  table) ; the original table
 			 (fprintf sp " --help, -h : Show this help~n")
@@ -133,8 +155,31 @@
 	       table))]
 	    [done
 	     (lambda (args r-acc)
-	       (finish (list->vector args)
-		       (reverse r-acc)))]
+	       (let ([options (reverse r-acc)]
+		     [c (length args)])
+		 (if (procedure-arity-includes? finish (add1 c))
+		     (apply finish options args)
+		     (let ([a (arity finish)])
+		       (error (string->symbol program)
+			      (format "expects~a, given ~a argument~a~a"
+				      (if (null? finish-help)
+					  " no arguments"
+					  (let ([s (open-output-string)])
+					    (parameterize ([current-output-port s])
+							  (print-args s finish-help finish))
+					    (let ([s (get-output-string s)])
+					      (if (equal? 2 (arity finish))
+						  (format " 1~a" s)
+						  s))))
+				      c
+				      (cond
+				       [(zero? c) "s"]
+				       [(= c 1) ": "]
+				       [else "s: "])
+				      (let loop ([args args])
+					(if (null? args)
+					    ""
+					    (string-append (car args) " " (loop (cdr args)))))))))))]
 	    [call-handler
 	     (lambda (handler flag args r-acc k)
 	       (let* ([a (arity handler)]

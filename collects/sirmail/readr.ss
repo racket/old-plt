@@ -36,6 +36,8 @@
 	      (install-text-functions)
 	      (install-emacs-bindings))
       
+      (define no-subject-string "<No subject>")
+
       (define main-frame #f)
       
       (define (show-error x)
@@ -697,13 +699,17 @@
                        (set! dragging-item item)
                        (when dragging-item
                          (let* ([ud (send dragging-item user-data)]
-                                [message (assoc ud mailbox)])
+                                [message (assoc ud mailbox)]
+                                [cap-length 50])
                            (when message
                              (let ([title (message-subject message)])
-                               (if ((string-length title) . <= . 20)
-                                   (set! dragging-title title)
-                                   (set! dragging-title
-                                         (string-append (substring title 0 17) "...")))))))))))]
+                               (cond
+                                 [(not title) (set! dragging-title no-subject-string)]
+                                 [((string-length title) . <= . cap-length)
+                                  (set! dragging-title title)]
+                                 [else
+                                  (set! dragging-title
+                                        (string-append (substring title 0 (- cap-length 3)) "..."))])))))))))]
               [(send evt dragging?)
                (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
                  (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
@@ -925,7 +931,7 @@
 	  (send (send from get-editor) insert 
 		(one-line (or (message-from m) "<unknown>")))
 	  (send (send subject get-editor) insert 
-		(one-line (or (message-subject m) "<No subject>")))
+		(one-line (or (message-subject m) no-subject-string)))
 	  (unless (message-downloaded? m)
 	    (apply-style i unread-delta))
 	  (when (memq 'marked (message-flags m))

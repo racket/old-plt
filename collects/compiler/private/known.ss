@@ -85,20 +85,20 @@
       ;;  to be called later, and some call previously installed procedures.
       ;;  We care abot the installers and callers.
       (define prims-that-induce-procedure-calls
-	'(#%apply #%map #%for-each #%andmap #%ormap #%make-promise
-		  #%dynamic-wind #%thread #%call-in-nested-thread
-		  #%make-object #%call-with-values #%time-apply
-		  #%call-with-output-file #%call-with-input-file
-		  #%with-output-to-file #%with-input-from-file
-		  #%exit-handler #%current-eval #%current-exception-handler
-		  #%current-prompt-read #%current-load
-		  #%call-with-escape-continuation #%call-with-current-continuation
-		  #%current-print #%port-display-handler #%port-write-handler
-		  #%port-print-handler #%global-port-print-handler
-		  #%error-display-handler #%error-escape-handler
-		  #%port-read-handler #%error-value->string-handler
-		  #%call/ec #%call/cc #%hash-table-get
-		  #%hash-table-map #%hash-table-for-each #%make-input-port #%make-output-port))
+	'(apply map for-each andmap ormap make-promise
+		  dynamic-wind thread call-in-nested-thread
+		  make-object call-with-values time-apply
+		  call-with-output-file call-with-input-file
+		  with-output-to-file with-input-from-file
+		  exit-handler current-eval current-exception-handler
+		  current-prompt-read current-load
+		  call-with-escape-continuation call-with-current-continuation
+		  current-print port-display-handler port-write-handler
+		  port-print-handler global-port-print-handler
+		  error-display-handler error-escape-handler
+		  port-read-handler error-value->string-handler
+		  call/ec call/cc hash-table-get
+		  hash-table-map hash-table-for-each make-input-port make-output-port))
 
       ;; The valueable? predicate is used to determine how many variables
       ;;  are reliably set in a mutually-recursive binding context.
@@ -220,8 +220,8 @@
 	      (if fun
 		  (let ([args (map extract-value (zodiac:app-args v))])
 		    (case fun
-		      [(#%void) (zodiac:make-special-constant 'void)]
-		      [(#%char->integer) 
+		      [(void) (zodiac:make-special-constant 'void)]
+		      [(char->integer) 
 		       (with-handlers ([void (lambda (x) v)])
 			 (let ([args (map (lambda (a) (syntax-e (zodiac:zodiac-stx (zodiac:quote-form-expr a)))) args)])
 			   (let ([new-v (apply (global-defined-value fun) args)])

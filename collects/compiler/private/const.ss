@@ -80,6 +80,7 @@
 		      (zodiac:zodiac-stx code)
 		      (make-empty-box) 
 		      var
+		      #f
 		      (box '()))]
 		 [def (zodiac:make-define-values-form 
 		       (zodiac:zodiac-stx code)
@@ -107,6 +108,7 @@
 			   (and ast (zodiac:zodiac-stx ast))
 			   (make-empty-box) 
 			   (string->symbol (number->string counter))
+			   #f
 			   (box '()))])
 		  
 		  (set-annotation! sv (varref:empty-attributes))
@@ -143,9 +145,11 @@
       (define compiler:make-const-constructor
 	(lambda (ast constructor-name args)
 	  (let* ([v (zodiac:make-top-level-varref
+		     ;; FIXME?: wrong syntax
 		     (zodiac:zodiac-stx ast)
 		     (make-empty-box) 
 		     constructor-name
+		     '#%kernel
 		     (box '()))]
 		 [app  (zodiac:make-app 
 			(zodiac:zodiac-stx ast)
@@ -192,8 +196,20 @@
 
       (define (construct-vector-constant ast constructor known-immutable?)
 	(let* ([elems (map (lambda (x)
-			     (compiler:construct-const-code! x known-immutable?))
-			   (zodiac:read-object ast))]
+			     (compiler:construct-const-code! 
+			      (zodiac:make-read x)
+			      known-immutable?))
+			   (let ([p (zodiac:zodiac-stx ast)])
+			     (or (syntax->list p)
+				 (and (vector? (syntax-e p))
+				      (vector->list (syntax-e p)))
+				 (let loop ([p p])
+				   (cond
+				    [(stx-pair? p)
+				     (cons (stx-car p)
+					   (loop (stx-cdr p)))]
+				    [else
+				     (list p)])))))]
 	       [known-immutable? (or known-immutable? (null? elems))])
 	  (or (and known-immutable?
 		   (find-immutable-vector constructor elems))
@@ -220,7 +236,7 @@
 	   [(box? (zodiac:read-object ast))
 	    (compiler:add-const! (compiler:make-const-constructor
 				  ast
-				  '#%box
+				  'box
 				  (list (compiler:construct-const-code!
 					 (zodiac:read-object ast)
 					 known-immutable?)))

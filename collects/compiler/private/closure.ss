@@ -68,6 +68,7 @@
 		      (zodiac:zodiac-stx lam)
 		      (make-empty-box)
 		      var
+		      #f
 		      (box '())
 		      lam
 		      pls?)]

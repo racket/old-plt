@@ -5,8 +5,8 @@
 ; Notes mutability of lexical variables.
 ; Performs a few very-high-level optimizations, such as
 ;  throwing away constant expressions in a begin.
-; Performs a few ad hoc optimizations, like (#%+ x 1)
-;  => (#%add1 x)
+; Performs a few ad hoc optimizations, like (+ x 1)
+;  => (add1 x)
 ; Normalizes the expression forms:
 ;   - begin/begin0: flattened as much as possible; empty
 ;     and one-expression begins are eliminated
@@ -16,8 +16,7 @@
 ;  a global variable.)
 ; Infers names for closures and interfaces. (Do this early so
 ;  that elaboration doesn't mangle the names.)
-; Detects global varrefs to built-in primitives, changing +
-;  to #%+ if primitivesare assumed.
+; Detects global varrefs to built-in primitives.
 ; Drops MrSpidey-specific forms.
 ; Detects known immutability of signature vectors produced by */sig
 ;  forms
@@ -94,65 +93,56 @@
       (define prephase:begin0-pushable?
 	(one-of zodiac:case-lambda-form? zodiac:quote-form?))
 
-      ;; returns a true value if the symbol is a primitive function.
-      ;; if the assume-primitives? option is true, it set!s the name
-      ;; to the #% form.
-      (define prephase:primitive-name?!
+      ;; returns a true value if the symbol refers to a primitive function.
+      (define prephase:primitive-name?
 	(lambda (ast)
-	  (let* ([sym (zodiac:varref-var ast)]
-		 [str (symbol->string sym)]
-		 [len (string-length str)]
-		 [built-in #f]
-		 [hash-percent? (eq? sym built-in)])
-	    
-	    (if built-in
-		
-		(begin
-		  (zodiac:set-varref-var! ast sym)
-		  #t)
-		
-		hash-percent?))))
+	  (eq? '#%kernel (zodiac:top-level-varref-module ast))))
 
       (define (preprocess:adhoc-app-optimization ast prephase-it)
 	(let ([fun (zodiac:app-fun ast)])
 	  (and (zodiac:top-level-varref? fun)
+	       (eq? '#%kernel (zodiac:top-level-varref-module fun))
 	       (let ([name (zodiac:varref-var fun)]
 		     [args (zodiac:app-args ast)]
 		     [new-fun (lambda (newname)
 				(prephase-it
 				 (zodiac:make-top-level-varref
+				  ;; FIXME?: wrong syntax
 				  (zodiac:zodiac-stx fun)
 				  (make-empty-box)
-				  newname)))])
+				  newname
+				  '#%kernel
+				  (box '()))))])
 		 (case name
-		   [(#%void) (if (null? args)
-				 (prephase-it (zodiac:make-special-constant 'void))
-				 #f)]
-		   [(#%list) (if (null? args)
-				 (prephase-it (zodiac:make-special-constant 'null))
-				 #f)]
-		   [(#%+ #%-) (when (and (= 2 (length args))
-					 (zodiac:quote-form? (cadr args))
-					 (equal? 1 (syntax-e (zodiac:zodiac-stx (zodiac:quote-form-expr (cadr args))))))
-				(let ([newname (if (eq? name '#%+) '#%add1 '#%sub1)])
-				  (zodiac:set-app-fun! ast (new-fun newname))
-				  (zodiac:set-app-args! ast (list (car args)))))
+		   [(void) (if (null? args)
+			       (prephase-it (zodiac:make-special-constant 'void))
+			       #f)]
+		   [(list) (if (null? args)
+			       (prephase-it (zodiac:make-special-constant 'null))
+			       #f)]
+		   [(+ -) (when (and (= 2 (length args))
+				     (zodiac:quote-form? (cadr args))
+				     (equal? 1 (syntax-e (zodiac:zodiac-stx (zodiac:quote-form-expr (cadr args))))))
+			    (let ([newname (if (eq? name '+) 'add1 'sub1)])
+			      (zodiac:set-app-fun! ast (new-fun newname))
+			      (zodiac:set-app-args! ast (list (car args)))))
 		    #f] ; always return #f => use the (possibly mutated) ast
-		   [(#%memv) ; (memv x '(c)) => (eqv x c); important for `case' elaboration
+		   [(memv) ; (memv x '(c)) => (eqv x c); important for `case' elaboration
 		    (when (and (= 2 (length args))
 			       (zodiac:quote-form? (cadr args)))
 		      (let ([quoted (zodiac:quote-form-expr (cadr args))])
 			(when (and (syntax->list (zodiac:zodiac-stx quoted))
 				   (= 1 (length (syntax->list (zodiac:zodiac-stx quoted)))))
-			  (zodiac:set-app-fun! ast (new-fun '#%eqv?))
+			  (zodiac:set-app-fun! ast (new-fun 'eqv?))
 			  (zodiac:set-app-args! ast 
 						(list (car args)
 						      (zodiac:make-quote-form
 						       (zodiac:zodiac-stx fun)
 						       (make-empty-box)
-						       (car (syntax->list (zodiac:zodiac-stx quoted)))))))))
+						       (zodiac:make-read
+							(car (syntax->list (zodiac:zodiac-stx quoted))))))))))
 		    #f] ; always return #f => use the (possibly mutated) ast
-		   [(#%verify-linkage-signature-match)
+		   [(verify-linkage-signature-match)
 		    ;; Important optimization for compound-unit/sig: mark signature-defining vectors
 		    ;;  as immutable
 		    (when (= 5 (length args))
@@ -183,10 +173,16 @@
 		     [(zodiac:quote-form? ast) ast]
 		     
 		     ;;----------------------------------------------------------
+		     ;; SYNTAX - FIXME, WRONG!!!!
+		     ;;
+		     [(zodiac:quote-syntax-form? ast)
+		      (zodiac:make-special-constant 'void)]
+		     
+		     ;;----------------------------------------------------------
 		     ;; VARIABLE REFERENCES
 		     ;;
 		     ;; set up all varrefs with an attribute set
-		     ;; note all #%... varrefs as primitives
+		     ;; note all varrefs to primitives
 		     ;; change unit-bound `top-levels' to lexicals
 		     ;;
 		     [(zodiac:varref? ast)
@@ -194,7 +190,7 @@
 		      (set-annotation! ast (varref:empty-attributes))
 			    
 		      (when (and (zodiac:top-level-varref? ast)
-				 (prephase:primitive-name?! ast))
+				 (prephase:primitive-name? ast))
 			(varref:add-attribute! ast varref:primitive))
 		      
 		      ast]
@@ -260,9 +256,9 @@
 			need-val?
 			name))
 
-		      ;; ????? Obsolte? ????
-					; this will mark the letrec so it is NOT retraversed by
-					; a possible future call to a-normalize! (the mutating version)
+		      ;; ????? Obsolete? ????
+		      ;; this will mark the letrec so it is NOT retraversed by
+		      ;; a possible future call to a-normalize! (the mutating version)
 		      ;; (set-annotation! ast #f)
 
 		      ast]
@@ -281,11 +277,12 @@
 		       ast
 		       (prephase! (zodiac:if-form-else ast) need-val? name))
 
-		      ;; Ad hoc optimization: (if (#%not x) y z) => (if x z y)
+		      ;; Ad hoc optimization: (if (not x) y z) => (if x z y)
 		      (let ([test (zodiac:if-form-test ast)])
 			(when (and (zodiac:app? test)
 				   (zodiac:top-level-varref? (zodiac:app-fun test))
-				   (eq? '#%not (zodiac:varref-var (zodiac:app-fun test)))
+				   (eq? 'not (zodiac:varref-var (zodiac:app-fun test)))
+				   (eq? '#%kernel (zodiac:top-level-varref-module (zodiac:app-fun test)))
 				   (= 1 (length (zodiac:app-args test))))
 			  (let ([then (zodiac:if-form-then ast)]
 				[else (zodiac:if-form-else ast)])
@@ -448,6 +445,13 @@
 			     ast
 			     (prephase! (zodiac:define-values-form-val ast) #t (zodiac:define-values-form-vars ast)))
 			    ast))]
+		     
+		     ;;----------------------------------------------------------
+		     ;; DEFINE-SYNTAX - FIXME, WRONG!!!!
+		     ;;
+		     [(zodiac:define-syntax-form? ast)
+		      (zodiac:make-special-constant 'void)]
+		     
 		     
 		     ;;-----------------------------------------------------------
 		     ;; APPLICATIONS

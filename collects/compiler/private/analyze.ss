@@ -181,7 +181,7 @@
 
       ;; turns a 'bad' letrec into let+set!, also returning a procedure
       ;; to set! the body to the correct form, to avoid re-analyzing it
-      ;; the 'body' is set to #%void 
+      ;; the 'body' is set to (void)
       (define letrec->let+set!
 	(lambda (ast)
 	  (let* ([body
@@ -217,7 +217,7 @@
 				(zodiac:make-special-constant 'undefined)
 				(compiler:make-const-constructor 
 				 ast
-				 '#%values
+				 'values
 				 (map (lambda (_) (zodiac:make-special-constant 
 						   'undefined))
 				      vars))))
@@ -322,9 +322,7 @@
 			       (if remapped
 				   (cdr remapped)
 				   binding))]
-		    [new-ast (f (zodiac:zodiac-origin ast)
-				(zodiac:zodiac-start ast)
-				(zodiac:zodiac-finish ast)
+		    [new-ast (f (zodiac:zodiac-stx ast)
 				(make-empty-box)
 				(zodiac:binding-var binding)
 				binding)])
@@ -336,6 +334,7 @@
 			   (zodiac:zodiac-stx ast)
 			   (make-empty-box)
 			   (zodiac:varref-var ast)
+			   (zodiac:top-level-varref-module ast)
 			   (zodiac:top-level-varref-slot ast))])
 	     ;; Copy attribute set:
 	     (set-annotation! new-ast (get-annotation ast))
@@ -916,7 +915,7 @@
 		     ;;    in the binding structure in the compiler:bound structure..
 		     ;;
 		     ;;    (let ([x (set! y A)]) M) ->
-		     ;;      (begin (set! y A) (let ([x #%void]) M))
+		     ;;      (begin (set! y A) (let ([x (void)]) M))
 		     ;;
 		     ;;    if the variable bound is constant, the let is discarded,
 		     ;;    and the value is naturally propagated.
@@ -1042,10 +1041,10 @@
 				     (not (binding-mutable? (get-annotation (car l)))))
 				   (zodiac:letrec-values-form-vars ast)))
 			  
-					;-----------------------------------------------------------
-					; WELL-BEHAVED LETREC (incomplete bindings never exposed)
-					;  mark appropriate variables as letrec bound
-					;
+			  ;;-----------------------------------------------------------
+			  ;; WELL-BEHAVED LETREC (incomplete bindings never exposed)
+			  ;;  mark appropriate variables as letrec bound
+			  ;;
 			  (let* ([vars (map car (zodiac:letrec-values-form-vars ast))])
 			    (set! local-vars (set-union (list->set vars) local-vars))
 			    (let ([new-env (append vars env)])
@@ -1066,10 +1065,10 @@
 				
 				(values ast body-multi))))
 			  
-					;-----------------------------------------------------------
-					; POSSIBLY POORLY BEHAVED LETREC
-					;   rewrite as let+set!
-					;
+			  ;;-----------------------------------------------------------
+			  ;; POSSIBLY POORLY BEHAVED LETREC
+			  ;;   rewrite as let+set!
+			  ;;
 			  (begin
 			    (compiler:warning ast "letrec will be rewritten with set!")
 			    (debug "rewriting letrec~n")

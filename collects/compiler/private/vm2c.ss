@@ -1299,40 +1299,41 @@
 	       
 	       ;; (immediate x)
 	       [(vm:immediate? ast)
-		(let ([ast (vm:immediate-text ast)])
+		(let ([tast (vm:immediate-text ast)])
 		  (cond 
 		   
 		   ;;--------------------------------------------------------------
 		   ;; CONSTANTS
 		   ;;
 		   ;; labels
-		   [(number? ast)
-		    (emit-expr "~a" ast)]
+		   [(number? tast)
+		    (emit-expr "~a" tast)]
 		   
-		   [(boolean? (zodiac:read-object ast))
-		    (if (zodiac:read-object ast)
+		   [(boolean? (zodiac:read-object tast))
+		    (if (zodiac:read-object tast)
 			(emit-expr "scheme_true")
 			(emit-expr "scheme_false"))]
 		   
-		   [(number? (zodiac:read-object ast))
-		    (emit-expr "scheme_make_integer(~a)" (zodiac:read-object ast))]
+		   [(number? (zodiac:read-object tast))
+		    (emit-expr "scheme_make_integer(~a)" (zodiac:read-object tast))]
 		   
-		   [(char? (zodiac:read-object ast))
+		   [(char? (zodiac:read-object tast))
 		    (emit-expr "scheme_make_character('~a')"
 			       (vm->c:convert-char
-				(zodiac:read-object ast)))]
+				(zodiac:read-object tast)))]
 		   
-		   [(null? (zodiac:read-object ast))
+		   [(null? (zodiac:read-object tast))
 		    (emit-expr "scheme_null")]
 		   
-		   [(or (void? (zodiac:read-object ast))
-			(undefined? (zodiac:read-object ast)))
-		    (emit-expr (vm->c:convert-special-constant ast))]
+		   [(or (void? (zodiac:read-object tast))
+			(undefined? (zodiac:read-object tast)))
+		    (emit-expr (vm->c:convert-special-constant tast))]
 		   
 		   [else (compiler:internal-error
 			  ast
-			  (format "vm->c-expression: ~a not an immediate" ast))]))]
-
+			  (format "vm->c-expression: ~a not an immediate: ~e" 
+				  tast (zodiac:read-object tast)))]))]
+	       
 	       [(vm:build-constant? ast)
 		(let ([ast (vm:build-constant-text ast)])
 		  (cond

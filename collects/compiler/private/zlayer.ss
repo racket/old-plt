@@ -114,14 +114,14 @@
       (define zodiac:make-special-constant
 	;; make-quote, make-constant
 	(lambda (text)
-	  (let ([z (quote-syntax here)])
+	  (let ([stx (case text
+		       [(void) (datum->syntax (void) #f #f)]
+		       [(null) (datum->syntax null #f #f)]
+		       [(undefined) (datum->syntax undefined #f #f)]
+		       [else (compiler:internal-error 'make-special-constant "bad type")])])
 	    (zodiac:make-quote-form 
-	     z (make-empty-box)
-	     (case text
-	       [(void) (datum->syntax (void) #f #f)]
-	       [(null) (datum->syntax null #f #f)]
-	       [(undefined) (datum->syntax undefined #f #f)]
-	       [else (compiler:internal-error 'make-special-constant "bad type")])))))
+	     stx (make-empty-box)
+	     (zodiac:make-read stx)))))
       
       ;;-----------------------------------------------------------------------------
       ;; BINDING->LEXICAL-VARREF
@@ -133,8 +133,8 @@
 	(lambda (ast)
 	  (let ([v (zodiac:make-lexical-varref (zodiac:zodiac-stx ast)
 					       (make-empty-box)
-					       (syntax-e (zodiac:zodiac-stx ast))
-					       (zodiac:binding-var ast))])
+					       (zodiac:binding-var ast)
+					       ast)])
 	    (set-annotation! v (varref:empty-attributes))
 	    v)))
 

@@ -208,8 +208,8 @@
 		     ;; or an application of a primitive function to a-values. 
 		     ;;
 		     ;; We specially allow primitive applications
-		     ;; of a-values so the optimizer can recognize tests that cen be
-		     ;; implemented primitively, e.g., (#%zero? x)
+		     ;; of a-values so the optimizer can recognize tests that can be
+		     ;; implemented primitively, e.g., (zero? x)
 		     ;;
 		     ;; (norm (if A B C) k) ->
 		     ;;   (name A (lambda test (k (if test (norm B) (norm C)))))

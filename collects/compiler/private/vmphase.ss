@@ -41,7 +41,6 @@
 	(lambda (ast)
 	  (let* ([ref (make-vm:local-varref
 		       (zodiac:zodiac-stx ast)
-
 		       (zodiac:varref-var ast)
 		       (zodiac:bound-varref-binding ast))]
 		 
@@ -58,56 +57,56 @@
 	(if (and prim (procedure-arity-includes? (global-defined-value prim) argc))
 	    (let* ([argc=? (lambda (x) (= x argc))]
 		   [special-bool (case prim
-				   [(#%eq?) "MZC_EQP"]
-				   [(#%eqv?) "MZC_EQVP"]
-				   [(#%equal?) "MZC_EQUALP"]
-				   [(#%null?) "MZC_NULLP"]
-				   [(#%pair?) "MZC_PAIRP"]
-				   [(#%not) "MZC_NOTP"]
-				   [(#%symbol?) "MZC_SYMBOLP"]
-				   [(#%string?) "MZC_STRINGP"]
-				   [(#%vector?) "MZC_VECTORP"]
-				   [(#%number?) "MZC_NUMBERP"]
-				   [(#%procedure?) "MZC_PROCEDUREP"]
-				   [(#%char?) "MZC_CHARP"]
-				   [(#%eof-object?) "MZC_EOFP"]
-				   [(#%zero?) "MZC_ZEROP"]
-				   [(#%<) (and (argc=? 2) "MZC_LTP")]
-				   [(#%>) (and (argc=? 2) "MZC_GTP")]
-				   [(#%<=) (and (argc=? 2) "MZC_LTEP")]
-				   [(#%>=) (and (argc=? 2) "MZC_GTEP")]
-				   [(#%=) (and (argc=? 2) "MZC_EQLP")]
+				   [(eq?) "MZC_EQP"]
+				   [(eqv?) "MZC_EQVP"]
+				   [(equal?) "MZC_EQUALP"]
+				   [(null?) "MZC_NULLP"]
+				   [(pair?) "MZC_PAIRP"]
+				   [(not) "MZC_NOTP"]
+				   [(symbol?) "MZC_SYMBOLP"]
+				   [(string?) "MZC_STRINGP"]
+				   [(vector?) "MZC_VECTORP"]
+				   [(number?) "MZC_NUMBERP"]
+				   [(procedure?) "MZC_PROCEDUREP"]
+				   [(char?) "MZC_CHARP"]
+				   [(eof-object?) "MZC_EOFP"]
+				   [(zero?) "MZC_ZEROP"]
+				   [(<) (and (argc=? 2) "MZC_LTP")]
+				   [(>) (and (argc=? 2) "MZC_GTP")]
+				   [(<=) (and (argc=? 2) "MZC_LTEP")]
+				   [(>=) (and (argc=? 2) "MZC_GTEP")]
+				   [(=) (and (argc=? 2) "MZC_EQLP")]
 				   [else #f])])
 	      (if special-bool
 		  (prim-k special-bool #t)
 		  (let ([special (case prim
-				   [(#%cons) "MZC_CONS"]
-				   [(#%list) (cond
+				   [(cons) "MZC_CONS"]
+				   [(list) (cond
 					      [(argc=? 1) "MZC_LIST1"]
 					      [(argc=? 2) "MZC_LIST2"]
 					      [else #f])]
-				   [(#%append) (and (argc=? 2) "MZC_APPEND")]
-				   [(#%car) "MZC_CAR"]
-				   [(#%cdr) "MZC_CDR"]
-				   [(#%cadr) "MZC_CADR"]
-				   [(#%cddr) "MZC_CDDR"]
-				   [(#%caar) "MZC_CAAR"]
-				   [(#%cdar) "MZC_CDAR"]
-				   [(#%caddr) "MZC_CADDR"]
-				   [(#%set-car!) "MZC_SET_CAR"]
-				   [(#%set-cdr!) "MZC_SET_CDR"]
-				   [(#%vector-ref) "MZC_VECTOR_REF"]
-				   [(#%vector-set!) "MZC_VECTOR_SET"]
-				   [(#%string-ref) "MZC_STRING_REF"]
-				   [(#%string-set!) "MZC_STRING_SET"]
-				   [(#%char->integer) "MZC_CHAR_TO_INTEGER"]
-				   [(#%add1) "MZC_ADD1"]
-				   [(#%sub1) "MZC_SUB1"]
-				   [(#%+) (and (argc=? 2) "MZC_PLUS2")]
-				   [(#%-) (and (argc=? 2) "MZC_MINUS2")]
-				   [(#%*) (and (argc=? 2) (compiler:option:fixnum-arithmetic) "MZC_TIMES2")]
-				   [(#%min) (and (argc=? 2) "MZC_MIN2")]
-				   [(#%max) (and (argc=? 2) "MZC_MAX2")]
+				   [(append) (and (argc=? 2) "MZC_APPEND")]
+				   [(car) "MZC_CAR"]
+				   [(cdr) "MZC_CDR"]
+				   [(cadr) "MZC_CADR"]
+				   [(cddr) "MZC_CDDR"]
+				   [(caar) "MZC_CAAR"]
+				   [(cdar) "MZC_CDAR"]
+				   [(caddr) "MZC_CADDR"]
+				   [(set-car!) "MZC_SET_CAR"]
+				   [(set-cdr!) "MZC_SET_CDR"]
+				   [(vector-ref) "MZC_VECTOR_REF"]
+				   [(vector-set!) "MZC_VECTOR_SET"]
+				   [(string-ref) "MZC_STRING_REF"]
+				   [(string-set!) "MZC_STRING_SET"]
+				   [(char->integer) "MZC_CHAR_TO_INTEGER"]
+				   [(add1) "MZC_ADD1"]
+				   [(sub1) "MZC_SUB1"]
+				   [(+) (and (argc=? 2) "MZC_PLUS2")]
+				   [(-) (and (argc=? 2) "MZC_MINUS2")]
+				   [(*) (and (argc=? 2) (compiler:option:fixnum-arithmetic) "MZC_TIMES2")]
+				   [(min) (and (argc=? 2) "MZC_MIN2")]
+				   [(max) (and (argc=? 2) "MZC_MAX2")]
 				   [else #f])])
 		    (if special
 			(prim-k special #f)
@@ -194,7 +193,8 @@
 					#f
 					identity
 					#f
-					#f)]
+					#f
+					#t)]
 					; we have to copy pointers if necessary!
 				  [var (if (vm:deref? var)
 					   (vm:deref-var var)
@@ -232,7 +232,7 @@
 		     (append (set->list (code-free-vars code))
 			     (set->list (code-global-vars code)))))]
 	     [convert
-	      (lambda (ast multi? leaf tail-pos tail?)
+	      (lambda (ast multi? leaf tail-pos tail? used?)
 		(when (compiler:option:debug)
 		  (zodiac:print-start! (debug:get-port) ast)
 		  (fprintf (debug:get-port) "~a~n" ast))
@@ -244,15 +244,16 @@
 		 [(zodiac:begin-form? ast)
 		  (apply append!
 			 (begin-map!
-					; non-tail
+			  ;; non-tail, not used
 			  (lambda (b) (convert b 
 					       #t
 					       list 
 					       (lambda (x) (make-vm:void #f x))
+					       #f
 					       #f))
-					; tail
-			  (lambda (b) (convert b multi? leaf tail-pos tail?))
-					; list
+			  ;; tail
+			  (lambda (b) (convert b multi? leaf tail-pos tail? used?))
+			  ;; list
 			  (zodiac:begin-form-bodies ast)))]
 		 
 		 ;;-----------------------------------------------------------------
@@ -264,12 +265,13 @@
 				       #f
 				       identity
 				       #f
-				       #f)]
+				       #f
+				       #t)]
 			 [first (convert (zodiac:begin0-form-first ast) 
 					 multi?
 					 (lambda (val) (list (make-vm:begin0-mark! #f var val)))
-					 #f #f)]
-			 [rest (convert (zodiac:begin0-form-rest ast) #t list #f #f)]
+					 #f #f #t)]
+			 [rest (convert (zodiac:begin0-form-rest ast) #t list #f #f #f)]
 			 [begin0-setup
 			  (make-vm:begin0-setup!
 			   (zodiac:zodiac-stx ast)
@@ -289,9 +291,9 @@
 		 ;; IF FORM
 		 ;;
 		 [(zodiac:if-form? ast)
-		  (let ([test (convert (zodiac:if-form-test ast) #f list #f #f)]
-			[then (convert (zodiac:if-form-then ast) multi? leaf tail-pos tail?)]
-			[else (convert (zodiac:if-form-else ast) multi? leaf tail-pos tail?)])
+		  (let ([test (convert (zodiac:if-form-test ast) #f list #f #f #t)]
+			[then (convert (zodiac:if-form-then ast) multi? leaf tail-pos tail? used?)]
+			[else (convert (zodiac:if-form-else ast) multi? leaf tail-pos tail? used?)])
 		    (list (make-vm:if     
 			   (zodiac:zodiac-stx ast)
 			   test
@@ -326,7 +328,8 @@
 						#f
 						identity
 						#f
-						#f)))
+						#f
+						#t)))
 				    (car (zodiac:let-values-form-vars ast)))]
 			 [val (car (zodiac:let-values-form-vals ast))]
 			 [reps (map (lambda (bound)
@@ -339,7 +342,7 @@
 						       (binding-letrec-set? b)
 						       (binding-letrec-set? b))))
 					       (car (zodiac:let-values-form-vars ast)))]
-			 [body (convert (zodiac:let-values-form-body ast) multi? leaf tail-pos tail?)])
+			 [body (convert (zodiac:let-values-form-body ast) multi? leaf tail-pos tail? used?)])
 		    
 		    (if (not temps-needed?)
 			
@@ -347,7 +350,8 @@
 					  (not (= 1 (length vars)))
 					  (lambda (val) (list (make-vm:set! #f vars val #f)))
 					  #f
-					  #f)
+					  #f
+					  #t)
 				 body)
 			
 			(let* ([tnames (map (lambda (_) (compiler:gensym)) vars)]
@@ -369,7 +373,8 @@
 						      #f
 						      identity
 						      #f
-						      #f))
+						      #f
+						      #t))
 					   tbounds)]
 			       [set-temps
 				(convert val
@@ -379,7 +384,7 @@
 						  #f
 						  (map (lambda (r) (cons target-type:lexical r)) trefs)
 						  val #f)))
-					 #f #f)]
+					 #f #f #t)]
 			       [make-boxes 
 				(apply append!
 				       (map (lambda (rep var)
@@ -452,7 +457,8 @@
 					       #f
 					       identity
 					       #f
-					       #f))
+					       #f
+					       #t))
 				    new-bounds)]
 			 [pointers (map vm:deref-var new-vars)]
 			 [vars (foldr (lambda (var val l)
@@ -462,7 +468,8 @@
 							   #f
 							   identity
 							   #f
-							   #f)
+							   #f
+							   #t)
 						  l)
 					    l))
 				      null
@@ -489,12 +496,14 @@
 							      #f
 							      identity
 							      #f
-							      #f)))
+							      #f
+							      #t)))
 					      (convert val
 						       #f
 						       identity
 						       #f
-						       #f)
+						       #f
+						       #t)
 					      #f)
 					     l)))
 				 null
@@ -525,7 +534,7 @@
 			  closure-reps)
 		     (apply append (map fill-label pointers codes))
 		     (apply append! (map fill-env pointers codes))
-		     (convert (zodiac:letrec-values-form-body ast) multi? leaf tail-pos tail?)))]
+		     (convert (zodiac:letrec-values-form-body ast) multi? leaf tail-pos tail? used?)))]
 		 
 		 
 		 
@@ -565,18 +574,19 @@
 							     #f ;val
 							     #f ;known-but-used?
 							     (make-rep:pointer closure-alloc-rep))))]
-					; the reference to the closure
+			 ;; the reference to the closure
 			 [new-var (and new-bound
 				       (convert (zodiac:binding->lexical-varref new-bound)
 						#f
 						identity
 						#f
-						#f))]
-					; the reference to the pointer to the closure
+						#f
+						#t))]
+			 ;; the reference to the pointer to the closure
 			 [pointer (and new-var (vm:deref-var new-var))]
 			 
-					; set up arguments to closure-maker
-			 [make-args (map (lambda (a) (convert a #f identity #f #f)) (compiler:make-closure-args ast))]
+			 ;; set up arguments to closure-maker
+			 [make-args (map (lambda (a) (convert a #f identity #f #f #t)) (compiler:make-closure-args ast))]
 			 [get-args (if (null? make-args)
 				       ()
 				       (list (make-vm:generic-args (zodiac:zodiac-stx ast)
@@ -609,7 +619,7 @@
 		  (let* ([var (zodiac:set!-form-var ast)]
 			 [val (convert (zodiac:set!-form-val ast)
 				       #f
-				       identity #f #f)]
+				       identity #f #f #t)]
 			 [set!-exp
 			  (make-vm:set!		     
 			   (zodiac:zodiac-stx ast)
@@ -620,7 +630,8 @@
 						    #f
 						    identity
 						    #f
-						    #f))))
+						    #f
+						    #t))))
 			   val
 			   (if (zodiac:top-level-varref? var)
 			       (list "set!" 0)
@@ -629,7 +640,11 @@
 			(cons set!-exp
 			      (leaf (tail-pos (make-vm:immediate #f
 								 (zodiac:make-special-constant 'void)))))
-			(leaf set!-exp)))]
+			(if used?
+			    (cons set!-exp
+				  (leaf (make-vm:immediate #f
+							   (zodiac:make-special-constant 'void))))
+			    (leaf set!-exp))))]
 		 
 		 ;;-----------------------------------------------------------------
 		 ;; DEFINE FORM
@@ -651,10 +666,11 @@
 					(make-vm:set! #f
 						      (list (cons
 							     target-type:static
-							     (convert (car vars) #f identity #f #f)))
+							     (convert (car vars) #f identity #f #f #t)))
 						      val #f)))
 				     #f
-				     #f)]
+				     #f
+				     #t)]
 			   
 			   ;; DEFINE GLOBAL VARREFS - user written
 			   [(and (andmap zodiac:top-level-varref? vars)
@@ -672,7 +688,8 @@
 							   vars)
 						      val (list "define-values" 1))))
 				     #f
-				     #f)]
+				     #f
+				     #t)]
 			   
 			   [else (compiler:internal-error ast "bad define")])])
 		    
@@ -695,7 +712,7 @@
 			 [exp (make-vm:struct
 			       (zodiac:zodiac-stx ast)
 			       (zodiac:struct-form-type ast)
-			       (if super (convert super #f identity #f #f) #f)
+			       (if super (convert super #f identity #f #f #t) #f)
 			       (zodiac:struct-form-fields ast)
 			       multi?)])
 
@@ -719,9 +736,10 @@
 					    #f
 					    identity
 					    #f
-					    #f))]
-			 [key (convert (zodiac:with-continuation-mark-form-key ast) #f identity #f #f)]
-			 [val (convert (zodiac:with-continuation-mark-form-val ast) #f identity #f #f)]
+					    #f
+					    #t))]
+			 [key (convert (zodiac:with-continuation-mark-form-key ast) #f identity #f #f #t)]
+			 [val (convert (zodiac:with-continuation-mark-form-val ast) #f identity #f #f #t)]
 			 [body (convert (zodiac:with-continuation-mark-form-body ast)
 					multi?
 					(lambda (val) (if var
@@ -730,7 +748,8 @@
 								 var val))
 							  (leaf val)))
 					(and (not wcm-var) tail-pos)
-					(and (not wcm-var) tail?))]
+					(and (not wcm-var) tail?)
+					used?)]
 			 [extract
 			  (and wcm-var
 			       (make-vm:wcm-extract
@@ -783,12 +802,12 @@
 					    (primitive-closure? v)))
 				      (zodiac:varref-var (zodiac:app-fun ast))))]
 			 [simple-tail-prim? (and tail? (simple-tail-prim? prim))]
-			 [closure (convert (zodiac:app-fun ast) #f identity #f #f)]
+			 [closure (convert (zodiac:app-fun ast) #f identity #f #f #t)]
 			 [args (zodiac:app-args ast)]
 			 [argc (length args)]
 			 [converted-args
 			  (map (lambda (A)
-				 (convert A #f identity #f #f))
+				 (convert A #f identity #f #f #t))
 			       args)])
 		    (check-primitive-as-macro
 		     prim argc
@@ -896,11 +915,12 @@
 		 ;;
 		 [(zodiac:quote-form? ast)
 		  (let* ([const (zodiac:quote-form-expr ast)]
+			 [stx (or (zodiac:zodiac-stx ast) (zodiac:zodiac-stx const))]
 			 [vm ((if (vm:literal-constant? const) 
 				  (lambda (n)
-				    (make-vm:immediate #f n))
+				    (make-vm:immediate stx n))
 				  (lambda (n)
-				    (make-vm:build-constant #f n)))
+				    (make-vm:build-constant stx n)))
 			      const)])
 		    (if tail-pos
 			(leaf (tail-pos vm))
@@ -917,5 +937,5 @@
 					; is evaluated
 	    (values (make-vm:sequence
 		     (zodiac:zodiac-stx ast)
-		     (convert ast multi? (or leaf list) tail-pos tail?))
+		     (convert ast multi? (or leaf list) tail-pos tail? (not tail?)))
 		    new-locals)))))))

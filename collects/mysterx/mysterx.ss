@@ -1502,7 +1502,7 @@
 	 (lambda ()
 	   (let* ([s (mxprims:element-list-style elt)]
 		  [elts (style:parse-string s)])
-	     (map (style:string->list-style-item elts)))))
+	     (map style:string->list-style-item elts))))
 	(define list-style-native
 	 (lambda ()
 	   (mxprims:element-list-style elt)))

@@ -1,5 +1,27 @@
+`(#|
+
 This directory contains code for automatic testing
 of DrScheme.
+
+
+
+
+
+
+PR-based tests:
+  
+  |# menu-test.ss
+     pr-144.ss
+     pr-17.ss
+     pr-246.ss
+     pr-39.ss
+     pr-46.ss
+     pr-48.ss
+     pr-51.ss
+     pr-58.ss
+     pr-80.ss
+     pr-99.ss
+     repl-test.ss #|
 
 Ideally, each test should be run with a fresh invocation
 of DrScheme.  Since that's time-consuming, you can
@@ -20,3 +42,4 @@ There are some other files in this directory, which appear
 to be unused, such as tmp.ss, and line-art.ss.  The directory
 syncheck/ appears to be unused.
 
+|#)

@@ -260,8 +260,6 @@
   (define UNTACKED-BRUSH (send mred:the-brush-list find-or-create-brush "WHITE" 'solid))
   (define PEN (send mred:the-pen-list find-or-create-pen "BLUE" 1 'solid))
   
-  (class null args (sequence (apply super-init args)))
-  
   (define make-graphics:media-edit%
     (lambda (super%)
       (let* ([pi (* 2 (asin 1))]

@@ -42,12 +42,7 @@
   (fw:preferences:set-default 'drscheme:test-suite:run-interval 10 number?)
 
   (define (ask-test-suite)
-    (let* ([drscheme-test-dir (ormap (lambda (d)
-				       (let ([d (build-path d 'up "tests" "drscheme")])
-					 (if (directory-exists? d)
-					     d
-					     #f)))
-				     (current-library-collection-paths))]
+    (let* ([drscheme-test-dir (collection-path "tests" "drscheme")]
 	   [frame (make-object mred:frame% "Test Suites")]
 	   [panel (make-object mred:vertical-panel% frame)]
 	   [top-panel (make-object mred:vertical-panel% panel)]
@@ -66,26 +61,23 @@
 	(send bottom-panel stretchable-height #f)
 	(let* ([tests
 		(core:function:quicksort
-		 (core:function:foldl 
-		  (lambda (x l)
-		    (if (and (file-exists? (build-path drscheme-test-dir x))
-			     (>= (string-length x) 3)
-			     (string=? ".ss" (substring x (- (string-length x) 3) (string-length x))))
-			(cons x l)
-			l))
-		  null
-		  (directory-list drscheme-test-dir))
+		 (map 
+		  symbol->string
+		  (call-with-input-file (build-path drscheme-test-dir "README") (core:function:compose eval read)))
 		 string<=?)]
 	       [lb (make-object mred:list-box%
 		     #f
+		     tests
 		     top-panel
-		     tests)])
+		     void)])
 
 	  ;; set values from preferences
-	  (let* ([test-suite (fw:preferences:get 'drscheme:test-suite:file-name)])
-	    (send lb set-string-selection test-suite)
-	    (send lb set-first-item test-suite)
-	    (fw:test:run-interval (fw:preferences:get 'drscheme:test-suite:run-interval)))
+	  (let* ([test-suite (fw:preferences:get 'drscheme:test-suite:file-name)]
+		 [num (send lb find-string test-suite)])
+	    (when num
+	      (send lb set-string-selection test-suite)
+	      (send lb set-first-visible-item num)
+	      (fw:test:run-interval (fw:preferences:get 'drscheme:test-suite:run-interval))))
 
 	  (send
 	   (make-object mred:button%

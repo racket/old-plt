@@ -1,6 +1,3 @@
-;; enqueue a low-priority event to put characters in the buffer for
-;; drscheme rather than putting them in directly.
-
 
 (unit/sig drscheme:rep^
   (import [mred : mred-interfaces^]
@@ -204,7 +201,7 @@
 	   (map (lambda (ls)
 		  (map (lambda (s)
 			 (cond
-			   [(is-a? s mred:string-snip%)
+			   [(is-a? s mred:original:string-snip%)
 			    (send s get-text 0 (send s get-count))]
 			   [(string? s) s]
 			   [else "'non-string-snip"]))
@@ -215,72 +212,6 @@
      'mred:console-previous-exprs
      marshall unmarshall))
   
-  (define share-except 
-    (lambda (cp l)
-      (lambda ()
-	(make-parameterization-with-sharing
-	 cp cp
-	 l
-	 (lambda (pm) #f)))))
-
-  (define (dynamic-disable-break f)
-    (with-parameterization ((share-except
-			     (current-parameterization)
-			     (list break-enabled
-				   current-custodian 
-				   current-exception-handler
-				   parameterization-branch-handler)))
-      (lambda ()
-	(mzlib:thread:dynamic-disable-break f))))
-  
-  (define (dynamic-not-killable c needs-break? f)
-    ; Assume breaking is currently disabled
-    (let* ([cp (current-parameterization)]
-	   [result #f]
-	   [t-done (make-semaphore)]
-	   [t (parameterize ([current-custodian c]
-			     [parameterization-branch-handler
-			      (share-except
-			       cp
-			       ; Share break-enabled!
-			       (list current-exception-handler))])
-		   (thread
-		    (lambda ()
-		      (if needs-break?
-			  (with-handlers ([exn:misc:user-break?
-					   void])
-			       (set! result (f)))
-			  (set! result (f)))
-		      (semaphore-post t-done))))]
-	   [orig-t (current-thread)]
-	   [t2 (if needs-break?
-		   (parameterize ([current-custodian c]
-				  [parameterization-branch-handler
-				   (share-except
-				    cp
-				    (list break-enabled current-exception-handler))])
-		       (thread
-			(lambda ()
-			  ; If the original thread is killed, break the
-			  ;  work thread.
-			  (thread-wait orig-t)
-			  (break-thread t))))
-		   #f)]
-	   [kill-t2 (lambda ()
-		      (when t2
-			(parameterize ([current-custodian c])
-			   (kill-thread t2))))])
-      (if needs-break?
-	  (with-handlers ([exn:misc:user-break?
-			   (lambda (x)
-			     (break-thread t)
-			     (kill-t2)
-			     (raise x))])
-	     (mred:yield t-done))
-	  (mred:yield t-done))
-      (kill-t2)
-      result))
-
   (define (make-edit% super%)
     (class super% args
       (inherit insert change-style
@@ -309,6 +240,13 @@
        [super-initialize-console initialize-console]
        [super-reset-console reset-console])
 
+      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;;                                            ;;;
+      ;;;             Zodiac Interface               ;;;
+      ;;;                                            ;;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
       (public
 	[report-exception-error
 	 (lambda (exn)
@@ -353,15 +291,9 @@
 			 #f (sub1 (send file last-position)) 'end)
 		   (send file scroll-to-position start #f finish))
 	       (send file end-edit-sequence)
-	       (send (send file get-canvas) set-focus))))]
+	       (send (send file get-canvas) focus))))]
 	[on-set-media void])
 
-      (override
-	[get-prompt (lambda () "> ")])
-      (public
-	[user-param #f]
-	[user-setting (fw:preferences:get 'drscheme:settings)]
-	[user-custodian (make-custodian)])
       (public
 	[process-edit
 	 (lambda (edit fn start end annotate?)
@@ -379,6 +311,19 @@
 	       (basis:process-sexp/zodiac sexp z fn annotate?)
 	       (basis:process-sexp/no-zodiac sexp fn)))])
 
+      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;;                                            ;;;
+      ;;;                Evaluation                  ;;;
+      ;;;                                            ;;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
+      (override
+	[get-prompt (lambda () "> ")])
+      (public
+	[user-param #f]
+	[user-setting (fw:preferences:get 'drscheme:settings)]
+	[user-custodian (make-custodian)])
       (private
 	[in-evaluation? #f]
 	[in-evaluation-semaphore (make-semaphore 1)]
@@ -437,27 +382,7 @@
 			 (format "The evaluation thread is no longer running, ~
 			 so no evaluation can take place until ~
 			 the next execution."))))))])
-      (override
-       [display-result
-	(lambda (v)
-	  (unless (void? v)
-	    (let ([v (if (basis:r4rs-style-printing? user-setting)
-			 v
-			 (print-convert:print-convert v))])
-	      (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-			      (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
-			     [mzlib:pretty-print:pretty-print-print-hook
-			      (lambda (x _ port) (this-result-write x))])
-		(mzlib:pretty-print:pretty-print v this-result)))))])
       (public
-	[display-results
-	 (lambda (anss)
-	   (let ([c-locked? (locked?)])
-	     (unless (andmap void? anss)
-	       (dynamic-wind
-		(lambda () (lock #f))
-		(lambda () (for-each display-result anss))
-		(lambda () (lock c-locked?))))))]
 	[do-many-buffer-evals
 	 (lambda (edit start end)
 	   (unless in-evaluation?
@@ -470,7 +395,6 @@
 	     (when should-collect-garbage?
 	       (set! should-collect-garbage? #f)
 	       (collect-garbage))
-	     (begin-edit-sequence)
 	     (run-in-evaluation-thread
 	      (lambda ()
 		(protect-user-evaluation
@@ -482,7 +406,6 @@
 				     (lambda (expr recur)
 				       (cond
 					[(basis:process-finish? expr)
-					 (end-edit-sequence)
 					 (void)]
 					[else
 					 (let ([answers (call-with-values
@@ -661,7 +584,13 @@
 			  (semaphore-post running-semaphore)
 			  (update-running))))
 		     (loop))))))))])
-
+      (public
+	[shutting-down? #f]
+	[shutdown 
+	 (lambda ()
+	   (set! shutting-down? #t)
+	   (shutdown-user-custodian))])
+      
 	(private
 	  [running-semaphore (make-semaphore 1)]
 	  [running-on? #f]
@@ -727,9 +656,7 @@
 		 (begin-edit-sequence)
 		 (lock #f)
 		 (let ([starting-at-prompt-mode? prompt-mode?])
-		   (send transparent-edit end-edit-sequence)  ;; wrong thing. Need to save the transparent edits that are in edit-sequences and end the sequences later.
 		   (set! transparent-edit (make-object transparent-io-edit%))
-		   (send transparent-edit begin-edit-sequence)
 		   
 		   ;; ensure that there is a newline before the snip is inserted
 		   (unless (member 'hard-newline
@@ -742,7 +669,7 @@
 		   (unless transparent-edit
 		     (printf "transparent-edit is ~a!" transparent-edit))
 		   (send transparent-edit auto-wrap #t)
-		   (let ([snip (make-object mred:string-snip% transparent-edit)])
+		   (let ([snip (make-object mred:editor-snip% transparent-edit)])
 		     (set! transparent-snip snip)
 		     (insert snip (last-position) (last-position))
 		     (insert (string #\newline) (last-position) (last-position))
@@ -791,14 +718,10 @@
 	  [TIME-FACTOR 10]
 	  [generic-write
 	   (let ([time-of-last-call (current-milliseconds)])
-	     (lambda (transparent-edit? s style-func)
-	       (let ([current-time (current-milliseconds)]
-		     [handle-insertion
+	     (lambda (edit s style-func)
+	       (let ([handle-insertion
 		      (lambda ()
-			(let* ([edit (if transparent-edit?
-					 transparent-edit
-					 this)]
-			       [start (send edit last-position)]
+			(let* ([start (send edit last-position)]
 			       [c-locked? (send edit locked?)])
 			  (send edit lock #f)
 			  (send edit insert
@@ -810,29 +733,11 @@
 			    (send edit set-prompt-position end)
 			    (style-func start end))
 			  (send edit lock c-locked?)))])
-		 
 		 (when prompt-mode?
 		   (insert #\newline)
 		   (set-prompt-mode #f))
-		 (when (and in-evaluation? 
-			    (<= CACHE-TIME (- current-time time-of-last-call)))
-		   (let* ([start (current-milliseconds)]
-			  [_ (end-edit-sequence)]
-			  [_ (when transparent-edit (send transparent-edit end-edit-sequence))]
-			  [end (current-milliseconds)]
-			  [_ (begin-edit-sequence #f)]
-			  [new-cache-time (* TIME-FACTOR (- end start))]
-			  [between
-			   (min (max MIN-CACHE-TIME
-				     new-cache-time)
-				MAX-CACHE-TIME)])
-		     (set! CACHE-TIME between)))
 		 (handle-insertion))))]
 	  [generic-close (lambda () '())]
-	  [flush-console-output
-	   (lambda ()
-	     ;; unimplemented
-	     (void))]
 	  
 	  
 	  [saved-newline? #f]
@@ -842,7 +747,7 @@
 	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
 	       (mred:queue-callback
 		(lambda ()
-		  (generic-write #f
+		  (generic-write this
 				 s 
 				 (lambda (start end)
 				   (change-style result-delta
@@ -869,7 +774,7 @@
 			 [gw
 			  (lambda (s)
 			    (generic-write
-			     #t
+			     transparent-edit
 			     s
 			     (lambda (start end)
 			       (send transparent-edit
@@ -925,7 +830,29 @@
 				 original-write-handler)))
 	      (list this-out this-err this-result)
 	      (list this-out-write this-err-write this-result-write)))])
+
+      (public
+	[display-results
+	 (lambda (anss)
+	   (for-each 
+	    (lambda (v)
+	      (unless (void? v)
+		(let ([v (if (basis:r4rs-style-printing? user-setting)
+			     v
+			     (print-convert:print-convert v))])
+		  (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+				  (lambda (x _ port) (and (is-a? x mred:original:snip%) 1))]
+				 [mzlib:pretty-print:pretty-print-print-hook
+				  (lambda (x _ port) (this-result-write x))])
+		    (mzlib:pretty-print:pretty-print v this-result)))))
+	    anss))])
+
       
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;;					     ;;;
+	;;;                Execution                 ;;;
+	;;;					     ;;;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       (private 
 	[insert-delta
@@ -936,21 +863,13 @@
 	       (change-style delta before after)
 	       (values before after))))])
       (public
-	[shutting-down? #f]
-	[shutdown 
-	 (lambda ()
-	   (set! shutting-down? #t)
-	   (shutdown-user-custodian))]
 	[repl-initially-active? #f])
       (override
 	[reset-console
 	 (let ([first-dir (current-directory)])
 	   (lambda ()
-	     (printf "resetting console~n")
 	     (clear-previous-expr-positions)
-	     (printf "-3~n")
 	     (shutdown-user-custodian)
-	     (printf "-2~n")
 	     (cleanup-transparent-io)
 	     (set! should-collect-garbage? #t)
 
@@ -960,8 +879,6 @@
 	     ;; in case the last evaluation thread was killed, clean up some state.
 	     (lock #f)
 	     (set! in-evaluation? #f)
-
-	     (printf "-1~n")
 
 	     (begin-edit-sequence)
 	     (set-resetting #t)
@@ -979,8 +896,6 @@
 	     (insert-delta (format ".~n") WELCOME-DELTA)
 	     (set! repl-initially-active? #t)
 	     (end-edit-sequence)
-
-	     (printf "0~n")
 
 	     (set! user-setting (fw:preferences:get 'drscheme:settings))
 
@@ -1021,7 +936,6 @@
 			       (invoke-open-unit/sig u))))))])
 
 	       (set! user-custodian ((in-parameterization p current-custodian)))
-	       (printf "1~n")
 	       (with-parameterization p
 		 (lambda ()
 
@@ -1030,8 +944,6 @@
 		   (current-error-port this-err)
 		   (current-input-port this-in)
 		   
-		   (printf "2~n")
-
 		   (global-port-print-handler
 		    (let ([old (global-port-print-handler)])
 		      (lambda (value port)
@@ -1114,8 +1026,6 @@
 				     (send rep report-unlocated-error msg)
 				     (mred:message-box "Uncaught Error" msg))))))))
 		   
-		   (printf "3~n")
-
 		   (let ([directory
 			  (let/ec k
 			    (unless (get-top-level-window)
@@ -1135,8 +1045,6 @@
 				     (lambda ()
 				       (shutdown-user-custodian)))))
 
-		   (printf "4~n")
-		   
 		   ;; set all parameter before constructing eventspace
 		   ;; so that the parameters are set in the eventspace's
 		   ;; parameterization
@@ -1158,8 +1066,6 @@
 				    ;(sleep 1/10)
 				    (update-running)
 				    (f))))
-
-		     (printf "5~n")
 
 		     (mred:event-dispatch-handler
 		      (rec drscheme-event-dispatch-handler
@@ -1192,13 +1098,9 @@
 				  (semaphore-post running-semaphore)
 				  (update-running)))))))
 
-		     (printf "6~n")
-
 		     (set! user-eventspace (mred:make-eventspace))
 		     (mred:current-eventspace user-eventspace)
 		     (init-evaluation-thread p first-box)
-
-		     (printf "7~n")
 
 		     ;; this subterfuge with the extra variable indirection is necessary
 		     ;; so that the correct event-dispatch-handler is installed in
@@ -1212,10 +1114,7 @@
 
 	       (set! user-param p))
 
-	     (printf "8~n")
-
-	     (super-reset-console)
-	     (printf "reset console~n")))]
+	     (super-reset-console)))]
 	[initialize-console
 	 (lambda ()
 	   (super-initialize-console)
@@ -1647,7 +1546,7 @@
       (class super% args
 	(inherit change-style prompt-position set-prompt-position
 		 resetting? set-resetting lock get-text
-		 flush-console-output set-position last-position get-character
+		 set-position last-position get-character
 		 clear-undos set-cursor
 		 do-pre-eval do-post-eval)
 	(rename [super-on-insert on-insert]
@@ -1668,20 +1567,14 @@
 	  [wait-for-sexp (make-semaphore 0)]
 	  
 	  [auto-set-wrap #t]
-	  [on-local-char-NO-LONGER
-	   (lambda (key)
-	     (flush-console-output)
-	     (super-on-local-char key))]
 	  [shutdown
 	   (lambda ()
-	     (flush-console-output)
 	     (set! shutdown? #t)
 	     (lock #t))]
 	  [consumed-delta 
 	   (make-object mred:style-delta% 'change-bold)]
 	  [mark-consumed
 	   (lambda (start end)
-	     (flush-console-output)
 	     (let ([old-resetting resetting?])
 	       (set-resetting #t)
 	       (change-style consumed-delta start end)
@@ -1690,7 +1583,6 @@
 	  [fetch-sexp
 	   (lambda ()
 	     (set-cursor (make-object mred:cursor% 'ibeam))
-	     (flush-console-output)
 	     (let loop ()
 	       (let ([yield/loop? #f]
 		     [answer #f])
@@ -1727,7 +1619,6 @@
 		   (set-cursor #f)))))]
 	  [fetch-char
 	   (lambda ()
-	     (flush-console-output)
 	     (let ([found-char
 		    (lambda (pos)
 		      (mark-consumed pos (add1 pos))
@@ -1803,91 +1694,3 @@
       fw:text:searching%)))
   
   (define edit% (make-edit% console-edit%)))
-
-	 
-#|
-          [generic-write-OLD
-	   ; This must be called within a procedure wrapped by
-	   ; kill-protect
-	   (let ([first-time? #t])
-	     (lambda (edit s style-func)
-	       (printf s)
-	       '(begin
-	       (printf "generic-write.1 ~s~n" (list edit s style-func))
-	       (let ([handle-insertion
-		      (lambda ()
-			(let ([start (send edit last-position)]
-			      [c-locked? (send edit locked?)])
-			  (send edit lock #f)
-			  (send edit insert
-				(if (is-a? s mred:snip%)
-				    (send s copy)
-				    s))
-			  (let ([end (send edit last-position)])
-			    ;(send edit change-style null start end) ; wx
-			    (send edit set-prompt-position end)
-			    (style-func start end))
-			  (send edit lock c-locked?)))])
-		 (if first-time?
-		     (begin
-		       (printf "generic-write.2~n")
-		       (set! first-time? #f)
-		       (semaphore-wait timer-sema)
-		       (begin-edit-sequence #f)
-		       (handle-insertion)
-		       (printf "generic-write.3~n")
-		       (end-edit-sequence)
-		       (printf "generic-write.4~n")
-		       (semaphore-post timer-sema))
-		     (begin
-		       (semaphore-wait timer-sema)
-		       (printf "generic-write.5~n")
-		       (unless timer-on
-			 (let ([on-box (box (if transparent-edit
-						(list transparent-edit)
-						null))])
-			   (begin-edit-sequence #f)
-			   (when transparent-edit
-			     (send transparent-edit begin-edit-sequence))
-			   (set! timer-on on-box)
-			   (parameterize ([current-custodian my-custodian]
-					  [parameterization-branch-handler
-					   (share-except
-					    (current-parameterization)
-					    (list current-exception-handler))])
-			     (thread
-			      (lambda ()
-				(dynamic-wind
-				 void
-				 (lambda ()
-				   (sleep (/ CACHE-TIME 1000.)))
-				 (lambda ()
-				   (semaphore-wait timer-sema)
-				   (when (unbox on-box)
-				     (printf "generic-write.6~n")
-				     (let* ([start (current-milliseconds)]
-					    [_ (begin (for-each (lambda (e) (send e end-edit-sequence))
-								(unbox on-box))
-						      (end-edit-sequence))]
-					    [end (current-milliseconds)]
-					    [new-cache-time (* TIME-FACTOR (- end start))]
-					    [between
-					     (min (max MIN-CACHE-TIME
-						       new-cache-time)
-						  MAX-CACHE-TIME)])
-				       (printf "generic-write.7~n")
-				       (set! CACHE-TIME between)
-				       (set! timer-on #f)))
-				   (semaphore-post timer-sema))))))))
-		       (printf "generic-write.8~n")
-		       (begin-edit-sequence #f)
-		       (set-position (last-position))
-		       (when (and prompt-mode?)
-			 (insert #\newline))
-		       (handle-insertion)
-		       (printf "generic-write.9~n")
-		       (end-edit-sequence)
-		       (semaphore-post timer-sema)
-		       (set-prompt-mode #f)
-		       (printf "generic-write.10~n")))))))]
-|#

@@ -252,6 +252,8 @@
      (let ([sym (string->symbol fn)])
        (dynamic-wind
 	(lambda ()
+	  (unless (equal? fn (global-defined-value 'working-on-fn))
+	    (printf "~a slipped by (last known: ~a)~n" fn (global-defined-value 'working-on-fn)))
 	  (for-each (lambda (stack-fn)
 		      (let ([old (hash-table-get file-ht stack-fn (lambda () null))])
 			(unless (member fn old)
@@ -263,11 +265,13 @@
 	(lambda ()
 	  (set! file-stack (cdr file-stack))))))))
 
+(define working-on-fn #f)
+
 (define check-require/proc
   (lambda (filename)
     (unless (file-exists? filename)
       (error 'check-require/proc "file does not exist: ~a~n" filename))
-
+    
     (let* ([sym (string->symbol filename)]
 	   [load/save
 	    (lambda (filename reason)
@@ -275,23 +279,27 @@
 	      (let ([anss (call-with-values (lambda () (load filename)) list)])
 		(hash-table-put! value-ht sym anss)
 		(apply values anss)))]
+	   [last-working-on (global-defined-value 'working-on-fn)]
 	   [hash-table-maps?
 	    (lambda (ht value)
 	      (let/ec k
 		(hash-table-get ht value (lambda () (k #f)))
 		#t))])
-      (if (hash-table-maps? value-ht sym)
-	  (let* ([secs (hash-table-get mods-ht sym)]
-		 [reason (ormap (lambda (fn)
-				  (if (< (hash-table-get mods-ht (string->symbol fn))
-					 (file-or-directory-modify-seconds fn))
-				      fn
-				      #f))
-				(cons filename (hash-table-get file-ht sym (lambda () null))))])
-	    (if reason
-		(load/save filename (format "~a was modified" reason))
-		(apply values (hash-table-get value-ht sym))))
-	  (load/save filename "never before loaded")))))
+      (global-defined-value 'working-on-fn filename)
+      (begin0
+	(if (hash-table-maps? value-ht sym)
+	    (let* ([secs (hash-table-get mods-ht sym)]
+		   [reason (ormap (lambda (fn)
+				    (if (< (hash-table-get mods-ht (string->symbol fn))
+					   (file-or-directory-modify-seconds fn))
+					fn
+					#f))
+				  (cons filename (hash-table-get file-ht sym (lambda () null))))])
+	      (if reason
+		  (load/save filename (format "~a was modified" reason))
+		  (apply values (hash-table-get value-ht sym))))
+	    (load/save filename "never before loaded"))
+	(global-defined-value 'working-on-fn last-working-on)))))
 
 (define-macro require-relative-library
   (lambda (filename)
@@ -302,6 +310,15 @@
 	(build-path
 	 (apply collection-path require-relative-collection)
 	 ,filename)))))
+
+(define-macro require-relative-library-unit/sig
+  (lambda (filename)
+    (let ([g (gensym "require-relative-library-unit/sig")])
+      `(let ([,g (require-relative-library ,filename)])
+	 (printf "requie-relative-library-unit/sig: ~a~n" filename)
+	 (unless (unit/sig? ,g)
+	   (error 'require-relative-library-unit/sig "not a unit/sig: ~a~n" ,g))
+	 ,g))))
 
 (define-macro require-library
   (lambda (filename . collections)
@@ -315,6 +332,14 @@
 	    (build-path
 	     (apply collection-path h)
 	     f)))))))
+
+(define-macro require-library-unit/sig
+  (lambda (filename . collections)
+    (let ([g (gensym "require-library-unit/sig")])
+      `(let ([,g (require-relative-library ,filename ,@collections)])
+	 (unless (unit/sig? ,g)
+	   (error 'require-library-unit/sig "not a unit/sig: ~a~n" ,g))
+	 ,g))))
 
 
 (define graphical-debug? #t)

@@ -761,6 +761,11 @@ Scheme_Object *MrEdEventspaceConfig(Scheme_Object *e)
   return (Scheme_Object *)((MrEdContext *)e)->main_config;
 }
 
+Scheme_Object *MrEdEventspaceThread(Scheme_Object *e)
+{
+  return (Scheme_Object *)((MrEdContext *)e)->handler_running;
+}
+
 Scheme_Object *MrEdGetFrameList(void)
 {
   MrEdContext *c;

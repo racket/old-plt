@@ -12,6 +12,7 @@ extern Scheme_Type mred_eventspace_type;
 extern Scheme_Object *MrEdGetFrameList(void);
 extern int MrEdCheckForBreak(void);
 extern Scheme_Object *MrEdEventspaceConfig(Scheme_Object *);
+extern Scheme_Object *MrEdEventspaceThread(Scheme_Object *e);
 
 extern Scheme_Object *MrEdMakeEventspace(Scheme_Config *c);
 extern int wxsIsContextShutdown(void *cx);

@@ -1579,6 +1579,19 @@ static Scheme_Object *wxSchemeMakeEventspace(int, Scheme_Object **)
   return (Scheme_Object *)MrEdMakeEventspace((Scheme_Config *)NULL);
 }
 
+static Scheme_Object *wxEventspaceHandlerThread(int argc, Scheme_Object **argv)
+{
+  if (SCHEME_TYPE(argv[0]) == mred_eventspace_type) {
+    Scheme_Object *v;
+    v = MrEdEventspaceThread(argv[0]);
+    if (!v)
+      v = scheme_false;
+    return v;
+  }
+
+  scheme_wrong_type("eventspace-handler-thread", "eventspace", 0, argc, argv);
+}
+
 static Scheme_Object *queue_callback(int argc, Scheme_Object **argv)
 {
   MrEd_add_q_callback("queue-callback", argc, argv);
@@ -2525,6 +2538,11 @@ static void wxScheme_Install(Scheme_Env *global_env)
   scheme_install_xc_global("main-eventspace?",
 			   scheme_make_prim_w_arity(CAST_SP main_eventspace_p,
 						    "main-eventspace?",
+						    1, 1),
+			   global_env);
+  scheme_install_xc_global("eventspace-handler-thread",
+			   scheme_make_prim_w_arity(CAST_SP wxEventspaceHandlerThread,
+						    "eventspace-handler-thread",
 						    1, 1),
 			   global_env);
 

@@ -1,69 +1,79 @@
 
-; Defines a simple text and/or pasteboard editor program, which
-; demonstrates how to use the basic editor classes. The program also
-; demonstrates how to create menus.
+(module draw mzscheme
+  (require (lib "mred.ss" "mred")
+	   (lib "class.ss")
+	   (lib "string.ss"))
 
-(require-relative-library "graph.ss") ; defines the box and graph snips
+  (provide draw-snip%
+	   ;; the name `snip-class' isimportant!
+	   (rename draw-snip-class snip-class))
 
-(define (new-text-frame) (new-frame text%))
-(define (new-pasteboard-frame) (new-frame pasteboard%))
+  ;; A simple snip class that makes an empty square of a certain
+  ;; size. Try (make-object draw-snip% 100 100) in DrScheme to get an
+  ;; empty box (100 pixels x 100 pixles) as the result.
 
-(define (new-frame editor%)
-  (define f (make-object frame% "Simple Editor" #f 400 400))
-  (define c (make-object editor-canvas% f))
-  (define e (make-object editor%))
-  (define mb (make-object menu-bar% f))
+  (define draw-snip%
+    (class snip%
+      (inherit get-admin set-snipclass set-count)
+      (init-field w h)
+      (override*
+	[get-extent  ; called by an editor to get the snip's size
+	 (lambda (dc x y wbox hbox descentbox spacebox lspacebox rspacebox)
+	   (when hbox
+	     (set-box! hbox h))
+	   (when wbox
+	     (set-box! wbox w))
+	   (when descentbox
+	     (set-box! descentbox 0))
+	   (when spacebox
+	     (set-box! spacebox 0))
+	   (when rspacebox
+	     (set-box! rspacebox 0))
+	   (when lspacebox
+	     (set-box! lspacebox 0)))]
+	[draw  ; called by an editor to draw the snip
+	 (lambda (dc x y . other)
+	   (let* ((xw (sub1 (+ x w)))
+		  (yh (sub1 (+ y h)))
+		  (x (add1 x))
+		  (y (add1 y)))
+	     (send dc draw-line x y xw y)
+	     (send dc draw-line xw y xw yh)
+	     (send dc draw-line x yh xw yh)
+	     (send dc draw-line x y x yh)))]
+	[copy  ; clones the snip
+	 (lambda ()
+	   (make-object draw-snip% w h))]
+	[write  ; marshals the snip to a text stream
+	 (lambda (stream)
+	   (send stream << w)
+	   (send stream << h))]
+	[resize  ; called by a pasetboard editor to resize the snip
+	 (lambda (w-in h-in)
+	   (set! w w-in)
+	   (set! h h-in)
+	   ;; send resize notification to the editor containing the snip
+	   (let ([admin (get-admin)])
+	     (when admin
+	       (send admin resized this #t)))
+	   #t)])
+      (super-instantiate ())
+      ;; Need to set the "class" for unmarshaling from text stream
+      (set-snipclass (send (get-the-snip-class-list) find "(lib \"draw.ss\" \"mrdemo\")"))
+      (set-count 1)))
 
-  (define file-menu (make-object menu% "File" mb))
-  (define edit-menu (make-object menu% "Edit" mb))
-  (define font-menu (make-object menu% "Font" mb))
-
-  (make-object menu-item% "New Text Frame" file-menu
-	       (lambda (item event) 
-		 (new-text-frame))
-	       #\N)
-  (make-object menu-item% "New Pasteboard Frame" file-menu
-	       (lambda (item event) 
-		 (new-pasteboard-frame)))
-
-  (make-object menu-item% "Open..." file-menu
-	       (lambda (item event) 
-		 (send e load-file ""))
-	       #\O)
-  (make-object menu-item% "Save As..." file-menu
-	       (lambda (item event) 
-		 (send e save-file ""))
-	       #\S)
-  (make-object separator-menu-item% file-menu)
-  (make-object menu-item% "Print..." file-menu
-	       (lambda (item event)
-		 (send e print))
-	       #\P)
-  (make-object separator-menu-item% file-menu)
-  (make-object menu-item% "Close" file-menu
-	       (lambda (item event)
-		 (send f show #f))
-	       #\Q)
-
-  (append-editor-operation-menu-items edit-menu #f)
-  (make-object menu-item% "Insert Plain Box" edit-menu
-	       (lambda (item event)
-		 (send e insert (make-object draw-snip% 100 100))))
-  (make-object menu-item% "Insert Graph..." edit-menu
-	       (lambda (item event)
-		 (let ([s (get-text-from-user "Formula"
-					      "Formula to plot in [0,1]:"
-					      f
-					      "(lambda (x) x)")])
-		   (when s
-		     (let ([v (read-from-string s)])
-		       (send e insert 
-			     (make-object graph-snip% v)))))))
-
-  (append-editor-font-menu-items font-menu)
-  ((current-text-keymap-initializer) (send e get-keymap))
-  (send c set-editor e)
-  (send f show #t)
-  f)
-
-(new-text-frame)
+  ; The snip "class" is used for unmarshaling a snip from a text stream
+  (define draw-snip-class
+    (make-object
+     (class snip-class%
+       (inherit set-classname)
+       (override*
+	[read
+	 (lambda (stream)
+	   (let ([w-box (box 0)]
+		 [h-box (box 0)])
+	     (send stream >> w-box)
+	     (send stream >> h-box)
+	     (make-object draw-snip% (unbox w-box) (unbox h-box))))])
+       (super-instantiate ())
+       (set-classname "(lib \"draw.ss\" \"mrdemo\")")))))

@@ -12,17 +12,18 @@
 
   ;; add the new settings
   (basis:add-setting 
-   (let ([s (basis:copy-setting (basis:find-setting-named "MzScheme"))])
-     (basis:set-setting-name! s "MrEd")
+   (let ([s (basis:copy-setting (basis:find-setting-named
+				 "Textual Full Scheme (MzScheme)"))])
+     (basis:set-setting-name! s "Graphical Full Scheme (MrEd)")
      s))
   (basis:add-setting 
-   (let ([s (basis:copy-setting (basis:find-setting-named "Textual Full Scheme"))])
-     (basis:set-setting-name! s "Graphical Full Scheme")
-     (basis:set-setting-vocabulary-symbol! s 'mred-debug)
+   (let ([s (basis:copy-setting (basis:find-setting-named
+				 "Textual Full Scheme without Debugging (MzScheme)"))])
+     (basis:set-setting-name! s "Graphical Full Scheme without Debugging (MrEd)")
      s))
 
   (fw:application:current-app-name "DrScheme")
-  (fw:version:add-spec 'd 3)
+  (fw:version:add-spec 'd 4)
   
   
   ;; add preferences

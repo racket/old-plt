@@ -7,7 +7,7 @@ It supports three methods:
   get-bundle : (-> bundle<%>)
     returns the bundle that this manager manages
 
-  create-view : ((snip -> void) -> void)
+  create-view : (bundle-frame% (snip -> void) -> void)
     constructs a snip that displays the Bundle that this manager
     manages. Calls its argument with the snip, which must insert
     the snip into an editor%.
@@ -57,6 +57,11 @@ using the interpreter pattern:
 
 --
 
+bundle-frame%
+
+    enable-children : (boolean -> void)
+      Enables or disables the buttons that allow creation of new children nodes.
+    
 bundle-pasteboard%
 
 leaf-bundle-snip%
@@ -177,8 +182,8 @@ node-bundle-snip%
       (public
         [get-bundle (lambda () contents)]
         [create-view
-         (lambda (insert-into-editor)
-           (let* ([view (make-object bundle-pasteboard%)]
+         (lambda (frame insert-into-editor)
+           (let* ([view (make-object bundle-pasteboard% frame)]
                   [snip (make-object editor-snip% view)])
              (insert-into-editor snip)
              (send view set-contents-snip (build-view-contents view))
@@ -344,7 +349,7 @@ node-bundle-snip%
         (set-children _children))))
   
   (define bundle-pasteboard%
-    (class pasteboard% ()
+    (class pasteboard% (frame)
       (private
         [contents-snip #f])
       (public
@@ -371,7 +376,17 @@ node-bundle-snip%
              (get-snip-location snip #f yb #t)
              (unbox yb)))])
       (inherit invalidate-bitmap-cache)
+      (rename [super-after-select after-select])
       (override
+        [after-select
+         (lambda (snip on?)
+           (super-after-select snip on?)
+           (cond
+             [(not on?) 
+              (send frame enable-children #f)]
+             [(is-a? snip node-bundle-snip%)
+              (send frame enable-children #t)]
+             [else (void)]))]
 	[after-move-to
 	 (lambda (snip x y dragging)
 	   (invalidate-bitmap-cache))]
@@ -443,7 +458,7 @@ node-bundle-snip%
         [get-width (lambda () width)]
         [get-height (lambda () height)])
       (override
-	[get-extent
+        [get-extent
 	 (lambda (dc x y w h descent space lspace rspace)
 	   
 	   (let-values ([(tw th _1 _2)
@@ -479,72 +494,72 @@ node-bundle-snip%
   (define int1 (make-object node-bundle% 'z (list leaf1 leaf2)))
   (define int2 (make-object node-bundle% 'y (list leaf2 int1 leaf2)))
   (define int3 (make-object node-bundle% 'x (list int2 leaf2)))
-  (printf "~s~n"
-          (send int3 traverse
-                (lambda (c x)
-                  (cond
-                    [(is-a? c leaf-bundle%)
-                     (append (send c get-names) x)]
-                    [(is-a? c node-bundle%)
-                     (map (lambda (x) (list (send c get-label) x))
-                          x)]
-                    [else (error)]))
-                null))
+  
   (define bundle (make-object bundle-manager% int2))
   
+  (define bundle-frame%
+    (class frame% ()
+      (public
+        [enable-children
+         (lambda (x)
+           (send new-leaf-button enable x)
+           (send new-node-button enable x))])
+      (sequence
+        (super-init "Bundles" #f 400 400))
+      (private
+        [button-panel (make-object horizontal-panel% this)]
+        [text (make-object text%)]
+        [new-bundle-button (make-object button%
+                             "New Bundle"
+                             button-panel
+                             (lambda x
+                               (new-bundle)))]
+        [new-leaf-button (make-object button%
+                           "New Leaf"
+                           button-panel
+                           (lambda x
+                             (new-leaf)))]
+        [new-node-button (make-object button%
+                           "New Node"
+                           button-panel
+                           (lambda x
+                             (new-node)))]
+        [canvas (make-object editor-canvas%
+                  this
+                  text)]
+        
+        [new-leaf
+         (lambda ()
+           (let/ec k
+             (let ([out
+                    (lambda ()
+                      (bell)
+                      (k #f))]
+                   [snip (send text get-focus-snip)])
+               (unless (is-a? snip editor-snip%)
+                 (out))
+               (let ([pb (send snip get-editor)])
+                 (unless (is-a? pb bundle-pasteboard%)
+                   (out))
+                 (let ([snip (send pb find-next-selected-snip #f)])
+                   (unless (and snip
+                                (is-a? snip node-bundle-snip%)
+                                (not (send pb find-next-selected-snip snip)))
+                     (out))
+                   (let ([node-bundle (send snip get-bundle)])
+                     (send node-bundle add-child (make-object leaf-bundle% '(zzz)))))))))]
+        
+        [new-node void]
+        
+        [new-bundle
+         (lambda ()
+           (let ([name (get-text-from-user "New bundle" "Name of new bundle")])
+             (send text insert name)
+             (send bundle create-view this (lambda (snip) (send text insert snip)))
+             (send text insert #\newline)))])
+      (sequence
+        (send button-panel stretchable-height #f)
+        (enable-children #f))))
+  
   (define (new-bundle-frame)
-    (define frame (make-object frame% "Bundles" #f 400 400))
-    (define button-panel (make-object horizontal-panel% frame))
-    (define text (make-object text%))
-    (define new-bundle-button (make-object button%
-                                           "New Bundle"
-                                           button-panel
-                                           (lambda x
-                                             (new-bundle))))
-    (define new-leaf-button (make-object button%
-                                         "New Leaf"
-                                         button-panel
-                                         (lambda x
-                                           (new-leaf))))
-    (define new-node-button (make-object button%
-                                         "New Node"
-                                         button-panel
-                                         (lambda x
-                                           (new-node))))
-    (define canvas (make-object editor-canvas%
-                                frame
-                                text))
-    
-    (define (new-leaf) 
-      (let/ec k
-        (let ([out
-               (lambda ()
-                 (bell)
-                 (k #f))]
-              [snip (send text get-focus-snip)])
-          (printf "~a~n" snip)
-          (unless (is-a? snip editor-snip%)
-            (out))
-          (let ([pb (send snip get-editor)])
-            (printf "~a~n" pb)
-            (unless (is-a? pb bundle-pasteboard%)
-              (out))
-            (let ([snip (send pb find-next-selected-snip #f)])
-              (printf "~a~n" snip)
-              (unless (and snip
-                           (is-a? snip node-bundle-snip%)
-                           (not (send pb find-next-selected-snip snip)))
-                (out))
-              (let ([node-bundle (send snip get-bundle)])
-                (send node-bundle add-child (make-object leaf-bundle% '(zzz)))))))))
-    
-    (define (new-node) (void))
-    
-    (define (new-bundle)
-      (let ([name (get-text-from-user "New bundle" "Name of new bundle")])
-        (send text insert name)
-        (send bundle create-view (lambda (snip) (send text insert snip)))
-        (send text insert #\newline)))
-
-    (send button-panel stretchable-height #f)
-    (send frame show #t)))
+    (send (make-object bundle-frame%) show #t)))

@@ -66,11 +66,17 @@
                               (send p stretchable-width #f)
                               (send p stretchable-height #t)
                               p)]
-         [full-scheme-radio-box-labels
-          '("Textual (MzScheme)" 
-            "Graphical (MrEd)" 
-            "Textual without Debugging (MzScheme)" 
-            "Graphical without Debugging (MrEd)")]
+         [full-scheme-radio-box-label-map
+	  (let ([re (regexp "Full Scheme ")])
+	    (let loop ([settings (cdr (cdr (cdr basis:settings)))] ;; remove teaching languages
+		       [n 0])
+	      (cond
+	       [(null? settings) null]
+	       [else
+		(let ([name (basis:setting-name (car settings))])
+		  (cons (list (regexp-replace re name "") name n)
+			(loop (cdr settings)
+			      (+ n 1))))])))]
          [full-scheme-radio-box #f]
          [full-scheme-radio-box-callback
 	  (lambda ()
@@ -78,15 +84,16 @@
 	     'drscheme:settings
 	     (basis:copy-setting
 	      (basis:find-setting-named
-               (list-ref
-                (send full-scheme-radio-box get-selection)
-                full-scheme-radio-box-labels)))))]
+               (cadr
+		(list-ref
+		 full-scheme-radio-box-label-map
+		 (send full-scheme-radio-box get-selection)))))))]
          [close-full-scheme-radio-box
           (lambda ()
             (when full-scheme-radio-box
               (send full-scheme-panel change-children (lambda (x) null))))]
          [open-full-scheme-radio-box
-          (lambda ()
+          (lambda (setting)
             (cond
               [full-scheme-radio-box
                (send full-scheme-panel change-children
@@ -95,9 +102,13 @@
                (set! full-scheme-radio-box
                      (make-object mred:radio-box% 
                                   #f
-                                  full-scheme-radio-box-labels
+                                  (map car full-scheme-radio-box-label-map)
                                   full-scheme-panel
-                                  (lambda x (full-scheme-radio-box-callback))))]))]
+                                  (lambda x (full-scheme-radio-box-callback))))
+	       (let ([ele (assoc (basis:setting-name setting)
+				 (map cdr full-scheme-radio-box-label-map))])
+		 (when ele
+		   (send full-scheme-radio-box set-selection (cadr ele))))]))]
 	 [full-scheme "Full Scheme"]
          [language-choice-choices (list (first language-levels)
                                         (second language-levels)
@@ -111,7 +122,7 @@
 	    (lambda (choice evt)
 	      (cond
 	       [(string=? full-scheme (send choice get-string-selection))
-		(open-full-scheme-radio-box)
+		(open-full-scheme-radio-box (fw:preferences:get 'drscheme:settings))
 		(full-scheme-radio-box-callback)]
 	       [else
 		(close-full-scheme-radio-box)
@@ -258,17 +269,11 @@
                  (close-full-scheme-radio-box)]
                 [else
                  (send language-choice set-string-selection full-scheme)
-                 (open-full-scheme-radio-box)
-                 (cond
-                   [(string=? (basis:setting-name v) "Textual Full Scheme")
-                    (send full-scheme-radio-box set-selection 0)]
-                   [(string=? (basis:setting-name v) "Graphical Full Scheme")
-                    (send full-scheme-radio-box set-selection 1)]
-                   [(string=? (basis:setting-name v) "MzScheme")
-                    (send full-scheme-radio-box set-selection 2)]
-                   [(string=? (basis:setting-name v) "MrEd")
-                    (send full-scheme-radio-box set-selection 3)]
-                   [else (void)])])
+                 (open-full-scheme-radio-box v)
+		 (let ([map (assoc (basis:setting-name v)
+				   full-scheme-radio-box-label-map)])
+		   (when map
+		     (send full-scheme-radio-box set-selection (caddr map))))])
 	      
 	      (send printing set-selection
 		    (get-printer-style-number (basis:setting-printing v)))

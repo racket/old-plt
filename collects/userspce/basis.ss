@@ -123,7 +123,7 @@
              (printing constructor-style)
 	     (define-argv? #f)))
 	  (make-setting/parse
-	   `((name "Textual Full Scheme")
+	   `((name "Textual Full Scheme (MzScheme)")
 	     (vocabulary-symbol mzscheme-debug)
 	     (extra-definitions-unit-name #f)
 	     (macro-libraries ())
@@ -145,7 +145,7 @@
              (printing r4rs-style)
 	     (define-argv? #t)))
 	  (make-setting/parse
-	   `((name "MzScheme")
+	   `((name "Textual Full Scheme without Debugging (MzScheme)")
 	     (extra-definitions-unit-name #f)
 	     (macro-libraries ())
 	     (vocabulary-symbol mzscheme)
@@ -548,8 +548,7 @@
   ;; effect: sets the parameters for drscheme and drscheme-jr
   (define (initialize-parameters custodian setting)
     (let*-values ([(namespace-flags) (let ([name (setting-name setting)])
-                                       (if (or (string=? "MrEd" name)
-                                               (string=? "MrEd Debug" name))
+                                       (if (regexp-match "MrEd" name)
                                            (list 'mred)
                                            (list)))]
                   [(extra-definitions)

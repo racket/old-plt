@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.24 1999/07/16 05:11:09 robby Exp $
+;; $Id: testr.ss,v 1.25 1999/07/20 22:04:42 mflatt Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -333,6 +333,19 @@
 ;; RADIO-BOX 
 ;;
 
+  (define (build-labels radio-box)
+    (string-append
+     (format "~s" (send radio-box get-item-label 0))
+     (let loop ([n (- (send radio-box get-number) 1)])
+       (cond
+	[(zero? n) ""]
+	[else (string-append " "
+			     (format "~s"
+				     (send radio-box get-item-label
+					   (- (send radio-box get-number)
+					      n)))
+			     (loop (- n 1)))]))))
+
   (define (set-radio-box! in-cb state) 
     (control-action
      'test:set-radio-box!
@@ -344,12 +357,18 @@
 	 (let ([total (send rb get-number)])
 	   (let loop ([n total])
 	     (cond
-	       [(zero? n) (error 'test:set-radio-box! "did not find ~e as an enabled label for ~e" state in-cb)]
+	       [(zero? n) (error 'test:set-radio-box!
+				 "did not find ~e as a label for ~e; labels: ~a"
+				 state in-cb
+				 (build-labels in-cb))]
 	       [else (let ([i (- total n)])
-		       (if (and (send rb is-enabled? i)
-				(or (string=? state (send rb get-item-label i))
-				    (string=? state (send rb get-item-plain-label i))))
-			   (send rb set-selection i)
+		       (if (or (string=? state (send rb get-item-label i))
+			       (string=? state (send rb get-item-plain-label i)))
+			   (if (send rb is-enabled? i)
+			       (send rb set-selection i)
+			       (error 'test:set-radio-box!
+				      "label ~e is disabled"
+				      state))
 			   (loop (- n 1))))])))]
 	[(number? state)
 	 (unless (send rb is-enabled? state)

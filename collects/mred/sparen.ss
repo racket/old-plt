@@ -28,13 +28,15 @@
 				   cache)))
 
     (define scheme-backward-match
-      (opt-lambda (edit start end [cache #f])
+      (case-lambda
+       [(edit start end cache)
 	(mred:paren:backward-match edit start end
-				    scheme-paren-pairs
-				    scheme-quote-pairs
-				    scheme-comments
-				    #f
-				    cache)))
+				   scheme-paren-pairs
+				   scheme-quote-pairs
+				   scheme-comments
+				   #f
+				   cache)]
+       [(edit start end) (scheme-backward-match edit start end #f)]))
 
     (define scheme-balanced?
       (lambda (edit start end)
@@ -44,10 +46,12 @@
 			       scheme-comments)))
     
     (define scheme-backward-containing-sexp
-      (opt-lambda (edit start end [cache #f])
+      (case-lambda
+       [(edit start end cache)
 	(mred:paren:backward-match edit start end
 				    scheme-paren-pairs
 				    scheme-quote-pairs
 				    scheme-comments
 				    #t
-				    cache))))
+				    cache)]
+       [(edit start end) (scheme-backward-containing-sexp edit start end #f)])))

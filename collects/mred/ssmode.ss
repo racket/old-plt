@@ -186,6 +186,18 @@
 	  (rename [super-on-char on-char]
 		  [super-deinstall deinstall]
 		  [super-install install])
+
+	  (private
+	    [in-single-line-comment?
+	     (lambda (edit position)
+	       (let ([line (send edit position-line position)])
+		 (ormap
+		  (lambda (comment-start)
+		    (let ([f (send edit find-string comment-start -1 position)])
+		      (if (= -1 f)
+			  #f
+			  (= (send edit position-line f) line))))
+		  mred:scheme-paren:scheme-comments)))])
 	  (private
 	    [remove-indents-callback
 	     (mred:preferences:add-preference-callback
@@ -308,7 +320,8 @@
 					   mred:scheme-paren:scheme-paren-pairs)))]
 			       [is-left-paren? (is-paren? car)]
 			       [is-right-paren? (is-paren? cdr)])
-			  (when (= here there)
+			  (when (and (= here there)
+				     (not (in-single-line-comment? edit here)))
 			    (let/ec k
 			      (let-values
 				  ([(left right)
@@ -386,6 +399,8 @@
 						  (lambda (x) x)]
 						 [else (find-right-paren (- p 1))]))])
 		   (cond
+		    [(in-single-line-comment? edit here)
+		     (send edit insert char)]
 		    [(and (not (= 0 here))
 			  (char=? (string-ref (get-text (- here 1) here) 0) #\\))
 		     (send edit insert char)]

@@ -34,7 +34,7 @@ exit 1
   (error './install "no arguments allowed on the command line")
   (exit 1))
 
-(define release-date "May 2003")
+(define release-date "August 2003")
 
 (define didnothing " (nothing to do)")
 

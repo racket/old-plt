@@ -221,11 +221,7 @@
   ; value-now : signal[a] -> a
   (define (value-now val)
     (if (behavior? val)
-        (let ([v1 (signal-value val)])
-          (if (cons? v1)
-              (cons (value-now (first v1))
-                    (value-now (rest v1)))
-              v1))
+        (signal-value val)
         val))
   
   (define (value-now/copy val)
@@ -437,7 +433,7 @@
         (proc->signal
          (case-lambda
            [()
-            (when (not (eq? init (value-now e-b)))
+            (when (not (eq? init (signal-value e-b)))
               (unregister ret init)
               (set! init (value-now e-b))
               (register ret init)

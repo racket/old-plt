@@ -60,7 +60,7 @@
      (lambda (x)
        (if (<= (abs x) 0.5)
 	   (make-complex (cosh x) (sinh x))
-	   (begin
+	   (let ()
 	     (define e1 (exp x))
 	     (define e2 (/ 0.5 e1))
 	     (define e3 (* 0.5 e1))

@@ -2,7 +2,7 @@
   (import)
 
   (define (warning s x)
-    (printf s (if (exn? x) (exn-message x) x)))
+    (printf (string-append s "~n") (if (exn? x) (exn-message x) x)))
 
   ;; get-info : (listof string) -> (union #f (string (-> TST) -> TST))
   (define get-info

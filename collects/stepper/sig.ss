@@ -106,4 +106,6 @@
 (define-signature stepper:mred-extensions^
   (stepper-canvas%
    stepper-text%
-   image?))
+   image?
+   separator-snip% ;; these last two aren't required, but are useful 
+   vertical-separator-snip%)) ;; for debugging purposes

@@ -342,30 +342,35 @@
                      [(annotated-sub-exprs free-bindings-sub-exprs)
                       (dual-map non-tail-recur sub-exprs)]
                      [(free-bindings) (apply binding-set-union free-bindings-sub-exprs)])
-                   (if cheap-wrap?
-                       (values (expr-cheap-wrap annotated-sub-exprs) free-bindings)
-                       (let* ([arg-temps (build-list (length sub-exprs) get-arg-binding)]
-                              [arg-temp-syms (map z:binding-var arg-temps)] 
-                              [let-clauses `((,arg-temp-syms 
-                                              (#%values ,@(map (lambda (x) `(#%quote ,*unevaluated*)) arg-temps))))]
-                              [set!-list (map (lambda (arg-symbol annotated-sub-expr)
-                                                `(#%set! ,arg-symbol ,annotated-sub-expr))
-                                              arg-temp-syms annotated-sub-exprs)]
-                              [new-tail-bound (binding-set-union tail-bound arg-temps)]
-                              [app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
-                              [annotate-app? (let ([fun-exp (z:app-fun expr)])
-                                               (and (z:top-level-varref? fun-exp)
-                                                    (non-annotated-proc? fun-exp)))]
-                              [final-app (break-wrap (simple-wcm-wrap app-debug-info 
-                                                                      (if annotate-app?
-                                                                          (return-value-wrap arg-temp-syms)
-                                                                          arg-temp-syms)))]
-                              [debug-info (make-debug-info-app new-tail-bound
-                                                               (binding-set-union free-bindings arg-temps)
-                                                               'not-yet-called)]
-                              [let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))]
-                              [let-exp `(#%let-values ,let-clauses ,let-body)])
-                         (values let-exp free-bindings))))]
+                  (cond [cheap-wrap?
+                         (values (expr-cheap-wrap annotated-sub-exprs) free-bindings)]
+                        [ankle-wrap?
+                         (values (wcm-break-wrap
+                                  (make-debug-info-normal free-bindings) annotated-sub-exprs)
+                                 free-bindings)]
+                        [foot-wrap?
+                         (let* ([arg-temps (build-list (length sub-exprs) get-arg-binding)]
+                                [arg-temp-syms (map z:binding-var arg-temps)] 
+                                [let-clauses `((,arg-temp-syms 
+                                                (#%values ,@(map (lambda (x) `(#%quote ,*unevaluated*)) arg-temps))))]
+                                [set!-list (map (lambda (arg-symbol annotated-sub-expr)
+                                                  `(#%set! ,arg-symbol ,annotated-sub-expr))
+                                                arg-temp-syms annotated-sub-exprs)]
+                                [new-tail-bound (binding-set-union tail-bound arg-temps)]
+                                [app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
+                                [annotate-app? (let ([fun-exp (z:app-fun expr)])
+                                                 (and (z:top-level-varref? fun-exp)
+                                                      (non-annotated-proc? fun-exp)))]
+                                [final-app (break-wrap (simple-wcm-wrap app-debug-info 
+                                                                        (if annotate-app?
+                                                                            (return-value-wrap arg-temp-syms)
+                                                                            arg-temp-syms)))]
+                                [debug-info (make-debug-info-app new-tail-bound
+                                                                 (binding-set-union free-bindings arg-temps)
+                                                                 'not-yet-called)]
+                                [let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))]
+                                [let-exp `(#%let-values ,let-clauses ,let-body)])
+                           (values let-exp free-bindings))]))]
 	       
 	       [(z:struct-form? expr)
 		(let ([super-expr (z:struct-form-super expr)]

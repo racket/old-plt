@@ -109,4 +109,4 @@
       (cddr step))))
  steps)
 
-(send f show #t)
+(lambda () (send f show #t))

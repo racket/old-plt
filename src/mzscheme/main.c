@@ -59,7 +59,7 @@
 # include <console.h>
 # pragma far_data on
 # include <SIOUX.h>
-# pragma far_data off
+# pragma far_data reset
 #endif
 #ifdef MACINTOSH_SET_STACK
 # include <Memory.h>

@@ -4413,7 +4413,7 @@ void mx_cleanup(void) {
 }
 
 Scheme_Object *scheme_module_name(void) {
-  mx_name = scheme_intern_symbol("mxmain");
+  mx_name = scheme_intern_symbol(MXMAIN);
   return mx_name;
 }
 
@@ -4486,12 +4486,12 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   scheme_add_atexit_closer(mx_exit_closer);
   atexit(mx_cleanup);
- 
+
   return scheme_void;
 }
 
 Scheme_Object *scheme_reload(Scheme_Env *env) {
-  return scheme_void;
+  return scheme_initialize(env);
 }
 
 // for some reason, couldn't put ATL stuff in browser.cxx

@@ -451,6 +451,7 @@
 					    'forward 0 'eof #f)))))
 	  (send km map-function ":m:q" "reflow-paragraph")
 	  (send km map-function ":a:q" "reflow-paragraph")
+	  (special-option-key #t)
 
 	  (install-text-functions km)
 	  (install-emacs-bindings km)

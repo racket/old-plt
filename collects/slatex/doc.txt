@@ -13,10 +13,20 @@ To use SLaTeX in a program, require _slatex.ss_:
 
   (require-library "slatex.ss" "slatex")
 
-The file slatex.ss defines one procedure:
+The file slatex.ss defines three procedures:
 
 > (slatex filename)
 
-which accepts a string naming a file and runs slatex and latex on the
-file. Note that this must be the correct filename -- do include the ".tex"
-suffix.
+This procedure accepts a string naming a file and runs slatex and latex on
+the file. It calls `filename->latex-filename' on `filename'.
+
+> (latex filename)
+
+This procedure `latex's the file named by filename. It calls
+filename->latex-filename on `filename'.
+
+> (filename->latex-filename filename)
+
+This procedure accepts a filename and, if that file exists, it returns
+it. If the filename appended with the suffix `.tex' exists, that filename
+is returned. Otherwise, error is called.

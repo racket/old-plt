@@ -2,12 +2,10 @@
   (provide installer)
 
   (require "mkindex.ss")
-  (require "mkconfig.ss")
 
   (define installer
     (lambda (path) 
-	(create-index-file)
-	(create-server-config-file))))
+	(create-index-file))))
 
 
 

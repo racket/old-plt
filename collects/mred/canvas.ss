@@ -1,3 +1,4 @@
+
 (define mred:canvas@
   (unit/sig mred:canvas^
     (import [mred:debug : mred:debug^] 
@@ -131,4 +132,29 @@
 	  (sequence
 	    (apply super-init args)))))
 
-    (define simple-frame-canvas% (make-simple-frame-canvas% editor-canvas%))))
+    (define simple-frame-canvas% (make-simple-frame-canvas% editor-canvas%))
+    
+    (define make-one-line-canvas%
+      (lambda (super%)
+	(class super% (parent [x -1] [y -1] [w -1] [h -1] 
+			      [name ""] [style 0] [spp 100] [m ()])
+	  (inherit get-media user-min-height)
+	  (rename [super-set-media set-media])
+	  (private
+	    [update-size
+	     (lambda (media)
+	       (unless (null? media)
+		 (let ([top (send media line-location 0 #t)]
+		       [bottom (send media line-location 0 #f)])
+		   (user-min-height (- bottom top)))))])
+	  (public
+	    [set-media
+	     (lambda (media)
+	       (super-set-media media)
+	       (update-size media))])
+	  (sequence
+	    (super-init parent x y w h name style spp m)
+	    (update-size (get-media))))))
+    
+    (define one-line-canvas%
+      (make-one-line-canvas% simple-frame-canvas%))))

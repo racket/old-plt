@@ -307,7 +307,7 @@
 					(report-error (zodiac:interface:zodiac-exn-start-location exn)
 						      (zodiac:interface:zodiac-exn-end-location exn)
 						      (zodiac:interface:zodiac-exn-type exn)
-						      (exn-message exn))
+						      (zodiac:interface:zodiac-exn-message exn))
 					(cleanup)
 					(k #f))])
 		       (let ([zodiac-read (reader)])

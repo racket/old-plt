@@ -4,15 +4,14 @@
 
     (mred:debug:printf 'invoke "drscheme:zodiac-interface@")
 
-    (define-struct (zodiac-exn struct:exn) (start-location end-location type))
+    (define-struct zodiac-exn (message start-location end-location type))
 
     (define dispatch-report
       (lambda (type string start-location end-location)
 	(let* ([start (zodiac:location-offset start-location)]
 	       [finish (add1 (zodiac:location-offset end-location))]
 	       [file (zodiac:location-file start-location)])
-	  (raise (make-zodiac-exn string ((debug-info-handler))
-				  start-location end-location type)))))
+	  (raise (make-zodiac-exn string start-location end-location type)))))
 
     (define report-error
       (lambda (type)

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.1.1.1 1997/12/22 16:11:55 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.2 1998/02/03 18:49:55 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -791,7 +791,7 @@ wxPenList::~wxPenList(void)
 void wxPenList::AddPen (wxPen * pen)
 {
   list->Append(pen); 
-  list->Show(pen, FALSE); /* so it can be collected */
+  list->Show(pen, -1); /* so it can be collected */
 }
 
 wxPen *wxPenList::FindOrCreatePen (wxColour * colour, int width, int style)
@@ -847,7 +847,7 @@ wxBrushList::~wxBrushList(void)
 void wxBrushList::AddBrush(wxBrush *Brush) 
 { 
   list->Append(Brush); 
-  list->Show(Brush, FALSE); /* so it can be collected */
+  list->Show(Brush, -1); /* so it can be collected */
 } 
 
 
@@ -905,7 +905,7 @@ wxFontList::~wxFontList (void)
 void wxFontList::AddFont (wxFont * font)
 {
   list->Append(font);
-  list->Show(font, FALSE); /* so it can be collected */
+  list->Show(font, -1); /* so it can be collected */
 }
 
 wxFont *wxFontList::

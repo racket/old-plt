@@ -470,6 +470,9 @@ Scheme_Object *(*scheme_make_struct_type)(Scheme_Object *base,
 Scheme_Object *(*scheme_make_struct_instance)(Scheme_Object *stype,
 					   int argc,
 					   Scheme_Object **argv);
+Scheme_Object *(*scheme_make_struct_exptime)(Scheme_Object **names, int count,
+						    Scheme_Object *super_exptime,
+						    int flags);
 int (*scheme_is_struct_instance)(Scheme_Object *type, Scheme_Object *v);
 Scheme_Object *(*scheme_struct_ref)(Scheme_Object *s, int pos);
 void (*scheme_struct_set)(Scheme_Object *s, int pos, Scheme_Object *v);
@@ -487,6 +490,7 @@ long (*scheme_hash_key)(Scheme_Object *o);
 long (*scheme_equal_hash_key)(Scheme_Object *o);
 long (*scheme_equal_hash_key2)(Scheme_Object *o);
 Scheme_Object *(*scheme_build_list)(int argc, Scheme_Object **argv);
+void (*scheme_make_list_immutable)(Scheme_Object *l);
 int (*scheme_list_length)(Scheme_Object *list);
 int (*scheme_proper_list_length)(Scheme_Object *list);
 Scheme_Object *(*scheme_alloc_list)(int size);

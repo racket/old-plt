@@ -811,6 +811,7 @@ enum {
 typedef struct Scheme_Config {
   Scheme_Type type;
   MZ_HASH_KEY_EX
+  int *use_count; /* non-zero => copy-on-write of extensions table */
   Scheme_Bucket_Table *extensions;
   Scheme_Object *configs[1];
 } Scheme_Config;
@@ -1249,6 +1250,7 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #define SCHEME_STRUCT_NO_SET 0x10
 #define SCHEME_STRUCT_GEN_GET 0x20
 #define SCHEME_STRUCT_GEN_SET 0x40
+#define SCHEME_STRUCT_EXPTIME 0x80
 
 /*========================================================================*/
 /*                           file descriptors                             */

@@ -267,6 +267,7 @@ scheme_make_struct_values
 scheme_make_struct_names
 scheme_make_struct_type
 scheme_make_struct_instance
+scheme_make_struct_exptime
 scheme_is_struct_instance
 scheme_struct_ref
 scheme_struct_set
@@ -278,6 +279,7 @@ scheme_equal
 scheme_equal_hash_key
 scheme_equal_hash_key2
 scheme_build_list
+scheme_make_list_immutable
 scheme_list_length
 scheme_proper_list_length
 scheme_alloc_list

@@ -233,7 +233,14 @@
 	[(_ name)
 	 (identifier? (syntax name))
 	 (let ([sig (get-sig 'signature->symbols stx #f (syntax name))])
-	   (with-syntax ([e (explode-sig sig #f)])
+	   (with-syntax ([e (let cleanup ([p (explode-sig sig #f)])
+			      ;; Strip struct info:
+			      (list->vector 
+			       (map (lambda (i)
+				      (if (symbol? i)
+					  i
+					  (cons (car i) (cleanup (cdr i)))))
+				    (vector->list (car p)))))])
 	     (syntax 'e)))])))
 
   ;; Internal:

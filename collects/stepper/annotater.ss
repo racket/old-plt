@@ -196,9 +196,9 @@
          (define (simple-wcm-break-wrap debug-info expr)
            (simple-wcm-wrap debug-info (break-wrap expr)))
          
-         (define (late-let-break-wrap var-names lifted-name-gensyms expr)
+         (define (late-let-break-wrap var-names lifted-gensyms expr)
            (if break
-               (let* ([interlaced (apply append (map list var-names lifted-name-gensyms))])
+               (let* ([interlaced (apply append (map list var-names lifted-gensyms))])
                  `(#%begin (,(make-break 'late-let-break) ,@interlaced) ,expr))
                expr))
          
@@ -274,18 +274,21 @@
          ; a) an annotated s-expression
          ; b) a list of varrefs for the variables which occur free in the expression
          ;
-	 ;(z:parsed (union (list-of z:varref) 'all) (list-of z:varref) bool bool -> 
+	 ;(z:parsed (union (list-of z:varref) 'all) (list-of z:varref) bool bool (union #f symbol (list binding symbol)) -> 
          ;          sexp (list-of z:varref))
 	 
-	 (define (annotate/inner expr tail-bound pre-break? top-level?)
+	 (define (annotate/inner expr tail-bound pre-break? top-level? procedure-name-info)
 	   
-	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound #t #f))]
-                  [define-values-recur (lambda (expr) (annotate/inner expr tail-bound #f #f))]
-                  [non-tail-recur (lambda (expr) (annotate/inner expr null #f #f))]
-                  [lambda-body-recur (lambda (expr) (annotate/inner expr 'all #t #f))]
+	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound #t #f #f))]
+                  [define-values-recur (lambda (expr name) (annotate/inner expr tail-bound #f #f name))]
+                  [non-tail-recur (lambda (expr) (annotate/inner expr null #f #f #f))]
+                  [let-rhs-recur (lambda (expr binding dyn-index-sym) 
+                                   (annotate/inner expr null #f #f (list binding dyn-index-sym)))]
+                  [lambda-body-recur (lambda (expr) (annotate/inner expr 'all #t #f #f))]
                   ; note: no pre-break for the body of a let; it's handled by the break for the
                   ; let itself.
-                  [let-body-recur (lambda (expr bindings) (annotate/inner expr (binding-set-union tail-bound bindings) #f #f))]
+                  [let-body-recur (lambda (expr bindings) 
+                                    (annotate/inner expr (binding-set-union tail-bound bindings) #f #f #f))]
                   [cheap-wrap-recur (lambda (expr) (let-values ([(ann _) (non-tail-recur expr)]) ann))]
                   [make-debug-info-normal (lambda (free-bindings)
                                             (make-debug-info expr tail-bound free-bindings null 'none))]
@@ -444,7 +447,7 @@
                      ([(bodies) (z:begin-form-bodies expr)]
                       [(annotated-bodies free-bindings)
                        (dual-map (lambda (expr)
-                                   (annotate/inner expr 'all #f #t)) 
+                                   (annotate/inner expr 'all #f #t #t)) 
                                  bodies)])
                        (values `(#%begin ,@annotated-bodies)
                                (apply binding-set-union free-bindings)))
@@ -512,8 +515,10 @@
                      [(vals) (z:let-values-form-vals expr)]
                      [(_1) (for-each utils:check-for-keyword binding-list)]
                      [(_2) (for-each mark-never-undefined binding-list)]
+                     [(lifted-gensym-sets) (map (lambda (x) (map get-lifted-gensym x)) binding-sets)]
+                     [(lifted-gensyms) (apply append lifted-gensym-sets)]
                      [(annotated-vals free-bindings-vals)
-                      (dual-map non-tail-recur vals)]
+                      (dual-map let-rhs-recur vals (map car binding-sets) (map car lifted-gensym-sets))]
                      [(annotated-body free-bindings-body)
                       (let-body-recur (z:let-values-form-body expr) binding-list)]
                      [(free-bindings) (apply binding-set-union (remq* binding-list free-bindings-body)
@@ -525,8 +530,7 @@
                                   binding-sets
                                   annotated-vals)])
                         (values (expr-cheap-wrap `(#%let-values ,bindings ,annotated-body)) free-bindings))
-                      (let* ([lifted-gensyms (map get-lifted-gensym binding-list)]
-                             [dummy-binding-sets
+                      (let* ([dummy-binding-sets
                               (let ([counter 0])
                                 (map (lambda (binding-set)
                                        (map (lambda (binding) 
@@ -578,8 +582,10 @@
                      [(_1) (when (andmap z:case-lambda-form? vals)
                              (for-each mark-never-undefined binding-list))] ; we could be more aggressive about this.
                      [(_2) (for-each utils:check-for-keyword binding-list)]
+                     [(lifted-gensym-sets) (map (lambda (x) (map get-lifted-gensym x)) binding-sets)]
+                     [(lifted-gensyms) (apply append lifted-gensym-sets)]
                      [(annotated-vals free-bindings-vals)
-                      (dual-map non-tail-recur vals)]
+                      (dual-map let-rhs-recur vals (map car binding-sets) (map car lifted-gensym-sets))]
                      [(annotated-body free-bindings-body)
                       (let-body-recur (z:letrec-values-form-body expr) 
                                       binding-list)]
@@ -596,9 +602,8 @@
                                 free-bindings-outer))
                       (let* ([create-index-finder (lambda (binding)
                                                     `(,binding-indexer ,binding))]
-                             [lifted-name-gensyms (map get-lifted-gensym binding-list)]
                              [outer-initialization
-                              `((,(append lifted-name-gensyms binding-names) 
+                              `((,(append lifted-gensyms binding-names) 
                                  (#%values ,@(append (map create-index-finder binding-list)
                                                      binding-names))))]
                              [set!-clauses
@@ -608,7 +613,7 @@
                                    annotated-vals)]
                              [middle-begin
                               (double-break-wrap `(#%begin ,@set!-clauses ,(late-let-break-wrap binding-list
-                                                                                                lifted-name-gensyms
+                                                                                                lifted-gensyms
                                                                                                 annotated-body)))]
                              [wrapped-begin
                               (wcm-wrap (make-debug-info expr 
@@ -634,21 +639,14 @@
                      
                      [(val) (z:define-values-form-val expr)]
                      [(annotated-val free-bindings-val)
-                      (define-values-recur val)])
-                      (cond [(and (z:case-lambda-form? val) (not cheap-wrap?))
-                             (values `(#%define-values ,binding-names
-                                       (#%let ((,closure-temp ,annotated-val))
-                                        (,update-closure-record-name ,closure-temp (#%quote ,(car binding-names)))
-                                        ,closure-temp))
-                                     free-bindings-val)]
-                            [(z:struct-form? val)
-                             (values `(#%define-values ,binding-names
-                                       ,(wrap-struct-form binding-names annotated-val)) 
-                                     free-bindings-val)]
-                            [else
-                             (values `(#%define-values ,binding-names
-                                       ,annotated-val) 
-                                     free-bindings-val)]))]
+                      (define-values-recur val (car binding-names))])
+                  (cond [(z:struct-form? val)
+                         (values `(#%define-values ,binding-names
+                                   ,(wrap-struct-form binding-names annotated-val)) 
+                                 free-bindings-val)]
+                        [else
+                         (values `(#%define-values ,binding-names ,annotated-val) 
+                                 free-bindings-val)]))]
 	       
 	       [(z:set!-form? expr)
                 (utils:check-for-keyword (z:set!-form-var expr)) 
@@ -690,19 +688,34 @@
                      [(new-free-bindings) (apply binding-set-union free-bindings-cases)]
                      [(closure-info) (make-debug-info-app 'all new-free-bindings 'none)]
                      [(wrapped-annotated) (wcm-wrap (make-debug-info-normal null)
-                                                    annotated-case-lambda)]
-                     [(hash-wrapped) `(#%let ([,closure-temp ,wrapped-annotated])
-                                       (,closure-table-put! ,closure-temp
-                                        (,make-closure-record 
-                                         #f
-                                         ,closure-info 
-                                         #f))
-                                       ,closure-temp)])
-		  (values (if cheap-wrap?
-                              annotated-case-lambda
-                              hash-wrapped)
-			  new-free-bindings))]
-	       
+                                                    annotated-case-lambda)])
+                  (if cheap-wrap?
+                      (values annotated-case-lambda new-free-bindings)
+                      (cond [(symbol? procedure-name-info)
+                             (values
+                              `(,(lambda (closure debug-info)
+                                   (closure-table-put! closure (make-closure-record procedure-name-info
+                                                                                    debug-info
+                                                                                    #f))
+                                   closure)
+                                ,wrapped-annotated
+                                ,closure-info)
+                              new-free-bindings)]
+                            [(pair? procedure-name-info)
+                             (values
+                              `(,(lambda (closure debug-info dynamic-index)
+                                   (closure-table-put! closure (make-closure-record (list (car procedure-name-info)
+                                                                                          dynamic-index)
+                                                                                    debug-info
+                                                                                    #f))
+                                   closure)
+                                ,wrapped-annotated
+                                ,closure-info
+                                ,(cadr procedure-name-info))
+                              new-free-bindings)]
+                            [else
+                             (values wrapped-annotated new-free-bindings)])))]
+                                
                ; the annotation for w-c-m is insufficient for
                ; debugging: there must be an intermediate let & set!s to
                ; allow the user to see the computed values for the key and the
@@ -885,7 +898,7 @@
          
          (define (annotate/top-level expr)
            (let-values ([(annotated dont-care)
-                         (annotate/inner expr 'all #f #t)])
+                         (annotate/inner expr 'all #f #t #f)])
              annotated)))
          
          ; body of local

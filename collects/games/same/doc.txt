@@ -1,4 +1,4 @@
-The object of Same is to score points by removing dots from the
+The object of _Same_ is to score points by removing dots from the
 board. To remove a dot, click on it. As long as there is another dot
 of the same color next to the clicked dot, it will disappear along
 with all adjacent dots of the same color. After the dots disappear,

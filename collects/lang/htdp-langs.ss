@@ -375,6 +375,10 @@ to the original stdout of DrScheme.
       (define (register-profile-start . x) #f)
       (define (register-profile-done . x) (void))
       
+      (define (test-coverage-enabled) #f)
+      (define (test-covered . x) (void))
+      (define (initialize-test-coverage-point . x) (void))
+      
       (define-values/invoke-unit/sig stacktrace^ stacktrace@ #f stacktrace-imports^)
       
       ;; add-debugging : (sexp -> value) -> sexp -> value

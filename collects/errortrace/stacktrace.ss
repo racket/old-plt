@@ -6,6 +6,11 @@
   (provide stacktrace@ stacktrace^ stacktrace-imports^)
   
   (define-signature stacktrace-imports^ (with-mark
+                                         
+                                         test-coverage-enabled
+                                         test-covered
+                                         initialize-test-coverage-point
+                                         
                                          profile-key
                                          profiling-enabled
                                          initialize-profile-point
@@ -24,9 +29,33 @@
       (define (st-mark-bindings x) null)
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;; Test case coverage instrumenter
+
+      ;; test-coverage-point : (syntax[list of exprs] symbol-or-#f syntax boolean -> syntax[list of exprs])
+
+      ;; This procedure is called by `annotate' and `annotate-top' to wrap
+      ;; expressions with test suite coverage information.  Returning the
+      ;; first argument means no profiling information is collected.
+
+      ;; the second argument is the source expression, 
+
+      (define (test-coverage-point bodies expr)
+        (if (test-coverage-enabled)
+            (let ([key (gensym 'test-coverage-point)])
+              (initialize-test-coverage-point key expr)
+              (with-syntax ([key (datum->syntax-object #f key (quote-syntax here))]
+                            [bodies bodies]
+                            [test-covered test-covered])
+                (syntax
+                 ((test-covered 'key)
+                  .
+                  bodies))))
+            bodies))
+      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;; Profiling instrumenter
 
-      ;; profile-point : (syntax symbol-or-#f syntax boolean -> syntax)
+      ;; profile-point : (syntax[list of exprs] symbol-or-#f syntax boolean -> syntax[list of exprs])
 
       ;; This procedure is called by `annotate' and `annotate-top' to wrap
       ;; expressions with profile collecting information.  Returning the
@@ -36,7 +65,7 @@
       ;; argument is the source expression, and the fourth argument is #t for
       ;; a transformer expression and #f for a normal expression.
 
-      (define (profile-point body name expr trans?)
+      (define (profile-point bodies name expr trans?)
         (if (profiling-enabled)
             (let ([key (gensym 'profile-point)])
               (initialize-profile-point key name expr)
@@ -48,13 +77,13 @@
                 (with-syntax ([rest 
                                (insert-at-tail*
                                 (syntax (register-profile-done 'key start))
-                                body
+                                bodies
                                 trans?)])
                   (syntax
                    ((let ([start (register-profile-start 'key)])
                       (with-continuation-mark 'profile-key 'key
-                                              (begin . rest))))))))
-            body))
+                        (begin . rest))))))))
+            bodies))
       
       (define (insert-at-tail* e exprs trans?)
         (if (stx-null? (stx-cdr exprs))
@@ -119,10 +148,14 @@
       ;; for case-lambda
       (define (annotate-lambda name expr args body trans?)
 	(with-syntax ([body
-		       (profile-point 
-			(map (lambda (e) (annotate e trans?)) (stx->list body))
-			name expr
-			trans?)]
+		       (test-coverage-point
+                        (profile-point 
+                         (map (lambda (e) (annotate e trans?))
+                              (stx->list body))
+                         name
+                         expr
+                         trans?)
+                        expr)]
 		      [args args])
           (syntax (args . body))))
       

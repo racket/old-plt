@@ -8,6 +8,19 @@
            (lib "unitsig.ss"))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Test coverage run-time support
+  (define test-coverage-enabled (make-parameter #f))
+  
+  (define test-coverage-info (make-hash-table))
+  
+  (define (initialize-test-coverage-point key expr)
+    (hash-table-put! test-coverage-info key (list #f expr)))
+  
+  (define (test-covered key)
+    (let ([v (hash-table-get test-coverage-info key)])
+      (set-car! v #t)))
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Profiling run-time support
 
   (define profile-thread #f)

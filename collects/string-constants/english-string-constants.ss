@@ -434,6 +434,10 @@ please adhere to these guidelines:
  (font-name "Font Name")
  (font-size "Font Size")
  (set-font "Set Font...")
+ (font-smoothing-label  "Font smoothing")
+ (font-smoothing-none "None")
+ (font-smoothing-some "Some")
+ (font-smoothing-all "All")
  (select-font-name "Select Font Name")
  (example-text "Example Text:")
  (only-warn-once "Only warn once when definitions and interactions are not synchronized")
@@ -874,6 +878,7 @@ please adhere to these guidelines:
  (no-debugging-or-profiling "No debugging or profiling")
  (debugging "Debugging")
  (debugging-and-profiling "Debugging and profiling")
+ (test-coverage "Syntactic Test Suite Coverage")
  (whole/fractional-exact-numbers-label "Print numbers as fractions")
  (booleans-as-true/false-label "Print booleans using true and false")
  (show-details-button-label "Show Details")
@@ -953,6 +958,9 @@ please adhere to these guidelines:
  (profiling-no-information-available "There is no profiling information available. Please be sure that profiling is enabled in your language and you have run your program.")
  (profiling-clear? "Changing the definitions window invalidates the profiling information. Continue?")
  
+ ;; test coverage
+ (test-coverage-clear? "Changing the definitions window invalidates the test coverage information. Continue?")
+
  ;;; repl stuff
  (evaluation-terminated "Evaluation Terminated")
  (evaluation-terminated-explanation

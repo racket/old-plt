@@ -1166,7 +1166,7 @@
 (drscheme:language:simple-settings-annotations
  (drscheme:language:simple-settings?
   . -> .
-  (symbols 'none 'debug 'debug/profile))
+  (symbols 'none 'debug 'debug/profile 'test-coverage))
  (simple-settings)
 
 "Extracts the debugging setting from a simple-settings.")
@@ -1183,7 +1183,7 @@
   (symbols 'mixed-fraction 'mixed-fraction-e 'repeating-decimal 'repeating-decimal-e)
   boolean?
   boolean?
-  (symbols 'none 'debug 'debug/profile)
+  (symbols 'none 'debug 'debug/profile 'test-coverage)
   . -> .
   drscheme:language:simple-settings?)
  (case-sensitive

@@ -3231,35 +3231,32 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
   int isdir;
   Scheme_Object *file, *base;
 
-#if 0
 #if defined(UNIX_FILE_SYSTEM) || defined(DOS_FILE_SYSTEM)
-  /* Faster check --- avoids split operations, if possible */
+  /* Fast check; avoids split operations, if possible */
   {
     char *s;
     int len, i, saw_dot = 0;
     s = SCHEME_PATH_VAL(path);
     len = SCHEME_PATH_LEN(path);
-    if (scheme_is_complete_path(s, len)) {
-      for (i = 0; i < len; i++) {
-	if (s[i] == '.')
-	  saw_dot = 1;
-	else if (IS_A_SEP(s[i])) {
-	  if (saw_dot)
-	    break;
-	  saw_dot = 0;
-	}
-      }
-      /* One more possibility: ends with just ".": */
-      if (len > 1
-	  && (s[len - 1] == '.')
-	  && (IS_A_SEP(s[len - 2])))
-	i = -0;
-      
-      if (i == len)
+
+    for (i = 0; i < len; i++) {
+      if (s[i] == '.')
+	saw_dot++;
+      else if (IS_A_SEP(s[i])) {
+	if ((saw_dot == 1) || (saw_dot == 2))
+	  break;
+	saw_dot = 0;
+      } else
+	saw_dot = 3;
+    }
+
+    if (i == len) {
+      if ((saw_dot != 1) && (saw_dot != 2))
 	return path;
     }
+    /* There's a . or .. in the path. Switch to 
+       slower (but reliable across platforms) mode */
   }
-#endif
 #endif
 
   /* Check whether it can be simplified: */

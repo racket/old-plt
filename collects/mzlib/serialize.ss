@@ -17,7 +17,8 @@
 	   serialize
 	   deserialize)
 
-  (define-struct serialize-info (vectorizer maker-id type-id graph-maker))
+  (define-struct serialize-info (vectorizer deserialize-id dir))
+  (define-struct deserialize-info (maker graph-maker))
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; define-serializable-struct
@@ -25,86 +26,96 @@
 
   ;; generate-struct-declaration wants a function to generate the actual
   ;;  call to `make-struct-type'. This is where we insert the serializable property.
-  (define-for-syntax (make-make-make-struct-type inspector-stx)
-    (lambda (orig-stx name-stx defined-name-stxes super-info)
-      (when super-info
-	(unless (andmap values (list-ref super-info 3))
-	  (raise-syntax-error
-	   #f
-	   "not all fields are known for parent struct type"
-	   orig-stx
-	   (syntax-case orig-stx ()
-	     [(_ (__ super-id) . rest) #'super-id]))))
-      (let ([num-fields (/ (- (length defined-name-stxes) 3) 2)])
-	#`(letrec-values ([(type maker pred access mutate)
-			   (make-struct-type '#,name-stx 
-					     #,(and super-info (list-ref super-info 0))
-					     #,num-fields
-					     0 #f
-					     (list
-					      (cons
-					       prop:serializable
-					       (make-serialize-info
-						;; The struct-to-vector function: --------------------
-						(lambda (v)
-						  (vector
-						   #,@(if super-info
-							  (reverse
-							   (map (lambda (sel)
-								  #`(#,sel v))
-								(list-ref super-info 3)))
-							  null)
-						   #,@(let loop ([n num-fields][r null])
-							(if (zero? n)
-							    r
-							    (loop (sub1 n)
-								  (cons
-								   #`(access v #,(sub1 n))
-								   r))))))
-						;; The constructor id: --------------------
-						(quote-syntax
-						 #,((syntax-local-certifier)
-						    (list-ref defined-name-stxes 1)))
-						;; The struct type id: --------------------
-						(quote-syntax
-						 #,((syntax-local-certifier)
-						    (list-ref defined-name-stxes 0)))
-						;; The shell function: --------------------
-						;;  Returns an shell object plus
-						;;  a function to update the shell (used for
-						;;  building cycles): 
-						(let ([super-sets
-						       (list #,@(if super-info
-								    (list-ref super-info 4)
-								    null))])
-						  (lambda ()
-						    (let ([s0
-							   (#,(list-ref defined-name-stxes 1)
-							    #,@(append
-								(if super-info
-								    (map (lambda (x) #f)
-									 (list-ref super-info 3))
-								    null)
-								(vector->list
-								 (make-vector num-fields #f))))])
-						      (values
-						       s0
-						       (lambda (s)
-							 #,@(if super-info
-								(map (lambda (set get)
-								       #`(#,set s0 (#,get s)))
-								     (list-ref super-info 4)
-								     (list-ref super-info 3))
-								null)
-							 #,@(let loop ([n num-fields])
-							      (if (zero? n)
-								  null
-								  (let ([n (sub1 n)])
-								    (cons #`(mutate s0 #,n (access s #,n))
-									  (loop n)))))
-							 (void)))))))))
-					     #,inspector-stx)])
-	    (values type maker pred access mutate)))))
+  (define-for-syntax (make-make-make-struct-type inspector+deserializer-stx)
+    (let-values ([(inspector-stx deserialize-id)
+		  (apply values (syntax->list inspector+deserializer-stx))])
+      (lambda (orig-stx name-stx defined-name-stxes super-info)
+	(when super-info
+	  (unless (andmap values (list-ref super-info 3))
+	    (raise-syntax-error
+	     #f
+	     "not all fields are known for parent struct type"
+	     orig-stx
+	     (syntax-case orig-stx ()
+	       [(_ (__ super-id) . rest) #'super-id]))))
+	(let ([num-fields (/ (- (length defined-name-stxes) 3) 2)])
+	  #`(letrec-values ([(type maker pred access mutate)
+			     (make-struct-type '#,name-stx 
+					       #,(and super-info (list-ref super-info 0))
+					       #,num-fields
+					       0 #f
+					       (list
+						;; --- The prop:serializable property means this is serializable
+						(cons
+						 prop:serializable
+						 (make-serialize-info
+						  ;; The struct-to-vector function: --------------------
+						  (lambda (v)
+						    (vector
+						     #,@(if super-info
+							    (reverse
+							     (map (lambda (sel)
+								    #`(#,sel v))
+								  (list-ref super-info 3)))
+							    null)
+						     #,@(let loop ([n num-fields][r null])
+							  (if (zero? n)
+							      r
+							      (loop (sub1 n)
+								    (cons
+								     #`(access v #,(sub1 n))
+								     r))))))
+						  ;; The serializer id: --------------------
+						  (quote-syntax
+						   #,((syntax-local-certifier)
+						      deserialize-id))
+						  ;; Directory for last-ditch resolution --------------------
+						  (or (current-load-relative-directory) 
+						      (current-directory))))
+						;; --- The prop:internal-deserialize property just communicates
+						;;     information to the deserialize binding (because it's more
+						;;     convenient to generate the deserialize info here)
+						(cons
+						 prop:internal-deserialize
+						 (list
+						  ;; The maker-getter: --------------------
+						  (lambda () maker)
+						  ;; The shell function: --------------------
+						  ;;  Returns an shell object plus
+						  ;;  a function to update the shell (used for
+						  ;;  building cycles): 
+						  (let ([super-sets
+							 (list #,@(if super-info
+								      (list-ref super-info 4)
+								      null))])
+						    (lambda ()
+						      (let ([s0
+							     (#,(list-ref defined-name-stxes 1)
+							      #,@(append
+								  (if super-info
+								      (map (lambda (x) #f)
+									   (list-ref super-info 3))
+								      null)
+								  (vector->list
+								   (make-vector num-fields #f))))])
+							(values
+							 s0
+							 (lambda (s)
+							   #,@(if super-info
+								  (map (lambda (set get)
+									 #`(#,set s0 (#,get s)))
+								       (list-ref super-info 4)
+								       (list-ref super-info 3))
+								  null)
+							   #,@(let loop ([n num-fields])
+								(if (zero? n)
+								    null
+								    (let ([n (sub1 n)])
+								      (cons #`(mutate s0 #,n (access s #,n))
+									    (loop n)))))
+							   (void)))))))))
+					       #,inspector-stx)])
+	      (values type maker pred access mutate))))))
     
   (define-syntax define-serializable-struct
     (let ()
@@ -194,14 +205,40 @@
 
       ;; Generate the result expression. This is complicated
       ;; by the fact that super-id information may or may not be
-      ;; immediately available, so we insert a delay
+      ;; immediately available, so we also need continue-define-...
       (define (generate-result stx id super-id field-ids inspector-stx)
-	(generate-struct-declaration stx
-				     id super-id field-ids 
-				     (syntax-local-context)
-				     (make-make-make-struct-type inspector-stx)
-				     #'continue-define-serializable-struct inspector-stx))
+	(with-syntax ([deserializer-id (datum->syntax-object
+					id
+					(string->symbol
+					 (format "deserializer:~a" (syntax-e id)))
+					id)]
+		      [struct-type-id (datum->syntax-object
+				       id
+				       (string->symbol
+					(format "struct:~a" (syntax-e id)))
+				       id)]
+		      [inspector-expr inspector-stx])
+	  #`(begin
+	      #,(generate-struct-declaration stx
+					     id super-id field-ids 
+					     (syntax-local-context)
+					     (make-make-make-struct-type #'(inspector-expr deserializer-id))
+					     #'continue-define-serializable-struct 
+					     #'(inspector-expr deserializer-id))
+	      (define deserializer-id (let ([l (internal-deserialize-info struct-type-id)])
+					(make-deserialize-info
+					 ((car l))
+					 (cadr l))))
+	      #,@(if (eq? 'top-level (syntax-local-context))
+		     null
+		     (list #'(provide deserializer-id))))))
+
       (lambda (stx)
+	(unless (memq (syntax-local-context) '(top-level module))
+	  (raise-syntax-error
+	   #f
+	   "allowed only at the top level or within a module top level"
+	   stx))
 	(main stx))))
 
   (define-syntax (continue-define-serializable-struct stx)
@@ -232,20 +269,29 @@
 	(date? v)
 	(arity-at-least? v)))
   
-  (define (mod-to-id maker-id struct-id mod-map cache)
-    (hash-table-get 
-     cache maker-id 
-     (lambda ()
-       (let ([id
-	      (let* ([names (cons maker-id struct-id)])
-		(hash-table-get 
-		 mod-map names
-		 (lambda ()
-		   (let ([id (hash-table-count mod-map)])
-		     (hash-table-put! mod-map names id)
-		     id))))])
-	 (hash-table-put! cache maker-id id)
-	 id))))
+  (define (mod-to-id info mod-map cache)
+    (let ([deserialize-id (serialize-info-deserialize-id info)])
+      (hash-table-get 
+       cache deserialize-id
+       (lambda ()
+	 (let ([id
+		(let ([path+name
+		       (cons
+			(let ([b (identifier-binding deserialize-id)])
+			  (and (list? b)
+			       (collapse-module-path-index 
+				(car b)
+				`(file ,(build-path (serialize-info-dir info)
+						    "here.ss")))))
+			(syntax-e deserialize-id))])
+		  (hash-table-get 
+		   mod-map path+name
+		   (lambda ()
+		     (let ([id (hash-table-count mod-map)])
+		       (hash-table-put! mod-map path+name id)
+		       id))))])
+	   (hash-table-put! cache deserialize-id id)
+	   id)))))
 
   (define (is-mutable? o)
     (or (and (or (pair? o)
@@ -374,9 +420,7 @@
 	v]
        [(serializable-struct? v)
 	(let ([info (serializable-info v)])
-	  (cons (mod-to-id (serialize-info-maker-id info) 
-			   (serialize-info-type-id info)
-			   mod-map mod-map-cache) 
+	  (cons (mod-to-id info mod-map mod-map-cache) 
 		(map (serial #t)
 		     (vector->list
 		      ((serialize-info-vectorizer info) v)))))]
@@ -419,9 +463,7 @@
     (cond
      [(serializable-struct? v)
       (let ([info (serializable-info v)])
-	(mod-to-id (serialize-info-maker-id info) 
-		   (serialize-info-type-id info) 
-		   mod-map mod-map-cache))]
+	(mod-to-id info mod-map mod-map-cache))]
      [(vector? v)
       (cons 'v (vector-length v))]
      [(pair? v)
@@ -481,6 +523,9 @@
   ;; deserialize
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+  (define-values (prop:internal-deserialize internal-deserialize? internal-deserialize-info)
+    (make-struct-type-property 'internal-deserialize #f))
+
   (define (deserialize-one v share mod-map)
     (let loop ([v v])
       (cond
@@ -496,8 +541,8 @@
 	(bytes->immutable-bytes v)]
        [(number? (car v))
 	;; Struct instance:
-	(let ([m (vector-ref mod-map (car v))])
-	  (apply (car m) (map loop (cdr v))))]
+	(let ([info (vector-ref mod-map (car v))])
+	  (apply (deserialize-info-maker info) (map loop (cdr v))))]
        [else
 	(case (car v)
 	  [(?) (vector-ref share (cdr v))]
@@ -534,9 +579,8 @@
     (cond
      [(number? v)
       ;; Struct instance
-      (let* ([m (vector-ref mod-map v)]
-	     [info (serializable-info (cdr m))])
-	(let-values ([(obj fix) ((serialize-info-graph-maker info))])
+      (let* ([info (vector-ref mod-map v)])
+	(let-values ([(obj fix) ((deserialize-info-graph-maker info))])
 	  (vector-set! fixup n fix)
 	  obj))]
      [(pair? v)
@@ -604,23 +648,12 @@
       ;; Load constructor mapping
       (let loop ([n 0][l mod-map-l])
 	(unless (null? l)
-	  (let ([a (car l)])
-	    ;; Load module, if any:
-	    (let ([b (identifier-binding (car a))])
-	      (when (list? b)
-		(unless (symbol? (car b))
-		  (let ([path (collapse-module-path-index 
-			       (car b)
-			       `(file ,(build-path (or (current-load-relative-directory) 
-						       (current-directory))
-						   "here.ss")))])
-		    (dynamic-require path #f)))))
+	  (let* ([path+name (car l)]
+		 [des (if (car path+name)
+			  (dynamic-require (car path+name) (cdr path+name))
+			  (namespace-variable-value (cdr path+name)))])
 	    ;; Register maker and struct type:
-	    (vector-set! mod-map n (cons 
-				    ;; Maker:
-				    (eval-syntax (car a))
-				    ;; Struct type:
-				    (eval-syntax (cdr a)))))
+	    (vector-set! mod-map n des))
 	  (loop (add1 n) (cdr l))))
       ;; Create vector for sharing:
       (let ([share (make-vector share-n #f)]

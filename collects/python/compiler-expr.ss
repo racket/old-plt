@@ -47,45 +47,47 @@
       (list (list 'pos (target->parm-tup target)))
       (send target get-start-pos)
       (send target get-end-pos)))
-  
-  
-  ;; generate-lambda: parameters% syntax-object (or false bindings-mixin%) -> sexp
-  ;; generate a lambda.  if scope is not #f, its bindings are defined (as void)
-  (define (generate-lambda parms body-so scope)
-    ;; this is where the outer "let" for default values should
-    ;; be placed; I'll do that after I finish the rest of the def/call code.
-    ;; it's bad design anyway...
-    `(opt-lambda ,(send parms to-scheme)
-       (let ,(append (normalize-assoc-list
-                      (flatten1
-                       (map (lambda (tuple)
-                              (unpack tuple
-                                      (send (first-atom tuple) to-scheme)))
-                            (filter list? (send parms get-pos)))))
-                     (let ([seq (send parms get-seq)])
-                       (if seq
-                           (let ([seq (send seq to-scheme)])
-                             `([,seq (list->py-tuple% ,seq)]))
-                           empty))
-                     ;(let ([dict (send parms get-dict)])
-                     ;  (if dict
-                     ;      (let ([dict (send dict to-scheme)])
-                     ;        `([,dict (begin (printf "at first, dict is ~a~n" dict)
-                     ;                        (assoc-list->py-dict% ,dict))]))
-                     ;      empty))
-                     (if scope
-                         (map (lambda (b)
-                                `[,(send b to-scheme) (void)])
-                              (send scope get-bindings))
-                         empty))
-         ,body-so)))
 
-  ;; generate-py-lambda: symbol parameters% syntax-object (or false bindings-mixin%) -> sexp
-  ;; generate a lambda.  if scope is not #f, its bindings are defined (as void)
-  (define (generate-py-lambda name parms body-so scope)
+  ;; generate-function-bindings: parameters% syntax-object (or false bindings-mixin%) -> sexp
+  ;; generate the enclosing LET bindings for a function
+  ;; if scope is not #f, its bindings are defined here (as void)
+  (define (generate-function-bindings parms body-so scope)
+    `(let ,(append (normalize-assoc-list
+                    (flatten1
+                     (map (lambda (tuple)
+                            (unpack tuple
+                                    (send (first-atom tuple) to-scheme)))
+                          (filter list? (send parms get-pos)))))
+                   (let ([seq (send parms get-seq)])
+                     (if seq
+                         (let ([seq (send seq to-scheme)])
+                           `([,seq (list->py-tuple% ,seq)]))
+                         empty))
+                   ;(let ([dict (send parms get-dict)])
+                   ;  (if dict
+                   ;      (let ([dict (send dict to-scheme)])
+                   ;        `([,dict (begin (printf "at first, dict is ~a~n" dict)
+                   ;                        (assoc-list->py-dict% ,dict))]))
+                   ;      empty))
+                   (if scope
+                       (map (lambda (b)
+                              `[,(send b to-scheme) (void)])
+                            (send scope get-bindings))
+                       empty))
+       ,@body-so))
+  
+  ;; generate-lambda: parameters% syntax-object -> sexp
+  ;; generate a lambda.
+  (define (generate-lambda parms body-so)
+    `(opt-lambda ,(send parms to-scheme)
+         ,body-so))
+
+  ;; generate-py-lambda: symbol parameters% syntax-object -> sexp
+  ;; generate a scheme-lambda->python-lambda wrapper (and the lambda)
+  (define (generate-py-lambda name parms body-so)
     (let ([seq (send parms get-seq)]
           [dict (send parms get-dict)])
-      `(procedure->py-function% ,(generate-lambda parms body-so scope)
+      `(procedure->py-function% ,(generate-lambda parms body-so)
                                 ',name
                                 (list ,@(map (lambda (p)
                                                `',(send (first-atom p) to-scheme))
@@ -409,12 +411,16 @@
       (inherit ->orig-so)
       (define/override (to-scheme)
         (->orig-so `(,(py-so 'assoc-list->py-dict%)
-                     (list ,@(map (lambda (key-value-pair)
-                                    (apply (lambda (key value)
-                                             `(list ,(send key to-scheme)
-                                                    ,(send value to-scheme)))
-                                           key-value-pair))
-                                  key-values)))))
+                     (list ,@(let ([key-id (gensym 'key)])
+                               (map (lambda (key-value-pair)
+                                      (apply (lambda (key value)
+                                               `(list (let ([,key-id (->scheme ,(send key to-scheme))])
+                                                        (if (string? ,key-id)
+                                                            (string->symbol ,key-id)
+                                                            ,key-id))
+                                                      ,(send value to-scheme)))
+                                               key-value-pair))
+                                      key-values))))))
       
       (super-instantiate ())))
   
@@ -708,13 +714,14 @@
       
       (define/public (get-bindings) bindings)
       
+      (define/public (get-parms) parms)
+      
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
         (->orig-so (generate-py-lambda 'anonymous-function
                                        parms
-                                       (send body to-scheme)
-                                       this)))
+                                       (send body to-scheme #f #t))))
 ;                   `(,(py-so 'procedure->py-function%) (lambda ,(send parms to-scheme)
 ;                                                         ,(send body to-scheme)))))
       

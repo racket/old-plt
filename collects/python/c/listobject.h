@@ -24,7 +24,8 @@ typedef struct {
     PyObject **ob_item;
 } PyListObject;
 
-PyAPI_DATA(PyTypeObject) PyList_Type;
+//PyAPI_DATA(PyTypeObject) PyList_Type;
+extern PyTypeObject PyList_Type;
 
 #define PyList_Check(op) PyObject_TypeCheck(op, &PyList_Type)
 #define PyList_CheckExact(op) ((op)->ob_type == &PyList_Type)
@@ -44,13 +45,14 @@ PyAPI_FUNC(PyObject *) PyList_AsTuple(PyObject *);
 /* Macro, trading safety for speed */
      /* disabled for now */
 /*
+*/
 #define PyList_GET_ITEM(op, i) (((PyListObject *)(op))->ob_item[i])
 #define PyList_SET_ITEM(op, i, v) (((PyListObject *)(op))->ob_item[i] = (v))
 #define PyList_GET_SIZE(op)    (((PyListObject *)(op))->ob_size)
-*/
-#define PyList_GET_SIZE PyList_GetSize
-#define PyList_GET_ITEM PyList_GetItem
-#define PyList_SET_ITEM PyList_SetItem
+
+//#define PyList_GET_SIZE PyList_GetSize
+//#define PyList_GET_ITEM PyList_GetItem
+//#define PyList_SET_ITEM PyList_SetItem
 
 #ifdef __cplusplus
 }

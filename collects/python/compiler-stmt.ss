@@ -30,7 +30,17 @@
       (inherit stx-err)
       (define/override (to-scheme)
         (stx-err "Invalid usage of to-scheme on a statement% (I'm purely virtual)"))
-        
+
+      ;; do nothing for most statements
+      (define/public (set-tail-position!)
+        (void))
+      
+      ;; nontail-return?: -> bool
+      ;; determine whether this is a non-tail return statement
+      ;; or a compound statement with a non-tail return part
+      (define/public (nontail-return?)
+        #f)
+      
       (super-instantiate ())))
 
   ;; 6.1
@@ -307,12 +317,25 @@
           (stx-err "'return' outside function"))
         (when expression
           (send expression set-bindings! enclosing-scope)))
+
+      (define tail-position? #f)
+      
+      ;; pleeeease let it be true :)
+      (define/override (set-tail-position!)
+        ;(printf "TAIL!~n")
+        (set! tail-position? #t))
+      
+      (define/override (nontail-return?)
+        ;(printf "return~n")
+        (not tail-position?))
       
       ;;daniel
       (inherit ->orig-so ->lex-so)
       (define/override (to-scheme); py-return)
         ;(->orig-so `(,py-return ,(send expression to-scheme))))
-        (->orig-so `(,(send scope get-return-symbol) ,(send expression to-scheme))))
+        (->orig-so (if tail-position?
+                       (send expression to-scheme)
+                       `(,(send scope get-return-symbol) ,(send expression to-scheme)))))
       
       (super-instantiate ())))
 
@@ -515,7 +538,11 @@
 
       (define/override (collect-globals)
         (apply append (sub-stmt-map (lambda (s) (send s collect-globals)))))
+
+      (define last-statement (car (last-pair statements)))
       
+      (define/override (set-tail-position!)
+        (send last-statement set-tail-position!))
       
       ;;daniel
       ; defs-and-exprs:  -> (listof (union sexp (list (or 'field 'method) name value)))
@@ -560,19 +587,33 @@
 ;                                          so))
 ;                                  so)))))
       
+       
+
+      (define/override (nontail-return?)
+        (ormap (lambda (statement)
+                 (send statement nontail-return?))
+               statements))
+      
       ;;daniel
       (inherit ->orig-so)
       (define/override to-scheme
-        (opt-lambda ([escape-continuation-symbol #f] [insert-void-return? #f])
-          (let ([body (let ([statements (sub-stmt-map (lambda (s) (send s to-scheme)))])
-                        (if insert-void-return? ; functions that have no return must return None
-                            (append statements `(,(py-so 'py-none)))
-                            statements))])
-            (->orig-so (if escape-continuation-symbol
+        (opt-lambda ([escape-continuation-symbol #f] [lambda-suite? #f] [def-suite? #f])
+          (let* ([return-is-last? (is-a? last-statement return%)]
+                 [body (let ([statements (sub-stmt-map (lambda (s) (send s to-scheme)))]
+                             [insert-void-return? (and def-suite?
+                                                       (not return-is-last?))])
+                         (if insert-void-return? ; functions that have no return must return None
+                             (append statements `(,(py-so 'py-none)))
+                             statements))]
+                 [body-with-let (if (or lambda-suite? def-suite?)
+                                    (generate-function-bindings (send scope get-parms) body scope)
+                                    body)])
+            (->orig-so (if (and escape-continuation-symbol
+                                (nontail-return?))
                            `(call-with-escape-continuation
                              (lambda (,escape-continuation-symbol)
-                               ,@body))
-                           `(begin ,@body))))))
+                               ,body-with-let))
+                           body-with-let)))))
 
          
       (super-instantiate ())))
@@ -603,6 +644,19 @@
       
       (define/override (check-break/cont enclosing-loop)
         (void (sub-stmt-map (lambda (s) (send s check-break/cont enclosing-loop)))))
+
+      (define/override (set-tail-position!)
+        (for-each (lambda (test&thn)
+                    (send (second test&thn) set-tail-position!))
+                  test-bodies)
+        (when else
+          (send else set-tail-position!)))
+      
+      (define/override (nontail-return?)
+        (or (ormap (lambda (test&thn)
+                     (send (second test&thn) nontail-return?))
+                   test-bodies)
+            (and else (send else nontail-return?))))
       
       ;;daniel
       (inherit ->orig-so)
@@ -651,6 +705,13 @@
       
       (define/public (get-break-symbol) break-symbol)
       (define/public (get-continue-symbol) continue-symbol)
+
+      (define/override (set-tail-position!)
+        (when else
+          (send else set-tail-position!)))
+      
+      (define/override (nontail-return?)
+        (and else (send else nontail-return?)))
       
       (inherit ->orig-so)
       (define/override (to-scheme)
@@ -705,6 +766,12 @@
       
       (define/public (get-break-symbol) break-symbol)
       (define/public (get-continue-symbol) continue-symbol)
+
+      (define/override (set-tail-position!)
+        (when else (send else set-tail-position!)))
+
+      (define/override (nontail-return?)
+        (and else (send else nontail-return?)))
 
       ;;daniel
       (inherit ->orig-so)
@@ -958,6 +1025,10 @@
        (define/override (check-break/cont enclosing-loop)
          (send body check-break/cont #f))
        
+       (define/public (get-parms) parms)
+       
+       (send body set-tail-position!)
+       
        
        ;;daniel
        (inherit ->orig-so)
@@ -966,8 +1037,7 @@
                       `(namespace-set-variable-value! #cs',proc-name
                          ,(generate-py-lambda proc-name
                                               parms
-                                              (send body to-scheme return-symbol #t)
-                                              this)))))
+                                              (send body to-scheme return-symbol #t #t))))))
 ;                         (,(py-so 'procedure->py-function%)
 ;                          ;; this is where the outer "let" for default values should
 ;                          ;; be placed; I'll do that after I finish the rest of the def/call code.

@@ -14,16 +14,23 @@
            )
 
 
-  (provide python load-ps py-eval
+  (provide python load-ps py-eval py-gen ssd ssd* python-ns
            ;read-python
            ;python-to-scheme
            ;compile-python
            ;compile-python-ast
            ;parse-python-port
            ;parse-python-file
+	   in-python
+	   ns-set!
+	   ns-get
            render-python-value
            render-python-value/format)
 
+  (define ssd syntax-object->datum)
+  
+  (define (ssd* lst) (map ssd lst))
+  
   (define (convert-value value)
    ; (py-object%->string value))
     (namespace-require '(lib "primitives.ss" "python"))
@@ -51,6 +58,11 @@
   (define pns (make-python-namespace))
   (set-python-namespace-name! pns '__main__)
 
+  (set-pyns! pns)
+  
+  (define (python-ns)
+    pns)
+  
   (define (load-ps)
     (parameterize ([current-namespace pns])
       (load-extension (build-path (this-expression-source-directory)
@@ -60,10 +72,17 @@
   (define (py-eval str)
     (let ([is (open-input-string str)])
       (begin0 (map convert-value
-                   (eval-python&copy (parameterize ([current-runtime-support-context #'here]
-                                                    [current-toplevel-context base-importing-stx])
-                                       (compile-python (parse-python-port is "input string"))) pns))
+                   (eval-python&copy (py-gen str)
+                                     pns))
               (close-input-port is))))
+  
+  (define (py-gen str)
+    (let ([is (open-input-string str)])
+      (begin0 (parameterize ([current-runtime-support-context #'here]
+                             [current-toplevel-context base-importing-stx])
+                (compile-python (parse-python-port is "input string")))
+              (close-input-port is))))
+    
   
   (define (python path)
     (let ([results (eval-python&copy (parameterize ([current-runtime-support-context #'here]

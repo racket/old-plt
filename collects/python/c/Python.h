@@ -17,11 +17,19 @@
 #undef Py_USING_UNICODE
 #endif
 
+//struct PyTypeObject;
+struct _typeobject;
+#define PYTYPEOBJECT struct _typeobject
+
   // these two should probably be something like SCHEME_HEAD
   #define PyObject_HEAD Scheme_Type type; \
 	MZ_HASH_KEY_EX \
 	void* stype; \
-	Scheme_Object* slots[3];
+        PYTYPEOBJECT * ob_type; \
+        Scheme_Object* dict; \
+        Scheme_Object* is_mutable;
+
+        //Scheme_Object* slots[3];
 /*
 #define PyObject_HEAD   Scheme_Type type; \
   short keyex; \
@@ -48,7 +56,8 @@
 		PyObject_HEAD \
 		int ob_size;
 
-#define PyObject_HEAD_INIT(type) 0, MZ_HASH_KEY_EX_INIT 0, {0, 0, 0},
+//#define PyObject_HEAD_INIT(type) 0, MZ_HASH_KEY_EX_INIT 0, {0, 0, 0},
+#define PyObject_HEAD_INIT(type) 0, MZ_HASH_KEY_EX_INIT 0, 0, 0, 0,
 
 typedef struct dScheme_Structure
 {
@@ -68,12 +77,10 @@ typedef dScheme_Structure PyObject;
 //typedef Scheme_Object PyIntObject;
 //typedef Scheme_Object PySliceObject;
 typedef PyObject PyIntObject;
-typedef PyObject PySliceObject;
+//typedef PyObject PySliceObject;
 
 //typedef Scheme_Object PyStringObject;
 
-struct _typeobject;
-#define PYTYPEOBJECT struct _typeobject
 
 
 
@@ -153,14 +160,15 @@ PyObject* generic_repr(PyObject* obj);
 
 void Py_FatalError (char * message);
 
-#define PyMem_NEW(type, count) ((type *)scheme_malloc_eternal(count))
-#define PyMem_Malloc(count) (scheme_malloc_eternal(count))
+#define PyMem_Malloc(count) (scheme_malloc(count))
 #define PyMem_MALLOC(count) PyMem_Malloc(count)
+#define PyMem_NEW(type, count) ((type *) PyMem_MALLOC(count))
 void PyMem_Free(void* obj);
 //#define PyMem_Free(obj)
 #define PyMem_FREE(obj) PyMem_Free(obj)
 // fixme
-#define PyMem_REALLOC(p, n)     realloc((p), (n) ? (n) : 1)
+#define PyMem_REALLOC(p, n)   PyMem_Realloc(p,n)
+//  realloc((p), (n) ? (n) : 1)
 
 #define PyObject_MALLOC PyMem_MALLOC
 //#define PyObject_Free PyMem_Free
@@ -359,8 +367,8 @@ PyAPI_DATA(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct;
 
 
 // this should be in sliceobject.h
-#define PySlice_Check(obj) sapply2("py-is-a?", item, slookup("py-slice%"))
-#define PySlice_GetIndicesEx(a, b, c, d, e, f) 0
+//#define PySlice_Check(obj) sapply2("py-is-a?", item, slookup("py-slice%"))
+//#define PySlice_GetIndicesEx(a, b, c, d, e, f) 0
 
 // SCHEME HELPER FUNCTIONS
 #define TWO_ARGS(var, arg1, arg2) Scheme_Object* var[2]; \
@@ -423,5 +431,7 @@ void spy_init_obj(PyObject* obj, PyTypeObject* py_type);
 #include <ceval.h>
 #include <intobject.h>
 #include <boolobject.h>
+
+#include <sliceobject.h>
 
 #endif

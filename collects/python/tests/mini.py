@@ -42,56 +42,95 @@
 #    def m(this, x):
 #        return C.some_static_field + x
 
-print 1 is 1
+#print 1 is 1
 
-x = 1
-x = y = z = 2
+#x = 1
+#x = y = z = 2
 
-a,b = (3,4)
+#a,b = (3,4)
 
-def f():
-  x = 1
+#def f():
+#  x = 1
 
-class A(object): pass
+#class A(object): pass
 
-class B(object): pass
+#class B(object): pass
 
-class C(A, B):
-  some_static_field = 7
+#class C(A, B):
+#  some_static_field = 7
   #print "hello!", some_static_field
-  another_static_field = some_static_field + 3
+#  another_static_field = some_static_field + 3
 
-  def m(this, x):
-    return C.some_static_field + x
+#  def m(this, x):
+#    return C.some_static_field + x
 
 
-def f(pos_arg1, pos_arg2, def_arg=1, *rest, **kw_args):
-  return 1
+#def f(pos_arg1, pos_arg2, def_arg=1, *rest, **kw_args):
+#  return 1
 
-def f(x):
-    return x
+#def f(x):
+#    return x
 
-f.__call__
+#f.__call__
 
-a = 3
+#a = 3
 
-def g(x):
-    def h(y):
-        return y
-    return x + 2
+#def g(x):
+#    def h(y):
+#       return y
+#    return x + 2
 
-class C:
-    def m(this):
-        return 8
+#class C:
+#    def m(this):
+#        return 8
 
-    x = 2
-    y = 3
-    y = 4
+#    x = 2
+#    y = 3
+#    y = 4
 
-c = C()
-print c.m()
-print c.x
-print c.y
+#c = C()
+#print c.m()
+#print c.x
+#print c.y
+
+# def make_string(fill_str, size):
+#   s = ''
+#   i = 0
+#   while i < size:
+#     s = s + fill_str
+#     i = i + 1
+#   return s
+#
+# def f(x):
+#   ''.gc()
+#   s = ''.foo() #range(1000000) #''.foo()
+#   return f(x)
+#
+#
+# def h(x):
+#   j(x)
+#   return i(x)
+#
+#
+# def j(x):
+#   ''.gc()
+#   s = ''.foo() # range(1000000) # ''.foo()
+#   h(x)
+#   return i(x)
+#
+#
+# def i(x): return x + 1
+
+#f(1)
+
+def f2(x):
+  ''.gc()
+  s = ''.foo()
+  if 0:
+    return 5
+  return f2(x)
+
+f2(1)
 
 ############ test the PyString C module ######
 #P = pstring.PString

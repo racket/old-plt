@@ -5,7 +5,7 @@
 #ifndef Py_OBJIMPL_H
 #define Py_OBJIMPL_H
 
-//#include "pymem.h"
+#include "pymem.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -270,7 +270,10 @@ extern PyGC_Head *_PyGC_generation0;
 
 /* Tell the GC to track this object.  NB: While the object is tracked the
  * collector it must be safe to call the ob_traverse method. */
-#define _PyObject_GC_TRACK(o) do { \
+#define _PyObject_GC_TRACK(o)
+
+#if 0
+do { \
 	PyGC_Head *g = _Py_AS_GC(o); \
 	if (g->gc.gc_refs != _PyGC_REFS_UNTRACKED) \
 		Py_FatalError("GC object already tracked"); \
@@ -280,6 +283,7 @@ extern PyGC_Head *_PyGC_generation0;
 	g->gc.gc_prev->gc.gc_next = g; \
 	_PyGC_generation0->gc.gc_prev = g; \
     } while (0);
+#endif
 
 /* Tell the GC to stop tracking this object.
  * gc_next doesn't need to be set to NULL, but doing so is a good

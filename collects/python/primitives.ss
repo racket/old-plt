@@ -178,7 +178,12 @@
     (py-create py-dict% ht))
 
   (define (py-dict%->hash-table pd)
-    (python-get-member pd scheme-hash-table-key #f))
+    (hash-table-get (python-node-dict pd) scheme-hash-table-key
+                    (lambda ()
+                      (printf "could not find Scheme hash-table in PyDict object.  keys:~n~a~n"
+                              (hash-table-map (python-node-dict pd) cons))
+                      (error "internal Spy error: py-dict%->hash-table"))))
+;    (python-get-member pd scheme-hash-table-key #f))
 
   (define (assoc-list->py-dict% al)
     (hash-table->py-dict% (assoc-list->hash-table al)))
@@ -455,6 +460,8 @@
 
   ;; py-object%->string: py-object% -> string
   (define (py-object%->string x)
+    ;(printf "py-object%->string~n")
+    ;(printf "py-object%->string: type: ~a~n" (py-string%->string (python-get-type-name (python-node-type x))))
     (cond
       [(py-is? x py-none) "None"]
       [(py-type? x) (format "<type ~a>"
@@ -486,6 +493,7 @@
       [(py-is-a? x py-dict%)
        (let ([dict-items-repr
               (lambda (ht)
+            ;    (printf "dict-items-repr~n")
                 (foldr (lambda (str1 str2) (if (> (string-length str2) 0)
                                                (string-append str1 ", " str2)
                                                str1))
@@ -507,8 +515,11 @@
                                                             ; (py-object%->string key)
                                                             ": "
                                                             (py-object%->string value)))))))])
+        ; (printf "woot~n")
          (string-append "{"
-                        (dict-items-repr (py-dict%->hash-table x))
+                        (let ([ht (py-dict%->hash-table x)])
+                          ;(printf "got the hash-table~n")
+                          (dict-items-repr ht))
                         "}"))]
       [(py-is-a? x py-function%) (string-append "<function "
                                                 (py-string%->string (python-get-name x))
@@ -782,6 +793,12 @@
 
   (python-add-members py-string%
                       `((__init__ ,(procedure->py-function% py-string%-init))
+                        (foo ,(lambda (this)
+                               (string->py-string% (make-string 1000000))))
+                        (gc ,(lambda (this)
+                               (collect-garbage)
+                               (display (current-memory-use))
+                               (newline)))
                         (__add__ ,(py-lambda '+ (this s)
                                           (string->py-string% (string-append (py-string%->string this)
                                                                                (py-string%->string s)))))
@@ -947,12 +964,22 @@
                            (lambda (i) (* (+ i start) step))))))]
       [else (error "Invalid key for __getitem__")]))
 
+     (define (->scheme-key key)
+       (let ([key (->scheme key)])
+         (if (string? key)
+             (string->symbol key)
+             key)))
+     
   (python-add-members py-dict%
                       `((__init__ ,(py-lambda '__init__ (this v)
                                               (python-set-member! this
                                                                   scheme-hash-table-key
                                                                   (if (list? v)
-                                                                      (assoc-list->hash-table v)
+                                                                      (assoc-list->hash-table
+                                                                       (map (lambda (key&value)
+                                                                              (list (->scheme-key (car key&value))
+                                                                                    (cadr key&value)))
+                                                                            v))
                                                                       v))))
                         (values ,(py-lambda 'values (this)
                                             (list->py-list%
@@ -975,6 +1002,8 @@
                                                                                      scheme-hash-table-key
                                                                                      false)
                                                                   (let ([key (->scheme key)])
+                                                                    (printf "dict.__setitem__: key: ~a~n"
+                                                                            key)
                                                                     (if (string? key)
                                                                         (string->symbol key)
                                                                         key))
@@ -984,9 +1013,12 @@
                                                                                     scheme-hash-table-key
                                                                                     false)
                                                                   (let ([key (->scheme key)])
+                                                                    (printf "dict.__getitem__: key: ~a~n"
+                                                                            key)
                                                                     (if (string? key)
                                                                         (string->symbol key)
-                                                                        key)))))))
+                                                                        key))
+                                                                  (lambda () #f))))))
 
   (python-add-members py-module%
                       `((__getattribute__ ,(py-lambda '__getattribute__ (this key)
@@ -1110,7 +1142,7 @@
     (namespace-set-variable-value! (string->symbol method-name)
                                    (lambda arg-list
                                      (printf "now applying ~a with ~a~n" method-name arg-list)
-                                     (apply (eval 'scheme-python-dispatch-method)
+                                     (apply (pns-get 'scheme-python-dispatch-method)
                                             (cons method-name
                                                   arg-list))))
     (printf "python-add-extension-method: added ~a~n" method-name))
@@ -1119,35 +1151,74 @@
   ;; create a new python module, put it in the current namespace, and return it
   (define (py-ext-init-module name)
     (let ([mod (namespace->py-module% (make-python-namespace) (symbol->string name))])
-      (namespace-set-variable-value! name
-                                     mod)
+      (eval `(in-python
+              (namespace-set-variable-value! ',name
+                                             ,mod)))
       mod))
 
   ;; py-ext-module-add-object: py-module% symbol py-object% -> void
   (define (py-ext-module-add-object pymod name obj)
 ;    (write "Adding an extension object...") (newline)
-    #cs(parameterize ([current-namespace (py-module%->namespace pymod)])
-      (namespace-set-variable-value! #csname obj))
-    (if (py-type? obj)
-        (begin 
- ;         (printf "obj is a type object.~n")
-          (python-set-member! obj 'spy-ext-type #t)
-          ((eval 'init-spy-ext-method-table) pymod name obj))
-        (printf "obj is not a type object~n")))
+    (let ([init-table (pns-get 'init-spy-ext-method-table)])
+      #cs(parameterize ([current-namespace (py-module%->namespace pymod)])
+           (namespace-set-variable-value! #csname obj))
+      (if (py-type? obj)
+          (begin 
+            ;         (printf "obj is a type object.~n")
+            (python-set-member! obj 'spy-ext-type #t)
+            (python-set-member! obj python-to-scheme-method
+                                (py-lambda python-to-scheme-method (this)
+                                           (string->symbol (py-object%->string this))))
+            (init-table pymod name obj))
+          (printf "obj is not a type object~n"))))
 
+     (define pyns #f)
+     
+     (define (set-pyns! ns) (set! pyns ns))
+     
+     (define (peval sxp)
+       (parameterize ([current-namespace pyns])
+         (eval sxp)))
+ 
+     
+     
+     (define (pns-get sym)
+       (peval sym))
+;       (eval `(in-python (ns-get ',sym))))
+     
   ;; python-wrap-ext-function: cptr symbol -> py-function%
   (define (python-wrap-ext-function fn-ptr name)
     (procedure->py-function%
      (lambda args
-       (apply (eval 'spy-ext-call-fn)
+       (apply (pns-get 'spy-ext-call-fn)
               (cons fn-ptr args)))
      name))
 
+  ;; python-wrap-ext-function-binary: cptr symbol -> py-function%
+  (define (python-wrap-ext-function-binary fn-ptr name)
+    (procedure->py-function%
+     (lambda (a b)
+       (apply (pns-get 'spy-ext-call-fn-binary)
+              (cons fn-ptr
+                    (cons a
+                          (cons b null)))))
+     name))
+     
+  ;; python-wrap-ext-function-inquiry: cptr symbol -> py-function%
+  (define (python-wrap-ext-function-inquiry fn-ptr name)
+    (procedure->py-function%
+     (lambda (self)
+       (apply (pns-get 'spy-ext-call-fn-inquiry)
+              (cons fn-ptr
+                    (cons self null))))
+     name))
+     
   ;; python-wrap-ext-method: cptr symbol -> py-function%
   (define (python-wrap-ext-method-varargs fn-ptr name)
 ;    (printf "PYTHON WRAP EXT METHOD: ~a~n" name)
     (procedure->py-function% (lambda (self . args)
-                               (apply (eval 'spy-ext-call-bound-varargs)
+                               (printf "python-wrap-ext-method-varargs: called ~a~n" name)
+                               (apply (pns-get 'spy-ext-call-bound-varargs)
                                       (cons fn-ptr (cons self args))))
                              name))
 
@@ -1155,16 +1226,25 @@
   (define (python-wrap-ext-method-noargs fn-ptr name)
  ;   (printf "PYTHON WRAP EXT METHOD: ~a~n" name)
     (procedure->py-function% (lambda (self)
-                               (apply (eval 'spy-ext-call-bound-noargs)
+                               (apply (pns-get 'spy-ext-call-bound-noargs)
                                       (cons fn-ptr (cons self null))))
                              name))
   
+  ;; python-wrap-ext-method=onearg: cptr symbol -> py-function%
+  (define (python-wrap-ext-method-onearg fn-ptr name)
+ ;   (printf "PYTHON WRAP EXT METHOD: ~a~n" name)
+    (procedure->py-function% (lambda (self arg)
+                               (apply (pns-get 'spy-ext-call-bound-onearg)
+                                      (cons fn-ptr (cons self
+                                                         (cons arg null)))))
+                             name))
+
   ;; TODO: add support for keyword args (applying kw-args funcs as varargs fns now)
   ;; python-wrap-ext-method: cptr symbol -> py-function%
   (define (python-wrap-ext-method-kwargs fn-ptr name)
   ;  (printf "PYTHON WRAP EXT METHOD: ~a~n" name)
     (procedure->py-function% (lambda (self . args)
-                               (apply (eval 'spy-ext-call-bound-kwargs)
+                               (apply (pns-get 'spy-ext-call-bound-kwargs)
                                       (cons fn-ptr
                                             (cons self
                                                   (cons (assoc-list->py-dict% '())

@@ -4,7 +4,8 @@
 	   (lib "url.ss" "net")
 	   (lib "process.ss")
 	   (lib "etc.ss")
-	   (lib "string-constant.ss" "string-constants"))
+	   (lib "string-constant.ss" "string-constants")
+	   (lib "file.ss"))
 
   (require "util.ss")
 
@@ -121,14 +122,17 @@
 	  [doc-name (make-local-doc-filename tmp-dir stub)])
       (call-with-output-file doc-name
 	(lambda (out-port)
-	  (call/input-url (string->url url) get-pure-port 
-			  (lambda (in-port)
-			    (let loop ()
-			      (let ([s (read-string 1024 in-port)])
-				(unless (eof-object? s)
-					(display s out-port)
-                                      (loop))))))))
-    (void)))
+	  (parameterize ([current-proxy-servers 
+			  (or (get-preference 'plt:http-proxy (lambda () #f))
+			      null)])
+	    (call/input-url (string->url url) get-pure-port 
+			    (lambda (in-port)
+			      (let loop ()
+				(let ([s (read-string 1024 in-port)])
+				  (unless (eof-object? s)
+				    (display s out-port)
+				    (loop)))))))))
+      (void)))
 
   (define (delete-known-doc tmp-dir doc-name)
     (let ([doc-dir (build-path (collection-path "doc") doc-name)])

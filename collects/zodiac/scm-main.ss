@@ -816,12 +816,12 @@
       (let* ((kwd '())
 	      (in-pattern '(_ expr))
 	      (out-pattern '(let-values (((s)
-					   (current-gc-milliseconds))
+					   (#%current-gc-milliseconds))
 					  ((v cpu user)
 					    (#%time-apply (lambda () expr))))
 			      (#%printf
 				"cpu time: ~s real time: ~s gc time: ~s~n"
-				cpu user (- (current-gc-milliseconds) s))
+				cpu user (#%- (#%current-gc-milliseconds) s))
 			      (#%apply #%values v)))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)

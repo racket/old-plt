@@ -75,9 +75,7 @@
 				   (make-object mred:style-delta% 'change-bold)
 				   0
 				   (string-length str))
-			     (send text end-edit-sequence)
 			     (super-file-menu:print item control)
-			     (send text begin-edit-sequence)
 			     (send text delete 0 (+ (string-length str) 1) #f)
 			     (send text set-modified modified?)
 			     (send text end-edit-sequence))

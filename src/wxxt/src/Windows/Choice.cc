@@ -253,8 +253,10 @@ void wxChoice::Append(char *s)
   s = protect_amp(s);
 
   choice_menu->Append(num_choices++, s, (char *)(-1));
-  if (num_choices == 1)
+  if (num_choices == 1) {
     XtVaSetValues(X->handle, XtNshrinkToFit, False, XtNlabel, s, NULL);
+    selection = 0;
+  }
 }
 
 void wxChoice::Clear(void)

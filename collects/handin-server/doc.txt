@@ -101,8 +101,8 @@ Quick start for testing:
  6. Make a "test" subdirectory in "active"
 
  7. In your new directory, run
-       mzscheme -mvqM handin-server
-
+        mred -mvqM handin-server
+     
  8. Start DrScheme, click "Handin", handin as "tester" with
     password "pw"
 
@@ -201,4 +201,4 @@ The _utils.ss_ module provides utilities helpful in implementing
 `checker' functions:
 
 > (unpack-submission string) - returns two text% objects correcponding
-  to the submitted definitions and interactions windows
+  to the submitted definitions and interactions windows.

@@ -10,7 +10,7 @@
   
   (provide make-gui@)
   
-  (define (make-gui@ state frame)
+  (define (make-gui@ state)
     (unit/sig gui^
       (import (script : script^) code-engine^)
       
@@ -268,7 +268,7 @@
       (define (close-window)
         (send window-pane close-current))
       
-      (define window-pane (make-object tabbed-panel% frame))
+      (define window-pane #f)
       
       (define (get-current-directory)
         (let ((c (send window-pane get-current)))
@@ -276,6 +276,7 @@
               (send c get-dir)
               (script:make-file (find-system-path 'home-dir)))))
       
-      (add-window (get-current-directory))
-      
-      (send frame show #t))))
+      (lambda (frame)
+        (set! window-pane (make-object tabbed-panel% frame))
+        (add-window (get-current-directory))
+        (send frame show #t)))))

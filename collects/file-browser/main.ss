@@ -1,6 +1,7 @@
 (module main mzscheme
   (require (lib "class.ss")
            (lib "unitsig.ss")
+           (lib "unit.ss")
            (lib "list.ss")
            (lib "tool.ss" "drscheme")
            (lib "mred.ss" "mred")
@@ -34,7 +35,7 @@
               (define f-int name) ...)))))))
   
   (define orig-output (current-output-port))
-  (define trace? #f)
+  (define trace? #t)
   (define-syntax trace
     (syntax-rules ()
       ((_ str arg ...)
@@ -48,32 +49,39 @@
         (drscheme:unit:make-bitmap "Browse Files"
                                    (build-path (collection-path "icons") "file.gif")))
 
-      (define (setup-namespace run-thread unit)
-        (trace "entering setup-namespace")
-        (if (not (null? unit))
-            (let ((s (make-semaphore)))
-              (trace "starting setup-namespace user-thread")
-              (run-thread
-               (lambda () 
-                 (trace "in setup-namespace user-thread")
-                 (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
-                   (script-unit-param unit)
-                   (namespace-require `(lib "script.ss" "file-browser"))
-                   (load (build-path (find-system-path 'pref-dir) ".file-browser.ss"))
-                   (trace "no exception in setup-namespace user-thread"))
-                 (semaphore-post s)
-                 (trace "semaphore posted")))
-              (yield s)
-              (trace "finished setup-namespace user-thread")))
-        (trace "leaving setup-namespace"))
-
-      (define script-unit null)
-      (define active? #f)
+      (define frame #f)
       
+      (define-values/invoke-unit
+       (new-file-window open-window)
+       (unit
+         (import)
+         (export new-file-window open-window)
+         (define counter 0)
+         (define lock (make-semaphore 1))
+         (define (new-file-window)
+           (semaphore-wait lock)
+           (set! counter (add1 counter))
+           (semaphore-post lock))
+         (define (open-window)
+           (semaphore-wait lock)
+           (cond
+             ((> counter 0)
+              (set! counter (sub1 counter))
+              (semaphore-post lock)
+              #t)
+             (else
+              (semaphore-post lock)
+              #f)))))
+
+      ;;(load (build-path (find-system-path 'pref-dir) ".file-browser.ss"))
+
       (drscheme:get/extend:extend-unit-frame
        (lambda (frame%)
          (class frame%
            (inherit get-button-panel get-interactions-text)
+           (public get-script-unit is-active?)
+           
+           (trace "building-frame")
            
            (define code-engine@
              (unit/sig code-engine^
@@ -82,11 +90,7 @@
                (trace "invoking code-engine")
                
                (set! script-unit (make-unit script^ (signature->symbols script^)))
-               
-               (setup-namespace (lambda (t)
-                                  (send (get-interactions-text) run-in-evaluation-thread t))
-                                script-unit)
-               
+                              
                (trace "code-engine through")
                
                (define (wrap v)
@@ -113,6 +117,12 @@
                        (lambda ()
                          (callback (eval (read (open-input-string code-string)))))))))
            
+           (define script-unit #f)
+           (define (get-script-unit) script-unit)
+           
+           (define active? (open-window))
+           (define (is-active?) active?)
+
            (rename (super-enable-evaluation enable-evaluation))
            (define/override (enable-evaluation)
              (send button enable #t)
@@ -122,6 +132,12 @@
            (define/override (disable-evaluation)
              (send button enable #f)
              (super-disable-evaluation))
+           
+           (rename (super-execute-callback execute-callback))
+           (define/override (execute-callback)
+             (set! frame this)        ;; Relies on the face that executes are atomic with respect
+                                      ;; to other executes
+             (super-execute-callback))
            
            (rename (super-make-root-area-container make-root-area-container))
            (define container #f)
@@ -135,33 +151,40 @@
              (let ((root (make-object % container)))
                root))
            
-           (super-instantiate ())
+           (define start
+             (cond
+               (active?
+                (invoke-unit/sig 
+                 (compound-unit/sig
+                   (import)
+                   (link (FS : file-system^ ((make-file-system@ state) GUI))
+                         (SCRIPT : script^ (script@ GUI FS))
+                         (CODE : code-engine^ (code-engine@ SCRIPT))
+                         (GUI : gui^ ((make-gui@ state)
+                                      SCRIPT CODE)))
+                   (export))))))
+           (set! frame this)
+           
+           (trace "super-frame start")
+           (super-instantiate ())  ;; on-execute happens in here
+           (trace "super-frame finish")
+           (cond
+             (active?
+              (send container begin-container-sequence)
+              (start container)
+              (send container change-children
+                    (lambda (c) (cons (cadr c) (cons (car c) null))))
+              (send container end-container-sequence)))
            
            (define button
              (make-object button% (activate-bitmap this) (get-button-panel)
                (lambda (a b)
-		 (set! active? #t)
+                 (new-file-window)
                  (drscheme:unit:open-drscheme-window))))
-           
-	   (cond
-             (active?
-              ;(set! active? #f)
-              (send container begin-container-sequence)
-              (invoke-unit/sig 
-               (compound-unit/sig
-                 (import)
-                 (link (FS : file-system^ ((make-file-system@ state) GUI))
-                       (SCRIPT : script^ (script@ GUI FS))
-                       (CODE : code-engine^ (code-engine@ SCRIPT))
-                       (GUI : gui^ ((make-gui@ state container)
-                                    SCRIPT CODE)))
-                 (export)))
-              (send container change-children
-                    (lambda (c) (cons (cadr c) (cons (car c) null))))
-              (send container end-container-sequence)))
-              
-              (send (get-button-panel) change-children
-                    (lambda (x) (cons button (remq button x)))))))
+
+           (send (get-button-panel) change-children
+                 (lambda (x) (cons button (remq button x)))))))
+          
       
       (define (phase1)
         (drscheme:language:extend-language-interface
@@ -171,7 +194,7 @@
              (rename (super-on-execute on-execute))
              (define/override (on-execute settings run-in-user-thread)
                (trace "entering on-execute")
-	       (if active?
+	       (if (send frame is-active?)
 		   (let ((module-name ((current-module-name-resolver) 
 				       '(lib "script-param.ss" "file-browser")
 				       'script-param #f))
@@ -181,9 +204,10 @@
 		      (lambda ()
 			(trace "in on-execute user-thread")
 			(with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
-			  (namespace-attach-module prog-namespace module-name))))
-		     (trace "finish on-execute user-thread")
-		     (setup-namespace run-in-user-thread script-unit)))
+			  (namespace-attach-module prog-namespace module-name)
+                          (script-unit-param (send frame get-script-unit))
+                          (namespace-require `(lib "script.ss" "file-browser")))))
+		     (trace "finish on-execute user-thread")))
                (trace "calling super-on-execute")
                (super-on-execute settings run-in-user-thread))
              (super-instantiate ())))))

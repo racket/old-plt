@@ -10,17 +10,19 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 (define mach-id (string->symbol (system-library-subpath)))
 
 (define search-path
-  (list "/usr" "/usr/local/gnu" "/sw"))
+  (list "/usr" "/usr/local/gnu" "/sw" (build-path (collection-path "openssl") "openssl")))
 
 (define mzssl-path
   (ormap (lambda (x)
 	   (and (directory-exists? (build-path x "include" "openssl"))
 		(or ;(file-exists? (build-path x "lib" "libssl.a"))
 		    (file-exists? (build-path x "lib" "libssl.so"))
-		    (file-exists? (build-path x "lib" "libssl.dylib")))
+		    (file-exists? (build-path x "lib" "libssl.dylib"))
+		    (file-exists? (build-path x "lib" "libeay32.lib")))
 		(or ;(file-exists (build-path x "lib" "libcrypto.a"))
 		    (file-exists? (build-path x "lib" "libcrypto.so"))
-		    (file-exists? (build-path x "lib" "libcrypto.dylib")))
+		    (file-exists? (build-path x "lib" "libcrypto.dylib"))
+		    (file-exists? (build-path x "lib" "ssleay32.lib")))
 		x))
     search-path))
 
@@ -64,13 +66,19 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
   [else (void)])
 
 
-;; Add -L and -l for readline:
-(add-flags current-extension-linker-flags 
-	   (list (format "-L~a/lib" mzssl-path)
-		 "-lssl" "-lcrypto"))
+;; Add -L and -l for ssl:
+(unless (eq? mach-id 'win32\\i386)
+  (add-flags current-extension-linker-flags 
+	     (list (format "-L~a/lib" mzssl-path)
+		   "-lssl" "-lcrypto")))
 
 ; More platform-specific linker flags.
 (case mach-id
+  [(win32\\i386)
+   (add-flags current-standard-link-libraries
+	      (list (build-path mzssl-path "lib" "libeay32.lib")
+		    (build-path mzssl-path "lib" "ssleay32.lib")
+		    "wsock32.lib"))]
   [(sparc-solaris i386-solaris)
    (add-flags current-extension-linker-flags
 	      (list "-ltermcap"))]

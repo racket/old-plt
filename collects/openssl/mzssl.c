@@ -1,15 +1,32 @@
 /* ssl.c: an extension to PLT MzScheme to allow SSL connections */
+
 #include <openssl/ssl.h>
 #include <openssl/err.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
 #include "escheme.h"
+
+#ifdef USE_UNIX_SOCKETS_TCP
+# include <sys/types.h>
+# include <netinet/in.h>
+# include <netdb.h>
+# include <sys/socket.h>
+# include <sys/time.h>
+# include <fcntl.h>
+# include <unistd.h>
+# include <errno.h>
+# define NOT_WINSOCK(x) (x)
+# define INVALID_SOCKET (-1)
+# define WAS_EINPROGRESS(e) ((e == EINPROGRESS))
+# define mz_strerror(x) dup_errstr(strerror(x))
+# define mz_hstrerror(x) dup_errstr(hstrerror(x))
+#endif
+
+#ifdef USE_WINSOCK_TCP
+# include <winsock.h>
+# define NOT_WINSOCK(x) 0
+# define WAS_EINPROGRESS(e) ((e == WSAEINPROGRESS))
+# define mz_strerror(x) "Unknown error"
+# define mz_hstrerror(x) "Unknown error"
+#endif
 
 /* stolen from $(PLTHOME}/src/mzscheme/src/schpriv.h */
 #ifdef USE_FCNTL_O_NONBLOCK
@@ -34,22 +51,6 @@
 # define DECL_FDSET(n, c) fd_set n[c]
 # define INIT_DECL_FDSET(n, c) /* empty */
 #endif
-
-/* stolen from $(PLTHOME)/src/mzscheme/src/schpriv.h */
-typedef void (*Scheme_Kill_Action_Func)(void *);
-void scheme_push_kill_action(Scheme_Kill_Action_Func f, void *d);
-void scheme_pop_kill_action();
-# define BEGIN_ESCAPEABLE(func, data) \
-    { mz_jmp_buf savebuf; \
-      scheme_push_kill_action((Scheme_Kill_Action_Func)func, (void *)data); \
-      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf)); \
-      if (scheme_setjmp(scheme_error_buf)) { \
-        func(data); \
-        scheme_longjmp(savebuf, 1); \
-      } else {
-# define END_ESCAPEABLE() \
-      scheme_pop_kill_action(); \
-      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); } }
 
 struct sslplt {
   SSL *ssl;
@@ -412,13 +413,13 @@ SSL_METHOD *check_encrypt_and_convert(int argc, Scheme_Object *argv[], int c)
 
   sym_val = SCHEME_SYM_VAL(argv[2]);
 
-  if(!strcasecmp(sym_val, "sslv2-or-v3")) {
+  if(!strcmp(sym_val, "sslv2-or-v3")) {
     return (c ? SSLv23_client_method() : SSLv23_server_method());
-  } else if(!strcasecmp(sym_val, "sslv2")) {
+  } else if(!strcmp(sym_val, "sslv2")) {
     return (c ? SSLv2_client_method() : SSLv2_server_method());
-  } else if(!strcasecmp(sym_val, "sslv3")) {
+  } else if(!strcmp(sym_val, "sslv3")) {
     return (c ? SSLv3_client_method() : SSLv3_server_method());
-  } else if(!strcasecmp(sym_val, "tls")) {
+  } else if(!strcmp(sym_val, "tls")) {
     return (c ? TLSv1_client_method() : TLSv1_server_method());
   } else scheme_wrong_type("ssl-connect", 
 			   "one of 'sslv23, 'sslv2, 'sslv3, or 'tls", 
@@ -502,7 +503,7 @@ int ssl_check_connect(Scheme_Object *connector)
 
   do {
     res = select((int)connector + 1, NULL, writefds, exnfds, &time);
-  } while((res == 0) && (errno == EINTR));
+  } while((res == 0) && NOT_WINSOCK(errno == EINTR));
 
   return res;
 }
@@ -520,13 +521,17 @@ void ssl_connect_needs_wakeup(Scheme_Object *connector, void *fds)
   MZ_FD_SET((int)connector, (fd_set *)fds2);
 }
 
+#ifdef USE_UNIX_SOCKETS_TCP
+
 /* closesocket: close a socket, and try real hard to do it. This is lifted 
    entirely from ${PLTHOME}/src/mzscheme/src/network.c */
 void closesocket(long s)
 {
   int cr;
-  do { cr = close(s); } while((cr == -1) && (errno == EINTR));
+  do { cr = close(s); } while((cr == -1) && NOT_WINSOCK(errno == EINTR));
 }
+
+#endif
 
 /* close_socket_and_dec: called when we're broken out of our attempt to
    connect a socket */
@@ -535,6 +540,20 @@ void close_socket_and_dec(unsigned short sock)
   closesocket(sock);
 /*   --scheme_file_open_count; */
 }
+
+#ifdef USE_UNIX_SOCKETS_TCP
+/* Copy error strings in case a thread swap happens
+   between the time the string is obtained and
+   the string is put into an error message. */
+static char *dup_errstr(char *s) {
+  char *t;
+  long len;
+  len = strlen(s);
+  t = scheme_malloc_atomic(len);
+  memcpy(t, s, len);
+  return t;
+}
+#endif
 
 /*****************************************************************************
  * SCHEME EXTERNAL FUNCTION IMPLEMENTATIONS: These are the implemenations of *
@@ -572,13 +591,20 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
   }
 #endif
   sock = socket(PF_INET, SOCK_STREAM, PROTO_P_PROTO);
-  if(sock == -1)  { errstr = strerror(errno); goto clean_up_and_die; }
+  if (sock == INVALID_SOCKET)  { errstr = mz_strerror(errno); goto clean_up_and_die; }
+#ifdef USE_WINSOCK_TCP
+  {
+    unsigned long ioarg = 1;
+    ioctlsocket(sock, FIONBIO, &ioarg);
+  }
+#else
   fcntl(sock, F_SETFL, MZ_NONBLOCKING);
+#endif
   
   /* lookup hostname and get a reasonable structure */
   host = get_host_by_number(address);
   if(!host) host = gethostbyname(address);
-  if(!host) { errstr = hstrerror(h_errno); goto clean_up_and_die; }
+  if(!host) { errstr = mz_hstrerror(h_errno); goto clean_up_and_die; }
     
   /* make the network connection */
   addr.sin_family = AF_INET;
@@ -589,8 +615,8 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
   status = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
   /* here's the complicated bit */
   if(status == -1) {
-    if(errno != EINPROGRESS) { 
-      errstr = strerror(errno); goto clean_up_and_die; 
+    if(!WAS_EINPROGRESS(errno)) { 
+      errstr = mz_strerror(errno); goto clean_up_and_die; 
     }
     
 /*     scheme_file_open_count++; */
@@ -603,7 +629,7 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
     {
       int so_len = sizeof(status);
       if(getsockopt(sock, SOL_SOCKET,SO_ERROR, (void*)&status, &so_len) != 0) {
-/* 	scheme_file_open_count--; */ errstr = strerror(status); 
+/* 	scheme_file_open_count--; */ errstr = mz_strerror(status); 
 	goto clean_up_and_die;
       }
     }

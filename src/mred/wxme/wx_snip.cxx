@@ -575,7 +575,7 @@ void wxTextSnip::GetExtent(wxDC *dc,
     if ((flags & wxSNIP_INVISIBLE) || !count 
 	|| (count == 1 && text[0] == '\n')
 	|| (count == 1 && text[0] == '\t')) {
-      if (text[0] == '\t')
+      if (count == 1 && text[0] == '\t')
 	w = style->GetTextWidth(dc);
       else
 	w = 0;

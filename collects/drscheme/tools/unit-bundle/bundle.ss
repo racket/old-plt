@@ -1,11 +1,51 @@
 #|
 
+A bundle-table% is a mapping from names to bundles. It supports these methods:
+  
+  extend : (symbol bundle-manager% -> void)
+    adds a new binding from the symbol to a bundle.
+  
+  lookup : (symbol -> (union #f bundle-manager%))
+    looks up a bundle
+  
+  create-view : (-> void)
+    opens a frame displaying the mappings of names to bundles in
+    this table. If a frame has already been created, just shows that
+    frame.
+    
+    All changes to the table of the bundle rare reflected in the frame.
+
+-- 
+
+A bundle-table-frame% provides the view of a bundle-table%
+
+It's single initialization is argument is a bundle-table%. It supports:
+
+   extend : ((symbol bundle-manager%) -> void)
+   
+      called when the bundle-table is extended
+
+   delete : (symbol -> void)
+   
+      called when an entry in the bundle-table is removed
+
+      
+--    
+
 A bundle-manager% is an manager class. It keeps track of an instance
 of a Bundle Contents and the views associated with that instance.
+
+It takes no initialization arguments.
+
 It supports three methods:
 
-  get-bundle : (-> bundle<%>)
-    returns the bundle that this manager manages
+  get-bundle : (-> (union #f bundle<%>))
+    returns the bundle that this manager manages or #f
+    if this manager is not yet managing a bundle.
+
+  set-bundle : ((union #f bundle<%>) -> void)
+    sets the bundle that this manager manages;
+    #f indicates that no bundle is managed.
 
   create-view : (bundle-frame% (snip -> void) -> void)
     constructs a snip that displays the Bundle that this manager
@@ -14,7 +54,7 @@ It supports three methods:
   
   bundle-changed : (-> void)
     notifies all views of this bundle to update themselves.
-    
+
 -- 
 
 A Bundle is a tree representing the structure of the bundle,
@@ -80,8 +120,9 @@ node-bundle-snip%
       bundle-changed))
   
   (define bundle-manager%
-    (class* object% (bundle-manager<%>) (contents)
+    (class* object% (bundle-manager<%>) ()
       (private
+        [contents #f]
         [views null]
         [interior-height-addition 10]
         [calculate-tree-size
@@ -181,6 +222,7 @@ node-bundle-snip%
                [else (error 'create-view "fell off cond: ~e~n" contents)])))])
       (public
         [get-bundle (lambda () contents)]
+        [set-bundle (lambda (b) (set! contents b))]
         [create-view
          (lambda (frame insert-into-editor)
            (let* ([view (make-object bundle-pasteboard% frame)]
@@ -506,17 +548,46 @@ node-bundle-snip%
       (sequence
         (super-init))))
   
-  ;; test
-  (define leaf1 (make-object leaf-bundle% '(aaa b)))
-  (define leaf2 (make-object leaf-bundle% '(c dd)))
-  (define int1 (make-object node-bundle% 'z (list leaf1 leaf2)))
-  (define int2 (make-object node-bundle% 'y (list leaf2 int1 leaf2)))
-  (define int3 (make-object node-bundle% 'x (list int2 leaf2)))
+  (define bundle-table%
+    (class object% ()
+      (private
+       [table null]
+       [view #f])
+      (public
+        [extend
+         (lambda (name contents)
+           (when view
+             (send view extend name contents))
+           (set! table (cons (cons name contents) table)))]
+        [remove
+         (lambda (name)
+           (when view
+             (send view remove name))
+           (set! table
+                 (let loop ([table table])
+                   (cond
+                     [(null? table) null]
+                     [else (let ([ent (car table)])
+                             (if (eq? (car ent) name)
+                                 (cdr table)
+                                 (cons (car table)
+                                       (loop (cdr table)))))]))))]
+        [lookup
+         (lambda (name)
+           (let ([ans (memq name table)])
+             (if ans
+                 (cdr ans)
+                 #f)))])
+      (public
+        [create-view
+         (lambda ()
+           (set! view (make-object bundle-table-frame% this))
+           (send view show #t))])
+      (sequence (super-init))))
+           
   
-  (define bundle (make-object bundle-manager% int2))
-  
-  (define bundle-frame%
-    (class frame% ()
+  (define bundle-table-frame%
+    (class frame% (bundle-table)
       (public
         [enable-children
          (lambda (x)
@@ -541,22 +612,16 @@ node-bundle-snip%
            (let/ec k
              (let ([out (lambda () (bell) (k #f))]
                    [snip (send text get-focus-snip)])
-	       (printf "1~n")
                (unless (is-a? snip editor-snip%)
                  (out))
-	       (printf "2~n")
                (let ([pb (send snip get-editor)])
                  (unless (is-a? pb bundle-pasteboard%)
                    (out))
                  (let ([snip (send pb find-next-selected-snip #f)])
-		   (printf "3 ~s~n" (list (not (not snip))
-					  (and snip (is-a? snip node-bundle-snip%))
-					  (not (send pb find-next-selected-snip snip))))
                    (unless (and snip
                                 (is-a? snip node-bundle-snip%)
                                 (not (send pb find-next-selected-snip snip)))
                      (out))
-		   (printf "4~n")
                    (let ([node-bundle (send snip get-bundle)])
                      (send node-bundle add-child (make-object leaf-bundle% '(zzz)))))))))]
         

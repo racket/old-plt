@@ -177,7 +177,10 @@
       (public
 	[get-seconds
 	 (lambda ()
-	   seconds)]
+	   seconds)])
+      (private
+	[last-time-before-current? #f])
+      (public
 	[update
 	 (lambda ()
 	   (let ([current (current-seconds)])
@@ -189,12 +192,18 @@
 		   (loop)))
 	       (update-date-edit)
 	       (send main-edit sort-lines))
+	     (when (and last-time-before-current?
+			(< seconds current))
+	       (set! last-time-before-current? #f)
+	       (send main-edit sort-lines))
 	     (let ([delta (- current seconds)])
 	       (let-values ([(d-seconds d-minutes d-hours d-days d-weeks d-years)
 			     (seconds->delta (abs delta))])
 		 (redisplay delta d-seconds d-minutes d-hours d-days d-weeks d-years)))))])
       (sequence (super-init edit show-border? x-inset y-inset x-inset y-inset)
-		(init-seconds (current-seconds))
+		(let ([current (current-seconds)])
+		  (init-seconds current)
+		  (set! last-time-before-current? (< current seconds)))
 		(update-date-edit))))
   
   (define main-edit%
@@ -243,16 +252,31 @@
 			     (send admin release-snip outer))))
 		       lines)
 	     (delete 0 (last-position) #f)
-	     (let ([first? #t])
-	       (for-each (lambda (outer)
-			   (if first?
-			       (set! first? #f)
-			       (insert (string #\newline) (get-start-position) -1 #f))
-			   (insert outer (get-start-position) -1 #f))
-			 (quicksort lines
-				    (lambda (x y)
-				      (<= (get-seconds x)
-					  (get-seconds y))))))
+	     (let ([current (current-seconds)])
+	       (let loop ([lines (quicksort lines
+					    (lambda (x y)
+					      (<= (get-seconds x)
+						  (get-seconds y))))]
+			  [first? #t]
+			  [crossed-line? #f])
+		 (cond
+		   [(null? lines) (void)]
+		   [else (let* ([outer (car lines)]
+				[this-above-line? (< (get-seconds outer) current)]
+				[insert-separator?
+				 (and (not this-above-line?)
+				      (not crossed-line?)
+				      (not first?))])
+			   (when insert-separator?
+			     (insert (string #\newline) (get-start-position) -1 #f)
+			     (insert (make-object mred:separator-snip%) (get-start-position) -1 #f))
+			   (when (and (not first?) 
+				      (not insert-separator?))
+			     (insert (string #\newline) (get-start-position) -1 #f))
+			   (insert outer (get-start-position) -1 #f)
+			   (loop (cdr lines)
+				 #f
+				 (or crossed-line? insert-separator?)))])))
 	     (lock #t)))]
 	
 	[new-counter

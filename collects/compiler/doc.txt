@@ -384,9 +384,10 @@ Additional info.ss fields trigger additional setup actions:
    parallel to `mred-launcher-names'.
 
  * `install-collection' - a procedure that accepts a directory path
-   argument and performs collection-specific installation work.
-   This procedure should avoid unnecessary work in the case that
-   it is called multiple times for the same installation.
+   argument (the path to the collection) and performs
+   collection-specific installation work.  This procedure should avoid
+   unnecessary work in the case that it is called multiple times for
+   the same installation.
 
  Unpacking .plt Distribution Archives
  ------------------------------------

@@ -31,20 +31,8 @@
            #"__head_~a_lib\0"
            #"__~a_lib_iname\0")))
 
-  (provide version-bytes) ; can be useful in other places
-  (define version-bytes
-    (cond [(regexp-match #rx#"^([0-9]+(?:p[0-9])?)(?:[.]([0-9]+))?$"
-                         (string->bytes/utf-8 (version)))
-           => (lambda (m)
-                (let ([major (cadr m)] [minor (or (caddr m) #"")])
-                  (bytes-append major #"_"
-                                (make-bytes (- (bytes-length xxxs) 1
-                                               (bytes-length major)
-                                               (bytes-length minor))
-                                            (char->integer #\0))
-                                minor)))]
-          [else (error 'winvers-change "unexpected version string: ~s"
-                       (version))]))
+  (require (lib "filename-version.ss" "dynext"))
+  (define version-bytes (string->bytes/utf-8 filename-version-part))
 
   (define bytes-downcase
     (let* ([a* (char->integer #\A)]

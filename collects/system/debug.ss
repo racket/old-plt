@@ -1,4 +1,5 @@
 (begin-elaboration-time
+ (define mred:debug:param (current-parameterization))
  (define-values (mred:debug:printf
 		 mred:debug:if
 		 mred:debug:when
@@ -19,7 +20,6 @@
 			   [else (printf "WARNING: environment variable MREDDEBUG expected to evaluate to a list or a symbol got: ~a~n" r)
 				 null])))
 		       null)))]
-	  [param (current-parameterization)]
 	  [release? #f]
 	  [when/unless
 	   (lambda (when/unless)
@@ -39,7 +39,7 @@
      (values
       (lambda (symbol string . rest)
 	`(when (member ,symbol (unbox ,when))
-	  (with-parameterization ,param
+	  (with-parameterization (global-defined-value 'mred:debug:param)
 				 (lambda ()
 				   (printf
 				    (string-append ,string "~n")
@@ -77,34 +77,14 @@
 (define-macro mred:debug:turn-on mred:debug:turn-on)
 (define-macro mred:debug:turn-off mred:debug:turn-off)
 
-(mred:debug:when (list 'compile 'compile-and-exit 'load)
+(mred:debug:when (list 'load)
   (letrec* ([old-handler (current-load)]
 	    [offset-string "  "]
 	    [indent-string ""])
     (current-load (lambda (f)
 		    (let* ([file (if (relative-path? f)
 				     (build-path (current-directory) f)
-				     f)]
-			   [link?
-			    (lambda (x)
-			      (let* ([len (string-length x)]
-				     [ans (or (and (> len 4)
-						   (string=? (substring x (- len 4) len) "link"))
-					      (and (> len 6)
-						   (string=? (substring x (- len 6) len) "macros")))])
-				(when ans
-				  (mred:debug:printf 'load "~afilname; skip: ~a" indent-string x))
-				ans))]
-			   [mzlib?
-			    (lambda (x)
-			      (let*-values ([(base _1 _2) (split-path x)]
-					    [(ans) (and base
-							(let-values ([(_1 name _2) (split-path base)])
-							  (equal? name "mzlib")))])
-					   '(printf "name: ~a~n" name)
-				(when ans
-				  (mred:debug:printf 'load "~amzlib; skip: ~a" indent-string x))
-				ans))])
+				     f)])
 		      (mred:debug:printf 'load "~aLoading ~a..." indent-string file)
 		      (let* ([indent
 			      (lambda ()
@@ -123,32 +103,6 @@
 			       (lambda () (call-with-values
 					   (lambda () (old-handler f))
 					   list))
-			       outdent)]
-			     [len (string-length file)]
-			     [basename (substring file 0 (- len 3))]
-			     [suffix (substring file (- len 3) len)]
-			     [zo (string-append basename ".zo")]
-			     [error-handler
-			      (lambda (e) 
-				(delete-file zo)
-				((error-display-handler)
-				 (string-append indent-string
-						(exn-message e)))
-				#f)])
-			(mred:debug:when
-			 (list 'compile 'compile-and-exit)
-			 (when (and (not (link? basename))
-				    (string=? ".ss" suffix)
-				    (or (not (file-exists? zo))
-					(<= (file-modify-seconds zo)
-					    (file-modify-seconds file)))
-				    (not (mzlib? file)))
-			   (mred:debug:printf 'load "~aCompiling ~a..." indent-string file)
-			   (indent)
-			   (with-handlers ((void error-handler))
-					  (compile-file file zo '(preserve-elaborations))
-					  #t)
-			   (outdent)
-			   (mred:debug:printf 'load "~aCompiled ~a." indent-string file)))
+			       outdent)])
 			(mred:debug:printf 'load "~aLoaded ~a." indent-string file)
 			(apply values answer)))))))

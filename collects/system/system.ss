@@ -6,6 +6,9 @@
 	  "splash.zo"
 	  "splash.ss"))
 
+(when (getenv "MREDCOMPILE")
+  (load "compsys.ss"))
+
 (define mred:original-output-port (current-output-port))
 
 ; Remember this directory
@@ -126,8 +129,8 @@
 	 (for-each (lambda (x) (apply (car x) (cdr x))) (reverse todo))
 	 
 	 (mred:invoke)
-	 (mred:debug:when 'compile-and-exit
-			  (wx:exit))
+	 (when (getenv "MREDCOMPILE")
+	   (wx:exit))
 	 (mred:no-more-splash-messages)
 	 (mred:build-spidey-unit)
 	 (when mred:non-unit-startup?

@@ -55,13 +55,13 @@ Mac OS X:
  Then follow the Unix instructions below, but note the following:
 
    * The MzScheme build creates a framework, PLT_MzScheme.framework,
-     which is installed into /Library/Frameworks. This framework is
+     which is installed into ~/Library/Frameworks. This framework is
      used by the executable `mzscheme' that goes into plt/bin.
 
    * The MrEd build creates a framework, PLT_MrEd.framework, which is
-     installed into /Library/Frameworks. This framework is used by the
+     installed into ~/Library/Frameworks. This framework is used by the
      executable bundle MrEd.app that goes into the `plt' directory.
-     Installation creates a link, plt/bin/mred, into the bundle.
+     Installation creates a script, plt/bin/mred, that runs the bundle.
 
    * The --enable-dynlib for `configure' is not supported for Mac OS
      X, because it is redundant (i.e., all builds create and use
@@ -74,15 +74,32 @@ Mac OS X:
 Mac OS Classic (PowerPC only):
 
  MrEd compiles for Mac OS Classic using MPW.  Stand-alone MzScheme is
- not suported for Classic.
+ not suported for Classic (use MrEd instead).
 
- To compile with MPW, set the workding directory to the "mac:mpw"
- subdirectory, then
+ To compile with MPW, set the working directory to the ":mac:mpw"
+ subdirectory of this one, then execute
+
+    set -e makefile makefile
     buildprogram all
 
- Depending on how you obtained the source, you may need to force the
- source code to have the type TEXT. The "textify.ss" program will do
- this for you, but it requires a Mac OS X MzScheme.
+ [Depending on how you obtained the source, you may need to force the
+  source code files to have the type TEXT. The "textify.ss" program in
+  ":mac:mpw" will do this for you, but it requires a Mac OS X MzScheme
+  with Apple's Developer Tools installed.]
+
+ `buildprogram all' generates three files:
+
+   plt:MrEd - the main application
+   plt:netglue - used by MrEd when TCP is started
+   plt:collects:launcher:GoMr - used to create "launchers"
+
+ After `buildprogram all' completes, double-click the MrEd application
+ with the command key pressed. In the dialog that appears, type
+
+      -mvqM- setup
+
+ and hit Return. The setup program will then run; it compiles Scheme
+ source to .zo format, and also creates launchers, such as "DrScheme".
 
 ========================================================================
  Compiling for supported Unix variants (including Linux)
@@ -236,10 +253,10 @@ information. As dsitributed, mzscheme/sconfig.h contains
 configurations for the following platforms:
 
               Windows
-              Mac OS (PPC and 68k)
-              Linux (x86, PPC, and 68k)
+              Mac OS (PPC Classic and OS X)
+              Linux (x86, PPC, 68k, Alpha)
               Cygwin
-              Solaris (x86 and Sparc)
+              Solaris (x86, Sparc)
               SunOS4 (Sparc)
               IBM AIX (RS6000)
               SGI IRIX (Mips)

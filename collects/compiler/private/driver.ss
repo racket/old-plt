@@ -1050,7 +1050,7 @@
 			      (for-each
 			       (lambda (c-declare)
 				 (fprintf c-port "~a~n" c-declare))
-			       c-declares)
+			       (reverse c-declares))
 			      (fprintf c-port "~n/* done with c-declare literals */~n~n"))
 
 			    (unless (null? c-lambdas)
@@ -1063,7 +1063,7 @@
 					    name)
 				   (fprintf c-port "~a~n" body)
 				   (fprintf c-port "}~n")))
-			       c-lambdas)
+			       (reverse c-lambdas))
 			      (fprintf c-port "~n/* done with c-lambda implementations */~n~n"))
 
 			    (fprintf c-port "#include \"mzc.h\"~n~n")

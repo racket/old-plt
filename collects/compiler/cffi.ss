@@ -1,4 +1,11 @@
 
+;; Implements the c-lambda and c-declare forms for interfacing to C.
+;; The macros communicate information to mzc using a 'mzc-cffi
+;; property. When this property information is ignored, the result is
+;; an expression that (eventually) produces an error. The mzc compiler
+;; notices the information, however, and substitutes a different kind
+;; of expression.
+
 (module cffi mzscheme
   (require (lib "stx.ss" "syntax"))
 
@@ -16,16 +23,17 @@
 				float double
 				scheme-object
 				char-string nonnull-char-string)))])
-	       (let ([v (ormap (lambda (i) 
-				 (and (module-identifier=? i t) i))
-			       literals)])
+	       (let ([v (and (identifier? t)
+			     (ormap (lambda (i) 
+				      (and (module-identifier=? i t) i))
+				    literals))])
 		 (cond
 		  [v (syntax-e v)]
 		  [(and for-return? 
 			;; FIXME: void is not lexically scoped
 			(eq? (syntax-e t) 'void))
 		   'void]
-		  [(let ([l (syntax->list v)])
+		  [(let ([l (syntax->list t)])
 		     (and l (= 2 (length l))
 			  (identifier? (car l))
 			  (string? (syntax-e (cadr l)))
@@ -72,8 +80,8 @@
 			       (let-values ([(setup tester unwrapper type-name done)
 					     (if (pair? type)
 						 (values #f
-							 (format "(SCHEME_FALSEP(~~a) \
-                                                                  || (SCHEME_CPTRP(~a) && !strcmp(SCHEME_CPTR_TYPE(~a), ~s))"
+							 (format "(SCHEME_FALSEP(~~a) ~
+                                                                  || (SCHEME_CPTRP(~a) && !strcmp(SCHEME_CPTR_TYPE(~a), ~s)))"
 								 scheme-var scheme-var (cadr type))
 							 (format "(SCHEME_TRUEP(~~a) ? SCHEME_CPTR_VAL(~a) : NULL)"
 								 scheme-var)
@@ -91,8 +99,8 @@
 						    (values " { long tmp;\n"
 							    "scheme_get_int_val(~a, &tmp)"
 							    "tmp  /* ~a */"
-							    "exact integer between (expt 2 -31) \
-                                                             and (sub1 (expr 2 31)) inclusive"
+							    (format "exact integer between (expt 2 -31) ~
+                                                                     and (sub1 (expr 2 31)) inclusive")
 							    " }\n")]
 						   [(unsigned-int unsigned-long)
 						    (values " { unsigned long tmp;\n"
@@ -105,13 +113,13 @@
 							    "(SCHEME_INTP(~a) \
                                                              && (long)((short)SCHEME_INT_VAL(~a)) == SCHEME_iNT_VAL(~a))"
 							    "SCHEME_INT_VAL(~a)"
-							    "exact integer between (expt 2 -15) \
-                                                             and (sub1 (expr 2 15)) inclusive"
+							    (format "exact integer between (expt 2 -15) ~
+                                                                     and (sub1 (expr 2 15)) inclusive")
 							    #f)]
 						   [(unsigned-short)
 						    (values #f
-							    "(SCHEME_INTP(~a) \
-                                                              && (long)((unsigned short)SCHEME_INT_VAL(~a)) \
+							    "(SCHEME_INTP(~a) ~
+                                                              && (long)((unsigned short)SCHEME_INT_VAL(~a)) ~
                                                                         == SCHEME_iNT_VAL(~a))"
 							    "SCHEME_INT_VAL(~a)"
 							    "exact integer between 0 and (sub1 (expr 2 16)) inclusive"
@@ -135,7 +143,8 @@
 							    "SCHEME_STRINGP(~a)"
 							    "SCHEME_STR_VAL(~a)" 
 							    "string"
-							    #f)]))])
+							    #f)]
+						   [else (error 'cffi "bad type for arg: ~a" type)]))])
 				 (string-append
 				  (or setup "")
 				  (format "  if (~a) {\n" (format tester scheme-var))
@@ -149,7 +158,7 @@
 	  [build-scheme-value (lambda (type scheme-var c-var)
 				(let ([builder
 				       (if (pair? type)
-					   (format "scheme_make_cptr(~a, ~s)" (cadr type))
+					   (format "scheme_make_cptr(~~a, ~s)" (cadr type))
 					   (case type
 					     [(bool) "(~a ? scheme_true : scheme_false)"]
 					     [(char unsigned-char signed-char) 
@@ -164,7 +173,9 @@
 					     [(float double)
 					      "scheme_make_double(~a)"]
 					     [(nonnull-char-string)
-					      "scheme_make_string(~a)"]))])
+					      "scheme_make_string(~a)"]
+					     [(scheme-object) "~a"]
+					     [else (error 'cffi "bad type for result: ~a" type)]))])
 				  (format "  ~a = ~a;\n"
 					  scheme-var
 					  (format builder c-var))))]
@@ -216,6 +227,7 @@
 						   (sub1 n)
 						   proc-name)
 				  (loop (add1 n) (cdr arg-types)))))
+			   (list " {\n")
 			   (list
 			    (if (regexp-match re:fname (syntax-e code))
 				;; Generate function call
@@ -247,6 +259,7 @@
 			    "  ___AT_END\n"
 			    "#undef ___AT_END\n"
 			    "#endif\n")
+			   (list " }\n")
 			   (list
 			    (if (eq? result-type 'void)
 				"  return scheme_void;\n"

@@ -360,6 +360,9 @@
  (wrap-text-item "Wrap Text")
 
  (windows-menu-label "&Windows")
+ (choose-a-frame "Choose a frame")        ;;; title of dialog
+ (choose-a-frame... "Choose a frame...")  ;;; corresponding title of menu item
+
  (show-menu-label "&Show")
 
  (help-menu-label "&Help")

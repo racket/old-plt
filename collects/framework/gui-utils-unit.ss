@@ -261,4 +261,61 @@
              (lambda ()
                #t)
              (lambda ()
-               (void)))))))))
+               (void))))))
+      
+      (define repeated-keystroke-timeout 300)
+      (define alphabetic-list-box%
+        (class list-box%
+          (init-field choices)
+          
+          (field (chars null)
+                 (last-time-stamp #f))
+          
+          (rename [super-on-subwindow-event on-subwindow-event]
+                  [super-on-subwindow-char on-subwindow-char])
+          (define/override (on-subwindow-event receiver evt)
+            (set! chars null)
+            (super-on-subwindow-event receiver evt))
+          (define/override (on-subwindow-char receiver evt)
+            (let ([code (send evt get-key-code)])
+              (printf "diff: ~s~n" (and last-time-stamp (- (send evt get-time-stamp) last-time-stamp)))
+              (when (or (not (char? code))
+                        (and last-time-stamp
+                             ((- (send evt get-time-stamp) last-time-stamp)
+                              . >= .
+                              repeated-keystroke-timeout)))
+                (set! chars null))
+              (set! last-time-stamp (send evt get-time-stamp))
+              (cond
+                [(char? code)
+                 (set! chars (cons code chars))
+                 (scroll-to-matching)]
+                [else
+                 (super-on-subwindow-char receiver evt)])))
+          
+          ;; scroll-to-matching : -> void
+          ;; scrolls the list box to the first string
+          ;; that matches the typed chars in `chars'.
+          (define (scroll-to-matching)
+            (let* ([typed-str (apply string (reverse chars))]
+                   [typed-len (string-length typed-str)])
+              (let loop ([n 0])
+                (when (< n (get-number))
+                  (let ([str (get-string n)])
+                    (cond
+                      [(and ((string-length str) . >= . typed-len)
+                            (string=? typed-str (substring str 0 typed-len)))
+                       (set-selection n)
+                       (make-visible n)]
+                      [else (loop (+ n 1))]))))))
+          (inherit get-number get-string set-selection)
+          
+          ;; make-visible : number -> void
+          ;; scrolls the list box so that the nth item is visible,
+          ;; unless the n'th item is already visible, in which case
+          ;; it does nothing.
+          (define (make-visible n)
+            (set-first-visible-item n))
+          (inherit set-first-visible-item)
+
+          (super-instantiate () (choices choices)))))))

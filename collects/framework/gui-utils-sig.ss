@@ -15,4 +15,5 @@
      get-choice
      open-input-buffer
      get-clicked-clickback-delta
-     get-clickback-delta)))
+     get-clickback-delta
+     alphabetic-list-box%)))

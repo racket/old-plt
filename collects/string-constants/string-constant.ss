@@ -100,8 +100,9 @@
                                    stx))
              (unless (hash-table-get ht datum (lambda () #f))
                (raise-syntax-error 
-                (quote-syntax string-constant)
-                (format "~a is not a known string constant" datum) stx))
+                #f
+                (format "~a is not a known string constant" datum) 
+                stx))
              (with-syntax ([(constants ...) (map (lambda (x) (hash-table-get (sc-constants x) datum))
                                                  available-string-constant-sets)]
                            [(languages ...) (map (lambda (x) (string->symbol (sc-language-name x)))

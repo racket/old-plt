@@ -44,7 +44,9 @@
 		    (flush-output (current-output-port))
 		    (flush-output (current-error-port))
 		    (mred:debug:printf 'load "Loading ~a..."
-			     (build-path (current-directory) x))
+			     (if (relative-path? x)
+				 (build-path (current-directory) x)
+				 x))
 		    (old-handler x)))))
 
 (define mred:debug:new-eval (void))

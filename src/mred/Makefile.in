@@ -233,8 +233,8 @@ install-lib:
 install_wx_xt:
 	cd ..; if [ ! -d $(prefix)/bin ] ; then mkdir $(prefix)/bin ; fi
 	cd ..; rm -f $(prefix)/bin/mred
-	cd ..; $(ICP) mred/mred `(cd $(prefix); pwd)`/bin/
 	$(MAKE) @MRLIBINSTALL@
+	cd ..; $(ICP) mred/mred `(cd $(prefix); pwd)`/bin/
 
 MRFWDIR = @FRAMEWORK_INSTALL_DIR@/PLT_MrEd.framework
 

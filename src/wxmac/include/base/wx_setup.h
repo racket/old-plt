@@ -109,11 +109,6 @@
 #define	wxFSB_WIDTH                600
 #define wxFSB_HEIGHT               500
 
-#define	MOTIF_MANAGE               1
-				    // Control default style of Dialogs
-				    // 1: use wxMOTIF_RESIZE as default
-				    // 0: do not use wxMOTIF_RESIZE as default
-
 #define USE_NOTICES                1
                                     // Under XView, use Notice package
                                     // for small messages instead of

@@ -181,6 +181,8 @@ class wxMediaPasteboard : public wxMediaBuffer
   void SetScrollStep(float s);
   float GetScrollStep(void);
 
+  Bool IsLockedForWrite() { return writeLocked; }
+
  private:
   Bool dragable, selectionVisible;
 

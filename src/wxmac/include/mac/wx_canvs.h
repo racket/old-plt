@@ -47,7 +47,7 @@ class wxCanvas: public wxbCanvas
 		int			y = -1,
 		int			width = -1,
 		int			height = -1,
-		long		style = wxRETAINED,
+		long		style = 0,
 		char*		windowName = "canvas",
 		WXTYPE		objectType = wxTYPE_CANVAS
 	);
@@ -59,7 +59,7 @@ class wxCanvas: public wxbCanvas
  		int			y = -1,
  		int			width = -1,
  		int			height = -1,
- 		long		style = wxRETAINED,
+ 		long		style = 0,
  		char*		windowName = "canvas",
  		WXTYPE		objectType = wxTYPE_CANVAS
  	);
@@ -71,7 +71,7 @@ class wxCanvas: public wxbCanvas
  		int			y = -1,
  		int			width = -1,
  		int			height = -1,
- 		long		style = wxRETAINED,
+ 		long		style = 0,
  		char*		windowName = "canvas",
  		WXTYPE		objectType = wxTYPE_CANVAS
  	);

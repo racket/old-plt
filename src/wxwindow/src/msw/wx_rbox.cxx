@@ -166,7 +166,12 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 
   cparent = (wxWnd *)(panel->handle);
 
-  labelPosition = panel->label_position;
+  if (_style & wxVERTICAL_LABEL)
+    labelPosition = wxVERTICAL;
+  else if (_style & wxHORIZONTAL_LABEL)
+    labelPosition = wxHORIZONTAL;
+  else
+    labelPosition = panel->label_position;
 
   panel->GetValidPosition(&x, &y);
 

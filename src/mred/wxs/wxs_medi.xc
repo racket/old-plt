@@ -127,6 +127,9 @@ static void NoInsertFile(wxMediaBuffer *)
 @ X "get-admin" : wxMediaAdmin^ GetAdmin(); : : : rNULL
 @ X "set-admin" : void SetAdmin(wxMediaAdmin^);
 
+@ X "locked-for-read?" : bool IsLockedForRead();
+@ X "locked-for-write?" : bool IsLockedForWrite();
+@ X "locked-for-flow?" : bool IsLockedForFlow();
 
 @ "global-to-local" : void GlobalToLocal(float?,float?);
 @ "local-to-global" : void LocalToGlobal(float?,float?);

@@ -326,6 +326,10 @@ class wxMediaBuffer : public wxObject
 
   void AddBufferFunctions(wxKeymap *tab);
 
+  virtual Bool IsLockedForRead() { return 0; }
+  virtual Bool IsLockedForFlow() { return 0; }
+  virtual Bool IsLockedForWrite() { return 0; }
+
 #ifdef MEMORY_USE_METHOD
   virtual long MemoryUse(void);
 #endif

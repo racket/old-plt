@@ -60,8 +60,6 @@ typedef short int WXTYPE;
 #define wxVSCROLL           0x00000001
 #define wxHSCROLL           0x00000002
 #define wxNO_CAPTION           0x00000004
-// Hint to Windowing system not to try anything clever: ***OBSOLETE***
-#define wxABSOLUTE_POSITIONING  8
 
 // Frame/dialog style flags
 #define wxSTAY_ON_TOP       0x00000008
@@ -84,67 +82,16 @@ typedef short int WXTYPE;
 
 // Subwindow style flags
 #define wxBORDER           0x00000040
-#define wxRETAINED         0x00000080
-#define wxEDITABLE         0x00000200
-#define wxREADONLY         0x00000400
+#define wxVERTICAL_LABEL   0x00000200
+#define wxHORIZONTAL_LABEL 0x00000400
 #define wxINVISIBLE        0x00000800
 #define wxGL_CONTEXT       0x00010000
 #define wxNO_AUTOCLEAR     0x00040000
 #define wxCONTROL_BORDER   0x00080000
 
-// Use native implementation, e.g. Text EDIT control for wxTextWindow
-// under MSW
-#define wxNATIVE_IMPL      0x01000000
-// Extended (or simply alternative) implementation, e.g. large
-// but not editable wxTextWindow under Windows
-#define wxEXTENDED_IMPL    0x02000000
-// Override CTL3D etc. control colour processing to
-// allow own background colour
-#define wxUSER_COLOURS     0x04000000
-#define wxVERTICAL_LABEL   0x08000000
-
 # define wxFLAT            0x00000100
-# define wxBACKINGSTORE    0x00004000
-# define wxMOTIF_RESIZE    0x01000000
-
-// Effect of this flags: when creating wxItem with labels and/or value,
-// say new wxText(...,"label",...,"init_value"), the item is created with
-// strings containing only '0' ("00000" and "0000000000" in the exemple),
-// then SetLabel/SetValue are called. This make alignement more easy:
-//
-// LabelPosition(wxHORIZONTAL)
-// new wxText("label    ","initval1")
-// NewLine()
-// new wxText("longlabel","initval2")
-//
-// the 2 texts are EXACTLY aligned...
-//
-// Please note that:
-//   - I choose '0' as constant character, because it has a mean width.
-//   - This style is useful only if LabelPosition is wxHorizontal...
-#define wxFIXED_LENGTH          0x00020000
-
-// Enhanced Dialog styles
-// Command area placment
-#define wxBOTTOM_COMMANDS       0x00000000
-#define wxRIGHT_COMMANDS        0x00040000
-#define wxMASK_COMMANDS         0x00040000
-// Status Area
-#define wxSTATUS_FOOTER         0x00000000
-#define wxNO_STATUS_FOOTER      0x00080000
-#define wxMASK_STATUS           0x00080000
-// Cancel Button/Pushpin Emulation
-#define wxNO_CANCEL_BUTTON      0x00000000
-#define wxCANCEL_BUTTON_FIRST   0x00100000
-#define wxCANCEL_BUTTON_LAST    0x00200000
-#define wxCANCEL_BUTTON_SECOND  0x00300000
-#define wxMASK_CANCEL           0x00300000
 
 #define wxDEFAULT_DIALOG_STYLE	(wxSYSTEM_MENU|wxCAPTION|wxTHICK_FRAME)
-
-# define wxENH_DEFAULT 0L
-#define wxCOLOURED             0x00400000
-
 
 // GDI descriptions
 
@@ -251,43 +198,11 @@ typedef enum {
 #define wxBOTH           (wxVERTICAL|wxHORIZONTAL)
 #define wxCENTER_FRAME   0x04  /* centering into frame rather than screen */
 
-// ToolPanel in wxFrame
-#define	wxTOOL_TOP	   1
-#define	wxTOOL_BOTTOM	   2
-#define	wxTOOL_LEFT	   3
-#define	wxTOOL_RIGHT	   4
-
-// Dialog specifiers/return values
-// Unfortunately const's cause too many 'defined but not used'
-// in GCC.
-// messages. So we're returning to defines for now.
-/*
-const wxOK =                0x0001;
-const wxYES_NO =            0x0002;
-const wxCANCEL =            0x0004;
-const wxYES =               0x0008;
-const wxNO =                0x0010;
-
-const wxICON_EXCLAMATION =  0x0020;
-const wxICON_HAND =         0x0040;
-const wxICON_QUESTION =     0x0080;
-const wxICON_INFORMATION =  0x0100;
-*/
-
 #define wxOK                0x0001
 #define wxYES_NO            0x0002
 #define wxCANCEL            0x0004
 #define wxYES               0x0008
 #define wxNO                0x0010
-
-#define wxICON_EXCLAMATION  0x0020
-#define wxICON_HAND         0x0040
-#define wxICON_QUESTION     0x0080
-#define wxICON_INFORMATION  0x0100
-
-#define wxICON_STOP         wxICON_HAND
-#define wxICON_ASTERISK     wxICON_INFORMATION
-#define wxICON_MASK         (0x0020|0x0040|0x0080|0x0100)
 
 #define wxCENTRE            0x0200
 #define wxCENTER wxCENTRE
@@ -308,19 +223,11 @@ const wxICON_INFORMATION =  0x0100;
 #define wxSIZE_USE_EXISTING     0
 
 // Clipboard formats
-#ifdef wx_msw
-# define wxCF_TEXT               CF_TEXT
-# define wxCF_BITMAP             CF_BITMAP
-# define wxCF_METAFILE           CF_METAFILEPICT
-# define wxCF_DIB                CF_DIB
-# define wxCF_OEMTEXT            CF_OEMTEXT
-#else
-# define wxCF_TEXT               1
-# define wxCF_BITMAP             2
-# define wxCF_METAFILE           3
-# define wxCF_DIB                4
-# define wxCF_OEMTEXT            5
-#endif
+#define wxCF_TEXT               1
+#define wxCF_BITMAP             2
+#define wxCF_METAFILE           3
+#define wxCF_DIB                4
+#define wxCF_OEMTEXT            5
 
 // Virtual keycodes
 enum _Virtual_keycodes {

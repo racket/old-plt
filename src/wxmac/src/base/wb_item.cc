@@ -129,7 +129,12 @@ wxbItem::wxbItem // Constructor (given parentArea)
       if (!buttonFont) buttonFont = wxNORMAL_FONT;
       labelColour = parentPanel->labelColour;
       labelFont = parentPanel->labelFont;
-      labelPosition = parentPanel->label_position;
+      if (style & wxVERTICAL_LABEL)
+	labelPosition = wxVERTICAL;
+      else if (style & wxHORIZONTAL_LABEL)
+	labelPosition = wxHORIZONTAL;
+      else
+	labelPosition = parentPanel->label_position;
     } else {
       backColour = NULL;
       buttonColour = NULL;

@@ -194,7 +194,9 @@ void wxCheckBox::SetLabel(char* label)
     return;
   
   if (label) {
-    labelString = copystring(wxItemStripLabel(label));
+    char *s;
+    s = copystring(wxItemStripLabel(label));
+    labelString = s;
   } else
     labelString = NULL;
 

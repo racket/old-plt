@@ -1041,8 +1041,6 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 			    "broken compiled code (stat-dist): cannot find prepared module");
 	return NULL;
       }
-
-      scheme_check_accessible_in_module(genv, symbol, srcsym, 0);
     }
   } else
     genv = env->genv;
@@ -1057,6 +1055,9 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     if (val)
       return val;
   }
+
+  if (modname)
+    scheme_check_accessible_in_module(genv, symbol, srcsym);
 
   if ((flags & SCHEME_NULL_FOR_UNBOUND) && !modname)
     return NULL;

@@ -1090,8 +1090,8 @@ Scheme_Object *scheme_make_random_state(long seed);
 #define q_scheme_eval_linked(obj) _scheme_do_eval(obj, 1)
 #define q_scheme_tail_eval(obj) scheme_tail_eval(obj)
 
-Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *expr, Scheme_Env *env);
-Scheme_Object *scheme_eval_linked_expr(Scheme_Object *expr);
+Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *expr, Scheme_Env *env, int let_depth);
+Scheme_Object *scheme_eval_linked_expr(Scheme_Object *expr, int let_depth);
 
 Scheme_Object *_scheme_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
 Scheme_Object *_scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
@@ -1440,8 +1440,7 @@ int scheme_is_module_env(Scheme_Comp_Env *env);
 
 Scheme_Env *scheme_module_load(Scheme_Object *modname, Scheme_Env *env);
 Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env);
-void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, 
-				       Scheme_Object *stx, int nosyntax);
+void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx);
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);
 
 /*========================================================================*/

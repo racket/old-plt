@@ -1442,9 +1442,9 @@
     (lambda (stx)
       (syntax-case stx ()
 	[(_ base (field ...) body1 body ...)
-	 (syntax/loc (let ()
-		       (define-struct base (field ...))
-		       body1 body ...))])))
+	 (syntax/loc stx (let ()
+			   (define-struct base (field ...))
+			   body1 body ...))])))
 
   (define-syntax fluid-let
     (lambda (stx)

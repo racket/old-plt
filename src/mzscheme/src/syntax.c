@@ -2557,7 +2557,7 @@ defmacro_execute(Scheme_Object *form)
   val = SCHEME_CDR(form);
 
   scheme_on_next_top(scheme_get_env(p->config)->init, NULL, scheme_false);
-  val = scheme_eval_linked_expr(val);
+  val = scheme_eval_linked_expr(val, 0);
 
   macro = scheme_alloc_stubborn_small_object();
   macro->type = scheme_macro_type;
@@ -2704,7 +2704,7 @@ do_letmacro(char *where, Scheme_Object *formname,
     a = scheme_link_expr(a, NULL);
 
     scheme_on_next_top(env, NULL, scheme_false);
-    a = scheme_eval_linked_expr(a);
+    a = scheme_eval_linked_expr(a, mrec.max_let_depth);
 
     macro = scheme_alloc_stubborn_small_object();
     macro->type = scheme_macro_type;

@@ -1041,7 +1041,7 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
 	}
 
 	if (!SAME_OBJ(m, info))
-	  scheme_check_accessible_in_module(m, (Scheme_Object *)b->bucket.bucket.key, NULL, 1);
+	  scheme_check_accessible_in_module(m, (Scheme_Object *)b->bucket.bucket.key, NULL);
 
 	return (Scheme_Object *)scheme_global_bucket((Scheme_Object *)b->bucket.bucket.key, m);
       }
@@ -3273,16 +3273,24 @@ static void *eval_k(void)
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *v;
   Scheme_Env *env;
-  int isexpr, multi;
+  int isexpr, multi, expr_let_depth;
 
   v = (Scheme_Object *)p->ku.k.p1;
   env = (Scheme_Env *)p->ku.k.p2;
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
-  isexpr = p->ku.k.i2;
   multi = p->ku.k.i1;
-    
+  isexpr = p->ku.k.i2;
+  expr_let_depth = p->ku.k.i3;
+
   if (isexpr) {
+    if (!scheme_check_runstack(expr_let_depth)) {
+      p->ku.k.p1 = v;
+      p->ku.k.i1 = multi;
+      p->ku.k.i2 = 1;
+      return (Scheme_Object *)scheme_enlarge_runstack(expr_let_depth, eval_k);
+    }
+
     if (multi)
       v = _scheme_eval_linked_expr_multi_wp(v, p);
     else
@@ -3292,8 +3300,9 @@ static void *eval_k(void)
 
     if (!scheme_check_runstack(top->max_let_depth)) {
       p->ku.k.p1 = top;
+      p->ku.k.p2 = env;
       p->ku.k.i1 = multi;
-      p->ku.k.i2 = isexpr;
+      p->ku.k.i2 = 0;
       return (Scheme_Object *)scheme_enlarge_runstack(top->max_let_depth, eval_k);
     }
 
@@ -3311,7 +3320,9 @@ static void *eval_k(void)
   return (void *)v;
 }
 
-static Scheme_Object *_eval(Scheme_Object *obj, Scheme_Env *env, int isexpr, int multi, int top)
+static Scheme_Object *_eval(Scheme_Object *obj, Scheme_Env *env, 
+			    int isexpr, int expr_let_depth,
+			    int multi, int top)
 {
   Scheme_Process *p = scheme_current_process;
   
@@ -3319,6 +3330,7 @@ static Scheme_Object *_eval(Scheme_Object *obj, Scheme_Env *env, int isexpr, int
   p->ku.k.p2 = env;
   p->ku.k.i1 = multi;
   p->ku.k.i2 = isexpr;
+  p->ku.k.i3 = expr_let_depth;
 
   if (top)
     return (Scheme_Object *)scheme_top_level_do(eval_k, 1);
@@ -3328,32 +3340,32 @@ static Scheme_Object *_eval(Scheme_Object *obj, Scheme_Env *env, int isexpr, int
 
 Scheme_Object *scheme_eval_compiled(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _eval(obj, env, 0, 0, 1);
+  return _eval(obj, env, 0, 0, 0, 1);
 }
 
 Scheme_Object *scheme_eval_compiled_multi(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _eval(obj, env, 0, 1, 1);
+  return _eval(obj, env, 0, 0, 1, 1);
 }
 
 Scheme_Object *_scheme_eval_compiled(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _eval(obj, env, 0, 0, 0);
+  return _eval(obj, env, 0, 0, 0, 0);
 }
 
 Scheme_Object *_scheme_eval_compiled_multi(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _eval(obj, env, 0, 1, 0);
+  return _eval(obj, env, 0, 0, 1, 0);
 }
 
-Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *obj, Scheme_Env *env)
+Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *obj, Scheme_Env *env, int let_depth)
 {
-  return _eval(scheme_link_expr(obj, env), NULL, 1, 0, 1);
+  return _eval(scheme_link_expr(obj, env), NULL, 1, let_depth, 0, 1);
 }
 
-Scheme_Object *scheme_eval_linked_expr(Scheme_Object *obj)
+Scheme_Object *scheme_eval_linked_expr(Scheme_Object *obj, int let_depth)
 {
-  return _eval(obj, NULL, 1, 0, 1);
+  return _eval(obj, NULL, 1, let_depth, 0, 1);
 }
 
 static void *expand_k(void)
@@ -3408,7 +3420,7 @@ do_default_eval_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
 
   v = _compile(argv[0], env, 0, 0);
 
-  return _eval(v, env, 0, 1, 0);
+  return _eval(v, env, 0, 0, 1, 0);
 }
 
 /* local functions */

@@ -1391,7 +1391,7 @@
 			      [(ditem) dragging-item])
 		   (set! dragging-item #f)
 		   (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
-		     (if (string? mailbox-name)
+                     (if (bytes? mailbox-name)
                          (let* ([user-data (send ditem user-data)]
                                 [item (assoc user-data mailbox)])
                            (when item
@@ -1402,8 +1402,9 @@
 				 enable-main-frame
 				 (lambda (bad-break break-ok)
 				   (with-handlers ([void no-status-handler])
+                                     (void)
 				     (copy-messages-to (list item) mailbox-name)
-				     (purge-messages (list item))))
+                                     (purge-messages (list item))))
 				 close-frame)))))
                          (status "")))))]
               [else

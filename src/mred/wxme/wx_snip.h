@@ -206,7 +206,7 @@ class wxTextSnip : public wxInternalSnip
   void Init(long allocsize);
 
  public:
-  char *text;
+  long dtext;
   char *buffer;
 
   long allocated;

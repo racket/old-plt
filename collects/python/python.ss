@@ -4,7 +4,7 @@
           ; (lib "etc.ss")
           ; "compiler.ss"
           ; "python-node.ss"
-           "primitives.ss" ;; need py-object%->string
+         ;  "primitives.ss" ;; need py-object%->string
           ; "read-python.ss"
            "compile-python.ss"
            "python-import.ss"
@@ -23,9 +23,9 @@
            render-python-value/format)
   
   (define (convert-value value)
-    (py-object%->string value))
-    ;(namespace-require '(lib "primitives.ss" "python"))
-    ;((namespace-variable-value 'py-object%->string) value))
+   ; (py-object%->string value))
+    (namespace-require '(lib "primitives.ss" "python"))
+    ((namespace-variable-value 'py-object%->string) value))
    ; ((dynamic-require '(lib "primitives.ss" "python") 'py-object%->string) value))
   
   (define (none? py-value)

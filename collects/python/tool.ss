@@ -109,6 +109,7 @@
                 (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
                (current-eval 
                 (drscheme:debug:make-debug-eval-handler (current-eval)))
+               ;(drscheme:debug:test-coverage-enabled #t)
                (init-python-namespace (current-namespace)))))
 ;            (dynamic-require '(lib "base.ss" "python") #f)
 ;            (let ([path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]

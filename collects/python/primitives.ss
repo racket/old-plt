@@ -71,6 +71,7 @@
       (python-current-exception exn)
       (raise exn)))
   
+  ;; there are four special cases in this function.
   (define python-get-member
     (opt-lambda (obj member-name [wrap? #t] [orig-call? #t])
       (cond
@@ -78,6 +79,7 @@
         [(eq? member-name '__class__) (python-node-type obj)]
          ;; special case #2: __dict__ is the internal dictionary (well, usually... let's just assume always)
          [(eq? member-name '__dict__) (py-create py-dict% (python-node-dict obj))]
+         ;;;;;;;;;;;;;; SPECIAL CASE 3 NOW IRRELEVANT.  __call__ DEFINED AS A MEMBER OF py-type%
          ;; special case #3: __call__ is implicitly defined for type objects
          ;;   but not py-type%, because type() creates a new type.... :P
 ;         [(and orig-call?
@@ -945,6 +947,7 @@
                         [(this obj) (python-node-type obj)]
                         [(this name base-types member-dict)
                          (python-create-type name base-types member-dict)]))
+                         
   
   
   (define py-true (py-create py-int% 1))

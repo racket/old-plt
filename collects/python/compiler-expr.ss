@@ -699,6 +699,8 @@
       (define/public (add-binding id)
         (set! bindings (cons id bindings)))
       
+      (define/public (get-bindings) bindings)
+      
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)

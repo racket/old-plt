@@ -52,10 +52,10 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
   Cleanup();
 
   float xw = x + width, yh = y + height;
-  x = dc->LogicalToDeviceX(x);
-  y = dc->LogicalToDeviceY(y);
-  width = dc->LogicalToDeviceX(xw) - x;
-  height = dc->LogicalToDeviceY(yh) - y;
+  x = dc->FLogicalToDeviceX(x);
+  y = dc->FLogicalToDeviceY(y);
+  width = dc->FLogicalToDeviceX(xw) - x;
+  height = dc->FLogicalToDeviceY(yh) - y;
 
   if (is_ps) {
     height = -height;
@@ -71,21 +71,28 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
     y  = -y;
   }
 
+  int ix, iy, iw, ih;
+
+  ix = (int)floor(x);
+  iy = (int)floor(y);
+  iw = ((int)floor(x + width)) - ix;
+  ih = ((int)floor(y + height)) - iy;
+
 #ifdef wx_msw
-  rgn = CreateRectRgn(x, y, x + width, y + height);
+  rgn = CreateRectRgn(ix, iy, ix + iw, iy + ih);
 #endif
 #ifdef wx_x
   rgn = XCreateRegion();
   XRectangle r;
-  r.x = (int)floor(x);
-  r.y = (int)floor(y);
-  r.width = (int)floor(width);
-  r.height = (int)floor(height);
+  r.x = ix;
+  r.y = iy;
+  r.width = iw;
+  r.height = ih;
   XUnionRectWithRegion(&r, rgn, rgn);
 #endif
 #ifdef wx_mac
   rgn = NewRgn();
-  SetRectRgn(rgn, x, y, x + width, y + height);
+  SetRectRgn(rgn, ix, iy, ix + iw, iy + ih);
 #endif
 }
 
@@ -103,7 +110,7 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
       smallest = height;
     radius = (float)(- radius * smallest);
   } else
-    radius = dc->LogicalToDeviceXRel(radius);
+    radius = dc->FLogicalToDeviceXRel(radius);
 
 #ifndef wx_x
   if (is_ps) {
@@ -141,14 +148,21 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
 #endif
 
   float xw = x + width, yh = y + height;
-  x = dc->LogicalToDeviceX(x);
-  y = dc->LogicalToDeviceY(y);
-  width = dc->LogicalToDeviceX(xw) - x;
-  height = dc->LogicalToDeviceY(yh) - y;
+  x = dc->FLogicalToDeviceX(x);
+  y = dc->FLogicalToDeviceY(y);
+  width = dc->FLogicalToDeviceX(xw) - x;
+  height = dc->FLogicalToDeviceY(yh) - y;
 #if defined(wx_msw) || defined(wx_mac)
-  int xradius = dc->LogicalToDeviceXRel(radius);
-  int yradius = dc->LogicalToDeviceYRel(radius);
+  int xradius = dc->FLogicalToDeviceXRel(radius);
+  int yradius = dc->FLogicalToDeviceYRel(radius);
 #endif
+
+  int ix, iy, iw, ih;
+
+  ix = (int)floor(x);
+  iy = (int)floor(y);
+  iw = ((int)floor(x + width)) - ix;
+  ih = ((int)floor(y + height)) - iy;
 
   if (is_ps) {
     height = -height;
@@ -158,13 +172,13 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   }
 
 #ifdef wx_msw
-  rgn = CreateRoundRectRgn(x, y, x + width, y + height, xradius, yradius);
+  rgn = CreateRoundRectRgn(ix, iy, ix + iw, iy + ih, xradius, yradius);
 #endif
 #ifdef wx_mac
   rgn = NewRgn();
   OpenRgn();
   Rect r;
-  SetRect(&r, x, y, x + width, y + height);
+  SetRect(&r, ix, iy, ix + iw, iy + ih);
   FrameRoundRect(&r, xradius, yradius);
   CloseRgn(rgn);
 #endif
@@ -175,10 +189,10 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
   Cleanup();
 
   float xw = x + width, yh = y + height;
-  x = dc->LogicalToDeviceX(x);
-  y = dc->LogicalToDeviceY(y);
-  width = dc->LogicalToDeviceX(xw) - x;
-  height = dc->LogicalToDeviceY(yh) - y;
+  x = dc->FLogicalToDeviceX(x);
+  y = dc->FLogicalToDeviceY(y);
+  width = dc->FLogicalToDeviceX(xw) - x;
+  height = dc->FLogicalToDeviceY(yh) - y;
 
   if (is_ps) {
     height = -height;
@@ -193,14 +207,23 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
     y = -y;
   }
 
+#if defined(wx_msw) || defined(wx_mac)
+  int ix, iy, iw, ih;
+
+  ix = (int)floor(x);
+  iy = (int)floor(y);
+  iw = ((int)floor(x + width)) - ix;
+  ih = ((int)floor(y + height)) - iy;
+#endif
+
 #ifdef wx_msw
-  rgn = CreateEllipticRgn(x, y, x + width, y + height);
+  rgn = CreateEllipticRgn(ix, iy, ix + iw, iy + ih);
 #endif
 #ifdef wx_mac
   rgn = NewRgn();
   OpenRgn();
   Rect r;
-  SetRect(&r, x, y, x + width, y + height);
+  SetRect(&r, ix, iy, ix + iw, iy + ih);
   FrameOval(&r);
   CloseRgn(rgn);
 #endif
@@ -232,13 +255,6 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
 #endif
 }
 
-void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset, int fillStyle)
-{
-  Cleanup();
-
-  if (n < 2)
-    return;
-
 #ifdef wx_x
 # define POINT XPoint
 #endif
@@ -247,18 +263,32 @@ void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset,
   typedef struct { int x, y; } MyPoint;
 #endif
 
+typedef struct { float x, y; } FPoint;
+
+void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset, int fillStyle)
+{
+  Cleanup();
+
+  if (n < 2)
+    return;
+
   POINT *cpoints = new POINT[n];
+  FPoint *fpoints = (is_ps ? new FPoint[n] : NULL);
   int i;
   for (i = 0; i < n; i++) {
     cpoints[i].x = dc->LogicalToDeviceX(points[i].x + xoffset);
     cpoints[i].y = dc->LogicalToDeviceY(points[i].y + yoffset);
+    if (fpoints) {
+      fpoints[i].x = dc->FLogicalToDeviceX(points[i].x + xoffset);
+      fpoints[i].y = dc->FLogicalToDeviceY(points[i].y + yoffset);
+    }
   }
 
   if (is_ps) {
     ps = new wxPSRgn_Atomic("", "poly");
-    *this << cpoints[0].x << " " << cpoints[0].y  << " moveto\n";
+    *this << fpoints[0].x << " " << fpoints[0].y  << " moveto\n";
     for (i = 1; i < n; i++)
-      *this << cpoints[i].x << " " << cpoints[i].y  << " lineto\n";
+      *this << fpoints[i].x << " " << fpoints[i].y  << " lineto\n";
     *this << "closepath\n";
 
     /* So bitmap-based region is right */

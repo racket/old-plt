@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: FileDialog.cc,v 1.4 1998/08/14 21:44:39 mflatt Exp $
+ * $Id: FileDialog.cc,v 1.5 1998/09/06 01:54:00 mflatt Exp $
  *
  * Purpose: file load and save dialogs
  *
@@ -22,12 +22,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-
-#include <limits.h> // for PATH_MAX
-#include <sys/types.h>
-#include <dirent.h> // for opendir, readdir, etc.
-#include <unistd.h> // for getcwd
-#include <string.h>
 
 #include "wx.h"
 

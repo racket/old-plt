@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: wxSetup.h,v 1.3 1996/01/11 10:26:35 markus Exp $
+ * $Id: wxSetup.h,v 1.1.1.1 1997/12/22 17:28:42 mflatt Exp $
  *
  * Purpose: Window library configuration file. Note: you may need to edit
  *          the main makefile after you have edited this.
@@ -34,23 +34,7 @@
 /*
 * Enables debugging: memory tracing, assert, etc.
 */
-#define DEBUG 1
-/*
- * Enables provision of run-time type information.
- * This will have a small space overhead.
-*/
-#define USE_DYNAMIC_CLASSES 0
-/*
- * Enables debugging version of wxObject::new and wxObject::delete (*IF* DEBUG)
- * WARNING: this code may not work with all architectures, especially
- * if alignment is an issue.
-*/
-#define WX_USE_MEMORY_TRACING 0
-/*
- * Enable debugging version of global memory operators new and delete
- * Disable it, If this causes problems (e.g. link errors)
-*/
-#define USE_GLOBAL_MEMORY_OPERATORS 0
+#define DEBUG 0
 /*
  * Use PostScript device context
 */

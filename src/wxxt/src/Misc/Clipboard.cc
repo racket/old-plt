@@ -4,7 +4,7 @@
  * Author:      Julian Smart and Matthew Flatt
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_clipb.cc,v 1.3 1994/08/14 21:28:43 edz Exp $
+ * RCS_ID:      $Id: Clipboard.cc,v 1.1.1.1 1997/12/22 17:28:54 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -25,8 +25,6 @@ static const char sccsid[] = "@(#)wx_clipb.cc	1.2 5/9/94";
 #define  Uses_ShellWidget
 #include "widgets.h"
 
-#if USE_CLIPBOARD
-
 wxClipboard *wxTheClipboard;
 
 static Widget clipWindow;
@@ -35,66 +33,6 @@ static Widget clipWindow;
 #define VALUE_TYPE void*
 
 Atom xa_text, xa_targets;
-
-Bool 
-wxOpenClipboard (void)
-{
-  return FALSE;
-}
-
-Bool 
-wxCloseClipboard (void)
-{
-  return FALSE;
-}
-
-Bool 
-wxEmptyClipboard (void)
-{
-  return FALSE;
-}
-
-Bool 
-wxIsClipboardFormatAvailable (int dataFormat)
-{
-  return FALSE;
-}
-
-Bool 
-wxSetClipboardData (int dataFormat, wxObject * obj, int width, int height)
-{
-  return FALSE;
-}
-
-wxObject *
-wxGetClipboardData (int dataFormat)
-{
-  return NULL;
-}
-
-int 
-wxEnumClipboardFormats (int dataFormat)
-{
-  return 0;
-}
-
-int 
-wxRegisterClipboardFormat (char *formatName)
-{
-  return 0;
-}
-
-Bool 
-wxGetClipboardFormatName (int dataFormat, char *formatName, int maxCount)
-{
-  formatName[0] = 0;
-  return FALSE;
-}
-
-/*
- * Matthew Flatt's code
- */
-
 
 void wxInitClipboard(void)
 {
@@ -113,9 +51,6 @@ void wxInitClipboard(void)
   xa_targets = ATOM("TARGETS");
 }
 
-IMPLEMENT_DYNAMIC_CLASS(wxClipboard, wxObject)
-IMPLEMENT_ABSTRACT_CLASS(wxClipboardClient, wxObject)
-
 wxClipboard::wxClipboard()
 {
   clipOwner = NULL;
@@ -128,15 +63,15 @@ wxClipboard::~wxClipboard()
     delete[] cbString;
 }
 
-static Boolean wxConvertClipboard(Widget w, Atom *selection, Atom *target,
+static Boolean wxConvertClipboard(Widget WXUNUSED(w), Atom *WXUNUSED(selection), Atom *target,
 				  Atom *type_return, XtPointer *value_return,
 				  unsigned long *length_return,
 				  int *format_return)
 {
   wxClipboard *cb;
   Atom xa;
-  char **formats;
-  int i, count, extra;
+  char **formats = NULL;
+  int i = 0, count, extra;
 
   cb = wxTheClipboard;
 
@@ -199,7 +134,7 @@ static Boolean wxConvertClipboard(Widget w, Atom *selection, Atom *target,
   return TRUE;
 }
 
-static void wxSelectionDone(Widget w, Atom *selection, Atom *target)
+static void wxSelectionDone(Widget WXUNUSED(w), Atom *WXUNUSED(selection), Atom *WXUNUSED(target))
 {
   wxClipboard *cb;
 
@@ -212,12 +147,12 @@ static void wxSelectionDone(Widget w, Atom *selection, Atom *target)
     delete[]  cb->receivedTargets;
 }
 
-static void wxStringSelectionDone(Widget w, Atom *selection, Atom *target)
+static void wxStringSelectionDone(Widget WXUNUSED(w), Atom *WXUNUSED(selection), Atom *WXUNUSED(target))
 {
   /* do nothing */
 }
 
-static void wxLoseClipboard(Widget w, Atom *selection)
+static void wxLoseClipboard(Widget WXUNUSED(w), Atom *WXUNUSED(selection))
 {
   wxClipboard *cb;
 
@@ -283,8 +218,8 @@ void wxClipboard::SetClipboardString(char *str, long time)
   }
 }
 
-static void wxGetTargets(Widget w, XtPointer cbv, Atom *sel, Atom *type,
-			 XtPointer value, unsigned long *len, int *format)
+static void wxGetTargets(Widget WXUNUSED(w), XtPointer cbv, Atom *WXUNUSED(sel), Atom *WXUNUSED(type),
+			 XtPointer value, unsigned long *len, int *WXUNUSED(format))
 {
   wxClipboard *cb;
 
@@ -300,8 +235,8 @@ static void wxGetTargets(Widget w, XtPointer cbv, Atom *sel, Atom *type,
   }
 }
 
-static void wxGetSelection(Widget w, XtPointer cbv, Atom *sel, Atom *type,
-			   XtPointer value, unsigned long *len, int *format)
+static void wxGetSelection(Widget WXUNUSED(w), XtPointer cbv, Atom *WXUNUSED(sel), Atom *WXUNUSED(type),
+			   XtPointer value, unsigned long *len, int *WXUNUSED(format))
 {
   wxClipboard *cb;
 
@@ -350,12 +285,7 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     XtGetSelectionValue(clipWindow, XA_PRIMARY,
 			xa_targets, wxGetTargets, (XtPointer)this, time);
 
-#if 1
     wxDispatchEventsUntil(CheckReady, &receivedTargets);
-#else
-    while (!receivedTargets)
-      wxYield();
-#endif
 
     Atom xa;
     long i;
@@ -377,17 +307,10 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     XtGetSelectionValue(clipWindow, XA_PRIMARY,
 			xa, wxGetSelection, (XtPointer)this, 0);
     
-#if 1
     wxDispatchEventsUntil(CheckReady, &receivedString);
-#else
-    while (!receivedString)
-      wxYield();
-#endif
 
     *length = receivedLength;
 
     return receivedString;
   }
 }
-
-#endif

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Pen+Brush.cc,v 1.5 1998/09/23 00:11:58 mflatt Exp $
+ * $Id: Pen+Brush.cc,v 1.6 1998/10/30 00:01:39 mflatt Exp $
  *
  * Purpose: pen and brush classes needed for drawing
  *
@@ -33,11 +33,6 @@
 #define  Uses_wxBitmap
 #include "wx.h"
 
-IMPLEMENT_DYNAMIC_CLASS(wxPen, wxObject)
-IMPLEMENT_DYNAMIC_CLASS(wxPenList, wxList)
-IMPLEMENT_DYNAMIC_CLASS(wxBrush, wxObject)
-IMPLEMENT_DYNAMIC_CLASS(wxBrushList, wxList)
-
 //-----------------------------------------------------------------------------
 // wxPen create and destroy
 //-----------------------------------------------------------------------------
@@ -55,10 +50,6 @@ wxPen::wxPen(void)
     dash    = NULL;
     width   = 1;
     locked = 0;
-
-#if !WXGARBAGE_COLLECTION_ON
-    wxThePenList->AddPen(this);
-#endif
 }
 
 wxPen::wxPen(wxColour &col, int Width, int Style)
@@ -74,10 +65,6 @@ wxPen::wxPen(wxColour &col, int Width, int Style)
     nb_dash = 0;
     dash    = NULL;
     locked = 0;
-
-#if !WXGARBAGE_COLLECTION_ON
-    wxThePenList->AddPen(this);
-#endif
 }
 
 wxPen::wxPen(const char *col, int Width, int Style)
@@ -93,19 +80,12 @@ wxPen::wxPen(const char *col, int Width, int Style)
     nb_dash = 0;
     dash    = NULL;
     locked = 0;
-
-#if !WXGARBAGE_COLLECTION_ON
-    wxThePenList->AddPen(this);
-#endif
 }
 
 wxPen::~wxPen(void)
 {
   if (stipple)
     --stipple->selectedIntoDC;
-#if !WXGARBAGE_COLLECTION_ON
-    wxThePenList->RemovePen(this);
-#endif
 }
 
 void wxPen::SetStipple(wxBitmap *s)

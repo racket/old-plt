@@ -99,13 +99,9 @@ class wxStandardSnipClassList : public wxSnipClassList
   wxSnipClass *FindByMapPosition(short n);
 };
 
-#ifdef WXME_FOR_MRED
 extern wxStandardSnipClassList *wxMakeTheSnipClassList();
 extern wxStandardSnipClassList *wxGetTheSnipClassList();
 #define wxTheSnipClassList (*wxGetTheSnipClassList())
-#else
-extern wxStandardSnipClassList wxTheSnipClassList;
-#endif
 
 /******************************************************************/
 
@@ -495,13 +491,9 @@ class wxBufferDataClassList : public /* should be private */ wxList
   wxBufferDataClass *FindByMapPosition(short n);
 };
 
-#ifdef WXME_FOR_MRED
 extern wxBufferDataClassList *wxMakeTheBufferDataClassList();
 extern wxBufferDataClassList *wxGetTheBufferDataClassList();
 #define wxTheBufferDataClassList (*wxGetTheBufferDataClassList())
-#else
-extern wxBufferDataClassList wxTheBufferDataClassList;
-#endif
 
 /**********************************************************************/
 

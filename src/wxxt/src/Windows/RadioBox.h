@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: RadioBox.h,v 1.2 1998/02/05 23:00:32 mflatt Exp $
+ * $Id: RadioBox.h,v 1.3 1998/10/16 15:55:55 mflatt Exp $
  *
  * Purpose: radio box panel item
  *
@@ -34,7 +34,6 @@ class wxBitmap;
 class wxPanel;
 
 class wxRadioBox : public wxItem {
-DECLARE_DYNAMIC_CLASS(wxRadioBox)
 public:
     wxRadioBox(void);
     wxRadioBox(wxPanel *panel, wxFunction func, char *label,

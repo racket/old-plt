@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.cc,v 1.5 1998/09/23 00:11:54 mflatt Exp $
+ * $Id: DC.cc,v 1.6 1999/10/05 17:26:05 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -33,17 +33,9 @@
 
 #include <math.h>
 
-IMPLEMENT_DYNAMIC_CLASS(wxPoint, wxObject)
-IMPLEMENT_DYNAMIC_CLASS(wxIntPoint, wxObject)
-#if 0
-IMPLEMENT_DYNAMIC_CLASS(wxRectangle, wxObject)
-#endif
-
 //-----------------------------------------------------------------------------
 // create and destroy wxDC
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_ABSTRACT_CLASS(wxDC, wxObject)
 
 wxDC::wxDC(void)
 {
@@ -159,8 +151,6 @@ void wxDC::CalcBoundingBox(float x, float y)
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
  */
-
-#if USE_SPLINES
 
 void wxDC::DrawSpline(int n, wxPoint pts[])
 {
@@ -368,5 +358,3 @@ static void wx_spline_draw_point_array(wxDC *dc)
 	node = wx_spline_point_list.First();
     }
 }
-
-#endif // USE_SPLINES

@@ -1,7 +1,5 @@
 
-#if defined(WXME_FOR_MRED) || defined(wx_xt)
 #define USE_OLD_TYPE_SYSTEM 1
-#endif
 
 #define wxTYPE_MEDIA_CANVAS 344
 #define wxTYPE_MEDIA_BUFFER 345

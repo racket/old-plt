@@ -1785,9 +1785,9 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
 	  old = total;
 	  total = new char[sz];
 	  memcpy(total, old, length);
+	  delete[] old;
 	}
 	memcpy(total + length, str, l);
-	delete[] old;
       } else
 	total = str;
       length += l;

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Bitmap.h,v 1.2 1998/09/18 22:08:57 mflatt Exp $
+ * $Id: Bitmap.h,v 1.3 1998/10/18 12:04:11 mflatt Exp $
  *
  * Purpose: bitmap classes to implement pixmaps, icons, and cursors
  *
@@ -43,7 +43,6 @@ class wxItem;
 class wxMemoryDC;
 
 class wxBitmap : public wxObject { // bitmap representation
-DECLARE_DYNAMIC_CLASS(wxBitmap)
 public:
     wxBitmap(void);
     wxBitmap(char bits[], int width, int height);
@@ -82,7 +81,6 @@ public:
 };
 
 class wxCursor : public wxBitmap { // cursor representation
-DECLARE_DYNAMIC_CLASS(wxCursor)
 public:
     wxCursor(void);
     wxCursor(char bits[], int width, int height /* , int x=0, int y=0 */);
@@ -97,7 +95,6 @@ private:
 };
 
 class wxGDIList : public wxList { // GDI list representation (list of bitmaps)
-DECLARE_DYNAMIC_CLASS(wxGDIList)
 public:
     wxGDIList(void);
     ~wxGDIList(void);

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Panel.cc,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
+ * $Id: Panel.cc,v 1.2 1999/03/09 14:17:52 mflatt Exp $
  *
  * Purpose: base class for all panels
  *
@@ -42,8 +42,6 @@
 //-----------------------------------------------------------------------------
 // wxPanel create and destroy
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_DYNAMIC_CLASS(wxPanel, wxWindow)
 
 wxPanel::wxPanel(void) : wxWindow()
 {

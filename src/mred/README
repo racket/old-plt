@@ -31,12 +31,6 @@ Linux), change variables as necessary:
    * Set the program names, such as the C compiler
 
    * Set OPTIONS:
-        * -DWXME_FOR_MRED must be preserved
-        * Add -DWXME_LSB_FIRST=1 if the target machine represents
-          integers with the least-significant byte in the lowest memory
-          address. For example, this flag is needed for Intel machines,
-          but not Sparc machines. MrEd will display a warning at startup
-          if the flag value is incorrectly chosen.
         * Add -DOPERATOR_NEW_ARRAY if the C++ compiler uses separate new
           and new[] operators. For example, this flag is needed for gcc
           version 2.6.3 and later, but not for version 2.5.8.
@@ -44,7 +38,7 @@ Linux), change variables as necessary:
           allow an assignment to copy structures. A compile-time error
           will occur if the flag is needed but not provided.
 
-   * Probably the XLIB and/or XINCLUDE directory lists must be
+   * Probably the XLIB and/or XINCLUDE directory lists need to be
      adjusted.
 
    * Perhaps some other flags should be changed for your local 

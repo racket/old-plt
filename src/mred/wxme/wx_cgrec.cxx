@@ -86,7 +86,7 @@ wxSchemeModifyRecord::wxSchemeModifyRecord(void *proc)
 
 extern int wxsSchemeUndo(void *);
 
-Bool wxSchemeModifyRecord::Undo(wxMediaBuffer *media)
+Bool wxSchemeModifyRecord::Undo(wxMediaBuffer *)
 {
   return wxsSchemeUndo(p);
 }

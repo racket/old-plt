@@ -100,9 +100,7 @@ void wxInitMedia(void)
   wxAllTypes.AddType(wxTYPE_BUFFER_DATA_CLASS_LIST, wxTYPE_LIST, "buffer-data-class-list");
 #endif
 
-#ifndef WXME_FOR_MRED
   wxMediaIOCheckLSB();
-#endif
 
   if (!wxmeExpandFilename)
     wxmeExpandFilename = wxCallExpandPath;
@@ -1943,8 +1941,8 @@ void wxMediaEdit::InsertPasteSnip(wxSnip *snip, wxBufferData *data)
 
   Insert(snip, readInsert);
   if (data) {
-    wxSnip *snip = FindSnip(readInsert, +1);
-    SetSnipData(snip, data);
+    wxSnip *fsnip = FindSnip(readInsert, +1);
+    SetSnipData(fsnip, data);
   }
   readInsert += addpos;
 }

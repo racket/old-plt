@@ -407,13 +407,11 @@ class wxMediaCanvas : public wxCanvas
 
   virtual void Scroll(int x, int y, Bool refresh);
 
-#ifdef WXME_FOR_MRED
   /* To block bad uses: */
   virtual void Scroll(int x, int y);
   virtual void SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,
 			     int x_page, int y_page, int x_pos=0, int y_pos=0,
 			     Bool setVirtualSize = TRUE);
-#endif
 
   void BlinkCaret();
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.h,v 1.4 1999/03/28 20:38:16 mflatt Exp $
+ * $Id: MenuBar.h,v 1.5 1999/07/14 23:34:08 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -36,7 +36,6 @@ class wxPanel;
 class wxMenu;
 
 class wxMenuBar : public wxItem {
-DECLARE_DYNAMIC_CLASS(wxMenuBar)
 public:
     wxMenuBar(void);
     wxMenuBar(int n, wxMenu *menus[], char *titles[]);

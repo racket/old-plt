@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Resources.cc,v 1.2 1998/12/15 17:23:47 mflatt Exp $
+ * $Id: Resources.cc,v 1.3 1999/07/14 00:20:44 mflatt Exp $
  *
  * Purpose: read/write .Xdefaults
  *
@@ -31,16 +31,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#if USE_RESOURCES
-
-// Yuck this is really BOTH site and platform dependent
-// so we should use some other strategy!
-#ifdef sun
-# define DEFAULT_XRESOURCE_DIR "/usr/openwin/lib/app-defaults"
-#else
-# define DEFAULT_XRESOURCE_DIR "/usr/lib/X11/app-defaults"
-#endif
-
 //-----------------------------------------------------------------------------
 // We have a cache for writing different resource files,
 // which will only get flushed when we call wxFlushResources().
@@ -55,21 +45,15 @@
 static char *GetResourcePath(char *buf, char *name, Bool create = FALSE)
 {
     if (create && FileExists(name)) {
-	strcpy(buf, name);
-	return buf; // Exists so ...
+      strcpy(buf, name);
+      return buf; // Exists so ...
     }
     if (*name == '/')
-	strcpy(buf, name);
-    else {
-	// Put in standard place for resource files if not absolute
-	strcpy(buf, DEFAULT_XRESOURCE_DIR);
-	strcat(buf, "/");
-	strcat(buf, FileNameFromPath(name));
-    }
+      strcpy(buf, name);
     if (create) {
-	// Touch the file to create it
-	FILE *fd = fopen(buf, "w");
-	if (fd) fclose(fd);
+      // Touch the file to create it
+      FILE *fd = fopen(buf, "w");
+      if (fd) fclose(fd);
     }
     return buf;
 }
@@ -346,5 +330,3 @@ Bool wxGetResource(const char *section, const char *entry, int *value,
     } else
 	return FALSE;
 }
-
-#endif // USE_RESOURCES

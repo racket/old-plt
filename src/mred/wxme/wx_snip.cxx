@@ -56,17 +56,7 @@ static void memmove(char *dest, char *src, long size)
 }
 #endif
 
-#ifndef WXME_FOR_MRED
-# ifndef wx_mac
-#  define KeyType int
-# endif
-#endif
-
-#ifndef WXME_FOR_MRED
-# define WXGC_CLEANUP_ARG(a) /* empty */
-#else
 # define WXGC_CLEANUP_ARG(a) a
-#endif
 
 /* MSW version needs this for just a little while longer... */
 #ifndef WXGC_ATOMIC
@@ -691,19 +681,6 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
   }
 
   text[count] = save;
-
-#if defined(wx_x) && (defined(WXME_FOR_MRED) || !defined(wx_xt))
-  if (style->GetUnderlined()) {
-    float descent = style->GetTextDescent(dc);
-    float h = style->GetTextHeight(dc);
-
-    if (descent >= 2)
-      y += h - (descent / 2);
-    else
-      y += h - descent;
-    dc->DrawLine(x, y, x + w + GC_LINE_EXTEND, y);
-  }
-#endif
 }
 
 void wxTextSnip::Split(long position, wxSnip **first, wxSnip **second)
@@ -1745,14 +1722,10 @@ wxSnipClass *wxStandardSnipClassList::FindByMapPosition(short n)
   return NULL;
 }
 
-#ifdef WXME_FOR_MRED
 wxStandardSnipClassList *wxMakeTheSnipClassList(void)
 {
   return new wxStandardSnipClassList;
 }
-#else
-wxStandardSnipClassList wxTheSnipClassList;
-#endif
 
 /***************************************************************/
 
@@ -1949,11 +1922,7 @@ wxBufferDataClass *wxBufferDataClassList::FindByMapPosition(short n)
   return NULL;
 }
 
-#ifdef WXME_FOR_MRED
 wxBufferDataClassList *wxMakeTheBufferDataClassList()
 {
   return new wxBufferDataClassList;
 }
-#else
-wxBufferDataClassList wxTheBufferDataClassList;
-#endif

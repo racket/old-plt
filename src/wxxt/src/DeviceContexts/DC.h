@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.h,v 1.5 1998/09/23 00:11:55 mflatt Exp $
+ * $Id: DC.h,v 1.6 1998/10/30 00:01:39 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -35,7 +35,6 @@
 
 // wxPoint
 class wxPoint : public wxObject {
-DECLARE_DYNAMIC_CLASS(wxPoint)
 public:
     wxPoint(void) : wxObject(WXGC_NO_CLEANUP) { x = y = 0.0; }
     /* MATTHEW: */
@@ -45,23 +44,12 @@ public:
 
 // wxIntPoint
 class wxIntPoint : public wxObject {
-DECLARE_DYNAMIC_CLASS(wxIntPoint)
 public:
     wxIntPoint(void) : wxObject(WXGC_NO_CLEANUP) { x = y = 0; }
     /* MATTHEW: */
     wxIntPoint(int a, int b)  : wxObject(WXGC_NO_CLEANUP) { x = a; y = b; }
     int x, y;
 };
-
-#if 0
-// wxRectangle
-class wxRectangle : public wxObject {
-DECLARE_DYNAMIC_CLASS(wxRectangle)
-public:
-    wxRectangle(void) : wxObject(WXGC_NO_CLEANUP) { x = y = width = height = 0; }
-    int x, y, width, height;
-};
-#endif
 
 class wxBitmap;
 class wxBrush;
@@ -74,7 +62,6 @@ class wxPen;
 class wxRegion;
 
 class wxDC : public wxObject {
-DECLARE_DYNAMIC_CLASS(wxDC)
 public:
     wxDC(void);
 
@@ -147,11 +134,9 @@ public:
 	{ return YDEV2LOG(y); }
     virtual float DeviceToLogicalYRel(int y)
 	{ return YDEV2LOGREL(y); }
-#if USE_SPLINES
     void  DrawSpline(int n, wxPoint pts[]);
     void  DrawSpline(wxList *pts);
     void  DrawSpline(float x1,float y1, float x2,float y2, float x3,float y3);
-#endif
     void  EndDrawing(void)
 	{}
     wxColour *GetBackground(void)
@@ -189,6 +174,14 @@ public:
     virtual int LogicalToDeviceY(float y)
 	{ return YLOG2DEV(y); }
     virtual int LogicalToDeviceYRel(float y)
+	{ return YLOG2DEVREL(y); }
+    virtual float FLogicalToDeviceX(float x)
+	{ return XLOG2DEV(x); }
+    virtual float FLogicalToDeviceXRel(float x)
+	{ return XLOG2DEVREL(x); }
+    virtual float FLogicalToDeviceY(float y)
+	{ return YLOG2DEV(y); }
+    virtual float FLogicalToDeviceYRel(float y)
 	{ return YLOG2DEVREL(y); }
     float MaxX(void)
 	{ return max_x; }
@@ -259,10 +252,8 @@ protected:
 	{ return int(floor((float(y) - origin_y) * scale_y)); }
     int YLOG2DEVREL(float y)
 	{ return int(floor(float(y) * scale_y)); }
-#if USE_SPLINES
     // virtual function for spline drawing
     virtual void DrawOpenSpline(wxList *pts);
-#endif
 };
 
 #endif // DC_h

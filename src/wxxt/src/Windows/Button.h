@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Button.h,v 1.1 1996/01/10 14:57:03 markus Exp $
+ * $Id: Button.h,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
  *
  * Purpose: button panel item
  *
@@ -34,7 +34,6 @@ class wxBitmap;
 class wxPanel;
 
 class wxButton : public wxItem {
-DECLARE_DYNAMIC_CLASS(wxButton)
 public:
     wxButton(void);
     ~wxButton(void);

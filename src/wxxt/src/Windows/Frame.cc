@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.20 1999/07/11 01:51:44 mflatt Exp $
+ * $Id: Frame.cc,v 1.21 1999/08/09 14:51:30 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -84,8 +84,6 @@ Pixmap plt_icon, plt_mask;
 //-----------------------------------------------------------------------------
 // create and destroy frame
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_DYNAMIC_CLASS(wxFrame, wxPanel)
 
 wxFrame::wxFrame(void) : wxPanel()
 {

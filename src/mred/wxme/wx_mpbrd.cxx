@@ -1647,22 +1647,13 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
     wxPen *pen;
     wxBrush *brush;
     wxFont *font;
-#if defined(wx_xt) && !defined(WXME_FOR_MRED)
-    wxColour *fg, *bg;
-#else
     wxColour fg, bg;
-#endif
 
     pen = dc->GetPen();
     brush = dc->GetBrush();
     font = dc->GetFont();
-#if defined(wx_xt) && !defined(WXME_FOR_MRED)
-    fg = &dc->GetTextForeground();
-    bg = &dc->GetTextBackground();
-#else
     fg = dc->GetTextForeground();
     bg = dc->GetTextBackground();
-#endif
 
 #ifndef NO_GET_CLIPPING_REGION
     wxRegion *rgn;
@@ -1679,13 +1670,8 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
     dc->SetBrush(brush);
     dc->SetPen(pen);
     dc->SetFont(font);
-#if defined(wx_xt) && !defined(WXME_FOR_MRED)
-    dc->SetTextForeground(fg);
-    dc->SetTextBackground(bg);
-#else
     dc->SetTextForeground(&fg);
     dc->SetTextBackground(&bg);
-#endif
   }
 }
 

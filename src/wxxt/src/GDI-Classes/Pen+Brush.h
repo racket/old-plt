@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Pen+Brush.h,v 1.1.1.1 1997/12/22 17:28:51 mflatt Exp $
+ * $Id: Pen+Brush.h,v 1.2 1998/01/29 15:52:59 mflatt Exp $
  *
  * Purpose: pen and brush classes needed for drawing
  *
@@ -35,7 +35,6 @@ class wxBitmap;
 typedef unsigned char wxDash;
 
 class wxBrush : public wxObject { // brush representation
-DECLARE_DYNAMIC_CLASS(wxBrush)
 public:
     wxBrush(void);
     wxBrush(wxColour& col, int style);
@@ -63,7 +62,6 @@ private:
 };
 
 class wxPen : public wxObject { // pen representation
-DECLARE_DYNAMIC_CLASS(wxPen)
 public:
     wxPen(void);
     wxPen(wxColour& col, int width, int style);
@@ -104,7 +102,6 @@ private:
 };
 
 class wxBrushList : public wxObject {
-DECLARE_DYNAMIC_CLASS(wxBrushList)
     wxChildList *list;
 public:
     wxBrushList(void);
@@ -116,7 +113,6 @@ public:
 };
 
 class wxPenList : public wxObject {
-DECLARE_DYNAMIC_CLASS(wxPenList)
     wxChildList *list;
 public:
     wxPenList(void);

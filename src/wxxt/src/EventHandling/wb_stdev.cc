@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      	$Id: wb_stdev.cc,v 1.4 1998/08/14 21:44:40 mflatt Exp $
+ * RCS_ID:      	$Id: wb_stdev.cc,v 1.5 1998/09/09 16:02:50 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -32,8 +32,6 @@ wxPopupEvent::wxPopupEvent() : wxCommandEvent(wxEVENT_TYPE_MENU_SELECT)
   __type = wxTYPE_POPUP_EVENT;
 }
 
-IMPLEMENT_DYNAMIC_CLASS(wxCommandEvent, wxEvent)
-
 wxCommandEvent::wxCommandEvent(WXTYPE commandType)
 {
   eventType = commandType;
@@ -43,8 +41,6 @@ wxCommandEvent::wxCommandEvent(WXTYPE commandType)
  * Mouse events
  *
  */
-
-IMPLEMENT_DYNAMIC_CLASS(wxMouseEvent, wxEvent)
 
 wxMouseEvent::wxMouseEvent(WXTYPE commandType)
 {
@@ -263,9 +259,7 @@ void wxMouseEvent::Position(float *xpos, float *ypos)
  * Keyboard events
  *
  */
-
-IMPLEMENT_DYNAMIC_CLASS(wxKeyEvent, wxEvent)
-
+ 
 wxKeyEvent::wxKeyEvent(WXTYPE type)
 {
   eventType = type;

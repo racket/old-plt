@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: FontDirectory.cc,v 1.7 1999/10/05 13:32:17 mflatt Exp $
+ * $Id: FontDirectory.cc,v 1.8 1999/10/05 14:25:04 mflatt Exp $
  *
  * Purpose: wxWindows font name handling
  *
@@ -49,6 +49,9 @@ char *font_defaults[] = {
   "AfmStraight", "",
   "AfmItalic", "${AfmSlant}",
   "AfmSlant", "O",
+  "AfmStraightTimes", "",
+  "AfmItalicTimes", "${AfmSlantTimes}",
+  "AfmSlantTimes", "I",
   "AfmRoman", "Ro",
   "AfmTimes", "Times",
   "AfmHelvetica", "Helv",
@@ -56,11 +59,11 @@ char *font_defaults[] = {
 
   "Afm___", "${AfmTimes,$[weight],$[style]}",
 
-  "AfmTimes__", "${AfmTimes}${Afm$[weight]}${Afm$[style]}",
+  "AfmTimes__", "${AfmTimes}${Afm$[weight]}${Afm$[style]Times}",
   "AfmTimesMediumStraight", "${AfmTimes}${AfmRoman}",
   "AfmTimesLightStraight", "${AfmTimes}${AfmRoman}",
-  "AfmTimes_Italic", "${AfmTimes}$[weight]${AfmItalic}",
-  "AfmTimes_Slant", "${AfmTimes}$[weight]${AfmItalic}",
+  "AfmTimes_Italic", "${AfmTimes}${Afm$[weight]}${AfmItalicTimes}",
+  "AfmTimes_Slant", "${AfmTimes}${Afm$[weight]}${AfmItalicTimes}",
 
   "AfmSwiss__", "${AfmHelvetica}${Afm$[weight]}${Afm$[style]}",
   "AfmModern__", "${AfmCourier}${Afm$[weight]}${Afm$[style]}",
@@ -146,8 +149,6 @@ char *font_defaults[] = {
   NULL
 };
 
-IMPLEMENT_DYNAMIC_CLASS(wxFontNameDirectory, wxObject)
-
 wxFontNameDirectory wxTheFontNameDirectory;
 
 enum {
@@ -231,10 +232,6 @@ int wxFontNameDirectory::GetNewFontId(void)
 {
   return (nextFontId++);
 }
-
-#if !USE_RESOURCES
-#define wxGetResource(a, b, c) 0
-#endif
 
 static void SearchResource(const char *prefix, const char **names, int count, char **v)
 {

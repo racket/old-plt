@@ -96,8 +96,6 @@ class wxScrollEvent: public wxEvent
 // Item or menu event class
 class wxCommandEvent: public wxEvent
 {
-  DECLARE_DYNAMIC_CLASS(wxCommandEvent)
-
  public:
   wxCommandEvent(WXTYPE commandType = 0);
   inline ~wxCommandEvent(void) {}
@@ -113,8 +111,6 @@ public:
 // Mouse event class
 class wxMouseEvent: public wxEvent
 {
-  DECLARE_DYNAMIC_CLASS(wxMouseEvent)
-
  public:
   float x;
   float y;
@@ -191,8 +187,6 @@ class wxMouseEvent: public wxEvent
 // Keyboard input event class
 class wxKeyEvent: public wxEvent
 {
-  DECLARE_DYNAMIC_CLASS(wxKeyEvent)
-
  public:
   float x ;
   float y ;

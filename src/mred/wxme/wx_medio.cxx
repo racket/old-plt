@@ -10,13 +10,7 @@
 #include "wx_medio.h"
 #include <string.h>
 
-#ifndef WXME_LSB_FIRST
-#ifdef wx_msw
-#define WXME_LSB_FIRST 1
-#else
-#define WXME_LSB_FIRST 0
-#endif
-#endif
+static int lsb_first;
 
 /* For testing and debugging: */
 #define TYPESAFE 0
@@ -45,20 +39,8 @@ enum {
 void wxMediaIOCheckLSB(void)
 {
   long v = 1;
-  char first;
 
-  first = *(char *)&v;
-#if WXME_LSB_FIRST
-  first = !first;
-#endif
-  if (first)
-    printf("wxMedia was compiled with the wrong WXME_LSB_FIRST flag\nvalue. The correct value is "
-#if WXME_LSB_FIRST
-	   "FALSE"
-#else
-	   "TRUE"
-#endif
-	   ".");
+  lsb_first = *(char *)&v;
 }
 
 /****************************************************************/
@@ -308,19 +290,19 @@ wxMediaStreamIn& wxMediaStreamIn::GetFixed(long& v)
     return *this;
   }
 
-#if !WXME_LSB_FIRST
-  f->Read((char *)&v, sizeof(long));
-#else
-  if (WXME_VERSION_ONE())
+  if (!lsb_first) {
     f->Read((char *)&v, sizeof(long));
-  else {
-    unsigned char bl[4];
-    
-    f->Read((char *)bl, 4);
-    v = (((long)bl[0]) << 24) + (((long)bl[1]) << 16)
-      + (((long)bl[2]) << 8) + bl[3];
+  } else {
+    if (WXME_VERSION_ONE())
+      f->Read((char *)&v, sizeof(long));
+    else {
+      unsigned char bl[4];
+      
+      f->Read((char *)bl, 4);
+      v = (((long)bl[0]) << 24) + (((long)bl[1]) << 16)
+	+ (((long)bl[2]) << 8) + bl[3];
+    }
   }
-#endif
 
   return *this;
 }
@@ -453,22 +435,22 @@ wxMediaStreamIn& wxMediaStreamIn::Get(double &v)
     return *this;
   }
 
-#if !WXME_LSB_FIRST
-  f->Read((char *)&v, sizeof(double));
-#else
-  if (WXME_VERSION_ONE())
+  if (!lsb_first) {
     f->Read((char *)&v, sizeof(double));
-  else {
-    char num[sizeof(double)], num2[sizeof(double)];
-    int i, j;
-
-    f->Read((char *)num, sizeof(double));
-    for (i = 0, j = sizeof(double); i < sizeof(double); )
-      num2[i++] = num[--j];
-
-    memcpy((char *)&v, num2, sizeof(double));
+  } else {
+    if (WXME_VERSION_ONE())
+      f->Read((char *)&v, sizeof(double));
+    else {
+      char num[sizeof(double)], num2[sizeof(double)];
+      int i, j;
+      
+      f->Read((char *)num, sizeof(double));
+      for (i = 0, j = sizeof(double); i < sizeof(double); )
+	num2[i++] = num[--j];
+      
+      memcpy((char *)&v, num2, sizeof(double));
+    }
   }
-#endif
 
   return *this;
 }
@@ -557,17 +539,17 @@ wxMediaStreamOut& wxMediaStreamOut::PutFixed(long v)
 {
   Typeset(st_FIXED);
 
-#if !WXME_LSB_FIRST
-  f->Write((char *)&v, sizeof(long));
-#else
-  char lb[4];
-
-  lb[0] = (v >> 24) & 0xFF;
-  lb[1] = (v >> 16) & 0xFF;
-  lb[2] = (v >> 8) & 0xFF;
-  lb[3] = v & 0xFF;
-  f->Write(lb, 4);
-#endif
+  if (!lsb_first) {
+    f->Write((char *)&v, sizeof(long));
+  } else {
+    char lb[4];
+    
+    lb[0] = (v >> 24) & 0xFF;
+    lb[1] = (v >> 16) & 0xFF;
+    lb[2] = (v >> 8) & 0xFF;
+    lb[3] = v & 0xFF;
+    f->Write(lb, 4);
+  }
 
   return *this;
 }
@@ -651,18 +633,18 @@ wxMediaStreamOut& wxMediaStreamOut::Put(double v)
 {
   Typeset(st_FLOAT);
 
-#if !WXME_LSB_FIRST
-  f->Write((char *)&v, sizeof(double));
-#else
-  char num[sizeof(double)], num2[sizeof(double)];
-  int i, j;
-
-  memcpy(num2, (char *)&v, sizeof(double));
-  for (i = 0, j = sizeof(double); i < sizeof(double); )
-    num[i++] = num2[--j];
-  
-  f->Write((char *)num, sizeof(double));
-#endif
+  if (!lsb_first) {
+    f->Write((char *)&v, sizeof(double));
+  } else {
+    char num[sizeof(double)], num2[sizeof(double)];
+    int i, j;
+    
+    memcpy(num2, (char *)&v, sizeof(double));
+    for (i = 0, j = sizeof(double); i < sizeof(double); )
+      num[i++] = num2[--j];
+    
+    f->Write((char *)num, sizeof(double));
+  }
 
   return *this;
 }

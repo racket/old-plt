@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.11 1999/03/28 20:38:15 mflatt Exp $
+ * $Id: Menu.cc,v 1.12 1999/07/14 23:34:08 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -38,8 +38,6 @@
 //-----------------------------------------------------------------------------
 // constructor and destructor
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_DYNAMIC_CLASS(wxMenu, wxObject)
 
 wxMenu::wxMenu(char *_title, wxFunction _func)
 {

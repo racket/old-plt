@@ -1026,7 +1026,6 @@ void wxMediaCanvas::Scroll(int MCIS_UNUSED(x), int MCIS_UNUSED(y),
 #endif
 }
 
-#ifdef WXME_FOR_MRED
 void wxMediaCanvas::Scroll(int, int)
 {
   /* Nothing */
@@ -1038,7 +1037,6 @@ void wxMediaCanvas::SetScrollbars(int, int, int, int,
 {
   /* Nothing */
 }
-#endif
 
 void wxMediaCanvas::GetScroll(int *x, int *y)
 {

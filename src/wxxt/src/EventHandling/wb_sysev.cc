@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_sysev.cc,v 1.1.1.1 1997/12/22 17:28:50 mflatt Exp $
+ * RCS_ID:	$Id: wb_sysev.cc,v 1.2 1998/08/08 03:33:02 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -32,8 +32,6 @@
 #   define  Uses_wxList
 #   include "wx.h"
 #endif // #ifndef wx_xt
-
-IMPLEMENT_ABSTRACT_CLASS(wxEvent, wxObject)
 
 wxEvent::wxEvent(void) : wxObject(WXGC_NO_CLEANUP)
 {

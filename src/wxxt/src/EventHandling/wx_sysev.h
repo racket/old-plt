@@ -20,9 +20,6 @@
 #   include "common.h"
 #   include "wx_obj.h"
 #   include "wx_types.h"
-#   ifndef IN_CPROTO
-#	include "iostream.h"
-#   endif
 #endif
 
 /*
@@ -43,8 +40,6 @@ typedef       void    *wxEvent ;
 
 class wxEvent: public wxObject
 {
-  DECLARE_ABSTRACT_CLASS(wxEvent)
-
  public:
   char *eventHandle;         // Handle of an underlying windowing system event
   WXTYPE   eventType;

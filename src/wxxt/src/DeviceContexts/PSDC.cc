@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.27 1999/10/05 17:26:06 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.28 1999/10/08 04:33:18 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -95,18 +95,11 @@ static double pie = 0.0;
 #ifndef WXUNUSED
 # define WXUNUSED(x) x
 #endif
-#ifndef IMPLEMENT_DYNAMIC_CLASS
-# define IMPLEMENT_DYNAMIC_CLASS(x, y) /* empty */
-#endif
 
 #ifdef wx_xt
 # define WXXTUNUSED(c) /* empty */
 #else
 # define WXXTUNUSED(x) x
-#endif
-
-#ifndef wx_mac
-# define OFSTREAM_HAS_TELLP_AND_SEEKP 1
 #endif
 
 #define DEFAULT_PAPER "Letter 8 1/2 x 11 in"
@@ -117,8 +110,6 @@ class wxCanvas;
 #include "wx_privt.h"
 #endif
 
-#include <iostream.h>
-#include <fstream.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -175,16 +166,6 @@ static char *wx_afm_path = NULL;
 */
 
 #define _MAXPATHLEN 500
-
-// steve, 05.09.94
-// VMS has a bug in the ofstream class.
-// the buffering doesn't work correctly. therefore
-// we will allocate (temporarily) a very big buffer (1MB), so
-// that a buffer overflow will not occur.
-#ifdef VMS
-#define VMS_BUFSIZ (1024L*1024L)
-static char *fileBuffer = NULL;
-#endif
 
 #ifndef wx_xt
 # define current_font font
@@ -260,8 +241,6 @@ PSStream& PSStream::operator<<(long l) {
     fprintf(f, "%ld", l);
   return *this;
 }
-
-IMPLEMENT_DYNAMIC_CLASS(wxPostScriptDC, wxDC)
 
 wxPostScriptDC::wxPostScriptDC (void)
 {
@@ -1890,6 +1869,26 @@ int wxPostScriptDC::LogicalToDeviceYRel(float y)
   return (int)floor(YSCALEREL(y));
 }
 
+float wxPostScriptDC::FLogicalToDeviceX(float x)
+{
+  return XSCALE(x);
+}
+
+float wxPostScriptDC::FLogicalToDeviceXRel(float x)
+{
+  return XSCALEREL(x);
+}
+
+float wxPostScriptDC::FLogicalToDeviceY(float y)
+{
+  return YSCALE(y);
+}
+
+float wxPostScriptDC::FLogicalToDeviceYRel(float y)
+{
+  return YSCALEREL(y);
+}
+
 void wxPostScriptDC::GetSize(float *width, float *height)
 {
   if (width)
@@ -1964,8 +1963,6 @@ XPrinterDialog (wxWindow *parent)
 #	define PS_PRINTER_OPTIONS	NULL
 #	define PS_AFM_PATH		NULL
 #endif
-
-IMPLEMENT_DYNAMIC_CLASS(wxPrintSetupData, wxObject)
 
 wxPrintSetupData::wxPrintSetupData(void)
 {
@@ -2144,8 +2141,6 @@ void wxInitializePrintSetupData(Bool /* init */)
 // wxPrintPaperType implementation
 //-----------------------------------------------------------------------------
 
-IMPLEMENT_DYNAMIC_CLASS(wxPrintPaperType, wxObject)
-
 wxPrintPaperType::wxPrintPaperType(char *name, int wmm, int hmm, int wp, int hp)
 {
     widthMM = wmm;
@@ -2164,8 +2159,6 @@ wxPrintPaperType::~wxPrintPaperType(void)
 //-----------------------------------------------------------------------------
 // wxPrintPaperDatabase implementation
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_DYNAMIC_CLASS(wxPrintPaperDatabase, wxList)
 
 wxPrintPaperDatabase::wxPrintPaperDatabase(void) : wxList(wxKEY_STRING)
 {

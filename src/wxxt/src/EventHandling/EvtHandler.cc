@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: EvtHandler.cc,v 1.5 1999/07/14 23:34:08 mflatt Exp $
+ * $Id: EvtHandler.cc,v 1.6 1999/08/05 21:45:31 mflatt Exp $
  *
  * Purpose: base event handler of windows etc.
  *
@@ -35,22 +35,12 @@
 // create/destroy wxEvtHandler
 //-----------------------------------------------------------------------------
 
-IMPLEMENT_DYNAMIC_CLASS(wxEvtHandler, wxObject);
-
 wxEvtHandler::wxEvtHandler(void)
 {
-    wx_client_data = NULL;
-    nextHandler = NULL;
-    previousHandler = NULL;
 }
 
 wxEvtHandler::~wxEvtHandler(void)
 {
-    // Takes itself out of the list of handlers
-    if (previousHandler)
-	previousHandler->nextHandler = nextHandler;
-    if (nextHandler)
-	nextHandler->previousHandler = previousHandler;
 }
 
 //-----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DialogBox.cc,v 1.3 1998/07/03 21:50:52 mflatt Exp $
+ * $Id: DialogBox.cc,v 1.4 1999/05/20 20:51:16 mflatt Exp $
  *
  * Purpose: dialog box
  *
@@ -32,8 +32,6 @@
 #define  Uses_wxList
 #define  Uses_wxTypeTree
 #include "wx.h"
-
-IMPLEMENT_DYNAMIC_CLASS(wxDialogBox, wxFrame)
 
 wxDialogBox::wxDialogBox(void) : wxFrame()
 {

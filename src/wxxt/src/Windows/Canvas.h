@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.h,v 1.2 1998/12/06 05:06:17 mflatt Exp $
+ * $Id: Canvas.h,v 1.3 1999/04/08 16:12:10 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -36,9 +36,9 @@ class wxCursor;
 class wxKeyEvent;
 class wxMouseEvent;
 class wxPanel;
+class wxFrame;
 
 class wxCanvas : public wxItem {
-DECLARE_DYNAMIC_CLASS(wxCanvas)
 public:
     wxCanvas(void); 
     wxCanvas(wxPanel *parent,

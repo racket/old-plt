@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Font.h,v 1.2 1998/01/29 15:52:59 mflatt Exp $
+ * $Id: Font.h,v 1.3 1999/10/05 13:32:17 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -33,7 +33,6 @@
 extern char *wx_font_spec[];
 
 class wxFont : public wxObject {
-DECLARE_DYNAMIC_CLASS(wxFont)
 public:
     wxFont(void);
     /* MATTHEW */
@@ -68,7 +67,6 @@ private:
 };
 
 class wxFontList : public wxObject {
-DECLARE_DYNAMIC_CLASS(wxFontList)
    wxChildList *list;
 public:
     wxFontList(void);

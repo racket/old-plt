@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.29 1999/08/15 16:52:42 mflatt Exp $
+ * $Id: Window.cc,v 1.30 1999/08/28 16:14:50 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -64,8 +64,6 @@ extern void wxSetSensitive(Widget, Bool enabled);
 #define REPORT_ZERO_WIDTH_FLAG 0x20
 #define REPORT_ZERO_HEIGHT_FLAG 0x40
 #define LAST_WAS_ALT_DOWN_FLAG 0x80
-
-IMPLEMENT_DYNAMIC_CLASS(wxWindow, wxEvtHandler)
 
 wxWindow::wxWindow(void)
 { 
@@ -611,7 +609,7 @@ void wxWindow::Scroll(int x_pos, int y_pos)
       x_pos = min(x_pos, gwd-wd); x_pos = max(0, x_pos);
       y_pos = min(y_pos, ght-ht); y_pos = max(0, y_pos); 
       // set position
-      XtVaSetValues(X->handle, XtNx, Position(-x_pos), XtNy, Position(-y_pos), NULL);
+      XtVaSetValues(X->handle, XtNx, (Position)(-x_pos), XtNy, (Position)(-y_pos), NULL);
     }
 }
 
@@ -636,7 +634,7 @@ void wxWindow::SetScrollArea(int gwd, int ght)
     // set size and reposition if necessary (x,y changed)
     XtVaSetValues(X->handle,
 		  XtNx,     x,              XtNy,      y,
-		  XtNwidth, Dimension(gwd), XtNheight, Dimension(ght),
+		  XtNwidth, (Dimension)gwd, XtNheight, (Dimension)ght,
 		  NULL);
 }
 
@@ -791,8 +789,8 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
   if (!X->frame || !X->handle) // forbid, if no widget associated
     return FALSE;
 
-  int dev_x = int(x);
-  int dev_y = int(y);
+  int dev_x = (int)x;
+  int dev_y = (int)y;
   
   ClientToScreen(&dev_x, &dev_y);
   menu->PopupMenu(X->frame, dev_x, dev_y);
@@ -1727,8 +1725,8 @@ void wxWindow::GetTextExtent(const char *s, float *w, float *h, float *descent,
     if (!theFont) theFont = font;
     XTextExtents((XFontStruct*)theFont->GetInternalFont(), s, strlen(s),
 		 &direction, &ascent, &descent2, &overall);
-    *w = float(overall.width);
-    *h = float(ascent + descent2);
+    *w = (float)(overall.width);
+    *h = (float)(ascent + descent2);
     if (descent) *descent = (float)descent2;
     if (ext_leading) *ext_leading = 0.0;
 }

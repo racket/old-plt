@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: CheckBox.h,v 1.2 1998/02/05 23:00:32 mflatt Exp $
+ * $Id: CheckBox.h,v 1.3 1998/08/08 03:33:03 mflatt Exp $
  *
  * Purpose: check box panel item
  *
@@ -34,7 +34,6 @@ class wxBitmap;
 class wxPanel;
 
 class wxCheckBox: public wxItem {
-DECLARE_DYNAMIC_CLASS(wxCheckBox)
 public:
     wxCheckBox(void);
     ~wxCheckBox(void);

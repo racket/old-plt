@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_list.cc,v 1.2 1998/01/29 15:52:59 mflatt Exp $
+ * RCS_ID:	$Id: wb_list.cc,v 1.3 1998/02/07 13:43:59 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -124,7 +124,7 @@ void wxNode::Kill(wxList *list)
   list = NULL;
   
 #ifdef wx_mac
-// Put this here since data may try to remove itself as a child: kludge
+  // Put this here since data may try to remove itself as a child: kludge
   if (list && list->destroy_data)
     delete data;
 #endif // wx_mac
@@ -180,48 +180,6 @@ wxList::wxList(KeyType the_key_type, Bool clean_up)
   first_node = NULL;
   last_node = NULL;
   key_type = the_key_type;
-}
-
-// Variable argument list, terminated by a zero
-wxList::wxList (wxObject *, ...)
-{
-#if 0
-  __type = wxTYPE_LIST;
-  va_list ap;
-
-  va_start (ap, first_one);
-
-  wxNode *last = new wxNode (this, NULL, NULL, first_one);
-  first_node = last;
-  n = 1;
-
-  for (;;)
-    {
-      wxObject *object = va_arg (ap, wxObject *);
-//    if (object == NULL) // Doesn't work in Windows -- segment is non-zero for NULL!
-#ifdef wx_msw
-      if ((int) object == 0)
-#else
-      if ((long) object == 0)
-#endif
-	break;
-      else
-	{
-	  wxNode *node = new wxNode (this, last, NULL, object);
-	  last = node;
-	  n++;
-	}
-    }
-  last_node = last;
-  va_end (ap);
-
-  destroy_data = 0;
-  key_type = wxKEY_NONE;
-#else
-#ifndef wx_msw
-  fprintf (stderr, "Error: cannot use variable-argument functions on\n");
-#endif
-#endif
 }
 
 wxList::~wxList (void)
@@ -392,60 +350,6 @@ void wxList::Clear (void)
   n = 0;
 }
 
-// (stefan.hammes@urz.uni-heidelberg.de)
-//
-// function for sorting lists. the concept is borrowed from 'qsort'.
-// by giving a sort function, arbitrary lists can be sorted.
-// method:
-// - put wxObject pointers into an array
-// - sort the array with qsort
-// - put back the sorted wxObject pointers into the list
-//
-// CAVE: the sort function receives pointers to wxObject pointers (wxObject **),
-//       so dereference right!
-// EXAMPLE:
-//   int listcompare(const void *arg1, const void *arg2)
-//   {
-//      return(compare(**(wxString **)arg1,
-//                     **(wxString **)arg2));
-//   }
-//
-//   void main()
-//   { 
-//     wxList list;
-//
-//     list.Append(new wxString("DEF"));
-//     list.Append(new wxString("GHI"));
-//     list.Append(new wxString("ABC"));
-//     list.Sort(listcompare);
-//   }
-
-void wxList::Sort(wxSortCompareFunction compfunc)
-{
-  // allocate an array for the wxObject pointers of the list
-  const size_t num = Number();
-  wxObject **objArray = new wxObject *[num];
-  wxObject **objPtr = objArray;
-  
-  // go through the list and put the pointers into the array
-  wxNode *node = First();
-  while(node!=NULL){
-    *objPtr++ = node->Data();
-    node = node->Next();
-  }
-  // sort the array
-  qsort((void *)objArray,num,sizeof(wxObject *),compfunc);
-  // put the sorted pointers back into the list  
-  objPtr = objArray;
-  node = First();
-  while(node!=NULL){
-    node->SetData(*objPtr++);
-    node = node->Next();
-  }
-  // free the array
-  delete[] objArray;
-}
-
 /*
  * String list
  *
@@ -469,56 +373,6 @@ long wxList::MemoryUse(void)
   return s + wxObject::MemoryUse();
 }
 #endif
-
-
-// Variable argument list, terminated by a zero
-// Makes new storage for the strings
-wxStringList::wxStringList (char *, ...)
-{
-#if 0
-  __type = wxTYPE_STRING_LIST;
-  n = 0;
-  destroy_data = 0;
-  key_type = wxKEY_NONE;
-  first_node = NULL;
-  last_node = NULL;
-
-  if (!first)
-    return;
-
-  va_list ap;
-
-  va_start (ap, first);
-
-  wxNode *last = new wxNode (this, NULL, NULL, (wxObject *) copystring (first));
-  first_node = last;
-  n = 1;
-
-  for (;;)
-    {
-      char *s = va_arg (ap, char *);
-//    if (s == NULL)
-#ifdef wx_msw
-      if ((int) s == 0)
-#else
-      if ((long) s == 0)
-#endif
-	break;
-      else
-	{
-	  wxNode *node = new wxNode (this, last, NULL, (wxObject *) copystring (s));
-	  last = node;
-	  n++;
-	}
-    }
-  last_node = last;
-  va_end (ap);
-#else
-#ifndef wx_msw
-  fprintf (stderr, "Error: cannot use variable-argument functions\n");
-#endif
-#endif
-}
 
 wxStringList::~wxStringList (void)
 {
@@ -570,34 +424,6 @@ char **wxStringList::ListToArray (Bool new_copies)
       node = node->Next ();
     }
   return string_array;
-}
-
-static int 
-wx_comparestrings (const void *arg1, const void *arg2)
-{
-  char **s1 = (char **) arg1;
-  char **s2 = (char **) arg2;
-
-  return strcmp (*s1, *s2);
-}
-
-// Sort a list of strings - deallocates old nodes, allocates new
-void wxStringList::Sort (void)
-{
-  size_t N = n;
-  char **array = new char *[N];
-
-  size_t i = 0;
-  for (wxNode * node = First (); node; node = node->Next ())
-    array[i++] = (char *) node->Data ();
-
-  qsort (array, N, sizeof (char *), wx_comparestrings);
-  Clear ();
-
-  for (i = 0; i < N; i++)
-    Append ((wxObject *) (array[i]));
-
-  delete[]array;
 }
 
 // Checks whether s is a member of the list

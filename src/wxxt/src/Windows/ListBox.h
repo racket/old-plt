@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.h,v 1.4 1998/11/17 13:11:49 mflatt Exp $
+ * $Id: ListBox.h,v 1.5 1998/12/05 01:08:21 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -34,7 +34,6 @@ class wxPanel;
 class wxStringList;
 
 class wxListBox : public wxItem {
-DECLARE_DYNAMIC_CLASS(wxListBox)
 public:
     wxListBox(void);
     wxListBox(wxPanel *panel, wxFunction func, char *title,
@@ -72,7 +71,6 @@ public:
     void  Set(int n, char *choices[]);
     void  Set(wxStringList *slist);
     void  SetClientData(int n, char *client_data);
-    void  SetClientData(char *data) { wxItem::SetClientData(data); }
     void  SetFirstItem(int n);
     void  SetFirstItem(char *s);
     void  SetSelection(int c, Bool select = TRUE);

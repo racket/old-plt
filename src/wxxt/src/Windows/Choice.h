@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.h,v 1.4 1998/11/12 18:14:45 mflatt Exp $
+ * $Id: Choice.h,v 1.5 1998/11/17 13:11:48 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -35,7 +35,6 @@ class wxPanel;
 
 // Choice item
 class wxChoice : public wxItem {
-DECLARE_DYNAMIC_CLASS(wxChoice)
 public:
     wxChoice(void);
     wxChoice(wxPanel *panel, wxFunction func, char *label,

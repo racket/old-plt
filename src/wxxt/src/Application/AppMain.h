@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.h,v 1.2 1996/01/11 10:26:41 markus Exp $
+ * $Id: AppMain.h,v 1.1.1.1 1997/12/22 17:28:45 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -33,10 +33,9 @@
 class wxFrame;
 
 class wxApp : public wxObject {
-DECLARE_DYNAMIC_CLASS(wxApp)
 public:
     // functions
-    wxApp(wxlanguage_t language = wxLANGUAGE_DEFAULT);
+    wxApp();
 
     virtual void    Dispatch(void);
             Bool    Initialized(void) { return initialized; };

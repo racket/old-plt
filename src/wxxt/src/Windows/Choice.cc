@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.15 1999/10/08 04:36:35 mflatt Exp $
+ * $Id: Choice.cc,v 1.16 1999/10/22 14:41:54 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -41,8 +41,6 @@ char *wxchoice_unprotect_amp(char *s);
 //-----------------------------------------------------------------------------
 // create and destroy button
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_DYNAMIC_CLASS(wxChoice, wxItem)
 
 wxChoice::wxChoice(void) : wxItem()
 {

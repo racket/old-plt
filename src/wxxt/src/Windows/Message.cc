@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Message.cc,v 1.4 1998/12/05 01:08:21 mflatt Exp $
+ * $Id: Message.cc,v 1.5 1998/12/15 17:23:53 mflatt Exp $
  *
  * Purpose: message panel item
  *
@@ -37,8 +37,6 @@
 //-----------------------------------------------------------------------------
 // create and destroy message
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_DYNAMIC_CLASS(wxMessage, wxItem)
 
 wxMessage::wxMessage(void) : wxItem()
 {

@@ -10,6 +10,8 @@ WXSCFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) $(GUI) $(WARN) $(OPT) $(DEBUGFLAGS)
 WXSCHEMEHEADERS = wxscheme.h ../../mzscheme/src/stypes.h ../../mzscheme/include/scheme.h
 MEDIAHEADERS = ../wxme/wx_media.h ../wxme/wx_medad.h ../wxme/wx_snip.h
 WINDOWHEADERS = $(WXDIR)/src/Windows/Window.h
+MAINDCHEADERS = $(WXDIR)/src/DeviceContexts/DC.h
+DCHEADERS = $(MAINDCHEADERS) $(WXDIR)/src/DeviceContexts/WindowDC.h $(WXDIR)/src/DeviceContexts/PSDC.h
 
 OBJDIR=objects/sys$(MZPLATFORMSUFFIX)$(GUISUFFIX)
 
@@ -174,7 +176,7 @@ $(OBJDIR)/wxs_cnvs.o : wxs_cnvs.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_cnvs.cxx -o $(OBJDIR)/wxs_cnvs.o
 $(OBJDIR)/wxs_cstr.o : wxs_cstr.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) wxs_cstr.cxx -o $(OBJDIR)/wxs_cstr.o
-$(OBJDIR)/wxs_dc.o : wxs_dc.cxx $(WXSCHEMEHEADERS)
+$(OBJDIR)/wxs_dc.o : wxs_dc.cxx $(WXSCHEMEHEADERS) $(DCHEADERS)
 	$(WXSCC) wxs_dc.cxx -o $(OBJDIR)/wxs_dc.o
 $(OBJDIR)/wxs_evnt.o : wxs_evnt.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) wxs_evnt.cxx -o $(OBJDIR)/wxs_evnt.o
@@ -198,9 +200,9 @@ $(OBJDIR)/wxs_list.o : wxs_list.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) wxs_list.cxx -o $(OBJDIR)/wxs_list.o
 $(OBJDIR)/wxs_madm.o : wxs_madm.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_madm.cxx -o $(OBJDIR)/wxs_madm.o
-$(OBJDIR)/wxs_medi.o : wxs_medi.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS)
+$(OBJDIR)/wxs_medi.o : wxs_medi.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
 	$(WXSCC) wxs_medi.cxx -o $(OBJDIR)/wxs_medi.o
-$(OBJDIR)/wxs_mede.o : wxs_mede.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS)
+$(OBJDIR)/wxs_mede.o : wxs_mede.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
 	$(WXSCC) wxs_mede.cxx -o $(OBJDIR)/wxs_mede.o
 $(OBJDIR)/wxs_menu.o : wxs_menu.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_menu.cxx -o $(OBJDIR)/wxs_menu.o
@@ -208,7 +210,7 @@ $(OBJDIR)/wxs_mio.o : wxs_mio.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEA
 	$(WXSCC) wxs_mio.cxx -o $(OBJDIR)/wxs_mio.o
 $(OBJDIR)/wxs_misc.o : wxs_misc.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_misc.cxx -o $(OBJDIR)/wxs_misc.o
-$(OBJDIR)/wxs_mpb.o : wxs_mpb.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) ../wxme/wx_medpb.h
+$(OBJDIR)/wxs_mpb.o : wxs_mpb.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) ../wxme/wx_medpb.h $(MAINDCHEADERS)
 	$(WXSCC) wxs_mpb.cxx -o $(OBJDIR)/wxs_mpb.o
 $(OBJDIR)/wxs_obj.o : wxs_obj.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) wxs_obj.cxx -o $(OBJDIR)/wxs_obj.o
@@ -218,9 +220,9 @@ $(OBJDIR)/wxs_rado.o : wxs_rado.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_rado.cxx -o $(OBJDIR)/wxs_rado.o
 $(OBJDIR)/wxs_slid.o : wxs_slid.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_slid.cxx -o $(OBJDIR)/wxs_slid.o
-$(OBJDIR)/wxs_snip.o : wxs_snip.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS)
+$(OBJDIR)/wxs_snip.o : wxs_snip.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
 	$(WXSCC) wxs_snip.cxx -o $(OBJDIR)/wxs_snip.o
-$(OBJDIR)/wxs_styl.o : wxs_styl.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) ../wxme/wx_style.h
+$(OBJDIR)/wxs_styl.o : wxs_styl.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) ../wxme/wx_style.h $(MAINDCHEADERS)
 	$(WXSCC) wxs_styl.cxx -o $(OBJDIR)/wxs_styl.o
 $(OBJDIR)/wxs_tbar.o : wxs_tbar.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) wxs_tbar.cxx -o $(OBJDIR)/wxs_tbar.o

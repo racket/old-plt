@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: EvtHandler.h,v 1.3 1998/08/14 21:44:40 mflatt Exp $
+ * $Id: EvtHandler.h,v 1.4 1998/08/18 20:03:39 mflatt Exp $
  *
  * Purpose: base event handler of windows etc.
  *
@@ -37,23 +37,9 @@ class wxMouseEvent;
 class wxWindow;
 
 class wxEvtHandler : public wxObject {
-DECLARE_DYNAMIC_CLASS(wxEvtHandler)
 public:
     wxEvtHandler(void);
     ~wxEvtHandler(void);
-
-    inline char         *GetClientData(void)
-	{ return wx_client_data; }
-    inline wxEvtHandler *GetNextHandler(void)
-	{ return nextHandler; }
-    inline wxEvtHandler *GetPreviousHandler(void)
-	{ return previousHandler; }
-    inline void SetClientData(char *data)
-	{ wx_client_data = data; }
-    inline void SetNextHandler(wxEvtHandler *handler)
-	{nextHandler = handler; }
-    inline void SetPreviousHandler(wxEvtHandler *handler)
-	{ previousHandler = handler; }
 
     // virtual event functions
     inline virtual void OnActivate(Bool WXUNUSED(active)) {};
@@ -93,10 +79,6 @@ public:
     inline virtual void OnSelect(Bool WXUNUSED(select)) {};
     inline virtual void OnSetFocus(void) {};
     inline virtual void OnSize(int WXUNUSED(width), int WXUNUSED(height)) {};
-protected:
-    wxEvtHandler *nextHandler;
-    wxEvtHandler *previousHandler;
-    char         *wx_client_data;
 };
 
 #if defined (Uses_XtIntrinsic) || defined (Uses_XtIntrinsicP) || defined (Uses_XLib)

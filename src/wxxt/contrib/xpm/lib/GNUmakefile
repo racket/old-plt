@@ -27,7 +27,7 @@ WXDIR=$(shell pwd)/../../wxxt
 
 include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
 
-XPM_CC = $(XPMCC) $(DEBUGFLAGS) $(WARN) $(OPT) -DZPIPE -c
+XPM_CC = $(XPMCC) $(CFLAGS) -DZPIPE -c
 
 OBJDIR = objects/sys$(MZPLATFORMSUFFIX)
 LIBDIR = lib/sys$(MZPLATFORMSUFFIX)

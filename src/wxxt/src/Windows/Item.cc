@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Item.cc,v 1.2 1998/09/06 01:54:02 mflatt Exp $
+ * $Id: Item.cc,v 1.3 1998/12/05 01:08:21 mflatt Exp $
  *
  * Purpose: base class for all panel items
  *
@@ -36,8 +36,6 @@
 //-----------------------------------------------------------------------------
 // wxItem constructor
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_DYNAMIC_CLASS(wxItem, wxWindow)
 
 wxItem::wxItem(void) : wxWindow()
 { 

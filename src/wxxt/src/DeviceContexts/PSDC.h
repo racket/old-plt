@@ -38,10 +38,6 @@ class wxMemoryDC;
 typedef       void    *wxPostScriptDC ;
 #else
 
-#ifndef DECLARE_DYNAMIC_CLASS
-# define DECLARE_DYNAMIC_CLASS(x) /* empty */
-#endif
-
 #ifdef wx_xt
 # define DRAW_TEXT_CONST /* empty */
 #else
@@ -52,8 +48,6 @@ class PSStream;
 
 class wxPostScriptDC: public wxDC
 {
-  DECLARE_DYNAMIC_CLASS(wxPostScriptDC)
-
  public:
 #ifdef wx_xt
   char *title;
@@ -154,6 +148,10 @@ class wxPostScriptDC: public wxDC
   int LogicalToDeviceY(float y);
   int LogicalToDeviceXRel(float x);
   int LogicalToDeviceYRel(float y);
+  float FLogicalToDeviceX(float x);
+  float FLogicalToDeviceY(float y);
+  float FLogicalToDeviceXRel(float x);
+  float FLogicalToDeviceYRel(float y);
   Bool Blit(float xdest, float ydest, float width, float height,
             wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL);
   Bool Blit(float xdest, float ydest, float width, float height,
@@ -194,7 +192,6 @@ enum {
 extern void wxInitializePrintSetupData(Bool init = TRUE);
 
 class wxPrintSetupData : public wxObject {
-DECLARE_DYNAMIC_CLASS(wxPrintSetupData)
 public:
     wxPrintSetupData(void);
     ~wxPrintSetupData(void);
@@ -273,7 +270,6 @@ extern wxPrintSetupData *wxGetThePrintSetupData();
 extern void wxSetThePrintSetupData(wxPrintSetupData *);
 
 class wxPrintPaperType : public wxObject {
-DECLARE_DYNAMIC_CLASS(wxPrintPaperType)
 public:
     wxPrintPaperType(char *name=NULL, int wmm=0, int hmm=0, int wp=0, int hp=0);
     ~wxPrintPaperType(void);
@@ -286,7 +282,6 @@ public:
 };
 
 class wxPrintPaperDatabase : public wxList {
-DECLARE_DYNAMIC_CLASS(wxPrintPaperDatabase)
 public:
     wxPrintPaperDatabase(void);
     ~wxPrintPaperDatabase(void);

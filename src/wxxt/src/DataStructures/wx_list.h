@@ -63,9 +63,6 @@ class wxNode
   inline void     DataGCIgnored(void)         { WXGC_IGNORE(data); }
 };
 
-// type of compare function for list sort operation (as in 'qsort')
-typedef int (*wxSortCompareFunction)(const void *elem1, const void *elem2);
-
 class wxList: public wxObject
 {
 
@@ -86,7 +83,6 @@ class wxList: public wxObject
 #endif // wx_mac
   wxList(KeyType the_key_type, Bool clean_up = TRUE);
   wxList(int N, wxObject *Objects[]);
-  wxList(wxObject *object, ...);
   ~wxList(void);
 
   inline int Number(void) { return n; }
@@ -136,9 +132,6 @@ class wxList: public wxObject
   inline void DeleteContents(int destroy) { destroy_data = destroy; }
                                              // Instruct it to destroy user data
                                              // when deleting nodes
-  // this function allows the sorting of arbitrary lists by giving
-  // a function to compare two list elements.
-  void Sort(wxSortCompareFunction compfunc);
 
 #ifdef MEMORY_USE_METHOD
   long MemoryUse(void);
@@ -152,13 +145,11 @@ class wxStringList: public wxList
 
  public:
   wxStringList(void);
-  wxStringList(char *first ...);
   ~wxStringList(void);
 
   virtual wxNode *Add(const char *s);
   virtual void Delete(const char *s);
   virtual char **ListToArray(Bool new_copies = FALSE);
-  virtual void Sort(void);
   virtual Bool Member(const char *s);
 };
 

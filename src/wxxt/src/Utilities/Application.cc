@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Application.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
+ * $Id: Application.cc,v 1.2 1998/04/11 13:57:29 mflatt Exp $
  *
  * Purpose: global utilities for wxWindows application and main loop
  *
@@ -42,14 +42,6 @@ void wxExit(void)
 
 void wxFlushEvents(void)
 {
-#if 0
-    XSync(wxAPP_DISPLAY, FALSE);
-    XEvent event;
-    while (wxTheApp->Pending()) {
-      XFlush(wxAPP_DISPLAY);
-      wxTheApp->Dispatch();
-    }
-#endif
 }
 
 //-----------------------------------------------------------------------------

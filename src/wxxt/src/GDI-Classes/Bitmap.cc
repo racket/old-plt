@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Bitmap.cc,v 1.7 1998/10/19 20:40:50 mflatt Exp $
+ * $Id: Bitmap.cc,v 1.8 1999/01/14 22:24:11 mflatt Exp $
  *
  * Purpose: bitmap classes to implement pixmaps, icons, and cursors
  *
@@ -50,10 +50,6 @@ enum {
 #endif
 };
 
-IMPLEMENT_DYNAMIC_CLASS(wxBitmap, wxObject)
-IMPLEMENT_DYNAMIC_CLASS(wxCursor, wxBitmap)
-IMPLEMENT_DYNAMIC_CLASS(wxGDIList, wxList)
-
 class wxBitmap_Xintern {
 public:
     int          type;			// what is the type of the bitmap
@@ -85,10 +81,6 @@ wxBitmap::wxBitmap(void)
 
     Xbitmap = NULL;
     cmap    = wxAPP_COLOURMAP;
-
-#if !WXGARBAGE_COLLECTION_ON
-    wxTheBitmapList->Append(this);
-#endif
 }
 
 // create bitmap from bitmap-data
@@ -116,9 +108,6 @@ wxBitmap::wxBitmap(char bits[], int w, int h)
 	delete Xbitmap;
 	Xbitmap = NULL;
     }
-#if !WXGARBAGE_COLLECTION_ON
-    wxTheBitmapList->Append(this);
-#endif
 
     WXGC_IGNORE(selectedTo);
 }
@@ -133,10 +122,6 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
 
     // use load method
     (void)LoadFile(bitmap_file, flags);
-
-#if !WXGARBAGE_COLLECTION_ON
-    wxTheBitmapList->Append(this);
-#endif
 
     WXGC_IGNORE(selectedTo);
 }
@@ -177,9 +162,6 @@ wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem)) // anItem used for MOT
 	delete Xbitmap;
 	Xbitmap = NULL;
     }
-#if !WXGARBAGE_COLLECTION_ON
-    wxTheBitmapList->Append(this);
-#endif
 
     WXGC_IGNORE(selectedTo);
 }
@@ -197,10 +179,6 @@ wxBitmap::wxBitmap(int w, int h, Bool b_and_w)
     // use create method
     (void)Create(w, h, b_and_w ? 1 : -1);
 
-#if !WXGARBAGE_COLLECTION_ON
-    wxTheBitmapList->Append(this);
-#endif
-
     WXGC_IGNORE(selectedTo);
 }
 
@@ -210,9 +188,6 @@ wxBitmap::~wxBitmap(void)
     // free pixmap and infos
     Destroy();
     // remove Bitmap form List
-#if !WXGARBAGE_COLLECTION_ON
-    wxTheBitmapList->DeleteObject(this);
-#endif
 }
 
 static int errorFlagged;

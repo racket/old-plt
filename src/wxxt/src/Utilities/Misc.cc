@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Misc.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
+ * $Id: Misc.cc,v 1.2 1998/09/24 18:33:31 mflatt Exp $
  *
  * Purpose: miscellaneous utilities
  *
@@ -45,91 +45,4 @@ int wxGetOsVersion(int *majorVsn, int *minorVsn)
     if (majorVsn)  *majorVsn = X_PROTOCOL;
     if (minorVsn)  *minorVsn = XlibSpecificationRelease;
     return wxXT_X;
-}
-
-/*
- * wxWindows search function utilities
- */
-
-static wxWindow *wxFindWindowByLabel1(char *title, wxWindow *parent);
-
-wxWindow *wxFindWindowByLabel(char *title, wxWindow *parent)
-{
-    if (parent) {
-	return wxFindWindowByLabel1(title, parent);
-    } else {
-	for (wxChildNode* node=wxTopLevelFrames(NULL)->First(); node; node=node->Next()) {
-	    wxWindow *win = (wxWindow*)node->Data();
-	    if (win && node->IsShown()) {
-	      wxWindow *retwin = wxFindWindowByLabel1(title, win);
-	      if (retwin)
-		return retwin;
-	    }
-	}
-    }
-    return NULL;
-}
-
-static wxWindow *wxFindWindowByLabel1(char *title, wxWindow *parent)
-{
-    if (parent) {
-	char *lab = parent->GetLabel();
-	if (lab && StringMatch(title, lab))
-	    return parent;
-    }
-    if (parent) {
-	for (wxChildNode *node=parent->GetChildren()->First(); node; node=node->Next()) {
-	    wxWindow *win = (wxWindow*)node->Data();
-	    wxWindow *retwin = wxFindWindowByLabel1(title, win);
-	    if (retwin)
-		return retwin;
-	}
-    }
-    return NULL;
-}
-
-static wxWindow *wxFindWindowByName1(char *title, wxWindow *parent);
-
-wxWindow *wxFindWindowByName(char *title, wxWindow *parent)
-{
-    if (parent) {
-	return wxFindWindowByName1(title, parent);
-    } else {
-	for (wxChildNode *node=wxTopLevelFrames(NULL)->First(); node; node=node->Next()) {
-	    wxWindow *win = (wxWindow*)node->Data();
-	    if (win && node->IsShown()) {
-	      wxWindow *retwin = wxFindWindowByName1(title, win);
-	      if (retwin)
-		return retwin;
-	    }
-	}
-    }
-    // Failed? Try by label instead.
-    return wxFindWindowByLabel(title, parent);
-}
-
-static wxWindow *wxFindWindowByName1(char *title, wxWindow *parent)
-{
-    if (parent) {
-	char *lab = parent->GetName ();
-	if (lab && StringMatch(title, lab))
-	    return parent;
-    }
-    if (parent) {
-	for (wxChildNode *node=parent->GetChildren()->First(); node; node=node->Next()) {
-	    wxWindow *win = (wxWindow*)node->Data();
-	    wxWindow *retwin = wxFindWindowByName1(title, win);
-	    if (retwin)
-		return retwin;
-	}
-    }
-    return NULL;
-}
-
-int wxFindMenuItemId(wxFrame *frame, char *menuString, char *itemString)
-{
-    wxMenuBar *menuBar = frame->GetMenuBar();
-    if (!menuBar)
-	return -1;
-    return menuBar->FindMenuItem(menuString, itemString);
 }

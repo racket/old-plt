@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Home.cc,v 1.1 1996/01/10 14:56:53 markus Exp $
+ * $Id: Home.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
  *
  * Purpose: get user home info
  *
@@ -29,13 +29,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-char *wxGetHomeDir(char *dest)
-{
-    char *ptr = wxGetUserHome(NULL);
-    strcpy(dest, ptr && *ptr ? ptr : "/");
-    return dest;
-}
 
 char *wxGetUserHome(const char *user)
 {

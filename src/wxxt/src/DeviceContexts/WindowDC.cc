@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.27 1999/09/17 02:20:32 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.28 1999/10/08 04:33:18 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -83,8 +83,6 @@ Pixmap* hatch_bitmaps = NULL;
 //-----------------------------------------------------------------------------
 // create and destroy wxWindowDC
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_DYNAMIC_CLASS(wxWindowDC, wxDC)
 
 wxWindowDC::wxWindowDC(void) : wxDC()
 {

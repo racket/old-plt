@@ -34,7 +34,6 @@ typedef       void    *wxHashTable ;
 
 class wxHashTable: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxHashTable)
 
  public:
   int n;
@@ -100,8 +99,6 @@ class wxHashTable: public wxObject
 
 };
 
-#if WXGARBAGE_COLLECTION_ON
-
 /* Special hash table implementation for widgets.
  * This is part of an experimental garbage collection system
  * for wxWindows, by Matthew Flatt: use with caution.
@@ -121,8 +118,6 @@ class wxNonlockingHashTable
   inline void Append(long w, wxObject *o) { Put(w, o); }
   inline wxObject *Find(long w) { return Get(w); }
 };
-
-#endif
 
 #endif // IN_CPROTO
 #endif // wxb_hashh

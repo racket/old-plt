@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Colour.h,v 1.1.1.1 1997/12/22 17:28:51 mflatt Exp $
+ * $Id: Colour.h,v 1.2 1998/08/01 12:42:15 mflatt Exp $
  *
  * Purpose: classes to cover colours and colourmaps
  *
@@ -41,7 +41,6 @@ class wxColourMap_Xintern;
 class wxColourMap;
 
 class wxColour : public wxObject { // colour representation
-DECLARE_DYNAMIC_CLASS(wxColour)
 public:
     wxColour(void);
     wxColour(unsigned char r, unsigned char g, unsigned char b);
@@ -76,7 +75,6 @@ private:
 };
 
 class wxColourMap : public wxObject { // colourmap representation
-DECLARE_DYNAMIC_CLASS(wxColourMap)
 public:
     wxColourMap(Bool priv=TRUE);
     ~wxColourMap(void);
@@ -92,7 +90,6 @@ private:
 };
 
 class wxColourDatabase : public wxList { // colour database representation
-DECLARE_DYNAMIC_CLASS(wxColourDatabase)
 public:
     wxColourDatabase(void) : wxList(wxKEY_STRING) {};
     ~wxColourDatabase(void);

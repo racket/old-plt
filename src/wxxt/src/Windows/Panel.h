@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Panel.h,v 1.2 1998/09/06 01:54:02 mflatt Exp $
+ * $Id: Panel.h,v 1.3 1998/11/12 18:14:46 mflatt Exp $
  *
  * Purpose: base class for all panels
  *
@@ -37,7 +37,6 @@ class wxFont;
 class wxItem;
 
 class wxPanel : public wxWindow {
-DECLARE_DYNAMIC_CLASS(wxPanel)
 public:
     wxPanel(void); 
     wxPanel(wxPanel *parent, int x=-1, int y=-1, int width=-1, int height=-1,

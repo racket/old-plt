@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: String.cc,v 1.2 1998/11/09 17:25:08 mflatt Exp $
+ * $Id: String.cc,v 1.3 1998/12/05 01:08:21 mflatt Exp $
  *
  * Purpose: string copy and conversion
  *
@@ -41,54 +41,6 @@ char *copystring(const char *s)
     return news;
 }
 
-void wxStringToDouble(char *s, double *number)
-{
-    if (s && *s && number)
-	*number = strtod(s, NULL);
-}
-
-void wxStringToFloat(char *s, float *number)
-{
-    if (s && *s && number)
-	*number = (float)strtod(s, NULL);
-}
-
-void wxStringToInt(char *s, int *number)
-{
-    if (s && *s && number)
-	*number = (int)strtol(s, NULL, 10);
-}
-
-void wxStringToLong(char *s, long *number)
-{
-    if (s && *s && number)
-	*number = strtol(s, NULL, 10);
-}
-
-char *wxDoubleToString(double number)
-{
-    sprintf(wxBuffer, "%.2f", number);
-    return wxBuffer;
-}
-
-char *wxFloatToString(float number)
-{
-    sprintf(wxBuffer, "%.2f", number);
-    return wxBuffer;
-}
-
-char *wxIntToString(int number)
-{
-    sprintf(wxBuffer, "%d", number);
-    return wxBuffer;
-}
-
-char *wxLongToString(long number)
-{
-    sprintf(wxBuffer, "%ld", number);
-    return wxBuffer;
-}
-
 void wxGetLabelAndKey(char *label, char **clean_label, char **clean_key)
 {
     char *key;
@@ -104,38 +56,6 @@ void wxGetLabelAndKey(char *label, char **clean_label, char **clean_key)
 	*key++ ='\0';
     if (clean_key)
       *clean_key = key; // point to key binding in private copy
-}
-
-Bool wxStringMatch(char *str1, char *str2, Bool subString, Bool exact)
-{
-    if (str1 == NULL || str2 == NULL)
-	return FALSE;
-    if (str1 == str2)
-	return TRUE;
-
-    if (subString) {
-	int len1 = strlen (str1);
-	int len2 = strlen (str2);
-	int i;
-	for (i = 0; i <= len2 - len1; i++) {
-	    if (strncasecmp (str1, str2 + i, len1) == 0)
-		return TRUE;
-	}
-    } else if (exact) {
-	if (strcasecmp (str1, str2) == 0)
-	    return TRUE;
-    } else {
-	int len1 = strlen (str1);
-	int len2 = strlen (str2);
-	if (strncasecmp (str1, str2, min (len1, len2)) == 0)
-	    return TRUE;
-    }
-    return FALSE;
-}
-
-int wxStringEq(char *s1, char *s2)
-{
-    return (int)(s1 && s2 && (strcmp(s1, s2) == 0));
 }
 
 char *wxStripMenuCodes(char *in, char *out)

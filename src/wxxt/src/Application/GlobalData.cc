@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: GlobalData.cc,v 1.1.1.1 1997/12/22 17:28:45 mflatt Exp $
+ * $Id: GlobalData.cc,v 1.2 1998/04/11 13:57:29 mflatt Exp $
  *
  * Purpose: global data for an application (UNSHARED)
  *
@@ -45,9 +45,6 @@ wxColourMap* wxAPP_COLOURMAP = 0;
 
 //-- Application data wxWindows (Xt) ------------------------------------------
 
-#if 0
-Widget	     wxAPP_TOPLEVEL;
-#endif
 XtAppContext wxAPP_CONTEXT;
 
 //-- Application data wxWindows (XLib) ----------------------------------------
@@ -55,16 +52,6 @@ XtAppContext wxAPP_CONTEXT;
 Display* wxAPP_DISPLAY = 0;
 Screen*	 wxAPP_SCREEN = 0;
 Window   wxAPP_ROOT = 0;
-
-//-- DialogBox ----------------------------------------------------------------
-
-#if 0
-// A stack of modal_showing flags, since we can't rely
-// on accessing wxDialogBox::modal_showing within
-// wxDialogBox::Show in case a callback has deleted the wxDialogBox.
-wxList wxModalShowingStack;
-wxList wxModalFrames;
-#endif
 
 //-- Events --------------------------------------------------------------------
 
@@ -74,12 +61,6 @@ wxList wxPrimaryEventHandlerList;
 wxList wxPreEventHandlerList;
 wxList wxPostEventHandlerList;
 
-//-- Frames -------------------------------------------------------------------
-
-#if 0
-wxList wxTopLevelFrames;
-#endif
-
 //-- GDI collections ----------------------------------------------------------
 
 wxColourDatabase* wxTheColourDatabase = 0;
@@ -87,14 +68,6 @@ wxPenList*        wxThePenList = 0;
 wxBrushList*	  wxTheBrushList = 0;
 wxFontList*	  wxTheFontList = 0;
 wxGDIList*	  wxTheBitmapList = 0;
-
-//-- IPC ----------------------------------------------------------------------
-
-#if USE_IPC
-Bool  wxIPCInitialized       = FALSE;
-char* wxDefaultIPCBuffer     = NULL;
-int   wxDefaultIPCBufferSize = 4000;
-#endif
 
 //-- misc ---------------------------------------------------------------------
 
@@ -106,30 +79,10 @@ int   wxCursorBusy = 0;
 wxPrintPaperDatabase* wxThePrintPaperDatabase = 0;
 wxPrintSetupData*     wxThePrintSetupData = 0;
 
-//-- Prolog IO ----------------------------------------------------------------
-
-#if USE_PROLOGIO
-// Error handler function definition. If app returns TRUE,
-// carry on processing.
-proioErrorHandler currentProioErrorHandler;
-// Temporary variable for communicating between read.cc and YACC/LEX
-class PrologDatabase;
-PrologDatabase* hyPrologDatabase = NULL;
-#endif
-
 //-- Resources ----------------------------------------------------------------
 
-#if USE_RESOURCES
 XrmDatabase wxResourceDatabase;
 wxList wxResourceCache(wxKEY_STRING);
-#endif
-
-//-- RPC ----------------------------------------------------------------------
-
-#if USE_RPC
-class PrologDatabase;
-PrologDatabase *rpcPrologDatabase = NULL;
-#endif
 
 //-- simple language support---------------------------------------------------
 

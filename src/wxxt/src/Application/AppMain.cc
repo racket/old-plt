@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.cc,v 1.6 1998/09/06 01:53:58 mflatt Exp $
+ * $Id: AppMain.cc,v 1.7 1998/10/28 16:09:23 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -35,59 +35,25 @@
 #include "widgets.h" // for X11/StringDefs.h
 
 //-----------------------------------------------------------------------------
-// application resources
-//-----------------------------------------------------------------------------
-
-typedef struct {
-    Boolean debugEvents;
-    Boolean debugOutput;
-} TwxAPP_DATA;
-TwxAPP_DATA wxAPP_DATA;
-
-//- application resources and options -
-static XtResource wxAppResources[] = {
-    { "debugEvents", "DebugEvents", XtRBoolean, sizeof(Boolean),
-      XtOffsetOf(TwxAPP_DATA, debugEvents), XtRImmediate, (XtPointer)FALSE },
-    { "debugOutput", "DebugOutput", XtRBoolean, sizeof(Boolean),
-      XtOffsetOf(TwxAPP_DATA, debugOutput), XtRImmediate, (XtPointer)FALSE },
-};
-static XrmOptionDescRec wxAppOptions[] = {
-    { "-debugEvents", "*debugEvents", XrmoptionNoArg, "TRUE" },
-    { "-debugOutput", "*debugOutput", XrmoptionNoArg, "TRUE" },
-};
-
-//-----------------------------------------------------------------------------
 // wxApp implementation
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_DYNAMIC_CLASS(wxApp, wxObject)
 
 // references to global data for compatibility
 Bool&  wxApp::wantDebugOutput = wxAPP_DEBUGOUTPUT;
 char*& wxApp::wx_class        = wxAPP_CLASS;
 char*& wxApp::appName         = wxAPP_NAME;
 
-wxApp::wxApp(wxlanguage_t language)
+wxApp::wxApp()
 {
-    __type = wxTYPE_APP;
-
-    // no application and/or application not initialized
-    initialized = FALSE;
-    wxTheApp = this;
-    wxSetLanguage(language);
+  __type = wxTYPE_APP;
+  
+  // no application and/or application not initialized
+  initialized = FALSE;
+  wxTheApp = this;
 }
 
 void wxApp::Dispatch(void)
 {
-#if 0
-  /* MATTHEW */
-  // The problem with XtAppNextEvent is that it automatically dispatches
-  // timers and alternate inputs and then stalls for an X event. If the
-  // only thing pending was alternate input, a wxYield() could stall.
-  // XtAppProcessEvent does what we want:
-  XtAppProcessEvent(wxAPP_CONTEXT, XtIMAll);
-#endif
-
   wxDoNextEvent();
 }
 
@@ -95,36 +61,7 @@ int wxApp::MainLoop(void)
 {
     keep_going = TRUE;
     while (keep_going) {
-#if 0
-        XEvent event;
-	XtAppNextEvent(wxAPP_CONTEXT, &event);
-#if DEBUG
-	if (wxAPP_DATA.debugEvents) {
-	    // print widgetname and event number
-	    Widget w; int type = event.xany.type;
-	    static char* event_name[] = {
-		"", "unknown(-)",                                         // 0-1
-		"KeyPress", "KeyRelease", "ButtonPress", "ButtonRelease", // 2-5
-		"MotionNotify", "EnterNotify", "LeaveNotify", "FocusIn",  // 6-9
-		"FocusOut", "KeymapNotify", "Expose", "GraphicsExpose",   // 10-13
-		"NoExpose", "VisibilityNotify", "CreateNotify",           // 14-16
-		"DestroyNotify", "UnmapNotify", "MapNotify", "MapRequest",// 17-20
-		"ReparentNotify", "ConfigureNotify", "ConfigureRequest",  // 21-23
-		"GravityNotify", "ResizeRequest", "CirculateNotify",      // 24-26
-		"CirculateRequest", "PropertyNotify", "SelectionClear",   // 27-29
-		"SelectionRequest", "SelectionNotify", "ColormapNotify",  // 30-32
-		"ClientMessage", "MappingNotify",                         // 33-34
-		"unknown(+)"};                                            // 35
-	    type = min(35, type); type = max(1, type);
-	    w = XtWindowToWidget(event.xany.display, event.xany.window);
-	    fprintf(stderr, "%40s:%s\n", (w ? XtName(w) : "unknown"), event_name[type]);
-	    fflush(stdout);
-	}
-#endif
-	XtDispatchEvent(&event);
-#else
-	wxDoEvents();
-#endif
+      wxDoEvents();
     }
     return 0;
 }
@@ -132,11 +69,7 @@ int wxApp::MainLoop(void)
 Bool wxApp::Pending(void)
 {
     XFlush(wxAPP_DISPLAY);
-#if 0
-    return (XtAppPending(wxAPP_CONTEXT));
-#else
     return (wxEventReady());
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -213,7 +146,7 @@ int wxEntry(int argc, char *argv[])
     }
 
     // init private and public data
-    /* MATTHEW: Set if not set... */
+    /* Set if not set... */
     if (!wxAPP_CLASS) wxAPP_CLASS = wxFileNameFromPath(argv[0]);
     if (!wxAPP_NAME)  wxAPP_NAME  = wxFileNameFromPath(argv[0]);
 
@@ -222,7 +155,7 @@ int wxEntry(int argc, char *argv[])
 
     wxPutAppToplevel(XtAppInitialize(
 	&wxAPP_CONTEXT, wxAPP_CLASS,
-	wxAppOptions, XtNumber(wxAppOptions),	// resource options
+	NULL, 0,
 	&xargc, argv,				// command line arguments
 	NULL,					// fallback resources
 	NULL, 0));				// argument override for app-shell
@@ -237,14 +170,6 @@ int wxEntry(int argc, char *argv[])
       argv[i - ate] = argv[i];
     argc -= ate;
 
-    XtGetApplicationResources(wxAPP_TOPLEVEL, 
-			      &wxAPP_DATA, 
-			      wxAppResources, 
-			      XtNumber(wxAppResources), 
-			      NULL, 
-			      0);
-    wxAPP_DEBUGOUTPUT = wxAPP_DATA.debugOutput;
-
     wxTheApp->argc = argc;
     wxTheApp->argv = argv;
 
@@ -255,23 +180,6 @@ int wxEntry(int argc, char *argv[])
 
     return 0;
 }
-
-// If the compiler really, really wants main() to be in the main program
-// a macro (IMPLEMENT_WXWIN_MAIN) is provided.
-
-#if 0
-
-#ifndef WX_FORCE_APP_CREATION
-#define WX_FORCE_APP_CREATION 0
-#endif
-
-#if !defined(AIX) && !defined(AIX4) && !WX_FORCE_APP_CREATION
-int main(int argc, char *argv[]) {
-    return wxEntry(argc, argv);
-}
-#endif
-
-#endif
 
 //-----------------------------------------------------------------------------
 // initialize and destroy global data

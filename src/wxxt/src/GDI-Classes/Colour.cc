@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Colour.cc,v 1.5 1998/10/28 16:09:23 mflatt Exp $
+ * $Id: Colour.cc,v 1.6 1999/07/19 22:19:22 mflatt Exp $
  *
  * Purpose: classes to cover colours and colourmaps
  *
@@ -33,10 +33,6 @@
 #include "wx.h"
 
 #include <ctype.h>
-
-IMPLEMENT_DYNAMIC_CLASS(wxColour, wxObject)
-IMPLEMENT_DYNAMIC_CLASS(wxColourDatabase, wxList)
-IMPLEMENT_DYNAMIC_CLASS(wxColourMap, wxObject)
 
 // shift between wxWindows RGB- and XColor RGB-values
 // (necessary because the values specify an intensity)

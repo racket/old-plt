@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DialogBox.h,v 1.2 1996/01/11 15:10:26 markus Exp $
+ * $Id: DialogBox.h,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
  *
  * Purpose: dialog box
  *
@@ -31,7 +31,6 @@
 #endif
 
 class wxDialogBox : public wxFrame {
-DECLARE_DYNAMIC_CLASS(wxDialogBox)
 public:
     wxDialogBox(void);
     wxDialogBox(wxFrame *parent, char *title, Bool modal=FALSE,

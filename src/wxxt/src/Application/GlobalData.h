@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: GlobalData.h,v 1.3 1998/08/05 23:56:30 mflatt Exp $
+ * $Id: GlobalData.h,v 1.4 1999/05/20 20:51:15 mflatt Exp $
  *
  * Purpose: global data for an application (UNSHARED)
  *
@@ -62,10 +62,7 @@ extern wxColourMap* wxAPP_COLOURMAP;
 #if defined (Uses_XtIntrinsic) || defined (Uses_XtIntrinsicP)
 extern Widget wxGetAppToplevel(void);
 extern void wxPutAppToplevel(Widget);
-#define wxAPP_TOPLEVEL (wxGetAppToplevel())
-#if 0
-extern Widget wxAPP_TOPLEVEL;
-#endif
+# define wxAPP_TOPLEVEL (wxGetAppToplevel())
 extern XtAppContext wxAPP_CONTEXT;
 #endif
 
@@ -77,17 +74,9 @@ extern Window   wxAPP_ROOT;
 
 //-- DialogBox ----------------------------------------------------------------
 
-#if 0
-// A stack of modal_showing flags, since we can't rely
-// on accessing wxDialogBox::modal_showing within
-// wxDialogBox::Show in case a callback has deleted the wxDialogBox.
-extern wxList wxModalShowingStack;
-extern wxList wxModalFrames;
-#else
 wxWindow *wxGetModalWindow(wxObject*);
 void wxPushModalWindow(wxObject*,wxWindow *);
 void wxPopModalWindow(wxObject*,wxWindow *);
-#endif
 
 //-- Events --------------------------------------------------------------------
 
@@ -101,9 +90,6 @@ extern wxList wxPostEventHandlerList;
 
 extern wxChildList *wxGetTopLevelWindowsList(wxObject*);
 #define wxTopLevelFrames(w) (wxGetTopLevelWindowsList(w))
-#if 0
-extern wxList wxTopLevelFrames;
-#endif
 
 extern void *wxGetContextForFrame();
 
@@ -115,14 +101,6 @@ extern wxBrushList*	 wxTheBrushList;
 extern wxFontList*	 wxTheFontList;
 extern wxGDIList*	 wxTheBitmapList;
 
-//-- IPC ----------------------------------------------------------------------
-
-#if USE_IPC
-extern Bool  wxIPCInitialized;
-extern char* wxDefaultIPCBuffer;
-extern int   wxDefaultIPCBufferSize;
-#endif
-
 //-- misc ---------------------------------------------------------------------
 
 extern char* wxBuffer;
@@ -132,33 +110,12 @@ extern int   wxCursorBusy;
 
 extern wxPrintPaperDatabase* wxThePrintPaperDatabase;
 
-//-- Prolog IO ----------------------------------------------------------------
-
-#if USE_PROLOGIO
-// Error handler function definition. If app returns TRUE,
-// carry on processing.
-typedef Bool (*proioErrorHandler) (int errorType, char *msg);
-extern proioErrorHandler currentProioErrorHandler;
-// Temporary variable for communicating between read.cc and YACC/LEX
-class PrologDatabase;
-extern PrologDatabase* hyPrologDatabase;
-#endif
-
 //-- Resources ----------------------------------------------------------------
 
-#if USE_RESOURCES
 #if defined (Uses_XtIntrinsic) || defined (Uses_XtIntrinsicP) || defined (Uses_XLib)
 extern XrmDatabase wxResourceDatabase;
 #endif
 extern wxList wxResourceCache;
-#endif
-
-//-- RPC ----------------------------------------------------------------------
-
-#if USE_RPC
-class PrologDatabase;
-extern PrologDatabase *rpcPrologDatabase;
-#endif
 
 //-- simple language support---------------------------------------------------
 

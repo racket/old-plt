@@ -43,11 +43,7 @@ static int defaultSize = 10;
 static int defaultSize = 12;
 #endif
 
-#if !defined(wx_xt) || defined(WXME_FOR_MRED)
 # define FONT_DIRECTORY wxTheFontNameDirectory
-#else
-# define FONT_DIRECTORY (*wxTheFontNameDirectory)
-#endif
 
 extern void wxmeError(const char *e);
 
@@ -668,11 +664,7 @@ int wxStyle::GetFamily()
 char *wxStyle::GetFace()
 {
 #ifndef NO_GENERAL_FONTS
-# ifndef WXME_FOR_MRED
-  return font->GetFaceName();
-# else
   return font->GetFaceString();
-# endif
 #else
   return font->GetFamilyString();
 #endif
@@ -880,11 +872,7 @@ class NotificationRec {
   long id;
 };
 
-#ifndef WXME_FOR_MRED
-static long nextNotifyId = 0;
-#else
 extern "C" long scheme_make_symbol(const char *name);
-#endif
 
 wxStyleList::wxStyleList() : wxList()
 {
@@ -1184,11 +1172,7 @@ long wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
     scheme_weak_reference((void **)&rec->data);
   else
     WXGC_IGNORE(rec->data);
-#ifndef WXME_FOR_MRED
-  rec->id = nextNotifyId++;
-#else
   rec->id = scheme_make_symbol("notify-change-key");
-#endif
 
   /* Look for dropped weak entries to replace: */
   wxNode *node;

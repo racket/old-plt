@@ -1898,8 +1898,8 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
   line = lineRoot->FindLocation(starty);
 
   if (skipBox != this) {
-    wxPen *savePen = dc->GetPen();
-    wxBrush *saveBrush = dc->GetBrush();
+    wxPen *lsavePen = dc->GetPen();
+    wxBrush *lsaveBrush = dc->GetBrush();
 
     dc->SetBrush(clearBrush);
     dc->SetPen(outlinePen);
@@ -1908,8 +1908,8 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 		      rightx - leftx + GC_RECT_BRUSH_EXTEND,
 		      endy - starty + GC_RECT_BRUSH_EXTEND);
 
-    dc->SetBrush(saveBrush);
-    dc->SetPen(savePen);
+    dc->SetBrush(lsaveBrush);
+    dc->SetPen(lsavePen);
   }
 
   OnPaint(TRUE, dc, leftx, starty, rightx, endy, dx, dy, 
@@ -2416,22 +2416,13 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     wxPen *pen;
     wxBrush *brush;
     wxFont *font;
-#if defined(wx_xt) && !defined(WXME_FOR_MRED)
-    wxColour *fg, *bg;
-#else
     wxColour fg, bg;
-#endif
 
     pen = dc->GetPen();
     brush = dc->GetBrush();
     font = dc->GetFont();
-#if defined(wx_xt) && !defined(WXME_FOR_MRED)
-    fg = &dc->GetTextForeground();
-    bg = &dc->GetTextBackground();
-#else
     fg = dc->GetTextForeground();
     bg = dc->GetTextBackground();
-#endif
 
 #ifndef NO_GET_CLIPPING_REGION
     wxRegion *rgn;
@@ -2448,13 +2439,8 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     dc->SetBrush(brush);
     dc->SetPen(pen);
     dc->SetFont(font);
-#if defined(wx_xt) && !defined(WXME_FOR_MRED)
-    dc->SetTextForeground(fg);
-    dc->SetTextBackground(bg);
-#else
     dc->SetTextForeground(&fg);
     dc->SetTextBackground(&bg);
-#endif
 
     if (ps)
       skipBox = savesb;

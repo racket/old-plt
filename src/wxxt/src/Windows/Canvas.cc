@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.cc,v 1.9 1999/07/21 16:09:33 mflatt Exp $
+ * $Id: Canvas.cc,v 1.10 1999/07/21 17:34:57 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -39,8 +39,6 @@
 //-----------------------------------------------------------------------------
 // create and destroy canvas
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_DYNAMIC_CLASS(wxCanvas, wxItem)
 
 wxCanvas::wxCanvas(void) : wxItem()
 {

@@ -8,8 +8,6 @@
    For plain text, a client is not necessary. */
 class wxClipboardClient : public wxObject
 {
-  DECLARE_ABSTRACT_CLASS(wxClipboardClient)
-
  public:
   /* This list should be filled in with strings indicating the formats
      this client can provide. Almost all clients will provide "TEXT".
@@ -32,16 +30,11 @@ class wxClipboardClient : public wxObject
 /* ONE instance of this class: */
 class wxClipboard : public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxClipboard)
-
  public:
   wxClipboardClient *clipOwner;
   char *cbString, *sentString, *receivedString;
   void *receivedTargets;
   long receivedLength;
-#ifdef wx_xview
-  long sel_owner;
-#endif
 
   wxClipboard();
   ~wxClipboard();

@@ -15,7 +15,7 @@ include make$(MZPLATFORMSUFFIX).env
 #
 # Motif Release 1.2
 #
-#   $RCSfile: Makefile,v $ $Revision: 1.1 $ $Date: 1997/12/22 17:35:44 $
+#   $RCSfile: Makefile,v $ $Revision: 1.2 $ $Date: 1998/09/23 00:11:52 $
 
 # -------------------------------------------------------------------------
 # Makefile generated from "Imake.tmpl" and </tmp/IIf.a07519>
@@ -46,7 +46,7 @@ include make$(MZPLATFORMSUFFIX).env
 #
 # Motif Release 1.2.2
 #
-#   $RCSfile: Makefile,v $ $Revision: 1.1 $ $Date: 1997/12/22 17:35:44 $
+#   $RCSfile: Makefile,v $ $Revision: 1.2 $ $Date: 1998/09/23 00:11:52 $
 # platform:  $XConsortium: sun.cf,v 1.72.1.1 92/03/18 13:13:37 rws Exp $
 
 # operating system:  SunOS 4.1.3
@@ -290,9 +290,7 @@ PICFLAGS = -pic
 # -------------------------------------------------------------------------
 # start of Imakefile
 
-# $Id: Makefile,v 1.1 1997/12/22 17:35:44 mflatt Exp $
-
-        WXSTRING=DataStructures/$(OBJDIR)/wxstring.o
+# $Id: Makefile,v 1.2 1998/09/23 00:11:52 mflatt Exp $
 
         POSTSCRIPTDC=DeviceContexts/$(OBJDIR)/PSDC.o
         POSTSCRIPTDLG=Dialogs/$(OBJDIR)/PSDialog.o
@@ -330,7 +328,6 @@ CCOBJS =\
  DataStructures/$(OBJDIR)/TypeTree.o\
  DataStructures/$(OBJDIR)/wb_hash.o\
  DataStructures/$(OBJDIR)/wb_list.o\
- ${WXSTRING}\
 \
  DeviceContexts/$(OBJDIR)/DC.o\
  DeviceContexts/$(OBJDIR)/MemoryDC.o\
@@ -358,19 +355,10 @@ CCOBJS =\
  GDI-Classes/$(OBJDIR)/FontDirectory.o\
  GDI-Classes/$(OBJDIR)/Pen+Brush.o\
 \
- ${DOCVIEW}\
- ${FORM}\
- ${PRINTPREVIEW}\
-\
- ${IPC}\
- ${HELP}\
-\
  ${CLIPBOARD}\
+\
  Misc/$(OBJDIR)/Timer.o\
  Misc/$(OBJDIR)/wb_mgstr.o\
-\
- ${PROLOGIO}\
- ${RPC}\
 \
  Utilities/$(OBJDIR)/Application.o\
  Utilities/$(OBJDIR)/Assert.o\
@@ -521,30 +509,21 @@ HEADERS = \
  AIAI-include/wx_vlbox.h \
  AIAI-include/wx_win.h \
  AIAI-include/wxgraph.h \
- AIAI-include/wxstring.h \
  AIAI-include/wxtree.h \
  Application/AppMain.h \
  Application/GlobalData.h \
- DataStructures/HashTable.h \
- DataStructures/List.h \
  DataStructures/Object.h \
  DataStructures/PathList.h \
  DataStructures/PrintSetup.h \
- DataStructures/String.h \
- DataStructures/StringList.h \
  DataStructures/TypeTree.h \
  DataStructures/wx_hash.h \
  DataStructures/wx_list.h \
- DataStructures/wxstring.h \
  DeviceContexts/DC.h \
  DeviceContexts/MemoryDC.h \
  DeviceContexts/PSDC.h \
  DeviceContexts/WindowDC.h \
  Dialogs/DialogBase.h \
  Dialogs/Dialogs.h \
- DrawingClasses/wxgraph.h \
- DrawingClasses/wxgraphp.h \
- DrawingClasses/wxtree.h \
  EventHandling/Event.h \
  EventHandling/EvtHandler.h \
  EventHandling/wx_stdev.h \
@@ -554,16 +533,8 @@ HEADERS = \
  GDI-Classes/Font.h \
  GDI-Classes/FontDirectory.h \
  GDI-Classes/Pen+Brush.h \
- HighLevel/Form.h \
- HighLevel/wx_form.h \
- IPC-Classes/Client.h \
- IPC-Classes/Help.h \
- IPC-Classes/IPC.h \
- IPC-Classes/Server.h \
  Misc/Timer.h \
  Misc/wx_mgstr.h \
- PrologIO/prorpc.h \
- PrologIO/read.h \
  Utilities/Utilities.h \
  Windows/Button.h \
  Windows/Canvas.h \
@@ -758,27 +729,6 @@ clean::
 # additional rules
 #------------------------------------------------------------------------------
 
-PrologIO/parser.c: PrologIO/parser.y
-	$(YACC) PrologIO/parser.y
-	sed -e "s/y.tab.c/PrologIO\/parser.y/g" < y.tab.c | \
-	sed -e "s/BUFSIZ/5000/g"            | \
-	sed -e "s/YYLMAX 200/YYLMAX 5000/g" | \
-	sed -e "s/yy/PROIO_yy/g"            | \
-	sed -e "s/input/PROIO_input/g"      | \
-	sed -e "s/unput/PROIO_unput/g"      > PrologIO/parser.c
-	$(RM) y.tab.c
-
-PrologIO/lexer.c: PrologIO/lexer.l
-	$(LEX) PrologIO/lexer.l
-	sed -e "s/lex.yy.c/PrologIO\/lexer.l/g" < lex.yy.c | \
-	sed -e "s/yy/PROIO_yy/g"       | \
-	sed -e "s/input/PROIO_input/g" | \
-	sed -e "s/unput/PROIO_unput/g" > PrologIO/lexer.c
-	$(RM) lex.yy.c
-
-clean::
-	$(RM) PrologIO/lexer.c PrologIO/parser.c
-
 build-wbuild-widgets:: ${WOBJS:$(OBJDIR)/.o=.h}
 
 install::
@@ -793,20 +743,12 @@ install::
 	else (set -x; $(MKDIRHIER) $(DESTINCLUDEDIR)/DeviceContexts); fi
 	@if [ -d $(DESTINCLUDEDIR)/Dialogs ]; then set +x; \
 	else (set -x; $(MKDIRHIER) $(DESTINCLUDEDIR)/Dialogs); fi
-	@if [ -d $(DESTINCLUDEDIR)/DrawingClasses ]; then set +x; \
-	else (set -x; $(MKDIRHIER) $(DESTINCLUDEDIR)/DrawingClasses); fi
 	@if [ -d $(DESTINCLUDEDIR)/EventHandling ]; then set +x; \
 	else (set -x; $(MKDIRHIER) $(DESTINCLUDEDIR)/EventHandling); fi
 	@if [ -d $(DESTINCLUDEDIR)/GDI-Classes ]; then set +x; \
 	else (set -x; $(MKDIRHIER) $(DESTINCLUDEDIR)/GDI-Classes); fi
-	@if [ -d $(DESTINCLUDEDIR)/HighLevel ]; then set +x; \
-	else (set -x; $(MKDIRHIER) $(DESTINCLUDEDIR)/HighLevel); fi
-	@if [ -d $(DESTINCLUDEDIR)/IPC-Classes ]; then set +x; \
-	else (set -x; $(MKDIRHIER) $(DESTINCLUDEDIR)/IPC-Classes); fi
 	@if [ -d $(DESTINCLUDEDIR)/Misc ]; then set +x; \
 	else (set -x; $(MKDIRHIER) $(DESTINCLUDEDIR)/Misc); fi
-	@if [ -d $(DESTINCLUDEDIR)/PrologIO ]; then set +x; \
-	else (set -x; $(MKDIRHIER) $(DESTINCLUDEDIR)/PrologIO); fi
 	@if [ -d $(DESTINCLUDEDIR)/Utilities ]; then set +x; \
 	else (set -x; $(MKDIRHIER) $(DESTINCLUDEDIR)/Utilities); fi
 	@if [ -d $(DESTINCLUDEDIR)/Windows ]; then set +x; \
@@ -861,10 +803,6 @@ DataStructures/wb_$(OBJDIR)/hash.o:\
 DataStructures/wb_$(OBJDIR)/list.o:\
 	DataStructures/wb_list.cc DataStructures/Object.h \
 	DataStructures/wx_list.h
-
-DataStructures/$(OBJDIR)/wxstring.o:\
-	DataStructures/wxstring.cc \
-	DataStructures/Object.h DataStructures/wxstring.h
 
 DeviceContexts/$(OBJDIR)/DC.o:\
 	DeviceContexts/DC.cc DataStructures/Object.h \
@@ -959,17 +897,6 @@ Dialogs/$(OBJDIR)/PSDialog.o:\
 	Dialogs/DialogBase.h Windows/Item.h \
 	Windows/RadioBox.h Windows/Text.h
 
-DrawingClasses/$(OBJDIR)/wxgraph.o:\
-	DrawingClasses/wxgraph.cc \
-	DataStructures/Object.h DataStructures/wx_list.h \
-	DataStructures/wx_hash.h DeviceContexts/DC.h \
-	DrawingClasses/wxgraph.h DrawingClasses/wxgraphp.h
-
-DrawingClasses/$(OBJDIR)/wxtree.o:\
-	DrawingClasses/wxtree.cc \
-	DataStructures/Object.h DataStructures/wx_list.h \
-	DeviceContexts/DC.h DrawingClasses/wxtree.h
-
 EventHandling/wb_$(OBJDIR)/stdev.o:\
 	EventHandling/wb_stdev.cc DataStructures/Object.h \
 	EventHandling/wx_sysev.h EventHandling/wx_stdev.h
@@ -1007,41 +934,6 @@ GDI-Classes/$(OBJDIR)/Pen+Brush.o:\
 	GDI-Classes/Colour.h GDI-Classes/Pen+Brush.h \
         GDI-Classes/Region.h GDI-Classes/Region.cc
 
-HighLevel/$(OBJDIR)/wb_form.o:\
-	HighLevel/wb_form.cc DataStructures/Object.h \
-	DataStructures/wx_list.h DataStructures/wx_hash.h \
-	EventHandling/wx_sysev.h EventHandling/wx_stdev.h EventHandling/EvtHandler.h \
-	GDI-Classes/Bitmap.h GDI-Classes/Colour.h \
-	GDI-Classes/Font.h GDI-Classes/Pen+Brush.h \
-	DeviceContexts/DC.h DeviceContexts/WindowDC.h \
-	HighLevel/wx_form.h Windows/Window.h Windows/Panel.h \
-	Windows/Item.h Windows/Button.h Windows/CheckBox.h \
-	Windows/Choice.h Windows/ListBox.h Windows/Message.h \
-	Windows/RadioBox.h Windows/Slider.h Windows/Text.h \
-	Windows/MultiText.h
-
-IPC-Classes/$(OBJDIR)/Client.o:\
-	IPC-Classes/Client.cc \
-	DataStructures/Object.h DataStructures/wx_list.h \
-	IPC-Classes/IPC.h IPC-Classes/Client.h IPC-Classes/Sock.h
-
-IPC-Classes/$(OBJDIR)/Help.o:\
-	IPC-Classes/Help.cc DataStructures/Object.h \
-	DataStructures/wx_list.h IPC-Classes/IPC.h \
-	IPC-Classes/Client.h IPC-Classes/Help.h
-
-IPC-Classes/$(OBJDIR)/IPC.o:\
-	IPC-Classes/IPC.cc DataStructures/Object.h \
-	DataStructures/wx_list.h IPC-Classes/IPC.h IPC-Classes/Sock.h
-
-IPC-Classes/$(OBJDIR)/Server.o:\
-	IPC-Classes/Server.cc \
-	DataStructures/Object.h DataStructures/wx_list.h \
-	IPC-Classes/IPC.h IPC-Classes/Server.h IPC-Classes/Sock.h
-
-IPC-Classes/$(OBJDIR)/Sock.o:\
-	IPC-Classes/Sock.cc IPC-Classes/Sock.h
-
 Misc/$(OBJDIR)/Timer.o:\
 	Misc/Timer.cc DataStructures/Object.h \
 	Misc/Timer.h
@@ -1052,20 +944,6 @@ Misc/wb_$(OBJDIR)/mgstr.o:\
 Misc/$(OBJDIR)/Clipboard.o:\
 	Misc/Clipboard.cc DataStructures/Object.h Application/GlobalData.h \
 	Misc/Clipboard.h Windows/Frame.h Windows/Window.h
-
-PrologIO/$(OBJDIR)/read.o:\
-	PrologIO/read.cc \
-	DataStructures/Object.h DataStructures/wx_list.h \
-	DataStructures/wx_hash.h PrologIO/read.h
-
-PrologIO/$(OBJDIR)/parser.o:\
-	 PrologIO/parser.c PrologIO/lexer.c
-
-PrologIO/$(OBJDIR)/prorpc.o:\
-	PrologIO/prorpc.cc ./DataStructures/Object.h \
-	DataStructures/wx_list.h DataStructures/wx_hash.h \
-	IPC-Classes/IPC.h IPC-Classes/Client.h \
-	IPC-Classes/Server.h PrologIO/read.h PrologIO/prorpc.h
 
 Utilities/$(OBJDIR)/Application.o:\
 	Utilities/Application.cc \

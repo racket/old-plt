@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.cc,v 1.10 1999/03/28 20:38:16 mflatt Exp $
+ * $Id: MenuBar.cc,v 1.11 1999/07/14 23:34:08 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -38,8 +38,6 @@
 //-----------------------------------------------------------------------------
 // constructor and destructor
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_DYNAMIC_CLASS(wxMenuBar, wxItem)
 
 wxMenuBar::wxMenuBar(void) : wxItem()
 {

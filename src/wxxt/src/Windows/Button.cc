@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Button.cc,v 1.3 1998/08/08 03:33:03 mflatt Exp $
+ * $Id: Button.cc,v 1.4 1999/07/17 15:27:43 mflatt Exp $
  *
  * Purpose: button panel item
  *
@@ -37,8 +37,6 @@
 //-----------------------------------------------------------------------------
 // create and destroy button
 //-----------------------------------------------------------------------------
-
-IMPLEMENT_DYNAMIC_CLASS(wxButton, wxItem)
 
 wxButton::wxButton(void) : wxItem()
 {

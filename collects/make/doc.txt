@@ -109,10 +109,10 @@ MAKE-LINE without a COMMAND-THUNK is useful as a target for
 making a number of other targets (the dependencies).
 
 `make/proc' catches any exceptions raised by a COMMAND-THUNK
-and wraps them in an exn:make structure, and raises the
-wrapped exn. exn:make structures are defined with:
+and wraps them in an exn:fail:make structure, and raises the
+wrapped exn. exn:fail:make structures are defined with:
 
-  (define-struct (exn:make struct:exn) (target orig-exn))
+  (define-struct (exn:fail:make exn:fail) (target orig-exn))
 
 The `target' field is a string or a list of strings naming
 the target(s), and the `orig-exn' field is the original

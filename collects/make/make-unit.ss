@@ -10,7 +10,7 @@
     (unit/sig make^
       (import)
 
-      (define-struct (exn:make exn) (target orig-exn))
+      (define-struct (exn:fail:make exn:fail) (target orig-exn))
       
       (define make-print-checking (make-parameter #t))
       (define make-print-dep-no-line (make-parameter #t))
@@ -134,7 +134,7 @@
 						""))
 				    (with-handlers ([exn:fail?
 						     (lambda (exn)
-						       (raise (make-exn:make 
+						       (raise (make-exn:fail:make 
 							       (string->immutable-string
 								(format "make: Failed to make ~a; ~a"
 									(path-string->string (car line))

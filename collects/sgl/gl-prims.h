@@ -83,39 +83,39 @@ static void scheme_set_types()
   Scheme_Object *dynamic_require = scheme_builtin_value("dynamic-require");
   Scheme_Object *args[2];
   
-  args[0] = scheme_make_string("gl-vectors/gl-double-vector.ss");
+  args[0] = scheme_make_utf8_string("gl-vectors/gl-double-vector.ss");
   args[1] = scheme_intern_symbol("gl-double-vector-internal-type");
   gl_double_vector_type = SCHEME_INT_VAL(scheme_apply(dynamic_require, 2, args));
 
-  args[0] = scheme_make_string("gl-vectors/gl-float-vector.ss");
+  args[0] = scheme_make_utf8_string("gl-vectors/gl-float-vector.ss");
   args[1] = scheme_intern_symbol("gl-float-vector-internal-type");
   gl_float_vector_type = SCHEME_INT_VAL(scheme_apply(dynamic_require, 2, args));
 
-  args[0] = scheme_make_string("gl-vectors/gl-uint-vector.ss");
+  args[0] = scheme_make_utf8_string("gl-vectors/gl-uint-vector.ss");
   args[1] = scheme_intern_symbol("gl-uint-vector-internal-type");
   gl_uint_vector_type = SCHEME_INT_VAL(scheme_apply(dynamic_require, 2, args));
 
-  args[0] = scheme_make_string("gl-vectors/gl-ushort-vector.ss");
+  args[0] = scheme_make_utf8_string("gl-vectors/gl-ushort-vector.ss");
   args[1] = scheme_intern_symbol("gl-ushort-vector-internal-type");
   gl_ushort_vector_type = SCHEME_INT_VAL(scheme_apply(dynamic_require, 2, args));
 
-  args[0] = scheme_make_string("gl-vectors/gl-ubyte-vector.ss");
+  args[0] = scheme_make_utf8_string("gl-vectors/gl-ubyte-vector.ss");
   args[1] = scheme_intern_symbol("gl-ubyte-vector-internal-type");
   gl_ubyte_vector_type = SCHEME_INT_VAL(scheme_apply(dynamic_require, 2, args));
 
-  args[0] = scheme_make_string("gl-vectors/gl-int-vector.ss");
+  args[0] = scheme_make_utf8_string("gl-vectors/gl-int-vector.ss");
   args[1] = scheme_intern_symbol("gl-int-vector-internal-type");
   gl_int_vector_type = SCHEME_INT_VAL(scheme_apply(dynamic_require, 2, args));
 
-  args[0] = scheme_make_string("gl-vectors/gl-short-vector.ss");
+  args[0] = scheme_make_utf8_string("gl-vectors/gl-short-vector.ss");
   args[1] = scheme_intern_symbol("gl-short-vector-internal-type");
   gl_short_vector_type = SCHEME_INT_VAL(scheme_apply(dynamic_require, 2, args));
 
-  args[0] = scheme_make_string("gl-vectors/gl-byte-vector.ss");
+  args[0] = scheme_make_utf8_string("gl-vectors/gl-byte-vector.ss");
   args[1] = scheme_intern_symbol("gl-byte-vector-internal-type");
   gl_byte_vector_type = SCHEME_INT_VAL(scheme_apply(dynamic_require, 2, args));
 
-  args[0] = scheme_make_string("gl-vectors/gl-boolean-vector.ss");
+  args[0] = scheme_make_utf8_string("gl-vectors/gl-boolean-vector.ss");
   args[1] = scheme_intern_symbol("gl-boolean-vector-internal-type");
   gl_boolean_vector_type = SCHEME_INT_VAL(scheme_apply(dynamic_require, 2, args));
 

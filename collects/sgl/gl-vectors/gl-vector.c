@@ -65,16 +65,14 @@ bad_index(char *name, Scheme_Object *vec, Scheme_Object *i, int len)
     char *vstr;
     int vlen;
     vstr = scheme_make_provided_string(vec, 2, &vlen);
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-		     i,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: index %s out of range [%d, %d] for gl-<type-name>-vector: %t",
 		     name, 
 		     scheme_make_provided_string(i, 2, NULL), 
 		     0, len-1,
 		     vstr, vlen);
   } else
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-		     i,
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		     "%s: bad index %s for empty gl-<type-name>-vector",
 		     name,
 		     scheme_make_provided_string(i, 0, NULL));
@@ -90,7 +88,7 @@ static void length_mismatch(const char *name, int argc, Scheme_Object **argv, in
   
   argstr = scheme_make_args_string("", -1, argc, argv, &alen);
   
-  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[i],
+  scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 		   "%s: all gl-<type-name>-vectors must have same length%t", 
 		   name, argstr, alen);
   return;

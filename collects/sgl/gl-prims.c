@@ -3370,7 +3370,7 @@ static Scheme_Object *scm_GetMinmaxParameterfv(void *p,
 
 static Scheme_Object *scm_GetString(void *p, int c, Scheme_Object **v)
 {
-	return scheme_make_string((char *) glGetString(arg_GLenum(0)));
+	return scheme_make_utf8_string((char *) glGetString(arg_GLenum(0)));
 }
 
 /*...........................................................................*/

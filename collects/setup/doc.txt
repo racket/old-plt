@@ -21,7 +21,15 @@ services:
    The -l flag takes one or more collection names and restricts Setup
    PLT's action to those collections.
 
-   In addition to compilation, a collection's info.ss library can
+   The --mode <mode> flag causes Setup PLT to use a .zo compiler other
+   than the default, and to put the resulting .zo files in a
+   subdirectory (of the usual place) names <mode>. The compiler is
+   obtained by using <mode> as a collection name, finding a
+   _zo-compile.ss_ module in that collection, and extracting its
+   `zo-compile' export. The `zo-compile' export should be a function
+   like MzScheme's `compile'.
+
+   In addition to compilation, a collection's "info.ss" library can
    specify executables to be installed in the "plt" directory
    ("plt/bin" under Unix) or other installation actions.
 
@@ -195,8 +203,11 @@ parameters that control the setup process:
 > verbose - #t => prints message from `make' to stderr [default: #f]
 > make-verbose - #t => verbose `make' [default: #f]
 > compiler-verbose - #t => verbose `compiler' [default: #f]
-> clean - #t => delete .zo and .so/.dll files in the specified collections
-         [default: #f]
+> clean - #t => delete .zo and .so/.dll files in the specified
+         collections [default: #f]
+> compile-mode - path => use a .zo compiler other than plain `compile',
+                 and build to (build-path "compiled" (compile-mode))
+                 [default: #f]
 > make-zo - #t => compile .zo files [default #t]
 > make-so - #t => compile .so/.dll files [default: #f]
 > make-launchers - #t => make collection "info.ss"-specified launchers

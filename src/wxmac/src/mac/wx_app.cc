@@ -582,13 +582,11 @@ static Bool doPreOnChar(wxWindow *in_win, wxWindow *win, wxKeyEvent *evt)
 }
 
 short wxMacDisableMods; /* If a modifier key is here, handle it specially */
-static short t2u_ready = 0;
-static TextToUnicodeInfo t2uinfo;
 
-static Handle transH = NULL;
-static unsigned long transState = 0;
-static Handle ScriptH = NULL;
-static short region_code = 1;
+static Handle uchrHandle;
+static Handle KCHRHandle;
+static UInt32 key_state;
+static SInt16 lastKeyLayoutID;
 
 void wxApp::doMacKeyUpDown(Bool down)
 {
@@ -622,17 +620,6 @@ void wxApp::doMacKeyUpDown(Bool down)
   if (!theMacWxFrame || !theMacWxFrame->IsEnable())
     return;	
 
-  if (!ScriptH) {
-    struct ItlbRecord * r;
-    ScriptH = GetResource('itlb',0);
-    if (ScriptH) {
-      HLock(ScriptH);
-      r = (ItlbRecord*)*ScriptH;
-      region_code = r->itlbKeys;  	
-      HUnlock(ScriptH);
-    }	
-  }
-  
   theKeyEvent = new wxKeyEvent(wxEVENT_TYPE_CHAR);
   theKeyEvent->x = cCurrentEvent.where.h;
   theKeyEvent->y = cCurrentEvent.where.v;
@@ -710,39 +697,102 @@ void wxApp::doMacKeyUpDown(Bool down)
       key = WXK_NEXT;
       break;     
     default:
-      if (!transH) {
-	transH = GetResource('KCHR', region_code);
-	HNoPurge(transH);
-      }
-      if (transH && (cCurrentEvent.modifiers & wxMacDisableMods)) {
-	/* Remove effect of anything in wxMacDisableMods: */
-	int mods = cCurrentEvent.modifiers - (cCurrentEvent.modifiers & wxMacDisableMods);
-	HLock(transH);
-	key = KeyTranslate(*transH, (key & 0x7F) | mods, &transState) & charCodeMask;
-	HUnlock(transH);
-      } else 
-	key = cCurrentEvent.message & charCodeMask;
+      {
+	char cstr[3];
+	int from_str = 0;
 
-      if ((key > 127) && (key < 256)) {
-	/* Translate to Unicode */
-	ByteCount ubytes, converted;
-	unsigned char str[1];
-	UniChar unicode[1];
-	
-	if (!t2u_ready) {
-	  CreateTextToUnicodeInfoByEncoding(kTextEncodingMacRoman, &t2uinfo);
-	  t2u_ready = 1;
+	if (cCurrentEvent.modifiers & wxMacDisableMods) {
+	  /* The following code manually translates the virtual key event
+	     into a character. We'd use this code all the time, except
+	     that dead keys have already been filtered before we get here,
+	     which means that option-e-e doesn't produce an accented e.
+	     So, instead, we only use this code to find out what would
+	     happen if the control key weren't pressed. */
+	  int mods;
+	  OSStatus status;
+	  UniCharCount len;
+	  UniChar keys[1];
+	  SInt16 currentKeyLayoutID;
+	  static UCKeyboardLayout *key_layout;
+
+	  /* Remove effect of anything in wxMacDisableMods: */
+	  mods = cCurrentEvent.modifiers - (cCurrentEvent.modifiers & wxMacDisableMods);
+	  
+	  currentKeyLayoutID = GetScriptVariable(GetScriptManagerVariable(smKeyScript), smScriptKeys);
+	  if ((!uchrHandle && !KCHRHandle) || (currentKeyLayoutID != lastKeyLayoutID)) {
+	    key_state = 0;
+	    KCHRHandle = GetResource('KCHR', currentKeyLayoutID);
+	    if (!KCHRHandle)
+	      uchrHandle = GetResource('uchr', currentKeyLayoutID);
+	    else
+	      uchrHandle = NULL;
+	    lastKeyLayoutID = currentKeyLayoutID;
+	  }
+
+	  if (!uchrHandle) {
+	    if (!KCHRHandle) {
+	      key = '?';
+	    } else {
+	      int trans;
+	      trans = KeyTranslate(*KCHRHandle, key | mods, &key_state);
+	      if (trans & 0xFF0000) {
+		/* 2-byte result */
+		cstr[0] = (trans & 0xFF0000) >> 16;
+		cstr[1] = trans & 0xFF;
+		cstr[2] = 0;
+	      } else {
+		/* 1-byte result */
+		cstr[0] = trans & 0xFF;
+		cstr[1] = 0;
+	      }
+
+	      key = '?'; /* temporary */
+	      from_str = 1;
+	    }
+	  } else {
+	    key_layout = (UCKeyboardLayout *)*uchrHandle;
+
+	    status = UCKeyTranslate(key_layout,
+				    key,
+				    cCurrentEvent.what - keyDown,
+				    mods >> 8,
+				    LMGetKbdType(),
+				    0 /* options */,
+				    &key_state,
+				    1,
+				    &len,
+				    keys);
+
+	    if (status == noErr)
+	      key = keys[0];
+	    else
+	      key = '?';
+	  }
+	} else {
+	  key = '?'; /* temporary */
+	  cstr[0] = cCurrentEvent.message & charCodeMask;
+	  cstr[1] = 0;
+	  from_str = 1;
 	}
-	
-	str[0] = key;
-	
-	ConvertFromTextToUnicode(t2uinfo, 1, (char *)str, 0,
-				 0, NULL,
-				 NULL, NULL,
-				 2, &converted, &ubytes,
-				 (UniCharArrayPtr)unicode);
-	
-	key = unicode[0];
+
+	if (from_str) {
+	  CFStringRef str;
+	  UniChar keys[1];
+  
+	  str = CFStringCreateWithCStringNoCopy(NULL, cstr,
+						GetScriptManagerVariable(smKeyScript),
+						kCFAllocatorNull);
+	  if (str) {
+	    if (CFStringGetLength(str) > 0)
+	      CFStringGetCharacters(str, CFRangeMake(0, 1), keys);
+	    else
+	      keys[0] = '?';
+	    CFRelease(str);
+	  } else
+	    keys[0] = '?';
+
+	  key = keys[0];
+	}
       }
     } // end switch
   }

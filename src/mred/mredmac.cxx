@@ -413,7 +413,7 @@ int WNE(EventRecord *e, double sleep_secs)
 
     if (ok && (e->what == keyDown)) {
       /* This seems to fix problems with, e.g., option-e e e
-	 producing an accept on the 2nd e */
+	 producing an accent on the 2nd e */
       SendEventToEventTarget(ref, GetEventDispatcherTarget());
       /* The above takes care of [Shift-]Cmd-`. So ignore that one, now. */
       {

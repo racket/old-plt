@@ -47,7 +47,7 @@
    
    ;; What about char->integer constraint?
    [unicode  (:or (:: "u" (:** 1 4 digit16))
-                  (:: "U" (:** 1 8 digit16)))]
+                  (:: "U" (:** 1 6 digit16)))]
    
    [character (:or (:: "#\\" any-char)
                    (:: "#\\" character-name)
@@ -85,6 +85,7 @@
                         "\\f"
                         "\\r"
                         "\\e"
+                        "\\'"
                         (:: "\\" (:** 1 3 digit8))
                         (:: "\\x" (:** 1 2 digit16))
                         (:: "\\" #\newline))]

@@ -43,9 +43,9 @@
 
   (provide framework@
 	   framework-no-prefs@
-	   framework-small-part@)
+	   frameworkc@)
 
-  (define framework-small-part@
+  (define frameworkc@
     (compound-unit/sig
       (import [mred : mred^]
 	      [test : framework:test^]
@@ -119,7 +119,7 @@
 	      [pref-file : framework:prefs-file^])
       (link [test : framework:test^ (framework:test@ mred)]
 	    [gui-utils : framework:gui-utils^ (framework:gui-utils@ mred)]
-	    [f : frameworkc^ (framework-small-part@ mred test pref-file gui-utils)])
+	    [f : frameworkc^ (frameworkc@ mred test pref-file gui-utils)])
       (export
        (unit test)
        (unit gui-utils)

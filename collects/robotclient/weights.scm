@@ -42,10 +42,10 @@
 ;(define water-push-bid (make-parameter 1))
 ;(define blank-push-bid (make-parameter 1))
 ;(define max-bid-const (make-parameter 10))
-(define max-bid (make-parameter 0))
-(define player-cur (make-parameter #f))
+  (define max-bid (make-parameter 0))
+  (define player-cur (make-parameter #f))
   
-
+  
   (define-struct search-player (x y id money capacity packages))
   
 	(define (update-robots robot-list p)
@@ -299,6 +299,24 @@
                               (not (and (= (search-player-x (player-cur)) x) (= (search-player-y (player-cur)) y))) ))))
 
   (define (is-robot-within? x y n)
+    (let ((max-x (+ x n))
+	  (max-y (+ y n)))
+    (let loop ((i (- y n))
+	       (j (- x n)))
+      (cond
+       ((= j x) (loop i (add1 j)))
+       ((= i y) (loop (add1 i) (- x n)))
+       ((> i max-y) #f)
+       ((> j max-x) (loop (add1 i) (- x n)))
+       ((= 1 (get-robot (get-spot (board) j i)))
+	(printf "Robot is within!~n")
+	#t)
+       (else
+	(loop i (add1 j)))))))
+	
+
+
+  (define (is-robot-within? x y n)
     (let ([max-y (+ y n)]
           [max-x (+ x n)])
       (let loop ([cur-y (- y n)])
@@ -312,6 +330,7 @@
                       (begin (printf "Robot is within!~n") #t)
                       (loopx (+ 1 cur-x)))))))))
   
+
 	(define-syntax wall?
 	  (syntax-rules ()
 			((_ board x y)

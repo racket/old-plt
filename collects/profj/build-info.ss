@@ -606,8 +606,8 @@
                              (map var-decl-type
                                   (method-parms method)))
                         (map (lambda (t)
-                               (let ((name (cons (id-string (name-id t))
-                                                 (map id-string (name-path t)))))
+                               (let ((name (make-ref-type (id-string (name-id t))
+                                                          (map id-string (name-path t)))))
                                  (if (is-subclass? name throw-type type-recs)
                                      name
                                      (raise-error t thrown-not-throwable))))

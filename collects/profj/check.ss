@@ -1038,6 +1038,10 @@
                    (reference-type? exp-type)
                    (not (eq? this (send type-recs get-class-record exp-type))))
           (raise-error err-list pri-meth-called))
+        (unless (andmap (lambda (thrown)
+                          (lookup-exn thrown env type-recs))
+                        (method-record-throws method-record))
+          (raise-error #f #f))
         (set-call-method-record! call method-record)
         (method-record-rtype method-record))))
      

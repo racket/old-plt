@@ -160,7 +160,7 @@
   ;; (make-field-record string (list symbol) (list string) type)
   (define-struct field-record (name modifiers class type))
   
-  ;; (make-method-record string (list symbol) type (list type) (list (list string)) string string)
+  ;; (make-method-record string (list symbol) type (list type) (list type) string string)
   (define-struct method-record (name modifiers rtype atypes throws mangled_name class))
 
 ;                                                                                      
@@ -450,7 +450,7 @@
                                     (cadr input)
                                     (parse-type (caddr input))
                                     (map parse-type (cadddr input))
-                                    (list-ref input 4)
+                                    (map parse-type (list-ref input 4))
                                     #f
                                     (list-ref input 5))))
              (parse-type
@@ -491,7 +491,7 @@
                  (method-record-modifiers m)
                  (type->list (method-record-rtype m))
                  (map type->list (method-record-atypes m))
-                 (method-record-throws m)
+                 (map type->list (method-record-throws m))
                  (method-record-class m))))
              (type->list
               (lambda (t)

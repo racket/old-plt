@@ -34,7 +34,7 @@
 		     ,label
 		     'nbsp 'nbsp
 		     (INPUT ((TYPE "hidden")
-			     (NAME "tmpdir")
+			     (NAME "tmp-dir")
 			     (VALUE ,(hexify-string tmp-directory))))
 		     (INPUT ((TYPE "submit")
 			     (ID "stop")

@@ -131,7 +131,7 @@
       (private
 	[data #f])
       (public
-	[get-buffer (lambda () (send snip get-item-buffer))]
+	[get-editor (lambda () (send snip get-item-buffer))]
 	[is-selected? (lambda () (send snip is-selected?))]
 	[select (lambda (on?) (send snip select on?))]
 	[user-data (case-lambda [() data][(x) (set! data x)])])))
@@ -139,7 +139,7 @@
   (define hierarchical-list-compound-item%
     (class hierarchical-list-item% (snip)
       (override
-	[get-buffer (lambda () (send snip get-title-buffer))])
+	[get-editor (lambda () (send snip get-title-buffer))])
       (public
 	[new-item (lambda () 
 		    (begin0
@@ -184,7 +184,7 @@
 	[select (lambda (on?)
 		  (unless (eq? (not selected?) (not on?))
 		    (top-select (if on? item #f) snip)))]
-	[double-select (lambda () (send top double-select item))])
+	[double-select (lambda () (send top on-double-select item))])
       (override
 	[on-default-char void]
 	[on-default-event void])
@@ -299,7 +299,7 @@
 		    (if (send a on)
 			(begin
 			  (send main-buffer begin-edit-sequence)
-			  (send top item-opened (get-item))
+			  (send top on-item-opened (get-item))
 			  (if (zero? (send content-buffer last-position))
 			      (set! was-empty? #t)
 			      (begin
@@ -314,7 +314,7 @@
 			  (send main-buffer begin-edit-sequence)
 			  (send content-buffer deselect-all)
 			  (send main-buffer delete 2 5)
-			  (send top item-closed (get-item))
+			  (send top on-item-closed (get-item))
 			  (send main-buffer end-edit-sequence))))]
 	[get-title-buffer (lambda () title-buffer)]
 	[get-content-buffer (lambda () content-buffer)]
@@ -344,10 +344,10 @@
       (inherit min-width min-height)
       (public
 	[get-selected (lambda () selected-item)]
-	[item-opened void]
-	[item-closed void]
-	[double-select void]
-	[select void]
+	[on-item-opened void]
+	[on-item-closed void]
+	[on-double-select void]
+	[on-select void]
 	[new-item (lambda () (send top-buffer new-item))]
 	[new-list (lambda () (send top-buffer new-list))]
 	[delete-item (lambda (i) (send top-buffer delete-item i))]
@@ -359,7 +359,7 @@
 		       (set! selected (if item s #f))
 		       (set! selected-item item)
 		       (when selected (send selected show-select #t))
-		       (select item)))]
+		       (on-select item)))]
 	[top-buffer (make-object hierarchical-list-text% this do-select)]
 	[selected #f]
 	[selected-item #f])

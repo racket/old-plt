@@ -2039,7 +2039,7 @@ static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[])
   return scheme_param_config("current-command-line-arguments",
 			     scheme_make_integer(MZCONFIG_CMDLINE_ARGS),
 			     argc, argv,
-			     -1, ok_cmdline, "vector of byte strings", 1);
+			     -1, ok_cmdline, "vector of strings", 1);
 }
 
 /**********************************************************************/

@@ -312,6 +312,7 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
   
   {
     int sl, wt, aa;
+    const char *aa_tag = XFT_ANTIALIAS;
 
     wt = ((weight == wxBOLD)
 	  ? XFT_WEIGHT_BOLD
@@ -330,8 +331,11 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
       break;
     case wxSMOOTHING_ON:
     case wxSMOOTHING_PARTIAL:
-    default:
       aa = 1;
+      break;
+    default:
+      aa_tag = NULL;
+      aa = 0;
       break;
     }
     
@@ -341,7 +345,8 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
 		       XFT_SIZE, XftTypeInteger, point_size,
 		       XFT_WEIGHT, XftTypeInteger, wt,
 		       XFT_SLANT, XftTypeInteger, sl,
-		       XFT_ANTIALIAS, XftTypeBool, aa,
+		       /* aa tag must be last, b/c is might be 0ed: */
+		       aa_tag, XftTypeBool, aa,
 		       NULL);
     } else
       fs = NULL;
@@ -352,7 +357,8 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
 		       XFT_SIZE, XftTypeInteger, point_size,
 		       XFT_WEIGHT, XftTypeInteger, wt,
 		       XFT_SLANT, XftTypeInteger, sl,
-		       XFT_ANTIALIAS, XftTypeBool, aa,
+		       /* aa tag must be last, b/c is might be 0ed: */
+		       aa_tag, XftTypeBool, aa,
 		       NULL);
     }
   }

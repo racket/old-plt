@@ -2,6 +2,12 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.18:
+
+ * Quoted portions of a symbol (using | or \) preserve their case,
+   even when symbols are read without case-sensitivity. (Quoting
+   should have always worked this way, but I didn't know better.)
+
 Version 199.17:
 
  * Added `read-accept-quasiquote' to control whether the reader
@@ -213,7 +219,8 @@ Fixed memory bug in the run-time support for mzc-compiled code
 Changed the error display handler to take a raised value (usually
    an exception record) as a second argument
 Added port-count-lines!, which enables line-couting for a port
-Added read-dot-as-symbol parameter
+Quoted portions of a symbol (using | or \) preserve their case,
+Added read-dot-as-symbol and read-accept-quasiquote parameters
 Fixed quotient, remainder, and modulo when the first argument
  is exact 0 and the second argument is inexact
 Default for pconvert.ss's whole/fractional-exact-numbers parameter

@@ -5898,8 +5898,8 @@ void scheme_count_input_port(Scheme_Object *port, long *s, long *e,
     *s += (sizeof(Scheme_Indexed_String)
 	   + is->size);
   } else if (ip->sub_type == scheme_tcp_input_port_type) {
-    if (ht && !scheme_lookup_in_table(ht, (const char *)ip->port_data)) {
-      scheme_add_to_table(ht, (const char *)ip->port_data, scheme_true, 0);
+    if (ht && !scheme_hash_get(ht, (Scheme_Object *)ip->port_data)) {
+      scheme_hash_set(ht, (Scheme_Object *)ip->port_data, scheme_true);
       *s += sizeof(Scheme_Tcp_Buf);
     }
   } else if (ip->sub_type == scheme_user_input_port_type) {
@@ -5912,9 +5912,9 @@ void scheme_count_input_port(Scheme_Object *port, long *s, long *e,
 	      + scheme_count_memory(d[2], ht))
 	   : 0);
   } else if (ip->sub_type == scheme_pipe_read_port_type) {
-    if (ht && !scheme_lookup_in_table(ht, (const char *)ip->port_data)) {
+    if (ht && !scheme_hash_get(ht, (Scheme_Object *)ip->port_data)) {
       Scheme_Pipe *p = (Scheme_Pipe *)ip->port_data;
-      scheme_add_to_table(ht, (const char *)ip->port_data, scheme_true, 0);
+      scheme_hash_set(ht, (Scheme_Object *)ip->port_data, scheme_true);
       *s += (sizeof(Scheme_Pipe) + p->buflen);
     }
   }
@@ -5936,8 +5936,8 @@ void scheme_count_output_port(Scheme_Object *port, long *s, long *e,
     *s += (sizeof(Scheme_Indexed_String)
 	   + is->size);
   } else if (op->sub_type == scheme_tcp_output_port_type) {
-    if (!scheme_lookup_in_table(ht, (const char *)op->port_data)) {
-      scheme_add_to_table(ht, (const char *)op->port_data, scheme_true, 0);
+    if (!scheme_hash_get(ht, (Scheme_Object *)op->port_data)) {
+      scheme_hash_set(ht, (Scheme_Object *)op->port_data, scheme_true);
       *s += sizeof(Scheme_Tcp_Buf);
     }
   } else if (op->sub_type == scheme_user_output_port_type) {
@@ -5949,9 +5949,9 @@ void scheme_count_output_port(Scheme_Object *port, long *s, long *e,
 	      + scheme_count_memory(d[1], ht))
 	   : 0);
   } else if (op->sub_type == scheme_pipe_read_port_type) {
-    if (!scheme_lookup_in_table(ht, (const char *)op->port_data)) {
+    if (!scheme_hash_get(ht, (Scheme_Object *)op->port_data)) {
       Scheme_Pipe *p = (Scheme_Pipe *)op->port_data;
-      scheme_add_to_table(ht, (const char *)op->port_data, scheme_true, 0);
+      scheme_hash_set(ht, (Scheme_Object *)op->port_data, scheme_true);
       *s += (sizeof(Scheme_Pipe) + p->buflen);
     }
   }

@@ -872,8 +872,8 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     long traced;
     int no_walk = 0;
 
-    no_walk = (!c || !SAME_OBJ(p[0], scheme_true));
-
+    no_walk = 1 /* (!c || !SAME_OBJ(p[0], scheme_true)) */;
+    
     for (i = 0; i < NUM_TYPE_SLOTS; i++) {
       scheme_memory_count[i] = scheme_memory_size[i] = 0;
       scheme_memory_actual_size[i] = scheme_memory_actual_count[i] = 0;
@@ -1097,7 +1097,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
   scheme_console_printf(" (dump-memory-stats 'type) - prints paths to instances of type.\n");
   scheme_console_printf("   Examples: (dump-memory-stats '<pair>), (dump-memory-stats 'frame).\n");
   scheme_console_printf("   If 'type is 'stack, prints paths to thread stacks.\n");
-  scheme_console_printf(" (dump-memory-stats #t) - tries harder to find bad data.\n");
+  /* scheme_console_printf(" (dump-memory-stats #t) - tries harder to find bad data.\n"); */
   scheme_console_printf("End Help\n");
 #endif
 
@@ -1208,7 +1208,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
     break;
   case scheme_syntax_type:
 #if FORCE_KNOWN_SUBPARTS
-    e = COUNT(SCHEME_PTR2_VAL(root));
+    e = COUNT(SCHEME_IPTR_VAL(root));
 #endif
     break;
   case scheme_application_type:

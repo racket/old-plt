@@ -25,11 +25,20 @@
 			 (or (read-accept-compiled) (not src?))])
 	   (let ([v (read p)])
 	     (when (eof-object? v)
-	       (error 'read-one "empty file; expected a module declaration in: ~e"path))
+	       (error 'read-one "empty file; expected a module declaration in: ~a" path))
+	     (when src?
+	       (unless (and (pair? v) (eq? 'module (car v)))
+		 (error 'read-one "expected a module declaration, found: ~e in: ~a" v path))
+	       (let ([name (let-values ([(base name dir?) (split-path path)])
+			     (string->symbol (regexp-replace re:suffix name "")))])
+		 (unless (and (pair? (cdr v))
+			      (eq? (cadr v) name))
+		   (error 'read-one "expected a module declaration named ~a, found: ~e in: ~a" 
+			  name v path))))
 	     (unless (eof-object? (read p))
 	       (error 
 		'read-one 
-		"file has more than one expression; expected a module declaration only in: ~e"
+		"file has more than one expression; expected a module declaration only in: ~a"
 		path))
 	     v)))
        (lambda () (close-input-port p)))))
@@ -130,7 +139,7 @@
   (define re:path-only (regexp "^(.*)/[^/]*$"))
 
   (define collapse-module-path
-    ;; relto should be a relative-path, '(lib relative-path collection), or '(file path)
+    ;; relto-mp should be a relative-path, '(lib relative-path collection), or '(file path)
     (lambda (s relto-mp)
       (let ([combine-relative-elements
 	     (lambda (elements)

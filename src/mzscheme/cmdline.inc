@@ -200,9 +200,6 @@ static void init_mred(Scheme_Env *global_env)
 		       global_env);
     scheme_eval_string("(require (lib \"mred.ss\" \"mred\"))", 
 		       global_env);
-    scheme_eval_string("(with-handlers ([void void])"
-		       "  (send (current-ps-setup) set-afm-path (collection-path \"afm\")))",
-		       global_env);
   }
 }
 #endif
@@ -240,6 +237,9 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #if !defined(DONT_RUN_REP) || !defined(DONT_PARSE_COMMAND_LINE)
   int no_rep = 0;
   int script_mode = 0;
+#endif
+#if !defined(MZSCHEME_CMD_LINE)
+  int skip_init_mred = 0;
 #endif
 #if !defined(DONT_LOAD_INIT_FILE) || !defined(DONT_PARSE_COMMAND_LINE)
   int no_init_file = 0;
@@ -356,6 +356,10 @@ static int run_from_cmd_line(int argc, char *_argv[],
       argv[0] = "-w";
     else if (!strcmp("--binary", argv[0]))
       argv[0] = "-b";
+# ifndef MZSCHEME_CMD_LINE
+    else if (!strcmp("--nogui", argv[0]))
+      argv[0] = "-Z";
+# endif
 # ifdef CMDLINE_STDIO_FLAG
     else if (!strcmp("--stdio", argv[0]))
       argv[0] = "-z";
@@ -540,8 +544,13 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	case 'b':
 	  scheme_binary_mode_stdio = 1;
 	  break;
+#ifndef MZSCHEME_CMD_LINE
+	case 'Z':
+	  skip_init_mred = 1;
+	  break;
+#endif
 #ifdef CMDLINE_STDIO_FLAG
-	case 'z':
+	case 'z': /* ^^^ fallthrough ^^^ */
 	  no_rep = 1;
 	  evals_and_loads[num_enl] = "(read-eval-print-loop)";
 	  is_load[num_enl++] = 0;
@@ -623,8 +632,9 @@ static int run_from_cmd_line(int argc, char *_argv[],
     init_collection_paths(global_env);
 #endif /* NO_FILE_SYSTEM_UTILS */
 
-#ifndef MZSCHEME_CMD_LINE  
-  init_mred(global_env);
+#ifndef MZSCHEME_CMD_LINE
+  if (!skip_init_mred)
+    init_mred(global_env);
 #endif
 
   fa = (FinishArgs *)scheme_malloc(sizeof(FinishArgs));
@@ -673,6 +683,9 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -L <file> <coll> : Same as -e '(require (lib \"<file>\" \"<coll>\"))'.\n"
 	 "  -r, --script : Script mode: use as last switch for scripts. Same as -fmv-.\n" 
 	 "  -i, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
+# ifndef MZSCHEME_CMD_LINE
+	 "  -Z, --nogui : Skip \"class.ss\" and \"mred.ss\" require.\n"
+# endif
 # ifdef CMDLINE_STDIO_FLAG
 	 "  -z, --stdio : Use stdio REPL. Same as -ve '(read-eval-print-loop)'.\n"
 # endif

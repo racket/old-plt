@@ -33,7 +33,7 @@
   (define (language-dialog)
     (letrec
 	([dialog% (class mred:dialog% (name)
-		    (public
+		    (override
 		      [on-close
 		       (lambda ()
 			 (when (procedure? unregister-callback)

@@ -195,10 +195,6 @@ pict snip :
            (lambda ()
              (let ([stx/poss (get-stx/poss editor)])
                (let-values ([(w h) (send snip get-size)])
-                 (printf "h ~s ys ~s nys ~s\n" 
-                         h 
-                         (map stx/pos-y stx/poss)
-                         (map (lambda (x) (- h (stx/pos-y x))) stx/poss))
                  (with-syntax ([(subpicts ...) (map stx/pos-stx stx/poss)]
                                [(subsnips ...) (map stx/pos-snip stx/poss)]
                                [(ids ...) (generate-ids "snip-id" (map stx/pos-stx stx/poss))]
@@ -296,24 +292,25 @@ pict snip :
         (mixin (color:text<%> editor<%>) (show-picts<%>)
           (inherit get-canvas freeze-colorer)
           
-          (define picts-ht (make-hash-table 'equal))
+          ;; all-picts-ht : hash-table[(cons text% number) -op> hash-table[pict -o> p]]
+          ;; the inner hashtables are really treated as sets, using the pict as
+          ;; the equality measure.
+          (define all-picts-ht (make-hash-table 'equal))
+          
           (define frozen-colorers (make-hash-table))
-          (define clear-highlights void)
           
           (define mouse-loc #f)
           (define visible-picts #f)
           
           (define/public (slideshow:clear-picts)
-            (set! picts-ht (make-hash-table 'equal))
+            (set! all-picts-ht (make-hash-table 'equal))
             (hash-table-for-each
              frozen-colorers
              (lambda (k v)
                (send k thaw-colorer)))
-            (clear-highlights)
-            (set! clear-highlights void)
             (set! frozen-colorers (make-hash-table)))
           
-          (define/public (slideshow:register-pict text offset range pict-drawer width height)
+          (define/public (slideshow:register-pict text offset range pict pict-drawer width height)
             (hash-table-get frozen-colorers
                             text
                             (lambda ()
@@ -325,21 +322,20 @@ pict snip :
                                 (hash-table-put! frozen-colorers text #t))))
             (let ([locked? (send text is-locked?)])
               (send text lock #f)
-              ;(send text change-style has-info-style offset (+ offset 1) #f)
-              (set! clear-highlights
-                    (let ([ch clear-highlights]
-                          [new (send text highlight-range offset (+ offset 1) has-info-bkg-color)])
-                      (lambda ()
-                        (ch)
-                        (new))))
+              (send text change-style has-info-style offset (+ offset 1) #f)
               (send text lock locked?))
-            (let ([key (cons text offset)])
-              (hash-table-put! 
+            (let* ([key (cons text offset)]
+                   [picts-ht
+                    (hash-table-get all-picts-ht 
+                                    key
+                                    (lambda ()
+                                      (let ([new-ht (make-hash-table)])
+                                        (hash-table-put! all-picts-ht key new-ht)
+                                        new-ht)))])
+              (hash-table-put!
                picts-ht
-               key
-               (append
-                (hash-table-get picts-ht key (lambda () null))
-                (list (make-p pict-drawer width height))))))
+               pict
+               (make-p pict-drawer width height))))
           
           (rename [super-on-event on-event])
           (define/override (on-event evt)
@@ -369,15 +365,16 @@ pict snip :
                       [menu (new popup-menu%)]
                       [show? #f])
                   (let* ([frozen-mouse-picts-key (cons text pos)]
-                         [picts (hash-table-get picts-ht frozen-mouse-picts-key (lambda () #f))])
-                    (when picts
-                      (set! show? #t)
-                      (new menu-item%
-                           (label sc-freeze-picts)
-                           (parent menu)
-                           (callback
-                            (lambda (x y)
-                              (send frame slideshow:set-permanent-picts picts))))))
+                         [picts-ht (hash-table-get all-picts-ht frozen-mouse-picts-key (lambda () #f))])
+                    (when picts-ht
+                      (let ([picts (hash-table-map picts-ht (lambda (k v) v))])
+                        (set! show? #t)
+                        (new menu-item%
+                             (label sc-freeze-picts)
+                             (parent menu)
+                             (callback
+                              (lambda (x y)
+                                (send frame slideshow:set-permanent-picts picts)))))))
                   (when (send frame slideshow:has-permanent-picts?)
                     (new menu-item%
                          (label sc-thaw-picts)
@@ -403,7 +400,10 @@ pict snip :
                     (send frame slideshow:set-visible-picts
                           (and pos 
                                text 
-                               (hash-table-get picts-ht new-mouse-loc (lambda () #f)))))))))
+                               (let ([picts-ht
+                                      (hash-table-get all-picts-ht new-mouse-loc (lambda () #f))])
+                                 (and picts-ht
+                                      (hash-table-map picts-ht (lambda (k v) v)))))))))))
               
           ;; get-pos/text : event -> (values (union #f text%) (union number #f))
           ;; returns two #fs to indicate the event doesn't correspond to
@@ -435,6 +435,10 @@ pict snip :
                     [else (values #f #f)])))))
           
           (super-new)))
+      
+      (define has-info-style (make-object style-delta% 'change-underline #t))
+      (send has-info-style set-delta-background "grey")
+      (send has-info-style set-delta-foreground "hotpink")
       
       (define (unit-frame-mixin %)
         (class %
@@ -584,11 +588,11 @@ pict snip :
                   (parameterize ([current-eventspace system-eventspace])
                     (queue-callback
                      (lambda ()
-                       (add-pict-drawer stx pict-drawer width height))))))))))
+                       (add-pict-drawer stx v pict-drawer width height))))))))))
       
       ;; add-pict-drawer : syntax pict-drawer number number -> void
       ;; thread: system eventspace
-      (define (add-pict-drawer stx pict-drawer width height)
+      (define (add-pict-drawer stx pict pict-drawer width height)
         (let ([src (syntax-source stx)]
               [offset (syntax-position stx)]
               [span (syntax-span stx)])
@@ -606,7 +610,7 @@ pict snip :
                                      (loop outer-editor))]
                                   [else src])))])
               (when (is-a? top-most show-picts<%>)
-                (send top-most slideshow:register-pict src (- offset 1) span pict-drawer width height))))))
+                (send top-most slideshow:register-pict src (- offset 1) span pict pict-drawer width height))))))
       
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;
@@ -679,7 +683,7 @@ pict snip :
         (syntax-case stx (lambda case-lambda if begin begin0 let-values letrec-values set! quote quote-syntax with-continuation-mark #%app #%datum #%top)
           [variable
            (identifier? (syntax variable))
-           (add-send-over (syntax variable) stx 1)]
+           (add-send-over/var (syntax variable) stx)]
           [(lambda formals expr ...)
            (with-syntax ([(rewritten-expr ...) 
                           (map rewrite-expr (syntax->list (syntax (expr ...))))])
@@ -709,18 +713,26 @@ pict snip :
              (syntax (begin0 rewritten-expr ...)))]
           [(let-values (((variable ...) v-expr) ...) expr ...)
            (with-syntax ([(rewritten-expr ...) (map rewrite-expr (syntax->list (syntax (expr ...))))]
-                         [(rewritten-v-expr ...) (map (lambda (x vars) 
-                                                        (add-send-over (rewrite-expr x) x (length (syntax->list vars))))
-                                                      (syntax->list (syntax (v-expr ...)))
-                                                      (syntax->list (syntax ((variable ...) ...))))])
-             (syntax (let-values (((variable ...) rewritten-v-expr) ...) rewritten-expr ...)))]
+                         [(rewritten-v-expr ...) (map rewrite-expr (syntax->list (syntax (v-expr ...))))]
+                         [((send-over-vars ...) ...)
+                          (map (lambda (vars)
+                                 (map (lambda (var) (add-send-over/var var var))
+                                      (syntax->list vars)))
+                               (syntax->list (syntax ((variable ...) ...))))])
+             (syntax (let-values (((variable ...) rewritten-v-expr) ...)
+                       (begin (void) (begin (void) send-over-vars ...) ...)
+                       rewritten-expr ...)))]
           [(letrec-values (((variable ...) v-expr) ...) expr ...)
            (with-syntax ([(rewritten-expr ...) (map rewrite-expr (syntax->list (syntax (expr ...))))]
-                         [(rewritten-v-expr ...) (map (lambda (x vars) 
-                                                        (add-send-over (rewrite-expr x) x (length (syntax->list vars)))) 
-                                                      (syntax->list (syntax (v-expr ...)))
-                                                      (syntax->list (syntax ((variable ...) ...))))])
-             (syntax (letrec-values (((variable ...) rewritten-v-expr) ...) rewritten-expr ...)))]
+                         [(rewritten-v-expr ...) (map rewrite-expr (syntax->list (syntax (v-expr ...))))]
+                         [((send-over-vars ...) ...)
+                          (map (lambda (vars)
+                                 (map (lambda (var) (add-send-over/var var var))
+                                      (syntax->list vars)))
+                               (syntax->list (syntax ((variable ...) ...))))])
+             (syntax (letrec-values (((variable ...) rewritten-v-expr) ...)
+                       (begin (void) (begin (void) send-over-vars ...) ...)
+                       rewritten-expr ...)))]
           [(set! variable expr)
            (with-syntax ([rewritten-expr (add-send-over (rewrite-expr (syntax expr)) (syntax expr) 1)])
              (syntax (set! variable rewritten-expr)))]
@@ -749,7 +761,16 @@ pict snip :
                  (send-over vars #'loc) ...
                  (values vars ...))))
             stx))
-      
+      (define (add-send-over/var stx loc-stx)
+        (if (object? (syntax-source loc-stx))
+            (with-syntax ([send-over send-over]
+                          [stx stx]
+                          [loc (datum->syntax-object loc-stx 1 loc-stx)])
+              (syntax
+               (begin 
+                 (send-over stx #'loc)
+                 stx)))
+            stx))
       (define (build-vars n)
         (cond
           [(zero? n) #'()]

@@ -1,3 +1,18 @@
+(require-library "errortrace.ss" "errortrace")
+
+#|
+
+types:
+
+  (define-type cols (listof (listof number)))
+  (define-type rows (listof (listof number)))
+
+  (define-type solution ???) ;; unspecified as of yet
+
+  (define-type problem (make-problem string cols rows (union #f solution)))
+
+|#
+
 (require-library "functios.ss")
 (require-library "spidey.ss")
 

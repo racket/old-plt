@@ -289,7 +289,7 @@
 	[title-buffer (make-object (get-title-buffer%) top top-select item this)]
 	[content-buffer (make-object (get-content-buffer%) top top-select)]
 	[title-snip (make-object wx:media-snip% title-buffer #f 0 0 0 0 0 0 0 0)]
-	[content-snip (make-object wx:media-snip% content-buffer #f 0 0 0 0 0 0 0 0)]
+	[content-snip (make-object wx:media-snip% content-buffer #f 4 0 0 0 0 0 0 0)]
 	[arrow (make-object arrow-snip% on-arrow)]
 	[whitespace (make-object whitespace-snip%)])
       (sequence

@@ -4916,7 +4916,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   Scheme_Object *a[4];
   Scheme_Subprocess *subproc;
 #if defined(WINDOWS_PROCESSES)
-  int exact_cmdline;
+  int exact_cmdline = 0;
 #endif
 #if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
   int spawn_status;

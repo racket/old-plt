@@ -408,7 +408,6 @@ void wxApp::doMacMouseUp(void)
       int type = rightButton ? wxEVENT_TYPE_RIGHT_UP : wxEVENT_TYPE_LEFT_UP;
 
       mouseWindow->ScreenToClient(&hitX, &hitY); // mouseWindow client c.s.
-      mouseWindow->ClientToLogical(&hitX, &hitY); // mouseWindow logical c.s.
       
       theMouseEvent = new wxMouseEvent(type);
       theMouseEvent->leftDown = FALSE;
@@ -498,7 +497,6 @@ void wxApp::doMacMouseMotion(void)
       hitX = cCurrentEvent.where.h; // screen window c.s.
       hitY = cCurrentEvent.where.v; // screen window c.s.
       mouseWindow->ScreenToClient(&hitX, &hitY); // mouseWindow client c.s.
-      mouseWindow->ClientToLogical(&hitX, &hitY); // mouseWindow logical c.s.
       theMouseEvent->x = hitX;
       theMouseEvent->y = hitY;
 

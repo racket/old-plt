@@ -275,9 +275,9 @@ scheme_init_fun (Scheme_Env *env)
 						      "continuation-mark-set->list",
 						      2, 2),
 			     env);
-  scheme_add_global_constant("continuation-mark-set->lists",
+  scheme_add_global_constant("continuation-mark-set->list*",
 			     scheme_make_prim_w_arity(extract_cc_markses,
-						      "continuation-mark-set->lists",
+						      "continuation-mark-set->list*",
 						      2, 3),
 			     env);
   scheme_add_global_constant("continuation-mark-set-first",
@@ -2979,12 +2979,12 @@ extract_cc_markses(int argc, Scheme_Object *argv[])
   long last_pos;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_mark_set_type)) {
-    scheme_wrong_type("continuation-mark-set->lists", "continuation-mark-set", 0, argc, argv);
+    scheme_wrong_type("continuation-mark-set->list*", "continuation-mark-set", 0, argc, argv);
     return NULL;
   }
   len = scheme_proper_list_length(argv[1]);
   if (len < 0) {
-    scheme_wrong_type("continuation-mark-set->lists", "list", 1, argc, argv);
+    scheme_wrong_type("continuation-mark-set->list*", "list", 1, argc, argv);
     return NULL;
   }
   if (argc > 2)

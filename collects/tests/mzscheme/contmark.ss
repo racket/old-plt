@@ -21,6 +21,24 @@
 
 (test '(10) 'wcm (with-continuation-mark 'key 10 
 		   (extract-current-continuation-marks 'key)))
+(test '(#(10 #f)) 'wcm (with-continuation-mark 'key 10 
+			 (continuation-mark-set->list* (current-continuation-marks) '(key no-key))))
+(test '(#(#f 10)) 'wcm (with-continuation-mark 'key 10 
+			 (continuation-mark-set->list* (current-continuation-marks) '(no-key key))))
+(test '(#(nope 10)) 'wcm (with-continuation-mark 'key 10 
+			   (continuation-mark-set->list* (current-continuation-marks) '(no-key key) 'nope)))
+
+(test '(#(10 12)) 'wcm (with-continuation-mark 'key1 10 
+			 (with-continuation-mark 'key2 12 
+			   (continuation-mark-set->list* (current-continuation-marks) '(key1 key2)))))
+(test '(#(#f 12) #(10 #f)) 'wcm 
+      (with-continuation-mark 'key1 10 
+	(let ([x (with-continuation-mark 'key2 12 
+		   (continuation-mark-set->list* (current-continuation-marks) '(key1 key2)))])
+	  (if (void? x)
+	      x
+	      x))))
+
 (test '(11) 'wcm (with-continuation-mark 'key 10 
 		   (with-continuation-mark 'key 11
 		     (extract-current-continuation-marks 'key))))

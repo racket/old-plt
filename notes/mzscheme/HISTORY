@@ -2,6 +2,12 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.30
+Struct property types are now overridable in subtypes
+Added "serialize.ss" module to MzLib
+Added module-compiled-exports
+Added continuation-mark-set->list*
+
 Version 299.29
 Added binding of greek-lambda character (code point #x03BB) to
  expand to lambda

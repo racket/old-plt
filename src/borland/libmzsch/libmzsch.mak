@@ -43,7 +43,7 @@ IDLGENFILES =
 LIBRARIES = 
 PACKAGES = 
 SPARELIBS = 
-DEFFILE = mzsj.def
+DEFFILE = 
 # ---------------------------------------------------------------------------
 PATHCPP = .;..\..\Mzscheme\Src;..\..\mzscheme\src\gmp
 PATHASM = .;

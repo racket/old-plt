@@ -81,10 +81,10 @@ Insert the following six lines before the line containing ".pas.hpp":
 
 ..\mzscheme\src\mzsj86.obj: ..\mzscheme\src\mzsj86.c
 	$(BCB)\BIN\$(BCC32) -S $(CFLAG1) $(WARNINGS) -I$(INCLUDEPATH) -D$(USERDEFINES);$(SYSDEFINES) -n$(@D) ..\mzscheme\src\mzsj86.c
-	ml /Zm /c /Cx /Dmodel=\; ..\mzscheme\src\mzsj86.asm
+	ml /Zm /c /Cx /omf /Dmodel=\; ..\mzscheme\src\mzsj86.asm
 ..\mzscheme\gc\mach_dep.obj: ..\mzscheme\gc\mach_dep.c
 	$(BCB)\BIN\$(BCC32) -S $(CFLAG1) $(WARNINGS) -I$(INCLUDEPATH) -D$(USERDEFINES);$(SYSDEFINES) -n$(@D) ..\mzscheme\gc\mach_dep.c
-	ml /Zm /c /Cx /Dmodel=\; ..\mzscheme\gc\mach_dep.asm
+	ml /Zm /c /Cx /omf /Dmodel=\; ..\mzscheme\gc\mach_dep.asm
 
 libmzgc.mak
 -----------
@@ -93,7 +93,7 @@ Insert the following three lines before the line containing ".pas.hpp":
 
 ..\..\mzscheme\gc\mach_dep.obj: ..\..\mzscheme\gc\mach_dep.c
 	$(BCB)\BIN\$(BCC32) -S $(CFLAG1) $(WARNINGS) -I$(INCLUDEPATH) -D$(USERDEFINES);$(SYSDEFINES) -n$(@D) ..\..\mzscheme\gc\mach_dep.c
-	ml /Zm /c /Cx /Dmodel=\; ..\..\mzscheme\gc\mach_dep.asm
+	ml /Zm /c /Cx /omf /Dmodel=\; ..\..\mzscheme\gc\mach_dep.asm
 
 libmzsch.mak
 ------------
@@ -110,4 +110,4 @@ Then insert the following three lines before the line containing ".pas.hpp":
 
 ..\..\mzscheme\src\mzsj86.obj: ..\..\mzscheme\src\mzsj86.c
 	$(BCB)\BIN\$(BCC32) -S $(CFLAG1) $(WARNINGS) -I$(INCLUDEPATH) -D$(USERDEFINES);$(SYSDEFINES) -n$(@D) ..\..\mzscheme\src\mzsj86.c
-	ml /Zm /c /Cx /Cp /Dmodel=\; /Dpublicdll=public ..\..\mzscheme\src\mzsj86.asm
+	ml /Zm /c /Cx /Cp /omf /Dmodel=\; /Dpublicdll=public ..\..\mzscheme\src\mzsj86.asm

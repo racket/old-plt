@@ -833,7 +833,9 @@ sub PrintMethod
     print "#ifdef MZ_PRECISE_GC\n";
     print "  ${newclass} *sElF = this;\n";
     print "#endif\n";
-    print "  static void *mcache = 0;\n\n";
+    print "  static void *mcache = 0;\n";
+    &PrintSboxTmp();
+    print "\n";
 
     # Count pushable arguments
     @scms = @schemes;
@@ -1371,6 +1373,7 @@ sub PrintSpecificFunction
     }
 
     &PrintLocals($prefix);
+    &PrintSboxTmp();
 
     # Count pushable pointers:
     if ($global) {
@@ -1551,15 +1554,15 @@ sub PrintBundleVar
 	print "$wvs(objscheme_bundle_generic((void *)$var))";
     } elsif (substr($paramtype, -1) eq '*') {
 	substr($paramtype, -1) = '';
-	print "$wvs(objscheme_box(";
+	print "(sbox_tmp = ";
 	&PrintBundleVar("(*$var)", $paramtype, $wvs);
-	print "))";
+	print ", $wvs(objscheme_box(sbox_tmp)))";
     } elsif (substr($paramtype, -1) eq '?') {
 	substr($paramtype, -1) = '';
 	print "(($var) ? ";
-	print "$wvs(objscheme_box(";
+	print "(sbox_tmp = ";
 	&PrintBundleVar("(*$var)", $paramtype, $wvs);
-	print "))";
+	print ", $wvs(objscheme_box(sbox_tmp)))";
 	print " : XC_SCHEME_NULL)";
     } elsif (substr($paramtype, -1) eq '&') {
 	substr($paramtype, -1) = '';
@@ -1567,9 +1570,9 @@ sub PrintBundleVar
 	&PrintBundleVar("$var", $paramtype, $wvs);
     } elsif (substr($paramtype, -1) eq '+') {
 	substr($paramtype, -1) = '';
-	print "$wvs(objscheme_box(";
+	print "(sbox_tmp = ";
 	&PrintBundleVar($var, $paramtype, $wvs);
-	print "))";
+	print ", $wvs(objscheme_box(sbox_tmp)))";
     } elsif ($paramtype eq 'bool') {
 	print "($var ? scheme_true : scheme_false)";
     } elsif ($paramtype eq 'char') {
@@ -1742,14 +1745,18 @@ sub PrintUnbundleVar
 	print ")WITH_VAR_STACK(objscheme_unbundle_generic($var, $stop))";
     } elsif (substr($paramtype, -1) eq '*' || substr($paramtype, -1) eq '+') {
 	substr($paramtype, -1) = '';
-	&PrintUnbundleVar("WITH_VAR_STACK(objscheme_unbox($var, $stop))", $paramtype, "", "", &Unboxing($stop));
+	print "(sbox_tmp = WITH_VAR_STACK(objscheme_unbox($var, $stop)), ";
+	&PrintUnbundleVar("sbox_tmp", $paramtype, "", "", &Unboxing($stop));
+	print ")";
     } elsif (substr($paramtype, -1) eq '&') {
 	substr($paramtype, -1) = '';
 	print "*" if ($outgoing);
 	&PrintUnbundleVar("$var", $paramtype, "", "", $stop);
     } elsif (substr($paramtype, -1) eq '?') {
 	substr($paramtype, -1) = '';
-	&PrintUnbundleVar("WITH_VAR_STACK(objscheme_nullable_unbox($var, $stop))", $paramtype, "", "", &Unboxing($stop));
+	print "(sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox($var, $stop)), ";
+	&PrintUnbundleVar("sbox_tmp", $paramtype, "", "", &Unboxing($stop));
+	print ")";
     } elsif ($paramtype eq 'bool') {
 	print "WITH_VAR_STACK(objscheme_unbundle_bool(${var}, $stop))";
     } elsif ($paramtype eq 'char') {
@@ -2024,6 +2031,20 @@ sub PrintUnbundledEffects
 	    }
 	} else {
 	    $offset += 1;
+	}
+	$paramnum += 1;
+    }	
+}
+
+sub PrintSboxTmp
+{
+    $paramnum = 0;
+    foreach $paramtype (@paramtypes) {
+	if ($schemes[$paramnum]) {
+	    if (&NeedsDeref($paramtype)) {
+		print "  Scheme_Object *sbox_tmp;\n";
+		return;
+	    }
 	}
 	$paramnum += 1;
     }	

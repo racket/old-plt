@@ -228,8 +228,9 @@ static int alloc_close_color(Display *display, Colormap cmap, XColor *xc)
   if (wxAllocColor(display, cmap, &ctab[close])) { 
     static int approxmsg = 1;
     if (approxmsg) {
-      wxError("Warning: cannot allocate colour, using approximate match.\n"
-	      "(Future allocations may be approximate without report.)");
+      wxError("Cannot allocate color, using approximate match.\n"
+	      "(Future allocations may be approximate without report.)",
+	      "MrEd Warning");
       
       approxmsg = 0;
     }

@@ -3287,6 +3287,7 @@ static Scheme_Object *os_wxMediaEditFindWordbreak(Scheme_Object *obj, int n,  Sc
   nnlong _x1;
   nnlong* x1 = &_x1;
   int x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -3296,11 +3297,11 @@ static Scheme_Object *os_wxMediaEditFindWordbreak(Scheme_Object *obj, int n,  Sc
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "find-wordbreak in text%")), "find-wordbreak in text%"", extracting boxed argument"));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "find-wordbreak in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "find-wordbreak in text%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "find-wordbreak in text%")), "find-wordbreak in text%"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "find-wordbreak in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "find-wordbreak in text%"", extracting boxed argument")));
   x2 = WITH_VAR_STACK(unbundle_symset_breakType(p[2], "find-wordbreak in text%"));
 
   
@@ -3775,6 +3776,7 @@ static Scheme_Object *os_wxMediaEditGetTabs(Scheme_Object *obj, int n,  Scheme_O
   float* x1 = &_x1;
   Bool _x2;
   Bool* x2 = &_x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -3785,21 +3787,21 @@ static Scheme_Object *os_wxMediaEditGetTabs(Scheme_Object *obj, int n,  Scheme_O
     if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-tabs in text%")), "get-tabs in text%"", extracting boxed argument"));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-tabs in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-tabs in text%"", extracting boxed argument")));
   } else
     x0 = NULL;
   if (n > 1) {
     if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-tabs in text%")), "get-tabs in text%"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-tabs in text%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-tabs in text%"", extracting boxed argument")));
   } else
     x1 = NULL;
   if (n > 2) {
     if (XC_SCHEME_NULLP(p[2]))
     x2 = NULL;
   else
-    *x2 = WITH_VAR_STACK(objscheme_unbundle_bool(WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "get-tabs in text%")), "get-tabs in text%"", extracting boxed argument"));
+    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "get-tabs in text%")), WITH_VAR_STACK(objscheme_unbundle_bool(sbox_tmp, "get-tabs in text%"", extracting boxed argument")));
   } else
     x2 = NULL;
 
@@ -4135,6 +4137,7 @@ static Scheme_Object *os_wxMediaEditGetSnipPositionAndLocation(Scheme_Object *ob
   float* x2 = &_x2;
   float _x3;
   float* x3 = &_x3;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -4146,19 +4149,19 @@ static Scheme_Object *os_wxMediaEditGetSnipPositionAndLocation(Scheme_Object *ob
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-snip-position-and-location in text%")), "get-snip-position-and-location in text%"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-snip-position-and-location in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-snip-position-and-location in text%"", extracting boxed argument")));
   if (n > 2) {
     if (XC_SCHEME_NULLP(p[2]))
     x2 = NULL;
   else
-    *x2 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "get-snip-position-and-location in text%")), "get-snip-position-and-location in text%"", extracting boxed argument"));
+    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "get-snip-position-and-location in text%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-snip-position-and-location in text%"", extracting boxed argument")));
   } else
     x2 = NULL;
   if (n > 3) {
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-snip-position-and-location in text%")), "get-snip-position-and-location in text%"", extracting boxed argument"));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-snip-position-and-location in text%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-snip-position-and-location in text%"", extracting boxed argument")));
   } else
     x3 = NULL;
 
@@ -4187,6 +4190,7 @@ static Scheme_Object *os_wxMediaEditFindSnip(Scheme_Object *obj, int n,  Scheme_
   int x1;
   nnlong _x2;
   nnlong* x2 = &_x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -4199,7 +4203,7 @@ static Scheme_Object *os_wxMediaEditFindSnip(Scheme_Object *obj, int n,  Scheme_
     if (XC_SCHEME_NULLP(p[2]))
     x2 = NULL;
   else
-    *x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "find-snip in text%")), "find-snip in text%"", extracting boxed argument"));
+    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "find-snip in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "find-snip in text%"", extracting boxed argument")));
   } else
     x2 = NULL;
 
@@ -4809,6 +4813,7 @@ static Scheme_Object *os_wxMediaEditPositionLocation(Scheme_Object *obj, int n, 
   Bool x3;
   Bool x4;
   Bool x5;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -4820,14 +4825,14 @@ static Scheme_Object *os_wxMediaEditPositionLocation(Scheme_Object *obj, int n, 
     if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "position-location in text%")), "position-location in text%"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "position-location in text%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "position-location in text%"", extracting boxed argument")));
   } else
     x1 = NULL;
   if (n > 2) {
     if (XC_SCHEME_NULLP(p[2]))
     x2 = NULL;
   else
-    *x2 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "position-location in text%")), "position-location in text%"", extracting boxed argument"));
+    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "position-location in text%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "position-location in text%"", extracting boxed argument")));
   } else
     x2 = NULL;
   if (n > 3) {
@@ -4944,6 +4949,7 @@ static Scheme_Object *os_wxMediaEditFindPositionInLine(Scheme_Object *obj, int n
   Bool* x3 = &_x3;
   float _x4;
   float* x4 = &_x4;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -4956,21 +4962,21 @@ static Scheme_Object *os_wxMediaEditFindPositionInLine(Scheme_Object *obj, int n
     if (XC_SCHEME_NULLP(p[2]))
     x2 = NULL;
   else
-    *x2 = WITH_VAR_STACK(objscheme_unbundle_bool(WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "find-position-in-line in text%")), "find-position-in-line in text%"", extracting boxed argument"));
+    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "find-position-in-line in text%")), WITH_VAR_STACK(objscheme_unbundle_bool(sbox_tmp, "find-position-in-line in text%"", extracting boxed argument")));
   } else
     x2 = NULL;
   if (n > 3) {
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = WITH_VAR_STACK(objscheme_unbundle_bool(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "find-position-in-line in text%")), "find-position-in-line in text%"", extracting boxed argument"));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "find-position-in-line in text%")), WITH_VAR_STACK(objscheme_unbundle_bool(sbox_tmp, "find-position-in-line in text%"", extracting boxed argument")));
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "find-position-in-line in text%")), "find-position-in-line in text%"", extracting boxed argument"));
+    *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "find-position-in-line in text%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "find-position-in-line in text%"", extracting boxed argument")));
   } else
     x4 = NULL;
 
@@ -4998,6 +5004,7 @@ static Scheme_Object *os_wxMediaEditFindLine(Scheme_Object *obj, int n,  Scheme_
   float x0;
   Bool _x1;
   Bool* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -5009,7 +5016,7 @@ static Scheme_Object *os_wxMediaEditFindLine(Scheme_Object *obj, int n,  Scheme_
     if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_bool(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "find-line in text%")), "find-line in text%"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "find-line in text%")), WITH_VAR_STACK(objscheme_unbundle_bool(sbox_tmp, "find-line in text%"", extracting boxed argument")));
   } else
     x1 = NULL;
 
@@ -5038,6 +5045,7 @@ static Scheme_Object *os_wxMediaEditFindPosition(Scheme_Object *obj, int n,  Sch
   Bool* x3 = &_x3;
   float _x4;
   float* x4 = &_x4;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -5050,21 +5058,21 @@ static Scheme_Object *os_wxMediaEditFindPosition(Scheme_Object *obj, int n,  Sch
     if (XC_SCHEME_NULLP(p[2]))
     x2 = NULL;
   else
-    *x2 = WITH_VAR_STACK(objscheme_unbundle_bool(WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "find-position in text%")), "find-position in text%"", extracting boxed argument"));
+    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "find-position in text%")), WITH_VAR_STACK(objscheme_unbundle_bool(sbox_tmp, "find-position in text%"", extracting boxed argument")));
   } else
     x2 = NULL;
   if (n > 3) {
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = WITH_VAR_STACK(objscheme_unbundle_bool(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "find-position in text%")), "find-position in text%"", extracting boxed argument"));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "find-position in text%")), WITH_VAR_STACK(objscheme_unbundle_bool(sbox_tmp, "find-position in text%"", extracting boxed argument")));
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "find-position in text%")), "find-position in text%"", extracting boxed argument"));
+    *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "find-position in text%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "find-position in text%"", extracting boxed argument")));
   } else
     x4 = NULL;
 
@@ -5915,6 +5923,7 @@ static Scheme_Object *os_wxMediaEditGetVisibleLineRange(Scheme_Object *obj, int 
   nnlong* x0 = &_x0;
   nnlong _x1;
   nnlong* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -5924,11 +5933,11 @@ static Scheme_Object *os_wxMediaEditGetVisibleLineRange(Scheme_Object *obj, int 
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-visible-line-range in text%")), "get-visible-line-range in text%"", extracting boxed argument"));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-visible-line-range in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-visible-line-range in text%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-visible-line-range in text%")), "get-visible-line-range in text%"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-visible-line-range in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-visible-line-range in text%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->GetVisibleLineRange(x0, x1));
@@ -5952,6 +5961,7 @@ static Scheme_Object *os_wxMediaEditGetVisiblePositionRange(Scheme_Object *obj, 
   nnlong* x0 = &_x0;
   nnlong _x1;
   nnlong* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -5961,11 +5971,11 @@ static Scheme_Object *os_wxMediaEditGetVisiblePositionRange(Scheme_Object *obj, 
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-visible-position-range in text%")), "get-visible-position-range in text%"", extracting boxed argument"));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-visible-position-range in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-visible-position-range in text%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-visible-position-range in text%")), "get-visible-position-range in text%"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-visible-position-range in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-visible-position-range in text%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->GetVisiblePositionRange(x0, x1));
@@ -6193,6 +6203,7 @@ static Scheme_Object *os_wxMediaEditGetPosition(Scheme_Object *obj, int n,  Sche
   nnlong* x0 = &_x0;
   nnlong _x1;
   nnlong* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -6202,12 +6213,12 @@ static Scheme_Object *os_wxMediaEditGetPosition(Scheme_Object *obj, int n,  Sche
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-position in text%")), "get-position in text%"", extracting boxed argument"));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-position in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-position in text%"", extracting boxed argument")));
   if (n > 1) {
     if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-position in text%")), "get-position in text%"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-position in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-position in text%"", extracting boxed argument")));
   } else
     x1 = NULL;
 

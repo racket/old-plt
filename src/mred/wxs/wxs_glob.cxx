@@ -286,6 +286,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     string _x2;
     string* x2 = &_x2;
     npathname x3;
+  Scheme_Object *sbox_tmp;
 
     SETUP_VAR_STACK_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
@@ -298,7 +299,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
       WITH_VAR_STACK(scheme_wrong_count("get-resource (string case)", 3, 4, n, p));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "get-resource (string case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "get-resource (string case)"));
-          *x2 = (string)WITH_VAR_STACK(objscheme_unbundle_string(WITH_VAR_STACK(objscheme_unbox(p[2], "get-resource (string case)")), "get-resource (string case)"", extracting boxed argument"));
+          *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "get-resource (string case)")), (string)WITH_VAR_STACK(objscheme_unbundle_string(sbox_tmp, "get-resource (string case)"", extracting boxed argument")));
     if (n > 3) {
       x3 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[3], "get-resource (string case)"));
     } else
@@ -317,6 +318,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     long _x2;
     long* x2 = &_x2;
     npathname x3;
+  Scheme_Object *sbox_tmp;
 
     SETUP_VAR_STACK_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
@@ -329,7 +331,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
       WITH_VAR_STACK(scheme_wrong_count("get-resource (number case)", 3, 4, n, p));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "get-resource (number case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "get-resource (number case)"));
-          *x2 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[2], "get-resource (number case)")), "get-resource (number case)"", extracting boxed argument"));
+          *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "get-resource (number case)")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-resource (number case)"", extracting boxed argument")));
     if (n > 3) {
       x3 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[3], "get-resource (number case)"));
     } else
@@ -379,13 +381,14 @@ static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
   int* x0 = &_x0;
   int _x1;
   int* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "display-size")), "display-size"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "display-size")), "display-size"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "display-size")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "display-size"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "display-size")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "display-size"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(wxDisplaySize(x0, x1));

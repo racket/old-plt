@@ -662,6 +662,7 @@ static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Schem
   float* x4 = &_x4;
   class wxFont* x5;
   Bool x6;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -671,20 +672,20 @@ static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Schem
 
   
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "get-text-extent in window%"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[1], "get-text-extent in window%")), "get-text-extent in window%"", extracting boxed argument"));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[2], "get-text-extent in window%")), "get-text-extent in window%"", extracting boxed argument"));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
   if (n > 3) {
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-text-extent in window%")), "get-text-extent in window%"", extracting boxed argument"));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-text-extent in window%")), "get-text-extent in window%"", extracting boxed argument"));
+    *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
   } else
     x4 = NULL;
   if (n > 5) {
@@ -765,14 +766,15 @@ static Scheme_Object *os_wxWindowScreenToClient(Scheme_Object *obj, int n,  Sche
   int* x0 = &_x0;
   int _x1;
   int* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "screen-to-client in window%")), "screen-to-client in window%"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "screen-to-client in window%")), "screen-to-client in window%"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "screen-to-client in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "screen-to-client in window%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "screen-to-client in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "screen-to-client in window%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->ScreenToClient(x0, x1));
@@ -796,14 +798,15 @@ static Scheme_Object *os_wxWindowClientToScreen(Scheme_Object *obj, int n,  Sche
   int* x0 = &_x0;
   int _x1;
   int* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "client-to-screen in window%")), "client-to-screen in window%"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "client-to-screen in window%")), "client-to-screen in window%"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "client-to-screen in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "client-to-screen in window%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "client-to-screen in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "client-to-screen in window%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->ClientToScreen(x0, x1));
@@ -873,14 +876,15 @@ static Scheme_Object *os_wxWindowGetPosition(Scheme_Object *obj, int n,  Scheme_
   int* x0 = &_x0;
   int _x1;
   int* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get-position in window%")), "get-position in window%"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "get-position in window%")), "get-position in window%"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get-position in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-position in window%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-position in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-position in window%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetPosition(x0, x1));
@@ -904,14 +908,15 @@ static Scheme_Object *os_wxWindowGetClientSize(Scheme_Object *obj, int n,  Schem
   int* x0 = &_x0;
   int _x1;
   int* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get-client-size in window%")), "get-client-size in window%"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "get-client-size in window%")), "get-client-size in window%"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get-client-size in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-client-size in window%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-client-size in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-client-size in window%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetClientSize(x0, x1));
@@ -935,14 +940,15 @@ static Scheme_Object *os_wxWindowGetSize(Scheme_Object *obj, int n,  Scheme_Obje
   int* x0 = &_x0;
   int _x1;
   int* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get-size in window%")), "get-size in window%"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "get-size in window%")), "get-size in window%"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get-size in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-size in window%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-size in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-size in window%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetSize(x0, x1));

@@ -35,7 +35,7 @@ typedef short Type_Tag;
 
 #define TIME 0
 #define SEARCH 0
-#define SAFETY 0
+#define SAFETY 1
 #define RECYCLE_HEAP 0
 #define KEEP_FROM_PTR 0
 

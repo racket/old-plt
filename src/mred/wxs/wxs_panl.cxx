@@ -784,14 +784,15 @@ static Scheme_Object *os_wxPanelGetCursor(Scheme_Object *obj, int n,  Scheme_Obj
   int* x0 = &_x0;
   int _x1;
   int* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get-item-cursor in panel%")), "get-item-cursor in panel%"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "get-item-cursor in panel%")), "get-item-cursor in panel%"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get-item-cursor in panel%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-item-cursor in panel%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-item-cursor in panel%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-item-cursor in panel%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->GetCursor(x0, x1));

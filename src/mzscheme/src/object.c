@@ -489,7 +489,17 @@ static Scheme_Object *NullClass(void)
 
 static int CompareObjectPtrs(Scheme_Object **a, Scheme_Object **b)
 {
-  return (scheme_hash_key(*a)) - (scheme_hash_key(*b));
+  long ha, hb;
+  
+  /* Can't just subtract hb from ha because it might overflow: */
+  ha = scheme_hash_key(*a);
+  hb = scheme_hash_key(*b);
+  if (ha < hb)
+    return -1;
+  else if (ha == hb)
+    return 0;
+  else
+    return 1;
 }
 
 #define SEQUALS(a, b) (scheme_hash_key(a) == scheme_hash_key(b))

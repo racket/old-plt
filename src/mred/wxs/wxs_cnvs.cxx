@@ -892,14 +892,15 @@ static Scheme_Object *os_wxCanvasViewStart(Scheme_Object *obj, int n,  Scheme_Ob
   int* x0 = &_x0;
   int _x1;
   int* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "view-start in canvas%")), "view-start in canvas%"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "view-start in canvas%")), "view-start in canvas%"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "view-start in canvas%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "view-start in canvas%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "view-start in canvas%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "view-start in canvas%"", extracting boxed argument")));
 
   if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { FillZero(x0,x1); return scheme_void; }
   WITH_VAR_STACK(((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->ViewStart(x0, x1));
@@ -971,14 +972,15 @@ static Scheme_Object *os_wxCanvasGetVirtualSize(Scheme_Object *obj, int n,  Sche
   int* x0 = &_x0;
   int _x1;
   int* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get-virtual-size in canvas%")), "get-virtual-size in canvas%"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "get-virtual-size in canvas%")), "get-virtual-size in canvas%"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get-virtual-size in canvas%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-virtual-size in canvas%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-virtual-size in canvas%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-virtual-size in canvas%"", extracting boxed argument")));
 
   if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { FillZero(x0,x1); return scheme_void; }
   WITH_VAR_STACK(((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->GetVirtualSize(x0, x1));

@@ -182,34 +182,36 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big)
 {
   float w, h, d, asc;
   Scheme_Object *a[4];
-  REMEMBER_VAR_STACK();
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH_ARRAY(0, a, 4);
 
   if (!dc->Ok()) {
-    a[0] = a[1] = a[2] = a[3] = WITH_REMEMBERED_STACK(scheme_make_double(0.0));
+    a[0] = a[1] = a[2] = a[3] = WITH_VAR_STACK(scheme_make_double(0.0));
   } else {
-    WITH_REMEMBERED_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big));
+    WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big));
     
-    a[0] = WITH_REMEMBERED_STACK(scheme_make_double(w));
-    a[1] = WITH_REMEMBERED_STACK(scheme_make_double(h));
-    a[2] = WITH_REMEMBERED_STACK(scheme_make_double(d));
-    a[3] = WITH_REMEMBERED_STACK(scheme_make_double(asc));
+    a[0] = WITH_VAR_STACK(scheme_make_double(w));
+    a[1] = WITH_VAR_STACK(scheme_make_double(h));
+    a[2] = WITH_VAR_STACK(scheme_make_double(d));
+    a[3] = WITH_VAR_STACK(scheme_make_double(asc));
   }
 
-  return scheme_values(4, a);
+  return WITH_VAR_STACK(scheme_values(4, a));
 }
 
 static void* MyGetSize(wxDC *dc)
 {
   float w, h;
   Scheme_Object *a[2];
-  REMEMBER_VAR_STACK();
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH_ARRAY(0, a, 2);
 
   dc->GetSize(&w, &h);
 
-  a[0] = WITH_REMEMBERED_STACK(scheme_make_double(w));
-  a[1] = WITH_REMEMBERED_STACK(scheme_make_double(h));
+  a[0] = WITH_VAR_STACK(scheme_make_double(w));
+  a[1] = WITH_VAR_STACK(scheme_make_double(h));
 
-  return WITH_REMEMBERED_STACK(scheme_values(2, a));
+  return WITH_VAR_STACK(scheme_values(2, a));
 }
 
 

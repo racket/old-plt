@@ -2121,6 +2121,7 @@ static Scheme_Object *os_wxMediaBufferBeginWriteHeaderFooterToFile(Scheme_Object
   string x1;
   long _x2;
   long* x2 = &_x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -2131,7 +2132,7 @@ static Scheme_Object *os_wxMediaBufferBeginWriteHeaderFooterToFile(Scheme_Object
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamOut(p[0], "begin-write-header-footer-to-file in editor<%>", 0));
   x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "begin-write-header-footer-to-file in editor<%>"));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[2], "begin-write-header-footer-to-file in editor<%>")), "begin-write-header-footer-to-file in editor<%>"", extracting boxed argument"));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "begin-write-header-footer-to-file in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "begin-write-header-footer-to-file in editor<%>"", extracting boxed argument")));
 
   
   r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->BeginWriteHeaderFooterToFile(x0, x1, x2));
@@ -2256,6 +2257,7 @@ static Scheme_Object *os_wxMediaBufferGetFilename(Scheme_Object *obj, int n,  Sc
   objscheme_check_valid(obj);
   Bool _x0;
   Bool* x0 = &_x0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -2266,7 +2268,7 @@ static Scheme_Object *os_wxMediaBufferGetFilename(Scheme_Object *obj, int n,  Sc
     if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = WITH_VAR_STACK(objscheme_unbundle_bool(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-filename in editor<%>")), "get-filename in editor<%>"", extracting boxed argument"));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-filename in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_bool(sbox_tmp, "get-filename in editor<%>"", extracting boxed argument")));
   } else
     x0 = NULL;
 
@@ -2778,6 +2780,7 @@ static Scheme_Object *os_wxMediaBufferGetViewSize(Scheme_Object *obj, int n,  Sc
   nnfloat* x0 = &_x0;
   nnfloat _x1;
   nnfloat* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -2787,11 +2790,11 @@ static Scheme_Object *os_wxMediaBufferGetViewSize(Scheme_Object *obj, int n,  Sc
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-view-size in editor<%>")), "get-view-size in editor<%>"", extracting boxed argument"));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-view-size in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view-size in editor<%>"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-view-size in editor<%>")), "get-view-size in editor<%>"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-view-size in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view-size in editor<%>"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GetViewSize(x0, x1));
@@ -2837,6 +2840,7 @@ static Scheme_Object *os_wxMediaBufferLocalToGlobal(Scheme_Object *obj, int n,  
   float* x0 = &_x0;
   float _x1;
   float* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -2846,11 +2850,11 @@ static Scheme_Object *os_wxMediaBufferLocalToGlobal(Scheme_Object *obj, int n,  
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "local-to-global in editor<%>")), "local-to-global in editor<%>"", extracting boxed argument"));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "local-to-global in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "local-to-global in editor<%>"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "local-to-global in editor<%>")), "local-to-global in editor<%>"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "local-to-global in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "local-to-global in editor<%>"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->LocalToGlobal(x0, x1));
@@ -2874,6 +2878,7 @@ static Scheme_Object *os_wxMediaBufferGlobalToLocal(Scheme_Object *obj, int n,  
   float* x0 = &_x0;
   float _x1;
   float* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -2883,11 +2888,11 @@ static Scheme_Object *os_wxMediaBufferGlobalToLocal(Scheme_Object *obj, int n,  
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "global-to-local in editor<%>")), "global-to-local in editor<%>"", extracting boxed argument"));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "global-to-local in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "global-to-local in editor<%>"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "global-to-local in editor<%>")), "global-to-local in editor<%>"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "global-to-local in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "global-to-local in editor<%>"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GlobalToLocal(x0, x1));
@@ -3054,6 +3059,7 @@ static Scheme_Object *os_wxMediaBufferGetSnipLocation(Scheme_Object *obj, int n,
   float _x2;
   float* x2 = &_x2;
   Bool x3;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3066,14 +3072,14 @@ static Scheme_Object *os_wxMediaBufferGetSnipLocation(Scheme_Object *obj, int n,
     if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-snip-location in editor<%>")), "get-snip-location in editor<%>"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-snip-location in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-snip-location in editor<%>"", extracting boxed argument")));
   } else
     x1 = NULL;
   if (n > 2) {
     if (XC_SCHEME_NULLP(p[2]))
     x2 = NULL;
   else
-    *x2 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "get-snip-location in editor<%>")), "get-snip-location in editor<%>"", extracting boxed argument"));
+    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[2], "get-snip-location in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-snip-location in editor<%>"", extracting boxed argument")));
   } else
     x2 = NULL;
   if (n > 3) {
@@ -3475,6 +3481,7 @@ static Scheme_Object *os_wxMediaBufferGetExtent(Scheme_Object *obj, int n,  Sche
   nnfloat* x0 = &_x0;
   nnfloat _x1;
   nnfloat* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -3484,11 +3491,11 @@ static Scheme_Object *os_wxMediaBufferGetExtent(Scheme_Object *obj, int n,  Sche
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-extent in editor<%>")), "get-extent in editor<%>"", extracting boxed argument"));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-extent in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor<%>"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-extent in editor<%>")), "get-extent in editor<%>"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-extent in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor<%>"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GetExtent(x0, x1));
@@ -5520,6 +5527,7 @@ static Scheme_Object *wxMediaGlobalwxGetMediaPrintMargin(int n,  Scheme_Object *
   nnlong* x0 = &_x0;
   nnlong _x1;
   nnlong* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
@@ -5528,11 +5536,11 @@ static Scheme_Object *wxMediaGlobalwxGetMediaPrintMargin(int n,  Scheme_Object *
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-editor-print-margin in editor%")), "get-editor-print-margin in editor%"", extracting boxed argument"));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-editor-print-margin in editor%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-editor-print-margin in editor%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-editor-print-margin in editor%")), "get-editor-print-margin in editor%"", extracting boxed argument"));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[1], "get-editor-print-margin in editor%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-editor-print-margin in editor%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(wxGetMediaPrintMargin(x0, x1));

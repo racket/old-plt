@@ -98,15 +98,16 @@ static Scheme_Object *os_wxMultColourGet(Scheme_Object *obj, int n,  Scheme_Obje
   float* x1 = &_x1;
   float _x2;
   float* x2 = &_x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[0], "get in mult-color<%>")), "get in mult-color<%>"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[1], "get in mult-color<%>")), "get in mult-color<%>"", extracting boxed argument"));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[2], "get in mult-color<%>")), "get in mult-color<%>"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get in mult-color<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get in mult-color<%>"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get in mult-color<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get in mult-color<%>"", extracting boxed argument")));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "get in mult-color<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get in mult-color<%>"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMultColour *)((Scheme_Class_Object *)obj)->primdata)->Get(x0, x1, x2));
@@ -374,15 +375,16 @@ static Scheme_Object *os_wxAddColourGet(Scheme_Object *obj, int n,  Scheme_Objec
   short* x1 = &_x1;
   short _x2;
   short* x2 = &_x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get in add-color<%>")), "get in add-color<%>"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "get in add-color<%>")), "get in add-color<%>"", extracting boxed argument"));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[2], "get in add-color<%>")), "get in add-color<%>"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get in add-color<%>")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get in add-color<%>"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get in add-color<%>")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get in add-color<%>"", extracting boxed argument")));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "get in add-color<%>")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get in add-color<%>"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxAddColour *)((Scheme_Class_Object *)obj)->primdata)->Get(x0, x1, x2));

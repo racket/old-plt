@@ -877,6 +877,7 @@ void os_wxSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   os_wxSnip *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
@@ -893,14 +894,14 @@ void os_wxSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   } else {
   
   p[0] = scheme_make_integer(x0);
-  p[1] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(objscheme_bundle_wxSnip((*x1)))));
-  p[2] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(objscheme_bundle_wxSnip((*x2)))));
+  p[1] = (sbox_tmp = WITH_VAR_STACK(objscheme_bundle_wxSnip((*x1))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
+  p[2] = (sbox_tmp = WITH_VAR_STACK(objscheme_bundle_wxSnip((*x2))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 3, p));
   
-  if (x1) *x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[1], "split in snip%"", extracting return value via box")), "split in snip%"", extracting return value via box"", extracting boxed argument", 0));
-  if (x2) *x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[2], "split in snip%"", extracting return value via box")), "split in snip%"", extracting return value via box"", extracting boxed argument", 0));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "split in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in snip%"", extracting return value via box"", extracting boxed argument", 0)));
+  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "split in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in snip%"", extracting return value via box"", extracting boxed argument", 0)));
   
   }
 }
@@ -991,6 +992,7 @@ void os_wxSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nnflo
   os_wxSnip *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(12);
   VAR_STACK_PUSH(0, method);
@@ -1014,22 +1016,22 @@ void os_wxSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nnflo
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
   p[1] = WITH_VAR_STACK(scheme_make_double(x1));
   p[2] = WITH_VAR_STACK(scheme_make_double(x2));
-  p[3] = ((x3) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x3))))) : XC_SCHEME_NULL);
-  p[4] = ((x4) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x4))))) : XC_SCHEME_NULL);
-  p[5] = ((x5) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x5))))) : XC_SCHEME_NULL);
-  p[6] = ((x6) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x6))))) : XC_SCHEME_NULL);
-  p[7] = ((x7) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x7))))) : XC_SCHEME_NULL);
-  p[8] = ((x8) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x8))))) : XC_SCHEME_NULL);
+  p[3] = ((x3) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x3))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[4] = ((x4) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x4))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[5] = ((x5) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x5))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[6] = ((x6) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x6))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[7] = ((x7) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x7))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[8] = ((x8) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x8))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 9, p));
   
-  if (x3) *x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in snip%"", extracting return value via box")), "get-extent in snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x4) *x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in snip%"", extracting return value via box")), "get-extent in snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x5) *x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in snip%"", extracting return value via box")), "get-extent in snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x6) *x6 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in snip%"", extracting return value via box")), "get-extent in snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x7) *x7 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in snip%"", extracting return value via box")), "get-extent in snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x8) *x8 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in snip%"", extracting return value via box")), "get-extent in snip%"", extracting return value via box"", extracting boxed argument"));
+  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x4) *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x5) *x5 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x6) *x6 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x7) *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x8) *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
   
   }
 }
@@ -1600,6 +1602,7 @@ static Scheme_Object *os_wxSnipSplit(Scheme_Object *obj, int n,  Scheme_Object *
   class wxSnip** x1 = &_x1;
   class wxSnip* _x2;
   class wxSnip** x2 = &_x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -1607,8 +1610,8 @@ static Scheme_Object *os_wxSnipSplit(Scheme_Object *obj, int n,  Scheme_Object *
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "split in snip%"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[1], "split in snip%")), "split in snip%"", extracting boxed argument", 0));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[2], "split in snip%")), "split in snip%"", extracting boxed argument", 0));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "split in snip%")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in snip%"", extracting boxed argument", 0)));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "split in snip%")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in snip%"", extracting boxed argument", 0)));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1725,6 +1728,7 @@ static Scheme_Object *os_wxSnipGetExtent(Scheme_Object *obj, int n,  Scheme_Obje
   nnfloat* x7 = &_x7;
   nnfloat _x8;
   nnfloat* x8 = &_x8;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -1739,42 +1743,42 @@ static Scheme_Object *os_wxSnipGetExtent(Scheme_Object *obj, int n,  Scheme_Obje
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in snip%")), "get-extent in snip%"", extracting boxed argument"));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting boxed argument")));
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in snip%")), "get-extent in snip%"", extracting boxed argument"));
+    *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting boxed argument")));
   } else
     x4 = NULL;
   if (n > 5) {
     if (XC_SCHEME_NULLP(p[5]))
     x5 = NULL;
   else
-    *x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in snip%")), "get-extent in snip%"", extracting boxed argument"));
+    *x5 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting boxed argument")));
   } else
     x5 = NULL;
   if (n > 6) {
     if (XC_SCHEME_NULLP(p[6]))
     x6 = NULL;
   else
-    *x6 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in snip%")), "get-extent in snip%"", extracting boxed argument"));
+    *x6 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting boxed argument")));
   } else
     x6 = NULL;
   if (n > 7) {
     if (XC_SCHEME_NULLP(p[7]))
     x7 = NULL;
   else
-    *x7 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in snip%")), "get-extent in snip%"", extracting boxed argument"));
+    *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting boxed argument")));
   } else
     x7 = NULL;
   if (n > 8) {
     if (XC_SCHEME_NULLP(p[8]))
     x8 = NULL;
   else
-    *x8 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in snip%")), "get-extent in snip%"", extracting boxed argument"));
+    *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting boxed argument")));
   } else
     x8 = NULL;
 
@@ -2798,6 +2802,7 @@ void os_wxTextSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   os_wxTextSnip *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
@@ -2814,14 +2819,14 @@ void os_wxTextSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   } else {
   
   p[0] = scheme_make_integer(x0);
-  p[1] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(objscheme_bundle_wxSnip((*x1)))));
-  p[2] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(objscheme_bundle_wxSnip((*x2)))));
+  p[1] = (sbox_tmp = WITH_VAR_STACK(objscheme_bundle_wxSnip((*x1))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
+  p[2] = (sbox_tmp = WITH_VAR_STACK(objscheme_bundle_wxSnip((*x2))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 3, p));
   
-  if (x1) *x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[1], "split in string-snip%"", extracting return value via box")), "split in string-snip%"", extracting return value via box"", extracting boxed argument", 0));
-  if (x2) *x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[2], "split in string-snip%"", extracting return value via box")), "split in string-snip%"", extracting return value via box"", extracting boxed argument", 0));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "split in string-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in string-snip%"", extracting return value via box"", extracting boxed argument", 0)));
+  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "split in string-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in string-snip%"", extracting return value via box"", extracting boxed argument", 0)));
   
   }
 }
@@ -2912,6 +2917,7 @@ void os_wxTextSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, n
   os_wxTextSnip *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(12);
   VAR_STACK_PUSH(0, method);
@@ -2935,22 +2941,22 @@ void os_wxTextSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, n
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
   p[1] = WITH_VAR_STACK(scheme_make_double(x1));
   p[2] = WITH_VAR_STACK(scheme_make_double(x2));
-  p[3] = ((x3) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x3))))) : XC_SCHEME_NULL);
-  p[4] = ((x4) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x4))))) : XC_SCHEME_NULL);
-  p[5] = ((x5) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x5))))) : XC_SCHEME_NULL);
-  p[6] = ((x6) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x6))))) : XC_SCHEME_NULL);
-  p[7] = ((x7) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x7))))) : XC_SCHEME_NULL);
-  p[8] = ((x8) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x8))))) : XC_SCHEME_NULL);
+  p[3] = ((x3) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x3))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[4] = ((x4) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x4))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[5] = ((x5) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x5))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[6] = ((x6) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x6))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[7] = ((x7) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x7))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[8] = ((x8) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x8))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 9, p));
   
-  if (x3) *x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in string-snip%"", extracting return value via box")), "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x4) *x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in string-snip%"", extracting return value via box")), "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x5) *x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in string-snip%"", extracting return value via box")), "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x6) *x6 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in string-snip%"", extracting return value via box")), "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x7) *x7 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in string-snip%"", extracting return value via box")), "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x8) *x8 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in string-snip%"", extracting return value via box")), "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument"));
+  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in string-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x4) *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in string-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x5) *x5 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in string-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x6) *x6 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in string-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x7) *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in string-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x8) *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in string-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting return value via box"", extracting boxed argument")));
   
   }
 }
@@ -3534,6 +3540,7 @@ static Scheme_Object *os_wxTextSnipSplit(Scheme_Object *obj, int n,  Scheme_Obje
   class wxSnip** x1 = &_x1;
   class wxSnip* _x2;
   class wxSnip** x2 = &_x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -3541,8 +3548,8 @@ static Scheme_Object *os_wxTextSnipSplit(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "split in string-snip%"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[1], "split in string-snip%")), "split in string-snip%"", extracting boxed argument", 0));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[2], "split in string-snip%")), "split in string-snip%"", extracting boxed argument", 0));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "split in string-snip%")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in string-snip%"", extracting boxed argument", 0)));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "split in string-snip%")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in string-snip%"", extracting boxed argument", 0)));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3659,6 +3666,7 @@ static Scheme_Object *os_wxTextSnipGetExtent(Scheme_Object *obj, int n,  Scheme_
   nnfloat* x7 = &_x7;
   nnfloat _x8;
   nnfloat* x8 = &_x8;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3673,42 +3681,42 @@ static Scheme_Object *os_wxTextSnipGetExtent(Scheme_Object *obj, int n,  Scheme_
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in string-snip%")), "get-extent in string-snip%"", extracting boxed argument"));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in string-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting boxed argument")));
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in string-snip%")), "get-extent in string-snip%"", extracting boxed argument"));
+    *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in string-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting boxed argument")));
   } else
     x4 = NULL;
   if (n > 5) {
     if (XC_SCHEME_NULLP(p[5]))
     x5 = NULL;
   else
-    *x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in string-snip%")), "get-extent in string-snip%"", extracting boxed argument"));
+    *x5 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in string-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting boxed argument")));
   } else
     x5 = NULL;
   if (n > 6) {
     if (XC_SCHEME_NULLP(p[6]))
     x6 = NULL;
   else
-    *x6 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in string-snip%")), "get-extent in string-snip%"", extracting boxed argument"));
+    *x6 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in string-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting boxed argument")));
   } else
     x6 = NULL;
   if (n > 7) {
     if (XC_SCHEME_NULLP(p[7]))
     x7 = NULL;
   else
-    *x7 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in string-snip%")), "get-extent in string-snip%"", extracting boxed argument"));
+    *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in string-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting boxed argument")));
   } else
     x7 = NULL;
   if (n > 8) {
     if (XC_SCHEME_NULLP(p[8]))
     x8 = NULL;
   else
-    *x8 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in string-snip%")), "get-extent in string-snip%"", extracting boxed argument"));
+    *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in string-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in string-snip%"", extracting boxed argument")));
   } else
     x8 = NULL;
 
@@ -4505,6 +4513,7 @@ void os_wxTabSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   os_wxTabSnip *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
@@ -4521,14 +4530,14 @@ void os_wxTabSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   } else {
   
   p[0] = scheme_make_integer(x0);
-  p[1] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(objscheme_bundle_wxSnip((*x1)))));
-  p[2] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(objscheme_bundle_wxSnip((*x2)))));
+  p[1] = (sbox_tmp = WITH_VAR_STACK(objscheme_bundle_wxSnip((*x1))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
+  p[2] = (sbox_tmp = WITH_VAR_STACK(objscheme_bundle_wxSnip((*x2))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 3, p));
   
-  if (x1) *x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[1], "split in tab-snip%"", extracting return value via box")), "split in tab-snip%"", extracting return value via box"", extracting boxed argument", 0));
-  if (x2) *x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[2], "split in tab-snip%"", extracting return value via box")), "split in tab-snip%"", extracting return value via box"", extracting boxed argument", 0));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "split in tab-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in tab-snip%"", extracting return value via box"", extracting boxed argument", 0)));
+  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "split in tab-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in tab-snip%"", extracting return value via box"", extracting boxed argument", 0)));
   
   }
 }
@@ -4619,6 +4628,7 @@ void os_wxTabSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nn
   os_wxTabSnip *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(12);
   VAR_STACK_PUSH(0, method);
@@ -4642,22 +4652,22 @@ void os_wxTabSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nn
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
   p[1] = WITH_VAR_STACK(scheme_make_double(x1));
   p[2] = WITH_VAR_STACK(scheme_make_double(x2));
-  p[3] = ((x3) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x3))))) : XC_SCHEME_NULL);
-  p[4] = ((x4) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x4))))) : XC_SCHEME_NULL);
-  p[5] = ((x5) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x5))))) : XC_SCHEME_NULL);
-  p[6] = ((x6) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x6))))) : XC_SCHEME_NULL);
-  p[7] = ((x7) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x7))))) : XC_SCHEME_NULL);
-  p[8] = ((x8) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x8))))) : XC_SCHEME_NULL);
+  p[3] = ((x3) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x3))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[4] = ((x4) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x4))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[5] = ((x5) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x5))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[6] = ((x6) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x6))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[7] = ((x7) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x7))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[8] = ((x8) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x8))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 9, p));
   
-  if (x3) *x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in tab-snip%"", extracting return value via box")), "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x4) *x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in tab-snip%"", extracting return value via box")), "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x5) *x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in tab-snip%"", extracting return value via box")), "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x6) *x6 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in tab-snip%"", extracting return value via box")), "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x7) *x7 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in tab-snip%"", extracting return value via box")), "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x8) *x8 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in tab-snip%"", extracting return value via box")), "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument"));
+  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in tab-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x4) *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in tab-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x5) *x5 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in tab-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x6) *x6 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in tab-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x7) *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in tab-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x8) *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in tab-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument")));
   
   }
 }
@@ -5184,6 +5194,7 @@ static Scheme_Object *os_wxTabSnipSplit(Scheme_Object *obj, int n,  Scheme_Objec
   class wxSnip** x1 = &_x1;
   class wxSnip* _x2;
   class wxSnip** x2 = &_x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -5191,8 +5202,8 @@ static Scheme_Object *os_wxTabSnipSplit(Scheme_Object *obj, int n,  Scheme_Objec
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "split in tab-snip%"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[1], "split in tab-snip%")), "split in tab-snip%"", extracting boxed argument", 0));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[2], "split in tab-snip%")), "split in tab-snip%"", extracting boxed argument", 0));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "split in tab-snip%")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in tab-snip%"", extracting boxed argument", 0)));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "split in tab-snip%")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in tab-snip%"", extracting boxed argument", 0)));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -5309,6 +5320,7 @@ static Scheme_Object *os_wxTabSnipGetExtent(Scheme_Object *obj, int n,  Scheme_O
   nnfloat* x7 = &_x7;
   nnfloat _x8;
   nnfloat* x8 = &_x8;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -5323,42 +5335,42 @@ static Scheme_Object *os_wxTabSnipGetExtent(Scheme_Object *obj, int n,  Scheme_O
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in tab-snip%")), "get-extent in tab-snip%"", extracting boxed argument"));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in tab-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting boxed argument")));
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in tab-snip%")), "get-extent in tab-snip%"", extracting boxed argument"));
+    *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in tab-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting boxed argument")));
   } else
     x4 = NULL;
   if (n > 5) {
     if (XC_SCHEME_NULLP(p[5]))
     x5 = NULL;
   else
-    *x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in tab-snip%")), "get-extent in tab-snip%"", extracting boxed argument"));
+    *x5 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in tab-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting boxed argument")));
   } else
     x5 = NULL;
   if (n > 6) {
     if (XC_SCHEME_NULLP(p[6]))
     x6 = NULL;
   else
-    *x6 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in tab-snip%")), "get-extent in tab-snip%"", extracting boxed argument"));
+    *x6 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in tab-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting boxed argument")));
   } else
     x6 = NULL;
   if (n > 7) {
     if (XC_SCHEME_NULLP(p[7]))
     x7 = NULL;
   else
-    *x7 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in tab-snip%")), "get-extent in tab-snip%"", extracting boxed argument"));
+    *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in tab-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting boxed argument")));
   } else
     x7 = NULL;
   if (n > 8) {
     if (XC_SCHEME_NULLP(p[8]))
     x8 = NULL;
   else
-    *x8 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in tab-snip%")), "get-extent in tab-snip%"", extracting boxed argument"));
+    *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in tab-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in tab-snip%"", extracting boxed argument")));
   } else
     x8 = NULL;
 
@@ -6224,6 +6236,7 @@ void os_wxImageSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   os_wxImageSnip *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
@@ -6240,14 +6253,14 @@ void os_wxImageSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   } else {
   
   p[0] = scheme_make_integer(x0);
-  p[1] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(objscheme_bundle_wxSnip((*x1)))));
-  p[2] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(objscheme_bundle_wxSnip((*x2)))));
+  p[1] = (sbox_tmp = WITH_VAR_STACK(objscheme_bundle_wxSnip((*x1))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
+  p[2] = (sbox_tmp = WITH_VAR_STACK(objscheme_bundle_wxSnip((*x2))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 3, p));
   
-  if (x1) *x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[1], "split in image-snip%"", extracting return value via box")), "split in image-snip%"", extracting return value via box"", extracting boxed argument", 0));
-  if (x2) *x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[2], "split in image-snip%"", extracting return value via box")), "split in image-snip%"", extracting return value via box"", extracting boxed argument", 0));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "split in image-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in image-snip%"", extracting return value via box"", extracting boxed argument", 0)));
+  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "split in image-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in image-snip%"", extracting return value via box"", extracting boxed argument", 0)));
   
   }
 }
@@ -6338,6 +6351,7 @@ void os_wxImageSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, 
   os_wxImageSnip *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(12);
   VAR_STACK_PUSH(0, method);
@@ -6361,22 +6375,22 @@ void os_wxImageSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, 
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
   p[1] = WITH_VAR_STACK(scheme_make_double(x1));
   p[2] = WITH_VAR_STACK(scheme_make_double(x2));
-  p[3] = ((x3) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x3))))) : XC_SCHEME_NULL);
-  p[4] = ((x4) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x4))))) : XC_SCHEME_NULL);
-  p[5] = ((x5) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x5))))) : XC_SCHEME_NULL);
-  p[6] = ((x6) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x6))))) : XC_SCHEME_NULL);
-  p[7] = ((x7) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x7))))) : XC_SCHEME_NULL);
-  p[8] = ((x8) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x8))))) : XC_SCHEME_NULL);
+  p[3] = ((x3) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x3))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[4] = ((x4) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x4))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[5] = ((x5) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x5))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[6] = ((x6) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x6))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[7] = ((x7) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x7))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[8] = ((x8) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x8))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 9, p));
   
-  if (x3) *x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in image-snip%"", extracting return value via box")), "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x4) *x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in image-snip%"", extracting return value via box")), "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x5) *x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in image-snip%"", extracting return value via box")), "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x6) *x6 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in image-snip%"", extracting return value via box")), "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x7) *x7 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in image-snip%"", extracting return value via box")), "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x8) *x8 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in image-snip%"", extracting return value via box")), "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument"));
+  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in image-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x4) *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in image-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x5) *x5 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in image-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x6) *x6 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in image-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x7) *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in image-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x8) *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in image-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument")));
   
   }
 }
@@ -6461,6 +6475,7 @@ static Scheme_Object *os_wxImageSnipGetFilename(Scheme_Object *obj, int n,  Sche
   objscheme_check_valid(obj);
   Bool _x0;
   Bool* x0 = &_x0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -6471,7 +6486,7 @@ static Scheme_Object *os_wxImageSnipGetFilename(Scheme_Object *obj, int n,  Sche
     if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = WITH_VAR_STACK(objscheme_unbundle_bool(WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-filename in image-snip%")), "get-filename in image-snip%"", extracting boxed argument"));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[0], "get-filename in image-snip%")), WITH_VAR_STACK(objscheme_unbundle_bool(sbox_tmp, "get-filename in image-snip%"", extracting boxed argument")));
   } else
     x0 = NULL;
 
@@ -7046,6 +7061,7 @@ static Scheme_Object *os_wxImageSnipSplit(Scheme_Object *obj, int n,  Scheme_Obj
   class wxSnip** x1 = &_x1;
   class wxSnip* _x2;
   class wxSnip** x2 = &_x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -7053,8 +7069,8 @@ static Scheme_Object *os_wxImageSnipSplit(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "split in image-snip%"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[1], "split in image-snip%")), "split in image-snip%"", extracting boxed argument", 0));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[2], "split in image-snip%")), "split in image-snip%"", extracting boxed argument", 0));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "split in image-snip%")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in image-snip%"", extracting boxed argument", 0)));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "split in image-snip%")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in image-snip%"", extracting boxed argument", 0)));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -7171,6 +7187,7 @@ static Scheme_Object *os_wxImageSnipGetExtent(Scheme_Object *obj, int n,  Scheme
   nnfloat* x7 = &_x7;
   nnfloat _x8;
   nnfloat* x8 = &_x8;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -7185,42 +7202,42 @@ static Scheme_Object *os_wxImageSnipGetExtent(Scheme_Object *obj, int n,  Scheme
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in image-snip%")), "get-extent in image-snip%"", extracting boxed argument"));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in image-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting boxed argument")));
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in image-snip%")), "get-extent in image-snip%"", extracting boxed argument"));
+    *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in image-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting boxed argument")));
   } else
     x4 = NULL;
   if (n > 5) {
     if (XC_SCHEME_NULLP(p[5]))
     x5 = NULL;
   else
-    *x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in image-snip%")), "get-extent in image-snip%"", extracting boxed argument"));
+    *x5 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in image-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting boxed argument")));
   } else
     x5 = NULL;
   if (n > 6) {
     if (XC_SCHEME_NULLP(p[6]))
     x6 = NULL;
   else
-    *x6 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in image-snip%")), "get-extent in image-snip%"", extracting boxed argument"));
+    *x6 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in image-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting boxed argument")));
   } else
     x6 = NULL;
   if (n > 7) {
     if (XC_SCHEME_NULLP(p[7]))
     x7 = NULL;
   else
-    *x7 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in image-snip%")), "get-extent in image-snip%"", extracting boxed argument"));
+    *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in image-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting boxed argument")));
   } else
     x7 = NULL;
   if (n > 8) {
     if (XC_SCHEME_NULLP(p[8]))
     x8 = NULL;
   else
-    *x8 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in image-snip%")), "get-extent in image-snip%"", extracting boxed argument"));
+    *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in image-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in image-snip%"", extracting boxed argument")));
   } else
     x8 = NULL;
 
@@ -8067,6 +8084,7 @@ void os_wxMediaSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   os_wxMediaSnip *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
@@ -8083,14 +8101,14 @@ void os_wxMediaSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   } else {
   
   p[0] = scheme_make_integer(x0);
-  p[1] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(objscheme_bundle_wxSnip((*x1)))));
-  p[2] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(objscheme_bundle_wxSnip((*x2)))));
+  p[1] = (sbox_tmp = WITH_VAR_STACK(objscheme_bundle_wxSnip((*x1))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
+  p[2] = (sbox_tmp = WITH_VAR_STACK(objscheme_bundle_wxSnip((*x2))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 3, p));
   
-  if (x1) *x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[1], "split in editor-snip%"", extracting return value via box")), "split in editor-snip%"", extracting return value via box"", extracting boxed argument", 0));
-  if (x2) *x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[2], "split in editor-snip%"", extracting return value via box")), "split in editor-snip%"", extracting return value via box"", extracting boxed argument", 0));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "split in editor-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in editor-snip%"", extracting return value via box"", extracting boxed argument", 0)));
+  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "split in editor-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in editor-snip%"", extracting return value via box"", extracting boxed argument", 0)));
   
   }
 }
@@ -8181,6 +8199,7 @@ void os_wxMediaSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, 
   os_wxMediaSnip *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(12);
   VAR_STACK_PUSH(0, method);
@@ -8204,22 +8223,22 @@ void os_wxMediaSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, 
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxDC(x0));
   p[1] = WITH_VAR_STACK(scheme_make_double(x1));
   p[2] = WITH_VAR_STACK(scheme_make_double(x2));
-  p[3] = ((x3) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x3))))) : XC_SCHEME_NULL);
-  p[4] = ((x4) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x4))))) : XC_SCHEME_NULL);
-  p[5] = ((x5) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x5))))) : XC_SCHEME_NULL);
-  p[6] = ((x6) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x6))))) : XC_SCHEME_NULL);
-  p[7] = ((x7) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x7))))) : XC_SCHEME_NULL);
-  p[8] = ((x8) ? WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x8))))) : XC_SCHEME_NULL);
+  p[3] = ((x3) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x3))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[4] = ((x4) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x4))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[5] = ((x5) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x5))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[6] = ((x6) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x6))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[7] = ((x7) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x7))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
+  p[8] = ((x8) ? (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x8))), WITH_VAR_STACK(objscheme_box(sbox_tmp))) : XC_SCHEME_NULL);
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 9, p));
   
-  if (x3) *x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in editor-snip%"", extracting return value via box")), "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x4) *x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in editor-snip%"", extracting return value via box")), "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x5) *x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in editor-snip%"", extracting return value via box")), "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x6) *x6 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in editor-snip%"", extracting return value via box")), "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x7) *x7 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in editor-snip%"", extracting return value via box")), "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument"));
-  if (x8) *x8 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in editor-snip%"", extracting return value via box")), "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument"));
+  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in editor-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x4) *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in editor-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x5) *x5 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in editor-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x6) *x6 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in editor-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x7) *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in editor-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x8) *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in editor-snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument")));
   
   }
 }
@@ -8238,16 +8257,17 @@ static Scheme_Object *os_wxMediaSnipGetInset(Scheme_Object *obj, int n,  Scheme_
   nnint* x2 = &_x2;
   nnint _x3;
   nnint* x3 = &_x3;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get-inset in editor-snip%")), "get-inset in editor-snip%"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "get-inset in editor-snip%")), "get-inset in editor-snip%"", extracting boxed argument"));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_unbox(p[2], "get-inset in editor-snip%")), "get-inset in editor-snip%"", extracting boxed argument"));
-      *x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_unbox(p[3], "get-inset in editor-snip%")), "get-inset in editor-snip%"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get-inset in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-inset in editor-snip%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-inset in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-inset in editor-snip%"", extracting boxed argument")));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "get-inset in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-inset in editor-snip%"", extracting boxed argument")));
+      *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[3], "get-inset in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-inset in editor-snip%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->GetInset(x0, x1, x2, x3));
@@ -8308,16 +8328,17 @@ static Scheme_Object *os_wxMediaSnipGetMargin(Scheme_Object *obj, int n,  Scheme
   nnint* x2 = &_x2;
   nnint _x3;
   nnint* x3 = &_x3;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get-margin in editor-snip%")), "get-margin in editor-snip%"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_unbox(p[1], "get-margin in editor-snip%")), "get-margin in editor-snip%"", extracting boxed argument"));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_unbox(p[2], "get-margin in editor-snip%")), "get-margin in editor-snip%"", extracting boxed argument"));
-      *x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(WITH_VAR_STACK(objscheme_unbox(p[3], "get-margin in editor-snip%")), "get-margin in editor-snip%"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get-margin in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-margin in editor-snip%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-margin in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-margin in editor-snip%"", extracting boxed argument")));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "get-margin in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-margin in editor-snip%"", extracting boxed argument")));
+      *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[3], "get-margin in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-margin in editor-snip%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->GetMargin(x0, x1, x2, x3));
@@ -9156,6 +9177,7 @@ static Scheme_Object *os_wxMediaSnipSplit(Scheme_Object *obj, int n,  Scheme_Obj
   class wxSnip** x1 = &_x1;
   class wxSnip* _x2;
   class wxSnip** x2 = &_x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -9163,8 +9185,8 @@ static Scheme_Object *os_wxMediaSnipSplit(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "split in editor-snip%"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[1], "split in editor-snip%")), "split in editor-snip%"", extracting boxed argument", 0));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(WITH_VAR_STACK(objscheme_unbox(p[2], "split in editor-snip%")), "split in editor-snip%"", extracting boxed argument", 0));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "split in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in editor-snip%"", extracting boxed argument", 0)));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "split in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in editor-snip%"", extracting boxed argument", 0)));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -9281,6 +9303,7 @@ static Scheme_Object *os_wxMediaSnipGetExtent(Scheme_Object *obj, int n,  Scheme
   nnfloat* x7 = &_x7;
   nnfloat _x8;
   nnfloat* x8 = &_x8;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -9295,42 +9318,42 @@ static Scheme_Object *os_wxMediaSnipGetExtent(Scheme_Object *obj, int n,  Scheme
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in editor-snip%")), "get-extent in editor-snip%"", extracting boxed argument"));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-extent in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting boxed argument")));
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in editor-snip%")), "get-extent in editor-snip%"", extracting boxed argument"));
+    *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-extent in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting boxed argument")));
   } else
     x4 = NULL;
   if (n > 5) {
     if (XC_SCHEME_NULLP(p[5]))
     x5 = NULL;
   else
-    *x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in editor-snip%")), "get-extent in editor-snip%"", extracting boxed argument"));
+    *x5 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[5], "get-extent in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting boxed argument")));
   } else
     x5 = NULL;
   if (n > 6) {
     if (XC_SCHEME_NULLP(p[6]))
     x6 = NULL;
   else
-    *x6 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in editor-snip%")), "get-extent in editor-snip%"", extracting boxed argument"));
+    *x6 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[6], "get-extent in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting boxed argument")));
   } else
     x6 = NULL;
   if (n > 7) {
     if (XC_SCHEME_NULLP(p[7]))
     x7 = NULL;
   else
-    *x7 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in editor-snip%")), "get-extent in editor-snip%"", extracting boxed argument"));
+    *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[7], "get-extent in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting boxed argument")));
   } else
     x7 = NULL;
   if (n > 8) {
     if (XC_SCHEME_NULLP(p[8]))
     x8 = NULL;
   else
-    *x8 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in editor-snip%")), "get-extent in editor-snip%"", extracting boxed argument"));
+    *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[8], "get-extent in editor-snip%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in editor-snip%"", extracting boxed argument")));
   } else
     x8 = NULL;
 

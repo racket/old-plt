@@ -650,6 +650,7 @@ void os_wxMediaPasteboard::InteractiveAdjustResize(class wxSnip* x0, nnfloat* x1
   os_wxMediaPasteboard *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(8);
   VAR_STACK_PUSH(0, method);
@@ -667,14 +668,14 @@ void os_wxMediaPasteboard::InteractiveAdjustResize(class wxSnip* x0, nnfloat* x1
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
-  p[1] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x1)))));
-  p[2] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x2)))));
+  p[1] = (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x1))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
+  p[2] = (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x2))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 3, p));
   
-  if (x1) *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_unbox(p[1], "interactive-adjust-resize in pasteboard%"", extracting return value via box")), "interactive-adjust-resize in pasteboard%"", extracting return value via box"", extracting boxed argument"));
-  if (x2) *x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_unbox(p[2], "interactive-adjust-resize in pasteboard%"", extracting return value via box")), "interactive-adjust-resize in pasteboard%"", extracting return value via box"", extracting boxed argument"));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "interactive-adjust-resize in pasteboard%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "interactive-adjust-resize in pasteboard%"", extracting return value via box"", extracting boxed argument")));
+  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "interactive-adjust-resize in pasteboard%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "interactive-adjust-resize in pasteboard%"", extracting return value via box"", extracting boxed argument")));
   
   }
 }
@@ -688,6 +689,7 @@ void os_wxMediaPasteboard::InteractiveAdjustMove(class wxSnip* x0, float* x1, fl
   os_wxMediaPasteboard *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(8);
   VAR_STACK_PUSH(0, method);
@@ -705,14 +707,14 @@ void os_wxMediaPasteboard::InteractiveAdjustMove(class wxSnip* x0, float* x1, fl
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
-  p[1] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x1)))));
-  p[2] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x2)))));
+  p[1] = (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x1))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
+  p[2] = (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x2))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 3, p));
   
-  if (x1) *x1 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[1], "interactive-adjust-move in pasteboard%"", extracting return value via box")), "interactive-adjust-move in pasteboard%"", extracting return value via box"", extracting boxed argument"));
-  if (x2) *x2 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[2], "interactive-adjust-move in pasteboard%"", extracting return value via box")), "interactive-adjust-move in pasteboard%"", extracting return value via box"", extracting boxed argument"));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "interactive-adjust-move in pasteboard%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "interactive-adjust-move in pasteboard%"", extracting return value via box"", extracting boxed argument")));
+  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "interactive-adjust-move in pasteboard%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "interactive-adjust-move in pasteboard%"", extracting return value via box"", extracting boxed argument")));
   
   }
 }
@@ -726,6 +728,7 @@ void os_wxMediaPasteboard::InteractiveAdjustMouse(float* x0, float* x1)
   os_wxMediaPasteboard *sElF = this;
 #endif
   static void *mcache = 0;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
@@ -741,14 +744,14 @@ void os_wxMediaPasteboard::InteractiveAdjustMouse(float* x0, float* x1)
     ASSELF wxMediaPasteboard::InteractiveAdjustMouse(x0, x1);
   } else {
   
-  p[0] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x0)))));
-  p[1] = WITH_VAR_STACK(objscheme_box(WITH_VAR_STACK(scheme_make_double((*x1)))));
+  p[0] = (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x0))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
+  p[1] = (sbox_tmp = WITH_VAR_STACK(scheme_make_double((*x1))), WITH_VAR_STACK(objscheme_box(sbox_tmp)));
   
 
   v = WITH_VAR_STACK(scheme_apply(method, 2, p));
   
-  if (x0) *x0 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[0], "interactive-adjust-mouse in pasteboard%"", extracting return value via box")), "interactive-adjust-mouse in pasteboard%"", extracting return value via box"", extracting boxed argument"));
-  if (x1) *x1 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[1], "interactive-adjust-mouse in pasteboard%"", extracting return value via box")), "interactive-adjust-mouse in pasteboard%"", extracting return value via box"", extracting boxed argument"));
+  if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "interactive-adjust-mouse in pasteboard%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "interactive-adjust-mouse in pasteboard%"", extracting return value via box"", extracting boxed argument")));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "interactive-adjust-mouse in pasteboard%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "interactive-adjust-mouse in pasteboard%"", extracting return value via box"", extracting boxed argument")));
   
   }
 }
@@ -3081,6 +3084,7 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustResize(Scheme_Object 
   nnfloat* x1 = &_x1;
   nnfloat _x2;
   nnfloat* x2 = &_x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3089,8 +3093,8 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustResize(Scheme_Object 
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[0], "interactive-adjust-resize in pasteboard%", 0));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_unbox(p[1], "interactive-adjust-resize in pasteboard%")), "interactive-adjust-resize in pasteboard%"", extracting boxed argument"));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(WITH_VAR_STACK(objscheme_unbox(p[2], "interactive-adjust-resize in pasteboard%")), "interactive-adjust-resize in pasteboard%"", extracting boxed argument"));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "interactive-adjust-resize in pasteboard%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "interactive-adjust-resize in pasteboard%"", extracting boxed argument")));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "interactive-adjust-resize in pasteboard%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "interactive-adjust-resize in pasteboard%"", extracting boxed argument")));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3118,6 +3122,7 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMove(Scheme_Object *o
   float* x1 = &_x1;
   float _x2;
   float* x2 = &_x2;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3126,8 +3131,8 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMove(Scheme_Object *o
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[0], "interactive-adjust-move in pasteboard%", 0));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[1], "interactive-adjust-move in pasteboard%")), "interactive-adjust-move in pasteboard%"", extracting boxed argument"));
-      *x2 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[2], "interactive-adjust-move in pasteboard%")), "interactive-adjust-move in pasteboard%"", extracting boxed argument"));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "interactive-adjust-move in pasteboard%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "interactive-adjust-move in pasteboard%"", extracting boxed argument")));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "interactive-adjust-move in pasteboard%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "interactive-adjust-move in pasteboard%"", extracting boxed argument")));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3154,14 +3159,15 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMouse(Scheme_Object *
   float* x0 = &_x0;
   float _x1;
   float* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[0], "interactive-adjust-mouse in pasteboard%")), "interactive-adjust-mouse in pasteboard%"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[1], "interactive-adjust-mouse in pasteboard%")), "interactive-adjust-mouse in pasteboard%"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "interactive-adjust-mouse in pasteboard%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "interactive-adjust-mouse in pasteboard%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "interactive-adjust-mouse in pasteboard%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "interactive-adjust-mouse in pasteboard%"", extracting boxed argument")));
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3763,14 +3769,15 @@ static Scheme_Object *os_wxMediaPasteboardGetCenter(Scheme_Object *obj, int n,  
   float* x0 = &_x0;
   float _x1;
   float* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[0], "get-center in pasteboard%")), "get-center in pasteboard%"", extracting boxed argument"));
-      *x1 = WITH_VAR_STACK(objscheme_unbundle_float(WITH_VAR_STACK(objscheme_unbox(p[1], "get-center in pasteboard%")), "get-center in pasteboard%"", extracting boxed argument"));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get-center in pasteboard%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-center in pasteboard%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-center in pasteboard%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-center in pasteboard%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->GetCenter(x0, x1));

@@ -126,6 +126,8 @@ static double GetInexact(wxMediaStreamIn *s)
   return d;
 }
 
+#define GET Get
+
 @CLASSBASE wxMediaStreamIn "editor-stream-in" : "object"
 
 @CREATOR (wxMediaStreamInBase!);
@@ -141,8 +143,8 @@ static double GetInexact(wxMediaStreamIn *s)
 @ m "get-exact" : long GetExact();
 @ m "get-inexact" : double GetInexact();
 
-@ ">>" : wxMediaStreamIn! Get(Long*); <> exact
-@ ">>" : wxMediaStreamIn! Get(Double*); <> inexact
+@ ">>" : wxMediaStreamIn! GET(Long*); <> exact
+@ ">>" : wxMediaStreamIn! GET(Double*); <> inexact
 
 @ "set-boundary" : void SetBoundary(nnlong);
 @ "remove-boundary" : void RemoveBoundary();
@@ -155,6 +157,7 @@ static double GetInexact(wxMediaStreamIn *s)
 
 @END
 
+#define PUT Put
 
 @CLASSBASE wxMediaStreamOut "editor-stream-out" : "object"
 
@@ -167,9 +170,9 @@ static double GetInexact(wxMediaStreamIn *s)
 
 @ "put-fixed" : wxMediaStreamOut! PutFixed(long);
 
-@ "<<" : wxMediaStreamOut! Put(string); <> string
-@ "<<" : wxMediaStreamOut! Put(Double); <> inexact number
-@ "<<" : wxMediaStreamOut! Put(Long); <> exact number
+@ "<<" : wxMediaStreamOut! PUT(string); <> string
+@ "<<" : wxMediaStreamOut! PUT(Double); <> inexact number
+@ "<<" : wxMediaStreamOut! PUT(Long); <> exact number
 
 @ "tell" : long Tell();
 @ "jump-to" : void JumpTo(nnlong);

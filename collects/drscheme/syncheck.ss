@@ -176,8 +176,8 @@ If the namespace does not, they are colored the unbound color.
               ;; results indicates if the binding was added to the table. It is added, unless
               ;;  1) it is already there, or
               ;;  2) it is a link to itself
-              (define (add-to-bindings-table start-text start-left start-right
-                                             end-text end-left end-right)
+              (define/private (add-to-bindings-table start-text start-left start-right
+                                                    end-text end-left end-right)
                 (cond
                   [(and (object=? start-text end-text)
                         (= start-left end-left)
@@ -226,7 +226,7 @@ If the namespace does not, they are colored the unbound color.
               (define tacked-hash-table (make-hash-table))
               (define cursor-location #f)
               (define cursor-text #f)
-              (define (find-poss text left-pos right-pos)
+              (define/private (find-poss text left-pos right-pos)
                 (let ([xlb (box 0)]
                       [ylb (box 0)]
                       [xrb (box 0)]
@@ -243,7 +243,7 @@ If the namespace does not, they are colored the unbound color.
               ;; find-char-box : text number number -> (values number number number number)
               ;; returns the bounding box (left, top, right, bottom) for the text range.
               ;; only works right if the text is on a single line.
-              (define (find-char-box text left-pos right-pos)
+              (define/private (find-char-box text left-pos right-pos)
                 (let ([xlb (box 0)]
                       [ylb (box 0)]
                       [xrb (box 0)]
@@ -260,12 +260,12 @@ If the namespace does not, they are colored the unbound color.
                      xr 
                      yr))))
               
-              (define (update-arrow-poss arrow)
+              (define/private (update-arrow-poss arrow)
                 (cond
                   [(var-arrow? arrow) (update-var-arrow-poss arrow)]
                   [(tail-arrow? arrow) (update-tail-arrow-poss arrow)]))
               
-              (define (update-var-arrow-poss arrow)
+              (define/private (update-var-arrow-poss arrow)
                 (let-values ([(start-x start-y) (find-poss 
                                                  (var-arrow-start-text arrow)
                                                  (var-arrow-start-pos-left arrow)
@@ -279,7 +279,7 @@ If the namespace does not, they are colored the unbound color.
                   (set-arrow-end-x! arrow end-x)
                   (set-arrow-end-y! arrow end-y)))
               
-              (define (update-tail-arrow-poss arrow)
+              (define/private (update-tail-arrow-poss arrow)
                 (let-values ([(start-x start-y) (find-poss 
                                                  (tail-arrow-from-text arrow)
                                                  (tail-arrow-from-pos arrow)
@@ -359,7 +359,7 @@ If the namespace does not, they are colored the unbound color.
               ;; replace a value with that key already there.
               ;; If use-key? is #f, it adds `to-add' without a key.
               ;; pre: arrow-vectors is not #f
-              (define (add-to-range/key text start end to-add key use-key?)
+              (define/private (add-to-range/key text start end to-add key use-key?)
                 (let ([arrow-vector (hash-table-get 
                                      arrow-vectors
                                      text 
@@ -472,7 +472,7 @@ If the namespace does not, they are colored the unbound color.
                     (send dc set-pen old-pen))))
               
               ;; for-each-tail-arrows : (tail-arrow -> void) tail-arrow -> void
-              (define (for-each-tail-arrows f tail-arrow)
+              (define/private (for-each-tail-arrows f tail-arrow)
                 ;; call-f-ht ensures that `f' is only called once per arrow
                 (define call-f-ht (make-hash-table))
 
@@ -511,7 +511,7 @@ If the namespace does not, they are colored the unbound color.
               ;; returns two #fs to indicate the event doesn't correspond to
               ;; a position in an editor, or returns the innermost text
               ;; and position in that text where the event is.
-              (define (get-pos/text event)
+              (define/private (get-pos/text event)
                 (let ([event-x (send event get-x)]
                       [event-y (send event get-y)]
                       [on-it? (box #f)])
@@ -639,7 +639,7 @@ If the namespace does not, they are colored the unbound color.
 
               ;; tack/untack-callback : (listof arrow) -> void
               ;; callback for the tack/untack menu item
-              (define (tack/untack-callback arrows)
+              (define/private (tack/untack-callback arrows)
                 (let ([arrow-tacked?
                        (lambda (arrow)
                          (hash-table-get
@@ -685,7 +685,7 @@ If the namespace does not, they are colored the unbound color.
                  (lambda (pos text vec-ents)
                    (jump-to-binding-callback vec-ents))))
               
-              (define (jump-to-binding/bound-helper text do-jump)
+              (define/private (jump-to-binding/bound-helper text do-jump)
                 (let ([pos (send text get-start-position)])
                   (when arrow-vectors
                     (let ([arrow-vector (hash-table-get arrow-vectors text (lambda () #f))])
@@ -696,7 +696,7 @@ If the namespace does not, they are colored the unbound color.
               
               ;; jump-to-next-callback : (listof arrow) -> void
               ;; callback for the jump popup menu item
-              (define (jump-to-next-callback pos txt input-arrows)
+              (define/private (jump-to-next-callback pos txt input-arrows)
                 (unless (null? input-arrows)
                   (let* ([arrow-key (car input-arrows)]
                          [orig-arrows (hash-table-get bindings-table
@@ -721,7 +721,7 @@ If the namespace does not, they are colored the unbound color.
                                      [else (loop (cdr arrows))]))]))]))))
               
               ;; jump-to : (list text number number) -> void
-              (define (jump-to to-arrow)
+              (define/private (jump-to to-arrow)
                 (let ([end-text (first to-arrow)]
                       [end-pos-left (second to-arrow)]
                       [end-pos-right (third to-arrow)])
@@ -730,7 +730,7 @@ If the namespace does not, they are colored the unbound color.
               
               ;; jump-to-binding-callback : (listof arrow) -> void
               ;; callback for the jump popup menu item
-              (define (jump-to-binding-callback arrows)
+              (define/private (jump-to-binding-callback arrows)
                 (unless (null? arrows)
                   (let* ([arrow (car arrows)]
                          [start-text (var-arrow-start-text arrow)]
@@ -749,7 +749,7 @@ If the namespace does not, they are colored the unbound color.
                           (unless (null? vec-ents)
                             (jump-to-definition-callback (car vec-ents)))))))))
               
-              (define (jump-to-definition-callback def-link)
+              (define/private (jump-to-definition-callback def-link)
                 (let* ([filename (def-link-filename def-link)]
                        [stx (def-link-syntax def-link)]
                        [frame (fw:handler:edit-file filename)])
@@ -759,7 +759,7 @@ If the namespace does not, they are colored the unbound color.
                       (with-syntax ([(module m mzscheme (a b (define-values (id) x))) mod-stx])
                         (send frame syncheck:button-callback (syntax id)))))))
               
-              (super-instantiate ())))))
+              (super-new)))))
       
       (define syncheck-bitmap
         (drscheme:unit:make-bitmap
@@ -770,7 +770,8 @@ If the namespace does not, they are colored the unbound color.
         (interface ()
           syncheck:clear-highlighting
           syncheck:button-callback
-          syncheck:add-to-cleanup-texts))
+          syncheck:add-to-cleanup-texts
+          syncheck:error-report-visible?))
       
       (define (make-new-unit-frame% super%)
         (class* super% (syncheck-frame<%>)
@@ -860,17 +861,20 @@ If the namespace does not, they are colored the unbound color.
               (stretchable-height #t))
             (make-object vertical-panel% report-error-parent-panel))
           
-          (define (hide-error-report) 
+          (define/public (syncheck:error-report-visible?)
+            (member report-error-panel (send report-error-parent-panel get-children)))
+          
+          (define/private (hide-error-report) 
             (when (member report-error-panel (send report-error-parent-panel get-children))
               (send report-error-parent-panel change-children
                     (lambda (l) (remq report-error-panel l)))))
           
-          (define (show-error-report)
+          (define/private (show-error-report)
             (unless (member report-error-panel (send report-error-parent-panel get-children))
               (send report-error-parent-panel change-children
                     (lambda (l) (cons report-error-panel l)))))
           
-          (define (report-error message exn)
+          (define/private (report-error message exn)
             (send* report-error-text
               (begin-edit-sequence)
               (lock #f)
@@ -891,8 +895,7 @@ If the namespace does not, they are colored the unbound color.
           (define docs-panel 'uninitialized-docs-panel)
           (define docs-panel-visible? #f)
           (define docs-messages 'uninitialized-docs-lines)
-          (override make-root-area-container)
-          (define (make-root-area-container % parent)
+          (define/override (make-root-area-container % parent)
             (let* ([s-root (super-make-root-area-container
                             vertical-panel%
                             parent)]
@@ -911,7 +914,7 @@ If the namespace does not, they are colored the unbound color.
               
               r-root))
 
-          (define (update-docs-visibility)
+          (define/private (update-docs-visibility)
             (send super-root change-children 
                   (lambda (l) 
                     (let* ([first (if docs-panel-visible?
@@ -920,11 +923,11 @@ If the namespace does not, they are colored the unbound color.
                            [snd (cons rest-panel first)])
                       snd))))
 
-          (define (hide-docs-messages)
+          (define/private (hide-docs-messages)
             (when docs-panel-visible?
               (set! docs-panel-visible? #f)
               (update-docs-visibility)))
-          (define (set-docs-messages lines)
+          (define/private (set-docs-messages lines)
             (when (< (length docs-messages) (length lines))
               (set! docs-messages
                     (append
@@ -1065,7 +1068,7 @@ If the namespace does not, they are colored the unbound color.
           ;; set-directory : text -> void
           ;; sets the current-directory and current-load-relative-directory
           ;; based on the file saved in the definitions-text
-          (define (set-directory definitions-text)
+          (define/private (set-directory definitions-text)
             (let* ([tmp-b (box #f)]
                    [fn (send definitions-text get-filename tmp-b)])
               (unless (unbox tmp-b)
@@ -1086,15 +1089,14 @@ If the namespace does not, they are colored the unbound color.
               (send definitions-text end-edit-sequence)
               (send definitions-text lock locked?)))
           
-          (super-instantiate ())
+          (super-new)
           
           (define check-syntax-button
             (make-object button%
               (syncheck-bitmap this)
               (get-button-panel)
               (lambda (button evt) (syncheck:button-callback))))
-          (public syncheck:get-button)
-          (define (syncheck:get-button) check-syntax-button)
+          (define/public (syncheck:get-button) check-syntax-button)
           (send (get-definitions-text) set-styles-fixed #t)
           (send check-syntax-button show button-visible?)
           (send (get-button-panel) change-children
@@ -1516,11 +1518,12 @@ If the namespace does not, they are colored the unbound color.
           (hash-table-for-each requires (lambda (k v) (hash-table-put! unused-requires k #t)))
           (hash-table-for-each require-for-syntaxes (lambda (k v) (hash-table-put! unused-require-for-syntaxes k #t)))
           
-          (for-each (lambda (vars) (for-each (lambda (var)
-                                               (when (syntax-original? var)
-                                                 (color-variable var identifier-binding)
-                                                 (make-rename-menu var id-sets)))
-                                             vars))
+          (for-each (lambda (vars) 
+                      (for-each (lambda (var)
+                                  (when (syntax-original? var)
+                                    (color-variable var identifier-binding)
+                                    (make-rename-menu var id-sets)))
+                                vars))
                     (get-idss binders))
           
           (for-each (lambda (vars) (for-each 

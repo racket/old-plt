@@ -82,16 +82,21 @@
 					   (if-stream-out cout)
 					   (if-stream-in cin)
 					   (if-stream-out cerr)
-					   exe args)])      
+					   exe args)]
+		 [(it-ready) (make-semaphore)])
       (let ([so (streamify-out cout out #t)]
-	    [si (streamify-in cin in #t void)]
+	    [si (streamify-in cin in #t (lambda (ok?)
+					  (if ok?
+					      (semaphore-post it-ready)
+					      (semaphore-wait it-ready))))]
 	    [se (streamify-out cerr err #t)]
 	    [aport (lambda (x)
 		     (and (port? x) x))])
 	(when (thread? si)
 	  ;; Wait for process to end, then stop copying input:
 	  (thread (lambda ()
-		    (sync subp)
+		    (sync subp si)
+		    (semaphore-wait it-ready)
 		    (break-thread si))))
 	(list (aport so)
 	      (aport si)

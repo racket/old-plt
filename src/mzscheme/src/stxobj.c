@@ -508,8 +508,11 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
       p = SCHEME_PTR_VAL(SCHEME_CAR(wraps));
       n = SCHEME_CAR(p);
       phase -= SCHEME_INT_VAL(n);
-      if (phase == 1)
+      if (phase == 1) {
 	*home = SCHEME_CDR(p);
+	if (SCHEME_FALSEP(*home))
+	  scheme_signal_error("broken compiled code: bad variable home");
+      }
     } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
       /* Lexical rename: */
       Scheme_Object *rename, *renamed;

@@ -250,22 +250,15 @@ vector_to_list (int argc, Scheme_Object *argv[])
 Scheme_Object *
 scheme_vector_to_list (Scheme_Object *vec)
 {
-  int len, i;
-  Scheme_Object *first, *last, *pair;
+  int i;
+  Scheme_Object *pair = scheme_null;
+  Scheme_Object **v = SCHEME_VEC_ELS(vec);
 
-  len = SCHEME_VEC_SIZE (vec);
-  first = last = scheme_null;
-  for (i = 0; i < len ; i++) {
-    pair = scheme_make_pair(SCHEME_VEC_ELS(vec)[i], scheme_null);
-    if (SCHEME_NULLP(first))
-      first = last = pair;
-    else {
-      SCHEME_CDR (last) = pair;
-      last = pair;
-    }
+  for (i = SCHEME_VEC_SIZE(vec); i--; ) {
+    pair = scheme_make_pair(v[i], pair);
   }
 
-  return first;
+  return pair;
 }
 
 static Scheme_Object *

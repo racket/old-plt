@@ -757,10 +757,8 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
   if (fcount) {
     for (slot_num = 0; slot_num < fcount; slot_num++) {
       if (field_symbols) {
-	Scheme_Object *fn = SCHEME_STX_CAR(field_symbols);
-	field_symbols = SCHEME_STX_CDR(field_symbols);
-
-	fn = SCHEME_STX_SYM(fn);
+	Scheme_Object *fn = SCHEME_CAR(field_symbols);
+	field_symbols = SCHEME_CDR(field_symbols);
 
 	field_name = scheme_symbol_val(fn);
 	fnlen = SCHEME_SYM_LEN(fn);
@@ -792,7 +790,7 @@ Scheme_Object **scheme_make_struct_names(Scheme_Object *base,
 					 int flags, int *count_out)
 {
   int len;
-  len = field_symbols ? scheme_stx_list_length(field_symbols) : 0;
+  len = field_symbols ? scheme_list_length(field_symbols) : 0;
 
   return _make_struct_names(scheme_symbol_val(base),
 			    SCHEME_SYM_LEN(base),
@@ -1009,7 +1007,7 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
     info->type = scheme_struct_info_type;
     
     info->name = SCHEME_STX_SYM(base_symbol);
-    info->fields = field_symbols;
+    info->fields = scheme_syntax_to_datum(field_symbols, 0, NULL);
     info->parent_type_expr = parent_expr ? parent_expr : scheme_null;
   } else
     info = NULL;

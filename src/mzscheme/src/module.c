@@ -834,7 +834,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  && scheme_stx_module_eq(begin_stx, SCHEME_STX_CAR(e), 0)) {
 	if (scheme_stx_proper_list_length(e) < 0)
 	  scheme_wrong_syntax("begin (module body)", NULL, form, "bad syntax (" IMPROPER_LIST_FORM ")");
-	fm = scheme_append(e, fm);
+	fm = scheme_append(scheme_flatten_syntax_list(SCHEME_STX_CDR(e), NULL), SCHEME_STX_CDR(fm));
       } else
 	break;
     }
@@ -1792,6 +1792,11 @@ static Scheme_Object *write_module(Scheme_Object *obj)
   return l;
 }
 
+static Scheme_Object *copy_list(Scheme_Object *l)
+{
+  return scheme_vector_to_list(scheme_list_to_vector(l));
+}
+
 static Scheme_Object *read_module(Scheme_Object *obj)
 {
   Scheme_Module *m;
@@ -1851,14 +1856,14 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   }
   m->export_src_names = v;
 
-  m->et_body = SCHEME_CAR(obj);
+  m->et_body = copy_list(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
-  m->body = SCHEME_CAR(obj);
+  m->body = copy_list(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
 
-  m->imports = SCHEME_CAR(obj);
+  m->imports = copy_list(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
-  m->et_imports = obj;
+  m->et_imports = copy_list(obj);
 
   return (Scheme_Object *)m;
 }

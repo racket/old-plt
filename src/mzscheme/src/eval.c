@@ -1027,8 +1027,8 @@ static Scheme_Object *link_module_variable(Scheme_Object *modname,
   
   if (!menv) {
     scheme_wrong_syntax("link", NULL, varname,
-			"broken compiled code, no declaration for module"
-			": %S", modname);
+			"broken compiled code (phase %d), no declaration for module"
+			": %S", info->phase, modname);
     return NULL;
   }
 

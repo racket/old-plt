@@ -26,6 +26,7 @@ fi
 if [ -x "$pltdir/bin/mzscheme" ]; then
   mz="$pltdir/bin/mzscheme"
 elif [ -e "$pltdir/MzScheme.exe" ]; then
+  # Note: with cygwin, `-x' doesn't work properly
   mz="$pltdir/MzScheme.exe"
 else
   echo "install: cannot find the mzscheme executable"
@@ -36,6 +37,11 @@ else
   echo "!!        src/README for build instructions.       !!"
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
   exit 1
+fi
+
+# Prefer MrEd on Windows.
+if [ -e "$plt/MrEd.exe" ]; then
+  mz="$pltdir/MrEd.exe"
 fi
 
 exec "$mz" -qC "$0" "$@"

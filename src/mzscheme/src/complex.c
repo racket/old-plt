@@ -301,7 +301,7 @@ Scheme_Object *scheme_complex_sqrt(const Scheme_Object *o)
     /* We may have lost too much precision, if i << r.  The result is
        going to be inexact, anyway, so switch to using expt. */
     Scheme_Object *a[2];
-    a[0] = o;
+    a[0] = (Scheme_Object *)o;
     a[1] = scheme_make_double(0.5);
     return scheme_expt(2, a);
   }

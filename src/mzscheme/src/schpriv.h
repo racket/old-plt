@@ -989,6 +989,7 @@ Scheme_Object *scheme_bignum_min(const Scheme_Object *a, const Scheme_Object *b)
 void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
 			  Scheme_Object **qp, Scheme_Object **rp, int norm);
 Scheme_Object *scheme_bignum_power(const Scheme_Object *a, const Scheme_Object *b);
+Scheme_Object *scheme_bignum_gcd(const Scheme_Object *a, const Scheme_Object *b);
 Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n);
 Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r);
 Scheme_Object *scheme_bignum_and(const Scheme_Object *a, const Scheme_Object *b);

@@ -34,12 +34,15 @@ extern void free(void *);
 #include "gmp-impl.h"
 #include "gmplonglong.h"
 
-# define GMP_NAIL_BITS 0
-# define GMP_LIMB_BITS BITS_PER_MP_LIMB
-# define GMP_NUMB_BITS BITS_PER_MP_LIMB
-# define GMP_LIMB_HIGHBIT (1 << (BITS_PER_MP_LIMB - 1))
-# define GMP_NUMB_HIGHBIT GMP_LIMB_HIGHBIT
+#define GMP_NAIL_BITS 0
+#define GMP_LIMB_BITS BITS_PER_MP_LIMB
+#define GMP_NUMB_BITS BITS_PER_MP_LIMB
+#define GMP_LIMB_HIGHBIT (1 << (BITS_PER_MP_LIMB - 1))
+#define GMP_NUMB_HIGHBIT GMP_LIMB_HIGHBIT
+
+#ifndef NULL
 # define NULL 0L
+#endif
 
 #if GMP_NUMB_BITS == 32
 # define MP_BASES_CHARS_PER_LIMB_10      9

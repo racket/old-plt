@@ -1020,11 +1020,11 @@ typedef struct Scheme_Output_Port Scheme_Output_Port;
 
 typedef long (*Scheme_Get_String_Fun)(Scheme_Input_Port *port,
 				      char *buffer, long offset, long size,
-				      int nonblock, Scheme_Object *unless_evt);
+				      int nonblock, Scheme_Object *unless);
 typedef long (*Scheme_Peek_String_Fun)(Scheme_Input_Port *port,
 				       char *buffer, long offset, long size,
 				       Scheme_Object *skip,
-				       int nonblock, Scheme_Object *unless_evt);
+				       int nonblock, Scheme_Object *unless);
 typedef Scheme_Object *(*Scheme_Progress_Evt_Fun)(Scheme_Input_Port *port);
 typedef int (*Scheme_Peeked_Read_Fun)(Scheme_Input_Port *port,
 				      long amount,
@@ -1070,6 +1070,7 @@ struct Scheme_Input_Port
   long position, readpos, lineNumber, charsSinceNewline, utf8cont;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines, was_cr;
+  Scheme_Object *unless, *unless_cache;
   struct Scheme_Output_Port *output_half;
 };
 

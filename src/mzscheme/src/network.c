@@ -1469,7 +1469,7 @@ static int tcp_byte_ready (Scheme_Input_Port *port)
 static long tcp_get_string(Scheme_Input_Port *port, 
 			   char *buffer, long offset, long size,
 			   int nonblock,
-			   Scheme_Object *unless_evt)
+			   Scheme_Object *unless)
 {
   int errid;
   Scheme_Tcp *data;
@@ -1478,7 +1478,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
 
  top:
 
-  if (unless_evt && scheme_unless_ready(unless_evt))
+  if (scheme_unless_ready(unless))
     return SCHEME_UNLESS_READY;
 
   if (data->b.hiteof)
@@ -1508,12 +1508,12 @@ static long tcp_get_string(Scheme_Input_Port *port,
     scheme_block_until_unless((Scheme_Ready_Fun)tcp_byte_ready,
 			      scheme_need_wakeup,
 			      (Scheme_Object *)port,
-			      0.0, unless_evt,
+			      0.0, unless,
 			      nonblock);
 #else
     do {
       scheme_thread_block_enable_break((float)0.0, nonblock);
-      if (unless_evt && scheme_unless_ready(unless_evt))
+      if (scheme_unless_ready(unless))
 	break;
     } while (!tcp_byte_ready(port));
     scheme_current_thread->ran_some = 1;
@@ -1521,7 +1521,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
 
     scheme_wait_input_allowed(port, nonblock);
 
-    if (unless_evt && scheme_unless_ready(unless_evt))
+    if (scheme_unless_ready(unless))
       return SCHEME_UNLESS_READY;
   }
 

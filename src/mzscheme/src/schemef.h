@@ -108,11 +108,11 @@ MZ_EXTERN int scheme_block_until_enable_break(Scheme_Ready_Fun f, Scheme_Needs_W
 					      float, int enable);
 MZ_EXTERN int scheme_block_until_unless(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun fdf,
 					Scheme_Object *data, float delay, 
-					Scheme_Object *unless_evt,
+					Scheme_Object *unless,
 					int enable_break);
 
 MZ_EXTERN void scheme_wait_input_allowed(Scheme_Input_Port *port, int nonblock);
-MZ_EXTERN int scheme_unless_ready(Scheme_Object *unless_evt);
+MZ_EXTERN int scheme_unless_ready(Scheme_Object *unless);
 
 MZ_EXTERN int scheme_in_main_thread(void);
 

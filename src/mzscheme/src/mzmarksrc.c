@@ -478,6 +478,8 @@ input_port {
   gcMARK(ip->progress_evt);
   gcMARK(ip->input_lock);
   gcMARK(ip->input_giveup);
+  gcMARK(ip->unless);
+  gcMARK(ip->unless_cache);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));

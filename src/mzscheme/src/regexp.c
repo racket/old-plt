@@ -1354,10 +1354,11 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
 	peekskip = scheme_make_integer(rw->input_end);
 
       rw->str = regstr; /* get_string can swap threads */
-      got = scheme_get_byte_string("regexp-match", rw->port, 
-				   rw->instr, rw->input_end, need_total - rw->input_end,
-				   0, /* blocking mode */
-				   1, peekskip);
+      got = scheme_get_byte_string_unless("regexp-match", rw->port, 
+					  rw->instr, rw->input_end, need_total - rw->input_end,
+					  0, /* blocking mode */
+					  1, peekskip,
+					  rw->unless_evt);
       regstr = rw->str;
       
       if (got == EOF)
@@ -1366,6 +1367,8 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
 	rw->input_end += got;
     }
   }
+
+  rw->instr[rw->input_end] = 0;
 }
 
 #ifdef DO_STACK_CHECK
@@ -2536,7 +2539,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
   char *full_s;
   rxpos *startp, *endp;
   int offset = 0, orig_offset, endset, m, was_non_byte;
-  Scheme_Object *iport, *oport = NULL, *startv = NULL, *endv = NULL, *dropped, *unless_evt;
+  Scheme_Object *iport, *oport = NULL, *startv = NULL, *endv = NULL, *dropped, *unless_evt = NULL;
   
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_BYTE_STRINGP(argv[0])
@@ -2574,7 +2577,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
     if (argc > 3) {
       if (!SCHEME_FALSEP(argv[3])) {
 	endset = scheme_extract_index(name, 3, argc, argv, len + 1, 1);
-
+	
 	if (iport) {
 	  if (endset < 0) {
 	    /* argument was a bignum */
@@ -2593,34 +2596,33 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	}
 	endv = argv[3];
       }
-
+      
       if (argc > 4) {
-	if (SCHEME_TRUEP(argv[4])) {
-	  if (!SCHEME_OUTPORTP(argv[4]))
-	    scheme_wrong_type(name, "output-port or #f", 4, argc, argv);
-	  oport = argv[4];
+	if (peek) {
+	  if (!SCHEME_FALSEP(argv[4])) {
+	    unless_evt = argv[4];
+	    if (!SAME_TYPE(SCHEME_TYPE(unless_evt), scheme_progress_evt_type)) {
+	      scheme_wrong_type(name, "progress evt or #f", 4, argc, argv);
+	      return NULL;
+	    }
+	    if (!iport) {
+	      scheme_arg_mismatch(name, 
+				  "progress evt cannot be used with string input: ",
+				  unless_evt);
+	    } else if (!SAME_OBJ(iport, SCHEME_PTR1_VAL(unless_evt))) {
+	      scheme_arg_mismatch(name,
+				  "evt is not a progress evt for the given port:",
+				  unless_evt);
+	      return NULL;
+	    }
+	  }
+	} else {
+	  if (SCHEME_TRUEP(argv[4])) {
+	    if (!SCHEME_OUTPORTP(argv[4]))
+	      scheme_wrong_type(name, "output-port or #f", 4, argc, argv);
+	    oport = argv[4];
+	  }
 	}
-      }
-    }
-  }
-
-  unless_evt = NULL;
-  if (argc > 4) {
-    if (!SCHEME_FALSEP(argv[5])) {
-      unless_evt = argv[5];
-      if (!SAME_TYPE(SCHEME_TYPE(unless_evt), scheme_progress_evt_type)) {
-	scheme_wrong_type(name, "progress evt or #f", 5, argc, argv);
-	return NULL;
-      }
-      if (!iport) {
-	scheme_arg_mismatch(name, 
-			    "progress evt cannot be used with string input: ",
-			    unless_evt);
-      } else if (!SAME_OBJ(iport, SCHEME_PTR1_VAL(unless_evt))) {
-	scheme_arg_mismatch(name,
-			    "evt is not a progress evt for the given port:",
-			    unless_evt);
-	return NULL;
       }
     }
   }

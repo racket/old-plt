@@ -3719,14 +3719,14 @@ static void needs_wakeup_unless(Scheme_Object *o, void *fds)
 
 int scheme_block_until_unless(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun fdf,
 			      Scheme_Object *data, float delay, 
-			      Scheme_Object *unless_evt,
+			      Scheme_Object *unless,
 			      int enable_break)
 {
-  if (unless_evt) {
+  if (unless) {
     void **a;
     a = MALLOC_N(void *, 4);
     a[0] = data;
-    a[1] = unless_evt;
+    a[1] = unless;
     a[2] = f;
     a[3] = fdf;
 

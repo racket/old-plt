@@ -999,6 +999,9 @@ scheme_make_input_port(Scheme_Object *subtype,
   cl = SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_PORT_COUNT_LINES));
   ip->count_lines = cl;
 
+  if (progress_evt_fun == scheme_progress_evt_via_get)
+    ip->unless_cache = scheme_false;
+
   if (must_close) {
     Scheme_Custodian_Reference *mref;
     mref = scheme_add_managed(NULL,
@@ -1339,9 +1342,9 @@ long scheme_get_byte_string_unless(const char *who,
 	scheme_pop_break_enable(&cframe, 0);
       }
 
-      if (v == EOF)
+      if (v == EOF) {
 	return EOF;
-      else if (v == SCHEME_SPECIAL) {
+      } else if (v == SCHEME_SPECIAL) {
 	ip->special = NULL;
 	scheme_bad_time_for_special(who, port);
       } else if (v == skip) {
@@ -1367,13 +1370,69 @@ long scheme_get_byte_string_unless(const char *who,
       if (ip->pending_eof > 1) {
 	ip->pending_eof = 1;
 	gc = EOF;
-      } else if (peek && ps)
-	gc = ps(ip, buffer, offset + got, size, peek_skip, only_avail == 2, unless_evt);
-      else {
-	gc = gs(ip, buffer, offset + got, size, only_avail == 2, unless_evt);
+      } else {
+	/* Call port's get or peek function. But first, set up
+	   an "unless" to detect other acesses of the port
+	   if we block. */
+	Scheme_Object *unless;
+	  
+	if (nonblock > 0) {
+	  if (ip->unless)
+	    unless = ip->unless;
+	  else
+	    unless = NULL;
+	} else if (ip->unless_cache) {
+	  if (ip->unless) {
+	    unless = ip->unless;
+	    /* Setting car to #f means that it can't be recycled */
+	    SCHEME_CAR(unless) = scheme_false;
+	  } else if (SCHEME_TRUEP(ip->unless_cache)) {
+	    unless = ip->unless_cache;
+	    ip->unless_cache = scheme_false;
+	    ip->unless = unless;
+	  } else {
+	    unless = scheme_make_pair(NULL, NULL);
+	    ip->unless = unless;
+	  }
+	  if (unless_evt)
+	    SCHEME_CDR(unless) = unless_evt;
+	} else
+	  unless = unless_evt;
 
-	if (!peek && gc && (gc != EOF) && ip->progress_evt)
-	  post_progress(ip);
+	/* Finally, call port's get or peek: */
+	if (peek && ps)
+	  gc = ps(ip, buffer, offset + got, size, peek_skip, only_avail == 2, unless);
+	else {
+	  gc = gs(ip, buffer, offset + got, size, only_avail == 2, unless);
+
+	  if (!peek && gc && ip->progress_evt
+	      && (gc != EOF) 
+	      && (gc != SCHEME_UNLESS_READY))
+	    post_progress(ip);
+	}
+
+	/* Let other threads know that something happened,
+	   and/or deregister this thread's request for information. */
+	if (unless && ip->unless_cache) {
+	  if (!SCHEME_CAR(unless)) {
+	    /* Recycle "unless", since we were the only user */
+	    ip->unless_cache = unless;
+	    SCHEME_CDR(unless) = NULL;
+	  } else {
+	    if (SCHEME_TRUEP(SCHEME_CAR(unless))) {
+	      /* gc should be SCHEME_UNLESS_READY; only a user
+		 port without a peek can incorrectly produce something 
+		 else */
+	      if (gc == SCHEME_UNLESS_READY) {
+		gc = 0;
+	      }
+	    } else if (gc) {
+	      /* Notify other threads that something happened */
+	      SCHEME_CAR(unless) = scheme_true;
+	    }
+	  }
+	  ip->unless = NULL;
+	}
       }
 
       if (gc == SCHEME_SPECIAL) {
@@ -1418,8 +1477,9 @@ long scheme_get_byte_string_unless(const char *who,
       gc = 0;
 
     got += gc;
-    if (peek)
+    if (peek) {
       peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(gc));
+    }
     size -= gc;
 
     if (!peek) {
@@ -1611,9 +1671,18 @@ static void release_input_lock(void *_ip)
   ip->input_giveup = NULL;
 }
 
-int scheme_unless_ready(Scheme_Object *unless_evt)
+int scheme_unless_ready(Scheme_Object *unless)
 {
-  return scheme_wait_sema(unless_evt, 1);
+  if (!unless)
+    return 0;
+
+  if (SCHEME_CAR(unless) && SCHEME_TRUEP(SCHEME_CAR(unless)))
+    return 1;
+
+  if (SCHEME_CDR(unless))
+    return scheme_wait_sema(SCHEME_CDR(unless), 1);
+
+  return 0;
 }
 
 int scheme_peeked_read_via_get(Scheme_Input_Port *ip,
@@ -3948,12 +4017,12 @@ fd_byte_ready (Scheme_Input_Port *port)
 static long fd_get_string(Scheme_Input_Port *port,
 			  char *buffer, long offset, long size,
 			  int nonblock,
-			  Scheme_Object *unless_evt)
+			  Scheme_Object *unless)
 {
   Scheme_FD *fip;
   long bc;
 
-  if (unless_evt && scheme_unless_ready(unless_evt))
+  if (scheme_unless_ready(unless))
     return SCHEME_UNLESS_READY;
 
   fip = (Scheme_FD *)port->port_data;
@@ -3977,19 +4046,18 @@ static long fd_get_string(Scheme_Input_Port *port,
 
       /* If no chars appear to be ready, go to sleep. */
       while (!fd_byte_ready(port)) {
-	if (nonblock > 0) {
+	if (nonblock > 0)
 	  return 0;
-	}
 
 	scheme_block_until_unless((Scheme_Ready_Fun)fd_byte_ready,
 				  (Scheme_Needs_Wakeup_Fun)fd_need_wakeup,
 				  (Scheme_Object *)port,
-				  0.0, unless_evt,
+				  0.0, unless,
 				  nonblock);
 
 	scheme_wait_input_allowed(port, nonblock);
 
-	if (unless_evt && scheme_unless_ready(unless_evt))
+	if (scheme_unless_ready(unless))
 	  return SCHEME_UNLESS_READY;
       }
 
@@ -4517,7 +4585,7 @@ osk_byte_ready (Scheme_Input_Port *port)
 
 static int osk_get_string(Scheme_Input_Port *port,
 			  char *buffer, int offset, int size,
-			  int nonblock, Scheme_Object *unless_evt)
+			  int nonblock, Scheme_Object *unless)
 {
   int c;
   osk_console_input *osk;
@@ -4528,12 +4596,12 @@ static int osk_get_string(Scheme_Input_Port *port,
     }
     
     scheme_block_until_unless(osk_byte_ready, NULL, (Scheme_Object *)port, 0.0,
-			      unless_evt,
+			      unless,
 			      nonblock);
 
     scheme_wait_input_allowed(port, nonblock);
     
-    if (unless_evt && scheme_unless_ready(unless_evt))
+    if (scheme_unless_ready(unless))
       return SCHEME_UNLESS_READY;
   }
 

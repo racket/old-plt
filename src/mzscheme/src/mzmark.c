@@ -1273,6 +1273,8 @@ int input_port_MARK(void *p) {
   gcMARK(ip->progress_evt);
   gcMARK(ip->input_lock);
   gcMARK(ip->input_giveup);
+  gcMARK(ip->unless);
+  gcMARK(ip->unless_cache);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
@@ -1294,6 +1296,8 @@ int input_port_FIXUP(void *p) {
   gcFIXUP(ip->progress_evt);
   gcFIXUP(ip->input_lock);
   gcFIXUP(ip->input_giveup);
+  gcFIXUP(ip->unless);
+  gcFIXUP(ip->unless_cache);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));

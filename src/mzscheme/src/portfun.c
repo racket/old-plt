@@ -717,11 +717,11 @@ static long
 string_get_or_peek_bytes(Scheme_Input_Port *port, 
 			 char *buffer, long offset, long size,
 			 int peek, long skip,
-			 Scheme_Object *unless_evt)
+			 Scheme_Object *unless)
 {
   Scheme_Indexed_String *is;
 
-  if (unless_evt && scheme_unless_ready(unless_evt))
+  if (unless && scheme_unless_ready(unless))
     return SCHEME_UNLESS_READY;
 
   is = (Scheme_Indexed_String *) port->port_data;
@@ -749,16 +749,16 @@ string_get_or_peek_bytes(Scheme_Input_Port *port,
 static long 
 string_get_bytes(Scheme_Input_Port *port, 
 		  char *buffer, long offset, long size,
-		  int nonblock, Scheme_Object *unless_evt)
+		  int nonblock, Scheme_Object *unless)
 {
-  return string_get_or_peek_bytes(port, buffer, offset, size, 0, 0, unless_evt);
+  return string_get_or_peek_bytes(port, buffer, offset, size, 0, 0, unless);
 }
 
 static long 
 string_peek_bytes(Scheme_Input_Port *port, 
 		   char *buffer, long offset, long size,
 		   Scheme_Object *sskip,
-		   int nonblock, Scheme_Object *unless_evt)
+		   int nonblock, Scheme_Object *unless)
 {
   long skip;
 
@@ -767,7 +767,7 @@ string_peek_bytes(Scheme_Input_Port *port,
   else
     skip = ((Scheme_Indexed_String *)port->port_data)->size;
 
-  return string_get_or_peek_bytes(port, buffer, offset, size, 1, skip, unless_evt);
+  return string_get_or_peek_bytes(port, buffer, offset, size, 1, skip, unless);
 }
 
 static int
@@ -1078,7 +1078,7 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
 		       char *buffer, long offset, long size,
 		       int nonblock,
 		       int peek, Scheme_Object *peek_skip,
-		       Scheme_Object *unless_evt,
+		       Scheme_Object *unless,
 		       Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *fun, *val, *a[3], *bstr;
@@ -1091,7 +1091,7 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
     /* Leftover from a read-based peek used to implement `char-ready?'
        This can't happen is peek is 1, because in that case we have a
        peek_proc, so there's no need for read-based peeks. Also,
-       unless_evt must be NULL. */
+       SCHEME_CDR(unless) must be NULL. */
     uip->peeked = NULL;
     if (SCHEME_INTP(val)) {
       buffer[offset] = SCHEME_INT_VAL(val);
@@ -1101,6 +1101,9 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
     } else
       return EOF;
   }
+
+  if (unless && SCHEME_PAIRP(unless))
+    unless = SCHEME_CDR(unless);
 
   if (peek)
     fun = uip->peek_proc;
@@ -1119,7 +1122,7 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
     }
     a[0] = bstr;
     a[1] = peek_skip;
-    a[2] = unless_evt ? unless_evt : scheme_false;
+    a[2] = unless ? unless : scheme_false;
 
     /* Disable breaks while calling the port's function: */
     scheme_push_break_enable(&cframe, 0, 0);
@@ -1134,7 +1137,7 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
 
     r = user_read_result(peek ? "user port peek" : "user port read",
 			 port, val, bstr, peek, nonblock, 
-			 1, !!uip->peek_proc, !!unless_evt, sinfo);
+			 1, !!uip->peek_proc, unless && SCHEME_CDR(unless), sinfo);
 
     scheme_pop_break_enable(&cframe, 1);
 
@@ -1163,11 +1166,11 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
 static long 
 user_get_bytes(Scheme_Input_Port *port, 
 	       char *buffer, long offset, long size,
-	       int nonblock, Scheme_Object *unless_evt)
+	       int nonblock, Scheme_Object *unless)
 {
   return user_get_or_peek_bytes(port, buffer, offset, size, 
 				nonblock, 0, NULL,
-				unless_evt,
+				unless,
 				NULL);
 }
 
@@ -1175,11 +1178,11 @@ static long
 user_peek_bytes(Scheme_Input_Port *port, 
 		char *buffer, long offset, long size,
 		Scheme_Object *skip,
-		int nonblock, Scheme_Object *unless_evt)
+		int nonblock, Scheme_Object *unless)
 {
   return user_get_or_peek_bytes(port, buffer, offset, size, 
 				nonblock, 1, skip, 
-				unless_evt,
+				unless,
 				NULL);
 }
 
@@ -1618,7 +1621,7 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
 				   char *buffer, long offset, long size,
 				   int nonblock,
 				   int peek, long peek_skip,
-				   Scheme_Object *unless_evt)
+				   Scheme_Object *unless)
 {
   Scheme_Pipe *pipe;
   long c, skipped = 0;
@@ -1631,12 +1634,12 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
 
     scheme_block_until_unless((Scheme_Ready_Fun)scheme_byte_ready_or_user_port_ready,
 			      NULL, (Scheme_Object *)p,
-			      0.0, unless_evt,
+			      0.0, unless,
 			      nonblock);
 
     scheme_wait_input_allowed(p, nonblock);
 
-    if (unless_evt && scheme_unless_ready(unless_evt))
+    if (scheme_unless_ready(unless))
       return SCHEME_UNLESS_READY;
   }
 
@@ -1752,16 +1755,16 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
 static long pipe_get_bytes(Scheme_Input_Port *p, 
 			   char *buffer, long offset, long size,
 			   int nonblock,
-			   Scheme_Object *unless_evt)
+			   Scheme_Object *unless)
 {
-  return pipe_get_or_peek_bytes(p, buffer, offset, size, nonblock, 0, 0, unless_evt);
+  return pipe_get_or_peek_bytes(p, buffer, offset, size, nonblock, 0, 0, unless);
 }
 
 static long pipe_peek_bytes(Scheme_Input_Port *p, 
 			    char *buffer, long offset, long size,
 			    Scheme_Object *skip,
 			    int nonblock,
-			    Scheme_Object *unless_evt)
+			    Scheme_Object *unless)
 {
   long peek_skip;
 
@@ -1775,7 +1778,7 @@ static long pipe_peek_bytes(Scheme_Input_Port *p,
 #endif
   }
 
-  return pipe_get_or_peek_bytes(p, buffer, offset, size, nonblock, 1, peek_skip, unless_evt);
+  return pipe_get_or_peek_bytes(p, buffer, offset, size, nonblock, 1, peek_skip, unless);
 }
 
 static long pipe_write_bytes(Scheme_Output_Port *p, 

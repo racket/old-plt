@@ -88,10 +88,10 @@ int (*scheme_block_until_enable_break)(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_F
 					      float, int enable);
 int (*scheme_block_until_unless)(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun fdf,
 					Scheme_Object *data, float delay, 
-					Scheme_Object *unless_evt,
+					Scheme_Object *unless,
 					int enable_break);
 void (*scheme_wait_input_allowed)(Scheme_Input_Port *port, int nonblock);
-int (*scheme_unless_ready)(Scheme_Object *unless_evt);
+int (*scheme_unless_ready)(Scheme_Object *unless);
 int (*scheme_in_main_thread)(void);
 void (*scheme_cancel_sleep)(void);
 Scheme_Object *(*scheme_make_thread_cell)(Scheme_Object *def_val, int inherited);

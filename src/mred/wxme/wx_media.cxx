@@ -1255,11 +1255,9 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	needXCopy = TRUE;
 #endif	
       if (isnip || strlen)
-	delayRefresh++;
+	BeginEditSequence();
       Delete(start, end, scrollOk);
       deleted = TRUE;
-      if (isnip || strlen)
-	--delayRefresh;
 #if ALLOW_X_STYLE_SELECTION
       if (!delayRefresh)
 	needXCopy = FALSE;
@@ -1268,6 +1266,7 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 
   if (!isnip && !strlen)
     return;
+  /* If deleted, must end edit sequence... */
 
   writeLocked = TRUE;
 
@@ -1626,6 +1625,9 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
   } else
     RefreshByLineDemand();
 
+  if (deleted)
+    EndEditSequence();
+
   if (!modified)
     SetModified(TRUE);
   
@@ -1636,6 +1638,9 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
  give_up:
   writeLocked = FALSE;
   flowLocked = FALSE;
+  if (deleted)
+    EndEditSequence();
+
   return;
 }
 

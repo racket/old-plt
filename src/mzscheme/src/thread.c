@@ -1563,7 +1563,8 @@ static void select_thread(Scheme_Thread *start_thread)
     /* Can't swap in processes with a nestee: */
     while (new_thread 
 	   && (new_thread->nestee
-	       /* USER_SUSPENDED should only happen if new_thread is  the main thread */
+	       || (new_thread->running & MZTHREAD_SUSPENDED)
+	       /* USER_SUSPENDED should only happen if new_thread is the main thread */
 	       || (new_thread->running & MZTHREAD_USER_SUSPENDED))) {
       new_thread = new_thread->next;
     }
@@ -2124,7 +2125,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   scheme_current_thread = np;
 
-  if (p->next) /* not main thread... */
+  if (p != scheme_main_thread)
     scheme_weak_suspend_thread(p);
 
   /* Call thunk, catch escape: */
@@ -2149,7 +2150,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   if (np->prev)
     np->prev->next = np->next;
-  else if (np->next) {
+  else {
     scheme_first_thread = np->next;
     np->next->prev = np->prev;
   }
@@ -2167,7 +2168,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   scheme_current_thread = p;
 
-  if (p->next) /* not main thread... */
+  if (p != scheme_main_thread)
     scheme_weak_resume_thread(p);
 
 #ifdef RUNSTACK_IS_GLOBAL
@@ -2810,13 +2811,12 @@ void scheme_weak_suspend_thread(Scheme_Thread *r)
 
   if (r->running & MZTHREAD_SUSPENDED)
     return;
-
+  
   if (r->prev) {
     r->prev->next = r->next;
     r->next->prev = r->prev;
   } else {
-    if (r->next)
-      r->next->prev = NULL;
+    r->next->prev = NULL;
     scheme_first_thread = r->next;
   }
 

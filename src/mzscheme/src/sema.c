@@ -567,7 +567,8 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	     if the thread is killed. */
 	  scheme_current_thread->running += MZTHREAD_NEED_KILL_CLEANUP;
 	  scheme_weak_suspend_thread(scheme_current_thread);
-	  scheme_current_thread->running -= MZTHREAD_NEED_KILL_CLEANUP;
+	  if (scheme_current_thread->running & MZTHREAD_NEED_KILL_CLEANUP)
+	    scheme_current_thread->running -= MZTHREAD_NEED_KILL_CLEANUP;
 	}
 
 	/* We've been resumed. But was it for the semaphore, or a signal? */
@@ -585,11 +586,8 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	    if (ws[i]->picked) {
 	      out_of_a_line = 1;
 	      if (semas[i]->value) {
-		if (semas[i]->value > 0) {
+		if (semas[i]->value > 0)
 		  --(semas[i]->value);
-		  if (waiting && waiting->reposts && waiting->reposts[i])
-		    scheme_post_sema((Scheme_Object *)semas[i]);
-		}
 		break;
 	      }
 	    }

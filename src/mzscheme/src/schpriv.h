@@ -1239,4 +1239,9 @@ void scheme_reset_prepared_error_buffer(void);
 # define HT_EXTRACT_WEAK(x) (*(char **)(x))
 #endif
 
+#ifndef MZ_PRECISE_GC
+# define START_XFORM_SKIP /**/
+# define END_XFORM_SKIP /**/
+#endif
+
 #endif /* __mzscheme_private__ */

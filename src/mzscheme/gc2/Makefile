@@ -95,7 +95,7 @@ xsrc:
 
 xobjects: $(OBJS)
 
-XFORMDEP = gc2.h # xform.ss
+XFORMDEP = gc2.h xform.ss
 
 $(XSRCDIR)/salloc.c: $(SRCDIR)/$(OBJDIR)/salloc.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/salloc.c $(XSRCDIR)/salloc.c

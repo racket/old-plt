@@ -175,6 +175,7 @@ scheme_init_number (Scheme_Env *env)
     REGISTER_SO(single_nan_object);
 #endif
     
+    START_XFORM_SKIP;
 #ifndef DONT_IGNORE_FPE_SIGNAL
     MZ_SIGSET(SIGFPE, SIG_IGN);
 #endif
@@ -197,6 +198,7 @@ scheme_init_number (Scheme_Env *env)
       ieee_set_fp_control(flags);
     }
 #endif
+    END_XFORM_SKIP;
 
 #if defined(HUGE_VAL) && !defined(USE_DIVIDE_MAKE_INFINITY)
     scheme_infinity_val = HUGE_VAL;

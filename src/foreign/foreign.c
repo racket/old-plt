@@ -1985,7 +1985,7 @@ void scheme_init_foreign(Scheme_Env *env)
   scheme_add_global("ctype-alignof",
     scheme_make_prim_w_arity(foreign_ctype_alignof, "ctype-alignof", 1, 1), menv);
   scheme_add_global("malloc",
-    scheme_make_prim_w_arity(foreign_malloc, "malloc", 1, 4), menv);
+    scheme_make_prim_w_arity(foreign_malloc, "malloc", 1, 5), menv);
   scheme_add_global("end-stubborn-change",
     scheme_make_prim_w_arity(foreign_end_stubborn_change, "end-stubborn-change", 1, 1), menv);
   scheme_add_global("free",

@@ -1128,7 +1128,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
  * different types, the only requirement is for a size, either a number of
  * bytes or a type.  If no mode is specified, then scheme_malloc will be used
  * when the type is any pointer, otherwise scheme_malloc_atomic is used. */
-{:(cdefine malloc 1 4):}
+{:(cdefine malloc 1 5):}
 {
   int i, size=0, num=0, failok=0;
   void *from = NULL, *res = NULL;

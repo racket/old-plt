@@ -7,6 +7,8 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
+#pragma implementation "wx_hash.h"
+
 #if defined(_MSC_VER)
 # include "wx.h"
 #else

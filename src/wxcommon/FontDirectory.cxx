@@ -22,6 +22,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#pragma implementation
+
 #ifdef wx_xt
 # define  Uses_wxApp
 # define  Uses_wxFontNameDirectory

@@ -7,6 +7,8 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
+#pragma implementation "wx_list.h"
+
 #if defined(_MSC_VER)
 # include "wx.h"
 #else
@@ -15,7 +17,10 @@
 #  define  Uses_wxStringList
 #  include "wx.h"
 # else
-#  include "wx.h"
+#  ifdef OS_X
+#   include "wx_list.h"
+#   include "wx_utils.h"
+#  endif
 # endif
 #endif
 

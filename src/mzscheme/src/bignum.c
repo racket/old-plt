@@ -1438,7 +1438,7 @@ Scheme_Object *scheme_bignum_gcd(const Scheme_Object *n, const Scheme_Object *d)
   d_size = SCHEME_BIGLEN(d);
 
   if (!n_size)
-    return scheme_make_integer(0);
+    return (Scheme_Object *)d;
 
   r = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
   r->type = scheme_bignum_type;

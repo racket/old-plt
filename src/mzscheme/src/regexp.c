@@ -1037,12 +1037,12 @@ regexec(const char *who,
 	drain = (char *)scheme_malloc_atomic(amt);
 
 	do {
-	  got = scheme_get_string(who, port, drain, 0, amt, 0, 0, 0);
+	  got = scheme_get_byte_string(who, port, drain, 0, amt, 0, 0, 0);
 	  if (got != EOF) {
 	    Scheme_Object *delta;
 	    
 	    if (discard_oport)
-	      scheme_put_string(who, discard_oport, drain, 0, got, 0);
+	      scheme_put_byte_string(who, discard_oport, drain, 0, got, 0);
 	    
 	    dropped = scheme_bin_plus(dropped, scheme_make_integer(amt));
 	    delta = scheme_bin_minus(portstart, dropped);
@@ -1072,14 +1072,14 @@ regexec(const char *who,
 	  long got;
 
 	  if (discard_oport && *startp)
-	    scheme_put_string(who, discard_oport, *stringp, 0, *startp, 0);
+	    scheme_put_byte_string(who, discard_oport, *stringp, 0, *startp, 0);
 
 	  if (get_offsets)
 	    drain = *stringp;
 	  else
 	    /* Allocate fresh in case we get different results from previous peek: */
 	    drain = (char *)scheme_malloc_atomic(*endp);
-	  got = scheme_get_string(who, port, drain, 0, *endp, 0, 0, 0);
+	  got = scheme_get_byte_string(who, port, drain, 0, *endp, 0, 0, 0);
 	}
 
 	*_dropped = dropped;
@@ -1093,9 +1093,9 @@ regexec(const char *who,
 	  
 	  drain = (char *)scheme_malloc_atomic(4096);
 
-	  while ((got = scheme_get_string(who, port, drain, 0, 4096, 0, 0, 0)) != EOF) {
+	  while ((got = scheme_get_byte_string(who, port, drain, 0, 4096, 0, 0, 0)) != EOF) {
 	    if (discard_oport)
-	      scheme_put_string(who, discard_oport, drain, 0, got, 0);
+	      scheme_put_byte_string(who, discard_oport, drain, 0, got, 0);
 	  }
 	}
 	return 0;
@@ -1124,9 +1124,9 @@ regexec(const char *who,
 	if (skip >= REGPORT_FLUSH_THRESHOLD) {
 	  if (!peek) {
 	    if (discard_oport)
-	      scheme_put_string(who, discard_oport, *stringp, 0, skip, 0);
+	      scheme_put_byte_string(who, discard_oport, *stringp, 0, skip, 0);
 	    
-	    scheme_get_string(who, port, *stringp, 0, skip, 0, 0, 0);
+	    scheme_get_byte_string(who, port, *stringp, 0, skip, 0, 0, 0);
 
 	    if (portend)
 	      portend = scheme_bin_minus(portend, scheme_make_integer(skip));
@@ -1146,7 +1146,7 @@ regexec(const char *who,
 	    char *drain;
 
 	    if (discard_oport && *startp)
-	      scheme_put_string(who, discard_oport, *stringp, 0, *startp, 0);
+	      scheme_put_byte_string(who, discard_oport, *stringp, 0, *startp, 0);
 
 	    if (get_offsets)
 	      drain = *stringp;
@@ -1154,7 +1154,7 @@ regexec(const char *who,
 	      /* Allocate fresh in case we get different results from previous peek: */
 	      drain = (char *)scheme_malloc_atomic(*endp);
 
-	    scheme_get_string(who, port, drain, 0, *endp, 0, 0, 0);
+	    scheme_get_byte_string(who, port, drain, 0, *endp, 0, 0, 0);
 	  }
 
 	  *_dropped = dropped;
@@ -1169,8 +1169,8 @@ regexec(const char *who,
 	   and `*stringp' must hold the characters: */
 	if (len > 0) {
 	  if (discard_oport)
-	    scheme_put_string(who, discard_oport, *stringp, 0, len, 0);
-	  scheme_get_string(who, port, *stringp, 0, len, 0, 0, 0);
+	    scheme_put_byte_string(who, discard_oport, *stringp, 0, len, 0);
+	  scheme_get_byte_string(who, port, *stringp, 0, len, 0, 0, 0);
 	}
       }
     } else {
@@ -1308,10 +1308,10 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
     peekskip = scheme_make_integer(rw->input_end);
 
   /* Fill as much of our buffer as possible: */
-  got = scheme_get_string("regexp-match", rw->port, 
-			  rw->instr, rw->input_end, got,
-			  1, /* read at least one char, and as much as possible */
-			  1, peekskip);
+  got = scheme_get_byte_string("regexp-match", rw->port, 
+			       rw->instr, rw->input_end, got,
+			       1, /* read at least one char, and as much as possible */
+			       1, peekskip);
 
   regstr = rw->str;
 
@@ -1328,10 +1328,10 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
 	peekskip = scheme_make_integer(rw->input_end);
 
       rw->str = regstr; /* get_string can swap threads */
-      got = scheme_get_string("regexp-match", rw->port, 
-			      rw->instr, rw->input_end, need_total - rw->input_end,
-			      0, /* blocking mode */
-			      1, peekskip);
+      got = scheme_get_byte_string("regexp-match", rw->port, 
+				   rw->instr, rw->input_end, need_total - rw->input_end,
+				   0, /* blocking mode */
+				   1, peekskip);
       regstr = rw->str;
       
       if (got == EOF)
@@ -2393,18 +2393,22 @@ static int translate(unsigned char *s, int len, char **result)
 
 static Scheme_Object *do_make_regexp(const char *who, int is_byte, int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *re;
+  Scheme_Object *re, *bs;
   char *s;
   int slen;
 
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type(who, "string", 0, argc, argv);
-  if (!is_byte)
-    if (scheme_utf8_decode_all(SCHEME_STR_VAL(argv[0]), SCHEME_STRTAG_VAL(argv[0]), NULL, 0) < 0)
-      scheme_arg_mismatch(who, "string is not a well-formed UTF-8 encoding: ", argv[0]);
+  if (is_byte) {
+    if (!SCHEME_BYTE_STRINGP(argv[0]))
+      scheme_wrong_type(who, "byte-string", 0, argc, argv);
+    bs = argv[0];
+  } else {
+    if (!SCHEME_CHAR_STRINGP(argv[0]))
+      scheme_wrong_type(who, "string", 0, argc, argv);
+    bs = scheme_char_string_to_byte_string(argv[0]);
+  }
 
-  s = SCHEME_STR_VAL(argv[0]);
-  slen = SCHEME_STRTAG_VAL(argv[0]);
+  s = SCHEME_BYTE_STR_VAL(bs);
+  slen = SCHEME_BYTE_STRTAG_VAL(bs);
 
   if (!is_byte) {
     slen = translate(s,slen, &s);
@@ -2428,13 +2432,19 @@ static Scheme_Object *do_make_regexp(const char *who, int is_byte, int argc, Sch
   if (!is_byte)
     ((regexp *)re)->is_utf8 = 1;
 
-  if (SCHEME_IMMUTABLE_STRINGP(argv[0]))
+  if (SCHEME_IMMUTABLEP(argv[0]))
     ((regexp *)re)->source = argv[0];
-  else {
+  else if (is_byte) {
     Scheme_Object *src;
-    src = scheme_make_immutable_sized_string(SCHEME_STR_VAL(argv[0]), 
-					     SCHEME_STRTAG_VAL(argv[0]), 
-					     1);
+    src = scheme_make_immutable_sized_byte_string(SCHEME_BYTE_STR_VAL(argv[0]), 
+						  SCHEME_BYTE_STRTAG_VAL(argv[0]), 
+						  1);
+    ((regexp *)re)->source = src;
+  } else {
+    Scheme_Object *src;
+    src = scheme_make_immutable_sized_char_string(SCHEME_CHAR_STR_VAL(argv[0]), 
+						  SCHEME_CHAR_STRTAG_VAL(argv[0]), 
+						  1);
     ((regexp *)re)->source = src;
   }
   
@@ -2448,7 +2458,7 @@ static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *make_utf8_regexp(int argc, Scheme_Object *argv[])
 {
-  return do_make_regexp("regexp-unicode", 0, argc, argv);
+  return do_make_regexp("regexp-utf8", 0, argc, argv);
 }
 
 Scheme_Object *scheme_make_regexp(Scheme_Object *str, int is_byte, int * volatile result_is_err_string)
@@ -2487,18 +2497,18 @@ static Scheme_Object *gen_compare(char *name, int pos,
   Scheme_Object *iport, *oport = NULL, *startv = NULL, *endv = NULL, *dropped;
   
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
-      && !SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type(name, "regexp-or-string", 0, argc, argv);
-  if ((peek || !SCHEME_STRINGP(argv[1]))
+      && !SCHEME_BYTE_STRINGP(argv[0]))
+    scheme_wrong_type(name, "regexp-or-byte-string", 0, argc, argv);
+  if ((peek || !SCHEME_BYTE_STRINGP(argv[1]))
       && !SCHEME_INPORTP(argv[1]))
-    scheme_wrong_type(name, peek ? "input-port" : "string or input-port", 1, argc, argv);
+    scheme_wrong_type(name, peek ? "input-port" : "string, byte-string, or input-port", 1, argc, argv);
   
   if (SCHEME_INPORTP(argv[1])) {
     iport = argv[1];
     endset = -2;
   } else {
     iport = NULL;
-    endset = SCHEME_STRLEN_VAL(argv[1]);
+    endset = SCHEME_BYTE_STRLEN_VAL(argv[1]);
   }
 
   if (argc > 2) {
@@ -2553,15 +2563,15 @@ static Scheme_Object *gen_compare(char *name, int pos,
   if (iport && !startv)
     startv = scheme_make_integer(0);
 
-  if (SCHEME_STRINGP(argv[0])) {
-    char *s = SCHEME_STR_VAL(argv[0]);
-    long slen = SCHEME_STRTAG_VAL(argv[0]);
+  if (SCHEME_BYTE_STRINGP(argv[0])) {
+    char *s = SCHEME_BYTE_STR_VAL(argv[0]);
+    long slen = SCHEME_BYTE_STRTAG_VAL(argv[0]);
     r = regcomp(s, 0, slen);
   } else
     r = (regexp *)argv[0];
 
   if (!iport)
-    full_s = SCHEME_STR_VAL(argv[1]);
+    full_s = SCHEME_BYTE_STR_VAL(argv[1]);
   else
     full_s = NULL;
 
@@ -2578,7 +2588,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
     Scheme_Object *l = scheme_null;
 
     if (oport && !iport)
-      scheme_put_string(name, oport, full_s, 0, *startp, 0);
+      scheme_put_byte_string(name, oport, full_s, 0, *startp, 0);
 
     for (i = r->nsubexp; i--; ) {
       if (startp[i] != -1) {
@@ -2599,9 +2609,9 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	} else {
 	  long len;
 	  len = endp[i] - startp[i];
-	  l = scheme_make_pair(scheme_make_sized_offset_string(full_s, startp[i], 
-							       len,
-							       1),
+	  l = scheme_make_pair(scheme_make_sized_offset_byte_string(full_s, startp[i], 
+								    len,
+								    1),
 			       l);
 	}
       } else
@@ -2611,7 +2621,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
     return l;
   } else {
     if (oport && !iport)
-      scheme_put_string(name, oport, full_s, 0, endset, 0);
+      scheme_put_byte_string(name, oport, full_s, 0, endset, 0);
 
     return scheme_false;
   }
@@ -2645,22 +2655,22 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
   int prefix_len = 0, sourcelen, srcoffset = 0;
 
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
-      && !SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("regexp-replace", "regexp-or-string", 0, argc, argv);
-  if (!SCHEME_STRINGP(argv[1]))
-    scheme_wrong_type("regexp-replace", "string", 1, argc, argv);
-  if (!SCHEME_STRINGP(argv[2]))
-    scheme_wrong_type("regexp-replace", "string", 2, argc, argv);
+      && !SCHEME_BYTE_STRINGP(argv[0]))
+    scheme_wrong_type("regexp-replace", "regexp-or-byte-string", 0, argc, argv);
+  if (!SCHEME_BYTE_STRINGP(argv[1]))
+    scheme_wrong_type("regexp-replace", "byte-string", 1, argc, argv);
+  if (!SCHEME_BYTE_STRINGP(argv[2]))
+    scheme_wrong_type("regexp-replace", "byte-string", 2, argc, argv);
 
-  if (SCHEME_STRINGP(argv[0])) {
-    char *s = SCHEME_STR_VAL(argv[0]);
-    long slen = SCHEME_STRTAG_VAL(argv[0]);
+  if (SCHEME_BYTE_STRINGP(argv[0])) {
+    char *s = SCHEME_BYTE_STR_VAL(argv[0]);
+    long slen = SCHEME_BYTE_STRTAG_VAL(argv[0]);
     r = regcomp(s, 0, slen);
   } else
     r = (regexp *)argv[0];
 
-  source = SCHEME_STR_VAL(argv[1]);
-  sourcelen = SCHEME_STRTAG_VAL(argv[1]);
+  source = SCHEME_BYTE_STR_VAL(argv[1]);
+  sourcelen = SCHEME_BYTE_STRTAG_VAL(argv[1]);
 
   startp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
   endp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
@@ -2675,16 +2685,16 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
       char *insert;
       long len, end, startpd, endpd;
       
-      insert = regsub(r, SCHEME_STR_VAL(argv[2]), SCHEME_STRTAG_VAL(argv[2]), &len, 
+      insert = regsub(r, SCHEME_BYTE_STR_VAL(argv[2]), SCHEME_BYTE_STRTAG_VAL(argv[2]), &len, 
 		      source, startp, endp);
       
-      end = SCHEME_STRTAG_VAL(argv[1]);
+      end = SCHEME_BYTE_STRTAG_VAL(argv[1]);
       
       startpd = startp[0];
       endpd = endp[0];
       
       if (!startpd && (endpd == end) && !prefix)
-	return scheme_make_sized_string(insert, len, 0);
+	return scheme_make_sized_byte_string(insert, len, 0);
       else if (!all) {
 	char *result;
 	long total;
@@ -2696,7 +2706,7 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
 	memcpy(result + (startpd - srcoffset), insert, len);
 	memcpy(result + (startpd - srcoffset) + len, source + endpd, (end - endpd) + 1);
 	
-	return scheme_make_sized_string(result, total, 0);
+	return scheme_make_sized_byte_string(result, total, 0);
       } else {
 	char *naya;
 	long total;
@@ -2727,7 +2737,7 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
       memcpy(result + prefix_len, source + srcoffset, slen);
       result[prefix_len + slen] = 0;
       
-      return scheme_make_sized_string(result, total, 0);
+      return scheme_make_sized_byte_string(result, total, 0);
     }
 
     SCHEME_USE_FUEL(1);
@@ -2781,9 +2791,9 @@ void scheme_regexp_initialize(Scheme_Env *env)
 						      "regexp", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("regexp-unicode", 
+  scheme_add_global_constant("regexp-utf8", 
 			     scheme_make_prim_w_arity(make_utf8_regexp, 
-						      "regexp-unicode", 
+						      "regexp-utf8", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("regexp-match",

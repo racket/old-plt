@@ -87,17 +87,16 @@ static Scheme_Object *dump_heap(int argc, Scheme_Object **argv)
 {
   char *filename;
 
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("write-image-to-file", "string", 0, argc, argv);
+  if (!SCHEME_PATH_STRINGP(argv[0]))
+    scheme_wrong_type("write-image-to-file", SCHEME_PATH_STRING_STR, 0, argc, argv);
   if (argc > 1)
     if (!SCHEME_FALSEP(argv[1]))
       scheme_check_proc_arity("write-image-to-file", 0,
 			      1, argc, argv);
 
-  filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]), 
-				    SCHEME_STRTAG_VAL(argv[0]), 
-				    "write-image-to-file", NULL,
-				    SCHEME_GUARD_FILE_WRITE);
+  filename = scheme_expand_string_filename(argv[0], 
+					   "write-image-to-file", NULL,
+					   SCHEME_GUARD_FILE_WRITE);
 
 #ifdef UNIX_IMAGE_DUMPS
   if (scheme_dump_heap) {
@@ -144,8 +143,8 @@ static Scheme_Object *load_heap(int argc, Scheme_Object **argv)
   char *filename;
   int bad = 0;
 
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("read-image-from-file", "string", 0, argc, argv);
+  if (!SCHEME_PATH_STRINGP(argv[0]))
+    scheme_wrong_type("read-image-from-file", SCHEME_PATH_STRING_STR, 0, argc, argv);
 
   if (SCHEME_VECTORP(argv[1])) {
     Scheme_Object **a;
@@ -153,7 +152,7 @@ static Scheme_Object *load_heap(int argc, Scheme_Object **argv)
 
     a = SCHEME_VEC_ELS(argv[1]);
     for (i = SCHEME_VEC_SIZE(argv[1]); i--; ) {
-      if (!SCHEME_STRINGP(a[i])) {
+      if (!SCHEME_BYTE_STRINGP(a[i])) {
 	bad = 1;
 	break;
       }
@@ -164,10 +163,9 @@ static Scheme_Object *load_heap(int argc, Scheme_Object **argv)
   if (bad)
     scheme_wrong_type("read-image-from-file", "vector of strings", 0, argc, argv);
 
-  filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]), 
-				    SCHEME_STRTAG_VAL(argv[0]), 
-				    "read-image-from-file", NULL,
-				    SCHEME_GUARD_FILE_READ);
+  filename = scheme_expand_string_filename(argv[0],
+					   "read-image-from-file", NULL,
+					   SCHEME_GUARD_FILE_READ);
 
 #ifdef UNIX_IMAGE_DUMPS
   if (scheme_load_heap)

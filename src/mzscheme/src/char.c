@@ -26,12 +26,8 @@
 #include <ctype.h>
 
 /* globals */
-
-/* All characters */
+#include "schuchar.inc"
 Scheme_Object **scheme_char_constants;
-
-unsigned char scheme_portable_upcase[256];
-unsigned char scheme_portable_downcase[256];
 
 /* locals */
 static Scheme_Object *char_p (int argc, Scheme_Object *argv[]);
@@ -48,31 +44,24 @@ static Scheme_Object *char_gt_eq_ci (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_alphabetic (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_numeric (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_whitespace (int argc, Scheme_Object *argv[]);
+static Scheme_Object *char_symbolic (int argc, Scheme_Object *argv[]);
+static Scheme_Object *char_blank (int argc, Scheme_Object *argv[]);
+static Scheme_Object *char_control (int argc, Scheme_Object *argv[]);
+static Scheme_Object *char_punctuation (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_upper_case (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_lower_case (int argc, Scheme_Object *argv[]);
+static Scheme_Object *char_title_case (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_to_integer (int argc, Scheme_Object *argv[]);
 static Scheme_Object *integer_to_char (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_upcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_downcase (int argc, Scheme_Object *argv[]);
-
-void scheme_init_portable_case(void)
-{
-  int i;
-
-  for (i = 0; i < 256; i++) {
-    scheme_portable_upcase[i] = i;
-    scheme_portable_downcase[i] = i;
-  }
-
-  for (i = 'a'; i < 'z' + 1; i++) {
-    scheme_portable_upcase[i] = i - ('a' - 'A');
-    scheme_portable_downcase[i - ('a' - 'A')] = i;
-  }
-}
+static Scheme_Object *char_titlecase (int argc, Scheme_Object *argv[]);
 
 void scheme_init_char (Scheme_Env *env)
 {
   int i;
+
+  init_uchar_table();
 
   REGISTER_SO(scheme_char_constants);
 
@@ -153,9 +142,29 @@ void scheme_init_char (Scheme_Env *env)
 						      "char-numeric?", 
 						      1, 1, 1), 
 			     env);
+  scheme_add_global_constant("char-symbolic?", 
+			     scheme_make_folding_prim(char_symbolic, 
+						      "char-symbolic?", 
+						      1, 1, 1), 
+			     env);
   scheme_add_global_constant("char-whitespace?", 
 			     scheme_make_folding_prim(char_whitespace, 
 						      "char-whitespace?", 
+						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant("char-blank?", 
+			     scheme_make_folding_prim(char_blank, 
+						      "char-blank?", 
+						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant("char-iso-control?", 
+			     scheme_make_folding_prim(char_control, 
+						      "char-iso-control?", 
+						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant("char-punctuation?", 
+			     scheme_make_folding_prim(char_punctuation, 
+						      "char-punctuation?", 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-upper-case?", 
@@ -163,9 +172,19 @@ void scheme_init_char (Scheme_Env *env)
 						      "char-upper-case?", 
 						      1, 1, 1),
 			     env);
+  scheme_add_global_constant("char-title-case?", 
+			     scheme_make_folding_prim(char_title_case, 
+						      "char-title-case?", 
+						      1, 1, 1),
+			     env);
   scheme_add_global_constant("char-lower-case?", 
 			     scheme_make_folding_prim(char_lower_case, 
 						      "char-lower-case?", 
+						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant("char-title-case?", 
+			     scheme_make_folding_prim(char_title_case, 
+						      "char-title-case?", 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char->integer", 
@@ -188,11 +207,24 @@ void scheme_init_char (Scheme_Env *env)
 						      "char-downcase", 
 						      1, 1, 1),
 			     env);
+  scheme_add_global_constant("char-titlecase", 
+			     scheme_make_folding_prim(char_titlecase, 
+						      "char-titlecase", 
+						      1, 1, 1),
+			     env);
 }
 
-Scheme_Object *scheme_make_char(char ch)
+Scheme_Object *scheme_make_char(mzchar ch)
 {
-  return _scheme_make_char(ch);
+  Scheme_Object *o;
+
+  if (ch < 255)
+    return scheme_char_constants[ch];
+  
+  o = scheme_alloc_small_object();
+  SCHEME_CHAR_VAL(o) = ch;
+
+  return o;
 }
 
 /* locals */
@@ -203,126 +235,67 @@ char_p (int argc, Scheme_Object *argv[])
   return (SCHEME_CHARP(argv[0]) ? scheme_true : scheme_false);
 }
 
-#define CHAR_UN_CHECK(name) \
- if (!SCHEME_CHARP(argv[0])) \
-   char_un_error(name, argc, argv)
+#define charSTD_DOWNCASE(nl) nl;
+#define charNO_DOWNCASE(nl) /* empty */
 
-static void char_un_error(char *name, int argc, Scheme_Object *argv[])
-{
-  if (!SCHEME_CHARP(argv[0]))
-    scheme_wrong_type(name, "character", 0, argc, argv);
-}
-
-#define charSTD_UPCASE(nl) nl;
-#define charNO_UPCASE(nl) /* empty */
-
-#define GEN_CHAR_COMP(func_name, scheme_name, comp, UPCASE) \
+#define GEN_CHAR_COMP(func_name, scheme_name, comp, DOWNCASE) \
  static Scheme_Object *func_name(int argc, Scheme_Object *argv[])     \
  { int c, prev, i; Scheme_Object *rv = scheme_true; \
    if (!SCHEME_CHARP(argv[0]))      \
      scheme_wrong_type(#scheme_name, "character", 0, argc, argv);     \
-   prev = ((unsigned char)SCHEME_CHAR_VAL(argv[0]));     \
-   UPCASE(prev = mz_portable_toupper(prev)) \
+   prev = SCHEME_CHAR_VAL(argv[0]);     \
+   DOWNCASE(prev = scheme_tolower(prev)) \
    for (i = 1; i < argc; i++) {     \
      if (!SCHEME_CHARP(argv[i]))      \
        scheme_wrong_type(#scheme_name, "character", i, argc, argv);     \
-     c = ((unsigned char)SCHEME_CHAR_VAL(argv[i]));     \
-     UPCASE(c = mz_portable_toupper(c)) \
+     c = SCHEME_CHAR_VAL(argv[i]);     \
+     DOWNCASE(c = scheme_tolower(c)) \
      if (!(prev comp c)) rv = scheme_false;   \
      prev = c;     \
    }     \
    return rv;     \
  }
 
-GEN_CHAR_COMP(char_eq, char=?, ==, charNO_UPCASE)
-GEN_CHAR_COMP(char_lt, char<?, <, charNO_UPCASE)
-GEN_CHAR_COMP(char_gt, char>?, >, charNO_UPCASE)
-GEN_CHAR_COMP(char_lt_eq, char<=?, <=, charNO_UPCASE)
-GEN_CHAR_COMP(char_gt_eq, char>=?, >=, charNO_UPCASE)
+GEN_CHAR_COMP(char_eq, char=?, ==, charNO_DOWNCASE)
+GEN_CHAR_COMP(char_lt, char<?, <, charNO_DOWNCASE)
+GEN_CHAR_COMP(char_gt, char>?, >, charNO_DOWNCASE)
+GEN_CHAR_COMP(char_lt_eq, char<=?, <=, charNO_DOWNCASE)
+GEN_CHAR_COMP(char_gt_eq, char>=?, >=, charNO_DOWNCASE)
 
-GEN_CHAR_COMP(char_eq_ci, char-ci=?, ==, charSTD_UPCASE)
-GEN_CHAR_COMP(char_lt_ci, char-ci<?, <, charSTD_UPCASE)
-GEN_CHAR_COMP(char_gt_ci, char-ci>?, >, charSTD_UPCASE)
-GEN_CHAR_COMP(char_lt_eq_ci, char-ci<=?, <=, charSTD_UPCASE)
-GEN_CHAR_COMP(char_gt_eq_ci, char-ci>=?, >=, charSTD_UPCASE)
+GEN_CHAR_COMP(char_eq_ci, char-ci=?, ==, charSTD_DOWNCASE)
+GEN_CHAR_COMP(char_lt_ci, char-ci<?, <, charSTD_DOWNCASE)
+GEN_CHAR_COMP(char_gt_ci, char-ci>?, >, charSTD_DOWNCASE)
+GEN_CHAR_COMP(char_lt_eq_ci, char-ci<=?, <=, charSTD_DOWNCASE)
+GEN_CHAR_COMP(char_gt_eq_ci, char-ci>=?, >=, charSTD_DOWNCASE)
 
-static Scheme_Object *
-char_alphabetic (int argc, Scheme_Object *argv[])
-{
-  unsigned char c;
-
-  CHAR_UN_CHECK("char-alphabetic?");
-
-  c = SCHEME_CHAR_VAL(argv[0]);
-
-  return ((((c >= 'A') && (c <= 'Z'))
-	   || ((c >= 'a') && (c <= 'z')))
-	  ? scheme_true 
-	  : scheme_false);
+#define GEN_CHAR_TEST(func_name, scheme_name, pred) \
+static Scheme_Object *func_name (int argc, Scheme_Object *argv[]) \
+{ \
+  mzchar c;    \
+  if (!SCHEME_CHARP(argv[0]))  \
+    scheme_wrong_type(scheme_name, "character", 0, argc, argv); \
+  c = SCHEME_CHAR_VAL(argv[0]);                    \
+  return (pred(c) ? scheme_true : scheme_false);   \
 }
-
-static Scheme_Object *
-char_numeric (int argc, Scheme_Object *argv[])
-{
-  unsigned char c;
-
-  CHAR_UN_CHECK("char-numeric?");
-
-  c = SCHEME_CHAR_VAL(argv[0]);
-
-  return ((c >= '0') && (c <= '9')) ? scheme_true : scheme_false;
-}
-
-static Scheme_Object *
-char_whitespace (int argc, Scheme_Object *argv[])
-{
-  unsigned char c;
-
-  CHAR_UN_CHECK("char-whitespace?");
-
-  c = SCHEME_CHAR_VAL(argv[0]);
-
-  if ((c == ' ')
-      || (c == '\t')
-      || (c == '\n')
-      || (c == '\v')
-      || (c == '\f')
-      || (c == '\r'))
-    return scheme_true;
-  else
-    return scheme_false;
-}
-
-static Scheme_Object *
-char_upper_case (int argc, Scheme_Object *argv[])
-{
-  unsigned char c;
-
-  CHAR_UN_CHECK("char-upper-case?");
-
-  c = SCHEME_CHAR_VAL(argv[0]);
-
-  return ((c >= 'A') && (c <= 'Z')) ? scheme_true : scheme_false;
-}
-
-static Scheme_Object *
-char_lower_case (int argc, Scheme_Object *argv[])
-{
-  unsigned char c;
-
-  CHAR_UN_CHECK("char-lower-case?");
-
-  c = SCHEME_CHAR_VAL(argv[0]);
-
-  return ((c >= 'a') && (c <= 'z')) ? scheme_true : scheme_false;
-}
+     
+GEN_CHAR_TEST(char_numeric, "char-numeric?", scheme_isdigit)
+GEN_CHAR_TEST(char_alphabetic, "char-alphabetic?", scheme_isalpha)
+GEN_CHAR_TEST(char_whitespace, "char-whitespace?", scheme_isspace)
+GEN_CHAR_TEST(char_blank, "char-blank?", scheme_isblank)
+GEN_CHAR_TEST(char_control, "char-iso-control?", scheme_isspace)
+GEN_CHAR_TEST(char_punctuation, "char-punctuation?", scheme_ispunc)
+GEN_CHAR_TEST(char_symbolic, "char-symbolic?", scheme_issymbol)
+GEN_CHAR_TEST(char_upper_case, "char-upper-case?", scheme_isupper)
+GEN_CHAR_TEST(char_lower_case, "char-lower-case?", scheme_islower)
+GEN_CHAR_TEST(char_title_case, "char-title-case?", scheme_istitle)
 
 static Scheme_Object *
 char_to_integer (int argc, Scheme_Object *argv[])
 {
-  unsigned char c;
+  mzchar c;
 
-  CHAR_UN_CHECK("char->integer");
+  if (!SCHEME_CHARP(argv[0]))
+    scheme_wrong_type("char->integer", "character", 0, argc, argv);
 
   c = SCHEME_CHAR_VAL(argv[0]);
 
@@ -332,45 +305,35 @@ char_to_integer (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 integer_to_char (int argc, Scheme_Object *argv[])
 {
-  long v;
+  if (SCHEME_INTP(argv[0])) {
+    long v;
+    v = SCHEME_INT_VAL(argv[0]);
+    if ((v >= 0) 
+	&& (v <= 0x7FFFFFFF)
+	&& (v != 0xFFFE)
+	&& (v != 0xFFFF)
+	&& ((v < 0xD800) || (v > 0xDFFF)))
+      return _scheme_make_char(v);
+  }
 
-  if (!SCHEME_INTP(argv[0]))
-    scheme_wrong_type("integer->char", "exact in [0, 255]", 0, argc, argv);
-
-  v = SCHEME_INT_VAL(argv[0]);
-  if ((v < 0) || (v > 255))
-    scheme_wrong_type("integer->char", "exact in [0, 255]", 0, argc, argv);
-
-  return _scheme_make_char(v);
+  scheme_wrong_type("integer->char", 
+		    "exact integer in [0,#x7FFFFFFF], not in [#xD800,#xDFFF] or [#xFFFE,#xFFFF]", 
+		    0, argc, argv);
+  return NULL;
 }
 
-static Scheme_Object *
-char_upcase (int argc, Scheme_Object *argv[])
-{
-  unsigned char c;
-
-  CHAR_UN_CHECK("char-upcase");
-
-  c = SCHEME_CHAR_VAL(argv[0]);
-
-  if ((c >= 'a') && (c <= 'z'))
-    return _scheme_make_char(c - ('a' - 'A'));
-  else
-    return argv[0];
+#define GEN_RECASE(func_name, scheme_name, cvt) \
+static Scheme_Object *func_name (int argc, Scheme_Object *argv[]) \
+{ \
+  mzchar c;    \
+  if (!SCHEME_CHARP(argv[0]))  \
+    scheme_wrong_type(scheme_name, "character", 0, argc, argv); \
+  c = SCHEME_CHAR_VAL(argv[0]);                    \
+  c = cvt(c);                                      \
+  return scheme_make_character(c);   \
 }
 
-static Scheme_Object *
-char_downcase (int argc, Scheme_Object *argv[])
-{
-  unsigned char c;
-
-  CHAR_UN_CHECK("char-downcase");
-
-  c = SCHEME_CHAR_VAL(argv[0]);
-
-  if ((c >= 'A') && (c <= 'Z'))
-    return _scheme_make_char(c + ('a' - 'A'));
-  else
-    return argv[0];
-}
+GEN_RECASE(char_upcase, "char-upcase", scheme_toupper)
+GEN_RECASE(char_downcase, "char-downcase", scheme_tolower)
+GEN_RECASE(char_titlecase, "char-titlecase", scheme_totitle)
 

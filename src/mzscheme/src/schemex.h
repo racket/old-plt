@@ -155,6 +155,10 @@ Scheme_Object *(*scheme_make_void)(void);
 Scheme_Object *scheme_undefined;
 Scheme_Object *scheme_tail_call_waiting;
 Scheme_Object *scheme_multiple_values;
+unsigned int;
+int scheme_uchar_ups;
+int scheme_uchar_downs;
+int scheme_uchar_titles;
 /*========================================================================*/
 /*                              evaluation                                */
 /*========================================================================*/
@@ -234,6 +238,7 @@ void (*scheme_unweak_reference)(void **p);
 #endif
 void (*scheme_add_finalizer)(void *p, void (*f)(void *p, void *data), void *data);
 void (*scheme_add_finalizer_once)(void *p, void (*f)(void *p, void *data), void *data);
+void (*scheme_subtract_finalizer)(void *p, void (*f)(void *p, void *data), void *data);
 void (*scheme_add_scheme_finalizer)(void *p, void (*f)(void *p, void *data), void *data);
 void (*scheme_add_scheme_finalizer_once)(void *p, void (*f)(void *p, void *data), void *data);
 void (*scheme_register_finalizer)(void *p,
@@ -303,13 +308,26 @@ Scheme_Object *(*scheme_make_closed_prim_w_everything)(Scheme_Closed_Prim *fun,
 void (*scheme_prim_is_method)(Scheme_Object *o);
 Scheme_Object *(*scheme_make_pair)(Scheme_Object *car, Scheme_Object *cdr);
 Scheme_Object *(*scheme_make_immutable_pair)(Scheme_Object *car, Scheme_Object *cdr);
-Scheme_Object *(*scheme_make_string)(const char *chars);
-Scheme_Object *(*scheme_make_sized_string)(char *chars, long len, int copy);
-Scheme_Object *(*scheme_make_sized_offset_string)(char *chars, long d, long len, int copy);
-Scheme_Object *(*scheme_make_immutable_sized_string)(char *chars, long len, int copy);
-Scheme_Object *(*scheme_make_string_without_copying)(char *chars);
-Scheme_Object *(*scheme_alloc_string)(int size, char fill);
-Scheme_Object *(*scheme_append_string)(Scheme_Object *, Scheme_Object *);
+Scheme_Object *(*scheme_make_byte_string)(const char *chars);
+Scheme_Object *(*scheme_make_sized_byte_string)(char *chars, long len, int copy);
+Scheme_Object *(*scheme_make_sized_offset_byte_string)(char *chars, long d, long len, int copy);
+Scheme_Object *(*scheme_make_immutable_sized_byte_string)(char *chars, long len, int copy);
+Scheme_Object *(*scheme_make_byte_string_without_copying)(char *chars);
+Scheme_Object *(*scheme_alloc_byte_string)(int size, char fill);
+Scheme_Object *(*scheme_append_byte_string)(Scheme_Object *, Scheme_Object *);
+Scheme_Object *(*scheme_make_utf8_string)(const char *chars);
+Scheme_Object *(*scheme_make_sized_utf8_string)(char *chars, long len);
+Scheme_Object *(*scheme_make_sized_offset_utf8_string)(char *chars, long d, long len);
+Scheme_Object *(*scheme_make_immutable_sized_utf8_string)(char *chars, long len);
+Scheme_Object *(*scheme_char_string_to_byte_string)(Scheme_Object *s);
+Scheme_Object *(*scheme_byte_string_to_char_string)(Scheme_Object *s);
+Scheme_Object *(*scheme_make_char_string)(const mzchar *chars);
+Scheme_Object *(*scheme_make_sized_char_string)(mzchar *chars, long len, int copy);
+Scheme_Object *(*scheme_make_sized_offset_char_string)(mzchar *chars, long d, long len, int copy);
+Scheme_Object *(*scheme_make_immutable_sized_char_string)(mzchar *chars, long len, int copy);
+Scheme_Object *(*scheme_make_char_string_without_copying)(mzchar *chars);
+Scheme_Object *(*scheme_alloc_char_string)(int size, mzchar fill);
+Scheme_Object *(*scheme_append_char_string)(Scheme_Object *, Scheme_Object *);
 Scheme_Object *(*scheme_make_vector)(int size, Scheme_Object *fill);
 Scheme_Object *(*scheme_make_integer_value)(long i);
 Scheme_Object *(*scheme_make_integer_value_from_unsigned)(unsigned long i);
@@ -319,7 +337,7 @@ Scheme_Object *(*scheme_make_double)(double d);
 #ifdef MZ_USE_SINGLE_FLOATS
 Scheme_Object *(*scheme_make_float)(float f) ;
 #endif
-Scheme_Object *(*scheme_make_char)(char ch);
+Scheme_Object *(*scheme_make_char)(mzchar ch);
 Scheme_Object *(*scheme_make_sema)(long v);
 void (*scheme_post_sema)(Scheme_Object *o);
 void (*scheme_post_sema_all)(Scheme_Object *o);
@@ -339,10 +357,27 @@ int (*scheme_utf8_decode)(const unsigned char *s, int start, int len,
 				 long *ipos, char utf16, int permissive);
 int (*scheme_utf8_decode_all)(const unsigned char *s, int len, unsigned int *us, 
 				     int permissive);
+int (*scheme_utf8_decode_prefix)(const unsigned char *s, int len, unsigned int *us, 
+					int permissive);
+mzchar *(*scheme_utf8_decode_to_buffer)(const unsigned char *s, int len, 
+					       mzchar *buf, int blen);
+mzchar *(*scheme_utf8_decode_to_buffer_len)(const unsigned char *s, int len, 
+						   mzchar *buf, int blen, long *rlen);
 int (*scheme_utf8_encode)(const unsigned int *us, int start, int len, 
 				 unsigned char *s, int dstart,
 				 char utf16);
 int (*scheme_utf8_encode_all)(const unsigned int *us, int len, unsigned char *s);
+char *(*scheme_utf8_encode_malloc)(const unsigned int *us, int len, long *olen);
+char *(*scheme_utf8_encode_to_buffer)(const mzchar *s, int len, 
+					     char *buf, int blen);
+char *(*scheme_utf8_encode_to_buffer_len)(const mzchar *s, int len, 
+						 char *buf, int blen, long *rlen);
+unsigned short;
+					       unsigned short *buf, int bufsize,
+					       long *ulen, int term_size);
+mzchar *(*scheme_utf16_to_ucs4)(const unsigned short *text, int len, 
+				       mzchar *buf, int bufsize,
+				       long *ulen, int term_size);
 /*========================================================================*/
 /*                               bignums                                  */
 /*========================================================================*/
@@ -401,34 +436,46 @@ void (*scheme_write)(Scheme_Object *obj, Scheme_Object *port);
 void (*scheme_display)(Scheme_Object *obj, Scheme_Object *port);
 void (*scheme_write_w_max)(Scheme_Object *obj, Scheme_Object *port, long maxl);
 void (*scheme_display_w_max)(Scheme_Object *obj, Scheme_Object *port, long maxl);
-void (*scheme_write_string)(const char *str, long len, Scheme_Object *port);
-long (*scheme_put_string)(const char *who, Scheme_Object *port,
-				 const char *str, long d, long len,
-				 int rarely_block);
+void (*scheme_write_byte_string)(const char *str, long len, Scheme_Object *port);
+void (*scheme_write_char_string)(const mzchar *str, long len, Scheme_Object *port);
+long (*scheme_put_byte_string)(const char *who, Scheme_Object *port,
+				      const char *str, long d, long len,
+				      int rarely_block);
+long (*scheme_put_char_string)(const char *who, Scheme_Object *port,
+				      const mzchar *str, long d, long len,
+				      int rarely_block);
 char *(*scheme_write_to_string)(Scheme_Object *obj, long *len);
 char *(*scheme_display_to_string)(Scheme_Object *obj, long *len);
 char *(*scheme_write_to_string_w_max)(Scheme_Object *obj, long *len, long maxl);
 char *(*scheme_display_to_string_w_max)(Scheme_Object *obj, long *len, long maxl);
 void (*scheme_debug_print)(Scheme_Object *obj);
 void (*scheme_flush_output)(Scheme_Object *port);
-char *(*scheme_format)(char *format, int flen, int argc, Scheme_Object **argv, long *rlen);
-void (*scheme_printf)(char *format, int flen, int argc, Scheme_Object **argv);
+char *(*scheme_format)(mzchar *format, int flen, int argc, Scheme_Object **argv, long *rlen);
+void (*scheme_printf)(mzchar *format, int flen, int argc, Scheme_Object **argv);
+char *(*scheme_format_utf8)(char *format, int flen, int argc, Scheme_Object **argv, long *rlen);
+void (*scheme_printf_utf8)(char *format, int flen, int argc, Scheme_Object **argv);
 int (*scheme_getc)(Scheme_Object *port);
+int (*scheme_get_byte)(Scheme_Object *port);
 int (*scheme_peekc)(Scheme_Object *port);
+int (*scheme_peek_byte)(Scheme_Object *port);
 int (*scheme_peekc_skip)(Scheme_Object *port, Scheme_Object *skip);
+int (*scheme_peek_byte_skip)(Scheme_Object *port, Scheme_Object *skip);
 int (*scheme_getc_special_ok)(Scheme_Object *port);
+int (*scheme_get_byte_special_ok)(Scheme_Object *port);
 int (*scheme_peekc_special_ok)(Scheme_Object *port);
+int (*scheme_peek_byte_special_ok_skip)(Scheme_Object *port, Scheme_Object *skip);
 int (*scheme_peekc_special_ok_skip)(Scheme_Object *port, Scheme_Object *skip);
 void (*scheme_ungetc)(int ch, Scheme_Object *port);
+int (*scheme_byte_ready)(Scheme_Object *port);
 int (*scheme_char_ready)(Scheme_Object *port);
 int (*scheme_peekc_is_ungetc)(Scheme_Object *port);
 void (*scheme_need_wakeup)(Scheme_Object *port, void *fds);
-long (*scheme_get_string)(const char *who,
+long (*scheme_get_byte_string)(const char *who,
 				 Scheme_Object *port,
 				 char *buffer, long offset, long size,
 				 int only_avail,
 				 int peek, Scheme_Object *peek_skip);
-long (*scheme_get_chars)(Scheme_Object *port, long size, char *buffer, int offset);
+long (*scheme_get_bytes)(Scheme_Object *port, long size, char *buffer, int offset);
 long (*scheme_tell)(Scheme_Object *port);
 long (*scheme_output_tell)(Scheme_Object *port);
 long (*scheme_tell_line)(Scheme_Object *port);
@@ -438,15 +485,15 @@ void (*scheme_close_input_port)(Scheme_Object *port);
 void (*scheme_close_output_port)(Scheme_Object *port);
 Scheme_Object *(*scheme_make_port_type)(const char *name);
 Scheme_Input_Port *(*scheme_make_input_port)(Scheme_Object *subtype, void *data,
-						    Scheme_Get_String_Fun get_string_fun,
+						    Scheme_Get_String_Fun get_byte_string_fun,
 						    Scheme_Peek_String_Fun peek_string_fun,
-						    Scheme_In_Ready_Fun char_ready_fun,
+						    Scheme_In_Ready_Fun byte_ready_fun,
 						    Scheme_Close_Input_Fun close_fun,
 						    Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
 						    int must_close);
 Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype,
 						      void *data,
-						      Scheme_Write_String_Fun write_string_fun,
+						      Scheme_Write_String_Fun write_byte_string_fun,
 						      Scheme_Out_Ready_Fun ready_fun,
 						      Scheme_Close_Output_Fun close_fun,
 						      Scheme_Need_Wakeup_Output_Fun need_wakeup_fun,
@@ -456,17 +503,18 @@ Scheme_Object *(*scheme_open_output_file)(const char *name, const char *who);
 Scheme_Object *(*scheme_make_file_input_port)(FILE *fp);
 Scheme_Object *(*scheme_make_named_file_input_port)(FILE *fp, const char *filename);
 Scheme_Object *(*scheme_make_file_output_port)(FILE *fp);
-Scheme_Object *(*scheme_make_string_input_port)(const char *str);
-Scheme_Object *(*scheme_make_sized_string_input_port)(const char *str, long len);
-Scheme_Object *(*scheme_make_string_output_port)();
-char *(*scheme_get_string_output)(Scheme_Object *);
-char *(*scheme_get_sized_string_output)(Scheme_Object *, long *len);
+Scheme_Object *(*scheme_make_byte_string_input_port)(const char *str);
+Scheme_Object *(*scheme_make_sized_byte_string_input_port)(const char *str, long len);
+Scheme_Object *(*scheme_make_byte_string_output_port)();
+char *(*scheme_get_byte_string_output)(Scheme_Object *);
+char *(*scheme_get_sized_byte_string_output)(Scheme_Object *, long *len);
 void (*scheme_pipe)(Scheme_Object **read, Scheme_Object **write);
 void (*scheme_pipe_with_limit)(Scheme_Object **write, Scheme_Object **read, int maxsize);
 long (*scheme_set_file_position)(Scheme_Object *port, long pos);
 int (*scheme_file_exists)(char *filename);
 int (*scheme_directory_exists)(char *dirname);
 char *(*scheme_expand_filename)(char* filename, int ilen, const char *errorin, int *ex, int guards);
+char *(*scheme_expand_string_filename)(Scheme_Object *f, const char *errorin, int *ex, int guards);
 char *(*scheme_os_getcwd)(char *buf, int buflen, int *actlen, int noexn);
 int (*scheme_os_setcwd)(char *buf, int noexn);
 char *(*scheme_getdrive)(void);
@@ -599,6 +647,7 @@ char *(*scheme_make_args_string)(char *s, int which, int argc, Scheme_Object **a
 void (*scheme_no_dumps)(char *why);
 const char *(*scheme_system_library_subpath)();
 void (*scheme_signal_received)(void);
+int (*scheme_char_strlen)(const mzchar *s);
 #ifndef SCHEME_EX_INLINE
 } Scheme_Extension_Table;
 #endif

@@ -1409,7 +1409,7 @@ static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount)
   return data;
 }
 
-static int tcp_char_ready (Scheme_Input_Port *port)
+static int tcp_byte_ready (Scheme_Input_Port *port)
 {
   Scheme_Tcp *data;
 #ifdef USE_SOCKETS_TCP
@@ -1496,19 +1496,19 @@ static long tcp_get_string(Scheme_Input_Port *port,
       return n;
     }
 
-  if (!tcp_char_ready(port)) {
+  if (!tcp_byte_ready(port)) {
     if (nonblock)
       return 0;
 
 #ifdef USE_SOCKETS_TCP
-    scheme_block_until((Scheme_Ready_Fun)scheme_char_ready_or_user_port_ready,
+    scheme_block_until((Scheme_Ready_Fun)scheme_byte_ready_or_user_port_ready,
 		       scheme_need_wakeup,
 		       (Scheme_Object *)port,
 		       0.0);
 #else
     do {
       scheme_thread_block((float)0.0);
-    } while (!tcp_char_ready(port));
+    } while (!tcp_byte_ready(port));
     scheme_current_thread->ran_some = 1;
 #endif
   }
@@ -1833,7 +1833,7 @@ static long tcp_write_string(Scheme_Output_Port *port,
     /* Closed while blocking? */
     if (((Scheme_Output_Port *)port)->closed) {
       /* Call write again to signal the error: */
-      scheme_put_string("tcp-write-string", (Scheme_Object *)port, s, offset, len, 0);
+      scheme_put_byte_string("tcp-write-string", (Scheme_Object *)port, s, offset, len, 0);
       return sent + len; /* shouldn't get here */
     }
 
@@ -1888,7 +1888,7 @@ make_named_tcp_input_port(void *data, const char *name)
 			       data,
 			       tcp_get_string,
 			       NULL,
-			       tcp_char_ready,
+			       tcp_byte_ready,
 			       tcp_close_input,
 			       tcp_need_wakeup,
 			       1);
@@ -1939,6 +1939,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
   char * volatile address = "", * volatile errmsg = "";
   unsigned short origid, id;
   int errpart = 0, errid = 0;
+  Scheme_Object *bs;
 #ifdef USE_SOCKETS_TCP
   GC_CAN_IGNORE tcp_address tcp_connect_dest_addr;
 # ifndef PROTOENT_IS_INT
@@ -1946,8 +1947,8 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 # endif
 #endif
 
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("tcp-connect", "string", 0, argc, argv);
+  if (!SCHEME_PATH_STRINGP(argv[0]))
+    scheme_wrong_type("tcp-connect", SCHEME_PATH_STRING_STR, 0, argc, argv);
   if (!CHECK_PORT_ID(argv[1]))
     scheme_wrong_type("tcp-connect", PORT_ID_TYPE, 1, argc, argv);
 
@@ -1955,7 +1956,11 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
   TCP_INIT("tcp-connect");
 #endif
 
-  address = SCHEME_STR_VAL(argv[0]);
+  bs = argv[0];
+  if (SCHEME_CHAR_STRINGP(bs))
+    bs = scheme_char_string_to_byte_string(bs);
+
+  address = SCHEME_BYTE_STR_VAL(bs);
   origid = (unsigned short)SCHEME_INT_VAL(argv[1]);
 
   scheme_security_check_network("tcp-connect", address, origid, 1);
@@ -2180,8 +2185,8 @@ tcp_listen(int argc, Scheme_Object *argv[])
   if (argc > 2)
     reuse = SCHEME_TRUEP(argv[2]);
   if (argc > 3) {
-    if (!SCHEME_STRINGP(argv[3]) && !SCHEME_FALSEP(argv[3]))
-      scheme_wrong_type("tcp-connect", "string or #f", 3, argc, argv);
+    if (!SCHEME_PATH_STRINGP(argv[3]) && !SCHEME_FALSEP(argv[3]))
+      scheme_wrong_type("tcp-connect", SCHEME_PATH_STRING_STR " or #f", 3, argc, argv);
   }
     
 #ifdef USE_TCP
@@ -2193,9 +2198,16 @@ tcp_listen(int argc, Scheme_Object *argv[])
     backlog = SCHEME_INT_VAL(argv[1]);
   else
     backlog = 4;
-  if (argc > 3)
-    address = (SCHEME_STRINGP(argv[3]) ? SCHEME_STR_VAL(argv[3]) : NULL);
-  else
+  if (argc > 3) {
+    if (SCHEME_BYTE_STRINGP(argv[3]))
+      address = SCHEME_BYTE_STR_VAL(argv[3]);
+    else if (SCHEME_CHAR_STRINGP(argv[3])) {
+      Scheme_Object *bs;
+      bs = scheme_char_string_to_byte_string(argv[3]);
+      address = SCHEME_BYTE_STR_VAL(bs);
+    } else
+      address = NULL;
+  } else
     address = NULL;
 
   scheme_security_check_network("tcp-listen", address, origid, 0);
@@ -2630,11 +2642,11 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
 
   b = (unsigned char *)&here_a;
   sprintf(sa, "%d.%d.%d.%d", b[0], b[1], b[2], b[3]);
-  result[0] = scheme_make_string(sa);
+  result[0] = scheme_make_byte_string(sa);
 
   b = (unsigned char *)&there_a;
   sprintf(sa, "%d.%d.%d.%d", b[0], b[1], b[2], b[3]);
-  result[1] = scheme_make_string(sa);
+  result[1] = scheme_make_byte_string(sa);
 
   return scheme_values(2, result);
 #else
@@ -2847,14 +2859,20 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
     scheme_wrong_type(name, "udp-socket", 0, argc, argv);
 
 #ifdef UDP_IS_SUPPORTED
-  if (!SCHEME_FALSEP(argv[1]) && !SCHEME_STRINGP(argv[1]))
-    scheme_wrong_type(name, (do_bind ? "string or #f" : "string"), 1, argc, argv);
+  if (!SCHEME_FALSEP(argv[1]) && !SCHEME_PATH_STRINGP(argv[1]))
+    scheme_wrong_type(name, (do_bind ? SCHEME_PATH_STRING_STR " or #f" : "string"), 1, argc, argv);
   if ((do_bind || !SCHEME_FALSEP(argv[2])) && !CHECK_PORT_ID(argv[2]))
     scheme_wrong_type(name, (do_bind ? PORT_ID_TYPE : PORT_ID_TYPE " or #f"), 2, argc, argv);
 		      
-  if (SCHEME_TRUEP(argv[1]))
-    address = SCHEME_STR_VAL(argv[1]);
-  else
+  if (SCHEME_TRUEP(argv[1])) {
+    if (SCHEME_BYTE_STRINGP(argv[1]))
+      address = SCHEME_BYTE_STR_VAL(argv[1]);
+    else {
+      Scheme_Object *bs;
+      bs = scheme_char_string_to_byte_string(argv[1]);
+      address = SCHEME_BYTE_STR_VAL(bs);
+    }
+  } else
     address = NULL;
   if (SCHEME_TRUEP(argv[2]))
     origid = (unsigned short)SCHEME_INT_VAL(argv[2]);
@@ -3023,23 +3041,29 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
 
 #ifdef UDP_IS_SUPPORTED
   if (with_addr) {
-    if (!SCHEME_STRINGP(argv[1]))
-      scheme_wrong_type(name, "string", 1, argc, argv);
+    if (!SCHEME_PATH_STRINGP(argv[1]))
+      scheme_wrong_type(name, SCHEME_PATH_STRING_STR, 1, argc, argv);
     if (!CHECK_PORT_ID(argv[2]))
       scheme_wrong_type(name, PORT_ID_TYPE, 2, argc, argv);
     delta = 0;
   } else
     delta = -2;
 
-  if (!SCHEME_STRINGP(argv[3 + delta]))
-    scheme_wrong_type(name, "string", 3 + delta, argc, argv);
+  if (!SCHEME_BYTE_STRINGP(argv[3 + delta]))
+    scheme_wrong_type(name, "byte-string", 3 + delta, argc, argv);
   
   scheme_get_substring_indices(name, argv[3 + delta], 
 			       argc, argv,
 			       4 + delta, 5 + delta, &start, &end);
 
   if (with_addr) {
-    address = SCHEME_STR_VAL(argv[1]);
+    if (SCHEME_BYTE_STRINGP(argv[1]))
+      address = SCHEME_BYTE_STR_VAL(argv[1]);
+    else {
+      Scheme_Object *bs;
+      bs = scheme_char_string_to_byte_string(argv[1]);
+      address = SCHEME_BYTE_STR_VAL(bs);
+    }
     origid = (unsigned short)SCHEME_INT_VAL(argv[2]);
 
     scheme_security_check_network(name, address, origid, 1);
@@ -3077,10 +3101,10 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
       udp->bound = 1; /* in case it's not bound already, send[to] binds it */
 
       if (with_addr)
-	x = sendto(udp->s, SCHEME_STR_VAL(argv[3+delta]) + start, end - start, 
+	x = sendto(udp->s, SCHEME_BYTE_STR_VAL(argv[3+delta]) + start, end - start, 
 		   0, (struct sockaddr *)&udp_dest_addr, sizeof(udp_dest_addr));
       else
-	x = send(udp->s, SCHEME_STR_VAL(argv[3+delta]) + start, end - start, 0);
+	x = send(udp->s, SCHEME_BYTE_STR_VAL(argv[3+delta]) + start, end - start, 0);
 
       if (x == -1) {
 	errid = SOCK_ERRNO();
@@ -3216,8 +3240,8 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
   if (!SCHEME_UDPP(argv[0]))
     scheme_wrong_type(name, "udp-socket", 0, argc, argv);
 #ifdef UDP_IS_SUPPORTED
-  if (!SCHEME_STRINGP(argv[1]) || !SCHEME_MUTABLEP(argv[1]))
-      scheme_wrong_type(name, "mutable-string", 1, argc, argv);
+  if (!SCHEME_BYTE_STRINGP(argv[1]) || !SCHEME_MUTABLEP(argv[1]))
+      scheme_wrong_type(name, "mutable-byte-string", 1, argc, argv);
   
   scheme_get_substring_indices(name, argv[1], 
 			       argc, argv,
@@ -3242,7 +3266,7 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
 
     {
       int asize = sizeof(udp_src_addr);
-      x = recvfrom(udp->s, SCHEME_STR_VAL(argv[1]) + start, end - start, 0,
+      x = recvfrom(udp->s, SCHEME_BYTE_STR_VAL(argv[1]) + start, end - start, 0,
 		   (struct sockaddr *)&udp_src_addr, &asize);
     }
 
@@ -3276,10 +3300,10 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
 
     a = (unsigned char *)&udp_src_addr.sin_addr;
     sprintf(buf, "%d.%d.%d.%d", a[0], a[1], a[2], a[3]);
-    if (udp->previous_from_addr && !strcmp(SCHEME_STR_VAL(udp->previous_from_addr), buf)) {
+    if (udp->previous_from_addr && !strcmp(SCHEME_BYTE_STR_VAL(udp->previous_from_addr), buf)) {
       v[1] = udp->previous_from_addr;
     } else {
-      v[1] = scheme_make_immutable_sized_string(buf, -1, 1);
+      v[1] = scheme_make_immutable_sized_byte_string(buf, -1, 1);
       udp->previous_from_addr = v[1];
     }
 

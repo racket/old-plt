@@ -682,11 +682,11 @@ Scheme_Object *scheme_source_to_name(Scheme_Object *code)
     Scheme_Object *name;
 
     src[0] = 0;
-    if (cstx->srcloc->src && SCHEME_STRINGP(cstx->srcloc->src)) {
-      if (SCHEME_STRLEN_VAL(cstx->srcloc->src) < 20)
-	memcpy(src, SCHEME_STR_VAL(cstx->srcloc->src), SCHEME_STRLEN_VAL(cstx->srcloc->src) + 1);
+    if (cstx->srcloc->src && SCHEME_BYTE_STRINGP(cstx->srcloc->src)) {
+      if (SCHEME_BYTE_STRLEN_VAL(cstx->srcloc->src) < 20)
+	memcpy(src, SCHEME_BYTE_STR_VAL(cstx->srcloc->src), SCHEME_BYTE_STRLEN_VAL(cstx->srcloc->src) + 1);
       else {
-	memcpy(src, SCHEME_STR_VAL(cstx->srcloc->src) + SCHEME_STRLEN_VAL(cstx->srcloc->src) - 19, 20);
+	memcpy(src, SCHEME_BYTE_STR_VAL(cstx->srcloc->src) + SCHEME_BYTE_STRLEN_VAL(cstx->srcloc->src) - 19, 20);
 	src[0] = '.';
 	src[1] = '.';
 	src[2] = '.';
@@ -1745,7 +1745,7 @@ static Scheme_Object *object_name(int argc, Scheme_Object **argv)
   } else if (SCHEME_INPORTP(a)) {
     Scheme_Input_Port *ip = (Scheme_Input_Port *)a;
     if (ip->name) {
-      return scheme_make_immutable_sized_string(ip->name, -1, 0);
+      return scheme_make_immutable_sized_byte_string(ip->name, -1, 0);
     }
   } else if (SCHEME_THREADP(a)) {
     Scheme_Thread *t = (Scheme_Thread *)a;
@@ -3138,7 +3138,7 @@ scheme_default_print_handler(int argc, Scheme_Object *argv[])
     argv[0] = obj;
     argv[1] = port;
     _scheme_apply(scheme_print_proc, 2, argv);
-    scheme_write_string("\n", 1, port);
+    scheme_write_byte_string("\n", 1, port);
   }
 
   return scheme_void;
@@ -3152,7 +3152,7 @@ scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
   Scheme_Object *inport = scheme_get_param(config, MZCONFIG_INPUT_PORT);
   char *name;
 
-  scheme_write_string("> ", 2, port);
+  scheme_write_byte_string("> ", 2, port);
   scheme_flush_output(port);
 
   name = ((Scheme_Input_Port *)inport)->name;
@@ -3160,7 +3160,7 @@ scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
   if (inport == scheme_orig_stdin_port)
     scheme_flush_orig_outputs();
 
-  return scheme_read_syntax(inport, scheme_make_string(name));
+  return scheme_read_syntax(inport, scheme_make_byte_string(name));
 }
 
 

@@ -4007,7 +4007,7 @@ Scheme_Object *scheme_load_compiled_stx_string(const char *str, long len)
 {
   Scheme_Object *port, *expr;
 
-  port = scheme_make_sized_string_input_port(str, -len);
+  port = scheme_make_sized_byte_string_input_port(str, -len);
 
   expr = scheme_internal_read(port, NULL, 1, 0);
 
@@ -4459,7 +4459,7 @@ Scheme_Object *scheme_eval_string_all(const char *str, Scheme_Env *env, int cont
 {
   Scheme_Object *port, *expr, *result = scheme_void;
 
-  port = scheme_make_string_input_port(str);
+  port = scheme_make_byte_string_input_port(str);
   do {
     expr = scheme_read_syntax(port, scheme_false);
     if (SAME_OBJ(expr, scheme_eof))

@@ -807,7 +807,8 @@ immutablep (int argc, Scheme_Object *argv[])
 	   && SCHEME_IMMUTABLEP(v)
 	   && (SCHEME_PAIRP(v)
 	       || SCHEME_VECTORP(v)
-	       || SCHEME_STRINGP(v)
+	       || SCHEME_BYTE_STRINGP(v)
+	       || SCHEME_CHAR_STRINGP(v)
 	       || SCHEME_BOXP(v)))
 	  ? scheme_true
 	  : scheme_false);

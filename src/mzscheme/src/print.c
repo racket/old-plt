@@ -52,7 +52,7 @@ static int print(Scheme_Object *obj, int notdisplay, int compact,
 		 Scheme_Hash_Table *ht,
 		 Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht,
 		 Scheme_Thread *p);
-static void print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p);
+static void print_byte_string(char *s, int l, int notdisplay, Scheme_Thread *p);
 static void print_pair(Scheme_Object *pair, int notdisplay, int compact, 
 		       Scheme_Hash_Table *ht, 
 		       Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, 
@@ -68,6 +68,9 @@ static char *print_to_string(Scheme_Object *obj, long * volatile len, int write,
 
 static Scheme_Object *quote_link_symbol = NULL;
 static char *quick_buffer = NULL;
+static char *quick_encode_buffer = NULL;
+
+#define QUICK_ENCODE_BUFFER_SIZE 256
 
 static char compacts[_CPT_COUNT_];
 
@@ -101,9 +104,11 @@ void scheme_init_print(Scheme_Env *env)
   int i;
 
   REGISTER_SO(quick_buffer);
+  REGISTER_SO(quick_encode_buffer);
   
   quick_buffer = (char *)scheme_malloc_atomic(100);
-  
+  quick_encode_buffer = (char *)scheme_malloc_atomic(QUICK_ENCODE_BUFFER_SIZE);
+
   REGISTER_SO(quote_link_symbol);
   
   quote_link_symbol = scheme_intern_symbol("-q");
@@ -156,7 +161,7 @@ static void do_handled_print(Scheme_Object *obj, Scheme_Object *port,
   a[0] = obj;
   
   if (maxl > 0) {
-    a[1] = scheme_make_string_output_port();
+    a[1] = scheme_make_byte_string_output_port();
   } else
     a[1] = port;
   
@@ -166,11 +171,11 @@ static void do_handled_print(Scheme_Object *obj, Scheme_Object *port,
     char *s;
     long len;
 
-    s = scheme_get_sized_string_output(a[1], &len);
+    s = scheme_get_sized_byte_string_output(a[1], &len);
     if (len > maxl)
       len = maxl;
 
-    scheme_write_string(s, len, port);
+    scheme_write_byte_string(s, len, port);
   }
 }
 
@@ -657,7 +662,7 @@ print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int notdispla
 
   str = print_to_string(obj, &len, notdisplay, port, maxl, p, config);
 
-  scheme_write_string(str, len, port);
+  scheme_write_byte_string(str, len, port);
 }
 
 static void print_this_string(Scheme_Thread *p, const char *str, int offset, int autolen)
@@ -697,6 +702,10 @@ static void print_this_string(Scheme_Thread *p, const char *str, int offset, int
   memcpy(p->print_buffer + p->print_position, str + offset, len);
   p->print_position += len;
 
+  /* ----------- Do not use str after this point --------------- */
+  /*  It might be quick_buffer, and another thread might try to  */
+  /*  use the buffer.                                            */
+
   SCHEME_USE_FUEL(len);
   
   if (p->print_maxlen > PRINT_MAXLEN_MIN)  {
@@ -715,7 +724,7 @@ static void print_this_string(Scheme_Thread *p, const char *str, int offset, int
   } else if (p->print_position > MAX_PRINT_BUFFER) {
     if (p->print_port) {
       p->print_buffer[p->print_position] = 0;
-      scheme_write_string(p->print_buffer, p->print_position, p->print_port);
+      scheme_write_byte_string(p->print_buffer, p->print_position, p->print_port);
       
       p->print_position = 0;
     }
@@ -1012,19 +1021,56 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 			  SCHEME_SYM_LEN(obj));
       }
     }
-  else if (SCHEME_STRINGP(obj))
+  else if (SCHEME_BYTE_STRINGP(obj))
     {
       if (compact) {
 	int l;
 
-	print_compact(p, CPT_STRING);
-	l = SCHEME_STRTAG_VAL(obj);
+	print_compact(p, CPT_BYTE_STRING);
+	l = SCHEME_BYTE_STRTAG_VAL(obj);
 	print_compact_number(p, l);
-	print_this_string(p, SCHEME_STR_VAL(obj), 0, l);
+	print_this_string(p, SCHEME_BYTE_STR_VAL(obj), 0, l);
       } else {
-	print_string(obj, notdisplay, p);
+	if (notdisplay)
+	  print_this_string(p, "#$", 0, 2);
+	print_byte_string(SCHEME_BYTE_STR_VAL(obj), 
+			  SCHEME_BYTE_STRLEN_VAL(obj), 
+			  notdisplay, p);
 	closed = 1;
       }
+    }
+  else if (SCHEME_CHAR_STRINGP(obj))
+    {
+      int l, el, reset;
+      char *buf;
+      
+      l = SCHEME_CHAR_STRTAG_VAL(obj);
+      el = l * MAX_UTF8_CHAR_BYTES;
+      if (el <= QUICK_ENCODE_BUFFER_SIZE) {
+	if (quick_encode_buffer) {
+	  buf = quick_encode_buffer;
+	  quick_encode_buffer = NULL;
+	} else
+	  buf = (char *)scheme_malloc_atomic(QUICK_ENCODE_BUFFER_SIZE);
+	reset = 1;
+      } else {
+	buf = (char *)scheme_malloc_atomic(el);
+	reset = 0;
+      }
+      el = scheme_utf8_encode_all(SCHEME_CHAR_STR_VAL(obj), l, buf);
+
+      if (compact) {
+	print_compact(p, CPT_CHAR_STRING);
+	print_compact_number(p, el);
+	print_compact_number(p, l);
+	print_this_string(p, buf, 0, el);
+      } else {
+	print_byte_string(buf, el, notdisplay, p);
+	closed = 1;
+      }
+
+      if (reset)
+	quick_encode_buffer = buf;
     }
   else if (SCHEME_CHARP(obj))
     {
@@ -1302,7 +1348,14 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	     print_this_string(p, "#rxu", 0, 4);
 	   else
 	     print_this_string(p, "#rx", 0, 3);
-	   print_string(src, 1, p);
+	   
+	   if (SCHEME_CHAR_STRINGP(src)) {
+	     print(src, 1, 0, ht,symtab, rnht, p);
+	   } else {
+	     print_byte_string(SCHEME_BYTE_STR_VAL(src),
+			       SCHEME_BYTE_STRTAG_VAL(src),
+			       1, p);
+	   }
 	 } else if (compact)
 	   cannot_print(p, notdisplay, obj, ht);
 	 else
@@ -1346,8 +1399,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	Scheme_Stx *stx = (Scheme_Stx *)obj;
 	if ((stx->srcloc->line >= 0) || (stx->srcloc->pos >= 0)) {
 	  print_this_string(p, "#<syntax:", 0, 9);
-	  if (stx->srcloc->src && SCHEME_STRINGP(stx->srcloc->src)) {
-	    print_this_string(p, SCHEME_STR_VAL(stx->srcloc->src), 0, SCHEME_STRLEN_VAL(stx->srcloc->src));
+	  if (stx->srcloc->src && SCHEME_BYTE_STRINGP(stx->srcloc->src)) {
+	    print_this_string(p, SCHEME_BYTE_STR_VAL(stx->srcloc->src), 0, SCHEME_BYTE_STRLEN_VAL(stx->srcloc->src));
 	    print_this_string(p, ":", 0, 1);
 	  }
 	  if (stx->srcloc->line >= 0)
@@ -1671,13 +1724,10 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 }
 
 static void
-print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p)
+print_byte_string(char *str, int len, int notdisplay, Scheme_Thread *p)
 {
-  char *str, minibuf[8], *esc;
-  int len, a, i, v, utf8_leftover = 0;
-
-  len = SCHEME_STRTAG_VAL(string);
-  str = SCHEME_STR_VAL(string);
+  char minibuf[8], *esc;
+  int a, i, v, utf8_leftover = 0;
 
   if (notdisplay) {
     print_this_string(p, "\"", 0, 1);

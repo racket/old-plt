@@ -1260,7 +1260,7 @@ Scheme_Object *scheme_named_map_1(char *,
 
 int scheme_strncmp(const char *a, const char *b, int len);
 
-#define _scheme_make_char(ch) (scheme_char_constants[(unsigned char)(ch)])
+#define _scheme_make_char(ch) scheme_make_character(ch)
 
 Scheme_Object *scheme_default_eval_handler(int, Scheme_Object *[]);
 Scheme_Object *scheme_default_print_handler(int, Scheme_Object *[]);
@@ -1861,8 +1861,8 @@ char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv
 
 #define IMPROPER_LIST_FORM "illegal use of `.'"
 
-int scheme_string_has_null(Scheme_Object *o);
-#define STRING_W_NO_NULLS "string (with no null characters)"
+int scheme_byte_string_has_null(Scheme_Object *o);
+#define BYTE_STRING_W_NO_NULLS "byte-string (with no null characters)"
 
 Scheme_Object *scheme_do_exit(int argc, Scheme_Object *argv[]);
 
@@ -1904,7 +1904,7 @@ void scheme_file_create_hook(char *filename);
 #endif
 
 void scheme_do_format(const char *procname, Scheme_Object *port,
-		      const unsigned char *format, int flen,
+		      const mzchar *format, int flen,
 		      int fpos, int offset, int argc, Scheme_Object **argv);
 
 Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[], char *who, int handler_param);
@@ -2028,15 +2028,15 @@ Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 					   void *data,
 					   Scheme_Get_String_Fun get_string_fun,
 					   Scheme_Peek_String_Fun peek_string_fun,
-					   Scheme_In_Ready_Fun char_ready_fun,
+					   Scheme_In_Ready_Fun byte_ready_fun,
 					   Scheme_Close_Input_Fun close_fun,
 					   Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
 					   int must_close);
 
-int scheme_user_port_char_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_Info *sinfo);
+int scheme_user_port_byte_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_Info *sinfo);
 int scheme_user_port_write_probably_ready(Scheme_Output_Port *op, Scheme_Schedule_Info *sinfo);
 
-int scheme_char_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info *sinfo);
+int scheme_byte_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info *sinfo);
 
 #define CURRENT_INPUT_PORT(config) scheme_get_param(config, MZCONFIG_INPUT_PORT)
 #define CURRENT_OUTPUT_PORT(config) scheme_get_param(config, MZCONFIG_OUTPUT_PORT)
@@ -2047,6 +2047,8 @@ int scheme_char_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info 
 #else
 # define MZ_NONBLOCKING FNDELAY
 #endif
+
+#define MAX_UTF8_CHAR_BYTES 6
 
 /*========================================================================*/
 /*                         memory debugging                               */
@@ -2097,10 +2099,5 @@ void scheme_reset_locale(void);
 #define SCHEME_SYM_UNINTERNEDP(o) (((Scheme_Symbol *)o)->keyex & 0x1)
 #define SCHEME_SYM_PARALLELP(o) (((Scheme_Symbol *)o)->keyex & 0x2)
 #define SCHEME_SYM_WEIRDP(o) (((Scheme_Symbol *)o)->keyex & 0x3)
-
-extern unsigned char scheme_portable_upcase[256];
-extern unsigned char scheme_portable_downcase[256];
-#define mz_portable_toupper(c) scheme_portable_upcase[c]
-#define mz_portable_tolower(c) scheme_portable_downcase[c]
 
 #endif /* __mzscheme_private__ */

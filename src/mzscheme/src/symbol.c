@@ -540,10 +540,10 @@ symbol_to_string_prim (int argc, Scheme_Object *argv[])
   if (!SCHEME_SYMBOLP(argv[0]))
     scheme_wrong_type("symbol->string", "symbol", 0, argc, argv);
 
-  return scheme_make_sized_offset_string((char *)(argv[0]),
-					 SCHEME_SYMSTR_OFFSET(argv[0]),
-					 SCHEME_SYM_LEN(argv[0]),
-					 1);
+  return scheme_make_sized_offset_utf8_string((char *)(argv[0]),
+					      SCHEME_SYMSTR_OFFSET(argv[0]),
+					      SCHEME_SYM_LEN(argv[0]),
+					      1);
 }
 
 static Scheme_Object *gensym(int argc, Scheme_Object *argv[])
@@ -556,13 +556,14 @@ static Scheme_Object *gensym(int argc, Scheme_Object *argv[])
   else
     r = NULL;
 
-  if (r && !SCHEME_SYMBOLP(r) && !SCHEME_STRINGP(r))
+  if (r && !SCHEME_SYMBOLP(r) && !SCHEME_CHAR_STRINGP(r))
     scheme_wrong_type("gensym", "symbol or string", 0, argc, argv);
 
   if (r) {
-    if (SCHEME_STRINGP(r))
+    if (SCHEME_STRINGP(r)) {
+      r = scheme_char_string_to_byte_string(r);
       str = SCHEME_STR_VAL(r);
-    else
+    } else
       str = SCHEME_SYM_VAL(r);
     sprintf(buffer, "%.80s%d", str, gensym_counter++);
     str = NULL; /* because it might be GC-misaligned */

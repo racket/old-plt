@@ -214,12 +214,18 @@ int scheme_equal (Scheme_Object *obj1, Scheme_Object *obj2)
   } else if (SCHEME_VECTORP(obj1)) {
 #   include "mzeqchk.inc"
     return vector_equal(obj1, obj2);
-  } else if (SCHEME_STRINGP(obj1)) {
+  } else if (SCHEME_BYTE_STRINGP(obj1)) {
     int l1, l2;
-    l1 = SCHEME_STRTAG_VAL(obj1);
-    l2 = SCHEME_STRTAG_VAL(obj2);
+    l1 = SCHEME_BYTE_STRTAG_VAL(obj1);
+    l2 = SCHEME_BYTE_STRTAG_VAL(obj2);
     return ((l1 == l2)
-	    && !memcmp(SCHEME_STR_VAL(obj1), SCHEME_STR_VAL(obj2), l1));
+	    && !memcmp(SCHEME_BYTE_STR_VAL(obj1), SCHEME_BYTE_STR_VAL(obj2), l1));
+  } else if (SCHEME_CHAR_STRINGP(obj1)) {
+    int l1, l2;
+    l1 = SCHEME_CHAR_STRTAG_VAL(obj1);
+    l2 = SCHEME_CHAR_STRTAG_VAL(obj2);
+    return ((l1 == l2)
+	    && !memcmp(SCHEME_CHAR_STR_VAL(obj1), SCHEME_CHAR_STR_VAL(obj2), l1 * sizeof(mzchar)));
   } else if (SCHEME_STRUCTP(obj1)) {
     if (SCHEME_STRUCT_TYPE(obj1) != SCHEME_STRUCT_TYPE(obj2))
       return 0;

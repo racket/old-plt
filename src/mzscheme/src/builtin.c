@@ -38,7 +38,7 @@ Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Schem
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Config *config = p->config;
 
-  port = scheme_make_sized_string_input_port(str, -len); /* negative means it's constant */
+  port = scheme_make_sized_byte_string_input_port(str, -len); /* negative means it's constant */
 
   saved = scheme_get_param(config, MZCONFIG_ENV);
   if (!env) env = (Scheme_Env *)saved;

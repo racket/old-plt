@@ -181,6 +181,9 @@ typedef short Scheme_Type;
    also define MZSHORT_IS_SHORT. */
 typedef int mzshort;
 
+typedef unsigned int mzchar;
+typedef int mzchar_int; /* includes EOF */
+
 /* MzScheme values have the type `Scheme_Object *'.
    The actual Scheme_Object structure only defines a few variants.
    The important thing is that all `Scheme_Object *'s start with
@@ -204,7 +207,8 @@ typedef struct Scheme_Object
 
   union
     {
-      struct { char *string_val; int tag_val; } str_val;
+      struct { mzchar *string_val; int tag_val; } char_str_val;
+      struct { char *string_val; int tag_val; } byte_str_val;
       struct { void *ptr1, *ptr2; } two_ptr_val;
       struct { int int1; int int2; } two_int_val;
       struct { void *ptr; int pint; } ptr_int_val;
@@ -221,7 +225,7 @@ typedef struct {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   union {
-    char char_val;
+    mzchar char_val;
     Scheme_Object *ptr_value;
     long int_val;
     Scheme_Object *ptr_val;
@@ -320,13 +324,20 @@ typedef struct Scheme_Vector {
 #define SCHEME_REALP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_izi_type)))
 #define SCHEME_NUMBERP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_type)))
 
-#define SCHEME_STRINGP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_string_type)
-#define SCHEME_MUTABLE_STRINGP(obj)  (SCHEME_STRINGP(obj) && SCHEME_MUTABLEP(obj))
-#define SCHEME_IMMUTABLE_STRINGP(obj)  (SCHEME_STRINGP(obj) && SCHEME_IMMUTABLEP(obj))
+#define SCHEME_CHAR_STRINGP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_char_string_type)
+#define SCHEME_MUTABLE_CHAR_STRINGP(obj)  (SCHEME_CHAR_STRINGP(obj) && SCHEME_MUTABLEP(obj))
+#define SCHEME_IMMUTABLE_CHAR_STRINGP(obj)  (SCHEME_CHAR_STRINGP(obj) && SCHEME_IMMUTABLEP(obj))
+
+#define SCHEME_BYTE_STRINGP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_byte_string_type)
+#define SCHEME_MUTABLE_BYTE_STRINGP(obj)  (SCHEME_BYTE_STRINGP(obj) && SCHEME_MUTABLEP(obj))
+#define SCHEME_IMMUTABLE_BYTE_STRINGP(obj)  (SCHEME_BYTE_STRINGP(obj) && SCHEME_IMMUTABLEP(obj))
+
+#define SCHEME_PATH_STRINGP(x) (SCHEME_BYTE_STRINGP(x) || SCHEME_CHAR_STRINGP(x))
+#define SCHEME_PATH_STRING_STR "byte-string or string"
 
 #define SCHEME_SYMBOLP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_symbol_type)
 
-#define SCHEME_STRSYMP(obj) (SCHEME_STRINGP(obj) || SCHEME_SYMBOLP(obj))
+#define SCHEME_STRSYMP(obj) (SCHEME_CHAR_STRINGP(obj) || SCHEME_SYMBOLP(obj))
 
 #define SCHEME_BOOLP(obj)    (SAME_OBJ(obj, scheme_true) || SAME_OBJ(obj, scheme_false))
 #define SCHEME_FALSEP(obj)     SAME_OBJ((obj), scheme_false)
@@ -384,14 +395,14 @@ typedef struct Scheme_Vector {
         ? argv [argnum]                                                                 \
         : (scheme_wrong_type (fname, typenam, argnum, argc, argv), argv [argnum]))
 
-#define GUARANTEE_BOOL(fname, argnum)      GUARANTEE_TYPE (fname, argnum, SCHEME_BOOLP, "boolean")
-#define GUARANTEE_CHAR(fname, argnum)      GUARANTEE_TYPE (fname, argnum, SCHEME_CHARP, "character")
-#define GUARANTEE_INTEGER(fname, argnum)   GUARANTEE_TYPE (fname, argnum, SCHEME_INTP, "integer")
-#define GUARANTEE_PAIR(fname, argnum)      GUARANTEE_TYPE (fname, argnum, SCHEME_PAIRP, "pair")
-#define GUARANTEE_PROCEDURE(fname, argnum) GUARANTEE_TYPE (fname, argnum, SCHEME_PROCP, "procedure")
-#define GUARANTEE_STRING(fname, argnum)    GUARANTEE_TYPE (fname, argnum, SCHEME_STRINGP, "string")
-#define GUARANTEE_STRSYM(fname, argnum)    GUARANTEE_TYPE (fname, argnum, SCHEME_STRSYMP, "string or symbol")
-#define GUARANTEE_SYMBOL(fname, argnum)    GUARANTEE_TYPE (fname, argnum, SCHEME_SYMBOLP, "symbol")
+#define GUARANTEE_BOOL(fname, argnum)        GUARANTEE_TYPE (fname, argnum, SCHEME_BOOLP, "boolean")
+#define GUARANTEE_CHAR(fname, argnum)        GUARANTEE_TYPE (fname, argnum, SCHEME_CHARP, "character")
+#define GUARANTEE_INTEGER(fname, argnum)     GUARANTEE_TYPE (fname, argnum, SCHEME_INTP, "integer")
+#define GUARANTEE_PAIR(fname, argnum)        GUARANTEE_TYPE (fname, argnum, SCHEME_PAIRP, "pair")
+#define GUARANTEE_PROCEDURE(fname, argnum)   GUARANTEE_TYPE (fname, argnum, SCHEME_PROCP, "procedure")
+#define GUARANTEE_CHAR_STRING(fname, argnum) GUARANTEE_TYPE (fname, argnum, SCHEME_CHAR_STRINGP, "string")
+#define GUARANTEE_STRSYM(fname, argnum)      GUARANTEE_TYPE (fname, argnum, SCHEME_STRSYMP, "string or symbol")
+#define GUARANTEE_SYMBOL(fname, argnum)      GUARANTEE_TYPE (fname, argnum, SCHEME_SYMBOLP, "symbol")
 
 /*========================================================================*/
 /*                        basic Scheme accessors                          */
@@ -409,16 +420,19 @@ typedef struct Scheme_Vector {
 # define scheme_make_float(x) scheme_make_double((double)x)
 #endif
 
-#define SCHEME_STR_VAL(obj)  ((obj)->u.str_val.string_val)
-#define SCHEME_STRTAG_VAL(obj)  ((obj)->u.str_val.tag_val)
-#define SCHEME_STRLEN_VAL(obj)  ((obj)->u.str_val.tag_val)
+#define SCHEME_CHAR_STR_VAL(obj)  ((obj)->u.char_str_val.string_val)
+#define SCHEME_CHAR_STRTAG_VAL(obj)  ((obj)->u.char_str_val.tag_val)
+#define SCHEME_CHAR_STRLEN_VAL(obj)  ((obj)->u.char_str_val.tag_val)
+#define SCHEME_BYTE_STR_VAL(obj)  ((obj)->u.byte_str_val.string_val)
+#define SCHEME_BYTE_STRTAG_VAL(obj)  ((obj)->u.byte_str_val.tag_val)
+#define SCHEME_BYTE_STRLEN_VAL(obj)  ((obj)->u.byte_str_val.tag_val)
 #define SCHEME_SYM_VAL(obj)  (((Scheme_Symbol *)(obj))->s)
 #define SCHEME_SYM_LEN(obj)  (((Scheme_Symbol *)(obj))->len)
 
 #define SCHEME_SYMSTR_OFFSET(obj) ((unsigned long)SCHEME_SYM_VAL(obj)-(unsigned long)(obj))
 
 /* return a `char *' pointing to the string or the symbol name */
-#define SCHEME_STRSYM_VAL(obj) (SCHEME_SYMBOLP(obj) ? SCHEME_SYM_VAL(obj) : SCHEME_STR_VAL(obj))
+#define SCHEME_STRSYM_VAL(obj) (SCHEME_SYMBOLP(obj) ? SCHEME_SYM_VAL(obj) : SCHEME_CHAR_STR_VAL(obj))
 
 #define SCHEME_BOX_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
 
@@ -450,7 +464,8 @@ typedef struct Scheme_Vector {
 #define SCHEME_CPTR_TYPE(obj) ((char *)SCHEME_PTR2_VAL(obj))
 
 #define SCHEME_SET_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
-#define SCHEME_SET_STRING_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
+#define SCHEME_SET_CHAR_STRING_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
+#define SCHEME_SET_BYTE_STRING_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
 #define SCHEME_SET_PAIR_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
 #define SCHEME_SET_VECTOR_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
 #define SCHEME_SET_BOX_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)
@@ -460,7 +475,7 @@ typedef struct Scheme_Vector {
 /*========================================================================*/
 
 #define scheme_make_integer(i)    LONG_TO_OBJ ((OBJ_TO_LONG(i) << 1) | 0x1)
-#define scheme_make_character(ch) (scheme_char_constants[(unsigned char)(ch)])
+#define scheme_make_character(ch) ((ch < 127) ? scheme_char_constants[(unsigned char)(ch)] : scheme_make_char(ch))
 
 #define scheme_uchar_find(x) (scheme_uchar_table[x >> 21][(x >> 8) & 0x1FFF][x & 0xFF])
 
@@ -468,16 +483,17 @@ typedef struct Scheme_Vector {
 #define scheme_issymbol(x) ((scheme_uchar_find(x)) & 0x2)
 #define scheme_ispunc(x) ((scheme_uchar_find(x)) & 0x4)
 #define scheme_iscontrol(x) ((scheme_uchar_find(x)) & 0x8)
-#define scheme_iswhitespace(x) ((scheme_uchar_find(x)) & 0x10)
-#define scheme_ishex(x) ((scheme_uchar_find(x)) & 0x20)
+#define scheme_isspace(x) ((scheme_uchar_find(x)) & 0x10)
+#define scheme_isxdigit(x) ((scheme_uchar_find(x)) & 0x20)
 #define scheme_isdigit(x) ((scheme_uchar_find(x)) & 0x40)
-#define scheme_istitle(x) ((scheme_uchar_find(x)) & 0x80)
-#define scheme_isup(x) ((scheme_uchar_find(x)) & 0x100)
-#define scheme_islow(x) ((scheme_uchar_find(x)) & 0x200)
+#define scheme_isalpha(x) ((scheme_uchar_find(x)) & 0x80)
+#define scheme_istitle(x) ((scheme_uchar_find(x)) & 0x100)
+#define scheme_isupper(x) ((scheme_uchar_find(x)) & 0x200)
+#define scheme_islower(x) ((scheme_uchar_find(x)) & 0x400)
 
-#define scheme_toupper(x) (x + scheme_uchar_ups[(((scheme_uchar_find(x)) & 0xfa00) >> 10)])
-#define scheme_tolower(x) (x + scheme_uchar_downs[(((scheme_uchar_find(x)) & 0x3F0000) >> 16)])
-#define scheme_totitle(x) (x + scheme_uchar_titles[(((scheme_uchar_find(x)) & 0xfa00000) >> 22)])
+#define scheme_toupper(x) (x + scheme_uchar_ups[(((scheme_uchar_find(x)) & 0xfa00) >> 11)])
+#define scheme_tolower(x) (x + scheme_uchar_downs[(((scheme_uchar_find(x)) & 0x3F0000) >> 17)])
+#define scheme_totitle(x) (x + scheme_uchar_titles[(((scheme_uchar_find(x)) & 0xfa00000) >> 23)])
 
 /*========================================================================*/
 /*                          procedure values                              */
@@ -1011,13 +1027,13 @@ struct Scheme_Input_Port
   void *port_data;
   Scheme_Get_String_Fun get_string_fun;
   Scheme_Peek_String_Fun peek_string_fun;
-  Scheme_In_Ready_Fun char_ready_fun;
+  Scheme_In_Ready_Fun byte_ready_fun;
   Scheme_Close_Input_Fun close_fun;
   Scheme_Need_Wakeup_Input_Fun need_wakeup_fun;
   Scheme_Object *read_handler;
   char *name;
   Scheme_Object *peeked_read, *peeked_write;
-  unsigned char ungotten[4];
+  unsigned char ungotten[24];
   int ungotten_count;
   Scheme_Object *special, *ungotten_special;
   long position, readpos, lineNumber, charsSinceNewline, utf8cont;

@@ -122,7 +122,8 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_input_port_type, "<input-port>");
   set_name(scheme_output_port_type, "<output-port>");
   set_name(scheme_thread_type, "<thread>");
-  set_name(scheme_string_type, "<string>");
+  set_name(scheme_char_string_type, "<string>");
+  set_name(scheme_byte_string_type, "<byte-string>");
   set_name(scheme_struct_property_type, "<struct-property>");
   set_name(scheme_structure_type, "<struct>");
 #ifdef USE_SENORA_GC
@@ -428,7 +429,8 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_double_type, double_obj);
   GC_REG_TRAV(scheme_complex_izi_type, complex_obj);
   GC_REG_TRAV(scheme_complex_type, complex_obj);
-  GC_REG_TRAV(scheme_string_type, string_obj);
+  GC_REG_TRAV(scheme_byte_string_type, string_obj);
+  GC_REG_TRAV(scheme_char_string_type, string_obj);
   GC_REG_TRAV(scheme_symbol_type, symbol_obj);
   GC_REG_TRAV(scheme_null_type, char_obj); /* small */
   GC_REG_TRAV(scheme_pair_type, cons_cell);

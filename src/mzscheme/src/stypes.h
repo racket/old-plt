@@ -57,7 +57,7 @@ enum {
   scheme_double_type,
   scheme_complex_izi_type, /* 40 */
   scheme_complex_type,
-  scheme_string_type,
+  scheme_char_string_type,
   scheme_symbol_type,
   scheme_null_type,
   scheme_pair_type,
@@ -128,8 +128,7 @@ enum {
   scheme_thread_set_type,   /* 110 */
   scheme_string_converter_type,
   scheme_alarm_type,
-
-  scheme_reserved3_type,
+  scheme_byte_string_type,
 
 #ifdef MZTAG_REQUIRED
   _scheme_last_normal_type_,

@@ -47,6 +47,8 @@ static Scheme_Object *read_f (int, Scheme_Object *[]);
 static Scheme_Object *read_syntax_f (int, Scheme_Object *[]);
 static Scheme_Object *read_char (int, Scheme_Object *[]);
 static Scheme_Object *read_char_spec (int, Scheme_Object *[]);
+static Scheme_Object *read_byte (int, Scheme_Object *[]);
+static Scheme_Object *read_byte_spec (int, Scheme_Object *[]);
 static Scheme_Object *read_line (int, Scheme_Object *[]);
 static Scheme_Object *sch_read_string (int, Scheme_Object *[]);
 static Scheme_Object *sch_read_string_bang (int, Scheme_Object *[]);
@@ -64,13 +66,17 @@ static Scheme_Object *write_string_avail_nonblock(int argc, Scheme_Object *argv[
 static Scheme_Object *write_string_avail_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *peek_char (int, Scheme_Object *[]);
 static Scheme_Object *peek_char_spec (int, Scheme_Object *[]);
+static Scheme_Object *peek_byte (int, Scheme_Object *[]);
+static Scheme_Object *peek_byte_spec (int, Scheme_Object *[]);
 static Scheme_Object *eof_object_p (int, Scheme_Object *[]);
 static Scheme_Object *char_ready_p (int, Scheme_Object *[]);
+static Scheme_Object *byte_ready_p (int, Scheme_Object *[]);
 static Scheme_Object *sch_write (int, Scheme_Object *[]);
 static Scheme_Object *display (int, Scheme_Object *[]);
 static Scheme_Object *sch_print (int, Scheme_Object *[]);
 static Scheme_Object *newline (int, Scheme_Object *[]);
 static Scheme_Object *write_char (int, Scheme_Object *[]);
+static Scheme_Object *write_byte (int, Scheme_Object *[]);
 static Scheme_Object *load (int, Scheme_Object *[]);
 static Scheme_Object *current_load (int, Scheme_Object *[]);
 static Scheme_Object *current_load_directory(int argc, Scheme_Object *argv[]);
@@ -253,14 +259,14 @@ scheme_init_port_fun(Scheme_Env *env)
 						      "open-output-file",
 						      1, 3), 
 			     env);
-  scheme_add_global_constant("open-output-string", 
+  scheme_add_global_constant("open-output-byte-string", 
 			     scheme_make_prim_w_arity(open_output_string,
-						      "open-output-string", 
+						      "open-output-byte-string", 
 						      0, 0),
 			     env);
-  scheme_add_global_constant("get-output-string", 
+  scheme_add_global_constant("get-output-byte-string", 
 			     scheme_make_prim_w_arity(get_output_string,
-						      "get-output-string",
+						      "get-output-byte-string",
 						      1, 1),
 			     env);
   scheme_add_global_constant("open-input-output-file", 
@@ -333,79 +339,89 @@ scheme_init_port_fun(Scheme_Env *env)
 						      "read-char-or-special", 
 						      0, 1), 
 			     env);
+  scheme_add_global_constant("read-byte", 
+			     scheme_make_prim_w_arity(read_byte, 
+						      "read-byte", 
+						      0, 1), 
+			     env);
+  scheme_add_global_constant("read-byte-or-special", 
+			     scheme_make_prim_w_arity(read_byte_spec, 
+						      "read-byte-or-special", 
+						      0, 1), 
+			     env);
   scheme_add_global_constant("read-line", 
 			     scheme_make_prim_w_arity(read_line, 
 						      "read-line", 
 						      0, 2), 
 			     env);
-  scheme_add_global_constant("read-string", 
+  scheme_add_global_constant("read-byte-string", 
 			     scheme_make_prim_w_arity(sch_read_string, 
-						      "read-string", 
+						      "read-byte-string", 
 						      1, 2), 
 			     env);
-  scheme_add_global_constant("read-string!", 
+  scheme_add_global_constant("read-byte-string!", 
 			     scheme_make_prim_w_arity(sch_read_string_bang, 
-						      "read-string!", 
+						      "read-byte-string!", 
 						      1, 4), 
 			     env);
-  scheme_add_global_constant("peek-string", 
+  scheme_add_global_constant("peek-byte-string", 
 			     scheme_make_prim_w_arity(sch_peek_string, 
-						      "peek-string", 
+						      "peek-byte-string", 
 						      2, 3), 
 			     env);
-  scheme_add_global_constant("peek-string!", 
+  scheme_add_global_constant("peek-byte-string!", 
 			     scheme_make_prim_w_arity(sch_peek_string_bang, 
-						      "peek-string!", 
+						      "peek-byte-string!", 
 						      2, 5), 
 			     env);
-  scheme_add_global_constant("read-string-avail!", 
+  scheme_add_global_constant("read-byte-string-avail!", 
 			     scheme_make_prim_w_arity(read_string_bang, 
-						      "read-string-avail!", 
+						      "read-byte-string-avail!", 
 						      1, 4), 
 			     env);
-  scheme_add_global_constant("read-string-avail!*", 
+  scheme_add_global_constant("read-byte-string-avail!*", 
 			     scheme_make_prim_w_arity(read_string_bang_nonblock, 
-						      "read-string-avail!*", 
+						      "read-byte-string-avail!*", 
 						      1, 4), 
 			     env);
-  scheme_add_global_constant("read-string-avail!/enable-break", 
+  scheme_add_global_constant("read-byte-string-avail!/enable-break", 
 			     scheme_make_prim_w_arity(read_string_bang_break, 
-						      "read-string-avail!/enable-break", 
+						      "read-byte-string-avail!/enable-break", 
 						      1, 4), 
 			     env);
-  scheme_add_global_constant("peek-string-avail!", 
+  scheme_add_global_constant("peek-byte-string-avail!", 
 			     scheme_make_prim_w_arity(peek_string_bang, 
-						      "peek-string-avail!", 
+						      "peek-byte-string-avail!", 
 						      2, 5), 
 			     env);
-  scheme_add_global_constant("peek-string-avail!*", 
+  scheme_add_global_constant("peek-byte-string-avail!*", 
 			     scheme_make_prim_w_arity(peek_string_bang_nonblock, 
-						      "peek-string-avail!*", 
+						      "peek-byte-string-avail!*", 
 						      2, 5), 
 			     env);
-  scheme_add_global_constant("peek-string-avail!/enable-break", 
+  scheme_add_global_constant("peek-byte-string-avail!/enable-break", 
 			     scheme_make_prim_w_arity(peek_string_bang_break, 
-						      "peek-string-avail!/enable-break", 
+						      "peek-byte-string-avail!/enable-break", 
 						      2, 5), 
 			     env);
-  scheme_add_global_constant("write-string", 
+  scheme_add_global_constant("write-byte-string", 
 			     scheme_make_prim_w_arity(write_string, 
-						      "write-string", 
+						      "write-byte-string", 
 						      1, 4),
 			     env);
-  scheme_add_global_constant("write-string-avail", 
+  scheme_add_global_constant("write-byte-string-avail", 
 			     scheme_make_prim_w_arity(write_string_avail, 
-						      "write-string-avail", 
+						      "write-byte-string-avail", 
 						      1, 4),
 			     env);
-  scheme_add_global_constant("write-string-avail*", 
+  scheme_add_global_constant("write-byte-string-avail*", 
 			     scheme_make_prim_w_arity(write_string_avail_nonblock, 
-						      "write-string-avail*", 
+						      "write-byte-string-avail*", 
 						      1, 4),
 			     env);
-  scheme_add_global_constant("write-string-avail/enable-break",
+  scheme_add_global_constant("write-byte-string-avail/enable-break",
 			     scheme_make_prim_w_arity(write_string_avail_break, 
-						      "write-string-avail/enable-break", 
+						      "write-byte-string-avail/enable-break", 
 						      1, 4),
 			     env);
   scheme_add_global_constant("peek-char", 
@@ -418,10 +434,25 @@ scheme_init_port_fun(Scheme_Env *env)
 						      "peek-char-or-special", 
 						      0, 2), 
 			     env);
+  scheme_add_global_constant("peek-byte", 
+			     scheme_make_prim_w_arity(peek_byte, 
+						      "peek-byte", 
+						      0, 2), 
+			     env);
+  scheme_add_global_constant("peek-byte-or-special", 
+			     scheme_make_prim_w_arity(peek_byte_spec, 
+						      "peek-byte-or-special", 
+						      0, 2), 
+			     env);
   scheme_add_global_constant("eof-object?", 
 			     scheme_make_folding_prim(eof_object_p, 
 						      "eof-object?", 
 						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant("byte-ready?", 
+			     scheme_make_prim_w_arity(byte_ready_p, 
+						      "byte-ready?", 
+						      0, 1), 
 			     env);
   scheme_add_global_constant("char-ready?", 
 			     scheme_make_prim_w_arity(char_ready_p, 
@@ -439,6 +470,11 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("write-char", 
 			     scheme_make_prim_w_arity(write_char, 
 						      "write-char", 
+						      1, 2), 
+			     env);
+  scheme_add_global_constant("write-byte", 
+			     scheme_make_prim_w_arity(write_byte, 
+						      "write-byte", 
 						      1, 2), 
 			     env);
   
@@ -631,7 +667,7 @@ string_peek_string(Scheme_Input_Port *port,
 }
 
 static int
-string_char_ready (Scheme_Input_Port *port)
+string_byte_ready (Scheme_Input_Port *port)
 {
   return 1;
 }
@@ -673,7 +709,7 @@ make_indexed_string (const char *str, long len)
 }
 
 Scheme_Object *
-scheme_make_sized_string_input_port(const char *str, long len)
+scheme_make_sized_byte_string_input_port(const char *str, long len)
 {
   Scheme_Input_Port *ip;
 
@@ -681,7 +717,7 @@ scheme_make_sized_string_input_port(const char *str, long len)
 			       make_indexed_string(str, len),
 			       string_get_string,
 			       string_peek_string,
-			       string_char_ready,
+			       string_byte_ready,
 			       string_close_in,
 			       NULL,
 			       0);
@@ -692,9 +728,9 @@ scheme_make_sized_string_input_port(const char *str, long len)
 }
 
 Scheme_Object *
-scheme_make_string_input_port(const char *str)
+scheme_make_byte_string_input_port(const char *str)
 {
-  return scheme_make_sized_string_input_port(str, strlen(str));
+  return scheme_make_sized_byte_string_input_port(str, strlen(str));
 }
 
 /*========================================================================*/
@@ -741,7 +777,7 @@ string_close_out (Scheme_Output_Port *port)
 }
 
 Scheme_Object *
-scheme_make_string_output_port (void)
+scheme_make_byte_string_output_port (void)
 {
   Scheme_Output_Port *op;
 
@@ -757,7 +793,7 @@ scheme_make_string_output_port (void)
 }
 
 char *
-scheme_get_sized_string_output(Scheme_Object *port, long *size)
+scheme_get_sized_byte_string_output(Scheme_Object *port, long *size)
 {
   Scheme_Output_Port *op;
   Scheme_Indexed_String *is;
@@ -790,7 +826,7 @@ scheme_get_sized_string_output(Scheme_Object *port, long *size)
 char *
 scheme_get_string_output(Scheme_Object *port)
 {
-  return scheme_get_sized_string_output(port, NULL);
+  return scheme_get_sized_byte_string_output(port, NULL);
 }
 
 /*========================================================================*/
@@ -842,13 +878,13 @@ user_get_or_peek_string(Scheme_Input_Port *port,
   else
     fun = uip->read_proc;
 
-  if (uip->reuse_str && (size == SCHEME_STRLEN_VAL(uip->reuse_str))) {
+  if (uip->reuse_str && (size == SCHEME_BYTE_STRLEN_VAL(uip->reuse_str))) {
     a[0] = uip->reuse_str;
     uip->reuse_str = NULL;
   } else {
     char *vb;
     vb = scheme_malloc_atomic(size + 1);
-    a[0] = scheme_make_sized_string(vb, size, 0);
+    a[0] = scheme_make_sized_byte_string(vb, size, 0);
   }
   a[1] = peek_skip;
   val = scheme_apply(fun, peek ? 2 : 1, a);
@@ -902,7 +938,7 @@ user_get_or_peek_string(Scheme_Input_Port *port,
 	  }
 	}
       } else {
-	scheme_wrong_type(peek ? "user port peek-string" : "user port read-string", 
+	scheme_wrong_type(peek ? "user port peek-byte-string" : "user port read-byte-string", 
 			  (peek 
 			   ? "non-negative exact integer, eof, waitable, or procedure of arity 4"
 			   : "non-negative exact integer, eof, or procedure of arity 4"), 
@@ -912,14 +948,14 @@ user_get_or_peek_string(Scheme_Input_Port *port,
     } else
       n = SCHEME_INT_VAL(val);
 
-    if ((n < 0) || (n > SCHEME_STRLEN_VAL(a[0]))) {
-      scheme_arg_mismatch(peek ? "user port peek-string" : "user port read-string",
+    if ((n < 0) || (n > SCHEME_BYTE_STRLEN_VAL(a[0]))) {
+      scheme_arg_mismatch(peek ? "user port peek-byte-string" : "user port read-byte-string",
 			  "result integer is larger than the supplied string: ",
 			  val);
     }
 
     if (n) {
-      memcpy(buffer + offset, SCHEME_STR_VAL(a[0]), n);
+      memcpy(buffer + offset, SCHEME_BYTE_STR_VAL(a[0]), n);
       return n;
     } else {
       scheme_thread_block(0.0); /* penalty for inaccuracy? */
@@ -953,7 +989,7 @@ user_peek_string(Scheme_Input_Port *port,
 }
 
 static int
-user_char_ready_sinfo(Scheme_Input_Port *port, Scheme_Schedule_Info *sinfo)
+user_byte_ready_sinfo(Scheme_Input_Port *port, Scheme_Schedule_Info *sinfo)
 {
   int c, can_peek;
   char s[1];
@@ -987,12 +1023,12 @@ user_char_ready_sinfo(Scheme_Input_Port *port, Scheme_Schedule_Info *sinfo)
 }
 
 static int
-user_char_ready(Scheme_Input_Port *port)
+user_byte_ready(Scheme_Input_Port *port)
 {
-  return user_char_ready_sinfo(port, NULL);
+  return user_byte_ready_sinfo(port, NULL);
 }
 
-int scheme_user_port_char_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_Info *sinfo)
+int scheme_user_port_byte_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_Info *sinfo)
 {
   User_Input_Port *uip = (User_Input_Port *)ip->port_data;
 
@@ -1004,7 +1040,7 @@ int scheme_user_port_char_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_
     sinfo->potentially_false_positive = 1;
     return 1;
   } else {
-    return user_char_ready_sinfo(ip, sinfo);
+    return user_byte_ready_sinfo(ip, sinfo);
   }
 }
 
@@ -1093,7 +1129,7 @@ user_write_string(Scheme_Output_Port *port, const char *str, long offset, long l
     return 0;
   } else {
     if (!to_write)
-      to_write = scheme_make_sized_offset_string((char *)str, offset, len, 1);
+      to_write = scheme_make_sized_offset_byte_string((char *)str, offset, len, 1);
     p[0] = to_write;
     SCHEME_SET_IMMUTABLE(p[0]);
     p[1] = scheme_make_integer(0);
@@ -1105,7 +1141,7 @@ user_write_string(Scheme_Output_Port *port, const char *str, long offset, long l
 
   if (SCHEME_FALSEP(val)) {
     if (!rarely_block)
-      scheme_arg_mismatch("user port write-string",
+      scheme_arg_mismatch("user port write-byte-string",
 			  "bad result for blocking mode: ",
 			  val);
     if (rarely_block == 2)
@@ -1118,7 +1154,7 @@ user_write_string(Scheme_Output_Port *port, const char *str, long offset, long l
     n = SCHEME_INT_VAL(val);
     
     if (!rarely_block && (n != len)) {
-      scheme_arg_mismatch("user port write-string",
+      scheme_arg_mismatch("user port write-byte-string",
 			  "result integer for blocking mode is not the "
 			  "length of the supplied string: ",
 			  val);
@@ -1131,11 +1167,11 @@ user_write_string(Scheme_Output_Port *port, const char *str, long offset, long l
   } else {
     if ((SCHEME_INTP(val) && (SCHEME_INT_VAL(val) > 0))
 	|| (SCHEME_BIGNUMP(val) && SCHEME_BIGPOS(val))) {
-      scheme_arg_mismatch("user port write-string",
+      scheme_arg_mismatch("user port write-byte-string",
 			  "result integer is larger than the supplied string: ",
 			  val);
     } else {
-      scheme_wrong_type("user port write-string",
+      scheme_wrong_type("user port write-byte-string",
 			"non-negative exact integer or #f", 
 			-1, -1, &val);
     }
@@ -1233,7 +1269,7 @@ static long pipe_get_or_peek_string(Scheme_Input_Port *p,
     if (nonblock)
       return 0;
 
-    scheme_block_until((Scheme_Ready_Fun)scheme_char_ready_or_user_port_ready,
+    scheme_block_until((Scheme_Ready_Fun)scheme_byte_ready_or_user_port_ready,
 		       NULL, (Scheme_Object *)p, 0.0);
 
     if (p->closed) {
@@ -1479,7 +1515,7 @@ static long pipe_write_string(Scheme_Output_Port *p,
   return len + wrote;
 }
 
-static int pipe_char_ready(Scheme_Input_Port *p)
+static int pipe_byte_ready(Scheme_Input_Port *p)
 {
   Scheme_Pipe *pipe;
   int v;
@@ -1564,7 +1600,7 @@ void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int que
 				  (void *)pipe,
 				  pipe_get_string,
 				  pipe_peek_string,
-				  pipe_char_ready,
+				  pipe_byte_ready,
 				  pipe_in_close,
 				  NULL,
 				  0);
@@ -1684,7 +1720,7 @@ make_input_port(int argc, Scheme_Object *argv[])
 			       (uip->peek_proc
 				? user_peek_string
 				: NULL),
-			       user_char_ready,
+			       user_byte_ready,
 			       user_close_input,
 			       user_needs_wakeup_input,
 			       0);
@@ -1741,11 +1777,11 @@ open_input_file (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 open_input_string (int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("open-input-string", "string", 0, argc, argv);
+  if (!SCHEME_BYTE_STRINGP(argv[0]))
+    scheme_wrong_type("open-input-byte-string", "byte-string", 0, argc, argv);
 
-  return scheme_make_sized_string_input_port(SCHEME_STR_VAL(argv[0]), 
-					     SCHEME_STRTAG_VAL(argv[0]));
+  return scheme_make_sized_byte_string_input_port(SCHEME_BYTE_STR_VAL(argv[0]), 
+						  SCHEME_BYTE_STRTAG_VAL(argv[0]));
 }
 
 static Scheme_Object *
@@ -1763,7 +1799,7 @@ open_input_output_file (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 open_output_string (int argc, Scheme_Object *argv[])
 {
-  return scheme_make_string_output_port();
+  return scheme_make_byte_string_output_port();
 }
 
 static Scheme_Object *
@@ -1776,11 +1812,11 @@ get_output_string (int argc, Scheme_Object *argv[])
   op = (Scheme_Output_Port *)argv[0];
   if (!SCHEME_OUTPORTP(argv[0]) 
       || (op->sub_type != scheme_string_output_port_type))
-    scheme_wrong_type("get-output-string", "string output port", 0, argc, argv);
+    scheme_wrong_type("get-output-byte-string", "string output port", 0, argc, argv);
 
-  s = scheme_get_sized_string_output(argv[0], &size);
+  s = scheme_get_sized_byte_string_output(argv[0], &size);
 
-  return scheme_make_sized_string(s, size, 1);
+  return scheme_make_sized_byte_string(s, size, 1);
 }
 
 static Scheme_Object *
@@ -2098,7 +2134,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec)
+do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec, int is_byte)
 {
   Scheme_Object *port;
   int ch;
@@ -2124,15 +2160,29 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec)
     } else
       skip = NULL;
     
-    if (spec)
-      ch = scheme_peekc_special_ok_skip(port, skip);
-    else
-      ch = scheme_peekc_skip(port, skip);
+    if (spec) {
+      if (is_byte)
+	ch = scheme_peek_byte_special_ok_skip(port, skip);
+      else
+	ch = scheme_peekc_special_ok_skip(port, skip);
+    } else {
+      if (is_byte)
+	ch = scheme_peek_byte_skip(port, skip);
+      else
+	ch = scheme_peekc_skip(port, skip);
+    }
   } else {
-    if (spec)
-      ch = scheme_getc_special_ok(port);
-    else
-      ch = scheme_getc(port);
+    if (spec) {
+      if (is_byte)
+	ch = scheme_get_byte_special_ok(port);
+      else
+	ch = scheme_getc_special_ok(port);
+    } else {
+      if (is_byte)
+	ch = scheme_get_byte(port);
+      else
+	ch = scheme_getc(port);
+    }
   }
 
   if (ch == SCHEME_SPECIAL) {
@@ -2148,6 +2198,8 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec)
     }
   } else if (ch == EOF)
     return scheme_eof;
+  else if (is_byte)
+    return scheme_make_integer(ch);
   else
     return _scheme_make_char(ch);
 }
@@ -2155,25 +2207,49 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec)
 static Scheme_Object *
 read_char (int argc, Scheme_Object *argv[])
 {
-  return do_read_char("read-char", argc, argv, 0, 0);
+  return do_read_char("read-char", argc, argv, 0, 0, 0);
 }
 
 static Scheme_Object *
 read_char_spec (int argc, Scheme_Object *argv[])
 {
-  return do_read_char("read-char-or-special", argc, argv, 0, 1);
+  return do_read_char("read-char-or-special", argc, argv, 0, 1, 0);
 }
 
 static Scheme_Object *
 peek_char (int argc, Scheme_Object *argv[])
 {
-  return do_read_char("peek-char", argc, argv, 1, 0);
+  return do_read_char("peek-char", argc, argv, 1, 0, 0);
 }
 
 static Scheme_Object *
 peek_char_spec (int argc, Scheme_Object *argv[])
 {
-  return do_read_char("peek-char-or-special", argc, argv, 1, 1);
+  return do_read_char("peek-char-or-special", argc, argv, 1, 1, 0);
+}
+
+static Scheme_Object *
+read_byte (int argc, Scheme_Object *argv[])
+{
+  return do_read_char("read-byte", argc, argv, 0, 0, 1);
+}
+
+static Scheme_Object *
+read_byte_spec (int argc, Scheme_Object *argv[])
+{
+  return do_read_char("read-byte-or-special", argc, argv, 0, 1, 1);
+}
+
+static Scheme_Object *
+peek_byte (int argc, Scheme_Object *argv[])
+{
+  return do_read_char("peek-byte", argc, argv, 1, 0, 1);
+}
+
+static Scheme_Object *
+peek_byte_spec (int argc, Scheme_Object *argv[])
+{
+  return do_read_char("peek-byte-or-special", argc, argv, 1, 1, 1);
 }
 
 static Scheme_Object *
@@ -2182,7 +2258,7 @@ read_line (int argc, Scheme_Object *argv[])
   Scheme_Object *port;
   int ch;
   int crlf = 0, cr = 0, lf = 1;
-  char *buf, *oldbuf, onstack[32];
+  mzchar *buf, *oldbuf, onstack[32];
   long size = 31, oldsize, i = 0;
 
   if (argc && !SCHEME_INPORTP(argv[0]))
@@ -2246,14 +2322,14 @@ read_line (int argc, Scheme_Object *argv[])
       oldbuf = buf;
 
       size *= 2;
-      buf = (char *)scheme_malloc_atomic(size + 1);
-      memcpy(buf, oldbuf, oldsize);
+      buf = (mzchar *)scheme_malloc_atomic((size + 1) * sizeof(mzchar));
+      memcpy(buf, oldbuf, oldsize * sizeof(mzchar));
     }
     buf[i++] = ch;
   }
   buf[i] = '\0';
 
-  return scheme_make_sized_string(buf, i, buf == onstack);
+  return scheme_make_sized_char_string(buf, i, buf == onstack);
 }
 
 static Scheme_Object *
@@ -2280,8 +2356,8 @@ do_general_read_string(const char *who, int argc, Scheme_Object *argv[],
     }
     str = NULL; /* allocated later */
   } else {
-    if (!SCHEME_MUTABLE_STRINGP(argv[0])) {
-      scheme_wrong_type(who, "mutable-string", 0, argc, argv);
+    if (!SCHEME_MUTABLE_BYTE_STRINGP(argv[0])) {
+      scheme_wrong_type(who, "mutable-byte-string", 0, argc, argv);
       return NULL;
     }
     str = argv[0];
@@ -2329,7 +2405,7 @@ do_general_read_string(const char *who, int argc, Scheme_Object *argv[],
 
   if (!size) {
     if (alloc_mode)
-      return scheme_make_sized_string("", 0, 0);
+      return scheme_make_sized_byte_string("", 0, 0);
     else
       return scheme_make_integer(0);
   }
@@ -2340,13 +2416,13 @@ do_general_read_string(const char *who, int argc, Scheme_Object *argv[],
 				 scheme_make_provided_string(argv[0], 0, NULL));
       return NULL;
     }
-    str = scheme_alloc_string(size, 0);
+    str = scheme_alloc_byte_string(size, 0);
   }
 
-  got = scheme_get_string(who, port, 
-			  SCHEME_STR_VAL(str), start, size, 
-			  only_avail,
-			  peek, peek_skip);
+  got = scheme_get_byte_string(who, port, 
+			       SCHEME_BYTE_STR_VAL(str), start, size, 
+			       only_avail,
+			       peek, peek_skip);
 
   if (got == EOF)
     return scheme_eof;
@@ -2354,7 +2430,7 @@ do_general_read_string(const char *who, int argc, Scheme_Object *argv[],
   if (alloc_mode) {
     if (got < size) {
       /* Ended up with a shorter string: */
-      str = scheme_make_sized_string(SCHEME_STR_VAL(str), got, 1);
+      str = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(str), got, 1);
     }
     return str;
   } else
@@ -2364,49 +2440,49 @@ do_general_read_string(const char *who, int argc, Scheme_Object *argv[],
 static Scheme_Object *
 sch_read_string(int argc, Scheme_Object *argv[])
 {
-  return do_general_read_string("read-string", argc, argv, 1, 0, 0);
+  return do_general_read_string("read-byte-string", argc, argv, 1, 0, 0);
 }
 
 static Scheme_Object *
 sch_read_string_bang(int argc, Scheme_Object *argv[])
 {
-  return do_general_read_string("read-string!", argc, argv, 0, 0, 0);
+  return do_general_read_string("read-byte-string!", argc, argv, 0, 0, 0);
 }
 
 static Scheme_Object *
 sch_peek_string(int argc, Scheme_Object *argv[])
 {
-  return do_general_read_string("peek-string", argc, argv, 1, 0, 1);
+  return do_general_read_string("peek-byte-string", argc, argv, 1, 0, 1);
 }
 
 static Scheme_Object *
 sch_peek_string_bang(int argc, Scheme_Object *argv[])
 {
-  return do_general_read_string("peek-string!", argc, argv, 0, 0, 1);
+  return do_general_read_string("peek-byte-string!", argc, argv, 0, 0, 1);
 }
 
 static Scheme_Object *
 read_string_bang(int argc, Scheme_Object *argv[])
 {
-  return do_general_read_string("read-string-avail!", argc, argv, 0, 1, 0);
+  return do_general_read_string("read-byte-string-avail!", argc, argv, 0, 1, 0);
 }
 
 static Scheme_Object *
 read_string_bang_nonblock(int argc, Scheme_Object *argv[])
 {
-  return do_general_read_string("read-string-avail!*", argc, argv, 0, 2, 0);
+  return do_general_read_string("read-byte-string-avail!*", argc, argv, 0, 2, 0);
 }
 
 static Scheme_Object *
 peek_string_bang(int argc, Scheme_Object *argv[])
 {
-  return do_general_read_string("peek-string-avail!", argc, argv, 0, 1, 1);
+  return do_general_read_string("peek-byte-string-avail!", argc, argv, 0, 1, 1);
 }
 
 static Scheme_Object *
 peek_string_bang_nonblock(int argc, Scheme_Object *argv[])
 {
-  return do_general_read_string("peek-string-avail!*", argc, argv, 0, 2, 1);
+  return do_general_read_string("peek-byte-string-avail!*", argc, argv, 0, 2, 1);
 }
 
 
@@ -2416,8 +2492,8 @@ do_write_string_avail(const char *who, int argc, Scheme_Object *argv[], int rare
   Scheme_Object *port, *str;
   long size, start, finish, putten;
 
-  if (!SCHEME_STRINGP(argv[0])) {
-    scheme_wrong_type(who, "string", 0, argc, argv);
+  if (!SCHEME_BYTE_STRINGP(argv[0])) {
+    scheme_wrong_type(who, "byte-string", 0, argc, argv);
     return NULL;
   } else
     str = argv[0];
@@ -2435,9 +2511,9 @@ do_write_string_avail(const char *who, int argc, Scheme_Object *argv[], int rare
   else
     port = CURRENT_OUTPUT_PORT(scheme_config);
 
-  putten = scheme_put_string(who, port, 
-			     SCHEME_STR_VAL(str), start, size,
-			     rarely_block);
+  putten = scheme_put_byte_string(who, port, 
+				  SCHEME_BYTE_STR_VAL(str), start, size,
+				  rarely_block);
 
   if (putten < 0)
     return scheme_false;
@@ -2448,19 +2524,19 @@ do_write_string_avail(const char *who, int argc, Scheme_Object *argv[], int rare
 static Scheme_Object *
 write_string(int argc, Scheme_Object *argv[])
 {
-  return do_write_string_avail("write-string", argc, argv, 0);
+  return do_write_string_avail("write-byte-string", argc, argv, 0);
 }
 
 static Scheme_Object *
 write_string_avail(int argc, Scheme_Object *argv[])
 {
-  return do_write_string_avail("write-string-avail", argc, argv, 1);
+  return do_write_string_avail("write-byte-string-avail", argc, argv, 1);
 }
 
 static Scheme_Object *
 write_string_avail_nonblock(int argc, Scheme_Object *argv[])
 {
-  return do_write_string_avail("write-string-avail*", argc, argv, 2);
+  return do_write_string_avail("write-byte-string-avail*", argc, argv, 2);
 }
 
 typedef struct {
@@ -2558,6 +2634,22 @@ char_ready_p (int argc, Scheme_Object *argv[])
   return (scheme_char_ready(port) ? scheme_true : scheme_false);
 }
 
+static Scheme_Object *
+byte_ready_p (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *port;
+
+  if (argc && !SCHEME_INPORTP(argv[0]))
+    scheme_wrong_type("byte-ready?", "input-port", 0, argc, argv);
+
+  if (argc)
+    port = argv[0];
+  else
+    port = CURRENT_INPUT_PORT(scheme_config);
+  
+  return (scheme_byte_ready(port) ? scheme_true : scheme_false);
+}
+
 static Scheme_Object *sch_default_display_handler(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_OUTPORTP(argv[1]))
@@ -2615,10 +2707,10 @@ display_write(char *name,
   if (escape > 0) {
     if (!((Scheme_Output_Port *)port)->display_handler) {
       Scheme_Object *v = argv[0];
-      if (SCHEME_STRINGP(v)) {
-	scheme_put_string(name, port,
-			  SCHEME_STR_VAL(v), 0, SCHEME_STRLEN_VAL(v),
-			  0);
+      if (SCHEME_BYTE_STRINGP(v)) {
+	scheme_put_byte_string(name, port,
+			       SCHEME_BYTE_STR_VAL(v), 0, SCHEME_BYTE_STRLEN_VAL(v),
+			       0);
       } else
 	scheme_internal_display(v, port, config);
     } else {
@@ -2689,7 +2781,36 @@ newline (int argc, Scheme_Object *argv[])
   else
     port = CURRENT_OUTPUT_PORT(scheme_config);
   
-  (void)scheme_put_string("newline", port, "\n", 0, 1, 0);
+  (void)scheme_put_byte_string("newline", port, "\n", 0, 1, 0);
+
+  return scheme_void;
+}
+
+static Scheme_Object *
+write_byte (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *port;
+  int v;
+  unsigned char buffer[1];
+
+  if (argc && !SCHEME_INTP(argv[0]))
+    scheme_wrong_type("write-char", "exact integer in [0,255]", 0, argc, argv);
+  v = SCHEME_INT_VAL(argv[0]);
+  if ((v < 0) || (v > 255))
+    scheme_wrong_type("write-char", "exact integer in [0,255]", 0, argc, argv);
+
+  if (argc > 1) {
+    if (!SCHEME_OUTPORTP(argv[1]))
+      scheme_wrong_type("write-char", "output-port", 1, argc, argv);
+    port = argv[1];
+  } else
+    port = CURRENT_OUTPUT_PORT(scheme_config);
+
+  buffer[0] = v;
+
+  scheme_put_byte_string("write-char", port,
+			 (char *)buffer, 0, 1,
+			 0);
 
   return scheme_void;
 }
@@ -2698,7 +2819,9 @@ static Scheme_Object *
 write_char (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *port;
-  unsigned char buffer[1];
+  unsigned char buffer[MAX_UTF8_CHAR_BYTES];
+  unsigned int ubuffer[1];
+  int len;
 
   if (argc && !SCHEME_CHARP(argv[0]))
     scheme_wrong_type("write-char", "character", 0, argc, argv);
@@ -2709,11 +2832,12 @@ write_char (int argc, Scheme_Object *argv[])
   } else
     port = CURRENT_OUTPUT_PORT(scheme_config);
 
-  buffer[0] = SCHEME_CHAR_VAL(argv[0]);
+  ubuffer[0] = SCHEME_CHAR_VAL(argv[0]);
+  len = scheme_utf8_encode_all(ubuffer, 1, buffer);
 
-  scheme_put_string("write-char", port,
-		    (char *)buffer, 0, 1,
-		    0);
+  scheme_put_byte_string("write-char", port,
+			 (char *)buffer, 0, len,
+			 0);
 
   return scheme_void;
 }
@@ -2980,7 +3104,7 @@ static Scheme_Object *do_load_handler(void *data)
       /* If d is NULL, shape was wrong */
       if (!d) {
 	if (!other || !SCHEME_SYMBOLP(other))
-	  other = scheme_make_string("something else");
+	  other = scheme_make_byte_string("something else");
 	else {
 	  char *s, *t;
 	  long len, slen;
@@ -2995,7 +3119,7 @@ static Scheme_Object *do_load_handler(void *data)
 	  s[len + slen] = '\'';
 	  s[len + slen + 1]= 0;
 
-	  other = scheme_make_sized_string(s, len + slen + 1, 0);
+	  other = scheme_make_sized_byte_string(s, len + slen + 1, 0);
 	}
 
 	scheme_raise_exn(MZEXN_MODULE,
@@ -3077,8 +3201,8 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   Scheme_Config *config = p->config;
   LoadHandlerData *lhd;
 
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("default-load-handler", "string", 0, argc, argv);
+  if (!SCHEME_PATH_STRINGP(argv[0]))
+    scheme_wrong_type("default-load-handler", SCHEME_PATH_STRING_STR, 0, argc, argv);
   expected_module = argv[1];
   if (!SCHEME_FALSEP(expected_module) && !SCHEME_SYMBOLP(expected_module))
     scheme_wrong_type("default-load-handler", "symbol or #f", 1, argc, argv);
@@ -3086,14 +3210,23 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   port = scheme_do_open_input_file("default-load-handler", 0, 1, argv);
 
   /* Turn on line/column counting, unless it's a .zo file: */
-  {
+  if (SCHEME_BYTE_STRINGP(argv[0])) {
     long len;
 
-    len = SCHEME_STRLEN_VAL(argv[0]);
+    len = SCHEME_BYTE_STRLEN_VAL(argv[0]);
     if ((len < 3)
-	|| (SCHEME_STR_VAL(argv[0])[len - 3] != '.')
-	|| (SCHEME_STR_VAL(argv[0])[len - 2] != 'z')
-	|| (SCHEME_STR_VAL(argv[0])[len - 1] != 'o'))
+	|| (SCHEME_BYTE_STR_VAL(argv[0])[len - 3] != '.')
+	|| (SCHEME_BYTE_STR_VAL(argv[0])[len - 2] != 'z')
+	|| (SCHEME_BYTE_STR_VAL(argv[0])[len - 1] != 'o'))
+      scheme_count_lines(port);
+  } else {
+    long len;
+
+    len = SCHEME_CHAR_STRLEN_VAL(argv[0]);
+    if ((len < 3)
+	|| (SCHEME_CHAR_STR_VAL(argv[0])[len - 3] != '.')
+	|| (SCHEME_CHAR_STR_VAL(argv[0])[len - 2] != 'z')
+	|| (SCHEME_CHAR_STR_VAL(argv[0])[len - 1] != 'o'))
       scheme_count_lines(port);
   }
 
@@ -3125,7 +3258,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   lhd->p = p;
   lhd->config = config;
   lhd->port = port;
-  name = scheme_make_string(((Scheme_Input_Port *)port)->name);
+  name = scheme_make_byte_string(((Scheme_Input_Port *)port)->name);
   lhd->stxsrc = name;
   lhd->expected_module = expected_module;
 
@@ -3188,14 +3321,13 @@ Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[],
   const char *filename;
   Scheme_Object *load_dir;
 
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type(who, "string", 0, argc, argv);
+  if (!SCHEME_PATH_STRINGP(argv[0]))
+    scheme_wrong_type(who, SCHEME_PATH_STRING_STR, 0, argc, argv);
 
-  filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
-				    SCHEME_STRTAG_VAL(argv[0]),
-				    who,
-				    NULL,
-				    SCHEME_GUARD_FILE_READ);
+  filename = scheme_expand_string_filename(argv[0],
+					   who,
+					   NULL,
+					   SCHEME_GUARD_FILE_READ);
 
   /* Calculate load directory */
   load_dir = scheme_get_file_directory(filename);
@@ -3207,7 +3339,7 @@ Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[],
   ld->param = handler_param;
   {
     Scheme_Object *ss;
-    ss = scheme_make_sized_string((char *)filename, -1, 0);
+    ss = scheme_make_sized_byte_string((char *)filename, -1, 0);
     ld->filename = ss;
   }
   ld->config = config;
@@ -3242,11 +3374,12 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
     char *s;
     int len;
 
-    if (!SCHEME_STRINGP(d))
+    if (!SCHEME_PATH_STRINGP(d))
       return NULL;
 
-    s = SCHEME_STR_VAL(d);
-    len = SCHEME_STRTAG_VAL(d);
+    ed = (SCHEME_BYTE_STRINGP(d) ? d : scheme_char_string_to_byte_string(d));
+    s = SCHEME_BYTE_STR_VAL(ed);
+    len = SCHEME_BYTE_STRTAG_VAL(ed);
 
     if (!scheme_is_complete_path(s, len))
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
@@ -3255,16 +3388,9 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
 		       "current-load-relative-directory: not a complete path: \"%q\"",
 		       s);
 
-    expanded = scheme_expand_filename(s, len, "current-load-relative-directory", NULL, 
-				      SCHEME_GUARD_FILE_EXISTS);
-    ed = scheme_make_immutable_sized_string(expanded, strlen(expanded), 1);
-    if (!scheme_directory_exists(expanded)) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       ed,
-		       fail_err_symbol,
-		       "current-load-relative-directory: directory not found or not a directory: \"%q\"",
-		       expanded);
-    }
+    expanded = scheme_expand_string_filename(d, "current-load-relative-directory", NULL, 
+					     SCHEME_GUARD_FILE_EXISTS);
+    ed = scheme_make_immutable_sized_byte_string(expanded, strlen(expanded), 1);
 
     return ed;
   }
@@ -3287,7 +3413,7 @@ Scheme_Object *scheme_load(const char *file)
   mz_jmp_buf savebuf;
   Scheme_Object * volatile val;
 
-  p[0] = scheme_make_string(file);
+  p[0] = scheme_make_byte_string(file);
   memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
   if (scheme_setjmp(scheme_error_buf)) {
     val = NULL;
@@ -3323,8 +3449,8 @@ static Scheme_Object *use_compiled_kind(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 transcript_on(int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("transcript-on", "string", 0, argc, argv);
+  if (!SCHEME_PATH_STRINGP(argv[0]))
+    scheme_wrong_type("transcript-on", SCHEME_PATH_STRING_STR, 0, argc, argv);
 
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "transcript-on: not supported");

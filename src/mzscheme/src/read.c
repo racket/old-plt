@@ -45,7 +45,7 @@
 # include <malloc.h>
 #endif
 
-#define MAX_QUICK_SYMBOL_SIZE 255
+#define MAX_QUICK_SYMBOL_SIZE 64
 
 /* Init options for embedding: */
 int scheme_square_brackets_are_parens = 1;
@@ -71,9 +71,6 @@ static Scheme_Object *print_hash_table(int, Scheme_Object *[]);
 
 #define NOT_EOF_OR_SPECIAL(x) ((x) >= 0)
 
-#define portable_isspace(x) ((x < 128) && isspace(x))
-#define portable_isalpha(x) ((x < 128) && isalpha(x))
-
 #define mzSPAN(port, pos)  (scheme_tell(port) - pos + 1)
 
 #ifdef MZ_XFORM
@@ -95,7 +92,8 @@ static Scheme_Object *read_list(Scheme_Object *port, Scheme_Object *stxsrc,
 				int shape, int use_stack,
 				Scheme_Hash_Table **ht,
 				Scheme_Object *indentation);
-static Scheme_Object *read_string(Scheme_Object *port, Scheme_Object *stxsrc,
+static Scheme_Object *read_string(int is_byte,
+				  Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
 				  Scheme_Object *indentation);
 static Scheme_Object *read_quote(char *who, Scheme_Object *quote_symbol, int len,
@@ -106,7 +104,7 @@ static Scheme_Object *read_quote(char *who, Scheme_Object *quote_symbol, int len
 static Scheme_Object *read_vector(Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
 				  char closer, 
-				  long reqLen, const char *reqBuffer,
+				  long reqLen, const mzchar *reqBuffer,
 				  Scheme_Hash_Table **ht,
 				  Scheme_Object *indentation);
 static Scheme_Object *read_number(int init_ch,
@@ -501,7 +499,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 
   do {
     ch = scheme_getc_special_ok(port);
-  } while (NOT_EOF_OR_SPECIAL(ch) && portable_isspace(ch));
+  } while (NOT_EOF_OR_SPECIAL(ch) && scheme_isspace(ch));
 
   line = scheme_tell_line(port);
   col = scheme_tell_column(port);
@@ -588,7 +586,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	return read_symbol(ch, port, stxsrc, line, col, pos, indentation);
       } else
 	return read_list(port, stxsrc, line, col, pos, '}', mz_shape_cons, 0, ht, indentation);
-    case '"': return read_string(port, stxsrc, line, col, pos,indentation);
+    case '"': return read_string(0, port, stxsrc, line, col, pos,indentation);
     case '\'': return read_quote("quoting '", quote_symbol, 1, port, stxsrc, line, col, pos, ht, indentation);
     case '`': 
       if (!local_can_read_quasi) {
@@ -803,18 +801,18 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	      cnt++;
 	      if (ch == 'u') {
 		is_byte = 0;
-		ch = scheme_getc_special_ok(port);
 		cnt++;
+		ch = scheme_getc_special_ok(port);
 	      }
 	      if (ch == '"') {
 		Scheme_Object *str;
 		int is_err;
 
-		/* Skip #rx[b]: */
+		/* Skip #rx[u]: */
 		col = scheme_tell_column(port);
 		pos = scheme_tell(port);
 
-		str = read_string(port, stxsrc, line, col, pos, indentation);
+		str = read_string(is_byte, port, stxsrc, line, col, pos, indentation);
 
 		if (stxsrc)
 		  str = SCHEME_STX_VAL(str);
@@ -835,7 +833,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	    }
 
 	    {
-	      char a[1], b[1], c[1];
+	      mzchar a[1], b[1], c[1];
 
 	      a[0] = 'x';
 	      b[0] = 'u';
@@ -843,7 +841,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 		
 	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 
 			      ch, indentation, 
-			      "read: bad syntax `#r%t%t%t'",
+			      "read: bad syntax `#r%u%u%u'",
 			      a, cnt ? 1 : 0,
 			      b, (cnt > 1) ? 1 : 0,
 			      c, (NOT_EOF_OR_SPECIAL(ch) ? 1 : 0));
@@ -852,7 +850,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	  }
 	case 'h':
 	  {
-	    const char *str = "asheq";
+	    const mzchar str[] = { 'a', 's', 'h', 'e', 'q', 0 };
 	    int scanpos = 0, failed = 0;
 
 	    do {
@@ -886,29 +884,40 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 
 	    /* Report an error. So far, we read 'h', then scanpos chars of str, then ch. */
 	    {
-	      char str_part[7], one_more[2];
+	      mzchar str_part[7], one_more[2];
 
-	      memcpy(str_part, str, scanpos);
+	      memcpy(str_part, str, scanpos * sizeof(mzchar));
 	      str_part[scanpos] = 0;
 	      if (NOT_EOF_OR_SPECIAL(ch)) {
 		one_more[0] = ch;
 		one_more[1] = 0;
 	      } else
 		one_more[0] = 0;
-
+	      
 	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 
 			      ch, indentation, 
-			      "read: bad syntax `#h%s%t'",
+			      "read: bad syntax `#h%5%u'",
 			      str_part,
 			      one_more, NOT_EOF_OR_SPECIAL(ch) ? 1 : 0);
 	      return NULL;
 	    }
 	  }
+	case '$':
+	  ch = scheme_getc_special_ok(port);
+	  if (ch != '"') {
+	    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 
+			    ch, indentation, 
+			    "read: bad syntax `#$%c'",
+			    ch);
+	    return NULL;
+	  }
+	  return read_string(1, port, stxsrc, line, col, pos,indentation);
+	  break;
 	default:
 	  {
 	    int vector_length = -1;
 	    int i = 0, j = 0, overflow = 0, digits = 0;
-	    char tagbuf[64], vecbuf[64]; /* just for errors */
+	    mzchar tagbuf[64], vecbuf[64]; /* just for errors */
 	    
 	    while (NOT_EOF_OR_SPECIAL(ch) && isdigit(ch)) {
 	      if (digits <= MAX_GRAPH_ID_DIGITS)
@@ -973,7 +982,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	      
 	      if (digits > MAX_GRAPH_ID_DIGITS)
 		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
-				"read: graph id too long in #%s#",
+				"read: graph id too long in #%5#",
 				tagbuf);
 	    
 	      if (*ht)
@@ -1031,13 +1040,18 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	    }
 	  
 	    {
-	      char lbuffer[200];
-	      int pch = ch;
+	      char *lbuffer;
+	      int pch = ch, ulen, blen;
 	      
 	      if ((pch == EOF) || (pch == SCHEME_SPECIAL))
 		pch = 0;
 	      
-	      sprintf(lbuffer, "%s%c", tagbuf, pch);
+	      ulen = scheme_char_strlen(tagbuf);
+	      blen = scheme_utf8_encode_all(tagbuf, ulen, NULL);
+	      lbuffer = (char *)scheme_malloc_atomic(blen + MAX_UTF8_CHAR_BYTES + 1);
+	      scheme_utf8_encode_all(tagbuf, ulen, lbuffer);
+	      blen += scheme_utf8_encode_all(&pch, 1, lbuffer + blen);
+	      lbuffer[blen] = 0;
 	      
 	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
 			      "read: bad syntax `#%s'",
@@ -1416,7 +1430,7 @@ read_list(Scheme_Object *port,
 	       && (next = scheme_peekc_special_ok(port),
 		   ((next == EOF)
 		    || (next == SCHEME_SPECIAL)
-		    || portable_isspace(next)
+		    || scheme_isspace(next)
 		    || (next == '(')
 		    || (next == ')')
 		    || (next == '"')
@@ -1512,11 +1526,11 @@ read_list(Scheme_Object *port,
 
 /* '"' has already been read */
 static Scheme_Object *
-read_string(Scheme_Object *port,
+read_string(int is_byte, Scheme_Object *port,
 	    Scheme_Object *stxsrc, long line, long col, long pos,
 	    Scheme_Object *indentation)
 {
-  char *buf, *oldbuf, onstack[32];
+  mzchar *buf, *oldbuf, onstack[32];
   int i, j, n, n1, ch;
   long size = 31, oldsize;
   Scheme_Object *result;
@@ -1572,11 +1586,11 @@ read_string(Scheme_Object *port,
         continue; /* <---------- !!!! */
       case 'x':
 	ch = scheme_getc_special_ok(port);
-	if (isxdigit(ch)) {
-	  n = ch<='9' ? ch-'0' : (mz_portable_toupper(ch)-'A'+10);
+	if (scheme_isxdigit(ch)) {
+	  n = ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10);
 	  ch = scheme_peekc_special_ok(port);
-	  if (NOT_EOF_OR_SPECIAL(ch) && isxdigit(ch)) {
-	    n = n*16 + (ch<='9' ? ch-'0' : (mz_portable_toupper(ch)-'A'+10));
+	  if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
+	    n = n*16 + (ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10));
 	    scheme_getc(port); /* must be ch */
 	  }
 	  ch = n;
@@ -1593,31 +1607,27 @@ read_string(Scheme_Object *port,
 	break;
       case 'u':
 	ch = scheme_getc_special_ok(port);
-	if (isxdigit(ch)) {
+	if (scheme_isxdigit(ch)) {
 	  int count = 1;
-	  char ubuf[6];
-	  n = ch<='9' ? ch-'0' : (mz_portable_toupper(ch)-'A'+10);
+	  n = ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10);
 	  while (count < 6) {
 	    ch = scheme_peekc_special_ok(port);
-	    if (NOT_EOF_OR_SPECIAL(ch) && isxdigit(ch)) {
-	      n = n*16 + (ch<='9' ? ch-'0' : (mz_portable_toupper(ch)-'A'+10));
+	    if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
+	      n = n*16 + (ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10));
 	      scheme_getc(port); /* must be ch */
 	      count++;
 	    } else
 	      break;
 	  }
-	  count = scheme_utf8_encode(&n, 0, 1, ubuf, 0, 0);
-	  if (i + count > size) { 
-	    oldsize = size;
-	    oldbuf = buf;
-	    
-	    size *= 2;
-	    buf = (char *)scheme_malloc_atomic(size + 1);
-	    memcpy(buf, oldbuf, oldsize);
+	  /* overflow makes a negative character, but also disallow
+	     surrogate points */
+	  if (((n >= 0xD800) && (n <= 0xDFFF))
+	      || (n == 0xFFFE)
+	      || (n == 0xFFFF)) {
+	    ch = -1;
+	  } else {
+	    ch = n;
 	  }
-	  memcpy(buf + i, ubuf, count - 1);
-	  i += (count - 1);
-	  ch = ubuf[count - 1];
 	} else {
 	  if (ch == SCHEME_SPECIAL)
 	    scheme_get_special(port, stxsrc,
@@ -1669,19 +1679,28 @@ read_string(Scheme_Object *port,
       }
     }
 
+    if (is_byte && ch > 255)
+      ch = -1;
+    if (ch < 0) {
+      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
+		      "read: out-of-range character in %sstring",
+		      is_byte ? "byte-" : "");
+      return NULL;
+    }
+
     if (i >= size) { 
       oldsize = size;
       oldbuf = buf;
       
       size *= 2;
-      buf = (char *)scheme_malloc_atomic(size + 1);
-      memcpy(buf, oldbuf, oldsize);
+      buf = (mzchar *)scheme_malloc_atomic((size + 1) * sizeof(mzchar));
+      memcpy(buf, oldbuf, oldsize * sizeof(mzchar));
     }
     buf[i++] = ch;
   }
   buf[i] = '\0';
 
-  result = scheme_make_immutable_sized_string(buf, i, i <= 31);
+  result = scheme_make_immutable_sized_char_string(buf, i, i <= 31);
   if (stxsrc)
     result =  scheme_make_stx_w_offset(result, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
   return result;
@@ -1721,7 +1740,7 @@ static Scheme_Object *
 read_vector (Scheme_Object *port,
 	     Scheme_Object *stxsrc, long line, long col, long pos,
 	     char closer, 
-	     long requestLength, const char *reqBuffer,
+	     long requestLength, const mzchar *reqBuffer,
 	     Scheme_Hash_Table **ht, 
 	     Scheme_Object *indentation)
 /* requestLength == -1 => no request
@@ -1736,7 +1755,7 @@ read_vector (Scheme_Object *port,
 
   if (requestLength == -2) {
     STACK_END(r);
-    scheme_raise_out_of_memory("read", "making vector of size %s", reqBuffer);
+    scheme_raise_out_of_memory("read", "making vector of size %5", reqBuffer);
     return NULL;
   }
 
@@ -1815,7 +1834,8 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 		      int is_symbol, int pipe_quote,
 		      Scheme_Object *indentation)
 {
-  char *buf, *oldbuf, onstack[MAX_QUICK_SYMBOL_SIZE];
+  mzchar *buf, *oldbuf, onstack[MAX_QUICK_SYMBOL_SIZE];
+  char b_onstack[MAX_QUICK_SYMBOL_SIZE], *b_buf;
   int size, oldsize;
   int i, ch, quoted, quoted_ever = 0, running_quote = 0;
   int rq_pos = 0, rq_col = 0, rq_line = 0;
@@ -1848,7 +1868,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 
   while (NOT_EOF_OR_SPECIAL(ch)
 	 && (running_quote
-	     || (!portable_isspace(ch)
+	     || (!scheme_isspace(ch)
 		 && (ch != '(')
 		 && (ch != ')')
 		 && (ch != '"')
@@ -1902,12 +1922,12 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
       oldbuf = buf;
       
       size *= 2;
-      buf = (char *)scheme_malloc_atomic(size + 1);
-      memcpy(buf, oldbuf, oldsize);
+      buf = (mzchar *)scheme_malloc_atomic((size + 1) * sizeof(mzchar));
+      memcpy(buf, oldbuf, oldsize * sizeof(mzchar));
     }
 
     if (!case_sens && !quoted && !running_quote)
-      ch = mz_portable_tolower(ch);
+      ch = scheme_tolower(ch);
 
     buf[i++] = ch;
 
@@ -1943,16 +1963,49 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 
   if ((is_symbol || quoted_ever) && !is_float && !is_not_float && !radix_set)
     o = scheme_false;
-  else
-    o = scheme_read_number(buf, i, 
-			   is_float, is_not_float, decimal_inexact, 
-			   radix, radix_set,
-			   port, NULL, 0,
-			   stxsrc, line, col, pos, SPAN(port, pos),
-			   indentation);
+  else {
+    int j;
+    for (j = 0 ; j < i; j++) {
+      if (buf[j] > 127)
+	break;
+    }
+    if (j < i) {
+      if (radix_set || is_float || is_not_float) {
+	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos),
+			0, indentation,
+			"read: illegal character in number: %u", 
+			buf, i);
+      }
+      o = scheme_false;
+    } else {
+      /* Fast string -> byte string */
+      if (i < MAX_QUICK_SYMBOL_SIZE - 1)
+	b_buf = b_onstack;
+      else
+	b_buf = (char *)scheme_malloc_atomic(i + 1);
+      for (j = 0 ; j < i; j++) {
+	b_buf[j] = buf[j];
+      }
+      b_buf[i] = 0;
 
-  if (SAME_OBJ(o, scheme_false))
-    o = scheme_intern_exact_symbol(buf, i);
+      o = scheme_read_number(b_buf, i, 
+			     is_float, is_not_float, decimal_inexact, 
+			     radix, radix_set,
+			     port, NULL, 0,
+			     stxsrc, line, col, pos, SPAN(port, pos),
+			     indentation);
+    }
+  }
+
+  if (SAME_OBJ(o, scheme_false)) {
+    size = scheme_utf8_encode_all(buf, i, NULL);
+    if (size < MAX_QUICK_SYMBOL_SIZE)
+      b_buf = b_onstack;
+    else
+      b_buf = (char *)scheme_malloc_atomic(size);
+    scheme_utf8_encode_all(buf, i, b_buf);
+    o = scheme_intern_exact_symbol(b_buf, size);
+  }
 
   if (stxsrc)
     o = scheme_make_stx_w_offset(o, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
@@ -1992,6 +2045,17 @@ read_symbol(int init_ch,
 /*========================================================================*/
 /*                              char reader                               */
 /*========================================================================*/
+
+static int u_strcmp(mzchar *s, char *t)
+{
+  int i;
+
+  for (i = 0; s[i] && (s[i] == t[i]); i++) {
+  }
+  if (s[i] || t[i])
+    return 1;
+  return 0;
+}
 
 /* "#\" has been read */
 static Scheme_Object *
@@ -2036,63 +2100,63 @@ read_character(Scheme_Object *port,
     return scheme_make_char(ch);
   }
 
-  if ((ch != EOF) && NOT_EOF_OR_SPECIAL(next) && portable_isalpha(next)) {
-    char *buf, *oldbuf, onstack[32];
+  if ((ch != EOF) && NOT_EOF_OR_SPECIAL(next) && scheme_isalpha(next)) {
+    mzchar *buf, *oldbuf, onstack[32];
     int i;
     long size = 31, oldsize;
 
     i = 1;
     buf = onstack;
-    buf[0] = mz_portable_tolower(ch);
-    while ((ch = scheme_peekc_special_ok(port), NOT_EOF_OR_SPECIAL(ch) && portable_isalpha(ch))) {
+    buf[0] = scheme_tolower(ch);
+    while ((ch = scheme_peekc_special_ok(port), NOT_EOF_OR_SPECIAL(ch) && scheme_isalpha(ch))) {
       scheme_getc(port); /* is alpha character */
       if (i >= size) {
 	oldsize = size;
 	oldbuf = buf;
 	
 	size *= 2;
-	buf = (char *)scheme_malloc_atomic(size + 1);
-	memcpy(buf, oldbuf, oldsize);
+	buf = (mzchar *)scheme_malloc_atomic((size + 1) * sizeof(mzchar));
+	memcpy(buf, oldbuf, oldsize * sizeof(mzchar));
       }
-      buf[i++] = mz_portable_tolower(ch);
+      buf[i++] = scheme_tolower(ch);
     }
     buf[i] = '\0';
     
     switch (buf[0]) {
     case 'n': /* maybe `newline' or 'null' or 'nul' */
-      if (!strcmp(buf, "newline"))
+      if (!u_strcmp(buf, "newline"))
 	return scheme_make_char('\n');
-      if (!strcmp(buf, "null") || !strcmp(buf, "nul"))
+      if (!u_strcmp(buf, "null") || !u_strcmp(buf, "nul"))
 	return scheme_make_char('\0');
       break;
     case 's': /* maybe `space' */
-      if (!strcmp(buf, "space"))
+      if (!u_strcmp(buf, "space"))
 	return scheme_make_char(' ');
       break;
     case 'r': /* maybe `rubout' or `return' */
-      if (!strcmp(buf, "rubout"))
+      if (!u_strcmp(buf, "rubout"))
 	return scheme_make_char(0x7f);
-      if (!strcmp(buf, "return"))
+      if (!u_strcmp(buf, "return"))
 	return scheme_make_char('\r');
       break;
     case 'p': /* maybe `page' */
-      if (!strcmp(buf, "page"))
+      if (!u_strcmp(buf, "page"))
 	return scheme_make_char('\f');
       break;
     case 't': /* maybe `tab' */
-      if (!strcmp(buf, "tab"))
+      if (!u_strcmp(buf, "tab"))
 	return scheme_make_char('\t');
       break;
     case 'v': /* maybe `vtab' */
-      if (!strcmp(buf, "vtab"))
+      if (!u_strcmp(buf, "vtab"))
 	return scheme_make_char(0xb);
       break;
     case 'b': /* maybe `backspace' */
-      if (!strcmp(buf, "backspace"))
+      if (!u_strcmp(buf, "backspace"))
 	return scheme_make_char('\b');
       break;
     case 'l': /* maybe `linefeed' */
-      if (!strcmp(buf, "linefeed"))
+      if (!u_strcmp(buf, "linefeed"))
 	return scheme_make_char('\n');
       break;
     default:
@@ -2100,7 +2164,7 @@ read_character(Scheme_Object *port,
     }
 
     scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
-		    "read: bad character constant: #\\%s",
+		    "read: bad character constant: #\\%5",
 		    buf);
   }
 
@@ -2215,7 +2279,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
 
  start_over:
 
-  while ((ch = scheme_getc_special_ok(port), NOT_EOF_OR_SPECIAL(ch) && portable_isspace(ch))) {}
+  while ((ch = scheme_getc_special_ok(port), NOT_EOF_OR_SPECIAL(ch) && scheme_isspace(ch))) {}
 
   if (ch == ';') {
     do {
@@ -2593,7 +2657,7 @@ static Scheme_Object *read_compact(CPort *port,
 	port->pos += len;
 #endif
 
-	ep = scheme_make_sized_string_input_port(s, len);
+	ep = scheme_make_sized_byte_string_input_port(s, len);
 	
 	v = read_inner(ep, NULL, ht, scheme_null, 0);
       }
@@ -2636,11 +2700,25 @@ static Scheme_Object *read_compact(CPort *port,
 	   a particular compiled expression. */
       }
       break;
-    case CPT_STRING:
+    case CPT_BYTE_STRING:
       l = read_compact_number(port);
       RANGE_CHECK_GETS(l);
       s = read_compact_chars(port, buffer, BLK_BUF_SIZE, l);
-      v = scheme_make_immutable_sized_string(s, l, l < BLK_BUF_SIZE);
+      v = scheme_make_immutable_sized_byte_string(s, l, l < BLK_BUF_SIZE);
+      break;
+    case CPT_CHAR_STRING:
+      {
+	unsigned int el;
+	mzchar *us;
+	el = read_compact_number(port);
+	l = read_compact_number(port);
+	RANGE_CHECK_GETS(el);
+	s = read_compact_chars(port, buffer, BLK_BUF_SIZE, el);
+	us = (mzchar *)scheme_malloc_atomic((l + 1) * sizeof(mzchar));
+	scheme_utf8_decode_all(s, l, us, 0);
+	us[el] = 0;
+	v = scheme_make_immutable_sized_char_string(us, el, 0);
+      }
       break;
     case CPT_CHAR:
       ZO_CHECK(port->pos < port->size);
@@ -3219,7 +3297,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
     if (size < 0) size = 0;
     if (size > 63) size = 63;
 
-    got = scheme_get_chars(port, size, buf, 0);
+    got = scheme_get_bytes(port, size, buf, 0);
     buf[got] = 0;
 
     if (strcmp(buf, MZSCHEME_VERSION))
@@ -3248,7 +3326,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   }
   rp->orig_port = port;
   rp->size = size;
-  if ((got = scheme_get_chars(port, size, (char *)rp->start, 0)) != size)
+  if ((got = scheme_get_bytes(port, size, (char *)rp->start, 0)) != size)
     scheme_read_err(port, NULL, -1, -1, -1, -1, 0, NULL,
 		    "read (compiled): ill-formed code (bad count: %ld != %ld, started at %ld)",
 		    got, size, rp->base);

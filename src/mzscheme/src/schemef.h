@@ -191,10 +191,10 @@ MZ_EXTERN Scheme_Object scheme_undefined[1];
 MZ_EXTERN Scheme_Object *scheme_tail_call_waiting;
 MZ_EXTERN Scheme_Object *scheme_multiple_values;
 
-MZ_EXTERN unsigned int **scheme_uchar_table[1];
-MZ_EXTERN int scheme_uchar_ups[1];
-MZ_EXTERN int scheme_uchar_downs[1];
-MZ_EXTERN int scheme_uchar_titles[1];
+MZ_EXTERN unsigned int **scheme_uchar_table[];
+MZ_EXTERN int scheme_uchar_ups[];
+MZ_EXTERN int scheme_uchar_downs[];
+MZ_EXTERN int scheme_uchar_titles[];
 
 /*========================================================================*/
 /*                              evaluation                                */
@@ -297,6 +297,7 @@ MZ_EXTERN void scheme_unweak_reference(void **p);
 #endif
 MZ_EXTERN void scheme_add_finalizer(void *p, void (*f)(void *p, void *data), void *data);
 MZ_EXTERN void scheme_add_finalizer_once(void *p, void (*f)(void *p, void *data), void *data);
+MZ_EXTERN void scheme_subtract_finalizer(void *p, void (*f)(void *p, void *data), void *data);
 MZ_EXTERN void scheme_add_scheme_finalizer(void *p, void (*f)(void *p, void *data), void *data);
 MZ_EXTERN void scheme_add_scheme_finalizer_once(void *p, void (*f)(void *p, void *data), void *data);
 MZ_EXTERN void scheme_register_finalizer(void *p,
@@ -376,13 +377,31 @@ MZ_EXTERN void scheme_prim_is_method(Scheme_Object *o);
 
 MZ_EXTERN Scheme_Object *scheme_make_pair(Scheme_Object *car, Scheme_Object *cdr);
 MZ_EXTERN Scheme_Object *scheme_make_immutable_pair(Scheme_Object *car, Scheme_Object *cdr);
-MZ_EXTERN Scheme_Object *scheme_make_string(const char *chars);
-MZ_EXTERN Scheme_Object *scheme_make_sized_string(char *chars, long len, int copy);
-MZ_EXTERN Scheme_Object *scheme_make_sized_offset_string(char *chars, long d, long len, int copy);
-MZ_EXTERN Scheme_Object *scheme_make_immutable_sized_string(char *chars, long len, int copy);
-MZ_EXTERN Scheme_Object *scheme_make_string_without_copying(char *chars);
-MZ_EXTERN Scheme_Object *scheme_alloc_string(int size, char fill);
-MZ_EXTERN Scheme_Object *scheme_append_string(Scheme_Object *, Scheme_Object *);
+
+MZ_EXTERN Scheme_Object *scheme_make_byte_string(const char *chars);
+MZ_EXTERN Scheme_Object *scheme_make_sized_byte_string(char *chars, long len, int copy);
+MZ_EXTERN Scheme_Object *scheme_make_sized_offset_byte_string(char *chars, long d, long len, int copy);
+MZ_EXTERN Scheme_Object *scheme_make_immutable_sized_byte_string(char *chars, long len, int copy);
+MZ_EXTERN Scheme_Object *scheme_make_byte_string_without_copying(char *chars);
+MZ_EXTERN Scheme_Object *scheme_alloc_byte_string(int size, char fill);
+MZ_EXTERN Scheme_Object *scheme_append_byte_string(Scheme_Object *, Scheme_Object *);
+
+MZ_EXTERN Scheme_Object *scheme_make_utf8_string(const char *chars);
+MZ_EXTERN Scheme_Object *scheme_make_sized_utf8_string(char *chars, long len);
+MZ_EXTERN Scheme_Object *scheme_make_sized_offset_utf8_string(char *chars, long d, long len);
+MZ_EXTERN Scheme_Object *scheme_make_immutable_sized_utf8_string(char *chars, long len);
+
+MZ_EXTERN Scheme_Object *scheme_char_string_to_byte_string(Scheme_Object *s);
+MZ_EXTERN Scheme_Object *scheme_byte_string_to_char_string(Scheme_Object *s);
+
+MZ_EXTERN Scheme_Object *scheme_make_char_string(const mzchar *chars);
+MZ_EXTERN Scheme_Object *scheme_make_sized_char_string(mzchar *chars, long len, int copy);
+MZ_EXTERN Scheme_Object *scheme_make_sized_offset_char_string(mzchar *chars, long d, long len, int copy);
+MZ_EXTERN Scheme_Object *scheme_make_immutable_sized_char_string(mzchar *chars, long len, int copy);
+MZ_EXTERN Scheme_Object *scheme_make_char_string_without_copying(mzchar *chars);
+MZ_EXTERN Scheme_Object *scheme_alloc_char_string(int size, mzchar fill);
+MZ_EXTERN Scheme_Object *scheme_append_char_string(Scheme_Object *, Scheme_Object *);
+
 MZ_EXTERN Scheme_Object *scheme_make_vector(int size, Scheme_Object *fill);
 MZ_EXTERN Scheme_Object *scheme_make_integer_value(long i);
 MZ_EXTERN Scheme_Object *scheme_make_integer_value_from_unsigned(unsigned long i);
@@ -392,7 +411,7 @@ MZ_EXTERN Scheme_Object *scheme_make_double(double d);
 #ifdef MZ_USE_SINGLE_FLOATS
 MZ_EXTERN Scheme_Object *scheme_make_float(float f) ;
 #endif
-MZ_EXTERN Scheme_Object *scheme_make_char(char ch);
+MZ_EXTERN Scheme_Object *scheme_make_char(mzchar ch);
 MZ_EXTERN Scheme_Object *scheme_make_sema(long v);
 MZ_EXTERN void scheme_post_sema(Scheme_Object *o);
 MZ_EXTERN void scheme_post_sema_all(Scheme_Object *o);
@@ -419,11 +438,30 @@ MZ_EXTERN int scheme_utf8_decode(const unsigned char *s, int start, int len,
 				 long *ipos, char utf16, int permissive);
 MZ_EXTERN int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, 
 				     int permissive);
+MZ_EXTERN int scheme_utf8_decode_prefix(const unsigned char *s, int len, unsigned int *us, 
+					int permissive);
+MZ_EXTERN mzchar *scheme_utf8_decode_to_buffer(const unsigned char *s, int len, 
+					       mzchar *buf, int blen);
+MZ_EXTERN mzchar *scheme_utf8_decode_to_buffer_len(const unsigned char *s, int len, 
+						   mzchar *buf, int blen, long *rlen);
 
 MZ_EXTERN int scheme_utf8_encode(const unsigned int *us, int start, int len, 
 				 unsigned char *s, int dstart,
 				 char utf16);
 MZ_EXTERN int scheme_utf8_encode_all(const unsigned int *us, int len, unsigned char *s);
+
+MZ_EXTERN char *scheme_utf8_encode_malloc(const unsigned int *us, int len, long *olen);
+MZ_EXTERN char *scheme_utf8_encode_to_buffer(const mzchar *s, int len, 
+					     char *buf, int blen);
+MZ_EXTERN char *scheme_utf8_encode_to_buffer_len(const mzchar *s, int len, 
+						 char *buf, int blen, long *rlen);
+
+MZ_EXTERN unsigned short *scheme_ucs4_to_utf16(const mzchar *text, int len, 
+					       unsigned short *buf, int bufsize,
+					       long *ulen, int term_size);
+MZ_EXTERN mzchar *scheme_utf16_to_ucs4(const unsigned short *text, int len, 
+				       mzchar *buf, int bufsize,
+				       long *ulen, int term_size);
 
 /*========================================================================*/
 /*                               bignums                                  */
@@ -494,10 +532,14 @@ MZ_EXTERN void scheme_write(Scheme_Object *obj, Scheme_Object *port);
 MZ_EXTERN void scheme_display(Scheme_Object *obj, Scheme_Object *port);
 MZ_EXTERN void scheme_write_w_max(Scheme_Object *obj, Scheme_Object *port, long maxl);
 MZ_EXTERN void scheme_display_w_max(Scheme_Object *obj, Scheme_Object *port, long maxl);
-MZ_EXTERN void scheme_write_string(const char *str, long len, Scheme_Object *port);
-MZ_EXTERN long scheme_put_string(const char *who, Scheme_Object *port,
-				 const char *str, long d, long len,
-				 int rarely_block);
+MZ_EXTERN void scheme_write_byte_string(const char *str, long len, Scheme_Object *port);
+MZ_EXTERN void scheme_write_char_string(const mzchar *str, long len, Scheme_Object *port);
+MZ_EXTERN long scheme_put_byte_string(const char *who, Scheme_Object *port,
+				      const char *str, long d, long len,
+				      int rarely_block);
+MZ_EXTERN long scheme_put_char_string(const char *who, Scheme_Object *port,
+				      const mzchar *str, long d, long len,
+				      int rarely_block);
 MZ_EXTERN char *scheme_write_to_string(Scheme_Object *obj, long *len);
 MZ_EXTERN char *scheme_display_to_string(Scheme_Object *obj, long *len);
 MZ_EXTERN char *scheme_write_to_string_w_max(Scheme_Object *obj, long *len, long maxl);
@@ -505,25 +547,33 @@ MZ_EXTERN char *scheme_display_to_string_w_max(Scheme_Object *obj, long *len, lo
 MZ_EXTERN void scheme_debug_print(Scheme_Object *obj);
 MZ_EXTERN void scheme_flush_output(Scheme_Object *port);
 
-MZ_EXTERN char *scheme_format(char *format, int flen, int argc, Scheme_Object **argv, long *rlen);
-MZ_EXTERN void scheme_printf(char *format, int flen, int argc, Scheme_Object **argv);
+MZ_EXTERN char *scheme_format(mzchar *format, int flen, int argc, Scheme_Object **argv, long *rlen);
+MZ_EXTERN void scheme_printf(mzchar *format, int flen, int argc, Scheme_Object **argv);
+MZ_EXTERN char *scheme_format_utf8(char *format, int flen, int argc, Scheme_Object **argv, long *rlen);
+MZ_EXTERN void scheme_printf_utf8(char *format, int flen, int argc, Scheme_Object **argv);
 
 MZ_EXTERN int scheme_getc(Scheme_Object *port);
+MZ_EXTERN int scheme_get_byte(Scheme_Object *port);
 MZ_EXTERN int scheme_peekc(Scheme_Object *port);
+MZ_EXTERN int scheme_peek_byte(Scheme_Object *port);
 MZ_EXTERN int scheme_peekc_skip(Scheme_Object *port, Scheme_Object *skip);
+MZ_EXTERN int scheme_peek_byte_skip(Scheme_Object *port, Scheme_Object *skip);
 MZ_EXTERN int scheme_getc_special_ok(Scheme_Object *port);
+MZ_EXTERN int scheme_get_byte_special_ok(Scheme_Object *port);
 MZ_EXTERN int scheme_peekc_special_ok(Scheme_Object *port);
+MZ_EXTERN int scheme_peek_byte_special_ok_skip(Scheme_Object *port, Scheme_Object *skip);
 MZ_EXTERN int scheme_peekc_special_ok_skip(Scheme_Object *port, Scheme_Object *skip);
 MZ_EXTERN void scheme_ungetc(int ch, Scheme_Object *port);
+MZ_EXTERN int scheme_byte_ready(Scheme_Object *port);
 MZ_EXTERN int scheme_char_ready(Scheme_Object *port);
 MZ_EXTERN int scheme_peekc_is_ungetc(Scheme_Object *port);
 MZ_EXTERN void scheme_need_wakeup(Scheme_Object *port, void *fds);
-MZ_EXTERN long scheme_get_string(const char *who,
+MZ_EXTERN long scheme_get_byte_string(const char *who,
 				 Scheme_Object *port,
 				 char *buffer, long offset, long size,
 				 int only_avail,
 				 int peek, Scheme_Object *peek_skip);
-MZ_EXTERN long scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset);
+MZ_EXTERN long scheme_get_bytes(Scheme_Object *port, long size, char *buffer, int offset);
 MZ_EXTERN long scheme_tell(Scheme_Object *port);
 MZ_EXTERN long scheme_output_tell(Scheme_Object *port);
 MZ_EXTERN long scheme_tell_line(Scheme_Object *port);
@@ -534,15 +584,15 @@ MZ_EXTERN void scheme_close_output_port(Scheme_Object *port);
 
 MZ_EXTERN Scheme_Object *scheme_make_port_type(const char *name);
 MZ_EXTERN Scheme_Input_Port *scheme_make_input_port(Scheme_Object *subtype, void *data,
-						    Scheme_Get_String_Fun get_string_fun,
+						    Scheme_Get_String_Fun get_byte_string_fun,
 						    Scheme_Peek_String_Fun peek_string_fun,
-						    Scheme_In_Ready_Fun char_ready_fun,
+						    Scheme_In_Ready_Fun byte_ready_fun,
 						    Scheme_Close_Input_Fun close_fun,
 						    Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
 						    int must_close);
 MZ_EXTERN Scheme_Output_Port *scheme_make_output_port(Scheme_Object *subtype,
 						      void *data,
-						      Scheme_Write_String_Fun write_string_fun,
+						      Scheme_Write_String_Fun write_byte_string_fun,
 						      Scheme_Out_Ready_Fun ready_fun,
 						      Scheme_Close_Output_Fun close_fun,
 						      Scheme_Need_Wakeup_Output_Fun need_wakeup_fun,
@@ -555,11 +605,11 @@ MZ_EXTERN Scheme_Object *scheme_make_file_input_port(FILE *fp);
 MZ_EXTERN Scheme_Object *scheme_make_named_file_input_port(FILE *fp, const char *filename);
 MZ_EXTERN Scheme_Object *scheme_make_file_output_port(FILE *fp);
 
-MZ_EXTERN Scheme_Object *scheme_make_string_input_port(const char *str);
-MZ_EXTERN Scheme_Object *scheme_make_sized_string_input_port(const char *str, long len);
-MZ_EXTERN Scheme_Object *scheme_make_string_output_port();
-MZ_EXTERN char *scheme_get_string_output(Scheme_Object *);
-MZ_EXTERN char *scheme_get_sized_string_output(Scheme_Object *, long *len);
+MZ_EXTERN Scheme_Object *scheme_make_byte_string_input_port(const char *str);
+MZ_EXTERN Scheme_Object *scheme_make_sized_byte_string_input_port(const char *str, long len);
+MZ_EXTERN Scheme_Object *scheme_make_byte_string_output_port();
+MZ_EXTERN char *scheme_get_byte_string_output(Scheme_Object *);
+MZ_EXTERN char *scheme_get_sized_byte_string_output(Scheme_Object *, long *len);
 
 MZ_EXTERN void scheme_pipe(Scheme_Object **read, Scheme_Object **write);
 MZ_EXTERN void scheme_pipe_with_limit(Scheme_Object **write, Scheme_Object **read, int maxsize);
@@ -569,6 +619,7 @@ MZ_EXTERN long scheme_set_file_position(Scheme_Object *port, long pos);
 MZ_EXTERN int scheme_file_exists(char *filename);
 MZ_EXTERN int scheme_directory_exists(char *dirname);
 MZ_EXTERN char *scheme_expand_filename(char* filename, int ilen, const char *errorin, int *ex, int guards);
+MZ_EXTERN char *scheme_expand_string_filename(Scheme_Object *f, const char *errorin, int *ex, int guards);
 
 MZ_EXTERN char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn);
 MZ_EXTERN int scheme_os_setcwd(char *buf, int noexn);
@@ -747,3 +798,5 @@ MZ_EXTERN void scheme_no_dumps(char *why);
 MZ_EXTERN const char *scheme_system_library_subpath();
 
 MZ_EXTERN void scheme_signal_received(void);
+
+MZ_EXTERN int scheme_char_strlen(const mzchar *s);

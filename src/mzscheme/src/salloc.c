@@ -465,9 +465,8 @@ static void do_next_finalization(void *o, void *data)
 
 /* Makes gc2 xformer happy: */
 typedef void (*finalizer_function)(void *p, void *data);
-#ifdef MZ_PRECISE_GC
 static int traversers_registered;
-#endif
+static Finalizations **save_fns_ptr;
 
 static void add_finalizer(void *v, void (*f)(void*,void*), void *data, 
 			  int prim, int ext,
@@ -475,20 +474,21 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
 			  void **ext_olddata,
 			  Finalizations **_fns,
 			  Finalization **_fn,
-			  int no_dup)
+			  int no_dup, int rmve)
 {
   finalizer_function oldf;
   void *olddata;
   Finalizations *fns, **fns_ptr, *prealloced;
   Finalization *fn;
 
-#ifdef MZ_PRECISE_GC
   if (!traversers_registered) {
+#ifdef MZ_PRECISE_GC
     GC_REG_TRAV(scheme_rt_finalization, mark_finalization);
     GC_REG_TRAV(scheme_rt_finalizations, mark_finalizations);
     traversers_registered = 1;
-  }
 #endif
+    REGISTER_SO(save_fns_ptr);
+  }
 
 #ifndef MZ_PRECISE_GC
   if (v != GC_base(v))
@@ -498,7 +498,11 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
   /* Allocate everything first so that we're not changing
      finalizations when finalizations could run: */
 
-  fns_ptr = MALLOC_ONE(Finalizations*);
+  if (save_fns_ptr) {
+    fns_ptr = save_fns_ptr;
+    save_fns_ptr = NULL;
+  } else
+    fns_ptr = MALLOC_ONE(Finalizations*);
 
   if (!ext) {
     fn = MALLOC_ONE_RT(Finalization);
@@ -510,10 +514,13 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
   } else
     fn = NULL;
 
-  prealloced = MALLOC_ONE_RT(Finalizations); /* may not need this... */
+  if (!rmve) {
+    prealloced = MALLOC_ONE_RT(Finalizations); /* may not need this... */
 #ifdef MZTAG_REQUIRED
-  prealloced->type = scheme_rt_finalizations;
+    prealloced->type = scheme_rt_finalizations;
 #endif
+  } else
+    prealloced = NULL;
 
   GC_register_eager_finalizer(v, prim ? 2 : 1, do_next_finalization, fns_ptr, &oldf, &olddata);
 
@@ -524,6 +531,10 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
     } else {
       *fns_ptr = *(Finalizations **)olddata;
     }
+  } else if (rmve) {
+    GC_register_finalizer(v, NULL, NULL, NULL, NULL);
+    save_fns_ptr = fns_ptr;
+    return;
   }
 
   if (!(*fns_ptr)) {
@@ -546,18 +557,34 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
 	Finalization *fnx;
 	for (fnx = fns->prim_first; fnx; fnx = fnx->next) {
 	  if (fnx->f == fn->f && fnx->data == fn->data) {
+	    if (rmve) {
+	      if (fnx->prev)
+		fnx->prev->next = fnx->next;
+	      else
+		fns->prim_first = fnx->next;
+	      if (fnx->next)
+		fnx->next->prev = fnx->prev;
+	      else
+		fns->prim_last = fnx->prev;
+	    }
 	    fn = NULL;
 	    break;
 	  }
 	}
       }
       if (fn) {
-	fn->next = fns->prim_first;
-	fns->prim_first = fn;
-	if (!fn->next)
-	  fns->prim_last = fn;
-	else
-	  fn->next->prev = fn;
+	if (!rmve) {
+	  fn->next = fns->prim_first;
+	  fns->prim_first = fn;
+	  if (!fn->next)
+	    fns->prim_last = fn;
+	  else
+	    fn->next->prev = fn;
+	}
+      }
+      /* Removed all finalization? */
+      if (!fns->ext_f && !fns->prim_first && !fns->scheme_first) {
+	GC_register_finalizer(v, NULL, NULL, NULL, NULL);
       }
     } else {
       fn->next = fns->scheme_first;
@@ -595,29 +622,34 @@ void scheme_unweak_reference(void **p)
 
 void scheme_add_finalizer(void *p, void (*f)(void *p, void *data), void *data)
 {
-  add_finalizer(p, f, data, 1, 0, NULL, NULL, NULL, NULL, 0);
+  add_finalizer(p, f, data, 1, 0, NULL, NULL, NULL, NULL, 0, 0);
 }
 
 void scheme_add_finalizer_once(void *p, void (*f)(void *p, void *data), void *data)
 {
-  add_finalizer(p, f, data, 1, 0, NULL, NULL, NULL, NULL, 1);
+  add_finalizer(p, f, data, 1, 0, NULL, NULL, NULL, NULL, 1, 0);
+}
+
+void scheme_subtract_finalizer(void *p, void (*f)(void *p, void *data), void *data)
+{
+  add_finalizer(p, f, data, 1, 0, NULL, NULL, NULL, NULL, 1, 1);
 }
 
 void scheme_add_scheme_finalizer(void *p, void (*f)(void *p, void *data), void *data)
 {
-  add_finalizer(p, f, data, 0, 0, NULL, NULL, NULL, NULL, 0);
+  add_finalizer(p, f, data, 0, 0, NULL, NULL, NULL, NULL, 0, 0);
 }
 
 void scheme_add_scheme_finalizer_once(void *p, void (*f)(void *p, void *data), void *data)
 {
-  add_finalizer(p, f, data, 0, 0, NULL, NULL, NULL, NULL, 1);
+  add_finalizer(p, f, data, 0, 0, NULL, NULL, NULL, NULL, 1, 0);
 }
 
 void scheme_register_finalizer(void *p, void (*f)(void *p, void *data), 
 			       void *data, void (**oldf)(void *p, void *data), 
 			       void **olddata)
 {
-  add_finalizer(p, f, data, 0, 1, oldf, olddata, NULL, NULL, 0);
+  add_finalizer(p, f, data, 0, 1, oldf, olddata, NULL, NULL, 0, 0);
 }
 
 void scheme_remove_all_finalization(void *p)
@@ -874,11 +906,11 @@ static void count_managed(Scheme_Custodian *m, int *c, int *a, int *u, int *t,
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
 #endif
-#ifdef MZ_PRECISE_GC
+#if defined(MZ_PRECISE_GC) && defined(DOS_FILE_SYSTEM)
 extern void gc_fprintf(int ignored, const char *c, ...);
 # define object_console_printf gc_fprintf
 #else
-# define object_console_printf scheme_console_printf
+# define object_console_printf fprintf
 #endif
 void scheme_print_tagged_value(const char *prefix, 
 			       void *v, int xtagged, unsigned long diff, int max_w,
@@ -982,7 +1014,7 @@ void scheme_print_tagged_value(const char *prefix,
   
   object_console_printf(
 #ifdef MZ_PRECISE_GC
-			0,
+			stderr,
 #endif
 			"%s%lx%s%s%s%s%s", 
 			prefix,

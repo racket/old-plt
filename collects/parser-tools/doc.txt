@@ -8,7 +8,7 @@ CHANGE: The lexer generator uses a new back-end based on derivatives
 (``Derivatives of Regular Expressions'',
  Janusz A. Brzozowski, JACM, Vol 11, No. 4 (October 1964))
 and can now support intersection and negation of arbitrary regular
-expressions.  For example, (@ "/*" (~ (&) "*/" (&)) "*/") matches a 
+expressions.  For example, (@ "/*" (~ (@ (&) "*/" (&))) "*/") matches a 
 Java comment.
 
 I was expecting the Brzozowski algorithm to generate tables more slowly
@@ -60,6 +60,34 @@ A regular expression is one of the following:
  dfa conversion understands the former idiom and will often create smaller
  dfas in the first case.
   
+Since negation is not a common operator on regular expressions, here are a 
+few examples:
+
+(~ "1") matches all strings except the string "1".
+          This includes "11", "111", "0", "01", "" and so on.
+
+(~ (* "1")) matches all strings that are not sequences of "1".
+              "0", "00", "11110", "0111", "11001010" and so on.
+
+From Brzozowski's paper: (& (@ (&) "111" (&)) 
+                            (~ (: (@ (&) "01") (+ "1"))))
+  matches all strings that have 3 consecutive ones, but not those that end in 
+  "01" and not those that are ones only.  These include:
+  "1110", "0001000111" and "0111" but not "", "11", "11101", "111" and "11111".
+
+(@ "/*" (~ (@ (&) "*/" (&))) "*/") matches Java/C block comments.
+ "/**/", "/******/", "/*////*/", "/*asg4*/" and so on.  It does not
+ match "/**/*/", "/*  */   */" and so on.
+ (@ (&) "*/" (&)) matches any string that has a "*/" in is, so (~ (@ (&)
+ "*/" (&))) matches any string without a "*/" in it.
+
+(@ "/*" (* (~ "*/")) "*/") : matches any string that starts with "/*"
+ and and ends with "*/", including "/* */ */ */".  (~ "*/") matches any
+ string that except "*/".  This includes "*" and "/" separately.  Thus
+ (* (~ "*/")) matches "*/" by first matching "*" and then matching "/".
+ Any other string is matched directly by (~ "*/").  In other words,
+ (* (~ "xx")) = (&).  It is usually not correct to place a * around a ~.
+
 
 To use the _lexer generator_ you must (require (lib "lex.ss" "parser-tools")).
 This gives you the following syntactic forms:

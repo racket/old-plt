@@ -37,7 +37,7 @@ DEBUGFLAGS=
 WARN= -Wall
 OPT= -O
 
-CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DNO_EXECUTE_PERMISSION -DSILENT -DOLD_BLOCK_ALLOC
+CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DNO_EXECUTE_PERMISSION -DSILENT -DOLD_BLOCK_ALLOC -DUSE_MMAP -DUSE_MUNMAP
 # Setjmp_test may yield overly optimistic results when compiled
 #  without optimization.
 # For dynamic library builds, it may be necessary to add flags to generate
@@ -117,6 +117,10 @@ CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DNO_EXECUTE_PERMIS
 #   fragmentation, but generally better performance for large heaps.
 # -DUSE_MMAP use MMAP instead of sbrk to get new memory.
 #   Works for Solaris and Irix.
+# -DUSE_MUNMAP causes memory to be returned to the OS under the right
+#   circumstances.  This currently disables VM-based incremental collection.
+#   This is currently experimental, and works only under some Unix and
+#   Linux versions.
 # -DMMAP_STACKS (for Solaris threads) Use mmap from /dev/zero rather than
 #   GC_scratch_alloc() to get stack memory.
 # -DPRINT_BLACK_LIST Whenever a black list entry is added, i.e. whenever
@@ -130,6 +134,17 @@ CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DNO_EXECUTE_PERMIS
 #   large block allocator and/or collecting more frequently.
 #   If you expect the allocator to promtly use an explicitly expanded
 #   heap, this is highly recommended.
+# -DGC_ASSERTIONS Enable some internal GC assertion checking.  Currently
+#   this facility is only used in a few places.  It is intended primarily
+#   for debugging of the garbage collector itself, but could also
+#   occasionally be useful for debugging of client code.  Slows down the
+#   collector somewhat, but not drastically.
+# -DKEEP_BACK_PTRS Add code to save back pointers in debugging headers
+#   for objects allocated with the debugging allocator.  If all objects
+#   through GC_MALLOC with GC_DEBUG defined, this allows the client
+#   to determine how particular or randomly chosen objects are reachable
+#   for debugging/profiling purposes.  The backptr.h interface is
+#   implemented only if this is defined.
 
 LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
     -DREDIRECT_MALLOC=GC_malloc_uncollectable \
@@ -161,7 +176,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     threadlibs.c if_mach.c if_not_there.c gc_cpp.cc gc_cpp.h weakpointer.h \
     gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h gc_alloc.h \
     include/new_gc_alloc.h include/javaxfc.h sparc_sunos4_mach_dep.s \
-    solaris_threads.h $(CORD_SRCS)
+    solaris_threads.h backptr.h $(CORD_SRCS)
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README test.c test_cpp.cc setjmp_t.c SMakefile.amiga \
@@ -169,7 +184,7 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            cord/gc.h include/gc.h include/gc_typed.h include/cord.h \
            include/ec.h include/private/cord_pos.h include/private/gcconfig.h \
            include/private/gc_hdrs.h include/private/gc_priv.h \
-	   include/gc_cpp.h README.rs6000 \
+	   include/gc_cpp.h README.rs6000 include/backptr.h \
            include/weakpointer.h README.QUICK callprocs pc_excludes \
            barrett_diagram README.OS2 README.Mac MacProjects.sit.hqx \
            MacOS.c EMX_MAKEFILE makefile.depend README.debugging \
@@ -177,7 +192,7 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            add_gc_prefix.c README.solaris2 README.sgi README.hp README.uts \
            win32_threads.c NT_THREADS_MAKEFILE gc.mak README.dj Makefile.dj \
-           README.alpha README.linux version.h Makefile.DLLs gc_watcom.asm \
+           README.alpha README.linux version.h Makefile.DLLs \
            WCC_MAKEFILE
 
 CORD_INCLUDE_FILES= $(srcdir)/gc.h $(srcdir)/cord/cord.h $(srcdir)/cord/ec.h \
@@ -216,21 +231,16 @@ $(OBJDIR)/mark.o $(OBJDIR)/typd_mlc.o $(OBJDIR)/finalize.o: $(srcdir)/gc_mark.h
 
 base_lib $(OBJDIR)/gc.a: $(OBJS) $(OBJDIR)/dyn_load.o $(UTILS)
 	./$(EXEDIR)/if_mach SPARC SUNOS5 $(AR) rus $(OBJDIR)/gc.a $(OBJS) $(OBJDIR)/dyn_load.o
-	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT $(AR) ru $(OBJDIR)/gc.a $(OBJS) $(OBJDIR)/dyn_load.o
-	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT $(RANLIB) $(OBJDIR)/gc.a || cat /dev/null
+	./$(EXEDIR)/if_mach M68K AMIGA $(AR) -vrus $(OBJDIR)/gc.a $(OBJS) $(OBJDIR)/dyn_load.o
+	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT ./$(EXEDIR)/if_mach M68K AMIGA NOT $(AR) ru $(OBJDIR)/gc.a $(OBJS) $(OBJDIR)/dyn_load.o
+	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT ./$(EXEDIR)/if_mach M68K AMIGA NOT $(RANLIB) $(OBJDIR)/gc.a || cat /dev/null
 #	ignore ranlib failure; that usually means it doesn't exist, and isn't needed
-
-$(OBJDIR)/libgc.a: 
-	make CFLAGS="$(LIBGC_CFLAGS)" clean $(OBJDIR)/gc.a $(OBJDIR)/gcc_support.o
-	mv $(OBJDIR)/gc.a $(OBJDIR)/libgc.a
-	./$(EXEDIR)/if_mach SPARC SUNOS5 $(AR) rus $(OBJDIR)/libgc.a $(OBJDIR)/gcc_support.o
-	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT $(AR) ru $(OBJDIR)/libgc.a $(OBJDIR)/gcc_support.o
-	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT $(RANLIB) $(OBJDIR)/libgc.a || cat /dev/null
 
 cords: $(CORD_OBJS) cord/cordtest $(UTILS)
 	./$(EXEDIR)/if_mach SPARC SUNOS5 $(AR) rus $(OBJDIR)/gc.a $(CORD_OBJS)
-	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT $(AR) ru $(OBJDIR)/gc.a $(CORD_OBJS)
-	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT $(RANLIB) $(OBJDIR)/gc.a || cat /dev/null
+	./$(EXEDIR)/if_mach M68K AMIGA $(AR) -vrus gc.a $(CORD_OBJS)
+	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT ./$(EXEDIR)/if_mach M68K AMIGA NOT $(AR) ru $(OBJDIR)/gc.a $(CORD_OBJS)
+	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT ./$(EXEDIR)/if_mach M68K AMIGA NOT $(RANLIB) $(OBJDIR)/gc.a || cat /dev/null
 
 $(OBJDIR)/gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/gc_cpp.h $(srcdir)/gc.h Makefile
 	$(CXX) -c $(CXXFLAGS) -o $(OBJDIR)/gc_cpp.o $(srcdir)/gc_cpp.cc
@@ -242,8 +252,9 @@ test_cpp: $(srcdir)/test_cpp.cc $(srcdir)/gc_cpp.h $(OBJDIR)/gc_cpp.o $(srcdir)/
 
 c++: $(OBJDIR)/gc_cpp.o $(srcdir)/gc_cpp.h # test_cpp # MATTHEW: remove test_cpp
 	./$(EXEDIR)/if_mach SPARC SUNOS5 $(AR) rus $(OBJDIR)/gc.a $(OBJDIR)/gc_cpp.o
-	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT $(AR) ru $(OBJDIR)/gc.a $(OBJDIR)/gc_cpp.o
-	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT $(RANLIB) $(OBJDIR)/gc.a || cat /dev/null
+	./$(EXEDIR)/if_mach M68K AMIGA $(AR) -vrus $(OBJDIR)/gc.a $(OBJDIR)/gc_cpp.o
+	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT ./$(EXEDIR)/if_mach M68K AMIGA NOT $(AR) ru $(OBJDIR)/gc.a $(OBJDIR)/gc_cpp.o
+	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT ./$(EXEDIR)/if_mach M68K AMIGA NOT $(RANLIB) $(OBJDIR)/gc.a || cat /dev/null
 	# MATTHEW: remove
 	# ./$(EXEDIR)/test_cpp 1
 
@@ -279,6 +290,7 @@ $(OBJDIR)/mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdi
 	./$(EXEDIR)/if_mach ALPHA "" $(AS) -o $(OBJDIR)/mach_dep.o $(srcdir)/alpha_mach_dep.s
 	./$(EXEDIR)/if_mach SPARC SUNOS5 $(AS) -o $(OBJDIR)/mach_dep.o $(srcdir)/sparc_mach_dep.s
 	./$(EXEDIR)/if_mach SPARC SUNOS4 $(AS) -o $(OBJDIR)/mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
+	./$(EXEDIR)/if_mach SPARC OPENBSD $(AS) -o $(OBJDIR)mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./$(EXEDIR)/if_not_there $(OBJDIR)/mach_dep.o $(CC) -c $(SPECIALCFLAGS) -o $(OBJDIR)/mach_dep.o $(srcdir)/mach_dep.c
 
 $(OBJDIR)/mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
@@ -316,6 +328,7 @@ cord/de: $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o
 	./$(EXEDIR)/if_mach RS6000 "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a -lcurses
 	./$(EXEDIR)/if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a -lcurses`./$(EXEDIR)/threadlibs`
 	./$(EXEDIR)/if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a -lcurses
+	./$(EXEDIR)/if_mach M68K AMIGA $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a -lcurses
 	./$(EXEDIR)/if_not_there cord/de $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o $(OBJDIR)/gc.a $(CURSES) `./$(EXEDIR)/threadlibs`
 
 $(EXEDIR)/if_mach: $(srcdir)/if_mach.c $(srcdir)/gcconfig.h

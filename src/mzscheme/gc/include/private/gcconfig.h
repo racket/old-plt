@@ -43,6 +43,11 @@
 #    define OPENBSD
 #    define mach_type_known
 # endif
+# if defined(__OpenBSD__) && defined(__sparc__)
+#    define SPARC
+#    define OPENBSD
+#    define mach_type_known
+# endif
 # if defined(__NetBSD__) && defined(m68k)
 #    define M68K
 #    define NETBSD
@@ -100,7 +105,8 @@
 #     endif
 #   define mach_type_known
 # endif
-# if defined(sparc) && defined(unix) && !defined(sun) && !defined(linux)
+# if defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
+     && !defined(__OpenBSD__)
 #   define SPARC
 #   define DRSNX
 #   define mach_type_known
@@ -129,7 +135,7 @@
 #   define HP_PA
 #   define mach_type_known
 # endif
-# if defined(LINUX) && defined(i386)
+# if defined(LINUX) && (defined(i386) || defined(__i386__))
 #    define I386
 #    define mach_type_known
 # endif
@@ -153,9 +159,11 @@
 #   endif
 #   define mach_type_known
 # endif
-# if defined(_AMIGA)
-#   define M68K
+# if defined(_AMIGA) && !defined(AMIGA)
 #   define AMIGA
+# endif
+# ifdef AMIGA 
+#   define M68K
 #   define mach_type_known
 # endif
 # if defined(THINK_C) || defined(__MWERKS__) && !defined(__powerc)
@@ -167,6 +175,11 @@
 #   define POWERPC
 #   define MACOS
 #   define mach_type_known
+# endif
+# if defined(macosx)
+#    define MACOSX
+#    define POWERPC
+#    define mach_type_known
 # endif
 # if defined(NeXT) && defined(mc68000)
 #   define M68K
@@ -486,13 +499,13 @@
 
 # ifdef POWERPC
 #   define MACH_TYPE "POWERPC"
-          /* MATTHEW: 4-byte alignment */
-#   ifdef USE_POWERPC_FOUR_BYTE_ALIGN
-#      define ALIGNMENT 4
-#   else
-#      define ALIGNMENT 2
-#   endif
 #   ifdef MACOS
+      /* MATTHEW: 4-byte alignment */
+#     ifdef USE_POWERPC_FOUR_BYTE_ALIGN
+#      define ALIGNMENT 4
+#     else
+#      define ALIGNMENT 2
+#     endif
 #     ifndef __LOWMEM__
 #     include <LowMem.h>
 #     endif
@@ -502,13 +515,23 @@
 #     define DATAEND  /* not needed */
 #   endif
 #   ifdef LINUX
+#     define ALIGNMENT 4	/* Guess.  Can someone verify?	*/
+				/* This was 2, but that didn't sound right. */
 #     define OS_TYPE "LINUX"
 #     define HEURISTIC1
 #     undef STACK_GRAN
 #     define STACK_GRAN 0x10000000
+	/* Stack usually starts at 0x80000000 */
 #     define DATASTART GC_data_start
       extern int _end;
 #     define DATAEND (&_end)
+#   endif
+#   ifdef MACOSX
+#     define ALIGNMENT 4
+#     define OS_TYPE "MACOSX"
+#     define DATASTART ((ptr_t) get_etext())
+#     define STACKBOTTOM ((ptr_t) 0xc0000000)
+#     define DATAEND	/* not needed */
 #   endif
 # endif
 
@@ -607,6 +630,11 @@
 #     define DATAEND (&_end)
 #     define SVR4
 #     define STACKBOTTOM ((ptr_t) 0xf0000000)
+#   endif
+#   ifdef OPENBSD
+#     define OS_TYPE "OPENBSD"
+#     define STACKBOTTOM ((ptr_t) 0xf8000000)
+#     define DATASTART ((ptr_t)(&etext))
 #   endif
 # endif
 
@@ -745,9 +773,11 @@
 #       include "stubinfo.h"
         extern int etext;
         extern int _stklen;
+        extern int __djgpp_stack_limit;
 #       define DATASTART ((ptr_t)((((word) (&etext)) + 0x1ff) & ~0x1ff))
-#       define STACKBOTTOM ((ptr_t)((word) _stubinfo + _stubinfo->size \
-                                                     + _stklen))
+/* #       define STACKBOTTOM ((ptr_t)((word) _stubinfo + _stubinfo->size \
+                                                     + _stklen)) */
+#       define STACKBOTTOM ((ptr_t)((word) __djgpp_stack_limit + _stklen))
 		/* This may not be right.  */
 #   endif
 #   ifdef OPENBSD
@@ -901,7 +931,7 @@
 	/* Normally HEURISTIC2 is too conervative, since		*/
 	/* the text segment immediately follows the stack.		*/
 	/* Hence we give an upper pound.				*/
-    	extern __start;
+    	extern int __start;
 #   	define HEURISTIC2_LIMIT ((ptr_t)((word)(&__start) & ~(getpagesize()-1)))
 #   	define CPP_WORDSZ 64
 #   	define MPROTECT_VDB
@@ -912,9 +942,13 @@
 #       define CPP_WORDSZ 64
 #       define STACKBOTTOM ((ptr_t) 0x120000000)
 #       ifdef __ELF__
+#   	  if 0
+	    /* __data_start apparently disappeared in some recent releases. */
             extern int __data_start;
 #           define DATASTART &__data_start
-#           define DYNAMIC_LOADING
+#	  endif
+#         define DATASTART GC_data_start
+#         define DYNAMIC_LOADING
 #       else
 #           define DATASTART ((ptr_t) 0x140000000)
 #       endif
@@ -1022,6 +1056,10 @@
 /* Presumably not worth the space it takes. */
 #   undef PROC_VDB
 #   undef MPROTECT_VDB
+# endif
+
+# ifdef USE_MUNMAP
+#   undef MPROTECT_VDB  /* Can't deal with address space holes. */
 # endif
 
 # if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB)

@@ -2,6 +2,6 @@
 (module exit mzscheme
   (provide start timeout interface-version)
 
-  (define timeout 1)
+  (define timeout 10)
   (define interface-version 'v1)
-  (define (start req) (exit) (send/finish "success")))
+  (define (start req) (exit)))

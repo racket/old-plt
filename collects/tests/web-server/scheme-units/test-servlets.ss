@@ -31,7 +31,7 @@
 
   (define test3-output "blah blah plain text")
 
-  (define test4-output 
+  (define test4-output
     (string-append
       "<html><head><title>Title</title></head><body><h1>Title</h1><p>ab</p>"
       "<p>seed</p></body></html>"))
@@ -147,7 +147,7 @@
       (make-test-case
         "Implicit send/back"
         (let ((stop-server (start-server)))
-          (let* ((p1 (get-pure-port 
+          (let* ((p1 (get-pure-port
                        (string->url
                          (format "http://~a:~a/servlets/add.ss"
                                  THE-IP THE-PORT))))
@@ -175,24 +175,25 @@
       (make-test-case
         "A servlet that exits"
         (let ((stop-server (start-server)))
-          (string=?
-            (read-line
-              (get-pure-port
-                (string->url
-                  (format "http://~a:~a/servlets/exit.ss"
-                          THE-IP THE-PORT))))
-            "success")
           (or
-            (string=?
-              (read-line
+           (begin0
+             (and
+              (eof-object?
+               (read-line
                 (get-pure-port
-                  (string->url
-                    (format "http://~a:~a/servlets/exit.ss"
-                            THE-IP THE-PORT))))
-              "monkey")
-            (begin
-              (stop-server)
-              (fail)))))
+                 (string->url
+                  (format "http://~a:~a/servlets/exit.ss"
+                          THE-IP THE-PORT)))))
+              (eof-object?
+               (read-line
+                (get-pure-port
+                 (string->url
+                  (format "http://~a:~a/servlets/exit.ss"
+                          THE-IP THE-PORT))))))
+             (stop-server))
+           (begin
+             (stop-server)
+             (fail)))))
 
       ;; Predict continuation URLs
       (make-test-case

@@ -6,7 +6,7 @@
 
   (provide start timeout interface-version)
 
-  (define timeout 1)
+  (define timeout 20)
   (define interface-version 'v1)
 
   (define (start req)

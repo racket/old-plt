@@ -17,6 +17,7 @@
   
   (define dir (build-path "compiled" "native" (system-library-subpath #f)))
   (define 3mdir (build-path dir "3m"))
+  (define precomp.h (build-path "gl-vectors" 3mdir "precomp.h"))
 
   (define use-3m?
     (and (memq (system-type) '(unix macosx windows))
@@ -81,45 +82,65 @@
 				   file.so)
 	    (delete/continue file.o))))))
 
-  (define (xform src dest)
+  (define (xform src dest use-precomp precomp?)
     (let-values ([(base name dir?) (split-path dest)])
       (make-directory* base))
     (parameterize ([current-directory (collection-path "sgl")])
+      (when (and use-precomp
+		 (not precomp?)
+		 (eq? 'windows (system-type))
+		 (not (file-exists? use-precomp)))
+	(let ([precomp.c (let-values ([(base name dir?) (split-path use-precomp)])
+			   (build-path base "precomp.c"))])
+	  (make-directory* 3mdir)
+	  (with-output-to-file precomp.c
+	    (lambda () (newline))
+	    'truncate/replace)
+	  (xform precomp.c use-precomp #f #t)))
       (restart-mzscheme #() 
 			(lambda (x) x)
 			(list->vector 
-			 (list
-			  "-qr"
-			  (path->string
-			   (build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss"))
-			  (let* ([fix-path (lambda (s)
-					     (regexp-replace* " " (path->string s) "\" \""))]
-				 [inc (build-path 'up 'up "include")]
-				 [extras (apply string-append
-						(format " ~a~a" 
-							(if (eq? 'windows (system-type))
-							    " /I"
-							    " -I")
-							(fix-path inc))
-						(map (lambda (p)
-						       (format 
-							" ~a~s"
-							(if (eq? 'windows (system-type))
-							    " /I"
-							    " -I")
-							(fix-path
-							 (build-path p "include"))))
-						     X11-include))])
-			    (if (eq? 'windows (system-type))
-				(format "cl.exe /MT /E /FIwindows.h ~a" 
-					extras)
-				(format "gcc -E ~a~a" 
-					(if (eq? 'macosx (system-type))
-					    "-DOS_X "
-					    "")
-					extras)))
-			  (if (path? src) (path->string src) src)
-			  (if (path? dest) (path->string dest) dest)))
+			 (append
+			  (list
+			   "-qr"
+			   (path->string
+			    (build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss")))
+			  (if (eq? 'windows (system-type))
+			      (cond
+			       [precomp? (list "--precompile")]
+			       [use-precomp
+				(list "--precompiled" (path->string use-precomp))]
+			       [else null])
+			      null)
+			  (list
+			   (let* ([fix-path (lambda (s)
+					      (regexp-replace* " " (path->string s) "\" \""))]
+				  [inc (build-path 'up 'up "include")]
+				  [extras (apply string-append
+						 (format " ~a~a" 
+							 (if (eq? 'windows (system-type))
+							     " /I"
+							     " -I")
+							 (fix-path inc))
+						 (map (lambda (p)
+							(format 
+							 " ~a~s"
+							 (if (eq? 'windows (system-type))
+							     " /I"
+							     " -I")
+							 (fix-path
+							  (build-path p "include"))))
+						      X11-include))])
+			     (if (eq? 'windows (system-type))
+				 (format "cl.exe /MT /E /FIwindows.h ~a" 
+					 extras)
+				 (format "gcc -E ~a~a" 
+					 (if (eq? 'macosx (system-type))
+					     "-DOS_X "
+					     "")
+					 extras)))
+			   (if (path? src) (path->string src) src)
+			   (if (path? dest) (path->string dest) dest))))
 			void)))
 
   (define (build-names str)
@@ -171,10 +192,10 @@
            ,(lambda ()
 	      (delete/continue file.h)
 	      (generate "gl-vectors/gl-vector.h" file.h replacements)))
-	  (,file3m.c (,file.c)
+	  (,file3m.c (,file.c ,@mz-headers)
 	   ,(lambda ()
 	      (delete/continue file3m.c)
-	      (xform file.c file3m.c)))))))
+	      (xform file.c file3m.c precomp.h #f)))))))
     
   (define (make-gl-prims file-name vecs home)
     (let* ((names (build-names file-name))
@@ -202,7 +223,7 @@
 	(,file3m.c (,file.c  "gl-prims.h" ,@mz-headers)
 	 ,(lambda ()
 	    (delete/continue file3m.c)
-	    (xform file.c file3m.c))))))
+	    (xform file.c file3m.c #f #f))))))
   
   (define vec-names
     '(("gl-double-vector"

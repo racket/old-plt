@@ -131,6 +131,7 @@
   (define (get-compiled-time path w/fail?)
     (let-values  ([(dir name) (get-compilation-dir+name path)])
       (first-date
+       (if w/fail? +inf.0 -inf.0)
        (lambda () (build-path dir "native" (system-library-subpath) (append-object-suffix "_loader")))
        (lambda () (build-path dir "native" (system-library-subpath) (append-object-suffix name)))
        (lambda () (build-path dir (string-append name ".zo")))
@@ -138,14 +139,14 @@
 
   (define first-date
     (case-lambda
-     [() +inf.0]
-     [(f . l)
+     [(def) def]
+     [(def f . l)
       (if f
 	  (with-handlers ([exn:i/o:filesystem?
 			   (lambda (ex)
-			     (apply first-date l))])
+			     (apply first-date def l))])
 	    (file-or-directory-modify-seconds (f)))
-	  (apply first-date l))]))
+	  (apply first-date def l))]))
   
   (define (compile-root path up-to-date)
     (let ([path (simplify-path (expand-path path))])

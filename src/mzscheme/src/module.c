@@ -4209,35 +4209,47 @@ static Scheme_Object *read_module(Scheme_Object *obj)
 
   m = MALLOC_ONE_TAGGED(Scheme_Module);
   m->type = scheme_module_type;
+
+  if (!SCHEME_PAIRP(obj)) return NULL;
   m->modname = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   m->src_modidx = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
   ((Scheme_Modidx *)m->src_modidx)->resolved = m->modname;
   m->self_modidx = m->src_modidx;
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   m->max_let_depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   m->dummy = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   m->prefix = (Resolve_Prefix *)SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   m->kernel_exclusion = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
+  if (!SCHEME_PAIRP(obj)) return NULL;
   m->reprovide_kernel = SCHEME_TRUEP(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   ie = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
+
+  if (!SCHEME_PAIRP(obj)) return NULL;
   nie = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
   
   count = SCHEME_INT_VAL(nie);
 
+  if (!SCHEME_VECTORP(ie) || (SCHEME_VEC_SIZE(ie) != count)) return NULL;
   v = MALLOC_N(Scheme_Object *, count);
   for (i = 0; i < count; i++) {
     v[i] = SCHEME_VEC_ELS(ie)[i];
@@ -4245,14 +4257,23 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   m->indirect_provides = v;
   m->num_indirect_provides = count;
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   esn = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
+
+  if (!SCHEME_PAIRP(obj)) return NULL;
   es = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
+
+  if (!SCHEME_PAIRP(obj)) return NULL;
   e = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
+  
+  if (!SCHEME_PAIRP(obj)) return NULL;
   nve = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
+
+  if (!SCHEME_PAIRP(obj)) return NULL;
   ne = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
 
@@ -4260,34 +4281,46 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   m->num_provides = count;
   m->num_var_provides = SCHEME_INT_VAL(nve);
 
+  if (!SCHEME_VECTORP(e) || (SCHEME_VEC_SIZE(e) != count)) return NULL;
   v = MALLOC_N(Scheme_Object *, count);
   for (i = 0; i < count; i++) {
     v[i] = SCHEME_VEC_ELS(e)[i];
   }
   m->provides = v;
 
+  if (!SCHEME_VECTORP(es) || (SCHEME_VEC_SIZE(es) != count)) return NULL;
   v = MALLOC_N(Scheme_Object *, count);
   for (i = 0; i < count; i++) {
     v[i] = SCHEME_VEC_ELS(es)[i];
   }
   m->provide_srcs = v;
 
+  if (!SCHEME_VECTORP(esn) || (SCHEME_VEC_SIZE(esn) != count)) return NULL;
   v = MALLOC_N(Scheme_Object *, count);
   for (i = 0; i < count; i++) {
     v[i] = SCHEME_VEC_ELS(esn)[i];
   }
   m->provide_src_names = v;
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
+  if (scheme_proper_list_length(SCHEME_CAR(obj)) < 0) return NULL;
   e = scheme_copy_list(SCHEME_CAR(obj));
   m->et_body = e;
   obj = SCHEME_CDR(obj);
+
+  if (!SCHEME_PAIRP(obj)) return NULL;
+  if (scheme_proper_list_length(SCHEME_CAR(obj)) < 0) return NULL;
   e = scheme_copy_list(SCHEME_CAR(obj));
   m->body = e;
   obj = SCHEME_CDR(obj);
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
+  if (scheme_proper_list_length(SCHEME_CAR(obj)) < 0) return NULL;
   e = scheme_copy_list(SCHEME_CAR(obj));
   m->requires = e;
   obj = SCHEME_CDR(obj);
+
+  if (scheme_proper_list_length(obj) < 0) return NULL;
   e = scheme_copy_list(obj);
   m->et_requires = e;
 

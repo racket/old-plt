@@ -2256,6 +2256,8 @@ static Scheme_Object *read_toplevel(Scheme_Object *obj)
 {
   Scheme_Toplevel *tl;
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
+
   tl = (Scheme_Toplevel *)scheme_malloc_atomic_tagged(sizeof(Scheme_Toplevel));
   tl->type = scheme_toplevel_type;
   tl->depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
@@ -2294,6 +2296,8 @@ static Scheme_Object *read_variable(Scheme_Object *obj)
   if (!SCHEME_SYMBOLP(obj)) {
     /* Find variable from module. */
     Scheme_Object *modname, *varname;
+
+    if (!SCHEME_PAIRP(obj)) return NULL;
 
     modname = SCHEME_CAR(obj);
     varname = SCHEME_CDR(obj);
@@ -2360,6 +2364,8 @@ static Scheme_Object *read_resolve_prefix(Scheme_Object *obj)
   Resolve_Prefix *rp;
   Scheme_Object *tv, *sv, **a;
   int i;
+
+  if (!SCHEME_PAIRP(obj)) return NULL;
 
   tv = SCHEME_CAR(obj);
   sv = SCHEME_CDR(obj);

@@ -3140,12 +3140,16 @@ static Scheme_Object *read_let_value(Scheme_Object *obj)
   lv = (Scheme_Let_Value *)scheme_malloc_tagged(sizeof(Scheme_Let_Value));
   lv->type = scheme_let_value_type;
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   lv->count = SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
+  if (!SCHEME_PAIRP(obj)) return NULL;
   lv->position = SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
+  if (!SCHEME_PAIRP(obj)) return NULL;
   lv->autobox = SCHEME_TRUEP(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
+  if (!SCHEME_PAIRP(obj)) return NULL;
   lv->value = SCHEME_CAR(obj);
   lv->body = SCHEME_CDR(obj);
 
@@ -3170,8 +3174,10 @@ static Scheme_Object *read_let_void(Scheme_Object *obj)
   lv = (Scheme_Let_Void *)scheme_malloc_tagged(sizeof(Scheme_Let_Void));
   lv->type = scheme_let_void_type;
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   lv->count = SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
+  if (!SCHEME_PAIRP(obj)) return NULL;
   lv->autobox = SCHEME_TRUEP(SCHEME_CAR(obj));
   lv->body = SCHEME_CDR(obj);
 
@@ -3214,15 +3220,18 @@ static Scheme_Object *read_letrec(Scheme_Object *obj)
 
   lr->type = scheme_letrec_type;
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   c = lr->count = SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   lr->body = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
 
   sa = MALLOC_N(Scheme_Object*, c);
   lr->procs = sa;
   for (i = 0; i < c; i++) {
+    if (!SCHEME_PAIRP(obj)) return NULL;
     lr->procs[i] = SCHEME_CAR(obj);
     obj = SCHEME_CDR(obj);
   }
@@ -3245,9 +3254,12 @@ static Scheme_Object *read_top(Scheme_Object *obj)
 
   top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
   top->type = scheme_compilation_top_type;
+  if (!SCHEME_PAIRP(obj)) return NULL;
   top->max_let_depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
-  top->prefix = (Resolve_Prefix *)SCHEME_CADR(obj);
-  top->code = SCHEME_CDDR(obj);
+  obj = SCHEME_CDR(obj);
+  if (!SCHEME_PAIRP(obj)) return NULL;
+  top->prefix = (Resolve_Prefix *)SCHEME_CAR(obj);
+  top->code = SCHEME_CDR(obj);
 
   return (Scheme_Object *)top;
 }
@@ -3276,6 +3288,7 @@ static Scheme_Object *read_case_lambda(Scheme_Object *obj)
   int count, i;
   Scheme_Case_Lambda *cl;
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   s = SCHEME_CDR(obj);
   for (count = 0; SCHEME_PAIRP(s); s = SCHEME_CDR(s)) {
     count++;

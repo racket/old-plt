@@ -829,10 +829,11 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   long * volatile cc_ok;
   long * volatile old_ec_ok;
   void * volatile old_cc_start;
+  volatile long save_list_stack_pos;
   mz_jmp_buf save, oversave;
   Scheme_Stack_State envss;
   Scheme_Comp_Env * volatile save_current_local_env;
-  Scheme_Object * volatile save_mark, *  volatile save_name;
+  Scheme_Object * volatile save_mark, *  volatile save_name, * volatile save_list_stack;
   Scheme_Thread * volatile p = scheme_current_thread;
   int set_overflow;
 #ifdef MZ_PRECISE_GC
@@ -874,6 +875,8 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   save_current_local_env = p->current_local_env;
   save_mark = p->current_local_mark;
   save_name = p->current_local_name;
+  save_list_stack = p->list_stack;
+  save_list_stack_pos = p->list_stack_pos;
 
   if (top_next_env) {
     p->current_local_env = top_next_env;
@@ -977,6 +980,8 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
     p->current_local_env = save_current_local_env;
     p->current_local_mark = save_mark;
     p->current_local_name = save_name;
+    p->list_stack = save_list_stack;
+    p->list_stack_pos = save_list_stack_pos;
     scheme_longjmp(save, 1);
   }
 
@@ -2901,27 +2906,34 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
 
   data->type = scheme_unclosed_procedure_type;
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   v = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
   data->flags = SCHEME_INT_VAL(v);
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   v = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
   data->num_params = SCHEME_INT_VAL(v);
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   data->max_let_depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
 
+  if (!SCHEME_PAIRP(obj)) return NULL;
   data->name = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
   if (SCHEME_NULLP(data->name))
     data->name = NULL;
   
+  if (!SCHEME_PAIRP(obj)) return NULL;
   v = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
   /* v is an svector */
 
   data->code = obj;
+
+  if (!SAME_TYPE(scheme_svector_type, SCHEME_TYPE(v))) return NULL;
 
   data->closure_size = SCHEME_SVEC_LEN(v);
   data->closure_map = SCHEME_SVEC_VEC(v);

@@ -883,7 +883,6 @@ Scheme_Object *
 scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, 
 		     Scheme_Config *config)
 {
-  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *v;
   Scheme_Hash_Table *ht = NULL;
 
@@ -898,9 +897,6 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc,
   local_can_read_quasi = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_QUASI));
   local_can_read_dot = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_DOT));
   
-  if (USE_LISTSTACK(!p->list_stack))
-    scheme_alloc_list_stack(p);
-
   v = read_inner(port, stxsrc, &ht);
 
   if (ht) {
@@ -932,6 +928,10 @@ scheme_read(Scheme_Object *port)
   local_can_read_compiled = SCHEME_TRUEP(scheme_get_param(scheme_config, 
 							  MZCONFIG_CAN_READ_COMPILED));
 
+  /* Need this before top_level_do: */
+  if (USE_LISTSTACK(!p->list_stack))
+    scheme_alloc_list_stack(p);
+
   p->ku.k.p1 = (void *)port;
   p->ku.k.p2 = NULL;
   return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
@@ -941,6 +941,10 @@ Scheme_Object *
 scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
 {
   Scheme_Thread *p = scheme_current_thread;
+
+  /* Need this before top_level_do: */
+  if (USE_LISTSTACK(!p->list_stack))
+    scheme_alloc_list_stack(p);
 
   local_can_read_compiled = SCHEME_TRUEP(scheme_get_param(scheme_config, 
 							  MZCONFIG_CAN_READ_COMPILED));
@@ -1799,9 +1803,9 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc)
 /*                               .zo reader                               */
 /*========================================================================*/
 
-#define ZO_CHECK(x) /* empty */
-#define RANGE_CHECK(x, y) /* empty */
-#define RANGE_CHECK_GETS(x) /* empty */
+#define ZO_CHECK(x) if (!(x)) ill_formed_code(port);
+#define RANGE_CHECK(x, y) ZO_CHECK (x y)
+#define RANGE_CHECK_GETS(x) RANGE_CHECK(x, < port->size - port->pos)
 
 typedef struct CPort {
   long pos, size;
@@ -1824,6 +1828,12 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
 static Scheme_Object *read_compact_quote(CPort *port,
 					 Scheme_Object **symtab,
 					 int embedded);
+
+static void ill_formed_code(CPort *port)
+{
+  scheme_read_err(port->orig_port, NULL, -1, -1, CP_TELL(port), -1, 0,
+		  "read (compiled): ill-formed code");
+}
 
 static long read_compact_number(CPort *port)
 {
@@ -2157,7 +2167,7 @@ static Scheme_Object *read_compact(CPort *port,
 
 	  v = scheme_make_modidx(path, base, scheme_false);
 
-	  RANGE_CHECK(l, < p->symtab_size);
+	  RANGE_CHECK(l, < port->symtab_size);
 	  symtab[l] = v;
 	}
 	break;
@@ -2180,7 +2190,7 @@ static Scheme_Object *read_compact(CPort *port,
 
 	v = (Scheme_Object *)mv;
 	
-	RANGE_CHECK(l, < p->symtab_size);
+	RANGE_CHECK(l, < port->symtab_size);
 	symtab[l] = v;
       }
       break;
@@ -2219,7 +2229,7 @@ static Scheme_Object *read_compact(CPort *port,
 	v = scheme_intern_exact_symbol(s, l);
 
 	l = read_compact_number(port);
-	RANGE_CHECK(l, < p->symtab_size);
+	RANGE_CHECK(l, < port->symtab_size);
 	symtab[l] = v;
       }
       break;
@@ -2276,8 +2286,7 @@ static Scheme_Object *read_compact(CPort *port,
     default:
       {
 	v = NULL;
-	scheme_read_err(port->orig_port, NULL, -1, -1, CP_TELL(port), -1, 0,
-			"read (compiled): bad #~ contents: %d", ch);
+	ill_formed_code(port);
       }
     }
 
@@ -2409,10 +2418,14 @@ static Scheme_Object *read_marshalled(int type,
   reader = scheme_type_readers[type];
 
   if (!reader)
-    scheme_read_err(port->orig_port, NULL, -1, -1, CP_TELL(port), -1, 0,
-		    "read (compiled): bad #~ type number: %d");
+    ill_formed_code(port);
   
-  return reader(l);
+  l = reader(l);
+
+  if (!l)
+    ill_formed_code(port);
+
+  return l;
 }
 
 static long read_compact_number_from_port(Scheme_Object *port)
@@ -2518,7 +2531,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   cp.size = size;
   if ((got = scheme_get_chars(port, size, (char *)cp.start, 0)) != size)
     scheme_read_err(port, NULL, -1, -1, -1, -1, 0,
-		    "read (compiled): bad count: %ld != %ld (started at %ld)",
+		    "read (compiled): ill-formed code (bad count: %ld != %ld, started at %ld)",
 		    got, size, cp.base);
   rp = &cp;
 

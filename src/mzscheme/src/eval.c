@@ -877,6 +877,8 @@ static Scheme_Sequence *malloc_sequence(int count)
 
 Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
 {
+  /* We have to be defensive in processing `seq'; it might be bad due
+     to a bad .zo */
   Scheme_Object *list, *v, *good;
   Scheme_Sequence *o;
   int count, i, k, total, last, first, setgood, addconst;
@@ -890,7 +892,7 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
   total = 0;
   first = 1;
   setgood = 1;
-  while (!SCHEME_NULLP(list)) {
+  while (SCHEME_PAIRP(list)) {
     v = SCHEME_CAR(list);
     list = SCHEME_CDR(list);
     last = SCHEME_NULLP(list);
@@ -917,6 +919,9 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
       first = 0;
     }
   }
+
+  if (!SCHEME_NULLP(list))
+    return NULL; /* bad .zo */
 
   if (!count)
     return scheme_compiled_void();
@@ -3995,6 +4000,9 @@ static Scheme_Object *read_with_cont_mark(Scheme_Object *obj)
 {
   Scheme_With_Continuation_Mark *wcm;
 
+  if (!SCHEME_PAIRP(obj) || !SCHEME_PAIRP(SCHEME_CDR(obj)))
+    return NULL; /* bad .zo */
+
   wcm = MALLOC_ONE_TAGGED(Scheme_With_Continuation_Mark);
   wcm->type = scheme_with_cont_mark_type;
   wcm->key = SCHEME_CAR(obj);
@@ -4055,10 +4063,8 @@ static Scheme_Object *read_syntax(Scheme_Object *obj)
   Scheme_Object *idx;
   Scheme_Object *first = NULL, *last = NULL;
 
-#if 0
-  if (!SCHEME_PAIRP(obj) || !SCHEME_SYMBOLP(SCHEME_CAR(obj)))
-    scheme_signal_error("bad compiled syntax");
-#endif
+  if (!SCHEME_PAIRP(obj) || !SCHEME_INTP(SCHEME_CAR(obj)))
+    return NULL; /* bad .zo */
 
   idx = SCHEME_CAR(obj);
 

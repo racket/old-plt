@@ -448,7 +448,7 @@
 					      (set! file new-file)
 					      (die)]
 					     [() (die)]))))
-	       (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-98 PLT~n"
+	       (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-99 PLT~n"
 		       (version))
 	       (printf "Language: ~a~n"
 		       (cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))

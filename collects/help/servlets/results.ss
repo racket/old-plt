@@ -77,8 +77,14 @@
       ; insert internal slashes, make absolute by prepending slash
       (string-append "/" (fold-into-web-path exp-tidy-path))))
 
-  (define (pretty-label label) ; TO DO, maybe
-	label)
+  (define (keyword-string? ekey)
+    (and (string? ekey)
+	 (not (string=? ekey ""))))
+
+  (define (pretty-label label keyword?) 
+    (if keyword?
+	`(FONT ((FACE "monospace")) ,label)
+	label))
 
   (define (maybe-extract-coll s)
     (let ([len (string-length s)])
@@ -102,14 +108,14 @@
   (define (make-caption coll)
     (format "Documentation for the ~a collection" coll))
 
-  (define (make-search-link href label src)
+  (define (make-search-link href label src ekey)
     `(TABLE ((CELLSPACING "0")
 	     (CELLPADDING "0"))
-	    (TR ()
-		(TD ()
-		    (A ((HREF ,href)) ,(pretty-label label)) " in "
-		    "\"" ,src "\""))))
-
+	    (TR 
+	     (TD 
+	      (A ((HREF ,href)) ,(pretty-label label (keyword-string? ekey)))
+	      " in "
+	      "\"" ,src "\""))))
 
   ; page-label is #f or a string that labels an HTML anchor
   ; path is either an absolute pathname (possibly not normalized) 
@@ -198,8 +204,8 @@
 
   (define (goto-lucky-entry ekey label src path page-label key)
     (let* ([href (if (html-entry? path)
-		     (make-html-href page-label path)
-		     (make-text-href page-label path))])
+		     (make-html-href page-label path ekey)
+		     (make-text-href page-label path ekey))])
       ; can use refresh here, instead of Javscript here - no semicolon in URL
       (send/finish 
        `(HTML
@@ -214,10 +220,10 @@
     (let* ([entry (if (html-entry? path)
 		      (make-search-link 
 		       (make-html-href page-label path)
-		       label src)
+		       label src ekey)
 		      (make-search-link 
 		       (make-text-href page-label path)
-		       label src))])
+		       label src ekey))])
       (set! search-responses
 	    (cons entry search-responses))))
 

@@ -1333,7 +1333,7 @@ Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
   Scheme_Object *zero = scheme_make_integer(0);
   Scheme_Object *two = scheme_make_integer(2);
 
-  /* First, find inital guess (too high, if anything): */
+  /* First, find inital guess (too high, if anything):. */
 
   /* Get length of binary number: */
   {
@@ -1361,6 +1361,8 @@ Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
      2^((len+1)/2). Pick that number as a. */
   a = scheme_bignum_shift(scheme_make_bignum(1), (len + 1) >> 1);
   
+  /* Now, refine the guess until we reach a fixpoint: */
+
   while (1) {
     /* Add a*a to x, divide by 2a: */
     a_sq = scheme_bin_mult(a, a);
@@ -1368,28 +1370,34 @@ Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
 
     b = scheme_bin_quotient(scheme_bin_plus(n, a_sq), twice_a);
 
-    /* If b = a, we're done: */
+    /* If b = a, we might be done: */
     if (scheme_bin_eq(b, a)) {
-      return a;
+      if (scheme_bin_eq(a_sq, n))
+	return a;
+      break; 
     }
 
     /* If b is bigger, there's no exact root: */
-    if (scheme_bin_gt(b, a)) {
-      double v;
-      
-      if (SCHEME_INTP(n))
-	v = (double)SCHEME_INT_VAL(n);
-      else {
-	v = scheme_bignum_to_float(n);
-	
-	if (MZ_IS_POS_INFINITY(v))
-	  return scheme_make_double(v);
-      }
-      
-      return scheme_make_double(sqrt(v));
-    }
+    if (scheme_bin_gt(b, a))
+      break;
     
     /* Otherwise, b is a better guess: */
     a = b;
+  }
+
+  /* Return inexact root: */
+  {
+    double v;
+    
+    if (SCHEME_INTP(n))
+      v = (double)SCHEME_INT_VAL(n);
+    else {
+      v = scheme_bignum_to_float(n);
+      
+      if (MZ_IS_POS_INFINITY(v))
+	return scheme_make_double(v);
+    }
+    
+    return scheme_make_double(sqrt(v));
   }
 }

@@ -61,6 +61,8 @@ class wxPostScriptDC: public wxDC
   unsigned char currentBlue;
   double clipx, clipy, clipw, cliph;
 
+  double max_x, max_y, min_x, min_y;
+
   char *current_font_name, *next_font_name;
   double current_font_size, next_font_size;
 
@@ -84,12 +86,9 @@ class wxPostScriptDC: public wxDC
   inline virtual void BeginDrawing(void) {} ;
   inline virtual void EndDrawing(void) {} ;
 
-  void FloodFill(double x1, double y1, wxColour *col, int style=wxFLOOD_SURFACE) ;
   Bool GetPixel(double x1, double y1, wxColour *col) ;
 
   void DrawLine(double x1, double y1, double x2, double y2);
-  void IntDrawLine(int x1, int y1, int x2, int y2);
-  void CrossHair(double x, double y) ;
   void DrawArc(double x1,double y1,double w,double h,double start,double end);
   void DrawPoint(double x, double y);
   void DrawPoint(wxPoint* point) { DrawPoint(point->x, point->y); }

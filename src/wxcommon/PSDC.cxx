@@ -475,7 +475,10 @@ void wxPostScriptDC::CalcBoundingBoxClip(double x, double y)
   else if (y >= (cliph + cliph))
     y = clipy + cliph;
 
-  CalcBoundingBox(x, y);
+  if (x < min_x) min_x = x;
+  if (y < min_y) min_y = y;
+  if (x > max_x) max_x = x;
+  if (y > max_y) max_y = y;
 }
 
 void wxPostScriptDC::Clear(void)
@@ -506,24 +509,9 @@ void wxPostScriptDC::Clear(void)
   }
 }
 
-void wxPostScriptDC::FloodFill(double WXUNUSED(x), double WXUNUSED(y), wxColour * WXUNUSED(col), int WXUNUSED(style))
-{
-}
-
 Bool wxPostScriptDC::GetPixel(double WXUNUSED(x), double WXUNUSED(y), wxColour * WXUNUSED(col))
 {
   return FALSE;
-}
-
-void wxPostScriptDC::IntDrawLine (int x1, int y1, int x2, int y2)
-{
-  DrawLine ((double) x1, (double) y1, (double) x2, (double) y2);
-}
-
-void wxPostScriptDC::CrossHair (double x, double y)
-{
-  DrawLine(0, y, paper_w, y);
-  DrawLine(x, 0, x, paper_h);
 }
 
 void wxPostScriptDC::DrawLine (double x1, double y1, double x2, double y2)

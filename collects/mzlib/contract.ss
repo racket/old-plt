@@ -33,7 +33,7 @@ add struct contracts for immutable structs?
                       (lib "stx.ss" "syntax")
                       (lib "name.ss" "syntax"))
   
-  (require "private/class-sneaky.ss"
+  (require "private/class-private.ss"
            "etc.ss"
            "list.ss")
   

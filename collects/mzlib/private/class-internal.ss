@@ -1,5 +1,5 @@
 
-(module class-sneaky mzscheme
+(module class-internal mzscheme
   (require (lib "list.ss")
            (lib "etc.ss"))
   (require-for-syntax (lib "kerncase.ss" "syntax")
@@ -1441,7 +1441,10 @@
 
 		  ;; -- Extract superclass methods and make inners ---
 		  (let ([renames (map (lambda (index)
-					(vector-ref (class-methods super) index))
+					(let ([vec (vector-ref (class-beta-methods super) index)])
+					  (or (and (positive? (vector-length vec))
+						   (vector-ref vec (sub1 (vector-length vec))))
+					      (vector-ref (class-methods super) index))))
 				      rename-indices)]
 			[inners (let ([new-finals (make-vector method-width #f)])
 				  ;; To compute `inner' indices, we need to know which methods
@@ -1458,7 +1461,7 @@
 							 (if (vector-ref new-finals index) 0 -1))])
 					   (when (negative? depth)
 					     (obj-error 'class*/names 
-							"inner method not final: ~a~a~a" 
+							"inner method not final: ~a~a" 
 							mname
 							(for-class name)))
 					   (lambda (obj default)

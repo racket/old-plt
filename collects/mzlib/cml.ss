@@ -8,6 +8,9 @@
   (define (sync w)
     (object-wait-multiple #f w))
 
+  (define (sync/enable-break w)
+    (object-wait-multiple/enable-break #f w))
+
   (define (channel)
     (make-channel))
 
@@ -38,20 +41,12 @@
   (define (current-time)
     (current-seconds))
   (define (time-evt t)
-    (make-nack-guard-waitable
-     (lambda (nack)
-       (let ([s (make-semaphore)])
-	 (thread-resume (thread/suspend-to-kill
-			 (lambda ()
-			   (object-wait-multiple (max 0 (- t (current-seconds)))
-						 nack)
-			   (semaphore-post s)))
-			(current-thread))
-	 (make-wrapped-waitable s void)))))
+    (make-alarm t))
 
   (provide/contract
    (spawn ((-> any) . -> . thread?))
    (sync (object-waitable? . -> . any))
+   (sync/enable-break (object-waitable? . -> . any))
    (channel (-> channel?))
    (channel-recv-evt (channel? . -> . object-waitable?))
    (channel-send-evt (channel? any? . -> . object-waitable?))

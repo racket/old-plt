@@ -1,5 +1,8 @@
 (module class mzscheme
-  (require "private/class-sneaky.ss")
+
+  ;; All of the implementation is actually in private/class-internal.ss,
+  ;;  which provides extra (private) functionality to contract.ss.
+  (require "private/class-internal.ss")
   
   (provide class
 	   class* class*/names

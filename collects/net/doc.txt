@@ -151,17 +151,9 @@ PROCEDURES -----------------------------------------------------------
 
 > (decode-some-url-parts url) -> url
 
-  Applies `uri-decode' to the `scheme', `host', `port', `path', and
-  `fragment' parts of the input URL, and assembles the decoded and
-  remaining parts into a new URL.
-
-  Before using `uri-decode', any "%" that is not followed by a hex
-  digit is replaced with "%25". (In other words, the decoing process
-  tries to accomodate ill-formed URLs.)
-
-  The `params' and `query' parts are not decoded because they are not
-  fully parsed (e.g., a "%xx" encoding might have been used to avoid
-  generating a parameter delimitter).
+  This procedure, which used to be provided by this library, is no
+  longer supported or necessary. A `url' struct not contains properly
+  decoded information.
 
 > (get-pure-port url [list-of-strings]) -> input-port
 

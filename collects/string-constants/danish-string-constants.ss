@@ -893,11 +893,6 @@
  (kill? "Ihjel?")
 
  ;;; version checker
- ;; vc-check-prompt is gone, I'm leaving this comment to make it easier to generate
- ;; vc-wizard-check-prompt which is similar, only it is used as part of the initial
- ;; wizard dialog.  Note that vc-wizard-check-prompt can (should) have newlines so
- ;; it will not make the dialog too wide.
- ;; (vc-check-prompt "Undersøg om der er PLT-software-opdateringer (kræver internet)?")
  (vc-update-check "Opdateringstjek")
  (vc-please-wait "Vent venligst")
  (vc-connecting-version-server "Skaber forbindelse til PLT's versionsserver")

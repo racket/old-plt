@@ -922,10 +922,10 @@
  
  ;; version checker
  ;; vc-check-prompt is gone, I'm leaving this comment to make it easier to generate
- ;; vc-wizard-check-prompt which is similar, only it is used as part of the initial
+ ;; vc-wizard-check-note which is similar, only it is used as part of the initial
  ;; wizard dialog.  Note that vc-wizard-check-prompt can (should) have newlines so
  ;; it will not make the dialog too wide.
- (vc-wizard-check-prompt "¿Buscar una versión reciente~nde DrScheme en línea?")
+ ; vc-wizard-check-note goes here
  (vc-wizard-check-button "¡Buscar ahora!") 
  (vc-update-check "Revisar Actualización")
  (vc-please-wait "Por favor espere")

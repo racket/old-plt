@@ -1020,9 +1020,8 @@
   ;; the next two are used in the initial wizard dialog.
   ;; Note that vc-wizard-check-prompt can (should) have newlines so
   ;; it will not make the dialog too wide.
-  (vc-wizard-check-prompt "Regarder sur Internet pour d'éventuelles~nmises à jour des logiciels PLT ?")
+  ; vc-wizard-check-note goes here
   (vc-wizard-check-button "Regarder !")
-  (vc-wizard-no-check-button "Continuer sans regarder")
   (vc-update-check "Vérification des mises à jour")
   (vc-please-wait "Veuillez patienter")
   (vc-connecting-version-server "Connexion au server de version de PLT en cours")

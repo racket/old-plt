@@ -2474,6 +2474,11 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       /* current env rename */
       Scheme_Env *env = (Scheme_Env *)scheme_get_param(scheme_current_thread->config, MZCONFIG_ENV);
       
+      if (!env->rename) {
+	Scheme_Object *rn;
+	rn = scheme_make_module_rename(0, 1);
+	env->rename = rn;
+      }
       a = env->rename;
     } else if (SCHEME_FALSEP(a)) {
       /* current exp-env rename */

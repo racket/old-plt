@@ -1349,7 +1349,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 
       s = sizeof(Scheme_Env);
 #if FORCE_KNOWN_SUBPARTS
-      e = COUNT(env->globals) + COUNT(env->nonempty_cond);
+      e = COUNT(env->globals);
 #endif
     }
     break;

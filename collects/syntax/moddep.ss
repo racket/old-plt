@@ -115,7 +115,7 @@
   (define-struct (exn:get-module-code exn) (path))
 
   (define get-module-code
-    (opt-lambda (path [sub-path "compiled"] [compiler compile])
+    (opt-lambda (path [sub-path "compiled"] [compiler compile] [extension-handler #f])
       (unless (path-string? path) 
 	(raise-type-error 'get-module-code "path or string (sans nul)" path))
       (let*-values ([(path) (resolve path)]
@@ -155,11 +155,13 @@
 	   ;; No source --- maybe there's an .so?
 	   [(and (not path-d)
 		 (date>=? so path-d))
-	    (with-dir (lambda () (raise (make-exn:get-module-code 
-					 (string->immutable-string
-					  (format "get-module-code: cannot use extension file; ~e" so))
-					 (current-continuation-marks)
-					 so))))]
+	    (if extension-handler
+		(extension-handler so #f)
+		(raise (make-exn:get-module-code 
+			(string->immutable-string
+			 (format "get-module-code: cannot use extension file; ~e" so))
+			(current-continuation-marks)
+			so)))]
 	   ;; Or maybe even a _loader.so?
 	   [(and (not path-d)
 		 (date>=? _loader-so path-d)
@@ -170,12 +172,14 @@
 							     (path-replace-suffix file #"")))))])
 		     loader)))
 	    => (lambda (loader)
-		 (raise (make-exn:get-module-code 
-			 (string->immutable-string
-			  (format "get-module-code: cannot use _loader file: ~e"
-				  _loader-so))
-			 (current-continuation-marks)
-			 loader)))]
+		 (if extension-handler
+		     (extension-handler loader #t)
+		     (raise (make-exn:get-module-code 
+			     (string->immutable-string
+			      (format "get-module-code: cannot use _loader file: ~e"
+				      _loader-so))
+			     (current-continuation-marks)
+			     loader))))]
 	   ;; Report a not-there error
 	   [else
 	    (raise (make-exn:get-module-code 

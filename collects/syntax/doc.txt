@@ -254,11 +254,11 @@ currently exist).
   If stx is eof or eof wrapped as a syntax object, then an error is
   raised or #f is returned.
 
-> (get-module-code module-path-v [compiled-subdir compile-proc]) - returns
-  a compiled expression for the declaration of the module specified by
-  `module-path-v'. The `module-path-v' argument is a quoted module
-  path, as for MzScheme's `dynamic-require' using the default module
-  path resolver.
+> (get-module-code path [compiled-subdir compile-proc ext-proc]) -
+  returns a compiled expression for the declaration of the module
+  specified by `module-path-v'. The `module-path-v' argument is a
+  quoted module path, as for MzScheme's `dynamic-require' using the
+  default module path resolver.
 
   The `compiled-subdir' argument defaults to "compiled"; it specifies
   the sub-directory to search for a compiled version of the module.
@@ -266,6 +266,22 @@ currently exist).
   The `compile-proc' argument defaults to `compile'. This procedure is
   used to compile module source if an already-compiled version is not
   available.
+
+  The `ext-proc' argument defaults to #f. If it is not #f, it must be
+  a procedure of two arguments that is used when `path' does not exist
+  and no ".zo" version of `path' can be found, but an extension
+  implementing `path' is found. In that case, the arguments to
+  `ext-proc' are the path for the extension, and a boolean indicating
+  whether the extension is a _loader file (#t) or not (#f).
+
+  If a ".zo" version of `path' is available and newer than var `path'
+  (in one of the directories specified by `compiled-subdir'), then it
+  is used instead of the source. Native-code versions of `path' are
+  ignored --- unless only a native-code version exists (i.e., `path'
+  itself does not exist). If only a native-code version exists, it is
+  supplied to `ext-proc' when `ext-proc' is #f, or an exception is
+  raised (to report that an extension file cannot be used) when
+  `ext-proc' is #f.
 
 > (resolve-module-path module-path-v rel-to-path-string/thunk/#f) -
   resolves a module path to filename path. The module path is

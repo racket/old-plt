@@ -1,9 +1,13 @@
 #!/bin/sh
 string=? ; exec $PLTHOME/bin/mzscheme -agrq $0 "$@"
 
-;; This script reads a stream of sgc (dump-memory-stats)
-;; output until EOF. Then, the avg change per dump is
-;; reported for all types.
+;; This script reads a stream of sgc (dump-memory-stats) output until
+;; EOF. Then, the avg change per dump is reported for all types. This
+;; is reported as a list of lists of four elements. The first element
+;; of the list is the kind of value, the second is the number of these
+;; values, the third is the estimated size and the fourth is the
+;; traced size. All three numbers are the average differences between
+;; traces.
 ;;
 ;; Use --skip <n> flag to skip the first <n> dumps
 ;;
@@ -187,13 +191,18 @@ string=? ; exec $PLTHOME/bin/mzscheme -agrq $0 "$@"
 
 (equalize-hash-tables diffs)
 
+(define (number->whole/part x)
+  (cond
+   [(or (= x (floor x)) (<= -1 x 1)) x]
+   [else `(+ ,(floor x) ,(- x (floor x)))]))
+
 (define avg-diffs
   (let* ([avg-lists
 	  (lambda (ls)
 	    (apply map (lambda x
 			 (if (ormap (lambda (x) (eq? x 'n/a)) x)
 			     'n/a
-			     (round (/ (apply + x) diffs-count))))
+			     (/ (apply + x) diffs-count)))
 		   ls))]
 	 [get-avg (lambda (key value)
 		    (list key
@@ -221,13 +230,18 @@ string=? ; exec $PLTHOME/bin/mzscheme -agrq $0 "$@"
 
 (define compare-entries
   (lambda (x y)
-    (let ([xl (last (second x))]
-	  [yl (last (second y))])
+    (let ([xl (car (second x))]
+	  [yl (car (second y))])
       (cond
 	[(eq? xl 'n/a) #f]
 	[(eq? yl 'n/a) #t]
+	[(= xl yl) (string<=? (symbol->string (car x))
+			      (symbol->string (car x)))]
 	[else (<= yl xl)]))))
 
+(define (numbers->whole/part l)
+  (map (lambda (i) (if (number? i) (number->whole/part i) i)) l))
+
 (pretty-print
- (map (lambda (x) (apply cons x))
+ (map (lambda (x) (numbers->whole/part (apply cons x)))
       (quicksort (remove-zeros avg-diffs) compare-entries)))

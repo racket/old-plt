@@ -9,7 +9,7 @@
 ;  => (#%add1 x)
 ; Normalizes the expression forms:
 ;   - begin/begin0: flattened as much as possible; empty
-;     begins are eliminated
+;     and one-expression begins are eliminated
 ;   - unit: unit-bound top-level-varrefs are replaced by
 ;     lexical-varrefs to ghost bindings (stored in the
 ;     unit's annotation); unit defines are changed to
@@ -583,36 +583,42 @@
 		;;
 		[(zodiac:begin-form? ast)
 		 (let ([bodies (zodiac:begin-form-bodies ast)])
-		   (begin-map! (lambda (e) (prephase! e in-unit? #f #f))
-			       (lambda (e) (prephase! e in-unit? need-val? name))
-			       bodies)
-		   (let ([final-bodies
-			  (let loop ([bodies bodies])
-			    (cond
-			     ; last expr in begin, finished
-			     [(null? (cdr bodies)) bodies]
-			     
-			     ; flatten begins
-			     [(zodiac:begin-form? (car bodies))
-			      (loop (append! (zodiac:begin-form-bodies (car bodies))
-					     (cdr bodies)))]
-			     
-			     ; flatten begin0s, too
-			     [(zodiac:begin0-form? (car bodies))
-			      (loop (append! (zodiac:begin0-form-bodies (car bodies))
-					     (cdr bodies)))]
-			     
-			     ; throw away dead values if possible
-			     [(prephase:dead-expression? (car bodies))
-			      (loop (cdr bodies))]
-			     
-			     ; otherwise
-			     [else (cons (car bodies) (loop (cdr bodies)))]))])
-		     (if (null? (cdr final-bodies))
-			 (car final-bodies)
-			 (begin
-			   (zodiac:set-begin-form-bodies! ast final-bodies)
-			   ast))))]
+		   (if (null? bodies)
+		       ; must be a top-level begin...
+		       (zodiac:make-special-constant 'void)
+
+		       ; Normal begin
+		       (begin
+			 (begin-map! (lambda (e) (prephase! e in-unit? #f #f))
+				     (lambda (e) (prephase! e in-unit? need-val? name))
+				     bodies)
+			 (let ([final-bodies
+				(let loop ([bodies bodies])
+				  (cond
+				   ; last expr in begin, finished
+				   [(null? (cdr bodies)) bodies]
+				   
+				   ; flatten begins
+				   [(zodiac:begin-form? (car bodies))
+				    (loop (append! (zodiac:begin-form-bodies (car bodies))
+						   (cdr bodies)))]
+				   
+				   ; flatten begin0s, too
+				   [(zodiac:begin0-form? (car bodies))
+				    (loop (append! (zodiac:begin0-form-bodies (car bodies))
+						   (cdr bodies)))]
+				   
+				   ; throw away dead values if possible
+				   [(prephase:dead-expression? (car bodies))
+				    (loop (cdr bodies))]
+				   
+				   ; otherwise
+				   [else (cons (car bodies) (loop (cdr bodies)))]))])
+			   (if (null? (cdr final-bodies))
+			       (car final-bodies)
+			       (begin
+				 (zodiac:set-begin-form-bodies! ast final-bodies)
+				 ast))))))]
 
 		;;-----------------------------------------------------------
 		;; BEGIN0 EXPRESSIONS

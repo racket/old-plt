@@ -2643,7 +2643,7 @@ static Scheme_Object *string_open_utf8_identity_converter(int argc, Scheme_Objec
     if (SCHEME_FALSEP(argv[0]))
       permissive = 0;
     else if (SCHEME_CHARP(argv[0]) && (SCHEME_CHAR_VAL(argv[0]) >= 0))
-      permissive = SCHEME_CHAR_VAL(argv[0]);
+      permissive = (unsigned char)(SCHEME_CHAR_VAL(argv[0]));
     else {
       scheme_wrong_type("string-open-utf8-identity-converter", "ASCII char or #f", 0, argc, argv);
       return NULL;
@@ -2720,10 +2720,10 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
 	if (!r) {
 	  /* Need to allocate, then do it again: */
 	  r = (char *)scheme_malloc_atomic(amt_wrote + 1);
-	  status = utf8_decode_x((unsigned char *)instr, istart, ifinish, 
-				 (unsigned int *)r, ostart, ofinish,
-				 &amt_read, &amt_wrote, 
-				 1, 0, c->permissive);
+	  utf8_decode_x((unsigned char *)instr, istart, ifinish, 
+			(unsigned int *)r, ostart, ofinish,
+			&amt_read, &amt_wrote, 
+			1, 0, c->permissive);
 	}
       }
     } else {
@@ -2924,8 +2924,10 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	    if (permissive) {
 	      v = permissive;
 	      checkmin = 0;
-	    } else
+	    } else {
+	      failmode = -2;
 	      break;
+	    }
 	  } else
 	    i += 2;
 	} else if (permissive) {
@@ -3016,17 +3018,23 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	    /* Corresponds to the middle of a char. We simply drop
 	       it. */
 	    j--;
+	    oki = i + 1;
 	    continue;
 	  }
-	} else
+	} else {
+	  failmode = -2;
 	  break;
+	}
       }
 
       if (v < checkmin) {
 	if (permissive) {
 	  v = permissive;
-	} else
+	  i = oki;
+	} else {
+	  failmode = -2;
 	  break;
+	}
       }
 
       if (compact) {
@@ -3043,35 +3051,36 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 #endif
 	    }
 	    j++;
-	  } else {
-	    int delta;
-	    delta = (i - oki);
-	    if (delta) {
-	      if (j + delta + 1 < dend) {
-		memcpy(((char *)us) + j, s + oki, delta + 1);
-		j += delta;
-	      } else
-		break;
-	    } else
-	      ((unsigned char *)us)[j] = v;
+	  } else if (us) {
+	    ((unsigned short *)us)[j] = v;
 	  }
-	} else if (us) {
-	  ((unsigned short *)us)[j] = v;
-	}	  
+	} else {
+	  int delta;
+	  delta = (i - oki);
+	  if (delta) {
+	    if (j + delta + 1 < dend) {
+	      if (us)
+		memcpy(((char *)us) + j, s + oki, delta + 1);
+	      j += delta;
+	    } else
+	      break;
+	  } else if (us)
+	    ((unsigned char *)us)[j] = v;
+	}
       } else if (us) {
 	us[j] = v;
       }
     }
-    oki = i;
+    oki = i + 1;
   }
-
-  if ((i < end) && (j < dend))
-    return failmode;
 
   if (ipos)
     *ipos = oki;
   if (jpos)
     *jpos = j;
+
+  if ((i < end) && (j < dend))
+    return failmode;
 
   return j;
 }
@@ -3081,7 +3090,7 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
 		       long *ipos, char utf16, int permissive)
 {
   return utf8_decode_x(s, start, end, us, dstart, dend, 
-		       ipos, NULL, 1, utf16, permissive);
+		       ipos, NULL, utf16, utf16, permissive);
 }
 
 int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, int permissive)

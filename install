@@ -113,8 +113,8 @@ exit 1
            (let* ([p1 (send e last-position)]
                   [_  (send e insert msg p1)]
                   [p2 (send e last-position)])
-             (send e insert "\n(click button below to continue)" p2)
-             (send e change-style 
+             (send e insert "\n(click button below to exit)" p2)
+             (send e change-style
                    (let ([d (make-object style-delta% 'change-bold)])
                      (send d set-delta-foreground "red")
                      d)

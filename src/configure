@@ -2385,7 +2385,7 @@ case $OS in
 
     if test "${enable_quartz}" = "yes" ; then
       # don't use X Libraries: 
-      LIBS="-framework Carbon -L/sw/lib/ -ldl "
+      LIBS="/sw/lib/libdl.a -framework Carbon"
     else
       CFLAGS="$CFLAGS -DXONX "
       LIBS="-L/sw/lib/ $LIBS -ldl "

@@ -22,71 +22,94 @@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
 
-      (define styles
-        `((keyword ,(color-prefs:make-style-delta "black" #f #f #f))
-          (string ,(color-prefs:make-style-delta "ForestGreen" #f #f #f))
-          (literal ,(color-prefs:make-style-delta "ForestGreen" #f #f #f))
-          (comment ,(color-prefs:make-style-delta (make-object color% 0 105 255) #f #f #f))
-          (error ,(color-prefs:make-style-delta "red" #f #f #f))
-          (identifier ,(color-prefs:make-style-delta "navy" #f #f #f))
-          (default ,(color-prefs:make-style-delta "black" #f #f #f))))
+      (define color-prefs-table
+        `((keyword ,(make-object color% "black") ,(string-constant profj-java-mode-color-keyword))
+          (string ,(make-object color% "forestgreen") ,(string-constant profj-java-mode-color-string))
+          (literal ,(make-object color% "forestgreen") ,(string-constant profj-java-mode-color-literal))
+          (comment ,(make-object color% 194 116 31) ,(string-constant profj-java-mode-color-comment))
+          (error ,(make-object color% "red") ,(string-constant profj-java-mode-color-error))
+          (identifier ,(make-object color% 38 38 128) ,(string-constant profj-java-mode-color-identifier))
+          (default ,(make-object color% "black") ,(string-constant profj-java-mode-color-default))))
       
-      (color-prefs:add "Java" styles)
+      ;; short-sym->pref-name : symbol -> symbol
+      ;; returns the preference name for the color prefs
+      (define (short-sym->pref-name sym) (string->symbol (short-sym->style-name sym)))
       
-      (drscheme:modes:add-mode "Java mode"
-                               (new color:text-mode%
-                                    (matches (list (list '|{| '|}|)
-                                                   (list '|(| '|)|)
-                                                   (list '|[| '|]|)))
-				    (get-token get-syntax-token)
-                                    (tab-name "Java"))
-                               (lambda (text prompt-position) 
-                                 (let ((is-if? #f)
-                                       (is-string? #f)
-                                       (open-parens 0)
-                                       (open-braces 0)
-                                       (open-curlies 0))
-                                   (let loop ((index 1) (char (send text get-character prompt-position)))
-                                     (unless (eq? char #\nul)
-                                       (cond 
-                                         ((and (= index 1) 
-                                               (eq? char #\i) 
-                                               (eq? (send text get-character (add1 prompt-position)) #\f)
-                                               (eq? (send text get-character (+ 2 prompt-position)) #\space))
-                                          (set! is-if? #t)
-                                          (loop 3 (send text get-character (+ 3 prompt-position))))
-                                         ((eq? char #\()
-                                          (unless is-string? (set! open-parens (add1 open-parens)))
-                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
-                                         ((eq? char #\))
-                                          (unless is-string? (set! open-parens (sub1 open-parens)))
-                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
-                                         ((eq? char #\{)
-                                          (unless is-string? (set! open-curlies (add1 open-curlies)))
-                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
-                                         ((eq? char #\})
-                                          (unless is-string? (set! open-curlies (sub1 open-curlies)))
-                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
-                                         ((eq? char #\[)
-                                          (unless is-string? (set! open-braces (add1 open-braces)))
-                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
-                                         ((eq? char #\])
-                                          (unless is-string? (set! open-braces (sub1 open-braces)))
-                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
-                                         ((eq? char #\")
-                                          (set! is-string? (not is-string?))
-                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
-                                         (else
-                                          (loop (add1 index) (send text get-character (+ index prompt-position)))))))
-                                   (not (or (not (= open-parens 0))
-                                            (not (= open-braces 0))
-                                            (not (= open-curlies 0))
-                                            is-if?))))
-                               (lambda (l)
-                                 (and l 
-                                      (pair? l)
-                                      (pair? (cdr l))
-                                      (equal? (cadr l) "ProfessorJ"))))
+      ;; short-sym->style-name : symbol->string
+      ;; converts the short name (from the table above) into a name in the editor list
+      ;; (they are added in by `color-prefs:register-color-pref', called below)
+      (define (short-sym->style-name sym) (format "profj:syntax-coloring:scheme:~a" sym))
+      
+      ;; extend-preferences-panel : vertical-panel -> void
+      ;; adds in the configuration for the Java colors to the prefs panel
+      (define (extend-preferences-panel parent)
+        (for-each
+         (lambda (line)
+           (let ([sym (car line)])
+             (color-prefs:build-color-selection-panel 
+              parent
+              (short-sym->pref-name sym)
+              (short-sym->style-name sym)
+              (format "~a" sym))))
+         color-prefs-table))
+      
+      (define mode-surrogate
+        (new color:text-mode%
+             (matches (list (list '|{| '|}|)
+                            (list '|(| '|)|)
+                            (list '|[| '|]|)))
+             (get-token get-syntax-token)
+             (token-sym->style short-sym->style-name)))
+      
+      (define (repl-submit text prompt-position)
+        (let ((is-if? #f)
+              (is-string? #f)
+              (open-parens 0)
+              (open-braces 0)
+              (open-curlies 0))
+          (let loop ((index 1) (char (send text get-character prompt-position)))
+            (unless (eq? char #\nul)
+              (cond 
+                ((and (= index 1) 
+                      (eq? char #\i) 
+                      (eq? (send text get-character (add1 prompt-position)) #\f)
+                      (eq? (send text get-character (+ 2 prompt-position)) #\space))
+                 (set! is-if? #t)
+                 (loop 3 (send text get-character (+ 3 prompt-position))))
+                ((eq? char #\()
+                 (unless is-string? (set! open-parens (add1 open-parens)))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ((eq? char #\))
+                 (unless is-string? (set! open-parens (sub1 open-parens)))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ((eq? char #\{)
+                 (unless is-string? (set! open-curlies (add1 open-curlies)))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ((eq? char #\})
+                 (unless is-string? (set! open-curlies (sub1 open-curlies)))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ((eq? char #\[)
+                 (unless is-string? (set! open-braces (add1 open-braces)))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ((eq? char #\])
+                 (unless is-string? (set! open-braces (sub1 open-braces)))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ((eq? char #\")
+                 (set! is-string? (not is-string?))
+                 (loop (add1 index) (send text get-character (+ index prompt-position))))
+                (else
+                 (loop (add1 index) (send text get-character (+ index prompt-position)))))))
+          (not (or (not (= open-parens 0))
+                   (not (= open-braces 0))
+                   (not (= open-curlies 0))
+                   is-if?))))
+      
+      ;; matches-language : (union #f (listof string)) -> boolean
+      (define (matches-language l)
+        (and l 
+             (pair? l)
+             (pair? (cdr l))
+             (equal? (cadr l) "ProfessorJ")))
       
       (define (phase1) (void))
       (define (phase2) 
@@ -498,7 +521,25 @@
       
       
       
-      ))
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;
+      ;;  Wire up to DrScheme
+      ;;
+      
+      (drscheme:modes:add-mode (string-constant profj-java-mode)
+                               mode-surrogate
+                               repl-submit
+                               matches-language)
+      (color-prefs:add-to-preferences-panel (string-constant profj-java)
+                                            extend-preferences-panel)
+      
+      (for-each (lambda (line)
+                  (let ([sym (car line)]
+                        [color (cadr line)])
+                    (color-prefs:register-color-pref (short-sym->pref-name sym)
+                                                     (short-sym->style-name sym)
+                                                     color)))
+                color-prefs-table)))
   
   (provide format-java)
   ;format-java: java-value bool symbol (list value) -> string
@@ -599,10 +640,4 @@
       [else
        (raise-syntax-error 'Java
                            "Internal Syntax error in compiling Java Program"
-                           stx)]))
-  
-
-  
-  )
-
-      
+                           stx)])))

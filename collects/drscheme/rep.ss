@@ -299,7 +299,9 @@
 	     (lock #f)
 	     (let ([starting-at-prompt-mode? prompt-mode?])
 	       (set! transparent-edit (make-object transparent-io-edit%))
-	       
+
+	       (send transparent-edit auto-wrap #t)
+
 	       ;; ensure that there is a newline before the snip is inserted
 	       (unless (member 'hard-newline
 			       (send (find-snip (last-position) 'before) get-flags))
@@ -307,10 +309,7 @@
 	       
 	       (when starting-at-prompt-mode?
 		 (set-prompt-mode #f))
-	       
-	       (unless transparent-edit
-		 (printf "transparent-edit is ~a!" transparent-edit))
-	       (send transparent-edit auto-wrap #t)
+
 	       (let ([snip (make-object mred:editor-snip% transparent-edit)])
 		 (set! transparent-snip snip)
 		 (insert snip (last-position) (last-position) #f)
@@ -322,7 +321,6 @@
 		   (when a
 		     (send a grab-caret))))
 	       (when starting-at-prompt-mode?
-		 (printf "insert-prompt.1~n")
 		 (insert-prompt)))
 	     (set-prompt-position (last-position))
 	     (lock c-locked?)
@@ -358,30 +356,28 @@
 	(private
 	  [flushing-event-running? #f]
 	  [io-collected-thunks null]
+	  [io-collected-edits null]
 	  [run-io-collected-thunks
 	   (lambda ()
-
-	     (printf "saved: ~a~n" (length io-collected-thunks))
 	     ;; also need to start edit-sequence in any affected
 	     ;; transparent io boxes.
 	     (begin-edit-sequence)
 	     (for-each (lambda (t) (t)) (reverse io-collected-thunks))
+	     (for-each (lambda (e) (send e end-edit-sequence)) io-collected-edits)
 	     (end-edit-sequence)
 
+	     (set! io-collected-edits null)
 	     (set! io-collected-thunks null))]
 	  [wait-for-io-to-complete
 	   (lambda ()
-	     (printf "wait-for-io-to-complete.1~n")
 	     (let ([semaphore (make-semaphore 0)])
-	       (mred:queue-callback
+	       (system
 		(lambda ()
-		  (printf "wait-for-io-to-complete.3~n")
-		  (run-io-collected-thunks)
-		  (printf "wait-for-io-to-complete.4~n"))
-		  (semaphore-post semaphore))
-	       (printf "wait-for-io-to-complete.2~n")
-	       (semaphore-wait semaphore)
-	       (printf "wait-for-io-to-complete.5~n")))]
+		  (mred:queue-callback
+		   (lambda ()
+		     (run-io-collected-thunks)
+		     (semaphore-post semaphore)))))
+	       (semaphore-wait semaphore)))]
 	  [queue-io
 	   (lambda (thunk)
 	     (let ([this-eventspace user-eventspace])
@@ -402,10 +398,14 @@
 			  (run-io-collected-thunks)
 			  (set! flushing-event-running? #f))))))))))])
 
-
 	(public
 	  [generic-write
 	   (lambda (edit s style-func)
+	     
+	     (unless (or (eq? this edit) (member edit io-collected-edits))
+	       (set! io-collected-edits (cons edit io-collected-edits))
+	       (send edit begin-edit-sequence))
+	     
 	     (when prompt-mode?
 	       (insert (string #\newline) (last-position) (last-position) #f)
 	       (set-prompt-mode #f))
@@ -420,9 +420,8 @@
 			 s)
 		     start
 		     start
-		     #f)
+		     #t)
 	       (let ([end (send edit last-position)])
-		 ;(send edit change-style null start end) ; wx
 		 (style-func start end)
 		 (send edit set-prompt-position end))
 	       (send edit lock c-locked?)
@@ -580,6 +579,7 @@
 	     (report-unlocated-error message)
 	     (when (is-a? file mred:text%)
 	       (send file begin-edit-sequence)
+	       (wait-for-io-to-complete)
 	       (send file set-position start finish)
 	       (if (is-a? file edit%)
 		   (send file scroll-to-position start
@@ -671,7 +671,6 @@
 	      (if (thread-running? user-thread)
 		  (let ([c-locked? (locked?)])
 		    (lock #f)
-		    (printf "insert-prompt.2~n")
 		    (insert-prompt)
 		    (lock c-locked?)
 		    (end-edit-sequence))
@@ -1089,6 +1088,7 @@
 				 (system
 				  (lambda ()
 				    (running-callback-stop)
+				    (wait-for-io-to-complete)
 				    (set! depth (- depth 1)))))
 			       (lambda ()
 				 (mzlib:thread:dynamic-enable-break
@@ -1301,7 +1301,6 @@
 					   which)])
 	       (begin-edit-sequence)
 	       (unless prompt-mode?
-		 (printf "insert-prompt.3~n")
 		 (insert-prompt))
 	       (delete prompt-position (last-position) #f)
 	       (for-each (lambda (snip/string)
@@ -1387,7 +1386,6 @@
 	     (ready-non-prompt))]
 	  [do-post-eval
 	   (lambda ()
-	     (printf "insert-prompt.4~n")
 	     (insert-prompt))])
 	
 	(private
@@ -1432,14 +1430,12 @@
 		       (not (eval-busy?)))
 		  (begin-edit-sequence)
 		  (when (not prompt-mode?)
-		    (printf "insert-prompt.5~n")
 		    (insert-prompt))
 		  (copy-to-end/set-position start end)
 		  (end-edit-sequence)]
 		 [(and (= start last) 
 		       (not prompt-mode?)
 		       (not (eval-busy?)))
-		  (printf "insert-prompt.6~n")
 		  (insert-prompt)]
 		 [(and (< prompt-position start)
 		       (only-spaces-after start)
@@ -1467,7 +1463,6 @@
 	(public
 	  [insert-prompt
 	   (lambda ()
-	     (printf "insert-prompt~n")
 	     (set! prompt-mode? #t)
 	     (begin-edit-sequence)
 	     (let* ([last (last-position)]

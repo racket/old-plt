@@ -1798,8 +1798,20 @@
                                              (lambda () (ctor-overload-error 'conflict type args src))
                                              (lambda () (ctor-overload-error 'no-match type args src))
                                              type-recs)
-                        (when (check-ctor-args args (method-record-atypes (car methods)) type src level type-recs)
-                          (car methods))))
+                        (if (> (length methods) 1)
+                            (let ((teaching-error
+                                   (lambda (kind)
+                                     (if (error-file-exists? class-record type-recs)
+                                         (call-provided-error (id-string (name-id name)) args kind)
+                                         (teaching-call-error kind (name-id name) args #f src methods)))))
+                              (resolve-overloading methods
+                                                   args
+                                                   (lambda () (teaching-error 'number))
+                                                   (lambda () (teaching-error 'type))
+                                                   (lambda () (teaching-error 'type))
+                                                   type-recs))
+                            (when (check-ctor-args args (method-record-atypes (car methods)) type src level type-recs)
+                              (car methods)))))
              (mods (method-record-modifiers const))
              (this (if static? 
                        class-record

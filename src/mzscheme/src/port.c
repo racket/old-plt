@@ -4573,13 +4573,6 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
     case 0: /* child */
 
-      {
-	/* Ignore signals here */
-	START_XFORM_SKIP;
-	MZ_SIGSET(SIGCHLD, SIG_IGN);
-	END_XFORM_SKIP;
-      }
-
       if (!synchonous) {
 	/* Copy pipe descriptors to stdin and stdout */
 	MSC_IZE(dup2)(to_subprocess[0], 0);
@@ -4640,14 +4633,25 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       } else {
 	int err;
 
-	err = MSC_IZE(execv)(command, argv);
+	/* Restore original SIGCHLD handling: */
+	START_XFORM_SKIP;
+	MZ_SIGSET(SIGCHLD, SIG_DFL);
+	END_XFORM_SKIP;
+
+      	err = MSC_IZE(execv)(command, argv);
 
 	/* If we get here it failed; give up */
 
 	if (as_child || !def_exit_on)
 	  _exit(err ? err : 1);
-	else
+	else {
+	  /* Back to MzScheme SIGCHLD handling: */
+	  START_XFORM_SKIP;
+	  MZ_SIGSET(SIGCHLD, child_done);
+	  END_XFORM_SKIP;
+
 	  return scheme_void;
+	}
       }
 
     default: /* parent */

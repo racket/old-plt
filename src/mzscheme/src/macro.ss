@@ -1132,8 +1132,8 @@
 	      (make-exn
 	       (#%string->immutable-string
 		(#%format
-		 "~s: expression for \"~s\" is not a signed unit"
-		 who tag))
+		 "~s: expression for \"~s\" is not a signed unit: ~e"
+		 who tag u))
 	       (#%current-continuation-marks)))))
        units tags)
       (#%for-each

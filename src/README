@@ -40,13 +40,13 @@ MSVC or Cygwin), cd to plt\src\mzscheme\dynsrc and run mkbordyn.bat.
 The mkbordyn.bat script requires bcc23.exe.
 
 ========================================================================
- Compiling for Mac OS (not Mac OS X)
+ Compiling for Mac OS (OS X or Classic)
 ========================================================================
 
 Read the instructions in plt/src/mac/README.
 
 ========================================================================
- Compiling for Unix (including Linux), Cygwin, BeOS, or Mac OS X
+ Compiling for Unix (including Linux), Cygwin, or BeOS (but not Mac OS X)
 ========================================================================
 
  1. Run the script `configure', which is in the same directory as
@@ -114,10 +114,10 @@ Read the instructions in plt/src/mac/README.
     `mzscheme' binary is copied for Unix into the directory
     plt/mzscheme.
 
- 4. Unix (Linux), BeOS, and Mac OS X: Run ./install in the plt
-    directory (one directory up from here). Afterwards, programs like
-    plt/bin/setup-plt and plt/bin/mzc should work. If you move the plt
-    tree, re-run plt/install.
+ 4. Unix (Linux) and BeOS: Run ./install in the plt directory (one
+    directory up from here). Afterwards, programs like 
+    plt/bin/setup-plt and plt/bin/mzc should work. If you move the 
+    plt tree, re-run plt/install.
 
     Cygwin: Create the other executables (besides mred.exe and
     mzscheme.exe) by running

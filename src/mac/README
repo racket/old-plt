@@ -26,16 +26,19 @@ as Codewarrior 7.0.
 
 2) cd to plt/src/mzscheme, and execute 'make g-c'
 
-3) Follow the instructions for building MzScheme-app.mcp contained in
-plt/src/mac/cw/README (basically, open the project file and compile
-it).
+3) In Codewarrior, open the project file plt/src/mac/cw/MzScheme-app.mcp,
+choose the "MzScheme-app.OSX" target from the pull-down menu in the upper-
+left corner, and then Make (cmd-m). (Ignore warning on opening the file
+of the form "couldn't find /usr/local/lib".)
 
 4) cd to plt/src/mac and execute the pre-make script by typing 
 ./pre-make
 (This step requires mzscheme, which is why we had to build it first.)
 
-5) Follow the instructions for building MrEd.mcp contained in
-plt/src/mac/cw/README
+5) As for MzScheme; in Codewarrior, open the project file plt/src/mac/cw/MrEd.mcp,
+choose the "MrEd.OSX" target from the pull-down menu in the upper-left
+corner, and then Make (cmd-m). (Ignore warning on opening the file of
+the form "couldn't find /usr/local/lib")
 
 *** OPTION 2: Installing downloaded binaries:
 

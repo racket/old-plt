@@ -72,6 +72,8 @@
    mzlib:pretty-print^
    (import)
    
+   (define pretty-print-show-inexactness (make-parameter #f))
+
    (define pretty-print-columns 
      (make-parameter 79
 		     (lambda (x)
@@ -189,6 +191,8 @@
      (define line-number 0)
 
      (define table (make-hash-table)) ; Hash table for looking for loops
+
+     (define show-inexactness? (pretty-print-show-inexactness))
 
      (define-struct mark (str def))
 
@@ -394,7 +398,11 @@
 					    col)))
 
 		   ((boolean? obj)     (out (if obj "#t" "#f") col))
-		   ((number? obj)      (out (number->string obj) col))
+		   ((number? obj)
+		    (when (and show-inexactness?
+			       (inexact? obj))
+		      (out "#i" col))
+		    (out (number->string obj) col))
 		   ; Let symbol get printed by default case to get proper quoting
 		   ; ((symbol? obj)      (out (symbol->string obj) col))
 		   ((string? obj)      (if display?
@@ -644,6 +652,7 @@
 	     ((lambda let* letrec define shared
 		      unless #%unless
 		      when #%when
+		      '|$\spadesuit$|
 		      #%lambda #%let* #%letrec #%define
 		      define-macro #%define-macro)
 	      pp-lambda)

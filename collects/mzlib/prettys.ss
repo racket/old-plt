@@ -8,5 +8,6 @@
    pretty-print-size-hook
    pretty-print-print-hook
    pretty-print-display-string-handler
-   pretty-print-print-line))
+   pretty-print-print-line
+   pretty-print-show-inexactness))
 

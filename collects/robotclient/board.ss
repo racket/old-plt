@@ -137,15 +137,18 @@
   (define-struct response (id name arg) (make-inspector))
   
   (define-tokens rt (NUM))
-  (define-empty-tokens ert (^ X Y N S E W P D EOF))
+  (define-empty-tokens ert (^ X Y N S E W P D EOF Robot died.))
   
   (define response-parser
     (parser
      (tokens rt ert)
-     (start response-list)
+     (start start)
      (end EOF)
      (error (lambda (a b c) (error 'parser)))
      (grammar
+      (start ((death) $1)
+	     ((response-list) $1))
+      (death ((Robot NUM died.) (raise 'dead-robot)))
       (response ((^ NUM com-list) 
                  (map (lambda (com)
                         (make-response $2 (car com) (cdr com)))
@@ -173,7 +176,7 @@
         (response-parser (lambda ()
                            (let ((i (read s)))
                              (cond
-                               ((memq i `(^ X Y N S E W P D)) i)
+                               ((memq i `(^ X Y N S E W P D Robot died.)) i)
                                ((number? i) (token-NUM i))
                                (else 'EOF))))))))
           

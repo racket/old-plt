@@ -10,7 +10,7 @@
   
   (define X11-include 
     (if (eq? (system-type) 'unix)
-        '("/usr/X11R6/include")
+        '("/usr/X11R6/include" "/usr/X/include")
         '()))
   
   (define dir (build-path "compiled" "native" (system-library-subpath)))

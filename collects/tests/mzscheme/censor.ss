@@ -3,24 +3,28 @@
 ; string for printing to a terminal
 (lambda (thunk)
   (let ([censor (lambda (s)
-		  (list->string
-		   (let loop ([s (string->list s)])
+		  (list->bytes
+		   (let loop ([s (bytes->list s)])
 		     (if (null? s)
 			 null
 			 (let ([c (car s)])
 			   (cond
-			    [(and (not (char-whitespace? c)) (or (<= (char->integer c) 32) (>= (char->integer c) #o200)))
-			     (append (cons #\{ (string->list 
-						(number->string 
-						 (char->integer c))))
-				     (cons #\} (loop (cdr s))))]
+			    [(and (or (< c 32) (>= c #o200))
+				  (not (= c 10)))
+			     (append (cons (char->integer #\{)
+					   (map
+					    char->integer
+					    (string->list 
+					     (number->string c))))
+				     (cons (char->integer #\})
+					   (loop (cdr s))))]
 			    [else
 			     (cons c (loop (cdr s)))]))))))])
     (let* ([oldp (current-output-port)]
 	   [cp (make-custom-output-port
 		#f
 		(lambda (s start end flush?)
-		  (display (censor (substring s start end)) oldp)
+		  (display (censor (subbytes s start end)) oldp)
 		  (- end start))
 		void
 		void)])

@@ -21,26 +21,26 @@
    (lambda ()
      (let loop ([n 0])
        (unless (= n 256)
-	       (let* ([c0 (integer->char n)]
-		      [c (if (read-case-sensitive)
-			     c0
-			     (char-downcase c0))])
-		 (cond
-		  [(char-whitespace? c)
-		   (test 'b readstr (string #\a c #\b))]
-		  [(char=? #\\ c) (test 'ab readstr (string #\a c #\b))]
-		  [(char=? #\; c) (test 'a readstr (string #\a c #\b))]
-		  [(char=? #\' c) (test ''b readstr (string #\a c #\b))]
-		  [(char=? #\` c) (test '`b readstr (string #\a c #\b))]
-		  [(char=? #\, c) (test ',b readstr (string #\a c #\b))]
-		  [else
-		   (test (string->symbol (string #\a (char-downcase c) #\b))
-			 'readstr
-			 (with-handlers ([void 
-					  (lambda (x) 
-					    (string->symbol (string #\a (char-downcase c) #\b)))])
-			      (readstr (string #\a c #\b))))]))
-	       (loop (add1 n)))))))
+	 (let* ([c0 (integer->char n)]
+		[c (if (read-case-sensitive)
+		       c0
+		       (char-downcase c0))])
+	   (cond
+	    [(char-whitespace? c)
+	     (test 'b readstr (string #\a c #\b))]
+	    [(char=? #\\ c) (test 'ab readstr (string #\a c #\b))]
+	    [(char=? #\; c) (test 'a readstr (string #\a c #\b))]
+	    [(char=? #\' c) (test ''b readstr (string #\a c #\b))]
+	    [(char=? #\` c) (test '`b readstr (string #\a c #\b))]
+	    [(char=? #\, c) (test ',b readstr (string #\a c #\b))]
+	    [else
+	     (test (string->symbol (string #\a (char-downcase c) #\b))
+		   'readstr
+		   (with-handlers ([void 
+				    (lambda (x) 
+				      (string->symbol (string #\a (char-downcase c) #\b)))])
+		     (readstr (string #\a c #\b))))]))
+	 (loop (add1 n)))))))
 
 (err/rt-test (readstr ")") exn:read?)
 (err/rt-test (readstr "[)") exn:read?)
@@ -375,13 +375,13 @@
 	 (if (null? s)
 	     eof
 	     (let ([i (car s)])
-	       (if (string? i)
-		   (if ((string-length i) . > . p)
+	       (if (bytes? i)
+		   (if ((bytes-length i) . > . p)
 		       (begin
 			(incpos!)
-			(string-set! str 0 (string-ref i p))
+			(bytes-set! str 0 (bytes-ref i p))
 			1)
-		       (loop (cdr s) (- p (string-length i))))
+		       (loop (cdr s) (- p (bytes-length i))))
 		   ;; a special:
 		   (cond
 		    [(zero? p) (incpos!)
@@ -410,11 +410,11 @@
      (lambda () #t))))
 
 ;; Read without specials:
-(let* ([p (make-p `("(list "
-		    "a"
-		    " "
-		    "b"
-		    "))")
+(let* ([p (make-p `(#"(list "
+		    #"a"
+		    #" "
+		    #"b"
+		    #"))")
 		  special-size
 		  (lambda (w l c p)
 		    (error "shouldn't get here")))]
@@ -431,11 +431,11 @@
   (test 8 syntax-column (caddr v)))
 
 ;; Without specials, with newlines:
-(let* ([p (make-p `("(list\n"
-		    "a"
-		    "\n"
-		    "b"
-		    "))")
+(let* ([p (make-p `(#"(list\n"
+		    #"a"
+		    #"\n"
+		    #"b"
+		    #"))")
 		  special-size
 		  (lambda (w l c p)
 		    (error "shouldn't get here")))]
@@ -452,11 +452,11 @@
   (test 0 syntax-column (caddr v)))
   
 ;; Simple read:
-(let* ([p (make-p `("(list "
+(let* ([p (make-p `(#"(list "
 		    ,a-special
-		    " "
+		    #" "
 		    ,b-special
-		    "))")
+		    #"))")
 		  special-size
 		  (lambda (w l c p)
 		    (test #f 'no-place w)
@@ -470,11 +470,11 @@
   (test b-special caddr v))
 
 ;; Read with newlines
-(let* ([p (make-p `("(list\n"
+(let* ([p (make-p `(#"(list\n"
 		    ,a-special
-		    "\n"
+		    #"\n"
 		    ,b-special
-		    "))")
+		    #"))")
 		  special-size
 		  (lambda (w l c p)
 		    (test l 'no-place l)
@@ -489,11 +489,11 @@
   (test b-special caddr v))
 
 ;; Read with src loc:
-(let* ([p (make-p `("(list "
+(let* ([p (make-p `(#"(list "
 		    ,a-special
-		    " "
+		    #" "
 		    ,b-special
-		    " end))")
+		    #" end))")
 		  special-size
 		  (lambda (w l c p)
 		    (test 'dk 'dk-place w)
@@ -516,9 +516,9 @@
 
   ;; Read with specials as syntax syntax already:
   (let* ([stx v]
-	 [p (make-p `("(list "
+	 [p (make-p `(#"(list "
 		      ,stx
-		      " end))")
+		      #" end))")
 		    (lambda (x)
 		      ;; pretend it's 100 wide
 		      100)
@@ -534,9 +534,9 @@
     (test 108 syntax-position (caddr l))
 
     ;; Check that plain read performs a syntax-object->datum:
-    (let* ([p (make-p `("(list "
+    (let* ([p (make-p `(#"(list "
 			,stx
-			" end))")
+			#" end))")
 		      (lambda (x) 100)
 		    (lambda (w l c p)
 		      (test #f 'no-place w)
@@ -548,9 +548,9 @@
 
 ;; Check that syntax read with with a list special
 ;;  syntaxizes the list.
-(let* ([p (make-p `("(list "
+(let* ([p (make-p `(#"(list "
 		    ,(list a-special b-special)
-		    " end))")
+		    #" end))")
 		  (lambda (x)
 		    100)
 		  (lambda (w l c p)
@@ -567,43 +567,43 @@
   (test 108 syntax-position (caddr l)))
 
 ;; Test delimitting and unsupported positions:
-(test (list 1 a-special) read (make-p (list "(1" a-special ")") (lambda (x) 1) void))
-(test (list 1) read (make-p (list "(1" special-comment ")") (lambda (x) 1) void))
-(test (list 'a a-special 'b) read (make-p (list "(a" a-special "b)") (lambda (x) 1) void))
-(test (list #\a a-special) read (make-p (list "(#\\a" a-special ")") (lambda (x) 1) void))
-(test (list #\newline a-special) read (make-p (list "(#\\newline" a-special ")") (lambda (x) 1) void))
-(test (list #\newline) read (make-p (list "(#\\newline" special-comment ")") (lambda (x) 1) void))
+(test (list 1 a-special) read (make-p (list #"(1" a-special #")") (lambda (x) 1) void))
+(test (list 1) read (make-p (list #"(1" special-comment #")") (lambda (x) 1) void))
+(test (list 'a a-special 'b) read (make-p (list #"(a" a-special #"b)") (lambda (x) 1) void))
+(test (list #\a a-special) read (make-p (list #"(#\\a" a-special #")") (lambda (x) 1) void))
+(test (list #\newline a-special) read (make-p (list #"(#\\newline" a-special #")") (lambda (x) 1) void))
+(test (list #\newline) read (make-p (list #"(#\\newline" special-comment #")") (lambda (x) 1) void))
 (test a-special read-char-or-special (make-p (list a-special) (lambda (x) 1) void))
 
 ;; Type error triggered by symbol 'z --- make sure it's propagated:
-(err/rt-test (read (make-p (list "(a" 'z ")") (lambda (x) 1) void)))
+(err/rt-test (read (make-p (list #"(a" 'z #")") (lambda (x) 1) void)))
 ;; Negative number triggers bad special result:
-(err/rt-test (read (make-p (list "(a" -42 ")") (lambda (x) 1) void)))
+(err/rt-test (read (make-p (list #"(a" -42 #")") (lambda (x) 1) void)))
 ;; Inexact number triggers bad special-comment result:
-(err/rt-test (read (make-p (list "(a" 42.0 ")") (lambda (x) 1) void)))
+(err/rt-test (read (make-p (list #"(a" 42.0 #")") (lambda (x) 1) void)))
 
 (define (run-delim-special a-special)
-  (test (list 5) read (make-p (list "(; \"" a-special "\n5)") (lambda (x) 1) void))
-  (test (list 5) read (make-p (list "(#| \"" a-special " |# 5)") (lambda (x) 1) void))
-  (test (list 5) read (make-p (list "(;" a-special "\n 5)") (lambda (x) 1) void))
-  (test 5 read (make-p (list "#| \"" a-special " |# 5") (lambda (x) 1) void))
-  (test 5 read (make-p (list ";" a-special "\n 5") (lambda (x) 1) void))
-  (err/rt-test (read (make-p (list "\"a" a-special "\"") (lambda (x) 1) void)) exn:read:non-char?)
-  (err/rt-test (read (make-p (list "\"" a-special "\"") (lambda (x) 1) void)) exn:read:non-char?)
-  (err/rt-test (read (make-p (list "\"\\" a-special "\"") (lambda (x) 1) void)) exn:read:non-char?)
-  (err/rt-test (read (make-p (list "\"\\x" a-special "\"") (lambda (x) 1) void)) exn:read:non-char?)
-  (err/rt-test (read (make-p (list "\"\\x1" a-special "\"") (lambda (x) 1) void)) exn:read:non-char?)
-  (err/rt-test (read (make-p (list "#\\" a-special "") (lambda (x) 1) void)) exn:read:non-char?)
-  (err/rt-test (read (make-p (list "#\\12" a-special "") (lambda (x) 1) void)) exn:read:non-char?)
-  (err/rt-test (read (make-p (list "#" a-special "") (lambda (x) 1) void)) exn:read:non-char?)
-  (err/rt-test (read (make-p (list "x\\" a-special "y") (lambda (x) 1) void)) exn:read:non-char?)
-  (err/rt-test (read (make-p (list "|" a-special "y|") (lambda (x) 1) void)) exn:read:non-char?)
-  (err/rt-test (read (make-p (list "|x" a-special "y|") (lambda (x) 1) void)) exn:read:non-char?))
+  (test (list 5) read (make-p (list #"(; \"" a-special #"\n5)") (lambda (x) 1) void))
+  (test (list 5) read (make-p (list #"(#| \"" a-special #" |# 5)") (lambda (x) 1) void))
+  (test (list 5) read (make-p (list #"(;" a-special #"\n 5)") (lambda (x) 1) void))
+  (test 5 read (make-p (list #"#| \"" a-special #" |# 5") (lambda (x) 1) void))
+  (test 5 read (make-p (list #";" a-special #"\n 5") (lambda (x) 1) void))
+  (err/rt-test (read (make-p (list #"\"a" a-special #"\"") (lambda (x) 1) void)) exn:read:non-char?)
+  (err/rt-test (read (make-p (list #"\"" a-special #"\"") (lambda (x) 1) void)) exn:read:non-char?)
+  (err/rt-test (read (make-p (list #"\"\\" a-special #"\"") (lambda (x) 1) void)) exn:read:non-char?)
+  (err/rt-test (read (make-p (list #"\"\\x" a-special #"\"") (lambda (x) 1) void)) exn:read:non-char?)
+  (err/rt-test (read (make-p (list #"\"\\x1" a-special #"\"") (lambda (x) 1) void)) exn:read:non-char?)
+  (err/rt-test (read (make-p (list #"#\\" a-special #"") (lambda (x) 1) void)) exn:read:non-char?)
+  (err/rt-test (read (make-p (list #"#\\12" a-special #"") (lambda (x) 1) void)) exn:read:non-char?)
+  (err/rt-test (read (make-p (list #"#" a-special #"") (lambda (x) 1) void)) exn:read:non-char?)
+  (err/rt-test (read (make-p (list #"x\\" a-special #"y") (lambda (x) 1) void)) exn:read:non-char?)
+  (err/rt-test (read (make-p (list #"|" a-special #"y|") (lambda (x) 1) void)) exn:read:non-char?)
+  (err/rt-test (read (make-p (list #"|x" a-special #"y|") (lambda (x) 1) void)) exn:read:non-char?))
 (run-delim-special a-special)
 (run-delim-special special-comment)
 
 ;; Test read-char-or-special:
-(let ([p (make-p (list "x" a-special "y") (lambda (x) 5) void)])
+(let ([p (make-p (list #"x" a-special #"y") (lambda (x) 5) void)])
   (test #\x peek-char-or-special p)
   (test 0 file-position p)
   (test #\x peek-char-or-special p 0)

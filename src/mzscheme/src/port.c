@@ -1521,15 +1521,15 @@ scheme_getc(Scheme_Object *port)
       v = scheme_utf8_decode_prefix(s, delta + 1, r, 0);
       if (v > 0)
 	return r[0];
-      else if (v == -1) {
-	/* -1 => decoding error */
+      else if (v == -2) {
+	/* -2 => decoding error */
 	/* If the sequence starts with a high bit set, then return '?',
 	   otherwise the bytes get dropped. */
 	if (s[0] & 0x80)
 	  return '?';
 	else
 	  delta = 0;
-      } else if (v == -2) {
+      } else if (v == -1) {
 	/* In middle of sequence - keep getting bytes. */
 	delta++;
       }
@@ -1659,8 +1659,8 @@ static int do_peekc_skip(Scheme_Object *port, Scheme_Object *skip,
       v = scheme_utf8_decode_prefix(s, delta + 1, r, 0);
       if (v > 0)
 	return r[0];
-      else if (v == -1) {
-	/* -1 => decoding error */
+      else if (v == -2) {
+	/* -2 => decoding error */
 	/* If the sequence starts with a high bit set, then return '?',
 	   otherwise the bytes will get dropped, so just increment 
 	   in_delta and reset delta to 0 */
@@ -1670,7 +1670,7 @@ static int do_peekc_skip(Scheme_Object *port, Scheme_Object *skip,
 	  in_delta++;
 	  delta = 0;
 	}
-      } else if (v == -2) {
+      } else if (v == -1) {
 	/* In middle of sequence - keep getting bytes. */
 	delta++;
 	in_delta++;
@@ -1686,7 +1686,7 @@ int scheme_peekc_skip(Scheme_Object *port, Scheme_Object *skip)
 
 int scheme_peekc(Scheme_Object *port)
 {
-  return scheme_peekc_skip(port, NULL);
+  return scheme_peekc_skip(port, scheme_make_integer(0));
 }
 
 int
@@ -1699,7 +1699,7 @@ scheme_peekc_special_ok_skip(Scheme_Object *port, Scheme_Object *skip)
 int
 scheme_peekc_special_ok(Scheme_Object *port)
 {
-  return scheme_peekc_special_ok_skip(port, NULL);
+  return scheme_peekc_special_ok_skip(port, scheme_make_integer(0));
 }
 
 int scheme_peekc_is_ungetc(Scheme_Object *port)

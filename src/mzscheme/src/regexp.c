@@ -2501,7 +2501,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
   regexp *r;
   char *full_s;
   rxpos *startp, *endp;
-  int offset = 0, endset, m, was_non_byte;
+  int offset = 0, orig_offset, endset, m, was_non_byte;
   Scheme_Object *iport, *oport = NULL, *startv = NULL, *endv = NULL, *dropped;
   
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
@@ -2582,6 +2582,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
     r = (regexp *)argv[0];
 
   was_non_byte = 0;
+  orig_offset = 0;
   if (!iport) {
     if (SCHEME_BYTE_STRINGP(argv[1]))
       full_s = SCHEME_BYTE_STR_VAL(argv[1]);
@@ -2595,10 +2596,17 @@ static Scheme_Object *gen_compare(char *name, int pos,
       scheme_utf8_encode(SCHEME_CHAR_STR_VAL(argv[1]), offset, endset,
 			 full_s, 0,
 			 0 /* not UTF-16 */);
+      orig_offset = offset;
       offset = 0;
       endset = blen;
       if (r->is_utf8)
 	was_non_byte = 1;
+      else {
+	/* Convert orig_offset into encoded bytes */
+	orig_offset = scheme_utf8_encode(SCHEME_CHAR_STR_VAL(argv[1]), 0, offset,
+					 NULL, 0,
+					 0);
+      }
     }
   } else
     full_s = NULL;
@@ -2632,6 +2640,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	    uspd = scheme_utf8_decode(full_s, offset, startp[i],
 				      NULL, 0, -1,
 				      NULL, 0, 0);
+	    uspd += orig_offset;
 	    startpd = scheme_make_integer(uspd);
 	    uepd = scheme_utf8_decode(full_s, startp[i], endp[i],
 				      NULL, 0, -1,
@@ -2639,8 +2648,11 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	    uepd += uspd;
 	    endpd = scheme_make_integer(uepd);
 	  } else {
-	    startpd = scheme_make_integer(startp[i]);
-	    endpd = scheme_make_integer(endp[i]);
+	    int v;
+	    v = startp[i] + orig_offset;
+	    startpd = scheme_make_integer(v);
+	    v = endp[i] + orig_offset;
+	    endpd = scheme_make_integer(v);
 	    
 	    if (iport) {
 	      /* Increment by drop count: */
@@ -2736,7 +2748,7 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
     source = SCHEME_BYTE_STR_VAL(bs);
     sourcelen = SCHEME_BYTE_STRTAG_VAL(bs);
     if (r->is_utf8)
-      was_non_byte = 1;
+    was_non_byte = 1;
   } else {
     source = SCHEME_BYTE_STR_VAL(argv[1]);
     sourcelen = SCHEME_BYTE_STRTAG_VAL(argv[1]);

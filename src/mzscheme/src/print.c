@@ -1961,16 +1961,17 @@ print_char(Scheme_Object *charobj, int notdisplay, Scheme_Thread *p)
 				  0);
 	  minibuf[2 + ch] = 0;
 	} else {
-	  sprintf(minibuf, "#\\U+%x", ch);
+	  sprintf(minibuf, "#\\u%x", ch);
 	}
 	str = minibuf;
 	break;
       }
   } else {
-    minibuf[0] = ch;
-    minibuf[1] = 0;
+    len = scheme_utf8_encode((unsigned int *)&ch, 0, 1,
+			     (unsigned char *)minibuf, 0,
+			     0);
+    minibuf[len] = 0;
     str = minibuf;
-    len = 1;
   }
 
   print_this_string(p, str, 0, len);

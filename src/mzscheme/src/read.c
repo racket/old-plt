@@ -1578,7 +1578,7 @@ read_string(int is_byte, Scheme_Object *port,
         continue; /* <---------- !!!! */
       case 'x':
 	ch = scheme_getc_special_ok(port);
-	if (scheme_isxdigit(ch)) {
+	if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
 	  n = ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10);
 	  ch = scheme_peekc_special_ok(port);
 	  if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
@@ -1599,7 +1599,7 @@ read_string(int is_byte, Scheme_Object *port,
 	break;
       case 'u':
 	ch = scheme_getc_special_ok(port);
-	if (scheme_isxdigit(ch)) {
+	if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
 	  int count = 1;
 	  n = ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10);
 	  while (count < 6) {
@@ -2072,7 +2072,32 @@ read_character(Scheme_Object *port,
     return scheme_make_char(ch);
   }
 
-  if ((ch != EOF) && NOT_EOF_OR_SPECIAL(next) && scheme_isalpha(next)) {
+  if ((ch == 'u')  && NOT_EOF_OR_SPECIAL(next) && scheme_isxdigit(next)) {
+    int count = 0, n = 0, nbuf[6];
+    while (count < 6) {
+      ch = scheme_peekc_special_ok(port);
+      if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
+	nbuf[count] = ch;
+	n = n*16 + (ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10));
+	scheme_getc(port); /* must be ch */
+	count++;
+      } else
+	break;
+    }
+    /* overflow makes a negative character; also, disallow
+       surrogate points */
+    if ((n < 0) 
+	|| ((n >= 0xD800) && (n <= 0xDFFF))
+	|| (n == 0xFFFE)
+	|| (n == 0xFFFF)) {
+      scheme_read_err(port, stxsrc, line, col, pos, count + 2, 0, indentation, 
+		      "read: bad character constant #\\%u",
+		      nbuf, count);
+      return NULL;
+    } else {
+      ch = n;
+    }
+  } else if ((ch != EOF) && NOT_EOF_OR_SPECIAL(next) && scheme_isalpha(next)) {
     mzchar *buf, *oldbuf, onstack[32];
     int i;
     long size = 31, oldsize;

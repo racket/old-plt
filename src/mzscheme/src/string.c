@@ -2832,8 +2832,8 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 			 int permissive)
      /* Results:
 	non-negative => translation complete
-	-1 => encoding error
-	-2 => input ended in middle of encoding
+	-1 => input ended in middle of encoding
+	-2 => encoding error
 	-3 => not enough output room */
 {
   int i, j, oki, failmode = -3;
@@ -3111,7 +3111,7 @@ mzchar *scheme_utf8_decode_to_buffer_len(const unsigned char *s, int len,
 		       0, 0);
   if (ulen < 0)
     return NULL;
-  if (ulen + 1 < blen) {
+  if (ulen + 1 > blen) {
     buf = (mzchar *)scheme_malloc_atomic((ulen + 1) * sizeof(mzchar));
   }
   utf8_decode_x(s, 0, len, buf, 0, -1,

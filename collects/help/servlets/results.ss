@@ -146,7 +146,7 @@
 	   maybe-coll))]
        [else ; manual
 	(let* ([tidy-url (tidy-html-url url)]
-	       [exploded-url (explode-path tidy-url)]
+	       [exploded-url (explode-url tidy-url)]
 	       [doc-dir (caddr exploded-url)]
 	       [full-doc-dir (build-path (collection-path "doc") doc-dir)]
 	       [installed? (hash-table-get installed-table
@@ -167,6 +167,21 @@
 		(format "/servlets/missing-manual.ss?manual=~a&name=~a"
 			(hexify-string manual-label) doc-dir))))])))
                             
+
+  ;; expode-url : string -> (listof string)
+  ;; splits the string argument at each slash.
+  (define (explode-url str)
+    (cond
+      [(regexp-match re:slash str)
+       =>
+       (lambda (m)
+	 (cons (cadr m) (explode-url (caddr m))))]
+      [else 
+       (if (string=? str "")
+	   empty
+	   (list str))]))
+
+  (define re:slash (regexp "^([^/]*)/(.*)$"))
 
   (define (make-text-href url page-label)
     (let ([maybe-coll (maybe-extract-coll last-header)])

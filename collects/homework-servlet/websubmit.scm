@@ -1,9 +1,9 @@
 (require (lib "unitsig.ss")
 	 (lib "servlet-sig.ss" "web-server")
          
-	 "websubmit-sig.scm"
-	 "websubmit-machine.scm"
-         "websubmit-pages.scm")
+	 (homework-servlet "websubmit-sig.scm")
+	 (homework-servlet "websubmit-machine.scm")
+         (homework-servlet "websubmit-pages.scm"))
 
 
 (define websubmit-servlet@
@@ -17,7 +17,7 @@
     ;;;;;; file: student-accounts
     ;;;;;; assignment directories
     (current-directory 
-     (build-path "/Users" "gregp" "projects" "websubmit-test")
+     (build-path "/" "some" "path" "goes" "here")
      )
     (start-machine)))
 

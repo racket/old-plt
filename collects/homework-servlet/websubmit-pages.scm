@@ -433,7 +433,15 @@
       (define get-login-req/initial
         (lambda (message)
           (send/forward/struct
-           login-req/initial (login-name password [create? notnull?])
+           login-req/initial ([login-name
+                               (lambda (l)
+                                 (unless (null? l)
+                                   (car l)))]
+                              [password
+                               (lambda (l)
+                                 (unless (null? l)
+                                   (car l)))]
+                              [create? notnull?])
            (get-login-html "Login" 
                            `((h2 ,course-title)
                              (h3 ,course-number)

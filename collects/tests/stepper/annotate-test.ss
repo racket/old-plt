@@ -138,6 +138,7 @@
 ; test notes to myself:
 ; the never-undefined property can only be tested in the non-foot-wrap modes
 ; hard to test 3D values like closure-capturing-proc
+; hard to test whether the source pointer is right.
 
 (define test-cases
   ; begin
@@ -342,7 +343,7 @@
         ; let 
         (list #'(lambda (a b c) (let* ([d b] [e (begin a d)]) (begin a b c d))) 'mzscheme cadr
               (lambda (stx)
-                (syntax-case (strip-outer-lambda stx) (begin with-continuation-mark let*-values)
+                (syntax-case (strip-outer-lambda stx) (begin with-continuation-mark let*-values set!-values)
                   [(let*-values bindings
                      (with-continuation-mark
                       key-0
@@ -352,18 +353,99 @@
                         (begin
                           break-1
                           (begin
-                            (set!-values vars-0 vals-0)
-                            (set!-values vars-1 vals-1)
-                            . rest)))))
+                            (set!-values vars-0 (with-continuation-mark key-1 mark-1 body-1))
+                            (set!-values vars-1 (with-continuation-mark key-2 mark-2 body-2))
+                            (begin
+                              break-2
+                              body-3))))))
                    (begin
-                     (test (void) check-mark (syntax mark-0) '(a b c d e lifter-d-1 lifter-e-2) 'all))
-                   
-                   ])))
+                     (test (void) check-mark (syntax mark-0) '(a b c d e lifter-d-1 lifter-e-2) 'all)
+                     (test '(d) syntax-object->datum (syntax vars-0))
+                     (test '(e) syntax-object->datum (syntax vars-1))
+                     (test (void) check-mark (syntax mark-1) '() 'all)
+                     (test (void) check-mark (syntax mark-2) '() 'all))])))
         
-                    ))
+        ; letrec --- the only thing that needs to be tested with letrec is that the undefined value is properly used.
+        
+        ; set!
+        (list #'(lambda (a b c) (set! a (begin b c))) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case (strip-outer-lambda stx) (begin with-continuation-mark set!)
+                  [(with-continuation-mark
+                    key-0
+                    mark-0
+                    (begin
+                      pre-break-0
+                      (set! var (with-continuation-mark key-1 mark-1 body))))
+                   (begin
+                     (test (void) check-mark (syntax mark-0) '(a b c) 'all)
+                     (test 'a syntax-object->datum (syntax var))
+                     (test (void) check-mark (syntax mark-1) '() 'all))])))
+        
+        ; set! with top-level-var
+        (list #'(set! a 9) #f car
+              (lambda (stx)
+                (syntax-case stx (set! with-continuation-mark)
+                  [(with-continuation-mark
+                    key-0
+                    mark-0
+                    (set! var val))
+                   (begin
+                     (test (void) check-mark (syntax mark-0) '(a) 'all)
+                     (test 'a syntax-object->datum (syntax var)))])))
+        
+        ; quote
+        (list #'(quote a) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case stx (quote with-continuation-mark)
+                  [(with-continuation-mark
+                    key-0
+                    mark-0
+                    (quote sym))
+                   (begin
+                     (test (void) check-mark (syntax mark-0) '() 'all)
+                     (test 'a syntax-e (syntax sym)))])))
+                     
+        ; quote-syntax
+        (list #'(quote-syntax a) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case stx (quote-syntax with-continuation-mark)
+                  [(with-continuation-mark
+                    key-0
+                    mark-0
+                    (quote-syntax sym))
+                   (begin
+                     (test (void) check-mark (syntax mark-0) '() 'all)
+                     (test 'a syntax-e (syntax sym)))])))
+        
+        ; wcm is explicitly not working (as opposed to _lots_ of other forms, which simply won't work in 
+        ; a stepper sense.  Begin0, for example.  I think.  And set!.  etc., etc.
+        
+        ; application
+        
+        (list #'(lambda (a b c) (a b)) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case (strip-outer-lambda stx) (let\-values with-continuation-mark begin)
+                  [(let-values arg-temps
+                     (with-continuation-mark
+                      key-0
+                      mark-0
+                      (begin
+                        pre-break-0
+                        (begin
+                          (set! var-0 val-0)
+                          (set! var-1 val-1)
+                          . rest))))
+                   (begin
+                     (test (void) check-mark (syntax mark-0) '(a b arg-temp-0 arg-temp-1) 'all)
+                     (printf "mark-0: ~a~n" (syntax-object->datum (syntax mark-0))))])))
+        
+                   
+        
+        ))
 
 (andmap (lambda (test-case)
             ((cadddr test-case) ((caddr test-case) (annotate-expr (car test-case) (cadr test-case)))))
         test-cases)
-
+ 
 (report-errs)

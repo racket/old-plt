@@ -51,12 +51,17 @@ the following imports:
   framework^
   (frame-mixin) - a mixin to be applied to Help Desk's frame, which
                   is derived from framework:frame:standard-menus%
+  help:doc-position^ 
+    - contains only:
+         user-defined-doc-position : string -> (union #f number)
+      that specifies a weight to be used for each manual.
+      #f means use the default weight
 
 It exports
 
 > help:help^
 
-which contains two items:
+which contains three items:
 
 > (new-help-frame startup-url) - takes a url (a string or a url
        record) to use as the initial page for the window. Returns a
@@ -73,6 +78,12 @@ which contains two items:
        (as defined by the "browser" collections), it is caught. The
        dialog is not closed until an URL is opened sucessfully or the
        user clicks the Cancel button.
+
+> (doc-collections-changed) - resets Help Desks's manuals index.
+       This procedure flushes the cached keywords, hdindex, and
+       doc.txt indicies and reloads them from scratch. It also
+       calls user-defined-doc-position to resort the order of
+       the manuals.
 
 The frame returned by `new-help-frame' provides two extra methods:
 

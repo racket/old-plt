@@ -5,6 +5,11 @@
  (lambda (d)
   (case (string->symbol d)
     [(help) -10]
+
+    [(beginning) -5]
+    [(intermediate) -4]
+    [(advanced) -3]
+
     [(drscheme) -1]
     [(r5rs) 0]
     [(mzscheme) 1]
@@ -18,7 +23,10 @@
     [(insidemz) 50]
     [else 100]))
  ;; Known manuals:
- '(("drscheme" . "PLT DrScheme: Programming Environment Manual")
+ '(("beginning" . "PLT DrScheme: Beginning Student Language")
+   ("advanced" . "PLT DrScheme: Advanced Student Language")
+   ("intermediate" . "PLT DrScheme: Intermediate Student Language")
+   ("drscheme" . "PLT DrScheme: Programming Environment Manual")
    ("r5rs" . "Revised(5) Report on the Algorithmic Language Scheme")
    ("mzscheme" . "PLT MzScheme: Language Manual")
    ("mred" . "PLT MrEd: Graphical Toolbox Manual")

@@ -23,7 +23,7 @@
 				  mred framework
 				  (export* basis))]
 	[zodiac : zodiac:system^
-		  ((require-library "link.ss" "zodiac")
+		  ((require-library "link2.ss" "zodiac")
 		   ((export* interface) : zodiac:interface^)
 		   (mzlib pretty-print)
 		   (mzlib file))]

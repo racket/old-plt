@@ -669,22 +669,47 @@
                              (set-clickback var-start var-end
                                             (lambda x
                                               (help:help-desk var))))))]
+		      [(or (zodiac:interface:exn:zodiac-syntax? exn)
+			   (zodiac:interface:exn:zodiac-read? exn))
+		       ;; in this case the error message _must_ have a
+		       ;; colon in it,
+		       ;; because of the drscheme:interface library
+		       (let ([link-tag
+			      (symbol->string
+			       (cond
+				[(zodiac:interface:exn:zodiac-syntax? exn)
+				 (zodiac:interface:exn:zodiac-syntax-link-tag exn)]
+				[(zodiac:interface:exn:zodiac-read? exn)
+				 (zodiac:interface:exn:zodiac-read-link-tag exn)]))]
+			     [colon-index
+			      (let loop ([n 0])
+				(cond
+				 [(<= (string-length s) n)
+				  0]
+				 [(char=? #\: (string-ref s n))
+				  n]
+				 [else (loop (+ n 1))]))])
+			 (change-style click-delta start (+ start colon-index))
+			 (set-clickback
+			  start (+ start colon-index)
+			  (lambda x
+			    (help:help-desk link-tag))))]
                       [else
                        (let ([bind-to-help
                               (lambda (regexp s)
-                                (let ([match (regexp-match regexp s)])
-                                  (if match
-                                      (let* ([prefix (cadr match)]
-                                             [var (caddr match)]
-                                             [var-start (+ start (string-length prefix))]
-                                             [var-end (+ var-start (string-length var))])
-                                        (change-style click-delta var-start var-end)
-                                        (set-clickback
-                                         var-start var-end
-                                         (lambda x
-                                           (help:help-desk var)))
-                                        prefix)
-                                      #f)))])
+				(let ([match (regexp-match regexp s)])
+				  (if match
+				      (let* ([prefix (cadr match)]
+					     [var (caddr match)]
+					     [var-start (+ start (string-length prefix))]
+					     [var-end (+ var-start (string-length var))])
+					(change-style click-delta var-start var-end)
+					(set-clickback
+					 var-start var-end
+					 (lambda x
+					   (help:help-desk var)))
+					prefix)
+				      #f)))])
                          (let loop ([s s])
                            (when s
                              (loop (bind-to-help class-regexp s))))

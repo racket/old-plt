@@ -35,7 +35,7 @@
 		   (let ([r (read-line)])
 		     (cond
 		      [(eof-object? r) "(Unknown title)"]
-		      [(regexp-match "<TITLE>(.*)</TITLE>" r) => cadr]
+		      [(regexp-match "<[tT][iI][tT][lL][eE]>(.*)</[tT][iI][tT][lL][eE]>" r) => cadr]
 		      [else (loop)]))))))
 	   doc-paths)])
     (let-values ([(collections-doc-files collection-names)

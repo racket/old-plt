@@ -1,9 +1,12 @@
 (unit/sig help:search^
-  (import mzlib:function^)
+  (import help:doc-position^
+	  mzlib:function^)
   
   ; Define an order for the documentation:
-  (define html-doc-position (car (require-library "docpos.ss" "help")))
-
+  (define standard-html-doc-position (car (require-library "docpos.ss" "help")))
+  (define (html-doc-position x)
+    (or (user-defined-doc-position x)
+	(standard-html-doc-position x)))
 
   ; These are set by reset-doc-lists:
   ;; docs, doc-names and doc-kinds are parallel lists. doc-kinds
@@ -214,7 +217,6 @@
   
   (define (doc-collections-changed)
     (set! doc-collection-date #f))
-
   
   ;; do-search : ((? -> ?)
   ;;              ??

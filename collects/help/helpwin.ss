@@ -1,5 +1,5 @@
 
-(unit/sig help:help^
+(unit/sig help:help-window^
   (import help:search^
 	  browser^
 	  mzlib:function^

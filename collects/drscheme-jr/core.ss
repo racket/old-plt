@@ -162,7 +162,7 @@
 	   [interface : drscheme:interface^
 		      ((require-library-unit/sig "interface.ss" "userspce") aries drzodiac)]
 	   [drzodiac : zodiac:system^
-		     ((require-library-unit/sig "link.ss" "zodiac")
+		     ((require-library-unit/sig "link2.ss" "zodiac")
 		      (interface : zodiac:interface^)
 		      (mzlib pretty-print)
 		      (mzlib file))]

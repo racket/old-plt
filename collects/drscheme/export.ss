@@ -13,14 +13,6 @@
   (link [interface : drscheme:interface^
           ((require-library "interface.ss" "userspce") aries zodiac)]
         [url : mzlib:url^ ((require-library "urlr.ss" "net") (mzlib file))]
-        [help-desk : help:drscheme-interface^ ((require-library "start-help-desk.ss" "help")
-					       (mzlib function)
-					       (mzlib string)
-					       (mzlib file)
-					       url
-					       (mred : mred^)
-					       framework
-					       frame)]
 	[basis-import : plt:basis-import^ ((unit/sig plt:basis-import^
 					     (import mred^)
 					     (define (invalid-teachpack s)
@@ -76,7 +68,18 @@
 		   basis
 		   (mzlib function) 
 		   (mzlib file)
-		   print-convert)])
+		   print-convert)]
+        [help-desk : help:drscheme-interface^
+		   ((require-library "start-help-desk.ss" "help")
+		    (mzlib function)
+		    (mzlib string)
+		    (mzlib file)
+		    url
+		    (mred : mred^)
+		    framework
+		    frame
+		    language
+		    basis)])
 
 	
   (export (unit interface)

@@ -1,20 +1,21 @@
 
 (compound-unit/sig
- (import (FUNCTION : mzlib:function^)
-	 (STRING : mzlib:string^)
-	 (FILE : mzlib:file^)
-	 (URL : mzlib:url^)
-	 (MRED : mred^)
-	 (FRAMEWORK : framework^)
-	 (MIXIN : (frame-mixin)))
- (link [BROWSER : browser^ ((require-library "browserr.ss" "browser")
-			    FUNCTION STRING FILE URL MRED)]
-       [SEARCH : help:search^ ((require-relative-library "search.ss")
-			       FUNCTION)]
-       [HELP : help:help^
-	     ((require-relative-library "helpwin.ss")
-	      SEARCH
-	      BROWSER FUNCTION STRING FILE URL
-	      MRED FRAMEWORK MIXIN)])
- (export (open HELP)))
-
+  (import (function : mzlib:function^)
+	  (string : mzlib:string^)
+	  (file : mzlib:file^)
+	  (url : mzlib:url^)
+	  (mred : mred^)
+	  (framework : framework^)
+	  (mixin : (frame-mixin))
+	  [doc-position : help:doc-position^])
+  (link [browser : browser^ ((require-library "browserr.ss" "browser")
+			     function string file url mred)]
+	[search : help:search^ ((require-relative-library "search.ss")
+				doc-position function)]
+	[help : help:help-window^
+	      ((require-relative-library "helpwin.ss")
+	       search
+	       browser function string file url
+	       mred framework mixin)])
+  (export (open help)
+	  (var (search doc-collections-changed))))

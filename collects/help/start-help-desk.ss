@@ -5,7 +5,9 @@
 	  mzlib:url^
 	  mred^
 	  framework^
-          [drscheme:frame : drscheme:frame^])
+          [drscheme:frame : drscheme:frame^]
+          [drscheme:language : drscheme:language^]
+	  [basis : plt:basis^])
 
   (define new-help-frame #f)
   (define open-url-from-user #f)
@@ -13,20 +15,67 @@
 
   (include "startup-url.ss")
 
+  (define doc-collections-changed void)
+
+  (preferences:add-callback
+   drscheme:language:settings-preferences-symbol
+   (lambda (p v) (doc-collections-changed)))
+
+  (define (user-defined-doc-position doc)
+    (let ([lang (preferences:get drscheme:language:settings-preferences-symbol)])
+      (cond
+       [(basis:beginner-language? lang)
+	(case (string->symbol doc)
+	  [(advanced) -100]
+	  [(intermediate) -101]
+	  [(beginning) -102]
+	  [else #f])]
+       [(basis:intermediate-language? lang)
+	(case (string->symbol doc)
+	  [(advanced) -101]
+	  [(intermediate) -102]
+	  [(beginning) -100]
+	  [else #f])]
+       [(basis:advanced-language? lang)
+	(case (string->symbol doc)
+	  [(advanced) -102]
+	  [(intermediate) -101]
+	  [(beginning) -100]
+	  [else #f])]
+       [else
+	(case (string->symbol doc)
+	  [(advanced) 100]
+	  [(intermediate) 101]
+	  [(beginning) 102]
+	  [else #f])])))
+
   (define (load-help-desk)
     (define frame-mixin drscheme:frame:basics-mixin)
-    (set!-values (new-help-frame
-                  open-url-from-user)
-                 (invoke-unit/sig
-                  (require-library "helpr.ss" "help")
-                  mzlib:function^
-                  mzlib:string^
-                  mzlib:file^
-                  mzlib:url^
-                  mred^
-                  framework^
-                  (frame-mixin)))
-    (set! load-help-desk void))
+    (let-values ([(_new-help-frame
+		   _open-url-from-user
+		   _doc-collections-changed)
+		  (let ()
+		    (define-values/invoke-unit/sig
+		      (new-help-frame
+		       open-url-from-user
+		       doc-collections-changed)
+		      (require-library "helpr.ss" "help")
+		      #f
+		      mzlib:function^
+		      mzlib:string^
+		      mzlib:file^
+		      mzlib:url^
+		      mred^
+		      framework^
+		      (frame-mixin)
+		      help:doc-position^)
+		    (values new-help-frame
+			    open-url-from-user
+			    doc-collections-changed))])
+      (set! new-help-frame _new-help-frame)
+      (set! open-url-from-user _open-url-from-user)
+      (set! doc-collections-changed _doc-collections-changed)
+      (set! load-help-desk void)))
 
   (define (open-url url)
     (load-help-desk)
@@ -60,7 +109,3 @@
 	    (send help-desk-frame search-for-help key 'keyword+index 'exact))
         (when turn-cursor-off?
           (end-busy-cursor)))])))
-
-
-      
-

@@ -41,6 +41,7 @@ class wxClipboard : public wxObject
   long receivedLength;
   Bool is_sel, in_progress;
   void *saferef;
+  double start_time;
 
   wxClipboard();
   ~wxClipboard();

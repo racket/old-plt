@@ -2222,6 +2222,8 @@ static void CopyIntoSelection()
   wxmb_commonCopyBuffer2 = saveBuffer2;
   wxmb_copyStyleList = saveStyles;
   wxmb_commonCopyRegionData = saveData;
+
+  xClipboardHack = FALSE;
 }
 
 

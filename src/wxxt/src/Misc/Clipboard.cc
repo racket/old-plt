@@ -385,6 +385,10 @@ char *wxClipboard::GetClipboardString(long time)
 }
 
 extern void wxBlockUntil(int (*)(void *), void *);
+extern void wxBlockUntilTimeout(int (*)(void *), void *, float);
+extern double scheme_get_inexact_milliseconds(void);
+
+static int clip_timeout;
 
 static int CheckNotInProgress(void *_cb)
 {
@@ -395,12 +399,20 @@ static int CheckNotInProgress(void *_cb)
 static int CheckReadyTarget(void *_cb)
 {
   wxClipboard *cb = (wxClipboard *)GET_SAFEREF(_cb);
+  double now;
+  now = scheme_get_inexact_milliseconds();
+  if (now > cb->start_time + clip_timeout)
+    return 1;
   return !!cb->receivedTargets;
 }
 
 static int CheckReadyString(void *_cb)
 {
   wxClipboard *cb = (wxClipboard *)GET_SAFEREF(_cb);
+  double now;
+  now = scheme_get_inexact_milliseconds();
+  if (now > cb->start_time + clip_timeout)
+    return 1;
   return !!cb->receivedString;
 }
 
@@ -408,7 +420,8 @@ static void abandoned_clip(void *_cb)
 {
   wxClipboard *cb = (wxClipboard *)GET_SAFEREF(_cb);
 
-  cb->in_progress = -1;
+  if (cb->in_progress)
+    cb->in_progress = -1;
 }
 
 char *wxClipboard::GetClipboardData(char *format, long *length, long time)
@@ -427,6 +440,9 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     Atom xa;
     long i;
 
+    if (!clip_timeout)
+      clip_timeout = XtAppGetSelectionTimeout(wxAPP_CONTEXT) + 1;
+
     /* Need to make sure that only one thread is here at a time. */
     wxBlockUntil(CheckNotInProgress, saferef);
     
@@ -438,9 +454,16 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     XtGetSelectionValue(getClipWindow, is_sel ? XA_PRIMARY : xa_clipboard,
 			xa_targets, wxGetTargets, (XtPointer)saferef, time);
 
+    start_time = scheme_get_inexact_milliseconds();
     BEGIN_ESCAPEABLE(abandoned_clip, saferef);
-    wxBlockUntil(CheckReadyTarget, saferef);
+    wxBlockUntilTimeout(CheckReadyTarget, saferef, clip_timeout);
     END_ESCAPEABLE();
+
+    if (!receivedTargets) {
+      /* Timeout */
+      in_progress = 0;
+      return NULL;
+    }
 
     xa = ATOM(format);
 
@@ -466,10 +489,17 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     XtGetSelectionValue(getClipWindow, is_sel ? XA_PRIMARY : xa_clipboard,
 			xa, wxGetSelection, (XtPointer)saferef, 0);
     
+    start_time = scheme_get_inexact_milliseconds();
     BEGIN_ESCAPEABLE(abandoned_clip, saferef);
-    wxBlockUntil(CheckReadyString, saferef);
+    wxBlockUntilTimeout(CheckReadyString, saferef, clip_timeout);
     END_ESCAPEABLE();
 
+    if (!receivedString) {
+      /* Timeout */
+      in_progress = 0;
+      return NULL;
+    }
+    
     *length = receivedLength;
 
     in_progress = 0;

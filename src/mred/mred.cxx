@@ -1673,6 +1673,11 @@ void wxBlockUntil(wxDispatch_Check_Fun f, void *data)
   scheme_block_until((Scheme_Ready_Fun)f, NULL, (Scheme_Object *)data, 0.0);
 }
 
+void wxBlockUntilTimeout(wxDispatch_Check_Fun f, void *data, float timeout)
+{
+  scheme_block_until((Scheme_Ready_Fun)f, NULL, (Scheme_Object *)data, timeout);
+}
+
 static SLEEP_PROC_PTR mzsleep;
 
 static void MrEdSleep(float secs, void *fds)

@@ -1,5 +1,6 @@
   (unit/sig drscheme:basis^
     (import [params : plt:parameters^]
+	    [drscheme : drscheme:export^]
 	    [mred : mred^]
 	    [zodiac : zodiac:system^])
     
@@ -58,11 +59,13 @@
 			    (define check-syntax-level 
 			      params:check-syntax-level))]
 		 [c@
-		  (compound-unit/sig (import)
+		  (compound-unit/sig (import [drscheme : drscheme:export^])
 				     (link [params : plt:parameters^ (params@)]
-					   [userspace : plt:userspace^ (plt:userspace@ params)]
+					   [userspace : plt:userspace^ (plt:userspace@
+									params
+									drscheme)]
 					   [library : () (l@ userspace)])
 				     (export (open userspace)))])
 	    (parameterize ([current-namespace n]
 			   [wx:current-eventspace eventspace])
-	      (invoke-open-unit/sig c@ #f)))))))
+	      (invoke-open-unit/sig c@ #f (drscheme : drscheme:export^))))))))

@@ -1,4 +1,4 @@
-((drscheme:help-desk:help-desk
-  TST
+((drscheme:frame:calc-button-min-sizes 
+  ((is-a?/c dc<%>) string? . -> . void?)
   ""))
 

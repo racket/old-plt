@@ -114,6 +114,11 @@
           (define/public (read-special file line col pos)
             (values number 1))
           
+          (define/override get-text
+            (case-lambda
+              [(offset num) (get-text offset num #f)]
+              [(offset num flattened?) (number->string number)]))
+
           (define/override (copy)
             (instantiate repeat-snip% ()
               [number number]
@@ -302,7 +307,7 @@
                             [(dw dh da dd) (send dc get-text-extent dens)]
                             [(ww wh wa wd) (send dc get-text-extent wholes)])
                  (let ([frac-w (max nw dw)])
-                   (send dc draw-text nums (+ x ww (- (/ nw 2)) (/ frac-w 2)) y)
+                   (send dc draw-text nums (+ x ww (- frac-w nw)) y)
                    (send dc draw-text dens (+ x ww (- (/ dw 2)) (/ frac-w 2)) (+ y nh 1))
                    (send dc draw-text wholes x (+ y (/ nh 2)))
                    (send dc draw-line

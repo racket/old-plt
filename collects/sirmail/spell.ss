@@ -11,7 +11,9 @@
   (provide/contract [activate-spelling ((is-a?/c color:text<%>) . -> . void?)])
   
   (define-lex-abbrevs
-   (letter (: (- #\A #\Z) (- #\a #\z) #\'))
+   (letter (: (- #\A #\Z) (- #\a #\z)))
+   (extended-letter (: letter #\'))
+   (word (@ (* extended-letter) (+ letter) (* extended-letter)))
    (paren (: #\( #\) #\[ #\] #\{ #\}))
    (white (: #\page #\newline #\return #\tab #\vtab #\space)))
                                    
@@ -23,7 +25,7 @@
       (values lexeme 'other (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos)))
      ((+ (^ (: letter white paren)))
       (values lexeme 'other #f (position-offset start-pos) (position-offset end-pos)))
-     ((+ letter)
+     (word
       (let ((ok (spelled-correctly? lexeme)))
         (values lexeme (if ok 'other 'error) #f (position-offset start-pos) (position-offset end-pos))))
      ((eof)

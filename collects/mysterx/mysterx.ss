@@ -1,5 +1,6 @@
 ;; mysterx.ss
 
+(require-library "function.ss")
 (require-library "string.ss")
 
 (load-extension "mysterx.dll")
@@ -11,8 +12,8 @@
 (define *handler-table* (make-hash-table))
 
 ; semaphores
-(define mx-thread-sem (make-semaphore))   ; protects *handler-threads*
-(define mx-handler-sem (make-semaphore))  ; protects *handler-table* and its contained hash tables
+(define mx-thread-sem (make-semaphore 1))   ; protects *handler-threads*
+(define mx-handler-sem (make-semaphore 1))  ; protects *handler-table* and its contained hash tables
 
 ; string x string -> symbol
 (define (make-event-key tag id)
@@ -38,7 +39,7 @@
 				       (hash-table-get *handler-table* doc)))])
       (hash-table-remove! doc-table key)
       (hash-table-put! doc-table key fn)))
-  (semaphore-signal mx-handler-sem))
+  (semaphore-post mx-handler-sem))
 
 (define (unregister-event-handler doc tag id)
   (unless (document? doc)
@@ -50,7 +51,7 @@
 	  [doc-table (hash-table-get *handler-table* doc void)])
       (unless (void? doc-table)
 	      (hash-table-remove! doc-table key))))
-  (semaphore-signal mx-handler-sem))
+  (semaphore-post mx-handler-sem))
 
 ; busy-wait loop -- until Mz threads allow blocking
 (define (block-until-event doc)
@@ -68,7 +69,7 @@
 		   [handler-thunk
 		    (lambda ()
 		      (let loop ()
-			(block-until-event)
+			(block-until-event doc)
 			   (let* ([event (get-event doc)]
 				  [tag (event-tag event)]
 				  [id (event-id event)]
@@ -81,8 +82,8 @@
 		    (cons 
 		     (cons doc (thread handler-thunk))
 		     *handler-threads*)))
-	    (semaphore-signal mx-handler-sem)))
-  (semaphore-signal mx-thread-sem))
+	    (semaphore-post mx-handler-sem)))
+  (semaphore-post mx-thread-sem))
 
 (define (stop-handling-events doc) 
   (semaphore-wait mx-thread-sem)
@@ -90,9 +91,15 @@
     (when doc-pair
 	  (thread-kill (cdr doc-pair))
 	  (set! *handler-threads* (remove doc-pair *handler-threads*))))
-  (semaphore-signal mx-thread-sem))
+  (semaphore-post mx-thread-sem))
 
+(define (insert-control! doc control)
+	(insert-html doc (object->html control))
+	(car (document-objects doc)))
 
+(define (append-control! doc control)
+	(insert-html doc (object->html control))
+	(car (last-pair (document-objects doc))))
 
 			      
 			 

@@ -42,6 +42,7 @@
   (initialize-parameters
    settings
    get-default-setting
+   get-default-setting-name
 
    zodiac-vocabulary?
    has-set!?
@@ -75,9 +76,7 @@
    (struct process-finish (error?))
 
    level->number
-   level-symbols
-   level-strings
-
+   number->level
    (struct setting (vocabulary-symbol
 		    case-sensitive?
 		    allow-set!-on-undefined?
@@ -95,7 +94,6 @@
 		    printing))
    make-setting/parse
 
-   find-setting-name
    find-setting-named
    add-setting
    copy-setting

@@ -220,10 +220,9 @@
      'mred:console-previous-exprs
      marshall unmarshall))
   
-  (define (setting-has-mred? setting)
-    (let ([name (basis:find-setting-name setting)])
-      (or (eq? 'MrEd name)
-	  (eq? '|MrEd Debug| name))))
+  (define (setting-has-mred? name)
+    (or (eq? 'MrEd name)
+	(eq? '|MrEd Debug| name)))
 
   (define (make-edit% super%)
     (class super% args
@@ -898,10 +897,11 @@
       (private
 	[initialize-parameters
 	 (lambda ()
-	   (let ([setting (fw:preferences:get 'drscheme:settings)])
+	   (let ([setting (fw:preferences:get 'drscheme:settings)]
+		 [setting-name (fw:preferences:get 'drscheme:setting-name)])
 	     (basis:initialize-parameters
 	      user-custodian
-	      (if (setting-has-mred? setting)
+	      (if (setting-has-mred? setting-name)
 		  (list 'mred)
 		  (list))
 	      setting)
@@ -1071,9 +1071,10 @@
 	   (insert-delta "Language: " WELCOME-DELTA)
 	   (let ([setting (fw:preferences:get 'drscheme:settings)])
 	     (insert-delta 
-	      (basis:find-setting-name setting)
+	      (symbol->string (fw:preferences:get 'drscheme:setting-name))
 	      RED-DELTA)
-	     (unless (basis:find-setting-name setting)
+	     (unless (equal? (basis:find-setting-named (fw:preferences:get 'drscheme:setting-name))
+			     (fw:preferences:get 'drscheme:settings))
 	       (insert-delta " Custom" RED-DELTA)))
 	   (insert-delta (format ".~n") WELCOME-DELTA)
 	   (set! repl-initially-active? #t)

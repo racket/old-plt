@@ -6,7 +6,8 @@
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:compound-unit : drscheme:compound-unit^]
 	  [drscheme:get/extend : drscheme:get/extend^]
-	  [basis : userspace:basis^])
+	  [basis : userspace:basis^]
+	  mzlib:function^)
   
 
   ;; add the new settings
@@ -16,6 +17,23 @@
   (fw:application:current-app-name "DrScheme")
   (fw:version:add-spec 'd 1)
   
+  
+  ;; add preferences
+  (fw:preferences:set-default 'drscheme:settings
+			       (basis:get-default-setting)
+			       basis:setting?)
+  (fw:preferences:set-default 'drscheme:setting-name
+			       (basis:get-default-setting-name)
+			       symbol?)
+  (fw:preferences:set-un/marshall 'drscheme:settings
+				  (compose cdr vector->list struct->vector)
+				  (lambda (x) 
+				    (if (and (list? x)
+					     (equal? (arity basis:make-setting) (length x)))
+					(apply basis:make-setting x)
+					(basis:get-default-setting))))
+
+
   ;; no more extension after this point
   (drscheme:get/extend:get-interactions-canvas%)
   (drscheme:get/extend:get-definitions-canvas%)

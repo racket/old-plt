@@ -143,27 +143,9 @@
 
   (define (snoc x y) (append y (list x)))
 
+  ;; add-setting : (symbol setting -> void)
   (define (add-setting name setting)
-    (set! settings (snoc (vector name setting) settings))
-    (set! level-symbols (snoc name level-symbols))
-    (set! level-strings (map symbol->string level-symbols)))
-
-  ;; level-symbols (list-of sym)
-  (define level-symbols (map (lambda (x) (vector-ref x 0)) settings))
-
-  ;; level-strings : (list-of string)
-  (define level-strings (map symbol->string level-symbols))
-
-  ;; find-setting-name : setting -> (union symbol #f)
-  (define (find-setting-name setting)
-    (unless (setting? setting)
-      (error 'find-setting-name "expected setting, got ~e" setting))
-    (or (ormap (lambda (x)
-		 (if (equal? (vector-ref x 1) setting)
-		     (vector-ref x 0)
-		     #f))
-	       settings)
-	#f))
+    (set! settings (snoc (vector name setting) settings)))
 
   ;; find-setting-named : symbol -> setting
   ;; effect: raises an exception if no setting named by the symbol exists
@@ -186,8 +168,11 @@
 	(error 'copy-setting "expected a setting, got ~e" x))
       (apply make-setting (cdr (vector->list (struct->vector x))))))
   
-  ;; get-default-setting : _ -> setting
+  ;; get-default-setting : (-> setting)
   (define (get-default-setting) (copy-setting (vector-ref (car settings) 1)))
+
+  ;; get-default-setting-name : (-> symbol)
+  (define (get-default-setting-name) (vector-ref (car settings) 0))
 
   ;; level->number : symbol -> int
   (define level->number
@@ -202,9 +187,14 @@
 		     (loop (+ n 1)
 			   (cdr settings))))]))))
 
-  ;; zodiac-vocabulary? : symbol -> boolean
-  (define (zodiac-vocabulary? sym)
-    (not (eq? sym 'MzScheme)))
+  ;; number->level : (int -> symbol)
+  (define number->level
+    (lambda (n)
+      (vector-ref (list-ref settings n) 0)))
+
+  ;; zodiac-vocabulary? : setting -> boolean
+  (define (zodiac-vocabulary? setting)
+    (not (eq? (setting-vocabulary-symbol setting) 'mzscheme)))
 
   ;; has-set!? : symbol -> boolean
   (define (has-set!? sym)

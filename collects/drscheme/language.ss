@@ -9,17 +9,6 @@
 	  mzlib:function^
 	  mzlib:file^
 	  mzlib:print-convert^)
-  
-  (fw:preferences:set-default 'drscheme:settings
-			       (basis:get-default-setting)
-			       basis:setting?)
-  (fw:preferences:set-un/marshall 'drscheme:settings
-				  (compose cdr vector->list struct->vector)
-				  (lambda (x) 
-				    (if (and (list? x)
-					     (equal? (arity basis:make-setting) (length x)))
-					(apply basis:make-setting x)
-					(basis:get-default-setting))))
 
   (define (get-printer-style-number printing-setting)
     (case printing-setting
@@ -76,11 +65,15 @@
 			    language-levels
 			    language-panel
 			    (lambda (choice evt)
-			      (let ([which (send choice get-selection)]
-				    [len (length basis:settings)])
-				(fw:preferences:set
-				 'drscheme:settings
-				 (basis:copy-setting (vector-ref (list-ref basis:settings which) 1))))))]
+			      (fw:preferences:set
+			       'drscheme:setting-name
+			       (string->symbol (send choice get-string-selection)))
+			      (fw:preferences:set
+			       'drscheme:settings
+			       (basis:copy-setting
+				(basis:find-setting-named
+				 (basis:number->level
+				  (send choice get-selection)))))))]
 	 [custom-message (make-object mred:message% "Custom" language-panel)]
 	 [_2 (make-object mred:horizontal-panel% language-panel)]
 	 [right-align
@@ -127,7 +120,7 @@
 	 [printing
 	  (right-align
 	   (lambda (main)
-	     (make-object mred:choice%
+	     (make-object mred:radio-box%
 	       "Output Style"
 	       (list "Constructor"
 		     "Quasiquote"
@@ -184,9 +177,7 @@
 			     [ss (selector setting)])
 			(equal? (not cbv)
 				(not ss))))])
-	      (and (eq? (basis:setting-vocabulary-symbol setting)
-			(list-ref basis:level-symbols (send language-choice get-selection)))
-		   (compare-check-box case-sensitive? basis:setting-case-sensitive?)
+	      (and (compare-check-box case-sensitive? basis:setting-case-sensitive?)
 		   (compare-check-box unmatched-cond/case-is-error? basis:setting-unmatched-cond/case-is-error?)
 		   (compare-check-box signal-undefined basis:setting-signal-undefined)
 		   (compare-check-box sharing-printing? basis:setting-sharing-printing?)
@@ -199,42 +190,42 @@
 		  change-children
 		  (lambda (l)
 		    (let ([not-custom?
-			   (ormap (lambda (name-setting)
-				    (let ([name (vector-ref name-setting 0)]
-					  [setting (vector-ref name-setting 1)])
-				      (compare-setting-to-gui setting)))
-				  basis:settings)])
+			   (compare-setting-to-gui
+			    (basis:find-setting-named
+			     (basis:number->level
+			      (send language-choice get-selection))))])
 		      (if not-custom?
 			  (list language-choice)
 			  (list language-choice custom-message))))))]
 	 [update-to
 	  (lambda (v)
 	    (let ([zodiac? (basis:zodiac-vocabulary? v)])
-	      (unless zodiac?
-		(basis:set-setting-signal-undefined! v #f))
-	      (send signal-undefined enable zodiac?))
-	    
-	    (send language-choice set-selection (basis:level->number (basis:setting-vocabulary-symbol v)))
 
-	    (send printing set-selection
-		  (get-printer-style-number (basis:setting-printing v)))
-	    (let ([r4rs-style? (eq? 'r4rs-style (basis:setting-printing v))])
-	      (send whole/fractional-exact-numbers enable (not r4rs-style?))
-	      (when r4rs-style?
-		(basis:set-setting-whole/fractional-exact-numbers! v #f)))
+	      (send printing set-selection
+		    (get-printer-style-number (basis:setting-printing v)))
+	      (let ([r4rs-style? (eq? 'r4rs-style (basis:setting-printing v))])
+		(send whole/fractional-exact-numbers enable (not r4rs-style?))
+		(when r4rs-style?
+		  (basis:set-setting-whole/fractional-exact-numbers! v #f)))
 
-	    (map (lambda (get check-box) (send check-box set-value (get v)))
-		 (list basis:setting-case-sensitive?
-		       basis:setting-sharing-printing?
-		       basis:setting-whole/fractional-exact-numbers
-		       basis:setting-unmatched-cond/case-is-error?
-		       basis:setting-signal-undefined)
-		 (list case-sensitive? 
-		       sharing-printing?
-		       whole/fractional-exact-numbers
-		       unmatched-cond/case-is-error?
-		       signal-undefined))
-	    (reset-choice))]
+	      (for-each
+	       (lambda (get check-box) (send check-box set-value (get v)))
+	       (list basis:setting-case-sensitive?
+		     basis:setting-sharing-printing?
+		     basis:setting-whole/fractional-exact-numbers
+		     basis:setting-unmatched-cond/case-is-error?
+		     basis:setting-signal-undefined)
+	       (list case-sensitive? 
+		     sharing-printing?
+		     whole/fractional-exact-numbers
+		     unmatched-cond/case-is-error?
+		     signal-undefined))
+
+	      (send printing enable 1
+		    (not (eq? (basis:setting-vocabulary-symbol v) 'beginner)))
+	      (send signal-undefined enable zodiac?)
+
+	      (reset-choice)))]
 	 [unregister-callback
 	  (fw:preferences:add-callback 'drscheme:settings 
 				       (lambda (p v) 

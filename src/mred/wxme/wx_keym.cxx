@@ -228,7 +228,8 @@ wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl,
 	&& (key->altOn == (alt > 0))
 	&& (key->altOff == (alt < 0))
 	&& (key->metaOn == (meta > 0))
-	&& (key->metaOff == (meta < 0)))
+	&& (key->metaOff == (meta < 0))
+	&& key->seqprefix == prev)
       break;
     key = key->next;
   }

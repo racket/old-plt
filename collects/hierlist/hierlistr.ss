@@ -3,6 +3,7 @@
 
   (define transparent (make-object brush% "WHITE" 'transparent))
   (define transparent-pen (make-object pen% "WHITE" 1 'transparent))
+  (define black-xor-pen (make-object pen% "BLACK" 1 'xor))
   (define red (make-object brush% "RED" 'solid))
   (define blue (make-object brush% "BLUE" 'solid))
   (define black-xor (make-object brush% "BLACK" 'xor))
@@ -123,10 +124,12 @@
 
   ; 
   (define item-keymap (make-object keymap%))
+
   (send item-keymap add-function "mouse-select"
 	(lambda (edit event) (if (send event button-down?) (send edit select #t))))
   (send item-keymap add-function "mouse-double-select"
 	(lambda (edit event) (if (send event button-down?) (send edit double-select))))
+
   (send item-keymap map-function "leftbutton" "mouse-select")
   (send item-keymap map-function "leftbuttondouble" "mouse-double-select")
 
@@ -200,20 +203,23 @@
 						    w
 						    'none)))))])]
 	[on-paint
-	 (lambda (pre? dc left top right bottom dx dy caret)
-	   (if (and (not pre?) selected?)
-	       (let ([b (send dc get-brush)]
-		     [p (send dc get-pen)])
-		 (send dc set-brush black-xor)
-		 (send dc set-pen transparent-pen)
-		 (send dc draw-rectangle (+ dx left) (+ dy top) (- right left) (- bottom top))
-		 (send dc set-pen p)
-		 (send dc set-brush b))))])
+	 (lambda (pre? dc left top_ right bottom dx dy caret)
+	   (when (and (not pre?) selected?)
+	     (let ([b (send dc get-brush)]
+		   [p (send dc get-pen)]
+		   [filled? (or (not (send top show-focus))
+				(send top has-focus?))])
+	       (send dc set-brush (if filled? black-xor transparent))
+	       (send dc set-pen (if filled? transparent-pen black-xor-pen))
+	       (send dc draw-rectangle (+ dx left) (+ dy top_) (- right left) (- bottom top_))
+	       (send dc set-pen p)
+	       (send dc set-brush b))))])
       (public
 	[select (lambda (on?)
 		  (unless (eq? (not selected?) (not on?))
 		    (top-select (if on? item #f) snip)))]
-	[double-select (lambda () (send top on-double-select item))])
+	[double-select (lambda () (send top on-double-select item))]
+	[select-prev (lambda () (send top select-prev))])
       (override
 	[on-default-char void]
 	[on-default-event void])
@@ -383,9 +389,33 @@
 	(send main-buffer insert title-snip)
 	(send main-buffer change-style (make-object style-delta% 'change-alignment 'top) 0 2))))
 
+  (define list-keymap (make-object keymap%))
+
+  (send list-keymap add-function "select-prev"
+	(lambda (list event) (send list select-prev)))
+  (send list-keymap add-function "select-next"
+	(lambda (list event) (send list select-next)))
+  (send list-keymap add-function "select-first"
+	(lambda (list event) (send list select-first)))
+  (send list-keymap add-function "select-last"
+	(lambda (list event) (send list select-last)))
+  (send list-keymap add-function "page-up"
+	(lambda (list event) (send list page-up)))
+  (send list-keymap add-function "page-down"
+	(lambda (list event) (send list page-down)))
+
+  (send list-keymap map-function "up" "select-prev")
+  (send list-keymap map-function "down" "select-next")
+  (send list-keymap map-function "home" "select-first")
+  (send list-keymap map-function "end" "select-last")
+  (send list-keymap map-function "pageup" "page-up")
+  (send list-keymap map-function "pagedown" "page-down")
+
   (define hierarchical-list%
     (class editor-canvas% (parent)
       (inherit min-width min-height)
+      (rename [super-on-char on-char]
+	      [super-on-focus on-focus])
       (public
 	[selectable
 	 (case-lambda
@@ -399,15 +429,75 @@
 	[new-item (lambda () (send top-buffer new-item))]
 	[new-list (lambda () (send top-buffer new-list))]
 	[delete-item (lambda (i) (send top-buffer delete-item i))]
-	[get-items (lambda () (send top-buffer get-items))])
+	[get-items (lambda () (send top-buffer get-items))]
+	[select-next (lambda () (move +1))]
+	[select-prev (lambda () (move -1))]
+	[select-first (lambda () (let ([l (get-items)])
+				   (unless (null? l)
+				     (send (car l) select #t)
+				     (send (car l) scroll-to))))]
+	[select-last (lambda () (let loop ([l (get-items)])
+				  (cond
+				   [(null? l) (void)]
+				   [(null? (cdr l))
+				    (send (car l) select #t)
+				    (send (car l) scroll-to)]
+				   [else (loop (cdr l))])))]
+	[page-up (lambda () (page 'up))]
+	[page-down (lambda () (page 'down))]
+	[show-focus
+	 (case-lambda
+	  [() show-focus?]
+	  [(on?) (set! show-focus? on?)])])
       (override
+	[on-char
+	 (lambda (e)
+	   (unless (send list-keymap handle-key-event this e)
+	     (super-on-char e)))]
 	[on-size
 	 (lambda (w h)
 	   (send top-buffer begin-edit-sequence)
 	   (send top-buffer reflow-items)
-	   (send top-buffer end-edit-sequence))])
+	   (send top-buffer end-edit-sequence))]
+	[on-focus
+	 (lambda (on?)
+	   (when (and selected show-focus?)
+	     (send selected show-select #t))
+	   (super-on-focus on?))])
       (private
+	[move (lambda (dir) 
+		(define (find i l)
+		  (let loop ([l l][pos 0])
+		    (if (null? l)
+			#f
+			(if (eq? (car l) i)
+			    pos
+			    (loop (cdr l) (add1 pos))))))
+		(let* ([l (get-items)]
+		       [pos (if selected-item
+				(+ dir (find selected-item l))
+				(if (negative? dir)
+				    (sub1 (length l))
+				    0))])
+		  (when (< -1 pos (length l))
+		    (let ([i (list-ref l pos)])
+		      (send i select #t)
+		      (send i scroll-to)))))]
+	[page (lambda (dir)
+		(let ([items (get-items)])
+		  (unless (null? items)
+		    (let ([sbox (box 0)]
+			  [ebox (box 0)])
+		      (send top-buffer get-visible-line-range sbox ebox)
+		      (let* ([len (max 1 (sub1 (- (unbox ebox) (unbox sbox))))]
+			     [l (if (eq? dir 'up)
+				    (max 0 (- (unbox sbox) len))
+				    (min (sub1 (length items)) (+ (unbox ebox) len)))]
+			     [i (list-ref items l)])
+			(send i select #t)
+			(send i scroll-to))))))]
 	[selectable? #t]
+	[show-focus? #f]
 	[do-select (lambda (item s)
 		     (when selectable?
 		       (unless (eq? item selected-item)

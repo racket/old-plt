@@ -1878,10 +1878,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   else
     start = 0; /* compiler-friendly */
 
-#ifdef USE_OSKIT_CONSOLE
-  scheme_check_keyboard_input();
-#endif
-
   if (!p->external_break && !p->next && scheme_check_for_break && scheme_check_for_break())
     p->external_break = 1;
 
@@ -1892,6 +1888,10 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   }
   
  swap_or_sleep:
+
+#ifdef USE_OSKIT_CONSOLE
+  scheme_check_keyboard_input();
+#endif
 
 #ifndef MZ_REAL_THREADS
   if (!do_atomic && (sleep_time >= 0.0)) {

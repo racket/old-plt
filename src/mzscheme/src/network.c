@@ -289,9 +289,10 @@ void scheme_init_network(Scheme_Env *env)
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("tcp-addresses", 
-			     scheme_make_folding_prim(tcp_addresses,
-						      "tcp-addresses", 
-						      1, 1, 1), 
+			     scheme_make_prim_w_arity2(tcp_addresses,
+						       "tcp-addresses", 
+						       1, 1,
+						       2, 2), 
 			     env);
   scheme_add_global_constant("tcp-abandon-port", 
 			     scheme_make_prim_w_arity(tcp_abandon_port,

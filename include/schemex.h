@@ -287,6 +287,17 @@ Scheme_Object *(*scheme_make_folding_closed_prim)(Scheme_Closed_Prim *prim,
 					       void *data, const char *name,
 					       mzshort mina, mzshort maxa,
 					       short functional);
+Scheme_Object *(*scheme_make_prim_w_everything)(Scheme_Prim *fun, int eternal,
+						       const char *name,
+						       mzshort mina, mzshort maxa,
+						       short folding,
+						       mzshort minr, mzshort maxr);
+Scheme_Object *(*scheme_make_closed_prim_w_everything)(Scheme_Closed_Prim *fun,
+							      void *data,
+							      const char *name,
+							      mzshort mina, mzshort maxa,
+							      short folding,
+							      mzshort minr, mzshort maxr);
 void (*scheme_prim_is_method)(Scheme_Object *o);
 Scheme_Object *(*scheme_make_pair)(Scheme_Object *car, Scheme_Object *cdr);
 Scheme_Object *(*scheme_make_immutable_pair)(Scheme_Object *car, Scheme_Object *cdr);

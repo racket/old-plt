@@ -181,6 +181,8 @@
 #define scheme_make_noneternal_prim_w_arity (scheme_extension_table->scheme_make_noneternal_prim_w_arity)
 #define scheme_make_closed_prim_w_arity (scheme_extension_table->scheme_make_closed_prim_w_arity)
 #define scheme_make_folding_closed_prim (scheme_extension_table->scheme_make_folding_closed_prim)
+#define scheme_make_prim_w_everything (scheme_extension_table->scheme_make_prim_w_everything)
+#define scheme_make_closed_prim_w_everything (scheme_extension_table->scheme_make_closed_prim_w_everything)
 #define scheme_prim_is_method (scheme_extension_table->scheme_prim_is_method)
 #define scheme_make_pair (scheme_extension_table->scheme_make_pair)
 #define scheme_make_immutable_pair (scheme_extension_table->scheme_make_immutable_pair)

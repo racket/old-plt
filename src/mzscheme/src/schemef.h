@@ -353,6 +353,17 @@ MZ_EXTERN Scheme_Object *scheme_make_folding_closed_prim(Scheme_Closed_Prim *pri
 					       void *data, const char *name,
 					       mzshort mina, mzshort maxa,
 					       short functional);
+MZ_EXTERN Scheme_Object *scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
+						       const char *name,
+						       mzshort mina, mzshort maxa,
+						       short folding,
+						       mzshort minr, mzshort maxr);
+MZ_EXTERN Scheme_Object *scheme_make_closed_prim_w_everything(Scheme_Closed_Prim *fun,
+							      void *data,
+							      const char *name,
+							      mzshort mina, mzshort maxa,
+							      short folding,
+							      mzshort minr, mzshort maxr);
 
 MZ_EXTERN void scheme_prim_is_method(Scheme_Object *o);
 

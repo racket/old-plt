@@ -154,6 +154,8 @@ scheme_make_folding_prim
 scheme_make_noneternal_prim_w_arity
 scheme_make_closed_prim_w_arity
 scheme_make_folding_closed_prim
+scheme_make_prim_w_everything
+scheme_make_closed_prim_w_everything
 scheme_prim_is_method
 scheme_make_pair
 scheme_make_immutable_pair

@@ -698,20 +698,6 @@ typedef struct {
 /* If count is not 0, then check array[0] for CLOS_IS_METHOD.
    Otherwise, name is a boxed symbol (or #f) to indicate a method. */
 
-Scheme_Object *
-scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
-			      const char *name,
-			      mzshort mina, mzshort maxa,
-			      short folding,
-			      mzshort minr, mzshort maxr);
-Scheme_Object *
-scheme_make_closed_prim_w_everything(Scheme_Closed_Prim *fun,
-				     void *data,
-				     const char *name,
-				     mzshort mina, mzshort maxa,
-				     short folding,
-				     mzshort minr, mzshort maxr);
-
 #define scheme_make_prim_w_arity2(f, n, mina, maxa, minr, maxr) \
   scheme_make_prim_w_everything(f, 0, n, mina, maxa, 0, minr, maxr)
 

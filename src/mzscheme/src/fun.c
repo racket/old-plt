@@ -95,6 +95,7 @@ static Scheme_Object *cc_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cont_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *extract_cc_marks (int argc, Scheme_Object *argv[]);
+static Scheme_Object *extract_cc_markses (int argc, Scheme_Object *argv[]);
 static Scheme_Object *extract_one_cc_mark (int argc, Scheme_Object *argv[]);
 static Scheme_Object *void_func (int argc, Scheme_Object *argv[]);
 static Scheme_Object *void_p (int argc, Scheme_Object *argv[]);
@@ -274,6 +275,11 @@ scheme_init_fun (Scheme_Env *env)
 						      "continuation-mark-set->list",
 						      2, 2),
 			     env);
+  scheme_add_global_constant("continuation-mark-set->lists",
+			     scheme_make_prim_w_arity(extract_cc_markses,
+						      "continuation-mark-set->lists",
+						      2, 2),
+			     env);
   scheme_add_global_constant("continuation-mark-set-first",
 			     scheme_make_prim_w_arity(extract_one_cc_mark,
 						      "continuation-mark-set-first",
@@ -384,7 +390,6 @@ scheme_init_fun (Scheme_Env *env)
 						       "current-prompt-read",
 						       MZCONFIG_PROMPT_READ_HANDLER),
 			     env);
-
 
   scheme_install_type_writer(scheme_unclosed_procedure_type,
 			     write_compiled_closure);
@@ -2966,6 +2971,12 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
   return first;
 }
 
+static Scheme_Object *
+extract_cc_markses(int argc, Scheme_Object *argv[])
+{
+  return scheme_void;
+}
+
 Scheme_Object *
 scheme_extract_one_cc_mark(Scheme_Object *mark_set, Scheme_Object *key)
 {
@@ -3710,7 +3721,6 @@ scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
 
   return scheme_read_syntax(inport, name);
 }
-
 
 /*========================================================================*/
 /*                        [un]marshalling closure code                    */

@@ -991,7 +991,7 @@ static long user_read_result(const char *who, Scheme_Input_Port *port,
 			     int special_ok, int false_ok,
 			     Scheme_Schedule_Info *sinfo)
 {
-  Scheme_Object *a[1];
+  Scheme_Object *a[2];
 
   val_again:
 
@@ -1033,15 +1033,25 @@ static long user_read_result(const char *who, Scheme_Input_Port *port,
 	if (nonblock) {
 	  if (sinfo) {
 	    scheme_set_sync_target(sinfo, val, (Scheme_Object *)port, NULL, 0, 1);
+	    return 0;
+	  } else {
+	    /* Poll: */
+	    a[0] = scheme_make_integer(0);
+	    a[1] = val;
+	    val = scheme_sync_timeout(2, a);
+	    if (!val)
+	      return 0;
+	    else if (scheme_is_evt(val))
+	      return 0;
+	    goto val_again;
 	  }
-	  return 0;
 	} else {
 	  /* Sync on the given evt. */
 	  a[0] = val;
 	  if (nonblock < 0)
-	    val = scheme_sync(1, a);
-	  else
 	    val = scheme_sync_enable_break(1, a);
+	  else
+	    val = scheme_sync(1, a);
 
 	  /* Port may have been closed while we were syncing: */
 	  if (port->closed) {

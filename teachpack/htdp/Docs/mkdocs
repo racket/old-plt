@@ -36,7 +36,7 @@ fi
     #"Show Queen"))
 
 (define dest-dir (build-path (collection-path "doc") "teachpack"))
-(printf "writing docs to ~s\n" dest-dir)
+(printf "writing docs to ~s\n" (path->string dest-dir))
 
 (require (lib "list.ss"))
 

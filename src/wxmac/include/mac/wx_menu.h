@@ -194,7 +194,7 @@ private:
 };
 
 extern void wxPrepareMenuDraw(void);
-extern void wxDoneMenuDraw(void);
+extern void wxDoneMenuDraw(Bool menu_hilited = FALSE);
 
 #endif // IN_CPROTO
 #endif // wx_menuh

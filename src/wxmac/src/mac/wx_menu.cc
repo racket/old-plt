@@ -118,18 +118,17 @@ wxMenuBar::~wxMenuBar(void)
   }
 }
 
-static GDHandle mb_dev_handle = 0;
-static CGrafPtr mb_grafptr = NULL;
+static int unhilite_before_change = FALSE;
 
 void wxPrepareMenuDraw(void)
 {
-  GetGWorld(&mb_grafptr, &mb_dev_handle);
-  SetPort(wxGetGrafPtr());
+  if (unhilite_before_change)
+    HiliteMenu(0);
 }
 
-void wxDoneMenuDraw(void)
+void wxDoneMenuDraw(Bool menu_hilited)
 {
-  SetGWorld(mb_grafptr, mb_dev_handle);
+  unhilite_before_change = menu_hilited;
 }
 
 static void wxInvalMenuBar(void)
@@ -386,7 +385,7 @@ void wxMenu::MacChangeMenuText(wxMenu *menu, char *new_title)
   if (menu->menu_bar && menu->menu_bar == last_installed_bar)
     menu->menu_bar->Install();
 
-	// Dispose the old menu
+  // Dispose the old menu
   ::DisposeMenu(omh);
 }
 
@@ -844,9 +843,11 @@ void wxMenu::Append(int Id, char* Label, char* helpString, Bool checkable)
   no_items ++;
 
   BuildMacMenuString(menusetup, menustr, item->itemName, FALSE);
+  wxPrepareMenuDraw();
   ::AppendMenu(cMacMenu, (ConstStr255Param)menusetup);
   ::SetMenuItemText(cMacMenu, no_items, (ConstStr255Param)menustr);
   ::SetMenuItemTextEncoding(cMacMenu, no_items, kCFStringEncodingISOLatin1);
+  wxDoneMenuDraw();
   CheckHelpHack();
 }
 
@@ -880,16 +881,20 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
 
   BuildMacMenuString(pullrightSetup, pullrightLabel,item->itemName, TRUE);
 	
+  wxPrepareMenuDraw();
   ::AppendMenu(cMacMenu, (ConstStr255Param)pullrightSetup);
   ::SetMenuItemText(cMacMenu, no_items, (ConstStr255Param)pullrightLabel);
   ::SetMenuItemTextEncoding(cMacMenu, no_items, kCFStringEncodingISOLatin1);
   ::SetMenuItemHierarchicalID(cMacMenu, no_items, SubMenu->cMacMenuId);
+  wxDoneMenuDraw();
 
   ancestor = this;
   while (ancestor) {
     if (ancestor->menu_bar) {
       if (ancestor->menu_bar == last_installed_bar) {
+	wxPrepareMenuDraw();
 	InsertMenu(SubMenu->cMacMenu, -1);
+	wxDoneMenuDraw();
 	SubMenu->wxMacInsertSubmenu();
       }
       break;
@@ -917,7 +922,9 @@ Bool wxMenu::Delete(wxMenu *menu, int Id, int delpos)
 	|| (delpos == pos)) {
       if (item->subMenu)
 	item->subMenu->window_parent = NULL;
+      wxPrepareMenuDraw();
       ::DeleteMenuItem(cMacMenu, pos + 1);
+      wxDoneMenuDraw();
       menuItems->DeleteNode(node);
       DELETE_OBJ item;
       --no_items;
@@ -1039,10 +1046,12 @@ void wxMenu::Enable(Bool Flag)
 	    {
 	      if (frame->IsFrontWindow())
 		{
+		  wxPrepareMenuDraw();
 		  if (cEnable)
 		    EnableMenuItem(cMacMenu, 0);
 		  else
 		    DisableMenuItem(cMacMenu, 0);
+		  wxDoneMenuDraw();
 		  wxInvalMenuBar();
 		  CheckHelpHack();
 		}
@@ -1113,7 +1122,9 @@ void wxMenu::wxMacInsertSubmenu(void)
       menuItem = (wxMenuItem*)node->Data();
       submenu = menuItem->subMenu;
       if (submenu) {
+	wxPrepareMenuDraw();
 	InsertMenu(submenu->cMacMenu, -1);
+	wxDoneMenuDraw();
 	submenu->wxMacInsertSubmenu();
       }
       node = node->Next();

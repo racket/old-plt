@@ -697,7 +697,7 @@ void wxFrame::Command(int id)
       if (theParentMenu) {
 	wxPrepareMenuDraw();
 	HiliteMenu(theParentMenu->cMacMenuId); // hilite the menu
-	wxDoneMenuDraw();
+	wxDoneMenuDraw(TRUE);
 	ProcessCommand(id);
       }
     }

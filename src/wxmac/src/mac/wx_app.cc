@@ -341,7 +341,7 @@ void wxApp::doMacMouseDown(void)
 	wxTracking();
 	wxPrepareMenuDraw();
 	menuResult = MenuSelect(cCurrentEvent.where);
-	wxDoneMenuDraw();
+	wxDoneMenuDraw(TRUE);
 	doMacInMenuBar(menuResult, FALSE);
       }
       break;
@@ -598,7 +598,7 @@ void wxApp::doMacKeyUpDown(Bool down)
 	  long menuResult;
 	  wxPrepareMenuDraw();
 	  menuResult = MenuEvent(&cCurrentEvent);
-	  wxDoneMenuDraw();
+	  wxDoneMenuDraw(TRUE);
 	  if (menuResult) {
 	    if (doMacInMenuBar(menuResult, TRUE)) {
 	      return;

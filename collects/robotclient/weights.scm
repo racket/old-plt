@@ -41,16 +41,17 @@
 ;(define blank-push-bid (make-parameter 1))
 ;(define max-bid-const (make-parameter 10))
 (define max-bid (make-parameter 0))
-
+(define player-cur (make-parameter #f))
 
   (define-struct search-player (x y id money capacity packages))
   
 	(define (update-robots robot-list p)
+          (player-cur p)
 	  (do 
-	      ([y (- (search-player-y p) 2) (+ y 1)]
+	      ([y (- (search-player-y (player-cur)) 2) (+ y 1)]
 	       [counter-y 0 (+ counter-y 1)])
 	      ((< counter-y 5) (void 2))
-	    (do ([x (- (search-player-x p) 2) (+ x 1)]
+	    (do ([x (- (search-player-x (player-cur)) 2) (+ x 1)]
                   [counter-x 0 (+ counter-x 1)])
                ((< counter-x 5) (void 2))
 	      (set-valid (get-spot board x y)))))
@@ -61,6 +62,7 @@
           (begin
             (if (= (max-bid) 0)
                 (max-bid (* (max-bid-const) (/ (player-initial-money) (* (board-height) (board-width))))))
+            (player-cur p)
 	  (cond
 	   [(eq? mtype 'm)
 	    (let*
@@ -68,15 +70,15 @@
 		 [weight (if (= 1 (get-valid spot))
 			     (get-weight spot)
 			     (let ([new-weight
-				    (+ (if (could-player-move? (board) x y p)
+				    (+ (if (could-player-move? (board) x y (player-cur))
 				    (+ (* (wall-danger-value) (wall-danger? (board) x y))
 				       (* (water-danger-value) (water-danger? (board) x y))
 				       (* (blank-danger-value) (blank-danger? (board) x y))
 				       (* (wall-threat-value) (wall-threat? (board) x y))
 				       (* (water-threat-value) (water-threat? (board) x y))
 				       (* (blank-threat-value) (blank-threat? (board) x y))
-				       (* (water-escape-value) (water-escape? (board) x y p))
-				       (* (blank-escape-value) (blank-escape? (board) x y p))
+				       (* (water-escape-value) (water-escape? (board) x y (player-cur)))
+				       (* (blank-escape-value) (blank-escape? (board) x y (player-cur)))
 				       (* (wall-escape-value) (wall-escape? (board) x y p))
 				       (* (water-push-value) (water-push? (board) x y p))
 				       (* (blank-push-value) (blank-push? (board) x y p))
@@ -92,10 +94,10 @@
 					    (if (home? (board) x y)
 						(home-value)))))
 				(* (next-water-value) (next-to-water? (board) x y))
-				(* (destination-value) (destination? x y (search-player-packages p)))
-				(* (one-destination-value) (one-away-destination? (board) x y (search-player-packages p)))
-				(* (two-destination-value) (two-away-destination? (board) x y (search-player-packages p)))
-				(* (three-destination-value) (three-away-destination? (board) x y (search-player-packages p)))
+				(* (destination-value) (destination? x y (search-player-packages (player-cur))))
+				(* (one-destination-value) (one-away-destination? (board) x y (search-player-packages (player-cur))))
+				(* (two-destination-value) (two-away-destination? (board) x y (search-player-packages (player-cur))))
+				(* (three-destination-value) (three-away-destination? (board) x y (search-player-packages (player-cur))))
 				(* (one-home-value) (one-away-base? (board) x y))
 				(* (two-home-value) (two-away-base? (board) x y))
 				(* (three-home-value) (three-away-base? (board) x y)))])
@@ -110,7 +112,7 @@
                                    1
                                    (round bid)) null null))]
 	   [(eq? mtype 'd)
-	    (let* ([ptod (get-packages-for x y (search-player-packages))]
+	    (let* ([ptod (get-packages-for x y (search-player-packages (player-cur)))]
 		   [weight (+ (if (could-player-move? (board) x y p)
 				 (+ (* (wall-danger-value) (wall-danger? (board) x y))
 				    (* (water-danger-value) (water-danger? (board) x y))
@@ -139,7 +141,7 @@
 	    (error "not a recognized symbol")])))
 
 	(define (wleft p)
-          (- (search-player-capacity p) (eval `(+ ,@(map package-weight (search-player-packages p))))))
+          (- (search-player-capacity (player-cur)) (eval `(+ ,@(map package-weight (search-player-packages (player-cur)))))))
 	;; 
 	(define-syntax figure-bid
 	  (syntax-rules ()
@@ -224,7 +226,9 @@
 	(define-syntax is-robot?
 	  (syntax-rules ()
 			((_ board x y)
-			 (= 1 (get-robot (get-spot board x y))))))
+                         
+			 (and (= 1 (get-robot (get-spot board x y)))
+                              (not (and (= (search-player-x (player-cur)) x) (= (search-player-y (player-cur)) y))) ))))
 
 	(define-syntax wall?
 	  (syntax-rules ()
@@ -248,12 +252,12 @@
 
 	(define-syntax robot-threat?
 	  (syntax-rules ()
-			((_ board x y)
-			 (or (is-robot? board x y)
-			     (is-robot? board (- x 1) y)
-			     (is-robot? board (+ x 1) y)
-			     (is-robot? board x (- y 1))
-			     (is-robot? board x (+ y 1))))))
+			((_ board x y )
+			 (or (is-robot? board x y )
+			     (is-robot? board (- x 1) y )
+			     (is-robot? board (+ x 1) y )
+			     (is-robot? board x (- y 1) )
+			     (is-robot? board x (+ y 1) )))))
 			 
 	(define-syntax wall-threat?
 	  (syntax-rules ()
@@ -303,19 +307,19 @@
 	(define-syntax pinned?
 	  (syntax-rules ()
 			((_ board x y t)
-			 (or (and (is-robot? board (- x 1) y)
+			 (or (and (is-robot? board (- x 1) y )
 				  (= t (get-type (get-spot board (+ x 1) y))))
-			     (and (is-robot? board (+ x 1) y)
+			     (and (is-robot? board (+ x 1) y )
 				  (= t (get-type (get-spot board (- x 1) y))))
-			     (and (is-robot? board x (- y 1))
+			     (and (is-robot? board x (- y 1) )
 				  (= t (get-type (get-spot board x (+ y 1)))))
-			     (and (is-robot? board x (+ y 1))
+			     (and (is-robot? board x (+ y 1) )
 				  (= t (get-type (get-spot board x (- y 1)))))))))
 
 	(define-syntax wall-danger?
 	  (syntax-rules ()
 			((_ board x y)
-			 (if (pinned? board x y 2)
+			 (if (pinned? board x y 2 )
 			     1
 			     0))))
 
@@ -337,8 +341,8 @@
 	(define-syntax wall-escape?
 	  (syntax-rules ()
 			((_ board x y p)
-			 (if (and (pinned? board (search-player-x p) (search-player-y p) 2)
-				  (or (not (is-robot? board x y)) (not (wall? board (+ x (- x (search-player-x p))) (+ y (- y (search-player-y p)))))))
+			 (if (and (pinned? board (search-player-x (player-cur)) (search-player-y (player-cur)) 2)
+				  (or (not (is-robot? board x y )) (not (wall? board (+ x (- x (search-player-x (player-cur)))) (+ y (- y (search-player-y (player-cur))))))))
 			     1
 			     0))))
 
@@ -346,17 +350,17 @@
 	  (syntax-rules ()
 			((_ board x y p)
 			 (if (and (or 
-				   (pinned? board (search-player-x p) (search-player-y p) 0)
-				   (pinned? board (search-player-x p) (search-player-y p) 3))
-				  (or (not (is-robot? board x y)) (not (wall? board (+ x (- x (search-player-x p))) (+ y (- y (search-player-y p)))))))
+				   (pinned? board (search-player-x (player-cur)) (search-player-y (player-cur)) 0)
+				   (pinned? board (search-player-x (player-cur)) (search-player-y (player-cur)) 3))
+				  (or (not (is-robot? board x y )) (not (wall? board (+ x (- x (search-player-x (player-cur)))) (+ y (- y (search-player-y (player-cur))))))))
 			     1
 			     0))))
 
 	(define-syntax water-escape?
 	  (syntax-rules ()
 			((_ board x y p)
-			 (if (and (pinned? board (search-player-x p) (search-player-y p) 1)
-				  (or (not (is-robot? board x y)) (not (wall? board (+ x (- x (search-player-x p))) (+ y (- y (search-player-y p)))))))
+			 (if (and (pinned? board (search-player-x (player-cur)) (search-player-y (player-cur)) 1)
+				  (or (not (is-robot? board x y )) (not (wall? board (+ x (- x (search-player-x (player-cur)))) (+ y (- y (search-player-y (player-cur))))))))
 			     1
 			     0))))
 
@@ -364,24 +368,24 @@
 	(define-syntax wall-push?
 	  (syntax-rules ()
 			((_ board x y p)
-			 (if (and (is-robot? board x y)
-				  (wall? board (+ x (- x (search-player-x p))) (+ y (- y (search-player-y p)))))
+			 (if (and (is-robot? board x y )
+				  (wall? board (+ x (- x (search-player-x (player-cur)))) (+ y (- y (search-player-y (player-cur))))))
 			     1
 			     0))))
 
 	(define-syntax blank-push?
 	  (syntax-rules ()
 			((_ board x y p)
-			 (if (and (is-robot? board x y)
-				  (blank? board (+ x (- x (search-player-x p))) (+ y (- y (search-player-y p)))))
+			 (if (and (is-robot? board x y )
+				  (blank? board (+ x (- x (search-player-x (player-cur)))) (+ y (- y (search-player-y (player-cur))))))
 			     1
 			     0))))
 
 	(define-syntax water-push?
 	  (syntax-rules ()
 			((_ board x y p)
-			 (if (and (is-robot? board x y)
-				  (water? board (+ x (- x (search-player-x p))) (+ y (- y (search-player-y p)))))
+			 (if (and (is-robot? board x y )
+				  (water? board (+ x (- x (search-player-x (player-cur)))) (+ y (- y (search-player-y (player-cur))))))
 			     1
 			     0))))
 	
@@ -441,9 +445,9 @@
 	(define-syntax could-player-move?
 	  (syntax-rules ()
 			((_ board x y p)
-			 (if (= x (search-player-x p))
-			     (<= (abs (- (search-player-y p) y)) 1)
-			     (if (= y (search-player-y p))
-				 (<= (abs (- (search-player-x p) x)) 1))))))
+			 (if (= x (search-player-x (player-cur)))
+			     (<= (abs (- (search-player-y (player-cur)) y)) 1)
+			     (if (= y (search-player-y (player-cur)))
+				 (<= (abs (- (search-player-x (player-cur)) x)) 1))))))
         
         )

@@ -97,6 +97,7 @@
                    ((n-weight n-bid) (if (< x (board-height)) (get-move-weight (add1 x) y) (values #f void)))
                    ((w-weight w-bid) (if (> y 1) (get-move-weight x (sub1 y)) (values #f void)))
                    ((e-weight e-bid) (if (< y (board-width)) (get-move-weight x (add1 y)) (values #f void))))
+        (display (list p-weight d-weight n-weight s-weight e-weight w-weight)) (newline)
         (list (maker p-weight x y p-bid 'P p)
               (when d-weight (maker d-weight x y d-bid 'D d))
               (when n-weight (maker n-weight (add1 x) y n-bid 'N null))
@@ -134,7 +135,7 @@
               (when w-weight (maker w-weight x (sub1 y) w-bid))))))
   
   (define (compute-move packages robots)
-    (display (get-player-x))(display " : ")(display (get-player-y))(newline)
+    (display "x and y: ")(display (get-player-x))(display " : ")(display (get-player-y))(newline)
     (display (player-money))(newline)
     (queue-head null)
     (in-queue 0)
@@ -147,7 +148,8 @@
     (for-each enqueue 
               (generate-first-moves (get-player-x) (get-player-y) packages))
     (search-node (dequeue))
-    (display (best-cmd))
+    (display (best-cmd)) (display ":")
+    (display (best-weight))(newline)
     (best-cmd)
     )
 
@@ -160,6 +162,7 @@
                                         (move-back move) 
                                         (add1 (move-step move))  
                                         (move-orig move)))
+      (display (best-cmd))(display ":")(display (best-weight))(newline)
       (search-node (dequeue))))
   
   )

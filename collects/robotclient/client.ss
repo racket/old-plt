@@ -13,7 +13,7 @@
                                 (custodian-shutdown-all client-custodian)
                                 (printf "~a~n" (exn-message ex))
                                 (display (score))(newline)
-                                ;(raise ex)
+                                (raise ex)
                                 (score))))
           (let-values (((input output) (tcp-connect host-name port)))
             (display "Player" output)

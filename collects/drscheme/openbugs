@@ -1,12 +1,12 @@
-- the language level message on startup is some strange red sexp
-
 - in the language dialog box:
-  - clicking on options 2 and 3 is strange for the printer
   - allow set! on undefined is ignored
-  - show sharing is ignored
 
 - in the lowest language level (define (f . x) x) is incorrectly a
   syntax error.
+
+- loading doesn't work for files saved with images (ie files in mred's format)
+
+- load should evaluate as it loads, rather than after it loads
 
 - when multiple expression are put on one line in the interactions
   window, they are wrapped in a begin. So, instead of seeing all of

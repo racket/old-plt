@@ -1,12 +1,4 @@
-- .htx files are no longer supported. If you need .htx files to be
-  supported, please send mail to plt-bugs@cs requesting that for the
-  next version. If we don't hear anything, they will go the way of the
-  dodo.
-
 - backup files don't preserve permissions
-
-- replace all may replace things twice, if the replace string is a
-  substring of the findstring.
 
 - the directory line in the common-file-dialogs is confusing
 
@@ -17,3 +9,7 @@
   draw-line into that viewport.
 	
 - you cannot break (read)
+
+- pathnames are normalized to early and can cause automouter problems
+
+- control-l doesn't get the horizontal direction right.

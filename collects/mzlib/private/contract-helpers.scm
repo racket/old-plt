@@ -7,7 +7,7 @@
   ;; the name isn't fresh, so `id' combined with `ids' must already be unique.
   (define (mangle-id main-stx prefix id . ids)
     (datum->syntax-object
-     (syntax-local-introduce main-stx)
+     #f
      (string->symbol
       (string-append
        prefix

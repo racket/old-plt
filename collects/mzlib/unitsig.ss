@@ -143,7 +143,7 @@
 		 (list unt)
 		 (quote ((#() . #())))
 		 (quote (exploded-sigs)))
-		(invoke-unit (signed-unit-unit u)
+		(invoke-unit (signed-unit-unit unt)
 			     . flat-sigs)))))])))
   
   (define-syntax unit->unit/sig

@@ -1,5 +1,5 @@
 
-(module get-info mzscheme
+(module getinfo mzscheme
 
   (require (lib "file.ss"))
   (require (lib "match.ss"))

@@ -22,3 +22,6 @@ types:
 
 (define-signature BOARD^ ())
 
+(define-signature paint-by-numbers:all-problems^ (problemss set-names))
+(define-signature paint-by-numbers:problem-set^ (problems set-name))
+(define-signature paint-by-numbers:problem^ ((struct problem (name rows cols solution))))

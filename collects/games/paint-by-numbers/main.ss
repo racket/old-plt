@@ -3,12 +3,14 @@
   (import [GUI : GUI^]
 	  [SOLVE : SOLVE^]
 	  [fw : framework^]
+	  paint-by-numbers:problem^
+	  [all : paint-by-numbers:all-problems^]
 	  mzlib:pretty-print^
 	  mred-interfaces^)
 
-  (define-struct problem (name rows cols solution))
+  (printf "all:set-names: ~s~n" all:set-names)
 
-  (include "problems.ss")
+  (define problems (car all:problemss))
 
   (define game-name "Paint by Numbers")
   (define editor-name "Paint by Numbers Designer")
@@ -137,6 +139,10 @@
 	[help-button
 	 (make-object button% "Help" top-panel (lambda (_1 _2) (show-help)))])
       (sequence
+	(send this change-children (lambda (l) 
+				     (for-each (lambda (c) (send c stretchable-height #f)) l)
+				     l))
+	(send top-panel stretchable-height #f)
 	(send top-panel set-alignment 'right 'center))))
 
   (define pbn-frame%
@@ -164,14 +170,13 @@
 
       (inherit can-close? show)
 
-      (inherit change-children stretchable-width stretchable-height update-filename)
+      (inherit stretchable-width stretchable-height update-filename)
       (private
 	[set-problem
 	 (lambda (prlmb)
 	   (update-filename #f)
 	   (send wrong-item enable (problem-solution prlmb))
 	   (send editor-item enable (problem-solution prlmb))
-	   (change-children (lambda (x) (list top-panel)))
 	   (stretchable-width #f)
 	   (stretchable-height #f)
 	   (stretchable-width #t)
@@ -179,8 +184,8 @@
 	   (let ([rows (problem-rows prlmb)]
 		 [cols (problem-cols prlmb)])
 	     (set! problem prlmb)
-	     (set! canvas (make-object GUI:paint-by-numbers-canvas% this rows cols))))]
-
+	     (set! canvas (make-object GUI:paint-by-numbers-canvas% canvas-panel rows cols))
+	     (send canvas-panel change-children (lambda (l) (list canvas)))))]
 
 	[show-wrong
 	 (lambda ()
@@ -243,15 +248,29 @@
       (inherit top-panel help-button)
       (private
 	[gap (make-object horizontal-panel% top-panel)]
-	[choice (make-object choice%
-		  "Choose a Board"
-		  (map problem-name problems)
-		  top-panel
-		  (lambda (choice evt)
-		    (set-problem (list-ref problems (send choice get-selection)))))]
+	[set-choice
+	 (make-object choice%
+		      "Set"
+		      all:set-names
+		      top-panel
+		      (lambda (choice evt)
+			(set! problems (list-ref all:problemss (send choice get-selection)))
+			(send board-choice clear)
+			(for-each (lambda (problem) (send board-choice append (problem-name problem)))
+				  problems)
+			(set-problem (car problems))))]
+	[board-choice (make-object choice%
+				   "Board"
+				   (map problem-name problems)
+				   top-panel
+				   (lambda (choice evt)
+				     (set-problem (list-ref problems (send choice get-selection)))))]
+	[canvas/spacer-panel (make-object horizontal-panel% this)]
+	[canvas-panel (make-object vertical-pane% canvas/spacer-panel)]
+	[spacer (make-object grow-box-spacer-pane% canvas/spacer-panel)]
 	[canvas #f])
       (sequence
-	(send top-panel change-children (lambda (l) (list choice gap help-button))))
+	(send top-panel change-children (lambda (l) (list set-choice board-choice gap help-button))))
 
       (override
 	[get-canvas
@@ -299,6 +318,11 @@
 	 (lambda ()
 	   canvas)])
 
+      (private
+	[space/canvas-panel (make-object horizontal-panel% this)]
+	[canvas-panel (make-object vertical-pane% space/canvas-panel)]
+	[spacer (make-object grow-box-spacer-pane% canvas-panel)])
+
       (sequence
 	(super-init editor-name)
 
@@ -306,13 +330,13 @@
 	 [(pair? indicator)
 	  (set! canvas
 		  (make-object GUI:design-paint-by-numbers-canvas%
-		    this
+		    canvas-panel
 		    (car indicator)
 		    (cdr indicator)))]
 	 [(is-a? indicator bitmap%)
 	  (set! canvas
 		(make-object GUI:design-paint-by-numbers-canvas%
-		  this
+		  canvas-panel
 		  (min biggest-editor (send indicator get-width))
 		  (min biggest-editor (send indicator get-height))))
 	  (when (or (> (send indicator get-width) biggest-editor)
@@ -325,7 +349,7 @@
 	 [(problem? indicator)
 	  (set! canvas
 		(make-object GUI:design-paint-by-numbers-canvas%
-		  this
+		  canvas-panel
 		  (length (problem-cols indicator))
 		  (length (problem-rows indicator))))
 	  (send canvas set-grid

@@ -35,7 +35,8 @@
 ;;    quote - 'immutable for known immutable quoted vars
 ;;    lambda - an inferred name (temporary)
 ;;    module - a module-info record
-;;    define-syntax - in-mod?
+;;    define-[for-]syntax - in-mod?, wrap RHS with 
+;;                          (for-syntax-in-env (lambda () ...))
 ;;; ------------------------------------------------------------
 
 (module prephase mzscheme
@@ -153,6 +154,8 @@
 			(mark (list-ref args 4))))
 		    #f]
 		   [else #f])))))
+
+      (define for-syntax-slot (box #f))
 
       ;;----------------------------------------------------------------------------
       ;; PREPHASE MAIN FUNCTION
@@ -483,7 +486,24 @@
 				(zodiac:parsed-back ast)
 				(map (lambda (e) (prephase! e in-mod? #t #f))
 				     (get-names ast))
-				(prephase! (get-expr ast)
+				(prephase! (zodiac:make-app 
+					    (zodiac:zodiac-stx ast)
+					    (make-empty-box)
+					    (zodiac:make-top-level-varref
+					     for-syntax-in-env-stx
+					     (make-empty-box)
+					     'for-syntax-in-env
+					     #f
+					     for-syntax-slot
+					     #t
+					     #f
+					     #f)
+					    (list
+					     (zodiac:make-case-lambda-form
+					      (zodiac:zodiac-stx ast)
+					      (make-empty-box)
+					      (list (zodiac:make-list-arglist null))
+					      (list (get-expr ast)))))
 					   in-mod?
 					   #t (get-names ast)))])
 			  (set-annotation! ast in-mod?)

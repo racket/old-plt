@@ -3227,6 +3227,18 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
 }
 
 
+/* For mzc: */
+Scheme_Object *scheme_apply_for_syntax_in_env(Scheme_Object *proc, Scheme_Env *env)
+{
+  Scheme_Comp_Env *rhs_env;
+
+  rhs_env = scheme_new_comp_env(env, NULL, SCHEME_TOPLEVEL_FRAME);
+
+  scheme_on_next_top(rhs_env, NULL, scheme_false, NULL, 
+		     env, (env->link_midx ? env->link_midx : env->module->src_modidx));
+  return scheme_apply_multi(proc, 0, NULL);
+}
+
 /**********************************************************************/
 /*                          #%module-begin                            */
 /**********************************************************************/

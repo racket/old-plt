@@ -666,6 +666,7 @@ Scheme_Object *(*scheme_make_modidx)(Scheme_Object *path,
 				  Scheme_Object *resolved);
 Scheme_Object *(*scheme_declare_module)(Scheme_Object *shape, Scheme_Invoke_Proc ivk,
 				     Scheme_Invoke_Proc sivk, void *data, Scheme_Env *env);
+Scheme_Object *(*scheme_apply_for_syntax_in_env)(Scheme_Object *proc, Scheme_Env *env);
 /*========================================================================*/
 /*                                symbols                                 */
 /*========================================================================*/

@@ -400,6 +400,7 @@ scheme_finish_primitive_module
 scheme_protect_primitive_provide
 scheme_make_modidx
 scheme_declare_module
+scheme_apply_for_syntax_in_env
 scheme_intern_symbol
 scheme_intern_exact_symbol
 scheme_intern_exact_char_symbol

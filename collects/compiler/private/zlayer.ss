@@ -241,6 +241,9 @@
 	   [(zodiac:require/provide-form? ast)
 	    `(require/provide ...)]
 
+	   [(zodiac:module-form? ast)
+	    `(module ... ,(zodiac->sexp/annotate (zodiac:module-form-body ast)))]
+
 	   [else
 	    (error 'zodiac->sexp/annotate "unsupported ~s" ast)]))))))
 

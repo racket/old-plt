@@ -97,6 +97,8 @@ typedef struct {
 #define MZC_LIST2(p, av, bv) scheme_make_pair(av, scheme_make_pair(bv, scheme_null))
 #define MZC_APPEND(p, av, bv) scheme_append(av, bv)
 
+#define MZC_FOR_SYNTAX_IN_ENV(ignored, proc) scheme_apply_for_syntax_in_env(proc, env)
+
 #if MZC_UNSAFE
 /* Unsafe versions */
 #define MZC_CAR(p, av) SCHEME_CAR(av)

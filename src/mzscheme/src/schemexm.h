@@ -449,6 +449,7 @@
 #define scheme_protect_primitive_provide (scheme_extension_table->scheme_protect_primitive_provide)
 #define scheme_make_modidx (scheme_extension_table->scheme_make_modidx)
 #define scheme_declare_module (scheme_extension_table->scheme_declare_module)
+#define scheme_apply_for_syntax_in_env (scheme_extension_table->scheme_apply_for_syntax_in_env)
 #define scheme_intern_symbol (scheme_extension_table->scheme_intern_symbol)
 #define scheme_intern_exact_symbol (scheme_extension_table->scheme_intern_exact_symbol)
 #define scheme_intern_exact_char_symbol (scheme_extension_table->scheme_intern_exact_char_symbol)

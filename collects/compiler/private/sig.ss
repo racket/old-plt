@@ -5,6 +5,9 @@
   (require "../sig.ss")
   (require (lib "zodiac-sig.ss" "syntax"))
 
+  (define for-syntax-in-env-stx #'for-syntax-in-env)
+  (provide for-syntax-in-env-stx)
+
   (provide compiler:library^)
   (define-signature compiler:library^
     (logical-inverse

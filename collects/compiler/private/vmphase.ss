@@ -55,7 +55,9 @@
 	    ref)))
 
       (define (check-primitive-as-macro prim argc prim-k normal-k)
-	(if (and prim (procedure-arity-includes? (dynamic-require 'mzscheme prim) argc))
+	(if (and prim 
+		 (or (eq? prim 'for-syntax-in-env)
+		     (procedure-arity-includes? (dynamic-require 'mzscheme prim) argc)))
 	    (let* ([argc=? (lambda (x) (= x argc))]
 		   [special-bool (case prim
 				   [(eq?) "MZC_EQP"]
@@ -111,6 +113,7 @@
 				   [(*) (and (argc=? 2) (compiler:option:fixnum-arithmetic) "MZC_TIMES2")]
 				   [(min) (and (argc=? 2) "MZC_MIN2")]
 				   [(max) (and (argc=? 2) "MZC_MAX2")]
+				   [(for-syntax-in-env) "MZC_FOR_SYNTAX_IN_ENV"]
 				   [else #f])])
 		    (if special
 			(prim-k special #f)
@@ -816,11 +819,15 @@
 				      [name (and (zodiac:varref? fun)
 						 (zodiac:varref-var fun))])
 				 (and (zodiac:top-level-varref? fun)
-				      (varref:has-attribute? fun varref:primitive)
-				      (let ([v (dynamic-require 'mzscheme name)])
-					(or (primitive? v) 
-					    (primitive-closure? v)))
-				      (zodiac:varref-var (zodiac:app-fun ast))))]
+				      (or (and (varref:has-attribute? fun varref:primitive)
+					       (let ([v (dynamic-require 'mzscheme name)])
+						 (or (primitive? v) 
+						     (primitive-closure? v)))
+					       (zodiac:varref-var fun))
+					  (and (identifier? (zodiac:zodiac-stx fun))
+					       (module-identifier=? (zodiac:zodiac-stx fun) 
+								    for-syntax-in-env-stx)
+					       'for-syntax-in-env))))]
 			 [simple-tail-prim? (and tail? (simple-tail-prim? prim))]
 			 [closure (convert (zodiac:app-fun ast) #f identity #f #f #t)]
 			 [args (zodiac:app-args ast)]

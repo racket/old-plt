@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.186 1999/06/04 14:09:22 mflatt Exp $
+; $Id: scm-main.ss,v 1.187 1999/06/13 21:41:25 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1953,7 +1953,7 @@
 	    (static-error expr "Malformed reference-file"))))))
 
   (add-primitivized-micro-form 'reference-file beginner-vocabulary reference-file-macro)
-  (add-on-demand-form 'macro 'reference-file common-vocabulary reference-file-macro)
+  (add-on-demand-form 'micro 'reference-file common-vocabulary reference-file-macro)
 
   (define require-library-micro
     (let* ((kwd '())

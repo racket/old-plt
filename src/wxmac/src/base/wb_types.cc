@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_types.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_types.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -55,8 +55,6 @@ void wxInitStandardTypes(void)
 
   wxAllTypes.AddType(wxTYPE_BUTTON,      wxTYPE_ITEM,                       "button");
   wxAllTypes.AddType(wxTYPE_MESSAGE,     wxTYPE_ITEM,                       "message");
-  wxAllTypes.AddType(wxTYPE_TEXT,        wxTYPE_ITEM,                       "text");
-  wxAllTypes.AddType(wxTYPE_MULTI_TEXT,  wxTYPE_TEXT,                       "multi text");
   wxAllTypes.AddType(wxTYPE_CHOICE,      wxTYPE_ITEM,                       "choice");
   wxAllTypes.AddType(wxTYPE_LIST_BOX,    wxTYPE_ITEM,                       "list box");
   wxAllTypes.AddType(wxTYPE_CHECK_BOX,   wxTYPE_ITEM,                       "check box");

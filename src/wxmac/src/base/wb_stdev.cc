@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_stdev.cc,v 1.2 1998/06/02 20:51:42 robby Exp $
+ * RCS_ID:      $Id: wb_stdev.cc,v 1.3 1998/08/14 13:56:03 robby Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -50,6 +50,7 @@ static wxEvent *wxCommandEventConstructor(WXTYPE eventClass, WXTYPE eventType)
 
 wxPopupEvent::wxPopupEvent(void) : wxCommandEvent(wxEVENT_TYPE_MENU_SELECT)
 {
+  __type = wxTYPE_POPUP_EVENT;
 }
 
 wxScrollEvent::wxScrollEvent(void)

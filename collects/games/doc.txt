@@ -21,17 +21,9 @@ or other games installed as sub-collections of the "games" collection
 
                                               - by Matthew
 
- * _Crazy 8s_ (against two computer players) - The card game where you
-   try to get rid of all you cards by matching the value or suit of
-   the top card in the discard pile. An 8 can be discarded at any
-   time, and in that case, the player who discarded the 8 gets to pick
-   any suit for it (hence the craziness of 8s). A player can choose to
-   draw a card insteda of discarding, as long as cards are left in the
-   draw pile, and a player's turn continues after drawing (so a player
-   can continue drawing to find something to discard). If no cards are
-   left in the deck, a player may pass instead of discarding. The
-   status line at the bottom of the window provides instructions as
-   you go. [The computer players are not smart.]
+ * Crazy 8s : The card game where you try to get rid of all you cards
+   by matching the top card in the discard pile. Choose "Help" for
+   details.
 
                                               - by Matthew
 

@@ -7,7 +7,7 @@
   (require-relative-library "setupsig.ss")
   (require-library "invoke.ss"))
 
-(define-values/invoke-unit/sig compiler:setup-option^
+(define-values/invoke-unit/sig setup-option^
   (parameterize ([use-compiled-file-kinds 'none])
     (require-relative-library "setup-optionr.ss")))
 
@@ -60,7 +60,7 @@
 (parameterize ([use-compiled-file-kinds (if (clean) 'none (use-compiled-file-kinds))])
   (invoke-unit/sig
    (compound-unit/sig
-    (import (SOPTION : compiler:setup-option^))
+    (import (SOPTION : setup-option^))
     (link [LAUNCHER : launcher-maker^ ((require-library "launcherr.ss" "launcher"))]
 	  [STRING : mzlib:string^ ((require-library "stringr.ss"))]
 	  [FILE : mzlib:file^ ((require-library "filer.ss") STRING FUNCTION)]
@@ -88,4 +88,4 @@
 		       OPTION
 		       LAUNCHER)])
     (export))
-   compiler:setup-option^))
+   setup-option^))

@@ -8,4 +8,4 @@ fi
 
 SYS=`${PLTHOME}/bin/archsys`
 
-exec ${PLTHOME}/.bin/${SYS}/mzscheme '-mqvL' 'setup.ss' 'compiler' '--'   ${1+"$@"}
+exec ${PLTHOME}/.bin/${SYS}/mzscheme '-mqvL' 'setup.ss' 'setup' '--'   ${1+"$@"}

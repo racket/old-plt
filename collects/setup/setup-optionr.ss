@@ -1,5 +1,5 @@
 
-(unit/sig compiler:setup-option^
+(unit/sig setup-option^
   (import)
 
   (define verbose (make-parameter #f))

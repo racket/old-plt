@@ -185,7 +185,7 @@ An unpackable is one of the following:
  Making .plt archives
  --------------------
 
-The compiler collection's pack.ss library provides functions to help
+The setup collection's pack.ss library provides functions to help
 make .plt archives, especially under Unix:
 
 > (pack dest name paths collections [filter encode? file-mode]) -
@@ -224,18 +224,18 @@ make .plt archives, especially under Unix:
  Setup PLT as a Unit
  -------------------
 
-The _setupr.ss_ library in the compiler collection contains a signed
+The _setupr.ss_ library in the setup collection contains a signed
 unit that imports
 
-  compiler:setup-option^ - described below
+  setup-option^ - described below
   mzlib:file^
-  compiler^ - from sig.ss, described above
-  compiler:option^  - from sig.ss, described above
+  compiler^ - from sig.ss in the compiler collection
+  compiler:option^  - from sig.ss in the compiler collection
   launcher-maker^ - from launchers.ss in the `launcher' collection
 
 Invoking this unit starts the setup process. The _setupsig.ss_ library
 defines the
->      compiler:setup-option^
+>      setup-option^
 signature, which is implemented by the unit in _setup-optionr.ss_. It
 defines the following parameters that control the setup process:
 
@@ -266,11 +266,11 @@ initialized between them, e.g.:
     (compound-unit/sig
       ...
       (link ...
-            [OPTIONS : compiler:setup-option^ 
-                       ((require-library "setup-optionr.ss" "compiler"))]
+            [OPTIONS : setup-option^ 
+                       ((require-library "setup-optionr.ss" "setup"))]
             [MY-CODE : ()
                        ((require-library "init-options.ss") OPTIONS)]
             [SETUP : ()
-                     ((require-library "setupr.ss" "compiler")
+                     ((require-library "setupr.ss" "setup")
                       OPTIONS ...)])
       ...)

@@ -3,7 +3,7 @@
 ; Calls `exit' when done.
 
 (unit/sig ()
-  (import compiler:setup-option^
+  (import setup-option^
 	  mzlib:file^
 	  compiler^
 	  (compiler:option : compiler:option^)

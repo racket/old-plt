@@ -6,7 +6,7 @@
  (require-library "files.ss")
  (require-library "sig.ss" "compiler"))
 
-(define-signature compiler:setup-option^
+(define-signature setup-option^
   (verbose
    make-verbose
    compiler-verbose

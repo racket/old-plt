@@ -15,6 +15,13 @@
 @MACRO rFALSE = return FALSE;
 @MACRO rZERO = return 0;
 
+@MACRO bAnythingFromVoid = ((Scheme_Object *){x})
+@MACRO ubAnythingToVoid = ((void *){x})
+@MACRO cAnything = 1
+
+extern Bool wxsCheckIsPopupMenu(void *m);
+@MACRO CHECKMENU[n.p] = if (!wxsCheckIsPopupMenu(p[<p>])) scheme_wrong_type(<n>, "popup-menu% object", <p>, n, p);
+
 @BEGINSYMBOLS style > > PRED BUNDLE
 @SYM "no-hscroll" : wxMCANVAS_NO_H_SCROLL
 @SYM "no-vscroll" : wxMCANVAS_NO_V_SCROLL
@@ -62,6 +69,8 @@ typedef void *(*CAPOFunc)(void*);
 
 @ "call-as-primary-owner" : void[]/CastToSO//spAnything CallAsPrimaryOwner(CAPOFunc//ubTestFunc///spCAPOProc/nopush, -void[]//ubData////push);
 
+@ v "popup-for-editor" : wxMenu^ PopupForMedia(wxMediaBuffer^,void[]/bAnythingFromVoid/ubAnythingToVoid/cAnything///push); : : : rNULL
+
 @SETMARK w = d
 @INCLUDE wxs_win.xci
 
@@ -108,6 +117,7 @@ typedef void *(*CAPOFunc)(void*);
 @ V "needs-update" : void NeedsUpdate(wxSnip!, float,float,nnfloat,nnfloat);
 @ V "release-snip" : bool ReleaseSnip(wxSnip!); : : : rFALSE
 @ V "update-cursor" : void UpdateCursor();
+@ V "popup-menu" : bool PopupMenu(void[]/bAnythingFromVoid/ubAnythingToVoid/cAnything///push,wxSnip!,float,float); : : CHECKMENU[METHODNAME("snip-admin%","popup-menu").0] : rFALSE
 
 @END
 
@@ -176,10 +186,6 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 
 @ "get-double-click-interval" : int GetDoubleClickInterval();
 @ "set-double-click-interval" : void SetDoubleClickInterval(rint[0|1000000]);
-
-@MACRO bAnythingFromVoid = ((Scheme_Object *){x})
-@MACRO ubAnythingToVoid = ((void *){x})
-@MACRO cAnything = 1
 
 @ v "handle-key-event" : bool HandleKeyEvent(UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything///push,wxKeyEvent!);
 @ v "handle-mouse-event" : bool HandleMouseEvent(UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything///push,wxMouseEvent!);

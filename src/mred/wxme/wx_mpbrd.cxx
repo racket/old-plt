@@ -1408,6 +1408,29 @@ wxSnip *wxMediaPasteboard::SnipSetAdmin(wxSnip *snip, wxSnipAdmin *a)
   return snip;
 }
 
+Bool wxMediaPasteboard::ReallyCanEdit(int op)
+{
+  if (op != wxEDIT_COPY) {
+    if (writeLocked)
+      return FALSE;
+  }
+
+  switch(op) {
+  case wxEDIT_CLEAR:
+  case wxEDIT_CUT:
+  case wxEDIT_COPY:
+  case wxEDIT_KILL:
+    if (!FindNextSelectedSnip(NULL))
+      return FALSE;
+    break;
+  case wxEDIT_SELECT_ALL:
+    if (!snips)
+      return FALSE;
+  }
+
+  return TRUE;
+}
+
 /***************************************************************************/
 
 Bool wxMediaPasteboard::FindDot(wxSnipLocation *loc, float x, float y,

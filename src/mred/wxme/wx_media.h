@@ -234,6 +234,8 @@ class wxMediaEdit : public wxMediaBuffer
 
   void SetStyleList(wxStyleList *styles);
 
+  Bool ReallyCanEdit(int op);
+
   /* Convert canvas co-ordinates to caret position */
   long FindPosition(float x, float y, Bool 
 		    *ateol = NULL, Bool *onit = NULL,

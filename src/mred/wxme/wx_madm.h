@@ -38,6 +38,8 @@ class wxMediaAdmin : public wxObject
   virtual void GetMaxView(float *x, float *y, float *w, float *h, 
 			  Bool full = FALSE);
   virtual Bool DelayRefresh();
+
+  virtual Bool PopupMenu(void *m, float x, float y) = 0;
 };
 
 inline wxMediaAdmin::wxMediaAdmin()
@@ -83,6 +85,8 @@ class wxCanvasMediaAdmin : public wxMediaAdmin
   void UpdateCursor();
   void GetMaxView(float *x, float *y, float *h, float *w, Bool full = FALSE);
 
+  Bool PopupMenu(void *m, float x, float y);
+
   inline wxMediaCanvas *GetCanvas() { return canvas; }
 };
 
@@ -125,6 +129,8 @@ class wxMediaSnipMediaAdmin : public wxMediaAdmin
   void UpdateCursor();
 
   virtual Bool DelayRefresh();
+
+  Bool PopupMenu(void *m, float x, float y);
 
   inline wxMediaSnip* GetSnip() { return snip; }
 };

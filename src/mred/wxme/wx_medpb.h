@@ -78,6 +78,8 @@ class wxMediaPasteboard : public wxMediaBuffer
   void ChangeStyle(wxStyle *style, wxSnip *snip = NULL);
   void ChangeStyle(wxStyleDelta *delta, wxSnip *snip);
 
+  Bool ReallyCanEdit(int op);
+
   Bool GetSnipLocation(wxSnip *thesnip, float *x = NULL, float *y = NULL, Bool bottomRight=FALSE);
 
   void SetFilename(char *, Bool temp = FALSE);

@@ -35,6 +35,9 @@ START_XFORM_SKIP;
 #include "wxs_obj.h"
 
 
+
+extern Bool wxsCheckIsPopupMenu(void *m);
+
 static Scheme_Object *style_wxMCANVAS_NO_H_SCROLL_sym = NULL;
 static Scheme_Object *style_wxMCANVAS_NO_V_SCROLL_sym = NULL;
 static Scheme_Object *style_wxMCANVAS_HIDE_H_SCROLL_sym = NULL;
@@ -180,6 +183,7 @@ typedef void *(*CAPOFunc)(void*);
 
 
 
+
 class os_wxMediaCanvas : public wxMediaCanvas {
  public:
 
@@ -194,6 +198,7 @@ class os_wxMediaCanvas : public wxMediaCanvas {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
+  class wxMenu* PopupForMedia(class wxMediaBuffer* x0, void* x1);
 #ifdef MZ_PRECISE_GC
   void gcMark();
   void gcFixup();
@@ -506,6 +511,41 @@ void os_wxMediaCanvas::OnKillFocus()
   }
 }
 
+class wxMenu* os_wxMediaCanvas::PopupForMedia(class wxMediaBuffer* x0, void* x1)
+{
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaCanvas *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(7);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaCanvas_class, "popup-for-editor", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    return NULL;
+  } else {
+  
+  p[0] = WITH_VAR_STACK(objscheme_bundle_wxMediaBuffer(x0));
+  p[1] = ((Scheme_Object *)x1);
+  
+
+  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
+  
+  
+  return WITH_VAR_STACK(objscheme_unbundle_wxMenu(v, "popup-for-editor in editor-canvas%"", extracting return value", 1));
+  }
+}
+
 static Scheme_Object *os_wxMediaCanvasOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -738,6 +778,36 @@ static Scheme_Object *os_wxMediaCanvasOnKillFocus(Scheme_Object *obj, int n,  Sc
   
   
   return scheme_void;
+}
+
+static Scheme_Object *os_wxMediaCanvasPopupForMedia(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxMenu* r;
+  objscheme_check_valid(obj);
+  class wxMediaBuffer* x0 INIT_NULLED_OUT;
+  void* x1 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(4);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(3, x1);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaBuffer(p[0], "popup-for-editor in editor-canvas%", 1));
+  x1 = ((void *)p[1]);
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = WITH_VAR_STACK(((os_wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxMediaCanvas::PopupForMedia(x0, x1));
+  else
+    r = WITH_VAR_STACK(((wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->PopupForMedia(x0, x1));
+
+  
+  
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxMenu(r));
 }
 
 static Scheme_Object *os_wxMediaCanvasCallAsPrimaryOwner(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -1028,7 +1098,7 @@ void objscheme_setup_wxMediaCanvas(void *env)
 
   wxREGGLOB(os_wxMediaCanvas_class);
 
-  os_wxMediaCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-canvas%", "canvas%", os_wxMediaCanvas_ConstructScheme, 18));
+  os_wxMediaCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-canvas%", "canvas%", os_wxMediaCanvas_ConstructScheme, 19));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-char", os_wxMediaCanvasOnChar, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-event", os_wxMediaCanvasOnEvent, 1, 1));
@@ -1039,6 +1109,7 @@ void objscheme_setup_wxMediaCanvas(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-size", os_wxMediaCanvasOnSize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-set-focus", os_wxMediaCanvasOnSetFocus, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-kill-focus", os_wxMediaCanvasOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "popup-for-editor", os_wxMediaCanvasPopupForMedia, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "call-as-primary-owner", os_wxMediaCanvasCallAsPrimaryOwner, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "set-lazy-refresh", os_wxMediaCanvasSetLazyRefresh, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "get-lazy-refresh", os_wxMediaCanvasGetLazyRefresh, 0, 0));
@@ -1125,6 +1196,7 @@ class os_wxMediaAdmin : public wxMediaAdmin {
   os_wxMediaAdmin CONSTRUCTOR_ARGS(());
   ~os_wxMediaAdmin();
   Bool DelayRefresh();
+  Bool PopupMenu(void* x0, float x1, float x2);
   void UpdateCursor();
   void NeedsUpdate(float x0, float x1, nnfloat x2, nnfloat x3);
   void Resized(Bool x0);
@@ -1187,6 +1259,41 @@ Bool os_wxMediaAdmin::DelayRefresh()
   
   
   return WITH_VAR_STACK(objscheme_unbundle_bool(v, "refresh-delayed? in editor-admin%"", extracting return value"));
+  }
+}
+
+Bool os_wxMediaAdmin::PopupMenu(void* x0, float x1, float x2)
+{
+  Scheme_Object *p[3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaAdmin *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(6);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 3);
+  VAR_STACK_PUSH(5, x0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaAdmin_class, "popup-menu", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    return FALSE;
+  } else {
+  
+  p[0] = ((Scheme_Object *)x0);
+  p[1] = WITH_VAR_STACK(scheme_make_double(x1));
+  p[2] = WITH_VAR_STACK(scheme_make_double(x2));
+  
+
+  v = WITH_VAR_STACK(scheme_apply(method, 3, p));
+  
+  
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "popup-menu in editor-admin%"", extracting return value"));
   }
 }
 
@@ -1497,6 +1604,37 @@ static Scheme_Object *os_wxMediaAdminDelayRefresh(Scheme_Object *obj, int n,  Sc
     r = WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)obj)->primdata)->DelayRefresh());
   else
     r = WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)obj)->primdata)->DelayRefresh());
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *os_wxMediaAdminPopupMenu(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(obj);
+  void* x0 INIT_NULLED_OUT;
+  float x1;
+  float x2;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, x0);
+
+  if (!wxsCheckIsPopupMenu(p[0])) scheme_wrong_type(METHODNAME("editor-admin%","popup-menu"), "popup-menu% object", 0, n, p);
+  x0 = ((void *)p[0]);
+  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[1], "popup-menu in editor-admin%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[2], "popup-menu in editor-admin%"));
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = WITH_VAR_STACK(((os_wxMediaAdmin *)((Scheme_Class_Object *)obj)->primdata)->PopupMenu(x0, x1, x2));
+  else
+    r = WITH_VAR_STACK(((wxMediaAdmin *)((Scheme_Class_Object *)obj)->primdata)->PopupMenu(x0, x1, x2));
 
   
   
@@ -1860,9 +1998,10 @@ void objscheme_setup_wxMediaAdmin(void *env)
 
   wxREGGLOB(os_wxMediaAdmin_class);
 
-  os_wxMediaAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-admin%", "object%", os_wxMediaAdmin_ConstructScheme, 9));
+  os_wxMediaAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-admin%", "object%", os_wxMediaAdmin_ConstructScheme, 10));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "refresh-delayed?", os_wxMediaAdminDelayRefresh, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "popup-menu", os_wxMediaAdminPopupMenu, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "update-cursor", os_wxMediaAdminUpdateCursor, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "needs-update", os_wxMediaAdminNeedsUpdate, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "resized", os_wxMediaAdminResized, 1, 1));
@@ -2075,6 +2214,7 @@ class os_wxSnipAdmin : public wxSnipAdmin {
 
   os_wxSnipAdmin CONSTRUCTOR_ARGS(());
   ~os_wxSnipAdmin();
+  Bool PopupMenu(void* x0, class wxSnip* x1, float x2, float x3);
   void UpdateCursor();
   Bool ReleaseSnip(class wxSnip* x0);
   void NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4);
@@ -2111,6 +2251,43 @@ CONSTRUCTOR_INIT(: wxSnipAdmin())
 os_wxSnipAdmin::~os_wxSnipAdmin()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+Bool os_wxSnipAdmin::PopupMenu(void* x0, class wxSnip* x1, float x2, float x3)
+{
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxSnipAdmin *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(7);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 4);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSnipAdmin_class, "popup-menu", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    return FALSE;
+  } else {
+  
+  p[0] = ((Scheme_Object *)x0);
+  p[1] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x1));
+  p[2] = WITH_VAR_STACK(scheme_make_double(x2));
+  p[3] = WITH_VAR_STACK(scheme_make_double(x3));
+  
+
+  v = WITH_VAR_STACK(scheme_apply(method, 4, p));
+  
+  
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "popup-menu in snip-admin%"", extracting return value"));
+  }
 }
 
 void os_wxSnipAdmin::UpdateCursor()
@@ -2490,6 +2667,40 @@ class wxMediaBuffer* os_wxSnipAdmin::GetMedia()
   
   return WITH_VAR_STACK(objscheme_unbundle_wxMediaBuffer(v, "get-editor in snip-admin%"", extracting return value", 1));
   }
+}
+
+static Scheme_Object *os_wxSnipAdminPopupMenu(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(obj);
+  void* x0 INIT_NULLED_OUT;
+  class wxSnip* x1 INIT_NULLED_OUT;
+  float x2;
+  float x3;
+
+  SETUP_VAR_STACK_REMEMBERED(4);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(3, x1);
+
+  if (!wxsCheckIsPopupMenu(p[0])) scheme_wrong_type(METHODNAME("snip-admin%","popup-menu"), "popup-menu% object", 0, n, p);
+  x0 = ((void *)p[0]);
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[1], "popup-menu in snip-admin%", 0));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[2], "popup-menu in snip-admin%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_float(p[3], "popup-menu in snip-admin%"));
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = WITH_VAR_STACK(((os_wxSnipAdmin *)((Scheme_Class_Object *)obj)->primdata)->PopupMenu(x0, x1, x2, x3));
+  else
+    r = WITH_VAR_STACK(((wxSnipAdmin *)((Scheme_Class_Object *)obj)->primdata)->PopupMenu(x0, x1, x2, x3));
+
+  
+  
+  return (r ? scheme_true : scheme_false);
 }
 
 static Scheme_Object *os_wxSnipAdminUpdateCursor(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -2891,8 +3102,9 @@ void objscheme_setup_wxSnipAdmin(void *env)
 
   wxREGGLOB(os_wxSnipAdmin_class);
 
-  os_wxSnipAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-admin%", "object%", os_wxSnipAdmin_ConstructScheme, 11));
+  os_wxSnipAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-admin%", "object%", os_wxSnipAdmin_ConstructScheme, 12));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "popup-menu", os_wxSnipAdminPopupMenu, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "update-cursor", os_wxSnipAdminUpdateCursor, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "release-snip", os_wxSnipAdminReleaseSnip, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "needs-update", os_wxSnipAdminNeedsUpdate, 5, 5));
@@ -3631,7 +3843,6 @@ static Bool KMCallbackToScheme(UNKNOWN_OBJ, wxEvent *, KeymapCallbackToSchemeRec
 static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxKeyEvent *, KeymapCallbackToSchemeRec *data);
 static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxMouseEvent *, KeymapCallbackToSchemeRec *data);
 static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
-
 
 
 

@@ -1070,6 +1070,24 @@ static Scheme_Object *SetMediaPasteboardMaker(int, Scheme_Object *a[])
   return scheme_void;
 }
 
+static Scheme_Object *is_menu;
+
+Bool wxsCheckIsPopupMenu(void *m)
+{
+  Scheme_Object *v, *a[1];
+
+  a[0] = (Scheme_Object *)m;
+  v = _scheme_apply(is_menu, 1, a);
+  return SCHEME_TRUEP(v);
+}
+
+static Scheme_Object *SetIsMenu(int, Scheme_Object *a[])
+{
+  wxREGGLOB(is_menu);
+  is_menu = a[0];
+  return scheme_void;
+}
+
 #ifdef wx_mac
 extern short wxMacDisableMods;
 #define SCK_ARG p
@@ -1741,6 +1759,11 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
   scheme_install_xc_global("set-pasteboard-editor-maker",
 			   scheme_make_prim_w_arity(SetMediaPasteboardMaker,
 						    "set-pasteboard-editor-maker",
+						    1, 1),
+			   global_env);
+  scheme_install_xc_global("set-menu-tester",
+			   scheme_make_prim_w_arity(SetIsMenu,
+						    "set-menu-tester",
 						    1, 1),
 			   global_env);
   

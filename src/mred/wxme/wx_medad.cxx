@@ -547,6 +547,11 @@ void wxMediaCanvas::UpdateCursorNow(void)
     media->SetAdmin(oldadmin);
 }
 
+wxMenu *wxMediaCanvas::PopupForMedia(wxMediaBuffer *b, void *m)
+{
+  return NULL;
+}
+
 void wxMediaCanvas::OnChar(wxKeyEvent *event)
 {
   if (media && !media->printing) {
@@ -1394,6 +1399,22 @@ void wxCanvasMediaAdmin::UpdateCursor()
     if (prevadmin)
       prevadmin->UpdateCursor();
   }
+}
+
+Bool wxCanvasMediaAdmin::PopupMenu(void *m, float x, float y)
+{
+  float dx, dy;
+  wxMenu *menu;
+
+  if (canvas->media) {
+    menu = canvas->PopupForMedia(canvas->media, m);
+    if (menu) {
+      (void)canvas->GetDCAndOffset(&dx, &dy);
+      return canvas->PopupMenu(menu, x - dx, y - dy);
+    }
+  }
+
+  return FALSE;
 }
 
 void wxCanvasMediaAdmin::AdjustStdFlag(void)

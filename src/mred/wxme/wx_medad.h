@@ -184,8 +184,11 @@ class wxMediaBuffer : public wxObject
 
   /* Edit & Font menus: */
   void DoEdit(int op, Bool recursive = TRUE, long time = 0);
+  Bool CanEdit(int op, Bool recursive = TRUE);
   void DoFont(int op, Bool recursive = TRUE);
   virtual void ChangeStyle(wxStyleDelta *) = 0;
+
+  virtual Bool ReallyCanEdit(int op) = 0;
 
   virtual void Clear() = 0;
   virtual void Cut(Bool extend, long time) = 0;
@@ -299,6 +302,8 @@ class wxMediaBuffer : public wxObject
 
   virtual char *GetFile(char *path);
   virtual char *PutFile(char *path, char *suggested_name);
+
+  wxWindow *ExtractParent(void);
 
   int GetInactiveCaretThreshold(void);
   void SetInactiveCaretThreshold(int);
@@ -431,6 +436,8 @@ class wxMediaCanvas : public wxCanvas
   void ScrollWithBottomBase(Bool bottom);
 
   void *CallAsPrimaryOwner(void *(*f)(void *), void *);
+
+  virtual wxMenu *PopupForMedia(wxMediaBuffer *b, void *m);
 };
 
 class wxCursor;
@@ -458,6 +465,7 @@ class wxStandardSnipAdmin : public wxSnipAdmin
   Bool ReleaseSnip(wxSnip *);
 
   void UpdateCursor();
+  Bool PopupMenu(void *m, wxSnip *s, float x, float y);
 };
 
 class wxBufferData;

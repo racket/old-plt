@@ -245,6 +245,11 @@ void wxSnip::DoEdit(int, Bool, long)
 {
 }
 
+Bool wxSnip::CanEdit(int, Bool)
+{
+  return FALSE;
+}
+
 void wxSnip::DoFont(int, Bool)
 {
 }

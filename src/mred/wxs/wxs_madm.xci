@@ -7,4 +7,5 @@
 @ A "resized" : void Resized(bool);
 @ A "needs-update" : void NeedsUpdate(float,float,nnfloat,nnfloat);
 @ A "update-cursor" : void UpdateCursor();
+@ A "popup-menu" : bool PopupMenu(void[]/bAnythingFromVoid/ubAnythingToVoid/cAnything///push,float,float); : : CHECKMENU[METHODNAME("editor-admin%","popup-menu").0] : rFALSE
 @ A "refresh-delayed?" : bool DelayRefresh(); : : : rFALSE

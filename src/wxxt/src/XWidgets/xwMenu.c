@@ -1249,7 +1249,8 @@ static void MoveSelection(MenuWidget mw, int direction)
 	item = item->next;
       else
 	item = item->prev;
-    } while (item && (item->type == MENU_SEPARATOR));
+    } while (item && ((item->type == MENU_SEPARATOR)
+		      || !item->enabled));
 
     if (!item) {
       /* Wraparound: highlight first/last: */
@@ -1261,7 +1262,8 @@ static void MoveSelection(MenuWidget mw, int direction)
 	  item = item->next;
       }
 
-      while (item && (item->type == MENU_SEPARATOR)) {
+      while (item && ((item->type == MENU_SEPARATOR)
+		      || !item->enabled)) {
 	if (direction > 0)
 	  item = item->next;
 	else
@@ -1276,17 +1278,19 @@ static void MoveSelection(MenuWidget mw, int direction)
   } else if (direction > 0) {
     menu_item  *item = ms->menu;
 
-    while (item && (item->type == MENU_SEPARATOR))
+    while (item && ((item->type == MENU_SEPARATOR)
+		    || !item->enabled))
       item = item->next;
 
-    if (ms->menu)
-      HighlightItem(mw, ms, ms->menu);
+    if (item)
+      HighlightItem(mw, ms, item);
   } else {
     menu_item  *item = ms->menu;
     if (item) {
       while (item->next)
 	item = item->next;
-      while (item && (item->type == MENU_SEPARATOR))
+      while (item && ((item->type == MENU_SEPARATOR)
+		      || !item->enabled))
 	item = item->prev;
       
       if (item)

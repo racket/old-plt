@@ -152,6 +152,7 @@ class wxSnip : public wxObject
   virtual void BlinkCaret(wxDC *dc, float x, float y);  
   
   virtual void DoEdit(int op, Bool recursive = TRUE, long time = 0);
+  virtual Bool CanEdit(int op, Bool recursive = TRUE);
   virtual void DoFont(int op, Bool recursive = TRUE);
 
   virtual int Match(wxSnip *other); 
@@ -336,6 +337,7 @@ class wxSnipAdmin : public wxObject
   virtual Bool ReleaseSnip(wxSnip *) = 0;
 
   virtual void UpdateCursor() = 0;
+  virtual Bool PopupMenu(void *m, wxSnip *s, float x, float y) = 0;
 };
 
 inline wxSnipAdmin::wxSnipAdmin()
@@ -392,6 +394,7 @@ class wxMediaSnip : public wxInternalSnip
   virtual void BlinkCaret(wxDC *dc, float x, float y);
 
   virtual void DoEdit(int op, Bool recursive = TRUE, long time = 0);
+  virtual Bool CanEdit(int op, Bool recursive = TRUE);
   virtual void DoFont(int op, Bool recursive = TRUE);
 
   virtual Bool Match(wxSnip *other); 

@@ -489,6 +489,7 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 
 
 
+/* : : /DLGORFRAME[3.METHODNAME("editor<%>","print")] */
 
 
 
@@ -2551,6 +2552,34 @@ static Scheme_Object *os_wxMediaBufferSetKeymap(Scheme_Object *obj, int n,  Sche
   
   
   return scheme_void;
+}
+
+static Scheme_Object *os_wxMediaBufferCanEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(obj);
+  int x0;
+  Bool x1;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+  x0 = WITH_VAR_STACK(unbundle_symset_editOp(p[0], "can-do-edit-operation? in editor<%>"));
+  if (n > 1) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[1], "can-do-edit-operation? in editor<%>"));
+  } else
+    x1 = TRUE;
+
+  
+  r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->CanEdit(x0, x1));
+
+  
+  
+  return (r ? scheme_true : scheme_false);
 }
 
 static Scheme_Object *os_wxMediaBufferDoEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -4985,7 +5014,7 @@ void objscheme_setup_wxMediaBuffer(void *env)
   wxREGGLOB(os_wxMediaBuffer_class);
   wxREGGLOB(os_wxMediaBuffer_interface);
 
-  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 114));
+  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 115));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location", os_wxMediaBufferwxbDCToBuffer, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location", os_wxMediaBufferwxbBufferToDC, 2, 2));
@@ -5010,6 +5039,7 @@ void objscheme_setup_wxMediaBuffer(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-style-list", os_wxMediaBufferGetStyleList, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-keymap", os_wxMediaBufferGetKeymap, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-keymap", os_wxMediaBufferSetKeymap, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "can-do-edit-operation?", os_wxMediaBufferCanEdit, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "do-edit-operation", os_wxMediaBufferDoEdit, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-max-undo-history", os_wxMediaBufferGetMaxUndoHistory, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-max-undo-history", os_wxMediaBufferSetMaxUndoHistory, 1, 1));

@@ -42,5 +42,6 @@
  set-editor-snip-maker
  set-text-editor-maker
  set-pasteboard-editor-maker
+ set-menu-tester
  fill-private-color
  location->window)

@@ -2235,6 +2235,37 @@ void wxMediaEdit::SplitSnip(long pos)
   flowLocked = FALSE;
 }
 
+Bool wxMediaEdit::ReallyCanEdit(int op)
+{
+  if (readLocked)
+    return FALSE;
+
+  if (op != wxEDIT_COPY) {
+    if (flowLocked || writeLocked)
+      return FALSE;
+  }
+
+  switch(op) {
+  case wxEDIT_CLEAR:
+  case wxEDIT_CUT:
+  case wxEDIT_COPY:
+    if (startpos == endpos)
+      return FALSE;
+    break;
+  case wxEDIT_PASTE:
+    break;
+  case wxEDIT_KILL:
+    if (endpos == len)
+      return FALSE;
+    break;
+  case wxEDIT_SELECT_ALL:
+    if (!len)
+      return 0;
+  }
+
+  return TRUE;
+}
+
 /****************************************************************/
 
 char *wxMediaEdit::GetFlattenedText(long *got)

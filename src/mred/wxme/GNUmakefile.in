@@ -43,7 +43,7 @@ wx_mpbrd.o : $(srcdir)/wx_mpbrd.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_
                         $(srcdir)/../../wxxt/src/GDI-Classes/Pen+Brush.h
 	$(MCC) $(srcdir)/wx_mpbrd.cxx -o wx_mpbrd.o
 
-wx_medad.o : $(srcdir)/wx_medad.cxx $(HEADERS) $(srcdir)/wx_snip.h
+wx_medad.o : $(srcdir)/wx_medad.cxx $(HEADERS) $(srcdir)/wx_snip.h $(srcdir)/wx_madm.h
 	$(MCC) $(srcdir)/wx_medad.cxx -o wx_medad.o
 
 wx_mbuf.o : $(srcdir)/wx_mbuf.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h

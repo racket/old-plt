@@ -562,6 +562,32 @@ void wxMediaBuffer::DoEdit(int op, Bool recursive, long time)
   }
 }
 
+
+Bool wxMediaBuffer::CanEdit(int op, Bool recursive)
+{ 
+  if (recursive && caretSnip) {
+    return caretSnip->CanEdit(op, TRUE);
+  }
+
+  if (IsLocked()) {
+    if (op != wxEDIT_COPY)
+      return FALSE;
+  }
+
+  switch(op) {
+  case wxEDIT_UNDO:
+    if (changes_start == changes_end)
+      return FALSE;
+    break;
+  case wxEDIT_REDO:
+    if (redochanges_start == redochanges_end)
+      return FALSE;
+    break;
+  }
+
+  return ReallyCanEdit(op);
+}
+
 int wxMediaBuffer::AppendFontItems(wxMenu *, int)
 {
   return 0;
@@ -1198,6 +1224,23 @@ char *wxMediaBuffer::GetFilename(Bool *temp)
   return filename;
 }
 
+wxWindow *wxMediaBuffer::ExtractParent(void)
+{
+  if (admin && (admin->standard > 0)) {
+    wxWindow *w;
+    
+    w = ((wxCanvasMediaAdmin *)admin)->GetCanvas();
+    
+    while (w && !wxSubType(w->__type, wxTYPE_FRAME)
+	   && !wxSubType(w->__type, wxTYPE_DIALOG_BOX)) {
+      w = w->GetParent();
+    }
+    
+    return w;
+  } else
+    return NULL;
+}
+
 #ifndef wx_xt
 class wxMediaPrintout : public wxPrintout
 {
@@ -1272,19 +1315,7 @@ void wxMediaBuffer::Print(Bool interactive, Bool fitToPage, int WXUNUSED_X(outpu
 #endif
 
   if (!parent) {
-    if (admin && (admin->standard > 0)) {
-      wxWindow *w;
-
-      w = ((wxCanvasMediaAdmin *)admin)->GetCanvas();
-
-      while (w && !wxSubType(w->__type, wxTYPE_FRAME)
-	     && !wxSubType(w->__type, wxTYPE_DIALOG_BOX)) {
-	w = w->GetParent();
-      }
-
-      if (w)
-	parent = w;
-    }
+    parent = ExtractParent();
   }
 
   if (ps) {
@@ -2143,14 +2174,14 @@ char *wxMediaBuffer::GetFile(char *path)
 {
   return wxFileSelector("Choose a file", path, NULL,
 			NULL, WILDCARD, wxOPEN, 
-			NULL, 0, 0);
+			ExtractParent(), 0, 0);
 }
  
 char *wxMediaBuffer::PutFile(char *path, char *suggested_name)
 {
   return wxFileSelector("Save file as", path,
 			suggested_name, NULL, WILDCARD, wxSAVE, 
-			NULL, 0, 0);
+			ExtractParent(), 0, 0);
 }
 
 void wxMediaBuffer::SetLoadOverwritesStyles(Bool b)
@@ -2344,6 +2375,18 @@ void wxStandardSnipAdmin::UpdateCursor()
 {
   if (media->admin)
     media->admin->UpdateCursor();
+}
+
+Bool wxStandardSnipAdmin::PopupMenu(void *m, wxSnip *snip, float x, float y)
+{
+  if (media->admin) {
+    float sl, st;
+    if (media->GetSnipLocation(snip, &sl, &st, FALSE)) {
+      media->admin->PopupMenu(m, x + sl, y + st);
+    }
+  }
+   
+  return FALSE;
 }
 
 #ifdef wx_mac

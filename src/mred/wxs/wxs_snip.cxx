@@ -267,6 +267,7 @@ class os_wxSnip : public wxSnip {
   Bool Resize(nnfloat x0, nnfloat x1);
   void Write(class wxMediaStreamOut* x0);
   Bool Match(class wxSnip* x0);
+  Bool CanEdit(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
@@ -529,6 +530,39 @@ Bool os_wxSnip::Match(class wxSnip* x0)
   
   
   return WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in snip%"", extracting return value"));
+  }
+}
+
+Bool os_wxSnip::CanEdit(int x0, Bool x1)
+{
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSnip_class, "can-do-edit-operation?", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    return ASSELF wxSnip::CanEdit(x0, x1);
+  } else {
+  
+  p[0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
+  p[1] = (x1 ? scheme_true : scheme_false);
+  
+
+  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
+  
+  
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in snip%"", extracting return value"));
   }
 }
 
@@ -1258,6 +1292,37 @@ static Scheme_Object *os_wxSnipMatch(Scheme_Object *obj, int n,  Scheme_Object *
     r = WITH_VAR_STACK(((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::Match(x0));
   else
     r = WITH_VAR_STACK(((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->Match(x0));
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *os_wxSnipCanEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(obj);
+  int x0;
+  Bool x1;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+  x0 = WITH_VAR_STACK(unbundle_symset_editOp(p[0], "can-do-edit-operation? in snip%"));
+  if (n > 1) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[1], "can-do-edit-operation? in snip%"));
+  } else
+    x1 = TRUE;
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = WITH_VAR_STACK(((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::CanEdit(x0, x1));
+  else
+    r = WITH_VAR_STACK(((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->CanEdit(x0, x1));
 
   
   
@@ -2037,7 +2102,7 @@ void objscheme_setup_wxSnip(void *env)
 
   wxREGGLOB(os_wxSnip_class);
 
-  os_wxSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip%", "object%", os_wxSnip_ConstructScheme, 34));
+  os_wxSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip%", "object%", os_wxSnip_ConstructScheme, 35));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "previous", os_wxSnipPrevious, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "next", os_wxSnipNext, 0, 0));
@@ -2048,6 +2113,7 @@ void objscheme_setup_wxSnip(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "resize", os_wxSnipResize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "write", os_wxSnipWrite, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "match?", os_wxSnipMatch, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "can-do-edit-operation?", os_wxSnipCanEdit, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "do-edit-operation", os_wxSnipDoEdit, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "blink-caret", os_wxSnipBlinkCaret, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "own-caret", os_wxSnipOwnCaret, 1, 1));
@@ -2167,6 +2233,7 @@ class os_wxTextSnip : public wxTextSnip {
   Bool Resize(nnfloat x0, nnfloat x1);
   void Write(class wxMediaStreamOut* x0);
   Bool Match(class wxSnip* x0);
+  Bool CanEdit(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
@@ -2436,6 +2503,39 @@ Bool os_wxTextSnip::Match(class wxSnip* x0)
   
   
   return WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in string-snip%"", extracting return value"));
+  }
+}
+
+Bool os_wxTextSnip::CanEdit(int x0, Bool x1)
+{
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxTextSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTextSnip_class, "can-do-edit-operation?", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    return ASSELF wxTextSnip::CanEdit(x0, x1);
+  } else {
+  
+  p[0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
+  p[1] = (x1 ? scheme_true : scheme_false);
+  
+
+  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
+  
+  
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in string-snip%"", extracting return value"));
   }
 }
 
@@ -3184,6 +3284,37 @@ static Scheme_Object *os_wxTextSnipMatch(Scheme_Object *obj, int n,  Scheme_Obje
   return (r ? scheme_true : scheme_false);
 }
 
+static Scheme_Object *os_wxTextSnipCanEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(obj);
+  int x0;
+  Bool x1;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+  x0 = WITH_VAR_STACK(unbundle_symset_editOp(p[0], "can-do-edit-operation? in string-snip%"));
+  if (n > 1) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[1], "can-do-edit-operation? in string-snip%"));
+  } else
+    x1 = TRUE;
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = WITH_VAR_STACK(((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::CanEdit(x0, x1));
+  else
+    r = WITH_VAR_STACK(((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->CanEdit(x0, x1));
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
 static Scheme_Object *os_wxTextSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3776,7 +3907,7 @@ void objscheme_setup_wxTextSnip(void *env)
 
   wxREGGLOB(os_wxTextSnip_class);
 
-  os_wxTextSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "string-snip%", "snip%", os_wxTextSnip_ConstructScheme, 23));
+  os_wxTextSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "string-snip%", "snip%", os_wxTextSnip_ConstructScheme, 24));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "read", os_wxTextSnipRead, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "insert", os_wxTextSnipInsert, 2, 3));
@@ -3787,6 +3918,7 @@ void objscheme_setup_wxTextSnip(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "resize", os_wxTextSnipResize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "write", os_wxTextSnipWrite, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "match?", os_wxTextSnipMatch, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "can-do-edit-operation?", os_wxTextSnipCanEdit, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "do-edit-operation", os_wxTextSnipDoEdit, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "blink-caret", os_wxTextSnipBlinkCaret, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "own-caret", os_wxTextSnipOwnCaret, 1, 1));
@@ -3891,6 +4023,7 @@ class os_wxTabSnip : public wxTabSnip {
   Bool Resize(nnfloat x0, nnfloat x1);
   void Write(class wxMediaStreamOut* x0);
   Bool Match(class wxSnip* x0);
+  Bool CanEdit(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
@@ -4153,6 +4286,39 @@ Bool os_wxTabSnip::Match(class wxSnip* x0)
   
   
   return WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in tab-snip%"", extracting return value"));
+  }
+}
+
+Bool os_wxTabSnip::CanEdit(int x0, Bool x1)
+{
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxTabSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTabSnip_class, "can-do-edit-operation?", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    return ASSELF wxTabSnip::CanEdit(x0, x1);
+  } else {
+  
+  p[0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
+  p[1] = (x1 ? scheme_true : scheme_false);
+  
+
+  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
+  
+  
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in tab-snip%"", extracting return value"));
   }
 }
 
@@ -4846,6 +5012,37 @@ static Scheme_Object *os_wxTabSnipMatch(Scheme_Object *obj, int n,  Scheme_Objec
   return (r ? scheme_true : scheme_false);
 }
 
+static Scheme_Object *os_wxTabSnipCanEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(obj);
+  int x0;
+  Bool x1;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+  x0 = WITH_VAR_STACK(unbundle_symset_editOp(p[0], "can-do-edit-operation? in tab-snip%"));
+  if (n > 1) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[1], "can-do-edit-operation? in tab-snip%"));
+  } else
+    x1 = TRUE;
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = WITH_VAR_STACK(((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::CanEdit(x0, x1));
+  else
+    r = WITH_VAR_STACK(((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->CanEdit(x0, x1));
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
 static Scheme_Object *os_wxTabSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5405,7 +5602,7 @@ void objscheme_setup_wxTabSnip(void *env)
 
   wxREGGLOB(os_wxTabSnip_class);
 
-  os_wxTabSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-snip%", "string-snip%", os_wxTabSnip_ConstructScheme, 21));
+  os_wxTabSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-snip%", "string-snip%", os_wxTabSnip_ConstructScheme, 22));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-scroll-step-offset", os_wxTabSnipGetScrollStepOffset, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "find-scroll-step", os_wxTabSnipFindScrollStep, 1, 1));
@@ -5414,6 +5611,7 @@ void objscheme_setup_wxTabSnip(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "resize", os_wxTabSnipResize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "write", os_wxTabSnipWrite, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "match?", os_wxTabSnipMatch, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "can-do-edit-operation?", os_wxTabSnipCanEdit, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "do-edit-operation", os_wxTabSnipDoEdit, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "blink-caret", os_wxTabSnipBlinkCaret, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "own-caret", os_wxTabSnipOwnCaret, 1, 1));
@@ -5587,6 +5785,7 @@ class os_wxImageSnip : public wxImageSnip {
   Bool Resize(nnfloat x0, nnfloat x1);
   void Write(class wxMediaStreamOut* x0);
   Bool Match(class wxSnip* x0);
+  Bool CanEdit(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
@@ -5856,6 +6055,39 @@ Bool os_wxImageSnip::Match(class wxSnip* x0)
   
   
   return WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in image-snip%"", extracting return value"));
+  }
+}
+
+Bool os_wxImageSnip::CanEdit(int x0, Bool x1)
+{
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxImageSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxImageSnip_class, "can-do-edit-operation?", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    return ASSELF wxImageSnip::CanEdit(x0, x1);
+  } else {
+  
+  p[0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
+  p[1] = (x1 ? scheme_true : scheme_false);
+  
+
+  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
+  
+  
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in image-snip%"", extracting return value"));
   }
 }
 
@@ -6689,6 +6921,37 @@ static Scheme_Object *os_wxImageSnipMatch(Scheme_Object *obj, int n,  Scheme_Obj
   return (r ? scheme_true : scheme_false);
 }
 
+static Scheme_Object *os_wxImageSnipCanEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(obj);
+  int x0;
+  Bool x1;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+  x0 = WITH_VAR_STACK(unbundle_symset_editOp(p[0], "can-do-edit-operation? in image-snip%"));
+  if (n > 1) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[1], "can-do-edit-operation? in image-snip%"));
+  } else
+    x1 = TRUE;
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = WITH_VAR_STACK(((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::CanEdit(x0, x1));
+  else
+    r = WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->CanEdit(x0, x1));
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
 static Scheme_Object *os_wxImageSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -7296,7 +7559,7 @@ void objscheme_setup_wxImageSnip(void *env)
 
   wxREGGLOB(os_wxImageSnip_class);
 
-  os_wxImageSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 26));
+  os_wxImageSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 27));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset", os_wxImageSnipSetOffset, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap", os_wxImageSnipSetBitmap, 1, 1));
@@ -7310,6 +7573,7 @@ void objscheme_setup_wxImageSnip(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "resize", os_wxImageSnipResize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "write", os_wxImageSnipWrite, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "match?", os_wxImageSnipMatch, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "can-do-edit-operation?", os_wxImageSnipCanEdit, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "do-edit-operation", os_wxImageSnipDoEdit, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "blink-caret", os_wxImageSnipBlinkCaret, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "own-caret", os_wxImageSnipOwnCaret, 1, 1));
@@ -7418,6 +7682,7 @@ class os_wxMediaSnip : public wxMediaSnip {
   Bool Resize(nnfloat x0, nnfloat x1);
   void Write(class wxMediaStreamOut* x0);
   Bool Match(class wxSnip* x0);
+  Bool CanEdit(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
@@ -7680,6 +7945,39 @@ Bool os_wxMediaSnip::Match(class wxSnip* x0)
   
   
   return WITH_VAR_STACK(objscheme_unbundle_bool(v, "match? in editor-snip%"", extracting return value"));
+  }
+}
+
+Bool os_wxMediaSnip::CanEdit(int x0, Bool x1)
+{
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaSnip_class, "can-do-edit-operation?", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    return ASSELF wxMediaSnip::CanEdit(x0, x1);
+  } else {
+  
+  p[0] = WITH_VAR_STACK(bundle_symset_editOp(x0));
+  p[1] = (x1 ? scheme_true : scheme_false);
+  
+
+  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
+  
+  
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-do-edit-operation? in editor-snip%"", extracting return value"));
   }
 }
 
@@ -8812,6 +9110,37 @@ static Scheme_Object *os_wxMediaSnipMatch(Scheme_Object *obj, int n,  Scheme_Obj
   return (r ? scheme_true : scheme_false);
 }
 
+static Scheme_Object *os_wxMediaSnipCanEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(obj);
+  int x0;
+  Bool x1;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+  x0 = WITH_VAR_STACK(unbundle_symset_editOp(p[0], "can-do-edit-operation? in editor-snip%"));
+  if (n > 1) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[1], "can-do-edit-operation? in editor-snip%"));
+  } else
+    x1 = TRUE;
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = WITH_VAR_STACK(((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::CanEdit(x0, x1));
+  else
+    r = WITH_VAR_STACK(((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->CanEdit(x0, x1));
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
 static Scheme_Object *os_wxMediaSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -9486,7 +9815,7 @@ void objscheme_setup_wxMediaSnip(void *env)
 
   wxREGGLOB(os_wxMediaSnip_class);
 
-  os_wxMediaSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 41));
+  os_wxMediaSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 42));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-inset", os_wxMediaSnipGetInset, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-inset", os_wxMediaSnipSetInset, 4, 4));
@@ -9513,6 +9842,7 @@ void objscheme_setup_wxMediaSnip(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "resize", os_wxMediaSnipResize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "write", os_wxMediaSnipWrite, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "match?", os_wxMediaSnipMatch, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "can-do-edit-operation?", os_wxMediaSnipCanEdit, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "do-edit-operation", os_wxMediaSnipDoEdit, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "blink-caret", os_wxMediaSnipBlinkCaret, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "own-caret", os_wxMediaSnipOwnCaret, 1, 1));

@@ -215,6 +215,14 @@ void wxMediaSnip::DoEdit(int op, Bool recursive, long time)
     me->DoEdit(op, recursive, time);
 }
 
+Bool wxMediaSnip::CanEdit(int op, Bool recursive)
+{
+  if (me)
+    return me->CanEdit(op, recursive);
+  else
+    return FALSE;
+}
+
 void wxMediaSnip::DoFont(int op, Bool recursive)
 {
   if (me)
@@ -845,6 +853,18 @@ void wxMediaSnipMediaAdmin::UpdateCursor()
   sadmin = snip->GetAdmin();
   if (sadmin)
     sadmin->UpdateCursor();
+}
+
+Bool wxMediaSnipMediaAdmin::PopupMenu(void *m, float x, float y)
+{
+  wxSnipAdmin *sadmin;
+  sadmin = snip->GetAdmin();
+  if (sadmin)
+    return sadmin->PopupMenu(m, snip, 
+			     x + snip->leftMargin, 
+			     y + snip->topMargin);  
+  else
+    return FALSE;
 }
 
 Bool wxMediaSnipMediaAdmin::DelayRefresh()

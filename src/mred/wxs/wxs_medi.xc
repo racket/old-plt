@@ -124,6 +124,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 @ "get-max-undo-history" : int GetMaxUndoHistory();
 
 @ "do-edit-operation" : void DoEdit(SYM[editOp],bool=TRUE,ExactLong=0);
+@ "can-do-edit-operation?" : bool CanEdit(SYM[editOp],bool=TRUE);
 
 @ "set-keymap" : void SetKeymap(wxKeymap^=NULL);
 @ "get-keymap" : wxKeymap^ GetKeymap();
@@ -148,7 +149,8 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 @ "insert-box" : void InsertBox(SYM[bufferType]=wxEDIT_BUFFER);
 @ "insert-image" : void InsertImage(nstring=NULL,SYM[bitmapType]=0,bool=FALSE,bool=TRUE);
 
-@ "print" : void Print(bool=TRUE,bool=TRUE,SYM[printMethod]=0,wxWindow^=NULL); : : /DLGORFRAME[3.METHODNAME("editor<%>","print")]
+@ "print" : void Print(bool=TRUE,bool=TRUE,SYM[printMethod]=0,wxWindow^=NULL);
+/* : : /DLGORFRAME[3.METHODNAME("editor<%>","print")] */
 
 @ "begin-write-header-footer-to-file" : bool BeginWriteHeaderFooterToFile(wxMediaStreamOut!,string,long*);
 @ "end-write-header-footer-to-file" : bool EndWriteHeaderFooterToFile(wxMediaStreamOut!,long);

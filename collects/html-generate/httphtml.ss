@@ -25,5 +25,5 @@
 ;;;  Created and released initial version.
 
 (require-library "strings.ss")
-(require-library "http.ss" "SchemeCGI")
-(require-library "html.ss" "SchemeCGI")
+(require-library "http.ss" "html-generate")
+(require-library "html.ss" "html-generate")

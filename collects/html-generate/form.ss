@@ -24,7 +24,7 @@
 ;;; September 5, 1996 - Version 0.1
 ;;;  Created and released initial version.
 
-(require-library "formpars.ss" "SchemeCGI")
+(require-library "formpars.ss" "html-generate")
 
 ;;; Some helper procedures
 (define (xform-string-copy modifier)

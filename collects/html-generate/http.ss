@@ -27,7 +27,7 @@
 ;;;  Created and released initial version.
 ;;;
 
-(require-library "mime.ss" "SchemeCGI")
+(require-library "mime.ss" "html-generate")
 
 ;;; Error reporter.
 ;;;

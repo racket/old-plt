@@ -30,7 +30,7 @@
 ;;; September 12, 1996 - Version 0.1
 ;;;  Created and released initial version.
 
-(require-library "colors.ss" "SchemeCGI")
+(require-library "colors.ss" "html-generate")
 (require-library "string.ss")
 
 (define safe-html

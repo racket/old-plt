@@ -24,5 +24,5 @@
 ;;; February 1, 1997 - Version 0.1
 ;;;  Created and released initial version.
 
-(require-library "inetu.ss" "SchemeCGI")
+(require-library "inetu.ss" "html-generate")
 (invoke-open-unit/sig mzlib:inet@ #f)

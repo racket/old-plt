@@ -1,4 +1,4 @@
-(require-library "html.ss" "SchemeCGI")
+(require-library "html.ss" "html-generate")
 
 (read-case-sensitive #t)
 

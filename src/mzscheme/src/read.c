@@ -292,11 +292,11 @@ void scheme_init_read(Scheme_Env *env)
     for (i = 0; i < 128; i++) {
       delim[i] = SCHEME_OK;
     }
-    for (i = 'A'; i < 'Z'; i++) {
+    for (i = 'A'; i <= 'Z'; i++) {
       delim[i] |= CROC_OK;
       delim[i + ('a'-'A')] |= CROC_OK;
     }
-    for (i = '0'; i < '9'; i++) {
+    for (i = '0'; i <= '9'; i++) {
       delim[i] |= (CROC_OK | CROC_NUM_OK);
     }
     delim['('] -= SCHEME_OK;

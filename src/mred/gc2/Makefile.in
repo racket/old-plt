@@ -43,9 +43,9 @@ CPP = @CPP@
 
 JPEG_A = ../../wxcommon/jpeg/libjpeg.@LIBSFX@
 JPEG_INC = -I../../wxcommon/jpeg -I$(srcdir)/../../wxcommon/jpeg
-ZLIB_A = ../../wxcommon/zlib/libz.a
+ZLIB_A = ../../wxcommon/zlib/libz.@LIBSFX@
 ZLIB_INC = -I$(srcdir)/../../wxcommon/zlib
-PNG_A = ../../wxcommon/libpng/libpng.a
+PNG_A = ../../wxcommon/libpng/libpng.@LIBSFX@
 
 XFORM_INC_wx_xt = -Dwx_xt -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src
 XFORM_INC_wx_mac = -Dwx_mac -DOS_X -MMD -DWX_CARBON -I$(WXMACDIR)/../utils/image/src -I$(WXMACDIR)/../contrib/wxxpm/libxpm.34b/lib -I$(WXMACDIR)/../../mac/mzscheme

@@ -322,13 +322,28 @@
       (send f show #t)
       f))
   
-  (define library-directory
-    (let ([lib-dir (build-path 
-		    (collection-path "mzlib")
-		    'up 'up "lib")])
-      (if (directory-exists? lib-dir)
-	  lib-dir
-	  null)))
+  
+  ; object to remember last library directory
+  
+  (define *library-directory* 
+    (make-object 
+     (class null ()
+	    (private [the-dir #f])
+	    (public
+	     [get (lambda () the-dir)]
+	     [set-from-file!
+	      (lambda (file) 
+		(set! the-dir (path-only file)))]
+	     [set-to-default 
+	      (lambda ()
+		(let ([lib-dir (build-path 
+				(collection-path "mzlib") 
+				'up 'up "lib")])
+		  (if (directory-exists? lib-dir)
+		      (set! the-dir lib-dir)
+		      (set! the-dir ()))))])
+	    (sequence
+	      (set-to-default)))))
 
   (define (fill-language-menu language-menu)
     (send* language-menu 
@@ -336,27 +351,18 @@
 	   (append-separator)
 	   (append-item "Set Library To..."
 			(lambda ()
+			  (printf "library-directory: ~a~n"
+				  (send *library-directory* get))
 			  (let ([lib-file (mred:get-file 
-					   library-directory
+					   (send *library-directory* get) 
 					   "Select a library" 
 					   ".*\\.ss$")])
 			    (when lib-file
 			      (mred:set-preference
 			       'drscheme:library-file lib-file)
-			      (set! library-directory lib-file)))))
+			      (send *library-directory*
+				    set-from-file! lib-file)))))
 	   (append-item "Clear Library"
 			(lambda ()
 			  (mred:set-preference 'drscheme:library-file #f))))))
-
-
-
-
-
-
-
-
-
-
-
-
 

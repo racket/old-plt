@@ -5617,6 +5617,8 @@ static void default_sleep(float v, void *fds)
       secs = 100000;
     if (usecs < 0)
       usecs = 0;
+    if (usecs >= 1000000)
+      usecs = 999999;
 
     time.tv_sec = secs;
     time.tv_usec = usecs;
@@ -5671,6 +5673,8 @@ static void default_sleep(float v, void *fds)
 	secs = 100000;
       if (usecs < 0)
 	usecs = 0;
+      if (usecs >= 1000000)
+	usecs = 999999;
       
       time.tv_sec = secs;
       time.tv_usec = usecs;

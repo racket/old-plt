@@ -164,8 +164,9 @@
 		    (current-directory))
 		base))
 	  relto)]
+     [(pair? relto) relto]
      [(not dir?)
-      (error 'resolve-module-path-index "can't resolve \"self\" with just a relative directory")]
+      (error 'resolve-module-path-index "can't resolve \"self\" with just a relative directory ~e" relto)]
      [(procedure? relto) (relto)]
      [else
       (current-directory)]))

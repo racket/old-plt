@@ -1242,9 +1242,9 @@
 				    ;; Tell nested `syntax' forms about the
 				    ;;  pattern-bound variables:
 				    (list
-				     (quote-syntax letrec-syntax) 
+				     (quote-syntax letrec-syntaxes) 
 				     (map (lambda (pattern-var unflat-pattern-var temp-var)
-					    (list pattern-var 
+					    (list (list pattern-var)
 						  (list
 						   (quote-syntax make-syntax-mapping)
 						   ;; Tell it the shape of the variable:
@@ -1421,16 +1421,36 @@
 	 names)
 	#f)))
   
+  (define-syntax letrec-syntax
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ ([id expr] ...) body1 body ...)
+	 (syntax/loc stx
+	     (letrec-syntax ([(id) expr] ...)
+	       body1 body ...))])))
+
+  (define-syntax let-syntaxes
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ ([(id ...) expr] ...) body1 body ...)
+	 (with-syntax ([((tmp ...) ...) 
+			(map
+			 generate-temporaries 
+			 (syntax->list (syntax ((id ...) ...))))])
+	   (syntax/loc stx
+	       (letrec-syntaxes ([(tmp ...) expr] ...)
+		 (letrec-syntaxes ([(id ...) (values
+					      (syntax-local-value (quote-syntax tmp) void)
+					      ...)] ...)
+		   body1 body ...))))])))
+
   (define-syntax let-syntax
     (lambda (stx)
       (syntax-case stx ()
-	[(_ ([id expr] ...) body)
-	 (with-syntax ([(tmp ...) (generate-temporaries (syntax (id ...)))])
-	   (syntax/loc
-	    stx
-	    (letrec-syntax ([tmp expr] ...)
-	      (letrec-syntax ([id (syntax-local-value (quote-syntax tmp) void)] ...)
-		body))))])))
+	[(_ ([id expr] ...) body1 body ...)
+	 (syntax/loc stx
+	     (let-syntaxes ([(id) expr] ...)
+	       body1 body ...))])))
 
   ;; From Dybvig:
   (define-syntax syntax-rules
@@ -1447,7 +1467,7 @@
 
   (provide (all-from #%stxcase) (all-from #%small-scheme)
 	   (all-from #%with-stx) (all-from #%stxloc) check-duplicate-identifier
-	   let-syntax syntax-rules))
+	   letrec-syntax let-syntaxes let-syntax syntax-rules))
 
 ;;----------------------------------------------------------------------
 ;; #%more-scheme : case, do, etc. - remaining syntax

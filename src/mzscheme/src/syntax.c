@@ -202,7 +202,7 @@ scheme_init_syntax (Scheme_Env *env)
   
   lexical_syntax_symbol = scheme_intern_symbol("quote-syntax");
   define_macro_symbol = scheme_intern_symbol("define-syntaxes");
-  let_macro_symbol = scheme_intern_symbol("letrec-syntax");
+  let_macro_symbol = scheme_intern_symbol("letrec-syntaxes");
 
   scheme_register_syntax(DEFINE_VALUES_EXPD, define_values_resolve, 
 			 define_values_link, define_values_execute, 1);
@@ -321,7 +321,7 @@ scheme_init_syntax (Scheme_Env *env)
 							lexical_syntax_expand), 
 			    env);
   scheme_add_global_keyword("define-syntaxes", scheme_defmacro_syntax, env);
-  scheme_add_global_keyword("letrec-syntax", 
+  scheme_add_global_keyword("letrec-syntaxes", 
 			    scheme_make_compiled_syntax(letmacro_syntax, 
 							letmacro_expand), 
 			    env);
@@ -2836,6 +2836,7 @@ do_letmacro(char *where, Scheme_Object *formname,
   Scheme_Comp_Env *env;
   Scheme_Compile_Info mrec;
   int cnt, i;
+  DupCheckRecord r;
 
   form = SCHEME_STX_CDR(forms);
   if (!SCHEME_STX_PAIRP(form))
@@ -2849,22 +2850,27 @@ do_letmacro(char *where, Scheme_Object *formname,
   env = scheme_new_compilation_frame(0, 0, origenv);
 
   check_form(where, bindings);
-  
-  cnt = scheme_stx_proper_list_length(bindings);
-  i = 0;
-  if (cnt > 0)
-    scheme_add_local_syntax(cnt, env);
+
+  cnt = 0;
+
+  scheme_begin_dup_symbol_check(&r, env);
 
   for (v = bindings; SCHEME_STX_PAIRP(v); v = SCHEME_STX_CDR(v)) {
-    Scheme_Object *a;
+    Scheme_Object *a, *l;
 
     a = SCHEME_STX_CAR(v);
     if (!SCHEME_STX_PAIRP(a)
-	|| !SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(a))
 	|| !SCHEME_STX_PAIRP(SCHEME_STX_CDR(a)))
       v = NULL;
 
-    if (a) {
+    for (l = SCHEME_STX_CAR(a); SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
+      if (!SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(l)))
+	break;
+    }
+    if (!SCHEME_STX_NULLP(l))
+      v = NULL;
+
+    if (v) {
       Scheme_Object *rest;
       rest = SCHEME_STX_CDR(a);
       if (!SCHEME_STX_NULLP(SCHEME_STX_CDR(rest)))
@@ -2872,13 +2878,30 @@ do_letmacro(char *where, Scheme_Object *formname,
     }
 
     if (!v)
-      scheme_wrong_syntax(where, a, forms, "bad syntax (binding clause not an identifier and expression)");
+      scheme_wrong_syntax(where, a, forms, "bad syntax (binding clause not an "
+			  "identifier sequence and expression)");
 
-    a = SCHEME_STX_CAR(a);
-    scheme_check_identifier(where, a, NULL, env, forms);
+    for (l = SCHEME_STX_CAR(a); SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
+      a = SCHEME_STX_CAR(l);
+      scheme_check_identifier(where, a, NULL, env, forms);
+      scheme_dup_symbol_check(&r, where, a, "binding", form);
+      cnt++;
+    }
+  }
 
-    if (cnt > 0)
-      scheme_set_local_syntax(i++, a, NULL, env);
+  scheme_add_local_syntax(cnt, env);
+  if (cnt > 0) {
+    /* Add new syntax names to the environment: */
+    i = 0;
+    for (v = bindings; SCHEME_STX_PAIRP(v); v = SCHEME_STX_CDR(v)) {
+      Scheme_Object *a, *l;
+
+      a = SCHEME_STX_CAR(v);
+      for (l = SCHEME_STX_CAR(a); SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
+	a = SCHEME_STX_CAR(l);
+	scheme_set_local_syntax(i++, a, NULL, env);
+      }
+    }
   }
 
   scheme_prepare_exp_env(env->genv);
@@ -2886,10 +2909,11 @@ do_letmacro(char *where, Scheme_Object *formname,
   i = 0;
 
   for (v = bindings; SCHEME_STX_PAIRP(v); v = SCHEME_STX_CDR(v)) {
-    Scheme_Object *a, *name;
+    Scheme_Object *a, *names, **results, *l;
+    int vc, nc, j;
 
     a = SCHEME_STX_CAR(v);
-    name = SCHEME_STX_CAR(a);
+    names = SCHEME_STX_CAR(a);
     a = SCHEME_STX_CDR(a);
     a = SCHEME_STX_CAR(a);
 
@@ -2903,14 +2927,50 @@ do_letmacro(char *where, Scheme_Object *formname,
     a = scheme_link_expr(a, NULL);
 
     scheme_on_next_top(env, NULL, scheme_false);
-    a = scheme_eval_linked_expr(a, mrec.max_let_depth);
+    a = scheme_eval_linked_expr_multi(a, mrec.max_let_depth);
 
-    macro = scheme_alloc_stubborn_small_object();
-    macro->type = scheme_macro_type;
-    SCHEME_PTR_VAL(macro) = a;
-    scheme_end_stubborn_change((void *)macro);
+    if (SAME_OBJ(a, SCHEME_MULTIPLE_VALUES))
+      vc = scheme_current_thread->ku.multiple.count;
+    else
+      vc = 1;
 
-    scheme_set_local_syntax(i++, name, macro, env);
+    for (nc = 0, l = names; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
+      nc++;
+    }
+    if (vc != nc) {
+      Scheme_Object *name;
+      const char *symname;
+      
+      if (nc >= 1) {
+	name = SCHEME_STX_CAR(names);
+	name = SCHEME_STX_VAL(name);
+      } else
+	name = NULL;
+      symname = (name ? scheme_symbol_name(name) : "");
+      scheme_wrong_return_arity("letrec-syntaxes",
+				nc, vc,
+				(vc == 1) ? (Scheme_Object **)a : scheme_current_thread->ku.multiple.array,
+				"%s%s%s",
+				name ? "defining \"" : "0 names",
+				symname,
+				name ? ((nc == 1) ? "\"" : "\", ...") : "");
+    }
+
+    results = scheme_current_thread->ku.multiple.array;
+
+    for (j = 0, l = names; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l), j++) {
+      Scheme_Object *name;
+      name = SCHEME_STX_CAR(l);
+    
+      macro = scheme_alloc_small_object();
+      macro->type = scheme_macro_type;
+      if (vc == 1)
+	SCHEME_PTR_VAL(macro) = a;
+      else
+	SCHEME_PTR_VAL(macro) = results[j];
+
+      scheme_set_local_syntax(i++, name, macro, env);
+    }
   }
 
   body = scheme_add_env_renames(body, env, origenv);
@@ -2940,14 +3000,14 @@ static Scheme_Object *
 letmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
 		Scheme_Compile_Info *rec, int drec)
 {
-  return do_letmacro("letrec-syntax", NULL,
+  return do_letmacro("letrec-syntaxes", NULL,
 		     form, env, rec, drec, 0, scheme_false);
 }
 
 static Scheme_Object *
 letmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  return do_letmacro("letrec-syntax", let_macro_symbol, 
+  return do_letmacro("letrec-syntaxes", let_macro_symbol, 
 		     form, env, NULL, 0, depth, boundname);
 }
 

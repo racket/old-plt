@@ -999,9 +999,9 @@
                   (provide TAG? TAG-length)
                   (provide (rename allocate-TAG make-TAG))
                   (define (allocate-TAG n . init)
-                    (let* ([p (malloc n type)]
+                    (let* ([p (if (eq? n 0) #f (malloc n type))]
                            [v (make-TAG p n)])
-                      (when (pair? init)
+                      (when (and p (pair? init))
                         (let ([init (car init)])
                           (let loop ([i (sub1 n)])
                             (unless (< i 0)

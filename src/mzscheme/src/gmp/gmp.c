@@ -74,8 +74,8 @@ extern void free(void *);
 # define __GMP_ALLOCATE_FUNC_LIMBS(n) TMP_ALLOC(n * sizeof(mp_limb_t))
 # define __GMP_FREE_FUNC_LIMBS(p, n) /* */
 
-static const int mp_bits_per_limb = BITS_PER_MP_LIMB;
-static const int __gmp_0 = 0;
+/* static const int mp_bits_per_limb = BITS_PER_MP_LIMB; */
+/* static const int __gmp_0 = 0; */
 /* static int __gmp_junk; */
 /* static int gmp_errno = 0; */
 

@@ -551,7 +551,21 @@
 	  [color-syntax
 	   (lambda (reader edit)
 	     (letrec* ([user-param (ivar interactions-edit param)]
-		       [add-arrow (ivar edit syncheck:add-arrow)]
+		       [add-arrow 
+			(let ([aa (ivar edit syncheck:add-arrow)])
+			  (lambda (start-left start-right finish-left finish-right)
+			    (let* ([start-dx 0]
+				   [start-dy 0]
+				   [end-dx 0]
+				   [end-dy 0]
+				   [delta 0]
+				   [brush (make-object wx:brush% "BLUE" wx:const-solid)]
+				   [pen (make-object wx:pen%
+						     (make-object wx:colour% "BLUE")
+						     1 wx:const-solid)])
+			      (aa start-left start-right 
+				  finish-left finish-right
+				  delta brush pen))))]
 		       [find-string (ivar edit find-string)]
 		       [change-style (lambda (s x y)
 				       ((ivar edit change-style) s x y))]
@@ -598,8 +612,7 @@
 				  (eq? (zodiac:origin-who
 					(zodiac:zodiac-origin zodiac-ast))
 				       'source)]
-				 [z:start (zodiac:location-offset
-					   (zodiac:zodiac-start zodiac-ast))]
+				 [z:start (zodiac:location-offset (zodiac:zodiac-start zodiac-ast))]
 				 [z:finish (+ 1
 					      (zodiac:location-offset
 					       (zodiac:zodiac-finish zodiac-ast)))]
@@ -624,11 +637,8 @@
 					    
 				 [color
 				  (lambda (delta)
-				    (when source-object?
-				      (let* ([start z:start]
-					     [finish z:finish])
-					(when (and finish start)
-					  (change-style delta start finish)))))]
+				    (when (and source-object? z:finish z:start)
+				      (change-style delta z:start z:finish)))]
 				 
 				 [color-argss
 				  (lambda (argss)
@@ -643,23 +653,11 @@
 			       (when source-object?
 				 (let* ([binding (zodiac:bound-varref-binding zodiac-ast)]
 					[start (zodiac:location-offset (zodiac:zodiac-start binding))]
-					[finish (add1 (zodiac:location-offset (zodiac:zodiac-finish binding)))]
-					[start-dx 0]
-					[start-dy 0]
-					[end-dx 0]
-					[end-dy 0]
-					[delta 0]
-					[brush (make-object wx:brush% "BLUE" wx:const-solid)]
-					[pen (make-object wx:pen%
-					       (make-object wx:colour% "BLUE")
-					       1 wx:const-solid)])
-				   (add-arrow z:start z:finish 
-					      start finish
-					      delta brush pen)))			       
+					[finish (add1 (zodiac:location-offset (zodiac:zodiac-finish binding)))])
+				 (add-arrow z:start z:finish start finish)))
 			       (color bound-style)]
 			      
 			      [(zodiac:top-level-varref? zodiac-ast)
-			       (print-struct #t)
 			       (when source-object?
 				 (set! top-level-varrefs (cons zodiac-ast top-level-varrefs)))]
 			      
@@ -684,9 +682,15 @@
 			       (color-syntax)
 			       (for-each 
 				(lambda (var)
-				  (hash-table-put! defineds (zodiac:varref-var var) #t))
+				  (hash-table-put! defineds 
+						   (zodiac:varref-var var)
+						   var))
 				(zodiac:define-values-form-vars zodiac-ast))
-			       (for-each color-loop (zodiac:define-values-form-vars zodiac-ast))
+			       (for-each (lambda (var) 
+					   (change-style bound-style 
+							 (zodiac:location-offset (zodiac:zodiac-start var))
+							 (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))))
+					 (zodiac:define-values-form-vars zodiac-ast))
 			       (color-loop (zodiac:define-values-form-val zodiac-ast))]
 			      
 			      [(zodiac:begin-form? zodiac-ast)
@@ -765,7 +769,7 @@
 		       (time (color-loop expanded))
 		       (read-loop)))))
 	       
-	       ; color the top-level varrefs
+	       ; color and add arrows for the top-level varrefs
 	       (let ([built-in?
 		      (lambda (s)
 			(with-parameterization (ivar interactions-edit param)
@@ -776,7 +780,13 @@
 			       (change-style
 				(cond
 				  [(hash-table-get defineds id (lambda () #f))
-				   bound-style]
+				   =>
+				   (lambda (def-var)
+				     (add-arrow (zodiac:location-offset (zodiac:zodiac-start var))
+						(add1 (zodiac:location-offset (zodiac:zodiac-finish var)))
+						(zodiac:location-offset (zodiac:zodiac-start def-var))
+						(add1 (zodiac:location-offset (zodiac:zodiac-finish def-var))))
+				     bound-style)]
 				  [(built-in? id) primitive-style]
 				  [else unbound-style])
 				(zodiac:location-offset (zodiac:zodiac-start var))

@@ -150,6 +150,10 @@ provides a few additional functions helpful for constructing servlets:
 
 > extract-bindings : sym environment -> (listof str)
   returns a list of values associated with the name sym.
+  
+> exists-binding? : sym environment -> bool
+  returns if the name sym is bound in the environment.
+  This is useful for checkboxes.
 
 > extract-user-pass : environment -> (U #f (cons str str))
   (define (extract-user-pass headers) ...)

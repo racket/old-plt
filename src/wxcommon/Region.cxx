@@ -2403,6 +2403,25 @@ void wxPath::InstallPS(wxPostScriptDC *dc, wxPSStream *s, double dx, double dy)
   }
 }
 
+static double my_round(double d)
+{
+  double i, frac;
+
+  if (d < 0) {
+    frac = modf(d, &i);
+    if (frac < -0.5)
+      return i - 1;
+    else
+      return i;
+  } else {
+    frac = modf(d, &i);
+    if (frac < 0.5)
+      return i;
+    else
+      return i + 1;
+  }
+}
+
 int wxPath::ToPolygons(int **_lens, double ***_ptss, double sx, double sy)
 {
   int i, cnt, *lens, len, alloc_len, need_len;
@@ -2502,8 +2521,8 @@ int wxPath::ToPolygons(int **_lens, double ***_ptss, double sx, double sy)
 	       after scaling, so round intermediate points.
 	       End point have to be floored, for consistency
 	       with everything else, so leave them alone. */
-	    x = round(x * sx) / sx;
-	    y = round(y * sy) / sy;
+	    x = my_round(x * sx) / sx;
+	    y = my_round(y * sy) / sy;
 	  }
 	  pts[len++] = x;
 	  pts[len++] = y;

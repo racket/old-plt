@@ -950,7 +950,11 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
 
     DoneDC(dc);
     return;
-  }
+  } else
+    ReleaseGraphics(dc);
+
+  if (clipping && clipping->Empty())
+    return;
 
   cnt = p->ToPolygons(&lens, &ptss, user_scale_x, user_scale_y);
 
@@ -966,32 +970,26 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
 
   prev = SetPolyFillMode(dc, (fillStyle == wxODDEVEN_RULE) ? ALTERNATE : WINDING);
 
+  /* Scaled version */
+  for (i = 0, k = 0; i < cnt; i++) {
+    for (j = 0; j < lens[i]; j += 2) {
+      xoffset1 = MS_XLOG2DEV(ptss[i][j] + xoffset);
+      yoffset1 = MS_YLOG2DEV(ptss[i][j+1] + yoffset);
+      pts[k].x = xoffset1;
+      pts[k].y = yoffset1;
+      k++;
+    }
+  }
+  
+  /* Turn of GDI scale. We do it ourselves, so we can
+     plot half points that scale up to full points. */
+  SetMapMode(2, dc);
+
   if (StartBrush(dc, 1)) {
     if (cnt == 1) {
-      /* Unscaled version for Polygon(): */
-      for (i = 0, k = 0; i < cnt; i++) {
-	for (j = 0; j < lens[i]; j += 2) {
-	  ShiftXY(ptss[i][j] + xoffset, ptss[i][j+1] + yoffset, &xoffset1, &yoffset1);
-	  pts[k].x = xoffset1;
-	  pts[k].y = yoffset1;
-	  k++;
-	}
-      }
-
       (void)Polygon(dc, pts, total_cnt);
     } else {
       HRGN rgn = 0, rgn1;
-
-      /* Scaled version for clipping region: */
-      for (i = 0, k = 0; i < cnt; i++) {
-	for (j = 0; j < lens[i]; j += 2) {
-	  xoffset1 = MS_XLOG2DEV(ptss[i][j] + xoffset);
-	  yoffset1 = MS_YLOG2DEV(ptss[i][j+1] + yoffset);
-	  pts[k].x = xoffset1;
-	  pts[k].y = yoffset1;
-	  k++;
-	}
-      }
 
       for (i = 0, k = 0; i < cnt; i++) {
 	j = (lens[i] / 2);
@@ -1020,16 +1018,6 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
     DoneBrush(dc);
   }
   if (StartPen(dc)) {
-    /* Unscaled version for draw-line */
-    for (i = 0, k = 0; i < cnt; i++) {
-      for (j = 0; j < lens[i]; j += 2) {
-	ShiftXY(ptss[i][j] + xoffset, ptss[i][j+1] + yoffset, &xoffset1, &yoffset1);
-	pts[k].x = xoffset1;
-	pts[k].y = yoffset1;
-	k++;
-      }
-    }
-
     for (i = 0, k = 0; i < cnt; i++) {
       j = (lens[i] / 2);
       if ((i + 1 == cnt) && p->IsOpen()) {
@@ -1041,6 +1029,8 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
     }
     DonePen(dc);
   }
+
+  SetMapMode(mapping_mode, dc);
 
   SetPolyFillMode(dc, prev);
 

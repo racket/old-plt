@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.188 1999/06/18 18:02:52 mflatt Exp $
+; $Id: scm-main.ss,v 1.189 1999/07/09 18:44:33 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1023,17 +1023,13 @@
 				  (format "Malformed ~a" formname)))))))])
     (add-patterned-macro 'tprompt
 			 '(tprompt E ...)
-			 '(let ([grab-Turtles Turtles]
-				[grab-Cache Cache])
-			    (begin E ...)
-			    (set! Turtles grab-Turtles)
-			    (set! Cache grab-Cache)))
+			 '(tpromptfn (lambda () E ...)))
     (add-patterned-macro 'split
 			 '(split E ...)
 			 '(splitfn (lambda () E ...)))
     (add-patterned-macro 'split*
 			 '(split* E ...)
-			 '(split*fn (lambda () E) ...)))
+			 '(split*fn (list (lambda () E) ...))))
   
   (define (make-let*-macro begin?)
       (let* ((kwd '())

@@ -87,7 +87,6 @@ static Scheme_Object *load (int, Scheme_Object *[]);
 static Scheme_Object *current_load (int, Scheme_Object *[]);
 static Scheme_Object *current_load_directory(int argc, Scheme_Object *argv[]);
 static Scheme_Object *default_load (int, Scheme_Object *[]);
-static Scheme_Object *use_compiled_kind(int, Scheme_Object *[]);
 static Scheme_Object *transcript_on(int, Scheme_Object *[]);
 static Scheme_Object *transcript_off(int, Scheme_Object *[]);
 static Scheme_Object *flush_output (int, Scheme_Object *[]);
@@ -118,8 +117,6 @@ static void register_traversers(void);
 
 static Scheme_Object *any_symbol, *any_one_symbol;
 static Scheme_Object *cr_symbol, *lf_symbol, *crlf_symbol;
-
-static Scheme_Object *all_symbol, *none_symbol;
 
 static Scheme_Object *module_symbol;
 
@@ -168,12 +165,6 @@ scheme_init_port_fun(Scheme_Env *env)
   lf_symbol = scheme_intern_symbol("linefeed");
   crlf_symbol = scheme_intern_symbol("return-linefeed");
 
-  REGISTER_SO(all_symbol);
-  REGISTER_SO(none_symbol);
-  
-  all_symbol = scheme_intern_symbol("all");
-  none_symbol = scheme_intern_symbol("none");
-  
   REGISTER_SO(module_symbol);
   
   module_symbol = scheme_intern_symbol("module");
@@ -579,12 +570,6 @@ scheme_init_port_fun(Scheme_Env *env)
 						       MZCONFIG_LOAD_DIRECTORY), 
 			     env);
 
-  scheme_add_global_constant("use-compiled-file-kinds",
-			     scheme_register_parameter(use_compiled_kind,
-						       "use-compiled-file-kinds",
-						       MZCONFIG_USE_COMPILED_KIND),
-			     env);
-
   scheme_add_global_constant ("transcript-on", 
 			      scheme_make_prim_w_arity(transcript_on,
 						       "transcript-on", 
@@ -646,7 +631,9 @@ scheme_init_port_fun(Scheme_Env *env)
 void scheme_init_port_fun_config(void)
 {
   scheme_set_root_param(MZCONFIG_LOAD_DIRECTORY, scheme_false);
-  scheme_set_root_param(MZCONFIG_USE_COMPILED_KIND, all_symbol);
+  scheme_set_root_param(MZCONFIG_USE_COMPILED_KIND, 
+			scheme_make_immutable_pair(scheme_make_path("compiled"),
+						   scheme_null));
 
   {
     Scheme_Object *dlh;
@@ -3505,26 +3492,6 @@ Scheme_Object *scheme_load(const char *file)
   memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 
   return val;
-}
-
-static Scheme_Object *compiled_kind_p(int argc, Scheme_Object **argv)
-{
-  Scheme_Object *o = argv[0];
-  
-  if (SAME_OBJ(o, all_symbol))
-    return o;
-  if (SAME_OBJ(o, none_symbol))
-    return o;
-
-  return NULL;
-}
-
-static Scheme_Object *use_compiled_kind(int argc, Scheme_Object *argv[])
-{
-  return scheme_param_config("use-compiled-file-kinds",
-			     scheme_make_integer(MZCONFIG_USE_COMPILED_KIND),
-			     argc, argv,
-			     -1, compiled_kind_p, "compiled file kind symbol", 1);
 }
 
 static Scheme_Object *

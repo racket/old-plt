@@ -156,6 +156,7 @@ static Scheme_Object *parse_requires(Scheme_Object *form,
 static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx, int delay_exptime, Scheme_Object *cycle_list);
 static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx, int delay_exptime, Scheme_Object *cycle_list);
 static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env, Scheme_Object *cycle_list);
+static void finish_expstart_module_in_namespace(Scheme_Env *menv, Scheme_Env *env);
 static void eval_module_body(Scheme_Env *menv);
 
 static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
@@ -961,21 +962,8 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	  }
 
 	  /* Have to force laziness in source to ensure sharing: */
-	  if (menv->lazy_syntax) {
-	    Scheme_Cont_Frame_Data cframe;
-	    Scheme_Config *config;
-
-	    config = scheme_extend_config(scheme_current_config(),
-					  MZCONFIG_ENV,
-					  (Scheme_Object *)from_env);
-	    
-	    scheme_push_continuation_frame(&cframe);
-	    scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
-
-	    finish_expstart_module(menv, from_env, scheme_null);
-	    
-	    scheme_pop_continuation_frame(&cframe);
-	  }
+	  if (menv->lazy_syntax)
+	    finish_expstart_module_in_namespace(menv, from_env);
 
 	  l = menv->et_require_names;
 	  while (!SCHEME_NULLP(l)) {
@@ -1644,8 +1632,9 @@ Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Sch
     if (!menv)
       return NULL;
 
-    if (menv->lazy_syntax)
-      finish_expstart_module(menv, env, scheme_null);
+    if (menv->lazy_syntax) {
+      finish_expstart_module_in_namespace(menv, env);
+    }
 
     name = scheme_tl_id_sym(menv, name, 0);
 
@@ -1876,6 +1865,23 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env, Scheme_Obj
 		    rp, let_depth, 1, syntax);
     }
   }
+}
+
+static void finish_expstart_module_in_namespace(Scheme_Env *menv, Scheme_Env *from_env)
+{
+  Scheme_Cont_Frame_Data cframe;
+  Scheme_Config *config;
+  
+  config = scheme_extend_config(scheme_current_config(),
+				MZCONFIG_ENV,
+				(Scheme_Object *)from_env);
+  
+  scheme_push_continuation_frame(&cframe);
+  scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
+  
+  finish_expstart_module(menv, from_env, scheme_null);
+  
+  scheme_pop_continuation_frame(&cframe);
 }
 
 static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, 

@@ -646,11 +646,11 @@
                (make-object void% src-stx)
                (let ([vals (map (lambda (x) (send x get-const-val)) rands)]
                      [f (dynamic-require 'mzscheme (send rator orig-name))])
-                 (with-handlers ([not-break-exn? (lambda (x) 
-                                                   (fprintf (current-error-port)
-                                                            "constant calculation error: ~a~n"
-                                                            (exn-message x))
-                                                   this)])
+                 (with-handlers ([exn:fail? (lambda (x) 
+					      (fprintf (current-error-port)
+						       "constant calculation error: ~a~n"
+						       (exn-message x))
+					      this)])
                    (known-single-result
                     (send (make-object constant% (apply f vals) src-stx)
                           simplify ctx)))))]

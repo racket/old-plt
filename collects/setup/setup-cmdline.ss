@@ -53,6 +53,8 @@
 	 (add-flags '((force-unpacks #t)))]
 	[("-a" "--all-users") "Install archives into PLTHOME, not user-specific directory"
 	 (add-flags '((all-users #t)))]
+	[("--mode") mode "Select a compilation mode"
+	 (add-flags `((compile-mode ,mode)))]
 	[("-l") =>
 	 (lambda (flag . collections)
 	   (map list collections))

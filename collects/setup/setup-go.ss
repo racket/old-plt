@@ -40,7 +40,8 @@
 	     trust-existing-zos
 	     pause-on-errors
 	     force-unpacks
-	     all-users)
+	     all-users
+	     compile-mode)
 
   (specific-collections x-specific-collections)
   (archives x-archives)

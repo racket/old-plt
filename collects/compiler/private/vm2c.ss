@@ -128,6 +128,7 @@
 	    (for-each
 	     (lambda (ss)
 	       (emit-string port
+			    "char"
 			    (syntax-string-str ss)
 			    (format "SYNTAX_STRING_~a" (syntax-string-id ss))))
 	     l))))
@@ -145,17 +146,24 @@
 		   (vm->c:INEXACTS-name)
 		   (const:get-inexact-counter))))
 
-      (define (vm->c:emit-string-declarations! port)
+      (define (emit-string-declarations! port table kind)
 	(hash-table-for-each
-	 (const:get-string-table)
-	 (lambda (sym index)
-	   (let* ([str (symbol->string sym)])
-	     (emit-string port str (format "STRING_~a" index))))))
+	 table
+	 (lambda (str index)
+	   (emit-string port kind str (format "STRING_~a" index)))))
+
+      (define (vm->c:emit-string-declarations! port)
+	(emit-string-declarations! port (const:get-string-table) "mzchar")
+	(emit-string-declarations! port (const:get-bytes-table) "char"))
 
       (define emit-string
-	(lambda (port str name)
-	  (let* ([len (string-length str)])
-	    (let ([friendly (substring str 0 (min len 24))])
+	(lambda (port kind str name)
+	  (let* ([len (if (string? str)
+			  (string-length str)
+			  (bytes-length str))])
+	    (let ([friendly (if (string? str)
+				(substring str 0 (min len 24))
+				(bytes->string/latin-1 (subbytes str 0 (min len 24))))])
 	      (fprintf port
 		       "/* ~a */~n"
 		       (list->string (map (lambda (i)
@@ -165,12 +173,14 @@
 					      i]
 					     [else #\_]))
 					  (string->list friendly)))))
-	    (fprintf port "static const char ~a[~a] = {" name (add1 len))
+	    (fprintf port "static const ~a ~a[~a] = {" kind name (add1 len))
 	    (let loop ([i 0])
 	      (unless (= i len)
 		(when (zero? (modulo i 20))
 		  (fprintf port "~n    "))
-		(fprintf port "~a, " (char->integer (string-ref str i)))
+		(fprintf port "~a, " (if (string? str)
+					 (char->integer (string-ref str i))
+					 (bytes-ref str i)))
 		(loop (add1 i)))))
 	  (fprintf port "0 }; /* end of ~a */~n~n" name)))
 
@@ -1630,9 +1640,13 @@
 		(let ([ast (vm:build-constant-text ast)])
 		  (cond
 		   [(string? (zodiac:zread-object ast))
-		    (fprintf port "scheme_make_immutable_sized_string((char *)STRING_~a, ~a, 0)" 
+		    (fprintf port "scheme_make_immutable_sized_char_string((mzchar *)STRING_~a, ~a, 0)" 
 			     (const:intern-string (zodiac:zread-object ast))
 			     (string-length (zodiac:zread-object ast)))]
+		   [(bytes? (zodiac:zread-object ast))
+		    (fprintf port "scheme_make_immutable_sized_byte_string((char *)STRING_~a, ~a, 0)" 
+			     (const:intern-string (zodiac:zread-object ast))
+			     (bytes-length (zodiac:zread-object ast)))]
 		   [(symbol? (zodiac:zread-object ast))
 		    (let ([s (symbol->string (zodiac:zread-object ast))])
 		      (emit-expr "scheme_intern_exact_symbol(~s, ~a)" s (string-length s)))]

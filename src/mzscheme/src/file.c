@@ -157,6 +157,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object *argv[]);
 static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[]);
 static Scheme_Object *file_size(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *argv[]);
+static Scheme_Object *use_compiled_kind(int, Scheme_Object *[]);
 static Scheme_Object *find_system_path(int argc, Scheme_Object **argv);
 #endif
 
@@ -397,6 +398,11 @@ void scheme_init_file(Scheme_Env *env)
 						       MZCONFIG_COLLECTION_PATHS),
 			     env);
 #endif
+  scheme_add_global_constant("use-compiled-file-kinds",
+			     scheme_register_parameter(use_compiled_kind,
+						       "use-compiled-file-kinds",
+						       MZCONFIG_USE_COMPILED_KIND),
+			     env);
 }
 
 /**********************************************************************/
@@ -488,7 +494,7 @@ static Scheme_Object *string_to_path(int argc, Scheme_Object **argv)
 
   p = scheme_char_string_to_path(argv[0]);
   
-  check_path_ok("bytes->path", p, argv[0]);
+  check_path_ok("string->path", p, argv[0]);
 
   return p;
 }
@@ -4167,13 +4173,11 @@ static Scheme_Object *current_directory(int argc, Scheme_Object **argv)
 
 #endif
 
-#ifndef NO_FILE_SYSTEM_UTILS
-
 static Scheme_Object *collpaths_gen_p(int argc, Scheme_Object **argv, int rel)
 {
   Scheme_Object *v = argv[0];
 
-  if (scheme_proper_list_length(v) < (rel ? 1 : 0))
+  if (scheme_proper_list_length(v) < 0)
     return NULL;
 
   if (SCHEME_NULLP(v))
@@ -4220,6 +4224,8 @@ static Scheme_Object *collpaths_gen_p(int argc, Scheme_Object **argv, int rel)
   }
 }
 
+#ifndef NO_FILE_SYSTEM_UTILS
+
 static Scheme_Object *collpaths_p(int argc, Scheme_Object **argv)
 {
   return collpaths_gen_p(argc, argv, 0);
@@ -4234,6 +4240,19 @@ static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *
 }
 
 #endif
+
+static Scheme_Object *compiled_kind_p(int argc, Scheme_Object **argv)
+{
+  return collpaths_gen_p(argc, argv, 1);
+}
+
+static Scheme_Object *use_compiled_kind(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("use-compiled-file-kinds",
+			     scheme_make_integer(MZCONFIG_USE_COMPILED_KIND),
+			     argc, argv,
+			     -1, compiled_kind_p, "list of paths", 1);
+}
 
 /********************************************************************************/
 

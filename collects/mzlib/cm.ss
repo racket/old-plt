@@ -4,6 +4,7 @@
 
   (provide make-compilation-manager-load/use-compiled-handler
 	   managed-compile-zo
+	   current-managed-zo-compile
 	   make-caching-managed-compile-zo
 	   trust-existing-zos
 	   manager-compile-notify-handler
@@ -14,6 +15,8 @@
   (define indent (make-parameter ""))
   (define trust-existing-zos (make-parameter #f))
   
+  (define current-managed-zo-compile (make-parameter compile))
+
   (define my-max
     (case-lambda
       (() 0)
@@ -31,28 +34,28 @@
 		   [(symbol? (car l)) (loop (cdr l))]
 		   [else (cons (car l) (loop (cdr l)))]))))))
 
-  (define (get-compilation-dir+name path)
+  (define (get-compilation-dir+name mode path)
     (let-values (((base name-suffix must-be-dir?) (split-path path)))
       (let ((name (path-replace-suffix name-suffix #"")))
 	(values
 	 (cond
-	  ((eq? 'relative base) (build-path "compiled"))
-	  (else (build-path base "compiled")))
+	  ((eq? 'relative base) mode)
+	  (else (build-path base mode)))
 	 name))))
 
-  (define (get-compilation-path path)
-    (let-values ([(dir name) (get-compilation-dir+name path)])
+  (define (get-compilation-path mode path)
+    (let-values ([(dir name) (get-compilation-dir+name mode path)])
       (path->bytes (build-path dir name))))
 
-  (define (get-code-dir path)
+  (define (get-code-dir mode path)
     (let-values (((base name-suffix must-be-dir?) (split-path path)))
       (cond
-        ((eq? 'relative base) (build-path "compiled"))
-        (else (build-path base "compiled")))))
+        ((eq? 'relative base) mode)
+        (else (build-path base mode)))))
 
-  (define (write-deps code path external-deps)
+  (define (write-deps code mode path external-deps)
     (let ((dep-path (bytes->path
-		     (bytes-append (get-compilation-path path) #".dep")))
+		     (bytes-append (get-compilation-path mode path) #".dep")))
           (deps (get-deps code path)))
       (let ((op (open-output-file dep-path 'replace)))
         (write (cons (version)
@@ -66,21 +69,21 @@
   (define (touch path)
     (close-output-port (open-output-file path 'append)))
 
-  (define (compilation-failure path zo-name date-path reason)
+  (define (compilation-failure mode path zo-name date-path reason)
     (with-handlers ((exn:fail:filesystem? void))
       (delete-file zo-name))
     (let ([fail-path (bytes->path
-		      (bytes-append (get-compilation-path path) #".fail"))])
+		      (bytes-append (get-compilation-path mode path) #".fail"))])
       (let ([p (open-output-file fail-path 'truncate/replace)])
 	(display reason p)
 	(close-output-port p)))
     ((trace) (format "~afailure" (indent))))
 
-  (define (compile-zo path)
+  (define (compile-zo mode path)
     ((manager-compile-notify-handler) path)
     ((trace) (format "~acompiling: ~a" (indent) path))
     (parameterize ([indent (string-append "  " (indent))])
-      (let ([zo-name (bytes->path (bytes-append (get-compilation-path path) #".zo"))])
+      (let ([zo-name (bytes->path (bytes-append (get-compilation-path mode path) #".zo"))])
         (cond
          [(and (file-exists? zo-name) (trust-existing-zos)) (touch zo-name)]
          [else
@@ -88,11 +91,11 @@
           (with-handlers ([exn:get-module-code?
                            (lambda (ex)
                              (compilation-failure
-                              path zo-name (exn:get-module-code-path ex)
+                              mode path zo-name (exn:get-module-code-path ex)
 			      (exn-message ex)))])
             (let* ([param
                     ;; Avoid using cm while loading cm-ctime:
-                    (parameterize ([use-compiled-file-kinds 'none])
+                    (parameterize ([use-compiled-file-kinds null])
                       (dynamic-require '(lib "cm-ctime.ss" "mzlib" "private")
                                        'current-external-file-registrar))]
                    [external-deps null]
@@ -100,13 +103,13 @@
                                                  (set! external-deps
                                                        (cons (path->bytes ext-file)
                                                              external-deps)))])
-                           (get-module-code path))]
-                   [code-dir (get-code-dir path)])
+                           (get-module-code path mode (current-managed-zo-compile)))]
+                   [code-dir (get-code-dir mode path)])
               (if (not (directory-exists? code-dir))
                 (make-directory code-dir))
               (let ((out (open-output-file zo-name 'replace)))
                 (with-handlers ((exn:fail?
-                                 (lambda (ex) (compilation-failure path zo-name #f (exn-message ex)))))
+                                 (lambda (ex) (compilation-failure mode path zo-name #f (exn-message ex)))))
                   (dynamic-wind
                     void
                     (lambda () (write code out))
@@ -125,7 +128,7 @@
                          (if (> ss-sec (current-seconds))
                            ", which appears to be in the future"
                            ""))))
-              (write-deps code path external-deps)))])))
+              (write-deps code mode path external-deps)))])))
     ((trace) (format "~aend compile: ~a" (indent) path)))
 
   (define (format-date date)
@@ -144,8 +147,8 @@
 
   (define _loader-path (append-object-suffix (bytes->path #"_loader")))
 
-  (define (get-compiled-time path w/fail?)
-    (let*-values  ([(dir name) (get-compilation-dir+name path)])
+  (define (get-compiled-time mode path w/fail?)
+    (let*-values  ([(dir name) (get-compilation-dir+name mode path)])
       (first-date
        (lambda () (build-path dir "native" (system-library-subpath) _loader-path))
        (lambda () (build-path dir "native" (system-library-subpath) (append-object-suffix name)))
@@ -163,7 +166,7 @@
 	    (file-or-directory-modify-seconds (f)))
 	  (apply first-date l))]))
   
-  (define (compile-root path up-to-date)
+  (define (compile-root mode path up-to-date)
     (let ([path (simplify-path (expand-path path))])
       (let ((stamp (and up-to-date
 			(hash-table-get up-to-date path (lambda () #f)))))
@@ -171,7 +174,7 @@
           (stamp stamp)
           (else
            ((trace) (format "~achecking: ~a" (indent) path))
-           (let ((path-zo-time (get-compiled-time path #f))
+           (let ((path-zo-time (get-compiled-time mode path #f))
                  (path-time 
                   (with-handlers ((exn:fail:filesystem? 
                                    (lambda (ex)
@@ -184,23 +187,23 @@
                 (cond
                   ((> path-time path-zo-time) 
 		   ((trace) (format "~anewer src..." (indent)))
-		   (compile-zo path))
+		   (compile-zo mode path))
                   (else
                    (let ((deps (with-handlers ((exn:fail:filesystem? (lambda (ex) (list (version)))))
                                  (call-with-input-file (bytes->path 
-							(bytes-append (get-compilation-path path) #".dep"))
+							(bytes-append (get-compilation-path mode path) #".dep"))
                                    read))))
                      (cond
                        ((or (not (pair? deps))
                             (not (equal? (version) (car deps))))
 			((trace) (format "~anewer version..." (indent)))
-                        (compile-zo path))
+                        (compile-zo mode path))
                        ((ormap (lambda (d)
 				 ;; str => str is a module file name (check transitive dates)
 				 ;; (cons 'ext str) => str is an non-module file (check date)
 				 (let ([t (cond
-					   [(bytes? d) (compile-root (bytes->path d) up-to-date)]
-					   [(path? d) (compile-root d up-to-date)]
+					   [(bytes? d) (compile-root mode (bytes->path d) up-to-date)]
+					   [(path? d) (compile-root mode d up-to-date)]
 					   [(and (pair? d) (eq? (car d) 'ext))
 					    (with-handlers ((exn:fail:filesystem?
 							     (lambda (ex) +inf.0)))
@@ -210,8 +213,8 @@
 				     ((trace) (format "~anewer: ~a (~a > ~a)..." (indent) d t path-zo-time)))
 				   (> t path-zo-time)))
 			       (map un-plthome-ify (cdr deps)))
-                        (compile-zo path))))))
-                (let ((stamp (get-compiled-time path #t)))
+                        (compile-zo mode path))))))
+                (let ((stamp (get-compiled-time mode path #t)))
                   (hash-table-put! up-to-date path stamp)
                   stamp)))))))))
   
@@ -222,7 +225,7 @@
     (let ([cache (make-hash-table 'equal)])
       (lambda (zo)
 	(parameterize ([current-load/use-compiled (make-compilation-manager-load/use-compiled-handler/table cache)])
-	  (compile-root (path->complete-path zo) cache)))))
+	  (compile-root (car (use-compiled-file-kinds)) (path->complete-path zo) cache)))))
 
   (define (make-compilation-manager-load/use-compiled-handler)
     (make-compilation-manager-load/use-compiled-handler/table (make-hash-table 'equal)))
@@ -231,14 +234,17 @@
     (let ([orig-eval (current-eval)]
 	  [orig-load (current-load)]
 	  [orig-namespace (current-namespace)]
-	  [default-handler (current-load/use-compiled)])
+	  [default-handler (current-load/use-compiled)]
+	  [modes (use-compiled-file-kinds)])
+      (when (null? modes)
+	(error 'make-compilation-manager-... "empty use-compiled-file-kinds list"))
       (letrec ([compilation-manager-load-handler
 		(lambda (path mod-name)
 		  (cond
                     [(not mod-name)
                      ((trace) (format "~askipping:  ~a mod-name ~s" (indent) path mod-name))
                      (default-handler path mod-name)]
-                    [(eq? 'none (use-compiled-file-kinds))
+                    [(not (member (car modes) (use-compiled-file-kinds)))
                      ((trace) (format "~askipping:  ~a file-kinds ~s" (indent) path (use-compiled-file-kinds)))
                      (default-handler path mod-name)]
                     [(not (eq? compilation-manager-load-handler (current-load/use-compiled)))
@@ -259,6 +265,7 @@
                      (default-handler path mod-name)]
                     [else 
                      ((trace) (format "~aprocessing: ~a" (indent) path))
-                     (compile-root path cache)
+                     (compile-root (car modes) path cache)
+		     ((trace) (format "~adone: ~a" (indent) path))
                      (default-handler path mod-name)]))])
 	compilation-manager-load-handler))))

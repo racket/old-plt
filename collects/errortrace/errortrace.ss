@@ -21,4 +21,7 @@
 	   annotate-executed-file)
   
   (current-eval errortrace-eval-handler)
-  (error-display-handler errortrace-error-display-handler))
+  (error-display-handler errortrace-error-display-handler)
+  (when (equal? (list (string->path "compiled"))
+		(use-compiled-file-kinds))
+    (use-compiled-file-kinds '("compiled/errortrace" "compiled"))))

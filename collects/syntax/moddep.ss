@@ -1,5 +1,6 @@
 
 (module moddep mzscheme
+  (require (lib "etc.ss"))
 
   (provide with-module-reading-parameterization)
   (define (with-module-reading-parameterization thunk)
@@ -103,71 +104,72 @@
   
   (define-struct (exn:get-module-code exn) (path))
 
-  (define (get-module-code path)
-    (unless (path-string? path) 
-      (raise-type-error 'get-module-code "path or string (sans nul)" path))
-    (let*-values ([(path) (resolve path)]
-		  [(base file dir?) (split-path path)]
-		  [(base) (if (eq? base 'relative) 'same base)]
-		  [(mode) (use-compiled-file-kinds)]
-		  [(comp?) (not (eq? mode 'none))])
-      (let* ([get-so (lambda (file)
-		       (if comp?
-			   (build-path base
-				       "compiled"
-				       "native"
-				       (system-library-subpath)
-				       (path-replace-suffix
-					file
-					(case (system-type)
-					  [(windows) #".dll"]
-					  [else #".so"])))
-			   #f))]
-	     [ok-kind? (lambda (file) (eq? mode 'all))]
-	     [zo (and comp?
-		      (build-path base
-				  "compiled"
-				  (path-replace-suffix file #".zo")))]
-	     [so (get-so file)]
-	     [_loader-so (get-so (string->path "_loader.ss"))]
-	     [path-d (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
-		       (file-or-directory-modify-seconds path))]
-	     [with-dir (lambda (t) 
-			 (parameterize ([current-load-relative-directory 
-					 (if (path? base) 
-					     base 
-					     (current-directory))])
-			   (t)))])
-	(cond
-	 [(and (date>=? _loader-so path-d)
-	       (let ([getter (load-extension _loader-so)])
-		 (let-values ([(loader modname) (getter (string->symbol 
-							 (bytes->string/latin-1
-							  (path->bytes
-							   (path-replace-suffix file #"")))))])
-		   loader)))
-	  => (lambda (loader)
-	       (raise (make-exn:get-module-code 
-		       (string->immutable-string
-			(format "get-module-code: cannot use _loader file: ~e"
-				_loader-so))
-		       (current-continuation-marks)
-		       loader)))]
-	 [(date>=? so path-d)
-	  (with-dir (lambda () (raise (make-exn:get-module-code 
-				       (string->immutable-string
-					(format "get-module-code: cannot use extension file; ~e" so))
-                                       (current-continuation-marks)
-				       so))))]
-	 [(date>=? zo path-d)
-	  (read-one zo #f)]
-	 [(not path-d)
-	  (raise (make-exn:get-module-code 
-		  (string->immutable-string (format "get-module-code: no such file: ~e" path))
-		  (current-continuation-marks)
-		  #f))]
-	 [else 
-	  (with-dir (lambda () (compile (read-one path #t))))]))))
+  (define get-module-code
+    (opt-lambda (path [sub-path "compiled"] [compiler compile])
+      (unless (path-string? path) 
+	(raise-type-error 'get-module-code "path or string (sans nul)" path))
+      (let*-values ([(path) (resolve path)]
+		    [(base file dir?) (split-path path)]
+		    [(base) (if (eq? base 'relative) 'same base)]
+		    [(mode) (use-compiled-file-kinds)]
+		    [(comp?) (not (eq? mode 'none))])
+	(let* ([get-so (lambda (file)
+			 (if comp?
+			     (build-path base
+					 sub-path
+					 "native"
+					 (system-library-subpath)
+					 (path-replace-suffix
+					  file
+					  (case (system-type)
+					    [(windows) #".dll"]
+					    [else #".so"])))
+			     #f))]
+	       [ok-kind? (lambda (file) (eq? mode 'all))]
+	       [zo (and comp?
+			(build-path base
+				    sub-path
+				    (path-replace-suffix file #".zo")))]
+	       [so (get-so file)]
+	       [_loader-so (get-so (string->path "_loader.ss"))]
+	       [path-d (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
+			 (file-or-directory-modify-seconds path))]
+	       [with-dir (lambda (t) 
+			   (parameterize ([current-load-relative-directory 
+					   (if (path? base) 
+					       base 
+					       (current-directory))])
+			     (t)))])
+	  (cond
+	   [(and (date>=? _loader-so path-d)
+		 (let ([getter (load-extension _loader-so)])
+		   (let-values ([(loader modname) (getter (string->symbol 
+							   (bytes->string/latin-1
+							    (path->bytes
+							     (path-replace-suffix file #"")))))])
+		     loader)))
+	    => (lambda (loader)
+		 (raise (make-exn:get-module-code 
+			 (string->immutable-string
+			  (format "get-module-code: cannot use _loader file: ~e"
+				  _loader-so))
+			 (current-continuation-marks)
+			 loader)))]
+	   [(date>=? so path-d)
+	    (with-dir (lambda () (raise (make-exn:get-module-code 
+					 (string->immutable-string
+					  (format "get-module-code: cannot use extension file; ~e" so))
+					 (current-continuation-marks)
+					 so))))]
+	   [(date>=? zo path-d)
+	    (read-one zo #f)]
+	   [(not path-d)
+	    (raise (make-exn:get-module-code 
+		    (string->immutable-string (format "get-module-code: no such file: ~e" path))
+		    (current-continuation-marks)
+		    #f))]
+	   [else 
+	    (with-dir (lambda () (compiler (read-one path #t))))])))))
 
   (define re:dir #rx#"(.+?)/+(.*)")
 

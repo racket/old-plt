@@ -179,6 +179,7 @@
      const:get-inexact-table
 
      const:get-string-table
+     const:get-bytes-table
      const:intern-string
 
      compiler:add-const!

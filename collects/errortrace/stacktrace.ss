@@ -28,8 +28,47 @@
   (define stacktrace@
     (unit/sig stacktrace^
       (import stacktrace-imports^)
-  
-      (define-struct st-mark (source))
+
+      (define (short-version v depth)
+	(cond
+	 [(identifier? v) (syntax-e v)]
+	 [(null? v) null]
+	 [(vector? v) (if (zero? depth)
+			  #(....)
+			  (list->vector
+			   (short-version (vector->list v) (sub1 depth))))]
+	 [(box? v) (if (zero? depth)
+		       #&(....)
+		       (box (short-version (unbox v) (sub1 depth))))]
+	 [(pair? v) (cond
+		     [(zero? depth) '(....)]
+		     [(memq (syntax-e (car v)) '(#%datum #%app #%top))
+		      (short-version (cdr v) depth)]
+		     [else
+		      (cons (short-version (car v) (sub1 depth))
+			    (short-version (cdr v) (sub1 depth)))])]
+	 [(syntax? v) (short-version (syntax-e v) depth)]
+	 [else v]))
+
+      (define (make-st-mark stx) #`(quote (#,(short-version stx 10)
+					   #,(let ([s (let ([source (syntax-source stx)])
+							(cond
+							 [(string? source) source]
+							 [(path? source) (path->string source)]
+							 [(not source) #f]
+							 [else (format "~a" source)]))])
+					       (and s
+						    (string->symbol s)))
+					   #,(syntax-line stx)
+					   #,(syntax-column stx)
+					   #,(syntax-position stx)
+					   #,(syntax-span stx))))
+      (define (st-mark-source src) (datum->syntax-object
+				    #f
+				    (car src)
+				    (cdr src)
+				    #f))
+				    
       (define (st-mark-bindings x) null)
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -211,14 +250,20 @@
            (kernel-syntax-case expr trans?
              [_
               (identifier? expr)
-              (if (eq? 'lexical (identifier-binding expr))
+	      (let ([b ((if trans? identifier-binding identifier-transformer-binding) #'id)])
+		(cond
+		 [(eq? 'lexical b)
                   ;; lexical variable - no error possile
-                  expr
+                  expr]
+		 [(and (pair? b) (eq? '#%kernel (car b)))
+		  ;; built-in - no error possible
+		  expr]
+		 [else
                   ;; might be undefined/uninitialized
-                  (with-mark expr make-st-mark expr))]
+                  (with-mark expr make-st-mark expr)]))]
              
-             [(#%top . _)
-              ;; might be undefined/uninitialized
+             [(#%top . id)
+	      ;; might be undefined/uninitialized
               (with-mark expr make-st-mark expr)]
              [(#%datum . _)
               ;; no error possible

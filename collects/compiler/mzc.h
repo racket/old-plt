@@ -61,7 +61,7 @@ static void closure_alloc_inc()
 
 #define SCHEME_DETATCH_MV_BUFFER(mv, pr) if (SAME_OBJ(mv, pr->values_buffer)) pr->values_buffer = NULL
 
-#define SCHEME_CURRENT_ENV(pr) ((Scheme_Env *)scheme_get_param(pr->config, MZCONFIG_ENV))
+#define SCHEME_CURRENT_ENV(pr) scheme_get_env(NULL)
 
 typedef struct {
   Scheme_Object * val;

@@ -43,13 +43,19 @@
       (define compile-notify-handler
 	(make-parameter void))
 
-      (define current-compiler-dynamic-require-namespace 
-	(make-parameter orig-namespace))
+      (define current-compiler-dynamic-require-wrapper
+	(make-parameter (lambda (thunk)
+			  (parameterize ([current-namespace orig-namespace])
+			    (thunk)))))
+
       (define (c-dynamic-require path id)
-	(if (current-compiler-dynamic-require-namespace)
-	    (parameterize ([current-namespace (current-compiler-dynamic-require-namespace)])
-	      (dynamic-require path id))
-	    (dynamic-require path id)))
+	((current-compiler-dynamic-require-wrapper)
+	 (lambda ()
+	   (dynamic-require path id))))
+      (define (c-get-info cp)
+	((current-compiler-dynamic-require-wrapper)
+	 (lambda ()
+	   (get-info cp))))
 
       (define (make-extension-compiler mode prefix)
 	(let ([u (c-dynamic-require `(lib "base.ss" "compiler" "private")
@@ -205,7 +211,7 @@
 			 compiler^)])
 	    (let ([dir (apply collection-path cp)]
 		  [orig (current-directory)]
-		  [info (get-info cp)])
+		  [info (c-get-info cp)])
 	      (dynamic-wind
 		  (lambda () (current-directory dir))
 		  (lambda ()

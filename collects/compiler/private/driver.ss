@@ -138,6 +138,8 @@
 				     (make-directory* d))
 				   d)
 				 dest-dir)]
+		   [path-prefix (lambda (a b)
+				  (bytes->path (bytes-append a (path->bytes b))))]
 		   [sbase (extract-base-filename/ss file (if from-c? #f 'mzc))]
 		   [cbase (extract-base-filename/c file (if from-c? 'mzc #f))]
 		   [base (or sbase cbase)]
@@ -145,13 +147,13 @@
 			      (find-system-path 'temp-dir)
 			      dest-dir)]
 		   [c-prefix (if tmp-c?
-				 (lambda (s) (string-append "mzcTMP" s))
+				 (lambda (s) (path-prefix #"mzcTMP" s))
 				 values)]
 		   [o-dir (if tmp-o?
 			      (find-system-path 'temp-dir)
 			      dest-dir)]
 		   [o-prefix (if tmp-o?
-				 (lambda (s) (string-append "mzcTMP" s))
+				 (lambda (s) (path-prefix #"mzcTMP" s))
 				 values)])
 	      (unless base
 		(error 'mzc "not a Scheme or C file: ~a" input-name))
@@ -166,7 +168,7 @@
 		      (build-path dest-dir (append-extension-suffix base))
 		      (string-append (compiler:clean-string (compiler:option:setup-prefix)) 
 				     "_" 
-				     (compiler:clean-string base)))))))
+				     (compiler:clean-string (path->string base))))))))
       
       (define elaboration-exn-handler
 	(lambda (exn)
@@ -469,7 +471,7 @@
 	   (append! l (block-source file-block)))))
 
       (define (open-input-scheme-file path)
-	(let ([p (let ([open (with-handlers ([not-break-exn? (lambda (x) #f)])
+	(let ([p (let ([open (with-handlers ([exn:fail? (lambda (x) #f)])
 			       (dynamic-require '(lib "mred.ss" "mred") 'open-input-graphical-file))])
 		   (if open
 		       ;; Handles WXME files:

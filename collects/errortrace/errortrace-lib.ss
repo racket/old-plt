@@ -4,6 +4,7 @@
 
 (module errortrace-lib mzscheme
   (require "stacktrace.ss"
+	   "errortrace-key.ss"
            (lib "list.ss") 
            (lib "unitsig.ss"))
 
@@ -78,21 +79,23 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Stacktrace instrumenter
 
+  (define dynamic-errortrace-key
+    (dynamic-require '(lib "errortrace-key-syntax.ss" "errortrace") 
+		     'errortrace-key-syntax))
+
   ;; with-mark : stx (any -> stx) stx -> stx
   (define (with-mark mark make-st-mark expr)
     (with-syntax ([expr expr]
 		  [loc (make-st-mark mark)]
-		  [key key])
+		  [et-key dynamic-errortrace-key])
       (execute-point
        mark
        (syntax
 	(with-continuation-mark
-	    'key
+	    et-key
 	    loc
 	  expr)))))
-  
-  (define key (gensym 'key))
-  
+
   (define-values/invoke-unit/sig stacktrace^ stacktrace@ #f stacktrace-imports^)
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -179,35 +182,26 @@
   (define instrumenting-enabled (make-parameter #t))
   (define error-context-display-depth (make-parameter 10000 (lambda (x) (and (integer? x) x))))
   
-  (define (cleanup v)
-    (cond
-     [(and (pair? v)
-	   (memq (car v) '(#%datum #%app #%top)))
-      (cleanup (cdr v))]
-     [(pair? v)
-      (cons (cleanup (car v)) (cleanup (cdr v)))]
-     [else v]))
-
   ;; port exn -> void
   ;; effect: prints out the context surrounding the exception
   (define (print-error-trace p x)
     (let loop ([n (error-context-display-depth)]
                [l (map st-mark-source
-		       (continuation-mark-set->list (exn-continuation-marks x) key))])
-
+		       (continuation-mark-set->list (exn-continuation-marks x) 
+						    errortrace-key))])
       (cond
         [(or (zero? n) (null? l)) (void)]
         [(pair? l)
 	 (let* ([stx (car l)]
+		[source (syntax-source stx)]
 		[file (cond
-		       [(path-string? (syntax-source stx))
-			(string->symbol (if (path? (syntax-source stx))
-					    (path->string (syntax-source stx))
-					    (syntax-source stx)))]
-		       [(not (syntax-source stx))
+		       [(string? source) source]
+		       [(path? source)
+			(path->string source)]
+		       [(not source)
 			#f]
 		       [else
-			(string->symbol (format "~a" (syntax-source stx)))])]
+			(format "~a" source)])]
 		[line (syntax-line stx)]
 		[col (syntax-column stx)]
 		[pos (syntax-position stx)])
@@ -217,7 +211,7 @@
 		     [line (format ":~a:~a" line col)]
 		     [pos (format "::~a" pos)]
 		     [else ""])
-		    (cleanup (syntax-object->datum stx)))
+		    (syntax-object->datum stx))
 	   (loop (- n 1) (cdr l)))])))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -253,37 +247,54 @@
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define errortrace-eval-handler    
+  (define (make-errortrace-elaborator orig begin-step combine)
+    (lambda (e)
+      ;; Loop to flatten top-level `begin's:
+      (let loop ([e e])
+	(let ([top-e (expand-syntax-to-top-form e)])
+	  (define (normal top-e)
+	    (let* ([ex (expand-syntax top-e)]
+		   [a (annotate-top ex #f)])
+	      (orig a)))
+	  (syntax-case top-e (begin module)
+	    [(begin expr ...)
+	     ;; Found a `begin', so expand/eval each contained
+	     ;; expression one at a time
+	     (foldl (lambda (e old-val)
+		      (combine old-val (loop e)))
+		    (void)
+		    (syntax->list #'(expr ...)))]
+	    [(module name . reste)
+	     (if (eq? (syntax-e #'name) 'errortrace-key)
+		 (orig top-e)
+		 (let ([top-e (expand-syntax top-e)])
+		   (syntax-case top-e (module #%plain-module-begin)
+		     [(module name init-import (#%plain-module-begin body ...))
+		      (normal #'(module name init-import 
+				  (#%plain-module-begin 
+				   (require (lib "errortrace-key.ss" "errortrace")) 
+				   (require-for-syntax (lib "errortrace-key.ss" "errortrace")) 
+				   body ...)))])))]
+	    [_else
+	     ;; Not `begin', so proceed with normal expand and eval
+	     (normal top-e)])))))
+  
+  (define errortrace-eval-handler
     (let ([orig (current-eval)]
           [ns (current-namespace)])
-      (lambda (e)
-        (if (and (eq? ns (current-namespace))
-		 (not (compiled-expression? (if (syntax? e)
-						(syntax-e e)
-						e))))
-            ;; Loop to flatten top-level `begin's:
-            (let loop ([e (if (syntax? e)
-			      e
-			      (namespace-syntax-introduce
-			       (datum->syntax-object #f e)))])
-              (let ([top-e (expand-syntax-to-top-form e)])
-                (syntax-case top-e (begin)
-                  [(begin expr ...)
-                   ;; Found a `begin', so expand/eval each contained
-                   ;; expression one at a time
-                   (foldl (lambda (e old-val)
-                            (loop e))
-                          (void)
-                          (syntax->list #'(expr ...)))]
-                  [_else
-                   ;; Not `begin', so proceed with normal expand and eval
-                   (let* ([ex (expand-syntax top-e)]
-                          [a (if (not (instrumenting-enabled))
-                                 ex
-                                 (annotate-top ex #f))])
-                     (orig a))])))
-            (orig e)))))
-  
+      (let ([elab (make-errortrace-elaborator orig orig void)])
+	(lambda (e)
+	  (if (and (instrumenting-enabled)
+		   (eq? ns (current-namespace))
+		   (not (compiled-expression? (if (syntax? e)
+						  (syntax-e e)
+						  e))))
+	      (elab (if (syntax? e)
+			e
+			(namespace-syntax-introduce
+			 (datum->syntax-object #f e))))
+	      (orig e))))))
+
   (define errortrace-error-display-handler
     (let ([orig (error-display-handler)])
       (lambda (msg exn)
@@ -297,6 +308,7 @@
   
   (provide errortrace-eval-handler
            errortrace-error-display-handler
+	   make-errortrace-elaborator
            
            print-error-trace 
 	   error-context-display-depth 

@@ -40,6 +40,7 @@
       (define const:inexact-counter 0)
       (define const:number-table (make-hash-table))
       (define const:string-table (make-hash-table))
+      (define const:bytes-table (make-hash-table))
       (define const:string-counter 0)
 
       (define (const:get-symbol-table) const:symbol-table)
@@ -47,6 +48,7 @@
       (define (const:get-inexact-table) const:inexact-table)
       (define (const:get-inexact-counter) const:inexact-counter)
       (define (const:get-string-table) const:string-table)
+      (define (const:get-bytes-table) const:bytes-table)
 
       (define vector-table (make-hash-table))
 
@@ -68,7 +70,8 @@
 	(set! const:inexact-table (make-hash-table))
 	(set! const:inexact-counter 0)
 	(set! const:number-table (make-hash-table))
-	(set! const:string-table (make-hash-table))
+	(set! const:string-table (make-hash-table 'equal))
+	(set! const:bytes-table (make-hash-table 'equal))
 	(set! const:string-counter 0)
 	(set! compiler:static-list null)
 	(set! compiler:per-load-static-list null)
@@ -78,14 +81,16 @@
 	(set! syntax-strings null))
 
       (define (const:intern-string s)
-	(let ([sym (string->symbol s)])
+	(let ([table
+	       (if (string? s) 
+		   const:string-table 
+		   const:bytes-table)])
 	  (hash-table-get 
-	   const:string-table
-	   sym
+	   table
+	   s
 	   (lambda ()
 	     (begin0
-	      const:string-counter
-	      (hash-table-put! const:string-table sym const:string-counter)
+	      (hash-table-put! table s const:string-counter)
 	      (set! const:string-counter (add1 const:string-counter)))))))
 
       (define (compiler:add-per-load-static-list! var)
@@ -332,6 +337,7 @@
 	 [(and (negative? size)
 	       (or (number? datum)
 		   (string? datum)
+		   (bytes? datum)
 		   (symbol? datum)
 		   (boolean? datum)
 		   (regexp? datum)))
@@ -341,9 +347,9 @@
       (define-struct compiled-string (id len))
 
       (define (construct-big-constant ast stx known-immutable?)
-	(let* ([s (let ([p (open-output-string)])
+	(let* ([s (let ([p (open-output-bytes)])
 		    (write (compile `(quote ,stx)) p)
-		    (get-output-string p))]
+		    (get-output-bytes p))]
 	       [id (const:intern-string s)])
 	  (let ([const (compiler:add-const!
 			(compiler:re-quote
@@ -351,7 +357,7 @@
 			  (datum->syntax-object
 			   #f
 			   ;; HACK!
-			   (make-compiled-string id (string-length s)))))
+			   (make-compiled-string id (bytes-length s)))))
 			(if known-immutable?
 			    varref:static
 			    varref:per-load-static))])
@@ -457,7 +463,8 @@
 
 	   ;; other atomic constants that must be built
 	   [else
-	    (when (string? (zodiac:zread-object ast))
+	    (when (or (string? (zodiac:zread-object ast))
+		      (bytes? (zodiac:zread-object ast)))
 	      (const:intern-string (zodiac:zread-object ast)))
 	    (compiler:add-const! (compiler:re-quote ast) 
 				 varref:static)])))
@@ -508,7 +515,7 @@
       (define (const:finish-syntax-constants!)
 	(if (null? syntax-constants)
 	    0
-	    (let* ([s (open-output-string)]
+	    (let* ([s (open-output-bytes)]
 		   [uninterned-symbol-info (get-new-uninterned-symbols!)]
 		   [c (compile `(quote-syntax ,(list->vector 
 						(let ([l (map cdr syntax-constants)]
@@ -520,7 +527,7 @@
 						       (list (varref:module-invoke-context-path-index mi))
 						       null))))))])
 	      (display c s)
-	      (let ([syntax-string (get-output-string s)])
+	      (let ([syntax-string (get-output-bytes s)])
 		(let* ([strvar (compiler:add-syntax-string! 
 				syntax-string
 				(varref:current-invoke-module)

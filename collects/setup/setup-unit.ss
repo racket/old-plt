@@ -7,6 +7,7 @@
 	   (lib "unit.ss")
 	   (lib "file.ss")
 	   (lib "list.ss")
+	   (lib "cm.ss")
 
 	   "option-sig.ss"
 	   (lib "sig.ss" "compiler")
@@ -274,6 +275,11 @@
 			   path)])))
 	 (directory-list path)))
 
+      (define mode-dir
+	(if (compile-mode)
+	    (build-path "compiled" (compile-mode))
+	    (build-path "compiled")))
+
       (define (clean-collection cc dependencies)
 	(let* ([info (cc-info cc)]
 	       [default (box 'default)]
@@ -281,9 +287,9 @@
 		       info
 		       'clean
 		       (lambda ()
-			 (list "compiled" 
-			       (build-path "compiled" "native")
-			       (build-path "compiled" "native" (system-library-subpath))))
+			 (list mode-dir
+			       (build-path mode-dir "native")
+			       (build-path mode-dir "native" (system-library-subpath))))
 		       (lambda (x)
 			 (unless (or (eq? x default)
 				     (and (list? x)
@@ -328,8 +334,8 @@
 		 (lambda (file _)
 		   (let-values ([(dir name dir?) (split-path file)])
 		     (let ([base-name (path-replace-suffix name #"")])
-		       (let ([zo (build-path dir "compiled" (format "~a.zo" base-name))]
-			     [dep (build-path dir "compiled" (format "~a.dep" base-name))])
+		       (let ([zo (build-path dir mode-dir (format "~a.zo" base-name))]
+			     [dep (build-path dir mode-dir (format "~a.dep" base-name))])
 			 (when (and (file-exists? dep)
 				    (file-exists? zo))
 			   (set! did-something? #t)
@@ -416,8 +422,9 @@
       (do-install-part 'pre)
 
       (define (make-it desc compile-collection)
-	;; Create a fresh namespace to avoid polluting the compilation
-	;;  with modules that are already loaded
+	;; To avoid polluting the compilation with modules that are
+	;; already loaded, create a fresh namespace before calling
+	;; this function
 	(for-each (lambda (cc)
 		    (record-error
 		     cc
@@ -443,7 +450,36 @@
 		       (collect-garbage))))
 		  collections-to-compile))
 
-      (when (make-zo) (make-it ".zos" compile-collection-zos))
+      (define orig-namespace (current-namespace))
+
+      (define (with-specified-mode thunk)
+	(if (not (compile-mode))
+	    (thunk)
+	    ;; Use the indicated mode
+	    (let ([zo-compile (with-handlers ([exn:fail?
+					       (lambda (exn)
+						 (error 'setup-plt
+							"error loading compiler for mode ~s: ~s"
+							(compile-mode)
+							(if (exn? exn)
+							    (exn-message exn)
+							    exn)))])
+				(dynamic-require `(lib "zo-compile.ss" ,(compile-mode)) 'zo-compile))]
+		  [orig-kinds (use-compiled-file-kinds)])
+	      (parameterize ([current-namespace (make-namespace)]
+			     [current-managed-zo-compile zo-compile]
+			     [use-compiled-file-kinds (list mode-dir)]
+			     [current-compiler-dynamic-require-wrapper
+			      (lambda (thunk)
+				(parameterize ([current-namespace orig-namespace]
+					       [use-compiled-file-kinds orig-kinds])
+				  (thunk)))])
+		(thunk)))))
+
+      (when (make-zo) 
+	(with-specified-mode
+	 (lambda ()
+	   (make-it ".zos" compile-collection-zos))))
       (when (make-so) (make-it "extensions" compile-collection-extension))
 
       (when (make-launchers)

@@ -9,6 +9,7 @@ Executables
 
 The following are the executables:
 
+  plt/bin/help-desk --- for Help
   plt/bin/drscheme -- PLT's main Scheme development environment
   plt/bin/drscheme-jr -- A simple text-based DrScheme
   plt/bin/mred -- a Scheme GUI engine
@@ -40,31 +41,10 @@ For compilation instructions, see plt/src/mred/README and
 plt/src/mzscheme/README.
 
 If there is no plt/src/mzscheme directory, you did not download
-the source code distribution. In this case, you should be ready to
+the source code distribution. In that case, you should be ready to
 run.
-
-Documentation
--------------
-
-Some documentation may be included in plt/collects/doc, but some of
-the PLT documentation must be downloaded separately from the
-executables.
-
-HTML documentation for PLT software should be installed into
-plt/collects/doc. For example, the DrScheme documenation should be in
-plt/collects/doc/drscheme, with button icons in plt/collects/doc/icons.
-
-DrScheme and MrEd will automatically add documentation installed in
-plt/collects/doc to the Help menu.
-
-Release Notes
--------------
-
-The release notes for this version are in plt/notes/releases/51.html.
-More specific notes can be found in sub-directories of plt/notes.
 
 More Information
 ----------------
 
-For more information, see
-  http://www.cs.rice.edu/CS/PLT/packages/
+Run plt/bin/help-desk for further information.

@@ -546,7 +546,7 @@
 				 (unless (equal? ht (hash-table-get ht-orig root-dir))
 				   (make-directory* (build-path root-dir "info-domain" "compiled"))
 				   (let ([p (build-path root-dir "info-domain" "compiled" "cache.ss")])
-				     (setup-printf "Updating ~a~n" p)
+				     (setup-printf "Updating ~a" p)
 				     (with-handlers ([exn:fail? (warning-handler (void))])
 				       (with-output-to-file p
 					 (lambda ()

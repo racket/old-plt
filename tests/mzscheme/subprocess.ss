@@ -211,22 +211,14 @@
 
   (let ([test
 	 (lambda (o i e)
-	   (error-test `(process*/ports ,o ,i ,e cat)))])
+	   (err/rt-test (process*/ports o i e cat)))])
     (test f #f #f)
     (test #f f2 #f)
     (test #f #f f)
 
     (test f f f2)
     (test f2 f2 f2)
-    (test f2 f f)
-
-    (test (open-output-string) #f #f)
-    (test #f (open-input-string "hi") #f)
-    (test #f #f (open-output-string))
-
-    (test (open-output-string) f f2)
-    (test f2 (open-input-string "hi") f2)
-    (test f2 f (open-output-string))))
+    (test f2 f f)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; nested tests

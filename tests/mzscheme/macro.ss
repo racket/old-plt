@@ -13,6 +13,40 @@
 (test 9 'macro (mx +))
 (test -7 'macro (mx -))
 (test 18 'macro (let ([mx (lambda (x) (x 1 8 9))]) (mx +)))
+
+(define-syntax (m stx)
+  (syntax-case stx ()
+    [(_) #'(m2 x)]))
+
+(define-syntax (m2 stx)
+  (syntax-case stx ()
+    [(_ y) #'(let ([y 10]
+		   [x 8])
+	       y)]))
+
+(test 10 'hygiene (m))
+(test 10 'hygiene (m2 y))
+(test 10 'hygiene (m2 x))
+(test 10 'hygiene (eval #'(m)))
+(test 10 'hygiene (eval (expand #'(m))))
+(test 10 'hygiene (eval (expand (expand #'(m)))))
+
+(define-syntax define-foo
+  (syntax-rules ()
+    ((_ expr) (define foo expr))))
+
+(test 'o 'hygiene (let ()
+		    (define-foo 'f)
+		    (define-foo 'o)
+		    (define o 'o)
+		    o))
+(test 'o 'hygiene (eval (expand (expand #'(let ()
+					    (define-foo 'f)
+					    (define-foo 'o)
+					    (define o 'o)
+					    o)))))
+
+
 (test 13 'let-macro (let-syntax ([mx (lambda (stx)
 				       (syntax-case stx ()
 					 [(_ x) (syntax (x 6 7))]))])

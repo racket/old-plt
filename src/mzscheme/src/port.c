@@ -2452,7 +2452,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
     return NULL;
   }
 
-  if (regfile && (existsok == -1)) {
+  if (regfile && (existsok < 0)) {
     if (mode[0] == 'a')
       SetFilePointer(fd, 0, NULL, FILE_END);
     else

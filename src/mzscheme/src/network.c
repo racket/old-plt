@@ -1867,8 +1867,8 @@ tcp_listen(int argc, Scheme_Object *argv[])
   if (argc > 2)
     reuse = SCHEME_TRUEP(argv[2]);
   if (argc > 3) {
-    if (!SCHEME_STRINGP(argv[3]))
-      scheme_wrong_type("tcp-connect", "string", 3, argc, argv);
+    if (!SCHEME_STRINGP(argv[3]) && !SCHEME_FALSEP(argv[3]))
+      scheme_wrong_type("tcp-connect", "string or #f", 3, argc, argv);
   }
     
 #ifdef USE_TCP
@@ -1881,7 +1881,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
   else
     backlog = 4;
   if (argc > 3)
-    address = SCHEME_STR_VAL(argv[3]);
+    address = (SCHEME_STRINGP(argv[3]) ? SCHEME_STR_VAL(argv[3]) : NULL);
   else
     address = NULL;
 

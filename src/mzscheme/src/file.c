@@ -1655,6 +1655,8 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
 #endif
 
 #ifdef DOS_FILE_SYSTEM
+  scheme_security_check_file("link-exists?", filename, SCHEME_GUARD_FILE_EXISTS);
+
   return scheme_false;
 #endif
 #ifdef USE_MAC_FILE_TOOLBOX

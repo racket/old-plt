@@ -239,7 +239,6 @@ scheme_fdclr
 scheme_fdisset
 scheme_add_fd_handle
 scheme_add_fd_eventmask
-scheme_return_eof_for_error
 scheme_security_check_file
 scheme_security_check_network
 scheme_make_namespace

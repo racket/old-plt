@@ -707,7 +707,8 @@
 (err/rt-test (make-string 5.0 #\b))
 (err/rt-test (make-string 5.2 #\a))
 (err/rt-test (make-string -5 #\f))
-(err/rt-test (make-string 500000000000000 #\f) exn:misc:out-of-memory?)
+(err/rt-test (make-string 500000000000000 #\f) exn:misc:out-of-memory?) ;; bignum on 32-bit machines
+(err/rt-test (make-string 50000000000000000000 #\f) exn:misc:out-of-memory?)  ;; bignum on 64-bit machines
 
 (define f (make-string 3 #\*))
 (test "?**" 'string-set! (begin (string-set! f 0 #\?) f))

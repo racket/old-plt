@@ -1001,20 +1001,7 @@ mark_input_file {
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_File));
 }
 
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-mark_tested_input_file {
- mark:
-  Tested_Input_File *tip = (Tested_Input_File *)p;
-  
-  gcMARK(tip->fp);
-#ifdef WIN32_FD_HANDLES
-  gcMARK(tip->thread_memory);
-#endif
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Tested_Input_File));
-}
-
+#if defined(WIN32_FD_HANDLES)
 mark_tcp_select_info {
  mark:
  size:
@@ -1032,22 +1019,7 @@ mark_output_file {
   gcBYTES_TO_WORDS(sizeof(Scheme_Output_File));
 }
 
-#ifdef USING_TESTED_OUTPUT_FILE
-mark_tested_output_file {
- mark:
-  Tested_Output_File *top = (Tested_Output_File *)p;
-  
-  gcMARK(top->fp);
-#ifdef WIN32_FD_HANDLES
-  gcMARK(top->thread_memory);
-#endif
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Tested_Output_File));
-}
-#endif
-
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
 mark_input_fd {
  mark:
   Scheme_FD *fd = (Scheme_FD *)p;
@@ -1068,14 +1040,6 @@ mark_system_child {
 
  size:
   gcBYTES_TO_WORDS(sizeof(System_Child));
-}
-#endif
-
-#ifdef BEOS_PROCESSES
-mark_beos_process {
- mark:
- size:
-  gcBYTES_TO_WORDS(sizeof(BeOSThread));
 }
 #endif
 

@@ -118,6 +118,16 @@ typedef jmpbuf jmp_buf[1];
 
 #define GC_MIGHT_USE_REGISTERED_STATICS
 
+#ifdef OS_X
+ #ifdef MACINTOSH_EVENTS
+  #ifdef XONX
+   #include "macosxonxpre.h"
+  #else
+   #include "macosxpre.h"
+  #endif
+ #endif
+#endif
+
 /* Set up MZ_EXTERN for DLL build */
 #if SCHEME_DIRECT_EMBEDDED && defined(WINDOWS_DYNAMIC_LOAD) \
     && (defined(_MSC_VER) || defined(__BORLANDC__)) \
@@ -550,9 +560,19 @@ typedef struct Scheme_Env Scheme_Env;
 /*========================================================================*/
 
 #ifdef USE_MZ_SETJMP
-typedef long mz_jmp_buf[8];
+typedef long mz_pre_jmp_buf[8];
 #else
-# define mz_jmp_buf jmp_buf
+# define mz_pre_jmp_buf jmp_buf
+#endif
+
+#ifdef MZ_PRECISE_GC
+typedef struct {
+  mz_pre_jmp_buf jb;
+  void **gcvs;
+  void *gcvs_cnt;
+} mz_jmp_buf;
+#else
+# define mz_jmp_buf mz_pre_jmp_buf
 #endif
 
 /* Like setjmp & longjmp, but you can jmp to a deeper stack position */
@@ -725,8 +745,6 @@ typedef struct Scheme_Thread {
 
   long block_start_sleep;
 
-  int eof_on_error; /* For port operations */
-
   /* MzScheme client can use: */
   void (*on_kill)(struct Scheme_Thread *p);
   void *kill_data;
@@ -853,7 +871,7 @@ typedef struct Scheme_Input_Port
   Scheme_Object *sub_type;
   Scheme_Custodian_Reference *mref;
   void *port_data;
-  int (*getc_fun) (struct Scheme_Input_Port *port);
+  int (*getc_fun) (struct Scheme_Input_Port *port, int *nonblock, int *eof_on_error);
   int (*peekc_fun) (struct Scheme_Input_Port *port);
   int (*char_ready_fun) (struct Scheme_Input_Port *port);
   void (*close_fun) (struct Scheme_Input_Port *port);
@@ -879,6 +897,8 @@ typedef struct Scheme_Output_Port
   void *port_data;
   void (*write_string_fun)(char *str, long d, long len, struct Scheme_Output_Port *);
   void (*close_fun) (struct Scheme_Output_Port *);
+  int (*ready_fun) (struct Scheme_Output_Port *);
+  void (*need_wakeup_fun)(struct Scheme_Output_Port *, void *);
   long pos;
   Scheme_Object *display_handler;
   Scheme_Object *write_handler;
@@ -1021,13 +1041,16 @@ MZ_EXTERN Scheme_Object *scheme_eval_waiting;
 #define scheme_break_waiting(p) (p->external_break)
 
 #ifndef USE_MZ_SETJMP
-# ifdef JMP_BUF_IS_JMPBUF
-#  define scheme_longjmp(b, v) longjmp(&b, v)
-#  define scheme_setjmp(b) setjmp(&b)
-# else
-#  define scheme_longjmp(b, v) longjmp(b, v)
-#  define scheme_setjmp(b) setjmp(b)
-# endif
+# define scheme_mz_longjmp(b, v) longjmp(b, v)
+# define scheme_mz_setjmp(b) setjmp(b)
+#endif
+
+#ifdef MZ_PRECISE_GC
+# define scheme_longjmp(b, v) (GC_variable_stack = (b).gcvs, GC_variable_stack[1] = (b).gcvs_cnt, scheme_mz_longjmp((b).jb, v))
+# define scheme_setjmp(b)     ((b).gcvs = GC_variable_stack, (b).gcvs_cnt = GC_variable_stack[1], scheme_mz_setjmp((b).jb))
+#else
+# define scheme_longjmp(b, v) scheme_mz_longjmp(b, v)
+# define scheme_setjmp(b) scheme_mz_setjmp(b)
 #endif
 
 /*========================================================================*/
@@ -1168,7 +1191,7 @@ void scheme_restore_nonmain_thread(void);
 #ifdef MAC_FILE_SYSTEM
 extern long scheme_creator_id;
 #endif
-#ifdef MACINTOSH_EVENTS
+#ifdef MACINTOSH_EVENTS 
 extern void (*scheme_handle_aewait_event)(EventRecord *e);
 #endif
 
@@ -1205,8 +1228,6 @@ MZ_EXTERN void scheme_register_static(void *ptr, long size);
 #else
 # define MZ_REGISTER_STATIC(x) /* empty */
 #endif
-
-MZ_EXTERN void scheme_setup_forced_exit(void);
 
 MZ_EXTERN void scheme_start_atomic(void);
 MZ_EXTERN void scheme_end_atomic(void);

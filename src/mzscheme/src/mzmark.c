@@ -2532,40 +2532,7 @@ int mark_input_file_FIXUP(void *p) {
 #define mark_input_file_IS_CONST_SIZE 1
 
 
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-int mark_tested_input_file_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Tested_Input_File));
-}
-
-int mark_tested_input_file_MARK(void *p) {
-  Tested_Input_File *tip = (Tested_Input_File *)p;
-  
-  gcMARK(tip->fp);
-#ifdef WIN32_FD_HANDLES
-  gcMARK(tip->thread_memory);
-#endif
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Tested_Input_File));
-}
-
-int mark_tested_input_file_FIXUP(void *p) {
-  Tested_Input_File *tip = (Tested_Input_File *)p;
-  
-  gcFIXUP(tip->fp);
-#ifdef WIN32_FD_HANDLES
-  gcFIXUP(tip->thread_memory);
-#endif
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Tested_Input_File));
-}
-
-#define mark_tested_input_file_IS_ATOMIC 0
-#define mark_tested_input_file_IS_CONST_SIZE 1
-
-
+#if defined(WIN32_FD_HANDLES)
 int mark_tcp_select_info_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Tcp_Select_Info));
@@ -2613,42 +2580,7 @@ int mark_output_file_FIXUP(void *p) {
 #define mark_output_file_IS_CONST_SIZE 1
 
 
-#ifdef USING_TESTED_OUTPUT_FILE
-int mark_tested_output_file_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Tested_Output_File));
-}
-
-int mark_tested_output_file_MARK(void *p) {
-  Tested_Output_File *top = (Tested_Output_File *)p;
-  
-  gcMARK(top->fp);
-#ifdef WIN32_FD_HANDLES
-  gcMARK(top->thread_memory);
-#endif
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Tested_Output_File));
-}
-
-int mark_tested_output_file_FIXUP(void *p) {
-  Tested_Output_File *top = (Tested_Output_File *)p;
-  
-  gcFIXUP(top->fp);
-#ifdef WIN32_FD_HANDLES
-  gcFIXUP(top->thread_memory);
-#endif
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Tested_Output_File));
-}
-
-#define mark_tested_output_file_IS_ATOMIC 0
-#define mark_tested_output_file_IS_CONST_SIZE 1
-
-#endif
-
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
 int mark_input_fd_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_FD));
@@ -2703,27 +2635,6 @@ int mark_system_child_FIXUP(void *p) {
 
 #define mark_system_child_IS_ATOMIC 0
 #define mark_system_child_IS_CONST_SIZE 1
-
-#endif
-
-#ifdef BEOS_PROCESSES
-int mark_beos_process_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(BeOSThread));
-}
-
-int mark_beos_process_MARK(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(BeOSThread));
-}
-
-int mark_beos_process_FIXUP(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(BeOSThread));
-}
-
-#define mark_beos_process_IS_ATOMIC 1
-#define mark_beos_process_IS_CONST_SIZE 1
 
 #endif
 

@@ -323,62 +323,6 @@
 
 #endif
 
-  /************** BeOS with egcs (and CodeWarrior?) ****************/
-
-#if defined(__BEOS__)
-
-# ifdef __INTEL__
-#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "i586-beos"
-# else
-#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-beos"
-#  define SCHEME_BIG_ENDIAN
-#endif
-
-# include "uconfig.h"
-# undef UNIX_DYNAMIC_LOAD
-# undef UNIX_FIND_STACK_BOUNDS
-# undef USE_GETRUSAGE
-# undef SYSTEM_TYPE_NAME
-
-# define SYSTEM_TYPE_NAME "beos"
-
-# define BEOS_IMAGE_DYNAMIC_LOAD
-# define LINK_EXTENSIONS_BY_TABLE
-
-# undef HAS_STANDARD_IOB
-# undef FILES_HAVE_FDS
-# undef USE_FD_PORTS
-# define USE_BEOS_PORT_THREADS
-# define USE_BEOS_SOCKET_INCLUDE
-
-# undef UNIX_PROCESSES
-# define BEOS_PROCESSES
-
-# define USE_FCNTL_O_NONBLOCK
-# define MZ_PF_INET AF_INET
-# define PROTOENT_IS_INT IPPROTO_TCP
-# define CANT_SET_SOCKET_BUFSIZE
-# define SEND_IS_NEVER_TOO_BIG
-
-# define USE_BEOS_SNOOZE
-
-# define SIGSET_IS_SIGNAL
-
-# define DIRENT_NO_NAMLEN
-
-# define BEOS_FIND_STACK_BOUNDS
-# define STACK_GROWS_DOWN
-
-# define USE_TM_GMTOFF_FIELD
-
-# ifdef __INTEL__
-#  define REGISTER_POOR_MACHINE
-# endif
-
-# define FLAGS_ALREADY_SET
-
-#endif
-
   /************** SGI/IRIX with SGI cc ****************/
 
 #if  (defined(mips) || defined(__mips)) \
@@ -402,6 +346,10 @@
 # define USE_FCNTL_O_NONBLOCK
 
 # define USE_TIMEZONE_AND_ALTZONE_VAR
+
+# ifdef _ABIN32
+#  define USE_LONG_LONG_FOR_BIGDIG
+# endif
 
 # define FLAGS_ALREADY_SET
 
@@ -586,12 +534,13 @@
 #ifdef __CYGWIN32__
 # define UNIX_PROCESSES
 # define FILES_HAVE_FDS
+# define USE_FD_PORTS
 # define HAS_CYGWIN_IOB
 # define SIGCHILD_DOESNT_INTERRUPT_SELECT
 #else
 # define NO_SLEEP
 # define WINDOWS_PROCESSES
-# define DETECT_WIN32_CONSOLE_STDIN
+# define WINDOWS_FILE_HANDLES
 # define USE_WIN32_THREAD_TIMER
 #endif
 
@@ -638,8 +587,10 @@
 # undef HAS_STANDARD_IOB
 # define HAS_BSD_IOB
 
+#ifndef XONX
 # undef SYSTEM_TYPE_NAME
 # define SYSTEM_TYPE_NAME "macosx"
+#endif
 
 # define STACK_GROWS_DOWN
 # define SCHEME_BIG_ENDIAN
@@ -660,7 +611,9 @@
 
 # define USE_TM_GMTOFF_FIELD
 
+#ifndef XONX
 # define MACINTOSH_EVENTS
+#endif
 
 # ifndef OS_X
 #  define OS_X 1
@@ -973,15 +926,8 @@
  /* USE_MAC_TCP means that the tcp- procedures can be implemented
     with the Mac TCP toolbox. */
 
- /* DETECT_WIN32_CONSOLE_STDIN notices character reads from console
-    stdin so that char-ready? and blocking reads can be implemented
-    correctly (so that Scheme threads are not blocked when no input
-    is ready). If NO_STDIO_THREADS is defined, this flag is ignored. */
-
- /* NO_STDIO_THREADS turns off special Windows handling for stdin
-    and process input ports. The special handling implements char-ready?
-	and non-blocking reads (so that reading from one of these ports does
-	not block other MzScheme threads). */
+ /* WINDOWS_FILE_HANDLES implements file access through the Windows
+    API (CreateFile(), ReadFile(), etc.) */
 
  /* USE_FCNTL_O_NONBLOCK uses O_NONBLOCK instead of FNDELAY for
     fcntl on Unix TCP sockets. (Posix systems need this flag). */
@@ -1266,6 +1212,9 @@
     way for x86 machines. */
 
  /* SIXTY_FOUR_BIT_INTEGERS indicates that 'long's are 64-bits wide. */
+
+ /* USE_LONG_LONG_FOR_BIGDIG indicates that `long long' is available
+    and 64 bits wide (don't mix with SIXTY_FOUR_BIT_INTEGERS). */
 
  /* MACROMAN_CHAR_SET indicates that latin1-integer->char should convert
     Latin-1 values to MacRoman characters. */

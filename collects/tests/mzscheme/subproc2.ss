@@ -1,6 +1,8 @@
 
 (define child? (member "child" (vector->list (current-command-line-arguments))))
 
+(define a-lot 500000)
+
 (unless child?
   (load-relative "loadtest.ss")
 
@@ -19,16 +21,18 @@
       
       (test #t
             positive?
-            ;; Push 50000 chars; should block at least once:
-            (let ([s (make-string 50000 #\a)])
+            ;; Push a-lot chars; should block at least once:
+            (let ([s (make-string a-lot #\a)])
               (let loop ([offset 0])
                 (let ([ready? (object-wait-multiple 0 out)])
                   (printf "~a ~a~n" offset ready?)
                   (+ (if ready? 0 1)
                      (let ([n (write-string-avail s out offset)])
-                       (if (= (+ n offset) 50000)
+                       (if (= (+ n offset) a-lot)
                            0
                            (loop (+ offset n)))))))))
+
+      (test "done" read-line in)
       
       'ok)))
 
@@ -41,10 +45,12 @@
         (printf "not go!~n"))
   
     (fprintf (current-error-port) "CHILD: starting sleep~n")
-    (sleep 3)
+    (sleep 1)
     (fprintf (current-error-port) "CHILD: finished sleep; reading...~n")
 
-    (unless (= 50000 (string-length (read-string 50000)))
+    (unless (= a-lot (string-length (read-string a-lot)))
       (fprintf (current-error-port) "CHILD: bad read count"))
+
+    (printf "done~n")
     
     'ok))

@@ -352,6 +352,7 @@
        scheme_get_milliseconds scheme_get_process_milliseconds
        scheme_rational_to_double scheme_bignum_to_double
        scheme_rational_to_float scheme_bignum_to_float
+       |GetStdHandle|
 
        scheme_make_small_bignum scheme_make_small_rational scheme_make_small_complex))
 

@@ -34,8 +34,8 @@ MZ_EXTERN void scheme_longjmpup(Scheme_Jumpup_Buf *b);
 MZ_EXTERN void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b);
 
 #ifdef USE_MZ_SETJMP
-MZ_EXTERN int scheme_setjmp(mz_jmp_buf b);
-MZ_EXTERN void scheme_longjmp(mz_jmp_buf b, int v);
+MZ_EXTERN int scheme_mz_setjmp(mz_pre_jmp_buf b);
+MZ_EXTERN void scheme_mz_longjmp(mz_pre_jmp_buf b, int v);
 #endif
 
 MZ_EXTERN void scheme_clear_escape(void);
@@ -451,7 +451,7 @@ MZ_EXTERN int scheme_are_all_chars_ready(Scheme_Object *port);
 
 MZ_EXTERN Scheme_Object *scheme_make_port_type(const char *name);
 MZ_EXTERN Scheme_Input_Port *scheme_make_input_port(Scheme_Object *subtype, void *data,
-						    int (*getc_fun)(Scheme_Input_Port*),
+						    int (*getc_fun)(Scheme_Input_Port*, int*, int*),
 						    int (*peekc_fun)(Scheme_Input_Port*),
 						    int (*char_ready_fun)(Scheme_Input_Port*),
 						    void (*close_fun)(Scheme_Input_Port*),
@@ -461,6 +461,8 @@ MZ_EXTERN Scheme_Output_Port *scheme_make_output_port(Scheme_Object *subtype,
 						      void *data,
 						      void (*write_string_fun)(char*, long, long, Scheme_Output_Port*),
 						      void (*close_fun)(Scheme_Output_Port*),
+						      int (*ready_fun)(Scheme_Output_Port*),
+						      void (*need_wakeup_fun)(Scheme_Output_Port*, void *),
 						      int must_close);
 
 MZ_EXTERN Scheme_Object *scheme_make_file_input_port(FILE *fp);
@@ -502,10 +504,8 @@ MZ_EXTERN int scheme_fdisset(void *fd, int pos);
 MZ_EXTERN void scheme_add_fd_handle(void *h, void *fds, int repost);
 MZ_EXTERN void scheme_add_fd_eventmask(void *fds, int mask);
 
-MZ_EXTERN int scheme_return_eof_for_error();
-
-MZ_EXTERN void scheme_security_check_file(const char *who, char *filename, int guards);
-MZ_EXTERN void scheme_security_check_network(const char *who, char *host, int port);
+MZ_EXTERN void scheme_security_check_file(const char *who, const char *filename, int guards);
+MZ_EXTERN void scheme_security_check_network(const char *who, const char *host, int port, int client);
 
 /*========================================================================*/
 /*                        namespace/environment                           */

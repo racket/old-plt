@@ -67,6 +67,8 @@
 
 	    [ignore-redraw-request? #f]
 
+	    [already-trying? #f] ; hack around stubborn Motif bug
+
 	    ; pointer to panel in the frame for use in on-size
 	    [panel null])
 	  
@@ -268,29 +270,32 @@
 				   "Entered frame's on-size; args ~s ~s")
 				  new-width new-height)
 	       (super-on-size new-width new-height)
-	       (let ([new-width (get-width)]
-		     [new-height (get-height)])
-		 (let-values ([(correct-w correct-h)
+	       (unless already-trying?
+	         (let ([new-width (get-width)]
+		       [new-height (get-height)])
+		   (let-values ([(correct-w correct-h)
 			       (correct-size new-width new-height)])
-		   (mred:debug:printf 'container-frame-on-size
-			   (string-append
-			    "container-frame-on-size: "
-			    "Correct size ~s ~s")
-			   correct-w correct-h)
-		   (unless (and (= new-width correct-w)
-				(= new-height correct-h)
-				(not force?))
-		     (mred:debug:printf 
+		     (mred:debug:printf 'container-frame-on-size
+					(string-append
+					 "container-frame-on-size: "
+					 "Correct size ~s ~s")
+					correct-w correct-h)
+		     (unless (and (= new-width correct-w)
+				  (= new-height correct-h)
+				  (not force?))
+		       (mred:debug:printf 
+			'container-frame-on-size
+			(string-append
+			 "container-frame-on-size: "
+			 "resizing frame to correct size"))
+		       (set! already-trying? #t)
+		       (set-size -1 -1 correct-w correct-h)
+		       (set! already-trying? #f))
+		     (mred:debug:printf         
 		      'container-frame-on-size
 		      (string-append
 		       "container-frame-on-size: "
-		       "resizing frame to correct size"))
-		     (set-size -1 -1 correct-w correct-h))
-		   (mred:debug:printf         
-		    'container-frame-on-size
-		    (string-append
-		     "container-frame-on-size: "
-		     "Leaving onsize at the end.")))))])
+		       "Leaving onsize at the end."))))))])
 
 	  (sequence
 	    (apply super-init args)

@@ -66,7 +66,13 @@
 	 (error-escape-handler (lambda () (escape-k #f)))
 	 (send edit begin-edit-sequence))
        (lambda ()
-	 (let ([mzlib (reference-library "corer.ss")])
+	 (let ([cu (compound-unit/sig (import)
+		    (link [wx : wx^ (wx:wx@)]
+			  [C : mzlib:core^ ((reference-library "corer.ss"))]
+			  [mred : mred^ ((reference-library "linkwx.ss" "mred") C wx)])
+		    (export (unit mred)
+			    (open C)
+			    (unit wx)))])
 	   (let/ec k
 	     (send edit clear-events)
 	     (set! escape-k k)
@@ -85,10 +91,10 @@
 				(show-error string))))))
 	       (with-parameterization param
 		 (lambda ()
-		   (invoke-open-unit/sig wx:wx@ wx)
+		   (require-library "debug.ss" "system")
+		   (invoke-open-unit/sig cu)
 		   (global-defined-value 'remember remember)
 		   (global-defined-value 'remember-around remember-around)
-		   (invoke-open-unit/sig mzlib)
 		   (load/cd user-config-file)))))
 	   (send edit sync)))
        (lambda ()

@@ -1,6 +1,9 @@
 SYSTEM HISTORY
 --------------
 Version 49:
+- autosaving has been moved to new edit and pasteboard classes, 
+  mred:backup-autosave-edit and  mred:backup-autosave-pasteboard.
+
 - mred:add-preference-default now takes a function which determines if
   preferences read from the disk are valid or not (if not, the default
   is used)

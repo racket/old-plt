@@ -3320,20 +3320,34 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
     case CPT_HASH_TABLE:
       {
 	Scheme_Hash_Table *t;
+	Scheme_Object *l;
 	int eq, len;
 
 	eq = read_compact_number(port);
 	if (eq)
-	  t = scheme_make_hash_table(SCHEME_hash_ptr);
-	else
 	  t = scheme_make_hash_table_equal();
+	else
+	  t = scheme_make_hash_table(SCHEME_hash_ptr);
 	len = read_compact_number(port);
 	
+	l = scheme_null;
 	while (len--) {
 	  Scheme_Object *k, *v;
 	  k = read_compact(port, 0);
 	  v = read_compact(port, 0);
-	  scheme_hash_set(t, k, v);
+	  /* We can't always hash directly, because a key or value
+	     might have a graph reference inside it. */
+	  l = scheme_make_pair(scheme_make_pair(k, v), l);
+	}
+
+	/* Map an unintenred sym to l so that resolve_references
+	   completes the table construction. */
+	scheme_hash_set(t, an_uninterned_symbol, l);
+	if (!(*port->ht)) {
+	  /* So that resolve_references is called to build the table: */
+	  Scheme_Hash_Table *tht;
+	  tht = scheme_make_hash_table(SCHEME_hash_ptr);
+	  *(port->ht) = tht;
 	}
 
 	v = (Scheme_Object *)t;

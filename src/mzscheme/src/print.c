@@ -1266,7 +1266,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       Scheme_Hash_Table *t;
       Scheme_Object **keys, **vals, *val;
       int i, size, did_one = 0;
-      
+
       if (compact) {
 	print_compact(pp, CPT_HASH_TABLE);
 	if (scheme_is_hash_table_equal(obj))
@@ -1301,13 +1301,13 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	  print(val, notdisplay, compact, ht, symtab, rnht, pp);
 	  if (!compact)
 	    print_utf8_string(pp, ")", 0, 1);
-	  did_one = 1;
+	  did_one++;
 	}
       }
 
       if (!compact)
 	print_utf8_string(pp, ")", 0, 1);
-      
+
       closed = 1;
     }
   else if (SAME_OBJ(obj, scheme_true))

@@ -41,7 +41,7 @@ LDFLAGS = $(XLIB)
 ###########################
 
 XFORM_INC_wx_xt = -Dwx_xt -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src
-XFORM_INC_wx_mac = -Dwx_mac -DOS_X -DWX_CARBON -I$(WXMACDIR)/../utils/image/src -I$(WXMACDIR)/../contrib/wxxpm/libxpm.34b/lib -I$(WXMACDIR)/../../mac/mzscheme
+XFORM_INC_wx_mac = -Dwx_mac -DOS_X -MMD -DWX_CARBON -I$(WXMACDIR)/../utils/image/src -I$(WXMACDIR)/../contrib/wxxpm/libxpm.34b/lib -I$(WXMACDIR)/../../mac/mzscheme
 
 MZMMM_wx_xt = ../../mzscheme/mzscheme3m
 MZMMM_wx_mac = env DYLD_FRAMEWORK_PATH="`pwd`/../../mzscheme" ../../mzscheme/mzscheme3m
@@ -189,8 +189,10 @@ xsrc/wx_xbm.cc: $(WXDIR)/utils/image/src/wx_xbm.cc $(WXBDIR)/utils/image/src/wx_
 
 MACXPRECOMP = macxsrc/xform_precomp.h
 
-macxsrc/xform_precomp.h : $(XFORMDEP) $(srcdir)/macprecomp.cxx ../../wxmac/src/precomp.o
+macxsrc/xform_precomp.h : $(XFORMDEP) $(srcdir)/macprecomp.cxx
 	env XFORM_PRECOMP=yes $(XFORM) $(srcdir)/macprecomp.cxx $(MACXPRECOMP)
+
+@INCLUDEDEP@ macprecomp.d
 
 wx_xt_XFORMWP = $(XFORM)
 wx_mac_XFORMWP = env XFORM_USE_PRECOMP=$(MACXPRECOMP) $(XFORM)
@@ -587,12 +589,14 @@ wx_xbm.o: xsrc/wx_xbm.cc
 
 MACXFLAG = -Wno-long-double
 
-macuseprecomp.o : macxsrc/xform_precomp.h $(srcdir)/macuseprecomp.cxx
-	$(CXX) $(MACXFLAG) -Imacxsrc --dump-pch . -o macuseprecomp.o -c $(srcdir)/macuseprecomp.cxx
-	touch macuseprecomp.o
+precomp.o : macxsrc/xform_precomp.h $(srcdir)/precomp.cxx
+	$(CXX) $(MACXFLAG) -Imacxsrc --dump-pch . -o precomp.o -c $(srcdir)/precomp.cxx
+	touch precomp.o
 
-MACPRECOMPDEP = macuseprecomp.o
-MACUSEPRECOMP = --load-pch .
+WXPRECOMPDIR = .
+
+MACPRECOMPDEP = @WXPRECOMP@
+MACUSEPRECOMP = @USE_WXPRECOMP@
 
 mwb_item.o: macxsrc/wb_item.cc $(MACPRECOMPDEP)
 	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwb_item.o macxsrc/wb_item.cc
@@ -1346,7 +1350,7 @@ wx_mac_PLAIN_OBJS = \
    ../../wxmac/src/ALHeirarchical.o \
    ../../wxmac/src/ALSelectors.o
 
-xform: $(XSRCS) xcglue.c
+xform: $(XSRCS) xsrc/xcglue.c
 
 wx_xt_LIBS = -lXpm -L../../wxcommon/jpeg -ljpeg $(LDLIBS)
 wx_mac_LIBS = -framework Carbon -framework QuickTime ../../wxcommon/jpeg/libjpeg.a

@@ -1993,6 +1993,7 @@ Bool wxMediaPasteboard::ScrollTo(wxSnip *snip,
     delayedscrollY = localy;
     delayedscrollW = w;
     delayedscrollH = h;
+    return FALSE;
   } else if (admin) {
     float x, y;
 
@@ -2009,7 +2010,8 @@ Bool wxMediaPasteboard::ScrollTo(wxSnip *snip,
       return TRUE;
     } else
       return FALSE;
-  }
+  } else
+    return FALSE;
 }
 
 void wxMediaPasteboard::SetCaretOwner(wxSnip *snip, int dist)

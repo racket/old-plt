@@ -335,7 +335,7 @@ case $OS in
 
     CFLAGS="$CFLAGS -DOS_X"
 
-    gcc_vers_three=`gcc -v 2>&1 | grep "version 3[.]"`
+    gcc_vers_three=`${CC} -v 2>&1 | grep "version 3[.]"`
     if test "$gcc_vers_three" = "" ; then
       # gcc 2.95.2
       if test "${enable_quartz}" = "yes" ; then

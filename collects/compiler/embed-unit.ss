@@ -110,7 +110,41 @@
 				 [(normal) ""]
 				 [(3m) "3m"])]
 	       [src (build-path (collection-path "launcher")
-				(format "Starter~a.app" variant-suffix))])
+				(format "Starter~a.app" variant-suffix))]
+	       [creator (let ([c (assq 'creator aux)])
+			  (or (and c
+				   (cdr c))
+			      "MrSt"))]
+	       [file-types (let ([m (assq 'file-types aux)])
+			     (and m
+				  (pair? (cdr m))
+				  (cdr m)))]
+	       [resource-files (let ([m (assq 'resource-files aux)])
+				 (and m
+				      (cdr m)))])
+	  (when creator
+	    (unless (and (string? creator) (= 4 (string-length creator)))
+	      (error 'make-executable "creator is not a 4-character string: ~e" creator)))
+	  (when file-types
+	    (unless (and (list? file-types)
+			 (andmap list? file-types)
+			 (andmap (lambda (spec)
+				   (andmap (lambda (p)
+					     (and (list? p)
+						  (= 2 (length p))
+						  (string? (car p))))
+					   spec))
+				 file-types))
+	      (error 'make-executable "bad file-types spec: ~e" file-types)))
+	  (when resource-files
+	    (unless (and (list? resource-files)
+			 (andmap (lambda (s)
+				   (and (string? s)
+					(or (absolute-path? s)
+					    (relative-path? s))))
+				 resource-files))
+	      (error 'make-executable "resource-files is not a list of paths: ~e" resource-files)))
+
 	  (when (directory-exists? dest)
 	    (delete-directory/files dest))
 	  (make-directory* (build-path dest "Contents" "Resources"))
@@ -147,23 +181,55 @@
 						       (cons (car c)
 							     (loop (cdr c)))])))
 					       (cddr l))))))])
-	    (let ([new-plist (plist-replace
-			      orig-plist
-
-			      "CFBundleExecutable" 
-			      name
-
-			      ;; "CFBundleIconFile"
-			      ;; name
-			      
-			      "CFBundleIdentifier" 
-			      (format "org.plt-scheme.~a" name))])
+	    (let* ([new-plist (plist-replace
+			       orig-plist
+			       
+			       "CFBundleExecutable" 
+			       name
+			       
+			       "CFBundleSignature"
+			       creator
+			       
+			       "CFBundleIdentifier" 
+			       (format "org.plt-scheme.~a" name))]
+		   [new-plist (if file-types
+				  (plist-replace
+				   new-plist
+				   
+				   "CFBundleDocumentTypes"
+				   (cons 'array
+					 (map (lambda (spec)
+						(cons
+						 'dict
+						 (map (lambda (p)
+							(list
+							 'assoc-pair
+							 (car p)
+							   (cadr p)))
+						      spec)))
+					      file-types)))
+				  
+				  new-plist)])
 	      (call-with-output-file (build-path dest 
 						 "Contents" 
 						 "Info.plist")
 		(lambda (port)
 		  (write-plist new-plist port))
 		'truncate)))
+	  (call-with-output-file (build-path dest 
+					     "Contents" 
+					     "PkgInfo")
+	    (lambda (port)
+	      (fprintf port "APPL~a" creator))
+	    'truncate)
+	  (when resource-files
+	    (for-each (lambda (p)
+			(let-values ([(base name dir?) (split-path p)])
+			  (copy-file p (build-path dest
+						   "Contents" 
+						   "Resources"
+						   name))))
+		      resource-files))
 	  (build-path dest "Contents" "MacOS" name)))
 
       (define (finish-osx-mred dest flags exec-name launcher?)

@@ -202,7 +202,7 @@ void wxPrintData::SetNoCopies(int c)
 
 void wxPrintData::SetAllPages(Bool flag)
 {
-  PMSetPageRange(cPrintSettings,1,kPMPrintAllPages);
+  PMSetPageRange(cPrintSettings, 1, (unsigned long)kPMPrintAllPages);
 }
 
 void wxPrintData::SetCollate(Bool flag)

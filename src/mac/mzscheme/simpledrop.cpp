@@ -24,7 +24,6 @@
 
 extern int strlen(char *);
 extern int isspace(int);
-
 static void strcpy(char *s, char *d)
 {
   while (*d) *(s++) = *(d++);
@@ -44,6 +43,8 @@ char **scheme_mac_argv;
 #ifdef OS_X
 void GetStarterInfo();
 #endif
+
+extern char *wxFSRefToPath(FSRef fsref);
 
 static char *ThisAppName(void)
 {	
@@ -260,8 +261,10 @@ static pascal OSErr OpenFinderDoc(const AppleEvent *evt, AppleEvent *b, long c)
   DescType	retType;
   AEKeyword	keywd;
   FSSpec	fss;
+  FSRef	        fsref;
   char          **files, *fl;
-  
+  OSErr         err;
+
   AEGetParamDesc(evt, keyDirectObject, typeAEList, &docList);
   AECountItems(&docList, &count);
   if (gone)
@@ -270,18 +273,37 @@ static pascal OSErr OpenFinderDoc(const AppleEvent *evt, AppleEvent *b, long c)
       files = (char **)malloc(sizeof(char *) * count);
   j = 0;
   for (i = 0; i < count; i++) {
-    AEGetNthPtr(&docList, i + 1, typeFSS, &keywd, &retType, (Ptr)&fss, sizeof(FSSpec), &size);
-    fl = scheme_mac_spec_to_path(&fss);
-    if (gone)
-      files[i + j] = fl;
-    else {
-      /* have to malloc everything */
-      char *fl2;
-      fl2 = (char *)malloc(strlen(fl)+1);
-      memcpy(fl2, fl, strlen(fl)+1);
-      files[i + j] = fl2;
+    err = AEGetNthPtr(&docList, i + 1, typeFSRef, &keywd, &retType, (Ptr)&fsref, sizeof(fsref), &size);
+    if (err != noErr) {
+      if (err == errAECoercionFail) {
+	/* Try FSSpec: */
+	FSSpec spec;
+	err = AEGetNthPtr(&docList, i + 1, typeFSS, &keywd, &retType, (Ptr)&fss, sizeof(FSSpec), &size);
+	if (err == noErr) {
+	  fl = scheme_mac_spec_to_path(&spec);
+	} else {
+	  fl = NULL;
+	}
+      } else {
+	fl = NULL;
+      }
+    } else {
+      fl = wxFSRefToPath(fsref);
     }
-    if (!files[i + j])
+
+    if (fl) {
+      if (gone)
+	files[i + j] = fl;
+      else {
+	/* have to malloc everything */
+	char *fl2;
+	fl2 = (char *)malloc(strlen(fl)+1);
+	memcpy(fl2, fl, strlen(fl)+1);
+	files[i + j] = fl2;
+      }
+      if (!files[i + j])
+	--j;
+    } else
       --j;
   }
   AEDisposeDesc(&docList);
@@ -366,8 +388,8 @@ void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
       for (i = 2; i < (*argc); i++) {
 	new_argv[i - 1] = (*argv)[i];
       }
-      for (; i < new_argc; i++) {
-	new_argv[i] = scheme_mac_argv[i - (*argc) + 1];
+      for (; i < new_argc + 1; i++) {
+	new_argv[i - 1] = scheme_mac_argv[i - (*argc) + 1];
       }
       scheme_mac_argc = new_argc;
       scheme_mac_argv = new_argv;

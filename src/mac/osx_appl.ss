@@ -142,8 +142,8 @@ exit 1
     (create-app (current-directory)
 		(if for-3m? "../MrEd3m" "MrEd")
 		"MrEd"
-		"APPLMrEd"
-		(make-info-plist (if for-3m? "MrEd3m" "MrEd") "MrEd" #t))
+		"APPLmReD"
+		(make-info-plist (if for-3m? "MrEd3m" "MrEd") "mReD" #t))
 
     (create-fw (current-directory)
 	       "PLT_MrEd"

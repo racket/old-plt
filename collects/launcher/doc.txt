@@ -41,6 +41,9 @@ executables.
               script will call ignoring `args'; if this name is not
               provided, the script will go through the MrEd executable
 
+      _'creator_ (Mac OS X) - provides a 4-character string to use as
+              the application signature.
+
    See also `build-aux-from-path' below. The default `aux' is `null'.
 
    For Unix/X, the script created by `make-mred-launcher' detects and
@@ -144,6 +147,7 @@ executables.
        * .icns => 'icns file
        * .ico  => 'ico file
        * .lch  => 'independent? as #t (file content is ignored)
+       * .creator => initial 4-characters in the file
 
 > (current-launcher-variant [symbol]) - Gets or sets a symbol
    parameter that indicates a variant of MzScheme or MrEd to use for

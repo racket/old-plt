@@ -386,7 +386,8 @@ void wxMenuBar::Enable(int Id, Bool Flag)
   wxMenu *menu;
 
   for (j = 0; j < n; j++) {
-    theMenuItem = menus[j]->FindItemForId(Id);
+    menu = menus[j];
+    theMenuItem = menu->FindItemForId(Id);
     if (theMenuItem) {
       theMenuItem->Enable(Flag);
       return;

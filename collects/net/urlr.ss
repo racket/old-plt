@@ -97,7 +97,8 @@
 	      (sa (if scheme (sa scheme "://") "")
 		(if host host "")
 		(if port (sa ":" (number->string port)) "")
-		"/"
+		; There used to be a "/" here, but that causes an
+		; extra leading slash -- wonder why it ever worked!
 		path
 		(if params (sa ";" params) "")
 		(if query (sa "?" query) "")

@@ -1930,14 +1930,11 @@ void wxMediaPasteboard::UpdateLocation(wxSnipLocation *loc)
 
 void wxMediaPasteboard::UpdateSnip(wxSnip *snip)
 {
-  int i;
   wxSnipLocation *loc;
 
-  for (i = 0; i < snipLocationList->size; i++) {
-    loc = (wxSnipLocation *)snipLocationList->vals[i];
-    if (loc)
-      UpdateLocation(loc);
-  }
+  loc = DoXSnipLoc(snipLocationList, snip);
+  if (loc)
+    UpdateLocation(loc);
 }
 
 void wxMediaPasteboard::UpdateSelected()

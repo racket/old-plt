@@ -446,8 +446,6 @@ void mx_register_object(Scheme_Object *obj,IUnknown *pIUnknown,
     return;
   }
 
-  pIUnknown->AddRef();
-
   scheme_register_finalizer(obj,release_fun,pIUnknown,NULL,NULL);
   scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,
 							MZCONFIG_MANAGER),
@@ -2121,11 +2119,13 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
     break;
     
   case VT_I4 :
+  case VT_INT :
     
     s = "int";
     break;
     
   case VT_I4 | VT_BYREF:
+  case VT_INT | VT_BYREF:
     
     s = "int";
     isBox = TRUE;
@@ -2523,6 +2523,7 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
       longInt <= SHRT_MAX && longInt >= SHRT_MIN;
     
   case VT_I4 :
+  case VT_INT :
     
     return SCHEME_EXACT_INTEGERP(val) && 
       scheme_get_int_val(val,&longInt);
@@ -2858,6 +2859,17 @@ void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
     *pVariantArg->plVal = (long)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
     break;
     
+  case VT_INT :
+    
+    pVariantArg->intVal = SCHEME_INT_VAL(val);
+    break;
+    
+  case VT_INT | VT_BYREF :
+    
+    pVariantArg->pintVal = (int *)allocParamMemory(sizeof(long));
+    *pVariantArg->pintVal = (int)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
+    break;
+    
   case VT_R4 :
     
     pVariantArg->fltVal = (float)SCHEME_DBL_VAL(val);
@@ -3006,6 +3018,10 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
     
     return scheme_make_integer(pVariantArg->lVal);
     
+  case VT_INT :
+    
+    return scheme_make_integer(pVariantArg->intVal);
+    
   case VT_R4 :
     
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -3077,6 +3093,12 @@ void unmarshallVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
     
     SCHEME_BOX_VAL(val) = scheme_make_integer(*pVariantArg->plVal);
     scheme_gc_ptr_ok(pVariantArg->plVal);
+    break;
+    
+  case VT_INT | VT_BYREF :
+    
+    SCHEME_BOX_VAL(val) = scheme_make_integer(*pVariantArg->pintVal);
+    scheme_gc_ptr_ok(pVariantArg->pintVal);
     break;
     
   case VT_R4 | VT_BYREF :

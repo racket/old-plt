@@ -873,9 +873,20 @@ static Scheme_Object *finish_ssl(const char *name, int sock, SSL_METHOD *meth,
   return scheme_values(2, retval);
 
  clean_up_and_die:
-  if(sock) closesocket(sock);
-  if(ctx) SSL_CTX_free(ctx);
-  if(ssl) SSL_free(ssl);
+  if (ctx) 
+    SSL_CTX_free(ctx);
+
+  if (ssl) 
+    SSL_free(ssl);
+  else {
+    if (bio)
+      BIO_free(bio);
+    else {
+      if(sock) 
+	closesocket(sock);
+    }
+  }
+
   if (do_accept)
     scheme_raise_exn(MZEXN_I_O_TCP, 
 		     "%s: accepted connection failed (%Z)",
@@ -967,19 +978,19 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
 
   status = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
   /* here's the complicated bit */
-  if(status == -1) {
+  if (status) {
     int errid;
     errid = SOCK_ERRNO();
-    if(!WAS_EINPROGRESS(errid)) { 
+    if (!WAS_EINPROGRESS(errid)) { 
       errstr = NULL; err = errid; goto clean_up_and_die; 
     }
-    
+
     {
       int *sptr;
 
       sptr = (int *)scheme_malloc_atomic(2 * sizeof(int));
-      sptr[1] = sock;
-      sptr[0] = 1;
+      sptr[0] = sock;
+      sptr[1] = 1;
 
       BEGIN_ESCAPEABLE(close_socket_and_dec, sock);
       scheme_block_until(ssl_check_sock, ssl_sock_needs_wakeup, 

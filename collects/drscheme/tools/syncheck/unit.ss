@@ -607,7 +607,7 @@
 		       [color-loop
 			(lambda (zodiac-ast)
 			  '(begin (mzlib:pretty-print@:pretty-print zodiac-ast)
-				  (newline))
+				 (newline))
 			  (let* ([source-object?
 				  (eq? (zodiac:origin-who
 					(zodiac:zodiac-origin zodiac-ast))
@@ -764,7 +764,10 @@
 			[expr (time (reader))])
 		   (unless (zodiac:eof? expr)
 		     '(printf "expanding ")
-		     (let ([expanded (time (zodiac:scheme-expand expr user-param))])
+		     (let ([expanded (time (call/nal zodiac:scheme-expand/nal
+						     zodiac:scheme-expand
+						     (expression: expr)
+						     (parameterization: user-param)))])
 		       '(printf "coloring  ")
 		       (time (color-loop expanded))
 		       (read-loop)))))

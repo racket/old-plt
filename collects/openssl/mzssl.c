@@ -161,7 +161,9 @@ Scheme_Object *write_close_thread(int argc, Scheme_Object *argv[])
 
 	if (cur->ob_used) {
 	  cur->write_blocked_reason = 0;
+
 	  status = SSL_write(cur->ssl, &(cur->obuffer), 1);
+
 	  if (status > 1) {
 	    cur->ob_used = 0;
 	  } else {
@@ -177,6 +179,7 @@ Scheme_Object *write_close_thread(int argc, Scheme_Object *argv[])
 		 that it's not a transient error, so the
 		 next action will find the same error. */
 	      drop = 1;
+	      cur->ob_used = 0;
 	    }
 	  }
 	} else if (cur->close_in && cur->close_out) {
@@ -274,14 +277,14 @@ long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
   long bytes_read = 0;
   struct sslplt *ssl = (struct sslplt *)SCHEME_INPORT_VAL(port);
 
-  /* check the buffer */
-  if(ssl->ib_used) {
-    buffer[offset++] = ssl->ibuffer;
-    bytes_read++; 
-    ssl->ib_used = 0;
-  }
-
   while (!bytes_read) {
+    /* check the buffer */
+    if(ssl->ib_used) {
+      buffer[offset + bytes_read] = ssl->ibuffer;
+      bytes_read++; 
+      ssl->ib_used = 0;
+    }
+
     /* make sure people aren't being sneaky */
     if(ssl->close_in) {
       errstr = "read from closed port!";
@@ -300,8 +303,8 @@ long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
       err = SSL_get_error(ssl->ssl, status);
 
       /* see if we've hit the end of file */
-      if(err == SSL_ERROR_ZERO_RETURN) {
-	/* do stuff */
+      if ((err == SSL_ERROR_ZERO_RETURN)
+	  || ((err == SSL_ERROR_SYSCALL) && !status)) {
 	if(bytes_read == 0) 
 	  return EOF;
 	else
@@ -327,9 +330,10 @@ long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
        and might shift it into SSL_ERROR_WANT_WRITE mode.
        Use the general sll input blocking functions. */
 
-    scheme_block_until((Scheme_Ready_Fun)sslin_char_ready, 
-		       (Scheme_Needs_Wakeup_Fun)sslin_need_wakeup,
-		       (void *)port, (float)0.0);
+    if (!bytes_read)
+      scheme_block_until((Scheme_Ready_Fun)sslin_char_ready, 
+			 (Scheme_Needs_Wakeup_Fun)sslin_need_wakeup,
+			 (void *)port, (float)0.0);
   }
   
   return bytes_read;
@@ -524,7 +528,7 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
   }
 
  write_error:
-  scheme_raise_exn(MZEXN_I_O_PORT_WRITE, port, "ssl-read: error writing (%Z)",
+   scheme_raise_exn(MZEXN_I_O_PORT_WRITE, port, "ssl-read: error writing (%Z)",
 		   err, errstr);
   return 0; /* needless, but it makes GCC happy */
 }
@@ -538,25 +542,82 @@ static int sslout_char_ready(Scheme_Output_Port *port)
   return !ssl->ob_used;
 }
 
-/* sslout_close: close down a buffer, freeing the temporary structures we
-   created. */
+static int shutdown_ready(Scheme_Object *_ssl)
+{
+  struct sslplt *ssl = (struct sslplt *)_ssl;
+
+  if (!ssl->write_blocked_reason)
+    return 1;
+  else
+    check_socket_ready(BIO_get_fd(SSL_get_wbio(ssl->ssl), NULL),
+		       (ssl->write_blocked_reason == 2));
+}
+
+static void shutdown_need_wakeup(Scheme_Object *_ssl, void *fds)
+{
+  struct sslplt *ssl = (struct sslplt *)_ssl;
+
+  if (!ssl->write_blocked_reason)
+    scheme_cancel_sleep();
+  else
+    socket_add_fds(BIO_get_fd(SSL_get_wbio(ssl->ssl), NULL),
+		   fds,
+		   (ssl->write_blocked_reason == 2));
+}
+
+/* sslout_close: close down a buffer */
 void sslout_close(Scheme_Output_Port *port)
 {
   struct sslplt *ssl = (struct sslplt *)SCHEME_OUTPORT_VAL(port);
   int forced = 0;
 
-  if (!ssl->ob_used)
-    SSL_shutdown(ssl->ssl);
-  else if (scheme_close_should_force_port_closed()) {
+  if (ssl->ob_used && scheme_close_should_force_port_closed()) {
     /* Tell daemon to give up: */
     ssl->ob_used = 0;
     ssl->write_blocked_reason = 0;
-    forced = 1;
-  }
+    ssl->close_out = 1;
+  } else {
+    if (ssl->ob_used){
+      scheme_block_until((Scheme_Ready_Fun)sslout_char_ready, 
+			 (Scheme_Needs_Wakeup_Fun)sslout_need_wakeup,
+			 (void *)port, (float)0.0);
+    }
+    /* assert: !ssl->ob_used */
+    
+    while (!ssl->close_out) {
+      int status;
+      int err;
 
-  ssl->close_out = 1;
-  if (!forced && ssl->close_in) {
-    SSL_free(ssl->ssl);
+      status = SSL_shutdown(ssl->ssl);
+      if (status < 1)
+	err = SSL_get_error(ssl->ssl, status);
+
+      if ((status < 1) && !scheme_close_should_force_port_closed()
+	  /* if an eof occurs, let's agree that it's shut down */
+	  && !((err == SSL_ERROR_SYSCALL) && !status)) {
+	if (err == SSL_ERROR_WANT_READ)
+	  ssl->write_blocked_reason = 1;
+	else if (err == SSL_ERROR_WANT_WRITE)
+	  ssl->write_blocked_reason = 2;
+	else {
+	  const char *errstr;
+	  err = get_ssl_error_msg(err, &errstr, status, 1);
+	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE, port, 
+			   "ssl-close: error shutting down output (%Z)",
+			   err, errstr);
+	  return;
+	}
+
+	scheme_block_until(shutdown_ready, 
+			   shutdown_need_wakeup,
+			   (void *)ssl, (float)0.0);      
+      } else {
+	ssl->close_out = 1;
+	if (ssl->close_in) {
+	  SSL_free(ssl->ssl);
+	}
+      }
+    }
   }
 }
 

@@ -363,6 +363,7 @@ long (*scheme_get_chars)(Scheme_Object *port, long size, char *buffer, int offse
 long (*scheme_tell)(Scheme_Object *port);
 long (*scheme_output_tell)(Scheme_Object *port);
 long (*scheme_tell_line)(Scheme_Object *port);
+void (*scheme_count_lines)(Scheme_Object *port);
 void (*scheme_close_input_port)(Scheme_Object *port);
 void (*scheme_close_output_port)(Scheme_Object *port);
 int (*scheme_are_all_chars_ready)(Scheme_Object *port);

@@ -119,6 +119,8 @@ void scheme_init_format_procedure(Scheme_Env *env)
   %q = truncated-to-256 string
   %Q = truncated-to-256 Scheme string
   %V = scheme_value
+
+  %L = line number, -1 means no line
 */
 
 static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
@@ -180,6 +182,20 @@ static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	    sprintf(buf, "%f", f);
 	    t = buf;
 	    tlen = strlen(t);
+	  }
+	  break;
+	case 'L':	  
+	  {
+	    long d;
+	    d = va_arg(args, long);
+	    if (d >= 0) {
+	      sprintf(buf, ", line %ld", d);
+	      t = buf;
+	      tlen = strlen(t);
+	    } else {
+	      t = buf;
+	      tlen = 0;
+	    }
 	  }
 	  break;
 	case 'S':

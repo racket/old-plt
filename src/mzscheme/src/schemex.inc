@@ -246,6 +246,7 @@
   scheme_extension_table->scheme_tell = scheme_tell;
   scheme_extension_table->scheme_output_tell = scheme_output_tell;
   scheme_extension_table->scheme_tell_line = scheme_tell_line;
+  scheme_extension_table->scheme_count_lines = scheme_count_lines;
   scheme_extension_table->scheme_close_input_port = scheme_close_input_port;
   scheme_extension_table->scheme_close_output_port = scheme_close_output_port;
   scheme_extension_table->scheme_are_all_chars_ready = scheme_are_all_chars_ready;

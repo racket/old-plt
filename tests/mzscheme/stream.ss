@@ -1,8 +1,5 @@
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
-
-(SECTION 'stream)
+(printf "Stream Tests (current dir must be startup dir)~n")
 
 (define (log . args)
   '(begin
@@ -62,6 +59,30 @@
 	(unless (eof-object? s)
 	  (loop))))))
 
+(define (check-file/fastest in)
+  (let ([p (open-input-file test-file)]
+	[s1 (make-string 5000)]
+	[s2 (make-string 5000)])
+    (let loop ([leftover 0])
+      (let* ([n1 (let ([n (read-string-avail! s1 p leftover)])
+		   (if (eof-object? n)
+		       (if (zero? leftover)
+			   n
+			   leftover)
+		       (+ n leftover)))]
+	     [n2 (read-string-avail! s2 in 0 (if (eof-object? n1)
+						 1
+					   n1))])
+	(unless (if (or (eof-object? n1)
+			(eof-object? n2)
+			(= n2 n1 5000))
+		    (equal? s1 s2)
+		    (string=? (substring s1 0 n2)
+			      (substring s2 0 n2)))
+	  (error "fast check failed"))
+	(unless (eof-object? n1)
+	  (loop (- n1 n2)))))))
+
 (define portno 40000)
 
 (define l1 (tcp-listen portno))
@@ -111,6 +132,12 @@
 (close-input-port p)
 (end)
 
+(start "Quicker check:~n")
+(define p (open-input-file test-file))
+(check-file/fastest p)
+(close-input-port p)
+(end)
+
 (start "Plain pipe...~n")
 (define-values (r w) (make-pipe))
 (feed-file w)
@@ -123,6 +150,13 @@
 (feed-file/fast w)
 (close-output-port w)
 (check-file/fast r)
+(end)
+
+(start "Plain pipe, fastest...~n")
+(define-values (r w) (make-pipe))
+(feed-file/fast w)
+(close-output-port w)
+(check-file/fastest r)
 (end)
 
 (start "To file and back:~n")
@@ -165,6 +199,16 @@
 (close-output-port w)
 (close-input-port p)
 (check-file/fast r)
+(end)
+
+(start "File back, fastest:~n")
+(define-values (r w) (make-pipe))
+(define p (open-input-file tmp-file))
+(define t (thread (copy-stream p w)))
+(thread-wait t)
+(close-output-port w)
+(close-input-port p)
+(check-file/fastest r)
 (end)
 
 (start "Echo...~n")
@@ -227,3 +271,6 @@
 	  (close-output-port wp1)))
 (check-file/fast rp2)
 (end)
+
+(tcp-close l1)
+(tcp-close l2)

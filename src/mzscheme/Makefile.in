@@ -53,11 +53,11 @@ libguile:
 
 dynlib:
 	cd src; $(MAKE) mzheaders
-	cd dynsrc; $(MAKE) LIBDIR='$(LIBDIR)' dynlib 
+	cd dynsrc; $(MAKE) dynlib 
 
 dynexample:
 	$(MAKE) dynlib
-	cd dynsrc; $(MAKE) LIBDIR='$(LIBDIR)' dynexample 
+	cd dynsrc; $(MAKE) dynexample 
 
 oe:
 	$(MAKE) dynlib

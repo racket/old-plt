@@ -55,6 +55,6 @@
 	      (flat-pp e))
       (old-eval e))))
  (lambda ()
-   (load flat-load))
+   (load-relative flat-load))
  (lambda ()
    (current-eval old-eval)))

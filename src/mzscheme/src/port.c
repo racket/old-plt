@@ -117,6 +117,19 @@ typedef struct Scheme_Indexed_String {
 
 typedef struct {
   MZTAG_IF_REQUIRED
+  unsigned char *buf;
+  long buflen;
+  int bufstart, bufend;
+  int eof;
+#ifdef MZ_REAL_THREADS
+  int num_waiting;
+  void *change_mutex;
+  Scheme_Object *wait_sem;
+#endif
+} Scheme_Pipe;
+
+typedef struct {
+  MZTAG_IF_REQUIRED
   FILE *f;
   int regfile;
 } Scheme_Input_File;
@@ -1367,8 +1380,8 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->lineNumber = 1;
   ip->charsSinceNewline = 1;
   ip->closed = 0;
-  ip->eoffound = 0;
   ip->read_handler = NULL;
+  ip->count_lines = 0;
 
 #ifdef MZ_REAL_THREADS
   ip->sema = scheme_make_sema(1);
@@ -1501,8 +1514,7 @@ scheme_getc (Scheme_Object *port)
       ip->lineNumber++;
     } else
       ip->charsSinceNewline++;
-  } else
-    ip->eoffound = 1;
+  }
 
   END_LOCK_PORT(ip->sema);
 
@@ -1568,6 +1580,28 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       buffer[offset + got] = 0;
 #endif
       got += fread(buffer + offset + got, 1, size, f);
+#ifdef USE_FD_PORTS
+    } else if (SAME_OBJ(ip->sub_type, fd_input_port_type)
+	       && ((Scheme_FD *)ip->port_data)->regfile) {
+      Scheme_FD *fip = (Scheme_FD *)ip->port_data;
+      int n;
+
+      n = ((size <= fip->bufcount)
+	   ? size
+	   : fip->bufcount);
+	  
+      memcpy(buffer + offset + got, fip->buffer + fip->buffpos, n);
+      fip->buffpos += n;
+      fip->bufcount -= n;
+      got += n;
+      size -= n;
+
+      if (size) {
+	n = read(fip->fd, buffer + offset + got, size);
+	if (n > 0)
+	  got += n;
+      }
+#endif
     } else if (SAME_OBJ(ip->sub_type, string_input_port_type)) {
       Scheme_Indexed_String *is;
       long l;
@@ -1583,6 +1617,38 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       is->index += l;
       
       got += l;
+    } else if (SAME_OBJ(ip->sub_type, pipe_read_port_type)) {
+      Scheme_Pipe *pipe;
+      
+      pipe = (Scheme_Pipe *)ip->port_data;
+
+      if (pipe->bufstart != pipe->bufend) {
+	if (pipe->bufstart > pipe->bufend) {
+	  int n;
+	  n = pipe->buflen - pipe->bufstart;
+	  if (n > size)
+	    n = size;
+	  memcpy(buffer + offset + got, pipe->buf + pipe->bufstart, n);
+	  pipe->bufstart += n;
+	  if (pipe->bufstart == pipe->buflen)
+	    pipe->bufstart = 0;
+	  size -= n;
+	  got += n;
+	}
+	if (pipe->bufstart < pipe->bufend) {
+	  int n;
+	  n = pipe->bufend - pipe->bufstart;
+	  if (n > size)
+	    n = size;
+	  memcpy(buffer + offset + got, pipe->buf + pipe->bufstart, n);
+	  pipe->bufstart += n;
+	  size -= n;
+	  got += n;
+	}
+      }
+
+      if (size)
+	use_getc = 1;
     } else if (SAME_OBJ(ip->sub_type, user_input_port_type)) {
       if (only_avail) {
 	/* We don't try to implement an efficient `read-string-avail!' on
@@ -1694,26 +1760,23 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
   /* Adjust position information for chars got so far */
   /****************************************************/
   ip->position += got;
-  for (i = got, c = 0; i--; c++) {
-    if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r') {
-      break;
+  if (ip->count_lines) {
+    for (i = got, c = 0; i--; c++) {
+      if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r') {
+	break;
+      }
     }
+    if (i >= 0) {
+      int n = 0;
+      ip->charsSinceNewline = c + 1;
+      while (i--) {
+	if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r')
+	  n++;
+      }
+      ip->lineNumber += n;
+    } else
+      ip->charsSinceNewline += c;
   }
-  if (i >= 0) {
-    int n = 0;
-    ip->charsSinceNewline = c + 1;
-    while (i--) {
-      if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r')
-	n++;
-    }
-    ip->lineNumber += n;
-  } else
-    ip->charsSinceNewline += c;
-
-  if (!use_getc 
-      && (got < orig_size) 
-      && (!only_avail || !got))
-    ip->eoffound = 1;
 
   /************************************/
   /* `read-string' on a generic port? */
@@ -1906,6 +1969,9 @@ scheme_tell_line (Scheme_Object *port)
 
   ip = (Scheme_Input_Port *)port;
 
+  if (!ip->count_lines)
+    return -1;
+
   BEGIN_LOCK_PORT(ip->sema);
 
   check_closed("#<primitive:get-file-line>", "input", port, ip->closed);
@@ -1915,6 +1981,12 @@ scheme_tell_line (Scheme_Object *port)
   END_LOCK_PORT(ip->sema);
 
   return line;
+}
+
+void
+scheme_count_lines (Scheme_Object *port)
+{
+  ((Scheme_Input_Port *)port)->count_lines = 1;
 }
 
 void
@@ -5050,9 +5122,7 @@ static Scheme_Object *do_load_handler(void *data)
 static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *port;
-  char *filename;
   int ch;
-  FILE *fp;
   Scheme_Process *p = scheme_current_process;
   Scheme_Config *config = p->config;
   LoadHandlerData *lhd;
@@ -5060,25 +5130,9 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("default-load-handler", "string", 0, argc, argv);
 
-  filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
-				    SCHEME_STRTAG_VAL(argv[0]),
-				    "default-load-handler", 
-				    NULL);
+  port = do_open_input_file("default-load-handler", 0, 1, argv);
 
-  if (scheme_directory_exists(filename)) {
-    filename_exn("default-load-handler", "cannot open directory as a file", filename, errno);
-    return scheme_void;
-  }
-
-  fp = fopen(filename, "rb");
-  if (!fp) {
-    filename_exn("default-load-handler", "cannot open file for input", filename, errno);
-    return NULL;
-  }
-  scheme_file_open_count++;
-
-  port = _scheme_make_named_file_input_port(fp, filename, 
-					    scheme_is_regular_file(filename));
+  scheme_count_lines(port);
 
   /* Skip over #! at beginning of file */
   if ((ch = scheme_getc(port)) == '#') {
@@ -5535,19 +5589,6 @@ void scheme_flush_output(Scheme_Object *port)
 /*========================================================================*/
 /*                               pipe ports                               */
 /*========================================================================*/
-
-typedef struct {
-  MZTAG_IF_REQUIRED
-  unsigned char *buf;
-  long buflen;
-  int bufstart, bufend;
-  int eof;
-#ifdef MZ_REAL_THREADS
-  int num_waiting;
-  void *change_mutex;
-  Scheme_Object *wait_sem;
-#endif
-} Scheme_Pipe;
 
 static int pipe_getc(Scheme_Input_Port *p)
 {

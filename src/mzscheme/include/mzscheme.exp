@@ -188,6 +188,7 @@ scheme_get_chars
 scheme_tell
 scheme_output_tell
 scheme_tell_line
+scheme_count_lines
 scheme_close_input_port
 scheme_close_output_port
 scheme_are_all_chars_ready

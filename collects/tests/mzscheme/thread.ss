@@ -278,7 +278,7 @@
 
 (error-test '(call-in-nested-thread (lambda () (kill-thread (current-thread)))) exn:thread?)
 (error-test '(call-in-nested-thread (lambda () ((error-escape-handler)))) exn:thread?)
-(error-test '(call-in-nested-thread (lambda () (raise 5))) (lambda (x) (= x 5)))
+(error-test '(call-in-nested-thread (lambda () (raise (box 5)))) box?)
 
 (define c1 (make-custodian))
 (define c2 (make-custodian))

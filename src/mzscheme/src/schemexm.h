@@ -246,6 +246,7 @@
 #define scheme_tell (scheme_extension_table->scheme_tell)
 #define scheme_output_tell (scheme_extension_table->scheme_output_tell)
 #define scheme_tell_line (scheme_extension_table->scheme_tell_line)
+#define scheme_count_lines (scheme_extension_table->scheme_count_lines)
 #define scheme_close_input_port (scheme_extension_table->scheme_close_input_port)
 #define scheme_close_output_port (scheme_extension_table->scheme_close_output_port)
 #define scheme_are_all_chars_ready (scheme_extension_table->scheme_are_all_chars_ready)

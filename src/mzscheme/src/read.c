@@ -2,7 +2,7 @@
   MzScheme
   Copyright (c) 2004 PLT Scheme, Inc.
   Copyright (c) 1995-2001 Matthew Flatt
- 
+
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
     License as published by the Free Software Foundation; either
@@ -80,7 +80,7 @@ static Scheme_Object *print_unreadable(int, Scheme_Object *[]);
 #define RETURN_FOR_HASH_COMMENT     0x2
 #define RETURN_FOR_DELIM            0x4
 
-static 
+static
 #ifndef NO_INLINE_KEYWORD
 MSC_IZE(inline)
 #endif
@@ -138,7 +138,7 @@ static Scheme_Object *read_quote(char *who, Scheme_Object *quote_symbol, int len
 				 ReadParams *params);
 static Scheme_Object *read_vector(Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
-				  char closer, 
+				  char closer,
 				  long reqLen, const mzchar *reqBuffer,
 				  Scheme_Hash_Table **ht,
 				  Scheme_Object *indentation,
@@ -154,7 +154,7 @@ static Scheme_Object *read_symbol(int init_ch,
 				  long line, long col, long pos,
 				  Scheme_Object *indentation,
 				  ReadParams *params);
-static Scheme_Object *read_character(Scheme_Object *port, Scheme_Object *stcsrc, 
+static Scheme_Object *read_character(Scheme_Object *port, Scheme_Object *stcsrc,
 				     long line, long col, long pos,
 				     Scheme_Object *indentation,
 				     ReadParams *params);
@@ -213,7 +213,7 @@ typedef struct {
   long start_line;  /* opener's line */
   long last_line;   /* current line, already checked the identation */
   long suspicious_line; /* non-0 => first suspicious line since opener */
-  long max_indent;  /* max indentation encountered so far since opener, 
+  long max_indent;  /* max indentation encountered so far since opener,
 		       not counting indentation brackets by a more neseted
 		       opener */
   long suspicious_quote; /* non-0 => first suspicious quote whose closer
@@ -263,7 +263,7 @@ void scheme_init_read(Scheme_Env *env)
   REGISTER_SO(unsyntax_splicing_symbol);
   REGISTER_SO(quasisyntax_symbol);
   REGISTER_SO(an_uninterned_symbol);
-    
+
   quote_symbol = scheme_intern_symbol("quote");
   quasiquote_symbol = scheme_intern_symbol("quasiquote");
   unquote_symbol = scheme_intern_symbol("unquote");
@@ -332,82 +332,82 @@ void scheme_init_read(Scheme_Env *env)
   register_traversers();
 #endif
 
-  scheme_add_global_constant("read-case-sensitive", 
-			     scheme_register_parameter(read_case_sensitive, 
+  scheme_add_global_constant("read-case-sensitive",
+			     scheme_register_parameter(read_case_sensitive,
 						       "read-case-sensitive",
-						       MZCONFIG_CASE_SENS), 
+						       MZCONFIG_CASE_SENS),
 			     env);
-  scheme_add_global_constant("read-square-bracket-as-paren", 
-			     scheme_register_parameter(read_bracket_as_paren, 
+  scheme_add_global_constant("read-square-bracket-as-paren",
+			     scheme_register_parameter(read_bracket_as_paren,
 						       "read-square-bracket-as-paren",
-						       MZCONFIG_SQUARE_BRACKETS_ARE_PARENS), 
+						       MZCONFIG_SQUARE_BRACKETS_ARE_PARENS),
 			     env);
-  scheme_add_global_constant("read-curly-brace-as-paren", 
-			     scheme_register_parameter(read_brace_as_paren, 
+  scheme_add_global_constant("read-curly-brace-as-paren",
+			     scheme_register_parameter(read_brace_as_paren,
 						       "read-curly-brace-as-paren",
-						       MZCONFIG_CURLY_BRACES_ARE_PARENS), 
+						       MZCONFIG_CURLY_BRACES_ARE_PARENS),
 			     env);
-  scheme_add_global_constant("read-accept-graph", 
-			     scheme_register_parameter(read_accept_graph, 
+  scheme_add_global_constant("read-accept-graph",
+			     scheme_register_parameter(read_accept_graph,
 						       "read-accept-graph",
-						       MZCONFIG_CAN_READ_GRAPH), 
+						       MZCONFIG_CAN_READ_GRAPH),
 			     env);
-  scheme_add_global_constant("read-accept-compiled", 
-			     scheme_register_parameter(read_accept_compiled, 
+  scheme_add_global_constant("read-accept-compiled",
+			     scheme_register_parameter(read_accept_compiled,
 						       "read-accept-compiled",
-						       MZCONFIG_CAN_READ_COMPILED), 
+						       MZCONFIG_CAN_READ_COMPILED),
 			     env);
-  scheme_add_global_constant("read-accept-box", 
-			     scheme_register_parameter(read_accept_box, 
+  scheme_add_global_constant("read-accept-box",
+			     scheme_register_parameter(read_accept_box,
 						       "read-accept-box",
-						       MZCONFIG_CAN_READ_BOX), 
+						       MZCONFIG_CAN_READ_BOX),
 			     env);
   scheme_add_global_constant("read-accept-bar-quote",
 			     scheme_register_parameter(read_accept_pipe_quote,
 						       "read-accept-bar-quote",
-						       MZCONFIG_CAN_READ_PIPE_QUOTE), 
+						       MZCONFIG_CAN_READ_PIPE_QUOTE),
 			     env);
   scheme_add_global_constant("read-decimal-as-inexact",
 			     scheme_register_parameter(read_decimal_as_inexact,
 						       "read-decimal-as-inexact",
-						       MZCONFIG_READ_DECIMAL_INEXACT), 
+						       MZCONFIG_READ_DECIMAL_INEXACT),
 			     env);
   scheme_add_global_constant("read-accept-dot",
 			     scheme_register_parameter(read_accept_dot,
 						       "read-accept-dot",
-						       MZCONFIG_CAN_READ_DOT), 
+						       MZCONFIG_CAN_READ_DOT),
 			     env);
   scheme_add_global_constant("read-accept-quasiquote",
 			     scheme_register_parameter(read_accept_quasi,
 						       "read-accept-quasiquote",
-						       MZCONFIG_CAN_READ_QUASI), 
+						       MZCONFIG_CAN_READ_QUASI),
 			     env);
-  scheme_add_global_constant("print-graph", 
-			     scheme_register_parameter(print_graph, 
+  scheme_add_global_constant("print-graph",
+			     scheme_register_parameter(print_graph,
 						       "print-graph",
-						       MZCONFIG_PRINT_GRAPH), 
+						       MZCONFIG_PRINT_GRAPH),
 			     env);
-  scheme_add_global_constant("print-struct", 
-			     scheme_register_parameter(print_struct, 
+  scheme_add_global_constant("print-struct",
+			     scheme_register_parameter(print_struct,
 						       "print-struct",
-						       MZCONFIG_PRINT_STRUCT), 
+						       MZCONFIG_PRINT_STRUCT),
 			     env);
-  scheme_add_global_constant("print-box", 
-			     scheme_register_parameter(print_box, 
+  scheme_add_global_constant("print-box",
+			     scheme_register_parameter(print_box,
 						       "print-box",
-						       MZCONFIG_PRINT_BOX), 
+						       MZCONFIG_PRINT_BOX),
 			     env);
-  scheme_add_global_constant("print-vector-length", 
-			     scheme_register_parameter(print_vec_shorthand, 
+  scheme_add_global_constant("print-vector-length",
+			     scheme_register_parameter(print_vec_shorthand,
 						       "print-vector-length",
-						       MZCONFIG_PRINT_VEC_SHORTHAND), 
+						       MZCONFIG_PRINT_VEC_SHORTHAND),
 			     env);
-  scheme_add_global_constant("print-hash-table", 
-			     scheme_register_parameter(print_hash_table, 
+  scheme_add_global_constant("print-hash-table",
+			     scheme_register_parameter(print_hash_table,
 						       "print-hash-table",
-						       MZCONFIG_PRINT_HASH_TABLE), 
+						       MZCONFIG_PRINT_HASH_TABLE),
 			     env);
-  scheme_add_global_constant("print-unreadable", 
+  scheme_add_global_constant("print-unreadable",
 			     scheme_register_parameter(print_unreadable,
 						       "print-unreadable",
 						       MZCONFIG_PRINT_UNREADABLE),
@@ -430,7 +430,7 @@ void scheme_alloc_list_stack(Scheme_Thread *p)
 void scheme_clean_list_stack(Scheme_Thread *p)
 {
   if (p->list_stack) {
-    memset(p->list_stack + p->list_stack_pos, 0, 
+    memset(p->list_stack + p->list_stack_pos, 0,
 	   (NUM_CELLS_PER_STACK - p->list_stack_pos) * sizeof(Scheme_Simple_Object));
   }
 }
@@ -544,7 +544,7 @@ print_unreadable(int argc, Scheme_Object *argv[])
 
 #ifdef DO_STACK_CHECK
 
-static Scheme_Object *read_inner(Scheme_Object *port, 
+static Scheme_Object *read_inner(Scheme_Object *port,
 				 Scheme_Object *stxsrc,
 				 Scheme_Hash_Table **ht,
 				 Scheme_Object *indentation,
@@ -559,7 +559,7 @@ static Scheme_Object *read_k(void)
   Scheme_Object *stxsrc = (Scheme_Object *)p->ku.k.p3;
   Scheme_Object *indentation = SCHEME_CAR((Scheme_Object *)p->ku.k.p4);
   ReadParams *params = (ReadParams *)SCHEME_CDR((Scheme_Object *)p->ku.k.p4);
-  
+
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
@@ -572,7 +572,7 @@ static Scheme_Object *read_k(void)
 #define MAX_GRAPH_ID_DIGITS 8
 
 static Scheme_Object *
-read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, 
+read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	   Scheme_Object *indentation, ReadParams *params,
 	   int comment_mode)
 {
@@ -594,7 +594,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
       p->ku.k.p1 = (void *)port;
       p->ku.k.p2 = (void *)ht;
       p->ku.k.p3 = (void *)stxsrc;
-      
+
       pr = scheme_make_pair(indentation, (Scheme_Object *)params2);
       p->ku.k.p4 = (void *)pr;
 
@@ -620,9 +620,9 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
   if (col >= 0) {
     if (SCHEME_PAIRP(indentation)) {
       /* Ignore if it's a comment start or spurious closer: */
-      if ((ch != ';') 
+      if ((ch != ';')
 	  && !((ch == '#') && (scheme_peekc_special_ok(port) == '|'))
-	  && (ch != ')') 
+	  && (ch != ')')
 	  && ((ch != '}') || !params->curly_braces_are_parens)
 	  && ((ch != ']') || !params->square_brackets_are_parens)) {
 	Scheme_Indent *indt = (Scheme_Indent *)SCHEME_CAR(indentation);
@@ -668,40 +668,40 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	}
 	return v;
       }
-    case ']': 
+    case ']':
       if (!params->square_brackets_are_parens) {
 	return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
       } else {
 	unexpected_closer(ch, port, stxsrc, line, col, pos, indentation);
 	return NULL;
       }
-    case '}': 
+    case '}':
       if (!params->curly_braces_are_parens) {
 	return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
       } else {
 	unexpected_closer(ch, port, stxsrc, line, col, pos, indentation);
 	return NULL;
       }
-    case ')': 
+    case ')':
       unexpected_closer(ch, port, stxsrc, line, col, pos, indentation);
       return NULL;
-    case '(': 
+    case '(':
       return read_list(port, stxsrc, line, col, pos, ')', mz_shape_cons, 0, ht, indentation, params);
-    case '[': 
+    case '[':
       if (!params->square_brackets_are_parens) {
 	return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
       } else
 	return read_list(port, stxsrc, line, col, pos, ']', mz_shape_cons, 0, ht, indentation, params);
-    case '{': 
+    case '{':
       if (!params->curly_braces_are_parens) {
 	return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
       } else
 	return read_list(port, stxsrc, line, col, pos, '}', mz_shape_cons, 0, ht, indentation, params);
-    case '"': 
+    case '"':
       return read_string(0, port, stxsrc, line, col, pos,indentation, params);
-    case '\'': 
+    case '\'':
       return read_quote("quoting '", quote_symbol, 1, port, stxsrc, line, col, pos, ht, indentation, params);
-    case '`': 
+    case '`':
       if (!params->can_read_quasi || params->croc_mode) {
 	scheme_read_err(port, stxsrc, line, col, pos, 1, 0, indentation, "read: illegal use of backquote");
 	return NULL;
@@ -766,7 +766,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	    Scheme_Object *skipped;
 	    skipped = read_inner(port, stxsrc, ht, indentation, params, 0);
 	    if (SCHEME_EOFP(skipped))
-	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
+	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
 			      "read: expected a commented-out element for `#;' (found end-of-file)");
 	    /* For resolving graphs introduced in #; : */
 	    if (*ht) {
@@ -787,21 +787,21 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	case '%':
 	  scheme_ungetc('%', port);
 	  return read_symbol('#', port, stxsrc, line, col, pos, indentation, params);
-	case '(': 
+	case '(':
 	  return read_vector(port, stxsrc, line, col, pos, ')', -1, NULL, ht, indentation, params);
-	case '[': 
+	case '[':
 	  if (!params->square_brackets_are_parens) {
 	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, "read: bad syntax `#['");
 	    return NULL;
 	  } else
 	    return read_vector(port, stxsrc, line, col, pos, ']', -1, NULL, ht, indentation, params);
-	case '{': 
+	case '{':
 	  if (!params->curly_braces_are_parens) {
 	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, "read: bad syntax `#{'");
 	    return NULL;
 	  } else
 	    return read_vector(port, stxsrc, line, col, pos, '}', -1, NULL, ht, indentation, params);
-	case '\\': 
+	case '\\':
 	  {
 	    Scheme_Object *chr;
 	    chr = read_character(port, stxsrc, line, col, pos, indentation, params);
@@ -810,12 +810,12 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	    return chr;
 	  }
 	case 'T':
-	case 't': return (stxsrc 
-			  ? scheme_make_stx_w_offset(scheme_true, line, col, pos, 2, stxsrc, STX_SRCTAG) 
+	case 't': return (stxsrc
+			  ? scheme_make_stx_w_offset(scheme_true, line, col, pos, 2, stxsrc, STX_SRCTAG)
 			  : scheme_true);
 	case 'F':
-	case 'f': return (stxsrc 
-			  ? scheme_make_stx_w_offset(scheme_false, line, col, pos, 2, stxsrc, STX_SRCTAG) 
+	case 'f': return (stxsrc
+			  ? scheme_make_stx_w_offset(scheme_false, line, col, pos, 2, stxsrc, STX_SRCTAG)
 			  : scheme_false);
 	case 'c':
 	case 'C':
@@ -842,7 +842,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	      croc = 1;
 	      break;
 	    default:
-	      scheme_read_err(port, stxsrc, line, col, pos, 2, ch, indentation, 
+	      scheme_read_err(port, stxsrc, line, col, pos, 2, ch, indentation,
 			      "read: expected `s' or `i' after #c");
 	      return NULL;
 	    }
@@ -858,10 +858,10 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 		  if (ch == 'c' || ch == 'C') {
 		    /* Done */
 		  } else
-		    scheme_read_err(port, stxsrc, line, col, pos, 4, ch, indentation, 
+		    scheme_read_err(port, stxsrc, line, col, pos, 4, ch, indentation,
 				    "read: expected `c' after #cro");
 		} else
-		  scheme_read_err(port, stxsrc, line, col, pos, 3, ch, indentation, 
+		  scheme_read_err(port, stxsrc, line, col, pos, 3, ch, indentation,
 			      "read: expected `oc' after #cr");
 	      }
 
@@ -912,7 +912,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	    params->croc_mode = 0;
 
 	    v = read_inner(port, stxsrc, ht, indentation, params, 0);
-	    
+
 	    params->croc_mode = save_croc;
 
 	    if (SCHEME_EOFP(v)) {
@@ -923,7 +923,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 
 	    return v;
 	  } else {
-	    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
+	    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation,
 			    "read: expected `x' after `#s'");
 	    return NULL;
 	  }
@@ -939,21 +939,21 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	case 'e': return read_number(-1, port, stxsrc, line, col, pos, 0, 1, 10, 0, indentation, params);
 	case 'I':
 	case 'i': return read_number(-1, port, stxsrc, line, col, pos, 1, 0, 10, 0, indentation, params);
-	case '\'': 
+	case '\'':
 	  return read_quote("quoting #'", syntax_symbol, 2, port, stxsrc, line, col, pos, ht, indentation, params);
-	case '`': 
+	case '`':
 	  return read_quote("quasiquoting #`", quasisyntax_symbol, 2, port, stxsrc, line, col, pos, ht, indentation, params);
-	case ',': 
+	case ',':
 	  if (scheme_peekc_special_ok(port) == '@') {
 	    ch = scheme_getc(port); /* must be '@' */
 	    return read_quote("unquoting #`@", unsyntax_splicing_symbol, 3, port, stxsrc, line, col, pos, ht, indentation, params);
-	  } else 
+	  } else
 	    return read_quote("unquoting #`", unsyntax_symbol, 2, port, stxsrc, line, col, pos, ht, indentation, params);
-	case '~': 
+	case '~':
 	  if (params->can_read_compiled) {
 	    Scheme_Object *cpld;
 	    cpld = read_compiled(port, ht);
-	    if (stxsrc) 
+	    if (stxsrc)
 	      cpld = scheme_make_stx_w_offset(cpld, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
 	    return cpld;
 	  } else {
@@ -969,7 +969,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	    ch = scheme_getc_special_ok(port);
 
 	    if (ch == EOF)
-	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
+	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
 			      "read: end of file in #| comment");
 	    else if (ch == SCHEME_SPECIAL)
 	      scheme_get_ready_special(port, stxsrc, 0);
@@ -986,7 +986,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  if (params->can_read_box)
 	    return read_box(port, stxsrc, line, col, pos, ht, indentation, params);
 	  else {
-	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, 
+	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation,
 			    "read: #& expressions not currently enabled");
 	    return NULL;
 	  }
@@ -1018,7 +1018,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 		str = scheme_make_regexp(str, is_byte, &is_err);
 
 		if (is_err) {
-		  scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, 
+		  scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation,
 				  "read: bad regexp string: %s", (char *)str);
 		  return NULL;
 		}
@@ -1036,9 +1036,9 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	      a[0] = 'x';
 	      b[0] = '#';
 	      c[0] = ch;
-		
-	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 
-			      ch, indentation, 
+
+	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos),
+			      ch, indentation,
 			      "read: bad syntax `#r%u%u%u'",
 			      a, cnt ? 1 : 0,
 			      b, (cnt > 1) ? 1 : 0,
@@ -1091,9 +1091,9 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 		one_more[1] = 0;
 	      } else
 		one_more[0] = 0;
-	      
-	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 
-			      ch, indentation, 
+
+	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos),
+			      ch, indentation,
 			      "read: bad syntax `#h%5%u'",
 			      str_part,
 			      one_more, NOT_EOF_OR_SPECIAL(ch) ? 1 : 0);
@@ -1108,7 +1108,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	    int vector_length = -1;
 	    int i = 0, j = 0, overflow = 0, digits = 0;
 	    mzchar tagbuf[64], vecbuf[64]; /* just for errors */
-	    
+
 	    while (NOT_EOF_OR_SPECIAL(ch) && isdigit_ascii(ch)) {
 	      if (digits <= MAX_GRAPH_ID_DIGITS)
 		digits++;
@@ -1134,13 +1134,13 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 		tagbuf[i++] = '.';
 		tagbuf[i] = 0;
 	      }
-		
+
 	      if (!overflow) {
 		long old_len;
 
 		if (vector_length < 0)
 		  vector_length = 0;
-	      
+
 		old_len = vector_length;
 		vector_length = (vector_length * 10) + (ch - 48);
 		if ((vector_length < 0)|| ((vector_length / 10) != old_len)) {
@@ -1161,25 +1161,25 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	      return read_vector(port, stxsrc, line, col, pos, ']', vector_length, vecbuf, ht, indentation, params);
 	    if (ch == '{' && params->curly_braces_are_parens)
 	      return read_vector(port, stxsrc, line, col, pos, '}', vector_length, vecbuf, ht, indentation, params);
-	    
+
 	    if (ch == '#' && (vector_length != -1)) {
 	      /* Not a vector after all: a graph reference */
 	      Scheme_Object *ph;
-	      
+
 	      if (!params->can_read_graph)
-		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 				"read: #..# expressions not currently enabled");
-	      
+
 	      if (digits > MAX_GRAPH_ID_DIGITS)
-		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 				"read: graph id too long in #%5#",
 				tagbuf);
-	    
+
 	      if (*ht)
 		ph = (Scheme_Object *)scheme_hash_get(*ht, scheme_make_integer(vector_length));
 	      else
 		ph = NULL;
-	      
+
 	      if (!ph) {
 		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 				"read: no #%ld= preceding #%ld#",
@@ -1191,19 +1191,19 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	    if (ch == '=' && (vector_length != -1)) {
 	      /* Not a vector after all: a graph definition */
 	      Scheme_Object *v, *ph;
-	      
+
 	      if (!params->can_read_graph)
-		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 				 "read: #..= expressions not currently enabled");
-	      
+
 	      if (digits > MAX_GRAPH_ID_DIGITS)
-		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 				 "read: graph id too long in #%s=",
 				 tagbuf);
-	      
+
 	      if (*ht) {
 		if (scheme_hash_get(*ht, scheme_make_integer(vector_length))) {
-		  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
+		  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 				  "read: multiple #%ld= tags",
 				  vector_length);
 		  return NULL;
@@ -1215,37 +1215,37 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	      }
 	      ph = scheme_alloc_small_object();
 	      ph->type = scheme_placeholder_type;
-	      
+
 	      scheme_hash_set(*ht, scheme_make_integer(vector_length), (void *)ph);
-	      
+
 	      v = read_inner(port, stxsrc, ht, indentation, params, 0);
 	      if (SCHEME_EOFP(v))
-		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
 				"read: expected an element for graph (found end-of-file)");
 	      if (stxsrc && SCHEME_STXP(v)) /* might be a placeholder! */
 		v = scheme_make_graph_stx(v, line, col, pos);
 	      SCHEME_PTR_VAL(ph) = v;
-	      
+
 	      return v;
 	    }
-	  
+
 	    {
 	      char *lbuffer;
 	      int pch = ch, ulen, blen;
-	      
+
 	      if ((pch == EOF) || (pch == SCHEME_SPECIAL))
 		pch = 0;
-	      
+
 	      ulen = scheme_char_strlen(tagbuf);
 	      blen = scheme_utf8_encode_all(tagbuf, ulen, NULL);
 	      lbuffer = (char *)scheme_malloc_atomic(blen + MAX_UTF8_CHAR_BYTES + 1);
 	      scheme_utf8_encode_all(tagbuf, ulen, lbuffer);
-	      blen += scheme_utf8_encode(&pch, 0, 1, 
+	      blen += scheme_utf8_encode(&pch, 0, 1,
 					 lbuffer, blen,
 					 0);
 	      lbuffer[blen] = 0;
-	      
-	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
+
+	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation,
 			      "read: bad syntax `#%s'",
 			      lbuffer);
 
@@ -1275,7 +1275,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 }
 
 #ifdef DO_STACK_CHECK
-static Scheme_Object *resolve_references(Scheme_Object *obj, 
+static Scheme_Object *resolve_references(Scheme_Object *obj,
 					 Scheme_Object *port,
 					 int mkstx);
 
@@ -1292,7 +1292,7 @@ static Scheme_Object *resolve_k(void)
 }
 #endif
 
-static Scheme_Object *resolve_references(Scheme_Object *obj, 
+static Scheme_Object *resolve_references(Scheme_Object *obj,
 					 Scheme_Object *port,
 					 int mkstx)
 {
@@ -1383,7 +1383,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 	a = SCHEME_CAR(l);
 	key = SCHEME_CAR(a);
 	val = SCHEME_CDR(a);
-	
+
 	scheme_hash_set(t, key, val);
       }
     } else {
@@ -1429,12 +1429,12 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
   ht = MALLOC_N(Scheme_Hash_Table *, 1);
   do {
     v = read_inner(port, stxsrc, ht, scheme_null, &params, RETURN_FOR_HASH_COMMENT);
-    
+
     if (*ht) {
       /* Resolve placeholders: */
       if (v)
 	v = resolve_references(v, port, !!stxsrc);
-      
+
       /* In case some placeholders were introduced by #;: */
       v2 = scheme_hash_get(*ht, an_uninterned_symbol);
       if (v2)
@@ -1467,7 +1467,7 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int ca
 
   if (crc < 0)
     crc = SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_CAN_READ_COMPILED));
-  
+
   /* Need this before top_level_do: */
   if (USE_LISTSTACK(!p->list_stack))
     scheme_alloc_list_stack(p);
@@ -1478,7 +1478,7 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int ca
     p->ku.k.p1 = (void *)port;
     p->ku.k.p2 = (void *)stxsrc;
     p->ku.k.i1 = crc;
-    
+
     return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
   }
 }
@@ -1502,16 +1502,16 @@ Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, int mkstx)
 /*                             list reader                                */
 /*========================================================================*/
 
-static Scheme_Object *croc_add_module_wrapper(Scheme_Object *list, 
-					      Scheme_Object *stxsrc, 
+static Scheme_Object *croc_add_module_wrapper(Scheme_Object *list,
+					      Scheme_Object *stxsrc,
 					      Scheme_Object *port);
 
 /* "(" (or other opener) has already been read */
 static Scheme_Object *
-read_list(Scheme_Object *port, 
+read_list(Scheme_Object *port,
 	  Scheme_Object *stxsrc, long line, long col, long pos,
 	  int closer, int shape, int use_stack,
-	  Scheme_Hash_Table **ht, 
+	  Scheme_Hash_Table **ht,
 	  Scheme_Object *indentation,
 	  ReadParams *params)
 {
@@ -1554,21 +1554,21 @@ read_list(Scheme_Object *port,
 	indt = (Scheme_Indent *)SCHEME_CAR(indentation);
 	if (indt->suspicious_line) {
 	  suggestion = scheme_malloc_atomic(100);
-	  sprintf(suggestion, 
+	  sprintf(suggestion,
 		  "; indentation suggests a missing '%c' before line %ld",
 		  indt->suspicious_closer,
 		  indt->suspicious_line);
-	} 
+	}
       }
 
-      scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), EOF, indentation, 
+      scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), EOF, indentation,
 		      "read: expected a '%c'%s", closer, suggestion);
       return NULL;
     }
 
     if (ch == closer) {
       if (shape == mz_shape_hash_elem) {
-	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation, 
+	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation,
 			"read: expected dotted hash pair before '%c'",
 			closer);
 	return NULL;
@@ -1659,7 +1659,7 @@ read_list(Scheme_Object *port,
     ch = skip_whitespace_comments(port, stxsrc, ht, indentation, params);
     if ((ch == closer) && !params->croc_mode) {
       if (shape == mz_shape_hash_elem) {
-	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation, 
+	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation,
 			"read: expected `.' and value for hash before '%c'",
 			closer);
 	return NULL;
@@ -1670,7 +1670,7 @@ read_list(Scheme_Object *port,
 	list = cdr;
       else
 	SCHEME_CDR(last) = cdr;
-      
+
       if (infixed) {
 	/* Assert: we're not using the list stack */
 	list = scheme_make_pair(infixed, list);
@@ -1701,9 +1701,9 @@ read_list(Scheme_Object *port,
 		    || ((next == ']') && brackets)
 		    || ((next == '}') && braces)))) {
       scheme_tell_all(port, &dotline, &dotcol, &dotpos);
-      
+
       if (((shape != mz_shape_cons) && (shape != mz_shape_hash_elem)) || infixed) {
-	scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, 0, indentation, 
+	scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, 0, indentation,
 			"read: illegal use of \".\"");
 	return NULL;
       }
@@ -1715,7 +1715,7 @@ read_list(Scheme_Object *port,
 	  /* Parse as infix: */
 
 	  if (shape == mz_shape_hash_elem) {
-	    scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation, 
+	    scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation,
 			    "read: expected '%c' after hash value",
 			    closer);
 	    return NULL;
@@ -1732,13 +1732,13 @@ read_list(Scheme_Object *port,
 	  /* Make sure there's not a closing paren immediately after the dot: */
 	  ch = skip_whitespace_comments(port, stxsrc, ht, indentation, params);
 	  if ((ch == closer) || (ch == EOF)) {
-	    scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, (ch == EOF) ? EOF : 0, indentation, 
+	    scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, (ch == EOF) ? EOF : 0, indentation,
 			    "read: illegal use of \".\"");
 	    return NULL;
 	  }
 	  got_ch_already = 1;
 	} else {
-	  scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, (ch == EOF) ? EOF : 0, indentation, 
+	  scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, (ch == EOF) ? EOF : 0, indentation,
 			  "read: illegal use of \".\"");
 	  return NULL;
 	}
@@ -1760,10 +1760,10 @@ read_list(Scheme_Object *port,
       }
     } else {
       if (shape == mz_shape_hash_elem) {
-	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation, 
+	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation,
 			"read: expected `.' and value for hash");
 	return NULL;
-      } 
+      }
 
       got_ch_already = 1;
       cdr = pair;
@@ -1837,12 +1837,12 @@ read_string(int is_byte, Scheme_Object *port,
   buf = onstack;
   while ((ch = scheme_getc_special_ok(port)) != '"') {
     if (ch == EOF) {
-      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
+      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
 		      "read: expected a closing '\"'");
       return NULL;
     } else if (ch == SCHEME_SPECIAL) {
       scheme_get_ready_special(port, stxsrc, 0);
-      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation, 
+      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation,
 		      "read: found non-character while reading a string");
       return NULL;
     }
@@ -1851,12 +1851,12 @@ read_string(int is_byte, Scheme_Object *port,
     if (ch == '\\') {
       ch = scheme_getc_special_ok(port);
       if (ch == EOF) {
-	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
+	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
 			"read: expected a closing '\"'");
 	return NULL;
       } else if (ch == SCHEME_SPECIAL) {
 	scheme_get_ready_special(port, stxsrc, 0);
-	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation, 
+	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation,
 			"read: found non-character while reading a string");
 	return NULL;
       }
@@ -1874,7 +1874,7 @@ read_string(int is_byte, Scheme_Object *port,
         if (scheme_peekc_special_ok(port) == '\n')
 	  scheme_getc(port);
 	continue; /* <---------- !!!! */
-      case '\n': 
+      case '\n':
         continue; /* <---------- !!!! */
       case 'x':
 	ch = scheme_getc_special_ok(port);
@@ -1889,7 +1889,7 @@ read_string(int is_byte, Scheme_Object *port,
 	} else {
 	  if (ch == SCHEME_SPECIAL)
 	    scheme_get_ready_special(port, stxsrc, 0);
-	  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
+	  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation,
 			  "read: no hex digit following \\x in string");
 	  return NULL;
 	}
@@ -1923,8 +1923,8 @@ read_string(int is_byte, Scheme_Object *port,
 	  } else {
 	    if (ch == SCHEME_SPECIAL)
 	      scheme_get_ready_special(port, stxsrc, 0);
-	    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
-			    "read: no hex digit following \\%c in string", 
+	    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation,
+			    "read: no hex digit following \\%c in string",
 			    ((maxc == 4) ? 'u' : 'U'));
 	    return NULL;
 	  }
@@ -1935,7 +1935,7 @@ read_string(int is_byte, Scheme_Object *port,
 	  for (n = j = 0; j < 3; j++) {
 	    n1 = 8*n + ch - '0';
 	    if (n1 > 255) {
-	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
+	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 			      "read: escape sequence \\%o out of range in string", n1);
 	      return NULL;
 	    }
@@ -1951,7 +1951,7 @@ read_string(int is_byte, Scheme_Object *port,
 	  }
 	  ch = n;
 	} else {
-	  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
+	  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 			  "read: unknown escape sequence \\%c in %sstring", ch,
 			  is_byte ? "byte " : "");
 	  return NULL;
@@ -1972,16 +1972,16 @@ read_string(int is_byte, Scheme_Object *port,
     }
 
     if (ch < 0) {
-      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
+      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation,
 		      "read: out-of-range character in %sstring",
 		      is_byte ? "byte " : "");
       return NULL;
     }
 
-    if (i >= size) { 
+    if (i >= size) {
       oldsize = size;
       oldbuf = buf;
-      
+
       size *= 2;
       buf = (mzchar *)scheme_malloc_atomic((size + 1) * sizeof(mzchar));
       memcpy(buf, oldbuf, oldsize * sizeof(mzchar));
@@ -2025,11 +2025,11 @@ char *scheme_extract_indentation_suggestions(Scheme_Object *indentation)
 
   if (suspicious_quote) {
     suspicions = (char *)scheme_malloc_atomic(64);
-    sprintf(suspicions, 
-	    "; newline within string suggests a missing '\"' on line %ld", 
+    sprintf(suspicions,
+	    "; newline within string suggests a missing '\"' on line %ld",
 	    suspicious_quote);
   }
-  
+
   return suspicions;
 }
 
@@ -2041,9 +2041,9 @@ char *scheme_extract_indentation_suggestions(Scheme_Object *indentation)
 static Scheme_Object *
 read_vector (Scheme_Object *port,
 	     Scheme_Object *stxsrc, long line, long col, long pos,
-	     char closer, 
+	     char closer,
 	     long requestLength, const mzchar *reqBuffer,
-	     Scheme_Hash_Table **ht, 
+	     Scheme_Hash_Table **ht,
 	     Scheme_Object *indentation, ReadParams *params)
 /* requestLength == -1 => no request
    requestLength == -2 => overflow */
@@ -2071,7 +2071,7 @@ read_vector (Scheme_Object *port,
     char buffer[20];
     STACK_END(r);
     sprintf(buffer, "%ld", requestLength);
-    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
+    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 		    "read: vector length %ld is too small, "
 		    "%d values provided",
 		    requestLength, len);
@@ -2132,8 +2132,8 @@ typedef int (*Getc_Fun_r)(Scheme_Object *port);
 static Scheme_Object  *
 read_number_or_symbol(int init_ch, Scheme_Object *port,
 		      Scheme_Object *stxsrc, long line, long col, long pos,
-		      int is_float, int is_not_float, 
-		      int radix, int radix_set, 
+		      int is_float, int is_not_float,
+		      int radix, int radix_set,
 		      int is_symbol, int pipe_quote,
 		      Scheme_Object *indentation, ReadParams *params)
 {
@@ -2220,12 +2220,12 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
     if (ch == '\\' && !running_quote) {
       ch = scheme_getc_special_ok(port);
       if (ch == EOF) {
-	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
+	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
 			"read: EOF following \\ in symbol");
 	return NULL;
       } else if (ch == SCHEME_SPECIAL) {
 	scheme_get_ready_special(port, stxsrc, 0);
-	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation, 
+	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation,
 			"read: non-character following \\ in symbol");
 	return NULL;
       }
@@ -2240,13 +2240,13 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 
       ch = getc_special_ok_fun(port);
       continue; /* <-- !!! */
-    } else 
+    } else
       quoted = 0;
 
     if (i >= size) {
       oldsize = size;
       oldbuf = buf;
-      
+
       size *= 2;
       buf = (mzchar *)scheme_malloc_atomic((size + 1) * sizeof(mzchar));
       memcpy(buf, oldbuf, oldsize * sizeof(mzchar));
@@ -2270,15 +2270,15 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 
   if (running_quote && (ch == SCHEME_SPECIAL)) {
     scheme_get_ready_special(port, stxsrc, 0);
-    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation, 
-		    "read: non-character following \\ in symbol");      
+    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation,
+		    "read: non-character following \\ in symbol");
   }
 
   if (ungetc_ok)
     scheme_ungetc(ch, port);
 
   if (running_quote) {
-    scheme_read_err(port, stxsrc, rq_line, rq_col, rq_pos, SPAN(port, rq_pos), EOF, indentation, 
+    scheme_read_err(port, stxsrc, rq_line, rq_col, rq_pos, SPAN(port, rq_pos), EOF, indentation,
 		    "read: unbalanced `|'");
     return NULL;
   }
@@ -2289,7 +2289,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
     long xl, xc, xp;
     scheme_tell_all(port, &xl, &xc, &xp);
     scheme_read_err(port, stxsrc, xl, xc, xp,
-		    1, 0, indentation, 
+		    1, 0, indentation,
 		    "read: illegal use of \".\"");
     return NULL;
   }
@@ -2297,7 +2297,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
   if (!i && croc_mode) {
     /* If we end up with an empty string, then the first character
        is simply illegal */
-    scheme_read_err(port, stxsrc, line, col, pos, 1, 0, indentation, 
+    scheme_read_err(port, stxsrc, line, col, pos, 1, 0, indentation,
 		    "read: illegal character: %c", ch);
     return NULL;
   }
@@ -2310,7 +2310,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
     int found_e;
     found_e = check_croc_num(buf, i);
     if (found_e < 0) {
-      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
+      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 		      "read: bad number: %5", buf);
       return NULL;
     }
@@ -2325,7 +2325,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 	if (i >= size) {
 	  oldsize = size;
 	  oldbuf = buf;
-	  
+
 	  size *= 2;
 	  buf = (mzchar *)scheme_malloc_atomic((size + 1) * sizeof(mzchar));
 	  memcpy(buf, oldbuf, oldsize * sizeof(mzchar));
@@ -2339,8 +2339,8 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
   if ((is_symbol || quoted_ever) && !is_float && !is_not_float && !radix_set)
     o = scheme_false;
   else {
-    o = scheme_read_number(buf, i, 
-			   is_float, is_not_float, decimal_inexact, 
+    o = scheme_read_number(buf, i,
+			   is_float, is_not_float, decimal_inexact,
 			   radix, radix_set,
 			   port, NULL, 0,
 			   stxsrc, line, col, pos, SPAN(port, pos),
@@ -2349,7 +2349,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 
   if (SAME_OBJ(o, scheme_false)) {
     if (croc_mode && !is_symbol) {
-      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
+      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 		      "read: bad number: %5", buf);
       return NULL;
     }
@@ -2366,7 +2366,7 @@ static Scheme_Object  *
 read_number(int init_ch,
 	    Scheme_Object *port,
 	    Scheme_Object *stxsrc, long line, long col, long pos,
-	    int is_float, int is_not_float, 
+	    int is_float, int is_not_float,
 	    int radix, int radix_set,
 	    Scheme_Object *indentation, ReadParams *params)
 {
@@ -2386,7 +2386,7 @@ read_symbol(int init_ch,
 {
   return read_number_or_symbol(init_ch,
 			       port, stxsrc, line, col, pos,
-			       0, 0, 10, 0, 1, 
+			       0, 0, 10, 0, 1,
 			       params->can_read_pipe_quote,
 			       indentation, params);
 }
@@ -2468,7 +2468,7 @@ static int u_strcmp(mzchar *s, const char *_t)
 
 /* "#\" has been read */
 static Scheme_Object *
-read_character(Scheme_Object *port, 
+read_character(Scheme_Object *port,
 	       Scheme_Object *stxsrc, long line, long col, long pos,
 	       Scheme_Object *indentation, ReadParams *params)
 {
@@ -2478,13 +2478,13 @@ read_character(Scheme_Object *port,
 
   if (ch == SCHEME_SPECIAL) {
     scheme_get_ready_special(port, stxsrc, 0);
-    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation, 
+    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation,
 		    "read: found non-character after #\\");
     return NULL;
   }
 
   next = scheme_peekc_special_ok(port);
-  
+
   if ((ch >= '0' && ch <= '7') && (next >= '0' && next <= '7')) {
     /* a is the same as next */
     int last;
@@ -2493,9 +2493,9 @@ read_character(Scheme_Object *port,
 
     if (last != SCHEME_SPECIAL)
       scheme_getc(port); /* must be last */
-      
+
     if (last < '0' || last > '7' || ch > '3') {
-      scheme_read_err(port, stxsrc, line, col, pos, ((last == EOF) || (last == SCHEME_SPECIAL)) ? 3 : 4, last, indentation, 
+      scheme_read_err(port, stxsrc, line, col, pos, ((last == EOF) || (last == SCHEME_SPECIAL)) ? 3 : 4, last, indentation,
 		      "read: bad character constant #\\%c%c%c",
 		      ch, next, ((last == EOF) || (last == SCHEME_SPECIAL)) ? ' ' : last);
       return NULL;
@@ -2520,11 +2520,11 @@ read_character(Scheme_Object *port,
     }
     /* overflow makes a negative character; also, disallow
        surrogate points */
-    if ((n < 0) 
+    if ((n < 0)
 	|| ((n >= 0xD800) && (n <= 0xDFFF))
 	|| (n == 0xFFFE)
 	|| (n == 0xFFFF)) {
-      scheme_read_err(port, stxsrc, line, col, pos, count + 2, 0, indentation, 
+      scheme_read_err(port, stxsrc, line, col, pos, count + 2, 0, indentation,
 		      "read: bad character constant #\\%u",
 		      nbuf, count);
       return NULL;
@@ -2544,7 +2544,7 @@ read_character(Scheme_Object *port,
       if (i >= size) {
 	oldsize = size;
 	oldbuf = buf;
-	
+
 	size *= 2;
 	buf = (mzchar *)scheme_malloc_atomic((size + 1) * sizeof(mzchar));
 	memcpy(buf, oldbuf, oldsize * sizeof(mzchar));
@@ -2552,7 +2552,7 @@ read_character(Scheme_Object *port,
       buf[i++] = ch;
     }
     buf[i] = '\0';
-    
+
     switch (scheme_tolower(buf[0])) {
     case 'n': /* maybe `newline' or 'null' or 'nul' */
       if (!u_strcmp(buf, "newline"))
@@ -2594,13 +2594,13 @@ read_character(Scheme_Object *port,
       break;
     }
 
-    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
+    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 		    "read: bad character constant: #\\%5",
 		    buf);
   }
 
   if (ch == EOF) {
-    scheme_read_err(port, stxsrc, line, col, pos, 2, EOF, indentation, 
+    scheme_read_err(port, stxsrc, line, col, pos, 2, EOF, indentation,
 		    "read: expected a character after #\\");
   }
 
@@ -2616,14 +2616,14 @@ static Scheme_Object *
 read_quote(char *who, Scheme_Object *quote_symbol, int len,
 	   Scheme_Object *port,
 	   Scheme_Object *stxsrc, long line, long col, long pos,
-	   Scheme_Hash_Table **ht, 
+	   Scheme_Hash_Table **ht,
 	   Scheme_Object *indentation, ReadParams *params)
 {
   Scheme_Object *obj, *ret;
 
   obj = read_inner(port, stxsrc, ht, indentation, params, 0);
   if (SCHEME_EOFP(obj))
-    scheme_read_err(port, stxsrc, line, col, pos, len, EOF, indentation, 
+    scheme_read_err(port, stxsrc, line, col, pos, len, EOF, indentation,
 		    "read: expected an element for %s (found end-of-file)",
 		    who);
   ret = (stxsrc
@@ -2638,15 +2638,15 @@ read_quote(char *who, Scheme_Object *quote_symbol, int len,
 /* "#&" has been read */
 static Scheme_Object *read_box(Scheme_Object *port,
 			       Scheme_Object *stxsrc, long line, long col, long pos,
-			       Scheme_Hash_Table **ht, 
+			       Scheme_Hash_Table **ht,
 			       Scheme_Object *indentation, ReadParams *params)
 {
   Scheme_Object *o, *bx;
 
   o = read_inner(port, stxsrc, ht, indentation, params, 0);
-  
+
   if (SCHEME_EOFP(o))
-    scheme_read_err(port, stxsrc, line, col, pos, 2, EOF, indentation, 
+    scheme_read_err(port, stxsrc, line, col, pos, 2, EOF, indentation,
 		    "read: expected an element for #& box (found end-of-file)");
 
   bx = scheme_box(o);
@@ -2703,7 +2703,7 @@ static Scheme_Object *read_hash(Scheme_Object *port, Scheme_Object *stxsrc,
 /*========================================================================*/
 
 static int
-skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc, 
+skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
 			 Scheme_Hash_Table **ht, Scheme_Object *indentation, ReadParams *params)
 {
   int ch;
@@ -2738,13 +2738,13 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
     long col, pos, line;
 
     scheme_tell_all(port, &line, &col, &pos);
-    
+
     (void)scheme_getc(port); /* re-read '|' */
     do {
       ch = scheme_getc_special_ok(port);
 
       if (ch == EOF)
-	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
+	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
 			"read: end of file in #| comment");
       else if (ch == SCHEME_SPECIAL)
 	scheme_get_ready_special(port, stxsrc, 0);
@@ -2769,7 +2769,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
 
     skipped = read_inner(port, stxsrc, ht, indentation, params, 0);
     if (SCHEME_EOFP(skipped))
-      scheme_read_err(port, stxsrc, line, col, pos,  SPAN(port, pos), EOF, indentation, 
+      scheme_read_err(port, stxsrc, line, col, pos,  SPAN(port, pos), EOF, indentation,
 		      "read: expected a commented-out element for `#;' (found end-of-file)");
 
     /* For resolving graphs introduced in #; : */
@@ -2799,28 +2799,28 @@ static void unexpected_closer(int ch,
     Scheme_Indent *indt;
     int opener;
     char *missing;
-    
+
     indt = (Scheme_Indent *)SCHEME_CAR(indentation);
 
     found = scheme_malloc_atomic(100);
-    
+
     if (indt->closer == '}')
       opener = '{';
     else if (indt->closer == ']')
       opener = '[';
     else
       opener = '(';
-    
+
     /* Missing intermediate closers, or just need something else entirely? */
     {
       Scheme_Object *l;
       Scheme_Indent *indt2;
-	
+
       missing = "expected";
       for (l = SCHEME_CDR(indentation); SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	indt2 = (Scheme_Indent *)SCHEME_CAR(l);
 	if (indt2->closer == ch) {
-	  missing = "missing";	    
+	  missing = "missing";
 	}
       }
     }
@@ -2844,20 +2844,20 @@ static void unexpected_closer(int ch,
 
     if (indt->suspicious_line) {
       suggestion = scheme_malloc_atomic(100);
-      sprintf(suggestion, 
+      sprintf(suggestion,
 	      "; indentation suggests a missing '%c' before line %ld",
 	      indt->suspicious_closer,
 	      indt->suspicious_line);
     }
   }
 
-  scheme_read_err(port, stxsrc, line, col, pos, 1, 0, indentation, "read: %s '%c'%s",  
+  scheme_read_err(port, stxsrc, line, col, pos, 1, 0, indentation, "read: %s '%c'%s",
 		  found, ch, suggestion);
 }
 
 static void pop_indentation(Scheme_Object *indentation)
 {
-  /* Pop off indentation stack, and propagate 
+  /* Pop off indentation stack, and propagate
      suspicions if none found earlier. */
   if (SCHEME_PAIRP(indentation)) {
     Scheme_Indent *indt;
@@ -2891,7 +2891,7 @@ static void pop_indentation(Scheme_Object *indentation)
 #define RANGE_CHECK_GETS(x) RANGE_CHECK(x, <= port->size - port->pos)
 
 typedef struct CPort {
-  MZTAG_IF_REQUIRED  
+  MZTAG_IF_REQUIRED
   unsigned long pos, size;
   unsigned char *start;
   unsigned long symtab_size;
@@ -2914,7 +2914,7 @@ void scheme_ill_formed(struct CPort *port
 #endif
 		       )
 {
-  scheme_read_err(port->orig_port, NULL, -1, -1, CP_TELL(port), -1, 0, NULL, 
+  scheme_read_err(port->orig_port, NULL, -1, -1, CP_TELL(port), -1, 0, NULL,
 		  "read (compiled): ill-formed code"
 #if TRACK_ILL_FORMED_CATCH_LINES
 		  " [%s:%d]", file, line
@@ -2925,7 +2925,7 @@ void scheme_ill_formed(struct CPort *port
 static long read_compact_number(CPort *port)
 {
   /* >>> See also read_compact_number_from_port(), below. <<< */
-  
+
   long flag, v, a, b, c, d;
 
   ZO_CHECK(port->pos < port->size);
@@ -2939,7 +2939,7 @@ static long read_compact_number(CPort *port)
 
     a = CP_GETC(port);
     b = CP_GETC(port);
-    
+
     v = a
       + (b << 8);
     return v;
@@ -2950,7 +2950,7 @@ static long read_compact_number(CPort *port)
   }
 
   ZO_CHECK(port->pos + 3 < port->size);
-  
+
   a = CP_GETC(port);
   b = CP_GETC(port);
   c = CP_GETC(port);
@@ -2960,15 +2960,15 @@ static long read_compact_number(CPort *port)
     + (b << 8)
     + (c << 16)
     + (d << 24);
-  
+
   if (flag == 253)
     return v;
   else
     return -v;
 }
 
-static char *read_compact_chars(CPort *port, 
-				char *buffer, 
+static char *read_compact_chars(CPort *port,
+				char *buffer,
 				int bsize, int l)
 {
   /* Range check is performed before the function is called. */
@@ -3060,7 +3060,7 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 
 	len = read_compact_number(port);
 
-	RANGE_CHECK_GETS(len);
+	RANGE_CHECK_GETS((unsigned)len);
 
 #if defined(MZ_PRECISE_GC)
 	s = read_compact_chars(port, buffer, BLK_BUF_SIZE, len);
@@ -3118,7 +3118,7 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	  v = scheme_make_exact_symbol(s, l);
 	else
 	  v = scheme_intern_exact_parallel_symbol(s, l);
-	
+
 	l = read_compact_number(port);
 	RANGE_CHECK(l, < port->symtab_size);
 	port->symtab[l] = v;
@@ -3195,14 +3195,14 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	continue;
       }
       break;
-    case CPT_VECTOR: 
+    case CPT_VECTOR:
       {
 	Scheme_Object *vec;
 	unsigned int i;
 
-	l = read_compact_number(port);	
+	l = read_compact_number(port);
 	vec = scheme_make_vector(l, NULL);
-      
+
 	for (i = 0; i < l; i++) {
 	  Scheme_Object *cv;
 	  cv = read_compact(port, 0);
@@ -3257,7 +3257,7 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	v = scheme_make_local(scheme_local_unbox_type, p);
       }
       break;
-    case CPT_SVECTOR: 
+    case CPT_SVECTOR:
       {
 	int l;
 	l = read_compact_number(port);
@@ -3276,7 +3276,7 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	  v = read_compact(port, 1);
 	  a->args[i] = v;
 	}
-	
+
 	scheme_finish_application(a);
 	v = (Scheme_Object *)a;
       }
@@ -3327,7 +3327,7 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	Module_Variable *mv;
 	Scheme_Object *mod, *var;
 	int pos;
-	
+
 	l = read_compact_number(port); /* symtab index */
 	mod = read_compact(port, 0);
 	var = read_compact(port, 0);
@@ -3341,7 +3341,7 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	mv->pos = pos;
 
 	v = (Scheme_Object *)mv;
-	
+
 	RANGE_CHECK(l, < port->symtab_size);
 	port->symtab[l] = v;
       }
@@ -3351,7 +3351,7 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
       {
 	Scheme_Type type;
 	int k;
-	
+
 	if (CPT_BETWEEN(ch, SMALL_LOCAL_UNBOX)) {
 	  k = 1;
 	  type = scheme_local_unbox_type;
@@ -3406,7 +3406,7 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	  if (l == 1) {
 	    Scheme_Object *car, *cdr;
 	    car = read_compact(port, 0);
-	    cdr = (ppr 
+	    cdr = (ppr
 		   ? scheme_null
 		   : read_compact(port, 0));
 	    v = scheme_make_pair(car, cdr);
@@ -3416,7 +3416,7 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	  proper = ppr;
 	  need_car = l;
 	  continue;
-	}  
+	}
       }
       break;
     case CPT_SMALL_APPLICATION_START:
@@ -3431,9 +3431,9 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	  v = read_compact(port, 1);
 	  a->args[i] = v;
 	}
-	  
+
 	scheme_finish_application(a);
-	
+
 	v = (Scheme_Object *)a;
       }
       break;
@@ -3454,7 +3454,7 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	et = et << 3;
 	et += scheme_get_eval_type(app->rator);
 	SCHEME_APPN_FLAGS(app) = et;
-	
+
 	v = (Scheme_Object *)app;
       }
       break;
@@ -3479,7 +3479,7 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	et = et << 3;
 	et += scheme_get_eval_type(app->rator);
 	SCHEME_APPN_FLAGS(app) = et;
-	
+
 	v = (Scheme_Object *)app;
       }
       break;
@@ -3502,7 +3502,7 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	  local_list_stack = sa;
 	  local_list_stack_pos = 0;
 	}
-	
+
 	pair = (Scheme_Object *)(local_list_stack + (local_list_stack_pos++));
 	pair->type = scheme_pair_type;
 	SCHEME_CAR(pair) = v;
@@ -3541,7 +3541,7 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack, CPort 
       local_list_stack = sa;
       local_list_stack_pos = 0;
     }
-    
+
     last = (Scheme_Object *)(local_list_stack + (local_list_stack_pos++));
     last->type = scheme_pair_type;
     SCHEME_CAR(last) = v;
@@ -3562,7 +3562,7 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack, CPort 
 	local_list_stack = sa;
 	local_list_stack_pos = 0;
       }
-      
+
       pair = (Scheme_Object *)(local_list_stack + (local_list_stack_pos++));
       pair->type = scheme_pair_type;
       SCHEME_CAR(pair) = v;
@@ -3601,7 +3601,7 @@ static Scheme_Object *read_compact_quote(CPort *port, int embedded)
 
   if (*q_ht)
     resolve_references(v, NULL, 0);
-  
+
   return v;
 }
 
@@ -3625,7 +3625,7 @@ static Scheme_Object *read_marshalled(int type, CPort *port)
     STACK_END(r);
     scheme_ill_formed_code(port);
   }
-  
+
   l = reader(l);
 
   STACK_END(r);
@@ -3648,7 +3648,7 @@ static long read_compact_number_from_port(Scheme_Object *port)
     return flag;
   if (flag == 254)
     return -scheme_get_byte(port);
-  
+
   a = scheme_get_byte(port);
   b = scheme_get_byte(port);
 
@@ -3665,7 +3665,7 @@ static long read_compact_number_from_port(Scheme_Object *port)
     + (b << 8)
     + (c << 16)
     + (d << 24);
-  
+
   if (flag == 253)
     return v;
   else
@@ -3673,7 +3673,7 @@ static long read_compact_number_from_port(Scheme_Object *port)
 }
 
 /* "#~" has been read */
-static Scheme_Object *read_compiled(Scheme_Object *port, 
+static Scheme_Object *read_compiled(Scheme_Object *port,
 				    Scheme_Hash_Table **ht)
 {
   Scheme_Thread *p = scheme_current_thread;
@@ -3719,7 +3719,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   size = read_compact_number_from_port(port);
   {
     char buf[64];
-    
+
     if (size < 0) size = 0;
     if (size > 63) size = 63;
 
@@ -3727,7 +3727,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
     buf[got] = 0;
 
     if (strcmp(buf, MZSCHEME_VERSION))
-      scheme_read_err(port, NULL, -1, -1, -1, -1, 0, NULL, 
+      scheme_read_err(port, NULL, -1, -1, -1, -1, 0, NULL,
 		      "read (compiled): code compiled for version %s, not %s",
 		      (buf[0] ? buf : "???"), MZSCHEME_VERSION);
   }
@@ -3746,7 +3746,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   }
   rp->pos = 0;
   {
-    long base; 
+    long base;
     scheme_tell_all(port, NULL, NULL, &base);
     rp->base = base;
   }
@@ -3773,8 +3773,8 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 
   if (SAME_TYPE(SCHEME_TYPE(result), scheme_compilation_top_type)) {
     Scheme_Compilation_Top *top = (Scheme_Compilation_Top *)result;
-    
-    scheme_validate_code(rp, top->code, 
+
+    scheme_validate_code(rp, top->code,
 			 top->max_let_depth,
 			 top->prefix->num_toplevels,
 			 top->prefix->num_stxes);

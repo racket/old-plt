@@ -648,7 +648,7 @@ static Scheme_Object *link_application(Scheme_Object *o, Link_Info *info)
   Scheme_App_Rec *oapp = (Scheme_App_Rec *)o;
   Scheme_App_Rec *napp;
   Scheme_Object *e;
-  int n, i, size;
+  int n, i, size, diff = 0;
 
   n = oapp->num_args + 1;
   
@@ -660,8 +660,13 @@ static Scheme_Object *link_application(Scheme_Object *o, Link_Info *info)
 
   for (i = 0; i < n; i++) {
     e = scheme_link_expr(oapp->args[i], info);
+    if (!SAME_OBJ(e, oapp->args[i]))
+      diff = 1;
     napp->args[i] = e;
   }
+
+  if (!diff)
+    napp = oapp;
 
   return (Scheme_Object *)napp;
 }
@@ -736,17 +741,23 @@ static Scheme_Object *link_branch(Scheme_Object *o, Link_Info *info)
 {
   Scheme_Branch_Rec *ob = (Scheme_Branch_Rec *)o;
   Scheme_Branch_Rec *nb;
-  Scheme_Object *e;
+  Scheme_Object *tst, *thn, *els;
+
+  tst = scheme_link_expr(ob->test, info);
+  thn = scheme_link_expr(ob->tbranch, info);
+  els = scheme_link_expr(ob->fbranch, info);
+
+  if (SAME_OBJ(tst, ob->test)
+      && SAME_OBJ(thn, ob->tbranch)
+      && SAME_OBJ(els, ob->fbranch))
+    return (Scheme_Object *)ob;
 
   nb = MALLOC_ONE_TAGGED(Scheme_Branch_Rec);
   nb->type = scheme_branch_type;
 
-  e = scheme_link_expr(ob->test, info);
-  nb->test = e;
-  e = scheme_link_expr(ob->tbranch, info);
-  nb->tbranch = e;
-  e = scheme_link_expr(ob->fbranch, info);
-  nb->fbranch = e;
+  nb->test = tst;
+  nb->tbranch = thn;
+  nb->fbranch = els;
 
   return (Scheme_Object *)nb;
 }
@@ -774,12 +785,18 @@ static Scheme_Object *link_wcm(Scheme_Object *o, Link_Info *info)
   Scheme_With_Continuation_Mark *nwcm;
   Scheme_Object *k, *v, *b;
 
-  nwcm = MALLOC_ONE_TAGGED(Scheme_With_Continuation_Mark);
-  nwcm->type = scheme_with_cont_mark_type;
-
   k = scheme_link_expr(owcm->key, info);
   v = scheme_link_expr(owcm->val, info);
   b = scheme_link_expr(owcm->body, info);
+
+  if (SAME_OBJ(k, owcm->key)
+      && SAME_OBJ(v, owcm->val)
+      && SAME_OBJ(b, owcm->body))
+    return (Scheme_Object *)owcm;
+
+  nwcm = MALLOC_ONE_TAGGED(Scheme_With_Continuation_Mark);
+  nwcm->type = scheme_with_cont_mark_type;
+
   nwcm->key = k;
   nwcm->val = v;
   nwcm->body = b;
@@ -958,7 +975,7 @@ static Scheme_Object *link_sequence(Scheme_Object *o, Link_Info *info)
   Scheme_Sequence *os = (Scheme_Sequence *)o;
   Scheme_Sequence *ns;
   Scheme_Object *e;
-  int i, count;
+  int i, count, diff = 0;
 
   count = os->count;
   ns = malloc_sequence(count);
@@ -967,8 +984,13 @@ static Scheme_Object *link_sequence(Scheme_Object *o, Link_Info *info)
 
   for (i = 0; i < count; i++) {
     e = scheme_link_expr(os->array[i], info);
+    if (!SAME_OBJ(e, os->array[i]))
+      diff = 1;
     ns->array[i] = e;
   }
+
+  if (!diff)
+    ns = os;
 
   return (Scheme_Object *)ns;
 }

@@ -548,18 +548,22 @@ scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info)
   Scheme_Closure_Compilation_Data *ndata;
   Scheme_Object *e;
 
-  ndata = MALLOC_ONE_TAGGED(Scheme_Closure_Compilation_Data);
-  ndata->type = scheme_unclosed_procedure_type;
-
-  ndata->flags = odata->flags;
-  ndata->num_params = odata->num_params;
-  ndata->max_let_depth = odata->max_let_depth;
-  ndata->closure_size = odata->closure_size;
-  ndata->closure_map = odata->closure_map;
-  ndata->name = odata->name;
-
   e = scheme_link_expr(odata->code, info);
-  ndata->code = e;
+
+  if (!SAME_OBJ(e, odata->code)) {
+    ndata = MALLOC_ONE_TAGGED(Scheme_Closure_Compilation_Data);
+    ndata->type = scheme_unclosed_procedure_type;
+    
+    ndata->flags = odata->flags;
+    ndata->num_params = odata->num_params;
+    ndata->max_let_depth = odata->max_let_depth;
+    ndata->closure_size = odata->closure_size;
+    ndata->closure_map = odata->closure_map;
+    ndata->name = odata->name;
+    
+    ndata->code = e;
+  } else
+    ndata = odata;
   
   if (!ndata->closure_size)
     /* If only global frame is needed, go ahead and finialize closure */

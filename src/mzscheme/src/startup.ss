@@ -681,8 +681,8 @@
 	(unless (stx-null? (stx-cdr (stx-cdr p)))
 	  (apply
 	   raise-syntax-error 
-	   'syntax
-	   "misplaced ellipses"
+	   'syntax-case
+	   "misplaced ellipses in pattern"
 	   (pick-specificity
 	    top
 	    local-top)))
@@ -718,8 +718,8 @@
 		    (m&e dp dp #f))
 		  (apply
 		   raise-syntax-error 
-		   'syntax
-		   "misplaced ellipses"
+		   'syntax-case
+		   "misplaced ellipses in pattern"
 		   (pick-specificity
 		    top
 		    local-top)))
@@ -751,8 +751,8 @@
 		     (eq? (syntax-e p) '...))
 		(apply
 		 raise-syntax-error 
-		 'syntax
-		 "misplaced ellipses"
+		 'syntax-case
+		 "misplaced ellipses in pattern"
 		 (pick-specificity
 		  top
 		  local-top))
@@ -777,8 +777,8 @@
 		(let ([l (hash-table-get ht (syntax-e r) (lambda () null))])
 		  (when (ormap (lambda (i) (module-identifier=? i r)) l)
 		    (raise-syntax-error 
-		     'syntax
-		     "variable used twice"
+		     'syntax-case
+		     "variable used twice in pattern"
 		     top
 		     r))
 		  (hash-table-put! ht (syntax-e r) (cons r l)))]
@@ -856,11 +856,10 @@
 	(let* ([p-head (stx-car p)]
 	       [nestings (get-ellipsis-nestings p-head k)])
 	  (when (null? nestings)
-	    (printf "ack~n")
 	    (apply
 	     raise-syntax-error 
 	     'syntax
-	     "no pattern variables in ellipses"
+	     "no pattern variables before ellipses in template"
 	     (pick-specificity
 	      top
 	      local-top)))
@@ -887,7 +886,7 @@
 			(apply
 			 raise-syntax-error 
 			 'syntax
-			 "too many ellipses"
+			 "too many ellipses in template"
 			 (pick-specificity
 			  top
 			  local-top))))]
@@ -928,7 +927,7 @@
 		  (apply
 		   raise-syntax-error 
 		   'syntax
-		   "misplaced ellipses"
+		   "misplaced ellipses in template"
 		   (pick-specificity
 		    top
 		    local-top)))
@@ -953,7 +952,7 @@
 			  (apply
 			   raise-syntax-error 
 			   'syntax
-			   "misplaced ellipses"
+			   "misplaced ellipses in template"
 			   (pick-specificity
 			    top
 			    local-top)))
@@ -986,7 +985,7 @@
 				       (raise exn)
 				       (raise-syntax-error
 					'syntax
-					"incompatible ellipsis match counts"
+					"incompatible ellipsis match counts for template"
 					(quote ,p)
 					;; This is a trick to minimize the syntax structure we keep:
 					(quote-syntax ,(datum->syntax-object #f '... p)))))))))
@@ -1101,7 +1100,7 @@
 	  (apply
 	   raise-syntax-error 
 	   'syntax
-	   "too few ellipses for pattern variable"
+	   "too few ellipses for pattern variable in template"
 	   (pick-specificity
 	    src
 	    (let loop ([n nesting])
@@ -1130,7 +1129,7 @@
 		      (when (module-identifier=? l ssym)
 			(raise-syntax-error 
 			 'syntax
-			 "missing ellipses with pattern variable"
+			 "missing ellipses with pattern variable in template"
 			 ssym))]
 		     [else (loop (car l))]))))
 	      proto-r))

@@ -8,7 +8,7 @@
 
   (provide
    initial-env-package
-   annotate)
+   annotate)e
 
 ;  (import [z : zodiac^]
 ;          [utils : stepper:cogen-utils^]
@@ -497,7 +497,61 @@
                                       [whole-thing
                                        `(,output-identifier ,outer-initialization ,wrapped-begin)])
                                  (values whole-thing free-bindings))])))]
+
+                  [lambda-clause-abstraction 
+                   (lambda (clause)
+                     (with-syntax [(args body ...) clause]
+                       (utils:improper-foreach mark-never-undefined args)
+                       (let*-2vals ([(annotated-bodies free-varref-sets)
+                                     (2vals-map lambda-body-recur (syntax (body ...)))]
+                                    [new-free-varrefs (varref-set-remove-bindings (apply varref-set-union free-varref-sets)
+                                                                                  (syntax args))])
+                         (2vals (d->so clause (cons args annotated-bodies)) new-free-bindings))))]
                   
+                  [outer-lambda-abstraction
+                   (lambda (annotated-lambda free-varrefs)
+                    (if cheap-wrap?
+                        (2vals annotated-lambda free-varrefs)
+                        (let*-2vals
+                            ([closure-info (make-debug-info-app 'all free-varrefs 'none)]
+                             [(procedure-name) (ccond [(symbol? procedure-name-info)
+                                                       procedure-name-info]
+                                                      [(pair? procedure-name-info)
+                                                       (car procedure-name-info)]
+                                                      [(eq? procedure-name-info #f)
+                                                       #f])]
+                             [closure-storing-proc
+                              (lambda (closure debug-info . extra)
+                                (closure-table-put! closure (make-closure-record 
+                                                             procedure-name
+                                                             debug-info
+                                                             #f
+                                                             (if (not (null? extra))
+                                                                 (car extra)
+                                                                 #f)))
+                                closure)]
+                             [patched (inferred-name-patch annotated-lambda)]
+                             [captured
+                              (if (memq 'no-closure-capturing wrap-opts)
+                                  annotated-lambda
+                                  (cond [(symbol? procedure-name-info)
+                                         (d->so expr `(,closure-storing-proc ,patched ,closure-info))]
+                                        [(pair? procedure-name-info)
+                                         (if foot-wrap?
+                                             (d->so `(,closure-storing-proc ,patched ,closure-info ,(cadr procedure-name-info)))
+                                             (d->so `(,closure-storing-proc ,patched ,closure-info #f)))]
+                                        [else
+                                         (d->so `(,closure-storing-proc ,patched ,closure-info))]))])
+                          (2vals
+                           (ccond [foot-wrap? 
+                                   (wcm-wrap (make-debug-info-normal new-free-bindings)
+                                             captured)]
+                                  [ankle-wrap? 
+                                   captured]) ; no wcm is needed because evaluation of closures cannot cause exceptions.
+                           new-free-bindings))))]
+                    
+                     
+
                   )
 	     
              ; find the source expression and associate it with the parsed expression
@@ -505,82 +559,23 @@
 ;             (when (and red-exprs foot-wrap?)
 ;               (set-expr-read! expr (find-read-expr expr))) 
 
-	     (define (lambda-abstraction clause)
-               (with-syntax [(args bodies) clause]
-                 (utils:improper-foreach utils:check-for-keyword args) ; should we do this in 200?
-                 (utils:improper-foreach mark-never-undefined args)
-                 (let*-2vals ([(annotated-bodies free-varref-sets)
-                               (2vals-map lambda-body-recur bodies)]
-                              [new-free-bindings (varref-set-remove-bindings (apply varref-set-union free-varref-sets)
-                                                                             binding-list)])
                              
-                 (let*-2vals ([(annotated free-bindings)
-                               (lambda-body-recur body)]
-                              [new-free-bindings (varref-set-remove-bindings free-bindings binding-list)]
-                             
-             (syntax-case
+             (syntax-case expr 
 
-                 [(lambda args bodies)
-                  
-                      
+                 [(lambda . clause)
+                  (let*-2vals ([(annotated-clause free-varrefs)
+                                (lambda-clause-abstraction (syntax clause))]
+                               [annotated-lambda
+                                (d->so expr `(lambda ,@(syntax->list annotated-clause)))])
+                    (outer-lambda-abstraction annotated-lambda free-varrefs))]
                    
-                 [(case-lambda clauses)
-                  (let*-2vals 
-                    ([(annotated-cases free-bindings-cases)
-                      (2vals-map
-                       (lambda (arglist body)
-                         (let ([binding-list (z:arglist-vars arglist)]
-                               [args (utils:arglist->ilist arglist)])
-                           (utils:improper-foreach utils:check-for-keyword args) 
-                           (utils:improper-foreach mark-never-undefined args)
-                           (let*-values
-                               ([(annotated free-bindings)
-                                 (lambda-body-recur body)]
-                                [(new-free-bindings) (varref-set-remove-bindings free-bindings binding-list)]
-                                [(new-annotated) (list (utils:improper-map get-binding-name args) annotated)]) 
-                             (values new-annotated new-free-bindings))))
-                       (z:case-lambda-form-args expr)
-                       (z:case-lambda-form-bodies expr))]
-                     [(annotated-case-lambda) (cons '#%case-lambda annotated-cases)] 
-                     [(new-free-bindings) (apply varref-set-union free-bindings-cases)]
-                     [(closure-info) (make-debug-info-app 'all new-free-bindings 'none)]
-                     [(procedure-name) (ccond [(symbol? procedure-name-info)
-                                               procedure-name-info]
-                                              [(pair? procedure-name-info)
-                                               (car procedure-name-info)]
-                                              [(eq? procedure-name-info #f)
-                                               #f])]
-                     [(closure-storing-proc)
-                       (lambda (closure debug-info . extra)
-                         (closure-table-put! closure (make-closure-record 
-                                                      procedure-name
-                                                      debug-info
-                                                      #f
-                                                      (if (not (null? extra))
-                                                          (car extra)
-                                                          #f)))
-                         closure)])
-                  (if cheap-wrap?
-                      (values annotated-case-lambda new-free-bindings)
-                      (let* ([patched (inferred-name-patch annotated-case-lambda)]
-                             [captured
-                              (if (memq 'no-closure-capturing wrap-opts)
-                                  annotated-case-lambda
-                                  (cond [(symbol? procedure-name-info)
-                                         `(,closure-storing-proc ,patched ,closure-info)]
-                                        [(pair? procedure-name-info)
-                                         (if foot-wrap?
-                                             `(,closure-storing-proc ,patched ,closure-info ,(cadr procedure-name-info))
-                                             `(,closure-storing-proc ,patched ,closure-info #f))]
-                                        [else
-                                         `(,closure-storing-proc ,patched ,closure-info)]))])
-                        (values 
-                         (ccond [foot-wrap? 
-                                 (wcm-wrap (make-debug-info-normal new-free-bindings)
-                                           captured)]
-                                [ankle-wrap? 
-                                 captured]) ; no wcm is needed because evaluation of closures cannot cause exceptions.
-                         new-free-bindings))))]                 
+                 [(case-lambda . clauses)
+                  (let*-2vals ([(annotated-cases free-bindings-cases)
+                                (2vals-map lambda-clause-abstraction (syntax->list (syntax clauses)))]
+                               [annotated-case-lambda (d->so expr `(case-lambda ,@annotated-cases))]
+                               [free-varrefs (apply varref-set-union free-varrefs-cases)])
+                    (outer-lambda-abstraction annotated-case-lambda free-varrefs))]
+
 	       ; the variable forms 
 	       
                [(z:varref? expr)

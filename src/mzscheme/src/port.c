@@ -1940,7 +1940,7 @@ scheme_put_string(const char *who, Scheme_Object *port,
 
   Scheme_Output_Port *op = (Scheme_Output_Port *)port;
   Scheme_Write_String_Fun ws;
-  long out;
+  long out, llen, oout;
 
   CHECK_PORT_CLOSED(who, "output", port, op->closed);
 
@@ -1951,28 +1951,32 @@ scheme_put_string(const char *who, Scheme_Object *port,
        the same as a non-blocking flush */
     rarely_block = 0;
 
-  while (len) {
-    out = ws(op, str, d, len, rarely_block);
+  llen = len;
+  oout = 0;
+  while (llen || !len) {
+    out = ws(op, str, d, llen, rarely_block);
     
     /* If out is 0, it might be because the port got closed: */
     if (!out) {
       CHECK_PORT_CLOSED(who, "output", port, op->closed);
     }
     
-    if (out > 0)
+    if (out > 0) {
       op->pos += out;
+      oout += out;
+    }
 
-    if (rarely_block)
+    if (rarely_block || !len)
       break;
 
+    llen -= out;
     d += out;
-    len -= out;
   }
 
-  mzAssert(!rarely_block ? (out == len) : 1);
-  mzAssert((out < 0) ? (rarely_block == 2) : 1);
+  mzAssert(!rarely_block ? (oout == len) : 1);
+  mzAssert((oout < 0) ? (rarely_block == 2) : 1);
 
-  return out;
+  return oout;
 }
 
 void scheme_write_string(const char *str, long len, Scheme_Object *port)

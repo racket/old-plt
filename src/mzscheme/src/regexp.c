@@ -49,6 +49,8 @@ typedef long rxpos;
 # define BIGGEST_RXPOS 0x7FFFFFFF
 #endif
 
+#define INDIRECT_TO_PROGRAM
+
 typedef struct regexp {
   Scheme_Type type;
   MZ_HASH_KEY_EX
@@ -59,8 +61,22 @@ typedef struct regexp {
   char reganch;			/* Internal use only. */
   long regmust;                 /* Internal use only: => pointer relative to self */
   long regmlen;			/* Internal use only. */
+#ifdef INDIRECT_TO_PROGRAM
+  char *program;
+#else
   char program[1];		/* Unwarranted chumminess with compiler. */
+#endif
 } regexp;
+
+#ifdef INDIRECT_TO_PROGRAM
+# define N_ITO_DELTA(prog, extra, re) extra
+# define N_ITO_SPACE(v) 0
+# define ITO(x, y) x
+#else
+# define N_ITO_DELTA(prog, extra, re) ((prog+extra) - re)
+# define N_ITO_SPACE(v) v
+# define ITO(x, y) y
+#endif
 
 static regexp *regcomp(char *, rxpos, int);
 /* static int regexec(regexp *, char *, int, int, rxpos *, rxpos * ...); */
@@ -287,12 +303,12 @@ regcomp(char *expstr, rxpos exp, int explen)
     FAIL("regexp too big");
   
   /* Allocate space. */
-  r = (regexp *)scheme_malloc_tagged(sizeof(regexp) + (unsigned)regsize);
-
-  if (r == NULL)
-    FAIL("out of space");
-  
+  r = (regexp *)scheme_malloc_tagged(sizeof(regexp) + N_ITO_SPACE((unsigned)regsize));
   r->type = scheme_regexp_type;
+  
+#ifdef INDIRECT_TO_PROGRAM
+  r->program = (char *)scheme_malloc_atomic((unsigned)regsize + 1);
+#endif
   
   r->regsize = regsize;
 
@@ -302,8 +318,13 @@ regcomp(char *expstr, rxpos exp, int explen)
   regparse = exp;
   regparse_end = exp + explen;
   regnpar = 1;
+#ifdef INDIRECT_TO_PROGRAM
+  regstr = r->program;
+  regcode = 0;
+#else
   regstr = (char *)r;
   regcode = (char *)r->program - (char *)r;
+#endif
   regc(MAGIC);
   if (reg(0, &flags, 0) == 0)
     return NULL;
@@ -313,7 +334,7 @@ regcomp(char *expstr, rxpos exp, int explen)
   r->reganch = 0;
   r->regmust = -1;
   r->regmlen = 0;
-  scan = (r->program+1) - (char *)r;    /* First BRANCH. */
+  scan = N_ITO_DELTA(r->program, 1, (char *)r);    /* First BRANCH. */
   next = regnext(scan);
   if (OP(next) == END) {	/* Only one top-level choice. */
     scan = OPERAND(scan);
@@ -945,9 +966,9 @@ regexec(const char *who,
   if (!port && (prog->regmust >= 0)) {
     spos = stringpos;
     slen = stringlen;
-    while ((spos = l_strchr(string, spos, slen, ((char *)prog + prog->regmust)[0])) != -1) {
+    while ((spos = l_strchr(string, spos, slen, (ITO(prog->program, (char *)prog) + prog->regmust)[0])) != -1) {
       int i, l = prog->regmlen;
-      GC_CAN_IGNORE char *p = ((char *)prog + prog->regmust); /* ASSUMING NO GC HERE! */
+      GC_CAN_IGNORE char *p = (ITO(prog->program, (char *)prog) + prog->regmust); /* ASSUMING NO GC HERE! */
       slen = stringlen - (spos - stringpos);
       for (i = 0; (i < l) && (i < slen); i++) {
 	if (string[spos + i] != p[i])
@@ -1167,8 +1188,12 @@ regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, 
   }
   sp = ep = NULL;
 
+#ifdef INDIRECT_TO_PROGRAM
+  regstr = prog->program;
+#else
   regstr = (char *)prog;
-  if (regmatch(rw, (prog->program + 1) - (char *)prog)) {
+#endif
+  if (regmatch(rw, N_ITO_DELTA(prog->program, 1, (char *)prog))) {
     startp[0] = stringpos;
     endp[0] = rw->input;
     return 1;

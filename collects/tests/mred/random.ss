@@ -37,6 +37,10 @@
        [set-filter
 	(lambda (f)
 	  (set! filter f))]
+       [prepare values]
+       [set-prepare
+	(lambda (f)
+	  (set! prepare f))]
        [add
 	(lambda (x)
 	  (if (filter x)
@@ -56,7 +60,7 @@
 			     0
 			     (random c))))])
 	    (if (< n num-items)
-		(list-ref items n)
+		(prepare (list-ref items n))
 		(choose-parent-example (- n num-items)))))]
        [add-bad
 	(lambda (i)
@@ -92,7 +96,7 @@
      [add
       (lambda (v)
 	(unless (list? v)
-	  (error 'add "rejected: ~a in: ~a" x name))
+	  (error 'add "rejected: ~a in: ~a" v name))
 	(for-each
 	 (lambda (i)
 	   (send parent add i))
@@ -181,7 +185,7 @@
       [add (lambda (v)
 	     (send parent add v)
 	     (unless (ok v)
-	       (error 'add "rejected (late): ~a in: ~a" x name)))]
+	       (error 'add "rejected (late): ~a in: ~a" v name)))]
       [choose-example
        (opt-lambda ([which #f])
 	 (let loop ()
@@ -398,6 +402,10 @@
 
 (send bitmap%-example-list set-filter (lambda (bm) (send bm ok?)))
 
+; Avoid stuck states in random testing:
+(send frame%-example-list set-prepare (lambda (w) (send w enable #t) w))
+(send dialog%-example-list set-prepare (lambda (w) (send w enable #t) w))
+
 (send boolean-example-list set-filter boolean?)
 (send char-example-list set-filter char?)
 (send string-example-list set-filter string?)
@@ -579,21 +587,25 @@
 
 (define thread-output-port current-output-port)
 
+(define print-only? #f)
+
 (define (apply-args v dest name k)
   (if (list? v)
       (begin
 	(fprintf (thread-output-port) "~a: ~s" name v)
 	(flush-output (thread-output-port))
-	(with-handlers (((lambda (x) (not (fatal-exn? x)))
-			 (lambda (x)
-			   (fprintf (thread-output-port)
-				    ": error: ~a~n"
-				    (exn-message x)))))
-	  (if (eq? dest 'values)
-	      (k v)
-	      (send dest add (k v)))
-	  (flush-display)
-	  (fprintf (thread-output-port) ": success~n")))
+	(if print-only?
+	    (newline)
+	    (with-handlers (((lambda (x) (not (fatal-exn? x)))
+			     (lambda (x)
+			       (fprintf (thread-output-port)
+					": error: ~a~n"
+					(exn-message x)))))
+	      (if (eq? dest 'values)
+		  (k v)
+		  (send dest add (k v)))
+	      (flush-display)
+	      (fprintf (thread-output-port) ": success~n"))))
       (fprintf (thread-output-port) "~a: failure: ~a~n" name v)))
 
 (define (try-args arg-types dest name k)
@@ -640,6 +652,11 @@
 			 (fprintf (thread-output-port) 
 				  "  NO OCCURRENCE of method ~a in the error message~n"
 				  method))))]
+		  [exn:application:arity?
+		   (lambda (x)
+		     (fprintf (thread-output-port)
+			      ": UNEXPECTED ARITY MISMATCH: ~a~n"
+			      (exn-message x)))]
 		  [(lambda (x) (not (fatal-exn? x)))
 		   (lambda (x)
 		     (fprintf (thread-output-port)
@@ -947,7 +964,7 @@
 	     (string=? (vector-ref argv 0) "-r"))
   (exit 0))
 
-(random-seed 79)
+(random-seed 179)
 
 (create-all-bad)
 (call-all-bad)

@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2003-07-17")
+(define *tex2page-version* "2003-07-22")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -3371,8 +3371,7 @@
         (emit "]")
         (emit-nbsp 2)
         (do-label-aux key)
-        (emit "</td><td>")
-        (do-para)))))
+        (emit "</td><td valign=top>")))))
 
 (define display-index-entry
   (lambda (s o)
@@ -4788,7 +4787,8 @@
     ((case *image-format*
        ((gif) ps-to-img/gif)
        ((png) ps-to-img/png)
-       ((jpeg) ps-to-img/jpeg))
+       ((jpeg) ps-to-img/jpeg)
+       (else (terror 'ps-to-img) list))
      ps-file
      img-file-stem)))
 
@@ -4858,11 +4858,41 @@
   (lambda ()
     (let* ((b (get-bracketed-text-if-any)) (f (get-filename-possibly-braced)))
       (unless *eval-for-tex-only?*
-        (let ((img-file-stem (next-html-image-file-stem)))
-          (lazily-make-epsf-image-file f img-file-stem)
-          (source-scaled-image-file img-file-stem *epsf-ysize* *epsf-xsize*)
-          (set! *epsf-ysize* #f)
-          (set! *epsf-xsize* #f))))))
+        (cond
+         ((and (not *epsf-xsize*) (not *epsf-ysize*))
+          (let ((img-file-stem (next-html-image-file-stem)))
+            (lazily-make-epsf-image-file f img-file-stem)
+            (source-img-file img-file-stem)))
+         (else
+          (fluid-let
+            ((*imgpreamble-inferred* (cons 'epsfbox *imgpreamble-inferred*)))
+            (call-with-html-image-port
+              (lambda (o)
+                (when *epsf-xsize*
+                  (display "\\epsfxsize=" o)
+                  (display *epsf-xsize* o)
+                  (set! *epsf-xsize* #f)
+                  (display "bp" o)
+                  (newline o))
+                (when *epsf-ysize*
+                  (display "\\epsfysize=" o)
+                  (display *epsf-ysize* o)
+                  (set! *epsf-ysize* #f)
+                  (display "bp" o)
+                  (newline o))
+                (display "\\epsfbox{" o)
+                (display f o)
+                (display #\} o))))))))))
+
+(define do-epsfig
+  (lambda ()
+    (fluid-let
+      ((*imgpreamble-inferred* (cons 'epsfbox *imgpreamble-inferred*)))
+      (call-with-html-image-port
+        (lambda (o)
+          (display "\\epsfig{" o)
+          (dump-groupoid o)
+          (display #\} o))))))
 
 (define do-convertmptopdf
   (lambda ()
@@ -7229,6 +7259,15 @@
                 (file-exists? (string-append f ".scm")))
            (system (string-append "del " f ".*"))))))))
 
+(define start-off-css-file
+  (lambda ()
+    (let ((css-file (string-append *aux-dir/* *jobname* *css-file-suffix*)))
+      (ensure-file-deleted css-file)
+      (set! *css-port* (open-output-file css-file))
+      (display
+        "\n               body {\n               color: black;\n               /*   background-color: #e5e5e5;*/\n               background-color: #ffffff;\n               /*background-color: beige;*/\n               margin-top: 2em;\n               margin-left: 8%;\n               margin-right: 8%;\n               }\n\n               h1,h2,h3,h4,h5,h6 {\n               margin-top: .5em;\n               }\n\n               .title {\n               font-size: 200%;\n               font-weight: normal;\n               }\n\n               .partheading {\n               font-size: 100%;\n               }\n\n               .chapterheading {\n               font-size: 100%;\n               }\n\n               .beginsection {\n               font-size: 110%;\n               }\n\n               .tiny {\n               font-size: 40%;\n               }\n\n               .scriptsize {\n               font-size: 60%;\n               }\n\n               .footnotesize {\n               font-size: 75%;\n               }\n\n               .small {\n               font-size: 90%;\n               }\n\n               .normalsize {\n               font-size: 100%;\n               }\n\n               .large {\n               font-size: 120%;\n               }\n\n               .largecap {\n               font-size: 150%;\n               }\n\n               .largeup {\n               font-size: 200%;\n               }\n\n               .huge {\n               font-size: 300%;\n               }\n\n               .hugecap {\n               font-size: 350%;\n               }\n\n               pre {\n               margin-left: 2em;\n               }\n\n               blockquote {\n               margin-left: 2em;\n               }\n\n               ol {\n               list-style-type: decimal;\n               }\n\n               ol ol {\n               list-style-type: lower-alpha;\n               }\n\n               ol ol ol {\n               list-style-type: lower-roman;\n               }\n\n               ol ol ol ol {\n               list-style-type: upper-alpha;\n               }\n\n               /*\n               .verbatim {\n               color: #4d0000;\n               }\n               */\n\n               tt i {\n               font-family: serif;\n               }\n\n               .verbatim em {\n               font-family: serif;\n               }\n\n               .scheme em {\n               font-family: serif;\n               color: black;\n               }\n\n               .scheme {\n               color: brown;\n               }\n\n               .scheme .keyword {\n               color: #990000;\n               font-weight: bold;\n               }\n\n               .scheme .builtin {\n               color: #990000;\n               }\n\n               .scheme .variable {\n               color: navy;\n               }\n\n               .scheme .global {\n               color: purple;\n               }\n\n               .scheme .selfeval {\n               color: green;\n               }\n\n               .scheme .comment {\n               color:  teal;\n               }\n\n               .schemeresponse {\n               color: green;\n               }\n\n               .navigation {\n               color: red;\n               text-align: right;\n               font-size: medium;\n               font-style: italic;\n               }\n\n               .disable {\n               /* color: #e5e5e5; */\n               color: gray;\n               }\n\n               .smallcaps {\n               font-size: 75%;\n               }\n\n               .smallprint {\n               color: gray;\n               font-size: 75%;\n               text-align: right;\n               }\n\n               /*\n               .smallprint hr {\n               text-align: left;\n               width: 40%;\n               }\n               */\n\n               .footnoterule {\n               text-align: left;\n               width: 40%;\n               }\n\n               .colophon {\n               color: gray;\n               font-size: 80%;\n               text-align: right;\n               }\n\n               .colophon a {\n               color: gray;\n               }\n\n               "
+        *css-port*))))
+
 (define load-aux-file
   (lambda ()
     (let ((label-file
@@ -7245,9 +7284,7 @@
         (load-tex2page-data-file aux-file)
         (delete-file aux-file))
       (set! *aux-port* (open-output-file aux-file)))
-    (let ((css-file (string-append *aux-dir/* *jobname* *css-file-suffix*)))
-      (ensure-file-deleted css-file)
-      (set! *css-port* (open-output-file css-file)))
+    (start-off-css-file)
     (when (eqv? *tex-format* 'latex)
       (!definitely-latex)
       (write-aux `(!definitely-latex)))
@@ -7926,6 +7963,8 @@
     (emit "<ol>")))
 
 (tex-def-prim "\\epsfbox" do-epsfbox)
+
+(tex-def-prim "\\epsfig" do-epsfig)
 
 (tex-def-prim "\\epsfxsize" (lambda () (do-epsf-size 'x)))
 

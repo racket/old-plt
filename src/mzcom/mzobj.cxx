@@ -147,7 +147,10 @@ void setupSchemeEnv(void) {
 }
 
 DWORD WINAPI evalLoop(LPVOID args) {
+  HRESULT *pHr;
+  BOOL doEval;
   UINT len;
+  DWORD waitVal;
   char *narrowInput;
   Scheme_Object *outputObj;
   OLECHAR *outputBuffer;
@@ -158,7 +161,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
   HANDLE resetDoneSem;
   BSTR **ppInput;
   BSTR *pOutput;
-  HRESULT *pHr;
+  MSG msg;
 
   // make sure all MzScheme calls in this thread
 
@@ -181,12 +184,49 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
   while (1) {
 
-    if (WaitForMultipleObjects(2,evalLoopSems,FALSE,INFINITE) ==
-	WAIT_OBJECT_0 + 1) {
-      // reset semaphore signalled
-      setupSchemeEnv();
-      ReleaseSemaphore(resetDoneSem,1,NULL);
-      continue;
+    doEval = FALSE;
+
+    while (doEval == FALSE) {
+      waitVal = MsgWaitForMultipleObjects(2,evalLoopSems,FALSE,
+					  5,QS_ALLINPUT);
+
+      switch (waitVal) {
+
+      case WAIT_TIMEOUT :
+
+	eval_string_or_get_exn_message("(sleep)");
+	break;
+
+      case WAIT_OBJECT_0 + 1:
+
+	// reset semaphore signalled
+
+	setupSchemeEnv();
+	ReleaseSemaphore(resetDoneSem,1,NULL);
+
+	break;
+
+      case WAIT_OBJECT_0 + 2:
+
+	// Windows msg
+
+	while (PeekMessage(&msg,NULL,0x400,0x400,PM_REMOVE)) {
+	  TranslateMessage(&msg);
+	  DispatchMessage(&msg);
+	}
+
+	eval_string_or_get_exn_message("(sleep)");
+
+	break;
+
+      default :
+
+	// got string to eval
+
+	doEval = TRUE;
+
+	break;
+      }
     }
 
     len = SysStringLen(**ppInput);

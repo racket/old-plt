@@ -115,7 +115,7 @@
  (close "Fermer") ;; as in, close an open window
  (stop "Stop")   
  (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
- (are-you-sure-delete? "Etes-vous certain de vouloir effacer ~a?") ;; ~a is a filename
+ (are-you-sure-delete? "Etes-vous certain de vouloir effacer ~a ?") ;; ~a is a filename
  
  ;;; important urls
  (web-materials "Sites web apparentés") ;; menu item title
@@ -214,7 +214,7 @@
  (stop-logging "Stopper l'enregistrement")
  (please-choose-a-log-directory "Sélectionnez un répertoire d'enregistrement")
  (logging-to "Enregistrer dans : ")
- (erase-log-directory-contents "Effacer le contenu du répertoire d'enregistrement : ~a?")
+ (erase-log-directory-contents "Effacer le contenu du répertoire d'enregistrement : ~a ?")
  (error-erasing-log-directory "Erreur durant l'effacement du contenu du répertoire d'enregistrement.\n\n~a\n")
 
  (url "URL")
@@ -231,7 +231,7 @@
  (plt:hd:search-results "Résultats de la recherche")
  (plt:hd:search "Chercher")
  (plt:hd:search-for "Chercher")
- (plt:hd:lucky "Chanceux!")
+ (plt:hd:lucky "Chanceux !")
  (plt:hd:feeling-lucky "D'humeur chanceuse")
  (plt:hd:stop "Stop")
  (plt:hd:options "Options")
@@ -287,8 +287,8 @@
 
  ; help desk htty proxy
  (http-proxy "Proxy HTTP")
- ;(proxy-direct-connection "Connexion directe") ; more precise: "for HTTP downloads"
- ;(proxy-use-proxy "Utiliser le proxy :") ; more precise: "for HTTP downloads"
+ (proxy-direct-connection "Connexion directe pour les téléchargements HTTP")
+ (proxy-use-proxy "Utiliser le proxy pour les téléchargements HTTP :")
  (proxy-host "Machine")
  (proxy-port "Port")
  (proxy-bad-host "Mauvaise machine proxy")
@@ -651,7 +651,7 @@
  (autosave-error-deleting "Erreur durant l'effacement de ~a\n\n~a") ;; first is a filename, second is an error message from mz.
  (autosave-delete-button "Effacer")
  (autosave-delete-title "Effacer")  ;; title of a dialog asking for deletion confirmation
- (autosave-done "Fait")
+ (autosave-done "Continuer")
   
  ;; appears in the file dialog
  (autosave-restore-to-where? "Sélectionnez un répertoire où sauvegarder le fichier auto-sauvegardé.")
@@ -924,7 +924,7 @@
  
  ;;; version checker
  (vc-update-check "Vérification des mises à jour")
- (vc-check-prompt "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT?")
+ (vc-check-prompt "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT ?")
  (vc-please-wait "Veuillez patienter")
  (vc-connecting-version-server "Connexion au server de version de PLT en cours")
  (vc-network-timeout "Expiration du compte-à-rebours lors de la connexion réseau") 

@@ -118,6 +118,7 @@ private:
 
 	// Scroll the canvas
 	void Scroll(int xPos, int yPos);
+	void ScrollPercent(float xPos, float yPos);
 	void GetScrollUnitsPerPage(int* x_page, int* y_page);
 	virtual int GetScrollsPerPage(int orientation); // mac platform only
 

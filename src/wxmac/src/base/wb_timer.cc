@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_timer.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
+ * RCS_ID:      $Id: wb_timer.cc,v 1.2 1998/06/02 20:51:42 robby Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -35,7 +35,7 @@
 #define SYSV
 #endif
 
-wxbTimer::wxbTimer(void)
+wxbTimer::wxbTimer(void) : wxObject(WXGC_NO_CLEANUP)
 {
  #if 0
   __type = wxTYPE_TIMER;

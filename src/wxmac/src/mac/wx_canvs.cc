@@ -438,6 +438,40 @@ void wxCanvas::Scroll(int xPos, int yPos)
 		cScroll->SetScrollData(&scrollData, whatScrollData, NULL);
 }
 
+void wxCanvas::ScrollPercent(float xPos, float yPos)
+{
+  if (!scrollAutomanaged) {
+    /* Not managing  - do nothing */
+  } else {
+    /* Managing */
+    int xp, yp, vw, vh, cw, ch;
+    GetVirtualSize(&vw, &vh);
+    GetClientSize(&cw, &ch);
+
+    if (vw > cw)
+      vw -= cw;
+    else
+      vw = 0;
+    if (vh > ch)
+      vh -= ch;
+    else
+      vh = 0;
+
+    if (x >= 0)
+      xp = (int)floor(x * vw);
+    else
+      xp = -1;
+    
+    if (y >= 0)
+      yp = (int)floor(y * vh);
+    else
+      yp = -1;
+    
+    Scroll(xp, yp);
+  }
+
+}
+
 //-----------------------------------------------------------------------------
 void wxCanvas::EnableScrolling(Bool x_scroll, Bool y_scroll)
 {

@@ -745,8 +745,6 @@ void *MrEdForEachFrame(ForEachFrameProc fp, void *data)
   MrEdContextFrames *f = mred_frames;
   wxChildNode *node;
 
-  mred_contexts = NULL;
-
   while (f) {
     node = f->list->First();
 

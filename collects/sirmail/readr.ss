@@ -68,11 +68,11 @@
 	    (preferences:show-dialog)
 	    (yield 'wait))))
         
-      '(initial-exception-handler
+      (initial-exception-handler
        (lambda (x)
 	 (show-error x)
 	 ((error-escape-handler))))
-      '(current-exception-handler
+      (current-exception-handler
        (initial-exception-handler))
       
       ; Make my bindings global for file dialog, etc.
@@ -89,7 +89,6 @@
       ;;  Mailbox List                                           ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (printf "local dir: ~s\n" (LOCAL-DIR))
       (unless (directory-exists? (LOCAL-DIR))
 	(make-directory (LOCAL-DIR)))
 

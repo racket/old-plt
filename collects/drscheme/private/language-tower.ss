@@ -259,9 +259,7 @@
                                    start-line
                                    start-col))])])
           (lambda ()
-            (read-syntax source port 
-                         ;(list line col offset)
-                         ))))
+            (read-syntax source port (list line col offset)))))
       
       ;; open-input-text : (instanceof text%) num num -> input-port
       ;; creates a user port whose input is taken from the text%,

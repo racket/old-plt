@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; ast.ss
-;; $Id: ast.ss,v 1.5 2004/08/19 21:23:49 cobbe Exp $
+;; $Id: ast.ss,v 1.6 2004/08/24 13:49:15 cobbe Exp $
 ;;
 ;; Defines the AST types used for the ClassicJava system.
 ;;
@@ -150,6 +150,10 @@
    ;;        | (make-any-type)
    )
 
+  ;; type=? :: Type Type -> Boolean
+  ;; compares two types for (nominal) equality
+  (define type=? equal?)
+
   ;; src-expr? :: x -> Boolean
   ;; recognizes source (i.e., unelaborated) expressions
   (define src-expr?
@@ -236,6 +240,8 @@
                     [struct if-expr ([test expr?]
                                      [then expr?]
                                      [else expr?])]
+
+                    [type=? (-> type? type? boolean?)]
 
                     [src-expr? predicate?]
                     [tagged-expr? predicate?]

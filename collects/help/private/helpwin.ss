@@ -40,6 +40,70 @@
       (framework:preferences:set-default 'drscheme:help-desk:height
                                          (max 440 (min 800 (- screen-h 60)))
                                          number?)
+      (framework:preferences:set-default 'drscheme:help-desk:proxy
+                                         null
+                                         (lambda (x) (and (list? x)
+							  (andmap
+							   (lambda (x)
+							     (and (list? x)
+								  (= (length x) 3)
+								  (string? (car x))
+								  (string? (cadr x))
+								  (number? (caddr x))))
+							   x))))
+      (framework:preferences:add-panel "HTTP Proxy"
+				       (lambda (parent)
+					 (letrec ([p (instantiate vertical-panel% (parent)
+								  [stretchable-width #f]
+								  [stretchable-height #t]
+								  [alignment '(left top)])]
+						  [rb (make-object radio-box% 
+								   #f '("Direct connection" "Use proxy:")
+								   p
+								   (lambda (r e)
+								     (let ([proxy? (= 1 (send r get-selection))])
+								       (send proxy-spec enable proxy?)
+								       (if proxy?
+									   (update-proxy #f #f)
+									   (framework:preferences:set 'drscheme:help-desk:proxy null)))))]
+						  [proxy-spec (instantiate horizontal-panel% (p)
+									    [stretchable-width #f]
+									    [stretchable-height #f]
+									    [alignment '(left center)])]
+						  [update-proxy (lambda (b e)
+								  (let ([host (send host get-value)]
+									[port (send port get-value)])
+								    (let ([ok? (and (regexp-match "^[0-9a-zA-Z.]+$" host)
+										    (regexp-match "^[0-9]+$" port)
+										    (string->number port)
+										    (<= 1 (string->number port) 65535))])
+								      (framework:preferences:set 'drscheme:help-desk:proxy 
+												 (if ok? 
+												     (list (list "http" host (string->number port)))
+												     null))
+								      (send bad-host show (not ok?)))))]
+						  [host (make-object text-field% "Host" proxy-spec update-proxy "www.someplacethatisaproxy.domain.comm")]
+						  [port (make-object text-field% "Port" proxy-spec update-proxy "65535")]
+						  [bad-host (make-object message% "Bad Proxy Host" p)])
+					   (let ([s (framework:preferences:get 'drscheme:help-desk:proxy)])
+					     (if (pair? s)
+						 (begin
+						   (send host set-value (cadar s))
+						   (send port set-value (number->string (caddar s)))
+						   (send rb set-selection 1))
+						 (begin
+						   (send host set-value "")
+						   (send port set-value "")
+						   (send proxy-spec enable #f))))
+					   (send bad-host show #f)
+					   p)))
+      (framework:preferences:add-callback 'drscheme:help-desk:proxy 
+					  (lambda (name val)
+					    (current-proxy-servers val)))
+      (framework:preferences:get 'drscheme:help-desk:proxy) ; triggers callback
+					   
+								 
+							       
       
       (define (set-font-size size)
         (let* ([standard (send hyper-style-list new-named-style "Standard"

@@ -166,6 +166,18 @@ PROCEDURES -----------------------------------------------------------
   the (pure or impure) port and handles its contents.  The optional
   fourth argument is a set of strings to send to the server.
 
+> (current-proxy-servers) -> (list (list scheme string port-number) ...)
+> (current-proxy-servers server-mapping) -> void
+
+  The `current-proxy-server' parameter determines a mapping of proxy
+  servers used for connections. The mapping is of the form
+
+    (list (list proxiable-scheme server-string port-number) ...)
+
+  where, currently, the only proxiable scheme is "http". An omitted
+  mapping indicates that no proxy should be used. The default mapping
+  is the empty list (i.e., no proxies).
+
 PRAGMATICS -----------------------------------------------------------
 
 _file:_

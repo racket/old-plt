@@ -22,6 +22,33 @@
       
       (define-struct (url-exception exn) ())
       
+      (define current-proxy-servers
+	(make-parameter null (lambda (v)
+			       (unless (and (list? v)
+					    (andmap
+					     (lambda (v)
+					       (and (list? v)
+						    (= 3 (length v))
+						    (equal? (car v) "http")
+						    (string? (car v))
+						    (number? (caddr v))
+						    (exact? (caddr v))
+						    (integer? (caddr v))
+						    (<= 1 (caddr v) 65535)))
+					     v))
+				 (raise-type-error
+				  'current-proxy-servers
+				  "list of list of scheme, string, and exact integer in [1,65535]"
+				  v))
+			       (apply
+				list-immutable
+				(map (lambda (v)
+				       (list-immutable (string->immutable-string (car v))
+						       (string->immutable-string (cadr v))
+						       (caddr v)))
+				     v)))))
+
+
       ;; This is commented out; it's here for debugging.
       ;; It used to be outside the unit.
       
@@ -89,23 +116,31 @@
       
       ;; make-ports : url -> in-port x out-port
       (define make-ports
-        (lambda (url)
-          (let ((port-number (or (url-port url)
-                                 (url->default-port url))))
-            (tcp-connect (url-host url) port-number))))
+        (lambda (url proxy)
+          (let ((port-number (if proxy
+				 (caddr proxy)
+				 (or (url-port url)
+				     (url->default-port url))))
+		(host (if proxy
+			  (cadr proxy)
+			  (url-host url))))
+            (tcp-connect host port-number))))
       
       ;; http://get-impure-port : url [x list (str)] -> in-port
       (define http://get-impure-port
         (case-lambda 
          [(url) (http://get-impure-port url '())]
          [(url strings)
-          (let-values (((server->client client->server)
-                        (make-ports url)))
+          (let*-values (((proxy) (assoc (url-scheme url) (current-proxy-servers)))
+			((server->client client->server)
+			 (make-ports url proxy)))
             (let ((access-string
                    (url->string
-                    (make-url #f #f #f
-                              (url-path url) (url-params url)
-                              (url-query url) (url-fragment url)))))
+		    (if proxy
+			url
+			(make-url #f #f #f
+				  (url-path url) (url-params url)
+				  (url-query url) (url-fragment url))))))
               (for-each (lambda (s)
                           (display s client->server)
                           (newline client->server))

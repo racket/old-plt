@@ -15,4 +15,7 @@
 					;; (in-port -> T)
 					;; [x list (str)] -> T
      combine-url/relative		;; url x str -> url
-     url-exception?)))                  ;; T -> boolean
+     url-exception?                     ;; T -> boolean
+
+     current-proxy-servers)))           ;; (U ((U #f (list string num)) -> void) (-> (U #f (list string num))))
+

@@ -1393,6 +1393,32 @@ static int StyleThisToStandard(int v)
   }
 }
 
+static int AlignStandardToThis(int v)
+{
+  switch (v) {
+  case 0:
+    return wxALIGN_TOP;
+  case 2:
+    return wxALIGN_CENTER;
+  case 1:
+  default:
+    return wxALIGN_BOTTOM;
+  }
+}
+
+static int AlignThisToStandard(int v)
+{
+  switch (v) {
+  case wxALIGN_TOP:
+    return 0;
+  case wxALIGN_CENTER:
+    return 2;
+  case wxALIGN_BOTTOM:
+  default:
+    return 1;
+  }
+}
+
 wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList, 
 				    wxMediaStreamIn& f, 
 				    Bool overwritename)
@@ -1489,7 +1515,9 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
       }
 
       f >> delta.alignmentOn;
+      delta.alignmentOn = AlignStandardToThis(delta.alignmentOn);
       f >> delta.alignmentOff;
+      delta.alignmentOff = AlignStandardToThis(delta.alignmentOff);
 
       styleList->styleMap[i] = 
 	styleList->FindOrCreateStyle(styleList->styleMap[baseIndex], &delta);
@@ -1580,8 +1608,8 @@ Bool wxmbWriteStylesToFile(wxStyleList *styleList, wxMediaStreamOut &f)
       f << g;
       f << b;
 
-      f << delta.alignmentOn;
-      f << delta.alignmentOff;
+      f << AlignThisToStandard(delta.alignmentOn);
+      f << AlignThisToStandard(delta.alignmentOff);
     }
   }
 

@@ -333,7 +333,10 @@
     (let ((check-sub-expr 
            (lambda (expr) (check-expr expr env level type-recs current-class))))
       (cond
-        ((literal? exp) (expr-types exp))
+        ((literal? exp) 
+         (when (memq (expr-types exp) `(String string))
+           (add-required current-class "String" `("java" "lang") type-recs))
+         (expr-types exp))
         ((bin-op? exp)
          (set-expr-type exp 
                         (check-bin-op (bin-op-op exp)

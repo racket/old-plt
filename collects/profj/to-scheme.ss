@@ -388,12 +388,12 @@
     (if (null? reqs)
         null
         (let* ((req (cadr (car reqs)))
-               (err (lambda () (error 'translate-require (format "Internal Error: ~a not found" req))))) 
+               (err (lambda () (error 'translate-require (format "Internal Error: ~a not found" req)))))
           (cons (begin (send type-recs set-location! (car (car reqs)))
                        (send type-recs get-require-syntax 
                              (send type-recs require-prefix? 
                                    (cons (req-class req) (req-path req)) 
-                                   (lambda () (display "require-prefix?") (err)))
+                                   err)
                              (cons (req-class req) (req-path req))
                              err))
                 (translate-require (cdr reqs) type-recs)))))

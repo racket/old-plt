@@ -2163,6 +2163,7 @@ int main(int argc, char *argv[])
   
   Drop_GetArgs(&argc, &argv);
   
+#if 0
   while (argc > 2 && (!strcmp(argv[1], "-r"))) {
     char *file = argv[2];
     int j;
@@ -2173,6 +2174,7 @@ int main(int argc, char *argv[])
       argv[j] = argv[j + 2];
     argc -= 2;
   }  
+#endif
 #endif
   
   scheme_actual_main = actual_main;

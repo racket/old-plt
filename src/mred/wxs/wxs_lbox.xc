@@ -50,6 +50,7 @@
 @ "get-selection" : int GetSelection();
 @ "number" : int Number();
 @ "number-of-visible-items" : int NumberOfVisibleItems();
+@ "get-first-item" : int GetFirstItem();
 
 @MACRO ubArrayBox = NULL
 @MACRO cArrayBox = SCHEME_BOXP({x})

@@ -379,6 +379,7 @@ class os_wxMediaEdit : public wxMediaEdit {
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
   void CopySelfTo(class wxMediaBuffer* x0);
+  class wxMediaBuffer* CopySelf();
 };
 
 Scheme_Object *os_wxMediaEdit_class;
@@ -2128,6 +2129,37 @@ void os_wxMediaEdit::CopySelfTo(class wxMediaBuffer* x0)
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
+  }
+}
+
+class wxMediaBuffer* os_wxMediaEdit::CopySelf()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "copy-self", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+  } else sj = 1;
+  if (sj) {
+    if (method && !OBJSCHEME_PRIM_METHOD(method))
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+    return wxMediaEdit::CopySelf();
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_wxMediaBuffer(v, "wx:media-edit%::copy-self"", extracting return value", 0);
   }
 }
 
@@ -5508,6 +5540,26 @@ static Scheme_Object *os_wxMediaEditCopySelfTo(Scheme_Object *obj, int n,  Schem
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaEditCopySelf(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  class wxMediaBuffer* r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->wxMediaEdit::CopySelf();
+  else
+    r = ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->CopySelf();
+
+  
+  
+  return objscheme_bundle_wxMediaBuffer(r);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaEdit_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxMediaEdit *realobj;
@@ -5549,7 +5601,7 @@ void objscheme_setup_wxMediaEdit(void *env)
 if (os_wxMediaEdit_class) {
     objscheme_add_global_class(os_wxMediaEdit_class,  "wx:media-edit%", env);
 } else {
-  os_wxMediaEdit_class = objscheme_def_prim_class(env, "wx:media-edit%", "wx:media-buffer%", os_wxMediaEdit_ConstructScheme, 124);
+  os_wxMediaEdit_class = objscheme_def_prim_class(env, "wx:media-edit%", "wx:media-buffer%", os_wxMediaEdit_ConstructScheme, 125);
 
   scheme_add_method_w_arity(os_wxMediaEdit_class,"get-class-name",objscheme_classname_os_wxMediaEdit, 0, 0);
 
@@ -5676,6 +5728,7 @@ if (os_wxMediaEdit_class) {
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-char", os_wxMediaEditOnChar, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-event", os_wxMediaEditOnEvent, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "copy-self-to", os_wxMediaEditCopySelfTo, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "copy-self", os_wxMediaEditCopySelf, 0, 0);
 
 
   scheme_made_class(os_wxMediaEdit_class);

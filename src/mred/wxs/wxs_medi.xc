@@ -67,8 +67,6 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ X "save-file" : bool SaveFile(nstring=NULL,int=wxMEDIA_FF_SAME,bool=TRUE);
 @ X "insert-file" : bool InsertFile(string,int=wxMEDIA_FF_GUESS,bool=TRUE);
 
-@ X "copy-self" : wxMediaBuffer! CopySelf(); : : : : XrZERO
-
 @ X "get-extent" : void GetExtent(float?,float?);
 @ X "get-descent" : float GetDescent(); : : : : XrZERO
 @ X "get-space" : float GetSpace(); : : : : XrZERO

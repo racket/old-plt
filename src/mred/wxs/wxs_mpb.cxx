@@ -133,6 +133,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
   void CopySelfTo(class wxMediaBuffer* x0);
+  class wxMediaBuffer* CopySelf();
 };
 
 Scheme_Object *os_wxMediaPasteboard_class;
@@ -2028,6 +2029,37 @@ void os_wxMediaPasteboard::CopySelfTo(class wxMediaBuffer* x0)
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
+  }
+}
+
+class wxMediaBuffer* os_wxMediaPasteboard::CopySelf()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "copy-self", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+  } else sj = 1;
+  if (sj) {
+    if (method && !OBJSCHEME_PRIM_METHOD(method))
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+    return wxMediaPasteboard::CopySelf();
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  return objscheme_unbundle_wxMediaBuffer(v, "wx:media-pasteboard%::copy-self"", extracting return value", 0);
   }
 }
 
@@ -4185,6 +4217,26 @@ static Scheme_Object *os_wxMediaPasteboardCopySelfTo(Scheme_Object *obj, int n, 
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaPasteboardCopySelf(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  class wxMediaBuffer* r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::CopySelf();
+  else
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->CopySelf();
+
+  
+  
+  return objscheme_bundle_wxMediaBuffer(r);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardKill(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4309,7 +4361,7 @@ void objscheme_setup_wxMediaPasteboard(void *env)
 if (os_wxMediaPasteboard_class) {
     objscheme_add_global_class(os_wxMediaPasteboard_class,  "wx:media-pasteboard%", env);
 } else {
-  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "wx:media-pasteboard%", "wx:media-buffer%", os_wxMediaPasteboard_ConstructScheme, 94);
+  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "wx:media-pasteboard%", "wx:media-buffer%", os_wxMediaPasteboard_ConstructScheme, 95);
 
   scheme_add_method_w_arity(os_wxMediaPasteboard_class,"get-class-name",objscheme_classname_os_wxMediaPasteboard, 0, 0);
 
@@ -4402,6 +4454,7 @@ if (os_wxMediaPasteboard_class) {
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-char", os_wxMediaPasteboardOnChar, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-event", os_wxMediaPasteboardOnEvent, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "copy-self-to", os_wxMediaPasteboardCopySelfTo, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "copy-self", os_wxMediaPasteboardCopySelf, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "kill", os_wxMediaPasteboardKill, 0, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "paste", os_wxMediaPasteboardPaste, 0, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "copy", os_wxMediaPasteboardCopy, 0, 2);

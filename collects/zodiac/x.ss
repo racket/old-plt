@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.44 1998/05/18 20:49:07 shriram Exp $
+; $Id: x.ss,v 1.45 1998/07/14 20:25:04 shriram Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -18,7 +18,8 @@
 
   (define-struct vocabulary-record (name this rest
 				     symbol-error literal-error
-				     list-error ilist-error))
+				     list-error ilist-error
+				     sub-vocabs on-demand))
 
   (define get-vocabulary-name vocabulary-record-name)
 
@@ -38,7 +39,7 @@
 				 "Improper-list syntax invalid in this position")))
       (let ((h (make-hash-table)))
 	(make-vocabulary-record name h root
-	  symbol-error literal-error list-error ilist-error))))
+	  symbol-error literal-error list-error ilist-error null null))))
 
   (define append-vocabulary
     (opt-lambda (new old (name #f))
@@ -122,6 +123,32 @@
   (define get-ilist-micro (get-list/sym/lit-micro ilist-micro-kwd))
   (define get-sym-micro (get-list/sym/lit-micro sym-micro-kwd))
   (define get-lit-micro (get-list/sym/lit-micro lit-micro-kwd))
+
+  (define (add-sub-vocab name super sub)
+    (set-vocabulary-record-sub-vocabs!
+     super
+     (cons (cons name sub)
+	   (vocabulary-record-sub-vocabs super))))
+
+  (define (find-sub-vocab name super)
+    (let ([v (assq name (vocabulary-record-sub-vocabs super))])
+      (if v
+	  (cdr v)
+	  (let ([super (vocabulary-record-root super)])
+	    (and super (find-sub-vocab name super))))))
+
+  (define (add-on-demand-form kind name vocab micro)
+    (set-vocabulary-record-on-demand!
+     vocab
+     (cons (list* name kind micro)
+	   (vocabulary-record-on-demand vocab))))
+
+  (define (find-on-demand-form name vocab)
+    (let ([v (assq name (vocabulary-record-on-demand vocab))])
+      (if v
+	  (values (cadr v) (cddr v))
+	  (let ([super (vocabulary-record-root vocab)])
+	    (and super (find-sub-vocab name super))))))
 
   ; ----------------------------------------------------------------------
 
@@ -225,15 +252,15 @@
   (define m3-macro-body-evaluator #f)
 
   (define expand
-    (lambda/nal zodiac:expand/nal
+    (lambda (expr attr vocab elaboration-eval macro-body-eval)
       (fluid-let ((m3-elaboration-evaluator elaboration-eval)
-		   (m3-macro-body-evaluator macro-body-eval))
+		  (m3-macro-body-evaluator macro-body-eval))
 	(expand-expr expr (make-new-environment) attr vocab))))
 
   (define expand-program
-    (lambda/nal zodiac:expand-program/nal
+    (lambda (exprs attr vocab elaboration-eval macro-body-eval)
       (fluid-let ((m3-elaboration-evaluator elaboration-eval)
-		   (m3-macro-body-evaluator macro-body-eval))
+		  (m3-macro-body-evaluator macro-body-eval))
 	(put-attribute attr 'top-levels (make-hash-table))
 	(map (lambda (expr)
 	       (expand-expr expr (make-new-environment) attr vocab))

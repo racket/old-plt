@@ -3,15 +3,10 @@
   (case request
     [(name) "zodiac"]
     [(compile-prefix) '(begin
-			 (require-library "match.ss")
 			 (require-library "zsigs.ss" "zodiac")
-			 (require-library "sigs.ss" "zodiac")
-			 (require-library "namedarg.ss" "zodiac")
-			 (require-library "mzlibs.ss")
-			 (require-library "sparams.ss" "backward"))]
+			 (require-library "sigs.ss" "zodiac"))]
     [(compile-omit-files)
-     (list "namedarg.ss" "sigs.ss" "zsigs.ss" "scm-hanc.ss"
-	   "quasi.ss" "qq.ss")]
+     (list "sigs.ss" "zsigs.ss" "scm-hanc.ss" "quasi.ss")]
     [(compile-elaboration-zos)
      (list "zsigs.ss" "sigs.ss")]
     [else (failure)]))

@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.52 1998/05/18 22:56:29 shriram Exp $
+; $Id: scm-hanc.ss,v 1.53 1998/09/11 12:16:17 mflatt Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -1940,19 +1940,21 @@
 						iu/s-imports-vocab))
 					 in:linkage))))
 		  (expand-expr
-		    (structurize-syntax
-		      `(let ((unit ,in:expr))
-			 (#%verify-linkage-signature-match
-			   'invoke-unit/sig
-			   '(invoke)
-			   (#%list unit)
-			   '(#())
-			   '(,(map named-sig-list->named-sig-vector proc:linkage)))
-			 (invoke-unit
-			   (#%unit-with-signature-unit unit)
-			   ,@proc:imports))
-		      expr '(-1))
-		    env attributes vocab)))))
+		   (structurize-syntax
+		    `(let ((unit ,in:expr))
+		       (#%verify-linkage-signature-match
+			'invoke-unit/sig
+			'(invoke)
+			(#%list unit)
+			'(#())
+			'(,(map named-sig-list->named-sig-vector proc:linkage)))
+		       (#%invoke-unit
+			(#%unit-with-signature-unit unit)
+			;; Structurize proc:imports without marks to allow capture
+			,@(map (lambda (x) (structurize-syntax x expr '()))
+			       proc:imports)))
+		    expr '(-1))
+		   env attributes vocab)))))
 	  (else
 	    (static-error expr "Malformed invoke-unit/sig")))))))
 

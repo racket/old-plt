@@ -1,51 +1,7 @@
-; $Id: sigs.ss,v 1.52 1998/07/14 20:25:04 shriram Exp $
+; $Id: sigs.ss,v 1.53 1998/08/20 15:17:18 mflatt Exp $
 
-(begin-elaboration-time
- (require-relative-library "namedarg.ss"))
-
-  (define-argument-list zodiac:scheme-expand/nal
-    (kwd expression: expr)
-    (opt (kwd elaboration-evaluator: elaboration-eval)
-      (lambda (expr parsed->raw phase)
-	(eval (parsed->raw expr))))
-    (opt (kwd user-macro-body-evaluator: macro-body-eval)
-      (lambda (x . args)
-	(eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args)))))
-    (opt (kwd attributes: attr) 'previous)
-    (opt (kwd vocabulary: vocab) #f))
-
-  (define-argument-list zodiac:scheme-expand-program/nal
-    (kwd expressions: exprs)
-    (opt (kwd elaboration-evaluator: elaboration-eval)
-      (lambda (expr parsed->raw phase)
-	(eval (parsed->raw expr))))
-    (opt (kwd user-macro-body-evaluator: macro-body-eval)
-      (lambda (x . args)
-	(eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args)))))
-    (opt (kwd attributes: attr) 'previous)
-    (opt (kwd vocabulary: vocab) #f))
-
-  (define-argument-list zodiac:expand/nal
-    (kwd expression: expr)
-    (kwd attributes: attr)
-    (kwd vocabulary: vocab)
-    (opt (kwd elaboration-evaluator: elaboration-eval)
-      (lambda (expr parsed->raw phase)
-	(eval (parsed->raw expr))))
-    (opt (kwd user-macro-body-evaluator: macro-body-eval)
-      (lambda (x . args)
-	(eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))))
-
-  (define-argument-list zodiac:expand-program/nal
-    (kwd expressions: exprs)
-    (kwd attributes: attr)
-    (kwd vocabulary: vocab)
-    (opt (kwd elaboration-evaluator: elaboration-eval)
-      (lambda (expr parsed->raw phase)
-	(eval (parsed->raw expr))))
-    (opt (kwd user-macro-body-evaluator: macro-body-eval)
-      (lambda (x . args)
-	(eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))))
+(begin-construction-time (require-library "macro.ss"))
+(begin-construction-time (require-library "mzlibs.ss"))
 
 (define-signature zodiac:misc^
   (pretty-print debug-level symbol-append flush-printf print-and-return 
@@ -82,6 +38,8 @@
     (struct top-level-resolution ())
     introduce-identifier introduce-fresh-identifier introduce-bound-id
     create-vocabulary append-vocabulary
+    add-sub-vocab find-sub-vocab
+    add-on-demand-form get-on-demand-form 
     (struct vocabulary-record
       (name this rest symbol-error literal-error list-error ilist-error))))
 
@@ -91,11 +49,14 @@
     lexically-resolved? in-lexically-extended-env
     add-primitivized-micro-form add-primitivized-macro-form
     generate-name
+    elaboration-evaluator user-macro-body-evaluator
     scheme-expand scheme-expand-program
-    set-top-level-status get-top-level-status at-top-level?
-    mzscheme-libraries-provided
-    process-top-level-resolution ensure-not-macro/micro
+    beginner-vocabulary
+    intermediate-vocabulary
+    advanced-vocabulary
     scheme-vocabulary
+    set-top-level-status get-top-level-status at-top-level?
+    process-top-level-resolution ensure-not-macro/micro
     (struct parsed (back))
     (struct varref (var))
     (struct top-level-varref ())          create-top-level-varref
@@ -110,7 +71,6 @@
     distinct-valid-syntactic-id/s?
     valid-id? valid-id/s?
     distinct-valid-id/s?
-    language<=? language>=?
     optarglist-pattern
     (struct optarglist-entry (var+marks))
     (struct initialized-optarglist-entry (expr))
@@ -134,7 +94,6 @@
     (struct sym-arglist ())
     (struct list-arglist ())
     (struct ilist-arglist ())
-    arglist-decls-vocab
     make-argument-list))
 
 (define-signature zodiac:scheme-main^

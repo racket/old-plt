@@ -1,4 +1,4 @@
-; $Id: scm-spdy.ss,v 1.38 1998/04/21 02:59:56 robby Exp $
+; $Id: scm-spdy.ss,v 1.39 1998/06/08 23:07:21 shriram Exp $
 
 (unit/sig zodiac:scheme-mrspidey^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -304,12 +304,6 @@
 				(static-error f
 				  "Library path ~s must be a relative path"
 				  raw-f))))
-		      (if (and (or (null? raw-cs)
-				 (and (null? (cdr raw-cs))
-				   (string=? "mzlib" (car raw-cs))))
-			    (member raw-f mzscheme-libraries-provided))
-			(expand-expr (structurize-syntax '(#%void) expr '(-1))
-			  env attributes vocab)
 			(let-values (((base name dir?)
 				       (split-path raw-filename)))
 			  (when dir?
@@ -364,7 +358,7 @@
 				  original-directory)
 				(current-require-relative-collection
 				  original-collections)
-				(close-input-port p)))))))))))
+				(close-input-port p))))))))))
 	    (else
 	      (static-error expr (string-append "Malformed "
 				   (symbol->string form-name)))))))))

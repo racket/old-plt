@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.44 1998/05/15 04:17:30 shriram Exp $
+; $Id: scm-core.ss,v 1.45 1998/07/14 20:25:01 shriram Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -122,14 +122,25 @@
 
   ; --------------------------------------------------------------------
 
-  (define mzscheme-libraries-provided
-    '("refer.ss" "refer" "spidey.ss" "spidey" "macrox.ss" "macrox"))
+  (define common-vocabulary
+    (create-vocabulary 'common-vocabulary
+		       #f))
+
+  (define beginner-vocabulary
+    (create-vocabulary 'beginner-vocabulary
+		       common-vocabulary))
+
+  (define intermediate-vocabulary
+    (create-vocabulary 'intermediate-vocabulary
+		       beginner-vocabulary))
+
+  (define advanced-vocabulary
+    (create-vocabulary 'advanced-vocabulary
+		       intermediate-vocabulary))
 
   (define scheme-vocabulary
-    (create-vocabulary (symbol-append param:check-syntax-level
-			 "-"
-			 'scheme-vocabulary)
-      #f))
+    (create-vocabulary 'scheme-vocabulary
+		       common-vocabulary))
 
   (define ensure-not-macro/micro
     (lambda (expr env vocab)
@@ -158,7 +169,7 @@
 	      ref)
 	    (create-top-level-varref id expr))))))      
 
-  (add-sym-micro scheme-vocabulary
+  (add-sym-micro common-vocabulary
     (lambda (expr env attributes vocab)
       (let ((r (ensure-not-macro/micro expr env vocab)))
 	(cond
@@ -169,11 +180,11 @@
 	  (else
 	    (internal-error expr "Invalid resolution in core: ~s" r))))))
 
-  (add-list-micro scheme-vocabulary
+  (define (make-list-micro null-ok? lexvar-ok? expr-ok?)
     (lambda (expr env attributes vocab)
       (let ((contents (expose-list expr)))
 	(if (null? contents)
-	  (if (language>=? 'advanced)
+	  (if null-ok?
 	    (expand-expr (structurize-syntax `(quote ,expr) expr)
 	      env attributes vocab)
 	    (static-error expr "Empty combination is a syntax error"))
@@ -184,14 +195,19 @@
 		      (lambda (e)
 			(expand-expr e env attributes vocab))
 		      contents)))
-	      (when (or (and (language<=? 'core)
+	      (when (or (and (not lexvar-ok?)
 			  (not (top-level-varref? (car bodies))))
-		      (and (language<=? 'structured)
+		      (and (not expr-ok?)
 			(not (varref? (car bodies)))))
 		(static-error expr
 		  "First term after parenthesis is illegal in an application"))
 	      (set-top-level-status attributes top-level?)
 	      (create-app (car bodies) (cdr bodies) expr)))))))
+
+  (add-list-micro beginner-vocabulary (make-list-micro #f #f #f))
+  (add-list-micro intermediate-vocabulary (make-list-micro #f #t #f))
+  (add-list-micro advanced-vocabulary (make-list-micro #t #t #t))
+  (add-list-micro scheme-vocabulary (make-list-micro #t #t #t))
 
   (define lexically-resolved?
     (lambda (expr env)
@@ -231,33 +247,41 @@
     (set-top-level-status attr #t)
     (for-each (lambda (r) (r attr)) (attributes-resetters)))
 
+  (define elaboration-evaluator
+    (make-parameter
+     (lambda (expr parsed->raw phase)
+       (eval (parsed->raw expr)))))
+
+  (define user-macro-body-evaluator
+    (make-parameter
+     (lambda (x . args)
+       (eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))))
+
   (define scheme-expand
-    (lambda/nal zodiac:scheme-expand/nal
+    (opt-lambda (expr [attr 'previous] [vocab #f])
       (let ((attr (cond
 		    ((eq? attr 'previous) previous-attribute)
 		    ((not attr) (make-attributes))
 		    (else attr))))
 	(reset-internal-attributes attr)
-	(call/nal zodiac:expand/nal expand
-	  (expression: expr)
-	  (attributes: attr)
-	  (vocabulary: (or vocab scheme-vocabulary))
-	  (elaboration-evaluator: elaboration-eval)
-	  (user-macro-body-evaluator: macro-body-eval)))))
+	(expand expr
+		attr
+		(or vocab scheme-vocabulary)
+		(elaboration-evaluator)
+		(user-macro-body-evaluator)))))
   
   (define scheme-expand-program
-    (lambda/nal zodiac:scheme-expand-program/nal
+    (opt-lambda (exprs [attr 'previous] [vocab #f])
       (let ((attr (cond
 		    ((eq? attr 'previous) previous-attribute)
 		    ((not attr) (make-attributes))
 		    (else attr))))
 	(reset-internal-attributes attr)
-	(call/nal zodiac:expand-program/nal expand-program
-	  (expressions: exprs)
-	  (attributes: attr)
-	  (vocabulary: (or vocab scheme-vocabulary))
-	  (elaboration-evaluator: elaboration-eval)
-	  (user-macro-body-evaluator: macro-body-eval)))))
+	(expand-program exprs
+			attr
+			(or vocab scheme-vocabulary)
+			(elaboration-evaluator)
+			(user-macro-body-evaluator)))))
 
   ; ----------------------------------------------------------------------
 
@@ -344,33 +368,6 @@
 	(else (static-error ids "Invalid identifier")))))
 
     
-  ; ----------------------------------------------------------------------
-
-  (define language-levels '(core structured side-effecting advanced))
-
-  (define the-language param:check-syntax-level)
-
-  (unless (memq the-language language-levels)
-    (internal-error the-language "Invalid language level setting"))
-
-  (define language<=?
-    (let ((table
-	    (let loop ((<? #f) (levels language-levels))
-	      (if (null? levels) '()
-		(let ((first (car levels)) (rest (cdr levels)))
-		  (if (eq? the-language first)
-		    (cons (cons first #t) (loop #t rest))
-		    (cons (cons first <?) (loop <? rest))))))))
-      (lambda (language)
-	(let ((lookup (assq language table)))
-	  (if lookup (cdr lookup)
-	    (internal-error language "Illegal language level name"))))))
-
-  (define language>=?
-    (lambda (language)
-      (or (eq? language the-language)
-	(not (language<=? language)))))
-
   ; ----------------------------------------------------------------------
 
   (define optarglist-pattern 'vars)
@@ -705,38 +702,57 @@
 
   ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-  (define arglist-decls-vocab
+  (define (make-arglist-decls-vocab)
     (create-vocabulary 'arglist-decls-vocab #f
       "Invalid argument list entry"
       "Invalid argument list entry"
       "Invalid argument list entry"
       "Invalid argument list entry"))
 
-  (add-sym-micro arglist-decls-vocab
-    (lambda (expr env attributes vocab)
-      (if (language>=? 'side-effecting)
-	(make-sym-arglist
-	  (list
-	    (create-lexical-binding+marks expr)))
-	(static-error expr "Invalid argument list syntax"))))
+  (define full-arglist-decls-vocab (make-arglist-decls-vocab))
+  (define proper-arglist-decls-vocab (make-arglist-decls-vocab))
+  (define nonempty-arglist-decls-vocab (make-arglist-decls-vocab))
 
-  (add-list-micro arglist-decls-vocab
+  (add-sym-micro full-arglist-decls-vocab
+    (lambda (expr env attributes vocab)
+      (make-sym-arglist
+       (list
+	(create-lexical-binding+marks expr)))))
+
+  (let ([m (lambda (expr env attributes vocab)
+	     (static-error expr "Invalid argument list syntax"))])
+    (add-sym-micro proper-arglist-decls-vocab m)
+    (add-sym-micro nonempty-arglist-decls-vocab m))
+
+  (define (make-arg-list-micro null-ok?)
     (lambda (expr env attributes vocab)
       (let ((contents (expose-list expr)))
-	(when (and (language<=? 'structured)
-		(null? contents))
+	(when (and (not null-ok?)
+		   (null? contents))
 	  (static-error expr "All procedures must take at least one argument"))
 	(make-list-arglist
 	  (map create-lexical-binding+marks
 	    contents)))))
 
-  (add-ilist-micro arglist-decls-vocab
+  (add-list-micro nonempty-arglist-decls-vocab (make-arg-list-micro #f))
+  (add-list-micro proper-arglist-decls-vocab (make-arg-list-micro #t))
+  (add-list-micro full-arglist-decls-vocab (make-arg-list-micro #t))
+
+  (let ([m (lambda (expr env attributes vocab)
+	     (static-error expr "Invalid argument list syntax"))])
+    (add-ilist-micro proper-arglist-decls-vocab m)
+    (add-ilist-micro nonempty-arglist-decls-vocab m))
+
+  (add-ilist-micro full-arglist-decls-vocab
     (lambda (expr env attributes vocab)
-      (if (language>=? 'structured)
-	(make-ilist-arglist
-	  (map create-lexical-binding+marks
-	    (expose-list expr)))
-	(static-error expr "Invalid argument list syntax"))))
+      (make-ilist-arglist
+       (map create-lexical-binding+marks
+	    (expose-list expr)))))
+
+  (add-sub-vocab 'args beginner-vocabulary nonempty-arglist-decls-vocab)
+  (add-sub-vocab 'args intermediate-vocabulary proper-arglist-decls-vocab)
+  (add-sub-vocab 'args advanced-vocabulary full-arglist-decls-vocab)
+  (add-sub-vocab 'args scheme-vocabulary full-arglist-decls-vocab)
 
   ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

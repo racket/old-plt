@@ -1,0 +1,18 @@
+
+(scheme-expand expr [attr 'previous] [vocab #f]) - expands one expression
+
+(scheme-expand-program exprs [attr 'previous] [vocab #f]) - expands
+  several expressions
+
+elaboration-evaluator - parameter for the evaluatotr used to evaluate
+ begin-elaboration-time bodies and the RHS of a macro definition
+
+ default: (lambda (expr parsed->raw phase)
+            (eval (parsed->raw expr)))
+
+user-macro-body-evaluator - parameter for the evaluator used to
+ evaluate macro applications
+
+ default: (lambda (x . args)
+            (eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))
+

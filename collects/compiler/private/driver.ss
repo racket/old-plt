@@ -225,6 +225,39 @@
       ;;----------------------------------------------------------------------
       ;; Misc utils
 
+      ;; see (single) use for info:
+      (define (split-module m)
+	(let ([mi (get-annotation m)])
+	  (let ([mk
+		 (lambda (expr mode)
+		   (let ([ast (zodiac:make-module-form
+			       (zodiac:zodiac-stx m)
+			       (make-empty-box)
+			       (zodiac:module-form-name m)
+			       (zodiac:module-form-requires m)
+			       (zodiac:module-form-for-syntax-requires m)
+			       expr #f
+			       (zodiac:module-form-provides m)
+			       (zodiac:module-form-syntax-provides m)
+			       (zodiac:module-form-kernel-reprovide-hint m))])
+		     (set-annotation! 
+		      ast 
+		      (make-module-info (module-info-invoke mi) mode))
+		     ast))]
+		[body->list
+		 (lambda (expr)
+		   (if (zodiac:begin-form? expr)
+		       (zodiac:begin-form-bodies expr)
+		       (list expr)))])
+	    (append
+	     (map (lambda (x) (mk x 'body))
+		  (body->list
+		   (zodiac:module-form-body m)))
+	     (map (lambda (x) (mk x 'syntax-body))
+		  (body->list
+		   (zodiac:module-form-syntax-body m)))
+	     (list (mk (zodiac:make-special-constant 'void) 'constructor))))))
+
       ;; takes a list of a-normalized expressions and analyzes them
       ;; returns the analyzed code, a list of local variable lists, 
       ;; used variable lists, and captured variable lists
@@ -253,17 +286,28 @@
 			     (reverse! captured-acc)
 			     (reverse! children-acc))
 			max-arity)
-		(let-values ([(exp free-vars local-vars global-vars used-vars captured-vars
-				   children new-max-arity multi)
-			      (analyze-expression! (car sexps) empty-set null (null? (cdr sexps)))])
-		  (loop (cdr sexps) 
-			(cons exp source-acc) 
-			(cons local-vars locals-acc)
-			(cons global-vars globals-acc)
-			(cons used-vars used-acc)
-			(cons captured-vars captured-acc)
-			(cons children children-acc)
-			(max max-arity new-max-arity)))))))
+		(begin
+		  (varref:current-invoke-module 
+		   (and (zodiac:module-form? (car sexps))
+			(module-info-invoke (get-annotation (car sexps)))))
+
+		  (let-values ([(exp free-vars local-vars global-vars used-vars captured-vars
+				     children new-max-arity multi)
+				(analyze-expression! (car sexps) empty-set null (null? (cdr sexps)))])
+
+		    ;; Adds to const, per-load-const, per-invoke-const lists:
+		    (compiler:finish-syntax-constants!)
+
+		    (varref:current-invoke-module #f)
+
+		    (loop (cdr sexps) 
+			  (cons exp source-acc) 
+			  (cons local-vars locals-acc)
+			  (cons global-vars globals-acc)
+			  (cons used-vars used-acc)
+			  (cons captured-vars captured-acc)
+			  (cons children children-acc)
+			  (max max-arity new-max-arity))))))))
 
       ;; Lift static procedures
       (define s:lift
@@ -571,9 +615,21 @@
 				  source
 				  (let ([ast (prephase! (car source) (null? (cdr source)) #f)])
 				    (if (eq? errors compiler:messages)
-					; no errors here
-					(cons ast (loop (cdr source) errors))
-					; error, drop this one
+					
+					;; no errors here
+					(if (zodiac:module-form? ast)
+					    ;; If it's a module, split it into three parts:
+					    ;;   - body
+					    ;;   - syntax definitions
+					    ;;   - module registration
+					    ;; That way, the global variable sets, etc., are
+					    ;; kept separate.
+					    (append (split-module ast) (loop (cdr source) errors))
+
+					    ;; Normal expr
+					    (cons ast (loop (cdr source) errors)))
+					
+					;; error, drop this one
 					(loop (cdr source) compiler:messages)))))))])
 		    (verbose-time prephase-thunk))
 		  (compiler:report-messages! (not (compiler:option:test)))
@@ -643,8 +699,6 @@
 			 (block:register-max-arity! s:file-block max-arity)
 			 (s:register-max-arity! max-arity))
 		       
-		       (compiler:finish-syntax-constants!)
-
 		       ; take constant construction code and place it in front of the 
 		       ; previously generated code. True constants first.
 		       (set! number-of-true-constants (length (compiler:get-define-list)))
@@ -799,7 +853,7 @@
 					 (vm-phase (car s) 
 						   #t
 						   #f
-						   (if (null? (cdr s)) 
+						   (if (null? (cdr s))
 						       (lambda (ast)
 							 (make-vm:return 
 							  (zodiac:zodiac-stx ast)
@@ -964,20 +1018,37 @@
 				   [locals (map code-local-vars codes)]
 				   [globals (map code-global-vars codes)]
 				   [init-constants-count
-				   (if (zero? number-of-true-constants)
-				       -1
-				       (vm->c:emit-top-levels! "init_constants" #f #f number-of-true-constants
-							       (block-source s:file-block)
-							       locals globals
-							       (block-max-arity s:file-block)
-							       c-port))]
-				  [top-level-count
-				   (vm->c:emit-top-levels! "top_level" #t #t -1
-							   (list-tail (block-source s:file-block) number-of-true-constants)
-							   (list-tail locals number-of-true-constants)
-							   (list-tail globals number-of-true-constants)
-							   (block-max-arity s:file-block)
-							   c-port)])
+				    (if (zero? number-of-true-constants)
+					-1
+					(vm->c:emit-top-levels! "init_constants" #f #f number-of-true-constants
+								(block-source s:file-block)
+								locals globals
+								(block-max-arity s:file-block)
+								#f #f ; no module entries
+								c-port))]
+				   [_ (let loop ([i 0])
+					(unless (= i (get-num-module-invokes))
+					  (let loop ([syntax? #f])
+					    (vm->c:emit-top-levels! (format "module~a_body_~a" 
+									    (if syntax? "_syntax" "")
+									    i)
+								    #f #f -1
+								    (block-source s:file-block)
+								    locals
+								    globals
+								    (block-max-arity s:file-block)
+								    i syntax?
+								    c-port)
+					    (unless syntax? (loop #t)))
+					  (loop (add1 i))))]
+				   [top-level-count
+				    (vm->c:emit-top-levels! "top_level" #t #t -1
+							    (list-tail (block-source s:file-block) number-of-true-constants)
+							    (list-tail locals number-of-true-constants)
+							    (list-tail globals number-of-true-constants)
+							    (block-max-arity s:file-block)
+							    #f #f ; no module entries
+							    c-port)])
 			      (fprintf c-port
 				       "Scheme_Object * scheme_reload~a(Scheme_Env * env)~n{~n"
 				       compiler:setup-suffix)
@@ -1117,7 +1188,7 @@
 			  ;post (dynamic wind cleanup)
 			  (lambda ()  (close-output-port c-port)))))])
 		(with-handlers ([void (lambda (exn)
-					(delete-file c-output-path)
+					;(delete-file c-output-path)
 					(raise exn))])
 		  (verbose-time vm2c-thunk)))
 	      

@@ -45,6 +45,7 @@
       ;;  'scheme-object 
       ;;  'scheme-bucket
       ;;  'scheme-per-load-static
+      ;;  'scheme-per-invoke-static
       ;;  'label
       ;;  'prim
       ;;  'prim-case
@@ -175,14 +176,19 @@
 						 ;; field-name
 						 (if (const:per-load-statics-table? global)
 						     'pls
-						     #f)
-						 (if (const:per-load-statics-table? global)
+						     (if (varref:module-invoke? global)
+							 'pmis
+							 #f))
+						 (if (or (const:per-load-statics-table? global)
+							 (varref:module-invoke? global))
 						     global
 						     (mod-glob-cname global))
 						 ;; field-type
 						 (if (const:per-load-statics-table? global)
 						     (make-rep:atomic 'scheme-per-load-static)
-						     (make-rep:atomic 'scheme-bucket))))
+						     (if (varref:module-invoke? global)
+							 'scheme-per-invoke-static
+							 (make-rep:atomic 'scheme-bucket)))))
 					      (set->list (code-global-vars code))))])
 			   (if (null? fields)
 			       #f ; empty structure - don't use anything

@@ -63,7 +63,8 @@
 
       (define a-val/l-val/immediate? (one-of vm:global-varref? vm:primitive-varref? vm:local-varref? 
 					     vm:symbol-varref? vm:inexact-varref? 
-					     vm:static-varref? vm:bucket? vm:per-load-statics-table?
+					     vm:static-varref? vm:bucket?
+					     vm:per-load-statics-table? vm:per-invoke-statics-table?
 					     vm:struct-ref? vm:deref? vm:immediate?))
 
       (define vm-optimize!
@@ -144,6 +145,12 @@
 			(set-vm:sequence-vals! ast
 					       (apply append! 
 						      (map process! (vm:sequence-vals ast))))
+			ast]
+
+		       [(vm:module-body? ast)
+			(set-vm:module-body-vals! ast
+						  (apply append! 
+							 (map process! (vm:module-body-vals ast))))
 			ast]
 		       
 		       ;;--------------------------------------------------------------------
@@ -524,6 +531,11 @@
 
 
 		       [(vm:macro-apply? ast) (list ast)]
+
+		       ;;--------------------------------------------------------------------
+		       ;; MODULE CONSTRUCTION
+		       ;;
+		       [(vm:module-create? ast) (list ast)]
 		       
 		       ;;--------------------------------------------------------------------
 		       ;; WITH-CONTINUATION-MARK

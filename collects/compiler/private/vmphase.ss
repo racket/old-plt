@@ -210,10 +210,15 @@
 													 pointer)))))
 					   var #f))
 			   ;; Propogate global bucket
-			   (let* ([var (if (const:per-load-statics-table? 
-					    (rep:struct-field-orig-name field))
-					   (make-vm:per-load-statics-table #f)
-					   (make-vm:bucket #f var))])
+			   (let* ([var (cond
+					[(const:per-load-statics-table? 
+					  (rep:struct-field-orig-name field))
+					 (make-vm:per-load-statics-table #f)]
+					[(varref:module-invoke?
+					  (rep:struct-field-orig-name field))
+					 (make-vm:per-invoke-statics-table #f)]
+					[else
+					 (make-vm:bucket #f var)])])
 			     (make-vm:set! #f 
 					   (list (cons
 						  target-type:lexical
@@ -901,6 +906,8 @@
 			       a d (top-level-varref/bind-from-lift-lambda ast)))]
 			   [(varref:has-attribute? ast varref:per-load-static)
 			    (ignore-ast make-vm:per-load-static-varref)]
+			   [(varref:has-attribute? ast varref:per-invoke-static)
+			    (ignore-ast make-vm:per-invoke-static-varref)]
 			   [(varref:has-attribute? ast varref:primitive)
 			    (convert-global make-vm:primitive-varref)]
 			   [(varref:has-attribute? ast varref:symbol)
@@ -931,6 +938,19 @@
 		    (if tail-pos
 			(leaf (tail-pos vm))
 			(leaf vm)))]
+		 
+		 ;;-----------------------------------------------------------------
+		 ;; MODULE
+		 ;;
+		 ;;  If we get here, this is the module construction/registration
+		 ;;
+		 [(zodiac:module-form? ast)
+		  (let ([vm (make-vm:module-create
+			     (zodiac:zodiac-stx ast)
+			     ast)])
+		    (if tail-pos
+			(leaf (tail-pos vm))
+			(leaf vm)))]
 
 		 [else 
 		  (compiler:internal-error 
@@ -941,7 +961,20 @@
 	    (set! new-locals empty-set)
 	    ;; l->r evaluation necessary for convert to get called before new-locals
 	    ;; is evaluated
-	    (values (make-vm:sequence
+	    (values ((if (zodiac:module-form? ast)
+			 (let ([info (get-annotation ast)])
+			   (if (eq? 'constructor (module-info-part info))
+			       make-vm:sequence
+			       (lambda (stx vals)
+				 (make-vm:module-body
+				  stx vals
+				  (module-info-invoke info)
+				  (eq? 'syntax-body (module-info-part info))))))
+			 make-vm:sequence)
 		     (zodiac:zodiac-stx ast)
-		     (convert ast multi? (or leaf list) tail-pos tail? (not tail?)))
+		     (convert (if (and (zodiac:module-form? ast)
+				       (not (eq? 'constructor (module-info-part (get-annotation ast)))))
+				  (zodiac:module-form-body ast)
+				  ast)
+			      multi? (or leaf list) tail-pos tail? (not tail?)))
 		    new-locals)))))))

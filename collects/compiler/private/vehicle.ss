@@ -168,8 +168,8 @@
 	(hash-table-get compiler:vehicles 
 			vehicle-number
 			(lambda () 
-					; not an error because random placement
-					; may leave some vehicles empty
+			  ;; not an error because random placement
+			  ;; may leave some vehicles empty
 			  (let ([v (make-empty-vehicle vehicle:procedure)])
 			    (hash-table-put! compiler:vehicles vehicle-number v)
 			    v))))
@@ -220,6 +220,12 @@
 		 ;;
 		 [(zodiac:with-continuation-mark-form? ast)
 		  (relate! current-lambda (zodiac:with-continuation-mark-form-body ast))]
+		 
+		 ;;-----------------------------------------------------------
+		 ;; MODULE
+		 ;;
+		 [(zodiac:module-form? ast)
+		  (relate! current-lambda (zodiac:module-form-body ast))]
 		 
 		 ;;-----------------------------------------------------------------
 		 ;; APPLICATIONS

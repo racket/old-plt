@@ -70,7 +70,7 @@
 			       varname 
 			       exp-time?))
 
-      (define-struct module-info (globals
+      (define-struct modref-info (globals
 				  et-globals
 				  modidx-const))
 
@@ -89,7 +89,7 @@
 			   (not (eq? '#%kernel modname)))]
 		 [info (hash-table-get compiler:global-symbols modname
 				       (lambda ()
-					 (let ([p (make-module-info #f #f
+					 (let ([p (make-modref-info #f #f
 								    (if (module-path-index? modname)
 									(compiler:construct-const-code!
 									 (zodiac:make-read
@@ -101,9 +101,9 @@
 									modname))])
 					   (hash-table-put! compiler:global-symbols modname p)
 					   p)))]
-		 [t (or ((if et? module-info-et-globals module-info-globals) info)
+		 [t (or ((if et? modref-info-et-globals modref-info-globals) info)
 			(let ([t (make-hash-table)])
-			  ((if et? set-module-info-et-globals! set-module-info-globals!) info t)
+			  ((if et? set-modref-info-et-globals! set-modref-info-globals!) info t)
 			  t))])
 	    (hash-table-get t varname
 			    (lambda ()
@@ -119,7 +119,7 @@
 				n))))]))
 
       (define (compiler:get-module-path-constant modname)
-	(module-info-modidx-const (hash-table-get compiler:global-symbols modname void)))
+	(modref-info-modidx-const (hash-table-get compiler:global-symbols modname void)))
 
       (define (compiler:get-global-symbols) compiler:global-symbols)
 
@@ -135,28 +135,36 @@
       
       (define compiler:define-list null)
       (define compiler:per-load-define-list null)
+      (define compiler:per-invoke-define-list null)
       (define compiler:local-define-list null)
       (define compiler:local-per-load-define-list null)
+      (define compiler:local-per-invoke-define-list null)
 
       (define (compiler:get-define-list) compiler:define-list)
       (define (compiler:get-per-load-define-list) compiler:per-load-define-list)
+      (define (compiler:get-per-invoke-define-list) compiler:per-invoke-define-list)
       
       (define (compiler:init-define-lists!)
 	(set! compiler:define-list null)
 	(set! compiler:per-load-define-list null)
+	(set! compiler:per-invoke-define-list null)
 	(set! compiler:global-symbols (make-hash-table))
 	(set! compiler:primitive-refs empty-set))
       
-      (define (compiler:add-local-per-load-define-list! def)
-	(set! compiler:local-per-load-define-list 
-	      (cons def compiler:local-per-load-define-list)))
       (define (compiler:add-local-define-list! def)
 	(set! compiler:local-define-list 
 	      (cons def compiler:local-define-list)))
+      (define (compiler:add-local-per-load-define-list! def)
+	(set! compiler:local-per-load-define-list 
+	      (cons def compiler:local-per-load-define-list)))
+      (define (compiler:add-local-per-invoke-define-list! def)
+	(set! compiler:local-per-invoke-define-list 
+	      (cons def compiler:local-per-invoke-define-list)))
 
       (define (compiler:finish-syntax-constants!)
 	(set! compiler:local-define-list null)
 	(set! compiler:local-per-load-define-list null)
+	(set! compiler:local-per-invoke-define-list null)
 
 	(const:finish-syntax-constants!)
 
@@ -707,6 +715,9 @@
 			    (when (and (zodiac:varref? c)
 				       (varref:has-attribute? c varref:per-load-static))
 			      (add-global-var! const:the-per-load-statics-table))
+			    (when (and (zodiac:varref? c)
+				       (varref:has-attribute? c varref:per-invoke-static))
+			      (add-global-var! (varref:invoke-module ast)))
 			    
 			    c)]
 			 
@@ -774,6 +785,8 @@
 			(compiler:add-primitive-varref! ast)]
 		       [(varref:has-attribute? ast varref:per-load-static)
 			(add-global-var! const:the-per-load-statics-table)]
+		       [(varref:has-attribute? ast varref:per-invoke-static)
+			(add-global-var! (varref:invoke-module ast))]
 		       [(varref:has-attribute? ast varref:static)
 			(void)]
 		       [else
@@ -804,6 +817,7 @@
 		  (lambda (ast known-immutable?)
 		    (set! compiler:local-define-list null)
 		    (set! compiler:local-per-load-define-list null)
+		    (set! compiler:local-per-invoke-define-list null)
 		    (let ([ret (compiler:construct-const-code! 
 				(zodiac:quote-form-expr ast)
 				(or known-immutable?
@@ -817,15 +831,21 @@
 		      (set! compiler:per-load-define-list
 			    (append! compiler:per-load-define-list 
 				     (reverse! compiler:local-per-load-define-list)))
+		      (set! compiler:per-invoke-define-list
+			    (append! compiler:per-invoke-define-list 
+				     (reverse! compiler:local-per-invoke-define-list)))
 		      
 		      (set! compiler:local-define-list null)
-		      (set! compiler:local-per-load-define-list null)
+		      (set! compiler:local-per-invoke-define-list null)
 
 		      ;; If this `constant' is mutable, register the per-load
 		      ;; statics pointer as a `global'
 		      (when (and (zodiac:top-level-varref? ret)
 				 (varref:has-attribute? ret varref:per-load-static))
 			(add-global-var! const:the-per-load-statics-table))
+		      (when (and (zodiac:top-level-varref? ret)
+				 (varref:has-attribute? ret varref:per-invoke-static))
+			(add-global-var! (varref:invoke-module ret)))
 		      
 		      ret))]
 		 
@@ -1349,6 +1369,18 @@
 			
 			(values ret #f))]
 		     
+		     ;;-----------------------------------------------------------
+		     ;; MODULE
+		     ;;
+		     [(zodiac:module-form? ast)
+
+		      (zodiac:set-module-form-body!
+		       ast
+		       (analyze!-ast (zodiac:module-form-body ast) env inlined))
+		      
+		      (values ast #f)]
+		     
+
 		     [else (compiler:internal-error
 			    ast
 			    (format "unsupported syntactic form (~a)"

@@ -153,6 +153,12 @@
 		      (find! (zodiac:with-continuation-mark-form-val ast))
 		      (find! (zodiac:with-continuation-mark-form-body ast))]
 
+		     ;;-----------------------------------------------------------
+		     ;; MODULE
+		     ;;
+		     [(zodiac:module-form? ast)
+		      (find! (zodiac:module-form-body ast))]
+		     
 		     [else (compiler:internal-error
 			    ast
 			    (format "unsupported syntactic form (~a)"
@@ -276,7 +282,8 @@
 				      (remove-code-free-vars! code (make-singleton-set 
 								    (zodiac:bound-varref-binding ast))))
 				    (when (top-level-varref/bind-from-lift-pls? lifted)
-				      (add-global! const:the-per-load-statics-table))
+				      (add-global! (or (varref:current-invoke-module)
+						       const:the-per-load-statics-table)))
 				    lifted)
 				  
 				  ;; No change
@@ -292,6 +299,8 @@
 			(void)]
 		       [(varref:has-attribute? ast varref:per-load-static)
 			(add-global! const:the-per-load-statics-table)]
+		       [(varref:has-attribute? ast varref:per-invoke-static)
+			(add-global! (varref:invoke-module ast))]
 		       [(varref:has-attribute? ast varref:static)
 			(void)]
 		       [else (add-global! (compiler:add-global-varref! ast))])
@@ -341,7 +350,8 @@
 				(if (top-level-varref/bind-from-lift-pls? lifted)
 				    (set! globals (set-union-singleton 
 						   save-globals
-						   const:the-per-load-statics-table))
+						   (or (varref:current-invoke-module)
+						       const:the-per-load-statics-table)))
 				    (set! globals save-globals))
 				
 				lifted))))]
@@ -525,6 +535,18 @@
 		       ast
 		       (lift! (zodiac:with-continuation-mark-form-body ast) code))
 
+		      ast]
+
+		     ;;-----------------------------------------------------------
+		     ;; MODULE
+		     ;;
+		     [(zodiac:module-form? ast)
+
+		      (parameterize ([varref:current-invoke-module (module-info-invoke (get-annotation ast))])
+			(zodiac:set-module-form-body!
+			 ast
+			 (lift! (zodiac:module-form-body ast) code)))
+		      
 		      ast]
 
 		     [else (compiler:internal-error

@@ -273,6 +273,22 @@
 			(set-annotation! begin0-exp tbound)
 			(k begin0-exp))]
 
+		     ;;-----------------------------------------------------------
+		     ;; MODULE
+		     ;;
+		     [(zodiac:module-form? ast)
+		      (k (zodiac:make-module-form
+			  (zodiac:zodiac-stx ast)
+			  (zodiac:parsed-back ast)
+			  (zodiac:module-form-name ast)
+			  (zodiac:module-form-requires ast)
+			  (zodiac:module-form-for-syntax-requires ast)
+			  (a-normalize (zodiac:module-form-body ast) identity)
+			  #f ; see split-module in driver.ss
+			  (zodiac:module-form-provides ast)
+			  (zodiac:module-form-syntax-provides ast)
+			  (zodiac:module-form-kernel-reprovide-hint ast)))]
+
 		     ;;---------------------------------------------------------------
 		     ;; SET! EXPRESSIONS / DEFINE EXPRESSIONS
 		     ;;    

@@ -2,7 +2,7 @@
 ;; (c) 1996-1997 Sebastian Good
 ;; (c) 1997-2001 PLT
 
-;; Closure-making expressions, such as lambda and unit, are
+;; Closure-making expressions, such as lambda, are
 ;;  replaced with explicit make-closure AST nodes.
 ;; Closures that with empty free-variable sets are replaced
 ;;  with varrefs to a one-time created global closure. These
@@ -85,11 +85,24 @@
 	    (set-procedure-code-liftable! code (list sv)) 
 
 	    (if pls?
-		(begin
-		  (varref:add-attribute! sv varref:per-load-static)
-		  (compiler:add-per-load-static-list! var)
-		  (set! compiler:once-closures-list (cons def compiler:once-closures-list))
-		  (set! compiler:once-closures-globals-list (cons (code-global-vars code) compiler:once-closures-globals-list)))
+		(let ([def (if (varref:current-invoke-module)
+			       (let ([def (zodiac:make-module-form
+					   (zodiac:zodiac-stx def)
+					   (make-empty-box)
+					   #f #f #f
+					   def #f
+					   #f #f)])
+				 (set-annotation! 
+				  def 
+				  (make-module-info (varref:current-invoke-module) 'body)) ; FIXME!!!
+				 def)
+			       def)])
+		  
+		      (varref:add-attribute! sv (or (varref:current-invoke-module)
+						    varref:per-load-static))
+		      (compiler:add-per-load-static-list! var)
+		      (set! compiler:once-closures-list (cons def compiler:once-closures-list))
+		      (set! compiler:once-closures-globals-list (cons (code-global-vars code) compiler:once-closures-globals-list)))
 		(begin
 		  (set! compiler:lifted-lambda-vars (cons sv compiler:lifted-lambda-vars))
 		  (set! compiler:lifted-lambdas (cons def compiler:lifted-lambdas)))))))
@@ -242,6 +255,17 @@
 		  (zodiac:set-with-continuation-mark-form-body!
 		   ast
 		   (transform! (zodiac:with-continuation-mark-form-body ast)))
+		  
+		  ast]
+		 
+		 ;;-----------------------------------------------------------
+		 ;; MODULE
+		 ;;
+		 [(zodiac:module-form? ast)
+		  
+		  (zodiac:set-module-form-body!
+		   ast
+		   (transform! (zodiac:module-form-body ast)))
 		  
 		  ast]
 		 

@@ -52,9 +52,11 @@
 
       (define compiler:static-list null)
       (define compiler:per-load-static-list null)
+      (define compiler:per-invoke-static-list null)
 
       (define (compiler:get-static-list) compiler:static-list)
       (define (compiler:get-per-load-static-list) compiler:per-load-static-list)
+      (define (compiler:get-per-invoke-static-list) compiler:per-invoke-static-list)
 
       (define (const:init-tables!)
 	(set! const:symbol-table (make-hash-table))
@@ -66,6 +68,7 @@
 	(set! const:string-counter 0)
 	(set! compiler:static-list null)
 	(set! compiler:per-load-static-list null)
+	(set! compiler:per-invoke-static-list null)
 	(set! vector-table (make-hash-table)))
 
       (define (const:intern-string s)
@@ -82,6 +85,10 @@
       (define (compiler:add-per-load-static-list! var)
 	(set! compiler:per-load-static-list
 	      (cons var compiler:per-load-static-list)))
+
+      (define (compiler:add-per-invoke-static-list! var)
+	(set! compiler:per-invoke-static-list
+	      (cons var compiler:per-invoke-static-list)))
 
       (define-values (const:the-per-load-statics-table
 		      const:per-load-statics-table?)
@@ -106,14 +113,18 @@
 	    (set-annotation! sv (varref:empty-attributes))
 	    (varref:add-attribute! sv varref:static)
 	    (varref:add-attribute! sv attr)
-	    (if (eq? attr varref:per-load-static)
-		(begin
-		  (set! compiler:per-load-static-list
-			(cons var compiler:per-load-static-list)) 
-		  (compiler:add-local-per-load-define-list! def))
-		(begin
-		  (set! compiler:static-list (cons var compiler:static-list))
-		  (compiler:add-local-define-list! def)))
+	    (cond
+	     [(eq? attr varref:per-load-static)
+	      (set! compiler:per-load-static-list
+		    (cons var compiler:per-load-static-list)) 
+	      (compiler:add-local-per-load-define-list! def)]
+	     [(varref:module-invoke? attr)
+	      (set! compiler:per-invoke-static-list
+		    (cons (cons var attr) compiler:per-invoke-static-list)) 
+	      (compiler:add-local-per-invoke-define-list! def)]
+	     [else
+	      (set! compiler:static-list (cons var compiler:static-list))
+	      (compiler:add-local-define-list! def)])
 	    sv)))
 
       (define compiler:get-special-const!
@@ -315,9 +326,10 @@
 					  (compiler:construct-const-code!
 					   (wrap base)
 					   known-immutable?)))
-				   (if known-immutable?
-				       varref:static
-				       varref:per-load-static)))]
+				   (or (varref:current-invoke-module)
+				       (if known-immutable?
+					   varref:static
+					   varref:per-load-static))))]
 
 	   ;; other atomic constants that must be built
 	   [else
@@ -346,9 +358,14 @@
 				       syntax-constants))
 	  (set-annotation! sv (varref:empty-attributes))
 	  (varref:add-attribute! sv varref:static)
-	  (varref:add-attribute! sv varref:per-load-static) ;; actually, per-module-instance...
-	  (set! compiler:per-load-static-list
-		(cons var compiler:per-load-static-list))
+	  (varref:add-attribute! sv (or (varref:current-invoke-module)
+					varref:per-load-static))
+	  (if (varref:current-invoke-module)
+	      (set! compiler:per-invoke-static-list
+		    (cons (cons var (varref:current-invoke-module))
+			  compiler:per-invoke-static-list))
+	      (set! compiler:per-load-static-list
+		    (cons var compiler:per-load-static-list)))
 	  sv))
 
       (define (const:finish-syntax-constants!)
@@ -375,11 +392,18 @@
 
 		(set-annotation! sv (varref:empty-attributes))
 		(varref:add-attribute! sv varref:static)
-		(varref:add-attribute! sv varref:per-load-static) ;; actually, per-module-instance...
-		(set! compiler:per-load-static-list
-		      (cons vecvar compiler:per-load-static-list))
+		(varref:add-attribute! sv (or (varref:current-invoke-module)
+					      varref:per-load-static))
+		(if (varref:current-invoke-module)
+		    (set! compiler:per-invoke-static-list
+			  (cons (cons vecvar (varref:current-invoke-module))
+				compiler:per-invoke-static-list))
+		    (set! compiler:per-load-static-list
+			  (cons vecvar compiler:per-load-static-list)))
 
-		(compiler:add-local-per-load-define-list! ;; ..., per-module, ...
+		((if (varref:current-invoke-module)
+		     compiler:add-local-per-invoke-define-list!
+		     compiler:add-local-per-load-define-list!)
 		 (zodiac:make-define-values-form 
 		  #f
 		  (make-empty-box) (list sv)
@@ -413,7 +437,9 @@
 				    pos
 				    (cdar l))))))])
 		      (set-annotation! app (make-app #f #t 'vector-ref))
-		      (compiler:add-local-per-load-define-list! ;; ..., per-module, ...
+		      ((if (varref:current-invoke-module)
+			   compiler:add-local-per-invoke-define-list!
+			   compiler:add-local-per-load-define-list!)
 		       (zodiac:make-define-values-form 
 			(cdar l)
 			(make-empty-box) (list (caar l))

@@ -25,20 +25,45 @@
       ;; VARREF ATTRIBUTES
       ;;  Used as the annotation for zodiac:varref objects
 
-      (define (varref:empty-attributes) 0)
+      (define-struct va (flags invoke-module))
+
+      (define (varref:empty-attributes) (make-va 0 #f))
       (define (varref:add-attribute! ast attr)
-	(set-annotation! ast (bitwise-ior attr (get-annotation ast))))
+	(let ([va (get-annotation ast)])
+	  (let ([attr (if (varref:module-invoke? attr)
+			  (begin
+			    (set-va-invoke-module! va attr)
+			    varref:per-invoke-static)
+			  attr)])
+	    (set-va-flags! va (bitwise-ior attr (va-flags va))))))
       (define (varref:has-attribute? ast attr)
 	(let ([anno (get-annotation ast)])
-	  (and (number? anno) (positive? (bitwise-and attr anno)))))
+	  (and (va? anno) (positive? (bitwise-and (va-flags anno) attr)))))
+      (define (varref:invoke-module ast)
+	(let ([anno (get-annotation ast)])
+	  (and (va? anno) (va-invoke-module anno))))
 
       (define varref:static 1)
       (define varref:per-load-static 2)
-      (define varref:primitive 4)
-      (define varref:symbol 8)
-      (define varref:inexact 16)
-      (define varref:env 32)
+      (define varref:per-invoke-static 4)
+      (define varref:primitive 8)
+      (define varref:symbol 16)
+      (define varref:inexact 32)
+      (define varref:env 64)
 
+      (define mi-counter -1)
+      (define-struct varref:module-invoke (id))
+      (define (make-module-invoke)
+	(set! mi-counter (add1 mi-counter))
+	(make-varref:module-invoke mi-counter))
+
+      (define (get-num-module-invokes)
+	(add1 mi-counter))
+
+      (define (is-module-invoke? mi num)
+	(and (varref:module-invoke? mi)
+	     (= num (varref:module-invoke-id mi))))
+      
       ;;----------------------------------------------------------------------------
       ;; AST NODES
       ;;  New AST nodes to augment the zodiac set:
@@ -187,81 +212,6 @@
 	 ;; If so, output the case body within while(1){...}
 	 has-continue?))
 
-      ;; annotations given to a unit
-      (define-struct (unit-code struct:closure-code)
-	(defines
-	  ;; a list of zodiac:lexical-bindings
-	  exports
-	  ;; a list of zodiac:lexical-bindings
-	  import-anchors
-	  ;; a list of zodiac:lexical-bindings for anchors
-	  export-anchors
-	  ;; a list of zodiac:lexical-bindings for anchors
-	  export-list-offset 
-	  ;; integer - an index into the 
-	  ;; compiler:total-unit-exports list, which
-	  ;; contains information for describing
-	  ;; the unit to MzScheme
-	  ))
-
-      (define-struct (class-code struct:closure-code)
-	(public-lookup-bindings
-	 ;; ^- a list of zodiac:lexical-bindings
-	 ;; corresponding to possibly overridden
-	 ;; public ivars; these are the bindings
-	 ;; used to extract ivar values within
-	 ;; the class
-	 public-define-bindings
-	 ;; ^- a list of zodiac:lexical-bindings
-	 ;; corresponding to unoverridden
-	 ;; public ivars; these are the bindings
-	 ;; used only for installing the locally-
-	 ;; defined values for ivars
-	 override-lookup-bindings
-	 ;; a list of zodiac:lexical-bindings
-	 override-define-bindings
-	 ;; a list of zodiac:lexical-bindings
-	 private-bindings
-	 ;; a list of zodiac:lexical-bindings
-	 inherit-bindings
-	 ;; a list of zodiac:lexical-bindings
-	 rename-bindings
-	 ;; a list of zodiac:lexical-bindings
-	 assembly 
-	 ;; integer - an index into the
-	 ;; compiler:classes list, which
-	 ;; contains information for describing
-	 ;; the class to MzScheme
-	 ))
-
-      (define-struct invoke-info (anchors
-				  ;; a list of zodiac:lexical-bindings for the
-				  ;; sources of dynamically-linked variables
-				  ))
-
-      (define-struct compound-info (assembly 
-				    ;; integer - an index into the
-				    ;; compiler:compounds list, which
-				    ;; contains information for describing
-				    ;; the compound unit to MzScheme
-				    imports
-				    ;; constant reference, a zodiac:varref, for import spec
-				    exports
-				    ;; constant reference for export spec
-				    links
-				    ;; constant reference for link spec
-				    ))
-
-      (define-struct interface-info (assembly 
-				     ;; integer - an index into the
-				     ;; compiler:interfaces list, which
-				     ;; contains information for describing
-				     ;; the interface to MzScheme
-				     name
-				     ;; the inferred name; see the `name' field
-				     ;; in the `code' struct
-				     ))
-
       ;; annotations given to zodiac:app AST nodes
       (define-struct app (tail?
 			  ;; tail application?
@@ -270,6 +220,14 @@
 			  prim-name
 			  ;; MzScheme name for the known primitive, or #f
 			  ))
+
+      (define-struct module-info (invoke
+				  ;; a module-invoke record
+				  part
+				  ;; 'body, 'syntax-body, or 'constructor
+				  ))
+
+      (define varref:current-invoke-module (make-parameter #f))
 
       ;;----------------------------------------------------------------------------
       ;; ACCESSOR

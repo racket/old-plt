@@ -27,6 +27,7 @@
       ;; Block statements
       (define-struct (vm:sequence zodiac:struct:zodiac) (vals))
       (define-struct (vm:if zodiac:struct:zodiac) (test then else))
+      (define-struct (vm:module-body zodiac:struct:zodiac) (vals invoke syntax?))
 
       ;; Tail position statements
       (define-struct (vm:void zodiac:struct:zodiac) (val))
@@ -64,11 +65,13 @@
       (define-struct (vm:wcm-remember! zodiac:struct:zodiac) (var val))
       (define-struct (vm:wcm-extract zodiac:struct:zodiac) (var))
       (define-struct (vm:check-global zodiac:struct:zodiac) (var))
+      (define-struct (vm:module-create zodiac:struct:zodiac) (ast))
 
       ;; a-values
       (define-struct (vm:global-varref zodiac:struct:zodiac) (var))
       (define-struct (vm:bucket zodiac:struct:zodiac) (var))
       (define-struct (vm:per-load-statics-table zodiac:struct:zodiac) ())
+      (define-struct (vm:per-invoke-statics-table zodiac:struct:zodiac) ())
       (define-struct (vm:cast zodiac:struct:zodiac) (val rep)) ; last resort
 
       ;; l-values (locations in memory)
@@ -76,6 +79,7 @@
       (define-struct (vm:static-varref zodiac:struct:zodiac) (var))
       (define-struct (vm:static-varref-from-lift struct:vm:static-varref) (lambda))
       (define-struct (vm:per-load-static-varref struct:vm:static-varref) ())
+      (define-struct (vm:per-invoke-static-varref struct:vm:static-varref) ())
       (define-struct (vm:per-load-static-varref-from-lift struct:vm:per-load-static-varref) (lambda))
       (define-struct (vm:primitive-varref zodiac:struct:zodiac) (var))
       (define-struct (vm:symbol-varref zodiac:struct:zodiac) (var))

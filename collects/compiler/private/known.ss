@@ -542,6 +542,18 @@
 		     [(zodiac:quote-syntax-form? ast)
 		      ast]
 		     
+		     ;;-----------------------------------------------------------
+		     ;; MODULE
+		     ;;
+		     [(zodiac:module-form? ast)
+
+		      (zodiac:set-module-form-body!
+		       ast
+		       (analyze! (zodiac:module-form-body ast)))
+
+		      ast]
+		     
+
 		     [else (compiler:internal-error
 			    ast
 			    (format "unsupported syntactic form (~a)"

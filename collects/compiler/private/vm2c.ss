@@ -236,10 +236,40 @@
 	      (fprintf port "  int dummy;~n")
 	      (emit-static-variable-fields! port (compiler:get-per-load-static-list)))
 	  (fprintf port "} Scheme_Per_Load_Statics;~n")
-	  (newline port)))
+	  (newline port)
 
-					; when statics have binding information, this need only register
-					; pointer declarations
+	  (let ([ht (make-hash-table)])
+	    ;; Gather per-invoke statics with the same invoke id
+	    (let ([l (compiler:get-per-invoke-static-list)])
+	      (for-each (lambda (p)
+			  (let ([mi (cdr p)]
+				[var (car p)])
+			    (hash-table-put! ht (varref:module-invoke-id mi)
+					     (cons var
+						   (hash-table-get
+						    ht
+						    (varref:module-invoke-id mi)
+						    (lambda () null))))))
+			l)
+	      ;; Make sure that every module has a struct:
+	      (let loop ([i 0])
+		(unless (= i (get-num-module-invokes))
+		  (hash-table-get ht i (lambda ()
+					 (hash-table-put! ht i null)))
+		  (loop (add1 i))))
+	      (hash-table-for-each
+	       ht
+	       (lambda (id vars)
+		 (fprintf port "/* compiler-written per-invoke variables for module ~a */~n" id)
+		 (fprintf port "typedef struct Scheme_Per_Invoke_Statics_~a {~n" id)
+		 (if (null? vars)
+		     (fprintf port "  int dummy;~n")
+		     (emit-static-variable-fields! port vars))
+		 (fprintf port "} Scheme_Per_Invoke_Statics_~a;~n" id)
+		 (newline port)))))))
+
+      ;; when statics have binding information, this need only register
+      ;; pointer declarations
       (define vm->c:emit-registration!
 	(lambda (port)
 	  (fprintf port "~a/* register compiler-written static variables with GC */~n"
@@ -286,7 +316,7 @@
 	    (caloop (cdr l) (add1 pos)))))
 
       (define (vm->c:emit-top-levels! kind return? per-load? count vm-list locals-list 
-				      globals-list max-arity c-port)
+				      globals-list max-arity module mod-syntax? c-port)
 	;; count == -1 => go to the end of the list
 	(let tls-loop ([i 0]
 		       [n 0]
@@ -297,7 +327,9 @@
 		   "static ~a ~a_~a(Scheme_Env * env~a)~n{~n"
 		   (if return? "Scheme_Object *" "void")
 		   kind i
-		   (if per-load? ", Scheme_Per_Load_Statics *PLS" ""))
+		   (if module
+		       (format ", Scheme_Per_Invoke_Statics_~a *PMIS" module)
+		       (if per-load? ", Scheme_Per_Load_Statics *PLS" "")))
 	  (when (> max-arity 0)
 	    (fprintf c-port
 		     "~aScheme_Object * arg[~a];~n"
@@ -317,30 +349,37 @@
 		  (if (or (null? vml) (= n count))
 		      i
 		      (tls-loop (add1 i) n vml ll bl)))
-		(begin
-		  (let ([start (zodiac:zodiac-start (car vml))])
-		    (fprintf c-port "~a{ /* [~a,~a] */~n" vm->c:indent-spaces
-			     (zodiac:location-line start)
-			     (zodiac:location-column start)))
-		  (vm->c:emit-local-variable-declarations! 
-		   (car ll)
-		   (string-append vm->c:indent-spaces vm->c:indent-spaces)
-		   c-port)
-		  (vm->c:emit-local-bucket-declarations! 
-		   (car bl)
-		   (string-append vm->c:indent-spaces vm->c:indent-spaces)
-		   #t
-		   c-port)
-		  (vm->c:emit-bucket-lookups! 
-		   (car bl)
-		   (string-append vm->c:indent-spaces vm->c:indent-spaces)
-		   c-port)
-		  
-		  (vm->c-expression (car vml) #f c-port vm->c:indent-by #t)
-		  
-		  (fprintf c-port "~a}~n" vm->c:indent-spaces)
-		  
-		  (loop (sub1 c) (add1 n) (cdr vml) (cdr ll) (cdr bl)))))))
+		(if (not (or (and (not module)
+				  (not (vm:module-body? (car vml))))
+			     (and module
+				  (vm:module-body? (car vml))
+				  (is-module-invoke? (vm:module-body-invoke (car vml))  module)
+				  (eq? (vm:module-body-syntax? (car vml)) mod-syntax?))))
+		    (loop c n (cdr vml) (cdr ll) (cdr bl))
+		    (begin
+		      (let ([start (zodiac:zodiac-start (car vml))])
+			(fprintf c-port "~a{ /* [~a,~a] */~n" vm->c:indent-spaces
+				 (zodiac:location-line start)
+				 (zodiac:location-column start)))
+		      (vm->c:emit-local-variable-declarations! 
+		       (car ll)
+		       (string-append vm->c:indent-spaces vm->c:indent-spaces)
+		       c-port)
+		      (vm->c:emit-local-bucket-declarations! 
+		       (car bl)
+		       (string-append vm->c:indent-spaces vm->c:indent-spaces)
+		       #t
+		       c-port)
+		      (vm->c:emit-bucket-lookups! 
+		       (car bl)
+		       (string-append vm->c:indent-spaces vm->c:indent-spaces)
+		       c-port)
+		      
+		      (vm->c-expression (car vml) #f c-port vm->c:indent-by #t)
+		      
+		      (fprintf c-port "~a}~n" vm->c:indent-spaces)
+		      
+		      (loop (sub1 c) (add1 n) (cdr vml) (cdr ll) (cdr bl))))))))
 
       (define vm->c:emit-vehicle-prototype
 	(lambda (port number)
@@ -429,6 +468,9 @@
 				[(scheme-object) "Scheme_Object *"]
 				[(scheme-bucket) "Scheme_Bucket *"]
 				[(scheme-per-load-static) "struct Scheme_Per_Load_Statics *"]
+				[(scheme-per-invoke-static) 
+				 (format "struct Scheme_Per_Invoke_Statics_~a *"
+					 (varref:module-invoke-id (rep:struct-field-orig-name rep)))]
 				[(label) "int"]
 				[(prim) "Scheme_Closed_Primitive_Proc"]
 				[(prim-case) "Scheme_Closed_Case_Primitive_Proc"]
@@ -473,20 +515,27 @@
 	(lambda (globals indent top-level? port)
 	  (for-each 
 	   (lambda (var)
-	     (if (const:per-load-statics-table? var)
-		 (unless top-level?
-		   (fprintf port "~aScheme_Per_Load_Statics * PLS;~n"
-			    indent))
-		 (fprintf port "~aScheme_Bucket * G~a;~n"
-			  indent
-			  (vm->c:convert-symbol (mod-glob-cname var)))))
+	     (cond
+	      [(const:per-load-statics-table? var)
+	       (unless top-level?
+		 (fprintf port "~aScheme_Per_Load_Statics * PLS;~n"
+			  indent))]
+	      [(varref:module-invoke? var)
+	       (unless top-level?
+		 (fprintf port "~aScheme_Per_Invoke_Statics_~a * PMIS;~n"
+			  indent (varref:module-invoke-id var)))]
+	      [else
+	       (fprintf port "~aScheme_Bucket * G~a;~n"
+			indent
+			(vm->c:convert-symbol (mod-glob-cname var)))]))
 	   (set->list globals))))
 
       (define vm->c:emit-bucket-lookups!
 	(lambda (globals indent port)
 	  (for-each 
 	   (lambda (var)
-	     (unless (const:per-load-statics-table? var)
+	     (unless (or (const:per-load-statics-table? var)
+			 (varref:module-invoke? var))
 	       (let ([name (vm->c:convert-symbol (mod-glob-cname var))]
 		     [mod (mod-glob-modname var)]
 		     [var (mod-glob-varname var)]
@@ -685,31 +734,44 @@
 	    (if (null? vars)
 		undefines
 		(let ([var (car vars)])
-		  (if (const:per-load-statics-table? var)
-		      (begin
-			(fprintf port 
-				 (if (compiler:option:unpack-environments)
-				     "~aPLS = env->pls;~n"
-				     "#~adefine PLS env->pls~n")
-				 indent)
-			(loop (cdr vars)
-			      (if (compiler:option:unpack-environments)
-				  undefines
-				  (cons "PLS" undefines))))
-		      (let* ([vname (mod-glob-cname var)]
-			     [name (vm->c:convert-symbol vname)]
-			     [fname (rep:find-field (closure-code-rep code) vname)])
-			(fprintf port 
-				 (if (compiler:option:unpack-environments)
-				     "~aG~a = env->~a;~n"
-				     "#~adefine G~a env->~a~n")
-				 indent
-				 name
-				 fname)
-			(loop (cdr vars)
-			      (if (compiler:option:unpack-environments)
-				  undefines
-				  (cons (string-append "G" name) undefines))))))))))
+		  (cond
+		   [(const:per-load-statics-table? var)
+		    (begin
+		      (fprintf port 
+			       (if (compiler:option:unpack-environments)
+				   "~aPLS = env->pls;~n"
+				   "#~adefine PLS env->pls~n")
+			       indent)
+		      (loop (cdr vars)
+			    (if (compiler:option:unpack-environments)
+				undefines
+				(cons "PLS" undefines))))]
+		   [(varref:module-invoke? var)
+		    (begin
+		      (fprintf port 
+			       (if (compiler:option:unpack-environments)
+				   "~aPMIS = env->pmis;~n"
+				   "#~adefine PMIS env->pmis~n")
+			       indent)
+		      (loop (cdr vars)
+			    (if (compiler:option:unpack-environments)
+				undefines
+				(cons "PMIS" undefines))))]
+		   [else
+		    (let* ([vname (mod-glob-cname var)]
+			   [name (vm->c:convert-symbol vname)]
+			   [fname (rep:find-field (closure-code-rep code) vname)])
+		      (fprintf port 
+			       (if (compiler:option:unpack-environments)
+				   "~aG~a = env->~a;~n"
+				   "#~adefine G~a env->~a~n")
+			       indent
+			       name
+			       fname)
+		      (loop (cdr vars)
+			    (if (compiler:option:unpack-environments)
+				undefines
+				(cons (string-append "G" name) undefines))))]))))))
       
       (define vm->c:emit-case-prologue
 	(lambda (L which pre-decl lsuffix indent port)
@@ -844,7 +906,7 @@
       
 
       (define vm->c:block-statement?
-	(one-of vm:if? vm:sequence?))
+	(one-of vm:if? vm:sequence? vm:module-body?))
 
       (define vm->c:extract-inferred-name
 	(let ([nullsym (string->symbol "NULL")])
@@ -905,8 +967,9 @@
 	      (cond
 	       
 	       ;; (%sequence V ...) -> { M; ... }
-	       [(vm:sequence? ast)
-		(let* ([seq (vm:sequence-vals ast)])
+	       [(or (vm:sequence? ast)
+		    (vm:module-body? ast))
+		(let* ([seq ((if (vm:sequence? ast) vm:sequence-vals vm:module-body-vals) ast)])
 		  (when braces? (emit-indentation) (emit "{~n"))
 		  (for-each (lambda (v)
 			      (process v (indent) #t #t)
@@ -1193,6 +1256,9 @@
 				   (vm->c:convert-symbol
 				    (mod-glob-cname (vm:check-global-var ast)))))]
 	       
+	       [(vm:module-create? ast)
+		(emit-expr "MODULE_CREATE")]
+
 	       ;; with-continuation-mark
 	       [(vm:wcm-mark!? ast)
 		(emit-expr "scheme_set_cont_mark(")
@@ -1287,6 +1353,9 @@
 	       [(vm:per-load-statics-table? ast)
 		(emit-expr "PLS")]
 
+	       [(vm:per-invoke-statics-table? ast)
+		(emit-expr "PMIS")]
+
 	       ;; use apply-known? flag
 	       ;; 0 args => pass NULL for arg vector
 	       ;; (apply A <argc>) --> _scheme_apply(A, argc, arg)
@@ -1361,6 +1430,9 @@
 
 	       [(vm:per-load-static-varref? ast)
 		(emit-expr "PLS->~a" (vm->c:convert-symbol (vm:static-varref-var ast)))]
+	       
+	       [(vm:per-invoke-static-varref? ast)
+		(emit-expr "PMIS->~a" (vm->c:convert-symbol (vm:static-varref-var ast)))]
 	       
 	       [(vm:static-varref? ast)
 		(emit-expr "S.~a" (vm->c:convert-symbol (vm:static-varref-var ast)))]

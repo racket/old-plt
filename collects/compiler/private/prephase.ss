@@ -29,6 +29,7 @@
 ;;        the varref:primitive attribute can be added
 ;;    quote - 'immutable for known immutable quoted vars
 ;;    lambda - an inferred name (temporary)
+;;    module - a module-info record
 ;;; ------------------------------------------------------------
 
 (module prephase mzscheme
@@ -578,6 +579,23 @@
 		     ;; QUOTE-SYNTAX
 		     ;;
 		     [(zodiac:quote-syntax-form? ast)
+		      ast]
+
+		     ;;-----------------------------------------------------------
+		     ;; MODULE
+		     ;;
+		     [(zodiac:module-form? ast)
+
+		      (set-annotation! ast (make-module-info (make-module-invoke) #f))
+
+		      (zodiac:set-module-form-body!
+		       ast
+		       (prephase! (zodiac:module-form-body ast)
+				  #f #f))
+		      (zodiac:set-module-form-syntax-body!
+		       ast
+		       (prephase! (zodiac:module-form-syntax-body ast)
+				  #f #f))
 		      ast]
 		     
 

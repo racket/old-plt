@@ -54,14 +54,21 @@
     (varref:empty-attributes
      varref:add-attribute!
      varref:has-attribute?
-     
+     varref:invoke-module
+
      varref:static
      varref:per-load-static
+     varref:per-invoke-static
      varref:primitive
      varref:symbol
      varref:inexact
      varref:env
-     
+
+     (struct varref:module-invoke (id))
+     make-module-invoke
+     get-num-module-invokes
+     is-module-invoke?
+
      (struct compiler:make-closure (lambda free-vars args name))
      
      (struct binding (rec?       ; part of a letrec recursive binding set
@@ -91,6 +98,10 @@
      (struct case-code (has-continue?))
 
      (struct app (tail? prim? prim-name))
+
+     (struct module-info (invoke part))
+
+     varref:current-invoke-module
 
      compiler:bound-varref->binding 
 
@@ -171,8 +182,10 @@
 
      compiler:get-static-list
      compiler:get-per-load-static-list
+     compiler:get-per-invoke-static-list
      
      compiler:add-per-load-static-list!
+     compiler:add-per-invoke-static-list!
 
      compiler:make-const-constructor
 
@@ -210,6 +223,7 @@
 
      compiler:get-define-list
      compiler:get-per-load-define-list
+     compiler:get-per-invoke-define-list
 
      compiler:init-define-lists!
 
@@ -218,6 +232,7 @@
 
      compiler:add-local-define-list!
      compiler:add-local-per-load-define-list!
+     compiler:add-local-per-invoke-define-list!
      
      (struct case-info (body case-code global-vars used-vars captured-vars max-arity))
 
@@ -275,7 +290,8 @@
   (define-signature compiler:vmstructs^
     ((struct vm:sequence (vals))
      (struct vm:if (test then else))
-     
+     (struct vm:module-body (vals invoke syntax?))
+
      (struct vm:void (val))
      (struct vm:return (val))
      (struct vm:tail-apply (closure argc prim))
@@ -305,16 +321,19 @@
      (struct vm:wcm-remember! (var val))
      (struct vm:wcm-extract (var))
      (struct vm:check-global (var))
+     (struct vm:module-create (ast))
 
      (struct vm:global-varref (var))
      (struct vm:bucket (var))
      (struct vm:per-load-statics-table ())
+     (struct vm:per-invoke-statics-table ())
      (struct vm:cast (val rep)) ; last resort
 
      (struct vm:local-varref (var binding))
      (struct vm:static-varref (var))
      (struct vm:static-varref-from-lift (lambda))
      (struct vm:per-load-static-varref ())
+     (struct vm:per-invoke-static-varref ())
      (struct vm:per-load-static-varref-from-lift (lambda))
      (struct vm:primitive-varref (var))
      (struct vm:symbol-varref (var))

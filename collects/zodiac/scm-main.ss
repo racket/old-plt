@@ -341,18 +341,11 @@
     (when (language>=? 'side-effecting)
       (add-micro-form 'set!-values scheme-vocabulary
 	(let* ((kwd '(set!-values))
-		(in-pattern-1 '(set!-values () val))
-		(in-pattern-2 '(set!-values (vars ...) val))
-		(m&e-1 (pat:make-match&env in-pattern-1 kwd))
-		(m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+		(in-pattern '(set!-values (vars ...) val))
+		(m&e (pat:make-match&env in-pattern kwd)))
 	  (lambda (expr env attributes vocab)
 	    (cond
-	      ((pat:match-against m&e-1 expr env)
-		=>
-		(lambda (p-env)
-		  (let ((val (pat:pexpand 'val p-env kwd)))
-		    (expand-expr val env attributes vocab))))
-	      ((pat:match-against m&e-2 expr env)
+	      ((pat:match-against m&e expr env)
 		=>
 		(lambda (p-env)
 		  (let* ((vars (pat:pexpand '(vars ...) p-env kwd))
@@ -363,7 +356,8 @@
 			  `(let-values ((,new-names ,val))
 			     ,@(map (lambda (var new-name)
 				      `(set! ,var ,new-name))
-				 vars new-names))
+				 vars new-names)
+			     (#%void))
 			  expr)
 			env attributes vocab)))))
 	      (else

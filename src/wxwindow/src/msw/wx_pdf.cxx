@@ -19,6 +19,11 @@
 #include "wx_timer.h"
 #include <direct.h>
 
+extern "C" {
+  struct Scheme_Thread_Memory *scheme_remember_thread(void *);
+  void scheme_forget_thread(struct Scheme_Thread_Memory *);
+};
+
 typedef struct {
   wxPDF f;
   void *data;
@@ -113,12 +118,16 @@ BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
    if (!(th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)DoPrim, _data, 0, &id))) {
      result = f(data, top);
    } else {
+     struct Scheme_Thread_Memory *thread_memory = scheme_remember_thread((void *)th);
+
      WaitForSingleObject(_data->ready_sema, INFINITE);
      AttachThreadInput(id, GetCurrentThreadId(), TRUE);
      ReleaseSemaphore(_data->go_sema, 1, &old);
 
      wxDispatchEventsUntil(Check, (void *)_data);
 
+     WaitForSingleObject(th, INFINITE);
+     scheme_forget_thread(thread_memory);
      CloseHandle(th);
 
      result = _data->result;

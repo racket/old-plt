@@ -433,13 +433,6 @@ ptr_t cold_gc_frame;
 #   endif /* !THREADS */
 }
 
-static int done_only_time; /* MATTHEW */
-#ifdef MSWIN32
-# define DO_DYNLIB_ONLY_ONCE 0
-#else
-# define DO_DYNLIB_ONLY_ONCE 0
-#endif
-
 /*
  * Call the mark routines (GC_tl_push for a single pointer, GC_push_conditional
  * on groups of pointers) on every top level accessible pointer.
@@ -472,11 +465,8 @@ ptr_t cold_gc_frame;
      /* Reregister dynamic libraries, in case one got added.	*/
 #      if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(PCR)) \
            && !defined(SRC_M3)
-	if (!done_only_time) { /* MATTHEW */
-         GC_remove_tmp_roots();
-         GC_register_dynamic_libraries();
-	 done_only_time = DO_DYNLIB_ONLY_ONCE; /* MATTHEW */
-	}
+       GC_remove_tmp_roots();
+       GC_register_dynamic_libraries();
 #      endif
      /* Mark everything in static data areas                             */
        for (i = 0; i < n_root_sets; i++) {

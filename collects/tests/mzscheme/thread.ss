@@ -84,6 +84,8 @@
 (test #f custodian? 1)
 (arity-test custodian? 1 1)
 
+(arity-test custodian-shutdown-all 1 1)
+
 (arity-test make-custodian 0 1)
 (error-test '(make-custodian 0))
 

@@ -1133,4 +1133,13 @@ extern int scheme_internal_checking_char;
 #define MZTHREAD_NEED_KILL_CLEANUP 0x8
 #define MZTHREAD_STILL_RUNNING(running) ((running) && !((running) & MZTHREAD_KILLED))
 
+#ifdef WINDOWS_PROCESSES
+struct Scheme_Thread_Memory *scheme_remember_thread(void *);
+void scheme_remember_subthread(struct Scheme_Thread_Memory *, void *);
+void scheme_forget_thread(struct Scheme_Thread_Memory *);
+void scheme_forget_subthread(struct Scheme_Thread_Memory *);
+void scheme_suspend_remembered_threads(void);
+void scheme_resume_remembered_threads(void);
+#endif
+
 #endif /* __mzscheme_private__ */

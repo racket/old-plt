@@ -22,6 +22,11 @@
 
 extern long last_msg_time;
 
+extern "C" {
+  struct Scheme_Thread_Memory *scheme_remember_thread(void *);
+  void scheme_forget_thread(struct Scheme_Thread_Memory *);
+};
+
 extern void wxDoPreGM(void);
 extern void wxDoPostGM(void);
 extern int wxCheckMousePosition();
@@ -282,6 +287,7 @@ void MrEdMSWSleep(float secs, void *fds)
     HANDLE th2;
     DWORD result;
     DWORD id;
+    struct Scheme_Thread_Memory *thread_memory;
 
     if (r->set.fd_count || w->set.fd_count || e->set.fd_count) {
       fake = socket(PF_INET, SOCK_STREAM, 0);
@@ -290,6 +296,10 @@ void MrEdMSWSleep(float secs, void *fds)
       th2 = CreateThread(NULL, 5000, 
 	              (LPTHREAD_START_ROUTINE)signal_fddone,
 		      fds, 0, &id);
+      /* Not actually necessary, since GC can't occur during the
+	 thread's life, but better safe than sorry if we change the
+	 code later. */
+      thread_memory = scheme_remember_thread((void *)th2);
     
       rps[num_handles] = 0;
       handles[num_handles++] = th2;
@@ -308,6 +318,8 @@ void MrEdMSWSleep(float secs, void *fds)
 
     if (th2) {
       closesocket(fake);
+      WaitForSingleObject(th2, INFINITE);
+      scheme_forget_thread(thread_memory);
       CloseHandle(th2);
     }
   } else {

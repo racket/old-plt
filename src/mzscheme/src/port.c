@@ -74,6 +74,7 @@ static int mzerrno = 0;
 #include "schfd.h"
 
 #if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
+static void init_thread_memory();
 # ifdef NO_STDIO_THREADS 
 #  undef DETECT_WIN32_CONSOLE_STDIN
 # else
@@ -412,6 +413,10 @@ scheme_init_port (Scheme_Env *env)
 {
   if (scheme_starting_up) {
     Scheme_Config *config = scheme_config;
+
+#ifdef WINDOWS_PROCESSES
+    init_thread_memory();
+#endif
     
     REGISTER_SO(scheme_eof);
     REGISTER_SO(scheme_orig_stdout_port);
@@ -1091,6 +1096,94 @@ void scheme_add_fd_eventmask(void *fds, int mask)
   ((win_extended_fd_set *)fds)->wait_event_mask |= mask;
 #endif
 }
+
+#ifdef WINDOWS_PROCESSES
+typedef struct Scheme_Thread_Memory {
+  void *handle;
+  void *subhandle;
+  struct Scheme_Thread_Memory *prev;
+  struct Scheme_Thread_Memory *next;
+} Scheme_Thread_Memory;
+
+Scheme_Thread_Memory *tm_start, *tm_next;
+
+extern void (*GC_collect_start_callback)(void);
+extern void (*GC_collect_end_callback)(void);
+
+static void init_thread_memory()
+{
+  REGISTER_SO(tm_start);
+  REGISTER_SO(tm_next);
+
+  /* We start with a pre-allocated tm because we
+     want to register a thread before performing any
+     allocations. */
+  tm_next = MALLOC_ONE(Scheme_Thread_Memory);
+
+  /* scheme_init_process() will replace these: */
+  GC_collect_start_callback = scheme_suspend_remembered_threads;
+  GC_collect_end_callback = scheme_resume_remembered_threads;
+}
+
+struct Scheme_Thread_Memory *scheme_remember_thread(void *t)
+{
+  Scheme_Thread_Memory *tm = tm_next;
+
+  tm->next = tm_start;
+  if (tm->next)
+    tm->next->prev = tm;
+  tm_start = tm;
+
+  tm_next = MALLOC_ONE(Scheme_Thread_Memory);
+
+  return tm;
+}
+
+void scheme_remember_subthread(struct Scheme_Thread_Memory *tm, void *t)
+{
+  tm->subhandle = t;
+}
+
+void scheme_forget_thread(struct Scheme_Thread_Memory *tm)
+{
+  if (tm->prev)
+    tm->prev->next = tm->next;
+  else
+    tm_start = tm->next;
+
+  if (tm->next)
+    tm->next = tm->prev;
+}
+
+void scheme_forget_subthread(struct Scheme_Thread_Memory *tm)
+{
+  tm->subhandle = NULL;
+}
+
+void scheme_suspend_remembered_threads(void)
+{
+  Scheme_Thread_Memory *tm;
+  
+  for (tm = tm_start; tm; tm = tm->next) {
+    SuspendThread((HANDLE)tm->handle);
+    if (tm->subhandle)
+      SuspendThread((HANDLE)tm->subhandle);
+  }
+}
+
+void scheme_resume_remembered_threads(void)
+{
+  Scheme_Thread_Memory *tm;
+  
+  for (tm = tm_start; tm; tm = tm->next) {
+    if (tm->subhandle)
+      ResumeThread((HANDLE)tm->subhandle);
+    ResumeThread((HANDLE)tm->handle);
+  }
+}
+
+#endif
+
 
 Scheme_Object *scheme_make_port_type(const char *name)
 {
@@ -2107,6 +2200,7 @@ typedef struct {
   OS_SEMAPHORE_TYPE interrupt;  /* hit when a char is ready */
   int stupid_eof_check;
   OS_SEMAPHORE_TYPE stupid_eof_check_going;
+  struct Scheme_Thread_Memory *thread_memory;
 #endif
   int need_wait;                 /* 1 => use ready_sema */
   OS_MUTEX_TYPE lock_mutex;      /* lock on remaining fields */
@@ -2227,6 +2321,7 @@ static void tested_file_close_input(Scheme_Input_Port *p)
     printf("have to kill reader thread\n");
     TerminateThread(tip->th, -1);
   }
+  scheme_forget_thread(tip->thread_memory);
   CloseHandle(tip->th);
   if (tip->stupid_eof_check_going)
     CloseHandle(tip->stupid_eof_check_going);
@@ -2348,12 +2443,18 @@ static long read_for_tested_file(void *data)
 	      if (!tip->stupid_eof_check_going)
 		tip->stupid_eof_check_going = MAKE_SEMAPHORE();
 
+	      /* Perhaps unlikely: parent thread is memorized, yet: */
+	      while (!tip->thread_memory)
+		Sleep(1);
+
 	      tip->stupid_eof_check = 0;
 	      th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StupidEofCheck, tip, 0, &id);
+	      scheme_remember_subthread(tip->thread_memory, (void *)th);
 	      WAIT_SEMAPHORE(tip->stupid_eof_check_going);
 
 	      WaitForSingleObject(th, 100);
 	      TerminateThread(th, 0);
+	      scheme_forget_subthread(tip->thread_memory);
 	      CloseHandle(th);
 
 	      if (tip->stupid_eof_check)
@@ -2449,6 +2550,7 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
     tip->th = (void *)_beginthreadex(NULL, 5000, 
 				     (LPTHREAD_START_ROUTINE)read_for_tested_file,
 				     tip, 0, &id);
+    tip->thread_memory = scheme_remember_thread((void *)tip->th);
   }
 #endif
 
@@ -7209,6 +7311,9 @@ static void default_sleep(float v, void *fds)
 	OS_THREAD_TYPE th;
 	Tcp_Select_Info *info;
 	tcp_t fake;
+#if defined(WIN32_FD_HANDLES)
+	struct Scheme_Thread_Memory *thread_memory;
+#endif
 
 	info = MALLOC_ONE(Tcp_Select_Info);
 
@@ -7225,6 +7330,10 @@ static void default_sleep(float v, void *fds)
 	  th = CreateThread(NULL, 5000, 
 			    (LPTHREAD_START_ROUTINE)select_for_tcp,
 			    info, 0, &id);
+	  /* Not actually necessary, since GC can't occur during the
+	     thread's life, but better safe than sorry if we change the
+	     code later. */
+	  thread_memory = scheme_remember_thread((void *)th);
 	}
 #endif	
 #if defined(USE_BEOS_PORT_THREADS)
@@ -7249,6 +7358,8 @@ static void default_sleep(float v, void *fds)
 	closesocket(fake); /* cause selector thread to end */
 
 #if defined(WIN32_FD_HANDLES)
+	WaitForSingleObject(th, INFINITE);
+	scheme_forget_thread(thread_memory);
 	CloseHandle(th);
 #endif
 	

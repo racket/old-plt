@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.14 1998/11/17 21:40:36 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.15 1999/07/06 16:52:20 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1172,7 +1172,7 @@ class wxFontNameItem : public wxObject
   int family; /* MATTHEW: [4] New font system */
   char *name;
   wxSuffixMap screen, printing, afm;
-  Bool isroman;
+  Bool isfamily;
 };
 
 static int WCoordinate(int w)
@@ -1280,7 +1280,7 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 			     int wt, int st)
 {
   const char *weight, *style; /* MATTHEW: [4] const */
-  char *v;
+  char *v, *rname;
   int i; /* MATTHEW: [14] Delete k & j */
   const char *names[3]; /* MATTHEW: [4] const */
 
@@ -1388,10 +1388,12 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	  goto found;
 	}
 
+      rname = (char *)((resname[0] == '@') ? resname + 1 : resname);
+
 #ifdef wx_msw
       /* MATTHEW: [4] For msw, there's a meaningful default */
       if (!v)
-	v = copystring(resname);
+	v = copystring(rname);
 #else
       if (!strcmp(devresname, "Screen")) {
 	if (v && (v[0] == '+')) {
@@ -1405,7 +1407,7 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	     -([^-]*)-(.*) => -\1-\2-<weight>-<style>-normal-*-*-%d-*-*-*-*-*-*
 	     ([^-].*[^-]) => \1
 	     */
-	  src = (v ? v : (char *)resname);
+	  src = (v ? v : (char *)rname);
 	  len = strlen(src);
 	  if (src[0] == '-') {
 	    int c = 0;
@@ -1477,6 +1479,7 @@ void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname
   
   item->id = fontid;
   item->family = family;
+  item->isfamily = (resname[0] != '@');
   
   sprintf(resource, "Family%s", resname);
   fam = NULL;
@@ -1502,13 +1505,6 @@ void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname
 
   item->name = copystring(resname);
 
-  /* MATTHEW: [14] Delay this: */
-#if 0
-  item->screen.Initialize(resname, "Screen");
-  item->printing.Initialize(resname, "PostScript");
-  item->afm.Initialize(resname, "Afm");
-#endif
-
   table->Put(fontid, item);
 }
 
@@ -1516,12 +1512,17 @@ void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname
 int wxFontNameDirectory::FindOrCreateFontId(const char *name, int family)
 {
   int id;
+  char *s;
 
   if ((id = GetFontId(name)))
     return id;
 
   id = GetNewFontId();
-  Initialize(id, family, name);
+
+  s = new char[strlen(name) + 2];
+  strcpy(s + 1, name);
+  s[0] = '@';
+  Initialize(id, family, s);
 
   return id;
 }
@@ -1581,6 +1582,9 @@ char *wxFontNameDirectory::GetFontName(int fontid)
   if (!item)
     return NULL;
 
+  if (item->isfamily)
+    return NULL;
+
   return item->name;
 }
 
@@ -1592,7 +1596,7 @@ int wxFontNameDirectory::GetFontId(const char *name) /* MATTHEW: [4] const */
 
   while ((node = table->Next())) {
     wxFontNameItem *item = (wxFontNameItem *)node->Data();
-    if (!strcmp(name, item->name))
+    if (!item->isfamily && !strcmp(name, item->name+1))
       return item->id;
   }
 

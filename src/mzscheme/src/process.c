@@ -409,7 +409,7 @@ void scheme_init_process(Scheme_Env *env)
   scheme_add_global_constant("custodian-shutdown-all",
 			     scheme_make_prim_w_arity(manager_close_all,
 						      "custodian-shutdown-all",
-						      0, 1),
+						      1, 1),
 			     env);
   scheme_add_global_constant("current-custodian", 
 			     scheme_register_parameter(current_manager,
@@ -1761,12 +1761,20 @@ static void get_ready_for_GC()
 #endif
    
   scheme_fuel_counter = 0;
+
+#ifdef WINDOWS_PROCESSES
+  scheme_suspend_remembered_threads();
+#endif
 }
 
 extern int GC_words_allocd;
 
 static void done_with_GC()
 {
+#ifdef WINDOWS_PROCESSES
+  scheme_resume_remembered_threads();
+#endif
+
   scheme_total_gc_time += (scheme_get_process_milliseconds() - start_this_gc_time);
 }
 

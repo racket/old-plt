@@ -281,7 +281,7 @@ char* wxButton::GetLabel(void)
 		return NULL;
 	if (cMacControl)
 	  ::GetControlTitle(cMacControl, pTitle);
-	wxMacPtoCString(pTitle, wxBuffer);
+	CopyPascalStringToC(pTitle, wxBuffer);
     return wxBuffer;
 }
 

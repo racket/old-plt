@@ -676,10 +676,11 @@ char *wxListBox::GetString(int N)
 	OSErr result;
 	
 	result = ALGetCell((void **)&stringHandle, &cell, cListReference);
-	if (result != noErr)
+	if (result != noErr) {
 		return NULL;
+	}
 
-        CopyPascalStringToC(*stringHandle,wxBuffer);
+    CopyPascalStringToC(*stringHandle,wxBuffer);
 	return wxBuffer;
 }
 

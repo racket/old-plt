@@ -626,8 +626,7 @@ char *wxChoice::GetString (int n)
 	if (n < 0 || n >= no_strings)
 		return NULL; // dummy
 	::GetMenuItemText(hDynMenu, n+1, s);
-	memcpy(wxBuffer, &s[1], s[0]);
-	wxBuffer[s[0]] = '\0';
+	CopypascalStringToC(s, wxBuffer);
 	return copystring(wxBuffer);
 }
 
@@ -648,8 +647,7 @@ char* wxChoice::GetLabel(void)
 {
 	int n;
 	if (sTitle && (n = sTitle[0])) {
-		memcpy(wxBuffer, &sTitle[1], n);
-		wxBuffer[n] = '\0';
+		CopyPascalStringToC(sTitle, wxBuffer);
 		return wxBuffer;
 	}
 	else
@@ -662,14 +660,12 @@ void wxChoice::SetLabel(char *label)
 		delete[] (char *)sTitle;
 	}
 	label = wxItemStripLabel(label);
-	int n = strlen(label);
 	sTitle = (StringPtr)new char[n+1];
-	sTitle[0] = n;
-	memcpy(&sTitle[1], label, n);
+	CopyCStringToPascal(label, sTitle);
 	
 	SetCurrentDC();
-        Rect r = TitleRect;
-        OffsetRect(&r,SetOriginX,SetOriginY);
+    Rect r = TitleRect;
+    OffsetRect(&r,SetOriginX,SetOriginY);
 	EraseRect(&r);
 	Paint();
 }

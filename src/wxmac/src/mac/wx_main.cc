@@ -67,11 +67,12 @@ int wxEntry(int argc, char* argv[])
 //	if (!wxTheApp->wx_class) wxTheApp->wx_class = macCopyString(argv[0]);
 
 	wxmac_startup_directory = scheme_os_getcwd(NULL, 0, NULL, 1);
+	wxREGGLOB(wxmac_startup_directory);
 	
 	FSSpec spec;
-        SInt16 vRefNum;
-        SInt32 dirID;
-        const Str255 fileName = "\p";
+    SInt16 vRefNum;
+    SInt32 dirID;
+    const Str255 fileName = "\p";
 #ifdef OS_X
         static char path_divider = '/';
 #else

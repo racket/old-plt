@@ -188,7 +188,7 @@ char* wxCheckBox::GetLabel(void)
 	if (cMacControl) {
 	  Str255 pLabel;
 	  ::GetControlTitle(cMacControl, pLabel);
-	  wxMacPtoCString(pLabel, wxBuffer);
+	  CopyPascalStringToC(pLabel, wxBuffer);
       return wxBuffer;
     } else if (buttonBitmap)
       return NULL;

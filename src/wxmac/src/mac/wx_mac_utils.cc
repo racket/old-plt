@@ -107,23 +107,6 @@ wxMacString1& wxMacString1::operator=(char* cString)
 }
 
 //-----------------------------------------------------------------------------
-void wxMacCtoPString(char* theCString, Str255 thePString)
-{
-	long itsLength = strlen(theCString);
-	if (itsLength > 255) itsLength = 255;
-	BlockMove(theCString, thePString+1, itsLength); // BlockMove allows args to overlap
-	thePString[0] = itsLength;
-}
-
-//-----------------------------------------------------------------------------
-void wxMacPtoCString(Str255 thePString, char* theCString)
-{
-	long itsLength = thePString[0];
-	BlockMove(thePString+1, theCString, itsLength); // BlockMove allows args to overlap
-	theCString[itsLength] = 0;
-}
-
-//-----------------------------------------------------------------------------
 void wxError(const char *msg, const char *title)
 {	wxMessageBox((char *)msg, (char *)title,wxOK);		
 }

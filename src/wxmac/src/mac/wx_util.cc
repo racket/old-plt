@@ -66,7 +66,6 @@ extern "C" {
 #if 0
 static DIR *wxDirStream = NULL;
 #endif
-static char *wxFileSpec = NULL;
 static int wxFindFileFlags = 0;
 
 extern "C" {

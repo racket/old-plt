@@ -145,7 +145,7 @@ char* wxScrollBar::GetLabel()
 	Str255	pLabel;
 
 	::GetControlTitle(cMacControl, pLabel);
-	wxMacPtoCString(pLabel, wxBuffer);
+	::CopyPascalStringToC(pLabel, wxBuffer);
     return wxBuffer;
 }
 

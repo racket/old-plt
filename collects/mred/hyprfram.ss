@@ -68,7 +68,9 @@
 			    (cond
 			      [(null? tags-left)
 			       (send edit show-message
-				     "Unable to find destination position."
+				     (format
+				      "Unable to find destination position for ~s."
+				      tag)
 				     "Error")]
 			      [(string=? tag (mred:hyper-edit:hypertag-name (car tags-left)))
 			       (send edit set-position 
@@ -306,6 +308,6 @@
 
     (define hyper-text-require (lambda () (void)))
 
-    (mred:handler:insert-format-handler  "Hyper-Text" "htx" 
+    (mred:handler:insert-format-handler  "Hyper-Text" '("htx" "html")
 					  (lambda (filename group)
 					    (open-hyper-make filename group)))))

@@ -7,6 +7,7 @@
     (import [mred:debug : mred:debug^]
 	    [mred:edit : mred:edit^]
 	    [mred:hyper-dialog : mred:hyper-dialog^]
+	    [mred:html : mred:html^]
 	    [mzlib:file : mzlib:file^]
 	    [mzlib:string : mzlib:string^])
 	    
@@ -49,7 +50,7 @@
 		   find-snip get-snip-position line-start-position
 		   get-visible-line-range scroll-to-position position-line
 		   begin-write-header-footer-to-file end-write-header-footer-to-file
-		   write-to-file set-filename
+		   write-to-file set-filename get-file-format
 		   set-clickback  remove-clickback set-file-format
 		   get-frame insert-image)
 	  (rename [super-get-filename get-filename]
@@ -291,8 +292,10 @@
 	       (lambda (edit start end)
 		 (catch-errors 
 		  (lambda (err-msg)
-		    (show-message "Unable to find destination position."
-				  "Error"))
+		    (show-message 
+		     (format "Unable to find destination position ~s?~n~a" 
+			     tag err-msg)
+		     "Error"))
 		  (lambda () #f)
 		  (if follow-on-click?
 		      (let ([filename  
@@ -390,31 +393,39 @@
 			      (set-position  (hypertag-position (car tags-left)))]
 			     [else (tags-loop (cdr tags-left))])))))]
 	    [add-link 
-	     (lambda (start end filename tag)
+	     (opt-lambda (start end filename tag [promise-ok? #f])
 	       (let* ([new-link (make-hyperlink start end filename tag)]
 		      [set-clickback  (if (not (null? follow-on-click?))
 					  set-clickback 
 					  (lambda args #t))]
 		      [new-links-list
-		       (let insert-loop ([links-left hyperlinks-list])
-			 (if (null? links-left)
-			     (begin(set-clickback  start end 
+		       (if promise-ok?
+			   (begin
+			     (set-clickback start end 
+					    (make-clickback-funct filename tag))
+			     (cons new-link hyperlinks-list))
+			   (let insert-loop ([links-left hyperlinks-list])
+			     (if (null? links-left)
+				 (begin (set-clickback start end 
+						       (make-clickback-funct filename tag)) 
+					(cons new-link ()))
+				 (cond
+				  [(<= end (hyperlink-anchor-start(car links-left)))
+				   (cons (car links-left)(insert-loop (cdr links-left)))]
+				  [(>= start (hyperlink-anchor-end (car links-left)))
+				   (set-clickback  start end 
 						   (make-clickback-funct filename tag)) 
-				   (cons new-link ()))
-			     (cond
-			       [(<= end (hyperlink-anchor-start(car links-left)))
-				(cons (car links-left)(insert-loop (cdr links-left)))]
-			       [(>= start (hyperlink-anchor-end (car links-left)))
-				(set-clickback  start end 
-						(make-clickback-funct filename tag)) 
-				(cons new-link links-left)]
-			       [else (show-message 
-				      "A new link cannot overlap with a current link"
-				      "Error") 
-				     #f])))])
+				   (cons new-link links-left)]
+				  [else (show-message 
+					 "A new link cannot overlap with a current link"
+					 "Error") 
+					#f]))))])
 		 (if new-links-list
 		     (set! hyperlinks-list new-links-list))
 		 new-links-list))]
+	    [reverse-links
+	     (lambda ()
+	       (set! hyperlinks-list (reverse! hyperlinks-list)))]
 	    
 	    [remove-link    ;; walking links-list twice but it should be short?!
 	     (lambda (pos)
@@ -537,11 +548,9 @@
 				  name))
 			    pos))))]
 	    [get-filename
-	     (opt-lambda ([tmp? null])
-	       (let ([fn (super-get-filename tmp?)])
-		 (if (string? fn)
-		     (mzlib:file:normalize-path fn)
-		     ())))]
+	     (opt-lambda ([temp? null])
+	       (let ([fn (super-get-filename temp?)])
+		 (if (string? fn)(mzlib:file:normalize-path fn)())))]
 	    [update-directory
 	     (opt-lambda ([new-dir 
 			   (if (string? (get-filename))
@@ -573,6 +582,8 @@
 			    (update-directory)
 			    (install-clickbacks )
 			    (add-h-link-style)
+			    (when (= (get-file-format) wx:const-media-ff-text)
+				  (mred:html:html-convert this))
 			    (set-file-format wx:const-media-ff-std)
 			    #t)
 		     (begin (set-filename filename)

@@ -758,8 +758,10 @@
 			       [current-error-port orig-stderr])
 		  (init-transparent-io #f)
 		  (let* ([old-saved-newline? saved-newline?]
-			 [len (string-length s)]
-			 [s1 (if (and (> len 0)
+			 [len (and (string? s)
+				   (string-length s))]
+			 [s1 (if (and len
+				      (> len 0)
 				      (char=? (string-ref s (- len 1)) #\newline))
 				 (begin 
 				   (set! saved-newline? #t)
@@ -1241,24 +1243,10 @@
 	  [this-err (make-this-err)]
 	  [this-out (make-this-out)]
 	  [this-in (make-this-in)]
-	  [takeover
+	  [set-display/write-handlers
 	   (lambda ()
 	     (mred:debug:unless 
 	      'no-takeover
-	      (error-display-handler
-	       (let ([old (error-display-handler)])
-		 (rec console-error-display-handler
-		      (lambda (x)
-			(old x)
-			(flush-console-output)))))
-	      (current-output-port this-out)
-	      (current-input-port this-in)
-	      (current-error-port this-err)
-	      (port-read-handler this-in (lambda (x) (transparent-read)))
-	      (mzlib:pretty-print:pretty-print-display-string-handler 
-	       (lambda (string port)
-		 (for-each (lambda (x) (write-char x port))
-			   (string->list string))))
 	      (for-each (lambda (port port-out-write)
 			  (let ([original-write-handler (port-write-handler port)]
 				[original-display-handler (port-display-handler port)]
@@ -1285,14 +1273,33 @@
 					   mzlib:pretty-print:pretty-print
 					   original-write-handler)))
 			(list this-out this-err this-result)
-			(list this-out-write this-err-write this-result-write))))])
+			(list this-out-write this-err-write this-result-write))))]
+	  [takeover
+	   (lambda ()
+	     (mred:debug:unless 
+	      'no-takeover
+	      (error-display-handler
+	       (let ([old (error-display-handler)])
+		 (rec console-error-display-handler
+		      (lambda (x)
+			(old x)
+			(flush-console-output)))))
+	      (current-output-port this-out)
+	      (current-input-port this-in)
+	      (current-error-port this-err)
+	      (port-read-handler this-in (lambda (x) (transparent-read)))
+	      (mzlib:pretty-print:pretty-print-display-string-handler 
+	       (lambda (string port)
+		 (for-each (lambda (x) (write-char x port))
+			   (string->list string))))))])
 	(sequence
 	  (mred:debug:printf 'super-init "before console-edit%")
 	  (apply super-init args)
 	  (mred:debug:printf 'super-init "after console-edit%"))
 	(sequence
 	  (set-mode (make-object mred:scheme-mode:scheme-interaction-mode%))
-	  (takeover)))))
+	  (takeover)
+	  (set-display/write-handlers)))))
   
   (define console-edit% (make-console-edit% mred:edit:backup-autosave-edit%))
   

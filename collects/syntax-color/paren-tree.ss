@@ -74,6 +74,11 @@
            (send tree search-max!)
            (send tree add-to-root-length length))))
       
+      (define/public (truncate pos)
+        (let-values (((l r) (split tree pos)))
+          (set! tree l)))
+        
+      
       (define/public (match-forward pos)
         (send tree search! pos)
         (cond

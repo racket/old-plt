@@ -159,10 +159,10 @@
             ((>= edit-start-pos current-pos)
              (set! invalid-tokens-start (+ change-length invalid-tokens-start)))
             (else
-             (printf "here~n") 
              (send tokens search! (- edit-start-pos start-pos))
              (let-values (((tok-start tok-end valid-tree invalid-tree)
                            (send tokens split)))
+               (send parens truncate tok-start)
                (set! tokens valid-tree)
                (set! invalid-tokens-start (+ change-length invalid-tokens-start))
                (set! current-pos (+ start-pos tok-start)))))))
@@ -267,6 +267,7 @@
                     (off))))))
       
       (define in-match-parens? #f)
+
       (define match-parens
         (opt-lambda ([just-clear? #f])
           (unless in-match-parens?
@@ -338,9 +339,6 @@
       (rename (super-after-insert after-insert))
       (define/override (after-insert edit-start-pos change-length)
         (super-after-insert edit-start-pos change-length)
-        ;(unless (local-edit-sequence?)
-        ;  (when (has-focus?)
-        ;    (match-parens)))
         (do-insert/delete edit-start-pos change-length))
       
       (rename (super-after-delete after-delete))

@@ -34,6 +34,7 @@
   (define HTTPS-PORT-NUMBER (get-config 'https-port-number (add1 PORT-NUMBER)))
   (define SESSION-TIMEOUT (get-config 'session-timeout 300))
   (define SESSION-MEMORY-LIMIT (get-config 'session-memory-limit 40000000))
+  (define DEFAULT-FILE-NAME (get-config 'default-file-name "handin.scm"))
   (define MAX-UPLOAD (get-config 'max-upload 500000))
   (define MAX-UPLOAD-KEEP (get-config 'max-upload-keep 9))
   (define ID-REGEXP (get-config 'id-regexp #rx"^.*$"))
@@ -56,25 +57,48 @@
 					       "unable to clean up lock file: ~s" f))
 				      "users.ss"))
 		   "users.ss")
-  
+
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+  (define backup-prefix "BACKUP-")
+  (define backup-dir-re (regexp (format "^~a[0-9]+$" backup-prefix)))
+  (define (backup n) (format "~a~a" backup-prefix n))
+  (define (files+backups)
+    (let* ([files (directory-list)]
+           [backups (filter (lambda (f)
+                              (and (directory-exists? f)
+                                   (regexp-match backup-dir-re f)))
+                            files)])
+      (values (remove* backups files) backups)))
+  (define (do-backups)
+    (let-values ([(files backups) (files+backups)])
+      (define (make-backup-available n)
+        (when (member (backup n) backups)
+          (if (< n MAX-UPLOAD-KEEP)
+            (begin (make-backup-available (add1 n))
+                   (rename-file-or-directory (backup n) (backup (add1 n))))
+            (delete-directory/files (backup n)))))
+      (unless (null? files)
+        (LOG "backing up ~a" files)
+        (make-backup-available 0)
+        (make-directory (backup 0))
+        (for-each (lambda (file)
+                    (rename-file-or-directory file (build-path (backup 0) file)))
+                  files))))
+  (define (undo-backup)
+    ;; It is ok to just move BACKUP-0 to the real directory, the above will
+    ;; just find it available on later backups.
+    (let-values ([(files backups) (files+backups)])
+      (LOG "undoing backup")
+      (for-each delete-directory/files files)
+      (when (member (backup 0) backups)
+        (for-each (lambda (file)
+                    (rename-file-or-directory (build-path (backup 0) file) file))
+                  (directory-list (backup 0)))
+        (delete-directory (backup 0)))))
+
   (define (save-submission s part)
-    ;; Shift old files:
-    (when (file-exists? (format "~a0" part))
-      (when (file-exists? (format "~a~a" part MAX-UPLOAD-KEEP))
-	(delete-file (format "~a~a" part MAX-UPLOAD-KEEP)))
-      (let loop ([n MAX-UPLOAD-KEEP][log? #t])
-	(unless (zero? n)
-	  (let ([exists? (file-exists? (format "~a~a" part (sub1 n)))])
-	    (when exists?
-	      (when log?
-		(LOG "shifting ~a" (sub1 n)))
-	      (rename-file-or-directory 
-	       (format "~a~a" part (sub1 n))
-	       (format "~a~a" part n)))
-	    (loop (sub1 n) (not exists?))))))
-    (with-output-to-file (format "~a0" part)
+    (with-output-to-file part
       (lambda () (display s))))
 
   (define (accept-specific-submission user assignment r r-safe w)
@@ -88,36 +112,36 @@
 		       (positive? len))
 	    (error 'handin "bad length: ~s" len))
 	  (unless (len . < . MAX-UPLOAD)
-	    (error 'handin 
+	    (error 'handin
 		   "max handin file size is ~s bytes, file to handin is too big (~s bytes)"
-		   MAX-UPLOAD
-		   len))
+		   MAX-UPLOAD len))
 	  (fprintf w "go\n")
 	  (unless (regexp-match #rx"[$]" r-safe)
-	    (error 'handin 
+	    (error 'handin
 		   "did not find start-of-content marker"))
 	  (let ([s (read-string len r)])
 	    (unless (and (string? s) (= (string-length s) len))
-	      (error 'handin 
+	      (error 'handin
 		     "error uploading (got ~s, expected ~s bytes)"
 		     (if (string? s) (string-length s) s)
 		     len))
+            (do-backups)
 	    (LOG "checking ~a for ~a" assignment user)
-	    (let ([part
-		   (let ([checker (build-path 'up "checker.ss")])
-		     (if (file-exists? checker)
+	    (with-handlers ([void (lambda (e) (undo-backup) (raise e))])
+              (let ([part
+                     (let ([checker (build-path 'up "checker.ss")])
+                       (if (file-exists? checker)
 			 ((dynamic-require `(file ,(path->complete-path checker)) 'checker)
-			  user
-			  s)
-			 "handin"))])
-	      (fprintf w "confirm\n")
-	      (let ([v (read (make-limited-input-port r 50))])
-		(if (eq? v 'check)
+			  user s)
+			 DEFAULT-FILE-NAME))])
+                (fprintf w "confirm\n")
+                (let ([v (read (make-limited-input-port r 50))])
+                  (if (eq? v 'check)
 		    (begin
 		      (LOG "saving ~a for ~a" assignment user)
 		      (save-submission s part)
 		      (fprintf w "done\n"))
-		    (error 'handin "upload not confirmed: ~s" v)))))))))
+		    (error 'handin "upload not confirmed: ~s" v))))))))))
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

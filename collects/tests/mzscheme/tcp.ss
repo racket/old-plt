@@ -14,11 +14,13 @@
   (let-values ([(r w) (connect)])
     (printf "Hit return to start reading~n")
     (read-line)
-    (let loop ([last 'none-read])
+    (let loop ([last -1])
       (let ([v (read r)])
 	(if (eof-object? v)
 	    last
 	    (begin
+	      (unless (= v (add1 last))
+		(printf "skipped! ~a ~a~n" last v))
 	      (when (zero? (modulo v 50000))
 		(printf "~a~n" v))
 	      (loop v)))))))

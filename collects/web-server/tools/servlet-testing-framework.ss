@@ -10,18 +10,19 @@
 (module servlet-testing-framework mzscheme
   (require (lib "match.ss")
            (lib "list.ss")
+           (lib "url.ss" "net")
+           (lib "uri-codec.ss" "net")
            (lib "xml.ss" "xml")
 
-           "uri-codec.ss"
-           "url.ss"
-           "servlet-helpers.ss"
-           "servlet-tables.ss"
-           "connection-manager.ss"
-           "timer.ss"
-           (all-except "request-parsing.ss" request-bindings)
+           (lib "servlet.ss" "web-server")
+           (lib "servlet-tables.ss" "web-server")
+           (lib "connection-manager.ss" "web-server")
+           (lib "timer.ss" "web-server")
+           (all-except (lib "request-parsing.ss" "web-server")
+                       request-bindings)
            )
 
-  (provide start-servlet resume-servlet)
+  (provide start-servlet resume-servlet resume-servlet/headers)
 
   ;; Start the servlet
   (define (start-servlet svt)
@@ -30,48 +31,68 @@
   (define the-instance
     (make-servlet-instance 'id0 (make-hash-table) 0 (make-semaphore 0)))
 
-  ;; new-servlet-context: request o-port (-> void) (box ('a -> void))
-  ;; -> servlet-context
-  (define (new-servlet-context req op suspend abort)
+  ;; new-servlet-context: request o-port (-> void) -> servlet-context
+  (define (new-servlet-context req op suspend )
     (make-servlet-context
       the-instance
       (let ((cust (make-custodian)))
         (make-connection
-          (start-timer 15 (lambda () ((unbox abort) (void))))
+          (start-timer 15 (lambda () (custodian-shutdown-all cust)))
           (open-input-string "foo") op cust #t))
       req
       suspend))
 
-  ;; run-servlet: request ( -> void) -> s-expression
-  ;; Run a servlet and return its next response. Note that the servlet may be a
-  ;; continuation.
-  (define (run-servlet req svt)
-    (let* ((op    (open-output-string))
-           (abort (box #f))
-           (sc    (new-servlet-context req op (make-suspender op abort) abort)))
-      (update-current-servlet-context! sc)
-        (let/cc k
-          (set-box! abort k)
-          (svt))
-      (let ((ip (open-input-string (get-output-string op))))
-        (purify-port ip)
-        (xml->xexpr (read-xml/element ip)))))
+   ;; run-servlet: request string -> s-expression
+   ;; Run a servlet and return its next response. Note that the servlet may be a
+   ;; continuation.
+   (define (run-servlet req svt)
+     (let* ((cust (make-custodian))
+            (result-channel (make-channel))
+            (op (open-output-string))
+            (sc (new-servlet-context
+                  req op
+                  (make-suspender result-channel op cust))))
+       (parameterize ((current-custodian cust))
+         (thread
+           (lambda ()
+             (thread-cell-set! current-servlet-context sc)
+             (svt))))
+       (channel-get result-channel)))
 
-  ;; make-suspender: o-port (box (value -> void)) -> (-> void)
-  (define (make-suspender op abort)
-    (lambda () ((unbox abort) (void))))
+   ;; make-suspender: channel o-port custodian -> (-> void)
+   (define (make-suspender result-channel op cust)
+     (lambda ()
+       (channel-put
+         result-channel
+         (let ((ip (open-input-string (get-output-string op))))
+           (purify-port ip)
+           (xml->xexpr (read-xml/element ip))))))
 
-  ;; Resume the servlet
-  (define (resume-servlet prev-url input)
+  (define (resume-servlet/headers prev-url input headers)
+    (with-handlers
+      ((exn:fail:contract?
+         (lambda (e)
+           `(html (head (title "Timeout"))
+                  (body
+                    (p "The transaction referred to by this url is no longer "
+                       "active.  Please "
+                       (a ((href ,(servlet-instance-k-table the-instance)))
+                          "restart")
+                       " the transaction."))))))
     (let ((u (string->url prev-url)))
       (cond
-        ((embedded-ids? u)
+        ((continuation-url? u)
          => (lambda (res)
               (let ((k (hash-table-get (servlet-instance-k-table the-instance)
                                        (cadr res)))
-                    (new-req (new-request/url (embed-url-bindings input u))))
+                    (new-req (new-request/url+headers
+                               (embed-url-bindings input u) headers)))
                 (run-servlet new-req (lambda () (k new-req))))))
-        (else (error "url doesn't encode a servlet continuation")))))
+        (else (error "url doesn't encode a servlet continuation"))))))
+
+  ;; Resume the servlet
+  (define (resume-servlet prev-url input)
+    (resume-servlet/headers prev-url input '()))
 
   ;; embed-url-bindings: (listof (cons string string)) url -> url
   ;; encode bindings in a url
@@ -103,7 +124,11 @@
 
   ;; Produce a new request, with an url
   (define (new-request/url new-url)
-    (make-request 'get (remove-query new-url) '() (url-query new-url)
+    (new-request/url+headers new-url '()))
+
+  ;; Produce a new request, with an url and headers
+  (define (new-request/url+headers new-url headers)
+    (make-request 'get (remove-query new-url) headers (url-query new-url)
                   "a-host-ip" "a-client-ip"))
 
   ;; Produce a new request, with bindings

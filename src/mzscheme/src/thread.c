@@ -1223,9 +1223,9 @@ Scheme_Custodian_Reference *scheme_add_managed(Scheme_Custodian *m, Scheme_Objec
 
 void scheme_remove_managed(Scheme_Custodian_Reference *mr, Scheme_Object *o)
 {
-  /* This might be a good idea in practice, but I'm not sure: */
-  /*   scheme_subtract_finalizer(o, managed_object_gone, mr); */
-  /*   scheme_subtract_finalizer(o, rebox_willdone_object, mr); */
+  /* Is this a good idea? I'm not sure: */
+  scheme_subtract_finalizer(o, managed_object_gone, mr);
+  scheme_subtract_finalizer(o, rebox_willdone_object, mr);
 
   remove_managed(mr, o, NULL, NULL);
 }

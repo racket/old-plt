@@ -30,8 +30,7 @@
     int i;
     Scheme_Object * result = scheme_null;
     for(i = length - 1; i >= 0 ;i--)    {
-	printf(\"adding %f \n\",dbls[i]);
-       result = scheme_make_pair(scheme_make_double(dbls[i]),result);
+ 	result = scheme_make_pair(scheme_make_double(dbls[i]),result);
        }	
     return result;
   }

@@ -31,8 +31,10 @@
   ; normalze-vector : posn number number -> posn
   (define (normalize-vector vec x-sample-size y-sample-size)
     (let* ((size (vector-magnitude vec)))
-      (vector (* (/ (vector-x vec) size) x-sample-size 9/10)
-              (* (/ (vector-y vec) size) y-sample-size 9/10))))
+      (if (zero? size)
+          (vector 0 0)
+          (vector (* (/ (vector-x vec) size) x-sample-size 9/10)
+                  (* (/ (vector-y vec) size) y-sample-size 9/10)))))
       
   ; normalize-vector : listof-posn number number -> listolf-posn
   (define (normalize-vectors deltas x-sample-size y-sample-size)

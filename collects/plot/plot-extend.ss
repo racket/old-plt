@@ -107,4 +107,4 @@
   (provide 
    define-plot-type   
    (all-from (lib "view.ss" "plot"))
-   (all-from (lib "renderer-helpers.ss" "plot"))))
+   (all-from (lib "renderer-helpers.ss" "plot"))))>>>>>>> 1.3

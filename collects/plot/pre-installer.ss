@@ -206,4 +206,4 @@
                         ))
         (for-each delete-file fit-objs))))
                  
-  (provide pre-installer))
+  (provide pre-installer build-plot build-fit))

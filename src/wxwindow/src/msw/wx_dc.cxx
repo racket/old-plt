@@ -505,8 +505,21 @@ static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
   dc->SetClippingRegion(old);
 }
 
+static int round(float f)
+{
+  double d;
+  
+  (void)modf(f, &d);
+
+  return (int)d;
+}
+
 void wxDC::DrawArc(float x, float y, float w, float h, float start, float end)
 {
+  int xx1, yy1, xx2, yy2, hh, ww;
+  float cx, cy;
+  float rx1, ry1, rx2, ry2;
+
   HDC dc = ThisDC();
 
   if (!dc) return;
@@ -517,30 +530,34 @@ void wxDC::DrawArc(float x, float y, float w, float h, float start, float end)
     FillWithStipple(this, r, current_brush);
   }
 
-  int xx1, yy1, xx2, yy2, hh, ww, cx, cy;
-
   ShiftXY(x, y, xx1, yy1);
   ShiftXY(x + w, y + h, xx2, yy2);
   hh = yy2 - yy1;
   ww = xx2 - xx1;
+  
+  /* Adjust w & h for Windows conventions: */
+  hh++; xx2++;
+  ww++; yy2++;
 
-  cx = xx1 + ww/2;
-  cy = yy1 + hh/2;
+  cx = xx1 + (float)ww/2;
+  cy = yy1 + (float)hh/2;
 
-  float rx1, ry1, rx2, ry2;
-
-  rx1 = cx + (ww / 2) * cos(start);
-  ry1 = cy - ((hh / 2) * sin(start));
-  rx2 = cx + (ww / 2) * cos(end);
-  ry2 = cy - ((hh / 2) * sin(end));
+  rx1 = cx + ((float)ww / 2) * cos(start);
+  ry1 = cy - (((float)hh / 2) * sin(start));
+  rx2 = cx + ((float)ww / 2) * cos(end);
+  ry2 = cy - (((float)hh / 2) * sin(end));
 
   if (StartBrush(dc, 1)) {
-    Pie(dc, xx1, yy1, xx2, yy2, rx1, ry1, rx2, ry2);
+    Pie(dc, xx1, yy1, xx2, yy2, 
+	round(rx1), round(ry1), 
+	round(rx2), round(ry2));
     DoneBrush(dc);
   }
 
   if (StartPen(dc)) {
-    Arc(dc, xx1, yy1, xx2, yy2, rx1, ry1, rx2, ry2);
+    Arc(dc, xx1, yy1, xx2, yy2, 
+	round(rx1), round(ry1), 
+	round(rx2), round(ry2));
     DonePen(dc);
   }
   

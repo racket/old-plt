@@ -369,6 +369,7 @@
  (help-menu-label "&Aide")
  (about-info "Auteurs et détails concernant ce logiciel.")
  (about-menu-item "A propos de ...")
+ (help-menu-check-for-updates "Regarder les mises à jour...")
 
  ;;; help-desk-specific menus
  (new-help-desk "&Nouvelle Aide")
@@ -518,6 +519,7 @@
  (beginning-student "Etudiant niveau débutant")
  (beginning-student/abbrev "Etudiant niveau débutant avec abréviations pour les listes")
  (intermediate-student "Etudiant niveau intermédiaire")
+ (intermediate-student/lambda "Etudiant niveau intermédiaire, plus Lambda")
  (advanced-student "Etudiant niveau avancé")
  (full-language "Complet") ;; also in the HtDP languages section
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...

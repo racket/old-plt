@@ -706,6 +706,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   Scheme_Stack_State envss;
   Scheme_Comp_Env *save_current_local_env;
   Scheme_Process *p = scheme_current_process;
+  int set_overflow;
 
 #ifndef MZ_REAL_THREADS
   if (scheme_active_but_sleeping)
@@ -717,7 +718,6 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   old_cc_start = p->cc_start;
 
   p->cc_ok = cc_ok = (long *)scheme_malloc_atomic(sizeof(long));
-  p->cc_start = &v;
   
   if (old_cc_ok)
     *old_cc_ok = 0;
@@ -737,56 +737,65 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 
   save_current_local_env = p->current_local_env;
 
-  memcpy(&oversave, &p->overflow_buf, sizeof(mz_jmp_buf));
-  if (scheme_setjmp(p->overflow_buf)) {
-    while (1) {
-      Scheme_Overflow *overflow;
+  /* We set up an overflow handler at the lowest point possible
+     in the stack for each thread. When we create a thread,
+     we need to make sure that it starts out with a reasonable
+     amount of space. */
+  set_overflow = !p->overflow_set;
+  if (set_overflow) {
+    p->overflow_set = 1;
+    p->cc_start = &v;
+    memcpy(&oversave, &p->overflow_buf, sizeof(mz_jmp_buf));
+    if (scheme_setjmp(p->overflow_buf)) {
+      while (1) {
+	Scheme_Overflow *overflow;
 
-      overflow = MALLOC_ONE(Scheme_Overflow);
+	overflow = MALLOC_ONE(Scheme_Overflow);
       
-      memcpy(&overflow->cont, &scheme_overflow_cont, 
-	     sizeof(Scheme_Jumpup_Buf));
-      overflow->prev = p->overflow;
-      p->overflow = overflow;
+	memcpy(&overflow->cont, &scheme_overflow_cont, 
+	       sizeof(Scheme_Jumpup_Buf));
+	overflow->prev = p->overflow;
+	p->overflow = overflow;
       
-      memcpy(&overflow->savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-      if (scheme_setjmp(scheme_error_buf)) {
-	scheme_overflow_reply = NULL; /* means "continue the error" */
-      } else {
-	void *p1, *p2, *p3, *p4;
-	int i1, i2;
+	memcpy(&overflow->savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+	if (scheme_setjmp(scheme_error_buf)) {
+	  scheme_overflow_reply = NULL; /* means "continue the error" */
+	} else {
+	  void *p1, *p2, *p3, *p4;
+	  int i1, i2;
 	
-	p1 = p->ku.k.p1;
-	p2 = p->ku.k.p2;
-	p3 = p->ku.k.p3;
-	p4 = p->ku.k.p4;
-	i1 = p->ku.k.i1;
-	i2 = p->ku.k.i2;
+	  p1 = p->ku.k.p1;
+	  p2 = p->ku.k.p2;
+	  p3 = p->ku.k.p3;
+	  p4 = p->ku.k.p4;
+	  i1 = p->ku.k.i1;
+	  i2 = p->ku.k.i2;
 	
-	/* stack overflow is a lot of work; force a sleep */
-	scheme_process_block(0);
+	  /* stack overflow is a lot of work; force a sleep */
+	  scheme_process_block(0);
 	
-	p->ku.k.p1 = p1;
-	p->ku.k.p2 = p2;
-	p->ku.k.p3 = p3;
-	p->ku.k.p4 = p4;
-	p->ku.k.i1 = i1;
-	p->ku.k.i2 = i2;
+	  p->ku.k.p1 = p1;
+	  p->ku.k.p2 = p2;
+	  p->ku.k.p3 = p3;
+	  p->ku.k.p4 = p4;
+	  p->ku.k.i1 = i1;
+	  p->ku.k.i2 = i2;
 	
-	scheme_overflow_reply = scheme_overflow_k();
+	  scheme_overflow_reply = scheme_overflow_k();
+	}
+      
+	overflow = p->overflow;
+	memcpy(&scheme_error_buf, &overflow->savebuf, sizeof(mz_jmp_buf));
+	p->overflow = overflow->prev;
+	memcpy(&scheme_overflow_cont, &overflow->cont, 
+	       sizeof(Scheme_Jumpup_Buf));
+	overflow = NULL; /* Maybe helps GC */
+	/* Reset overflow buffer and continue */
+	if (scheme_setjmp(p->overflow_buf)) {
+	  /* handle again */
+	} else
+	  scheme_longjmpup(&scheme_overflow_cont);
       }
-      
-      overflow = p->overflow;
-      memcpy(&scheme_error_buf, &overflow->savebuf, sizeof(mz_jmp_buf));
-      p->overflow = overflow->prev;
-      memcpy(&scheme_overflow_cont, &overflow->cont, 
-	     sizeof(Scheme_Jumpup_Buf));
-      overflow = NULL; /* Maybe helps GC */
-      /* Reset overflow buffer and continue */
-      if (scheme_setjmp(p->overflow_buf)) {
-	/* handle again */
-      } else
-	scheme_longjmpup(&scheme_overflow_cont);
     }
   }
 
@@ -801,8 +810,11 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
       *old_ec_ok = 1;
     p->cc_ok = old_cc_ok;
     p->ec_ok = old_ec_ok;
-    p->cc_start = old_cc_start;  
-    memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
+    p->cc_start = old_cc_start;
+    if (set_overflow) {
+      memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
+      p->overflow_set = 0;
+    }
     scheme_longjmp(save, 1);
   }
 
@@ -812,7 +824,10 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 
   memcpy(&p->error_buf, &save, sizeof(mz_jmp_buf));
 
-  memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
+  if (set_overflow) {
+    memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
+    p->overflow_set = 0;
+  }
 
   *cc_ok = 0;
   if (old_cc_ok)

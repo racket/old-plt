@@ -35,6 +35,7 @@
 #endif
 
 #include "schpriv.h"
+#include "schmach.h"
 #include "schgc.h"
 #include <time.h>
 #ifdef FILES_HAVE_FDS
@@ -1256,14 +1257,80 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
 
 Scheme_Object *scheme_thread(Scheme_Object *thunk, Scheme_Config *config)
 {
-  long dummy;
-
-  return make_subprocess(thunk, (void *)&dummy, config, NULL);
+  return scheme_thread_w_manager(thunk, config, NULL);
 }
 
-Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *config, Scheme_Manager *mgr)
+/* Stuff for ensuring that a new thread has a reasonable starting stack: */
+#ifndef MZ_REAL_THREADS
+# ifdef DO_STACK_CHECK
+#  define THREAD_STACK_SPACE (STACK_SAFETY_MARGIN / 2)
+void scheme_check_stack_ok(char *s) {
+#  include "mzstkchk.h"
+  {
+    s[THREAD_STACK_SPACE] = 1;
+  } else {
+    s[THREAD_STACK_SPACE] = 0;
+  }
+}
+
+static int is_stack_too_shallow2(void)
+{
+  char s[THREAD_STACK_SPACE+1];
+  
+  scheme_check_stack_ok(s);
+  return s[THREAD_STACK_SPACE];
+}
+
+static int is_stack_too_shallow(void)
+{
+#  include "mzstkchk.h"
+  {
+    return 1;
+  }
+  return is_stack_too_shallow2();
+}
+
+static Scheme_Object *thread_k()
+{
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Object *thunk;
+  Scheme_Config *config;
+  Scheme_Manager *mgr;
+  long dummy;
+  
+  thunk = (Scheme_Object *)p->ku.k.p1;
+  config = (Scheme_Config *)p->ku.k.p2;
+  mgr = (Scheme_Manager *)p->ku.k.p3;
+
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
+  
+  return make_subprocess(thunk, (void *)&dummy, config, mgr);
+}
+# endif
+#endif
+
+Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *config, 
+				       Scheme_Manager *mgr)
 {
   long dummy;
+
+#ifndef MZ_REAL_THREADS
+# ifdef DO_STACK_CHECK
+  /* Make sure the thread starts out with a reasonable stack size, so
+     it doesn't thrash right away: */
+  if (is_stack_too_shallow()) {
+    Scheme_Process *p = scheme_current_process;
+
+    p->ku.k.p1 = thunk;
+    p->ku.k.p2 = config;
+    p->ku.k.p3 = mgr;
+
+    return scheme_handle_stack_overflow(thread_k);
+  }
+# endif
+#endif
 
   return make_subprocess(thunk, (void *)&dummy, config, mgr);
 }

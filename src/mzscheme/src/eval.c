@@ -1638,10 +1638,6 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq,
   return build_sequence(seq, to_linked, opt);
 }
 
-#ifndef STACK_SAFETY_MARGIN
-#define STACK_SAFETY_MARGIN 50000
-#endif
-
 #if defined(UNIX_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE)
 extern unsigned long GC_get_stack_base();
 #endif

@@ -26,17 +26,17 @@
 /* If stacks grow up then */
 
 #if !defined(STACK_GROWS_UP) && !defined(STACK_GROWS_DOWN)
-#define STACK_GROWS_UNKNOWN
+# define STACK_GROWS_UNKNOWN
 #endif
 
 #ifdef STACK_GROWS_UP
-#define STK_COMP(a,b) ((a) > (b))
+# define STK_COMP(a,b) ((a) > (b))
 #else
-#ifdef STACK_GROWS_DOWN
-#define STK_COMP(a,b) ((a) < (b))
-#else
-#define STK_COMP(a,b) (scheme_stack_grows_up == ((a) > (b)))
-#endif
+# ifdef STACK_GROWS_DOWN
+#  define STK_COMP(a,b) ((a) < (b))
+# else
+#  define STK_COMP(a,b) (scheme_stack_grows_up == ((a) > (b)))
+# endif
 #endif
 
 #ifdef SHORT_ALIGN
@@ -46,3 +46,7 @@ typedef long stack_val;
 #endif
 
 extern int scheme_stack_grows_up;
+
+#ifndef STACK_SAFETY_MARGIN
+# define STACK_SAFETY_MARGIN 50000
+#endif

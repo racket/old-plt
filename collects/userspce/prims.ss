@@ -152,7 +152,8 @@
        void?
        raise
        make-exn:else
-       current-continuation-marks))
+       current-continuation-marks
+       require-library/proc))
   (define intermediate
     '(number?
        =
@@ -304,7 +305,8 @@
        void?
        raise
        make-exn:else
-       current-continuation-marks))
+       current-continuation-marks
+       require-library/proc))
   (define advanced
     '(number?
        =
@@ -459,6 +461,7 @@
        raise
        make-exn:else
        current-continuation-marks
+       require-library/proc
        force
        promise?
        make-promise

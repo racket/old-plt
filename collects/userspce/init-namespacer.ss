@@ -213,16 +213,16 @@
 	     to-remove-from-intermediate]
 	    [(advanced)
 	     to-remove-from-advanced]
-	    [else
-             ;; must be null -- these namespaces have keywords
-	     null])])
-      (for-each undefine to-remove)
-      (for-each (lambda (x)
-		  (let ([name (car x)]
-			[str-name (symbol->string (car x))])
-		    (when (and (>= (string-length str-name) 2)
-			       (string=? (substring str-name 0 2)
-					 "#%"))
-		      (keyword-name name))))
-		(make-global-value-list)))))
+	    [else #f])])
+      (when to-remove
+        (for-each undefine to-remove)
+        (for-each (lambda (x)
+                    (let ([name (car x)]
+                          [str-name (symbol->string (car x))])
+                      (when (or (syntax? (global-defined-value name))
+                                (and (>= (string-length str-name) 2)
+                                     (string=? (substring str-name 0 2)
+                                               "#%")))
+                        (keyword-name name))))
+                  (make-global-value-list))))))
 

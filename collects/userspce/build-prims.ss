@@ -1,3 +1,8 @@
+(current-load 
+ (let ([ol (current-load)])
+   (lambda (x)
+     (printf "loading ~s~n" x)
+     (ol x))))
 (require-library "pretty.ss")
 (require-library "file.ss")
 

@@ -13,7 +13,7 @@
 	    init-vars
 	    clauses ...)
 	 (let ([se (lambda (msg expr)
-		     (raise-syntax-error 'class100*/names msg stx expr))])
+		     (raise-syntax-error 'class*/names msg stx expr))])
 	   ;; Check this and super-init:
 	   (unless (identifier? (syntax this-id))
 	     (se "not an identifier" (syntax this-id)))
@@ -55,13 +55,13 @@
 			    [id (identifier? (syntax id))
 				(list kind (syntax id) (syntax id) (syntax/loc (syntax id) (void)))]
 			    [(id expr) (identifier? (syntax id))
-			     (list kind (syntax id) (syntax id) (syntax expr))]
+				       (list kind (syntax id) (syntax id) (syntax expr))]
 			    [(id) (and can-rename? (identifier? (syntax id)))
-			     (list kind (syntax id) (syntax id) (syntax/loc (syntax id) (void)))]
+				  (list kind (syntax id) (syntax id) (syntax/loc (syntax id) (void)))]
 			    [((iid eid) expr) (and can-rename?
 						   (identifier? (syntax iid))
 						   (identifier? (syntax eid)))
-			     (list kind (syntax iid) (syntax eid) (syntax expr))]
+					      (list kind (syntax iid) (syntax eid) (syntax expr))]
 			    [else (se (format "bad ~a clause" kind) (syntax decl))]))
 			(syntax->list decls)))]
 		    [body 
@@ -98,7 +98,7 @@
 				     (list 'inherit (syntax id) (syntax id))]
 				 [(iid eid) (and (identifier? (syntax iid))
 						 (identifier? (syntax eid)))
-				  (list 'inherit (syntax iid) (syntax eid))]
+					    (list 'inherit (syntax iid) (syntax eid))]
 				 [else (se "bad inherit clause" decl)]))
 			     (syntax->list (syntax (id ...))))]
 			   [(sequence expr ...)
@@ -209,7 +209,6 @@
 	  "missing this and super-init bindings"
 	  (syntax bad-this-super)
 	  stx)])))
-       
   
   (define-syntax class100*
     (lambda (stx)
@@ -220,13 +219,12 @@
 	    clauses ...)
 	 (with-syntax ([this (datum->syntax-object (stx-car stx) 'this stx)]
 		       [super-init (datum->syntax-object (stx-car stx) 'super-init stx)])
-	   (syntax/loc
-	    stx
-	    (class100*/names (this super-init)
-			     super-expr 
-			     (interface-expr ...)
-			     init-vars
-			     clauses ...)))])))
+	   (syntax/loc stx
+	       (class100*/names (this super-init)
+				super-expr 
+				(interface-expr ...)
+				init-vars
+				clauses ...)))])))
 
   (define-syntax class100
     (lambda (stx)
@@ -234,26 +232,31 @@
 	[(_ super-expr
 	    init-vars
 	    clauses ...)
-	 (with-syntax ([class100* (datum->syntax-object (stx-car stx) 'class100* stx)])
-	   (syntax/loc stx (class100* super-expr () init-vars clauses ...)))])))
+	 (with-syntax ([this (datum->syntax-object (stx-car stx) 'this stx)]
+		       [super-init (datum->syntax-object (stx-car stx) 'super-init stx)])
+	   (syntax/loc stx 
+	       (class100*/names (this super-init) super-expr () init-vars 
+				clauses ...)))])))
 
   (define-syntax class100*-asi
     (lambda (stx)
       (syntax-case stx ()
 	[(_ super (interface ...) body ...)
-	 (with-syntax ([class100* (datum->syntax-object (stx-car stx) 'class100* stx)]
+	 (with-syntax ([this (datum->syntax-object (stx-car stx) 'this stx)]
 		       [super-init (datum->syntax-object (stx-car stx) 'super-init stx)])
 	   (syntax/loc stx 
-	     (class100* super (interface ...) args body ... (sequence (apply super-init args)))))])))
+	     (class100*/names (this super-init) super (interface ...) args 
+			      body ... (sequence (apply super-init args)))))])))
 
   (define-syntax class100-asi
     (lambda (stx)
       (syntax-case stx ()
 	[(_ super body ...)
-	 (with-syntax ([class100* (datum->syntax-object (stx-car stx) 'class100* stx)]
+	 (with-syntax ([this (datum->syntax-object (stx-car stx) 'this stx)]
 		       [super-init (datum->syntax-object (stx-car stx) 'super-init stx)])
 	   (syntax/loc stx 
-	     (class100* super () args body ... (sequence (apply super-init args)))))])))
+	     (class100*/names (this super-init) super () args 
+			      body ... (sequence (apply super-init args)))))])))
   
   (provide class100 class100* class100*/names
 	   class100-asi class100*-asi))

@@ -55,6 +55,7 @@
 				       stx
 				       c-file))])
 		     (open-input-file c-file))])
+	    (port-count-lines! p)
 	    ;; Read expressions from file
 	    (let ([content
 		   (let loop ()

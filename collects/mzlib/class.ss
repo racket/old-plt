@@ -1440,8 +1440,8 @@
 				    (loop (cdr l) (remq (caar l) names))]
 				   [else (cons (car l) (loop (cdr l) names))]))
 				null)])
-	    ;; In 'stop or 'list mode, make sure no by-name arguments are left over
-	    (when (memq (class-init-mode c) '(stop list))
+	    ;; In 'list mode, make sure no by-name arguments are left over
+	    (when (eq? 'list (class-init-mode c))
 	      (unless (or (null? leftovers)
 			  (not (ormap car leftovers)))
 		(unused-args-error o (filter car leftovers))))
@@ -1454,7 +1454,7 @@
 		   (obj-error 'make-object "superclass already initialized by class initialization~a"
 			      (for-class (class-name c))))
 		 (set! inited? #t)
-		 (let ([named-args (if (not (eq? 'normal (class-init-mode c)))
+		 (let ([named-args (if (eq? 'list (class-init-mode c))
 				       ;; all old args must have been used up
 				       new-named-args
 				       ;; Normal mode: merge leftover keyword-based args with new ones

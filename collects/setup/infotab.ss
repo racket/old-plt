@@ -6,7 +6,7 @@
   (define-syntax info-module-begin
     (lambda (stx)
       (syntax-case stx ()
-	[(_ defn ...)
+	[(mod-beg defn ...)
 	 (let ([defns (syntax->list (syntax (defn ...)))])
 	   (let ([names (map (lambda (defn)
 			       (syntax-case defn (define)
@@ -28,27 +28,27 @@
 		  "duplicate definition"
 		  stx
 		  dup)))
-	     (with-syntax ([(name ...) names])
+	     (with-syntax ([(name ...) names]
+			   [#%info-lookup (datum->syntax-object
+					   (syntax mod-beg) ; target module's context
+					   '#%info-lookup)])
 	       (syntax
 		(#%module-begin
 		 defn ...
 		 (define #%info-lookup
-		   ;; letrec is needed, otherwise #%info-lookup is scoped here
-		   (letrec ([#%info-lookup
-			     (case-lambda
-			      [(n) (#%info-lookup n (lambda () (error 'info.ss "no info for ~a" n)))]
-			      [(n fail)
-			       (unless (and (procedure? fail)
-					    (procedure-arity-includes? fail 0))
-				 (error
-				  'info.ss
-				  "expected second argument to be a procedure that takes no arguments, got: ~e"
-				  fail))
-			       (case n
-				 [(name) name]
-				 ...
-				 [else (fail)])])])
-		     #%info-lookup))
+		   (case-lambda
+		    [(n) (#%info-lookup n (lambda () (error 'info.ss "no info for ~a" n)))]
+		    [(n fail)
+		     (unless (and (procedure? fail)
+				  (procedure-arity-includes? fail 0))
+		       (error
+			'info.ss
+			"expected second argument to be a procedure that takes no arguments, got: ~e"
+			fail))
+		     (case n
+		       [(name) name]
+		       ...
+		       [else (fail)])]))
 		 (provide #%info-lookup))))))])))
 
   (provide (rename info-module-begin #%module-begin)

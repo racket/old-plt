@@ -97,7 +97,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (module match mzscheme
-  (require-for-syntax "private/mkmatch.ss")
+  (require-for-syntax "private/mkmatch.ss"
+		      (lib "stx.ss" "syntax")
+		      (lib "struct.ss" "syntax"))
 
   (provide
    match
@@ -132,12 +134,29 @@
      (let parse-pattern ([p p])
        (define (r l) (map parse-pattern (syntax->list l)))
        (define (i v) (match:syntax-err p (format "illegal use of ~a" v)))
-       (syntax-case p (_ quote $ ? and or not set! get! quasiquote ... ___)
+       (syntax-case* p (_ quote $ ? and or not set! get! quasiquote ... ___) module-or-top-identifier=?
 	 [_ '_]
 	 [(quote x) `(quote ,(syntax-object->datum (syntax x)))]
 	 [(quote . _) (i "quote")]
 	 [($ struct p ...)
-	  `($ struct ,@(r (syntax (p ...))))]
+	  (let ([name (syntax struct)])
+	    (unless (identifier? name)
+	      (i "$; not followed by an identifier"))
+	    (let ([info (syntax-local-value name (lambda () #f))])
+	      (unless (struct-declaration-info? info)
+		(i (format "$; `~a' is not the name of a structure type"
+			   (syntax-e name))))
+	      (let ([pred (caddr info)]
+		    [sel (reverse
+			  (let loop ([l (list-ref info 3)])
+			    (if (or (null? l) (not (car l)))
+				null
+				(cons (car l) (loop (cdr l))))))])
+		(unless (= (length sel)
+			   (length (syntax->list (syntax (p ...)))))
+		  (i (format "$; wrong number of fields for `~a'"
+			     (syntax-e name))))
+		`($ ,(cons pred sel) ,@(r (syntax (p ...)))))))]
 	 [($ . _) (i "$")]
 	 [(and p ...)
 	  `(and ,@(r (syntax (p ...))))]
@@ -239,37 +258,37 @@
 			  (syntax->list (syntax (clause ...))))
 			 stx)
 			stx)])
-	  (syntax
-	   (let ([mv exp])
-	     body)))])))
+	  (syntax/loc stx
+	    (let ([mv exp])
+	      body)))])))
 
  (define-syntax match-lambda
    (lambda (stx)
      (syntax-case stx ()
        [(_ clause ...)
-	(syntax (lambda (x) (match x clause ...)))])))
+	(syntax/loc stx (lambda (x) (match x clause ...)))])))
 
  (define-syntax match-lambda*
    (lambda (stx)
      (syntax-case stx ()
        [(_ clause ...)
-	(syntax (lambda x (match x clause ...)))])))
+	(syntax/loc stx (lambda x (match x clause ...)))])))
 
  (define-syntax match-let*
    (lambda (stx)
      (syntax-case stx ()
        [(_ () body1 body ...)
-	(syntax (begin body1 body ...))]
+	(syntax/loc stx (begin body1 body ...))]
        [(_ ([pat1 exp1] [pat exp] ...) body1 body ...)
-	(syntax (match exp1 
-		  [pat1 (match-let* ([pat exp] ...) 
-				    body1 body ...)]))])))
+	(syntax/loc stx (match exp1 
+			  [pat1 (match-let* ([pat exp] ...) 
+					    body1 body ...)]))])))
  (define-syntax match-let
    (lambda (stx)
      (syntax-case stx ()
        [(_ ([pat exp] ...) body1 body ...)	
-	(syntax (match-let* ([(pat ...) (list exp ...)]) 
-			    body1 body ...))])))
+	(syntax/loc stx (match-let* ([(pat ...) (list exp ...)]) 
+				    body1 body ...))])))
 
  (define-syntax match-letrec
    (lambda (stx)

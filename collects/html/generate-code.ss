@@ -28,11 +28,11 @@
          (append
           (list
            '(define-struct html-element (attributes))
-           `(define-struct (html-full struct:html-element) (content)))
-          (map (lambda (x) `(define-struct (,x struct:html-full) ()))
+           `(define-struct (html-full html-element) (content)))
+          (map (lambda (x) `(define-struct (,x html-full) ()))
                non-empty-names)
           (map (lambda (x)
-                 `(define-struct (,x struct:html-element) ()))
+                 `(define-struct (,x html-element) ()))
                empty-names))))
       'text 'truncate)))
 

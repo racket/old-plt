@@ -81,6 +81,16 @@ _struct.ss_: generating the same names as `define-struct'
   result list. If `omit-set?' is true, then the setter names are
   omitted from the result list.
 
+> (build-struct-generation name-id field-ids omit-sel? omit-set?) -
+  takes the same arguments as `build-struct-names' and generates an
+  S-expression for code using `make-struct-type' to generate the
+  structure type and return values for the identifiers creates by
+  `build-struct-names'.
+
+> (struct-declaration-info? v) - returns #t if `x' has the shape of
+  expansion-time information for structure type declarations, #f
+  otherwise. See also the syntax chapter of the MzScheme manual.
+
 ======================================================================
 _docprovide.ss_: attaching documentation to exports
 ======================================================================

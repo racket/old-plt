@@ -66,6 +66,11 @@
 				  (syntax (vector e ...)))]
 			       [(vector . _)
 				(bad "vector")]
+			       [(make-x . _)
+				(struct-decl-for (syntax make-x))
+				(let ([decl (struct-decl-for (syntax make-x))]
+				      [args (syntax->list (syntax _))])
+				  expr)]
 			       [_else expr]))
 			   exprs)]
 		     [(finish-expr ...)

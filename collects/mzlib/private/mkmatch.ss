@@ -216,8 +216,7 @@
 								(g204 (car p) (cdr p)))
 							    (if (equal? (car p) '$)
 								(if (and (pair? (cdr p))
-									 (symbol?
-									  (cadr p))
+									 '(symbol? (cadr p)) ; skip this test - not a symbol anymore
 									 (list? (cddr p)))
 								    ((lambda (r ps)
 								       `($
@@ -670,12 +669,11 @@
 	       ((and (pair? p) (eq? 'not (car p)))
 		(next (cadr p) e sf ks kf))
 	       ((and (pair? p) (eq? '$ (car p)))
-		(let* ((tag (cadr p))
+		(let* ((info (cadr p))
 		       (fields (cdr p))
-		       (rlen (length fields))
-		       (tst `(,(symbol-append tag '?) ,e)))
+		       (rlen (length fields)))
 		  (emit
-		   tst
+		   `(,(car info) ,e)
 		   sf
 		   kf
 		   (let rloop ((n 1))
@@ -684,7 +682,7 @@
 			   (ks sf)
 			   (next
 			    (list-ref fields n)
-			    `(vector-ref (struct->vector ,e) ,n)
+			    `(,(list-ref info n) ,e)
 			    sf
 			    kf
 			    (rloop (+ 1 n)))))))))

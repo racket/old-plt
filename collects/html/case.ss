@@ -462,7 +462,7 @@
         acc))
       ((map)
        (cons
-        (make-map
+        (make--map
           (element-attributes x)
           (xml-contents->html (element-content x)))
         acc))

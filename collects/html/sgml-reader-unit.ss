@@ -15,10 +15,10 @@
       (import xml-structs^)
       
       ;; Start-tag ::= (make-start-tag Location Location Symbol (listof Attribute))
-      (define-struct (start-tag struct:source) (name attrs))
+      (define-struct (start-tag source) (name attrs))
       
       ;; End-tag ::= (make-end-tag Location Location Symbol)
-      (define-struct (end-tag struct:source) (name))
+      (define-struct (end-tag source) (name))
       
       ;; Token ::= Contents | Start-tag | End-tag | Eof
       

@@ -224,6 +224,16 @@
 		 ;;  Optionally transform them, can expand even if not transforming.
 		 (let ([local-public-names (map car (append publics overrides))]
 		       [proc-shape (lambda (name expr xforms)
+				     (define (expand expr)
+				       (local-expand
+					expr
+					(append
+					 (kernel-form-identifier-list
+					  (quote-syntax here))
+					 (list 
+					  this-id
+					  super-instantiate-id
+					  super-make-object-id))))
 				     (define (vars-ok? vars)
 				       (or (identifier? vars)
 					   (stx-null? vars)
@@ -241,7 +251,7 @@
 								(or class-name 
 								    ""))) 
 					#f))
-				     (let loop ([stx expr])
+				     (let loop ([stx expr][can-expand? #t])
 				       (syntax-case stx (lambda case-lambda letrec-values let-values)
 					 [(lambda vars body1 body ...)
 					  (vars-ok? (syntax vars))
@@ -281,18 +291,12 @@
 					       (identifier? (syntax id1))
 					       (identifier? (syntax id2))
 					       (bound-identifier=? (syntax id1) (syntax id2)))
-					  (let ([proc (loop (local-expand
-							     (syntax expr)
-							     (append
-							      (kernel-form-identifier-list
-							       (quote-syntax here))
-							      (list 
-							       this-id
-							       super-instantiate-id
-							       super-make-object-id))))])
+					  (let ([proc (loop (syntax expr) #t)])
 					    (syntax/loc stx (let- ([(id1) proc]) id2)))]
 					 [_else 
-					  (bad "bad form for method definition" stx)])))])
+					  (if can-expand?
+					      (loop (expand stx) #f)
+					      (bad "bad form for method definition" stx))])))])
 		   ;; Do the extraction:
 		   (let-values ([(methods exprs)
 				 (let loop ([exprs exprs][ms null][es null])
@@ -558,13 +562,17 @@
 					;; Initialization
 					(lambda (this-id super-id init-args)
 					  (letrec-syntax ([super-instantiate-id
-							   (syntax-rules () 
-							     [(_ (arg (... ...)) (kw kwarg) (... ...))
-							      (-instantiate super-id _ #f (arg (... ...)) (kw kwarg) (... ...))])]
+							   (lambda (stx)
+							     (syntax-case stx () 
+								 [(_ (arg (... ...)) (kw kwarg) (... ...))
+								  (syntax (-instantiate super-id _ #f (arg (... ...)) (kw kwarg) (... ...)))]))]
 							  [super-make-object-id
-							   (syntax-rules () 
-							     [(_ arg (... ...))
-							      (-instantiate super-id _ #f (list arg (... ...)))])])
+							   (lambda (stx)
+							     (syntax-case stx () 
+							       [(_ arg (... ...))
+								(syntax (-instantiate super-id _ #f (list arg (... ...))))]
+							       [(_ . arg)
+								(syntax (-instantiate super-id _ #f arg))]))])
 					    (let ([plain-init-name undefined]
 						  ...)
 					      (letrec-syntax mappings

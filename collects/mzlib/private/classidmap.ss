@@ -1,6 +1,18 @@
 
 (module classidmap mzscheme
 
+  (require (lib "stx.ss" "syntax"))
+
+  (define (make-method-apply id this args)
+    (let loop ([args args][accum null])
+      (cond
+       [(stx-null? args)
+	(list* id this args)]
+       [(stx-pair? args)
+	(loop (stx-cdr args) (cons (stx-car args) accum))]
+       [else
+	(list* 'apply id this (reverse (cons args accum)))])))
+
   (define (make-field-map this-id field-accessor field-mutator)
     (let ([set!-stx (datum->syntax-object this-id 'set!)])
       (make-set!-transformer
@@ -35,9 +47,10 @@
 	   [(id . args)
 	    (datum->syntax-object 
 	     this-id 
-	     (list* (list method-accessor this-id) 
-		    this-id
-		    (syntax args))
+	     (make-method-apply
+	      (list method-accessor this-id) 
+	      this-id
+	      (syntax args))
 	     stx)]
 	   [_else
 	    (raise-syntax-error 
@@ -56,7 +69,7 @@
 	   [(id . args)
 	    (datum->syntax-object 
 	     this-id
-	     (list* rename-temp this-id (syntax args))
+	     (make-method-apply rename-temp this-id (syntax args))
 	     stx)]
 	   [_else
 	    (raise-syntax-error 

@@ -274,7 +274,7 @@ sub-directories:
     consecutively from 1 when the server starts) or 0 for a message
     for server without a connection.
 
-  * status-web-log.ss (created if not present, appended otherwise)
+  * web-status-log.ss (created if not present, appended otherwise)
     --- records accesses of the HTTPS status web server.
 
   * [in]active/<assignment>/<user>/<filename>0 (if submitted) --- the

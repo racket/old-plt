@@ -3385,7 +3385,7 @@
 		    (let ([modname (string->symbol (string-append
 						    abase
 						    (bytes->string/latin-1
-						     (path->bytes (normal-case-path no-sfx)))))]
+						     (path->bytes no-sfx))))]
 			  [ht (hash-table-get
 			       -module-hash-table-table
 			       (namespace-module-registry (current-namespace))

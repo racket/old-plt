@@ -138,9 +138,9 @@ static Scheme_Object *unpack_rand_state(Scheme_Random_State *s)
 
 /**************************************************/
 
-static unsigned long _random_m(unsigned long *_x)
+static unsigned int _random_m(unsigned int *_x)
 {
-  unsigned long x, y;
+  unsigned int x, y;
   x = *_x;
   y = x & 0xFFFF;
   x = (30903 * y) + (x >> 16);
@@ -148,27 +148,29 @@ static unsigned long _random_m(unsigned long *_x)
   return y;
 }
 
-static long _random_n(long *_x, long n)
+static int _random_n(int *_x, int n)
 {
   return ((_random_m(_x) << 16) + _random_m(_x)) % n;
 }
 
-static void sch_srand_half(unsigned long x, Scheme_Random_State *s)
+static void sch_srand_half(unsigned int x, Scheme_Random_State *s)
 {
-  /* Due to integer overflow, this doesn't match the Scheme implementation! */
-  unsigned long z;
+  /* Due to integer overflow, this doesn't match the Scheme implementation!
+     We use "int" instead of "long" to make the overflow consistent
+     across platforms (since "long" is sometimes 64 bits). */
+  unsigned int z;
   z = _random_n(&x, Im1-1);
-  s->x10 = (double)(1 + (((unsigned long)s->x10 + z) % (Im1 - 1)));
+  s->x10 = (double)(1 + (((unsigned int)s->x10 + z) % (Im1 - 1)));
   z = _random_n(&x, Im1);
-  s->x11 = (double)(((unsigned long)s->x11 + z) % Im1);
+  s->x11 = (double)(((unsigned int)s->x11 + z) % Im1);
   z = _random_n(&x, Im1);
-  s->x12 = (double)(((unsigned long)s->x12 + z) % Im1);
+  s->x12 = (double)(((unsigned int)s->x12 + z) % Im1);
   z = _random_n(&x, Im2-1);
-  s->x20 = (double)(1 + (((unsigned long)s->x20 + z) % (Im2 - 1)));
+  s->x20 = (double)(1 + (((unsigned int)s->x20 + z) % (Im2 - 1)));
   z = _random_n(&x, Im2);
-  s->x21 = (double)(((unsigned long)s->x21 + z) % Im2);
+  s->x21 = (double)(((unsigned int)s->x21 + z) % Im2);
   z = _random_n(&x, Im2);
-  s->x22 = (double)(((unsigned long)s->x22 + z) % Im2);
+  s->x22 = (double)(((unsigned int)s->x22 + z) % Im2);
 
   /* Due to the mismatch, maybe it's possible that we can hit a degeneracy?
      Double-check, just in case... */
@@ -178,7 +180,7 @@ static void sch_srand_half(unsigned long x, Scheme_Random_State *s)
     s->x20 = 1;
 }
 
-static void sch_srand(unsigned long x, Scheme_Random_State *s)
+static void sch_srand(unsigned int x, Scheme_Random_State *s)
 {
   /* Initial values are from Sebastian Egner's implementation: */
   s->x10 = 1062452522.0;

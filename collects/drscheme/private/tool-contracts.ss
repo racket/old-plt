@@ -952,7 +952,7 @@
  ".")
 
 (drscheme:language:put-executable
- ((is-a?/c top-level-window<%>) string? boolean? boolean? . -> . (union false? string?))
+ ((is-a?/c top-level-window<%>) string? boolean? boolean? string? . -> . (union false? string?))
  (parent program-filename mred? launcher?)
  "Calls the MrEd primitive"
  "@flink put-file"
@@ -967,8 +967,8 @@
 (drscheme:language:create-executable-gui
  ((union false? (is-a?/c top-level-window<%>))
   (union false? string?)
-  boolean?
-  boolean?
+  (union (lambda (x) (eq? x #t)) (symbols 'launcher 'standalone))
+  (union (lambda (x) (eq? x #t)) (symbols 'mzscheme 'mred))
   . -> .
   (union false?
 	 (list/p (symbols 'no-show 'launcher 'stand-alone)

@@ -228,10 +228,12 @@ to the original stdout of DrScheme.
           (inherit get-module get-transformer-module get-init-code
                    use-namespace-require/copy?)
           (define/override (create-executable setting parent program-filename)
-            (let ([executable-filename (drscheme:language:put-executable
-					parent program-filename
-					#f 
-                                        #t)])
+            (let ([executable-filename
+		   (drscheme:language:put-executable
+		    parent program-filename
+		    #f 
+		    #t
+		    (string-constant save-a-mred-stand-alone-executable))])
               (when executable-filename
                 (drscheme:language:create-module-based-stand-alone-executable
                  program-filename

@@ -594,6 +594,11 @@
  (create-executable-title "Create Executable")
  (must-save-before-executable "You must save your program before creating an executable.")
  (save-an-executable "Save an Executable")
+ (save-a-mred-launcher "Save a MrEd Launcher")
+ (save-a-mzscheme-launcher "Save a MzScheme Launcher")
+ (save-a-mred-stand-alone-executable "Save a MrEd Stand-alone Executable")
+ (save-a-mzscheme-stand-alone-executable "Save a MzScheme Stand-alone Executable")
+
  (definitions-not-saved "The definitions window has not been saved. The executable will use the latest saved version of the definitions window. Continue?")
  (inline-saved-program-in-executable?
   "Inline the saved program in the executable? If yes, you can copy the executable to another ~a computer but the executable will be quite large. If not, you cannot copy the executable to another computer, but it will be much smaller. Additionally, if not, the executable will load the latest version of the program.")

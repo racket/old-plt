@@ -480,9 +480,11 @@
 					 (symbol? v))
 				     (original v p)
 				     (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-						     (lambda (x _ port) (and (is-a? x mred:original:snip%) 1))]
+						     (lambda (x _ port)
+						       (and (is-a? x mred:original:snip%) 1))]
 						    [mzlib:pretty-print:pretty-print-print-hook
-						     (lambda (x _ port) (port-out-write x))])
+						     (lambda (x _ port)
+						       (port-out-write x))])
 				       (pretty v p 'infinity)))))))])
 		  (handler-maker port-display-handler 
 				 mzlib:pretty-print:pretty-display 
@@ -955,7 +957,7 @@
 	     
 	     (print-convert:current-print-convert-hook
 	      (lambda (expr basic-convert sub-convert)
-		(let ([ans (if (is-a? expr mred:snip%)
+		(let ([ans (if (is-a? expr mred:original:snip%)
 			       expr
 			       (basic-convert expr))])
 		  ans)))
@@ -1118,6 +1120,7 @@
 		 (insert-delta "Execute has not been clicked." warning-style-delta)
 		 (lock #t))))])
       (sequence
+	(set-display/write-handlers)
 	(apply super-init args))))
 
   (define make-console-edit%
@@ -1166,6 +1169,9 @@
 		
 		[super-after-set-position after-set-position])
 	(private
+
+	  ;; used to highlight the prompt that the caret is "in the range of".
+	  ;; not currently used at all.
 	  [find-which-previous-sexp
 	   (lambda ()
 	     (let*-values ([(x y) (values (get-start-position) (get-end-position))])
@@ -1180,83 +1186,20 @@
 					     (<= left y right))
 					(values left right)
 					(loop tl)))]))))]
-	  [moving-down? #f]
-	  [needs-to-move #f]
-	  [needs-to-move-left #f]
-	  [needs-to-move-right #f]
-	  [needs-to-move-original null]
-	  [updating-highlighted-prompt #f]
 	  [on-something
 	   (opt-lambda (super start len [attend-to-styles-fixed? #f])
 	     (cond
 	       [(or resetting?
-		    moving-down?
-		    updating-highlighted-prompt
 		    (not (number? prompt-position))
 		    (>= start prompt-position)
 		    (and attend-to-styles-fixed? styles-fixed?))
 		(super start len)]
-	       [else 
-		(let-values ([(left right) (find-which-previous-sexp)])
-		  (and #f
-		       left
-		       (super start len)
-		       '(begin
-			  (when needs-to-move
-			    (mred:message-box "Internal Error" "needs to move already #t!!"))
-			  (newline)
-			  (newline)
-			  (set! needs-to-move #t)
-			  (set! needs-to-move-left left)
-			  (set! needs-to-move-right right)
-			  (split-snip left)
-			  (split-snip right)
-			  '(fprintf mred:constants:original-output-port 
-				    "left ~a right ~a~n" left right)
-			  (set! needs-to-move-original
-				(let loop ([snip (find-snip left mred:const-snip-after)])
-				  (cond
-				    [(not snip) null]
-				    [(< (get-snip-position snip) right)
-				     '(fprintf mred:constants:original-output-port 
-					       "orig: ~s~n" (send snip get-text 0 10000))
-				     (cons (send snip copy) (loop (send snip next)))]
-				    [else null])))
-			  (begin-edit-sequence)
-			  #t)))]))]
+	       [else #f]))]
 	  [after-something
 	   (lambda (combine start len)
-	     (when (and (not needs-to-move)
-			(not moving-down?)
-			(or resetting?
-			    (and prompt-mode? (< start prompt-position))))
-	       (set! prompt-position (combine prompt-position len)))
-	     (when needs-to-move
-	       (set! needs-to-move #f)
-	       (set! needs-to-move-right (combine needs-to-move-right len))
-	       (split-snip needs-to-move-left)
-	       (split-snip needs-to-move-right)
-	       (let ([start-selection (get-start-position)]
-		     [end-selection (get-end-position)]
-		     [delta (- prompt-position needs-to-move-left)])
-		 (set! moving-down? #t)
-		 (let loop ([snip (find-snip needs-to-move-left 'after)])
-		   (cond
-		     [(not snip) (void)]
-		     [(< (get-snip-position snip) needs-to-move-right)
-		      (insert (send snip copy) (last-position) (last-position) #t)
-		      (loop (send snip next))]
-		     [else (void)]))
-		 (delete needs-to-move-left needs-to-move-right #f)
-		 (for-each (lambda (s) 
-			     '(fprintf mred:constants:original-output-port 
-				       "copy: ~s~n" (send s get-text 0 10000))
-			     (insert (send s copy) needs-to-move-left needs-to-move-left #f))
-			   needs-to-move-original)
-		 (set-position (+ start-selection delta)
-			       (+ end-selection delta)))
-	       (set! moving-down? #f)
-	       (end-edit-sequence)))])
+	     (when (or resetting?
+		       (and prompt-mode? (< start prompt-position)))
+	       (set! prompt-position (combine prompt-position len))))])
 	(public
 	  [resetting? #f]
 	  [set-resetting (lambda (v) (set! resetting? v))])
@@ -1669,12 +1612,10 @@
 	       (do-post-eval)))])
 	(sequence
 	  (apply super-init args)))))
-  
-  (define console-edit% (make-console-edit% fw:scheme:text%))
 
   (define transparent-io-edit% 
     (make-transparent-io-edit%
      (make-console-edit%
       fw:text:searching%)))
   
-  (define edit% (make-edit% console-edit%)))
+  (define edit% (make-edit% (make-console-edit% fw:scheme:text%))))

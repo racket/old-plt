@@ -70,36 +70,47 @@
 	(insert "The current input port always returns eof.") (insert #\newline)
 	(new-prompt))))
 
-  (define frame-section "MrEd-REPL-size")
+  (define frame-size-section "MrEd-REPL-size")
+  (define frame-position-section "MrEd-REPL-position")
 
-  (define-values (frame-width frame-height)
-    (let* ([default (lambda (reason)
-		      ;(printf "using default console size: ~a~n" reason)
-		      (values 500 400))]
-	   [b (box "")]
-	   [s (get-resource "mred" frame-section b)])
-      (with-handlers ([(lambda (x) #t)
-		       (lambda (x)
-			 (default (if (exn? x) (exn-message x) x)))])
-	(if s
-	    (let* ([p (open-input-string (unbox b))]
-		   [l (read p)])
-	      (if (and (list? l)
-		       (= 2 (length l))
-		       (andmap number? l))
-		  (values (car l) (cadr l))
-		  (default "not alist of length two of numbers")))
-	    (default "no resource returned")))))
+  (define-values (frame-width frame-height frame-x frame-y)
+    (let* ([default-size (lambda () (values 500 400))]
+	   [default-position (lambda () (values 0 0))]
+	   [get-numbers
+	    (lambda (section default)
+	      (with-handlers ([(lambda (x) #t)
+			       (lambda (x)
+				 (default))])
+		(let* ([b (box "")]
+		       [s (get-resource "mred" section b)])
+		  (if s
+		      (let* ([l (read (open-input-string (unbox b)))])
+			(if (and (list? l)
+				 (= 2 (length l))
+				 (andmap number? l))
+			    (values (car l) (cadr l))
+			    (default)))
+		      (default)))))])
+      (let-values ([(x y) (get-numbers frame-position-section default-position)]
+		   [(w h) (get-numbers frame-size-section default-size)])
+	(values (max 0 w) (max 0 h) (max x 0) (max y 0)))))
 
   ;; GUI creation
   (define frame (make-object (class frame% args
 			       (inherit accept-drop-files)
 			       (override
+				[on-move
+				 (lambda (x y)
+				   (write-resource
+				    "mred"
+				    frame-position-section
+				    (format "~s" (list x y))
+				    (find-graphical-system-path 'setup-file)))]
 				[on-size
 				 (lambda (w h)
 				   (write-resource
 				    "mred"
-				    frame-section
+				    frame-size-section
 				    (format "~s" (list w h))
 				    (find-graphical-system-path 'setup-file)))]
 				 [on-close (lambda () 
@@ -110,7 +121,9 @@
 			     "Color MrEd REPL"
 			     #f
 			     frame-width
-			     frame-height))
+			     frame-height
+			     frame-x
+			     frame-y))
   (define repl-buffer (make-object esq:text%))
   (define evaluation-thread #f)
   (define break-button (make-object button%

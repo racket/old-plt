@@ -1,14 +1,14 @@
 <html>
 
 <head>
-<title> DrScheme Release Notes </title>
+<title> PLT Release Notes </title>
 </head>
 
 <body>
 <h2><img align=center
          src="http://www.cs.rice.edu/CS/PLT/packages/drscheme/logo.gif"
          alt="[DrScheme logo]">
-DrScheme Release Notes</h2>
+PLT Release Notes</h2>
 
 <p>
 
@@ -16,15 +16,36 @@ DrScheme Release Notes</h2>
 <b>Release Date</b>:<tt> </tt> March 17, 1998.
 
 <p>
-The following is a summary of the major changes in this release
-from the previous one.
+The following is a summary of the major changes in this release of the
+PLT software from the previous one.
 
-<h4> DrScheme </h4>
+<h2> New Programs </h2>
 
 <ul>
 <li>
-Something was certainly fixed.
+DrScheme Jr is a new text-only version of DrScheme. It requires less
+resources, but provides only a read-eval-print loop. DrScheme Jr does
+not provide a built-in program editor or a graphical toolbox.
 
+<LI>
+<b><tt>mzc</tt></b> is a new compiler that transforms MzScheme
+programs to native code libraries. <b><tt>mzc</tt></b> is not yet an
+optimizing compiler; the performance of its output is comparable
+running the Scheme source directly in MzScheme.
+
+</ul>
+
+<h2> The Future </h2>
+
+<STRONG>IMPORTANT</STRONG>: Expect major changes in the MrEd graphical
+toolbox with version 53 or so. Likely changes include:
+<ul>
+<li> removing the useless size arguments for initializing <tt>mred:frame%</tt>,
+   <tt>mred:button%</tt>, etc. instances;
+<li> changing the "nothing" value (e.g., no parent frame) from <tt>null</tt> to 
+     <tt>#f</tt>; and
+<li> replacing <tt>bitwise-or</tt>ed <tt>wx:const-XXX</tt> numerical constants with 
+   lists of <tt>'wx:const-XXX</tt> symbols.
 </ul>
 
 <P>

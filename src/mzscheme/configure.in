@@ -143,6 +143,10 @@ if test "${enable_gl}" = "" ; then
   esac
 fi
 
+if test "${enable_iconv}" = "" ; then
+  enable_iconv=yes
+fi
+
 ###### Make sure MrEd is really there ######
 
 if test "${enable_mred}" = "yes" ; then
@@ -415,7 +419,6 @@ case $OS in
     # zlib comes with the OS
     ZLIB_A=""
     ZLIB_INC=""
-    LIBS="$LIBS -liconv"
 
     gcc_vers_three=`${CC} -v 2>&1 | grep "version 3[.]"`
     if test "$gcc_vers_three" = "" ; then
@@ -508,8 +511,47 @@ AC_TRY_RUN(
 if test "$inline" = "no" ; then
   MZOPTIONS="$MZOPTIONS -DNO_INLINE_KEYWORD"
 fi
-
 AC_MSG_RESULT($inline) 
+
+iconv_lib_flag=""
+if test "${enable_iconv}" = "yes" ; then
+  AC_CHECK_HEADER(iconv.h, enable_iconv=yes, enable_iconv=no)
+  if test "${enable_iconv}" = "yes" ; then  
+    # Does it all work, now?
+    AC_TRY_RUN(
+[   #include <iconv.h>]
+[   #include <langinfo.h>]
+    int main() {
+[     iconv_open("UTF-8", "UTF-8");]
+      return 0;
+    }, enable_iconv=yes, enable_iconv=no, enable_iconv=yes)
+    if test "${enable_iconv}" = "no" ; then  
+      # Try adding -liconv ?
+      #  We did not use AC_CHECK_LIB because iconv is sometimes macro-renamed
+      ORIG_LIBS="$LIBS"
+      LIBS="$LIBS -liconv"
+      AC_TRY_RUN(
+[     #include <iconv.h>]
+[     #include <langinfo.h>]
+      int main() {
+[     iconv_open("UTF-8", "UTF-8");]
+      return 0;
+      }, enable_iconv=yes, enable_iconv=no, enable_iconv=yes)
+      if test "${enable_iconv}" = "no" ; then
+        LIBS="$ORIG_LIBS"
+      else
+        iconv_lib_flag=" -liconv"      
+      fi
+    fi
+  fi
+fi
+[ msg="iconv is usable" ]
+AC_MSG_CHECKING($msg)
+iconv_usage_result="$enable_iconv$iconv_lib_flag"
+AC_MSG_RESULT($iconv_usage_result)
+if test "${enable_iconv}" = "no" ; then
+  PREFLAGS="$PREFLAGS -DMZ_NO_ICONV"  
+fi
 
 if test "${enable_compact}" = "yes" ; then
   GC2OPTIONS="$GC2OPTIONS -DUSE_COMPACT_3M_GC"

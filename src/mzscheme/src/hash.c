@@ -713,6 +713,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_symbol_type, hash_symbol);
   PROC(scheme_null_type, hash_addr);
   PROC(scheme_pair_type, hash_general);
+  PROC(scheme_wrap_chunk_type, hash_general);
   PROC(scheme_vector_type, hash_general);
   PROC(scheme_input_port_type, hash_general);
   PROC(scheme_output_port_type, hash_general);

@@ -5500,6 +5500,9 @@ echo $ECHO_N "checking $msg... $ECHO_C" >&6
 iconv_usage_result="$enable_iconv$iconv_lib_flag"
 echo "$as_me:$LINENO: result: $iconv_usage_result" >&5
 echo "${ECHO_T}$iconv_usage_result" >&6
+if test "${enable_iconv}" = "no" ; then
+  PREFLAGS="$PREFLAGS -DMZ_NO_ICONV"
+fi
 
 if test "${enable_compact}" = "yes" ; then
   GC2OPTIONS="$GC2OPTIONS -DUSE_COMPACT_3M_GC"

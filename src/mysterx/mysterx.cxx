@@ -695,15 +695,20 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
   char buff[MAX_PATH];
   int len;
   
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-help","com-object",0,argc,argv);
+  if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-help","com-object or com-type",0,argc,argv);
   }
   
   if (argc == 2 && SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type("com-help","string",1,argc,argv);
   }
 
-  pITypeInfo = typeInfoFromComObject((MX_COM_Object *)argv[0]);
+  if (MX_COM_OBJP(argv[0])) {
+    pITypeInfo = typeInfoFromComObject((MX_COM_Object *)argv[0]);
+  }
+  else {
+    pITypeInfo = MX_COM_TYPE_VAL(argv[0]);
+  }
 
   hr = pITypeInfo->GetDocumentation(MEMBERID_NIL,NULL,NULL,NULL,
 				    &helpFileName);

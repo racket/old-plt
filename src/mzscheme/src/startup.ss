@@ -2021,15 +2021,6 @@
 	     "module selection"
 	     s))
 	  ;; At this point, filename is a complete path
-	  (unless (file-exists? filename)
-	    (raise (make-exn:i/o:filesystem
-		    (string->immutable-string 
-		     (format 
-		      "standard-module-name-resolver: module file does not exist: ~a" 
-		      filename))
-		    (current-continuation-marks)
-		    filename
-		    #f)))
 	  (let ([filename (normal-case-path (simplify-path (expand-path filename)))])
 	    (let-values ([(base name dir?) (split-path filename)])
 	      (let ([no-sfx (regexp-replace -re:suffix name "")]

@@ -803,7 +803,7 @@ static Scheme_Object *os_wxMediaStreamOutBaseWrite(int n,  Scheme_Object *p[])
   
   x0 = NULL;
 
-  x0 = WITH_VAR_STACK(__MakecharArray((0 < n) ? p[POFFSET+0] : scheme_null, &x1, METHODNAME("editor-stream-out-base%","write")));
+  x0 = WITH_VAR_STACK(__MakecharArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x1, METHODNAME("editor-stream-out-base%","write")));
   if (((Scheme_Class_Object *)p[0])->primflag)
     WITH_VAR_STACK(((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)p[0])->primdata)->Write(x0, x1));
   else

@@ -831,6 +831,12 @@ sub DoPrintClass
 	select(OUT);
     }
 
+    if ($global) {
+	$POFFSET = "0";
+    } else {
+	$POFFSET = "POFFSET";
+    }
+
     # Print class and interface decls:
     if (!$global) {
 	print "static Scheme_Object *${newclass}_class;\n";
@@ -1522,12 +1528,6 @@ sub PrintFunction
 
     # Define Scheme callback
     #
-
-    if ($global) {
-	$POFFSET = "0";
-    } else {
-	$POFFSET = "POFFSET";
-    }
 
     $numfuncs = 0;
     $thisfuncs = ();

@@ -954,8 +954,8 @@ void os_wxSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
   
-  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[+1], "split in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in snip%"", extracting return value via box"", extracting boxed argument", 0)));
-  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[+2], "split in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in snip%"", extracting return value via box"", extracting boxed argument", 0)));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "split in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in snip%"", extracting return value via box"", extracting boxed argument", 0)));
+  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+2], "split in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_wxSnip(sbox_tmp, "split in snip%"", extracting return value via box"", extracting boxed argument", 0)));
   
   }
 }
@@ -1083,12 +1083,12 @@ void os_wxSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nnflo
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+9, p));
   
-  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[+3], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
-  if (x4) *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[+4], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
-  if (x5) *x5 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[+5], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
-  if (x6) *x6 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[+6], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
-  if (x7) *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[+7], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
-  if (x8) *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[+8], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x4) *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+4], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x5) *x5 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+5], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x6) *x6 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+6], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x7) *x7 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+7], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
+  if (x8) *x8 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+8], "get-extent in snip%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-extent in snip%"", extracting return value via box"", extracting boxed argument")));
   
   }
 }

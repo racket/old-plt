@@ -60,13 +60,9 @@ MZEXTRAEXPORT='GCDIR=$(GCDIRECTORY)'
 
 all:
 	$(MAKE) wx
-	if [ -f wrap/wrap.ss ] ; then $(MAKE) mred-wrap ; fi
 	cd wxs; $(MAKE)
 	cd wxme; $(MAKE)
 	$(MAKE) mred
-
-mred-wrap:
-	cd wrap; $(MAKE)
 
 bin:
 	$(MAKE) mred

@@ -615,6 +615,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #endif /* NO_FILE_SYSTEM_UTILS */
 
 #ifndef MZSCHEME_CMD_LINE  
+  scheme_eval_string("(import (lib \"mred.ss\" \"mred\"))", 
+		     global_env);
   scheme_eval_string("(with-handlers ([void void])"
 		     "  (send (current-ps-setup) set-afm-path (collection-path \"afm\")))",
 		     global_env);

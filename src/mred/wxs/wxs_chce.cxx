@@ -848,7 +848,7 @@ static Scheme_Object *os_wxChoice_ConstructScheme(int n,  Scheme_Object *p[])
   } else
     x10 = "checkBox";
 
-  x8 = WITH_VAR_STACK(__MakestringArray((7 < n) ? p[POFFSET+7] : scheme_null, &x7, METHODNAME("choice%","initialization")));if (!x5) x5 = -1;if (!x6) x6 = -1;
+  x8 = WITH_VAR_STACK(__MakestringArray((7+POFFSET < n) ? p[POFFSET+7] : scheme_null, &x7, METHODNAME("choice%","initialization")));if (!x5) x5 = -1;if (!x6) x6 = -1;
   realobj = WITH_VAR_STACK(new os_wxChoice CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)));
 #ifdef MZ_PRECISE_GC
   WITH_VAR_STACK(realobj->gcInit_wxChoice(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10));

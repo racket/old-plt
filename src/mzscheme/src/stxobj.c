@@ -1761,6 +1761,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
     } else if (SCHEME_FALSEP(a)) {
       /* current exp-env rename */
       Scheme_Env *env = (Scheme_Env *)scheme_get_param(scheme_current_thread->config, MZCONFIG_ENV);
+      scheme_prepare_exp_env(env);
       stack = scheme_make_pair(env->exp_env->rename, stack);
     } else if (SCHEME_SYMBOLP(a)) {
       /* mark barrier */

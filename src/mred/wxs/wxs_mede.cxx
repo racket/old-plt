@@ -3849,7 +3849,7 @@ static Scheme_Object *os_wxMediaEditSetTabs(int n,  Scheme_Object *p[])
   } else
     x3 = TRUE;
 
-  x0 = WITH_VAR_STACK(__MakefloatArray((0 < n) ? p[POFFSET+0] : scheme_null, &x1, METHODNAME("text%","set-tabs")));
+  x0 = WITH_VAR_STACK(__MakefloatArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x1, METHODNAME("text%","set-tabs")));
   WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->SetTabs(x0, x1, x2, x3));
 
   
@@ -7556,7 +7556,7 @@ static Scheme_Object *os_wxMediaEdit_ConstructScheme(int n,  Scheme_Object *p[])
   } else
     x1 = NULL;
 
-  x1 = WITH_VAR_STACK(__MakefloatArray((1 < n) ? p[POFFSET+1] : scheme_null, &x2, METHODNAME("text%","initialization")));
+  x1 = WITH_VAR_STACK(__MakefloatArray((1+POFFSET < n) ? p[POFFSET+1] : scheme_null, &x2, METHODNAME("text%","initialization")));
   realobj = WITH_VAR_STACK(new os_wxMediaEdit CONSTRUCTOR_ARGS((x0, x1, x2)));
 #ifdef MZ_PRECISE_GC
   WITH_VAR_STACK(realobj->gcInit_wxMediaEdit(x0, x1, x2));

@@ -1002,7 +1002,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(int n,  Scheme_Object *p[])
     } else
       x11 = "radioBox";
 
-    if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = WITH_VAR_STACK(__MakewxBitmapArray((7 < n) ? p[POFFSET+7] : scheme_null, &x7, METHODNAME("radio-box%","initialization")));
+    if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = WITH_VAR_STACK(__MakewxBitmapArray((7+POFFSET < n) ? p[POFFSET+7] : scheme_null, &x7, METHODNAME("radio-box%","initialization")));
     realobj = WITH_VAR_STACK(new os_wxRadioBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)));
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxRadioBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
@@ -1072,7 +1072,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(int n,  Scheme_Object *p[])
     } else
       x11 = "radioBox";
 
-    if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = WITH_VAR_STACK(__MakestringArray((7 < n) ? p[POFFSET+7] : scheme_null, &x7, METHODNAME("radio-box%","initialization")));
+    if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = WITH_VAR_STACK(__MakestringArray((7+POFFSET < n) ? p[POFFSET+7] : scheme_null, &x7, METHODNAME("radio-box%","initialization")));
     realobj = WITH_VAR_STACK(new os_wxRadioBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)));
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxRadioBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));

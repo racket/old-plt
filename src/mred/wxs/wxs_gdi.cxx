@@ -3808,7 +3808,7 @@ static Scheme_Object *os_wxRegionSetPolygon(int n,  Scheme_Object *p[])
   } else
     x4 = wxODDEVEN_RULE;
 
-  x1 = WITH_VAR_STACK(__MakewxPointArray((0 < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("region%","set-polygon")));
+  x1 = WITH_VAR_STACK(__MakewxPointArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("region%","set-polygon")));
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->SetPolygon(x0, x1, x2, x3, x4));
 
   

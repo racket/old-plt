@@ -912,11 +912,16 @@ Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env)
 {
   Scheme_Module *m;
   Scheme_Env *env;
+  Scheme_Object *prefix;
 
   m = MALLOC_ONE_TAGGED(Scheme_Module);
   m->type = scheme_module_type;
   
   env = scheme_new_module_env(for_env, m, 0);
+
+  prefix = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
+  if (SCHEME_SYMBOLP(prefix))
+    name = scheme_symbol_append(prefix, name);
 
   m->modname = name;
   m->imports = scheme_null;

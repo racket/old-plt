@@ -116,7 +116,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 @ "clear-undos" : void ClearUndos();
 
 @MACRO ubUndoer = ((void *){x})
-@MACRO CHECKUNDOER = WITH_VAR_STACK(scheme_check_proc_arity(METHODNAME("editor<%>","add-undo"), 0, 0, 1, p));
+@MACRO CHECKUNDOER = WITH_VAR_STACK(scheme_check_proc_arity(METHODNAME("editor<%>","add-undo"), 0, POFFSET, n, p));
 
 @ "add-undo" : void AddSchemeUndo(UNKNOWN_OBJ//ubUndoer////push); : : /CHECKUNDOER
 

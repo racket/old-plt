@@ -611,7 +611,7 @@ static Scheme_Object *os_wxListBoxSet(int n,  Scheme_Object *p[])
   
   x1 = NULL;
 
-  x1 = WITH_VAR_STACK(__MakestringArray((0 < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("list%","set")));
+  x1 = WITH_VAR_STACK(__MakestringArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("list%","set")));
   WITH_VAR_STACK(((wxListBox *)((Scheme_Class_Object *)p[0])->primdata)->Set(x0, x1));
 
   
@@ -1208,7 +1208,7 @@ static Scheme_Object *os_wxListBox_ConstructScheme(int n,  Scheme_Object *p[])
   } else
     x11 = "button";
 
-  if (!x6) x6 = -1;if (!x7) x7 = -1;x9 = WITH_VAR_STACK(__MakestringArray((8 < n) ? p[POFFSET+8] : scheme_null, &x8, METHODNAME("list-box%","initialization")));
+  if (!x6) x6 = -1;if (!x7) x7 = -1;x9 = WITH_VAR_STACK(__MakestringArray((8+POFFSET < n) ? p[POFFSET+8] : scheme_null, &x8, METHODNAME("list-box%","initialization")));
   realobj = WITH_VAR_STACK(new os_wxListBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)));
 #ifdef MZ_PRECISE_GC
   WITH_VAR_STACK(realobj->gcInit_wxListBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));

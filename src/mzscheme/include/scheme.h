@@ -455,7 +455,6 @@ typedef struct {
 typedef Scheme_Object *(*Scheme_Type_Reader)(Scheme_Object *list);
 typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 
-
 /*========================================================================*/
 /*                      hash tables and environments                      */
 /*========================================================================*/

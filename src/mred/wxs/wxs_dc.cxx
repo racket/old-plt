@@ -1233,7 +1233,7 @@ static Scheme_Object *os_wxDCDrawPolygon(int n,  Scheme_Object *p[])
   } else
     x4 = wxODDEVEN_RULE;
 
-  x1 = WITH_VAR_STACK(__MakewxPointArray((0 < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("dc<%>","draw-polygon")));DO_OK_CHECK(METHODNAME("dc<%>","draw-polygon"))
+  x1 = WITH_VAR_STACK(__MakewxPointArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("dc<%>","draw-polygon")));DO_OK_CHECK(METHODNAME("dc<%>","draw-polygon"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawPolygon(x0, x1, x2, x3, x4));
 
   
@@ -1267,7 +1267,7 @@ static Scheme_Object *os_wxDCDrawLines(int n,  Scheme_Object *p[])
   } else
     x3 = 0;
 
-  x1 = WITH_VAR_STACK(__MakewxPointArray((0 < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("dc<%>","draw-lines")));DO_OK_CHECK(METHODNAME("dc<%>","draw-lines"))
+  x1 = WITH_VAR_STACK(__MakewxPointArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("dc<%>","draw-lines")));DO_OK_CHECK(METHODNAME("dc<%>","draw-lines"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawLines(x0, x1, x2, x3));
 
   

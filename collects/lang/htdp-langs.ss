@@ -432,7 +432,7 @@ to the original stdout of DrScheme.
 	;; but we leave it here for now.
         (add-htdp-language
          (instantiate htdp-language% ()
-           (one-line-summary (string-constant htdp-full-one-line-summary))
+           (one-line-summary (string-constant pretty-big-scheme-one-line-summary))
            (sharing-printing #t)
            (abbreviate-cons-as-list #t)
            (allow-sharing? #t)
@@ -440,7 +440,7 @@ to the original stdout of DrScheme.
            (module '(lib "htdp-full-graphics.ss" "lang"))
            (language-position
             (list (string-constant plt)
-                  (string-constant pretty-big-language)))
+                  (string-constant pretty-big-scheme)))
            (read-accept-dot #t)))
         
         (add-htdp-language

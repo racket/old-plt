@@ -639,7 +639,7 @@
  (advanced-one-line-summary "Intermediate plus lambda and mutation")
  (full-language "Full") ;; also in the HtDP languages section
  (pretty-big-scheme "Pretty Big Scheme")
- (htdp-full-one-line-summary "Advanced, plus PLT extensions and GUI library")
+ (pretty-big-scheme-one-line-summary "Graphical, plus many standard libraries")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS-like")
  (mred-lang-name "Graphical without debugging (MrEd)")

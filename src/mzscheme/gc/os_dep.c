@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1996-1997 by Silicon Graphics.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -10,9 +11,9 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, March 8, 1996 12:00 pm PST */
 
 # include "gc_priv.h"
+
 # if defined(LINUX) && !defined(POWERPC)
 #   include <linux/version.h>
 #   if (LINUX_VERSION_CODE <= 0x10400)
@@ -29,6 +30,9 @@
 # endif
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS)
 #   include <sys/types.h>
+#   if !defined(MSWIN32) && !defined(SUNOS4)
+#   	include <unistd.h>
+#   endif
 # endif
 # include <stdio.h>
 # include <signal.h>
@@ -49,6 +53,10 @@
 # endif
 
 # if (defined(SVR4) || defined(AUX) || defined(DGUX)) && !defined(PCR)
+#   define NEED_FIND_LIMIT
+# endif
+
+# if defined(LINUX) && defined(POWERPC)
 #   define NEED_FIND_LIMIT
 # endif
 
@@ -79,11 +87,13 @@
 
 #ifdef IRIX5
 # include <sys/uio.h>
+# include <malloc.h>   /* for locking */
+#endif
+#ifdef USE_MMAP
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
 # include <fcntl.h>
-# include <malloc.h>	/* for locking */
 #endif
 
 #ifdef SUNOS5SIGS
@@ -98,7 +108,7 @@
 #ifdef DJGPP
   /* Apparently necessary for djgpp 2.01.  May casuse problems with	*/
   /* other versions.							*/
-  typedef caddr_t long unsigned int;
+  typedef long unsigned int caddr_t;
 #endif
 
 #ifdef PCR
@@ -107,17 +117,28 @@
 # include "mm/PCR_MM.h"
 #endif
 
-#if defined(PROT_EXEC) && !defined(NO_EXECUTE_PERMISSION)
+#if !defined(NO_EXECUTE_PERMISSION)
 # define OPT_PROT_EXEC PROT_EXEC
 #else
 # define OPT_PROT_EXEC 0
+#endif
+
+#if defined(LINUX) && defined(POWERPC)
+  ptr_t GC_data_start;
+
+  void GC_init_linuxppc()
+  {
+    extern ptr_t GC_find_limit();
+    extern char **_environ;
+    GC_data_start = GC_find_limit((ptr_t)&_environ, FALSE);
+  }
 #endif
 
 # ifdef OS2
 
 # include <stddef.h>
 
-# ifndef __IBMC__ /* e.g. EMX */
+# if !defined(__IBMC__) && !defined(__WATCOMC__) /* e.g. EMX */
 
 struct exe_hdr {
     unsigned short      magic_number;
@@ -218,7 +239,7 @@ void GC_enable_signals(void)
 
 /* MATTHEW: !RS6000 */
 #  if !defined(PCR) && !defined(AMIGA) && !defined(MSWIN32) \
-      && !defined(MACOS) && !defined(DJGPP) && !defined(RS6000)
+      && !defined(MACOS) && !defined(DJGPP) && !defined(DOS4GW) && !defined(RS6000)
 
 #   if defined(sigmask) && !defined(UTS4)
 	/* Use the traditional BSD interface */
@@ -292,31 +313,46 @@ void GC_enable_signals()
 
 # endif /*!OS/2 */
 
-/*
- * Find the base of the stack.
+/* Ivan Demakov: simplest way (to me) */
+#ifdef DOS4GW
+  void GC_disable_signals() { }
+  void GC_enable_signals() { }
+#endif
+
+/* Find the page size */
+word GC_page_size;
+
+# ifdef MSWIN32
+  void GC_setpagesize()
+  {
+    SYSTEM_INFO sysinfo;
+    
+    GetSystemInfo(&sysinfo);
+    GC_page_size = sysinfo.dwPageSize;
+  }
+
+# else
+#   if defined(MPROTECT_VDB) || defined(PROC_VDB)
+	void GC_setpagesize()
+	{
+	    GC_page_size = GETPAGESIZE();
+	}
+#   else
+	/* It's acceptable to fake it. */
+	void GC_setpagesize()
+	{
+	    GC_page_size = HBLKSIZE;
+	}
+#   endif
+# endif
+
+/* 
+ * Find the base of the stack. 
  * Used only in single-threaded environment.
  * With threads, GC_mark_roots needs to know how to do this.
  * Called with allocator lock held.
  */
-# if defined(MSWIN32) || defined(CYGWIN32)
-#  ifdef CYGWIN32
-#  include <windows.h>
-#  endif
-
-/* Get the page size.	*/
-word GC_page_size = 0;
-
-word GC_getpagesize()
-{
-    SYSTEM_INFO sysinfo;
-    
-    if (GC_page_size == 0) {
-        GetSystemInfo(&sysinfo);
-        GC_page_size = sysinfo.dwPageSize;
-    }
-    return(GC_page_size);
-}
-
+# ifdef MSWIN32 
 # define is_writable(prot) ((prot) == PAGE_READWRITE \
 			    || (prot) == PAGE_WRITECOPY \
 			    || (prot) == PAGE_EXECUTE_READWRITE \
@@ -346,7 +382,7 @@ ptr_t GC_get_stack_base()
 {
     int dummy;
     ptr_t sp = (ptr_t)(&dummy);
-	ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_getpagesize() - 1));
+    ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_page_size - 1));
     word size = GC_get_writable_length(trunc_sp, 0);
    
     return(trunc_sp + size);
@@ -681,9 +717,9 @@ void GC_register_data_segments()
     
     GetSystemInfo(&sysinfo);
     limit = sysinfo.lpMinimumApplicationAddress;
-    p = (ptr_t)((word)start & ~(GC_getpagesize() - 1));
+    p = (ptr_t)((word)start & ~(GC_page_size - 1));
     for (;;) {
-    	q = (LPVOID)(p - GC_getpagesize());
+    	q = (LPVOID)(p - GC_page_size);
     	if ((ptr_t)q > (ptr_t)p /* underflow */ || q < limit) break;
     	result = VirtualQuery(q, &buf, sizeof(buf));
     	if (result != sizeof(buf) || buf.AllocationBase == 0) break;
@@ -827,7 +863,9 @@ int * etext_addr;
     if (setjmp(GC_jmp_buf) == 0) {
     	/* Try writing to the address.	*/
     	*result = *result;
+        GC_reset_fault_handler();
     } else {
+        GC_reset_fault_handler();
     	/* We got here via a longjmp.  The address is not readable.	*/
     	/* This is known to happen under Solaris 2.4 + gcc, which place	*/
     	/* string constants in the text segment, but after etext.	*/
@@ -835,7 +873,6 @@ int * etext_addr;
     	/* text and data segments, so plan A bought us something.	*/
     	result = (char *)GC_find_limit((ptr_t)(DATAEND) - MIN_PAGE_SIZE, FALSE);
     }
-    GC_reset_fault_handler();
     return((char *)result);
 }
 # endif
@@ -897,9 +934,11 @@ void GC_register_data_segments()
  */
  
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
-	&& !defined(MSWIN32) && !defined(MACOS)
+	&& !defined(MSWIN32) && !defined(MACOS) && !defined(DOS4GW)
 
-extern caddr_t sbrk();
+# ifdef SUNOS4
+    extern caddr_t sbrk();
+# endif
 # ifdef __STDC__
 #   define SBRK_ARG_T ptrdiff_t
 # else
@@ -915,23 +954,23 @@ word bytes;
 {
     caddr_t cur_brk = sbrk(0);
     caddr_t result;
-    SBRK_ARG_T lsbs = (word)cur_brk & (HBLKSIZE-1);
+    SBRK_ARG_T lsbs = (word)cur_brk & (GC_page_size-1);
     static caddr_t my_brk_val = 0;
     
     if ((SBRK_ARG_T)bytes < 0) return(0); /* too big */
     if (lsbs != 0) {
-        if(sbrk(HBLKSIZE - lsbs) == (caddr_t)(-1)) return(0);
+        if(sbrk(GC_page_size - lsbs) == (caddr_t)(-1)) return(0);
     }
     if (cur_brk == my_brk_val) {
     	/* Use the extra block we allocated last time. */
         result = (ptr_t)sbrk((SBRK_ARG_T)bytes);
         if (result == (caddr_t)(-1)) return(0);
-        result -= HBLKSIZE;
+        result -= GC_page_size;
     } else {
-        result = (ptr_t)sbrk(HBLKSIZE + (SBRK_ARG_T)bytes);
+        result = (ptr_t)sbrk(GC_page_size + (SBRK_ARG_T)bytes);
         if (result == (caddr_t)(-1)) return(0);
     }
-    my_brk_val = result + bytes + HBLKSIZE;	/* Always HBLKSIZE aligned */
+    my_brk_val = result + bytes + GC_page_size;	/* Always page aligned */
     return((ptr_t)result);
 }
 
@@ -947,22 +986,20 @@ word bytes;
     static int fd;
     void *result;
     static ptr_t last_addr = HEAP_START;
-    static size_t page_size;
 
     if (!initialized) {
 	fd = open("/dev/zero", O_RDONLY);
-	page_size = getpagesize();
 	initialized = TRUE;
     }
     result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
 		  MAP_PRIVATE | MAP_FIXED, fd, 0/* offset */);
     if (result == MAP_FAILED) return(0);
-    last_addr = (ptr_t)result + bytes + page_size - 1;
-    last_addr = (ptr_t)((word)last_addr & ~(page_size - 1));
+    last_addr = (ptr_t)result + bytes + GC_page_size - 1;
+    last_addr = (ptr_t)((word)last_addr & ~(GC_page_size - 1));
     return((ptr_t)result);
 }
 
-#else /* Not RS6000, USE_MMAP */
+#else /* Not RS6000, not USE_MMAP */
 ptr_t GC_unix_get_mem(bytes)
 word bytes;
 {
@@ -978,27 +1015,27 @@ word bytes;
   else
     return mem;
 #else
-  caddr_t result;
+  ptr_t result;
 # ifdef IRIX5
     /* Bare sbrk isn't thread safe.  Play by malloc rules.	*/
     /* The equivalent may be needed on other systems as well. 	*/
     __LOCK_MALLOC();
 # endif
   {
-    caddr_t cur_brk = sbrk(0);
-    SBRK_ARG_T lsbs = (word)cur_brk & (HBLKSIZE-1);
+    ptr_t cur_brk = (ptr_t)sbrk(0);
+    SBRK_ARG_T lsbs = (word)cur_brk & (GC_page_size-1);
     
     if ((SBRK_ARG_T)bytes < 0) return(0); /* too big */
     if (lsbs != 0) {
-        if(sbrk(HBLKSIZE - lsbs) == (caddr_t)(-1)) return(0);
+        if((ptr_t)sbrk(GC_page_size - lsbs) == (ptr_t)(-1)) return(0);
     }
-    result = sbrk((SBRK_ARG_T)bytes);
-    if (result == (caddr_t)(-1)) result = 0;
+    result = (ptr_t)sbrk((SBRK_ARG_T)bytes);
+    if (result == (ptr_t)(-1)) result = 0;
   }
 # ifdef IRIX5
     __UNLOCK_MALLOC();
 # endif
-  return((ptr_t)result);
+  return(result);
 #endif
 }
 
@@ -1332,27 +1369,6 @@ struct hblk *h;
 VOLATILE page_hash_table GC_dirty_pages;
 				/* Pages dirtied since last GC_read_dirty. */
 
-word GC_page_size;
-
-bool GC_just_outside_heap(addr)
-word addr;
-{
-    register unsigned i;
-    register word start;
-    register word end;
-    word mask = GC_page_size-1;
-    
-    for (i = 0; i < GC_n_heap_sects; i++) {
-    	start = (word) GC_heap_sects[i].hs_start;
-    	end = start + (word)GC_heap_sects[i].hs_bytes;
-        if (addr < ((start + mask) & ~mask) && addr >= (start & ~mask)
-            || addr >= (end & ~mask) && addr < ((end + mask) & ~mask)) {
-            return(TRUE);
-        }
-    }
-    return(FALSE);
-}
-
 #if defined(SUNOS4) || defined(FREEBSD)
     typedef void (* SIG_PF)();
 #endif
@@ -1372,7 +1388,12 @@ word addr;
     typedef void (* REAL_SIG_PF)(int, struct siginfo *, void *);
 #endif
 #if defined(LINUX)
-    typedef void (* REAL_SIG_PF)(int, struct sigcontext_struct);
+#   include <linux/version.h>
+#   if (LINUX_VERSION_CODE >= 0x20100)
+      typedef void (* REAL_SIG_PF)(int, struct sigcontext);
+#   else
+      typedef void (* REAL_SIG_PF)(int, struct sigcontext_struct);
+#   endif
 # endif
 
 SIG_PF GC_old_bus_handler;
@@ -1407,7 +1428,11 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #   endif
 # endif
 # if defined(LINUX)
-    void GC_write_fault_handler(int sig, struct sigcontext_struct sc)
+#   if (LINUX_VERSION_CODE >= 0x20100)
+      void GC_write_fault_handler(int sig, struct sigcontext sc)
+#   else
+      void GC_write_fault_handler(int sig, struct sigcontext_struct sc)
+#   endif
 #   define SIG_OK (sig == SIGSEGV)
 #   define CODE_OK TRUE
 	/* Empirically c.trapno == 14, but is that useful?      */
@@ -1429,7 +1454,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 {
     register unsigned i;
 #   ifdef IRIX5
-	char * addr = (char *) (scp -> sc_badvaddr);
+	char * addr = (char *) (size_t) (scp -> sc_badvaddr);
 #   endif
 #   if defined(OSF1) && defined(ALPHA)
 	char * addr = (char *) (scp -> sc_traparg_a0);
@@ -1466,7 +1491,8 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #	else
 	    in_allocd_block = (HDR(addr) != 0);
 #	endif
-        if (!in_allocd_block && !GC_just_outside_heap((word)addr)) {
+        if (!in_allocd_block) {
+	    /* Heap blocks now begin and end on page boundaries */
             SIG_PF old_handler;
             
             if (sig == SIGSEGV) {
@@ -1554,21 +1580,6 @@ struct hblk *h;
     }
 }
 
-#if defined(SVR4)
-#include <unistd.h>
-int
-GC_getpagesize()
-{
-    return sysconf(_SC_PAGESIZE);
-}
-#else
-# ifdef MSWIN32
-   /* GC_getpagesize() defined above */
-# else
-#  define GC_getpagesize() getpagesize()
-# endif
-#endif
-				 
 void GC_dirty_init()
 {
 #if defined(SUNOS5SIGS)
@@ -1581,7 +1592,6 @@ void GC_dirty_init()
 	GC_printf0("Inititalizing mprotect virtual dirty bit implementation\n");
 #   endif
     GC_dirty_maintained = TRUE;
-    GC_page_size = GC_getpagesize();
     if (GC_page_size % HBLKSIZE != 0) {
         GC_err_printf0("Page size not multiple of HBLKSIZE\n");
         ABORT("Page size not multiple of HBLKSIZE");
@@ -1643,18 +1653,13 @@ void GC_dirty_init()
 
 void GC_protect_heap()
 {
-    word ps = GC_page_size;
-    word pmask = (ps-1);
     ptr_t start;
-    word offset;
     word len;
     unsigned i;
     
     for (i = 0; i < GC_n_heap_sects; i++) {
-        offset = (word)(GC_heap_sects[i].hs_start) & pmask;
-        start = GC_heap_sects[i].hs_start - offset;
-        len = GC_heap_sects[i].hs_bytes + offset;
-        len += ps-1; len &= ~pmask;
+        start = GC_heap_sects[i].hs_start;
+        len = GC_heap_sects[i].hs_bytes;
         PROTECT(start, len);
     }
 }
@@ -1726,14 +1731,19 @@ word len;
 /* Replacement for UNIX system call.	 */
 /* Other calls that write to the heap	 */
 /* should be handled similarly.		 */
-# ifndef LINT
-  int read(fd, buf, nbyte)
+# if defined(__STDC__) && !defined(SUNOS4)
+#   include <unistd.h>
+    ssize_t read(int fd, void *buf, size_t nbyte)
 # else
-  int GC_read(fd, buf, nbyte)
+#   ifndef LINT
+      int read(fd, buf, nbyte)
+#   else
+      int GC_read(fd, buf, nbyte)
+#   endif
+    int fd;
+    char *buf;
+    int nbyte;
 # endif
-int fd;
-char *buf;
-int nbyte;
 {
     int result;
     
@@ -1792,6 +1802,7 @@ word n;
  * address space), but it avoids intercepting system calls.
  */
 
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/signal.h>
 #include <sys/fault.h>
@@ -1856,6 +1867,7 @@ void GC_dirty_init()
     	ABORT("/proc open failed");
     }
     GC_proc_fd = syscall(SYS_ioctl, fd, PIOCOPENPD, 0);
+    close(fd);
     if (GC_proc_fd < 0) {
     	ABORT("/proc ioctl failed");
     }
@@ -1916,6 +1928,7 @@ int dummy;
                 WARN("Insufficient space for /proc read\n", 0);
                 /* Punt:	*/
         	memset(GC_grungy_pages, 0xff, sizeof (page_hash_table));
+		memset(GC_written_pages, 0xff, sizeof(page_hash_table));
 #		ifdef SOLARIS_THREADS
 		    BZERO(GC_fresh_pages,
 		    	  MAX_FRESH_PAGES * sizeof (struct hblk *)); 
@@ -2108,6 +2121,7 @@ struct hblk *h;
 	--> We only know how to to get the first 6 arguments
 #   endif
 
+#ifdef SAVE_CALL_CHAIN
 /* Fill in the pc and argument information for up to NFRAMES of my	*/
 /* callers.  Ignore my frame and my callers frame.			*/
 void GC_save_callers (info) 
@@ -2132,6 +2146,7 @@ struct callinfo info[NFRAMES];
   if (nframes < NFRAMES) info[nframes].ci_pc = 0;
 }
 
+#endif /* SAVE_CALL_CHAIN */
 #endif /* SPARC */
 
 #ifdef SAVE_CALL_CHAIN

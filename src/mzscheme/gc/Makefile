@@ -49,7 +49,9 @@ CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DSILENT
 # -DSOLARIS_THREADS enables support for Solaris (thr_) threads.
 #   (Clients should also define SOLARIS_THREADS and then include
 #   gc.h before performing thr_ or dl* or GC_ operations.)
-#   This is broken on nonSPARC machines.
+#   Must also define -D_REENTRANT
+# -D_SOLARIS_PTHREADS enables support for Solaris pthreads.
+#   Define SOLARIS_THREADS as well.
 # -DIRIX_THREADS enables support for Irix pthreads.  See README.irix.
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
 #   of objects to be recognized.  (See gc_priv.h for consequences.)
@@ -101,6 +103,15 @@ CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DSILENT
 # -DATOMIC_UNCOLLECTABLE includes code for GC_malloc_atomic_uncollectable.
 #   This is useful if either the vendor malloc implementation is poor,
 #   or if REDIRECT_MALLOC is used.
+# -DHBLKSIZE=ddd, where ddd is a power of 2 between 512 and 16384, explicitly
+#   sets the heap block size.  Each heap block is devoted to a single size and
+#   kind of object.  For the incremental collector it makes sense to match
+#   the most likely page size.  Otherwise large values result in more
+#   fragmentation, but generally better performance for large heaps.
+# -DUSE_MMAP use MMAP instead of sbrk to get new memory.
+#   Works for Solaris and Irix.
+# -DMMAP_STACKS (for Solaris threads) Use mmap from /dev/zero rather than
+#   GC_scratch_alloc() to get stack memory.
 
 LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
     -DREDIRECT_MALLOC=GC_malloc_uncollectable \
@@ -118,11 +129,11 @@ RANLIB= ranlib
 srcdir = .
 VPATH = $(srcdir)
 
-OBJS= $(OBJDIR)/alloc.o $(OBJDIR)/reclaim.o $(OBJDIR)/allchblk.o $(OBJDIR)/misc.o $(OBJDIR)/mach_dep.o $(OBJDIR)/os_dep.o $(OBJDIR)/mark_rts.o $(OBJDIR)/headers.o $(OBJDIR)/mark.o $(OBJDIR)/obj_map.o $(OBJDIR)/blacklst.o $(OBJDIR)/finalize.o $(OBJDIR)/new_hblk.o $(OBJDIR)/dbg_mlc.o $(OBJDIR)/malloc.o $(OBJDIR)/stubborn.o $(OBJDIR)/checksums.o $(OBJDIR)/solaris_threads.o $(OBJDIR)/irix_threads.o $(OBJDIR)/typd_mlc.o $(OBJDIR)/ptr_chck.o $(OBJDIR)/mallocx.o
+OBJS= $(OBJDIR)/alloc.o $(OBJDIR)/reclaim.o $(OBJDIR)/allchblk.o $(OBJDIR)/misc.o $(OBJDIR)/mach_dep.o $(OBJDIR)/os_dep.o $(OBJDIR)/mark_rts.o $(OBJDIR)/headers.o $(OBJDIR)/mark.o $(OBJDIR)/obj_map.o $(OBJDIR)/blacklst.o $(OBJDIR)/finalize.o $(OBJDIR)/new_hblk.o $(OBJDIR)/dbg_mlc.o $(OBJDIR)/malloc.o $(OBJDIR)/stubborn.o $(OBJDIR)/checksums.o $(OBJDIR)/solaris_threads.o $(OBJDIR)/irix_threads.o $(OBJDIR)/typd_mlc.o $(OBJDIR)/ptr_chck.o $(OBJDIR)/mallocx.o $(OBJDIR)/solaris_pthreads.o
 
-CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c irix_threads.c typd_mlc.c ptr_chck.c mallocx.c
+CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c irix_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c
 
-CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c cord/cord.h cord/ec.h cord/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC cord/$(OBJDIR)/SCOPTIONS.amiga cord/$(OBJDIR)/SMakefile.amiga
+CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c cord/cord.h cord/ec.h cord/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC cord/SCOPTIONS.amiga cord/SMakefile.amiga
 
 CORD_OBJS=  cord/$(OBJDIR)/cordbscs.o cord/$(OBJDIR)/cordxtra.o cord/$(OBJDIR)/cordprnt.o
 
@@ -131,7 +142,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     config.h gc_mark.h include/gc_inl.h include/gc_inline.h gc.man \
     threadlibs.c if_mach.c if_not_there.c gc_cpp.cc gc_cpp.h weakpointer.h \
     gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h gc_alloc.h \
-    $(CORD_SRCS)
+    sparc_sunos4_mach_dep.s solaris_threads.h $(CORD_SRCS)
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README test.c test_cpp.cc setjmp_t.c SMakefile.amiga \
@@ -182,7 +193,7 @@ $(OBJS) $(OBJDIR)/test.o $(OBJDIR)/dyn_load.o $(OBJDIR)/dyn_load_sunos53.o: \
 
 $(OBJDIR)/mark.o $(OBJDIR)/typd_mlc.o $(OBJDIR)/finalize.o: $(srcdir)/gc_mark.h
 
-$(OBJDIR)/gc.a: $(OBJS) $(OBJDIR)/dyn_load.o $(UTILS)
+base_lib $(OBJDIR)/gc.a: $(OBJS) $(OBJDIR)/dyn_load.o $(UTILS)
 	./$(EXEDIR)/if_mach SPARC SUNOS5 $(AR) rus $(OBJDIR)/gc.a $(OBJS) $(OBJDIR)/dyn_load.o
 	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT $(AR) ru $(OBJDIR)/gc.a $(OBJS) $(OBJDIR)/dyn_load.o
 	./$(EXEDIR)/if_mach SPARC SUNOS5 NOT $(RANLIB) $(OBJDIR)/gc.a || cat /dev/null
@@ -239,6 +250,7 @@ $(OBJDIR)/mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdi
 # ./$(EXEDIR)/if_mach RS6000 "" $(AS) -o $(OBJDIR)/mach_dep.o $(srcdir)/rs6000_mach_dep.s
 	./$(EXEDIR)/if_mach ALPHA "" $(AS) -o $(OBJDIR)/mach_dep.o $(srcdir)/alpha_mach_dep.s
 	./$(EXEDIR)/if_mach SPARC SUNOS5 $(AS) -o $(OBJDIR)/mach_dep.o $(srcdir)/sparc_mach_dep.s
+	./$(EXEDIR)/if_mach SPARC SUNOS4 $(AS) -o $(OBJDIR)/mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./$(EXEDIR)/if_not_there $(OBJDIR)/mach_dep.o $(CC) -c $(SPECIALCFLAGS) -o $(OBJDIR)/mach_dep.o $(srcdir)/mach_dep.c
 
 $(OBJDIR)/mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
@@ -247,6 +259,8 @@ $(OBJDIR)/mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
 	./$(EXEDIR)/if_not_there $(OBJDIR)/mark_rts.o $(CC) -c $(CFLAGS) -o $(OBJDIR)/mark_rts.o $(srcdir)/mark_rts.c
 #	Work-around for DEC optimizer tail recursion elimination bug.
 #  The ALPHA-specific line should be removed if gcc is used.
+
+$(OBJDIR)/alloc.o: version.h
 
 cord/$(OBJDIR)/cordbscs.o: $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c $(srcdir)/cord/cordbscs.c
@@ -356,6 +370,17 @@ gctest_dyn_link: $(OBJDIR)/test.o libgc.so
 gctest_irix_dyn_link: $(OBJDIR)/test.o libirixgc.so
 	$(CC) -L$(ABSDIR) -o gctest_irix_dyn_link $(OBJDIR)/test.o -lirixgc
 
+test_dll.o: test.c libgc_globals.h
+	$(CC) $(CFLAGS) -DGC_USE_DLL -c test.c -o test_dll.o
+
+test_dll: test_dll.o libgc_dll.a libgc.dll
+	$(CC) test_dll.o -L$(ABSDIR) -lgc_dll -o test_dll
+
+SYM_PREFIX-libgc=GC
+
+# Uncomment the following line to build a GNU win32 DLL
+# include Makefile.DLLs
+
 reserved_namespace: $(SRCS)
 	for file in $(SRCS) test.c test_cpp.cc; do \
 		sed s/GC_/_GC_/g < $$file > tmp; \
@@ -410,6 +435,8 @@ $(OBJDIR)/dyn_load.o: dyn_load.c
 	$(CC) $(CFLAGS) -c dyn_load.c -o $(OBJDIR)/dyn_load.o
 $(OBJDIR)/mallocx.o: mallocx.c
 	$(CC) $(CFLAGS) -c mallocx.c -o $(OBJDIR)/mallocx.o
+$(OBJDIR)/solaris_pthreads.o: solaris_pthreads.c
+	$(CC) $(CFLAGS) -c solaris_pthreads.c -o $(OBJDIR)/solaris_pthreads.o
 
 $(OBJDIR)/test.o: test.c
 	$(CC) $(CFLAGS) -c test.c -o $(OBJDIR)/test.o

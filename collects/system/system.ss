@@ -134,9 +134,10 @@
 	(when mred:non-unit-startup?
 	  (set! mred:console (mred:startup)))
 	(for-each mred:edit-file files-to-open)
-	'(unless (= mred:splash-max mred:splash-counter)
-	  (printf "WARNING: splash max (~a) != splash counter (~a)~n"
-		  mred:splash-max mred:splash-counter))
+	(when mred:debug:on?
+	  (unless (= mred:splash-max mred:splash-counter)
+	    (printf "WARNING: splash max (~a) != splash counter (~a)~n"
+		    mred:splash-max mred:splash-counter)))
 	(mred:close-splash)
 	mred:console]
        [else 

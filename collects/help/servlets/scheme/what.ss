@@ -74,7 +74,7 @@
     "Other dialects are designed for practicing programmers. " 
     "The " (A ((NAME "r5rs2") (VALUE "R5RS Scheme language")))
     ,(standout-text "R5RS")
-    " is a standard dialect of Scheme that is "
+    " language is a standard dialect of Scheme that is "
     "defined by the " 
     (A ((HREF "/doc/r5rs/"))
        "Revised(5) Report on the Algorithmic "

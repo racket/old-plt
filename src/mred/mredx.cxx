@@ -14,29 +14,19 @@
 #include "wx_media.h"
 #include "scheme.h"
 
-#if defined(wx_motif)
-#include <X11/Xlib.h>
-#include <X11/keysymdef.h>
-#endif
-
 #include "mred.h"
 
-static int short_circuit = 0, just_check = 0, checking_for_break = 0;
-#ifdef wx_xt
-static Widget just_this_one;
-#else
-static MrEdContext *just_this_one;
-#endif
+#include <X11/Shell.h>
 
-#ifdef wx_xt
+static int short_circuit = 0, just_check = 0, checking_for_break = 0;
+static Widget just_this_one;
+
 static Widget orig_top_level;
 static Widget save_top_level = 0;
-#endif
 
 static KeyCode breaking_code;
 static int breaking_code_set = 0;
 
-#ifdef wx_xt
 static Widget *grab_stack, grabber;
 static int grab_stack_pos = 0, grab_stack_size = 0;
 #define WSTACK_INC 3
@@ -67,76 +57,7 @@ extern "C" {
 	grabber = NULL;
     }
 };
-#endif
 
-#ifdef wx_motif
-Scheme_Hash_Table *registered_widgets;
-
-void wxRegisterFrameWidget(Widget w)
-{
-  if (!registered_widgets) {
-    /* Use SCHEME_hash_weak_ptr so elements can be deleted from the table */
-    registered_widgets = scheme_hash_table(7, SCHEME_hash_weak_ptr, 0, 0);
-  }
-
-  Scheme_Bucket *b;
-  
-  b = scheme_bucket_from_table(registered_widgets, (const char *)w);
-  b->val = (void *)MrEdGetContext();
-}
-
-void wxUnregisterFrameWidget(Widget w)
-{
-  if (!registered_widgets)
-    return;
-
-  if (scheme_lookup_in_table(registered_widgets, (const char *)w)) {
-    Scheme_Bucket *b;
-    
-    b = scheme_bucket_from_table(registered_widgets, (const char *)w);
-    /* Removes from hash table: */
-    *(void **)b->key = NULL;
-  }
-}
-
-static MrEdContext *WidgetContext(Widget w)
-{
-  if (!registered_widgets)
-    return NULL;
-
-  void *v = scheme_lookup_in_table(registered_widgets, (const char *)w);
-
-  return (MrEdContext *)v;
-}
-
-typedef struct IdleCallback {
-  MrEdContext *context;
-  void (*f)(void *);
-  void *data;
-  struct IdleCallback *next;
-} IdleCallback;
-
-IdleCallback *idleList = NULL;
-
-void wxRegsiterIdleCallback(void (*f)(void *), void *data, wxWindow *w)
-{
-  IdleCallback *i = new IdleCallback, *j = idleList;
-  i->next = NULL;
-  i->f = f;
-  i->data = data;
-  i->context = MrEdGetContext(w);
-
-  if (j) {
-    while (j->next)
-      j = j->next;
-    j->next = i;
-  } else
-    idleList = i;
-}
-
-#endif
-
-#if wx_xt
 Widget wxGetAppToplevel()
 {
   if (save_top_level)
@@ -149,31 +70,24 @@ void wxPutAppToplevel(Widget w)
 {
   save_top_level = w;
 }
-#endif
 
 void MrEdInitFirstContext(MrEdContext *c)
 {
-#ifdef wx_xt
   orig_top_level = save_top_level;
   c->finalized->toplevel = save_top_level;
   save_top_level = 0;
-#endif
 }
 
 void MrEdInitNewContext(MrEdContext *c)
 {
-#ifdef wx_xt
   wxInitNewToplevel();
   c->finalized->toplevel = save_top_level;
   save_top_level = 0;
-#endif
 }
 
 void MrEdDestroyContext(MrEdFinalizedContext *c)
 {
-#ifdef wx_xt
   XtDestroyWidget(c->toplevel);
-#endif
 }
 
 Window GetEventWindow(XEvent *e)
@@ -248,22 +162,12 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
     Widget parent;
     for (parent = widget; XtParent(parent); parent = XtParent(parent));
     
-#ifdef wx_motif
-    MrEdContext *parent_context = WidgetContext(parent);
-#endif
-
 #if 0
     printf("parent: %lx context: %lx\n", parent, parent_context);
 #endif
 
     if (just_this_one) {
-      if (
-#ifdef wx_xt
-	  parent == just_this_one
-#else
-	  just_this_one == parent_context
-#endif
-	  ) {
+      if (parent == just_this_one) {
 	if (checking_for_break) {
 	  if (e->type == KeyPress) {
 	    if ((e->xkey.state & ControlMask) 
@@ -285,13 +189,7 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
       MrEdContext *c;
       
       for (c = mred_contexts; c; c = c->next)
-	if (
-#ifdef wx_xt
-	    c->finalized->toplevel == parent
-#else
-	    c == parent_context
-#endif
-	    ) {
+	if (c->finalized->toplevel == parent) {
 	  if (!c->ready) {
 #if 0
 	    printf("not ready\n");
@@ -352,20 +250,12 @@ int MrEdGetNextEvent(int check_only, int current_only,
     *which = NULL;
 
   just_check = check_only;
-#ifdef wx_xt
   just_this_one = (current_only ? wxGetAppToplevel() : (Widget)NULL);
-#else
-  just_this_one = (current_only ? MrEdGetContext() : NULL);
-#endif
 
-#ifdef wx_motif
-  d = XtDisplay(wxTheApp->topLevel);
-#else
   if (!orig_top_level)
     d = XtDisplay(save_top_level);
   else
     d = XtDisplay(orig_top_level);
-#endif
 
   if (XCheckIfEvent(d, event, CheckPred, (char *)which)) {
     just_check = 0;
@@ -374,29 +264,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
     short_circuit = 0;
     return 1;
   }
-
-#ifdef wx_motif
-  if (idleList) {
-    MrEdContext *c = MrEdGetContext();
-    IdleCallback *i = idleList, *prev = NULL, *x;
-
-    while (i) {
-      if (!current_only || (idleList->context == c)) {
-	x = i;
-	i = i->next;
-	if (prev)
-	  prev->next = i;
-	else
-	  idleList = i;
-
-	x->f(x->data);
-      } else {
-	prev = i;
-	i = i->next;
-      }
-    }
-  }
-#endif
 
   return 0;
 }
@@ -428,14 +295,10 @@ void wxSetSensitive(Widget w, Bool enabled)
 
 Display *MrEdGetXDisplay(void)
 {
-#ifdef wx_motif
-  return XtDisplay(wxTheApp->topLevel);
-#else
   if (!orig_top_level)
     return XtDisplay(save_top_level);
   else
     return XtDisplay(orig_top_level);
-#endif
 }
 
 void MrEdDispatchEvent(XEvent *event)
@@ -466,36 +329,29 @@ void MrEdDispatchEvent(XEvent *event)
       MrEdContext *c = MrEdGetContext();
       wxWindow *ew = c->modal_window;
       if (ew) {
-#ifdef wx_xt
 	exempt = ew->GetHandle()->frame;
-#endif
-#ifdef wx_motif
-	exempt = (Widget)ew->handle;
-#endif
       }
 
       while (widget) {
-#ifdef wx_xt
 	if (widget == grabber)
 	  break;
-#endif
-	if (scheme_lookup_in_table(disabled_widgets, (const char *)widget)) {
+
+	/* Key Events: the window for the key event might be the
+	   location of the mouse, rather than the window with the
+	   focus. Only start checking the enabled state with the first
+	   top-level window, since a disabled sub-window never has the
+	   focus within that top-level window. */
+
+	if (((type != KeyPress) && (type != KeyRelease))
+	    || XtIsSubclass(widget, transientShellWidgetClass)
+	    || XtIsSubclass(widget, topLevelShellWidgetClass)) {
+	  
+	  if (scheme_lookup_in_table(disabled_widgets, (const char *)widget)) {
 #if 0
-	  printf("disabled for %s: %lx from %lx\n", get_event_type(event), widget, ow);
+	    printf("disabled for %s: %lx from %lx\n", get_event_type(event), widget, ow);
 #endif
-#ifdef wx_motif
-	  if (type == ButtonPress
-	      || type == ButtonRelease) {
-	    /* Mouse down: make sure the event is dispatched, but redirect it to a harmless
-	       window. Otherwise, if a popup menu is active, Motif gets confused. */
-	    extern wxFrame *mred_real_main_frame;
-	    if (mred_real_main_frame) {
-	      event->xbutton.window = XtWindow(mred_real_main_frame->clientArea);
-	      break;
-	    }
+	    return;
 	  }
-#endif
-	  return;
 	}
 
 	if (widget == exempt)
@@ -506,29 +362,6 @@ void MrEdDispatchEvent(XEvent *event)
     }
   }
 
-#if 0
-  Window w = GetEventWindow(event);
-  if (orig_top_level) {
-    Widget wg = w ? XtWindowToWidget(XtDisplay(orig_top_level), w) : (Widget)0;
-    if (wg) {
-      Widget parent;
-      for (parent = wg; XtParent(parent); parent = XtParent(parent));
-      
-      MrEdContext *here = MrEdGetContext();
-      if (here->finalized->toplevel != parent) {
-	printf("Wrong context %lx for dispatching %lx\n", here, w);
-	MrEdContext *c;
-	for (c = mred_contexts; c; c = c->next)
-	  if (c->finalized->toplevel == parent) {
-	    printf("Should have been %lx\n", c);
-	    break;
-	  }
-      }
-    }
-  }
-  printf("dispatch %d for %lx in %lx\n", event->type, w, scheme_current_process);
-#endif
-
   XtDispatchEvent(event);
 }
 
@@ -538,14 +371,10 @@ int MrEdCheckForBreak(void)
   XEvent e;
   Display *d;
 
-#ifdef wx_motif
-  d = XtDisplay(wxTheApp->topLevel);
-#else
   if (!orig_top_level)
     d = XtDisplay(save_top_level);
   else
     d = XtDisplay(orig_top_level);
-#endif
 
   if (!breaking_code_set) {
     breaking_code = XKeysymToKeycode(d, 'c');
@@ -561,7 +390,6 @@ int MrEdCheckForBreak(void)
   return br;
 }
 
-#ifdef wx_xt
 #include "wx_timer.h"
 
 class wxXtTimer : public wxTimer
@@ -603,4 +431,3 @@ extern "C" {
       return (long)t;
     }
 }
-#endif

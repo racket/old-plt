@@ -58,7 +58,7 @@
 # define USE_ULIMIT
 #endif
 
-#if defined(wx_motif) || defined(wx_xt)
+#if defined(wx_xt)
 # include <X11/Xlib.h>
 # include <X11/keysymdef.h>
 #endif
@@ -960,11 +960,7 @@ static int try_dispatch(Scheme_Object *do_it)
 static void wakeup_on_dispatch(Scheme_Object *, void *fds)
 {
 #ifdef wx_x
-# ifdef wx_xt
   Display *d = XtDisplay(mred_main_context->finalized->toplevel);
-# else
-  Display *d = XtDisplay(wxTheApp->topLevel);
-# endif
   int fd;
   
   fd = ConnectionNumber(d);
@@ -2432,12 +2428,7 @@ void wxFlushDisplay(void)
 #ifdef wx_x
   Display *d;
 
-#ifdef wx_motif
-  d = XtDisplay(wxTheApp->topLevel);
-#endif
-#ifdef wx_xt
   d = XtDisplay(wxAPP_TOPLEVEL);
-#endif
 
   XFlush(d);
   XSync(d, FALSE);

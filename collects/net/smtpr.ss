@@ -47,10 +47,18 @@
 	    (string-append "." l) ; it was all dots
 	    l)))
 
-  (define send-smtp-message
+  (define smtp-sending-end-of-message
+    (make-parameter void
+		    (lambda (f)
+		      (unless (and (procedure? f)
+				   (procedure-arity-includes? f 0))
+			(raise-type-error 'smtp-sending-end-of-message "thunk" f))
+		      f)))
+  
+  (define smtp-send-message
     (case-lambda
      [(server sender recipients header message-lines)
-      (send-smtp-message server sender recipients header message-lines 25)]
+      (smtp-send-message server sender recipients header message-lines 25)]
      [(server sender recipients header message-lines pos)
       (when (null? recipients)
 	(error 'send-smtp-message "no recievers"))
@@ -88,11 +96,16 @@
 	     (log "body: ~a~n" l)
 	     (fprintf w "~a~a" (protect-line l) crlf))
 	   message-lines)
+
+	  ;; After we send the ".", then only break in an emergency
+	  ((smtp-sending-end-of-message))
+
 	  (fprintf w ".~a" crlf)
 	  (check-reply r 250)
-
+	  
 	  (log "quit~n")
 	  (fprintf w "QUIT~a" crlf)
 	  (check-reply r 221)
+	  
 	  (close-output-port w)
 	  (close-input-port r)))])))

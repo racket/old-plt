@@ -44,6 +44,11 @@
 #  include <sys/select.h>
 # endif
 #endif
+#ifdef USE_ITIMER
+# include <sys/types.h>
+# include <sys/time.h>
+# include <signal.h>
+#endif
 #ifdef USE_BEOS_SOCKET_INCLUDE
 # include <be/net/socket.h>
 #endif
@@ -4123,6 +4128,9 @@ void scheme_block_child_signals(int block)
 
   sigemptyset(&sigs);
   sigaddset(&sigs, SIGCHLD);
+#ifdef USE_ITIMER
+  sigaddset(&sigs, SIGPROF);
+#endif
   sigprocmask(block ? SIG_BLOCK : SIG_UNBLOCK, &sigs, NULL);
 }
 
@@ -4719,6 +4727,33 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       sc->next = scheme_system_children;
       scheme_system_children = sc;
       sc->id = pid;
+    } else {
+#ifdef USE_ITIMER
+      /* Turn off the timer. */
+      struct itimerval t, old;
+      sigset_t sigs;
+  
+      t.it_value.tv_sec = 0;
+      t.it_value.tv_usec = 0;
+      t.it_interval.tv_sec = 0;
+      t.it_interval.tv_usec = 0;
+      
+      setitimer(ITIMER_PROF, &t, &old);
+      
+      while (!sigpending(&sigs)) {
+	/* Clear already-queued signal: */
+	if (sigismember(&sigs, SIGPROF)) {
+	  sigemptyset(&sigs);
+	  sigaddset(&sigs, SIGPROF);
+	  MZ_SIGSET(SIGPIPE, SIG_IGN);
+	  sigprocmask(SIG_UNBLOCK, &sigs, NULL);
+	  /* Hopefully, signal ignored here. */
+	  sleep(0);
+	  sigprocmask(SIG_BLOCK, &sigs, NULL);
+	} else
+	  break;
+      }
+#endif
     }
 
     scheme_block_child_signals(0);

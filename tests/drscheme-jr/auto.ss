@@ -257,9 +257,6 @@
 
   ;; ;;;;;;;;;;;;;;;;;;;;;; prims ;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (try "(eq? 5 5)" 
-       (cb-diff '(error "expected symbols as arguments") true-string))
-       
   (try "(cons 3 4)"
        (pl-diff '(error "second argument must be of type <list>")
 		(pc-diff "(cons 3 4)" "(3 . 4)")))

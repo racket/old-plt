@@ -56,8 +56,7 @@ STDMETHODIMP CSink::set_extension_table(int p)
   return S_OK;
 }
 
-STDMETHODIMP CSink::set_myssink_table(int p)
-{
+STDMETHODIMP CSink::set_myssink_table(int p) {
   myssink_table = (MYSSINK_TABLE *)p;
   return S_OK;
 }
@@ -77,7 +76,7 @@ STDMETHODIMP CSink::register_handler(DISPID dispId,int handler) {
   }
   else {
 
-    while (p->next != NULL) {
+    while (p != NULL) {
 
       if (p->dispId == dispId) { // update existing entry
 	p->handler = (Scheme_Object *)handler;
@@ -88,6 +87,30 @@ STDMETHODIMP CSink::register_handler(DISPID dispId,int handler) {
     }
 
     p->next = newEventHandlerEntry(dispId,(Scheme_Object *)handler);
+  }
+
+  return S_OK;
+}
+
+STDMETHODIMP CSink::unregister_handler(DISPID dispId) {
+  unsigned short hashVal;
+  EVENT_HANDLER_ENTRY *p;
+
+  hashVal = getHashValue(dispId);
+  
+  p = &eventHandlerTable[hashVal];
+  
+  if (p->dispId == (DISPID)0) { // no handler installed
+    return S_OK;
+  }
+
+  while (p != NULL) {
+    if (p->dispId == dispId) { // set existing entry to NULL
+      p->handler = NULL;
+      return S_OK;
+    }
+
+    p = p->next;
   }
 
   return S_OK;
@@ -446,6 +469,10 @@ HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
   }
 
   handler = p->handler;
+
+  if (handler == NULL) { // handler was unregistered
+    return S_OK;
+  }
   
   numParams = pDispParams->cArgs;
 

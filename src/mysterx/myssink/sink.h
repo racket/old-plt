@@ -56,6 +56,7 @@ public:
  STDMETHOD(set_extension_table)(int);
  STDMETHOD(set_myssink_table)(int);
  STDMETHOD(register_handler)(DISPID,int); 
+ STDMETHOD(unregister_handler)(DISPID); 
 
  //override ATL implementations
 

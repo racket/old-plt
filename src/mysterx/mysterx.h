@@ -216,6 +216,7 @@ MX_PRIM_DECL(mx_com_object_pred);
 MX_PRIM_DECL(mx_com_register_object);
 MX_PRIM_DECL(mx_com_help);
 MX_PRIM_DECL(mx_com_register_event_handler);
+MX_PRIM_DECL(mx_com_unregister_event_handler);
 MX_PRIM_DECL(mx_all_controls);
 MX_PRIM_DECL(mx_all_coclasses);
 MX_PRIM_DECL(mx_find_element);

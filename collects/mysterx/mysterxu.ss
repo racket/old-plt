@@ -19,6 +19,7 @@
   (define com-event-type mxprims:com-event-type)
   (define com-help mxprims:com-help)
   (define com-register-event-handler mxprims:com-register-event-handler)
+  (define com-unregister-event-handler mxprims:com-unregister-event-handler)
   (define com-all-coclasses mxprims:com-all-coclasses)
   (define com-all-controls mxprims:com-all-controls)
   (define coclass->html mxprims:coclass->html)

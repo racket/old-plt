@@ -15,6 +15,7 @@
    com-event-type
    com-help
    com-register-event-handler
+   com-unregister-event-handler
    com-all-coclasses
    com-all-controls
    coclass->html
@@ -37,6 +38,7 @@
    com-event-type
    com-help
    com-register-event-handler
+   com-unregister-event-handler
    com-all-coclasses
    com-all-controls
    coclass->html

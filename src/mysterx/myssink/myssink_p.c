@@ -2,7 +2,7 @@
 
 
 /* File created by MIDL compiler version 5.01.0164 */
-/* at Fri May 28 14:03:40 1999
+/* at Tue Jun 29 14:51:22 1999
  */
 /* Compiler settings for myssink.idl:
     Oicf (OptLev=i2), W1, Zp8, env=Win32, ms_ext, c_ext
@@ -28,7 +28,7 @@
 #include "myssink.h"
 
 #define TYPE_FORMAT_STRING_SIZE   3                                 
-#define PROC_FORMAT_STRING_SIZE   91                                
+#define PROC_FORMAT_STRING_SIZE   119                               
 
 typedef struct _MIDL_TYPE_FORMAT_STRING
     {
@@ -98,7 +98,8 @@ static const unsigned short ISink_FormatStringOffsetTable[] =
     (unsigned short) -1,
     0,
     28,
-    56
+    56,
+    90
     };
 
 static const MIDL_SERVER_INFO ISink_ServerInfo = 
@@ -123,7 +124,7 @@ static const MIDL_STUBLESS_PROXY_INFO ISink_ProxyInfo =
     0
     };
 
-CINTERFACE_PROXY_VTABLE(10) _ISinkProxyVtbl = 
+CINTERFACE_PROXY_VTABLE(11) _ISinkProxyVtbl = 
 {
     &ISink_ProxyInfo,
     &IID_ISink,
@@ -136,7 +137,8 @@ CINTERFACE_PROXY_VTABLE(10) _ISinkProxyVtbl =
     0 /* IDispatch_Invoke_Proxy */ ,
     (void *)-1 /* ISink::set_extension_table */ ,
     (void *)-1 /* ISink::set_myssink_table */ ,
-    (void *)-1 /* ISink::register_handler */
+    (void *)-1 /* ISink::register_handler */ ,
+    (void *)-1 /* ISink::unregister_handler */
 };
 
 
@@ -148,6 +150,7 @@ static const PRPC_STUB_FUNCTION ISink_table[] =
     STUB_FORWARDING_FUNCTION,
     NdrStubCall2,
     NdrStubCall2,
+    NdrStubCall2,
     NdrStubCall2
 };
 
@@ -155,7 +158,7 @@ CInterfaceStubVtbl _ISinkStubVtbl =
 {
     &IID_ISink,
     &ISink_ServerInfo,
-    10,
+    11,
     &ISink_table[-3],
     CStdStubBuffer_DELEGATING_METHODS
 };
@@ -302,6 +305,44 @@ static const MIDL_PROC_FORMAT_STRING __MIDL_ProcFormatString =
 			NdrFcShort( 0x18 ),	/* Alpha Stack size/offset = 24 */
 #endif
 /* 88 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Procedure unregister_handler */
+
+/* 90 */	0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/* 92 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 96 */	NdrFcShort( 0xa ),	/* 10 */
+#ifndef _ALPHA_
+/* 98 */	NdrFcShort( 0xc ),	/* x86, MIPS, PPC Stack size/offset = 12 */
+#else
+			NdrFcShort( 0x18 ),	/* Alpha Stack size/offset = 24 */
+#endif
+/* 100 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 102 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 104 */	0x4,		/* Oi2 Flags:  has return, */
+			0x2,		/* 2 */
+
+	/* Parameter __MIDL_0019 */
+
+/* 106 */	NdrFcShort( 0x48 ),	/* Flags:  in, base type, */
+#ifndef _ALPHA_
+/* 108 */	NdrFcShort( 0x4 ),	/* x86, MIPS, PPC Stack size/offset = 4 */
+#else
+			NdrFcShort( 0x8 ),	/* Alpha Stack size/offset = 8 */
+#endif
+/* 110 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Return value */
+
+/* 112 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+#ifndef _ALPHA_
+/* 114 */	NdrFcShort( 0x8 ),	/* x86, MIPS, PPC Stack size/offset = 8 */
+#else
+			NdrFcShort( 0x10 ),	/* Alpha Stack size/offset = 16 */
+#endif
+/* 116 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
 			0x0

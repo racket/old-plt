@@ -80,6 +80,7 @@ static MX_PRIM mxPrims[] = {
   // COM events
   
   { mx_com_register_event_handler,"com-register-event-handler",3,3 },
+  { mx_com_unregister_event_handler,"com-unregister-event-handler",2,2 },
   
   // coclasses
   
@@ -675,56 +676,26 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   ReleaseSemaphore(eventSinkMutex,1,NULL);
 }
 
-Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
+FUNCDESC *getFuncDescForEvent(LPOLESTR name,ITypeInfo *pITypeInfo) {        
   HRESULT hr;
-  IDispatch *pIDispatch;
-  char *eventName;
-  ITypeInfo *pITypeInfo;
-  ISink *pISink;
-  FUNCDESC *pFuncDesc;
   TYPEATTR *pTypeAttr;
-  BOOL foundEvent;
-  unsigned short numFuncDescs;
+  FUNCDESC *pFuncDesc;
   BSTR bstr;
   UINT bstrCount;
-  BSTR unicodeName;
+  unsigned short numFuncDescs;
   int i;
-  
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-register-event-handler","com-object",0,argc,argv);
-  }
-  
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("com-register-event-handler","string",1,argc,argv);
-  }
-  
-  if (SCHEME_PROCP(argv[2]) == FALSE) {
-    scheme_wrong_type("com-register-event-handler","procedure",1,argc,argv);
-  }
-  
-  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
-  eventName = SCHEME_STR_VAL(argv[1]);
-  
-  connectComObjectToEventSink((MX_COM_Object *)argv[0]);
-  
-  pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO(argv[0]);
-  pISink = MX_COM_OBJ_EVENTSINK(argv[0]);
-  
+
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
   
   if (hr != S_OK || pTypeAttr == NULL) {
     codedComError("Unable to get type attributes for events",hr);
   }
-  
+
   numFuncDescs = pTypeAttr->cFuncs;
   
   pITypeInfo->ReleaseTypeAttr(pTypeAttr);
   
-  foundEvent = FALSE;
-  
-  unicodeName = schemeStringToBSTR(argv[1]);
-  
-  for (i = 0; foundEvent == FALSE && i < numFuncDescs; i++) {
+  for (i = 0; i < numFuncDescs; i++) {
     
     hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
     
@@ -740,22 +711,109 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
       codedComError("Error getting event method name",hr);
     }
     
-    if (wcscmp(unicodeName,bstr) == 0) {
-      pISink->register_handler(pFuncDesc->memid,(int)argv[2]);
-      foundEvent = TRUE;
+    if (wcscmp(name,bstr) == 0) {
+      SysFreeString(bstr);
+      return pFuncDesc;
     }
     
     SysFreeString(bstr);
     
     pITypeInfo->ReleaseFuncDesc(pFuncDesc);
   }
+
+  return NULL;
+}
+
+Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
+  char *eventName;
+  ITypeInfo *pITypeInfo;
+  ISink *pISink;
+  FUNCDESC *pFuncDesc;
+  BSTR unicodeName;
+  
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-register-event-handler","com-object",0,argc,argv);
+  }
+  
+  if (SCHEME_STRINGP(argv[1]) == FALSE) {
+    scheme_wrong_type("com-register-event-handler","string",1,argc,argv);
+  }
+  
+  if (SCHEME_PROCP(argv[2]) == FALSE) {
+    scheme_wrong_type("com-register-event-handler","procedure",1,argc,argv);
+  }
+  
+  eventName = SCHEME_STR_VAL(argv[1]);
+  
+  connectComObjectToEventSink((MX_COM_Object *)argv[0]);
+  
+  pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO(argv[0]);
+  pISink = MX_COM_OBJ_EVENTSINK(argv[0]);
+
+  unicodeName = schemeStringToBSTR(argv[1]);
+
+  pFuncDesc = getFuncDescForEvent(unicodeName,pITypeInfo);
+
+  if (pFuncDesc) {				   
+    pISink->register_handler(pFuncDesc->memid,(int)argv[2]);
+  }
+
+  pITypeInfo->ReleaseFuncDesc(pFuncDesc);
   
   SysFreeString(unicodeName);
   
-  if (foundEvent == FALSE) {
+  if (pFuncDesc == NULL) {
     scheme_signal_error("Can't find event %s in type description",eventName);
   }
   
+  return scheme_void;
+}
+
+Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
+  char *eventName;
+  ITypeInfo *pITypeInfo;
+  ISink *pISink;
+  FUNCDESC *pFuncDesc;
+  BSTR unicodeName;
+  
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-unregister-event-handler","com-object",0,argc,argv);
+  }
+  
+  if (SCHEME_STRINGP(argv[1]) == FALSE) {
+    scheme_wrong_type("com-unregister-event-handler","string",1,argc,argv);
+  }
+  
+  eventName = SCHEME_STR_VAL(argv[1]);
+  
+  pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO(argv[0]);
+
+  if (pITypeInfo == NULL) {
+    scheme_signal_error("No event type information for object");
+  }
+
+  pISink = MX_COM_OBJ_EVENTSINK(argv[0]);
+
+  if (pISink == NULL) { // no events registered
+    return scheme_void;
+  }
+  
+  unicodeName = schemeStringToBSTR(argv[1]);
+
+  pFuncDesc = getFuncDescForEvent(unicodeName,pITypeInfo);
+
+  if (pFuncDesc) {				   
+    pISink->unregister_handler(pFuncDesc->memid);
+  }
+    
+  pITypeInfo->ReleaseFuncDesc(pFuncDesc);
+  
+  SysFreeString(unicodeName);
+  
+  if (pFuncDesc == NULL) {
+    scheme_signal_error("Can't find event %s in type description",eventName);
+  }
+
   return scheme_void;
 }
 

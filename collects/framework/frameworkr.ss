@@ -1,10 +1,11 @@
 ;;
-;; $Id: frameworkr.ss,v 1.3 1998/09/01 22:11:35 robby Exp $
+;; $Id: frameworkr.ss,v 1.4 1998/09/06 01:32:33 robby Exp $
 ;;
 
-(compound-unit/sig (import [core : mzlib:core^])
+(compound-unit/sig (import [core : mzlib:core^]
+			   [mred : mred^])
   (link [date : mzlib:date^ ((require-library-unit/sig "dater.ss")
-			     (core function@))]
+			     (core function))]
 	[application : framework:application^ ((require-unit/sig "app.ss"))]
 	[version : mred:version^ ((require-unit/sig "version.ss")
 				  (core function)
@@ -47,15 +48,10 @@
 		exit autosave handler (core function@)
 		(core file@))]
 
-	;; stopped here
+	[canvas : mred:canvas^ ((require-unit/sig "canvas.ss") mred preferences)]
 
-	[canvas : mred:canvas^ 
-		((require-unit/sig "canvas.ss") wx 
-		 (minimal constants) (minimal container) edit preferences 
-		 (core file@) (core function@))]
-	[panel : mred:panel^ ((require-unit/sig "panel.ss") wx 
-			      (minimal constants)
-			      (minimal container) canvas (core function@))]
+	[panel : mred:panel^ ((require-unit/sig "panel.ss") mred)]
+
 	[frame : mred:frame^ 
 	       ((require-unit/sig "frame.ss") wx 
 		(minimal constants) console
@@ -65,18 +61,10 @@
 		panel gui-utils application
 		(core function@) (core file@)
 		date)]
-	[control : mred:control^
-		 ((require-unit/sig "control.ss") wx 
-		   edit canvas (minimal container))]
 	[scheme-mode : mred:scheme-mode^ 
-		     ((require-unit/sig "ssmode.ss") wx 
-		      (minimal constants)
-		      preferences gui-utils (minimal container)
-		      mode match-cache paren scheme-paren icon
-		      handler keymap (core string@)
-		      (core function@))]
-	[self-test : mred:self-test^
-		   ((require-unit/sig  "stlink.ss")  wx  (minimal testable)  keymap)])
+		     ((require-unit/sig "scheme.ss")
+		      mred preferences match-cache paren
+		      scheme-paren icon keymap)])
   (export (unit version)
 	  (unit (exn : mred:exn-external^))
 	  (unit preferences)

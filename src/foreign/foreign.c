@@ -1748,6 +1748,7 @@ static Scheme_Object *foreign_ffi_call(int argc, Scheme_Object *argv[])
   GC_CAN_IGNORE ffi_type *rtype, **atypes;
   GC_CAN_IGNORE ffi_cif *cif;
   int i, nargs;
+  MZ_REGISTER_STATIC(ffi_name_prefix);
   if (!ffi_name_prefix)
     ffi_name_prefix = scheme_make_byte_string_without_copying("ffi:");
   if (!SCHEME_FFIANYPTRP(argv[0]))

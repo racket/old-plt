@@ -229,8 +229,8 @@ class wxMediaEdit : public wxMediaBuffer
   Bool RefreshDelayed(void);
 
   void ChangeStyle(wxStyleDelta *);
-  void ChangeStyle(wxStyle *, long start = -1, long end = -1);
-  void ChangeStyle(wxStyleDelta *, long start, long end = -1);
+  void ChangeStyle(wxStyle *, long start = -1, long end = -1, Bool counts_as_mod = TRUE);
+  void ChangeStyle(wxStyleDelta *, long start, long end = -1, Bool counts_as_mod = TRUE);
   /* Called automatically when a style is changed; no need to call this */
   void StyleHasChanged(wxStyle *style);
 
@@ -540,7 +540,7 @@ class wxMediaEdit : public wxMediaBuffer
   void _SetPosition(Bool setflash, int bias, long start, long end, 
 		    Bool ateol, Bool scroll, int seltype);
 
-  void _ChangeStyle(long start, long end, wxStyle *, wxStyleDelta *, Bool restoreSel = 1);
+  void _ChangeStyle(long start, long end, wxStyle *, wxStyleDelta *, Bool restoreSel = 1, Bool counts_as_mod = TRUE);
 
   void MakeOnlySnip(void);
   void SpliceSnip(wxSnip *snip, wxSnip *prev, wxSnip *next);

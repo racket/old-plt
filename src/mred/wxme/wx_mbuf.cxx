@@ -2116,6 +2116,9 @@ Bool wxMediaBuffer::Modified(void)
 
 void wxMediaBuffer::SetModified(Bool mod)
 {
+  if (!!mod == !!modified)
+    return;
+
   modified = mod;
 
   if (mod)

@@ -3941,18 +3941,18 @@ void wxMediaEdit::ChangeStyle(wxStyleDelta *delta)
   ChangeStyle(delta, -1);
 }
 
-void wxMediaEdit::ChangeStyle(wxStyleDelta *delta, long start, long end)
+void wxMediaEdit::ChangeStyle(wxStyleDelta *delta, long start, long end, Bool counts_as_mod)
 {
   _ChangeStyle(start > -1 ? start : startpos, 
 	       end > -1 ? end : (start > -1 ? len : endpos), 
-	       NULL, delta);
+	       NULL, delta, 1, counts_as_mod);
 }
 
-void wxMediaEdit::ChangeStyle(wxStyle *style, long start, long end)
+void wxMediaEdit::ChangeStyle(wxStyle *style, long start, long end, Bool counts_as_mod)
 {
   _ChangeStyle(start > -1 ? start : startpos, 
 	       end > -1 ? end : (start > -1 ? len : endpos), 
-	       style, NULL);
+	       style, NULL, 1, counts_as_mod);
 }
 
 void wxMediaEdit::SetStyleList(wxStyleList *newList)

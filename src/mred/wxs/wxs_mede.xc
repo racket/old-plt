@@ -136,8 +136,8 @@
 @ v "do-copy" : void DoCopy(nnlong,nnlong,ExactLong,bool);
 @ v "do-paste" : void DoPaste(nnlong,ExactLong);
 
-@ "change-style" : void ChangeStyle(wxStyleDelta^,nnls[start],nnls[end]=-1); <> style-delta% and position
-@ "change-style" : void ChangeStyle(wxStyle^,nnls[start]=-1,nnls[end]=-1); <> style%
+@ "change-style" : void ChangeStyle(wxStyleDelta^,nnls[start],nnls[end]=-1,bool=TRUE); <> style-delta% and position
+@ "change-style" : void ChangeStyle(wxStyle^,nnls[start]=-1,nnls[end]=-1,bool=TRUE); <> style%
 			
 @ "split-snip" : void SplitSnip(nnlong);
 

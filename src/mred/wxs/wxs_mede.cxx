@@ -5124,23 +5124,28 @@ static Scheme_Object *os_wxMediaEditChangeStyle(int n,  Scheme_Object *p[])
     class wxStyleDelta* x0 INIT_NULLED_OUT;
     long x1;
     long x2;
+    Bool x3;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, x0);
 
     
-    if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("change-style in text% (style-delta% and position case)", POFFSET+2, POFFSET+3, n, p, 1));
+    if ((n < (POFFSET+2)) || (n > (POFFSET+4))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("change-style in text% (style-delta% and position case)", POFFSET+2, POFFSET+4, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxStyleDelta(p[POFFSET+0], "change-style in text% (style-delta% and position case)", 1));
     x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+1], "start", "change-style in text% (style-delta% and position case)"));
     if (n > (POFFSET+2)) {
       x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+2], "end", "change-style in text% (style-delta% and position case)"));
     } else
       x2 = -1;
+    if (n > (POFFSET+3)) {
+      x3 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+3], "change-style in text% (style-delta% and position case)"));
+    } else
+      x3 = TRUE;
 
     
-    WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->ChangeStyle(x0, x1, x2));
+    WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->ChangeStyle(x0, x1, x2, x3));
 
     
     
@@ -5165,14 +5170,15 @@ static Scheme_Object *os_wxMediaEditChangeStyle(int n,  Scheme_Object *p[])
     class wxStyle* x0 INIT_NULLED_OUT;
     long x1;
     long x2;
+    Bool x3;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, x0);
 
     
-    if ((n < (POFFSET+1)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("change-style in text% (style% case)", POFFSET+1, POFFSET+3, n, p, 1));
+    if ((n < (POFFSET+1)) || (n > (POFFSET+4))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("change-style in text% (style% case)", POFFSET+1, POFFSET+4, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxStyle(p[POFFSET+0], "change-style in text% (style% case)", 1));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+1], "start", "change-style in text% (style% case)"));
@@ -5182,9 +5188,13 @@ static Scheme_Object *os_wxMediaEditChangeStyle(int n,  Scheme_Object *p[])
       x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+2], "end", "change-style in text% (style% case)"));
     } else
       x2 = -1;
+    if (n > (POFFSET+3)) {
+      x3 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+3], "change-style in text% (style% case)"));
+    } else
+      x3 = TRUE;
 
     
-    WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->ChangeStyle(x0, x1, x2));
+    WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->ChangeStyle(x0, x1, x2, x3));
 
     
     
@@ -7524,7 +7534,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-line" " method", (Scheme_Method_Prim *)os_wxMediaEditFindLine, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-position" " method", (Scheme_Method_Prim *)os_wxMediaEditFindPosition, 2, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "split-snip" " method", (Scheme_Method_Prim *)os_wxMediaEditSplitSnip, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "change-style" " method", (Scheme_Method_Prim *)os_wxMediaEditChangeStyle, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "change-style" " method", (Scheme_Method_Prim *)os_wxMediaEditChangeStyle, 1, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "do-paste" " method", (Scheme_Method_Prim *)os_wxMediaEditDoPaste, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "do-copy" " method", (Scheme_Method_Prim *)os_wxMediaEditDoCopy, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "kill" " method", (Scheme_Method_Prim *)os_wxMediaEditKill, 0, 3));

@@ -237,7 +237,7 @@ void wxMediaFlashTimer::Notify(void)
 
 void wxMediaEdit::_ChangeStyle(long start, long end, 
 			       wxStyle *newStyle, wxStyleDelta *delta,
-			       Bool restoreSel)
+			       Bool restoreSel, Bool counts_as_mod)
 {
   wxSnip *gsnip, *startSnip, *endSnip;
   wxStyleChangeRecord *rec;
@@ -346,7 +346,7 @@ void wxMediaEdit::_ChangeStyle(long start, long end,
     CheckMergeSnips(start);
     CheckMergeSnips(end);
     
-    if (!modified)
+    if (!modified && counts_as_mod)
       SetModified(TRUE);
 
     writeLocked = FALSE;

@@ -17,7 +17,8 @@
       (let ([orig-eventspace (wx:current-eventspace)]
 	    [bottom-eventspace (wx:make-eventspace)])
 	(lambda ()
-	  (let ([p (make-parameterization)]
+	  (let ([system-parameterization (current-parameterization)]
+		[p (make-parameterization)]
 		[n (make-namespace 'no-constants
 				   'wx
 				   'hash-percent-syntax
@@ -63,7 +64,10 @@
 			       (wx:check-for-break))])
 		     (or one two))))
 		(wx:current-eventspace bottom-eventspace)
-		(exit-handler (lambda (arg) (mred:exit)))
+		(exit-handler (lambda (arg)
+				(with-parameterization system-parameterization
+				  (lambda ()
+				    (mred:exit)))))
 		(read-curly-brace-as-paren #t)
 		(read-square-bracket-as-paren #t)
 		(error-display-handler
@@ -110,7 +114,6 @@
 	    return-value
 	    return-error
 	    to-be-evaluated
-	    [get-prompt (lambda () "|-")]
 	    
 	    waiting-for-loaded
 	    [load-success? #f])
@@ -124,6 +127,7 @@
 			  (insert (send x copy) (last-position)))]
 	    [size-hook (lambda (x _) (and (is-a? x wx:snip%) 1))])
 	  (public
+	    [get-prompt (lambda () "|-")]
 	    [takeover void]
 	    [get-escape (lambda () escape-fn)]
 	    [set-escape (lambda (x) (set! escape-fn x))]

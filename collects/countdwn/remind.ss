@@ -1,16 +1,84 @@
 (unit/sig countdown^
-  (import [wx : wx^]
-	  mzlib:date^
+  (import mzlib:date^
 	  mzlib:thread^
 	  mzlib:function^
 	  mzlib:pretty-print^
-	  [mred : mred^])
+	  mred^)
 
   (define init-params
     (lambda ()
       (date-display-format 'american)))
   (init-params)
 
+  (define separator-snipclass
+    (make-object
+     (class-asi snip-class%
+       (override
+	 [read (lambda (s) 
+		 (let ([size-box (box 0)])
+		   (send s get size-box)
+		   (make-object separator-snip%)))]))))
+  (send* separator-snipclass
+    (set-version 1)
+    (set-classname "sepatator-snip%"))
+  (send (get-the-snip-class-list) add separator-snipclass)
+  
+  ;; the two numbers 1 and 2 which appear here are to line up this snip
+  ;; with the embedded snips around it in the drscheme rep.
+  ;; I have no idea where the extra pixels are going.
+  (define separator-snip%
+    (class snip% ()
+      (inherit get-style set-snipclass set-flags get-flags get-admin)
+      (private [width 500]
+	       [height 1]
+	       [white-around 2])
+      (override
+	[write (lambda (s) 
+		 (send s put (char->integer #\r)))]
+	[copy (lambda () 
+		(let ([s (make-object (object-class this))])
+		  (send s set-style (get-style))
+		  s))]
+	[get-extent
+	 (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
+	   (for-each (lambda (box) (when box (set-box! box 0)))
+		     (list descent-box space-box lspace-box rspace-box))
+	   (let* ([admin (get-admin)]
+		  [reporting-media (send admin get-edit)]
+		  [reporting-admin (send reporting-media get-admin)]
+		  [widthb (box 0)]
+		  [space 2])
+	     (send reporting-admin get-view #f #f widthb #f)
+	     (set! width (- (unbox widthb) 
+			    space
+			    2)))
+	   (set! height 1)
+	   (when w-box
+	     (set-box! w-box width))
+	   (when h-box
+	     (set-box! h-box (+ (* 2 white-around) height))))]
+	[draw
+	 (let* ([body-pen (send the-pen-list find-or-create-pen "BLUE" 0 'solid)]
+		[body-brush (send the-brush-list find-or-create-brush "BLUE" 'solid)])
+	   (lambda (dc x y left top right bottom dx dy drawCaret)
+	     (let ([orig-pen (send dc get-pen)]
+		   [orig-brush (send dc get-brush)])
+	       (send dc set-pen body-pen)
+	       (send dc set-brush body-brush)
+	       
+	       (send dc draw-rectangle (+ x 1)
+		     (+ white-around y) width height)
+	       
+	       (send dc set-pen orig-pen)
+	       (send dc set-brush orig-brush))))]
+	[get-text
+	 (opt-lambda (offset num [flattened? #f])
+	   "1")])
+      (sequence
+	(super-init)
+	(set-flags (cons 'hard-newline (get-flags)))
+	(set-snipclass separator-snipclass))))
+  
   (define seconds->delta
     (let ([seconds-per-minute 60]
 	  [minutes-per-hour 60]
@@ -38,8 +106,8 @@
 		  weeks
 		  total-years)))))
   
-  (define label-delta (make-object wx:style-delta% wx:const-change-bold))
-  (define date-delta (make-object wx:style-delta% wx:const-change-italic))
+  (define label-delta (make-object style-delta% 'change-bold))
+  (define date-delta (make-object style-delta% 'change-italic))
 
   (define y-inset 0)
   (define x-inset 0)
@@ -54,10 +122,10 @@
 	  (set-max-undo-history 0)
 	  (hide-caret #t)))))
 
-  (define inner-edit% (make-hidden-edit% wx:media-edit%))
+  (define inner-edit% (make-hidden-edit% text%))
 
   (define date%
-    (class wx:media-snip% (date-edit main-edit i-second i-minute i-hour i-day i-month i-year)
+    (class editor-snip% (date-edit main-edit i-second i-minute i-hour i-day i-month i-year)
       (private
 	[TMP-date (seconds->date (current-seconds))]
 	[second i-second]
@@ -208,7 +276,7 @@
 		(update-date-edit))))
   
   (define paren-snip%
-    (class-asi wx:media-snip%
+    (class-asi editor-snip%
       (private
 	[what 'not-paren])
       (public
@@ -217,7 +285,7 @@
 	[get-paren (lambda () what)])))
 
   (define main-edit%
-    (class (make-hidden-edit% mred:media-edit%) args
+    (class (make-hidden-edit% text%) args
       (inherit begin-edit-sequence end-edit-sequence
 	       insert get-admin delete get-canvas
 	       last-position lock hide-caret
@@ -261,9 +329,9 @@
 	 (lambda ()
 	   (let ([get-seconds
 		  (lambda (line)
-		    (let* ([media (send line get-media)]
+		    (let* ([media (send line get-edit)]
 			   [last (send media last-position)]
-			   [first (send media find-snip last wx:const-snip-before)]
+			   [first (send media find-snip last 'before)]
 			   [seconds (send first get-seconds)])
 		      seconds))]
 		 [admin (get-admin)])
@@ -298,7 +366,7 @@
 					   this-inset)])
 			   (when insert-separator?
 			     (insert (string #\newline) (get-start-position) -1 #f)
-			     (insert (make-object mred:separator-snip%) (get-start-position) -1 #f))
+			     (insert (make-object separator-snip%) (get-start-position) -1 #f))
 			   (when (and (not first?) 
 				      (not insert-separator?))
 			     (insert (string #\newline) (get-start-position) -1 #f))
@@ -317,8 +385,7 @@
 	     (let* ([date-edit (make-object inner-edit%)]
 		    [make-snip
 		     (lambda (edit)
-		       (make-object wx:media-snip% edit show-border?
-				    x-inset y-inset x-inset y-inset))]
+		       (make-object editor-snip% edit show-border? x-inset y-inset x-inset y-inset))]
 		    [date-snip (make-snip date-edit)]
 		    [display (make-object date% date-edit this second minute hour day month year)]
 		    [label-edit (make-object inner-edit%)]
@@ -346,7 +413,7 @@
 		 (insert display (send main get-start-position) -1 #f))
 	       (for-each (lambda (e) (send e lock #t))
 			 (list date-edit label-edit main))
-	       (send (get-canvas) add-wide-snip outer)
+	       '(send (get-canvas) add-wide-snip outer)
 	       (lock #t)
 	       outer)))]
 	[sync

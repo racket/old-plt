@@ -1,3 +1,4 @@
 (unit/sig ()
-  (import before^)
-  (send frame show #t))
+  (import before^ mred^)
+  (send frame show #t)
+  (yield quit-semaphore))

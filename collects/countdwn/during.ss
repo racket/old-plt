@@ -1,11 +1,10 @@
 (unit/sig during^
-  (import [wx : wx^]
-	  before^
+  (import before^
 	  mzlib:date^ 
 	  mzlib:function^
 	  mzlib:string^
 	  mzlib:pretty-print^
-	  [mred : mred^])
+	  mred^)
   (define remember
     (opt-lambda (name second [minute #f] [hour #f] [day #f] [month #f] [year #f])
       (send edit new-counter name second minute hour day month year)))
@@ -31,21 +30,23 @@
     (let* ([error-frame #f]
 	   [error-edit #f]
 	   [frame%
-	    (class-asi mred:frame%
+	    (class-asi frame%
 	      (rename [super-on-close on-close])
-	      (public
+	      (override
 		[on-close
 		 (lambda () (and (super-on-close)
 				 (set! error-frame #f)))]))])
       (lambda (err-string)
 	(unless error-frame
-	  (set! error-frame (make-object frame% null ".countdownrc errors" 0 0 300 100))
-	  (set! error-edit (make-object mred:media-edit%))
+	  (set! error-frame (make-object frame% ".countdownrc errors"))
+	  (set! error-edit (make-object text%))
+	  (send error-frame min-width 400)
+	  (send error-frame min-height 200)
 	  (send (make-object
-		 mred:media-canvas%
+		 editor-canvas%
 		 (make-object
-		  mred:horizontal-panel% error-frame))
-		set-media
+		  horizontal-panel% error-frame))
+		set-edit
 		error-edit) 
 	  (send error-frame show #t))
 	(let ([last (send error-edit last-position)])
@@ -67,23 +68,23 @@
 	 (send edit begin-edit-sequence))
        (lambda ()
 	 (let ([cu (compound-unit/sig (import)
-		    (link [wx : wx^ (wx:wx@)]
-			  [C : mzlib:core^ ((require-library "corer.ss"))]
-			  [mred : mred^ ((require-library "linkwx.ss" "mred") C wx)])
-		    (export (unit mred)
-			    (open C)
-			    (unit wx)))])
+		    (link [C : mzlib:core^ ((require-library "corer.ss"))]
+			  [mred : mred^ (mred@)])
+		    (export (open mred)
+			    (open C)))])
 	   (let/ec k
 	     (send edit clear-events)
 	     (set! escape-k k)
 	     (let ([param (make-parameterization)])
 	       (map (lambda (x v) ((in-parameterization param x) v))
-		    (list current-namespace 
-			  wx:current-eventspace
+		    (list error-print-width 
+			  current-namespace
+			  current-eventspace
 			  current-custodian
 			  error-display-handler)
-		    (list (make-namespace 'wx)
-			  (wx:make-eventspace)
+		    (list 500
+			  (make-namespace)
+			  (make-eventspace)
 			  (make-custodian)
 			  (lambda (string)
 			    (with-parameterization orig-param
@@ -91,7 +92,6 @@
 				(show-error string))))))
 	       (with-parameterization param
 		 (lambda ()
-		   (require-library "debug.ss" "system")
 		   (invoke-open-unit/sig cu)
 		   (global-defined-value 'remember remember)
 		   (global-defined-value 'remember-around remember-around)
@@ -107,7 +107,7 @@
   (thread (rec check-user-config
 	       (lambda ()
 		 (let ([now (current-seconds)]
-		       [last-mod (file-modify-seconds user-config-file)])
+		       [last-mod (file-or-directory-modify-seconds user-config-file)])
 		   (when (<= last-loaded last-mod)
 		     (set! last-loaded (current-seconds))
 		     (load-user-config))

@@ -31,7 +31,7 @@ are the same as the last arguments to remember.
 
 After creating that file, run Countdown like this:
 
-  mred -x -A countdwn
+  /home/scheme/plt/collects/countdwn/run
 
 (note the missing "o" in countdwn... thank you 8.3)
 It will open a window on your screen and your troubles will be over! 

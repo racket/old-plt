@@ -4650,19 +4650,22 @@ __gmp_tmp_free (mark)
 void scheme_gmp_tls_init(long *s) 
 {
   s[0] = 0;
-  s[1] = (long)&xxx;
+  s[1] = 0;
+  s[2] = (long)&xxx;
 }
 
 void scheme_gmp_tls_load(long *s) 
 {
   s[0] = (long)current_total_allocation;
-  s[1] = (long)current;
+  s[1] = (long)max_total_allocation;
+  s[2] = (long)current;
 }
 
 void scheme_gmp_tls_unload(long *s)
 {
   current_total_allocation = (unsigned long)s[0];
-  current = (tmp_stack *)s[1];
+  max_total_allocation = (unsigned long)s[1];
+  current = (tmp_stack *)s[2];
   
 }
 #else

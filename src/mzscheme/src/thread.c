@@ -136,6 +136,10 @@ extern HANDLE scheme_break_semaphore;
 static int swapping = 0;
 #endif
 
+extern void scheme_gmp_tls_init(long *s);
+extern void scheme_gmp_tls_load(long *s);
+extern void scheme_gmp_tls_unload(long *s);
+
 /*========================================================================*/
 /*                    local variables and proptypes                       */
 /*========================================================================*/
@@ -1218,6 +1222,8 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
 
   process->list_stack = NULL;
 
+  scheme_gmp_tls_init(process->gmp_tls);
+
   if (prefix) {
     if (after) {
       process->prev = after;
@@ -1394,6 +1400,7 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
     swapping = 0;
 #endif
     scheme_reset_locale();
+    scheme_gmp_tls_unload(scheme_current_thread->gmp_tls);
     {
       Scheme_Object *l, *o;
       Scheme_Closure_Func f;
@@ -1408,6 +1415,7 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
     swap_no_setjmp = 0;
 
     /* We're leaving... */
+    scheme_gmp_tls_load(scheme_current_thread->gmp_tls);
 #ifdef RUNSTACK_IS_GLOBAL
     scheme_current_thread->runstack = MZ_RUNSTACK;
     scheme_current_thread->runstack_start = MZ_RUNSTACK_START;

@@ -7,6 +7,7 @@
 (unit/sig ()
   (import mred^
 	  mzlib:core^
+          mzlib:print-convert^
 	  framework^
 	  [drscheme : drscheme:export^]
 	  [zodiac : zodiac:system^]
@@ -545,11 +546,18 @@
 	    (set! language-settings new-settings)
 	    (is-changed))))
 
+      (define (get-file-list-box-string file)
+        (let ([sp (open-output-string)])
+          (parameterize ([current-output-port sp]
+                         [pretty-print:pretty-print-columns 'infinity])
+            (pretty-print:pretty-print (cons (car file) (map print-convert (cdr file)))))
+          (get-output-string sp)))
+
       (define (refresh-files-list-box)
 	(send files-list-box clear)
 	(for-each
 	 (lambda (file)
-	   (send files-list-box append (format "~s" file)))
+           (send files-list-box append (get-file-list-box-string file)))
 	 files))
 
       (define (swap index)
@@ -613,19 +621,21 @@
 	  (is-changed)))
       
       (define (swap-abs/rel-file)
-        (let* ([file (list-ref files (send files-list-box get-selection))]
+        (let* ([index (send files-list-box get-selection)]
+               [file (list-ref files index)]
                [fp (cadr file)]
                [path (apply build-path (cdr file))]
                [new-path
                 (cond
                   [(relative-path? path)
-                   (build-path project-dir path)]
+                   (file:normalize-path (build-path project-dir path))]
                   [(absolute-path? path)
                    (if project-dir
                        (file:find-relative-path path project-dir)
                        (begin (bell)
                               path))])])
           (set-cdr! file (my-explode-path new-path))
+          (send files-list-box set-string index (get-file-list-box-string file))
           (update-buttons)))
 
       (define (update-buttons)
@@ -646,7 +656,7 @@
                   (case (car file)
                     [(build-path)
                      (send pathize-button enable #t)
-                     (if (absolute-path? (cadr file))
+                     (if (absolute-path? (apply build-path (cdr file)))
                          (send pathize-button set-label "Make Rel")
                          (send pathize-button set-label "Make Abs"))]
                     [(require-library)
@@ -687,7 +697,7 @@
 	(define new-files
 	  (let ([user-result (get-file-list)])
 	    (and user-result
-		 (map (function:compose normal-case-path file:normalize-path)
+		 (map file:normalize-path
 		      (function:filter file-exists? user-result)))))
 
 	(define (prompt-user-collection? filename collection collection-dir)
@@ -820,7 +830,7 @@
 				    (file:normalize-path
 				     (build-path (apply collection-path collections)
 						 filename)))
-				   new-file)
+				   (normal-case-path new-file))
 				  (prompt-user-collection?
 				   filename
 				   collections

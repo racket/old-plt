@@ -11,6 +11,7 @@
    [main : () ((require-library "main.ss" "drscheme" "tools" "project-manager")
 	       mred
 	       core
+               pc
 	       fw
 	       drscheme
 	       zodiac

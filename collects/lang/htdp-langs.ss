@@ -122,16 +122,14 @@ to the original stdout of DrScheme.
       (define (sharing/not-config-panel allow-sharing-config? _parent)
         (let* ([parent (make-object vertical-panel% _parent)]
                
-               [input-msg (make-object message% (string-constant input-syntax) parent)]
-               [input-panel (instantiate vertical-panel% ()
+               [input-panel (instantiate group-box-panel% ()
                               (parent parent)
-                              (style '(border))
+                              (label (string-constant input-syntax))
                               (alignment '(left center)))]
                
-               [output-msg (make-object message% (string-constant output-syntax) parent)]
-               [output-panel (instantiate vertical-panel% ()
+               [output-panel (instantiate group-box-panel% ()
                                (parent parent)
-                               (style '(border))
+                               (label (string-constant output-syntax))
                                (alignment '(left center)))]
                
                [case-sensitive (make-object check-box%

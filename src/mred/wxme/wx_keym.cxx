@@ -37,6 +37,8 @@
 #define FUNC_REC_INHERITANCE : public wxObject
 #endif
 
+extern void wxsKeymapError(char *s);
+
 class wxKeyFunc FUNC_REC_INHERITANCE
 {
  public:
@@ -69,10 +71,19 @@ class wxKeycode FUNC_REC_INHERITANCE
 {
  public:
   long code;
-  Bool shift;
-  Bool ctrl;
-  Bool alt;
-  Bool meta;
+  int score;
+
+#define TF_Flag(var) unsigned var : 1
+  TF_Flag( shiftOn );
+  TF_Flag( shiftOff );
+  TF_Flag( ctrlOn );
+  TF_Flag( ctrlOff );
+  TF_Flag( altOn );
+  TF_Flag( altOff );
+  TF_Flag( metaOn );
+  TF_Flag( metaOff );
+#undef TF_Flag
+
   char *fname;
 
   Bool isprefix;
@@ -108,12 +119,7 @@ wxKeymap::wxKeymap()
   mousefunctions = NULL;
   keys = NULL;
 
-  numImpliedShifts = allocedImplies = 0;
-  impliesShift = NULL;
-
   prefix = NULL;
-  err = NULL;
-  WXGC_IGNORE(errdata);
 
   active_mouse_function = NULL;
 
@@ -166,9 +172,6 @@ wxKeymap::~wxKeymap()
 #endif
     delete mousefunctions;
   }
-
-  if (impliesShift)
-    delete[] impliesShift;
 }
 
 void wxKeymap::Reset(void)
@@ -220,68 +223,92 @@ void wxKeymap::SetBreakSequenceCallback(wxBreakSequenceFunction f,
     fold(dataold);
 }
 
-wxKeycode *wxKeymap::FindKey(long code, Bool shift, Bool ctrl, 
+wxKeycode *wxKeymap::FindKey(long code, 
+			     Bool shift, Bool ctrl, 
 			     Bool alt, Bool meta,
 			     wxKeycode *prefix)
 {
   wxKeycode *key;
-  
+  wxKeycode *bestKey = NULL;
+  int bestScore = -1;
+
   if (!keys)
     return NULL;
-
-  shift = !!shift;
-  ctrl = !!ctrl;
-  alt = !!alt;
-  meta = !!meta;
 
   key = (wxKeycode *)keys->Get(code);
   while (key) {
     if (key->code == code
-	&& key->shift == shift
-	&& key->ctrl == ctrl
-	&& key->alt == alt
-	&& key->meta == meta
+	&& ((key->shiftOn && shift)
+	    || (key->shiftOff && !shift)
+	    || (!key->shiftOn && !key->shiftOff))
+	&& ((key->ctrlOn && ctrl)
+	    || (key->ctrlOff && !ctrl)
+	    || (!key->ctrlOn && !key->ctrlOff))
+	&& ((key->altOn && alt)
+	    || (key->altOff && !alt)
+	    || (!key->altOn && !key->altOff))
+	&& ((key->metaOn && meta)
+	    || (key->metaOff && !meta)
+	    || (!key->metaOn && !key->metaOff))
 	&& key->seqprefix == prefix) {
-      return key;
+      int score = key->score;
+      if (score > bestScore) {
+	bestKey = key;
+	bestScore = score;
+      }
     }
     key = key->next;
   }
 
-  return key;
+  return bestKey;
 }
 
-wxKeycode *wxKeymap::MapFunction(long code, Bool shift, Bool ctrl, 
-				 Bool alt, Bool meta,
+wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl, 
+				 int alt, int meta,
 				 char *fname, wxKeycode *prev, int type)
 {
   wxKeycode *key, *newkey;
 
-  if ((key = FindKey(code, shift, ctrl, alt, meta, prev))) {
+  /* Look for exact key: */
+  key = keys ? ((wxKeycode *)keys->Get(code)) : NULL;
+  while (key) {
+    if (key->code == code
+	&& (key->shiftOn == (shift > 0))
+	&& (key->shiftOff == (shift < 0))
+	&& (key->ctrlOn == (ctrl > 0))
+	&& (key->ctrlOff == (ctrl < 0))
+	&& (key->altOn == (alt > 0))
+	&& (key->altOff == (alt < 0))
+	&& (key->metaOn == (meta > 0))
+	&& (key->metaOff == (meta < 0)))
+      break;
+    key = key->next;
+  }
+
+  if (key) {
     if ((type == wxKEY_PREFIX) != key->isprefix) {
-      if (err) {
-	char buffer[256];
+      char buffer[256];
 	
-	if (isprint(code))
-	  sprintf(buffer, "keymap: key %c ", (char)code);
-	else
-	  sprintf(buffer, "keymap: key code %ld ", code);
+      if (isprint(code))
+	sprintf(buffer, "keymap: key %c ", (char)code);
+      else
+	sprintf(buffer, "keymap: key code %ld ", code);
 
-	if (shift)
-	  strcat(buffer, "+ shift ");
-	if (ctrl)
-	  strcat(buffer, "+ control ");
-	if (alt)
-	  strcat(buffer, "+ alt ");
-	if (meta)
-	  strcat(buffer, "+ meta ");
+      if (shift)
+	strcat(buffer, "+ shift ");
+      if (ctrl)
+	strcat(buffer, "+ control ");
+      if (alt)
+	strcat(buffer, "+ alt ");
+      if (meta)
+	strcat(buffer, "+ meta ");
 
-	strcat(buffer, "is ");
-	if (!key->isprefix)
-	  strcat(buffer, "not ");
-	strcat(buffer, "a prefix key");
-
-	err(errdata, buffer);
-      }
+      strcat(buffer, "is ");
+      if (!key->isprefix)
+	strcat(buffer, "not ");
+      strcat(buffer, "a prefix key");
+	
+      wxsKeymapError(buffer);
 
       return NULL;
     }  else {
@@ -292,14 +319,26 @@ wxKeycode *wxKeymap::MapFunction(long code, Bool shift, Bool ctrl,
       return key;
     }
   }
-
+  
   newkey = new wxKeycode;
 
   newkey->code = code;
-  newkey->shift = shift;
-  newkey->ctrl = ctrl;
-  newkey->alt = alt;
-  newkey->meta = meta;
+  newkey->shiftOn = (shift > 0);
+  newkey->shiftOff = (shift < 0);
+  newkey->ctrlOn = (ctrl > 0);
+  newkey->ctrlOff = (ctrl < 0);
+  newkey->altOn = (alt > 0);
+  newkey->altOff = (alt < 0);
+  newkey->metaOn = (meta > 0);
+  newkey->metaOff = (meta < 0);
+  newkey->score = ((newkey->shiftOn ? 1 : 0)
+		   + (newkey->shiftOff ? 5 : 0)
+		   + (newkey->ctrlOn ? 1 : 0)
+		   + (newkey->ctrlOff ? 5 : 0)
+		   + (newkey->altOn ? 1 : 0)
+		   + (newkey->altOff ? 5 : 0)
+		   + (newkey->metaOn ? 1 : 0)
+		   + (newkey->metaOn ? 5 : 0));
   newkey->fname = copystring(fname);
   newkey->next = NULL;
 
@@ -425,41 +464,12 @@ static long GetCode(char **keyseqp)
   return code;
 }
 
-void wxKeymap::ImpliesShift(char *str)
-{
-  long code;
-  char buffer[256];
-
-  code = GetCode(&str);
-  if (!code) {
-    if (err) {
-      sprintf(buffer, "implies-shift: bad key: \"%.100s\"", str);
-      err(errdata, buffer);
-    }
-    return;
-  }
-
-  if (numImpliedShifts == allocedImplies) {
-    long *old;
-
-    old = impliesShift;
-    allocedImplies = (!allocedImplies ? 40 : 2 * allocedImplies);
-    impliesShift = new long[allocedImplies];
-    if (old) {
-      memcpy(impliesShift, old, allocedImplies * sizeof(long));
-      delete[] old;
-    }
-  }
-
-  impliesShift[numImpliedShifts++] = code;
-}
-
 void wxKeymap::MapFunction(char *keys, char *fname)
 {
   char *keyseq = keys;
   int num_keys, num_new_keys;
   wxKeycode **key, **new_key;
-  Bool shift, ctrl, alt, meta, both_shifts;
+  int shift, ctrl, alt, meta, mod;
   int part = 1, i, j;
   long code;
   char *errstr;
@@ -474,30 +484,41 @@ void wxKeymap::MapFunction(char *keys, char *fname)
     code = 0;
     
     while (*keyseq && (*keyseq != ';')) {
-      if (isspace(*keyseq)) {
+      mod = 1;
+      if (*keyseq == '~') {
+	if (!keyseq[1] || (keyseq[2] != ':')) {
+	  goto do_char;
+	} else {
+	  mod = -1;
+	  keyseq++;
+	  goto do_mod;
+	}
+      } else if (isspace(*keyseq)) {
 	keyseq++;
       } else if (keyseq[1] == ':') {
+      do_mod:
 	switch (tolower(*keyseq)) {
 	case 's':
-	  shift = TRUE;
+	  shift = mod;
 	  break;
 	case 'c':
-	  ctrl = TRUE;
+	  ctrl = mod;
 	  break;
 	case 'm':
 #ifdef wx_mac
 	  return; // impossible
 #endif
-	  meta = TRUE;
+	  meta = mod;
 	  break;
 	case 'd':
 #ifndef wx_mac
-	  return; // impossible
+	  if (mod > 1)
+	    return; // impossible
+	  meta = mod;
 #endif
-	  meta = TRUE;
 	  break;
 	case 'a':
-	  alt = TRUE;
+	  alt = mod;
 	  break;
 	default:
 	  errstr = "bad modifier";
@@ -505,6 +526,7 @@ void wxKeymap::MapFunction(char *keys, char *fname)
 	}
 	keyseq += 2;
       } else {
+      do_char:
 	code = GetCode(&keyseq);
 	if (!code) {
 	  errstr = "bad keyname";
@@ -521,25 +543,12 @@ void wxKeymap::MapFunction(char *keys, char *fname)
 	  shift = TRUE;
       } 
 
-      both_shifts = FALSE;
-      if (!shift) {
-	for (i = 0; i < numImpliedShifts; i++)
-	  if (code == impliesShift[i]) {
-	    both_shifts = TRUE;
-	    break;
-	  }
-      }
-
-      num_new_keys = (both_shifts ? 2 : 1) * num_keys;
+      num_new_keys = num_keys;
       new_key = new wxKeycode*[num_new_keys];
 
       for (i = 0, j = 0; i < num_keys; i++) {
 	new_key[j++] = MapFunction(code, shift, ctrl, alt, meta, fname, key[i], 
 				   *keyseq ? wxKEY_PREFIX : wxKEY_FINAL);
-	if (both_shifts) {
-	  new_key[j++] = MapFunction(code, !shift, ctrl, alt, meta, fname, key[i], 
-				     *keyseq ? wxKEY_PREFIX : wxKEY_FINAL);
-	}
       }
       
       num_keys = num_new_keys;
@@ -560,11 +569,9 @@ void wxKeymap::MapFunction(char *keys, char *fname)
   return;
 
  key_error:
-  if (err) {
-    sprintf(buffer, "keymap: %s in keystring: \"%.100s\", part %d", 
-	    errstr, keys, part);
-    err(errdata, buffer);
-  }
+  sprintf(buffer, "keymap: %s in keystring: \"%.100s\", part %d", 
+	  errstr, keys, part);
+  wxsKeymapError(buffer);
 }
 
 int wxKeymap::HandleEvent(long code, Bool shift, Bool ctrl, 
@@ -878,11 +885,10 @@ Bool wxKeymap::CallFunction(char *name, UNKNOWN_OBJ media, wxKeyEvent &event,
     for (i = 0; i < chainCount; i++)
       if (chainTo[i]->CallFunction(name, media, event, TRUE))
 	return TRUE;
-  } else if (err) {
+  } else {
     char buffer[256];
-    
-    sprintf(buffer, "keymap: no key function \"%s\"", name);
-    err(errdata, buffer);
+    sprintf(buffer, "keymap: no key function \"%.150s\"", name);
+    wxsKeymapError(buffer);
   }
 
   return 0;
@@ -907,20 +913,13 @@ Bool wxKeymap::CallFunction(char *name, UNKNOWN_OBJ media, wxMouseEvent &event,
     for (i = 0; i < chainCount; i++)
       if (chainTo[i]->CallFunction(name, media, event, TRUE))
 	return TRUE;
-  } else if (err) {
+  } else {
     char buffer[256];
-    
-    sprintf(buffer, "keymap: no mouse function \"%s\"", name);
-    err(errdata, buffer);
+    sprintf(buffer, "keymap: no mouse function \"%.150s\"", name);
+    wxsKeymapError(buffer);
   }
 
   return FALSE;
-}
-
-void wxKeymap::SetErrorCallback(wxKeyErrorFunction f, void *d)
-{
-  err = f;
-  errdata = d;
 }
 
 void wxKeymap::AdjustUsage(Bool newUser)

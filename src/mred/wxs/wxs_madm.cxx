@@ -3714,25 +3714,6 @@ static Scheme_Object *os_wxKeymapSetBreakSequenceCallback(Scheme_Object *obj, in
 }
 
 #pragma argsused
-static Scheme_Object *os_wxKeymapSetErrorCallback(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  wxKeyErrorFunction x0;
-  void* x1;
-
-  KeymapCallbackToSchemeRec *cb;
-  x0 = (wxKeyErrorFunction)ErrorCallbackToScheme;
-
-  kctsr(cb) = p[0]; x1 = (void *)cb;
-  ((wxKeymap *)((Scheme_Class_Object *)obj)->primdata)->SetErrorCallback(x0, x1);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxKeymapCallFunction(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3900,24 +3881,6 @@ static Scheme_Object *os_wxKeymapAddKeyFunction(Scheme_Object *obj, int n,  Sche
 }
 
 #pragma argsused
-static Scheme_Object *os_wxKeymapImpliesShift(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  string x0;
-
-  
-  x0 = (string)objscheme_unbundle_string(p[0], "implies-shift in keymap%");
-
-  
-  ((wxKeymap *)((Scheme_Class_Object *)obj)->primdata)->ImpliesShift(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxKeymapMapFunction(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4060,12 +4023,11 @@ void objscheme_setup_wxKeymap(void *env)
 if (os_wxKeymap_class) {
     objscheme_add_global_class(os_wxKeymap_class, "keymap%", env);
 } else {
-  os_wxKeymap_class = objscheme_def_prim_class(env, "keymap%", "object%", os_wxKeymap_ConstructScheme, 18);
+  os_wxKeymap_class = objscheme_def_prim_class(env, "keymap%", "object%", os_wxKeymap_ConstructScheme, 16);
 
  scheme_add_method_w_arity(os_wxKeymap_class, "remove-chained-keymap", os_wxKeymapRemoveChainedKeymap, 1, 1);
  scheme_add_method_w_arity(os_wxKeymap_class, "chain-to-keymap", os_wxKeymapChainToKeymap, 2, 2);
  scheme_add_method_w_arity(os_wxKeymap_class, "set-break-sequence-callback", os_wxKeymapSetBreakSequenceCallback, 1, 1);
- scheme_add_method_w_arity(os_wxKeymap_class, "set-error-callback", os_wxKeymapSetErrorCallback, 1, 1);
  scheme_add_method_w_arity(os_wxKeymap_class, "call-function", os_wxKeymapCallFunction, 3, 4);
  scheme_add_method_w_arity(os_wxKeymap_class, "remove-grab-mouse-function", os_wxKeymapRemoveGrabMouseFunction, 0, 0);
  scheme_add_method_w_arity(os_wxKeymap_class, "set-grab-mouse-function", os_wxKeymapSetGrabMouseFunction, 1, 1);
@@ -4073,7 +4035,6 @@ if (os_wxKeymap_class) {
  scheme_add_method_w_arity(os_wxKeymap_class, "remove-grab-key-function", os_wxKeymapRemoveGrabKeyFunction, 0, 0);
  scheme_add_method_w_arity(os_wxKeymap_class, "set-grab-key-function", os_wxKeymapSetGrabKeyFunction, 1, 1);
  scheme_add_method_w_arity(os_wxKeymap_class, "add-key-function", os_wxKeymapAddKeyFunction, 2, 2);
- scheme_add_method_w_arity(os_wxKeymap_class, "implies-shift", os_wxKeymapImpliesShift, 1, 1);
  scheme_add_method_w_arity(os_wxKeymap_class, "map-function", os_wxKeymapMapFunction, 2, 2);
  scheme_add_method_w_arity(os_wxKeymap_class, "break-sequence", os_wxKeymapBreakSequence, 0, 0);
  scheme_add_method_w_arity(os_wxKeymap_class, "handle-mouse-event", os_wxKeymapHandleMouseEvent, 2, 2);

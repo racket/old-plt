@@ -26,8 +26,6 @@ enum {
   wxKEY_PREFIX
 };
 
-typedef void (*wxKeyErrorFunction)(void *data, char *str);
-
 #define WXK_MOUSE_RIGHT         (-1)
 #define WXK_MOUSE_LEFT          (-2)
 #define WXK_MOUSE_MIDDLE        (-3)
@@ -44,11 +42,7 @@ class wxKeymap : public wxObject
 {
   wxHashTable *keyfunctions, *mousefunctions;
   wxHashTable *keys;
-  wxKeyErrorFunction err;
-  void *errdata;
 
-  long numImpliedShifts, allocedImplies;
-  long *impliesShift;
   int usage;
 
   int chainCount;
@@ -110,13 +104,11 @@ class wxKeymap : public wxObject
   void BreakSequence(void);
   void SetBreakSequenceCallback(wxBreakSequenceFunction f, void *data);
 
-  class wxKeycode *MapFunction(long code, Bool shift, Bool ctrl, 
-			       Bool alt, Bool meta, 
+  class wxKeycode *MapFunction(long code, int shift, int ctrl, 
+			       int alt, int meta, 
 			       char *fname, class wxKeycode *prevkey=NULL, 
 			       int keytype = wxKEY_FINAL);
   void MapFunction(char *keyname, char *fname);
-
-  void ImpliesShift(char *str);
 
   void AddKeyFunction(char *name, wxKeyFunction func, void *data);
   void AddMouseFunction(char *name, wxMouseFunction func, void *data);
@@ -124,8 +116,6 @@ class wxKeymap : public wxObject
 		    Bool try_chained = FALSE);
   Bool CallFunction(char *name, UNKNOWN_OBJ media, wxMouseEvent &event, 
 		    Bool try_chained = FALSE);
-
-  void SetErrorCallback(wxKeyErrorFunction, void *d=NULL);
 
   void ChainToKeymap(wxKeymap *, Bool prefix);
   void RemoveChainedKeymap(wxKeymap *);

@@ -96,7 +96,7 @@
 		    (if port (sa ":" (number->string port)) "")
 					; There used to be a "/" here, but that causes an
 					; extra leading slash -- wonder why it ever worked!
-		    path
+		    (combine-path-strings path)
 		    (if params (sa ";" params) "")
 		    (if query (sa "?" query) "")
 		    (if fragment (sa "#" fragment) ""))))))))
@@ -453,7 +453,7 @@
 			  (make-url "file"
 				    #f	; host
 				    #f	; port
-				    path
+				    (separate-path-strings path)
 				    #f	; params
 				    #f	; query
 				    fragment
@@ -474,42 +474,69 @@
 					    (if s (string->number s) #f))))
 			       (host (get-str 5  0 0)))
 			  (make-url (get-str 2  0 1) ; scheme
-                                    host
-                                    (get-num 6  1 0) ; port
-                                    (let ([path (get-str 7  0 0)])
-                                      ;; If path is "" and the input is an absolute URL 
-                                      ;; with a hostname, then the intended path is "/", 
-                                      ;; but the URL is missing a "/" at the end.
-                                      (if (and (string=? path "")
-                                               host)
-                                          "/"
-                                          path))
-                                    (get-str 8  1 0) ; params
-                                    (get-str 9  1 0) ; query
-                                    (get-str 10 1 0) ; fragment
-                                    (get-str 4  0 1) ; user
-                                    ))
+					 host
+					 (get-num 6  1 0) ; port
+					 (separate-path-strings
+                                          (let ([path (get-str 7  0 0)])
+                                            ;; If path is "" and the input is an absolute URL 
+                                            ;; with a hostname, then the intended path is "/", 
+                                            ;; but the URL is missing a "/" at the end.
+                                            (if (and (string=? path "")
+                                                     host)
+                                                "/"
+                                                path)))
+					 (get-str 8  1 0) ; params
+					 (uri-decode/maybe (get-str 9  1 0)) ; query
+					 (uri-decode/maybe (get-str 10 1 0)) ; fragment
+					 (get-str 4  0 1) ; user
+					 ))
 			(url-error "Invalid URL string: ~e" str))))))))
-	
-      (define (decode-some-url-parts url)
-	(let ([uri-decode/maybe
-	       (lambda (f)
-		 ;; If #f, and leave unmolested any % that in't followed by hex digit
-		 (and f (uri-decode (regexp-replace* "%([^0-9a-fA-F])" f "%25\\1"))))])
-	  (make-url (uri-decode/maybe (url-scheme url))
-                    (uri-decode/maybe (url-host url))
-                    (uri-decode/maybe (url-port url))
-                    (uri-decode/maybe (url-path url))
-                    (url-params url)
-                    (url-query url)
-                    (uri-decode/maybe (url-fragment url))
-                    (uri-decode/maybe (url-user url)))))
-
-#|
-      Old version. See PR 6152 for information on its replacement.
-
-      <old version elided.  That's what CVS is for.>
+	      
+      (define (uri-decode/maybe f)
+        ;; If #f, and leave unmolested any % that is followed by hex digit
+        ;; if a % is not followed by a hex digit, replace it with %25
+        ;; in an attempt to be "friendly"
+        (and f (uri-decode (regexp-replace* "%([^0-9a-fA-F])" f "%25\\1"))))
       
-      |#
-
-)))
+      (define (decode-some-url-parts url)
+        (make-url/user (uri-decode/maybe (url-scheme url))
+                       (uri-decode/maybe (url-host url))
+                       (uri-decode/maybe (url-port url))
+                       (uri-decode/maybe (url-path url))
+                       (url-params url)
+                       (url-query url)
+                       (uri-decode/maybe (url-fragment url))
+                       (if (url/user? url)
+                           (uri-decode/maybe (url/user-user url))
+                           #f)))))
+    
+  ;; separate-path-strings : string[starting with /] -> (listof string)
+  (define (separate-path-strings str)
+    (when (or (string=? str "")
+              (not (char=? (string-ref str 0) #\/)))
+      (error 'separate-path-strings "got non path string, ~e" str))
+    (let loop ([str (substring str 1 (string-length str))])
+      (cond
+        [(regexp-match #rx"([^/]*)/(.*)$" str)
+         =>
+         (lambda (m)
+           (cons (cadr m) (loop (caddr m))))]
+        [else (list str)])))
+  
+  (define (combine-path-strings strs)
+    (apply
+     string-append
+     (let loop ([strs strs])
+       (cond
+         [(null? strs) '()]
+         [else (list* "/"
+                      (car strs)
+                      (loop (cdr strs)))]))))
+  
+  ;; tests for path string combination and separation
+  #;
+  (and (equal? (separate-path-strings "/a") (list "a"))
+       (equal? (separate-path-strings "/a/b") (list "a" "b"))
+       (equal? (separate-path-strings "/a/b/c") (list "a" "b" "c"))
+       (equal? (combine-path-strings (list "a")) "/a")
+       (equal? (combine-path-strings (list "a" "b")) "/a/b")

@@ -1,10 +1,6 @@
 On Mon, Nov 18, 2002 at 03:03:49PM -0600, Robert Bruce Findler wrote:
 > Make deletion actually set the focus to another one of the snips, so I
 > can keep deleting.
-
-> Did we talk about teachpacks? I think that the teachpack prims exported
-> to the tools interface should be enough, but you'd have to be unititzed
-> first.
 -------------------
 I think that there is too much whitespace around the boxes, too. It'd           
 be nicer to use color to separate the lines and get back some screen
@@ -18,18 +14,10 @@ Robby
 -------------------
 First use experience report: Pls:                                          
                                                             
-1. automatically associate the test suite with the current file name
-   (from where you launched "new test suite").                      
-                                                                    
 2. enable tab to move from "slot" to slot                           
                                                                                 
 3. make "actual" visibly different so that people know you can't fill
    it in ... :-)                                                     
-                                                                     
-4. the teachpacks need to be included in the execution               
-                                                                     
-5. when you detect an error during execution, also hi-lite the source  
-   of the error in the DrScheme window.                                         
                                                                      
 -- Matthias                                
 -------------------
@@ -42,6 +30,4 @@ Philippe
 -------------------
 Make the save button come up when the program to test is changed.
 Make the save button not come up when a test-suite is just loaded.
--------------------
-Hide caret in the error display text
 -------------------

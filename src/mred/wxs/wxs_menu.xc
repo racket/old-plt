@@ -14,6 +14,13 @@ static void menuSelect(wxMenu *m)
 #endif
 }
 
+static void menubarSelect(wxMenuBar *mb)
+{
+#ifdef wx_msw
+  mb->SelectSystem();
+#endif
+}
+
 // @CLASSBASE wxMenuItem "menu-item" : "object"
 // @END
 
@@ -77,6 +84,8 @@ static void menuSelect(wxMenu *m)
 @ "number" : int Number()
 
 @ "set-label-top" : void SetLabelTop(int, string); : : /CHECKNEGVOID[0]
+
+@ m "select-system" : void menubarSelect();
 
 @END
 

@@ -34,6 +34,13 @@ static void menuSelect(wxMenu *m)
 #endif
 }
 
+static void menubarSelect(wxMenuBar *mb)
+{
+#ifdef wx_msw
+  mb->SelectSystem();
+#endif
+}
+
 // @CLASSBASE wxMenuItem "menu-item" : "object"
 // @END
 
@@ -661,6 +668,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
+
 class os_wxMenuBar : public wxMenuBar {
  public:
 
@@ -690,6 +698,22 @@ os_wxMenuBar::os_wxMenuBar(Scheme_Object * o, int x0, wxMenu** x1, string* x2)
 os_wxMenuBar::~os_wxMenuBar()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMenuBarmenubarSelect(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+
+  
+
+  
+  menubarSelect(((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata));
+
+  
+  
+  return scheme_void;
 }
 
 #pragma argsused
@@ -835,8 +859,9 @@ void objscheme_setup_wxMenuBar(void *env)
 if (os_wxMenuBar_class) {
     objscheme_add_global_class(os_wxMenuBar_class, "menu-bar%", env);
 } else {
-  os_wxMenuBar_class = objscheme_def_prim_class(env, "menu-bar%", "object%", os_wxMenuBar_ConstructScheme, 5);
+  os_wxMenuBar_class = objscheme_def_prim_class(env, "menu-bar%", "object%", os_wxMenuBar_ConstructScheme, 6);
 
+ scheme_add_method_w_arity(os_wxMenuBar_class, "select-system", os_wxMenuBarmenubarSelect, 0, 0);
  scheme_add_method_w_arity(os_wxMenuBar_class, "set-label-top", os_wxMenuBarSetLabelTop, 2, 2);
  scheme_add_method_w_arity(os_wxMenuBar_class, "number", os_wxMenuBarNumber, 0, 0);
  scheme_add_method_w_arity(os_wxMenuBar_class, "enable-top", os_wxMenuBarEnableTop, 2, 2);

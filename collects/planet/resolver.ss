@@ -379,7 +379,4 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
 ; UTILITY
 ; A few small utility functions
 
-(define (last l) (car (reverse l)))
-(define (drop-last l) (reverse (cdr (reverse l))))
-
-)
+(define (last l) (car (reverse l))))

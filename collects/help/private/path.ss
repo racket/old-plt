@@ -1,6 +1,9 @@
 (module path mzscheme
-  (provide servlet-path?)
+  (require (lib "contract.ss"))
+  (provide/contract
+   [servlet-path? (path? . -> . boolean?)])
 
-  ; forward-slashed-path-string -> (union #f list)
   (define (servlet-path? path)
-    (regexp-match "^/servlets/" path)))
+    (regexp-match #rx#"^/servlets/" 
+                  (path->bytes path))))
+

@@ -4,11 +4,10 @@
 
   (provide/contract
    [standard-html-doc-position (path? . -> . number?)]
-   [known-docs (listof (cons/p path? string?))])
-  
-  (provide user-defined-doc-position
-           set-doc-position!
-	   reset-doc-positions!)
+   [user-defined-doc-position (path? . -> . (union false? number?))]
+   [known-docs (listof (cons/p path? string?))]
+   [set-doc-position! (path? number? . -> . void?)]
+   [reset-doc-positions! (void? . -> . void?)])
   
   ;; Define an order on the standard docs.
   (define (standard-html-doc-position d)
@@ -22,22 +21,18 @@
   (define user-doc-positions '())
 
   (define (set-doc-position! manual weight)
-    (let ([man-sym (string->symbol manual)])
-      (unless (assoc manual known-docs)
-	      (error 
-	       'set-doc-position! 
-	       "Unknown manual \"~a\"" manual))
-      (set! user-doc-positions
-	    (cons (list man-sym weight)
-		  (filter (lambda (x)
-			    (not (eq? (car x) man-sym)))
-			  user-doc-positions)))))
+    (unless (assoc manual known-docs)
+      (error 'set-doc-position! "unknown manual ~s" manual))
+    (set! user-doc-positions
+          (cons (list manual weight)
+                (filter (lambda (x) (not (equal? (car x) manual)))
+                        user-doc-positions))))
 
   (define (reset-doc-positions!)
     (set! user-doc-positions '()))
 
   (define (user-defined-doc-position manual)
-    (let ([result (assoc (string->symbol manual) user-doc-positions)])
+    (let ([result (assoc manual user-doc-positions)])
       (and result (cadr result))))
   
   ;; (listof (list string string number))

@@ -20,9 +20,9 @@
            finddoc-page
 	   finddoc-page-anchor)
   
-  (provide/contract [get-doc-name (string? . -> . string?)]
+  (provide/contract [get-doc-name (path? . -> . string?)]
                     [find-doc-directories (-> (listof path?))]
-                    [find-doc-directory (string? . -> . (union false? path?))]
+                    [find-doc-directory (path? . -> . (union false? path?))]
                     [find-doc-names (-> (listof (cons/p path? string?)))]
                     
                     [goto-manual-link (hd-cookie? string? string? . -> . any?)]
@@ -189,8 +189,8 @@
                                (dloop (cdr doc-contents) acc)))]))
                     (loop (cdr paths) acc)))])))
   
-  ;; find-doc-directory : string[doc-collection-name] -> (union #f string[dir-name])
   ;; finds the full path of the doc directory, if one exists
+  ;; input is just the short name of the directory (as a path)
   (define (find-doc-directory doc)
     (let loop ([dirs (find-doc-directories)])
       (cond
@@ -380,7 +380,7 @@
                    "</FONT>")
                   ""))))
   
-  ;; get-doc-name : path -> path
+  ;; get-doc-name : path -> string
   (define cached-doc-names (make-hash-table 'equal))
   (define (get-doc-name doc-dir)
     (hash-table-get
@@ -391,7 +391,7 @@
          (hash-table-put! cached-doc-names doc-dir res)
          res))))
 
-  ;; compute-doc-name : string[full-path] -> string[title of manual]
+  ;; compute-doc-name : path -> string[title of manual]
   ;; gets the title either from the known docs list, by parsing the
   ;; html, or if both those fail, by using the name of the directory
   ;; Special-cases the help collection. It's not a known doc directory

@@ -76,38 +76,7 @@ extern int osk_not_console; /* set by cmd-line flag */
 #include <math.h> /* for fmod , used by default_sleep */
 #include "schfd.h"
 
-#if defined(WINDOWS_PROCESSES) || defined(WINDOWS_FILE_HANDLES)
-static void init_thread_memory();
-# define WIN32_FD_HANDLES
-# include <windows.h>
-# include <process.h>
-# include <signal.h>
-# include <io.h>
-# include <fcntl.h>
-# define OS_SEMAPHORE_TYPE HANDLE
-# define OS_MUTEX_TYPE CRITICAL_SECTION
-# define OS_THREAD_TYPE HANDLE
-#endif
-#ifdef WINDOWS_FILE_HANDLES
-# define MZ_FDS
-typedef struct Win_FD_Input_Thread {
-  /* This is malloced for use in a Win32 thread */
-  HANDLE fd;
-  volatile int avail, err, eof, checking;
-  unsigned char *buffer;
-  HANDLE checking_sema, ready_sema, you_clean_up_sema;
-} Win_FD_Input_Thread;
-typedef struct Win_FD_Output_Thread {
-  /* This is malloced for use in a Win32 thread */
-  HANDLE fd;
-  int nonblocking;
-  volatile flushed; /* used for non-blocking */
-  volatile int done, err_no, buflen, bufstart, bufend; /* used for blocking */
-  unsigned char *buffer; /* used for blocking */
-  HANDLE lock_sema, work_sema, ready_sema, you_clean_up_sema;
-} Win_FD_Output_Thread;
-static int stupid_windows_machine;
-#endif
+/******************** Generic FILEs ********************/
 
 typedef struct {
   MZTAG_IF_REQUIRED
@@ -120,12 +89,57 @@ typedef struct {
   FILE *f;
 } Scheme_Output_File;
 
-#if defined(WIN32_FD_HANDLES)
+/******************** Windows I/O and Subprocesses ********************/
+
+#if defined(WINDOWS_PROCESSES) || defined(WINDOWS_FILE_HANDLES)
+
+static void init_thread_memory();
+
+# define WIN32_FD_HANDLES
 # include <windows.h>
+# include <process.h>
+# include <signal.h>
+# include <io.h>
+# include <fcntl.h>
+# define OS_SEMAPHORE_TYPE HANDLE
+# define OS_MUTEX_TYPE CRITICAL_SECTION
+# define OS_THREAD_TYPE HANDLE
 #endif
+
+#ifdef WINDOWS_FILE_HANDLES
+
+# define MZ_FDS
+
+typedef struct Win_FD_Input_Thread {
+  /* This is malloced for use in a Win32 thread */
+  HANDLE fd;
+  volatile int avail, err, eof, checking;
+  unsigned char *buffer;
+  HANDLE checking_sema, ready_sema, you_clean_up_sema;
+} Win_FD_Input_Thread;
+
+typedef struct Win_FD_Output_Thread {
+  /* This is malloced for use in a Win32 thread */
+  HANDLE fd;
+  int nonblocking;  /* non-zero => an NT pipe where non-blocking WriteFile
+		       works. We still use a thread to detect when the
+		       write has ben flushed, which in turn is needed to
+		       know whether future writes will immediately succeed. */
+  volatile flushed; /* used for non-blocking, only */
+  volatile int done, err_no, buflen, bufstart, bufend; /* used for blocking, only */
+  unsigned char *buffer; /* used for blocking */
+  HANDLE lock_sema, work_sema, ready_sema, you_clean_up_sema;
+} Win_FD_Output_Thread;
+
+static int stupid_windows_machine;
+
+#endif
+
 #if defined(WINDOWS_PROCESSES)
 # include <ctype.h>
 #endif
+
+/******************** Unix Subprocesses ********************/
 
 #if defined(UNIX_PROCESSES)
 /* For process & system: */
@@ -136,6 +150,8 @@ typedef struct System_Child {
   int status;
   struct System_Child *next;
 } System_Child;
+
+System_Child *scheme_system_children;
 #endif
 
 typedef struct Scheme_Subprocess {
@@ -151,6 +167,14 @@ typedef struct Scheme_Subprocess {
 # define MZ_FDS
 #endif
 
+/******************** Unix/Windows I/O ********************/
+
+/* Windows I/O is piggy-backed on Unix file-descriptor I/O.  Making
+   Windows file HANDLEs behave as nicely as file descriptors for
+   non-blocking I/O requires a lot of work, and often a separate
+   thread. The "th" and "oth" fields of Scheme_FD point to malloced
+   (non-GCed) records that mediate the threads. */
+
 #ifdef MZ_FDS
 
 # define MZPORT_FD_BUFFSIZE 4096
@@ -164,8 +188,8 @@ typedef struct Scheme_FD {
   unsigned char *buffer;
 
 # ifdef WINDOWS_FILE_HANDLES
-  Win_FD_Input_Thread *th;
-  struct Win_FD_Output_Thread *oth;
+  Win_FD_Input_Thread *th;   /* input mode */
+  Win_FD_Output_Thread *oth; /* output mode */
 # endif
 } Scheme_FD;
 
@@ -184,6 +208,8 @@ typedef struct Scheme_FD {
 #else
 # define FILENAME_EXN_E "%e"
 #endif
+
+/******************** Globals and Prototypes ********************/
 
 /* globals */
 Scheme_Object scheme_eof[1];
@@ -227,10 +253,6 @@ Scheme_Object *scheme_pipe_read_port_type;
 Scheme_Object *scheme_pipe_write_port_type;
 
 int scheme_force_port_closed;
-
-#if defined(UNIX_PROCESSES)
-System_Child *scheme_system_children;
-#endif
 
 #if defined(FILES_HAVE_FDS)
 static int external_event_fd, put_external_event_fd, event_fd_set;
@@ -3075,18 +3097,26 @@ fd_char_ready (Scheme_Input_Port *port)
   else {
 #ifdef WINDOWS_FILE_HANDLES
     if (!fip->th) {
-      /* No thread -- apparently wait works */
+      /* No thread -- so wait works. This case isn't actually used
+	 right now, because wait doesn't seem to work reliably for
+	 anything that we can recognize other than regfiles, which are
+	 handled above. */
       if (WaitForSingleObject((HANDLE)fip->fd, 0) == WAIT_OBJECT_0)
 	return 1;
     } else {
+      /* Has the reader thread pulled in data? */
       if (fip->th->checking) {
+	/* The thread is still trying, last we knew. Check the
+	   data-is-ready sema: */
 	if (WaitForSingleObject(fip->th->ready_sema, 0) == WAIT_OBJECT_0) {
 	  fip->th->checking = 0;
 	  return 1;
 	}
       } else if (fip->th->avail || fip->th->err || fip->th->eof)
-	return 1;
+	return 1; /* other thread found data */
       else {
+	/* Doesn't have anything, and it's not even looking. Tell it
+	   to look: */
 	fip->th->checking = 1;
 	ReleaseSemaphore(fip->th->checking_sema, 1, NULL);
       }
@@ -3172,6 +3202,8 @@ static int fd_getc(Scheme_Input_Port *port)
 
 #ifdef WINDOWS_FILE_HANDLES
     if (!fip->th) {
+      /* We can read directly. This must be a regular file, where
+	 reading never blocks. */
       DWORD rgot;
 
       rgot = MZPORT_FD_BUFFSIZE;
@@ -3183,6 +3215,7 @@ static int fd_getc(Scheme_Input_Port *port)
 	errno = GetLastError();
       }
     } else {
+      /* Extract data made available by the reader thread: */
       if (fip->th->eof) {
 	bc = 0;
       } else if (fip->th->err) {
@@ -3236,9 +3269,14 @@ fd_close_input(Scheme_Input_Port *port)
 
 #ifdef WINDOWS_FILE_HANDLES
   if (fip->th) {
+    /* -1 for checking means "shut down" */
     fip->th->checking = -1;
     ReleaseSemaphore(fip->th->checking_sema, 1, NULL);
+
+    /* Try to get out of cleaning up the records (since they can't be
+       cleaned until the thread is also done: */
     if (WaitForSingleObject(fip->th->you_clean_up_sema, 0) != WAIT_OBJECT_0) {
+      /* The other thread exited and left us with clean-up: */
       WindowsFDICleanup(fip->th);
     } /* otherwise, thread is responsible for clean-up */
   }
@@ -3268,18 +3306,26 @@ fd_need_wakeup(Scheme_Input_Port *port, void *fds)
   MZ_FD_SET(n, (fd_set *)fds2);
 #else
   if (fip->th) {
+    /* See fd-char_ready */
     if (!fip->checking) {
-      if (fip->avail || fip->err || fip->eof)
+      if (fip->avail || fip->err || fip->eof) {
+	/* Data is ready. We shouldn't be trying to sleep, so force an
+	   immediate wake-up: */
 	scheme_add_fd_nosleep(fds);
-      else {
+      } else {
 	fip->checking = 1;
 	ReleaseSemaphore(fip->th->checking_sema, 1, NULL);
 	scheme_add_fd_handle((void *)fip->th->ready_sema, fds, 1);
       }
     } else
       scheme_add_fd_handle((void *)fip->th->ready_sema, fds, 1);
-  } else
+  } else if (fip->regfile) {
+    /* regular files never block */
+    scheme_add_fd_nosleep(fds);
+  } else {
+    /* This case is not currently used. See fd_char_ready. */
     scheme_add_fd_handle((void *)fip->fd, fds, 0);
+  }
 #endif
 }
 
@@ -3320,6 +3366,14 @@ make_fd_input_port(int fd, const char *filename, int regfile)
 
 #ifdef WINDOWS_FILE_HANDLES
   if (!regfile) {
+    /* To get non-blocking I/O for anything that can block, we create
+       a separate reader thread. 
+
+       Yes, Windows NT pipes support non-blocking reads, but there
+       doesn't seem to be any way to use WaitForSingleObject to sleep
+       until characters are ready. PeekNamedPipe can be used for
+       polling, but not sleeping. */
+
     Win_FD_Input_Thread *th;
     DWORD id;
     HANDLE h;
@@ -3350,17 +3404,22 @@ make_fd_input_port(int fd, const char *filename, int regfile)
   return (Scheme_Object *)ip;
 }
 
+# ifdef WINDOWS_FILE_HANDLES
+
 static long WindowsFDReader(Win_FD_Input_Thread *th)
 {
   DWORD toget, got;
 
-  /* Non-pipe: get one char at a time: */
-  if (GetFileType((HANDLE)th->fd) == FILE_TYPE_PIPE)
+  if (GetFileType((HANDLE)th->fd) == FILE_TYPE_PIPE) {
+    /* Reading from a pipe will return early when data is available. */
     toget = MZPORT_FD_BUFFSIZE;
-  else
+  } else {
+    /* Non-pipe: get one char at a time: */
     toget = 1;
+  }
 
   while (!th->eof && !th->err) {
+    /* Wait until we're supposed to look for input: */
     WaitForSingleObject(th->checking_sema, INFINITE);
 
     if (th->checking < 0)
@@ -3374,12 +3433,14 @@ static long WindowsFDReader(Win_FD_Input_Thread *th)
       th->err = GetLastError();
     }
 
+    /* Notify main program that we found something: */
     ReleaseSemaphore(th->ready_sema, 1, NULL);
   }
 
+  /* We have to clean up if the main program has abandoned us: */
   if (WaitForSingleObject(th->you_clean_up_sema, 0) != WAIT_OBJECT_0) {
     WindowsFDICleanup(th);
-  } /* otherwise, main thread is responsible for clean-up */
+  } /* otherwise, main program is responsible for clean-up */
 
   return 0;
 }
@@ -3392,6 +3453,8 @@ static void WindowsFDICleanup(Win_FD_Input_Thread *th)
   free(th->buffer);
   free(th);
 }
+
+# endif
 
 #endif
 
@@ -3691,6 +3754,8 @@ static void wait_until_fd_flushed(Scheme_Output_Port *op)
 #ifdef WINDOWS_FILE_HANDLES
 static int win_fd_flush_done(Scheme_Object *_oth)
 {
+  /* For checking whether the output thread has finished a flush. */
+
   Win_FD_Output_Thread *oth = (Win_FD_Output_Thread *)_oth;
   int done;
   
@@ -3706,9 +3771,13 @@ static int win_fd_flush_done(Scheme_Object *_oth)
 
 static void win_fd_flush_needs_wakeup(Scheme_Object *_oth, void *fds)
 {
+  /* For sleping until the output thread has finished a flush. */
+
+  /* Double-check that we're not already done: */
   if (win_fd_flush_done(_oth))
     scheme_add_fd_nosleep(fds);
   else {
+    /* Not done. thread will notify us through ready_sema: */
     Win_FD_Output_Thread *oth = (Win_FD_Output_Thread *)_oth;
     
     scheme_add_fd_handle(oth->ready_sema, fds, 1);
@@ -3728,6 +3797,7 @@ fd_write_ready (Scheme_Object *port)
 
 #ifdef WINDOWS_FILE_HANDLES
   if (fop->oth) {
+    /* Pipe output that can block... */
     int retval;
 
     WaitForSingleObject(fop->oth->lock_sema, INFINITE);
@@ -3741,7 +3811,7 @@ fd_write_ready (Scheme_Object *port)
 
     return retval;
   } else
-    return 1;
+    return 1; /* non-blocking output, such as a console */
 #else
   {
     DECL_FDSET(writefds, 1);
@@ -3834,6 +3904,10 @@ static int flush_fd(Scheme_Output_Port *op,
       DWORD wrote;
 
       if (fop->regfile) {
+	/* Regular files never block, so this code looks like the Unix
+	   code.  We've cheated in the make_fd proc and called
+	   FILE_TYPE_CHAR devices (e.g., console) regular files,
+	   because they cannot block, either. */
 	if (WriteFile((HANDLE)fop->fd, bufstr + offset, buflen - offset, &wrote, NULL)) {
 	  len = wrote;
 	  full_write_buffer = 0;
@@ -3846,18 +3920,26 @@ static int flush_fd(Scheme_Output_Port *op,
 	errsaved = 0;
 	len = -1;
 
+	/* If we don't have a thread yet, we'll need to start it. If
+	   we have a non-blocking pipe, we can try the write (and
+	   we'll still need the thread to determine when the data is
+	   flushed. */
 	if (!fop->oth || fop->oth->nonblocking) {
-	  int ft, nonblocking;
+	  int nonblocking;
 
+	  /* If we don't have a thread, this is our first write attempt.
+	     Determine whether this is a non-blocking pipe: */
 	  if (!fop->oth) {
 	    /* The FILE_TYPE_PIPE test is currently redundant, I think,
 	       but better safe than sorry. */
 	    nonblocking = ((stupid_windows_machine < 0) 
 			   && (GetFileType((HANDLE)fop->fd) == FILE_TYPE_PIPE));
 	  } else
-	    nonblocking = 1;
+	    nonblocking = 1; /* ust be, or we would not have got here */
 
 	  if (nonblocking) {
+	    /* Unless we're still trying to flush old data, write to the
+	       pipe and have the other thread start flushing it. */
 	    DWORD old, nonblock = PIPE_NOWAIT;
 	    int ok, flushed;
 
@@ -3890,13 +3972,12 @@ static int flush_fd(Scheme_Output_Port *op,
 	      errsaved = GetLastError();
 	    }
 	  } else
-	    full_write_buffer = 1; /* creates the writer thread... */
+	    full_write_buffer = 0; /* and create the writer thread... */
 
-	  /* No thread because we haven't needed it, yet? */
 	  if (!fop->oth) {
-	    /* Note: we create a thread even for pipes that can be put in
-	       non-blocking mode, because that seems to be the only way to
-	       get waitable behavior. */
+	    /* We create a thread even for pipes that can be put in
+	       non-blocking mode, because that seems to be the only
+	       way to get waitable behavior. */
 	    Win_FD_Output_Thread *oth;
 	    HANDLE h;
 	    DWORD id;
@@ -3937,7 +4018,17 @@ static int flush_fd(Scheme_Output_Port *op,
 	   done... */
 	
 	if (!fop->oth->nonblocking) {
-	  /* We haven't written anything yet! */
+	  /* This case is only for Win 95/98/Me anonymous pipes.  We
+	     haven't written anything yet! We write to a buffer read
+	     by the other thread, and return -- the other thread takes
+	     care of writing. Thus, as long as there's room in the
+	     buffer, we don't block, and we can tell whether there's
+	     room. Technical problem: if multiple ports are attched to
+	     the same underlying pipe (different handle, same
+	     "device"), the port writes can get out of order. We try
+	     to avoid the problem by sleeping --- it's only Win
+	     95/98/Me, after all. */
+
 	  Win_FD_Output_Thread *oth = fop->oth;
 
 	  WaitForSingleObject(oth->lock_sema, INFINITE);
@@ -3951,10 +4042,13 @@ static int flush_fd(Scheme_Output_Port *op,
 	    int was_pre;
 
 	    if (!oth->buflen) {
-	      /* Avoid fragmenting: */
+	      /* Avoid fragmenting in circular buffer: */
 	      oth->bufstart = 0;
 	      oth->bufend = 0;
 	    }
+
+	    /* Write to top part of circular buffer, then bottom part
+	       if anything's left. */
 
 	    if (oth->bufstart <= oth->bufend) {
 	      was_pre = 1;
@@ -3989,6 +4083,8 @@ static int flush_fd(Scheme_Output_Port *op,
 		len += wrote;
 	      }
 	    }
+	    /* Let the other thread know that it should start trying
+	       to write, if it isn't already: */
 	    ReleaseSemaphore(oth->work_sema, 1, NULL);
 	    Sleep(0); /* to decrease the chance of re-ordering flushes */
 	  }
@@ -3999,7 +4095,7 @@ static int flush_fd(Scheme_Output_Port *op,
 	  WaitForSingleObject(oth->lock_sema, INFINITE);
 	  oth->flushed = 0;
 	  ReleaseSemaphore(oth->lock_sema, 1, NULL);
-	  ReleaseSemaphore(oth->work_sema, 1, NULL);
+	  ReleaseSemaphore(oth->work_sema, 1, NULL); /* start trying to flush */
 	}
       }
 #else
@@ -4121,7 +4217,10 @@ fd_close_output(Scheme_Output_Port *port)
   if (fop->oth) {
     fop->oth->done = 1;
     ReleaseSemaphore(fop->oth->work_sema, 1, NULL);
+
+    /* Try to leave clean-up to the other thread: */
     if (WaitForSingleObject(fop->oth->you_clean_up_sema, 0) != WAIT_OBJECT_0) {
+      /* Other thread is already done, so we're stuck with clean-up: */
       WindowsFDOCleanup(fop->oth);
     } /* otherwise, thread is responsible for clean-up */
     fop->oth = NULL;
@@ -4157,6 +4256,7 @@ make_fd_output_port(int fd, int regfile)
   /* Character devices can't block output, right? */
   if (GetFileType((HANDLE)fop->fd) == FILE_TYPE_CHAR)
     regfile = 1;
+  /* The work thread is created on demand in fd_flush. */
 #endif
   
   fop->regfile = regfile;
@@ -4191,7 +4291,7 @@ static long WindowsFDWriter(Win_FD_Output_Thread *oth)
   int ok, more_work = 0, err_no;
 
   if (oth->nonblocking) {
-    /* Non-blocking mode. Just flush. */
+    /* Non-blocking mode (Win NT pipes). Just flush. */
     while (!oth->done) {
       WaitForSingleObject(oth->work_sema, INFINITE);
       
@@ -4203,7 +4303,8 @@ static long WindowsFDWriter(Win_FD_Output_Thread *oth)
       ReleaseSemaphore(oth->lock_sema, 1, NULL);
     }
   } else {
-    /* Blocking mode. We do the writing work. */
+    /* Blocking mode. We do the writing work.  This case is only for
+       Win 95/98/Me anonymous pipes. */
     while (!oth->err_no) {
       if (!more_work)
 	WaitForSingleObject(oth->work_sema, INFINITE);

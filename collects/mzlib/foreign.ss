@@ -590,28 +590,38 @@
 ;; This is a kind of a pointer that gets a specific tag when converted to
 ;; Scheme, and accepts only such tagged pointers when going to C.  An optional
 ;; `ptr-type' can be given to be used as the base pointer type, instead of
-;; _pointer.
-(define* (make-cpointer-type tag . ptr-type)
-  (let ([tagged->C (string->symbol (format "~a->C" tag))]
-        [error-string (format "expecting a \"~a\" pointer, got ~~e" tag)])
-    (make-ctype (if (pair? ptr-type) (car ptr-type) _pointer)
-      (lambda (p)
-        (if (cpointer? p)
-          (unless (eq? tag (cpointer-type p))
-            (error tagged->C error-string p))
-          (error tagged->C error-string p))
-        p)
-      (lambda (p) (set-cpointer-type! p tag) p))))
+;; _pointer, `scheme->c' and `c->scheme' can be used for adding conversion
+;; hooks.
+(define* make-cpointer-type
+  (case-lambda
+   [(tag) (make-cpointer-type tag #f #f #f)]
+   [(tag ptr-type) (make-cpointer-type tag ptr-type #f #f)]
+   [(tag ptr-type scheme->c c->scheme)
+    (let ([tagged->C (string->symbol (format "~a->C" tag))]
+          [error-string (format "expecting a \"~a\" pointer, got ~~e" tag)])
+      (make-ctype (or ptr-type _pointer)
+                  (lambda (p)
+                    (let ([p (if scheme->c (scheme->c p) p)])
+                      (if (cpointer? p)
+                        (unless (eq? tag (cpointer-type p))
+                          (error tagged->C error-string p))
+                        (error tagged->C error-string p))
+                      p))
+                  (lambda (p)
+                    (when p (set-cpointer-type! p tag))
+                    (if c->scheme (c->scheme p) p))))]))
 
 ;; A macro version of the above, using the defined name for a tag string, and
 ;; defining a predicate too.  The name should look like `_foo', the predicate
 ;; will be `foo?', and the tag will be "foo".  In addition, `foo-tag' is bound
-;; to the tag.  The optional `ptr-type' argument is the same as that of
-;; `make-cpointer-type'.
+;; to the tag.  The optional `ptr-type', `scheme->c', and `c->scheme' arguments
+;; are the same as those of `make-cpointer-type'.
 (provide define-cpointer-type)
 (define-syntax (define-cpointer-type stx)
   (syntax-case stx ()
-    [(_ _TYPE ptr-type)
+    [(_ _TYPE) #'(_ _TYPE #f #f #f)]
+    [(_ _TYPE ptr-type) #'(_ _TYPE ptr-type #f #f)]
+    [(_ _TYPE ptr-type scheme->c c->scheme)
      (and (identifier? #'_TYPE)
           (regexp-match #rx"^_.+" (symbol->string (syntax-e #'_TYPE))))
      (let ([name (cadr (regexp-match #rx"^_(.+)$"
@@ -624,11 +634,11 @@
                      [TYPE-tag    (id name "-tag")])
          #'(define-values (_TYPE TYPE? TYPE-tag)
              (let ([TYPE-tag name-string])
-               (values (make-cpointer-type TYPE-tag ptr-type)
-                       (lambda (x)
-                         (and (cpointer? x) (eq? TYPE-tag (cpointer-type x))))
-                       TYPE-tag)))))]
-    [(_ _TYPE) #'(_ _TYPE _pointer)]))
+               (values
+                (make-cpointer-type TYPE-tag ptr-type scheme->c c->scheme)
+                (lambda (x)
+                  (and (cpointer? x) (eq? TYPE-tag (cpointer-type x))))
+                TYPE-tag)))))]))
 
 ;; ----------------------------------------------------------------------------
 ;; Struct wrappers

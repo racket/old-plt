@@ -6,16 +6,29 @@
 
 ;; ===== Main Objects =========================================================
 
-(define-struct MagickWand (ptr))
-(define _MagickWand
-  (make-ctype _pointer MagickWand-ptr
-    (lambda (ptr)
-      (if ptr
-        (let ([new (make-MagickWand ptr)])
-          (register-finalizer new DestroyMagickWand)
-          new)
-        (error '_MagickWand "got a NULL pointer")))))
+(define-syntax defmagick-pointer-type
+  (syntax-rules ()
+    [(_ _name destructor s->c)
+     (define-cpointer-type _name #f s->c
+       (lambda (ptr)
+         (if ptr
+           (begin (register-finalizer ptr destructor) ptr)
+           (error '_name "got a NULL pointer"))))]
+    [(_ _name destructor) (defmagick-pointer-type _name destructor #f)]))
 
+(defmagick-pointer-type _MagickWand DestroyMagickWand)
+(defmagick-pointer-type _DrawingWand DestroyDrawingWand)
+(defmagick-pointer-type _Image DestroyImage)
+(defmagick-pointer-type _DrawInfo DestroyDrawInfo)
+(defmagick-pointer-type _PixelWand DestroyPixelWand
+  ;; This can be implicitly built when given a color name
+  (lambda (x)
+    (let loop ([x x])
+      (cond [(string? x) (loop (NewPixelWand x))]
+            [(list?   x) (loop (NewPixelWand x))]
+            [else x])))) ; can use NULL as a pixel wand (see floodfill)
+
+;; Use a struct for this because we want to keep the associated image width
 (define-struct PixelIterator (ptr width))
 (define _PixelIterator
   (make-ctype _pointer PixelIterator-ptr
@@ -25,53 +38,6 @@
           (register-finalizer new DestroyPixelIterator)
           new)
         (error '_PixelIterator "got a NULL pointer")))))
-
-(define-struct PixelWand (ptr))
-;; This can be implicitly built when given a color name
-(define _PixelWand
-  (make-ctype _pointer
-    (lambda (x)
-      (let loop ([x x])
-        (cond [(string? x) (loop (NewPixelWand x))]
-              [(list?   x) (loop (NewPixelWand x))]
-              [(not x) #f] ; can use NULL as a pixel wand (see floodfill)
-              [else (PixelWand-ptr x)])))
-    (lambda (ptr)
-      (if ptr
-        (let ([new (make-PixelWand ptr)])
-          (register-finalizer new DestroyPixelWand)
-          new)
-        (error '_PixelWand "got a NULL pointer")))))
-
-(define-struct DrawingWand (ptr))
-(define _DrawingWand
-  (make-ctype _pointer DrawingWand-ptr
-    (lambda (ptr)
-      (if ptr
-        (let ([new (make-DrawingWand ptr)])
-          (register-finalizer new DestroyDrawingWand)
-          new)
-        (error '_DrawingWand "got a NULL pointer")))))
-
-(define-struct Image (ptr))
-(define _Image
-  (make-ctype _pointer Image-ptr
-    (lambda (ptr)
-      (if ptr
-        (let ([new (make-Image ptr)])
-          (register-finalizer new DestroyImage)
-          new)
-        (error '_Image "got a NULL pointer")))))
-
-(define-struct DrawInfo (ptr))
-(define _DrawInfo
-  (make-ctype _pointer DrawInfo-ptr
-    (lambda (ptr)
-      (if ptr
-        (let ([new (make-DrawInfo ptr)])
-          (register-finalizer new DestroyDrawInfo)
-          new)
-        (error '_DrawInfo "got a NULL pointer")))))
 
 ;; ===== Utilities ============================================================
 

@@ -543,28 +543,48 @@ void scheme_init_port_fun_config(void)
 /*========================================================================*/
 
 static long 
-string_get_string(Scheme_Input_Port *port, 
-		  char *buffer, long offset, long size,
-		  int nonblock)
+string_get_or_peek_string(Scheme_Input_Port *port, 
+			  char *buffer, long offset, long size,
+			  int peek, long skip)
 {
   Scheme_Indexed_String *is;
 
   is = (Scheme_Indexed_String *) port->port_data;
-  if (is->index >= is->size)
+  if (is->index + skip >= is->size)
     return EOF;
   else {
-    long l;
+    long l, delta;
 
-    if (is->index + size <= is->size)
+    delta = is->index + skip;
+
+    if (delta + size <= is->size)
       l = size;
     else
-      l = (is->size - is->index);
+      l = (is->size - delta);
       
-    memcpy(buffer + offset, is->string + is->index, l);
-    is->index += l;
+    memcpy(buffer + offset, is->string + delta, l);
+    if (!peek)
+      is->index += l;
     
     return l;
   }
+}
+
+static long 
+string_get_string(Scheme_Input_Port *port, 
+		  char *buffer, long offset, long size,
+		  int nonblock)
+{
+  return string_get_or_peek_string(port, buffer, offset, size, 0, 0);
+}
+
+static long 
+string_peek_string(Scheme_Input_Port *port, 
+		   char *buffer, long offset, long size,
+		   long skip,
+		   int nonblock)
+{
+  return string_get_or_peek_string(port, buffer, offset, size, 1, skip);
 }
 
 static int
@@ -617,7 +637,7 @@ scheme_make_sized_string_input_port(const char *str, long len)
   ip = _scheme_make_input_port(scheme_string_input_port_type,
 			       make_indexed_string(str, len),
 			       string_get_string,
-			       NULL,
+			       string_peek_string,
 			       string_char_ready,
 			       string_close_in,
 			       NULL,
@@ -1593,7 +1613,7 @@ make_input_port(int argc, Scheme_Object *argv[])
 			       user_needs_wakeup_input,
 			       0);
 
-  ip->name = "USERPORT";
+  ip->name = "CUSTOMPORT";
 
   return (Scheme_Object *)ip;
 }
@@ -2249,8 +2269,8 @@ do_general_read_string(const char *who, int argc, Scheme_Object *argv[],
     return scheme_eof;
 
   if (alloc_mode) {
-    if (got < size - 5) {
-      /* Reallocate in case got << size */
+    if (got < size) {
+      /* Ended up with a shorter string: */
       str = scheme_make_sized_string(SCHEME_STR_VAL(str), got, 1);
     }
     return str;

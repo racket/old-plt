@@ -16,9 +16,6 @@
 
 # include "private/gc_priv.h"
 
-#undef STACKBOTTOM
-#define FREEBSD_STACKBOTTOM
-
 # if defined(LINUX) && !defined(POWERPC)
 #   include <linux/version.h>
 #   if (LINUX_VERSION_CODE <= 0x10400)

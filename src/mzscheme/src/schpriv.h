@@ -389,6 +389,7 @@ typedef struct Scheme_Stx {
   Scheme_Object *src;
   Scheme_Object *xtra;
   Scheme_Object *wraps;
+  Scheme_Object *lazy_wraps;
 } Scheme_Stx;
 
 Scheme_Object *scheme_make_stx(Scheme_Object *val, 

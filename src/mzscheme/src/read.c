@@ -79,6 +79,9 @@ static Scheme_Object *read_string(Scheme_Object *port, Scheme_Object *stxsrc,
 static Scheme_Object *read_quote(Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col,
 				 Scheme_Hash_Table **ht CURRENTPROCPRM);
+static Scheme_Object *read_syntax_quote(Scheme_Object *port, Scheme_Object *stxsrc,
+					long line, long col,
+					Scheme_Hash_Table **ht CURRENTPROCPRM);
 static Scheme_Object *read_vector(Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col,
 				  char closer, 
@@ -154,6 +157,7 @@ static Scheme_Object *quote_symbol;
 static Scheme_Object *quasiquote_symbol;
 static Scheme_Object *unquote_symbol;
 static Scheme_Object *unquote_splicing_symbol;
+static Scheme_Object *syntax_symbol;
 
 /* Table of built-in variable refs for .zo loading: */
 static Scheme_Object **variable_references;
@@ -170,11 +174,13 @@ void scheme_init_read(Scheme_Env *env)
   REGISTER_SO(quasiquote_symbol);
   REGISTER_SO(unquote_symbol);
   REGISTER_SO(unquote_splicing_symbol);
+  REGISTER_SO(syntax_symbol);
     
   quote_symbol = scheme_intern_symbol("quote");
   quasiquote_symbol = scheme_intern_symbol("quasiquote");
   unquote_symbol = scheme_intern_symbol("unquote");
   unquote_splicing_symbol = scheme_intern_symbol("unquote-splicing");
+  syntax_symbol = scheme_intern_symbol("syntax");
 
   scheme_add_global_constant("read-case-sensitive", 
 			     scheme_register_parameter(read_case_sensitive, 
@@ -520,7 +526,8 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	case 'e': return read_number(port, stxsrc, line, col, 0, 1, 10, 0 CURRENTPROCARG);
 	case 'I':
 	case 'i': return read_number(port, stxsrc, line, col, 1, 0, 10, 0 CURRENTPROCARG);
-	case '`': 
+	case '\'': return read_syntax_quote(port, stxsrc, line, col, ht CURRENTPROCARG);
+	case '~': 
 	  if (local_can_read_compiled) {
 	    Scheme_Object *cpld;
 	    cpld = read_compiled(port, ht CURRENTPROCARG);
@@ -530,7 +537,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	  } else {
 	    scheme_raise_exn(MZEXN_READ,
 			     port,
-			     "read: #` expressions not currently enabled");
+			     "read: #~ compiled expressions not currently enabled");
 	    return NULL;
 	  }
 	case '|':
@@ -1507,6 +1514,24 @@ static Scheme_Object *read_box(Scheme_Object *port,
   return bx;
 }
 
+/* "#'" has been read */
+static Scheme_Object *
+read_syntax_quote(Scheme_Object *port,
+		  Scheme_Object *stxsrc, long line, long col,
+		  Scheme_Hash_Table **ht CURRENTPROCPRM)
+{
+  Scheme_Object *obj, *ret;
+
+  obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
+  ret = (stxsrc
+	 ? scheme_make_stx(syntax_symbol, line, col, stxsrc)
+	 : syntax_symbol);
+  ret = scheme_make_pair(ret, scheme_make_pair(obj, scheme_null));
+  if (stxsrc)
+    ret = scheme_make_stx(ret, line, col, stxsrc);
+  return ret;
+}
+
 /*========================================================================*/
 /*                               utilities                                */
 /*========================================================================*/
@@ -1939,7 +1964,7 @@ static Scheme_Object *read_compact(CPort *port,
 	v = NULL;
 	scheme_raise_exn(MZEXN_READ,
 			 port,
-			 "read (compiled): bad #` contents: %d at %ld", ch,
+			 "read (compiled): bad #~ contents: %d at %ld", ch,
 			 CP_TELL(port));
       }
     }
@@ -2077,7 +2102,7 @@ static Scheme_Object *read_marshalled(int type,
   if (!reader)
     scheme_raise_exn(MZEXN_READ,
 		     port,
-		     "read (compiled): bad #` type number: %d at %ld",
+		     "read (compiled): bad #~ type number: %d at %ld",
 		     type, CP_TELL(port));
   
   return reader(l);
@@ -2110,7 +2135,7 @@ static long read_compact_number_from_port(Scheme_Object *port)
     return -v;
 }
 
-/* "#`" has been read */
+/* "#~" has been read */
 static Scheme_Object *read_compiled(Scheme_Object *port, 
 				    Scheme_Hash_Table **ht
 				    CURRENTPROCPRM)

@@ -88,6 +88,7 @@
   (case-lambda 
    [(th expr) (thunk-error-test th expr exn:application:type?)]
    [(th expr exn?)
+    (set! expr (syntax->datum expr))
     (set! number-of-error-tests (add1 number-of-error-tests))
     (write expr)
     (display "  =e=> ")
@@ -149,7 +150,7 @@
 
 (define (syntax-test expr)
   (error-test expr exn:syntax?)
-  (error-test `(if #f ,expr) exn:syntax?))
+  (error-test (datum->syntax `(if #f ,expr) expr expr) exn:syntax?))
 
 (define (arity-test f min max)
   (letrec ([aok?

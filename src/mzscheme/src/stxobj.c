@@ -166,10 +166,8 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
   stx->line = line;
   stx->col = col;
   stx->src = src;
-  if (HAS_SUBSTX(val))
-    stx->wraps = scheme_false;
-  else
-    stx->wraps = scheme_null;
+  stx->wraps = scheme_null;
+  stx->lazy_wraps = scheme_null;
 
   return (Scheme_Object *)stx;
 }
@@ -206,7 +204,7 @@ Scheme_Object *add_remove_mark(Scheme_Object *wraps, Scheme_Object *m)
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
-  Scheme_Object *wraps;
+  Scheme_Object *wraps, *lazy_wraps;
 
 #if CHECK_STX
   if (!SCHEME_STXP(o))
@@ -214,26 +212,23 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
 #endif
 
   if (HAS_SUBSTX(stx->val)) {
-    Scheme_Object *here_wraps, *lazy_wraps;
     wraps = stx->wraps;
-
-    here_wraps = SCHEME_FALSEP(stx->wraps) ? scheme_null : SCHEME_CAR(stx->wraps);
-    lazy_wraps = SCHEME_FALSEP(stx->wraps) ? scheme_null : SCHEME_CDR(stx->wraps);
-    if (SAME_OBJ(here_wraps, lazy_wraps)) {
-      here_wraps = add_remove_mark(here_wraps, m);
-      lazy_wraps = here_wraps;
+    lazy_wraps = stx->lazy_wraps;
+    if (SAME_OBJ(wraps, lazy_wraps)) {
+      wraps = add_remove_mark(wraps, m);
+      lazy_wraps = wraps;
     } else {
-      here_wraps = add_remove_mark(here_wraps, m);
+      wraps = add_remove_mark(wraps, m);
       lazy_wraps = add_remove_mark(lazy_wraps, m);
     }
-    
-    wraps = scheme_make_pair(here_wraps, lazy_wraps);
   } else {
     wraps = add_remove_mark(stx->wraps, m);
+    lazy_wraps = scheme_null;
   }
 
   stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src);
   stx->wraps = wraps;
+  stx->lazy_wraps = lazy_wraps;
 
   return (Scheme_Object *)stx;
 }
@@ -332,7 +327,7 @@ void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
-  Scheme_Object *wraps;
+  Scheme_Object *wraps, *lazy_wraps;
 
 #if CHECK_STX
   if (!SCHEME_STXP(o))
@@ -344,27 +339,24 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
 #endif
 
   if (HAS_SUBSTX(stx->val)) {
-    Scheme_Object *here_wraps, *lazy_wraps;
     wraps = stx->wraps;
+    lazy_wraps = stx->lazy_wraps;
 
-    here_wraps = SCHEME_FALSEP(stx->wraps) ? scheme_null : SCHEME_CAR(stx->wraps);
-    lazy_wraps = SCHEME_FALSEP(stx->wraps) ? scheme_null : SCHEME_CDR(stx->wraps);
-
-    if (SAME_OBJ(here_wraps, lazy_wraps)) {
-      here_wraps = scheme_make_pair(rename, here_wraps);
-      lazy_wraps = here_wraps;
+    if (SAME_OBJ(wraps, lazy_wraps)) {
+      wraps = scheme_make_pair(rename, wraps);
+      lazy_wraps = wraps;
     } else {
-      here_wraps = scheme_make_pair(rename, here_wraps);
+      wraps = scheme_make_pair(rename, wraps);
       lazy_wraps = scheme_make_pair(rename, lazy_wraps);
     }
-
-    wraps = scheme_make_pair(here_wraps, lazy_wraps);
   } else {
     wraps = scheme_make_pair(rename, stx->wraps);
+    lazy_wraps = scheme_null;
   }
   
   stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src);
   stx->wraps = wraps;
+  stx->lazy_wraps = lazy_wraps;
 
   return (Scheme_Object *)stx;
 }
@@ -402,16 +394,9 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
     /* p1 is the list after wl... */
     
     if (HAS_SUBSTX(stx->val)) {
-      if (SCHEME_FALSEP(stx->wraps)) {
-	if (!SCHEME_NULLP(p1))
-	  owner_wraps = NULL;
-      } else {
-	if (!SAME_OBJ(owner_wraps, SCHEME_CAR(stx->wraps))
-	    || !SAME_OBJ(owner_wraps, SCHEME_CAR(stx->wraps)))
-	  owner_wraps = NULL;
-      }
-      if (owner_wraps)
-	owner_wraps = scheme_make_pair(owner_wraps, owner_wraps);
+      if (!SAME_OBJ(owner_wraps, stx->wraps)
+	  || !SAME_OBJ(owner_wraps, stx->lazy_wraps))
+	owner_wraps = NULL;
     } else {
       if (!SAME_OBJ(stx->wraps, p1))
 	owner_wraps = NULL;
@@ -420,6 +405,8 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
     if (owner_wraps) {
       stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src);
       stx->wraps = owner_wraps;
+      if (HAS_SUBSTX(stx->val))
+	stx->lazy_wraps = owner_wraps;
       return (Scheme_Object *)stx;
     }
   }
@@ -453,16 +440,16 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
   Scheme_Stx *stx = (Scheme_Stx *)o;
 
   if (HAS_SUBSTX(stx->val) 
-      && !SCHEME_FALSEP(stx->wraps)
-      && !SCHEME_NULLP(SCHEME_CDR(stx->wraps))) {
+      && !SCHEME_NULLP(stx->lazy_wraps)) {
     Scheme_Object *v = stx->val, *result;
     Scheme_Object *wraps, *here_wraps;
     Scheme_Object *ml;
     int wl_count = 0;
     
-    here_wraps = SCHEME_CAR(stx->wraps);
-    wraps = SCHEME_CDR(stx->wraps);
-    
+    here_wraps = stx->wraps;
+    wraps = stx->lazy_wraps;
+    stx->lazy_wraps = scheme_null;
+
     /* Count wraps to prop: */
     for (ml = wraps; !SCHEME_NULLP(ml); ml = SCHEME_CDR(ml)) {
       wl_count++;
@@ -510,8 +497,6 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 
       stx->val = v;
     }
-
-    stx->wraps = scheme_make_pair(here_wraps, scheme_null);
   }
 
   return stx->val;
@@ -1025,24 +1010,24 @@ static int same_list(Scheme_Object *a, Scheme_Object *b)
 }
 
 
-static Scheme_Object *wraps_to_datum(Scheme_Object *w_in, int subs,   
+static Scheme_Object *wraps_to_datum(Scheme_Object *w_in, 
+				     Scheme_Object *lw,
 				     Scheme_Hash_Table *rns)
 {
   Scheme_Object *stack, *a, *w = w_in;
   int is_in_module = 0;
 
-  if (subs) {
-    if (SCHEME_FALSEP(w))
-      return w;
+  if (lw) {
+    if (SCHEME_NULLP(w) && SCHEME_NULLP(lw))
+      return scheme_false;
 
-    if (SAME_OBJ(SCHEME_CAR(w), SCHEME_CDR(w))) {
+    if (SAME_OBJ(w, lw)) {
       /* #f as first marshalled obj means "same as second": */
-      return scheme_make_pair(scheme_false,
-			      wraps_to_datum(SCHEME_CAR(w), 0, rns));
+      return scheme_make_pair(scheme_false, wraps_to_datum(w, NULL, rns));
     }
     
-    return scheme_make_pair(wraps_to_datum(SCHEME_CAR(w), 0, rns),
-			    wraps_to_datum(SCHEME_CDR(w), 0, rns));
+    return scheme_make_pair(wraps_to_datum(w, NULL, rns),
+			    wraps_to_datum(lw, NULL, rns));
   }
 
   a = scheme_lookup_in_table(rns, (const char *)w_in);
@@ -1305,7 +1290,11 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
     result = v;
 
   if (with_marks > 1)
-    result = scheme_make_pair(result, wraps_to_datum(stx->wraps, HAS_SUBSTX(stx->val), rns));
+    result = scheme_make_pair(result, wraps_to_datum(stx->wraps, 
+						     (HAS_SUBSTX(stx->val)
+						      ? stx->lazy_wraps
+						      : NULL),
+						     rns));
 
   if (ph)
     SCHEME_PTR_VAL(ph) = result;
@@ -1660,34 +1649,21 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 
   if (wraps) {
     wraps = datum_to_wraps(wraps, HAS_SUBSTX(SCHEME_STX_VAL(result)), (Scheme_Hash_Table *)stx_wraps);
-    ((Scheme_Stx *)result)->wraps = wraps;
-  } else if (SCHEME_FALSEP((Scheme_Object *)stx_wraps)) {
-    if (HAS_SUBSTX(SCHEME_STX_VAL(result)))
-      ((Scheme_Stx *)result)->wraps = scheme_false;
-    else
-      ((Scheme_Stx *)result)->wraps = scheme_null;
-  } else {
-    /* Copy wraps: */
-    Scheme_Object *stxwraps;
-
-    if (HAS_SUBSTX(stx_wraps->val))
-      stxwraps = SCHEME_FALSEP(stx_wraps->wraps) ? scheme_null : SCHEME_CAR(stx_wraps->wraps);
-    else
-      stxwraps = stx_wraps->wraps;
-    
     if (HAS_SUBSTX(SCHEME_STX_VAL(result))) {
-      /* No propagation will be needed: */
-      Scheme_Object *wraps;
-      
-      if (SCHEME_NULLP(stxwraps))
-	wraps = scheme_false;
-      else
-	wraps = scheme_make_pair(stxwraps, scheme_null);
-      
+      if (SCHEME_FALSEP(wraps)) {
+	((Scheme_Stx *)result)->wraps = scheme_null;
+	((Scheme_Stx *)result)->lazy_wraps = scheme_null;
+      } else {
+	((Scheme_Stx *)result)->wraps = SCHEME_CAR(wraps);
+	((Scheme_Stx *)result)->lazy_wraps = SCHEME_CDR(wraps);
+      }
+    } else
       ((Scheme_Stx *)result)->wraps = wraps;
-    } else {
-      ((Scheme_Stx *)result)->wraps = stxwraps;
-    }
+  } else if (SCHEME_FALSEP((Scheme_Object *)stx_wraps)) {
+    /* wraps already nulled */
+  } else {
+    /* Note: no propagation will be needed for SUBSTX */
+    ((Scheme_Stx *)result)->wraps = stx_wraps->wraps;
   }
   
   if (ph) {

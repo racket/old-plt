@@ -104,6 +104,8 @@
 #include <Memory.h>
 #endif
 
+#define EMBEDDED_DEFINES_START_ANYWHERE 1
+
 /* globals */
 int scheme_allow_cond_auto_else = 1;
 
@@ -239,7 +241,7 @@ scheme_init_eval (Scheme_Env *env)
   unknown_symbol = scheme_intern_symbol("unknown");
   void_link_symbol = scheme_intern_symbol("-v");
   quote_symbol = scheme_intern_symbol("quote");
-  letmacro_symbol = scheme_intern_symbol("let-one-syntax");
+  letmacro_symbol = scheme_intern_symbol("letrec-syntax");
   begin_symbol = scheme_intern_symbol("begin");
   
   scheme_install_type_writer(scheme_application_type, write_application);
@@ -1423,6 +1425,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
     /* Yep, it's a macro; expand once */
     first = scheme_expand_expr(first, env, 1, boundname);
   } else {
+#if 0
     if (SAME_OBJ(val, scheme_define_values_syntax)) {
       /* Check the form of the definition: can't shadow syntax bindings. */
       /* Only check identifier if the definition is well-formed. */
@@ -1467,6 +1470,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 	}
       }
     }
+#endif
 
     return first;
   }
@@ -1922,7 +1926,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 			    Scheme_Compile_Info *rec, int drec, 
 			    int depth, Scheme_Object *boundname)
 /* This ugly code parses a block of code, transforming embedded
-   define-values and define-syntax into letrec and let-one-syntax.
+   define-values and define-syntax into letrec and letrec-syntax.
    It is espcailly ugly because we have to expand macros
    before deciding what we have. */
 {
@@ -1972,15 +1976,20 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       forms = scheme_datum_to_syntax(forms, orig_forms, orig_forms, 0);
 
       goto try_again;
-    } else if (SAME_OBJ(gval, scheme_define_values_syntax)) {
-      /* Turn defines into a letrec-values: */
+    } else if (SAME_OBJ(gval, scheme_define_values_syntax)
+	       || SAME_OBJ(gval, scheme_defmacro_syntax)) {
+      /* Turn defines into a letrec: */
       Scheme_Object *var, *vars, *v, *link, *l = scheme_null, *start = NULL;
-      
+      int values = SAME_OBJ(gval, scheme_define_values_syntax);
+      GC_CAN_IGNORE char *dname = (values 
+				   ? "define-values (internal)" 
+				   : "define-syntax (internal)");
+
       while (1) {
 	v = SCHEME_STX_CDR(first);
 	
 	if (!SCHEME_STX_PAIRP(v))
-	  scheme_wrong_syntax("define-values (internal)", NULL, forms, 
+	  scheme_wrong_syntax(dname, NULL, forms, 
 			      "bad syntax (" IMPROPER_LIST_FORM ")");
 
 	var = NULL;
@@ -1988,7 +1997,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	while (SCHEME_STX_PAIRP(vars)) {
 	  var = SCHEME_STX_CAR(vars);
 	  if (!SCHEME_STX_SYMBOLP(var))
-	    scheme_wrong_syntax("define-values (internal)", var, forms, 
+	    scheme_wrong_syntax(dname, var, forms, 
 				"name must be an identifier");
 	  vars = SCHEME_STX_CDR(vars);
 	}
@@ -2001,11 +2010,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	l = link;
 	result = SCHEME_STX_CDR(result);
 	if (!SCHEME_STX_NULLP(result) && !SCHEME_STX_PAIRP(result))
-	  scheme_wrong_syntax("define-values (internal)", NULL, forms, NULL);
-
-	/* Special case: (define-values define-values x) */
-	if (var && SAME_OBJ(define_values_symbol, SCHEME_STX_SYM(var)))
-	  break;
+	  scheme_wrong_syntax(dname, NULL, forms, NULL);
 
       define_try_again:
 	if (!SCHEME_STX_NULLP(result)) {
@@ -2014,7 +2019,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	    first = scheme_datum_to_syntax(first, forms, forms, 0);
 	    first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, &gval);
 	    name = SCHEME_STX_CAR(first);
-	    if (NOT_SAME_OBJ(gval, scheme_define_values_syntax)) {
+	    if ((values && NOT_SAME_OBJ(gval, scheme_define_values_syntax))
+		|| (!values && NOT_SAME_OBJ(gval, scheme_defmacro_syntax))) {
 	      if (SAME_OBJ(gval, scheme_begin_syntax)) {
 		/* Inline content */
 		Scheme_Object *content = SCHEME_STX_CDR(first);
@@ -2036,8 +2042,9 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       }
 
       if (SCHEME_STX_PAIRP(result)) {
-	result = scheme_make_pair(letrec_values_symbol, scheme_make_pair(start, result));
-	result = scheme_datum_to_syntax(result, forms, forms, 0);
+	result = scheme_make_pair(values ? letrec_values_symbol : letmacro_symbol, 
+				  scheme_make_immutable_pair(start, result));
+	result = scheme_datum_to_syntax(result, forms, scheme_sys_wraps(env), 0);
 
 	name = NULL;
       } else {
@@ -2045,40 +2052,6 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	scheme_wrong_syntax("begin (possibly implicit)", NULL, forms, 
 			    "no expression after a sequence of internal definitions");
       }
-    } else if (SAME_OBJ(gval, scheme_defmacro_syntax)) {
-      /* Convert to let-... */
-      Scheme_Object *var, *body, *rest, *let;
-      char *where;
-      
-      where = "define-syntax (internal)";
-      let = letmacro_symbol;
-      
-      rest = SCHEME_STX_CDR(result);
-      
-      first = SCHEME_STX_CDR(first);
-      if (!SCHEME_STX_PAIRP(first))
-	scheme_wrong_syntax(where, first, result, NULL);
-      var = SCHEME_STX_CAR(first);
-      first = SCHEME_STX_CDR(first);
-      if (!SCHEME_STX_PAIRP(first))
-	scheme_wrong_syntax(where, first, result, NULL);
-      body = SCHEME_STX_CAR(first);
-      first = SCHEME_STX_CDR(first);
-      if (!SCHEME_STX_NULLP(first))
-	scheme_wrong_syntax(where, first, result, NULL);
-
-      if (SCHEME_STX_NULLP(rest))
-	scheme_wrong_syntax("begin (possibly implicit)", NULL, forms, 
-			    "no expression after a macro or expansion-time definition");
-
-      result = cons(let,
-		   cons(var,
-			cons(body,
-			     rest)));
-
-      result = scheme_datum_to_syntax(result, forms, forms, 0);
-      
-      name = NULL;
     }
 
     if (!name) {
@@ -2112,7 +2085,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 
     first = scheme_compile_expr(first, env, recs, 0);
 #if EMBEDDED_DEFINES_START_ANYWHERE
-    forms = scheme_compile_expand_block(rest, env, recs, 1, 1);
+    forms = scheme_compile_expand_block(rest, env, recs, 1, 1, boundname);
 #else
     forms = scheme_compile_list(rest, env, recs, 1);
 #endif

@@ -1319,7 +1319,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	  print_compact_number(p, t);
 	}
       } else {
-	print_this_string(p, "#`", 2);
+	print_this_string(p, "#~", 2);
 #if NO_COMPACT
 	if (t < _scheme_last_type_) {
 	  sprintf (quick_buffer, "%ld", (long)SCHEME_TYPE(obj));

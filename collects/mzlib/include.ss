@@ -1,13 +1,12 @@
 
 (module include mzscheme
+  (require-for-syntax (lib "stx.ss" "syntax"))
 
   (define-syntax include
     (lambda (stx)
       ;; Parse the file name
       (let ([file
-	     (syntax-case* stx (build-path) (lambda (a b)
-					      (eq? (syntax-e a)
-						   (syntax-e b)))
+	     (syntax-case* stx (build-path) module-or-top-identifier=?
 	       [(_ fn)
 		(string? (syntax-e (syntax fn)))
 		(syntax-e (syntax fn))]
@@ -15,8 +14,10 @@
 		(andmap
 		 (lambda (e)
 		   (or (string? (syntax-e e))
-		       (module-identifier=? e (quote-syntax up))
-		       (module-identifier=? e (quote-syntax same))))
+		       (and (identifier? e)
+			    (or
+			     (module-identifier=? e (quote-syntax up))
+			     (module-identifier=? e (quote-syntax same))))))
 		 (syntax->list (syntax (elem1 elem ...))))
 		(apply build-path (syntax-object->datum (syntax (elem1 elem ...))))])])
 	;; Complete the file name

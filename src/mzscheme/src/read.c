@@ -946,11 +946,11 @@ read_list(Scheme_Object *port,
 	  char closer, int vec, int use_stack,
 	  Scheme_Hash_Table **ht CURRENTPROCPRM)
 {
-  Scheme_Object *list = NULL, *last = NULL, *car, *cdr, *pair;
+  Scheme_Object *list = NULL, *last = NULL, *car, *cdr, *pair, *infixed = NULL;
   int ch, next;
   int brackets = local_square_brackets_are_parens;
   int braces = local_curly_braces_are_parens;
-  long start, startline;
+  long start, startline, dotpos, dotline;
 
   start = scheme_tell(port);
   startline = scheme_tell_line(port);
@@ -1005,6 +1005,14 @@ read_list(Scheme_Object *port,
 	list = cdr;
       else
 	SCHEME_CDR(last) = cdr;
+      
+      if (infixed) {
+	/* Assert: we're not using the list stack */
+	list = scheme_make_pair(infixed, list);
+	if (stxsrc)
+	  SCHEME_SET_PAIR_IMMUTABLE(list);
+      }
+
       return (stxsrc
 	      ? scheme_make_stx(list, line, col, stxsrc, STX_SRCTAG)
 	      : list);
@@ -1024,28 +1032,54 @@ read_list(Scheme_Object *port,
 		    || ((next == '{') && braces)
 		    || ((next == ']') && brackets)
 		    || ((next == '}') && braces)))) {
-      if (vec)
+      dotpos = scheme_tell(port);
+      dotline = scheme_tell_line(port);
+      
+      if (vec || infixed) {
 	scheme_raise_exn(MZEXN_READ,
 			 port,
 			 "read: illegal use of \".\" at position %ld%L in %q",
-			 scheme_tell(port), scheme_tell_line(port), SCHEME_IPORT_NAME(port));
+			 dotpos, dotline, SCHEME_IPORT_NAME(port));
+	return NULL;
+      }
       cdr = read_inner(port, stxsrc, ht CURRENTPROCARG);
       ch = skip_whitespace_comments(port);
-      if (ch != closer)
-	scheme_raise_exn(MZEXN_READ,
-			 port,
-			 "read: illegal use of \".\" at position %ld%L in %q",
-			 scheme_tell(port), scheme_tell_line(port), SCHEME_IPORT_NAME(port));
+      if (ch != closer) {
+	if (ch == '.') {
+	  /* Parse as infix: */
+	  infixed = cdr;
 
-      SCHEME_CDR(pair) = cdr;
-      cdr = pair;
-      if (!list)
-	list = cdr;
-      else
-	SCHEME_CDR(last) = cdr;
-      return (stxsrc
-	      ? scheme_make_stx(list, line, col, stxsrc, STX_SRCTAG)
-	      : list);
+	  if (!list)
+	    list = pair;
+	  else
+	    SCHEME_CDR(last) = pair;
+	  last = pair;
+	} else {
+	  scheme_raise_exn(MZEXN_READ,
+			   port,
+			   "read: illegal use of \".\" at position %ld%L in %q",
+			   dotpos, dotline, SCHEME_IPORT_NAME(port));
+	  return NULL;
+	}
+      } else {
+	SCHEME_CDR(pair) = cdr;
+	cdr = pair;
+	if (!list)
+	  list = cdr;
+	else
+	  SCHEME_CDR(last) = cdr;
+
+	if (infixed) {
+	  /* Assert: we're not using the list statck */
+	  list = scheme_make_pair(infixed, list);
+	  if (stxsrc)
+	    SCHEME_SET_PAIR_IMMUTABLE(list);
+	}
+
+	return (stxsrc
+		? scheme_make_stx(list, line, col, stxsrc, STX_SRCTAG)
+		: list);
+      }
     } else {
       scheme_ungetc(ch, port);
       cdr = pair;

@@ -5545,9 +5545,13 @@ static void default_sleep(float v, void *fds)
 	/* Simple: just wait for HANDLE-based input: */
 #if defined(WIN32_FD_HANDLES)
 	/* Extensions may handle events */
-	result = MsgWaitForMultipleObjects(count, array, FALSE, 
-					   v ? (DWORD)(v * 1000) : INFINITE,
-					   ((win_extended_fd_set *)fds)->wait_event_mask);
+	if (((win_extended_fd_set *)fds)->wait_event_mask
+	    && GetQueueStatus(((win_extended_fd_set *)fds)->wait_event_mask))
+	  result = WAIT_TIMEOUT; /* doesn't matter... */
+	else
+	  result = MsgWaitForMultipleObjects(count, array, FALSE, 
+					     v ? (DWORD)(v * 1000) : INFINITE,
+					     ((win_extended_fd_set *)fds)->wait_event_mask);
 #endif
 #if defined(USE_BEOS_PORT_THREADS)
 	result = wait_multiple_sema(count, array, v);
@@ -5601,9 +5605,13 @@ static void default_sleep(float v, void *fds)
 	array[count++] = th;
 
 #if defined(WIN32_FD_HANDLES)
-	result = MsgWaitForMultipleObjects(count, array, FALSE, 
-					   v ? (DWORD)(v * 1000) : INFINITE,
-					   ((win_extended_fd_set *)fds)->wait_event_mask);
+	if (((win_extended_fd_set *)fds)->wait_event_mask
+	    && GetQueueStatus(((win_extended_fd_set *)fds)->wait_event_mask))
+	  result = WAIT_TIMEOUT; /* doesn't matter... */
+	else
+	  result = MsgWaitForMultipleObjects(count, array, FALSE, 
+					     v ? (DWORD)(v * 1000) : INFINITE,
+					     ((win_extended_fd_set *)fds)->wait_event_mask);
 #endif	
 #if defined(USE_BEOS_PORT_THREADS)
 	result = wait_multiple_sema(count, array, v);

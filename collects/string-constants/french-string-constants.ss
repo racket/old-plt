@@ -245,6 +245,7 @@
  (plt:hd:exact-match "mot exact")
  (plt:hd:containing-match "contenant le mot")
  (plt:hd:regexp-match "expression régulière")
+ (plt:hd:find-docs-for "Chercher dans les docs :")
  (plt:hd:nothing-found-for-search-key "Rien n'a été trouvé pour \"~a\".")
  (plt:hd:searching "Recherche en cours...")
  (plt:hd:search-stopped "(Recherche stoppée.)")

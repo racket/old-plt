@@ -126,7 +126,7 @@
   "Der Help Desk enthält ausführliche Informationen über PLT Software, einschliesslich DrScheme, MzScheme, und MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT")
  (help-on-help "Hilfe zum Help Desk")
  (help-on-help-details "Um Hilfe darüber zu bekommen, wie man mit Help Desk umgeht, folgen Sie dem Link `How to use Help Desk' auf der Help Desk Startseite. (Um dahin zu kommen, drücken Sie den `Home' Knopf oben im Help Desk Fenster.)")
- (find-docs-for "Finde Dokumente:")	; GmpOa~
+ (plt:hd:find-docs-for "Finde Dokumente:")	; GmpOa~
  (search "Suche")
  ; next 3 are popup menu choices at bottom of help desk window
  (search-for-keyword "nach Schlüsselwort")
@@ -136,7 +136,7 @@
  (containing-match "beinhaltet")
  (regexp-match "Regexp Treffer")
  ;(stop "Abbrechen")
- (feeling-lucky "Feeling Lucky")	;pbliE
+ (plt:hd:feeling-lucky "Feeling Lucky")	;pbliE
  (nothing-found-for-search-key "Nichts gefunden für \"~a\".")
  (searching "wird gesucht...")
  (search-stopped "(Suche abgebrochen.)")

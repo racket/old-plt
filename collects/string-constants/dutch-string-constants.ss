@@ -134,7 +134,7 @@
   "De Hulpbron bevat complete informatie omtrent PLT programmatuur, waaronder DrScheme, MzScheme, en MrEd.\n\nVersie ~a\nAuteursrecht (c) 1995-2001 PLT")
  (help-on-help "Hulp voor hulp")
  (help-on-help-details "Voor hulp bij het gebruik van de Hulpbron, klik de link `Help Desk' op de startpagina van de Hulpbron. (Om op die startpagina te komen, klik op de Startknop bovenaan het hulpbronvenster.)")
- (find-docs-for "Zoektekst:") ; <**> - This whole part needs redoing.  The "search" button is at the wrong place for natural Dutch..
+ (plt:hd:find-docs-for "Zoektekst:") ; <**> - This whole part needs redoing.  The "search" button is at the wrong place for natural Dutch..
  (search "Zoek")
  ; next 3 are popup menu choices at bottom of help desk window
  (search-for-keyword "een trefwoord")
@@ -143,7 +143,7 @@
  (exact-match "precies")
  (containing-match "die dit bevat")
  (regexp-match "regexp match")
- (feeling-lucky "Het eerste het beste") ; -- Where does this occur?
+ (plt:hd:feeling-lucky "Het eerste het beste") ; -- Where does this occur?
  (nothing-found-for-search-key "Niets gevonden voor \"~a\".")
  (searching "Searching...")
  (search-stopped "(Zoeken gestopt.)")

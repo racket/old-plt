@@ -135,7 +135,7 @@
  (help-on-help "Hjælp til hjælp")
  (help-on-help-details "Brug hjælpebordet til at få hjælp. Følg linket `How to use Help Desk' på hjælpebordets startside.
 (For at komme til hjemmesiden, hvis du ikke allerede er der, skal du klikke på `Hjem'-knappen i toppen af hjælpebordets vindue.)")
- (find-docs-for "Find dokumentation om:")
+ (plt:hd:find-docs-for "Find dokumentation om:")
  (search "Søg")
  ; next 3 are popup menu choices at bottom of help desk window
  (search-for-keyword "efter Nøgleord")
@@ -144,7 +144,7 @@
  (exact-match "præcis match")
  (containing-match "indeholdende match")
  (regexp-match "regexp match")
- (feeling-lucky "Jeg er heldig")
+ (plt:hd:feeling-lucky "Jeg er heldig")
  (nothing-found-for-search-key "Ingenting blev fundet om \"~a\".")
  (searching "Søger...")
  (search-stopped "(Søgning stoppet.)")

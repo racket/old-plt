@@ -17,7 +17,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r8b")
+(define *tex2page-version* "4r8c")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -7117,16 +7117,15 @@
                    ".ind"))
           (write-log " ... failed; try manually"))
         (write-log 'separation-newline))
-      (when (and (not (null? *missing-eps-files*)) (not (null? *mp-files*)))
-        (for-each
-          (lambda (f)
-            (when (file-exists? f)
-              (write-log 'separation-newline)
-              (write-log "Running: metapost ")
-              (write-log f)
-              (write-log 'separation-newline)
-              (system (string-append *metapost* " " f))))
-          *mp-files*))
+      (for-each
+        (lambda (f)
+          (when (file-exists? f)
+            (write-log 'separation-newline)
+            (write-log "Running: metapost ")
+            (write-log f)
+            (write-log 'separation-newline)
+            (system (string-append *metapost* " " f))))
+        *mp-files*)
       (for-each
         (lambda (eps-file+img-file-stem)
           (retry-lazy-image

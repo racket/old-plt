@@ -680,7 +680,7 @@ please adhere to these guidelines:
  (insert-pb-box-item "Insert Pasteboard Box")
  (insert-image-item "Insert Image...")
  (insert-comment-box-menu-item-label "Insert Comment Box")
- (insert-lambda "Insert &Lambda")
+ (insert-lambda "Insert λ")
  (insert-delta "Insert &Delta (define)")
 
  (wrap-text-item "Wrap Text")

@@ -52,18 +52,31 @@ in several significant ways:
    however, has no such barrier, so that created threads can trade
    continuations.
 
- * The "parameter" construct has been redefined. The new definition is
-   indistinguishable from the old one, except that (1) the body of a
-   `parameterize' is in tail position with respect to the entire
-   `parameterize' expression, (2) a `parameterize' expression tends to
-   execute much more quickly, while parameter lookup can be slightly
-   slower, (3) a `parameterize' has the expected effect if a
-   continuation is captured during the `parameterize' body and invoked
-   in a different thread.
+ * The "parameter" construct has been redefined. The revised
+   `parameterize' is like the old one, except that:
 
-   Preserved thread cells now provide precisely the senatics of old
-   "parameters". A new "parameter" maps a continuation to a preserved
-   thread cell, which in turn provides a thread-specific value.
+     - The `parameterize' form accepts only parameter procedures
+      created by `make-parameter', not arbitrary procedures that
+      accept 0 or 1 arguments.
+
+    - The body of a `parameterize' is in tail position with respect
+      to the entire `parameterize' expression.
+
+    - The given parameter procedures are not called on exit from a
+      `parameterize' form, so the parameter guards (if any) are not
+      called.
+
+    - A `parameterize' expression tends to execute much more quickly,
+      while parameter lookup can be slightly slower.
+
+    - A `parameterize' has the expected effect if a continuation is
+      captured during the `parameterize' body and invoked in a
+      different thread.
+
+   Preserved thread cells now provide precisely the semantics of old
+   "parameters" (but without a form like `parameterize'). Meanwhile, a
+   new "parameter" maps a continuation to a preserved thread cell,
+   which in turn provides a thread-specific value.
 
  * The `break-enabled' procedure no longer corresponds to a parameter,
    because changing the break-enable state implies a check for a

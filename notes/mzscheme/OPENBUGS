@@ -9,5 +9,3 @@ Under Windows, if other OS-level processes write to or read from the
  same end of pipe as MzScheme, MzScheme may incorrectly report that
  the pipe is ready for reading/writing or it may prematurely read
  input (preventing the other process from receiving it)
-
-On Alpha machines, inexact negative zero is not handled correctly

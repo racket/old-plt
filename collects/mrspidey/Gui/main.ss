@@ -236,6 +236,7 @@
            `(add-no-show-frame ,filename ,fi ,@first-frame-locs))
          (assert (not frame))
          (let ([summary-edit (make-object text%)])
+	   (send summary-edit set-style-list (scheme:get-style-list))
            (initialize-summary summary-edit)
            (pretty-debug-gui `(summary-initialized))
            (parameterize

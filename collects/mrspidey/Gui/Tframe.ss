@@ -140,6 +140,7 @@
           ;; and to load and annotate file
           (set! program-edit 
             (send main annotated-edit display-mode filename program-canvas))
+	  (send program-edit set-style-list (scheme:get-style-list))
           (send program-canvas set-editor program-edit))]
 
       [focus-def

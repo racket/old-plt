@@ -28,7 +28,8 @@
      begin-edit-sequence
      end-edit-sequence
      last-position
-     get-keymap)
+     get-keymap
+     set-style-list)
 
     (public
 
@@ -56,6 +57,7 @@
     (sequence
 		
       (apply super-init init-args)
+      (set-style-list (scheme:get-style-list))
 
       ;; disable paste for errant right mouse clicks
       (let ([ k (get-keymap)])

@@ -625,6 +625,7 @@
 		    [_ (set! type-snip (make-object editor-snip%))]
 		    [snip-edit (make-object text%)]
 		    [_ (send type-snip set-editor snip-edit)])
+	      (send snip-edit set-style-list (scheme:get-style-list))
 
 	      (dynamic-wind
 	       (lambda ()

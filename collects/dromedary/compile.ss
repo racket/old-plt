@@ -68,7 +68,7 @@
 ;	 #f
 	 (let ([result (compile-ml stmt (empty-context))])
 ;	   (pretty-print "Compile successful")
-	   (pretty-print (format "initial progval: ~a" result))
+	   ;(pretty-print (format "initial progval: ~a" result))
 	    result))))
 ;	 #f)))
 
@@ -146,7 +146,7 @@
      (define (mkdefinestructs scll)
        (if (null? scll)
 	   null
-	   (cons #`(define-struct (#,(string->symbol (syntax-object->datum (caar scll))) <user-type>) (tlist) (make-inspector)) (mkdefinestructs (cdr scll)))))
+	   (cons #`(define-struct (#,(datum->syntax-object (current-compile-context) (string->symbol (syntax-object->datum (caar scll)))) <user-type>) (tlist) (make-inspector)) (mkdefinestructs (cdr scll)))))
 
      (define (mkdefine binding)
        #`(define #,(car binding) #,(cdr binding)))

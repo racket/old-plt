@@ -7,7 +7,7 @@
   (define-signature net:imap^
     (imap-port-number
 
-     imap-connect
+     imap-connect imap-connect*
      imap-disconnect
      imap-force-disconnect
      imap-reselect

@@ -176,6 +176,29 @@
 
       (define imap-port-number (make-parameter 143))
 
+      (define (imap-connect* r w username password inbox)
+	(with-handlers ([void
+			  (lambda (x)
+			    (close-input-port r)
+			    (close-output-port w)
+			    (raise x))])
+	  
+	  (check-ok (imap-send r w "NOOP" void))
+	  (let ([reply (imap-send r w (format "LOGIN ~a ~a" 
+					(str->arg username) 
+					(str->arg password)) 
+			 void)])
+	    (if (and (pair? reply) (tag-eq? 'NO (car reply)))
+		(error 'imap-connect "username or password rejected by server: ~s" reply)
+		(check-ok reply)))
+	  
+	  (let ([imap (make-imap-connection r w)])
+	    (let-values ([(init-count init-recent) 
+			  (imap-reselect imap inbox)])
+	      (values imap
+		init-count
+		init-recent)))))
+
       (define (imap-connect server username password inbox)
 					; => imap count-k recent-k
 	(let-values ([(r w) (if debug-via-stdio?
@@ -183,27 +206,7 @@
 				  (printf "stdin == ~a~n" server)
 				  (values  (current-input-port) (current-output-port)))
 				(tcp-connect server (imap-port-number)))])
-	  (with-handlers ([void
-			   (lambda (x)
-			     (close-input-port r)
-			     (close-output-port w)
-			     (raise x))])
-
-	    (check-ok (imap-send r w "NOOP" void))
-	    (let ([reply (imap-send r w (format "LOGIN ~a ~a" 
-						(str->arg username) 
-						(str->arg password)) 
-				    void)])
-	      (if (and (pair? reply) (tag-eq? 'NO (car reply)))
-		  (error 'imap-connect "username or password rejected by server: ~s" reply)
-		  (check-ok reply)))
-	    
-	    (let ([imap (make-imap-connection r w)])
-	      (let-values ([(init-count init-recent) 
-			    (imap-reselect imap inbox)])
-		(values imap
-			init-count
-			init-recent))))))
+	  (imap-connect* r w username password inbox)))
       
       (define (imap-reselect imap inbox)
 	(let ([r (imap-connection-r imap)]

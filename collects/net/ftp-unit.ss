@@ -131,18 +131,21 @@
 	;; (printf "~a~n" s)
 	(void))
 
+      (define (ftp-establish-connection* in out username password)
+	(ftp-check-response in "220" print-msg (void))
+	(fprintf out (string-append "USER " username "~n"))
+	(let ([no-password? (ftp-check-response in (list "331" "230") 
+			      (lambda (line 230?)
+				(or 230? (regexp-match "^230" line)))
+			      #f)])
+	  (unless no-password?
+	    (fprintf out (string-append "PASS " password "~n"))
+	    (ftp-check-response in "230" void (void))))
+	(make-tcp-connection in out))
+      
       (define (ftp-establish-connection server-address server-port username password)
 	(let-values ([(tcpin tcpout) (tcp-connect server-address server-port)])
-	  (ftp-check-response tcpin "220" print-msg (void))
-	  (fprintf tcpout (string-append "USER " username "~n"))
-	  (let ([no-password? (ftp-check-response tcpin (list "331" "230") 
-						    (lambda (line 230?)
-						      (or 230? (regexp-match "^230" line)))
-						    #f)])
-	    (unless no-password?
-	      (fprintf tcpout (string-append "PASS " password "~n"))
-	      (ftp-check-response tcpin "230" void (void))))
-	  (make-tcp-connection tcpin tcpout)))
+	  (ftp-establish-connection* tcpin tcpout username password)))
 
       (define (ftp-close-connection tcp-ports)
 	(fprintf (tcp-connection-out tcp-ports) "QUIT~n")

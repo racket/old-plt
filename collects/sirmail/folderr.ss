@@ -14,6 +14,8 @@
   (require (lib "imap-sig.ss" "net"))
   
   (require (lib "hierlist-sig.ss" "hierlist"))
+
+  (require (lib "openssl.ss" "openssl"))
   
   (provide folder@)
   (define folder@
@@ -46,12 +48,15 @@
                      (unless p (error 'connect "connection cancelled"))
                      p))])
           (let-values ([(server port-no)
-                        (parse-server-name (IMAP-SERVER) 143)])
+                        (parse-server-name (IMAP-SERVER) (if (get-pref 'sirmail:use-ssl?) 993 143))])
             (begin0
-              (parameterize ([imap-port-number port-no])
-                (imap-connect server (USERNAME) 
-                              passwd
-                              mailbox-name))
+	      (if (get-pref 'sirmail:use-ssl?)
+		  (let-values ([(in out) (ssl-connect server port-no)])
+		    (imap-connect* in out (USERNAME) passwd mailbox-name))
+		  (parameterize ([imap-port-number port-no])
+		    (imap-connect server (USERNAME) 
+		                  passwd
+                                  mailbox-name)))
               (unless (get-PASSWORD)
                 (set-PASSWORD passwd))))))
 

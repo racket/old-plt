@@ -52,6 +52,28 @@
 
       (define default-nntpd-port-number 119)
 
+      ;; connect-to-server*:
+      ;; input-port output-port -> communicator
+      
+      (define connect-to-server*
+	(case-lambda
+	  [(receiver sender) (connect-to-server* receiver sender "unspecified"
+			                         "unspecified")]
+	  [(receiver sender server-name port-number)
+	   (let ((communicator (make-communicator sender receiver server-name
+				                  port-number)))
+	     (let-values (((code response)
+			   (get-single-line-response communicator)))
+	       (case code
+		 [(201) communicator]
+		 ((200)
+		  communicator)
+		 (else
+		   ((signal-error make-unexpected-response
+		      "unexpected connection response: ~s ~s"
+		      code response)
+		    code response)))))]))
+      
       ;; connect-to-server :
       ;; string [x number] -> commnicator
 
@@ -59,19 +81,7 @@
 	(opt-lambda (server-name (port-number default-nntpd-port-number))
 	  (let-values (((receiver sender)
 			(tcp-connect server-name port-number)))
-	    (let ((communicator
-		   (make-communicator sender receiver server-name port-number)))
-	      (let-values (((code response)
-			    (get-single-line-response communicator)))
-		(case code
-                  [(201) communicator]
-		  ((200)
-		   communicator)
-		  (else
-		   ((signal-error make-unexpected-response
-				  "unexpected connection response: ~s ~s"
-				  code response)
-		    code response))))))))
+	    (connect-to-server* receiver sender server-name port-number))))
 
       ;; close-communicator :
       ;; communicator -> ()

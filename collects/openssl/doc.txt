@@ -1,0 +1,26 @@
+The _openssl_ collection provides glue for the OpenSSL library with the
+MzScheme port system. It has been tested under Linux, FreeBSD and Max OS/X.
+The OpenSSL collection functions nearly identically to the standard network
+subsystems, with a few additional flags. It currently exports the following
+three objects:
+
+Like ssl-connect, but breaking is enabled while trying to connect. 
+
+> ssl-available? 
+
+A boolean value which says whether the system openssl library was successfully 
+loaded. Calling ssl-connect or ssl-connect/enable-break when this value is #f 
+(library not loaded) will raise an error.
+
+> (ssl-connect hostname port [flag])
+
+Connect to the given host (a string) on the given port (a number from 1 to
+65535). This encryption will be encrypted using SSL. The optional flag 
+determines which encryption protocol is used. At the current time, the flag,
+if given, must be one of: 'sslv2-or-v3 (SSL protocol versions 2 or 3, as
+appropriate; this is the default), 'sslv2 (SSL protocol version 2), 'sslv3
+(SSL protocol version 3), or 'tls (the TLS protocol version 1). The return
+values are as tcp-connect; an input port and an output port. 
+
+> (ssl-connect/enable-break hostname port [flag])
+

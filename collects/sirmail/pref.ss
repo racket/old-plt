@@ -30,6 +30,7 @@
   (preferences:set-default 'sirmail:default-to-domain "plt-scheme.org" ip-string?)
 
   (preferences:set-default 'sirmail:imap-server "imap.plt-scheme.org" ip-string?)
+  (preferences:set-default 'sirmail:use-ssl? #f boolean?)
   (preferences:set-default 'sirmail:smtp-server "sendmail.plt-scheme.org" ip-string?)
 
   (preferences:set-default 'sirmail:local-directory 
@@ -460,7 +461,7 @@
       
       (make-text-field "Username" p 10 'sirmail:username #f check-id (lambda (x) x) (lambda (x) x))
       (make-text-field "IMAP Server" p 20 'sirmail:imap-server #f check-host-address/port (lambda (x) x) (lambda (x) x))
-
+      (make-boolean "Encrypt IMAP connection using SSL" p 'sirmail:use-ssl?)
 	
       (make-file/directory-button #t "Local Directory" p
 				  'sirmail:local-directory

@@ -52,16 +52,7 @@
 			    (raise-type-error 'smtp-sending-end-of-message "thunk" f))
 			  f)))
       
-      (define smtp-send-message
-	(case-lambda
-	 [(server sender recipients header message-lines)
-	  (smtp-send-message server sender recipients header message-lines 25)]
-	 [(server sender recipients header message-lines pos)
-	  (when (null? recipients)
-	    (error 'send-smtp-message "no receivers"))
-	  (let-values ([(r w) (if debug-via-stdio?
-				  (values (current-input-port) (current-output-port))
-				  (tcp-connect server pos))])
+      (define (smtp-send-message* r w sender recipients header message-lines)
 	    (with-handlers ([void (lambda (x)
 				    (close-input-port r)
 				    (close-output-port w)
@@ -105,4 +96,16 @@
 	      (check-reply r 221)
 	      
 	      (close-output-port w)
-	      (close-input-port r)))])))))
+	      (close-input-port r)))
+      
+      (define smtp-send-message
+	(case-lambda
+	 [(server sender recipients header message-lines)
+	  (smtp-send-message server sender recipients header message-lines 25)]
+	 [(server sender recipients header message-lines pos)
+	  (when (null? recipients)
+	    (error 'send-smtp-message "no receivers"))
+	  (let-values ([(r w) (if debug-via-stdio?
+				  (values (current-input-port) (current-output-port))
+				  (tcp-connect server pos))])
+	    (smtp-send-message* r w sender recipients header message-lines))])))))

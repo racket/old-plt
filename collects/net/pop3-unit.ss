@@ -72,23 +72,30 @@
       (define-struct (+ok server-responses) ())
       (define-struct (-err server-responses) ())
 
+      ;; connect-to-server*:
+      ;; input-port output-port -> communicator
+
+      (define connect-to-server*
+	(case-lambda
+	  [(receiver sender) (connect-to-server* receiver sender "unspecified" "unspecified")]
+	  [(receiver sender server-name port-number)
+	   (let ((communicator  (make-communicator sender receiver server-name port-number
+				  'authorization)))
+	     (let ((response (get-status-response/basic communicator)))
+	       (cond
+		 ((+ok? response) communicator)
+		 ((-err? response)
+		  ((signal-error make-cannot-connect
+		     "cannot connect to ~a on port ~a"
+		     server-name port-number))))))]))
+      
       ;; connect-to-server :
       ;; string [x number] -> communicator
 
       (define connect-to-server
 	(opt-lambda (server-name (port-number default-pop-port-number))
-	  (let-values (((receiver sender)
-			(tcp-connect server-name port-number)))
-	    (let ((communicator
-		   (make-communicator sender receiver server-name port-number
-				      'authorization)))
-	      (let ((response (get-status-response/basic communicator)))
-		(cond
-		 ((+ok? response) communicator)
-		 ((-err? response)
-		  ((signal-error make-cannot-connect
-				 "cannot connect to ~a on port ~a"
-				 server-name port-number)))))))))
+	  (let-values (((receiver sender) (tcp-connect server-name port-number)))
+	    (connect-to-server* receiver sender server-name port-number))))
 
       ;; authenticate/plain-text :
       ;; string x string x communicator -> ()

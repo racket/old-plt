@@ -6,7 +6,7 @@
   
   (define-signature net:nntp^
     ((struct communicator (sender receiver server port))
-     connect-to-server disconnect-from-server
+     connect-to-server connect-to-server* disconnect-from-server
      open-news-group
      head-of-message body-of-message
      newnews-since generic-message-command

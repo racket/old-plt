@@ -37,6 +37,8 @@
 
   (require (lib "sendurl.ss" "net"))
 
+  (require (lib "openssl.ss" "openssl"))
+
   ;; Constant for messages without a title:
   (define no-subject-string "<No subject>")
 
@@ -207,9 +209,13 @@
 					      (unless p (error 'connect "connection cancelled"))
 					      p))])
 				(let*-values ([(imap count new) (let-values ([(server port-no)
-									      (parse-server-name (IMAP-SERVER) 143)])
-								  (parameterize ([imap-port-number port-no])
-								    (imap-connect server (USERNAME) pw mailbox-name)))]
+									      (parse-server-name (IMAP-SERVER)
+										(if (get-pref 'sirmail:use-ssl?) 993 143))])
+								  (if (get-pref 'sirmail:use-ssl?)
+								      (let-values ([(in out) (ssl-connect server port-no)])
+									(imap-connect* in out (USERNAME) pw mailbox-name))
+								      (parameterize ([imap-port-number port-no])
+									(imap-connect server (USERNAME) pw mailbox-name))))]
 					      [(uid-l) (imap-status imap mailbox-name '(uidnext))])
                                   (unless (get-PASSWORD)
 				    (set-PASSWORD pw))

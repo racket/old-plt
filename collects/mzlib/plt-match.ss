@@ -141,7 +141,8 @@
    match-test
    match:test-no-order
    pregexp-match-with-error
-   ) 
+   exn:misc:match?
+   exn:misc:match-value) 
   
   (require-for-syntax (lib "stx.ss" "syntax")
                       (lib "etc.ss")

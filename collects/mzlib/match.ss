@@ -126,7 +126,8 @@
    match-letrec
    match-define
    match-test
-   )
+   exn:misc:match?
+   exn:misc:match-value)
 
   (require-for-syntax (lib "stx.ss" "syntax")
                       (lib "etc.ss")

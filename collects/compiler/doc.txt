@@ -222,7 +222,7 @@ library opens these units into the current namespace with the prefix
 The low-level functions are:
 
   (mzc:eval-compile-prefix expr) - Evaluates an elaboration-time
-    expression `expr'.  Future calls to mzc:compile-XXX will see the
+    S-expression `expr'.  Future calls to mzc:compile-XXX will see the
     effects of the elaboration expression.
 
   (mzc:compile-extension scheme-source dest-dir) - Compiles a

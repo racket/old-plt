@@ -21,6 +21,48 @@ extern Screen *wxAPP_SCREEN;
 
 #define OK 1
 
+/* Fast TrueColor code is from Guillaume Chazarain <gfc@altern.org> */
+
+/* How many bits are set in mask ? */
+static int mask_length(unsigned long mask)
+{
+    int length = 0;
+
+    while (mask) {
+        length += mask & 1;
+        mask >>= 1;
+    }
+
+    return length;
+}
+
+/* Take the nb most significant bits in value. */
+static unsigned short n_bits(unsigned short value, int nb)
+{
+    /* length should be 16. */
+    int length = sizeof(unsigned short) * 8;
+    unsigned short mask;
+
+    /*        16 - nb bits
+     *        vvvvvvvvvvv
+     * mask = 0000000000011111
+     *                   ^^^^^
+     *                  nb bits
+     */
+    mask = (1 << nb) - 1;
+
+    /* mask = 1111100000000000 */
+    mask <<= length - nb;
+
+    /* value = xxxxx00000000000 */
+    value &= mask;
+
+    /* value = 00000000000xxxxx */
+    value >>= length - nb;
+
+    return value;
+}
+
 Status wxAllocColor(Display *d, Colormap cm, XColor *c)
 {
   int i;
@@ -30,6 +72,7 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
   int p, w, o;
   unsigned long pixel;
   Status status;
+  Visual *vi;
 
   /* If we have a weird colormap, essentially give up (no
      deallocation). */
@@ -38,31 +81,27 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
 
   /* If the screen is TrueColor, do it fast. (Does the default
      colormap always use the default visual?) */
-  if (DefaultVisualOfScreen(wxAPP_SCREEN)->class == TrueColor) {
-    switch (DefaultDepthOfScreen(wxAPP_SCREEN)) {
-    case 24:
-    case 32:
-      c->pixel = (c->blue >> 8) |
-	(c->green & 0xff00) | 
-	((c->red & 0xff00) << 8);
-      return OK;
-      
-    case 16:
-      c->pixel = ((c->blue & 0xf800) >> 11) |
-	((c->green & 0xfc00) >> 5) |
-	(c->red & 0xf800);
-      return OK;
-      
-    case 15:
-      c->pixel = ((c->blue & 0xf800) >> 10) |
-	((c->green & 0xf800) >> 5) |
-	(c->red & 0xf800);
-      return OK;
-      
-    default:
-      break;
-    }
+  vi = DefaultVisualOfScreen(wxAPP_SCREEN);
+  if (vi->class == TrueColor) {
+    unsigned int r_length, g_length, b_length;
+
+    r_length = mask_length(vi->red_mask);
+    g_length = mask_length(vi->green_mask);
+    b_length = mask_length(vi->blue_mask);
+
+    c->red = n_bits(c->red, r_length);
+    c->green = n_bits(c->green, g_length);
+    c->blue = n_bits(c->blue, b_length);
+
+    /* c->pixel = rrrrrggggggbbbbb */
+    c->pixel = (c->red << (g_length + b_length)) |
+	       (c->green << b_length) |
+	        c->blue;
+
+    return OK;
   }
+
+  /* Do things the difficult way... */
 
   /* Check for black: */
   if (!c->red && !c->green && !c->blue) {

@@ -16,6 +16,16 @@
     
     (mred:debug:printf 'invoke "mred:container-panels@")
     
+    (define debug-borders
+      (let ([curr-value #f])
+	(case-lambda
+	 [() curr-value]
+	 [(new-value)
+	  (if (boolean? new-value)
+	      (set! curr-value new-value)
+	      (error 'mred:debug-borders "Expected a boolean; got ~s"
+		     new-value))])))
+    
     ; panel%: a class with all the functionality of a wx:panel%
     ; that can hold items and reposition them as necessary.  Note that a
     ; panel can contain other panels.
@@ -211,11 +221,11 @@
 			     (gms-helper
 			      (cdr kid-info)
 			      (max x-accum
-				   (+ const-default-spacing
+				   (+ const-default-border
 				      (child-info-x-posn curr-info)
 				      (child-info-x-min curr-info)))
 			      (max y-accum
-				   (+ const-default-spacing
+				   (+ const-default-border
 				      (child-info-y-posn curr-info)
 				      (child-info-y-min
 				       curr-info)))))))])
@@ -224,7 +234,7 @@
 			     (get-two-int-values get-client-size)])
 		 (let ([min-client-size
 			 (gms-helper (get-children-info)
-			   const-default-spacing const-default-spacing)]
+			   const-default-border const-default-border)]
 		       [delta-w (- (get-width) client-w)]
 		       [delta-h (- (get-height) client-h)])
 		   (list (max (user-min-width)
@@ -479,11 +489,10 @@
 	  (case-lambda
 	    [() curr-border]
 	    [(new-val)
-	     (unless (and (real? new-val)
-		       (not (negative? new-val)))
+	     (unless (non-negative-number? new-val)
 	       (error 'border
-		 "Expected a non-negative number; given ~s"
-		 new-val))
+		      "Expected a non-negative number; given ~s"
+		      new-val))
 	     (set! curr-border new-val)
 	     (send panel force-redraw)]))))
 	
@@ -497,7 +506,7 @@
 	
 	(public
 	  [default-spacing-width const-default-spacing]
-	  [default-border-width const-default-spacing]
+	  [default-border-width const-default-border]
 	  
 	  [spacing (make-spacing this)]
 
@@ -534,7 +543,7 @@
 
 	(public
 	  [default-spacing-width const-default-spacing]
-	  [default-border-width const-default-spacing]
+	  [default-border-width const-default-border]
 	  
 	  [spacing (make-spacing this)]
 
@@ -588,7 +597,7 @@
 	  ; pointer to currently active child
 	  [active null]
 	  
-	  [default-border-width const-default-spacing]
+	  [default-border-width const-default-border]
 	  
 	  [border (make-border this)]
 

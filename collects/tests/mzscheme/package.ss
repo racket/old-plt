@@ -61,6 +61,7 @@
     (define x 10)
     (define y 11)))
 
+(err/rt-test x exn:variable?)
 (test 10 "" (dot p1 x))
 (test 12 "" (dot p1 y x))
 (syntax-test #'(dot p2 x))

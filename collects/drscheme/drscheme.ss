@@ -2,6 +2,7 @@
 ;(require-library "grepl.ss" "drscheme")
 ;(require-library "rload.ss" "drscheme")
 
+(require-library "mred-interfaces.ss" "framework")
 (require-library "errortrace.ss" "errortrace")
 
 (error-print-width 80)

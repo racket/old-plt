@@ -1,3 +1,5 @@
+(require-library "functios.ss")
+
 (define-signature turtle^ 
   (turtles
 

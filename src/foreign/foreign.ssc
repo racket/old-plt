@@ -113,17 +113,19 @@ exec mzscheme -r "$0" "$0" "$@"
 
 {:
 
+(define (scheme-id->c-name str)
+  (let loop ([str (format "~a" str)]
+             [substs '((#rx"->" "to") (#rx"[-/]" "_")
+                       (#rx"\\?$" "_p") (#rx"!$" ""))])
+    (if (null? substs)
+      str
+      (loop (regexp-replace* (caar substs) str (cadar substs)) (cdr substs)))))
+
 ;; User function definition
 (define cfunctions '())
 (define (_cdefine name minargs . maxargs)
   (define cname
-    (let loop ([name (symbol->string name)]
-               [substs
-                '((#rx"->" "2") (#rx"-" "_") (#rx"\\?$" "_p") (#rx"!$" ""))])
-      (if (null? substs)
-        (concat "FP_" name)
-        (loop (regexp-replace* (caar substs) name (cadar substs))
-              (cdr substs)))))
+    (concat "FP_" (scheme-id->c-name name)))
   (set! maxargs (if (null? maxargs) minargs (car maxargs)))
   (set! cfunctions (cons (list name cname minargs maxargs) cfunctions))
   (~ "#undef MYNAME" \\ "#define MYNAME \""name"\"" \\
@@ -379,7 +381,7 @@ static Scheme_Hash_Table *opened_libs;
 #define scheme_make_realinteger_value_from_unsigned \
   scheme_make_integer_value_from_unsigned
 
-#else
+#else /* SIXTY_FOUR_BIT_INTEGERS defined */
 
 /* Modified versions of stuff from number.c  */
 /* These will make sense in MzScheme when longs are not the same as ints */
@@ -434,7 +436,25 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
     return scheme_make_bignum_from_unsigned(i);
 }
 
-#endif
+#endif /* SIXTY_FOUR_BIT_INTEGERS */
+
+unsigned short *ucs4_string_to_utf16_pointer(Scheme_Object *ucs)
+{
+  long ulen;
+  unsigned short *res;
+  res = scheme_ucs4_to_utf16
+          (SCHEME_CHAR_STR_VAL(ucs), 0, SCHEME_CHAR_STRLEN_VAL(ucs),
+           NULL, -1, &ulen, 0);
+  return res;
+}
+
+Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
+{
+  long ulen;
+  mzchar *res;
+  res = scheme_utf16_to_ucs4(utf, 0, strlen(utf), NULL, -1, &ulen, 0);
+  return scheme_make_sized_char_string(res, ulen, 0);
+}
 
 {:
 ;; Types are defined with the `defctype' function.  This looks like:
@@ -444,8 +464,8 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
 ;;     ...)
 ;; The current properties are:
 ;;   stype: scheme type symbol
-;;   ftype: type name used by libffi (as ffi_type_X)
-;;          (defaults to stype + "s" prefix for ints)
+;;   cname: like stype but used for C identifiers
+;;   ftype: type name used by libffi (as ffi_type_X) (defaults to cname)
 ;;   ctype: C type, or #f if none (defaults to ftype, with proper massaging)
 ;;   macro: if specified as "X", use "SCHEME_XP" and "SCHEME_X_VAL" as the
 ;;          defaults for the next two properties
@@ -466,10 +486,11 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
 
 (define *type-counter* 0)
 
-(define (describe-type stype ftype ctype pred s->c c->s)
+(define (describe-type stype cname ftype ctype pred s->c c->s)
   (set! *type-counter* (add1 *type-counter*))
-  (~ "#define FFI_"stype" ("*type-counter*")" \\
-     "/* Type Name:   "stype \\
+  (~ "#define FFI_"cname" ("*type-counter*")" \\
+     "/* Type Name:   "stype (if (equal? cname stype)
+                               "" (concat " ("cname")")) \\
      " * LibFfi type: ffi_type_"ftype \\
      " * C type:      "(or ctype "-none-") \\
      " * Predicate:   "(cond [(not pred) "-none-"]
@@ -500,7 +521,8 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
                (cadr args))]
             [else (loop (cddr args))])))
   (let* ([stype (symbol->string type)]
-         [ftype (prop 'ftype stype)]
+         [cname (scheme-id->c-name stype)]
+         [ftype (prop 'ftype cname)]
          [ctype (prop 'ctype
                       (regexp-replace
                        #rx"^sint"
@@ -511,8 +533,8 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
          [pred  (prop 'pred (and macro (concat "SCHEME_"macro"P")))]
          [s->c  (prop 's->c (and macro (concat "SCHEME_"macro"_VAL")))]
          [c->s  (prop 'c->s)])
-    (describe-type stype ftype ctype pred s->c c->s)
-    `(,type (stype ,stype) (ftype ,ftype) (ctype ,ctype)
+    (describe-type stype cname ftype ctype pred s->c c->s)
+    `(,type (stype ,stype) (cname ,cname) (ftype ,ftype) (ctype ,ctype)
       (macro ,macro) (pred ,pred) (s->c ,s->c) (c->s ,c->s))))
 
 (define (defctype name . args)
@@ -534,6 +556,7 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
                      [all   (if all? #'#t #'#f)]
                      [alias (id 'alias)]
                      [stype (id 'stype)]
+                     [cname (id 'cname)]
                      [ctype (id 'ctype)]
                      [ftype (id 'ftype)]
                      [macro (id 'macro)]
@@ -546,6 +569,7 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
                        (define (get sym) (cadr (assq sym data)))
                        (when (or all (not alias))
                          (let ([stype (get 'stype)]
+                               [cname (get 'cname)]
                                [ftype (get 'ftype)]
                                [ctype (get 'ctype)]
                                [macro (get 'macro)]
@@ -649,19 +673,28 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
   's->c "SCHEME_TRUEP"
   'c->s (lambda (x) (concat "("x"?scheme_true:scheme_false)")))
 
-(~ "/* Strings -- no copying of C strings is done, #f is NULL." \\
-   " * (note: these are not like char* which is just a pointer) */")
+(~ "/* Strings -- no copying is done." \\
+   " * #f is not NULL since these are used only for strings, use byte" \\
+   " * strings if this is what you need. */" \\
+   )
 
-(defctype 'string
+(defctype 'string/ucs-4
   'ftype "pointer"
   'ctype "mzchar*"
-  'pred  (lambda (x aux)
-           (concat "SCHEME_FALSEP("x")||SCHEME_CHAR_STRINGP("x")"))
-  's->c  (lambda (x aux)
-           (concat "SCHEME_FALSEP("x")?NULL:SCHEME_CHAR_STR_VAL("x")"))
-  'c->s  (lambda (x)
-           (concat "("x"==NULL)?scheme_false:"
-                   "scheme_make_char_string_without_copying("x")")))
+  'pred  "SCHEME_CHAR_STRINGP"
+  's->c  "SCHEME_CHAR_STR_VAL"
+  'c->s  "scheme_make_char_string_without_copying")
+
+(defctype 'string/utf-16
+  'ftype "pointer"
+  'ctype "unsigned short*"
+  'pred  "SCHEME_CHAR_STRINGP"
+  's->c  "ucs4_string_to_utf16_pointer"
+  'c->s  "utf16_pointer_to_ucs4_string")
+
+(~ "/* Byte strings -- not copying C strings, #f is NULL." \\
+   " * (note: these are not like char* which is just a pointer) */" \\
+   )
 
 (defctype 'bytes
   'ftype "pointer"
@@ -684,6 +717,13 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
   'c->s  (lambda (x)
            (concat "("x"==NULL)?scheme_false:"
                    "scheme_make_path_without_copying("x")")))
+
+(defctype 'symbol
+  'ftype "pointer"
+  'ctype "char*"
+  'pred  "SCHEME_SYMBOLP"
+  's->c  "SCHEME_SYM_VAL"
+  'c->s  "scheme_intern_symbol")
 
 (~ "/* This is for any C pointer: #f is NULL, cpointer values as well as" \\
    " * ffi-obj and string values pass their pointer.  When used as a return" \\
@@ -718,7 +758,7 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
 
 :}
 typedef union FFIAny {
-  {:(for-each-type (when ctype (~ ctype" x_"stype";"))):}
+  {:(for-each-type (when ctype (~ ctype" x_"cname";"))):}
 } FFIAny;
 
 {: (set! *type-counter* (add1 *type-counter*))
@@ -789,7 +829,7 @@ static int ffi_sizeof(Scheme_Object *type)
   if (type == NULL) return -1;
   switch (FFITYPE_PRIMLABEL(type)) {
   {:(for-each-type
-      (~ "case FFI_"stype": return "
+      (~ "case FFI_"cname": return "
          (if ctype (concat "sizeof("ctype");") "0;"))):}
   /* for structs */
   default: return FFITYPE_PRIMTYPE(type)->size;
@@ -911,7 +951,7 @@ static Scheme_Object *ffi_c_to_scheme(Scheme_Object *type, void *src)
     return (Scheme_Object*)src;
   } else switch (FFITYPE_PRIMLABEL(type)) {
     {:(for-each-type
-        (~ "case FFI_"stype": return "
+        (~ "case FFI_"cname": return "
            (if ctype
              (let ([x (concat "(("ctype"*)src)[0]")])
                (if (string? c->s) (concat c->s"("x")") (c->s x)))
@@ -949,7 +989,7 @@ static void* ffi_scheme_to_c(Scheme_Object *type, void *dst,
         (define (wrong-type obj type)
           (concat "scheme_wrong_type(\"Scheme->C\", \""type"\", "
                   "0, 1, &("obj"));"))
-        (~ "case FFI_"stype":")
+        (~ "case FFI_"cname":")
         (if ctype
           (let* ([x (concat "((("ctype"*)dst)[0])")]
                  [f (lambda (p)
@@ -1433,9 +1473,8 @@ void scheme_init_foreign(Scheme_Env *env)
            "(scheme_intern_symbol(\"_"(cadr alias)"\"),menv), "
            "menv);")
         (begin (cmake-object "t" ffi-type "NULL"
-                             (format "(Scheme_Object*)(void*)(&ffi_type_~a)"
-                                     ftype)
-                             (format "(Scheme_Object*)FFI_~a" stype))
+                 (concat "(Scheme_Object*)(void*)(&ffi_type_"ftype")")
+                 (concat "(Scheme_Object*)FFI_"cname))
                (~ "scheme_add_global(\"_"stype"\", (Scheme_Object*)t, "
                   "menv);")))):}
   scheme_finish_primitive_module(menv);

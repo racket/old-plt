@@ -46,7 +46,8 @@
 			      mzlib
 			      framework
 			      (export* unit)
-			      (export* frame))]
+			      (export* frame)
+			      (export* help-desk))]
 	[main : drscheme:main^ ((require-relative-library "main.ss")
 				i
 				framework

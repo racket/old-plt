@@ -4251,6 +4251,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  /* Skip for now. */
 	} else if ((v = scheme_hash_get(required, name))) {
 	  /* Required */
+	  if (protected) {
+	    name = SCHEME_CAR(provided->vals[i]);
+	    scheme_wrong_syntax("module", NULL, name, "cannot protect imported identifier with re-provide"); 
+	  }
 	  if (SCHEME_TRUEP(SCHEME_VEC_ELS(v)[3])) {
 	    /* If this is a kernel re-provide, don't provide after all. */
 	    if (reprovide_kernel

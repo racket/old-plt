@@ -4475,7 +4475,7 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
   insp = argv[2];
 
   if (HAS_CERTS(((Scheme_Stx *)argv[1])->certs)) {
-    Scheme_Cert *certs;
+    Scheme_Cert *certs, *new_certs = NULL;
     Scheme_Object *v;
     char *s;
 
@@ -4512,8 +4512,12 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
 			     s, argv[0]);
 	    return NULL;
 	  }
+	  new_certs = cons_cert(certs->mark, certs->insp, new_certs);
+	} else {
+	  /* the certificate wasn't needed before, so drop it*/
 	}
-      }
+      } else
+	new_certs = cons_cert(certs->mark, certs->insp, new_certs);
       certs = certs->next;
     }
 
@@ -4524,7 +4528,7 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
 					stx->props);
     res->wraps = stx->wraps;
     res->u.lazy_prefix = stx->u.lazy_prefix;
-    res->certs = ((Scheme_Stx *)argv[1])->certs;
+    res->certs = new_certs;
     
     return (Scheme_Object *)res;
   } else

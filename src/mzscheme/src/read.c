@@ -76,6 +76,9 @@ static Scheme_Object *print_unreadable(int, Scheme_Object *[]);
 
 #define isdigit_ascii(n) ((n >= '0') && (n <= '9'))
 
+#define RETURN_FOR_SPECIAL_COMMENT  0x1
+#define RETURN_FOR_HASH_COMMENT     0x2
+
 static 
 #ifndef NO_INLINE_KEYWORD
 MSC_IZE(inline)
@@ -480,7 +483,7 @@ static Scheme_Object *read_inner(Scheme_Object *port,
 				 Scheme_Hash_Table **ht,
 				 Scheme_Object *indentation,
 				 ReadParams *params,
-				 int return_for_lookahead);
+				 int comment_mode);
 
 static Scheme_Object *read_k(void)
 {
@@ -505,7 +508,7 @@ static Scheme_Object *read_k(void)
 static Scheme_Object *
 read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, 
 	   Scheme_Object *indentation, ReadParams *params,
-	   int return_for_lookahead_on_special_comment)
+	   int comment_mode)
 {
   int ch, ch2, depth;
   long line = 0, col = 0, pos = 0;
@@ -529,7 +532,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
       pr = scheme_make_pair(indentation, (Scheme_Object *)params2);
       p->ku.k.p4 = (void *)pr;
 
-      p->ku.k.i1 = return_for_lookahead_on_special_comment;
+      p->ku.k.i1 = comment_mode;
       return scheme_handle_stack_overflow(read_k);
     }
   }
@@ -584,7 +587,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	v = scheme_get_special(port, stxsrc, line, col, pos, 0);
 	if (scheme_special_comment_value(v)) {
 	  /* a "comment" */
-	  if (return_for_lookahead_on_special_comment)
+	  if (comment_mode & RETURN_FOR_SPECIAL_COMMENT)
 	    return NULL;
 	  else
 	    goto start_over;
@@ -689,6 +692,10 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	      v = scheme_make_pair(skipped, v);
 	      scheme_hash_set(*ht, an_uninterned_symbol, v);
 	    }
+
+	    if (comment_mode & RETURN_FOR_HASH_COMMENT)
+	      return NULL;
+
 	    goto start_over;
 	  }
 	  break;
@@ -1249,17 +1256,23 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
   params.can_read_dot = SCHEME_TRUEP(v);
   
   ht = MALLOC_N(Scheme_Hash_Table *, 1);
-  v = read_inner(port, stxsrc, ht, scheme_null, &params, 0);
+  do {
+    v = read_inner(port, stxsrc, ht, scheme_null, &params, RETURN_FOR_HASH_COMMENT);
+    
+    if (*ht) {
+      /* Resolve placeholders: */
+      if (v)
+	v = resolve_references(v, port, !!stxsrc);
+      
+      /* In case some placeholders were introduced by #;: */
+      v2 = scheme_hash_get(*ht, an_uninterned_symbol);
+      if (v2)
+	resolve_references(v2, port, !!stxsrc);
 
-  if (*ht) {
-    /* Resolve placeholders: */
-    v = resolve_references(v, port, !!stxsrc);
-
-    /* In case some placeholders were introduced by #;: */
-    v2 = scheme_hash_get(*ht, an_uninterned_symbol);
-    if (v2)
-      resolve_references(v2, port, !!stxsrc);
-  }
+      if (!v)
+	*ht = NULL;
+    }
+  } while (!v);
 
   return v;
 }
@@ -1418,7 +1431,7 @@ read_list(Scheme_Object *port,
       }
     } else {
       scheme_ungetc(ch, port);
-      car = read_inner(port, stxsrc, ht, indentation, params, 1);
+      car = read_inner(port, stxsrc, ht, indentation, params, RETURN_FOR_SPECIAL_COMMENT);
       if (!car) continue; /* special was a comment */
       /* can't be eof, due to check above */
     }

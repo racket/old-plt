@@ -1337,14 +1337,17 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       if (compact || !pp->print_unreadable) {
 	cannot_print(pp, notdisplay, obj, ht, compact);
       } else {
-	print_this_string(pp, "#<path:", 0, 7);
+	if (notdisplay)
+	  print_this_string(pp, "#<path:", 0, 7);
 	{
 	  Scheme_Object *str;
 	  str = scheme_byte_string_to_char_string_locale(obj);
 	  print(str, 0, 0, ht, symtab, rnht, pp);
 	}
-	PRINTADDRESS(pp, obj);
-	print_this_string(pp, ">", 0, 1);
+	if (notdisplay) {
+	  PRINTADDRESS(pp, obj);
+	  print_this_string(pp, ">", 0, 1);
+	}
       }
     }
   else if (SCHEME_PRIMP(obj) && ((Scheme_Primitive_Proc *)obj)->name)

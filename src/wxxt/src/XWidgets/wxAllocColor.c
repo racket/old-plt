@@ -86,6 +86,8 @@ static int tc_known;
 static unsigned int r_length, g_length, b_length;
 static unsigned int r_start, g_start, b_start;
 
+int wx_simple_r_start, wx_simple_g_start, wx_simple_b_start;
+
 int wx_alloc_color_is_fast;
 
 Colormap fast_colormap = 0; /* for init, we assume that no valid colormap is 0! */
@@ -133,7 +135,14 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
       g_start = mask_start(tc->green_mask);
       b_start = mask_start(tc->blue_mask);
 
-      wx_alloc_color_is_fast = 1;
+      if ((r_length == 8) && (g_length == 8) && (b_length == 8)) {
+	wx_simple_r_start = r_start;
+	wx_simple_g_start = g_start;
+	wx_simple_b_start = b_start;
+	wx_alloc_color_is_fast = 2;
+      } else
+	wx_alloc_color_is_fast = 1;
+
       fast_colormap = wx_default_colormap;
     }
     tc_known = 1;

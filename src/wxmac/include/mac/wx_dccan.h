@@ -47,7 +47,7 @@ class wxCanvasDC: public wxbCanvasDC
 
   wxBitmap* selected_pixmap;
 
-  PixMapHandle fast_ph;
+  void *fast_pb;
   long fast_rb;
 
   int gdx, gdy;

@@ -134,8 +134,8 @@ Bool wxCanvasDC::BeginSetPixelFast(int x, int y, int w, int h)
       && ((y + h) <= pixmapHeight)) {
     PixMapHandle ph;
     ph = GetGWorldPixMap(cMacDC->macGrafPort());
-    fast_ph = ph;
-    fast_rb = GetPixRowBytes(fast_ph);
+    fast_pb = GetPixBaseAddr(ph);
+    fast_rb = GetPixRowBytes(ph);
     return TRUE;
   } else
     return FALSE;
@@ -143,7 +143,7 @@ Bool wxCanvasDC::BeginSetPixelFast(int x, int y, int w, int h)
 
 void wxCanvasDC::EndSetPixelFast()
 {
-  fast_ph = NULL;
+  fast_pb = NULL;
 }
 
 void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
@@ -151,13 +151,13 @@ void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
   if (Colour) {
     UInt32 *p;
     
-    p = (UInt32 *)GetPixBaseAddr(fast_ph);
+    p = (UInt32 *)fast_pb;
     p[(j * (fast_rb >> 2)) + i] = ((r << 16) | (g << 8) | (b << 0));
   } else {
     unsigned char *p, v, bit;
     int pos;
 
-    p = (unsigned char *)GetPixBaseAddr(fast_ph);
+    p = (unsigned char *)fast_pb;
     bit = 1 << (7 - (i & 0x7));
     pos = (j * fast_rb) + (i >> 3);
     v = p[pos];
@@ -218,7 +218,7 @@ void wxCanvasDC::GetPixelFast(int x, int y, int *r, int *g, int *b)
   if (Colour) {
     UInt32 *p, v;
 
-    p = (UInt32 *)GetPixBaseAddr(fast_ph);
+    p = (UInt32 *)fast_pb;
     v = p[(y * (fast_rb >> 2)) + x];
     *r = (v >> 16) & 0xFF;
     *g = (v >> 8) & 0xFF;
@@ -226,7 +226,7 @@ void wxCanvasDC::GetPixelFast(int x, int y, int *r, int *g, int *b)
   } else {
     unsigned char *p, v, bit;
 
-    p = (unsigned char *)GetPixBaseAddr(fast_ph);
+    p = (unsigned char *)fast_pb;
     bit = 1 << (7 - (x & 0x7));
     v = p[(y * fast_rb) + (x >> 3)];
     if (v & bit)

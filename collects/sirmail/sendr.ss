@@ -22,6 +22,7 @@
       (import (exit-sirmail)
 	      sirmail:utils^
 	      sirmail:options^
+	      sirmail:read^
 	      mred^
 	      net:imap^
 	      net:smtp^
@@ -32,18 +33,6 @@
 	      (install-emacs-bindings))
 
               
-      ;; queue-directory : string
-      ;; the directory where queue'd files are stored (created at this point)
-      (define queue-directory 
-        (let ([dir (build-path (find-system-path 'pref-dir) 
-                               (if (eq? 'unix (system-type)) 
-                                   ".sirmail-queue"
-                                   "SirMail Queue"))])
-          (unless (directory-exists? dir)
-            (make-directory dir))
-          dir))
-      
-      
       (define FRAME-WIDTH 560)
       (define FRAME-HEIGHT 600)
       (let-values ([(display-width display-height) (get-display-size)])

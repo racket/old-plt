@@ -33,7 +33,6 @@
   (provide sirmail:send^)
   (define-signature sirmail:send^
     (new-mailer
-     queue-directory
      (struct enclosure (name subheader data))))
 
   (provide sirmail:options^)
@@ -63,4 +62,4 @@
 
   (provide sirmail:read^)
   (define-signature sirmail:read^
-    ()))
+    (queue-directory)))

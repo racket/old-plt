@@ -1001,7 +1001,7 @@
         (parent file-menu)
         (demand-callback
          (lambda (menu-item) 
-           (send menu-item enable (not (= 0 (length (directory-list queue-directory)))))))
+           (send menu-item enable (enqueued-messages?))))
         (callback
          (lambda (i e)
            (send-queued-messages))))
@@ -1348,6 +1348,33 @@
       
       (reset-mailboxes-menus)
       
+      ;; queue-directory : string
+      ;; the directory where queue'd files are stored (created at this point)
+      (define queue-directory 
+        (let ([dir (build-path (find-system-path 'pref-dir) 
+                               (if (eq? 'unix (system-type)) 
+                                   ".sirmail-queue"
+                                   "SirMail Queue"))])
+          (unless (directory-exists? dir)
+            (make-directory dir))
+          dir))
+      
+      ;; enqueued-messages? : -> bool
+      ;; returns true if there are messages to send
+      (define (enqueued-messages?)
+	(not (= 0 (length (directory-list queue-directory)))))
+
+      ;; ask-about-queued-messages : -> void
+      (define (ask-about-queued-messages)
+	(when (enqueued-messages?)
+	  (let ([answer (message-box
+			 "SirMail"
+			 "Send Queued Messages?"
+			 #f
+			 '(yes-no))])
+	    (when (eq? 'yes answer)
+	      (send-queued-messages)))))
+
       ;; send-queued-messsages : -> void
       ;; sends the files queued in `queue-directory'
       (define (send-queued-messages)
@@ -1819,5 +1846,8 @@
       ;; url-delta :  style-delta
       ;; this is used to higlight urls in the editor window
       (define url-delta (make-object style-delta% 'change-underline #t))
-      (send url-delta set-delta-foreground "blue"))))
+      (send url-delta set-delta-foreground "blue")
+
+      ;;; main init stuff (at least some of it)
+      (ask-about-queued-messages))))
 

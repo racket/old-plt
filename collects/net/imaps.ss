@@ -14,4 +14,7 @@
    imap-expunge
    
    imap-mailbox-exists?
-   imap-create-mailbox))
+   imap-create-mailbox
+
+   imap-root-mailbox
+   imap-list-child-mailboxes))

@@ -322,4 +322,14 @@
 	  [w (imap-connection-w imap)])
       (check-ok 
        (imap-send r w 
-		  (format "CREATE ~a" mailbox) void)))))
+		  (format "CREATE ~a" mailbox) void))))
+
+
+  (define imap-root-mailbox (make-parameter "~/IMAP/"))
+  (define (imap-list-child-mailboxes imap mailbox)
+    (let ([r (imap-connection-r imap)]
+	  [w (imap-connection-w imap)])
+      (check-ok
+       (imap-send r w (format "LIST \"~a\" %" mailbox) (lambda (x) (write x) (newline)))))) 
+
+)

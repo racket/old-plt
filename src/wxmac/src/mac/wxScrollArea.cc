@@ -38,13 +38,6 @@ wxScrollArea::wxScrollArea
 
   bothScrolls = ((cStyle & wxVSCROLL) && (cStyle & wxHSCROLL));
 
-  // mflatt:
-  //  While a scrollbar should overap a frame edge when the scrollbar is positioned
-  //    along a frame edge, the full scroll bar outline must be drawn when a scrollbar
-  //    is not on a frame edge. This is why I went back to the old scrollbar positioning.
-  //  If someone can get the new positioning but still have all of the scrollbar outline
-  //    drawn, I will be happy.
-
   if (cStyle & wxVSCROLL)
     {
       cVScrollBar = new wxScrollBar(this, NULL, "",
@@ -90,4 +83,10 @@ wxScrollArea::wxScrollArea
 //-----------------------------------------------------------------------------
 wxScrollArea::~wxScrollArea(void)	// destructor
 {
+}
+
+//-----------------------------------------------------------------------------
+void wxScrollArea::ShowScrolls(Bool h, Bool v)
+{
+  
 }

@@ -33,6 +33,8 @@ class wxScrollArea: public wxArea
 
 	~wxScrollArea(void);		// destructor
 
+	void ShowScrolls(Bool h, Bool v);
+
 };
 
 #endif // wxScrollAreah

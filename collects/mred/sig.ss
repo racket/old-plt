@@ -211,9 +211,13 @@
    make-edit%
    make-pasteboard%
    make-return-edit%
+   make-backup-autosave-buffer%
+
    edit%
    return-edit%
+   backup-autosave-edit%
    pasteboard%
+   backup-autosave-pasteboard%
    
    make-snip%
    snip%

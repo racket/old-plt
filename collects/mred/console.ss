@@ -83,7 +83,7 @@
 	    (mred:debug:printf 'super-init "before scheme-mode-edit%")
 	    (set-mode (make-object mred:scheme-mode:scheme-mode%))))))
 
-    (define scheme-mode-edit% (make-scheme-mode-edit% mred:edit:edit%))
+    (define scheme-mode-edit% (make-scheme-mode-edit% mred:edit:backup-autosave-edit%))
 
     (define console-max-save-previous-exprs 30)
 		    

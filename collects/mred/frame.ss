@@ -302,11 +302,8 @@
 		 (set! title-prefix s)
 		 (do-title)))]
 	    [get-canvas% (lambda () mred:canvas:frame-title-canvas%)]
-	    [get-edit% (lambda () mred:edit:edit%)]
-	    [make-edit
-	     (lambda ()
-	       (let ([% (get-edit%)])
-		 (make-object %)))])
+	    [get-edit% (lambda () mred:edit:backup-autosave-edit%)]
+	    [make-edit (lambda () (make-object (get-edit%)))])
 	  
 	  (public
 	    [save-as
@@ -399,13 +396,7 @@
 	  (sequence
 	    (when (send mred:icon:icon ok?)
 	      (set-icon mred:icon:icon))
-	    (do-title)))))
+	    (do-title)
+	    (mred:autosave:register-autosave this)))))
 
     (define simple-menu-frame% (make-simple-frame% standard-menus-frame%)))
-
-
-
-
-
-
-

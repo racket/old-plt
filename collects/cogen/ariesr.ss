@@ -72,7 +72,7 @@
 		      (z:interface:internal-error id
 			"Given in check-for-keyword")))))
 	    (when (keyword-name? real-id)
-	      (z:interface:static-error id "Invalid use of keyword"
+	      (z:interface:static-error id "Invalid use of keyword ~s"
 		real-id)))))
 
       (define paroptarglist->ilist

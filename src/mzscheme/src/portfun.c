@@ -70,6 +70,8 @@ static Scheme_Object *write_string(int argc, Scheme_Object *argv[]);
 static Scheme_Object *write_bytes_avail(int argc, Scheme_Object *argv[]);
 static Scheme_Object *write_bytes_avail_nonblock(int argc, Scheme_Object *argv[]);
 static Scheme_Object *write_bytes_avail_break(int argc, Scheme_Object *argv[]);
+static Scheme_Object *write_special(int argc, Scheme_Object *argv[]);
+static Scheme_Object *write_special_nonblock(int argc, Scheme_Object *argv[]);
 static Scheme_Object *peek_char (int, Scheme_Object *[]);
 static Scheme_Object *peek_char_spec (int, Scheme_Object *[]);
 static Scheme_Object *peek_byte (int, Scheme_Object *[]);
@@ -330,12 +332,12 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("make-custom-input-port", 
 			     scheme_make_prim_w_arity(make_input_port, 
 						      "make-custom-input-port", 
-						      3, 3), 
+						      3, 4), 
 			     env);
   scheme_add_global_constant("make-custom-output-port", 
 			     scheme_make_prim_w_arity(make_output_port, 
 						      "make-custom-output-port", 
-						      4, 4), 
+						      4, 6), 
 			     env);
   
   scheme_add_global_constant("read", 
@@ -346,7 +348,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("read-syntax", 
 			     scheme_make_prim_w_arity(read_syntax_f,
 						      "read-syntax", 
-						      1, 3), 
+						      0, 3), 
 			     env);
   scheme_add_global_constant("read-char", 
 			     scheme_make_prim_w_arity(read_char, 
@@ -472,6 +474,16 @@ scheme_init_port_fun(Scheme_Env *env)
 			     scheme_make_prim_w_arity(write_bytes_avail_break, 
 						      "write-bytes-avail/enable-break", 
 						      1, 4),
+			     env);
+  scheme_add_global_constant("write-special", 
+			     scheme_make_prim_w_arity(write_special, 
+						      "write-special", 
+						      1, 2),
+			     env);
+  scheme_add_global_constant("write-special-avail*", 
+			     scheme_make_prim_w_arity(write_special_nonblock, 
+						      "write-special-avail*", 
+						      1, 2),
 			     env);
   scheme_add_global_constant("peek-char", 
 			     scheme_make_prim_w_arity(peek_char, 
@@ -756,16 +768,15 @@ scheme_make_sized_byte_string_input_port(const char *str, long len)
 {
   Scheme_Input_Port *ip;
 
-  ip = _scheme_make_input_port(scheme_string_input_port_type,
-			       make_indexed_string(str, len),
-			       string_get_bytes,
-			       string_peek_bytes,
-			       string_byte_ready,
-			       string_close_in,
-			       NULL,
-			       0);
-
-  ip->name = "STRING";
+  ip = scheme_make_input_port(scheme_string_input_port_type,
+			      make_indexed_string(str, len),
+			      scheme_intern_symbol("string"),
+			      string_get_bytes,
+			      string_peek_bytes,
+			      string_byte_ready,
+			      string_close_in,
+			      NULL,
+			      0);
 
   return (Scheme_Object *)ip;
 }
@@ -826,9 +837,11 @@ scheme_make_byte_string_output_port (void)
 
   op = scheme_make_output_port (scheme_string_output_port_type,
 				make_indexed_string(NULL, 0),
+				scheme_intern_symbol("string"),
 				string_write_bytes,
 				NULL,
 				string_close_out,
+				NULL,
 				NULL,
 				0);
 
@@ -1119,6 +1132,7 @@ typedef struct User_Output_Port {
   Scheme_Object *write_proc;
   Scheme_Object *flush_proc;
   Scheme_Object *close_proc;
+  Scheme_Object *write_special_proc;
   Scheme_Object *closed_sema;
 } User_Output_Port;
 
@@ -1275,6 +1289,19 @@ user_close_output (Scheme_Output_Port *port)
      that port_sema doesn't swap anything in (because port->closed
      isn't set, yet. */
   scheme_post_sema_all(uop->closed_sema);
+}
+
+static int
+user_write_special (Scheme_Output_Port *port, Scheme_Object *v, int nonblock)
+{
+  Scheme_Object *a[2];
+  User_Output_Port *uop = (User_Output_Port *)port->port_data;
+
+  a[0] = v;
+  a[1] = (nonblock ? scheme_true : scheme_false);
+  v = scheme_apply(uop->write_special_proc, 2, a);
+
+  return SCHEME_TRUEP(v);
 }
 
 /*========================================================================*/
@@ -1623,6 +1650,7 @@ void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int que
   Scheme_Pipe *pipe;
   Scheme_Input_Port *readp;
   Scheme_Output_Port *writep;
+  Scheme_Object *name;
 
   if (queuelimit) queuelimit++; /* need separator in circular buffer */
 
@@ -1642,22 +1670,25 @@ void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int que
   pipe->wakeup_on_read = scheme_null;
   pipe->wakeup_on_write = scheme_null;
 
-  readp = _scheme_make_input_port(scheme_pipe_read_port_type,
-				  (void *)pipe,
-				  pipe_get_bytes,
-				  pipe_peek_bytes,
-				  pipe_byte_ready,
-				  pipe_in_close,
-				  NULL,
-				  0);
+  name = scheme_intern_symbol("pipe");
 
-  readp->name = "PIPE";
+  readp = scheme_make_input_port(scheme_pipe_read_port_type,
+				 (void *)pipe,
+				 name,
+				 pipe_get_bytes,
+				 pipe_peek_bytes,
+				 pipe_byte_ready,
+				 pipe_in_close,
+				 NULL,
+				 0);
 
   writep = scheme_make_output_port(scheme_pipe_write_port_type,
 				   (void *)pipe,
+				   name,
 				   pipe_write_bytes,
 				   pipe_out_ready,
 				   pipe_out_close,
+				   NULL,
 				   NULL,
 				   0);
 
@@ -1737,7 +1768,7 @@ make_input_port(int argc, Scheme_Object *argv[])
 {
   Scheme_Input_Port *ip;
   User_Input_Port *uip;
-  Scheme_Object *s;
+  Scheme_Object *s, *name;
 
   scheme_check_proc_arity("make-custom-input-port", 1, 0, argc, argv);
   if (SCHEME_TRUEP(argv[1])) {
@@ -1745,6 +1776,10 @@ make_input_port(int argc, Scheme_Object *argv[])
       scheme_wrong_type("make-custom-input-port", "procedure (arity 2) or #f", 1, argc, argv);
   }
   scheme_check_proc_arity("make-custom-input-port", 0, 2, argc, argv);
+  if (argc > 3)
+    name = argv[3];
+  else
+    name = scheme_intern_symbol("userport");
   
   uip = MALLOC_ONE_RT(User_Input_Port);
 #ifdef MZTAG_REQUIRED
@@ -1760,18 +1795,18 @@ make_input_port(int argc, Scheme_Object *argv[])
   if (!SCHEME_TRUEP(uip->peek_proc))
     uip->peek_proc = NULL;
 
-  ip = _scheme_make_input_port(scheme_user_input_port_type,
-			       uip,
-			       user_get_bytes,
-			       (uip->peek_proc
-				? user_peek_bytes
-				: NULL),
-			       user_byte_ready,
-			       user_close_input,
-			       user_needs_wakeup_input,
-			       0);
+  ip = scheme_make_input_port(scheme_user_input_port_type,
+			      uip,
+			      name,
+			      user_get_bytes,
+			      (uip->peek_proc
+			       ? user_peek_bytes
+			       : NULL),
+			      user_byte_ready,
+			      user_close_input,
+			      user_needs_wakeup_input,
+			      0);
 
-  ip->name = "CUSTOMPORT";
   ip->pending_eof = 1; /* means that pending EOFs should be tracked */
 
   return (Scheme_Object *)ip;
@@ -1782,7 +1817,7 @@ make_output_port (int argc, Scheme_Object *argv[])
 {
   Scheme_Output_Port *op;
   User_Output_Port *uop;
-  Scheme_Object *s;
+  Scheme_Object *s, *name;
 
   if (SCHEME_TRUEP(argv[0])) {
     if (!scheme_check_proc_arity(NULL, 0, 0, argc, argv))
@@ -1791,6 +1826,16 @@ make_output_port (int argc, Scheme_Object *argv[])
   scheme_check_proc_arity("make-custom-output-port", 4, 1, argc, argv);
   scheme_check_proc_arity("make-custom-output-port", 0, 2, argc, argv);
   scheme_check_proc_arity("make-custom-output-port", 0, 3, argc, argv);
+  if (argc > 4) {
+    if (SCHEME_TRUEP(argv[4])) {
+      if (!scheme_check_proc_arity(NULL, 2, 4, argc, argv))
+	scheme_wrong_type("make-custom-output-port", "procedure (arity 2) or #f", 4, argc, argv);
+    }
+  }
+  if (argc > 5)
+    name = argv[5];
+  else
+    name = scheme_intern_symbol("userport");
 
   uop = MALLOC_ONE_RT(User_Output_Port);
 #ifdef MZTAG_REQUIRED
@@ -1801,15 +1846,18 @@ make_output_port (int argc, Scheme_Object *argv[])
   uop->write_proc = argv[1];
   uop->flush_proc = argv[2];
   uop->close_proc = argv[3];
+  uop->write_special_proc = (((argc > 4) && SCHEME_TRUEP(argv[4])) ? argv[4] : NULL);
   s = scheme_make_sema(0);
   uop->closed_sema = s;
 
   op = scheme_make_output_port(scheme_user_output_port_type,
 			       uop,
+			       name,
 			       user_write_bytes,
 			       user_write_ready,
 			       user_close_output,
 			       user_needs_wakeup_output,
+			       uop->write_special_proc ? user_write_special : NULL,
 			       0);
 
   return (Scheme_Object *)op;
@@ -2045,15 +2093,15 @@ static int check_offset_list(Scheme_Object *l)
 
   if (SCHEME_PAIRP(l)) {
     a = SCHEME_CAR(l);
-    if (scheme_nonneg_exact_p(a)) {
+    if (SCHEME_FALSEP(a) || scheme_nonneg_exact_p(a)) {
       l = SCHEME_CDR(l);
       if (SCHEME_PAIRP(l)) {
 	a = SCHEME_CAR(l);
-	if (scheme_nonneg_exact_p(a)) {
+	if (SCHEME_FALSEP(a) || scheme_nonneg_exact_p(a)) {
 	  l = SCHEME_CDR(l);
 	  if (SCHEME_PAIRP(l)) {
 	    a = SCHEME_CAR(l);
-	    if (scheme_nonneg_exact_p(a)) {
+	    if (SCHEME_FALSEP(a) || scheme_nonneg_exact_p(a)) {
 	      l = SCHEME_CDR(l);
 	      if (SCHEME_NULLP(l))
 		return 1;
@@ -2078,11 +2126,11 @@ static Scheme_Object *make_offset(Scheme_Object *delta, Scheme_Object *src)
   pos = SCHEME_CADR(delta);
 
   /* Offsets are too large => lost track */
-  if (SCHEME_BIGNUMP(line))
+  if (SCHEME_FALSEP(line) || SCHEME_BIGNUMP(line))
     line = scheme_make_integer(-1);
-  if (SCHEME_BIGNUMP(col))
+  if (SCHEME_FALSEP(col) || SCHEME_BIGNUMP(col))
     col = scheme_make_integer(-1);
-  if (SCHEME_BIGNUMP(pos))
+  if (SCHEME_FALSEP(pos) || SCHEME_BIGNUMP(pos))
     pos = scheme_make_integer(-1);
 
   o = MALLOC_ONE_TAGGED(Scheme_Stx_Offset);
@@ -2110,7 +2158,7 @@ static Scheme_Object *sch_default_read_handler(void *ignore, int argc, Scheme_Ob
 
   if (argc == 3) {
     if (!check_offset_list(argv[2]))
-      scheme_wrong_type("default-port-read-handler", "#f or list of three non-negative exact integers", 2, argc, argv);
+      scheme_wrong_type("default-port-read-handler", "#f or list of three non-negative exact integers or #fs", 2, argc, argv);
   }
 
   if ((Scheme_Object *)argv[0] == scheme_orig_stdin_port)
@@ -2164,7 +2212,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
   if (argc > 2) {
     /* Argument should be a list: (list line col pos) */
     if (!check_offset_list(argv[2]))
-      scheme_wrong_type("read-syntax", "#f or list of three non-negative exact integers", 2, argc, argv);
+      scheme_wrong_type("read-syntax", "#f or list of three non-negative exact integers or #fs", 2, argc, argv);
     
     delta = argv[2];
   }
@@ -2172,7 +2220,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
   if (((Scheme_Input_Port *)port)->read_handler) {
     Scheme_Object *o[3], *result;
     o[0] = port;
-    o[1] = argv[0];
+    o[1] = (argc ? argv[0] : ((Scheme_Input_Port *)port)->name);
     if (SCHEME_FALSEP(delta))
       delta = scheme_make_pair(scheme_make_integer(0),
 			       scheme_make_pair(scheme_make_integer(0),
@@ -2190,7 +2238,9 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
       return NULL;
     }
   } else {
-    Scheme_Object *src = argv[0];
+    Scheme_Object *src;
+
+    src = (argc ? argv[0] : ((Scheme_Input_Port *)port)->name);
 
     if (SCHEME_TRUEP(delta))
       src = make_offset(delta, src);
@@ -2710,6 +2760,44 @@ write_string(int argc, Scheme_Object *argv[])
   return do_write_bytes_avail(0, "write-string", argc, argv, 0);
 }
 
+static Scheme_Object *
+do_write_special(const char *name, int argc, Scheme_Object *argv[], int nonblock)
+{
+  Scheme_Object *port;
+  int ok;
+
+  if (argc > 1) {
+    if (!SCHEME_OUTPORTP(argv[1]))
+      scheme_wrong_type(name, "output-port", 1, argc, argv);
+    port = argv[1];
+  } else
+    port = CURRENT_OUTPUT_PORT(scheme_current_config());
+
+  if (((Scheme_Output_Port *)port)->write_special_fun) {
+    Scheme_Write_Special_Fun ws = ((Scheme_Output_Port *)port)->write_special_fun;
+    ok = ws((Scheme_Output_Port *)port, argv[0], nonblock);
+  } else {
+    scheme_arg_mismatch(name,
+			"port does not support special values: ",
+			port);
+    return NULL;
+  }
+
+  return ok ? scheme_true : scheme_false;
+}
+
+static Scheme_Object *
+write_special(int argc, Scheme_Object *argv[])
+{
+  return do_write_special("write-special", argc, argv, 0);
+}
+
+static Scheme_Object *
+write_special_nonblock(int argc, Scheme_Object *argv[])
+{
+  return do_write_special("write-special-avail*", argc, argv, 1);
+}
+
 Scheme_Object *
 scheme_call_enable_break(Scheme_Prim *prim, int argc, Scheme_Object *argv[])
 {
@@ -3220,7 +3308,7 @@ static Scheme_Object *do_load_handler(void *data)
 	}
 
 	scheme_raise_exn(MZEXN_FAIL,
-			 "default-load-handler: expected a `module' declaration for `%S', found: %T in: %q",
+			 "default-load-handler: expected a `module' declaration for `%S', found: %T in: %V",
 			 lhd->expected_module,
 			 other,
 			 ((Scheme_Input_Port *)port)->name);
@@ -3232,7 +3320,7 @@ static Scheme_Object *do_load_handler(void *data)
       d = scheme_internal_read(port, lhd->stxsrc, 1, 0);
       if (!SCHEME_EOFP(d)) {
 	scheme_raise_exn(MZEXN_FAIL,
-			 "default-load-handler: expected only a `module' declaration for `%S', but found an extra expression in: %q",
+			 "default-load-handler: expected only a `module' declaration for `%S', but found an extra expression in: %V",
 			 lhd->expected_module,
 			 ((Scheme_Input_Port *)port)->name);
 	
@@ -3275,7 +3363,7 @@ static Scheme_Object *do_load_handler(void *data)
 
   if (SCHEME_SYMBOLP(lhd->expected_module) && !got_one) {
     scheme_raise_exn(MZEXN_FAIL,
-		     "default-load-handler: expected a `module' declaration for `%S', but found end-of-file in: %q",
+		     "default-load-handler: expected a `module' declaration for `%S', but found end-of-file in: %V",
 		     lhd->expected_module,
 		     ((Scheme_Input_Port *)port)->name);
     
@@ -3368,7 +3456,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   lhd->p = p;
   lhd->config = config;
   lhd->port = port;
-  name = scheme_make_path(((Scheme_Input_Port *)port)->name);
+  name = ((Scheme_Input_Port *)port)->name;
   lhd->stxsrc = name;
   lhd->expected_module = expected_module;
   

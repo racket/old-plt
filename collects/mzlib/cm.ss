@@ -237,7 +237,9 @@
 	  [default-handler (current-load/use-compiled)]
 	  [modes (use-compiled-file-paths)])
       (when (null? modes)
-	(error 'make-compilation-manager-... "empty use-compiled-file-paths list"))
+	(raise-mismatch-error 'make-compilation-manager-... 
+			      "empty use-compiled-file-paths list: "
+			      modes))
       (letrec ([compilation-manager-load-handler
 		(lambda (path mod-name)
 		  (cond

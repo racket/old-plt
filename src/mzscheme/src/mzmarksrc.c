@@ -500,6 +500,7 @@ output_port {
 
   gcMARK(op->sub_type);
   gcMARK(op->port_data);
+  gcMARK(op->name);
   gcMARK(op->display_handler);
   gcMARK(op->write_handler);
   gcMARK(op->print_handler);
@@ -1058,6 +1059,7 @@ mark_user_output {
   gcMARK(uop->write_proc);
   gcMARK(uop->flush_proc);
   gcMARK(uop->close_proc);
+  gcMARK(uop->write_special_proc);
   gcMARK(uop->closed_sema);
  size:
   gcBYTES_TO_WORDS(sizeof(User_Output_Port));

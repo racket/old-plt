@@ -42,7 +42,7 @@
 	      (let ([v (hash-table-get table s
 				       (lambda ()
 					 (raise
-					  (make-exn:unit
+					  (make-exn:fail:unit
 					   (string->immutable-string
 					    (format
 					     "~a: ~a is missing a value name `~a', required by ~a"
@@ -56,7 +56,7 @@
 		       (unless (symbol? v)
 			 (let ([p (sig-path-name s path)])
 			   (raise
-			    (make-exn:unit
+			    (make-exn:fail:unit
 			     (string->immutable-string
 			      (format
 			       "~a: ~a contains `~a' as a sub-unit name, but ~a contains `~a' as a value name"
@@ -72,7 +72,7 @@
 	      (let ([v (hash-table-get table (car s)
 				       (lambda ()
 					 (raise
-					  (make-exn:unit
+					  (make-exn:fail:unit
 					   (string->immutable-string
 					    (format
 					     "~a: ~a is missing a sub-unit name `~a', required by ~a"
@@ -86,7 +86,7 @@
 		       (unless (hash-table? v)
 			 (let ([p (sig-path-name (car s) path)])
 			   (raise
-			    (make-exn:unit
+			    (make-exn:fail:unit
 			     (string->immutable-string
 			      (format
 			       "~a: ~a contains `~a' as a value name, but ~a contains `~a' as a sub-unit name"
@@ -108,7 +108,7 @@
 		(when v
 		  (let ([p (sig-path-name k path)])
 		    (raise
-		     (make-exn:unit
+		     (make-exn:fail:unit
 		      (string->immutable-string
 		       (format
 			"~a: ~a contains an extra ~a name `~a' that is not required by ~a"

@@ -1887,33 +1887,34 @@ static void tcp_close_output(Scheme_Output_Port *port)
 }
 
 static Scheme_Object *
-make_named_tcp_input_port(void *data, const char *name)
+make_tcp_input_port(void *data, const char *name)
 {
   Scheme_Input_Port *ip;
-
-  ip = _scheme_make_input_port(scheme_tcp_input_port_type,
-			       data,
-			       tcp_get_string,
-			       NULL,
-			       tcp_byte_ready,
-			       tcp_close_input,
-			       tcp_need_wakeup,
-			       1);
-
-  ip->name = (char *)name;
+  
+  ip = scheme_make_input_port(scheme_tcp_input_port_type,
+			      data,
+			      scheme_make_immutable_sized_utf8_string((char *)name, -1),
+			      tcp_get_string,
+			      NULL,
+			      tcp_byte_ready,
+			      tcp_close_input,
+			      tcp_need_wakeup,
+			      1);
 
   return (Scheme_Object *)ip;
 }
 
 static Scheme_Object *
-make_tcp_output_port(void *data)
+make_tcp_output_port(void *data, const char *name)
 {
   return (Scheme_Object *)scheme_make_output_port(scheme_tcp_output_port_type,
 						  data,
+						  scheme_make_immutable_sized_utf8_string((char *)name, -1),
 						  tcp_write_string,
 						  (Scheme_Out_Ready_Fun)tcp_check_write,
 						  tcp_close_output,
 						  (Scheme_Need_Wakeup_Output_Fun)tcp_write_needs_wakeup,
+						  NULL,
 						  1);
 }
 
@@ -2031,8 +2032,8 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
       goto tcp_close_and_error;
     }
     
-    v[0] = make_named_tcp_input_port(data, address);
-    v[1] = make_tcp_output_port(data);
+    v[0] = make_tcp_input_port(data, address);
+    v[1] = make_tcp_output_port(data, address);
     
     return scheme_values(2, v);
     
@@ -2124,8 +2125,8 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 
 	  tcp = make_tcp_port_data(s, 2);
 	  
-	  v[0] = make_named_tcp_input_port(tcp, address);
-	  v[1] = make_tcp_output_port(tcp);
+	  v[0] = make_tcp_input_port(tcp, address);
+	  v[1] = make_tcp_output_port(tcp, address);
 	  
 	  REGISTER_SOCKET(s);
 
@@ -2509,8 +2510,8 @@ tcp_accept(int argc, Scheme_Object *argv[])
 
     tcp = make_tcp_port_data(s, 2);
 
-    v[0] = make_named_tcp_input_port(tcp, "TCP");
-    v[1] = make_tcp_output_port(tcp);
+    v[0] = make_tcp_input_port(tcp, "[accepted]");
+    v[1] = make_tcp_output_port(tcp, "[accepted]");
 
     scheme_file_open_count++;
     REGISTER_SOCKET(s);
@@ -2531,8 +2532,8 @@ tcp_accept(int argc, Scheme_Object *argv[])
       Scheme_Object *v[2];
       Scheme_Tcp *data;
       
-      v[0] = make_named_tcp_input_port(datas[i], "TCP");
-      v[1] = make_tcp_output_port(datas[i]);
+      v[0] = make_tcp_input_port(datas[i], "[accepted]");
+      v[1] = make_tcp_output_port(datas[i], "[accepted]");
       
       if (!(errid = mac_tcp_listen(l->portid, l->hostid, &data))) {
         /* new listener at the end of the queue: */

@@ -1015,6 +1015,8 @@ typedef long (*Scheme_Write_String_Fun)(Scheme_Output_Port *,
 typedef int (*Scheme_Out_Ready_Fun)(Scheme_Output_Port *port);
 typedef void (*Scheme_Close_Output_Fun)(Scheme_Output_Port *port);
 typedef void (*Scheme_Need_Wakeup_Output_Fun)(Scheme_Output_Port *, void *);
+typedef int (*Scheme_Write_Special_Fun)(Scheme_Output_Port *, Scheme_Object *,
+					int nonblock);
 
 struct Scheme_Input_Port
 {
@@ -1030,7 +1032,7 @@ struct Scheme_Input_Port
   Scheme_Close_Input_Fun close_fun;
   Scheme_Need_Wakeup_Input_Fun need_wakeup_fun;
   Scheme_Object *read_handler;
-  char *name;
+  Scheme_Object *name;
   Scheme_Object *peeked_read, *peeked_write;
   unsigned char ungotten[24];
   int ungotten_count;
@@ -1053,7 +1055,9 @@ struct Scheme_Output_Port
   Scheme_Close_Output_Fun close_fun;
   Scheme_Out_Ready_Fun ready_fun;
   Scheme_Need_Wakeup_Output_Fun need_wakeup_fun;
+  Scheme_Write_Special_Fun write_special_fun;
   long pos;
+  Scheme_Object *name;
   Scheme_Object *display_handler;
   Scheme_Object *write_handler;
   Scheme_Object *print_handler;

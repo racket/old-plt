@@ -126,9 +126,9 @@ void scheme_init_sema(Scheme_Env *env)
 						      1, 1, 1), 
 			     env);  
 
-  scheme_add_global_constant("make-alarm", 
+  scheme_add_global_constant("make-alarm-waitable", 
 			     scheme_make_prim_w_arity(make_alarm,
-						      "make-alarm",
+						      "make-alarm-waitable",
 						      1, 1), 
 			     env);
 
@@ -922,7 +922,7 @@ static Scheme_Object *make_alarm(int argc, Scheme_Object **argv)
   double sleep_end;
 
   if (!SCHEME_REALP(argv[0])) {
-    scheme_wrong_type("make-alarm", "real number", 0, argc, argv);
+    scheme_wrong_type("make-alarm-waitable", "real number", 0, argc, argv);
   }
 
   sleep_end = scheme_get_val_as_double(argv[0]);

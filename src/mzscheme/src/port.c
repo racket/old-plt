@@ -301,9 +301,8 @@ static Scheme_Object *subprocess_wait(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_shell_execute(int c, Scheme_Object *args[]);
 static void register_subprocess_wait();
 
-Scheme_Object *
-_scheme_make_named_file_input_port(FILE *fp, const char *filename,
-				   int regfile);
+static Scheme_Object *
+_scheme_make_named_file_input_port(FILE *fp, Scheme_Object *name, int regfile);
 static void default_sleep(float v, void *fds);
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
@@ -314,8 +313,8 @@ OS_SEMAPHORE_TYPE scheme_break_semaphore;
 #endif
 
 #ifdef MZ_FDS
-static Scheme_Object *make_fd_input_port(int fd, const char *filename, int regfile, int textmode, int *refcount);
-static Scheme_Object *make_fd_output_port(int fd, int regfile, int textmode, char *read_too_filename);
+static Scheme_Object *make_fd_input_port(int fd, Scheme_Object *name, int regfile, int textmode, int *refcount);
+static Scheme_Object *make_fd_output_port(int fd, Scheme_Object *name, int regfile, int textmode, int read_too);
 #endif
 #ifdef USE_OSKIT_CONSOLE
 static Scheme_Object *make_oskit_console_input_port();
@@ -462,17 +461,17 @@ scheme_init_port (Scheme_Env *env)
 			    ? scheme_make_stdin()
 #ifdef USE_OSKIT_CONSOLE
 			    : (osk_not_console
-			       ? scheme_make_named_file_input_port(stdin, "STDIN")
+			       ? scheme_make_named_file_input_port(stdin, scheme_intern_symbol("stdin"))
 			       : make_oskit_console_input_port())
 #else
 # ifdef MZ_FDS
 #  ifdef WINDOWS_FILE_HANDLES
-			    : make_fd_input_port((int)GetStdHandle(STD_INPUT_HANDLE), "STDIN", 0, 0, NULL)
+			    : make_fd_input_port((int)GetStdHandle(STD_INPUT_HANDLE), scheme_intern_symbol("stdin"), 0, 0, NULL)
 #  else
-			    : make_fd_input_port(0, "STDIN", 0, 0, NULL)
+			    : make_fd_input_port(0, scheme_intern_symbol("stdin"), 0, 0, NULL)
 #  endif
 # else
-			    : scheme_make_named_file_input_port(stdin, "STDIN")
+			    : scheme_make_named_file_input_port(stdin, scheme_intern_symbol("stdin"))
 # endif
 #endif
 			    );
@@ -481,9 +480,10 @@ scheme_init_port (Scheme_Env *env)
 			     ? scheme_make_stdout()
 #ifdef MZ_FDS
 # ifdef WINDOWS_FILE_HANDLES
-			     : make_fd_output_port((int)GetStdHandle(STD_OUTPUT_HANDLE), 0, 0, NULL)
+			     : make_fd_output_port((int)GetStdHandle(STD_OUTPUT_HANDLE), 
+						   scheme_intern_symbol("stdout"), 0, 0, 0)
 # else
-			     : make_fd_output_port(1, 0, 0, NULL)
+			     : make_fd_output_port(1, scheme_intern_symbol("stdout"), 0, 0, 0)
 # endif
 #else
 			     : scheme_make_file_output_port(stdout)
@@ -494,9 +494,10 @@ scheme_init_port (Scheme_Env *env)
 			     ? scheme_make_stderr()
 #ifdef MZ_FDS
 # ifdef WINDOWS_FILE_HANDLES
-			     : make_fd_output_port((int)GetStdHandle(STD_ERROR_HANDLE), 0, 0, NULL)
+			     : make_fd_output_port((int)GetStdHandle(STD_ERROR_HANDLE), 
+						   scheme_intern_symbol("stderr"), 0, 0, 0)
 # else
-			     : make_fd_output_port(2, 0, 0, NULL)
+			     : make_fd_output_port(2, scheme_intern_symbol("stderr"), 0, 0, 0)
 # endif
 #else
 			     : scheme_make_file_output_port(stderr)
@@ -944,14 +945,15 @@ Scheme_Object *scheme_make_port_type(const char *name)
 }
 
 Scheme_Input_Port *
-_scheme_make_input_port(Scheme_Object *subtype,
-			void *data,
-			Scheme_Get_String_Fun get_string_fun,
-			Scheme_Peek_String_Fun peek_string_fun,
-			Scheme_In_Ready_Fun byte_ready_fun,
-			Scheme_Close_Input_Fun close_fun,
-			Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
-			int must_close)
+scheme_make_input_port(Scheme_Object *subtype,
+		       void *data,
+		       Scheme_Object *name,
+		       Scheme_Get_String_Fun get_string_fun,
+		       Scheme_Peek_String_Fun peek_string_fun,
+		       Scheme_In_Ready_Fun byte_ready_fun,
+		       Scheme_Close_Input_Fun close_fun,
+		       Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
+		       int must_close)
 {
   Scheme_Input_Port *ip;
   int cl;
@@ -965,7 +967,7 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->byte_ready_fun = byte_ready_fun;
   ip->need_wakeup_fun = need_wakeup_fun;
   ip->close_fun = close_fun;
-  ip->name = "stdin";
+  ip->name = name;
   ip->ungotten_count = 0;
   ip->position = 0;
   ip->readpos = 0; /* like position, but collapses CRLF */
@@ -991,21 +993,6 @@ _scheme_make_input_port(Scheme_Object *subtype,
   return (ip);
 }
 
-Scheme_Input_Port *
-scheme_make_input_port(Scheme_Object *subtype,
-		       void *data,
-		       Scheme_Get_String_Fun get_string_fun,
-		       Scheme_Peek_String_Fun peek_string_fun,
-		       Scheme_In_Ready_Fun byte_ready_fun,
-		       Scheme_Close_Input_Fun close_fun,
-		       Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
-		       int must_close)
-{
-  return _scheme_make_input_port(subtype, data,
-				 get_string_fun, peek_string_fun, byte_ready_fun, close_fun,
-				 need_wakeup_fun, must_close);
-}
-
 static int waitable_input_port_p(Scheme_Object *p)
 {
   return 1;
@@ -1014,10 +1001,12 @@ static int waitable_input_port_p(Scheme_Object *p)
 Scheme_Output_Port *
 scheme_make_output_port(Scheme_Object *subtype,
 			void *data,
+			Scheme_Object *name,
 			Scheme_Write_String_Fun write_string_fun,
 			Scheme_Out_Ready_Fun ready_fun,
 			Scheme_Close_Output_Fun close_fun,
 			Scheme_Need_Wakeup_Output_Fun need_wakeup_fun,
+			Scheme_Write_Special_Fun write_special_fun,
 			int must_close)
 {
   Scheme_Output_Port *op;
@@ -1026,10 +1015,12 @@ scheme_make_output_port(Scheme_Object *subtype,
   op->type = scheme_output_port_type;
   op->sub_type = subtype;
   op->port_data = data;
+  op->name = name;
   op->write_string_fun = write_string_fun;
   op->close_fun = close_fun;
   op->ready_fun = ready_fun;
   op->need_wakeup_fun = need_wakeup_fun;
+  op->write_special_fun = write_special_fun;
   op->closed = 0;
   op->pos = 0;
   op->display_handler = NULL;
@@ -2657,7 +2648,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
     } else {
       regfile = S_ISREG(buf.st_mode);
       scheme_file_open_count++;
-      result = make_fd_input_port(fd, filename, regfile, 0, NULL);
+      result = make_fd_input_port(fd, scheme_make_path(filename), regfile, 0, NULL);
     }
   }
 #else
@@ -2682,7 +2673,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
     return NULL;
   }
 
-  result = make_fd_input_port((int)fd, filename, regfile, mode[1] == 't', NULL);
+  result = make_fd_input_port((int)fd, scheme_make_path(filename), regfile, mode[1] == 't', NULL);
 # else
   if (scheme_directory_exists(filename)) {
     filename_exn(name, "cannot open directory as a file", filename, 0);
@@ -2697,7 +2688,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
     if (scheme_mac_path_to_spec(filename, &spec)) {
       errno = FSpOpenDF(&spec, fsRdWrShPerm, &refnum);
       if (errno == noErr)
-	result = make_fd_input_port(refnum, filename, 1, mode[1] == 't', NULL);
+	result = make_fd_input_port(refnum, scheme_make_path(filename), 1, mode[1] == 't', NULL);
       else {
 	filename_exn(name, "could not open file", filename, errno);
 	return NULL;
@@ -2717,7 +2708,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
   }
   scheme_file_open_count++;
 
-  result = scheme_make_named_file_input_port(fp, filename);
+  result = scheme_make_named_file_input_port(fp, scheme_make_path(filename));
 #  endif
 # endif
 #endif
@@ -2896,7 +2887,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 
   regfile = S_ISREG(buf.st_mode);
   scheme_file_open_count++;
-  return make_fd_output_port(fd, regfile, 0, (and_read ? filename : NULL));
+  return make_fd_output_port(fd, scheme_make_path(filename), regfile, 0, and_read);
 #else
 # ifdef WINDOWS_FILE_HANDLES
   if (!existsok)
@@ -2975,7 +2966,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   }
 
   scheme_file_open_count++;
-  return make_fd_output_port((int)fd, regfile, mode[1] == 't', (and_read ? filename : NULL));
+  return make_fd_output_port((int)fd, scheme_make_path(filename), regfile, mode[1] == 't', and_read);
 # else
   if (scheme_directory_exists(filename)) {
     if (!existsok)
@@ -3020,7 +3011,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 	  scheme_file_create_hook(filename);
 
 	scheme_file_open_count++;
-	return make_fd_output_port(refnum, 1, mode[1] == 't', (and_read ? filename : NULL));
+	return make_fd_output_port(refnum, scheme_make_path(filename), 1, mode[1] == 't', and_read);
       } else {
 	filename_exn(name, "could not open file", filename, errno);
 	return NULL;
@@ -3470,7 +3461,7 @@ static long file_get_string(Scheme_Input_Port *port,
   if (c <= 0) {
     if (!feof(fp)) {
       scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
-		       "error reading from file port \"%q\" (%e)",
+		       "error reading from file port %V (%e)",
 		       port->name, errno);
       return 0;
     } else
@@ -3499,8 +3490,8 @@ file_need_wakeup(Scheme_Input_Port *port, void *fds)
 {
 }
 
-Scheme_Object *
-_scheme_make_named_file_input_port(FILE *fp, const char *filename, int regfile)
+static Scheme_Object *
+_scheme_make_named_file_input_port(FILE *fp, Scheme_Object *name, int regfile)
 {
   Scheme_Input_Port *ip;
   Scheme_Input_File *fip;
@@ -3516,34 +3507,29 @@ _scheme_make_named_file_input_port(FILE *fp, const char *filename, int regfile)
 
   fip->f = fp;
 
-  ip = _scheme_make_input_port(file_input_port_type,
-			       fip,
-			       file_get_string,
-			       NULL,
-			       file_byte_ready,
-			       file_close_input,
-			       file_need_wakeup,
-			       1);
-
-  {
-    char *s;
-    s = scheme_strdup(filename);
-    ip->name = s;
-  }
+  ip = scheme_make_input_port(file_input_port_type,
+			      fip,
+			      name,
+			      file_get_string,
+			      NULL,
+			      file_byte_ready,
+			      file_close_input,
+			      file_need_wakeup,
+			      1);
 
   return (Scheme_Object *)ip;
 }
 
 Scheme_Object *
-scheme_make_named_file_input_port(FILE *fp, const char *filename)
+scheme_make_named_file_input_port(FILE *fp, Scheme_Object *name)
 {
-  return _scheme_make_named_file_input_port(fp, filename, 0);
+  return _scheme_make_named_file_input_port(fp, name, 0);
 }
 
 Scheme_Object *
 scheme_make_file_input_port(FILE *fp)
 {
-  return scheme_make_named_file_input_port(fp, "FILE");
+  return scheme_make_named_file_input_port(fp, scheme_intern_symbol("file"));
 }
 
 /*========================================================================*/
@@ -3874,7 +3860,7 @@ static long fd_get_string(Scheme_Input_Port *port,
 	  fip->bufcount = 0;
 	  fip->buffpos = 0;
 	  scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
-			   "error reading from stream port \"%q\" (" FILENAME_EXN_E ")",
+			   "error reading from stream port %V (" FILENAME_EXN_E ")",
 			   port->name, errno);
 	  return 0;
 	}
@@ -3994,7 +3980,7 @@ fd_need_wakeup(Scheme_Input_Port *port, void *fds)
 }
 
 static Scheme_Object *
-make_fd_input_port(int fd, const char *filename, int regfile, int win_textmode, int *refcount)
+make_fd_input_port(int fd, Scheme_Object *name, int regfile, int win_textmode, int *refcount)
 {
   Scheme_Input_Port *ip;
   Scheme_FD *fip;
@@ -4016,20 +4002,15 @@ make_fd_input_port(int fd, const char *filename, int regfile, int win_textmode, 
 
   fip->refcount = refcount;
 
-  ip = _scheme_make_input_port(fd_input_port_type,
-			       fip,
-			       fd_get_string,
-			       NULL,
-			       fd_byte_ready,
-			       fd_close_input,
-			       fd_need_wakeup,
-			       1);
-
-  {
-    char *s;
-    s = scheme_strdup(filename);
-    ip->name = s;
-  }
+  ip = scheme_make_input_port(fd_input_port_type,
+			      fip,
+			      name,
+			      fd_get_string,
+			      NULL,
+			      fd_byte_ready,
+			      fd_close_input,
+			      fd_need_wakeup,
+			      1);
 
   ip->pending_eof = 1; /* means that pending EOFs should be tracked */
 
@@ -4314,19 +4295,18 @@ make_oskit_console_input_port()
 
 # ifdef OSKIT_TEST
   REGISTER_SO(normal_stdin);
-  normal_stdin = scheme_make_named_file_input_port(stdin, "STDIN");
+  normal_stdin = scheme_make_named_file_input_port(stdin, scheme_intern_symbol("stdin"));
 # endif
 
-  ip = _scheme_make_input_port(oskit_console_input_port_type,
-			       osk,
-			       osk_get_string,
-			       NULL,
-			       osk_byte_ready,
-			       osk_close_input,
-			       osk_need_wakeup,
-			       1);
-
-  ip->name = "STDIN";
+  ip = scheme_make_input_port(oskit_console_input_port_type,
+			      osk,
+			      scheme_intern_symbol("stdin"),
+			      osk_get_string,
+			      NULL,
+			      osk_byte_ready,
+			      osk_close_input,
+			      osk_need_wakeup,
+			      1);
 
   return (Scheme_Object *)ip;
 }
@@ -4421,9 +4401,11 @@ scheme_make_file_output_port(FILE *fp)
 
   return (Scheme_Object *)scheme_make_output_port(file_output_port_type,
 						  fop,
+						  scheme_intern_symbol("file"),
 						  file_write_string,
 						  NULL,
 						  file_close_output,
+						  NULL,
 						  NULL,
 						  1);
 }
@@ -5120,7 +5102,7 @@ fd_close_output(Scheme_Output_Port *port)
 }
 
 static Scheme_Object *
-make_fd_output_port(int fd, int regfile, int win_textmode, char *and_read_filename)
+make_fd_output_port(int fd, Scheme_Object *name, int regfile, int win_textmode, int and_read)
 {
   Scheme_FD *fop;
   unsigned char *bfr;
@@ -5152,19 +5134,21 @@ make_fd_output_port(int fd, int regfile, int win_textmode, char *and_read_filena
 
   the_port = (Scheme_Object *)scheme_make_output_port(fd_output_port_type,
 						      fop,
+						      name,
 						      fd_write_string,
 						      (Scheme_Out_Ready_Fun)fd_write_ready,
 						      fd_close_output,
 						      (Scheme_Need_Wakeup_Output_Fun)fd_write_need_wakeup,
+						      NULL,
 						      1);
-  if (and_read_filename) {
+  if (and_read) {
     int *rc;
     Scheme_Object *a[2];
     rc = (int *)scheme_malloc_atomic(sizeof(int));
     *rc = 2;
     fop->refcount = rc;
     a[1] = the_port;
-    a[0] = make_fd_input_port(fd, and_read_filename, regfile, win_textmode, rc);
+    a[0] = make_fd_input_port(fd, name, regfile, win_textmode, rc);
     return scheme_values(2, a);
   } else
     return the_port;
@@ -6120,9 +6104,9 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   /*        Create new port objects       */
   /*--------------------------------------*/
 
-  in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout", 0, 0, NULL));
-  out = (out ? out : make_fd_output_port(to_subprocess[1], 0, 0, NULL));
-  err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr", 0, 0, NULL));
+  in = (in ? in : make_fd_input_port(from_subprocess[0], scheme_intern_symbol("subprocess-stdout"), 0, 0, NULL));
+  out = (out ? out : make_fd_output_port(to_subprocess[1], scheme_intern_symbol("subprocess-stdin"), 0, 0, 0));
+  err = (err ? err : make_fd_input_port(err_subprocess[0], scheme_intern_symbol("subprocess-stderr"), 0, 0, 0));
 
   /*--------------------------------------*/
   /*          Return result info          */

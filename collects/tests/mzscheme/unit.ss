@@ -56,9 +56,9 @@
 (syntax-test #'(unit (import i) (export) (set! i 5)))
 
 ; Empty exports are syntactically ok::
-(error-test #'(compound-unit (import) (link (A (0))) (export (A))) exn:unit?)
-(error-test #'(compound-unit (import) (link (A (0 (B))) (B (0))) (export)) exn:unit?)
-(error-test #'(compound-unit (import) (link (A (0)) (B (0))) (export (A x) (B))) exn:unit?)
+(error-test #'(compound-unit (import) (link (A (0))) (export (A))) exn:fail:unit?)
+(error-test #'(compound-unit (import) (link (A (0 (B))) (B (0))) (export)) exn:fail:unit?)
+(error-test #'(compound-unit (import) (link (A (0)) (B (0))) (export (A x) (B))) exn:fail:unit?)
 
 ; Self-import is now allowed
 ; (syntax-test #'(compound-unit (import) (link (A (0 (A)))) (export))) 

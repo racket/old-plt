@@ -1760,9 +1760,10 @@ static Scheme_Object *object_name(int argc, Scheme_Object **argv)
       return s;
   } else if (SCHEME_INPORTP(a)) {
     Scheme_Input_Port *ip = (Scheme_Input_Port *)a;
-    if (ip->name) {
-      return scheme_make_immutable_sized_byte_string(ip->name, -1, 0);
-    }
+    return ip->name;
+  } else if (SCHEME_OUTPORTP(a)) {
+    Scheme_Output_Port *op = (Scheme_Output_Port *)a;
+    return op->name;
   } else if (SCHEME_THREADP(a)) {
     Scheme_Thread *t = (Scheme_Thread *)a;
     if (t->name) {
@@ -3361,7 +3362,7 @@ scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
   Scheme_Config *config;
   Scheme_Object *port;
   Scheme_Object *inport;
-  char *name;
+  Scheme_Object *name;
 
   config = scheme_current_config();
   port = scheme_get_param(config, MZCONFIG_OUTPUT_PORT);
@@ -3375,7 +3376,7 @@ scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
   if (inport == scheme_orig_stdin_port)
     scheme_flush_orig_outputs();
 
-  return scheme_read_syntax(inport, scheme_make_byte_string(name));
+  return scheme_read_syntax(inport, name);
 }
 
 

@@ -17,7 +17,7 @@
   (define insp (current-inspector)) ; for named structures
 
   (define-struct unit (num-imports exports go)) ; unit value
-  (define-struct (exn:unit exn) ()) ; run-time exception
+  (define-struct (exn:fail:unit exn:fail) ()) ; run-time exception
 
   ;; For units with inferred names, generate a struct that prints using the name:
   (define (make-naming-constructor type name)
@@ -333,13 +333,13 @@
   (define (check-expected-interface tag unit num-imports exports)
     (unless (unit? unit)
       (raise
-       (make-exn:unit
+       (make-exn:fail:unit
 	(string->immutable-string
 	 (format "compound-unit: result of expression for tag ~s not a unit: ~e" tag unit))
 	(current-continuation-marks))))
     (unless (= num-imports (unit-num-imports unit))
       (raise
-       (make-exn:unit
+       (make-exn:fail:unit
 	(string->immutable-string
 	 (format "compound-unit: unit for tag ~s expects ~a imports, given ~a" 
 		 tag
@@ -352,7 +352,7 @@
 	      (cond
 	       [(null? l)
 		(raise
-		 (make-exn:unit
+		 (make-exn:fail:unit
 		  (string->immutable-string
 		   (format "compount-unit: unit for tag ~s has no ~s export" 
 			   tag ex))
@@ -719,13 +719,13 @@
   (define (check-unit u n)
     (unless (unit? u)
       (raise
-       (make-exn:unit
+       (make-exn:fail:unit
 	(string->immutable-string
 	 (format "invoke-unit: result of unit expression was not a unit: ~e" u))
 	(current-continuation-marks))))
     (unless (= (unit-num-imports u) n)
       (raise
-       (make-exn:unit
+       (make-exn:fail:unit
 	(string->immutable-string
 	 (format "invoke-unit: expected a unit with ~a imports, given one with ~a imports"
 		 n (unit-num-imports u)))
@@ -825,7 +825,7 @@
       (values (mk #f) (mk #t))))
   
   (provide (rename :unit unit) compound-unit invoke-unit unit?
-	  exn:unit? struct:exn:unit make-exn:unit
+	   (struct exn:fail:unit ())
 
-	  define-values/invoke-unit
-	  namespace-variable-bind/invoke-unit))
+	   define-values/invoke-unit
+	   namespace-variable-bind/invoke-unit))

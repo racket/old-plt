@@ -538,19 +538,13 @@ static void sslin_need_wakeup(Scheme_Input_Port *port, void *fds)
 
 /* make_sslin_port: called to create a scheme input port to return to the
    caller, eventually */
-Scheme_Input_Port *make_sslin_port(SSL *ssl, struct sslplt *wrapper)
+Scheme_Input_Port *make_sslin_port(SSL *ssl, struct sslplt *wrapper, const char *name)
 {
-  return scheme_make_input_port(ssl_input_port_type, wrapper, ssl_get_string, 
+  return scheme_make_input_port(ssl_input_port_type, wrapper, 
+				scheme_make_immutable_sized_utf8_string((char *)name, -1),
+				ssl_get_string, 
 				NULL, sslin_char_ready, sslin_close, 
 				sslin_need_wakeup, 1);
-}
-
-Scheme_Input_Port *make_named_sslin_port(SSL *ssl, struct sslplt *d, char *n)
-{
-  Scheme_Input_Port *retval;
-  retval = make_sslin_port(ssl, d);
-  retval->name = n;
-  return retval;
 }
 
 /*****************************************************************************
@@ -770,11 +764,14 @@ static void sslout_need_wakeup(Scheme_Output_Port *port, void *fds)
 
 /* make_sslout_port: called to create a scheme output port to return to the
    caller, eventually. */
-static Scheme_Output_Port *make_sslout_port(SSL *ssl, struct sslplt *data)
+static Scheme_Output_Port *make_sslout_port(SSL *ssl, struct sslplt *data, const char *name)
 {
-  return scheme_make_output_port(ssl_output_port_type, data, write_string, 
+  return scheme_make_output_port(ssl_output_port_type, data, 
+				 scheme_make_immutable_sized_utf8_string((char *)name, -1),
+				 write_string, 
 				 sslout_char_ready, sslout_close, 
-				 sslout_need_wakeup, 1);
+				 sslout_need_wakeup, 
+				 NULL, 1);
 }
 
 /*****************************************************************************
@@ -947,8 +944,8 @@ static Scheme_Object *finish_ssl(const char *name, int sock, SSL_METHOD *meth,
   }
 
   sslplt = create_register_sslplt(ssl);
-  retval[0] = (Scheme_Object*)make_named_sslin_port(ssl, sslplt, address);
-  retval[1] = (Scheme_Object*)make_sslout_port(ssl, sslplt);
+  retval[0] = (Scheme_Object*)make_sslin_port(ssl, sslplt, address);
+  retval[1] = (Scheme_Object*)make_sslout_port(ssl, sslplt, address);
   return scheme_values(2, retval);
 
  clean_up_and_die:

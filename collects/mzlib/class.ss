@@ -20,5 +20,5 @@
 	   is-a? subclass? implementation? interface-extension?
 	   object-interface object-info object->vector
 	   method-in-interface? interface->method-names class->interface class-info
-	   exn:object? struct:exn:object make-exn:object
+	   (struct exn:fail:object ())
 	   make-primitive-class))

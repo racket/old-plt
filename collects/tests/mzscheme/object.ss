@@ -284,10 +284,10 @@
 (test #t is-a? picky (class->interface picky-fish%))
 (test #f is-a? red-fish (class->interface picky-fish%))
 
-(err/rt-test (instantiate fish% () (bad-size 10)) exn:object?)
-(err/rt-test (instantiate fish% () (size 10) (size 12)) exn:object?)
-(err/rt-test (instantiate fish% (10) (size 12)) exn:object?)
-(err/rt-test (instantiate picky-fish% () (size 17)) exn:object?)
+(err/rt-test (instantiate fish% () (bad-size 10)) exn:fail:object?)
+(err/rt-test (instantiate fish% () (size 10) (size 12)) exn:fail:object?)
+(err/rt-test (instantiate fish% (10) (size 12)) exn:fail:object?)
+(err/rt-test (instantiate picky-fish% () (size 17)) exn:fail:object?)
 
 (err/rt-test (color-fish-color picky))
 (err/rt-test (color-fish-color 6))
@@ -304,8 +304,8 @@
 
 ;; Can't use inner without a `final' here or in superclass
 (syntax-test #'(class object% (define/public (f x) x) (inner [inner-f f])))
-(err/rt-test (class object% (inner [inner-f f])) exn:object?)
-(err/rt-test (class (class object% (define/public (f x) x)) (inner [inner-f f])) exn:object?)
+(err/rt-test (class object% (inner [inner-f f])) exn:fail:object?)
+(err/rt-test (class (class object% (define/public (f x) x)) (inner [inner-f f])) exn:fail:object?)
 
 (define bfoo-jgoo%
   (class object%
@@ -424,7 +424,7 @@
 
 ;; Missing last-name:
 (err/rt-test (instantiate rest-arg-fish% () (-first-name "Gil") (-nicknames null)) 
-	     exn:object?)
+	     exn:fail:object?)
 
 (define rest-fish-0 (instantiate rest-arg-fish% () (-first-name "Gil") (last-name "Finn")))
 (test "Gil Finn, a.k.a.: ()" 'osf (send rest-fish-0 greeting))
@@ -436,15 +436,15 @@
 (err/rt-test (instantiate rest-arg-fish% () 
 			  (-first-name "Gil") (last-name "Finn") 
 			  (-nicknames "Slick"))
-	     exn:object?)
+	     exn:fail:object?)
 (err/rt-test (instantiate rest-arg-fish% () 
 			  (-first-name "Gil") (last-name "Finn") 
 			  (anything "Slick"))
-	     exn:object?)
+	     exn:fail:object?)
 
 ;; Redundant by-pos:
 (err/rt-test (instantiate rest-arg-fish% ("Gil") (-first-name "Gilly") (last-name "Finn"))
-	     exn:object?)
+	     exn:fail:object?)
 
 (define no-rest-fish%
   (class fish%
@@ -461,7 +461,7 @@
 
 ;; Too many by-pos:
 (err/rt-test (instantiate no-rest-fish% ("Gil" "Finn" "hi" "there"))
-	     exn:object?)
+	     exn:fail:object?)
 
 (define no-rest-0 (instantiate no-rest-fish% ("Gil" "Finn")))
 (test 12 'norest (send no-rest-0 get-size))
@@ -480,7 +480,7 @@
 
 ;; Too many by-pos:
 (err/rt-test (instantiate no-rest-fish% ("Gil" "Finn" 18 20))
-	     exn:object?)
+	     exn:fail:object?)
 
 (define no-rest-0 (instantiate allow-rest-fish% ("Gil" "Finn" 18)))
 (test 18 'allowrest (send no-rest-0 get-size))
@@ -500,7 +500,7 @@
 
 ;; Unused by-pos:
 (err/rt-test (instantiate allow-rest/size-already-fish% ("Gil" "Finn" 18))
-	     exn:object?)
+	     exn:fail:object?)
 
 
 ;; Subclass where superclass has rest arg, check by-pos:
@@ -520,7 +520,7 @@
 
 (test '("hi" "there") 'to-rest (send (instantiate to-rest% ("hi" "there")) get-args))
 (err/rt-test (instantiate to-rest% () (by-name "hi"))
-	     exn:object?)
+	     exn:fail:object?)
 
 ;; Check by-pos with super-instantiate:
 
@@ -530,7 +530,7 @@
 
 (test '("hey," "hi" "there") 'to-rest (send (instantiate to-rest2% ("hi" "there")) get-args))
 (err/rt-test (instantiate to-rest2% () (by-name "hi"))
-	     exn:object?)
+	     exn:fail:object?)
 
 ;; Even more nested:
 
@@ -779,7 +779,7 @@
 		       (super-make-object)))])
 	     (test 73 'priv (send o priv))
 	     o))])
-  (err/rt-test (send o priv) exn:object?))
+  (err/rt-test (send o priv) exn:fail:object?))
 
 (let ([c% (let ()
 	    (define-local-member-name priv)
@@ -789,9 +789,9 @@
 	      (test 100 'priv ((class-field-accessor c% priv) (make-object c% 100)))
 	      (test 100 'priv ((class-field-accessor c% priv) (instantiate c% () [priv 100])))
 	      c%))])
-  (err/rt-test (class-field-accessor c% priv) exn:object?)
+  (err/rt-test (class-field-accessor c% priv) exn:fail:object?)
   (test #t object? (make-object c% 10))
-  (err/rt-test (instantiate c% () [priv 10]) exn:object?))
+  (err/rt-test (instantiate c% () [priv 10]) exn:fail:object?))
 
 (let ([c% (let ()
 	    (define-local-member-name priv)
@@ -804,7 +804,7 @@
 	      (test 100 'priv (send (instantiate c% () [priv 100]) m))
 	      c%))])
   (test 101 'priv (send (make-object c% 101) m))
-  (err/rt-test (instantiate c% () [priv 101]) exn:object?))
+  (err/rt-test (instantiate c% () [priv 101]) exn:fail:object?))
 
 (let ([c% (let ()
 	    (define-local-member-name priv)
@@ -818,10 +818,10 @@
 	      (test 100 'priv (send (instantiate c% () [xpriv 100]) m))
 	      (test 100 'priv ((class-field-accessor c% priv) (instantiate c% () [xpriv 100])))
 	      c%))])
-  (err/rt-test (class-field-accessor c% priv) exn:object?)
+  (err/rt-test (class-field-accessor c% priv) exn:fail:object?)
   (test 101 'priv (send (make-object c% 101) m))
   (test 101 'priv (send (instantiate c% () [xpriv 101]) m))
-  (err/rt-test (instantiate c% () [priv 10]) exn:object?))
+  (err/rt-test (instantiate c% () [priv 10]) exn:fail:object?))
 
 (let ([c% (let ()
 	    (define-local-member-name priv)
@@ -833,14 +833,14 @@
 	      (test 100 'priv (send* (make-object c% 100) (priv)))
 	      (test 100 'priv (with-method ([p ((make-object c% 100) priv)]) (p)))
 	      (test 100 'gen-priv (send-generic (make-object c% 100) (generic c% priv)))
-	      (err/rt-test (make-generic c% 'priv) exn:object?)
+	      (err/rt-test (make-generic c% 'priv) exn:fail:object?)
 	      c%))])
   (test #t object? (make-object c% 10))
-  (err/rt-test (send (make-object c% 10) priv) exn:object?)
-  (err/rt-test (send* (make-object c% 10) (priv)) exn:object?)
-  (err/rt-test (with-method ([p ((make-object c% 100) priv)]) (p)) exn:object?)
-  (err/rt-test (generic c% priv) exn:object?)
-  (err/rt-test (make-generic c% 'priv) exn:object?))
+  (err/rt-test (send (make-object c% 10) priv) exn:fail:object?)
+  (err/rt-test (send* (make-object c% 10) (priv)) exn:fail:object?)
+  (err/rt-test (with-method ([p ((make-object c% 100) priv)]) (p)) exn:fail:object?)
+  (err/rt-test (generic c% priv) exn:fail:object?)
+  (err/rt-test (make-generic c% 'priv) exn:fail:object?))
 
 ;; Make sure local name works with `send' in an area where the
 ;;  name is also directly bound:

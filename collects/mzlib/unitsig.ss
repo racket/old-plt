@@ -171,7 +171,7 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (define verify-linkage-signature-match
-    (let ([make-exn make-exn:unit]
+    (let ([make-exn make-exn:fail:unit]
 	  [p-suffix (lambda (pos) (case pos [(1) 'st][(2) 'nd][(3) 'rd][else 'th]))])
       (lambda (who tags units esigs isigs)
 	(for-each

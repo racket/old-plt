@@ -39,9 +39,9 @@
     (thread-dead-waitable th))
   
   (define (current-time)
-    (current-seconds))
+    (current-inexact-milliseconds))
   (define (time-evt t)
-    (make-alarm t))
+    (make-alarm-waitable t))
 
   (provide/contract
    (spawn ((-> any) . -> . thread?))

@@ -2602,11 +2602,11 @@
   
   (define undefined (letrec ([x x]) x))
   
-  (define-struct (exn:object exn) () insp)
+  (define-struct (exn:fail:object exn:fail) () insp)
 
   (define (obj-error where . msg)
     (raise
-     (make-exn:object
+     (make-exn:fail:object
       (string->immutable-string
        (string-append
 	(format "~a: " where)
@@ -2640,6 +2640,6 @@
 	   is-a? subclass? implementation? interface-extension?
 	   object-interface object-info object->vector
 	   method-in-interface? interface->method-names class->interface class-info
-	   exn:object? struct:exn:object make-exn:object
+	   (struct exn:fail:object ())
 	   make-primitive-class))
 

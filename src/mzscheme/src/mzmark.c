@@ -1344,6 +1344,7 @@ int output_port_MARK(void *p) {
 
   gcMARK(op->sub_type);
   gcMARK(op->port_data);
+  gcMARK(op->name);
   gcMARK(op->display_handler);
   gcMARK(op->write_handler);
   gcMARK(op->print_handler);
@@ -1359,6 +1360,7 @@ int output_port_FIXUP(void *p) {
 
   gcFIXUP(op->sub_type);
   gcFIXUP(op->port_data);
+  gcFIXUP(op->name);
   gcFIXUP(op->display_handler);
   gcFIXUP(op->write_handler);
   gcFIXUP(op->print_handler);
@@ -2671,6 +2673,7 @@ int mark_user_output_MARK(void *p) {
   gcMARK(uop->write_proc);
   gcMARK(uop->flush_proc);
   gcMARK(uop->close_proc);
+  gcMARK(uop->write_special_proc);
   gcMARK(uop->closed_sema);
   return
   gcBYTES_TO_WORDS(sizeof(User_Output_Port));
@@ -2683,6 +2686,7 @@ int mark_user_output_FIXUP(void *p) {
   gcFIXUP(uop->write_proc);
   gcFIXUP(uop->flush_proc);
   gcFIXUP(uop->close_proc);
+  gcFIXUP(uop->write_special_proc);
   gcFIXUP(uop->closed_sema);
   return
   gcBYTES_TO_WORDS(sizeof(User_Output_Port));

@@ -1177,11 +1177,13 @@ void scheme_read_err(Scheme_Object *port,
       column = col;
 
     if (port) {
-      Scheme_Object *str;
-      fn = SCHEME_IPORT_NAME(port);
-      str = scheme_make_path_without_copying(fn);
-      str = scheme_remove_current_directory_prefix(str);
-      fn = SCHEME_BYTE_STR_VAL(str);
+      Scheme_Object *pn;
+      pn = SCHEME_IPORT_NAME(port);
+      if (SCHEME_PATHP(pn)) {
+	pn = scheme_remove_current_directory_prefix(pn);
+	fn = SCHEME_PATH_VAL(pn);
+      } else
+	fn = "UNKNOWN";
     } else
       fn = "UNKNOWN";
 

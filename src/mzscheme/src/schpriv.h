@@ -2064,15 +2064,6 @@ Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, 
 void scheme_bad_time_for_special(const char *name, Scheme_Object *port);
 extern int scheme_special_ok;
 
-Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
-					   void *data,
-					   Scheme_Get_String_Fun get_string_fun,
-					   Scheme_Peek_String_Fun peek_string_fun,
-					   Scheme_In_Ready_Fun byte_ready_fun,
-					   Scheme_Close_Input_Fun close_fun,
-					   Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
-					   int must_close);
-
 int scheme_user_port_byte_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_Info *sinfo);
 int scheme_user_port_write_probably_ready(Scheme_Output_Port *op, Scheme_Schedule_Info *sinfo);
 

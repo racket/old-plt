@@ -792,7 +792,7 @@
 		       (letrec ([check-sig
 				 (lambda (sig use-sig)
 				   (when use-sig
-				     (with-handlers ([exn:unit?
+				     (with-handlers ([exn:fail:unit?
 						      (lambda (exn)
 							(syntax-error 
 							 #f expr

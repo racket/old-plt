@@ -261,6 +261,7 @@
 (when (file-exists? "tmp4")
   (delete-file "tmp4"))
 (let ([p (open-output-file "tmp4")])
+  (err/rt-test (write-special 'foo p) exn:application:mismatch?)
   (test #t integer? (port-file-identity p))
   (let ([q (open-input-file "tmp4")])
     (test (port-file-identity p) port-file-identity q)
@@ -527,10 +528,12 @@
 
 (test #t input-port? (make-custom-input-port void void void))
 (test #t input-port? (make-custom-input-port void #f void))
+(test #t input-port? (make-custom-input-port void #f void 1000))
+(test 1000 object-name (make-custom-input-port void #f void 1000))
 (err/rt-test (read (make-custom-input-port void void void)))
 (err/rt-test (read-char (make-custom-input-port void void void)))
 (err/rt-test (peek-char (make-custom-input-port void void void)))
-(arity-test make-custom-input-port 3 3)
+(arity-test make-custom-input-port 3 4)
 (err/rt-test (make-custom-input-port 8 void void))
 (err/rt-test (make-custom-input-port void 8 void))
 (err/rt-test (make-custom-input-port void void 8))
@@ -540,7 +543,10 @@
 
 (test #t output-port? (make-custom-output-port #f void void void))
 (test #t output-port? (make-custom-output-port void void void void))
-(arity-test make-custom-output-port 4 4)
+(test #t output-port? (make-custom-output-port void void void void void))
+(test #t output-port? (make-custom-output-port void void void void void 7786))
+(test 7786 object-name (make-custom-output-port void void void void void 7786))
+(arity-test make-custom-output-port 4 6)
 (err/rt-test (make-custom-output-port 8 void void void))
 (err/rt-test (make-custom-output-port #f 8 void void))
 (err/rt-test (make-custom-output-port #f void 8 void))
@@ -548,6 +554,7 @@
 (err/rt-test (make-custom-output-port #f add1 void void))
 (err/rt-test (make-custom-output-port #f void add1 void))
 (err/rt-test (make-custom-output-port #f void void add1))
+(err/rt-test (write-special 'foo (make-custom-output-port void void void void)) exn:application:mismatch?)
 
 (let ([p (make-custom-input-port 
 	  (lambda (s) (bytes-set! s 0 97) 1)
@@ -950,6 +957,54 @@
       (test (list (cons x (add1 x))) regexp-match-peek-positions #"0" p (expt 10 100)))))
 
 ;;------------------------------------------------------------
+
+;; Test custom output port
+(let ([l null]
+      [s (make-semaphore)]
+      [flushed? #f]
+      [spec #f])
+  (let ([p (make-custom-output-port
+	    (lambda () (make-semaphore-peek s))
+	    (lambda (bytes start end non-block?)
+	      (define can-block? (not non-block?))
+	      (if (if can-block?
+		      (semaphore-wait s)
+		      (semaphore-try-wait? s))
+		  (let ([len (if can-block?
+				 (- end start)
+				 1)])
+		    (set! l (append l
+				    (list (subbytes bytes start (+ start len)))))
+		    len)
+		  0))
+	    (lambda ()
+	      (set! flushed? #t))
+	    (lambda ()
+	      (set! l #f))
+	    (lambda (s non-block?)
+	      (set! spec s)
+	      (not non-block?)))])
+    (test 0 write-bytes-avail* #"abc" p)
+    (semaphore-post s)
+    (test 3 write-bytes #"abc" p)
+    (test '(#"abc") values l)
+    (semaphore-post s)
+    (let ([n (write-bytes-avail #"abc" p)])
+      (test #t <= n 1 3)
+      (test (add1 n) length l))
+    (flush-output p)
+    (test #t values flushed?)
+    (test #f write-special-avail* 'thing p)
+    (test 'thing values spec)
+    (test #t write-special 'thung p)
+    (test 'thung values spec)
+    (test (void) close-output-port p)
+    (test #f values l)
+    (set! l 10)
+    (test (void) close-output-port p)
+    (test 10 values l)))
+
+; --------------------------------------------------
 
 (SECTION 6 10 4)
 (load "tmp1")

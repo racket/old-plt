@@ -615,25 +615,27 @@ MZ_EXTERN void scheme_close_output_port(Scheme_Object *port);
 
 MZ_EXTERN Scheme_Object *scheme_make_port_type(const char *name);
 MZ_EXTERN Scheme_Input_Port *scheme_make_input_port(Scheme_Object *subtype, void *data,
+						    Scheme_Object *name,
 						    Scheme_Get_String_Fun get_byte_string_fun,
 						    Scheme_Peek_String_Fun peek_string_fun,
 						    Scheme_In_Ready_Fun byte_ready_fun,
 						    Scheme_Close_Input_Fun close_fun,
 						    Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
 						    int must_close);
-MZ_EXTERN Scheme_Output_Port *scheme_make_output_port(Scheme_Object *subtype,
-						      void *data,
+MZ_EXTERN Scheme_Output_Port *scheme_make_output_port(Scheme_Object *subtype, void *data,
+						      Scheme_Object *name,
 						      Scheme_Write_String_Fun write_byte_string_fun,
 						      Scheme_Out_Ready_Fun ready_fun,
 						      Scheme_Close_Output_Fun close_fun,
 						      Scheme_Need_Wakeup_Output_Fun need_wakeup_fun,
+						      Scheme_Write_Special_Fun write_special_fun,
 						      int must_close);
 
 MZ_EXTERN Scheme_Object *scheme_open_input_file(const char *name, const char *who);
 MZ_EXTERN Scheme_Object *scheme_open_output_file(const char *name, const char *who);
 
 MZ_EXTERN Scheme_Object *scheme_make_file_input_port(FILE *fp);
-MZ_EXTERN Scheme_Object *scheme_make_named_file_input_port(FILE *fp, const char *filename);
+MZ_EXTERN Scheme_Object *scheme_make_named_file_input_port(FILE *fp, Scheme_Object *name);
 MZ_EXTERN Scheme_Object *scheme_make_file_output_port(FILE *fp);
 
 MZ_EXTERN Scheme_Object *scheme_make_byte_string_input_port(const char *str);

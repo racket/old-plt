@@ -21,6 +21,36 @@
 ;;;;;    ;;; ;   ;;;   ;;; ;        ;;;  ;       ;;;;    ;;;;    ;;;     ;    ;;;;;   ;;; ;  ;;;  
 
   
+  #| Documentation ------------------------------------------------------------
+  (define-checked (name pred_1? ... pred_n?))
+  re-defines the constructor make-name so that it makes sure that its
+  n arguments satisfy pred_1? ... pred_n?
+  
+  Note: 
+  to maintain the invariant, also modify the mutators to check their arguments
+  |#
+  (define-syntax (define-checked stx)
+    (syntax-case stx ()
+      [(_ (name pred? ...))
+       (let ([make-variable 
+              ; String SyntaxObject -> SyntaxObject
+              (lambda (x y)
+                (datum->syntax-object
+                 stx
+                 (string->symbol 
+                  (format "~a-~a" x (syntax-object->datum y)))))])
+         (with-syntax ([make-name   (make-variable "make" (syntax name))]
+                       [(x ...) (generate-temporaries (syntax (pred? ...)))])
+           (syntax
+            (set! make-name 
+                  (let ([make-name make-name])
+                    (lambda (x ...)
+                      (check-arg 'make-name (pred? x) pred? "an" x)
+                      ...
+                      (make-name x ...)))))))]))
+  ; _ -> true
+  (define (true? x) #t)
+
   ;; Structure Definitions ----------------------------------------------------
   (define-struct fe (question))
 
@@ -29,6 +59,14 @@
   (define-struct (check fe)   ())
   (define-struct (yes-no fe)  (positive negative))
   (define-struct (radio fe)   (labels))
+
+  (define-checked (password string?))
+  (define-checked (numeric string?))
+  (define-checked (check string?))
+  (define (list-of-strings? l)
+    (and (list? l) (andmap string? l)))
+  (define-checked (radio string? list-of-strings?))
+  (define-checked (yes-no string? true? true?))
 
   ; todo
   (define-struct (button fe)  ())

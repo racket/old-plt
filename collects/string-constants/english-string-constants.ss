@@ -577,6 +577,6 @@
  (latest-binary-information-format "Latest released version: ~a (iteration ~a)")
  (connecting-version-server "Connecting to PLT version server")
  (update-dialog-title "PLT update status")
- (need-update-string "One or more install PLT software packages needs updating")
+ (need-update-string "One or more installed PLT software packages needs updating")
  (no-update-string "All installed PLT software packages are up-to-date")
  )

@@ -152,7 +152,7 @@
   (define image->gl-vector
     (lambda (file)
       (let* (
-             (bmp  (make-object bitmap% file 'bmp #f))
+             (bmp  (make-object bitmap% file 'unknown #f))
              (dc (instantiate bitmap-dc% (bmp)))
              (pixels (* (send bmp get-width) (send bmp get-height)))
              (vec (make-vector (* pixels 3)))

@@ -2,15 +2,14 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
-
 Version 299.5
 Changed object-name for input ports and output ports
 Changed read-syntax to make the source name optional (defaults
  to the port's name)
-Added write-special and write-special*
+Added write-special and write-special-avail*
 Extended make-custom-input-port to accept an optional port name
-Extended make-custom-output-port to accept an optional write-special
- proc and an optional port name
+Extended make-custom-output-port to accept an optional
+ write-special-proc and an optional port name
 A location-offset lists for a port read handler can contain #f
 
 Version 299.4

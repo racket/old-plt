@@ -107,10 +107,12 @@ sub ReadFile {
 		$_ = &SkipKey($_, $key_include);
 		$incfile = &Wash($_);
 		$oldin = $linenum . ":" . tell(IN) . ":" . $thisfile;
-		if (!open(IN2, $incfile)) {
+		$thisfile =~ /^((.*\/)|)([^\/]*)$/;
+		$incpath = $1;
+		if (!open(IN2, "$incpath$incfile")) {
 		    print STDERR "Couldn't open \"${incfile}\"\n";
 		} else {
-		    $thisfile = $incfile;
+		    $thisfile = "$incpath$incfile";
 		    $linenum = 0;
 		    push(@openfiles, $oldin);
 		    close(IN);

@@ -1,3 +1,27 @@
+Version 52, ??, 1998
+R5RS compliance
+Added scheme-report-environment, null-environment, and
+ interaction-environment
+expand-defmacro now signals the same set of syntax errors
+ as compile and eval
+local-expand-defmacro no longer lets define expressions
+ pass in a non-to-level context; to implement a macro that
+ detects define forms, use local-expand-body-expression
+current-directory is now a parameter
+Top-level definitions are no longer allowed in the branches 
+ of an if expression; consider replacing an expression like
+ (if ... (define x ...)) with 
+ (if ... (global-defined-value 'x ...))
+Added simplify-path
+Fixed bug in (let/ec a (let/ec b (let/cc k ...))); calling
+ b then k then a would fail, jumping to b instead of a
+Fixed read-eval-print loop when jumping to the continuation
+ of a previous eval and raising an exception there before
+ the evaluation finishes
+Inside MzScheme: current-directory, now a parameter, no
+ longer sets the current directory as managed by the OS
+Inside MzScheme: scheme_split_pathname changed
+
 Version 51, March 25, 1998
 Changed load/use-compiled: searches for .zo files in
  a "compiled/" subdirectory, and searches for .so/.dll

@@ -1,9 +1,4 @@
 
-expand-defmacro fails to report certain syntax errors:
-  unbound ids in units
-  duplicate ids in let, let-values, etc.
-  define or define-values not at top-level
-
 (let loop ([x 0]) (call/cc loop)) accumulates memory
 
 "synrule.ss" is missing `let-syntax' and `letrec-syntax'
@@ -27,8 +22,3 @@ Under AIX, write to tcp output port blocks when the low-level
 
 Under FreeBSD, if the descripters limit is greater than 256, then
   it is automatically reduced to 256 within MzScheme/MrEd/DrScheme
-
-Still to be added to support R5RS:
-  (scheme-report-environment n)
-  (null-environment)
-  (interaction-environment)

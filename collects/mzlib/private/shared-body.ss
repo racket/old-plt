@@ -32,8 +32,8 @@
 				    names))])
 			   ;; Remove #%app if present...
 			   (syntax-case e (#%app)
-			     [(#%app e ...)
-			      (syntax (e ...))]
+			     [(#%app a ...)
+			      (syntax/loc e (a ...))]
 			     [_else e])))
 		       exprs)]
 	   [struct-decl-for (lambda (id)
@@ -103,7 +103,8 @@
 				     expr))
 				  (with-syntax ([undefineds (map (lambda (x) (syntax undefined)) args)])
 				    (syntax (make-x . undefineds))))]
-			       [_else expr]))
+			       [_else
+				expr]))
 			   exprs)]
 		     [(finish-expr ...)
 		      (let ([gen-n (lambda (l)

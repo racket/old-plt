@@ -16,6 +16,7 @@
 #include "escheme.h"
 
 #include "srptypes.h"
+#include "srpbuffer.h"
 #include "srpersist.h"
 
 #include "srpprims.tbl"
@@ -5838,6 +5839,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   for (i = 0; i < sizeray(srpStructs); i++) {
     structNameSymbol = scheme_intern_symbol(srpStructs[i].name);
     structType = scheme_make_struct_type(structNameSymbol,NULL,srpStructs[i].numFields);
+    *(srpStructs[i].pStructType) = structType;
     structNames = scheme_make_struct_names(structNameSymbol,
 					   stringArrayToSchemeSymbolList(srpStructs[i].fields,srpStructs[i].numFields),
 					   0,&nameCount);

@@ -1,0 +1,144 @@
+// srpstructs.tbl -- Scheme structures for srpersist
+
+char *numericFields[] = {
+  "precision",
+  "scale",
+  "sign",
+  "val"
+};
+
+char *dateFields[] = {
+  "year",
+  "month",
+  "day"
+};
+
+char *timeFields[] = {
+  "hour",
+  "minute",
+  "second"
+};
+
+char *timeStampFields[] = {
+  "year",
+  "month",
+  "day",
+  "hour",
+  "minute",
+  "second",
+  "fraction"
+};
+
+char *yearIntervalFields[] = {
+  "sign",
+  "year"
+};
+
+char *monthIntervalFields[] = {
+  "sign",
+  "month"
+};
+
+char *dayIntervalFields[] = {
+  "sign",
+  "day"
+};
+
+char *hourIntervalFields[] = {
+  "sign",
+  "hour"
+};
+
+char *minuteIntervalFields[] = {
+  "sign",
+  "minute"
+};
+
+char *secondIntervalFields[] = {
+  "sign",
+  "second"
+};
+
+char *yearToMonthIntervalFields[] = {
+  "sign",
+  "year",
+  "month"
+};
+
+char *dayToHourIntervalFields[] = {
+  "sign",
+  "day",
+  "hour"
+};
+
+char *dayToMinuteIntervalFields[] = {
+  "sign",
+  "day",
+  "hour",
+  "minute",
+};
+
+char *dayToSecondIntervalFields[] = {
+  "sign",
+  "day",
+  "hour",
+  "minute",
+  "second"
+};
+
+char *hourToMinuteIntervalFields[] = {
+  "sign",
+  "hour",
+  "minute"
+};
+
+char *hourToSecondIntervalFields[] = {
+  "sign",
+  "hour",
+  "minute",
+  "second"
+};
+
+char *minuteToSecondIntervalFields[] = {
+  "sign",
+  "minute",
+  "second"
+};
+
+Scheme_Object *numericStructType;
+Scheme_Object *dateStructType;
+Scheme_Object *timeStructType;
+Scheme_Object *timeStampStructType;
+Scheme_Object *yearIntervalStructType;
+Scheme_Object *monthIntervalStructType;
+Scheme_Object *dayIntervalStructType;
+Scheme_Object *hourIntervalStructType;
+Scheme_Object *minuteIntervalStructType;
+Scheme_Object *secondIntervalStructType;
+Scheme_Object *yearToMonthIntervalStructType;
+Scheme_Object *dayToHourIntervalStructType;
+Scheme_Object *dayToMinuteIntervalStructType;
+Scheme_Object *dayToSecondIntervalStructType;
+Scheme_Object *hourToMinuteIntervalStructType;
+Scheme_Object *hourToSecondIntervalStructType;
+Scheme_Object *minuteToSecondIntervalStructType;
+
+SRPSTRUCT srpStructs[] = {
+  { "sql-numeric", &numericStructType, numericFields, sizeray(numericFields) },
+  { "sql-date", &dateStructType, dateFields, sizeray(dateFields) },
+  { "sql-time", &timeStructType, timeFields, sizeray(timeFields) },
+  { "sql-timestamp", &timeStampStructType, timeStampFields, sizeray(timeStampFields) },
+  { "sql-year-interval", &yearIntervalStructType, yearIntervalFields, sizeray(yearIntervalFields) },
+  { "sql-month-interval", &monthIntervalStructType, monthIntervalFields, sizeray(monthIntervalFields) },
+  { "sql-day-interval", &dayIntervalStructType, dayIntervalFields, sizeray(dayIntervalFields) },
+  { "sql-hour-interval", &hourIntervalStructType, hourIntervalFields, sizeray(hourIntervalFields) },
+  { "sql-minute-interval", &minuteIntervalStructType, minuteIntervalFields, sizeray(minuteIntervalFields) },
+  { "sql-second-interval", &secondIntervalStructType, secondIntervalFields, sizeray(secondIntervalFields) },
+  { "sql-year-to-month-interval", &yearToMonthIntervalStructType, yearToMonthIntervalFields, sizeray(yearToMonthIntervalFields) },
+  { "sql-day-to-hour-interval", &dayToHourIntervalStructType, dayToHourIntervalFields, sizeray(dayToHourIntervalFields) },
+  { "sql-day-to-minute-interval", &dayToMinuteIntervalStructType, dayToMinuteIntervalFields, sizeray(dayToMinuteIntervalFields) },
+  { "sql-day-to-second-interval", &dayToSecondIntervalStructType, dayToSecondIntervalFields, sizeray(dayToSecondIntervalFields) },
+  { "sql-hour-to-minute-interval", &hourToMinuteIntervalStructType, hourToMinuteIntervalFields, sizeray(hourToMinuteIntervalFields) },
+  { "sql-hour-to-second-interval", &hourToSecondIntervalStructType, hourToSecondIntervalFields, sizeray(hourToSecondIntervalFields) },
+  { "sql-minute-to-second-interval", &minuteToSecondIntervalStructType, minuteToSecondIntervalFields, sizeray(minuteToSecondIntervalFields) },
+};

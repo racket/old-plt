@@ -55,6 +55,7 @@ typedef struct _srp_prim_ {
 
 typedef struct _srp_struct_ {
   char *name;
+  Scheme_Object **pStructType;
   char **fields;
   int numFields;
 } SRPSTRUCT;

@@ -257,7 +257,8 @@ enum _Virtual_keycodes {
  WXK_SPACE   =	32,
  WXK_DELETE  = 127,
 
- WXK_START   = 300,
+ /* Use Unicode surrogate area to avoid conflicts with real chars */
+ WXK_START   = 0xD800,
  WXK_LBUTTON,
  WXK_RBUTTON,
  WXK_CANCEL,

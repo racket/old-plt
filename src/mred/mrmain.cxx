@@ -390,6 +390,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
 		     (unsigned char *)a, 0,
 		     1 /* UTF-16 */);
 
+  /* Skip argv[0], which is the name of the executable */
+  a[l] = 0;
+  while (*a && a[0] != ' ') {
+    a = a XFORM_OK_PLUS 1;
+  }
+
   return wxWinMain(hInstance, hPrevInstance, a, nCmdShow, main);
 }
 

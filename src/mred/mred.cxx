@@ -261,6 +261,7 @@ typedef struct Context_Custodian_Hop {
 #else
 # define WEAKIFY(x) x
 # define WEAKIFIED(x) x
+# define HIDE_FROM_XFORM(x) x
 #endif
 
 static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdContext *),

@@ -8,8 +8,6 @@
 	  mzlib:pretty-print^
 	  mred-interfaces^)
 
-  (printf "all:set-names: ~s~n" all:set-names)
-
   (define problems (car all:problemss))
 
   (define game-name "Paint by Numbers")

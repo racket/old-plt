@@ -4,7 +4,6 @@
  * Author:      Julian Smart and Matthew Flatt
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: Clipboard.cc,v 1.7 2000/06/13 15:05:05 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 

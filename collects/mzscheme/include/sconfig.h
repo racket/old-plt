@@ -189,6 +189,8 @@ int scheme_solaris_semaphore_try_down(void *);
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-sunos4"
 # define SIGSET_IS_SIGNAL
 # define USE_TM_GMTOFF_FIELD
+# define NO_STRERROR_AVAILABLE
+# define USE_ON_EXIT_FOR_ATEXIT
 # endif
 
 # define FLAGS_ALREADY_SET
@@ -535,8 +537,6 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define USE_EXPLICT_FP_FORM_CHECK
 # define ZERO_MINUS_ZERO_IS_POS_ZERO
 # define LOG_ZERO_ISNT_NEG_INF
-
-# define NO_INLINE_KEYWORD
 
 # define USE_ULIMIT
 
@@ -1328,7 +1328,6 @@ int scheme_pthread_semaphore_try_down(void *);
 /***********************/
 
 #define UNISTD_INCLUDE
-#define NO_INLINE_KEYWORD
 
  /* REGISTER_POOR_MACHINE guides a hand optimization that seems to
     be work best one way for Sparc machines, and better the other
@@ -1380,6 +1379,11 @@ int scheme_pthread_semaphore_try_down(void *);
 
  /* NO_USLEEP means that there is no usleep() function. Used only in 
     standalone MzScheme. Used only if NO_SLEEP is undefined. */
+
+ /* NO_STRERROR_AVAILABLE means that strerror() is not available. */
+
+ /* USE_ON_EXIT_FOR_ATEXIT means that a SunOS4-style on_exit()
+    is available instead of atexit(). */
 
  /* NO_NEED_FOR_BEGINTHREAD indicates that the C library used for
     Windows is always thread-ready and there's no need use the

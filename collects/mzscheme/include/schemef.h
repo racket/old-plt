@@ -469,6 +469,7 @@ char *scheme_get_string_output(Scheme_Object *);
 char *scheme_get_sized_string_output(Scheme_Object *, int *len);
 
 void scheme_pipe(Scheme_Object **write, Scheme_Object **read);
+void scheme_pipe_with_limit(Scheme_Object **write, Scheme_Object **read, int maxsize);
 
 int scheme_file_exists(char *filename);
 int scheme_directory_exists(char *dirname);

@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 static wxColor *the_color;
+extern void wxmeError(const char *e);
 
 static void draw_scanline(JSAMPROW row, int cols, int rownum, int step, JSAMPARRAY colormap, wxMemoryDC *dc)
 {
@@ -96,6 +97,13 @@ static void my_error_exit(j_common_ptr cinfo)
 
 int read_JPEG_file(char * filename, wxBitmap *bm)
 {
+  FILE * infile;		/* source file */
+  JSAMPARRAY buffer;		/* Output row buffer */
+  int row_stride;		/* physical row width in output buffer */
+  wxMemoryDC *dc;
+#ifdef MZ_PRECISE_GC
+  START_XFORM_SKIP;
+#endif
   /* This struct contains the JPEG decompression parameters and pointers to
    * working space (which is allocated as needed by the JPEG library).
    */
@@ -105,11 +113,9 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
    * struct, to avoid dangling-pointer problems.
    */
   struct my_error_mgr jerr;
-  /* More stuff */
-  FILE * infile;		/* source file */
-  JSAMPARRAY buffer;		/* Output row buffer */
-  int row_stride;		/* physical row width in output buffer */
-  wxMemoryDC *dc;
+#ifdef MZ_PRECISE_GC
+  END_XFORM_SKIP;
+#endif
 
   /* In this example we want to open the input file before doing anything else,
    * so that the setjmp() error recovery below can assume the file is open.
@@ -119,6 +125,7 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
 
   if ((infile = fopen(filename, "rb")) == NULL) {
     sprintf(jpeg_err_buffer, "can't open %.255s\n", filename);
+    wxmeError(jpeg_err_buffer);
     return 0;
   }
 
@@ -132,6 +139,7 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
     /* If we get here, the JPEG code has signaled an error.
      * We need to clean up the JPEG object, close the input file, and return.
      */
+    wxmeError(jpeg_err_buffer);
     jpeg_destroy_decompress(&cinfo);
     fclose(infile);
     return 0;

@@ -32,7 +32,7 @@ CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt $(COMPFLAGS)
 LDFLAGS = $(XLIB)
 ###########################
 
-XFORM = ../../mzscheme/mzscheme2k -rq $(srcdir)/../../mzscheme/gc2/xform.ss ../../mzscheme/gc2/ctok "gcc -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) -Dwx_xt -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src"
+XFORM = ../../mzscheme/mzscheme2k -rq $(srcdir)/../../mzscheme/gc2/xform.ss ../../mzscheme/gc2/ctok "gcc -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) -Dwx_xt -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src -I$(srcdir)/../../wxcommon/jpeg"
 XFORMDEP = $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/gc2.h
 
 WXBDIR=../../wxxt
@@ -276,6 +276,9 @@ xsrc/wxs_styl.cc: $(srcdir)/../wxs/wxs_styl.cxx ../wxs/wxs_styl.o $(XFORMDEP)
 xsrc/wxs_win.cc: $(srcdir)/../wxs/wxs_win.cxx ../wxs/wxs_win.o $(XFORMDEP)
 	$(XFORM) $(srcdir)/../wxs/wxs_win.cxx xsrc/wxs_win.cc
 
+xsrc/wxJPEG.cc: $(srcdir)/../../wxcommon/wxJPEG.cxx ../wxJPEG.o $(XFORMDEP)
+	$(XFORM) $(srcdir)/../../wxcommon/wxJPEG.cxx xsrc/wxJPEG.cc
+
 GCPREINC = -include $(srcdir)/../../mzscheme/gc2/gc2.h
 POSTFLAGS = $(OPTIONS) $(COMPFLAGS)
 
@@ -481,6 +484,8 @@ wxs_styl.o: xsrc/wxs_styl.cc
 	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_styl.o xsrc/wxs_styl.cc
 wxs_win.o: xsrc/wxs_win.cc
 	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_win.o xsrc/wxs_win.cc
+wxJPEG.o: xsrc/wxJPEG.cc
+	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxJPEG.o xsrc/wxJPEG.cc
 mred.o: xsrc/mred.cc
 	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mred.o xsrc/mred.cc
 mredx.o: xsrc/mredx.cc
@@ -607,6 +612,8 @@ XSRCS = xsrc/Window.cc \
   xsrc/wxs_styl.cc \
   xsrc/wxs_win.cc \
 \
+  xsrc/wxJPEG.cc \
+\
   xsrc/mred.cc \
   xsrc/mredx.cc
 
@@ -724,6 +731,8 @@ XOBJS = Window.o \
   wxs_styl.o \
   wxs_win.o \
 \
+  wxJPEG.o \
+\
   mred.o \
   mredx.o \
 \
@@ -799,7 +808,7 @@ XWOBJS = ../../wxxt/src/XWidgets/xwArrow.o \
 xform: $(XSRCS) xcglue.c
 
 ../mred2k: $(XOBJS) $(MZOBJS) $(XWOBJS)
-	$(LINKER) $(MREDLDFLAGS) -o ../mred2k $(XOBJS) $(MZOBJS) $(XWOBJS) -lXpm $(LDLIBS)
+	$(LINKER) $(MREDLDFLAGS) -o ../mred2k $(XOBJS) $(MZOBJS) $(XWOBJS) -lXpm -L../../wxcommon/jpeg -ljpeg $(LDLIBS)
 
 xsrc:
 	mkdir xsrc

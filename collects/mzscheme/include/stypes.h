@@ -24,7 +24,7 @@ enum {
   scheme_compiled_let_void_type,
   scheme_compiled_syntax_type,
 
-  scheme_quote_compilation_type,
+  scheme_quote_compilation_type, /* used while writing, only */
 
   _scheme_compiled_values_types_,
 

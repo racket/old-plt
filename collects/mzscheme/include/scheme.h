@@ -38,9 +38,6 @@
 # endif
 #endif
 
-#define AGRESSIVE_ZERO_FOR_GC
-#define AGRESSIVE_ZERO_TB
-
 #if SGC_STD_DEBUGGING
 # ifndef USE_SENORA_GC
 #  define USE_SENORA_GC
@@ -665,9 +662,7 @@ typedef struct Scheme_Process {
 
   int eof_on_error; /* For port operations */
 
-#ifdef AGRESSIVE_ZERO_TB
   int tail_buffer_set;
-#endif
 
   /* MzScheme client can use: */
   void (*on_kill)(struct Scheme_Process *p);
@@ -967,11 +962,7 @@ typedef void Scheme_Instance_Init_Proc(Scheme_Object **init_boxes,
 
 #define _scheme_force_value(v) ((v == SCHEME_TAIL_CALL_WAITING) ? scheme_force_value(v) : v)
 
-#ifdef AGRESSIVE_ZERO_TB
-#define scheme_tail_apply_buffer_wp(n, p) ((p)->tail_buffer_set = n, (p)->tail_buffer)
-#else
 #define scheme_tail_apply_buffer_wp(n, p) ((p)->tail_buffer)
-#endif
 #define scheme_tail_apply_buffer(n) scheme_tail_apply_buffer_wp(n, scheme_current_process)
 
 #define _scheme_tail_apply_no_copy_wp_tcw(f, n, args, p, tcw) (p->ku.apply.tail_rator = f, p->ku.apply.tail_rands = args, p->ku.apply.tail_num_rands = n, tcw)
@@ -1305,7 +1296,7 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #endif
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #if defined(__MWERKS__)

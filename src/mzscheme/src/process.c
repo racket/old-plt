@@ -3342,9 +3342,23 @@ int scheme_pthread_semaphore_up(void *s)
   return !sem_post((sem_t *)s);
 }
 
+static int pwaiting;
+
 int scheme_pthread_semaphore_down_breakable(void *s)
 {
-  return !sem_wait((sem_t *)s);
+  int v;
+
+  SCHEME_GET_LOCK();
+  pwaiting++;
+  SCHEME_RELEASE_LOCK();
+
+  v = !sem_wait((sem_t *)s);
+
+  SCHEME_GET_LOCK();
+  --pwaiting;
+  SCHEME_RELEASE_LOCK();
+
+  return v;
 }
 
 int scheme_pthread_semaphore_try_down(void *s)

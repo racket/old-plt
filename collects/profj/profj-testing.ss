@@ -22,6 +22,7 @@
   (define (java-equal? v1 v2 visited-v1 visited-v2)
     (or (eq? v1 v2)
         (already-seen? v1 v2 visited-v1 visited-v2)
+        (and (number? v1) (number? v2) (= v1 v2))
         (cond
           ((and (object? v1) (object? v2))
            (cond

@@ -654,6 +654,7 @@
  (use-mixed-fractions "Mixed fractions")
  (use-repeating-decimals "Repeating decimals")
  (decimal-notation-for-rationals "Use decimal notation for rationals")
+ (please-select-a-language "Please select a language.")
 
  
  ;;; languages

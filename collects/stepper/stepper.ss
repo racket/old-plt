@@ -37,11 +37,18 @@
                       print-convert
                       (drscheme basis)
                       shared)]
+        [mred-interfaces : mred-interfaces^
+                         (mred-interfaces@)]
+        [framework : framework^
+                   ((require-library "frameworkr.ss" "framework")
+                    core
+                    mred-interfaces)]
         [STEPPER : ()
                  ((require-library-unit/sig "stepperr.ss" "stepper")
                   pretty
-                  mred
+                  (mred-interfaces : mred^)
                   drscheme
                   annotate
-                  reconstruct)])                   
+                  reconstruct
+                  framework)])       
       (export))

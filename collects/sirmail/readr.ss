@@ -332,16 +332,15 @@
       
       (define (check-for-new)
 	(status "Checking ~a at ~a..." mailbox-name (IMAP-SERVER))
-	(unless new-messages?
-	  (let-values ([(imap count new next-uid) (connect 'next-uid)])
-	    (unless (= next-uid current-next-uid)
-	      (set! new-messages? #t))))
+	(let-values ([(imap count new next-uid) (connect 'next-uid)])
+	  (set! new-messages? (not (= next-uid current-next-uid))))
 	(if new-messages?
 	    (begin
 	      (send new-mail-msg show #t)
 	      (status "New mail")
 	      #t)
 	    (begin
+	      (send new-mail-msg show #f)
 	      (status "No new mail")
 	      #f))
 	new-messages?)
@@ -1851,8 +1850,7 @@
 	  (inherit stop)
           (define/override (notify)
             (when can-poll?
-              (unless (or (send disconnected-msg is-shown?)
-                          new-messages?)
+              (unless (send disconnected-msg is-shown?)
                 (with-handlers ([void
                                  (lambda (x)
                                    (stop)
@@ -1863,12 +1861,15 @@
                                            (if (exn? x)
                                                (exn-message x)
                                                x)))])
-                  (when (as-background
-                         enable-main-frame
-                         (lambda (break-bad break-ok) 
-                           (check-for-new))
-                         void)
-                    (bell))))))
+		  (let ([old-new-messages? new-messages?])
+		    (as-background
+		     enable-main-frame
+		     (lambda (break-bad break-ok) 
+		       (check-for-new))
+		     void)
+		    (when (and new-messages?
+			       (not (eq? old-new-messages? new-messages?)))
+		      (bell)))))))
           (super-instantiate ())))
       
       (define biff

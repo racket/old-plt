@@ -58,9 +58,30 @@
 		 ,home-page))))
   
   (define (get-binding sym) 
-    (extract-binding/single 
-     sym 
-     (request-bindings initial-request)))
+    (with-handlers
+     ([void 
+       (lambda _
+	 (send/finish
+	  `(HTML
+	    (HEAD
+	     (TITLE "Missing bug report field")
+	     ,hd-css)
+	    (BODY
+	     (H1 ,(color-with "red" "Missing bug report field"))
+	     (P)
+	     "One or more fields is missing from a "
+	     "submitted PLT bug report. "
+	     (P)
+	     "This error may have occurred if you tried "
+	     "to restart the bug report confirmation "
+	     "servlet.  If you were unable to complete "
+	     "your bug report, you'll need to start over."
+	     (P)
+	     (A ((HREF "/servlets/bug-report.ss")) "Click here")
+	     " to start a new bug report."))))])
+     (extract-binding/single 
+      sym 
+      (request-bindings initial-request))))
 
   (define raw-synth-info (get-binding 'synth-info))
   (define port (open-input-string raw-synth-info))

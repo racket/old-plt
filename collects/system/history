@@ -1,6 +1,9 @@
 SYSTEM HISTORY
 --------------
 Version 45:
+- there is a new edit%, mred:return-edit%. It takes an extra arg at
+  initialization time, which should be a function that will be called
+  when the user types return in the edit.
 - takeover-output is now takeover and release-output is gone.
   In the next release this should become obsolete
 - there are now two new methods of simple-menu-frame%'s, 

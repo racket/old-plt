@@ -99,8 +99,65 @@ in several significant ways:
  * The `struct' form is gone, replaced by a more flexible
    `make-struct-type' form. 
 
-   The `define-struct' form works as before, but also supports an
-   optional inspector expression after the field list.
+   The `define-struct' form has changed. In addition to the old
+   bindings from a `define-struct' declaration like
+
+      (define-struct <id> (<field-id> ...))
+
+   binds <id> to expansion-time information about the declaration, and
+   the sub-typing form is
+ 
+      (define-struct (<id> <super-id>) (<field-id> ...))
+
+   where <super-id> is the <id> from a previous `define-struct' ---
+   not an expression that produces a structure type descriptor.
+
+   The changes break old code in several ways:
+
+     - The binding for <id> might collide with other definitions.
+
+     - Sub-typing declarations must be changed, usually by deleting
+       `struct:'.
+
+   The new `define-struct' is slightly less powerful than the old one,
+   though in ways that are unlikely to matter. For example, the new
+   form cannot extend a structure type descriptor that is passed into
+   a procedure.
+
+   The advantage of the change is that forms like `match' and `shared'
+   can work properly with structures. For example, given the
+   declarations
+
+     (define-struct a (x y))
+     (define-struct (b a) (z))
+
+   The expression
+
+     (match .... [($ a pat) ....])
+
+   is a syntax error, because the structure type `a' has two
+   fields. But
+
+     (match .... [($ a pat1 pat2) ....])
+     (match .... [($ b pat1 pat2 pat3) ....])
+
+   both work, and the structure types need not be declared as
+   "transparent" (through a dummy inspector).
+   
+   The `struct' module export form exports the <id> binding as well as
+   the old ones, so that sub-typing declarations and `match' forms
+   work across module boundaries.
+
+   The `struct' signature form for `unit/sig' introduces
+   expansion-time information into importing units that immitates that
+   of a `define-struct' declaration. The information is currently
+   limited, in that subtyping relations are not exposed and the actual
+   structure type may have more fields than declared in the
+   signature. But `match' works with the partial information, for
+   example, matching on as many fields as declared in the signature.
+
+   The `define-struct' form also works mostly as before, but also
+   supports an optional inspector expression after the field list.
 
    Inspectors provide debugging access, with a custodian-like
    hierarchy for opacity. The form
@@ -113,9 +170,11 @@ in several significant ways:
 
    for transparent structs.
 
-   Struct type properties let a programmer attach static information
-   to a structure type. (For example, using properties,
+   Finally, structure type properties let a programmer attach static
+   information to a structure type. (For example, using properties,
    structure-based classes can be implemented more efficiently.)
+   Structure type properties are only available via
+   `make-struct-type'.
 
  * The `process', `process*', `process/ports', `process*/ports',
    `system', and `system*' procedures have been moved to a new MzLib

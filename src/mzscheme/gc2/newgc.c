@@ -1,3 +1,4 @@
+#define MZ_PRECISE_GC 1
 /*
    A new Precise GC for MzScheme
    Copyright (C) 2001 Matthew Flatt and Adam Wick
@@ -9,7 +10,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#define MZ_PRECISE_GC 1
 #include "gc2.h"
 #include "../src/schpriv.h"
 
@@ -40,7 +40,6 @@ void GCDBG(char *format, ...) {
 #endif
 
 /* #defines you can change without definately breaking the collector */
-#define MAX_HEAP_SIZE		(1024*1024*1024) /* FIXME: Should be syscall*/
 #define GEN0_SIZE		(8 * 1024 * 1024)
 #define OT_INIT_SIZE		5
 #define OT_ADD_SIZE		10
@@ -201,7 +200,6 @@ static short ot_addentry(Scheme_Custodian *cust) {
 	ot_table[i]->custs = cl_add(ot_table[i]->custs, cust);
 	cust = box ? (Scheme_Custodian*)box->u.two_ptr_val.ptr1 : NULL;
       }
-      printf("Created new owner entry %i\n", i);
       return i;
     }
 
@@ -385,6 +383,18 @@ static void roots_fixup(void) {
 /*****************************************************************************
  * Memory allocation (midlevel)
  *****************************************************************************/
+
+#if defined(__FreeBSD__)
+#include <machine/vmparam.h>
+#define MAX_HEAP_SIZE		MAXDSIZ
+#elif defined(linux)
+unsigned long MAX_HEAP_SIZE;
+#error "This won't work"
+#else
+#define MAX_HEAP_SIZE		(1024*1024*1024) /* FIXME: Should be syscall*/
+#endif
+
+
 #define MPAGE_SIZE		(1 << LOG_MPAGE_SIZE)
 #define PAGES_IN_HEAP		(MAX_HEAP_SIZE / MPAGE_SIZE)
 #define MAX_USED_PAGES		(PAGES_IN_HEAP / 2)
@@ -674,9 +684,9 @@ void *GC_malloc_allow_interior(size_t size) {
 struct accnthook {
   short type;
   short owner;
-  Scheme_Custodian *cust;
   unsigned long bytes;
-  Scheme_Object *func;
+  Scheme_Custodian *cust;
+  Scheme_Custodian *cust_to_kill;
   struct accnthook *next;
 };
 
@@ -706,13 +716,13 @@ long GC_get_memory_use(void *c) {
   }
 }
 
-int GC_set_account_hook(int type, void *cust, unsigned long b, void *f) {
+int GC_set_account_hook(int type, void *c1, unsigned long b, void *c2) {
   struct accnthook *work = (struct accnthook*)malloc(sizeof(struct accnthook));
   work->type = type;
   work->owner = ot_current();
-  work->cust = cust;
   work->bytes = b;
-  work->func = f;
+  work->cust = c1;
+  work->cust_to_kill = c2;
   work->next = accnthooks;
   accnthooks = work;
   if(type == MZACCT_REQUIRE) accnt_requires += b;
@@ -732,7 +742,7 @@ static void accnt_mark(short owner) {
   struct accnthook *work;
   
   for(work = accnthooks; work; work = work->next)
-    if(work->owner == owner) gcMARK(work->func);
+    if(work->owner == owner) gcMARK(work->cust_to_kill);
 }
 
 static void accnt_fixup(void) {
@@ -745,7 +755,7 @@ static void accnt_fixup(void) {
       if(prev) { prev->next = cur->next; free(cur); cur = prev->next; }
       else { accnthooks = cur->next; free(cur); cur = accnthooks; }
     } else {
-      gcFIXUP(cur->cust); gcFIXUP(cur->func);
+      gcFIXUP(cur->cust); gcFIXUP(cur->cust_to_kill);
       if((cur->type == MZACCT_REQUIRE) && (mla_memfree() < accnt_requires)) {
 	if(prev) prev->next = cur->next;
 	else accnthooks = cur->next;
@@ -1143,7 +1153,8 @@ static void rq_run() {
 	free(work);
       } else {
 	struct accnthook *ah = (struct accnthook *)work->obj;
-	_scheme_apply(ah->func, 0, NULL);
+/* 	printf("Scheduling custodian for death\n"); */
+	scheme_schedule_custodian_close(ah->cust_to_kill);
 	free(ah);
 	free(work);
       }
@@ -1181,7 +1192,6 @@ void GC_register_traversers(short tag, Size_Proc size, Mark_Proc mark,
   fixup_table[tag] = fixup;
   atomic_table[tag] = is_atomic;
 }
-
 
 void GC_init_type_tags(int count, int weakbox) {
   static int initialized = 0;
@@ -2101,9 +2111,9 @@ static void gc_collect(int force_full) {
   if(!gc_deny) {
     short curown = ot_current();
     struct owner_list *ol = ol_add(NULL, curown);
-    
+
     gc_runcycle(force_full);
-/*     printf("Running collection %li (topgen = %i)\n", gc_numcollects, */
+/*     printf("Running collection %li (topgen = %i)\n", gc_numcollects,  */
 /* 	   gc_topgen); */
     if(GC_collect_start_callback) GC_collect_start_callback();
 

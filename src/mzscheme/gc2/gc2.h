@@ -67,7 +67,7 @@ long GC_get_memory_use(void *c);
 
 #define MZACCT_REQUIRE		0
 #define MZACCT_LIMIT		1
-extern int GC_set_account_hook(int type, void *cust, unsigned long b, void *f);
+extern int GC_set_account_hook(int type, void *c1, unsigned long b, void *c2);
 /*
   Set a memory-accounting property. Returns 0 for failure (i.e., not
   supported). */

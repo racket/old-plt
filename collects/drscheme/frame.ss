@@ -49,10 +49,10 @@
       (sequence 
 	(apply super-init args))))
 
-  (define <%> (interface (fw:frame:info<%> basics<%>)))
+  (define <%> (interface (fw:frame:editor<%> basics<%> fw:frame:text-info<%>)))
 
   (define -mixin
-    (mixin (fw:frame:info<%> basics<%>) (<%>) (name)
+    (mixin (fw:frame:editor<%> fw:frame:text-info<%> basics<%>) (<%>) (name)
 
 
       (inherit get-editor)

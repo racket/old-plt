@@ -18,6 +18,7 @@
 	  [drscheme:language : drscheme:language^]
 	  [drscheme:app : drscheme:app^]
 	  [drscheme:frame : drscheme:frame^]
+	  [drscheme:unit : drscheme:unit^]
 	  [basis : userspace:basis^]
 	  [drscheme:text : drscheme:text^]
           [help : help:drscheme-interface^])
@@ -29,6 +30,8 @@
   ;; note: the parameter basis:current-setting contains the setting
   ;; currently in use in the repl. The preference drscheme:setting,
   ;; however, contains the current settings in the language dialog.
+  ;; basis:initialize-parameters sets the value of that parameter in
+  ;; the user's eventspace's thread.
 
   (define (printf . args) (apply fprintf drscheme:init:original-output-port args))
 
@@ -253,6 +256,13 @@
       running
       not-running
       get-directory))
+
+  (define file-icon (let ([bitmap
+			   (make-object mred:bitmap%
+			     (build-path (collection-path "icons") "file.gif"))])
+		      (if (send bitmap ok?)
+			  (make-object mred:image-snip% bitmap)
+			  (make-object mred:string-snip% "[open file]"))))
 
   (define (make-text% super%)
     (rec rep-text%
@@ -834,7 +844,31 @@
                      (zodiac:zodiac? di)
                      (basis:zodiac-vocabulary? user-setting))
                 (let* ([start (zodiac:zodiac-start di)]
-                       [finish (zodiac:zodiac-finish di)])
+                       [finish (zodiac:zodiac-finish di)]
+		       [error-filename (zodiac:location-file start)])
+		  (when (string? error-filename)
+		    (let ([open-callback
+			   (lambda ()
+			     (let ([fr (fw:handler:edit-file error-filename)])
+			       (when (is-a? fr drscheme:unit:frame%)
+				 (let ([definitions (ivar fr definitions-text)]
+				       [interactions (ivar fr interactions-text)])
+				   (send interactions highlight-error definitions
+					 (zodiac:location-offset (zodiac:zodiac-start di))
+					 (+ 1 (zodiac:location-offset (zodiac:zodiac-finish di))))))))]
+			  [last-pos (last-position)]
+			  [old-locked? locked?])
+		      (begin-edit-sequence)
+		      (lock #f)
+		      (insert (send file-icon copy) last-pos last-pos)
+		      (change-style (fw:gui-utils:get-clickback-delta) last-pos (last-position))
+		      (set-clickback last-pos (last-position)
+				     (lambda (text start end)
+				       (open-callback))
+				     (fw:gui-utils:get-clicked-clickback-delta))
+		      (lock old-locked?)
+		      (end-edit-sequence)))
+
                   (report-error start finish 'dynamic message exn))
                 (report-unlocated-error message exn)))]
         [define report-unlocated-error ; =Kernel=
@@ -1032,14 +1066,12 @@
 		   [else
 		    (single-loop-eval
 		     (lambda ()
-		       (let ([answers
-			      (call-with-values
-			       (lambda ()
-				 (if (basis:zodiac-vocabulary? (basis:current-setting))
-				     (basis:syntax-checking-primitive-eval expr)
-				     (basis:primitive-eval expr)))
-			       list)])
-			 (display-results answers))))
+		       (call-with-values
+			(lambda ()
+			  (if (basis:zodiac-vocabulary? (basis:current-setting))
+			      (basis:syntax-checking-primitive-eval expr)
+			      (basis:primitive-eval expr)))
+			(lambda x (display-results x)))))
 		    (recur)]))
                    start
                    end
@@ -1374,12 +1406,13 @@
                                       (send text on-close)))))
                          (userspace-load filename))))))
               
+		   
               (basis:error-display/debug-handler
-               (lambda (msg marks exn)
+               (lambda (msg zodiac exn)
                  (queue-system-callback/sync
                   user-thread
                   (lambda () 
-                    (report-located-error msg marks exn)))))
+                    (report-located-error msg zodiac exn)))))
               
               (error-display-handler
                (rec drscheme-error-display-handler
@@ -1512,7 +1545,9 @@
                              (lambda args (drscheme:app:about-drscheme))
                              click-delta))
             
-            (reset-console))]
+            (reset-console)
+	    (insert-prompt)
+	    (clear-undos))]
         
         (set-display/write-handlers)
         (super-init)

@@ -38,7 +38,8 @@
 	[rep : drscheme:rep^
 	     ((require-relative-library "rep.ss")
 	      mred mzlib framework print-convert zodiac
-	      interface init snip language app frame basis text
+	      interface init snip language app frame unit
+	      basis text
               help-desk)]
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")

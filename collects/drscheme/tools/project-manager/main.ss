@@ -2,7 +2,7 @@
 ;; - track files in project.
 ;;   - when project is opened check already open files.
 ;;   - after execute, grab files that were loaded (?)
-;; - 
+;; - finish implementing the context<%> object
 
 (unit/sig ()
   (import mred^
@@ -114,13 +114,12 @@
 
 
   (define project-frame%
-    (class/d (drscheme:frame:basics-mixin frame:text-info%) (filename)
-      ((inherit get-area-container get-menu-bar get-editor)
+    (class/d (drscheme:frame:basics-mixin frame:standard-menus%) (filename)
+      ((inherit get-area-container get-menu-bar)
        (rename [super-make-root-area-container make-root-area-container])
        (override file-menu:save file-menu:save-as
                  make-root-area-container
-		 can-close? on-close
-                 get-canvas% get-editor%)
+		 can-close? on-close)
        (public project-name ;; : string
                has-file? ;; : (string -> boolean)
                ))
@@ -133,7 +132,7 @@
 		(when (and (is-a? frame project-aware-frame<%>)
 			   (eq? this (send frame project:get-project-window)))
 		  (send frame project:set-project-window #f))))
-        (send (get-editor) shutdown))
+        (send rep shutdown))
       
       (define (has-file? file)
         (let ([n (file:normalize-path file)])
@@ -387,44 +386,37 @@
 
       (define (execute-project)
 	(when (offer-to-save-files)
-          (let ([rep (get-editor)])
-	    (reset-hierlist)
-            (send rep initialize-console)
-	    (send rep run-in-evaluation-thread
-		  (lambda ()
-		    (when collection-paths
-		      (current-library-collection-paths collection-paths))
-		    
-		    
-                    '(drscheme:basis:error-display/debug-handler
-		     (let ([project-manager-error-display/debug-handler
-			    (lambda (msg zodiac exn)
-			      (if (and zodiac
-				       (zodiac:zodiac? zodiac))
-				  (show-error/open-file msg zodiac)
-				  (message-box (format "Error running project ~a" project-name) msg)))])
-		       project-manager-error-display/debug-handler))
-		    
-		    (let ([ol (current-load)])
-		      (current-load
-		       (lambda (l)
-			 (dynamic-wind
-			  (lambda ()
-			    (push-file l))
-			  (lambda () (ol l))
-			  (lambda ()
-			    (pop-file))))))))
+	  (reset-hierlist)
+	  (show/hide-rep #t)
+	  (send rep reset-console)
+	  (send rep run-in-evaluation-thread
+		(lambda ()
+		  (when collection-paths
+		    (current-library-collection-paths collection-paths))
+		  
+		  (let ([ol (current-load)])
+		    (current-load
+		     (lambda (l)
+		       (dynamic-wind
+			(lambda () (push-file l))
+			(lambda () (ol l))
+			(lambda () (pop-file))))))))
 
-	    (send rep do-many-evals
-		  (lambda (single-iteration)
-		    (for-each
-		     (lambda (file)
-		       (single-iteration
-			(lambda ()
-			  (cond
-			   [(string? file) (load file)]
-			   [else (apply require-library/proc file)]))))
-		     files))))))
+	  (send rep do-many-evals
+		(lambda (single-iteration)
+		  (for-each
+		   (lambda (file)
+		     (single-iteration
+		      (lambda ()
+			(call-with-values
+			 (lambda ()
+			   (cond
+			    [(string? file) (load file)]
+			    [else (apply require-library/proc file)]))
+			 (lambda x
+			   (send rep display-results x))))))
+		   files)))
+	  (send rep clear-undos)))
       
       '(define (execute-project)
 	(when (offer-to-save-files)
@@ -926,14 +918,18 @@
 		    null)))
 	(send rep-outer-panel stretchable-height rep-shown?)
 	(send rep-outer-panel stretchable-width rep-shown?))
-      (define (show/hide-rep)
-	(set! rep-shown? (not rep-shown?))
-        (is-changed)
-        (update-rep-shown)
-        (unless (or to-load-files-shown?
-                    loaded-files-shown?
-                    rep-shown?)
-          (show/hide-loaded-files)))
+      (define show/hide-rep
+	(case-lambda
+	 [() (show/hide-rep (not rep-shown?))]
+	 [(new-value)
+	  (unless (eq? new-value rep-shown?)
+	    (set! rep-shown? new-value)
+	    (is-changed)
+	    (update-rep-shown)
+	    (unless (or to-load-files-shown?
+			loaded-files-shown?
+			rep-shown?)
+	      (show/hide-loaded-files)))]))
       
       (define (hierlist-item-mixin class%)
 	(class/d class% args
@@ -1069,10 +1065,17 @@
                    running not-running
                    get-directory))
 
-          (define (ensure-rep-shown) (void))
+          (define (ensure-rep-shown)
+	    (show/hide-rep #t))
           (define (needs-execution?) #f)
-          (define (enable-evaluation) (void))
-          (define (disable-evaluation) (void))
+          (define (enable-evaluation)
+	    (send execute-button enable #t)
+	    (send execute-menu-item enable #t)
+	    (send rep lock #f))
+          (define (disable-evaluation)
+	    (send execute-button enable #f)
+	    (send execute-menu-item enable #f)
+	    (send rep lock #t))
           (define (running) (void))
           (define (not-running) (void))
           (define (get-directory) (current-directory))
@@ -1087,9 +1090,6 @@
           (sequence
             (super-init (make-object context%)))))
 
-      (define (get-canvas%) (canvas:wide-snip-mixin canvas:info%))
-      (define (get-editor%) localized-rep-text%)
-      
       (define (make-root-area-container class% parent)
         (let ([main (super-make-root-area-container vertical-panel% parent)])
           (set! top-panel (make-object vertical-panel% main))
@@ -1114,7 +1114,7 @@
       (define project-menu (make-object menu% "Project" mb))
       (add-common-project-menu-items project-menu)
       (make-object separator-menu-item% project-menu)
-      (make-object menu-item% "Execute" project-menu (lambda x (execute-project)) #\t)
+      (define execute-menu-item (make-object menu-item% "Execute" project-menu (lambda x (execute-project)) #\t))
       (make-object menu-item% "Add Files..." project-menu (lambda x (add-files)))
       (make-object menu-item% "Configure Language..." project-menu (lambda x (configure-language)) #\l)
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
@@ -1123,6 +1123,9 @@
       (define rep-outer-panel rep-outer-panel)
       (define rep-panel rep-panel)
       
+      (define rep (make-object localized-rep-text%))
+      (define rep-canvas (make-object (canvas:wide-snip-mixin canvas:info%) rep-panel rep))
+
       (define execute-button (make-object button% "Execute" top-panel (lambda x (execute-project))))
 
       (define top-horizontal-panel (make-object horizontal-panel% top-panel))
@@ -1172,7 +1175,9 @@
 
       (when (and filename
 		 (file-exists? filename))
-	(load-file filename))))
+	(load-file filename))
+
+      (send rep initialize-console)))
 
   (define open-project
     (case-lambda

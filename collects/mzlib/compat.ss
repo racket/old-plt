@@ -109,8 +109,8 @@
 				(append fields init-fields)))])
 	     (syntax
 	      (define-values (struct: make- ? gs ...)
-		(let-values ([(struct: make- ? gs ...)
-			      (struct sname (field ... init-field ...))])
+		(let ()
+		  (define-struct sname (field ... init-field ...))
 		  (values struct: 
 			  (let ([make- (lambda (field ...)
 					 (make- field ...

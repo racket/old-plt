@@ -32,7 +32,7 @@
  * Gets the directory portion of an multiple file OPENFILENAME file buffer.  
  * Returns length of said directory portion
  */
-static int GetDirectoryPart(char* fileBuffer, char* directory) 
+static int GetDirectoryPart(wchar_t* fileBuffer, wchar_t* directory) 
 {
   int length;
   
@@ -40,8 +40,8 @@ static int GetDirectoryPart(char* fileBuffer, char* directory)
      end with a \.  If the file is, e.g., c:\file.dat, it will.  If
      the file is c:\somedir\file.dat, it won't so we must append the \ */
 
-  length = strlen(fileBuffer);
-  strcpy(directory, fileBuffer);
+  length = wx_wstrlen(fileBuffer);
+  memcpy(directory, fileBuffer, (length + 1) * sizeof(wchar_t));
 
   if(! (directory[length - 1] == '\\') ) {
     directory[length] = '\\';
@@ -57,20 +57,20 @@ static int GetDirectoryPart(char* fileBuffer, char* directory)
  * Returns the length of the buffer than will be need for the
  * transformed multiple file OPENFILENAME file buffer 
  */
-static int GetTotalLength(char* fileBuffer, int directoryLength)
+static int GetTotalLength(wchar_t* fileBuffer, int directoryLength)
 {
-  char* currentFile;
+  wchar_t* currentFile;
   int currentLength = 0;
   int totalLength = 0;
   
   currentFile = fileBuffer;
   
   /* Skip the directory part */      
-  currentLength = strlen(currentFile);
+  currentLength = wx_wstrlen(currentFile);
   currentFile += currentLength + 1;
 
   while (*currentFile) {
-    currentLength = strlen(currentFile);
+    currentLength = wx_wstrlen(currentFile);
     totalLength += directoryLength + currentLength + 8;
     currentFile += currentLength + 1;
   }
@@ -78,6 +78,19 @@ static int GetTotalLength(char* fileBuffer, int directoryLength)
   return totalLength;
 }
 
+extern "C" {
+ int scheme_utf8_encode(const unsigned int *us, int start, int end, 
+			unsigned char *s, int dstart,
+			char utf16);
+};
+
+static int len_in_bytes(const wchar_t *s, int start, int len)
+{
+  return scheme_utf8_encode((const unsigned int *)s,
+			    start, start + len,
+			    NULL, 0,
+			    1);
+}
 
 /**
  * If a dialog box allows multiple files to be selected, and the user
@@ -96,54 +109,69 @@ static int GetTotalLength(char* fileBuffer, int directoryLength)
  * This function does the conversion from the Windows format to the
  * format we want
  */
-static char* ExtractMultipleFileNames(OPENFILENAME* of, char* fileBuffer) 
+static char* ExtractMultipleFileNames(OPENFILENAMEW* of, wchar_t* wFileBuffer) 
 {
-  char* result;
-  
   /* Check for multiple file names, indicated by a null character
      preceding nFileOffset */
-  if (of->nFileOffset && !fileBuffer[of->nFileOffset - 1]) {
-    char directory[FILEBUF_SIZE];
-    int directoryLength = 0;
+  if (of->nFileOffset && !wFileBuffer[of->nFileOffset - 1]) {
+    wchar_t directory[FILEBUF_SIZE];
+    wchar_t *result;
+    char num_buf[8];
+    int directoryLength, directoryByteLength;
     int currentFile;
-    int currentFileLength = 0;
+    int currentFileLength = 0, currentFileByteLength;
     int currentTotal = 0;
     int totalLength = 0;
         
-    directoryLength = GetDirectoryPart(fileBuffer, directory);
-    totalLength = GetTotalLength(fileBuffer, directoryLength);
+    directoryLength = GetDirectoryPart(wFileBuffer, directory);
+    totalLength = GetTotalLength(wFileBuffer, directoryLength);
     
-    result = new WXGC_ATOMIC char[totalLength];
+    directoryByteLength = len_in_bytes(wFileBuffer, 0, directoryLength);
+
+    result = new WXGC_ATOMIC wchar_t[totalLength];
 
     /* Skip the directory part */
-    currentFileLength = strlen(fileBuffer);
+    currentFileLength = wx_wstrlen(wFileBuffer);
     currentFile = currentFileLength + 1;
 
     /* Copy the concatentation of the directory and file */
-    while (fileBuffer[currentFile]) {
-      currentFileLength = strlen(fileBuffer XFORM_OK_PLUS currentFile);
-      sprintf(result XFORM_OK_PLUS currentTotal, "%5d ",
-	      currentFileLength + directoryLength);
-      memcpy(result + currentTotal + 6, directory, directoryLength);
+    while (wFileBuffer[currentFile]) {
+      currentFileLength = wx_wstrlen(wFileBuffer XFORM_OK_PLUS currentFile);
+      currentFileByteLength = len_in_bytes(wFileBuffer, currentFile, currentFileLength);
+
+      sprintf(num_buf, "%5d ", currentFileByteLength + directoryByteLength);
+      {
+	int i;
+	for (i = 0; i < 6; i++) {
+	  result[currentTotal + i] = num_buf[i];
+	}
+      }
+      memcpy(result + currentTotal + 6, directory, directoryLength * sizeof(wchar_t));
       memcpy(result + currentTotal + 6 + directoryLength,
-	     fileBuffer + currentFile, currentFileLength);
+	     wFileBuffer + currentFile, currentFileLength * sizeof(wchar_t));
 
       currentFile += currentFileLength + 1;
       currentTotal += currentFileLength + directoryLength + 6;
     }
     result[currentTotal] = 0;
+
+    return wxNARROW_STRING(result);
   }
   /* Only a single file name so we can simply copy it */
   else {
     int length;
+    char* result;
+    char *fileBuffer;
+
+    fileBuffer = wxNARROW_STRING(wFileBuffer);
     length = strlen(fileBuffer);
 
     result = new WXGC_ATOMIC char[length + 7];
     sprintf(result, "%5d ", length);
     memcpy(result + 6, fileBuffer, length + 1);
-  }
 
-  return result;
+	return result;
+  }
 }
 
 
@@ -161,21 +189,21 @@ int wxMessageBox(char *message, char *caption, long type,
 }
 
 
-static BOOL DoGetSaveFileName(OPENFILENAME *of, HWND parent)
+static BOOL DoGetSaveFileName(OPENFILENAMEW *of, HWND parent)
 {
   if (!of->hwndOwner)
     of->hwndOwner = parent;
-  return GetSaveFileName(of);
+  return GetSaveFileNameW(of);
 }
 
-static BOOL DoGetOpenFileName(OPENFILENAME *of, HWND parent)
+static BOOL DoGetOpenFileName(OPENFILENAMEW *of, HWND parent)
 {
   if (!of->hwndOwner)
     of->hwndOwner = parent;
-  return GetOpenFileName(of);
+  return GetOpenFileNameW(of);
 }
 
-static BOOL DoGetDir(BROWSEINFO *b, HWND parent)
+static BOOL DoGetDir(BROWSEINFOW *b, HWND parent)
 {
   ITEMIDLIST *r;
 
@@ -184,13 +212,13 @@ static BOOL DoGetDir(BROWSEINFO *b, HWND parent)
 
   CoInitialize(NULL);
 
-  r = SHBrowseForFolder(b);
+  r = SHBrowseForFolderW(b);
 
   if (r) {
     IMalloc *mi;
     int ok;
 
-    ok = SHGetPathFromIDList(r, b->pszDisplayName);
+    ok = SHGetPathFromIDListW(r, b->pszDisplayName);
 
     SHGetMalloc(&mi);
     mi->Free(r);
@@ -210,10 +238,10 @@ char *wxFileSelector(char *message,
 {
   wxWnd *wnd = NULL;
   HWND hwnd = NULL;
-  char *file_buffer;
-  char *filter_buffer;
-  char *def_path, *def_ext;
-  OPENFILENAME *of;
+  wchar_t *file_buffer;
+  wchar_t *filter_buffer;
+  wchar_t *def_path, *def_ext;
+  OPENFILENAMEW *of;
   long msw_flags = 0;
   Bool success;
 
@@ -226,14 +254,14 @@ char *wxFileSelector(char *message,
   }
 
   if (flags & wxGETDIR) {
-    BROWSEINFO *b;
-    char *result, *_result;
+    BROWSEINFOW *b;
+    wchar_t *result, *_result;
     int ok;
 
-    _result = (char *)malloc(MAX_PATH + 1);
+    _result = (wchar_t *)malloc(sizeof(wchar_t) * (MAX_PATH + 1));
     
-    b = (BROWSEINFO *)malloc(sizeof(BROWSEINFO));
-    memset(b, 0, sizeof(BROWSEINFO));
+    b = (BROWSEINFOW *)malloc(sizeof(BROWSEINFOW));
+    memset(b, 0, sizeof(BROWSEINFOW));
 
 #ifndef BIF_NEWDIALOGSTYLE
 # define BIF_NEWDIALOGSTYLE	0x0040
@@ -241,27 +269,27 @@ char *wxFileSelector(char *message,
 
     b->pidlRoot = NULL;
     b->pszDisplayName = _result;
-    b->lpszTitle = message;
+    b->lpszTitle = wxWIDE_STRING_COPY(message);
     b->ulFlags = (BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS);
 
     ok = wxPrimitiveDialog((wxPDF)DoGetDir, b, 1);
     free(b);
 
     if (ok) {
-      result = new WXGC_ATOMIC char[MAX_PATH + 1];
-      memcpy(result, _result, MAX_PATH + 1);
+      result = new WXGC_ATOMIC wchar_t[MAX_PATH + 1];
+      memcpy(result, _result, sizeof(wchar_t) * (MAX_PATH + 1));
     } else
       result = NULL;
 
     free(_result);
 
-    return result;
+    return wxNARROW_STRING(result);
   }
 
-  file_buffer = (char *)malloc(FILEBUF_SIZE);
+  file_buffer = (wchar_t *)malloc(sizeof(wchar_t *) * FILEBUF_SIZE);
 
   if (default_filename) {
-    strncpy(file_buffer, default_filename, FILEBUF_SIZE);
+    wcsncpy(file_buffer, wxWIDE_STRING(default_filename), FILEBUF_SIZE);
     file_buffer[FILEBUF_SIZE-1] = 0;
   } else 
     file_buffer[0] = 0;
@@ -285,23 +313,33 @@ char *wxFileSelector(char *message,
   
   if (wildcard) {
     int i, len;
+    wchar_t *ww;
 
-    filter_buffer = (char *)malloc(200);
+    filter_buffer = (wchar_t *)malloc(200 * sizeof(wchar_t));
+
+    ww = wxWIDE_STRING(wildcard);
+    len = wx_wstrlen(ww);
   
-    if (!strchr(wildcard, '|'))
-      sprintf(filter_buffer, "Files (%s)|%s", wildcard, wildcard);
-    else
-      strcpy(filter_buffer, wildcard);
+    if (!strchr(wildcard, '|')) {
+      memcpy(filter_buffer, L"Files (", sizeof(wchar_t) * 7);
+      memcpy(filter_buffer + 7, ww, sizeof(wchar_t) * len);
+      memcpy(filter_buffer + 7 + len, L")|", sizeof(wchar_t) * 2);
+      memcpy(filter_buffer + 9 + len, ww, sizeof(wchar_t) * len);
+      filter_buffer[9 + (2*len)] = 0;
+    } else {
+      memcpy(filter_buffer, ww, sizeof(wchar_t) * len);
+      filter_buffer[len] = 0;
+    }
 
-    len = strlen(filter_buffer);
+    len = wx_wstrlen(filter_buffer);
 	 
     for (i = 0; i < len; i++) {
-      if (filter_buffer[i]=='|')
-	filter_buffer[i] = '\0';
+      if (filter_buffer[i] == '|')
+	filter_buffer[i] = 0;
     }
 
     /* Extra terminator: */
-    filter_buffer[len+1] = '\0';
+    filter_buffer[len+1] = 0;
   } else
     filter_buffer = NULL;
 
@@ -310,19 +348,21 @@ char *wxFileSelector(char *message,
     MrEdSyncCurrentDir();
   }
 
-  of = (OPENFILENAME *)malloc(sizeof(OPENFILENAME));
+  of = (OPENFILENAMEW *)malloc(sizeof(OPENFILENAMEW));
 
-  memset(of, 0, sizeof(OPENFILENAME));
+  memset(of, 0, sizeof(OPENFILENAMEW));
 
-  of->lStructSize = sizeof(OPENFILENAME);
+  of->lStructSize = sizeof(OPENFILENAMEW);
   of->hwndOwner = hwnd;
 
   if (default_path) {
     int len, alen;
-    len = strlen(default_path);
+    wchar_t *dp;
+    dp = wxWIDE_STRING_COPY(default_path);
+    len = wx_wstrlen(dp);
     alen = min(MAX_PATH, len);
-    def_path = (char *)malloc(alen + 1);
-    memcpy(def_path, default_path, alen + 1);
+    def_path = (wchar_t *)malloc((alen + 1) * sizeof(wchar_t));
+    memcpy(def_path, dp, (len + 1) * sizeof(wchar_t));
     def_path[alen] = 0;
 
     // Picky, picky. Need backslashes.
@@ -338,16 +378,18 @@ char *wxFileSelector(char *message,
 
   if (default_extension) {
     int len, fl;
-    len = strlen(default_extension);
-	fl = min(50, len);
-    def_ext = (char *)malloc(fl + 1);
-    memcpy(def_ext, default_extension, fl);
+    wchar_t *de;
+    de = wxWIDE_STRING_COPY(default_extension);
+    len = wx_wstrlen(de);
+    fl = min(50, len);
+    def_ext = (wchar_t *)malloc(sizeof(wchar_t) * (fl + 1));
+    memcpy(def_ext, de, fl * sizeof(wchar_t));
     def_ext[fl] = 0;
   } else
     def_ext = NULL;
       
   if (wildcard) {
-    of->lpstrFilter = (LPSTR)filter_buffer;
+    of->lpstrFilter = (LPWSTR)filter_buffer;
     of->nFilterIndex = 1L;
   } else {
     of->lpstrFilter = NULL;
@@ -360,11 +402,12 @@ char *wxFileSelector(char *message,
   of->lpstrFileTitle = NULL;
   of->nMaxFileTitle = 0;
   of->lpstrInitialDir = def_path;
-  of->lpstrTitle = message;
+  of->lpstrTitle = wxWIDE_STRING_COPY(message);
   of->nFileOffset = 0;
   of->nFileExtension = 0;
   of->lpstrDefExt = def_ext;
 
+  msw_flags = OFN_HIDEREADONLY;
   if (flags & wxSAVE)
     msw_flags |= OFN_OVERWRITEPROMPT;
   if (flags & wxMULTIOPEN)
@@ -392,7 +435,7 @@ char *wxFileSelector(char *message,
     if (success && (flags & wxMULTIOPEN)) {
       s = ExtractMultipleFileNames(of, file_buffer);
     } else if (success) {
-      s = copystring(file_buffer);
+      s = wxNARROW_STRING(file_buffer);
     } else
       s = NULL;
     

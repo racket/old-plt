@@ -21,34 +21,29 @@ typedef       void    *wxDC ;
 class wxDC: public wxbDC
 {
  public:
-	wxMacDC* cMacDC; // mac platform only
-	Pattern cMacPattern; // mac platform only (temp work pattern)
-
-	enum wxMacToolType {kNoTool, kPenTool, kBrushTool, kQuillTool, kBlitTool, kColorBlitTool, kTextTool}; // mac platform only
-	wxMacToolType cMacCurrentTool; // mac platform only
+  wxMacDC* cMacDC; // mac platform only
+  Pattern cMacPattern; // mac platform only (temp work pattern)
+	
+  enum wxMacToolType {kNoTool, kBGTool, kPenTool, kBrushTool, kQuillTool, kBlitTool, kColorBlitTool, kTextTool};
+  wxMacToolType cMacCurrentTool; // mac platform only
 
  public:
-	wxDC(void);
-	~wxDC(void);
-	
-	virtual void SetTextForeground(wxColour *colour);
-    virtual void SetTextBackground(wxColour *colour);
-    virtual void SetBackgroundMode(int mode);
-
-    void ToolChanged(wxMacToolType tool);
-
-// Mac platform only
-	void wxMacDrawPoint(int x1, int y1);
-	void wxMacDrawLine(int x1, int y1, int x2, int y2);
+  wxDC(void);
+  ~wxDC(void);
+  
+  virtual void SetTextForeground(wxColour *colour);
+  virtual void SetTextBackground(wxColour *colour);
+  virtual void SetBackgroundMode(int mode);
+  
+  void ToolChanged(wxMacToolType tool);
+  
+  // Mac platform only
+  void wxMacDrawPoint(int x1, int y1);
+  void wxMacDrawLine(int x1, int y1, int x2, int y2);
 };
 
-/*
- * X
- * Ok, so all this isn't neat, but it about works.
- */
-
 extern "C" {
- #include <math.h>
+# include <math.h>
 }
 
 // Logical to device

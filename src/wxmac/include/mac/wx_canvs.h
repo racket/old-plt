@@ -93,8 +93,6 @@ private:
 //=============================================================================
  public:
 
-	virtual void BeginDrawing(void);
-	virtual void EndDrawing(void);
 	inline wxCanvasDC *GetDC(void) { return wx_dc; }
 
 	void OnClientAreaDSize(int dW, int dH, int dX, int dY);

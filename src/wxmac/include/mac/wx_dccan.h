@@ -49,6 +49,7 @@ class wxCanvasDC: public wxbCanvasDC
 
   void SetCanvasClipping() ;
   void GetClippingBox(float* x,float* y,float* w,float* h) ;
+  void ReleaseCurrentDC();
 
   virtual void BeginDrawing(void);
   virtual void EndDrawing(void);

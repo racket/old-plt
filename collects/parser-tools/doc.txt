@@ -43,8 +43,8 @@ This gives you the following syntatic forms:
    > (get-lexeme) returns the matched string
    > lex-buf is the lex-buf being processed (this is useful for
       matching input with multiple lexers, see example below)
-   The lexer will raise an exception (via the (error ...) function) if
-   none of the regular expressions match the input.
+   The lexer will raise an exception (exn:read) if none of the regular
+   expressions match the input.
    Hint: If ((- #\000 #\377) custom-error-behavior) is the last rule,
    then there will always be a match and custom-error-behavior will be
    executed to handle the error situation as desired, only consuming
@@ -65,7 +65,14 @@ This gives you the following syntatic forms:
 
 
 Several values are also provided:
-> (make-lex-buf input-port) creates a lex-buf from an input-port
+
+> (make-lex-buf input-port) creates a lex-buf from an input-port.  A
+  lex-buf automatically treats #\return, #\newline and #\return
+  #\newline as single #\newline characters.  For keeping source
+  location information, the lex-buf treats a #\tab as however many
+  spaces (> 0) are needed to bring the column number to a multiple of
+  8.
+
 > (make-lex-buf input-port offsets) creates a lex-buf from an
   input-port that starts at the source location provided at offsets
   rather than at 1.  Offsets must be a list of 3 non-negative integers

@@ -58,7 +58,7 @@ typedef struct regexp {
 } regexp;
 
 static regexp *regcomp(char *, rxpos, int);
-static int regexec(regexp *, char *, int, int, rxpos *, rxpos *);
+/* static int regexec(regexp *, char *, int, int, rxpos *, rxpos * ...); */
 
 /* 156 is octal 234: */
 #define MAGIC   156
@@ -846,25 +846,48 @@ static rxpos l_strchr(char *str, rxpos a, int l, int c)
   return -1;
 }
 
+static void fixup_offsets(rxpos *startp, rxpos *endp, int nsubexp, rxpos dropped)
+{
+  rxpos i;
+
+  /* The offsets will be returned to the user,
+     not used to index *stringp, so increment
+     by the number of characters we'd already dropped: */
+  for (i = 0; i < nsubexp; i++) {
+    if (startp[i] != -1) {
+      startp[i] += dropped;
+      endp[i] += dropped;
+    }
+  }
+}
+
 /*
  * regexec and friends
  */
 
 /*
- * Global work variables for regexec().
+ * Work variables for regtry().
  */
-static char *reginstr;
-static rxpos reginput, reginput_end; /* String-input pointer. */
-static rxpos regbol;		/* Beginning of input, for ^ check. */
-static rxpos *regstartp;	/* Pointer to startp array. */
-static rxpos *regendp;		/* Ditto for endp. */
+typedef struct Regwork {
+  char *str;              /* copy of regstr; used only to protect before thread swaps */
+  char *instr;
+  Scheme_Object *port;
+  rxpos instr_size;       /* For port reads */
+  rxpos input_maxend;     /* For port reads */
+  rxpos input, input_end; /* String-input pointer. */
+  rxpos bol;		  /* Beginning of input, for ^ check. */
+  rxpos *startp;	  /* Pointer to startp array. */
+  rxpos *endp;		  /* Ditto for endp. */
+} Regwork;
 
 /*
  * Forwards.
  */
-STATIC int regtry(regexp *, char *, int, int, rxpos *, rxpos *);
-STATIC int regmatch(rxpos);
-STATIC int regrepeat(rxpos);
+STATIC int regtry(regexp *, char *, int, int, rxpos *, rxpos *, Regwork *rw, int);
+STATIC int regtry_port(regexp *, Scheme_Object *, rxpos *, rxpos *, 
+		       char **, rxpos *, rxpos *, rxpos, rxpos, int);
+STATIC int regmatch(Regwork *rw, rxpos);
+STATIC int regrepeat(Regwork *rw, rxpos);
 
 #ifdef DEBUG
 int regnarrate = 0;
@@ -876,10 +899,14 @@ STATIC char *regprop();
    - regexec - match a regexp against a string
    */
 static int
-regexec(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, rxpos *endp)
+regexec(const char *who,
+	regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, rxpos *endp,
+	Scheme_Object *port, char **stringp, int peek, int nonpeek_offsets)
+     /* stringp, peek, and nonpeek_offsets used only with port */
 {
   int spos;
   int slen;
+  rxpos dropped = 0; /* used for ports, only */
  
   /* Check validity of program. */
   if (UCHARAT(prog->program) != MAGIC) {
@@ -908,55 +935,78 @@ regexec(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp,
       return 0;
   }
 
-  /* Mark beginning of line for ^ . */
-  regbol = stringpos;
+  if (port && !peek && stringpos) {
+    /* In non-pek port mode, skip over stringpos chars: */
+    char *drain;
+    long amt = stringpos, got;
+
+    if (amt > 4096)
+      amt = 4096;
+
+    drain = (char *)scheme_malloc_atomic(amt);
+    do {
+      got = scheme_get_string(who, port, drain, 0, amt, 0, 0, 0);
+      if (got != EOF) {
+	dropped += amt;
+	if (amt > (stringpos - dropped))
+	  amt = stringpos - dropped;
+      }
+    } while ((got != EOF) && (dropped < stringpos));
+    stringpos -= dropped;
+  }
 
   /* Simplest case:  anchored match need be tried only once. */
   if (prog->reganch) {
     if (port) {
       rxpos len = 0, space = 0;
+
       *stringp = NULL;
-      if (regtry_port(prog, port, startp, endp, stringp, &len, &space, 0)) {
+      if (regtry_port(prog, port, startp, endp, stringp, &len, &space, stringpos, stringlen - dropped, 1)) {
 	if (!peek) {
 	  /* Need to consume matched chars: */
-	  scheme_get_chars(port, *stringp, 0, *endp, 0, 0, 0);
+	  scheme_get_string(who, port, *stringp, 0, *endp, 0, 0, 0);
 	}
+
+	if (dropped && nonpeek_offsets)
+	  fixup_offsets(startp, endp, prog->nsubexp, dropped);
+
 	return 1;
       } else {
 	if (!peek) {
 	  /* Need to consume all chars */
 	  char *drain;
 	  drain = (char *)scheme_malloc_atomic(4096);
-	  while (scheme_get_chars(port, drain, 0, 4096, 0, 0, 0) != EOF) {
+	  while (scheme_get_string(who, port, drain, 0, 4096, 0, 0, 0) != EOF) {
 	    /* ... drain more ... */
 	  }
 	}
 	return 0;
       }
     } else
-      return regtry(prog, string, stringpos, stringlen, startp, endp);
+      return regtry(prog, string, stringpos, stringlen, startp, endp, 0, 1);
   }
 
   /* Messy cases:  unanchored match. */
   spos = stringpos;
   if (!port && (prog->regstart != '\0')) {
-    /* We know what char it must start with. */
+    /* We know what char the string must start with. */
     while ((spos = l_strchr(string, spos, stringlen - (spos - stringpos), prog->regstart)) != -1) {
-      if (regtry(prog, string, spos, stringlen - (spos - stringpos), startp, endp))
+      if (regtry(prog, string, spos, stringlen - (spos - stringpos), startp, endp, 0, spos == stringpos))
 	return 1;
       spos++;
     }
   } else {
-    /* We don't -- general case. */
+    /* We don't know the starting char, or we have a port -- general
+       case. */
     if (port) {
-      rxpos len = 0, skip = 0, dropped = 0;
+      rxpos len = 0, skip = stringpos, space = 0;
       *stringp = NULL;
       
       do {
 	if (!peek && (skip == 32)) {
 	  char drain[32];
 	  int got;
-	  got = scheme_get_chars(port, drain, 0, 32, 0, 0, 0);
+	  got = scheme_get_string(who, port, drain, 0, 32, 0, 0, 0);
 	  if (got == EOF) {
 	    /* Broken port, or someone else is reading it */
 	    got = skip;
@@ -966,41 +1016,32 @@ regexec(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp,
 	  memmove(*stringp, *stringp + got, len);
 	}
 
-	if (regtry_port(prog, port, startp, endp, stringp, &len, &space, skip)) {
+	if (regtry_port(prog, port, startp, endp, stringp, &len, &space, skip, stringlen - dropped, !space)) {
 	  if (!peek) {
 	    char *drain;
 	    
-	    scheme_get_string(port, *stringp, 0, skip, 0, 0, 0);
-	    
+	    drain = (char *)scheme_malloc_atomic(skip + *endp);
+	    scheme_get_string(who, port, drain, 0, skip + *endp, 0, 0, 0);
 	  }
 
-	  if (dropped && nonpeek_offsets) {
-	    /* The offsets will be returned to the user,
-	       not used to index *stringp, so increment
-	       by the number of characters we'd already dropped: */
-	    for (i = 0; i < prog->nsubexp; i++) {
-	      if (startp[i] != -1) {
-		startp[i] += dropped;
-		endp[i] += dropped;
-	      }
-	    }
-	  }
+	  if (dropped && nonpeek_offsets)
+	    fixup_offsets(startp, endp, prog->nsubexp, dropped);
 
 	  return 1;
-	} else if (len > skip)
-	  skip++;
-      } while (len > skip);
+	}
+	skip++;
+      } while (len >= skip);
 
       if (!peek) {
 	/* If we get here, there must be skip leftover characters in the port,
 	   and *stringp must be at least skip characters long: */
 	if (skip)
-	  scheme_get_string(port, *stringp, 0, skip, 0, 0, 0);
+	  scheme_get_string(who, port, *stringp, 0, skip, 0, 0, 0);
       }
     } else {
       rxpos e = stringpos + stringlen;
       do {
-	if (regtry(prog, string, spos, stringlen - (spos - stringpos), startp, endp))
+	if (regtry(prog, string, spos, stringlen - (spos - stringpos), startp, endp, 0, spos == stringpos))
 	  return 1;
       } while (spos++ != e);
     }
@@ -1014,16 +1055,25 @@ regexec(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp,
    - regtry - try match at specific point
    */
 static int			/* 0 failure, 1 success */
-regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, rxpos *endp)
+regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, rxpos *endp, Regwork *rw, int atstart)
 {
   int i;
   GC_CAN_IGNORE rxpos *sp, *ep;
+  Regwork _rw;
 
-  reginstr = string;
-  reginput = stringpos;
-  reginput_end = stringpos + stringlen;
-  regstartp = startp;
-  regendp = endp;
+  if (!rw) {
+    rw = &_rw;
+    rw->port = NULL;
+  }
+  rw->instr = string;
+  rw->input = stringpos;
+  rw->input_end = stringpos + stringlen;
+  rw->startp = startp;
+  rw->endp = endp;
+  if (atstart)
+    rw->bol = stringpos;
+  else
+    rw->bol = -1;
 
   /* ASSUMING NO GC in this loop: */ 
   sp = startp;
@@ -1035,9 +1085,9 @@ regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, 
   sp = ep = NULL;
 
   regstr = (char *)prog;
-  if (regmatch((prog->program + 1) - (char *)prog)) {
+  if (regmatch(rw, (prog->program + 1) - (char *)prog)) {
     startp[0] = stringpos;
-    endp[0] = reginput;
+    endp[0] = rw->input;
     return 1;
   } else
     return 0;
@@ -1048,65 +1098,82 @@ regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, 
    */
 static int			/* 0 failure, 1 success */
 regtry_port(regexp *prog, Scheme_Object *port, rxpos *startp, rxpos *endp, 
-	    char **work_string, rxpos *len, rxpos *size, rxpos skip)
+	    char **work_string, rxpos *len, rxpos *size, rxpos skip, rxpos maxlen,
+	    int atstart)
 {
   int m;
+  Regwork rw;
 
-  regport = port;
-  reginstr_size = *size;
+  rw.port = port;
+  rw.instr_size = *size;
+  rw.input_maxend = maxlen;
 
-  m = regtry(prog, *work_string, skip, *len, startp, endp);
+  m = regtry(prog, *work_string, skip, *len - skip, startp, endp, &rw, atstart);
 
-  *work_string = reginstr;
-  *len = reginput_end;
-  *size = reginstr_size;
+  *work_string = rw.instr;
+  *len = rw.input_end;
+  *size = rw.instr_size;
 
   return m;
 }
 
-#define NEED_INPUT(v, n) if (regport && (((v) + (n)) > reginput_end)) read_more_from_regport((v) + (n))
+#define NEED_INPUT(rw, v, n) if (rw->port && (((v) + (n)) > rw->input_end)) read_more_from_regport(rw, (v) + (n))
 
-static void read_more_from_regport(rxpos need_total)
+static void read_more_from_regport(Regwork *rw, rxpos need_total)
      /* Called when we're about to look past our read-ahead */
 {
   long got;
 
-  if (reginstr_size < need_total) {
+  /* limit reading by rw->input_maxend: */
+  if (need_total > rw->input_maxend) {
+    need_total = rw->input_maxend;
+    if (need_total <= rw->input_end)
+      return;
+  }
+
+  if (rw->instr_size < need_total) {
     char *naya;
-    long size;
+    long size = rw->instr_size;
     
     size = size * 2;
     if (size <need_total)
       size += need_total;
 
     naya = (char *)scheme_malloc_atomic(size);
-    memcpy(naya, reginstr, reginput_end);
+    memcpy(naya, rw->instr, rw->input_end);
 
-    reginstr_size = size;
+    rw->instr = naya;
+    rw->instr_size = size;
   }
 
+  rw->str = regstr; /* get_string can swap threadsa */
+
   /* Fill as much of our buffer as possible: */
-  got = scheme_get_string("regexp-match", regport, 
-			  reginstr, reginput_end, reginstr_size - reginput_end,
+  got = scheme_get_string("regexp-match", rw->port, 
+			  rw->instr, rw->input_end, rw->instr_size - rw->input_end,
 			  1, /* read at least one char, and as much as possible */
-			  1, regnput_end);
+			  1, rw->input_end);
+
+  regstr = rw->str;
 
   if (got == EOF)
-    regport = NULL; /* turn off further port reading */
+    rw->port = NULL; /* turn off further port reading */
   else {
-    reginput_end += got;
+    rw->input_end += got;
 
     /* Non-blocking read got enough? If not, try againin blocking mode: */
-    if (need_total > reginput_end) {
-      got = scheme_get_string("regexp-match", regport, 
-			      reginstr, reginput_end, need_total - reginput_end,
+    if (need_total > rw->input_end) {
+      rw->str = regstr; /* get_string can swap threadsa */
+      got = scheme_get_string("regexp-match", rw->port, 
+			      rw->instr, rw->input_end, need_total - rw->input_end,
 			      0, /* blocking mode */
-			      1, regnput_end);
+			      1, rw->input_end);
+      regstr = rw->str;
       
       if (got == EOF)
-	regport = NULL; /* turn off further port reading */
+	rw->port = NULL; /* turn off further port reading */
       else
-	reginput_end += got;
+	rw->input_end += got;
     }
   }
 }
@@ -1117,8 +1184,13 @@ static void read_more_from_regport(rxpos need_total)
 static Scheme_Object *regmatch_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
+  Regwork *rw = (Regwork *)p->ku.k.p1;
 
-  return (Scheme_Object *)regmatch(p->ku.k.i1);
+  p->ku.k.p1 = NULL;
+
+  regstr = rw->str; /* in case of thread swap */
+ 
+  return (Scheme_Object *)regmatch(rw, p->ku.k.i1);
 }
 
 #endif
@@ -1134,7 +1206,7 @@ static Scheme_Object *regmatch_k(void)
    * by recursion.
    */
 static int			/* 0 failure, 1 success */
-regmatch(rxpos prog)
+regmatch(Regwork *rw, rxpos prog)
 {
   rxpos scan;		/* Current node. */
   rxpos next;			/* Next node. */
@@ -1144,6 +1216,8 @@ regmatch(rxpos prog)
 # include "mzstkchk.h"
     {
       Scheme_Thread *p = scheme_current_thread;
+      rw->str = regstr; /* in case of thread swap */
+      p->ku.k.p1 = rw;
       p->ku.k.i1 = prog;
       return (int)scheme_handle_stack_overflow(regmatch_k);
     }
@@ -1156,19 +1230,19 @@ regmatch(rxpos prog)
 
     switch (OP(scan)) {
     case BOL:
-      if (reginput != regbol)
+      if (rw->input != rw->bol)
 	return(0);
       break;
     case EOL:
-      NEED_INPUT(reginput, 1);
-      if (reginput != reginput_end)
+      NEED_INPUT(rw, rw->input, 1);
+      if (rw->input != rw->input_end)
 	return(0);
       break;
     case ANY:
-      NEED_INPUT(reginput, 1);
-      if (reginput == reginput_end)
+      NEED_INPUT(rw, rw->input, 1);
+      if (rw->input == rw->input_end)
 	return(0);
-      reginput++;
+      rw->input++;
       break;
     case EXACTLY: {
       int len, i;
@@ -1176,31 +1250,31 @@ regmatch(rxpos prog)
 
       opnd = OPSTR(OPERAND(scan));
       len = OPLEN(OPERAND(scan));
-      NEED_INPUT(reginput, len);
-      if (len > reginput_end - reginput)
+      NEED_INPUT(rw, rw->input, len);
+      if (len > rw->input_end - rw->input)
 	return 0;
       for (i = 0; i < len; i++) {
-	if (regstr[opnd+i] != reginstr[reginput+i])
+	if (regstr[opnd+i] != rw->instr[rw->input+i])
 	  return 0;
       }
-      reginput += len;
+      rw->input += len;
     }
       break;
     case ANYOF:
-      NEED_INPUT(reginput, 1);
-      if (reginput == reginput_end || (l_strchr(regstr, OPSTR(OPERAND(scan)), 
+      NEED_INPUT(rw, rw->input, 1);
+      if (rw->input == rw->input_end || (l_strchr(regstr, OPSTR(OPERAND(scan)), 
 						OPLEN(OPERAND(scan)), 
-						reginstr[reginput]) == -1))
+						rw->instr[rw->input]) == -1))
 	return(0);
-      reginput++;
+      rw->input++;
       break;
     case ANYBUT:
-      NEED_INPUT(reginput, 1);
-      if (reginput == reginput_end || (l_strchr(regstr, OPSTR(OPERAND(scan)), 
+      NEED_INPUT(rw, rw->input, 1);
+      if (rw->input == rw->input_end || (l_strchr(regstr, OPSTR(OPERAND(scan)), 
 						OPLEN(OPERAND(scan)), 
-						reginstr[reginput]) != -1))
+						rw->instr[rw->input]) != -1))
 	return(0);
-      reginput++;
+      rw->input++;
       break;
     case NOTHING:
       break;
@@ -1213,10 +1287,10 @@ regmatch(rxpos prog)
 	next = OPERAND(scan);	/* Avoid recursion. */
       else {
 	do {
-	  save = reginput;
-	  if (regmatch(OPERAND(scan)))
+	  save = rw->input;
+	  if (regmatch(rw, OPERAND(scan)))
 	    return(1);
-	  reginput = save;
+	  rw->input = save;
 	  scan = regnext(scan);
 	} while (scan != 0 && OP(scan) == BRANCH);
 	return(0);
@@ -1242,25 +1316,25 @@ regmatch(rxpos prog)
       if (OP(next) == EXACTLY)
 	nextch = regstr[OPSTR(OPERAND(next))];
       min = ((OP(scan) == STAR) || (OP(scan) == STAR2)) ? 0 : 1;
-      save = reginput;
-      no = regrepeat(OPERAND(scan));
+      save = rw->input;
+      no = regrepeat(rw, OPERAND(scan));
       if (greedy) {
 	while (no >= min) {
 	  /* If it could work, try it. */
-	  if (nextch == '\0' || reginstr[reginput] == nextch)
-	    if (regmatch(next))
+	  if (nextch == '\0' || rw->instr[rw->input] == nextch)
+	    if (regmatch(rw, next))
 	      return(1);
 	  /* Couldn't or didn't -- back up. */
 	  no--;
-	  reginput = save + no;
+	  rw->input = save + no;
 	}
       } else {
 	int i;
 	for (i = min; i <= no; i++) {
-	  reginput = save + i;
+	  rw->input = save + i;
 	  /* If it could work, try it. */
-	  if (nextch == '\0' || reginstr[reginput] == nextch)
-	    if (regmatch(next))
+	  if (nextch == '\0' || rw->instr[rw->input] == nextch)
+	    if (regmatch(rw, next))
 	      return(1);
 	}
       }
@@ -1295,29 +1369,29 @@ regmatch(rxpos prog)
 	  }
 	}
 
-	save = reginput;
+	save = rw->input;
 
 	if (isopen) {
-	  if (regmatch(next)) {
+	  if (regmatch(rw, next)) {
 	    /*
 	     * Don't set startp if some later
 	     * invocation of the same parentheses
 	     * already has.
 	     */
-	    if (regstartp[no] == -1)
-	      regstartp[no] = save;
+	    if (rw->startp[no] == -1)
+	      rw->startp[no] = save;
 	    return(1);
 	  } else
 	    return(0);
 	} else {
-	  if (regmatch(next)) {
+	  if (regmatch(rw, next)) {
 	    /*
 	     * Don't set endp if some later
 	     * invocation of the same parentheses
 	     * already has.
 	     */
-	    if (regendp[no] == -1)
-	      regendp[no] = save;
+	    if (rw->endp[no] == -1)
+	      rw->endp[no] = save;
 	    return(1);
 	  } else
 	    return(0);
@@ -1341,45 +1415,45 @@ regmatch(rxpos prog)
    - regrepeat - repeatedly match something simple, report how many
    */
 static int
-regrepeat(rxpos p)
+regrepeat(Regwork *rw, rxpos p)
 {
   int count = 0;
   rxpos scan;
   rxpos opnd;
 
-  scan = reginput;
+  scan = rw->input;
   opnd = OPERAND(p);
   switch (OP(p)) {
   case ANY:
-    NEED_INPUT(scan, 0x7FFFFFFF); /* need all! */
-    count = reginput_end - scan;
+    NEED_INPUT(rw, scan, 0x7FFFFFFF); /* need all! */
+    count = rw->input_end - scan;
     scan += count;
     break;
   case EXACTLY:
     {
       rxpos opnd2 = OPSTR(opnd);
-      while (regstr[opnd2] == reginstr[scan]) {
+      while (regstr[opnd2] == rw->instr[scan]) {
 	count++;
 	scan++;
       }
     }
     break;
   case ANYOF:
-    NEED_INPUT(scan, 1);
-    while (scan != reginput_end 
-	   && (l_strchr(regstr, OPSTR(opnd), OPLEN(opnd), reginstr[scan]) != -1)) {
+    NEED_INPUT(rw, scan, 1);
+    while (scan != rw->input_end 
+	   && (l_strchr(regstr, OPSTR(opnd), OPLEN(opnd), rw->instr[scan]) != -1)) {
       count++;
       scan++;
-      NEED_INPUT(scan, 1);
+      NEED_INPUT(rw, scan, 1);
     }
     break;
   case ANYBUT:
-    NEED_INPUT(scan, 1);
-    while (scan != reginput_end 
-	   && (l_strchr(regstr, OPSTR(opnd), OPLEN(opnd), reginstr[scan]) == -1)) {
+    NEED_INPUT(rw, scan, 1);
+    while (scan != rw->input_end 
+	   && (l_strchr(regstr, OPSTR(opnd), OPLEN(opnd), rw->instr[scan]) == -1)) {
       count++;
       scan++;
-      NEED_INPUT(scan, 1);
+      NEED_INPUT(rw, scan, 1);
     }
     break;
   default:			/* Oh dear.  Called inappropriately. */
@@ -1387,7 +1461,7 @@ regrepeat(rxpos p)
     count = 0;			/* Best compromise. */
     break;
   }
-  reginput = scan;
+  rw->input = scan;
 
   return(count);
 }
@@ -1538,41 +1612,78 @@ static Scheme_Object *gen_compare(char *name, int pos,
   char *full_s;
   rxpos *startp, *endp;
   int offset = 0, endset, m;
+  Scheme_Object *iport;
   
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_STRINGP(argv[0]))
     scheme_wrong_type(name, "regexp-or-string", 0, argc, argv);
-  if (!SCHEME_STRINGP(argv[1]))
-    scheme_wrong_type(name, "string", 1, argc, argv);
+  if (!SCHEME_STRINGP(argv[1])
+      && !SCHEME_INPORTP(argv[1]))
+    scheme_wrong_type(name, "string or input-port", 1, argc, argv);
+  
+  if (SCHEME_INPORTP(argv[1])) {
+    iport = argv[1];
+    endset = -2;
+  } else {
+    iport = NULL;
+    endset = SCHEME_STRLEN_VAL(argv[1]);
+  }
 
-  endset = SCHEME_STRLEN_VAL(argv[1]);
   if (argc > 2) {
     int len = endset;
 
     offset = scheme_extract_index(name, 2, argc, argv, len + 1);
 
-    if (offset > len)
+    if (!iport && (offset > len)) {
       scheme_out_of_string_range(name, "offset ", argv[2], argv[1], 0, len);
+      return NULL;
+    } else if (offset < 0) {
+      /* argument was a bignum */
+      offset = 0x7FFFFFFF;
+    }
+      
 
     if (argc > 3) {
       endset = scheme_extract_index(name, 3, argc, argv, len + 1);
 
-      if (endset < offset || endset > len)
+      if (iport) {
+	if (endset < 0) {
+	  /* argument was a bignum */
+	  endset = 0x7FFFFFFF;
+	}
+	/* compare numbers */
+	if (scheme_bin_lt(argv[3], argv[2])) {
+	  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+			   argv[3],
+			   "%s: ending index %V is smaller than starting index %V for port",
+			   name, argv[3], argv[2]);
+	  return NULL;
+	}
+      } else if (endset < offset || endset > len) {
 	scheme_out_of_string_range(name, "ending ", argv[3], argv[1], offset, len);
+	return NULL;
+      }
     }
   }
 
-  if (SCHEME_STRINGP(argv[0])) {
+  if (iport && (endset < 0))
+    endset = 0x7FFFFFFF;
+
+  if (SCHEME_STRINGP(argv[0]))
     r = regcomp(SCHEME_STR_VAL(argv[0]), 0, SCHEME_STRTAG_VAL(argv[0]));
-  } else
+  else
     r = (regexp *)argv[0];
 
-  full_s = SCHEME_STR_VAL(argv[1]);
+  if (!iport)
+    full_s = SCHEME_STR_VAL(argv[1]);
+  else
+    full_s = NULL;
 
   startp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
   endp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
 
-  m = regexec(r, full_s, offset, endset - offset, startp, endp);
+  m = regexec(name, r, full_s, offset, endset - offset, startp, endp,
+	      iport, &full_s, 0, pos);
 
   if (m) {
     int i;
@@ -1644,7 +1755,8 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
   while (1) {
     int m;
 
-    m = regexec(r, source, srcoffset, sourcelen - srcoffset, startp, endp);
+    m = regexec("regexp-replace", r, source, srcoffset, sourcelen - srcoffset, startp, endp,
+		NULL, NULL, 0, 0);
 
     if (m) {
       char *insert;
@@ -1744,7 +1856,6 @@ void scheme_regexp_initialize(Scheme_Env *env)
 
   REGISTER_SO(regparsestr);
   REGISTER_SO(regstr);
-  REGISTER_SO(reginstr);
 
   scheme_add_global_constant("regexp", 
 			     scheme_make_prim_w_arity(make_regexp, 

@@ -452,6 +452,7 @@
 	   (lambda (s)
 	     (queue-io
 	      (lambda ()
+		(printf "this-result-write.cleanup-transparent-io~n")
 		(cleanup-transparent-io)
 		(generic-write this
 			       s
@@ -495,6 +496,7 @@
 	     (lambda (s exn)
 	       (queue-io
 		(lambda ()
+		  (printf "this-err-write/exn.cleanup-transparent-io~n")
 		  (cleanup-transparent-io)
 		  (generic-write
 		   this
@@ -709,26 +711,8 @@
 		 (insert-warning)))
 	     (do-many-buffer-evals this start end)))])
       (public
-	[cleanup-interaction
+	[cleanup
 	 (lambda ()
-	   (system
-	    (lambda ()
-	      (mred:end-busy-cursor)
-	      (begin-edit-sequence)
-	      (cleanup-transparent-io)
-	      (set-caret-owner #f 'display)
-	      (cleanup-evaluation)
-	      (when (thread-running? user-thread)
-		(let ([c-locked? (locked?)])
-		  (lock #f)
-		  (insert-prompt)
-		  (lock c-locked?)))
-	      (end-edit-sequence)
-	      (send (get-top-level-window) enable-evaluation))))]
-	[cleanup-evaluation
-	 (lambda ()
-	   (begin-edit-sequence)
-	   (wait-for-io-to-complete)
 	   (unless (thread-running? user-thread)
 	     (lock #t)
 	     (unless shutting-down?
@@ -736,7 +720,29 @@
 		"Warning"
 		(format "The evaluation thread is no longer running, ~
 			 so no evaluation can take place until ~
-			 the next execution."))))
+			 the next execution.")))))]
+	[cleanup-interaction
+	 (lambda ()
+	   (system
+	    (lambda ()
+	      (mred:end-busy-cursor)
+	      (begin-edit-sequence)
+	      (wait-for-io-to-complete)
+	      (cleanup-transparent-io)
+	      (set-caret-owner #f 'display)
+	      (when (thread-running? user-thread)
+		(let ([c-locked? (locked?)])
+		  (lock #f)
+		  (insert-prompt)
+		  (lock c-locked?)))
+	      (cleanup)
+	      (end-edit-sequence)
+	      (send (get-top-level-window) enable-evaluation))))]
+	[cleanup-evaluation
+	 (lambda ()
+	   (begin-edit-sequence)
+	   (wait-for-io-to-complete)
+	   (cleanup)
 	   (end-edit-sequence))])
       (public
 	[do-many-buffer-evals
@@ -751,6 +757,7 @@
 	     (semaphore-post in-evaluation-semaphore)
 	     (send (get-top-level-window) disable-evaluation)
 	     (reset-break-state)
+	     (printf "do-many-buffer-evals.cleanup-transparent-io~n")
 	     (cleanup-transparent-io)
 	     (reset-pretty-print-width)
 	     (ready-non-prompt)
@@ -763,7 +770,9 @@
 		(with-running-flag
 		 (lambda ()
 		   (protect-user-evaluation
-		    cleanup-interaction
+		    (lambda ()
+		      (printf "run-in-evaluation-thread; done~n")
+		      (cleanup-interaction))
 		    (lambda ()
 		      (process-edit
 		       edit
@@ -1165,6 +1174,7 @@
 	 (lambda ()
 	   (clear-previous-expr-positions)
 	   (shutdown-user-custodian)
+	   (printf "reset-console.cleanup-transparent-io~n")
 	   (cleanup-transparent-io)
 	   (set! should-collect-garbage? #t)
 
@@ -1361,16 +1371,16 @@
 	   (lambda ()
 	     (set! previous-expr-positions null))]
 	  [copy-previous-expr
-	   (lambda (which)
+	   (lambda ()
 	     (let ([snip/strings (list-ref (fw:preferences:get
 					    'mred:console-previous-exprs) 
-					   which)])
+					   previous-expr-pos)])
 	       (begin-edit-sequence)
 	       (unless prompt-mode?
 		 (insert-prompt))
 	       (delete prompt-position (last-position) #f)
 	       (for-each (lambda (snip/string)
-			   (insert (if (is-a? snip/string mred:snip%)
+			   (insert (if (is-a? snip/string mred:original:snip%)
 				       (send snip/string copy)
 				       snip/string)
 				   prompt-position))
@@ -1385,7 +1395,7 @@
 		       (if (< (add1 previous-expr-pos) (length previous-exprs))
 			   (add1 previous-expr-pos)
 			   0))
-		 (copy-previous-expr previous-expr-pos))))]
+		 (copy-previous-expr))))]
 	  [copy-prev-previous-expr
 	   (lambda ()
 	     (let ([previous-exprs (fw:preferences:get 'mred:console-previous-exprs)])
@@ -1394,7 +1404,7 @@
 		       (if (<= previous-expr-pos 0)
 			   (sub1 (length previous-exprs))
 			   (sub1 previous-expr-pos)))
-		 (copy-previous-expr previous-expr-pos))))]
+		 (copy-previous-expr))))]
 	  
 	  [do-save-and-eval
 	   (lambda (start end)

@@ -1585,6 +1585,8 @@ scheme_expt(int argc, Scheme_Object *argv[])
   if (!SCHEME_NUMBERP(n))
     scheme_wrong_type("expt", "number", 0, argc, argv);
 
+  if (e == zeroi)
+    return scheme_make_integer(1);
   if (e == scheme_make_integer(1))
     return n;
   if (n == scheme_make_integer(1)) {
@@ -1655,9 +1657,7 @@ scheme_expt(int argc, Scheme_Object *argv[])
 	    norm = 1;
 	}
 
-	if (!norm && (e == zeroi)) {
-	  return scheme_make_integer(1);
-	} else if (!norm) {
+	if (!norm) {
 	  int isnonneg, iseven, negz;
 #ifdef MZ_USE_SINGLE_FLOATS
 	  int single = !SCHEME_DBLP(n) && !SCHEME_DBLP(e);

@@ -433,28 +433,33 @@ called by |expose|.
 @proc highlight_border($)
 {
     XRectangle rect[4];
+    int t;
+
+    /* There's another function like this in xwEnforcer, for some reason */
 
     if ($highlightThickness == 0) return;
+
+    t = 1 /* $highlightThickness */; 
 
     rect[0].x = 0;
     rect[0].y = 0;
     rect[0].width = $width;
-    rect[0].height = 1 /* $highlightThickness */;
+    rect[0].height = t;
 
     rect[1].x = 0;
     rect[1].y = 0;
-    rect[1].width = 1 /* $highlightThickness */;
+    rect[1].width = t;
     rect[1].height = $height;
 
-    rect[2].x = $width - $highlightThickness;
+    rect[2].x = $width - t;
     rect[2].y = 0;
-    rect[2].width = 1 /* $highlightThickness */;
+    rect[2].width = t;
     rect[2].height = $height;
 
     rect[3].x = 0;
-    rect[3].y = $height - $highlightThickness;
+    rect[3].y = $height - t;
     rect[3].width = $width;
-    rect[3].height = 1 /* $highlightThickness */;
+    rect[3].height = t;
 
     if (!$bordergc) create_bordergc($);
     XFillRectangles(XtDisplay($), XtWindow($), $bordergc, &rect[0], 4);

@@ -136,8 +136,6 @@ class wxBitmap: public wxObject
 class wxCursor: public wxObject
 {
  public:
-  CursHandle cMacCursor;
-
   wxCursor(void);
   wxCursor(char bits[], int width, int height, int depth = 1);
   wxCursor(char *name);
@@ -145,6 +143,10 @@ class wxCursor: public wxObject
   ~wxCursor(void);
 
   Bool Ok(void);
+
+ protected:
+  CursHandle cMacCursor;
+  CursPtr cMacCustomCursor; // i.e., locally allocated
 };
 
 #endif // IN_CPROTO

@@ -231,7 +231,7 @@
             (lex-error in pos "expected = in attribute ~a" name))
           (skip-space in)
           ;; more here - handle entites and disallow "<"
-          (let* ([delimiter (read-char in)]
+          (let* ([delimiter (read-char-or-special in)]
                  [value (case delimiter
                           [(#\' #\")
                            (list->string
@@ -246,7 +246,9 @@
                                          ;; more here - do something with user defined entites
                                          (read-more)))]
                                   [else (read-char in) (cons c (read-more))]))))]
-                          [else (lex-error in pos "attribute values must be in ''s or in \"\"s")])])
+                          [else (if (char? delimiter)
+                                    (lex-error in pos "attribute values must be in ''s or in \"\"s")
+                                    delimiter)])])
             (make-attribute start (pos) name value))))
       
       ;; skip-space : Input-port -> Void

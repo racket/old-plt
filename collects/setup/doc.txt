@@ -81,7 +81,7 @@ Additional info.ss fields trigger additional setup actions:
 >  mred-launcher-names - a list of executable names to be
    installed in plt (or plt/bin) to run MrEd programs
    implemented by the collection.  This is treated in
-   parallel to `mzscheme-launcher-names'. 
+   parallel to `mred-launcher-libraries. 
 
 >  mred-launcher-libraries - a list of library names in
    parallel to `mred-launcher-names'.

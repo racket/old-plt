@@ -1562,10 +1562,8 @@ void scheme_reset_locale(void)
 
 /**************************** MacOS ***********************************/
 
-#ifdef MACINTOSH_EVENTS
-#ifndef OS_X
+#if defined(MACINTOSH_EVENTS) && !defined(OS_X)
 # include <Gestalt.h>
-#endif
 static void machine_details(char *s)
 {
    OSErr err;
@@ -1647,7 +1645,7 @@ void machine_details(char *buff)
 
 /***************************** Unix ***********************************/
 
-#if !defined(MACINTOSH_EVENTS) && !defined(DOS_FILE_SYSTEM) && !defined(USE_OSKIT_CONSOLE)
+#if (!defined(MACINTOSH_EVENTS) || defined(OS_X)) && !defined(DOS_FILE_SYSTEM) && !defined(USE_OSKIT_CONSOLE)
 static char *uname_locations[] = { "/bin/uname",
 				   "/usr/bin/uname",
 				   /* The above should cover everything, but

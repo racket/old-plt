@@ -14,87 +14,74 @@
                        [CLOSURE? (make-id "~a?")]
                        [CLOSURE-ref (make-id "~a-ref")]
                        [CLOSURE-set! (make-id "~a-set!")]
+                       [CLOSURE-env (make-id "~env")]
+                       [set-CLOSURE-env! (make-id "set-~a-env!")]
                        [struct:CLOSURE (make-id "struct:~a")])
-           (with-syntax ([(selectors ...)
-                          (map
-                           (lambda (fvar-name)
-                             (datum->syntax-object
-                              #'tag (string->symbol
-                                     (format "~a-~a" 
-                                             (syntax-object->datum #'tag)
-                                             (syntax-object->datum fvar-name)))))
-                           (syntax->list #'(fvars ...)))]
-                         [(setters ...)
-                          (map
-                           (lambda (fvar-name)
-                             (datum->syntax-object
-                              #'tag (string->symbol
-                                     (format "set-~a-~a!"
-                                             (syntax-object->datum #'tag)
-                                             (syntax-object->datum fvar-name)))))
-                           (syntax->list #'(fvars ...)))])
-             #`(begin
-                 (define CLOSURE:deserialize-info
-                   (make-deserialize-info
-                    
-                    ;; make-proc: (listof value) -> CLOSURE
-                    (lambda (fvars ...) (make-CLOSURE (lambda () fvars) ...))
-                    
-                    ;; cycle-make-proc: -> (values CLOSURE (CLOSURE -> void))
-                    (lambda ()
-                      (let ([new-closure (make-CLOSURE #,@(map (lambda (x) #f) (syntax->list #'(setters ...))))])
-                        (values
-                         new-closure
-                         #,(if (null? (syntax->list #'(setters ...)))
-                               #'void
-                               #'(lambda (clsr)
-                                   (setters new-closure (selectors clsr)) ...)))))))
-                 
-                 (define CLOSURE:serialize-info
-                   (make-serialize-info
-                    
-                    ;; to-vector: CLOSURE -> vector
-                    (lambda (clsr)
-                      (list->vector
-                       (list (selectors clsr) ...)))
-                    
-                    ;; deserialize-id
-                    (syntax CLOSURE:deserialize-info)
-                    
-                    ;; can-cycle?
-                    #t
-                    
-                    ;; dir-path
-                    (build-path "/")))
-                 
-                 (define-values (struct:CLOSURE make-CLOSURE CLOSURE? selectors ... setters ...)
-                   (let-values ([(struct:CLOSURE make-CLOSURE CLOSURE? CLOSURE-ref CLOSURE-set!)
-                                 (make-struct-type 'tag ;; the tag goes here
-                                                   #f  ; no super type
-                                                   #,(length (syntax->list #'(selectors ...)))
-                                                   0   ; number of auto-fields
-                                                   #f  ; auto-v
-                                                   
-                                                   ; prop-vals:
-                                                   (list (cons prop:serializable CLOSURE:serialize-info))
-                                                   
-                                                   #f  ; inspector
-                                                   
-                                                   ;; the struct apply proc:
-                                                   (lambda (clsr formals ...)
-                                                     (let-values ([(fvars ...) (values (selectors clsr) ...)])
-                                                       proc-body))
-                                                   )])
-                     (values struct:CLOSURE make-CLOSURE CLOSURE? 
-                             #,@(let loop ([selectors (syntax->list #'(selectors ...))]
-                                           [n 0])
-                                  (if (null? selectors) #'()
-                                      (cons
-                                       #`(lambda (clsr) ((CLOSURE-ref clsr #,n)))
-                                       (loop (cdr selectors) (add1 n)))))
-                             #,@(let loop ([setters (syntax->list #'(setters ...))]
-                                           [n 0])
-                                  (if (null? setters) #'()
-                                      (cons
-                                       #`(lambda (clsr new-val) (CLOSURE-set! clsr #,n (lambda () new-val)))
-                                       (loop (cdr setters) (add1 n))))))))))))])))
+           #`(begin
+               (define CLOSURE:deserialize-info
+                 (make-deserialize-info
+                  
+                  ;; make-proc: value ... -> CLOSURE
+                  #,(if (null? (syntax->list #'(fvars ...)))
+                        #'(lambda () (make-CLOSURE))
+                        #'(lambda (fvars ...) (make-CLOSURE (lambda () (values fvars ...)))))
+                  
+                  ;; cycle-make-proc: -> (values CLOSURE (CLOSURE -> void))
+                  (lambda ()
+                    (let ([new-closure
+                           #,(if (null? (syntax->list #'(fvars ...)))
+                                 #'(make-CLOSURE)
+                                 #'(make-CLOSURE (lambda () (error "closure not initialized"))))])
+                      (values
+                       new-closure
+                       #,(if (null? (syntax->list #'(fvars ...)))
+                             #'void
+                             #'(lambda (clsr)
+                                 (set-CLOSURE-env! new-closure (CLOSURE-env clsr)))))))))
+               
+               (define CLOSURE:serialize-info
+                 (make-serialize-info
+                  
+                  ;; to-vector: CLOSURE -> vector
+                  #,(if (null? (syntax->list #'(fvars ...)))
+                        #'(lambda (clsr) (vector))
+                        #'(lambda (clsr)
+                            (call-with-values
+                             (lambda () ((CLOSURE-env clsr)))
+                             vector)))
+                  
+                  ;; deserialize-id
+                  (syntax CLOSURE:deserialize-info)
+                  
+                  ;; can-cycle?
+                  #t
+                  
+                  ;; dir-path
+                  (build-path "/")))
+               
+               (define-values (struct:CLOSURE make-CLOSURE CLOSURE? #,@(if (null? (syntax->list #'(fvars ...)))
+                                                                           #'()
+                                                                           #'(CLOSURE-env set-CLOSURE-env!)))
+                 (let-values ([(struct:CLOSURE make-CLOSURE CLOSURE? CLOSURE-ref CLOSURE-set!)
+                               (make-struct-type 'tag ;; the tag goes here
+                                                 #f  ; no super type
+                                                 #,(if (null? (syntax->list #'(fvars ...)))
+                                                       0 1)
+                                                 0   ; number of auto-fields
+                                                 #f  ; auto-v
+                                                 
+                                                 ; prop-vals:
+                                                 (list (cons prop:serializable CLOSURE:serialize-info))
+                                                 
+                                                 #f  ; inspector
+                                                 
+                                                 ;; the struct apply proc:
+                                                 (lambda (clsr formals ...)
+                                                   (let-values ([(fvars ...) ((CLOSURE-env clsr))])
+                                                     proc-body))
+                                                 )])
+                   (values struct:CLOSURE make-CLOSURE CLOSURE?
+                           #,@(if (null? (syntax->list #'(fvars ...)))
+                                  #'()
+                                  #'((lambda (clsr) (CLOSURE-ref clsr 0))
+                                     (lambda (clsr new-env) (CLOSURE-set! clsr 0 new-env))))))))))])))

@@ -12,7 +12,8 @@
   (require "plt-browser.ss")
 
   (provide help-desk-browser
-	   help-desk-navigate)
+	   help-desk-navigate
+           in-help-desk-navigate?)
 
   (define (build-dispatch-url hd-cookie url)
     (format "http://127.0.0.1:~a/servlets/start.ss?url=~a"
@@ -54,9 +55,14 @@
 	   2)))
 
   (define nav-mutex (make-semaphore 1))
-  
+
+  (define navigate? #f)
+  (define (in-help-desk-navigate?)
+    navigate?)
+
   (define (help-desk-navigate hd-cookie url)
     (semaphore-wait nav-mutex)
+    (set! navigate? #t)
     (let ([nav-sem (make-semaphore 0)])
       (letrec
 	  ([monitor-thread
@@ -84,6 +90,7 @@
 	 (send-help-desk-url (hd-cookie->browser hd-cookie) 
 			     (build-dispatch-url hd-cookie url))
 	 (yield nav-sem)
+	 (set! navigate? #f)
 	 (semaphore-post nav-mutex)))))
   
   (define (help-desk-browser hd-cookie)

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.29 2001/11/02 21:53:09 clements Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.30 2001/11/05 06:55:00 clements Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -148,6 +148,7 @@ char *wxbFont::GetWeightString(void)
 // Colour
 
 wxColour::wxColour (void)
+	: wxObject(WXGC_NO_CLEANUP)
 {
   __type = wxTYPE_COLOUR;
   isInit = FALSE;
@@ -167,6 +168,7 @@ wxColour::wxColour (void)
 }
 
 wxColour::wxColour (unsigned char r, unsigned char g, unsigned char b)
+	: wxObject(WXGC_NO_CLEANUP)
 {
   __type = wxTYPE_COLOUR;
   red = r;
@@ -188,12 +190,14 @@ wxColour::wxColour (unsigned char r, unsigned char g, unsigned char b)
 }
 
 wxColour::wxColour (wxColour *src)
+	: wxObject(WXGC_NO_CLEANUP)
 {
   CopyFrom(src);
 }
 
 
 wxColour::wxColour (const char *col)
+	: wxObject(WXGC_NO_CLEANUP)
 {
   __type = wxTYPE_COLOUR;
   wxColour *the_colour = wxTheColourDatabase->FindColour (col);
@@ -244,6 +248,24 @@ wxColour *wxColour::CopyFrom(wxColour *src)
   return this;
 }
 
+wxColour *wxColour::CopyFrom(const char *col)
+{
+  wxColour *the_colour = wxTheColourDatabase->FindColour (col);
+  if (the_colour)
+    {
+      red = the_colour->Red ();
+      green = the_colour->Green ();
+      blue = the_colour->Blue ();
+      isInit = TRUE;
+    }
+  else
+    {
+      red = 0;
+      green = 0;
+      blue = 0;
+      isInit = FALSE;
+    }
+}
 
 wxColour &wxColour::operator = (wxColour &src)
 {
@@ -565,22 +587,22 @@ int wxbPen::GetDashes (wxDash ** ptr)
 
 wxColour *wxbPen::GetColour (void)
 {
-  return &colour;
+  return colour;
 }
 
 void wxbPen::SetColour (wxColour *col)
 {
-  colour.CopyFrom(col);
+  colour->CopyFrom(col);
 }
 
 void wxbPen::SetColour (const char *col)
 {
-  colour = col;
+  colour->CopyFrom(col);
 }
 
 void wxbPen::SetColour (char red, char green, char blue)
 {
- colour.Set(red, green, blue);
+ colour->Set(red, green, blue);
 }
 
 void wxbPen::SetWidth (float Width)
@@ -659,22 +681,22 @@ wxBitmap *wxbBrush::GetStipple (void)
 
 wxColour *wxbBrush::GetColour (void)
 {
-  return &colour;
+  return colour;
 }
 
 void wxbBrush::SetColour (wxColour *col)
 {
-  colour.CopyFrom(col);
+  colour->CopyFrom(col);
 }
 
 void wxbBrush::SetColour (const char *col)
 {
-  colour = col;
+  colour->CopyFrom(col);
 }
 
 void wxbBrush::SetColour (char red, char green, char blue)
 {
-  colour.Set(red, green, blue);
+  colour->Set(red, green, blue);
 }
 
 void wxbBrush::SetStyle (int Style)

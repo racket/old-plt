@@ -311,7 +311,12 @@ wxColourMap::~wxColourMap(void)
 //-----------------------------------------------------------------------------
 wxPen::wxPen(void)
 {
-  colour = NULL;
+  wxColour *c;
+  
+  c = new wxColour(wxBLACK);
+  c->Lock(1);
+  colour = c;
+  
   stipple = NULL ;
   style = wxSOLID;
   join = wxJOIN_ROUND ;
@@ -337,7 +342,12 @@ wxPen::~wxPen()
 wxPen::wxPen(wxColour *col, float Width, int Style):
   wxbPen(col, Width, Style)
 {
-  colour.CopyFrom(col);
+  wxColour *c;
+  
+  c = new wxColour(col);
+  c->Lock(1);
+  colour = c;
+  
   stipple = NULL ;
   width = Width;
   style = Style;
@@ -351,7 +361,12 @@ wxPen::wxPen(wxColour *col, float Width, int Style):
 wxPen::wxPen(char *col, float Width, int Style):
   wxbPen(col, Width, Style)
 {
-  SetColour(col);
+  wxColour *c;
+  
+  c = new wxColour(col);
+  c->Lock(1);
+  colour = c;
+  
   stipple = NULL ;
   width = Width;
   style = Style;
@@ -369,8 +384,9 @@ wxBrush::wxBrush(void)
   wxColour *c;
   
   c = new wxColour(wxBLACK);
+  c->Lock(1);
   
-  colour = *c;
+  colour = c;
   style = wxSOLID;
   stipple = NULL ;
 }
@@ -381,19 +397,27 @@ wxBrush::~wxBrush()
 }
 
 //-----------------------------------------------------------------------------
-wxBrush::wxBrush(wxColour *col, int Style):
-  wxbBrush(col, Style)
+wxBrush::wxBrush(wxColour *col, int Style)
 {
-  SetColour(col);
+  wxColour *c;
+  
+  c = new wxColour(col);
+  c->Lock(1);
+  colour = c;
+  
   style = Style;
   stipple = NULL ;
 }
 
 //-----------------------------------------------------------------------------
-wxBrush::wxBrush(char *col, int Style):
-  wxbBrush(col, Style)
+wxBrush::wxBrush(char *col, int Style)
 {
-  SetColour(col);
+  wxColour *c;
+  
+  c = new wxColour(col);
+  c->Lock(1);
+  colour = c;
+  
   style = Style;
   stipple = NULL ;
 }

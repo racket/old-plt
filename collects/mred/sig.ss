@@ -255,10 +255,8 @@
    make-status-frame%))
 
 (define-signature mred:group^
-  (buffer-group%
-   frame-group%
-   current-frames
-   keep-frames))
+  (frame-group%
+   the-frame-group))
 
 (define-signature mred:handler^
   (handler? handler-name handler-extension handler-handler

@@ -10,7 +10,6 @@
 	    [mred:find-string : mred:find-string^]
 	    [mred:icon : mred:icon^]
 	    [mred:menu : mred:menu^] 
-	    [mred:group : mred:group^]
 	    [mred:finder : mred:finder^]
 	    [mred:handler : mred:handler^]
 	    [mred:exit : mred:exit^]
@@ -23,7 +22,7 @@
 
     (define make-editor-frame%
       (lambda (super%)
-	(class super% ([filename #f][show? #t][frameset (mred:group:current-frames)])
+	(class super% ([filename #f][show? #t])
 	  (inherit make-menu show save-as
 		   make-edit active-edit
 		   get-edit get-canvas)
@@ -32,29 +31,9 @@
 		  [super-on-menu-command on-menu-command]
 		  [super-next-menu-id next-menu-id])
 	  (private 
-	    [other-offset 0]
-	    
-	    [frames frameset]
-	    [keep-buffers? (is-a? frameset mred:group:frame-group%)]
-	    [buffers (if keep-buffers? (ivar frames buffers))])
+	    [other-offset 0])
 	  
 	  (public
-	    [file-menu:new (lambda () 
-			     (if (is-a? frameset mred:group:frame-group%)
-				 (send frames new-frame #f)
-				 (mred:handler:edit-file #f))
-			     #t)]
-
-
-	    [file-menu:between-open-and-save
-	     (lambda (file-menu)
-	       (when keep-buffers?
-		 (send file-menu append-item "Switch to..."
-		       (lambda ()
-			 (if (get-canvas)
-			     (send buffers pick (get-canvas))
-			     (wx:bell)))))
-	       (send file-menu append-separator))]
 	    [file-menu:between-save-and-print
 	     (lambda (file-menu)
 	       (send file-menu append-item "Save As Text..."
@@ -74,10 +53,6 @@
 			     (send (active-edit) set-mode mode))))))
 	       (send file-menu append-separator))]
 	    [auto-save? #t]
-	    [on-frame-active
-	     (lambda ()
-	       (if keep-buffers?
-		   (send frames set-active-frame this)))]
 	    [check-saved
 	     (opt-lambda (edit [reason "Close"])
 	       (let* ([name (send edit get-filename)]
@@ -91,11 +66,6 @@
 			 [(save) (send edit save-file)]
 			 [(continue) (send edit remove-autosave) #t]
 			 [else #f])))))]
-	    [get-frame-group
-	     (lambda ()
-	       (if keep-buffers?
-		   frames
-		   #f))]
 	    [next-menu-id
 	     (lambda ()
 	       other-offset)]
@@ -111,16 +81,12 @@
 		     (send edit set-mode mode)))))]
 
 	    [open-file
-	     (opt-lambda (orig-filename [canvas (get-canvas)]
-					[check-save? (not keep-buffers?)])
+	     (opt-lambda (orig-filename [canvas (get-canvas)])
 	       ; filename = () => ask user
 	       ; filename = #f => no file, make untitled
 	       ; filename = <buffer> => use buffer
 	       ; otherwise, filename = name string
-	       '(printf "open-file; test: ~a~n" (or (not check-save?)
-						   (check-saved (send canvas get-media))))
-	       (if (or (not check-save?)
-		       (check-saved (send canvas get-media)))
+	       (if (check-saved (send canvas get-media))
 		   (let* ([filename
 			   (if (null? orig-filename)
 			       (mred:finder:get-file)
@@ -137,18 +103,12 @@
 				    "Untitled"
 				    name)))
 			     (filename filename)
-			     (else (if keep-buffers?
-				       (send buffers 
-					     make-untitled-name)
-				       "Untitled")))]
+			     (else "Untitled"))]
 			  ; Look for an existing buffer for this file
 			  [edit
-			   (cond
-			     ((object? orig-filename) orig-filename)
-			     ((or untitled? (not keep-buffers?))
-			      #f)
-			     (else
-			      (send buffers find-buffer-by-name 'file filename)))])
+			   (if (object? orig-filename)
+			       orig-filename
+			       #f)])
 		     ; If we didn't find a buffer, create one
 		     (if (not edit)
 			 (let ([edit (make-edit)])
@@ -162,15 +122,9 @@
 				       untitled?)))
 			   ; Pick the editing mode
 			   (pick-mode edit)
-			   ; We created this buffer; add to the global list
-			   (if keep-buffers?
-			       (send buffers add-buffer 'file #f edit))
 			   (send canvas set-media edit))
 			 ; Found an existing edit
-			 (begin
-			   (if keep-buffers?
-			       (send buffers reset-buffer-state edit))
-			   (send canvas set-media edit)))
+			 (send canvas set-media edit))
 		     #t)
 		   #f))])
 	  (private [font-offset 0])
@@ -191,27 +145,14 @@
 	    
 	    [on-close
 	     (lambda ()
-	       (if (and (super-on-close)
-			(or (not keep-buffers?)
-			    (send frames remove-frame this)))
-		   (if keep-buffers?
+	       (if (super-on-close)
+		   (if (check-all-saved)
 		       (begin
-			 (send (get-canvas) set-media '())
+			 (mred:exit:remove-exit-callback exit-callback-tag)
+			 (set! auto-save? #f)
 			 #t)
-		       (if (check-all-saved)
-			   (begin
-			     (mred:exit:remove-exit-callback exit-callback-tag)
-			     (set! auto-save? #f)
-			     #t)
-			   #f))
-		   #f))]
-	    
-	    [do-autosave
-	     (lambda ()
-	       (when auto-save?
-		 (let ([m (get-edit)])
-		   (unless (null? m)
-		     (send m do-autosave)))))])
+		       #f)
+		   #f))])
 
 
 	  (public
@@ -234,15 +175,9 @@
 	  
 	  (public
 	    [exit-callback-tag
-	     (if (not keep-buffers?)
-		 (mred:exit:insert-exit-callback check-all-saved-for-quit))])
+	     (mred:exit:insert-exit-callback check-all-saved-for-quit)])
 	  
 	  (sequence
-	    
-	    (if keep-buffers?
-		(send frames insert-frame this)
-		(mred:autosave:register-autosave this))
-	    
 	    (let ([filename (if (and (string? filename) (file-exists? filename))
 				(mzlib:file:normalize-path filename)
 				filename)])

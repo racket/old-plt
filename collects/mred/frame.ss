@@ -34,17 +34,25 @@
 
     (define empty-frame%
       (class mred:container:frame% args
-	(rename [super-pre-on-char pre-on-char]
+	(rename [super-on-frame-active on-frame-active]
+		[super-pre-on-char pre-on-char]
 		[super-pre-on-event pre-on-event])
 	(sequence (mred:debug:printf 'creation "creating a frame"))
 	(public
 	  [get-panel% (lambda () mred:container:vertical-panel%)]
-	  [on-close (lambda () #t)])
+	  [on-close
+	   (lambda ()
+	     (send mred:group:the-frame-group remove-frame this))])
 	(sequence 
 	  (mred:debug:printf 'super-init "before empty-frame%")
 	  (apply super-init args)
+	  (send mred:group:the-frame-group insert-frame this)
 	  (mred:debug:printf 'super-init "after empty-frame%"))
 	(public
+	  [on-frame-active
+	   (lambda ()
+	     (super-on-frame-active)
+	     (send mred:group:the-frame-group set-active-frame this))]
 	  [keymap (make-object wx:keymap%)]
 	  [make-root-panel
 	   (lambda (% parent)
@@ -104,126 +112,130 @@
 	  (begin-elaboration-time
             (let-struct between (menu name separator)
               (let-struct an-item (name help-string proc key menu-string-before menu-string-after)
-                (letrec* ( [wx:platform (global-defined-value 'wx:platform)]
-                           [build-id
-                            (lambda (name post)
-                              (let ([name-string (symbol->string name)])
-                                (string->symbol (string-append name-string post))))]
-                           [build-public-clause
-                             (opt-lambda (item)
-                               (let ([name (an-item-name item)]
-                                      [help-string (an-item-help-string item)]
-                                      [proc (an-item-proc item)])
-                                 `(public 
-                                    [,name ,proc]
-                                    [,(build-id name "-id") #f]
-                                    [,(build-id name "-string") ""]
-                                    [,(build-id name "-help-string") ,help-string])))]
-                           [build-proc-clause
-                             (lambda (item)
-                               (let* ([name (an-item-name item)]
-                                       [name-string (symbol->string name)]
-                                       [menu-before-string (an-item-menu-string-before item)]
-                                       [menu-after-string (an-item-menu-string-after item)]
-                                       [key (an-item-key item)]
-                                       [file-menu? (string=? (substring name-string 0 9) "file-menu")])
-                                 `(when ,name
-                                    (set! ,(build-id name "-id")
-                                      (send ,(if file-menu? 'file-menu 'edit-menu) append-item 
-                                        (join ,menu-before-string 
-                                          ,(build-id name "-string")
-                                          ,menu-after-string)
-                                        ,name ,(build-id name "-help-string")
-                                        #f ,key)))))]
-                           [build-between-ivar
-                             (lambda (between)
-                               (string->symbol 
-                                 (string-append (symbol->string (between-menu between))
-                                   ":"
-                                   (symbol->string (between-name between)))))]
-                           [build-between-proc-clause
-                             (lambda (between)
-                               `(,(build-between-ivar between) ,(between-menu between)))]
-                           [build-between-public-clause
-                             (lambda (between)
-                               `(public
-                                  [,(build-between-ivar between) 
-                                    ,(if (between-separator between)
-                                       '(lambda (m) (send m append-separator))
-                                       '(lambda (x) (void)))]))]
-                           [build-make-menu-bar
-                             (lambda (items)
-                               (let ([mb (gensym "mb")])
-                                 `(lambda ()
-                                    (let ([,mb (super-make-menu-bar)])
-                                      (set! file-menu (make-menu))
-                                      (set! edit-menu (make-menu))
-                                      (send* ,mb (append file-menu
-                                                   (if (eq? wx:platform 'windows)
-                                                     "&File" "F&ile"))
-                                        (append edit-menu "&Edit"))
-                                      ,@(map (lambda (x)
-                                               (if (between? x)
+                (letrec* ([wx:platform
+			   ;; mrspidey hack
+			   (if (defined? 'wx:platform)
+			       (global-defined-value 'wx:platform)
+			       'unix)]
+			  [build-id
+			   (lambda (name post)
+			     (let ([name-string (symbol->string name)])
+			       (string->symbol (string-append name-string post))))]
+			  [build-public-clause
+			   (opt-lambda (item)
+			     (let ([name (an-item-name item)]
+				   [help-string (an-item-help-string item)]
+				   [proc (an-item-proc item)])
+			       `(public 
+				  [,name ,proc]
+				  [,(build-id name "-id") #f]
+				  [,(build-id name "-string") ""]
+				  [,(build-id name "-help-string") ,help-string])))]
+			  [build-proc-clause
+			   (lambda (item)
+			     (let* ([name (an-item-name item)]
+				    [name-string (symbol->string name)]
+				    [menu-before-string (an-item-menu-string-before item)]
+				    [menu-after-string (an-item-menu-string-after item)]
+				    [key (an-item-key item)]
+				    [file-menu? (string=? (substring name-string 0 9) "file-menu")])
+			       `(when ,name
+				  (set! ,(build-id name "-id")
+					(send ,(if file-menu? 'file-menu 'edit-menu) append-item 
+					      (join ,menu-before-string 
+						    ,(build-id name "-string")
+						    ,menu-after-string)
+					      ,name ,(build-id name "-help-string")
+					      #f ,key)))))]
+			  [build-between-ivar
+			   (lambda (between)
+			     (string->symbol 
+			      (string-append (symbol->string (between-menu between))
+					     ":"
+					     (symbol->string (between-name between)))))]
+			  [build-between-proc-clause
+			   (lambda (between)
+			     `(,(build-between-ivar between) ,(between-menu between)))]
+			  [build-between-public-clause
+			   (lambda (between)
+			     `(public
+				[,(build-between-ivar between) 
+				 ,(if (between-separator between)
+				      '(lambda (m) (send m append-separator))
+				      '(lambda (x) (void)))]))]
+			  [build-make-menu-bar
+			   (lambda (items)
+			     (let ([mb (gensym "mb")])
+			       `(lambda ()
+				  (let ([,mb (super-make-menu-bar)])
+				    (set! file-menu (make-menu))
+				    (set! edit-menu (make-menu))
+				    (send* ,mb (append file-menu
+						       (if (eq? wx:platform 'windows)
+							   "&File" "F&ile"))
+					   (append edit-menu "&Edit"))
+				    ,@(map (lambda (x)
+					     (if (between? x)
                                                  (build-between-proc-clause x)
                                                  (build-proc-clause x)))
-					  items)
-                                      ,mb))))]
-                           [items
-                             (list (make-an-item 'file-menu:new "Open a new file"
-                                     '(lambda () (mred:handler:edit-file #f) #t)
-                                     "n" "&New" "")
-                               (make-between 'file-menu 'between-new-and-open #f)
-                               (make-an-item 'file-menu:open "Open a file from disk"
-                                 '(lambda () (mred:handler:open-file) #t)
-                                 "o" "&Open" "...")
-                               (make-an-item 'file-menu:open-url "Open a Uniform Resource Locater"
-                                 '(lambda () (mred:handler:open-url) #t)
-                                 #f "Open &Url" "...")
-                               (make-between 'file-menu 'between-open-and-save #f)
-                               (make-an-item 'file-menu:revert 
-                                 "Revert this file to the copy on disk"
-                                 #f #f "&Revert" "")
-                               (make-an-item 'file-menu:save "" #f "s" "&Save" "")
-                               (make-an-item 'file-menu:save-as "" #f #f "Save" " &As...")
-                               (make-between 'file-menu 'between-save-and-print #t)
-                               (make-an-item 'file-menu:print "" #f "p" "&Print" "...")
-                               (make-between 'file-menu 'between-print-and-close #t)
-                               (make-an-item 'file-menu:close "" 
-                                 '(lambda () (when (on-close) (show #f)) #t)
-                                 "w" "&Close" "")
-                               (make-between 'file-menu 'between-close-and-quit #f)
-                               (make-an-item 'file-menu:quit "" '(lambda () (mred:exit:exit))
-                                 (if (eq? wx:platform 'macintosh) "q" "x")
-                                 (if (eq? wx:platform 'macintosh) "Quit" "E&xit") "")
-                               (make-between 'file-menu 'after-quit #f)
-				
-                               (make-an-item 'edit-menu:undo "" #f "z" "&Undo" "")
-                               (make-an-item 'edit-menu:redo "" #f "y" "&Redo" "")
-                               (make-between 'edit-menu 'between-redo-and-cut #t)
-                               (make-an-item 'edit-menu:cut "" #f "x" "Cu&t" "")
-                               (make-between 'edit-menu 'between-cut-and-copy #f)
-                               (make-an-item 'edit-menu:copy "" #f "c" "&Copy" "")
-                               (make-between 'edit-menu 'between-copy-and-paste #f)
-                               (make-an-item 'edit-menu:paste "" #f "v" "&Paste" "")
-                               (make-between 'edit-menu 'between-paste-and-clear #f)
-                               (make-an-item 'edit-menu:clear "" #f #f
-                                 (if (eq? wx:platform 'macintosh)
-                                   "Clear"
-                                   "&Delete")
-                                 "")
-                               (make-between 'edit-menu 'between-clear-and-select-all #f)
-                               (make-an-item 'edit-menu:select-all "" #f "a" "Select A&ll" "")
-                               (make-between 'edit-menu 'between-select-all-and-find #t)
-                               (make-an-item 'edit-menu:find "Search for a string in the buffer"
-                                 '(lambda () (send this search 1) #t)
-                                 "f" "Find" "")
-                               (make-an-item 'edit-menu:replace "Search and replace a string in the buffer"
-                                 #f #f "Replace" "")
-                               (make-between 'edit-menu 'between-replace-and-preferences #t)
-                               (make-an-item 'edit-menu:preferences ""
-                                 '(lambda () (mred:preferences:show-preferences-dialog) #t)
-                                 #f "Preferences..." "")
-                               (make-between 'edit-menu 'after-standard-items #f))])
+					   items)
+				    ,mb))))]
+			  [items
+			   (list (make-an-item 'file-menu:new "Open a new file"
+					       '(lambda () (mred:handler:edit-file #f) #t)
+					       "n" "&New" "")
+				 (make-between 'file-menu 'between-new-and-open #f)
+				 (make-an-item 'file-menu:open "Open a file from disk"
+					       '(lambda () (mred:handler:open-file) #t)
+					       "o" "&Open" "...")
+				 (make-an-item 'file-menu:open-url "Open a Uniform Resource Locater"
+					       '(lambda () (mred:handler:open-url) #t)
+					       #f "Open &Url" "...")
+				 (make-between 'file-menu 'between-open-and-save #f)
+				 (make-an-item 'file-menu:revert 
+					       "Revert this file to the copy on disk"
+					       #f #f "&Revert" "")
+				 (make-an-item 'file-menu:save "" #f "s" "&Save" "")
+				 (make-an-item 'file-menu:save-as "" #f #f "Save" " &As...")
+				 (make-between 'file-menu 'between-save-and-print #t)
+				 (make-an-item 'file-menu:print "" #f "p" "&Print" "...")
+				 (make-between 'file-menu 'between-print-and-close #t)
+				 (make-an-item 'file-menu:close "" 
+					       '(lambda () (when (on-close) (show #f)) #t)
+					       "w" "&Close" "")
+				 (make-between 'file-menu 'between-close-and-quit #f)
+				 (make-an-item 'file-menu:quit "" '(lambda () (mred:exit:exit))
+					       (if (eq? wx:platform 'macintosh) "q" "x")
+					       (if (eq? wx:platform 'macintosh) "Quit" "E&xit") "")
+				 (make-between 'file-menu 'after-quit #f)
+				 
+				 (make-an-item 'edit-menu:undo "" #f "z" "&Undo" "")
+				 (make-an-item 'edit-menu:redo "" #f "y" "&Redo" "")
+				 (make-between 'edit-menu 'between-redo-and-cut #t)
+				 (make-an-item 'edit-menu:cut "" #f "x" "Cu&t" "")
+				 (make-between 'edit-menu 'between-cut-and-copy #f)
+				 (make-an-item 'edit-menu:copy "" #f "c" "&Copy" "")
+				 (make-between 'edit-menu 'between-copy-and-paste #f)
+				 (make-an-item 'edit-menu:paste "" #f "v" "&Paste" "")
+				 (make-between 'edit-menu 'between-paste-and-clear #f)
+				 (make-an-item 'edit-menu:clear "" #f #f
+					       (if (eq? wx:platform 'macintosh)
+						   "Clear"
+						   "&Delete")
+					       "")
+				 (make-between 'edit-menu 'between-clear-and-select-all #f)
+				 (make-an-item 'edit-menu:select-all "" #f "a" "Select A&ll" "")
+				 (make-between 'edit-menu 'between-select-all-and-find #t)
+				 (make-an-item 'edit-menu:find "Search for a string in the buffer"
+					       '(lambda () (send this search 1) #t)
+					       "f" "Find" "")
+				 (make-an-item 'edit-menu:replace "Search and replace a string in the buffer"
+					       #f #f "Replace" "")
+				 (make-between 'edit-menu 'between-replace-and-preferences #t)
+				 (make-an-item 'edit-menu:preferences ""
+					       '(lambda () (mred:preferences:show-preferences-dialog) #t)
+					       #f "Preferences..." "")
+				 (make-between 'edit-menu 'after-standard-items #f))])
                   `(class-asi super%
                      (inherit make-menu on-close show)
                      (rename [super-make-menu-bar make-menu-bar])
@@ -244,13 +256,15 @@
       (lambda (super%)
 	(class super% ([name mred:application:app-name])
 	  (inherit panel get-client-size set-icon get-menu-bar
-		   make-menu on-close show active-edit active-canvas)
+		   make-menu show active-edit active-canvas)
 	  (rename [super-on-close on-close]
 		  [super-set-title set-title])
 	  (public
 	    [WIDTH frame-width]
 	    [HEIGHT frame-height])
 	  
+	  (public)
+
 	  (public
 	    [get-panel%  (lambda () mred:panel:vertical-edit-panel%)]
 	    [title-prefix name])

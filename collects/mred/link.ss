@@ -39,8 +39,8 @@
 		 constants keymap)]
 	  [handler : mred:handler^
 		   ((reference-unit/sig "handler.ss") wx 
-		    constants group gui-utils 
-		    editor-frame finder hyper-frame
+		    constants gui-utils 
+		    editor-frame finder group hyper-frame
 		    canvas container edit preferences
 		    (core file@))] 
 	  [keymap : mred:keymap^
@@ -60,7 +60,7 @@
 			      constants (core function@))]
 	  [edit : mred:edit^ 
 		((reference-unit/sig "edit.ss") wx 
-		 constants connections finder path-utils mode
+		 constants connections autosave finder path-utils mode
 		 scheme-paren keymap icon preferences gui-utils
 		 (core function@))]
 	  [gui-utils : mred:gui-utils^
@@ -76,7 +76,8 @@
 		 ((reference-unit/sig "group.ss") wx 
 		  constants preferences editor-frame gui-utils
 		  exit autosave handler application
-		  (core function@))]
+		  (core function@)
+		  (core file@))]
 	  [canvas : mred:canvas^ 
 		  ((reference-unit/sig "canvas.ss") wx 
 		   constants container edit preferences (core file@))]
@@ -98,7 +99,7 @@
 			((reference-unit/sig "edframe.ss") wx 
 			 constants
 			 preferences edit frame container
-			 canvas find-string icon menu group
+			 canvas find-string icon menu
 			 finder handler exit autosave gui-utils
 			 (core function@) (core file@))]
 	  [project : mred:project^ 

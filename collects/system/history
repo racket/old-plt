@@ -1,6 +1,30 @@
 SYSTEM HISTORY
 --------------
 Version 49:
+- There is only one frame group now, and all frames are registered
+  with it. It is called mred:the-frame-group.
+  Associated changes:
+  - mred:current-frames is gone
+  - mred:edit-file only takes at most two arguments now
+  - handlers do not take a group as an argument
+  - mred:editor-frame% does not take a group as an input argument
+  - classes with the method `get-edit' are treated specially in groups
+  - mred:frame-group% method open-file does not exist,
+    use the procedures mred:edit-file or mred:open-file.
+  - mred:frame-group% ask-before-closing last eliminated. 
+    Use the empty-callback method
+  - added locate-file, a method of mred:the-frame-group which
+    takes a filename and returns a frame that is editing that if one exists.
+  - mred:edit-file now consults mred:the-frame-group to see if 
+    the file is already open, based on the third argument (or the parameter
+    mred:edit-file-consult-group)
+  - mred:editor-frame
+     - medthod get-frame-group gone from mred:editor-frame%
+     - method open-file's final optional arg eliminated
+     - do-autosave method deleted
+     - register-autosave call moved to mred:std-buffer 
+       (ie mred:edit and mred:pasteboard)
+
 - The perform-updates and set-perform-update ivars in mred:panel%,
   mred:frame%, and mred:dialog-box% have been replaced with the
   delay-updates method in mred:frame% and mred:dialog-box%.

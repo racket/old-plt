@@ -281,6 +281,7 @@ Scheme_Object *scheme_handle_stack_overflow(Scheme_Object *(*k)(void));
 Scheme_Object *scheme_read_number(const char *str, long len,
 				  int is_float, 
 				  int is_not_float,
+				  int decimal_means_float,
 				  int radix, int radix_set, 
 				  Scheme_Object *port,
 				  int *div_by_zero);

@@ -2880,6 +2880,7 @@ string_to_number (int argc, Scheme_Object *argv[])
   long radix;
   long len;
   char *str;
+  int decimal_inexact;
 
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("string->number", "string", 0, argc, argv);
@@ -2899,7 +2900,12 @@ string_to_number (int argc, Scheme_Object *argv[])
   str = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
 
-  return scheme_read_number(str, len, 0, 0, radix, 0, NULL, NULL);
+  decimal_inexact = SCHEME_TRUEP(scheme_get_param(scheme_config, 
+						  MZCONFIG_READ_DECIMAL_INEXACT));
+  
+  return scheme_read_number(str, len, 
+			    0, 0, decimal_inexact,
+			    radix, 0, NULL, NULL);
 }
 
 #ifdef USE_EXPLICT_FP_FORM_CHECK
@@ -3014,6 +3020,7 @@ static Scheme_Object *CHECK_SINGLE(Scheme_Object *v, int s)
 Scheme_Object *scheme_read_number(const char *str, long len,
 				  int is_float, 
 				  int is_not_float,
+				  int decimal_means_float,
 				  int radix, int radix_set, 
 				  Scheme_Object *complain,
 				  int *div_by_zero)
@@ -3224,7 +3231,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
     if (first)
       n1 = scheme_read_number(first, has_sign,
-			      is_float, is_not_float,
+			      is_float, is_not_float, decimal_means_float,
 			      radix, 1, next_complain,
 			      &fdbz);
     else
@@ -3240,7 +3247,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     
     if (second)
       n2 = scheme_read_number(second, has_i - has_sign,
-			      is_float, is_not_float,
+			      is_float, is_not_float, decimal_means_float,
 			      radix, 1, next_complain,
 			      &sdbz);
     else if (str[has_sign] == '-')
@@ -3266,12 +3273,12 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     }
 
     if (!is_not_float && ((SCHEME_FLOATP(n1) && (n2 != zeroi)) || is_float))
-      n2 = exact_to_inexact(1, &n2);  /* uses default conversion */
+      n2 = exact_to_inexact(1, &n2);  /* uses default conversion: float or double */
     else if (is_not_float)
       n2 = inexact_to_exact(1, &n2);
 
     if (!is_not_float && ((SCHEME_FLOATP(n2) && (n1 != zeroi)) || is_float))
-      n1 = exact_to_inexact(1, &n1); /* uses default conversion */
+      n1 = exact_to_inexact(1, &n1); /* uses default conversion: float or double */
     else if (is_not_float)
       n1 = inexact_to_exact(1, &n1);
 
@@ -3301,7 +3308,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 #endif
 
     n2 = scheme_read_number(second, len - has_at - 1,
-			    1, 0,
+			    1, 0, 1,
 			    radix, 1, next_complain,
 			    &fdbz);
 
@@ -3317,12 +3324,12 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       /* Special case: angle is zero => real number */
       if (d2 == 0.0)
 	return scheme_read_number(first, has_at,
-				  is_float, is_not_float,
+				  is_float, is_not_float, decimal_means_float,
 				  radix, 1, next_complain,
 				  div_by_zero);
       
       n1 = scheme_read_number(first, has_at, 
-			      1, 0,
+			      1, 0, 1,
 			      radix, 1, next_complain,
 			      &sdbz);
     } else {
@@ -3364,15 +3371,6 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   for (i = 0; i < len; i++) {
     int ch = str[i];
     if (ch == '.') {
-#if 0
-      if (radix != 10) {
-	if (report)
-	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: decimal point implies base 10: %s",
-			   str);
-	return scheme_false;
-      }
-#endif
       if (has_decimal) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
@@ -3467,17 +3465,6 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     }
   }
 
-#if 0
-  /* Floting-point in non-base-10? */
-  if (has_decimal && radix != 10) {
-    if (complain)
-      scheme_raise_exn(MZEXN_READ, complain, 
-		       "read-number: decimal implies base 10 in %s", 
-		       str);
-    return scheme_false;
-  }
-#endif
-
 #ifdef MZ_USE_SINGLE_FLOATS
   if (has_expt && str[has_expt]) {
     single = str[has_expt];
@@ -3494,7 +3481,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
 
   /* When possible, use the standard floating-point parser */
-  if (!is_not_float && !has_slash && !has_hash && (radix == 10) 
+  if (!is_not_float && (is_float || decimal_means_float) 
+      && !has_slash && !has_hash && (radix == 10) 
       && (has_decimal || has_expt)) {
     double d;
     const char *strcpy;
@@ -3563,7 +3551,11 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     if (!has_expt)
       has_expt = len;
 
-    if (!has_hash && (radix == 10) && (!has_decimal || !is_not_float)) {
+    if (!has_hash && (radix == 10) 
+	&& (!has_decimal 
+	    /* ... or it's ok to return a float: */
+	    || is_float
+	    || (!is_not_float && decimal_means_float))) {
       char *s;
       int dbz;
 
@@ -3571,7 +3563,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       memcpy(s, str, has_expt);
       s[has_expt] = 0;
       
-      mantissa = scheme_read_number(s, has_expt, 0, 0,
+      mantissa = scheme_read_number(s, has_expt, 
+				    0, 0, 1,
 				    radix, 1, next_complain,
 				    &dbz);
       if (SCHEME_FALSEP(mantissa)) {
@@ -3652,7 +3645,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
     n = scheme_bin_mult(mantissa, power);
 
-    if (!is_not_float)
+    if (is_float || (!is_not_float && decimal_means_float))
       n = CHECK_SINGLE(TO_DOUBLE(n), single);
     else
       n = CHECK_SINGLE(n, single);
@@ -3680,7 +3673,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     memcpy(first, str, has_slash);
     first[has_slash] = 0;
 
-    n1 = scheme_read_number(first, has_slash, 0, 0,
+    n1 = scheme_read_number(first, has_slash,
+			    0, 0, 1,
 			    radix, 1, next_complain,
 			    div_by_zero);
     if (SAME_OBJ(n1, scheme_false))
@@ -3701,7 +3695,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 #endif
 
       n2 = scheme_read_number(substr, len - has_slash - 1,
-			      0, 0, 
+			      0, 0, 1,
 			      radix, 1, next_complain,
 			      div_by_zero);
     }

@@ -401,6 +401,7 @@ enum {
   MZCONFIG_CAN_READ_COMPILED,
   MZCONFIG_CAN_READ_BOX,
   MZCONFIG_CAN_READ_PIPE_QUOTE,
+  MZCONFIG_READ_DECIMAL_INEXACT,
 
   MZCONFIG_PRINT_GRAPH,
   MZCONFIG_PRINT_STRUCT,
@@ -531,6 +532,7 @@ typedef struct Scheme_Process {
   char quick_case_sens;
   char quick_square_brackets_are_parens;
   char quick_curly_braces_are_parens;
+  char quick_read_decimal_inexact;
 
   /* Used during `display' and `write': */
   char *print_buffer;

@@ -86,35 +86,37 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 static int skip_whitespace_comments(Scheme_Object *port);
 
 #ifndef MZ_REAL_THREADS
-#define local_can_read_compiled (scheme_current_process->quick_can_read_compiled)
-#define local_can_read_pipe_quote (scheme_current_process->quick_can_read_pipe_quote)
-#define local_can_read_box (scheme_current_process->quick_can_read_box)
-#define local_can_read_graph (scheme_current_process->quick_can_read_graph)
-#define local_case_sensitive (scheme_current_process->quick_case_sens)
-#define local_square_brackets_are_parens (scheme_current_process->quick_square_brackets_are_parens)
-#define local_curly_braces_are_parens (scheme_current_process->quick_curly_braces_are_parens)
+# define local_can_read_compiled (scheme_current_process->quick_can_read_compiled)
+# define local_can_read_pipe_quote (scheme_current_process->quick_can_read_pipe_quote)
+# define local_can_read_box (scheme_current_process->quick_can_read_box)
+# define local_can_read_graph (scheme_current_process->quick_can_read_graph)
+# define local_case_sensitive (scheme_current_process->quick_case_sens)
+# define local_square_brackets_are_parens (scheme_current_process->quick_square_brackets_are_parens)
+# define local_curly_braces_are_parens (scheme_current_process->quick_curly_braces_are_parens)
+# define local_read_decimal_inexact (scheme_current_process->quick_read_decimal_inexact)
 
-#define local_list_stack (scheme_current_process->list_stack)
-#define local_list_stack_pos (scheme_current_process->list_stack_pos)
+# define local_list_stack (scheme_current_process->list_stack)
+# define local_list_stack_pos (scheme_current_process->list_stack_pos)
 
-#define local_vector_memory (scheme_current_process->vector_memory)
-#define local_vector_memory_size (scheme_current_process->vector_memory_size)
-#define local_vector_memory_count (scheme_current_process->vector_memory_count)
+# define local_vector_memory (scheme_current_process->vector_memory)
+# define local_vector_memory_size (scheme_current_process->vector_memory_size)
+# define local_vector_memory_count (scheme_current_process->vector_memory_count)
 #else
-#define local_can_read_compiled (p->quick_can_read_compiled)
-#define local_can_read_pipe_quote (p->quick_can_read_pipe_quote)
-#define local_can_read_box (p->quick_can_read_box)
-#define local_can_read_graph (p->quick_can_read_graph)
-#define local_case_sensitive (p->quick_case_sens)
-#define local_square_brackets_are_parens (p->quick_square_brackets_are_parens)
-#define local_curly_braces_are_parens (p->quick_curly_braces_are_parens)
+# define local_can_read_compiled (p->quick_can_read_compiled)
+# define local_can_read_pipe_quote (p->quick_can_read_pipe_quote)
+# define local_can_read_box (p->quick_can_read_box)
+# define local_can_read_graph (p->quick_can_read_graph)
+# define local_case_sensitive (p->quick_case_sens)
+# define local_square_brackets_are_parens (p->quick_square_brackets_are_parens)
+# define local_curly_braces_are_parens (p->quick_curly_braces_are_parens)
+# define local_read_decimal_inexact (p->quick_read_decimal_inexact)
 
-#define local_list_stack (p->list_stack)
-#define local_list_stack_pos (p->list_stack_pos)
+# define local_list_stack (p->list_stack)
+# define local_list_stack_pos (p->list_stack_pos)
 
-#define local_vector_memory (p->vector_memory)
-#define local_vector_memory_size (p->vector_memory_size)
-#define local_vector_memory_count (p->vector_memory_count)
+# define local_vector_memory (p->vector_memory)
+# define local_vector_memory_size (p->vector_memory_size)
+# define local_vector_memory_count (p->vector_memory_count)
 #endif
 
 #define NUM_CELLS_PER_STACK 500
@@ -690,6 +692,7 @@ scheme_internal_read(Scheme_Object *port, int crc, Scheme_Config *config CURRENT
   local_case_sensitive = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CASE_SENS));
   local_square_brackets_are_parens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS));
   local_curly_braces_are_parens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CURLY_BRACES_ARE_PARENS));
+  local_read_decimal_inexact = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_READ_DECIMAL_INEXACT));
 
   if (!p->list_stack)
     scheme_alloc_list_stack(p);
@@ -946,6 +949,7 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
   int case_sens = local_case_sensitive;
   int brackets = local_square_brackets_are_parens;
   int braces = local_curly_braces_are_parens;
+  int decimal_inexact = local_read_decimal_inexact;
   Scheme_Object *o;
   int ungetc_ok;
   Getc_Fun getc_fun;
@@ -1038,7 +1042,9 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
   if ((is_symbol || quoted_ever) && !is_float && !is_not_float && !radix_set)
     o = scheme_false;
   else
-    o = scheme_read_number(buf, i, is_float, is_not_float, radix, radix_set,
+    o = scheme_read_number(buf, i, 
+			   is_float, is_not_float, decimal_inexact, 
+			   radix, radix_set,
 			   port, NULL);
 
   if (SAME_OBJ(o, scheme_false)) {

@@ -366,7 +366,23 @@
 	       
 	       ; there is no begin, begin0, or let in beginner. but can they be generated? 
 	       ; for instance by macros? Maybe.
-	       
+
+	       ; adding begin for xml stuff.  Just as a dummy, mind you.
+               
+               [(z:begin-form? expr) ; let's see if this works.
+                (let ([exps (z:begin-form-bodies expr)])
+                  (values
+                   `(#%begin 
+                      ,@(case (length exps)
+                          ((2) (let-values ([(annotated-struct-decl _) (tail-recur (cadr exps))])
+                                 (list annotated-struct-decl)))
+                          ((3) (let-values ([(annotated-xml-decl _1) (tail-recur (cadr exps))]
+                                            [(annotated-struct-decl _2) (tail-recur (caddr exps))])
+                                 (list annotated-xml-decl annotated-struct-decl)))
+                          [else (e:internal-error 'annotate/inner
+                                                  "I don't recognize this use of (xml) begin")]))
+                   null))]
+                 
 	       [(z:define-values-form? expr)
 		(let+ ([val vars (z:define-values-form-vars expr)]
 		       [val _ (map utils:check-for-keyword vars)]
@@ -445,6 +461,8 @@
            (let-values ([(annotated dont-care)
                          (annotate/inner expr 'all #f)])
              (cond [(z:define-values-form? expr)
+                    annotated]
+                   [(z:begin-form? expr) ; cheap hack for xml
                     annotated]
                    [else
                     `(#%define-values ,(list (top-level-exp-gensym-source expr))

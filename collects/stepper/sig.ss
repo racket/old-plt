@@ -1,3 +1,6 @@
+(define-signature xml-reconstruct^
+  (patch-up-sexp))
+
 (define-signature stepper:zodiac-client-procs^
   (never-undefined-getter
    never-undefined-setter

@@ -10,6 +10,7 @@
           [d : drscheme:export^]
           [p : mzlib:print-convert^]
           [f : framework^]
+          [xmls : xml-reconstruct^]
           stepper:shared^)
 
   ;;;;;; copied from /plt/collects/drscheme/snip.ss :
@@ -118,15 +119,17 @@
         (string? val)
         (symbol? val)))
   
-  (define (maybe-insert-highlighted-value exp inserted)
-    (let ([recur (lambda (exp) (maybe-insert-highlighted-value exp inserted))])
-      (cond [(or (list? exp)
-                 (vector? exp))
+  ; insert-highlighted-value : sexp sexp -> sexp
+  ; replaces highlight-placeholder in the first sexp with the second sexp
+  
+  (define (insert-highlighted-value exp inserted)
+    (let ([recur (lambda (exp) (insert-highlighted-value exp inserted))])
+      (cond [(list? exp)
              (map recur exp)]
+            [(vector? exp)
+             (list->vector (map recur (vector->list exp)))]
             [(eq? exp highlight-placeholder)
-             (if (confusable-value? inserted)
-                 highlight-placeholder
-                 inserted)]
+             inserted]
             [else exp])))
   
   (define stepper-text%
@@ -204,7 +207,17 @@
                          (set! clear-highlight-thunks
                                (cons (highlight-range redex-begin redex-end highlight-color #f #f)
                                      clear-highlight-thunks))))))]
-
+              
+              [hacked-format-sexp
+               (lambda (exp region color)
+                 (if (confusable-value? region)
+                     (let-values ([(new-exp dont-care)
+                                  (xmls:patch-up-sexp exp no-sexp)])
+                       (format-sexp new-exp region color))
+                     (let-values ([(new-exp new-region) 
+                                     (xmls:patch-up-sexp (insert-highlighted-value exp region) region)])
+                         (format-sexp new-exp new-region color))))]
+              
               [format-whole-step
                (lambda ()
                  (lock #f)
@@ -214,22 +227,22 @@
                  (erase)
                  (for-each
                   (lambda (expr)
-                    (format-sexp expr no-sexp #f)
+                    (let-values ([(patched dont-care)
+                                  (xmls:patch-up-sexp expr no-sexp)])
+                      (format-sexp patched no-sexp #f))
                     (insert #\newline))
                   finished-exprs)
                  (insert (make-object separator-snip%))
                  (when (not (eq? redex no-sexp))
                    (insert #\newline)
                    (reset-style)
-                   (format-sexp (maybe-insert-highlighted-value exp redex)
-                                redex redex-highlight-color)
+                   (hacked-format-sexp exp redex redex-highlight-color)
                    (insert #\newline)
                    (insert (make-object separator-snip%))
                    (insert #\newline))
                  (cond [(not (eq? reduct no-sexp))
                         (reset-style)
-                        (format-sexp (maybe-insert-highlighted-value post-exp reduct)
-                                     reduct result-highlight-color)]
+                        (hacked-format-sexp post-exp reduct result-highlight-color)]
                        [error-msg
                         (let ([before-error-msg (last-position)])
                           (reset-style)
@@ -375,7 +388,7 @@
       
   (lambda (frame)
     (let ([settings (f:preferences:get 'drscheme:settings)])
-      (if (not (string=? (d:basis:setting-name settings) beginner-level-name))
+      (if #f ; (not (string=? (d:basis:setting-name settings) beginner-level-name))
           (message-box "Stepper" 
                        (format (string-append "Language level is set to \"~a\".~n"
                                               "The Foot only works for the \"~a\" language level.~n")

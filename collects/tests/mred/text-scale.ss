@@ -46,7 +46,7 @@
 	(set! sy 1))
       (send dc set-scale sx sy))
   (if rotate?
-      (send dc draw-text str (/ 100 sx) (/ y sy) #f 0 (* pi 1/4))
+      (send dc draw-text str (/ 100 sx) (/ y sy) #f 0 (* pi -1/4))
       (if one-by-one?
 	  (let loop ([s (string->list str)]
 		     [x (/ 100 sx)])

@@ -367,7 +367,7 @@
                                                 (reset-region end 'end))
                                               
                                               (define/augment (can-insert? start len)
-                                                (and (or (<= (+ start len) immutable-start)
+                                                (and (or (<= start immutable-start)
                                                          (>= start immutable-end))
                                                      (inner #t can-insert? start len)))
                                               (define/augment (after-insert start len)

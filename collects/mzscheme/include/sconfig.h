@@ -583,7 +583,7 @@ int scheme_win32_semaphore_try_down(void *);
 # define STACK_GROWS_DOWN
 
 # define DO_STACK_CHECK
-# define MACOS_STACK_LIMIT
+# define MACOS_FIND_STACK_BOUNDS
 # define STACK_SAFETY_MARGIN 10000
 
 # define TIME_SYNTAX
@@ -927,7 +927,7 @@ int scheme_win32_semaphore_try_down(void *);
 
  /* DO_STACK_CHECK checks for stack overflow during execution.
      Requires either UNIX_FIND_STACK_BOUNDS, USE_STACKAVAIL,
-     MACOS_STACK_LIMIT, or ASSUME_FIXED_STACK_SIZE. */
+     MACOS_FIND_STACK_BOUNDS, or ASSUME_FIXED_STACK_SIZE. */
 
  /* UNIX_FIND_STACK_BOUNDS figures out the maximum stack position
      on Unix systems, using getrlimit() and the GC_find_stack_base()
@@ -936,7 +936,7 @@ int scheme_win32_semaphore_try_down(void *);
      overflow; works with Borland C++, maybe other compilers.
     WINDOWS_FIND_STACK_BOUNDS figures out the maximum stack position
      under Windows (uses GC_find_stack_base())
-    MACOS_STACK_LIMIT figures out the stack limit on the Mac.
+    MACOS_FIND_STACK_BOUNDS figures out the stack limit on the Mac.
     ASSUME_FIXED_STACK_SIZE assumes that the main stack size is
      always FIXED_STACK_SIZE.
     Use only one of these if DO_STACK_CHECK is used, or none otherwise. */

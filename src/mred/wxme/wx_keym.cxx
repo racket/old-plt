@@ -469,6 +469,7 @@ void wxKeymap::MapFunction(char *keys, char *fname)
     
     while (*keyseq && (*keyseq != ';')) {
       if (isspace(*keyseq)) {
+	keyseq++;
       } else if (keyseq[1] == ':') {
 	switch (tolower(*keyseq)) {
 	case 's':

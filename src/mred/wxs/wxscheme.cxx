@@ -1264,6 +1264,9 @@ int wxsGetImageType(char *fn)
       expect = "IF8";
       type = wxBITMAP_TYPE_GIF;
       break;
+    default:
+      type = 0;
+      break;
     }
 
     if (expect) {

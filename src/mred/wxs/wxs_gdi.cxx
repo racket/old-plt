@@ -2700,7 +2700,7 @@ static Scheme_Object *bundle_symset_cursor(int v) {
 class os_wxCursor : public wxCursor {
  public:
 
-  os_wxCursor(Scheme_Object * obj, string x0, int x1, int x2 = 0, int x3 = 0);
+  os_wxCursor(Scheme_Object * obj, string x0, int x1 = 0, int x2 = 0, int x3 = 0);
   os_wxCursor(Scheme_Object * obj, int x0);
   ~os_wxCursor();
 };
@@ -2768,10 +2768,13 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x3;
 
     
-    if ((n < 2) ||(n > 4)) 
-      scheme_wrong_count("initialization in cursor% (cursor name case)", 2, 4, n, p);
+    if ((n < 1) ||(n > 4)) 
+      scheme_wrong_count("initialization in cursor% (cursor name case)", 1, 4, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "initialization in cursor% (cursor name case)");
-    x1 = unbundle_symset_bitmapType(p[1], "initialization in cursor% (cursor name case)");
+    if (n > 1) {
+      x1 = unbundle_symset_bitmapType(p[1], "initialization in cursor% (cursor name case)");
+    } else
+      x1 = 0;
     if (n > 2) {
       x2 = objscheme_unbundle_integer(p[2], "initialization in cursor% (cursor name case)");
     } else

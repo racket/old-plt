@@ -321,9 +321,10 @@
      (class null ()
 	   (private [the-dir #f])
 	   (public
-	    [set! (lambda (s)
-		    (set! the-dir s))]
 	    [get (lambda () the-dir)]
+	    [set-from-file!
+	     (lambda (file) 
+	       (set! the-dir (path-only file)))]
 	    [set-to-default 
 	     (lambda ()
 	       (if (eq? wx:platform 'macintosh)

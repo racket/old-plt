@@ -10,15 +10,6 @@
 
   (define names '(search-height search-bg search-fg search-link sys-link))
 
-  (define complete-page	
-    `(HTML 
-      (HEAD ,hd-css
-	    (TITLE "PLT Help Desk configuration"))
-      (BODY
-       (H1 "Configuration complete")
-       (P)
-       ,home-page)))
-
   (define (make-error-page msgs)
     `(HTML 
       (HEAD ,hd-css
@@ -63,8 +54,10 @@
 	     (put-prefs names vals)))
 
     (if (errors?)
-	 (make-error-page error-msgs)
-	 complete-page)))
+	(send/finish 
+	 (make-error-page error-msgs))
+	(redirect-to "/servlets/home.ss"))))
+
 
 
 

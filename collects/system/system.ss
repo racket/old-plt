@@ -3,12 +3,12 @@
 ; Print a little more than MzScheme automatically does:
 (error-print-width 100)
 
-(define mred:verbose-load? #f)
+(define mred:debug? #f)
 
 (unless (defined? 'mred:startup-print-status)
    (define mred:startup-print-status 
-     (if (and (defined? 'mred:verbose-load?)
-	      mred:verbose-load?)
+     (if (and (defined? 'mred:debug?)
+	      mred:debug?)
 	 (lambda (x) (display x) (newline))
 	 (lambda (x) #f))))
 
@@ -43,8 +43,8 @@
     (wx:message-box "Cannot find the MzScheme libraries." "Error")
     (error 'mrsystem "cannot find the MzScheme libraries"))
 (define mzlib:constant-lib? #t)
-(require-library "core.ss")
-(require-library "trigger.ss")
+(require-library "corec.ss")
+(require-library "triggerc.ss")
 
 (define mred:plt-home-directory
   (if (defined? 'mred:plt-home-directory)
@@ -61,6 +61,21 @@
 		    mred:system-source-directory))
 	      mred:system-source-directory))))))
 (constant mred:plt-home-directory)
+
+(when mred:debug?
+  (define mred:new-console (void))
+  (define mred:new-eval (void))
+  (define mred:make-new-console
+    (lambda ()
+      (load "functor-setup.ss")
+      (set! mred:new-eval (make-eval 'wx))
+      (set! mred:new-console
+	    (new-eval `(begin (define mred:system-source-directory ,mred:system-source-directory)
+			      (define mred:plt-home-directory ,mred:plt-home-directory)
+			      (require-library "sfunctor.ss")
+			      (invoke-open-unit ,(sigfunctor->functor mred:main@) mred)
+			      (make-object mred:console-frame% #f)))))))
+
 
 (for-each (lambda (x)
 	    (mred:startup-print-status (string-append "Loading " x "..."))

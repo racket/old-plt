@@ -3549,7 +3549,6 @@ Scheme_Object *scm_gluBuild3DMipmaps(void *p, int c, Scheme_Object **v) {
 			      arg_GLvoidv(7, width*height*depth, t));
   return scheme_make_integer(res);
 }
-#endif
 
 Scheme_Object *scm_gluBuild1DMipmapLevels(void *p, int c, Scheme_Object **v) {
   GLsizei width = arg_GLsizei(2);
@@ -3583,7 +3582,6 @@ Scheme_Object *scm_gluBuild2DMipmapLevels(void *p, int c, Scheme_Object **v) {
   return scheme_make_integer(res);
 }
 
-#ifdef GLU_VERSION_1_3
 Scheme_Object *scm_gluBuild3DMipmapLevels(void *p, int c, Scheme_Object **v) {
   GLsizei width = arg_GLsizei(2);
   GLsizei height = arg_GLsizei(3);
@@ -4912,13 +4910,8 @@ static const struct scm_prim scm_prim[] = {
 
 	{ "gluGetString", scm_gluGetString, 1, 1},
 	{ "gluScaleImage", scm_gluScaleImage, 9, 9},
-# if _MSC_VER < 1300
-#else
 	{ "gluBuild1DMipmaps", scm_gluBuild1DMipmaps, 6, 6},
 	{ "gluBuild2DMipmaps", scm_gluBuild2DMipmaps, 7, 7},
-	{ "gluBuild1DMipmapLevels", scm_gluBuild1DMipmapLevels, 9, 9},
-	{ "gluBuild2DMipmapLevels", scm_gluBuild2DMipmapLevels, 10, 10},
-#endif
 	{ "gluOrtho2D", scm_gluOrtho2D, 4, 4},
 	{ "gluPerspective", scm_gluPerspective, 4, 4},
 	{ "gluLookAt", scm_gluLookAt, 9, 9},
@@ -4937,6 +4930,8 @@ static const struct scm_prim scm_prim[] = {
 #ifdef GLU_VERSION_1_3
 	{ "gluBuild3DMipmaps", scm_gluBuild3DMipmaps, 8, 8},
 	{ "gluBuild3DMipmapLevels", scm_gluBuild3DMipmapLevels, 11, 11},
+	{ "gluBuild2DMipmapLevels", scm_gluBuild2DMipmapLevels, 10, 10},
+	{ "gluBuild1DMipmapLevels", scm_gluBuild1DMipmapLevels, 9, 9}
 #endif
  
 };

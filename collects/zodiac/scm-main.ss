@@ -267,11 +267,13 @@
 		  (if (get-top-level-status attributes)
 		    (if (null? bodies)
 		      (static-error expr "Malformed begin")
-		      (create-begin-form
-			(map (lambda (e)
-			       (expand-expr e env attributes vocab))
-			  bodies)
-			expr))
+		      (if (null? (cdr bodies))
+			(expand-expr (car bodies) env attributes vocab)
+			(create-begin-form
+			  (map (lambda (e)
+				 (expand-expr e env attributes vocab))
+			    bodies)
+			  expr)))
 		    (let-values
 		      (((definitions terms)
 			 (let loop ((seen '()) (rest bodies))
@@ -291,12 +293,14 @@
 				   (values (reverse seen)
 				     rest))))))))
 		      (if (null? definitions)
-			(create-begin-form
-			  (map (lambda (e)
-				 (expand-expr e env attributes
-				   vocab))
-			    terms)
-			  expr)
+			(if (null? (cdr terms))
+			  (expand-expr (car terms) env attributes vocab)
+			  (create-begin-form
+			    (map (lambda (e)
+				   (expand-expr e env attributes
+				     vocab))
+			      terms)
+			    expr))
 			(expand-expr
 			  (structurize-syntax
 			    `(letrec*-values

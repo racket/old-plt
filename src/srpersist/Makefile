@@ -23,19 +23,19 @@ NATIVE_DIR=../../collects/srpersist/compiled/native/$(ARCH)
 .cxx.o ::
 	$(CPP) $(CPP_FLAGS) $<  
 
-all : srpersist.so
+all : srpmain.so
 
-install : srpersist.so 
+install : srpmain.so 
 	mkdir -p $(NATIVE_DIR)
-	cp -p srpersist.so $(NATIVE_DIR)/
+	cp -p srpmain.so $(NATIVE_DIR)/
 
-srpersist.so : $(OBJS)
-	$(MZC) --ld srpersist.so $(OBJS) -L$(LIBDIR) -l$(DRIVER_MGR_LIB)
+srpmain.so : $(OBJS)
+	$(MZC) --ld srpmain.so $(OBJS) -L$(LIBDIR) -l$(DRIVER_MGR_LIB)
 
 srpersist.o : srpersist.cxx srptypes.h srpbuffer.h srpersist.h srpprims.tbl \
 	srpstructs.tbl srpexns.tbl srpconsts.tbl srpinfo.tbl srpbitmask.tbl
 	$(CPP) $(CPP_FLAGS) srpersist.cxx
-	
+
 srpbuffer.o : srpbuffer.cxx srptypes.h srpbuffer.h srpersist.h
 	$(CPP) $(CPP_FLAGS) srpbuffer.cxx
 

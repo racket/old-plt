@@ -2366,14 +2366,18 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
 		  args = SCHEME_STX_CDR(args);
 		  rest = SCHEME_STX_CDR(rest);
 		}
+
+		body = scheme_datum_to_syntax(cons(let_symbol,
+						   cons(bindings,
+							body)),
+					      form, 
+					      scheme_sys_wraps(env), 
+					      0, 2);
+
+		/* Copy certifications from lambda to `body'. */
+		body = scheme_stx_cert(body, NULL, NULL, name, NULL);
 		
-		return scheme_compile_expand_expr(scheme_datum_to_syntax(cons(let_symbol,
-									      cons(bindings,
-										   body)),
-									 form, 
-									 scheme_sys_wraps(env), 
-									 0, 2),
-						  env, rec, drec, 0);
+		return scheme_compile_expand_expr(body, env, rec, drec, 0);
 	      } else {
 #if 0
  		scheme_wrong_syntax(scheme_application_stx_string, NULL, form, 

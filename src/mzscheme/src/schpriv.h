@@ -633,7 +633,7 @@ typedef struct {
 } Scheme_App_Rec;
 
 typedef struct {
-  Scheme_Inclhash_Object iso; /* keyex used for num_args */
+  Scheme_Inclhash_Object iso; /* keyex used for flags */
   Scheme_Object *rator;
   Scheme_Object *rand;
 } Scheme_App2_Rec;

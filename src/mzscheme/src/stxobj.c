@@ -25,6 +25,8 @@
 
 #define STX_DEBUG 0
 
+Scheme_Object *scheme_datum_to_syntax_proc;
+
 static Scheme_Object *syntax_p(int argc, Scheme_Object **argv);
 static Scheme_Object *graph_syntax_p(int argc, Scheme_Object **argv);
 
@@ -280,10 +282,13 @@ void scheme_init_stx(Scheme_Env *env)
 						      "syntax-object->datum",
 						      1, 1 + STX_DEBUG, 1),
 			     env);
+  
+  REGISTER_SO(scheme_datum_to_syntax_proc);
+  scheme_datum_to_syntax_proc = scheme_make_folding_prim(datum_to_syntax,
+							 "datum->syntax-object",
+							 2, 4, 1);
   scheme_add_global_constant("datum->syntax-object", 
-			     scheme_make_folding_prim(datum_to_syntax,
-						      "datum->syntax-object",
-						      2, 4, 1),
+			     scheme_datum_to_syntax_proc,
 			     env);
 
   scheme_add_global_constant("syntax-e", 

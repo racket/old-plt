@@ -54,6 +54,10 @@ Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 #define MAX_CONST_TOPLEVEL_POS 16
 Scheme_Object *toplevels[MAX_CONST_TOPLEVEL_DEPTH][MAX_CONST_TOPLEVEL_POS];
 
+#define TABLE_CACHE_MAX_SIZE 2048
+Scheme_Hash_Table *toplevels_ht;
+Scheme_Hash_Table *locals_ht[2];
+
 Scheme_Env *scheme_initial_env;
 
 /* locals */
@@ -249,7 +253,7 @@ Scheme_Env *scheme_basic_env()
 						   * MAX_CONST_TOPLEVEL_DEPTH 
 						   * MAX_CONST_TOPLEVEL_POS);
 # ifdef MEMORY_COUNTING_ON
-    scheme_misc_count += sizeof(Scheme_Toplevel) * MAX_CONST_TOPLEVEL_DEPTH * MAX_CONST_TOPLEVEL_POS);
+    scheme_misc_count += (sizeof(Scheme_Toplevel) * MAX_CONST_TOPLEVEL_DEPTH * MAX_CONST_TOPLEVEL_POS);
 # endif
 #endif
 
@@ -269,6 +273,19 @@ Scheme_Env *scheme_basic_env()
 	toplevels[i][k] = (Scheme_Object *)v;
       }
     }
+  }
+
+  REGISTER_SO(toplevels_ht);
+  REGISTER_SO(locals_ht[0]);
+  REGISTER_SO(locals_ht[1]);
+
+  {
+    Scheme_Hash_Table *ht;
+    toplevels_ht = scheme_make_hash_table_equal();
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+    locals_ht[0] = ht;
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+    locals_ht[1] = ht;
   }
 
   scheme_init_true_false();
@@ -1266,17 +1283,32 @@ Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)
 static Scheme_Object *make_toplevel(mzshort depth, int position, int resolved)
 {
   Scheme_Toplevel *tl;
+  Scheme_Object *v, *pr;
 
   if (resolved) {
     if ((depth < MAX_CONST_TOPLEVEL_DEPTH)
 	&& (position < MAX_CONST_TOPLEVEL_POS))
       return toplevels[depth][position];
-  }
+
+    pr = scheme_make_pair(scheme_make_integer(depth), scheme_make_integer(position));
+    v = scheme_hash_get(toplevels_ht, pr);
+    if (v)
+      return v;
+  } else
+    pr = NULL;
 
   tl = (Scheme_Toplevel *)scheme_malloc_atomic_tagged(sizeof(Scheme_Toplevel));
   tl->so.type = (resolved ? scheme_toplevel_type : scheme_compiled_toplevel_type);
   tl->depth = depth;
   tl->position = position;
+
+  if (resolved) {
+    if (toplevels_ht->count > TABLE_CACHE_MAX_SIZE) {
+      toplevels_ht = scheme_make_hash_table_equal();
+    }
+    scheme_hash_set(toplevels_ht, pr, (Scheme_Object *)tl);
+  }
+
   return (Scheme_Object *)tl;
 }
 
@@ -1385,13 +1417,28 @@ static Scheme_Object *alloc_local(short type, int pos)
 Scheme_Object *scheme_make_local(Scheme_Type type, int pos)
 {
   int k;
+  Scheme_Object *v;
 
   k = type - scheme_local_type;
 
   if (pos < MAX_CONST_LOCAL_POS)
     return scheme_local[pos][k];
 
-  return alloc_local(type, pos);
+  v = scheme_hash_get(locals_ht[k], scheme_make_integer(pos));
+  if (v)
+    return v;
+
+  v = alloc_local(type, pos);
+
+  if (locals_ht[k]->count > TABLE_CACHE_MAX_SIZE) {
+    Scheme_Hash_Table *ht;
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+    locals_ht[k] = ht;
+  }
+
+  scheme_hash_set(locals_ht[k], scheme_make_integer(pos), v);
+
+  return v;
 }
 
 static Scheme_Object *force_lazy_macro(Scheme_Object *val, long phase)

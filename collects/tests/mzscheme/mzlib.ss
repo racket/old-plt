@@ -32,8 +32,7 @@
 
 (load-relative "pretty.ss")
 
-;; FIX ME!
-; (load-relative "package.ss")
+(load-relative "package.ss")
 
 (load-relative "contract-test.ss")
 

@@ -953,7 +953,12 @@ extern int (*scheme_check_print_is_obj)(Scheme_Object *o);
 static int check_home(Scheme_Object *o)
 {
 #ifdef MZ_PRECISE_GC
-  return (SCHEME_INTP(o) || GC_is_tagged(o));
+  return (SCHEME_INTP(o) || GC_is_tagged(o) 
+	  || SAME_OBJ(o, scheme_true) 
+	  || SAME_OBJ(o, scheme_false)
+	  || SAME_OBJ(o, scheme_null)
+	  || SAME_OBJ(o, scheme_eof)
+	  || SAME_OBJ(o, scheme_void));
 #else
   /* GC_set(o) */
   return 1;
@@ -1041,7 +1046,7 @@ void scheme_print_tagged_value(const char *prefix,
 	size = ((Scheme_Bucket_Table *)v)->size;
 	count = ((Scheme_Bucket_Table *)v)->count;
       }
-
+      
       sprintf(buffer, "[%c:%d:%d]", htype, count, size);
 
       len2 = strlen(buffer);
@@ -1050,6 +1055,20 @@ void scheme_print_tagged_value(const char *prefix,
       memcpy(t2 + len, buffer, len2 + 1);
       len += len2;
       type = t2;
+    } else if (!scheme_strncmp(type, "#<syntax", 8)) {
+      char *t2, *t3;
+      long len2, len3;
+
+      t2 = scheme_write_to_string_w_max(SCHEME_STX_VAL(v), &len2, 32);
+      
+      len3 = len + len2 + 2;
+      t3 = (char *)scheme_malloc_atomic(len3);
+      memcpy(t3, type, len);
+      t3[len] = '=';
+      memcpy(t3 + len + 1, t2, len2);
+      t3[len + len2 + 1] = 0;
+      type = t3;
+      len = len3;
     }
 
     sep = "=";

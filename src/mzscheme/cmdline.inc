@@ -573,7 +573,7 @@ static int run_from_cmd_line(int argc, char *argv[],
 	 ", prints version.\n"
 # endif
 # ifdef VERSION_YIELD_FLAG
-	 "  -V, --yield : Like -v, adds yield after loading/evaling all files/exprs.\n"
+	 "  -V, --yield : Like -v, adds yield after evaling/loading all exprs/files.\n"
 # endif
 	 "  -h, --help : Shows this information and exits, ignoring other switches.\n"
 #ifdef UNIX_IMAGE_DUMPS

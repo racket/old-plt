@@ -1474,7 +1474,18 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
 {
   Scheme_Input_Port *ip;
   long got = 0, i, c;
-  long orig_size = size;
+  long orig_size;
+  int only_avail;
+  int use_getc = 0;
+
+  if (size < 0) {
+    only_avail = 1;
+    size = -size;
+  } else {
+    only_avail = 0;
+  }
+
+  orig_size = size;
   
   ip = (Scheme_Input_Port *)port;
 
@@ -1528,20 +1539,95 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
       got += l;
     } else {
       /* use getc: */
-      int c;
-      
-      while (size--) {
-	Getc_Fun f = ip->getc_fun;
-	c = f(ip);
-	if (c != EOF)
-	  buffer[got++] = c;
-	else
-	  break;
-      }
+      use_getc = 1;
     }
   }
+
+  /* read-string-avail! on a generic port? */
+  if (use_getc && only_avail) {
+    /* Get more characters the semi-hard way:. */
+    /* The call to getc can only block/escape if we haven't gotten any
+       characters yet. So we can still use direct calls, the fast
+       position adjust, etc. */
+    int c;
+    Getc_Fun f = ip->getc_fun;
+    Char_Ready_Fun cr = ip->char_ready_fun;
+    Scheme_Process *pr = scheme_current_process;
+#ifdef USE_FD_PORTS
+    Scheme_FD *fip;
+#endif
+#ifdef USE_TCP
+    Scheme_Tcp *data;
+#endif
+
+#ifdef USE_FD_PORTS
+    fip = (SAME_OBJ(ip->sub_type, fd_input_port_type)
+	   ? (Scheme_FD *)ip->port_data
+	   : (Scheme_FD *)NULL);
+#endif
+#ifdef USE_TCP
+    data = (SAME_OBJ(ip->sub_type, tcp_input_port_type)
+	    ? (Scheme_Tcp *)ip->port_data
+	    : (Scheme_Tcp *)NULL);
+#endif
+
+    while (size) {
+      if (got) {
+#ifdef USE_FD_PORTS
+	if (!fip || !fip->bufcount)
+#endif
+#ifdef USE_TCP
+	  if (!data || (data->bufpos >= data->bufmax))
+#endif
+	    if (!cr(ip))
+	      break;
+	pr->eof_on_error = 1;
+      }
+#ifdef USE_FD_PORTS
+      /* Fast path for fds */
+      if (fip && fip->bufcount) {
+	int n;
+	n = ((size <= fip->bufcount)
+	     ? size
+	     : fip->bufcount);
+	  
+	memcpy(buffer + got, fip->buffer + fip->buffpos, n);
+	fip->buffpos += n;
+	fip->bufcount -= n;
+	got += n;
+	size -= n;
+      } else
+#endif
+#ifdef USE_TCP
+      /* Fast path for tcp */
+      if (data && (data->bufpos < data->bufmax)) {
+	int n;
+	n = data->bufmax - data->bufpos;
+	n = ((size <= n)
+	     ? size
+	     : n);
+	  
+	memcpy(buffer + got, data->buffer + data->bufpos, n);
+	data->bufpos += n;
+	got += n;
+	size -= n;
+      } else
+#endif
+	{
+	  c = f(ip);
+	  if (c != EOF) {
+	    buffer[got++] = c;
+	    --size;
+	  } else
+	    break;
+	}
+    }
   
-  /* Adjust position information: */
+    pr->eof_on_error = 0;
+    use_getc = 0;
+  }
+  
+  /* Adjust position information for chars got so far: */
   ip->position += got;
   for (i = got, c = 0; i--; c++) {
     if (buffer[i] == '\n' || buffer[i] == '\r') {
@@ -1559,7 +1645,21 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
   } else
     ip->charsSinceNewline += c;
 
-  if (got < orig_size)
+  /* read-string on a generic port? */
+  if (use_getc) {
+    /* Get more characters the hard way: */
+    int c;
+    
+    while (size--) {
+      c = scheme_getc((Scheme_Object *)ip);
+      if (c != EOF)
+	buffer[got++] = c;
+      else
+	break;
+    }
+  }
+
+  if ((got < orig_size) && (!only_avail || !got))
     ip->eoffound = 1;
 
   END_LOCK_PORT(ip->sema);
@@ -1844,6 +1944,11 @@ force_close_output_port(Scheme_Object *port)
   force_port_closed = 0;
 }
 
+int
+scheme_return_eof_for_error()
+{
+  return scheme_current_process->eof_on_error;
+}
 
 /*========================================================================*/
 /*                          FILE input ports                              */
@@ -1998,11 +2103,15 @@ static int file_getc(Scheme_Input_Port *port)
 
   if (c == EOF) {
     if (!feof(fp)) {
-      scheme_raise_exn(MZEXN_I_O_PORT_READ,
-		       port,
-		       "error reading from file port (%d)",
-		       errno);
-      return 0;
+      if (scheme_return_eof_for_error()) {
+	return c;
+      } else {
+	scheme_raise_exn(MZEXN_I_O_PORT_READ,
+			 port,
+			 "error reading from file port (%d)",
+			 errno);
+	return 0;
+      }
     }
 #ifndef DONT_CLEAR_FILE_EOF
     clearerr(fp);
@@ -2149,6 +2258,7 @@ static int fd_getc(Scheme_Input_Port *port)
   fip = (Scheme_FD *)port->port_data;
 
   if (fip->bufcount) {
+    /* NOTE: this fast path is also inlined in scheme_get_chars */
     fip->bufcount--;
     return fip->buffer[fip->buffpos++];
   } else {
@@ -2168,10 +2278,16 @@ static int fd_getc(Scheme_Input_Port *port)
 
     if (fip->bufcount < 0) {
       fip->bufcount = 0;
-      scheme_raise_exn(MZEXN_I_O_PORT_READ,
-		       port,
-		       "error reading from stream port (%d)",
-		       errno);
+      fip->buffpos = 0;
+      if (scheme_return_eof_for_error()) {
+	return EOF;
+      } else {
+	scheme_raise_exn(MZEXN_I_O_PORT_READ,
+			 port,
+			 "error reading from stream port (%d)",
+			 errno);
+	return 0;
+      }
     }
 
     if (!fip->bufcount) {
@@ -2541,10 +2657,12 @@ static int tested_file_getc(Scheme_Input_Port *p)
     return c;
   } else {
     /* must be an error */
-    scheme_raise_exn(MZEXN_I_O_PORT_READ,
-		     p,
-		     "error reading from file port (%d)",
-		     tip->err_no);
+    if (!scheme_return_eof_for_error()) {
+      scheme_raise_exn(MZEXN_I_O_PORT_READ,
+		       p,
+		       "error reading from file port (%d)",
+		       tip->err_no);
+    }
     return EOF;
   }
 }
@@ -3047,14 +3165,33 @@ user_getc (Scheme_Input_Port *port)
   Scheme_Object *fun, *val;
 
   fun = ((Scheme_Object **) port->port_data)[0];
-  val = _scheme_apply(fun, 0, NULL);
+
+  if (scheme_return_eof_for_error()) {
+    mz_jmp_buf savebuf;
+    memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+    if (!scheme_setjmp(scheme_error_buf)) {
+      val = _scheme_apply(fun, 0, NULL);
+    } else {
+      scheme_clear_escape();
+      val = scheme_eof;
+    }
+    memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+  } else {
+    val = _scheme_apply(fun, 0, NULL);
+  }
+
   if (SCHEME_EOFP(val))
     return EOF;
   else {
-    if (!SCHEME_CHARP(val))
-      scheme_raise_exn(MZEXN_I_O_PORT_USER,
-		       port,
-		       "port: user read-char returned a non-character");
+    if (!SCHEME_CHARP(val)) {
+      if (scheme_return_eof_for_error()) {
+	return EOF;
+      } else {
+	scheme_raise_exn(MZEXN_I_O_PORT_USER,
+			 port,
+			 "port: user read-char returned a non-character");
+      }
+    }
     return (unsigned char)SCHEME_CHAR_VAL(val);
   }
 }
@@ -4211,7 +4348,7 @@ read_string_bang(int argc, Scheme_Object *argv[])
   if (!size)
     return scheme_make_integer(0);
 
-  got = scheme_get_chars(port, size, SCHEME_STR_VAL(str) + start);
+  got = scheme_get_chars(port, -size, SCHEME_STR_VAL(str) + start);
 
   if (!got)
     return scheme_eof;
@@ -6894,6 +7031,7 @@ static int tcp_getc(Scheme_Input_Port *port)
   if (!data->activeRcv)
 #endif
     if (data->bufpos < data->bufmax)
+      /* NOTE: this fast path is also inlined in scheme_get_chars */
       return (unsigned char)data->buffer[data->bufpos++];
 
   if (!tcp_char_ready(port)) {
@@ -6982,10 +7120,14 @@ static int tcp_getc(Scheme_Input_Port *port)
 #endif
   
   if (data->bufmax == -1) {
-    scheme_raise_exn(MZEXN_I_O_PORT_READ,
-		     port,
-		     "tcp-read: error reading (%d)",
-		     errid);
+    if (scheme_return_eof_for_error()) {
+      return EOF;
+    } else {
+      scheme_raise_exn(MZEXN_I_O_PORT_READ,
+		       port,
+		       "tcp-read: error reading (%d)",
+		       errid);
+    }
   } else if (!data->bufmax) {
     data->hiteof = 1;
     return EOF;

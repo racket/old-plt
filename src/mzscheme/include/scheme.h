@@ -602,6 +602,8 @@ typedef struct Scheme_Process {
 
   long block_start_sleep;
 
+  int eof_on_error; /* For port operations */
+
 #ifdef AGRESSIVE_ZERO_TB
   int tail_buffer_set;
 #endif

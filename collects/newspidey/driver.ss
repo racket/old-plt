@@ -27,15 +27,15 @@
                terms)
           (cgp:propagate-constraints)
           
+          (let ([end (current-milliseconds)])
+            (printf "time: ~a ms~n" (- end start)))
+
           (tr:init-set-var-to-type)
           (tr:type-reduce-rec-bindings)
           (for-each da:debug-arity terms)
           
           ;; debug
           ;;(cgp:pp-constraints cgp:*the-constraints*)
-
-          (let ([end (current-milliseconds)])
-            (printf "time: ~a ms~n" (- end start)))
         )))))
   
   ) ;; unit/sig

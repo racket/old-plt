@@ -424,6 +424,12 @@
 				  (z:sequence-clause-exprs clause))))))
 		     (z:class*/names-form-inst-clauses expr)))]
 
+	    [(z:with-continuation-mark-form? expr)
+	     `(#%with-continuation-mark
+	       ,(annotate (z:with-continuation-mark-form-key expr))
+	       ,(annotate (z:with-continuation-mark-form-val expr))
+	       ,(annotate (z:with-continuation-mark-form-body expr)))]
+	    
 	    [else
 	      (print-struct #t)
 	      (z:interface:internal-error

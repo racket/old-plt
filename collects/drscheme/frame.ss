@@ -15,8 +15,51 @@
   (define basics-mixin
     (mixin (fw:frame:standard-menus<%>) (basics<%>) args
       
-      (inherit get-edit-target-object)
+      (inherit get-edit-target-object get-menu-bar)
       (private
+	[get-menu-bindings
+	 (lambda ()
+	   (let ([name-ht (make-hash-table)]
+		 [fun-ht (make-hash-table)])
+	     (let loop ([menu-container (get-menu-bar)])
+	       (for-each
+		(lambda (item)
+		  (when (is-a? item mred:selectable-menu-item<%>)
+		    (let ([short-cut (send item get-shortcut)])
+		      (when short-cut
+			(let ([keyname
+			       (fw:keymap:canonicalize-keybinding-string
+				(string-append
+				 (case (system-type)
+				   [(windows) "c:"]
+				   [(macos) "d:"]
+				   [(unix)
+				    (case (send item get-x-shortcut-prefix)
+				      [(meta) "m:"]
+				      [(alt) "a:"]
+				      [(ctl) "c:"]
+				      [(ctl-m) "c:m;"])]
+				   [else ""])
+				 (string short-cut)))])
+			  (hash-table-put! name-ht keyname (send item get-plain-label))
+			  (hash-table-put! fun-ht keyname
+					   (lambda ()
+					     (let ([evt (make-object mred:control-event% 'menu)])
+					       (send evt set-time-stamp (current-milliseconds))
+					       (send item command evt))))))))
+		  (when (is-a? item mred:menu-item-container<%>)
+		    (loop item)))
+		(send menu-container get-items)))
+	     (values name-ht fun-ht)))]
+		
+	[copy-hash-table
+	 (lambda (ht)
+	   (let ([res (make-hash-table)])
+	     (hash-table-for-each
+	      ht
+	      (lambda (x y) (hash-table-put! res x y)))
+	     res))]
+
         [show-keybindings
          (lambda ()
            (let ([edit-object (get-edit-target-object)])
@@ -24,18 +67,35 @@
                       (is-a? edit-object mred:editor<%>))
                  (let ([keymap (send edit-object get-keymap)])
                    (when (is-a? keymap fw:keymap:aug-keymap<%>)
-                     (let ([table (send keymap get-map-function-table)])
-                       (mred:get-choices-from-user
-                        "Key Bindings" "Choose binding"
-			(map
-			 (lambda (x)
-			   (format "~a (~a)" (cadr x) (car x)))
-			 (mzlib:function:quicksort
-			  (hash-table-map 
-			   table
-			   list)
-			  (lambda (x y)
-			    (string<=? (cadr x) (cadr y)))))))))
+                     (let*-values ([(menu-names menu-funs) (get-menu-bindings)])
+		       (let* ([table (send keymap get-map-function-table/ht
+					   (copy-hash-table menu-names))]
+			      [structured-list
+			       (mzlib:function:quicksort
+				(hash-table-map table list)
+				(lambda (x y) (string-ci<=? (cadr x) (cadr y))))]
+			      [choice
+			       (mred:get-choices-from-user
+				"Key Bindings" "Choose binding"
+				(map
+				 (lambda (x) (format "~a (~a)" (cadr x) (car x)))
+				 structured-list))])
+			 (when choice
+			   (let* ([choice-item (list-ref structured-list (car choice))]
+				  [choice-key (car choice-item)]
+				  [choice-name (cadr choice-item)])
+			     (cond
+			      [(hash-table-get menu-funs choice-key (lambda () #f))
+			       =>
+			       (lambda (f) (f))]
+			      [else
+			       (let ([ke (make-object mred:key-event%)])
+				 ;; should set all of ke here, but that is a pain!
+				 ;; to do this properly, need to change split out the
+				 ;; parser from the normalizer in
+				 ;; collects/framework/keymap.ss.
+				 (send keymap call-function choice-name edit-object ke #t))])))))))
+				     
                  (mred:bell))))])
       
       (override

@@ -7,11 +7,10 @@ Version 102/9:
 
    The strings and lists available from parameters like
    `current-directory' and `current-library-collection-paths' are now
-   immutable. These parameters essentially provided the motivation.
-   Otherwise, a thread might change the current directory of a
-   different thread by mutating the string returned by
-   `current-directory'. Similar problems could occur via mutations to
-   strings returned by GUI objects in MrEd.
+   immutable, which motivated the change.  Otherwise, a thread might
+   change the current directory of a different thread by mutating the
+   string returned by `current-directory'. Similar problems could
+   occur via mutations to strings returned by GUI objects in MrEd.
 
  * Changed `time-apply' to return four values --- including the gc
    time --- and changed its arguments to be like `apply', where the
@@ -21,7 +20,7 @@ Version 102/9:
    argument followed by a list is not supported by `time-apply'.)
 
    The `time' syntactic form is unchanged (but its expansion is
-   obviously different).
+   different).
 
  * Added 'exec-file flag to `find-system-path', which returns the path
    of the current executable as started by the OS. (The same path is
@@ -30,6 +29,9 @@ Version 102/9:
  * Fixed .zo writing to use indices for built-in primitives (as in
    53), instead of names (as, due to a bug, in 101). This fix shrinks
    the size of a .zo file by 20% on average.
+
+ * Fixed missing `volatile' annotations, needed to make MzScheme work
+   with gcc 2.95.2 on sparcs.
 
 Version 102/8:
 

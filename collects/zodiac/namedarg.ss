@@ -1,4 +1,4 @@
-; -*- Scheme -*-
+; $Id$
 
 (begin-construction-time
 

@@ -1,3 +1,5 @@
+; $Id$
+
 (reference "namedarg.ss")
 
   (define-argument-list zodiac:scheme-expand/nal
@@ -55,7 +57,9 @@
     resolve resolve-in-env
     macro-resolution? micro-resolution? top-level-resolution?
     introduce-identifier introduce-fresh-identifier introduce-bound-id
-    create-vocabulary append-vocabulary))
+    create-vocabulary append-vocabulary
+    (struct vocabulary-record
+      (name this rest symbol-error literal-error list-error ilist-error))))
 
 (define-signature zodiac:scheme-core^
   (name-eq? marks-equal?

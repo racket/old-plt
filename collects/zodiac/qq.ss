@@ -1,3 +1,5 @@
+; $Id$
+
 (define qq-base-level 0)
 
 (define qq-vocab
@@ -87,6 +89,10 @@
 		       (begin0
 			 (get-attribute attributes 'qq-unquote-type)
 			 (put-attribute attributes 'qq-unquote-type 'unquote))))
+		(display out) (newline)
+		(display this-changed?) (newline)
+		(display this-uq-type) (newline)
+		(newline)
 		(loop (cdr items)
 		  (cons (make-qq-seq-entry (car items) out this-changed?
 			  this-uq-type)

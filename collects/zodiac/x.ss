@@ -1,3 +1,5 @@
+; $Id$
+
 (unit/sig zodiac:expander^
   (import
     zodiac:misc^ zodiac:sexp^
@@ -125,7 +127,8 @@
   (define expand-expr
     (lambda (expr env attributes vocab)
       ; (printf "Expanding~n") (pretty-print (sexp->raw expr))
-      ; (printf "Expanding~n") (pretty-print expr) (newline))
+      ; (printf "Expanding~n~s~n~n" (sexp->raw expr))
+      ; (printf "Expanding~n") (pretty-print expr) (newline)
       ; (printf "Expanding~n") (display expr) (newline) (newline)
       ; (printf "in ~s~n" (get-vocabulary-name vocab))
       ;	(printf "in vocabulary~n") (print-env vocab)

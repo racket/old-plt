@@ -1,3 +1,5 @@
+; $Id$
+
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
 (define-struct (unit-element struct:signature-element) (id signature))

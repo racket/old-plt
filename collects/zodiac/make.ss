@@ -1,3 +1,5 @@
+; $Id$
+
 (printf "Loading ...~n")
 (load "invoke.ss")
 

@@ -1,3 +1,5 @@
+; $Id$
+
 ; Uses of memq are okay, since they look up pattern var in kwd list
 
 ; Use of equal? WILL FAIL!

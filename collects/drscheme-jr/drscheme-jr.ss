@@ -188,6 +188,10 @@
 			 (compose pretty-print-handler print-convert)
 			 pretty-print-handler))
 
+(define mzrice-user-vocabulary
+  (zodiac:create-vocabulary 'scheme-w/-user-defined-macros-vocab
+    zodiac:scheme-vocabulary))
+
 (define mzrice-expand-eval
   (let ([primitive-eval (current-eval)])
     (lambda (x)
@@ -197,7 +201,8 @@
 		  (let* ([expanded (call/nal zodiac:scheme-expand/nal
 				     zodiac:scheme-expand
 				     (expression: x)
-				     (parameterization: parameterization))]
+				     (parameterization: parameterization)
+				     (vocabulary: mzrice-user-vocabulary))]
 			 [_ '(printf "expanded: ~a~n~n" expanded)]
 			 [annotated (if annotate?
 					(aries:annotate expanded)

@@ -281,7 +281,7 @@
 			  flags))
 	      (newline))
 	    'truncate/replace))
-       (,(format "Save current settings to ~a" (get-argv-file)))]
+       (,(format "Save current settings to:~n           ~a" (get-argv-file)))]
       [("--show")
        ,(lambda (_) (printf "Current settings: ~a~n" (make-implies-string #f)))
        ("Show the current settings")]
@@ -292,7 +292,7 @@
 		  level
 		  (make-implies-string syntax-level))
 	  (exit))
-       ("Show the flags implies by a particular language" "language")]])
+       ("Show the flags implied by a particular language" "language")]])
    (case-lambda 
     [(accum) #f]
     [(accum file) file])

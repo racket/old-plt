@@ -1025,7 +1025,7 @@ improve method arity mismatch contract violation error messages?
                          [(method/app-var ...) (generate-temporaries mtds)]
                          [(methods ...) (build-methods-stx (map mtd-mtd-arg-stx mtds))]
                          
-                         [(field-ctc-stx ...) (map mtd-ctc-stx flds)]
+                         [(field-ctc-stx ...) (map fld-ctc-stx flds)]
                          [(field-name ...) (map fld-name flds)]
                          [(field-var ...) (generate-temporaries flds)]
                          [(field/app-var ...) (generate-temporaries flds)])
@@ -1033,52 +1033,46 @@ improve method arity mismatch contract violation error messages?
               (make-contract
                "class contract"
                (let ([method-var (contract-proc method-ctc-stx)] ...
-                     [field-ctc-var field-ctc-stx] ...)
-                 (begin
-                   (void)
-                   (unless (contract? field-ctc-var)
-                     (error 'object-contract
-                            "expected contract for field ~a, got ~e"
-                            'field-name
-                            field-ctc-var)) ...)
-                 (let ([field-var (contract-proc field-ctc-var)] ...)
-                   (lambda (pos-blame neg-blame src-info orig-str)
-                     (let ([method/app-var (method-var pos-blame neg-blame src-info orig-str)] ...
-                           [field/app-var (field-var pos-blame neg-blame src-info orig-str)]...)
-                       (let ([cls (make-wrapper-class 'wrapper-class 
-                                                      '(method-name ...)
-                                                      (list methods ...)
-                                                      '() ; '(field-name ...)
-                                                      )])
-                         (lambda (val)
-                           (unless (object? val)
+                     [field-var (contract-proc (coerce-contract object-contract field-ctc-stx))] ...)
+                 (lambda (pos-blame neg-blame src-info orig-str)
+                   (let ([method/app-var (method-var pos-blame neg-blame src-info orig-str)] ...
+                         [field/app-var (field-var pos-blame neg-blame src-info orig-str)]...)
+                     (let ([cls (make-wrapper-class 'wrapper-class 
+                                                    '(method-name ...)
+                                                    (list methods ...)
+                                                    '(field-name ...)
+                                                    )])
+                       (lambda (val)
+                         (unless (object? val)
+                           (raise-contract-error src-info
+                                                 pos-blame
+                                                 neg-blame
+                                                 orig-str
+                                                 "expected an object, got ~e"
+                                                 val))
+                         (let ([val-mtd-names
+                                (interface->method-names
+                                 (object-interface
+                                  val))])
+                           (void)
+                           (unless (memq 'method-name val-mtd-names)
                              (raise-contract-error src-info
                                                    pos-blame
                                                    neg-blame
                                                    orig-str
-                                                   "expected an object, got ~e"
-                                                   val))
-                           (let ([val-mtd-names
-                                  (interface->method-names
-                                   (object-interface
-                                    val))])
-                             (void)
-                             (unless (memq 'method-name val-mtd-names)
-                               (raise-contract-error src-info
-                                                     pos-blame
-                                                     neg-blame
-                                                     orig-str
-                                                     "expected an object with method ~s"
-                                                     'method-name))
-                             ...)
-                           
-                           (let ([vtable (extract-vtable val)]
-                                 [method-ht (extract-method-ht val)])
-                             (make-object cls
-                               val
-                               (method/app-var (vector-ref vtable (hash-table-get method-ht 'method-name))) ...
-                               ;(field/app-var (field-res val 'field-name))
-                               ))))))))))))]))
+                                                   "expected an object with method ~s"
+                                                   'method-name))
+                           ...)
+                         
+                         ;; need to make sure all field names are there...
+                         
+                         (let ([vtable (extract-vtable val)]
+                               [method-ht (extract-method-ht val)])
+                           (make-object cls
+                             val
+                             (method/app-var (vector-ref vtable (hash-table-get method-ht 'method-name))) ...
+                             (field/app-var (get-field field-name val)) ...
+                             )))))))))))]))
     
     (define (object-contract/proc2 stx)
       (syntax-case stx ()

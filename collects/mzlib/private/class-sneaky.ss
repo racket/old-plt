@@ -2098,6 +2098,31 @@ substitutability is checked properly.
        (mk (quote-syntax make-class-field-mutator) "class")
        (mk (quote-syntax make-generic/proc) "class or interface"))))
 
+  (define-syntax (get-field stx)
+    (syntax-case stx ()
+      [(_ name obj)
+       (identifier? (syntax name))
+       (syntax (let ([obj-x obj])
+                 (unless (object? obj-x)
+                   (raise-mismatch-error 
+                    'get-field
+                    "expected an object, got"
+                    obj-x))
+                 (let* ([cls (object-ref obj-x)]
+                        [field-ht (class-field-ht cls)]
+                        [index (hash-table-get 
+                                field-ht
+                                'name
+                                (lambda ()
+                                  (raise-mismatch-error 
+                                   'get-field
+                                   (format "expected an object that has a field named ~s, got " 'name)
+                                   obj-x)))]
+                        [getter (class-field-ref cls)])
+                   (getter obj-x (cdr index)))))]
+      [(_ name obj)
+       (raise-syntax-error 'get-field "expected a field name as first argument" stx (syntax name))]))
+  
   (define (find-with-method object name)
     (find-method/who 'with-method object name))
 
@@ -2516,7 +2541,7 @@ substitutability is checked properly.
         (let loop ([i 0]
                    [field-ids field-ids])
           (when (< i field-count)
-            (hash-table-put! field-ht (car field-ids) (+ i 1 method-count))
+            (hash-table-put! field-ht (car field-ids) (cons cls (+ i method-count)))
             (loop (+ i 1)
                   (cdr field-ids))))
         
@@ -2569,6 +2594,7 @@ substitutability is checked properly.
 	   (rename :interface interface) interface?
 	   object% object?
 	   new make-object instantiate
+           get-field
 	   send send/apply send* class-field-accessor class-field-mutator with-method
 	   private* public*  public-final* override* override-final*
 	   define/private define/public define/public-final define/override define/override-final

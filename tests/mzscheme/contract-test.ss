@@ -759,12 +759,73 @@
       (eval '(require contract-test-suite6))
       (eval '(define-struct (t s) ()))))
 
+  
+;                                                                                                     
+;                                                                                                     
+;                                                                                                     
+;           ;       ;                                                                                 
+;           ;                                                                                         
+;           ;                         ;                                   ;                       ;   
+;    ;;;    ; ;;    ;    ;;;    ;;;  ;;;;           ;;;    ;;;    ; ;;   ;;;;  ; ;  ;;;     ;;;  ;;;; 
+;   ;   ;   ;;  ;   ;   ;   ;  ;   ;  ;            ;   ;  ;   ;   ;;  ;   ;    ;;  ;   ;   ;   ;  ;   
+;  ;     ;  ;    ;  ;  ;    ; ;       ;           ;      ;     ;  ;   ;   ;    ;       ;  ;       ;   
+;  ;     ;  ;    ;  ;  ;;;;;; ;       ;    ;;;;;; ;      ;     ;  ;   ;   ;    ;    ;;;;  ;       ;   
+;  ;     ;  ;    ;  ;  ;      ;       ;           ;      ;     ;  ;   ;   ;    ;   ;   ;  ;       ;   
+;   ;   ;   ;;  ;   ;   ;      ;   ;  ;            ;   ;  ;   ;   ;   ;   ;    ;   ;   ;   ;   ;  ;   
+;    ;;;    ; ;;    ;    ;;;;   ;;;    ;;           ;;;    ;;;    ;   ;    ;;  ;    ;;;;;   ;;;    ;; 
+;                   ;                                                                                 
+;                   ;                                                                                 
+;                 ;;                                                                                  
+
+  
   (test/spec-passed
    'object-contract0
    '(contract (object-contract)
               (new object%)
               'pos
               'neg))
+
+  (test/spec-failed
+   'object-contract/field1
+   '(contract (object-contract (field x integer?))
+              (new object%)
+              'pos
+              'neg)
+   "pos")
+  
+  (test/spec-failed
+   'object-contract/field2
+   '(contract (object-contract (field x integer?))
+              (new (class object% (field [x #t]) (super-new)))
+              'pos
+              'neg)
+   "pos")
+  
+  (test/spec-passed/result
+   'object-contract/field3
+   '(get-field
+     x
+     (contract (object-contract (field x integer?))
+               (new (class object% (field [x 12]) (super-new)))
+               'pos
+               'neg))
+   12)
+  
+  (test/spec-failed
+   'object-contract/field4
+   '(contract (object-contract (field x boolean?) (field y boolean?))
+              (new (class object% (field [x #t] [y 'x]) (super-new)))
+              'pos
+              'neg)
+   "pos")
+  
+  (test/spec-failed
+   'object-contract/field5
+   '(contract (object-contract (field x symbol?) (field y symbol?))
+              (new (class object% (field [x #t] [y 'x]) (super-new)))
+              'pos
+              'neg)
+   "pos")
   
   (test/spec-passed/result
    'object-contract1
@@ -815,6 +876,25 @@
               'neg)
    "pos")
 
+  
+;                                                                     
+;                                                                     
+;                                                                     
+;   ;                                               ;       ;         
+;                                                   ;       ;         
+;                                       ;           ;       ;         
+;   ;   ; ;;  ;;    ; ;;  ;;    ;   ;  ;;;;  ;;;    ; ;;    ;    ;;;  
+;   ;   ;;  ;;  ;   ;;  ;;  ;   ;   ;   ;   ;   ;   ;;  ;   ;   ;   ; 
+;   ;   ;   ;   ;   ;   ;   ;   ;   ;   ;       ;   ;    ;  ;  ;    ; 
+;   ;   ;   ;   ;   ;   ;   ;   ;   ;   ;    ;;;;   ;    ;  ;  ;;;;;; 
+;   ;   ;   ;   ;   ;   ;   ;   ;   ;   ;   ;   ;   ;    ;  ;  ;      
+;   ;   ;   ;   ;   ;   ;   ;   ;  ;;   ;   ;   ;   ;;  ;   ;   ;     
+;   ;   ;   ;   ;   ;   ;   ;    ;; ;    ;;  ;;;;;  ; ;;    ;    ;;;; 
+;                                                                     
+;                                                                     
+;                                                                     
+
+  
   (test/spec-failed
    'immutable1
    '(let ([ct (contract (list-immutableof (boolean? . -> . boolean?)) 

@@ -122,7 +122,7 @@
       (for-each (lambda (imp) (process-import type-recs imp level)) (package-imports prog))
 
       ;Build jinfo information for each def in this file
-      (for-each (lambda (def) (process-class/iface def pname type-recs (null? args) level)) defs)
+      (for-each (lambda (def) (process-class/iface def pname type-recs (null? args) #t level)) defs)
 
       ;Add these to the list for type checking
       (add-to-queue defs)))
@@ -154,7 +154,7 @@
         (send type-recs add-require-syntax native-name 
               (build-require-syntax (car native-name) pname dir #f #f))
         (send type-recs add-to-records defname
-              (lambda () (process-class/iface def pname type-recs look-in-table level)))
+              (lambda () (process-class/iface def pname type-recs look-in-table #t level)))
         ;;get info for Inner member classes
         (let ([prefix (format "~a." name)])
           (for-each (lambda (member)
@@ -165,10 +165,14 @@
                         (add-def-info member pname type-recs current-loc #f (def-level def) req-syn)))
                     (def-members def))))))
   
-  ;build-anon-info: def (list string) symbol type-records loc bool -> void
-  (define (build-inner-info def pname level type-recs current-loc look-in-table?)
-    (add-def-info def pname type-recs current-loc look-in-table? level)
-    (process-class/iface def pname type-recs #f level))
+  ;build-anon-info: def (U void symbol) (list string) symbol type-records loc bool -> class-record
+  (define (build-inner-info def unique-name pname level type-recs current-loc look-in-table?)
+    ;(add-def-info def pname type-recs current-loc look-in-table? level)
+    (let ((record (process-class/iface def pname type-recs #f #f level)))
+      (send type-recs add-to-records 
+            (if (eq? (def-kind def) 'statement) (list unique-name) (id-string (def-name def)))
+            record)
+      record))
   
   ;add-to-queue: (list definition) -> void
   (define (add-to-queue defs)
@@ -387,11 +391,13 @@
   ;------------------------------------------------------------------------------------
   ;Functions for processing classes and interfaces
   
-  ;; process-class/iface: (U class-def interface-def) (list string) type-records bool symbol -> class-record
-  (define (process-class/iface ci package-name type-recs look-in-table level)
+  ;; process-class/iface: (U class-def interface-def) (list string) type-records bool bool symbol -> class-record
+  (define (process-class/iface ci package-name type-recs look-in-table put-in-table level)
     (cond
-      ((interface-def? ci) (process-interface ci package-name type-recs look-in-table level))
-      ((class-def? ci) (process-class ci package-name type-recs look-in-table level))))
+      ((interface-def? ci) 
+       (process-interface ci package-name type-recs look-in-table put-in-table level))
+      ((class-def? ci) 
+       (process-class ci package-name type-recs look-in-table put-in-table level))))
   
   ;;get-parent-record: (list string) name (list string) type-records (list string) -> record
   (define (get-parent-record name n child-name level type-recs)
@@ -439,14 +445,14 @@
                                      (method-record-modifiers m2))))
                (over-riden? m (cdr listm))))))
   
-  ;; process-class: class-def (list string) type-records bool symbol -> class-record
-  (define (process-class class package-name type-recs look-in-table? level)
+  ;; process-class: class-def (list string) type-records bool bool symbol -> class-record
+  (define (process-class class package-name type-recs look-in-table? put-in-table? level)
     (let* ((info (def-header class))
            (cname (cons (id-string (header-id info)) package-name)))
       (send type-recs set-location! (def-file class))
       (let ((build-record
              (lambda ()
-               (send type-recs add-to-records cname 'in-progress)
+               (when put-in-table? (send type-recs add-to-records cname 'in-progress))
                (let* ((super (if (null? (header-extends info)) null (car (header-extends info))))
                       (super-name (if (null? super) 
                                       '("Object" "java" "lang") 
@@ -552,11 +558,11 @@
                                         (append (map name->list (header-implements info))
                                                 (map class-record-parents iface-records)
                                                 (class-record-ifaces super-record)))))))
-                     (send type-recs add-class-record record)
+                     (when put-in-table? (send type-recs add-class-record record))
                      
                      (for-each (lambda (member)
 			     (when (def? member)
-			       (process-class/iface member package-name type-recs #f level)))
+			       (process-class/iface member package-name type-recs #f put-in-table? level)))
 			   members)
                      
                      record))))))
@@ -565,8 +571,7 @@
            (lambda (rec) rec))
           (look-in-table?
            (get-record (send type-recs get-class-record cname #f build-record) type-recs))
-          (else
-           (build-record))))))
+          (else (build-record))))))
   
   ;find-strictfp (list modifier) -> modifier
   (define (find-strictfp mods)
@@ -617,8 +622,8 @@
                   (car methods))
              (find-default-ctor (cdr methods)))))
   
-  ;; process-interface: interface-def (list string) type-records bool symbol -> class-record
-  (define (process-interface iface package-name type-recs look-in-table? level)
+  ;; process-interface: interface-def (list string) type-records bool bool symbol -> class-record
+  (define (process-interface iface package-name type-recs look-in-table? put-in-table? level)
     (let* ((info (def-header iface))
            (iname (cons (id-string (header-id info)) package-name)))
       (send type-recs set-location! (def-file iface))

@@ -32,8 +32,8 @@
   ;; var-type => (make-var-type string type properties)
   (define-struct var-type (var type properties))
   
-  ;;inner-rec ==> (make-inner-rec string class-rec)
-  (define-struct inner-rec (name record))
+  ;;inner-rec ==> (make-inner-rec string (U symbol void) class-rec)
+  (define-struct inner-rec (name unique-name record))
   
   ;;Environment variable properties
   ;;(make-properties bool bool bool bool bool bool)
@@ -194,13 +194,13 @@
   (define (lookup-label label env)
     (member label (environment-labels env)))
 
-  ;;add-local-inner-to-env: string class-rec env -> env
-  (define (add-local-inner-to-env name rec env)
+  ;;add-local-inner-to-env: string symbol class-rec env -> env
+  (define (add-local-inner-to-env name unique-name rec env)
     (make-environment (environment-types env)
                       (environment-set-vars env)
                       (environment-exns env)
                       (environment-labels env)
-                      (cons (make-inner-rec name rec) (environment-local-inners env))))
+                      (cons (make-inner-rec name unique-name rec) (environment-local-inners env))))
   
   ;;lookup-local-inner: string env -> (U class-rec #f)
   (define (lookup-local-inner name env)
@@ -322,7 +322,7 @@
       (update-class-with-inner old-update)
       (send type-recs set-class-reqs old-reqs)))
   
-  ;check-inner def symbol type-records (list string) env -> (U class-record void)
+  ;check-inner def symbol type-records (list string) env -> (U (list symbol class-record) void)
   (define (check-inner-def def level type-recs c-class env)
     (let* ((statement-inner? (eq? (def-kind def) 'statement))
            (local-inner? (or (eq? (def-kind def) 'anon) statement-inner?))
@@ -342,7 +342,9 @@
       (for-each (lambda (use)
                   (add-required c-class (req-class use) (req-path use) type-recs))
                 (def-uses def))
-      inner-rec))
+      (when statement-inner?
+        (set-id-string! (header-id (def-header def)) unique-name))
+      (list unique-name inner-rec)))
     
   ;add-init-args: def env -> void
   ;Updates the inner class with the names of the final variables visible within the class
@@ -1011,8 +1013,9 @@
   (define (check-throw exp/env src env interact? type-recs)
     (let ((exp-type (type/env-t exp/env)))
       (cond
-        ((and (scheme-val? exp-type) (scheme-val-type exp-type)) =>
-       (lambda (t) (check-throw t src env interact? type-recs)))
+        ((and (scheme-val? exp-type) (scheme-val-type exp-type)) 
+         =>
+         (lambda (t) (check-throw t src env interact? type-recs)))
         ((scheme-val? exp-type) (set-scheme-val-type! throw-type))
         ((or (not (ref-type? exp-type))
              (not (is-eq-subclass? exp-type throw-type type-recs)))
@@ -1147,10 +1150,11 @@
   ;check-local-inner: def env symbol (list string) type-records -> type/env
   (define (check-local-inner def env level c-class type-recs)
     ((update-class-with-inner) def)
-    (make-type/env (make-ref-type (id-string (def-name def)) null) 
-                   (add-local-inner-to-env 
-                    (id-string (def-name def))
-                    (check-inner-def def level type-recs c-class env) env)))
+    (let ((original-name (id-string (def-name def)))
+          (rec/new-name (check-inner-def def level type-recs c-class env)))
+      (make-type/env 
+       (make-ref-type original-name null) 
+       (add-local-inner-to-env original-name (car rec/new-name) (cadr rec/new-name) env))))
   
   ;check-break: (U id #f) src bool bool symbol env-> type/env
   (define (check-break label src in-loop? in-switch? level env)
@@ -1537,11 +1541,16 @@
                  (if obj
                      (field-lookup fname (type/env-t obj-type/env) obj src level type-recs)
                      (let* ((name (var-access-class (field-access-access acc))))
-                       (set! class-rec (get-record (send type-recs get-class-record 
-                                                         (if (pair? name) name (list name))
-                                                         #f
-                                                         ((get-importer type-recs) name type-recs level src))
-                                                   type-recs))
+                       (set! class-rec
+                             ;First clause: static field of a local inner class
+                             (or (and (or (string? name) (= 1 (length name)))
+                                      (let ((rec? (lookup-local-inner (if (pair? name) (car name) name) env)))
+                                        (and rec? (inner-rec-record rec?))))
+                                 (get-record (send type-recs get-class-record 
+                                                   (if (pair? name) name (list name))
+                                                   #f
+                                                   ((get-importer type-recs) name type-recs level src))
+                                             type-recs)))
                        (cond
                          ((class-record? class-rec)
                           (get-field-record fname class-rec
@@ -2104,15 +2113,24 @@
                     (make-name (def-name name/def) null (id-src (def-name name/def))))
                    ((id? name/def) (make-name name/def null (id-src name/def)))
                    (else name/def)))
-           (type (name->type name/def c-class (name-src name) level type-recs))
-           (class-record (get-record (send type-recs get-class-record type c-class) type-recs))
-           (methods (get-method-records (car (class-record-name class-record)) class-record)))
-      (unless (equal? (car (class-record-name class-record)) (ref-type-class/iface type))
+           (inner-lookup? (lookup-local-inner (id-string (name-id name)) env))      
+           (type (if inner-lookup?
+                     (make-ref-type (symbol->string (inner-rec-unique-name inner-lookup?)) null)
+                     (name->type name/def c-class (name-src name) level type-recs)))
+           (class-record 
+            (if inner-lookup?
+                (inner-rec-record inner-lookup?)
+                (get-record (send type-recs get-class-record type c-class) type-recs)))
+           (methods (get-method-records (id-string (name-id name)) class-record)))
+      (unless (or (equal? (car (class-record-name class-record)) (ref-type-class/iface type))
+                  (not (def? name/def))
+                  (not inner-lookup?))
         (set-id-string! (name-id name) (car (class-record-name class-record)))
         (set-class-alloc-inner?! exp #t))
       (unless (or (equal? (ref-type-class/iface type) (car c-class))
                   (equal? (car (class-record-name class-record))
                           (format "~a.~a" (car c-class) (ref-type-class/iface type)))
+                  (class-alloc-inner? exp)
                   (inner-alloc? exp))
         (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
       (when (memq 'abstract (class-record-modifiers class-record))
@@ -2202,8 +2220,18 @@
   ;                    symbol (list string) type-records -> type/env
   (define (check-array-alloc elt-type exps dim src check-sub-exp env level c-class type-recs)
     (send type-recs add-req (make-req 'array null))
-    (let ((type (type-spec-to-type elt-type c-class level type-recs)))
-      (when (ref-type? type)
+    (let* ((inner-lookup? 
+            (and (name? (type-spec-name elt-type))
+                 (lookup-local-inner (id-string (name-id (type-spec-name elt-type))) env)))
+           (type 
+            (if inner-lookup?
+                (if (> (type-spec-dim elt-type) 0)
+                    (make-array-type
+                     (make-ref-type (inner-rec-unique-name inner-lookup?) null)
+                     (type-spec-dim elt-type))
+                    (make-ref-type (inner-rec-unique-name inner-lookup?) null))
+                (type-spec-to-type elt-type c-class level type-recs))))
+      (when (and (ref-type? type) (not inner-lookup?))
         (add-required c-class (ref-type-class/iface type) (ref-type-path type) type-recs))
       (set-type-spec-dim! elt-type (+ (length exps) dim))
       (let loop ((subs exps) (env env))
@@ -2224,10 +2252,20 @@
   ;;                        (list string) type-records -> type/env
   (define (check-array-alloc-init elt-type dim init src check-sub-exp env level c-class type-recs)
     (send type-recs add-req (make-req 'array null))
-    (let* ((type (type-spec-to-type elt-type c-class level type-recs))
+    (let* ((inner-lookup? 
+            (and (name? (type-spec-name elt-type))
+                 (lookup-local-inner (id-string (name-id (type-spec-name elt-type))) env)))
+           (type 
+            (if inner-lookup?
+                (if (> (type-spec-dim elt-type) 0)
+                    (make-array-type
+                     (make-ref-type (inner-rec-unique-name inner-lookup?) null)
+                     (type-spec-dim elt-type))
+                    (make-ref-type (inner-rec-unique-name inner-lookup?) null))
+                (type-spec-to-type elt-type c-class level type-recs)))
            (a-type/env (check-array-init (array-init-vals init) check-sub-exp env type type-recs))
            (a-type (type/env-t a-type/env)))
-      (when (ref-type? type)
+      (when (and (ref-type? type) (not inner-lookup?))
         (add-required c-class (ref-type-class/iface type) (ref-type-path type) type-recs))
       (unless (= (array-type-dim a-type) dim)
         (array-dim-error type dim (array-type-dim a-type) src))
@@ -2321,13 +2359,24 @@
               'boolean
               (unary-error op 'bool expr-type src))))
        (type/env-e expr-type/env))))
-    
+  
   ;; 15.16
   ;check-cast: type/env type-spec src symbol (list string) type-records -> type/env
   (define (check-cast exp-type/env cast-type src level current-class type-recs)
-    (let ((exp-type (type/env-t exp-type/env))
-          (type (type-spec-to-type cast-type current-class level type-recs)))
-      (when (reference-type? type)
+    (let* ((exp-type (type/env-t exp-type/env))
+           (env (type/env-e exp-type/env))
+           (inner-lookup? 
+            (and (name? (type-spec-name cast-type))
+                 (lookup-local-inner (id-string (name-id (type-spec-name cast-type))) env)))
+           (type 
+            (if inner-lookup?
+                (if (> (type-spec-dim cast-type) 0)
+                    (make-array-type
+                     (make-ref-type (inner-rec-unique-name inner-lookup?) null)
+                     (type-spec-dim cast-type))
+                    (make-ref-type (inner-rec-unique-name inner-lookup?) null))
+                (type-spec-to-type cast-type current-class level type-recs))))
+      (when (and (reference-type? type) (not inner-lookup?))
         (unless (equal? (car current-class) (ref-type-class/iface type))
           (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type)))))
       (make-type/env
@@ -2341,9 +2390,20 @@
   ;; 15.20.2
   ;check-instanceof type/env type-spec src symbol (list string) type-records -> type/env
   (define (check-instanceof exp-type/env inst-type src level current-class type-recs)
-    (let ((exp-type (type/env-t exp-type/env))
-          (type (type-spec-to-type inst-type current-class level type-recs)))
-      (when (ref-type? type)
+    (let* ((exp-type (type/env-t exp-type/env))
+           (env (type/env-e exp-type/env))
+           (inner-lookup? 
+            (and (name? (type-spec-name inst-type))
+                 (lookup-local-inner (id-string (name-id (type-spec-name inst-type))) env)))
+           (type 
+            (if inner-lookup?
+                (if (> (type-spec-dim inst-type) 0)
+                    (make-array-type
+                     (make-ref-type (inner-rec-unique-name inner-lookup?) null)
+                     (type-spec-dim inst-type))
+                    (make-ref-type (inner-rec-unique-name inner-lookup?) null))
+                (type-spec-to-type inst-type current-class level type-recs))))
+      (when (and (ref-type? type) (not inner-lookup?))
         (unless (equal? (car current-class) (ref-type-class/iface type))
           (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type)))))
       (make-type/env 

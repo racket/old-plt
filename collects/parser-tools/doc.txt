@@ -174,7 +174,7 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
   (define-empty-tokens grouping-tokens (OPEN CLOSE HASHOPEN IMPROPER EOF))
   
   (define read-lexer
-    (lex
+    (lexer
      [(: #\newline #\space #\tab (comment)) 
       (read-lexer lex-buf)]
      ["#t" 
@@ -221,7 +221,7 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
     (parser 
      (start sexp-list)
      (debug "read-table")
-     (error (lambda () (error 'read-error)))
+     (error (lambda (x) (error 'read-error)))
      (tokens value-tokens grouping-tokens)
      (end EOF)
      (grammar

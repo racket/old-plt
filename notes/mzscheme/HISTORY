@@ -8,17 +8,17 @@ Version 199.24:
    variables are implemented. The change has various performance
    implications (but it should be invisible otherwise):
 
-      GOOD - code is shared completely for separate instantiations of
-      a module, saving space in many cases.
+      Pro: code is shared completely for separate instantiations of a
+      module, saving space in many cases.
 
-      BAD - `lambda' expressions that reference only top-levels and
-      imports used to be constant closures, but now they have to be
+      Con: a `lambda' expression that references only top-levels and
+      imports used to be a constant closure, but now it has to be
       constructed (unless all the references are to primitives).
 
  * Got rid of lazy invocations for compile-time code in a module (and
    its for-syntax imports, etc.) via `require'. This simplifies the
    programming model in a useful way, and it's cheap enough after the
-   change to top-level variable access.
+   change to module-variable access.
 
 Version 199.23:
 

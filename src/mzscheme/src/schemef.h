@@ -393,6 +393,9 @@ MZ_EXTERN Scheme_Object *scheme_make_immutable_sized_utf8_string(char *chars, lo
 
 MZ_EXTERN Scheme_Object *scheme_char_string_to_byte_string(Scheme_Object *s);
 MZ_EXTERN Scheme_Object *scheme_byte_string_to_char_string(Scheme_Object *s);
+MZ_EXTERN Scheme_Object *scheme_char_string_to_byte_string_locale(Scheme_Object *s);
+MZ_EXTERN Scheme_Object *scheme_byte_string_to_char_string_locale(Scheme_Object *s);
+MZ_EXTERN Scheme_Object *scheme_char_string_to_path(Scheme_Object *p);
 
 MZ_EXTERN Scheme_Object *scheme_make_char_string(const mzchar *chars);
 MZ_EXTERN Scheme_Object *scheme_make_sized_char_string(mzchar *chars, long len, int copy);
@@ -630,8 +633,13 @@ MZ_EXTERN char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn);
 MZ_EXTERN int scheme_os_setcwd(char *buf, int noexn);
 MZ_EXTERN char *scheme_getdrive(void);
 
-MZ_EXTERN Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **base, int *isdir);
-MZ_EXTERN Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv);
+MZ_EXTERN Scheme_Object *scheme_split_path(const char *path, int len, Scheme_Object **base, int *isdir);
+MZ_EXTERN Scheme_Object *scheme_build_path(int argc, Scheme_Object **argv);
+
+MZ_EXTERN Scheme_Object *scheme_make_path(const char *chars);
+MZ_EXTERN Scheme_Object *scheme_make_sized_path(char *chars, long len, int copy);
+MZ_EXTERN Scheme_Object *scheme_make_sized_offset_path(char *chars, long d, long len, int copy);
+MZ_EXTERN Scheme_Object *scheme_make_path_without_copying(char *chars);
 
 #ifdef MACINTOSH_EVENTS
 MZ_EXTERN char *scheme_mac_spec_to_path(mzFSSpec *spec);

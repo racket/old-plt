@@ -3441,7 +3441,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   lhd->p = p;
   lhd->config = config;
   lhd->port = port;
-  name = scheme_make_byte_string(((Scheme_Input_Port *)port)->name);
+  name = scheme_make_path(((Scheme_Input_Port *)port)->name);
   lhd->stxsrc = name;
   lhd->expected_module = expected_module;
 
@@ -3522,7 +3522,7 @@ Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[],
   ld->param = handler_param;
   {
     Scheme_Object *ss;
-    ss = scheme_make_sized_byte_string((char *)filename, -1, 0);
+    ss = scheme_make_sized_path((char *)filename, -1, 0);
     ld->filename = ss;
   }
   ld->config = config;
@@ -3560,7 +3560,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
     if (!SCHEME_PATH_STRINGP(d))
       return NULL;
 
-    ed = (SCHEME_BYTE_STRINGP(d) ? d : scheme_char_string_to_byte_string(d));
+    ed = (SCHEME_PATHP(d) ? d : scheme_char_string_to_path(d));
     s = SCHEME_BYTE_STR_VAL(ed);
     len = SCHEME_BYTE_STRTAG_VAL(ed);
 
@@ -3573,7 +3573,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
 
     expanded = scheme_expand_string_filename(d, "current-load-relative-directory", NULL, 
 					     SCHEME_GUARD_FILE_EXISTS);
-    ed = scheme_make_immutable_sized_byte_string(expanded, strlen(expanded), 1);
+    ed = scheme_make_sized_path(expanded, strlen(expanded), 1);
 
     return ed;
   }
@@ -3587,7 +3587,7 @@ current_load_directory(int argc, Scheme_Object *argv[])
   return scheme_param_config("current-load-relative-directory", 
 			     scheme_make_integer(MZCONFIG_LOAD_DIRECTORY),
 			     argc, argv,
-			     -1, abs_directory_p, "string or #f", 1);
+			     -1, abs_directory_p, "path, string, or #f", 1);
 }
 
 Scheme_Object *scheme_load(const char *file)
@@ -3596,7 +3596,7 @@ Scheme_Object *scheme_load(const char *file)
   mz_jmp_buf savebuf;
   Scheme_Object * volatile val;
 
-  p[0] = scheme_make_byte_string(file);
+  p[0] = scheme_make_path(file);
   memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
   if (scheme_setjmp(scheme_error_buf)) {
     val = NULL;

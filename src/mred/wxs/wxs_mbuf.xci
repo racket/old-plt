@@ -70,18 +70,18 @@
 @ Z "on-new-image-snip" : wxImageSnip! OnNewImageSnip(nstring,SYM[bitmapType],bool,bool);
 @ Z "on-new-box" : wxSnip! OnNewBox(SYM[bufferType]);
 
-@ Z "can-save-file?" : bool CanSaveFile(bstring,SYM[fileType]);
-@ Z "on-save-file" : void OnSaveFile(bstring,SYM[fileType]);
+@ Z "can-save-file?" : bool CanSaveFile(epathname,SYM[fileType]);
+@ Z "on-save-file" : void OnSaveFile(epathname,SYM[fileType]);
 @ Z "after-save-file" : void AfterSaveFile(bool);
-@ Z "can-load-file?" : bool CanLoadFile(bstring,SYM[fileType]);
-@ Z "on-load-file" : void OnLoadFile(bstring,SYM[fileType]);
+@ Z "can-load-file?" : bool CanLoadFile(epathname,SYM[fileType]);
+@ Z "on-load-file" : void OnLoadFile(epathname,SYM[fileType]);
 @ Z "after-load-file" : void AfterLoadFile(bool);
 
 @ Z "on-edit-sequence" : void OnEditSequence();
 @ Z "after-edit-sequence" : void AfterEditSequence();
 
-@ Z "get-file" : nbstring GetFile(nbstring);
-@ Z "put-file" : nbstring PutFile(nbstring, nbstring);
+@ Z "get-file" : npathname GetFile(epathname);
+@ Z "put-file" : npathname PutFile(epathname, epathname);
 
 @MACRO makeNoCopyFlatString[len] = WITH_VAR_STACK(scheme_make_sized_char_string(r, <len>, 0))
 

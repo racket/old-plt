@@ -150,7 +150,7 @@ class os_wxPanel : public wxPanel {
   os_wxPanel CONSTRUCTOR_ARGS((class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "panel"));
 #endif
   ~os_wxPanel();
-  void OnDropFile(pathname x0);
+  void OnDropFile(epathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
   void OnSize(int x0, int x1);
@@ -197,7 +197,7 @@ os_wxPanel::~os_wxPanel()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
-void os_wxPanel::OnDropFile(pathname x0)
+void os_wxPanel::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -613,14 +613,14 @@ static Scheme_Object *os_wxPanelOnDropFile(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPanel_class, "on-drop-file in panel%", n, p);
-  pathname x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "on-drop-file in panel%"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "on-drop-file in panel%"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
@@ -1168,7 +1168,7 @@ class os_wxDialogBox : public wxDialogBox {
 
   os_wxDialogBox CONSTRUCTOR_ARGS((class wxWindow* x0, nstring x1, Bool x2 = FALSE, int x3 = 300, int x4 = 300, int x5 = 500, int x6 = 500, int x7 = 0, string x8 = "dialogBox"));
   ~os_wxDialogBox();
-  void OnDropFile(pathname x0);
+  void OnDropFile(epathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
   void OnSize(int x0, int x1);
@@ -1203,7 +1203,7 @@ os_wxDialogBox::~os_wxDialogBox()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
-void os_wxDialogBox::OnDropFile(pathname x0)
+void os_wxDialogBox::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1535,14 +1535,14 @@ static Scheme_Object *os_wxDialogBoxOnDropFile(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDialogBox_class, "on-drop-file in dialog%", n, p);
-  pathname x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "on-drop-file in dialog%"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "on-drop-file in dialog%"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)

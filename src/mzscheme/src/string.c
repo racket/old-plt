@@ -137,8 +137,11 @@ static Scheme_Object *byte_string_utf8_ref (int argc, Scheme_Object *argv[]);
 static Scheme_Object *byte_string_utf8_length (int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *byte_string_to_char_string (int argc, Scheme_Object *argv[]);
-static Scheme_Object *byte_string_to_char_string_permissive (int argc, Scheme_Object *argv[]);
+static Scheme_Object *byte_string_to_char_string_locale (int argc, Scheme_Object *argv[]);
+static Scheme_Object *byte_string_to_char_string_latin1 (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_string_to_byte_string (int argc, Scheme_Object *argv[]);
+static Scheme_Object *char_string_to_byte_string_locale (int argc, Scheme_Object *argv[]);
+static Scheme_Object *char_string_to_byte_string_latin1 (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_string_utf8_length (int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *version(int argc, Scheme_Object *argv[]);
@@ -171,6 +174,10 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 			 long *ipos, long *jpos, 
 			 char compact, char utf16, char might_continue,
 			 int permissive);
+
+static char *string_to_from_locale(int to_bytes,
+				   char *in, int delta, int len, 
+				   long *olen, int perm);
 
 #define portable_isspace(x) (((x) < 128) && isspace(x))
 
@@ -221,11 +228,11 @@ scheme_init_string (Scheme_Env *env)
 #  endif
 # endif
   REGISTER_SO(platform_path_no_variant);
-  platform_path_no_variant = scheme_make_byte_string(SCHEME_PLATFORM_LIBRARY_SUBPATH);
+  platform_path_no_variant = scheme_make_path(SCHEME_PLATFORM_LIBRARY_SUBPATH);
 #else
 # define MZ3M_SUBDIR /* empty */
 #endif
-  platform_path = scheme_make_byte_string(SCHEME_PLATFORM_LIBRARY_SUBPATH MZ3M_SUBDIR);
+  platform_path = scheme_make_path(SCHEME_PLATFORM_LIBRARY_SUBPATH MZ3M_SUBDIR);
 
   REGISTER_SO(putenv_str_table);
   REGISTER_SO(embedding_banner);
@@ -535,41 +542,56 @@ scheme_init_string (Scheme_Env *env)
 			     env);
 
 
-  scheme_add_global_constant("bytes-utf8-index", 
+  scheme_add_global_constant("bytes-utf-8-index", 
 			     scheme_make_prim_w_arity(byte_string_utf8_index,
-						      "bytes-utf8-index",
+						      "bytes-utf-8-index",
 						      2, 3),
 			     env);
-  scheme_add_global_constant("bytes-utf8-length",
+  scheme_add_global_constant("bytes-utf-8-length",
 			     scheme_make_prim_w_arity(byte_string_utf8_length,
-						      "bytes-utf8-length",
+						      "bytes-utf-8-length",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("bytes-utf8-ref",
+  scheme_add_global_constant("bytes-utf-8-ref",
 			     scheme_make_prim_w_arity(byte_string_utf8_ref,
-						      "bytes-utf8-ref",
+						      "bytes-utf-8-ref",
 						      2, 3),
 			     env);
 
-  scheme_add_global_constant("bytes->string/utf8",
+  scheme_add_global_constant("bytes->string/utf-8",
 			     scheme_make_prim_w_arity(byte_string_to_char_string,
-						      "bytes->string/utf8",
-						      1, 1),
+						      "bytes->string/utf-8",
+						      1, 4),
 			     env);
-  scheme_add_global_constant("bytes->string/utf8-permissive",
-			     scheme_make_prim_w_arity(byte_string_to_char_string_permissive,
-						      "bytes->string/utf8-permissive",
-						      2, 2),
+  scheme_add_global_constant("bytes->string/locale",
+			     scheme_make_prim_w_arity(byte_string_to_char_string_locale,
+						      "bytes->string/locale",
+						      1, 4),
 			     env);
-  scheme_add_global_constant("string->bytes/utf8",
+  scheme_add_global_constant("bytes->string/latin-1",
+			     scheme_make_prim_w_arity(byte_string_to_char_string_latin1,
+						      "bytes->string/latin-1",
+						      1, 4),
+			     env);
+  scheme_add_global_constant("string->bytes/utf-8",
 			     scheme_make_prim_w_arity(char_string_to_byte_string,
-						      "string->bytes/utf8",
-						      1, 1),
+						      "string->bytes/utf-8",
+						      1, 4),
+			     env);
+  scheme_add_global_constant("string->bytes/locale",
+			     scheme_make_prim_w_arity(char_string_to_byte_string_locale,
+						      "string->bytes/locale",
+						      1, 4),
+			     env);
+  scheme_add_global_constant("string->bytes/latin-1",
+			     scheme_make_prim_w_arity(char_string_to_byte_string_latin1,
+						      "string->bytes/latin-1",
+						      1, 4),
 			     env);
 
-  scheme_add_global_constant("string-utf8-length",
+  scheme_add_global_constant("string-utf-8-length",
 			     scheme_make_prim_w_arity(char_string_utf8_length,
-						      "string-utf8-length",
+						      "string-utf-8-length",
 						      1, 3),
 			     env);
 
@@ -717,20 +739,6 @@ Scheme_Object *
 scheme_make_utf8_string(const char *chars)
 {
   return scheme_make_sized_offset_utf8_string((char *)chars, 0, -1);
-}
-
-static Scheme_Object *append_all_strings_backwards(Scheme_Object *l)
-{
-  int i, len;
-  Scheme_Object **a;
-
-  len = scheme_list_length(l);
-  a = MALLOC_N(Scheme_Object *, len);
-  for (i = len; i--; l = SCHEME_CDR(l)) {
-    a[i] = SCHEME_CAR(l);
-  }
-  
-  return string_append(len, a);
 }
 
 /**********************************************************************/
@@ -950,6 +958,8 @@ GEN_BYTE_STRING_COMP(byte_string_gt, "bytes>?", mz_strcmp, >)
 /*                   byte string <-> char string                      */
 /**********************************************************************/
 
+/************************* bytes->string *************************/
+
 static Scheme_Object *
 do_byte_string_to_char_string(const char *who, 
 			      Scheme_Object *bstr,
@@ -988,7 +998,38 @@ do_byte_string_to_char_string(const char *who,
 }
 
 static Scheme_Object *
-do_string_to_vector(const char *who, int offset_start, int permc_pos, int argc, Scheme_Object *argv[])
+do_byte_string_to_char_string_locale(const char *who, 
+				     Scheme_Object *bstr,
+				     long istart, long ifinish,
+				     int perm)
+{
+  char *us;
+  long olen;
+
+  if (!iconv_open)
+    return do_byte_string_to_char_string(who, bstr, istart, ifinish, perm);
+
+  if (istart < ifinish) {
+    us = string_to_from_locale(0, SCHEME_BYTE_STR_VAL(bstr), 
+			       istart, ifinish - istart,
+			       &olen, perm);
+    
+    if (!us) {
+      scheme_arg_mismatch(who,
+			  "byte string is not a valid encoding for the current locale: ",
+			  bstr);
+    }
+    ((mzchar *)us)[olen] = 0;
+  } else {
+    us = "\0\0\0";
+    olen = 0;
+  }
+
+  return scheme_make_sized_char_string((mzchar *)us, olen, 0);
+}
+
+static Scheme_Object *
+do_string_to_vector(const char *who, int mode, int argc, Scheme_Object *argv[])
 {
   int permc;
   long istart, ifinish;
@@ -996,31 +1037,56 @@ do_string_to_vector(const char *who, int offset_start, int permc_pos, int argc, 
   if (!SCHEME_BYTE_STRINGP(argv[0]))
     scheme_wrong_type(who, "byte string", 0, argc, argv);
 
-  if (permc_pos) {
-    if (!SCHEME_CHARP(argv[permc_pos]))
-      scheme_wrong_type(who, "character", permc_pos, argc, argv);
-    permc = SCHEME_CHAR_VAL(argv[1]);
-  } else
+  if ((argc < 2) || SCHEME_FALSEP(argv[1]))
     permc = -1;
+  else {
+    if (!SCHEME_CHARP(argv[1]))
+      scheme_wrong_type(who, "character or #f", 1, argc, argv);
+    permc = SCHEME_CHAR_VAL(argv[1]);
+  }
   
   scheme_get_substring_indices(who, argv[0], argc, argv, 
-			       offset_start, offset_start + 1,
+			       2, 3,
 			       &istart, &ifinish);
   
-  return do_byte_string_to_char_string(who, argv[0], istart, ifinish, permc);
+  if (mode == 0)
+    return do_byte_string_to_char_string(who, argv[0], istart, ifinish, permc);
+  else if (mode == 1)
+    return do_byte_string_to_char_string_locale(who, argv[0], istart, ifinish, permc);
+  else {
+    /* Latin-1 */
+    mzchar *us;
+    unsigned char *s;
+    long i, len;
+    len = ifinish - istart;
+    s = SCHEME_BYTE_STR_VAL(argv[0]);
+    us = (mzchar *)scheme_malloc_atomic((len + 1) * sizeof(mzchar));
+    for (i = istart; i < ifinish; i++) {
+      us[i - istart] = s[i];
+    }
+    us[len] = 0;
+    
+    return scheme_make_sized_char_string(us, len, 0);
+  }
 }
 
 
 static Scheme_Object *
 byte_string_to_char_string (int argc, Scheme_Object *argv[])
 {
-  return do_string_to_vector("string->bytes/utf8", 1, 0, argc, argv);
+  return do_string_to_vector("bytes->string/utf-8", 0, argc, argv);
 }
 
 static Scheme_Object *
-byte_string_to_char_string_permissive (int argc, Scheme_Object *argv[])
+byte_string_to_char_string_locale (int argc, Scheme_Object *argv[])
 {
-  return do_string_to_vector("string->bytes/utf8-permissive", 2, 1, argc, argv);
+  return do_string_to_vector("bytes->string/locale", 1, argc, argv);
+}
+
+static Scheme_Object *
+byte_string_to_char_string_latin1 (int argc, Scheme_Object *argv[])
+{
+  return do_string_to_vector("bytes->string/latin-1", 2, argc, argv);
 }
 
 Scheme_Object *scheme_byte_string_to_char_string(Scheme_Object *o)
@@ -1028,6 +1094,12 @@ Scheme_Object *scheme_byte_string_to_char_string(Scheme_Object *o)
   return do_byte_string_to_char_string("s->s", o, 0, SCHEME_BYTE_STRLEN_VAL(o), '?');
 }
 
+Scheme_Object *scheme_byte_string_to_char_string_locale(Scheme_Object *o)
+{
+  return do_byte_string_to_char_string_locale("s->s", o, 0, SCHEME_BYTE_STRLEN_VAL(o), '?');
+}
+
+/************************* string->bytes *************************/
 
 static Scheme_Object *do_char_string_to_byte_string(Scheme_Object *s, long istart, long ifinish)
 {
@@ -1046,32 +1118,122 @@ static Scheme_Object *do_char_string_to_byte_string(Scheme_Object *s, long istar
   return scheme_make_sized_byte_string(bs, slen, 0);
 }
 
+static Scheme_Object *
+do_char_string_to_byte_string_locale(const char *who, 
+				     Scheme_Object *cstr,
+				     long istart, long ifinish,
+				     int perm)
+{
+  char *s;
+  long olen;
+
+  if (!iconv_open)
+    return do_char_string_to_byte_string(cstr, istart, ifinish);
+
+  if (istart < ifinish) {
+    s = string_to_from_locale(1, (char *)SCHEME_CHAR_STR_VAL(cstr), 
+			      istart, ifinish - istart,
+			      &olen, perm);
+    
+    if (!s) {
+      scheme_arg_mismatch(who,
+			  "string cannot be encoded for the current locale: ",
+			  cstr);
+    }
+    s[olen] = 0;
+  } else {
+    s = "";
+    olen = 0;
+  }
+
+  return scheme_make_sized_byte_string(s, olen, 0);
+}
+
+
 Scheme_Object *scheme_char_string_to_byte_string(Scheme_Object *s)
 {
   return do_char_string_to_byte_string(s, 0, SCHEME_CHAR_STRLEN_VAL(s));
 }
 
-Scheme_Object *char_string_to_byte_string(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_char_string_to_byte_string_locale(Scheme_Object *s)
+{
+  return do_char_string_to_byte_string_locale("s->s", s, 0, SCHEME_CHAR_STRLEN_VAL(s), '?');
+}
+
+static Scheme_Object *do_chars_to_bytes(const char *who, int mode, 
+					int argc, Scheme_Object *argv[])
 {
   long istart, ifinish;
+  int permc;
 
   if (!SCHEME_CHAR_STRINGP(argv[0]))
-    scheme_wrong_type("string->bytes/utf8", "string", 0, argc, argv);
+    scheme_wrong_type(who, "string", 0, argc, argv);
   
-  scheme_get_substring_indices("string->bytes/utf8", argv[0], argc, argv, 
-			       1, 2, &istart, &ifinish);
+  if ((argc < 2) || SCHEME_FALSEP(argv[1]))
+    permc = -1;
+  else {
+    if (!SCHEME_BYTEP(argv[1]))
+      scheme_wrong_type(who, "byte or #f", 1, argc, argv);
+    permc = SCHEME_INT_VAL(argv[1]);
+  } 
+  
+  scheme_get_substring_indices(who, argv[0], argc, argv, 
+			       2, 3, &istart, &ifinish);
     
-  return do_char_string_to_byte_string(argv[0], istart, ifinish);
+  if (mode == 1)
+    return do_char_string_to_byte_string_locale(who, argv[0], istart, ifinish, permc);
+  else if (mode == 0)
+    return do_char_string_to_byte_string(argv[0], istart, ifinish);
+  else {
+    /* Latin-1 */
+    mzchar *us;
+    unsigned char *s;
+    long i, len;
+    len = ifinish - istart;
+    us = SCHEME_CHAR_STR_VAL(argv[0]);
+    s = (unsigned char *)scheme_malloc_atomic(len + 1);
+    for (i = istart; i < ifinish; i++) {
+      if (us[i] < 256)
+	s[i - istart] = us[i];
+      else if (permc >= 0) {
+	s[i - istart] = permc;
+      } else {
+	scheme_arg_mismatch(who,
+			    "string cannot be encoded in Latin-1: ",
+			    argv[0]);
+      }
+    }
+    s[len] = 0;
+    
+    return scheme_make_sized_byte_string(s, len, 0);
+  }
 }
+
+static Scheme_Object *char_string_to_byte_string(int argc, Scheme_Object *argv[])
+{
+  return do_chars_to_bytes("string->bytes/utf-8", 0, argc, argv);
+}
+
+static Scheme_Object *char_string_to_byte_string_locale(int argc, Scheme_Object *argv[])
+{
+  return do_chars_to_bytes("string->bytes/locale", 1, argc, argv);
+}
+
+static Scheme_Object *char_string_to_byte_string_latin1(int argc, Scheme_Object *argv[])
+{
+  return do_chars_to_bytes("string->bytes/latin-1", 2, argc, argv);
+}
+
+/************************* Other *************************/
 
 static Scheme_Object *char_string_utf8_length (int argc, Scheme_Object *argv[])
 {
   long istart, ifinish, len;
 
   if (!SCHEME_CHAR_STRINGP(argv[0]))
-    scheme_wrong_type("string-utf8-length", "string", 0, argc, argv);
+    scheme_wrong_type("string-utf-8-length", "string", 0, argc, argv);
   
-  scheme_get_substring_indices("string-utf8-length", argv[0], argc, argv, 
+  scheme_get_substring_indices("string-utf-8-length", argv[0], argc, argv, 
 			       1, 2, &istart, &ifinish);
 
   len = scheme_utf8_encode(SCHEME_CHAR_STR_VAL(argv[0]), istart, ifinish,
@@ -1088,11 +1250,11 @@ byte_string_utf8_length (int argc, Scheme_Object *argv[])
   char *chars;
 
   if (!SCHEME_BYTE_STRINGP(argv[0]))
-    scheme_wrong_type("bytes-utf8-length", "string", 0, argc, argv);
+    scheme_wrong_type("bytes-utf-8-length", "string", 0, argc, argv);
   
   chars = SCHEME_BYTE_STR_VAL(argv[0]);
 
-  scheme_get_substring_indices("bytes-utf8-length", argv[0], argc, argv, 
+  scheme_get_substring_indices("bytes-utf-8-length", argv[0], argc, argv, 
 			       1, 2,
 			       &istart, &ifinish);
   
@@ -1113,7 +1275,7 @@ byte_string_utf8_index(int argc, Scheme_Object *argv[])
   char *chars;
 
   if (!SCHEME_BYTE_STRINGP(argv[0]))
-    scheme_wrong_type("bytes-utf8-index", "byte string", 0, argc, argv);
+    scheme_wrong_type("bytes-utf-8-index", "byte string", 0, argc, argv);
   
   chars = SCHEME_BYTE_STR_VAL(argv[0]);
 
@@ -1125,10 +1287,10 @@ byte_string_utf8_index(int argc, Scheme_Object *argv[])
   }
 
   if (pos < 0) {
-    scheme_wrong_type("bytes-utf8-index", "non-negative exact integer", 1, argc, argv);
+    scheme_wrong_type("bytes-utf-8-index", "non-negative exact integer", 1, argc, argv);
   }
 
-  scheme_get_substring_indices("bytes-utf8-index", argv[0], argc, argv, 
+  scheme_get_substring_indices("bytes-utf-8-index", argv[0], argc, argv, 
 			       2, 3,
 			       &istart, &ifinish);
   
@@ -1150,7 +1312,7 @@ byte_string_utf8_ref(int argc, Scheme_Object *argv[])
   unsigned int us[1];
 
   if (!SCHEME_BYTE_STRINGP(argv[0]))
-    scheme_wrong_type("bytes-utf8-ref", "byte string", 0, argc, argv);
+    scheme_wrong_type("bytes-utf-8-ref", "byte string", 0, argc, argv);
   
   chars = SCHEME_BYTE_STR_VAL(argv[0]);
 
@@ -1162,10 +1324,10 @@ byte_string_utf8_ref(int argc, Scheme_Object *argv[])
   }
 
   if (pos < 0) {
-    scheme_wrong_type("bytes-utf8-ref", "non-negative exact integer", 1, argc, argv);
+    scheme_wrong_type("bytes-utf-8-ref", "non-negative exact integer", 1, argc, argv);
   }
 
-  scheme_get_substring_indices("bytes-utf8-ref", argv[0], argc, argv, 
+  scheme_get_substring_indices("bytes-utf-8-ref", argv[0], argc, argv, 
 			       2, 3,
 			       &istart, &ifinish);
   
@@ -1922,6 +2084,104 @@ static char *do_convert(iconv_t cd,
   }
 }
 
+#define MZ_SC_BUF_SIZE 32
+#ifdef SCHEME_BIG_ENDIAN
+# define MZ_UCS4_NAME "UCS-4BE"
+#else
+# define MZ_UCS4_NAME "UCS-4LE"
+#endif
+
+static char *string_to_from_locale(int to_bytes,
+				   char *in, int delta, int len, 
+				   long *olen, int perm)
+     /* Call this function only when icon is available */
+{
+  Scheme_Object *parts = scheme_null, *one;
+  char *c;
+  long clen, used;
+  int status;
+  iconv_t cd;
+
+  if (to_bytes)
+    cd = iconv_open(nl_langinfo(CODESET), MZ_UCS4_NAME);
+  else
+    cd = iconv_open(MZ_UCS4_NAME, nl_langinfo(CODESET));
+  if (cd == (iconv_t)-1)
+    return NULL;
+
+  while (len) {
+    /* We might have conversion errors... */
+    c = do_convert(cd, NULL, NULL, 
+		   (char *)in, (to_bytes ? 4 : 1) * delta, (to_bytes ? 4 : 1) * len,
+		   NULL, 0, 0,
+		   1 /* grow */, (to_bytes ? 1 : 4) /* terminator size */,
+		   &used, &clen,
+		   &status);
+    
+    if (to_bytes)
+      used >>= 2;
+
+    if ((perm < 0) && (used < len)) {
+      iconv_close(cd);
+      return NULL;
+    }
+
+    delta += used;
+    len -= used;
+    
+    if (!len && SCHEME_NULLP(parts)) {
+      if (to_bytes) {
+	*olen = clen;
+	c[*olen] = 0;
+      } else {
+	*olen = (clen >> 2);
+	((mzchar *)c)[*olen] = 0;
+      }
+      return c;
+    }
+
+    /* We can get here if there was some conversion error at some
+       point. We're building up a list of parts. */
+
+    if (to_bytes) {
+      one = scheme_make_sized_byte_string(c, clen, 0);
+    } else {
+      one = scheme_make_sized_char_string((mzchar *)c, clen >> 4, 0);
+    }
+
+    parts = scheme_make_pair(one, parts);
+    
+    if (len) {
+      /* Conversion error, so skip one char. */
+      if (to_bytes) {
+	char bc[1];
+	bc[0] = perm;
+	one = scheme_make_sized_byte_string(bc, 0, 1);
+      } else {
+	mzchar bc[1];
+	bc[0] = perm;
+	one = scheme_make_sized_char_string(bc, 0, 1);
+      }
+      parts = scheme_make_pair(one, parts);
+      delta += 1;
+      len -= 1;
+    }
+  }
+  
+  iconv_close(cd);
+
+  if (to_bytes) {
+    parts = append_all_byte_strings_backwards(parts);
+    *olen = SCHEME_BYTE_STRTAG_VAL(parts);
+    
+    return SCHEME_BYTE_STR_VAL(parts);
+  } else {
+    parts = append_all_strings_backwards(parts);
+    *olen = SCHEME_CHAR_STRTAG_VAL(parts);
+    
+    return (char *)SCHEME_CHAR_STR_VAL(parts);
+  }
+}
 
 static char *locale_recase(int to_up,
 			   /* in must be null-terminated, iilen doesn't include it */ 
@@ -2016,12 +2276,6 @@ static char *locale_recase(int to_up,
 int mz_locale_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
      /* The s1 and s2 arguments are actually UCS-4. */
 {
-# define MZ_SC_BUF_SIZE 32
-# ifdef SCHEME_BIG_ENDIAN
-#  define MZ_UCS4_NAME "UCS-4BE"
-# else
-#  define MZ_UCS4_NAME "UCS-4LE"
-# endif
   long clen1, clen2, used1, used2, origl1, origl2;
   char *c1, *c2, buf1[MZ_SC_BUF_SIZE], buf2[MZ_SC_BUF_SIZE];
   char case_buf1[MZ_SC_BUF_SIZE], case_buf2[MZ_SC_BUF_SIZE];

@@ -1075,10 +1075,10 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   else if (SCHEME_CHARP(obj))
     {
       if (compact) {
-	char s[1];
+	int cv;
 	print_compact(p, CPT_CHAR);
-	s[0] = SCHEME_CHAR_VAL(obj);
-	print_this_string(p, s, 0, 1);
+	cv = SCHEME_CHAR_VAL(obj);
+	print_compact_number(p, cv);
       } else
 	print_char(obj, notdisplay, p);
     }
@@ -1242,6 +1242,17 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 
       closed = 1;
     }
+  else if (SCHEME_PATHP(obj))
+    {
+      if (compact) {
+	cannot_print(p, notdisplay, obj, ht);
+      } else {
+	print_this_string(p, "#<", 0, 2);
+	print_string_in_angle(p, SCHEME_PATH_VAL(obj), "path:", -1);
+	PRINTADDRESS(p, obj);
+	print_this_string(p, ">", 0, 1);
+      }
+    }
   else if (SCHEME_PRIMP(obj) && ((Scheme_Primitive_Proc *)obj)->name)
     {
       if (compact) {
@@ -1344,11 +1355,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	 Scheme_Object *src;
 	 src = scheme_regexp_source(obj);
 	 if (src) {
-	   if (!scheme_regexp_is_byte(obj))
-	     print_this_string(p, "#rx", 0, 4);
-	   else
-	     print_this_string(p, "#rx#", 0, 3);
-	   
+	   print_this_string(p, "#rx", 0, 3);
 	   print(src, 1, 0, ht,symtab, rnht, p);
 	 } else if (compact)
 	   cannot_print(p, notdisplay, obj, ht);
@@ -1393,7 +1400,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	Scheme_Stx *stx = (Scheme_Stx *)obj;
 	if ((stx->srcloc->line >= 0) || (stx->srcloc->pos >= 0)) {
 	  print_this_string(p, "#<syntax:", 0, 9);
-	  if (stx->srcloc->src && SCHEME_BYTE_STRINGP(stx->srcloc->src)) {
+	  if (stx->srcloc->src && SCHEME_PATH_STRINGP(stx->srcloc->src)) {
 	    print_this_string(p, SCHEME_BYTE_STR_VAL(stx->srcloc->src), 0, SCHEME_BYTE_STRLEN_VAL(stx->srcloc->src));
 	    print_this_string(p, ":", 0, 1);
 	  }

@@ -91,7 +91,7 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 @MACRO ubFrameDialog[who] = (((n <= {s}) || XC_SCHEME_NULLP({x})) ? (wxWindow *)NULL : (WITH_VAR_STACK(objscheme_istype_wxFrame({x}, NULL, 1)) ? (wxWindow *)WITH_VAR_STACK(objscheme_unbundle_wxFrame({x}, NULL, 0)) : (WITH_VAR_STACK(objscheme_istype_wxDialogBox({x}, NULL, 1)) ? (wxWindow *)WITH_VAR_STACK(objscheme_unbundle_wxDialogBox({x}, NULL, 0)) : (WITH_VAR_STACK(scheme_wrong_type(<who>, "frame% or dialog%", -1, 0, &{x})), (wxWindow *)NULL))))
 @MACRO cFrameDialog = (WITH_REMEMBERED_STACK(objscheme_istype_wxFrame({x}, NULL, 1)) || WITH_REMEMBERED_STACK(objscheme_istype_wxDialogBox({x}, NULL, 1)))
 
-@ "file-selector" : nstring wxFileSelector(nstring,npathname=NULL,nstring=NULL,nstring=NULL,nstring=FILE_SEL_DEF_PATTERN,SYM[fileSelMode]=wxOPEN,wxWindow^//ubFrameDialog["file-selector"]/cFrameDialog=NULL,int=-1,int=-1);
+@ "file-selector" : npathname wxFileSelector(nstring,npathname=NULL,npathname=NULL,nstring=NULL,nstring=FILE_SEL_DEF_PATTERN,SYM[fileSelMode]=wxOPEN,wxWindow^//ubFrameDialog["file-selector"]/cFrameDialog=NULL,int=-1,int=-1);
 
 @ "is-color-display?" : bool wxColourDisplay();
 @ "get-display-depth" : int wxDisplayDepth();

@@ -682,7 +682,7 @@ Scheme_Object *scheme_source_to_name(Scheme_Object *code)
     Scheme_Object *name;
 
     src[0] = 0;
-    if (cstx->srcloc->src && SCHEME_BYTE_STRINGP(cstx->srcloc->src)) {
+    if (cstx->srcloc->src && SCHEME_PATHP(cstx->srcloc->src)) {
       if (SCHEME_BYTE_STRLEN_VAL(cstx->srcloc->src) < 20)
 	memcpy(src, SCHEME_BYTE_STR_VAL(cstx->srcloc->src), SCHEME_BYTE_STRLEN_VAL(cstx->srcloc->src) + 1);
       else {

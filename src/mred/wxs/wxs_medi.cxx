@@ -517,9 +517,6 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 // X are Methods not intended to be overriden by the user,
 // but acutally are implemented with virtual
 
-// These don't use `pathname' because they expand internally
-// @ X "load-file" : bool LoadFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE);
-// @ X "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> filename
 
 // No longer actually in C, but we want them in the editor<%> interface:
 
@@ -560,16 +557,16 @@ class os_wxMediaBuffer : public wxMediaBuffer {
  public:
 
   ~os_wxMediaBuffer();
-  nbstring PutFile(nbstring x0, nbstring x1);
-  nbstring GetFile(nbstring x0);
+  npathname PutFile(epathname x0, epathname x1);
+  npathname GetFile(epathname x0);
   void AfterEditSequence();
   void OnEditSequence();
   void AfterLoadFile(Bool x0);
-  void OnLoadFile(bstring x0, int x1);
-  Bool CanLoadFile(bstring x0, int x1);
+  void OnLoadFile(epathname x0, int x1);
+  Bool CanLoadFile(epathname x0, int x1);
   void AfterSaveFile(Bool x0);
-  void OnSaveFile(bstring x0, int x1);
-  Bool CanSaveFile(bstring x0, int x1);
+  void OnSaveFile(epathname x0, int x1);
+  Bool CanSaveFile(epathname x0, int x1);
   class wxSnip* OnNewBox(int x0);
   class wxImageSnip* OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3);
   void InvalidateBitmapCache(float x0 = 0.0, float x1 = 0.0, float x2 = -1.0, float x3 = -1.0);
@@ -627,7 +624,7 @@ os_wxMediaBuffer::~os_wxMediaBuffer()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
-nbstring os_wxMediaBuffer::PutFile(nbstring x0, nbstring x1)
+npathname os_wxMediaBuffer::PutFile(epathname x0, epathname x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -651,8 +648,8 @@ nbstring os_wxMediaBuffer::PutFile(nbstring x0, nbstring x1)
     READY_TO_RETURN; return ASSELF wxMediaBuffer::PutFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
-  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x1));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
+  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
@@ -660,15 +657,15 @@ nbstring os_wxMediaBuffer::PutFile(nbstring x0, nbstring x1)
   
   
   {
-     nbstring resval;
-     resval = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(v, "put-file in editor<%>"", extracting return value"));
+     npathname resval;
+     resval = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(v, "put-file in editor<%>"", extracting return value"));
      READY_TO_RETURN;
      return resval;
   }
   }
 }
 
-nbstring os_wxMediaBuffer::GetFile(nbstring x0)
+npathname os_wxMediaBuffer::GetFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -691,7 +688,7 @@ nbstring os_wxMediaBuffer::GetFile(nbstring x0)
     READY_TO_RETURN; return ASSELF wxMediaBuffer::GetFile(x0);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
@@ -699,8 +696,8 @@ nbstring os_wxMediaBuffer::GetFile(nbstring x0)
   
   
   {
-     nbstring resval;
-     resval = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(v, "get-file in editor<%>"", extracting return value"));
+     npathname resval;
+     resval = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(v, "get-file in editor<%>"", extracting return value"));
      READY_TO_RETURN;
      return resval;
   }
@@ -804,7 +801,7 @@ void os_wxMediaBuffer::AfterLoadFile(Bool x0)
   }
 }
 
-void os_wxMediaBuffer::OnLoadFile(bstring x0, int x1)
+void os_wxMediaBuffer::OnLoadFile(epathname x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -827,7 +824,7 @@ void os_wxMediaBuffer::OnLoadFile(bstring x0, int x1)
     READY_TO_RETURN; ASSELF wxMediaBuffer::OnLoadFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -839,7 +836,7 @@ void os_wxMediaBuffer::OnLoadFile(bstring x0, int x1)
   }
 }
 
-Bool os_wxMediaBuffer::CanLoadFile(bstring x0, int x1)
+Bool os_wxMediaBuffer::CanLoadFile(epathname x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -862,7 +859,7 @@ Bool os_wxMediaBuffer::CanLoadFile(bstring x0, int x1)
     READY_TO_RETURN; return ASSELF wxMediaBuffer::CanLoadFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -912,7 +909,7 @@ void os_wxMediaBuffer::AfterSaveFile(Bool x0)
   }
 }
 
-void os_wxMediaBuffer::OnSaveFile(bstring x0, int x1)
+void os_wxMediaBuffer::OnSaveFile(epathname x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -935,7 +932,7 @@ void os_wxMediaBuffer::OnSaveFile(bstring x0, int x1)
     READY_TO_RETURN; ASSELF wxMediaBuffer::OnSaveFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -947,7 +944,7 @@ void os_wxMediaBuffer::OnSaveFile(bstring x0, int x1)
   }
 }
 
-Bool os_wxMediaBuffer::CanSaveFile(bstring x0, int x1)
+Bool os_wxMediaBuffer::CanSaveFile(epathname x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -970,7 +967,7 @@ Bool os_wxMediaBuffer::CanSaveFile(bstring x0, int x1)
     READY_TO_RETURN; return ASSELF wxMediaBuffer::CanSaveFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -2444,7 +2441,7 @@ static Scheme_Object *os_wxMediaBufferInsertImage(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaBuffer_class, "insert-image in editor<%>", n, p);
-  npstring x0 INIT_NULLED_OUT;
+  nxpathname x0 INIT_NULLED_OUT;
   int x1;
   Bool x2;
   Bool x3;
@@ -2455,7 +2452,7 @@ static Scheme_Object *os_wxMediaBufferInsertImage(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0)) {
-    x0 = (npstring)WITH_VAR_STACK(objscheme_unbundle_nullable_pstring(p[POFFSET+0], "insert-image in editor<%>"));
+    x0 = (nxpathname)WITH_VAR_STACK(objscheme_unbundle_nullable_xpathname(p[POFFSET+0], "insert-image in editor<%>"));
   } else
     x0 = NULL;
   if (n > (POFFSET+1)) {
@@ -2509,7 +2506,7 @@ static Scheme_Object *os_wxMediaBufferGetFilename(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nbstring r INIT_NULLED_OUT;
+  npathname r INIT_NULLED_OUT;
   objscheme_check_valid(os_wxMediaBuffer_class, "get-filename in editor<%>", n, p);
   Bool _x0;
   Bool* x0 = &_x0;
@@ -2536,7 +2533,7 @@ static Scheme_Object *os_wxMediaBufferGetFilename(int n,  Scheme_Object *p[])
     { Scheme_Object *sbv_ = (_x0 ? scheme_true : scheme_false); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_pathname((char *)r));
 }
 
 static Scheme_Object *os_wxMediaBufferModified(int n,  Scheme_Object *p[])
@@ -3935,7 +3932,7 @@ static Scheme_Object *os_wxMediaBufferSaveFile(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(os_wxMediaBuffer_class, "save-file in editor<%>", n, p);
-  npstring x0 INIT_NULLED_OUT;
+  nxpathname x0 INIT_NULLED_OUT;
   int x1;
   Bool x2;
 
@@ -3945,7 +3942,7 @@ static Scheme_Object *os_wxMediaBufferSaveFile(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0)) {
-    x0 = (npstring)WITH_VAR_STACK(objscheme_unbundle_nullable_pstring(p[POFFSET+0], "save-file in editor<%>"));
+    x0 = (nxpathname)WITH_VAR_STACK(objscheme_unbundle_nullable_xpathname(p[POFFSET+0], "save-file in editor<%>"));
   } else
     x0 = NULL;
   if (n > (POFFSET+1)) {
@@ -3993,10 +3990,10 @@ static Scheme_Object *os_wxMediaBufferPutFile(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nbstring r;
+  npathname r;
   objscheme_check_valid(os_wxMediaBuffer_class, "put-file in editor<%>", n, p);
-  nbstring x0 INIT_NULLED_OUT;
-  nbstring x1 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
+  epathname x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -4004,8 +4001,8 @@ static Scheme_Object *os_wxMediaBufferPutFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(2, x1);
 
   
-  x0 = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(p[POFFSET+0], "put-file in editor<%>"));
-  x1 = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(p[POFFSET+1], "put-file in editor<%>"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "put-file in editor<%>"));
+  x1 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+1], "put-file in editor<%>"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
@@ -4016,23 +4013,23 @@ static Scheme_Object *os_wxMediaBufferPutFile(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_pathname((char *)r));
 }
 
 static Scheme_Object *os_wxMediaBufferGetFile(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nbstring r;
+  npathname r;
   objscheme_check_valid(os_wxMediaBuffer_class, "get-file in editor<%>", n, p);
-  nbstring x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(p[POFFSET+0], "get-file in editor<%>"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "get-file in editor<%>"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
@@ -4043,7 +4040,7 @@ static Scheme_Object *os_wxMediaBufferGetFile(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_pathname((char *)r));
 }
 
 static Scheme_Object *os_wxMediaBufferAfterEditSequence(int n,  Scheme_Object *p[])
@@ -4122,7 +4119,7 @@ static Scheme_Object *os_wxMediaBufferOnLoadFile(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaBuffer_class, "on-load-file in editor<%>", n, p);
-  bstring x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -4130,7 +4127,7 @@ static Scheme_Object *os_wxMediaBufferOnLoadFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "on-load-file in editor<%>"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "on-load-file in editor<%>"));
   x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "on-load-file in editor<%>"));
 
   
@@ -4151,7 +4148,7 @@ static Scheme_Object *os_wxMediaBufferCanLoadFile(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(os_wxMediaBuffer_class, "can-load-file? in editor<%>", n, p);
-  bstring x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -4159,7 +4156,7 @@ static Scheme_Object *os_wxMediaBufferCanLoadFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "can-load-file? in editor<%>"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "can-load-file? in editor<%>"));
   x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "can-load-file? in editor<%>"));
 
   
@@ -4204,7 +4201,7 @@ static Scheme_Object *os_wxMediaBufferOnSaveFile(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaBuffer_class, "on-save-file in editor<%>", n, p);
-  bstring x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -4212,7 +4209,7 @@ static Scheme_Object *os_wxMediaBufferOnSaveFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "on-save-file in editor<%>"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "on-save-file in editor<%>"));
   x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "on-save-file in editor<%>"));
 
   
@@ -4233,7 +4230,7 @@ static Scheme_Object *os_wxMediaBufferCanSaveFile(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(os_wxMediaBuffer_class, "can-save-file? in editor<%>", n, p);
-  bstring x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -4241,7 +4238,7 @@ static Scheme_Object *os_wxMediaBufferCanSaveFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "can-save-file? in editor<%>"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "can-save-file? in editor<%>"));
   x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "can-save-file? in editor<%>"));
 
   

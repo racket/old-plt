@@ -4962,7 +4962,7 @@ static Scheme_Config *make_initial_config(void)
 
   {
     Scheme_Object *s;
-    s = scheme_make_byte_string(scheme_os_getcwd(NULL, 0, NULL, 1));
+    s = scheme_make_path(scheme_os_getcwd(NULL, 0, NULL, 1));
     scheme_set_param(config, MZCONFIG_CURRENT_DIRECTORY, s);
   }
 

@@ -315,7 +315,7 @@ typedef struct Scheme_Security_Guard {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   struct Scheme_Security_Guard *parent;
-  Scheme_Object *file_proc;    /* who-symbol path-string mode-symbol -> void */
+  Scheme_Object *file_proc;    /* who-symbol path mode-symbol -> void */
   Scheme_Object *network_proc; /* who-symbol host-string-or-'listen port-k -> void */
 } Scheme_Security_Guard;
 

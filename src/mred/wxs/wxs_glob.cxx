@@ -633,10 +633,10 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nstring r;
+  npathname r;
   nstring x0 INIT_NULLED_OUT;
   npathname x1 INIT_NULLED_OUT;
-  nstring x2 INIT_NULLED_OUT;
+  npathname x2 INIT_NULLED_OUT;
   nstring x3 INIT_NULLED_OUT;
   nstring x4 INIT_NULLED_OUT;
   int x5;
@@ -660,7 +660,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
   } else
     x1 = NULL;
   if (n > (0+2)) {
-    x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[0+2], "file-selector"));
+    x2 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[0+2], "file-selector"));
   } else
     x2 = NULL;
   if (n > (0+3)) {
@@ -691,7 +691,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_pathname((char *)r));
 }
 
 void objscheme_setup_wxsGlobal(Scheme_Env *env)

@@ -321,6 +321,9 @@ Scheme_Object *(*scheme_make_sized_offset_utf8_string)(char *chars, long d, long
 Scheme_Object *(*scheme_make_immutable_sized_utf8_string)(char *chars, long len);
 Scheme_Object *(*scheme_char_string_to_byte_string)(Scheme_Object *s);
 Scheme_Object *(*scheme_byte_string_to_char_string)(Scheme_Object *s);
+Scheme_Object *(*scheme_char_string_to_byte_string_locale)(Scheme_Object *s);
+Scheme_Object *(*scheme_byte_string_to_char_string_locale)(Scheme_Object *s);
+Scheme_Object *(*scheme_char_string_to_path)(Scheme_Object *p);
 Scheme_Object *(*scheme_make_char_string)(const mzchar *chars);
 Scheme_Object *(*scheme_make_sized_char_string)(mzchar *chars, long len, int copy);
 Scheme_Object *(*scheme_make_sized_offset_char_string)(mzchar *chars, long d, long len, int copy);
@@ -523,8 +526,12 @@ char *(*scheme_expand_string_filename)(Scheme_Object *f, const char *errorin, in
 char *(*scheme_os_getcwd)(char *buf, int buflen, int *actlen, int noexn);
 int (*scheme_os_setcwd)(char *buf, int noexn);
 char *(*scheme_getdrive)(void);
-Scheme_Object *(*scheme_split_pathname)(const char *path, int len, Scheme_Object **base, int *isdir);
-Scheme_Object *(*scheme_build_pathname)(int argc, Scheme_Object **argv);
+Scheme_Object *(*scheme_split_path)(const char *path, int len, Scheme_Object **base, int *isdir);
+Scheme_Object *(*scheme_build_path)(int argc, Scheme_Object **argv);
+Scheme_Object *(*scheme_make_path)(const char *chars);
+Scheme_Object *(*scheme_make_sized_path)(char *chars, long len, int copy);
+Scheme_Object *(*scheme_make_sized_offset_path)(char *chars, long d, long len, int copy);
+Scheme_Object *(*scheme_make_path_without_copying)(char *chars);
 #ifdef MACINTOSH_EVENTS
 char *(*scheme_mac_spec_to_path)(mzFSSpec *spec);
 int (*scheme_mac_path_to_spec)(const char *filename, mzFSSpec *spec);

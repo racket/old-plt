@@ -98,6 +98,8 @@ int objscheme_istype_pstring(Scheme_Object *, const char *stopifbad);
 #define objscheme_istype_mzstring objscheme_istype_string
 #define objscheme_istype_mzxstring objscheme_istype_string
 int objscheme_istype_pathname(Scheme_Object *, const char *stopifbad);
+int objscheme_istype_epathname(Scheme_Object *, const char *stopifbad);
+#define objscheme_istype_xpathname objscheme_istype_pathname
 int objscheme_istype_char(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_closed_prim(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_proc2(Scheme_Object *, const char *stopifbad);
@@ -111,6 +113,8 @@ Scheme_Object *objscheme_bundle_bstring(char *);
 #define objscheme_bundle_pstring objscheme_bundle_bstring
 Scheme_Object *objscheme_bundle_mzstring(mzchar *);
 Scheme_Object *objscheme_bundle_pathname(char *);
+#define objscheme_bundle_epathname objscheme_bundle_pathname
+#define objscheme_bundle_xpathname objscheme_bundle_pathname
 Scheme_Object *objscheme_bundle_nonnegative_symbol_float(double d, const char *symname);
 
 long objscheme_unbundle_integer(Scheme_Object *, const char *);
@@ -127,7 +131,7 @@ char *objscheme_unbundle_string(Scheme_Object *, const char *);
 char *objscheme_unbundle_bstring(Scheme_Object *, const char *);
 char *objscheme_unbundle_pstring(Scheme_Object *, const char *);
 mzchar *objscheme_unbundle_mzstring(Scheme_Object *, const char *);
-#define objscheme_unbundle_mzzstring(a, b) (char *)objscheme_unbundle_mzstring(a, b)
+#define objscheme_unbundle_mzxstring(a, b) (char *)objscheme_unbundle_mzstring(a, b)
 mzchar *objscheme_unbundle_mzstring(Scheme_Object *, const char *);
 char *objscheme_unbundle_mutable_bstring(Scheme_Object *, const char *);
 mzchar *objscheme_unbundle_mutable_mzstring(Scheme_Object *, const char *);
@@ -139,6 +143,10 @@ char *objscheme_unbundle_pathname(Scheme_Object *, const char *);
 char *objscheme_unbundle_nullable_pathname(Scheme_Object *, const char *);
 char *objscheme_unbundle_write_pathname(Scheme_Object *, const char *);
 char *objscheme_unbundle_nullable_write_pathname(Scheme_Object *, const char *);
+char *objscheme_unbundle_epathname(Scheme_Object *, const char *);
+char *objscheme_unbundle_nullable_epathname(Scheme_Object *, const char *);
+char *objscheme_unbundle_xpathname(Scheme_Object *, const char *);
+char *objscheme_unbundle_nullable_xpathname(Scheme_Object *, const char *);
 char objscheme_unbundle_char(Scheme_Object *, const char *);
 
 #define objscheme_bundle_integer scheme_make_integer
@@ -193,7 +201,11 @@ typedef char *wbstring;
 typedef mzchar *wmzstring;
 
 typedef char *pathname;
+typedef char *epathname;
 typedef char *npathname;
+typedef char *xpathname;
+typedef char *nxpathname;
+typedef char *nepathname;
 typedef const char *cpathname;
 typedef const char *cnpathname;
 typedef char *wpathname;

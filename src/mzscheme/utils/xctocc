@@ -2151,7 +2151,11 @@ sub PrintBundleVar
 	     || ($paramtype eq 'npathname')
 	     || ($paramtype eq 'ncpathname')
 	     || ($paramtype eq 'wpathname') 
-	     || ($paramtype eq 'wnpathname')) {
+	     || ($paramtype eq 'wnpathname')
+	     || ($paramtype eq 'epathname') 
+	     || ($paramtype eq 'nepathname')
+	     || ($paramtype eq 'xpathname') 
+	     || ($paramtype eq 'nxpathname')) {
 	print "$wvs(objscheme_bundle_pathname((char *)$var))";
     } elsif (substr($paramtype, -1) eq '!') {
 	substr($paramtype, -1) = '';
@@ -2235,7 +2239,11 @@ sub ParamIsPointer
 	     || ($paramtype eq 'npathname')
 	     || ($paramtype eq 'ncpathname')
 	     || ($paramtype eq 'wpathname')
-	     || ($paramtype eq 'wnpathname')) {
+	     || ($paramtype eq 'wnpathname')
+	     || ($paramtype eq 'epathname')
+	     || ($paramtype eq 'nepathname')
+	     || ($paramtype eq 'xpathname')
+	     || ($paramtype eq 'nxpathname')) {
 	return 1;
     } elsif (substr($paramtype, -1) eq '!') {
 	return 1;
@@ -2353,8 +2361,10 @@ sub PrintUnbundleVar
 	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_pstring(${var}, $stop))";
     } elsif ($paramtype eq 'npstring' || $paramtype eq 'ncpstring') {
 	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_nullable_pstring($var, $stop))";
-    } elsif ($paramtype eq 'mzxstring' || $paramtype eq 'mzstring' || $paramtype eq 'cmzstring') {
+    } elsif ($paramtype eq 'mzstring' || $paramtype eq 'cmzstring') {
 	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_mzstring(${var}, $stop))";
+    } elsif ($paramtype eq 'mzxstring') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_mzxstring(${var}, $stop))";
     } elsif ($paramtype eq 'wmzstring') {
 	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_mutable_mzstring(${var}, $stop))";
     } elsif ($paramtype eq 'nmzstring' || $paramtype eq 'ncmzstring') {
@@ -2367,6 +2377,14 @@ sub PrintUnbundleVar
 	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_write_pathname(${var}, $stop))";
     } elsif ($paramtype eq 'wnpathname') {
 	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_nullable_write_pathname(${var}, $stop))";
+    } elsif ($paramtype eq 'epathname' || $paramtype eq 'cepathname') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_epathname(${var}, $stop))";
+    } elsif ($paramtype eq 'nepathname' || $paramtype eq 'ncepathname') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_nullable_epathname(${var}, $stop))";
+    } elsif ($paramtype eq 'xpathname' || $paramtype eq 'cxpathname') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_xpathname(${var}, $stop))";
+    } elsif ($paramtype eq 'nxpathname' || $paramtype eq 'ncxpathname') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_nullable_xpathname(${var}, $stop))";
     } elsif (substr($paramtype, -1) eq '!') {
 	substr($paramtype, -1) = '';
 	&PrintUnbundleObject($var, $paramtype, 0, $mname);
@@ -2731,6 +2749,14 @@ sub PrintTypecheck
 	print "WITH_REMEMBERED_STACK(objscheme_istype_pathname($var, $stop))";
     } elsif ($paramtype eq 'npathname' || $paramtype eq 'ncpathname') {
 	print "(XC_SCHEME_NULLP($var) || WITH_REMEMBERED_STACK(objscheme_istype_pathname($var, $stop)))";
+    } elsif ($paramtype eq 'epathname' || $paramtype eq 'cepathname') {
+	print "WITH_REMEMBERED_STACK(objscheme_istype_epathname($var, $stop))";
+    } elsif ($paramtype eq 'nepathname' || $paramtype eq 'ncepathname') {
+	print "(XC_SCHEME_NULLP($var) || WITH_REMEMBERED_STACK(objscheme_istype_epathname($var, $stop)))";
+    } elsif ($paramtype eq 'xpathname' || $paramtype eq 'cxpathname') {
+	print "WITH_REMEMBERED_STACK(objscheme_istype_xpathname($var, $stop))";
+    } elsif ($paramtype eq 'nxpathname' || $paramtype eq 'ncxpathname') {
+	print "(XC_SCHEME_NULLP($var) || WITH_REMEMBERED_STACK(objscheme_istype_xpathname($var, $stop)))";
     } elsif (substr($paramtype, -1) eq '!') {
 	substr($paramtype, -1) = '';
 	&PrintTypecheckObj($var, $paramtype, $stop);

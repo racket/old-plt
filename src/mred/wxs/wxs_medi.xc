@@ -84,10 +84,7 @@ static void NoInsertFile(wxMediaBuffer *)
 // but acutally are implemented with virtual
 @SETMARK X = D
 
-// These don't use `pathname' because they expand internally
-// @ X "load-file" : bool LoadFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE);
-@ X "save-file" : bool SaveFile(npstring=NULL,SYM[fileType]=wxMEDIA_FF_SAME,bool=TRUE);
-// @ X "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> filename
+@ X "save-file" : bool SaveFile(nxpathname=NULL,SYM[fileType]=wxMEDIA_FF_SAME,bool=TRUE);
 @ X "insert-port" : SYM[fileType] InsertPort(Scheme_Object[]//ubPort/cPort///push,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> port
 
 // No longer actually in C, but we want them in the editor<%> interface:
@@ -175,10 +172,10 @@ static void NoInsertFile(wxMediaBuffer *)
 @ "is-locked?" : bool IsLocked();
 @ "is-modified?" : bool Modified();
 
-@ "get-filename" : nbstring GetFilename(bool?=NULL);
+@ "get-filename" : npathname GetFilename(bool?=NULL);
 
 @ "insert-box" : void InsertBox(SYM[bufferType]=wxEDIT_BUFFER);
-@ "insert-image" : void InsertImage(npstring=NULL,SYM[bitmapType]=0,bool=FALSE,bool=TRUE);
+@ "insert-image" : void InsertImage(nxpathname=NULL,SYM[bitmapType]=0,bool=FALSE,bool=TRUE);
 
 @ "print" : void Print(bool=TRUE,bool=TRUE,SYM[printMethod]=0,wxWindow^=NULL,bool=TRUE);
 /* : : /DLGORFRAME[3.METHODNAME("editor<%>","print")] */

@@ -249,7 +249,7 @@ class os_wxChoice : public wxChoice {
 
   os_wxChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string* x8 = NULL, int x9 = 0, string x10 = "checkBox"));
   ~os_wxChoice();
-  void OnDropFile(pathname x0);
+  void OnDropFile(epathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
   void OnSize(int x0, int x1);
@@ -284,7 +284,7 @@ os_wxChoice::~os_wxChoice()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
-void os_wxChoice::OnDropFile(pathname x0)
+void os_wxChoice::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -702,14 +702,14 @@ static Scheme_Object *os_wxChoiceOnDropFile(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxChoice_class, "on-drop-file in choice%", n, p);
-  pathname x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "on-drop-file in choice%"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "on-drop-file in choice%"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)

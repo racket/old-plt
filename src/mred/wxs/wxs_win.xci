@@ -8,4 +8,4 @@
 @ w "pre-on-char" : bool PreOnChar(wxWindow!,wxKeyEvent!);  : JMPDECL/SETJMPV[1]/RESETJMP : : returnFALSE : returnFALSE : wxWindow
 @ w "pre-on-event" : bool PreOnEvent(wxWindow!,wxMouseEvent!);  : JMPDECL/SETJMPV[1]/RESETJMP : : returnFALSE : returnFALSE : wxWindow
 
-@ w "on-drop-file" : void OnDropFile(pathname) : JMPDECL/SETJMP/RESETJMP
+@ w "on-drop-file" : void OnDropFile(epathname) : JMPDECL/SETJMP/RESETJMP

@@ -332,8 +332,11 @@ typedef struct Scheme_Vector {
 #define SCHEME_MUTABLE_BYTE_STRINGP(obj)  (SCHEME_BYTE_STRINGP(obj) && SCHEME_MUTABLEP(obj))
 #define SCHEME_IMMUTABLE_BYTE_STRINGP(obj)  (SCHEME_BYTE_STRINGP(obj) && SCHEME_IMMUTABLEP(obj))
 
-#define SCHEME_PATH_STRINGP(x) (SCHEME_BYTE_STRINGP(x) || SCHEME_CHAR_STRINGP(x))
-#define SCHEME_PATH_STRING_STR "byte-string or string"
+#define SCHEME_PATHP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_path_type)
+  /* A path is guranteed to have the same shape as a byte string */
+
+#define SCHEME_PATH_STRINGP(x) (SCHEME_CHAR_STRINGP(x) || SCHEME_PATHP(x))
+#define SCHEME_PATH_STRING_STR "path or string"
 
 #define SCHEME_SYMBOLP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_symbol_type)
 
@@ -424,6 +427,8 @@ typedef struct Scheme_Vector {
 #define SCHEME_BYTE_STR_VAL(obj)  ((obj)->u.byte_str_val.string_val)
 #define SCHEME_BYTE_STRTAG_VAL(obj)  ((obj)->u.byte_str_val.tag_val)
 #define SCHEME_BYTE_STRLEN_VAL(obj)  ((obj)->u.byte_str_val.tag_val)
+#define SCHEME_PATH_VAL(obj)  ((obj)->u.byte_str_val.string_val)
+#define SCHEME_PATH_LEN(obj)  ((obj)->u.byte_str_val.tag_val)
 #define SCHEME_SYM_VAL(obj)  (((Scheme_Symbol *)(obj))->s)
 #define SCHEME_SYM_LEN(obj)  (((Scheme_Symbol *)(obj))->len)
 

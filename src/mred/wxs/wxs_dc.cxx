@@ -1529,7 +1529,7 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (mzxstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(p[POFFSET+0], "draw-text in dc<%>"));
+  x0 = (mzxstring)WITH_VAR_STACK(objscheme_unbundle_mzxstring(p[POFFSET+0], "draw-text in dc<%>"));
   x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-text in dc<%>"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "draw-text in dc<%>"));
   if (n > (POFFSET+3)) {
@@ -1545,7 +1545,7 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
   } else
     x6 = 0.0;
 
-  if (x5 > SCHEME_CHAR_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-text"), "string index too large: ", p[POFFSET+5]));DO_OK_CHECK(METHODNAME("dc<%>","draw-text"))x4 = FALSE;
+  if (x5 > SCHEME_CHAR_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-text"), "string index too large: ", p[POFFSET+5]));DO_OK_CHECK(METHODNAME("dc<%>","draw-text"))x4 = TRUE;
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawText(x0, x1, x2, x3, x4, x5, x6));
 
   

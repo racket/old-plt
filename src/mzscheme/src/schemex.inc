@@ -205,6 +205,9 @@
   scheme_extension_table->scheme_make_immutable_sized_utf8_string = scheme_make_immutable_sized_utf8_string;
   scheme_extension_table->scheme_char_string_to_byte_string = scheme_char_string_to_byte_string;
   scheme_extension_table->scheme_byte_string_to_char_string = scheme_byte_string_to_char_string;
+  scheme_extension_table->scheme_char_string_to_byte_string_locale = scheme_char_string_to_byte_string_locale;
+  scheme_extension_table->scheme_byte_string_to_char_string_locale = scheme_byte_string_to_char_string_locale;
+  scheme_extension_table->scheme_char_string_to_path = scheme_char_string_to_path;
   scheme_extension_table->scheme_make_char_string = scheme_make_char_string;
   scheme_extension_table->scheme_make_sized_char_string = scheme_make_sized_char_string;
   scheme_extension_table->scheme_make_sized_offset_char_string = scheme_make_sized_offset_char_string;
@@ -350,8 +353,12 @@
   scheme_extension_table->scheme_os_getcwd = scheme_os_getcwd;
   scheme_extension_table->scheme_os_setcwd = scheme_os_setcwd;
   scheme_extension_table->scheme_getdrive = scheme_getdrive;
-  scheme_extension_table->scheme_split_pathname = scheme_split_pathname;
-  scheme_extension_table->scheme_build_pathname = scheme_build_pathname;
+  scheme_extension_table->scheme_split_path = scheme_split_path;
+  scheme_extension_table->scheme_build_path = scheme_build_path;
+  scheme_extension_table->scheme_make_path = scheme_make_path;
+  scheme_extension_table->scheme_make_sized_path = scheme_make_sized_path;
+  scheme_extension_table->scheme_make_sized_offset_path = scheme_make_sized_offset_path;
+  scheme_extension_table->scheme_make_path_without_copying = scheme_make_path_without_copying;
 #ifdef MACINTOSH_EVENTS
   scheme_extension_table->scheme_mac_spec_to_path = scheme_mac_spec_to_path;
   scheme_extension_table->scheme_mac_path_to_spec = scheme_mac_path_to_spec;

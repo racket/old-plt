@@ -107,8 +107,8 @@ static char *get_init_filename(Scheme_Env *env)
 
       f = _scheme_apply(f, 1, a);
 
-      if (SCHEME_BYTE_STRINGP(f))
-	return SCHEME_BYTE_STR_VAL(f);
+      if (SCHEME_PATHP(f))
+	return SCHEME_PATH_VAL(f);
     }
   }
 

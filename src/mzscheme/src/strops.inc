@@ -410,9 +410,20 @@ X__(string_to_immutable) (int argc, Scheme_Object *argv[])
     return s;
 }
 
-/**********************************************************************/
-/*                           constructors                             */
-/**********************************************************************/
+static Scheme_Object *
+X_(append_all, strings_backwards)(Scheme_Object *l)
+{
+  int i, len;
+  Scheme_Object **a;
+
+  len = scheme_list_length(l);
+  a = MALLOC_N(Scheme_Object *, len);
+  for (i = len; i--; l = SCHEME_CDR(l)) {
+    a[i] = SCHEME_CAR(l);
+  }
+  
+  return X__(string_append)(len, a);
+}
 
 #undef SCHEME_X_STR_VAL
 #undef SCHEME_X_STRTAG_VAL

@@ -709,6 +709,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_complex_type, hash_general);
   PROC(scheme_char_string_type, hash_general);
   PROC(scheme_byte_string_type, hash_general);
+  PROC(scheme_path_type, hash_general);
   PROC(scheme_symbol_type, hash_symbol);
   PROC(scheme_null_type, hash_addr);
   PROC(scheme_pair_type, hash_general);
@@ -898,6 +899,7 @@ long scheme_equal_hash_key(Scheme_Object *o)
       break;
     }
   case scheme_byte_string_type:
+  case scheme_path_type:
     {
       int i = SCHEME_BYTE_STRLEN_VAL(o);
       char *s = SCHEME_BYTE_STR_VAL(o);
@@ -1087,6 +1089,7 @@ long scheme_equal_hash_key2(Scheme_Object *o)
       return k;
     }
   case scheme_byte_string_type:
+  case scheme_path_type:
     {
       int k = 0, i = SCHEME_BYTE_STRLEN_VAL(o);
       char *s = SCHEME_BYTE_STR_VAL(o);

@@ -6438,7 +6438,6 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 
 
 
-// This isn't `pathname' because it expands internally
 
 
 
@@ -6461,7 +6460,7 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 class os_wxImageSnip : public wxImageSnip {
  public:
 
-  os_wxImageSnip CONSTRUCTOR_ARGS((npstring x0 = NULL, int x1 = 0, Bool x2 = FALSE, Bool x3 = TRUE));
+  os_wxImageSnip CONSTRUCTOR_ARGS((nxpathname x0 = NULL, int x1 = 0, Bool x2 = FALSE, Bool x3 = TRUE));
 #ifndef MZ_PRECISE_GC
   os_wxImageSnip CONSTRUCTOR_ARGS((class wxBitmap* x0, class wxBitmap* x1 = NULL));
 #endif
@@ -6507,7 +6506,7 @@ void os_wxImageSnip::gcFixup() {
 
 static Scheme_Object *os_wxImageSnip_class;
 
-os_wxImageSnip::os_wxImageSnip CONSTRUCTOR_ARGS((npstring x0, int x1, Bool x2, Bool x3))
+os_wxImageSnip::os_wxImageSnip CONSTRUCTOR_ARGS((nxpathname x0, int x1, Bool x2, Bool x3))
 CONSTRUCTOR_INIT(: wxImageSnip(x0, x1, x2, x3))
 {
 }
@@ -7568,7 +7567,7 @@ static Scheme_Object *os_wxImageSnipGetFilename(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nbstring r INIT_NULLED_OUT;
+  npathname r INIT_NULLED_OUT;
   objscheme_check_valid(os_wxImageSnip_class, "get-filename in image-snip%", n, p);
   Bool _x0;
   Bool* x0 = &_x0;
@@ -7595,7 +7594,7 @@ static Scheme_Object *os_wxImageSnipGetFilename(int n,  Scheme_Object *p[])
     { Scheme_Object *sbv_ = (_x0 ? scheme_true : scheme_false); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_pathname((char *)r));
 }
 
 static Scheme_Object *os_wxImageSnipLoadFile(int n,  Scheme_Object *p[])
@@ -7603,7 +7602,7 @@ static Scheme_Object *os_wxImageSnipLoadFile(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxImageSnip_class, "load-file in image-snip%", n, p);
-  npstring x0 INIT_NULLED_OUT;
+  nxpathname x0 INIT_NULLED_OUT;
   int x1;
   Bool x2;
   Bool x3;
@@ -7613,7 +7612,7 @@ static Scheme_Object *os_wxImageSnipLoadFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (npstring)WITH_VAR_STACK(objscheme_unbundle_nullable_pstring(p[POFFSET+0], "load-file in image-snip%"));
+  x0 = (nxpathname)WITH_VAR_STACK(objscheme_unbundle_nullable_xpathname(p[POFFSET+0], "load-file in image-snip%"));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "load-file in image-snip%"));
   } else
@@ -8461,7 +8460,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
     
     READY_TO_PRE_RETURN;
   } else  {
-    npstring x0 INIT_NULLED_OUT;
+    nxpathname x0 INIT_NULLED_OUT;
     int x1;
     Bool x2;
     Bool x3;
@@ -8475,7 +8474,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
     if ((n > (POFFSET+4))) 
       WITH_VAR_STACK(scheme_wrong_count_m("initialization in image-snip% (filename case)", POFFSET+POFFSET, POFFSET+4, n, p, 1));
     if (n > (POFFSET+0)) {
-      x0 = (npstring)WITH_VAR_STACK(objscheme_unbundle_nullable_pstring(p[POFFSET+0], "initialization in image-snip% (filename case)"));
+      x0 = (nxpathname)WITH_VAR_STACK(objscheme_unbundle_nullable_xpathname(p[POFFSET+0], "initialization in image-snip% (filename case)"));
     } else
       x0 = NULL;
     if (n > (POFFSET+1)) {

@@ -158,7 +158,7 @@ class os_wxWindow : public wxWindow {
  public:
 
   ~os_wxWindow();
-  void OnDropFile(pathname x0);
+  void OnDropFile(epathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
   void OnSize(int x0, int x1);
@@ -186,7 +186,7 @@ os_wxWindow::~os_wxWindow()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
-void os_wxWindow::OnDropFile(pathname x0)
+void os_wxWindow::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -405,14 +405,14 @@ static Scheme_Object *os_wxWindowOnDropFile(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxWindow_class, "on-drop-file in window%", n, p);
-  pathname x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "on-drop-file in window%"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "on-drop-file in window%"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)

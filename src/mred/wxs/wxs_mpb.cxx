@@ -417,16 +417,16 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   Bool CanInsert(class wxSnip* x0, class wxSnip* x1, float x2, float x3);
   void DoPaste(ExactLong x0);
   void DoCopy(ExactLong x0, Bool x1);
-  nbstring PutFile(nbstring x0, nbstring x1);
-  nbstring GetFile(nbstring x0);
+  npathname PutFile(epathname x0, epathname x1);
+  npathname GetFile(epathname x0);
   void AfterEditSequence();
   void OnEditSequence();
   void AfterLoadFile(Bool x0);
-  void OnLoadFile(bstring x0, int x1);
-  Bool CanLoadFile(bstring x0, int x1);
+  void OnLoadFile(epathname x0, int x1);
+  Bool CanLoadFile(epathname x0, int x1);
   void AfterSaveFile(Bool x0);
-  void OnSaveFile(bstring x0, int x1);
-  Bool CanSaveFile(bstring x0, int x1);
+  void OnSaveFile(epathname x0, int x1);
+  Bool CanSaveFile(epathname x0, int x1);
   class wxSnip* OnNewBox(int x0);
   class wxImageSnip* OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3);
   void InvalidateBitmapCache(float x0 = 0.0, float x1 = 0.0, float x2 = -1.0, float x3 = -1.0);
@@ -1608,7 +1608,7 @@ void os_wxMediaPasteboard::DoCopy(ExactLong x0, Bool x1)
   }
 }
 
-nbstring os_wxMediaPasteboard::PutFile(nbstring x0, nbstring x1)
+npathname os_wxMediaPasteboard::PutFile(epathname x0, epathname x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1632,8 +1632,8 @@ nbstring os_wxMediaPasteboard::PutFile(nbstring x0, nbstring x1)
     READY_TO_RETURN; return ASSELF wxMediaPasteboard::PutFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
-  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x1));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
+  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
@@ -1641,15 +1641,15 @@ nbstring os_wxMediaPasteboard::PutFile(nbstring x0, nbstring x1)
   
   
   {
-     nbstring resval;
-     resval = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(v, "put-file in pasteboard%"", extracting return value"));
+     npathname resval;
+     resval = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(v, "put-file in pasteboard%"", extracting return value"));
      READY_TO_RETURN;
      return resval;
   }
   }
 }
 
-nbstring os_wxMediaPasteboard::GetFile(nbstring x0)
+npathname os_wxMediaPasteboard::GetFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1672,7 +1672,7 @@ nbstring os_wxMediaPasteboard::GetFile(nbstring x0)
     READY_TO_RETURN; return ASSELF wxMediaPasteboard::GetFile(x0);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
@@ -1680,8 +1680,8 @@ nbstring os_wxMediaPasteboard::GetFile(nbstring x0)
   
   
   {
-     nbstring resval;
-     resval = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(v, "get-file in pasteboard%"", extracting return value"));
+     npathname resval;
+     resval = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(v, "get-file in pasteboard%"", extracting return value"));
      READY_TO_RETURN;
      return resval;
   }
@@ -1785,7 +1785,7 @@ void os_wxMediaPasteboard::AfterLoadFile(Bool x0)
   }
 }
 
-void os_wxMediaPasteboard::OnLoadFile(bstring x0, int x1)
+void os_wxMediaPasteboard::OnLoadFile(epathname x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1808,7 +1808,7 @@ void os_wxMediaPasteboard::OnLoadFile(bstring x0, int x1)
     READY_TO_RETURN; ASSELF wxMediaPasteboard::OnLoadFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -1820,7 +1820,7 @@ void os_wxMediaPasteboard::OnLoadFile(bstring x0, int x1)
   }
 }
 
-Bool os_wxMediaPasteboard::CanLoadFile(bstring x0, int x1)
+Bool os_wxMediaPasteboard::CanLoadFile(epathname x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1843,7 +1843,7 @@ Bool os_wxMediaPasteboard::CanLoadFile(bstring x0, int x1)
     READY_TO_RETURN; return ASSELF wxMediaPasteboard::CanLoadFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -1893,7 +1893,7 @@ void os_wxMediaPasteboard::AfterSaveFile(Bool x0)
   }
 }
 
-void os_wxMediaPasteboard::OnSaveFile(bstring x0, int x1)
+void os_wxMediaPasteboard::OnSaveFile(epathname x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1916,7 +1916,7 @@ void os_wxMediaPasteboard::OnSaveFile(bstring x0, int x1)
     READY_TO_RETURN; ASSELF wxMediaPasteboard::OnSaveFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -1928,7 +1928,7 @@ void os_wxMediaPasteboard::OnSaveFile(bstring x0, int x1)
   }
 }
 
-Bool os_wxMediaPasteboard::CanSaveFile(bstring x0, int x1)
+Bool os_wxMediaPasteboard::CanSaveFile(epathname x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1951,7 +1951,7 @@ Bool os_wxMediaPasteboard::CanSaveFile(bstring x0, int x1)
     READY_TO_RETURN; return ASSELF wxMediaPasteboard::CanSaveFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -4948,10 +4948,10 @@ static Scheme_Object *os_wxMediaPasteboardPutFile(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nbstring r;
+  npathname r;
   objscheme_check_valid(os_wxMediaPasteboard_class, "put-file in pasteboard%", n, p);
-  nbstring x0 INIT_NULLED_OUT;
-  nbstring x1 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
+  epathname x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -4959,8 +4959,8 @@ static Scheme_Object *os_wxMediaPasteboardPutFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(2, x1);
 
   
-  x0 = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(p[POFFSET+0], "put-file in pasteboard%"));
-  x1 = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(p[POFFSET+1], "put-file in pasteboard%"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "put-file in pasteboard%"));
+  x1 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+1], "put-file in pasteboard%"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
@@ -4971,23 +4971,23 @@ static Scheme_Object *os_wxMediaPasteboardPutFile(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_pathname((char *)r));
 }
 
 static Scheme_Object *os_wxMediaPasteboardGetFile(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nbstring r;
+  npathname r;
   objscheme_check_valid(os_wxMediaPasteboard_class, "get-file in pasteboard%", n, p);
-  nbstring x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(p[POFFSET+0], "get-file in pasteboard%"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "get-file in pasteboard%"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
@@ -4998,7 +4998,7 @@ static Scheme_Object *os_wxMediaPasteboardGetFile(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_pathname((char *)r));
 }
 
 static Scheme_Object *os_wxMediaPasteboardAfterEditSequence(int n,  Scheme_Object *p[])
@@ -5077,7 +5077,7 @@ static Scheme_Object *os_wxMediaPasteboardOnLoadFile(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaPasteboard_class, "on-load-file in pasteboard%", n, p);
-  bstring x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -5085,7 +5085,7 @@ static Scheme_Object *os_wxMediaPasteboardOnLoadFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "on-load-file in pasteboard%"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "on-load-file in pasteboard%"));
   x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "on-load-file in pasteboard%"));
 
   
@@ -5106,7 +5106,7 @@ static Scheme_Object *os_wxMediaPasteboardCanLoadFile(int n,  Scheme_Object *p[]
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(os_wxMediaPasteboard_class, "can-load-file? in pasteboard%", n, p);
-  bstring x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -5114,7 +5114,7 @@ static Scheme_Object *os_wxMediaPasteboardCanLoadFile(int n,  Scheme_Object *p[]
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "can-load-file? in pasteboard%"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "can-load-file? in pasteboard%"));
   x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "can-load-file? in pasteboard%"));
 
   
@@ -5159,7 +5159,7 @@ static Scheme_Object *os_wxMediaPasteboardOnSaveFile(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaPasteboard_class, "on-save-file in pasteboard%", n, p);
-  bstring x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -5167,7 +5167,7 @@ static Scheme_Object *os_wxMediaPasteboardOnSaveFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "on-save-file in pasteboard%"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "on-save-file in pasteboard%"));
   x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "on-save-file in pasteboard%"));
 
   
@@ -5188,7 +5188,7 @@ static Scheme_Object *os_wxMediaPasteboardCanSaveFile(int n,  Scheme_Object *p[]
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(os_wxMediaPasteboard_class, "can-save-file? in pasteboard%", n, p);
-  bstring x0 INIT_NULLED_OUT;
+  epathname x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -5196,7 +5196,7 @@ static Scheme_Object *os_wxMediaPasteboardCanSaveFile(int n,  Scheme_Object *p[]
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "can-save-file? in pasteboard%"));
+  x0 = (epathname)WITH_VAR_STACK(objscheme_unbundle_epathname(p[POFFSET+0], "can-save-file? in pasteboard%"));
   x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "can-save-file? in pasteboard%"));
 
   

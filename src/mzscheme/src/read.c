@@ -2720,8 +2720,8 @@ static Scheme_Object *read_compact(CPort *port,
       }
       break;
     case CPT_CHAR:
-      ZO_CHECK(port->pos < port->size);
-      v = scheme_make_character(CP_GETC(port));
+      l = read_compact_number(port);
+      v = scheme_make_character(l);
       break;
     case CPT_INT:
       v = scheme_make_integer(read_compact_number(port));

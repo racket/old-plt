@@ -1142,10 +1142,7 @@ static char *make_srcloc_string(Scheme_Stx_Srcloc *srcloc, long *len)
 
   src = srcloc->src;
 
-  if (src && SCHEME_CHAR_STRINGP(src))
-    src = scheme_char_string_to_byte_string(src);
-    
-  if (src && SCHEME_BYTE_STRINGP(src)) {
+  if (src && SCHEME_PATHP(src)) {
     /* Strip off prefix matching the current directory: */
     src = scheme_remove_current_directory_prefix(src);
 
@@ -1231,7 +1228,7 @@ void scheme_read_err(Scheme_Object *port,
     if (port) {
       Scheme_Object *str;
       fn = SCHEME_IPORT_NAME(port);
-      str = scheme_make_byte_string_without_copying(fn);
+      str = scheme_make_path_without_copying(fn);
       str = scheme_remove_current_directory_prefix(str);
       fn = SCHEME_BYTE_STR_VAL(str);
     } else

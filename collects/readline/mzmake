@@ -13,6 +13,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 (require-library "functio.ss")
 
 (define header (build-path (collection-path "mzscheme" "include") "scheme.h"))
+(define version-header (build-path (collection-path "mzscheme" "include") "schvers.h"))
 
 (define dir (build-path "compiled" "native" (system-library-subpath)))
 (define mzrl.so (build-path dir "mzrl.so"))
@@ -62,7 +63,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
  ((mzrl.so (mzrl.o dir)
 	   (link-extension #f (list mzrl.o) mzrl.so))
   
-  (mzrl.o ("mzrl.c" header dir)
+  (mzrl.o ("mzrl.c" header version-header dir)
 	  (compile-extension #f "mzrl.c" mzrl.o ()))
   
   (dir ()

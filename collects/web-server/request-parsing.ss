@@ -13,12 +13,12 @@
   ;; path-suffix: (listof string)
   ;; The part of the URL path that gets passed to the servlet as arguments.
 
-  ;; header?: any? -> boolean
+  ;; header?: anyd/c -> boolean
   ;; is this a header?
   (define header?
     (cons/c symbol? bytes?))
 
-  ;; bindings? any? -> boolean
+  ;; bindings? any/c -> boolean
   ;; is this a binding
   (define binding?
     (cons/c symbol? string?))

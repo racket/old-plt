@@ -54,6 +54,13 @@ Or, to compile the `mzscheme' executable for other Unix platforms:
   [CYGWIN32 note: either use `mzmake', or `make cygwin-setup' before
    `make bin'.]
 
+After compiling MzScheme, `[mz]make install' copies the binary and
+libraries into their normal places in the plt tree. (For example,
+mzscheme is copied to to ../../.bin/<platform-id>/mzscheme.) After
+running `[mz]make install', then run ./install in the plt directory
+(two directotires up from here). At that point, plt/bin/setup-plt and
+plt/bin/mzc will work. (If you move the plt tree, re-run plt/install.)
+
 To compile parts of MzScheme for embedding or extending:
 
   * `[mz]make mzschemelib' (or `mzmake mzschemelib') compiles 
@@ -76,15 +83,15 @@ To compile parts of MzScheme for embedding or extending:
   * `[mz]make dynexample' compiles the example dynamic
      extension objects/sys/dynexmpl.so; when this is loaded into
      MzScheme, (by using load-extension), it defines a "date" 
-     procedure; mzc must be in the path and dynlib must be
-     made
+     procedure; mzscheme must be installed and mzc must be in
+     the path
 
   * `[mz]make oe' compiles a larger example dynamic
      extension objects/sys/oe.so; when this is loaded into
      MzScheme, (by using load-extension), it defines "odd",
      "even", "fib", and "fib2" procedures, and returns
-     two values (#t and #f) when loaded; mzc must be in the path
-     and dynlib must be made
+     two values (#t and #f) when loaded; mzscheme must be 
+     installed and mzc must be in the path
 
 ------------------------------------------------------------------------
  Compiling for Multiple Unix Platforms

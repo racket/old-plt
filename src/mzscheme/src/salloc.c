@@ -707,6 +707,9 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     long total_count = 0, total_size = 0;
     long total_actual_count = 0, total_actual_size = 0;
     long traced;
+    int no_walk = 0;
+
+    no_walk = (!c || !SAME_OBJ(p[0], scheme_true));
 
     for (i = 0; i < NUM_TYPE_SLOTS; i++) {
       scheme_memory_count[i] = scheme_memory_size[i] = 0;
@@ -723,7 +726,8 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 
     tagged = tagged_while_counting;
     
-    smc_ht = scheme_hash_table(1000, SCHEME_hash_ptr, 0, 0);
+    if (!no_walk)
+      smc_ht = scheme_hash_table(1000, SCHEME_hash_ptr, 0, 0);
     
     if (tagged) 
       GC_for_each_element(real_tagged, count_tagged, NULL);
@@ -974,7 +978,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   if (type >= _scheme_last_type_)
     return 0;
 
-  if (scheme_lookup_in_table(ht, (const char *)root))
+  if (ht && scheme_lookup_in_table(ht, (const char *)root))
     return 0;
 
   home = GC_set(root);
@@ -988,9 +992,10 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   }
 #endif
 
-  scheme_add_to_table(ht, (const char *)root, scheme_true, 0);
+  if (ht)
+    scheme_add_to_table(ht, (const char *)root, scheme_true, 0);
 
-#define COUNT(x) scheme_count_memory((Scheme_Object *)x, ht)
+#define COUNT(x) (ht ? scheme_count_memory((Scheme_Object *)x, ht) : 0)
 
   switch (type) {
   case scheme_variable_type:
@@ -1500,7 +1505,10 @@ long scheme_count_envbox(Scheme_Object *root, Scheme_Hash_Table *ht)
   }
 #endif
 
-  return scheme_count_memory(SCHEME_ENVBOX_VAL(root), ht) + 4;
+  if (ht)
+    return scheme_count_memory(SCHEME_ENVBOX_VAL(root), ht) + 4;
+  else
+    return 4;
 }
 
 #if 0

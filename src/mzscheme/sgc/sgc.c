@@ -152,7 +152,7 @@
 #define USE_WATCH_FOUND_FUNC SGC_STD_DEBUGGING
 /* Calls GC_found_watch when the watch-for ptr is found. */
 
-#define PAD_BOUNDARY_BYTES SGC_STD_DEBUGGING
+#define PAD_BOUNDARY_BYTES (0 && SGC_STD_DEBUGGING)
 /* Put a known padding pattern around every allocated
    block to test for array overflow/underflow.
    Pad-testing is performed at the beginning of every GC.

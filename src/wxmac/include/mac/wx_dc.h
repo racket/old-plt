@@ -18,6 +18,8 @@
 typedef       void    *wxDC ;
 #else
 
+class wxGL;
+
 class wxDC: public wxbDC
 {
  public:
@@ -40,6 +42,8 @@ class wxDC: public wxbDC
   // Mac platform only
   void wxMacDrawPoint(int x1, int y1);
   void wxMacDrawLine(int x1, int y1, int x2, int y2);
+
+  virtual wxGL *GetGL();
 };
 
 extern "C" {

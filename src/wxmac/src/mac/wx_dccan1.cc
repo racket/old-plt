@@ -15,6 +15,7 @@
 #include "wx_mac_utils.h"
 #include "wx_area.h"
 #include "wx_rgn.h"
+#include <AGL/agl.h> 
 
 extern CGrafPtr wxMainColormap;
 
@@ -712,4 +713,104 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
   }
 
   cMacCurrentTool = whichTool;
+}
+
+/************************************************************************/
+/*                                GL                                    */
+/************************************************************************/
+
+wxGL *wxCanvasDC::GetGL()
+{
+  if (!gl) {
+    CGrafPtr cp;
+    gl = new wxGL();
+    cp = cMacDC->macGrafPort();
+    gl->Reset(cp, 0);
+    canvas->ResetGLView();
+  }
+
+  return gl;
+}
+
+static wxGL *current_gl_context = NULL;
+static int gl_registered;
+static AGLPixelFormat fmt;
+static AGLPixelFormat sb_fmt;
+
+wxGL::wxGL()
+  : wxObject(WXGC_NO_CLEANUP)
+{
+  if (!gl_registered) {
+    GC_CAN_IGNORE GLint attrib[] = { AGL_RGBA, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 16, AGL_NONE };
+    GC_CAN_IGNORE GLint sb_attrib[] = { AGL_RGBA, AGL_DEPTH_SIZE, 16, AGL_NONE };
+
+    wxREGGLOB(current_gl_context); 
+    gl_registered = 1;
+
+    fmt = aglChoosePixelFormat(NULL, 0, attrib);
+    sb_fmt = aglChoosePixelFormat(NULL, 0, sb_attrib);
+  }
+}
+
+wxGL::Reset(CGrafPtr gp, int offscreen)
+{
+  AGLContext ctx; 
+
+  ctx = (AGLContext)gl_ctx;
+
+  if (this == current_gl_context) {
+    aglSetCurrentContext(NULL);
+  }
+
+  aglSetDrawable(ctx, NULL);
+  aglDestroyContext(ctx); 
+
+  if (gp) {
+    ctx = aglCreateContext(offscreen ? sb_fmt : fmt, NULL);
+    
+    aglSetDrawable(ctx, gp);
+
+    gl_ctx = (long)ctx;
+  }
+}
+
+void wxGL::SwapBuffers(void)
+{
+  if (gl_ctx) {
+    aglSwapBuffers((AGLContext)gl_ctx);
+  }
+}
+
+void wxGL::ThisContextCurrent(void)
+{
+  if (gl_ctx) {
+    aglSetCurrentContext((AGLContext)gl_ctx);
+    current_gl_context = this;
+  }
+}
+
+void wxGL::ResetGLView(int x, int y, int w, int h)
+{
+  GLint bufferRect[4];
+  AGLContext ctx = (AGLContext)gl_ctx;
+  
+  bufferRect[0] = x;
+  bufferRect[1] = y;
+  bufferRect[2] = w;
+  bufferRect[3] = h;
+  
+  aglSetInteger(ctx, AGL_BUFFER_RECT, bufferRect);
+  aglEnable(ctx, AGL_BUFFER_RECT);
+  
+  if (current_gl_context != this) {
+    aglSetCurrentContext(ctx);
+  }
+  glViewport(0, 0, (GLsizei)w, (GLsizei)h);
+  if (current_gl_context != this) {
+    if (current_gl_context) {
+      aglSetCurrentContext((AGLContext)current_gl_context->gl_ctx);
+    } else {
+      aglSetCurrentContext(NULL);
+    }
+  }
 }

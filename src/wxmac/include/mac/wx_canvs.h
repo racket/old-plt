@@ -34,7 +34,6 @@ class wxCanvas: public wxbCanvas
 	Bool vScrollingEnabled;
 	Bool scrollAutomanaged;
 	wxBorderArea *canvas_border;
-	long gl_ctx; /* really an AGLContext */
 
 //=============================================================================
 // Public constructors
@@ -162,9 +161,6 @@ private:
 	virtual void AddWhiteRgn(RgnHandle rgn, RgnHandle ergn);
 
 	Bool WantsFocus();
-
-	void CanvasSwapBuffers(void);
-	void ThisContextCurrent(void);
 
 	void ResetGLView(void);
 };

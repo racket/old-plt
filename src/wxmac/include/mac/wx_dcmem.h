@@ -31,6 +31,7 @@ class wxMemoryDC: public wxbMemoryDC
   ~wxMemoryDC(void);
   virtual void SelectObject(wxBitmap *bitmap);
   wxBitmap *GetObject();
+  wxGL *GetGL();
 };
 
 #endif // IN_CPROTO

@@ -24,6 +24,7 @@ class wxCanvasDC: public wxbCanvasDC
   Bool cMacDoingDrawing;  // mac platform only; internal use only; used by Begin/EndDrawing
  public:
   wxCanvas* canvas;
+  wxGL *gl;
   // Every time a callback happens, these are set to point to the right values
   // for drawing calls to work
 
@@ -134,6 +135,8 @@ class wxCanvasDC: public wxbCanvasDC
   
   wxRegion *BrushStipple();
   void PaintStipple(wxRegion *);
+
+  wxGL *GetGL();
 };
 
 long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str, int d = 0, int len = -1);
@@ -152,6 +155,22 @@ extern Pattern wx_white_pat, wx_black_pat, wx_light_gray_pat, wx_dark_gray_pat;
 #define GetLightGrayPattern() &wx_light_gray_pat
 #define GetDarkGrayPattern() &wx_dark_gray_pat
 extern void wx_init_patterns();
+
+class wxGL : public wxObject {
+public:
+  wxGL();
+
+  long gl_ctx; /* really an AGLContext */
+
+  int Ok();
+  
+  void Reset(CGrafPtr gp, int offscreen) = 0;
+  
+  void SwapBuffers(void) = 0;
+  void ThisContextCurrent(void) = 0;
+  
+  void ResetGLView(int x, int y, int w, int h);
+};
 
 #endif // IN_CPROTO
 #endif // wx_dccanh

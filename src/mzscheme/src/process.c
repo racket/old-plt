@@ -842,8 +842,11 @@ Scheme_Process *scheme_do_close_managed(Scheme_Manager *m, Closer_Func cf)
   Scheme_Process *kill_self = NULL, *ks;
   Scheme_Manager *c, *next;
 
-  if (!m)
+  if (!m) {
     m = main_manager;
+    if (!m)
+      return NULL;
+  }
 
   /* Kill children first: */
   for (c = MANAGER_FAM(m->children); c; c = next) {

@@ -236,9 +236,6 @@ static int run_from_cmd_line(int argc, char *argv[],
   DllMain(NULL, DLL_PROCESS_ATTACH, NULL);
 #endif
 
-  /* Avoid exiting problems under Windows: */
-  scheme_setup_forced_exit();
-
   prog = argv[0];
   argv++;
   --argc;
@@ -568,6 +565,9 @@ static int run_from_cmd_line(int argc, char *argv[],
   }
 #endif /* DONT_PARSE_COMMAND_LINE */
   
+  /* Avoid exiting problems under Windows: */
+  scheme_setup_forced_exit();
+
   global_env = mk_basic_env();
 
   sch_argv = scheme_make_vector(argc, scheme_null);

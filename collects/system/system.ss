@@ -128,8 +128,8 @@
 	(user-break-poll-handler wx:check-for-break)
 	(mred:change-splash-message "Command Line...")
 	(for-each (lambda (x) (apply (car x) (cdr x))) (reverse todo))
-	(mred:no-more-splash-messages)
 	(mred:invoke)
+	(mred:no-more-splash-messages)
 	(when mred:non-unit-startup?
 	  (set! mred:console (mred:startup)))
 	(for-each mred:edit-file files-to-open)

@@ -115,10 +115,10 @@
 	     (lambda (element)
 	       (if (pair? element)
 		   (and (check-for-keyword (car element))
-			(list (z:binding-var (car element))
+			(list (get-binding-name (car element))
 			      (annotate/inner (cdr element))))
 		   (and (check-for-keyword element)
-			(z:binding-var element))))))
+			(get-binding-name element))))))
 	(cond
 	  ((z:sym-paroptarglist? paroptarglist)
 	   (process-args (car (z:paroptarglist-vars paroptarglist))))
@@ -186,6 +186,25 @@
   (define (is-unit-bound? varref)
     (and (z:top-level-varref/bind/unit? varref)
 	 (z:top-level-varref/bind/unit-unit? varref)))
+
+  ; get-binding-name extracts the S-expression name fgor a binding. Zodiac
+  ; creates a unique, gensym'd symbol for each binding, but the name is
+  ; unreadable. Here, we create a new gensym, but the name of the generated
+  ; symbol prints in the same way as the original symbol.
+  
+  (define (get-binding-name binding)
+    (let ([name (lookup-new-binding-name binding)])
+      (or name
+	  (let* ([orig-name (z:binding-orig-name binding)]
+		 [name (string->uninterned-symbol (symbol->string orig-name))])
+	    (set-new-binding-name! binding name)
+	    name))))
+
+  (define-values (lookup-new-binding-name set-new-binding-name!)
+    (let-values ([(getter setter) (z:register-client 'aries:new-name (lambda () #f))])
+      (values
+       (lambda (parsed) (getter (z:parsed-back parsed)))
+       (lambda (parsed n) (setter (z:parsed-back parsed) n)))))
   
   ; translate-bound-varref is a short piece of code which would otherwise appear
   ; twice: it translates a bound variable, inserting the undefined-value-check if
@@ -193,7 +212,9 @@
   ; the miscategorization of unit-vars described above.
   
   (define (translate-bound-varref expr maybe-undef?)
-    (let ([v (z:varref-var expr)]
+    (let ([v (if (z:top-level-varref? expr)
+		 (z:varref-var expr)
+		 (get-binding-name (z:bound-varref-binding expr)))]
 	  [real-v (if (z:top-level-varref? expr)
 		      (z:varref-var expr)
 		      (z:binding-orig-name
@@ -208,6 +229,11 @@
 		       ,v))
 	  ; don't wrap lexical variables - nothing can go wrong
 	  v)))
+
+  (define (translate-bound-varref/lhs expr)
+    ; Right now, translate-bound-varref adds no annotation
+    ;  if the seconrd argument is #f.
+    (translate-bound-varref expr #f))
 
   ; mark lexical variables that are known never to be undefined, an
   ; important optimization when (signal-undefined) is #t
@@ -298,7 +324,7 @@
 		  (map (lambda (vars val)
 			 (for-each check-for-keyword vars)
 			 (for-each mark-never-undefined vars)
-			 `(,(map z:binding-var vars)
+			 `(,(map get-binding-name vars)
 			   ,(annotate/inner val)))
 		       (z:let-values-form-vars expr)
 		       (z:let-values-form-vals expr))])
@@ -322,7 +348,7 @@
 	   (let* ([bindings
 		   (map (lambda (vars val)
 			  (for-each check-for-keyword vars)
-			  `(,(map z:binding-var vars)
+			  `(,(map get-binding-name vars)
 			    ,(annotate/inner val)))
 			(z:letrec*-values-form-vars expr)
 			(z:letrec*-values-form-vals expr))])
@@ -341,14 +367,14 @@
 	   `(#%define-values
 	     ,(map (lambda (v)
 		     (check-for-keyword v)
-		     (z:varref-var v))
+		     (translate-bound-varref/lhs v))
 		   (z:define-values-form-vars expr))
 	     ,(annotate/inner (z:define-values-form-val expr)))]
 	  
 	  [(z:set!-form? expr)
 	   (check-for-keyword (z:set!-form-var expr))	
 	   (wrap expr
-		 `(#%set! ,(z:varref-var (z:set!-form-var expr))
+		 `(#%set! ,(translate-bound-varref/lhs (z:set!-form-var expr))
 		   ,(annotate/inner (z:set!-form-val expr))))]
 	  
 	  [(z:case-lambda-form? expr)
@@ -357,7 +383,7 @@
 		      (let ((args (arglist->ilist args)))
 			(improper-foreach check-for-keyword args)
 			(improper-foreach mark-never-undefined args)
-			`(,(improper-map z:binding-var args)
+			`(,(improper-map get-binding-name args)
 			  ,(annotate/inner body))))
 		    (z:case-lambda-form-args expr)
 		    (z:case-lambda-form-bodies expr)))]
@@ -375,18 +401,18 @@
 	  [(z:unit-form? expr)
 	   (let ((imports (z:unit-form-imports expr))
 		 (exports (map (lambda (export)
-				 (list (z:varref-var (car export))
+				 (list (translate-bound-varref/lhs (car export))
 				       (z:read-object (cdr export))))
 			       (z:unit-form-exports expr)))
 		 (clauses (map annotate/top-level (z:unit-form-clauses expr))))
 	     (for-each check-for-keyword imports)
 	     `(#%unit
-	       (import ,@(map z:binding-var imports))
+	       (import ,@(map get-binding-name imports))
 	       (export ,@exports)
 	       ,@clauses))]
 	  
 	  [(z:compound-unit-form? expr)
-	   (let ((imports (map z:binding-var
+	   (let ((imports (map get-binding-name
 			       (z:compound-unit-form-imports expr)))
 		 (links (z:compound-unit-form-links expr))
 		 (exports (z:compound-unit-form-exports expr)))
@@ -399,7 +425,7 @@
 			    (imports
 			     (map (lambda (import)
 				    (if (z:lexical-varref? import)
-					(z:varref-var import)
+					(translate-bound-varref/lhs import)
 					`(,(read->raw (car import))
 					  ,(read->raw (cdr import)))))
 				  (cddr link-clause))))
@@ -420,7 +446,7 @@
 	  
 	  [(z:invoke-unit-form? expr)
 	   `(#%invoke-unit ,(annotate/inner (z:invoke-unit-form-unit expr))
-	     ,@(map z:varref-var	
+	     ,@(map translate-bound-varref/lhs
 		    (z:invoke-unit-form-variables expr)))]
 	  
 	  [(z:interface-form? expr)
@@ -432,8 +458,8 @@
 	  
 	  [(z:class*/names-form? expr)
 	   `(#%class*/names
-	     (,(z:binding-var (z:class*/names-form-this expr))
-	      ,(z:binding-var (z:class*/names-form-super-init expr)))
+	     (,(get-binding-name (z:class*/names-form-this expr))
+	      ,(get-binding-name (z:class*/names-form-super-init expr)))
 	     ,(annotate/inner (z:class*/names-form-super-expr expr))
 	     ,(map annotate/inner (z:class*/names-form-interfaces expr))
 	     ,(paroptarglist->ilist (z:class*/names-form-init-vars expr))
@@ -443,7 +469,7 @@
 		    ((z:public-clause? clause)
 		     `(public
 			,@(map (lambda (internal export expr)
-				 `((,(z:binding-var internal)
+				 `((,(get-binding-name internal)
 				    ,(read->raw export))
 				   ,(annotate/inner expr)))
 			       (z:public-clause-internals clause)
@@ -452,7 +478,7 @@
 		    ((z:override-clause? clause)
 		     `(override
 		       ,@(map (lambda (internal export expr)
-				`((,(z:binding-var internal)
+				`((,(get-binding-name internal)
 				   ,(read->raw export))
 				  ,(annotate/inner expr)))
 			      (z:override-clause-internals clause)
@@ -461,21 +487,21 @@
 		    ((z:private-clause? clause)
 		     `(private
 			,@(map (lambda (internal expr)
-				 `(,(z:binding-var internal)
+				 `(,(get-binding-name internal)
 				   ,(annotate/inner expr)))
 			       (z:private-clause-internals clause)
 			       (z:private-clause-exprs clause))))
 		    ((z:inherit-clause? clause)
 		     `(inherit
 			,@(map (lambda (internal inherited)
-				 `(,(z:binding-var internal)
+				 `(,(get-binding-name internal)
 				   ,(read->raw inherited)))
 			       (z:inherit-clause-internals clause)
 			       (z:inherit-clause-imports clause))))
 		    ((z:rename-clause? clause)
 		     `(rename
 			,@(map (lambda (internal import)
-				 `(,(z:binding-var internal)
+				 `(,(get-binding-name internal)
 				   ,(read->raw import)))
 			       (z:rename-clause-internals clause)
 			       (z:rename-clause-imports clause))))

@@ -45,6 +45,13 @@
 (= 14 (dispatch-start 0))
 (= 20 (dispatch-start 6))
 
+(module m01.1 "../persistent-interaction.ss"
+  (define (id x) x)
+  `(,@(list 1 2 (start-interaction id))))
+
+(require m01.1)
+(equal? (list 1 2 3) (dispatch-start 3))
+
 ;; start-interaction may be called mutitple times
 ;; each call overwrites the previous interaction
 ;; continuation with the latest one.
@@ -57,6 +64,8 @@
 (void? (dispatch-start 1))
 (= 3 (dispatch-start 2))
 (= 0 (dispatch-start -1))
+
+
 
 
 ;; ****************************************

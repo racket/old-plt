@@ -97,7 +97,14 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
   [else (void)])
 
 ;; Add the -lcurses flag:
-(add-flags current-extension-linker-flags (list "-lcurses"))
+(define (ncurses-and-not-curses?)
+  (and (file-exists? "/usr/lib/libncurses.so")
+       (not (file-exists? "/usr/lib/libcurses.so"))))
+
+(add-flags current-extension-linker-flags 
+	   (list (if (ncurses-and-not-curses?)
+		     "-lncurses"
+		     "-lcurses")))
 
 (define (delete/continue x)
   (with-handlers ([(lambda (x) #t) void])

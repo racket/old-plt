@@ -1103,18 +1103,17 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_extend_module_rename_with_kernel(rn);
   } else {
     int i;
-    Scheme_Object **exs, **exss, **exsns;
+    Scheme_Object **exs, **exss, **exsns, *midx;
 
     exs = iim->provides;
     exsns = iim->provide_src_names;
     exss = iim->provide_srcs;
     for (i = iim->num_provides; i--; ) {
-      scheme_extend_module_rename(rn, 
-				  ((exss && !SCHEME_FALSEP(exss[i])) 
-				   ? scheme_modidx_shift(exss[i], iim->self_modidx, iidx)
-				   : iidx),
-				  exs[i], 
-				  exsns[i]);
+      if (exss && !SCHEME_FALSEP(exss[i]))
+	midx = scheme_modidx_shift(exss[i], iim->self_modidx, iidx);
+      else
+	midx = iidx;
+      scheme_extend_module_rename(rn, midx, exs[i], exsns[i]);
     }
 
     if (iim->reprovide_kernel)

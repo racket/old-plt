@@ -7,6 +7,20 @@
  
   (provide compile-exceptions make-compilation-path)
   
+  (define (get-path paths)
+    (if (null? paths) ""
+        (if (directory-exists? (build-path (car paths) "profj"))
+            (car paths)
+            (get-path (cdr paths)))))
+  
+  (let ((path (build-path (get-path (current-library-collection-paths)) "profj" "libs" "java" "lang")))
+    (unless (directory-exists? (build-path path "compiled"))
+      (make-directory (build-path path "compiled")))
+    (unless (file-exists? (build-path path "compiled" "Object.jinfo"))
+      (copy-file (build-path path "Object.jinfo") (build-path path "compiled" "Object.jinfo"))
+      (copy-file (build-path path "String.jinfo") (build-path path "compiled" "String.jinfo"))
+      (copy-file (build-path path "Throwable.jinfo") (build-path path "compiled" "Throwable.jinfo"))))
+  
   ;flatten : list -> list
   (define (flatten l)
     (cond

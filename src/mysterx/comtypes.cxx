@@ -21,6 +21,7 @@
 
 Scheme_Type mx_com_object_type;     
 Scheme_Type mx_document_type;
+Scheme_Type mx_element_type;
 Scheme_Type mx_event_type;
 
 Scheme_Type mx_com_cy_type;
@@ -74,7 +75,6 @@ Scheme_Object *mx_make_scode(SCODE scode) {
   retval->scode = scode;
 
   return (Scheme_Object *)retval;
-
 }
 
 

@@ -76,6 +76,11 @@ typedef struct _com_document_ {
   IEventQueue *pIEventQueue;
 } MX_Document_Object;
 
+typedef struct _mx_element_ {
+  Scheme_Type type;
+  IHTMLElement *pIHTMLElement;
+} MX_Element;
+
 typedef struct _date_ {
   Scheme_Type type;
 } MX_Date_Object;
@@ -119,6 +124,9 @@ typedef struct _document_window_style_option {
 #define MX_DOCUMENT_VAL(o) (((MX_Document_Object *)o)->pIHTMLDocument2)
 #define MX_DOCUMENT_EVENTQUEUE(o) (((MX_Document_Object *)o)->pIEventQueue)
 
+#define MX_ELEMENTP(o) (o->type == mx_element_type)
+#define MX_ELEMENT_VAL(o) (((MX_Element *)o)->pIHTMLElement)
+
 #define MX_EVENTP(o) (o->type == mx_event_type)
 #define MX_EVENT_VAL(o) (((MX_Event *)o)->pEvent)
 
@@ -135,8 +143,9 @@ typedef struct _document_window_style_option {
 #define MX_IUNKNOWN_VAL(o) (((MX_COM_Data_Object *)o)->pIUnknown)
 
 extern Scheme_Type mx_com_object_type; 
-extern Scheme_Type mx_event_type;
 extern Scheme_Type mx_document_type;
+extern Scheme_Type mx_element_type;
+extern Scheme_Type mx_event_type;
 extern Scheme_Type mx_com_cy_type;
 extern Scheme_Type mx_com_date_type;
 extern Scheme_Type mx_com_boolean_type;
@@ -170,6 +179,7 @@ MX_PRIM_DECL(mx_com_get_property_type);
 MX_PRIM_DECL(mx_com_set_property_type);
 MX_PRIM_DECL(mx_all_controls);
 MX_PRIM_DECL(mx_all_com_classes);
+MX_PRIM_DECL(mx_find_element);
 MX_PRIM_DECL(mx_document_objects);
 MX_PRIM_DECL(mx_coclass_to_html);
 MX_PRIM_DECL(mx_insert_html);
@@ -177,6 +187,194 @@ MX_PRIM_DECL(mx_append_html);
 MX_PRIM_DECL(mx_replace_html);
 MX_PRIM_DECL(mx_get_event);
 MX_PRIM_DECL(mx_document_pred);
+
+// elements
+
+MX_PRIM_DECL(mx_element_insert_html);
+MX_PRIM_DECL(mx_element_append_html);
+MX_PRIM_DECL(mx_element_insert_text);
+MX_PRIM_DECL(mx_element_append_text);
+MX_PRIM_DECL(mx_element_attribute);
+MX_PRIM_DECL(mx_element_set_attribute);
+MX_PRIM_DECL(mx_element_click);
+MX_PRIM_DECL(mx_element_tag);
+MX_PRIM_DECL(mx_element_font_family);
+MX_PRIM_DECL(mx_element_set_font_family);
+MX_PRIM_DECL(mx_element_font_style);
+MX_PRIM_DECL(mx_element_set_font_style);
+MX_PRIM_DECL(mx_element_font_variant);
+MX_PRIM_DECL(mx_element_set_font_variant);
+MX_PRIM_DECL(mx_element_font_weight);
+MX_PRIM_DECL(mx_element_set_font_weight);
+MX_PRIM_DECL(mx_element_font);
+MX_PRIM_DECL(mx_element_set_font);
+MX_PRIM_DECL(mx_element_background);
+MX_PRIM_DECL(mx_element_set_background);
+MX_PRIM_DECL(mx_element_background_image);
+MX_PRIM_DECL(mx_element_set_background_image);
+MX_PRIM_DECL(mx_element_background_repeat);
+MX_PRIM_DECL(mx_element_set_background_repeat);
+MX_PRIM_DECL(mx_element_background_position);
+MX_PRIM_DECL(mx_element_set_background_position);
+MX_PRIM_DECL(mx_element_text_decoration);
+MX_PRIM_DECL(mx_element_set_text_decoration);
+MX_PRIM_DECL(mx_element_text_transform);
+MX_PRIM_DECL(mx_element_set_text_transform);
+MX_PRIM_DECL(mx_element_text_align);
+MX_PRIM_DECL(mx_element_set_text_align);
+MX_PRIM_DECL(mx_element_margin);
+MX_PRIM_DECL(mx_element_set_margin);
+MX_PRIM_DECL(mx_element_padding);
+MX_PRIM_DECL(mx_element_set_padding);
+MX_PRIM_DECL(mx_element_border);
+MX_PRIM_DECL(mx_element_set_border);
+MX_PRIM_DECL(mx_element_border_top);
+MX_PRIM_DECL(mx_element_set_border_top);
+MX_PRIM_DECL(mx_element_border_bottom);
+MX_PRIM_DECL(mx_element_set_border_bottom);
+MX_PRIM_DECL(mx_element_border_left);
+MX_PRIM_DECL(mx_element_set_border_left);
+MX_PRIM_DECL(mx_element_border_right);
+MX_PRIM_DECL(mx_element_set_border_right);
+MX_PRIM_DECL(mx_element_border_color);
+MX_PRIM_DECL(mx_element_set_border_color);
+MX_PRIM_DECL(mx_element_border_width);
+MX_PRIM_DECL(mx_element_set_border_width);
+MX_PRIM_DECL(mx_element_border_style);
+MX_PRIM_DECL(mx_element_set_border_style);
+MX_PRIM_DECL(mx_element_border_top_style);
+MX_PRIM_DECL(mx_element_set_border_top_style);
+MX_PRIM_DECL(mx_element_border_bottom_style);
+MX_PRIM_DECL(mx_element_set_border_bottom_style);
+MX_PRIM_DECL(mx_element_border_left_style);
+MX_PRIM_DECL(mx_element_set_border_left_style);
+MX_PRIM_DECL(mx_element_border_right_style);
+MX_PRIM_DECL(mx_element_set_border_right_style);
+MX_PRIM_DECL(mx_element_style_float);
+MX_PRIM_DECL(mx_element_set_style_float);
+MX_PRIM_DECL(mx_element_clear);
+MX_PRIM_DECL(mx_element_set_clear);
+MX_PRIM_DECL(mx_element_display);
+MX_PRIM_DECL(mx_element_set_display);
+MX_PRIM_DECL(mx_element_visibility);
+MX_PRIM_DECL(mx_element_set_visibility);
+MX_PRIM_DECL(mx_element_list_style_type);
+MX_PRIM_DECL(mx_element_set_list_style_type);
+MX_PRIM_DECL(mx_element_list_style_position);
+MX_PRIM_DECL(mx_element_set_list_style_position);
+MX_PRIM_DECL(mx_element_list_style_image);
+MX_PRIM_DECL(mx_element_set_list_style_image);
+MX_PRIM_DECL(mx_element_list_style);
+MX_PRIM_DECL(mx_element_set_list_style);
+MX_PRIM_DECL(mx_element_whitespace);
+MX_PRIM_DECL(mx_element_set_whitespace);
+MX_PRIM_DECL(mx_element_position);
+MX_PRIM_DECL(mx_element_overflow);
+MX_PRIM_DECL(mx_element_set_overflow);
+MX_PRIM_DECL(mx_element_pagebreak_before);
+MX_PRIM_DECL(mx_element_set_pagebreak_before);
+MX_PRIM_DECL(mx_element_pagebreak_after);
+MX_PRIM_DECL(mx_element_set_pagebreak_after);
+MX_PRIM_DECL(mx_element_css_text);
+MX_PRIM_DECL(mx_element_set_css_text);
+MX_PRIM_DECL(mx_element_cursor);
+MX_PRIM_DECL(mx_element_set_cursor);
+MX_PRIM_DECL(mx_element_clip);
+MX_PRIM_DECL(mx_element_set_clip);
+MX_PRIM_DECL(mx_element_filter);
+MX_PRIM_DECL(mx_element_set_filter);
+MX_PRIM_DECL(mx_element_style_string);
+MX_PRIM_DECL(mx_element_text_decoration_none);
+MX_PRIM_DECL(mx_element_set_text_decoration_none);
+MX_PRIM_DECL(mx_element_text_decoration_underline);
+MX_PRIM_DECL(mx_element_set_text_decoration_underline);
+MX_PRIM_DECL(mx_element_text_decoration_overline);
+MX_PRIM_DECL(mx_element_set_text_decoration_overline);
+MX_PRIM_DECL(mx_element_text_decoration_linethrough);
+MX_PRIM_DECL(mx_element_set_text_decoration_linethrough);
+MX_PRIM_DECL(mx_element_text_decoration_blink);
+MX_PRIM_DECL(mx_element_set_text_decoration_blink);
+MX_PRIM_DECL(mx_element_pixel_top);
+MX_PRIM_DECL(mx_element_set_pixel_top);
+MX_PRIM_DECL(mx_element_pixel_left);
+MX_PRIM_DECL(mx_element_set_pixel_left);
+MX_PRIM_DECL(mx_element_pixel_width);
+MX_PRIM_DECL(mx_element_set_pixel_width);
+MX_PRIM_DECL(mx_element_pixel_height);
+MX_PRIM_DECL(mx_element_set_pixel_height);
+MX_PRIM_DECL(mx_element_pos_top);
+MX_PRIM_DECL(mx_element_set_pos_top);
+MX_PRIM_DECL(mx_element_pos_left);
+MX_PRIM_DECL(mx_element_set_pos_left);
+MX_PRIM_DECL(mx_element_pos_width);
+MX_PRIM_DECL(mx_element_set_pos_width);
+MX_PRIM_DECL(mx_element_pos_height);
+MX_PRIM_DECL(mx_element_set_pos_height);
+MX_PRIM_DECL(mx_element_font_size);
+MX_PRIM_DECL(mx_element_set_font_size);
+MX_PRIM_DECL(mx_element_color);
+MX_PRIM_DECL(mx_element_set_color);
+MX_PRIM_DECL(mx_element_background_color);
+MX_PRIM_DECL(mx_element_set_background_color);
+MX_PRIM_DECL(mx_element_background_position_x);
+MX_PRIM_DECL(mx_element_set_background_position_x);
+MX_PRIM_DECL(mx_element_background_position_y);
+MX_PRIM_DECL(mx_element_set_background_position_y);
+MX_PRIM_DECL(mx_element_word_spacing);
+MX_PRIM_DECL(mx_element_set_word_spacing);
+MX_PRIM_DECL(mx_element_letter_spacing);
+MX_PRIM_DECL(mx_element_set_letter_spacing);
+MX_PRIM_DECL(mx_element_vertical_align);
+MX_PRIM_DECL(mx_element_set_vertical_align);
+MX_PRIM_DECL(mx_element_text_indent);
+MX_PRIM_DECL(mx_element_set_text_indent);
+MX_PRIM_DECL(mx_element_line_height);
+MX_PRIM_DECL(mx_element_set_line_height);
+MX_PRIM_DECL(mx_element_margin_top);
+MX_PRIM_DECL(mx_element_set_margin_top);
+MX_PRIM_DECL(mx_element_margin_bottom);
+MX_PRIM_DECL(mx_element_set_margin_bottom);
+MX_PRIM_DECL(mx_element_margin_left);
+MX_PRIM_DECL(mx_element_set_margin_left);
+MX_PRIM_DECL(mx_element_margin_right);
+MX_PRIM_DECL(mx_element_set_margin_right);
+MX_PRIM_DECL(mx_element_padding_top);
+MX_PRIM_DECL(mx_element_set_padding_top);
+MX_PRIM_DECL(mx_element_padding_bottom);
+MX_PRIM_DECL(mx_element_set_padding_bottom);
+MX_PRIM_DECL(mx_element_padding_left);
+MX_PRIM_DECL(mx_element_set_padding_left);
+MX_PRIM_DECL(mx_element_padding_right);
+MX_PRIM_DECL(mx_element_set_padding_right);
+MX_PRIM_DECL(mx_element_border_top_color);
+MX_PRIM_DECL(mx_element_set_border_top_color);
+MX_PRIM_DECL(mx_element_border_bottom_color);
+MX_PRIM_DECL(mx_element_set_border_bottom_color);
+MX_PRIM_DECL(mx_element_border_left_color);
+MX_PRIM_DECL(mx_element_set_border_left_color);
+MX_PRIM_DECL(mx_element_border_right_color);
+MX_PRIM_DECL(mx_element_set_border_right_color);
+MX_PRIM_DECL(mx_element_border_top_width);
+MX_PRIM_DECL(mx_element_set_border_top_width);
+MX_PRIM_DECL(mx_element_border_bottom_width);
+MX_PRIM_DECL(mx_element_set_border_bottom_width);
+MX_PRIM_DECL(mx_element_border_left_width);
+MX_PRIM_DECL(mx_element_set_border_left_width);
+MX_PRIM_DECL(mx_element_border_right_width);
+MX_PRIM_DECL(mx_element_set_border_right_width);
+MX_PRIM_DECL(mx_element_width);
+MX_PRIM_DECL(mx_element_set_width);
+MX_PRIM_DECL(mx_element_height);
+MX_PRIM_DECL(mx_element_set_height);
+MX_PRIM_DECL(mx_element_top);
+MX_PRIM_DECL(mx_element_set_top);
+MX_PRIM_DECL(mx_element_left);
+MX_PRIM_DECL(mx_element_set_left);
+MX_PRIM_DECL(mx_element_z_index);
+MX_PRIM_DECL(mx_element_set_z_index);
+
+// events
+
 MX_PRIM_DECL(mx_event_keypress_pred);
 MX_PRIM_DECL(mx_event_keydown_pred);
 MX_PRIM_DECL(mx_event_keyup_pred);
@@ -213,9 +411,14 @@ MX_PRIM_DECL(mx_make_document);
 MX_PRIM_DECL(mx_document_show);
   
 void mx_register_com_object(Scheme_Object *,IUnknown *);
-IHTMLElementCollection *getBodyObjects(IHTMLElement *);
+IHTMLElementCollection *getBodyElementsWithTag(IHTMLElement *,char *);
+IDispatch *getElementInCollection(IHTMLElementCollection *,int);
 IDispatch *getObjectInCollection(IHTMLElementCollection *,int);
+BSTR schemeStringToBSTR(Scheme_Object *);
+BSTR stringToBSTR(char *,size_t);
 Scheme_Object *BSTRToSchemeString(BSTR);
+Scheme_Object *variantToSchemeObject(VARIANTARG *);
+void marshallSchemeValueToVariant(Scheme_Object *,VARIANTARG *);
 void initEventNames(void);
-
+IHTMLElement *findBodyElement(IHTMLDocument2 *,char *,char *);
 

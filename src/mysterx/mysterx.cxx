@@ -57,12 +57,201 @@ static MX_PRIM mxPrims[] = {
   { mx_com_get_property_type,"get-property-type",2,2 },
   { mx_com_set_property_type,"set-property-type",2,2 },
   { mx_all_com_classes,"all-com-classes",0,0 },
+  { mx_find_element,"document-find-element",3,3 },
   { mx_document_objects,"document-objects",1,1 },
   { mx_coclass_to_html,"coclass->html",1,3 },
   { mx_insert_html,"document-insert-html",2,2 },
   { mx_append_html,"document-append-html",2,2 },
   { mx_replace_html,"document-replace-html",2,2 },
   { mx_document_pred,"document?",1,1 },
+
+  // elements
+
+  { mx_element_insert_html,"element-insert-html",2,2 },
+  { mx_element_append_html,"element-append-html",2,2 },
+  { mx_element_insert_html,"element-insert-text",2,2 },
+  { mx_element_append_html,"element-append-text",2,2 },
+  { mx_element_attribute,"element-attribute",2,2 },
+  { mx_element_set_attribute,"element-set-attribute!",3,3 },
+  { mx_element_click,"element-click",1,1 },
+  { mx_element_tag,"element-tag",1,1 },
+  { mx_element_font_family,"element-font-family",1,1 },
+  { mx_element_set_font_family,"element-set-font-family!",2,2 },
+  { mx_element_font_style,"element-font-style",1,1 },
+  { mx_element_set_font_style,"element-set-font-style!",2,2 },
+  { mx_element_font_variant,"element-font-variant",1,1 },
+  { mx_element_set_font_variant,"element-set-font-variant!",2,2 },
+  { mx_element_font_weight,"element-font-weight",1,1 },
+  { mx_element_set_font_weight,"element-set-font-weight!",2,2 },
+  { mx_element_font,"element-font",1,1 },
+  { mx_element_set_font,"element-set-font!",2,2 }, 
+  { mx_element_background,"element-background",1,1 },
+  { mx_element_set_background,"element-set-background!",2,2 }, 
+  { mx_element_background_image,"element-background-image",1,1 },
+  { mx_element_set_background_image,"element-set-background-image!",1,1 },
+  { mx_element_background_repeat,"element-background-repeat",1,1 },
+  { mx_element_set_background_repeat,"element-set-background-repeat!",1,1 },
+  { mx_element_background_position,"element-background-position",1,1 },
+  { mx_element_set_background_position,"element-set-background-position!",2,2 }, 
+  { mx_element_text_decoration,"element-text-decoration",1,1 },
+  { mx_element_set_text_decoration,"element-set-text-decoration!",2,2 }, 
+  { mx_element_text_transform,"element-text-transform",1,1 },
+  { mx_element_set_text_transform,"element-set-text-transform!",2,2 }, 
+  { mx_element_text_align,"element-text-align",1,1 },
+  { mx_element_set_text_align,"element-set-text-align!",2,2 }, 
+  { mx_element_margin,"element-margin",1,1 },
+  { mx_element_set_margin,"element-set-margin!",2,2 }, 
+  { mx_element_padding,"element-padding",1,1 },
+  { mx_element_set_padding,"element-set-padding!",2,2 }, 
+  { mx_element_border,"element-border",1,1 },
+  { mx_element_set_border,"element-set-border!",2,2 }, 
+  { mx_element_border_top,"element-border-top",1,1 },
+  { mx_element_set_border_top,"element-set-border-top!",2,2 }, 
+  { mx_element_border_bottom,"element-border-bottom",1,1 },
+  { mx_element_set_border_bottom,"element-set-border-bottom!",2,2 }, 
+  { mx_element_border_left,"element-border-left",1,1 },
+  { mx_element_set_border_left,"element-set-border-left!",2,2 }, 
+  { mx_element_border_right,"element-border-right",1,1 },
+  { mx_element_set_border_right,"element-set-border-right!",2,2 }, 
+  { mx_element_border_color,"element-border-color",1,1 },
+  { mx_element_set_border_color,"element-set-border-color!",2,2 }, 
+  { mx_element_border_width,"element-border-width",1,1 },
+  { mx_element_set_border_width,"element-set-border-width!",2,2 }, 
+  { mx_element_border_style,"element-border-style",1,1 },
+  { mx_element_set_border_style,"element-set-border-style!",2,2 }, 
+  { mx_element_border_top_style,"element-border-top-style",1,1 },
+  { mx_element_set_border_top_style,"element-set-border-top-style!",2,2 }, 
+  { mx_element_border_bottom_style,"element-border-bottom-style",1,1 },
+  { mx_element_set_border_bottom_style,"element-set-border-bottom-style!",2,2 }, 
+  { mx_element_border_left_style,"element-border-left-style",1,1 },
+  { mx_element_set_border_left_style,"element-set-border-left-style!",2,2 }, 
+  { mx_element_border_right_style,"element-border-right-style",1,1 },
+  { mx_element_set_border_right_style,"element-set-border-right-style!",2,2 }, 
+  { mx_element_style_float,"element-style-float",1,1 },
+  { mx_element_set_style_float,"element-set-style-float!",2,2 }, 
+  { mx_element_clear,"element-clear",1,1 },
+  { mx_element_set_clear,"element-set-clear!",2,2 }, 
+  { mx_element_display,"element-display",1,1 },
+  { mx_element_set_display,"element-set-display!",2,2 }, 
+  { mx_element_visibility,"element-visibility",1,1 },
+  { mx_element_set_visibility,"element-set-visibility!",2,2 }, 
+  { mx_element_list_style_type,"element-list-style-type",1,1 },
+  { mx_element_set_list_style_type,"element-set-list-style-type!",2,2 }, 
+  { mx_element_list_style_position,"element-list-style-position",1,1 },
+  { mx_element_set_list_style_position,"element-set-list-style-position!",2,2 }, 
+  { mx_element_list_style_image,"element-list-style-image",1,1 },
+  { mx_element_set_list_style_image,"element-set-list-style-image!",2,2 }, 
+  { mx_element_list_style,"element-list-style",1,1 },
+  { mx_element_set_list_style,"element-set-list-style!",2,2 }, 
+  { mx_element_whitespace,"element-whitespace",1,1 },
+  { mx_element_set_whitespace,"element-set-whitespace!",2,2 }, 
+  { mx_element_position,"element-position",1,1 },
+  { mx_element_overflow,"element-overflow",1,1 },
+  { mx_element_set_overflow,"element-set-overflow!",2,2 }, 
+  { mx_element_pagebreak_before,"element-pagebreak-before",1,1 },
+  { mx_element_set_pagebreak_before,"element-set-pagebreak-before!",2,2 }, 
+  { mx_element_pagebreak_after,"element-pagebreak-after",1,1 },
+  { mx_element_set_pagebreak_after,"element-set-pagebreak-after!",2,2 }, 
+  { mx_element_css_text,"element-css-text",1,1 },
+  { mx_element_set_css_text,"element-set-css-text!",2,2 }, 
+  { mx_element_cursor,"element-cursor",1,1 },
+  { mx_element_set_cursor,"element-set-cursor!",2,2 }, 
+  { mx_element_clip,"element-clip",1,1 },
+  { mx_element_set_clip,"element-set-clip!",2,2 }, 
+  { mx_element_filter,"element-filter",1,1 },
+  { mx_element_set_filter,"element-set-filter!",2,2 }, 
+  { mx_element_style_string,"element-style-string",1,1 },
+  { mx_element_text_decoration_none,"element-text-decoration-none",1,1 },
+  { mx_element_set_text_decoration_none,"element-set_text_decoration_none!",2,2 }, 
+  { mx_element_text_decoration_underline,"element-text-decoration-underline",1,1 },
+  { mx_element_set_text_decoration_underline,"element-set-text-decoration-underline!",2,2 }, 
+  { mx_element_text_decoration_overline,"element-text-decoration-overline",1,1 },
+  { mx_element_set_text_decoration_overline,"element-set-text-decoration-overline!",2,2 }, 
+  { mx_element_text_decoration_linethrough,"element-text-decoration-linethrough",1,1 },
+  { mx_element_set_text_decoration_linethrough,"element-set-text-decoration-linethrough!",2,2 }, 
+  { mx_element_text_decoration_blink,"element-text-decoration-blink",1,1 },
+  { mx_element_set_text_decoration_blink,"element-set-text-decoration-blink!",2,2 }, 
+  { mx_element_pixel_top,"element-pixel-top",1,1 },
+  { mx_element_set_pixel_top,"element-set-pixel-top!",2,2 }, 
+  { mx_element_pixel_left,"element-pixel-left",1,1 },
+  { mx_element_set_pixel_left,"element-set-pixel-left!",2,2 }, 
+  { mx_element_pixel_width,"element-pixel-width",1,1 },
+  { mx_element_set_pixel_width,"element-set-pixel-width!",2,2 }, 
+  { mx_element_pixel_height,"element-pixel-height",1,1 },
+  { mx_element_set_pixel_height,"element-set-pixel-height!",2,2 }, 
+  { mx_element_pos_top,"element-pos-top",1,1 },
+  { mx_element_set_pos_top,"element-set-pos-top!",2,2 }, 
+  { mx_element_pos_left,"element-pos-left",1,1 },
+  { mx_element_set_pos_left,"element-set-pos-left!",2,2 }, 
+  { mx_element_pos_width,"element-pos-width",1,1 },
+  { mx_element_set_pos_width,"element-set-pos-width!",2,2 }, 
+  { mx_element_pos_height,"element-pos-height",1,1 },
+  { mx_element_set_pos_height,"element-set-pos-height!",2,2 }, 
+  { mx_element_font_size,"element-font-size",1,1 },
+  { mx_element_set_font_size,"element-set-font-size!",2,2 }, 
+  { mx_element_color,"element-color",1,1 },
+  { mx_element_set_color,"element-set-color!",2,2 }, 
+  { mx_element_background_color,"element-background-color",1,1 },
+  { mx_element_set_background_color,"element-set-background-color!",2,2 }, 
+  { mx_element_background_position_x,"element-background-position-x",1,1 },
+  { mx_element_set_background_position_x,"element-set-background-position-x!",2,2 }, 
+  { mx_element_background_position_y,"element-background-position-y",1,1 },
+  { mx_element_set_background_position_y,"element-set-background-position-y!",2,2 }, 
+  { mx_element_word_spacing,"element-word-spacing",1,1 },
+  { mx_element_set_word_spacing,"element-set-word-spacing!",2,2 }, 
+  { mx_element_letter_spacing,"element-letter-spacing",1,1 },
+  { mx_element_set_letter_spacing,"element-set-letter-spacing!",2,2 }, 
+  { mx_element_vertical_align,"element-vertical-align",1,1 },
+  { mx_element_set_vertical_align,"element-set-vertical-align!",2,2 }, 
+  { mx_element_text_indent,"element-text-indent",1,1 },
+  { mx_element_set_text_indent,"element-set-text-indent!",2,2 }, 
+  { mx_element_line_height,"element-line-height",1,1 },
+  { mx_element_set_line_height,"element-set-line-height!",2,2 }, 
+  { mx_element_margin_top,"element-margin-top",1,1 },
+  { mx_element_set_margin_top,"element-set-margin-top!",2,2 }, 
+  { mx_element_margin_bottom,"element-margin-bottom",1,1 },
+  { mx_element_set_margin_bottom,"element-set-margin-bottom!",2,2 }, 
+  { mx_element_margin_left,"element-margin-left",1,1 },
+  { mx_element_set_margin_left,"element-set-margin-left!",2,2 }, 
+  { mx_element_margin_right,"element-margin-right",1,1 },
+  { mx_element_set_margin_right,"element-set-margin-right!",2,2 }, 
+  { mx_element_padding_top,"element-padding-top",1,1 },
+  { mx_element_set_padding_top,"element-set-padding-top!",2,2 }, 
+  { mx_element_padding_bottom,"element-padding-bottom",1,1 },
+  { mx_element_set_padding_bottom,"element-set-padding-bottom!",2,2 }, 
+  { mx_element_padding_left,"element-padding-left",1,1 },
+  { mx_element_set_padding_left,"element-set-padding-left!",2,2 }, 
+  { mx_element_padding_right,"element-padding-right",1,1 },
+  { mx_element_set_padding_right,"element-set-padding-right!",2,2 }, 
+  { mx_element_border_top_color,"element-border-top-color",1,1 },
+  { mx_element_set_border_top_color,"element-set-border-top-color!",2,2 }, 
+  { mx_element_border_bottom_color,"element-border-bottom-color",1,1 },
+  { mx_element_set_border_bottom_color,"element-set-border-bottom-color!",2,2 }, 
+  { mx_element_border_left_color,"element-border-left-color",1,1 },
+  { mx_element_set_border_left_color,"element-set-border-left-color!",2,2 }, 
+  { mx_element_border_right_color,"element-border-right-color",1,1 },
+  { mx_element_set_border_right_color,"element-set-border-right-color!",2,2 }, 
+  { mx_element_border_top_width,"element-border-top-width",1,1 },
+  { mx_element_set_border_top_width,"element-set-border-top-width!",2,2 }, 
+  { mx_element_border_bottom_width,"element-border-bottom-width",1,1 },
+  { mx_element_set_border_bottom_width,"element-set-border-bottom-width!",2,2 }, 
+  { mx_element_border_left_width,"element-border-left-width",1,1 },
+  { mx_element_set_border_left_width,"element-set-border-left-width!",2,2 }, 
+  { mx_element_border_right_width,"element-border-right-width",1,1 },
+  { mx_element_set_border_right_width,"element-set-border-right-width!",2,2 }, 
+  { mx_element_width,"element-width",1,1 },
+  { mx_element_set_width,"element-set-width!",2,2 }, 
+  { mx_element_height,"element-height",1,1 },
+  { mx_element_set_height,"element-set-height!",2,2 }, 
+  { mx_element_top,"element-top",1,1 },
+  { mx_element_set_top,"element-set-top!",2,2 }, 
+  { mx_element_left,"element-left",1,1 },
+  { mx_element_set_left,"element-set-left!",2,2 }, 
+  { mx_element_z_index,"element-z-index",1,1 },
+  { mx_element_set_z_index,"element-set-z-index!",2,2 }, 
+  
+  // events
+  
   { mx_event_pred,"event?",1,1 },
   { mx_get_event,"get-event",1,1 },
   { mx_event_tag,"event-tag",1,1},
@@ -370,7 +559,7 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   int i;
 
   if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("mx-methods","mx-object",0,argc,argv) ;
+    scheme_wrong_type("mx-methods","mx-object",0,argc,argv);
   }
 
   pIDispatch = MX_COM_OBJ_VAL(argv[0]);
@@ -667,11 +856,11 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   int i;
 
   if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("mx-method-type","mx-object",0,argc,argv) ;
+    scheme_wrong_type("mx-method-type","mx-object",0,argc,argv);
   }
 
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("mx-method-type","string",1,argc,argv) ;
+    scheme_wrong_type("mx-method-type","string",1,argc,argv);
   }
 
   pIDispatch = MX_COM_OBJ_VAL(argv[0]);
@@ -925,18 +1114,15 @@ VARIANT_BOOL schemeValToBool(Scheme_Object *val) {
   return SCHEME_FALSEP(val) ? 0 : 0xFFFF;
 }
 
-BSTR schemeStringToBSTR(Scheme_Object *o) {
+BSTR stringToBSTR(char *s,size_t len) {
   HRESULT hr;
   BSTR bstr;
   WCHAR *unicodeString;
-  size_t len;
-
-  len = SCHEME_STRLEN_VAL(o);
 
   unicodeString = (WCHAR *)scheme_malloc((len + 1) * sizeof(WCHAR));
   scheme_dont_gc_ptr(unicodeString);
 
-  hr = MultiByteToWideChar(CP_ACP,(DWORD)0,SCHEME_STR_VAL(o),len + 1,
+  hr = MultiByteToWideChar(CP_ACP,(DWORD)0,s,len + 1,
 			   unicodeString,len + 1);
 
   scheme_gc_ptr_ok(unicodeString);
@@ -952,6 +1138,10 @@ BSTR schemeStringToBSTR(Scheme_Object *o) {
   }
 
   return bstr;
+}
+
+BSTR schemeStringToBSTR(Scheme_Object *o) {
+  return stringToBSTR(SCHEME_STR_VAL(o),SCHEME_STRLEN_VAL(o));
 }
 
 VARTYPE schemeValueToVarType(Scheme_Object *obj) {
@@ -1032,8 +1222,8 @@ void *allocParamMemory(size_t n) {
   return retval;
 }
 
-void marshallSchemeValueToVariant(Scheme_Object *val,
-				    VARIANTARG *pVariantArg) {
+void marshallSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
+
   // called when COM type spec allows any VARIANT
 
   if (SCHEME_CHARP(val)) {
@@ -1436,7 +1626,7 @@ void unmarshallVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
 
   default :
 
-    ;   
+   ;   
     
     // no unmarshalling or cleanup needed
 
@@ -1627,11 +1817,11 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   HRESULT hr;
 
   if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type(mx_fun_string(invKind),"com-object",0,argc,argv) ;
+    scheme_wrong_type(mx_fun_string(invKind),"com-object",0,argc,argv);
   }
 
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type(mx_fun_string(invKind),"string",1,argc,argv) ;
+    scheme_wrong_type(mx_fun_string(invKind),"string",1,argc,argv);
   }
  
   pIDispatch = MX_COM_OBJ_VAL(argv[0]);
@@ -1860,7 +2050,7 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   MX_COM_Object *com_object;
 
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("document_objects","mx-document",0,argc,argv) ;
+    scheme_wrong_type("document_objects","mx-document",0,argc,argv);
   }
 
   pDocument = MX_DOCUMENT_VAL(argv[0]); 
@@ -1871,7 +2061,7 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
     scheme_signal_error("Can't find document body");
   }
 
-  pObjectsCollection = getBodyObjects(pBody);
+  pObjectsCollection = getBodyElementsWithTag(pBody,"OBJECT");
   
   pBody->Release();
 
@@ -2034,6 +2224,38 @@ CLSID getCLSIDFromString(char const *name) {  // linear search through Registry
   return clsid;
 }
 
+Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
+  IHTMLElement *pIHTMLElement;
+  MX_Element *retval;
+
+  if (MX_DOCUMENTP(argv[0]) == FALSE) { 
+    scheme_wrong_type("document-find-element","mx-document",0,argc,argv);
+  }
+
+  if (SCHEME_STRINGP(argv[1]) == FALSE) { 
+    scheme_wrong_type("document-find-element","string",1,argc,argv);
+  }
+
+  if (SCHEME_STRINGP(argv[2]) == FALSE) {
+    scheme_wrong_type("document-find-element","string",2,argc,argv);
+  }
+
+  pIHTMLElement = findBodyElement(MX_DOCUMENT_VAL(argv[0]),
+				  SCHEME_STR_VAL(argv[1]),
+				  SCHEME_STR_VAL(argv[2]));
+
+  if (pIHTMLElement == NULL) {
+    scheme_signal_error("Element not found");
+  }
+  
+  retval = (MX_Element *)scheme_malloc(sizeof(MX_Element));
+
+  retval->type = mx_element_type;
+  retval->pIHTMLElement = pIHTMLElement;
+
+  return (Scheme_Object *)retval;
+}
+
 Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
   char *controlName;
   LPOLESTR clsidString;
@@ -2043,12 +2265,12 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
   int width,height;
 
   if (SCHEME_STRINGP(argv[0]) == FALSE) {
-    scheme_wrong_type("coclass->html","string",0,argc,argv) ;
+    scheme_wrong_type("coclass->html","string",0,argc,argv);
   }
 
   if (argc == 2 || argc == 3) {
     if (SCHEME_INTP(argv[1]) == FALSE) {
-      scheme_wrong_type("coclass->html","int",1,argc,argv) ;
+      scheme_wrong_type("coclass->html","int",1,argc,argv);
     }
     width = SCHEME_INT_VAL(argv[1]);
   }
@@ -2058,7 +2280,7 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
 
   if (argc == 3) {
     if (SCHEME_INTP(argv[2]) == FALSE) {
-      scheme_wrong_type("coclass->html","int",2,argc,argv) ;
+      scheme_wrong_type("coclass->html","int",2,argc,argv);
     }
     height = SCHEME_INT_VAL(argv[2]);
   }
@@ -2099,11 +2321,11 @@ Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
   BSTR where,html;
 
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type(scheme_name,"mx-document",0,argc,argv) ;
+    scheme_wrong_type(scheme_name,"mx-document",0,argc,argv);
   }
 
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type(scheme_name,"string",1,argc,argv) ;
+    scheme_wrong_type(scheme_name,"string",1,argc,argv);
   }
 
   pDocument = MX_DOCUMENT_VAL(argv[0]);
@@ -2140,11 +2362,11 @@ Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
   BSTR html;
 
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("replace-html","mx-document",0,argc,argv) ;
+    scheme_wrong_type("replace-html","mx-document",0,argc,argv);
   }
 
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("replace-html","string",1,argc,argv) ;
+    scheme_wrong_type("replace-html","string",1,argc,argv);
   }
 
   pDocument = MX_DOCUMENT_VAL(argv[0]);
@@ -2265,7 +2487,7 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   WaitForSingleObject(documentHwndMutex,INFINITE);
 
   if (SCHEME_STRINGP(argv[0]) == FALSE) {
-    scheme_wrong_type("make-document","string",1,argc,argv) ;
+    scheme_wrong_type("make-document","string",1,argc,argv);
   }
 
   docWindowInit.docWindow.label = SCHEME_STR_VAL(argv[0]);
@@ -2403,7 +2625,7 @@ Scheme_Object *mx_document_show(int argc,Scheme_Object **argv) {
   MX_Document_Object *pDoc;
 
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("show-document","mx-document",0,argc,argv) ;
+    scheme_wrong_type("show-document","mx-document",0,argc,argv);
   }
 
   pDoc = (MX_Document_Object *)argv[0];
@@ -2419,8 +2641,9 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   int i;
 
   mx_com_object_type = scheme_make_type("<com-object>");
-  mx_event_type = scheme_make_type("<mx-event>");
   mx_document_type = scheme_make_type("<mx-document>");
+  mx_element_type = scheme_make_type("<mx-element>");
+  mx_event_type = scheme_make_type("<mx-event>");
   mx_com_cy_type = scheme_make_type("<com-currency>");
   mx_com_date_type = scheme_make_type("<com-date>");
   mx_com_boolean_type = scheme_make_type("<com-bool>");

@@ -224,6 +224,8 @@
 		 ;;  Optionally transform them, can expand even if not transforming.
 		 (let ([local-public-names (map car (append publics overrides))]
 		       [proc-shape (lambda (name expr xforms)
+				     ;; expands an expression so we can check whether
+				     ;; it has the right form
 				     (define (expand expr)
 				       (local-expand
 					expr
@@ -234,12 +236,15 @@
 					  this-id
 					  super-instantiate-id
 					  super-make-object-id))))
+				     ;; Checks whether the vars sequence is well-formed
 				     (define (vars-ok? vars)
 				       (or (identifier? vars)
 					   (stx-null? vars)
 					   (and (stx-pair? vars)
 						(identifier? (stx-car vars))
 						(vars-ok? (stx-cdr vars)))))
+				     ;; mk-name: constructs a method name
+				     ;; for error reporting, etc.
 				     (define (mk-name)
 				       (datum->syntax-object 
 					#f 
@@ -251,13 +256,33 @@
 								(or class-name 
 								    ""))) 
 					#f))
+				     ;; filter: removes shadows vars, so that we
+				     ;;  don't unshadow them
+				     (define (filter xforms vars)
+				       (let ([vars ;; flatten var list
+					      (let loop ([vars vars])
+						(cond
+						 [(identifier? vars) (list vars)]
+						 [(stx-null? vars) null]
+						 [(stx-pair? vars)
+						  (cons (stx-car vars)
+							(loop (stx-cdr vars)))]))])
+					 (let loop ([xforms (syntax->list xforms)])
+					   (cond
+					    [(null? xforms) null]
+					    [(ormap (lambda (id)
+						      (bound-identifier=? id (stx-car (car xforms))))
+						    xforms)
+					     (loop (cdr xforms))]
+					    [else (cons (car xforms) (loop (cdr xforms)))]))))
+				     ;; -- tranform loop starts here --
 				     (let loop ([stx expr][can-expand? #t])
 				       (syntax-case stx (lambda case-lambda letrec-values let-values)
 					 [(lambda vars body1 body ...)
 					  (vars-ok? (syntax vars))
 					  (if xforms
 					      (with-syntax ([this-id this-id]
-							    [xforms xforms]
+							    [xforms (filter xforms (syntax vars))]
 							    [name (mk-name)])
 						(syntax/loc stx 
 						  (let ([name
@@ -272,7 +297,11 @@
 					  (andmap vars-ok? (syntax->list (syntax (vars ...))))
 					  (if xforms
 					      (with-syntax ([this-id this-id]
-							    [xforms xforms]
+							    [(xforms ...)
+							     (map
+							      (lambda (vars)
+								(filter xforms vars))
+							      (syntax->list (syntax (vars ...))))]
 							    [name (mk-name)])
 						(syntax/loc stx
 						  (let ([name
@@ -291,7 +320,7 @@
 					       (identifier? (syntax id1))
 					       (identifier? (syntax id2))
 					       (bound-identifier=? (syntax id1) (syntax id2)))
-					  (let ([proc (loop (syntax expr) #t)])
+					  (with-syntax ([proc (loop (syntax expr) #t)])
 					    (syntax/loc stx (let- ([(id1) proc]) id2)))]
 					 [_else 
 					  (if can-expand?
@@ -567,14 +596,16 @@
 							   (lambda (stx)
 							     (syntax-case stx () 
 								 [(_ (arg (... ...)) (kw kwarg) (... ...))
-								  (syntax (-instantiate super-id _ #f (arg (... ...)) (kw kwarg) (... ...)))]))]
+								  (syntax (-instantiate super-id _ #f (list arg (... ...)) (kw kwarg) (... ...)))]))]
 							  [super-make-object-id
 							   (lambda (stx)
 							     (syntax-case stx () 
 							       [(_ arg (... ...))
 								(syntax (-instantiate super-id _ #f (list arg (... ...))))]
 							       [(_ . arg)
-								(syntax (-instantiate super-id _ #f arg))]))])
+								(with-syntax ([flattened-arg
+									       (flatten-args (syntax arg))])
+								  (syntax (-instantiate super-id _ #f (apply list . flattened-arg))))]))])
 					    (let ([plain-init-name undefined]
 						  ...)
 					      (letrec-syntax mappings
@@ -1057,30 +1088,27 @@
     (lambda (stx)
       (syntax-case stx ()
 	[(_ class arg ...)
-	 (syntax (instantiate class (arg ...)))])))
+	 (syntax (instantiate class (arg ...)))]
+	[(form class . args)
+	 (with-syntax ([flattened-args (flatten-args (syntax args))])
+	   (syntax (-instantiate do-make-object form class (apply list flattened-args))))])))
   
   (define-syntax instantiate
     (lambda (stx)
       (syntax-case stx ()
-	[(_ . x) (syntax (-instantiate do-make-object _ . x))])))
+	[(form class (arg ...) . x) 
+	 (syntax (-instantiate do-make-object form class (list arg ...) . x))])))
 
   (define-syntax -instantiate
     (lambda (stx)
       (syntax-case stx ()
-	[(_ do-make-object form class (by-pos-arg ...) (kw arg) ...)
-	 (andmap identifier? (syntax->list (syntax (kw ...))))
-	 (syntax (do-make-object class
-				 (list by-pos-arg ...)
-				 (list (cons 'kw arg)
-				       ...)))]
 	[(_ do-make-object form class args (kw arg) ...)
-	 (and (andmap identifier? (syntax->list (syntax (kw ...))))
-	      (not (syntax-e (syntax class))))
+	 (andmap identifier? (syntax->list (syntax (kw ...))))
 	 (syntax (do-make-object class
 				 args
 				 (list (cons 'kw arg)
 				       ...)))]
-	[(_ super-make-object form class (by-pos-arg ...) kwarg ...)
+	[(_ super-make-object form class args kwarg ...)
 	 ;; some kwarg must be bad:
 	 (for-each (lambda (kwarg)
 		     (syntax-case kwarg ()

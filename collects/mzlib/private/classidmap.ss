@@ -93,7 +93,16 @@
 	"cannot use superclass initialization form in a method"
 	stx))))
 
+  (define (flatten-args orig-args)
+    (let loop ([args orig-args][accum null])
+      (cond
+       [(stx-null? args) orig-args]
+       [(stx-pair? args)
+	(loop (stx-cdr args) (cons (stx-car args) accum))]
+       [else
+	(reverse (cons args accum))])))
+
   (provide make-field-map make-method-map make-rename-map
-	   init-error-map super-error-map))
+	   init-error-map super-error-map flatten-args))
 
     

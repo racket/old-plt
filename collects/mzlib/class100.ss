@@ -51,11 +51,11 @@
 			(lambda (decl)
 			  (syntax-case decl ()
 			    [id (identifier? (syntax id))
-				(list kind (syntax id) (syntax id) (syntax (void)))]
+				(list kind (syntax id) (syntax id) (syntax/loc (syntax id) (void)))]
 			    [(id expr) (identifier? (syntax id))
 			     (list kind (syntax id) (syntax id) (syntax expr))]
 			    [(id) (and can-rename? (identifier? (syntax id)))
-			     (list kind (syntax id) (syntax id) (syntax (void)))]
+			     (list kind (syntax id) (syntax id) (syntax/loc (syntax id) (void)))]
 			    [((iid eid) expr) (and can-rename?
 						   (identifier? (syntax iid))
 						   (identifier? (syntax eid)))

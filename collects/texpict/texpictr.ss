@@ -54,6 +54,7 @@
 (define blank 
   (case-lambda
    [() (blank 0 0 0)]
+   [(s) (blank s s)]
    [(w h) (blank w h 0)]
    [(w a d) (make-pict `(picture ,w ,(+ a d)) w (+ a d) a d null)]))
 

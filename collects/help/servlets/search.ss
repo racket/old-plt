@@ -60,7 +60,7 @@
 			 (B ,(color-with search-fg
 					 (string-constant search-for)
 					 ":")))
-		     (TD 
+		     (TD ((NOWRAP "true"))
 		      (INPUT ((TYPE "text")
 			      (NAME "search-string")
 			      (VALUE "")
@@ -78,7 +78,8 @@
 		     (TD ((ALIGN "right")) 
 			 (B  ,(color-with search-fg (string-constant
 						     options) ":")))
-		     (TD ((COLSPAN "2"))
+		     (TD ((COLSPAN "2")
+		          (NOWRAP "true"))
 			 (SELECT ((NAME "search-type"))
 				 ,@(map make-option
 					search-types))

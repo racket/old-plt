@@ -3,6 +3,7 @@
 ;  tag impure and imperative signals (pure vs. stateful vs. effectful)
 ;
 ; To do:
+; QUESTION: should cond change to skip undefined conditions?
 ; make switchable events
 ; split delay into consumer and producer
 ; deal with multiple values (?)
@@ -210,7 +211,10 @@
            ((changes test) . ==> .
                            if-fun)
            (if-fun (value-now test)))
-          (if test (then-thunk) (else-thunk)))))
+          (cond
+            [(undefined? test) undefined]
+            [test (then-thunk)]
+            [else (else-thunk)]))))
   
   (define (weakly-cache thunk)
     (let ([cache (make-weak-box #f)])
@@ -294,11 +298,18 @@
           [_ (void)])
         (! man (make-unreg inf sup))))
   
+  (define-values (undefined undefined?)
+    (let-values ([(desc make-undefined undefined? acc mut)
+                  (make-struct-type
+                   'undefined #f 0 0 #f null frtime-inspector
+                   (lambda (fn . args) fn))])
+      (values (make-undefined) undefined?)))
+#|
   (define undefined
     (string->uninterned-symbol "<undefined>"))
   (define (undefined? x)
     (eq? x undefined))
-  
+|#  
   (define-syntax safe-eval
     (syntax-rules ()
       [(_ expr ...)

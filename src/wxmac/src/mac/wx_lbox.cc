@@ -117,6 +117,7 @@ static void MyDrawCell(ALData cellData, ALCellPtr cell, const Rect *cellRect, AL
 
     ForeColor(blackColor);
     CopyPascalStringToC(*(StringHandle)cellData, wxBuffer);
+    TextMode(srcOr);
     DrawLatin1Text(wxBuffer, 0, -1, 0);
   }
 }
@@ -330,7 +331,7 @@ void wxListBox::OnEvent(wxMouseEvent *event)
     wxTracking();
 
     doubleclick = ::ALClick(startPt, modifiers, UNSCALE_TIMESTAMP(event->timeStamp),cListReference);
-    
+
     ReleaseCurrentDC();
     
     ALLastClick(&cell, cListReference);

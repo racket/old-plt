@@ -4008,7 +4008,7 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
     /* Make sure memory is 8-aligned */
     if (((long)tagged.low & 0x4)) {
       if (tagged.low == tagged.high) {
-	new_page(MTYPE_TAGGED, &tagged);
+	new_page(MTYPE_TAGGED, 0, &tagged);
 	return GC_malloc_one_tagged(size_in_words << 2);
       }
       ((Type_Tag *)tagged.low)[0] = SKIP;

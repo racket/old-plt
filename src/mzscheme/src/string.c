@@ -1483,7 +1483,7 @@ void scheme_reset_locale(void)
 
   if (on != scheme_locale_on) {
 #ifndef DONT_USE_LOCALE
-    setlocale(LC_CTYPE, on ? "" : "C");
+    setlocale(LC_CTYPE | LC_COLLATE, on ? "" : "C");
 #endif
     scheme_locale_on = on;
   }

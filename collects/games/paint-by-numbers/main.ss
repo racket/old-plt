@@ -184,7 +184,7 @@
 		     (unless (or (eq? board-entry real-answer)
 				 (eq? board-entry 'unknown)
 				 (eq? real-answer 'unknown))
-		       (set-entry m n 'wrong)))
+		       (send canvas set-to-error m n)))
 		   (loop (- j 1))))
 	       (loop (- i 1)))))]
 	

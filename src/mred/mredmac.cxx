@@ -418,16 +418,14 @@ int WNE(EventRecord *e, double sleep_secs)
     }
 
     if (ok && (e->what == keyDown)) {
-      /* This seems to fix problems with, e.g., option-e e e
-	 producing an accent on the 2nd e */
-      SendEventToEventTarget(ref, GetEventDispatcherTarget());
-      /* The above takes care of [Shift-]Cmd-`. So ignore that one, now. */
-      {
-	int mods = (e->modifiers & (shiftKey | cmdKey | controlKey | optionKey));
-	if ((mods == (shiftKey | cmdKey)) || (mods == cmdKey)) {
-	  if ((e->message & charCodeMask) == '`')
-	    ok = 0;
-	}
+      /* Let the normal system handle Cmd-Q, Cmd-~ to rotate windows,
+	 accent handling (so option-e e e doesn't produce an accent on
+	 the 2nd e), etc. */
+      OSErr oe;
+      oe = SendEventToEventTarget(ref, GetEventDispatcherTarget());
+      if (oe != eventNotHandledErr) {
+	/* The event was handled, so we don't need to handle it again */
+	ok = 0;
       }
     }
 

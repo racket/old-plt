@@ -491,7 +491,11 @@ int scheme_os_setcwd(char *expanded, int noexn)
   } else
     err = 1;
 #else
-  err = MSC_IZE(chdir)(expanded);
+  while (1) {
+    err = MSC_IZE(chdir)(expanded);
+    if (!err || (errno != EINTR))
+      break;
+  }
 #endif
 
   if (err && !noexn)
@@ -1406,7 +1410,11 @@ static int UNC_stat(char *dirname, int len, int *flags, int *isdir, Scheme_Objec
   } else
     strip_end = strip_char = 0;
 
-  v = !MSC_IZE(stat)(dirname, &buf);
+  while (1) {
+    v = !MSC_IZE(stat)(dirname, &buf);
+    if (v || (errno != EINTR))
+      break;
+  }
 
   if (v) {
     if (isdir && S_ISDIR(buf.st_mode))
@@ -1449,7 +1457,14 @@ int scheme_directory_exists(char *dirname)
 #  else
   struct MSC_IZE(stat) buf;
 
-  return !MSC_IZE(stat)(dirname, &buf) && S_ISDIR(buf.st_mode);
+  while (1) {
+    if (!MSC_IZE(stat)(dirname, &buf))
+      break;
+    else if (errno != EINTR)
+      return 0;
+  }
+
+  return S_ISDIR(buf.st_mode);
 #  endif
 # endif
 #endif
@@ -1470,7 +1485,14 @@ int scheme_is_regular_file(char *filename)
     return 0;
 #  endif
 
-  return !MSC_IZE(stat)(filename, &buf) && S_ISREG(buf.st_mode);
+  while (1) {
+    if (!MSC_IZE(stat)(filename, &buf))
+      break;
+    else if (errno != EINTR)
+      return 0;
+  }
+
+  return S_ISREG(buf.st_mode);
 # endif  
 #endif
 }
@@ -1546,8 +1568,14 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
 				  "link-exists?",
 				  NULL,
 				  0, 1);
+    while (1) {
+      if (!MSC_IZE(lstat)(filename, &buf))
+	break;
+      else if (errno != EINTR)
+	return scheme_false;
+    }
 
-    if (!MSC_IZE(lstat)(filename, &buf) && S_ISLNK(buf.st_mode))
+    if (S_ISLNK(buf.st_mode))
       return scheme_true;
     else
       return scheme_false;
@@ -2249,11 +2277,15 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
     }
   }
 #else
-  if (!MSC_IZE(unlink)(scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
-					      SCHEME_STRTAG_VAL(argv[0]),
-					      "delete-file",
-					      NULL)))
-    return scheme_void;
+  while (1) {
+    if (!MSC_IZE(unlink)(scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
+						SCHEME_STRTAG_VAL(argv[0]),
+						"delete-file",
+						NULL)))
+      return scheme_void;
+    else if (errno != EINTR)
+      break;
+  }
   errid = errno;
 #endif
   
@@ -2348,8 +2380,12 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
   if (scheme_file_exists(dest) || scheme_directory_exists(dest))
     goto failed;
   
-  if (!rename(src, dest))
-    return scheme_void;
+  while (1) {
+    if (!rename(src, dest))
+      return scheme_void;
+    else if (errno != EINTR)
+      break;
+  }
 #endif
 
 failed:
@@ -2455,10 +2491,13 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
     fclose(d);
 
     if (ok) {
-      if (!chmod(dest, buf.st_mode))
-	return scheme_void;
-      else
-	reason = "cannot set destination's mode";
+      while (1) {
+	if (!chmod(dest, buf.st_mode))
+	  return scheme_void;
+	else if (errno != EINTR)
+	  break;
+      }
+      reason = "cannot set destination's mode";
     } else
       reason = "read or write failed";
   }
@@ -2650,7 +2689,16 @@ static Scheme_Object *resolve_path(int argc, Scheme_Object *argv[])
       fullfilename[--len] = 0;
     }
 
-    if ((len = readlink(fullfilename, buffer, SL_NAME_MAX)) > 0)
+    while (1) {
+      len = readlink(fullfilename, buffer, SL_NAME_MAX);
+      if (len == -1) {
+	if (errno != EINTR)
+	  break;
+      } else
+	break;
+    }
+
+    if (len > 0)
       return scheme_make_sized_string(buffer, len, 1);
   }
 #endif
@@ -3124,20 +3172,24 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
 				    "make-directory",
 				    NULL);
   
-  if (MSC_IZE(mkdir)(filename
+  while (1) {
+    if (!MSC_IZE(mkdir)(filename
 #ifndef MKDIR_NO_MODE_FLAG
-		     , 0xFFFF
+			, 0xFFFF
 #endif
-		     )) {
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		     argv[0],
-		     (errno == EEXIST) ? exists_err_symbol : fail_err_symbol,
-		     "make-directory: cannot make directory: %q (%e)",
-		     filename_for_error(argv[0]),
-		     errno);
-    return NULL;
-  } else
-    return scheme_void;
+			))
+      return scheme_void;
+    else if (errno != EINTR)
+      break;
+  }
+
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+		   argv[0],
+		   (errno == EEXIST) ? exists_err_symbol : fail_err_symbol,
+		   "make-directory: cannot make directory: %q (%e)",
+		   filename_for_error(argv[0]),
+		   errno);
+  return NULL;
 #endif
 }
 
@@ -3155,17 +3207,21 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
 				    SCHEME_STRTAG_VAL(argv[0]),
 				    "delete-directory",
 				    NULL);
-  
-  if (MSC_IZE(rmdir)(filename)) {
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		     argv[0],
-		     fail_err_symbol,
-		     "delete-directory: cannot delete directory: %q (%e)",
-		     filename_for_error(argv[0]),
-		     errno);
-    return NULL;
-  } else
-    return scheme_void;
+
+  while (1) {
+    if (!MSC_IZE(rmdir)(filename))
+      return scheme_void;
+    else if (errno != EINTR)
+      break;
+  }
+
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+		   argv[0],
+		   fail_err_symbol,
+		   "delete-directory: cannot delete directory: %q (%e)",
+		   filename_for_error(argv[0]),
+		   errno);
+  return NULL;
 #endif
 }
 
@@ -3212,8 +3268,12 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
       return secs;
   }
 # else
-  if (!MSC_IZE(stat)(file, &buf))
-    return scheme_make_integer_value_from_time(buf.st_mtime);
+  while (1) {
+    if (!MSC_IZE(stat)(file, &buf))
+      return scheme_make_integer_value_from_time(buf.st_mtime);
+    else if (errno != EINTR)
+      break;
+  }
 # endif
 #endif
 
@@ -3408,7 +3468,14 @@ static Scheme_Object *file_size(int argc, Scheme_Object *argv[])
   {
     struct MSC_IZE(stat) buf;
 
-    if (MSC_IZE(stat)(filename, &buf) || S_ISDIR(buf.st_mode))
+    while (1) {
+      if (!MSC_IZE(stat)(filename, &buf))
+	break;
+      else if (errno != EINTR)
+	goto failed;
+    }
+
+    if (S_ISDIR(buf.st_mode))
       goto failed;
 
     len = buf.st_size;

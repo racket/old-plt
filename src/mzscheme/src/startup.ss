@@ -2631,9 +2631,11 @@
 		 (extend-parameterization
 		  (continuation-mark-set-first #f parameterization-key)
 		  p/v ...)
-	       (let ()
-		 expr1
-		 expr ...))))])))
+	       (begin
+		 (check-for-break)
+		 (let ()
+		   expr1
+		   expr ...)))))])))
 
   (define (current-parameterization)
     (continuation-mark-set-first #f parameterization-key))
@@ -2647,7 +2649,9 @@
     (with-continuation-mark
 	parameterization-key
 	paramz
-      (thunk)))
+      (begin
+	(check-for-break)
+	(thunk))))
 
   (define-syntax with-handlers
     (lambda (stx)

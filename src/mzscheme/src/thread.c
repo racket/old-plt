@@ -296,6 +296,8 @@ static Scheme_Object *will_executor_try(int argc, Scheme_Object *args[]);
 static Scheme_Object *will_executor_go(int argc, Scheme_Object *args[]);
 static Scheme_Object *will_executor_sema(Scheme_Object *w, int *repost);
 
+static Scheme_Object *check_break_now(int argc, Scheme_Object *args[]);
+
 static void make_initial_config(Scheme_Thread *p);
 
 static int do_kill_thread(Scheme_Thread *p);
@@ -714,6 +716,11 @@ void scheme_init_parameterization(Scheme_Env *env)
 			     scheme_make_prim_w_arity(extend_parameterization,
 						      "extend-parameterization", 
 						      1, -1), 
+			     newenv);
+  scheme_add_global_constant("check-for-break", 
+			     scheme_make_prim_w_arity(check_break_now,
+						      "check-for-break", 
+						      0, 0), 
 			     newenv);
 
   scheme_finish_primitive_module(newenv);
@@ -3064,6 +3071,11 @@ void scheme_check_break_now(void) {
   }
 }
 
+static Scheme_Object *check_break_now(int argc, Scheme_Object *args[])
+{
+  scheme_check_break_now();
+  return scheme_void;
+}
 
 static Scheme_Object *raise_user_break(int argc, Scheme_Object ** volatile argv)
 {

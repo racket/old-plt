@@ -42,6 +42,13 @@ Fixed a bug in the bytecode verifier that caused it to skip
  significant parts of typical bytecode
 Added a hook for (planet ...) module paths to the standard
  module name resolver
+MzLib's contract.ss: changed and/f to and/c, or/f is deprected
+ (use union), added object contracts, flat-contracts (without
+ names) are a separate type; use flat-contract-predicate rather
+ than flat-named-contract, added flat-rec-contract, improved
+ performance
+MzLib's class.ss: added get-field and field-bound?
+
 
 Version 205, August 2003
 Extended regexp language with "(?:...)"

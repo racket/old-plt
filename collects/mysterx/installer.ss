@@ -2,7 +2,7 @@
   (require (lib "process.ss"))
 
   (define installer
-    (lambda (plt-home) 
+    (lambda (mx-path) 
       (if (not (eq? (system-type) 'windows))
 	  (fprintf (current-error-port) 
 		   "Error: can't install MysterX on non-Windows machine~n")

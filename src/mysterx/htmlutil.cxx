@@ -230,6 +230,8 @@ Scheme_Object *mx_element_selection(int argc,Scheme_Object **argv) {
 
   hr = pIHTMLSelectElement->get_value(&selection);
 
+  pIHTMLSelectElement->Release();
+
   if (hr != S_OK) {
     codedComError("element-selection: Error getting selection value",hr);
   }
@@ -265,6 +267,8 @@ Scheme_Object *mx_element_set_selection(int argc,Scheme_Object **argv) {
   hr = pIHTMLSelectElement->put_value(selection);
 
   SysFreeString(selection);
+
+  pIHTMLSelectElement->Release();
 
   if (hr != S_OK) {
     codedComError("element-selection: Error getting selection value",hr);

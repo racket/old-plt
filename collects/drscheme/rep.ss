@@ -90,6 +90,7 @@
 			       (wx:check-for-break))])
 		     (or one two))))
 		(wx:current-eventspace bottom-eventspace)
+		;(wx:eventspace-parameterization bottom-eventspace p)
 		(exit-handler (lambda (arg)
 				(with-parameterization system-parameterization
 				  (lambda ()
@@ -140,7 +141,7 @@
 	  (private
 	    [escape-fn #f])
 	  (public
-	    [get-prompt (lambda () "- ")]
+	    [get-prompt (lambda () "> ")]
 	    [get-escape (lambda () escape-fn)]
 	    [set-escape (lambda (x) (set! escape-fn x))]
 	    
@@ -161,8 +162,9 @@
 			       threads-queue)
 		     (set! threads-queue null)
 		     (semaphore-post protect-threads-queue)
-		     (set! current-thread-desc #f)
-		     (insert-prompt))]
+		     (if current-thread-desc
+			 (set! current-thread-desc #f)
+			 (insert-prompt)))]
 	    [userspace-eval
 	     (let ([system-parameterization (current-parameterization)])
 	       (lambda (sexp)
@@ -378,7 +380,7 @@
 				 (mred:get-preference
 				  'drscheme:settings)))))
 		      red-delta)
-		     (insert-delta "." delta)
+		     (insert-delta (format ".~n") delta)
 		     (set-clickback before after 
 				    (lambda args (drscheme:app:about-drscheme))
 				    click-delta)))

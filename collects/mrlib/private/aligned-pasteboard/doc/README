@@ -1,0 +1,55 @@
+This file is README
+
+  This collection is the aligned-pasteboard collection. It implements
+pasteboards with automatic geometry management. There are four names
+provided by the collection. They are:
+
+  vertical-pasteboard% implements aligned-pasteboard<%>
+    a pasteboard with all of its children snips aligned vertically.
+  horizontal-pasteboard% implements algined-pasteboard<%>
+    a pasteboard with all of its children snips aligned horizontally.
+  aligned-editor-canvas% implements aligned-pasteboard-parent<%>
+    a special editor-canvas% for containing aligned pasteboards.
+  aligned-editor-snip% implemenets aligned-pasteboard-parent<%>
+    a special editor-snip% for containing aligned pasteboards.
+  aligned-pasteboard<%>
+    an interface defining what an aligned-pasteboard must implement
+  aligned-pasteboard-parent<%>
+    an interface defining a container suitable for aligned-pasteboard<%>
+  aligned-snip<%>
+    an interface that must be implemented if a snip within an editor is
+    to be resized by the geometry-management
+
+  The four classes are used just as their parental counter parts. The only
+difference is that an aligned-pasteboard% may only be contained in one
+aligned-editor-container<%> at a time maximum. Further an
+aligned-editor-container<%> may contain only an aligned-pasteboard<%>
+and an aligned-pasteboard<%> may only be contained in an
+aligned-editor-container<%>
+
+  Certain methods no longer make sence in the interface to the
+aligned-pasteboards. For example move-to should not be called by the
+user as moving and resizing of snips is all done automatically by
+the pasteboard. The following methods should not be called by the user:
+
+  in aligned-pasteboard<%>
+    move
+    move-to
+    resize
+
+  in aligned-snip<%>
+    resize
+
+  in aligned-editor-snip%
+    set-min-height
+    set-min-height
+
+Known Bugs:
+
+  there is currently no use of spacing in aligned-pasteboard<%>. It is
+intended to give a space between children snips in the pasteboard. This
+may be implemented later and its not very important.
+
+  users are able to move the snips in the pasteboard by highlighting the
+the snip and using the keyboard arrows. this should be disabled. in
+locked-pasteboard. I do not see a way of disabling this in the help desk.

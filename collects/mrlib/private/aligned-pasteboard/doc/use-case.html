@@ -1,0 +1,90 @@
+<html>
+  <head>
+    <title>use case</title>
+  </head>
+  <body>
+    <h1>on-size method of the vertical-pasteboard% and
+        horizontal-pasteboard% classes</h1>
+
+    <p>
+        there is no on-size event of the pasteboard% class. it is not notified
+      when it's display gets an on-size event. this causes a behavoir that is
+      unlike panels which get an on-size event when they are resized. in
+      order to get the vertical-pasteboard% objects to behave more like
+      vertical-panel% objects i will derive editor-canvas% and editor-snip%
+      classes for the purpose of displaying vertical-pasteboard% objects.
+    </p>
+    </p>
+        the editor-canvas% on-size method will be overriden to call send an
+      on-size message to it's vertical-pasteboard% editor.
+    </p>
+
+    <dl>
+      <dt>Title</dt>
+      <dd>on-size of vertical-pasteboard%</dd>
+      <dt>Actors</dt>
+      <dd>user, frame%, aligned-editor-canvas%, vertical-pasteboard%,
+          snip%</dd>
+      <dt>use case</dt>
+      <dd>
+        <table border="1">
+          <thead>
+            <th>user</th>
+            <th>frame%</th>
+            <th>aligned-editor-canvas%</th>
+            <th>vertical-pasteboard%</th>
+            <th>snip%</th>
+          </thead>
+          <tr>
+            <td>
+              <ul>
+                <li>user resizes the window</li>
+              </ul>
+            </td>
+            <td>
+              <ul>
+                <li>frame gets and on-size method changes its size</li>
+                <li>sends on-size messages to its child aligned-pasteboard-canvas%</li>
+              </ul>
+            </td>
+            <td>
+              <ul>
+                <li> canvas gets on-size and changes its size</li>
+                <li>sends on-size to its vertical-pastaboard% child</li>
+              </ul>
+            </td>
+            <td>
+              <ul>
+                <li>pasteboard gets on-size and chages its size.</li>
+                <li>pasteboard sends get-min-height to all stretchable snips</li>
+                <li>pasteboard gets get of all unstretchable snips (with get-snip-location method)</li>
+              </ul>
+            </td>
+            <td>
+              <ul>
+                <li>stretchable snip% gets get-min-height and returns its
+                    minimum height</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>
+              <ul>
+                <li>pasteboard adds the minimum heights of the
+                    stretchable snips to the hieghts of the others</li>
+                <li>pasteboard calculates how much size is left
+                    over and divided by the number of sizeable snips</li>
+                <li>pasteboard sends the size-left over per sizable
+                    value to the resize method of each sizeable snip</li>
+              </ul>
+            </td>
+            <td><ul><li>resizable snips change their size</li></ul></td>
+          </tr>
+        </table> 
+      </dd>
+    </dl>
+  </body>
+</html>

@@ -9,6 +9,7 @@
 # include <Files.h>
 # include <EPPC.h>
 # include <AppleEvents.h>
+# include <Events.h>
 #endif
 
 #ifndef FOR_STARTER
@@ -273,11 +274,37 @@ static pascal OSErr OpenFinderDoc(const AppleEvent *evt, AppleEvent *b, long c)
   return 0;
 }
 
-static pascal OSErr SetUpQuitMessage(const AppleEvent *a, AppleEvent *b, long c)
+static pascal OSErr CmdLineMessage(const AppleEvent *evt, AppleEvent *b, long c)
 {
-  Drop_Quit();
+  AEDescList	cmdList;
+  DescType	retType;
+  AEKeyword	keywd;
+  char          *cmdLine;
+  long          size;
+
+  AEGetParamDesc(evt, keyDirectObject, typeAEList, &cmdList);
+  size = 1023;
+  cmdLine = (char *)NewPtr(size + 1);
+  AEGetNthPtr(&cmdList, 1, typeChar, &keywd, &retType, (Ptr)cmdLine, size, &size);
+
+#if 0
+  {
+    char buf[256];
+    sprintf(buf + 1, "cmdline %d '%4.4s' %20.20s", size, &retType, cmdLine);
+    buf[0] = strlen(buf);
+    DebugStr((unsigned char *)buf);
+  }
+#endif
+
+  cmdLine[size] = 0;
+  scheme_mac_ready = 1;
+  parse_commandline(cmdLine, NULL, 0);
   
   return 0;
+}
+
+static pascal OSErr SetUpQuitMessage(const AppleEvent *a, AppleEvent *b, long c)
+{
 }
 
 static void Install(void)
@@ -287,7 +314,14 @@ static void Install(void)
   err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, NewAEEventHandlerUPP(OpenFinderDoc), 0, 0);
   err = AEInstallEventHandler(kCoreEventClass, kAEPrintDocuments, NewAEEventHandlerUPP(DoNothing), 0, 0);
   err = AEInstallEventHandler(kCoreEventClass, kAEQuitApplication, NewAEEventHandlerUPP(SetUpQuitMessage), 0, 0);
+  err = AEInstallEventHandler('PLT ', 'cmdl', NewAEEventHandlerUPP(CmdLineMessage), 0, 0);
 }
+
+#ifdef WX_CARBON
+# define SLEEP_TIME 0x7FFFFFFF
+#else
+# define SLEEP_TIME 60
+#endif
 
 void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
 {
@@ -299,7 +333,7 @@ void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
   while (!scheme_mac_ready) {
     EventRecord event;
     
-    WaitNextEvent(highLevelEventMask, &event, 0x7FFFFFFF, 0L);
+    WaitNextEvent(highLevelEventMask, &event, SLEEP_TIME, 0L);
     if (event.what == kHighLevelEvent) {
 #ifdef WX_CARBON
       AEProcessAppleEvent(&event);

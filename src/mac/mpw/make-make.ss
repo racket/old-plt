@@ -51,7 +51,9 @@
 	       obj
 	       (if is-c? "" " carbon.dump")
 	       f
-	       (if is-c? "MrC" "MrCpp -load carbon.dump -rtti off")
+	       (if is-c? 
+		   "MrC" 
+		   "MrCpp -load carbon.dump -rtti off")
 	       f
 	       (mk-includes-cmdline includes)
 	       cpp-defines
@@ -433,7 +435,12 @@
 	  "jerror.c"
 	  "jmemnobs.c"))))
 
-(define all-srcs
+(define starter-srcs
+  (map
+   (make-comp (list ((mk-src-path "mac" "mzscheme"))))
+   (list ((mk-src-path "mac" "starter") "starter.cpp"))))
+
+(define all-srcs ; except starter
   (append mz-srcs
 	  gc-srcs
 	  wxbase-srcs
@@ -486,12 +493,16 @@
     (printf "\tMrC nethack.c -o nethack.c.o\r")
     (printf "\tPPCLink nethack.c.o -export FillInNetPointers -o ::::netglue \"{SharedLibraries}InterfaceLib\" -xm s\r\r")
 
-    (printf "\rall \304 ::::MrEd ::::netglue\r\r")
+    (printf "\r\r::::collects:launcher:GoMr \304 starter.cpp.o\r")
+    (printf "\tPPCLink starter.cpp.o \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}MrCPlusLib.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}StdCRuntime.o\" -o ::::collects:launcher:GoMr -c 'MrSt' -m __appstart\r")
+    (printf "\tRez ::cw:MrStarter.r -o ::::collects:launcher:GoMr -append\r\r")
+
+    (printf "\rall \304 ::::MrEd ::::netglue ::::collects:launcher:GoMr\r\r")
 
     (printf "\r::::MrEd \304 {OBJS}\r")
     (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}MrCPlusLib.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}StdCRuntime.o\" -o ::::MrEd -c 'MrEd' -m __appstart~a\r"
 	    (if debug? " -sym big" ""))
-    (printf "\tRez ::cw:MrEd.r ::cw:MrEd_classic.r -o ::::MrEd -c MrEd -t APPL -append\r")
+    (printf "\tRez ::cw:MrEd.r ::cw:MrEd_classic.r -o ::::MrEd -append\r")
     (when debug?
       (printf "\tMakeSym MrEd.xcoff -P -sym big -o MrEd.sym ~a~a\r"
 	      (if (null? debug-only)
@@ -506,6 +517,10 @@
     (for-each (lambda (p)
 		(printf "~a\r\r" (caddr p)))
 	      all-srcs)
+
+    (for-each (lambda (p)
+		(printf "~a\r\r" (caddr p)))
+	      starter-srcs)
     
     ;; Append all .dep files:
     (for-each (lambda (f)

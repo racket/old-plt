@@ -212,6 +212,8 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_channel_waiter_type, "<channel-waiter>");
 
+  set_name(scheme_special_comment_type, "<special-comment>");
+
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");
 }
@@ -495,6 +497,8 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_rt_buf_holder, buf_holder);
   GC_REG_TRAV(scheme_rt_pipe, mark_pipe);
+
+  GC_REG_TRAV(scheme_special_comment_type, small_object);
 
   GC_REG_TRAV(scheme_thread_cell_type, iptr_obj);
 }

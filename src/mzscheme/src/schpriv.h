@@ -431,6 +431,8 @@ typedef struct Scheme_Struct_Type {
   Scheme_Object *proc_attr; /* int (position) or proc, only for proc_struct */
   char *immutables;
 
+  Scheme_Object *guard;
+  
   struct Scheme_Struct_Type *parent_types[1];
 } Scheme_Struct_Type;
 
@@ -453,7 +455,9 @@ Scheme_Object **scheme_make_struct_names_from_array(const char *base,
 						    int flags, int *count_out);
 Scheme_Object *scheme_make_struct_type_from_string(const char *base,
 						   Scheme_Object *parent,
-						   int num_fields);
+						   int num_fields,
+						   Scheme_Object *props,
+						   Scheme_Object *guard);
 
 Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown_val, Scheme_Object *insp);
 
@@ -462,6 +466,8 @@ Scheme_Object *scheme_extract_struct_procedure(Scheme_Object *obj, int num_rands
 Scheme_Object *scheme_proc_struct_name_source(Scheme_Object *a);
 
 #define SCHEME_STRUCT_INSPECTOR(obj) (((Scheme_Structure *)obj)->stype->inspector)
+
+extern Scheme_Object *scheme_source_property;
 
 /*========================================================================*/
 /*                         syntax objects                                 */
@@ -2073,7 +2079,7 @@ int scheme_byte_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info 
 
 #define CURRENT_INPUT_PORT(config) scheme_get_param(config, MZCONFIG_INPUT_PORT)
 #define CURRENT_OUTPUT_PORT(config) scheme_get_param(config, MZCONFIG_OUTPUT_PORT)
-#define CHECK_PORT_CLOSED(who, kind, port, closed) if (closed) scheme_raise_exn(MZEXN_I_O_PORT_CLOSED, port, "%s: " kind " port is closed", who);
+#define CHECK_PORT_CLOSED(who, kind, port, closed) if (closed) scheme_raise_exn(MZEXN_FAIL, port, "%s: " kind " port is closed", who);
 
 #ifdef USE_FCNTL_O_NONBLOCK
 # define MZ_NONBLOCKING O_NONBLOCK

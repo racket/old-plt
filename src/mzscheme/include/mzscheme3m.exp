@@ -64,6 +64,7 @@ scheme_wrong_count
 scheme_wrong_count_m
 scheme_case_lambda_wrong_count
 scheme_wrong_type
+scheme_wrong_field_type
 scheme_arg_mismatch
 scheme_wrong_return_arity
 scheme_unbound_global
@@ -383,6 +384,8 @@ scheme_struct_set
 scheme_make_struct_type_property
 scheme_make_struct_type_property_w_guard
 scheme_struct_type_property_ref
+scheme_make_location
+scheme_is_location
 scheme_eq
 scheme_eqv
 scheme_equal

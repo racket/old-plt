@@ -163,7 +163,7 @@ static Scheme_Object *make_sema(int n, Scheme_Object **p)
     }
 
     if (!scheme_get_int_val(p[0], &v)) {
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+      scheme_raise_exn(MZEXN_FAIL,
 		       "make-semaphore: starting value %s is too large",
 		       scheme_make_provided_string(p[0], 0, NULL));
     } else if (v < 0)
@@ -256,7 +256,7 @@ void scheme_post_sema(Scheme_Object *o)
     return;
   }
 
-  scheme_raise_exn(MZEXN_MISC,
+  scheme_raise_exn(MZEXN_FAIL,
 		   "semaphore-post: the maximum post count has already been reached");
 }
 

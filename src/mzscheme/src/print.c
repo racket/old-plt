@@ -661,7 +661,7 @@ print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int notdispla
   
   op = (Scheme_Output_Port *)port;
   if (op->closed)
-    scheme_raise_exn(MZEXN_I_O_PORT_CLOSED, port, "%s: output port is closed", name);
+    scheme_raise_exn(MZEXN_FAIL, "%s: output port is closed", name);
 
   str = print_to_string(obj, &len, notdisplay, port, maxl, p, config);
 
@@ -862,9 +862,7 @@ static void print_escaped(Scheme_Thread *p, int notdisplay,
 static void cannot_print(Scheme_Thread *p, int notdisplay, 
 			 Scheme_Object *obj, Scheme_Hash_Table *ht)
 {
-  scheme_raise_exn(MZEXN_APPLICATION_TYPE, 
-		   obj,
-		   scheme_intern_symbol("code with only printable constants"),
+  scheme_raise_exn(MZEXN_FAIL,
 		   "%s: cannot marshal constant that is embedded in compiled code: %V",
 		   notdisplay ? "write" : "display",
 		   obj);

@@ -101,18 +101,18 @@ static Scheme_Object *dump_heap(int argc, Scheme_Object **argv)
 #ifdef UNIX_IMAGE_DUMPS
   if (scheme_dump_heap) {
     if (no_dumps) {
-      scheme_raise_exn(MZEXN_MISC,
+      scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		       "write-image-to-file: image cannot be saved; %s", 
 		       no_dumps);
       return NULL;
     } else if (scheme_file_open_count) {
-      scheme_raise_exn(MZEXN_MISC,
+      scheme_raise_exn(MZEXN_CONTRACT,
 		       "write-image-to-file: a file, process, or TCP port is open (%d)",
 		       scheme_file_open_count);
       return NULL;
 #ifdef UNIX_PROCESSES
     } else if (scheme_system_children) {
-      scheme_raise_exn(MZEXN_MISC,
+      scheme_raise_exn(MZEXN_CONTRACT,
 		       "write-image-to-file: a subprocess is still active");
       return NULL;
 #endif
@@ -133,7 +133,7 @@ static Scheme_Object *dump_heap(int argc, Scheme_Object **argv)
   }
 #endif
   
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "write-image-to-file: not supported");
   return NULL;
 }
@@ -172,7 +172,7 @@ static Scheme_Object *load_heap(int argc, Scheme_Object **argv)
     scheme_load_heap(filename, argv[1]);
 #endif
 
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "read-image-from-file: not supported");
   return NULL;
 }
@@ -309,9 +309,7 @@ static Scheme_Object *dump_image(char *filename)
     } while ((fd == -1) && (errno == EINTR));
 
     if (fd == -1) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       scheme_make_string(filename),
-		       scheme_false,
+      scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		       "write-image-to-file: couldn't write file \"%q\"", 
 		       filename);
     } else {
@@ -570,7 +568,7 @@ static void restore_image(char *file, int argc, char **argv,
 
 static void read_image_exn(char *phase, char *file)
 {
-  scheme_raise_exn(MZEXN_MISC,
+  scheme_raise_exn(MZEXN_FAIL,
 		   "read-image-from-file: restore from \"%q\" failed at %s (%d).", 
 		   file, phase, errno);
 }
@@ -586,7 +584,7 @@ static Scheme_Object *load_image(char *filename, Scheme_Object *argvec)
   
   count = SCHEME_VEC_SIZE(argvec);
   if (count > MAX_ARGV)
-    scheme_raise_exn(MZEXN_MISC,
+    scheme_raise_exn(MZEXN_FAIL,
 		     "read-image-from-file: too many string arguments; "
 		     "maximum is %d", MAX_ARGV);
 
@@ -599,7 +597,7 @@ static Scheme_Object *load_image(char *filename, Scheme_Object *argvec)
   a = NULL;
 
   if (l > MAX_ARGLEN)
-    scheme_raise_exn(MZEXN_MISC,
+    scheme_raise_exn(MZEXN_FAIL,
 		     "read-image-from-file: string arguments too long; "
 		     "maximum total length is %d", MAX_ARGLEN);
 

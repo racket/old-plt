@@ -1316,7 +1316,7 @@ scheme_apply_macro(Scheme_Object *name,
    code = scheme_apply(rator, 1, rands_vec);
 
    if (!SCHEME_STXP(code)) {
-     scheme_raise_exn(MZEXN_MISC,
+     scheme_raise_exn(MZEXN_CONTRACT,
 		      "%S: return value from syntax expander was not syntax",
 		      SCHEME_STX_SYM(name));
    }
@@ -1873,7 +1873,7 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
 
       argstr = scheme_make_args_string("", -1, argc, argv, &alen);
 
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[i],
+      scheme_raise_exn(MZEXN_CONTRACT,
 		       "%s: all lists must have same size%t",
 		       name, argstr, alen);
       return NULL;
@@ -1886,7 +1886,7 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
 
     s = scheme_make_arity_expect_string(argv[0], argc - 1, NULL, &aelen);
 
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[0],
+    scheme_raise_exn(MZEXN_CONTRACT,
 		     "%s: arity mismatch for %t", name,
 		     s, aelen);
     return NULL;
@@ -1929,8 +1929,7 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
     for (i = 0; i < argc ; i++) {
       if (!SCHEME_PAIRP(working[i])) {
 	/* There was a mutation! */
-	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-			 working[i],
+	scheme_raise_exn(MZEXN_CONTRACT,
 			 "%s: argument list mutated",
 			 name);
 	return NULL;
@@ -3206,8 +3205,7 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
     }
   }
 
-  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-		   secs,
+  scheme_raise_exn(MZEXN_CONTRACT,
 		   "seconds->date: integer %s is out-of-range",
 		   scheme_make_provided_string(secs, 0, NULL));
 
@@ -3243,7 +3241,7 @@ static Scheme_Object *time_apply(int argc, Scheme_Object *argv[])
 
     s = scheme_make_arity_expect_string(argv[0], num_rands, NULL, &aelen);
 
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[0],
+    scheme_raise_exn(MZEXN_CONTRACT,
 		     "time-apply: arity mismatch for %t",
 		     s, aelen);
     return NULL;

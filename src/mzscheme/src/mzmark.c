@@ -3740,6 +3740,7 @@ int mark_struct_type_val_MARK(void *p) {
   gcMARK(t->uninit_val);
   gcMARK(t->props);
   gcMARK(t->proc_attr);
+  gcMARK(t->guard);
   gcMARK(t->immutables);
 
   return
@@ -3761,6 +3762,7 @@ int mark_struct_type_val_FIXUP(void *p) {
   gcFIXUP(t->uninit_val);
   gcFIXUP(t->props);
   gcFIXUP(t->proc_attr);
+  gcFIXUP(t->guard);
   gcFIXUP(t->immutables);
 
   return

@@ -182,8 +182,6 @@ static Scheme_Object *exec_file_symbol, *pref_file_symbol, *addon_dir_symbol;
 static Scheme_Object *exec_cmd;
 #endif
 
-static Scheme_Object *fail_err_symbol, *path_err_symbol, *exists_err_symbol;
-
 void scheme_init_file(Scheme_Env *env)
 {
   REGISTER_SO(up_symbol);
@@ -205,18 +203,10 @@ void scheme_init_file(Scheme_Env *env)
   REGISTER_SO(addon_dir_symbol);
 #endif
 
-  REGISTER_SO(fail_err_symbol);
-  REGISTER_SO(path_err_symbol);
-  REGISTER_SO(exists_err_symbol);
-    
   up_symbol = scheme_intern_symbol("up");
   relative_symbol = scheme_intern_symbol("relative");
   same_symbol = scheme_intern_symbol("same");
   
-  fail_err_symbol = scheme_false;
-  path_err_symbol = scheme_intern_symbol("ill-formed-path");
-  exists_err_symbol = scheme_intern_symbol("already-exists");
-
 #ifndef NO_FILE_SYSTEM_UTILS
 
   read_symbol = scheme_intern_symbol("read");
@@ -611,7 +601,8 @@ char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn)
 	  }
 	}
 	
-	scheme_raise_exn(MZEXN_I_O, "current-directory: unknown failure (%e)", errno);
+	scheme_raise_exn(MZEXN_FAIL_FILESYSTEM, 
+			 "current-directory: unknown failure (%e)", errno);
       }
 
       buflen = strlen(r) + 1;
@@ -677,9 +668,7 @@ int scheme_os_setcwd(char *expanded, int noexn)
 #endif
 
   if (err && !noexn)
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       scheme_make_path(expanded),
-		       fail_err_symbol,
+      scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		       "current-directory: unable to switch to directory: \"%q\"",
 		       expanded);
 
@@ -1162,15 +1151,11 @@ static int has_null(const char *s, long l)
 static void raise_null_error(const char *name, Scheme_Object *path, const char *mod)
 {
   if (!(SCHEME_CHAR_STRINGP(path) ? SCHEME_CHAR_STRTAG_VAL(path) : SCHEME_PATH_LEN(path)))
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		     path,
-		     path_err_symbol,
+    scheme_raise_exn(MZEXN_CONTRACT,
 		     "%s: path string%s is empty", 
 		     name, mod);
   else
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		     path,
-		     path_err_symbol,
+    scheme_raise_exn(MZEXN_CONTRACT,
 		     "%s: path string%s contains a null character: %Q", 
 		     name, mod, 
 		     path);
@@ -1408,9 +1393,7 @@ static char *do_expand_filename(Scheme_Object *o, char* filename, int ilen, cons
 
     if (filename[f] && filename[f] != '/') {
       if (errorin && report_bad_user)
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-			 scheme_make_path(filename),
-			 path_err_symbol,
+	scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 			 "%s: bad username in path: \"%q\"", 
 			 errorin, filename);
       return NULL;
@@ -1438,9 +1421,7 @@ static char *do_expand_filename(Scheme_Object *o, char* filename, int ilen, cons
 
     if (!home) {
       if (errorin && report_bad_user)
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-			 scheme_make_path(filename),
-			 path_err_symbol,
+	scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 			 "%s: bad username in path: \"%q\"", 
 			 errorin, filename);
       return NULL;
@@ -1974,9 +1955,7 @@ Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd)
     return scheme_bin_plus(devn, inon);
   }
 
-  scheme_raise_exn(MZEXN_I_O_PORT,
-		   port,
-		   fail_err_symbol,
+  scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		   "port-file-identity: error obtaining identity (%E)",
 		   errid);
   return NULL;
@@ -2080,9 +2059,7 @@ Scheme_Object *scheme_build_path(int argc, Scheme_Object **argv)
 	  long alen;
 
 	  astr = scheme_make_args_string("other ", i, argc, argv, &alen);
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-			   scheme_make_path(next),
-			   path_err_symbol,
+	  scheme_raise_exn(MZEXN_CONTRACT,
 			   "build-path: %d%s path element is an empty string%t", 
 			   i + 1,
 			   scheme_number_suffix(i + 1),
@@ -2113,9 +2090,7 @@ Scheme_Object *scheme_build_path(int argc, Scheme_Object **argv)
       if (next[0] == '/') {
 	rel = 0;
 	if (i) {
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-			   scheme_make_path(next),
-			   path_err_symbol,
+	  scheme_raise_exn(MZEXN_CONTRACT,
 			   "build-path: absolute path \"%q\" cannot be"
 			   " added to a path",
 			   next);
@@ -2155,9 +2130,7 @@ Scheme_Object *scheme_build_path(int argc, Scheme_Object **argv)
 	      str[30] = 0;
 	    } else
 	      str[pos] = 0;
-	    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-			     scheme_make_path(next),
-			     path_err_symbol,
+	    scheme_raise_exn(MZEXN_CONTRACT,
 			     "build-path: %s \"%s\" cannot be"
 			     " added to the path \"%q\"",
 			     is_drive ? "drive" : "absolute path",
@@ -2205,9 +2178,7 @@ Scheme_Object *scheme_build_path(int argc, Scheme_Object **argv)
 #endif
 		nstr = next + next_off;
 
-	      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-			       scheme_make_path(nstr),
-			       path_err_symbol,
+	      scheme_raise_exn(MZEXN_CONTRACT,
 			       "build-path: absolute path \"%q\" cannot be"
 			       " added to a path",
 			       nstr);
@@ -2476,9 +2447,7 @@ static Scheme_Object *split_path(int argc, Scheme_Object **argv)
   len = SCHEME_PATH_LEN(inpath);
 
   if (!len) {
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		     inpath, 
-		     path_err_symbol,
+    scheme_raise_exn(MZEXN_CONTRACT,
 		     "split-path: path is an empty string");
   }
 
@@ -2632,9 +2601,7 @@ static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
       raise_null_error("path->complete-path", p, "");
 
     if (!scheme_is_complete_path(ws, wlen))
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       wrt,
-		       path_err_symbol,
+      scheme_raise_exn(MZEXN_CONTRACT,
 		       "path->complete-path: second argument is not a complete path: \"%q\"",
 		       ws);
 
@@ -2704,9 +2671,7 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
   errid = errno;
 #endif
   
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
-		   argv[0], 
-		   fail_err_symbol,
+  scheme_raise_exn(MZEXN_FAIL_FILESYSTEM, 
 		   "delete-file: cannot delete file: \"%q\" (%e)",
 		   filename_for_error(argv[0]),
 		   errid);
@@ -2857,9 +2822,7 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 #if defined (USE_MAC_FILE_TOOLBOX) || ! defined (DOS_FILE_SYSTEM)
 failed:
 #endif
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
-		   argv[0],
-		   (exists_ok < 0) ? exists_err_symbol : fail_err_symbol,
+  scheme_raise_exn((exists_ok < 0) ? MZEXN_FAIL_FILESYSTEM_EXISTS : MZEXN_FAIL_FILESYSTEM, 
 		   "rename-file-or-directory: cannot rename file or directory: %q to: %q (" MOVE_ERRNO_FORMAT ")",
 		   filename_for_error(argv[0]),
 		   filename_for_error(argv[1]),
@@ -3066,9 +3029,7 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
   }
 #endif
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
-		   argv[0],
-		   pre_exists ? exists_err_symbol : fail_err_symbol,
+  scheme_raise_exn(pre_exists ? MZEXN_FAIL_FILESYSTEM_EXISTS : MZEXN_FAIL_FILESYSTEM, 
 		   "copy-file: %s; cannot copy: %q to: %q",
 		   reason,
 		   filename_for_error(argv[0]),
@@ -3243,9 +3204,7 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
 	if ((len == SCHEME_PATH_LEN(p))
 	    && !strcmp(s, SCHEME_PATH_VAL(p))) {
 	  /* Cycle of links detected */
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-			   path,
-			   fail_err_symbol,
+	  scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 			   "simplify-path: cycle detected at link: \"%q\"",
 			   s);
 	}
@@ -3370,7 +3329,7 @@ static Scheme_Object *current_drive(int argc, Scheme_Object *argv[])
 
   return scheme_make_sized_path(drive, strlen(drive), 0);
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, "current-drive: not supported");
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED, "current-drive: not supported");
   return NULL;
 #endif
 }
@@ -3443,9 +3402,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
   }
 
   if (filename && !scheme_directory_exists(filename))
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		     scheme_make_path(filename),
-		     fail_err_symbol,
+    scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		     "directory-list: could not open \"%q\"",
 		     filename);
 #endif
@@ -3466,9 +3423,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 
   if (!find_mac_file(filename, 0, &dir, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0)) {
     if (argc) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       argv[0],
-		       fail_err_symbol,
+      scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		       "directory-list: could not open \"%q\"",
 		       filename);
     }
@@ -3739,9 +3694,7 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
 # define MKDIR_EXN_TYPE "%e"
 # endif
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		   argv[0],
-		   exists_already ? exists_err_symbol : fail_err_symbol,
+  scheme_raise_exn(exists_already ? MZEXN_FAIL_FILESYSTEM_EXISTS : MZEXN_FAIL_FILESYSTEM,
 		   "make-directory: cannot make directory: %q (" MKDIR_EXN_TYPE ")",
 		   filename_for_error(argv[0]),
 		   errno);
@@ -3805,9 +3758,7 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
   }
 # endif
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		   argv[0],
-		   fail_err_symbol,
+  scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		   "delete-directory: cannot delete directory: %q (%e)",
 		   filename_for_error(argv[0]),
 		   errno);
@@ -3835,7 +3786,7 @@ static Scheme_Object *make_link(int argc, Scheme_Object *argv[])
 				      SCHEME_GUARD_FILE_WRITE);
 
 #if defined(USE_MAC_FILE_TOOLBOX) || defined(DOS_FILE_SYSTEM)
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "make-file-or-directory-link: link creation not supported on this platform; "
 		   "cannot create link: %Q",
 		   argv[1]);
@@ -3847,9 +3798,7 @@ static Scheme_Object *make_link(int argc, Scheme_Object *argv[])
       break;
   }
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		   argv[1],
-		   (errno == EEXIST) ? exists_err_symbol : fail_err_symbol,
+  scheme_raise_exn((errno == EEXIST) ? MZEXN_FAIL_FILESYSTEM_EXISTS : MZEXN_FAIL_FILESYSTEM,
 		   "make-file-or-directory-link: cannot make link: %q (%e)",
 		   filename_for_error(argv[1]),
 		   errno);
@@ -3897,8 +3846,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
       return NULL;
     }
     if (!scheme_get_time_val(argv[1], &mtime)) {
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-		       argv[1],
+      scheme_raise_exn(MZEXN_CONTRACT,
 		       "file-or-directory-modify-seconds: integer %s is out-of-range",
 		       scheme_make_provided_string(argv[1], 0, NULL));
       return NULL;
@@ -3947,9 +3895,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
     }
 #endif
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		   argv[0],
-		   fail_err_symbol,
+  scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		   "file-or-directory-modify-seconds: error %s file/directory time: %q (%e)",
 		   set_time ? "setting" : "getting",
 		   filename_for_error(argv[0]),
@@ -4104,9 +4050,7 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 #endif
   
   if (!l) {
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		     argv[0],
-		     fail_err_symbol,
+    scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		     "file-or-directory-permissions: file or directory not found: \"%q\"",
 		     filename_for_error(argv[0]));
   }
@@ -4165,9 +4109,7 @@ static Scheme_Object *file_size(int argc, Scheme_Object *argv[])
   return scheme_make_integer_value_from_unsigned(len);
 
 failed:
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		   argv[0],
-		   fail_err_symbol,
+  scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		   "file-size: file not found: \"%q\"",
 		   filename_for_error(argv[0]));
   return NULL;
@@ -4600,8 +4542,7 @@ static long check_four(char *name, int which, int argc, Scheme_Object **argv)
     scheme_wrong_type(name, "MacOS type/creator 4-character byte string", which, argc, argv);
 
   if (SCHEME_BYTE_STRTAG_VAL(o) != 4) {
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-		     o,
+    scheme_raise_exn(MZEXN_CONTRACT,
 		     "%s: string is not a 4-character type or creator signature: %V",
 		     name,
 		     o);

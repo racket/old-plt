@@ -965,8 +965,7 @@ char *scheme_bignum_to_allocated_string(const Scheme_Object *b, int radix, int a
   SAFE_SPACE(csd)
 
   if (radix != 10 && radix != 2 && radix != 8 && radix != 16)
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_make_integer(radix),
-		     "bad bignum radix (%d)", radix);
+    scheme_raise_exn(MZEXN_CONTRACT, "bad bignum radix: %d", radix);
 
   if (SCHEME_BIGLEN(b) == 0) {
     if (alloc) {

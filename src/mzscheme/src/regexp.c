@@ -252,7 +252,7 @@ STATIC int regstrcspn(char *, char *, char *);
 static void
 regerror(char *s)
 {
-  scheme_raise_exn(MZEXN_MISC,
+  scheme_raise_exn(MZEXN_FAIL,
 		   "regexp: %s", s);
 }
 
@@ -2549,8 +2549,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	  }
 	  /* compare numbers */
 	  if (scheme_bin_lt(argv[3], argv[2])) {
-	    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-			     argv[3],
+	    scheme_raise_exn(MZEXN_CONTRACT,
 			     "%s: ending index %V is smaller than starting index %V for port",
 			     name, argv[3], argv[2]);
 	    return NULL;

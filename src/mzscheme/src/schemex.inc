@@ -72,6 +72,7 @@
   scheme_extension_table->scheme_wrong_count_m = scheme_wrong_count_m;
   scheme_extension_table->scheme_case_lambda_wrong_count = scheme_case_lambda_wrong_count;
   scheme_extension_table->scheme_wrong_type = scheme_wrong_type;
+  scheme_extension_table->scheme_wrong_field_type = scheme_wrong_field_type;
   scheme_extension_table->scheme_arg_mismatch = scheme_arg_mismatch;
   scheme_extension_table->scheme_wrong_return_arity = scheme_wrong_return_arity;
   scheme_extension_table->scheme_unbound_global = scheme_unbound_global;
@@ -425,6 +426,8 @@
   scheme_extension_table->scheme_make_struct_type_property = scheme_make_struct_type_property;
   scheme_extension_table->scheme_make_struct_type_property_w_guard = scheme_make_struct_type_property_w_guard;
   scheme_extension_table->scheme_struct_type_property_ref = scheme_struct_type_property_ref;
+  scheme_extension_table->scheme_make_location = scheme_make_location;
+  scheme_extension_table->scheme_is_location = scheme_is_location;
   scheme_extension_table->scheme_eq = scheme_eq;
   scheme_extension_table->scheme_eqv = scheme_eqv;
   scheme_extension_table->scheme_equal = scheme_equal;

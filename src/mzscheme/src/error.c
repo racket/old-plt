@@ -29,6 +29,7 @@
 #endif
 
 #define mzVA_ARG(x, y) HIDE_FROM_XFORM(va_arg(x, y))
+#define TMP_CMARK_VALUE scheme_parameterization_key
 
 /* globals */
 void (*scheme_console_printf)(char *str, ...);
@@ -657,7 +658,7 @@ scheme_signal_error (const char *msg, ...)
   }
 
 #ifndef SCHEME_NO_EXN
-  scheme_raise_exn(MZEXN_MISC, "%t", buffer, len);
+  scheme_raise_exn(MZEXN_FAIL, "%t", buffer, len);
 #else
   call_error(buffer, len, scheme_false);
 #endif
@@ -845,8 +846,6 @@ void scheme_wrong_count_m(const char *name, int minc, int maxc,
 			  int argc, Scheme_Object **argv, int is_method)
      /* minc == -1 => name is really a case-lambda or proc-struct */
 {
-  Scheme_Object *arity;
-  Scheme_Object *v;
   char *s;
   long len;
   Scheme_Thread *p = scheme_current_thread;
@@ -881,34 +880,9 @@ void scheme_wrong_count_m(const char *name, int minc, int maxc,
   if (!argc || !minc)
     is_method = 0;
 
-  v = scheme_make_integer(argc - (is_method ? 1 : 0));
-
   s = make_arity_expect_string(name, -1, minc, maxc, argc, argv, &len, is_method);
 
-  if (minc >= 0)
-    arity = scheme_make_arity((mzshort)(minc - (is_method ? 1 : 0)), (mzshort)(maxc - (is_method ? 1 : 0)));
-  else if (minc == -1) {
-    arity = scheme_arity((Scheme_Object *)name);
-    if (is_method) {
-      /* Post-process the arity. It must be a list. We can mutate it. */
-      Scheme_Object *l = arity, *a, *b;
-      while (!SCHEME_NULLP(l)) {
-	a = SCHEME_CAR(l);
-	if (SCHEME_INTP(a))
-	  SCHEME_CAR(l) = scheme_make_integer(SCHEME_INT_VAL(a) - 1);
-	else {
-	  /* arity-at-least: */
-	  b = ((Scheme_Structure *)a)->slots[0];
-	  b = scheme_make_integer(SCHEME_INT_VAL(b) - 1);
-	  ((Scheme_Structure *)a)->slots[0] = b;
-	}
-	l = SCHEME_CDR(l);
-      }
-    }
-  } else
-    arity = scheme_null; /* a primitive case-lambda with zero cases */
-
-  scheme_raise_exn(MZEXN_APPLICATION_ARITY, v, arity, "%t", s, len);
+  scheme_raise_exn(MZEXN_CONTRACT_ARITY, "%t", s, len);
 }
 
 void scheme_wrong_count(const char *name, int minc, int maxc, int argc,
@@ -923,48 +897,16 @@ void scheme_case_lambda_wrong_count(const char *name,
 				    int is_method,
 				    int count, ...)
 {
-  Scheme_Object *arity, *a;
   char *s;
   long len;
-  va_list args;
-  int i;
 
   /* Watch out for impossible is_method claims: */
   if (!argc)
     is_method = 0;
 
-  arity = scheme_alloc_list(count);
-
-  va_start(args, count);
-  for (i = 0, a = arity; i < count; i++, a = SCHEME_CDR(a)) {
-    mzshort mina, maxa;
-    Scheme_Object *av;
-
-    mina = mzVA_ARG(args, int);
-    maxa = mzVA_ARG(args, int);
-
-    if (is_method) {
-      if (maxa == -1) {
-	mina -= 1;
-      } else {
-	mina -= 1;
-	maxa -= 1;
-      }
-    }
-
-    av = scheme_make_arity(mina, maxa);
-    SCHEME_CAR(a) = av;
-  }
-  va_end(args);
-
   s = make_arity_expect_string(name, -1, -2, 0, argc, argv, &len, is_method);
 
-  /* Adjust argc for a method before making the exn record: */
-  if (is_method && argc)
-    argc--;
-
-  scheme_raise_exn(MZEXN_APPLICATION_ARITY, scheme_make_integer(argc),
-		   arity, "%t", s, len);
+  scheme_raise_exn(MZEXN_CONTRACT_ARITY, "%t", s, len);
 }
 
 char *scheme_make_arity_expect_string(Scheme_Object *proc,
@@ -1066,7 +1008,6 @@ void scheme_wrong_type(const char *name, const char *expected,
   int slen;
   int isres = 0;
   GC_CAN_IGNORE char *isress = "argument";
-  Scheme_Object *typesym;
 
   o = argv[which < 0 ? 0 : which];
   if (argc < 0) {
@@ -1077,10 +1018,8 @@ void scheme_wrong_type(const char *name, const char *expected,
 
   s = scheme_make_provided_string(o, 1, &slen);
 
-  typesym = scheme_intern_symbol(expected);
-
   if ((which < 0) || (argc == 1))
-    scheme_raise_exn(MZEXN_APPLICATION_TYPE, o, typesym,
+    scheme_raise_exn(MZEXN_CONTRACT,
 		     "%s: expects %s of type <%s>; "
 		     "given %t",
 		     name, isress, expected, s, slen);
@@ -1097,7 +1036,7 @@ void scheme_wrong_type(const char *name, const char *expected,
       olen = 0;
     }
 
-    scheme_raise_exn(MZEXN_APPLICATION_TYPE, o, typesym,
+    scheme_raise_exn(MZEXN_CONTRACT,
 		     "%s: expects type <%s> as %d%s %s, "
 		     "given: %t%t",
 		     name, expected, which + 1,
@@ -1107,6 +1046,23 @@ void scheme_wrong_type(const char *name, const char *expected,
   }
 }
 
+void scheme_wrong_field_type(Scheme_Object *c_name,
+			     const char *expected,
+			     Scheme_Object *o)
+{
+  const char *s;
+  char *s2;
+  int l;
+  Scheme_Object *a[1];
+  a[0] = o;
+  s = scheme_symbol_name(c_name);
+  l = strlen(s);
+  s2 = (char *)scheme_malloc_atomic(l + 6);
+  memcpy(s2, "make-", 5);
+  memcpy(s2 + 5, s, l + 1);
+  scheme_wrong_type(s2, expected, -1, 0, a);
+}
+
 void scheme_arg_mismatch(const char *name, const char *msg, Scheme_Object *o)
 {
   char *s;
@@ -1114,7 +1070,7 @@ void scheme_arg_mismatch(const char *name, const char *msg, Scheme_Object *o)
 
   s = scheme_make_provided_string(o, 1, &slen);
 
-  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, o,
+  scheme_raise_exn(MZEXN_CONTRACT,
 		   "%s: %s%t",
 		   name, msg, s, slen);
 }
@@ -1183,6 +1139,7 @@ void scheme_read_err(Scheme_Object *port,
   char *s, *ls, lbuf[30], *fn, *suggests;
   long slen, fnlen;
   int show_loc;
+  Scheme_Object *loc;
 
   /* Precise GC: Don't allocate before getting hidden args off stack */
   s = prepared_buf;
@@ -1249,12 +1206,18 @@ void scheme_read_err(Scheme_Object *port,
   else
     suggests = "";
 
-  scheme_raise_exn((gotc == EOF) ? MZEXN_READ_EOF : ((gotc == SCHEME_SPECIAL) ? MZEXN_READ_NON_CHAR : MZEXN_READ),
-		   stxsrc ? stxsrc : scheme_false,
-		   (line < 0) ? scheme_false : scheme_make_integer(line),
-		   (col < 0) ? scheme_false : scheme_make_integer(col-1),
-		   (pos < 0) ? scheme_false : scheme_make_integer(pos),
-		   (span < 0) ? scheme_false : scheme_make_integer(span),
+  loc = scheme_make_location(stxsrc ? stxsrc : scheme_false,
+			     (line < 0) ? scheme_false : scheme_make_integer(line),
+			     (col < 0) ? scheme_false : scheme_make_integer(col-1),
+			     (pos < 0) ? scheme_false : scheme_make_integer(pos),
+			     (span < 0) ? scheme_false : scheme_make_integer(span));
+
+  scheme_raise_exn(((gotc == EOF) 
+		    ? MZEXN_FAIL_READ_EOF 
+		    : ((gotc == SCHEME_SPECIAL) 
+		       ? MZEXN_FAIL_READ_NON_CHAR 
+		       : MZEXN_FAIL_READ)),
+		   scheme_make_immutable_pair(loc, scheme_null),
 		   "%t%s%t%s",
 		   fn, fnlen, ls,
 		   s, slen, suggests);
@@ -1429,7 +1392,10 @@ void scheme_wrong_syntax(const char *where,
   } else
     blen = scheme_sprintf(buffer, blen, "%s: %t", where, s, slen);
 
-  scheme_raise_exn(MZEXN_SYNTAX, form, nomwho, mod,
+  /* We don't actually use nomwho and mod, anymore. */
+
+  scheme_raise_exn(MZEXN_FAIL_SYNTAX, 
+		   form,
 		   "%t", buffer, blen);
 }
 
@@ -1470,7 +1436,7 @@ void scheme_wrong_rator(Scheme_Object *rator, int argc, Scheme_Object **argv)
       s = " (no arguments)";
   }
 
-  scheme_raise_exn(MZEXN_APPLICATION_TYPE, rator, scheme_intern_symbol("procedure"),
+  scheme_raise_exn(MZEXN_CONTRACT,
 		   "procedure application: expected procedure, given: %t%t",
 		   r, rlen, s, slen);
 }
@@ -1564,9 +1530,7 @@ void scheme_wrong_return_arity(const char *where,
 			(got == 1) ? "" : "s",
 			v, vlen);
 
-  scheme_raise_exn(MZEXN_APPLICATION_ARITY,
-		   scheme_make_integer(got),
-		   scheme_make_integer(expected),
+  scheme_raise_exn(MZEXN_CONTRACT_ARITY,
 		   "%t",
 		   buffer, blen);
 }
@@ -1592,7 +1556,7 @@ void scheme_raise_out_of_memory(const char *where, const char *msg, ...)
     prepared_buf = init_buf(NULL, &prepared_buf_len);
   }
 
-  scheme_raise_exn(MZEXN_MISC_OUT_OF_MEMORY,
+  scheme_raise_exn(MZEXN_FAIL_OUT_OF_MEMORY,
 		   "%s%sout of memory %t",
 		   where ? where : "",
 		   where ? ": " : "",
@@ -1611,13 +1575,13 @@ void scheme_unbound_global(Scheme_Bucket *b)
     else
       errmsg = "reference to an identifier before its definition: %S";
 
-    scheme_raise_exn(MZEXN_VARIABLE,
+    scheme_raise_exn(MZEXN_CONTRACT_VARIABLE,
 		     name,
 		     errmsg,
 		     name,
 		     ((Scheme_Bucket_With_Home *)b)->home->module->modname);
   } else {
-    scheme_raise_exn(MZEXN_VARIABLE,
+    scheme_raise_exn(MZEXN_CONTRACT_VARIABLE,
 		     name,
 		     "reference to undefined identifier: %S",
 		     name);
@@ -1701,8 +1665,8 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
   }
 
 #ifndef NO_SCHEME_EXNS
-  newargs[1] = scheme_void;
-  do_raise(scheme_make_struct_instance(exn_table[MZEXN_USER].type,
+  newargs[1] = TMP_CMARK_VALUE;
+  do_raise(scheme_make_struct_instance(exn_table[MZEXN_FAIL].type,
 				       2, newargs),
 	   0, 1);
 
@@ -1781,7 +1745,7 @@ static Scheme_Object *raise_type_error(int argc, Scheme_Object *argv[])
 
     if ((SCHEME_INTP(argv[2]) && (SCHEME_INT_VAL(argv[2]) >= argc - 3))
 	|| SCHEME_BIGNUMP(argv[2]))
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[2],
+      scheme_raise_exn(MZEXN_CONTRACT,
 		       "raise-type-error: position index is %V, "
 		       "but only %d arguments provided",
 		       argv[2],
@@ -2054,7 +2018,7 @@ scheme_raise_exn(int id, ...)
 
 #ifndef NO_SCHEME_EXNS
   eargs[0] = scheme_make_immutable_sized_utf8_string(buffer, alen);
-  eargs[1] = scheme_void;
+  eargs[1] = TMP_CMARK_VALUE;
 
   do_raise(scheme_make_struct_instance(exn_table[id].type,
 				       c, eargs),
@@ -2094,15 +2058,6 @@ def_exn_handler(int argc, Scheme_Object *argv[])
   call_error(s, len, argv[0]);
 
   return scheme_void;
-}
-
-Scheme_Object *scheme_special_comment_width(Scheme_Object *o)
-{
-  if (SCHEME_STRUCTP(o)
-      && scheme_is_struct_instance(exn_table[MZEXN_SPECIAL_COMMENT].type, o))
-    return ((Scheme_Structure *)o)->slots[2];
-  else
-    return NULL;
 }
 
 static Scheme_Object *
@@ -2234,6 +2189,75 @@ void scheme_raise(Scheme_Object *exn)
   do_raise(exn, 0, 0);
 }
 
+typedef Scheme_Object (*Scheme_Struct_Field_Guard_Proc)(int argc, Scheme_Object *v);
+
+static Scheme_Object *exn_field_check(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_IMMUTABLE_CHAR_STRINGP(argv[0]))
+    scheme_wrong_field_type(argv[2], "immutable string", argv[0]);
+  if (!SAME_OBJ(argv[1], TMP_CMARK_VALUE) && !SCHEME_CONT_MARK_SETP(argv[1]))
+    scheme_wrong_field_type(argv[2], "continuation mark set", argv[1]);
+
+  return scheme_values(2, argv);
+}
+
+static Scheme_Object *variable_field_check(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_SYMBOLP(argv[2]))
+    scheme_wrong_field_type(argv[3], "symbol", argv[2]);
+
+  return scheme_values(3, argv);
+}
+
+static Scheme_Object *syntax_field_check(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_STXP(argv[2]))
+    scheme_wrong_field_type(argv[3], "syntax object", argv[2]);
+
+  return scheme_values(3, argv);
+}
+
+static Scheme_Object *read_field_check(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *l;
+
+  l = argv[2];
+  while (SCHEME_IMMUTABLE_PAIRP(l)) {
+    if (!scheme_is_location(SCHEME_CAR(l)))
+      break;
+    l = SCHEME_CDR(l);
+  }
+
+  if (!SCHEME_NULLP(l))
+    scheme_wrong_field_type(argv[3], "immutable list of locations", argv[2]);
+
+  return scheme_values(3, argv);
+}
+
+static Scheme_Object *break_field_check(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_ECONTP(argv[2]))
+    scheme_wrong_field_type(argv[3], "escape continuation", argv[2]);
+
+  return scheme_values(3, argv);
+}
+
+static Scheme_Object *extract_syntax_locations(int argc, Scheme_Object **argv)
+{
+  if (scheme_is_struct_instance(exn_table[MZEXN_FAIL_SYNTAX].type, argv[0]))
+    return scheme_make_pair(scheme_struct_ref(argv[0], 2), NULL);
+  scheme_wrong_type("exn:fail:syntax-locations-accessor", "exn:fail:syntax", 0, argc, argv);
+  return NULL;
+}
+
+static Scheme_Object *extract_read_locations(int argc, Scheme_Object **argv)
+{
+  if (scheme_is_struct_instance(exn_table[MZEXN_FAIL_READ].type, argv[0]))
+    return scheme_struct_ref(argv[0], 2);
+  scheme_wrong_type("exn:fail:read-locations-accessor", "exn:fail:read", 0, argc, argv);
+  return NULL;
+}
+
 void scheme_init_exn(Scheme_Env *env)
 {
   int i, j;
@@ -2242,6 +2266,9 @@ void scheme_init_exn(Scheme_Env *env)
 #define _MZEXN_DECL_FIELDS
 # include "schexn.h"
 #undef _MZEXN_DECL_FIELDS
+#define _MZEXN_DECL_PROPS
+# include "schexn.h"
+#undef _MZEXN_DECL_PROPS
 
   REGISTER_SO(exn_table);
 
@@ -2257,10 +2284,10 @@ void scheme_init_exn(Scheme_Env *env)
 
 #define EXN_PARENT(id) exn_table[id].type
 
-#define EXN_FLAGS SCHEME_STRUCT_EXPTIME
+#define EXN_FLAGS SCHEME_STRUCT_EXPTIME | SCHEME_STRUCT_NO_SET
 
-#define SETUP_STRUCT(id, parent, name, argc, args) \
-    { tmpo = scheme_make_struct_type_from_string(name, parent, argc); \
+#define SETUP_STRUCT(id, parent, name, argc, args, props, guard) \
+    { tmpo = scheme_make_struct_type_from_string(name, parent, argc, props, guard); \
       exn_table[id].type = tmpo; \
       tmpop = scheme_make_struct_names_from_array(name, argc, args, EXN_FLAGS, &exn_table[id].count); \
       exn_table[id].names = tmpop; }

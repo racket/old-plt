@@ -1,18 +1,21 @@
 #!/bin/sh
-string=? ; if [ "$PLTHOME" = "" ] ; then PLTHOME=/usr/local/lib/plt ; export PLTHOME ; fi
-string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
+#|
+if [ "$PLTHOME" = "" ] ; then PLTHOME=/usr/local/lib/plt ; export PLTHOME ; fi
+exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
+|#
 
 (define doc? (and (= (vector-length argv) 1)
 		  (string=? (vector-ref argv 0) "doc")))
 
 (define l (read))
 
-(define-struct ex (define string base doc args parent parent-def numtotal depth mark))
+(define-struct ex (define string base doc args props guard parent parent-def numtotal depth mark))
 (define-struct fld (name type doc))
+(define-struct prop (scheme-name c-name value))
 
 (define max-exn-args 0)
 
-(define (make-an-ex sym parent parent-def parent-name totalargs args doc depth mark)
+(define (make-an-ex sym parent parent-def parent-name totalargs args props guard doc depth mark)
   (let* ([s (symbol->string sym)]
 	 [name (string-append parent-name 
 			      (if (string=? "" parent-name) "" ":") 
@@ -36,6 +39,8 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 	     sym
 	     doc
 	     args
+	     props
+	     guard
 	     parent
 	     parent-def
 	     count
@@ -43,10 +48,22 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 	     mark)))
 
 (define (make-arg-list args)
-  (if (null? args)
-      '()
-      (cons (make-fld (car args) (cadr args) (caddr args))
-	    (make-arg-list (cdddr args)))))
+  (cond
+   [(null? args) '()]
+   [(string? (cadar args))
+    (cons (apply make-fld (car args))
+	  (make-arg-list (cdr args)))]
+   [else
+    (make-arg-list (cdr args))]))
+
+(define (make-prop-list args)
+  (cond
+   [(null? args) '()]
+   [(symbol? (cadar args))
+    (cons (apply make-prop (car args))
+	  (make-prop-list (cdr args)))]
+   [else
+    (make-prop-list (cdr args))]))
 
 (define (make-struct-list v parent parent-def parent-name totalargs depth)
   (cond
@@ -60,7 +77,15 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 			(values (string->symbol (substring s 1 (string-length s))) c)
 			(values (car v) #f)))]
 		 [(e) (make-an-ex s parent parent-def parent-name totalargs 
-				  (make-arg-list (cadr v))
+				  (if (null? (cadr v))
+				      null
+				      (make-arg-list (cdadr v)))
+				  (if (null? (cadr v))
+				      null
+				      (make-prop-list (cdadr v)))
+				  (if (null? (cadr v))
+				      #f
+				      (caadr v))
 				  (caddr v) depth mark)])
       (cons e
        (apply append
@@ -234,21 +259,49 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 
       (printf "~n#endif~n~n")
       
+      (printf "#ifdef _MZEXN_DECL_PROPS~n~n")
+      
+      (for-each
+       (lambda (e)
+	 (let ([l (ex-props e)])
+	   (unless (null? l)
+	     (printf "#define ~a_PROPS " (ex-define e))
+	     (let loop ([l l])
+	       (if (null? l)
+		   (printf "scheme_null")
+		   (begin
+		     (printf "scheme_make_pair(")
+		     (printf "scheme_make_pair(~a, ~a), "
+			     (prop-c-name (car l)) 
+			     (prop-value (car l)))
+		     (loop (cdr l))
+		     (printf ")"))))
+	     (printf "~n"))))
+       l)
+
+      (printf "~n#endif~n~n")
+      
       (printf "#ifdef _MZEXN_SETUP~n~n")
       
       (for-each
        (lambda (e)
-	 (printf "  SETUP_STRUCT(~a, ~a, ~s, ~a, ~a)~n"
+	 (printf "  SETUP_STRUCT(~a, ~a, ~s, ~a, ~a, ~a, ~a)~n"
 		 (ex-define e)
 		 (let ([p (ex-parent-def e)])
 		   (if p
 		       (format "EXN_PARENT(~a)" p)
-		       'NULL))
+		       #cs'NULL))
 		 (ex-string e)
 		 (length (ex-args e))
 		 (if (null? (ex-args e))
 		     "NULL"
-		     (format "~a_FIELDS" (ex-define e)))))
+		     (format "~a_FIELDS" (ex-define e)))
+		 (if (null? (ex-props e))
+		     "scheme_null"
+		     (format "~a_PROPS" (ex-define e)))
+		 (if (ex-guard e)
+		     (format "scheme_make_prim(~a)" (ex-guard e))
+		     "NULL")))
        l)
 
       (printf "~n#endif~n")))

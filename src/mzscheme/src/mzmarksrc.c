@@ -1503,6 +1503,7 @@ mark_struct_type_val {
   gcMARK(t->uninit_val);
   gcMARK(t->props);
   gcMARK(t->proc_attr);
+  gcMARK(t->guard);
   gcMARK(t->immutables);
 
  size:

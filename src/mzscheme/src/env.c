@@ -2581,7 +2581,7 @@ namespace_variable_value(int argc, Scheme_Object *argv[])
       scheme_wrong_syntax("namespace-variable-value", NULL, id, "bound to syntax");
       return NULL;
     } else {
-      scheme_raise_exn(MZEXN_VARIABLE, argv[0],
+      scheme_raise_exn(MZEXN_CONTRACT_VARIABLE, argv[0],
 		       "namespace-variable-value: %S is not defined",
 		       argv[0]);
       return NULL;
@@ -2638,7 +2638,7 @@ namespace_undefine_variable(int argc, Scheme_Object *argv[])
     bucket = scheme_global_bucket(argv[0], env);
     bucket->val = NULL;
   } else {
-    scheme_raise_exn(MZEXN_VARIABLE, argv[0],
+    scheme_raise_exn(MZEXN_CONTRACT_VARIABLE, argv[0],
 		     "namespace-undefine-variable!: %S is not defined",
 		     argv[0]);
   }
@@ -2710,7 +2710,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 
   env = scheme_current_thread->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC, 
+    scheme_raise_exn(MZEXN_CONTRACT, 
 		     "syntax-local-value: not currently transforming");
 
   sym = argv[0];
@@ -2763,7 +2763,7 @@ local_exp_time_name(int argc, Scheme_Object *argv[])
 
   sym = scheme_current_thread->current_local_name;
   if (!sym)
-    scheme_raise_exn(MZEXN_MISC, 
+    scheme_raise_exn(MZEXN_CONTRACT, 
 		     "syntax-local-name: not currently transforming");
 
   return sym;
@@ -2776,7 +2776,7 @@ local_context(int argc, Scheme_Object *argv[])
 
   env = scheme_current_thread->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC, 
+    scheme_raise_exn(MZEXN_CONTRACT, 
 		     "syntax-local-context: not currently transforming");
 
   if (env->flags & SCHEME_INTDEF_FRAME) {
@@ -2821,7 +2821,7 @@ local_introduce(int argc, Scheme_Object *argv[])
 
   env = scheme_current_thread->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC, 
+    scheme_raise_exn(MZEXN_CONTRACT, 
 		     "syntax-local-introduce: not currently transforming");
 
   s = argv[0];
@@ -2842,7 +2842,7 @@ local_module_introduce(int argc, Scheme_Object *argv[])
 
   env = scheme_current_thread->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC, 
+    scheme_raise_exn(MZEXN_CONTRACT, 
 		     "syntax-local-module-introduce: not currently transforming");
 
   s = argv[0];
@@ -2871,7 +2871,7 @@ local_get_shadower(int argc, Scheme_Object *argv[])
 
   env = scheme_current_thread->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC, 
+    scheme_raise_exn(MZEXN_CONTRACT, 
 		     "syntax-local-get-shadower: not currently transforming");
 
   sym = argv[0];

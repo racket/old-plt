@@ -2851,25 +2851,21 @@
       (let-values ([(base name dir?) (split-path n)])
 	(if dir?
 	    (raise
-	     (make-exn:i/o:filesystem
+	     (make-exn:fail:filesystem
 	      (string->immutable-string
 	       (format "load/cd: cannot open a directory: ~s" n))
-	      (current-continuation-marks)
-	      n
-	      #f))
+	      (current-continuation-marks)))
 	    (if (not (bytes? base))
 		(load n)
 		(begin
 		  (if (not (directory-exists? base))
 		      (raise
-		       (make-exn:i/o:filesystem
+		       (make-exn:fail:filesystem
 			(string->immutable-string
 			 (format 
 			  "load/cd: directory of ~s does not exist (current directory is ~s)" 
 			  n (current-directory)))
-			(current-continuation-marks)
-			base
-			#f)))
+			(current-continuation-marks))))
 		  (let ([orig (current-directory)])
 		    (dynamic-wind
 			(lambda () (current-directory base))
@@ -2895,8 +2891,7 @@
 	  (cons-path (lambda (default s l) 
 		       (if (bytes=? s #"")
 			   (append default l)
-			   (with-handlers ([not-break-exn? (lambda (x) l)])
-			     (cons (bytes->path s) l))))))
+			   (cons (bytes->path s) l)))))
       (lambda (s default)
 	(unless (or (bytes? s)
 		    (string? s))
@@ -2982,10 +2977,10 @@
     (unless (path-string? s)
       (raise-type-error who "path or valid-path string" s))
     (unless (relative-path? s)
-      (raise (make-exn:i/o:filesystem
+      (raise (make-exn:contract
 	      (string->immutable-string
 	       (format "~a: invalid relative path: ~s" who s))
-	      (current-continuation-marks) s 'ill-formed-path))))
+	      (current-continuation-marks)))))
 
   (define (-check-collection who collection collection-path)
     (-check-relpath who collection) 
@@ -2996,16 +2991,14 @@
       (let cloop ([paths all-paths])
 	(if (null? paths)
 	    (raise
-	     (make-exn:i/o:filesystem
+	     (make-exn:fail:filesystem
 	      (string->immutable-string
 	       (format "~a: collection not found: ~s in any of: ~s" 
 		       who (if (null? collection-path)
 			       collection
 			       (apply build-path collection collection-path))
 		       all-paths))
-	      (current-continuation-marks)
-	      collection
-	      #f))
+	      (current-continuation-marks)))
 	    (let ([dir (build-path (car paths) collection)])
 	      (if (directory-exists? dir)
 		  (let* ([cpath (apply build-path dir collection-path)])
@@ -3027,7 +3020,7 @@
 		   [date>=?
 		    (lambda (a bm)
 		      (and a
-			   (let ([am (with-handlers ([not-break-exn? (lambda (x) #f)])
+			   (let ([am (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
 				       (file-or-directory-modify-seconds a))])
 			     (or (and (not bm) am) (and am bm (>= am bm))))))])
 	       (lambda (path expect-module)
@@ -3056,7 +3049,7 @@
 					       (path-replace-suffix file #".zo")))]
 			  [so (get-so file)]
 			  [_loader-so (get-so (bytes->path #"_loader.ss"))]
-			  [path-d (with-handlers ([not-break-exn? (lambda (x) #f)])
+			  [path-d (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
 				    (file-or-directory-modify-seconds path))]
 			  [with-dir (lambda (t) 
 				      (parameterize ([current-load-relative-directory 
@@ -3076,7 +3069,7 @@
 				       (when expect-module
 					 (unless (eq? modname expect-module)
 					   (raise
-					    (make-exn:module
+					    (make-exn:fail
 					     (string->immutable-string
 					      (format "load-extension: expected module declaration for `~a', found ~a through loader: ~~e"
 						      expect-module
@@ -3300,8 +3293,6 @@
 
   (define (port? x) (or (input-port? x) (output-port? x)))
 
-  (define (not-break-exn? x) (not (exn:break? x)))
-
   (define-values (struct:guard make-guard guard? guard-ref guard-set!)
     (make-struct-type 'waitable #f 1 0 #f (list (cons prop:waitable 0)) (current-inspector) #f '(0)))
 
@@ -3398,7 +3389,7 @@
 	   load-relative load-relative-extension
 	   path-list-string->path-list find-executable-path
 	   collection-path load/use-compiled current-load/use-compiled
-	   port? not-break-exn? make-guard-waitable
+	   port? make-guard-waitable
 	   channel-get channel-try-get channel-put
 	   find-library-collection-paths
 	   interaction-environment scheme-report-environment null-environment

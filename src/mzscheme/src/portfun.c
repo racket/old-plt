@@ -3231,7 +3231,7 @@ static Scheme_Object *do_load_handler(void *data)
 	  other = scheme_make_sized_byte_string(s, len + slen + 1, 0);
 	}
 
-	scheme_raise_exn(MZEXN_MODULE,
+	scheme_raise_exn(MZEXN_FAIL,
 			 "default-load-handler: expected a `module' declaration for `%S', found: %T in: %q",
 			 lhd->expected_module,
 			 other,
@@ -3243,7 +3243,7 @@ static Scheme_Object *do_load_handler(void *data)
       /* Check no more expressions: */
       d = scheme_internal_read(port, lhd->stxsrc, 1, 0);
       if (!SCHEME_EOFP(d)) {
-	scheme_raise_exn(MZEXN_MODULE,
+	scheme_raise_exn(MZEXN_FAIL,
 			 "default-load-handler: expected only a `module' declaration for `%S', but found an extra expression in: %q",
 			 lhd->expected_module,
 			 ((Scheme_Input_Port *)port)->name);
@@ -3286,7 +3286,7 @@ static Scheme_Object *do_load_handler(void *data)
   }
 
   if (SCHEME_SYMBOLP(lhd->expected_module) && !got_one) {
-    scheme_raise_exn(MZEXN_MODULE,
+    scheme_raise_exn(MZEXN_FAIL,
 		     "default-load-handler: expected a `module' declaration for `%S', but found end-of-file in: %q",
 		     lhd->expected_module,
 		     ((Scheme_Input_Port *)port)->name);
@@ -3464,9 +3464,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
     len = SCHEME_BYTE_STRTAG_VAL(ed);
 
     if (!scheme_is_complete_path(s, len))
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       d,
-		       scheme_intern_symbol("ill-formed-path"),
+      scheme_raise_exn(MZEXN_CONTRACT,
 		       "current-load-relative-directory: not a complete path: \"%q\"",
 		       s);
 
@@ -3534,7 +3532,7 @@ transcript_on(int argc, Scheme_Object *argv[])
   if (!SCHEME_PATH_STRINGP(argv[0]))
     scheme_wrong_type("transcript-on", SCHEME_PATH_STRING_STR, 0, argc, argv);
 
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "transcript-on: not supported");
 
   return scheme_void;
@@ -3543,7 +3541,7 @@ transcript_on(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 transcript_off(int argc, Scheme_Object *argv[])
 {
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "transcript-off: not supported");
 
   return scheme_void;

@@ -2,63 +2,52 @@
 #|
 
 Initial symbols are struct types. A non-initial symbol is a struct
-type without fields or subtypes. Square brackets are struct fields, *
-indicates especially MzScheme-specific (the star is not in the name),
-strings are types/comments.
+type without fields or subtypes. Square brackets are struct fields and
+propeties (the latter in curly braces), strings are contracts/comments.
 
 |#
 
-(exn [message "immutable-string" "error message" 
-	      continuation-marks "mark-set" "value returned by \\scmfirst{current-continuation-marks} immediately after the error is detected"] 
+#cs
+(exn [exn_field_check
+      (message "immutable string" "error message")
+      (continuation-marks "mark set"
+			  "value returned by \\scmfirst{current-continuation-marks} immediately before the exception is raised")] 
      -
-     (user [] "raised by calling \\scmfirst{error}")
+     (contract [] "inappropriate run-time use of a function or syntactic form"
+	       (arity []
+		      "application with the wrong number of arguments")
+	       (divide-by-zero [] "divide by zero")
+	       (continuation [] "attempt to cross a continuation barrier")
+	       (variable [variable_field_check
+			  (id "symbol" "the variable's identifier")]
+			 "unbound/not-yet-defined global or module variable"))
      
-     (variable [id "symbol" "the variable's identifier"]
-	       "unbound or not-yet-defined global or module variable at run time")
+     (fail [] "exceptions that typically can be handled; raised by \\rawscm{error}"
+	   (syntax [syntax_field_check
+		    (expr "syntax object or {\\scmfalse}" "illegal expression (or {\\scmfalse} if unknown)")
+		    {exn:source scheme_source_property |scheme_make_prim(extract_syntax_locations)|}]
+		   "syntax error, but not a \\scmfirst{read} error")
+	   (read [read_field_check
+		  (source "list of \\rawscm{location}s" "source location(s) of error")
+		  {exn:source scheme_source_property  |scheme_make_prim(extract_read_locations)|}]
+		 "\\rawscm{read} parsing error"
+		 (eof [] "unexpected end-of-file")
+		 (non-char [] "unexpected non-character"))
+	   (filesystem [] "error manipulating a filesystem object"
+		       (exists [] "attempt to create a file that exists already")
+		       (version [] "version mismatch loading an extension"))
+	   (network [] "TCP and UDP errors")
+	   (out-of-memory [] "out of memory")
+	   (unsupported [] "unsupported feature"))
+     
+     (break [break_field_check
+	     (continuation "escape continuation" "resumes from the break")]
+	    "asynchronous break signal"))
 
-     (application [value "value" "the error-specific inappropriate value"] -
-		  (arity [expected "arity" "the correct procedure arity as returned by \\scmfirst{arity}"]
-			 "application with the wrong number of arguments")
-		  (type [expected "symbol" "name of the expected type"]
-			"wrong argument type to a procedure, not including divide-by-zero")
-		  (mismatch [] "bad argument combination (e.g., out-of-range index for a vector) or platform-specific integer range error")
-		  (divide-by-zero [] "divide by zero; \\rawscm{application-value} is always zero")
-		  (*continuation [] "attempt to cross a continuation boundary or apply another thread's continuation"))
-     
-     (syntax [expr "syntax object or {\\scmfalse}" "illegal expression (or {\\scmfalse} if unknown)"
-		   form "symbol or {\\scmfalse}" "the syntactic form name that detected the error (or {\\scmfalse} if unknown)"
-		   module "symbol, module path index, or {\\scmfalse}" "the form-defining module (or {\\scmfalse} if unknown)"]
-	     "syntax error, but not a \\scmfirst{read} error")
-     
-     (read [source "value" "source name"
-		 line "positive exact integer or {\\scmfalse}" "source line"
-		 column "non-negative exact integer or {\\scmfalse}" "source column"
-		 position "positive exact integer or {\\scmfalse}" "source position"
-		 span "non-negative exact integer or {\\scmfalse}" "source span"]
-	   "\\rawscm{read} parsing error"
-	   (eof [] "unexpected end-of-file")
-	   (non-char [] "unexpected non-character"))
-     
-     (i/o [] -
-	  (port [port "port" "port for attempted operation"] -
-		(read [] "error reading from a port")
-		(write [] "error writing to a port")
-		(closed [] "attempt to operate on a closed port"))
-	  (filesystem [pathname "path" "file or directory pathname"
-				detail "symbol or {\\scmfalse}" "\\SymbolFirst{ill-formed-path}, \\SymbolFirst{already-exists}, or \\SymbolFirst{wrong-version}, indicating the reason for the exception (if available), or \\rawscm{\\#f}"] 
-		      "illegal pathname or error manipulating a filesystem object")
-	  (tcp [] "TCP errors")
-	  (udp [] "UDP errors"))
-     
-     (thread [] "raised by \\scmfirst{call-with-custodian}")
 
-     (module [] "raised by \\scmkfirst{module}, \\scmkfirst{require}, etc.")
-
-     (break [continuation "continuation" "a continuation that resumes from the break"] "asynchronous thread break")
-
+#|
+Not an exception in the above sense:
      (special-comment [width "non-negative exact integer" "width of the special comment in port positions"]
 	"raised by a custom input port's special-reading procedure")
-     
-     (misc [] "low-level or MzScheme-specific error"
-	   (unsupported [] "unsupported feature")
-	   (out-of-memory [] "out of memory")))
+|#
+

@@ -194,7 +194,7 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 				       (SCHEME_TRUEP(c->sup) ? ((Scheme_Class *)c->sup)->base_struct_type : object_struct),
 				       NULL,
 				       0, 0, NULL,
-				       NULL);
+				       NULL, NULL);
   c->base_struct_type = base_stype;
 
   /* Type to use when instantiating from C: */
@@ -206,7 +206,8 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 				  scheme_make_pair(scheme_make_pair(argv[1], argv[2]),
 						   scheme_make_pair(scheme_make_pair(object_property, 
 										     argv[0]),
-								    scheme_null)));
+								    scheme_null)),
+				  NULL);
   
   c->struct_type = stype;
   
@@ -219,7 +220,8 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 					 scheme_make_pair(scheme_make_pair(dispatcher_property, argv[3]),
 							  scheme_make_pair(scheme_make_pair(object_property, 
 											    argv[0]),
-									   scheme_null)));
+									   scheme_null)),
+					 NULL);
   
   /* Type to instantiate from Scheme: */
   
@@ -231,7 +233,8 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 						   scheme_make_pair(scheme_make_pair(dispatcher_property, argv[3]),
 								    scheme_make_pair(scheme_make_pair(object_property, 
 												      argv[0]),
-										     scheme_null))));
+										     scheme_null))),
+				  NULL);
   
   /* Need constructor from instantiate type: */
   flags = (SCHEME_STRUCT_NO_TYPE
@@ -505,7 +508,7 @@ void objscheme_init(Scheme_Env *env)
   object_struct = scheme_make_struct_type(scheme_intern_symbol("primitive-object"), 
 					  NULL, NULL,
 					  0, 2 + EXTRA_PRIM_OBJECT_FIELD, NULL,
-					  NULL);
+					  NULL, NULL);
   
 #ifdef MZ_PRECISE_GC
   GC_register_traversers(objscheme_class_type, gc_class_size, gc_class_mark, gc_class_fixup, 0, 0);

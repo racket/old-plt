@@ -713,7 +713,7 @@ static void TCP_INIT(char *name)
   } else
     return;
   
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "%s: not supported on this machine"
 		   " (no winsock driver)",
 		   name);
@@ -902,18 +902,18 @@ static void TCP_INIT(char *name)
     netglue = "netglue";
 
   if (!scheme_mac_path_to_spec(netglue, &spec))
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "%s: TCP initialization error (can't find %q)",
 		     name, netglue);
 
   err = GetDiskFragment(&spec, 0, 0, 0, kPrivateCFragCopy, &connID, 0, NULL);
   if (err != noErr)
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "%s: TCP initialization error (can't load %q: %e)",
 		     name, netglue, err);
   err = FindSymbol(connID, "\pFillInNetPointers", (Ptr *)&f, 0);
   if (err != noErr)
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "%s: TCP initialization error (can't get netglue function: %e)",
 		     name, err);
 
@@ -926,13 +926,13 @@ static void TCP_INIT(char *name)
   pb.ioParam.ioPermssn = fsCurPerm;
   
   if ((errNo = mzPBOpenSync(&pb))) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "%s: TCP initialization error (at .IPP; %e)",
 		     name, (int)errNo);
   }
 
   if ((errNo = OpenResolver(NULL))) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "%s: TCP initialization error (at resolver; %e)",
 		     name, (int)errNo);
   }
@@ -1611,7 +1611,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
 #endif
   
   if (data->b.bufmax == -1) {
-    scheme_raise_exn(MZEXN_I_O_PORT_READ,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     port,
 		     "tcp-read: error reading (%e)",
 		     errid);
@@ -1852,7 +1852,7 @@ static long tcp_write_string(Scheme_Output_Port *port,
   }
 
   if (errid)
-    scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     port,
 		     "tcp-write: error writing (%e)",
 		     errid);
@@ -2155,11 +2155,11 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_TCP
-  scheme_raise_exn(MZEXN_I_O_TCP,
+  scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		   "tcp-connect: connection to %s, port %d failed%s (at step %d: %E)",
 		   address, origid, errmsg, errpart, errid);
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "tcp-connect: not supported on this platform");
 #endif
 
@@ -2232,7 +2232,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
     if (address) {
       local_host = MALLOC_ONE_ATOMIC(struct hostInfo);
       if ((errid = tcp_addr(address, local_host))) {
-	scheme_raise_exn(MZEXN_I_O_TCP,
+	scheme_raise_exn(MZEXN_FAIL_NETWORK,
 			 "tcp-listen: host not found: %s (%E)",
 			 address, errid);
 	return NULL;
@@ -2328,7 +2328,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
       } else
 	errid = SOCK_ERRNO();
     } else {
-      scheme_raise_exn(MZEXN_I_O_TCP,
+      scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		       "tcp-listen: host not found: %s",
 		       address);
       return NULL;
@@ -2342,11 +2342,11 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_TCP
-  scheme_raise_exn(MZEXN_I_O_TCP,
+  scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		   "tcp-listen: listen on %d failed (%E)",
 		   origid, errid);
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "tcp-listen: not supported on this platform");
 #endif
 
@@ -2410,7 +2410,7 @@ tcp_stop(int argc, Scheme_Object *argv[])
   was_closed = stop_listener(argv[0]);
 
   if (was_closed) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "tcp-close: listener was already closed");
     return NULL;
   }
@@ -2434,7 +2434,7 @@ tcp_accept_ready(int argc, Scheme_Object *argv[])
   TCP_INIT("tcp-accept-ready?");
 
   if (LISTENER_WAS_CLOSED(argv[0])) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "tcp-accept-ready?: listener is closed");
     return NULL;
   }
@@ -2482,7 +2482,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
   }
 
   if (was_closed) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "tcp-accept: listener is closed");
     return NULL;
   }
@@ -2551,7 +2551,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
   }
 # endif
 
-  scheme_raise_exn(MZEXN_I_O_TCP,
+  scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		   "tcp-accept: accept from listener failed (%E)", errid);
 #else
   scheme_wrong_type("tcp-accept", "tcp-listener", 0, argc, argv);
@@ -2611,7 +2611,7 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
     scheme_wrong_type("tcp-addresses", "tcp-port", 0, argc, argv);
 
   if (closed)
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "tcp-addresses: port is closed");
 
 # ifdef USE_SOCKETS_TCP
@@ -2622,13 +2622,13 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
     
     l = sizeof(tcp_here_addr);
     if (getsockname(tcp->tcp, (struct sockaddr *)&tcp_here_addr, &l)) {
-      scheme_raise_exn(MZEXN_I_O_TCP,
+      scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		       "tcp-addresses: could not get local address (%e)",
 		       SOCK_ERRNO());
     }
     l = sizeof(tcp_there_addr);
     if (getpeername(tcp->tcp, (struct sockaddr *)&tcp_there_addr, &l)) {
-      scheme_raise_exn(MZEXN_I_O_TCP,
+      scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		       "tcp-addresses: could not get peer address (%e)",
 		       SOCK_ERRNO());
     }
@@ -2751,7 +2751,7 @@ static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
   if (s == INVALID_SOCKET) {
     int errid;
     errid = SOCK_ERRNO();
-    scheme_raise_exn(MZEXN_I_O_UDP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "udp-open-socket: creation failed (%E)", errid);
     return NULL;
   }
@@ -2792,7 +2792,7 @@ static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
 
   return (Scheme_Object *)udp;
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "udp-open-socket: not supported on this platform");
   return NULL;
 #endif
@@ -2806,7 +2806,7 @@ udp_close(int argc, Scheme_Object *argv[])
 
 #ifdef UDP_IS_SUPPORTED
   if (udp_close_it(argv[0])) {
-    scheme_raise_exn(MZEXN_I_O_UDP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "udp-close: udp socket was already closed");
     return NULL;
   }
@@ -2880,8 +2880,7 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
     origid = 0;
 
   if (!do_bind && (SCHEME_TRUEP(argv[1]) != SCHEME_TRUEP(argv[2]))) {
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-		     argv[2],
+    scheme_raise_exn(MZEXN_CONTRACT,
 		     "%s: last two arguments must be both #f or both non-#f, given: %V %V",
 		     name, argv[1], argv[2]);
   }
@@ -2889,7 +2888,7 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
   scheme_security_check_network(name, address, origid, !do_bind);
 
   if (udp->s == INVALID_SOCKET) {
-    scheme_raise_exn(MZEXN_I_O_UDP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "%s: udp socket was already closed: %V",
 		     name,
 		     udp);
@@ -2898,7 +2897,7 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
 
 
   if (do_bind && udp->bound) {
-    scheme_raise_exn(MZEXN_I_O_UDP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "%s: udp socket is already bound: %V",
 		     name,
 		     udp);
@@ -2946,7 +2945,7 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
       }
     }
 
-    scheme_raise_exn(MZEXN_I_O_UDP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "%s: can't %s to port: %d on address: %s (%E)", 
 		     name,
 		     do_bind ? "bind" : "connect",
@@ -2955,7 +2954,7 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
 		     errid);
     return NULL;
   } else {
-    scheme_raise_exn(MZEXN_I_O_UDP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "%s: can't resolve address: %s", 
 		     name,
 		     address);
@@ -3078,7 +3077,7 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
     while (1) {
       if (udp->s == INVALID_SOCKET) {
 	/* socket was closed, maybe while we slept */
-	scheme_raise_exn(MZEXN_I_O_UDP,
+	scheme_raise_exn(MZEXN_FAIL_NETWORK,
 			 "%s: udp socket is closed: %V",
 			 name, udp);
 	return NULL;
@@ -3086,7 +3085,7 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
       if ((!with_addr && !udp->connected)
 	  || (with_addr && udp->connected)) {
 	/* socket is unconnected, maybe disconnected while we slept */
-	scheme_raise_exn(MZEXN_I_O_UDP,
+	scheme_raise_exn(MZEXN_FAIL_NETWORK,
 			 "%s: udp socket is%s connected: %V",
 			 name, 
 			 with_addr ? "" : " not",
@@ -3114,7 +3113,7 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
 	  break;
       } else if (x != (end - start)) {
 	/* this isn't supposed to happen: */
-	scheme_raise_exn(MZEXN_I_O_UDP,
+	scheme_raise_exn(MZEXN_FAIL_NETWORK,
 			 "%s: didn't send enough (%d != %d)", 
 			 name,
 			 x, end - start);
@@ -3126,14 +3125,14 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
     if (x > -1) {
       return (can_block ? scheme_void : scheme_true);
     } else {
-      scheme_raise_exn(MZEXN_I_O_UDP,
+      scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		       "%s: send failed (%E)", 
 		       name,
 		       errid);
       return NULL;
     }
   } else {
-    scheme_raise_exn(MZEXN_I_O_UDP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "%s: can't resolve address: %s", 
 		     name,
 		     address);
@@ -3244,7 +3243,7 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
 			       2, 3, &start, &end);
 
   if (!udp->bound) {
-    scheme_raise_exn(MZEXN_I_O_UDP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "%s: udp socket is not bound: %V",
 		     name,
 		     udp);
@@ -3254,7 +3253,7 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
   while (1) {
     if (udp->s == INVALID_SOCKET) {
       /* socket was closed, maybe while we slept */
-      scheme_raise_exn(MZEXN_I_O_UDP,
+      scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		       "%s: udp socket is closed: %V",
 		       name, udp);
       return NULL;
@@ -3308,7 +3307,7 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
 
     return scheme_values(3,v);
   } else {
-    scheme_raise_exn(MZEXN_I_O_UDP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "%s: receive failed (%E)", 
 		     name,
 		     errid);

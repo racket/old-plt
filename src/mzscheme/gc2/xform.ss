@@ -41,7 +41,7 @@
 (use-compiled-file-kinds 'none)
 
 ;; Make sure we can find MzLib:
-(unless (with-handlers ([not-break-exn? (lambda (x) #f)])
+(unless (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
 	  (collection-path "mzlib"))
   (let ([p (build-path (current-load-relative-directory)
 		       'up
@@ -515,7 +515,7 @@
   (define (mk-error-thread proc)
     (thread (lambda ()
 	      (let loop ()
-		(let ([l (read-line (list-ref proc 3) 'any)])
+		(let ([l (read-bytes-line (list-ref proc 3) 'any)])
 		  (unless (eof-object? l)
 		    (fprintf (current-error-port) "~a~n" l)
 		    (loop))))
@@ -536,7 +536,7 @@
 	 (open-input-file (change-suffix precompiled-header #".e"))))
   (define re:boring #rx#"^(()|(# .*)|(#line .*)|(#pragma implementation.*)|(#pragma interface.*))$")
   (define (skip-to-interesting-line p)
-    (let ([l (read-line p 'any)])
+    (let ([l (read-bytes-line p 'any)])
       (cond
        [(eof-object? l) l]
        [(regexp-match-positions re:boring l) (skip-to-interesting-line p)]
@@ -545,7 +545,7 @@
   (when recorded-cpp-in
     ;; Skip over common part:
     (let loop ([lpos 1])
-      (let ([pl (read-line recorded-cpp-in 'any)])
+      (let ([pl (read-bytes-line recorded-cpp-in 'any)])
 	(unless (eof-object? pl)
 	  (let ([l (skip-to-interesting-line (car cpp-process))])
 	    (unless (equal? pl l)
@@ -563,7 +563,7 @@
 		;; line-by-line, so we can filter:
 		(begin
 		  (let loop ()
-		    (let ([l (read-line (car cpp-process) 'any)])
+		    (let ([l (read-bytes-line (car cpp-process) 'any)])
 		      (unless (eof-object? l)
 			(unless (regexp-match-positions re:boring l)
 			  (display l recorded-cpp-out)

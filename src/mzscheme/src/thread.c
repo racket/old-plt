@@ -774,7 +774,7 @@ static Scheme_Object *custodian_require_mem(int argc, Scheme_Object *args[])
     return scheme_void;
 #endif
 
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "custodian-require-memory: not supported");
   return NULL; /* doesn't get here */
 }
@@ -806,7 +806,7 @@ static Scheme_Object *custodian_limit_mem(int argc, Scheme_Object *args[])
     return scheme_void;
 #endif
 
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "custodian-limit-memory: not supported");
   return NULL; /* doesn't get here */
 }
@@ -2843,7 +2843,8 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   if (failure) {
     if (!v)
-      scheme_raise_exn(MZEXN_THREAD, "call-in-nested-thread: the thread was killed, or it exited via the default error escape handler");
+      scheme_raise_exn(MZEXN_FAIL, 
+		       "call-in-nested-thread: the thread was killed, or it exited via the default error escape handler");
     else
       scheme_raise(v);
   }

@@ -841,7 +841,9 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	
 	  {
 	    Overflow_K_Proc f = scheme_overflow_k;
-	    scheme_overflow_reply = f();
+	    Scheme_Object *reply;
+	    reply = f();
+	    scheme_overflow_reply = reply;
 	  }
 	}
       

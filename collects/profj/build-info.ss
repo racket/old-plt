@@ -393,12 +393,16 @@
                                 (if (memq 'strictfp test-mods)
                                     (process-members members old-methods cname type-recs level 
                                                      (find-strictfp modifiers))
-                                    (process-members members old-methods cname type-recs level))))
+                                    (process-members members old-methods cname type-recs level)))
+                               ((ctor?) (has-ctor? m)))
                    
-                   (unless (has-ctor? m)
+                   (unless ctor?
                      (when (and (eq? level 'beginner) (not (memq 'abstract test-mods)))
-                       (beginner-ctor-error (header-id info) (id-src (header-id info))))
+                       (beginner-ctor-error 'none (header-id info) (id-src (header-id info))))
                      (add-ctor class (lambda (rec) (set! m (cons rec m))) old-methods (header-id info) level))
+                   
+                   (when (and ctor? (eq? level 'beginner) (memq 'abstract test-mods))
+                     (beginner-ctor-error 'abstract (header-id info) (id-src (header-id info))))
                    
                    (valid-field-names? f members m level type-recs)
                    (valid-method-sigs? m members level type-recs)
@@ -1202,10 +1206,12 @@
                "Only constructors may have no return type, but must have the name of the class")
        n src)))
 
-  ;beginner-ctor-error: id src -> void
-  (define (beginner-ctor-error class src) 
+  ;beginner-ctor-error: symbol id src -> void
+  (define (beginner-ctor-error kind class src) 
     (let ((n (id->ext-name class)))
-      (raise-error n (format "Class ~a must have a constructor" n) n src)))
+      (raise-error n (case kind
+                       ((none) (format "Class ~a must have a constructor" n))
+                       ((abstract) (format "Abstract class ~a may not have a constructor" n))) n src)))
 
   ;default-ctor-error symbol id string src symbol -> void
   (define (default-ctor-error kind name parent src level)

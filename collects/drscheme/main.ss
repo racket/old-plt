@@ -7,51 +7,18 @@
 	  [drscheme:app : drscheme:app^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:get/extend : drscheme:get/extend^]
+	  [drscheme:language : drscheme:language^]
 	  [basis : plt:basis^]
 	  mzlib:function^
           mzlib:file^
 	  setup:plt-installer^)
 
-
-  (fw:finder:default-extension "scm")
-
-  ;; add the graphical settings
-  (basis:add-setting 
-   (let ([s (basis:copy-setting (basis:find-setting-named
-				 "Textual Full Scheme without Debugging (MzScheme)"))])
-     (basis:set-setting-name! s "Graphical Full Scheme without Debugging (MrEd)")
-     (basis:set-setting-vocabulary-symbol! s 'mred)
-     s)
-   3)
-  (basis:add-setting 
-   (let ([s (basis:copy-setting (basis:find-setting-named
-				 "Textual Full Scheme (MzScheme)"))])
-     (basis:set-setting-name! s "Graphical Full Scheme (MrEd)")
-     (basis:set-setting-vocabulary-symbol! s 'mred-debug)
-     s)
-   3)
-
-  (fw:application:current-app-name "DrScheme")
-  ;(fw:version:add-spec 'd 2)
-  
-  
   ;; no more extension after this point
   (drscheme:get/extend:get-interactions-canvas%)
   (drscheme:get/extend:get-definitions-canvas%)
   (drscheme:get/extend:get-unit-frame%)
   (drscheme:get/extend:get-interactions-text%)
   (drscheme:get/extend:get-definitions-text%)
-
-
-  ;; add a handler to open .plt files.
-  (fw:handler:insert-format-handler 
-   "Projects"
-   (lambda (filename)
-     (and (equal? "plt" (filename-extension filename))
-	  (fw:gui-utils:get-choice (format "Install ~a or open for editing?" filename)
-				   "Install" "Edit")))
-   (lambda (filename)
-     (run-installer filename)))
 
 
   ;; the initial window doesn't set the 

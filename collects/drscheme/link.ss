@@ -18,7 +18,13 @@
 	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
 	[graph : drscheme:graph^ ((require-relative-library "graph.ss")
                                   mred framework (mzlib string) (mzlib function))]
-        [export* : drscheme:export^ ((require-relative-library "export.ss")
+        [zodiac : zodiac:system^
+		  ((require-library "link2.ss" "zodiac")
+		   ((export* interface) : zodiac:interface^)
+		   (mzlib pretty-print)
+		   (mzlib file))]
+
+	[export* : drscheme:export^ ((require-relative-library "export.ss")
 				     mred mzlib mzlib:date framework
 				     plt-installer get-info
 				     print-convert app
@@ -26,17 +32,22 @@
 				     init graph
 				     cogen zodiac)]
 
-	[prefs : drscheme:prefs^ ((require-relative-library "prefs.ss")
-				  (export* language)
-				  mred framework
-				  (export* basis))]
-	[zodiac : zodiac:system^
-		  ((require-library "link2.ss" "zodiac")
-		   ((export* interface) : zodiac:interface^)
-		   (mzlib pretty-print)
-		   (mzlib file))]
+        [main-before : ()
+		     ((require-relative-library "main-before.ss")
+		      mred
+		      framework
+		      (mzlib pretty-print)
+		      print-convert
+		      app
+		      (export* unit)
+		      (export* get/extend)
+		      (export* language)
+		      (export* basis)
+		      (mzlib function)
+		      (mzlib file)
+		      plt-installer)]
 
-        [cogen : plt:aries^
+	[cogen : plt:aries^
                ((require-library-unit/sig "link.ss" "stepper-graphical")
                 mzlib
                 framework
@@ -45,6 +56,8 @@
                 export*
                 zodiac
                 ((export* interface) : zodiac:interface^))]
+
+
 	[app : drscheme:app^ ((require-relative-library "app.ss")
 			      mred
 			      mzlib
@@ -52,7 +65,6 @@
 			      (export* unit)
 			      (export* frame)
 			      (export* help-desk))]
-
 
 	[tool : ()
 	      ((require-relative-library "tool.ss")
@@ -70,6 +82,7 @@
 				app
 				(export* unit)
 				(export* get/extend)
+				(export* language)
 				(export* basis)
 				(mzlib function)
 				(mzlib file)
@@ -85,7 +98,6 @@
 	  (unit cogen plt:aries)
 
 	  (unit init drscheme:init)
-	  (unit prefs drscheme:prefs)
 	  (unit text drscheme:text)
 	  (unit snip drscheme:snip)
 	  (unit export* drscheme:export)

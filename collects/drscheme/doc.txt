@@ -18,7 +18,6 @@ definitions into the top-level matching these signatures:
   setup:get-info^
   zodiac:system^ (prefix: zodiac)
   plt:aries^ (prefix: plt:aries)
-  drscheme:prefs^ (prefix: drscheme:prefs)
   drscheme:text^ (prefix: drscheme:text)
   drscheme:snip^ (prefix: drscheme:snip)
   drscheme:export^ (prefix: drscheme:export)

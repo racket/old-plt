@@ -1,18 +1,49 @@
-(unit/sig drscheme:prefs^
-  (import [drscheme:language : drscheme:language^]
-	  mred^
-	  [framework : framework^]
-	  [basis : plt:basis^])
+(unit/sig ()
+  (import mred^
+	  [fw : framework^]
+	  [pretty-print : mzlib:pretty-print^]
+	  [print-convert : mzlib:print-convert^]
+	  [drscheme:app : drscheme:app^]
+	  [drscheme:unit : drscheme:unit^]
+	  [drscheme:get/extend : drscheme:get/extend^]
+	  [drscheme:language : drscheme:language^]
+	  [basis : plt:basis^]
+	  mzlib:function^
+          mzlib:file^
+	  setup:plt-installer^)
+
+
+  (fw:finder:default-extension "scm")
+
+  ;; add the graphical settings
+  (basis:add-setting 
+   (let ([s (basis:copy-setting (basis:find-setting-named
+				 "Textual Full Scheme without Debugging (MzScheme)"))])
+     (basis:set-setting-name! s "Graphical Full Scheme without Debugging (MrEd)")
+     (basis:set-setting-vocabulary-symbol! s 'mred)
+     s)
+   3)
+  (basis:add-setting 
+   (let ([s (basis:copy-setting (basis:find-setting-named
+				 "Textual Full Scheme (MzScheme)"))])
+     (basis:set-setting-name! s "Graphical Full Scheme (MrEd)")
+     (basis:set-setting-vocabulary-symbol! s 'mred-debug)
+     s)
+   3)
+
+  (fw:application:current-app-name "DrScheme")
+  ;(fw:version:add-spec 'd 2)
 
   (define (valid-setting? setting)
-    (ormap (lambda (x) (equal? (basis:setting-name setting)
-                               (basis:setting-name x)))
+    (ormap (lambda (x)
+	     (equal? (basis:setting-name setting)
+		     (basis:setting-name x)))
            basis:settings))
 
-  (framework:preferences:set-default 'drscheme:backtrace-window-width 400 number?)
-  (framework:preferences:set-default 'drscheme:backtrace-window-height 300 number?)
+  (fw:preferences:set-default 'drscheme:backtrace-window-width 400 number?)
+  (fw:preferences:set-default 'drscheme:backtrace-window-height 300 number?)
 
-  (framework:preferences:set-default 
+  (fw:preferences:set-default 
    'drscheme:keybindings-window-size
    (cons 200 400)
    (lambda (x) (and (pair? x)
@@ -24,7 +55,7 @@
   ;; In that case, the default is specified in the pref.ss file
   ;; of the default collection and may not be the default
   ;; specified below.
-  (framework:preferences:set-un/marshall
+  (fw:preferences:set-un/marshall
    drscheme:language:settings-preferences-symbol
    (lambda (x) (cdr (vector->list (struct->vector x))))
    (lambda (x) 
@@ -37,17 +68,18 @@
 	       #f))
 	 #f)))
 
-  (framework:preferences:set-default
-   'drscheme:enable-backtrace-in-teaching-levels
-   #f
-   boolean?)
-
-  (framework:preferences:set-default
+  (fw:preferences:set-default
    drscheme:language:settings-preferences-symbol
    (basis:get-default-setting)
    basis:setting?)
 
-  (framework:preferences:set-default
+
+  (fw:preferences:set-default
+   'drscheme:enable-backtrace-in-teaching-levels
+   #f
+   boolean?)
+
+  (fw:preferences:set-default
    'drscheme:execute-warning-once
    #f
    (lambda (x)
@@ -80,12 +112,12 @@
 
   (define default-font-name (get-family-builtin-face 'modern))
   
-  (framework:preferences:set-default
+  (fw:preferences:set-default
    'drscheme:font-name
    default-font-name
    string?)
 
-  (framework:preferences:set-default
+  (fw:preferences:set-default
    'drscheme:font-size
    (send (send (send (make-object text%) 
 		     get-style-list)
@@ -94,7 +126,7 @@
    (lambda (x) (and (number? x) (exact? x) (= x (floor x)))))
 
   (define (set-font-size size)
-    (let* ([scheme-standard (send (framework:scheme:get-style-list)
+    (let* ([scheme-standard (send (fw:scheme:get-style-list)
 				  find-named-style "Standard")]
 	   [scheme-delta (make-object style-delta%)])
       (send scheme-standard get-delta scheme-delta)
@@ -103,7 +135,7 @@
       (send scheme-standard set-delta scheme-delta)))
 
   (define (set-font-name name)
-    (let* ([scheme-standard (send (framework:scheme:get-style-list)
+    (let* ([scheme-standard (send (fw:scheme:get-style-list)
 				  find-named-style "Standard")]
 	   [scheme-delta (make-object style-delta%)])
       (send scheme-standard get-delta scheme-delta)
@@ -111,32 +143,32 @@
       (send scheme-delta set-family 'modern)
       (send scheme-standard set-delta scheme-delta)))
 
-  (set-font-size (framework:preferences:get 'drscheme:font-size))
-  (set-font-name (framework:preferences:get 'drscheme:font-name))
+  (set-font-size (fw:preferences:get 'drscheme:font-size))
+  (set-font-name (fw:preferences:get 'drscheme:font-name))
 
-  (framework:preferences:add-callback
+  (fw:preferences:add-callback
    'drscheme:font-size
    (lambda (p v)
      (set-font-size v)))
   
-  (framework:preferences:add-callback
+  (fw:preferences:add-callback
    'drscheme:font-name
    (lambda (p v)
      (set-font-name v)))
   
-  (unless (member (framework:preferences:get 'drscheme:font-name)
+  (unless (member (fw:preferences:get 'drscheme:font-name)
                   (get-fixed-faces))
-    (framework:preferences:set 'drscheme:font-name default-font-name))
+    (fw:preferences:set 'drscheme:font-name default-font-name))
   
-  (framework:preferences:add-panel
+  (fw:preferences:add-panel
    "Font"
    (lambda (panel)
      (let* ([main (make-object vertical-panel% panel)]
 	    [options-panel (make-object horizontal-panel% main)]
 	    [size (make-object slider% "Font Size" 1 72 options-panel
 			       (lambda (size evt)
-                                 (framework:preferences:set 'drscheme:font-size (send size get-value)))
-			       (framework:preferences:get 'drscheme:font-size))]
+                                 (fw:preferences:set 'drscheme:font-size (send size get-value)))
+			       (fw:preferences:get 'drscheme:font-size))]
 
 	    [font-name-control
 	     (case (system-type)
@@ -146,11 +178,11 @@
                                     (get-fixed-faces)
                                     options-panel
                                     (lambda (font-name evt)
-                                      (framework:preferences:set 
+                                      (fw:preferences:set 
                                        'drscheme:font-name
                                        (send font-name get-string-selection))))])
 		  (send choice set-string-selection
-			(framework:preferences:get 'drscheme:font-name))
+			(fw:preferences:get 'drscheme:font-name))
 		  choice)]
 	       [else
 		(make-object button%
@@ -162,7 +194,7 @@
 				   "Select Font Name"
 				   (get-fixed-faces))])
 		      (when choice
-			(framework:preferences:set 
+			(fw:preferences:set 
                          'drscheme:font-name 
                          (list-ref (get-fixed-faces) (car choice)))))))])]
 				      
@@ -189,24 +221,24 @@
 		 (send text lock #t)
 		 (send text end-edit-sequence)))])
 		 
-       (framework:preferences:add-callback
+       (fw:preferences:add-callback
 	drscheme:language:settings-preferences-symbol
 	(lambda (p v)
 	  (update-text v)))
-       (update-text (framework:preferences:get drscheme:language:settings-preferences-symbol))
+       (update-text (fw:preferences:get drscheme:language:settings-preferences-symbol))
        (send ex-panel set-alignment 'left 'center)
        (send ex-panel stretchable-height #f)
        (send canvas allow-tab-exit #t)
        (send options-panel stretchable-height #f)
        (send options-panel set-alignment 'center 'top)
-       (send text set-style-list (framework:scheme:get-style-list))
+       (send text set-style-list (fw:scheme:get-style-list))
        (send text lock #t)
        main)))
 
-  (framework:scheme:add-preferences-panel)
-  (framework:preferences:add-general-panel)
+  (fw:scheme:add-preferences-panel)
+  (fw:preferences:add-general-panel)
 
-  (framework:preferences:add-panel
+  (fw:preferences:add-panel
    "General II"
    (lambda (panel)
      (let* ([main (make-object vertical-panel% panel)]
@@ -224,13 +256,24 @@
 			     string
 			     p
 			     (lambda (checkbox evt)
-			       (framework:preferences:set 
+			       (fw:preferences:set 
 				pref-sym 
 				(send checkbox get-value))))])
-		    (send q set-value (framework:preferences:get pref-sym))))))])
+		    (send q set-value (fw:preferences:get pref-sym))))))])
        (make-check-box 'drscheme:execute-warning-once
 		       "Only warn once when executions and interactions are not synchronized")
        (make-check-box 'drscheme:enable-backtrace-in-teaching-levels
 		       "Enable backtrace bug icon in teaching languages")
        (make-object vertical-panel% main)
-       main))))
+       main)))
+
+  ;; add a handler to open .plt files.
+  (fw:handler:insert-format-handler 
+   "Projects"
+   (lambda (filename)
+     (and (equal? "plt" (filename-extension filename))
+	  (fw:gui-utils:get-choice (format "Install ~a or open for editing?" filename)
+				   "Install" "Edit")))
+   (lambda (filename)
+     (run-installer filename))))
+  

@@ -291,7 +291,7 @@
 		   (when a
 		     (send a grab-caret))))
 	       (init-transparent-io-do-work grab-focus?))
-	   (when  (eq? (current-thread) evaluation-thread)
+	   (when  (eq? (current-thread) user-thread)
 	     (set-caret-owner transparent-snip 'display))
 	   (end-edit-sequence))]
 
@@ -824,16 +824,7 @@
 	     (set! in-evaluation? #f)
 	     (send (get-top-level-window) not-running)
 
-	     ;; this thread is created to run the actual shutdown, in
-	     ;; case the custodian is going to shutdown the current
-	     ;; thread!  The semaphore is there for when the case when
-	     ;; current thread is not shutdown.
-	     (let ([sema (make-semaphore 0)])
-	       (parameterize ([current-custodian drscheme:init:system-custodian])
-		 (thread (lambda ()
-			   (custodian-shutdown-all user-custodian)
-			   (semaphore-post sema)))
-		 (semaphore-wait sema)))))])
+	     (custodian-shutdown-all user-custodian)))])
       (public
 	[reset-break-state (lambda () (set! ask-about-kill? #f))]
 	[break (lambda ()
@@ -869,15 +860,13 @@
 	[thread-killed 'not-yet-thread-killed]
 	[initialize-killed-thread
 	 (lambda ()
-	   (system
-	    (lambda ()
-	      (when (thread? thread-killed)
-		(kill-thread thread-killed))
-	      (set! thread-killed
-		    (thread
-		     (lambda ()
-		       (thread-wait user-thread)
-		       (killed-callback)))))))]
+	   (when (thread? thread-killed)
+	     (kill-thread thread-killed))
+	   (set! thread-killed
+		 (thread
+		  (lambda ()
+		    (thread-wait user-thread)
+		    (killed-callback)))))]
 
 	[protect-user-evaluation
 	 (lambda (cleanup thunk)
@@ -911,7 +900,6 @@
 	   (set! in-evaluation? #f)
 	   (semaphore-post in-evaluation-semaphore))])
       (public
-	[evaluation-thread #f]
 	[run-in-evaluation-thread 
 	 (lambda (thunk)
 	   (semaphore-wait eval-thread-state-sema)
@@ -925,35 +913,40 @@
 				   (mred:make-eventspace)))
 	   (set! limiting-sema (make-semaphore output-limit-size))
 	   (set! user-break-enabled? #t)
-	   (parameterize ([mred:current-eventspace user-eventspace]
-			  [current-custodian user-custodian])
-	     (mred:queue-callback
-	      (lambda ()
-		(mzlib:thread:dynamic-disable-break
-		 (lambda ()
+	   (let ([ready (make-semaphore)]
+		 [goahead (make-semaphore)])
+	     (parameterize ([mred:current-eventspace user-eventspace])
+	       (mred:queue-callback
+		(lambda ()
+		  (break-enabled #f)
+		  (set! user-thread (current-thread))
 
-		   (set! user-thread (current-thread))
+		  (initialize-parameters)
+		  
 
-		   (initialize-parameters)
-		   (initialize-killed-thread)
+		  (let ([drscheme-error-escape-handler
+			 (lambda ()
+			   (error-escape-k))])
+		    (error-escape-handler drscheme-error-escape-handler)
+		    (basis:bottom-escape-handler drscheme-error-escape-handler))
 
-		   (let ([drscheme-error-escape-handler
-			  (lambda ()
-			    (error-escape-k))])
-		     (error-escape-handler drscheme-error-escape-handler)
-		     (basis:bottom-escape-handler drscheme-error-escape-handler))
+		  (send (get-top-level-window) not-running)
 
-		   (send (get-top-level-window) not-running)
-		   (set! evaluation-thread (current-thread))
-		   (let loop ()
-		     (unless (semaphore-try-wait? eval-thread-queue-sema)
-		       (mred:yield eval-thread-queue-sema))
-		     (semaphore-wait eval-thread-state-sema)
-		     (let ([thunk (car eval-thread-thunks)])
-		       (set! eval-thread-thunks (cdr eval-thread-thunks))
-		       (semaphore-post eval-thread-state-sema)
-		       (thunk))
-		     (loop))))))))])
+		  (semaphore-post ready)
+		  (semaphore-wait goahead)
+
+		  (let loop ()
+		    (unless (semaphore-try-wait? eval-thread-queue-sema)
+		      (mred:yield eval-thread-queue-sema))
+		    (semaphore-wait eval-thread-state-sema)
+		    (let ([thunk (car eval-thread-thunks)])
+		      (set! eval-thread-thunks (cdr eval-thread-thunks))
+		      (semaphore-post eval-thread-state-sema)
+		      (thunk))
+		    (loop)))))
+	     (semaphore-wait ready)
+	     (initialize-killed-thread)
+	     (semaphore-post goahead)))])
       (public
 	[shutting-down? #f]
 	[shutdown 
@@ -1215,6 +1208,9 @@
 	[reset-console
 	 (lambda ()
 	   (clear-previous-expr-positions)
+	   (when (thread? thread-killed)
+	     (kill-thread thread-killed)
+	     (set! thread-killed #f))
 	   (shutdown-user-custodian)
 	   (cleanup-transparent-io)
 	   (set! should-collect-garbage? #t)

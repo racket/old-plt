@@ -3,7 +3,9 @@
 (require-library "guis.ss" "tests" "utils")
 
 (define-signature drscheme:test-util^
-  (do-execute
+  (save-drscheme-window-as
+   use-open/close-dialog
+   do-execute
    test-util-error
    poll-until
    wait-for-computation

@@ -1,18 +1,43 @@
 (define tmp-filename
-  (build-path (collection-path "tests" "drscheme") "launcher-test-tmp.ss"))
+  (build-path (collection-path "tests" "drscheme")
+	      "launcher-test-tmp.ss"))
+(define tmp-launcher
+  (build-path (collection-path "tests" "drscheme")
+	      "launcher-test-tmp"))
 
-(define (save-as filename)
-  (let ([drs (wait-for-drscheme-frame)])
-    (fw:test:menu-select "File" "Save Definitions As...")
-    (let ([dlg (wait-for-new-frame drs)])
-      (for-each
-       fw:test:keystroke
-       (string->list filename))
-      (fw:test:button-push "OK"))))
+(define-values (port-num listener)
+  (let loop ([n 100])
+    (unless (zero? n)
+      (with-handlers ([(lambda (x) #t)
+		       (lambda (x)
+			 (loop (- n 1)))])
+	(let ([tcp-port (+ 51700 n)])
+	  (values tcp-port
+		  (tcp-listen tcp-port)))))))
 
 (define drs (wait-for-drscheme-frame))
 (define definitions-canvas (ivar drs definitions-canvas))
 (send definitions-canvas focus)
-"Full pathname"
-(for-each fw:test:keystroke (string->list "(message-box \"1\" \"1\")"))
-(save-as tmp-filename)
+(fw:test:menu-select "Edit" "Select All")
+(for-each
+ fw:test:keystroke
+ (let ([port (open-output-string)])
+   (parameterize ([current-output-port port])
+     (write
+      `(let-values ([(in out) (tcp-connect "localhost" ,port-num)])
+	 (write '() out))))
+   (string->list (get-output-string port))))
+(when (file-exists? tmp-filename)
+  (delete-file tmp-filename))
+(save-drscheme-window-as tmp-filename)
+
+(when (file-exists? tmp-launcher)
+  (delete-file tmp-launcher))
+(use-open/close-dialog
+ (lambda ()
+   (fw:test:menu-select "Scheme" "Create Launcher..."))
+ tmp-launcher)
+(system tmp-launcher)
+(define-values (in out) (tcp-accept listener))
+(unless (null? (read in))
+  (error))

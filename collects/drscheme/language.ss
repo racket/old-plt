@@ -39,7 +39,7 @@
 	 [customization-left-panel (make-object mred:vertical-pane% customization-panel)]
 	 [customization-right-panel (make-object mred:vertical-pane% customization-panel)]
 	 [when-message (make-object mred:message%
-			 "Language changes effective after next execution"
+			 "Language changes effective after click on Execute"
 			 main)]
 	 [make-sub-panel
 	  (lambda (name panel)

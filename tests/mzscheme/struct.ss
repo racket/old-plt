@@ -174,6 +174,11 @@
 	     [bad2 (make2 18 -18)]
 	     [bad3 (make3 #f 19)]
 	     [bad11 (make bad1)])
+	(test #t pred bad1)
+	(test #t pred2 bad2)
+	(test #t pred3 bad3)
+	(test #t pred bad11)
+
 	(test #t procedure? bad1)
 	(test #t procedure? bad2)
 	(test #t procedure? bad3)
@@ -221,6 +226,11 @@
 	     [cons2 (make2 cons -18)]
 	     [cons3 (make3 #f cons)]
 	     [cons11 (make cons1)])
+	(test #t pred cons1)
+	(test #t pred2 cons2)
+	(test #t pred3 cons3)
+	(test #t pred cons11)
+
 	(test #t procedure? cons1)
 	(test #t procedure? cons2)
 	(test #t procedure? cons3)
@@ -272,6 +282,30 @@
 		      (unless ((vector-ref (struct->vector s) 3) s) (error "should be instance"))
 		      (cons b a))
 		    2 values values '(2 . 1) t-insp))
+
+(let-values ([(type make pred sel set) (make-struct-type 'p #f 1 0 #f null #f (lambda () 5))])
+  (let ([useless (make 7)])
+    (test #t pred useless)
+    (test #t procedure? useless)
+    (test null procedure-arity useless)
+    (test 'p object-name useless)
+    (err/rt-test (useless) exn:application:arity?)
+    (err/rt-test (useless 1) exn:application:arity?)
+    (err/rt-test (useless 1 2) exn:application:arity?)))
+
+(let-values ([(type make pred sel set) (make-struct-type 'p #f 1 0 #f null #f (case-lambda 
+									       [(x) 7]
+									       [() 5]
+									       [(x y z) 8]))]) 
+  (let ([useless (make 7)])
+    (test #t pred useless)
+    (test #t procedure? useless)
+    (test '(0 2) procedure-arity useless)
+    (test 'p object-name useless)
+    (test 7 useless)
+    (err/rt-test (useless 1) exn:application:arity?)
+    (test 8 useless 1 2)
+    (err/rt-test (useless 1 2 3) exn:application:arity?)))
 
 (define-struct a (b c))
 (define-struct aa ())

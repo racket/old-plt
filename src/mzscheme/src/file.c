@@ -122,18 +122,6 @@ long scheme_creator_id = 'MzSc';
 
 #define CURRENT_WD() scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY)
 
-#ifdef DOS_FILE_SYSTEM
-# define WIDE_PATH(s) convert_to_wchar(s, 0)
-# define WIDE_PATH_COPY(s) convert_to_wchar(s, 1)
-# define NARROW_PATH(s) convert_from_wchar(s)
-# define MSC_W_IZE(n) _w ## n
-#else
-# define WIDE_PATH(s) s
-# define WIDE_PATH_COPY(s) s
-# define NARROW_PATH(s) s
-# define MSC_W_IZE(n) MSC_IZE(n) 
-#endif
-
 /* local */
 static Scheme_Object *file_exists(int argc, Scheme_Object **argv);
 static Scheme_Object *directory_exists(int argc, Scheme_Object **argv);
@@ -1454,15 +1442,16 @@ int scheme_file_exists(char *filename)
 }
 
 #ifdef DOS_FILE_SYSTEM
-# define FIND_FIRST FindFirstFile
-# define FIND_NEXT FindNextFile
+# define FIND_FIRST FindFirstFileW
+# define FIND_NEXT FindNextFileW
 # define FIND_CLOSE FindClose
-# define FF_TYPE WIN32_FIND_DATA
+# define FF_TYPE WIN32_FIND_DATAW
 # define FF_HANDLE_TYPE HANDLE
 # define FIND_FAILED(h) (h == INVALID_HANDLE_VALUE)
 # define _A_RDONLY FILE_ATTRIBUTE_READONLY
 # define GET_FF_ATTRIBS(fd) (fd.dwFileAttributes)
 # define GET_FF_MODDATE(fd) convert_date(&fd.ftLastWriteTime)
+# define GET_FF_NAME(fd) fd.cFileName
 static time_t convert_date(const FILETIME *ft)
 {
   LONGLONG l, m;
@@ -3250,7 +3239,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
   char *pattern;
   int len;
   long hfile;
-  struct _finddata_t info;
+  FF_TYPE info;
 #endif
 #ifdef USE_MAC_FILE_TOOLBOX
   CInfoPBRec pbrec;
@@ -3355,12 +3344,12 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     return scheme_null;
 
   do {
-    if ((info.name[0] == '.')
-	&& (!info.name[1] || ((info.name[1] == '.')
-			      && !info.name[2]))) {
+    if ((GET_FF_NAME(info)[0] == '.')
+	&& (!GET_FF_NAME(info)[1] || ((GET_FF_NAME(cFileName)[1] == '.')
+				      && !GET_FF_NAME(cFileName)[2]))) {
       /* skip . and .. */
     } else {
-      n = scheme_make_string(info.name);
+      n = scheme_make_string(NARROW_PATH(info.cFileName));
       elem = scheme_make_pair(n, scheme_null);
       if (last)
 	SCHEME_CDR(last) = elem;

@@ -202,10 +202,20 @@ static void do_scheme_rep(Scheme_Env *);
 static int cont_run(FinishArgs *f);
 int actual_main(int argc, char *argv[]);
 
+#ifdef WINDOWS_UNICODE_SUPPORT
+# define MAIN wmain
+# define MAIN_char wchar_t
+# define MAIN_argv wargv
+#else
+# define MAIN main
+# define MAIN_char char
+# define MAIN_argv argv
+#endif
+
 /*****************************     main    ********************************/
 /*            Phase 1 setup, then call actual_main (indirectly)           */
 
-int main(int argc, char **argv)
+int MAIN(int argc, MAIN_char **MAIN_argv)
 {
   void *stack_start;
   int rval;
@@ -229,6 +239,26 @@ int main(int argc, char **argv)
 #endif
 
   scheme_actual_main = actual_main;
+
+#ifdef WINDOWS_UNICODE_SUPPORT
+ {
+   char **argv, *a;
+   int i, j, l;
+   argv = (char **)malloc(sizeof(char*)*argc);
+   for (i = 0; i < argc; i++) {
+     for (j = 0; wargv[i][j]; j++) {
+     }
+     l = scheme_utf8_encode(argv[i], 0, j, 
+			    NULL, 0,
+			    1 /* UTF-16 */);
+     a = malloc(l + 1);
+     scheme_utf8_encode(argv[i], 0, j, 
+			a, 0,
+			1 /* UTF-16 */);
+     argv[i] = a;
+   }
+ }
+#endif
 
   rval = scheme_image_main(argc, argv); /* calls actual_main */
 

@@ -2304,13 +2304,13 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
   }
 #else
 # ifdef WINDOWS_FILE_HANDLES
-  fd = CreateFile(filename,
-		  GENERIC_READ,
-		  FILE_SHARE_READ | FILE_SHARE_WRITE,
-		  NULL,
-		  OPEN_EXISTING,
-		  0,
-		  NULL);
+  fd = CreateFileW(WIDE_PATH(filename),
+		   GENERIC_READ,
+		   FILE_SHARE_READ | FILE_SHARE_WRITE,
+		   NULL,
+		   OPEN_EXISTING,
+		   0,
+		   NULL);
 
   if (fd == INVALID_HANDLE_VALUE) {
     filename_exn(name, "cannot open input file", filename, GetLastError());
@@ -2561,13 +2561,13 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   else if (existsok  == 2)
     hmode = OPEN_ALWAYS;
 
-  fd = CreateFile(filename,
-		  GENERIC_WRITE | (and_read ? GENERIC_READ : 0),
-		  FILE_SHARE_READ | FILE_SHARE_WRITE,
-		  NULL,
-		  hmode,
-		  FILE_FLAG_BACKUP_SEMANTICS, /* lets us detect directories in NT */
-		  NULL);
+  fd = CreateFileW(WIDE_PATH(filename),
+		   GENERIC_WRITE | (and_read ? GENERIC_READ : 0),
+		   FILE_SHARE_READ | FILE_SHARE_WRITE,
+		   NULL,
+		   hmode,
+		   FILE_FLAG_BACKUP_SEMANTICS, /* lets us detect directories in NT */
+		   NULL);
 
   if (fd == INVALID_HANDLE_VALUE) {
     int err;
@@ -5911,7 +5911,7 @@ static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
 			       SCHEME_GUARD_FILE_EXISTS);
 #ifdef WINDOWS_PROCESSES
   {
-    SHELLEXECUTEINFO se;
+    SHELLEXECUTEINFOW se;
     int nplen;
 
     nplen = strlen(dir);
@@ -5920,17 +5920,20 @@ static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
     memset(&se, 0, sizeof(se));
     se.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_DDEWAIT;
     se.cbSize = sizeof(se);
-    se.lpVerb = (SCHEME_FALSEP(argv[0]) ? NULL : SCHEME_STR_VAL(argv[0]));
-    se.lpFile = SCHEME_STR_VAL(argv[1]);
-    se.lpParameters = SCHEME_STR_VAL(argv[2]);
-    se.lpDirectory = dir;
+    if (SCHEME_FALSEP(argv[0]))
+      se.lpVerb = NULL;
+    else
+      se.lpVerb = WIDE_PATH_COPY(SCHEME_STR_VAL(argv[0]));
+    se.lpFile = WIDE_PATH_COPY(SCHEME_STR_VAL(argv[1]));
+    se.lpParameters = WIDE_PATH_COPY(SCHEME_STR_VAL(argv[2]));
+    se.lpDirectory = WIDE_PATH_COPY(dir);
     se.nShow = show;
     se.hwnd = NULL;
 
     /* Used to use ShellExecuteEx(&se) here. Not sure why it doesn't work,
        and the problem was intermittent (e.g., worked for opening a URL
        with IE as the default browser, but failed with Netscape). */
-    if (ShellExecute(se.hwnd, se.lpVerb, se.lpFile, se.lpParameters, se.lpDirectory, se.nShow)) {
+    if (ShellExecuteW(se.hwnd, se.lpVerb, se.lpFile, se.lpParameters, se.lpDirectory, se.nShow)) {
       if (se.hProcess) {
 	Scheme_Subprocess *subproc;
 

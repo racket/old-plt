@@ -5,7 +5,12 @@
   (provide unpack-submission
 	   
 	   unpack-test-suite-submission
-	   is-test-suite-submission?)
+	   is-test-suite-submission?
+
+	   make-evaluator
+	   evaluate-all
+	   evaluate-submission
+	   reraise-exn-as-submission-problem)
 
   (define (unpack-submission str)
     (let* ([base (make-object editor-stream-in-string-base% str)]
@@ -87,5 +92,67 @@
 	      (send program read-from-file stream))
 	    (super-read-header-from-file stream name)))
 
-      (super-new))))
+      (super-new)))
+
+
+  ;; Execution ----------------------------------------
+
+  (define (make-evaluator language teachpacks)
+    (let ([ns (make-namespace-with-mred 'empty)])
+      (parameterize ([current-namespace ns]
+		     [read-case-sensitive #t])
+	(parameterize ([current-eventspace (make-eventspace)])
+	  (namespace-require `(lib ,(case language
+				      [(beginner) "htdp-beginner.ss"]
+				      [(beginner-abbr) "htdp-beginner-abbr.ss"]
+				      [(intermediate) "htdp-intermediate.ss"]
+				      [(intermediate-lambda) "htdp-intermediate-lambda.ss"]
+				      [(advanced) "htdp-advanced.ss"])
+				   "lang"))
+	  (for-each (lambda (tp)
+		      (namespace-require `(file ,tp)))
+		    teachpacks)
+	  (let ([ch (make-channel)]
+		[result-ch (make-channel)])
+	    (queue-callback
+	     (lambda ()
+	       (let loop ()
+		 (let ([expr (channel-get ch)])
+		   (unless (eof-object? expr)
+		     (with-handlers ([void (lambda (exn)
+					     (channel-put result-ch (cons 'exn exn)))])
+		       (channel-put result-ch (cons 'val (eval expr))))
+		     (loop))))
+	       (let loop ()
+		 (channel-put result-ch '(exn . no-more-to-evaluate))
+		 (loop))))
+	    (lambda (expr)
+	      (channel-put ch expr)
+	      (let ([r (channel-get result-ch)])
+		(if (eq? (car r) 'exn)
+		    (raise (cdr r))
+		    (cdr r)))))))))
+
+  (define (evaluate-all source port eval)
+    (let loop ()
+      (let ([expr (read-syntax source port)])
+	(unless (eof-object? expr)
+	  (eval expr)
+	  (loop)))))
+
+  (define (evaluate-submission str eval)
+    (let-values ([(defs interacts) (unpack-submission str)])
+      (evaluate-all 'handin (open-input-text-editor defs) eval)))
+
+  (define (reraise-exn-as-submission-problem thunk)
+    (with-handlers ([void (lambda (exn)
+			    (error
+			     'handin
+			     "submission failed due to evaluation error: ~a"
+			     (if (exn? exn)
+				 (exn-message exn)
+				 exn)))])
+      (thunk)))
+  
+  )
 

@@ -135,6 +135,9 @@
       ;; Since we're going to use the username in paths:
       (when (regexp-match #rx"[/\\:]" username)
 	(error 'handin "username must not contain a slash, backslash, or colon"))
+      (when (regexp-match #rx"^((NUL)|(CON)|(PRN)|(AUX)|(CLOCK[$])|(COM[1-9])|(LPT[1-9]))[.]?" 
+			  (list->string (map char-upcase (string->list username))))
+	(error 'handin "username must not be a Windows special file name"))
       (unless (check-id id)
 	(error 'handin "id has wrong format: ~a; need ~a for id" id ID-DESC))
       (put-user (string->symbol username)

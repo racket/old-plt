@@ -292,3 +292,18 @@ The _utils.ss_ module provides utilities helpful in implementing
 
 > (is-test-suitef-submission? string) - returns #t if `string' can be
   read as a test suite, #f otherwise.
+
+> (make-evaluator language teachpack-paths) - returns a function of
+  one argument for evaluating expressions in the designated teaching
+  language, one of 'beginner, 'beginner-abbr, 'intermediate,
+  'intermediate-lambda, or 'advanced. The `teachpack-paths' list
+  contains paths to teachpacks to load in the evaluator.
+
+  The actual evaluation of expressions happens in a separate
+  eventspace and namespace.
+
+> (evaluate-all source input-port eval) - like `load' on and input
+  ports.
+
+> (evaluate-submission string eval) - like `load' on a non-test-suite
+  submission string.

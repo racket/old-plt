@@ -74,7 +74,8 @@
        (unless (output-port? dest)
 	 (raise-type-error 'copy-port "output-port" dest)))
      (cons dest dests))
-    (let ([s (make-bytes 4096)])
+    (let ([dests (cons dest dests)]
+	  [s (make-bytes 4096)])
       (let loop ()
 	(let ([c (read-bytes-avail! s src)])
 	  (unless (eof-object? c)
@@ -84,7 +85,7 @@
 		 (unless (= start c)
 		   (let ([c2 (write-bytes-avail s dest start c)])
 		     (loop (+ start c2))))))
-	     (cons dest dests))
+	     dests)
 	    (loop))))))
   
   (define merge-input

@@ -1764,7 +1764,7 @@ public:
       fileMenu->Delete(77);
       fileMenu->Append(77, QUIT_MENU_ITEM);
 
-      media->Insert("\n[Exited]");
+      media->Insert("\n[Exited]", media->LastPosition());
       if (beginEditSeq) {
 	beginEditSeq = 0;
 	media->EndEditSequence();

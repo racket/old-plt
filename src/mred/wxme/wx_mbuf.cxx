@@ -43,7 +43,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#define NUM_MAX_UNDOS 500
+#define NUM_MAX_UNDOS 100
 
 #if ALLOW_X_STYLE_SELECTION
 Bool wxMediaXSelectionMode = TRUE;
@@ -1529,6 +1529,10 @@ void wxMediaBuffer::SetMaxUndoHistory(int v)
        j++, i = (i + 1) % maxUndos) {
     naya[j] = changes[i];
   }
+  for (; i != changes_end; i = (i + 1) % maxUndos) {
+    delete_cgrec(changes[i]);
+  }
+  changes = naya;
   changes_start = 0;
   changes_end = v ? (j % v) : 0;
 
@@ -1538,6 +1542,10 @@ void wxMediaBuffer::SetMaxUndoHistory(int v)
        j++, i = (i + 1) % maxUndos) {
     naya[j] = redochanges[i];
   }
+  for (; i != redochanges_end; i = (i + 1) % maxUndos) {
+    delete_cgrec(redochanges[i]);
+  }
+  redochanges = naya;
   redochanges_start = 0;
   redochanges_end = v ? (j % v) : v;
 
@@ -1582,8 +1590,8 @@ static void InitCutNPaste()
 
     wxREGGLOB(wxmb_commonCopyBuffer);
     wxREGGLOB(wxmb_commonCopyBuffer2);
-    wxmb_commonCopyBuffer = new wxList();
-    wxmb_commonCopyBuffer2 = new wxList();
+    wxmb_commonCopyBuffer = new wxList(wxKEY_NONE, FALSE);
+    wxmb_commonCopyBuffer2 = new wxList(wxKEY_NONE, FALSE);
 
     wxREGGLOB(wxmb_copyStyleList);
     wxREGGLOB(wxmb_commonCopyRegionData);
@@ -1656,8 +1664,8 @@ void wxMediaBuffer::FreeOldCopies(void)
     if (wxmb_commonCopyRegionData)
       DELETE_OBJ wxmb_commonCopyRegionData;
 
-    wxmb_commonCopyBuffer = new wxList();
-    wxmb_commonCopyBuffer2 = new wxList();
+    wxmb_commonCopyBuffer = new wxList(wxKEY_NONE, FALSE);
+    wxmb_commonCopyBuffer2 = new wxList(wxKEY_NONE, FALSE);
 
     wxmb_commonCopyRegionData = NULL;
 
@@ -1686,8 +1694,8 @@ void wxMediaBuffer::FreeOldCopies(void)
   copyRingBuffer1[copyRingPos] = wxmb_commonCopyBuffer;
   copyRingBuffer2[copyRingPos] = wxmb_commonCopyBuffer2;
   
-  wxmb_commonCopyBuffer = new wxList();
-  wxmb_commonCopyBuffer2 = new wxList();
+  wxmb_commonCopyBuffer = new wxList(wxKEY_NONE, FALSE);
+  wxmb_commonCopyBuffer2 = new wxList(wxKEY_NONE, FALSE);
 
   copyRingData[copyRingPos] = wxmb_commonCopyRegionData;
   wxmb_commonCopyRegionData = NULL;
@@ -1809,9 +1817,9 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
 
   m->BeginEditSequence();
 
-  copySnips = new wxList();
+  copySnips = new wxList(wxKEY_NONE, FALSE);
   wxmb_commonCopyBuffer = copySnips;
-  copySnips2 = new wxList();
+  copySnips2 = new wxList(wxKEY_NONE, FALSE);
   wxmb_commonCopyBuffer2 = copySnips2;
   wxmb_copyStyleList = NULL;
   wxmb_commonCopyRegionData = NULL;
@@ -1826,7 +1834,7 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
     wxSnip *s;
     wxNode *n;
     wxList *unselect;
-    unselect = new wxList();
+    unselect = new wxList(wxKEY_NONE, FALSE);
     
     BeginEditSequence();
     for (s = pb->FindFirstSnip(); s; s = s->Next()) {

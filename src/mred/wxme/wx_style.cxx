@@ -932,7 +932,7 @@ void wxStyleList::Clear(void)
 
   Append(basic);
 
-  notifications = new wxList();
+  notifications = new wxList(wxKEY_NONE, FALSE);
 }
 
 void wxStyleList::Copy(wxStyleList *other)

@@ -167,7 +167,7 @@ wxMediaEdit::wxMediaEdit(float spacing, float *tabstops, int numtabs)
 
   overwriteMode = FALSE;
 
-  clickbacks = new wxList();
+  clickbacks = NULL;
 
   typingStreak = FALSE;
   deletionStreak = FALSE;
@@ -225,7 +225,8 @@ wxMediaEdit::~wxMediaEdit()
     DELETE_OBJ snip;
   }
 
-  clickbacks->DeleteContents(TRUE);
+  if (clickbacks)
+    clickbacks->DeleteContents(TRUE);
 }
 
 wxMediaBuffer *wxMediaEdit::CopySelf(void)
@@ -2452,6 +2453,9 @@ void wxMediaEdit::SetClickback(long start, long end,
 
 void wxMediaEdit::SetClickback(wxClickback *click)
 {
+  if (!clickbacks)
+    clickbacks = new wxList(wxKEY_NONE, FALSE);
+
   clickbacks->Append(click);
 }
 
@@ -2459,6 +2463,8 @@ void wxMediaEdit::RemoveClickback(long start, long end)
 {
   wxNode *node, *next;
   wxClickback *click;
+
+  if (!clickbacks) return;
 
   for (node = clickbacks->First(); node; node = next) {
     next = node->Next();
@@ -2475,7 +2481,7 @@ void wxMediaEdit::CallClickback(long start, long end)
   wxNode *node;
   wxClickback *click;
 
-  if (start > end)
+  if ((start > end) || !clickbacks)
     return;
 
   for (node = clickbacks->First(); node; node = node->Next()) {
@@ -4225,7 +4231,7 @@ Bool wxMediaEdit::ReleaseSnip(wxSnip *snip)
 
   _Delete(pos, pos + snip->count, FALSE, FALSE);
 
-  if (!(*snip->admin_ptr) && (snip->flags & wxSNIP_OWNED))
+  if (!(snip->admin) && (snip->flags & wxSNIP_OWNED))
     snip->flags  -= wxSNIP_OWNED;
 
   return TRUE;

@@ -121,7 +121,7 @@
 @END
 
 
-@CLASSBASE wxPoint "point" : "object"
+@CLASSBASE wxPoint "point" : "object" / nofnl
 
 @CREATOR (); <> no argument
 @CREATOR (float,float); <> xy values

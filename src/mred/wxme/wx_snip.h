@@ -115,7 +115,7 @@ class wxSnip : public wxObject
   void Init(void);
 
  protected:
-  wxSnipAdmin **admin_ptr;
+  wxSnipAdmin *admin;
 
  public:
   long count;

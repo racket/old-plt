@@ -1340,6 +1340,9 @@ void wxMediaEdit::AdjustClickbacks(long start, long end,
   wxClickback *click;
   Bool deleteit;
 
+  if (!clickbacks)
+    return;
+
   for (node = clickbacks->First(); node; node = next) {
     next = node->Next();
     click = (wxClickback *)node->Data();
@@ -1373,6 +1376,9 @@ wxClickback *wxMediaEdit::FindClickback(long start, float y)
 {
   wxNode *node;
   wxClickback *click;
+
+  if (!clickbacks)
+    return NULL;
 
   for (node = clickbacks->First(); node; node = node->Next()) {
     click = (wxClickback *)node->Data();
@@ -1684,7 +1690,7 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
 	fprintf(stderr, "Snip's line inconsistency\n");
       if (!snip->style)
 	fprintf(stderr, "Snip's style missing\n");
-      if (*snip->admin_ptr != snipAdmin)
+      if (snip->admin != snipAdmin)
 	fprintf(stderr, "Snip's admin inconsistency\n");
       if (!(snip->flags & wxSNIP_OWNED))
 	fprintf(stderr, "Snip's is-owned inconsistency\n");

@@ -92,7 +92,7 @@ wxMediaSnip::~wxMediaSnip()
 
 void wxMediaSnip::SetAdmin(wxSnipAdmin *a)
 {
-  if (PTRNE(a, (*admin_ptr))) {
+  if (PTRNE(a, admin)) {
     wxSnip::SetAdmin(a);
     if (me) {
       if (a) {
@@ -105,12 +105,12 @@ void wxMediaSnip::SetAdmin(wxSnipAdmin *a)
     }
   } 
 
-  if ((*admin_ptr) && (flags & wxSNIP_USES_BUFFER_PATH)) {
+  if (admin && (flags & wxSNIP_USES_BUFFER_PATH)) {
     /* Propogate a filename change: */
     Bool istemp;
     if (me && (!me->GetFilename(&istemp) || istemp)) {
       wxMediaBuffer *b;
-      b = (*admin_ptr)->GetMedia();
+      b = admin->GetMedia();
       if (b) {
 	char *filename;
 	filename = b->GetFilename();
@@ -127,20 +127,20 @@ void wxMediaSnip::SetMedia(wxMediaBuffer *b)
   if (me == b)
     return;
 
-  if (me && (*admin_ptr))
+  if (me && admin)
     me->SetAdmin(NULL);
   me = b;
   if (b) {
     if (b->GetAdmin()) {
       me = NULL;
       return;
-    } else if (*admin_ptr) {
+    } else if (admin) {
       me->SetAdmin(myAdmin);
     }
   }
 
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 }
 
 wxMediaBuffer *wxMediaSnip::GetThisMedia(void)
@@ -493,29 +493,29 @@ void wxMediaSnip::Write(wxMediaStreamOut *f)
 void wxMediaSnip::SetMaxWidth(float w)
 {
   maxWidth = w;
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 }
 
 void wxMediaSnip::SetMinWidth(float w)
 {
   minWidth = w;
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 }
 
 void wxMediaSnip::SetMaxHeight(float h)
 {
   maxHeight = h;
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 }
 
 void wxMediaSnip::SetMinHeight(float h)
 {
   minHeight = h;
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 }
 
 float wxMediaSnip::GetMaxWidth(void) { return maxWidth; }
@@ -531,8 +531,8 @@ Bool wxMediaSnip::GetTightTextFit(void)
 void wxMediaSnip::SetTightTextFit(Bool t)
 {
   tightFit = (t ? TRUE : FALSE);
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 }
 
 Bool wxMediaSnip::GetAlignTopLine(void)
@@ -543,8 +543,8 @@ Bool wxMediaSnip::GetAlignTopLine(void)
 void wxMediaSnip::SetAlignTopLine(Bool t)
 {
   alignTopLine = (t ? TRUE : FALSE);
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 }
 
 Bool wxMediaSnip::Resize(float w, float h)
@@ -563,8 +563,8 @@ Bool wxMediaSnip::Resize(float w, float h)
     me->SetMinWidth(w);
   }
 
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 
   return TRUE;
 }
@@ -573,15 +573,15 @@ void wxMediaSnip::ShowBorder(Bool show)
 {
   if ((withBorder ?  1 : 0) != (show ? 1 : 0)) {
     withBorder = (show ? TRUE : FALSE);
-    if (*admin_ptr) {
+    if (admin) {
       wxDC *dc;
       float w, h;
 
-      dc = (*admin_ptr)->GetDC();
+      dc = admin->GetDC();
       if (dc) {
 	w = h = 0.0;
 	GetExtent(dc, 0, 0, &w, &h);
-	(*admin_ptr)->NeedsUpdate(this, leftInset, topInset, 
+	admin->NeedsUpdate(this, leftInset, topInset, 
 				  w + rightMargin - rightInset, 
 				  h + bottomMargin - bottomInset);
       }
@@ -601,8 +601,8 @@ void wxMediaSnip::SetMargin(int lm, int tm, int rm, int bm)
   rightMargin = rm;
   bottomMargin = bm;
   
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 }
 
 void wxMediaSnip::GetMargin(int *lm, int *tm, int *rm, int *bm)
@@ -620,15 +620,15 @@ void wxMediaSnip::SetInset(int lm, int tm, int rm, int bm)
   rightMargin = rm;
   bottomMargin = bm;
 
-  if (*admin_ptr) {
+  if (admin) {
     wxDC *dc;
     float w, h;
 
-    dc = (*admin_ptr)->GetDC();
+    dc = admin->GetDC();
     if (dc) {
       w = h = 0.0;
       GetExtent(dc, 0, 0, &w, &h);
-      (*admin_ptr)->NeedsUpdate(this, 0, 0, 
+      admin->NeedsUpdate(this, 0, 0, 
 			 w + rightMargin + leftMargin,
 			 h + bottomMargin + topMargin);
     }

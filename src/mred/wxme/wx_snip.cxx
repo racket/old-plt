@@ -140,8 +140,7 @@ void wxSnip::Init(void)
   next = prev = NULL;
   line = NULL;
 
-  admin_ptr = new wxSnipAdmin*;
-  *admin_ptr = NULL;
+  admin = NULL;
 
   style = wxTheStyleList->BasicStyle();
 }
@@ -164,16 +163,16 @@ wxSnip *wxSnip::Previous(void)
 
 wxSnipAdmin *wxSnip::GetAdmin(void)
 {
-  return *admin_ptr;
+  return admin;
 }
 
 void wxSnip::SetAdmin(wxSnipAdmin *a)
 {
-  if (PTRNE(a, *admin_ptr) && (flags & wxSNIP_OWNED)
+  if (PTRNE(a, admin) && (flags & wxSNIP_OWNED)
       && (a || !(flags & wxSNIP_CAN_DISOWN)))
     return;
 
-  *admin_ptr = a;
+  admin = a;
   SizeCacheInvalid();
   if (!a) {
     prev = next = NULL;
@@ -189,8 +188,8 @@ void wxSnip::SetCount(long new_count)
   if (new_count <= 0)
     new_count = 1;
   count = new_count;
-  if (*admin_ptr) {
-    if (!(*admin_ptr)->Recounted(this, TRUE))
+  if (admin) {
+    if (!admin->Recounted(this, TRUE))
       count = old_count;
   }
 }
@@ -224,8 +223,8 @@ void wxSnip::SetFlags(long new_flags)
     new_flags |= wxSNIP_CAN_SPLIT; 
 
   flags = new_flags;
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 }
 
 void wxSnip::OnEvent(wxDC *, float, float, float, float, wxMouseEvent *)
@@ -326,8 +325,8 @@ void wxSnip::Split(long position, wxSnip **first, wxSnip **second)
   *second = this;
 
 #if CHECK_CS_FLAG
-  if (!(flags & wxSNIP_CAN_SPLIT) && *admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (!(flags & wxSNIP_CAN_SPLIT) && admin)
+    admin->Resized(this, TRUE);
 #endif
 }
 
@@ -439,10 +438,10 @@ Bool wxSnip::ReleaseFromOwner(void)
   if (!IsOwned())
     return TRUE;
 
-  if (!*admin_ptr)
+  if (!admin)
     return FALSE;
 
-  if ((*admin_ptr)->ReleaseSnip(this))
+  if (admin->ReleaseSnip(this))
     return !(flags & wxSNIP_OWNED);
   else
     return FALSE;
@@ -768,8 +767,8 @@ void wxTextSnip::Split(long position, wxSnip **first, wxSnip **second)
   *second = this;
 
 #if CHECK_CS_FLAG
-  if (!(flags & wxSNIP_CAN_SPLIT) && *admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (!(flags & wxSNIP_CAN_SPLIT) && admin)
+    admin->Resized(this, TRUE);
 #endif
 }
 
@@ -785,8 +784,8 @@ wxSnip *wxTextSnip::MergeWith(wxSnip *pred)
   Insert(((wxTextSnip *)pred)->buffer + ((wxTextSnip *)pred)->dtext, pred->count, 0);
 
 #if CHECK_CS_FLAG
-  if (!(flags & wxSNIP_CAN_SPLIT) && (*admin_ptr))
-    (*admin_ptr)->Resized(this, TRUE);
+  if (!(flags & wxSNIP_CAN_SPLIT) && admin)
+    admin->Resized(this, TRUE);
 #endif
 
   return this;
@@ -823,8 +822,8 @@ void wxTextSnip::Insert(char *str, long len, long pos)
   w = -1.0;
   
 #if CHECK_CS_FLAG
-  if (!(flags & wxSNIP_CAN_SPLIT) && (*admin_ptr))
-    if (!(*admin_ptr)->Recounted(this, TRUE))
+  if (!(flags & wxSNIP_CAN_SPLIT) && admin)
+    if (!admin->Recounted(this, TRUE))
       count -= len;
 #endif
 }
@@ -1021,12 +1020,12 @@ void wxTabSnip::GetExtent(wxDC *dc,
     float mult;
     wxMediaBuffer *media = NULL;
 
-    if ((*admin_ptr) && (media = (*admin_ptr)->GetMedia()) && (media->bufferType == wxEDIT_BUFFER)) {
+    if (admin && (media = admin->GetMedia()) && (media->bufferType == wxEDIT_BUFFER)) {
       float space;
       Bool units;
       wxMediaEdit *edt;
 
-      edt = (wxMediaEdit *)(*admin_ptr)->GetMedia();
+      edt = (wxMediaEdit *)admin->GetMedia();
       tabs = edt->GetTabs(&n, &space, &units);
       tabspace = space;
       mult = units ? 1 : w;
@@ -1413,12 +1412,12 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
 
     loadname = name;
 
-    if (!relativePath || (*admin_ptr)) {
+    if (!relativePath || admin) {
       if (relativePath) {
 	wxMediaBuffer *b;
 	char *path;
 	
-	b = (*admin_ptr) ? (*admin_ptr)->GetMedia() : (wxMediaBuffer *)NULL;
+	b = admin ? admin->GetMedia() : (wxMediaBuffer *)NULL;
 	fn = b ? b->GetFilename() : (char *)NULL;
 	if (fn) {
 	  path = wxPathOnly(fn);
@@ -1467,8 +1466,8 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
 
   contentsChanged = TRUE;
 
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 }
 
 void wxImageSnip::Copy(wxImageSnip *newSnip)
@@ -1522,8 +1521,8 @@ void wxImageSnip::SetBitmap(wxBitmap *map)
 
   contentsChanged = TRUE;
   
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 }
 
 void wxImageSnip::SetOffset(float x, float y)
@@ -1533,8 +1532,8 @@ void wxImageSnip::SetOffset(float x, float y)
 
   contentsChanged = TRUE;
 
-  if (*admin_ptr)
-    (*admin_ptr)->NeedsUpdate(this, 0, 0, w, h);
+  if (admin)
+    admin->NeedsUpdate(this, 0, 0, w, h);
 }
 
 Bool wxImageSnip::Resize(float w, float h)
@@ -1544,8 +1543,8 @@ Bool wxImageSnip::Resize(float w, float h)
 
   contentsChanged = TRUE;
 
-  if (*admin_ptr)
-    (*admin_ptr)->Resized(this, TRUE);
+  if (admin)
+    admin->Resized(this, TRUE);
 
   return TRUE;
 }
@@ -1571,9 +1570,9 @@ float wxImageSnip::GetScrollStepOffset(long i)
 
 void wxImageSnip::SetAdmin(wxSnipAdmin *a)
 {
-  if (PTRNE(*admin_ptr, a))
+  if (PTRNE(admin, a))
     wxSnip::SetAdmin(a);
-  if (*admin_ptr && relativePath && filename)
+  if (admin && relativePath && filename)
     LoadFile(filename, filetype, TRUE);
 }
 

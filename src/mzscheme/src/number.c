@@ -673,6 +673,17 @@ int minus_zero_p(double d)
   return 0;
 }
 
+#ifdef DEFEAT_FP_COMP_OPTIMIZATION
+int scheme_both_nan(double a, double b)
+{
+  /* Called by the MZ_IS_NAN() macro for certain compilers.
+     A and B are actually the same FP number, but the compiler
+     optimizes (A == A) to TRUE, so we use a function call to
+     hide the fact that A and B are the same. */
+  return a != b;
+}
+#endif
+
 Scheme_Object *scheme_make_double(double d)
 {
   Scheme_Double *sd;

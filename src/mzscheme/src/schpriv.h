@@ -834,24 +834,31 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 # define USE_TCP
 #endif
 
-#ifndef USE_IEEE_FP_PREDS
+#if !defined(USE_IEEE_FP_PREDS) && !defined(USE_SCO_IEEE_PREDS)
 extern double scheme_infinity_val, scheme_minus_infinity_val;
 # define MZ_IS_POS_INFINITY(d) ((d) == scheme_infinity_val)
 # define MZ_IS_NEG_INFINITY(d) ((d) == scheme_minus_infinity_val)
 # ifdef NAN_EQUALS_ANYTHING
 #  define MZ_IS_NAN(d) (((d) == 1.0) && ((d) == 2.0))
 # else
-#  define MZ_IS_NAN(d) (!((d) == (d)))
+#  ifdef DEFEAT_FP_COMP_OPTIMIZATION
+extern int scheme_both_nan(double a, double b);
+#   define MZ_IS_NAN(d) scheme_both_nan(d, d);
+#  else
+#   define MZ_IS_NAN(d) (!((d) == (d)))
+#  endif
 # endif
-#elif USE_SCO_IEEE_PREDS
-# include <ieeefp.h>
-# define MZ_IS_POS_INFINITY(d) (fpclass(d) == FP_PINF)
-# define MZ_IS_NEG_INFINITY(d) (fpclass(d) == FP_NINF)
-# define MZ_IS_NAN(d) isnan(d)
 #else
-# define MZ_IS_POS_INFINITY(d) (isinf(d) && (d > 0))
-# define MZ_IS_NEG_INFINITY(d) (isinf(d) && (d < 0))
-# define MZ_IS_NAN(d) isnan(d)
+# ifdef USE_SCO_IEEE_PREDS
+#  include <ieeefp.h>
+#  define MZ_IS_POS_INFINITY(d) (fpclass(d) == FP_PINF)
+#  define MZ_IS_NEG_INFINITY(d) (fpclass(d) == FP_NINF)
+#  define MZ_IS_NAN(d) isnan(d)
+# else
+#  define MZ_IS_POS_INFINITY(d) (isinf(d) && (d > 0))
+#  define MZ_IS_NEG_INFINITY(d) (isinf(d) && (d < 0))
+#  define MZ_IS_NAN(d) isnan(d)
+# endif
 #endif
 
 double scheme_bignum_to_double_inf_info(const Scheme_Object *n, int just_use, int *only_need);

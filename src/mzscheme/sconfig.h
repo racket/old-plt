@@ -399,6 +399,7 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define BSTRING_INCLUDE
 
+# define DEFEAT_FP_COMP_OPTIMIZATION
 # define POW_HANDLES_INF_CORRECTLY
 
 # define NO_INLINE_KEYWORD
@@ -1081,6 +1082,10 @@ int scheme_pthread_semaphore_try_down(void *);
 
  /* USE_SCO_IEEE_FP_PREDS uses fpclass() and isnan() to implement tests for
     infinity. */
+
+ /* DEFEAT_FP_COMP_OPTIMIZATION avoids a compiler optimization that
+    converts (a == a) to TRUE, even if `a' is floating-point. Used
+    only when USE_[SCO_]IEEE_FP_PREDS is not defined. */
 
  /* IGNORE_BY_CONTROL_387 turns off floating-point error for
     Intel '387 with _control87. DONT_IGNORE_PIPE_SIGNAL can be on or

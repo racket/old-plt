@@ -351,11 +351,16 @@ int scheme_is_subinspector(Scheme_Object *i, Scheme_Object *sup);
 typedef struct Scheme_Struct_Type {
   Scheme_Type type;
   MZ_HASH_KEY_EX
-  short num_slots, num_islots, delta_slots;
+  short num_slots, num_islots;
   short name_pos;
+
   Scheme_Object *name;
   Scheme_Object *type_name; /* struct: prefix */
+
   Scheme_Object *inspector;
+  Scheme_Object *accessor, *mutator;
+
+  Scheme_Object *uninit_val;
 
   int num_props;
   Scheme_Object **props; /* array of pair of (property, value) */

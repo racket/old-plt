@@ -27,8 +27,10 @@
       (function:quicksort (hash-table-map colls (lambda (x v) (symbol->string x))) string<=?)))
 
   (define (add-common-project-menu-items project-menu)
-    (local [(define new-project-item (make-object menu-item% "New Project" project-menu (lambda x (new-project))))
-	    (define open-project-item (make-object menu-item% "Open Project" project-menu (lambda x (open-project))))]
+    (local [(define new-project-item
+	      (make-object menu-item% "New Project" project-menu (lambda x (new-project))))
+	    (define open-project-item
+	      (make-object menu-item% "Open Project..." project-menu (lambda x (open-project))))]
       (void)))
   
   (define project-aware-frame<%>
@@ -40,8 +42,14 @@
     (class/d* super% (project-aware-frame<%>) args
 
       ((inherit get-menu-bar definitions-text set-label-prefix)
-       (override change-to-file)
-       (rename [super-change-to-file change-to-file])
+       (override change-to-file
+		 file-menu:between-print-and-close
+		 file-menu:between-new-and-open
+		 file-menu:between-open-and-revert)
+       (rename [super-change-to-file change-to-file]
+	       [super-file-menu:between-open-and-revert file-menu:between-open-and-revert]
+	       [super-file-menu:between-new-and-open file-menu:between-new-and-open]
+	       [super-file-menu:between-print-and-close file-menu:between-print-and-close])
        (public 
          project:set-project-window ;; : ((union #f (instance project-frame%)) -> void)
 	 project:get-project-window ;; : (-> (union #f (instance project-frame%)))
@@ -62,32 +70,41 @@
       (define project-window #f)
       (define (project:get-project-window) project-window)
       (define (project:set-project-window p)
-        (send project-menu-item set-label 
-              (if p
-                  (format "Bring project ~a to the front" (ivar p project-name))
-                  "Bring project to the front"))
-        (send project-menu-item enable p)
+	(when project-menu-item
+	  (send project-menu-item set-label 
+		(if p
+		    (format "Bring project ~a to the front" (ivar p project-name))
+		    "Bring project to the front"))
+	  (send project-menu-item enable p))
 	(if p
 	    (set-label-prefix (ivar p project-name))
 	    (set-label-prefix "DrScheme"))
         (set! project-window p))
       
 
-      (apply super-init args)
+      (define (file-menu:between-new-and-open file-menu)
+	(make-object menu-item% "New Project" file-menu (lambda x (new-project)))
+	(super-file-menu:between-new-and-open file-menu))
 
-      (define mb (get-menu-bar))
-      (define project-menu (make-object menu% "Project" mb))
-      (add-common-project-menu-items project-menu)
-      (make-object separator-menu-item% project-menu)
-      
-      (define project-menu-item (make-object menu-item% 
-                                  "Bring project to the front"
-                                  project-menu
-                                  (lambda xxx
-                                    (when project-window
-                                      (send project-window show #t)))))
-      (send project-menu-item enable #f)
-      
+      (define (file-menu:between-open-and-revert file-menu)
+	(make-object menu-item% "Open Project..." file-menu (lambda x (open-project)))
+	(super-file-menu:between-open-and-revert file-menu))
+
+      (define (file-menu:between-print-and-close file-menu)
+	(super-file-menu:between-print-and-close file-menu)
+	(set! project-menu-item
+	      (make-object menu-item% 
+		"Bring project to the front"
+		file-menu
+		(lambda xxx
+		  (when project-window
+		    (send project-window show #t)))))
+      (send project-menu-item enable #f))
+
+      (define project-menu-item #f)
+       
+     (apply super-init args)
+
       (and (send definitions-text get-filename)
 	   (set-project-window (send definitions-text get-filename)))
 
@@ -99,10 +116,16 @@
   (define project-frame%
     (class/d (drscheme:frame:basics-mixin frame:standard-menus%) (filename)
       ((inherit get-area-container get-menu-bar)
-       (rename [super-make-root-area-container make-root-area-container])
+       (rename [super-make-root-area-container make-root-area-container]
+	       [super-file-menu:between-open-and-revert file-menu:between-open-and-revert]
+	       [super-file-menu:between-new-and-open file-menu:between-new-and-open])
        (override file-menu:save file-menu:save-as
+		 edit-menu:between-select-all-and-find
+		 file-menu:between-print-and-close
                  make-root-area-container
-		 can-close? on-close)
+		 can-close? on-close
+		 file-menu:between-new-and-open
+		 file-menu:between-open-and-revert)
        (public project-name ;; : string
                has-file? ;; : (string -> boolean)
                ))
@@ -183,7 +206,7 @@
 	(if filename
 	    (let-values ([(base top __) (split-path filename)])
 	      top)
-	    "Untitled"))
+	    (gui-utils:next-untitled-name)))
 
       (define files null)
       (define language-settings 
@@ -1082,6 +1105,20 @@
           (set! rep-panel (make-object class% rep-outer-panel))
           rep-panel))
       
+      (define (file-menu:between-print-and-close file-menu)
+	(void))
+      (define (edit-menu:between-select-all-and-find edit-menu)
+	(void))
+
+      (define (file-menu:between-new-and-open file-menu)
+	(make-object menu-item% "New Project" file-menu (lambda x (new-project)))
+	(super-file-menu:between-new-and-open file-menu)
+	(make-object separator-menu-item% file-menu))
+
+      (define (file-menu:between-open-and-revert file-menu)
+	(make-object menu-item% "Open Project..." file-menu (lambda x (open-project)))
+	(super-file-menu:between-open-and-revert file-menu))
+
       (super-init project-name #f 400 450)
 
       (set! project-frames (cons this project-frames))
@@ -1097,11 +1134,9 @@
         (make-object menu-item% "Show Interactions" show-menu (lambda xxx (show/hide-rep))))
       
       (define project-menu (make-object menu% "Project" mb))
-      (add-common-project-menu-items project-menu)
-      (make-object separator-menu-item% project-menu)
       (define execute-menu-item (make-object menu-item% "Execute" project-menu (lambda x (execute-project)) #\t))
       (make-object menu-item% "Add Files..." project-menu (lambda x (add-files)))
-      (make-object menu-item% "Configure Language..." project-menu (lambda x (configure-language)) #\l)
+      (make-object menu-item% "Choose Language..." project-menu (lambda x (configure-language)) #\l)
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
 
       (define top-panel top-panel)

@@ -493,7 +493,8 @@
 		       [code (send key get-key-code)]
 		       [copy-to-end/set-position
 			(lambda (start end)
-			  (change-style (make-object wx:style-delta%) start end)
+			  (split-snip start)
+			  (split-snip end)
 			  (let loop ([snip (find-snip start wx:const-snip-after)])
 			    (cond
 			      [(null? snip) (void)]

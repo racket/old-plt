@@ -308,13 +308,13 @@ void wxTabChoice::Paint(void)
          drawing on contained items. */
       GetControlBounds(pane, &itemRect);
       itemRect.top += (TAB_PANE_OVERLAP >> 1);
-      itemRect.left -= 3;
-      itemRect.right += 3;
+      itemRect.left -= 2;
+      itemRect.right += 2;
       itemRect.bottom += 5;
       RectRgn(clipRgn, &itemRect);
       itemRect.top += 10;
-      itemRect.left += 4;
-      itemRect.right -= 4;
+      itemRect.left += 3;
+      itemRect.right -= 3;
       itemRect.bottom -= 6;
       RectRgn(innerRgn, &itemRect);
       DiffRgn(clipRgn, innerRgn, clipRgn);

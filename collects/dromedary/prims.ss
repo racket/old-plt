@@ -1,7 +1,8 @@
 (module prims mzscheme
 	(require (lib "list.ss")
 		 (lib "match.ss")
-		 (lib "pretty.ss"))
+		 (lib "pretty.ss")
+		 (lib "structure.ss"))
 	(provide <library-names> user-types built-in-and-user-funcs <constructors> <flatten> <cons>
 		 (struct <tuple> (list))
 		 (struct arrow (arglist result))
@@ -25,7 +26,8 @@
 		 float? any?
 		 array-get
 		 pretty-print
-		 (all-from (lib "match.ss")))
+		 (all-from (lib "match.ss"))
+		 (all-from (lib "structure.ss")))
 
 	(define-struct value-set (name type) (make-inspector))
 	(define-struct <tuple> (list) (make-inspector))
@@ -145,14 +147,14 @@
 	(define (array-get arr)
 	  (lambda (pos)
 ;; Don't forget to return invalid argument
-	    (vector-ref (+ 1 arr) pos)))
+	    (vector-ref arr pos)))
 
 	(define (array-set! arr)
 	  (lambda (pos)
 	    (lambda (item)
 ;; Don't forget to raise Invalid arument
 	      (begin
-		(vector-set! arr (+ 1 pos) item)
+		(vector-set! arr pos item)
 		(make-<unit> #f)))))
 
 	(define (make-array k)
@@ -375,6 +377,8 @@
 ;	(hash-table-put! <constructors> "::" (cons (make-arrow (list (make-<tuple> (list (make-tvar "'a") (make-tlist (make-tvar "'a"))))) (make-tlist (make-tvar "'a"))) cons))
 	(hash-table-put! <constructors> "::" (cons (make-tconstructor (make-<tuple> (list (make-tvar "'a") (make-tlist (make-tvar "'a")))) (make-tlist (make-tvar "'a"))) <cons>))
 	(hash-table-put! <constructors> "list" (cons (make-tlist (make-tvar "'a")) "some error"))
+	(hash-table-put! <constructors> "ref" (cons (make-ref (make-tvar "'a")) "some error"))
+	(hash-table-put! <constructors> "array" (cons (make-tarray (make-tvar "'a")) "some error"))
 	(hash-table-put! <constructors> "float" (cons "float" "some error"))
 	(hash-table-put! <constructors> "int" (cons "int" "some error"))
 	(hash-table-put! <constructors> "bool" (cons "bool" "some error"))
@@ -406,7 +410,9 @@
 	(hash-table-put! built-in-and-user-funcs "max" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) (make-tvar "'a"))) <max>))
 	(hash-table-put! built-in-and-user-funcs "or" (cons (make-arrow (list "bool") (make-arrow (list "bool") "bool")) <or>))
 	(hash-table-put! built-in-and-user-funcs "||" (cons (make-arrow (list "bool") (make-arrow (list "bool") "bool")) <or>))
-	(hash-table-put! built-in-and-user-funcs "&&" (cons (make-arrow (list "bool") (make-arrow (list "bool") "bool")) <and>))
+	(hash-table-put! built-in-and-user-funcs "&&" (cons (make-arrow (list "bool") (make-arrow (list "bool") "bool")) <and>))	
+	(hash-table-put! built-in-and-user-funcs "|" (cons (make-arrow (list "bool") (make-arrow (list "bool") "bool")) <or>))
+	(hash-table-put! built-in-and-user-funcs "&" (cons (make-arrow (list "bool") (make-arrow (list "bool") "bool")) <and>))
 	(hash-table-put! built-in-and-user-funcs "!=" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'b")) "bool")) !=))
 	(hash-table-put! built-in-and-user-funcs "not" (cons (make-arrow (list "bool") "bool") not))
 	(hash-table-put! built-in-and-user-funcs "~-" (cons (make-arrow (list "int") "int") -))

@@ -29,7 +29,9 @@
 	  (begin
 	    (set! current-type (cdr current-type))
 	    (if (<voidstruct>? value)
-		(format "~a~n" (ml-tstyle firsttype))
+		(if (arrow? firsttype)
+		    (format "~a = <fun>" (ml-tstyle firsttype))
+		    (format "~a~n" (ml-tstyle firsttype)))
 		(format "~a = ~a~n" (ml-tstyle firsttype) (ml-style value))))))
 
 

@@ -151,13 +151,19 @@
 
 			   
 		    [($ ast:pexp_ifthenelse test ifexp elseexp isrc tsrc esrc)
-		     (let ([testt (typecheck-ml test context)]
+;		     (pretty-print (format "test: ~a, ifexp: ~a, elseexp: ~a" test ifexp elseexp))
+		     (let* ([testt (typecheck-ml test context)]
 			   [ifexpt (typecheck-ml ifexp context)]
-			   [elseexpt (typecheck-ml elseexp context)])
+			   [elseexpt (if (null? elseexp)
+					 "unit"
+					 (typecheck-ml elseexp context))]
+			   [elseexpsrc (if (null? elseexp)
+					   (at ifexp (ast:expression-pexp_src ifexp))
+					   (at elseexp (ast:expression-pexp_src elseexp)))])
 		       (if (unify "bool" testt (at test (ast:expression-pexp_src test)))
-			   (if (unify ifexpt elseexpt (at elseexp (ast:expression-pexp_src elseexp)))
+			   (if (unify ifexpt elseexpt elseexpsrc)
 			       ifexpt
-			       (raise-syntax-error #f (format "Expected type ~a but found ~a" ifexpt elseexpt) (at elseexp (ast:expression-pexp_src elseexp))))
+			       (raise-syntax-error #f (format "Expected type ~a but found ~a" ifexpt elseexpt) elseexpsrc))
 			   
 			   (raise-syntax-error #f "Test wasn't boolean" (at ifexp (ast:expression-pexp_src ifexp)))))]
 		    
@@ -203,20 +209,22 @@
 		    [($ ast:pexp_try tryexp pelist)
 		     (let ([tryt (typecheck-ml tryexp context)]
 			   [exnt (typecheck-match pelist "exception" context)])
-		       (if (unify tryt exnt)
+		       (if (unify tryt exnt (at pelist src))
 			   tryt))]
 
 		    [($ ast:pexp_while testexpr bodyexpr)
 		     (let ([testt (typecheck-ml testexpr context)]
 			   [bodyt (typecheck-ml bodyexpr context)])
-		       (if (and (unify "bool" testt) (unify "unit" bodyt))
+		       (if (and (unify "bool" testt (at testexpr (ast:expression-pexp_src testexpr))) (unify "unit" bodyt (at bodyexpr (ast:expression-pexp_src bodyexpr))))
 			   "unit"))]
 
 		    [($ ast:pexp_for var init test up body)
 		     (let ([initt (typecheck-ml init context)]
 			   [testt (typecheck-ml test context)])
-		       (if (and (unify "int" initt) (unify "int" testt))
-			   (if (unify "unit" (typecheck-ml body (update (syntax-object->datum var) (cons "int" null) context)))
+		       (if (and (unify "int" initt (at init (ast:expression-pexp_src init))) (unify "int" testt (at test (ast:expression-pexp_src test))))
+			   (if (unify "unit" 
+                                      (typecheck-ml body (update (syntax-object->datum var) (cons "int" null) context))
+                                      (at body (ast:expression-pexp_src body)))
 			       "unit")))]
 		    [($ ast:pexp_sequence firstexpr restexpr)
 		     (let ([firstt (typecheck-ml firstexpr context)]
@@ -493,6 +501,10 @@
 			    [(equal? (unlongident name) "list")
 			       
 			       (make-tlist (typecheck-type (car ctlist) boundlist))]
+			    [(equal? (unlongident name) "ref")
+			     (make-ref (typecheck-type (car ctlist) boundlist))]
+			    [(equal? (unlongident name) "array")
+			     (make-tarray (typecheck-type (car ctlist) boundlist))]
 			    [(null? ctlist)
 			     fconstructor
 			       ]

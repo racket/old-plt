@@ -4,7 +4,8 @@
 	      (prefix ast: "ast.ss")
 	      (lib "match.ss")
 	      (lib "list.ss")
-	      (lib "pretty.ss"))
+	      (lib "pretty.ss")
+	      (lib "structure.ss"))
 
      (provide compile-all)
 
@@ -20,6 +21,9 @@
 
      (define next-label 0)     
      (define loc #f)
+     (define structure-provides null)
+     (define structure-number 0)
+     (define structure-list null)
 
      (define (build-src syn)
        (if syn
@@ -63,6 +67,8 @@
 
      (define (compile-all stmt location)
        (set! loc location)
+       (set! structure-provides null)
+       (set! structure-number 0)
        (<flatten> (list
 ;	(datum->syntax-object
 ;	 #f
@@ -101,8 +107,20 @@
      (define (compile-structure desc src context)
        (match desc
 	      [($ ast:pstr_value rec_flag pelist lsrc)
-	       (let ([all-bindings (map compile-define (repeat rec_flag (length pelist)) pelist (repeat context (length pelist)) (repeat lsrc (length pelist)))])
-		 all-bindings)]
+	       (begin
+		 (set! structure-provides null)
+		 (let ([all-bindings (map compile-define (repeat rec_flag (length pelist)) pelist (repeat context (length pelist)) (repeat lsrc (length pelist)))])
+		   (begin
+;		     (pretty-print (format "structure-provides: ~a" structure-provides))
+;		     (pretty-print (format "all bindings: ~a" all-bindings))
+		     (set! structure-number (+ 1 structure-number))
+		     
+		   #`(begin
+		       (structure #,(datum->syntax-object (current-compile-context) (string->symbol (format "foo~a" structure-number))) #,(map datum->syntax-object (repeat (current-compile-context) (length structure-provides)) (map string->symbol structure-provides)) (begin #,@(<flatten> all-bindings)))
+		       (open #,(datum->syntax-object (current-compile-context) (string->symbol (format "foo~a" structure-number))))
+		       (make-<voidstruct> #f))
+		   )))]
+;		 all-bindings)))]
 	      [($ ast:pstr_type stdlist)
 	       (map compile-typedecl stdlist)]
 	      [($ ast:pstr_eval expr lsrc)
@@ -300,7 +318,7 @@
 	      [($ ast:pexp_while testexpr bodyexpr)
 	       (let ([testc (compile-ml testexpr context)]
 		     [bodyc (compile-ml bodyexpr context)])
-		 #`(let loop
+		 #`(let loop ()
 		       (if #,testc
 			   (begin
 			     #,bodyc
@@ -308,16 +326,18 @@
 			   (make-<unit> #f))))]
 
 	      [($ ast:pexp_for var init test up body)
+	       (pretty-print (format "for testc: ~a" test))
 	       (let ([initc (compile-ml init context)]
 		     [testc (compile-ml test context)]
-		     [bodyc (compile-ml body context)])
-		 #`(let loop ([#,var #,initc]) 
-		     (if #,testc 
+		     [bodyc (compile-ml body context)]
+		     [rvar (string->symbol (syntax-object->datum var))])
+		 #`(let loop ([#,rvar #,initc]) 
+		     (if (= #,rvar #,testc)
 			 (begin 
 			   #,bodyc 
 			   (loop #,(if up 
-				       #`(+ #,var 1)
-				       #`(- #,var 1))))
+				       #`(+ #,rvar 1)
+				       #`(- #,rvar 1))))
 			 (make-<unit> #f))))]
 	      [($ ast:pexp_sequence firstexpr restexpr)
 	       #`(begin #,(compile-ml firstexpr context)
@@ -329,7 +349,7 @@
      (define (compile-match pelist context)
        (if (null? pelist)
 	   null
-	   (cons #`[#,(get-varpat (caar pelist)) #,(compile-ml (cdar pelist) context)]
+	   (cons #`[#,(get-varpat (caar pelist) #f) #,(compile-ml (cdar pelist) context)]
 		 (compile-match (cdr pelist) context))))
 
      (define (repeat x n)
@@ -348,16 +368,21 @@
 
 
 
-     (define (get-varpat pattern)
+     (define (get-varpat pattern define?)
        (match (ast:pattern-ppat_desc pattern)
 	      [($ ast:ppat_var variable)
-	       (translate-id (syntax-object->datum variable) variable)]
+	       (begin
+		 (if define?
+		     (if (null? (filter (lambda (x) (equal? x (syntax-object->datum variable)))  structure-provides))
+			 (set! structure-provides (cons (syntax-object->datum variable) structure-provides))
+			 structure-provides))
+		 (translate-id (syntax-object->datum variable) variable))]
 	      [($ ast:ppat_constant const)
 	       (syntax-object->datum const)]
 	      [($ ast:ppat_tuple tlist)
-	       #`($ <tuple> #,(map get-varpat tlist))]
+	       #`($ <tuple> #,(map get-varpat tlist (repeat define? (length tlist))))]
 	      [($ ast:ppat_constraint pat ct)
-	       (get-varpat pat)]
+	       (get-varpat pat define?)]
 	      [($ ast:ppat_any dummy)
 	       #'_]
 	      [($ ast:ppat_construct name pat bool)
@@ -375,13 +400,13 @@
 			    (if (equal? (cdr constructor) <cons>)
 				;; The pattern should be a <tuple> of two
 				(if (ast:ppat_tuple? (ast:pattern-ppat_desc pat))
-				    (let ([head (get-varpat (car (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))))]
-					  [tail (get-varpat (cadr (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))))])
+				    (let ([head (get-varpat (car (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))) define?)]
+					  [tail (get-varpat (cadr (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))) define?)])
 				      #`(#,head . #,tail))
 				    (pretty-print (list "Not a tuple: " (ast:pattern-ppat_desc pat))))
-				#`($ #,(string->symbol (syntax-object->datum (ast:lident-name name))) #,(if (null? pat) pat (get-varpat pat))))
+				#`($ #,(string->symbol (syntax-object->datum (ast:lident-name name))) #,(if (null? pat) pat (get-varpat pat define?))))
 			    )
-			    #`($ #,(string->symbol (unlongident name)) #,(if (null? pat) #'dummy (get-varpat pat)))))]
+			    #`($ #,(string->symbol (unlongident name)) #,(if (null? pat) #'dummy (get-varpat pat define?)))))]
 		     [else (pretty-print (list "Unknown construct: " name pat bool))])]
 	      [else
 	       (let [(src-loc (ast:pattern-ppat_src pattern))]
@@ -416,7 +441,7 @@
 
 
      (define (compile-function pelist context)
-       (let ([patterns (map get-varpat (map car pelist))]
+       (let ([patterns (map get-varpat (map car pelist) (repeat #f (length (map car pelist))))]
 	     [exps (map compile-ml (map cdr pelist) (repeat context (length (map cdr pelist))))])
 	 (with-syntax ([(pat ...) patterns]
 		       [(expr ...) exps])
@@ -460,12 +485,12 @@
        (if (and rec
 		(not (ast:pexp_function? (ast:expression-pexp_desc (cdr binding)))))
 	   (raise-syntax-error #f "This kind of expression is not allowed on right hand side of let rec" (at (cdr binding) (ast:expression-pexp_src (cdr binding))))
-	   (let ([varpat (get-varpat (car binding))]
+	   (let ([varpat (get-varpat (car binding) #t)]
 		 [val (compile-ml (cdr binding) context)])
 	     #`(begin
 ;		 (#,(create-syntax #f `match-define (build-src lsrc)) #,varpat #,val)
 		 (match-define #,varpat #,val)
-		 #,varpat))))
+		 (make-<voidstruct> #f)))))
 
 
      (define (compile-let rec bindings finalexpr context ksrc isrc)
@@ -481,7 +506,7 @@
 						  ))
 		 (if rec
 		     (pretty-print "This kind of expression is not allowed as right-hand side of `let rec'")
-		     (let ([varpat (get-varpat (car cur-bind))]
+		     (let ([varpat (get-varpat (car cur-bind) #f)]
 			   [val (compile-ml (cdr cur-bind) context)])
 		       #`(#,(create-syntax #f `match (build-src ksrc)) 
 			  ((#,(create-syntax #f `lambda (build-src isrc)) () #,val))

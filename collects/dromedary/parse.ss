@@ -564,9 +564,9 @@
      [(<simple_expr> DOT <label_longident> LESSMINUS <expr>)
       (ast:make-expression (ast:make-pexp_setfield($1 $3 $5)) (build-src 5))]
      [(<simple_expr> DOT LPAREN <seq_expr> RPAREN LESSMINUS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "Array") "set")) (build-src 7)) (list (cons "" $1) (cons "" $4) (cons "" $7))) (build-src 7))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident (datum->syntax-object $2 "Array" (list #f (position-line $1-start-pos) (position-col $1-start-pos) (position-col $1-start-pos) (- (position-offset $6-end-pos) (position-col $1-start-pos))))) (datum->syntax-object $6 "set" (build-syn-list $6 (position-offset $6-end-pos))))) (build-src 7)) (list (cons "" $1) (cons "" $4) (cons "" $7))) (build-src 7))]
      [(<simple_expr> DOT LBRACKET <seq_expr> RBRACKET LESSMINUS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "String") "set")) (build-src 7)) (list (cons "" $1) (cons "" $4) (cons "" $7))) (build-src 7))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident (datum->syntax-object $2 "String" (list #f (position-line $1-start-pos) (position-col $1-start-pos) (position-col $1-start-pos) (- (position-offset $6-end-pos) (position-col $1-start-pos))))) (datum->syntax-object $6 "set" (build-syn-list $6 (position-offset $6-end-pos))))) (build-src 7)) (list (cons "" $1) (cons "" $4) (cons "" $7))) (build-src 7))]
 ;;     [(<simple_expr> DOT LBRACE <expr> RBRACE LESSMINUS <expr>)
 ;;      (bigarray_set)]
      [(<label> LESSMINUS <expr>)
@@ -607,12 +607,12 @@
       (ast:make-expression (ast:make-pexp_field $1 $3) (build-src 3))]
      [(<simple_expr> DOT LPAREN <seq_expr> RPAREN)
 ;woodoo
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "Array") "get")) (build-src 3 5)) (list (cons "" $1) (cons "" $4))) (build-src 5))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident (datum->syntax-object $2 "Array" (list #f (position-line $1-start-pos) (position-col $1-start-pos) (position-col $1-start-pos) (- (position-offset $5-end-pos) (position-col $1-start-pos))))) (datum->syntax-object $2 "get" (build-syn-list $2 (position-offset $5-end-pos))))) (build-src 3 5)) (list (cons "" $1) (cons "" $4))) (build-src 5))]
 ;;     [(<simple_expr> DOT LPAREN <seq_expr> error)
 ;; Unclosed error
 ;woodoo
      [(<simple_expr> DOT LBRACKET <seq_expr> RBRACKET)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "String") "get")) (build-src 3 5)) (list (cons "" $1) (cons "" $4))) (build-src 5))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident (datum->syntax-object $2 "String" (list #f (position-line $1-start-pos) (position-col $1-start-pos) (position-col $1-start-pos) (- (position-offset $5-end-pos) (position-col $1-start-pos))))) (datum->syntax-object $2 "get"(build-syn-list $2)))) (build-src 3 5)) (list (cons "" $1) (cons "" $4))) (build-src 5))]
 ;;     [(<simple_expr> DOT LBRACKET <seq_expr> error)
 ;; Unclosed error
 ;;     [(<simple_expr> DOT LBRACE <expr> RBRACE)

@@ -80,7 +80,7 @@
         ;; special case #1: __class__ is actually the type
         [(eq? member-name '__class__) (python-node-type obj)]
          ;; special case #2: __dict__ is the internal dictionary (well, usually... let's just assume always)
-         [(eq? member-name '__dict__) (py-create py-dict% (python-node-dict obj))]
+         [(eq? member-name '__dict__) (hash-table->py-dict% (python-node-dict obj))]
          ;;;;;;;;;;;;;; SPECIAL CASE 3 NOW IRRELEVANT.  __call__ DEFINED AS A MEMBER OF py-type%
          ;; special case #3: __call__ is implicitly defined for type objects
          ;;   but not py-type%, because type() creates a new type.... :P
@@ -174,18 +174,35 @@
   (define (py-number%->number pn)
     (python-get-member pn scheme-number-key #f))
 
+  (define (python-set-item! indexable key value)
+    (python-method-call indexable '__setitem__ (list key value)))
+
+  (define (python-get-item indexable key)
+    (python-method-call indexable '__getitem__ (list key)))
+
   (define (hash-table->py-dict% ht)
-    (py-create py-dict% ht))
+    (printf "hash-table->py-dict%~n")
+    (let ([d (python-create-object py-dict%)])
+      (hash-table-for-each ht
+                           (lambda (key value)
+                              (python-set-item! d key value)))
+      d))
 
   (define (py-dict%->hash-table pd)
-    (hash-table-get (python-node-dict pd) scheme-hash-table-key
-                    (lambda ()
-                      (printf "could not find Scheme hash-table in PyDict object.  keys:~n~a~n"
-                              (hash-table-map (python-node-dict pd) cons))
-                      (error "internal Spy error: py-dict%->hash-table"))))
+    (let ([keys (py-list%->list (python-method-call pd 'keys))]
+          [ht (make-hash-table)])
+      (for-each (lambda (key)
+                   (hash-table-put! ht key (python-get-item pd key))))
+      ht))
+;    (hash-table-get (python-node-dict pd) scheme-hash-table-key
+;                    (lambda ()
+;                      (printf "could not find Scheme hash-table in PyDict object.  keys:~n~a~n"
+;                              (hash-table-map (python-node-dict pd) cons))
+;                      (error "internal Spy error: py-dict%->hash-table"))))
 ;    (python-get-member pd scheme-hash-table-key #f))
 
   (define (assoc-list->py-dict% al)
+    (printf "assoc-list->py-dict%~n")
     (hash-table->py-dict% (assoc-list->hash-table al)))
 
   (define (py-object%->bool x)
@@ -290,7 +307,7 @@
     (let ([sm (python-new-static-method py-static-method%)])
       (py-static-method%-init sm fn)
       sm))
-     
+
   (define (py-static-method%->py-function% sm)
     (python-get-member sm 'static-method-function #f))
 
@@ -330,7 +347,7 @@
      (define py-object%-new (py-function%->py-static-method%
                                            (procedure->py-function% python-new-object
                                                                     '__new__)))
-     
+
   (python-set-member! py-object% '__new__ py-object%-new)
 
   (dprintf "3~n")
@@ -393,7 +410,10 @@
            (py-call (py-function%->procedure functor)
                     (if dict
                         (begin ;(printf "keywords args: ~a~n" kw-args)
-                               (cons (assoc-list->py-dict% kw-args) arg-list))
+                               (cons (if (empty? kw-args)
+                                         #f
+                                         (assoc-list->py-dict% kw-args))
+                                     arg-list))
                         arg-list)))))]
       ;; else, it's a py-method% or some other thing that has a __call__ field
       [else (dprintf "DEBUG: py-call got something else~n")
@@ -415,21 +435,25 @@
 
   ;; create instance object
   (define (python-create-object class . init-args)
-   ; (printf "DEBUG: python-create-object~n")
-    (let* ([alloc (begin0 (python-get-member class '__new__ #f)
-                       ;   (printf "DEBUG: python-create-object found __new__~n")
+    (printf "DEBUG: python-create-object~n")
+    (let* ([alloc (begin0 (or (hash-table-get (python-node-dict class)
+                                              '__new__ (lambda () #f))
+                              (python-get-member (python-node-type class) '__new__ #f))
+                          (printf "DEBUG: python-create-object found __new__~n")
                           )]
-           [obj (if (eq? alloc py-object%-new)
-                    (begin ;(printf "DEBUG: python-create-object calling object.__new__: ~a~n"
-                           ;        (py-object%->string alloc))
+           [obj (cond
+                  [(eq? alloc py-object%-new)
+                    (begin (printf "DEBUG: python-create-object calling object.__new__: ~a~n"
+                                   (py-object%->string alloc))
                       (py-call (py-static-method%->py-function% alloc)
-                             (list class)))
-                    (py-call alloc (cons class init-args)))])
-      ;(printf "DEBUG: python-create-object allocated~n")
+                             (list class)))]
+                  [(procedure? alloc) (printf "alloc is a proc~n") (apply alloc class init-args)]
+                  [else (printf "alloc is something else~n") (py-call alloc (cons class init-args))])])
+      (printf "DEBUG: python-create-object allocated~n")
       (when (py-is-a? obj class)
         (py-call (python-get-member class '__init__ #f)
                  (cons obj init-args))
-        ;(printf "DEBUG: python-create-object initialized~n")
+        (printf "DEBUG: python-create-object initialized~n")
         )
       obj))
 
@@ -494,37 +518,7 @@
                                (string-append "("
                                               (tuple-items-repr (py-tuple%->list x))
                                               ")"))]
-      [(py-is-a? x py-dict%)
-       (let ([dict-items-repr
-              (lambda (ht)
-            ;    (printf "dict-items-repr~n")
-                (foldr (lambda (str1 str2) (if (> (string-length str2) 0)
-                                               (string-append str1 ", " str2)
-                                               str1))
-                       ""
-                       (hash-table-map ht
-                                       (lambda (key value)
-                                         (if (and (symbol? key) ;; special internal Spy value
-                                                  (not (python-node? value)))
-                                             (string-append "<internal Spy key "
-                                                            (symbol->string key)
-                                                            ">: "
-                                                            (format "~a" value))
-                                             ;;;; the key is either a number or a symbol
-                                             (string-append (if (number? key)
-                                                                (number->string key)
-                                                                (string-append "'"
-                                                                               (symbol->string key)
-                                                                               "'"))
-                                                            ; (py-object%->string key)
-                                                            ": "
-                                                            (py-object%->string value)))))))])
-        ; (printf "woot~n")
-         (string-append "{"
-                        (let ([ht (py-dict%->hash-table x)])
-                          ;(printf "got the hash-table~n")
-                          (dict-items-repr ht))
-                        "}"))]
+      [(py-is-a? x py-dict%) (py-dict%->string x)]
       [(py-is-a? x py-function%) (string-append "<function "
                                                 (py-string%->string (python-get-name x))
                                                 ">")]
@@ -550,10 +544,45 @@
                     (if (spy-ext-object? x)
                         (string-append ": " ((eval 'spy-ext-object->string) x))
                         ""))]))
-     
+
      (define (spy-ext-object? obj)
        (hash-table-get (python-node-dict (python-node-type obj)) 'spy-ext-type (lambda () #f)))
-     
+
+
+
+      (define (dict-items-repr ht)
+            ;    (printf "dict-items-repr~n")
+                (foldr (lambda (str1 str2) (if (> (string-length str2) 0)
+                                               (string-append str1 ", " str2)
+                                               str1))
+                       ""
+                       (hash-table-map ht
+                                       (lambda (key value)
+                                         (if (and (symbol? key) ;; special internal Spy value
+                                                  (not (python-node? value)))
+                                             (string-append "<internal Spy key "
+                                                            (symbol->string key)
+                                                            ">: "
+                                                            (format "~a" value))
+                                             ;;;; the key is either a number or a symbol
+                                             (string-append (if (number? key)
+                                                                (number->string key)
+                                                                (string-append "'"
+                                                                               (symbol->string key)
+                                                                               "'"))
+                                                            ; (py-object%->string key)
+                                                            ": "
+                                                            (py-object%->string value)))))))
+
+  (define (py-dict%->string d)
+    "SOME-DICTIONARY"
+;    (string-append "{"
+;                   (let ([ht (py-dict%->hash-table d)])
+;                      ;(printf "got the hash-table~n")
+;                      (dict-items-repr ht))
+;                      "}")
+     )
+
 
   (define (python-get-attribute obj attr-sym)
    ; (printf "python-get-attribute is looking for ~a~n" attr-sym)
@@ -590,8 +619,8 @@
       [(or (py-is-a? indexable py-list%)
            (py-is-a? indexable py-tuple%)) (list-ref (py-list%->list indexable)
                                                      (if (number? index) index (py-number%->number index)))]
-      [(py-is-a? indexable py-dict%) ;(error "python-index: dictionaries not yet supported")]
-       (python-method-call indexable '__getitem__ (list index))]
+      [(py-is-a? indexable py-dict%) (error "python-index: dictionaries not yet supported")]
+       ;(python-method-call indexable '__getitem__ (list index))]
       [(py-type? indexable) (error (format "Unsubscriptable object: ~a" (py-object%->string indexable)))]
       [else (python-method-call indexable '__getitem__
                                 (list (if (number? index)
@@ -742,7 +771,9 @@
   (dprintf "6~n")
 
   (python-add-members py-object%
-                      `((__init__ ,(procedure->py-function% (lambda (this . args) (void))
+                      `((__init__ ,(procedure->py-function% (lambda (this . args)
+                                                               (printf "object.__init__~n")
+                                                               (void))
                                                             '__init__))
                         (__repr__ ,py-repr)
                         (__str__ ,py-repr)
@@ -983,7 +1014,7 @@
          (if (string? key)
              (string->symbol key)
              key)))
-     
+
   (python-add-members py-dict%
                       `((__init__ ,(py-lambda '__init__ (this v)
                                               (python-set-member! this
@@ -1049,6 +1080,11 @@
                                                            (py-module%->namespace this)])
                                              (namespace-set-variable-value! (py-string%->symbol key)
                                                                             value))))))
+
+  ; python-import-path : string -> py-module%
+  (define (python-import-path path-str)
+    (call-with-values (lambda () (python-load-module-path path-str))
+                      namespace->py-module%))
 
   ; namespace->py-module% namespace [string] [string] -> py-module%
   ; turn a scheme namespace into a python module
@@ -1177,7 +1213,7 @@
       #cs(parameterize ([current-namespace (py-module%->namespace pymod)])
            (namespace-set-variable-value! #csname obj))
       (if (py-type? obj)
-          (begin 
+          (begin
             ;         (printf "obj is a type object.~n")
             (python-set-member! obj 'spy-ext-type #t)
             (python-set-member! obj python-to-scheme-method
@@ -1187,19 +1223,19 @@
           (printf "obj is not a type object~n"))))
 
      (define pyns #f)
-     
+
      (define (set-pyns! ns) (set! pyns ns))
-     
+
      (define (peval sxp)
        (parameterize ([current-namespace pyns])
          (eval sxp)))
- 
-     
-     
+
+
+
      (define (pns-get sym)
        (peval sym))
 ;       (eval `(in-python (ns-get ',sym))))
-     
+
   ;; python-wrap-ext-function: cptr symbol -> py-function%
   (define (python-wrap-ext-function fn-ptr name)
     (procedure->py-function%
@@ -1221,7 +1257,7 @@
       (procedure->py-function% (lambda (a b c)
                                  (spy-ext-call-fn-objobjarg fn-ptr a b c))
                                name)))
-     
+
   ;; python-wrap-ext-function-intarg: cptr symbol -> py-function%
   (define (python-wrap-ext-function-intarg fn-ptr name)
     (let ([spy-ext-call-fn-intarg (pns-get 'spy-ext-call-fn-intarg)])
@@ -1245,7 +1281,7 @@
        (lambda (a b c)
          (spy-ext-call-fn-intobjarg fn-ptr a b c))
        name)))
-     
+
   ;; python-wrap-ext-function-intarg: cptr symbol -> py-function%
   (define (python-wrap-ext-function-intintobjarg fn-ptr name)
     (let ([spy-ext-call-fn-intintobjarg (pns-get 'spy-ext-call-fn-intintobjarg)])
@@ -1261,7 +1297,7 @@
        (lambda (a)
          (spy-ext-call-fn-unary fn-ptr a))
        name)))
-     
+
   ;; python-wrap-ext-function-binary: cptr symbol -> py-function%
   (define (python-wrap-ext-function-binary fn-ptr name)
     (procedure->py-function%
@@ -1279,7 +1315,7 @@
        (lambda (a b c)
          (spy-ext-call-fn-ternary fn-ptr a b c))
        name)))
-     
+
   ;; python-wrap-ext-function-inquiry: cptr symbol -> py-function%
   (define (python-wrap-ext-function-inquiry fn-ptr name)
     (procedure->py-function%
@@ -1296,7 +1332,7 @@
        (lambda (a b)
          (spy-ext-call-fn-coercion fn-ptr a b))
        name)))
-     
+
   ;; python-wrap-ext-method: cptr symbol -> py-function%
   (define (python-wrap-ext-method-varargs fn-ptr name)
 ;    (printf "PYTHON WRAP EXT METHOD: ~a~n" name)
@@ -1313,7 +1349,7 @@
                                (apply (pns-get 'spy-ext-call-bound-noargs)
                                       (cons fn-ptr (cons self null))))
                              name))
-  
+
   ;; python-wrap-ext-method=onearg: cptr symbol -> py-function%
   (define (python-wrap-ext-method-onearg fn-ptr name)
  ;   (printf "PYTHON WRAP EXT METHOD: ~a~n" name)
@@ -1327,16 +1363,19 @@
   ;; python-wrap-ext-method: cptr symbol -> py-function%
   (define (python-wrap-ext-method-kwargs fn-ptr name)
   ;  (printf "PYTHON WRAP EXT METHOD: ~a~n" name)
-    (procedure->py-function% (lambda (self . args)
+;    (procedure->py-function%
+           (lambda (self . args)
                                (apply (pns-get 'spy-ext-call-bound-kwargs)
-                                      (cons fn-ptr
-                                            (cons self
-                                                  (cons (assoc-list->py-dict% '())
-                                                        args)))))
-                             name))
-  
-     
-     
+                                      fn-ptr
+                                      self
+                                      #f;(assoc-list->py-dict% '())
+                                      args))
+
+        ;   name)
+           )
+
+
+
   ;; hash-table -> hash-table
   ;; duplicate a hash table
   (define (copy-hash-table ht)
@@ -1346,5 +1385,5 @@
                              (hash-table-put! new-ht key val)))
       new-ht))
 
-  
+
   )

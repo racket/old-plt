@@ -2,10 +2,12 @@
   (require (lib "list.ss")
            (lib "file.ss")
            (lib "etc.ss")
+           (lib "string.ss")
            ;"compile-python.ss"
            )
   (provide python-import-from-module
            python-load-module
+           python-load-module-path
            copy-namespace-bindings
            make-python-namespace ; note that make-python-namespace already calls init-...
            init-python-namespace
@@ -17,6 +19,9 @@
            set-python-cache-namespace!
            set-python-namespace-name!
            )
+
+  (define (python-load-module-path path-str)
+    (python-load-module (map string->symbol (regexp-split #rx"\\." path-str))))
 
   (define (dynamic-python-to-scheme)
 ;    (dynamic-require '(lib "compile-python.ss" "python") 'python-to-scheme))

@@ -6,11 +6,11 @@
 
   (define py-type% (make-python-node #f (make-hash-table) #f))
   (set-python-node-type! py-type% py-type%)
-  
+
   (define *reverse-list-of-types-to-finish-setting-up* (list (list py-type%
                                                                    'type
                                                                    #f)))
-  
+
   (define immutable-type
     (opt-lambda (name [base #f])
       (let ([node (make-python-node py-type%
@@ -37,7 +37,10 @@
   (define py-classmethod% (immutable-type 'classmethod))
   (define py-module% (immutable-type 'module))
   (define py-slice% (immutable-type 'slice))
-  
+
+  (define (set-py-dict! type)
+    (set! py-dict% type))
+
   ;; exceptions
   (define py-exception% (immutable-type #cs'Exception))
   (define py-type-error% (immutable-type #cs'TypeError py-exception%))
@@ -47,8 +50,8 @@
   (define py-system-error% (immutable-type #cs'SystemError py-exception%))
   (define py-future-warning% (immutable-type #cs'FutureWarning py-exception%))
   (define py-deprecation-warning% (immutable-type #cs'DeprecationWarning py-exception%))
+  (define py-key-error% (immutable-type #cs'KeyError py-exception%))
 
-  
   ;; files
   (define py-file% (immutable-type 'file))
 
@@ -58,7 +61,7 @@
                 (python-set-member! node (car key-value) (cadr key-value)))
               assoc-list))
 
-  
+
   ;; finish setting up
 ;  (for-each (lambda (type&name&base)
 ;              (let ([type (first type&name&base)]

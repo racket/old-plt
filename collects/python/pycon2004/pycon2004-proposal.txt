@@ -1,0 +1,101 @@
+From Python to PLT Scheme
+
+Daniel Silva and Philippe Meunier
+
+Contact: dsilva@ccs.neu.edu, meunier@ccs.neu.edu
+
+Requested timeslot: 30 minutes.
+
+Authors: Daniel Silva is a student in Computer Science at Northeastern University with an interest in lightweight programming languages.  Philippe Meunier is a PhD student in Computer Science at Northeastern University, working on static analysis of higher-order programming languages.
+
+Abstract:
+
+This paper describes an experimental embedding of Python into DrScheme for educational and professional use.  The core of the system is a compiler, which translates Python programs into equivalent MzScheme programs, and a runtime system to model the Python environment.  The system's C extension mechanism is nearly complete and source-compatible with CPython's system.  The generated MzScheme code may be evaluated or used by DrScheme tools, giving Python programmers access to the DrScheme development suite while writing in their favorite language, and giving DrScheme programmers access to Python.  Its development gives valuable insights into the kind of problems one faces when embedding a real-world language like Python in DrScheme.  In addition to C extension compatibility, we are now also implementing code optimization.
+
+Outline:
+
+* DrScheme background
+  - DrScheme is a PDE for languages compiled into the MzScheme language
+  - The MzScheme language a Scheme language with:
+    + Namespaces
+    + Hash tables
+  - DrScheme provides good tools
+    + CheckSyntax: binding information and syntax correctness
+    + Test coverage
+    + Test suite
+    + Profiler
+    + Debugger
+  - DrScheme makes it easy to create cross-language development tools
+    + Simple tool (plugin) interface
+    + Access to program AST
+
+* Spy: a Python -> MzScheme compiler for DrScheme
+  - Generates MzScheme source syntax objects
+    + Syntax objects: code + source location + extra properties
+  - Provides a Python runtime system
+
+* Code generation: Functions
+  - Definition
+    + ``return`` statements becomes Scheme escapes
+    + Keyword arguments stored in the function's dictionary
+  - Application
+    + Always applied through ``py-call``
+    + Tuple arguments unpacked inside function body
+
+* Code generation: Classes and objects
+  - All objects have an associated dictionary
+  - Inheritance information stored in dict (__bases__)
+  - All attributes stored in dictionary
+
+* Code generation: Modules
+  - MzScheme modules are checked at compile-time:
+    + No cycles
+    + Statically loaded at the top level
+    + No inter-module assignment
+  - Modeled with MzScheme namespaces (top-level environments)
+
+* Status
+  - Spy project currently updating its runtime system
+    + Initially written in Scheme
+    + Porting system to calls to CPython's standard modules
+  - C Extensions
+    + Currently implementing Python's C FFI/API
+    + Transparent source-level compatibility
+
+* Tools: Some automagically work
+  - Check Syntax
+  - Test coverage
+
+* Tools: Some might work
+  - Test suite (looks promising, awaiting ProfJ results)
+  - Profiler (should work as easily as Test Coverage)
+  - Debugger (PLT Debugger GUI upcoming)
+
+* Tools: Python cannot be analyzed by MrFlow
+  - No type-based flow information for primitives yet.
+  - Everything in Python behaves like a hash table.
+  - Analysis would need to internally simulate the hash tables.
+
+* Future Work
+  - Complete the FFI
+  - Optimization
+    + Tail calls: done!
+    + Constant folding: next
+    + Common subexpression elimination: maybe
+    + Other peephole optimizations...
+  - Special Python module: scheme
+    + From within Python:
+       import scheme  # special Scheme module
+       scheme.x = 7   # define Scheme variable x
+
+* Conclusion
+  - We have implemented the Python language (finished yield, exec, slices by PyCon 04)
+  - We have begun embedding CPython's primitive types
+  - We have begun providing a source-compatible C API
+  - We provide access to DrScheme and its tools
+
+* Contact us
+  - Information:
+    + http://spyweb.hopto.org
+  - Volunteers:
+    + dsilva@ccs.neu.edu

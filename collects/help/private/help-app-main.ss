@@ -38,7 +38,9 @@ It is only loaded when Help Desk is run by itself (outside DrScheme).
         'framework:standard-style-list:font-size
         (lambda (p v) (send size set-value v)))
        hp)))
-       
+  
+  (preferences:start-writing-thread)
+  
   (define the-hd-cookie (start-help-server (lambda (x) x)))
   (unless the-hd-cookie
     (printf "Help Desk: could not start server\n")

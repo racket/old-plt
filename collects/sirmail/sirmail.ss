@@ -197,6 +197,10 @@
 		    l))))
 	     (lambda () (set! asking-for-quit? #f))))))
 
+  ;; Start the preferences writing thread -------------------------------
+
+  (preferences:start-writing-thread)
+  
   ;; We start by opening "Inbox" ----------------------------------------
   
   (open-mailbox inbox-name)

@@ -48,17 +48,19 @@
     ;; (again, according to read) you get those langauges.
     ;; if it is set to anything else, you get all langauges.
     (define (env-var-set? lang)
-      (and env-var-set
-           (with-handlers ([exn:read? (lambda (x) #t)])
-             (let ([specific (read (open-input-string env-var-set))])
-               (cond
-                 [(symbol? specific) (eq? lang specific)]
-                 [(list? specific) (memq lang specific)]
-                 [else #t])))))
+      (cond
+        [(symbol? specific) (eq? lang specific)]
+        [(list? specific) (memq lang specific)]
+        [else #t]))
     
     (define env-var-set 
       (or (getenv "PLTSTRINGCONSTANTS")
           (getenv "STRINGCONSTANTS")))
+    
+    (define specific
+      (and env-var-set
+           (with-handlers ([exn:read? (lambda (x) #t)])
+             (read (open-input-string env-var-set)))))
     
     (define warning-message
       (let* (;; type no-warning-cache-key = (cons symbol symbol)

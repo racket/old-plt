@@ -1,10 +1,12 @@
 
 (module beginner mzscheme
   (require (lib "reduction-semantics.ss" "reduction-semantics")
-	   (lib "gui.ss" "reduction-semantics")
+	   ;(lib "gui.ss" "reduction-semantics")
            (lib "subst.ss" "reduction-semantics")
            (lib "match.ss"))
 
+  (provide run-tests)
+  
   #|
   
   `lang' below is actually more generous than beginner, but the
@@ -499,9 +501,9 @@
   (define (show-test-results)
     (cond
       [(= failed-tests 0) 
-       (fprintf (current-error-port) "passed all ~a tests" total-tests)]
+       (fprintf (current-error-port) "passed all ~a tests\n" total-tests)]
       [else
-       (fprintf (current-error-port) "failed ~a out of ~a tests" failed-tests total-tests)]))
+       (fprintf (current-error-port) "failed ~a out of ~a tests\n" failed-tests total-tests)]))
   
   (define-syntax (tests stx)
     (syntax-case stx ()

@@ -58,6 +58,9 @@ abstract out the `hole and `(hole name) patterns.
   (define-struct rib (name exp) (make-inspector)) ;; for testing, add inspector
 
   ;; hole-binding = (make-hole sexp (listof (union 'car 'cdr)) sym)
+  ;; the path should be reversed -- as each layer of the sexp
+  ;; is traversed, the 'car and 'cdr's are stuck at the front of
+  ;; the path. The result is reversed when put into a hole-path
   (define-struct hole-binding (exp path id) (make-inspector))
   
   ;; repeat = (make-repeat compiled-pattern (listof rib))
@@ -440,7 +443,8 @@ abstract out the `hole and `(hole name) patterns.
                      exp
                      (reverse (hole-path-path the-hole-path))
                      hole-id)))))))))))
-  
+
+  ;; match-in-hole : sexp sexp sexp compiled-pattern compiled-pattern symbol boolean (union symbol #f) -> compiled-pattern
   (define (match-in-hole context contractum exp match-context match-contractum this-hole-name bind-hole? hole-id)
     (lambda (exp hole-paths)
       (when (this-hole-id-used? hole-id hole-paths)
@@ -479,9 +483,9 @@ abstract out the `hole and `(hole name) patterns.
                                context exp holes))
                       (let* ([hole-rib (car holes)]
                              [a-hole (rib-exp hole-rib)]
-                             [a-hole-exp (hole-binding-exp a-hole)]
-                             [a-hole-path (hole-binding-path a-hole)]
-                             [contractum-bindingss (match-contractum a-hole-exp hole-paths)])
+                             [extended-hole-paths (extend-hole-paths hole-paths (reverse (hole-binding-path a-hole)))]
+                             [contractum-bindingss 
+                              (match-contractum (hole-binding-exp a-hole) extended-hole-paths)])
                         (if contractum-bindingss
                             (let i-loop ([contractum-bindingss contractum-bindingss]
                                          [acc acc])
@@ -496,7 +500,15 @@ abstract out the `hole and `(hole name) patterns.
                                                    (bindings-table bindings)))
                                           acc)))]))
                             (loop (cdr bindingss) acc)))))]))))))
-
+  
+  ;; extend-hole-paths : (listof hole-path) (listof (union 'car 'cdr)) -> (listof hole-path)
+  (define (extend-hole-paths hole-paths a-hole-path)
+    (map (lambda (hp)
+           (make-hole-path (hole-path-name hp)
+                           (hole-path-id hp)
+                           (append a-hole-path (hole-path-path hp))))
+         hole-paths))
+  
   ;; this-hole-id-used? : (union #f symbol) (listof hole-path) -> boolean
   (define (this-hole-id-used? hole-id hole-paths)
     (let loop ([hole-paths hole-paths])
@@ -1002,9 +1014,22 @@ abstract out the `hole and `(hole name) patterns.
               (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '() #f))))))
     
     (test-xab '(in-hole ec-multi (+ number number))
-              '(+ (+ 3 4) (+ 1 2))
-              (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '(cdr car) #f))))
-                    (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 3 4) '(cdr cdr car) #f))))))
+              '(+ 1 (+ 5 6))
+              (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 5 6) '(cdr cdr car) #f))))))
+    
+    (test-xab '(in-hole ec-multi (+ number number))
+              '(+ (+ (+ 1 2) 3) 4)
+              (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '(cdr car cdr car) #f))))))
+    
+    (test-xab '(in-hole ec-multi (+ number number))
+              '(+ (+ 3 (+ 1 2)) 4)
+              (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '(cdr car cdr cdr car) #f))))))
+    
+    (test-xab '(in-hole ec-multi (+ number number))
+              '(+ (+ (+ 1 2) (+ 3 4)) (+ 5 6))
+              (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 5 6) '(cdr cdr car) #f))))
+                    (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '(cdr car cdr car) #f))))
+                    (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 3 4) '(cdr car cdr cdr car) #f))))))
     
     (run-test
      'compatible-context-language1

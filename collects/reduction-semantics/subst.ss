@@ -47,6 +47,8 @@
                         build-exp
                         all-vars-exp
                         (append sub-pieces ...))))]
+             [((all-vars) sub-pieces ...)
+              (raise-syntax-error 'subst "expected all-vars must have an argument" stx rhs-stx)]
              [((all-vars all-vars-exp) not-build-clause anything ...)
               (raise-syntax-error 'subst "expected build clause" (syntax not-build-clause))]
              [((all-vars all-vars-exp))

@@ -8,6 +8,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   (define (make-bug-link name)
     (let ([dir (string-copy name)])
       (string-lowercase! dir)

@@ -6,6 +6,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   (define (make-header-text s)
     (color-highlight `(H2 () ,s)))
 

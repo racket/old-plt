@@ -11,6 +11,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   (define soft-page
     `(HTML 
       (HEAD ,hd-css

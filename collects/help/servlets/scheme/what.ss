@@ -8,6 +8,8 @@
 (unit/sig ()
   (import servlet^)
 
+ (report-errors-to-browser send/finish)
+
  (define (standout-text s)
    (color-with "forestgreen"
 	       `(B ,s)))

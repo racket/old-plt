@@ -47,7 +47,15 @@
 
    Tail calls are, for the most part, gotos within scheme_do_eval(). A
    C function called y the main evaluation loop can perform a
-   trampoling tail call via scheme_tail_apply.
+   trampoling tail call via scheme_tail_apply. The trampoline must
+   return to its caller without allocating any memory, because an
+   allocation optimization in the tail-call code assumes no GCs will
+   occur between the time that a tail call is issued and the time when
+   it's handled.
+
+   Multiple values are returned as a special SCHEME_MULTIPLE_VALUES
+   token that indicates actual values are stored in the current
+   thread's record.
 
    The apply half of the eval-apply loop branches on all possible
    application types. All primitive functions (including cons) are
@@ -75,7 +83,16 @@
    whether a variable is mutated or not). The second pass, called
    "resolve", finishes compilation by computing variable offsets and
    indirections (often mutating the records produced by the first
-   pass). */
+   pass). 
+   
+   Top-level variables (global or module) are referenced through the
+   Scheme stack, so that the variables can be "re-linked" each time a
+   module is instantiated. Syntax constants are similarly access
+   through the Scheme stack. The global variables and syntax objects
+   are sometimes called the "prefix", and scheme_push_prefix()
+   initializes the prefix portion of the stack.
+
+*/
 
 #include "schpriv.h"
 #include "schrunst.h"
@@ -364,13 +381,18 @@ scheme_init_eval (Scheme_Env *env)
 Scheme_Object *
 scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
 {
+  /* "Stack overflow" means running out of C-stack space. The other
+     end of this handler (i.e., the target for the longjmp) is
+     scheme_top_level_do in fun.c */
+
   scheme_overflow_k = k;
   scheme_init_jmpup_buf(&scheme_overflow_cont);
-  scheme_zero_unneeded_rands(scheme_current_thread);
+  scheme_zero_unneeded_rands(scheme_current_thread); /* for GC */
   if (scheme_setjmpup(&scheme_overflow_cont, scheme_current_thread,
 		      scheme_current_thread->cc_start)) {
     scheme_reset_jmpup_buf(&scheme_overflow_cont);
     if (!scheme_overflow_reply) {
+      /* No reply value means we should continue some escape. */
       scheme_longjmp(scheme_error_buf, 1);
     } else {
       Scheme_Object *reply = scheme_overflow_reply;
@@ -383,6 +405,7 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
 }
 
 void scheme_init_stack_check()
+     /* Finds the C stack limit --- platform-specific. */
 {
   int *v;
   unsigned long deeper;
@@ -474,6 +497,7 @@ void scheme_init_stack_check()
 
 
 int scheme_check_runstack(long size)
+     /* Checks whether the Scheme stack has `size' room left */
 {
 #ifndef RUNSTACK_IS_GLOBAL
   Scheme_Thread *p = scheme_current_thread;
@@ -483,6 +507,7 @@ int scheme_check_runstack(long size)
 }
 
 void *scheme_enlarge_runstack(long size, void *(*k)())
+     /* Adds a Scheme stack segment, of at least `size' bytes */
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Saved_Stack *saved;
@@ -508,7 +533,9 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
   MZ_RUNSTACK = MZ_RUNSTACK_START + size;
   
   v = k();
-  
+  /* If `k' escapes, the escape handler will restore the stack
+     pointers. */
+
   p->runstack_saved = saved->prev;
   MZ_RUNSTACK = saved->runstack;
   MZ_RUNSTACK_START = saved->runstack_start;
@@ -522,6 +549,8 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
 /*========================================================================*/
 
 int scheme_omittable_expr(Scheme_Object *o, int vals)
+     /* Checks whether the bytecode `o' returns `vals' values with no
+        side-effects. */
 {
   Scheme_Type vtype;
 
@@ -614,6 +643,7 @@ int scheme_is_compiled_procedure(Scheme_Object *o, int can_be_closed)
 }
 
 int scheme_get_eval_type(Scheme_Object *obj)
+     /* Categories for shirt-cutting recursive calls to the evaluator */
 {
   Scheme_Type type;
 
@@ -632,6 +662,8 @@ int scheme_get_eval_type(Scheme_Object *obj)
 }    
 
 static Scheme_Object *try_apply(Scheme_Object *f, Scheme_Object *args)
+     /* Apply `f' to `args' and ignore failues --- used for constant
+        folding attempts */
 {
   Scheme_Object * volatile result;
   mz_jmp_buf savebuf;
@@ -678,7 +710,7 @@ static Scheme_Object *make_application(Scheme_Object *v)
     if ((SCHEME_PRIMP(f) && (((Scheme_Primitive_Proc *)f)->flags & SCHEME_PRIM_IS_FOLDING))
 	|| (SCHEME_CLSD_PRIMP(f) 
 	    && (((Scheme_Closed_Primitive_Proc *)f)->flags & SCHEME_PRIM_IS_FOLDING))
-	|| (SAME_TYPE(SCHEME_TYPE(f), scheme_linked_closure_type)
+	|| (SAME_TYPE(SCHEME_TYPE(f), scheme_closure_type)
 	    && (((Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(f))->flags
 		& CLOS_FOLDABLE))) {
       f = try_apply(f, SCHEME_CDR(v));
@@ -2572,7 +2604,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       v = prim->prim_val(num_rands, rands);
 
       DEBUG_CHECK_TYPE(v);
-    } else if (type == scheme_linked_closure_type) {
+    } else if (type == scheme_closure_type) {
       Scheme_Closure_Compilation_Data *data;
       GC_CAN_IGNORE Scheme_Object **stack, **src;
       int i, has_rest, num_params;
@@ -3081,7 +3113,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	}
       case scheme_unclosed_procedure_type:
 	UPDATE_THREAD_RSPTR();
-	v = scheme_make_linked_closure(p, obj, 1);
+	v = scheme_make_closure(p, obj, 1);
 	goto returnv;
 
       case scheme_let_value_type:
@@ -3187,7 +3219,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  /* Create unfinished closures */
 	  while (i--) {
 	    Scheme_Object *uc;
-	    uc = scheme_make_linked_closure(p, a[i], 0);
+	    uc = scheme_make_closure(p, a[i], 0);
 	    stack[i] = uc;
 	  }
 

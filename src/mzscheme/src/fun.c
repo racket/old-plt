@@ -21,7 +21,16 @@
   All rights reserved.
 */
 
+/* This file is a hodge-podge of various aspects of application and
+   continuations.  It includes primitives like `call/cc' and
+   `procedure-arity', which have no better home, as well as parts of
+   closure compilation and wrappers for evaluation to handle stack
+   overflow and continuation-jump limits. */
+
 #include "schpriv.h"
+
+/* The implementations of the time primitives, such as
+   `current-seconds', vary a lot from platform to platform. */
 #ifdef TIME_SYNTAX
 # ifdef USE_MACTIME
 #  include <OSUtils.h>
@@ -52,11 +61,10 @@
 #endif /* TIME_SYNTAX */
 
 /* globals */
-int scheme_defining_primitives;
+int scheme_defining_primitives; /* set to 1 during start-up */
 
-Scheme_Object scheme_void[1];
-Scheme_Object *scheme_void_func;
-Scheme_Object *scheme_values_func;
+Scheme_Object scheme_void[1]; /* the void constant */
+Scheme_Object *scheme_values_func; /* the function bound to `values' */
 
 Scheme_Object *scheme_tail_call_waiting;
 
@@ -73,7 +81,7 @@ static Scheme_Object *cont_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *extract_cc_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *void_func (int argc, Scheme_Object *argv[]);
-static Scheme_Object *is_void_func (int argc, Scheme_Object *argv[]);
+static Scheme_Object *void_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *dynamic_wind (int argc, Scheme_Object *argv[]);
 #ifdef TIME_SYNTAX
 static Scheme_Object *time_apply(int argc, Scheme_Object *argv[]);
@@ -99,6 +107,7 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a);
 static Scheme_Object *write_compiled_closure(Scheme_Object *obj);
 static Scheme_Object *read_compiled_closure(Scheme_Object *obj);
 
+/* Back-door arguments to scheme_top_level_do: */
 static int top_next_registered;
 static Scheme_Comp_Env *top_next_env;
 static Scheme_Object *top_next_mark;
@@ -121,6 +130,10 @@ typedef struct Scheme_Dynamic_Wind_List {
   struct Scheme_Dynamic_Wind_List *next;
 } Scheme_Dynamic_Wind_List;
 
+/*========================================================================*/
+/*                             initialization                             */
+/*========================================================================*/
+
 void
 scheme_init_fun (Scheme_Env *env)
 {
@@ -129,8 +142,6 @@ scheme_init_fun (Scheme_Env *env)
 #ifdef MZ_PRECISE_GC
   register_traversers();
 #endif
-
-  REGISTER_SO(scheme_void_func);
 
   scheme_void->type = scheme_void_type;
 
@@ -141,8 +152,6 @@ scheme_init_fun (Scheme_Env *env)
   scheme_tail_call_waiting = scheme_alloc_eternal_object();
   scheme_tail_call_waiting->type = scheme_tail_call_waiting_type;
 #endif
-
-  scheme_void_func = scheme_make_folding_prim(void_func, "void", 0, -1, 1);
 
   scheme_add_global_constant("procedure?", 
 			     scheme_make_folding_prim(procedure_p, 
@@ -227,9 +236,12 @@ scheme_init_fun (Scheme_Env *env)
 						      1, 1),
 			     env);
 
-  scheme_add_global_constant("void", scheme_void_func, env);  
+  scheme_add_global_constant("void", scheme_make_folding_prim(void_func, 
+							      "void", 
+							      0, -1, 1), 
+			     env);
   scheme_add_global_constant("void?", 
-			     scheme_make_folding_prim(is_void_func,  
+			     scheme_make_folding_prim(void_p,  
 						      "void?", 
 						      1, 1, 1), 
 			     env);  
@@ -328,33 +340,9 @@ scheme_init_fun (Scheme_Env *env)
   is_method_symbol = scheme_intern_symbol("method-arity-error");
 }
 
-Scheme_Object *
-scheme_force_value(Scheme_Object *obj)
-{
-  if (SAME_OBJ(obj, SCHEME_TAIL_CALL_WAITING)) {
-    Scheme_Thread *p = scheme_current_thread;
-    Scheme_Object *v;
-
-    /* Watch out for use for use of tail buffer: */
-    if (p->ku.apply.tail_rands == p->tail_buffer) {
-      GC_CAN_IGNORE Scheme_Object **tb; 
-      p->tail_buffer = NULL; /* so args aren't zeroed */ 
-      tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
-      p->tail_buffer = tb;
-    }
-    
-    v = _scheme_apply_multi(p->ku.apply.tail_rator, 
-			    p->ku.apply.tail_num_rands, 
-			    p->ku.apply.tail_rands);
-    return v;
-  } else if (SAME_OBJ(obj, SCHEME_EVAL_WAITING)) {
-    Scheme_Thread *p = scheme_current_thread;
-    return _scheme_eval_linked_expr_multi(p->ku.eval.wait_expr);
-  } else if (obj)
-    return obj;
-  else
-    return scheme_void;
-}
+/*========================================================================*/
+/*                          primitive procedures                          */
+/*========================================================================*/
 
 Scheme_Object *
 scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
@@ -494,9 +482,15 @@ int scheme_has_method_property(Scheme_Object *code)
   return SCHEME_TRUEP(scheme_stx_property(code, is_method_symbol, NULL));
 }
 
+/*========================================================================*/
+/*                  closures (run time and compilation)                   */
+/*========================================================================*/
+
 Scheme_Object *
-scheme_make_linked_closure(Scheme_Thread *p, 
-			   Scheme_Object *linked_code, int close)
+scheme_make_closure(Scheme_Thread *p, Scheme_Object *code, int close)
+     /* Creates a closure at run-time (or an empty closure at compile
+        time; note that the byte-code marshaller in print.c can handle
+        empty closures for that reason). */
 {
   Scheme_Closure_Compilation_Data *data;
   Scheme_Closed_Compiled_Procedure *closure;
@@ -504,7 +498,7 @@ scheme_make_linked_closure(Scheme_Thread *p,
   short *map;
   int i;
 
-  data = (Scheme_Closure_Compilation_Data *)linked_code;
+  data = (Scheme_Closure_Compilation_Data *)code;
 
   i = data->closure_size;
 
@@ -512,13 +506,13 @@ scheme_make_linked_closure(Scheme_Thread *p,
     scheme_malloc_tagged(sizeof(Scheme_Closed_Compiled_Procedure)
 			 + (i - 1) * sizeof(Scheme_Object *));
 
-  closure->type = scheme_linked_closure_type;
-  SCHEME_COMPILED_CLOS_CODE(closure) = linked_code;
+  closure->type = scheme_closure_type;
+  SCHEME_COMPILED_CLOS_CODE(closure) = code;
 
 #ifdef MZ_PRECISE_GC
-  closure->closure_size = i;
+  closure->closure_size = i; /* needed for getting the object's size in bytes */
 #else
-  closure->zero_sized = !i;
+  closure->zero_sized = !i; /* info used for reporting certain arity errors */
 #endif
 
   if (!close || !i)
@@ -528,6 +522,7 @@ scheme_make_linked_closure(Scheme_Thread *p,
   dest = closure->vals;
   map = data->closure_map;
 
+  /* Copy data into the closure: */
   while (i--) {
     dest[i] = runstack[map[i]];
   }
@@ -536,7 +531,7 @@ scheme_make_linked_closure(Scheme_Thread *p,
 }
 
 /* Closure_Info is used to store extra closure information
-   before a closure mapping is resolved */
+   before a closure mapping is resolved. */
 typedef struct {
   MZTAG_IF_REQUIRED
   int *local_flags;
@@ -571,6 +566,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
   closure_size = data->closure_size;
   closure_map = (short *)scheme_malloc_atomic(sizeof(short) * closure_size);
 
+  /* Locals in closure are first: */
   oldpos = cl->base_closure_map;
   for (i = cl->base_closure_size; i--; ) {
     int li;
@@ -578,6 +574,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
     closure_map[i] = li;
   }
 
+  /* Then the pointer to globals, if any: */
   offset = cl->base_closure_size;
   if (cl->has_tl) {
     int li;
@@ -586,6 +583,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
     offset++;
   }
   
+  /* Then the syntax constants, if any: */
   stx_oldpos = cl->stx_closure_map;
   for (i = cl->stx_closure_size; i--; ) {
     int li;
@@ -593,6 +591,10 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
     closure_map[i + offset] = li;
   }
   
+  /* Set up mappng from old locations on the stack (as if bodies were
+     evaluated immediately) to new locations (where closures
+     effectively shift and compact valueson the stack): */
+
   new_info = scheme_resolve_info_extend(info, data->num_params, data->num_params,
 					cl->base_closure_size + data->num_params,
 					cl->stx_closure_size);
@@ -625,7 +627,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
     data->code = code;
   }
 
-  /* Add code to box set!ed variables: */
+  /* Add code to box set!ed argument variables: */
   for (i = 0; i < data->num_params; i++) {
     if (cl->local_flags[i] & SCHEME_INFO_BOXED) {
       int j = i + closure_size;
@@ -643,12 +645,13 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
 
   if (!data->closure_size)
     /* If the closure is empty, go ahead and finalize closure */
-    return scheme_make_linked_closure(NULL, (Scheme_Object *)data, 0);
+    return scheme_make_closure(NULL, (Scheme_Object *)data, 0);
   else
     return (Scheme_Object *)data;
 }
 
 Scheme_Object *scheme_source_to_name(Scheme_Object *code)
+     /* Makes up a procedure namewhen there's not a good one in the source: */
 {
   Scheme_Stx *cstx = (Scheme_Stx *)code;
   if ((cstx->srcloc->col >= 0) || (cstx->srcloc->pos >= 0)) {
@@ -685,6 +688,7 @@ Scheme_Object *scheme_source_to_name(Scheme_Object *code)
 Scheme_Object *
 scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code, 
 				Scheme_Compile_Info *rec, int drec)
+     /* Compiles a `lambda' expression */
 {
   Scheme_Object *allparams, *params, *forms, *param;
   Scheme_Closure_Compilation_Data *data;
@@ -787,7 +791,12 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   return (Scheme_Object *)data;
 }
 
+/*========================================================================*/
+/*                         stack-overflow wrapper                         */
+/*========================================================================*/
+
 void scheme_on_next_top(Scheme_Comp_Env *env, Scheme_Object *mark, Scheme_Object *name)
+     /* Set back-door arguments for scheme_top_level_do */
 {
   if (!top_next_registered) {
     top_next_registered = 1;
@@ -804,6 +813,8 @@ void scheme_on_next_top(Scheme_Comp_Env *env, Scheme_Object *mark, Scheme_Object
 typedef Scheme_Object *(*Overflow_K_Proc)(void);
 
 void *scheme_top_level_do(void *(*k)(void), int eb)
+     /* Wraps a function `k' with a handler for stack overflows and
+	barriers to full-continuation jumps.  */
 {
   void *v;
   long * volatile old_cc_ok;
@@ -1001,6 +1012,40 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   return v;
 }
 
+/*========================================================================*/
+/*                  procedure application evaluation                      */
+/*========================================================================*/
+
+Scheme_Object *
+scheme_force_value(Scheme_Object *obj)
+     /* Called where _scheme_apply() or _scheme_value() might return a
+	a tail-call-waiting trampoline token.  */
+{
+  if (SAME_OBJ(obj, SCHEME_TAIL_CALL_WAITING)) {
+    Scheme_Thread *p = scheme_current_thread;
+    Scheme_Object *v;
+
+    /* Watch out for use for use of tail buffer: */
+    if (p->ku.apply.tail_rands == p->tail_buffer) {
+      GC_CAN_IGNORE Scheme_Object **tb; 
+      p->tail_buffer = NULL; /* so args aren't zeroed */ 
+      tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
+      p->tail_buffer = tb;
+    }
+    
+    v = _scheme_apply_multi(p->ku.apply.tail_rator, 
+			    p->ku.apply.tail_num_rands, 
+			    p->ku.apply.tail_rands);
+    return v;
+  } else if (SAME_OBJ(obj, SCHEME_EVAL_WAITING)) {
+    Scheme_Thread *p = scheme_current_thread;
+    return _scheme_eval_linked_expr_multi(p->ku.eval.wait_expr);
+  } else if (obj)
+    return obj;
+  else
+    return scheme_void;
+}
+
 static void *apply_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
@@ -1185,149 +1230,9 @@ scheme_apply_macro(Scheme_Object *name,
   return code;
 }
 
-/* locals */
-
-static Scheme_Object *
-procedure_p (int argc, Scheme_Object *argv[])
-{
-  return (SCHEME_PROCP(argv[0]) ? scheme_true : scheme_false);
-}
-
-static Scheme_Object *primitive_p(int argc, Scheme_Object *argv[])
-{
-  int isprim;
-
-  if (SCHEME_PRIMP(argv[0]))
-    isprim = (((Scheme_Primitive_Proc *)argv[0])->flags & SCHEME_PRIM_IS_PRIMITIVE);
-  else if (SCHEME_CLSD_PRIMP(argv[0]))
-    isprim = (((Scheme_Closed_Primitive_Proc *)argv[0])->flags & SCHEME_PRIM_IS_PRIMITIVE);
-  else
-    isprim = 0;
-
-  return isprim ? scheme_true : scheme_false;
-}
-
-static Scheme_Object *primitive_closure_p(int argc, Scheme_Object *argv[])
-{
-  int isprim;
-
-  if (SCHEME_CLSD_PRIMP(argv[0]))
-    isprim = (((Scheme_Closed_Primitive_Proc *)argv[0])->flags & SCHEME_PRIM_IS_PRIMITIVE);
-  else
-    isprim = 0;
-
-  return isprim ? scheme_true : scheme_false;
-}
-
-const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
-{
-  Scheme_Type type;
-  int dummy;
-  char *s;
-
-  if (!len)
-    len = &dummy;
-
-  type = SCHEME_TYPE(p);
-  if (type == scheme_prim_type) {
-    *len = strlen(((Scheme_Primitive_Proc *)p)->name);
-    return ((Scheme_Primitive_Proc *)p)->name;
-  } else if (type == scheme_closed_prim_type) {
-    *len = strlen(((Scheme_Closed_Primitive_Proc *)p)->name);
-    return ((Scheme_Closed_Primitive_Proc *)p)->name;
-  } else if (type == scheme_cont_type || type == scheme_escaping_cont_type) {
-    return NULL;
-  } else if (type == scheme_case_closure_type) {
-    Scheme_Object *n;
-
-    n = ((Scheme_Case_Lambda *)p)->name;
-    if (n) {
-      if (SCHEME_BOXP(n)) {
-	/* See note in schpriv.h about the IS_METHOD hack */
-	n = SCHEME_BOX_VAL(n);
-	if (SCHEME_FALSEP(n))
-	  return NULL;
-      }
-
-      *len = SCHEME_SYM_LEN(n);
-      s = scheme_symbol_val(n);
-    } else
-      return NULL;
-  } else {
-    Scheme_Closure_Compilation_Data *data;
-
-    data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(p);
-    if (data->name) {
-      *len = SCHEME_SYM_LEN(data->name);
-      s = scheme_symbol_val(data->name);
-    } else
-      return NULL;
-  }
-
-  if (for_error) {
-    char *r;
-    
-    r = (char *)scheme_malloc_atomic(*len + 11);
-    memcpy(r, "procedure ", 10);
-    memcpy(r + 10, s, *len + 1);
-    *len += 10;
-
-    return r;
-  }
-
-  return s;
-}
-
-static Scheme_Object *primitive_result_arity(int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *o;
-
-  o = argv[0];
-
-  if (SCHEME_PRIMP(o)
-      && (((Scheme_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_PRIMITIVE)) {
-    if (((Scheme_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_MULTI_RESULT) {
-      Scheme_Prim_W_Result_Arity *p = (Scheme_Prim_W_Result_Arity *)o;
-      return scheme_make_arity(p->minr, p->maxr);
-    }
-  } else if (SCHEME_CLSD_PRIMP(o)
-	     && (((Scheme_Closed_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_PRIMITIVE)) {
-    if (((Scheme_Closed_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_MULTI_RESULT) {
-      Scheme_Closed_Prim_W_Result_Arity *p = (Scheme_Closed_Prim_W_Result_Arity *)o;
-      return scheme_make_arity(p->minr, p->maxr);
-    }
-  } else {
-    scheme_wrong_type("primitive-result_arity", "primitive", 0, argc, argv);
-    return NULL;
-  }
-
-  return scheme_make_integer(1);
-}
-
-static Scheme_Object *object_name(int argc, Scheme_Object **argv)
-{
-  if (SCHEME_PROCP(argv[0])) {
-    const char *s;
-    int len;
-
-    s = scheme_get_proc_name(argv[0], &len, 0);
-    if (s) 
-      return scheme_intern_exact_symbol(s, len);
-  } else if (SCHEME_STRUCTP(argv[0])) {
-    return SCHEME_STRUCT_NAME_SYM(argv[0]);
-  } else if (SCHEME_STRUCT_TYPEP(argv[0])) {
-    return ((Scheme_Struct_Type *)argv[0])->name;
-  } else if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_property_type)) {
-    return ((Scheme_Struct_Property *)argv[0])->name;
-  } if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_regexp_type)) {
-    Scheme_Object *s;
-    s = scheme_regexp_source(argv[0]);
-    if (s)
-      return s;
-  }
-
-  return scheme_false;
-}
+/*========================================================================*/
+/*                                   arity                                */
+/*========================================================================*/
 
 Scheme_Object *scheme_make_arity(short mina, short maxa)
 {
@@ -1488,6 +1393,164 @@ int scheme_check_proc_arity(const char *where, int a,
   return 1;
 }
 
+/*========================================================================*/
+/*                        basic function primitives                       */
+/*========================================================================*/
+
+static Scheme_Object *
+void_func (int argc, Scheme_Object *argv[])
+{
+  return scheme_void;
+}
+
+static Scheme_Object *
+void_p (int argc, Scheme_Object *argv[])
+{
+  return SAME_OBJ(argv[0], scheme_void) ? scheme_true : scheme_false;
+}
+
+static Scheme_Object *
+procedure_p (int argc, Scheme_Object *argv[])
+{
+  return (SCHEME_PROCP(argv[0]) ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *primitive_p(int argc, Scheme_Object *argv[])
+{
+  int isprim;
+
+  if (SCHEME_PRIMP(argv[0]))
+    isprim = (((Scheme_Primitive_Proc *)argv[0])->flags & SCHEME_PRIM_IS_PRIMITIVE);
+  else if (SCHEME_CLSD_PRIMP(argv[0]))
+    isprim = (((Scheme_Closed_Primitive_Proc *)argv[0])->flags & SCHEME_PRIM_IS_PRIMITIVE);
+  else
+    isprim = 0;
+
+  return isprim ? scheme_true : scheme_false;
+}
+
+static Scheme_Object *primitive_closure_p(int argc, Scheme_Object *argv[])
+{
+  int isprim;
+
+  if (SCHEME_CLSD_PRIMP(argv[0]))
+    isprim = (((Scheme_Closed_Primitive_Proc *)argv[0])->flags & SCHEME_PRIM_IS_PRIMITIVE);
+  else
+    isprim = 0;
+
+  return isprim ? scheme_true : scheme_false;
+}
+
+const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
+{
+  Scheme_Type type;
+  int dummy;
+  char *s;
+
+  if (!len)
+    len = &dummy;
+
+  type = SCHEME_TYPE(p);
+  if (type == scheme_prim_type) {
+    *len = strlen(((Scheme_Primitive_Proc *)p)->name);
+    return ((Scheme_Primitive_Proc *)p)->name;
+  } else if (type == scheme_closed_prim_type) {
+    *len = strlen(((Scheme_Closed_Primitive_Proc *)p)->name);
+    return ((Scheme_Closed_Primitive_Proc *)p)->name;
+  } else if (type == scheme_cont_type || type == scheme_escaping_cont_type) {
+    return NULL;
+  } else if (type == scheme_case_closure_type) {
+    Scheme_Object *n;
+
+    n = ((Scheme_Case_Lambda *)p)->name;
+    if (n) {
+      if (SCHEME_BOXP(n)) {
+	/* See note in schpriv.h about the IS_METHOD hack */
+	n = SCHEME_BOX_VAL(n);
+	if (SCHEME_FALSEP(n))
+	  return NULL;
+      }
+
+      *len = SCHEME_SYM_LEN(n);
+      s = scheme_symbol_val(n);
+    } else
+      return NULL;
+  } else {
+    Scheme_Closure_Compilation_Data *data;
+
+    data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(p);
+    if (data->name) {
+      *len = SCHEME_SYM_LEN(data->name);
+      s = scheme_symbol_val(data->name);
+    } else
+      return NULL;
+  }
+
+  if (for_error) {
+    char *r;
+    
+    r = (char *)scheme_malloc_atomic(*len + 11);
+    memcpy(r, "procedure ", 10);
+    memcpy(r + 10, s, *len + 1);
+    *len += 10;
+
+    return r;
+  }
+
+  return s;
+}
+
+static Scheme_Object *primitive_result_arity(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *o;
+
+  o = argv[0];
+
+  if (SCHEME_PRIMP(o)
+      && (((Scheme_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_PRIMITIVE)) {
+    if (((Scheme_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_MULTI_RESULT) {
+      Scheme_Prim_W_Result_Arity *p = (Scheme_Prim_W_Result_Arity *)o;
+      return scheme_make_arity(p->minr, p->maxr);
+    }
+  } else if (SCHEME_CLSD_PRIMP(o)
+	     && (((Scheme_Closed_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_PRIMITIVE)) {
+    if (((Scheme_Closed_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_MULTI_RESULT) {
+      Scheme_Closed_Prim_W_Result_Arity *p = (Scheme_Closed_Prim_W_Result_Arity *)o;
+      return scheme_make_arity(p->minr, p->maxr);
+    }
+  } else {
+    scheme_wrong_type("primitive-result_arity", "primitive", 0, argc, argv);
+    return NULL;
+  }
+
+  return scheme_make_integer(1);
+}
+
+static Scheme_Object *object_name(int argc, Scheme_Object **argv)
+{
+  if (SCHEME_PROCP(argv[0])) {
+    const char *s;
+    int len;
+
+    s = scheme_get_proc_name(argv[0], &len, 0);
+    if (s) 
+      return scheme_intern_exact_symbol(s, len);
+  } else if (SCHEME_STRUCTP(argv[0])) {
+    return SCHEME_STRUCT_NAME_SYM(argv[0]);
+  } else if (SCHEME_STRUCT_TYPEP(argv[0])) {
+    return ((Scheme_Struct_Type *)argv[0])->name;
+  } else if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_property_type)) {
+    return ((Scheme_Struct_Property *)argv[0])->name;
+  } if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_regexp_type)) {
+    Scheme_Object *s;
+    s = scheme_regexp_source(argv[0]);
+    if (s)
+      return s;
+  }
+
+  return scheme_false;
+}
+
 Scheme_Object *scheme_arity(Scheme_Object *p)
 {
   return get_or_check_arity(p, -1);
@@ -1555,6 +1618,7 @@ apply(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
        int and_mode, int or_mode)
+     /* common code for `map', `for-each', `andmap' and `ormap'
 {
   int i, size = 0, l;
   int can_multi;
@@ -1747,6 +1811,10 @@ Scheme_Object *scheme_values(int argc, Scheme_Object *argv[])
 
   return SCHEME_MULTIPLE_VALUES;
 }
+
+/*========================================================================*/
+/*                             continuations                              */
+/*========================================================================*/
 
 void scheme_clear_escape(void)
 {
@@ -2162,6 +2230,10 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
   return first;
 }
 
+/*========================================================================*/
+/*                             dynamic-wind                               */
+/*========================================================================*/
+
 typedef struct {
   MZTAG_IF_REQUIRED
   Scheme_Object *pre, *act, *post;
@@ -2324,17 +2396,9 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
   return v;
 }
 
-static Scheme_Object *
-void_func (int argc, Scheme_Object *argv[])
-{
-  return scheme_void;
-}
-
-static Scheme_Object *
-is_void_func (int argc, Scheme_Object *argv[])
-{
-  return SAME_OBJ(argv[0], scheme_void) ? scheme_true : scheme_false;
-}
+/*========================================================================*/
+/*                                  time                                  */
+/*========================================================================*/
 
 #ifdef TIME_SYNTAX
 
@@ -2702,7 +2766,9 @@ static Scheme_Object *current_seconds(int argc, Scheme_Object **argv)
 #endif
 
 
-/****************************************************************/
+/*========================================================================*/
+/*                             read-eval-print                            */
+/*========================================================================*/
 
 static Scheme_Object *
 current_print(int argc, Scheme_Object **argv)
@@ -2761,7 +2827,9 @@ scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
 }
 
 
-/****************************************************************/
+/*========================================================================*/
+/*                        [un]marshalling closure code                    */
+/*========================================================================*/
 
 #define BOOL(x) (x ? scheme_true : scheme_false)
 
@@ -2825,13 +2893,14 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
 
   if (!data->closure_size)
     /* If the closure is empty, go ahead and finalize */
-    return scheme_make_linked_closure(NULL, (Scheme_Object *)data, 0);
+    return scheme_make_closure(NULL, (Scheme_Object *)data, 0);
   else
     return (Scheme_Object *)data;
 }
 
-
-/**********************************************************************/
+/*========================================================================*/
+/*                                precise GC                              */
+/*========================================================================*/
 
 #ifdef MZ_PRECISE_GC
 

@@ -300,8 +300,8 @@ static void make_init_env(void)
 # define DONE_TIME(n) /**/
 #endif
 
-  /* The ordering of the first few init calls is important.
-	  Add to the end of the list, not the beginning. */
+  /* The ordering of the first few init calls is important, so add to
+     the end of the list, not the beginning. */
   MZTIMEIT(symbol-table, scheme_init_symbol_table());
   MZTIMEIT(type, scheme_init_type(env));
   MZTIMEIT(symbol-type, scheme_init_symbol_type(env));

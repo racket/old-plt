@@ -583,7 +583,7 @@ void scheme_init_hash_key_procs(void)
 #define PROC(t,f) hash_key_procs[t] = f
   PROC(scheme_prim_type, hash_prim);
   PROC(scheme_closed_prim_type, hash_prim);
-  PROC(scheme_linked_closure_type, hash_general);
+  PROC(scheme_closure_type, hash_general);
   PROC(scheme_case_closure_type, hash_case);
   PROC(scheme_cont_type, hash_general);
   PROC(scheme_escaping_cont_type, hash_general);

@@ -228,7 +228,7 @@
 (when pgc?
   ;; Header:
   (printf "#define FUNCCALL(setup, x) (setup, x)~n")
-  (printf "#define FUNCCALL_EMPTY(x) FUNCCALL(GC_variable_stack = __gc_var_stack__[0], x)~n")
+  (printf "#define FUNCCALL_EMPTY(x) FUNCCALL(GC_variable_stack = (void **)__gc_var_stack__[0], x)~n")
   (printf "#define FUNCCALL_AGAIN(x) FUNCCALL(GC_variable_stack = __gc_var_stack__, x)~n")
   (printf "#define PREPARE_VAR_STACK(size) void *__gc_var_stack__[size+2]; __gc_var_stack__[0] = GC_variable_stack;~n")
   (printf "#define SETUP(x) (GC_variable_stack = __gc_var_stack__, __gc_var_stack__[1] = (void *)x)~n")

@@ -203,10 +203,17 @@ int osk_not_console = 0;
 static void dangerdanger(int);
 #endif
 
-static int run_from_cmd_line(int argc, char *argv[], 
+#ifndef MZ_PRECISE_GC
+# ifndef GC_CAN_IGNORE
+#  define GC_CAN_IGNORE /**/
+# endif
+#endif
+
+static int run_from_cmd_line(int argc, char *_argv[], 
 			     Scheme_Env *(*mk_basic_env)(void),
 			     int (*cont_run)(FinishArgs *f))
 {
+  GC_CAN_IGNORE char **argv = _argv;
   Scheme_Env *global_env;
   char *prog;
   Scheme_Object *sch_argv;
@@ -268,7 +275,8 @@ static int run_from_cmd_line(int argc, char *argv[],
      arguments. */
   if (cmdline_exe_hack[0] != '[') {
     int n, i, d;
-    char *p, **argv2;
+    GC_CAN_IGNORE char *p;
+    char **argv2;
 
     p = cmdline_exe_hack + 1;
     n = 0;
@@ -355,7 +363,8 @@ static int run_from_cmd_line(int argc, char *argv[],
     if (!argv[0][1] || (argv[0][1] == '-' && argv[0][2])) {
       goto bad_switch;
     } else {
-      char *str, *se;
+      GC_CAN_IGNORE char *str;
+      char *se;
       for (str = argv[0] + 1; *str; str++) {
 	switch (*str) {
 	case 'h':

@@ -86,56 +86,79 @@
 	 (string-append
 	  " document.getElementById(\"search_height\").value="
 	  search-height-default)
+         "}"
+         "function showSearchPaneHeight() {"
+	 " var elt = document.getElementById(\"search_height\")"
+	 " if (document.getElementById(\"use_frames\").checked==true) {"
+	 "  elt.disabled=false"
+	 " } else {"
+	 "  elt.disabled=true"
+	 " }"
          "}")
 	(TITLE "PLT Help Desk configuration")
 	,hd-css)
-      (BODY 
+      (BODY ((onLoad "showSearchPaneHeight()"))
        (H1 ,(string-constant hd-configuration))
        (P)
        (FORM ((ACTION "/servlets/update-config.ss")
 	      (METHOD "POST"))
-	     (TABLE ((BGCOLOR "white")
-		     (ALIGN "center")
-		     (BORDER "2")
-		     (BORDERCOLOR "black")
-		     (CELLPADDING "4")
-		     (CELLSPACING "2")
-		     (COLS "2"))
-		    (TR (TH ((ALIGN "center")
-			     (COLSPAN "2")) 
-			    (FONT ((FACE "serif")
-				   (SIZE "+2"))
-				  ,(string-constant hd-search-frame-options))))
+	     (TABLE ((ALIGN "center"))
+	      (TR (TD
+		   (TABLE ((ALIGN "center"))
 		    (TR
-		     (TD ((ALIGN "right"))
-			 (B ,(string-constant hd-height) ":")) 
-		     (TD (INPUT ((TYPE "text")
-				 (NAME "search-height")
-				 (ID "search_height")
-				 (VALUE ,search-height)
-				 (SIZE "5")))
-			 'nbsp
-			 (FONT ((SIZE "-1")) ,(string-constant hd-pixels))))
-		    (TR (TD ((ALIGN "right")) (B ,(string-constant 
-						   hd-bg-color) ":"))
-			(TD (SELECT ((NAME "search-bg")
-	                             (ID "search_bg_select")
-				     (onChange "updateBgColor(this.value)"))
-				    ,@(map (make-option search-bg-color)
-					   color-choices))))
-		    (TR (TD ((ALIGN "right")) (B ,(string-constant hd-text-color) ":"))
-			(TD (SELECT ((NAME "search-fg")
-				     (ID "search_text_select")
-				     (onChange "updateTextColor(this.value)"))
-				    ,@(map (make-option search-text-color)
-					   color-choices))))
-		    (TR (TD ((ALIGN "right")) (B ,(string-constant hd-link-color) ":"))
-			(TD (SELECT ((NAME "search-link")
-				     (ID "search_link_select")
-				     (onChange "updateLinkColor(this.value)"))
-				    ,@(map (make-option search-link-color)
-					   color-choices)))))
-             (P)
+		     (TD (INPUT ,(append 
+				  `((TYPE "checkbox")
+				    (NAME "use-frames")
+				    (ID "use_frames")
+				    (onClick "showSearchPaneHeight()"))
+				  (if (use-frames?)
+				      `((CHECKED "true") (VALUE "true"))
+				      `()))))
+		     (TD (B ,(string-constant hd-use-html-frames)))))))
+	      (TR (TD 'nbsp))
+	      (TR (TD
+		   (TABLE ((BGCOLOR "white")
+			   (ALIGN "center")
+			   (BORDER "2")
+			   (BORDERCOLOR "black")
+			   (CELLPADDING "4")
+			   (CELLSPACING "2")
+			   (COLS "2"))
+			  (TR (TH ((ALIGN "center")
+				   (COLSPAN "2")) 
+				  (FONT ((FACE "serif")
+					 (SIZE "+2"))
+					,(string-constant hd-search-pane-options))))
+			  (TR
+			   (TD ((ALIGN "right"))
+			       (B ,(string-constant hd-height) ":")) 
+			   (TD (INPUT ((TYPE "text")
+				       (NAME "search-height")
+				       (ID "search_height")
+				       (VALUE ,search-height)
+				       (SIZE "5")))
+			       'nbsp
+			       (FONT ((SIZE "-1")) ,(string-constant hd-pixels))))
+			  (TR (TD ((ALIGN "right")) (B ,(string-constant 
+							 hd-bg-color) ":"))
+			      (TD (SELECT ((NAME "search-bg")
+					   (ID "search_bg_select")
+					   (onChange "updateBgColor(this.value)"))
+					  ,@(map (make-option search-bg-color)
+						 color-choices))))
+			  (TR (TD ((ALIGN "right")) (B ,(string-constant hd-text-color) ":"))
+			      (TD (SELECT ((NAME "search-fg")
+					   (ID "search_text_select")
+					   (onChange "updateTextColor(this.value)"))
+					  ,@(map (make-option search-text-color)
+						 color-choices))))
+			  (TR (TD ((ALIGN "right")) (B ,(string-constant hd-link-color) ":"))
+			      (TD (SELECT ((NAME "search-link")
+					   (ID "search_link_select")
+					   (onChange "updateLinkColor(this.value)"))
+					  ,@(map (make-option search-link-color)
+						 color-choices))))))))
+	     (P)
 	     (CENTER
 	      (TABLE ((BGCOLOR ,search-bg-color)
 		      (ID "sample_table")
@@ -144,8 +167,8 @@
 		     (TR (TD 
 			  (FONT ((COLOR ,search-text-color)
 				 (ID "sample_text"))
-				   ,(string-constant
-				     hd-text-sample))))
+				,(string-constant
+				  hd-text-sample))))
 		     (TR (TD (FONT ((COLOR ,search-link-color)
 				    (ID "sample_link")
 				    (STYLE "text-decoration:underline"))
@@ -157,8 +180,8 @@
 		      (CELLSPACING "0")
 		      (CELLPADDING "4")
 		      (WIDTH "50%"))
-		      (TR (TD 
-	                   ,(string-constant hd-javascript-note)))))
+		     (TR (TD 
+			  ,(string-constant hd-javascript-note)))))
 	     (P)
 	     (TABLE ((ALIGN "center"))
 		    (TR 
@@ -175,11 +198,933 @@
 	     (P)
 	     (CENTER 
 	      ,home-page)))))
-  
+
   config-page)
 
 
 
 
 
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      

@@ -8,7 +8,7 @@
 (unit/sig ()
   (import servlet^)
 
-  (define names '(search-height search-bg search-fg search-link))
+  (define names '(search-bg search-fg search-link))
 
   (define (make-error-page msgs)
     `(HTML 
@@ -41,17 +41,29 @@
   (let* ([bindings (request-bindings initial-request)]
 	 [extract-fun (lambda (sym)
 			(extract-binding/single sym bindings))]
-	 [vals (map extract-fun names)])
+	 [vals (map extract-fun names)]
+	 [use-frames-val (with-handlers 
+			  ([void (lambda _ "false")])
+			  (extract-fun 'use-frames))]
+	 [search-height-val (with-handlers 
+			     ([void (lambda _ #f)])
+			     (extract-fun 'search-height))])
 
-    (when (not (string->number (car vals)))
+    (when (and search-height-val 
+	       (not (string->number search-height-val)))
 	  (add-error!
-	   (format "String height \"~a\" not a number" (car vals))))
+	   (format "Search height \"~a\" not a number" search-height-val)))
 
     (unless (errors?)
 	    (with-handlers
 	     ([void (lambda _ 
 		      (add-error! "Error saving configuration"))])
-	     (put-prefs names vals)))
+	     (put-prefs names vals)
+	     (when search-height-val
+		   (put-prefs (list 'search-height)
+			      (list search-height-val)))
+	     (put-prefs (list 'use-frames)
+			(list use-frames-val))))
 
     (if (errors?)
 	(send/finish 

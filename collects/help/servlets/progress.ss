@@ -27,12 +27,6 @@
      (show nl)
      (semaphore-wait progress-semaphore)
 
-     (let ([logfile "c:/tmp/log.start"])
-       (when (file-exists? logfile)
-	     (delete-file logfile))
-       (with-output-to-file logfile
-	 (lambda () (printf "starting at ~a~n" (current-seconds)))))
-
      (let ([port (get-progress-input-port)])
        (let loop ()
 	 (let ([ln (read-line port)])

@@ -13,6 +13,7 @@
 
 (require "private/util.ss")
 (require "private/search-util.ss")
+(require "private/search-pane.ss")
 (require "private/hd-css.ss")
 
 (unit/sig ()
@@ -224,11 +225,17 @@
       (set! search-responses
 	    (cons entry search-responses))))
 
-  (define (make-results-page items)
+  (define search-bg
+    (get-pref/default 'search-bg search-bg-default))
+
+  (define (make-results-page search-string items)
     `(HTML
       (HEAD ,hd-css
 	    (TITLE "PLT Help Desk search results"))
       (BODY
+       ,@(if (use-frames?)
+	    '()
+	    `(,(search-pane search-string) (HR)))
        (FONT ((SIZE "+1"))
 	     ,(color-with "blue" `(B ,(string-constant search-results))))
        (BR)
@@ -254,6 +261,7 @@
 			       set-current-kind!
 			       (if lucky? goto-lucky-entry add-entry)))]
 	   [html (make-results-page
+		  search-string
 		  (if (string? result) ; error message
 		      `((H2 ((STYLE "color:red")) ,result))
 		      (reverse search-responses)))])

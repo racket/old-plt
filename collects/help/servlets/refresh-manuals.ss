@@ -1,5 +1,9 @@
 (require (lib "unitsig.ss")
-         (lib "servlet-sig.ss" "web-server"))
+         (lib "servlet-sig.ss" "web-server")
+         (lib "servlet-helpers.ss" "web-server")
+	 (lib "help-desk-mz.ss" "help")
+	 (lib "string-constant.ss" "string-constants")
+	 (lib "xml.ss" "xml"))
 
 (require "private/util.ss")
 (require "private/hd-css.ss")
@@ -34,24 +38,51 @@
   (reset-progress-semaphore!) ; may have lost state via browser stop
   (reset-refresh-semaphore!) 
 
-  (let ([hex-dir (hexify-string tmp-directory)])
-    `(HTML 
-      (HEAD ,hd-css
-	    (TITLE "Refresh PLT manuals"))
-      (FRAMESET ((ROWS "100,*"))
-		(FRAMESET ((COLS "*,110"))
-			  (FRAME ((NAME "refresh")
-				  (SRC 
-				   ,(format 
-				     "/servlets/do-refresh.ss?tmp-dir=~a"
-				     hex-dir))))
-			  (FRAME ((NAME "stopper")
-				  (SRC 
-				   ,(format 
-				     "/servlets/do-stop.ss?tmp-dir=~a"
-				     hex-dir)))))
-		(FRAME ((NAME "progress")
-			(SRC "/servlets/progress.ss")))))))
+  (make-html-response/incremental
+   (lambda (show)
+     (let* ([make-action
+	     (lambda (action format-string)
+	       (lambda (doc)
+		 (let ([doc-name (car doc)]
+		       [doc-label (cdr doc)])
+		   (show (format format-string doc-label) "<BR>")
+		   (action tmp-directory doc-name))))]
+	    [downloader (make-action download-known-doc 
+				     (string-constant refresh-downloading))]
+	    [deleter (make-action delete-known-doc 
+				  (string-constant refresh-deleting))]
+	    [installer (make-action run-setup-plt 
+				    (string-constant refresh-installing))]
+	    [looper (lambda (f)
+		      (for-each f known-docs))])
+       (doc-collections-changed)
+       (show "<HTML>")
+       (show (xexpr->string 
+	      `(HEAD ,hd-css (TITLE "Refresh PLT manuals")
+		     ,refresh-stop-javascript)))
+       (show refresh-stop-body-tag)
+       (show (xexpr->string (refresh-stop-form tmp-directory)))
+       (show "<PRE>")
+       (let-values ([(iport oport) (make-pipe)])
+         (set-progress-input-port! iport)		   
+	 (set-progress-output-port! oport)		   
+	 (semaphore-post progress-semaphore)
+	 (for-each looper 
+		   (list downloader deleter installer))
+	 (close-output-port oport))
+       (delete-directory/r tmp-directory)
+       (show (xexpr->string `(B ,(string-constant 
+				  refresh-done))))
+       (show "</PRE>")
+       (show "<P>")
+       (show (xexpr->string
+	      `(A ((HREF "/servlets/manuals.ss")) "Manuals page"))
+	     "<BR>")
+       (show (xexpr->string home-page))
+       (show "</BODY></HTML>")
+       (semaphore-post refresh-semaphore)))))
+
+
 
 
 

@@ -9,6 +9,9 @@
 
   (provide find/create-temporary-docs-dir
 	   refresh-docs-dir-base
+           refresh-stop-form
+	   refresh-stop-javascript
+           refresh-stop-body-tag
 	   delete-directory/r
 	   doc-url-format
 	   get-progress-input-port
@@ -29,6 +32,36 @@
 
   (define refresh-docs-dir-fmt
 	(string-append refresh-docs-dir-base "~a"))
+  
+  (define (refresh-stop-form tmp-directory . s)
+    `(FORM ((ACTION "/servlets/stop-refresh.ss")
+	    (TARGET "_top")
+	    (METHOD "POST"))
+	   ,@s
+	   (INPUT ((TYPE "hidden")
+		   (NAME "tmp-dir")
+		   (VALUE ,(hexify-string tmp-directory))))
+	   (INPUT ((TYPE "submit")
+		   (ID "stop")
+		   (NAME "stop")
+		   (VALUE "Stop")))
+	   (P)
+	   "If JavaScript is enabled in your browser, an "
+	   "installation log should appear in a separate browser "
+	   "window.  When you leave this page, that window will "
+	   "be closed."))
+
+  (define refresh-stop-javascript
+    (make-javascript
+     "function hideStop() {"
+     " document.forms[0].elements[1].disabled=\"true\""
+     "}"
+     "var pwin"
+     "pwin = window.open(\"/servlets/progress.ss\",\"_progress\")"
+     "window.focus()"))
+
+  (define refresh-stop-body-tag
+    "<BODY onLoad=\"hideStop()\" onUnload=\"pwin.close()\">")
 
   ;; find/create-temporary-docs-dir : -> string
   ;; if cannot find a suitable directory, an exn is raised.

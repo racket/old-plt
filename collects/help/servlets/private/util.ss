@@ -10,12 +10,15 @@
 	   (lib "docpos.ss" "help" "private"))
 	
   (provide get-pref/default
+	   get-bool-pref/default
 	   put-prefs
 	   cvs?
+	   use-frames?
 	   search-height-default
 	   search-bg-default
 	   search-text-default
 	   search-link-default
+	   use-frames-default
 	   color-highlight
 	   color-with
 	   hexify-string
@@ -36,15 +39,20 @@
 	,(string-constant hd-home)))
 
   (define (get-pref/default pref default)
-    (get-preference pref  (lambda () default)))
+    (get-preference pref (lambda () default)))
+
+  (define (get-bool-pref/default pref default)
+    (let ([raw-pref (get-pref/default pref (lambda () default))])
+      (if (string=? raw-pref "false") #f #t)))
 
   (define (put-prefs names vals)
     (put-preferences names vals)) 
 
   (define search-height-default "85")
-  (define search-bg-default "palegreen")
+  (define search-bg-default "lightsteelblue")
   (define search-text-default "black")
   (define search-link-default "darkblue")
+  (define use-frames-default "true")
 
   (define *the-highlight-color* "forestgreen")
 
@@ -59,6 +67,9 @@
   (define (cvs?)
     (directory-exists? 
      (build-path (collection-path "help") "CVS")))
+
+  (define (use-frames?)
+    (get-bool-pref/default 'use-frames use-frames-default))
 
   ; manual is doc collection subdirectory, e.g. "mred"
   (define (main-manual-page manual)

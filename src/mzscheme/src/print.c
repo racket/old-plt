@@ -1476,8 +1476,17 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       } else {
 	Scheme_Input_Port *ip;
 	ip = (Scheme_Input_Port *)obj;
-	print_this_string(pp, "#", 0, 1);
-	print_this_string(pp, scheme_symbol_val(ip->sub_type), 0, SCHEME_SYM_LEN(ip->sub_type));
+	print_this_string(pp, "#<input-port", 0, 12);
+	if (ip->name) {
+	  if (SCHEME_PATHP(ip->name)) {
+	    print_this_string(pp, ":", 0, 1);
+	    print_this_string(pp, SCHEME_BYTE_STR_VAL(ip->name), 0, SCHEME_BYTE_STRLEN_VAL(ip->name));
+	  } else if (SCHEME_SYMBOLP(ip->name)) {
+	    print_this_string(pp, ":", 0, 1);
+	    print_this_string(pp, scheme_symbol_val(ip->name), 0, SCHEME_SYM_LEN(ip->name));
+	  }
+	}
+	print_this_string(pp, ">", 0, 1);
       }
     }
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_regexp_type))
@@ -1504,8 +1513,17 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       } else {
 	Scheme_Output_Port *op;
 	op = (Scheme_Output_Port *)obj;
-	print_this_string(pp, "#", 0, 1);
-	print_this_string(pp, scheme_symbol_val(op->sub_type), 0, SCHEME_SYM_LEN(op->sub_type));
+	print_this_string(pp, "#<output-port", 0, 13);
+	if (op->name) {
+	  if (SCHEME_PATHP(op->name)) {
+	    print_this_string(pp, ":", 0, 1);
+	    print_this_string(pp, SCHEME_BYTE_STR_VAL(op->name), 0, SCHEME_BYTE_STRLEN_VAL(op->name));
+	  } else if (SCHEME_SYMBOLP(op->name)) {
+	    print_this_string(pp, ":", 0, 1);
+	    print_this_string(pp, scheme_symbol_val(op->name), 0, SCHEME_SYM_LEN(op->name));
+	  }
+	}
+	print_this_string(pp, ">", 0, 1);
       }
     }
   else if (SCHEME_CPTRP(obj))

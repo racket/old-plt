@@ -1921,7 +1921,7 @@
       'random-seed-same
       (begin (random-seed 23) (list (random 10) (random 20) (random 30))))
 (arity-test random-seed 1 1)
-(arity-test random 1 1)
+(arity-test random 0 1)
 (err/rt-test (random-seed "apple"))
 (err/rt-test (random-seed 4.5))
 (err/rt-test (random-seed -1))

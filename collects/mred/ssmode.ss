@@ -63,7 +63,7 @@
 			'(lambda let let* letrec letrec* recur
 			   let/cc let/ec letcc catch
 			   let-syntax letrec-syntax syntax-case
-                           let-signature
+                           let-signature fluid-let
 			   let-struct let-macro let-values let*-values
 			   case when unless match
 			   let-enumerate

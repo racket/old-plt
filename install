@@ -30,30 +30,78 @@ exit 1
 
 (use-compiled-file-kinds 'none)
 
-(unless (equal? #() argv)
-  (error './install "no arguments allowed on the command line")
-  (exit 1))
-
 (define release-date "August 2003")
-
-(define didnothing " (nothing to do)")
 
 (define plthome (current-directory))
 (putenv "PLTHOME" plthome)
 (putenv "PLTCOLLECTS" "")
-(current-library-collection-paths (list (build-path (find-system-path 'addon-dir)
-						    (version)
-						    "collects")
-					(build-path plthome "collects")))
+(current-library-collection-paths
+ (list (build-path plthome "collects")))
 
-(define plthome (regexp-replace* "\"" plthome "\\\\\""))
+(define zos?         'ask)
+(define scripts?     #t)
+(define deps?        #f)
+(define updates?     'ask)
+(define interactive? #t)
 
 (define in-osx-install? (getenv "OSX_PLT_INSTALL"))
+(define in-rpm-install? (getenv "RPM_INSTALL_PREFIX"))
+(define in-rpm-build? (and (getenv "RPM_OPT_FLAGS") (not in-rpm-install?)))
+
+(when (or in-osx-install? in-rpm-install? in-rpm-build?) (set! updates? #f))
+(when (or in-osx-install? in-rpm-install?)               (set! zos? #t))
+(when in-rpm-build?                                      (set! zos? #f))
+
+(require (lib "cmdline.ss"))
+(command-line "install" argv
+  (multi
+   (("-z")
+    "skip .zo file compilation."
+    (set! zos? #f))
+   (("+z")
+    "compile .zo files (default: ask)."
+    (set! zos? #t))
+   (("-s")
+    "skip modifying PLTHOME in scripts."
+    (set! scripts? #f))
+   (("+s")
+    "modify PLTHOME setting in scripts (default)."
+    (set! scripts? #f))
+   (("-d")
+    "skip modifying .dep files (default)."
+    (set! deps? #f))
+   (("+d")
+    "modify .dep files paths and .zo timestamps (ignore unless `+s' and `-z')."
+    (set! deps? #t))
+   (("-u")
+    "skip on-line updates checking."
+    (set! updates? #f))
+   (("+u")
+    "check for on-line updates (default: ask)."
+    (set! updates? #t))
+   (("-i")
+    "non-interactive mode."
+    (set! interactive? #f))
+   (("+i")
+    "interactive mode (default)."
+    (set! interactive? #t))
+   (("-p") explicit-home
+    "use explicit PLTHOME value instead of the current directory."
+    (if (absolute-path? explicit-home)
+      (set! plthome explicit-home)
+      (error './install
+             "bad value for PLTHOME, expected an absolute path, got ~s"
+             explicit-home)))))
+
+(when (and deps? (or (not scripts?) zos?))
+  (printf "Warning: can't modify .dep files.\n")
+  (set! deps? #f))
+
+(define didnothing? #t)
 
 (when in-osx-install?
   (namespace-require '(lib "mred.ss" "mred"))
   (namespace-require '(lib "class.ss")))
-
 ;; Set up GUI
 (when in-osx-install?
   (let ([evt (make-eventspace)]
@@ -113,92 +161,95 @@ exit 1
 			  (semaphore-wait (make-semaphore)))
 			(old-exit v)))))))
 
-(printf "setting PLTHOME to \"~a\" in scripts:~n" plthome)
+(define (get-y-n lines)
+  (or (not interactive?)
+      (begin (for-each display lines)
+             (display " [y] ")
+             (flush-output)
+             (let ([r (read-line)])
+               (not (regexp-match "^ *[nN]" r))))))
+
+(define (update-scripts)
+  (printf "setting PLTHOME to ~s in scripts:\n" plthome)
+  (parameterize ((current-directory "bin"))
+    (for-each
+     (lambda (f)
+       (cond
+        [(not (file-exists? f)) '-]
+        [(and (file-exists? f) (> (file-size f) 4096))
+         (printf " skipping ~a\n" f)]
+        [else
+         (set! didnothing? #f)
+         (printf " checking ~a..." f)
+         (let-values ([(lines changed?)
+                       (with-input-from-file f
+                         (lambda ()
+                           (let loop ([ls null] [changed? #f])
+                             (let ([l (read-line)])
+                               (cond
+                                ((eof-object? l) (values (reverse ls) changed?))
+                                ((regexp-match #rx"^( *)PLTHOME=(.*)$" l) =>
+                                 (lambda (m)
+                                   (loop (cons (format "~aPLTHOME=~s"
+                                                       (cadr m) plthome)
+                                               ls)
+                                         #t)))
+                                (else (loop (cons l ls) changed?)))))))])
+           (if changed?
+             (begin (printf " updating\n")
+                    (with-output-to-file f
+                      (lambda ()
+                        (for-each (lambda (l) (display l) (newline)) lines))
+                      'truncate))
+             (printf " nothing to do\n")))]))
+     (directory-list))))
+
+;; ============================================================================
+;; Start working here
+
+;; ---------- update scripts ----------
+
+(when scripts? (update-scripts))
+
+;; ---------- on-line updates ----------
+
+(when (eq? 'ask updates?)
+  (set! updates?
+        (get-y-n
+         (list (format "This distribution was created in ~a.\n" release-date)
+               "  Check for updates of PLT software over "
+               "the Internet (y/n)?"))))
 
 (require (lib "check-text.ss" "version"))
+(when updates? (check-version))
 
-(define re:plthome #rx"^(.*)PLTHOME=(.*)$")
+;; ---------- make .zo files ----------
 
-(for-each
- (lambda (f)
-    (let ([p (build-path "bin" f)])
-      (cond
-       [(and (file-exists? p)
-	     (> (file-size p) 4096))
-	(printf " skipping ~a~n" p)]
-       [else
-	(when (file-exists? p)
-	  (set! didnothing "")
-	  (printf " checking ~a~n" p)
-	  (let ([lines (with-input-from-file p
-			 (lambda ()
-			   (let loop ()
-			     (let ([l (read-line)])
-			       (if (eof-object? l)
-				   null
-				   (cons l (loop)))))))])
-	    (when (ormap (lambda (i) (regexp-match re:plthome i)) lines)
-	      (printf " updating ~a~n" p)
-	      (with-output-to-file p
-		(lambda ()
-		  (for-each
-		   (lambda (l)
-		     (let ([m (regexp-match re:plthome l)])
-		       (if m
-			   (printf "~aPLTHOME=\"~a\"~n"
-				   (cadr m) plthome)
-			   (printf "~a~n" l))))
-		   lines))
-		'truncate))))])))
- (directory-list "bin"))
+(when (eq? 'ask zos?)
+  (set! zos?
+        (get-y-n
+         '("PLT software starts up much faster with .zo files, but\n"
+           "creating .zo files now takes a few minutes and requires\n"
+           "several MB of additional disk space.\n"
+           "  Create .zo files now (y/n)?")))
+  (unless zos?
+    (printf "Skipping .zo-file creation; create .zo files later by running\n")
+    (printf "  ~a/bin/setup-plt\n" plthome)))
 
-(define (get-y-n)
-  (flush-output)
-  (let ([r (read-line)])
-    (not (regexp-match "^[nN]" r))))
-
-(define in-rpm-install? (getenv "RPM_INSTALL_PREFIX"))
-(define in-rpm-build? (and (getenv "RPM_OPT_FLAGS") (not in-rpm-install?)))
-
-(define check-version?
-  (if in-osx-install?
-      #f ;; until the version checker can work better with the GUI...
-      (if (or in-rpm-install? in-rpm-build?)
-	  #f
-	  (begin
-	    (printf "This distribution was created in ~a.~n" release-date)
-	    (printf "  Check for updates of PLT software over the Internet (y/n)? [y] ")
-	    (get-y-n)))))
-
-(when check-version?
-  (check-version))
-
-(define zo?
-  (or in-rpm-install?
-      in-osx-install?
-      (and (not in-rpm-build?)
-	   (begin
-	    (printf "PLT software starts up much faster with .zo files, but creating .zo~n")
-	    (printf "files now takes a few minutes and requires several MB of additional~n")
-	    (printf "disk space.~n")
-	    (printf "  Create .zo files now (y/n)? [y] ")
-	    (get-y-n)))))
-
-(unless zo?
-  (printf "Skipping .zo-file creation; create .zo files later by running~n")
-  (printf "  ~a/bin/setup-plt~n" plthome))
-
-(when zo?
-  ;; Need a new namespace to ensure that all modules
-  ;;  are compiled, including ones we've already loaded.
-  ;; We also need to re-enable compiled files, since
-  ;;  cm.ss checks on that flag.
+(when zos?
+  ;; Need a new namespace to ensure that all modules are compiled, including
+  ;; ones we've already loaded.  We also need to re-enable compiled files,
+  ;; since cm.ss checks on that flag.
   (parameterize ([current-namespace (make-namespace)]
 		 [use-compiled-file-kinds 'all])
     (dynamic-require '(lib "setup.ss" "setup") #f)))
 
-(printf "PLT installation done~a.~n" didnothing)
-(when (file-exists? "bin/drscheme")
-  (printf "Run DrScheme as bin/drscheme.~n")
-  (printf "For Help, select `Help Desk' from DrScheme's `Help' menu, or run bin/help-desk.~n"))
+;; ---------- done ----------
 
+(when interactive?
+  (printf "PLT installation done~a.\n" (if didnothing? " (nothing to do)" ""))
+  (when (file-exists? "bin/drscheme")
+    (for-each display
+              '("Run DrScheme as bin/drscheme.\n"
+                "For Help, select `Help Desk' from DrScheme's `Help' menu,\n"
+                "or run bin/help-desk.\n"))))

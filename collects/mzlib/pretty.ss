@@ -272,7 +272,8 @@
 	     (and (or (vector? obj)
 		      (pair? obj)
 		      (box? obj)
-		      (and (struct? obj) print-struct?))
+		      (and (struct? obj) print-struct?)
+		      (and (hash-table? obj) print-hash-table?))
 		  (or (hash-table-get table obj (lambda () #f))
 		      (begin
 			(hash-table-put! table obj #t)
@@ -291,7 +292,16 @@
 				[(box? obj) (loop (unbox obj))]
 				[(struct? obj)
 				 (ormap loop 
-					(vector->list (struct->vector obj)))])])
+					(vector->list (struct->vector obj)))]
+				[(hash-table? obj)
+				 (let/ec esc
+				   (hash-table-for-each
+				    obj
+				    (lambda (v k)
+				      (when (or (loop v)
+						(loop k))
+					(esc #t))))
+				   #f)])])
 			  (hash-table-remove! table obj)
 			  cycle)))))))
 
@@ -301,7 +311,8 @@
 	     (if (or (vector? obj)
 		     (pair? obj)
 		     (box? obj)
-		     (and (struct? obj) print-struct?))
+		     (and (struct? obj) print-struct?)
+		     (and (hash-table? obj) print-hash-table?))
 		 ; A little confusing: use #t for not-found
 		 (let ([p (hash-table-get table obj (lambda () #t))])
 		   (when (not (mark? p))
@@ -321,7 +332,13 @@
 				[(box? obj) (loop (unbox obj))]
 				[(struct? obj)
 				 (for-each loop 
-					   (vector->list (struct->vector obj)))]))
+					   (vector->list (struct->vector obj)))]
+				[(hash-table? obj)
+				 (hash-table-for-each
+				  obj
+				  (lambda (k v)
+				    (loop k)
+				    (loop v)))]))
 			     (begin
 			       (hash-table-put! table obj 
 						(make-mark #f (box #f)))))))))))

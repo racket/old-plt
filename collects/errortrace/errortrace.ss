@@ -409,19 +409,17 @@
                (cdr l))]
         [else (void)])))
   
-  (current-exception-handler
-   (let* ([orig (current-exception-handler)]
-          [errortrace-exception-handler
-           (lambda (x)
-             (if (exn? x)
-                 (let ([p (open-output-string)])
-                   (display (exn-message x) p)
-                   (newline p)
-                   (print-error-trace p x)
-		   ((error-display-handler) (get-output-string p) x)
-		   ((error-escape-handler)))
-                 (orig x)))])
-     errortrace-exception-handler))
+  (let* ([orig (error-display-handler)]
+         [errortrace-error-display-handler
+          (lambda (msg exn)
+            (if (exn? exn)
+                (let ([p (open-output-string)])
+                  (display (exn-message exn) p)
+                  (newline p)
+                  (print-error-trace p exn)
+                  (orig (get-output-string p) exn))
+                (orig msg exn)))])
+    (error-display-handler errortrace-error-display-handler))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Porfile printer

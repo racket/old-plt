@@ -224,8 +224,14 @@ _Supplemental Help Desk functions_
   It returns a string of XHTML with documentation extracted from the 
   _'blurb_ fields of the info.ss files in each collection.
 
-_Creating Help Desk Documentation_
-==================================
+_Creating Help Desk Documentation in doc.txt files_
+===================================================
+
+Help Desk reads the files named doc.txt in each top-level
+collection. Additionally, if the info.ss file contains a
+definition of _doc-sub-collection_ bound to a list of
+strings naming immediate subcollections, those
+sub-collections are also searched for doc.txt files.
 
 Index Entry Annotations
 - - - - - - - - - - - -
@@ -277,8 +283,8 @@ The "(send o set-title string)" part allows a Help Desk user to learn
 about the calling convention of `set-title' without accessing the
 documentation directly.
 
-The HTML Format
----------------
+_Creating Help Desk Documentation in HTML format_
+===================================================
 
 HTML documention is put in its own sub-directory in any
 `doc' collection (Help Desk searches all doc collections,

@@ -170,12 +170,20 @@
       ;; 19.8.3
       (MethodDeclaration
        [(MethodHeader Block) (make-method (method-modifiers $1)
+                                          (method-type $1)
+                                          (method-type-parms $1)
+                                          (method-name $1)
+                                          (method-parms $1)
+                                          (method-throws $1)
+                                          $2
+                                          (build-src 2))]
+       [(MethodHeader SEMI_COLON) (make-method (method-modifiers $1)
                                                (method-type $1)
                                                (method-type-parms $1)
                                                (method-name $1)
                                                (method-parms $1)
                                                (method-throws $1)
-                                               $2
+                                               #f
                                                (build-src 2))])
       
       (MethodHeader
@@ -366,7 +374,12 @@
 	(make-assignment #f (build-src 3) $1 $2 $3 (build-src 2 2))])
       
       (LeftHandSide
-       [(Name) (name->access $1)])
+       [(Name) (name->access $1)]
+       [(this PERIOD IDENTIFIER)
+        (make-access #f (build-src 3)
+                     (make-field-access (make-special-name #f (build-src 1) "this")
+                                        (make-id $3 (build-src 3 3))
+                                        #f))])
       
       (AssignmentOperator
        [(=) '=])

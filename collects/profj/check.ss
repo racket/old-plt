@@ -110,8 +110,10 @@
 
   ;lookup-this type-records env -> class-record
   (define (lookup-this type-recs env)
-    (send type-recs get-class-record 
-          (var-type-type (lookup-var-in-env "this" env))))  
+    (let ((this (lookup-var-in-env "this" env)))
+      (if this 
+          (send type-recs get-class-record (var-type-type this))
+          interactions-record)))
 
   ;add-required (list string) string (list string) type-records -> void
   (define (add-required test-class class path type-recs)
@@ -1386,7 +1388,8 @@
                   (when (check-method-args args (method-record-atypes (car methods)) name exp-type src type-recs)
                     (car methods))))
              (mods (method-record-modifiers method-record)))
-        (when (memq 'abstract mods) (call-access-error 'abs name exp-type src))
+        ;I think this is actually allowed. PROBLEM
+        ;        (when (memq 'abstract mods) (call-access-error 'abs name exp-type src))
         (when (and (memq 'protected mods) (reference-type? exp-type) 
                    (not (is-eq-subclass? this exp-type)))
           (call-access-error 'pro name exp-type src))
@@ -1457,7 +1460,7 @@
     (unless (= (length args) (length atypes))
       (ctor-arg-error 'number args atypes name src))
     (for-each (lambda (arg atype)
-                (unless (assignment-conversion arg atype type-recs)
+                (unless (assignment-conversion atype arg type-recs)
                   (ctor-arg-error 'type (list arg) (cons atype atypes) name src)))
               args atypes))
   
@@ -1816,8 +1819,8 @@
     (let ((cl (type->ext-name type)))
       (raise-error cl
                    (case kind
-                     ((abstract) "Class ~a is abstract and may not be constructed" cl)
-                     ((interface) "Interface ~a is an interface: only classes may be constructed" cl))
+                     ((abstract) (format "Class ~a is abstract and may not be constructed" cl))
+                     ((interface) (format "Interface ~a is an interface: only classes may be constructed" cl)))
                    cl src)))
 
   ;ctor-arg-error symbol (list type) (list type) type src -> void
@@ -1833,7 +1836,7 @@
                               n (length expecteds) awitht expecteds (length givens) awitht givens))
                      ((type)
                       (format "Constructor for ~a expects ~a ~a, but given a ~a instead of ~a for one argument"
-                              n awitht (cdr atypes) (car givens) (car atypes))))
+                              n awitht (map type->ext-name (cdr atypes)) (car givens) (type->ext-name (car atypes)))))
                    n src)))
 
   ;ctor-overload-error: symbol type (list type) src -> void

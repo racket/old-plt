@@ -759,11 +759,15 @@
   
   ;translate-method-body (list field) statement type-record -> syntax
   (define (translate-method-body parms block type-recs)
-    (make-syntax #f
-                 `(lambda ,(translate-parms parms)
-                    (let/ec return-k
-                      ,(translate-statement block type-recs)))
-                 #f))
+    (if block
+        (make-syntax #f
+                     `(lambda ,(translate-parms parms)
+                        (let/ec return-k
+                          ,(translate-statement block type-recs)))
+                     #f)
+        (make-syntax #f 
+                     `(lambda ,(translate-parms parms) (void))
+                     #f)))
   
   ;translate-parms: (list field) -> (list syntax)
   (define (translate-parms parms)

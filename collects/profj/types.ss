@@ -147,6 +147,8 @@
   ;; and methods.  Also parents and ifaces should contain all super-classes/ifaces
   (define-struct class-record (name modifiers class? fields methods parents ifaces))
 
+  (define interactions-record (make-class-record (list "interactions") null #f null null null null))
+  
   ;; (make-field-record string (list symbol) bool (list string) type)
   (define-struct field-record (name modifiers init? class type))
   

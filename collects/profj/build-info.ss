@@ -80,10 +80,10 @@
                                                 pname 
                                                 (find-directory pname (lambda () (list (build-path 'same))))
                                                 #t))
-                    (send type-recs add-to-records def-name
+                    (send type-recs add-to-records defname
                           (lambda () (process-class/iface def pname type-recs (null? args) level)))))
                   (package-defs prog))
-      (execution? #f)     
+      (execution? #f)
       
       ;Add package information to environment
       (add-my-package type-recs pname (package-defs prog) current-loc level)
@@ -902,7 +902,7 @@
          ((beginner intermediate) '(public abstract))
          ((advanced) `(public protected private abstract static final))
          ((full) '(public protected private abstract static final synchronized native strictfp))
-         ((abstract) '(public protected))
+         ((abstract) '(public protected abstract))
          ((ctor) '(public protected private))))
      (lambda (level)
        (case level

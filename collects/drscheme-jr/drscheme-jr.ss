@@ -117,11 +117,18 @@
 			   basis:set-setting-eq?-only-compares-symbols?!)
 	     "eq? only for symbols"
 	     basis:setting-eq?-only-compares-symbols?)
-       (list "--tag-inexacts"
+#|
+       (list "--require-inexacts"
 	     (make-get/set basis:setting-disallow-untagged-inexact-numbers
 			   basis:set-setting-disallow-untagged-inexact-numbers!)
 	     "#i required for inexact numbers"
 	     basis:setting-disallow-untagged-inexact-numbers)
+|#
+       (list "--tag-inexacts"
+	     (make-get/set basis:setting-print-tagged-inexact-numbers
+			   basis:set-setting-print-tagged-inexact-numbers!)
+	     "print inexact numbers with #i"
+	     basis:setting-print-tagged-inexact-numbers)
        (list "--whole-frac"
 	     (make-get/set basis:setting-whole/fractional-exact-numbers
 			   basis:set-setting-whole/fractional-exact-numbers!)

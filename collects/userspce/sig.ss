@@ -89,6 +89,7 @@
 		    signal-not-boolean
 		    eq?-only-compares-symbols?
 		    disallow-untagged-inexact-numbers
+		    print-tagged-inexact-numbers
 		    whole/fractional-exact-numbers
 		    printing))
    make-setting/parse

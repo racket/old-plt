@@ -40,6 +40,7 @@
 				signal-not-boolean
 				eq?-only-compares-symbols?
 				disallow-untagged-inexact-numbers
+				print-tagged-inexact-numbers
 				whole/fractional-exact-numbers
 				printing))
 
@@ -62,7 +63,8 @@
 			       (signal-undefined #t)
 			       (signal-not-boolean #t)
 			       (eq?-only-compares-symbols? #t)
-			       (disallow-untagged-inexact-numbers #t)
+			       (disallow-untagged-inexact-numbers #f)
+			       (print-tagged-inexact-numbers #t)
 			       (whole/fractional-exact-numbers #f)
 			       (printing constructor-style))))
 	  (vector 'Intermediate (make-setting/parse
@@ -77,7 +79,8 @@
 				   (signal-undefined #t)
 				   (signal-not-boolean #t)
 				   (eq?-only-compares-symbols? #t)
-				   (disallow-untagged-inexact-numbers #t)
+				   (disallow-untagged-inexact-numbers #f)
+				   (print-tagged-inexact-numbers #t)
 				   (whole/fractional-exact-numbers #f)
 				   (printing constructor-style))))
 	  (vector 'Advanced (make-setting/parse
@@ -93,6 +96,7 @@
 			       (signal-not-boolean #f)
 			       (eq?-only-compares-symbols? #f)
 			       (disallow-untagged-inexact-numbers #f)
+			       (print-tagged-inexact-numbers #f)
 			       (whole/fractional-exact-numbers #f)
 			       (printing constructor-style))))
 	  (vector 'R4RS+ (make-setting/parse
@@ -108,6 +112,7 @@
 			    (signal-not-boolean #f)
 			    (eq?-only-compares-symbols? #f)
 			    (disallow-untagged-inexact-numbers #f)
+			    (print-tagged-inexact-numbers #f)
 			    (whole/fractional-exact-numbers #f)
 			    (printing r4rs-style))))
 	  (vector raw-name (make-setting/parse
@@ -123,6 +128,7 @@
 			      (signal-not-boolean #f)
 			      (eq?-only-compares-symbols? #f)
 			      (disallow-untagged-inexact-numbers #f)
+			      (print-tagged-inexact-numbers #f)
 			      (whole/fractional-exact-numbers #f)
 			      (printing r4rs-style))))))
 
@@ -532,7 +538,7 @@
 	      [else (error 'install-language "found bad setting-printing: ~a~n" 
 			   (setting-printing setting))])
 
-	    (mzlib:pretty-print:pretty-print-show-inexactness (setting-disallow-untagged-inexact-numbers setting))
+	    (mzlib:pretty-print:pretty-print-show-inexactness (setting-print-tagged-inexact-numbers setting))
 	    (mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
 	    (mzlib:print-convert:whole/fractional-exact-numbers (setting-whole/fractional-exact-numbers setting))
 	    (print-graph (setting-sharing-printing? setting))

@@ -145,11 +145,13 @@
 			  basis:setting-eq?-only-compares-symbols?
 			  "Eq? only compares symbols"
 			  dynamic-panel)]
+#|
 	 [disallow-untagged-inexact-numbers
 	  (make-check-box basis:set-setting-disallow-untagged-inexact-numbers!
 			  basis:setting-disallow-untagged-inexact-numbers
 			  "Inexact numbers require #i"
 			  input-syntax-panel)]
+|#
 	 [printer-number->symbol
 	  (lambda (which)
 	    (case which
@@ -184,6 +186,11 @@
 			  basis:setting-sharing-printing?
 			  "Show sharing in values"
 			  output-syntax-panel)]
+	 [print-tagged-inexact-numbers
+	  (make-check-box basis:set-setting-print-tagged-inexact-numbers!
+			  basis:setting-print-tagged-inexact-numbers
+			  "Print inexact numbers with #i"
+			  output-syntax-panel)]
 	 [whole/fractional-exact-numbers
 	  (make-check-box basis:set-setting-whole/fractional-exact-numbers!
 			  basis:setting-whole/fractional-exact-numbers
@@ -216,9 +223,10 @@
 		   (compare-check-box signal-undefined basis:setting-signal-undefined)
 		   (compare-check-box signal-not-boolean basis:setting-signal-not-boolean)
 		   (compare-check-box eq?-only-compares-symbols? basis:setting-eq?-only-compares-symbols?)
-		   (compare-check-box disallow-untagged-inexact-numbers basis:setting-disallow-untagged-inexact-numbers)
+		   ; (compare-check-box disallow-untagged-inexact-numbers basis:setting-disallow-untagged-inexact-numbers)
 		   (compare-check-box allow-improper-lists? basis:setting-allow-improper-lists?)
 		   (compare-check-box sharing-printing? basis:setting-sharing-printing?)
+		   (compare-check-box print-tagged-inexact-numbers basis:setting-print-tagged-inexact-numbers)
 		   (compare-check-box whole/fractional-exact-numbers basis:setting-whole/fractional-exact-numbers)
 		   (compare-check-box abbreviate-cons-as-list? basis:setting-abbreviate-cons-as-list?)
 		   (eq? (printer-number->symbol (send printing get-selection))
@@ -255,6 +263,7 @@
 		  (get-printer-style-number (basis:setting-printing v)))
 	    (for-each (lambda (x) (send x enable (not (eq? 'r4rs-style (basis:setting-printing v)))))
 		      (list abbreviate-cons-as-list?
+			    print-tagged-inexact-numbers
 			    whole/fractional-exact-numbers))
 	    (map (lambda (get check-box) (send check-box set-value (get v)))
 		 (list basis:setting-case-sensitive?
@@ -262,10 +271,11 @@
 		       basis:setting-unmatched-cond/case-is-error?
 		       basis:setting-signal-undefined
 		       basis:setting-signal-not-boolean
-		       basis:setting-disallow-untagged-inexact-numbers
+		       ; basis:setting-disallow-untagged-inexact-numbers
 		       basis:setting-eq?-only-compares-symbols?
 		       basis:setting-allow-improper-lists?
 		       basis:setting-sharing-printing?
+		       basis:setting-print-tagged-inexact-numbers
 		       basis:setting-whole/fractional-exact-numbers
 		       basis:setting-abbreviate-cons-as-list?)
 		 (list case-sensitive? 
@@ -273,10 +283,11 @@
 		       unmatched-cond/case-is-error?
 		       signal-undefined
 		       signal-not-boolean
-		       disallow-untagged-inexact-numbers
+		       ; disallow-untagged-inexact-numbers
 		       eq?-only-compares-symbols?
 		       allow-improper-lists?
 		       sharing-printing?
+		       print-tagged-inexact-numbers
 		       whole/fractional-exact-numbers
 		       abbreviate-cons-as-list?))
 	    (reset-choice))])

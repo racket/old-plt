@@ -41,7 +41,7 @@
   ;; defunctionalize: expr (-> symbol) -> (values expr (listof definition))
   ;; remove lambdas from an expression
   (define (defunctionalize expr labeling)
-    (syntax-case expr (if #%app lambda let-values #%top #%datum with-continuation mark)
+    (syntax-case expr (if #%app lambda let-values #%top #%datum with-continuation mark quote)
       [(if test-expr csq-expr)
        (let-values ([(new-test-expr test-defs) (defunctionalize #'test-expr labeling)]
                     [(new-csq-expr csq-defs) (defunctionalize #'csq-expr labeling)])
@@ -90,6 +90,7 @@
                       closure-definitions)))))]
       [(#%top . var) (values expr '())]
       [(#%datum . var) (values expr '())]
+      [(quote datum) (values expr '())]
       [var (identifier? #'var) (values expr '())]
       [_else
        (raise-syntax-error #f "defunctionalize: dropped through" expr)]))
@@ -109,7 +110,7 @@
   ;; free-vars: expr -> (listof identifier)
   ;; Find the free variables in an expression
   (define (free-vars expr)
-    (syntax-case expr (if #%app lambda let #%top #%datum with-continuation-mark)
+    (syntax-case expr (if #%app lambda let #%top #%datum with-continuation-mark quote)
       [(if test-expr csq-expr)
        (union (free-vars #'test-expr)
               (free-vars #'csq-expr))]
@@ -133,6 +134,7 @@
        (set-diff (free-vars #'body-expr) (syntax->list #'(formals ...)))]
       [(#%top . var) '()]
       [(#%datum . var) '()]
+      [(quote datum) '()]
       [var (identifier? #'var)
            (let ([i-bdg (identifier-binding #'var)])
              (cond

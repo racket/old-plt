@@ -72,37 +72,37 @@
   ;; transform
   ;; This macro is where you put your transformations. Each def/expr is core mzscheme.
   ;; Furthermore, no def/expr is a define-syntaxes, require etc form.
-  (define-syntax (transform stx)
-    (syntax-case stx (define-values lambda)
-      [(_ rev-defs [(define-values (var) (lambda (formals ...) proc-body)) . rest])
-       #'(transform [(define-values (var) (lambda (formals ...) proc-body)) . rev-defs]
-                    rest)]
-      [(_ rev-defs [body-expr])
-       (let* ([base-labeling (make-labeling (string->bytes/utf-8 (format "~a" (syntax-object->datum stx))))]
-              [labeling (lambda ()
-                          (syntax-local-module-introduce
-                           (datum->syntax-object #f (base-labeling))))])
-         (let ([new-defs (foldl
-                          (lambda (first rest)
-                            (append (defunctionalize-definition
-                                      (local-expand
-                                       (elim-call/cc-from-definition (normalize-definition first))
-                                       'top-level (list #'#%top))
-                                       labeling)
-                                    rest))
-                          '()
-                          (syntax->list #'rev-defs))])
-           (let-values ([(new-body-expr body-defs) (defunctionalize
-                                                     (local-expand
-                                                      (elim-call/cc(normalize-term #'body-expr))
-                                                      'top-level (list #'#%top))
-                                                     labeling)])
-             #`(begin
-                 #,@new-defs
-                 #,@body-defs
-                 (abort/cc #,new-body-expr)))))]
-      [(_ rev-defs [])
-       (raise-syntax-error #f "module has no body expression" stx)]
+   (define-syntax (transform stx)
+     (syntax-case stx (define-values lambda)
+       [(_ rev-defs [(define-values (var) (lambda (formals ...) proc-body)) . rest])
+        #'(transform [(define-values (var) (lambda (formals ...) proc-body)) . rev-defs]
+                     rest)]
+       [(_ rev-defs [body-expr])
+        (let* ([base-labeling (make-labeling (string->bytes/utf-8 (format "~a" (syntax-object->datum stx))))]
+               [make-labeler (lambda (tag)
+                               (lambda ()
+                                 (datum->syntax-object tag (base-labeling))))])
+          (let ([new-defs (foldl
+                           (lambda (first rest)
+                             (append (defunctionalize-definition
+                                       (local-expand
+                                        (elim-call/cc-from-definition (normalize-definition first))
+                                        'top-level (list #'#%top))
+                                       (make-labeler first))
+                                     rest))
+                           '()
+                           (syntax->list #'rev-defs))])
+            (let-values ([(new-body-expr body-defs) (defunctionalize
+                                                      (local-expand
+                                                       (elim-call/cc (normalize-term #'body-expr))
+                                                       'top-level (list #'#%top))
+                                                      (make-labeler #'body-expr))])
+              #`(begin
+                  #,@new-defs
+                  #,@body-defs
+                  (abort/cc #,new-body-expr)))))]
+       [(_ rev-defs [])
+        (raise-syntax-error #f "module has no body expression" stx)]
       [_else
        (raise-syntax-error #f "extra body expression, or expression out of order" stx)]))
 

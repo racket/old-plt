@@ -2,22 +2,8 @@
   (provide closure-tests-suite)
   (require (planet "test.ss" ("schematics" "schemeunit.plt" 1 1))
            (lib "serialize.ss")
-           (lib "match.ss"))
-  
-  (require-for-syntax "../closure.ss")
-  (require-for-template mzscheme)
-  
-  (define-syntax (define-closure stx)
-    (syntax-case stx ()
-      [(_ tag (formals ...) (free-vars ...) body)
-       (let-values ([(make-CLOSURE closure-definitions)
-                     (make-closure-definition-syntax
-                      #'tag
-                      (syntax->list #'(formals ...))
-                      (syntax->list #'(free-vars ...))
-                      #'body)])
-         #`(begin #,@closure-definitions))]))
-  
+           (lib "match.ss")
+           "../define-closure.ss")  
   
   (define-closure id (x) () x)
   

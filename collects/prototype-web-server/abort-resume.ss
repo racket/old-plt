@@ -1,4 +1,5 @@
 (module abort-resume mzscheme
+  (require "define-closure.ss")
   (provide
 
    ;; AUXILLIARIES
@@ -59,7 +60,7 @@
   
   (define (start-continuation val)
     (error "interactive module not initialized"))
-  
+    
   ;; start-interaction: (request -> continuation) -> request
   ;; register the decode proc and start the interaction with the current-continuation
   (define (start-interaction decode)
@@ -69,6 +70,9 @@
             (reverse
              (continuation-mark-set->list (current-continuation-marks) the-cont-key))])
        (lambda (x) (abort (lambda () (resume current-marks x)))))))
+    
+  (define-closure kont (x) (current-marks)
+    (abort (lambda () (resume current-marks x))))
   
   ;; send/suspend: (continuation -> response) -> request
   ;; produce the current response and wait for the next request
@@ -77,7 +81,10 @@
      (let ([current-marks
             (reverse
              (continuation-mark-set->list (current-continuation-marks) the-cont-key))])
-       (lambda (x) (abort (lambda () (resume current-marks x)))))))
+       (make-kont (lambda () current-marks)))))
+;       (lambda (x) (abort (lambda () (resume current-marks x)))))))
+  
+  
   
   ;; **********************************************************************
   ;; **********************************************************************

@@ -20,7 +20,7 @@
        (or (url->continuation (request-uri req))
            (lambda (req) (dispatch-start req))))))
   
-  ;; send/suspend0: (url -> response) -> request
+  ;; send/suspend: (url -> response) -> request
   ;; the usual send/suspend
   (define (send/suspend page-maker)
     (send/suspend0

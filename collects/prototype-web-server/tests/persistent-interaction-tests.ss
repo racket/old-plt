@@ -1,8 +1,17 @@
-(require "../client.ss")
+(require "../client.ss"
+         (lib "serialize.ss"))
 
 ;; ****************************************
 ;; ****************************************
 ;; BASIC TESTS
+
+(module m00.3 "../persistent-interaction.ss"
+  (define (id x) x)
+  (define (foo x) 'foo)
+  (foo (start-interaction id)))
+
+(require m00.3)
+(eqv? 'foo (dispatch-start 7))
 
 (module m00 "../persistent-interaction.ss"
   (define (id x) x)
@@ -12,18 +21,18 @@
 (= 7 (dispatch-start 7))
 (= 8 (dispatch-start 8))
 
-(module m00.5 "../persistent-interaction.ss"
+(module m00.1 "../persistent-interaction.ss"
   (define (id x) x)
   (+ 1 (start-interaction id)))
 
-(require m00.5)
+(require m00.1)
 (= 2 (dispatch-start 1))
 
-(module m0a "../persistent-interaction.ss"
+(module m00.2 "../persistent-interaction.ss"
   (define (id x) x)
   (+ (+ 1 1) (start-interaction id)))
 
-(require m0a)
+(require m00.2)
 (= 14 (dispatch-start 12))
 (= 20 (dispatch-start 18))
 
@@ -48,6 +57,7 @@
 (void? (dispatch-start 1))
 (= 3 (dispatch-start 2))
 (= 0 (dispatch-start -1))
+
 
 ;; ****************************************
 ;; ****************************************
@@ -111,7 +121,6 @@
 ;; ****************************************
 ;; TESTS INVOLVING send/suspend
 
-
 (module table01 mzscheme
   (provide store-k
            lookup-k)
@@ -146,6 +155,34 @@
 (let* ([first-key (dispatch-start 'foo)]
        [second-key (dispatch `(,first-key 1))]
        [third-key (dispatch `(,first-key -7))])
+  (values
+   (= 3 (dispatch `(,second-key 2)))
+   (= 4 (dispatch `(,second-key 3)))
+   (zero? (dispatch `(,second-key -1)))
+   (= -7 (dispatch `(,third-key 0)))
+   (zero? (dispatch `(,third-key 7)))))
+
+
+(module m06.1 (lib "persistent-interaction.ss" "prototype-web-server")
+  (define (id x) x)
+  
+  (define (gn which)
+    (cadr
+     (send/suspend
+      (lambda (k)
+        (let ([ignore (printf "Please send the ~a number.~n" which)])
+          k)))))
+  
+  (let ([ignore (start-interaction car)])
+    (let ([result (+ (gn "first") (gn "second"))])
+      (let ([ignore (printf "The answer is: ~s~n" result)])
+        result))))
+
+(require m06.1)
+
+(let* ([first-key (dispatch-start 'foo)]
+       [second-key (dispatch `(,(deserialize (serialize first-key)) 1))]
+       [third-key (dispatch `(,(deserialize (serialize first-key) -7)))])
   (values
    (= 3 (dispatch `(,second-key 2)))
    (= 4 (dispatch `(,second-key 3)))

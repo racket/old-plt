@@ -108,6 +108,7 @@
       key))
   
   (define (lookup-k key-pair)
+    (printf "key-pair = ~s~n" key-pair)
     (hash-table-get the-table (car key-pair) (lambda () #f))))
 
 (module m06 "../interaction.ss"

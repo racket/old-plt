@@ -55,9 +55,11 @@ public class Env$$$ extends java.lang.ClassLoader implements EnvTags$$$ {
 // 1.2 : change to HashMap
   public Hashtable classes = new Hashtable();
 
-  private String dir;
+  private String dir, extensions;
 
-  protected Env$$$(String _dir) { dir = _dir; }
+  protected void setExtensionPath(String s) { extensions = s; }
+
+  protected Env$$$(String _dir, String e) { dir = _dir; extensions = e; }
 
   public Class findLocalClass(String name) throws ClassNotFoundException {
     return findClass(name);
@@ -70,8 +72,12 @@ public class Env$$$ extends java.lang.ClassLoader implements EnvTags$$$ {
     }
 
     try {
-      java.io.FileInputStream in =
-	new java.io.FileInputStream(dir + java.io.File.separator + name.replace('.', '/') + ".class");
+      java.io.FileInputStream in;
+      try {
+	in = new java.io.FileInputStream(dir + java.io.File.separator + name.replace('.', '/') + ".class");
+      } catch (java.io.IOException e) {
+	in = new java.io.FileInputStream(extensions + java.io.File.separator + name.replace('.', '/') + ".class");
+      }
       int len = in.available();
       byte[] buf = new byte[len];
       in.read(buf);

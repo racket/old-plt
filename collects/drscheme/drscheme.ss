@@ -3,8 +3,7 @@
 
 (require-library "macro.ss")
 (when graphical-debug?
-  (require-library "grepl.ss" "drscheme")
-  (memory-counter))
+  (require-library "grepl.ss" "drscheme"))
 (when (or graphical-debug? textual-debug?)
   (require-library "rload.ss" "drscheme")
   (require-library "errortrace.ss" "errortrace"))

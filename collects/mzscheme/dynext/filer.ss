@@ -52,8 +52,8 @@
 		       [(s) (extract-base-filename s #f)])])
 	      extract-base-filename))])
      (values
-      (mk "ss|scm" "Scheme")
-      (mk "c" "C")
-      (mk "kp" "constant pool")
-      (mk "o|obj" "compiled object")))))
+      (mk "[sS][sS]|[sS][cC][mM]" "Scheme")
+      (mk "[cC]" "C")
+      (mk "[kK][pP]" "constant pool")
+      (mk "[oO]|[oO][bB][jJ]" "compiled object")))))
 

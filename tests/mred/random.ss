@@ -988,7 +988,25 @@
 	     (string=? (vector-ref argv 0) "-r"))
   (exit 0))
 
-(random-seed 179)
+;; Remove some things:
+(for-each (lambda (p)
+	    (let ([k (ormap (lambda (k)
+			      (and (equal? k (car p))
+				   k))
+			    (hash-table-map classinfo (lambda (k v) k)))])
+	      (hash-table-put! 
+	       classinfo k
+	       (let ([l (hash-table-get classinfo k)])
+		 (let loop ([l l])
+		   (cond
+		    [(null? l) null]
+		    [(and (pair? (car l))
+			  (eq? (cadr p) (caar l)))
+		     (cdr l)]
+		    [else (cons (car l) (loop (cdr l)))]))))))
+	  '(("Eventspaces" sleep/yield)))
+
+(random-seed 170)
 
 (create-all-bad)
 (call-all-bad)

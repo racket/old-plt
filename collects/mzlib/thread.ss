@@ -11,8 +11,10 @@
 	  make-single-threader
 
 	  merge-input
-	  copy-port)
+	  copy-port
 
+	  run-server)
+  
   #|
   t accepts a function, f, and creates a thread. It returns the thread and a
   function, g. When g is applied it passes it's argument to f, and evaluates
@@ -191,5 +193,34 @@
 	  (copy a)
 	  (copy b)
 	  rd))]))
-   
-   )
+
+  (define (run-server port-number handler connection-timeout)
+    (let ([l (tcp-listen port-number)]
+	  [can-break? (break-enabled)])
+      (dynamic-wind
+	  void
+	  (lambda ()
+	    (let loop ()
+	      (with-handlers ([not-break-exn? void])
+		(let ([c (make-custodian)])
+		  (parameterize ([current-custodian c])
+		    (let-values ([(r w) (tcp-accept l)])
+		      (parameterize ([break-enabled #f])
+			;; Handler thread:
+			(let ([t (thread (lambda () 
+					   (when can-break?
+					     (break-enabled #t))
+					   (handler r w)))])
+			  ;; Clean-up thread
+			  (thread (lambda () 
+				    (thread-wait t)
+				    (custodian-shutdown-all c)))
+			  ;; Timeout thread, if any
+			  (when connection-timeout
+			    (thread (lambda ()
+				      (sleep connection-timeout)
+				      (break-thread t)
+				      (sleep connection-timeout)
+				      (kill-thread t))))))))))
+	      (loop)))
+	  (lambda () (tcp-close l))))))

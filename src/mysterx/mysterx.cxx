@@ -694,8 +694,6 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   
   hr = pIConnectionPoint->Advise(pIUnknown,&cookie);
   
-  pIConnectionPoint->Release();
-  
   if (hr != S_OK) {
     signalCodedEventSinkError("Unable to connect sink to connection point",hr);
   }

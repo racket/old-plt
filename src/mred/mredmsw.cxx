@@ -382,3 +382,45 @@ void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags)
   else
     c->queued_leaves = e;
 }
+
+/**********************************************************************/
+
+static Scheme_Hash_Table *gdi_objects;
+static void (*orig_exit)(int);
+
+static void clean_up_gdi_objects(int v)
+{
+  int i;
+  Scheme_Bucket *b;
+
+  for (i = 0; i < gdi_objects->size; i++) {
+    b = gdi_objects->buckets[i];
+    if (b && b->val) {
+      DeleteObject((HANDLE)b->key);
+    }
+  }
+
+  if (orig_exit)
+    orig_exit(v);
+  exit(v);
+}
+
+void RegisterGDIObject(HANDLE x)
+{
+  if (!gdi_objects) {
+    gdi_objects = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+    orig_exit = scheme_exit;
+    scheme_exit = clean_up_gdi_objects;
+  }
+
+  if (x)
+    scheme_add_to_table(gdi_objects, (const char *)x, (void *)x, 0);
+}
+
+void DeleteRegisteredGDIObject(HANDLE x)
+{
+  /* Removes from hash table: */
+  scheme_change_in_table(gdi_objects, (const char *)x, NULL);
+  
+  DeleteObject(x);
+}

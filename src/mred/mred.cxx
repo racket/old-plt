@@ -1439,9 +1439,11 @@ public:
   Bool OnClose(void) 
     { 
       hidden = TRUE;
-      if (stdio_kills_prog)
+      if (stdio_kills_prog) {
+	if (scheme_exit)
+	  scheme_exit(0);
 	exit(0);
-      else
+      } else
 	have_stdio = 0;
       return TRUE; 
     }
@@ -2242,6 +2244,8 @@ static void on_main_killed(Scheme_Process *p)
   }
 #endif
 
+  if (scheme_exit)
+    scheme_exit(0);
   exit(0);
 }
 

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.13 1999/01/09 19:18:39 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.14 1999/01/28 15:56:34 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -44,6 +44,9 @@ int pen_count, brush_count, font_count, bitmap_count;
 # define COUNT_P(c) 
 # define COUNT_M(c) 
 #endif
+
+void RegisterGDIObject(HANDLE x);
+void DeleteRegisteredGDIObject(HANDLE x);
 
 Bool wxMakeBitmapAndPalette(LPBITMAPINFOHEADER lpInfo, HPALETTE * phPal, HBITMAP * phBitmap);
 
@@ -100,9 +103,9 @@ Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Under
 wxFont::~wxFont()
 {
   if (screen_cfont)
-    DeleteObject(screen_cfont);
+    DeleteRegisteredGDIObject(screen_cfont);
   if (general_cfont)
-    DeleteObject(general_cfont);
+    DeleteRegisteredGDIObject(general_cfont);
   
   COUNT_M(font_count);
 }
@@ -180,6 +183,8 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
 		       0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 		       PROOF_QUALITY, DEFAULT_PITCH | FF_SWISS, NULL);
 
+  RegisterGDIObject((HANDLE)cfont);
+
   if (screenFont)
     screen_cfont = cfont;
   else
@@ -208,7 +213,7 @@ wxColourMap::wxColourMap(const int n, const unsigned char *red, const unsigned c
 wxColourMap::~wxColourMap(void)
 {
   if (ms_palette)
-    DeleteObject(ms_palette);
+    DeleteRegisteredGDIObject(ms_palette);
 }
 
 Bool wxColourMap::Create(const int n, const unsigned char *red, const unsigned char *green, const unsigned char *blue)
@@ -232,6 +237,7 @@ Bool wxColourMap::Create(const int n, const unsigned char *red, const unsigned c
     npPal->palPalEntry[i].peFlags = 0;
   }
   ms_palette = CreatePalette((LPLOGPALETTE)npPal);
+  RegisterGDIObject(ms_palette);
   LocalFree((HANDLE)npPal);
   return TRUE;
 }
@@ -288,7 +294,7 @@ wxPen::~wxPen()
   COUNT_M(pen_count);
 
   if (cpen)
-    DeleteObject(cpen);
+    DeleteRegisteredGDIObject(cpen);
 
   cpen = NULL;
 }
@@ -382,7 +388,7 @@ void wxPen::ChangePen(void)
   if (cpen) {
     /* Note: the pen can't be selected anywhere if we're changing it, so
        delete is ok */
-    DeleteObject(cpen);
+    DeleteRegisteredGDIObject(cpen);
     cpen = NULL;
   }
 
@@ -471,6 +477,8 @@ void wxPen::ChangePen(void)
 			real_dash);
   }
 
+  RegisterGDIObject(cpen);
+
   return;
 }
 
@@ -543,7 +551,7 @@ wxBrush::~wxBrush()
   COUNT_M(brush_count);
 
   if (cbrush)
-    DeleteObject(cbrush);
+    DeleteRegisteredGDIObject(cbrush);
 
   cbrush = NULL;
 }
@@ -586,7 +594,7 @@ void wxBrush::ChangeBrush(void)
 
   if (cbrush) {
     /* Note: brush isn't selected anywhere if we can change it. */
-    DeleteObject(cbrush);
+    DeleteRegisteredGDIObject(cbrush);
     cbrush = NULL;
   }
 
@@ -625,6 +633,8 @@ void wxBrush::ChangeBrush(void)
       break;
     }
   }
+
+  RegisterGDIObject(cbrush);
 
   old_style = style;
   old_stipple = stipple;
@@ -852,7 +862,6 @@ wxCursor::wxCursor(int cursor_type)
 
 wxCursor::~wxCursor(void)
 {
-//  wxTheCursorList->DeleteObject(this);
 }
 
 // Global cursor setting
@@ -964,6 +973,8 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
 
   ms_bitmap = CreateBitmap(the_width, the_height, 1, 1, copy);
 
+  RegisterGDIObject(ms_bitmap);
+
   if (ms_bitmap)
     ok = TRUE;
   else
@@ -1037,6 +1048,7 @@ wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem))
     {
       /* ximage is malloced and contains bitmap and attributes */
       ms_bitmap = ximage->bitmap;
+      RegisterGDIObject(ms_bitmap);
 
       BITMAP  bm;
       GetObject(ms_bitmap, sizeof(bm), (LPSTR) & bm);
@@ -1076,6 +1088,7 @@ Bool wxBitmap::Create(int w, int h, int d)
     ReleaseDC(NULL, dc);
     depth = wxDisplayDepth();
   }
+  RegisterGDIObject(ms_bitmap);
   if (ms_bitmap)
     ok = TRUE;
   else
@@ -1107,7 +1120,7 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
     oldSel->SelectObject(NULL);
 
   if (ms_bitmap) {
-    DeleteObject(ms_bitmap);
+    DeleteRegisteredGDIObject(ms_bitmap);
     ms_bitmap = NULL;
   }
 
@@ -1116,6 +1129,7 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
     ms_bitmap = LoadBitmap(wxhInstance, bitmap_file);
     if (ms_bitmap)
     {
+      RegisterGDIObject(ms_bitmap);
       ok = TRUE;
       BITMAP bm;
       GetObject(ms_bitmap, sizeof(BITMAP), (LPSTR) &bm);
@@ -1134,6 +1148,7 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
     if (c) {
       HDC glob_dc = GetDC(NULL);
       ms_bitmap = CreateBitmap(w, h, 1, 1, NULL);
+      RegisterGDIObject(ms_bitmap);
       ReleaseDC(NULL, glob_dc);
       if (ms_bitmap) {
 	HDC dc = ::CreateCompatibleDC(NULL);
@@ -1158,7 +1173,7 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
 	    height = h;
 	    depth = 1;
 	  } else {
-	    DeleteObject(ms_bitmap);
+	    DeleteRegisteredGDIObject(ms_bitmap);
 	    ms_bitmap = NULL;
 	  }
 
@@ -1182,6 +1197,7 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
 		if (errorStatus == XpmSuccess)
 		{
 	ms_bitmap = ximage->bitmap;
+	RegisterGDIObject(ms_bitmap);
 
 	BITMAP  bm;
 	GetObject(ms_bitmap, sizeof(bm), (LPSTR) & bm);
@@ -1261,7 +1277,7 @@ wxBitmap::~wxBitmap(void)
   }
   if (ms_bitmap)
   {
-    DeleteObject(ms_bitmap);
+    DeleteRegisteredGDIObject(ms_bitmap);
   }
   ms_bitmap = NULL;
 

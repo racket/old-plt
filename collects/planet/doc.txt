@@ -142,9 +142,10 @@ package that it tries in order.
 Whenever a file requires a package via PLaneT and that requirement is
 satisfied, the system makes a note of exactly which package satisfied
 that requirement and from then on always uses that exact same package,
-even if a newer version is available. This is done to prevent 
-"magic upgrades" in which a program stops working after installation
-because an unrelated package was installed.
+even if a newer version is available. This is done to prevent "magic
+upgrades" in which a program stops working after installation because
+an unrelated package was installed. Such connections are called links
+and are stored in a user-specific table called the linkage table.
 
 2. Acceptable local package
 
@@ -160,6 +161,43 @@ the requirement. The server then finds the newest matching package
 and sends it back to the client, which then installs it and uses
 it to satisfy the original requirement.
 
+_The planet command-line tool_
+------------------------------
+
+The planet command-line tool allows you to examine and manipulate your
+local planet cache and linkage table. It has several modes (only one
+of which may be used in a single invocation):
+
+-f, --file <plt-file> <owner> <maj> <min>
+
+Install local file <plt-file> as though it had been downloaded from
+the planet server. The installed package has path (planet (<owner>
+<plt-file's filename> <maj> <min>)), where maj and min are natural
+numbers and maj is greater than 0.
+
+-i, --install <owner> <pkg> <maj> <min>
+
+Download and install the package that 
+(require (planet "file.ss" (<owner> <pkg> <maj> <min>))
+would install. In this mode, min can be any s-expression that
+the (require (planet ...)) form can interpret, not just a natural
+number.
+
+-r, --remove <owner> <pkg> <maj> <min>
+
+Remove the specified package from the local cache.
+
+-p, --packages
+
+List the packages installed in the local cache.
+
+-l, --linkage
+
+List the current linkage table
+
+-U, --unlink-all
+
+Clear the linkage table, unlinking all packages and allowing upgrades.
 
 _Distributing Packages with PLaneT_
 -----------------------------------
@@ -307,6 +345,27 @@ This function will build a packaged version of your directory and
 return the path to that package. The path will always be a file named
 X.plt, where X is the name of the directory you gave to
 make-planet-archive, located in that same directory.
+
+You can now test that your .plt file works as intended using the
+planet command-line tool in its install mode:
+
+planet --file <path to your .plt file> <owner name> <maj> <min>
+
+will install the specified .plt file into your local PLaneT cache as
+though it had been downloaded from the PLaneT server with the given
+owner name and major and minor versions. After you run this command,
+you can require your package on your local machine using
+
+(require (planet (<owner name> <.plt file name without path> <maj> <min>)))
+
+to verify everything works. After you do so, you can use
+
+planet --remove <owner name> <.plt file name> <maj> <min>
+
+to remove the test package from your local cache. (Not removing it is
+safe as long as you use the same name and version numbers the package
+will have on the official PLaneT server; otherwise you may experience
+problems.)
 
 4. SUBMIT THE PACKAGE
 

@@ -282,9 +282,9 @@
 	    ;; The empty namespace, maybe? Don't annotate.
 	    (orig e)))))
    
-   ;; exn -> void
+   ;; port exn -> void
    ;; effect: prints out the context surrounding the exception
-   (define (errortrace-print-trace x)
+   (define (errortrace-print-trace p x)
      (let loop ([n (error-context-display-depth)]
 		[l (exn-debug-info x)])
        (cond
@@ -307,7 +307,7 @@
 	    (let ([p (current-error-port)])
 	      (display (exn-message x) p)
 	      (newline p)
-	      (errortrace-print-trace x)
+	      (errortrace-print-trace p x)
 	      ((error-escape-handler)))
 	    (orig x)))))
 

@@ -28,7 +28,7 @@
    (spawn ((-> any) . -> . thread?))
    (channel (-> channel?))
    (channel-recv-evt (channel? . -> . evt?))
-   (channel-send-evt (channel? any? . -> . evt?))
+   (channel-send-evt (channel? any/c . -> . evt?))
    
    (thread-done-evt (thread? . -> . evt?))
    (current-time (-> number?))

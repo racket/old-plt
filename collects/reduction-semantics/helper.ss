@@ -196,11 +196,11 @@
    explore-results
    explore-parallel-results)
   (provide/contract
-   (function-reduce* ((listof red?) any? (any? . -> . boolean?) number?
-		      . -> . (listof any?)))
+   (function-reduce* ((listof red?) any/c (any/c . -> . boolean?) number?
+		      . -> . (listof any/c)))
    (unique-names? ((listof symbol?) . -> . boolean?))
    (generate-string (-> string?))
-   (all-of (any? (any? . -> . any) . -> . (listof any?)))
-   (transitive-closure ((listof pair?) . -> . (listof (listof any?))))
+   (all-of (any/c (any/c . -> . any) . -> . (listof any/c)))
+   (transitive-closure ((listof pair?) . -> . (listof (listof any/c))))
    (many-results ((listof (lambda (x) (not (multi-result? x)))) . -> . any))
-   (first-result (any? . -> . any))))
+   (first-result (any/c . -> . any))))

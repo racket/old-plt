@@ -17,11 +17,11 @@
            )
   
   (provide/contract
-   (language->predicate (compiled-lang? symbol? . -> . (any? . -> . boolean?)))
-   (match-pattern (compiled-pattern any? . -> . (union false? (listof bindings?))))
-   (compile-pattern (compiled-lang? any? . -> . compiled-pattern))
-   (reduce ((listof (lambda (x) (red? x))) any? . -> . (listof any?)))
-   (variable-not-in (any? symbol? . -> . symbol?))
+   (language->predicate (compiled-lang? symbol? . -> . (any/c . -> . boolean?)))
+   (match-pattern (compiled-pattern any/c . -> . (union false/c (listof bindings?))))
+   (compile-pattern (compiled-lang? any/c . -> . compiled-pattern))
+   (reduce ((listof (lambda (x) (red? x))) any/c . -> . (listof any/c)))
+   (variable-not-in (any/c symbol? . -> . symbol?))
    (compatible-closure ((lambda (x) (red? x))
                         compiled-lang?
                         symbol?
@@ -29,18 +29,18 @@
                         (lambda (x) (red? x))))
    (context-closure ((lambda (x) (red? x))
                      compiled-lang?
-                     any?
+                     any/c
                      . -> .
                      (lambda (x) (red? x))))
 
    (make-bindings ((listof rib?) . -> . bindings?))
    (bindings-table (bindings? . -> . (listof rib?)))
-   (bindings? (any? . -> . boolean?))
+   (bindings? (any/c . -> . boolean?))
    
-   (make-rib (symbol? any? . -> . rib?))
-   (rib? (any? . -> . boolean?))
+   (make-rib (symbol? any/c . -> . rib?))
+   (rib? (any/c . -> . boolean?))
    (rib-name (rib? . -> . symbol?))
-   (rib-exp (rib? . -> . any?)))
+   (rib-exp (rib? . -> . any/c)))
   
   ;; type red = (make-red compiled-pat ((listof (cons sym tst)) -> any)
   (define-struct red (contractum reduct))

@@ -78,7 +78,7 @@ abstract out the `hole and `(hole name) patterns.
   ;; hole-path = (make-hole-path (union #f symbol) symbol (listof (union 'car 'cdr)))
   (define-struct hole-path (name id path) (make-inspector))
   
-  (define compiled-pattern (any? (listof hole-path?) . -> . (union false? (listof bindings?))))
+  (define compiled-pattern (any/c (listof hole-path?) . -> . (union false/c (listof bindings?))))
   
   (define-struct compiled-lang (lang ht across-ht has-hole-ht))
   
@@ -945,7 +945,7 @@ abstract out the `hole and `(hole name) patterns.
       (hash-table-get ht key (lambda () (k #f)))
       #t))
   
-  (provide/contract (replace (any? hole-binding? any? . -> . any)))
+  (provide/contract (replace (any/c hole-binding? any/c . -> . any)))
   ;; replaces `inner' inside `outer' (using eq?) with `new'
   (define (replace outer hb new)
     (let loop ([sexp outer]

@@ -14,14 +14,14 @@
   
   (provide/contract [make-embedding-executable
                      (opt-> (path-string?
-                             any?
-                             any?
-                             (listof (list/c (union boolean? symbol?) any?))
+                             any/c
+                             any/c
+                             (listof (list/c (union boolean? symbol?) any/c))
                              (listof path-string?)
-                             any?
+                             any/c
                              (listof string?))
-                            ((listof (cons/c symbol? any?))
-                             any?
+                            ((listof (cons/c symbol? any/c))
+                             any/c
                              symbol?)
                             void?)])
   (provide write-module-bundle

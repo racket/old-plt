@@ -45,8 +45,9 @@
 		 (directory-list dir))]
 	   [servlet-files 
 	    (filter 
-	     (lambda (s)
-	       (let ([len (string-length s)])
+	     (lambda (path)
+               (let* ([s (path->string path)]
+                      [len (string-length s)])
 		 (string=? 
 		  ".ss"
 		  (substring s (- len 3) len))))
@@ -58,7 +59,7 @@
   
   ; path is absolute, and has the servlet dir as a prefix 
   (define (relativize-and-slashify path)
-    (let* ([exp-path (explode-path path)]
+    (let* ([exp-path (map path->string (explode-path path))]
 	   [prefix-len (sub1 exploded-servlet-dir-len)]
 	   [relative-exp-path
 	    (let loop ([p exp-path]

@@ -900,8 +900,6 @@ scheme_bin_gcd (const Scheme_Object *n1, const Scheme_Object *n2)
 
     return scheme_make_double(a);
   } else {
-    Scheme_Object *r;
-
     n1 = scheme_to_bignum(n1);
     n2 = scheme_to_bignum(n2);
 

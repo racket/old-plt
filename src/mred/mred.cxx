@@ -260,7 +260,7 @@ typedef struct Context_Custodian_Hop {
 # define WEAKIFIED(x) x
 #endif
 
-static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdContext *), 
+static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdContext *),
 					 MrEdContext *tdata, int check_only);
 static void remove_q_callbacks(MrEdContext *c);
 
@@ -393,13 +393,13 @@ MrEdContext *MrEdGetContext(wxObject *w)
 #endif
       MrEdContext *c;
       c = (MrEdContext *)((wxFrame *)w)->context;
-      if (c) 
+      if (c)
 	return c;
 #if !defined(wx_xt) && !defined(wx_mac)
     } else {
       MrEdContext *c;
       c = (MrEdContext *)((wxDialogBox *)w)->context;
-      if (c) 
+      if (c)
 	return c;
     }
 #endif
@@ -536,7 +536,7 @@ void *wxsCheckEventspace(char *who)
 {
   MrEdContext *c;
   c = (MrEdContext *)wxGetContextForFrame();
-  
+
   if (c->killed)
     scheme_signal_error("%s: the current eventspace has been shutdown", who);
 
@@ -673,7 +673,7 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
     wxStandardSnipClassList *scl;
     wxBufferDataClassList *bdcl;
     MrEdFinalizedContext *fc;
-    
+
     c = (MrEdContext *)scheme_malloc_tagged(sizeof(MrEdContext));
     c->type = mred_eventspace_type;
 
@@ -747,11 +747,11 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 #ifndef MZ_PRECISE_GC
   scheme_weak_reference((void **)&mr_hop->context);
 #endif
-  
+
   {
     Scheme_Custodian_Reference *mr;
-    mr = scheme_add_managed(NULL, (Scheme_Object *)mr_hop, 
-			    CAST_SCCC kill_eventspace, 
+    mr = scheme_add_managed(NULL, (Scheme_Object *)mr_hop,
+			    CAST_SCCC kill_eventspace,
 			    NULL, 0);
     c->mref = mr;
   }
@@ -957,7 +957,7 @@ int mred_in_restricted_context()
 static wxTimer *TimerReady(MrEdContext *c)
 {
   wxTimer *timer = mred_timers;
-  
+
   if (c) {
     while (timer && (timer->context != (void *)c)) {
       timer = timer->next;
@@ -1046,7 +1046,7 @@ static void GoAhead(MrEdContext *c)
     mz_jmp_buf savebuf;
 
     memcpy(&e, &c->event, sizeof(MrEdEvent));
-    
+
     memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
     if (!scheme_setjmp(scheme_error_buf))
       MrEdDispatchEvent(&e);
@@ -1097,7 +1097,7 @@ static void DoTheEvent(MrEdContext *c)
       printf("Bad dispatcher\n");
 #endif
   }
-  
+
   if (c->ready_to_go)
     GoAhead(c);
 }
@@ -1229,8 +1229,8 @@ int MrEdEventReady(MrEdContext *c)
     restricted = 1;
 #endif
 
-  return (c->nested_avail 
-	  || TimerReady(c) 
+  return (c->nested_avail
+	  || TimerReady(c)
 	  || (!restricted && MrEdGetNextEvent(1, 1, NULL, NULL))
 	  || (!restricted && check_q_callbacks(2, MrEdSameContext, c, 1))
 	  || check_q_callbacks(1, MrEdSameContext, c, 1)
@@ -1265,7 +1265,7 @@ static void WaitForAnEvent_OrDie(MrEdContext *c)
       c->suspended = 0;
       c->ready = 0;
       c->waiting_for_nested = 0;
-      
+
       scheme_thread_block(0);
       scheme_current_thread->ran_some = 1;
 
@@ -1336,7 +1336,7 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
       }
     }
   }
-   
+
   /* We should never get here. */
 #if 0
   c->ready = 1;
@@ -1356,7 +1356,7 @@ static int MrEdContextReady(MrEdContext *, MrEdContext *c)
 static void event_found(MrEdContext *c)
 {
   c->ready = 0;
-  
+
   if (c->waiting_for_nested) {
     c->waiting_for_nested = 0;
     c->nested_avail = 1;
@@ -1369,7 +1369,7 @@ static void event_found(MrEdContext *c)
 
     cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
     scheme_thread_w_custodian(cp, c->main_config,
-			      (Scheme_Custodian *)scheme_get_param(c->main_config, 
+			      (Scheme_Custodian *)scheme_get_param(c->main_config,
 								   MZCONFIG_CUSTODIAN));
   }
 }
@@ -1443,7 +1443,7 @@ static int try_dispatch(Scheme_Object *do_it)
 
     if (SCHEME_FALSEP(do_it))
       scheme_current_thread->ran_some = 1;
-    
+
     if (c) {
       memcpy(&c->event, &e, sizeof(MrEdEvent));
       event_found(c);
@@ -1451,7 +1451,7 @@ static int try_dispatch(Scheme_Object *do_it)
       /* Event with unknown context: */
       MrEdDispatchEvent(&e);
     }
-    
+
     return 1;
   }
 
@@ -1466,9 +1466,9 @@ static void wakeup_on_dispatch(Scheme_Object *, void *fds)
 #ifdef wx_x
   Display *d = XtDisplay(mred_main_context->finalized->toplevel);
   int fd;
-  
+
   fd = ConnectionNumber(d);
-  
+
   MZ_FD_SET(fd, (fd_set *)fds);
 #endif
 }
@@ -1493,7 +1493,7 @@ void wxDoEvents()
     Scheme_Custodian *m, *oldm;
     if (!wx_in_terminal) {
       oldm = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
-      m = scheme_make_custodian(oldm);    
+      m = scheme_make_custodian(oldm);
       scheme_set_param(scheme_config, MZCONFIG_CUSTODIAN, (Scheme_Object *)m);
       wxREGGLOB(main_custodian);
       main_custodian = m;
@@ -1591,30 +1591,30 @@ static void MrEdSleep(float secs, void *fds)
 #ifdef NEVER_EVER_SLEEP
   return;
 #endif
-  
+
   if (!(KEEP_GOING))
     return;
-    
+
   now = scheme_get_inexact_milliseconds();
   {
     wxTimer *timer = mred_timers;
-    
+
     while (timer && !((MrEdContext *)timer->context)->ready) {
       timer = timer->next;
     }
-    
+
     if (timer) {
       double done = timer->expiration;
       double diff = done - now;
 
       diff /= 1000;
       if (diff <= 0)
-	secs = 0.00001;
+	secs = (float)0.00001;
       else if (!secs || (secs > diff))
-	secs = diff;
+	secs = (float)diff;
     }
   }
-  
+
 #ifdef wx_msw
   MrEdMSWSleep(secs, fds);
 #else
@@ -1708,7 +1708,7 @@ Bool wxTimer::Start(int millisec, Bool _one_shot)
 	return TRUE;
       }
       t = t->next;
-    } 
+    }
   } else
     mred_timers = this;
 
@@ -1785,7 +1785,7 @@ static void remove_q_callback(Q_Callback_Set *cs, Q_Callback *cb)
   cb->prev = NULL;
 }
 
-static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdContext *), 
+static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdContext *),
 					 MrEdContext *tdata, int check_only)
 {
   Q_Callback_Set *cs = q_callbacks + hi;
@@ -1797,15 +1797,15 @@ static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdCon
     if (test(tdata, cb->context)) {
       if (check_only)
 	return cb->context;
-	
+
       remove_q_callback(cs, cb);
-      
+
       memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
       if (!scheme_setjmp(scheme_error_buf))
 	scheme_apply_multi(cb->callback, 0, NULL);
       scheme_clear_escape();
       memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-      
+
       return cb->context;
     }
     cb = cb->next;
@@ -1838,7 +1838,7 @@ void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv)
   Q_Callback_Set *cs;
   Q_Callback *cb;
   int hi;
-  
+
   scheme_check_proc_arity(who, 0, 0, argc, argv);
   c = (MrEdContext *)wxsCheckEventspace("queue-callback");
 
@@ -1849,13 +1849,13 @@ void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv)
       hi = (SCHEME_TRUEP(argv[1]) ? 2 : 0);
   } else
     hi = 2;
-  
+
   cs = q_callbacks + hi;
-  
+
   cb = (Q_Callback*)scheme_malloc(sizeof(Q_Callback));
   cb->context = c;
   cb->callback = argv[0];
-  
+
   insert_q_callback(cs, cb);
 }
 
@@ -1925,11 +1925,11 @@ void MrEdQueueBeingReplaced(wxClipboardClient *clipOwner)
     clipOwner->context = NULL;
 
     p = scheme_make_closed_prim(CAST_SCP call_being_replaced, clipOwner);
-    
+
     cb = (Q_Callback*)scheme_malloc(sizeof(Q_Callback));
     cb->context = c;
     cb->callback = p;
-    
+
     insert_q_callback(q_callbacks + 1, cb);
   }
 }
@@ -1941,7 +1941,7 @@ void MrEdQueueInEventspace(void *context, Scheme_Object *thunk)
   cb = (Q_Callback*)scheme_malloc(sizeof(Q_Callback));
   cb->context = (MrEdContext *)context;
   cb->callback = thunk;
-  
+
   insert_q_callback(q_callbacks + 1, cb);
 }
 
@@ -1982,7 +1982,7 @@ public:
   Bool OnClose(void);
   void OnMenuCommand(long id);
   Bool PreOnChar(wxWindow *, wxKeyEvent *e);
-  Bool PreOnEvent(wxWindow *, wxMouseEvent *e);    
+  Bool PreOnEvent(wxWindow *, wxMouseEvent *e);
   void CloseIsQuit(void);
 };
 
@@ -1997,7 +1997,7 @@ IOFrame::IOFrame()
   wxMenu *m;
 
   display = new wxMediaCanvas(this);
-  
+
   media = new IOMediaEdit();
   display->SetMedia(media);
   endpos = 0;
@@ -2048,7 +2048,7 @@ IOFrame::IOFrame()
   m->Append(83, "&Break\tCmd+.");
   mb->Append(fileMenu, "File");
   mb->Append(m, "Edit");
-  
+
   have_stdio = 1;
   Show(TRUE);
 
@@ -2061,27 +2061,27 @@ void IOFrame::OnSize(int x, int y)
   if (display)
     display->SetSize(0, 0, x, y);
   if (media && (x > 30))
-    media->SetMaxWidth(x - 30);
+    media->SetMaxWidth((float)(x - 30));
 }
 
-Bool IOFrame::OnClose(void) 
-{ 
+Bool IOFrame::OnClose(void)
+{
   hidden = TRUE;
   if (stdio_kills_prog) {
     if (scheme_exit)
       scheme_exit(exit_val);
 #ifdef wx_msw
     mred_clean_up_gdi_objects();
-#endif	
+#endif
     scheme_immediate_exit(exit_val);
   } else {
     break_console_reading_threads();
     have_stdio = 0;
   }
-  return TRUE; 
+  return TRUE;
 }
 
-void IOFrame::OnMenuCommand(long id) 
+void IOFrame::OnMenuCommand(long id)
 {
   if (id == 79)
     media->Copy();
@@ -2093,7 +2093,7 @@ void IOFrame::OnMenuCommand(long id)
     if (OnClose())
       Show(FALSE);
 }
-    
+
 Bool IOFrame::PreOnChar(wxWindow *, wxKeyEvent *e)
 {
   PreOnEvent(NULL, NULL);
@@ -2117,7 +2117,7 @@ Bool IOFrame::PreOnEvent(wxWindow *, wxMouseEvent *e)
 
   return FALSE;
 }
-    
+
 void IOFrame::CloseIsQuit(void)
 {
 #ifdef wx_mac
@@ -2127,7 +2127,7 @@ void IOFrame::CloseIsQuit(void)
 #endif
   fileMenu->Delete(77);
   fileMenu->Append(77, QUIT_MENU_ITEM);
-  
+
   media->Insert("\n[Exited]", media->LastPosition());
   if (beginEditSeq) {
     beginEditSeq = 0;
@@ -2161,7 +2161,7 @@ static Bool RecordInput(void *m, wxEvent *event, void *data)
   len = start - ioFrame->endpos;
   s = media->GetText(ioFrame->endpos, start);
   ioFrame->endpos = start;
-  
+
   scheme_write_string(s, len, stdin_pipe);
 
   return TRUE;
@@ -2241,7 +2241,7 @@ static void MrEdSchemeMessages(char *msg, ...)
   } else if (!msg) {
     char *s;
     long d, l;
-    
+
     s = va_arg(args, char*);
     d = va_arg(args, long);
     l = va_arg(args, long);
@@ -2279,7 +2279,7 @@ static void MrEdSchemeMessages(char *msg, ...)
     char *s;
     long l;
 	DWORD wrote;
-    
+
     s = va_arg(args, char*);
     l = va_arg(args, long);
 
@@ -2352,7 +2352,7 @@ static void break_console_reading_threads()
   }
 }
 
-static long mrconsole_get_string(Scheme_Input_Port *ip, 
+static long mrconsole_get_string(Scheme_Input_Port *ip,
 				 char *buffer, long offset, long size,
 				 int nonblock)
 {
@@ -2388,7 +2388,7 @@ static Scheme_Object *MrEdMakeStdIn(void)
 
   scheme_pipe(&readp, &stdin_pipe);
 
-  ip = scheme_make_input_port(scheme_make_port_type("mred-console-input-port"), 
+  ip = scheme_make_input_port(scheme_make_port_type("mred-console-input-port"),
 			      readp,
 			      CAST_GS mrconsole_get_string,
 			      NULL,
@@ -2396,7 +2396,7 @@ static Scheme_Object *MrEdMakeStdIn(void)
 			      CAST_ICLOSE mrconsole_close,
 			      NULL,
 			      0);
-  
+
   return (Scheme_Object *)ip;
 }
 
@@ -2410,7 +2410,7 @@ static long stdout_write(Scheme_Output_Port*, const char *s, long d, long l, int
 
   if (!out)
     out = fopen("mrstdout.txt", "w");
-  
+
   if (out)
     fwrite(s + d, l, 1, out);
 #endif
@@ -2436,7 +2436,7 @@ static long stderr_write(Scheme_Output_Port*, const char *s, long d, long l, int
 #else
   if (!mrerr)
     mrerr = fopen("mrstderr.txt", "w");
-  
+
   if (mrerr)
     fwrite(s + d, l, 1, mrerr);
 #endif
@@ -2554,7 +2554,7 @@ void wxTracePath(void *o, unsigned long src, void *pd)
   if (trace_path_type > 0) {
     wxObject *obj = (wxObject *)o;
     int type = obj->__type;
-    
+
     if (type == trace_path_type)
       GC_store_path(o, src, pd);
   }
@@ -2662,7 +2662,7 @@ static void count_obj(void *o, int s, void *)
 static void dump_cpp_info()
 {
   int i, total_count = 0, total_size = 0, total_actual_size = 0;
-  
+
   for (i = 0; i < NUM_OBJ_KIND; i++)
     cpp_count[i] = cpp_sch_count[i] = cpp_size[i] = 0;
 
@@ -2698,10 +2698,10 @@ static void dump_cpp_info()
       total_actual_size += cpp_actual_size[i];
     }
   }
-    
+
   scheme_console_printf("%30.30s %10ld %10ld %10ld\n",
 			"total", total_count, total_size, total_actual_size);
-  
+
   scheme_console_printf("End wxWindows\n");
 
 #if ADD_OBJ_DUMP
@@ -2795,7 +2795,7 @@ void *wxOutOfMemory()
 {
   MrEdOutOfMemory();
   return NULL;
-} 
+}
 
 extern "C" {
   typedef void (*OOM_ptr)(void);
@@ -2832,12 +2832,12 @@ static const char *CallSchemeExpand(const char *filename, const char *who, int t
 {
   char *s;
 
-  s = scheme_expand_filename((char *)filename, strlen(filename), 
+  s = scheme_expand_filename((char *)filename, strlen(filename),
 			     who, 0,
-			     (to_write 
-			      ? SCHEME_GUARD_FILE_WRITE 
+			     (to_write
+			      ? SCHEME_GUARD_FILE_WRITE
 			      : SCHEME_GUARD_FILE_READ));
-  
+
   return s ? s : filename;
 }
 
@@ -2908,7 +2908,7 @@ static Scheme_Env *setup_basic_env()
   scheme_sleep = CAST_SLEEP MrEdSleep;
 
 #if ADD_OBJ_DUMP
-  scheme_add_global("dump-object-stats", 
+  scheme_add_global("dump-object-stats",
 		    scheme_make_prim(OBJDump), global_env);
 #endif
 
@@ -2969,17 +2969,17 @@ wxFrame *MrEdApp::OnInit(void)
   mred_nested_wait_type = scheme_make_type("<eventspace-nested-wait>");
   mred_eventspace_hop_type = scheme_make_type("<internal:eventspace-hop>");
 #ifdef MZ_PRECISE_GC
-  GC_register_traversers(mred_eventspace_type, 
-			 size_eventspace_val, 
-			 mark_eventspace_val, 
+  GC_register_traversers(mred_eventspace_type,
+			 size_eventspace_val,
+			 mark_eventspace_val,
 			 fixup_eventspace_val,
 			 1, 0);
-  GC_register_traversers(mred_nested_wait_type, 
-			 size_nested_wait_val, 
-			 mark_nested_wait_val, 
+  GC_register_traversers(mred_nested_wait_type,
+			 size_nested_wait_val,
+			 mark_nested_wait_val,
 			 fixup_nested_wait_val,
 			 1, 0);
-  GC_register_traversers(mred_eventspace_hop_type, 
+  GC_register_traversers(mred_eventspace_hop_type,
 			 size_eventspace_hop_val,
 			 mark_eventspace_hop_val,
 			 fixup_eventspace_hop_val,
@@ -3070,7 +3070,7 @@ static void MrEdExit(int v)
 
 #ifdef wx_msw
   mred_clean_up_gdi_objects();
-#endif	
+#endif
   scheme_immediate_exit(v);
 }
 #endif
@@ -3078,13 +3078,13 @@ static void MrEdExit(int v)
 static void on_main_killed(Scheme_Thread *p)
 {
   on_handler_killed(p);
-  
+
   if (scheme_exit)
     scheme_exit(exit_val);
   else {
 #ifdef wx_msw
     mred_clean_up_gdi_objects();
-#endif	
+#endif
     scheme_immediate_exit(exit_val);
   }
 }
@@ -3143,7 +3143,7 @@ void MrEdApp::DoDefaultAboutItem()
   short hit;
   CGrafPtr port;
   GDHandle device;
- 
+
   dial = GetNewDialog(129, NULL, (WindowRef)-1);
   GetGWorld(&port,&device);
 
@@ -3154,7 +3154,7 @@ void MrEdApp::DoDefaultAboutItem()
   SetGWorld(port,device);
 
   ModalDialog(NULL, &hit);
-  
+
   DisposeDialog(dial);
 }
 
@@ -3171,7 +3171,7 @@ int wxGetOriginalAppFSSpec(FSSpec *spec)
   {
     char *p;
     int i, len, c = 0;
-    
+
     p = s;
     len = strlen(s);
     for (i = len - 1; i; i--) {
@@ -3216,7 +3216,7 @@ void wxCreateApp(void)
 
     wxREGGLOB(TheMrEdApp);
     TheMrEdApp = new MrEdApp;
-  }  
+  }
 }
 
 /****************************************************************************/
@@ -3303,13 +3303,13 @@ int wxHiEventTrampoline(int (*wha_f)(void *), void *wha_data)
   het->val = 0;
 
   het->progress_cont = scheme_new_jmpupbuf_holder();
-  
+
   scheme_init_jmpup_buf(&het->progress_cont->buf);
 
   scheme_start_atomic();
-  scheme_dynamic_wind(CAST_DW_PRE pre_het, 
-		      CAST_DW_RUN act_het, 
-		      CAST_DW_POST post_het, 
+  scheme_dynamic_wind(CAST_DW_PRE pre_het,
+		      CAST_DW_RUN act_het,
+		      CAST_DW_POST post_het,
 		      NULL, het);
 
   if (het->timer_on) {
@@ -3329,7 +3329,7 @@ int wxHiEventTrampoline(int (*wha_f)(void *), void *wha_data)
 #ifdef MZ_PRECISE_GC
       het->fixup_var_stack_chain = &__gc_var_stack__;
 #endif
-      scheme_longjmpup(&het->progress_cont->buf);    
+      scheme_longjmpup(&het->progress_cont->buf);
     }
   }
 
@@ -3346,7 +3346,7 @@ static void suspend_het_progress(void)
   HiEventTramp * volatile het;
 
   het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
-  
+
   scheme_on_atomic_timeout = NULL;
 
   het->yielding = 0;
@@ -3446,18 +3446,28 @@ int mred_het_run_some(HiEventTrampProc do_f, void *do_data)
       het->do_data = do_data;
       het_do_run_new(het, iter);
     }
-    
+
     more = het->in_progress;
   }
 
   return more;
 }
 
+// Disable warning for returning address of local variable.
+#ifdef _MSC_VER
+#pragma warning (disable:4172)
+#endif
+
 static unsigned long get_deeper_base()
 {
   long here;
   return (unsigned long)&here;
 }
+
+// re-enable warning
+#ifdef _MSC_VER
+#pragma warning (default:4172)
+#endif
 
 #endif
 
@@ -3470,7 +3480,7 @@ void Drop_Runtime(char **argv, int argc)
 {
   int i;
   mz_jmp_buf savebuf;
-  
+
   memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
 
   if (scheme_setjmp(scheme_error_buf)) {
@@ -3490,7 +3500,7 @@ void Drop_Runtime(char **argv, int argc)
 static void wxDo(Scheme_Object *proc)
 {
   mz_jmp_buf savebuf;
-  
+
   memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
 
   if (scheme_setjmp(scheme_error_buf)) {

@@ -1,4 +1,4 @@
-;; (documentation (name match))
+;; (documentation (name plt-match))
 ;; <pre>Pattern Matching Syntactic Extensions for Scheme
 ;;
 ;; All bugs or questions concerning this software should be directed to
@@ -42,11 +42,8 @@
 ;;
 ;; pat ::= 
 ;;         identifier                      this binds an identifier if it 
-;;                                         doesn't conflict with
-;;                                         ..k, var, $, =, and, 
-;;                                         or, not, ?, set!, or get!
+;;                                         doesn't conflict with ..k or _
 ;;       | _                               anything
-;;       | ()                              the empty list
 ;;       | #t                              #t
 ;;       | #f                              #f
 ;;       | string                          a string
@@ -54,20 +51,22 @@
 ;;       | character                       a character
 ;;       | 'sexp                           an s-expression
 ;;       | 'symbol                         a symbol (special case of s-expr)
-;;       | (lvp_1 ... lvp_n)               list of n elements
-;;       | (pat ... pat_n . pat_{n+1})           list of n or more
-;;       | #(lvp_1 ... lvp_n)              vector of n elements
-;;       | #&pat                           box
-;;       | ($ struct-name pat_1 ... pat_n) a structure
-;;  REMOVED     | (list-no-order pat ...)         matches a list with no regard for 
+;;       | (list lvp_1 ... lvp_n)               list of n elements
+;;       | (list-rest lvp_1 ... lvp_n pat) an improper list of n elements
+;;                                         plus a last element which represents
+;;                                         the last cdr of the list
+;;       | (vector lvp_1 ... lvp_n)        vector of n elements
+;;       | (box pat)                       box
+;;       | (struct struct-name (pat_1 ... pat_n)) a structure
+;;       | (list-no-order pat ...)         matches a list with no regard for 
 ;;                                         the order of the
 ;;                                         items in the list
-;;  REMOVED     | (list-no-order pat ... pat_n ooo) pat_n matches the remaining 
+;;       | (list-no-order pat ... pat_n ooo) pat_n matches the remaining 
 ;;                                           unmatched items
-;;  REMOVED     | (hash-table pat ...)            matches the elements of a hash table
-;;  REMOVED     | (hash-table pat ... pat_n ooo)  pat_n must match the remaining 
+;;       | (hash-table pat ...)            matches the elements of a hash table
+;;       | (hash-table pat ... pat_n ooo)  pat_n must match the remaining 
 ;;                                         unmatched elements
-;;       | (= field pat)                   a field of a structure (field is 
+;;       | (app field pat)                 a field of a structure (field is 
 ;;                                         an accessor)
 ;;                                         Actually field can be any function 
 ;;                                         which can be
@@ -111,7 +110,7 @@
 ;;       | #&qp                            box
 ;;       | ,pat                            a pattern
 ;;       | ,@(lvp . . . lvp-n)
-;;       | ,@(pat . . . pat_n . pat_{n+1})
+;;       | ,@(lvp-1 . . . lvp-n . pat)
 ;;       | ,@`qp                           qp must evaluate to a list as 
 ;;                                         so that this rule resembles the 
 ;;                                         above two rules
@@ -123,7 +122,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(module match mzscheme
+(module plt-match mzscheme
   (provide 
    match
    match-lambda
@@ -169,7 +168,7 @@
                       match-letrec
                       match-define)
 
-    (include "private/match/match-inc.scm")    
+    (include "private/plt-match/match-inc.scm")    
     
     (define match/proc 
       (lambda (stx)
@@ -202,7 +201,7 @@
            (syntax/loc stx (let name () body1 body ...))]
           [(_ name ([pat1 exp1] [pat exp]...) body1 body ...)
            (identifier? (syntax name))
-           (let ((pat-list (syntax-object->datum (syntax (pat1 pat ...))))
+           (let ((pat-list (syntax-object->datum (syntax (list pat1 pat ...))))
                  (real-name (syntax-object->datum (syntax name))))
              (if (andmap pattern-var? pat-list)
                  (syntax/loc 
@@ -211,14 +210,15 @@
                  (syntax/loc 
                    stx
                    (letrec ([name
-                             (match-lambda* ((pat1 pat ...) body1 body ...))])
+                             (match-lambda* ((list pat1 pat ...) 
+                                             body1 body ...))])
                      (name exp1 exp ...)))))]
           [(_ () body1 body ...)
            (syntax/loc stx (begin body1 body...))]
           [(_ ([pat1 exp1] [pat exp]...) body1 body ...)
            (syntax/loc 
              stx 
-             ((match-lambda* ((pat1 pat ...) body1 body ...)) 
+             ((match-lambda* ((list pat1 pat ...) body1 body ...)) 
               exp1 exp ...))])))
     
     (define match-let*/proc
@@ -249,7 +249,7 @@
                   (compiled-match 
                    (gen-match (syntax the-exp);(syntax (list exp ...))
                               '()
-                              (syntax (((pat ...) never-used)))
+                              (syntax (((list pat ...) never-used)))
                               stx
                               (lambda (sf bv)
                                 (set! **match-bound-vars** bv)

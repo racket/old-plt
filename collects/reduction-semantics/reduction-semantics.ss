@@ -30,7 +30,7 @@
       (make-red (compile-pattern/cross lang contractum allow-cross?) reduct)))
   
   (define (compatible-closure red lang nt)
-    (let ([new-name 'compatible-closure-context]) ;; should be generative, but ...
+    (let ([new-name (gensym 'compatible-closure-context)])
       (make-red (compile-pattern/cross
                  lang
                  `(in-hole (name ,new-name (cross ,nt))

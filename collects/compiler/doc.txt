@@ -224,6 +224,9 @@ the following parameters:
 > compiler:option:test - #t ignores top-level expressions with syntax
    errors.  Default = #f.
 
+> compiler:option:zo-compiler-flags - a list of symbol flags for compiling
+   .zo files. Default = '(strip-macro-definitions ignore-require-library).
+
 More options are defined by the compile.ss and link.ss libraries in
 the `dynext' collection . Those options control the actual C compiler
 and linker that are used. See doc.txt in the `dynext' collection for

@@ -112,6 +112,8 @@
 	   (let ([mb (super-make-menu-bar)]
 		 [project-menu (make-menu)])
 	     
+	     (send mb append project-menu "Project")
+
 	     (unless weak-menus?
 	       (send project-menu append-item "Set Project Type..."
 		     set-project-type)
@@ -125,8 +127,6 @@
 	       (send project-menu append-separator)
 	       (send project-menu append-item "Compile Project..."
 		     compile-project))
-	     
-	     (send mb append project-menu "Project")
 	     
 	     mb))]
 	[on-close

@@ -208,14 +208,14 @@ install_wx_xt:
 	cd ..; $(ICP) mred/mred $(prefix)/bin/
 	$(MAKE) @MRLIBINSTALL@
 
-MRFWDIR = "@FRAMEWORK_INSTALL_DIR@"/PLT_MrEd.framework
+MRFWDIR = @FRAMEWORK_INSTALL_DIR@/PLT_MrEd.framework
 
 install_wx_mac:
 	rm -f $(MRFWDIR)/Versions/$(FWVERSION)/PLT_MrEd
 	rm -rf $(MRFWDIR)/Versions/$(FWVERSION)/Resources
 	rm -f $(MRFWDIR)/PLT_MrEd
 	rm -rf $(MRFWDIR)/Resources
-	if [ ! -d "@FRAMEWORK_INSTALL_DIR@" ] ; then mkdir "@FRAMEWORK_INSTALL_DIR@" ; fi
+	if [ ! -d @FRAMEWORK_INSTALL_DIR@ ] ; then mkdir @FRAMEWORK_INSTALL_DIR@ ; fi
 	if [ ! -d $(MRFWDIR) ] ; then mkdir $(MRFWDIR) ; fi
 	if [ ! -d $(MRFWDIR)/Versions ] ; then mkdir $(MRFWDIR)/Versions ; fi
 	if [ ! -d $(MRFWDIR)/Versions/$(FWVERSION) ] ; then mkdir $(MRFWDIR)/Versions/$(FWVERSION) ; fi

@@ -232,13 +232,13 @@ normal-install:
 	cd ..; echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(BUILDINFO)
 	cd ..; echo 'LIBS=@LIBS@' >> $(BUILDINFO)
 
-MZFWDIR = "@FRAMEWORK_INSTALL_DIR@"/PLT_MzScheme.framework
+MZFWDIR = @FRAMEWORK_INSTALL_DIR@/PLT_MzScheme.framework
 
 osx-install:
 	$(MAKE) normal-install
 	rm -f $(MZFWDIR)/Versions/$(FWVERSION)/PLT_MzScheme
 	rm -f $(MZFWDIR)/PLT_MzScheme
-	if [ ! -d "@FRAMEWORK_INSTALL_DIR@" ] ; then mkdir "@FRAMEWORK_INSTALL_DIR@" ; fi
+	if [ ! -d @FRAMEWORK_INSTALL_DIR@ ] ; then mkdir @FRAMEWORK_INSTALL_DIR@ ; fi
 	if [ ! -d $(MZFWDIR) ] ; then mkdir $(MZFWDIR) ; fi
 	if [ ! -d $(MZFWDIR)/Versions ] ; then mkdir $(MZFWDIR)/Versions ; fi
 	if [ ! -d $(MZFWDIR)/Versions/$(FWVERSION) ] ; then mkdir $(MZFWDIR)/Versions/$(FWVERSION) ; fi

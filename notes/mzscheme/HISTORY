@@ -5,22 +5,24 @@ See MzScheme_200.txt for information on major changes in MzScheme
 Version 199.15:
 
  * Added `error-print-source-location', which controls whether error
-   messages include source information (line and column, actual
-   expressions). An environment that reads the exception record to
-   hilite source (e.g., DrScheme) can thus provide less cluttered
-   error messages.
+   messages include source information (e.g., line and column, actual
+   expression). Turning off source info in the message text provides
+   less cluttered error messages for tools, like DrScheme, that
+   inspect the exception record anyway.
 
  * Added `current-command-line-arguments', which contains a vector of
-   argument strings. (The `argv' variable is still defined, but this
-   parameter is more generally useful.)
+   argument strings. (The `argv' variable is still defined, too.)
 
  * Fixed syntax expansion so that graph structure under `quote' is
-   preserved. Cyclic graph structure is not supported under `syntax'
-   or `quote-syntax' (i.e., those forms loop forever compiling when
-   given cyclic arguments).
+   preserved. Cyclic graph structure is not supported within `syntax'
+   or `quote-syntax' (i.e., those forms loop forever when expanding or
+   compiling with cyclic arguments).
 
- * Fixed a bug in `module' expansion when a top-level module
+ * Fixed a bug in `module' expansion in the case that a body
    expression expands to `letrec-syntaxes'.
+
+ * Added a `with-method' form to class.ss. The new form binds
+   identifiers for application-style method invocation.
 
 Version 199.14:
 
@@ -192,6 +194,8 @@ Renamed arity to procedure-arity
 Replaced primitive-name and inferred-name with object-name
 Added an "infix" conversion in the reader, triggered by a pair of dots
  between a pair of parens
+Added current-command-line-arguments parameter
+Added error-print-source-location parameter
 Changed string constants to support ANSI C escapes (e.g., \n)
 Fixed leaks (file descriptors, etc.) that could happen with
  thread kills
@@ -202,6 +206,8 @@ Added port-count-lines!, which enables line-couting for a port
 Added read-dot-as-symbol parameter
 Fixed quotient, remainder, and modulo when the first argument
  is exact 0 and the second argument is inexact
+Default for pconvert.ss's whole/fractional-exact-numbers parameter
+ changed to #f
 Upgraded to gc 6.0alpha4
 
 Version 103, August 28, 2000

@@ -147,5 +147,4 @@ MzLib changes:
 
  * "process.ss" is new
 
- * the default for the whole/fractional-exact-numbers parameter in
-   the pconvert.ss library is now #f
+For information about minor changes, see HISTORY.

@@ -12,7 +12,7 @@
                 client-procs
                 (core function))]
         [utils : stepper:cogen-utils^ 
-               ((require-library-unit/sig "cogen-utilsr.ss" "cogen")
+               ((require-library-unit/sig "utils.ss" "stepper")
                 zodiac
                 error)]        
         [shared : stepper:shared^ ((require-library-unit/sig "sharedr.ss" "stepper")

@@ -33,7 +33,7 @@
                       stepper
                       shared)]
         [stepper : stepper:model^
-                 ((require-library-unit/sig "stepper-model.ss" "stepper")
+                 ((require-library-unit/sig "model.ss" "stepper")
                   model-input
                   mred
                   zodiac

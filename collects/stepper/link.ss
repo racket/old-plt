@@ -18,7 +18,7 @@
                 client-procs
                 (core function))]
         [utils : stepper:cogen-utils^ 
-               ((require-library-unit/sig "cogen-utilsr.ss" "cogen")
+               ((require-library-unit/sig "utils.ss" "stepper")
                 zodiac
                 error)]        
         [shared : stepper:shared^ ((require-library-unit/sig "sharedr.ss" "stepper")
@@ -49,7 +49,7 @@
                 marks
                 annotate)]
         [stepper-view-controller : (stepper-go)
-                 ((require-library-unit/sig "stepper-view-controller.ss" "stepper")
+                 ((require-library-unit/sig "view-controller.ss" "stepper")
                   core
                   error
                   zodiac
@@ -63,7 +63,7 @@
                   utils
                   marks)]
         [stepper-startup : ()
-                         ((require-library-unit/sig "stepper-startup.ss" "stepper")
+                         ((require-library-unit/sig "startup.ss" "stepper")
                           core
                           mred
                           framework

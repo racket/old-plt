@@ -351,7 +351,7 @@
               (f:gui-utils:read-snips/chars-from-text (ivar drscheme-frame definitions-text)))
             
             (define step 
-              (invoke-unit/sig (require-library-unit/sig "stepper-instance.ss" "stepper")
+              (invoke-unit/sig (require-library-unit/sig "instance.ss" "stepper")
                                stepper:model-input^
                                (c : mzlib:core^)
                                (e : zodiac:interface^)

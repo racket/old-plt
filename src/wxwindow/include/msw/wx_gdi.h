@@ -33,6 +33,8 @@ class wxFont: public wxbFont
 	      int smoothing, Bool sip, float Rotation);
   HFONT BuildInternalFont(HDC dc, Bool screen_font = TRUE, float angle = 0.0);
   inline HFONT GetInternalFont(HDC dc, float angle = 0.0) { return BuildInternalFont(dc, TRUE, angle); }
+
+  Bool ScreenGlyphAvailable(int c);
 };
 
 class wxColourMap: public wxObject

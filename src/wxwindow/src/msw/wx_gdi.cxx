@@ -112,6 +112,11 @@ wxFont::~wxFont()
   COUNT_M(font_count);
 }
 
+Bool wxFont::ScreenGlyphAvailable(int c)
+{
+  return TRUE;
+}
+
 static int CALLBACK check_font_charset(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpntme,
 				       DWORD FontType, LPARAM lParam)
 {

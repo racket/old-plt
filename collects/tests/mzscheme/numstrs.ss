@@ -1,4 +1,9 @@
 
+;; #f means a symbol
+;; X means fails (syntax forces it to be a number)
+;; DBZ means fails because divide-by-zero
+;; NOE means fails because no such exact
+
 (define number-table
   `((,(+ 1/2 +i) "1/2+i")
     (100 "100")
@@ -92,8 +97,14 @@
     (X "#d1#/#3")
     (+inf.0 "1/0#")
     (-inf.0 "-1/0#")
+    (NOE "#e+inf.0")
+    (NOE "#e-inf.0")
+    (NOE "#e+nan.0")
+    (NOE "#e1/0#")
     (500.0 "1/2#e4")
     (5000.0 "1#/2#e4")
+    (500000000.0 "1/2#e10")
+    (35184372088832001953125/70368744177664 "#e1/2#e10")
     (1.6140901064495858e+019-50176.0i "#e#x+e#s+e@-e#l-e")
 
     (#f "d")

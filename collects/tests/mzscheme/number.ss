@@ -1058,6 +1058,7 @@
 (test 201.0 gcd (* 67. 3) (* 67 (expt 3 20)))
 (test 9.0 gcd +inf.0 9)
 (test 9.0 gcd -inf.0 9)
+(test 0 gcd (expt 9 35) 0)
 (test 288 lcm 32 -36)
 (test 12 lcm 2 3 4)
 (test 1 lcm)

@@ -62,7 +62,7 @@
 		 [v (car pair)]
 		 [s (cadr pair)])
 	    (cond
-	     [(memq v '(DBZ X))
+	     [(memq v '(X DBZ NOE))
 	      (err/rt-test (readstr s) exn:read?)
 	      (test #f string->number s)]
 	     [v 
@@ -337,7 +337,7 @@
 (let loop ([l number-table])
   (cond
    [(null? l) 'done]
-   [(or (number? (caar l)) (memq (caar l) '(X DBZ)))
+   [(or (number? (caar l)) (memq (caar l) '(X DBZ NOE)))
     (test-write-sym (string-append "|" (cadar l) "|") 
 		    (string-append "\\" (cadar l)) 
 		    (cadar l))

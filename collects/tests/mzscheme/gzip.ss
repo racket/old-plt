@@ -1,8 +1,40 @@
 
+(require (lib "deflate.ss")
+	 (lib "inflate.ss"))
+
+(for-each (lambda (f)
+	    (when (file-exists? f)
+	      (printf "trying ~a~n" f)
+	      (let ([str
+		     (call-with-input-file f
+		       (lambda (p)
+			 (let-values ([(in out) (make-pipe 4096)]
+				      [(out2) (open-output-bytes)])
+			   (thread
+			    (lambda ()
+			      (gzip-through-ports p out "x" 0)
+			      (close-output-port out)))
+			   (thread-wait
+			    (thread
+			     (lambda ()
+			       (gunzip-through-ports in out2)
+			       (close-output-port out2))))
+			   (get-output-bytes out2))))])
+		(let ([orig-str (call-with-input-file f
+				  (lambda (p)
+				    (read-bytes (file-size f) p)))])
+		  (unless (bytes=? str orig-str)
+		    (printf "not the same for ~a" f))))))
+	  (directory-list))
+
+
+#|
+
 ;; Uses (unix) `gzip' program from your path.
 ;; Run this in a directory with lots of files to use as tests
 
-(import (lib "deflate.ss"))
+(require (lib "deflate.ss")
+	 (lib "process.ss"))
 
 (define (check-file/fastest p in)
   (let ([s1 (make-string 5000)]
@@ -57,3 +89,5 @@
        (check-file/fastest mi zo)
        (close-input-port zo))))
  (directory-list))
+
+|#

@@ -171,6 +171,8 @@ class wxbDC: public wxObject
   inline virtual wxPen   *GetPen(void)             { return current_pen;}
   inline virtual wxColour* GetTextBackground(void)  { return current_text_background;}
   inline virtual wxColour* GetTextForeground(void)  { return current_text_foreground;}
+
+  virtual Bool GlyphAvailable(int c, wxFont *f = NULL) = 0;
  
   virtual void SetLogicalOrigin(float x, float y);
   virtual void SetDeviceOrigin(float x, float y);

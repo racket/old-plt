@@ -137,6 +137,8 @@ class wxDC: public wxbDC
   float FLogicalToDeviceXRel(float x);
   float FLogicalToDeviceYRel(float y);
 
+  Bool GlyphAvailable(int c, wxFont *f = NULL);
+
   Bool Blit(float xdest, float ydest, float width, float height,
             wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID,
 	    wxColour *c=NULL, wxBitmap *mask=NULL);

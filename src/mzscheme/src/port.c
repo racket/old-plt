@@ -5735,7 +5735,7 @@ static long mz_spawnv(char *command, const char * const *argv,
   else
     cr_flag = 0;
 
-  if (CreateProcessW(WIDE_PATH_COPY(command), WDIE_PATH_COPY(cmdline), 
+  if (CreateProcessW(WIDE_PATH_COPY(command), WIDE_PATH_COPY(cmdline), 
 		     NULL, NULL, 1 /*inherit*/,
 		     cr_flag, NULL, NULL,
 		     &startup, &info)) {

@@ -431,6 +431,13 @@ void wxDC::EndDrawing(void)
 {
 }
 
+Bool wxDC::GlyphAvailable(int c, wxFont *f)
+{
+  if (!f)
+    f = font;
+  return f->ScreenGlyphAvailable(c);
+}
+
 void wxDC::FloodFill(float x, float y, wxColour *col, int style)
 {
   HDC dc;

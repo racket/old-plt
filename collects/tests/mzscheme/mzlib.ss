@@ -20,8 +20,7 @@
 
 (load-relative "cmdline.ss")
 
-;; Commented out because it generates lots of bogus failures
-; (load-relative "pconvert.ss")
+(load-relative "pconvert.ss")
 
 (load-relative "pretty.ss")
 

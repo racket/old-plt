@@ -76,29 +76,16 @@
      (cons dest dests))
     (let ([s (make-bytes 4096)])
       (let loop ()
-	(let ([b (peek-byte-or-special src)])
-	  (if (or (byte? b) (eof-object? b))
-	      ;; Read-bytes-avail should work fine --- assuming
-	      ;; that no one else reads the byte, first. So we
-	      ;; have a race condition here, and the solution is
-	      ;; to add read-bytes-avail-or-special! to MzScheme
-	      (let ([c (read-bytes-avail! s src)])
-		(unless (eof-object? c)
-		  (for-each
-		   (lambda (dest)
-		     (let loop ([start 0])
-		       (unless (= start c)
-			 (let ([c2 (write-bytes-avail s dest start c)])
-			   (loop (+ start c2))))))
-		   (cons dest dests))
-		  (loop)))
-	      ;; Got a special
-	      (begin
-		(for-each
-		 (lambda (dest)
-		   (write-special dest b))
-		 (cons dest dests))
-		(loop)))))))
+	(let ([c (read-bytes-avail! s src)])
+	  (unless (eof-object? c)
+	    (for-each
+	     (lambda (dest)
+	       (let loop ([start 0])
+		 (unless (= start c)
+		   (let ([c2 (write-bytes-avail s dest start c)])
+		     (loop (+ start c2))))))
+	     (cons dest dests))
+	    (loop))))))
   
   (define merge-input
     (case-lambda

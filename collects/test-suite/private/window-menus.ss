@@ -80,6 +80,12 @@
            (define/override (file-menu:save-as-callback item event)
              (save-as))
            
+           (inherit-field model)
+           (define/override (file-menu:print-callback item event)
+             (send model print))
+           
+           (define/override (file-menu:create-print?) #t)
+           
            ;; update-executing (boolean? . -> . void?)
            ;; called by the model when it is executing
            (rename [super-update-executing update-executing])

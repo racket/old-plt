@@ -2371,8 +2371,8 @@ static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object *
     v = subunits[i]->init_func(boxesList[i], anchorsList[i], 
 			       subunits[i], sub_debug_request);
     if (i + 1 < num_mods) {
-      /* could be a tail-call */
-      v = _scheme_force_value(v);
+      /* could be a tail-call or a tail-eval */
+      v = scheme_force_value(v);
     }
   }
 

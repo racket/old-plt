@@ -20,6 +20,7 @@
    (lib "list.ss")
    (prefix arrow: (lib "arrow.ss" "drscheme"))
    (prefix frame: (lib "framework.ss" "framework"))
+   (prefix strcst: (lib "string-constant.ss" "string-constants"))
 
    (prefix sba: (lib "constraints-gen-and-prop.ss" "mrflow"))
    (prefix sba-gui: (lib "sba-gui-interface.ss" "mrflow"))
@@ -81,7 +82,7 @@
 
       (define mrflow-bitmap
         (drscheme:unit:make-bitmap
-         "Analyze"
+         (strcst:string-constant mrflow-button-title)
          (build-path (collection-path "icons") "mrflow-small.bmp")))
       
       
@@ -198,8 +199,8 @@
                   (when (eq? this source)
                     (case color
                       [(red) (change-style red-style start end)]
-                      [else (message-box "unknown color"
-                                         (format "Internal error. Cannot change style for unknown color: ~a"
+                      [else (message-box (strcst:string-constant mrflow-coloring-error-title)
+                                         (format (strcst:string-constant mrflow-coloring-error)
                                                  color))
                             (void)]))))
               (sba:get-regions-to-color))
@@ -477,17 +478,6 @@
                (set! inserted-snips '())
                (set! analysis-currently-deleting? #f)))
 
-           ; ANALYSIS DIALOGUE
-           ; -> boolean
-           ;(define (check-remove-analysis)
-           ;  (eq? (message-box
-           ;        "Clear Analysis?"
-           ;        "Do you want to invalidate the analysis and remove any boxes and arrows?"
-           ;        (send (get-canvas) get-top-level-window)
-           ;        '(yes-no))
-           ;       'yes))
-           
-           
            ; EDITOR MODIFICATIONS
            (rename [super-after-insert after-insert]
                    [super-after-delete after-delete])
@@ -646,7 +636,7 @@
                         (let ([types (list (sba:get-type label))])
                           (unless (null? types) ; always false, for now.
                             (make-object menu-item%
-                              "Show type"
+                              (strcst:string-constant mrflow-popup-menu-show-type)
                               menu
                               (lambda (item event)
                                 (set! analysis-currently-inserting? #t)
@@ -664,7 +654,7 @@
                                 (set! analysis-currently-inserting? #f)
                                 ))))
                         (make-object menu-item%
-                          "Hide type"
+                          (strcst:string-constant mrflow-popup-menu-hide-type)
                           menu
                           (lambda (item event)
                             (let* ([snips-poss (cdr label-snips-poss-pair)]
@@ -683,7 +673,7 @@
                         (let ([errors (sba:get-errors label)])
                           (unless (null? errors)
                             (make-object menu-item%
-                              "Show errors"
+                              (strcst:string-constant mrflow-popup-menu-show-errors)
                               menu
                               (lambda (item event)
                                 ; insert to the left of any type snip
@@ -707,7 +697,7 @@
                                   (set! analysis-currently-inserting? #f)
                                   )))))
                         (make-object menu-item%
-                          "Hide errors"
+                          (strcst:string-constant mrflow-popup-menu-hide-errors)
                           menu
                           (lambda (item event)
                             (let* ([snips-poss (cdr label-snips-poss-pair)]
@@ -740,7 +730,7 @@
                            [tacked-arrows (+ parents-tacked-arrows children-tacked-arrows)])
                       (when (< tacked-arrows max-arrows)
                         (make-object menu-item%
-                          "Tack all arrows"
+                          (strcst:string-constant mrflow-popup-menu-tack-all-arrows)
                           menu
                           (lambda (item event)
                             ; remove all (possibly untacked) arrows and add all arrows, tacked.
@@ -754,7 +744,7 @@
                             (invalidate-bitmap-cache))))
                       (when (> tacked-arrows 0)
                         (make-object menu-item%
-                          "Untack all arrows"
+                          (strcst:string-constant mrflow-popup-menu-untack-all-arrows)
                           menu
                           (lambda (item event)
                             (remove-arrows label 'all)
@@ -875,8 +865,8 @@
                                             [(exn:read? exn)
                                              (let ([end (exn:read-position exn)])
                                                (send definitions-text change-style red-style (sub1 end) end)
-                                               (message-box "read exception"
-                                                            (format "read exception: ~a" message)
+                                               (message-box (strcst:string-constant mrflow-read-exception-title)
+                                                            (format (strcst:string-constant mrflow-read-exception) message)
                                                             #f '(ok)))]
                                             [(exn:syntax? exn)
                                              (let ([syntax-object (exn:syntax-expr exn)])
@@ -884,13 +874,12 @@
                                                  (let ([start (sub1 (syntax-position syntax-object))])
                                                    (send definitions-text change-style red-style
                                                          start (+ start (syntax-span syntax-object)))
-                                                   (message-box "syntax exception"
-                                                                (format "syntax exception: ~a"
-                                                                        message)
+                                                   (message-box (strcst:string-constant mrflow-syntax-exception-title)
+                                                                (format (strcst:string-constant mrflow-syntax-exception) message)
                                                                 #f '(ok)))))]
                                             [else
-                                             (message-box "unknown exception"
-                                                          (format "unknown exception: ~a" exn))]))
+                                             (message-box (strcst:string-constant mrflow-unknown-exception-title)
+                                                          (format (strcst:string-constant mrflow-unknwon-exception) exn))]))
                                         (unless (eof-object? syntax-object-or-exception)
                                           ;(printf "~a~n~n" (syntax-object->datum syntax-object-or-exception))
                                           (sba:create-label-from-term syntax-object-or-exception '() #f)))
@@ -904,8 +893,8 @@
                           ; get-mrflow-primitives-filename defaults to R5RS
                           ; (see mrflow-default-implementation-mixin above), so if we arrive here,
                           ; we know we are in trouble.
-                          (message-box "language error"
-                                       (format "wrong filename for primitive types table: ~a~nAbort."
+                          (message-box (strcst:string-constant mrflow-language-primitives-error-title)
+                                       (format (strcst:string-constant mrflow-language-primitives-error)
                                                primitive-table-file)
                                        #f '(ok)))))))))
 

@@ -88,7 +88,6 @@ class wxDC: public wxbDC
   void DrawPoint(double x, double y);
 
   void DrawLines(int n, wxPoint points[], double xoffset = 0, double yoffset = 0);
-  void DrawLines(int n, wxIntPoint points[], int xoffset = 0, int yoffset = 0);
   // MS C7 complains if this overloaded function isn't explicitly mentioned
   inline void DrawLines(wxList *list, double xoffset = 0, double yoffset = 0)
   { wxbDC::DrawLines(list, xoffset, yoffset); }

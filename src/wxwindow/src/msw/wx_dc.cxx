@@ -834,38 +834,6 @@ void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,i
   DoneDC(dc);
 }
 
-void wxDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
-{
-  HDC dc;
-
-  dc = ThisDC();
-
-  if (!dc) return;
-
-  if (StartPen(dc)) {
-    int xoffset1;
-    int yoffset1;
-    POINT *cpoints;
-    int i;
-
-    ShiftXY(xoffset, yoffset, &xoffset1, &yoffset1);
-    
-    cpoints = new POINT[n];
-    for (i = 0; i < n; i++) {
-      cpoints[i].x = (int)(XLOG2DEV(points[i].x + xoffset1));
-      cpoints[i].y = (int)(YLOG2DEV(points[i].y + yoffset1));
-      CalcBoundingBox((double)points[i].x + xoffset, (double)points[i].y + yoffset);
-    }
-    
-    (void)Polyline(dc, cpoints, n);
-
-    DonePen(dc);
-  }
-
-  DoneDC(dc);
-
-}
-
 void wxDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
 {
   HDC dc;

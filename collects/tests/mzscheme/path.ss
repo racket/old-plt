@@ -1,5 +1,5 @@
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+
+(load-relative "loadtest.ss")
 
 (SECTION 'PATH)
 

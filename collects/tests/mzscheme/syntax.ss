@@ -1,6 +1,5 @@
 
-(unless (defined? 'SECTION)
-  (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
 (test 0 'with-handlers (with-handlers () 0))
 (test 1 'with-handlers (with-handlers ([void void]) 1))
@@ -737,15 +736,14 @@
 (syntax-test #'(lambda () (define x 2)))
 (syntax-test #'(lambda () (void (define x 2)) 1))
 
-; Unfortunately, there's no good way to test this for mzc:
-(unless (defined? 'building-flat-tests)
-  (error-test #'(define x (values)) exn:application:arity?)
-  (error-test #'(define x (values 1 2)) exn:application:arity?)
-  (error-test #'(define-values () 3) exn:application:arity?)
-  (error-test #'(define-values () (values 1 3)) exn:application:arity?)
-  (error-test #'(define-values (x y) (values)) exn:application:arity?)
-  (error-test #'(define-values (x y) 3) exn:application:arity?)
-  (error-test #'(define-values (x y) (values 1 2 3)) exn:application:arity?))
+;; No good way to test in mzc:
+(error-test #'(define x (values)) exn:application:arity?)
+(error-test #'(define x (values 1 2)) exn:application:arity?)
+(error-test #'(define-values () 3) exn:application:arity?)
+(error-test #'(define-values () (values 1 3)) exn:application:arity?)
+(error-test #'(define-values (x y) (values)) exn:application:arity?)
+(error-test #'(define-values (x y) 3) exn:application:arity?)
+(error-test #'(define-values (x y) (values 1 2 3)) exn:application:arity?)
 
 (begin (define ed-t1 1) (define ed-t2 2))
 (test 1 'begin-define ed-t1)

@@ -1,9 +1,8 @@
 
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
-(import (lib "unit.ss"))
+(require (lib "unit.ss"))
 
 (SECTION 'continuation-marks)
 

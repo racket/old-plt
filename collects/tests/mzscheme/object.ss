@@ -1,10 +1,9 @@
 
 ; Test MzScheme's object system
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
-(import (lib "class.ss"))
+(require (lib "class.ss"))
 
 (SECTION 'OBJECT)
 
@@ -580,7 +579,7 @@
 
 (do-override-tests #f)
 
-(when (defined? 'primclass%)
+'(when (defined? 'primclass%)
   (err/rt-test (make-object primclass%) exn:application:arity?)
   (err/rt-test (make-object primsubclass%) exn:application:arity?)
 

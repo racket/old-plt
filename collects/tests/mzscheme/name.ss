@@ -1,8 +1,10 @@
 
 ; Test MzScheme's name inference
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
+
+(require (lib "class.ss"))
+(require (lib "unit.ss"))
 
 (SECTION 'NAMES)
 

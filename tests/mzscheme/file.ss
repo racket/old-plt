@@ -1,7 +1,5 @@
 
-
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
 (define testing.ss (build-path (current-load-relative-directory) "testing.ss"))
 
@@ -432,9 +430,8 @@
 (err/rt-test (make-pipe "hello"))
 
 (test #t input-port? (make-input-port void void void))
-(err/rt-test (read (make-input-port void void void))
-	    exn:i/o:port:user?)
-(arity-test make-input-port 3 4)
+(err/rt-test (read (make-input-port void void void)))
+(arity-test make-input-port 3 5)
 (err/rt-test (make-input-port 8 void void))
 (err/rt-test (make-input-port void 8 void))
 (err/rt-test (make-input-port void void 8))

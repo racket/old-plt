@@ -1,6 +1,5 @@
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
 (SECTION 'namespaces)
 
@@ -9,17 +8,18 @@
 (arity-test compiled-expression? 1 1)
 
 (test #f compiled-expression? 1)
-(test #t compiled-expression? (compile 1))
-(test #t compiled-expression? (let ([c (compile 1)]
-				    [p (open-output-string)])
-				(display c p)
-				(parameterize ([read-accept-compiled #t])
-				  (read (open-input-string (get-output-string p))))))
+(test #t values (compiled-expression? (compile 1)))
+(test #t values (compiled-expression? (let ([c (compile 1)]
+					    [p (open-output-string)])
+					(display c p)
+					(parameterize ([read-accept-compiled #t])
+					  (read (open-input-string (get-output-string p)))))))
 
 (test `,void eval `',void)
 
+; FIXME: this is a useful test, but we have no make-global-value-list...
 ; Test primitive-name
-(let ([gvl (parameterize ([current-namespace (make-namespace)]) (make-global-value-list))]
+'(let ([gvl (parameterize ([current-namespace (make-namespace)]) (make-global-value-list))]
       [aliases (list (cons "call/cc" "call-with-current-continuation")
 		     (cons "call/ec" "call-with-escape-continuation")
 		     (cons "interaction-environment" "current-namespace"))])
@@ -43,6 +43,8 @@
 			    #f))))))
 	 gvl)))
 
+;;FIXME
+#|
 (define (test-empty . flags)
   (let ([e (apply make-namespace flags)])
     (parameterize ([current-namespace e])
@@ -58,3 +60,6 @@
       (test '((hello . 5)) make-global-value-list))))
 (test-empty 'empty)
 (apply test-empty (append '(empty) (map car flag-map) (map cadr flag-map)))
+|#
+
+(report-errs)

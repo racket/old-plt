@@ -1,6 +1,5 @@
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
 (SECTION 'optimization)
 
@@ -69,12 +68,13 @@
 
 (set! maybe-different-depths? #t)
 
-(test-comp 3
-	   '(#%+ 1 2))
+(require #%kernel) ; 
+
+(test-comp 3 '(+ 1 2))
 (test-comp (expt 5 30)
-	   '(#%expt 5 (#%* 5 6)))
+	   '(expt 5 (* 5 6)))
 (test-comp 88
-	   '(if (#%pair? #%null) 89 88))
+	   '(if (pair? null) 89 88))
 
 (test-comp '(let ([x 3]) x)
 	   '((lambda (x) x) 3))

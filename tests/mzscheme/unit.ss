@@ -1,9 +1,8 @@
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
 (SECTION 'unit)
-(import (lib "unit.ss"))
+(require (lib "unit.ss"))
 
 (syntax-test #'(unit))
 (syntax-test #'(unit (import)))
@@ -319,7 +318,7 @@
 
 ; Units and objects combined:
 
-(import (lib "class.ss"))
+(require (lib "class.ss"))
 
 (define u@
   (unit (import x) (export)  

@@ -1,10 +1,9 @@
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
-(import (lib "unit.ss"))
-(import (lib "unitsig.ss"))
-(import (lib "include.ss"))
+(require (lib "unit.ss"))
+(require (lib "unitsig.ss"))
+(require (lib "include.ss"))
 
 (SECTION 'unit/sig)
 

@@ -1,23 +1,11 @@
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
 (SECTION 'READING)
 (define readstr
   (lambda (s)
     (let* ([o (open-input-string s)]
-	   [read (if (defined? 'read/zodiac)
-		     (let ([r (read/zodiac (open-input-string s))])
-		       (lambda ()
-			 (let ([orig (error-escape-handler )])
-			   (dynamic-wind
-			    (lambda () (error-escape-handler 
-					(lambda ()
-					  (error-escape-handler orig)
-					  (error 'read/zodiac))))
-			    r
-			    (lambda () (error-escape-handler orig))))))
-		     (lambda () (read o)))])
+	   [read (lambda () (read o))])
       (let loop ([last eof])
 	(let ([v (read)])
 	  (if (eof-object? v)
@@ -25,9 +13,7 @@
 	      (loop v)))))))
 
 (define readerrtype
-  (if (defined? 'read/zodiac)
-      (lambda (x) (lambda (y) #t))
-      (lambda (x) x)))
+  (lambda (x) x))
 
 ; Make sure {whitespace} == {delimiter}
 (let ([with-censor (load-relative "censor.ss")])
@@ -116,9 +102,7 @@
 (err/rt-test (readstr "#2(1 2 3)") (readerrtype exn:read?))
 (err/rt-test (readstr "#200000000000(1 2 3)") (readerrtype exn:misc:out-of-memory?))
 
-(unless (defined? 'read/zodiac)
-  (test #t (lambda (x) (eq? (car x) (cdr x))) (readstr "(#0=(1 2) . #0#)"))
-  (test #t (lambda (x) (eq? (car x) (cdr x))) (readstr "(#1=(1 2) . #0001#)")))
+(test #t (lambda (x) (eq? (car x) (cdr x))) (readstr "(#1=(1 2) . #0001#)"))
 
 (err/rt-test (readstr "#0#") (readerrtype exn:read?))
 (err/rt-test (readstr "#0=#0#") (readerrtype exn:read?))

@@ -1,6 +1,5 @@
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "loadtest.ss")
 
 (SECTION 'parameters)
 
@@ -109,7 +108,7 @@
 		      '(let ([p (open-input-file "tmp5")])
 			 (dynamic-wind
 			  void
-			  (lambda () (read p))
+			  (lambda () (void (read p)))
 			  (lambda () (close-input-port p))))
 		      exn:read?
 		      #f)
@@ -143,9 +142,9 @@
 
 		(list current-input-port
 		      (list (make-input-port (lambda () #\x) (lambda () #t) void)
-			    (make-input-port (lambda () 5) (lambda () #t) void))
+			    (make-input-port (lambda () (error 'bad)) (lambda () #t) void))
 		      '(read-char)
-		      exn:i/o:port:user?
+		      exn:user?
 		      '("bad string"))
 		(list current-output-port
 		      (list (current-output-port)
@@ -217,6 +216,7 @@
 					[current-output-port o])
 			     (read-eval-print-loop))
 			 (let ([s (get-output-string o)])
+			   (printf "**~a**~n" s)
 			   (unless (char=? #\5 (string-ref s 2))
 				   (error 'print))))
 		      exn:user?

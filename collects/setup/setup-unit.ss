@@ -116,8 +116,13 @@
 			 (get-info collection-p))]
 		 [name (call-info info 'name (lambda () #f)
 				  (lambda (x)
-				    (unless (string? x)
-				      (error "result is not a string:" x))))])
+				    (when x
+				      (unless (string? x)
+					(error 
+					 (format 
+					  "'name' result from collection ~s is not a string:"
+					  collection-p)
+					 x)))))])
 	    (and
 	     name
 	     (make-cc
@@ -382,11 +387,18 @@
 				     (unless (file-exists? p)
 				       (setup-printf "Installing ~a launcher ~a" kind p)
 				       (make-launcher 
-					(list
-					 "-qmve-"
-					 (format
-					  "~s"
-					  `(require (lib ,mzll ,@(cc-collection cc)))))
+					(if (= 1 (length (cc-collection cc)))
+					    ;; Common case (simpler parsing for Windows to
+					    ;; avoid cygwin bug):
+					    (list
+					     "-qmvL-"
+					     mzll
+					     (car (cc-collection cc)))
+					    (list
+					     "-qmve-"
+					     (format
+					      "~s"
+					      `(require (lib ,mzll ,@(cc-collection cc))))))
 					p))))
 				 mzlls mzlns)
 				(setup-printf 

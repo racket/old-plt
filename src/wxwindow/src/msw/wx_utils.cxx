@@ -144,31 +144,50 @@ void wxInitUserResource(char *s)
 
 Bool wxWriteResource(const char *section, const char *entry, char *value, const char *file)
 {
-  if (file) {
-    char *naya;
-    int len, i;
-    len = strlen(file);
+  HKEY key;
 
-    naya = new char[len + 1];
+#define TRY_HKEY(name) if (!strcmp(section, #name)) key = name;
 
-    memcpy(naya, file, len + 1);
+  TRY_HKEY(HKEY_CLASSES_ROOT);
+  TRY_HKEY(HKEY_CURRENT_CONFIG);
+  TRY_HKEY(HKEY_CURRENT_USER);
+  TRY_HKEY(HKEY_LOCAL_MACHINE);
+  TRY_HKEY(HKEY_USERS);
 
-    for (i = 0; i < len; i++) {
-      naya[i] = tolower(naya[i]);
-      if (naya[i] == '/')
-	naya[i] = '\\';
+#undef TRY_HKEY
+
+  if (key) {
+    if (RegSetValue(key, entry, REG_SZ, value, strlen(value)) == ERROR_SUCCESS) {
+      return TRUE;
     }
-    while (len && naya[len - 1] == ' ') {
-      --len;
-      naya[len] = 0;
-    }
-
-    file = naya;
+    return FALSE;
   } else {
-    file = wxUserResourceFile;
-  } 
-   
-  return WritePrivateProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)value, (LPCSTR)file);
+    if (file) {
+      char *naya;
+      int len, i;
+      len = strlen(file);
+      
+      naya = new char[len + 1];
+      
+      memcpy(naya, file, len + 1);
+      
+      for (i = 0; i < len; i++) {
+	naya[i] = tolower(naya[i]);
+	if (naya[i] == '/')
+	  naya[i] = '\\';
+      }
+      while (len && naya[len - 1] == ' ') {
+	--len;
+	naya[len] = 0;
+      }
+      
+      file = naya;
+    } else {
+      file = wxUserResourceFile;
+    } 
+    
+    return WritePrivateProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)value, (LPCSTR)file);
+  }
 }
 
 Bool wxWriteResource(const char *section, const char *entry, float value, const char *file)

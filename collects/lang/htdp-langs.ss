@@ -100,11 +100,11 @@ to the original stdout of DrScheme.
                                (format "function:~a" (object-name x))))])
               (thunk)))
           
-          (define/override (render-value/format value settings port put-snip)
+          (define/override (render-value/format value settings port put-snip width)
             (set-printing-parameters
              settings
              (lambda ()
-               (super-render-value/format value settings port put-snip))))
+               (super-render-value/format value settings port put-snip width))))
           
           (define/override (render-value value settings port put-snip)
             (set-printing-parameters

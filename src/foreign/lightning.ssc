@@ -12,56 +12,7 @@ exec mzpp -s "---begin" -o `echo "$0" | sed 's/ssc$/c/'` "$0"
  ** of this file.
  ********************************************/
 
-{:
-
-(define (~ . args) (apply show args) (newline*))
-(define \\ newline*)
-
-(define (seplist l sep)
-  (cdr (apply append (map (lambda (x) (list sep x)) l))))
-(define-syntax push!
-  (syntax-rules () [(push! x l) (set! l (cons x l))]))
-(define-syntax pop!
-  (syntax-rules () [(pop! l) (begin0 (car l) (set! l (cdr l)))]))
-(define (upcase x)
-  (list->string (map char-upcase (string->list (format "~a" x)))))
-
-(define (scheme-id->c-name str)
-  (let loop ([str (format "~a" str)]
-             [substs '((#rx"->" "_to_") (#rx"[-/]" "_") (#rx"\\*" "S")
-                       (#rx"\\?$" "_p") (#rx"!$" ""))])
-    (if (null? substs)
-      str
-      (loop (regexp-replace* (caar substs) str (cadar substs)) (cdr substs)))))
-
-;; User function definition
-(define cfunctions '())
-(define (_cdefine name minargs . maxargs)
-  (define cname
-    (list "lightning_" (scheme-id->c-name name)))
-  (set! maxargs (if (null? maxargs) minargs (car maxargs)))
-  (push! (list name cname minargs maxargs) cfunctions)
-  (list "#undef MYNAME" \\ "#define MYNAME \""name"\""\\
-        "static Scheme_Object *"cname"(int argc, Scheme_Object *argv[])"\\))
-(define-syntax cdefine
-  (syntax-rules ()
-    [(_ name minargs maxargs) (_cdefine `name minargs maxargs)]
-    [(_ name args) (_cdefine `name args args)]))
-
-(define symbols '())
-(define (add-symbols syms)
-  (map (lambda (s)
-         (when (assq s symbols)
-           (error 'add-symbols "symbol ~s already defined" s))
-         (push! (list s (list (regexp-replace #rx"-" (symbol->string s) "_")
-                              "_sym"))
-                symbols)
-         (list "static Scheme_Object *"(cadar symbols)";"\\))
-       syms))
-(define-syntax defsymbols
-  (syntax-rules () [(_ sym ...) (add-symbols '(sym ...))]))
-
-:}
+{:(load "ssc-utils.ss"):}
 
 #include "escheme.h"
 #include <lightning.h>
@@ -216,6 +167,7 @@ inline long mzjit_get_imm(Scheme_Object *o)
   return i;
 }
 
+/* !!! */
 #define jit_finishi(sub) jit_finish(sub)
 
 {:
@@ -652,56 +604,11 @@ static size_t  mzjit_code_len = 0;
 }
 
 /*****************************************************************************/
-/* Testing */
-
-typedef int (*pifv)(void);
-typedef int (*pifi)(int);
-typedef int (*pifii)(int,int);
-
-{:(cdefine pifv 1 1):}
-{
-  pifv func;
-  if (!SCHEME_CPTRP(argv[0]))
-    scheme_wrong_type(MYNAME, "pointer", 0, argc, argv);
-  func = (pifv)(SCHEME_CPTR_VAL(argv[0]));
-  return scheme_make_integer_value(func());
-}
-
-{:(cdefine pifi 2 2):}
-{
-  pifi func;
-  if (!SCHEME_CPTRP(argv[0]))
-    scheme_wrong_type(MYNAME, "pointer", 0, argc, argv);
-  if (!SCHEME_INTP(argv[1]))
-    scheme_wrong_type(MYNAME, "integer", 1, argc, argv);
-  func = (pifi)(SCHEME_CPTR_VAL(argv[0]));
-  return scheme_make_integer_value(func(SCHEME_INT_VAL(argv[1])));
-}
-
-{:(cdefine pifii 3 3):}
-{
-  pifii func;
-  if (!SCHEME_CPTRP(argv[0]))
-    scheme_wrong_type(MYNAME, "pointer", 0, argc, argv);
-  if (!SCHEME_INTP(argv[1]))
-    scheme_wrong_type(MYNAME, "integer", 1, argc, argv);
-  if (!SCHEME_INTP(argv[2]))
-    scheme_wrong_type(MYNAME, "integer", 2, argc, argv);
-  func = (pifii)(SCHEME_CPTR_VAL(argv[0]));
-  return scheme_make_integer_value(func(SCHEME_INT_VAL(argv[1]),
-                                        SCHEME_INT_VAL(argv[2])));
-}
-
-/*****************************************************************************/
 /* Initialization */
 
-/* Remove this when in MzScheme */
-#define MZ_REGISTER_STATIC(x) scheme_register_static((void*)&x,sizeof(x))
-
-Scheme_Object *scheme_reload(Scheme_Env *env)
+/* This is called with the #%foreign module */
+void scheme_init_lightning(Scheme_Env *env)
 {
-  Scheme_Env *menv;
-  menv = scheme_primitive_module(scheme_intern_symbol("#%lightning"), env);
   op_alist = scheme_null;
   MZ_REGISTER_STATIC(op_alist);
   mzjit_code_len = 1024;
@@ -722,13 +629,6 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
                  "  scheme_make_prim_w_arity("(cadr x)", \""(car x)"\","
                         " "(caddr x)", "(cadddr x)"), menv);" \\))
       (reverse! cfunctions)):}
-  scheme_finish_primitive_module(menv);
-  return scheme_void;
 }
-
-Scheme_Object *scheme_initialize(Scheme_Env *env)
-{ return scheme_reload(env); }
-Scheme_Object *scheme_module_name()
-{ return scheme_intern_symbol("#%lightning"); }
 
 /*****************************************************************************/

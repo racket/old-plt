@@ -195,6 +195,7 @@ inline long mzjit_get_imm(Scheme_Object *o)
   return i;
 }
 
+/* !!! */
 #define jit_finishi(sub) jit_finish(sub)
 
 #define JIT_OP_add (scheme_make_integer(0))
@@ -272,10 +273,10 @@ Scheme_Object *op_alist;
 #define SCHEME_REGP(x) \
   ((SCHEME_SYMBOLP(x))||((SCHEME_PAIRP(x))&&(SCHEME_SYMBOLP(SCHEME_CAR(x)))))
 
-size_t mzjit_make (Scheme_Object * list , char * code , size_t len)
+size_t mzjit_make(Scheme_Object *list, char *code, size_t len)
 {
-  char * current_location = 0 ;
-  Scheme_Object * p = list , * command , * pc , * operator , * a ;
+  char *current_location = 0;
+  Scheme_Object *p = list, *command, *pc, *operator, *a;
   Scheme_Object *bwd_labels=scheme_null, *fwd_labels=scheme_null, *labelsym;
   int cmd_arg_num, operator_id;
   int type1, type2, kind, reg1=0, reg2=0, reg3=0, in;
@@ -1405,9 +1406,101 @@ size_t mzjit_make (Scheme_Object * list , char * code , size_t len)
       }
       break;
     /* ========== Jump and return operations 1 ========== */
+    case ((int)(JIT_OP_call)):
+    case ((int)(JIT_OP_finish)):
     case ((int)(JIT_OP_jmp)):
-      /* patch = jit_finishi(imm); */
-      patch = (_jit.x.pc = jit_calli((imm)), ADDLir(4 * _jitl.argssize, JIT_SP), _jitl.argssize = 0, _jit.x.pc);
+      if (cmd_arg_num != 1)
+        scheme_signal_error(errorstr_wrong_args_num, operator, 1, pc);
+      /* process `r/i' argument */
+      if (SCHEME_REGP(SCHEME_CAR(pc))) {
+        reg1 = mzjit_get_register(SCHEME_CAR(pc),0 /* always an integer register */);
+        kind = JIT_KIND_R;
+      } else {
+        imm = mzjit_get_imm(SCHEME_CAR(pc));
+        kind = JIT_KIND_I;
+      }
+      pc = SCHEME_CDR(pc);
+      switch (operator_id) {
+      case ((int)(JIT_OP_call)):
+        switch (kind) {
+        case (JIT_KIND_I): jit_calli(imm); break;
+        case (JIT_KIND_R): jit_callr(reg1); break;
+        default: scheme_signal_error(errorstr_bad_command_format,operator,command);
+        }
+        break;
+      case ((int)(JIT_OP_finish)):
+        switch (kind) {
+        case (JIT_KIND_I): jit_finishi(imm); break;
+        case (JIT_KIND_R): jit_finishr(reg1); break;
+        default: scheme_signal_error(errorstr_bad_command_format,operator,command);
+        }
+        break;
+      case ((int)(JIT_OP_jmp)):
+        switch (kind) {
+        case (JIT_KIND_R): jit_jmpr(reg1); break;
+        default: scheme_signal_error(errorstr_bad_command_format,operator,command);
+        }
+        break;
+      }
+      break;
+    /* ========== Jump and return operations 2 ========== */
+    case ((int)(JIT_OP_jmpi)):
+      if (cmd_arg_num != 1)
+        scheme_signal_error(errorstr_wrong_args_num, operator, 1, pc);
+      /* process `l' argument */
+      labelsym  = SCHEME_CAR(pc);
+      labeladdr = mzjit_get_label(labelsym,bwd_labels);
+      if (labeladdr != NULL) labelsym = NULL; else labeladdr = jit_forward();
+      pc = SCHEME_CDR(pc);
+      patch = jit_jmpi(labeladdr);
+      break;
+    /* ========== Jump and return operations 3 ========== */
+    case ((int)(JIT_OP_prolog)):
+    case ((int)(JIT_OP_leaf)):
+      if (cmd_arg_num != 1)
+        scheme_signal_error(errorstr_wrong_args_num, operator, 1, pc);
+      /* process `i' argument */
+      imm = mzjit_get_imm(SCHEME_CAR(pc));
+      pc = SCHEME_CDR(pc);
+      switch (operator_id) {
+      case ((int)(JIT_OP_prolog)):
+      jit_prolog(imm);
+        break;
+      case ((int)(JIT_OP_leaf)):
+      jit_leaf(imm);
+        break;
+      }
+      break;
+    /* ========== Jump and return operations 4 ========== */
+    case ((int)(JIT_OP_ret)):
+      if (cmd_arg_num != 0)
+        scheme_signal_error(errorstr_wrong_args_num, operator, 0, pc);
+      jit_ret();
+      break;
+    /* ========== Jump and return operations 5 ========== */
+    case ((int)(JIT_OP_retval)):
+      if (cmd_arg_num != 2)
+        scheme_signal_error(errorstr_wrong_args_num, operator, 2, pc);
+      /* process `t' argument */
+      type1 = (mzjit_get_type(SCHEME_CAR(pc)));
+      pc = SCHEME_CDR(pc);
+      /* process `r' argument */
+      reg1 = mzjit_get_register(SCHEME_CAR(pc),(type1>=JIT_TYPE_F));
+      pc = SCHEME_CDR(pc);
+        switch (type1) {
+        case (JIT_TYPE_C): jit_retval_c(reg1); break;
+        case (JIT_TYPE_UC): jit_retval_uc(reg1); break;
+        case (JIT_TYPE_S): jit_retval_s(reg1); break;
+        case (JIT_TYPE_US): jit_retval_us(reg1); break;
+        case (JIT_TYPE_I): jit_retval_i(reg1); break;
+        case (JIT_TYPE_UI): jit_retval_ui(reg1); break;
+        case (JIT_TYPE_L): jit_retval_l(reg1); break;
+        case (JIT_TYPE_UL): jit_retval_ul(reg1); break;
+        case (JIT_TYPE_P): jit_retval_p(reg1); break;
+        case (JIT_TYPE_F): jit_retval_f(reg1); break;
+        case (JIT_TYPE_D): jit_retval_d(reg1); break;
+        default: scheme_signal_error(errorstr_bad_command_format,operator,command);
+        }
       break;
     }
     if (labelsym != NULL) mzjit_set_fwd_label(labelsym, &fwd_labels, patch);
@@ -1433,7 +1526,7 @@ static size_t  mzjit_code_len = 0;
 
 #undef MYNAME
 #define MYNAME "jit-proc"
-static Scheme_Object *lightning_jit_proc(int argc, Scheme_Object *argv[])
+static Scheme_Object *foreign_jit_proc(int argc, Scheme_Object *argv[])
 {
   char *code;
   Scheme_Object *r;
@@ -1455,53 +1548,6 @@ static Scheme_Object *lightning_jit_proc(int argc, Scheme_Object *argv[])
   r = scheme_make_cptr(code, NULL);
   scheme_register_finalizer(r, free_jit_code, code, NULL, NULL);
   return r;
-}
-
-/*****************************************************************************/
-/* Testing */
-
-typedef int (*pifv)(void);
-typedef int (*pifi)(int);
-typedef int (*pifii)(int,int);
-
-#undef MYNAME
-#define MYNAME "pifv"
-static Scheme_Object *lightning_pifv(int argc, Scheme_Object *argv[])
-{
-  pifv func;
-  if (!SCHEME_CPTRP(argv[0]))
-    scheme_wrong_type(MYNAME, "pointer", 0, argc, argv);
-  func = (pifv)(SCHEME_CPTR_VAL(argv[0]));
-  return scheme_make_integer_value(func());
-}
-
-#undef MYNAME
-#define MYNAME "pifi"
-static Scheme_Object *lightning_pifi(int argc, Scheme_Object *argv[])
-{
-  pifi func;
-  if (!SCHEME_CPTRP(argv[0]))
-    scheme_wrong_type(MYNAME, "pointer", 0, argc, argv);
-  if (!SCHEME_INTP(argv[1]))
-    scheme_wrong_type(MYNAME, "integer", 1, argc, argv);
-  func = (pifi)(SCHEME_CPTR_VAL(argv[0]));
-  return scheme_make_integer_value(func(SCHEME_INT_VAL(argv[1])));
-}
-
-#undef MYNAME
-#define MYNAME "pifii"
-static Scheme_Object *lightning_pifii(int argc, Scheme_Object *argv[])
-{
-  pifii func;
-  if (!SCHEME_CPTRP(argv[0]))
-    scheme_wrong_type(MYNAME, "pointer", 0, argc, argv);
-  if (!SCHEME_INTP(argv[1]))
-    scheme_wrong_type(MYNAME, "integer", 1, argc, argv);
-  if (!SCHEME_INTP(argv[2]))
-    scheme_wrong_type(MYNAME, "integer", 2, argc, argv);
-  func = (pifii)(SCHEME_CPTR_VAL(argv[0]));
-  return scheme_make_integer_value(func(SCHEME_INT_VAL(argv[1]),
-                                        SCHEME_INT_VAL(argv[2])));
 }
 
 /*****************************************************************************/
@@ -1912,13 +1958,7 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
   ret_sym = scheme_intern_symbol("ret");
   MZ_REGISTER_STATIC(ret_sym);
   scheme_add_global("jit-proc",
-    scheme_make_prim_w_arity(lightning_jit_proc, "jit-proc", 1, 1), menv);
-  scheme_add_global("pifv",
-    scheme_make_prim_w_arity(lightning_pifv, "pifv", 1, 1), menv);
-  scheme_add_global("pifi",
-    scheme_make_prim_w_arity(lightning_pifi, "pifi", 2, 2), menv);
-  scheme_add_global("pifii",
-    scheme_make_prim_w_arity(lightning_pifii, "pifii", 3, 3), menv);
+    scheme_make_prim_w_arity(foreign_jit_proc, "jit-proc", 1, 1), menv);
   scheme_finish_primitive_module(menv);
   return scheme_void;
 }

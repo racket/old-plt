@@ -88,7 +88,6 @@ inplace-finish:
 copytree:
 	if [ ! -d $(prefix) ] ; then mkdir $(prefix) ; fi
 	cp -p -r $(srcdir)/../collects $(prefix)/.
-	if [ @MZINSTALLTARGET@ = "normal-install" ] ; then cp -p -r $(srcdir)/../bin $(prefix)/. ; fi
 	cp -p -r $(srcdir)/../include $(prefix)/.
 	cp -p -r $(srcdir)/../notes $(prefix)/.
 	cp -p -r $(srcdir)/../man $(prefix)/.

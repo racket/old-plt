@@ -1321,7 +1321,7 @@
                       (send type-recs add-req (make-req (car (class-record-name record))
                                                         (cdr (class-record-name record)))))
                     (get-method-records name record))
-                  (if (and (= (length (access-name expr) 1))
+                  (if (and (= (length (access-name expr)) 1)
                            (with-handlers ((exn:syntax? (lambda (exn) #f)))
                              (type-exists? (id-string (car (access-name expr)))
                                            null

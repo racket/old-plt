@@ -4,7 +4,7 @@
 	   (lib "big-draw.ss" "htdp")
            (lib "unitsig.ss")
            (lib "list.ss")
-           (lib "teach.ss" "lang" "private"))
+	   (lib "posn.ss" "lang"))
 
   (provide show)
 

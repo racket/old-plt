@@ -1727,18 +1727,20 @@ void GC_count_lambdas_and_structs(Scheme_Object *stype,
     
     while(start < end) {
       int size = ((struct objhead *)start)->size;
-      unsigned short tag = *(unsigned short *)(NUM(start) + WORD_SIZE);
-
-      switch(tag) {
-        case scheme_closure_type:
-        case scheme_case_closure_type:
-	  *lambdas += 1;
-	  break;
-        case scheme_structure_type:
-        case scheme_proc_struct_type:
-	  s = (Scheme_Structure*)(NUM(start) + WORD_SIZE);
-	  if(s->stype == (Scheme_Struct_Type*)stype)
-	    *structs += 1;
+      if(((struct objhead*)start)->type == PAGE_TAGGED) {
+	unsigned short tag = *(unsigned short *)(NUM(start) + WORD_SIZE);
+	
+	switch(tag) {
+          case scheme_closure_type:
+          case scheme_case_closure_type:
+	    *lambdas += 1;
+	    break;
+          case scheme_structure_type:
+          case scheme_proc_struct_type:
+	    s = (Scheme_Structure*)(NUM(start) + WORD_SIZE);
+	    if(s->stype == (Scheme_Struct_Type*)stype)
+	      *structs += 1;
+	}
       }
       start += size;
     }

@@ -26,7 +26,6 @@
 /* globals */
 void (*scheme_console_printf)(char *str, ...);
 void (*scheme_exit)(int v);
-int scheme_secure_primitive_exn;
 
 #ifdef MEMORY_COUNTING_ON
 long scheme_misc_count;
@@ -1225,14 +1224,6 @@ sch_raise(int argc, Scheme_Object *argv[])
   return do_raise(argv[0], 0, 0);
 }
 
-static Scheme_Object *
-secure_exn_types(int argc, Scheme_Object *argv[])
-{
-  scheme_secure_exceptions(scheme_get_env(scheme_config));
-  
-  return scheme_void;
-}
-
 #define NEEDED_BY_SCHEME_BASED_PRIMS(x) \
         ((x == MZEXN_SYNTAX) || (x == MZEXN_APPLICATION_TYPE) \
          || (x == MZEXN_APPLICATION_FPRINTF_EXTRA_ARGUMENTS) \
@@ -1281,16 +1272,10 @@ void scheme_init_exn(Scheme_Env *env)
 					 exn_table[i].names,
 					 exn_table[i].count,
 					 EXN_FLAGS);
-      for (j = exn_table[i].count; j--; ) {
-	if (!scheme_secure_primitive_exn || (j > 1))
-	  scheme_add_global_constant_symbol(exn_table[i].names[j],
-				     values[j],
-				     env);
-	else if (NEEDED_BY_SCHEME_BASED_PRIMS(i))
-	  scheme_add_global_symbol(exn_table[i].names[j],
-				   values[j],
-				   env);
-      }
+      for (j = exn_table[i].count; j--; )
+	scheme_add_global_constant_symbol(exn_table[i].names[j],
+					  values[j],
+					  env);
     }
   }
 
@@ -1304,21 +1289,12 @@ void scheme_init_exn(Scheme_Env *env)
 				"debug-info-handler",
 				MZCONFIG_DEBUG_INFO_HANDLER);
 
-  if (!scheme_secure_primitive_exn)
-    scheme_add_global_constant("debug-info-handler", s, env);
-  else
-    scheme_add_global("debug-info-handler", s, env);    
+  scheme_add_global_constant("debug-info-handler", s, env);
 
   scheme_add_global_constant("raise", 
 			     scheme_make_prim_w_arity(sch_raise, 
 						      "raise", 
 						      1, 1), 
-			     env);
-
-  scheme_add_global_constant("secure-primitive-exception-types",
-			     scheme_make_prim_w_arity(secure_exn_types,
-						      "secure-primitive-exception-types",
-						      0, 0),
 			     env);
 
   if (scheme_starting_up) {
@@ -1334,40 +1310,6 @@ void scheme_init_exn(Scheme_Env *env)
 					      "default-exception-handler",
 					      1, 1));
   }
-}
-
-static void scheme_do_secure_exceptions(Scheme_Env *env, int leftovers)
-{
-  /* Undefine the struct types and constructors for all prim exceptions */
-  int i;
-
-  for (i = 0; i < MZEXN_OTHER; i++) {
-    if (leftovers) {
-      if (NEEDED_BY_SCHEME_BASED_PRIMS(i))
-	scheme_remove_global(SCHEME_SYM_VAL(exn_table[i].names[1]), 
-			     env);
-    } else {
-      scheme_remove_global_constant(SCHEME_SYM_VAL(exn_table[i].names[0]), 
-				    env);
-      scheme_remove_global_constant(SCHEME_SYM_VAL(exn_table[i].names[1]), 
-				   env);
-    }
-  }
-
-  if (leftovers)
-    scheme_remove_global("debug-info-handler", env);
-  else
-    scheme_remove_global_constant("debug-info-handler", env);
-}
-
-void scheme_secure_exceptions(Scheme_Env *env)
-{
-  scheme_do_secure_exceptions(env, 0);
-}
-
-void scheme_secure_leftover_exceptions(Scheme_Env *env)
-{
-  scheme_do_secure_exceptions(env, 1);
 }
 
 #endif

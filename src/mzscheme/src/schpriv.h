@@ -20,6 +20,21 @@
 
 #include "scheme.h"
 
+#define RUNSTACK_IS_GLOBAL
+
+#ifdef RUNSTACK_IS_GLOBAL
+extern Scheme_Object **scheme_current_runstack;
+extern Scheme_Object **scheme_current_runstack_start;
+extern Scheme_Object **scheme_current_cont_mark_chain;
+# define MZ_RUNSTACK scheme_current_runstack
+# define MZ_RUNSTACK_START scheme_current_runstack_start
+# define MZ_CONT_MARK_CHAIN scheme_current_cont_mark_chain
+#else
+# define MZ_RUNSTACK (p->runstack)
+# define MZ_RUNSTACK_START (p->runstack_start)
+# define MZ_CONT_MARK_CHAIN (p->cont_mark_chain)
+#endif
+
 #define GLOB_IS_CONST 1
 #define GLOB_IS_KEYWORD 2
 #define GLOB_IS_PRIMITIVE 4
@@ -686,8 +701,6 @@ extern long scheme_max_found_symbol_name;
 Scheme_Object *scheme_compile_expand_macro_app(Scheme_Object *macro,
 					       Scheme_Object *form, Scheme_Comp_Env *env,
 					       Scheme_Compile_Info *rec, int depth);
-
-void scheme_secure_leftover_exceptions(Scheme_Env *);
 
 #define _scheme_make_char(ch) (scheme_char_constants[(unsigned char)(ch)])
 

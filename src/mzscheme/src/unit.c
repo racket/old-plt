@@ -1611,6 +1611,9 @@ static Scheme_Object *CloseUnit(Scheme_Object *data)
     int i;
     short *map;
     Scheme_Object **stack, **saved;
+#ifndef RUNSTACK_IS_GLOBAL
+    Scheme_Process *p = scheme_current_process;
+#endif
 
     data = (BodyData *)orig->data;
 
@@ -1623,7 +1626,7 @@ static Scheme_Object *CloseUnit(Scheme_Object *data)
     i = data->closure_size;
     cl->closure_saved = saved = MALLOC_N(Scheme_Object *, i);
     map = data->closure_map;
-    stack = scheme_current_process->runstack;
+    stack = MZ_RUNSTACK;
     while (i--)
       saved[i] = stack[map[i]];
     
@@ -1939,7 +1942,9 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
   Scheme_Debug_Request *request, debug_request;
   Scheme_Object *v, **boxes, **anchors;
   int c, i, j;
+#ifndef RUNSTACK_IS_GLOBAL
   Scheme_Process *p = scheme_current_process;
+#endif
 
   data = (InvokeUnitData *)data_in;
 
@@ -2001,9 +2006,9 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
 	boxes[i] = (Scheme_Object *)&((Scheme_Bucket *)e)->val;
 	anchors[i] = e;
       } else {
-	boxes[i] = p->runstack[SCHEME_LOCAL_POS(e)];
+	boxes[i] = MZ_RUNSTACK[SCHEME_LOCAL_POS(e)];
 	if (data->anchor_positions[ap] > 0)
-	  anchors[i] = p->runstack[data->anchor_positions[ap]];
+	  anchors[i] = MZ_RUNSTACK[data->anchor_positions[ap]];
 	ap++;
       }
     }
@@ -2113,13 +2118,13 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
     return (Scheme_Object *)scheme_enlarge_runstack(total, do_unit_k);
   }
 
-  stack = PUSH_RUNSTACK(p, p->runstack, i);
+  stack = PUSH_RUNSTACK(p, MZ_RUNSTACK, i);
   direct = cl->closure_saved;
   while (i--)
     stack[i] = direct[i];
   
-  indirect = PUSH_RUNSTACK(p, p->runstack, (2 * c));
-  direct = PUSH_RUNSTACK(p, p->runstack, (2 * data->num_locals));
+  indirect = PUSH_RUNSTACK(p, MZ_RUNSTACK, (2 * c));
+  direct = PUSH_RUNSTACK(p, MZ_RUNSTACK, (2 * data->num_locals));
 
   for (i = 0; i < c; i++) {
     indirect[i] = boxes[i];

@@ -45,11 +45,9 @@ static Scheme_Object *let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int 
 static Scheme_Object *let_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
 static Scheme_Object *let_star_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
 static Scheme_Object *letrec_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
-static Scheme_Object *letrec_star_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
 static Scheme_Object *let_values_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
 static Scheme_Object *let_star_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
 static Scheme_Object *letrec_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
-static Scheme_Object *letrec_star_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
 static Scheme_Object *begin_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
 static Scheme_Object *begin_expand (Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 static Scheme_Object *begin0_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
@@ -111,18 +109,14 @@ static Scheme_Object *read_case_lambda(Scheme_Object *obj);
 static Scheme_Object *define_values_symbol;
 static Scheme_Object *lambda_symbol;
 static Scheme_Object *letrec_symbol;
-static Scheme_Object *letrec_star_symbol;
 static Scheme_Object *let_star_symbol;
 static Scheme_Object *let_symbol;
 static Scheme_Object *letrec_symbol_nohp;
-static Scheme_Object *letrec_star_symbol_nohp;
 static Scheme_Object *let_star_symbol_nohp;
 static Scheme_Object *letrec_values_symbol;
-static Scheme_Object *letrec_star_values_symbol;
 static Scheme_Object *let_star_values_symbol;
 static Scheme_Object *let_values_symbol;
 static Scheme_Object *letrec_values_symbol_nohp;
-static Scheme_Object *letrec_star_values_symbol_nohp;
 static Scheme_Object *let_star_values_symbol_nohp;
 static Scheme_Object *let_values_symbol_nohp;
 static Scheme_Object *begin_symbol;
@@ -170,18 +164,14 @@ scheme_init_syntax (Scheme_Env *env)
     REGISTER_SO(define_values_symbol);
     REGISTER_SO(lambda_symbol);
     REGISTER_SO(letrec_symbol);
-    REGISTER_SO(letrec_star_symbol);
     REGISTER_SO(let_star_symbol);
     REGISTER_SO(let_symbol);
     REGISTER_SO(letrec_symbol_nohp);
-    REGISTER_SO(letrec_star_symbol_nohp);
     REGISTER_SO(let_star_symbol_nohp);
     REGISTER_SO(letrec_values_symbol);
-    REGISTER_SO(letrec_star_values_symbol);
     REGISTER_SO(let_star_values_symbol);
     REGISTER_SO(let_values_symbol);
     REGISTER_SO(letrec_values_symbol_nohp);
-    REGISTER_SO(letrec_star_values_symbol_nohp);
     REGISTER_SO(let_star_values_symbol_nohp);
     REGISTER_SO(let_values_symbol_nohp);
     REGISTER_SO(begin_symbol);
@@ -206,19 +196,15 @@ scheme_init_syntax (Scheme_Env *env)
     lambda_symbol = scheme_intern_symbol("#%lambda");
 
     letrec_symbol = scheme_intern_symbol("#%letrec");
-    letrec_star_symbol = scheme_intern_symbol("#%letrec*");
     let_star_symbol = scheme_intern_symbol("#%let*");
     let_symbol = scheme_intern_symbol("#%let");
     letrec_symbol_nohp = scheme_intern_symbol("letrec");
-    letrec_star_symbol_nohp = scheme_intern_symbol("letrec*");
     let_star_symbol_nohp = scheme_intern_symbol("let*");
 
     letrec_values_symbol = scheme_intern_symbol("#%letrec-values");
-    letrec_star_values_symbol = scheme_intern_symbol("#%letrec*-values");
     let_star_values_symbol = scheme_intern_symbol("#%let*-values");
     let_values_symbol = scheme_intern_symbol("#%let-values");
     letrec_values_symbol_nohp = scheme_intern_symbol("letrec-values");
-    letrec_star_values_symbol_nohp = scheme_intern_symbol("letrec*-values");
     let_values_symbol_nohp = scheme_intern_symbol("let-values");
     let_star_values_symbol_nohp = scheme_intern_symbol("let*-values");
 
@@ -314,10 +300,6 @@ scheme_init_syntax (Scheme_Env *env)
 			    scheme_make_compiled_syntax(letrec_syntax, 
 						        let_expand), 
 			    env);  
-  scheme_add_global_keyword("letrec*", 
-			    scheme_make_compiled_syntax(letrec_star_syntax, 
-						        let_expand), 
-			    env);
   
   scheme_add_global_keyword("let-values", 
 			    scheme_make_compiled_syntax(let_values_syntax, 
@@ -331,10 +313,6 @@ scheme_init_syntax (Scheme_Env *env)
 			    scheme_make_compiled_syntax(letrec_values_syntax, 
 						        let_expand), 
 			    env);  
-  scheme_add_global_keyword("letrec*-values", 
-			    scheme_make_compiled_syntax(letrec_star_values_syntax, 
-						        let_expand), 
-			    env);
   
   scheme_add_global_keyword("begin", 
 			    scheme_begin_syntax, 
@@ -1178,11 +1156,13 @@ case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 Scheme_Object *scheme_bangboxenv_execute(Scheme_Object *data)
 {
   int pos = SCHEME_INT_VAL(SCHEME_CAR(data));
-  Scheme_Process *run = scheme_current_process;
+#ifndef RUNSTACK_IS_GLOBAL
+  Scheme_Process *p = scheme_current_process;
+#endif
 
   data = SCHEME_CDR(data);
   
-  run->runstack[pos] = scheme_make_envunbox(run->runstack[pos]);
+  MZ_RUNSTACK[pos] = scheme_make_envunbox(MZ_RUNSTACK[pos]);
 
   return _scheme_tail_eval(data);
 }
@@ -1622,18 +1602,14 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
   fmname = SCHEME_CAR(form);
 
   if (SAME_OBJ(fmname, letrec_symbol)
-      || SAME_OBJ(fmname, letrec_symbol_nohp)
-      || SAME_OBJ(fmname, letrec_star_symbol)
-      || SAME_OBJ(fmname, letrec_star_symbol_nohp)) {
+      || SAME_OBJ(fmname, letrec_symbol_nohp)) {
     letrec = 1;
-    formname = "letrec*";
+    formname = "letrec";
   } else if (SAME_OBJ(fmname, letrec_values_symbol)
-      || SAME_OBJ(fmname, letrec_values_symbol_nohp)
-      || SAME_OBJ(fmname, letrec_star_values_symbol)
-      || SAME_OBJ(fmname, letrec_star_values_symbol_nohp)) {
+      || SAME_OBJ(fmname, letrec_values_symbol_nohp)) {
     letrec = 1;
     multi = 1;
-    formname = "letrec*-values";
+    formname = "letrec-values";
   } else if (SAME_OBJ(fmname, let_star_symbol)
 	     || SAME_OBJ(fmname, let_star_symbol_nohp)) {
     letstar = 1;
@@ -1780,7 +1756,7 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 		cons(SCHEME_CADR(form),
 		     cons(first, body)));
   else
-    return cons((letrec ? letrec_star_values_symbol : let_values_symbol),
+    return cons((letrec ? letrec_values_symbol : let_values_symbol),
 		cons(first, body));
 }
 
@@ -1810,12 +1786,6 @@ letrec_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *r
 }
 
 static Scheme_Object *
-letrec_star_syntax(Scheme_Object *form,Scheme_Comp_Env*env,Scheme_Compile_Info *rec)
-{
-  return gen_let_syntax(form, env, "letrec*", 0, 1, 0, rec);
-}
-
-static Scheme_Object *
 let_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
 		   Scheme_Compile_Info *rec)
 {
@@ -1834,13 +1804,6 @@ letrec_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 {
   return gen_let_syntax(form, env, "letrec-values", 0, 1, 1, rec);
 }
-
-static Scheme_Object *
-letrec_star_values_syntax(Scheme_Object *form,Scheme_Comp_Env*env,Scheme_Compile_Info *rec)
-{
-  return gen_let_syntax(form, env, "letrec*-values", 0, 1, 1, rec);
-}
-
 
 static Scheme_Object *nl_car(Scheme_Object *l, Scheme_Object *form)
 {

@@ -541,7 +541,7 @@ scheme_make_linked_closure(Scheme_Process *p,
   if (!close || !i)
     return (Scheme_Object *)closure;
 
-  runstack = p->runstack;
+  runstack = MZ_RUNSTACK;
   dest = closure->vals;
   map = data->closure_map;
 
@@ -1735,10 +1735,10 @@ call_cc (int argc, Scheme_Object *argv[])
 
   /* Copy out stack: */
   cont->runstack_copied = saved = MALLOC_ONE(Scheme_Saved_Stack);
-  size = p->runstack_size - (p->runstack - p->runstack_start);
+  size = p->runstack_size - (MZ_RUNSTACK - MZ_RUNSTACK_START);
   saved->runstack_size = size;
   saved->runstack_start = MALLOC_N(Scheme_Object*, size);
-  memcpy(saved->runstack_start, p->runstack, size * sizeof(Scheme_Object *));
+  memcpy(saved->runstack_start, MZ_RUNSTACK, size * sizeof(Scheme_Object *));
   isaved = saved;
   for (csaved = p->runstack_saved; csaved; csaved = csaved->prev) {
     isaved->prev = MALLOC_ONE(Scheme_Saved_Stack);
@@ -1799,8 +1799,8 @@ call_cc (int argc, Scheme_Object *argv[])
        when cont->runstack_copied was made) */
     isaved = cont->runstack_copied;
     size = isaved->runstack_size;
-    p->runstack = p->runstack_start + (p->runstack_size - size);
-    memcpy(p->runstack, isaved->runstack_start, size * sizeof(Scheme_Object *));
+    MZ_RUNSTACK = MZ_RUNSTACK_START + (p->runstack_size - size);
+    memcpy(MZ_RUNSTACK, isaved->runstack_start, size * sizeof(Scheme_Object *));
     for (csaved = p->runstack_saved; csaved; csaved = csaved->prev) {
       isaved = isaved->prev;
       size = isaved->runstack_size;
@@ -1826,13 +1826,15 @@ call_cc (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 cc_marks(int argc, Scheme_Object *argv[])
 {
+#ifndef RUNSTACK_IS_GLOBAL
   Scheme_Process *p = scheme_current_process;
+#endif
   Scheme_Object *first = scheme_null, *last = NULL, *key;
   Scheme_Object *frame_key = NULL;
   Scheme_Object **s;
 
   key = argv[0];
-  s = p->cont_mark_chain;
+  s = MZ_CONT_MARK_CHAIN;
 
   while(s) {
     if (SAME_OBJ(key, s[1]) && !SAME_OBJ(frame_key, s[3])) {

@@ -216,7 +216,6 @@ EXPORTS
  scheme_add_global_symbol
  scheme_remove_global_symbol
  scheme_add_global_constant_symbol
- scheme_constant
  scheme_set_keyword
  scheme_make_envunbox
  scheme_lookup_global
@@ -287,7 +286,6 @@ EXPORTS
  scheme_banner
  scheme_version
  scheme_check_proc_arity
- scheme_secure_exceptions
  scheme_make_provided_string
  scheme_make_args_string
  scheme_no_dumps

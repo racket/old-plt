@@ -1270,8 +1270,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 #endif
 
       /* Check stack: */
-      
-      scheme_count_closure(p->runstack,
+      scheme_count_closure(p->runstack, /* p->runstack may be wrong, but count_closure is turned off */
 			   p->runstack_size
 			   - (p->runstack
 			      - p->runstack_start),

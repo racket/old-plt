@@ -1792,9 +1792,11 @@ static Scheme_Object *do_eval_k(void)
 
 int scheme_check_runstack(long size)
 {
+#ifndef RUNSTACK_IS_GLOBAL
   Scheme_Process *p = scheme_current_process;
+#endif
 
-  return ((p->runstack - p->runstack_start) >= (size + TAIL_COPY_THRESHOLD));
+  return ((MZ_RUNSTACK - MZ_RUNSTACK_START) >= (size + TAIL_COPY_THRESHOLD));
 }
 
 void *scheme_enlarge_runstack(long size, void *(*k)())
@@ -1804,8 +1806,8 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
   void *v;
 
   saved->prev = p->runstack_saved;
-  saved->runstack = p->runstack;
-  saved->runstack_start = p->runstack_start;
+  saved->runstack = MZ_RUNSTACK;
+  saved->runstack_start = MZ_RUNSTACK_START;
   saved->runstack_size = p->runstack_size;
   
   size += TAIL_COPY_THRESHOLD;
@@ -1814,21 +1816,26 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
 
   p->runstack_saved = saved;
   p->runstack_size = size;
-  p->runstack_start = MALLOC_N(Scheme_Object*, size);
-  p->runstack = p->runstack_start + size;
+  MZ_RUNSTACK_START = MALLOC_N(Scheme_Object*, size);
+  MZ_RUNSTACK = MZ_RUNSTACK_START + size;
   
   v = k();
   
   p->runstack_saved = saved->prev;
-  p->runstack = saved->runstack;
-  p->runstack_start = saved->runstack_start;
+  MZ_RUNSTACK = saved->runstack;
+  MZ_RUNSTACK_START = saved->runstack_start;
   p->runstack_size = saved->runstack_size;
 
   return v;
 }
 
-#define USE_LOCAL_RUNSTACK 1
-#define DELAY_THREAD_RUNSTACK_UPDATE 1
+#ifdef REGISTER_POOR_MACHINE
+# define USE_LOCAL_RUNSTACK 0
+# define DELAY_THREAD_RUNSTACK_UPDATE 0
+#else
+# define USE_LOCAL_RUNSTACK 1
+# define DELAY_THREAD_RUNSTACK_UPDATE 1
+#endif
 
 /* Optimization that's helpful on some platforms for some programs, 
    but not others */
@@ -1888,22 +1895,23 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
   }
 #endif
 
-# define CONT_MARK_CHAIN p->cont_mark_chain
+# define CONT_MARK_CHAIN MZ_CONT_MARK_CHAIN
 # define RESET_CONT_MARK_CHAIN() (CONT_MARK_CHAIN = old_cont_mark_chain)
 
 #if USE_LOCAL_RUNSTACK
 # define RUNSTACK runstack
 # if DELAY_THREAD_RUNSTACK_UPDATE
-#  define UPDATE_THREAD_RSPTR() (p->runstack = runstack)
+#  define UPDATE_THREAD_RSPTR() (MZ_RUNSTACK = runstack)
 #  define RUNSTACK_CHANGED() /**/
 # else
 #  define UPDATE_THREAD_RSPTR() /**/
-#  define RUNSTACK_CHANGED() (p->runstack = runstack)
+#  define RUNSTACK_CHANGED() (MZ_RUNSTACK = runstack)
 # endif
-  runstack = p->runstack;
+  runstack = MZ_RUNSTACK;
 #else
-# define RUNSTACK p->runstack
+# define RUNSTACK MZ_RUNSTACK
 # define UPDATE_THREAD_RSPTR() /**/
+# define RUNSTACK_CHANGED() /**/
 #endif
 
 #define UPDATE_THREAD_RSPTR_FOR_GC() UPDATE_THREAD_RSPTR()
@@ -1914,7 +1922,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   if (num_rands >= 0) {
 
-    if ((RUNSTACK - p->runstack_start) < TAIL_COPY_THRESHOLD) {
+    if ((RUNSTACK - MZ_RUNSTACK_START) < TAIL_COPY_THRESHOLD) {
       /* It's possible that a sequence of primitive _scheme_tail_apply()
 	 calls will exhaust the Scheme stack. Watch out for that. */
       p->ku.k.p1 = (void *)obj;
@@ -1983,7 +1991,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       
       data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(obj);
 
-      if ((RUNSTACK - p->runstack_start) < data->max_let_depth) {
+      if ((RUNSTACK - MZ_RUNSTACK_START) < data->max_let_depth) {
 	p->ku.k.p1 = (void *)obj;
 	p->ku.k.i1 = num_rands;
 	p->ku.k.p2 = (void *)rands;
@@ -2729,8 +2737,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       return NULL;
     }
 
-  p->runstack = old_runstack;
-  p->cont_mark_chain = old_cont_mark_chain;
+  MZ_RUNSTACK = old_runstack;
+  MZ_CONT_MARK_CHAIN = old_cont_mark_chain;
 
   DEBUG_CHECK_TYPE(v);
 

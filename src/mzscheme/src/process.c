@@ -118,6 +118,12 @@ Scheme_Process **scheme_current_process_ptr;
 int *scheme_fuel_counter_ptr;
 #endif
 
+#ifdef RUNSTACK_IS_GLOBAL
+Scheme_Object **scheme_current_runstack;
+Scheme_Object **scheme_current_runstack_start;
+Scheme_Object **scheme_current_cont_mark_chain;
+#endif
+
 static Scheme_Manager *main_manager;
 
 long scheme_total_gc_time;
@@ -143,7 +149,6 @@ extern void (*GC_collect_end_callback)(void);
 static void get_ready_for_GC(void);
 static void done_with_GC(void);
 
-static Scheme_Object *constants_symbol, *no_constants_symbol;
 static Scheme_Object *keywords_symbol, *no_keywords_symbol;
 static Scheme_Object *callcc_is_callec_symbol, *callcc_is_not_callec_symbol;
 static Scheme_Object *hash_percent_syntax_symbol, *all_syntax_symbol, *empty_symbol;
@@ -480,8 +485,6 @@ void scheme_init_process(Scheme_Env *env)
     will_mutex = SCHEME_MAKE_MUTEX();
 #endif
 
-    REGISTER_SO(constants_symbol);
-    REGISTER_SO(no_constants_symbol);
     REGISTER_SO(keywords_symbol);
     REGISTER_SO(no_keywords_symbol);
     REGISTER_SO(callcc_is_callec_symbol);
@@ -490,8 +493,6 @@ void scheme_init_process(Scheme_Env *env)
     REGISTER_SO(all_syntax_symbol);
     REGISTER_SO(empty_symbol);
 
-    constants_symbol = scheme_intern_symbol("constants");
-    no_constants_symbol = scheme_intern_symbol("no-constants");
     keywords_symbol = scheme_intern_symbol("keywords");
     no_keywords_symbol = scheme_intern_symbol("no-keywords");
     callcc_is_callec_symbol = scheme_intern_symbol("call/cc=call/ec");
@@ -620,6 +621,17 @@ static Scheme_Process *make_process(Scheme_Config *config, Scheme_Manager *mgr)
   process->runstack = process->runstack_start + INIT_SCHEME_STACK_SIZE;
   process->runstack_saved = NULL;
   process->cont_mark_chain = NULL;
+#ifdef RUNSTACK_IS_GLOBAL
+  if (!prefix) {
+    REGISTER_SO(MZ_RUNSTACK);
+    REGISTER_SO(MZ_RUNSTACK_START);
+    REGISTER_SO(MZ_CONT_MARK_CHAIN);
+
+    MZ_RUNSTACK = process->runstack;
+    MZ_RUNSTACK_START = process->runstack_start;
+    MZ_CONT_MARK_CHAIN = process->cont_mark_chain;
+  }
+#endif
 
 #ifdef MZ_REAL_THREADS
   process->done_sema = scheme_make_sema(0);
@@ -1015,8 +1027,16 @@ void scheme_swap_process(Scheme_Process *new_process)
   if (SETJMP(scheme_current_process)) {
     RESETJMP(scheme_current_process);
     /* We're back! */
+#ifdef RUNSTACK_IS_GLOBAL
+    MZ_RUNSTACK = scheme_current_process->runstack;
+    MZ_RUNSTACK_START = scheme_current_process->runstack_start;
+#endif
   } else {
     /* We're leaving... */
+#ifdef RUNSTACK_IS_GLOBAL
+    scheme_current_process->runstack = MZ_RUNSTACK;
+    scheme_current_process->runstack_start = MZ_RUNSTACK_START;
+#endif
     scheme_current_process = new_process;
     LONGJMP(scheme_current_process);
   }
@@ -1044,6 +1064,13 @@ static void remove_process(Scheme_Process *r)
     if (p)
       p->next = r->next;
   }
+
+#ifdef RUNSTACK_IS_GLOBAL
+  if (r == scheme_current_process) {
+    r->runstack = MZ_RUNSTACK;
+    r->runstack_start = MZ_RUNSTACK_START;
+  }
+#endif
 
 #ifdef SENORA_GC_NO_FREE
   memset(r->runstack_start, 0, r->runstack_size * sizeof(Scheme_Object*));
@@ -1259,7 +1286,6 @@ void scheme_add_namespace_option(Scheme_Object *key, void (*f)(Scheme_Env *))
 
 Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
 {
-  int save_const;
   int save_no_key, save_ec_only, save_hp_syntax;
   int i, with_nso = 0;
   int empty = 0;
@@ -1270,18 +1296,13 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
   SCHEME_LOCK_MUTEX(make_namespace_mutex);
 #endif
 
-  save_const = scheme_constant_builtins;
   save_no_key = scheme_no_keywords;
   save_ec_only = scheme_escape_continuations_only;
   save_hp_syntax = scheme_hash_percent_syntax_only;
 
   for (i = 0; i < argc; i++) {
     v = argv[i];
-    if (v == constants_symbol)
-      scheme_constant_builtins = 1;
-    else if (v == no_constants_symbol)
-      scheme_constant_builtins = 0;
-    else if (v == keywords_symbol)
+    if (v == keywords_symbol)
       scheme_no_keywords = 0;
     else if (v == no_keywords_symbol)
       scheme_no_keywords = 1;
@@ -1316,7 +1337,6 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
   --scheme_do_atomic;
 #endif
 
-  scheme_constant_builtins = save_const;    
   scheme_no_keywords = save_no_key;   
   scheme_escape_continuations_only = save_ec_only;
   scheme_hash_percent_syntax_only = save_hp_syntax;
@@ -1604,6 +1624,11 @@ static void get_ready_for_GC()
   start_this_gc_time = scheme_get_process_milliseconds();
 
   scheme_zero_unneeded_rands(scheme_current_process);
+
+#ifdef RUNSTACK_IS_GLOBAL
+  scheme_current_process->runstack = MZ_RUNSTACK;
+  scheme_current_process->runstack_start = MZ_RUNSTACK_START;
+#endif
 
 #ifndef MZ_REAL_THREADS
   if (scheme_fuel_counter) {

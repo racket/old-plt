@@ -449,7 +449,6 @@ void scheme_add_global_symbol(Scheme_Object *name, Scheme_Object *val,
 void scheme_remove_global_symbol(Scheme_Object *name, Scheme_Env *env);
 void scheme_add_global_constant_symbol(Scheme_Object *name, Scheme_Object *v, Scheme_Env *env);
 
-void scheme_constant(Scheme_Object *sym, Scheme_Env *env);
 void scheme_set_keyword(Scheme_Object *name, Scheme_Env *env);
 
 Scheme_Object *scheme_make_envunbox(Scheme_Object *value);
@@ -592,10 +591,6 @@ char *scheme_version(void);
 
 int scheme_check_proc_arity(const char *where, int a,
 			    int which, int argc, Scheme_Object **argv);
-
-#ifndef NO_SCHEME_EXNS
-void scheme_secure_exceptions(Scheme_Env *env);
-#endif
 
 char *scheme_make_provided_string(Scheme_Object *o, int count, int *len);
 char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv);

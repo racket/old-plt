@@ -1446,11 +1446,14 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
 
   i = sclass->closure_size = data->closure_size;
   if (i) {
+#ifndef RUNSTACK_IS_GLOBAL
+    Scheme_Process *p = scheme_current_process;
+#endif
     Scheme_Object **saved, **stack;
     short *map = data->closure_map;
 
     saved = sclass->closure_saved = MALLOC_N(Scheme_Object *, i);
-    stack = scheme_current_process->runstack;
+    stack = MZ_RUNSTACK;
     while (i--)
       saved[i] = stack[map[i]];
   }
@@ -2740,11 +2743,11 @@ PushFrameVariables(Internal_Object *o, Init_Object_Rec *irec, Scheme_Class *scla
   ClassVariable *cvar;
   int i, count;
 
-  priv_stack = PUSH_RUNSTACK(p, p->runstack, sclass->num_private);
-  ref_stack = PUSH_RUNSTACK(p, p->runstack, sclass->num_ref);
-  pub_stack = PUSH_RUNSTACK(p, p->runstack, sclass->num_ivar);
+  priv_stack = PUSH_RUNSTACK(p, MZ_RUNSTACK, sclass->num_private);
+  ref_stack = PUSH_RUNSTACK(p, MZ_RUNSTACK, sclass->num_ref);
+  pub_stack = PUSH_RUNSTACK(p, MZ_RUNSTACK, sclass->num_ivar);
   count = sclass->num_arg_vars + 2;
-  obj_stack = PUSH_RUNSTACK(p, p->runstack, count);
+  obj_stack = PUSH_RUNSTACK(p, MZ_RUNSTACK, count);
 
   /* Privates: create boxes: */
   for (i = sclass->num_private; i--; )
@@ -2861,7 +2864,7 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
     skip_cmethods = 0;
   }
 
-  orig_stack = p->runstack;
+  orig_stack = MZ_RUNSTACK;
 
   frame = irec->frames + level;
   sclass = ((Scheme_Class *)o->o.sclass)->heritage[level];
@@ -2903,7 +2906,7 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
     }
 
     saved = sclass->closure_saved;
-    stack = PUSH_RUNSTACK(p, p->runstack, i);
+    stack = PUSH_RUNSTACK(p, MZ_RUNSTACK, i);
     while (i--)
       stack[i] = saved[i];
 
@@ -2947,7 +2950,7 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
 
   SetIVarValues(frame, priv_stack, obj_stack, sclass->ivars, pthresh);
 
-  p->runstack = orig_stack;
+  MZ_RUNSTACK = orig_stack;
 
   if (sclass->priminit == pi_CPP) {
     if (sclass->superclass->pos)

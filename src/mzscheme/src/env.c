@@ -58,8 +58,6 @@ Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 
 /* locals */
 static Scheme_Env *make_env(void);
-static Scheme_Object *constant_prim(int argc, Scheme_Object *argv[]);
-static Scheme_Object *constant_all_prim(int argc, Scheme_Object *argv[]);
 static Scheme_Object *keyword_prim(int argc, Scheme_Object *argv[]);
 static Scheme_Object *keyword_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *undefine(int argc, Scheme_Object *argv[]);
@@ -244,9 +242,6 @@ static void primitive_syntax_through_scheme(const char *name,
     Scheme_Object *sym = scheme_intern_symbol(name);
 
     scheme_add_global_symbol(sym, scheme_lookup_global(hp, env), env);
-    
-    if (scheme_constant_builtins)
-      scheme_constant(sym, env);
   }
 }
 
@@ -256,9 +251,6 @@ static void primitive_function_through_scheme(const char *name,
   Scheme_Object *sym, *hp;
 
   sym = scheme_intern_symbol(name);
-
-  if (scheme_constant_builtins)
-    scheme_constant(sym, env);
 
   hp = scheme_hash_percent_name(name, -1);
   
@@ -375,16 +367,6 @@ Scheme_Env *scheme_top_level_env(void)
 
   MARK_START_TIME();
 
-  scheme_add_global_constant("constant-name",
-			     scheme_make_prim_w_arity(constant_prim,
-						      "constant-name",
-						      1, 1),
-			     env);
-  scheme_add_global_constant("constant-name-all-globals",
-			     scheme_make_prim_w_arity(constant_all_prim,
-						      "constant-name-all-globals",
-						      0, -1),
-			     env);
   scheme_add_global_constant("keyword-name",
 			     scheme_make_prim_w_arity(keyword_prim,
 						      "keyword-name",
@@ -503,11 +485,6 @@ Scheme_Env *scheme_top_level_env(void)
     scheme_init_format_procedure(env);
     scheme_init_rep(env);
   }
-
-#ifndef NO_SCHEME_EXNS
-  if (scheme_secure_primitive_exn)
-    scheme_secure_leftover_exceptions(env);
-#endif
 
   DONE_TIME(macro);
 
@@ -731,9 +708,6 @@ scheme_add_global_keyword(const char *name, Scheme_Object *obj,
     Scheme_Object *sym = scheme_intern_symbol(name);
 
     scheme_add_global_symbol(sym, scheme_lookup_global(hp, env), env);
-    
-    if (scheme_constant_builtins)
-      scheme_constant(sym, env);
   }
 }
 
@@ -1359,50 +1333,6 @@ Scheme_Object *scheme_make_envunbox(Scheme_Object *value)
   SCHEME_ENVBOX_VAL(obj) = value;
 
   return obj;
-}
-
-void scheme_constant(Scheme_Object *sym, Scheme_Env *env)
-{
-  if (!SCHEME_SYMBOLP(sym))
-    scheme_wrong_type("constant-name", "symbol", 0, 1, &sym);
-
-  do_add_global_symbol(env, sym, NULL, 1, 0);
-}
-
-static Scheme_Object *
-constant_prim(int argc, Scheme_Object *argv[])
-{
-  scheme_constant(argv[0], scheme_get_env(scheme_config));
-  return scheme_void;
-}
-
-static Scheme_Object *
-constant_all_prim (int argc, Scheme_Object *argv[])
-{
-  int i, j;
-  Scheme_Hash_Table *globals;
-  Scheme_Bucket *b;
-
-  for (i = 0; i < argc; i++)
-    if (!SCHEME_SYMBOLP(argv[i]))
-      scheme_wrong_type("constant-name-all-globals", 
-			"symbol", i, argc, argv);
-
-  globals = get_globals(scheme_get_env(scheme_config));
-
-  for (i = 0; i < globals->size; i++) {
-    b = globals->buckets[i];
-    if (b && b->val) {
-      for (j = 0; j < argc; j++)
-	if (b->key == (void *)argv[j])
-	  break;
-      
-      if (j >= argc)
-	((Scheme_Bucket_With_Const_Flag *)b)->flags |= GLOB_IS_CONST;
-    }
-  }
-
-  return scheme_void;
 }
 
 static Scheme_Object *keyword_prim(int argc, Scheme_Object *argv[])

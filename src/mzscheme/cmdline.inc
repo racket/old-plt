@@ -1,7 +1,5 @@
 
 #define GDESC "Identifiers and symbols are initially case-sensitive.\n"
-#define KDESC "Built-in globals are constant.\n"
-#define UDESC "Primitive exceptions are secure.\n"
 #define SDESC "Set! works on undefined identifiers.\n"
 #define EDESC "Call/cc is replaced with call/ec.\n"
 #define ADESC "Fall-through cond or case is an error.\n"
@@ -186,10 +184,6 @@ static int run_from_cmd_line(int argc, char *argv[],
       argv[0] = "-h";
     else if (!strcmp("--case-sens", argv[0]))
       argv[0] = "-g";
-    else if (!strcmp("--const-globs", argv[0]))
-      argv[0] = "-k";
-    else if (!strcmp("--secure-exns", argv[0]))
-      argv[0] = "-u";
     else if (!strcmp("--esc-cont", argv[0]))
       argv[0] = "-c";
     else if (!strcmp("--set-undef", argv[0]))
@@ -237,12 +231,6 @@ static int run_from_cmd_line(int argc, char *argv[],
 	  break;
 	case 'c':
 	  scheme_escape_continuations_only = 1;
-	  break;
-	case 'k':
-	  scheme_constant_builtins = 1;
-	  break;
-	case 'u':
-	  scheme_secure_primitive_exn = 1;
 	  break;
 	case 's':
 	  scheme_allow_set_undefined = 1;
@@ -384,10 +372,6 @@ static int run_from_cmd_line(int argc, char *argv[],
       PRINTF(GDESC);
     if (scheme_escape_continuations_only)
       PRINTF(EDESC);
-    if (scheme_constant_builtins)
-      PRINTF(KDESC);
-    if (scheme_secure_primitive_exn)
-      PRINTF(UDESC);
     if (scheme_allow_set_undefined)
       PRINTF(SDESC);
     if (!scheme_allow_cond_auto_else)
@@ -475,7 +459,6 @@ static int run_from_cmd_line(int argc, char *argv[],
 	 " Language setting switches:\n"
 	 "  -g, --case-sens : " GDESC
 	 "  -c, --esc-cont : " EDESC
-	 "  -k, --const-globs: " KDESC
 	 "  -s, --set-undef : " SDESC
 	 "  -a, --no-auto-else : " ADESC
 	 "  -n, --no-key : " NDESC

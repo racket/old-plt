@@ -182,6 +182,8 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define USE_DYNAMIC_FDSET_SIZE
 
+# define REGISTER_POOR_MACHINE
+
 # define FLAGS_ALREADY_SET
 
 #endif
@@ -233,6 +235,8 @@ int scheme_solaris_semaphore_try_down(void *);
 # define USE_DYNAMIC_FDSET_SIZE
 
 # define SIGSET_IS_SIGNAL
+
+# define REGISTER_POOR_MACHINE
 
 # define FLAGS_ALREADY_SET
 
@@ -400,6 +404,8 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define USE_EXPLICT_FP_FORM_CHECK
 # define USE_FCNTL_O_NONBLOCK
 
+# define REGISTER_POOR_MACHINE
+
 # define FLAGS_ALREADY_SET
 
 #endif
@@ -541,6 +547,8 @@ int scheme_win32_semaphore_try_down(void *);
 # define DIR_INCLUDE
 #endif
 
+# define REGISTER_POOR_MACHINE
+
 # define FLAGS_ALREADY_SET
 
 #endif
@@ -642,6 +650,8 @@ int scheme_win32_semaphore_try_down(void *);
 # define IO_INCLUDE
 # define NO_SLEEP
 # define DONT_IGNORE_PIPE_SIGNAL
+
+# define REGISTER_POOR_MACHINE
 
 # define FLAGS_ALREADY_SET
 
@@ -1017,6 +1027,10 @@ int scheme_win32_semaphore_try_down(void *);
 /***********************/
 
 #define UNISTD_INCLUDE
+
+ /* REGISTER_POOR_MACHINE guides a hand optimization that seems to
+    be work best one way for Sparc machines, and better the other
+    way for x86 machines. */
 
  /* SIXTY_FOUR_BIT_INTEGERS indicates that 'long's are 64-bits wide. */
 

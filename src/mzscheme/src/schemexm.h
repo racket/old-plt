@@ -266,7 +266,6 @@
 #define scheme_add_global_symbol (scheme_extension_table->scheme_add_global_symbol)
 #define scheme_remove_global_symbol (scheme_extension_table->scheme_remove_global_symbol)
 #define scheme_add_global_constant_symbol (scheme_extension_table->scheme_add_global_constant_symbol)
-#define scheme_constant (scheme_extension_table->scheme_constant)
 #define scheme_set_keyword (scheme_extension_table->scheme_set_keyword)
 #define scheme_make_envunbox (scheme_extension_table->scheme_make_envunbox)
 #define scheme_lookup_global (scheme_extension_table->scheme_lookup_global)
@@ -339,9 +338,6 @@
 #define scheme_banner (scheme_extension_table->scheme_banner)
 #define scheme_version (scheme_extension_table->scheme_version)
 #define scheme_check_proc_arity (scheme_extension_table->scheme_check_proc_arity)
-#ifndef NO_SCHEME_EXNS
-#define scheme_secure_exceptions (scheme_extension_table->scheme_secure_exceptions)
-#endif
 #define scheme_make_provided_string (scheme_extension_table->scheme_make_provided_string)
 #define scheme_make_args_string (scheme_extension_table->scheme_make_args_string)
 #define scheme_no_dumps (scheme_extension_table->scheme_no_dumps)

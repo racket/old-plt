@@ -20,17 +20,23 @@ static void FillZero(int *a, int *b) {
   *a = *b = 0;
 }
 
+@BEGINSYMBOLS canvasFlags
+@SYM "border" : wxBORDER
+@SYM "vscroll" : wxVSCROLL
+@SYM "hscroll" : wxHSCROLL
+@ENDSYMBOLS
+
 /* Handle cases in Xt that are a problem because a wxPanel isn't really a wxCanvas */
 @MACRO PANELREDIRECT[x] = if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { <x>; }
 
+@INCLUDE wxs_drws.xci
+
 @CLASSBASE wxCanvas "wx:canvas":"wx:window"
 
-// @CREATOR ();
-@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,long=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> frame
-@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,long=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> panel
+@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[canvasFlags]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> frame
+@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[canvasFlags]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> panel
 
 @ "allow-double-click" : void AllowDoubleClick(bool);
-// @ "enable-scrolling" : void EnableScrolling(bool,bool);
 
 @INCLUDE wxs_char.xci
 
@@ -39,18 +45,10 @@ static void FillZero(int *a, int *b) {
 
 @ "popup-menu" : bool PopupMenu(wxMenu!, float, float);
 
-// Override wx-window:
-// @ "set-size" : void SetSize(int,int,int,int); : : /NOZERO[2]|NOZERO[3]
-// @ "set-client-size" : void SetClientSize(int,int); : : /NOZERO[0]|NOZERO[1]
-// @ "get-size" : void GetSize(int*,int*);
-// @ "get-client-size" : void GetClientSize(int*,int*);
-// @ "get-position" : void GetPosition(int*,int*);
-
 @ "get-dc" : wxCanvasDC! GetDC();
 
 @ "get-scroll-units" : void GetScrollUnitsPerPage(int*,int*); : : / PANELREDIRECT[ FillZero(x0,x1); return scheme_void]
 @ "get-virtual-size" : void GetVirtualSize(int*,int*); : : / PANELREDIRECT[FillZero(x0,x1); return scheme_void]
-// @ "is-retained?" : bool IsRetained(); : : / PANELREDIRECT[return scheme_false]
 @ "set-scrollbars" : void SetScrollbars(int,int,int,int,int,int,int=0,int=0,bool=TRUE);  : : / PANELREDIRECT[return scheme_void]
 @ "view-start" : void ViewStart(int*,int*); : : / PANELREDIRECT[FillZero(x0,x1); return scheme_void]
 @ "warp-pointer" : void WarpPointer(int,int);  : : / PANELREDIRECT[return scheme_void]
@@ -67,9 +65,5 @@ static void FillZero(int *a, int *b) {
 
 #define DrawsForCanvas
 @INCLUDE wxs_draw.xci
-
-@CONSTANT "wx:const-border" : long wxBORDER
-// @CONSTANT "wx:const-retained" : long wxRETAINED
-// @CONSTANT "wx:const-backingstore" : long wxBACKINGSTORE
 
 @END

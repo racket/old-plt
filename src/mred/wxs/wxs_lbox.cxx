@@ -17,6 +17,113 @@
 #include "wxscomon.h"
 
 
+static Scheme_Object *kind_wxSINGLE_sym = NULL;
+static Scheme_Object *kind_wxMULTIPLE_sym = NULL;
+static Scheme_Object *kind_wxEXTENDED_sym = NULL;
+
+static void init_symset_kind(void) {
+  kind_wxSINGLE_sym = scheme_intern_symbol("single");
+  kind_wxMULTIPLE_sym = scheme_intern_symbol("multiple");
+  kind_wxEXTENDED_sym = scheme_intern_symbol("extended");
+}
+
+static int unbundle_symset_kind(Scheme_Object *v, const char *where) {
+  if (!kind_wxEXTENDED_sym) init_symset_kind();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == kind_wxSINGLE_sym) { result = result | wxSINGLE; }
+  else if (i == kind_wxMULTIPLE_sym) { result = result | wxMULTIPLE; }
+  else if (i == kind_wxEXTENDED_sym) { result = result | wxEXTENDED; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "kind symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_kind(Scheme_Object *v, const char *where) {
+  if (!kind_wxEXTENDED_sym) init_symset_kind();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == kind_wxSINGLE_sym) { ; }
+  else if (i == kind_wxMULTIPLE_sym) { ; }
+  else if (i == kind_wxEXTENDED_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "kind symbol list", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_kind(int v) {
+  if (!kind_wxEXTENDED_sym) init_symset_kind();
+  Scheme_Object *l = scheme_null;
+  if (v & wxSINGLE) l = scheme_make_pair(kind_wxSINGLE_sym, l);
+  if (v & wxMULTIPLE) l = scheme_make_pair(kind_wxMULTIPLE_sym, l);
+  if (v & wxEXTENDED) l = scheme_make_pair(kind_wxEXTENDED_sym, l);
+  return l;
+}
+
+
+static Scheme_Object *style_wxALWAYS_SB_sym = NULL;
+static Scheme_Object *style_wxHSCROLL_sym = NULL;
+
+static void init_symset_style(void) {
+  style_wxALWAYS_SB_sym = scheme_intern_symbol("always-sb");
+  style_wxHSCROLL_sym = scheme_intern_symbol("hscroll");
+}
+
+static int unbundle_symset_style(Scheme_Object *v, const char *where) {
+  if (!style_wxHSCROLL_sym) init_symset_style();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == style_wxALWAYS_SB_sym) { result = result | wxALWAYS_SB; }
+  else if (i == style_wxHSCROLL_sym) { result = result | wxHSCROLL; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "style symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_style(Scheme_Object *v, const char *where) {
+  if (!style_wxHSCROLL_sym) init_symset_style();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == style_wxALWAYS_SB_sym) { ; }
+  else if (i == style_wxHSCROLL_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "style symbol list", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_style(int v) {
+  if (!style_wxHSCROLL_sym) init_symset_style();
+  Scheme_Object *l = scheme_null;
+  if (v & wxALWAYS_SB) l = scheme_make_pair(style_wxALWAYS_SB_sym, l);
+  if (v & wxHSCROLL) l = scheme_make_pair(style_wxHSCROLL_sym, l);
+  return l;
+}
+
+
 
 
 
@@ -134,12 +241,6 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
-// Quasi-booleans; nominally Bool, but really ints
-
-
-
-
-
 
 
 
@@ -171,7 +272,7 @@ class os_wxListBox : public wxListBox {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxListBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, Bool x3 = wxSINGLE, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = -1, int x8 = 0, string* x9 = NULL, long x10 = 0, string x11 = "button");
+  os_wxListBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3 = wxSINGLE, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = -1, int x8 = 0, string* x9 = NULL, int x10 = 0, string x11 = "button");
   ~os_wxListBox();
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
@@ -182,7 +283,7 @@ class os_wxListBox : public wxListBox {
 
 Scheme_Object *os_wxListBox_class;
 
-os_wxListBox::os_wxListBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1, nstring x2, Bool x3, int x4, int x5, int x6, int x7, int x8, string* x9, long x10, string x11)
+os_wxListBox::os_wxListBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, int x8, string* x9, int x10, string x11)
 : wxListBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)
 {
   __gc_external = (void *)o;
@@ -208,18 +309,20 @@ Bool os_wxListBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -241,18 +344,20 @@ Bool os_wxListBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -274,18 +379,20 @@ void os_wxListBox::OnSize(int x0, int x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxListBox::OnSize(x0, x1);
+wxListBox::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -306,16 +413,18 @@ void os_wxListBox::OnSetFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxListBox::OnSetFocus();
+wxListBox::OnSetFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -336,16 +445,18 @@ void os_wxListBox::OnKillFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxListBox::OnKillFocus();
+wxListBox::OnKillFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -881,14 +992,14 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
   class wxPanel* x0;
   wxFunction x1;
   nstring x2;
-  Bool x3;
+  int x3;
   int x4;
   int x5;
   int x6;
   int x7;
   int x8;
   string* x9;
-  long x10;
+  int x10;
   string x11;
 
   Scheme_Object *tmp_callback = NULL;
@@ -898,7 +1009,7 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
   x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "wx:list-box%::initialization");
   if (n > 3) {
-    x3 = objscheme_unbundle_integer(p[3], NULL);
+    x3 = unbundle_symset_kind(p[3], "wx:list-box%::initialization");;
   } else
     x3 = wxSINGLE;
   if (n > 4) {
@@ -922,7 +1033,7 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
   } else
     x9 = NULL;
   if (n > 9) {
-    x10 = objscheme_unbundle_integer(p[9], "wx:list-box%::initialization");
+    x10 = unbundle_symset_style(p[9], "wx:list-box%::initialization");;
   } else
     x10 = 0;
   if (n > 10) {
@@ -930,7 +1041,7 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
   } else
     x11 = "button";
 
-  if (!x6) x6 = -1;if (!x7) x7 = -1;if (((x3 & wxMULTIPLE) && (x3 & wxEXTENDED)) || (x3 & ~((Bool)(wxMULTIPLE | wxEXTENDED | wxALWAYS_SB)))) scheme_signal_error("wx:list-box%%::initialization: bad style specification: %d", x3);x9 = __MakestringArray((8 < n) ? p[8] : scheme_null, &x8, "wx:list-box%::initialization");
+  if (!x6) x6 = -1;if (!x7) x7 = -1;x9 = __MakestringArray((8 < n) ? p[8] : scheme_null, &x8, "wx:list-box%::initialization");
   realobj = new os_wxListBox(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11);
   delete[] x9;
   realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);

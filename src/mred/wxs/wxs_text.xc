@@ -10,6 +10,12 @@
 
 @HEADER
 
+@BEGINSYMBOLS textFlags
+@SYM "process-enter" : wxPROCESS_ENTER
+@SYM "password" : wxPASSWORD
+@SYM "readonly" : wxREADONLY      
+@ENDSYMBOLS
+
 @CLASSBASE wxText "wx:text":"wx:item"
 
 @CLASSID wxTYPE_TEXT
@@ -18,7 +24,7 @@
 @SET CALLBACK_CLASS_USER = "wx:text%::initialization"
 @INCLUDE cb_start.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,string="",int=-1,int=-1,int=-1,int=-1,long=0,string="text"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]//ubCallbackCreatorFinish
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,string="",int=-1,int=-1,int=-1,int=-1,SYM[textFlags]=0,string="text"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]//ubCallbackCreatorFinish
 
 @INCLUDE wxs_item.xci
 
@@ -37,6 +43,13 @@
 
 @INCLUDE cb_end.xci
 
+@BEGINSYMBOLS multiTextFlags
+@SYM "process-enter" : wxPROCESS_ENTER
+@SYM "password" : wxPASSWORD
+@SYM "readonly" : wxREADONLY
+@SYM "hscroll" : wxHSCROLL
+@ENDSYMBOLS
+
 @CLASSBASE wxMultiText "wx:multi-text":"wx:text"
 
 @CLASSID wxTYPE_MULTI_TEXT
@@ -45,7 +58,7 @@
 @SET CALLBACK_CLASS_USER = "wx:multi-text%::initialization"
 @INCLUDE cb_start.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,string="",int=-1,int=-1,int=-1,int=-1,long=0,string="text"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]//ubCallbackCreatorFinish
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,string="",int=-1,int=-1,int=-1,int=-1,SYM[multiTextFlags]=0,string="text"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]//ubCallbackCreatorFinish
 
 @ "get-value" : string GetValue();
 
@@ -56,12 +69,16 @@
 
 @INCLUDE cb_end.xci
 
+@BEGINSYMBOLS textWinFlags
+@SYM "readonly" : wxREADONLY
+@ENDSYMBOLS
+
 @CLASSBASE wxTextWindow "wx:text-window" : "wx:window"
 
 @CLASSID wxTYPE_TEXT_WINDOW
 
-@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,long=0,string="textWindow");: : /NOZERO[3]|NOZERO[4] <> frame
-@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,long=0,string="textWindow");: : /NOZERO[3]|NOZERO[4] <> panel
+@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[textWinFlags]=0,string="textWindow");: : /NOZERO[3]|NOZERO[4] <> frame
+@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[textWinFlags]=0,string="textWindow");: : /NOZERO[3]|NOZERO[4] <> panel
 
 @ "popup-menu" : bool PopupMenu(wxMenu!, float, float);
 
@@ -74,7 +91,6 @@
 @ "get-insertion-point" : long GetInsertionPoint();
 @ "get-last-position" : long GetLastPosition();
 @ "get-line-length" : long GetLineLength(int);
-// @ "get-line-text" : int GetLineText(int, string);
 @ "get-number-of-lines" : int GetNumberOfLines();
 @ "set-selection" : void SetSelection(long,long);
 @ "load-file" : bool LoadFile(pathname);
@@ -95,10 +111,5 @@
 
 @SETMARK c = d
 @INCLUDE wxs_char.xci
-
-// @ "<<" : void operator<<(string);
-// @ "<<" : void operator<<(int);
-// @ "<<" : void operator<<(float);
-// @ "<<" : void operator<<(char);
 
 @END

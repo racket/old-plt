@@ -518,11 +518,473 @@ class wxAddColour *objscheme_unbundle_wxAddColour(Scheme_Object *obj, const char
 }
 
 
+static Scheme_Object *family_wxBASE_sym = NULL;
+static Scheme_Object *family_wxDEFAULT_sym = NULL;
+static Scheme_Object *family_wxDECORATIVE_sym = NULL;
+static Scheme_Object *family_wxROMAN_sym = NULL;
+static Scheme_Object *family_wxSCRIPT_sym = NULL;
+static Scheme_Object *family_wxSWISS_sym = NULL;
+static Scheme_Object *family_wxMODERN_sym = NULL;
+static Scheme_Object *family_wxTELETYPE_sym = NULL;
+static Scheme_Object *family_wxSYSTEM_sym = NULL;
+
+static void init_symset_family(void) {
+  family_wxBASE_sym = scheme_intern_symbol("base");
+  family_wxDEFAULT_sym = scheme_intern_symbol("default");
+  family_wxDECORATIVE_sym = scheme_intern_symbol("decorative");
+  family_wxROMAN_sym = scheme_intern_symbol("roman");
+  family_wxSCRIPT_sym = scheme_intern_symbol("script");
+  family_wxSWISS_sym = scheme_intern_symbol("swiss");
+  family_wxMODERN_sym = scheme_intern_symbol("modern");
+  family_wxTELETYPE_sym = scheme_intern_symbol("teletype");
+  family_wxSYSTEM_sym = scheme_intern_symbol("system");
+}
+
+static int unbundle_symset_family(Scheme_Object *v, const char *where) {
+  if (!family_wxSYSTEM_sym) init_symset_family();
+  if (0) { }
+  else if (v == family_wxBASE_sym) { return wxBASE; }
+  else if (v == family_wxDEFAULT_sym) { return wxDEFAULT; }
+  else if (v == family_wxDECORATIVE_sym) { return wxDECORATIVE; }
+  else if (v == family_wxROMAN_sym) { return wxROMAN; }
+  else if (v == family_wxSCRIPT_sym) { return wxSCRIPT; }
+  else if (v == family_wxSWISS_sym) { return wxSWISS; }
+  else if (v == family_wxMODERN_sym) { return wxMODERN; }
+  else if (v == family_wxTELETYPE_sym) { return wxTELETYPE; }
+  else if (v == family_wxSYSTEM_sym) { return wxSYSTEM; }
+  if (where) scheme_wrong_type(where, "family symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_family(Scheme_Object *v, const char *where) {
+  if (!family_wxSYSTEM_sym) init_symset_family();
+  if (0) { }
+  else if (v == family_wxBASE_sym) { return 1; }
+  else if (v == family_wxDEFAULT_sym) { return 1; }
+  else if (v == family_wxDECORATIVE_sym) { return 1; }
+  else if (v == family_wxROMAN_sym) { return 1; }
+  else if (v == family_wxSCRIPT_sym) { return 1; }
+  else if (v == family_wxSWISS_sym) { return 1; }
+  else if (v == family_wxMODERN_sym) { return 1; }
+  else if (v == family_wxTELETYPE_sym) { return 1; }
+  else if (v == family_wxSYSTEM_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "family symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_family(int v) {
+  if (!family_wxSYSTEM_sym) init_symset_family();
+  switch (v) {
+  case wxBASE: return family_wxBASE_sym;
+  case wxDEFAULT: return family_wxDEFAULT_sym;
+  case wxDECORATIVE: return family_wxDECORATIVE_sym;
+  case wxROMAN: return family_wxROMAN_sym;
+  case wxSCRIPT: return family_wxSCRIPT_sym;
+  case wxSWISS: return family_wxSWISS_sym;
+  case wxMODERN: return family_wxMODERN_sym;
+  case wxTELETYPE: return family_wxTELETYPE_sym;
+  case wxSYSTEM: return family_wxSYSTEM_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *weight_wxBASE_sym = NULL;
+static Scheme_Object *weight_wxNORMAL_sym = NULL;
+static Scheme_Object *weight_wxLIGHT_sym = NULL;
+static Scheme_Object *weight_wxBOLD_sym = NULL;
+
+static void init_symset_weight(void) {
+  weight_wxBASE_sym = scheme_intern_symbol("base");
+  weight_wxNORMAL_sym = scheme_intern_symbol("normal");
+  weight_wxLIGHT_sym = scheme_intern_symbol("light");
+  weight_wxBOLD_sym = scheme_intern_symbol("bold");
+}
+
+static int unbundle_symset_weight(Scheme_Object *v, const char *where) {
+  if (!weight_wxBOLD_sym) init_symset_weight();
+  if (0) { }
+  else if (v == weight_wxBASE_sym) { return wxBASE; }
+  else if (v == weight_wxNORMAL_sym) { return wxNORMAL; }
+  else if (v == weight_wxLIGHT_sym) { return wxLIGHT; }
+  else if (v == weight_wxBOLD_sym) { return wxBOLD; }
+  if (where) scheme_wrong_type(where, "weight symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_weight(Scheme_Object *v, const char *where) {
+  if (!weight_wxBOLD_sym) init_symset_weight();
+  if (0) { }
+  else if (v == weight_wxBASE_sym) { return 1; }
+  else if (v == weight_wxNORMAL_sym) { return 1; }
+  else if (v == weight_wxLIGHT_sym) { return 1; }
+  else if (v == weight_wxBOLD_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "weight symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_weight(int v) {
+  if (!weight_wxBOLD_sym) init_symset_weight();
+  switch (v) {
+  case wxBASE: return weight_wxBASE_sym;
+  case wxNORMAL: return weight_wxNORMAL_sym;
+  case wxLIGHT: return weight_wxLIGHT_sym;
+  case wxBOLD: return weight_wxBOLD_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *style_wxBASE_sym = NULL;
+static Scheme_Object *style_wxNORMAL_sym = NULL;
+static Scheme_Object *style_wxITALIC_sym = NULL;
+static Scheme_Object *style_wxSLANT_sym = NULL;
+
+static void init_symset_style(void) {
+  style_wxBASE_sym = scheme_intern_symbol("base");
+  style_wxNORMAL_sym = scheme_intern_symbol("normal");
+  style_wxITALIC_sym = scheme_intern_symbol("italic");
+  style_wxSLANT_sym = scheme_intern_symbol("slant");
+}
+
+static int unbundle_symset_style(Scheme_Object *v, const char *where) {
+  if (!style_wxSLANT_sym) init_symset_style();
+  if (0) { }
+  else if (v == style_wxBASE_sym) { return wxBASE; }
+  else if (v == style_wxNORMAL_sym) { return wxNORMAL; }
+  else if (v == style_wxITALIC_sym) { return wxITALIC; }
+  else if (v == style_wxSLANT_sym) { return wxSLANT; }
+  if (where) scheme_wrong_type(where, "style symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_style(Scheme_Object *v, const char *where) {
+  if (!style_wxSLANT_sym) init_symset_style();
+  if (0) { }
+  else if (v == style_wxBASE_sym) { return 1; }
+  else if (v == style_wxNORMAL_sym) { return 1; }
+  else if (v == style_wxITALIC_sym) { return 1; }
+  else if (v == style_wxSLANT_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "style symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_style(int v) {
+  if (!style_wxSLANT_sym) init_symset_style();
+  switch (v) {
+  case wxBASE: return style_wxBASE_sym;
+  case wxNORMAL: return style_wxNORMAL_sym;
+  case wxITALIC: return style_wxITALIC_sym;
+  case wxSLANT: return style_wxSLANT_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *align_wxBASE_sym = NULL;
+static Scheme_Object *align_wxALIGN_TOP_sym = NULL;
+static Scheme_Object *align_wxALIGN_BOTTOM_sym = NULL;
+static Scheme_Object *align_wxALIGN_CENTER_sym = NULL;
+
+static void init_symset_align(void) {
+  align_wxBASE_sym = scheme_intern_symbol("base");
+  align_wxALIGN_TOP_sym = scheme_intern_symbol("align-top");
+  align_wxALIGN_BOTTOM_sym = scheme_intern_symbol("align-bottom");
+  align_wxALIGN_CENTER_sym = scheme_intern_symbol("align-center");
+}
+
+static int unbundle_symset_align(Scheme_Object *v, const char *where) {
+  if (!align_wxALIGN_CENTER_sym) init_symset_align();
+  if (0) { }
+  else if (v == align_wxBASE_sym) { return wxBASE; }
+  else if (v == align_wxALIGN_TOP_sym) { return wxALIGN_TOP; }
+  else if (v == align_wxALIGN_BOTTOM_sym) { return wxALIGN_BOTTOM; }
+  else if (v == align_wxALIGN_CENTER_sym) { return wxALIGN_CENTER; }
+  if (where) scheme_wrong_type(where, "align symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_align(Scheme_Object *v, const char *where) {
+  if (!align_wxALIGN_CENTER_sym) init_symset_align();
+  if (0) { }
+  else if (v == align_wxBASE_sym) { return 1; }
+  else if (v == align_wxALIGN_TOP_sym) { return 1; }
+  else if (v == align_wxALIGN_BOTTOM_sym) { return 1; }
+  else if (v == align_wxALIGN_CENTER_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "align symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_align(int v) {
+  if (!align_wxALIGN_CENTER_sym) init_symset_align();
+  switch (v) {
+  case wxBASE: return align_wxBASE_sym;
+  case wxALIGN_TOP: return align_wxALIGN_TOP_sym;
+  case wxALIGN_BOTTOM: return align_wxALIGN_BOTTOM_sym;
+  case wxALIGN_CENTER: return align_wxALIGN_CENTER_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *changeNoArg_wxCHANGE_NOTHING_sym = NULL;
+static Scheme_Object *changeNoArg_wxCHANGE_NORMAL_sym = NULL;
+static Scheme_Object *changeNoArg_wxCHANGE_BOLD_sym = NULL;
+static Scheme_Object *changeNoArg_wxCHANGE_ITALIC_sym = NULL;
+static Scheme_Object *changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym = NULL;
+static Scheme_Object *changeNoArg_wxCHANGE_NORMAL_COLOUR_sym = NULL;
+
+static void init_symset_changeNoArg(void) {
+  changeNoArg_wxCHANGE_NOTHING_sym = scheme_intern_symbol("change-nothing");
+  changeNoArg_wxCHANGE_NORMAL_sym = scheme_intern_symbol("change-normal");
+  changeNoArg_wxCHANGE_BOLD_sym = scheme_intern_symbol("change-bold");
+  changeNoArg_wxCHANGE_ITALIC_sym = scheme_intern_symbol("change-italic");
+  changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym = scheme_intern_symbol("change-toggle-underline");
+  changeNoArg_wxCHANGE_NORMAL_COLOUR_sym = scheme_intern_symbol("change-normal-colour");
+}
+
+static int unbundle_symset_changeNoArg(Scheme_Object *v, const char *where) {
+  if (!changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) init_symset_changeNoArg();
+  if (0) { }
+  else if (v == changeNoArg_wxCHANGE_NOTHING_sym) { return wxCHANGE_NOTHING; }
+  else if (v == changeNoArg_wxCHANGE_NORMAL_sym) { return wxCHANGE_NORMAL; }
+  else if (v == changeNoArg_wxCHANGE_BOLD_sym) { return wxCHANGE_BOLD; }
+  else if (v == changeNoArg_wxCHANGE_ITALIC_sym) { return wxCHANGE_ITALIC; }
+  else if (v == changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym) { return wxCHANGE_TOGGLE_UNDERLINE; }
+  else if (v == changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) { return wxCHANGE_NORMAL_COLOUR; }
+  if (where) scheme_wrong_type(where, "changeNoArg symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_changeNoArg(Scheme_Object *v, const char *where) {
+  if (!changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) init_symset_changeNoArg();
+  if (0) { }
+  else if (v == changeNoArg_wxCHANGE_NOTHING_sym) { return 1; }
+  else if (v == changeNoArg_wxCHANGE_NORMAL_sym) { return 1; }
+  else if (v == changeNoArg_wxCHANGE_BOLD_sym) { return 1; }
+  else if (v == changeNoArg_wxCHANGE_ITALIC_sym) { return 1; }
+  else if (v == changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym) { return 1; }
+  else if (v == changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeNoArg symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_changeNoArg(int v) {
+  if (!changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) init_symset_changeNoArg();
+  switch (v) {
+  case wxCHANGE_NOTHING: return changeNoArg_wxCHANGE_NOTHING_sym;
+  case wxCHANGE_NORMAL: return changeNoArg_wxCHANGE_NORMAL_sym;
+  case wxCHANGE_BOLD: return changeNoArg_wxCHANGE_BOLD_sym;
+  case wxCHANGE_ITALIC: return changeNoArg_wxCHANGE_ITALIC_sym;
+  case wxCHANGE_TOGGLE_UNDERLINE: return changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym;
+  case wxCHANGE_NORMAL_COLOUR: return changeNoArg_wxCHANGE_NORMAL_COLOUR_sym;
+  default: return NULL;
+  }
+}
+
+static Scheme_Object *changeFam_wxCHANGE_FAMILY_sym = NULL;
+
+static void init_symset_changeFam(void) {
+  changeFam_wxCHANGE_FAMILY_sym = scheme_intern_symbol("change-family");
+}
+
+static int unbundle_symset_changeFam(Scheme_Object *v, const char *where) {
+  if (!changeFam_wxCHANGE_FAMILY_sym) init_symset_changeFam();
+  if (0) { }
+  else if (v == changeFam_wxCHANGE_FAMILY_sym) { return wxCHANGE_FAMILY; }
+  if (where) scheme_wrong_type(where, "changeFam symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_changeFam(Scheme_Object *v, const char *where) {
+  if (!changeFam_wxCHANGE_FAMILY_sym) init_symset_changeFam();
+  if (0) { }
+  else if (v == changeFam_wxCHANGE_FAMILY_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeFam symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_changeFam(int v) {
+  if (!changeFam_wxCHANGE_FAMILY_sym) init_symset_changeFam();
+  switch (v) {
+  case wxCHANGE_FAMILY: return changeFam_wxCHANGE_FAMILY_sym;
+  default: return NULL;
+  }
+}
+
+static Scheme_Object *changeStyle_wxCHANGE_STYLE_sym = NULL;
+static Scheme_Object *changeStyle_wxCHANGE_TOGGLE_STYLE_sym = NULL;
+
+static void init_symset_changeStyle(void) {
+  changeStyle_wxCHANGE_STYLE_sym = scheme_intern_symbol("change-style");
+  changeStyle_wxCHANGE_TOGGLE_STYLE_sym = scheme_intern_symbol("change-toggle-style");
+}
+
+static int unbundle_symset_changeStyle(Scheme_Object *v, const char *where) {
+  if (!changeStyle_wxCHANGE_TOGGLE_STYLE_sym) init_symset_changeStyle();
+  if (0) { }
+  else if (v == changeStyle_wxCHANGE_STYLE_sym) { return wxCHANGE_STYLE; }
+  else if (v == changeStyle_wxCHANGE_TOGGLE_STYLE_sym) { return wxCHANGE_TOGGLE_STYLE; }
+  if (where) scheme_wrong_type(where, "changeStyle symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_changeStyle(Scheme_Object *v, const char *where) {
+  if (!changeStyle_wxCHANGE_TOGGLE_STYLE_sym) init_symset_changeStyle();
+  if (0) { }
+  else if (v == changeStyle_wxCHANGE_STYLE_sym) { return 1; }
+  else if (v == changeStyle_wxCHANGE_TOGGLE_STYLE_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeStyle symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_changeStyle(int v) {
+  if (!changeStyle_wxCHANGE_TOGGLE_STYLE_sym) init_symset_changeStyle();
+  switch (v) {
+  case wxCHANGE_STYLE: return changeStyle_wxCHANGE_STYLE_sym;
+  case wxCHANGE_TOGGLE_STYLE: return changeStyle_wxCHANGE_TOGGLE_STYLE_sym;
+  default: return NULL;
+  }
+}
+
+static Scheme_Object *changeWeight_wxCHANGE_WEIGHT_sym = NULL;
+static Scheme_Object *changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym = NULL;
+
+static void init_symset_changeWeight(void) {
+  changeWeight_wxCHANGE_WEIGHT_sym = scheme_intern_symbol("change-weight");
+  changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym = scheme_intern_symbol("change-toggle-weight");
+}
+
+static int unbundle_symset_changeWeight(Scheme_Object *v, const char *where) {
+  if (!changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) init_symset_changeWeight();
+  if (0) { }
+  else if (v == changeWeight_wxCHANGE_WEIGHT_sym) { return wxCHANGE_WEIGHT; }
+  else if (v == changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) { return wxCHANGE_TOGGLE_WEIGHT; }
+  if (where) scheme_wrong_type(where, "changeWeight symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_changeWeight(Scheme_Object *v, const char *where) {
+  if (!changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) init_symset_changeWeight();
+  if (0) { }
+  else if (v == changeWeight_wxCHANGE_WEIGHT_sym) { return 1; }
+  else if (v == changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeWeight symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_changeWeight(int v) {
+  if (!changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) init_symset_changeWeight();
+  switch (v) {
+  case wxCHANGE_WEIGHT: return changeWeight_wxCHANGE_WEIGHT_sym;
+  case wxCHANGE_TOGGLE_WEIGHT: return changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym;
+  default: return NULL;
+  }
+}
+
+static Scheme_Object *changeUnderline_wxCHANGE_UNDERLINE_sym = NULL;
+
+static void init_symset_changeUnderline(void) {
+  changeUnderline_wxCHANGE_UNDERLINE_sym = scheme_intern_symbol("change-underline");
+}
+
+static int unbundle_symset_changeUnderline(Scheme_Object *v, const char *where) {
+  if (!changeUnderline_wxCHANGE_UNDERLINE_sym) init_symset_changeUnderline();
+  if (0) { }
+  else if (v == changeUnderline_wxCHANGE_UNDERLINE_sym) { return wxCHANGE_UNDERLINE; }
+  if (where) scheme_wrong_type(where, "changeUnderline symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_changeUnderline(Scheme_Object *v, const char *where) {
+  if (!changeUnderline_wxCHANGE_UNDERLINE_sym) init_symset_changeUnderline();
+  if (0) { }
+  else if (v == changeUnderline_wxCHANGE_UNDERLINE_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeUnderline symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_changeUnderline(int v) {
+  if (!changeUnderline_wxCHANGE_UNDERLINE_sym) init_symset_changeUnderline();
+  switch (v) {
+  case wxCHANGE_UNDERLINE: return changeUnderline_wxCHANGE_UNDERLINE_sym;
+  default: return NULL;
+  }
+}
+
+static Scheme_Object *changeSize_wxCHANGE_SIZE_sym = NULL;
+static Scheme_Object *changeSize_wxCHANGE_BIGGER_sym = NULL;
+static Scheme_Object *changeSize_wxCHANGE_SMALLER_sym = NULL;
+
+static void init_symset_changeSize(void) {
+  changeSize_wxCHANGE_SIZE_sym = scheme_intern_symbol("change-size");
+  changeSize_wxCHANGE_BIGGER_sym = scheme_intern_symbol("change-bigger");
+  changeSize_wxCHANGE_SMALLER_sym = scheme_intern_symbol("change-smaller");
+}
+
+static int unbundle_symset_changeSize(Scheme_Object *v, const char *where) {
+  if (!changeSize_wxCHANGE_SMALLER_sym) init_symset_changeSize();
+  if (0) { }
+  else if (v == changeSize_wxCHANGE_SIZE_sym) { return wxCHANGE_SIZE; }
+  else if (v == changeSize_wxCHANGE_BIGGER_sym) { return wxCHANGE_BIGGER; }
+  else if (v == changeSize_wxCHANGE_SMALLER_sym) { return wxCHANGE_SMALLER; }
+  if (where) scheme_wrong_type(where, "changeSize symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_changeSize(Scheme_Object *v, const char *where) {
+  if (!changeSize_wxCHANGE_SMALLER_sym) init_symset_changeSize();
+  if (0) { }
+  else if (v == changeSize_wxCHANGE_SIZE_sym) { return 1; }
+  else if (v == changeSize_wxCHANGE_BIGGER_sym) { return 1; }
+  else if (v == changeSize_wxCHANGE_SMALLER_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeSize symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_changeSize(int v) {
+  if (!changeSize_wxCHANGE_SMALLER_sym) init_symset_changeSize();
+  switch (v) {
+  case wxCHANGE_SIZE: return changeSize_wxCHANGE_SIZE_sym;
+  case wxCHANGE_BIGGER: return changeSize_wxCHANGE_BIGGER_sym;
+  case wxCHANGE_SMALLER: return changeSize_wxCHANGE_SMALLER_sym;
+  default: return NULL;
+  }
+}
+
+static Scheme_Object *changeAlign_wxCHANGE_ALIGNMENT_sym = NULL;
+
+static void init_symset_changeAlign(void) {
+  changeAlign_wxCHANGE_ALIGNMENT_sym = scheme_intern_symbol("change-alignment");
+}
+
+static int unbundle_symset_changeAlign(Scheme_Object *v, const char *where) {
+  if (!changeAlign_wxCHANGE_ALIGNMENT_sym) init_symset_changeAlign();
+  if (0) { }
+  else if (v == changeAlign_wxCHANGE_ALIGNMENT_sym) { return wxCHANGE_ALIGNMENT; }
+  if (where) scheme_wrong_type(where, "changeAlign symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_changeAlign(Scheme_Object *v, const char *where) {
+  if (!changeAlign_wxCHANGE_ALIGNMENT_sym) init_symset_changeAlign();
+  if (0) { }
+  else if (v == changeAlign_wxCHANGE_ALIGNMENT_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeAlign symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_changeAlign(int v) {
+  if (!changeAlign_wxCHANGE_ALIGNMENT_sym) init_symset_changeAlign();
+  switch (v) {
+  case wxCHANGE_ALIGNMENT: return changeAlign_wxCHANGE_ALIGNMENT_sym;
+  default: return NULL;
+  }
+}
+
 
 
   
-
-
 
 
 
@@ -705,21 +1167,100 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(Scheme_Object *obj, int n,  Scheme
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   class wxStyleDelta* r;
   objscheme_check_valid(obj);
-  int x0;
-  int x1;
+  if ((n >= 1) && istype_symset_changeFam(p[0], NULL)) {
+    int x0;
+    int x1;
 
-  
-  x0 = objscheme_unbundle_integer(p[0], "wx:style-delta%::set-delta");
-  if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "wx:style-delta%::set-delta");
-  } else
-    x1 = 0;
+    
+    if (n != 2) 
+      scheme_wrong_count("wx:style-delta%::set-delta (family case)", 2, 2, n, p);
+    x0 = unbundle_symset_changeFam(p[0], "wx:style-delta%::set-delta (family case)");;
+    x1 = unbundle_symset_family(p[1], "wx:style-delta%::set-delta (family case)");;
 
-  
-  r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDelta(x0, x1);
+    
+    r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDelta(x0, x1);
 
-  
-  
+    
+    
+  } else if ((n >= 1) && istype_symset_changeStyle(p[0], NULL)) {
+    int x0;
+    int x1;
+
+    
+    if (n != 2) 
+      scheme_wrong_count("wx:style-delta%::set-delta (style case)", 2, 2, n, p);
+    x0 = unbundle_symset_changeStyle(p[0], "wx:style-delta%::set-delta (style case)");;
+    x1 = unbundle_symset_style(p[1], "wx:style-delta%::set-delta (style case)");;
+
+    
+    r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDelta(x0, x1);
+
+    
+    
+  } else if ((n >= 1) && istype_symset_changeWeight(p[0], NULL)) {
+    int x0;
+    int x1;
+
+    
+    if (n != 2) 
+      scheme_wrong_count("wx:style-delta%::set-delta (weight case)", 2, 2, n, p);
+    x0 = unbundle_symset_changeWeight(p[0], "wx:style-delta%::set-delta (weight case)");;
+    x1 = unbundle_symset_weight(p[1], "wx:style-delta%::set-delta (weight case)");;
+
+    
+    r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDelta(x0, x1);
+
+    
+    
+  } else if ((n >= 1) && istype_symset_changeUnderline(p[0], NULL)) {
+    int x0;
+    Bool x1;
+
+    
+    if (n != 2) 
+      scheme_wrong_count("wx:style-delta%::set-delta (underline case)", 2, 2, n, p);
+    x0 = unbundle_symset_changeUnderline(p[0], "wx:style-delta%::set-delta (underline case)");;
+    x1 = objscheme_unbundle_bool(p[1], "wx:style-delta%::set-delta (underline case)");
+
+    
+    r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDelta(x0, x1);
+
+    
+    
+  } else if ((n >= 1) && istype_symset_changeSize(p[0], NULL)) {
+    int x0;
+    int x1;
+
+    
+    if (n != 2) 
+      scheme_wrong_count("wx:style-delta%::set-delta (size case)", 2, 2, n, p);
+    x0 = unbundle_symset_changeSize(p[0], "wx:style-delta%::set-delta (size case)");;
+    x1 = objscheme_unbundle_integer(p[1], "wx:style-delta%::set-delta (size case)");
+
+    
+    r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDelta(x0, x1);
+
+    
+    
+  } else  {
+    int x0;
+    int x1;
+
+    
+    if ((n > 1)) 
+      scheme_wrong_count("wx:style-delta%::set-delta (no change argument case)", 0, 1, n, p);
+    if (n > 0) {
+      x0 = unbundle_symset_changeNoArg(p[0], "wx:style-delta%::set-delta (no change argument case)");;
+    } else
+      x0 = wxCHANGE_NOTHING;
+
+    
+    r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDelta(x0, x1);
+
+    
+    
+  }
+
   return objscheme_bundle_wxStyleDelta(r);
 }
 
@@ -736,7 +1277,7 @@ static Scheme_Object *objscheme_wxStyleDelta_Getfamily(Scheme_Object *obj, int n
   else
     v = ((wxStyleDelta *)cobj->primdata)->family;
 
-  return scheme_make_integer(v);
+  return bundle_symset_family(v);;
 }
 
 static Scheme_Object *objscheme_wxStyleDelta_Setfamily(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -747,7 +1288,7 @@ static Scheme_Object *objscheme_wxStyleDelta_Setfamily(Scheme_Object *obj, int n
 
   if (n != 1) scheme_wrong_count("set-family", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:style-delta%::family");
+  v = unbundle_symset_family(p[0], "wx:style-delta%::family");;
   ((wxStyleDelta *)cobj->primdata)->family = v;
 
   return scheme_void;
@@ -856,7 +1397,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetweightOn(Scheme_Object *obj, int
   else
     v = ((wxStyleDelta *)cobj->primdata)->weightOn;
 
-  return scheme_make_integer(v);
+  return bundle_symset_weight(v);;
 }
 
 static Scheme_Object *objscheme_wxStyleDelta_SetweightOn(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -867,7 +1408,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetweightOn(Scheme_Object *obj, int
 
   if (n != 1) scheme_wrong_count("set-weight-on", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:style-delta%::weight-on");
+  v = unbundle_symset_weight(p[0], "wx:style-delta%::weight-on");;
   ((wxStyleDelta *)cobj->primdata)->weightOn = v;
 
   return scheme_void;
@@ -886,7 +1427,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetweightOff(Scheme_Object *obj, in
   else
     v = ((wxStyleDelta *)cobj->primdata)->weightOff;
 
-  return scheme_make_integer(v);
+  return bundle_symset_weight(v);;
 }
 
 static Scheme_Object *objscheme_wxStyleDelta_SetweightOff(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -897,7 +1438,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetweightOff(Scheme_Object *obj, in
 
   if (n != 1) scheme_wrong_count("set-weight-off", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:style-delta%::weight-off");
+  v = unbundle_symset_weight(p[0], "wx:style-delta%::weight-off");;
   ((wxStyleDelta *)cobj->primdata)->weightOff = v;
 
   return scheme_void;
@@ -916,7 +1457,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetstyleOn(Scheme_Object *obj, int 
   else
     v = ((wxStyleDelta *)cobj->primdata)->styleOn;
 
-  return scheme_make_integer(v);
+  return bundle_symset_style(v);;
 }
 
 static Scheme_Object *objscheme_wxStyleDelta_SetstyleOn(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -927,7 +1468,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetstyleOn(Scheme_Object *obj, int 
 
   if (n != 1) scheme_wrong_count("set-style-on", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:style-delta%::style-on");
+  v = unbundle_symset_style(p[0], "wx:style-delta%::style-on");;
   ((wxStyleDelta *)cobj->primdata)->styleOn = v;
 
   return scheme_void;
@@ -946,7 +1487,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetstyleOff(Scheme_Object *obj, int
   else
     v = ((wxStyleDelta *)cobj->primdata)->styleOff;
 
-  return scheme_make_integer(v);
+  return bundle_symset_style(v);;
 }
 
 static Scheme_Object *objscheme_wxStyleDelta_SetstyleOff(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -957,7 +1498,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetstyleOff(Scheme_Object *obj, int
 
   if (n != 1) scheme_wrong_count("set-style-off", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:style-delta%::style-off");
+  v = unbundle_symset_style(p[0], "wx:style-delta%::style-off");;
   ((wxStyleDelta *)cobj->primdata)->styleOff = v;
 
   return scheme_void;
@@ -1160,7 +1701,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetalignmentOn(Scheme_Object *obj, 
   else
     v = ((wxStyleDelta *)cobj->primdata)->alignmentOn;
 
-  return scheme_make_integer(v);
+  return bundle_symset_align(v);;
 }
 
 static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOn(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -1171,7 +1712,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOn(Scheme_Object *obj, 
 
   if (n != 1) scheme_wrong_count("set-alignment-on", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:style-delta%::alignment-on");
+  v = unbundle_symset_align(p[0], "wx:style-delta%::alignment-on");;
   ((wxStyleDelta *)cobj->primdata)->alignmentOn = v;
 
   return scheme_void;
@@ -1190,7 +1731,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetalignmentOff(Scheme_Object *obj,
   else
     v = ((wxStyleDelta *)cobj->primdata)->alignmentOff;
 
-  return scheme_make_integer(v);
+  return bundle_symset_align(v);;
 }
 
 static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOff(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -1201,7 +1742,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOff(Scheme_Object *obj,
 
   if (n != 1) scheme_wrong_count("set-alignment-off", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:style-delta%::alignment-off");
+  v = unbundle_symset_align(p[0], "wx:style-delta%::alignment-off");;
   ((wxStyleDelta *)cobj->primdata)->alignmentOff = v;
 
   return scheme_void;
@@ -1211,25 +1752,94 @@ static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOff(Scheme_Object *obj,
 static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxStyleDelta *realobj;
-  int x0;
-  int x1;
+  if ((n >= 1) && istype_symset_changeSize(p[0], NULL)) {
+    int x0;
+    int x1;
 
-  
-  if ((n > 2)) 
-    scheme_wrong_count("wx:style-delta%::initialization", 0, 2, n, p);
-  if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "wx:style-delta%::initialization");
-  } else
-    x0 = wxCHANGE_NOTHING;
-  if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "wx:style-delta%::initialization");
-  } else
-    x1 = 0;
+    
+    if (n != 2) 
+      scheme_wrong_count("wx:style-delta%::initialization (size case)", 2, 2, n, p);
+    x0 = unbundle_symset_changeSize(p[0], "wx:style-delta%::initialization (size case)");;
+    x1 = objscheme_unbundle_integer(p[1], "wx:style-delta%::initialization (size case)");
 
-  
-  realobj = new os_wxStyleDelta(obj, x0, x1);
-  
-  
+    
+    realobj = new os_wxStyleDelta(obj, x0, x1);
+    
+    
+  } else if ((n >= 1) && istype_symset_changeUnderline(p[0], NULL)) {
+    int x0;
+    Bool x1;
+
+    
+    if (n != 2) 
+      scheme_wrong_count("wx:style-delta%::initialization (underline case)", 2, 2, n, p);
+    x0 = unbundle_symset_changeUnderline(p[0], "wx:style-delta%::initialization (underline case)");;
+    x1 = objscheme_unbundle_bool(p[1], "wx:style-delta%::initialization (underline case)");
+
+    
+    realobj = new os_wxStyleDelta(obj, x0, x1);
+    
+    
+  } else if ((n >= 1) && istype_symset_changeWeight(p[0], NULL)) {
+    int x0;
+    int x1;
+
+    
+    if (n != 2) 
+      scheme_wrong_count("wx:style-delta%::initialization (weight case)", 2, 2, n, p);
+    x0 = unbundle_symset_changeWeight(p[0], "wx:style-delta%::initialization (weight case)");;
+    x1 = unbundle_symset_weight(p[1], "wx:style-delta%::initialization (weight case)");;
+
+    
+    realobj = new os_wxStyleDelta(obj, x0, x1);
+    
+    
+  } else if ((n >= 1) && istype_symset_changeStyle(p[0], NULL)) {
+    int x0;
+    int x1;
+
+    
+    if (n != 2) 
+      scheme_wrong_count("wx:style-delta%::initialization (style case)", 2, 2, n, p);
+    x0 = unbundle_symset_changeStyle(p[0], "wx:style-delta%::initialization (style case)");;
+    x1 = unbundle_symset_style(p[1], "wx:style-delta%::initialization (style case)");;
+
+    
+    realobj = new os_wxStyleDelta(obj, x0, x1);
+    
+    
+  } else if ((n >= 1) && istype_symset_changeFam(p[0], NULL)) {
+    int x0;
+    int x1;
+
+    
+    if (n != 2) 
+      scheme_wrong_count("wx:style-delta%::initialization (family case)", 2, 2, n, p);
+    x0 = unbundle_symset_changeFam(p[0], "wx:style-delta%::initialization (family case)");;
+    x1 = unbundle_symset_family(p[1], "wx:style-delta%::initialization (family case)");;
+
+    
+    realobj = new os_wxStyleDelta(obj, x0, x1);
+    
+    
+  } else  {
+    int x0;
+    int x1;
+
+    
+    if ((n > 1)) 
+      scheme_wrong_count("wx:style-delta%::initialization (no change argument case)", 0, 1, n, p);
+    if (n > 0) {
+      x0 = unbundle_symset_changeNoArg(p[0], "wx:style-delta%::initialization (no change argument case)");;
+    } else
+      x0 = wxCHANGE_NOTHING;
+
+    
+    realobj = new os_wxStyleDelta(obj, x0, x1);
+    
+    
+  }
+
   ((Scheme_Class_Object *)obj)->primdata = realobj;
   objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
   ((Scheme_Class_Object *)obj)->primflag = 1;
@@ -1258,7 +1868,7 @@ if (os_wxStyleDelta_class) {
  scheme_add_method(os_wxStyleDelta_class, "set-delta-foreground", os_wxStyleDeltaSetDeltaForeground);
  scheme_add_method(os_wxStyleDelta_class, "set-delta-background", os_wxStyleDeltaSetDeltaBackground);
  scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-face", os_wxStyleDeltaSetDeltaFace, 1, 1);
- scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta", os_wxStyleDeltaSetDelta, 1, 2);
+ scheme_add_method(os_wxStyleDelta_class, "set-delta", os_wxStyleDeltaSetDelta);
 
   scheme_add_method_w_arity(os_wxStyleDelta_class,"get-family", objscheme_wxStyleDelta_Getfamily, 0, 0);
   scheme_add_method_w_arity(os_wxStyleDelta_class,"set-family", objscheme_wxStyleDelta_Setfamily, 1, 1);
@@ -1298,26 +1908,6 @@ if (os_wxStyleDelta_class) {
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxStyleDelta, wxTYPE_STYLE_DELTA);
 
 }
-  scheme_install_xc_global("wx:const-base", scheme_make_integer(wxBASE), env);
-  scheme_install_xc_global("wx:const-change-nothing", scheme_make_integer(wxCHANGE_NOTHING), env);
-  scheme_install_xc_global("wx:const-change-normal", scheme_make_integer(wxCHANGE_NORMAL), env);
-  scheme_install_xc_global("wx:const-change-style", scheme_make_integer(wxCHANGE_STYLE), env);
-  scheme_install_xc_global("wx:const-change-weight", scheme_make_integer(wxCHANGE_WEIGHT), env);
-  scheme_install_xc_global("wx:const-change-underline", scheme_make_integer(wxCHANGE_UNDERLINE), env);
-  scheme_install_xc_global("wx:const-change-size", scheme_make_integer(wxCHANGE_SIZE), env);
-  scheme_install_xc_global("wx:const-change-bold", scheme_make_integer(wxCHANGE_BOLD), env);
-  scheme_install_xc_global("wx:const-change-italic", scheme_make_integer(wxCHANGE_ITALIC), env);
-  scheme_install_xc_global("wx:const-change-toggle-style", scheme_make_integer(wxCHANGE_TOGGLE_STYLE), env);
-  scheme_install_xc_global("wx:const-change-toggle-weight", scheme_make_integer(wxCHANGE_TOGGLE_WEIGHT), env);
-  scheme_install_xc_global("wx:const-change-toggle-underline", scheme_make_integer(wxCHANGE_TOGGLE_UNDERLINE), env);
-  scheme_install_xc_global("wx:const-change-bigger", scheme_make_integer(wxCHANGE_BIGGER), env);
-  scheme_install_xc_global("wx:const-change-smaller", scheme_make_integer(wxCHANGE_SMALLER), env);
-  scheme_install_xc_global("wx:const-change-family", scheme_make_integer(wxCHANGE_FAMILY), env);
-  scheme_install_xc_global("wx:const-change-alignment", scheme_make_integer(wxCHANGE_ALIGNMENT), env);
-  scheme_install_xc_global("wx:const-change-normal-colour", scheme_make_integer(wxCHANGE_NORMAL_COLOUR), env);
-  scheme_install_xc_global("wx:const-align-top", scheme_make_integer(wxALIGN_TOP), env);
-  scheme_install_xc_global("wx:const-align-bottom", scheme_make_integer(wxALIGN_BOTTOM), env);
-  scheme_install_xc_global("wx:const-align-center", scheme_make_integer(wxALIGN_CENTER), env);
 }
 
 int objscheme_istype_wxStyleDelta(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1923,9 +2513,6 @@ class wxStyle *objscheme_unbundle_wxStyle(Scheme_Object *obj, const char *where,
 
 
 
-
-// @ "notify-on-change" : long NotifyOnChange(wxStyleNotifyFunc f, void *data);
-// @ "forget-notification" : void ForgetNotification(long);
 
 
 

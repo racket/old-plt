@@ -7,35 +7,43 @@
 
 @HEADER
 
-#define NEW_EVENT_IDS 1
+@BEGINSYMBOLS eventClass > ONE
+@SYM "type-key-event" : wxTYPE_KEY_EVENT
+@SYM "type-command-event" : wxTYPE_COMMAND_EVENT
+@SYM "type-mouse-event" : wxTYPE_MOUSE_EVENT
+@ENDSYMBOLS
 
 @CLASSBASE wxEvent "wx:event":"wx:object"
 
-// @CREATOR ()
-
-// These are not ready to be used:
-// @ H "write-event" : bool WriteEvent(ostream%);
-// @ H "read-event" : bool ReadEvent(istream%);
-
-@IVAR "event-class" : long eventClass
-@IVAR "event-type" : long eventType
+@IVAR "event-class" : SYM[eventClass] eventClass
 @IVAR "event-object" : wxObject! eventObject
 
-// Don't know where else to put these:
-@CONSTANT "wx:const-event-type-scroll-top" : int wxEVENT_TYPE_SCROLL_TOP ## NEW_EVENT_IDS
-@CONSTANT "wx:const-event-type-scroll-bottom" : int wxEVENT_TYPE_SCROLL_BOTTOM ## NEW_EVENT_IDS
-@CONSTANT "wx:const-event-type-scroll-lineup" : int wxEVENT_TYPE_SCROLL_LINEUP ## NEW_EVENT_IDS
-@CONSTANT "wx:const-event-type-scroll-linedown" : int wxEVENT_TYPE_SCROLL_LINEDOWN ## NEW_EVENT_IDS
-@CONSTANT "wx:const-event-type-scroll-pageup" : int wxEVENT_TYPE_SCROLL_PAGEUP ## NEW_EVENT_IDS
-@CONSTANT "wx:const-event-type-scroll-pagedown" : int wxEVENT_TYPE_SCROLL_PAGEDOWN ## NEW_EVENT_IDS
-@CONSTANT "wx:const-event-type-scroll-thumbtrack" : int wxEVENT_TYPE_SCROLL_THUMBTRACK ## NEW_EVENT_IDS
-
-@CONSTANT "wx:const-type-key-event" : int wxTYPE_KEY_EVENT
-@CONSTANT "wx:const-type-command-event" : int wxTYPE_COMMAND_EVENT
-@CONSTANT "wx:const-type-mouse-event" : int wxTYPE_MOUSE_EVENT
+@SYM "event-type-scroll-top" : wxEVENT_TYPE_SCROLL_TOP
+@SYM "event-type-scroll-bottom" : wxEVENT_TYPE_SCROLL_BOTTOM
+@SYM "event-type-scroll-lineup" : wxEVENT_TYPE_SCROLL_LINEUP
+@SYM "event-type-scroll-linedown" : wxEVENT_TYPE_SCROLL_LINEDOWN
+@SYM "event-type-scroll-pageup" : wxEVENT_TYPE_SCROLL_PAGEUP
+@SYM "event-type-scroll-pagedown" : wxEVENT_TYPE_SCROLL_PAGEDOWN
+@SYM "event-type-scroll-thumbtrack" : wxEVENT_TYPE_SCROLL_THUMBTRACK
 
 @END
 
+@BEGINSYMBOLS commandType > ONE
+@SYM "event-type-button-command" : wxEVENT_TYPE_BUTTON_COMMAND
+@SYM "event-type-checkbox-command" : wxEVENT_TYPE_CHECKBOX_COMMAND
+@SYM "event-type-choice-command" : wxEVENT_TYPE_CHOICE_COMMAND
+@SYM "event-type-listbox-command" : wxEVENT_TYPE_LISTBOX_COMMAND
+@SYM "event-type-text-command" : wxEVENT_TYPE_TEXT_COMMAND
+@SYM "event-type-multitext-command" : wxEVENT_TYPE_MULTITEXT_COMMAND
+@SYM "event-type-menu-command" : wxEVENT_TYPE_MENU_COMMAND
+@SYM "event-type-slider-command" : wxEVENT_TYPE_SLIDER_COMMAND
+@SYM "event-type-radiobox-command" : wxEVENT_TYPE_RADIOBOX_COMMAND
+@SYM "event-type-text-enter-command" : wxEVENT_TYPE_TEXT_ENTER_COMMAND
+@SYM "event-type-set-focus" : wxEVENT_TYPE_SET_FOCUS
+@SYM "event-type-kill-focus" : wxEVENT_TYPE_KILL_FOCUS
+@SYM "event-type-scrollbar-command" : wxEVENT_TYPE_SCROLLBAR_COMMAND  
+@SYM "event-type-virt-listbox-command" : wxEVENT_TYPE_VIRT_LISTBOX_COMMAND
+@ENDSYMBOLS
 
 @CLASSBASE wxCommandEvent "wx:command-event":"wx:event"
 
@@ -46,37 +54,96 @@
 @ "checked?" : bool Checked();
 @ "is-selection?" : bool IsSelection();
 
+@IVAR "event-type" : SYM[commandType] eventType
 @IVAR "extra-long" : long extraLong
 @IVAR "command-int" : int commandInt
 @IVAR "command-string" : string commandString
 
-@CONSTANT "wx:const-event-type-button-command" : int wxEVENT_TYPE_BUTTON_COMMAND
-@CONSTANT "wx:const-event-type-checkbox-command" : int wxEVENT_TYPE_CHECKBOX_COMMAND
-@CONSTANT "wx:const-event-type-choice-command" : int wxEVENT_TYPE_CHOICE_COMMAND
-@CONSTANT "wx:const-event-type-listbox-command" : int wxEVENT_TYPE_LISTBOX_COMMAND
-@CONSTANT "wx:const-event-type-text-command" : int wxEVENT_TYPE_TEXT_COMMAND
-@CONSTANT "wx:const-event-type-multitext-command" : int wxEVENT_TYPE_MULTITEXT_COMMAND
-@CONSTANT "wx:const-event-type-menu-command" : int wxEVENT_TYPE_MENU_COMMAND
-@CONSTANT "wx:const-event-type-slider-command" : int wxEVENT_TYPE_SLIDER_COMMAND
-@CONSTANT "wx:const-event-type-radiobox-command" : int wxEVENT_TYPE_RADIOBOX_COMMAND
-@CONSTANT "wx:const-event-type-text-enter-command" : int wxEVENT_TYPE_TEXT_ENTER_COMMAND
-@CONSTANT "wx:const-event-type-set-focus" : int wxEVENT_TYPE_SET_FOCUS
-@CONSTANT "wx:const-event-type-kill-focus" : int wxEVENT_TYPE_KILL_FOCUS
-@CONSTANT "wx:const-event-type-scrollbar-command" : int wxEVENT_TYPE_SCROLLBAR_COMMAND   ## NEW_EVENT_IDS
-@CONSTANT "wx:const-event-type-virt-listbox-command" : int wxEVENT_TYPE_VIRT_LISTBOX_COMMAND   ## NEW_EVENT_IDS
-
 @END
 
+@BEGINSYMBOLS keyCode > ONE/CHAR
+@SYM "k-back" : WXK_BACK
+@SYM "k-tab" : WXK_TAB
+@SYM "k-return" : WXK_RETURN
+@SYM "k-escape" : WXK_ESCAPE
+@SYM "k-space" : WXK_SPACE
+@SYM "k-delete" : WXK_DELETE
+@SYM "k-start" : WXK_START
+@SYM "k-lbutton" : WXK_LBUTTON
+@SYM "k-rbutton" : WXK_RBUTTON
+@SYM "k-cancel" : WXK_CANCEL
+@SYM "k-mbutton" : WXK_MBUTTON
+@SYM "k-clear" : WXK_CLEAR
+@SYM "k-shift" : WXK_SHIFT
+@SYM "k-control" : WXK_CONTROL
+@SYM "k-menu" : WXK_MENU
+@SYM "k-pause" : WXK_PAUSE
+@SYM "k-capital" : WXK_CAPITAL
+@SYM "k-prior" : WXK_PRIOR
+@SYM "k-next" : WXK_NEXT
+@SYM "k-end" : WXK_END
+@SYM "k-home" : WXK_HOME
+@SYM "k-left" : WXK_LEFT
+@SYM "k-up" : WXK_UP
+@SYM "k-right" : WXK_RIGHT
+@SYM "k-down" : WXK_DOWN
+@SYM "k-select" : WXK_SELECT
+@SYM "k-print" : WXK_PRINT
+@SYM "k-execute" : WXK_EXECUTE
+@SYM "k-snapshot" : WXK_SNAPSHOT
+@SYM "k-insert" : WXK_INSERT
+@SYM "k-help" : WXK_HELP
+@SYM "k-numpad0" : WXK_NUMPAD0
+@SYM "k-numpad1" : WXK_NUMPAD1
+@SYM "k-numpad2" : WXK_NUMPAD2
+@SYM "k-numpad3" : WXK_NUMPAD3
+@SYM "k-numpad4" : WXK_NUMPAD4
+@SYM "k-numpad5" : WXK_NUMPAD5
+@SYM "k-numpad6" : WXK_NUMPAD6
+@SYM "k-numpad7" : WXK_NUMPAD7
+@SYM "k-numpad8" : WXK_NUMPAD8
+@SYM "k-numpad9" : WXK_NUMPAD9
+@SYM "k-multiply" : WXK_MULTIPLY
+@SYM "k-add" : WXK_ADD
+@SYM "k-separator" : WXK_SEPARATOR
+@SYM "k-subtract" : WXK_SUBTRACT
+@SYM "k-decimal" : WXK_DECIMAL
+@SYM "k-divide" : WXK_DIVIDE
+@SYM "k-f1" : WXK_F1
+@SYM "k-f2" : WXK_F2
+@SYM "k-f3" : WXK_F3
+@SYM "k-f4" : WXK_F4
+@SYM "k-f5" : WXK_F5
+@SYM "k-f6" : WXK_F6
+@SYM "k-f7" : WXK_F7
+@SYM "k-f8" : WXK_F8
+@SYM "k-f9" : WXK_F9
+@SYM "k-f10" : WXK_F10
+@SYM "k-f11" : WXK_F11
+@SYM "k-f12" : WXK_F12
+@SYM "k-f13" : WXK_F13
+@SYM "k-f14" : WXK_F14
+@SYM "k-f15" : WXK_F15
+@SYM "k-f16" : WXK_F16
+@SYM "k-f17" : WXK_F17
+@SYM "k-f18" : WXK_F18
+@SYM "k-f19" : WXK_F19
+@SYM "k-f20" : WXK_F20
+@SYM "k-f21" : WXK_F21
+@SYM "k-f22" : WXK_F22
+@SYM "k-f23" : WXK_F23
+@SYM "k-f24" : WXK_F24
+@SYM "k-numlock" : WXK_NUMLOCK
+@SYM "k-scroll" : WXK_SCROLL
+@ENDSYMBOLS
 
 @CLASSBASE wxKeyEvent "wx:key-event":"wx:event"
 
 @CREATOR (int);
 
-// @ "control-down?" : bool ControlDown();
-// @ "shift-down?" : bool ShiftDown();
 @ "key-code" : long KeyCode();
 
-@IVAR "key-code" : long keyCode
+@IVAR "key-code" : SYM[keyCode] keyCode
 @IVAR "shift-down" : bool shiftDown
 @IVAR "control-down" : bool controlDown
 @IVAR "meta-down" : bool metaDown
@@ -86,83 +153,22 @@
 @IVAR "x" : float x
 @IVAR "y" : float y
 
-@CONSTANT "wx:const-event-type-char" : int wxEVENT_TYPE_CHAR
-
-@CONSTANT "wx:const-k-back" : int WXK_BACK
-@CONSTANT "wx:const-k-tab" : int WXK_TAB
-@CONSTANT "wx:const-k-return" : int WXK_RETURN
-@CONSTANT "wx:const-k-escape" : int WXK_ESCAPE
-@CONSTANT "wx:const-k-space" : int WXK_SPACE
-@CONSTANT "wx:const-k-delete" : int WXK_DELETE
-@CONSTANT "wx:const-k-start" : int WXK_START
-@CONSTANT "wx:const-k-lbutton" : int WXK_LBUTTON
-@CONSTANT "wx:const-k-rbutton" : int WXK_RBUTTON
-@CONSTANT "wx:const-k-cancel" : int WXK_CANCEL
-@CONSTANT "wx:const-k-mbutton" : int WXK_MBUTTON
-@CONSTANT "wx:const-k-clear" : int WXK_CLEAR
-@CONSTANT "wx:const-k-shift" : int WXK_SHIFT
-@CONSTANT "wx:const-k-control" : int WXK_CONTROL
-@CONSTANT "wx:const-k-menu" : int WXK_MENU
-@CONSTANT "wx:const-k-pause" : int WXK_PAUSE
-@CONSTANT "wx:const-k-capital" : int WXK_CAPITAL
-@CONSTANT "wx:const-k-prior" : int WXK_PRIOR
-@CONSTANT "wx:const-k-next" : int WXK_NEXT
-@CONSTANT "wx:const-k-end" : int WXK_END
-@CONSTANT "wx:const-k-home" : int WXK_HOME
-@CONSTANT "wx:const-k-left" : int WXK_LEFT
-@CONSTANT "wx:const-k-up" : int WXK_UP
-@CONSTANT "wx:const-k-right" : int WXK_RIGHT
-@CONSTANT "wx:const-k-down" : int WXK_DOWN
-@CONSTANT "wx:const-k-select" : int WXK_SELECT
-@CONSTANT "wx:const-k-print" : int WXK_PRINT
-@CONSTANT "wx:const-k-execute" : int WXK_EXECUTE
-@CONSTANT "wx:const-k-snapshot" : int WXK_SNAPSHOT
-@CONSTANT "wx:const-k-insert" : int WXK_INSERT
-@CONSTANT "wx:const-k-help" : int WXK_HELP
-@CONSTANT "wx:const-k-numpad0" : int WXK_NUMPAD0
-@CONSTANT "wx:const-k-numpad1" : int WXK_NUMPAD1
-@CONSTANT "wx:const-k-numpad2" : int WXK_NUMPAD2
-@CONSTANT "wx:const-k-numpad3" : int WXK_NUMPAD3
-@CONSTANT "wx:const-k-numpad4" : int WXK_NUMPAD4
-@CONSTANT "wx:const-k-numpad5" : int WXK_NUMPAD5
-@CONSTANT "wx:const-k-numpad6" : int WXK_NUMPAD6
-@CONSTANT "wx:const-k-numpad7" : int WXK_NUMPAD7
-@CONSTANT "wx:const-k-numpad8" : int WXK_NUMPAD8
-@CONSTANT "wx:const-k-numpad9" : int WXK_NUMPAD9
-@CONSTANT "wx:const-k-multiply" : int WXK_MULTIPLY
-@CONSTANT "wx:const-k-add" : int WXK_ADD
-@CONSTANT "wx:const-k-separator" : int WXK_SEPARATOR
-@CONSTANT "wx:const-k-subtract" : int WXK_SUBTRACT
-@CONSTANT "wx:const-k-decimal" : int WXK_DECIMAL
-@CONSTANT "wx:const-k-divide" : int WXK_DIVIDE
-@CONSTANT "wx:const-k-f1" : int WXK_F1
-@CONSTANT "wx:const-k-f2" : int WXK_F2
-@CONSTANT "wx:const-k-f3" : int WXK_F3
-@CONSTANT "wx:const-k-f4" : int WXK_F4
-@CONSTANT "wx:const-k-f5" : int WXK_F5
-@CONSTANT "wx:const-k-f6" : int WXK_F6
-@CONSTANT "wx:const-k-f7" : int WXK_F7
-@CONSTANT "wx:const-k-f8" : int WXK_F8
-@CONSTANT "wx:const-k-f9" : int WXK_F9
-@CONSTANT "wx:const-k-f10" : int WXK_F10
-@CONSTANT "wx:const-k-f11" : int WXK_F11
-@CONSTANT "wx:const-k-f12" : int WXK_F12
-@CONSTANT "wx:const-k-f13" : int WXK_F13
-@CONSTANT "wx:const-k-f14" : int WXK_F14
-@CONSTANT "wx:const-k-f15" : int WXK_F15
-@CONSTANT "wx:const-k-f16" : int WXK_F16
-@CONSTANT "wx:const-k-f17" : int WXK_F17
-@CONSTANT "wx:const-k-f18" : int WXK_F18
-@CONSTANT "wx:const-k-f19" : int WXK_F19
-@CONSTANT "wx:const-k-f20" : int WXK_F20
-@CONSTANT "wx:const-k-f21" : int WXK_F21
-@CONSTANT "wx:const-k-f22" : int WXK_F22
-@CONSTANT "wx:const-k-f23" : int WXK_F23
-@CONSTANT "wx:const-k-f24" : int WXK_F24
-@CONSTANT "wx:const-k-numlock" : int WXK_NUMLOCK
-@CONSTANT "wx:const-k-scroll" : int WXK_SCROLL
-
 @END
+
+@BEGINSYMBOLS mouseEventType > ONE
+@SYM "event-type-left-down" : wxEVENT_TYPE_LEFT_DOWN
+@SYM "event-type-left-up" : wxEVENT_TYPE_LEFT_UP
+@SYM "event-type-middle-down" : wxEVENT_TYPE_MIDDLE_DOWN
+@SYM "event-type-middle-up" : wxEVENT_TYPE_MIDDLE_UP
+@SYM "event-type-right-down" : wxEVENT_TYPE_RIGHT_DOWN
+@SYM "event-type-right-up" : wxEVENT_TYPE_RIGHT_UP
+@SYM "event-type-motion" : wxEVENT_TYPE_MOTION
+@SYM "event-type-enter-window" : wxEVENT_TYPE_ENTER_WINDOW
+@SYM "event-type-leave-window" : wxEVENT_TYPE_LEAVE_WINDOW
+@SYM "event-type-left-dclick" : wxEVENT_TYPE_LEFT_DCLICK
+@SYM "event-type-middle-dclick" : wxEVENT_TYPE_MIDDLE_DCLICK
+@SYM "event-type-right-dclick" : wxEVENT_TYPE_RIGHT_DCLICK
+@ENDSYMBOLS
 
 @CLASSBASE wxMouseEvent "wx:mouse-event":"wx:event"
 
@@ -172,24 +178,13 @@
 @ "button-d-click?" : bool ButtonDClick(int=-1);
 @ "button-down?" : bool ButtonDown(int=-1);
 @ "button-up?" : bool ButtonUp(int=-1);
-// @ "control-down?" : bool ControlDown();
-// @ "shift-down?" : bool ShiftDown();
 @ "dragging?" : bool Dragging();
 @ "entering?" : bool Entering();
 @ "leaving?" : bool Leaving();
 @ "is-button?" : bool IsButton();
-// @ "left-down?" : bool LeftDown();
-// @ "left-is-down?" : bool LeftIsDown();
-// @ "left-up?" : bool LeftUp();
-// @ "middle-down?" : bool MiddleDown();
-// @ "middle-is-down?" : bool MiddleIsDown();
-// @ "middle-up?" : bool MiddleUp();
 @ "moving?" : bool Moving();
-// @ "right-down?" : bool RightDown();
-// @ "right-is-down?" : bool RightIsDown();
-// @ "right-up?" : bool RightUp();
-// @ "position" : void Position(float*,float*);
 
+@IVAR "event-type" : SYM[mouseEventType] eventType
 @IVAR "left-down" : bool leftDown
 @IVAR "middle-down" : bool middleDown
 @IVAR "right-down" : bool rightDown
@@ -200,18 +195,5 @@
 @IVAR "x" : float x
 @IVAR "y" : float y
 @IVAR "time-stamp" : long timeStamp
-
-@CONSTANT "wx:const-event-type-left-down" : int wxEVENT_TYPE_LEFT_DOWN
-@CONSTANT "wx:const-event-type-left-up" : int wxEVENT_TYPE_LEFT_UP
-@CONSTANT "wx:const-event-type-middle-down" : int wxEVENT_TYPE_MIDDLE_DOWN
-@CONSTANT "wx:const-event-type-middle-up" : int wxEVENT_TYPE_MIDDLE_UP
-@CONSTANT "wx:const-event-type-right-down" : int wxEVENT_TYPE_RIGHT_DOWN
-@CONSTANT "wx:const-event-type-right-up" : int wxEVENT_TYPE_RIGHT_UP
-@CONSTANT "wx:const-event-type-motion" : int wxEVENT_TYPE_MOTION
-@CONSTANT "wx:const-event-type-enter-window" : int wxEVENT_TYPE_ENTER_WINDOW
-@CONSTANT "wx:const-event-type-leave-window" : int wxEVENT_TYPE_LEAVE_WINDOW
-@CONSTANT "wx:const-event-type-left-dclick" : int wxEVENT_TYPE_LEFT_DCLICK
-@CONSTANT "wx:const-event-type-middle-dclick" : int wxEVENT_TYPE_MIDDLE_DCLICK
-@CONSTANT "wx:const-event-type-right-dclick" : int wxEVENT_TYPE_RIGHT_DCLICK
 
 @END

@@ -21,7 +21,6 @@
 
 
 
-// @ "centre" : void Centre(int=wxHORIZONTAL);
 
 
 
@@ -378,18 +377,20 @@ Bool os_wxMessage::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -411,18 +412,20 @@ Bool os_wxMessage::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -444,18 +447,20 @@ void os_wxMessage::OnSize(int x0, int x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxMessage::OnSize(x0, x1);
+wxMessage::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -476,16 +481,18 @@ void os_wxMessage::OnSetFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxMessage::OnSetFocus();
+wxMessage::OnSetFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -506,16 +513,18 @@ void os_wxMessage::OnKillFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxMessage::OnKillFocus();
+wxMessage::OnKillFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -826,5 +835,4 @@ class wxMessage *objscheme_unbundle_wxMessage(Scheme_Object *obj, const char *wh
   else
     return (wxMessage *)o->primdata;
 }
-
 

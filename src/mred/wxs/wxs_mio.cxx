@@ -187,17 +187,19 @@ long os_wxMediaStreamInBase::Read(char* x0, long x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return 0;
+return 0;
   } else {
   
   p[0] = NULL;
   p[0] = ArrayToVector(x0, NULL, x1);
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   VectorToArray(x0, p[0], &x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -219,16 +221,18 @@ Bool os_wxMediaStreamInBase::Bad()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return 0;
+return 0;
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -250,17 +254,19 @@ void os_wxMediaStreamInBase::Skip(long x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -281,17 +287,19 @@ void os_wxMediaStreamInBase::Seek(long x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -312,16 +320,18 @@ long os_wxMediaStreamInBase::Tell()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return 0;
+return 0;
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -575,17 +585,19 @@ void os_wxMediaStreamOutBase::Write(char* x0, long x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = NULL;
   p[0] = __MakecharList(x0, x1);
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -606,16 +618,18 @@ Bool os_wxMediaStreamOutBase::Bad()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return 0;
+return 0;
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -637,17 +651,19 @@ void os_wxMediaStreamOutBase::Seek(long x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -668,16 +684,18 @@ long os_wxMediaStreamOutBase::Tell()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return 0;
+return 0;
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1142,21 +1160,10 @@ static double GetInexact(wxMediaStreamIn *s)
 
 
   
-// This is too dangerous: it is going away
-// @ "get" : wxMediaStreamIn% Get(long*////long,string);
-
-// @ "get" : wxMediaStreamIn% Get(short+);
-// @ "get" : wxMediaStreamIn% Get(int+);
-// @ "get" : wxMediaStreamIn% Get(char+);
-// @ "get" : wxMediaStreamIn% Get(float+);
 
 
 
 
-// @ ">>" : wxMediaStreamIn% operator>>(short+);
-// @ ">>" : wxMediaStreamIn% operator>>(int+);
-// @ ">>" : wxMediaStreamIn% operator>>(char+);
-// @ ">>" : wxMediaStreamIn% operator>>(float+);
 
 
 
@@ -1582,16 +1589,8 @@ class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *obj, co
 
 
 
-// @ "put" : wxMediaStreamOut% Put(short);
-// @ "put" : wxMediaStreamOut% Put(int);
-// @ "put" : wxMediaStreamOut% Put(char);
-// @ "put" : wxMediaStreamOut% Put(float);
 
 
-// @ "<<" : wxMediaStreamOut% operator<<(short);
-// @ "<<" : wxMediaStreamOut% operator<<(int);
-// @ "<<" : wxMediaStreamOut% operator<<(byte);
-// @ "<<" : wxMediaStreamOut% operator<<(float);
 
 
 

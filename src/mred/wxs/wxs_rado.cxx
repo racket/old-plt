@@ -18,6 +18,43 @@
 
 
 
+static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
+static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
+
+static void init_symset_orientation(void) {
+  orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+}
+
+static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  if (0) { }
+  else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
+  else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
+  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_orientation(Scheme_Object *v, const char *where) {
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  if (0) { }
+  else if (v == orientation_wxVERTICAL_sym) { return 1; }
+  else if (v == orientation_wxHORIZONTAL_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_orientation(int v) {
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  switch (v) {
+  case wxVERTICAL: return orientation_wxVERTICAL_sym;
+  case wxHORIZONTAL: return orientation_wxHORIZONTAL_sym;
+  default: return NULL;
+  }
+}
+
+
+
 
 #define CB_FUNCTYPE wxFunction 
 
@@ -237,8 +274,8 @@ class os_wxRadioBox : public wxRadioBox {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxRadioBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string* x8 = NULL, int x9 = 0, long x10 = wxVERTICAL, string x11 = "radioBox");
-  os_wxRadioBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, wxBitmap** x8, int x9 = 0, long x10 = wxVERTICAL, string x11 = "radioBox");
+  os_wxRadioBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string* x8 = NULL, int x9 = 0, int x10 = wxVERTICAL, string x11 = "radioBox");
+  os_wxRadioBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, wxBitmap** x8, int x9 = 0, int x10 = wxVERTICAL, string x11 = "radioBox");
   ~os_wxRadioBox();
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
@@ -249,7 +286,7 @@ class os_wxRadioBox : public wxRadioBox {
 
 Scheme_Object *os_wxRadioBox_class;
 
-os_wxRadioBox::os_wxRadioBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, string* x8, int x9, long x10, string x11)
+os_wxRadioBox::os_wxRadioBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, string* x8, int x9, int x10, string x11)
 : wxRadioBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)
 {
   __gc_external = (void *)o;
@@ -257,7 +294,7 @@ os_wxRadioBox::os_wxRadioBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1
   objscheme_note_creation(o);
 }
 
-os_wxRadioBox::os_wxRadioBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, wxBitmap** x8, int x9, long x10, string x11)
+os_wxRadioBox::os_wxRadioBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, wxBitmap** x8, int x9, int x10, string x11)
 : wxRadioBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)
 {
   __gc_external = (void *)o;
@@ -283,18 +320,20 @@ Bool os_wxRadioBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -316,18 +355,20 @@ Bool os_wxRadioBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -349,18 +390,20 @@ void os_wxRadioBox::OnSize(int x0, int x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxRadioBox::OnSize(x0, x1);
+wxRadioBox::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -381,16 +424,18 @@ void os_wxRadioBox::OnSetFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxRadioBox::OnSetFocus();
+wxRadioBox::OnSetFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -411,16 +456,18 @@ void os_wxRadioBox::OnKillFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxRadioBox::OnKillFocus();
+wxRadioBox::OnKillFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -715,7 +762,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     int x7;
     wxBitmap** x8;
     int x9;
-    long x10;
+    int x10;
     string x11;
 
     Scheme_Object *tmp_callback = NULL;
@@ -734,7 +781,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     } else
       x9 = 0;
     if (n > 9) {
-      x10 = objscheme_unbundle_integer(p[9], "wx:radio-box%::initialization (bitmap list case)");
+      x10 = unbundle_symset_orientation(p[9], "wx:radio-box%::initialization (bitmap list case)");;
     } else
       x10 = wxVERTICAL;
     if (n > 10) {
@@ -757,7 +804,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     int x7;
     string* x8;
     int x9;
-    long x10;
+    int x10;
     string x11;
 
     Scheme_Object *tmp_callback = NULL;
@@ -791,7 +838,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     } else
       x9 = 0;
     if (n > 9) {
-      x10 = objscheme_unbundle_integer(p[9], "wx:radio-box%::initialization (string list case)");
+      x10 = unbundle_symset_orientation(p[9], "wx:radio-box%::initialization (string list case)");;
     } else
       x10 = wxVERTICAL;
     if (n > 10) {

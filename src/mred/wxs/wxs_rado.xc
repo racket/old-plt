@@ -7,6 +7,8 @@
 
 @HEADER
 
+@INCLUDE wxs_ornt.xci
+
 @CLASSBASE wxRadioBox "wx:radio-box":"wx:item"
 
 @SET CALLBACK_CLASS = wxRadioBox
@@ -30,8 +32,8 @@
 
 @MACRO spBitmapList = (listof wxBitmap-object)
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cStringList,int=0,long=wxVERTICAL,string="radioBox"); : : ubCallbackSetup/NOZERO[5]|NOZERO[6]|glueListSet[string.7.8.7."wx:radio-box%::initialization"]/glueCleanup[8]/ubCallbackCreatorFinish <> string list
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int,int,int,int,-int,wxBitmap*[]/bList/ubList/cBitmapList//spBitmapList,int=0,long=wxVERTICAL,string="radioBox"); : : ubCallbackSetup/NOZERO[5]|NOZERO[6]|glueListSet[wxBitmap.7.8.7."wx:radio-box%::initialization"]/glueCleanup[8]/ubCallbackCreatorFinish <> bitmap list
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cStringList,int=0,SYM[orientation]=wxVERTICAL,string="radioBox"); : : ubCallbackSetup/NOZERO[5]|NOZERO[6]|glueListSet[string.7.8.7."wx:radio-box%::initialization"]/glueCleanup[8]/ubCallbackCreatorFinish <> string list
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int,int,int,int,-int,wxBitmap*[]/bList/ubList/cBitmapList//spBitmapList,int=0,SYM[orientation]=wxVERTICAL,string="radioBox"); : : ubCallbackSetup/NOZERO[5]|NOZERO[6]|glueListSet[wxBitmap.7.8.7."wx:radio-box%::initialization"]/glueCleanup[8]/ubCallbackCreatorFinish <> bitmap list
 
 @INCLUDE wxs_item.xci
 

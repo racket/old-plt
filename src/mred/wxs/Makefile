@@ -74,12 +74,12 @@ XCDEPEND = ../../mzscheme/utils/xctocc ../../mzscheme/utils/parse.pl wxs.xci com
 
 CB_DEPEND = cb_start.xci cb_end.xci cbgen_s.xci
 LIST_DEPEND = list.xci
-DRAW_DEPEND = wxs_draw.xci wxs_drwf.xci $(LIST_DEPEND)
+DRAW_DEPEND = wxs_draw.xci wxs_drwf.xci wxs_drws.xci $(LIST_DEPEND)
 ITEM_DEPEND = wxs_item.xci wxs_win.xci
 
 wxscomon.cxx : wxscomon.xc $(XCDEPEND)
 	$(XCTOCXX) wxscomon.xc
-wxs_bmap.cxx : wxs_bmap.xc $(XCDEPEND) $(LIST_DEPEND)
+wxs_bmap.cxx : wxs_bmap.xc wxs_bmt.xci $(XCDEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) wxs_bmap.xc
 wxs_butn.cxx : wxs_butn.xc  $(XCDEPEND) $(CB_DEPEND) $(ITEM_DEPEND)
 	$(XCTOCXX) wxs_butn.xc
@@ -115,11 +115,11 @@ wxs_lbox.cxx : wxs_lbox.xc  range.xci $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND) $(
 	$(XCTOCXX) wxs_lbox.xc
 wxs_list.cxx : wxs_list.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_list.xc
-wxs_madm.cxx : wxs_madm.xc wxs_madm.xci wxs_win.xci $(XCDEPEND)
+wxs_madm.cxx : wxs_madm.xc wxs_madm.xci wxs_fcs.xci wxs_win.xci $(XCDEPEND)
 	$(XCTOCXX) wxs_madm.xc
-wxs_medi.cxx : wxs_medi.xc wxs_mbuf.xci $(XCDEPEND) $(LIST_DEPEND)
+wxs_medi.cxx : wxs_medi.xc wxs_mbuf.xci wxs_fcs.xci $(XCDEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) wxs_medi.xc
-wxs_mede.cxx : wxs_mede.xc wxs_mbuf.xci $(XCDEPEND) $(LIST_DEPEND)
+wxs_mede.cxx : wxs_mede.xc wxs_mbuf.xci wxs_fcs.xci $(XCDEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) wxs_mede.xc
 wxs_menu.cxx : wxs_menu.xc  $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) wxs_menu.xc
@@ -127,7 +127,7 @@ wxs_mio.cxx : wxs_mio.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_mio.xc
 wxs_misc.cxx : wxs_misc.xc  $(XCDEPEND) $(CB_DEPEND)
 	$(XCTOCXX) wxs_misc.xc
-wxs_mpb.cxx : wxs_mpb.xc  wxs_mbuf.xci $(XCDEPEND)
+wxs_mpb.cxx : wxs_mpb.xc  wxs_mbuf.xci wxs_fcs.xci $(XCDEPEND)
 	$(XCTOCXX) wxs_mpb.xc
 wxs_obj.cxx : wxs_obj.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_obj.xc
@@ -137,7 +137,7 @@ wxs_rado.cxx : wxs_rado.xc  range.xci $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND) $(
 	$(XCTOCXX) wxs_rado.xc
 wxs_slid.cxx : wxs_slid.xc  $(XCDEPEND) $(CB_DEPEND) $(ITEM_DEPEND)
 	$(XCTOCXX) wxs_slid.xc
-wxs_snip.cxx : wxs_snip.xc  wxs_snip.xci $(XCDEPEND)
+wxs_snip.cxx : wxs_snip.xc  wxs_snip.xci wxs_bmt.xci $(XCDEPEND)
 	$(XCTOCXX) wxs_snip.xc
 wxs_styl.cxx : wxs_styl.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_styl.xc

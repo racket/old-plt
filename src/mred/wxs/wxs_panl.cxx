@@ -26,6 +26,89 @@
 #define INTERACT_METHODS 0
 #endif
 
+static Scheme_Object *panelFlags_wxBORDER_sym = NULL;
+
+static void init_symset_panelFlags(void) {
+  panelFlags_wxBORDER_sym = scheme_intern_symbol("border");
+}
+
+static int unbundle_symset_panelFlags(Scheme_Object *v, const char *where) {
+  if (!panelFlags_wxBORDER_sym) init_symset_panelFlags();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == panelFlags_wxBORDER_sym) { result = result | wxBORDER; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "panelFlags symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_panelFlags(Scheme_Object *v, const char *where) {
+  if (!panelFlags_wxBORDER_sym) init_symset_panelFlags();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == panelFlags_wxBORDER_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "panelFlags symbol list", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_panelFlags(int v) {
+  if (!panelFlags_wxBORDER_sym) init_symset_panelFlags();
+  Scheme_Object *l = scheme_null;
+  if (v & wxBORDER) l = scheme_make_pair(panelFlags_wxBORDER_sym, l);
+  return l;
+}
+
+
+
+static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
+static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
+
+static void init_symset_orientation(void) {
+  orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+}
+
+static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  if (0) { }
+  else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
+  else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
+  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_orientation(Scheme_Object *v, const char *where) {
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  if (0) { }
+  else if (v == orientation_wxVERTICAL_sym) { return 1; }
+  else if (v == orientation_wxHORIZONTAL_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_orientation(int v) {
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  switch (v) {
+  case wxVERTICAL: return orientation_wxVERTICAL_sym;
+  case wxHORIZONTAL: return orientation_wxHORIZONTAL_sym;
+  default: return NULL;
+  }
+}
+
+
 /* The derivation wx:panel -> wx:canvas is a lie for Xt */
 
 
@@ -62,18 +145,11 @@
 
 
 
-// @ "advance-cursor" : void AdvanceCursor(wxWindow!); ## !defined(wx_xt)
-// @ "get-child" : wxObject! GetChild(int); ## !defined(wx_xt)
-
-// @CONSTANT "wx:const-multiple-mask" : long wxMULTIPLE_MASK ## !defined(wx_xt)
-// @CONSTANT "wx:const-sb-mask" : long wxSB_MASK ## !defined(wx_xt)
-// @CONSTANT "wx:const-editable" : long wxEDITABLE ## !defined(wx_xt)
-
 class os_wxPanel : public wxPanel {
  public:
 
-  os_wxPanel(Scheme_Object * obj, class wxFrame* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, long x5 = 0, string x6 = "panel");
-  os_wxPanel(Scheme_Object * obj, class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, long x5 = 0, string x6 = "panel");
+  os_wxPanel(Scheme_Object * obj, class wxFrame* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "panel");
+  os_wxPanel(Scheme_Object * obj, class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "panel");
   ~os_wxPanel();
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
@@ -88,7 +164,7 @@ class os_wxPanel : public wxPanel {
 
 Scheme_Object *os_wxPanel_class;
 
-os_wxPanel::os_wxPanel(Scheme_Object * o, class wxFrame* x0, int x1, int x2, int x3, int x4, long x5, string x6)
+os_wxPanel::os_wxPanel(Scheme_Object * o, class wxFrame* x0, int x1, int x2, int x3, int x4, int x5, string x6)
 : wxPanel(x0, x1, x2, x3, x4, x5, x6)
 {
   __gc_external = (void *)o;
@@ -96,7 +172,7 @@ os_wxPanel::os_wxPanel(Scheme_Object * o, class wxFrame* x0, int x1, int x2, int
   objscheme_note_creation(o);
 }
 
-os_wxPanel::os_wxPanel(Scheme_Object * o, class wxPanel* x0, int x1, int x2, int x3, int x4, long x5, string x6)
+os_wxPanel::os_wxPanel(Scheme_Object * o, class wxPanel* x0, int x1, int x2, int x3, int x4, int x5, string x6)
 : wxPanel(x0, x1, x2, x3, x4, x5, x6)
 {
   __gc_external = (void *)o;
@@ -122,17 +198,19 @@ void os_wxPanel::OnChar(class wxKeyEvent& x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxPanel::OnChar(x0);
+wxPanel::OnChar(x0);
   } else {
   
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -153,17 +231,19 @@ void os_wxPanel::OnEvent(class wxMouseEvent& x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxPanel::OnEvent(x0);
+wxPanel::OnEvent(x0);
   } else {
   
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -184,16 +264,18 @@ void os_wxPanel::OnPaint()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxPanel::OnPaint();
+wxPanel::OnPaint();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -214,17 +296,19 @@ void os_wxPanel::OnDefaultAction(class wxItem* x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxPanel::OnDefaultAction(x0);
+wxPanel::OnDefaultAction(x0);
   } else {
   
   p[0] = objscheme_bundle_wxItem(x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -245,18 +329,20 @@ Bool os_wxPanel::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -278,18 +364,20 @@ Bool os_wxPanel::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -311,18 +399,20 @@ void os_wxPanel::OnSize(int x0, int x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxPanel::OnSize(x0, x1);
+wxPanel::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -343,16 +433,18 @@ void os_wxPanel::OnSetFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxPanel::OnSetFocus();
+wxPanel::OnSetFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -373,16 +465,18 @@ void os_wxPanel::OnKillFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxPanel::OnKillFocus();
+wxPanel::OnKillFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -734,7 +828,7 @@ static Scheme_Object *os_wxPanelGetLabelPosition(Scheme_Object *obj, int n,  Sch
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_orientation(r);;
 }
 
 #pragma argsused
@@ -745,7 +839,7 @@ static Scheme_Object *os_wxPanelSetLabelPosition(Scheme_Object *obj, int n,  Sch
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:panel%::set-label-position");
+  x0 = unbundle_symset_orientation(p[0], "wx:panel%::set-label-position");;
 
   
   ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetLabelPosition(x0);
@@ -1041,7 +1135,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
     int x2;
     int x3;
     int x4;
-    long x5;
+    int x5;
     string x6;
 
     
@@ -1065,7 +1159,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = objscheme_unbundle_integer(p[5], "wx:panel%::initialization (panel parent case)");
+      x5 = unbundle_symset_panelFlags(p[5], "wx:panel%::initialization (panel parent case)");;
     } else
       x5 = 0;
     if (n > 6) {
@@ -1083,7 +1177,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
     int x2;
     int x3;
     int x4;
-    long x5;
+    int x5;
     string x6;
 
     
@@ -1107,7 +1201,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = objscheme_unbundle_integer(p[5], "wx:panel%::initialization (frame case)");
+      x5 = unbundle_symset_panelFlags(p[5], "wx:panel%::initialization (frame case)");;
     } else
       x5 = 0;
     if (n > 6) {
@@ -1182,17 +1276,6 @@ if (os_wxPanel_class) {
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxPanel, wxTYPE_PANEL);
 
 }
-  scheme_install_xc_global("wx:const-single", scheme_make_integer(wxSINGLE), env);
-  scheme_install_xc_global("wx:const-multiple", scheme_make_integer(wxMULTIPLE), env);
-  scheme_install_xc_global("wx:const-extended", scheme_make_integer(wxEXTENDED), env);
-  scheme_install_xc_global("wx:const-needed-sb", scheme_make_integer(wxNEEDED_SB), env);
-  scheme_install_xc_global("wx:const-always-sb", scheme_make_integer(wxALWAYS_SB), env);
-  scheme_install_xc_global("wx:const-process-enter", scheme_make_integer(wxPROCESS_ENTER), env);
-  scheme_install_xc_global("wx:const-password", scheme_make_integer(wxPASSWORD), env);
-  scheme_install_xc_global("wx:const-vscroll", scheme_make_integer(wxVSCROLL), env);
-  scheme_install_xc_global("wx:const-hscroll", scheme_make_integer(wxHSCROLL), env);
-  scheme_install_xc_global("wx:const-caption", scheme_make_integer(wxCAPTION), env);
-  scheme_install_xc_global("wx:const-readonly", scheme_make_integer(wxREADONLY), env);
 }
 
 int objscheme_istype_wxPanel(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1246,12 +1329,72 @@ class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *obj, const char *where,
 
 
 
+static Scheme_Object *dialogFlags_wxCAPTION_sym = NULL;
+static Scheme_Object *dialogFlags_wxTHICK_FRAME_sym = NULL;
+static Scheme_Object *dialogFlags_wxSYSTEM_MENU_sym = NULL;
+static Scheme_Object *dialogFlags_wxRESIZE_BORDER_sym = NULL;
+
+static void init_symset_dialogFlags(void) {
+  dialogFlags_wxCAPTION_sym = scheme_intern_symbol("caption");
+  dialogFlags_wxTHICK_FRAME_sym = scheme_intern_symbol("thick-frame");
+  dialogFlags_wxSYSTEM_MENU_sym = scheme_intern_symbol("system-menu");
+  dialogFlags_wxRESIZE_BORDER_sym = scheme_intern_symbol("resize-border");
+}
+
+static int unbundle_symset_dialogFlags(Scheme_Object *v, const char *where) {
+  if (!dialogFlags_wxRESIZE_BORDER_sym) init_symset_dialogFlags();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == dialogFlags_wxCAPTION_sym) { result = result | wxCAPTION; }
+  else if (i == dialogFlags_wxTHICK_FRAME_sym) { result = result | wxTHICK_FRAME; }
+  else if (i == dialogFlags_wxSYSTEM_MENU_sym) { result = result | wxSYSTEM_MENU; }
+  else if (i == dialogFlags_wxRESIZE_BORDER_sym) { result = result | wxRESIZE_BORDER; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "dialogFlags symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_dialogFlags(Scheme_Object *v, const char *where) {
+  if (!dialogFlags_wxRESIZE_BORDER_sym) init_symset_dialogFlags();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == dialogFlags_wxCAPTION_sym) { ; }
+  else if (i == dialogFlags_wxTHICK_FRAME_sym) { ; }
+  else if (i == dialogFlags_wxSYSTEM_MENU_sym) { ; }
+  else if (i == dialogFlags_wxRESIZE_BORDER_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "dialogFlags symbol list", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_dialogFlags(int v) {
+  if (!dialogFlags_wxRESIZE_BORDER_sym) init_symset_dialogFlags();
+  Scheme_Object *l = scheme_null;
+  if (v & wxCAPTION) l = scheme_make_pair(dialogFlags_wxCAPTION_sym, l);
+  if (v & wxTHICK_FRAME) l = scheme_make_pair(dialogFlags_wxTHICK_FRAME_sym, l);
+  if (v & wxSYSTEM_MENU) l = scheme_make_pair(dialogFlags_wxSYSTEM_MENU_sym, l);
+  if (v & wxRESIZE_BORDER) l = scheme_make_pair(dialogFlags_wxRESIZE_BORDER_sym, l);
+  return l;
+}
 
 
 
 
 
-// @ "centre" : void Centre(int=wxBOTH);
+
+
 
 
 
@@ -1276,7 +1419,7 @@ class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *obj, const char *where,
 class os_wxDialogBox : public wxDialogBox {
  public:
 
-  os_wxDialogBox(Scheme_Object * obj, class wxWindow* x0, nstring x1, Bool x2 = FALSE, int x3 = 300, int x4 = 300, int x5 = 500, int x6 = 500, long x7 = wxDEFAULT_DIALOG_STYLE, string x8 = "dialogBox");
+  os_wxDialogBox(Scheme_Object * obj, class wxWindow* x0, nstring x1, Bool x2 = FALSE, int x3 = 300, int x4 = 300, int x5 = 500, int x6 = 500, int x7 = wxDEFAULT_DIALOG_STYLE, string x8 = "dialogBox");
   ~os_wxDialogBox();
   void OnDefaultAction(class wxItem* x0);
   void OnChar(class wxKeyEvent& x0);
@@ -1293,7 +1436,7 @@ class os_wxDialogBox : public wxDialogBox {
 
 Scheme_Object *os_wxDialogBox_class;
 
-os_wxDialogBox::os_wxDialogBox(Scheme_Object * o, class wxWindow* x0, nstring x1, Bool x2, int x3, int x4, int x5, int x6, long x7, string x8)
+os_wxDialogBox::os_wxDialogBox(Scheme_Object * o, class wxWindow* x0, nstring x1, Bool x2, int x3, int x4, int x5, int x6, int x7, string x8)
 : wxDialogBox(x0, x1, x2, x3, x4, x5, x6, x7, x8)
 {
   __gc_external = (void *)o;
@@ -1319,17 +1462,19 @@ void os_wxDialogBox::OnDefaultAction(class wxItem* x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxDialogBox::OnDefaultAction(x0);
+wxDialogBox::OnDefaultAction(x0);
   } else {
   
   p[0] = objscheme_bundle_wxItem(x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1350,17 +1495,19 @@ void os_wxDialogBox::OnChar(class wxKeyEvent& x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxDialogBox::OnChar(x0);
+wxDialogBox::OnChar(x0);
   } else {
   
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1381,17 +1528,19 @@ void os_wxDialogBox::OnEvent(class wxMouseEvent& x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxDialogBox::OnEvent(x0);
+wxDialogBox::OnEvent(x0);
   } else {
   
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1412,16 +1561,18 @@ void os_wxDialogBox::OnPaint()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxDialogBox::OnPaint();
+wxDialogBox::OnPaint();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1442,18 +1593,20 @@ Bool os_wxDialogBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1475,18 +1628,20 @@ Bool os_wxDialogBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1508,18 +1663,20 @@ void os_wxDialogBox::OnSize(int x0, int x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxDialogBox::OnSize(x0, x1);
+wxDialogBox::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1540,16 +1697,18 @@ void os_wxDialogBox::OnSetFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxDialogBox::OnSetFocus();
+wxDialogBox::OnSetFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1570,16 +1729,18 @@ void os_wxDialogBox::OnKillFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxDialogBox::OnKillFocus();
+wxDialogBox::OnKillFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1600,16 +1761,18 @@ Bool os_wxDialogBox::OnClose()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return wxDialogBox::OnClose();
+return wxDialogBox::OnClose();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1631,17 +1794,19 @@ void os_wxDialogBox::OnActivate(Bool x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxDialogBox::OnActivate(x0);
+wxDialogBox::OnActivate(x0);
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1892,7 +2057,7 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
   int x4;
   int x5;
   int x6;
-  long x7;
+  int x7;
   string x8;
 
   
@@ -1921,7 +2086,7 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
   } else
     x6 = 500;
   if (n > 7) {
-    x7 = objscheme_unbundle_integer(p[7], "wx:dialog-box%::initialization");
+    x7 = unbundle_symset_dialogFlags(p[7], "wx:dialog-box%::initialization");;
   } else
     x7 = wxDEFAULT_DIALOG_STYLE;
   if (n > 8) {
@@ -1973,7 +2138,7 @@ if (os_wxDialogBox_class) {
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxDialogBox, wxTYPE_DIALOG_BOX);
 
 }
-  scheme_install_xc_global("wx:const-default-dialog-style", scheme_make_integer(wxDEFAULT_DIALOG_STYLE), env);
+  scheme_install_xc_global("default-dialog-style", scheme_make_integer(wxDEFAULT_DIALOG_STYLE), env);
 }
 
 int objscheme_istype_wxDialogBox(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2024,5 +2189,4 @@ class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, const char
   else
     return (wxDialogBox *)o->primdata;
 }
-
 

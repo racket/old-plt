@@ -28,11 +28,33 @@
 
 @MACRO CHECKHASMENU[log] = if (<log>GET_THE_MENU_BAR(((wxFrame *)((Scheme_Class_Object *)obj)->primdata))) return scheme_void;
 
+@BEGINSYMBOLS frameFlags
+@SYM "caption" : wxCAPTION
+@SYM "iconize" : wxICONIZE
+@SYM "minimize" : wxMINIMIZE
+@SYM "maximize" : wxMAXIMIZE
+@SYM "sdi" : wxSDI
+@SYM "mdi-parent" : wxMDI_PARENT
+@SYM "mdi-child" : wxMDI_CHILD
+@SYM "thick-frame" : wxTHICK_FRAME
+@SYM "system-menu" : wxSYSTEM_MENU
+@SYM "minimize-box" : wxMINIMIZE_BOX
+@SYM "maximize-box" : wxMAXIMIZE_BOX
+@SYM "resize-border" : wxRESIZE_BORDER
+@ENDSYMBOLS
+
+@BEGINSYMBOLS orientation
+@SYM "both" : wxBOTH
+@SYM "horizontal" : wxHORIZONTAL
+@SYM "vertical" :  wxVERTICAL
+@ENDSYMBOLS
+
+
 @CLASSBASE wxFrame "wx:frame":"wx:window"
 
 @CLASSID wxTYPE_FRAME
 
-@CREATOR (wxFrame^, string, int = -1, int = -1, int = -1, int = -1, long = wxDEFAULT_FRAME, string = "frame") : : /NOZERO[4]|NOZERO[5]/
+@CREATOR (wxFrame^, string, int = -1, int = -1, int = -1, int = -1, SYM[frameFlags] = wxDEFAULT_FRAME, string = "frame") : : /NOZERO[4]|NOZERO[5]/
 
 @MACRO CHECKICONOK[p] = if (x<p> && !x<p>->Ok()) return scheme_void;
 
@@ -61,25 +83,5 @@
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci
-
-@MACRO TRUE = return TRUE;
-
-@CONSTANT "wx:const-iconize" : long wxICONIZE
-@CONSTANT "wx:const-minimize" : long wxMINIMIZE
-@CONSTANT "wx:const-maximize" : long wxMAXIMIZE
-@CONSTANT "wx:const-sdi" : long wxSDI
-@CONSTANT "wx:const-mdi-parent" : long wxMDI_PARENT
-@CONSTANT "wx:const-mdi-child" : long wxMDI_CHILD
-@CONSTANT "wx:const-thick-frame" : long wxTHICK_FRAME
-@CONSTANT "wx:const-system-menu" : long wxSYSTEM_MENU
-@CONSTANT "wx:const-minimize-box" : long wxMINIMIZE_BOX
-@CONSTANT "wx:const-maximize-box" : long wxMAXIMIZE_BOX
-@CONSTANT "wx:const-resize-border" : long wxRESIZE_BORDER
-@CONSTANT "wx:const-default-frame" : long wxDEFAULT_FRAME
-@CONSTANT "wx:const-allow-auto-resize" : long wxALLOW_AUTO_RESIZE
-
-@CONSTANT "wx:const-both" : int wxBOTH
-@CONSTANT "wx:const-horizontal" : int wxHORIZONTAL
-@CONSTANT "wx:const-vertical" : int wxVERTICAL
 
 @END

@@ -20,6 +20,62 @@
 #include "wxscomon.h"
 
 
+static Scheme_Object *textFlags_wxPROCESS_ENTER_sym = NULL;
+static Scheme_Object *textFlags_wxPASSWORD_sym = NULL;
+static Scheme_Object *textFlags_wxREADONLY_sym = NULL;
+
+static void init_symset_textFlags(void) {
+  textFlags_wxPROCESS_ENTER_sym = scheme_intern_symbol("process-enter");
+  textFlags_wxPASSWORD_sym = scheme_intern_symbol("password");
+  textFlags_wxREADONLY_sym = scheme_intern_symbol("readonly");
+}
+
+static int unbundle_symset_textFlags(Scheme_Object *v, const char *where) {
+  if (!textFlags_wxREADONLY_sym) init_symset_textFlags();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == textFlags_wxPROCESS_ENTER_sym) { result = result | wxPROCESS_ENTER; }
+  else if (i == textFlags_wxPASSWORD_sym) { result = result | wxPASSWORD; }
+  else if (i == textFlags_wxREADONLY_sym) { result = result | wxREADONLY; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "textFlags symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_textFlags(Scheme_Object *v, const char *where) {
+  if (!textFlags_wxREADONLY_sym) init_symset_textFlags();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == textFlags_wxPROCESS_ENTER_sym) { ; }
+  else if (i == textFlags_wxPASSWORD_sym) { ; }
+  else if (i == textFlags_wxREADONLY_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "textFlags symbol list", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_textFlags(int v) {
+  if (!textFlags_wxREADONLY_sym) init_symset_textFlags();
+  Scheme_Object *l = scheme_null;
+  if (v & wxPROCESS_ENTER) l = scheme_make_pair(textFlags_wxPROCESS_ENTER_sym, l);
+  if (v & wxPASSWORD) l = scheme_make_pair(textFlags_wxPASSWORD_sym, l);
+  if (v & wxREADONLY) l = scheme_make_pair(textFlags_wxREADONLY_sym, l);
+  return l;
+}
+
+
 
 
 
@@ -67,7 +123,7 @@ class os_wxText : public wxText {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxText(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, string x3 = "", int x4 = -1, int x5 = -1, int x6 = -1, int x7 = -1, long x8 = 0, string x9 = "text");
+  os_wxText(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, string x3 = "", int x4 = -1, int x5 = -1, int x6 = -1, int x7 = -1, int x8 = 0, string x9 = "text");
   ~os_wxText();
   void OnChar(class wxKeyEvent& x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -79,7 +135,7 @@ class os_wxText : public wxText {
 
 Scheme_Object *os_wxText_class;
 
-os_wxText::os_wxText(Scheme_Object * o, class wxPanel* x0, wxFunction x1, nstring x2, string x3, int x4, int x5, int x6, int x7, long x8, string x9)
+os_wxText::os_wxText(Scheme_Object * o, class wxPanel* x0, wxFunction x1, nstring x2, string x3, int x4, int x5, int x6, int x7, int x8, string x9)
 : wxText(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9)
 {
   __gc_external = (void *)o;
@@ -105,17 +161,19 @@ void os_wxText::OnChar(class wxKeyEvent& x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxText::OnChar(x0);
+wxText::OnChar(x0);
   } else {
   
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -136,18 +194,20 @@ Bool os_wxText::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -169,18 +229,20 @@ Bool os_wxText::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -202,18 +264,20 @@ void os_wxText::OnSize(int x0, int x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxText::OnSize(x0, x1);
+wxText::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -234,16 +298,18 @@ void os_wxText::OnSetFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxText::OnSetFocus();
+wxText::OnSetFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -264,16 +330,18 @@ void os_wxText::OnKillFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxText::OnKillFocus();
+wxText::OnKillFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -524,7 +592,7 @@ static Scheme_Object *os_wxText_ConstructScheme(Scheme_Object *obj, int n,  Sche
   int x5;
   int x6;
   int x7;
-  long x8;
+  int x8;
   string x9;
 
   Scheme_Object *tmp_callback = NULL;
@@ -554,7 +622,7 @@ static Scheme_Object *os_wxText_ConstructScheme(Scheme_Object *obj, int n,  Sche
   } else
     x7 = -1;
   if (n > 8) {
-    x8 = objscheme_unbundle_integer(p[8], "wx:text%::initialization");
+    x8 = unbundle_symset_textFlags(p[8], "wx:text%::initialization");;
   } else
     x8 = 0;
   if (n > 9) {
@@ -686,6 +754,67 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
   COPY_JMPBUF(scheme_error_buf, savebuf);
 }
 
+static Scheme_Object *multiTextFlags_wxPROCESS_ENTER_sym = NULL;
+static Scheme_Object *multiTextFlags_wxPASSWORD_sym = NULL;
+static Scheme_Object *multiTextFlags_wxREADONLY_sym = NULL;
+static Scheme_Object *multiTextFlags_wxHSCROLL_sym = NULL;
+
+static void init_symset_multiTextFlags(void) {
+  multiTextFlags_wxPROCESS_ENTER_sym = scheme_intern_symbol("process-enter");
+  multiTextFlags_wxPASSWORD_sym = scheme_intern_symbol("password");
+  multiTextFlags_wxREADONLY_sym = scheme_intern_symbol("readonly");
+  multiTextFlags_wxHSCROLL_sym = scheme_intern_symbol("hscroll");
+}
+
+static int unbundle_symset_multiTextFlags(Scheme_Object *v, const char *where) {
+  if (!multiTextFlags_wxHSCROLL_sym) init_symset_multiTextFlags();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == multiTextFlags_wxPROCESS_ENTER_sym) { result = result | wxPROCESS_ENTER; }
+  else if (i == multiTextFlags_wxPASSWORD_sym) { result = result | wxPASSWORD; }
+  else if (i == multiTextFlags_wxREADONLY_sym) { result = result | wxREADONLY; }
+  else if (i == multiTextFlags_wxHSCROLL_sym) { result = result | wxHSCROLL; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "multiTextFlags symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_multiTextFlags(Scheme_Object *v, const char *where) {
+  if (!multiTextFlags_wxHSCROLL_sym) init_symset_multiTextFlags();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == multiTextFlags_wxPROCESS_ENTER_sym) { ; }
+  else if (i == multiTextFlags_wxPASSWORD_sym) { ; }
+  else if (i == multiTextFlags_wxREADONLY_sym) { ; }
+  else if (i == multiTextFlags_wxHSCROLL_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "multiTextFlags symbol list", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_multiTextFlags(int v) {
+  if (!multiTextFlags_wxHSCROLL_sym) init_symset_multiTextFlags();
+  Scheme_Object *l = scheme_null;
+  if (v & wxPROCESS_ENTER) l = scheme_make_pair(multiTextFlags_wxPROCESS_ENTER_sym, l);
+  if (v & wxPASSWORD) l = scheme_make_pair(multiTextFlags_wxPASSWORD_sym, l);
+  if (v & wxREADONLY) l = scheme_make_pair(multiTextFlags_wxREADONLY_sym, l);
+  if (v & wxHSCROLL) l = scheme_make_pair(multiTextFlags_wxHSCROLL_sym, l);
+  return l;
+}
+
+
 
 
 
@@ -727,14 +856,14 @@ class os_wxMultiText : public wxMultiText {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxMultiText(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, string x3 = "", int x4 = -1, int x5 = -1, int x6 = -1, int x7 = -1, long x8 = 0, string x9 = "text");
+  os_wxMultiText(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, string x3 = "", int x4 = -1, int x5 = -1, int x6 = -1, int x7 = -1, int x8 = 0, string x9 = "text");
   ~os_wxMultiText();
   void OnChar(class wxKeyEvent& x0);
 };
 
 Scheme_Object *os_wxMultiText_class;
 
-os_wxMultiText::os_wxMultiText(Scheme_Object * o, class wxPanel* x0, wxFunction x1, nstring x2, string x3, int x4, int x5, int x6, int x7, long x8, string x9)
+os_wxMultiText::os_wxMultiText(Scheme_Object * o, class wxPanel* x0, wxFunction x1, nstring x2, string x3, int x4, int x5, int x6, int x7, int x8, string x9)
 : wxMultiText(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9)
 {
   __gc_external = (void *)o;
@@ -760,17 +889,19 @@ void os_wxMultiText::OnChar(class wxKeyEvent& x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxMultiText::OnChar(x0);
+wxMultiText::OnChar(x0);
   } else {
   
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -828,7 +959,7 @@ static Scheme_Object *os_wxMultiText_ConstructScheme(Scheme_Object *obj, int n, 
   int x5;
   int x6;
   int x7;
-  long x8;
+  int x8;
   string x9;
 
   Scheme_Object *tmp_callback = NULL;
@@ -858,7 +989,7 @@ static Scheme_Object *os_wxMultiText_ConstructScheme(Scheme_Object *obj, int n, 
   } else
     x7 = -1;
   if (n > 8) {
-    x8 = objscheme_unbundle_integer(p[8], "wx:multi-text%::initialization");
+    x8 = unbundle_symset_multiTextFlags(p[8], "wx:multi-text%::initialization");;
   } else
     x8 = 0;
   if (n > 9) {
@@ -980,11 +1111,54 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
   COPY_JMPBUF(scheme_error_buf, savebuf);
 }
 
+static Scheme_Object *textWinFlags_wxREADONLY_sym = NULL;
+
+static void init_symset_textWinFlags(void) {
+  textWinFlags_wxREADONLY_sym = scheme_intern_symbol("readonly");
+}
+
+static int unbundle_symset_textWinFlags(Scheme_Object *v, const char *where) {
+  if (!textWinFlags_wxREADONLY_sym) init_symset_textWinFlags();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == textWinFlags_wxREADONLY_sym) { result = result | wxREADONLY; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "textWinFlags symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_textWinFlags(Scheme_Object *v, const char *where) {
+  if (!textWinFlags_wxREADONLY_sym) init_symset_textWinFlags();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == textWinFlags_wxREADONLY_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "textWinFlags symbol list", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_textWinFlags(int v) {
+  if (!textWinFlags_wxREADONLY_sym) init_symset_textWinFlags();
+  Scheme_Object *l = scheme_null;
+  if (v & wxREADONLY) l = scheme_make_pair(textWinFlags_wxREADONLY_sym, l);
+  return l;
+}
 
 
 
 
-// @ "get-line-text" : int GetLineText(int, string);
 
 
 
@@ -992,16 +1166,13 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
 
 
 
-// @ "<<" : void operator<<(string);
-// @ "<<" : void operator<<(int);
-// @ "<<" : void operator<<(float);
-// @ "<<" : void operator<<(char);
+
 
 class os_wxTextWindow : public wxTextWindow {
  public:
 
-  os_wxTextWindow(Scheme_Object * obj, class wxFrame* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, long x5 = 0, string x6 = "textWindow");
-  os_wxTextWindow(Scheme_Object * obj, class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, long x5 = 0, string x6 = "textWindow");
+  os_wxTextWindow(Scheme_Object * obj, class wxFrame* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "textWindow");
+  os_wxTextWindow(Scheme_Object * obj, class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "textWindow");
   ~os_wxTextWindow();
   void OnChar(class wxKeyEvent& x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -1013,7 +1184,7 @@ class os_wxTextWindow : public wxTextWindow {
 
 Scheme_Object *os_wxTextWindow_class;
 
-os_wxTextWindow::os_wxTextWindow(Scheme_Object * o, class wxFrame* x0, int x1, int x2, int x3, int x4, long x5, string x6)
+os_wxTextWindow::os_wxTextWindow(Scheme_Object * o, class wxFrame* x0, int x1, int x2, int x3, int x4, int x5, string x6)
 : wxTextWindow(x0, x1, x2, x3, x4, x5, x6)
 {
   __gc_external = (void *)o;
@@ -1021,7 +1192,7 @@ os_wxTextWindow::os_wxTextWindow(Scheme_Object * o, class wxFrame* x0, int x1, i
   objscheme_note_creation(o);
 }
 
-os_wxTextWindow::os_wxTextWindow(Scheme_Object * o, class wxPanel* x0, int x1, int x2, int x3, int x4, long x5, string x6)
+os_wxTextWindow::os_wxTextWindow(Scheme_Object * o, class wxPanel* x0, int x1, int x2, int x3, int x4, int x5, string x6)
 : wxTextWindow(x0, x1, x2, x3, x4, x5, x6)
 {
   __gc_external = (void *)o;
@@ -1047,17 +1218,19 @@ void os_wxTextWindow::OnChar(class wxKeyEvent& x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxTextWindow::OnChar(x0);
+wxTextWindow::OnChar(x0);
   } else {
   
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1078,18 +1251,20 @@ Bool os_wxTextWindow::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1111,18 +1286,20 @@ Bool os_wxTextWindow::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1144,18 +1321,20 @@ void os_wxTextWindow::OnSize(int x0, int x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxTextWindow::OnSize(x0, x1);
+wxTextWindow::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1176,16 +1355,18 @@ void os_wxTextWindow::OnSetFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxTextWindow::OnSetFocus();
+wxTextWindow::OnSetFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1206,16 +1387,18 @@ void os_wxTextWindow::OnKillFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxTextWindow::OnKillFocus();
+wxTextWindow::OnKillFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1813,7 +1996,7 @@ static Scheme_Object *os_wxTextWindow_ConstructScheme(Scheme_Object *obj, int n,
     int x2;
     int x3;
     int x4;
-    long x5;
+    int x5;
     string x6;
 
     
@@ -1837,7 +2020,7 @@ static Scheme_Object *os_wxTextWindow_ConstructScheme(Scheme_Object *obj, int n,
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = objscheme_unbundle_integer(p[5], "wx:text-window%::initialization (panel case)");
+      x5 = unbundle_symset_textWinFlags(p[5], "wx:text-window%::initialization (panel case)");;
     } else
       x5 = 0;
     if (n > 6) {
@@ -1855,7 +2038,7 @@ static Scheme_Object *os_wxTextWindow_ConstructScheme(Scheme_Object *obj, int n,
     int x2;
     int x3;
     int x4;
-    long x5;
+    int x5;
     string x6;
 
     
@@ -1879,7 +2062,7 @@ static Scheme_Object *os_wxTextWindow_ConstructScheme(Scheme_Object *obj, int n,
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = objscheme_unbundle_integer(p[5], "wx:text-window%::initialization (frame case)");
+      x5 = unbundle_symset_textWinFlags(p[5], "wx:text-window%::initialization (frame case)");;
     } else
       x5 = 0;
     if (n > 6) {

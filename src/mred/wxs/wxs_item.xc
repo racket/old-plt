@@ -13,7 +13,6 @@
 
 @CLASSID wxTYPE_ITEM
 
-// @ "centre" : void Centre(int=wxHORIZONTAL);
 @ "command" : void Command(wxCommandEvent%);
 
 @INCLUDE wxs_icol.xci
@@ -42,15 +41,3 @@
 @ "set-label" : void SetLabel(string); <> string label
 
 @END
-
-#if 0
-
-@CLASSBASE wxGroupBox "wx:group-box":"wx:item"
-
-@CLASSID wxTYPE_GROUP_BOX
-
-@CREATOR (wxPanel!,string,int=-1,int=-1,int=-1,int=-1,long=0,string="groupBox");
-
-@END
-
-#endif

@@ -1,0 +1,26 @@
+
+@BEGINSYMBOLS bufferType > ONE
+@SYM "edit-buffer" : wxEDIT_BUFFER
+@SYM "pasteboard-buffer" : wxPASTEBOARD_BUFFER
+@ENDSYMBOLS
+
+@BEGINSYMBOLS fileType > ONE
+@SYM "media-ff-guess" : wxMEDIA_FF_GUESS
+@SYM "media-ff-std" : wxMEDIA_FF_STD
+@SYM "media-ff-text" : wxMEDIA_FF_TEXT
+@SYM "media-ff-text-force-cr" : wxMEDIA_FF_TEXT_FORCE_CR
+@SYM "media-ff-same" : wxMEDIA_FF_SAME
+@SYM "media-ff-copy" : wxMEDIA_FF_COPY
+@ENDSYMBOLS
+
+@BEGINSYMBOLS focus > ONE
+@SYM "focus-immediate" : wxFOCUS_IMMEDIATE
+@SYM "focus-display" : wxFOCUS_DISPLAY
+@SYM "focus-global" : wxFOCUS_GLOBAL
+@ENDSYMBOLS
+
+@BEGINSYMBOLS caret > ONE
+@SYM "snip-draw-no-caret" : wxSNIP_DRAW_NO_CARET
+@SYM "snip-draw-show-caret" : wxSNIP_DRAW_SHOW_CARET
+@SYM "snip-draw-show-inactive-caret" : wxSNIP_DRAW_SHOW_INACTIVE_CARET
+@ENDSYMBOLS

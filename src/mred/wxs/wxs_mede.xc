@@ -15,6 +15,29 @@
 @MACRO rFALSE = return FALSE;
 @MACRO rZERO = return 0;
 
+@BEGINSYMBOLS selType > ONE
+@SYM "default-select" : wxDEFAULT_SELECT
+@SYM "x-select" : wxX_SELECT
+@SYM "local-select" : wxLOCAL_SELECT
+@ENDSYMBOLS
+
+@BEGINSYMBOLS move > ONE
+@SYM "move-simple" : wxMOVE_SIMPLE
+@SYM "move-line" : wxMOVE_LINE
+@SYM "move-page" : wxMOVE_PAGE
+@SYM "move-word" : wxMOVE_WORD
+@ENDSYMBOLS
+
+@BEGINSYMBOLS findKind > ONE
+@SYM "snip-before-or-null" : wxSNIP_BEFORE_OR_NULL
+@SYM "snip-before" : wxSNIP_BEFORE
+@SYM "snip-after" : wxSNIP_AFTER
+@SYM "snip-after-or-null" : wxSNIP_AFTER_OR_NULL
+@ENDSYMBOLS
+
+@INCLUDE wxs_bkt.xci
+@INCLUDE wxs_fcs.xci
+
 @CLASSBASE wxMediaEdit "wx:media-edit" : "wx:media-buffer"
 
 @CREATOR (float=1.0,float[]=NULL/bList/ubList/cList,-int=0); : : /glueListSet[float.1.1.2."wx:media-edit%::initialization"]//
@@ -31,9 +54,9 @@
 @ "get-position" : void GetPosition(long?,long?=NULL);
 @ "get-start-position" : long GetStartPosition();
 @ "get-end-position" : long GetEndPosition();
-@ "set-position" : void SetPosition(long,long=-1,bool=FALSE,bool=TRUE,int=wxDEFAULT_SELECT);
-@ "set-position-bias-scroll" : void SetPositionBiasScroll(int,long,long=-1,bool=FALSE,bool=TRUE,int=wxDEFAULT_SELECT);
-@ "move-position" :  void MovePosition(long,bool=FALSE,int=wxMOVE_SIMPLE);
+@ "set-position" : void SetPosition(long,long=-1,bool=FALSE,bool=TRUE,SYM[selType]=wxDEFAULT_SELECT);
+@ "set-position-bias-scroll" : void SetPositionBiasScroll(int,long,long=-1,bool=FALSE,bool=TRUE,SYM[selType]=wxDEFAULT_SELECT);
+@ "move-position" :  void MovePosition(long,bool=FALSE,SYM[move]=wxMOVE_SIMPLE);
 @ "scroll-to-position" : bool ScrollToPosition(long,bool=FALSE,long=-1,int=0);
 @ "get-visible-position-range" : void GetVisiblePositionRange(long?,long?);
 @ "get-visible-line-range" : void GetVisibleLineRange(long?,long?);
@@ -108,7 +131,7 @@
 
 @ "find-string-all" : long[]/bReturnList[long.1] FindStringAll(string,-long*,int=1,long=-1,long=-1,bool=TRUE,bool=TRUE);
 
-@ "find-snip" : wxSnip^ FindSnip(long,int,long?=NULL)
+@ "find-snip" : wxSnip^ FindSnip(long,SYM[findKind],long?=NULL)
 @ "get-snip-position-and-location" : void GetSnipPositionAndLocation(wxSnip!,long?,float?,float?);
 @ "get-snip-position" : long GetSnipPosition(wxSnip!);
 
@@ -117,7 +140,7 @@
 @ "get-text" : string/makeNoCopyString[_x4] GetText(long=-1,long=-1,bool=FALSE,bool=FALSE,-long*=NULL);
 @ "get-character" : uchar GetCharacter(long);
 
-@ "insert-file" : bool InsertFile(string,int=wxMEDIA_FF_GUESS);
+@ "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS);
 
 @ "read-from-file" : bool ReadFromFile(wxMediaStreamIn%,long,bool=FALSE); <> with position
 @ "write-to-file" : bool WriteToFile(wxMediaStreamOut%,long,long=-1); <> with position
@@ -148,7 +171,7 @@
 @ v "get-region-data" : wxBufferData^ GetRegionData(long,long);
 @ v "set-region-data" : void SetRegionData(long, long, wxBufferData^);
 
-@ "find-wordbreak" : void FindWordbreak(long?,long?,int);
+@ "find-wordbreak" : void FindWordbreak(long?,long?,SYM[breakType]);
 
 @ "set-wordbreak-map" : void SetWordbreakMap(wxMediaWordbreakMap^);
 @ "get-wordbreak-map" : wxMediaWordbreakMap^ GetWordbreakMap();
@@ -229,49 +252,6 @@ static void ClickbackToScheme(wxMediaEdit *media,
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
 }
-
-@CONSTANT "wx:const-edit-undo" : int wxEDIT_UNDO
-@CONSTANT "wx:const-edit-redo" : int wxEDIT_REDO
-@CONSTANT "wx:const-edit-clear" : int wxEDIT_CLEAR
-@CONSTANT "wx:const-edit-cut" : int wxEDIT_CUT
-@CONSTANT "wx:const-edit-copy" : int wxEDIT_COPY
-@CONSTANT "wx:const-edit-paste" : int wxEDIT_PASTE
-@CONSTANT "wx:const-edit-kill" : int wxEDIT_KILL
-@CONSTANT "wx:const-edit-insert-text-box" : int wxEDIT_INSERT_TEXT_BOX
-@CONSTANT "wx:const-edit-insert-graphic-box" : int wxEDIT_INSERT_GRAPHIC_BOX
-@CONSTANT "wx:const-edit-insert-image" : int wxEDIT_INSERT_IMAGE
-@CONSTANT "wx:const-edit-select-all" : int wxEDIT_SELECT_ALL
-
-@CONSTANT "wx:const-move-simple" : int wxMOVE_SIMPLE
-@CONSTANT "wx:const-move-line" : int wxMOVE_LINE
-@CONSTANT "wx:const-move-page" : int wxMOVE_PAGE
-@CONSTANT "wx:const-move-word" : int wxMOVE_WORD
-
-@CONSTANT "wx:const-media-ff-guess" : int wxMEDIA_FF_GUESS
-@CONSTANT "wx:const-media-ff-std" : int wxMEDIA_FF_STD
-@CONSTANT "wx:const-media-ff-text" : int wxMEDIA_FF_TEXT
-@CONSTANT "wx:const-media-ff-text-force-cr" : int wxMEDIA_FF_TEXT_FORCE_CR
-@CONSTANT "wx:const-media-ff-same" : int wxMEDIA_FF_SAME
-@CONSTANT "wx:const-media-ff-copy" : int wxMEDIA_FF_COPY
-
-@CONSTANT "wx:const-snip-draw-no-caret" : int wxSNIP_DRAW_NO_CARET
-@CONSTANT "wx:const-snip-draw-show-caret" : int wxSNIP_DRAW_SHOW_CARET
-@CONSTANT "wx:const-snip-draw-show-inactive-caret" : int wxSNIP_DRAW_SHOW_INACTIVE_CARET
-
-@CONSTANT "wx:const-snip-before-or-null" : int wxSNIP_BEFORE_OR_NULL
-@CONSTANT "wx:const-snip-before" : int wxSNIP_BEFORE
-@CONSTANT "wx:const-snip-after" : int wxSNIP_AFTER
-@CONSTANT "wx:const-snip-after-or-null" : int wxSNIP_AFTER_OR_NULL
-
-@CONSTANT "wx:const-break-for-caret" : int wxBREAK_FOR_CARET
-@CONSTANT "wx:const-break-for-line" : int wxBREAK_FOR_LINE
-@CONSTANT "wx:const-break-for-selection" : int wxBREAK_FOR_SELECTION
-@CONSTANT "wx:const-break-for-user-1" : int wxBREAK_FOR_USER_1
-@CONSTANT "wx:const-break-for-user-2" : int wxBREAK_FOR_USER_2
-
-@CONSTANT "wx:const-default-select" : int wxDEFAULT_SELECT
-@CONSTANT "wx:const-x-select" : int wxX_SELECT
-@CONSTANT "wx:const-local-select" : int wxLOCAL_SELECT
 
 @END
 

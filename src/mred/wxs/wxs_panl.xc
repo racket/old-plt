@@ -16,13 +16,19 @@
 #define INTERACT_METHODS 0
 #endif
 
+@BEGINSYMBOLS panelFlags
+@SYM "border" : wxBORDER
+@ENDSYMBOLS
+
+@INCLUDE wxs_ornt.xci
+
 /* The derivation wx:panel -> wx:canvas is a lie for Xt */
 @CLASSBASE wxPanel "wx:panel":"wx:canvas"
 
 @CLASSID wxTYPE_PANEL
 
-@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,long=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> frame
-@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,long=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> panel parent
+@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[panelFlags]=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> frame
+@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[panelFlags]=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> panel parent
 
 @ "fit" : void Fit();
 @ "get-default-item" : wxButton! GetDefaultItem()
@@ -34,8 +40,8 @@
 
 @INCLUDE wxs_cnvs.xci
 
-@ "set-label-position" : void SetLabelPosition(int);
-@ "get-label-position" : int GetLabelPosition();
+@ "set-label-position" : void SetLabelPosition(SYM[orientation]);
+@ "get-label-position" : SYM[orientation] GetLabelPosition();
 
 @ "get-horizontal-spacing" : int GetHorizontalSpacing();
 @ "get-vertical-spacing" : int GetVerticalSpacing();
@@ -53,25 +59,15 @@
 @ "tab" : void Tab(); <> no argument
 @ "tab" : void Tab(int); <> tab amount
 
-// @ "advance-cursor" : void AdvanceCursor(wxWindow!); ## !defined(wx_xt)
-// @ "get-child" : wxObject! GetChild(int); ## !defined(wx_xt)
-
-// @CONSTANT "wx:const-multiple-mask" : long wxMULTIPLE_MASK ## !defined(wx_xt)
-@CONSTANT "wx:const-single" : long wxSINGLE       
-@CONSTANT "wx:const-multiple" : long wxMULTIPLE     
-@CONSTANT "wx:const-extended" : long wxEXTENDED     
-// @CONSTANT "wx:const-sb-mask" : long wxSB_MASK ## !defined(wx_xt)
-@CONSTANT "wx:const-needed-sb" : long wxNEEDED_SB    
-@CONSTANT "wx:const-always-sb" : long wxALWAYS_SB    
-@CONSTANT "wx:const-process-enter" : long wxPROCESS_ENTER
-@CONSTANT "wx:const-password" : long wxPASSWORD
-@CONSTANT "wx:const-vscroll" : long wxVSCROLL      
-@CONSTANT "wx:const-hscroll" : long wxHSCROLL      
-@CONSTANT "wx:const-caption" : long wxCAPTION      
-// @CONSTANT "wx:const-editable" : long wxEDITABLE ## !defined(wx_xt)
-@CONSTANT "wx:const-readonly" : long wxREADONLY      
-
 @END
+
+
+@BEGINSYMBOLS dialogFlags
+@SYM "caption" : wxCAPTION
+@SYM "thick-frame" : wxTHICK_FRAME
+@SYM "system-menu" : wxSYSTEM_MENU
+@SYM "resize-border" : wxRESIZE_BORDER
+@ENDSYMBOLS
 
 @CLASSBASE wxDialogBox "wx:dialog-box" : "wx:panel"
 
@@ -79,11 +75,9 @@
 
 @INCLUDE wxs_dorf.xci
 
-@CREATOR (wxWindow^,nstring,bool=FALSE,int=300,int=300,int=500,int=500,long=wxDEFAULT_DIALOG_STYLE,string="dialogBox"); : : /DLGORFRAME[0."wx:dialog-box%::initialization"]|NOZERO[5]|NOZERO[6]
+@CREATOR (wxWindow^,nstring,bool=FALSE,int=300,int=300,int=500,int=500,SYM[dialogFlags]=wxDEFAULT_DIALOG_STYLE,string="dialogBox"); : : /DLGORFRAME[0."wx:dialog-box%::initialization"]|NOZERO[5]|NOZERO[6]
 
-@CONSTANT "wx:const-default-dialog-style" : long wxDEFAULT_DIALOG_STYLE
-
-// @ "centre" : void Centre(int=wxBOTH);
+@CONSTANT "default-dialog-style" : long wxDEFAULT_DIALOG_STYLE
 
 @SETMARK f = d
 @INCLUDE wxs_fram.xci
@@ -92,36 +86,3 @@
 @INCLUDE wxs_panl.xci
 
 @END
-
-#if 0
-#if USE_ENHANCED_DIALOG
-
-@CLASSBASE wxEnhDialogBox "wx:enh-dialog-box" : "wx:dialog-box"
-
-@SET CALLBACK_CLASS = wxEnhDialogBox
-@INCLUDE cb_start.xci
-
-@MACRO rTRUE = return TRUE;
-
-@CREATOR (wxFrame^,string,bool=FALSE,wxFunction=NULL/bCallback/ubCallback/cCallback,int=-1,int=0,int=0,int=10,int=10,long=wxDEFAULT_DIALOG_STYLE,string="Shell"); : : ubCallbackSetup///ubCallbackCreatorFinish
-
-@IVAR "user-panel" : wxPanel! userPanel
-
-@ "set-status" : void SetStatus(string=NULL);
-@ "add-cmd" : wxButton! AddCmd(string,wxFunction/bCallback/ubCallback/cCallback,int=0); : : ubCallbackSetup///ubCallbackFinish
-@ "add-cmd" : wxButton! AddCmd(wxBitmap!,wxFunction/bCallback/ubCallback/cCallback,int=0); : : ubCallbackSetup///ubCallbackFinish
-	
-@ "get-cmd" : wxButton^ GetCmd(int);
-@ "set-pin" : void SetPin(bool);
-
-@ v "on-close" : bool OnClose(); : : : rTRUE
-
-@SETMARK p = d
-@INCLUDE wxs_panl.xci
-
-@END
-
-@INCLUDE cb_end.xci
-
-#endif
-#endif

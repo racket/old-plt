@@ -1,0 +1,5 @@
+
+@BEGINSYMBOLS orientation > ONE
+@SYM "vertical" : wxVERTICAL
+@SYM "horizontal" : wxHORIZONTAL
+@ENDSYMBOLS

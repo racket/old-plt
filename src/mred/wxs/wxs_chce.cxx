@@ -17,8 +17,6 @@
 #include "wxscomon.h"
 
 
-#define USE_COLUMNS 0
-
 
 
 #define CB_FUNCTYPE wxFunction 
@@ -146,7 +144,6 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
-
 class os_wxChoice : public wxChoice {
  public:
   Scheme_Object *callback_closure;
@@ -188,18 +185,20 @@ Bool os_wxChoice::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -221,18 +220,20 @@ Bool os_wxChoice::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -254,18 +255,20 @@ void os_wxChoice::OnSize(int x0, int x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxChoice::OnSize(x0, x1);
+wxChoice::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -286,16 +289,18 @@ void os_wxChoice::OnSetFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxChoice::OnSetFocus();
+wxChoice::OnSetFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -316,70 +321,24 @@ void os_wxChoice::OnKillFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxChoice::OnKillFocus();
+wxChoice::OnKillFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
   }
 }
-
-#if  USE_COLUMNS
-#pragma argsused
-static Scheme_Object *os_wxChoiceGetColumns(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  int r;
-  objscheme_check_valid(obj);
-#if  USE_COLUMNS
-
-  
-
-  
-  r = ((wxChoice *)((Scheme_Class_Object *)obj)->primdata)->GetColumns();
-
-  
-  
-#else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "wx:choice%::get-columns");
-#endif
-  return scheme_make_integer(r);
-}
-#endif
-
-#if  USE_COLUMNS
-#pragma argsused
-static Scheme_Object *os_wxChoiceSetColumns(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-#if  USE_COLUMNS
-  int x0;
-
-  
-  if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "wx:choice%::set-columns");
-  } else
-    x0 = 1;
-
-  
-  ((wxChoice *)((Scheme_Class_Object *)obj)->primdata)->SetColumns(x0);
-
-  
-  
-#endif
-  return scheme_void;
-}
-#endif
 
 #pragma argsused
 static Scheme_Object *os_wxChoiceGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -722,16 +681,10 @@ void objscheme_setup_wxChoice(void *env)
 if (os_wxChoice_class) {
     objscheme_add_global_class(os_wxChoice_class,  "wx:choice%", env);
 } else {
-  os_wxChoice_class = objscheme_def_prim_class(env, "wx:choice%", "wx:item%", os_wxChoice_ConstructScheme, 17);
+  os_wxChoice_class = objscheme_def_prim_class(env, "wx:choice%", "wx:item%", os_wxChoice_ConstructScheme, 15);
 
   scheme_add_method_w_arity(os_wxChoice_class,"get-class-name",objscheme_classname_os_wxChoice, 0, 0);
 
-#if  USE_COLUMNS
- scheme_add_method_w_arity(os_wxChoice_class, "get-columns", os_wxChoiceGetColumns, 0, 0);
-#endif
-#if  USE_COLUMNS
- scheme_add_method_w_arity(os_wxChoice_class, "set-columns", os_wxChoiceSetColumns, 0, 1);
-#endif
  scheme_add_method_w_arity(os_wxChoice_class, "get-string", os_wxChoiceGetString, 1, 1);
  scheme_add_method_w_arity(os_wxChoice_class, "set-string-selection", os_wxChoiceSetStringSelection, 1, 1);
  scheme_add_method_w_arity(os_wxChoice_class, "set-selection", os_wxChoiceSetSelection, 1, 1);

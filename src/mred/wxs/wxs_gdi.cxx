@@ -17,11 +17,225 @@
 
 
 
-#include "wxs_bmt.h"
-
 #include "wxscheme.h"
 #include "wxs_gdi.h"
 #include "wxscomon.h"
+
+
+
+#ifndef wx_mac
+#define wxBITMAP_TYPE_PICT 101
+#define wxBITMAP_TYPE_PICT_RESOURCE 100
+#endif
+
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_GIF_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_XBM_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_XPM_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym = NULL;
+
+static void init_symset_bitmapType(void) {
+  bitmapType_wxBITMAP_TYPE_BMP_sym = scheme_intern_symbol("bitmap-type-bmp");
+  bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym = scheme_intern_symbol("bitmap-type-bmp-resource");
+  bitmapType_wxBITMAP_TYPE_GIF_sym = scheme_intern_symbol("bitmap-type-gif");
+  bitmapType_wxBITMAP_TYPE_XBM_sym = scheme_intern_symbol("bitmap-type-xbm");
+  bitmapType_wxBITMAP_TYPE_XPM_sym = scheme_intern_symbol("bitmap-type-xpm");
+  bitmapType_wxBITMAP_TYPE_PICT_sym = scheme_intern_symbol("bitmap-type-pict");
+  bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym = scheme_intern_symbol("bitmap-type-pict-resource");
+}
+
+static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
+  if (!bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) init_symset_bitmapType();
+  if (0) { }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym) { return wxBITMAP_TYPE_BMP_RESOURCE; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) { return wxBITMAP_TYPE_PICT_RESOURCE; }
+  if (where) scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_bitmapType(Scheme_Object *v, const char *where) {
+  if (!bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) init_symset_bitmapType();
+  if (0) { }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_bitmapType(int v) {
+  if (!bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) init_symset_bitmapType();
+  switch (v) {
+  case wxBITMAP_TYPE_BMP: return bitmapType_wxBITMAP_TYPE_BMP_sym;
+  case wxBITMAP_TYPE_BMP_RESOURCE: return bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym;
+  case wxBITMAP_TYPE_GIF: return bitmapType_wxBITMAP_TYPE_GIF_sym;
+  case wxBITMAP_TYPE_XBM: return bitmapType_wxBITMAP_TYPE_XBM_sym;
+  case wxBITMAP_TYPE_XPM: return bitmapType_wxBITMAP_TYPE_XPM_sym;
+  case wxBITMAP_TYPE_PICT: return bitmapType_wxBITMAP_TYPE_PICT_sym;
+  case wxBITMAP_TYPE_PICT_RESOURCE: return bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *family_wxDEFAULT_sym = NULL;
+static Scheme_Object *family_wxDECORATIVE_sym = NULL;
+static Scheme_Object *family_wxROMAN_sym = NULL;
+static Scheme_Object *family_wxSCRIPT_sym = NULL;
+static Scheme_Object *family_wxSWISS_sym = NULL;
+static Scheme_Object *family_wxMODERN_sym = NULL;
+static Scheme_Object *family_wxTELETYPE_sym = NULL;
+static Scheme_Object *family_wxSYSTEM_sym = NULL;
+
+static void init_symset_family(void) {
+  family_wxDEFAULT_sym = scheme_intern_symbol("default");
+  family_wxDECORATIVE_sym = scheme_intern_symbol("decorative");
+  family_wxROMAN_sym = scheme_intern_symbol("roman");
+  family_wxSCRIPT_sym = scheme_intern_symbol("script");
+  family_wxSWISS_sym = scheme_intern_symbol("swiss");
+  family_wxMODERN_sym = scheme_intern_symbol("modern");
+  family_wxTELETYPE_sym = scheme_intern_symbol("teletype");
+  family_wxSYSTEM_sym = scheme_intern_symbol("system");
+}
+
+static int unbundle_symset_family(Scheme_Object *v, const char *where) {
+  if (!family_wxSYSTEM_sym) init_symset_family();
+  if (0) { }
+  else if (v == family_wxDEFAULT_sym) { return wxDEFAULT; }
+  else if (v == family_wxDECORATIVE_sym) { return wxDECORATIVE; }
+  else if (v == family_wxROMAN_sym) { return wxROMAN; }
+  else if (v == family_wxSCRIPT_sym) { return wxSCRIPT; }
+  else if (v == family_wxSWISS_sym) { return wxSWISS; }
+  else if (v == family_wxMODERN_sym) { return wxMODERN; }
+  else if (v == family_wxTELETYPE_sym) { return wxTELETYPE; }
+  else if (v == family_wxSYSTEM_sym) { return wxSYSTEM; }
+  if (where) scheme_wrong_type(where, "family symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_family(Scheme_Object *v, const char *where) {
+  if (!family_wxSYSTEM_sym) init_symset_family();
+  if (0) { }
+  else if (v == family_wxDEFAULT_sym) { return 1; }
+  else if (v == family_wxDECORATIVE_sym) { return 1; }
+  else if (v == family_wxROMAN_sym) { return 1; }
+  else if (v == family_wxSCRIPT_sym) { return 1; }
+  else if (v == family_wxSWISS_sym) { return 1; }
+  else if (v == family_wxMODERN_sym) { return 1; }
+  else if (v == family_wxTELETYPE_sym) { return 1; }
+  else if (v == family_wxSYSTEM_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "family symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_family(int v) {
+  if (!family_wxSYSTEM_sym) init_symset_family();
+  switch (v) {
+  case wxDEFAULT: return family_wxDEFAULT_sym;
+  case wxDECORATIVE: return family_wxDECORATIVE_sym;
+  case wxROMAN: return family_wxROMAN_sym;
+  case wxSCRIPT: return family_wxSCRIPT_sym;
+  case wxSWISS: return family_wxSWISS_sym;
+  case wxMODERN: return family_wxMODERN_sym;
+  case wxTELETYPE: return family_wxTELETYPE_sym;
+  case wxSYSTEM: return family_wxSYSTEM_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *weight_wxNORMAL_sym = NULL;
+static Scheme_Object *weight_wxLIGHT_sym = NULL;
+static Scheme_Object *weight_wxBOLD_sym = NULL;
+
+static void init_symset_weight(void) {
+  weight_wxNORMAL_sym = scheme_intern_symbol("normal");
+  weight_wxLIGHT_sym = scheme_intern_symbol("light");
+  weight_wxBOLD_sym = scheme_intern_symbol("bold");
+}
+
+static int unbundle_symset_weight(Scheme_Object *v, const char *where) {
+  if (!weight_wxBOLD_sym) init_symset_weight();
+  if (0) { }
+  else if (v == weight_wxNORMAL_sym) { return wxNORMAL; }
+  else if (v == weight_wxLIGHT_sym) { return wxLIGHT; }
+  else if (v == weight_wxBOLD_sym) { return wxBOLD; }
+  if (where) scheme_wrong_type(where, "weight symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_weight(Scheme_Object *v, const char *where) {
+  if (!weight_wxBOLD_sym) init_symset_weight();
+  if (0) { }
+  else if (v == weight_wxNORMAL_sym) { return 1; }
+  else if (v == weight_wxLIGHT_sym) { return 1; }
+  else if (v == weight_wxBOLD_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "weight symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_weight(int v) {
+  if (!weight_wxBOLD_sym) init_symset_weight();
+  switch (v) {
+  case wxNORMAL: return weight_wxNORMAL_sym;
+  case wxLIGHT: return weight_wxLIGHT_sym;
+  case wxBOLD: return weight_wxBOLD_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *style_wxNORMAL_sym = NULL;
+static Scheme_Object *style_wxITALIC_sym = NULL;
+static Scheme_Object *style_wxSLANT_sym = NULL;
+
+static void init_symset_style(void) {
+  style_wxNORMAL_sym = scheme_intern_symbol("normal");
+  style_wxITALIC_sym = scheme_intern_symbol("italic");
+  style_wxSLANT_sym = scheme_intern_symbol("slant");
+}
+
+static int unbundle_symset_style(Scheme_Object *v, const char *where) {
+  if (!style_wxSLANT_sym) init_symset_style();
+  if (0) { }
+  else if (v == style_wxNORMAL_sym) { return wxNORMAL; }
+  else if (v == style_wxITALIC_sym) { return wxITALIC; }
+  else if (v == style_wxSLANT_sym) { return wxSLANT; }
+  if (where) scheme_wrong_type(where, "style symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_style(Scheme_Object *v, const char *where) {
+  if (!style_wxSLANT_sym) init_symset_style();
+  if (0) { }
+  else if (v == style_wxNORMAL_sym) { return 1; }
+  else if (v == style_wxITALIC_sym) { return 1; }
+  else if (v == style_wxSLANT_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "style symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_style(int v) {
+  if (!style_wxSLANT_sym) init_symset_style();
+  switch (v) {
+  case wxNORMAL: return style_wxNORMAL_sym;
+  case wxITALIC: return style_wxITALIC_sym;
+  case wxSLANT: return style_wxSLANT_sym;
+  default: return NULL;
+  }
+}
+
 
 
 #define USE_FONT_NAME_DIRECTORY 1
@@ -34,13 +248,6 @@
 #endif
 
 
-
-
-
-
-// Not used:
-// @CONSTANT "wx:const-variable" : int wxVARIABLE
-// @CONSTANT "wx:const-fixed" : int wxFIXED
 
 
 
@@ -117,7 +324,7 @@ static Scheme_Object *os_wxFontGetWeight(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_weight(r);;
 }
 
 #pragma argsused
@@ -151,7 +358,7 @@ static Scheme_Object *os_wxFontGetStyle(Scheme_Object *obj, int n,  Scheme_Objec
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_style(r);;
 }
 
 #if  USE_FONT_NAME_DIRECTORY
@@ -191,7 +398,7 @@ static Scheme_Object *os_wxFontGetFamily(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_family(r);;
 }
 
 #pragma argsused
@@ -212,9 +419,9 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
       scheme_wrong_count("wx:font%::initialization (font name case)", 5, 6, n, p);
     x0 = objscheme_unbundle_nonnegative_integer(p[0], "wx:font%::initialization (font name case)");
     x1 = (cstring)objscheme_unbundle_string(p[1], "wx:font%::initialization (font name case)");
-    x2 = objscheme_unbundle_integer(p[2], "wx:font%::initialization (font name case)");
-    x3 = objscheme_unbundle_integer(p[3], "wx:font%::initialization (font name case)");
-    x4 = objscheme_unbundle_integer(p[4], "wx:font%::initialization (font name case)");
+    x2 = unbundle_symset_family(p[2], "wx:font%::initialization (font name case)");;
+    x3 = unbundle_symset_style(p[3], "wx:font%::initialization (font name case)");;
+    x4 = unbundle_symset_weight(p[4], "wx:font%::initialization (font name case)");;
     if (n > 5) {
       x5 = objscheme_unbundle_bool(p[5], "wx:font%::initialization (font name case)");
     } else
@@ -238,9 +445,9 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
     if ((n < 4) ||(n > 5)) 
       scheme_wrong_count("wx:font%::initialization (font id case)", 4, 5, n, p);
     x0 = objscheme_unbundle_nonnegative_integer(p[0], "wx:font%::initialization (font id case)");
-    x1 = objscheme_unbundle_integer(p[1], "wx:font%::initialization (font id case)");
-    x2 = objscheme_unbundle_integer(p[2], "wx:font%::initialization (font id case)");
-    x3 = objscheme_unbundle_integer(p[3], "wx:font%::initialization (font id case)");
+    x1 = unbundle_symset_family(p[1], "wx:font%::initialization (font id case)");;
+    x2 = unbundle_symset_style(p[2], "wx:font%::initialization (font id case)");;
+    x3 = unbundle_symset_weight(p[3], "wx:font%::initialization (font id case)");;
     if (n > 4) {
       x4 = objscheme_unbundle_bool(p[4], "wx:font%::initialization (font id case)");
     } else
@@ -298,19 +505,6 @@ if (os_wxFont_class) {
 
 
 }
-  scheme_install_xc_global("wx:const-default", scheme_make_integer(wxDEFAULT), env);
-  scheme_install_xc_global("wx:const-decorative", scheme_make_integer(wxDECORATIVE), env);
-  scheme_install_xc_global("wx:const-roman", scheme_make_integer(wxROMAN), env);
-  scheme_install_xc_global("wx:const-script", scheme_make_integer(wxSCRIPT), env);
-  scheme_install_xc_global("wx:const-swiss", scheme_make_integer(wxSWISS), env);
-  scheme_install_xc_global("wx:const-modern", scheme_make_integer(wxMODERN), env);
-  scheme_install_xc_global("wx:const-teletype", scheme_make_integer(wxTELETYPE), env);
-  scheme_install_xc_global("wx:const-system", scheme_make_integer(wxSYSTEM), env);
-  scheme_install_xc_global("wx:const-normal", scheme_make_integer(wxNORMAL), env);
-  scheme_install_xc_global("wx:const-light", scheme_make_integer(wxLIGHT), env);
-  scheme_install_xc_global("wx:const-bold", scheme_make_integer(wxBOLD), env);
-  scheme_install_xc_global("wx:const-italic", scheme_make_integer(wxITALIC), env);
-  scheme_install_xc_global("wx:const-slant", scheme_make_integer(wxSLANT), env);
 }
 
 int objscheme_istype_wxFont(Scheme_Object *obj, const char *stop, int nullOK)
@@ -366,7 +560,6 @@ class wxFont *objscheme_unbundle_wxFont(Scheme_Object *obj, const char *where, i
 
 
 
-// @ "remove-font" : void RemoveFont(wxFont!);
 
 
 class os_wxFontList : public wxFontList {
@@ -397,7 +590,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   class wxFont* r;
   objscheme_check_valid(obj);
-  if ((n >= 2) && objscheme_istype_number(p[0], NULL) && objscheme_istype_number(p[1], NULL)) {
+  if ((n >= 2) && objscheme_istype_number(p[0], NULL) && istype_symset_family(p[1], NULL)) {
     nnint x0;
     int x1;
     int x2;
@@ -408,9 +601,9 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
     if ((n < 4) ||(n > 5)) 
       scheme_wrong_count("wx:font-list%::find-or-create-font (font id case)", 4, 5, n, p);
     x0 = objscheme_unbundle_nonnegative_integer(p[0], "wx:font-list%::find-or-create-font (font id case)");
-    x1 = objscheme_unbundle_integer(p[1], "wx:font-list%::find-or-create-font (font id case)");
-    x2 = objscheme_unbundle_integer(p[2], "wx:font-list%::find-or-create-font (font id case)");
-    x3 = objscheme_unbundle_integer(p[3], "wx:font-list%::find-or-create-font (font id case)");
+    x1 = unbundle_symset_family(p[1], "wx:font-list%::find-or-create-font (font id case)");;
+    x2 = unbundle_symset_style(p[2], "wx:font-list%::find-or-create-font (font id case)");;
+    x3 = unbundle_symset_weight(p[3], "wx:font-list%::find-or-create-font (font id case)");;
     if (n > 4) {
       x4 = objscheme_unbundle_bool(p[4], "wx:font-list%::find-or-create-font (font id case)");
     } else
@@ -435,9 +628,9 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
       scheme_wrong_count("wx:font-list%::find-or-create-font (font name case)", 5, 6, n, p);
     x0 = objscheme_unbundle_nonnegative_integer(p[0], "wx:font-list%::find-or-create-font (font name case)");
     x1 = (cstring)objscheme_unbundle_string(p[1], "wx:font-list%::find-or-create-font (font name case)");
-    x2 = objscheme_unbundle_integer(p[2], "wx:font-list%::find-or-create-font (font name case)");
-    x3 = objscheme_unbundle_integer(p[3], "wx:font-list%::find-or-create-font (font name case)");
-    x4 = objscheme_unbundle_integer(p[4], "wx:font-list%::find-or-create-font (font name case)");
+    x2 = unbundle_symset_family(p[2], "wx:font-list%::find-or-create-font (font name case)");;
+    x3 = unbundle_symset_style(p[3], "wx:font-list%::find-or-create-font (font name case)");;
+    x4 = unbundle_symset_weight(p[4], "wx:font-list%::find-or-create-font (font name case)");;
     if (n > 5) {
       x5 = objscheme_unbundle_bool(p[5], "wx:font-list%::find-or-create-font (font name case)");
     } else
@@ -880,10 +1073,6 @@ class wxColour *objscheme_unbundle_wxColour(Scheme_Object *obj, const char *wher
 
 
 
-// @CREATOR (); ## !defined(wx_mac)
-
-// @ "create" : bool Create(int,custring,custring,custring); ## COLORMAP_CREATE
-
 class os_wxColourMap : public wxColourMap {
  public:
 
@@ -986,9 +1175,6 @@ class wxColourMap *objscheme_unbundle_wxColourMap(Scheme_Object *obj, const char
 
 
 
-// @CREATOR (_KEY_TYPE/bInt/ubIntKey/tInt);
-
-// @ "initialize" : void Initialize(); ## !defined(wx_xt)
 
 
 class os_wxColourDatabase : public wxColourDatabase {
@@ -1558,6 +1744,81 @@ class wxIntPoint *objscheme_unbundle_wxIntPoint(Scheme_Object *obj, const char *
 }
 
 
+static Scheme_Object *brushStyle_wxTRANSPARENT_sym = NULL;
+static Scheme_Object *brushStyle_wxSOLID_sym = NULL;
+static Scheme_Object *brushStyle_wxBDIAGONAL_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxCROSSDIAG_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxFDIAGONAL_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxCROSS_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxHORIZONTAL_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxVERTICAL_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxSTIPPLE_sym = NULL;
+static Scheme_Object *brushStyle_wxOPAQUE_STIPPLE_sym = NULL;
+
+static void init_symset_brushStyle(void) {
+  brushStyle_wxTRANSPARENT_sym = scheme_intern_symbol("transparent");
+  brushStyle_wxSOLID_sym = scheme_intern_symbol("solid");
+  brushStyle_wxBDIAGONAL_HATCH_sym = scheme_intern_symbol("bdiagonal-hatch");
+  brushStyle_wxCROSSDIAG_HATCH_sym = scheme_intern_symbol("crossdiag-hatch");
+  brushStyle_wxFDIAGONAL_HATCH_sym = scheme_intern_symbol("fdiagonal-hatch");
+  brushStyle_wxCROSS_HATCH_sym = scheme_intern_symbol("cross-hatch");
+  brushStyle_wxHORIZONTAL_HATCH_sym = scheme_intern_symbol("horizontal-hatch");
+  brushStyle_wxVERTICAL_HATCH_sym = scheme_intern_symbol("vertical-hatch");
+  brushStyle_wxSTIPPLE_sym = scheme_intern_symbol("stipple");
+  brushStyle_wxOPAQUE_STIPPLE_sym = scheme_intern_symbol("opaque-stipple");
+}
+
+static int unbundle_symset_brushStyle(Scheme_Object *v, const char *where) {
+  if (!brushStyle_wxOPAQUE_STIPPLE_sym) init_symset_brushStyle();
+  if (0) { }
+  else if (v == brushStyle_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
+  else if (v == brushStyle_wxSOLID_sym) { return wxSOLID; }
+  else if (v == brushStyle_wxBDIAGONAL_HATCH_sym) { return wxBDIAGONAL_HATCH; }
+  else if (v == brushStyle_wxCROSSDIAG_HATCH_sym) { return wxCROSSDIAG_HATCH; }
+  else if (v == brushStyle_wxFDIAGONAL_HATCH_sym) { return wxFDIAGONAL_HATCH; }
+  else if (v == brushStyle_wxCROSS_HATCH_sym) { return wxCROSS_HATCH; }
+  else if (v == brushStyle_wxHORIZONTAL_HATCH_sym) { return wxHORIZONTAL_HATCH; }
+  else if (v == brushStyle_wxVERTICAL_HATCH_sym) { return wxVERTICAL_HATCH; }
+  else if (v == brushStyle_wxSTIPPLE_sym) { return wxSTIPPLE; }
+  else if (v == brushStyle_wxOPAQUE_STIPPLE_sym) { return wxOPAQUE_STIPPLE; }
+  if (where) scheme_wrong_type(where, "brushStyle symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_brushStyle(Scheme_Object *v, const char *where) {
+  if (!brushStyle_wxOPAQUE_STIPPLE_sym) init_symset_brushStyle();
+  if (0) { }
+  else if (v == brushStyle_wxTRANSPARENT_sym) { return 1; }
+  else if (v == brushStyle_wxSOLID_sym) { return 1; }
+  else if (v == brushStyle_wxBDIAGONAL_HATCH_sym) { return 1; }
+  else if (v == brushStyle_wxCROSSDIAG_HATCH_sym) { return 1; }
+  else if (v == brushStyle_wxFDIAGONAL_HATCH_sym) { return 1; }
+  else if (v == brushStyle_wxCROSS_HATCH_sym) { return 1; }
+  else if (v == brushStyle_wxHORIZONTAL_HATCH_sym) { return 1; }
+  else if (v == brushStyle_wxVERTICAL_HATCH_sym) { return 1; }
+  else if (v == brushStyle_wxSTIPPLE_sym) { return 1; }
+  else if (v == brushStyle_wxOPAQUE_STIPPLE_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "brushStyle symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_brushStyle(int v) {
+  if (!brushStyle_wxOPAQUE_STIPPLE_sym) init_symset_brushStyle();
+  switch (v) {
+  case wxTRANSPARENT: return brushStyle_wxTRANSPARENT_sym;
+  case wxSOLID: return brushStyle_wxSOLID_sym;
+  case wxBDIAGONAL_HATCH: return brushStyle_wxBDIAGONAL_HATCH_sym;
+  case wxCROSSDIAG_HATCH: return brushStyle_wxCROSSDIAG_HATCH_sym;
+  case wxFDIAGONAL_HATCH: return brushStyle_wxFDIAGONAL_HATCH_sym;
+  case wxCROSS_HATCH: return brushStyle_wxCROSS_HATCH_sym;
+  case wxHORIZONTAL_HATCH: return brushStyle_wxHORIZONTAL_HATCH_sym;
+  case wxVERTICAL_HATCH: return brushStyle_wxVERTICAL_HATCH_sym;
+  case wxSTIPPLE: return brushStyle_wxSTIPPLE_sym;
+  case wxOPAQUE_STIPPLE: return brushStyle_wxOPAQUE_STIPPLE_sym;
+  default: return NULL;
+  }
+}
+
 
 
 
@@ -1612,7 +1873,7 @@ static Scheme_Object *os_wxBrushSetStyle(Scheme_Object *obj, int n,  Scheme_Obje
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:brush%::set-style");
+  x0 = unbundle_symset_brushStyle(p[0], "wx:brush%::set-style");;
 
   if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:brush::set-style", "brush", "brush");
   ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetStyle(x0);
@@ -1636,7 +1897,7 @@ static Scheme_Object *os_wxBrushGetStyle(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_brushStyle(r);;
 }
 
 #pragma argsused
@@ -1756,7 +2017,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
     if (n != 2) 
       scheme_wrong_count("wx:brush%::initialization (color name case)", 2, 2, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "wx:brush%::initialization (color name case)");
-    x1 = objscheme_unbundle_integer(p[1], "wx:brush%::initialization (color name case)");
+    x1 = unbundle_symset_brushStyle(p[1], "wx:brush%::initialization (color name case)");;
 
     
     realobj = new os_wxBrush(obj, x0, x1);
@@ -1770,7 +2031,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
     if (n != 2) 
       scheme_wrong_count("wx:brush%::initialization (wx:colour% case)", 2, 2, n, p);
     x0 = objscheme_unbundle_wxColour(p[0], "wx:brush%::initialization (wx:colour% case)", 0);
-    x1 = objscheme_unbundle_integer(p[1], "wx:brush%::initialization (wx:colour% case)");
+    x1 = unbundle_symset_brushStyle(p[1], "wx:brush%::initialization (wx:colour% case)");;
 
     
     realobj = new os_wxBrush(obj, *x0, x1);
@@ -1822,16 +2083,6 @@ if (os_wxBrush_class) {
 
 
 }
-  scheme_install_xc_global("wx:const-transparent", scheme_make_integer(wxTRANSPARENT), env);
-  scheme_install_xc_global("wx:const-solid", scheme_make_integer(wxSOLID), env);
-  scheme_install_xc_global("wx:const-bdiagonal-hatch", scheme_make_integer(wxBDIAGONAL_HATCH), env);
-  scheme_install_xc_global("wx:const-crossdiag-hatch", scheme_make_integer(wxCROSSDIAG_HATCH), env);
-  scheme_install_xc_global("wx:const-fdiagonal-hatch", scheme_make_integer(wxFDIAGONAL_HATCH), env);
-  scheme_install_xc_global("wx:const-cross-hatch", scheme_make_integer(wxCROSS_HATCH), env);
-  scheme_install_xc_global("wx:const-horizontal-hatch", scheme_make_integer(wxHORIZONTAL_HATCH), env);
-  scheme_install_xc_global("wx:const-vertical-hatch", scheme_make_integer(wxVERTICAL_HATCH), env);
-  scheme_install_xc_global("wx:const-stipple", scheme_make_integer(wxSTIPPLE), env);
-  scheme_install_xc_global("wx:const-opaque-stipple", scheme_make_integer(wxOPAQUE_STIPPLE), env);
 }
 
 int objscheme_istype_wxBrush(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1886,7 +2137,6 @@ class wxBrush *objscheme_unbundle_wxBrush(Scheme_Object *obj, const char *where,
 
 
 
-// @ "remove-brush" : void RemoveBrush(wxBrush!);
 
 
 class os_wxBrushList : public wxBrushList {
@@ -1925,7 +2175,7 @@ static Scheme_Object *os_wxBrushListFindOrCreateBrush(Scheme_Object *obj, int n,
     if (n != 2) 
       scheme_wrong_count("wx:brush-list%::find-or-create-brush (wx:colour% case)", 2, 2, n, p);
     x0 = objscheme_unbundle_wxColour(p[0], "wx:brush-list%::find-or-create-brush (wx:colour% case)", 0);
-    x1 = objscheme_unbundle_integer(p[1], "wx:brush-list%::find-or-create-brush (wx:colour% case)");
+    x1 = unbundle_symset_brushStyle(p[1], "wx:brush-list%::find-or-create-brush (wx:colour% case)");;
 
     
     r = ((wxBrushList *)((Scheme_Class_Object *)obj)->primdata)->FindOrCreateBrush(x0, x1);
@@ -1940,7 +2190,7 @@ static Scheme_Object *os_wxBrushListFindOrCreateBrush(Scheme_Object *obj, int n,
     if (n != 2) 
       scheme_wrong_count("wx:brush-list%::find-or-create-brush (color name case)", 2, 2, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "wx:brush-list%::find-or-create-brush (color name case)");
-    x1 = objscheme_unbundle_integer(p[1], "wx:brush-list%::find-or-create-brush (color name case)");
+    x1 = unbundle_symset_brushStyle(p[1], "wx:brush-list%::find-or-create-brush (color name case)");;
 
     
     r = ((wxBrushList *)((Scheme_Class_Object *)obj)->primdata)->FindOrCreateBrush(x0, x1);
@@ -2047,7 +2297,142 @@ class wxBrushList *objscheme_unbundle_wxBrushList(Scheme_Object *obj, const char
 }
 
 
+static Scheme_Object *penStyle_wxTRANSPARENT_sym = NULL;
+static Scheme_Object *penStyle_wxSOLID_sym = NULL;
+static Scheme_Object *penStyle_wxDOT_sym = NULL;
+static Scheme_Object *penStyle_wxLONG_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxSHORT_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxDOT_DASH_sym = NULL;
 
+static void init_symset_penStyle(void) {
+  penStyle_wxTRANSPARENT_sym = scheme_intern_symbol("transparent");
+  penStyle_wxSOLID_sym = scheme_intern_symbol("solid");
+  penStyle_wxDOT_sym = scheme_intern_symbol("dot");
+  penStyle_wxLONG_DASH_sym = scheme_intern_symbol("long-dash");
+  penStyle_wxSHORT_DASH_sym = scheme_intern_symbol("short-dash");
+  penStyle_wxDOT_DASH_sym = scheme_intern_symbol("dot-dash");
+}
+
+static int unbundle_symset_penStyle(Scheme_Object *v, const char *where) {
+  if (!penStyle_wxDOT_DASH_sym) init_symset_penStyle();
+  if (0) { }
+  else if (v == penStyle_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
+  else if (v == penStyle_wxSOLID_sym) { return wxSOLID; }
+  else if (v == penStyle_wxDOT_sym) { return wxDOT; }
+  else if (v == penStyle_wxLONG_DASH_sym) { return wxLONG_DASH; }
+  else if (v == penStyle_wxSHORT_DASH_sym) { return wxSHORT_DASH; }
+  else if (v == penStyle_wxDOT_DASH_sym) { return wxDOT_DASH; }
+  if (where) scheme_wrong_type(where, "penStyle symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_penStyle(Scheme_Object *v, const char *where) {
+  if (!penStyle_wxDOT_DASH_sym) init_symset_penStyle();
+  if (0) { }
+  else if (v == penStyle_wxTRANSPARENT_sym) { return 1; }
+  else if (v == penStyle_wxSOLID_sym) { return 1; }
+  else if (v == penStyle_wxDOT_sym) { return 1; }
+  else if (v == penStyle_wxLONG_DASH_sym) { return 1; }
+  else if (v == penStyle_wxSHORT_DASH_sym) { return 1; }
+  else if (v == penStyle_wxDOT_DASH_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "penStyle symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_penStyle(int v) {
+  if (!penStyle_wxDOT_DASH_sym) init_symset_penStyle();
+  switch (v) {
+  case wxTRANSPARENT: return penStyle_wxTRANSPARENT_sym;
+  case wxSOLID: return penStyle_wxSOLID_sym;
+  case wxDOT: return penStyle_wxDOT_sym;
+  case wxLONG_DASH: return penStyle_wxLONG_DASH_sym;
+  case wxSHORT_DASH: return penStyle_wxSHORT_DASH_sym;
+  case wxDOT_DASH: return penStyle_wxDOT_DASH_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *join_wxJOIN_BEVEL_sym = NULL;
+static Scheme_Object *join_wxJOIN_MITER_sym = NULL;
+static Scheme_Object *join_wxJOIN_ROUND_sym = NULL;
+
+static void init_symset_join(void) {
+  join_wxJOIN_BEVEL_sym = scheme_intern_symbol("join-bevel");
+  join_wxJOIN_MITER_sym = scheme_intern_symbol("join-miter");
+  join_wxJOIN_ROUND_sym = scheme_intern_symbol("join-round");
+}
+
+static int unbundle_symset_join(Scheme_Object *v, const char *where) {
+  if (!join_wxJOIN_ROUND_sym) init_symset_join();
+  if (0) { }
+  else if (v == join_wxJOIN_BEVEL_sym) { return wxJOIN_BEVEL; }
+  else if (v == join_wxJOIN_MITER_sym) { return wxJOIN_MITER; }
+  else if (v == join_wxJOIN_ROUND_sym) { return wxJOIN_ROUND; }
+  if (where) scheme_wrong_type(where, "join symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_join(Scheme_Object *v, const char *where) {
+  if (!join_wxJOIN_ROUND_sym) init_symset_join();
+  if (0) { }
+  else if (v == join_wxJOIN_BEVEL_sym) { return 1; }
+  else if (v == join_wxJOIN_MITER_sym) { return 1; }
+  else if (v == join_wxJOIN_ROUND_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "join symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_join(int v) {
+  if (!join_wxJOIN_ROUND_sym) init_symset_join();
+  switch (v) {
+  case wxJOIN_BEVEL: return join_wxJOIN_BEVEL_sym;
+  case wxJOIN_MITER: return join_wxJOIN_MITER_sym;
+  case wxJOIN_ROUND: return join_wxJOIN_ROUND_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *cap_wxCAP_ROUND_sym = NULL;
+static Scheme_Object *cap_wxCAP_PROJECTING_sym = NULL;
+static Scheme_Object *cap_wxCAP_BUTT_sym = NULL;
+
+static void init_symset_cap(void) {
+  cap_wxCAP_ROUND_sym = scheme_intern_symbol("cap-round");
+  cap_wxCAP_PROJECTING_sym = scheme_intern_symbol("cap-projecting");
+  cap_wxCAP_BUTT_sym = scheme_intern_symbol("cap-butt");
+}
+
+static int unbundle_symset_cap(Scheme_Object *v, const char *where) {
+  if (!cap_wxCAP_BUTT_sym) init_symset_cap();
+  if (0) { }
+  else if (v == cap_wxCAP_ROUND_sym) { return wxCAP_ROUND; }
+  else if (v == cap_wxCAP_PROJECTING_sym) { return wxCAP_PROJECTING; }
+  else if (v == cap_wxCAP_BUTT_sym) { return wxCAP_BUTT; }
+  if (where) scheme_wrong_type(where, "cap symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_cap(Scheme_Object *v, const char *where) {
+  if (!cap_wxCAP_BUTT_sym) init_symset_cap();
+  if (0) { }
+  else if (v == cap_wxCAP_ROUND_sym) { return 1; }
+  else if (v == cap_wxCAP_PROJECTING_sym) { return 1; }
+  else if (v == cap_wxCAP_BUTT_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "cap symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_cap(int v) {
+  if (!cap_wxCAP_BUTT_sym) init_symset_cap();
+  switch (v) {
+  case wxCAP_ROUND: return cap_wxCAP_ROUND_sym;
+  case wxCAP_PROJECTING: return cap_wxCAP_PROJECTING_sym;
+  case wxCAP_BUTT: return cap_wxCAP_BUTT_sym;
+  default: return NULL;
+  }
+}
 
 
 
@@ -2104,7 +2489,7 @@ static Scheme_Object *os_wxPenSetStyle(Scheme_Object *obj, int n,  Scheme_Object
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:pen%::set-style");
+  x0 = unbundle_symset_penStyle(p[0], "wx:pen%::set-style");;
 
   if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:pen::set-style", "pen", "pen");
   ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetStyle(x0);
@@ -2128,7 +2513,7 @@ static Scheme_Object *os_wxPenGetStyle(Scheme_Object *obj, int n,  Scheme_Object
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_penStyle(r);;
 }
 
 #pragma argsused
@@ -2244,7 +2629,7 @@ static Scheme_Object *os_wxPenSetJoin(Scheme_Object *obj, int n,  Scheme_Object 
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:pen%::set-join");
+  x0 = unbundle_symset_join(p[0], "wx:pen%::set-join");;
 
   
   ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetJoin(x0);
@@ -2268,7 +2653,7 @@ static Scheme_Object *os_wxPenGetJoin(Scheme_Object *obj, int n,  Scheme_Object 
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_join(r);;
 }
 
 #pragma argsused
@@ -2279,7 +2664,7 @@ static Scheme_Object *os_wxPenSetCap(Scheme_Object *obj, int n,  Scheme_Object *
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:pen%::set-cap");
+  x0 = unbundle_symset_cap(p[0], "wx:pen%::set-cap");;
 
   
   ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetCap(x0);
@@ -2303,7 +2688,7 @@ static Scheme_Object *os_wxPenGetCap(Scheme_Object *obj, int n,  Scheme_Object *
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_cap(r);;
 }
 
 #pragma argsused
@@ -2355,7 +2740,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
       scheme_wrong_count("wx:pen%::initialization (color name case)", 3, 3, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "wx:pen%::initialization (color name case)");
     x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:pen%::initialization (color name case)");
-    x2 = objscheme_unbundle_integer(p[2], "wx:pen%::initialization (color name case)");
+    x2 = unbundle_symset_penStyle(p[2], "wx:pen%::initialization (color name case)");;
 
     
     realobj = new os_wxPen(obj, x0, x1, x2);
@@ -2371,7 +2756,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
       scheme_wrong_count("wx:pen%::initialization (wx:colour% case)", 3, 3, n, p);
     x0 = objscheme_unbundle_wxColour(p[0], "wx:pen%::initialization (wx:colour% case)", 0);
     x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:pen%::initialization (wx:colour% case)");
-    x2 = objscheme_unbundle_integer(p[2], "wx:pen%::initialization (wx:colour% case)");
+    x2 = unbundle_symset_penStyle(p[2], "wx:pen%::initialization (wx:colour% case)");;
 
     
     realobj = new os_wxPen(obj, *x0, x1, x2);
@@ -2429,16 +2814,6 @@ if (os_wxPen_class) {
 
 
 }
-  scheme_install_xc_global("wx:const-join-bevel", scheme_make_integer(wxJOIN_BEVEL), env);
-  scheme_install_xc_global("wx:const-join-miter", scheme_make_integer(wxJOIN_MITER), env);
-  scheme_install_xc_global("wx:const-join-round", scheme_make_integer(wxJOIN_ROUND), env);
-  scheme_install_xc_global("wx:const-cap-round", scheme_make_integer(wxCAP_ROUND), env);
-  scheme_install_xc_global("wx:const-cap-projecting", scheme_make_integer(wxCAP_PROJECTING), env);
-  scheme_install_xc_global("wx:const-cap-butt", scheme_make_integer(wxCAP_BUTT), env);
-  scheme_install_xc_global("wx:const-dot", scheme_make_integer(wxDOT), env);
-  scheme_install_xc_global("wx:const-long-dash", scheme_make_integer(wxLONG_DASH), env);
-  scheme_install_xc_global("wx:const-short-dash", scheme_make_integer(wxSHORT_DASH), env);
-  scheme_install_xc_global("wx:const-dot-dash", scheme_make_integer(wxDOT_DASH), env);
 }
 
 int objscheme_istype_wxPen(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2494,7 +2869,6 @@ class wxPen *objscheme_unbundle_wxPen(Scheme_Object *obj, const char *where, int
 
 
 
-// @ "remove-pen" : void RemovePen(wxPen!);
 
 
 class os_wxPenList : public wxPenList {
@@ -2535,7 +2909,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
       scheme_wrong_count("wx:pen-list%::find-or-create-pen (wx:colour% case)", 3, 3, n, p);
     x0 = objscheme_unbundle_wxColour(p[0], "wx:pen-list%::find-or-create-pen (wx:colour% case)", 0);
     x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:pen-list%::find-or-create-pen (wx:colour% case)");
-    x2 = objscheme_unbundle_integer(p[2], "wx:pen-list%::find-or-create-pen (wx:colour% case)");
+    x2 = unbundle_symset_penStyle(p[2], "wx:pen-list%::find-or-create-pen (wx:colour% case)");;
 
     
     r = ((wxPenList *)((Scheme_Class_Object *)obj)->primdata)->FindOrCreatePen(x0, x1, x2);
@@ -2552,7 +2926,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
       scheme_wrong_count("wx:pen-list%::find-or-create-pen (color name case)", 3, 3, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "wx:pen-list%::find-or-create-pen (color name case)");
     x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:pen-list%::find-or-create-pen (color name case)");
-    x2 = objscheme_unbundle_integer(p[2], "wx:pen-list%::find-or-create-pen (color name case)");
+    x2 = unbundle_symset_penStyle(p[2], "wx:pen-list%::find-or-create-pen (color name case)");;
 
     
     r = ((wxPenList *)((Scheme_Class_Object *)obj)->primdata)->FindOrCreatePen(x0, x1, x2);
@@ -2659,22 +3033,166 @@ class wxPenList *objscheme_unbundle_wxPenList(Scheme_Object *obj, const char *wh
 }
 
 
+static Scheme_Object *cursor_wxCURSOR_ARROW_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_BULLSEYE_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_CHAR_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_CROSS_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_HAND_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_IBEAM_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_LEFT_BUTTON_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_MAGNIFIER_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_MIDDLE_BUTTON_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_NO_ENTRY_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_PAINT_BRUSH_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_PENCIL_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_POINT_LEFT_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_POINT_RIGHT_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_QUESTION_ARROW_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_RIGHT_BUTTON_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_SIZENESW_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_SIZENS_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_SIZENWSE_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_SIZEWE_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_SIZING_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_SPRAYCAN_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_WAIT_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_WATCH_sym = NULL;
 
-// @CREATOR ();
+static void init_symset_cursor(void) {
+  cursor_wxCURSOR_ARROW_sym = scheme_intern_symbol("cursor-arrow");
+  cursor_wxCURSOR_BULLSEYE_sym = scheme_intern_symbol("cursor-bullseye");
+  cursor_wxCURSOR_CHAR_sym = scheme_intern_symbol("cursor-char");
+  cursor_wxCURSOR_CROSS_sym = scheme_intern_symbol("cursor-cross");
+  cursor_wxCURSOR_HAND_sym = scheme_intern_symbol("cursor-hand");
+  cursor_wxCURSOR_IBEAM_sym = scheme_intern_symbol("cursor-ibeam");
+  cursor_wxCURSOR_LEFT_BUTTON_sym = scheme_intern_symbol("cursor-left-button");
+  cursor_wxCURSOR_MAGNIFIER_sym = scheme_intern_symbol("cursor-magnifier");
+  cursor_wxCURSOR_MIDDLE_BUTTON_sym = scheme_intern_symbol("cursor-middle-button");
+  cursor_wxCURSOR_NO_ENTRY_sym = scheme_intern_symbol("cursor-no-entry");
+  cursor_wxCURSOR_PAINT_BRUSH_sym = scheme_intern_symbol("cursor-paint-brush");
+  cursor_wxCURSOR_PENCIL_sym = scheme_intern_symbol("cursor-pencil");
+  cursor_wxCURSOR_POINT_LEFT_sym = scheme_intern_symbol("cursor-point-left");
+  cursor_wxCURSOR_POINT_RIGHT_sym = scheme_intern_symbol("cursor-point-right");
+  cursor_wxCURSOR_QUESTION_ARROW_sym = scheme_intern_symbol("cursor-question-arrow");
+  cursor_wxCURSOR_RIGHT_BUTTON_sym = scheme_intern_symbol("cursor-right-button");
+  cursor_wxCURSOR_SIZENESW_sym = scheme_intern_symbol("cursor-sizenesw");
+  cursor_wxCURSOR_SIZENS_sym = scheme_intern_symbol("cursor-sizens");
+  cursor_wxCURSOR_SIZENWSE_sym = scheme_intern_symbol("cursor-sizenwse");
+  cursor_wxCURSOR_SIZEWE_sym = scheme_intern_symbol("cursor-sizewe");
+  cursor_wxCURSOR_SIZING_sym = scheme_intern_symbol("cursor-sizing");
+  cursor_wxCURSOR_SPRAYCAN_sym = scheme_intern_symbol("cursor-spraycan");
+  cursor_wxCURSOR_WAIT_sym = scheme_intern_symbol("cursor-wait");
+  cursor_wxCURSOR_WATCH_sym = scheme_intern_symbol("cursor-watch");
+}
+
+static int unbundle_symset_cursor(Scheme_Object *v, const char *where) {
+  if (!cursor_wxCURSOR_WATCH_sym) init_symset_cursor();
+  if (0) { }
+  else if (v == cursor_wxCURSOR_ARROW_sym) { return wxCURSOR_ARROW; }
+  else if (v == cursor_wxCURSOR_BULLSEYE_sym) { return wxCURSOR_BULLSEYE; }
+  else if (v == cursor_wxCURSOR_CHAR_sym) { return wxCURSOR_CHAR; }
+  else if (v == cursor_wxCURSOR_CROSS_sym) { return wxCURSOR_CROSS; }
+  else if (v == cursor_wxCURSOR_HAND_sym) { return wxCURSOR_HAND; }
+  else if (v == cursor_wxCURSOR_IBEAM_sym) { return wxCURSOR_IBEAM; }
+  else if (v == cursor_wxCURSOR_LEFT_BUTTON_sym) { return wxCURSOR_LEFT_BUTTON; }
+  else if (v == cursor_wxCURSOR_MAGNIFIER_sym) { return wxCURSOR_MAGNIFIER; }
+  else if (v == cursor_wxCURSOR_MIDDLE_BUTTON_sym) { return wxCURSOR_MIDDLE_BUTTON; }
+  else if (v == cursor_wxCURSOR_NO_ENTRY_sym) { return wxCURSOR_NO_ENTRY; }
+  else if (v == cursor_wxCURSOR_PAINT_BRUSH_sym) { return wxCURSOR_PAINT_BRUSH; }
+  else if (v == cursor_wxCURSOR_PENCIL_sym) { return wxCURSOR_PENCIL; }
+  else if (v == cursor_wxCURSOR_POINT_LEFT_sym) { return wxCURSOR_POINT_LEFT; }
+  else if (v == cursor_wxCURSOR_POINT_RIGHT_sym) { return wxCURSOR_POINT_RIGHT; }
+  else if (v == cursor_wxCURSOR_QUESTION_ARROW_sym) { return wxCURSOR_QUESTION_ARROW; }
+  else if (v == cursor_wxCURSOR_RIGHT_BUTTON_sym) { return wxCURSOR_RIGHT_BUTTON; }
+  else if (v == cursor_wxCURSOR_SIZENESW_sym) { return wxCURSOR_SIZENESW; }
+  else if (v == cursor_wxCURSOR_SIZENS_sym) { return wxCURSOR_SIZENS; }
+  else if (v == cursor_wxCURSOR_SIZENWSE_sym) { return wxCURSOR_SIZENWSE; }
+  else if (v == cursor_wxCURSOR_SIZEWE_sym) { return wxCURSOR_SIZEWE; }
+  else if (v == cursor_wxCURSOR_SIZING_sym) { return wxCURSOR_SIZING; }
+  else if (v == cursor_wxCURSOR_SPRAYCAN_sym) { return wxCURSOR_SPRAYCAN; }
+  else if (v == cursor_wxCURSOR_WAIT_sym) { return wxCURSOR_WAIT; }
+  else if (v == cursor_wxCURSOR_WATCH_sym) { return wxCURSOR_WATCH; }
+  if (where) scheme_wrong_type(where, "cursor symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_cursor(Scheme_Object *v, const char *where) {
+  if (!cursor_wxCURSOR_WATCH_sym) init_symset_cursor();
+  if (0) { }
+  else if (v == cursor_wxCURSOR_ARROW_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_BULLSEYE_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_CHAR_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_CROSS_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_HAND_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_IBEAM_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_LEFT_BUTTON_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_MAGNIFIER_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_MIDDLE_BUTTON_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_NO_ENTRY_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_PAINT_BRUSH_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_PENCIL_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_POINT_LEFT_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_POINT_RIGHT_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_QUESTION_ARROW_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_RIGHT_BUTTON_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_SIZENESW_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_SIZENS_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_SIZENWSE_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_SIZEWE_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_SIZING_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_SPRAYCAN_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_WAIT_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_WATCH_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "cursor symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_cursor(int v) {
+  if (!cursor_wxCURSOR_WATCH_sym) init_symset_cursor();
+  switch (v) {
+  case wxCURSOR_ARROW: return cursor_wxCURSOR_ARROW_sym;
+  case wxCURSOR_BULLSEYE: return cursor_wxCURSOR_BULLSEYE_sym;
+  case wxCURSOR_CHAR: return cursor_wxCURSOR_CHAR_sym;
+  case wxCURSOR_CROSS: return cursor_wxCURSOR_CROSS_sym;
+  case wxCURSOR_HAND: return cursor_wxCURSOR_HAND_sym;
+  case wxCURSOR_IBEAM: return cursor_wxCURSOR_IBEAM_sym;
+  case wxCURSOR_LEFT_BUTTON: return cursor_wxCURSOR_LEFT_BUTTON_sym;
+  case wxCURSOR_MAGNIFIER: return cursor_wxCURSOR_MAGNIFIER_sym;
+  case wxCURSOR_MIDDLE_BUTTON: return cursor_wxCURSOR_MIDDLE_BUTTON_sym;
+  case wxCURSOR_NO_ENTRY: return cursor_wxCURSOR_NO_ENTRY_sym;
+  case wxCURSOR_PAINT_BRUSH: return cursor_wxCURSOR_PAINT_BRUSH_sym;
+  case wxCURSOR_PENCIL: return cursor_wxCURSOR_PENCIL_sym;
+  case wxCURSOR_POINT_LEFT: return cursor_wxCURSOR_POINT_LEFT_sym;
+  case wxCURSOR_POINT_RIGHT: return cursor_wxCURSOR_POINT_RIGHT_sym;
+  case wxCURSOR_QUESTION_ARROW: return cursor_wxCURSOR_QUESTION_ARROW_sym;
+  case wxCURSOR_RIGHT_BUTTON: return cursor_wxCURSOR_RIGHT_BUTTON_sym;
+  case wxCURSOR_SIZENESW: return cursor_wxCURSOR_SIZENESW_sym;
+  case wxCURSOR_SIZENS: return cursor_wxCURSOR_SIZENS_sym;
+  case wxCURSOR_SIZENWSE: return cursor_wxCURSOR_SIZENWSE_sym;
+  case wxCURSOR_SIZEWE: return cursor_wxCURSOR_SIZEWE_sym;
+  case wxCURSOR_SIZING: return cursor_wxCURSOR_SIZING_sym;
+  case wxCURSOR_SPRAYCAN: return cursor_wxCURSOR_SPRAYCAN_sym;
+  case wxCURSOR_WAIT: return cursor_wxCURSOR_WAIT_sym;
+  case wxCURSOR_WATCH: return cursor_wxCURSOR_WATCH_sym;
+  default: return NULL;
+  }
+}
+
+
 
 
 
 class os_wxCursor : public wxCursor {
  public:
 
-  os_wxCursor(Scheme_Object * obj, string x0, long x1 = wxBITMAP_TYPE_DEFAULT, int x2 = 0, int x3 = 0);
+  os_wxCursor(Scheme_Object * obj, string x0, int x1, int x2 = 0, int x3 = 0);
   os_wxCursor(Scheme_Object * obj, int x0);
   ~os_wxCursor();
 };
 
 Scheme_Object *os_wxCursor_class;
 
-os_wxCursor::os_wxCursor(Scheme_Object * o, string x0, long x1, int x2, int x3)
+os_wxCursor::os_wxCursor(Scheme_Object * o, string x0, int x1, int x2, int x3)
 : wxCursor(x0, x1, x2, x3)
 {
   __gc_external = (void *)o;
@@ -2716,13 +3234,13 @@ static Scheme_Object *os_wxCursorOk(Scheme_Object *obj, int n,  Scheme_Object *p
 static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxCursor *realobj;
-  if ((n >= 1) && objscheme_istype_number(p[0], NULL)) {
+  if ((n >= 1) && istype_symset_cursor(p[0], NULL)) {
     int x0;
 
     
     if (n != 1) 
       scheme_wrong_count("wx:cursor%::initialization (cursor id case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "wx:cursor%::initialization (cursor id case)");
+    x0 = unbundle_symset_cursor(p[0], "wx:cursor%::initialization (cursor id case)");;
 
     
     realobj = new os_wxCursor(obj, x0);
@@ -2730,18 +3248,15 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
     
   } else  {
     string x0;
-    long x1;
+    int x1;
     int x2;
     int x3;
 
     
-    if ((n < 1) ||(n > 4)) 
-      scheme_wrong_count("wx:cursor%::initialization (cursor name case)", 1, 4, n, p);
+    if ((n < 2) ||(n > 4)) 
+      scheme_wrong_count("wx:cursor%::initialization (cursor name case)", 2, 4, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "wx:cursor%::initialization (cursor name case)");
-    if (n > 1) {
-      x1 = objscheme_unbundle_integer(p[1], "wx:cursor%::initialization (cursor name case)");
-    } else
-      x1 = wxBITMAP_TYPE_DEFAULT;
+    x1 = unbundle_symset_bitmapType(p[1], "wx:cursor%::initialization (cursor name case)");;
     if (n > 2) {
       x2 = objscheme_unbundle_integer(p[2], "wx:cursor%::initialization (cursor name case)");
     } else
@@ -2786,30 +3301,6 @@ if (os_wxCursor_class) {
 
 
 }
-  scheme_install_xc_global("wx:const-cursor-arrow", scheme_make_integer(wxCURSOR_ARROW), env);
-  scheme_install_xc_global("wx:const-cursor-bullseye", scheme_make_integer(wxCURSOR_BULLSEYE), env);
-  scheme_install_xc_global("wx:const-cursor-char", scheme_make_integer(wxCURSOR_CHAR), env);
-  scheme_install_xc_global("wx:const-cursor-cross", scheme_make_integer(wxCURSOR_CROSS), env);
-  scheme_install_xc_global("wx:const-cursor-hand", scheme_make_integer(wxCURSOR_HAND), env);
-  scheme_install_xc_global("wx:const-cursor-ibeam", scheme_make_integer(wxCURSOR_IBEAM), env);
-  scheme_install_xc_global("wx:const-cursor-left-button", scheme_make_integer(wxCURSOR_LEFT_BUTTON), env);
-  scheme_install_xc_global("wx:const-cursor-magnifier", scheme_make_integer(wxCURSOR_MAGNIFIER), env);
-  scheme_install_xc_global("wx:const-cursor-middle-button", scheme_make_integer(wxCURSOR_MIDDLE_BUTTON), env);
-  scheme_install_xc_global("wx:const-cursor-no-entry", scheme_make_integer(wxCURSOR_NO_ENTRY), env);
-  scheme_install_xc_global("wx:const-cursor-painr-brush", scheme_make_integer(wxCURSOR_PAINT_BRUSH), env);
-  scheme_install_xc_global("wx:const-cursor-pencil", scheme_make_integer(wxCURSOR_PENCIL), env);
-  scheme_install_xc_global("wx:const-cursor-point-left", scheme_make_integer(wxCURSOR_POINT_LEFT), env);
-  scheme_install_xc_global("wx:const-cursor-point-right", scheme_make_integer(wxCURSOR_POINT_RIGHT), env);
-  scheme_install_xc_global("wx:const-cursor-question-arrow", scheme_make_integer(wxCURSOR_QUESTION_ARROW), env);
-  scheme_install_xc_global("wx:const-cursor-right-button", scheme_make_integer(wxCURSOR_RIGHT_BUTTON), env);
-  scheme_install_xc_global("wx:const-cursor-sizenesw", scheme_make_integer(wxCURSOR_SIZENESW), env);
-  scheme_install_xc_global("wx:const-cursor-sizens", scheme_make_integer(wxCURSOR_SIZENS), env);
-  scheme_install_xc_global("wx:const-cursor-sizenwse", scheme_make_integer(wxCURSOR_SIZENWSE), env);
-  scheme_install_xc_global("wx:const-cursor-sizewe", scheme_make_integer(wxCURSOR_SIZEWE), env);
-  scheme_install_xc_global("wx:const-cursor-sizing", scheme_make_integer(wxCURSOR_SIZING), env);
-  scheme_install_xc_global("wx:const-cursor-spraycan", scheme_make_integer(wxCURSOR_SPRAYCAN), env);
-  scheme_install_xc_global("wx:const-cursor-wait", scheme_make_integer(wxCURSOR_WAIT), env);
-  scheme_install_xc_global("wx:const-cursor-watch", scheme_make_integer(wxCURSOR_WATCH), env);
 }
 
 int objscheme_istype_wxCursor(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2863,135 +3354,12 @@ class wxCursor *objscheme_unbundle_wxCursor(Scheme_Object *obj, const char *wher
 
 
 
-
-// @CREATOR ();
-
-// in wx:bitmap%: 
-// @ "ok?" : bool Ok();
-
-class os_wxIcon : public wxIcon {
- public:
-
-  os_wxIcon(Scheme_Object * obj, string x0, int x1 = wxBITMAP_TYPE_DEFAULT);
-  ~os_wxIcon();
-};
-
-Scheme_Object *os_wxIcon_class;
-
-os_wxIcon::os_wxIcon(Scheme_Object * o, string x0, int x1)
-: wxIcon(x0, x1)
-{
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
-}
-
-os_wxIcon::~os_wxIcon()
-{
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxIcon_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  os_wxIcon *realobj;
-  string x0;
-  int x1;
-
-  
-  if ((n < 1) ||(n > 2)) 
-    scheme_wrong_count("wx:icon%::initialization", 1, 2, n, p);
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:icon%::initialization");
-  if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "wx:icon%::initialization");
-  } else
-    x1 = wxBITMAP_TYPE_DEFAULT;
-
-  
-  realobj = new os_wxIcon(obj, x0, x1);
-  
-  
-  ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
-  ((Scheme_Class_Object *)obj)->primflag = 1;
-  return obj;
-}
-
-static Scheme_Object *objscheme_classname_os_wxIcon(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:icon%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:icon%");
-}
-
-void objscheme_setup_wxIcon(void *env)
-{
-if (os_wxIcon_class) {
-    objscheme_add_global_class(os_wxIcon_class,  "wx:icon%", env);
-} else {
-  os_wxIcon_class = objscheme_def_prim_class(env, "wx:icon%", "wx:bitmap%", os_wxIcon_ConstructScheme, 1);
-
-  scheme_add_method_w_arity(os_wxIcon_class,"get-class-name",objscheme_classname_os_wxIcon, 0, 0);
-
-
-
-  scheme_made_class(os_wxIcon_class);
-
-
-}
-}
-
-int objscheme_istype_wxIcon(Scheme_Object *obj, const char *stop, int nullOK)
-{
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxIcon_class))
-    return 1;
-  else {
-    if (!stop)
-       return 0;
-    scheme_wrong_type(stop, "wx:icon%", -1, 0, &obj);
-    return 0;
-  }
-}
-
-Scheme_Object *objscheme_bundle_wxIcon(class wxIcon *realobj)
-{
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
-
-  if (!realobj) return scheme_null;
-
-  if (realobj->__gc_external)
-    return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
-    return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxIcon_class);
-
-  obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
-  obj->primflag = 0;
-
-  realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
-  return (Scheme_Object *)obj;
-}
-
-class wxIcon *objscheme_unbundle_wxIcon(Scheme_Object *obj, const char *where, int nullOK)
-{
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
-
-  (void)objscheme_istype_wxIcon(obj, where, nullOK);
-  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
-  if (o->primflag)
-    return (os_wxIcon *)o->primdata;
-  else
-    return (wxIcon *)o->primdata;
-}
-
-
 #if USE_FONT_NAME_DIRECTORY
+
+static inline int Identity(wxFontNameDirectory *, int v)
+{
+  return v;
+}
 
 
 
@@ -3013,6 +3381,25 @@ os_wxFontNameDirectory::~os_wxFontNameDirectory()
 }
 
 #pragma argsused
+static Scheme_Object *os_wxFontNameDirectoryIdentity(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  int r;
+  objscheme_check_valid(obj);
+  int x0;
+
+  
+  x0 = unbundle_symset_family(p[0], "wx:font-name-directory%::find-family-default-font-id");;
+
+  
+  r = Identity(((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata), x0);
+
+  
+  
+  return scheme_make_integer(r);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxFontNameDirectoryFindOrCreateFontId(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3023,7 +3410,7 @@ static Scheme_Object *os_wxFontNameDirectoryFindOrCreateFontId(Scheme_Object *ob
 
   
   x0 = (cstring)objscheme_unbundle_string(p[0], "wx:font-name-directory%::find-or-create-font-id");
-  x1 = objscheme_unbundle_integer(p[1], "wx:font-name-directory%::find-or-create-font-id");
+  x1 = unbundle_symset_family(p[1], "wx:font-name-directory%::find-or-create-font-id");;
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->FindOrCreateFontId(x0, x1);
@@ -3049,7 +3436,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFamily(Scheme_Object *obj, int n,
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_family(r);;
 }
 
 #pragma argsused
@@ -3140,9 +3527,9 @@ static Scheme_Object *os_wxFontNameDirectoryGetAFMName(Scheme_Object *obj, int n
   int x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:font-name-directory%::get-afm-name");
-  x1 = objscheme_unbundle_integer(p[1], "wx:font-name-directory%::get-afm-name");
-  x2 = objscheme_unbundle_integer(p[2], "wx:font-name-directory%::get-afm-name");
+  x0 = unbundle_symset_family(p[0], "wx:font-name-directory%::get-afm-name");;
+  x1 = unbundle_symset_style(p[1], "wx:font-name-directory%::get-afm-name");;
+  x2 = unbundle_symset_weight(p[2], "wx:font-name-directory%::get-afm-name");;
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetAFMName(x0, x1, x2);
@@ -3163,9 +3550,9 @@ static Scheme_Object *os_wxFontNameDirectoryGetPostScriptName(Scheme_Object *obj
   int x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:font-name-directory%::get-post-script-name");
-  x1 = objscheme_unbundle_integer(p[1], "wx:font-name-directory%::get-post-script-name");
-  x2 = objscheme_unbundle_integer(p[2], "wx:font-name-directory%::get-post-script-name");
+  x0 = unbundle_symset_family(p[0], "wx:font-name-directory%::get-post-script-name");;
+  x1 = unbundle_symset_style(p[1], "wx:font-name-directory%::get-post-script-name");;
+  x2 = unbundle_symset_weight(p[2], "wx:font-name-directory%::get-post-script-name");;
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetPostScriptName(x0, x1, x2);
@@ -3186,9 +3573,9 @@ static Scheme_Object *os_wxFontNameDirectoryGetScreenName(Scheme_Object *obj, in
   int x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:font-name-directory%::get-screen-name");
-  x1 = objscheme_unbundle_integer(p[1], "wx:font-name-directory%::get-screen-name");
-  x2 = objscheme_unbundle_integer(p[2], "wx:font-name-directory%::get-screen-name");
+  x0 = unbundle_symset_family(p[0], "wx:font-name-directory%::get-screen-name");;
+  x1 = unbundle_symset_style(p[1], "wx:font-name-directory%::get-screen-name");;
+  x2 = unbundle_symset_weight(p[2], "wx:font-name-directory%::get-screen-name");;
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetScreenName(x0, x1, x2);
@@ -3210,10 +3597,11 @@ void objscheme_setup_wxFontNameDirectory(void *env)
 if (os_wxFontNameDirectory_class) {
     objscheme_add_global_class(os_wxFontNameDirectory_class,  "wx:font-name-directory%", env);
 } else {
-  os_wxFontNameDirectory_class = objscheme_def_prim_class(env, "wx:font-name-directory%", "wx:object%", NULL, 10);
+  os_wxFontNameDirectory_class = objscheme_def_prim_class(env, "wx:font-name-directory%", "wx:object%", NULL, 11);
 
   scheme_add_method_w_arity(os_wxFontNameDirectory_class,"get-class-name",objscheme_classname_os_wxFontNameDirectory, 0, 0);
 
+ scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-family-default-font-id", os_wxFontNameDirectoryIdentity, 1, 1);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-or-create-font-id", os_wxFontNameDirectoryFindOrCreateFontId, 2, 2);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-family", os_wxFontNameDirectoryGetFamily, 1, 1);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-font-name", os_wxFontNameDirectoryGetFontName, 1, 1);

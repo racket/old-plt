@@ -18,13 +18,12 @@
 #include "wxscomon.h"
 
 
-
 #ifdef wx_mac
 #define Move(x, y) SetSize(-1, -1, x, y)
 #endif
 
 #if defined(wx_xt)
-#define wxPOS_USE_MINUS_ONE 0
+#define wxPOS_USE_MINUS_ONE 0x4
 #endif
 
 static int wxSchemeWindowGetWidth(wxWindow *w)
@@ -63,23 +62,100 @@ static int wxSchemeWindowGetY(wxWindow *w)
   return y;
 }
 
+static Scheme_Object *sizeMode_wxSIZE_AUTO_sym = NULL;
+static Scheme_Object *sizeMode_wxSIZE_AUTO_WIDTH_sym = NULL;
+static Scheme_Object *sizeMode_wxSIZE_AUTO_HEIGHT_sym = NULL;
+static Scheme_Object *sizeMode_wxSIZE_USE_EXISTING_sym = NULL;
+static Scheme_Object *sizeMode_wxPOS_USE_MINUS_ONE_sym = NULL;
 
-// @CREATOR ();
+static void init_symset_sizeMode(void) {
+  sizeMode_wxSIZE_AUTO_sym = scheme_intern_symbol("size-auto");
+  sizeMode_wxSIZE_AUTO_WIDTH_sym = scheme_intern_symbol("size-auto-width");
+  sizeMode_wxSIZE_AUTO_HEIGHT_sym = scheme_intern_symbol("size-auto-height");
+  sizeMode_wxSIZE_USE_EXISTING_sym = scheme_intern_symbol("size-use-exsiting");
+  sizeMode_wxPOS_USE_MINUS_ONE_sym = scheme_intern_symbol("pos-use-minus-one");
+}
+
+static int unbundle_symset_sizeMode(Scheme_Object *v, const char *where) {
+  if (!sizeMode_wxPOS_USE_MINUS_ONE_sym) init_symset_sizeMode();
+  if (0) { }
+  else if (v == sizeMode_wxSIZE_AUTO_sym) { return wxSIZE_AUTO; }
+  else if (v == sizeMode_wxSIZE_AUTO_WIDTH_sym) { return wxSIZE_AUTO_WIDTH; }
+  else if (v == sizeMode_wxSIZE_AUTO_HEIGHT_sym) { return wxSIZE_AUTO_HEIGHT; }
+  else if (v == sizeMode_wxSIZE_USE_EXISTING_sym) { return wxSIZE_USE_EXISTING; }
+  else if (v == sizeMode_wxPOS_USE_MINUS_ONE_sym) { return wxPOS_USE_MINUS_ONE; }
+  if (where) scheme_wrong_type(where, "sizeMode symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_sizeMode(Scheme_Object *v, const char *where) {
+  if (!sizeMode_wxPOS_USE_MINUS_ONE_sym) init_symset_sizeMode();
+  if (0) { }
+  else if (v == sizeMode_wxSIZE_AUTO_sym) { return 1; }
+  else if (v == sizeMode_wxSIZE_AUTO_WIDTH_sym) { return 1; }
+  else if (v == sizeMode_wxSIZE_AUTO_HEIGHT_sym) { return 1; }
+  else if (v == sizeMode_wxSIZE_USE_EXISTING_sym) { return 1; }
+  else if (v == sizeMode_wxPOS_USE_MINUS_ONE_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "sizeMode symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_sizeMode(int v) {
+  if (!sizeMode_wxPOS_USE_MINUS_ONE_sym) init_symset_sizeMode();
+  switch (v) {
+  case wxSIZE_AUTO: return sizeMode_wxSIZE_AUTO_sym;
+  case wxSIZE_AUTO_WIDTH: return sizeMode_wxSIZE_AUTO_WIDTH_sym;
+  case wxSIZE_AUTO_HEIGHT: return sizeMode_wxSIZE_AUTO_HEIGHT_sym;
+  case wxSIZE_USE_EXISTING: return sizeMode_wxSIZE_USE_EXISTING_sym;
+  case wxPOS_USE_MINUS_ONE: return sizeMode_wxPOS_USE_MINUS_ONE_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *direction_wxBOTH_sym = NULL;
+static Scheme_Object *direction_wxVERTICAL_sym = NULL;
+static Scheme_Object *direction_wxHORIZONTAL_sym = NULL;
+
+static void init_symset_direction(void) {
+  direction_wxBOTH_sym = scheme_intern_symbol("both");
+  direction_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  direction_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+}
+
+static int unbundle_symset_direction(Scheme_Object *v, const char *where) {
+  if (!direction_wxHORIZONTAL_sym) init_symset_direction();
+  if (0) { }
+  else if (v == direction_wxBOTH_sym) { return wxBOTH; }
+  else if (v == direction_wxVERTICAL_sym) { return wxVERTICAL; }
+  else if (v == direction_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
+  if (where) scheme_wrong_type(where, "direction symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_direction(Scheme_Object *v, const char *where) {
+  if (!direction_wxHORIZONTAL_sym) init_symset_direction();
+  if (0) { }
+  else if (v == direction_wxBOTH_sym) { return 1; }
+  else if (v == direction_wxVERTICAL_sym) { return 1; }
+  else if (v == direction_wxHORIZONTAL_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "direction symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_direction(int v) {
+  if (!direction_wxHORIZONTAL_sym) init_symset_direction();
+  switch (v) {
+  case wxBOTH: return direction_wxBOTH_sym;
+  case wxVERTICAL: return direction_wxVERTICAL_sym;
+  case wxHORIZONTAL: return direction_wxHORIZONTAL_sym;
+  default: return NULL;
+  }
+}
 
 
 
-// @ "make-modal" : void MakeModal(bool);
-// @ "set-client-size" : void SetClientSize(int,int); : : /NOZERO[0]|NOZERO[1]
-// @ "set-colour-map" : void SetColourMap(wxColourMap!);
 
-
-// Destruction not allowed in wxScheme:
-// @ "destroy-children" : void DestroyChildren();
-// @ "drag-accept-files" : void DragAcceptFiles(bool);
-// @ "add-child" : void AddChild(wxWindow!);
-// @ "capture-mouse" : void CaptureMouse();
-// @ "release-mouse" : void ReleaseMouse();
-// @ "get-children" : wxList! GetChildren();
 
 
 
@@ -120,18 +196,20 @@ Bool os_wxWindow::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -153,18 +231,20 @@ Bool os_wxWindow::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -186,18 +266,20 @@ void os_wxWindow::OnSize(int x0, int x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = scheme_make_integer(x0);
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -218,16 +300,18 @@ void os_wxWindow::OnSetFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -248,16 +332,18 @@ void os_wxWindow::OnKillFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -450,7 +536,10 @@ static Scheme_Object *os_wxWindowCenter(Scheme_Object *obj, int n,  Scheme_Objec
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:window%::center");
+  if (n > 0) {
+    x0 = unbundle_symset_direction(p[0], "wx:window%::center");;
+  } else
+    x0 = wxBOTH;
 
   
   ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->Center(x0);
@@ -929,7 +1018,7 @@ static Scheme_Object *os_wxWindowSetSize(Scheme_Object *obj, int n,  Scheme_Obje
   x2 = objscheme_unbundle_integer(p[2], "wx:window%::set-size");
   x3 = objscheme_unbundle_integer(p[3], "wx:window%::set-size");
   if (n > 4) {
-    x4 = objscheme_unbundle_integer(p[4], "wx:window%::set-size");
+    x4 = unbundle_symset_sizeMode(p[4], "wx:window%::set-size");;
   } else
     x4 = wxSIZE_AUTO;
 
@@ -966,7 +1055,7 @@ static Scheme_Object *os_wxWindowCentre(Scheme_Object *obj, int n,  Scheme_Objec
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "wx:window%::centre");
+    x0 = unbundle_symset_direction(p[0], "wx:window%::centre");;
   } else
     x0 = wxBOTH;
 
@@ -1003,7 +1092,7 @@ if (os_wxWindow_class) {
  scheme_add_method_w_arity(os_wxWindow_class, "get-x", os_wxWindowwxSchemeWindowGetX, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "get-width", os_wxWindowwxSchemeWindowGetWidth, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "get-height", os_wxWindowwxSchemeWindowGetHeight, 0, 0);
- scheme_add_method_w_arity(os_wxWindow_class, "center", os_wxWindowCenter, 1, 1);
+ scheme_add_method_w_arity(os_wxWindow_class, "center", os_wxWindowCenter, 0, 1);
  scheme_add_method_w_arity(os_wxWindow_class, "get-label", os_wxWindowGetLabel, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "get-grand-parent", os_wxWindowGetGrandParent, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "get-text-extent", os_wxWindowGetTextExtent, 3, 7);
@@ -1032,11 +1121,6 @@ if (os_wxWindow_class) {
 
 
 }
-  scheme_install_xc_global("wx:const-size-auto", scheme_make_integer(wxSIZE_AUTO), env);
-  scheme_install_xc_global("wx:const-size-auto-width", scheme_make_integer(wxSIZE_AUTO_WIDTH), env);
-  scheme_install_xc_global("wx:const-size-auto-height", scheme_make_integer(wxSIZE_AUTO_HEIGHT), env);
-  scheme_install_xc_global("wx:const-size-use-exsiting", scheme_make_integer(wxSIZE_USE_EXISTING), env);
-  scheme_install_xc_global("wx:const-pos-use-minus-one", scheme_make_integer(wxPOS_USE_MINUS_ONE), env);
 }
 
 int objscheme_istype_wxWindow(Scheme_Object *obj, const char *stop, int nullOK)

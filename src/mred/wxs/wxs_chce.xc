@@ -7,8 +7,6 @@
 
 @HEADER
 
-#define USE_COLUMNS 0
-
 @CLASSBASE wxChoice "wx:choice":"wx:item"
 
 @SET CALLBACK_CLASS = wxChoice
@@ -35,9 +33,6 @@
 @ "set-selection" : void SetSelection(int); : : /RANGE[0]
 @ "set-string-selection" : void SetStringSelection(string);
 @ "get-string" : string GetString(int); : : /RANGERET[0.scheme_null]
-
-@ "set-columns" : void SetColumns(int=1); ## USE_COLUMNS
-@ "get-columns" :  int GetColumns();  ## USE_COLUMNS
 
 @END
 

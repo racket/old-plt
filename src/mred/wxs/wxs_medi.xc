@@ -45,15 +45,42 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
   return cconvert(b, x, y, 0);
 }
 
+static void DoEditCommand(wxMediaBuffer *b, int cmd, Bool bl, long t)
+{
+  b->DoEdit(cmd, bl, t);
+}
+
 @MACRO rNULL = return NULL;
 @MACRO rFALSE = return FALSE;
 @MACRO rZERO = return 0;
+
+@INCLUDE wxs_fcs.xci
+
+@BEGINSYMBOLS editOp > ONE
+@SYM "edit-undo" : wxEDIT_UNDO
+@SYM "edit-redo" : wxEDIT_REDO
+@SYM "edit-clear" : wxEDIT_CLEAR
+@SYM "edit-cut" : wxEDIT_CUT
+@SYM "edit-copy" : wxEDIT_COPY
+@SYM "edit-paste" : wxEDIT_PASTE
+@SYM "edit-kill" : wxEDIT_KILL
+@SYM "edit-insert-text-box" : wxEDIT_INSERT_TEXT_BOX
+@SYM "edit-insert-graphic-box" : wxEDIT_INSERT_GRAPHIC_BOX
+@SYM "edit-insert-image" : wxEDIT_INSERT_IMAGE
+@SYM "edit-select-all" : wxEDIT_SELECT_ALL
+@ENDSYMBOLS
+
+@BEGINSYMBOLS printMethod > ONE
+@SYM "print-standard" : 0
+@SYM "print-postscript" : 1
+@SYM "print-ask" : 2
+@ENDSYMBOLS
 
 @CLASSBASE wxMediaBuffer "wx:media-buffer" : "wx:object"
 
 @CLASSID wxTYPE_MEDIA_BUFFER
 
-@IVAR "buffer-type" : int bufferType
+@IVAR "buffer-type" : SYM[bufferType] bufferType
 
 @SETMARK Y = V
 @SETMARK Z = v
@@ -64,9 +91,9 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @SETMARK X = D
 
 // These don't use `pathname' because they expand internally
-@ X "load-file" : bool LoadFile(nstring=NULL,int=wxMEDIA_FF_GUESS,bool=TRUE);
-@ X "save-file" : bool SaveFile(nstring=NULL,int=wxMEDIA_FF_SAME,bool=TRUE);
-@ X "insert-file" : bool InsertFile(string,int=wxMEDIA_FF_GUESS,bool=TRUE);
+@ X "load-file" : bool LoadFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE);
+@ X "save-file" : bool SaveFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_SAME,bool=TRUE);
+@ X "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE);
 
 @ X "get-extent" : void GetExtent(float?,float?);
 @ X "get-descent" : float GetDescent(); : : : : XrZERO
@@ -122,6 +149,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ "append-font-items" : int AppendFontItems(wxMenu!,int=0);
 @ "do-edit" : void DoEdit(int,bool=TRUE,long=0);
 @ "do-font" : void DoFont(int,bool=TRUE);
+@ m "do-edit-command" : void DoEditCommand(SYM[editOp],bool=TRUE,long=0);
 
 @ "set-keymap" : void SetKeymap(wxKeymap^=NULL);
 @ "get-keymap" : wxKeymap! GetKeymap();
@@ -141,10 +169,10 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 
 @ "get-filename" : nstring GetFilename(bool?=NULL);
 
-@ "insert-box" : void InsertBox(int=wxEDIT_BUFFER);
+@ "insert-box" : void InsertBox(SYM[bufferType]=wxEDIT_BUFFER);
 @ "insert-image" : void InsertImage(nstring=NULL,long=-1,bool=FALSE,bool=TRUE);
 
-@ "print" : void Print(nstring=NULL,bool=TRUE,bool=FALSE,int=0);
+@ "print" : void Print(nstring=NULL,bool=TRUE,bool=FALSE,SYM[printMethod]=0);
 
 @ "begin-write-header-footer-to-file" : bool BeginWriteHeaderFooterToFile(wxMediaStreamOut%,string,long*);
 @ "end-write-header-footer-to-file" : bool EndWriteHeaderFooterToFile(wxMediaStreamOut%,long);
@@ -158,13 +186,6 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
  
 @ m "buffer-location-to-dc-location" : void*/bundleAny wxbBufferToDC(double, double);
 @ m "dc-location-to-buffer-location" : void*/bundleAny wxbDCToBuffer(double, double);
-
-@CONSTANT "wx:const-edit-buffer" : int wxEDIT_BUFFER
-@CONSTANT "wx:const-pasteboard-buffer" : int wxPASTEBOARD_BUFFER
-
-@CONSTANT "wx:const-focus-immediate" : int wxFOCUS_IMMEDIATE
-@CONSTANT "wx:const-focus-display" : int wxFOCUS_DISPLAY
-@CONSTANT "wx:const-focus-global" : int wxFOCUS_GLOBAL
 
 @END
 

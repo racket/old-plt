@@ -6,8 +6,6 @@
 #define DO_OK_CHECK(v) if (!((wxDC *)((Scheme_Class_Object *)obj)->primdata)->Ok()) return v;
 #endif
 
-@MACRO CheckLogicalFunc[p.v.n] = switch (x<p>) { case wxAND: case wxAND_INVERT: case wxAND_REVERSE: case wxCLEAR: case wxCOPY: case wxEQUIV: case wxINVERT: case wxNAND: case wxNOR: case wxNO_OP: case wxOR: case wxOR_INVERT: case wxOR_REVERSE: case wxSET: case wxSRC_INVERT: case wxXOR: break; case wxCOLOR: if (x<p> == <v>) break; default: scheme_wrong_type(<n>, "logicalfunction integer", <p>, n, p); }
-
 @MACRO CheckOkGen[ret] = DO_OK_CHECK(<ret>)
 @MACRO CheckGen[p.ret] = if (!x<p>->Ok()) return <ret>;
 @MACRO CheckOk = $$CheckOkGen[scheme_void]

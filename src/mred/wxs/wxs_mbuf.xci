@@ -37,7 +37,7 @@
 @ Y "on-change" : void OnChange();
 
 @ Y "scroll-to" : bool ScrollTo(wxSnip!,float,float,float,float,bool); : : : : XrZERO
-@ Y "set-caret-owner" : void SetCaretOwner(wxSnip^,int=wxFOCUS_IMMEDIATE);
+@ Y "set-caret-owner" : void SetCaretOwner(wxSnip^,SYM[focus]=wxFOCUS_IMMEDIATE);
 @ Y "resized" : void Resized(wxSnip!,bool);
 @ Y "needs-update" : void NeedsUpdate(wxSnip!,float,float,float,float);
 
@@ -58,15 +58,15 @@
 @ Z "write-headers-to-file" : bool WriteHeadersToFile(wxMediaStreamOut%);
 @ Z "write-footers-to-file" : bool WriteFootersToFile(wxMediaStreamOut%);
 
-@ Z "on-paint" : void OnPaint(bool,wxDC!,float,float,float,float,float,float,int);  : : /CHECKOK[1."wx:media-buffer%::on-paint"]
+@ Z "on-paint" : void OnPaint(bool,wxDC!,float,float,float,float,float,float,SYM[caret]);  : : /CHECKOK[1."wx:media-buffer%::on-paint"]
 @ Y "invalidate-bitmap-cache" : void InvalidateBitmapCache(float=0.0,float=0.0,float=-1.0,float=-1.0);
 
 @ Z "on-new-image-snip" : wxImageSnip! OnNewImageSnip(nstring,long,bool,bool);
-@ Z "on-new-box" : wxSnip! OnNewBox(int);
+@ Z "on-new-box" : wxSnip! OnNewBox(SYM[bufferType]);
 
-@ Z "on-save-file" : bool OnSaveFile(string,int);
+@ Z "on-save-file" : bool OnSaveFile(string,SYM[fileType]);
 @ Z "after-save-file" : void AfterSaveFile(bool);
-@ Z "on-load-file" : bool OnLoadFile(string,int);
+@ Z "on-load-file" : bool OnLoadFile(string,SYM[fileType]);
 @ Z "after-load-file" : void AfterLoadFile(bool);
 
 @ Z "on-edit-sequence" : void OnEditSequence();

@@ -7,6 +7,8 @@
 
 @HEADER
 
+@INCLUDE wxs_fcs.xci
+
 @CLASSBASE wxMediaPasteboard "wx:media-pasteboard" : "wx:media-buffer"
 
 @CREATOR ()

@@ -22,6 +22,242 @@
 #include "wxs_obj.h"
 
 
+static Scheme_Object *style_wxMCANVAS_NO_H_SCROLL_sym = NULL;
+static Scheme_Object *style_wxMCANVAS_NO_V_SCROLL_sym = NULL;
+static Scheme_Object *style_wxMCANVAS_HIDE_H_SCROLL_sym = NULL;
+static Scheme_Object *style_wxMCANVAS_HIDE_V_SCROLL_sym = NULL;
+
+static void init_symset_style(void) {
+  style_wxMCANVAS_NO_H_SCROLL_sym = scheme_intern_symbol("mcanvas-no-h-scroll");
+  style_wxMCANVAS_NO_V_SCROLL_sym = scheme_intern_symbol("mcanvas-no-v-scroll");
+  style_wxMCANVAS_HIDE_H_SCROLL_sym = scheme_intern_symbol("mcanvas-hide-h-scroll");
+  style_wxMCANVAS_HIDE_V_SCROLL_sym = scheme_intern_symbol("mcanvas-hide-v-scroll");
+}
+
+static int unbundle_symset_style(Scheme_Object *v, const char *where) {
+  if (!style_wxMCANVAS_HIDE_V_SCROLL_sym) init_symset_style();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == style_wxMCANVAS_NO_H_SCROLL_sym) { result = result | wxMCANVAS_NO_H_SCROLL; }
+  else if (i == style_wxMCANVAS_NO_V_SCROLL_sym) { result = result | wxMCANVAS_NO_V_SCROLL; }
+  else if (i == style_wxMCANVAS_HIDE_H_SCROLL_sym) { result = result | wxMCANVAS_HIDE_H_SCROLL; }
+  else if (i == style_wxMCANVAS_HIDE_V_SCROLL_sym) { result = result | wxMCANVAS_HIDE_V_SCROLL; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "style symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_style(Scheme_Object *v, const char *where) {
+  if (!style_wxMCANVAS_HIDE_V_SCROLL_sym) init_symset_style();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == style_wxMCANVAS_NO_H_SCROLL_sym) { ; }
+  else if (i == style_wxMCANVAS_NO_V_SCROLL_sym) { ; }
+  else if (i == style_wxMCANVAS_HIDE_H_SCROLL_sym) { ; }
+  else if (i == style_wxMCANVAS_HIDE_V_SCROLL_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "style symbol list", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_style(int v) {
+  if (!style_wxMCANVAS_HIDE_V_SCROLL_sym) init_symset_style();
+  Scheme_Object *l = scheme_null;
+  if (v & wxMCANVAS_NO_H_SCROLL) l = scheme_make_pair(style_wxMCANVAS_NO_H_SCROLL_sym, l);
+  if (v & wxMCANVAS_NO_V_SCROLL) l = scheme_make_pair(style_wxMCANVAS_NO_V_SCROLL_sym, l);
+  if (v & wxMCANVAS_HIDE_H_SCROLL) l = scheme_make_pair(style_wxMCANVAS_HIDE_H_SCROLL_sym, l);
+  if (v & wxMCANVAS_HIDE_V_SCROLL) l = scheme_make_pair(style_wxMCANVAS_HIDE_V_SCROLL_sym, l);
+  return l;
+}
+
+
+
+static Scheme_Object *bufferType_wxEDIT_BUFFER_sym = NULL;
+static Scheme_Object *bufferType_wxPASTEBOARD_BUFFER_sym = NULL;
+
+static void init_symset_bufferType(void) {
+  bufferType_wxEDIT_BUFFER_sym = scheme_intern_symbol("edit-buffer");
+  bufferType_wxPASTEBOARD_BUFFER_sym = scheme_intern_symbol("pasteboard-buffer");
+}
+
+static int unbundle_symset_bufferType(Scheme_Object *v, const char *where) {
+  if (!bufferType_wxPASTEBOARD_BUFFER_sym) init_symset_bufferType();
+  if (0) { }
+  else if (v == bufferType_wxEDIT_BUFFER_sym) { return wxEDIT_BUFFER; }
+  else if (v == bufferType_wxPASTEBOARD_BUFFER_sym) { return wxPASTEBOARD_BUFFER; }
+  if (where) scheme_wrong_type(where, "bufferType symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_bufferType(Scheme_Object *v, const char *where) {
+  if (!bufferType_wxPASTEBOARD_BUFFER_sym) init_symset_bufferType();
+  if (0) { }
+  else if (v == bufferType_wxEDIT_BUFFER_sym) { return 1; }
+  else if (v == bufferType_wxPASTEBOARD_BUFFER_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "bufferType symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_bufferType(int v) {
+  if (!bufferType_wxPASTEBOARD_BUFFER_sym) init_symset_bufferType();
+  switch (v) {
+  case wxEDIT_BUFFER: return bufferType_wxEDIT_BUFFER_sym;
+  case wxPASTEBOARD_BUFFER: return bufferType_wxPASTEBOARD_BUFFER_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *fileType_wxMEDIA_FF_GUESS_sym = NULL;
+static Scheme_Object *fileType_wxMEDIA_FF_STD_sym = NULL;
+static Scheme_Object *fileType_wxMEDIA_FF_TEXT_sym = NULL;
+static Scheme_Object *fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym = NULL;
+static Scheme_Object *fileType_wxMEDIA_FF_SAME_sym = NULL;
+static Scheme_Object *fileType_wxMEDIA_FF_COPY_sym = NULL;
+
+static void init_symset_fileType(void) {
+  fileType_wxMEDIA_FF_GUESS_sym = scheme_intern_symbol("media-ff-guess");
+  fileType_wxMEDIA_FF_STD_sym = scheme_intern_symbol("media-ff-std");
+  fileType_wxMEDIA_FF_TEXT_sym = scheme_intern_symbol("media-ff-text");
+  fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym = scheme_intern_symbol("media-ff-text-force-cr");
+  fileType_wxMEDIA_FF_SAME_sym = scheme_intern_symbol("media-ff-same");
+  fileType_wxMEDIA_FF_COPY_sym = scheme_intern_symbol("media-ff-copy");
+}
+
+static int unbundle_symset_fileType(Scheme_Object *v, const char *where) {
+  if (!fileType_wxMEDIA_FF_COPY_sym) init_symset_fileType();
+  if (0) { }
+  else if (v == fileType_wxMEDIA_FF_GUESS_sym) { return wxMEDIA_FF_GUESS; }
+  else if (v == fileType_wxMEDIA_FF_STD_sym) { return wxMEDIA_FF_STD; }
+  else if (v == fileType_wxMEDIA_FF_TEXT_sym) { return wxMEDIA_FF_TEXT; }
+  else if (v == fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym) { return wxMEDIA_FF_TEXT_FORCE_CR; }
+  else if (v == fileType_wxMEDIA_FF_SAME_sym) { return wxMEDIA_FF_SAME; }
+  else if (v == fileType_wxMEDIA_FF_COPY_sym) { return wxMEDIA_FF_COPY; }
+  if (where) scheme_wrong_type(where, "fileType symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_fileType(Scheme_Object *v, const char *where) {
+  if (!fileType_wxMEDIA_FF_COPY_sym) init_symset_fileType();
+  if (0) { }
+  else if (v == fileType_wxMEDIA_FF_GUESS_sym) { return 1; }
+  else if (v == fileType_wxMEDIA_FF_STD_sym) { return 1; }
+  else if (v == fileType_wxMEDIA_FF_TEXT_sym) { return 1; }
+  else if (v == fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym) { return 1; }
+  else if (v == fileType_wxMEDIA_FF_SAME_sym) { return 1; }
+  else if (v == fileType_wxMEDIA_FF_COPY_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "fileType symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_fileType(int v) {
+  if (!fileType_wxMEDIA_FF_COPY_sym) init_symset_fileType();
+  switch (v) {
+  case wxMEDIA_FF_GUESS: return fileType_wxMEDIA_FF_GUESS_sym;
+  case wxMEDIA_FF_STD: return fileType_wxMEDIA_FF_STD_sym;
+  case wxMEDIA_FF_TEXT: return fileType_wxMEDIA_FF_TEXT_sym;
+  case wxMEDIA_FF_TEXT_FORCE_CR: return fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym;
+  case wxMEDIA_FF_SAME: return fileType_wxMEDIA_FF_SAME_sym;
+  case wxMEDIA_FF_COPY: return fileType_wxMEDIA_FF_COPY_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *focus_wxFOCUS_IMMEDIATE_sym = NULL;
+static Scheme_Object *focus_wxFOCUS_DISPLAY_sym = NULL;
+static Scheme_Object *focus_wxFOCUS_GLOBAL_sym = NULL;
+
+static void init_symset_focus(void) {
+  focus_wxFOCUS_IMMEDIATE_sym = scheme_intern_symbol("focus-immediate");
+  focus_wxFOCUS_DISPLAY_sym = scheme_intern_symbol("focus-display");
+  focus_wxFOCUS_GLOBAL_sym = scheme_intern_symbol("focus-global");
+}
+
+static int unbundle_symset_focus(Scheme_Object *v, const char *where) {
+  if (!focus_wxFOCUS_GLOBAL_sym) init_symset_focus();
+  if (0) { }
+  else if (v == focus_wxFOCUS_IMMEDIATE_sym) { return wxFOCUS_IMMEDIATE; }
+  else if (v == focus_wxFOCUS_DISPLAY_sym) { return wxFOCUS_DISPLAY; }
+  else if (v == focus_wxFOCUS_GLOBAL_sym) { return wxFOCUS_GLOBAL; }
+  if (where) scheme_wrong_type(where, "focus symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_focus(Scheme_Object *v, const char *where) {
+  if (!focus_wxFOCUS_GLOBAL_sym) init_symset_focus();
+  if (0) { }
+  else if (v == focus_wxFOCUS_IMMEDIATE_sym) { return 1; }
+  else if (v == focus_wxFOCUS_DISPLAY_sym) { return 1; }
+  else if (v == focus_wxFOCUS_GLOBAL_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "focus symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_focus(int v) {
+  if (!focus_wxFOCUS_GLOBAL_sym) init_symset_focus();
+  switch (v) {
+  case wxFOCUS_IMMEDIATE: return focus_wxFOCUS_IMMEDIATE_sym;
+  case wxFOCUS_DISPLAY: return focus_wxFOCUS_DISPLAY_sym;
+  case wxFOCUS_GLOBAL: return focus_wxFOCUS_GLOBAL_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *caret_wxSNIP_DRAW_NO_CARET_sym = NULL;
+static Scheme_Object *caret_wxSNIP_DRAW_SHOW_CARET_sym = NULL;
+static Scheme_Object *caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym = NULL;
+
+static void init_symset_caret(void) {
+  caret_wxSNIP_DRAW_NO_CARET_sym = scheme_intern_symbol("snip-draw-no-caret");
+  caret_wxSNIP_DRAW_SHOW_CARET_sym = scheme_intern_symbol("snip-draw-show-caret");
+  caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym = scheme_intern_symbol("snip-draw-show-inactive-caret");
+}
+
+static int unbundle_symset_caret(Scheme_Object *v, const char *where) {
+  if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) init_symset_caret();
+  if (0) { }
+  else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { return wxSNIP_DRAW_NO_CARET; }
+  else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { return wxSNIP_DRAW_SHOW_CARET; }
+  else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { return wxSNIP_DRAW_SHOW_INACTIVE_CARET; }
+  if (where) scheme_wrong_type(where, "caret symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_caret(Scheme_Object *v, const char *where) {
+  if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) init_symset_caret();
+  if (0) { }
+  else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { return 1; }
+  else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { return 1; }
+  else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "caret symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_caret(int v) {
+  if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) init_symset_caret();
+  switch (v) {
+  case wxSNIP_DRAW_NO_CARET: return caret_wxSNIP_DRAW_NO_CARET_sym;
+  case wxSNIP_DRAW_SHOW_CARET: return caret_wxSNIP_DRAW_SHOW_CARET_sym;
+  case wxSNIP_DRAW_SHOW_INACTIVE_CARET: return caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym;
+  default: return NULL;
+  }
+}
+
+
 static void *DoCAPOCallback(void *data)
 {
   jmp_buf savebuf;
@@ -45,9 +281,6 @@ typedef void *(*CAPOFunc)(void*);
 
 
 
-// @ v "scroll" : void Scroll(int,int,bool);
-// @ v "scroll" : void Scroll(int,int);
-
 
 
 
@@ -66,8 +299,8 @@ typedef void *(*CAPOFunc)(void*);
 class os_wxMediaCanvas : public wxMediaCanvas {
  public:
 
-  os_wxMediaCanvas(Scheme_Object * obj, class wxFrame* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, string x5 = "", long x6 = 0, int x7 = 100, class wxMediaBuffer* x8 = NULL);
-  os_wxMediaCanvas(Scheme_Object * obj, class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, string x5 = "", long x6 = 0, int x7 = 100, class wxMediaBuffer* x8 = NULL);
+  os_wxMediaCanvas(Scheme_Object * obj, class wxFrame* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, string x5 = "", int x6 = 0, int x7 = 100, class wxMediaBuffer* x8 = NULL);
+  os_wxMediaCanvas(Scheme_Object * obj, class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, string x5 = "", int x6 = 0, int x7 = 100, class wxMediaBuffer* x8 = NULL);
   ~os_wxMediaCanvas();
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
@@ -81,7 +314,7 @@ class os_wxMediaCanvas : public wxMediaCanvas {
 
 Scheme_Object *os_wxMediaCanvas_class;
 
-os_wxMediaCanvas::os_wxMediaCanvas(Scheme_Object * o, class wxFrame* x0, int x1, int x2, int x3, int x4, string x5, long x6, int x7, class wxMediaBuffer* x8)
+os_wxMediaCanvas::os_wxMediaCanvas(Scheme_Object * o, class wxFrame* x0, int x1, int x2, int x3, int x4, string x5, int x6, int x7, class wxMediaBuffer* x8)
 : wxMediaCanvas(x0, x1, x2, x3, x4, x5, x6, x7, x8)
 {
   __gc_external = (void *)o;
@@ -89,7 +322,7 @@ os_wxMediaCanvas::os_wxMediaCanvas(Scheme_Object * o, class wxFrame* x0, int x1,
   objscheme_note_creation(o);
 }
 
-os_wxMediaCanvas::os_wxMediaCanvas(Scheme_Object * o, class wxPanel* x0, int x1, int x2, int x3, int x4, string x5, long x6, int x7, class wxMediaBuffer* x8)
+os_wxMediaCanvas::os_wxMediaCanvas(Scheme_Object * o, class wxPanel* x0, int x1, int x2, int x3, int x4, string x5, int x6, int x7, class wxMediaBuffer* x8)
 : wxMediaCanvas(x0, x1, x2, x3, x4, x5, x6, x7, x8)
 {
   __gc_external = (void *)o;
@@ -115,17 +348,19 @@ void os_wxMediaCanvas::OnChar(class wxKeyEvent& x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxMediaCanvas::OnChar(x0);
+wxMediaCanvas::OnChar(x0);
   } else {
   
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -146,17 +381,19 @@ void os_wxMediaCanvas::OnEvent(class wxMouseEvent& x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxMediaCanvas::OnEvent(x0);
+wxMediaCanvas::OnEvent(x0);
   } else {
   
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -177,16 +414,18 @@ void os_wxMediaCanvas::OnPaint()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxMediaCanvas::OnPaint();
+wxMediaCanvas::OnPaint();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -207,18 +446,20 @@ Bool os_wxMediaCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -240,18 +481,20 @@ Bool os_wxMediaCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -273,18 +516,20 @@ void os_wxMediaCanvas::OnSize(int x0, int x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxMediaCanvas::OnSize(x0, x1);
+wxMediaCanvas::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -305,16 +550,18 @@ void os_wxMediaCanvas::OnSetFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxMediaCanvas::OnSetFocus();
+wxMediaCanvas::OnSetFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -335,16 +582,18 @@ void os_wxMediaCanvas::OnKillFocus()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxMediaCanvas::OnKillFocus();
+wxMediaCanvas::OnKillFocus();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -700,7 +949,7 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(Scheme_Object *obj, int n
     int x3;
     int x4;
     string x5;
-    long x6;
+    int x6;
     int x7;
     class wxMediaBuffer* x8;
 
@@ -729,7 +978,7 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(Scheme_Object *obj, int n
     } else
       x5 = "";
     if (n > 6) {
-      x6 = objscheme_unbundle_integer(p[6], "wx:media-canvas%::initialization (panel case)");
+      x6 = unbundle_symset_style(p[6], "wx:media-canvas%::initialization (panel case)");;
     } else
       x6 = 0;
     if (n > 7) {
@@ -752,7 +1001,7 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(Scheme_Object *obj, int n
     int x3;
     int x4;
     string x5;
-    long x6;
+    int x6;
     int x7;
     class wxMediaBuffer* x8;
 
@@ -781,7 +1030,7 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(Scheme_Object *obj, int n
     } else
       x5 = "";
     if (n > 6) {
-      x6 = objscheme_unbundle_integer(p[6], "wx:media-canvas%::initialization (frame case)");
+      x6 = unbundle_symset_style(p[6], "wx:media-canvas%::initialization (frame case)");;
     } else
       x6 = 0;
     if (n > 7) {
@@ -845,10 +1094,6 @@ if (os_wxMediaCanvas_class) {
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaCanvas, wxTYPE_MEDIA_CANVAS);
 
 }
-  scheme_install_xc_global("wx:const-mcanvas-no-h-scroll", scheme_make_integer(wxMCANVAS_NO_H_SCROLL), env);
-  scheme_install_xc_global("wx:const-mcanvas-no-v-scroll", scheme_make_integer(wxMCANVAS_NO_V_SCROLL), env);
-  scheme_install_xc_global("wx:const-mcanvas-hide-h-scroll", scheme_make_integer(wxMCANVAS_HIDE_H_SCROLL), env);
-  scheme_install_xc_global("wx:const-mcanvas-hide-v-scroll", scheme_make_integer(wxMCANVAS_HIDE_V_SCROLL), env);
 }
 
 int objscheme_istype_wxMediaCanvas(Scheme_Object *obj, const char *stop, int nullOK)
@@ -951,16 +1196,18 @@ Bool os_wxMediaAdmin::DelayRefresh()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -982,16 +1229,18 @@ void os_wxMediaAdmin::UpdateCursor()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1012,11 +1261,13 @@ void os_wxMediaAdmin::NeedsUpdate(float x0, float x1, float x2, float x3)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = scheme_make_double(x0);
@@ -1025,7 +1276,7 @@ void os_wxMediaAdmin::NeedsUpdate(float x0, float x1, float x2, float x3)
   p[3] = scheme_make_double(x3);
   
 
-  v = scheme_apply_eb(method, 4, p);
+  v = scheme_apply(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1046,17 +1297,19 @@ void os_wxMediaAdmin::Resized(Bool x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1077,17 +1330,19 @@ void os_wxMediaAdmin::GrabCaret(int x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
-  p[0] = scheme_make_integer(x0);
+  p[0] = bundle_symset_focus(x0);;
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1108,11 +1363,13 @@ Bool os_wxMediaAdmin::ScrollTo(float x0, float x1, float x2, float x3, Bool x4, 
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = scheme_make_double(x0);
@@ -1123,7 +1380,7 @@ Bool os_wxMediaAdmin::ScrollTo(float x0, float x1, float x2, float x3, Bool x4, 
   p[5] = scheme_make_integer(x5);
   
 
-  v = scheme_apply_eb(method, 6, p);
+  v = scheme_apply(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1145,11 +1402,13 @@ void os_wxMediaAdmin::GetMaxView(float* x0, float* x1, float* x2, float* x3, Boo
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = ((x0) ? objscheme_box(scheme_make_double((*x0))) : scheme_null);
@@ -1159,7 +1418,7 @@ void os_wxMediaAdmin::GetMaxView(float* x0, float* x1, float* x2, float* x3, Boo
   p[4] = (x4 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply_eb(method, 5, p);
+  v = scheme_apply(method, 5, p);
   
   if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-admin%::get-max-view"", extracting return value via box"), "wx:media-admin%::get-max-view"", extracting return value via box");
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-admin%::get-max-view"", extracting return value via box"), "wx:media-admin%::get-max-view"", extracting return value via box");
@@ -1184,11 +1443,13 @@ void os_wxMediaAdmin::GetView(float* x0, float* x1, float* x2, float* x3, Bool x
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = ((x0) ? objscheme_box(scheme_make_double((*x0))) : scheme_null);
@@ -1198,7 +1459,7 @@ void os_wxMediaAdmin::GetView(float* x0, float* x1, float* x2, float* x3, Bool x
   p[4] = (x4 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply_eb(method, 5, p);
+  v = scheme_apply(method, 5, p);
   
   if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-admin%::get-view"", extracting return value via box"), "wx:media-admin%::get-view"", extracting return value via box");
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-admin%::get-view"", extracting return value via box"), "wx:media-admin%::get-view"", extracting return value via box");
@@ -1223,18 +1484,20 @@ class wxDC* os_wxMediaAdmin::GetDC(float* x0, float* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return NULL;
+return NULL;
   } else {
   
   p[0] = ((x0) ? objscheme_box(scheme_make_double((*x0))) : scheme_null);
   p[1] = ((x1) ? objscheme_box(scheme_make_double((*x1))) : scheme_null);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-admin%::get-dc"", extracting return value via box"), "wx:media-admin%::get-dc"", extracting return value via box");
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-admin%::get-dc"", extracting return value via box"), "wx:media-admin%::get-dc"", extracting return value via box");
@@ -1341,7 +1604,7 @@ static Scheme_Object *os_wxMediaAdminGrabCaret(Scheme_Object *obj, int n,  Schem
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "wx:media-admin%::grab-caret");
+    x0 = unbundle_symset_focus(p[0], "wx:media-admin%::grab-caret");;
   } else
     x0 = wxFOCUS_GLOBAL;
 
@@ -1656,10 +1919,6 @@ class wxMediaAdmin *objscheme_unbundle_wxMediaAdmin(Scheme_Object *obj, const ch
 
 
 
-// Virtual, but not really overrideable since the class isn't instantiable
-// @SETMARK A = d
-// @INCLUDE wxs_madm.xci
-
 
 class os_wxCanvasMediaAdmin : public wxCanvasMediaAdmin {
  public:
@@ -1772,10 +2031,6 @@ class wxCanvasMediaAdmin *objscheme_unbundle_wxCanvasMediaAdmin(Scheme_Object *o
 
 
 
-
-// Virtual, but not really overrideable since the class isn't instantiable
-// @SETMARK A = d
-// @INCLUDE wxs_madm.xci
 
 
 class os_wxMediaSnipMediaAdmin : public wxMediaSnipMediaAdmin {
@@ -1900,7 +2155,7 @@ class os_wxSnipAdmin : public wxSnipAdmin {
   void NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3, float x4);
   Bool Recounted(class wxSnip* x0, Bool x1);
   void Resized(class wxSnip* x0, Bool x1);
-  void SetCaretOwner(class wxSnip* x0, int x1 = wxFOCUS_IMMEDIATE);
+  void SetCaretOwner(class wxSnip* x0, int x1);
   Bool ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5, int x6 = 0);
   void GetView(float* x0, float* x1, float* x2, float* x3, class wxSnip* x4 = NULL);
   void GetViewSize(float* x0, float* x1);
@@ -1936,16 +2191,18 @@ void os_wxSnipAdmin::UpdateCursor()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1966,17 +2223,19 @@ Bool os_wxSnipAdmin::ReleaseSnip(class wxSnip* x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1998,11 +2257,13 @@ void os_wxSnipAdmin::NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3,
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -2012,7 +2273,7 @@ void os_wxSnipAdmin::NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3,
   p[4] = scheme_make_double(x4);
   
 
-  v = scheme_apply_eb(method, 5, p);
+  v = scheme_apply(method, 5, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2033,18 +2294,20 @@ Bool os_wxSnipAdmin::Recounted(class wxSnip* x0, Bool x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2066,18 +2329,20 @@ void os_wxSnipAdmin::Resized(class wxSnip* x0, Bool x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2098,18 +2363,20 @@ void os_wxSnipAdmin::SetCaretOwner(class wxSnip* x0, int x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
-  p[1] = scheme_make_integer(x1);
+  p[1] = bundle_symset_focus(x1);;
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2130,11 +2397,13 @@ Bool os_wxSnipAdmin::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, fl
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return FALSE;
+return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -2146,7 +2415,7 @@ Bool os_wxSnipAdmin::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, fl
   p[6] = scheme_make_integer(x6);
   
 
-  v = scheme_apply_eb(method, 7, p);
+  v = scheme_apply(method, 7, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2168,11 +2437,13 @@ void os_wxSnipAdmin::GetView(float* x0, float* x1, float* x2, float* x3, class w
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = ((x0) ? objscheme_box(scheme_make_double((*x0))) : scheme_null);
@@ -2182,7 +2453,7 @@ void os_wxSnipAdmin::GetView(float* x0, float* x1, float* x2, float* x3, class w
   p[4] = objscheme_bundle_wxSnip(x4);
   
 
-  v = scheme_apply_eb(method, 5, p);
+  v = scheme_apply(method, 5, p);
   
   if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:snip-admin%::get-view"", extracting return value via box"), "wx:snip-admin%::get-view"", extracting return value via box");
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:snip-admin%::get-view"", extracting return value via box"), "wx:snip-admin%::get-view"", extracting return value via box");
@@ -2207,18 +2478,20 @@ void os_wxSnipAdmin::GetViewSize(float* x0, float* x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return;
+return;
   } else {
   
   p[0] = ((x0) ? objscheme_box(scheme_make_double((*x0))) : scheme_null);
   p[1] = ((x1) ? objscheme_box(scheme_make_double((*x1))) : scheme_null);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:snip-admin%::get-view-size"", extracting return value via box"), "wx:snip-admin%::get-view-size"", extracting return value via box");
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:snip-admin%::get-view-size"", extracting return value via box"), "wx:snip-admin%::get-view-size"", extracting return value via box");
@@ -2241,16 +2514,18 @@ class wxDC* os_wxSnipAdmin::GetDC()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return NULL;
+return NULL;
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2272,16 +2547,18 @@ class wxMediaBuffer* os_wxSnipAdmin::GetMedia()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return NULL;
+return NULL;
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2417,10 +2694,7 @@ static Scheme_Object *os_wxSnipAdminSetCaretOwner(Scheme_Object *obj, int n,  Sc
 
   
   x0 = objscheme_unbundle_wxSnip(p[0], "wx:snip-admin%::set-caret-owner", 0);
-  if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "wx:snip-admin%::set-caret-owner");
-  } else
-    x1 = wxFOCUS_IMMEDIATE;
+  x1 = unbundle_symset_focus(p[1], "wx:snip-admin%::set-caret-owner");;
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2641,7 +2915,7 @@ if (os_wxSnipAdmin_class) {
  scheme_add_method_w_arity(os_wxSnipAdmin_class, "needs-update", os_wxSnipAdminNeedsUpdate, 5, 5);
  scheme_add_method_w_arity(os_wxSnipAdmin_class, "recounted", os_wxSnipAdminRecounted, 2, 2);
  scheme_add_method_w_arity(os_wxSnipAdmin_class, "resized", os_wxSnipAdminResized, 2, 2);
- scheme_add_method_w_arity(os_wxSnipAdmin_class, "set-caret-owner", os_wxSnipAdminSetCaretOwner, 1, 2);
+ scheme_add_method_w_arity(os_wxSnipAdmin_class, "set-caret-owner", os_wxSnipAdminSetCaretOwner, 2, 2);
  scheme_add_method_w_arity(os_wxSnipAdmin_class, "scroll-to", os_wxSnipAdminScrollTo, 6, 7);
  scheme_add_method_w_arity(os_wxSnipAdmin_class, "get-view", os_wxSnipAdminGetView, 4, 5);
  scheme_add_method_w_arity(os_wxSnipAdmin_class, "get-view-size", os_wxSnipAdminGetViewSize, 2, 2);
@@ -2753,16 +3027,18 @@ void os_wxSnipClass::WriteDone()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxSnipClass::WriteDone();
+wxSnipClass::WriteDone();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2783,17 +3059,19 @@ Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut& x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return wxSnipClass::WriteHeader(x0);
+return wxSnipClass::WriteHeader(x0);
   } else {
   
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2815,16 +3093,18 @@ void os_wxSnipClass::ReadDone()
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    wxSnipClass::ReadDone();
+wxSnipClass::ReadDone();
   } else {
   
   
 
-  v = scheme_apply_eb(method, 0, p);
+  v = scheme_apply(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2845,17 +3125,19 @@ Bool os_wxSnipClass::ReadHeader(class wxMediaStreamIn& x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return wxSnipClass::ReadHeader(x0);
+return wxSnipClass::ReadHeader(x0);
   } else {
   
   p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2877,17 +3159,19 @@ class wxSnip* os_wxSnipClass::Read(class wxMediaStreamIn& x0)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return NULL;
+return NULL;
   } else {
   
   p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
   
 
-  v = scheme_apply_eb(method, 1, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3392,8 +3676,6 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 
 
 
-// @ "chain-handle-key-event" : int ChainHandleKeyEvent(wxObject!,wxKeyEvent%);
-// @ "chain-handle-mouse-event" : int ChainHandleMouseEvent(wxObject!,wxMouseEvent%);
 
 class os_wxKeymap : public wxKeymap {
  public:
@@ -3432,18 +3714,20 @@ Bool os_wxKeymap::HandleMouseEvent(class wxObject* x0, class wxMouseEvent& x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return wxKeymap::HandleMouseEvent(x0, x1);
+return wxKeymap::HandleMouseEvent(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_wxObject(x0);
   p[1] = objscheme_bundle_wxMouseEvent(&x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3465,18 +3749,20 @@ Bool os_wxKeymap::HandleKeyEvent(class wxObject* x0, class wxKeyEvent& x1)
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
   } else sj = 1;
   if (sj) {
-    if (method && !OBJSCHEME_PRIM_METHOD(method))
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-    return wxKeymap::HandleKeyEvent(x0, x1);
+return wxKeymap::HandleKeyEvent(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_wxObject(x0);
   p[1] = objscheme_bundle_wxKeyEvent(&x1);
   
 
-  v = scheme_apply_eb(method, 2, p);
+  v = scheme_apply(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4109,6 +4395,56 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)
 }
 
 
+static Scheme_Object *breakType_wxBREAK_FOR_CARET_sym = NULL;
+static Scheme_Object *breakType_wxBREAK_FOR_LINE_sym = NULL;
+static Scheme_Object *breakType_wxBREAK_FOR_SELECTION_sym = NULL;
+static Scheme_Object *breakType_wxBREAK_FOR_USER_1_sym = NULL;
+static Scheme_Object *breakType_wxBREAK_FOR_USER_2_sym = NULL;
+
+static void init_symset_breakType(void) {
+  breakType_wxBREAK_FOR_CARET_sym = scheme_intern_symbol("break-for-caret");
+  breakType_wxBREAK_FOR_LINE_sym = scheme_intern_symbol("break-for-line");
+  breakType_wxBREAK_FOR_SELECTION_sym = scheme_intern_symbol("break-for-selection");
+  breakType_wxBREAK_FOR_USER_1_sym = scheme_intern_symbol("break-for-user-1");
+  breakType_wxBREAK_FOR_USER_2_sym = scheme_intern_symbol("break-for-user-2");
+}
+
+static int unbundle_symset_breakType(Scheme_Object *v, const char *where) {
+  if (!breakType_wxBREAK_FOR_USER_2_sym) init_symset_breakType();
+  if (0) { }
+  else if (v == breakType_wxBREAK_FOR_CARET_sym) { return wxBREAK_FOR_CARET; }
+  else if (v == breakType_wxBREAK_FOR_LINE_sym) { return wxBREAK_FOR_LINE; }
+  else if (v == breakType_wxBREAK_FOR_SELECTION_sym) { return wxBREAK_FOR_SELECTION; }
+  else if (v == breakType_wxBREAK_FOR_USER_1_sym) { return wxBREAK_FOR_USER_1; }
+  else if (v == breakType_wxBREAK_FOR_USER_2_sym) { return wxBREAK_FOR_USER_2; }
+  if (where) scheme_wrong_type(where, "breakType symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_breakType(Scheme_Object *v, const char *where) {
+  if (!breakType_wxBREAK_FOR_USER_2_sym) init_symset_breakType();
+  if (0) { }
+  else if (v == breakType_wxBREAK_FOR_CARET_sym) { return 1; }
+  else if (v == breakType_wxBREAK_FOR_LINE_sym) { return 1; }
+  else if (v == breakType_wxBREAK_FOR_SELECTION_sym) { return 1; }
+  else if (v == breakType_wxBREAK_FOR_USER_1_sym) { return 1; }
+  else if (v == breakType_wxBREAK_FOR_USER_2_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "breakType symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_breakType(int v) {
+  if (!breakType_wxBREAK_FOR_USER_2_sym) init_symset_breakType();
+  switch (v) {
+  case wxBREAK_FOR_CARET: return breakType_wxBREAK_FOR_CARET_sym;
+  case wxBREAK_FOR_LINE: return breakType_wxBREAK_FOR_LINE_sym;
+  case wxBREAK_FOR_SELECTION: return breakType_wxBREAK_FOR_SELECTION_sym;
+  case wxBREAK_FOR_USER_1: return breakType_wxBREAK_FOR_USER_1_sym;
+  case wxBREAK_FOR_USER_2: return breakType_wxBREAK_FOR_USER_2_sym;
+  default: return NULL;
+  }
+}
+
 
 
 
@@ -4189,7 +4525,7 @@ static Scheme_Object *os_wxMediaWordbreakMapGetMap(Scheme_Object *obj, int n,  S
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_breakType(r);;
 }
 
 #pragma argsused
@@ -4202,7 +4538,7 @@ static Scheme_Object *os_wxMediaWordbreakMapSetMap(Scheme_Object *obj, int n,  S
 
   
   x0 = objscheme_unbundle_integer(p[0], "wx:media-wordbreak-map%::set-map");
-  x1 = objscheme_unbundle_integer(p[1], "wx:media-wordbreak-map%::set-map");
+  x1 = unbundle_symset_breakType(p[1], "wx:media-wordbreak-map%::set-map");;
 
   
   ((wxMediaWordbreakMap *)((Scheme_Class_Object *)obj)->primdata)->SetMap(x0, x1);

@@ -121,15 +121,8 @@ static double GetInexact(wxMediaStreamIn *s)
 
 @CREATOR (wxMediaStreamInBase%);
   
-// This is too dangerous: it is going away
-// @ "get" : wxMediaStreamIn% Get(long*////long,string);
-
 @ "get" : wxMediaStreamIn% Get(Long+////long); <> exact number
 @ "get" : wxMediaStreamIn% Get(Double+); <> inexact number
-// @ "get" : wxMediaStreamIn% Get(short+);
-// @ "get" : wxMediaStreamIn% Get(int+);
-// @ "get" : wxMediaStreamIn% Get(char+);
-// @ "get" : wxMediaStreamIn% Get(float+);
 
 @MACRO alwaysPassPtr = x0 = &_x0;
 
@@ -141,10 +134,6 @@ static double GetInexact(wxMediaStreamIn *s)
 
 @ ">>" : wxMediaStreamIn% operator>>(Long+); <> exact
 @ ">>" : wxMediaStreamIn% operator>>(Double+); <> inexact
-// @ ">>" : wxMediaStreamIn% operator>>(short+);
-// @ ">>" : wxMediaStreamIn% operator>>(int+);
-// @ ">>" : wxMediaStreamIn% operator>>(char+);
-// @ ">>" : wxMediaStreamIn% operator>>(float+);
 
 @ "set-boundary" : void SetBoundary(long);
 @ "remove-boundary" : void RemoveBoundary();
@@ -166,20 +155,12 @@ static double GetInexact(wxMediaStreamIn *s)
 @ "put" : wxMediaStreamOut% Put(string); <> string without length
 @ "put" : wxMediaStreamOut% Put(Long////long); <> exact number
 @ "put" : wxMediaStreamOut% Put(Double); <> inexact number
-// @ "put" : wxMediaStreamOut% Put(short);
-// @ "put" : wxMediaStreamOut% Put(int);
-// @ "put" : wxMediaStreamOut% Put(char);
-// @ "put" : wxMediaStreamOut% Put(float);
 
 @ "put-fixed" : wxMediaStreamOut% PutFixed(long);
 
 @ "<<" : wxMediaStreamOut% operator<<(string); <> string
 @ "<<" : wxMediaStreamOut% operator<<(Double); <> inexact number
 @ "<<" : wxMediaStreamOut% operator<<(Long); <> exact number
-// @ "<<" : wxMediaStreamOut% operator<<(short);
-// @ "<<" : wxMediaStreamOut% operator<<(int);
-// @ "<<" : wxMediaStreamOut% operator<<(byte);
-// @ "<<" : wxMediaStreamOut% operator<<(float);
 
 @ "tell" : long Tell();
 @ "jump-to" : void JumpTo(long);

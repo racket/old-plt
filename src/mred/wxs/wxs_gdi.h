@@ -102,12 +102,6 @@ int objscheme_istype_wxCursor(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxCursor(class wxCursor *realobj);
 class wxCursor *objscheme_unbundle_wxCursor(Scheme_Object *obj, const char *where, int nullOK);
 #endif
-void objscheme_setup_wxIcon(void *env);
-#ifndef WXS_SETUP_ONLY
-int objscheme_istype_wxIcon(Scheme_Object *obj, const char *stop, int nullOK);
-Scheme_Object *objscheme_bundle_wxIcon(class wxIcon *realobj);
-class wxIcon *objscheme_unbundle_wxIcon(Scheme_Object *obj, const char *where, int nullOK);
-#endif
 void objscheme_setup_wxFontNameDirectory(void *env);
 #ifndef WXS_SETUP_ONLY
 extern Scheme_Object *objscheme_bundle_wxFontNameDirectory(class wxFontNameDirectory *);

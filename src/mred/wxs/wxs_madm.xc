@@ -15,6 +15,15 @@
 @MACRO rFALSE = return FALSE;
 @MACRO rZERO = return 0;
 
+@BEGINSYMBOLS style
+@SYM "mcanvas-no-h-scroll" : wxMCANVAS_NO_H_SCROLL
+@SYM "mcanvas-no-v-scroll" : wxMCANVAS_NO_V_SCROLL
+@SYM "mcanvas-hide-h-scroll" : wxMCANVAS_HIDE_H_SCROLL
+@SYM "mcanvas-hide-v-scroll" : wxMCANVAS_HIDE_V_SCROLL
+@ENDSYMBOLS
+
+@INCLUDE wxs_fcs.xci
+
 static void *DoCAPOCallback(void *data)
 {
   jmp_buf savebuf;
@@ -36,16 +45,14 @@ typedef void *(*CAPOFunc)(void*);
 
 @CLASSBASE wxMediaCanvas "wx:media-canvas" : "wx:canvas"
 
-@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1, string="",long=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> frame
-@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1, string="",long=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> panel
+@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1, string="",SYM[style]=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> frame
+@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1, string="",SYM[style]=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> panel
 
 @CLASSID wxTYPE_MEDIA_CANVAS
 
 @ "set-media" : void SetMedia(wxMediaBuffer^,bool=TRUE);
 @ "get-media" : wxMediaBuffer^ GetMedia();
 
-// @ v "scroll" : void Scroll(int,int,bool);
-// @ v "scroll" : void Scroll(int,int);
 @ v "on-set-focus" : void OnSetFocus();
 @ v "on-kill-focus" : void OnKillFocus();
 
@@ -73,11 +80,6 @@ typedef void *(*CAPOFunc)(void*);
 @SETMARK c = d
 @INCLUDE wxs_cnvs.xci
 
-@CONSTANT "wx:const-mcanvas-no-h-scroll" : long wxMCANVAS_NO_H_SCROLL
-@CONSTANT "wx:const-mcanvas-no-v-scroll" : long wxMCANVAS_NO_V_SCROLL
-@CONSTANT "wx:const-mcanvas-hide-h-scroll" : long wxMCANVAS_HIDE_H_SCROLL
-@CONSTANT "wx:const-mcanvas-hide-v-scroll" : long wxMCANVAS_HIDE_V_SCROLL
-
 @END
 
 
@@ -100,10 +102,6 @@ typedef void *(*CAPOFunc)(void*);
 
 @VAR FIXCMA
 
-// Virtual, but not really overrideable since the class isn't instantiable
-// @SETMARK A = d
-// @INCLUDE wxs_madm.xci
-
 @ "get-canvas" : wxMediaCanvas! GetCanvas()
 
 @END
@@ -115,10 +113,6 @@ typedef void *(*CAPOFunc)(void*);
 @CLASSID wxTYPE_MEDIA_SNIP_MEDIA_ADMIN
 
 @VAR FIXMSMA
-
-// Virtual, but not really overrideable since the class isn't instantiable
-// @SETMARK A = d
-// @INCLUDE wxs_madm.xci
 
 @ "get-snip" : wxMediaSnip! GetSnip()
 
@@ -136,7 +130,7 @@ typedef void *(*CAPOFunc)(void*);
 @ V "get-view-size" : void GetViewSize(float?, float?);
 @ V "get-view" : void GetView(float?, float?, float?, float?, wxSnip^=NULL);
 @ V "scroll-to" : bool ScrollTo(wxSnip!, float,float,float,float, bool,int=0); : : : rFALSE
-@ V "set-caret-owner" : void SetCaretOwner(wxSnip!,int=wxFOCUS_IMMEDIATE);
+@ V "set-caret-owner" : void SetCaretOwner(wxSnip!,SYM[focus]);
 @ V "resized" : void Resized(wxSnip!, bool);
 @ V "recounted" : bool Recounted(wxSnip!, bool); : : : rFALSE
 @ V "needs-update" : void NeedsUpdate(wxSnip!, float,float,float,float);
@@ -221,8 +215,6 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 
 @ v "handle-key-event" : bool HandleKeyEvent(wxObject!,wxKeyEvent%);
 @ v "handle-mouse-event" : bool HandleMouseEvent(wxObject!,wxMouseEvent%);
-// @ "chain-handle-key-event" : int ChainHandleKeyEvent(wxObject!,wxKeyEvent%);
-// @ "chain-handle-mouse-event" : int ChainHandleMouseEvent(wxObject!,wxMouseEvent%);
 @ "break-sequence" : void BreakSequence();
 @ "map-function" : void MapFunction(string,string);
 @ "implies-shift" : void ImpliesShift(string);
@@ -372,7 +364,7 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)
   COPY_JMPBUF(scheme_error_buf, savebuf);
 }
 
-
+@INCLUDE wxs_bkt.xci
 
 @CLASSBASE wxMediaWordbreakMap "wx:media-wordbreak-map" : "wx:object"
 
@@ -380,8 +372,8 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)
 
 @CLASSID wxTYPE_WORDBREAK_MAP
 
-@ "set-map" : void SetMap(int,int);
-@ "get-map" : int GetMap(int);
+@ "set-map" : void SetMap(int,SYM[breakType]);
+@ "get-map" : SYM[breakType] GetMap(int);
 
 @ "adjust-usage" : void AdjustUsage(bool)
 @ "is-used?" : bool IsUsed();

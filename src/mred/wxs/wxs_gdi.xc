@@ -10,9 +10,33 @@
 
 @INCLUDE wxs.xci
 
-#include "wxs_bmt.h"
-
 @HEADER
+
+@INCLUDE wxs_bmt.xci
+
+@BEGINSYMBOLS family > ONE
+@SYM "default" : wxDEFAULT
+@SYM "decorative" : wxDECORATIVE
+@SYM "roman" : wxROMAN
+@SYM "script" : wxSCRIPT
+@SYM "swiss" : wxSWISS
+@SYM "modern" : wxMODERN
+@SYM "teletype" : wxTELETYPE
+@SYM "system" : wxSYSTEM
+@ENDSYMBOLS
+
+@BEGINSYMBOLS weight > ONE
+@SYM "normal" : wxNORMAL
+@SYM "light" : wxLIGHT
+@SYM "bold" : wxBOLD
+@ENDSYMBOLS
+
+@BEGINSYMBOLS style > ONE
+@SYM "normal" : wxNORMAL
+@SYM "italic" : wxITALIC
+@SYM "slant" : wxSLANT
+@ENDSYMBOLS
+
 
 #define USE_FONT_NAME_DIRECTORY 1
 
@@ -28,35 +52,15 @@
 @CLASSBASE wxFont "wx:font":"wx:object"
 
 @CREATOR (); <> no argument
-@CREATOR (nnint,int,int,int,bool=0) <> font id
-@CREATOR (nnint,cstring,int,int,int,bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
+@CREATOR (nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> font id
+@CREATOR (nnint,cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
 
-@ "get-family" : int GetFamily();
+@ "get-family" : SYM[family] GetFamily();
 @ "get-font-id" : int GetFontId(); ## USE_FONT_NAME_DIRECTORY
-@ "get-style" : int GetStyle();
+@ "get-style" : SYM[style] GetStyle();
 @ "get-point-size" : int GetPointSize();
-@ "get-weight" : int GetWeight();
+@ "get-weight" : SYM[weight] GetWeight();
 @ "get-underlined" : bool GetUnderlined();
-
-@CONSTANT "wx:const-default" : int wxDEFAULT
-@CONSTANT "wx:const-decorative" : int wxDECORATIVE
-@CONSTANT "wx:const-roman" : int wxROMAN
-@CONSTANT "wx:const-script" : int wxSCRIPT
-@CONSTANT "wx:const-swiss" : int wxSWISS
-@CONSTANT "wx:const-modern" : int wxMODERN
-@CONSTANT "wx:const-teletype" : int wxTELETYPE
-@CONSTANT "wx:const-system" : int wxSYSTEM
-
-// Not used:
-// @CONSTANT "wx:const-variable" : int wxVARIABLE
-// @CONSTANT "wx:const-fixed" : int wxFIXED
-
-@CONSTANT "wx:const-normal" : int wxNORMAL
-@CONSTANT "wx:const-light" : int wxLIGHT
-@CONSTANT "wx:const-bold" : int wxBOLD
-
-@CONSTANT "wx:const-italic" : int wxITALIC
-@CONSTANT "wx:const-slant" : int wxSLANT
 
 @END
 
@@ -65,9 +69,8 @@
 
 @CREATOR ();
 
-@ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,int,int,int,bool=0) <> font id
-@ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,cstring,int,int,int,bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
-// @ "remove-font" : void RemoveFont(wxFont!);
+@ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> font id
+@ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
 
 @CONSTANT "wx:the-font-list" : wxFontList! wxTheFontList
 
@@ -94,10 +97,6 @@
 
 @CLASSBASE wxColourMap "wx:colour-map" : "wx:object"
 
-// @CREATOR (); ## !defined(wx_mac)
-
-// @ "create" : bool Create(int,custring,custring,custring); ## COLORMAP_CREATE
-
 @END
 
 #ifdef wx_mac
@@ -120,11 +119,8 @@
 
 @VAR CDB_FIX
 
-// @CREATOR (_KEY_TYPE/bInt/ubIntKey/tInt);
-
 @ "find-colour" : wxColour^ FindColour(string);
 @ "find-name" : string FindName(wxColour%);
-// @ "initialize" : void Initialize(); ## !defined(wx_xt)
 @ "append" : void Append(string, wxColour!);
 
 @CONSTANT "wx:the-colour-database" : wxColourDatabase! wxTheColourDatabase
@@ -152,11 +148,24 @@
 
 @END
 
+@BEGINSYMBOLS brushStyle > ONE
+@SYM "transparent" : wxTRANSPARENT
+@SYM "solid" : wxSOLID
+@SYM "bdiagonal-hatch" : wxBDIAGONAL_HATCH
+@SYM "crossdiag-hatch" : wxCROSSDIAG_HATCH
+@SYM "fdiagonal-hatch" : wxFDIAGONAL_HATCH
+@SYM "cross-hatch" : wxCROSS_HATCH
+@SYM "horizontal-hatch" : wxHORIZONTAL_HATCH
+@SYM "vertical-hatch" : wxVERTICAL_HATCH
+@SYM "stipple" : wxSTIPPLE
+@SYM "opaque-stipple" : wxOPAQUE_STIPPLE
+@ENDSYMBOLS
+
 @CLASSBASE wxBrush "wx:brush" : "wx:object"
 
 @CREATOR (); <> no argument
-@CREATOR (wxColour%,int); <> wx:colour%
-@CREATOR (string,int); <> color name
+@CREATOR (wxColour%,SYM[brushStyle]); <> wx:colour%
+@CREATOR (string,SYM[brushStyle]); <> color name
 
 @ "get-colour" : wxColour% GetColour();
 @ "set-colour" : void SetColour(wxColour%); : : /CHECKMUT[wxBrush."brush"."wx:brush::set-colour"] <> wx:colour%
@@ -166,19 +175,8 @@
 @ "get-stipple" : wxBitmap! GetStipple();
 @ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxBrush."brush"."wx:brush::set-stipple"]
 
-@ "get-style" : int GetStyle();
-@ "set-style" : void SetStyle(int); : : /CHECKMUT[wxBrush."brush"."wx:brush::set-style"]
-
-@CONSTANT "wx:const-transparent" : int wxTRANSPARENT
-@CONSTANT "wx:const-solid" : int wxSOLID
-@CONSTANT "wx:const-bdiagonal-hatch" : int wxBDIAGONAL_HATCH
-@CONSTANT "wx:const-crossdiag-hatch" : int wxCROSSDIAG_HATCH
-@CONSTANT "wx:const-fdiagonal-hatch" : int wxFDIAGONAL_HATCH
-@CONSTANT "wx:const-cross-hatch" : int wxCROSS_HATCH
-@CONSTANT "wx:const-horizontal-hatch" : int wxHORIZONTAL_HATCH
-@CONSTANT "wx:const-vertical-hatch" : int wxVERTICAL_HATCH
-@CONSTANT "wx:const-stipple" : int wxSTIPPLE
-@CONSTANT "wx:const-opaque-stipple" : int wxOPAQUE_STIPPLE
+@ "get-style" : SYM[brushStyle] GetStyle();
+@ "set-style" : void SetStyle(SYM[brushStyle]); : : /CHECKMUT[wxBrush."brush"."wx:brush::set-style"]
 
 @END
 
@@ -186,26 +184,46 @@
 
 @CREATOR ();
 
-@ "find-or-create-brush" : wxBrush! FindOrCreateBrush(wxColour!,int); <> wx:colour%
-@ "find-or-create-brush" : wxBrush! FindOrCreateBrush(string,int); <> color name
-// @ "remove-brush" : void RemoveBrush(wxBrush!);
+@ "find-or-create-brush" : wxBrush! FindOrCreateBrush(wxColour!,SYM[brushStyle]); <> wx:colour%
+@ "find-or-create-brush" : wxBrush! FindOrCreateBrush(string,SYM[brushStyle]); <> color name
 
 @CONSTANT "wx:the-brush-list" : wxBrushList! wxTheBrushList
 
 @END
 
+@BEGINSYMBOLS penStyle > ONE
+@SYM "transparent" : wxTRANSPARENT
+@SYM "solid" : wxSOLID
+@SYM "dot" : wxDOT
+@SYM "long-dash" : wxLONG_DASH
+@SYM "short-dash" : wxSHORT_DASH
+@SYM "dot-dash" : wxDOT_DASH
+@ENDSYMBOLS
+
+@BEGINSYMBOLS join > ONE
+@SYM "join-bevel" : wxJOIN_BEVEL
+@SYM "join-miter" : wxJOIN_MITER
+@SYM "join-round" : wxJOIN_ROUND
+@ENDSYMBOLS
+
+@BEGINSYMBOLS cap > ONE
+@SYM "cap-round" : wxCAP_ROUND
+@SYM "cap-projecting" : wxCAP_PROJECTING
+@SYM "cap-butt" : wxCAP_BUTT
+@ENDSYMBOLS
+
 @CLASSBASE wxPen "wx:pen" : "wx:object"
 
 @CREATOR (); <> no argument
-@CREATOR (wxColour%,nnint,int); <> wx:colour%
-@CREATOR (string,nnint,int); <> color name
+@CREATOR (wxColour%,nnint,SYM[penStyle]); <> wx:colour%
+@CREATOR (string,nnint,SYM[penStyle]); <> color name
 
 @ "get-width" : int GetWidth();
 @ "set-width" : void SetWidth(int);
-@ "get-cap" : int GetCap();
-@ "set-cap" : void SetCap(int);
-@ "get-join" : int GetJoin();
-@ "set-join" : void SetJoin(int);
+@ "get-cap" : SYM[cap] GetCap();
+@ "set-cap" : void SetCap(SYM[cap]);
+@ "get-join" : SYM[join] GetJoin();
+@ "set-join" : void SetJoin(SYM[join]);
 
 @ "get-colour" : wxColour% GetColour();
 @ "set-colour" : void SetColour(wxColour%);  : : /CHECKMUT[wxPen."pen"."wx:pen::set-colour"] <> wx:colour%
@@ -215,21 +233,8 @@
 @ "get-stipple" : wxBitmap! GetStipple();
 @ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxPen."pen"."wx:pen::set-stipple"]
 
-@ "get-style" : int GetStyle();
-@ "set-style" : void SetStyle(int); : : /CHECKMUT[wxPen."pen"."wx:pen::set-style"]
-
-@CONSTANT "wx:const-join-bevel" : int wxJOIN_BEVEL
-@CONSTANT "wx:const-join-miter" : int wxJOIN_MITER
-@CONSTANT "wx:const-join-round" : int wxJOIN_ROUND
-
-@CONSTANT "wx:const-cap-round" : int wxCAP_ROUND
-@CONSTANT "wx:const-cap-projecting" : int wxCAP_PROJECTING
-@CONSTANT "wx:const-cap-butt" : int wxCAP_BUTT
-
-@CONSTANT "wx:const-dot" : int wxDOT
-@CONSTANT "wx:const-long-dash" : int wxLONG_DASH
-@CONSTANT "wx:const-short-dash" : int wxSHORT_DASH
-@CONSTANT "wx:const-dot-dash" : int wxDOT_DASH
+@ "get-style" : SYM[penStyle] GetStyle();
+@ "set-style" : void SetStyle(SYM[penStyle]); : : /CHECKMUT[wxPen."pen"."wx:pen::set-style"]
 
 @END
 
@@ -238,76 +243,72 @@
 
 @CREATOR ();
 
-@ "find-or-create-pen" : wxPen! FindOrCreatePen(wxColour!,nnint,int); <> wx:colour%
-@ "find-or-create-pen" : wxPen! FindOrCreatePen(string,nnint,int); <> color name
-// @ "remove-pen" : void RemovePen(wxPen!);
+@ "find-or-create-pen" : wxPen! FindOrCreatePen(wxColour!,nnint,SYM[penStyle]); <> wx:colour%
+@ "find-or-create-pen" : wxPen! FindOrCreatePen(string,nnint,SYM[penStyle]); <> color name
 
 @CONSTANT "wx:the-pen-list" : wxPenList! wxThePenList
 
 @END
 
+@BEGINSYMBOLS cursor > ONE
+@SYM "cursor-arrow" : wxCURSOR_ARROW
+@SYM "cursor-bullseye" : wxCURSOR_BULLSEYE
+@SYM "cursor-char" : wxCURSOR_CHAR
+@SYM "cursor-cross" : wxCURSOR_CROSS
+@SYM "cursor-hand" : wxCURSOR_HAND
+@SYM "cursor-ibeam" : wxCURSOR_IBEAM
+@SYM "cursor-left-button" : wxCURSOR_LEFT_BUTTON
+@SYM "cursor-magnifier" : wxCURSOR_MAGNIFIER
+@SYM "cursor-middle-button" : wxCURSOR_MIDDLE_BUTTON
+@SYM "cursor-no-entry" : wxCURSOR_NO_ENTRY
+@SYM "cursor-paint-brush" : wxCURSOR_PAINT_BRUSH
+@SYM "cursor-pencil" : wxCURSOR_PENCIL
+@SYM "cursor-point-left" : wxCURSOR_POINT_LEFT
+@SYM "cursor-point-right" : wxCURSOR_POINT_RIGHT
+@SYM "cursor-question-arrow" : wxCURSOR_QUESTION_ARROW
+@SYM "cursor-right-button" : wxCURSOR_RIGHT_BUTTON
+@SYM "cursor-sizenesw" : wxCURSOR_SIZENESW
+@SYM "cursor-sizens" : wxCURSOR_SIZENS
+@SYM "cursor-sizenwse" : wxCURSOR_SIZENWSE
+@SYM "cursor-sizewe" : wxCURSOR_SIZEWE
+@SYM "cursor-sizing" : wxCURSOR_SIZING
+@SYM "cursor-spraycan" : wxCURSOR_SPRAYCAN
+@SYM "cursor-wait" : wxCURSOR_WAIT
+@SYM "cursor-watch" : wxCURSOR_WATCH
+@ENDSYMBOLS
+
 @CLASSBASE wxCursor "wx:cursor" : "wx:object"
 
-// @CREATOR ();
-@CREATOR (string,long=wxBITMAP_TYPE_DEFAULT,int=0,int=0); <> cursor name
-@CREATOR (int); <> cursor id
+@CREATOR (string,SYM[bitmapType],int=0,int=0); <> cursor name
+@CREATOR (SYM[cursor]); <> cursor id
 
 @ "ok?" : bool Ok();
 
-@CONSTANT "wx:const-cursor-arrow" : int wxCURSOR_ARROW
-@CONSTANT "wx:const-cursor-bullseye" : int wxCURSOR_BULLSEYE
-@CONSTANT "wx:const-cursor-char" : int wxCURSOR_CHAR
-@CONSTANT "wx:const-cursor-cross" : int wxCURSOR_CROSS
-@CONSTANT "wx:const-cursor-hand" : int wxCURSOR_HAND
-@CONSTANT "wx:const-cursor-ibeam" : int wxCURSOR_IBEAM
-@CONSTANT "wx:const-cursor-left-button" : int wxCURSOR_LEFT_BUTTON
-@CONSTANT "wx:const-cursor-magnifier" : int wxCURSOR_MAGNIFIER
-@CONSTANT "wx:const-cursor-middle-button" : int wxCURSOR_MIDDLE_BUTTON
-@CONSTANT "wx:const-cursor-no-entry" : int wxCURSOR_NO_ENTRY
-@CONSTANT "wx:const-cursor-painr-brush" : int wxCURSOR_PAINT_BRUSH
-@CONSTANT "wx:const-cursor-pencil" : int wxCURSOR_PENCIL
-@CONSTANT "wx:const-cursor-point-left" : int wxCURSOR_POINT_LEFT
-@CONSTANT "wx:const-cursor-point-right" : int wxCURSOR_POINT_RIGHT
-@CONSTANT "wx:const-cursor-question-arrow" : int wxCURSOR_QUESTION_ARROW
-@CONSTANT "wx:const-cursor-right-button" : int wxCURSOR_RIGHT_BUTTON
-@CONSTANT "wx:const-cursor-sizenesw" : int wxCURSOR_SIZENESW
-@CONSTANT "wx:const-cursor-sizens" : int wxCURSOR_SIZENS
-@CONSTANT "wx:const-cursor-sizenwse" : int wxCURSOR_SIZENWSE
-@CONSTANT "wx:const-cursor-sizewe" : int wxCURSOR_SIZEWE
-@CONSTANT "wx:const-cursor-sizing" : int wxCURSOR_SIZING
-@CONSTANT "wx:const-cursor-spraycan" : int wxCURSOR_SPRAYCAN
-@CONSTANT "wx:const-cursor-wait" : int wxCURSOR_WAIT
-@CONSTANT "wx:const-cursor-watch" : int wxCURSOR_WATCH
-
 @END
 
-
-@CLASSBASE wxIcon "wx:icon" : "wx:bitmap"
-
-// @CREATOR ();
-@CREATOR (string, int=wxBITMAP_TYPE_DEFAULT);
-
-// in wx:bitmap%: 
-// @ "ok?" : bool Ok();
-
-@END
 
 #if USE_FONT_NAME_DIRECTORY
 
+static inline int Identity(wxFontNameDirectory *, int v)
+{
+  return v;
+}
+
 @CLASSBASE wxFontNameDirectory "wx:font-name-directory":"wx:object"
 
-@ "get-screen-name" : nstring GetScreenName(int,int,int);
-@ "get-post-script-name" : nstring GetPostScriptName(int,int,int);
-@ "get-afm-name" : nstring GetAFMName(int,int,int);
+@ "get-screen-name" : nstring GetScreenName(SYM[family],SYM[style],SYM[weight]);
+@ "get-post-script-name" : nstring GetPostScriptName(SYM[family],SYM[style],SYM[weight]);
+@ "get-afm-name" : nstring GetAFMName(SYM[family],SYM[style],SYM[weight]);
 
 @ "get-new-font-id" :   int GetNewFontId()
 @ "initialize" : void Initialize(int,int,string);
 
 @ "get-font-id" : int GetFontId(string);
 @ "get-font-name" : nstring GetFontName(int);
-@ "get-family" : int GetFamily(int);
+@ "get-family" : SYM[family] GetFamily(int);
 
-@ "find-or-create-font-id" : int FindOrCreateFontId(cstring,int);
+@ "find-or-create-font-id" : int FindOrCreateFontId(cstring,SYM[family]);
+@ m "find-family-default-font-id" : int Identity(SYM[family]);
 
 @CONSTANT "wx:the-font-name-directory" : wxFontNameDirectory% wxTheFontNameDirectory
 

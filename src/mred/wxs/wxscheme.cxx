@@ -1041,9 +1041,6 @@ extern char *wxmac_startup_directory;
 static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 {
   enum {
-    id_tmp_dir,
-    id_pref_dir,
-    id_init_dir,
     id_pref_file,
     id_init_file,
     id_setup_file,
@@ -1052,16 +1049,10 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 
   int which;
 
-  if (argv[0] == temp_dir_symbol)
-    which = id_tmp_dir;
-  else if (argv[0] == pref_dir_symbol)
-    which = id_pref_dir;
-  else if (argv[0] == pref_file_symbol)
+  if (argv[0] == pref_file_symbol)
     which = id_pref_file;
   else if (argv[0] == init_file_symbol)
     which = id_init_file;
-  else if (argv[0] == init_dir_symbol)
-    which = id_init_dir;
   else if (argv[0] == setup_file_symbol)
     which = id_setup_file;
   else if (argv[0] == autosaves_file_symbol)
@@ -1073,27 +1064,9 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   }
 
 #ifdef wx_x
-  if (which == id_tmp_dir) {
-    char *p;
-    
-    if ((p = getenv("TMPDIR"))) {
-      p = scheme_expand_filename(p, -1, NULL, NULL);
-      if (p && scheme_directory_exists(p))
-	return scheme_make_string(p);
-    }
-
-    if (scheme_directory_exists("/usr/tmp"))
-      return scheme_make_string("/usr/tmp");
-
-    return scheme_make_string("/tmp");
-  }
-
   Scheme_Object *home;
 
   home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL));
-
-  if ((which == id_pref_dir) || (which == id_init_dir))
-    return home;
 
   int ends_in_slash;
   ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == '/';
@@ -1186,14 +1159,11 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   Scheme_Object *home;
 
   switch (which) {
-  case id_pref_dir:
-  case id_init_dir:
   case id_pref_file:
   case id_init_file:
   case id_setup_file:
     t = 'pref';
     break;
-  case id_tmp_dir:
   default:
     t = 'temp';
     break;
@@ -1207,9 +1177,6 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     home = scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1));
   }
   
-  if ((which == id_pref_dir) || (which == id_tmp_dir) || (which == id_init_dir))
-    return home;
-
   int ends_in_colon;
   ends_in_colon = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == ':';
 
@@ -1225,7 +1192,7 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     return scheme_append_string(home,
 				scheme_make_string(":mred.fnt" + ends_in_colon));  
 
-  if (which == id_pref_file)
+  if (which == id_autosaves_file)
     return scheme_append_string(home,
 				scheme_make_string(":MrEd Autosaves" + ends_in_colon));
 #endif

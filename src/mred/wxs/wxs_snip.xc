@@ -7,34 +7,36 @@
 
 @HEADER
 
+@BEGINSYMBOLS flags
+@SYM "snip-can-append" : wxSNIP_CAN_APPEND
+@SYM "snip-newline" : wxSNIP_NEWLINE
+@SYM "snip-hard-newline" : wxSNIP_HARD_NEWLINE
+@SYM "snip-is-text" : wxSNIP_IS_TEXT
+@SYM "snip-invisible" : wxSNIP_INVISIBLE
+@SYM "snip-handles-events" : wxSNIP_HANDLES_EVENTS
+@SYM "snip-width-depends-on-x" : wxSNIP_WIDTH_DEPENDS_ON_X
+@SYM "snip-height-depends-on-x" : wxSNIP_HEIGHT_DEPENDS_ON_X
+@SYM "snip-width-depends-on-y" : wxSNIP_WIDTH_DEPENDS_ON_Y
+@SYM "snip-height-depends-on-y" : wxSNIP_HEIGHT_DEPENDS_ON_Y
+@SYM "snip-anchored" : wxSNIP_ANCHORED
+@SYM "snip-uses-buffer-path" : wxSNIP_USES_BUFFER_PATH
+@ENDSYMBOLS
+
 @CLASSBASE wxSnip "wx:snip":"wx:object"
 
 @CREATOR ();
 
 @CLASSID wxTYPE_SNIP
 
-@CONSTANT "wx:const-snip-can-append" : int wxSNIP_CAN_APPEND
-@CONSTANT "wx:const-snip-newline" : int wxSNIP_NEWLINE
-@CONSTANT "wx:const-snip-hard-newline" : int wxSNIP_HARD_NEWLINE
-@CONSTANT "wx:const-snip-is-text" : int wxSNIP_IS_TEXT
-@CONSTANT "wx:const-snip-invisible" : int wxSNIP_INVISIBLE
-@CONSTANT "wx:const-snip-handles-events" : int wxSNIP_HANDLES_EVENTS
-@CONSTANT "wx:const-snip-width-depends-on-x" : int wxSNIP_WIDTH_DEPENDS_ON_X
-@CONSTANT "wx:const-snip-height-depends-on-x" : int wxSNIP_HEIGHT_DEPENDS_ON_X
-@CONSTANT "wx:const-snip-width-depends-on-y" : int wxSNIP_WIDTH_DEPENDS_ON_Y
-@CONSTANT "wx:const-snip-height-depends-on-y" : int wxSNIP_HEIGHT_DEPENDS_ON_Y
-@CONSTANT "wx:const-snip-anchored" : int wxSNIP_ANCHORED
-@CONSTANT "wx:const-snip-uses-buffer-path" : int wxSNIP_USES_BUFFER_PATH
-
 @IVAR r "count" : long count
-@IVAR r "flags" : long flags
+@IVAR r "flags" : SYM[flags] flags
 @IVAR r "style" : wxStyle! style
 @IVAR "snipclass" : wxSnipClass^ snipclass
 
 @ "get-admin" : wxSnipAdmin! GetAdmin();
 
 @ "set-count" : void SetCount(long);
-@ "set-flags" : void SetFlags(long);
+@ "set-flags" : void SetFlags(SYM[flags]);
 
 @ "set-style" : void SetStyle(wxStyle!)
 
@@ -76,11 +78,12 @@
 
 @END
 
+@INCLUDE wxs_bmt.xci
 
 @CLASSBASE wxImageSnip "wx:image-snip":"wx:snip"
 
 // This isn't `pathname' because it expands internally
-@CREATOR (nstring=NULL,long=0,bool=FALSE,bool=TRUE);
+@CREATOR (nstring=NULL,SYM[bitmapType]=0,bool=FALSE,bool=TRUE);
 
 @CLASSID wxTYPE_IMAGE_SNIP
 
@@ -88,7 +91,7 @@
 @INCLUDE wxs_snip.xci
 
 // This isn't `pathname' because it expands internally
-@ "load-file" : void LoadFile(nstring,long,bool=FALSE,bool=TRUE);
+@ "load-file" : void LoadFile(nstring,SYM[bitmapType],bool=FALSE,bool=TRUE);
 
 @ "get-filename" : nstring GetFilename(bool?);
 @ "get-filetype" : long GetFiletype();
@@ -111,11 +114,6 @@
 @ "get-this-media" : wxMediaBuffer^ Get_This_Media();
 @ "get-media" : wxMediaBuffer^ GetThisMedia();
 @ "set-media" : void SetMedia(wxMediaBuffer^);
-
-@CONSTANT "wx:const-msnipbox-xmargin" : int wxMSNIPBOX_XMARGIN
-@CONSTANT "wx:const-msnipbox-ymargin" : int wxMSNIPBOX_YMARGIN
-@CONSTANT "wx:const-msnipbox-xinset" : int wxMSNIPBOX_XINSET
-@CONSTANT "wx:const-msnipbox-yinset" : int wxMSNIPBOX_YINSET
 
 @SETMARK s = d
 @INCLUDE wxs_snip.xci

@@ -30,17 +30,80 @@
 
 @END
 
+@BEGINSYMBOLS family > ONE
+@SYM "base" : wxBASE
+@SYM "default" : wxDEFAULT
+@SYM "decorative" : wxDECORATIVE
+@SYM "roman" : wxROMAN
+@SYM "script" : wxSCRIPT
+@SYM "swiss" : wxSWISS
+@SYM "modern" : wxMODERN
+@SYM "teletype" : wxTELETYPE
+@SYM "system" : wxSYSTEM
+@ENDSYMBOLS
+
+@BEGINSYMBOLS weight > ONE
+@SYM "base" : wxBASE
+@SYM "normal" : wxNORMAL
+@SYM "light" : wxLIGHT
+@SYM "bold" : wxBOLD
+@ENDSYMBOLS
+
+@BEGINSYMBOLS style > ONE
+@SYM "base" : wxBASE
+@SYM "normal" : wxNORMAL
+@SYM "italic" : wxITALIC
+@SYM "slant" : wxSLANT
+@ENDSYMBOLS
+
+@BEGINSYMBOLS align > ONE
+@SYM "base" : wxBASE
+@SYM "align-top" :  wxALIGN_TOP
+@SYM "align-bottom" : wxALIGN_BOTTOM
+@SYM "align-center" : wxALIGN_CENTER
+@ENDSYMBOLS
+
+@BEGINSYMBOLS changeNoArg > ONE
+@SYM "change-nothing" : wxCHANGE_NOTHING
+@SYM "change-normal" : wxCHANGE_NORMAL
+@SYM "change-bold" : wxCHANGE_BOLD
+@SYM "change-italic" : wxCHANGE_ITALIC
+@SYM "change-toggle-underline" : wxCHANGE_TOGGLE_UNDERLINE
+@SYM "change-normal-colour" : wxCHANGE_NORMAL_COLOUR
+@ENDSYMBOLS
+@BEGINSYMBOLS changeFam > ONE
+@SYM "change-family" : wxCHANGE_FAMILY
+@ENDSYMBOLS
+@BEGINSYMBOLS changeStyle > ONE
+@SYM "change-style" : wxCHANGE_STYLE
+@SYM "change-toggle-style" : wxCHANGE_TOGGLE_STYLE
+@ENDSYMBOLS
+@BEGINSYMBOLS changeWeight > ONE
+@SYM "change-weight" : wxCHANGE_WEIGHT
+@SYM "change-toggle-weight" : wxCHANGE_TOGGLE_WEIGHT
+@ENDSYMBOLS
+@BEGINSYMBOLS changeUnderline > ONE
+@SYM "change-underline" : wxCHANGE_UNDERLINE
+@ENDSYMBOLS
+@BEGINSYMBOLS changeSize > ONE
+@SYM "change-size" : wxCHANGE_SIZE
+@SYM "change-bigger" : wxCHANGE_BIGGER
+@SYM "change-smaller" : wxCHANGE_SMALLER
+@ENDSYMBOLS
+@BEGINSYMBOLS changeAlign > ONE
+@SYM "change-alignment" : wxCHANGE_ALIGNMENT
+@ENDSYMBOLS
 
 @CLASSBASE wxStyleDelta "wx:style-delta" : "wx:object"
 
-@IVAR "family" : int family
+@IVAR "family" : SYM[family] family
 @IVAR "face" : nstring face
 @IVAR "size-mult" : float sizeMult
 @IVAR "size-add" : int sizeAdd
-@IVAR "weight-on" : int weightOn
-@IVAR "weight-off" : int weightOff
-@IVAR "style-on" : int styleOn
-@IVAR "style-off" : int styleOff
+@IVAR "weight-on" : SYM[weight] weightOn
+@IVAR "weight-off" : SYM[weight] weightOff
+@IVAR "style-on" : SYM[style] styleOn
+@IVAR "style-off" : SYM[style] styleOff
 @IVAR "underlined-on" : bool underlinedOn
 @IVAR "underlined-off" : bool underlinedOff
 @IVAR "transparent-text-backing-on" : bool transparentTextBackingOn
@@ -49,14 +112,25 @@
 @IVAR r "background-mult" : wxMultColour% backgroundMult
 @IVAR r "foreground-add" : wxAddColour% foregroundAdd
 @IVAR r "background-add" : wxAddColour% backgroundAdd
-@IVAR "alignment-on" : int alignmentOn
-@IVAR "alignment-off" : int alignmentOff
+@IVAR "alignment-on" : SYM[align] alignmentOn
+@IVAR "alignment-off" : SYM[align] alignmentOff
   
-@CREATOR (int=wxCHANGE_NOTHING,int=0);
+@CREATOR (SYM[changeNoArg]=wxCHANGE_NOTHING,-int=0); <> no change argument
+@CREATORX (SYM[changeFam],SYM[family]); <> family
+@CREATORX (SYM[changeStyle],SYM[style]); <> style
+@CREATORX (SYM[changeWeight],SYM[weight]); <> weight
+@CREATORX (SYM[changeUnderline],bool); <> underline
+@CREATORX (SYM[changeSize],int); <> size
 
 @CLASSID wxTYPE_STYLE_DELTA
 
-@ "set-delta" : wxStyleDelta! SetDelta(int,int=0);
+@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeNoArg]=wxCHANGE_NOTHING,-int=0); <> no change argument
+@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeFam],SYM[family]); <> family
+@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeStyle],SYM[style]); <> style
+@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeWeight],SYM[weight]); <> weight
+@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeUnderline],bool); <> underline
+@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeSize],int); <> size
+
 @ "set-delta-face" : wxStyleDelta! SetDeltaFace(string);
 @ "set-delta-background" : wxStyleDelta! SetDeltaBackground(string); <> color name
 @ "set-delta-background" : wxStyleDelta! SetDeltaBackground(wxColour%); <> wx:colour%
@@ -66,29 +140,6 @@
 @ "equal?" : bool Equal(wxStyleDelta%);
 @ "collapse" : bool Collapse(wxStyleDelta%);
 @ "copy" : void Copy(wxStyleDelta!);
-
-@CONSTANT "wx:const-base" : int wxBASE
-
-@CONSTANT "wx:const-change-nothing" : int wxCHANGE_NOTHING
-@CONSTANT "wx:const-change-normal" : int wxCHANGE_NORMAL
-@CONSTANT "wx:const-change-style" : int wxCHANGE_STYLE
-@CONSTANT "wx:const-change-weight" : int wxCHANGE_WEIGHT
-@CONSTANT "wx:const-change-underline" : int wxCHANGE_UNDERLINE
-@CONSTANT "wx:const-change-size" : int wxCHANGE_SIZE
-@CONSTANT "wx:const-change-bold" : int wxCHANGE_BOLD
-@CONSTANT "wx:const-change-italic" : int wxCHANGE_ITALIC
-@CONSTANT "wx:const-change-toggle-style" : int wxCHANGE_TOGGLE_STYLE
-@CONSTANT "wx:const-change-toggle-weight" : int wxCHANGE_TOGGLE_WEIGHT
-@CONSTANT "wx:const-change-toggle-underline" : int wxCHANGE_TOGGLE_UNDERLINE
-@CONSTANT "wx:const-change-bigger" : int wxCHANGE_BIGGER
-@CONSTANT "wx:const-change-smaller" : int wxCHANGE_SMALLER
-@CONSTANT "wx:const-change-family" : int wxCHANGE_FAMILY
-@CONSTANT "wx:const-change-alignment" : int wxCHANGE_ALIGNMENT
-@CONSTANT "wx:const-change-normal-colour" : int wxCHANGE_NORMAL_COLOUR
-
-@CONSTANT "wx:const-align-top" : int wxALIGN_TOP
-@CONSTANT "wx:const-align-bottom" : int wxALIGN_BOTTOM
-@CONSTANT "wx:const-align-center" : int wxALIGN_CENTER
 
 @END
 
@@ -151,9 +202,6 @@
 @ "replace-named-style" : wxStyle! ReplaceNamedStyle(string,wxStyle^);
 
 @ "convert" : wxStyle! Convert(wxStyle!);
-
-// @ "notify-on-change" : long NotifyOnChange(wxStyleNotifyFunc f, void *data);
-// @ "forget-notification" : void ForgetNotification(long);
 
 @ "index-to-style" : wxStyle^ IndexToStyle(int);
 @ "style-to-index" : int StyleToIndex(wxStyle!);

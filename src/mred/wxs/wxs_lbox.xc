@@ -7,6 +7,17 @@
 
 @HEADER
 
+@BEGINSYMBOLS kind > SINGLE
+@SYM "single" : wxSINGLE       
+@SYM "multiple" : wxMULTIPLE     
+@SYM "extended" : wxEXTENDED     
+@ENDSYMBOLS
+
+@BEGINSYMBOLS style
+@SYM "always-sb" : wxALWAYS_SB    
+@SYM "hscroll" : wxHSCROLL
+@ENDSYMBOLS
+
 @CLASSBASE wxListBox "wx:list-box":"wx:item"
 
 @CLASSID wxTYPE_LIST_BOX
@@ -19,13 +30,7 @@
 @SET NOTEST = 1
 @INCLUDE list.xci
 
-@INCLUDE qbool.xci
-
-@MACRO CHECKKIND[n] = if (((x<n> & wxMULTIPLE) && (x<n> & wxEXTENDED)) || (x<n> & ~((Bool)(wxMULTIPLE | wxEXTENDED | wxALWAYS_SB)))) scheme_signal_error("wx:list-box%%::initialization: bad style specification: %d", x<n>);
-
-@MACRO spNum = num
-
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,Bool=wxSINGLE/bQBool/ubQBool/cQBool//spNum,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList,long=0,string="button"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]|CHECKKIND[3]|glueListSet[string.8.9.8."wx:list-box%::initialization"]/glueCleanup[9]/ubCallbackCreatorFinish
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,SYM[kind]=wxSINGLE,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList,SYM[style]=0,string="button"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]|glueListSet[string.8.9.8."wx:list-box%::initialization"]/glueCleanup[9]/ubCallbackCreatorFinish
 
 @INCLUDE wxs_item.xci
 

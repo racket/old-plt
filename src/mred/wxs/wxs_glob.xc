@@ -29,6 +29,35 @@
 
 @HEADER
 
+@BEGINSYMBOLS messageFlags
+@SYM "ok" : wxOK
+@SYM "yes-no" : wxYES_NO
+@SYM "cancel" : wxCANCEL
+@SYM "centre" : wxCENTRE
+@SYM "icon-exclamation" : wxICON_EXCLAMATION
+@SYM "icon-hand" : wxICON_HAND
+@SYM "icon-question" : wxICON_QUESTION
+@SYM "icon-information" : wxICON_INFORMATION
+@ENDSYMBOLS
+
+@BEGINSYMBOLS psMode > ONE
+@SYM "ps-preview" : PS_PREVIEW
+@SYM "ps-file" : PS_FILE
+@SYM "ps-printer" : PS_PRINTER
+@ENDSYMBOLS
+
+@BEGINSYMBOLS psOrientation > ONE
+@SYM "ps-portrait" : PS_PORTRAIT
+@SYM "ps-landscape" : PS_LANDSCAPE
+@ENDSYMBOLS
+
+@BEGINSYMBOLS fileSelMode > ONE
+@SYM "open" : wxOPEN
+@SYM "save" : wxSAVE
+@SYM "overwrite-prompt" : wxOVERWRITE_PROMPT
+@SYM "hide-readonly" : wxHIDE_READONLY
+@ENDSYMBOLS
+
 #define USE_PRINTER 1
 
 #define wxSetPrintPaperName wxThePrintSetupData->SetPaperName
@@ -68,11 +97,6 @@ static char *wxGet_Scheme(Bool (*f)(char *, int))
     return buffer;
 }
 
-static char *wxExpandPath_Scheme(char *path)
-{
-  return wxExpandPath(buffer, (const char *)path);
-}
-
 static char *wxGetEmailAddress_Scheme(void)
 {
   return wxGet_Scheme(wxGetEmailAddress);
@@ -86,15 +110,6 @@ static char *wxGetUserId_Scheme(void)
 static char *wxGetUserName_Scheme(void)
 {
   return wxGet_Scheme(wxGetUserName);
-}
-
-static char *wxGetHomeDir_Scheme(void)
-{
-#if defined(wx_msw) || defined(wx_mac)
-  return NULL;
-#else
-  return wxGetHomeDir(buffer);
-#endif
 }
 
 static char *wxStripMenuCodes_Scheme(char *in)
@@ -115,7 +130,7 @@ static char *wxStripMenuCodes_Scheme(char *in)
   return buffer;
 }
 
-#if !defined(wx_x) || defined(wx_xt)
+#if !defined(wx_motif)
 Bool wxSetDisplay(char *)
 {
   return FALSE;
@@ -133,40 +148,16 @@ extern void wxBell(void);
 
 @GLOBAL wxsGlobal
 
-// @ "wx:dir-exists?" : bool DirExists(string);
-// @ "wx:file-exists?" : bool FileExists(string);
-// @ "wx:file-name-from-path" : string FileNameFromPath(string);
-// @ "wx:is-absolute-path?" : bool IsAbsolutePath(string);
-// @ "wx:path-only" : string PathOnly(string);
-@ "wx:concat-files" : bool wxConcatFiles(pathname,pathname,pathname);
-// @ "wx:expand-path" : string wxExpandPath_Scheme(string);
-// @ "wx:copy-file" : bool wxCopyFile(pathname,pathname);
-// @ "wx:get-working-directory" : string wxGetWorkingDirectory();
-// @ "wx:set-working-directory" : void wxSetWorkingDirectory(string);
-@ "wx:get-temp-file-name" : string wxGetTempFileName(string);
-// @ "wx:is-wild?" : bool wxIsWild(string);
-// @ "wx:match-wild?" : bool wxMatchWild(string,string,bool);
-// @ "wx:mkdir" : bool wxMkdir(string);
-// Doesn't exist? @ "wx:rmdir" : bool wxRmdir(string);
-// @ "wx:remove-file" : bool wxRemoveFile(string);
-// @ "wx:rename-file" : bool wxRenameFile(string,string);
-// @ "wx:get-user-home" : string wxGetUserHome(ncstring=NULL);
-
 @ "wx:get-host-name" : nstring wxGetHostName_Scheme();
-// @ "wx:get-home-dir" : string wxGetHomeDir_Scheme();
 @ "wx:get-email-address" : nstring wxGetEmailAddress_Scheme();
 @ "wx:get-user-id" : nstring wxGetUserId_Scheme();
 @ "wx:get-user-name" : nstring wxGetUserName_Scheme();
 
-@ "wx:string-match?" : bool StringMatch(string,string,bool=TRUE,bool=FALSE);
-
 @ "wx:set-display" : bool wxSetDisplay(nstring);
 @ "wx:get-display-name" : nstring wxGetDisplayName();
 
-// @ "wx:exit" : void wxExit();
-
-@ "wx:file-selector" : string wxFileSelector(string,nstring=NULL,nstring=NULL,nstring=NULL,string=FILE_SEL_DEF_PATTERN,int=0,wxWindow^=NULL,int=-1,int=-1);
-@ "wx:message-box" : int wxMessageBox(string, string="Message",int=wxOK|wxCENTER,wxWindow^=NULL,int=-1,int=-1);
+@ "wx:file-selector" : string wxFileSelector(string,nstring=NULL,nstring=NULL,nstring=NULL,string=FILE_SEL_DEF_PATTERN,SYM[fileSelMode]=wxOPEN,wxWindow^=NULL,int=-1,int=-1);
+@ "wx:message-box" : int wxMessageBox(string, string="Message",SYM[messageFlags]=wxOK|wxCENTER,wxWindow^=NULL,int=-1,int=-1);
 @ "wx:get-text-from-user" : string wxGetTextFromUser(string,string="Input text",string="",wxWindow^=NULL,int=-1,int=-1,bool=TRUE);
 
 @SET TYPE = string
@@ -236,8 +227,8 @@ static void __CopyBackIntArray(int count, Scheme_Object *vec, int *r)
 @ "wx:get-printer-command" : string wxGetPrinterCommand(); ## USE_PRINTER
 @ "wx:get-printer-file" : string wxGetPrinterFile(); ## USE_PRINTER
 @ "wx:get-printer-preview-command" : string wxGetPrintPreviewCommand(); ## USE_PRINTER
-@ "wx:get-printer-mode" : int wxGetPrinterMode(); ## USE_PRINTER
-@ "wx:get-printer-orientation" : int wxGetPrinterOrientation(); ## USE_PRINTER
+@ "wx:get-printer-mode" : SYM[psMode] wxGetPrinterMode(); ## USE_PRINTER
+@ "wx:get-printer-orientation" : SYM[psOrientation] wxGetPrinterOrientation(); ## USE_PRINTER
 @ "wx:get-printer-options" : string wxGetPrinterOptions(); ## USE_PRINTER
 @ "wx:get-printer-scaling" : void wxGetPrinterScaling(float*,float*); ## USE_PRINTER
 @ "wx:get-printer-translation" : void wxGetPrinterTranslation(float*,float*); ## USE_PRINTER
@@ -248,8 +239,8 @@ static void __CopyBackIntArray(int count, Scheme_Object *vec, int *r)
 @ "wx:set-printer-command" : void wxSetPrinterCommand(string); ## USE_PRINTER
 @ "wx:set-printer-file" : void wxSetPrinterFile(pathname); ## USE_PRINTER
 @ "wx:set-printer-preview-command" : void wxSetPrintPreviewCommand(string);  ## USE_PRINTER
-@ "wx:set-printer-mode" : void wxSetPrinterMode(int); ## USE_PRINTER
-@ "wx:set-printer-orientation" : void wxSetPrinterOrientation(int); ## USE_PRINTER
+@ "wx:set-printer-mode" : void wxSetPrinterMode(SYM[psMode]); ## USE_PRINTER
+@ "wx:set-printer-orientation" : void wxSetPrinterOrientation(SYM[psOrientation]); ## USE_PRINTER
 @ "wx:set-printer-options" : void wxSetPrinterOptions(string); ## USE_PRINTER
 @ "wx:set-printer-scaling" : void wxSetPrinterScaling(nnfloat,nnfloat); ## USE_PRINTER
 @ "wx:set-printer-translation" : void wxSetPrinterTranslation(float,float); ## USE_PRINTER
@@ -257,41 +248,17 @@ static void __CopyBackIntArray(int count, Scheme_Object *vec, int *r)
 @ "wx:set-afm-path" : void wxSetAFMPath(nstring); ## USE_PRINTER
 @ "wx:set-post-script-level-2" : void wxSetLevel2Ok(bool); ## USE_PRINTER
 
-// @ "wx:new-id" : long wxNewId(); ## NO_XT
-// @ "wx:register-id" : void wxRegisterId(long); ## NO_XT
-
 @ "wx:begin-busy-cursor" : void wxBeginBusyCursor()
 @ "wx:is-busy?" : bool wxIsBusy();
 @ "wx:end-busy-cursor" : void wxEndBusyCursor();
 @ "wx:bell" : void wxBell();
 @ "wx:display-size" : void wxDisplaySize(int*,int*);
 
-// @ "wx:error" : void wxError(string,string="wxWindows Internal Error");
-// @ "wx:fatal-error" : void wxFatalError(string,string="wxWindows Fatal Error");
-
-// @ "wx:execute" : void wxExecute(string,bool=FALSE); ## !defined(wx_mac)
-// @ "wx:execute" : void wxExecute(string[]/bList/ubList/cList,bool=FALSE); : /// : /glueUncountedListSet[string.0.0."wx:execute"]/glueCleanup[0]/ ## !defined(wx_mac)
-// @ "wx:shell" : void wxShell(string); ## !defined(wx_mac)
-
-// @ "wx:find-first-file" : string wxFindFirstFile(cstring, int=0);
-// @ "wx:find-next-file" : nstring wxFindNextFile();
-
-// @ "wx:find-menu-item-id" : int wxFindMenuItemId(wxFrame!,string,string);
 @ "wx:find-window-by-label" : wxWindow^ wxFindWindowByLabel(string,wxWindow^=NULL);
 @ "wx:find-window-by-name" : wxWindow^ wxFindWindowByName(string,wxWindow^=NULL);
 @ "wx:strip-menu-codes" : string wxStripMenuCodes_Scheme(string);
 
-// @ "wx:get-elapsed-time" : long wxGetElapsedTime(bool=TRUE);  ## NO_XT
-// @ "wx:sleep" : void wxSleep(int);
-// @ "wx:start-timer" : void wxStartTimer(); ## NO_XT
-
-// @ "wx:sub-type?" : bool wxSubType(int,int);
-
-// @ "wx:to-lower" : char wxToLower(char);
-// @ "wx:to-upper" : char wxToUpper(char);
-
 @ "wx:get-free-memory" : long wxGetFreeMemory();
-// @ "wx:get-os-version" : int wxGetOsVersion(int?,int?);
 
 @ "wx:get-resource" : bool wxGetResource(string,string,string*,nstring=NULL); <> string
 @ "wx:get-resource" : bool wxGetResource(string,string,long*,nstring=NULL); <> number
@@ -303,39 +270,6 @@ static void __CopyBackIntArray(int count, Scheme_Object *vec, int *r)
 
 @ "wx:yield" : bool wxSchemeYield(void[]=NULL//BundleVoidStar///spSema);
 @ "wx:flush-display" : void wxFlushDisplay();
-
-@CONSTANT "wx:const-ok" : int wxOK
-@CONSTANT "wx:const-yes-no" : int wxYES_NO
-@CONSTANT "wx:const-cancel" : int wxCANCEL
-@CONSTANT "wx:const-yes" : int wxYES
-@CONSTANT "wx:const-no" : int wxNO
-
-@CONSTANT "wx:const-icon-exclamation" : int wxICON_EXCLAMATION
-@CONSTANT "wx:const-icon-hand" : int wxICON_HAND
-@CONSTANT "wx:const-icon-question" : int wxICON_QUESTION
-@CONSTANT "wx:const-icon-information" : int wxICON_INFORMATION
-
-@CONSTANT "wx:const-icon-stop" : int wxICON_STOP
-@CONSTANT "wx:const-icon-asterisk" : int wxICON_ASTERISK
-@CONSTANT "wx:const-icon-mask" : int wxICON_MASK
-
-@CONSTANT "wx:const-center" : int wxCENTER
-@CONSTANT "wx:const-centre" : int wxCENTRE
-
-// @CONSTANT "wx:const-file" : int wxFILE ## NO_XT
-// @CONSTANT "wx:const-dir" : int wxDIR
-
-@CONSTANT "wx:const-ps-portrait" : int PS_PORTRAIT
-@CONSTANT "wx:const-ps-landscape" : int PS_LANDSCAPE
- 
-@CONSTANT "wx:const-ps-preview" : int PS_PREVIEW
-@CONSTANT "wx:const-ps-file" : int PS_FILE
-@CONSTANT "wx:const-ps-printer" : int PS_PRINTER
- 
-@CONSTANT "wx:const-open" : int wxOPEN
-@CONSTANT "wx:const-save" : int wxSAVE
-@CONSTANT "wx:const-overwrite-prompt" : int wxOVERWRITE_PROMPT
-@CONSTANT "wx:const-hide-readonly" : int wxHIDE_READONLY
 
 @CONSTANT "wx:hourglass-cursor" : wxCursor! wxHOURGLASS_CURSOR
 

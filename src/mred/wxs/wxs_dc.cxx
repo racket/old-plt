@@ -29,10 +29,244 @@
 #include "wxscomon.h"
 
 
+static Scheme_Object *mapMode_MM_TWIPS_sym = NULL;
+static Scheme_Object *mapMode_MM_POINTS_sym = NULL;
+static Scheme_Object *mapMode_MM_METRIC_sym = NULL;
+static Scheme_Object *mapMode_MM_LOMETRIC_sym = NULL;
+static Scheme_Object *mapMode_MM_TEXT_sym = NULL;
+
+static void init_symset_mapMode(void) {
+  mapMode_MM_TWIPS_sym = scheme_intern_symbol("mm-twips");
+  mapMode_MM_POINTS_sym = scheme_intern_symbol("mm-points");
+  mapMode_MM_METRIC_sym = scheme_intern_symbol("mm-metric");
+  mapMode_MM_LOMETRIC_sym = scheme_intern_symbol("mm-lometric");
+  mapMode_MM_TEXT_sym = scheme_intern_symbol("mm-text");
+}
+
+static int unbundle_symset_mapMode(Scheme_Object *v, const char *where) {
+  if (!mapMode_MM_TEXT_sym) init_symset_mapMode();
+  if (0) { }
+  else if (v == mapMode_MM_TWIPS_sym) { return MM_TWIPS; }
+  else if (v == mapMode_MM_POINTS_sym) { return MM_POINTS; }
+  else if (v == mapMode_MM_METRIC_sym) { return MM_METRIC; }
+  else if (v == mapMode_MM_LOMETRIC_sym) { return MM_LOMETRIC; }
+  else if (v == mapMode_MM_TEXT_sym) { return MM_TEXT; }
+  if (where) scheme_wrong_type(where, "mapMode symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_mapMode(Scheme_Object *v, const char *where) {
+  if (!mapMode_MM_TEXT_sym) init_symset_mapMode();
+  if (0) { }
+  else if (v == mapMode_MM_TWIPS_sym) { return 1; }
+  else if (v == mapMode_MM_POINTS_sym) { return 1; }
+  else if (v == mapMode_MM_METRIC_sym) { return 1; }
+  else if (v == mapMode_MM_LOMETRIC_sym) { return 1; }
+  else if (v == mapMode_MM_TEXT_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "mapMode symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_mapMode(int v) {
+  if (!mapMode_MM_TEXT_sym) init_symset_mapMode();
+  switch (v) {
+  case MM_TWIPS: return mapMode_MM_TWIPS_sym;
+  case MM_POINTS: return mapMode_MM_POINTS_sym;
+  case MM_METRIC: return mapMode_MM_METRIC_sym;
+  case MM_LOMETRIC: return mapMode_MM_LOMETRIC_sym;
+  case MM_TEXT: return mapMode_MM_TEXT_sym;
+  default: return NULL;
+  }
+}
 
 
-// "U" for undefined (pure virtual); don't think we'll need it
-// @SETMARK q = v
+static Scheme_Object *solidity_wxTRANSPARENT_sym = NULL;
+static Scheme_Object *solidity_wxSOLID_sym = NULL;
+
+static void init_symset_solidity(void) {
+  solidity_wxTRANSPARENT_sym = scheme_intern_symbol("transparent");
+  solidity_wxSOLID_sym = scheme_intern_symbol("solid");
+}
+
+static int unbundle_symset_solidity(Scheme_Object *v, const char *where) {
+  if (!solidity_wxSOLID_sym) init_symset_solidity();
+  if (0) { }
+  else if (v == solidity_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
+  else if (v == solidity_wxSOLID_sym) { return wxSOLID; }
+  if (where) scheme_wrong_type(where, "solidity symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_solidity(Scheme_Object *v, const char *where) {
+  if (!solidity_wxSOLID_sym) init_symset_solidity();
+  if (0) { }
+  else if (v == solidity_wxTRANSPARENT_sym) { return 1; }
+  else if (v == solidity_wxSOLID_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "solidity symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_solidity(int v) {
+  if (!solidity_wxSOLID_sym) init_symset_solidity();
+  switch (v) {
+  case wxTRANSPARENT: return solidity_wxTRANSPARENT_sym;
+  case wxSOLID: return solidity_wxSOLID_sym;
+  default: return NULL;
+  }
+}
+
+
+
+static Scheme_Object *logicalFunc_wxAND_sym = NULL;
+static Scheme_Object *logicalFunc_wxAND_INVERT_sym = NULL;
+static Scheme_Object *logicalFunc_wxAND_REVERSE_sym = NULL;
+static Scheme_Object *logicalFunc_wxCLEAR_sym = NULL;
+static Scheme_Object *logicalFunc_wxCOPY_sym = NULL;
+static Scheme_Object *logicalFunc_wxEQUIV_sym = NULL;
+static Scheme_Object *logicalFunc_wxINVERT_sym = NULL;
+static Scheme_Object *logicalFunc_wxNAND_sym = NULL;
+static Scheme_Object *logicalFunc_wxNOR_sym = NULL;
+static Scheme_Object *logicalFunc_wxNO_OP_sym = NULL;
+static Scheme_Object *logicalFunc_wxOR_sym = NULL;
+static Scheme_Object *logicalFunc_wxOR_INVERT_sym = NULL;
+static Scheme_Object *logicalFunc_wxOR_REVERSE_sym = NULL;
+static Scheme_Object *logicalFunc_wxSET_sym = NULL;
+static Scheme_Object *logicalFunc_wxSRC_INVERT_sym = NULL;
+static Scheme_Object *logicalFunc_wxXOR_sym = NULL;
+static Scheme_Object *logicalFunc_wxCOLOR_sym = NULL;
+
+static void init_symset_logicalFunc(void) {
+  logicalFunc_wxAND_sym = scheme_intern_symbol("and");
+  logicalFunc_wxAND_INVERT_sym = scheme_intern_symbol("and-invert");
+  logicalFunc_wxAND_REVERSE_sym = scheme_intern_symbol("and-reverse");
+  logicalFunc_wxCLEAR_sym = scheme_intern_symbol("clear");
+  logicalFunc_wxCOPY_sym = scheme_intern_symbol("copy");
+  logicalFunc_wxEQUIV_sym = scheme_intern_symbol("equiv");
+  logicalFunc_wxINVERT_sym = scheme_intern_symbol("invert");
+  logicalFunc_wxNAND_sym = scheme_intern_symbol("nand");
+  logicalFunc_wxNOR_sym = scheme_intern_symbol("nor");
+  logicalFunc_wxNO_OP_sym = scheme_intern_symbol("no-op");
+  logicalFunc_wxOR_sym = scheme_intern_symbol("or");
+  logicalFunc_wxOR_INVERT_sym = scheme_intern_symbol("or-invert");
+  logicalFunc_wxOR_REVERSE_sym = scheme_intern_symbol("or-reverse");
+  logicalFunc_wxSET_sym = scheme_intern_symbol("set");
+  logicalFunc_wxSRC_INVERT_sym = scheme_intern_symbol("src-invert");
+  logicalFunc_wxXOR_sym = scheme_intern_symbol("xor");
+  logicalFunc_wxCOLOR_sym = scheme_intern_symbol("colour");
+}
+
+static int unbundle_symset_logicalFunc(Scheme_Object *v, const char *where) {
+  if (!logicalFunc_wxCOLOR_sym) init_symset_logicalFunc();
+  if (0) { }
+  else if (v == logicalFunc_wxAND_sym) { return wxAND; }
+  else if (v == logicalFunc_wxAND_INVERT_sym) { return wxAND_INVERT; }
+  else if (v == logicalFunc_wxAND_REVERSE_sym) { return wxAND_REVERSE; }
+  else if (v == logicalFunc_wxCLEAR_sym) { return wxCLEAR; }
+  else if (v == logicalFunc_wxCOPY_sym) { return wxCOPY; }
+  else if (v == logicalFunc_wxEQUIV_sym) { return wxEQUIV; }
+  else if (v == logicalFunc_wxINVERT_sym) { return wxINVERT; }
+  else if (v == logicalFunc_wxNAND_sym) { return wxNAND; }
+  else if (v == logicalFunc_wxNOR_sym) { return wxNOR; }
+  else if (v == logicalFunc_wxNO_OP_sym) { return wxNO_OP; }
+  else if (v == logicalFunc_wxOR_sym) { return wxOR; }
+  else if (v == logicalFunc_wxOR_INVERT_sym) { return wxOR_INVERT; }
+  else if (v == logicalFunc_wxOR_REVERSE_sym) { return wxOR_REVERSE; }
+  else if (v == logicalFunc_wxSET_sym) { return wxSET; }
+  else if (v == logicalFunc_wxSRC_INVERT_sym) { return wxSRC_INVERT; }
+  else if (v == logicalFunc_wxXOR_sym) { return wxXOR; }
+  else if (v == logicalFunc_wxCOLOR_sym) { return wxCOLOR; }
+  if (where) scheme_wrong_type(where, "logicalFunc symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_logicalFunc(Scheme_Object *v, const char *where) {
+  if (!logicalFunc_wxCOLOR_sym) init_symset_logicalFunc();
+  if (0) { }
+  else if (v == logicalFunc_wxAND_sym) { return 1; }
+  else if (v == logicalFunc_wxAND_INVERT_sym) { return 1; }
+  else if (v == logicalFunc_wxAND_REVERSE_sym) { return 1; }
+  else if (v == logicalFunc_wxCLEAR_sym) { return 1; }
+  else if (v == logicalFunc_wxCOPY_sym) { return 1; }
+  else if (v == logicalFunc_wxEQUIV_sym) { return 1; }
+  else if (v == logicalFunc_wxINVERT_sym) { return 1; }
+  else if (v == logicalFunc_wxNAND_sym) { return 1; }
+  else if (v == logicalFunc_wxNOR_sym) { return 1; }
+  else if (v == logicalFunc_wxNO_OP_sym) { return 1; }
+  else if (v == logicalFunc_wxOR_sym) { return 1; }
+  else if (v == logicalFunc_wxOR_INVERT_sym) { return 1; }
+  else if (v == logicalFunc_wxOR_REVERSE_sym) { return 1; }
+  else if (v == logicalFunc_wxSET_sym) { return 1; }
+  else if (v == logicalFunc_wxSRC_INVERT_sym) { return 1; }
+  else if (v == logicalFunc_wxXOR_sym) { return 1; }
+  else if (v == logicalFunc_wxCOLOR_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "logicalFunc symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_logicalFunc(int v) {
+  if (!logicalFunc_wxCOLOR_sym) init_symset_logicalFunc();
+  switch (v) {
+  case wxAND: return logicalFunc_wxAND_sym;
+  case wxAND_INVERT: return logicalFunc_wxAND_INVERT_sym;
+  case wxAND_REVERSE: return logicalFunc_wxAND_REVERSE_sym;
+  case wxCLEAR: return logicalFunc_wxCLEAR_sym;
+  case wxCOPY: return logicalFunc_wxCOPY_sym;
+  case wxEQUIV: return logicalFunc_wxEQUIV_sym;
+  case wxINVERT: return logicalFunc_wxINVERT_sym;
+  case wxNAND: return logicalFunc_wxNAND_sym;
+  case wxNOR: return logicalFunc_wxNOR_sym;
+  case wxNO_OP: return logicalFunc_wxNO_OP_sym;
+  case wxOR: return logicalFunc_wxOR_sym;
+  case wxOR_INVERT: return logicalFunc_wxOR_INVERT_sym;
+  case wxOR_REVERSE: return logicalFunc_wxOR_REVERSE_sym;
+  case wxSET: return logicalFunc_wxSET_sym;
+  case wxSRC_INVERT: return logicalFunc_wxSRC_INVERT_sym;
+  case wxXOR: return logicalFunc_wxXOR_sym;
+  case wxCOLOR: return logicalFunc_wxCOLOR_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *fillKind_wxODDEVEN_RULE_sym = NULL;
+static Scheme_Object *fillKind_wxWINDING_RULE_sym = NULL;
+
+static void init_symset_fillKind(void) {
+  fillKind_wxODDEVEN_RULE_sym = scheme_intern_symbol("oddeven-rule");
+  fillKind_wxWINDING_RULE_sym = scheme_intern_symbol("winding-rule");
+}
+
+static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
+  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
+  if (0) { }
+  else if (v == fillKind_wxODDEVEN_RULE_sym) { return wxODDEVEN_RULE; }
+  else if (v == fillKind_wxWINDING_RULE_sym) { return wxWINDING_RULE; }
+  if (where) scheme_wrong_type(where, "fillKind symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_fillKind(Scheme_Object *v, const char *where) {
+  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
+  if (0) { }
+  else if (v == fillKind_wxODDEVEN_RULE_sym) { return 1; }
+  else if (v == fillKind_wxWINDING_RULE_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "fillKind symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_fillKind(int v) {
+  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
+  switch (v) {
+  case wxODDEVEN_RULE: return fillKind_wxODDEVEN_RULE_sym;
+  case wxWINDING_RULE: return fillKind_wxWINDING_RULE_sym;
+  default: return NULL;
+  }
+}
+
+
+
+
+
 
 #undef DO_OK_CHECK
 #ifdef DrawsForCanvas
@@ -40,7 +274,6 @@
 #else
 #define DO_OK_CHECK(v) if (!((wxDC *)((Scheme_Class_Object *)obj)->primdata)->Ok()) return v;
 #endif
-
 
 
 extern Scheme_Object *objscheme_bundle_wxPoint(wxPoint *);
@@ -219,13 +452,8 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
-// @ Q "int-draw-line" : void IntDrawLine(int,int,int,int); : : /CheckOk
-// @ q "draw-spline" : void DrawSpline(wxList!); : : /CheckOk
 
 
-
-// Undefined?
-//@ "int-draw-lines" : void IntDrawLines(-int,wxIntPoint!/bList/ubList/cList,float=0,float=0); : / methListSet[wxIntPoint.0.1.0]// : /CheckOk|glueListSet[wxIntPoint.0.1.0]//
 
 
 
@@ -249,14 +477,6 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
-
-
-
-
-// @ Q "device-to-logical-x" : float DeviceToLogicalX(int); : : : rZERO
-// @ Q "device-to-logical-y" : float DeviceToLogicalY(int); : : : rZERO
-// @ Q "logical-to-device-x" : float LogicalToDeviceX(int); : : : rZERO
-// @ Q "logical-to-device-y" : float LogicalToDeviceY(int); : : : rZERO
 
 
 
@@ -526,7 +746,7 @@ static Scheme_Object *os_wxDCGetMapMode(Scheme_Object *obj, int n,  Scheme_Objec
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_mapMode(r);;
 }
 
 #pragma argsused
@@ -543,7 +763,7 @@ static Scheme_Object *os_wxDCGetLogicalFunction(Scheme_Object *obj, int n,  Sche
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_logicalFunc(r);;
 }
 
 #pragma argsused
@@ -578,6 +798,23 @@ static Scheme_Object *os_wxDCGetBrush(Scheme_Object *obj, int n,  Scheme_Object 
   
   
   return objscheme_bundle_wxBrush(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxDCGetBackgroundMode(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  int r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetBackgroundMode();
+
+  
+  
+  return bundle_symset_solidity(r);;
 }
 
 #pragma argsused
@@ -663,7 +900,7 @@ static Scheme_Object *os_wxDCSetBackgroundMode(Scheme_Object *obj, int n,  Schem
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:dc%::set-background-mode");
+  x0 = unbundle_symset_solidity(p[0], "wx:dc%::set-background-mode");;
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetBackgroundMode(x0);
@@ -681,7 +918,7 @@ static Scheme_Object *os_wxDCSetMapMode(Scheme_Object *obj, int n,  Scheme_Objec
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:dc%::set-map-mode");
+  x0 = unbundle_symset_mapMode(p[0], "wx:dc%::set-map-mode");;
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetMapMode(x0);
@@ -735,11 +972,11 @@ static Scheme_Object *os_wxDCBlit(Scheme_Object *obj, int n,  Scheme_Object *p[]
   x5 = objscheme_unbundle_float(p[5], "wx:dc%::blit");
   x6 = objscheme_unbundle_float(p[6], "wx:dc%::blit");
   if (n > 7) {
-    x7 = objscheme_unbundle_integer(p[7], "wx:dc%::blit");
+    x7 = unbundle_symset_logicalFunc(p[7], "wx:dc%::blit");;
   } else
     x7 = wxCOPY;
 
-  switch (x7) { case wxAND: case wxAND_INVERT: case wxAND_REVERSE: case wxCLEAR: case wxCOPY: case wxEQUIV: case wxINVERT: case wxNAND: case wxNOR: case wxNO_OP: case wxOR: case wxOR_INVERT: case wxOR_REVERSE: case wxSET: case wxSRC_INVERT: case wxXOR: break; case wxCOLOR: if (x7 == wxCOLOR) break; default: scheme_wrong_type("wx:dc::blit", "logicalfunction integer", 7, n, p); }DO_OK_CHECK(scheme_false)if (!x4->Ok()) return scheme_false;
+  DO_OK_CHECK(scheme_false)if (!x4->Ok()) return scheme_false;
   r = ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->Blit(x0, x1, x2, x3, x4, x5, x6, x7);
 
   
@@ -948,10 +1185,10 @@ static Scheme_Object *os_wxDCSetLogicalFunction(Scheme_Object *obj, int n,  Sche
   objscheme_check_valid(obj);
   int x0;
 
-  
-  x0 = objscheme_unbundle_integer(p[0], "wx:dc%::set-logical-function");
+  DO_OK_CHECK(scheme_void)
+  x0 = unbundle_symset_logicalFunc(p[0], "wx:dc%::set-logical-function");;
 
-  switch (x0) { case wxAND: case wxAND_INVERT: case wxAND_REVERSE: case wxCLEAR: case wxCOPY: case wxEQUIV: case wxINVERT: case wxNAND: case wxNOR: case wxNO_OP: case wxOR: case wxOR_INVERT: case wxOR_REVERSE: case wxSET: case wxSRC_INVERT: case wxXOR: break; case wxCOLOR: if (x0 == wxCOPY) break; default: scheme_wrong_type("wx:dc::set-logical-function", "logicalfunction integer", 0, n, p); }DO_OK_CHECK(scheme_void)
+  
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetLogicalFunction(x0);
 
   
@@ -1123,7 +1360,7 @@ static Scheme_Object *os_wxDCDrawPolygon(Scheme_Object *obj, int n,  Scheme_Obje
   } else
     x3 = 0;
   if (n > 3) {
-    x4 = objscheme_unbundle_integer(p[3], "wx:dc%::draw-polygon");
+    x4 = unbundle_symset_fillKind(p[3], "wx:dc%::draw-polygon");;
   } else
     x4 = wxODDEVEN_RULE;
 
@@ -1428,7 +1665,7 @@ void objscheme_setup_wxDC(void *env)
 if (os_wxDC_class) {
     objscheme_add_global_class(os_wxDC_class,  "wx:dc%", env);
 } else {
-  os_wxDC_class = objscheme_def_prim_class(env, "wx:dc%", "wx:object%", NULL, 54);
+  os_wxDC_class = objscheme_def_prim_class(env, "wx:dc%", "wx:object%", NULL, 55);
 
   scheme_add_method_w_arity(os_wxDC_class,"get-class-name",objscheme_classname_os_wxDC, 0, 0);
 
@@ -1449,6 +1686,7 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "get-logical-function", os_wxDCGetLogicalFunction, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-font", os_wxDCGetFont, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-brush", os_wxDCGetBrush, 0, 0);
+ scheme_add_method_w_arity(os_wxDC_class, "get-background-mode", os_wxDCGetBackgroundMode, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-background", os_wxDCGetBackground, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "set-device-origin", os_wxDCSetDeviceOrigin, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "set-user-scale", os_wxDCSetUserScale, 2, 2);
@@ -1492,30 +1730,6 @@ if (os_wxDC_class) {
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxDC, wxTYPE_DC);
 
 }
-  scheme_install_xc_global("wx:const-oddeven-rule", scheme_make_integer(wxODDEVEN_RULE), env);
-  scheme_install_xc_global("wx:const-winding-rule", scheme_make_integer(wxWINDING_RULE), env);
-  scheme_install_xc_global("wx:const-and", scheme_make_integer(wxAND), env);
-  scheme_install_xc_global("wx:const-and-invert", scheme_make_integer(wxAND_INVERT), env);
-  scheme_install_xc_global("wx:const-and-reverse", scheme_make_integer(wxAND_REVERSE), env);
-  scheme_install_xc_global("wx:const-clear", scheme_make_integer(wxCLEAR), env);
-  scheme_install_xc_global("wx:const-copy", scheme_make_integer(wxCOPY), env);
-  scheme_install_xc_global("wx:const-equiv", scheme_make_integer(wxEQUIV), env);
-  scheme_install_xc_global("wx:const-invert", scheme_make_integer(wxINVERT), env);
-  scheme_install_xc_global("wx:const-nand", scheme_make_integer(wxNAND), env);
-  scheme_install_xc_global("wx:const-nor", scheme_make_integer(wxNOR), env);
-  scheme_install_xc_global("wx:const-no-op", scheme_make_integer(wxNO_OP), env);
-  scheme_install_xc_global("wx:const-or", scheme_make_integer(wxOR), env);
-  scheme_install_xc_global("wx:const-or-invert", scheme_make_integer(wxOR_INVERT), env);
-  scheme_install_xc_global("wx:const-or-reverse", scheme_make_integer(wxOR_REVERSE), env);
-  scheme_install_xc_global("wx:const-set", scheme_make_integer(wxSET), env);
-  scheme_install_xc_global("wx:const-src-invert", scheme_make_integer(wxSRC_INVERT), env);
-  scheme_install_xc_global("wx:const-xor", scheme_make_integer(wxXOR), env);
-  scheme_install_xc_global("wx:const-colour", scheme_make_integer(wxCOLOR), env);
-  scheme_install_xc_global("wx:const-mm-twips", scheme_make_integer(MM_TWIPS), env);
-  scheme_install_xc_global("wx:const-mm-points", scheme_make_integer(MM_POINTS), env);
-  scheme_install_xc_global("wx:const-mm-metric", scheme_make_integer(MM_METRIC), env);
-  scheme_install_xc_global("wx:const-mm-lometric", scheme_make_integer(MM_LOMETRIC), env);
-  scheme_install_xc_global("wx:const-mm-text", scheme_make_integer(MM_TEXT), env);
 }
 
 int objscheme_istype_wxDC(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1570,10 +1784,6 @@ class wxDC *objscheme_unbundle_wxDC(Scheme_Object *obj, const char *where, int n
 
 
 
-
-// @SETMARK Q = d
-// @SETMARK q = d
-// @INCLUDE wxs_drwf.xci
 
 
 
@@ -1943,10 +2153,6 @@ class wxMemoryDC *objscheme_unbundle_wxMemoryDC(Scheme_Object *obj, const char *
 
 
 
-// @SETMARK Q = d
-// @SETMARK q = d
-// @INCLUDE wxs_drwf.xci
-
 class os_wxPostScriptDC : public wxPostScriptDC {
  public:
 
@@ -2105,10 +2311,6 @@ public:
 
 
 
-// @SETMARK Q = d
-// @SETMARK q = d
-// @INCLUDE wxs_drwf.xci
-
 
 class os_basePrinterDC : public basePrinterDC {
  public:
@@ -2264,10 +2466,6 @@ public:
 
 
 
-
-// @SETMARK Q = d
-// @SETMARK q = d
-// @INCLUDE wxs_drwf.xci
 
 class os_baseMetaFileDC : public baseMetaFileDC {
  public:

@@ -200,6 +200,7 @@
 # define scheme_bignum_from_float scheme_bignum_from_double
 #endif
   scheme_extension_table->scheme_bignum_to_string = scheme_bignum_to_string;
+  scheme_extension_table->scheme_bignum_to_allocated_string = scheme_bignum_to_allocated_string;
   scheme_extension_table->scheme_read_bignum = scheme_read_bignum;
   scheme_extension_table->scheme_bignum_normalize = scheme_bignum_normalize;
   scheme_extension_table->scheme_make_rational = scheme_make_rational;

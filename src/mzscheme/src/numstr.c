@@ -48,6 +48,8 @@ static Scheme_Object *make_pseudo_random_generator(int argc, Scheme_Object **arg
 static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object **argv);
 static Scheme_Object *pseudo_random_generator_p(int argc, Scheme_Object **argv);
 
+static char *number_to_allocated_string(int radix, Scheme_Object *obj, int alloc);
+
 static char *infinity_str = "+inf.0";
 static char *minus_infinity_str = "-inf.0";
 static char *not_a_number_str = "+nan.0";
@@ -1262,7 +1264,7 @@ number_to_string (int argc, Scheme_Object *argv[])
   } else
     radix = 10;
 
-  return scheme_make_string_without_copying(scheme_number_to_string(radix, o));
+  return scheme_make_string_without_copying(number_to_allocated_string(radix, o, 1));
 }
 
 
@@ -1302,61 +1304,71 @@ string_to_number (int argc, Scheme_Object *argv[])
 }
 
 
-static char *double_to_string (double d)
+static char *double_to_string (double d, int alloc)
 {
   char buffer[100], *s;
   int l, i, digits;
 
   if (MZ_IS_NAN(d))
-    return not_a_number_str;
+    s = not_a_number_str;
   else if (MZ_IS_POS_INFINITY(d))
-    return infinity_str;
+    s = infinity_str;
   else if (MZ_IS_NEG_INFINITY(d))
-    return minus_infinity_str;
-
-  if (d == 0.0) {
+    s = minus_infinity_str;
+  else if (d == 0.0) {
     /* Check for -0.0, since some printers get it wrong. */
     if (scheme_minus_zero_p(d))
-      return "-0.0";
+      s = "-0.0";
+    else
+      s = "0.0";
+  } else {
+    /* Initial count for significant digits is 14. That's big enough to
+       get most right, small enough to avoid nonsense digits. But we'll
+	 loop in case it's not precise enough to get read-write invariance: */
+    digits = 14;
+    while (digits < 30) {
+      double check;
+      char *ptr;
+
+      sprintf(buffer, "%.*g", digits, d);
+
+      /* Did we get read-write invariance, yet? */
+      check = strtod(buffer, &ptr);
+      if (check == d)
+	break;
+
+      digits++;
+    }
+    
+    l = strlen(buffer);
+    for (i = 0; i < l; i++) {
+      if (buffer[i] == '.' || isalpha((unsigned char)buffer[i]))
+	break;
+    }
+    if (i == l) {
+      buffer[i] = '.';
+      buffer[i + 1] = '0';
+      buffer[i + 2] = 0;
+      l += 2;
+    }
+    
+    s = (char *)scheme_malloc_atomic(strlen(buffer) + 1);
+    strcpy(s, buffer);
+    alloc = 0;
   }
 
-  /* Initial count for significant digits is 14. That's big enough to
-     get most right, small enough to avoid nonsense digits. But we'll
-     loop in case it's not precise enough to get read-write invariance: */
-  digits = 14;
-  while (digits < 30) {
-    double check;
-    char *ptr;
-
-    sprintf(buffer, "%.*g", digits, d);
-
-    /* Did we get read-write invariance, yet? */
-    check = strtod(buffer, &ptr);
-    if (check == d)
-      break;
-
-    digits++;
+  if (alloc) {
+    char *s2;
+    l = strlen(s) + 1;
+    s2 = (char *)scheme_malloc_atomic(l);
+    memcpy(s2, s, l);
+    s = s2;
   }
-
-  l = strlen(buffer);
-  for (i = 0; i < l; i++) {
-    if (buffer[i] == '.' || isalpha((unsigned char)buffer[i]))
-      break;
-  }
-  if (i == l) {
-    buffer[i] = '.';
-    buffer[i + 1] = '0';
-    buffer[i + 2] = 0;
-    l += 2;
-  }
-  
-  s = (char *)scheme_malloc_atomic(strlen(buffer) + 1);
-  strcpy(s, buffer);
 
   return s;
 }
 
-char *scheme_number_to_string(int radix, Scheme_Object *obj)
+char *number_to_allocated_string(int radix, Scheme_Object *obj, int alloc)
 {
   char *s;
 
@@ -1366,7 +1378,7 @@ char *scheme_number_to_string(int radix, Scheme_Object *obj)
 		       scheme_make_integer(radix),
 		       "number->string: "
 		       "inexact numbers can only be printed in base 10");
-    s = double_to_string(SCHEME_FLOAT_VAL(obj));
+    s = double_to_string(SCHEME_FLOAT_VAL(obj), alloc);
   } else if (SCHEME_RATIONALP(obj)) {
     Scheme_Object *n, *d;
     char *ns, *ds;
@@ -1375,8 +1387,8 @@ char *scheme_number_to_string(int radix, Scheme_Object *obj)
     n = scheme_rational_numerator(obj);
     d = scheme_rational_denominator(obj);
 
-    ns = scheme_number_to_string(radix, n);
-    ds = scheme_number_to_string(radix, d);
+    ns = number_to_allocated_string(radix, n, 0);
+    ds = number_to_allocated_string(radix, d, 0);
 
     nlen = strlen(ns);
     dlen = strlen(ds);
@@ -1393,8 +1405,10 @@ char *scheme_number_to_string(int radix, Scheme_Object *obj)
     r = _scheme_complex_real_part(obj);
     i = _scheme_complex_imaginary_part(obj);
 
-    rs = scheme_number_to_string(radix, r);
-    is = scheme_number_to_string(radix, i);
+    rs = number_to_allocated_string(radix, r, 0);
+    is = number_to_allocated_string(radix, i, 0);
+
+    printf("%s %s\n", rs, is);
 
     rlen = strlen(rs);
     ilen = strlen(is);
@@ -1411,10 +1425,15 @@ char *scheme_number_to_string(int radix, Scheme_Object *obj)
     if (SCHEME_INTP(obj))
       obj = scheme_make_bignum(SCHEME_INT_VAL(obj));
 
-    s = scheme_bignum_to_string(obj, radix);
+    s = scheme_bignum_to_allocated_string(obj, radix, alloc);
   }
 
   return s;
+}
+
+char *scheme_number_to_string(int radix, Scheme_Object *obj)
+{
+  return number_to_allocated_string(radix, obj, 0);
 }
 
 int scheme_check_double(const char *where, double d, const char *dest)
@@ -1429,7 +1448,7 @@ int scheme_check_double(const char *where, double d, const char *dest)
 		       "%s: no %s representation for %s",
 		       where, 
 		       dest,
-		       double_to_string(d));
+		       double_to_string(d, 0));
     return 0;
   }
 

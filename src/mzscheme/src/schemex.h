@@ -306,6 +306,7 @@ Scheme_Object *(*scheme_bignum_from_float)(float d);
 # define scheme_bignum_from_float scheme_bignum_from_double
 #endif
 char *(*scheme_bignum_to_string)(const Scheme_Object *n, int radix);
+char *(*scheme_bignum_to_allocated_string)(const Scheme_Object *n, int radix, int alloc);
 Scheme_Object *(*scheme_read_bignum)(const char *str, int offset, int radix);
 Scheme_Object *(*scheme_bignum_normalize)(const Scheme_Object *n);
 /*========================================================================*/

@@ -901,9 +901,8 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
 }
 
 
-char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
+char *scheme_bignum_to_allocated_string(const Scheme_Object *b, int radix, int alloc)
 {
-  
   Scheme_Object *c;
   unsigned char* str, *str2;
   int i, slen, start;
@@ -914,8 +913,15 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_make_integer(radix),
 		     "bad bignum radix (%d)", radix);
 
-  if (SCHEME_BIGLEN(b) == 0)
-    return "0";
+  if (SCHEME_BIGLEN(b) == 0) {
+    if (alloc) {
+      str2 = (unsigned char *)scheme_malloc_atomic(2);
+      str2[0] = '0';
+      str2[1] = 0;
+      return str2;
+    } else
+      return "0";
+  }
 
   c = bignum_copy(b, 1);  /* mpn_get_string may need a word of scratch space */
 
@@ -955,9 +961,15 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
     ++i;
   }
   
-  if (i == slen)
-    return "0";
-  else
+  if (i == slen) {
+    if (alloc) {
+      str2 = (unsigned char *)scheme_malloc_atomic(2);
+      str2[0] = '0';
+      str2[1] = 0;
+      return str2;
+    } else
+      return "0";
+  } else
     slen = slen - i + 1 + (SCHEME_BIGPOS(b) ? 0 : 1);
 
   str2 = (unsigned char *)scheme_malloc_atomic(slen);
@@ -981,6 +993,11 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
   str2[slen - 1] = 0;
 
   return (char *)str2;
+}
+
+char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
+{
+  return scheme_bignum_to_allocated_string(b, radix, 0);
 }
 
 Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)

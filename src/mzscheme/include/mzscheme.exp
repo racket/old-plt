@@ -166,6 +166,7 @@ scheme_make_bignum_from_unsigned
 scheme_bignum_to_double
 scheme_bignum_from_double
 scheme_bignum_to_string
+scheme_bignum_to_allocated_string
 scheme_read_bignum
 scheme_bignum_normalize
 scheme_make_rational

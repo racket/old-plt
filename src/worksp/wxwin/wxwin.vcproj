@@ -230,6 +230,9 @@
 				RelativePath="..\..\Wxwindow\Src\Msw\WX_SLIDR.cxx">
 			</File>
 			<File
+				RelativePath="..\..\Wxwindow\Src\Msw\WX_TABC.cxx">
+			</File>
+			<File
 				RelativePath="..\..\Wxwindow\Src\Msw\WX_TIMER.cxx">
 			</File>
 			<File

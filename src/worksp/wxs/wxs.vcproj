@@ -185,6 +185,9 @@
 				RelativePath="..\..\mred\Wxs\WXS_STYL.cxx">
 			</File>
 			<File
+				RelativePath="..\..\mred\Wxs\WXS_TABC.cxx">
+			</File>
+			<File
 				RelativePath="..\..\mred\Wxs\WXS_WIN.cxx">
 			</File>
 		</Filter>

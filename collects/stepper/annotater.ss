@@ -325,8 +325,8 @@
 		 ([val sub-exprs (cons (z:app-fun expr) (z:app-args expr))]
 		  [val arg-temps (build-list (length sub-exprs) get-arg-varref)]
                   [val arg-temp-syms (map z:varref-var arg-temps)] 
-                  [val let-clauses (list arg-temp-syms 
-                                         (map (lambda (x) `(#%quote ,*unevaluated*)) arg-temps))]
+                  [val let-clauses (list (list arg-temp-syms 
+                                               (map (lambda (x) `(#%quote ,*unevaluated*)) arg-temps)))]
                   [val pile-of-values
 		       (map (lambda (expr) 
 			      (let-values ([(annotated free) (non-tail-recur expr)])

@@ -40,13 +40,29 @@ OBJECTS = wx_style.o wx_keym.o wx_mbuf.o \
           wx_medad.o wx_snip.o wx_cgrec.o \
           wx_medio.o
 
+OBJECTHEADER_wx_xt = $(srcdir)/../../wxxt/src/DataStructures/Object.h
+PENBRUSHHEADER_wx_xt = $(srcdir)/../../wxxt/src/GDI-Classes/Pen+Brush.h
+DCHEADER_wx_xt = $(srcdir)/../../wxxt/src/DeviceContexts/DC.h  
+STDEVHEADER_wx_xt = $(srcdir)/../../wxxt/src/EventHandling/wx_stdev.h
+WINDOWHEADER_wx_xt = $(srcdir)/../../wxxt/src/Windows/Window.h
+
+OBJECTHEADER_wx_mac = $(srcdir)/../../wxmac/include/base/wx_obj.h
+PENBRUSHHEADER_wx_mac =
+DCHEADER_wx_mac = 
+STDEVHEADER_wx_mac = 
+WINDOWHEADER_wx_mac =
+
+PENBRUSHHEADER = $(PENBRUSHHEADER_@WXVARIANT@)
+DCHEADER = $(DCHEADER_@WXVARIANT@)
+STDEVHEADER = $(STDEVHEADER_@WXVARIANT@)
+WINDOWHEADER = $(WINDOWHEADER_@WXVARIANT@)
+
 ALLHEADERS = $(srcdir)/wx_ptreq.h $(srcdir)/wx_mtype.h \
-             $(srcdir)/../../wxxt/src/DataStructures/Object.h \
+             $(OBJECTHEADER_@WXVARIANT@) \
              $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h
 HEADERS = $(srcdir)/wx_media.h $(srcdir)/wx_medad.h $(srcdir)/wx_cgrec.h \
           $(srcdir)/wx_medio.h $(srcdir)/wx_style.h \
-          $(ALLHEADERS) $(srcdir)/../../wxxt/src/Windows/Window.h \
-          $(srcdir)/../../wxxt/src/DeviceContexts/DC.h $(srcdir)/../../wxxt/src/EventHandling/wx_stdev.h
+          $(ALLHEADERS) $(WINDOWHEADER) $(DCHEADER) $(STDEVHEADER)
 
 libwxme.a: $(OBJECTS)
 	$(AR) $(ARFLAGS) libwxme.a $(OBJECTS)
@@ -59,7 +75,7 @@ wx_media.o : $(srcdir)/wx_media.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_
 	$(MCC) $(srcdir)/wx_media.cxx -o wx_media.o
 
 wx_mpriv.o : $(srcdir)/wx_mpriv.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h $(srcdir)/wx_mpriv.h \
-                       $(srcdir)/wx_mline.h $(srcdir)/wx_gcrct.h $(srcdir)/../../wxxt/src/GDI-Classes/Pen+Brush.h
+                       $(srcdir)/wx_mline.h $(srcdir)/wx_gcrct.h $(PENBRUSHHEADER)
 	$(MCC) $(srcdir)/wx_mpriv.cxx -o wx_mpriv.o
 
 wx_msnip.o : $(srcdir)/wx_msnip.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h $(srcdir)/wx_madm.h \
@@ -70,7 +86,7 @@ wx_mline.o : $(srcdir)/wx_mline.cxx $(srcdir)/wx_mline.h $(srcdir)/wx_snip.h $(H
 	$(MCC) $(srcdir)/wx_mline.cxx -o wx_mline.o
 
 wx_mpbrd.o : $(srcdir)/wx_mpbrd.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h $(srcdir)/wx_medpb.h \
-                        $(srcdir)/../../wxxt/src/GDI-Classes/Pen+Brush.h
+                        $(PENBRUSHHEADER)
 	$(MCC) $(srcdir)/wx_mpbrd.cxx -o wx_mpbrd.o
 
 wx_medad.o : $(srcdir)/wx_medad.cxx $(HEADERS) $(srcdir)/wx_snip.h $(srcdir)/wx_madm.h
@@ -92,7 +108,7 @@ wx_medio.o : $(srcdir)/wx_medio.cxx $(srcdir)/wx_medio.h $(ALLHEADERS)
 	$(MCC) $(srcdir)/wx_medio.cxx -o wx_medio.o
 
 wx_style.o : $(srcdir)/wx_style.cxx $(srcdir)/wx_style.h $(srcdir)/wx_medio.h $(ALLHEADERS) \
-                       $(srcdir)/../../wxxt/src/DeviceContexts/DC.h  $(srcdir)/../../wxxt/src/GDI-Classes/Pen+Brush.h
+                       $(DCHEADER) $(PENBRUSHHEADER)
 	$(MCC) $(srcdir)/wx_style.cxx -o wx_style.o 
 
 clean:

@@ -38,13 +38,44 @@ LOCALFLAGS =
 
 WXSCFLAGS = $(CFLAGS)
 
+OBJECTHEADER_wx_xt = $(srcdir)/../../wxxt/src/DataStructures/Object.h
+OBJECTHEADER_wx_mac = $(srcdir)/../../wxmac/include/base/wx_obj.h
+
 WXSCHEMEHEADERS = $(srcdir)/wxscheme.h $(srcdir)/../../mzscheme/src/stypes.h $(srcdir)/../../mzscheme/utils/xcglue.h \
-                  $(srcdir)/../../mzscheme/include/scheme.h $(srcdir)/../../wxxt/src/DataStructures/Object.h \
+                  $(srcdir)/../../mzscheme/include/scheme.h $(OBJECTHEADER_@WXVARIANT@) \
                   $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h
 MEDIAHEADERS = $(srcdir)/../wxme/wx_media.h $(srcdir)/../wxme/wx_medad.h $(srcdir)/../wxme/wx_snip.h
-WINDOWHEADERS = $(srcdir)/../../wxxt/src/Windows/Window.h
-MAINDCHEADERS = $(srcdir)/../../wxxt/src/DeviceContexts/DC.h
-DCHEADERS = $(MAINDCHEADERS) $(srcdir)/../../wxxt/src/DeviceContexts/WindowDC.h $(srcdir)/../../wxcommon/PSDC.h
+
+
+WINDOWHEADERS_wx_xt = $(srcdir)/../../wxxt/src/Windows/Window.h
+MAINDCHEADERS_wx_xt = $(srcdir)/../../wxxt/src/DeviceContexts/DC.h
+DCHEADERS_wx_xt = $(MAINDCHEADERS) $(srcdir)/../../wxxt/src/DeviceContexts/WindowDC.h $(srcdir)/../../wxcommon/PSDC.h
+BUTTONHEADER_wx_xt = $(srcdir)/../../wxxt/src/Windows/Button.h
+CHECKBOXHEADER_wx_xt = $(srcdir)/../../wxxt/src/Windows/CheckBox.h
+FRAMEHEADER_wx_xt = $(srcdir)/../../wxxt/src/Windows/Frame.h
+PENBRUSHHEADER_wx_xt = $(srcdir)/../../wxxt/src/GDI-Classes/Pen+Brush.h
+LISTBOXHEADER_wx_xt = $(srcdir)/../../wxxt/src/Windows/ListBox.h
+CLIPBHEADER_wx_xt = $(srcdir)/../../wxxt/src/Misc/Clipboard.h
+
+WINDOWHEADERS_wx_mac = 
+MAINDCHEADERS_wx_mac = 
+DCHEADERS_wx_mac = 
+BUTTONHEADER_wx_mac = 
+CHECKBOXHEADER_wx_mac = 
+FRAMEHEADER_wx_mac = 
+PENBRUSHHEADER_wx_mac = 
+LISTBOXHEADER_wx_mac = 
+CLIPBHEADER_wx_mac = 
+
+WINDOWHEADERS = $(WINDOWHEADERS_@WXVARIANT@)
+MAINDCHEADERS = $(MAINDCHEADERS_@WXVARIANT@)
+DCHEADERS = $(DCHEADERS_@WXVARIANT@)
+BUTTONHEADER = $(BUTTONHEADER_@WXVARIANT@)
+CHECKBOXHEADER = $(CHECKBOXHEADER_@WXVARIANT@)
+FRAMEHEADER = $(FRAMEHEADER_@WXVARIANT@)
+PENBRUSHHEADER = $(PENBRUSHHEADER_@WXVARIANT@)
+LISTBOXHEADER = $(LISTBOXHEADER_@WXVARIANT@)
+CLIPBHEADER = $(CLIPBHEADER_@WXVARIANT@)
 
 OBJECTS = xcglue.o wxs_bmap.o wxs_butn.o wxs_chce.o wxs_ckbx.o wxs_cnvs.o \
           wxs_dc.o wxs_evnt.o wxs_fram.o wxs_gage.o wxs_gdi.o wxs_glob.o \
@@ -178,11 +209,11 @@ xcglue.o : $(srcdir)/../../mzscheme/utils/xcglue.c $(srcdir)/../../mzscheme/util
 
 wxs_bmap.o : $(srcdir)/wxs_bmap.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) $(srcdir)/wxs_bmap.cxx -o wxs_bmap.o
-wxs_butn.o : $(srcdir)/wxs_butn.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(srcdir)/../../wxxt/src/Windows/Button.h
+wxs_butn.o : $(srcdir)/wxs_butn.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(BUTTONHEADER)
 	$(WXSCC) $(srcdir)/wxs_butn.cxx -o wxs_butn.o
 wxs_chce.o : $(srcdir)/wxs_chce.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) $(srcdir)/wxs_chce.cxx -o wxs_chce.o
-wxs_ckbx.o : $(srcdir)/wxs_ckbx.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(srcdir)/../../wxxt/src/Windows/CheckBox.h
+wxs_ckbx.o : $(srcdir)/wxs_ckbx.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(CHECKBOXHEADER)
 	$(WXSCC) $(srcdir)/wxs_ckbx.cxx -o wxs_ckbx.o
 wxs_cnvs.o : $(srcdir)/wxs_cnvs.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) $(srcdir)/wxs_cnvs.cxx -o wxs_cnvs.o
@@ -190,17 +221,17 @@ wxs_dc.o : $(srcdir)/wxs_dc.cxx $(WXSCHEMEHEADERS) $(DCHEADERS)
 	$(WXSCC) $(srcdir)/wxs_dc.cxx -o wxs_dc.o
 wxs_evnt.o : $(srcdir)/wxs_evnt.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) $(srcdir)/wxs_evnt.cxx -o wxs_evnt.o
-wxs_fram.o : $(srcdir)/wxs_fram.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(srcdir)/../../wxxt/src/Windows/Frame.h
+wxs_fram.o : $(srcdir)/wxs_fram.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(FRAMEHEADER)
 	$(WXSCC) $(srcdir)/wxs_fram.cxx -o wxs_fram.o
 wxs_gage.o : $(srcdir)/wxs_gage.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) $(srcdir)/wxs_gage.cxx -o wxs_gage.o
-wxs_gdi.o : $(srcdir)/wxs_gdi.cxx $(WXSCHEMEHEADERS) $(srcdir)/../../wxxt/src/GDI-Classes/Pen+Brush.h
+wxs_gdi.o : $(srcdir)/wxs_gdi.cxx $(WXSCHEMEHEADERS) $(PENBRUSHHEADER)
 	$(WXSCC) $(srcdir)/wxs_gdi.cxx -o wxs_gdi.o
 wxs_glob.o : $(srcdir)/wxs_glob.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) $(srcdir)/wxs_glob.cxx -o wxs_glob.o
 wxs_item.o : $(srcdir)/wxs_item.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) $(srcdir)/wxs_item.cxx -o wxs_item.o
-wxs_lbox.o : $(srcdir)/wxs_lbox.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)  $(srcdir)/../../wxxt/src/Windows/ListBox.h
+wxs_lbox.o : $(srcdir)/wxs_lbox.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)  $(LISTBOXHEADER)
 	$(WXSCC) $(srcdir)/wxs_lbox.cxx -o wxs_lbox.o
 wxs_madm.o : $(srcdir)/wxs_madm.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
 	$(WXSCC) $(srcdir)/wxs_madm.cxx -o wxs_madm.o
@@ -212,7 +243,7 @@ wxs_menu.o : $(srcdir)/wxs_menu.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) $(srcdir)/wxs_menu.cxx -o wxs_menu.o
 wxs_mio.o : $(srcdir)/wxs_mio.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) $(srcdir)/wxs_mio.cxx -o wxs_mio.o
-wxs_misc.o : $(srcdir)/wxs_misc.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(srcdir)/../../wxxt/src/Misc/Clipboard.h
+wxs_misc.o : $(srcdir)/wxs_misc.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(CLIPBHEADER)
 	$(WXSCC) $(srcdir)/wxs_misc.cxx -o wxs_misc.o
 wxs_mpb.o : $(srcdir)/wxs_mpb.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(srcdir)/../wxme/wx_medpb.h $(MAINDCHEADERS)
 	$(WXSCC) $(srcdir)/wxs_mpb.cxx -o wxs_mpb.o

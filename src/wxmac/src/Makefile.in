@@ -66,13 +66,11 @@ OBJS = \
    wx_messg.o \
    wxBorder.o \
    wx_dc.o \
-   wx_mf.o \
    wxBorderArea.o \
    wx_dccan1.o \
    wx_mnuit.o \
    wxButtonBorder.o \
    wx_dccan2.o \
-   wx_mtxt.o \
    wx_dccan3.o \
    wx_panel.o \
    wxLabelArea.o \
@@ -91,12 +89,10 @@ OBJS = \
    wx_slidr.o \
    wxScroll.o \
    wx_frame.o \
-   wx_text.o \
    wxScrollArea.o \
    wx_gauge.o \
    wxScrollData.o \
    wx_gdi.o \
-   wx_txt.o \
    wx_app.o \
    wx_util.o \
    wx_area.o \
@@ -212,8 +208,6 @@ wxBorder.o : $(srcdir)/mac/wxBorder.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wxBorder.o -c $(srcdir)/mac/wxBorder.cc
 wx_dc.o : $(srcdir)/mac/wx_dc.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_dc.o -c $(srcdir)/mac/wx_dc.cc
-wx_mf.o : $(srcdir)/mac/wx_mf.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wx_mf.o -c $(srcdir)/mac/wx_mf.cc
 wxBorderArea.o : $(srcdir)/mac/wxBorderArea.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wxBorderArea.o -c $(srcdir)/mac/wxBorderArea.cc
 wx_dccan1.o : $(srcdir)/mac/wx_dccan1.cc
@@ -224,8 +218,6 @@ wxButtonBorder.o : $(srcdir)/mac/wxButtonBorder.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wxButtonBorder.o -c $(srcdir)/mac/wxButtonBorder.cc
 wx_dccan2.o : $(srcdir)/mac/wx_dccan2.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_dccan2.o -c $(srcdir)/mac/wx_dccan2.cc
-wx_mtxt.o : $(srcdir)/mac/wx_mtxt.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wx_mtxt.o -c $(srcdir)/mac/wx_mtxt.cc
 wx_dccan3.o : $(srcdir)/mac/wx_dccan3.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_dccan3.o -c $(srcdir)/mac/wx_dccan3.cc
 wx_panel.o : $(srcdir)/mac/wx_panel.cc
@@ -262,8 +254,6 @@ wxScroll.o : $(srcdir)/mac/wxScroll.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wxScroll.o -c $(srcdir)/mac/wxScroll.cc
 wx_frame.o : $(srcdir)/mac/wx_frame.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_frame.o -c $(srcdir)/mac/wx_frame.cc
-wx_text.o : $(srcdir)/mac/wx_text.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wx_text.o -c $(srcdir)/mac/wx_text.cc
 wxScrollArea.o : $(srcdir)/mac/wxScrollArea.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wxScrollArea.o -c $(srcdir)/mac/wxScrollArea.cc
 wx_gauge.o : $(srcdir)/mac/wx_gauge.cc
@@ -272,8 +262,6 @@ wxScrollData.o : $(srcdir)/mac/wxScrollData.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wxScrollData.o -c $(srcdir)/mac/wxScrollData.cc
 wx_gdi.o : $(srcdir)/mac/wx_gdi.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_gdi.o -c $(srcdir)/mac/wx_gdi.cc
-wx_txt.o : $(srcdir)/mac/wx_txt.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wx_txt.o -c $(srcdir)/mac/wx_txt.cc
 wx_app.o : $(srcdir)/mac/wx_app.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_app.o -c $(srcdir)/mac/wx_app.cc
 wx_util.o : $(srcdir)/mac/wx_util.cc

@@ -316,6 +316,7 @@ static long mark_stackoflw;
 #endif
 
 static int fnl_weak_link_count;
+static int num_fnls;
 
 static int ran_final;
 static int running_finals;
@@ -1073,6 +1074,7 @@ void GC_set_finalizer(void *p, int tagged, int level, void (*f)(void *p, void *d
 	  prev->next = fnl->next;
 	else
 	  fnls = fnl->next;
+	--num_fnls;
 	return;
       }
       return;
@@ -1133,6 +1135,7 @@ void GC_set_finalizer(void *p, int tagged, int level, void (*f)(void *p, void *d
 #endif
 
   fnls = fnl;
+  num_fnls++;
 }
 
 typedef struct Fnl_Weak_Link {
@@ -3658,6 +3661,8 @@ static void gcollect(int full)
 	    } else {
 	      prev = f;
 	    }
+	  } else {
+	    prev = f;
 	  }
 	}
 
@@ -3928,16 +3933,32 @@ static void gcollect(int full)
   resolve_for_fixup = 1;
 
   if (compact) {
+#if CHECKS
+    int fnl_count = 0;
+#endif
+
     scanned_pages = 0;
     
     do_roots(1);
 
     {
       Fnl *f;
-      for (f = fnls; f; f = f->next)
+      for (f = fnls; f; f = f->next) {
+#if CHECKS
+	fnl_count++;
+#endif
 	fixup_finalizer(f);
-      for (f = run_queue; f; f = f->next)
+      }
+      for (f = run_queue; f; f = f->next) {
+#if CHECKS
+	fnl_count++;
+#endif
 	fixup_finalizer(f);
+      }
+#if CHECKS
+      if (fnl_count != num_fnls)
+	CRASH(38);
+#endif
     }
     
     {
@@ -4017,7 +4038,8 @@ static void gcollect(int full)
       run_queue = run_queue->next;
       if (!run_queue)
 	last_in_queue = NULL;
-      
+      --num_fnls;
+
       gcs = GC_variable_stack;
       f->f(f->p, f->data);
       GC_variable_stack = gcs;
@@ -4748,6 +4770,7 @@ void GC_dump(void)
     }
   }
 
+  fprintf(stderr, "Active fnls: %d\n", num_fnls);
   fprintf(stderr, "Active fnl weak links: %d\n", fnl_weak_link_count);
 
   if (memory_in_use > max_memory_use)

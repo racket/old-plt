@@ -30,3 +30,5 @@
 #define USE_FCHDIR
 
 #define USE_GETRUSAGE
+
+#define USE_ITIMER

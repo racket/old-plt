@@ -13,7 +13,7 @@ EXPORTS
  scheme_register_parameter
  scheme_get_env
  scheme_current_process
- scheme_fuel_counter
+ int
  scheme_thread
  scheme_thread_w_manager
  scheme_kill_thread

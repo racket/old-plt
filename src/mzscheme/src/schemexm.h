@@ -18,10 +18,10 @@
 #else
 #ifndef LINK_EXTENSIONS_BY_TABLE
 #define scheme_current_process (scheme_extension_table->scheme_current_process)
-#define scheme_fuel_counter (scheme_extension_table->scheme_fuel_counter)
+#define int (scheme_extension_table->int)
 #else
 #define scheme_current_process_ptr (scheme_extension_table->scheme_current_process_ptr)
-#define scheme_fuel_counter_ptr (scheme_extension_table->scheme_fuel_counter_ptr)
+#define int (scheme_extension_table->int)
 #endif
 #endif
 #ifndef NO_SCHEME_THREADS

@@ -65,6 +65,11 @@
 #  include <be/net/socket.h>
 # endif
 #endif
+#ifdef USE_ITIMER
+# include <sys/types.h>
+# include <sys/time.h>
+# include <signal.h>
+#endif
 #ifdef USE_WINSOCK_TCP
 # ifdef USE_TCP
 #  include <winsock.h>
@@ -140,6 +145,10 @@ static int swapping = 0;
 /*========================================================================*/
 
 #define INIT_TB_SIZE  20
+
+#ifndef MZ_THREAD_QUANTUM_USEC
+# define MZ_THREAD_QUANTUM_USEC 10000
+#endif
 
 static int buffer_init_size = INIT_TB_SIZE;
 
@@ -2043,6 +2052,18 @@ void scheme_out_of_fuel(void)
 #endif
 }
 
+#ifdef USE_ITIMER
+static int itimer_handler_installed = 0;
+
+static void timer_expired(int ignored)
+{
+  scheme_fuel_counter = 0;
+#  ifdef SIGSET_NEEDS_REINSTALL
+  MZ_SIGSET(SIGPROF, timer_expired);
+#  endif
+}
+#endif
+
 int scheme_can_break(Scheme_Process *p, Scheme_Config *config)
 {
   return (!p->suspend_break
@@ -2393,6 +2414,24 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 #ifndef MZ_REAL_THREADS
   if (do_atomic)
     missed_context_switch = 1;
+#endif
+
+#ifdef USE_ITIMER
+  {
+    struct itimerval t, old;
+
+    if (!itimer_handler_installed) {
+      itimer_handler_installed = 1;
+      MZ_SIGSET(SIGPROF, timer_expired);
+    }
+
+    t.it_value.tv_sec = 0;
+    t.it_value.tv_usec = MZ_THREAD_QUANTUM_USEC;
+    t.it_interval.tv_sec = 0;
+    t.it_interval.tv_usec = 0;
+
+    setitimer(ITIMER_PROF, &t, &old);
+  }
 #endif
 
   MZTHREADELEM(p, fuel_counter) = p->engine_weight;

@@ -234,12 +234,12 @@ extern MZ_MARK_STACK_TYPE scheme_current_cont_mark_pos;
 #endif
 
 #ifndef MZ_REAL_THREADS
-extern int scheme_fuel_counter;
+extern volatile int scheme_fuel_counter;
 #endif
 
 void scheme_out_of_fuel(void);
 #define SCHEME_USE_FUEL(n) { \
-  if ((scheme_fuel_counter -= (n)) <= 0) { scheme_out_of_fuel(); }}
+  if (DECREMENT_FUEL(scheme_fuel_counter, n) <= 0) { scheme_out_of_fuel(); }}
 
 extern Scheme_Process *scheme_main_process;
 

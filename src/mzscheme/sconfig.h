@@ -1116,6 +1116,10 @@ int scheme_pthread_semaphore_try_down(void *);
 
  /* WINDOWS_PROCESSES implements the process functions for Windows. */
 
+ /* USE_ITIMER uses setitimer() to implement thread pre-emption (for
+    MzScheme-implemented threads). Define MZ_THREAD_QUANTUM_USEC to
+    set the base time in usec allocated to each thread. */
+
  /* SIGSET_IS_SIGNAL uses signal() in place of sigset() for Unix. This 
     flag is often paired with SIGSET_NEEDS_REINSTALL for traditional
     Unix systems. */

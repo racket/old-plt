@@ -65,10 +65,10 @@ Scheme_Process *scheme_get_current_process();
 #else
 #ifndef LINK_EXTENSIONS_BY_TABLE
 extern Scheme_Process *scheme_current_process;
-extern int scheme_fuel_counter;
+extern volatile int scheme_fuel_counter;
 #else
 extern Scheme_Process **scheme_current_process_ptr;
-extern int *scheme_fuel_counter_ptr;
+extern volatile int *scheme_fuel_counter_ptr;
 #endif
 #endif
 

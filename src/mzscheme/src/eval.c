@@ -105,7 +105,7 @@ Scheme_Object *scheme_eval_waiting;
 Scheme_Object *scheme_multiple_values;
 
 #ifndef MZ_REAL_THREADS
-int scheme_fuel_counter;
+volatile int scheme_fuel_counter;
 #endif
 
 int scheme_stack_grows_up;
@@ -319,13 +319,13 @@ scheme_init_eval (Scheme_Env *env)
 
 #ifndef MZ_REAL_THREADS
 # define DO_CHECK_FOR_BREAK(p, e) \
-	if ((scheme_fuel_counter--) <= 0) { \
+	if (DECREMENT_FUEL(scheme_fuel_counter, 1) <= 0) { \
 	  e scheme_process_block(0); \
           (p)->ran_some = 1; \
 	}
 #else
 # define DO_CHECK_FOR_BREAK(p, e) \
-	if (((p)->fuel_counter--) <= 0) { \
+	if (DECREMENT_FUEL((p)->fuel_counter, 1) <= 0) { \
 	  e scheme_process_block_w_process(0, p); \
 	}
 #endif

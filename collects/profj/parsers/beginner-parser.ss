@@ -10,12 +10,15 @@
            (lib "lex.ss" "parser-tools")           
            (lib "readerr.ss" "syntax"))
   
+  
   (provide parse-beginner parse-beginner-interactions)
+  ;(provide parsers)
   
   (define parsers
     (parser
      (start CompilationUnit BeginnerInteractions)
      (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
+     ;(terminals operator-tokens)
      (error (lambda (tok-ok name val start-pos end-pos)
               (if ((determine-error))
                   (raise-read-error (format "Parse error near <~a:~a>" name val)

@@ -8,27 +8,38 @@
   
   (require (lib "lex.ss" "parser-tools"))
 
+  ;(require (lib "build-grammar.ss" "tester"))
+  
   (provide (all-defined-except get-token-name))
   (define-struct test-case (test))
   (define-struct interact-case (box))
   ;(provide (struct test-case (test)) (struct interact-case (box)))
   
+  (define-syntax define-open-tokens
+    (syntax-rules ()
+      ((_ dt group-name list-name (token-symbols ...))
+       (begin 
+         (define list-name '(token-symbols ...))
+         (dt group-name (token-symbols ...))))))
+  
   ;(provide Operators Separators EmptyLiterals Keywords java-vals special-toks get-token get-syntax-token)
   
-  (define-empty-tokens Operators
+  ;(provide operator-tokens separator-tokens literal-tokens keyword-tokens val-tokens special-tokens)
+  
+  (define-open-tokens define-empty-tokens Operators operator-tokens
     (PIPE OR OREQUAL
      =	> < !	~	?	:
      ==	<=	>=	!=	&&	++	--
      +	-	*	/	&	^	%	<< >> >>>
      +=	-=	*=	/=	&=	^=	%=	<<=	>>=	>>>=))
 
-  (define-empty-tokens Separators
+  (define-open-tokens define-empty-tokens Separators separator-tokens
    (O_PAREN C_PAREN O_BRACE C_BRACE O_BRACKET C_BRACKET SEMI_COLON PERIOD COMMA))
   
-  (define-empty-tokens EmptyLiterals
+  (define-open-tokens define-empty-tokens EmptyLiterals literal-tokens
    (NULL_LIT TRUE_LIT FALSE_LIT EOF))
   
-  (define-empty-tokens Keywords
+  (define-open-tokens define-empty-tokens Keywords keyword-tokens
    (abstract    default    if            private      this
     boolean     do         implements    protected    throw
     break       double     import        public       throws
@@ -40,11 +51,11 @@
     const       for        new           switch
     continue    goto       package       synchronized))
 
-  (define-tokens java-vals
+  (define-open-tokens define-tokens java-vals val-tokens
     (STRING_LIT CHAR_LIT INTEGER_LIT LONG_LIT FLOAT_LIT DOUBLE_LIT 
                 IDENTIFIER STRING_ERROR NUMBER_ERROR HEX_LIT OCT_LIT HEXL_LIT OCTL_LIT))
   
-  (define-tokens special-toks
+  (define-open-tokens define-tokens special-toks special-tokens
     (INTERACTIONS_BOX TEST_SUITE OTHER_SPECIAL))
 
   (define (trim-string s f l)

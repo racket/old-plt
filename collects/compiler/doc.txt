@@ -388,8 +388,8 @@ Additional info.ss fields trigger additional setup actions:
    collection.  A parallel list of library names must be provided by
    `mred-launcher-libraries'. For each name, a launching executable is
    set up using the launcher collection's
-   `install-mzscheme-program-launcher'. If the executable already
-   exists, no action is taken.
+   `install-mred-program-launcher'. If the executable already exists,
+   no action is taken.
 
  * `mred-launcher-libraries' - a list of library names in
    parallel to `mred-launcher-names'.

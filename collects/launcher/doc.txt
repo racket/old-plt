@@ -52,8 +52,10 @@ and exports the following procedures.
 
 > (install-mred-program-launcher file collection name) - Calls
    `make-mred-launcher' with the destintation returned by
-   (mred-program-launcher-path name).
+   (mred-program-launcher-path name); the `file' and `collection'
+   arguments are passed on to `make-mred-launcher'.
 
 > (install-mzscheme-program-launcher file collection name) - Calls
    `make-mzscheme-launcher' with the destintation returned by
-   (mzscheme-program-launcher-path name).
+   (mzscheme-program-launcher-path name); the `file' and `collection'
+   arguments are passed on to `make-mzscheme-launcher'.

@@ -86,13 +86,15 @@
             type new))
 
 ;; Combining the above two in a `define-c' special form which makes a Scheme
-;; `binding':
+;; `binding', first a `parameter'-like constructor:
 (provide make-c-parameter)
 (define (make-c-parameter name lib type)
   (let ([obj (ffi-obj (get-ffi-obj-name 'make-c-parameter name)
                       (get-ffi-lib lib))])
     (case-lambda [()    (ffi-get  obj type)]
                  [(new) (ffi-set! obj type new)])))
+;; Then the fake binding syntax, uses the defined identifier to name the
+;; object:
 (provide define-c)
 (define-syntax (define-c stx)
   (syntax-case stx ()

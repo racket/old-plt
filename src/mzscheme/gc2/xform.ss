@@ -413,7 +413,8 @@
 					base-struct
 					union?)
 				    ; Ignore these variables, for one reason or another:
-				    (not (memq name '(tcp_connect_dest_addr))))
+				    (not (memq name '(tcp_connect_dest_addr tcp_listen_addr
+						      tcp_accept_addr))))
 			       (begin
 				 (when label?
 				   (printf "/* ~a: ~a ~a*/~n" 

@@ -529,6 +529,9 @@
   (define re:zo (regexp "[.][zZ][oO]$"))
 
   ;; drscheme-load-handler : string ->* TST
+  ;; - sets the intermeidate-values-during-load parameter before evaluating
+  ;;   the expressions in the file to guarantee that the parameter is only
+  ;;   set for the "outermost" load expression.
   (define (drscheme-load-handler filename)
     (unless (string? filename)
       (raise (make-exn:application:arity
@@ -550,7 +553,9 @@
 		       [else
 			(set! last
 			      (call-with-values
-			       (lambda () (syntax-checking-primitive-eval sexp))
+			       (lambda ()
+				 (parameterize ([intermediate-values-during-load void])
+				   (syntax-checking-primitive-eval sexp)))
 			       (lambda x
 				 (apply (intermediate-values-during-load) x)
 				 x)))
@@ -564,7 +569,9 @@
 		 (if (eof-object? r)
 		     (apply values last-vals)
 		     (call-with-values
-		      (lambda () (eval r))
+		      (lambda ()
+			(parameterize ([intermediate-values-during-load void])
+			  (eval r)))
 		      (lambda x
 			(apply (intermediate-values-during-load) x)
 			(loop x))))))))])))

@@ -212,8 +212,8 @@
  (log-definitions-and-interactions "Enregistrer les définitions et interactions...")
  (stop-logging "Stopper l'enregistrement")
  (please-choose-a-log-directory "Sélectionnez un répertoire d'enregistrement")
- (logging-to "Enregistrer dans: ")
- (erase-log-directory-contents "Effacer le contenu du répertoire d'enregistrement: ~a?")
+ (logging-to "Enregistrer dans : ")
+ (erase-log-directory-contents "Effacer le contenu du répertoire d'enregistrement : ~a?")
  (error-erasing-log-directory "Erreur durant l'effacement du contenu du répertoire d'enregistrement.\n\n~a\n")
 
  (url "URL")
@@ -231,6 +231,7 @@
  (plt:hd:search "Chercher")
  (plt:hd:search-for "Chercher")
  (plt:hd:lucky "Chanceux!")
+ (plt:hd:feeling-lucky "D'humeur chanceuse")
  (plt:hd:stop "Stop")
  (plt:hd:options "Options")
  (plt:hd:configure "Configurer")
@@ -297,11 +298,16 @@
  (home "Maison")
  (browser "Navigateur")
  (choose-browser "Choisissez un navigateur")
- ;; (no-browser "Aucun")  ; English changed from "None" to "Ask Later"
+ (external-browser-choice-title "Navigateur externe") ; title for radio-button set
+ (browser-command-line-label "Ligne de commande :") ; label for radio button that is followed by text boxes
+ (no-browser "Demander plus tard")
+ (use-internal-browser-for-help "Lire l'Aide à l'aide du navigateur PLT interne") ; radio-button label
+ (use-external-browser-for-help "Lire l'Aide à l'aide d'un navigateur externe") ; radio-button label
+ (browser-cmdline-expl-line-1 "(La ligne de commande est la concaténation du préfixe, de l'URL,") ; explanatory text for dialog, line 1
+ (browser-cmdline-expl-line-2 "et du suffixe, sans espace additionel entre eux.)") ; ... line 2. (Anyone need more lines?)
  (cannot-display-url "Impossible de montrer l'URL ~s : ~a")
  (install? "Installer ?")  ;; if a .plt file is found (title of dialog)
- ; package => paquetage, pas tres clair...
- (you-have-selected-an-installable-package "Vous avez sélectionné un logiciel qui peut être installé.")
+ (you-have-selected-an-installable-package "Vous avez sélectionné un logiciel qui peut être installé.") ; package => paquetage, pas tres clair...
  (do-you-want-to-install-it? "Voulez-vous l'installer ?")
  (paren-file-size "(Le fichier fait ~a octets)")
  (download-and-install "Télécharger && Installer") ;; button label
@@ -318,14 +324,18 @@
  (install-plt-file-dialog-title "Installer un fichier .plt")
  (install-plt-web-tab "Web")
  (install-plt-file-tab "Fichier")
- (install-plt-filename "Nom de fichier:")
- (install-plt-url "URL:")
+ (install-plt-filename "Nom de fichier :")
+ (install-plt-url "URL :")
  
  ;; install plt file when opened in drscheme strings
  (install-plt-file "Installer ~a ou l'ouvrir pour édition ?")
  (install-plt-file/yes "Installation")
  (install-plt-file/no "Edition")
  
+ (plt-installer-progress-window-title "Progresssion de l'installation") ;; frame title
+ (plt-installer-abort-installation "Abandonner l'installation") ;; button label
+ (plt-installer-aborted "Installation abandonnée.") ;; msg that appears in the installation window when installation is aborted
+
  ;;; about box
  (about-drscheme-frame-title "A propos de DrScheme")
  (take-a-tour "Faire un tour !")
@@ -334,6 +344,7 @@
  (parenthetical-last-language "(language précédent ~a)")
  (parenthetical-last-version/language "(version précédente ~a, language précédent ~a)")
  
+  
  ;;; save file in particular format prompting.
  (save-as-plain-text "Sauvegarder ce fichier au format texte ?")
  (save-in-drs-format "Sauvegarder ce fichier au format DrScheme (non-texte) ?")
@@ -350,6 +361,7 @@
  (scheme-prefs-panel-label "Scheme")
  (warnings-prefs-panel-label "Avertissements")
  (editor-prefs-panel-label "Edition")
+ (general-prefs-panel-label "Général")
  (highlight-parens "Griser les paires de parenthèses.")
  (fixup-parens "Corriger les parenthèses.")
  (flash-paren-match "Montrer le pairage de parenthèses.")
@@ -622,8 +634,8 @@
  ;; (also, do this with an unsaved file). Wait for the autosave
  ;; files to appear (typically 5 minutes). Kill DrScheme
  ;; and restart it. You'll see the dialog
- (autosave-autosave-label: "Fichier auto-sauvegardé:")
- (autosave-original-label: "Fichier original:")
+ (autosave-autosave-label: "Fichier auto-sauvegardé :")
+ (autosave-original-label: "Fichier original :")
  (autosave-autosave-label "Fichier auto-sauvegardé")
  (autosave-original-label "Fichier original")
  (autosave-compare-files "Comparer les fichiers auto-sauvegardés")
@@ -746,7 +758,7 @@
  (stand-alone "Autonome")
  (executable-type "Type")
  (executable-base "Base")
- (filename "Nom de fichier: ")
+ (filename "Nom de fichier : ")
  (create "Créer")
  (please-choose-an-executable-filename "Veuillez sélectionner un nom de fichier pour sauvegarder l'exécutable.")
  (windows-executables-must-end-with-exe
@@ -754,7 +766,7 @@
  (macosx-executables-must-end-with-app
   "Le nom de fichier\n\n  ~a\n\nest illégal. Sous MacOS X, le nom d'un exécutable doit se terminer par .app.")
  (warning-directory-will-be-replaced
-  "ATTENTION: le répertoire:\n\n  ~a\n\nva être remplacé. Voulez-vous continuer ?")
+  "ATTENTION : le répertoire :\n\n  ~a\n\nva être remplacé. Voulez-vous continuer ?")
  
  (create-servlet "Créer un servlet...") ;servlet = greffon, extension serveur?
  
@@ -1005,6 +1017,31 @@
  (wizard-back "Précédent")
  (wizard-finish "Fin")
 
- (plt-installer-progress-window-title "Progresssion de l'installation")
+ ;; warnings about closing a drscheme frame when the program
+ ;; might still be doing something interesting
+ (program-is-still-running "Le programme dans la fenêtre de définition est toujours en cours d'exécution. Fermer la fenêtre quand même ?")
+  (program-has-open-windows "Le programme dans la fenêtre de définition a d'autres fenêtres ouvertes. Fermer la fenêtre quand même ?")
+ 
+  ;; ml-cp names are all for the module language collection path
+  ;; configuration. See the details portion of the language dialog
+  ;; for the module language (at the bottom).
+  (ml-cp-default-collection-path "<<chemins de répertoires pour les collections par défaut>>")
 
+  ;; in std get-directory 
+  (ml-cp-choose-a-collection-path "Choisissez un chemin de répertoire pour une collection")
+
+  ;; err msg when adding default twice
+  (ml-cp-default-already-present
+   "Les chemins de répertoires pour les collections par défaut sont déjà présents")
+  
+  ;; title of this section of the dialog (possibly the word
+  ;; `Collection' should not be translated)
+  (ml-cp-collection-paths "Chemins de répertoires pour les collections")
+
+  ;; button labels
+  (ml-cp-add "Ajouter")
+  (ml-cp-add-default "Ajouter les chemins par défaut")
+  (ml-cp-remove "Enlever")
+  (ml-cp-raise "Monter")
+  (ml-cp-lower "Descendre")
   )

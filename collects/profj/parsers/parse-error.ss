@@ -2203,7 +2203,7 @@
                 ((dot? next-tok)
                  (cond
                    ((beginner?)
-                    (parse-error "Expected arguments or '()' to complete class allocation, '.' may not appear here"
+                    (parse-error "Expected (argument, ...) for an object creation, '.' may not appear here"
                                  (get-start next) (get-end next)))
                    ((advanced?)
                     (parse-expression cur-tok (parse-name (getter) getter #f) 'alloc-open getter statement-ok?))

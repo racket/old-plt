@@ -1251,10 +1251,12 @@
                 [(provide provide-specs ...)
                  (begin
                    (set! varrefs
-                         (map
-                          (lambda (x) (cons #f x))
-                          (apply append (map extract-provided-vars 
-                                             (syntax->list (syntax (provide-specs ...)))))))
+                         (append
+                          (map
+                           (lambda (x) (cons #f x))
+                           (apply append (map extract-provided-vars 
+                                              (syntax->list (syntax (provide-specs ...))))))
+                          varrefs))
                    (annotate-raw-keyword sexp))]
                 
                 [id

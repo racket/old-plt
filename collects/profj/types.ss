@@ -268,7 +268,7 @@
           ((eq? ctype 'string) (values "String" `("java" "lang")))
           ((ref-type? ctype) (values (ref-type-class/iface ctype) (ref-type-path ctype)))
           ((cons? ctype) (values (car ctype) (cdr ctype)))
-          (else ctype)))
+          (else (values ctype null))))
       
       ;search-for-record string string (list string) (-> #f) (-> 'a) -> class-record
       (define (search-for-record class-name new-prefix path test-fail fail)

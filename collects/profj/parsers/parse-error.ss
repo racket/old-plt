@@ -1338,6 +1338,12 @@
         ((start)
          (case kind
            ((C_BRACE EOF) cur-tok)
+           ((super) 
+            (parse-error 
+             (format "~a~n~a"
+                     "Calling the parent's constructor must be the first action of a constructor,"
+                     "and maynot appear here")
+             start end))
            ((this) 
             (let* ((next (getter))
                    (next-tok (get-tok next))
@@ -2244,7 +2250,7 @@
            (else
             (if (close-separator? tok)
                 (parse-error (format "Expected ) to close constructor arguments, found ~a" out) start end)
-                (parse-error (format "A ',' is required between constructor arguments, found ~a" out) start end)))))
+                (parse-error (format "A ',' is required between expressions in a constructor call, found ~a" out) start end)))))
         ((name)
          (case kind
            ((PERIOD) (parse-expression cur-tok (parse-name (getter) getter #f) 'name getter statement-ok?))
@@ -2284,7 +2290,7 @@
            (else 
             (if (close-separator? tok)
                 (parse-error (format "Expected ) to close method arguments, found ~a" out) start end)
-                (parse-error (format "A ',' is required between method arguments, found ~a" out) start end)))))
+                (parse-error (format "A ',' is required between expression in a method call, found ~a" out) start end)))))
         ((assign-end)
          (cond
            ((and statement-ok? (semi-colon? tok)) (getter))

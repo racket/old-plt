@@ -1671,8 +1671,8 @@
       
       (when (null? methods)
         (let* ((rec (if exp-type 
-                        (send type-recs get-class-record exp-type)
-                        (if static? (send type-recs get-class-record c-class) this)))
+                              (send type-recs get-class-record exp-type)
+                              (if static? (send type-recs get-class-record c-class) this)))
                (class? (member (id-string name) (send type-recs get-class-env)))
                (field? (cond
                          ((array-type? exp-type) (equal? (id-string name) "length"))

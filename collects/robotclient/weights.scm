@@ -127,7 +127,7 @@
 				 0)
 			     (* (dropoff-value) (if (null? ptod)
 						    0
-						    (eval `(+ ,@(map package-weight ptod))))))]
+						    (apply + (map package-weight ptod)))))]
 		   [bid (if (or (= (wall-danger? (board) x y) 1) (= (water-danger? (board) x y) 1) (= (blank-danger? (board) x y) 1))
 			    (* (water-escape-bid) (max-bid))
 			    1)])
@@ -136,10 +136,11 @@
                                  (round bid)) ptod null))]
 	   [(eq? mtype 'p)
 	    (let* ([ptop (most-of (wleft p) (quicksort list-of-pack (lambda (p1 p2) (< (pack-val p1 x y) (pack-val p2 x y)))))]
-		   [weight (* (pickup-value)
+		   [weight (begin (printf "ptop:~a~n" ptop)
+                             (* (pickup-value)
 			      (if (null? ptop)
 				  0
-				  (eval `(* ,@(map pack-val ptop (repeat x (length ptop)) (repeat y (length ptop)) )))))])
+				  (apply * (map pack-val ptop (repeat x (length ptop)) (repeat y (length ptop)) )))))])
 		   (values weight 1 null ptop))]
 	   [else
 	    (error "not a recognized symbol")])))

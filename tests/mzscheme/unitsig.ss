@@ -570,5 +570,24 @@
   (test #t struct-accessor-procedure? (go foo-bar (- make-foo)))
   (test #t struct-mutator-procedure? (go set-foo-bar! (- make-foo))))
 
+;; Definitions and namespace:
+(test 12
+      'def-val
+      (let ()
+	(define-values/invoke-unit/sig (foo)
+	  (unit/sig (foo)
+	    (import) 
+	    (define foo 12)))
+	foo))
+(test 120
+      'namespace
+      (parameterize ([current-namespace (make-namespace)])
+	(namespace-variable-bind/invoke-unit/sig
+	 (foo)
+	 (unit/sig (foo)
+	   (import) 
+	   (define foo 120)))
+	(eval 'foo)))
+	
 (report-errs)
 

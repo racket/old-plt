@@ -590,4 +590,17 @@
 	  #f y)
 	x))
 
+(test 55 'namespace
+      (parameterize ([current-namespace (make-namespace)])
+	(namespace-variable-bind/invoke-unit
+	 (x)
+	 (unit 
+	   (import)
+	   (export x)
+	   
+	   (define-syntax (five stx) #'55)
+	   (define x five)))
+	(eval 'x)))
+
+
 (report-errs)

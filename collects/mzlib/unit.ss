@@ -809,7 +809,7 @@
 							      . imports)))])
 			  (if global?
 			      (syntax (let-values ([(tagged-export ...) invoke-unit])
-					(namespace-variable-binding 'tagged-export tagged-export)
+					(namespace-set-variable-value! 'tagged-export tagged-export)
 					...
 					(void)))
 			      (syntax (define-values (tagged-export ...) invoke-unit)))))))])))])

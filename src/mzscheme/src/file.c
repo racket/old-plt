@@ -1427,6 +1427,7 @@ int scheme_file_exists(char *filename)
     return 0;
 #else
   struct MSC_IZE(stat) buf;
+  int ok;
 
 #  ifdef DOS_FILE_SYSTEM
   /* Claim that all special files exist: */
@@ -1434,7 +1435,11 @@ int scheme_file_exists(char *filename)
     return 1;
 #  endif
 
-  return !MSC_IZE(stat)(filename, &buf) && !S_ISDIR(buf.st_mode);
+  do {
+    ok = MSC_IZE(stat)(filename, &buf);
+  } while ((ok == -1) && (errno == EINTR));
+
+  return !ok && !S_ISDIR(buf.st_mode);
 #endif
 #endif
 }
@@ -2617,12 +2622,21 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
     int ok;
     struct stat buf;
 
-    if (stat(src, &buf) || S_ISDIR(buf.st_mode)) {
+
+    do {
+      ok = stat(src, &buf);
+    } while ((ok == -1) && (errno == EINTR));
+
+    if (ok || S_ISDIR(buf.st_mode)) {
       reason = "source file does not exist";
       goto failed;
     }
 
-    if (!stat(dest, &buf)) {
+    do {
+      ok = stat(dest, &buf);
+    } while ((ok == -1) && (errno == EINTR));
+
+    if (!ok) {
       reason = "destination already exists";
       pre_exists = 1;
       goto failed;

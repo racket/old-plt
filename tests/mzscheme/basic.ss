@@ -1075,6 +1075,8 @@
 (do-the-tests "ack" "" 3 0)
 (do-the-tests "ack" "hmm" 3 -3)
 
+(test '((10002 . 10003)) regexp-match-positions "a" (open-input-string (format "~abbac" (make-string 10000 #\x))))
+
 ;; Test regexp with null chars:
 (let* ([s (string #\a #\b #\nul #\c)]
        [3s (string-append s s s)])

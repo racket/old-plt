@@ -1055,7 +1055,7 @@ static char *make_srcloc_string(Scheme_Stx_Srcloc *srcloc, long *len)
   char *srcstr, *result;
   long srclen, rlen;
 
-  if (!srcloc->src) {
+  if (!srcloc->src || (SCHEME_FALSEP(srcloc->src) && (srcloc->pos < 0))) {
     if (len) *len = 0;
     return NULL;
   }

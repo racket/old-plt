@@ -1990,7 +1990,12 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
     filename_exn(name, "cannot open input file", filename, errno);
     return NULL;
   } else {
-    fstat(fd, &buf);
+    int ok;
+
+    do {
+      ok = fstat(fd, &buf);
+    } while ((ok == -1) && (errno == EINTR));
+
     if (S_ISDIR(buf.st_mode)) {
       int cr;
       do {
@@ -2055,6 +2060,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   int fd;
   int flags, regfile;
   struct stat buf;
+  int ok;
 #else
 # ifdef WINDOWS_FILE_HANDLES
   HANDLE fd;
@@ -2193,7 +2199,11 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 			 scheme_intern_symbol("already-exists"),
 			 "%s: file \"%q\" exists", name, filename);
       else {
-	if (unlink(filename))
+	do {
+	  ok = unlink(filename);
+	} while ((ok == -1) && (errno == EINTR));
+
+	if (ok)
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
 			   fail_err_symbol,
@@ -2210,8 +2220,11 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
       return NULL; /* shouldn't get here */
     }
   }
+  
+  do {
+    ok = fstat(fd, &buf);
+  } while ((ok == -1) && (errno == EINTR));
 
-  fstat(fd, &buf);
   regfile = S_ISREG(buf.st_mode);
   scheme_file_open_count++;
   return make_fd_output_port(fd, regfile, 0);
@@ -2317,6 +2330,8 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   if (!existsok || (existsok == 1)) {
 #  endif
     if (scheme_file_exists(filename)) {
+      int uok;
+
       if (!existsok)
 	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			 argv[0],
@@ -2325,7 +2340,11 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 #  ifdef MAC_FILE_SYSTEM
       if (existsok == 1) {
 #  endif
-	if (MSC_IZE(unlink)(filename))
+	do {
+	  uok = MSC_IZE(unlink)(filename);
+	} while ((uok == -1) && (errno == EINTR));
+
+	if (uok)
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
 			   fail_err_symbol,
@@ -2345,7 +2364,13 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
     if (existsok < -1) {
       /* Can't truncate; try to replace */
       if (scheme_file_exists(filename)) {
-	if (MSC_IZE(unlink)(filename))
+	int uok;
+
+	do {
+	  uok = MSC_IZE(unlink)(filename);
+	} while ((uok == -1) && (errno == EINTR));
+
+	if (uok)
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
 			   fail_err_symbol,

@@ -174,6 +174,107 @@
      (or (eq? x #t)
 	 (eq? x #f))))
   
+  (define mred:standard-menus-frameI
+    (interface () 
+	       edit-menu
+	       edit-menu:after-standard-items
+	       edit-menu:between-clear-and-select-all
+	       edit-menu:between-copy-and-paste
+	       edit-menu:between-cut-and-copy
+	       edit-menu:between-paste-and-clear
+	       edit-menu:between-redo-and-cut
+	       edit-menu:between-replace-and-preferences
+	       edit-menu:between-select-all-and-find
+	       edit-menu:clear
+	       edit-menu:clear-help-string
+	       edit-menu:clear-id
+	       edit-menu:clear-string
+	       edit-menu:copy
+	       edit-menu:copy-help-string
+	       edit-menu:copy-id
+	       edit-menu:copy-string
+	       edit-menu:cut
+	       edit-menu:cut-help-string
+	       edit-menu:cut-id
+	       edit-menu:cut-string
+	       edit-menu:find
+	       edit-menu:find-help-string
+	       edit-menu:find-id
+	       edit-menu:find-string
+	       edit-menu:paste
+	       edit-menu:paste-help-string
+	       edit-menu:paste-id
+	       edit-menu:paste-string
+	       edit-menu:preferences
+	       edit-menu:preferences-help-string
+	       edit-menu:preferences-id
+	       edit-menu:redo
+	       edit-menu:redo-help-string
+	       edit-menu:redo-id
+	       edit-menu:redo-string
+	       edit-menu:replace
+	       edit-menu:replace-help-string
+	       edit-menu:replace-id
+	       edit-menu:replace-string
+	       edit-menu:select-all
+	       edit-menu:select-all-help-string
+	       edit-menu:select-all-id
+	       edit-menu:select-all-string
+	       edit-menu:undo
+	       edit-menu:undo-help-string
+	       edit-menu:undo-id
+	       edit-menu:undo-string
+	       file-menu
+	       file-menu:after-quit
+	       file-menu:between-close-and-quit
+	       file-menu:between-new-and-open
+	       file-menu:between-open-and-save
+	       file-menu:between-print-and-close
+	       file-menu:between-save-and-print
+	       file-menu:close
+	       file-menu:close-help-string
+	       file-menu:close-id
+	       file-menu:close-string
+	       file-menu:new
+	       file-menu:new-help-string
+	       file-menu:new-id
+	       file-menu:new-string
+	       file-menu:open
+	       file-menu:open-help-string
+	       file-menu:open-id
+	       file-menu:open-string
+	       file-menu:open-url
+	       file-menu:open-url-help-string
+	       file-menu:open-url-id
+	       file-menu:open-url-string
+	       file-menu:print
+	       file-menu:print-help-string
+	       file-menu:print-id
+	       file-menu:print-string
+	       file-menu:quit
+	       file-menu:quit-help-string
+	       file-menu:quit-id
+	       file-menu:quit-string
+	       file-menu:revert
+	       file-menu:revert-help-string
+	       file-menu:revert-id
+	       file-menu:revert-string
+	       file-menu:save
+	       file-menu:save-as
+	       file-menu:save-as-help-string
+	       file-menu:save-as-id
+	       file-menu:save-as-string
+	       file-menu:save-help-string
+	       file-menu:save-id
+	       file-menu:save-string
+	       help-menu
+	       help-menu:about
+	       help-menu:about-help-string
+	       help-menu:about-id
+	       help-menu:about-string
+	       help-menu:after-about
+	       windows-menu)) 
+
   (define make-standard-menus-frame%
     (lambda (super%)
       (let ([join (opt-lambda (base special [suffix ""])
@@ -342,7 +443,7 @@
 					    "...")
 			      (make-between 'help-menu 'after-about #f))])
 	       `(rec mred:instance-standard-menus-frame%
-		     (class-asi super%
+		     (class*-asi super% (mred:standard-menus-frameI)
 		       (inherit make-menu on-close)
 		       (rename [super-make-menu-bar make-menu-bar]
 			       [super-show show]
@@ -358,7 +459,7 @@
 					 #f)))]
 				[set-close-menu-item-state! 
 				 (lambda (frame state)
-				   (when (is-a? frame mred:instance-standard-menus-frame%)
+				   (when (is-a? frame mred:standard-menus-frameI)
 					 (let ([close-menu-item 
 						(get-standard-menu-close-item frame)])
 					   (when close-menu-item

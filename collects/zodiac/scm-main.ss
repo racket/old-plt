@@ -500,15 +500,17 @@
 		(top-level? (get-top-level-status attributes)))
 	      (set-top-level-status attributes)
 	      (begin0
-		(expand-expr
-		  (structurize-syntax
-		    `(letrec*-values
-		       ,(map (lambda (vars+expr)
-			       `(,(car vars+expr) ,(cdr vars+expr)))
-			  vars+exprs)
-		       ,@(pat:pexpand expr-pattern p-env kwd))
-		    expr)
-		  env attributes vocab)
+		(set-macro-origin
+		  (expand-expr
+		    (structurize-syntax
+		      `(letrec*-values
+			 ,(map (lambda (vars+expr)
+				 `(,(car vars+expr) ,(cdr vars+expr)))
+			    vars+exprs)
+			 ,@(pat:pexpand expr-pattern p-env kwd))
+		      expr)
+		    env attributes vocab)
+		  (syntax-car expr))
 		(set-top-level-status attributes top-level?)))
 	    (static-error expr "Malformed local"))))))
 
@@ -1190,8 +1192,6 @@
 	       (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 		 (static-error expr
 		   (string-append "Malformed " kwd-text))))))))
-      (add-primitivized-macro-form 'letcc scheme-vocabulary
-	(rewriter 'letcc "letcc"))
       (add-primitivized-macro-form 'let/cc scheme-vocabulary
 	(rewriter 'let/cc "let/cc"))))
 
@@ -1207,12 +1207,8 @@
 	       (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 		 (static-error expr
 		   (string-append "Malformed " kwd-text))))))))
-      (add-primitivized-macro-form 'letec scheme-vocabulary
-	(rewriter 'letec "letec"))
       (add-primitivized-macro-form 'let/ec scheme-vocabulary
-	(rewriter 'let/ec "let/ec"))
-      (add-primitivized-macro-form 'catch scheme-vocabulary
-	(rewriter 'catch "catch"))))
+	(rewriter 'let/ec "let/ec"))))
 
   (add-macro-form
     'define-schema

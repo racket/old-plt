@@ -119,9 +119,7 @@
 		  (let ([start (cdaddr m)]
 			[field-name (substring header (caaddr (cdr m)) (cdaddr (cdr m)))])
 		    (let ([m2 (regexp-match-positions 
-			       (format "[~a][~a][^: ~a~a]*:"
-				       #\return #\linefeed
-				       #\return #\linefeed)
+			       #rx"\r\n[^: \r\n\"]*:"
 			       header
 			       start)])
 		      (if m2

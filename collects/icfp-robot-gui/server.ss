@@ -258,7 +258,7 @@
                              (super-instantiate ()))
                 "Waiting" f)]
            [mk-label (lambda (num-players)
-                       (format "Waiting for ~a clients..." num-players))]
+                       (format "Waiting for ~a clients on port ~a..." num-players server-port))]
            [m (make-object message% (mk-label num-players) d)])
       (make-object button% "Exit" d (lambda (b e) (exit)))
       (thread

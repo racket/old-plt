@@ -487,26 +487,26 @@
   ;;                       -> void
   ;; effect: sets the parameters for drscheme and drscheme-jr
   (define (initialize-parameters custodian setting)
-    (let ([namespace (make-namespace 'empty)])
-      
-      (current-setting setting)
-      (current-custodian custodian)
-      (error-value->string-handler drscheme-error-value->string-handler)
-      (current-exception-handler drscheme-exception-handler)
-      (initial-exception-handler drscheme-exception-handler)
-
-      (break-enabled #t)
-      (read-curly-brace-as-paren #t)
-      (read-square-bracket-as-paren #t)
-      (print-struct (not (eq? 'r4rs-style (setting-printing setting))))
-      (read-decimal-as-inexact (not (setting-read-decimal-as-exact? setting)))
-      
-      (error-print-width 250)
-      (current-print drscheme-print)
-      
-      (current-load-relative-directory #f)
-
+    
+    (current-setting setting)
+    (current-custodian custodian)
+    (error-value->string-handler drscheme-error-value->string-handler)
+    (current-exception-handler drscheme-exception-handler)
+    (initial-exception-handler drscheme-exception-handler)
+    
+    (break-enabled #t)
+    (read-curly-brace-as-paren #t)
+    (read-square-bracket-as-paren #t)
+    (print-struct (not (eq? 'r4rs-style (setting-printing setting))))
+    (read-decimal-as-inexact (not (setting-read-decimal-as-exact? setting)))
+    
+    (error-print-width 250)
+    (current-print drscheme-print)
+    
+    (current-load-relative-directory #f)
+    
       ;; must call the resolver before setting the namespace
+    (let ([namespace (make-namespace 'empty)])
       (let ([lang-module-spec (setting-language-defining-module setting)])
 	(dynamic-require lang-module-spec #f)
 	(let ([orig-namespace (current-namespace)]
@@ -514,46 +514,46 @@
 			  lang-module-spec #f #f)])
 	  (current-namespace namespace)
 	  (namespace-attach-module orig-namespace lang-name)
-	  (namespace-require lang-name)))
-
-      (read-case-sensitive (setting-case-sensitive? setting))
-      
-      (current-load drscheme-load-handler)
-      
-      (when (setting-define-argv? setting)
-        (namespace-variable-binding 'argv #())
-        (namespace-variable-binding 'program this-program))
-      
-      (global-port-print-handler drscheme-port-print-handler)
-      
-      (case (setting-printing setting)
-        [(constructor-style)
-         (r4rs-style-printing #f)
-         (constructor-style-printing #t)]
-        [(quasi-style)
-         (r4rs-style-printing #f)
-         (constructor-style-printing #f)
-         (quasi-read-style-printing #f)]
-        [(quasi-read-style)
-         (r4rs-style-printing #f)
-         (constructor-style-printing #f)
-         (quasi-read-style-printing #t)]
-        [(r4rs-style) (r4rs-style-printing #t)]
-        [else (error 'install-language "found bad setting-printing: ~a~n" 
-                     (setting-printing setting))])
-      
-      (pretty-print-exact-as-decimal
-       (setting-print-exact-as-decimal? setting))
-      (pretty-print-show-inexactness
-       (setting-print-tagged-inexact-numbers setting))
-      (show-sharing (setting-sharing-printing? setting))
-      (pretty-print-.-symbol-without-bars
-       (setting-print-.-symbols-without-bars setting))
-
+	  (namespace-require lang-name))))
+    
+    (read-case-sensitive (setting-case-sensitive? setting))
+    
+    (current-load drscheme-load-handler)
+    
+    (when (setting-define-argv? setting)
+      (namespace-variable-binding 'argv #())
+      (namespace-variable-binding 'program this-program))
+    
+    (global-port-print-handler drscheme-port-print-handler)
+    
+    (case (setting-printing setting)
+      [(constructor-style)
+       (r4rs-style-printing #f)
+       (constructor-style-printing #t)]
+      [(quasi-style)
+       (r4rs-style-printing #f)
+       (constructor-style-printing #f)
+       (quasi-read-style-printing #f)]
+      [(quasi-read-style)
+       (r4rs-style-printing #f)
+       (constructor-style-printing #f)
+       (quasi-read-style-printing #t)]
+      [(r4rs-style) (r4rs-style-printing #t)]
+      [else (error 'install-language "found bad setting-printing: ~a~n" 
+                   (setting-printing setting))])
+    
+    (pretty-print-exact-as-decimal
+     (setting-print-exact-as-decimal? setting))
+    (pretty-print-show-inexactness
+     (setting-print-tagged-inexact-numbers setting))
+    (show-sharing (setting-sharing-printing? setting))
+    (pretty-print-.-symbol-without-bars
+     (setting-print-.-symbols-without-bars setting))
+    
       ;; use the fractional snips instead.
-      (whole/fractional-exact-numbers #f)
-
-      (booleans-as-true/false
-       (setting-print-booleans-as-true/false setting))
-      (print-graph (and (r4rs-style-printing) (setting-sharing-printing? setting)))
-      (abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting)))))
+    (whole/fractional-exact-numbers #f)
+    
+    (booleans-as-true/false
+     (setting-print-booleans-as-true/false setting))
+    (print-graph (and (r4rs-style-printing) (setting-sharing-printing? setting)))
+    (abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))))

@@ -353,10 +353,10 @@
 	(let ([next-iteration
 	       (let/ec k
 		 (let ([annotate
-			(lambda (term)
+			(lambda (term read-expr)
 			  (dynamic-wind
 			   (lambda () (zodiac:interface:set-zodiac-phase 'expander))
-			   (lambda () (aries:annotate term))
+			   (lambda () (aries:annotate term read-expr))
 			   (lambda () (zodiac:interface:set-zodiac-phase #f))))]
 		       ; Always read with zodiac
 		       [zodiac-read
@@ -389,7 +389,7 @@
 				    (lambda () (zodiac:interface:set-zodiac-phase #f)))
 				   (zodiac:sexp->raw zodiac-read))]
 			      [heading-out (if (and annotate? use-z-exp?)
-					       (annotate exp)
+					       (annotate exp zodiac-read)
 					       exp)])
 			 (lambda () (f heading-out loop))))))])
 	  (next-iteration)))))
@@ -405,7 +405,7 @@
   (define format-source-loc 
     (case-lambda
      [(start-location end-location)
-      (format-source-loc start-location end-location #t)]
+      (format-source-loc #t)]
      [(start-location end-location start-at-one?)
       (format-source-loc start-location end-location start-at-one? #t)]
      [(start-location end-location start-at-one? lines-and-columns?)
@@ -704,5 +704,8 @@
       
       (when extra-definitions
         (extra-definitions))
+      
+      (global-defined-value '#%break aries:break)
+      
       (for-each (lambda (l) (apply require-library/proc l))
                 (setting-macro-libraries setting)))))

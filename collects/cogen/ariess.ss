@@ -1,11 +1,13 @@
 (define-signature plt:aries-core^
   (annotate
-   transform
-   error-box
+   ; transform
+   ; error-box
    ; the w-c-m key is the gensym'ed symbol created by
    ; aries to tag the continuation-marks which annotated
    ; code creates.
-   w-c-m-key))
+   extract-zodiac-location
+   w-c-m-key
+   break))
 
 (define-signature cogen-utils^
   (check-for-keyword

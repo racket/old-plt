@@ -33,6 +33,21 @@
 	  ,(z:make-zodiac #f start finish)
 	  ,body))))
   
+  ; extract-zodiac-location takes a continuation-mark-set
+  ; and returns the innermost (most recent) location. It returns #f if
+  ; the list is empty.
+  
+  (define (extract-zodiac-location mark-set)
+    (let ([mark-list (continuation-mark-set->list mark-set w-c-m-key)])
+      (if (null? mark-list)
+          #f
+          (car mark-list))))
+  
+  ; break is not defined in the old version of aries to do anything useful
+  
+  (define (break)
+    (raise 'silly-rabbit-trix-are-for-kids))
+  
   ; paroptarglist-> ilist and arglist->ilist are used to recreate
   ; mzscheme sexp syntax from the parsed zodiac form, so that the
   ; resulting expression can be fed to mzscheme.

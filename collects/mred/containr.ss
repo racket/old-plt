@@ -47,7 +47,14 @@
     ; minimum sizes for buttons.
     (define min-button-height (if (eq? wx:platform 'macintosh) 20 0))
     (define min-button-width (if (eq? wx:platform 'macintosh) 58 0))
-
+    
+    ; default size & placement for dialog boxes.  Note that these values
+    ; are not used by these classes; they are simply used in the function
+    ; that processes dialog-box%'s args before sending them on to
+    ; super-init, so we don't change the defaults from wx:dialog-box%.
+    (define default-dialog-posn 300)
+    (define default-dialog-size 500)
+    
     (define counter 0)
     
     ; this structure holds the information that a child will need to send
@@ -840,6 +847,9 @@
 		(mred:debug:printf 'container-insert-panel
 		  "Argument: ~s; ID ~s" new-panel
 		  (ivar new-panel object-ID))
+		(unless (null? panel)
+		  (error 'insert-panel
+			 "Adding a second panel to a frame or dialog"))
 		(unless (is-a? new-panel panel%)
 		  (error 'insert-panel
 		    "Expected a mred:panel% descendant; got ~s"
@@ -964,18 +974,56 @@
 	    (set! object-ID counter)
 	    (set! counter (add1 counter))))))
     
-    (define frame% (make-top-container% wx:frame%))
+;    (define frame% (make-top-container% wx:frame%))
+    (define frame%
+      (class (make-top-container% wx:frame%) args
+	(sequence
+	  (apply (opt-lambda (parent title
+			       [x const-default-posn]
+			       [y const-default-posn]
+			       [w const-default-size]
+			       [h const-default-size]
+			       [style (bitwise-ior
+					wx:const-sdi
+					wx:const-default-frame)]
+			       [name "frame"])
+		   (super-init parent title x y w h
+		     (bitwise-ior style wx:const-allow-auto-resize)
+		     name))
+	    args))))
+    
     (define dialog-box%
-      (class-asi (make-top-container% wx:dialog-box%)
+      (class (make-top-container% wx:dialog-box%) args
 	(inherit
 	  centre)
 	(rename
 	  [super-show show])
 	(public
+
+	  ; show: shows/hides the dialog and optionally centers it
+	  ; on-screen
+	  ; input: now?: a boolean; #t to show window, #f to hide it
+	  ;        center?: an optional boolean; #t to center, #f not.
+	  ; returns: nothing
+	  ; effects: shows or hides window; if now? & center? are both #t,
+	  ;   centers window on-screen as well.
 	  [show
-	    (lambda (now?)
-	      (when now? (centre wx:const-both))
-	      (super-show now?))])))
+	    (opt-lambda (now? [center? #t])
+	      (when (and now? center?) (centre wx:const-both))
+	      (super-show now?))])
+	(sequence
+	  (apply (opt-lambda (parent title
+			       [modal? #f]
+			       [x 300]
+			       [y 300]
+			       [w 500]
+			       [h 500]
+			       [style wx:const-default-dialog-style]
+			       [name "dialogBox"])
+		   (super-init parent title modal? x y w h
+		     (bitwise-ior style wx:const-allow-auto-resize)
+		     name))
+		 args))))
     
     ; make-get-size: creates a function which returns the minimum possible
     ;   size for a horizontal-panel% or vertical-panel% object.
@@ -1183,11 +1231,19 @@
     (define vertical-panel%
       (class-asi panel%
 	(inherit
+	  new-line
 	  force-redraw)
+	(rename
+	  [super-add add-child])
 	(public
 	  [spacing (make-spacing this)]
 
 	  [border (make-border this)]
+	  
+	  [add-child
+	   (lambda (new-child)
+	     (super-add new-child)
+	     (new-line))]
 	  
 	  [get-min-size
 	    (make-get-size this

@@ -1,19 +1,20 @@
 (module mzrl mzscheme
 
 (require (lib "foreign.ss"))
+(provide readline add-history set-completion-function!)
 
 (define libtermcap  (ffi-lib "libtermcap")) ; needed
 (define libreadline (ffi-lib "libreadline"))
 
-(define* readline
+(define readline
   (get-ffi-obj "readline" libreadline (_fun _string -> _string/eof)))
 
-(define* add-history
+(define add-history
   (get-ffi-obj "add_history" libreadline (_fun _string -> _void)))
 
 ;; Simple completion: use this with a (string -> list-of string) function that
 ;; returns the completions for a given string.  (should clean up bytes/string)
-(define* (set-completion-function! func)
+(define (set-completion-function! func)
   (if func
     (set-ffi-obj! "rl_completion_entry_function" libreadline
                   (_fun _string _int -> _pointer)

@@ -5,15 +5,15 @@
 
 <p>The teachpack <code>gui.ss</code> provides the following operations: 
 <menu>
-<li> <code>show-gui : -> true</code> 
-     <br>to show the frame 
+<li> <code>show-window : -> true</code> 
+     <br>to show the window 
 
-<li> <code>hide-gui : -> true</code> 
-     <br>to hide the frame
+<li> <code>hide-window : -> true</code> 
+     <br>to hide the window
 
-<li> <code>create-frame : (listof (listof gui-item)) -> true</code> 
-     <br>to add gui-items to a frame and to show the frame
-     <br>each list of gui-items defines one row of gui items in the frame
+<li> <code>create-window : (listof (listof gui-item)) -> true</code> 
+     <br>to add gui-items to a window and to show the window
+     <br>each list of gui-items defines one row of gui items in the window
 
 <li> <code>make-button : str (event% -> boolean) -> gui-item</code> 
      <br>to create a button with label and call-back function 
@@ -38,19 +38,15 @@
 <li> <code>choice-index : gui-item[choice%] -> num</code> 
      <br>to determine which choice is currently selected in a choice-item 
      <br>the result is the 0-based index in the choice menu 
-
-<li> <code>setup-gui : str num num -> true</code> 
-     <br>to set up a frame with given title and dimensions
-     <br>default titles and dimensions are provided 
 </menu>
 
 <p>Example: 
 <pre>
-> (create-frame (list (list (make-button "QUIT" hide-gui))))
+> (create-frame (list (list (make-button "QUIT" hide-window))))
 </pre>
 A button appears on the screen. Click on the button and it will disappear. 
 <pre>
-> (show-gui)
+> (show-window)
 </pre>
 The frame reappears. 
 

@@ -95,7 +95,7 @@ to choose among them.  In SrPersist, we write:
 
 Note that some database systems, such as Microsoft Access, 
 do not allow you to switch databases in this way.  You can 
-think of prepare as performing a compilation step; execute 
+think of prepare as performing a compilation step; sql-execute 
 runs the resulting code.
 
 Now suppose the database test_db contains a table 
@@ -106,7 +106,7 @@ We can make a query to get the desired data from the
 database.
 
     (prepare hstmt "SELECT name,age FROM people")
-    (execute hstmt)
+    (sql-execute hstmt)
 
 Conceptually, the statement above creates a new table,
 consisting of rows of data.  We need some location
@@ -178,7 +178,7 @@ appropriate SQL, and run it:
                             "name=\"Joe Bloggs\","
                             "address=\"123 Main Street\","
                             "age=42")) 
-    (execute hstmt)			    
+    (sql-execute hstmt)			    
 
 If you now perform the SELECT query above, and run the 
 given loop over the results, you should see the effect 

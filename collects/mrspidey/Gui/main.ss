@@ -159,8 +159,6 @@
                    (string=? filename file)
                    fi)])
              fileinfo*)))]
-	   ; (assert #f 'filename->fileinfo file)))]
-
       [filename->frame
        (lambda (file)
          (let ([x (filename->fileinfo file)])

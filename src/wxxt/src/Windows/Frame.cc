@@ -441,6 +441,32 @@ void wxFrame::SetClientSize(int width, int height)
     wxWindow::SetClientSize(width, height);
 }
 
+void wxFrame::EnforceSize(int minw, int minh, int maxw, int maxh, int incw, int inch)
+{
+  XSizeHints sh;
+
+  if (minw < 0)
+    minw = 0;
+  if (minh < 0)
+    minh = 0;
+  if (maxw < 0)
+    maxw = 32000;
+  if (maxh < 0)
+    maxh = 32000;
+
+  sh.flags = (PMinSize | PMaxSize | PResizeInc);
+  sh.min_width = minw;
+  sh.min_height = minh;
+  sh.max_width = maxw;
+  sh.max_height = maxh;
+  sh.width_inc = incw;
+  sh.height_inc = inch;
+
+  XSetWMNormalHints(XtDisplay(X->frame), 
+		    XtWindow(X->frame),
+		    &sh);
+}
+
 //-----------------------------------------------------------------------------
 // iconize, maximize
 //-----------------------------------------------------------------------------

@@ -1689,6 +1689,38 @@ static Scheme_Object *os_wxDialogBoxOnKillFocus(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxDialogBoxEnforceSize(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxDialogBox_class, "enforce-size in dialog%", n, p);
+  int x0;
+  int x1;
+  int x2;
+  int x3;
+  int x4;
+  int x5;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "enforce-size in dialog%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "enforce-size in dialog%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+2], "enforce-size in dialog%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+3], "enforce-size in dialog%"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+4], "enforce-size in dialog%"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+5], "enforce-size in dialog%"));
+
+  
+  WITH_VAR_STACK(((wxDialogBox *)((Scheme_Class_Object *)p[0])->primdata)->EnforceSize(x0, x1, x2, x3, x4, x5));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxDialogBoxOnClose(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1817,7 +1849,7 @@ void objscheme_setup_wxDialogBox(Scheme_Env *env)
 
   wxREGGLOB(os_wxDialogBox_class);
 
-  os_wxDialogBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dialog%", "window%", (Scheme_Method_Prim *)os_wxDialogBox_ConstructScheme, 10));
+  os_wxDialogBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dialog%", "window%", (Scheme_Method_Prim *)os_wxDialogBox_ConstructScheme, 11));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "system-menu" " method", (Scheme_Method_Prim *)os_wxDialogBoxdialogMenu, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "set-title" " method", (Scheme_Method_Prim *)os_wxDialogBoxSetTitle, 1, 1));
@@ -1827,6 +1859,7 @@ void objscheme_setup_wxDialogBox(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-size" " method", (Scheme_Method_Prim *)os_wxDialogBoxOnSize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-set-focus" " method", (Scheme_Method_Prim *)os_wxDialogBoxOnSetFocus, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-kill-focus" " method", (Scheme_Method_Prim *)os_wxDialogBoxOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "enforce-size" " method", (Scheme_Method_Prim *)os_wxDialogBoxEnforceSize, 6, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-close" " method", (Scheme_Method_Prim *)os_wxDialogBoxOnClose, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-activate" " method", (Scheme_Method_Prim *)os_wxDialogBoxOnActivate, 1, 1));
 

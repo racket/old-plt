@@ -81,6 +81,8 @@ public:
     virtual char  *GetTitle(void);
     virtual void  SetTitle(char *title);
 
+    void EnforceSize(int minw, int minh, int maxw, int maxh, int incw=1, int inch=1);
+
     void *context;
 
 protected:

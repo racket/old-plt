@@ -24,6 +24,8 @@
    seventh
    eighth
 
+   rest
+
    build-string
    build-vector
    build-list

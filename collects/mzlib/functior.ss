@@ -180,6 +180,8 @@
    (define seventh (polymorphic (compose fourth cdddr)))
    (define eighth (polymorphic (compose fourth cddddr)))
 
+   (define rest (polymorphic cdr))
+
    (define  build-string
      (lambda  (n  fcn)
        (unless  (and (integer? n) (exact? n) (>= n 0))

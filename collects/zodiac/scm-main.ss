@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.119 1997/08/14 17:36:56 shriram Exp $
+; $Id: scm-main.ss,v 1.120 1997/08/14 17:41:38 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1268,46 +1268,47 @@
 	  (else
 	    (static-error expr "Malformed cond"))))))
 
-  (add-primitivized-macro-form
-    'case
-    scheme-vocabulary
-    (let* ((kwd-1 '(else))
-	    (in-pattern-1 (if (language<=? 'structured)
-			    '(_ val (else b))
-			    '(_ val (else b ...))))
-	    (out-pattern-1 (if (language<=? 'structured) 'b '(begin b ...)))
-	    (kwd-2 '())
-	    (in-pattern-2 '(_ val))
-	    (out-pattern-2-signal-error
-	      `(#%raise (#%make-exn:else
-			  "no matching else clause"
-			  ,debug-info-handler-expression)))
-	    (out-pattern-2-no-error
-	      '(begin val (#%void)))
-	    (in-pattern-3 (if (language<=? 'structured)
-			    '(_ val ((keys ...) b) rest ...)
-			    '(_ val ((keys ...) b ...) rest ...)))
-	    (out-pattern-3 (if (language<=? 'structured)
-			     '(let ((tmp val))
-				(if (#%memv tmp (quote (keys ...)))
-				  b
-				  (case tmp rest ...)))
-			     '(let ((tmp val))
-				(if (#%memv tmp (quote (keys ...)))
-				  (begin b ...)
-				  (case tmp rest ...)))))
-	    (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
-	    (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))
-	    (m&e-3 (pat:make-match&env in-pattern-3 kwd-2)))
-      (lambda (expr env)
-	(or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd-1 env)
-	  (if (compile-allow-cond-fallthrough)
-	    (pat:match-and-rewrite expr m&e-2
-	      out-pattern-2-no-error kwd-2 env)
-	    (pat:match-and-rewrite expr m&e-2
-	      out-pattern-2-signal-error kwd-2 env))
-	  (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd-2 env)
-	  (static-error expr "Malformed case")))))
+  (when (language>=? 'side-effecting)
+    (add-primitivized-macro-form
+      'case
+      scheme-vocabulary
+      (let* ((kwd-1 '(else))
+	      (in-pattern-1 (if (language<=? 'structured)
+			      '(_ val (else b))
+			      '(_ val (else b ...))))
+	      (out-pattern-1 (if (language<=? 'structured) 'b '(begin b ...)))
+	      (kwd-2 '())
+	      (in-pattern-2 '(_ val))
+	      (out-pattern-2-signal-error
+		`(#%raise (#%make-exn:else
+			    "no matching else clause"
+			    ,debug-info-handler-expression)))
+	      (out-pattern-2-no-error
+		'(begin val (#%void)))
+	      (in-pattern-3 (if (language<=? 'structured)
+			      '(_ val ((keys ...) b) rest ...)
+			      '(_ val ((keys ...) b ...) rest ...)))
+	      (out-pattern-3 (if (language<=? 'structured)
+			       '(let ((tmp val))
+				  (if (#%memv tmp (quote (keys ...)))
+				    b
+				    (case tmp rest ...)))
+			       '(let ((tmp val))
+				  (if (#%memv tmp (quote (keys ...)))
+				    (begin b ...)
+				    (case tmp rest ...)))))
+	      (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
+	      (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))
+	      (m&e-3 (pat:make-match&env in-pattern-3 kwd-2)))
+	(lambda (expr env)
+	  (or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd-1 env)
+	    (if (compile-allow-cond-fallthrough)
+	      (pat:match-and-rewrite expr m&e-2
+		out-pattern-2-no-error kwd-2 env)
+	      (pat:match-and-rewrite expr m&e-2
+		out-pattern-2-signal-error kwd-2 env))
+	    (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd-2 env)
+	    (static-error expr "Malformed case"))))))
 
   (when (language>=? 'side-effecting)
     (add-primitivized-macro-form

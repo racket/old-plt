@@ -17,12 +17,15 @@
 /* needed for standard integer type names */
 #ifdef WINDOWS_DYNAMIC_LOAD
 #include <wtypes.h>
-typedef INT8   int8_t;
+#define alloca(x) _alloca(x)
+typedef INT8    int8_t;
 typedef UINT8  uint8_t;
-typedef INT16  int16_t;
+typedef INT16   int16_t;
 typedef UINT16 uint16_t;
-typedef INT32  int32_t;
+typedef INT32   int32_t;
 typedef UINT32 uint32_t;
+typedef INT64   int64_t;
+typedef UINT64 uint64_t;
 #else
 #include <inttypes.h>
 #endif
@@ -178,7 +181,6 @@ static Scheme_Object *foreign_ffi_obj(int argc, Scheme_Object *argv[])
   void *dlobj;
   ffi_lib_struct *lib = NULL;
   char *dlname;
-  const char *err;
   if (SCHEME_FFILIBP(argv[1]))
     lib = (ffi_lib_struct*)argv[1];
   else if (SCHEME_PATH_STRINGP(argv[1]) || SCHEME_FALSEP(argv[1]))
@@ -202,6 +204,7 @@ static Scheme_Object *foreign_ffi_obj(int argc, Scheme_Object *argv[])
 #else
     dlobj = dlsym(lib->handle, dlname);
     if (!dlobj) {
+      const char *err;
       err = dlerror();
       if (err != NULL)
         scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,

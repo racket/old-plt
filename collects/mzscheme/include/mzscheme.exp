@@ -16,8 +16,8 @@ scheme_current_process_ptr
 scheme_fuel_counter_ptr
 scheme_make_namespace
 scheme_thread
-scheme_break_thread
 scheme_kill_thread
+scheme_break_thread
 scheme_process_block
 scheme_swap_process
 scheme_block_until

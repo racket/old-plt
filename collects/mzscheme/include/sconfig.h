@@ -26,15 +26,24 @@
  /* Language Extensions */
 /***********************/
 
- /* NO_FILE_SYSTEM_UTILS removes most file system utilities. */
-
  /* NO_OBJECT_SYSTEM removes MzScheme's object system. */
 
  /* NO_REGEXP_UTILS removes MzScheme's regular expression utilities. */
 
- /* NO_SCHEME_THREADS removes MzScheme's threads from the Scheme user. */
+ /* NO_TCP_SUPPORT removes MzScheme's TCP utilities */
 
- /* NO_SCHEME_EXNS removes MzScheme's exception system. */
+ /* NO_SCHEME_THREADS removes MzScheme's threads from the Scheme user. 
+    In this case, custodian-shutdown-all doesn't kill threads. */
+
+ /* NO_FILE_SYSTEM_UTILS removes most file system utilities. */
+
+#if defined(NO_FILE_SYSTEM_UTILS) \
+	|| defined(NO_OBJECT_SYSTEM) \
+	|| defined(NO_TCP_SUPPORT) \
+	|| defined(NO_REGEXP_UTILS) \
+	|| defined(NO_SCHEME_THREADS)
+# define MZSCHEME_SOMETHING_OMITTED
+#endif
 
   /*******************************/
  /* Evaluator Tuning Parameters */
@@ -347,7 +356,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 
 #endif
 
-  /********* with Borland C++ or MS Visual C++ ************/
+  /******* Windows with MS Visual C++ or CYGWIN32 *********/
   /* See the "windows" directory for more MSVC details.   */
   /* MzScheme is probably no longer Borland-friendly,     */
   /* since it currently relies on one MSVC-style inline   */
@@ -362,7 +371,7 @@ int   scheme_sproc_semaphore_try_down(void *);
   /*   not under Win32s. A Win32s version will also work  */
   /*   under Windows NT.                                  */
 
-#if (defined(__BORLANDC__) || defined(_MSC_VER)) \
+#if (defined(__BORLANDC__) || defined(_MSC_VER) || defined(__CYGWIN32__)) \
     && (defined(__WIN32__) || defined(WIN32) || defined(_WIN32))
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "win32\\i386"
@@ -373,41 +382,44 @@ int   scheme_sproc_semaphore_try_down(void *);
 #  define USE_GETDRIVE
 #  define NO_READDIR
 #  define USE_FINDFIRST
-# else
+#  define NO_READLINK
+#  define MKDIR_NO_MODE_FLAG
+# endif
+# if defined(__BORLANDC__)
 #  define USE_GETDISK
 #  define DIRENT_NO_NAMLEN
+#  define NO_READLINK
+#  define MKDIR_NO_MODE_FLAG
 # endif
-# define NO_READLINK
-# define MKDIR_NO_MODE_FLAG
+# if defined(__CYGWIN32__)
+#  define USE_GET_CURRENT_DIRECTORY
+#  define USE_WINDOWS_FIND_FIRST
+#  define DIRENT_NO_NAMLEN
+# endif
 
 # define TIME_SYNTAX
-# define USE_FTIME
+# ifndef __CYGWIN32__
+#   define USE_FTIME
+# endif
 # define GETENV_FUNCTION
 # define DIR_FUNCTION
 
 # define STACK_GROWS_DOWN
-
 # define DO_STACK_CHECK
+# define WINDOWS_FIND_STACK_BOUNDS
 
-# if defined(_MSC_VER)
-#  define WINDOWS_FIND_STACK_BOUNDS
-# else
-#  define USE_STACKAVAIL
-# endif
-
-# if defined(_MSC_VER)
-#  define USE_MZ_SETJMP
-# endif
-# define STACK_SAFETY_MARGIN 20000
+# define USE_MZ_SETJMP
 
 # define WINDOWS_DYNAMIC_LOAD
 # define LINK_EXTENSIONS_BY_TABLE
 
-# define IGNORE_BY_CONTROL_387
+# if defined(__CYGWIN32__)
+#  define MUST_DEFEAT_FLOAT_REGISTER_OPTIMIZATION
+#endif
 # if defined(_MSC_VER)
 #  define NAN_EQUALS_ANYTHING
+#  define POW_HANDLES_INF_CORRECTLY
 # endif
-# define POW_HANDLES_INF_CORRECTLY
 
 # define IO_INCLUDE
 # define RAND_NOT_RANDOM
@@ -418,11 +430,17 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define WINDOWS_PROCESSES
 # define DETECT_WIN32_CONSOLE_STDIN
 
-
 # define SIGSET_IS_SIGNAL
 # define SIGSET_NEEDS_REINSTALL
 
+#ifdef __CYGWIN32__
+# define USE_UNIX_SOCKETS_TCP
+# define CANT_SET_SOCKET_BUFSIZE
+# define NO_NEED_FOR_BEGINTHREAD
+# define USE_CREATE_PIPE
+#else
 # define USE_WINSOCK_TCP
+#endif
 
 # ifdef WIN32_THREADS
 #  define MZ_REAL_THREADS
@@ -674,6 +692,12 @@ int scheme_win32_semaphore_try_down(void *);
  /* MKDIR_NO_MODE_FLAG specifies that mkdir() takes only one argument,
      instead of a directory name and mode flags. */
 
+ /* USE_GET_CURRENT_DIRECTORY uses Windows's GetCurrentDirectory()
+    instead of getcwd(). */
+
+ /* USE_WINDOWS_FIND_FIRST uses Window's FindFirstFile(), etc.
+    instead for _findfirst(), etc. */
+
   /***********************/
  /*       Ports         */
 /***********************/
@@ -706,8 +730,13 @@ int scheme_win32_semaphore_try_down(void *);
 
  /* DETECT_WIN32_CONSOLE_STDIN notices character reads from console
     stdin so that char-ready? and blocking reads can be implemented
-    correctly (so that Scheme thredas are not blocked when no input
-    is ready). */
+    correctly (so that Scheme threads are not blocked when no input
+    is ready). If NO_STDIO_THREADS is defined, this flag is ignored. */
+
+ /* NO_STDIO_THREADS turns off special Windows handling for stdin
+    and process input ports. The special handling implements char-ready?
+	and non-blocking reads (so that reading from one of these ports does
+	not block other MzScheme threads). */
 
  /* USE_FCNTL_O_NONBLOCK uses O_NONBLOCK instead of FNDELAY for
     fcntl on Unix TCP sockets. (Posix systems need this flag). */
@@ -721,6 +750,9 @@ int scheme_win32_semaphore_try_down(void *);
 
  /* UNIX_LIMIT_FDSET_SIZE insures that the fd limit at start-up is
     no greater than FD_SETSIZE */
+
+ /* CANT_SET_SOCKET_BUFSIZE turns off setting the buffer size for
+    Unix TCP sockets. */
 
   /***********************/
  /* Processes & Signals */
@@ -751,6 +783,8 @@ int scheme_win32_semaphore_try_down(void *);
 
  /* DONT_IGNORE_PIPE_SIGNAL stops MzScheme from ignoring SIGPIPE
     signals. */
+
+ /* USE_CREATE_PIPE uses CreatePipe() instead of _pipe() for Windows. */
 
   /**********************/
  /* Inexact Arithmetic */
@@ -815,6 +849,13 @@ int scheme_win32_semaphore_try_down(void *);
     negative inexact number x by computing the result for -x and negating
     it. Use this if (inexact->exact -0.1) is wrong. */
 
+ /* MUST_DEFEAT_FLOAT_REGISTER_OPTIMIZATION defeats a compiler optimization
+    that would place `double' or `float' values in a loop with a kind of
+	higher-precision floating point number register. This only matters in
+	one place, so this flag should be set rather than turning on a compiler
+	flag for the whole program. (Note for MSVC: a #pragma already handles
+	this.) */
+
   /***********************/
  /* Stack Maniuplations */
 /***********************/
@@ -858,11 +899,6 @@ int scheme_win32_semaphore_try_down(void *);
      stack is overflowed. Normally, it would copy out the current
      stack and try to continue the computation. Used only if
      DO_STACK_CHECK is used. */
-
- /* PROCESS_STACK_SIZE <X> sets the size of the allocated stack when
-     SPAWN_NEW_STACK is used. Stack-checking and copying works on these
-     stacks, so that arbitrary computaions can be performed with any
-     size stack. (Well, it can't be *too* small...) */
 
  /* UNIX_LIMIT_STACK <X> limits stack usage to <X> bytes. This may
      be necessary to avoid GC-setup traversal over too much memory
@@ -969,6 +1005,12 @@ int scheme_win32_semaphore_try_down(void *);
 
  /* NO_USLEEP means that there is no usleep() function. Used only in 
     standalone MzScheme. Used only if NO_SLEEP is undefined. */
+
+ /* NO_NEED_FOR_BEGINTHREAD indicates that the C library used for
+    Windows is always thread-ready and there's no need use the
+	_beginthreadex() function instead of CreateThread(). This is only
+	used when stdin and process ports are tested in a separate thread
+	(see NO_STDIO_TREADS). */
 
  /* WIN32S_HACK uses a special hack to implement threads under Win32s
     with some compilers. Obsolete. */

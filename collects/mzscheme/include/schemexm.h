@@ -22,12 +22,12 @@
 #define scheme_fuel_counter_ptr (scheme_extension_table->scheme_fuel_counter_ptr)
 #endif
 #endif
-#ifndef NO_SCHEME_THREADS
 #define scheme_make_namespace (scheme_extension_table->scheme_make_namespace)
+#ifndef NO_SCHEME_THREADS
 #define scheme_thread (scheme_extension_table->scheme_thread)
-#define scheme_break_thread (scheme_extension_table->scheme_break_thread)
 #define scheme_kill_thread (scheme_extension_table->scheme_kill_thread)
 #endif
+#define scheme_break_thread (scheme_extension_table->scheme_break_thread)
 #ifndef MZ_REAL_THREADS
 #define scheme_process_block (scheme_extension_table->scheme_process_block)
 #define scheme_swap_process (scheme_extension_table->scheme_swap_process)
@@ -149,9 +149,9 @@
 #define scheme_make_promise_from_thunk (scheme_extension_table->scheme_make_promise_from_thunk)
 #ifndef NO_SCHEME_THREADS
 #define scheme_make_sema (scheme_extension_table->scheme_make_sema)
-#endif
 #define scheme_post_sema (scheme_extension_table->scheme_post_sema)
 #define scheme_wait_sema (scheme_extension_table->scheme_wait_sema)
+#endif
 #define scheme_char_constants (scheme_extension_table->scheme_char_constants)
 #define scheme_get_int_val (scheme_extension_table->scheme_get_int_val)
 #define scheme_get_unsigned_int_val (scheme_extension_table->scheme_get_unsigned_int_val)
@@ -325,7 +325,9 @@
 #define scheme_banner (scheme_extension_table->scheme_banner)
 #define scheme_version (scheme_extension_table->scheme_version)
 #define scheme_check_proc_arity (scheme_extension_table->scheme_check_proc_arity)
+#ifndef NO_SCHEME_EXNS
 #define scheme_secure_exceptions (scheme_extension_table->scheme_secure_exceptions)
+#endif
 #define scheme_make_provided_string (scheme_extension_table->scheme_make_provided_string)
 #define scheme_make_args_string (scheme_extension_table->scheme_make_args_string)
 #define scheme_no_dumps (scheme_extension_table->scheme_no_dumps)

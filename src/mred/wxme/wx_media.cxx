@@ -1807,6 +1807,13 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, wxchar *str, wxList *snips
   if (endpos >= start)
     endpos += addlen;
 
+  if (!refreshUnset) {
+    if (refreshStart >= start)
+      refreshStart += addlen;
+    if (refreshEnd >= start)
+      refreshEnd += addlen;
+  }
+
   extraLine = !!(lastSnip->flags & wxSNIP_NEWLINE);
 
   writeLocked = FALSE;
@@ -2127,6 +2134,17 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
   else if (endpos > end)
     endpos -= dellen;
 
+  if (!refreshUnset) {
+    if ((refreshStart >= start) && (refreshStart <= end))
+      refreshStart = start;
+    else if (refreshStart >= end)
+      refreshStart -= dellen;
+    if ((refreshEnd >= start) && (refreshEnd <= end))
+      refreshEnd = start;
+    else if (refreshEnd >= end)
+      refreshEnd -= dellen;
+  }
+  
   extraLine = !!(lastSnip->flags & wxSNIP_NEWLINE);
 
   if (scrollOk && startpos == start) {

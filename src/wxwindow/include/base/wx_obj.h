@@ -46,6 +46,7 @@ class wxObject;
 #define WXGC_NO_CLEANUP FALSE
 #define DELETE_OBJ delete
 #define DELETE_VAL delete
+#define COPYSTRING_TO_ALIGNED(x) x
 
 class wxObject : public WXGC_CLEANUP_CLASS
 {

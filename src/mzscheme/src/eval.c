@@ -3952,8 +3952,6 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 {
   Scheme_Type type;
 
-#define goto_top scheme_validate_expr(port, expr, stack, depth, delta, num_toplevels)
-
  top:
   type = SCHEME_TYPE(expr);
 
@@ -4027,7 +4025,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       }
 
       expr = seq->array[cnt - 1];
-      goto_top;
+      goto top;
     }
     break;
   case scheme_branch_type:
@@ -4039,7 +4037,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       scheme_validate_expr(port, b->tbranch, stack, depth, delta, num_toplevels);
       memset(stack, VALID_NOT, delta);
       expr = b->fbranch;
-      goto_top;
+      goto top;
     }
     break;
   case scheme_with_cont_mark_type:
@@ -4051,7 +4049,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       scheme_validate_expr(port, wcm->val, stack, depth, delta, num_toplevels);
       memset(stack, VALID_NOT, delta);
       expr = wcm->body;
-      goto_top;
+      goto top;
     }
     break;
   case scheme_unclosed_procedure_type:
@@ -4123,7 +4121,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       }
 
       expr = lv->body;
-      goto_top;
+      goto top;
     }
     break;
   case scheme_let_void_type:
@@ -4144,7 +4142,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 	delta -= c;
 
       expr = lv->body;
-      goto_top;
+      goto top;
     }
     break;
   case scheme_letrec_type:
@@ -4171,7 +4169,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       }
 
       expr = l->body;
-      goto_top;
+      goto top;
     }
     break;
   case scheme_let_one_type:
@@ -4183,14 +4181,14 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 	scheme_ill_formed_code(port);
 
       expr = lo->value;
-      goto_top;
+      goto top;
     }
     break;
   default:
     /* All values are definitely ok, except pre-closed closures: */
     if (SAME_TYPE(type, scheme_closure_type)) {
       expr = SCHEME_COMPILED_CLOS_CODE(expr);
-      goto_top;
+      goto top;
     }
     break;
   }

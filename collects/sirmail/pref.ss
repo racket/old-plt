@@ -454,7 +454,8 @@
       p))
 
   (define (make-mbox-preferences-panel parent)
-    (let ([p (instantiate vertical-panel% (parent))])
+    (let ([p (instantiate vertical-panel% (parent)
+               (alignment '(left center)))])
       
       (make-text-field "Username" p 10 'sirmail:username #f check-id (lambda (x) x) (lambda (x) x))
       (make-text-field "IMAP Server" p 20 'sirmail:imap-server #f check-host-address/port (lambda (x) x) (lambda (x) x))
@@ -475,6 +476,8 @@
       (make-file/directory-button #f #f p
 				  'sirmail:auto-file-table-file
 				  "Auto-File Table File")
+      
+      (make-boolean "Show GC Icon" p 'sirmail:show-gc-icon)
 
       (make-text-list "Shown Header Fields" p 'sirmail:fields-to-show void)
 

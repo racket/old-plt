@@ -450,7 +450,7 @@
 					      `(place ,(get-h max-w (pict-width box))
 						      ,(get-v max-h (pict-height box)
 							      max-d (pict-descent box)
-							      max-a-complement)
+							      max-a-complement (pict-ascent box))
 						      ,box))
 					    boxes))])
 		       (post-process p max-a max-d
@@ -464,8 +464,8 @@
 	      [bbase (lambda (h a d ac dc) (+ d dc))] 
 	      [lb (lambda (m v . rest) 0)]
 	      [rt (lambda (m v . rest) (- m v))]
-	      [tline (lambda (m v md d mac) mac)]
-	      [bline (lambda (m v md d mac) (- md d))]
+	      [tline (lambda (m v md d mac a) (- mac (- v a)))]
+	      [bline (lambda (m v md d mac a) (- md d))]
 	      [c (lambda (m v . rest) (quotient* (- m v) 2))]
 	      [none (lambda (p a d one-line?) p)]
 	      [with-max-a (lambda (p a d one-line?)

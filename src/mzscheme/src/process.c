@@ -159,7 +159,7 @@ Scheme_Process *scheme_main_process = NULL;
 Scheme_Process *scheme_first_process = NULL;
 #ifdef LINK_EXTENSIONS_BY_TABLE
 Scheme_Process **scheme_current_process_ptr;
-int *scheme_fuel_counter_ptr;
+volatile int *scheme_fuel_counter_ptr;
 #endif
 #ifndef MZ_REAL_THREADS
 static int swap_no_setjmp = 0;
@@ -2432,6 +2432,9 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 
     setitimer(ITIMER_PROF, &t, &old);
   }
+#endif
+#ifdef USE_WIN32_THREAD_TIMER
+  scheme_start_itimer_thread(MZ_THREAD_QUANTUM_USEC);
 #endif
 
   MZTHREADELEM(p, fuel_counter) = p->engine_weight;

@@ -5505,12 +5505,12 @@ static long itimer_delay;
 
 static long ITimer(void)
 {
-  WaitForSingleObject(itimer_semaphore, INFINITY);
+  WaitForSingleObject(itimer_semaphore, INFINITE);
 
   while (1) {
     if (WaitForSingleObject(itimer_semaphore, itimer_delay / 1000) == WAIT_TIMEOUT) {
       scheme_fuel_counter = 0;
-      WaitForSingleObject(itimer_semaphore, INFINITY);
+      WaitForSingleObject(itimer_semaphore, INFINITE);
     }
   }
 }

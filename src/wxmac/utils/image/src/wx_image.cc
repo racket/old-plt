@@ -107,7 +107,6 @@ Bool wxLoadPICTIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		CGrafPtr saveport;
 		GetGWorld(&saveport, &savegd);
 		QDErr err;
-		GWorldPtr	newGWorld;
 		Rect	bounds = {0, 0, bm->GetHeight(), bm->GetWidth()};
 		err = NewGWorld(&bm->x_pixmap, 0, &bounds, NULL, NULL, noNewDevice);
 		if (!err) {
@@ -193,7 +192,6 @@ Bool wxLoadIntoBitmap(char *infile, wxBitmap *bitmap, wxColourMap **pal)
 
 wxBitmap *wxLoadBitmap(char *fileName, wxColourMap **pal)
 {
-  Bool stats;
   wxBitmap *bitmap = new wxBitmap;
 
   if (wxLoadIntoBitmap(fileName, bitmap, pal))

@@ -1,6 +1,4 @@
 
-#define INCLUDE_WITHOUT_PATHS
-
 #ifndef PRECOMPILE_TARGET_SET
   #ifdef OS_X
     #pragma precompile_target ":MrEdHeadersOSX"

@@ -913,8 +913,8 @@ void wxFrame::Paint(void)
 {
 	SetCurrentDC();
 	RgnHandle rgn, subrgn, borderRgn = NULL;
-	if (rgn = NewRgn()) {
-		if (subrgn = NewRgn()) {
+	if ((rgn = NewRgn())) {
+		if ((subrgn = NewRgn())) {
 		  if ((cStyle & wxNO_RESIZE_BORDER) || (borderRgn = NewRgn())) {
 		    if (borderRgn) {
                       int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);

@@ -1,7 +1,9 @@
-#ifdef OS_X
-  #pragma precompile_target ":MzHeadersOSX"
-#else
-  #pragma precompile_target ":MzHeadersPPC"
+#ifndef PRECOMPILED_TARGET_SPECIFIED
+ #ifdef OS_X
+   #pragma precompile_target ":MzHeadersOSX"
+ #else
+   #pragma precompile_target ":MzHeadersPPC"
+ #endif
 #endif
 
 #ifdef OS_X

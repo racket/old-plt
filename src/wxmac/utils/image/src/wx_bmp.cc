@@ -750,7 +750,7 @@ static void writeBMP4(FILE *fp, byte *pic8, int w, int h)
 /*******************************************/
 static void writeBMP8(FILE *fp, byte *pic8, int w, int h)
 {
-  int   i,j,c,padw;
+  int   i,j,padw;
   byte *pp;
 
   padw = ((w + 3)/4) * 4; /* 'w' padded to a multiple of 4pix (32 bits) */
@@ -767,7 +767,7 @@ static void writeBMP8(FILE *fp, byte *pic8, int w, int h)
 /*******************************************/
 static void writeBMP24(FILE *fp, byte *pic24, int w, int h)
 {
-  int   i,j,c,padb;
+  int   i,j,padb;
   byte *pp;
 
   padb = (4 - ((w*3) % 4)) & 0x03;  /* # of pad bytes to write at EOscanline */
@@ -809,7 +809,6 @@ unsigned short Mac_xform24(unsigned char c)
 // bitmap, delete the image
 Bool wxLoadBMPIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
-	CGrafPtr  colorPort;
 	PICINFO		picinfo;		// defined in wx_imgx.h
 	wxImage *xbmImage  = new wxImage();
 	if (xbmImage->LoadBMP(fileName, &picinfo) == 1) {
@@ -829,7 +828,7 @@ Bool wxLoadBMPIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		bm->x_pixmap = newGWorld;
 
 		RGBColor	cpix;
-		int y, x, k;
+		int y, x;
 		unsigned int byte;
 		unsigned char *buf = picinfo.pic;
  		GetForeColor(&cpix);	// probably 0,0,0

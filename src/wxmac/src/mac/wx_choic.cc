@@ -275,9 +275,7 @@ void wxChoice::ReCalcRect(void)
 {
 	int maxdfltw = 30;
 	int maxdflth = 12;
-	float	fWidth, fHeight, fDescent, fLeading;
-	int n,w,h;
-	unsigned char temp[256];
+	int w,h;
 
 #ifdef OS_X
     Rect r = {0,0,0,0};
@@ -286,6 +284,10 @@ void wxChoice::ReCalcRect(void)
     maxdfltw = r.right - r.left + (2 * PAD_X);
     maxdflth = r.bottom - r.top + (2 * PAD_Y);
 #else
+	float	fWidth, fHeight, fDescent, fLeading;
+	int n;
+	unsigned char temp[256];
+
         for (n = 0; n < no_strings; n++) {
 		// attempt to size control by width of largest string
 		::GetMenuItemText(hDynMenu, n+1, temp);

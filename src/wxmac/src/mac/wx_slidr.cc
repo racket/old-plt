@@ -42,12 +42,16 @@ static const char sccsid[] = "%W% %G%";
 # define PAD_BOTTOM 10
 #else
 # define KSCROLLH   16	// height of a mac scrollbar control
+# define PAD_X 0
+# define PAD_TOP 0
+# define PAD_BOTTOM 0
 #endif
 #define VSP			3	// space between scrollbar and value
 #define HSP			3	
 // Because I never get this right and t,l,b,r makes sense to me - CJC
 //
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
+
 static void InsetSliderRect(long style, Rect *r);
 
 static void InsetSliderRect(long style, Rect *r) 
@@ -167,7 +171,9 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     
     Rect r = controlRect;    
     OffsetRect(&r,SetOriginX,SetOriginY);
+#ifdef OS_X    
     InsetSliderRect(style,&r);
+#endif    
 	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &r, NULL,
 			TRUE, value, min_value, max_value, kControlSliderProc, (long)this);
 	CheckMemOK(cMacControl);
@@ -262,19 +268,23 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 
 		int vwid = valueRect.right - valueRect.left;
 		int vhgt = valueRect.bottom - valueRect.top;
+		Rect r;
 			
 		if (windowStyle & wxVERTICAL) {
-			int w = controlRect.right - controlRect.left;
-			// the wid can't change
-			::SizeControl(cMacControl, w, clientHeight);
+			controlRect.bottom = clientHeight;
+			r = controlRect;
+			InsetSliderRect(windowStyle,&r);
+			
+			::SizeControl(cMacControl, r.right - r.left, r.bottom - r.top);
 			valueRect.top = (clientHeight - vhgt) / 2;
 			valueRect.bottom = valueRect.top + vhgt;
 			valueRect.left = KSCROLLH + HSP;
 			valueRect.right = valueRect.left + vwid;
 		} else {
-			int h = controlRect.bottom - controlRect.top;
-			// the hgt can't change
-			::SizeControl(cMacControl, clientWidth, h);
+			controlRect.right = clientWidth;
+			r = controlRect;
+			InsetSliderRect(windowStyle,&r);
+			::SizeControl(cMacControl, r.right - r.left, r.bottom - r.top);
 			valueRect.left = (clientWidth - vwid) / 2;
 			valueRect.right = valueRect.left + vwid;
 			valueRect.top = KSCROLLH + VSP;

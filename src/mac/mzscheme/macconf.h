@@ -1,5 +1,3 @@
-#define INCLUDE_WITHOUT_PATHS
-
 #ifdef __MWERKS__
 #if defined(__powerc)
 #include <MacHeadersPPC>
@@ -19,11 +17,4 @@
 #define USE_TEMPORARY_MEMORY      // use Macintosh temporary memory.
 #define OLD_BLOCK_ALLOC
 
-// EEXIST --- the error in errno.h returned when a file cannot be
-// created because the file already exists --- is not defined on the mac.
-// (actually, it _is_ defined in Metrowerks 6)
-
-#if (__MWERKS__ < 0x2400)
-# define EEXIST dupFNErr
-#endif
 

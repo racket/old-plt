@@ -45,7 +45,7 @@ void CreateApp(void);
 extern "C" {
   extern char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn);
   extern char *scheme_mac_spec_to_path(FSSpec *spec);
-};
+}
 
 char *wxmac_startup_directory;
 

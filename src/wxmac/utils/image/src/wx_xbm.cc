@@ -247,8 +247,6 @@ static int WriteXBM(FILE *fp, byte *pic, int w, int h, char *fname)
 // bitmap, delete the image
 Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
-	CGrafPtr  colorPort;
-	
 	wxImage *xbmImage  = new wxImage();
 	if (xbmImage->LoadXBM(fileName, 1) == 0) {
 		// CreateOffScreenPixMap(&colorPort, gifImage);
@@ -268,8 +266,7 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		bm->x_pixmap = newGWorld;
 
 		RGBColor	cpix;
-		int i, j, k;
-		unsigned int byte;
+		int i, j;
 		unsigned char *buf = xbmImage->pic;
  		GetForeColor(&cpix);	// probably 0,0,0
  		::EraseRect(&bounds);
@@ -302,7 +299,6 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 // bitmap, delete the image
 Bool wxSaveXBMFromBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
-	CGrafPtr  colorPort;
 	FILE *f;
 	int w, h, i, j;
 	byte *pic, *p;

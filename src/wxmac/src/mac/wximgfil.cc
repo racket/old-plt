@@ -326,7 +326,6 @@ ushort wxGIF::get_next_code()
 
 void wxGIF::InitInterlaceRow(int linewidth)
 {
-  int linepos;
   int count, lpos;
   
   lpos = ItCount;
@@ -689,8 +688,6 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 
 void CreateOffScreenPixMap (CGrafPtr *cport, wxGIF *gif)
 {
-  CGrafPtr  colorPort;
-	
 	int width = gif->GetWidth(), height = gif->GetHeight();
 	Rect bounds = { 0, 0, height, width };
 	GDHandle savegw;
@@ -707,8 +704,7 @@ void CreateOffScreenPixMap (CGrafPtr *cport, wxGIF *gif)
 	LockPixels(GetGWorldPixMap(newGWorld));
 
 	RGBColor	cpix;
-	int i, j, k;
-	unsigned int byte;
+	int i, j;
 	unsigned char *buf = (unsigned char *)gif->GetRawImage();
 	for (i = 0; i < height; i++) {
 	  for (j = 0; j < width; j++, buf++) {

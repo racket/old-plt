@@ -123,7 +123,6 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
 
 wxObject *wxGetClipboardData(int dataFormat, long *size)
 {
-  Handle h;
   char *result;
   long format, length;
 
@@ -150,7 +149,7 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
     return NULL;
   }
 #else  
-  h = NewHandle(10);
+  Handle h = NewHandle(10);
   CheckMemOK(h);
   SInt32 offset;
   
@@ -176,7 +175,7 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
 
 int  wxEnumClipboardFormats(int dataFormat)
 {
-  long offset, format;
+  long format;
   wxNode *node;
   ClipboardFormat *cf;
 
@@ -206,7 +205,8 @@ int  wxEnumClipboardFormats(int dataFormat)
     err = GetCurrentScrap(&scrap);
     if ((err != noErr)||(GetScrapFlavorFlags(scrap,format,&dontcare) != noErr))
       return cf->format;
-#else      
+#else
+	long offset;      
     if (GetScrap(NULL, format, &offset) > 0)
        return cf->format;
 #endif

@@ -70,7 +70,7 @@ static int wxFindFileFlags = 0;
 
 extern "C" {
   extern char *scheme_mac_spec_to_path(FSSpec *spec);
-};
+}
 
 // Get a temporary filename, opening and closing the file.
 char *wxGetTempFileName (const char *prefix, char *dest)
@@ -278,7 +278,7 @@ int AddOrReplaceEntry(const char *section, const char *entry, char *Value, const
   // make a section
   sprintf(Section, "[%s]", section);
 
-  if ( sNode = SectionMember(sList, Section, strlen(Section)))
+  if ( (sNode = SectionMember(sList, Section, strlen(Section))))
   {
     if ( (eNode = EntryMember(sList, entry, strlen(entry))) )
     {
@@ -343,7 +343,7 @@ int GetEntry(const char *section, const char *entry, char *Value, const char *fi
   // make a section
   sprintf(Section, "[%s]", section);
 
-  if ( sNode = SectionMember(sList, Section, strlen(Section)))
+  if ( (sNode = SectionMember(sList, Section, strlen(Section))))
   {
     if ( (eNode = EntryMember(sList, entry, strlen(entry))) )
     {

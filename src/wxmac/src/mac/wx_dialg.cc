@@ -257,7 +257,7 @@ int wxMessageBox(char* message, char* caption, long style,
 extern "C" {
  extern char *scheme_mac_spec_to_path(FSSpec *f);
  extern int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
-};
+}
 
 //= T.P. ==============================================================================
 

@@ -2574,8 +2574,9 @@ word len;
     	      ((ptr_t)end_block - (ptr_t)start_block) + HBLKSIZE);
 }
 
+/* PLTSCHEME: no read() redefinition for MacOS X */
 #if !defined(MSWIN32) && !defined(MSWINCE) && !defined(THREADS) \
-    && !defined(GC_USE_LD_WRAP)
+    && !defined(GC_USE_LD_WRAP) && !defined(MACOSX)
 /* Replacement for UNIX system call.					 */
 /* Other calls that write to the heap should be handled similarly.	 */
 /* Note that this doesn't work well for blocking reads:  It will hold	 */

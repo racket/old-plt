@@ -247,22 +247,6 @@ CMzObj::CMzObj(void) {
 }
 
 CMzObj::~CMzObj(void) {
-  if (readSem) {
-    CloseHandle(readSem);
-  }
-
-  if (writeSem) {
-    CloseHandle(readSem);
-  }
-
-  if (exitSem) {
-    CloseHandle(readSem);
-  }
-
-  if (inputMutex) {
-    CloseHandle(inputMutex);
-  }
-
   if (threadHandle) {
     DWORD threadStatus;
 
@@ -271,6 +255,24 @@ CMzObj::~CMzObj(void) {
     if (threadStatus == STILL_ACTIVE) {
       TerminateThread(threadHandle,0);
     }
+
+    CloseHandle(threadHandle);
+  }
+
+  if (readSem) {
+    CloseHandle(readSem);
+  }
+
+  if (writeSem) {
+    CloseHandle(writeSem);
+  }
+
+  if (exitSem) {
+    CloseHandle(exitSem);
+  }
+
+  if (inputMutex) {
+    CloseHandle(inputMutex);
   }
 }
 

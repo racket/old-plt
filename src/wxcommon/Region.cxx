@@ -251,7 +251,18 @@ void wxRegion::SetEllipse(double x, double y, double width, double height)
   Cleanup();
 
   if (!no_prgn) {
+#ifdef WX_USE_CAIRO
+    /* cairo_arc() went bad for clipping in v0.3.0, so we avoid it. */
+    {
+      wxPath *p;
+      p = new wxPath();
+      p->Arc(x, y, width, height, 0, 2 * wxPI, TRUE);
+      p->Close();
+      prgn = new wxPathPathRgn(dc, p, 0, 0, wxODDEVEN_RULE);
+    }
+#else
     prgn = new wxArcPathRgn(dc, x, y, width, height, 0, 2 * wxPI);
+#endif
   }
 
   xw = x + width;
@@ -467,7 +478,19 @@ void wxRegion::SetArc(double x, double y, double w, double h, double start, doub
 
   save_no_prgn = no_prgn;
   if (!no_prgn) {
+#ifdef WX_USE_CAIRO
+    /* cairo_arc() went bad for clipping in v0.3.0, so we avoid it. */
+    {
+      wxPath *p;
+      p = new wxPath();
+      p->MoveTo(x + w / 2, y + h / 2);
+      p->Arc(x, y, w, h, start, end, TRUE);
+      p->Close();
+      prgn = new wxPathPathRgn(dc, p, 0, 0, wxODDEVEN_RULE);
+    }
+#else
     prgn = new wxArcPathRgn(dc, x, y, w, h, start, end);
+#endif
     no_prgn = 1;
   }
 
@@ -912,6 +935,14 @@ void wxRegion::Install(long target, Bool align)
     /* Empty region: */
 #ifdef WX_USE_CAIRO
     cairo_new_path(CAIRO_DEV);
+    cairo_move_to(CAIRO_DEV, 0, 0);
+    cairo_line_to(CAIRO_DEV, 1, 0);
+    cairo_line_to(CAIRO_DEV, 1, 1);
+    cairo_clip(CAIRO_DEV);
+    cairo_new_path(CAIRO_DEV);
+    cairo_move_to(CAIRO_DEV, 2, 2);
+    cairo_line_to(CAIRO_DEV, 3, 2);
+    cairo_line_to(CAIRO_DEV, 3, 3);
     cairo_clip(CAIRO_DEV);
 #endif
 #ifdef wx_mac

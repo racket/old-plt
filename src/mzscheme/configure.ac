@@ -827,7 +827,13 @@ if test "${enable_cairo}" = "yes" ; then
     if test "${enable_cairo}" = "yes" ; then  
       MROPTIONS="$MROPTIONS -DWX_USE_CAIRO"
       X_CFLAGS="$X_CFLAGS $cairo_cflags"
-      X_EXTRA_LIBS="$X_EXTRA_LIBS $cairo_libs"      
+      X_EXTRA_LIBS="$X_EXTRA_LIBS $cairo_libs"
+
+      CPPFLAGS="$CPPFLAGS $cairo_cflags"
+      AC_CHECK_HEADER(cairo-xlib.h, havecairoxlib=yes, havecairoxlib=no)
+      if test "${havecairoxlib}" = "no" ; then  
+        MROPTIONS="$MROPTIONS -DWX_CAIRO_NO_XLIBH"
+      fi
     else
       echo "no Cairo libs; Cairo support disabled"
     fi

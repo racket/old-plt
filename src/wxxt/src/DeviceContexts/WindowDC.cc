@@ -50,7 +50,12 @@
 #include <X11/Intrinsic.h>
 
 #ifdef WX_USE_CAIRO
+extern "C" {
 # include <cairo.h>
+# ifndef WX_CAIRO_NO_XLIBH
+#  include <cairo-xlib.h>
+# endif
+};
 #endif
 
 #define  UseXtRegions

@@ -483,7 +483,7 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
   if (use_cgctx) {
     /* Set scale */
     if (with_start) {
-      CGContextTranslateCTM(cgctx, ddx, ddy);
+      CGContextTranslateCTM(cgctx, ddx, -ddy);
       ddx = 0;
       ddy = 0;
     }

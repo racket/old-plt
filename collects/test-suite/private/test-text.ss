@@ -17,7 +17,7 @@
    base-snip%
    actual-snip%)
   
-  (define *disable-color* "AliceBlue")
+  (define *disable-color* "LightCyan")
   
   (define (grey-editor-snip-mixin super%)
     (class super%

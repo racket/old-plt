@@ -1121,6 +1121,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 	return scheme_compile_expr(form, env, rec, drec);
       } else if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
 	find_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
+	SCHEME_USE_FUEL(1);
       } else
 	break;
     } else
@@ -2907,7 +2908,7 @@ define_syntaxes_syntax(Scheme_Object *form, Scheme_Comp_Env *env,
   scheme_prepare_exp_env(env->genv);
 
   /* Get prefixed-based accessors for syntax buckets: */
-  names = scheme_named_map_1(NULL, stx_val, names, (Scheme_Object *)env->genv->exp_env);
+  names = scheme_named_map_1(NULL, stx_val, names, (Scheme_Object *)env->genv);
 
   dummy = scheme_make_environment_dummy(env);
   

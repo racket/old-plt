@@ -67,6 +67,7 @@ static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_introduce(int argc, Scheme_Object *argv[]);
+static Scheme_Object *make_introducer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_transformer_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_rename_transformer(int argc, Scheme_Object *argv[]);
@@ -427,6 +428,11 @@ static void make_init_env(void)
 			     scheme_make_prim_w_arity(local_introduce,
 						      "syntax-local-introduce",
 						      1, 1),
+			     env);
+  scheme_add_global_constant("make-syntax-introducer", 
+			     scheme_make_prim_w_arity(make_introducer,
+						      "make-syntax-introducer",
+						      0, 0),
 			     env);
 
   scheme_add_global_constant("make-set!-transformer", 
@@ -2663,6 +2669,12 @@ local_introduce(int argc, Scheme_Object *argv[])
     s = scheme_add_remove_mark(s, scheme_current_thread->current_local_mark);
 
   return s;
+}
+
+static Scheme_Object *
+make_introducer(int argc, Scheme_Object *argv[])
+{
+  return scheme_void;
 }
 
 static Scheme_Object *

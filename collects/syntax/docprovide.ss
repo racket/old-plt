@@ -136,7 +136,11 @@
 					     (string? (syntax-e (syntax header)))
 					     null]
 					    [(all-from/-except tag path label except ...)
-					     (list (syntax (require (prefix tag path))))]))
+					     (list (with-syntax ([pf (datum->syntax-object
+								      stx
+								      (syntax-e
+								       (syntax (prefix tag path))))])
+						     (syntax (require pf))))]))
 			     rows))])
 	  ;; Collapse rows for a section name:
 	  (let ([rows (let loop ([rows (apply append rows)])

@@ -348,7 +348,6 @@
                          [contract-id (mangle-id "provide/contract-contract-id" id)]
                          [pos-module-source (mangle-id "provide/contract-pos-module-source" id)]
                          [pos-stx (datum->syntax-object provide-stx 'here)]
-                         [module-source-as-symbol (datum->syntax-object provide-stx 'module-source-as-symbol)]
                          [id id]
                          [ctrct ctrct])
              (syntax/loc stx
@@ -409,7 +408,6 @@
          (with-syntax ([(bodies ...) (code-for-each-clause (syntax->list (syntax (p/c-ele ...))))])
            (syntax 
             (begin
-              (require (lib "contract-helpers.scm" "mzlib" "private"))
               bodies ...))))]))
 
   

@@ -292,8 +292,8 @@
      ;; 3.5
      ((: (eof) #\032) 'EOF)))
   
-  (define (syn-val a b c d)
-    (values a b (position-offset c) (position-offset d)))
+  (define (syn-val lex a b c d)
+    (values lex a b (position-offset c) (position-offset d)))
   
   (define get-syn-string
     (lexer
@@ -305,14 +305,14 @@
     (lexer
   ;; 3.12
      (Operator
-      (syn-val 'keyword lexeme start-pos end-pos))
+      (syn-val lexeme 'keyword #f start-pos end-pos))
      
      ;; 3.11
      ((: "(" ")" "{" "}" "[" "]")
-      (syn-val 'keyword (string->symbol lexeme) start-pos end-pos))
+      (syn-val lexeme 'keyword (string->symbol lexeme) start-pos end-pos))
      ;; 3.11
      ((: ";" "," ".")
-      (syn-val 'default lexeme start-pos end-pos))
+      (syn-val lexeme 'default #f start-pos end-pos))
 
      ;; 3.10.7, 3.10.4, 3.10.3, 3.10.1
      ((: "null" "true" "false"
@@ -330,30 +330,30 @@
          (@ DecimalNumeral IntegerTypeSuffix)
          (@ HexNumeral IntegerTypeSuffix)
          (@ OctalNumeral IntegerTypeSuffix))
-      (syn-val 'literal lexeme start-pos end-pos))
+      (syn-val lexeme 'literal #f start-pos end-pos))
       
      ;; 3.10.5
-     (#\" (values 'string lexeme (position-offset start-pos) (get-syn-string input-port)))
+     (#\" (values lexeme 'string #f (position-offset start-pos) (get-syn-string input-port)))
 
      ;; 3.9
-     (Keyword (syn-val 'keyword lexeme start-pos end-pos))
+     (Keyword (syn-val lexeme 'keyword #f start-pos end-pos))
 
      ;; 3.8
-     (Identifier (syn-val 'identifier lexeme start-pos end-pos))
+     (Identifier (syn-val lexeme 'identifier #f start-pos end-pos))
 
      ;; 3.7
-     (SyntaxComment (syn-val 'comment lexeme start-pos end-pos))
+     (SyntaxComment (syn-val lexeme 'comment #f start-pos end-pos))
 
      ;; 3.6
-     ((+ WhiteSpace) (syn-val 'white-space lexeme start-pos end-pos))
+     ((+ WhiteSpace) (syn-val lexeme 'white-space #f start-pos end-pos))
 
      ;; 3.5
-     ((: (eof) #\032) (values 'eof "eof" start-pos end-pos))
+     ((: (eof) #\032) (values lexeme 'eof #f start-pos end-pos))
      
-     ((special) (syn-val 'error #f start-pos end-pos))
-     ((special-error) (syn-val 'error #f start-pos end-pos))     
-     ((special-comment) (syn-val 'comment #f start-pos end-pos))
+     ((special) (syn-val "" 'error #f start-pos end-pos))
+     ((special-error) (syn-val "" 'error #f start-pos end-pos))     
+     ((special-comment) (syn-val "" 'comment #f start-pos end-pos))
      
-     ((- #\000 #\377) (syn-val 'error lexeme start-pos end-pos))
+     ((- #\000 #\377) (syn-val lexeme 'error #f start-pos end-pos))
      ))
   )

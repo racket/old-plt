@@ -14,17 +14,21 @@
     (define do-help
       (lambda ()
 	(mred:open-hyper-view (string-append
-			       "file:/"
+			       "file:"
 			       (build-path mred:plt-home-directory
 					   "doc"
 					   "drscheme"
 					   "index.htm")))))
 
-    (define frame-group (make-object mred:frame-group%))
+    (define frame-group
+      (make-object
+	  (class-asi mred:frame-group%
+	    (public
+	      [frame% unit-frame%]))))
     (send frame-group set-empty-callback mred:exit)
     
     (define frame%
-      (class mred:simple-menu-frame% (name snip)
+      (class mred:simple-menu-frame% (name snip [arg-group frame-group])
 	(rename [super-make-root-panel make-root-panel]
 		[super-on-close on-close]
 		[super-make-menu-bar make-menu-bar])
@@ -32,8 +36,10 @@
 	(public
 	  [on-close
 	   (lambda ()
-	     (and (super-on-close)
-		  (send group remove-frame this)))])
+	     (let ([super (super-on-close)]
+		   [grp (send group remove-frame this)])
+	       (printf "on-close: super: ~a grp: ~a~n" super grp)
+	       (and super grp)))])
 	(public
 	  [root-panel #f]
 	  [make-root-panel
@@ -81,7 +87,7 @@
 		   (lambda ()
 		     (make-object drscheme:compound-unit:frame% #f #f))))]
 
-	  [group frame-group]
+	  [group arg-group]
 	  [file-menu:open (lambda () (mred:open-file group))])
 
 	(sequence 
@@ -508,4 +514,4 @@
   (mred:insert-format-handler "Units"
                               (list "ss")
 				(opt-lambda ([name null] [group frame-group])
-				  (make-object unit-frame% name group #f)))))
+				  (make-object unit-frame% name #f group)))))

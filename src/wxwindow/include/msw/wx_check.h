@@ -14,13 +14,14 @@
 
 #include "wb_check.h"
 
-// Checkbox item (single checkbox)
+// Checkbox item
 class wxBitmap;
 class wxCheckBox: public wxbCheckBox
 {
  public:
-  int checkWidth ;
-  int checkHeight ;
+  int checkWidth;
+  int checkHeight;
+
   wxCheckBox(wxPanel *panel, wxFunction func, char *Title,
              int x = -1, int y = -1, int width = -1, int height = -1,
              long style = 0, char *name = "checkBox");

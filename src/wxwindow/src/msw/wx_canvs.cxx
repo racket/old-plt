@@ -18,7 +18,6 @@ extern char wxCanvasClassName[];
 wxCanvas::wxCanvas (void)
 {
   wxWinType = wxTYPE_XWND;
-  clipping = FALSE;
   handle = NULL;
   window_parent = NULL;
   horiz_units = 0;
@@ -39,7 +38,6 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 {
   wxWinType = wxTYPE_XWND;
   windowStyle = style;
-  clipping = FALSE;
   wxWnd *cparent = NULL;
   if (parent)
     cparent = (wxWnd *) parent->handle;

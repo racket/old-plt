@@ -28,7 +28,7 @@ class wxApp: public wxbApp
  public:
   HANDLE hInstance;
   MSG current_msg;
-  BOOL keep_going ;
+  BOOL keep_going;
 
   // this variable holds the display mode, which is
   // passed to the WinMain function.
@@ -40,8 +40,8 @@ class wxApp: public wxbApp
   virtual int MainLoop(void);
   void ExitMainLoop(void);
   Bool Initialized(void);
-  virtual Bool Pending(void) ;
-  virtual void Dispatch(void) ;
+  virtual Bool Pending(void);
+  virtual void Dispatch(void);
 
   virtual BOOL DoMessage(void);
   virtual BOOL ProcessMessage(MSG* pMsg);

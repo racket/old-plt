@@ -12,36 +12,13 @@
 #ifndef wx_itemph
 #define wx_itemph
 
-/* When implementing a new item, be sure to:
- *
- * - add the item to the parent panel
- * - set window_parent to the parent
- * - NULL any extra child window pointers not created for this item
- *   (e.g. label control that wasn't needed)
- * - delete any extra child windows in the destructor (e.g. label control)
- * - implement GetSize and SetSize
- * - to find panel position if coordinates are (-1, -1), use GetPosition
- * - call AdvanceCursor after creation, for panel layout mechanism.
- *
- */
-
 #include "wx_item.h"
 #include "wx_privt.h"
 #include "wx_utils.h"
 
- /*
-  * If we have Fafa lib, include header.
-  * else, force Windows Look
-  */
-
 #include "fafa.h"
 #include "fafapriv.h" //added by Chubraev 
 
-/*
- * Decide what window classes we're going to use
- * for this combination of CTl3D/FAFA settings
- */
- 
 #define STATIC_CLASS     "STATIC"
 #define STATIC_FLAGS     (SS_LEFT|WS_CHILD|WS_VISIBLE)
 #define CHECK_CLASS      "wxBUTTON"

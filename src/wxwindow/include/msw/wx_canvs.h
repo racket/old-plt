@@ -18,11 +18,6 @@
 class wxCanvas: public wxbCanvas
 {
  public:
-  Bool clipping;
-  int clip_x1;
-  int clip_y1;
-  int clip_x2;
-  int clip_y2;
 
   wxCanvas(void);
   wxCanvas(wxWindow *parent, int x=-1, int y=-1, int width=-1, int height=-1,

@@ -9,8 +9,6 @@
  * Renovated by Matthew for MrEd, 1995-2000
  */
 
-/* sccsid[] = "%W% %G%" */
-
 
 #ifndef wx_dch
 #define wx_dch
@@ -19,7 +17,7 @@
 #include "wb_dc.h"
 
 #ifdef IN_CPROTO
-typedef       void    *wxDC ;
+typedef       void    *wxDC;
 typedef       void    *wxPrinterDC;
 #else
 
@@ -30,8 +28,6 @@ class wxRegion;
 // with minimum extra functionality.
 class wxDC: public wxbDC
 {
-  DECLARE_ABSTRACT_CLASS(wxDC)
-
  public:
   Bool dont_delete;
   Bool screen_font;
@@ -62,19 +58,19 @@ class wxDC: public wxbDC
   wxDC(void);
   ~wxDC(void);
 
-  virtual void BeginDrawing(void) ;
-  virtual void EndDrawing(void) ;
+  virtual void BeginDrawing(void);
+  virtual void EndDrawing(void);
 
-  void FloodFill(float x1, float y1, wxColour *col, int style=wxFLOOD_SURFACE) ;
-  Bool GetPixel(float x1, float y1, wxColour *col) ;
-  void SetPixel(float x1, float y1, wxColour *col) ;
+  void FloodFill(float x1, float y1, wxColour *col, int style=wxFLOOD_SURFACE);
+  Bool GetPixel(float x1, float y1, wxColour *col);
+  void SetPixel(float x1, float y1, wxColour *col);
 
   inline void BeginSetPixel() {}
   inline void EndSetPixel() {}
 
   void DrawLine(float x1, float y1, float x2, float y2);
   void IntDrawLine(int x1, int y1, int x2, int y2);
-  void CrossHair(float x, float y) ;
+  void CrossHair(float x, float y);
   void DrawArc(float x1,float y1,float x2,float y2,float xc,float yc);
   void DrawPoint(float x, float y);
 
@@ -160,8 +156,6 @@ class wxDC: public wxbDC
 class wxPrinterDC: public wxDC
 {
  public:
-  DECLARE_CLASS(wxPrinterDC)
-
   // Create a printer DC
   wxPrinterDC(wxWindow *parent = NULL, 
 	      char *driver = NULL, char *device = NULL, char *output = NULL, Bool interactive = TRUE);

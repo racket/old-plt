@@ -9,14 +9,8 @@
  * Renovated by Matthew for MrEd, 1995-2000
  */
 
-/* sccsid[] = "%W% %G%" */
-
 #ifndef wx_cmdlgh
 #define wx_cmdlgh
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include "wx_setup.h"
 
@@ -26,14 +20,8 @@
 // Windows common dialog header
 #include "commdlg.h"
 
-
-/*
- * The following code was formerly in wx_dialg.h.
- */
- 
-
 int wxMessageBox(char *message, char *caption = "Message", long style = wxOK|wxCENTRE,
-  wxWindow *parent = NULL, int x = -1, int y = -1);
+		 wxWindow *parent = NULL, int x = -1, int y = -1);
 
 // An extended version of wxFileSelector
 

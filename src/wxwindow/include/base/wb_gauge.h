@@ -24,12 +24,8 @@ class wxbGauge: public wxItem
            int width = -1, int height = -1, long style = 0, char *name = "gauge");
   ~wxbGauge(void);
 
-  virtual void SetShadowWidth(int w) = 0;
-  virtual void SetBezelFace(int w) = 0;
   virtual void SetRange(int r) = 0;
   virtual void SetValue(int pos) = 0;
-//  void SetButtonColour(int w) = 0;
-//  void SetBackgroundColour(int w) = 0;
 };
 
 #endif // wb_gaugeh

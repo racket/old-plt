@@ -26,12 +26,8 @@ class wxGauge: public wxbGauge
   Bool Create(wxPanel *panel, char *label, int range, int x=-1, int y=-1,
            int width=-1, int height=-1, long style=0, char *name="gauge");
 
-  void SetShadowWidth(int w);
-  void SetBezelFace(int w);
   void SetRange(int r);
   void SetValue(int pos);
-  void SetButtonColour(wxColour *col);
-  void SetBackgroundColour(wxColour *col);
 
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
   void GetSize(int *width, int *height);

@@ -25,7 +25,6 @@ class wxCanvasDC: public wxbCanvasDC
   // Create a DC corresponding to a canvas
   wxCanvasDC(wxCanvas *canvas);
   void GetClippingBox(float *x,float *y,float *w,float *h) ;
-  /* MATTHEW: [8] */
   void GetClippingRegion(float *x, float *y, float *width, float *height);
 
   void GetSize(float *width, float *height);
@@ -34,15 +33,6 @@ class wxCanvasDC: public wxbCanvasDC
 	      wxBitmap *source, float xsrc, float ysrc);
 
   ~wxCanvasDC(void);
-};
-
-// This class specific to Windows 3.1
-class wxScreenDC: public wxCanvasDC
-{
- public:
-  // Create a DC representing the whole screen
-  wxScreenDC(void);
-  ~wxScreenDC(void);
 };
 
 #endif // wx_dccan

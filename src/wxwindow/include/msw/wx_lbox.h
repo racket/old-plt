@@ -44,8 +44,6 @@ class wxListBox: public wxbListBox
 
   virtual void ChangeToGray(Bool gray);
 
-  
-
   void Deselect(int N);
 
   // For single choice list item only
@@ -73,9 +71,6 @@ class wxListBox: public wxbListBox
 
   void InsertItems(int nItems, char **Items, int pos);
 
-  void SetBackgroundColour(wxColour*col) ;
-  void SetLabelColour(wxColour*col) ;
-  void SetButtonColour(wxColour*col) ;
   // Windows-specific code to set the horizontal extent of
   // the listbox, if necessary. If s is non-NULL, it's
   // used to calculate the horizontal extent.

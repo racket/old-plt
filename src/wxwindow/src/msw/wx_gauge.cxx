@@ -228,16 +228,6 @@ Bool wxGauge::Show(Bool show)
   return TRUE;
 }
 
-void wxGauge::SetShadowWidth(int w)
-{
-  SendMessage((HWND)ms_handle, ZYZG_SETWIDTH3D, w, 0);
-}
-
-void wxGauge::SetBezelFace(int w)
-{
-  SendMessage((HWND)ms_handle, ZYZG_SETBEZELFACE, w, 0);
-}
-
 void wxGauge::SetRange(int r)
 {
   SendMessage((HWND)ms_handle, ZYZG_SETRANGE, r, 0);
@@ -282,4 +272,3 @@ void wxGauge::ChangeToGray(Bool gray)
   if (static_label)
     ::EnableWindow(static_label, !gray);
 }
-

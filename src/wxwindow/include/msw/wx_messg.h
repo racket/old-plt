@@ -29,10 +29,6 @@ class wxMessage: public wxbMessage
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
   void SetLabel(char *label);
 
-  void SetBackgroundColour(wxColour*col) ;
-  void SetLabelColour(wxColour*col) ;
-  void SetButtonColour(wxColour*col) ;
-
   wxBitmap *bm_label;
 };
 

@@ -9,12 +9,10 @@
  * Renovated by Matthew for MrEd, 1995-2000
  */
 
-/* sccsid[] = "@(#)wx.h	1.2 5/9/94" */
-
 #ifndef wx_wxh
 #define wx_wxh
 
-#include "wx_setup.h"           // Which features to include - user editable
+#include "wx_setup.h"           // Which features to include
 #include "common.h"
 
 #include "wx_win.h"
@@ -25,7 +23,6 @@
 #include "wx_dcps.h"
 #include "wx_canvs.h"
 #include "wx_panel.h"
-#include "wx_dcpan.h"
 #include "wx_buttn.h"
 #include "wx_check.h"
 #include "wx_choic.h"
@@ -42,20 +39,16 @@
 #include "wx_dialg.h"
 #include "wx_utils.h"
 #include "wx_cmdlg.h"
-#include "wx_res.h"
 
-#ifdef wx_msw
 #include "wx_wmgr.h"
 #include "wx_privt.h"
 #include "wx_itemp.h"
 
-/* I don't know where this is coming from, but it makes a mess. */
+/* Windows changes GetStyle to GetStyleA, etc... */
 #undef GetStyle
 #undef SetStyle
 #undef GetFont
 #undef SetFont
 #undef SetBitmap
-
-#endif
 
 #endif // wx_wxh

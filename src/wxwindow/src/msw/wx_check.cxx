@@ -88,9 +88,6 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *
 				   CHECK_FLAGS | WS_CLIPSIBLINGS,
 				   0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 				   wxhInstance, NULL);
-#if CTL3D
-    Ctl3dSubclassCtl(wx_button);
-#endif
   }
 
   SubclassControl(wx_button);

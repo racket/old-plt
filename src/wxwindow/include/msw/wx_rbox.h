@@ -15,7 +15,7 @@
 #include "wb_rbox.h"
 
 // List box item
-class wxBitmap ;
+class wxBitmap;
 class wxRadioBox: public wxbRadioBox
 {
  private:
@@ -24,10 +24,10 @@ class wxRadioBox: public wxbRadioBox
   Bool selected;
   HWND *radioButtons;
   wxBitmap **bm_labels;
-  int majorDim ;
-  long style ;
-  int *radioWidth ;  // for bitmaps
-  int *radioHeight ;
+  int majorDim;
+  long style;
+  int *radioWidth;  // for bitmaps
+  int *radioHeight;
   Bool *buttonEnabled;
 
   wxRadioBox(wxPanel *panel, wxFunction func, char *Title,
@@ -61,18 +61,14 @@ class wxRadioBox: public wxbRadioBox
   void GetPosition(int *x, int *y);
   char *GetLabel(void);
   void SetLabel(char *label);
-  void SetLabel(int item, char *label) ;
-  void SetLabel(int item, wxBitmap *bitmap) ;
-  char *GetLabel(int item) ;
+  void SetLabel(int item, char *label);
+  void SetLabel(int item, wxBitmap *bitmap);
+  char *GetLabel(int item);
   Bool Show(Bool show);
   void SetFocus(void);
   void Enable(int item, Bool enable);
   void Enable(Bool enable);
-  void Show(int item, Bool show) ;
-
-  void SetBackgroundColour(wxColour*col) ;
-  void SetLabelColour(wxColour*col) ;
-  void SetButtonColour(wxColour*col) ;
+  void Show(int item, Bool show);
 
   int ButtonFocus(int i);
 };

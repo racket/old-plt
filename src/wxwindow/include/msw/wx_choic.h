@@ -44,16 +44,9 @@ class wxChoice: public wxbChoice
 
   BOOL MSWCommand(UINT param, WORD id);
 
-  void SetBackgroundColour(wxColour*col) ;
-  void SetLabelColour(wxColour*col) ;
-  void SetButtonColour(wxColour*col) ;
-
   virtual void ChangeToGray(Bool gray);
   
   virtual Bool Show(Bool s);
-
-  inline void SetColumns(int WXUNUSED(n) = 1 ) { /* No effect */ } ;
-  inline int GetColumns(void) { return 1 ; };
 };
 
 #endif // wx_choich

@@ -23,9 +23,9 @@ class wxMenuBar;
 class wxMenu: public wxbMenu
 {
  private:
-  Bool mustBeBreaked ;
+  Bool mustBeBreaked;
  public:
-  HANDLE save_ms_handle ; // Used for Enable() on popup
+  HANDLE save_ms_handle; // Used for Enable() on popup
 
   wxMenu(char *Title = NULL, wxFunction func = NULL);
   ~wxMenu(void);
@@ -37,13 +37,12 @@ class wxMenu: public wxbMenu
   Bool Checked(long Id);
   void SetTitle(char *label);
   char *GetTitle(void);
-  inline void SetLabel(char *label) { wxItem::SetLabel(label); } ;
+  inline void SetLabel(char *label) { wxItem::SetLabel(label); };
   void SetLabel(long Id, char *label);
   inline char *GetLabel(void) {return wxItem::GetLabel(); };
   char *GetLabel(long Id);
-  void Break(void) ;
+  void Break(void);
 
-  /* MATTHEW: [6] */
   Bool DeleteItem(long, int);
   Bool Delete(long Id);
   Bool DeleteByPosition(int pos);
@@ -57,8 +56,6 @@ class wxMenu: public wxbMenu
   BOOL MSWCommand(UINT param, WORD id);
 };
 
-// Menu Bar (a la Windows)
-#define MENU_BAR_PANEL_HEIGHT 30
 class wxFrame;
 class wxMenuBar:public wxbMenuBar
 {
@@ -74,12 +71,12 @@ class wxMenuBar:public wxbMenuBar
   void EnableTop(int pos, Bool Flag);
   void Check(long Id, Bool Flag);
   Bool Checked(long Id);
-  inline void SetLabel(char *label) { wxItem::SetLabel(label); } ;
-  void SetLabel(long Id,char *label) ;
+  inline void SetLabel(char *label) { wxItem::SetLabel(label); };
+  void SetLabel(long Id,char *label);
   inline char *GetLabel(void) {return wxItem::GetLabel(); };
-  char *GetLabel(long Id) ;
-  void SetLabelTop(int pos, char *label) ;
-  char *GetLabelTop(int pos) ;
+  char *GetLabel(long Id);
+  void SetLabelTop(int pos, char *label);
+  char *GetLabelTop(int pos);
 
   wxMenuItem *FindItemForMenuId(WORD menuId);
 

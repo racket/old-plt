@@ -1,7 +1,6 @@
 (module gl mzscheme
   (require (lib "foreign.ss")
            "gl-types.ss"
-           "gl-info.ss"
            "gl-vectors.ss")
   
   (unsafe!)

@@ -502,6 +502,15 @@
 		       [else (super-on-local-event event)])
 		     (super-on-local-event event))))]))))
 
+
+    (define syncheck-bitmap
+      (drscheme:unit:make-bitmap
+       (build-path mred:constants:plt-home-directory
+		   "icons"
+		   "syncheck.bmp")
+       (mred:debug:if 'mrslatex
+		      "CS"
+		      "Check Syntax")))
     (define new%
       (class (drscheme:parameters:current-frame%) args
 	(inherit button-panel definitions-edit interactions-edit)
@@ -806,13 +815,7 @@
 		 (wx:end-busy-cursor)))))]
 	  [button (make-object mred:button% button-panel
 			       (lambda (button evt) (button-callback))
-			       (drscheme:unit:make-bitmap
-				(build-path mred:constants:plt-home-directory
-					    "icons"
-					    "syncheck.bmp")
-				(mred:debug:if 'mrslatex
-					       "CS"
-					       "Check Syntax")))])
+			       syncheck-bitmap)])
 	(sequence
 	  (send definitions-edit set-styles-fixed #t)
 	  (send button-panel change-children

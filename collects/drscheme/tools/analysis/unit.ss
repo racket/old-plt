@@ -29,6 +29,13 @@
 		  plt:parameters^))
 	   (invoke-spidey frame)))))
 
+    (define spidey-bitmap
+      (drscheme:unit:make-bitmap
+       (build-path mred:constants:plt-home-directory
+		   "icons"
+		   "mrspidey.bmp")
+       "Analyze"))
+
     (define spidey-frame%
       (letrec ()
 	(class (drscheme:parameters:current-frame%) args
@@ -38,11 +45,7 @@
 	    [button (make-object mred:button%
 				 button-panel
 				 (lambda (button evt) (invoke-spidey this))
-				 (drscheme:unit:make-bitmap
-				  (build-path mred:constants:plt-home-directory
-					      "icons"
-					      "mrspidey.bmp")
-				  "Analyze"))])
+				 spidey-bitmap)])
 	  (sequence
 	    (send button-panel change-children
 		  (lambda (l)

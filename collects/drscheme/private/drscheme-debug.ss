@@ -166,7 +166,7 @@
       (newline)
       ((dynamic-require '(lib "errortrace.ss" "errortrace") 'output-profile-results) #f #f))
     (send t insert (get-output-string p))
-    (with-handlers ([not-break-exn?
+    (with-handlers ([exn:fail:filesystem?
 		     (lambda (x)
 		       (send t insert "\ndidn't save transcript in /home/robby/OUTPUT\n  ")
 		       (send t insert (if (exn? x)

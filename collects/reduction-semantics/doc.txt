@@ -448,7 +448,7 @@ from the menus.
 > (reduction-steps-cutoff)
 > (reduction-steps-cutoff number)
 
-A parameter that controls how many steps the `gui' function
+A parameter that controls how many steps the `traces' function
 takes before stopping.
 
 > (initial-font-size)

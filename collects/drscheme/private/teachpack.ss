@@ -58,7 +58,7 @@
       ;; to run properly
       (define (install-teachpack cache-entry)
         (let ([filename (cache-entry-filename cache-entry)])
-          (with-handlers ([not-break-exn?
+          (with-handlers ([exn:fail?
                            (lambda (exn)
                              (set-cache-entry-filename! cache-entry #f)
                              (show-teachpack-error filename exn))])

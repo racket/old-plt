@@ -47,6 +47,15 @@
   
   (define drs-bindings-keymap (make-object mred:keymap%))
   (send drs-bindings-keymap add-function
+        "execute"
+        (lambda (obj evt)
+          (when (is-a? obj mred:editor<%>)
+            (let ([canvas (send obj get-canvas)])
+              (when canvas
+                (let ([frame (send canvas get-top-level-window)])
+                  (when (is-a? frame drscheme:unit:frame%)
+                    (send frame execute-callback))))))))
+  (send drs-bindings-keymap add-function
         "toggle-focus-between-definitions-and-interactions"
         (lambda (obj evt)
           (when (is-a? obj mred:editor<%>)
@@ -59,9 +68,9 @@
                        (send (ivar frame interactions-canvas) focus)]
                       [else
                        (send (ivar frame definitions-canvas) focus)]))))))))
-  (send drs-bindings-keymap map-function
-        "c:x;o"
-        "toggle-focus-between-definitions-and-interactions")
+
+  (send drs-bindings-keymap map-function "c:x;o" "toggle-focus-between-definitions-and-interactions")
+  (send drs-bindings-keymap map-function "f5" "execute")
   
   ;; drs-bindings-keymap-mixin :
   ;;   ((implements editor:keymap<%>) -> (implements editor:keymap<%>))

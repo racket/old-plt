@@ -16,9 +16,10 @@
 
 (load-relative "pretty.ss")
 
-(load-relative "shared.ss")
-
 (load-relative "contracts.ss")
+
+; Next-to-last, because it `require's mzscheme
+(load-relative "shared.ss")
 
 ; Last - so macros are not present by accident
 (load-relative "macrolib.ss")

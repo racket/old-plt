@@ -194,6 +194,9 @@
 # if defined(__alpha__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "alpha-linux"
 # endif
+# if defined(__hppa__)
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "hppa-linux"
+# endif
 # ifndef SCHEME_PLATFORM_LIBRARY_SUBPATH
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "unknown-linux"
 # endif
@@ -208,10 +211,15 @@
 
 # define HAS_LINUX_IOB
 
-# define STACK_GROWS_DOWN
-
 # if defined(__alpha)
 #  define SIXTY_FOUR_BIT_INTEGERS
+# endif
+
+# if defined(__hppa__)
+#  define STACK_GROWS_UP
+#  define SIXTY_FOUR_BIT_INTEGERS
+# else
+#  define STACK_GROWS_DOWN
 # endif
 
 # define USE_IEEE_FP_PREDS
@@ -402,7 +410,7 @@
 
   /************** HP/UX with cc ****************/
 
-#if defined(_PA_RISC1_0) || defined(_PA_RISC1_1)
+#if (defined(_PA_RISC1_0) || defined(_PA_RISC1_1)) && !defined(linux)
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "parisc-hpux"
 

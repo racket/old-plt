@@ -929,7 +929,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	  }
 	  
 	  if (m2) {
-	    char *phase, buf[32], *err;
+	    char *phase, buf[32];
 
 	    if (!menv->phase)
 	      phase = "";

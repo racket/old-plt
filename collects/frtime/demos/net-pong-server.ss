@@ -15,27 +15,27 @@
           [neg-x (lambda (v) (make-posn (- (posn-x v)) (posn-y v)))]
           [neg-y (lambda (v) (make-posn (posn-x v) (- (posn-y v))))]
           [paddle2-pos (make-posn (clip (posn-x mouse-pos) 230 370) (clip (posn-y mouse-pos) 30 370))]
-          [paddle1-pos (switch (make-posn 30 200)
-                               (left-clicks . ==> .
+          [paddle1-pos (switch (left-clicks . ==> .
                                             (lambda (dummy)
                                               (hold ((remote-reg
                                                       (value-now slave)
                                                       'paddle1-pos)
                                                      . ==> .
                                                      (lambda (l) (make-posn (first l) (second l))))
-                                                    (make-posn 30 200)))))]
+                                                    (make-posn 30 200))))
+                               (make-posn 30 200))]
           [collide (match-lambda
                      [(_ mp p)
                       (let ([u (normalize (posn- mp p))])
                         (lambda (v)
                           (posn- v (posn* u (* 2 (posn-dot v u))))))])])
       (letrec ([pos1 (switch
-                      (posn+ (make-posn 100 100) (posn-integral vel1))
                       ((merge-e
                         (when-e (> (posn-x pos1) 500))
                         (when-e (< (posn-x pos1) -100))
                         (when-e (> (posn-y pos1) 500))
-                        (when-e (< (posn-y pos1) -100))) . ==> . (lambda (dummy) (posn+ (make-posn 100 100) (posn-integral vel1)))))]
+                        (when-e (< (posn-y pos1) -100))) . ==> . (lambda (dummy) (posn+ (make-posn 100 100) (posn-integral vel1))))
+                      (posn+ (make-posn 100 100) (posn-integral vel1)))]
                [vel1 (accum-b
                       (merge-e
                        ((merge-e

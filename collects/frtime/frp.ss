@@ -9,6 +9,7 @@
 ; handle structs, vectors (done?)
 ; localized exception-handling mechanism
 ; precise depths even when switching, proper treatment of cycles
+; revisit cons, vector [, structs]
 ;
 ; generalize and improve notion of time
 ;  (e.g., combine seconds & milliseconds,
@@ -173,20 +174,6 @@
         (signal-depth v)
         0))
   
-  (define proc->signal/marks
-    (opt-lambda ([thunk void]
-                 [marks (current-continuation-marks)])
-      (lambda producers
-        (let ([sig (make-signal
-                    undefined empty #f thunk
-                    (add1 (apply max 0 (map safe-signal-depth
-                                            producers)))
-                    marks)])
-          (when (cons? producers)
-            (register sig producers))
-          (set-signal-value! sig (safe-eval (thunk)))
-          sig))))
-  
   (define (proc->signal thunk . producers)
     (let ([sig (make-signal
                 undefined empty #f thunk
@@ -218,9 +205,9 @@
                       [else (else-thunk)]))])
       (if (behavior? test)
           (switch
-           (if-fun (value-now test))
            ((changes test) . ==> .
-                           if-fun))
+                           if-fun)
+           (if-fun (value-now test)))
           (if-fun test))))
   
   (define (weakly-cache thunk)
@@ -438,6 +425,7 @@
                                  (let loop ()
                                    (extract (lambda (the-event) proc (loop))
                                             streams))
+                                 ;(set! streams (map signal-value args))
                                  out)])
                    (apply proc->signal thunk args))))]))
   
@@ -453,24 +441,25 @@
                                 (set! out (erest out)))])
                    (proc->signal (lambda the-args expr out) dep ...))))]))
   
-  ; switch : behavior event[behavior] -> behavior
-  (define (switch init e)
-    (let ([e-b (hold e init)])
-      (rec ret
-        (proc->signal
-         (case-lambda
-           [()
-            (when (not (eq? init (signal-value e-b)))
-              (unregister ret init)
-              (set! init (value-now e-b))
-              (register ret init)
-              (set-signal-depth! ret (max (signal-depth ret)
-                                          (add1 (safe-signal-depth init)))))
-            (value-now init)]
-           [(msg) e])
-         e-b init))))
+  ; switch : event[behavior] behavior -> behavior
+  (define switch
+    (opt-lambda (e [init undefined])
+      (let ([e-b (hold e init)])
+        (rec ret
+          (proc->signal
+           (case-lambda
+             [()
+              (when (not (eq? init (signal-value e-b)))
+                (unregister ret init)
+                (set! init (value-now e-b))
+                (register ret init)
+                (set-signal-depth! ret (max (signal-depth ret)
+                                            (add1 (safe-signal-depth init)))))
+              (value-now init)]
+             [(msg) e])
+           e-b init)))))
   
-  ; event* -> event
+  ; event ... -> event
   (define (merge-e . args)
     (event-processor
      (emit the-event)
@@ -527,12 +516,12 @@
   ; -=> : event[a] b -> event[b]
   (define-syntax -=>
     (syntax-rules ()
-      [(_ e k-e) (==> e (lambda _ k-e))]))
+      [(_ e k-e) (==> e (lambda (_) k-e))]))
   
   ; =#> : event[a] (a -> bool) -> event[a]
   (define (e . =#> . p)
     (event-processor
-     (when (p the-event)
+     (when (value-now (p the-event))
        (emit the-event))
      (list e)))
   
@@ -571,16 +560,15 @@
        (emit ret))
      (list e)))
   
-
-  ; event[a] b (a b -> b) -> signal[b]
+  ; event[a] b (a b -> b) -> behavior[b]
   (define (collect-b ev init trans)
     (hold (collect-e ev init trans) init))
   
-  ; event[(a -> a)] a -> signal[a]
+  ; event[(a -> a)] a -> behavior[a]
   (define (accum-b ev init)
     (hold (accum-e ev init) init))
   
-  ; hold : a event[a] -> signal[a]
+  ; hold : a event[a] -> behavior[a]
   (define hold 
     (opt-lambda (e [init undefined])
       (proc->signal
@@ -803,7 +791,7 @@
                   (loop)]
                  [msg
                   (fprintf (current-error-port)
-                           "msg not understood: ~a~n"
+                           "frtime engine: msg not understood: ~a~n"
                            msg)
                   (loop)]))
              
@@ -984,7 +972,7 @@
   ; new-cell : behavior[a] -> behavior[a] (cell)
   (define new-cell
     (opt-lambda ([init undefined])
-      (switch init (event-receiver))))
+      (switch (event-receiver) init)))
     
   ; set-cell! : cell[a] a -> void
   (define (set-cell! ref beh)

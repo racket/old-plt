@@ -184,7 +184,9 @@
   (define (read-response in)
     (let* ((t (regexp-replace* "#" (read-line in) " ^ "))
            (s (open-input-string t)))
-      (with-handlers ((exn:user? (lambda (ex) (printf "~a~n" t))))
+      (with-handlers ((exn:user? (lambda (ex)
+                                   (printf "bad-string ~a~n" t)
+                                   (raise ex))))
         (response-parser (lambda ()
                            (let ((i (read s)))
                              (cond

@@ -37,7 +37,7 @@
          (if (> (move-weight move) (move-weight (qelt-move current)))
              (let ((q (make-qelt (qelt-left current) move current)))
                (cond 
-                 ((and (= (in-queue) 6) (eq? (current queue-head)))
+                 ((and (= (in-queue) 6) (eq? current (queue-head)))
                   (when (> (move-weight move) (best-weight))
                     (best-cmd (move-orig move))
                     (best-weight (move-weight move)))
@@ -74,7 +74,7 @@
       (qelt-move current)))
   
   (define (remove-queue-tail)
-    (let loop ((current queue-head))
+    (let loop ((current (queue-head)))
       (if (null? (qelt-right current))
           (set-qelt-right! (qelt-left current) null)
           (loop (qelt-right current)))))
@@ -134,6 +134,8 @@
               (when w-weight (maker w-weight x (sub1 y) w-bid))))))
   
   (define (compute-move packages robots)
+    (display "calling compute-move") (newline)
+    (display (get-player-x))(display " : ")(display (get-player-y))(newline)
     (queue-head null)
     (in-queue 0)
     (best-cmd null)
@@ -145,18 +147,20 @@
     (for-each enqueue 
               (generate-first-moves (get-player-x) (get-player-y) packages))
     (search-node (dequeue))
+    (printf "~a~n" (best-cmd))
+    (printf "~a~n" (player-money))
+    (best-cmd)
     )
 
-  (display (best-cmd))(newline)
   
   (define (search-node move)
-    (for-each enqueue (generate-moves (move-x move) 
-                                      (move-y move) 
-                                      (make-cord (move-x move) (move-y move)) 
-                                      (move-back move) 
-                                      (add1 (move-step move))  
-                                      (move-orig move)))
-    (display (best-cmd))(newline)
-    (search-node (dequeue)))
+    (when (< (move-step move) 10)
+      (for-each enqueue (generate-moves (move-x move) 
+                                        (move-y move) 
+                                        (make-cord (move-x move) (move-y move)) 
+                                        (move-back move) 
+                                        (add1 (move-step move))  
+                                        (move-orig move)))
+      (search-node (dequeue))))
   
   )

@@ -520,7 +520,9 @@
                       (setup-printf "~aInstalling ~a"
                                     (case part [(pre) "Pre-"] [(post) "Post-"] [else ""])
                                     (cc-name cc))
-                      (installer plthome)))))))
+		      (if (procedure-arity-includes? installer 2)
+			  (installer plthome (cc-path cc))
+			  (installer plthome))))))))
            ccs-to-compile)))
       
       (do-install-part 'pre)

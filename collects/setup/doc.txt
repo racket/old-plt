@@ -117,14 +117,14 @@ Additional "info.ss" fields trigger additional setup actions:
 >  mred-launcher-flags - a list of command-line flag lists, in
    parallel to `mred-launcher-names' (see above).
 
-> install-collection - a string or a path for a library
-   module relative to the collection. The module must
-   provide `installer' as a procedure that accepts a
-   directory path argument (the path to PLT installation
-   directory) and performs collection-specific installation
-   work.  This procedure should avoid unnecessary work in
-   the case that it is called multiple times for the same
-   installation.
+>  install-collection - a string or a path for a library module
+   relative to the collection. The module must provide `installer' as
+   a procedure that accepts either one or two arguments. The first
+   argument is a directory path to the PLT installation directory; the
+   second argument, if accecpted, is a path to the collection's own
+   directory. The procedure should perform collection-specific
+   installation work, and it should avoid unnecessary work in the case
+   that it is called multiple times for the same installation.
 
 >  pre-install-collection - like `install-collection', except that the
    corresponding installer is called *before* normal the .zo build,

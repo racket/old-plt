@@ -17,22 +17,13 @@ in several significant ways:
  * The core syntax system is hygienic; `define-macro' has been
    replaced by `define-syntax'.
 
-   In general, there is no easy way to convert a `define-macro'
-   definition to `define-syntax', but re-writing an old-style macro
-   with `define-syntax' and `syntax-case' is usually easy. In some
-   cases, the following works:
+   The "defmacro.ss" library in the "mzlib" collection defines
+   `define-macro' for compatibility purposes:
 
-      (define-syntax define-macro
-        (lambda (stx)
-	  (syntax-case stx ()
-	    [(_ name proc)
-	     (syntax
-	      (define-syntax name
-	        (lambda (stx)
-		  (datum->syntax-object 
-                   (quote-syntax here)
-                   (apply proc 
-		          (cdr (syntax-object->datum stx)))))))])))
+       (require (lib "defmacro.ss"))
+
+   The macro procedure cannot access global bindings as in previous
+   versions, however. See the MzLib and MzScheme manuals for details.
 
  * Although MzScheme has no class system, there is still a "standard"
    one (i.e., the one that works with MrEd), and it is different from

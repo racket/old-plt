@@ -77,10 +77,13 @@ the Unix instructions below, but note the following:
     described below).
 
     Also, make sure that you have libraries and header files for Xft
-    and Cairo (v2.0 and up) if you would like support for font
+    and Cairo (v1.23 and up) if you would like support for font
     smoothing (Xft) and graphics smoothing (Cairo). These libraries
     are not distributed with PLT Scheme. The configure process checks
     automatically whether these libraries are available.
+
+    Finally, make sure that you are using GNU `make'. Specifically,
+    the content of the "foreign" subdirectory requires GNU `make'.
 
  1. Run the script `configure' (which is in the same directory as this
     README), usually with a --prefix=TARGETDIR command-line argument
@@ -105,10 +108,9 @@ the Unix instructions below, but note the following:
     MzScheme and/or MrEd. The current directory at the time
     `configure' is run will be used as working space for building the
     executables (independent of --prefix). This build directory does
-    not have to be in the plt/ tree, even for an "in-place" build, as
-    long as you use GNU make when building MrEd. It's ok to run
-    `configure' from its own directory (as in the example above), but
-    it's often better (if you use GNU make) to pick a separate build
+    not have to be in the plt/ tree, even for an "in-place"
+    build. It's ok to run `configure' from its own directory (as in
+    the example above), but it's often better to pick a separate build
     directory that is otherwise empty.
 
     The `configure' script accepts many other flags that adjust the
@@ -135,7 +137,7 @@ the Unix instructions below, but note the following:
     build directory (but the same source) for each platform or
     configuration.
 
- 2. Run `make'.
+ 2. Run `make'. [As noted in step 0, this must be GNU `make'.]
 
     With Cygwin, use `make --unix'.
 

@@ -115,7 +115,7 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
 
 //----------------------------------------------------------------------
 
-#define ALWAYS_USE_ATSU 1
+#define ALWAYS_USE_ATSU 0
 
 void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_spacing)
 {

@@ -370,11 +370,19 @@ static void ExtensionCallback(NavEventCallbackMessage callBackSelector,
 	  rec.cancelButton = 0;
 	  rec.position = kWindowAlertPositionParentWindowScreen;
 
+	  which = kAlertStdAlertCancelButton;
+
 	  err = StandardAlert(kAlertCautionAlert,
 			      "\pReally replace?",
 			      NULL,
 			      &rec,
 			      &which);
+
+	  if (which == kAlertStdAlertCancelButton) {
+	    printf("cancel\n");
+	    callBackParms->eventData.itemHit = -1;
+	    return;
+	  }
 	}
       }
     }
@@ -438,7 +446,7 @@ char *wxFileSelector(char *message, char *default_path,
 
     cbi = new wxCallbackInfo();
     cbi->initial_directory = default_path;
-    cbi->force_extension = NULL;
+    cbi->force_extension = ".txt";
 
     NavGetDefaultDialogCreationOptions(&dialogOptions);
     if (default_filename) 

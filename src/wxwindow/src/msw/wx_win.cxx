@@ -980,6 +980,7 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 {
   LRESULT res;
 
+  /* See mredmsw.cxx: */
   if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxWndProc))
     return res;
 
@@ -991,6 +992,7 @@ LONG APIENTRY wxDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
   LRESULT res;
 
+  /* See mredmsw.cxx: */
   if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxDlgProc))
     return res;
 

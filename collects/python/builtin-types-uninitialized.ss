@@ -37,6 +37,10 @@
   (define py-classmethod% (immutable-type 'classmethod))
   (define py-module% (immutable-type 'module))
   (define py-slice% (immutable-type 'slice))
+  
+  ;; exceptions
+  (define py-exception% (immutable-type #cs'Exception))
+  (define py-type-error% (immutable-type #cs'TypeError py-exception%))
 
 
   (define (python-add-members node assoc-list)

@@ -1,5 +1,7 @@
-(module built-in mzscheme
+#cs(module built-in mzscheme
   (require "primitives.ss"
+           "runtime-support.ss"
+           (lib "list.ss")
            (lib "etc.ss"))
   (provide object
            staticmethod
@@ -15,7 +17,9 @@
            range
            len
            (rename py-sqrt sqrt)
-           (rename py-map map))
+           (rename py-map map)
+           (rename py-filter filter)
+           isinstance)
   
   (define object py-object%)
   (define staticmethod py-static-method%)
@@ -46,7 +50,16 @@
                           (py-sequence%->list lst))
                     (map py-sequence%->list rest)))))
                   'map))
+     
+   (define py-filter (py-lambda 'filter (fn lst)
+                                (list->py-list% (filter (lambda (x)
+                                                          (py-call fn (list x)))
+                                                        (py-sequence%->list lst)))))
+     
+   (define isinstance (py-lambda 'isinstance (obj type)
+                                 (bool->py-number% (py-is-a? obj type))))
                   
-          
+
+
   
   )

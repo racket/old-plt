@@ -168,57 +168,6 @@
                              ,@(map (lambda (t)
                                       (assignment-so t rhs))
                                     targets)))))
-;        (printf "targets: ~a" targets)
-;        (->orig-so (if (= 1 (length targets)) ; simple assignment
-;                       (if (is-a? (car targets) tattribute-ref%)
-;                           `(,(py-so 'python-set-member!)
-;                                 ,(send ((class-field-accessor tattribute-ref% expression) (car targets))
-;                                              to-scheme)
-;                                 ',(send ((class-field-accessor tattribute-ref% identifier) (car targets))
-;                                              to-scheme)
-;                                 ,(send expression to-scheme))
-;                              ;; if it's bound, and the tid is not the same obj as this one,
-;                              ;; then we set the bound variable.
-;                              ;; otherwise we must declare it
-;                           `(,(if (and (send scope is-bound? (car targets))
-;                                       (not (eq? (send scope binding-tid (car targets))
-;                                                           (car targets))))
-;                                  'set!
-;                                  'define) ,(send (car targets) to-scheme)
-;                              ,(send expression to-scheme)))
-;                       ;; multiple assignment
-;                      (let* ([indexes (build-list (length targets) identity)]
-;                             [def-targs (filter (lambda (i)
-;                                                  (def-targ? (list-ref targets i)))
-;                                                indexes)]
-;                             [set-targs (filter (lambda (i)
-;                                                  (set-targ? (list-ref targets i)))
-;                                                indexes)]
-;                             [attr-targs (filter (lambda (i)
-;                                                   (attr-targ? (list-ref targets i)))
-;                                                 indexes)])
-;                        `(define-values ,(map (lambda (i)
-;                                                (send (list-ref targets i) to-scheme))
-;                                              def-targs)
-;                           (let ([rhs ,(send expression to-scheme)])
-;                            (begin ,@(map (lambda (i)
-;                                            `(set! ,(send (list-ref targets i) to-scheme)
-;                                                   (,(py-so 'python-index) rhs ,i)))
-;                                          set-targs)
-;                                   ,@(map (lambda (i)
-;                                            `(,(py-so 'python-set-member!)
-;                                             ,(send ((class-field-accessor tattribute-ref%
-;                                                                           expression) (list-ref targets i))
-;                                                    to-scheme)
-;                                             ',(send ((class-field-accessor tattribute-ref%
-;                                                                            identifier) (list-ref targets i))
-;                                                     to-scheme)
-;                                             (,(py-so 'python-index) rhs ,i)))
-;                                          attr-targs)
-;                                   (values ,@(map (lambda (i)
-;                                                    `(,(py-so 'python-index) rhs ,i))
-;                                                  def-targs)))))))))
-                                            
       
       (super-instantiate ())))
   
@@ -243,6 +192,12 @@
   ;; 6.4
   (define pass%
     (class statement%
+      
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so '(void)))
+      
       (super-instantiate ())))
   
   ;; 6.5
@@ -285,14 +240,18 @@
       ;; expression: (or/f false? (is-a?/c expression%)
       (init-field expression)
       
+      (define scope #f)
+      
       (define/override (set-bindings! enclosing-scope)
+        (set! scope enclosing-scope)
         (when expression
           (send expression set-bindings! enclosing-scope)))
       
       ;;daniel
       (inherit ->orig-so ->lex-so)
-      (define/override (to-scheme py-return)
-        (->orig-so `(,py-return ,(send expression to-scheme))))
+      (define/override (to-scheme); py-return)
+        ;(->orig-so `(,py-return ,(send expression to-scheme))))
+        (->orig-so `(,(send scope get-return-symbol) ,(send expression to-scheme))))
       
       (super-instantiate ())))
 
@@ -320,6 +279,25 @@
         (when type (send type set-bindings! enclosing-scope))
         (when parm (send parm set-bindings! enclosing-scope))
         (when traceback (send traceback set-bindings! enclosing-scope)))
+      
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+;        (->orig-so (if type
+;                       (let ([type (send type to-scheme)])
+;                         (if parm
+;                             (let ([parm (send parm to-scheme)])
+;                               (if traceback
+;                                   (let ([traceback (send traceback to-scheme)])
+;                                     `(raise (,(py-so 'py-create) type parm)))
+;                                   `(raise (,(py-so 'py-create) type parm))))
+;                             `(raise (,(py-so 'py-create) type))))
+;                       `(raise (,(py-so 'python-current-exception))))))
+        (->orig-so `(,(py-so 'py-raise) ,(and type
+                                             (send type to-scheme))
+                                        ,(and parm
+                                             (send parm to-scheme))
+                                        ,(and traceback
+                                             (send traceback to-scheme)))))
       
       (super-instantiate ())))
   
@@ -405,7 +383,10 @@
       (define (sub-stmt-map f)
         (map f statements))
       
+      (define scope #f)
+      
       (define/override (set-bindings! enclosing-scope)
+        (set! scope enclosing-scope)
         (for-each (lambda (s) (send s set-bindings! enclosing-scope)) statements))
 
       (define/override (check-break/cont enclosing-loop)
@@ -430,14 +411,15 @@
       
       ;;daniel
       (inherit ->orig-so)
-      (define/override (to-scheme)
-            (->orig-so (let ([py-return (gensym 'return)])
+      (define/override to-scheme
+        (opt-lambda ([escape-continuation-symbol (gensym 'unusable)])
+            (->orig-so ;(let ([py-return (gensym 'return)])
                          `(call-with-escape-continuation
-                           (lambda (,py-return)
-                             ,@(sub-stmt-map (lambda (s)
-                                               (if (is-a? s return%)
-                                                   (send s to-scheme py-return)
-                                                   (send s to-scheme)))))))))
+                           (lambda (,escape-continuation-symbol) ;py-return)
+                             ,@(sub-stmt-map (lambda (s) (send s to-scheme))))))))
+;                                               (if (is-a? s return%)
+;                                                   (send s to-scheme py-return)
+;                                                   (send s to-scheme)))))))))
          
       (super-instantiate ())))
   
@@ -468,6 +450,18 @@
       (define/override (check-break/cont enclosing-loop)
         (void (sub-stmt-map (lambda (s) (send s check-break/cont enclosing-loop)))))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (let ([s-test-bodies (map (lambda (test-body)
+                               `[(,(py-so 'py-if) ,(send (car test-body) to-scheme) #t #f)
+                                 ,(send (cadr test-body) to-scheme)])
+                             test-bodies)])
+        (->orig-so (if else
+                       `(cond
+                          ,@s-test-bodies
+                          [else ,(send else to-scheme)])
+                       `(cond ,@s-test-bodies)))))
       
       (super-instantiate ())))
 
@@ -533,6 +527,28 @@
         (if else
             (send else check-break/cont enclosing-loop)))
 
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(begin
+                      (for-each ,(cond
+                                [(is-a? target tidentifier%)
+                                 `(lambda (,(send target to-scheme))
+                                    ,(send body to-scheme))]
+                                [(or (is-a? target ttuple%)
+                                     (is-a? target tlist-display%))
+                                 (let ([item (gensym 'item)])
+                                   `(lambda (,item)
+                                      (apply 
+                                       (lambda (,@(map (lambda (t) (send t to-scheme))
+                                                       (send target get-sub-targets)))
+                                         ,(send body to-scheme))
+                                       (,(py-so 'py-sequence%->list) ,item))))]
+                                [else (error "bad target for a 'for' loop")])
+                              (,(py-so 'py-sequence%->list) ,(send vals to-scheme)))
+                      ,(if else
+                          (send else to-scheme)))))
+      
       (super-instantiate ())))
   
   ;; 7.4
@@ -637,7 +653,6 @@
         (unless (hash-table-get global-table (send id get-symbol) (lambda () #f))
           (set! bindings (cons id bindings))))
       
-      
 ;      (define/public (is-global? id)
 ;        (cond
 ;          ((hash-table-get global-table (send id get-symbol) (lambda () #f)) #t)
@@ -674,6 +689,7 @@
        (field [body (make-object (class object%
                                    (define/public (collect-globals) null)
                                    (super-instantiate ())))])
+       (define/public (get-escape-continuation-symbol) (gensym 'unusable))
        (super-instantiate ()))))
   
   ;; 7.5
@@ -689,6 +705,11 @@
        
        ;;daniel -- moved (send name to-target) here to make set-bindings! work correctly
        (define tname (send name to-target))
+
+       (define return-symbol (gensym 'return))
+      
+       (define/public (get-return-symbol) return-symbol)
+       (define/public (get-escape-continuation-symbol) return-symbol)
        
        (define/override (set-bindings! es)
          (when es
@@ -706,7 +727,7 @@
          (->orig-so (let ([proc-name (send name to-scheme)])
                       `(define ,proc-name
                          (,(py-so 'py-lambda) ',proc-name ,(send parms to-scheme)
-                                            ,(send body to-scheme))))))
+                                            ,(send body to-scheme return-symbol))))))
        
        (super-instantiate ()))))
     

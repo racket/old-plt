@@ -20,6 +20,56 @@
 
   
   (define-struct (exn:not-found exn) () (make-inspector))
+  (define-struct (exn:python exn) (type value) (make-inspector))
+  
+  (define python-current-exception
+    (let ([current-exception (make-exn:python "" (current-continuation-marks) #f #f)])
+      (case-lambda
+        [() current-exception]
+        [(exn) (set! current-exception exn)])))
+  
+  ; py-raise: (union #f py-type%) (union #f python-node) (union #f py-traceback%) ->
+  (define (py-raise type obj traceback)
+    (unless type
+      (raise (python-current-exception)))
+    (let* ([exn-type (cond
+                       [(py-type? type) type]
+                       [(py-is-a? type py-string%) type]
+                       [(not (py-is? type py-none) (python-node-type type))]
+                       [else (py-raise py-type-error%
+                                       (format "exceptions must be strings, classes, or instances, not ~a"
+                                               (py-object%->string type))
+                                       #f)])]
+           [exn-value (cond
+                        [(or (not obj)
+                             (py-is? obj py-none)) (cond
+                                                     [(py-type? type) (py-create type)]
+                                                     [(py-is-a? type py-string%) py-none]
+                                                     [else type])]
+                        [(py-is-a? type py-string%) obj]
+                        [(and (not (py-type? type))
+                              (not (py-type? obj))) (py-raise py-type-error%
+                                                              (string->py-string%
+                                                              "instance exception may not have a separate value")
+                                                              #f)]
+                        [(py-is-a? obj exn-type) obj]
+                        [(py-is-a? obj py-tuple%) (py-call py-create
+                                                           (cons type
+                                                                 (py-tuple%->list obj)))]
+                        [else (py-create type obj)])]
+           [exn (make-exn:python (format "~a~a"
+                                         (py-object%->string exn-type)
+                                         (if (py-is? exn-value py-none)
+                                             ""
+                                             (format ": ~a"
+                                                     (py-object%->string
+                                                      (with-handlers ([exn:not-found? (lambda (exn) exn-value)])
+                                                        (python-get-member exn-value 'args))))))
+                                 (current-continuation-marks)
+                                 exn-type
+                                 exn-value)])
+      (python-current-exception exn)
+      (raise exn)))
   
   (define python-get-member
     (opt-lambda (obj member-name [wrap? #t] [orig-call? #t])
@@ -40,9 +90,10 @@
                    (with-handlers ([symbol? (lambda (exn-sym)
                                                   (unless (eq? exn-sym 'member-not-found)
                                                     (raise exn-sym))
-                                                  (error (make-exn:not-found (format "member ~a not found in ~a"
-                                                                 member-name
-                                                                 (py-object%->string obj)))))])
+                                                  (raise (make-exn:not-found (format "member ~a not found in ~a"
+                                                                                     member-name
+                                                                                     (py-object%->string obj))
+                                                                             (current-continuation-marks))))])
                          (hash-table-get (python-node-dict o)
                                          member-name
                                          (lambda ()
@@ -538,7 +589,10 @@
   
   
   (python-add-members py-string%
-                      `((__init__ ,(procedure->py-function% py-string%-init))))
+                      `((__init__ ,(procedure->py-function% py-string%-init))
+                        (__add__ ,(py-lambda '+ (this s)
+                                          (string->py-string% (string-append (py-string%->string this)
+                                                                               (py-string%->string s)))))))
   
   (python-add-members py-none%
                       `((__init__ ,(lambda (this)
@@ -551,6 +605,12 @@
                                      (python-set-member! this 'start lower)
                                      (python-set-member! this 'stop upper)
                                      (python-set-member! this 'step step)))))
+  
+  
+  (python-add-members py-exception%
+                      `((__init__ ,(lambda (this . args)
+                                     (python-set-member! this 'args
+                                                         (list->py-tuple% args))))))
   
   (define py-none (make-python-node py-none% (make-hash-table) #f))
   
@@ -615,31 +675,32 @@
                                                                           
 
   (define (simple-get-item this key list-to-sequence sequence-to-list)
-  (cond
-                                                   [(py-is-a? key py-number%)
-                                                 (list-ref (sequence-to-list this)
-                                                           (py-number%->number key))]
-                                                   [(py-is-a? key py-slice%)
-                                                    (let* ([len (py-number%->number
-                                                                 (python-method-call this '__len__))]
-                                                           [start (py-number%->number
-                                                                   (python-get-member key
-                                                                                      'start))]
-                                                           [stop (min len
-                                                                      (py-number%->number
-                                                                       (python-get-member key
-                                                                                          'stop)))]
-                                                           [step (let ([s (python-get-member key 'step)])
-                                                                   (if (py-is? s py-none)
-                                                                       1
-                                                                       (py-number%->number s)))])
-                                                      (list-to-sequence
-                                                      (map (lambda (i)
-                                                             (python-method-call this '__getitem__
-                                                                                 (number->py-number% i)))
-                                                           (build-list (floor (/ (- stop start) step))
-                                                                       (lambda (i) (* (+ i start) step))))))]
-                                                   [else (error "Invalid key for __getitem__")]))
+    (cond
+      [(py-is-a? key py-number%)
+       (list-ref (sequence-to-list this)
+                 (py-number%->number key))]
+      [(py-is-a? key py-slice%)
+       (let* ([len (py-number%->number
+                    (python-method-call this '__len__))]
+              [start (py-number%->number
+                      (python-get-member key
+                                         'start))]
+              [stop (min len
+                         (py-number%->number
+                          (python-get-member key
+                                             'stop)))]
+              [step (let ([s (python-get-member key 'step)])
+                      (if (py-is? s py-none)
+                          1
+                          (py-number%->number s)))])
+         (list-to-sequence
+          (map (lambda (i)
+                 (python-method-call this '__getitem__
+                                     (number->py-number% i)))
+               (build-list (floor (/ (- stop start) step))
+                           (lambda (i) (* (+ i start) step))))))]
+      [else (error "Invalid key for __getitem__")]))
+  
   (python-add-members py-dict%
                       `((__init__ ,(py-lambda '__init__ (this v)
                                               (python-set-member! this

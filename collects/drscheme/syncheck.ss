@@ -30,6 +30,9 @@
   (define mouse-over-variable-import (string-constant cs-mouse-over-variable-import))
   (define mouse-over-syntax-import (string-constant cs-mouse-over-syntax-import))
   
+  (define jump-to-next-occurrence  (string-constant cs-jump-to-next-occurrence))
+  (define jump-to-binding (string-constant cs-jump-to-binding))
+  
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
@@ -315,7 +318,8 @@
           syncheck:add-menu
           syncheck:add-arrow
           syncheck:add-tail-arrow
-          syncheck:add-mouse-over-status))
+          syncheck:add-mouse-over-status
+          syncheck:sort-bindings-table))
 
       ;; clearing-text-mixin : (mixin text%)
       ;; overrides methods that make sure the arrows go away appropriately.
@@ -375,6 +379,50 @@
               ;;                           string))))))
               (define arrow-vectors #f)
               
+              
+              ;; bindings-table : hash-table[(list text number number) -o> (listof (list text number number))]
+              (field [bindings-table (make-hash-table 'equal)])
+              (define (add-to-bindings-table start-text start-left start-right
+                                             end-text end-left end-right)
+                (unless (and (object=? start-text end-text)
+                             (= start-left end-left)
+                             (= start-right end-right))
+                  (let ([key (list start-text start-left start-right)])
+                    (hash-table-put!
+                     bindings-table
+                     key
+                     (cons
+                      (list end-text end-left end-right)
+                      (hash-table-get bindings-table key (lambda () '())))))))
+              
+              (define/public (syncheck:sort-bindings-table)
+                (define (compare-bindings l1 l2)
+                  (let ([start-text (first l1)]
+                        [start-left (second l1)]
+                        [end-text (first l2)]
+                        [end-left (second l2)])
+                    (cond
+                      [(eq? start-text end-text)
+                       (< start-left end-left)]
+                      [else
+                       (let ([start-parents (find-text-parents start-text)]
+                             [end-parents (find-text-parents end-text)])
+                         (cond
+                           [(memq start-text end-parents) 
+                            '...
+                            #f]
+                           [(memq end-text start-parents)
+                            '...
+                            #t]
+                           [else 
+                            ;;... find common parent and see relative places of item before ...
+                            #f]))])))
+                
+                (hash-table-for-each
+                 bindings-table
+                 (lambda (k v)
+                   (hash-table-put! bindings-table k (quicksort v compare-bindings)))))
+                    
               (field (tacked-hash-table (make-hash-table)))
               (field [cursor-location #f]
                      [cursor-text #f])
@@ -481,6 +529,9 @@
                 (let* ([arrow (make-var-arrow #f #f #f #f
                                               start-text start-pos-left start-pos-right
                                               end-text end-pos-left end-pos-right)])
+                  (add-to-bindings-table
+                   start-text start-pos-left start-pos-right
+                   end-text end-pos-left end-pos-right)
                   (add-to-range/key start-text start-pos-left start-pos-right arrow #f #f)
                   (add-to-range/key end-text end-pos-left end-pos-right arrow #f #f)))
               
@@ -754,9 +805,13 @@
                                           (lambda (item evt) (tack/untack-callback arrows))))
                                       (unless (null? var-arrows)
                                         (make-object menu-item%
-                                          (string-constant cs-jump)
+                                          jump-to-next-occurrence
                                           menu
-                                          (lambda (item evt) (jump-callback pos arrows))))
+                                          (lambda (item evt) (jump-to-next-callback pos text arrows)))
+                                        (make-object menu-item%
+                                          jump-to-binding
+                                          menu
+                                          (lambda (item evt) (jump-to-binding-callback pos arrows))))
                                       (for-each (lambda (f) (f menu)) add-menus)
                                       (send (get-canvas) popup-menu menu
                                             (+ 1 (inexact->exact (floor (send event get-x))))
@@ -798,18 +853,49 @@
                    arrows))
                 (invalidate-bitmap-cache))
               
-              ;; jump-callback : (listof arrow) -> void
+              ;; jump-to-next-callback : (listof arrow) -> void
               ;; callback for the jump popup menu item
-              (define (jump-callback pos arrows)
+              (define (jump-to-next-callback pos txt input-arrows)
+                (unless (null? input-arrows)
+                  (let* ([arrow-key (car input-arrows)]
+                         [orig-arrows (hash-table-get bindings-table
+                                                      (list (var-arrow-start-text arrow-key)
+                                                            (var-arrow-start-pos-left arrow-key)
+                                                            (var-arrow-start-pos-right arrow-key))
+                                                      (lambda () '()))])
+                    (unless (or (null? orig-arrows)
+                                (null? (cdr orig-arrows))
+                                (null? (cddr orig-arrows))) ;; need at least 2 arrows
+                      (let loop ([arrows orig-arrows])
+                        (cond
+                          [(null? arrows) (jump-to (car orig-arrows))]
+                          [else (let ([arrow (car arrows)])
+                                  (cond
+                                    [(and (object=? txt (first arrow))
+                                          (<= (second arrow) pos (third arrow)))
+                                     (jump-to (if (null? (cdr arrows))
+                                                  (car orig-arrows)
+                                                  (cadr arrows)))]
+                                    [else (loop (cdr arrows))]))]))))))
+              
+              ;; jump-to-end : (list text number number) -> void
+              (define (jump-to to-arrow)
+                (let ([end-text (first to-arrow)]
+                      [end-pos-left (second to-arrow)]
+                      [end-pos-right (third to-arrow)])
+                  (send end-text set-position end-pos-left end-pos-right)
+                  (send end-text set-caret-owner #f 'global)))
+              
+              ;; jump-to-binding-callback : (listof arrow) -> void
+              ;; callback for the jump popup menu item
+              (define (jump-to-binding-callback pos arrows)
                 (unless (null? arrows)
                   (let* ([arrow (car arrows)]
+                         [start-text (var-arrow-start-text arrow)]
                          [start-pos-left (var-arrow-start-pos-left arrow)]
-                         [start-pos-right (var-arrow-start-pos-right arrow)]
-                         [end-pos-left (var-arrow-end-pos-left arrow)]
-                         [end-pos-right (var-arrow-end-pos-right arrow)])
-                    (if (<= start-pos-left pos start-pos-right)
-                        (set-position end-pos-left end-pos-right)
-                        (set-position start-pos-left start-pos-right)))))              
+                         [start-pos-right (var-arrow-start-pos-right arrow)])
+                    (send start-text set-position start-pos-left start-pos-right)
+                    (send start-text set-caret-owner #f 'global))))
               
               (super-instantiate ())))))
       
@@ -1102,7 +1188,8 @@
                             (lambda () ; =drs=
                               (with-lock/edit-sequence
                                (lambda ()
-                                 (expansion-completed user-namespace)))
+                                 (expansion-completed user-namespace)
+                                 (send definitions-text syncheck:sort-bindings-table)))
                               (cleanup)
                               (custodian-shutdown-all user-custodian))))]
                         [else

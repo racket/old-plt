@@ -3,6 +3,8 @@
 improve method arity mismatch contract violation error messages?
   (abstract out -> and friends even more?)
 
+add structu contracts for immutable structs?
+
 |#
 
 (module contract mzscheme

@@ -353,9 +353,14 @@
   (define (get-b-assigns-expr body class)
     (cond
       ((assignment? body) 
-;       (if (and (access? (assignment-left body))
-;                (field-access? (access-name (assignment-left body))))
-;           (if (and (access? (
+       (unless (and (field-access? (access-name (assignment-left body)))
+                    (special-name? (field-access-object (access-name (assignment-left body))))
+                    (expr-src (field-access-object (access-name (assignment-left body)))))
+         (beginner-assn-error 'not-left-this (expr-src (assignment-left body)))) 
+       (when (and (access? (assignment-right body))
+                  (field-access? (access-name (assignment-right body)))
+                  (special-name? (field-access-object (access-name (assignment-right body)))))
+         (beginner-assn-error 'right-this (expr-src (assignment-right body))))
        (list body))
       ((call? body) 
        (if (expr-src body)
@@ -363,7 +368,7 @@
            null))
       (else 
        (beginner-ctor-error class body (expr-src body)))))
-
+  
   ;get-instance-assigns: (list member) -> (list (list assignment))
   (define (get-instance-assigns members)
     (cond
@@ -659,6 +664,19 @@
                    (format "Constructor for ~a may only assign the fields of ~a. Found illegal statement ~a"
                            class class exp)
                    exp src)))
+  
+  ;beginner-assn-error: sym src -> void
+  (define (beginner-assn-error kind src)
+    (raise-error 
+     '=
+     (case kind
+       ((not-left-this)
+        "Constructor must assign the class's fields.  This expression is not a field of this class and maynot be assigned")
+       ((right-this)
+        "The constructor maynot assign fields with other of its fields. Other values must be used"))
+     '= src))          
+
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Statement checking functions
   

@@ -1,11 +1,11 @@
  /*								-*- C++ -*-
- * $Id: FontDirectory.h,v 1.5 2002/09/17 00:23:57 mflatt Exp $
+ * $Id: FontDirectory.h,v 1.6 2004/01/04 23:01:15 mflatt Exp $
  *
  * Purpose: wxWindows font name handling
  *
  * Authors: Markus Holzem, Julian Smart, and Matthew Flatt
  *
- * Copyright: (C) 2004 PLT Scheme, Inc.
+ * Copyright: (C) 2005 PLT Scheme, Inc.
  * Copyright: (C) 1995, AIAI, University of Edinburgh (Julian)
  * Copyright: (C) 1995, GNU (Markus)
  *

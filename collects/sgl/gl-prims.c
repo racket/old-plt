@@ -13,7 +13,7 @@
  * MERCHANTABILITY or  FITNESS FOR A  PARTICULAR PURPOSE. See  the GNU
  * Lesser General Public License for more details.
  *
- * Modifications Copyright (C) 2003 by Scott Owens <sowens@cs.utah.edu>
+ * Modifications Copyright (C) 2005 by Scott Owens <sowens@cs.utah.edu>
  * GLU additions Copyright (C) 2004 by Brendan Burns of U. Mass.
  *
  */

@@ -1370,6 +1370,7 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
 {
   XfwfScrollInfo *sinfo = (XfwfScrollInfo*)p_XfwfScrollInfo;
   wxScrollEvent *wxevent;
+  int dir;
 
   wxWindow *win = (wxWindow *)GET_SAFEREF(winp);
   if (!win) {
@@ -1382,7 +1383,6 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
   wxevent = new wxScrollEvent();
   
   if (win->misc_flags & NO_AUTO_SCROLL_FLAG) {
-    int dir;
     switch (sinfo->reason) {
     case XfwfSUp:	
       win->SetScrollPos(dir = wxVERTICAL, win->vs_pos - 1);
@@ -1442,24 +1442,24 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
   
   if (win->misc_flags & NO_AUTO_SCROLL_FLAG) {
     wxevent->eventHandle = (char*)p_XfwfScrollInfo;
-    wxevent->direction = wxHORIZONTAL;
+    wxevent->direction = dir;
     switch (sinfo->reason) {
-    case XfwfSUp:	wxevent->direction = wxVERTICAL;
+    case XfwfSUp:
     case XfwfSLeft:	wxevent->moveType = wxEVENT_TYPE_SCROLL_LINEUP;
       break;
-    case XfwfSDown:	wxevent->direction = wxVERTICAL;
+    case XfwfSDown:
     case XfwfSRight:	wxevent->moveType = wxEVENT_TYPE_SCROLL_LINEDOWN;
       break;
-    case XfwfSPageUp:	wxevent->direction = wxVERTICAL;
+    case XfwfSPageUp:
     case XfwfSPageLeft:	wxevent->moveType = wxEVENT_TYPE_SCROLL_PAGEUP;
       break;
-    case XfwfSPageDown:	wxevent->direction = wxVERTICAL;
+    case XfwfSPageDown:
     case XfwfSPageRight:wxevent->moveType = wxEVENT_TYPE_SCROLL_PAGEDOWN;
       break;
-    case XfwfSTop:	wxevent->direction = wxVERTICAL;
+    case XfwfSTop:
     case XfwfSLeftSide:	wxevent->moveType = wxEVENT_TYPE_SCROLL_TOP;
       break;
-    case XfwfSBottom:	wxevent->direction = wxVERTICAL;
+    case XfwfSBottom:
     case XfwfSRightSide:wxevent->moveType = wxEVENT_TYPE_SCROLL_BOTTOM;
       break;
     case XfwfSDrag:	wxevent->moveType = wxEVENT_TYPE_SCROLL_THUMBTRACK;

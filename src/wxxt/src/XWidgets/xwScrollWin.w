@@ -2,7 +2,6 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.1 (see README for history)
 # 
-# $Id: xwScrollWin.w,v 1.8 1999/07/21 17:53:02 mflatt Exp $
 
 @CLASS XfwfScrolledWindow (XfwfBoard)  @file = xwScrollWin
 
@@ -479,8 +478,15 @@ Notify message -- then calls its own callbacks.
 	  new.vsize  = ght <= boardht ? 1.0 : (float)boardht/(float)ght;
 	  new.gx     = gx;
 	  new.gy     = gy;
-	} else
-	  new.flags  = 0;
+	} else {
+	  if (info->reason == XfwfSDrag) {
+	    if (w == $vscroll)
+	      new.flags  = XFWF_VPOS;
+	    else
+	      new.flags  = XFWF_HPOS;
+	  } else
+	    new.flags  = 0;
+	}
 	XtCallCallbackList($, $scrollCallback, &new);
     }
 }

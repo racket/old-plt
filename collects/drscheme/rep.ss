@@ -216,19 +216,15 @@
 			[reader
 			 (let ([gone #f])
 			   (lambda ()
-			     (if gone
-				 (zodiac:make-eof z)
-				 (begin (set! gone #t)
+			     (or gone
+				 (begin (set! gone (zodiac:make-eof z))
 					(zodiac:structurize-syntax sexp z)))))]
 			[answer (void)]
 			[f
 			 (lambda (annotated recur)
-			   '(printf "annotated: ~a~n" annotated)
 			   (if (process/zodiac-finish? annotated)
 			       (if (process/zodiac-finish-error? annotated)
-				   (with-parameterization param
-				     (lambda ()
-				       ((error-escape-handler))))
+				   (escape)
 				   answer)
 			       (begin (set! answer
 					    (with-parameterization param
@@ -449,6 +445,14 @@
 	  [send-scheme (opt-lambda (x [after void]) (void))]
 	  [evaluation-thread #f]
 	  [current-thread-directory (current-directory)]
+	  [escape
+	   (lambda ()
+	     (with-parameterization param
+	       (lambda ()
+		 ((error-escape-handler))))
+	     (mred:message-box "error-escape-handler didn't escape"
+			       "Error Escape")
+	     (error-escape-handler))]
 	  [init-evaluation-thread
 	   (lambda ()
 	     (parameterize ([current-custodian user-custodian])
@@ -457,32 +461,34 @@
 		     (mzlib:thread@:consumer-thread
 		      (opt-lambda (expr [after void])
 			(current-parameterization eval-thread-parameterization)
-			(let* ([user-code-error? #t])
-			  (dynamic-wind
-			   (lambda ()
-			     (current-directory current-thread-directory))
-			   (lambda ()
-			     (set! user-code-error? 
-				   (let/ec k
-				     (call-with-values
-				      (lambda ()
-					(with-handlers ([(lambda (x) #t)
-							 (lambda (exn)
-							   (report-exception-error exn this)
-							   (k #t))])
-					  (with-parameterization param
-					    (lambda ()
-					      (primitive-eval expr)))))
-				      (lambda anss
-					(let ([c-locked? locked?])
-					  (unless (andmap void? anss)
-					    (lock #f)
-					    (for-each display-result anss)
-					    (lock c-locked?)))))
-				     #f)))
-			   (lambda () 
-			     (set! current-thread-directory (current-directory))
-			     (after user-code-error?))))))])
+			(let/ec k
+			  (error-escape-handler (lambda () (k (void))))
+			  (let* ([user-code-error? #t])
+			    (dynamic-wind
+			     (lambda ()
+			       (current-directory current-thread-directory))
+			     (lambda ()
+			       (set! user-code-error? 
+				     (let/ec k
+				       (call-with-values
+					(lambda ()
+					  (with-handlers ([(lambda (x) #t)
+							   (lambda (exn)
+							     (report-exception-error exn this)
+							     (k #t))])
+					    (with-parameterization param
+					      (lambda ()
+						(primitive-eval expr)))))
+					(lambda anss
+					  (let ([c-locked? locked?])
+					    (unless (andmap void? anss)
+					      (lock #f)
+					      (for-each display-result anss)
+					      (lock c-locked?)))))
+				       #f)))
+			     (lambda () 
+			       (set! current-thread-directory (current-directory))
+			       (after user-code-error?)))))))])
 		 (set! send-scheme send-scheme2)
 		 (set! evaluation-thread evaluation-thread2))))])
 	(public
@@ -512,7 +518,10 @@
 			     (let ([last (void)])
 			       (lambda (sexp recur)
 				 (cond
-				   [(process/zodiac-finish? sexp) last]
+				   [(process/zodiac-finish? sexp)
+				    (if (process/zodiac-finish-error? sexp)
+					(escape)
+					last)]
 				   [else
 				    (set! last
 					  (with-handlers ([(lambda (x) #t)

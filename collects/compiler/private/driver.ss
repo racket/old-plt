@@ -198,14 +198,9 @@
 	(lambda (input-directory reader verbose?)
 	  (when verbose? (printf "~n Reading... ") (flush-output))
 	  ;; During reads, errors are truly fatal
-	  (let ([exprs (begin ; time
+	  (let ([exprs (let ([failed? #f])
 			 (let loop ([n 1])
-			   (let ([sexp (let loop () 
-					 ; This loop handles the case where
-					 ; the reader is really unhappy after
-					 ; it encounters an error
-					 (with-handlers ([void (lambda (x) (loop))])
-					   (reader)))])
+			   (let ([sexp (reader)])
 			     (if (eof-object? sexp)
 				 null
 				 (begin 
@@ -473,6 +468,28 @@
 	   file-block
 	   (append! l (block-source file-block)))))
 
+      (define (open-input-scheme-file path)
+	(let ([p (let ([open (with-handlers ([not-break-exn? (lambda (x) #f)])
+			       (dynamic-require '(lib "mred.ss" "mred") 'open-input-graphical-file))])
+		   (if open
+		       ;; Handles WXME files:
+		       (open path)
+		       ;; Check for WXME and give a nice error message:
+		       (let ([p (open-input-file path)])
+			 (when (regexp-match-peek "^WXME01[0-9][0-9] ## " p)
+			   (close-input-port p)
+			   (error 'compile-file
+				  "file appears to have graphical syntax (try graphical-mzc): ~a"
+				  path))
+			 p)))])
+	  ;; Skip leading "#!:
+	  (let loop ([s (regexp-match-peek #rx"^#![^\r\n]*" p)])
+	    (when s
+	      (read-line p)
+	      (when (regexp-match #rx"\\\\$" (car s))
+		(loop (regexp-match-peek #rx"^[^\r\n]*" p)))))
+	  p))
+
       ;;-------------------------------------------------------------------------------
       ;; ERROR/WARNING REPORTING/HANDLING ROUTINES
       ;;
@@ -638,7 +655,7 @@
 	
 	    (when input-path 
 	      (parameterize ([main-source-file input-path])
-		(let ([input-port (open-input-file input-path 'text)])
+		(let ([input-port (open-input-scheme-file input-path)])
 		  (port-count-lines! input-port)
 
 		  ;;-----------------------------------------------------------------------
@@ -649,8 +666,8 @@
 		  (unless (compiler:option:verbose) (newline))
 		  (let ([read-thunk
 			 (lambda ()
-			   (with-handlers (); [void top-level-exn-handler])
-			     (with-handlers (); [void elaboration-exn-handler])
+			   (with-handlers ([void top-level-exn-handler])
+			     (with-handlers ([void elaboration-exn-handler])
 			       (parameterize ([current-namespace elaborate-namespace]
 					      [compiler:escape-on-error #t])
 				 (set-block-source! 

@@ -486,9 +486,7 @@
       ;; domain-ref  =  atom                         ; symbolic reference
       (define msg-id
         (lambda (str)
-          (let* ((r (regexp "^<[^@>]+@[^\
-                                       .]+(\\.[^\
-                                               .]+)*>$"))
+          (let* ((r (regexp "^<[^@>]+@[^.]+(\\.[^.]+)*>$"))
                  (ans (regexp-match r str)))
             (if ans
                 str
@@ -513,7 +511,7 @@
       ;;
       (define MIME-extension-field
         (lambda (header entity)
-          (let* ((reg (regexp "^[Cc]ontent-(.+):[ 	]*(.+)$"))
+          (let* ((reg (regexp "^[Cc]ontent-(.+):[ \t]*(.+)$"))
                  (target (regexp-match reg header)))
             (and target
                  (set-entity-other!

@@ -49,7 +49,6 @@ typedef long rxpos;
 # define BIGGEST_RXPOS 0x7FFFFFFF
 #endif
 
-
 typedef struct regexp {
   Scheme_Type type;
   MZ_HASH_KEY_EX
@@ -1915,8 +1914,10 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	  l = scheme_make_pair(scheme_make_pair(startpd, endpd),
 			       l);
 	} else {
+	  long len;
+	  len = endp[i] - startp[i];
 	  l = scheme_make_pair(scheme_make_sized_offset_string(full_s, startp[i], 
-							       endp[i] - startp[i],
+							       len,
 							       1),
 			       l);
 	}

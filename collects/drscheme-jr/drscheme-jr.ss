@@ -218,7 +218,7 @@
 
     (define (bad-arguments s . args)
       (printf "DrScheme Jr error: ~a~n" (apply format s args))
-      (exit -1))
+      (exit 1))
 
     (define (choose-mode)
       (printf "Choose a language:~n")
@@ -336,7 +336,7 @@
 	      (printf "~a implies the following flags: ~a~n" 
 		      level
 		      (make-implies-string (string->symbol level)))
-	      (exit))
+	      (exit 0))
 	   ("Show the flags implied by a particular language" "language")]])
        (case-lambda 
 	[(accum) #f]

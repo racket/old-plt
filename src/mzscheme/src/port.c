@@ -488,7 +488,9 @@ scheme_init_port (Scheme_Env *env)
 #endif
 
 #ifndef DONT_IGNORE_PIPE_SIGNAL
+    START_XFORM_SKIP;
     MZ_SIGSET(SIGPIPE, SIG_IGN);
+    END_XFORM_SKIP;
 #endif
 
 #if defined(USE_BEOS_PORT_THREADS) || defined(BEOS_PROCESSES)
@@ -5015,7 +5017,9 @@ static void child_done(int ingored)
   } while (result > 0);
 
 # ifdef SIGSET_NEEDS_REINSTALL
+  START_XFORM_SKIP;
   MZ_SIGSET(SIGCHLD, child_done);
+  END_XFORM_SKIP;
 # endif
 }
 
@@ -5434,7 +5438,9 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       static int sigchld_installed = 0;
       if (!sigchld_installed) {
 	/* Catch child-done signals */
+	START_XFORM_SKIP;
 	MZ_SIGSET(SIGCHLD, child_done);
+	END_XFORM_SKIP;
 	sigchld_installed = 1;
       }
     }
@@ -5474,7 +5480,9 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     case 0: /* child */
 
       /* Ignore signals here */
+      START_XFORM_SKIP;
       MZ_SIGSET(SIGCHLD, SIG_IGN);
+      END_XFORM_SKIP;
 
       if (!synchonous) {
 	/* Copy pipe descriptors to stdin and stdout */
@@ -7240,7 +7248,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
 # ifdef USE_SOCKETS_TCP
   tcp_t s;
   int l;
-  tcp_address tcp_accept_addr;
+  tcp_address tcp_accept_addr; /* Use a long name for precise GC's xform.ss */
 # endif
 # ifdef USE_MAC_TCP
   listener_t *l;

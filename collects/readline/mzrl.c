@@ -42,7 +42,7 @@ Scheme_Object *do_add_history(int argc, Scheme_Object **argv)
   return scheme_void;
 }
 
-static int check(Scheme_Object *x)
+static int check_for_input(Scheme_Object *x)
 {
   fd_set fd;
   struct timeval time = {0, 0};
@@ -59,7 +59,7 @@ static void set_fd_wait(Scheme_Object *x, void *fd)
 
 static int block(void)
 {  
-  scheme_block_until(check, set_fd_wait, scheme_void, 0.0);
+  scheme_block_until(check_for_input, set_fd_wait, scheme_void, 0.0);
   return 0;
 }
 

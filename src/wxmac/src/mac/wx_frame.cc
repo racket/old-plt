@@ -613,9 +613,13 @@ void wxFrame::ShowAsActive(Bool flag)
 
 void wxFrame::SetIcon(wxBitmap* wx_icon, wxBitmap* mask, int kind) { }		// not implemented
 
-void wxFrame::Iconize(Bool iconize) { }			// not implemented
+void wxFrame::Iconize(Bool iconize) {
+  CollapseWindow(GetWindowFromPort(cMacDC->macGrafPort()), iconize);
+}
 
-Bool wxFrame::Iconized(void) { return FALSE; } 	// not implemented
+Bool wxFrame::Iconized(void) { 
+  return IsWindowCollapsed(GetWindowFromPort(cMacDC->macGrafPort()));
+}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Platform methods

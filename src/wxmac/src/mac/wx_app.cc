@@ -966,23 +966,43 @@ void wxApp::doMacContentClick(wxFrame* frame)
 }
 
 //-----------------------------------------------------------------------------
+
+static WindowPtr last_drag_click;
+static long last_drag_click_time;
+
 void wxApp::doMacInDrag(WindowPtr window)
 {
-  if (StillDown()) {
-    if (window != ::FrontWindow()) {
-      wxFrame* frontFrame = findMacWxFrame(::FrontWindow());
-      if (!frontFrame) wxFatalError("No wxFrame for frontWindow.");
+  if (last_drag_click == window) {
+    if ((cCurrentEvent.when != last_drag_click_time) // avoid bring-to-front redundancies
+	&& (cCurrentEvent.when - last_drag_click_time <= GetDblTime())) {
+      CollapseWindow(window, TRUE);
+      return;
     }
-    
+  }
+  last_drag_click = window;
+  last_drag_click_time = cCurrentEvent.when;
+
+  if (StillDown()) {
     wxFrame* theMacWxFrame = findMacWxFrame(window);
     if (theMacWxFrame) {
       BitMap screenBits;
+      long oldx, oldy;
       Rect dragBoundsRect;
+
       GetQDGlobalsScreenBits(&screenBits);
       dragBoundsRect = screenBits.bounds;
       InsetRect(&dragBoundsRect, 4, 4); // This is not really necessary
+
+      oldx = theMacWxFrame->cWindowX;
+      oldy = theMacWxFrame->cWindowY;
+
       DragWindow(window, cCurrentEvent.where, &dragBoundsRect);
+
       theMacWxFrame->wxMacRecalcNewSize(FALSE); // recalc new position only
+
+      if ((oldx != theMacWxFrame->cWindowX)
+	  || (oldy != theMacWxFrame->cWindowY))
+	last_drag_click = NULL;
     }
   }
 }

@@ -72,7 +72,7 @@
 #define NO_ATOMIC 0
 /* Never treat allocated data as atomic */
 
-#define NO_FREE_BLOCKS 0
+#define KEEP_BLOCKS_FOREVER 1
 /* Keep small-chunk assignment of a block forever */
 
 #define USE_BEST_FIT_ON_FREE_SECTORS 0
@@ -300,11 +300,12 @@
 /* Debugging the collector: */
 #define CHECK 0
 #define PRINT 0
-#define TIME 0
+#define TIME 1
 #define ALWAYS_TRACE 0
 #define CHECK_COLLECTING 0
 #define MARK_STATS 0
 #define ALLOC_STATS 0
+#define FINISH_STATS 0
 
 #if DETAIL_MEMORY_TRACING
 # undef STD_MEMORY_TRACING
@@ -3092,21 +3093,51 @@ static void collect_init_chunk(MemoryChunk *c, int uncollectable)
   }
 }
 
+#if FINISH_STATS
+# define FINISH_STATISTIC(x) x
+static int num_finish_chunk_stat;
+static int num_finish_chunkkeep_stat;
+static int num_finish_chunkfree_stat;
+static int num_finish_block_stat;
+static int num_finish_blockkeep_stat;
+static int num_finish_blockfree_stat;
+static int num_finish_blockfiltercycles_stat;
+static int num_finishes_stat;
+#else
+# define FINISH_STATISTIC(x)
+#endif
+
 static void collect_finish_chunk(MemoryChunk **c, struct GC_Set *set)
 {
+  unsigned long local_low_plausible;
+  unsigned long local_high_plausible;
+
+  local_low_plausible = low_plausible;
+  local_high_plausible = high_plausible;
+
   while (*c) {
     MemoryChunk *k = *c;
+
+    FINISH_STATISTIC(num_finish_chunk_stat++);
 
     if (k->marked) {
       c = &k->next;
 
-      if (!low_plausible || (k->start < low_plausible))
-	low_plausible = k->start;
-      if (!high_plausible || (k->end > high_plausible))
-	high_plausible = k->end;	
-    } else
+      FINISH_STATISTIC(num_finish_chunkkeep_stat++);
+
+      if (!local_low_plausible || (k->start < local_low_plausible))
+	local_low_plausible = k->start;
+      if (!local_high_plausible || (k->end > local_high_plausible))
+	local_high_plausible = k->end;	
+    } else {
+      FINISH_STATISTIC(num_finish_chunkfree_stat++);
+
       free_chunk(k, c, set);
+    }
   }
+
+  low_plausible = local_low_plausible;
+  high_plausible = local_high_plausible;
 }
 
 static void collect_init_common(MemoryBlock **blocks, int uncollectable)
@@ -3116,7 +3147,6 @@ static void collect_init_common(MemoryBlock **blocks, int uncollectable)
 
   for (i = 0; i < NUM_COMMON_SIZE; i++) {
     MemoryBlock *block = blocks[i];
-    long size = size_map[i];
 
     while (block) {
 #if CHECK
@@ -3134,6 +3164,7 @@ static void collect_init_common(MemoryBlock **blocks, int uncollectable)
       /* Test padding: */
       {
 	unsigned long p;
+	long size = size_map[i];
 	
 	for (p = block->start; p < block->top; p += size) {
 	  void *s = INT_TO_PTR(p);
@@ -3171,12 +3202,12 @@ static void collect_init_common(MemoryBlock **blocks, int uncollectable)
 	}
       } else {
 	if (block->top < block->end) {
-	  unsigned long diff = block->top - block->start;
-	  diff /= size;
-	  boundary = POS_TO_UNMARK_INDEX(diff);
-	  boundary_val = (POS_TO_UNMARK_BIT(diff) - 1) & ALL_UNMARKED;
-	} else
+	  int pos = block->positions[(block->top - block->start) >> LOG_PTR_SIZE];
+	  boundary = POS_TO_UNMARK_INDEX(pos);
+	  boundary_val = (POS_TO_UNMARK_BIT(pos) - 1) & ALL_UNMARKED;
+	} else {
 	  boundary = ELEM_PER_BLOCK(block);
+	}
 
 	for (j = ELEM_PER_BLOCK(block); j-- ; ) {
 	  if (j < boundary)
@@ -3198,6 +3229,11 @@ static void collect_finish_common(MemoryBlock **blocks,
 				  struct GC_Set *set)
 {
   int i;
+  unsigned long local_low_plausible;
+  unsigned long local_high_plausible;
+
+  local_low_plausible = low_plausible;
+  local_high_plausible = high_plausible;
 
   for (i = 0; i < NUM_COMMON_SIZE; i++) {
     MemoryBlock **prev = &blocks[i];
@@ -3208,6 +3244,9 @@ static void collect_finish_common(MemoryBlock **blocks,
 
     while (block) {
       int allfree;
+
+      FINISH_STATISTIC(num_finish_block_stat++);
+      
 #if CHECK
       if (block->end < block->start
 	  || block->top < block->start
@@ -3215,9 +3254,6 @@ static void collect_finish_common(MemoryBlock **blocks,
 	FPRINTF(STDERR,
 		"bad block: %ld %ld %ld %ld\n",
 		size, block->start, block->top, block->end);
-#endif
-#if NO_FREE_BLOCKS
-      block->allfree = 0;
 #endif
 
 #if ALLOW_SET_FINALIZER
@@ -3242,20 +3278,33 @@ static void collect_finish_common(MemoryBlock **blocks,
       allfree = 1;
       {
 	int j;
-	for (j = ELEM_PER_BLOCK(block); j-- ; )
+	for (j = ELEM_PER_BLOCK(block); j-- ; ) {
+	  FINISH_STATISTIC(num_finish_blockfiltercycles_stat++);
 	  if ((block->free[j] & ALL_UNMARKED) != ALL_UNMARKED) {
 	    allfree = 0;
 	    break;
 	  }
+	}
       }
 
+#if KEEP_BLOCKS_FOREVER
       if (allfree) {
+	int j;
+	block->top = block->start;
+	for (j = ELEM_PER_BLOCK(block); j-- ; )
+	  block->free[j] = 0;
+	allfree = 0;
+      }
+#endif
+
+      if (allfree) {
+	FINISH_STATISTIC(num_finish_blockfree_stat++);
+
 	--num_blocks;
-	
+
 	*prev = block->next;
 	free_sector(block);
 	mem_real_use -= SECTOR_SEGMENT_SIZE;
-
 	block = *prev;
       } else {
 #if DISTINGUISH_FREE_FROM_UNMARKED
@@ -3266,10 +3315,12 @@ static void collect_finish_common(MemoryBlock **blocks,
 	  block->free[j] |= SHIFT_UNMARK_TO_FREE(block->free[j]);
 #endif
 
-	if (!low_plausible || (block->start < low_plausible))
-	  low_plausible = block->start;
-	if (!high_plausible || (block->end > high_plausible))
-	  high_plausible = block->end;
+	FINISH_STATISTIC(num_finish_blockkeep_stat++);
+
+	if (!local_low_plausible || (block->start < local_low_plausible))
+	  local_low_plausible = block->start;
+	if (!local_high_plausible || (block->end > local_high_plausible))
+	  local_high_plausible = block->end;
 
 	prev = &block->next;
 	block = block->next;
@@ -3278,6 +3329,9 @@ static void collect_finish_common(MemoryBlock **blocks,
 
     block_ends[i] = blocks[i];
   }
+
+  low_plausible = local_low_plausible;
+  high_plausible = local_high_plausible;
 }
 
 static int collect_stack_count;
@@ -3288,9 +3342,11 @@ static unsigned long *collect_stack;
 
 #if KEEP_DETAIL_PATH
 # define PUSH_SRC(src) collect_stack[collect_stack_count++] = src;
+# define LOCAL_PUSH_SRC(src) local_collect_stack[local_collect_stack_count++] = src;
 # define COLLECT_STACK_FRAME_SIZE 3
 #else
 # define PUSH_SRC(src) /*empty*/
+# define LOCAL_PUSH_SRC(src) /*empty*/
 # define COLLECT_STACK_FRAME_SIZE 2
 #endif
 
@@ -3329,7 +3385,7 @@ static void push_collect(unsigned long start, unsigned long end, unsigned long s
   if (local_collect_stack_count < local_collect_stack_size) { \
     local_collect_stack[local_collect_stack_count++] = s; \
     local_collect_stack[local_collect_stack_count++] = e + 1 - PTR_ALIGNMENT; \
-    PUSH_SRC(src) \
+    LOCAL_PUSH_SRC(src) \
   } else { \
     collect_stack_count = local_collect_stack_count; \
     push_collect(s, e + 1 - PTR_ALIGNMENT, src); \
@@ -4309,6 +4365,7 @@ void do_GC_gcollect(void *stack_now)
   low_plausible = high_plausible = 0;
 
   for (j = 0; j < num_common_sets; j++) {
+    FINISH_STATISTIC(num_finishes_stat++);
     collect_finish_chunk(common_sets[j]->othersptr, common_sets[j]);
     collect_finish_common(common_sets[j]->blocks, 
 			  common_sets[j]->block_ends,
@@ -4402,6 +4459,26 @@ void do_GC_gcollect(void *stack_now)
 	  num_block_alloc_checks_stat,
 	  num_newblock_allocs_stat,
 	  num_chunk_allocs_stat);
+#endif
+#if FINISH_STATS
+  fprintf(STDERR,
+	  "finish stats:\n"
+	  " %d finishes\n"
+	  "  %d chunk finishes\n"
+	  "   %d chunk keep finishes\n"
+	  "   %d chunk free finishes\n"
+	  "  %d block finishes\n"
+	  "   %d block filter steps\n"
+	  "   %d block keep finishes\n"
+	  "   %d block free finishes\n",
+	  num_finishes_stat,
+	  num_finish_chunk_stat,
+	  num_finish_chunkkeep_stat,
+	  num_finish_chunkfree_stat,
+	  num_finish_block_stat,
+	  num_finish_blockfiltercycles_stat,
+	  num_finish_blockkeep_stat,
+	  num_finish_blockfree_stat);
 #endif
 }
 

@@ -2,16 +2,16 @@
 make.ss
 -------
 
-make.ss provides a `make' macro and a `make*' procedure.
+make.ss provides a `make' macro and a `make/proc' procedure.
  (make
    ((target (depend ...) command ...) ...)
    argv)
 expands to
-  (make*
+  (make/proc
      (list (list target (list depend ...) (lambda () command ...)) ...)
       argv)
 
-(make* spec argv) performs a make according to `spec' and using `argv'
+(make/proc spec argv) performs a make according to `spec' and using `argv'
 as command-line arguments selecting one or more targets.  `argv' can
 either be a string or a vector of strings.
 
@@ -20,7 +20,7 @@ either be a string or a vector of strings.
   MAKE-SPEC = (list MAKE-LINE ...)
   MAKE-LINE = (list TARGET-STRING (list DEPEND-STRING ...) COMMAND-THUNK)
 
-To make a target, make* is first called on each of the target's
+To make a target, make/proc is first called on each of the target's
 dependencies. If a target is not in the spec and it exists, then the
 target is considered made. If a target is older than any of its
 dependencies, the corresponding COMMAND-THUNK is invoked. The
@@ -28,11 +28,11 @@ COMMAND-THUNK is optional; a MAKE-LINE without a COMMAND-THUNK is
 useful as a target for making a number of other targets (the
 dependencies).
 
-`make*' does not specially capture any exception, so an exception
+`make/proc' does not specially capture any exception, so an exception
 raised by a COMMAND-THUNK will terminate the make.
 
 The maker.ss library is a signed unit that requires no imports
-and provdes `make*'.
+and provdes `make/proc'.
 
 collection.ss
 -------------

@@ -1,7 +1,7 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "prettys.ss")
+(require-library "prettys.ss")
 
-(define mzlib:pretty-print@ (reference-library-unit/sig "prettyr.ss"))
+(define mzlib:pretty-print@ (require-library-unit/sig "prettyr.ss"))
 

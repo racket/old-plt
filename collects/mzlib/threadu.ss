@@ -1,6 +1,6 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "threads.ss")
+(require-library "threads.ss")
 
-(define mzlib:thread@ (reference-library-unit/sig "threadr.ss"))
+(define mzlib:thread@ (require-library-unit/sig "threadr.ss"))

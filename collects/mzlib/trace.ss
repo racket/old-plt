@@ -13,7 +13,7 @@
     -:make-traced-entry -:traced-entry-original-proc -:traced-entry-trace-proc
     trace untrace))
 
-(begin-elaboration-time (reference-library "prettyu.ss"))
+(begin-elaboration-time (require-library "prettyu.ss"))
 
 (begin-elaboration-time
 (define mzlib:trace@

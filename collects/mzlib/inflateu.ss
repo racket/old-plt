@@ -1,6 +1,6 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "inflates.ss")
+(require-library "inflates.ss")
 
-(define mzlib:inflate@ (reference-library-unit/sig "inflater.ss"))
+(define mzlib:inflate@ (require-library-unit/sig "inflater.ss"))

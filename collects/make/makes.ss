@@ -1,3 +1,3 @@
 
 (define-signature make:make^
-  (make*))
+  (make/proc))

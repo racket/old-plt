@@ -288,7 +288,7 @@
 			 (lambda (x)
 			   (warning "Warning: error loading info.ss: ~a~n" x))])
 	   (let* ([info (parameterize ([require-library-use-compiled #f])
-			  (apply require-library "info.ss" collection-p))]
+			  (apply require-library/proc "info.ss" collection-p))]
 		  [name (call-info info 'name #f
 				   (lambda (x)
 				     (unless (string? x)

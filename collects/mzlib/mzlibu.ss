@@ -1,21 +1,21 @@
 
 ; Load all of mzlib
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "coreu.ss")
+(require-library "coreu.ss")
 
-(reference-library "synrule.ss")
+(require-library "synrule.ss")
 
-(reference-library "spidey.ss")
-(reference-library "triggeru.ss")
-(reference-library "zmathu.ss")
-(reference-library "pconveru.ss")
-(reference-library "dateu.ss")
-(reference-library "inflateu.ss")
-(reference-library "cmdlineu.ss")
-(reference-library "restartu.ss")
+(require-library "spidey.ss")
+(require-library "triggeru.ss")
+(require-library "zmathu.ss")
+(require-library "pconveru.ss")
+(require-library "dateu.ss")
+(require-library "inflateu.ss")
+(require-library "cmdlineu.ss")
+(require-library "restartu.ss")
 
-(reference-library "mzlibs.ss")
+(require-library "mzlibs.ss")
 
-(define mzlib@ (reference-library-unit/sig "mzlibr.ss"))
+(define mzlib@ (require-library-unit/sig "mzlibr.ss"))

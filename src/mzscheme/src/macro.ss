@@ -512,7 +512,7 @@
 
 (#%define-macro #%make-generic 
   (#%lambda (c% name)
-    `(#%uq-make-generic ,c% (quote ,name))))
+    `(#%make-generic/proc ,c% (quote ,name))))
 
 > kstop make-generic <
 
@@ -521,7 +521,7 @@
       (#%if (#%list? args)
 	  (#%let ([l (#%length args)])
 	    (#%cond
-	     [(#%= l 2) `(#%uq-ivar ,(#%car args) (#%quote ,(#%cadr args)))]
+	     [(#%= l 2) `(#%ivar/proc ,(#%car args) (#%quote ,(#%cadr args)))]
 	     [else (#%raise-syntax-error
 		    'ivar
 		    (#%format "bad syntax (~s parts after the keyword)" l)
@@ -833,7 +833,7 @@
 
 > fstop load-relative load-relative-extension <
 
-(#%define-values (require-library require-relative-library collection-path)
+(#%define-values (require-library/proc require-relative-library/proc collection-path)
   (#%let* ([get-table current-loaded-library-table]
 	   [not-found (box 0)]
 	   [null-str (#%string #\nul)]
@@ -886,13 +886,13 @@
 	  (#%letrec ([collection-path (#%lambda (collection . collection-path) 
 						(check-collection 'collection-path collection collection-path)
 						(find-col 'collection-path collection collection-path))]
-		     [require-relative-library
+		     [require-relative-library/proc
 		      (#%lambda (file . collection-path)
 			 (check 'require-relative-library file) 
 			 (check-collection 'require-relative-library file collection-path)
 			 (#%let ([cp (#%current-require-relative-collection)])
 			    (#%if cp
-				  (#%apply require-library file (#%append cp collection-path))
+				  (#%apply require-library/proc file (#%append cp collection-path))
 				  (#%raise
 				   (make-coll-exn
 				    (#%format "require-relative-library: there is no current collection for library: ~s~a"
@@ -902,9 +902,9 @@
 						    (#%format " in sub-collection: ~s" collection-path)))
 				    ((debug))
 				    (#%apply #%build-path file collection-path))))))]
-		     [require-library
+		     [require-library/proc
 		      (#%case-lambda
-		       [(file) (require-library file "mzlib")]
+		       [(file) (require-library/proc file "mzlib")]
 		       [(file collection . collection-path)
 			(check 'require-library file) (check-collection 'require-library collection collection-path)
 			(#%let ([table (get-table)]
@@ -933,29 +933,37 @@
 						    (#%hash-table-put! table sym result)
 						    (#%apply #%values result))
 					    (#%apply #%values found))))])])
-		    (#%values require-library require-relative-library collection-path))))
+		    (#%values require-library/proc require-relative-library/proc collection-path))))
 
-> fstop require-library require-relative-library collection-path <
+> fstop require-library/proc require-relative-library/proc collection-path <
 
-(#%define-macro #%reference-library
-  (#%letrec ([rl (#%case-lambda 
-		  [(name) (rl name "mzlib")]
-		  [(name collection . collection-path)
-		   (#%let ([name (#%local-expand-defmacro name)]
-			   [collection (#%local-expand-defmacro collection)]
-			   [check (#%lambda (s kind)
-				     (#%unless (#%string? s)
-					 (#%raise-syntax-error 
-					  'reference-library
-					  (#%format "~s name is not a string" kind)
-					  (#%list 'reference-library name collection))))])
-			  (check name "library")
-			  (check collection "collection")
-			  (#%for-each (#%lambda (c) (check c "sub-collection")) collection-path)
-			  `(#%require-library ,name ,collection ,@collection-path))])])
-       rl))
+(#%begin
+ (#%define tmp-rl
+      (#%lambda (req-lib/proc rel?)
+          (#%letrec ([rl (#%case-lambda 
+			  [(name . collection-path)
+			   (#%let ([name (#%local-expand-defmacro name)]
+				   [collection-path (#%map #%local-expand-defmacro collection-path)]
+				   [check (#%lambda (s kind)
+					    (#%unless (#%string? s)
+					      (#%let ([rlname (#%if rel? 'require-relative-library 'require-library)])
+						(#%raise-syntax-error 
+						 rlname
+						 (#%format "~s name is not a string" kind)
+						 (#%list* rlname name collection-path)))))])
+				  (check name "library")
+				  (#%if (#%or rel? (#%null? collection-path))
+					(#%for-each (#%lambda (c) (check c "sub-collection")) collection-path)
+					(#%begin
+					 (check (#%car collection-path) "collection")
+					 (#%for-each (#%lambda (c) (check c "sub-collection")) (#%cdr collection-path))))
+				  `(,req-lib/proc ,name ,@collection-path))])])
+	         rl)))
+  (#%define-macro #%require-relative-library (tmp-rl #%require-relative-library/proc #t))
+  (#%define-macro #%require-library (tmp-rl #%require-library/proc #f))
+  (#%undefine 'tmp-rl))
 
-> kstop reference-library <
+> kstop require-library require-relative-library <
 
 (#%define path-list-string->path-list
   (#%let ((r (#%regexp (#%let ((sep (#%case (#%system-type) 

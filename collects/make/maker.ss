@@ -3,12 +3,12 @@
  make:make^
  (import)
 
- (define make*
+ (define make/proc
   (let ([form-error
-	 (lambda (s p) (error 'make* "~a: ~s" s p))]
+	 (lambda (s p) (error 'make/proc "~a: ~s" s p))]
 	[line-error
-	 (lambda (s p n) (error 'make* "~a: ~s for line: ~a" s p n))])
-    (let ([make* (lambda (spec argv)
+	 (lambda (s p n) (error 'make/proc "~a: ~s for line: ~a" s p n))])
+    (let ([make/proc (lambda (spec argv)
 		   ; Check the form of spec:
 		   (and (or (list? spec) (form-error "specification is not a list" spec))
 			(or (pair? spec) (form-error "specification is an empty list" spec))
@@ -34,7 +34,7 @@
 		   (or (string? argv)
 		       (and (vector? argv)
 			    (andmap string? (vector->list argv)))
-		       (raise-type-error 'make* "string or string vector" argv))
+		       (raise-type-error 'make/proc "string or string vector" argv))
 		   (letrec ([make-file
 			     (lambda (s indent)
 			       (printf "~achecking ~a~n" indent s)
@@ -60,5 +60,5 @@
 		      [(equal? argv #()) (make-file (caar spec) "")]
 		      [else (for-each (lambda (f) (make-file f "")) (vector->list argv))])))])
       (case-lambda
-       [(spec) (make* spec #())]
-       [(spec argv) (make* spec argv)])))))
+       [(spec) (make/proc spec #())]
+       [(spec argv) (make/proc spec argv)])))))

@@ -85,7 +85,7 @@
     (unless (or (equal? argv #("zo"))
 		(directory-exists? dest-dir))
        (make-directory* dest-dir))
-    (make*
+    (make/proc
      (append
       (list o->so)
       `(("zo" ,zos))

@@ -2,7 +2,7 @@
 ; Contributed by Shriram
 ; This code steals heavily from Dorai Sitaram's implementation.
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
 (begin-elaboration-time
  (invoke-open-unit

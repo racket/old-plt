@@ -1,10 +1,10 @@
 
  (unit
   (import)
-  (export make-reference-unit make-reference)
+  (export make-require-unit make-require)
   
-  (define make-reference-unit
-   ; reference-unit, etc.
+  (define make-require-unit
+   ; require-unit, etc.
    (lambda (must-string? require? reqrel? sig? sname)
      (lambda names
        (let ([len (length names)]
@@ -28,8 +28,8 @@
 		  names))
 	 `(#%let ([result (,(if require?
 				(if reqrel? 
-				    '#%require-relative-library
-				    '#%require-library)
+				    '#%require-relative-library/proc
+				    '#%require-library/proc)
 				'#%load/use-compiled) ,@names)])
 		 (#%unless (,(if sig?
 				 '#%unit/sig?
@@ -45,15 +45,15 @@
 			     result)))
 		 result)))))
 
-  (define make-reference
-   ; reference
+  (define make-require
+   ; require
    (lambda (must-string? require? reqrel?)
      (lambda names
        (let ([sname (if require? 
 			(if reqrel?
-			    'reference-relative-library
-			    'reference-library)
-			'reference)]
+			    'require-relative-library
+			    'require-library)
+			'require)]
 	     [len (length names)]
 	     [expect (if require? +inf.0 1)])
 	 (unless (and (positive? len) (<= len expect))
@@ -70,9 +70,9 @@
 				       (list* sname names)))
 	   `(,(if require? 
 		  (if reqrel?
-		      'require-relative-library
-		      'require-library)
+		      'require-relative-library/proc
+		      'require-library/proc)
 		  '#%load/use-compiled) 
 	     ,@names))))))
 
-  (values make-reference-unit make-reference))
+  (values make-require-unit make-require))

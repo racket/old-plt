@@ -1,8 +1,8 @@
 
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "cmdlines.ss")
-(reference-library "restarts.ss")
+(require-library "cmdlines.ss")
+(require-library "restarts.ss")
 
-(define mzlib:restart@ (reference-library-unit/sig "restartr.ss"))
+(define mzlib:restart@ (require-library-unit/sig "restartr.ss"))

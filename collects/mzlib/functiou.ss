@@ -1,7 +1,7 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "functios.ss")
+(require-library "functios.ss")
 
-(define mzlib:function@ (reference-library-unit/sig "functior.ss"))
+(define mzlib:function@ (require-library-unit/sig "functior.ss"))
 

@@ -1,9 +1,9 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "compiles.ss")
+(require-library "compiles.ss")
 
-(define mzlib:compile@ (reference-library-unit/sig "compiler.ss"))
+(define mzlib:compile@ (require-library-unit/sig "compiler.ss"))
 
 
 

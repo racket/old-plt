@@ -1,13 +1,13 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "macrox.ss")
+(require-library "macrox.ss")
 
 (begin-elaboration-time
  (invoke-open-unit
-  (reference-library "macror.ss"))
+  (require-library "macror.ss"))
  (invoke-open-unit
-  (reference-library "letplusr.ss")))
+  (require-library "letplusr.ss")))
 
 (define-macro let-enumerate let-enumerate)
 (define-macro catch-errors catch-errors)

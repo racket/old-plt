@@ -10,9 +10,9 @@
 (require-library "string.ss")
 (require-library "compile.ss")
 
-(reference-library "compile.ss" "dynext")
-(reference-library "link.ss" "dynext")
-(reference-library "file.ss" "dynext")
+(require-library "compile.ss" "dynext")
+(require-library "link.ss" "dynext")
+(require-library "file.ss" "dynext")
 
 (require-library "makes.ss" "make")
 (require-library "collections.ss" "make")

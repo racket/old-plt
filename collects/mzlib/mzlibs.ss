@@ -1,12 +1,12 @@
 
-(reference-library "cores.ss")
-(reference-library "triggers.ss")
-(reference-library "zmaths.ss")
-(reference-library "pconvers.ss")
-(reference-library "dates.ss")
-(reference-library "inflates.ss")
-(reference-library "cmdlines.ss")
-(reference-library "restarts.ss")
+(require-library "cores.ss")
+(require-library "triggers.ss")
+(require-library "zmaths.ss")
+(require-library "pconvers.ss")
+(require-library "dates.ss")
+(require-library "inflates.ss")
+(require-library "cmdlines.ss")
+(require-library "restarts.ss")
 
 (define-signature mzlib^
   ((open mzlib:core^)

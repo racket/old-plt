@@ -1,9 +1,9 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
 (begin-elaboration-time
  (invoke-open-unit
-  (reference-library "macroxr.ss")))
+  (require-library "macroxr.ss")))
 
 (define-macro send* send*)
 (define-macro local local)

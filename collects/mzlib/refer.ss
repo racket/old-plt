@@ -1,19 +1,18 @@
 
 (define-macro begin-construction-time 
   (lambda body 
-    (eval `(begin ,@body))))
+    `(#%begin-elaboration-time ,@body)))
 
 (begin-elaboration-time
- (define-values (reference-unit reference) (invoke-unit (reference-library "referf.ss"))))
+ (define-values (require-unit require) (invoke-unit (require-library "referf.ss"))))
 
-(define-macro reference-library-unit/sig (reference-unit #t #t #f #t 'reference-library-unit/sig))
-(define-macro reference-library-unit (reference-unit #t #t #f #f 'reference-library-unit))
-(define-macro reference-relative-library-unit/sig (reference-unit #t #t #t #t 'reference-relative-library-unit/sig))
-(define-macro reference-relative-library-unit (reference-unit #t #t #t #f 'reference-relative-library-unit))
-(define-macro reference-unit/sig (reference-unit #t #f #f #t 'reference-unit/sig))
-(define-macro reference-unit (reference-unit #t #f #f #f 'reference-unit))
+(define-macro require-library-unit/sig (require-unit #t #t #f #t 'require-library-unit/sig))
+(define-macro require-library-unit (require-unit #t #t #f #f 'require-library-unit))
+(define-macro require-relative-library-unit/sig (require-unit #t #t #t #t 'require-relative-library-unit/sig))
+(define-macro require-relative-library-unit (require-unit #t #t #t #f 'require-relative-library-unit))
+(define-macro require-unit/sig (require-unit #t #f #f #t 'require-unit/sig))
+(define-macro require-unit (require-unit #t #f #f #f 'require-unit))
 
-(define-macro reference-relative-library (reference #t #t #t))
-(define-macro reference (reference #t #f #f))
+(define-macro require (require #t #f #f))
 
-(reference-library "spidey.ss")
+(require-library "spidey.ss")

@@ -15,7 +15,7 @@
 				 (or (list? (cadr line))
 				     (line-error "second part of clause is not a sequence" (cadr line))))))
 			spec))
-		  `(make* (list ,@(map (lambda (line)
+		  `(make/proc (list ,@(map (lambda (line)
 					 `(list ,(car line)
 						(list ,@(cadr line))
 						,@(let ([l (cddr line)])

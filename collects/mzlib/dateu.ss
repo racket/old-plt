@@ -1,10 +1,10 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "dates.ss")
-(reference-library "functios.ss")
+(require-library "dates.ss")
+(require-library "functios.ss")
 
-(define mzlib:date@ (reference-library-unit/sig "dater.ss"))
+(define mzlib:date@ (require-library-unit/sig "dater.ss"))
 
 #|
 

@@ -13,13 +13,13 @@
 ;; course, the expression to convert.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "pconvers.ss")
-(reference-library "strings.ss")
-(reference-library "functios.ss")
+(require-library "pconvers.ss")
+(require-library "strings.ss")
+(require-library "functios.ss")
 
-(define mzlib:print-convert@ (reference-library-unit/sig "pconverr.ss"))
+(define mzlib:print-convert@ (require-library-unit/sig "pconverr.ss"))
 
 #|
 

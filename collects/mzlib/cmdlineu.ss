@@ -1,7 +1,7 @@
 
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "cmdlines.ss")
+(require-library "cmdlines.ss")
 
-(define mzlib:command-line@ (reference-library-unit/sig "cmdliner.ss"))
+(define mzlib:command-line@ (require-library-unit/sig "cmdliner.ss"))

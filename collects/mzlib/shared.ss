@@ -1,10 +1,10 @@
 
-(reference-library "refer.ss")
-(reference-library "functios.ss")
+(require-library "refer.ss")
+(require-library "functios.ss")
 
 (begin-elaboration-time
  (invoke-open-unit
-  (reference-library "sharedr.ss")))
+  (require-library "sharedr.ss")))
 
 (define-macro shared shared)
 

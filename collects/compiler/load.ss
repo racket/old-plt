@@ -1,20 +1,20 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-relative-library "sigload.ss")
+(require-relative-library "sigload.ss")
 
-(reference-library "functio.ss")
-(reference-library "file.ss")
-(reference-library "pretty.ss")
+(require-library "functio.ss")
+(require-library "file.ss")
+(require-library "pretty.ss")
 
-(reference-library "compile.ss" "dynext")
-(reference-library "link.ss" "dynext")
-(reference-library "file.ss" "dynext")
+(require-library "compile.ss" "dynext")
+(require-library "link.ss" "dynext")
+(require-library "file.ss" "dynext")
 
-(reference-library "option.ss" "compiler")
+(require-library "option.ss" "compiler")
 
 (invoke-open-unit/sig
- (reference-relative-library-unit/sig "loadr.ss")
+ (require-relative-library-unit/sig "loadr.ss")
  mzc
  mzlib:function^
  mzlib:pretty-print^
@@ -25,7 +25,7 @@
  (compiler:option : compiler:option^))
 
 (invoke-open-unit/sig
- (reference-relative-library-unit/sig "ldr.ss")
+ (require-relative-library-unit/sig "ldr.ss")
  mzc
  dynext:compile^
  dynext:link^

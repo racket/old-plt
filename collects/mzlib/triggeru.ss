@@ -1,6 +1,6 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "triggers.ss")
+(require-library "triggers.ss")
 
-(define mzlib:trigger@ (reference-library-unit/sig "triggerr.ss"))
+(define mzlib:trigger@ (require-library-unit/sig "triggerr.ss"))

@@ -1,7 +1,7 @@
 
-(reference-relative-library "compiles.ss")
-(reference-relative-library "links.ss")
-(reference-relative-library "files.ss")
+(require-relative-library "compiles.ss")
+(require-relative-library "links.ss")
+(require-relative-library "files.ss")
 
 (define-signature dynext^
   ((unit compile@ : dynext:compile^)

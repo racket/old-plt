@@ -1,6 +1,6 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(begin-elaboration-time (invoke-open-unit (reference-relative-library "awkr.ss")))
+(begin-elaboration-time (invoke-open-unit (require-relative-library "awkr.ss")))
 
 (define-macro awk awk)

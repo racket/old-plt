@@ -1,9 +1,9 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "files.ss")
-(reference-library "functios.ss")
-(reference-library "strings.ss")
+(require-library "files.ss")
+(require-library "functios.ss")
+(require-library "strings.ss")
 
-(define mzlib:file@ (reference-library-unit/sig "filer.ss"))
+(define mzlib:file@ (require-library-unit/sig "filer.ss"))
 

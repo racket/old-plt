@@ -1,20 +1,20 @@
 
-(reference-library "functios.ss")
-(reference-library "files.ss")
-(reference-library "prettys.ss")
+(require-library "functios.ss")
+(require-library "files.ss")
+(require-library "prettys.ss")
 
-(reference-library "compiles.ss" "dynext")
-(reference-library "links.ss" "dynext")
-(reference-library "files.ss" "dynext")
+(require-library "compiles.ss" "dynext")
+(require-library "links.ss" "dynext")
+(require-library "files.ss" "dynext")
 
-(reference-library "zsigs.ss" "zodiac")
-(reference-library "sigs.ss" "zodiac")
+(require-library "zsigs.ss" "zodiac")
+(require-library "sigs.ss" "zodiac")
 
-(reference-library "sparams.ss" "backward")
+(require-library "sparams.ss" "backward")
 
 (require-library "sbasig.ss" "mrspidey")
 
-(reference-relative-library "sig.ss")
+(require-relative-library "sig.ss")
 
 (define-signature compiler:library^
   (logical-inverse

@@ -1,9 +1,9 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
 (begin-elaboration-time
  (invoke-open-unit
-  (reference-library "matchr.ss")))
+  (require-library "matchr.ss")))
 
 (define-macro match match)
 (define-macro match-lambda match-lambda)

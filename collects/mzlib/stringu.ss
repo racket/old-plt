@@ -1,7 +1,7 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-library "strings.ss")
+(require-library "strings.ss")
 
-(define mzlib:string@ (reference-library-unit/sig "stringr.ss"))
+(define mzlib:string@ (require-library-unit/sig "stringr.ss"))
 

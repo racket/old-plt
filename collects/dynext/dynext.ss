@@ -1,6 +1,6 @@
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-relative-library "compile.ss")
-(reference-relative-library "link.ss")
-(reference-relative-library "file.ss")
+(require-relative-library "compile.ss")
+(require-relative-library "link.ss")
+(require-relative-library "file.ss")

@@ -2,29 +2,29 @@
  (import)
  (link
   [referf 
-   : (make-reference-unit make-reference)
-   ((unit->unit/sig (reference-relative-library "referf.ss") 
+   : (make-require-unit make-require)
+   ((unit->unit/sig (require-relative-library "referf.ss") 
 		    () 
-		    (make-reference-unit make-reference)))]
+		    (make-require-unit make-require)))]
   [compile 
    : mzlib:compile^
    ((unit/sig mzlib:compile^
-    (import (make-reference-unit make-reference))
+    (import (make-require-unit make-require))
 
    (define identity (lambda (x n) x))
 
    ; top-level begin-elaboration-time => begin-expansion-time
    ; nested begin-elaboration-time => begin
-   ; reference-XXX => usual expansion w/o string check
-   (define -reference-library-unit/sig (make-reference-unit #f #t #f #t 'reference-library-unit/sig))
-   (define -reference-library-unit (make-reference-unit #f #t #f #f 'reference-library-unit))
-   (define -reference-relative-library-unit/sig (make-reference-unit #f #t #t #t 'reference-relative-library-unit/sig))
-   (define -reference-relative-library-unit (make-reference-unit #f #t #t #f 'reference-relative-library-unit))
-   (define -reference-unit/sig (make-reference-unit #f #f #f #t 'reference-unit/sig))
-   (define -reference-unit (make-reference-unit #f #f #f #f 'reference-unit))
-   (define -reference (make-reference #f #f #f))
-   (define -reference-library (make-reference #f #t #f))
-   (define -reference-relative-library (make-reference #f #t #t))
+   ; require-XXX => usual expansion w/o string check
+   (define -require-library-unit/sig (make-require-unit #f #t #f #t 'require-library-unit/sig))
+   (define -require-library-unit (make-require-unit #f #t #f #f 'require-library-unit))
+   (define -require-relative-library-unit/sig (make-require-unit #f #t #t #t 'require-relative-library-unit/sig))
+   (define -require-relative-library-unit (make-require-unit #f #t #t #f 'require-relative-library-unit))
+   (define -require-unit/sig (make-require-unit #f #f #f #t 'require-unit/sig))
+   (define -require-unit (make-require-unit #f #f #f #f 'require-unit))
+   (define -require (make-require #f #f #f))
+   (define -require-library (make-require #f #t #f))
+   (define -require-relative-library (make-require #f #t #t))
    (define make--begin-elaboration-time
      (lambda (do?)
        (lambda body
@@ -49,15 +49,15 @@
      (when (or preserve-elab? do-elab? preserve-constr? do-constr?)
        (eval `(begin
 		(require-library "refer.ss")
-		(define-macro reference ,-reference)
-		(define-macro reference-unit/sig ,-reference-unit/sig)
-		(define-macro reference-unit ,-reference-unit)
-		(define-macro reference-library-unit/sig ,-reference-library-unit/sig)
-		(define-macro reference-library-unit ,-reference-library-unit)
-		(define-macro reference-library ,-reference-library)
-		(define-macro reference-relative-library-unit/sig ,-reference-relative-library-unit/sig)
-		(define-macro reference-relative-library-unit ,-reference-relative-library-unit)
-		(define-macro reference-relative-library ,-reference-relative-library)
+		(define-macro require ,-require)
+		(define-macro require-unit/sig ,-require-unit/sig)
+		(define-macro require-unit ,-require-unit)
+		(define-macro require-library-unit/sig ,-require-library-unit/sig)
+		(define-macro require-library-unit ,-require-library-unit)
+		(define-macro require-library ,-require-library)
+		(define-macro require-relative-library-unit/sig ,-require-relative-library-unit/sig)
+		(define-macro require-relative-library-unit ,-require-relative-library-unit)
+		(define-macro require-relative-library ,-require-relative-library)
 		,@(let ([e (if preserve-elab?
 			       `((define-macro begin-elaboration-time ,(make--begin-elaboration-time do-elab?)))
 			       null)]
@@ -269,8 +269,8 @@
 							   (do-load s #f #t)
 							   #t)))
 						   (parameterize ([current-namespace namespace])
-								 (eval `(require-library ,name
-											 ,collection))
+								 (eval `(require-library/proc ,name
+											      ,collection))
 								 #f)))
 					     (begin
 					       (warning 
@@ -304,7 +304,7 @@
 						  (and expand-load? (do-load s #t #f))]
 						 [(load-relative #%load-relative)
 						  (and expand-load? (do-load s #f #t))]
-						 [(require-library #%require-library)
+						 [(require-library/proc #%require-library/proc)
 						  (and (not ignore-rl?) (do-rl s))]
 						 [else #f]))
 					     #f)])

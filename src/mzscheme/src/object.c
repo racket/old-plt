@@ -44,10 +44,10 @@
 #define CREATE_OBJECT "make-object"
 
 #define IVAR "ivar"
-#define UQ_IVAR "uq-ivar"
+#define UQ_IVAR "ivar/proc"
 
 #define MAKE_GENERIC "make-generic"
-#define UQ_MAKE_GENERIC "uq-make-generic"
+#define UQ_MAKE_GENERIC "make-generic/proc"
 
 #define IS_CLASS "class?"
 #define IS_INTERFACE "interface?"

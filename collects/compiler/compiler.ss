@@ -187,7 +187,7 @@
 	     compiler^)])
        (let ([dir (apply collection-path cp)]
 	     [orig (current-directory)]
-	     [info (apply require-library "info.ss" cp)])
+	     [info (apply require-library/proc "info.ss" cp)])
 	 (dynamic-wind
 	  (lambda () (current-directory dir))
 	  (lambda ()
@@ -237,7 +237,7 @@
 			       (for-each
 				(lambda (f)
 				  (printf "loading ~a~n" f)
-				  (require-relative-library f))
+				  (require-relative-library/proc f))
 				(reverse need-load))
 			       (set! need-load null)
 			       (printf "compiling ~a~n" ss)

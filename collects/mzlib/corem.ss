@@ -1,13 +1,13 @@
 
 ; Loads macro parts of MzLib:
 
-(reference-library "refer.ss")
+(require-library "refer.ss")
 
-(reference-relative-library "spidey.ss")
+(require-relative-library "spidey.ss")
 
-(reference-relative-library "macro.ss")
+(require-relative-library "macro.ss")
 
-(reference-relative-library "match.ss")
-(reference-relative-library "defstru.ss")
-(reference-relative-library "compatm.ss")
-(reference-relative-library "shared.ss")
+(require-relative-library "match.ss")
+(require-relative-library "defstru.ss")
+(require-relative-library "compatm.ss")
+(require-relative-library "shared.ss")

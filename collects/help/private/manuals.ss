@@ -41,30 +41,30 @@
            [docs (quicksort docs compare-docs)]
            [doc-paths (map (lambda (doc) (string-append "/doc/" doc "/")) docs)]
            [get-name
-	    (lambda (d)
-	      (let-values ([(_1 short-path _2) (split-path d)])
-		(let ([ass (assoc short-path known-docs)])
-		  (if ass
-		      (cdr ass)
-		      (with-input-from-file (build-path doc-collection-path short-path "index.htm")
-			(lambda ()
-			  (let loop ()
-			    (let ([r (read-line)])
-			      (cond
-			       [(eof-object? r) "(Unknown title)"]
-			       [(regexp-match re:title r) => cadr]
-			       [(regexp-match "<[tT][iI][tT][lL][eE]>(.*)$" r)
-				;; Append lines until we find it 
-				(let aloop ([r r])
-				  (let ([a (read-line)])
-				    (cond
-				     [(eof-object? a) (loop)] ; give up
-				     [else (let ([r (string-append r a)])
-					     (cond
-					      [(regexp-match re:title r) => cadr]
-					      [else (aloop r)]))])))]
-			       [else (loop)])))))))))]
-	   [names (map get-name doc-paths)]
+	    (lambda (doc-dir)
+	      (let ([ass (assoc short-path known-docs)])
+		(if ass
+		    (cdr ass)
+		    (with-input-from-file 
+			(build-path doc-collection-path doc-dir "index.htm")
+		      (lambda ()
+			(let loop ()
+			  (let ([r (read-line)])
+			    (cond
+			     [(eof-object? r) "(Unknown title)"]
+			     [(regexp-match re:title r) => cadr]
+			     [(regexp-match "<[tT][iI][tT][lL][eE]>(.*)$" r)
+			      ;; Append lines until we find it 
+			      (let aloop ([r r])
+				(let ([a (read-line)])
+				  (cond
+				   [(eof-object? a) (loop)] ; give up
+				   [else (let ([r (string-append r a)])
+					   (cond
+					    [(regexp-match re:title r) => cadr]
+					    [else (aloop r)]))])))]
+			     [else (loop)]))))))))]
+	   [names (map get-name docs)]
 	   [names+paths (map cons names doc-paths)]
 	   [is-lang? (lambda (name+path)
 		       (let ([name (car name+path)])
@@ -77,14 +77,18 @@
 	   [lang-doc-paths (map cdr lang-names+paths)]
 	   [tool-names (map car tool-names+paths)]
 	   [tool-doc-paths (map cdr tool-names+paths)]
-	   [mk-link (lambda (doc name)
-                      (let* ([manual-dir (car (last-pair (explode-path doc)))]
+	   [mk-link (lambda (doc-path name)
+                      ; doc-path is of form /doc/<doc-dir>/
+                      (let* ([manual-dir 
+				(substring doc-path
+				           5
+		                           (sub1 (string-length doc-path)))]
 			     [index-file (build-path 
 					  (collection-path "doc")
 					  manual-dir
 					  "index.htm")])
                         (format "<LI> <A HREF=\"~a\">~a</A>~a"
-			        doc
+			        doc-path
                                 name
                                 (if (and cvs-user?
                                          (file-exists? index-file))

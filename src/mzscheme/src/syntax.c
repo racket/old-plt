@@ -1317,7 +1317,7 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 
     c = icons(lambda_symbol, clause);
 
-    c = scheme_datum_to_syntax(c, clause, clause, 0, 0);
+    c = scheme_datum_to_syntax(c, clause, scheme_sys_wraps(env), 0, 0);
 
     c = cons(c, scheme_null);
 

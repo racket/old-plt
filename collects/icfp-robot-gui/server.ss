@@ -198,7 +198,7 @@
                       (fprintf output "#~a " (car act))
                       (when orig-robots
                         (let* ([r (assoc (car act) orig-robots)])
-                          (fprintf output "#~a X ~a Y ~a " (car r) (cadr r) (caddr r))))
+                          (fprintf output "X ~a Y ~a " (cadr r) (caddr r))))
                       (for-each (lambda (i)
                                   (if (symbol? i)
                                       (fprintf output "~a " i)

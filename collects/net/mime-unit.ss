@@ -33,7 +33,8 @@
 	   "head-sig.ss"
            "mime-util.ss"
            (lib "unitsig.ss")
-           (lib "etc.ss"))
+           (lib "etc.ss")
+           (lib "string.ss"))
 
   (provide net:mime@)
   (define net:mime@
@@ -69,6 +70,7 @@
       (define ietf-extensions '())
       (define iana-extensions '(;; text
                                 ("plain" . plain)
+                                ("html" . html)
                                 ("richtext"  . richtext)
                                 ("tab-separated-values" . tab-separated-values)
                                 ;; Multipart
@@ -279,38 +281,33 @@
       ;; Returns a list of input ports, each one containing the correspongind part.
       (define multipart-body
         (lambda (input boundary)
-          (letrec ((eat-part (lambda ()
-                               (let-values ([(pin pout) (make-pipe)])
-                                 (let loop ((ln (read-line input)))
-                                   (cond ((eof-object? ln)
-                                          (close-output-port pout)
-                                          (values pin;; part
-                                                  #f;; close-delimiter?
-                                                  #t;; eof reached?
-                                                  ))
-                                         ((regexp-match
-                                           (regexp (string-append "^--"
-                                                                  boundary
-                                                                  "--"
-                                                                  )) ln)
-					  (close-output-port pout)
-                                          (values pin #t #f))
-                                         ((regexp-match
-                                           (regexp (string-append "^--"
-                                                                  boundary
-                                                                  )) ln)
-                                          (close-output-port pout)
-                                          (values pin #f #f))
-                                         (else
-                                          (fprintf pout "~a~n" ln)
-                                          (loop (read-line input)))))))))
-	    (eat-part) ;; preamble
-            (let loop ()
-	      (let-values ([(part close? eof?) (eat-part)])
-		(cond (close? (list part))
-		      (eof? null)
-		      (else
-		       (cons part (loop)))))))))
+          (let ([re:done (regexp (string-append "^--" (regexp-quote boundary) "--"))]
+                [re:sep (regexp (string-append "^--" (regexp-quote boundary)))])
+            (letrec ((eat-part (lambda ()
+                                 (let-values ([(pin pout) (make-pipe)])
+                                   (let loop ((ln (read-line input)))
+                                     (cond ((eof-object? ln)
+                                            (close-output-port pout)
+                                            (values pin;; part
+                                                    #f;; close-delimiter?
+                                                    #t;; eof reached?
+                                                    ))
+                                           ((regexp-match re:done ln)
+                                            (close-output-port pout)
+                                            (values pin #t #f))
+                                           ((regexp-match re:sep ln)
+                                            (close-output-port pout)
+                                            (values pin #f #f))
+                                           (else
+                                            (fprintf pout "~a~n" ln)
+                                            (loop (read-line input)))))))))
+              (eat-part) ;; preamble
+              (let loop ()
+                (let-values ([(part close? eof?) (eat-part)])
+                  (cond (close? (list part))
+                        (eof? null)
+                        (else
+                         (cons part (loop))))))))))
       
       ;; MIME-message-headers := entity-headers
       ;; 			fields

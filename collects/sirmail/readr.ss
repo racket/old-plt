@@ -680,7 +680,6 @@
 					   (crlf->lf body)
 					   start 'same #f)
 				     (let ([end (send e last-position)])
-				       (send e change-style (send (send e get-style-list) find-named-style "Standard") start end)
 				       (delta e start end))))])
 		     (parse-and-insert-body h body e insert 79 img-mode?)))
                  (send e set-position 0)
@@ -1680,7 +1679,7 @@
 					    (send t change-style url-delta s e)))))])
 		(case (mime:entity-type ent)
 		  [(text) (let ([disp (mime:disposition-type (mime:entity-disposition ent))])
-			    (cond
+                            (cond
                               [(memq disp '(inline error))
                                (cond
                                  [(and html-mode?
@@ -1716,7 +1715,7 @@
 		   (map (lambda (msg)
 			  (unless (eq? (mime:entity-type ent) 'message)
 			    (insert (format "~a\r\n" (make-string sep-width #\-))
-				    (lambda (t s e) (send t change-style green-delta s e))))
+				    (lambda (t s e) (send t change-style green-delta s (sub1 e)))))
 			  (unless (null? (mime:message-fields msg))
 			    (insert (get-viewable-headers
 				     (let loop ([l (mime:message-fields msg)])

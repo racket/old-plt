@@ -371,10 +371,13 @@ static Scheme_Object *reg_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
   int *flagp = (int *)p->ku.k.p1;
+  int res;
 
   p->ku.k.p1 = NULL;
 
-  return (Scheme_Object *)reg(p->ku.k.i1, flagp);
+  res = reg(p->ku.k.i1, flagp);
+
+  return scheme_make_integer(res);
 }
 
 #endif
@@ -402,9 +405,11 @@ reg(int paren, int *flagp)
 # include "mzstkchk.h"
     {
       Scheme_Thread *p = scheme_current_thread;
+      Scheme_Object *ov;
       p->ku.k.i1 = paren;
       p->ku.k.p1 = (void *)flagp;
-      return (rxpos)scheme_handle_stack_overflow(reg_k);
+      ov = scheme_handle_stack_overflow(reg_k);
+      return SCHEME_INT_VAL(ov);
     }
   }
 #endif
@@ -1279,12 +1284,15 @@ static Scheme_Object *regmatch_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
   Regwork *rw = (Regwork *)p->ku.k.p1;
+  int res;
 
   p->ku.k.p1 = NULL;
 
   regstr = rw->str; /* in case of thread swap */
  
-  return (Scheme_Object *)regmatch(rw, p->ku.k.i1);
+  res = regmatch(rw, p->ku.k.i1);
+
+  return (res ? scheme_true : scheme_false);
 }
 
 #endif
@@ -1311,7 +1319,7 @@ regmatch(Regwork *rw, rxpos prog)
     {
       Scheme_Thread *p = scheme_current_thread;
       Regwork *rw2;
-      int result;
+      Scheme_Object *res;
 
       /* rw is likely be stack allocated, so copy out to
 	 the heap and then copy result back in on return. */
@@ -1324,11 +1332,11 @@ regmatch(Regwork *rw, rxpos prog)
       rw2->str = regstr; /* in case of thread swap */
       p->ku.k.p1 = rw2;
       p->ku.k.i1 = prog;
-      result = (int)scheme_handle_stack_overflow(regmatch_k);
+      res = scheme_handle_stack_overflow(regmatch_k);
 
       memcpy(rw, rw2, sizeof(Regwork));
 
-      return result;
+      return SCHEME_TRUEP(res);
     }
   }
 #endif

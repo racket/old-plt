@@ -752,16 +752,23 @@ will be used for the frame.
 	values.foreground = BlackPixelOfScreen(XtScreen($));
 	break;
     case XfwfAuto:
-        if (DefaultDepthOfScreen(XtScreen($)) > 4
-            && $lighter_color($, $background_pixel, &values.foreground)) {
+	{
+	  int ok;
+	  if (DefaultDepthOfScreen(XtScreen($)) > 4) {
+	    ok = $lighter_color($, $background_pixel, &values.foreground);
+	  } else
+	    ok = 0;
+	    
+	  if (ok) {
             mask = GCForeground;
-        } else {
+	  } else {
             mask = GCFillStyle | GCBackground | GCForeground | GCStipple;
             values.fill_style = FillOpaqueStippled;
             /* values.background = $background_pixel; */
             values.background = WhitePixelOfScreen(XtScreen($));
             values.foreground = BlackPixelOfScreen(XtScreen($));
             values.stipple = GetLightGray($);
+	  }
         }
         break;
     }

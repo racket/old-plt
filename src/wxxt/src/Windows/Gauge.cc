@@ -93,7 +93,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 #endif
 	 XtNtraversalOn, FALSE,
 	 XtNframeType,   XfwfSunken,
-	 XtNframeWidth,  2,
+	 XtNframeWidth,  1,
 	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,
 	 NULL);
     if (!(style & wxINVISIBLE))

@@ -196,16 +196,23 @@ static void create_lightgc(self)Widget self;
 	values.foreground = BlackPixelOfScreen(XtScreen(self));
 	break;
     case XfwfAuto:
-        if (DefaultDepthOfScreen(XtScreen(self)) > 4
-            && ((XfwfFrameWidgetClass)self->core.widget_class)->xfwfCommon_class.lighter_color(self, ((XfwfFrameWidget)self)->core.background_pixel, &values.foreground)) {
+	{
+	  int ok;
+	  if (DefaultDepthOfScreen(XtScreen(self)) > 4) {
+	    ok = ((XfwfFrameWidgetClass)self->core.widget_class)->xfwfCommon_class.lighter_color(self, ((XfwfFrameWidget)self)->core.background_pixel, &values.foreground);
+	  } else
+	    ok = 0;
+	    
+	  if (ok) {
             mask = GCForeground;
-        } else {
+	  } else {
             mask = GCFillStyle | GCBackground | GCForeground | GCStipple;
             values.fill_style = FillOpaqueStippled;
             /* values.background = $background_pixel; */
             values.background = WhitePixelOfScreen(XtScreen(self));
             values.foreground = BlackPixelOfScreen(XtScreen(self));
             values.stipple = GetLightGray(self);
+	  }
         }
         break;
     }
@@ -288,7 +295,7 @@ XfwfFrameClassRec xfwfFrameClassRec = {
 /* num_resources 	*/  11,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  True ,
-/* compress_exposure 	*/  XtExposeCompressMultiple ,
+/* compress_exposure 	*/  XtExposeCompressMaximal ,
 /* compress_enterleave 	*/  True ,
 /* visible_interest 	*/  False ,
 /* destroy      	*/  destroy,

@@ -113,8 +113,12 @@
       ;;   will be held.
       (define (re-tokenize in in-start-pos)
         (let-values (((type data new-token-start new-token-end) (get-token in)))
+          ;; breaks must be disabled before the semaphore wait so we can't be
+          ;; broken out of the critical section
           (break-enabled #f)
-          (semaphore-wait lock)
+          ;; If a break occurs while we are suspended, the break will occur
+          ;; and the critical section will not be entered
+          (semaphore-wait/enable-break lock)
           (unless (eq? 'eof type)
             (let ((len (- new-token-end new-token-start)))
               (set! current-pos (+ len current-pos))
@@ -232,6 +236,7 @@
             (break-enabled #t)
             (with-handlers ((not-break-exn?
                              (lambda (exn)
+                               (printf "~a~n" exn)
                                (break-enabled #f)
                                (semaphore-wait lock))))
               (re-tokenize (open-input-text-editor this current-pos end-pos)
@@ -278,27 +283,7 @@
       (wrap on-change)
       (wrap after-set-position)
       (wrap on-change-style a b)
-;    after-edit-sequence 
-;    on-char 
-;    on-default-char 
-;    on-default-event 
-;    on-disable-surrogate 
-;    on-display-size 
-;    on-edit-sequence 
-;    on-enable-surrogate 
-;    on-event 
-;    on-focus 
-;    on-load-file 
-;    on-local-char 
-;    on-local-event 
-;    on-new-box 
-;    on-new-image-snip 
-;    on-new-string-snip 
-;    on-new-tab-snip 
-;    on-paint 
-;    on-save-file 
-;    on-set-size-constraint 
-;    on-snip-modified 
+      (wrap on-set-size-constraint)
       
       (super-instantiate ())
       ))

@@ -8,7 +8,7 @@
            "ast.ss")
   
   (provide (all-defined-except sort number-assign-conversions remove-dups meth-member?
-                               variable-member? java-name->scheme generate-require-spec))
+                               variable-member? generate-require-spec))
       
   ;; symbol-type = 'null | 'string | 'boolean | 'char | 'byte | 'short | 'int
   ;;             | 'long | 'float | 'double | 'void
@@ -254,7 +254,7 @@
   (define-struct unknown-ref (methods fields))
   
   ;;(make-method-contract symbol (U type #f) (list (U type #f)))
-  (define-struct method-contract (name ret args))  
+  (define-struct method-contract (name return args))  
   
 ;                                                                                      
 ;                                                                            ;;        
@@ -640,7 +640,24 @@
          (or (and (equal? (scheme-val-name (car fields)) name) 
                   (car fields))
              (field-contract-lookup name (cdr fields)))))
-  
+
+  ;get-method-contracts: string unknown-ref -> (list method-contract)
+  (define (get-method-contracts name ref)
+    (letrec ((methods (unknown-ref-methods ref))
+             (lookup
+              (lambda (ms)
+                (and (not (null? ms))
+                     (or (and (equal? (method-contract-name (car ms)) name)
+                              (car ms))
+                         (lookup name (cdr ms)))))))
+      (cond
+        ((lookup methods) => (lambda (x) x))
+        (else 
+         (let ((mc (make-method-contract name (make-scheme-val 'method-return #t #f #f) #f)))
+           (set-unknown-ref-methods! ref (cons mc (unknown-ref-methods ref)))
+           (list mc))))))
+         
+                  
 ;                                          
 ;             ;                ;;          
 ;                             ;            

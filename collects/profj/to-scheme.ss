@@ -1459,7 +1459,7 @@
     (cond
       ((symbol? type)
        (case type
-         ((int short long byte) '(c:and/c number? exact?))
+         ((int short long byte) 'integer?)
          ((long float) '(c:and/c number? inexact?))
          ((boolean) 'boolean?)
          ((char) 'char?)

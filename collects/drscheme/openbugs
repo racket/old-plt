@@ -1,4 +1,3 @@
-- if you open a non-scheme file, and then open a scheme file from that
-  frame, you won't get anything. You have to open the new scheme file
-  from the original drscheme window.
-
+- when multiple expression are put on one line in the interactions
+  window, they are wrapped in a begin. So, instead of seeing all of
+  the results you only see the last one.

@@ -123,7 +123,7 @@
 
       (define signal-undefined? (make-parameter #t))
 
-      (signal-undefined? #f)
+      (signal-undefined? #t)
 
       (define annotate
 	(lambda (expr)

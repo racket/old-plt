@@ -36,7 +36,8 @@
    clear-viewport draw-viewport flip-viewport
 
    draw-line clear-line flip-line 
-   draw-pixel clear-pixel flip-pixel get-pixel get-color-pixel
+   draw-pixel clear-pixel flip-pixel 
+   get-pixel get-color-pixel test-pixel
 
    draw-rectangle clear-rectangle flip-rectangle 
    draw-ellipse clear-ellipse flip-ellipse 

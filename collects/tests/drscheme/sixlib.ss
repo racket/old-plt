@@ -1,5 +1,5 @@
+(require-library "graphics.ss" "graphics")
 (require-library "macro.ss")
-(require-library "graphic.ss" "graphics")
 (open-graphics)
 
 (define (struct-test)
@@ -97,6 +97,14 @@
                            (/ (modulo (+ x y 1) 3) 2)
                            (/ (modulo (+ x y 2) 3) 2))))]
         
+        [unmarshall-color
+         (lambda (c)
+           (if (is-a? c color%)
+               (list (send c red)
+                     (send c green)
+                     (send c blue))
+               c))]
+
         [for-each-point
          (lambda (f)
            (let loop ([i 8])
@@ -108,6 +116,7 @@
                (loop (- i 1)))))])
     (for-each-point
      (lambda (i j)
+       ;(printf "(~a, ~a) -> ~a~n" i j (unmarshall-color (f i j)))
        ((draw-pixel v) (make-posn i j) (f i j))))
     ;(get-mouse-click v)
     (for-each-point
@@ -117,7 +126,7 @@
                  (and (= (rgb-red rgb1) (rgb-red rgb2))
                       (= (rgb-blue rgb1) (rgb-blue rgb2))
                       (= (rgb-green rgb1) (rgb-green rgb2))))]
-              [color-expected (f i j)]
+              [color-expected ((test-pixel v) (f i j))]
               [bw-expected (if (cmp (make-rgb 1 1 1) color-expected) 0 1)]
               [color-got ((get-color-pixel v) (make-posn i j))]
               [bw-got ((get-pixel v) (make-posn i j))])
@@ -126,7 +135,9 @@
                   i j bw-got bw-expected))
          (unless (cmp color-expected color-got)
            (error 'test-get-color-pixel "wrong answer for (~a,~a); got ~a expected ~a"
-                  i j color-got color-expected)))))
+                  i j
+                  (unmarshall-color color-got)
+                  (unmarshall-color color-expected))))))
     (close-viewport v)))
 
 ;; test scaling

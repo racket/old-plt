@@ -1058,7 +1058,9 @@ void wxWindow::CaptureMouse(void)
 //-----------------------------------------------------------------------------
 void wxWindow::ReleaseMouse(void)
 {
-  if (gMouseWindow == this) gMouseWindow = NULL;
+  if (gMouseWindow == this) {
+    gMouseWindow = NULL;
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1238,22 +1240,23 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 	  //ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
 	  areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
 	  areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
+
+	  if (wxSubType(__type, wxTYPE_CANVAS)
+	      || wxSubType(__type, wxTYPE_PANEL)) {
+	    if (areaMouseEvent->ButtonDown())
+	      CaptureMouse();
+	    else if (gMouseWindow == this
+		     && !areaMouseEvent->Dragging())
+	      ReleaseMouse();
+	  }
+
 	  if (!doCallPreMouseEvent(this, this, areaMouseEvent)) {
 	    if (WantsFocus() && areaMouseEvent->ButtonDown()) {
 	      wxFrame *fr = GetRootFrame();
 	      if (fr)
 		fr->SetFocusWindow(this);
 	    }
-	    
-	    if (wxSubType(__type, wxTYPE_CANVAS)
-		|| wxSubType(__type, wxTYPE_PANEL)) {
-	      if (areaMouseEvent->ButtonDown())
-		CaptureMouse();
-	      else if (gMouseWindow == this
-		       && !areaMouseEvent->Dragging())
-		ReleaseMouse();
-	    }
-	    
+
 	    /* PreOnEvent could disable the target... */
 	    if (!IsGray())
 	      OnEvent(areaMouseEvent);

@@ -306,13 +306,17 @@
 			   `(inherit-from
 			      ,(z:varref-var
 				 (z:inherit-from-clause-super clause))
-			      ,@(map (lambda (inherited)
-				       (z:binding-var inherited))
+			      ,@(map (lambda (internal inherited)
+				       `(,(z:binding-var internal)
+					  ,(read->raw inherited)))
+				  (z:inherit-clause-internals clause)
 				  (z:inherit-clause-inheriteds clause))))
 			 ((z:inherit-clause? clause)
 			   `(inherit
-			      ,@(map (lambda (inherited)
-				       (z:binding-var inherited))
+			      ,@(map (lambda (internal inherited)
+				       `(,(z:binding-bar internal)
+					  ,(z:binding-var inherited)))
+				  (z:inherit-clause-internals clause)
 				  (z:inherit-clause-inheriteds clause))))
 			 ((z:rename-from-clause? clause)
 			   `(rename-from

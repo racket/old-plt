@@ -237,7 +237,7 @@
            file-menu:revert-help-string
            file-menu:revert-on-demand
            file-menu:create-revert?)
-   (define file-menu:revert-callback (lambda (x y) (void)))
+   (define file-menu:revert-callback (lambda (item control) (void)))
    (define file-menu:get-revert-item (lambda () file-menu:revert-item))
    (define file-menu:revert-string
      (lambda () (string-constant revert-menu-item)))
@@ -253,7 +253,7 @@
            file-menu:save-help-string
            file-menu:save-on-demand
            file-menu:create-save?)
-   (define file-menu:save-callback (lambda (x y) (void)))
+   (define file-menu:save-callback (lambda (item control) (void)))
    (define file-menu:get-save-item (lambda () file-menu:save-item))
    (define file-menu:save-string (lambda () (string-constant save-menu-item)))
    (define file-menu:save-help-string (lambda () (string-constant save-info)))
@@ -265,7 +265,7 @@
            file-menu:save-as-help-string
            file-menu:save-as-on-demand
            file-menu:create-save-as?)
-   (define file-menu:save-as-callback (lambda (x y) (void)))
+   (define file-menu:save-as-callback (lambda (item control) (void)))
    (define file-menu:get-save-as-item (lambda () file-menu:save-as-item))
    (define file-menu:save-as-string
      (lambda () (string-constant save-as-menu-item)))
@@ -282,7 +282,7 @@
            file-menu:print-help-string
            file-menu:print-on-demand
            file-menu:create-print?)
-   (define file-menu:print-callback (lambda (x y) (void)))
+   (define file-menu:print-callback (lambda (item control) (void)))
    (define file-menu:get-print-item (lambda () file-menu:print-item))
    (define file-menu:print-string
      (lambda () (string-constant print-menu-item)))
@@ -327,7 +327,8 @@
          (string-constant quit-menu-item-others))))
    (define file-menu:quit-help-string (lambda () (string-constant quit-info)))
    (define file-menu:quit-on-demand (lambda (menu-item) (void)))
-   (define file-menu:create-quit? (lambda () #t))
+   (define file-menu:create-quit?
+     (lambda () (not (eq? (system-type) 'macosx))))
    (public file-menu:after-quit)
    (define file-menu:after-quit (lambda (menu) (void)))
    (public edit-menu:undo-callback
@@ -527,7 +528,7 @@
            edit-menu:find-help-string
            edit-menu:find-on-demand
            edit-menu:create-find?)
-   (define edit-menu:find-callback (lambda (x y) (void)))
+   (define edit-menu:find-callback (lambda (item control) (void)))
    (define edit-menu:get-find-item (lambda () edit-menu:find-item))
    (define edit-menu:find-string (lambda () (string-constant find-menu-item)))
    (define edit-menu:find-help-string (lambda () (string-constant find-info)))
@@ -544,7 +545,7 @@
            edit-menu:find-again-help-string
            edit-menu:find-again-on-demand
            edit-menu:create-find-again?)
-   (define edit-menu:find-again-callback (lambda (x y) (void)))
+   (define edit-menu:find-again-callback (lambda (item control) (void)))
    (define edit-menu:get-find-again-item (lambda () edit-menu:find-again-item))
    (define edit-menu:find-again-string
      (lambda () (string-constant find-again-menu-item)))
@@ -563,7 +564,8 @@
            edit-menu:replace-and-find-again-help-string
            edit-menu:replace-and-find-again-on-demand
            edit-menu:create-replace-and-find-again?)
-   (define edit-menu:replace-and-find-again-callback (lambda (x y) (void)))
+   (define edit-menu:replace-and-find-again-callback
+     (lambda (item control) (void)))
    (define edit-menu:get-replace-and-find-again-item
      (lambda () edit-menu:replace-and-find-again-item))
    (define edit-menu:replace-and-find-again-string
@@ -579,7 +581,9 @@
    (define edit-menu:create-replace-and-find-again? (lambda () #f))
    (public edit-menu:between-find-and-preferences)
    (define edit-menu:between-find-and-preferences
-     (lambda (menu) (make-object separator-menu-item% menu)))
+     (lambda (menu)
+       (unless (eq? (system-type) 'macosx)
+         (make-object separator-menu-item% menu))))
    (public edit-menu:preferences-callback
            edit-menu:get-preferences-item
            edit-menu:preferences-string
@@ -595,7 +599,8 @@
    (define edit-menu:preferences-help-string
      (lambda () (string-constant preferences-info)))
    (define edit-menu:preferences-on-demand (lambda (menu-item) (void)))
-   (define edit-menu:create-preferences? (lambda () #t))
+   (define edit-menu:create-preferences?
+     (lambda () (not (eq? (system-type) 'macosx))))
    (public edit-menu:after-preferences)
    (define edit-menu:after-preferences (lambda (menu) (void)))
    (public help-menu:before-about)
@@ -606,7 +611,7 @@
            help-menu:about-help-string
            help-menu:about-on-demand
            help-menu:create-about?)
-   (define help-menu:about-callback (lambda (x y) (void)))
+   (define help-menu:about-callback (lambda (item control) (void)))
    (define help-menu:get-about-item (lambda () help-menu:about-item))
    (define help-menu:about-string
      (lambda () (string-constant about-menu-item)))

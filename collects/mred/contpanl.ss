@@ -70,7 +70,8 @@
 	     (send (car children) set-focus)))]
 	[on-default-action
 	 (lambda (item)
-	   (send item on-default-action))]
+	   (unless (null? item)
+	     (send item on-default-action)))]
 	
 	; list-diff: computes the difference between two lists
 	; input: l1, l2: two lists

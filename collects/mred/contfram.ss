@@ -325,7 +325,8 @@
 	  
 	 [on-default-action
 	  (lambda (item)
-	    (send item on-default-action))])
+	    (unless (null? item)
+	      (send item on-default-action)))])
 
 	  ; show: shows/hides the dialog and optionally centers it
 	  ; on-screen

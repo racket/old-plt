@@ -191,4 +191,49 @@
 		 x
 		 top-pos
 		 size
-		 line-width))))))
+		 line-width)))))
+    
+    (define unattached-nonsnip%
+      (class null ()
+	(public
+	  [draw
+	   (lambda (dc x y left top right bottom dx dy draw-caret)
+	     (void))]
+	  [get-extent
+	   (lambda (dc x y w h descent space lspace rspace)
+	     (let ([size (lambda (size)
+			   (lambda (b)
+			     (when (box? b)
+			       (set-box! b size))))])
+	       (for-each (size 20) (list w h))
+	       (for-each (size 2) (list descent space lspace rspace))))]
+	  [resize
+	   (lambda (w h)
+	     #f)]
+	  [size-cache-invalid void]
+	  [get-text (lambda () "unattached-nonsnip")])))
+	   
+    
+    (define forward-snip%
+      (class wx:snip% (unattached)
+	(public
+	  [copy
+	   (lambda ()
+	     (make-object forward-snip% unattached))]
+	  [get-extent
+	   (lambda (dc x y w h descent space lspace rspace)
+	     (send unattached get-extent dc x y w h descent space lspace rspace))]
+	  [draw
+	   (lambda (dc x y left top right bottom dx dy draw-caret)
+	     (send unattached dc x y left top right bottom dx dy draw-caret))]
+	  [resize
+	   (lambda (w h)
+	     (send unattached resize w h))]
+	  [size-cache-invalid 
+	   (lambda ()
+	     (send unattached size-cache-invalide))]
+	  [get-text
+	   (lambda ()
+	     (send unattached get-text))])))
+    
+    )

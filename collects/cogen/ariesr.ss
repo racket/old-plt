@@ -1,15 +1,14 @@
 ;; Moy
 ;; reworked by Robby
 
-;; aries adds only begin and let (in the app case) to the transformed source
+;; aries adds only begin and let to the transformed source
 
 (plt:require-library "ariess.ss")
 
 (define plt:aries@
   (unit/sig plt:aries^
     (import [zodiac : zodiac:system^]
-	    [zodiac:interface : zodiac:interface^]
-	    [user : plt:aries:predicates^])
+	    [zodiac:interface : zodiac:interface^])
 
     (define error-box
       (box #f))
@@ -21,16 +20,6 @@
 	 ((pair? list) (cons (f (car list)) (improper-map f (cdr list))))
 	 (else (f list)))))
 
-
-    (define macro-in-mzscheme?
-      (lambda (id)
-	(let* ([gdv (and (user:defined? id)
-			 (user:global-defined-value id))])
-	  (and gdv
-	       (or (user:syntax? gdv)
-		   (user:macro? gdv)
-		   (user:id-macro? gdv)
-		   (user:expansion-time-value? gdv))))))
 
     (define unparse-read
       (lambda (read)
@@ -59,13 +48,7 @@
 	  (zodiac:id-var expr)]
 
 	 [(zodiac:top-level-varref? expr)
-	  (let ([id (zodiac:id-var expr)])
-	    (if (macro-in-mzscheme? id)
-		(zodiac:interface:static-error expr
-					       (string-append
-						"illegal identifier: "
-						(symbol->string id)))
-		(wrap expr id)))]
+	  (wrap expr (zodiac:id-var expr))]
 	 
 	 [(zodiac:app? expr)
 	  (let* ([aries:app-arg (gensym 'aries:app-arg)]
@@ -130,9 +113,11 @@
 	       ,(map zodiac:symbol-orig-name
 		     (zodiac:define-struct-form-fields expr)))]
 
-	 [else (zodiac:interface:internal-error
-		(format "unknown object to annotate, start: ~a finish: ~a"
-			(zodiac:zodiac-start expr) (zodiac:zodiac-finish expr)))])))
+	 [else
+	  (print-struct #t)
+	  (zodiac:interface:internal-error
+	   expr
+	   (format "unknown object to annotate, ~a~n" expr))])))
 
     (define transform
       (lambda (port offset file)

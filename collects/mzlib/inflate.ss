@@ -239,23 +239,19 @@
  */
 |#
 
-  (define bb 0) ;                         /* bit buffer */
-  (define bk 0) ;                    /* bits in bit buffer */
+  (define bb 0) ; /* bit buffer */
+  (define bk 0) ; /* bits in bit buffer */
   (define peeked 0)
-  (define PEEK-LIMIT 32) ; assume that lookahead never needs more than 32 bytes
   
   (define (NEEDBITS n)
     (when (< bk n)
-      (let ([v (if (peeked . < . PEEK-LIMIT)
-		   (peek-byte input-port peeked)
-		   (begin
-		     (read-byte input-port)
-		     (set! peeked (sub1 peeked))
-		     (peek-byte input-port peeked)))])
+      (let ([v (peek-byte input-port peeked)])
 	(unless (eof-object? v)
-	  (begin
-	    (set! bb (+ bb (arithmetic-shift v bk)))
-	    (set! peeked (add1 peeked)))))
+	  (set! bb (+ bb (arithmetic-shift v bk)))
+	  ;; assume that lookahead never needs more than 32 bytes:
+	  (if (peeked . < . 32) 
+	      (set! peeked (add1 peeked))
+	      (read-byte input-port))))
       (set! bk (+ bk 8))
       (NEEDBITS n)))
   (define (DUMPBITS n)

@@ -231,6 +231,11 @@
   (erase-log-directory-contents "Effacer le contenu du répertoire d'enregistrement : ~a ?")
   (error-erasing-log-directory "Erreur durant l'effacement du contenu du répertoire d'enregistrement.\n\n~a\n")
   
+  ;; modes
+  (mode-submenu-label "Modes")
+  (scheme-mode "Mode scheme")
+  (text-mode "Mode texte")
+ 
   (url "URL")
   (url: "URL :")
   (open-url... "Ouvrir l'URL...")
@@ -477,7 +482,7 @@
   ;;; multi-file-search
   (mfs-multi-file-search-menu-item "Rechercher dans les fichiers...")
   (mfs-string-match/graphics "Une chaîne de caractères (y compris dans les fichiers avec graphiques)")
-  (mfs-regexp-match/no-graphics "Une expression régulière (fichiers texts seulement)")
+  (mfs-regexp-match/no-graphics "Une expression régulière (fichiers textuels seulement)")
   (mfs-searching... "Recherche en cours...")
   (mfs-configure-search "Configurer la recherche") ;; dialog title
   (mfs-files-section "Fichiers")   ;; section in config dialog

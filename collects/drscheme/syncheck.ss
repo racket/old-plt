@@ -774,8 +774,10 @@
                                           new-requires
                                           new-require-for-syntaxes
                                           new-referenced-macros
+                                          bound-in-sources
                                           has-module?)
                                          (annotate-basic sexp run-in-expansion-thread)])
+                             (annotate-bound-in-sources bound-in-sources)
                              (if has-module?
                                  (annotate-complete users-namespace
                                                     new-binders
@@ -1099,6 +1101,7 @@
       ;;                                    (listof syntax)
       ;;                                    (listof syntax)
       ;;                                    (listof (cons boolean syntax[original]))
+      ;;                                    (listof (cons syntax[original] syntax[original]))
       ;;                                    boolean)
       ;; annotates the lexical structure of the program `sexp', except
       ;; for the variables in the program. returns the variables in several
@@ -1116,14 +1119,15 @@
         (let ([binders null]
               [varrefs null]
               [tops null]
-              [has-module? #f]
               [requires null]
               [require-for-syntaxes null]
-              [referenced-macros null])
+              [referenced-macros null]
+              [bound-in-sources null]
+              [has-module? #f])
           (let level-loop ([sexp sexp]
                            [high-level? #f])
             (annotate-original-keywords sexp)
-            (annotate-bound-in-source sexp)
+            (set! bound-in-sources (combine-bound-in-source sexp bound-in-sources))
             (set! referenced-macros (get-referenced-macros high-level? sexp referenced-macros))
             (set! varrefs (flatten-cons-tree #t (syntax-property sexp 'bound-in-source) varrefs))
             (set! binders (flatten-cons-tree 'no-cons (syntax-property sexp 'binding-in-source) binders))
@@ -1277,23 +1281,37 @@
                   requires
                   require-for-syntaxes
                   referenced-macros
+                  bound-in-sources
                   has-module?)))
 
-      ;; annotate-bound-in-source : syntax -> void
-      ;; adds arrows between pairs found in the 'bound-in-source syntax property.
-      (define (annotate-bound-in-source stx)
-        (let loop ([bis (syntax-property stx 'bound-in-source)])
+      ;; annotate-bound-in-sources : (listof (cons syntax[orig] syntax[orig])) -> void
+      ;; adds arrows and colors between pairs found in the 'bound-in-source syntax property.
+      (define (annotate-bound-in-sources biss)
+        (for-each
+         (lambda (bis)
+           (color (car bis) bound-variable-style-str)
+           (color (cdr bis) bound-variable-style-str)
+           (connect-syntaxes (car bis) (cdr bis)))
+         biss))
+      
+      ;; combine-bound-in-sources : syntax (listof (cons syntax[orig] syntax[orig))
+      ;;                         -> (listof (cons syntax[orig] syntax[orig))
+      (define (combine-bound-in-source stx old-biss)
+        (let loop ([bis (syntax-property stx 'bound-in-source)]
+                   [acc old-biss])
           (cond
             [(and (cons? bis)
                   (syntax? (car bis))
                   (syntax? (cdr bis)))
-             (when (and (syntax-original? (car bis))
-                        (syntax-original? (cdr bis)))
-               (connect-syntaxes (car bis) (cdr bis)))]
+             (if (and (syntax-original? (car bis))
+                      (syntax-original? (cdr bis)))
+                 (cons bis acc)
+                 acc)]
             [(cons? bis)
-             (loop (car bis))
-             (loop (cdr bis))]
-            [else (void)])))
+             (loop (car bis)
+                   (loop (cdr bis)
+                         acc))]
+            [else acc])))
 
       ;; annotate-require-open : ((-> void) -> stx -> void)
       (define (annotate-require-open run-in-expansion-thread)

@@ -5045,6 +5045,13 @@ fi
 
 
 
+if test -d $srcdir/testsuite; then
+  TESTSUBDIR_TRUE=
+  TESTSUBDIR_FALSE='#'
+else
+  TESTSUBDIR_TRUE='#'
+  TESTSUBDIR_FALSE=
+fi
 
 
 TARGETDIR="unknown"

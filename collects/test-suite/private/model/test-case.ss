@@ -39,6 +39,7 @@
       ;; show-test (boolean? . -> . void?)
       ;; show/hide the test in the display
       (define/public (show-test show?)
+        (set! test-showing? show?)
         (send (get-editor) show-test show?))
       
       ;; reset (-> void?)

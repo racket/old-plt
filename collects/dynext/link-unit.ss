@@ -86,10 +86,14 @@
 	  (if (eq? '3m (link-variant))
 	      null
 	      (list s))))
-      
+
       (define (expand-for-link-variant l)
 	(apply append (map (lambda (s) (if (path-string? s) (list (path-string->string s)) (s))) l)))
 
+      (define use-mzdyn? (make-parameter #t))
+      (define (mzdyn-maybe s)
+        (lambda ()
+          (if (use-mzdyn?) (s) null)))
 
       (define (get-unix-link-flags)
 	(case (string->symbol (path->string (system-library-subpath)))
@@ -141,12 +145,14 @@
 							    "-e" "_dll_entry@12" 
 							    "-o" (path-string->string s))))
       (define msvc-link-output-strings (lambda (s) (list (string-append "/Fe" (path-string->string s)))))
-      (define borland-link-output-strings (lambda (s) (list "," (path-string->string s)
-							    "," "," "c0d32.obj" "cw32.lib" "import32.lib"
-							    "," (path->string
-								 (build-path std-library-dir 
-									     "bcc" 
-									     "mzdynb.def")))))
+      (define borland-link-output-strings (lambda (s) (list* "," (path-string->string s)
+                                                             "," "," "c0d32.obj" "cw32.lib" "import32.lib"
+                                                             (if (use-mzdyn?)
+                                                               (list "," (path->string
+                                                                          (build-path std-library-dir 
+                                                                                      "bcc" 
+                                                                                      "mzdynb.def")))
+                                                               null))))
       
       ;; See doc.txt:
       (define current-make-link-output-strings
@@ -191,21 +197,25 @@
 	  (cond
 	   [win-gcc? (list (wrap-xxxxxxx (wrap-3m "libmzsch~a~~a.lib"))
 			   (wrap-xxxxxxx (drop-3m "libmzgc~a.lib"))
-			   (filethunk (wrap-3m "mzdyn~a.exp"))
-			   (filethunk (wrap-3m "mzdyn~a.o"))
+			   (mzdyn-maybe (filethunk (wrap-3m "mzdyn~a.exp")))
+			   (mzdyn-maybe (filethunk (wrap-3m "mzdyn~a.o")))
 			   (file "init.o")
 			   (file "fixup.o"))]
-	   [win-borland? (map file (list "mzdynb.obj"))]
+	   [win-borland? (map file (if (use-mzdyn?)
+                                     (list "mzdynb.obj")
+                                     null))]
 	   [else (list (wrap-xxxxxxx (wrap-3m "libmzsch~a~~a.lib"))
 		       (wrap-xxxxxxx (drop-3m "libmzgc~a.lib"))
-		       (filethunk (wrap-3m "mzdyn~a.exp"))
-		       (filethunk (wrap-3m "mzdyn~a.obj")))])))
+		       (mzdyn-maybe (filethunk (wrap-3m "mzdyn~a.exp")))
+		       (mzdyn-maybe (filethunk (wrap-3m "mzdyn~a.obj"))))])))
       
       (define (get-unix/macos-link-libraries)
 	(list (lambda ()
-		(map (lambda (mz.o)
-		       (path->string (build-path std-library-dir mz.o)))
-		     ((wrap-3m "mzdyn~a.o"))))))
+		(if use-mzdyn?
+                  (map (lambda (mz.o)
+                         (path->string (build-path std-library-dir mz.o)))
+                       ((wrap-3m "mzdyn~a.o")))
+                  null))))
 
       ;; See doc.txt:
       (define current-standard-link-libraries
@@ -308,7 +318,9 @@
 			(let* ([dll-command
 				;; Generate DLL link information
 				`("--dllname" ,out 
-				  "--def" ,(path->string (build-path std-library-dir "gcc" "mzdyn.def"))
+				  ,@(if (use-mzdyn?)
+                                      `("--def" ,(path->string (build-path std-library-dir "gcc" "mzdyn.def")))
+                                      `())
 				  "--base-file" ,basefile
 				  "--output-exp" ,(path->string expfile))]
 			       ;; Command to link with new .exp, re-create .base:

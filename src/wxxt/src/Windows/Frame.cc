@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.13 1999/02/05 04:30:17 mflatt Exp $
+ * $Id: Frame.cc,v 1.14 1999/02/23 18:00:14 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -346,7 +346,7 @@ void wxFrame::SetIcon(wxBitmap *icon)
     if (bm->Ok()) {
       wxMemoryDC *mdc = new wxMemoryDC();
       mdc->SelectObject(bm);
-      mdc->Blit(0, 0, icon->GetWidth(), icon->GetHeight(), icon, 0, 0);
+      mdc->Blit(0, 0, icon->GetWidth(), icon->GetHeight(), icon, 0, 0, wxSTIPPLE, NULL);
       mdc->SelectObject(NULL);
 
       XtVaSetValues(X->frame, XtNiconPixmap, GETPIXMAP(bm), NULL);

@@ -86,7 +86,7 @@ char *wxGetTempFileName (const char *prefix, char *dest)
 #ifdef OS_X
     struct stat stbuf;
 #endif
-    sprintf (buf, "%s¥%s%d", temp_folder, prefix, (int) suffix); // CJC FIXME - really should get a temp folder
+    sprintf (buf, "%s_%s%d", temp_folder, prefix, (int) suffix);
     if (stat ((char *)buf, &stbuf) != 0) {
       // Touch the file to create it (reserve name)
       FILE *fd = fopen (buf, "w");
@@ -102,7 +102,7 @@ char *wxGetTempFileName (const char *prefix, char *dest)
     }
   }
   if (dest) dest[0] = 0;
-  return NULL;
+  return dest;
 }
 
 #ifndef OS_X

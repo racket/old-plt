@@ -3311,7 +3311,6 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
 }
 
 void unmarshalVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
-
   switch(pVariantArg->vt) {
 
   case VT_UI1 | VT_BYREF :
@@ -3777,34 +3776,43 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
       int len = strlen (name);
       int count = MultiByteToWideChar (CP_ACP, (DWORD) 0, name, len, namebuf, sizeray (namebuf) -1);
       namebuf[len] = '\0';
-      if (count < len)
-          scheme_signal_error ("com-invoke:  Unable to translate name to Unicode.");
-      
+      if (count < len) {
+	scheme_signal_error ("com-invoke:  Unable to translate name to Unicode.");
+      }      
+
       LPOLESTR namearray = (LPOLESTR)&namebuf;
 
       hr = pIDispatch->GetIDsOfNames (IID_NULL, &namearray, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
       if (FAILED (hr)) {
-          if (hr == E_OUTOFMEMORY)
-              scheme_signal_error ("com-invoke:  out of memory");
-          else if (hr == DISP_E_UNKNOWNNAME)
-              scheme_signal_error ("com-invoke:  unknown name");
-          else if (hr == DISP_E_UNKNOWNLCID)
-              scheme_signal_error ("com-invoke:  unknown LCID");
-          else
-              scheme_signal_error ("com-invoke:  unknown error");
-          }
+	switch (hr) {
+	case E_OUTOFMEMORY :
+	  scheme_signal_error ("com-invoke:  out of memory");
+	  break;
+	case DISP_E_UNKNOWNNAME :
+	  scheme_signal_error ("com-invoke:  unknown name");
+	  break;
+	case DISP_E_UNKNOWNLCID :
+	  scheme_signal_error ("com-invoke:  unknown LCID");
+	  break;
+	default :
+	  scheme_signal_error ("com-invoke:  unknown error");
+	  break;
+	}
       }
-  else 
-      dispid = pTypeDesc->memID;
+  }
+  else { 
+    dispid = pTypeDesc->memID;
+  }
 
-  // This will build the method arguments even if pTypeDesc is NULL.
+  // Build the method arguments even if pTypeDesc is NULL.
   numParamsPassed = buildMethodArguments(pTypeDesc,
 					 invKind,
 					 argc,argv,
 					 &methodArguments);
 
-  if (invKind != INVOKE_PROPERTYPUT)
+  if (invKind != INVOKE_PROPERTYPUT) {
     VariantInit (&methodResult);
+  }
 
   // invoke requested method
 

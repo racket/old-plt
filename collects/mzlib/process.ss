@@ -11,17 +11,21 @@
 
   ;; Helpers: ----------------------------------------
 
-  (define (shell-path/args)
+  (define (shell-path/args who argstr)
     (case (system-type)
-      ((unix) '("/bin/sh" "-c"))
-      ((windows) (list
-		  (let ([d (find-system-path 'sys-dir)])
-		    (let ([cmd (build-path d "cmd.exe")])
-		      (if (file-exists? cmd)
-			  cmd
-			  (build-path d "command.com"))))
-		  "/c"))
-      (else (error "don't know what shell to use for ~e." (system-type)))))
+      ((unix) (append '("/bin/sh" "-c") argstr))
+      ((windows) (let ([cmd 		  
+			(let ([d (find-system-path 'sys-dir)])
+			  (let ([cmd (build-path d "cmd.exe")])
+			    (if (file-exists? cmd)
+				cmd
+				(build-path d "command.com"))))])
+		   (list cmd
+			 'exact
+			 (format "~a /c ~a" cmd argstr))))
+      (else (raise-mismatch-error 
+	     (format "~a: don't know what shell to use for platform: " who)
+	     (system-type)))))
 
   (define (if-stream-out p)
     (if (or (not p) (file-stream-port? p))
@@ -86,13 +90,13 @@
 	      control))))
 
   (define (process/ports out in err str)
-    (apply process*/ports out in err (append (shell-path/args) (list str))))
+    (apply process*/ports out in err (shell-path/args "process/ports" str)))
 
   (define (process* exe . args)
     (apply process*/ports #f #f #f exe args))
 
   (define (process str)
-    (apply process* (append (shell-path/args) (list str))))
+    (apply process* (shell-path/args "process" str)))
 
   ;; Note: these always use current ports
   (define (system* exe . args)
@@ -128,4 +132,4 @@
   (define (system str)
     (if (eq? (system-type) 'macos)
 	(subprocess #f #f #f "by id" str)
-	(apply system* (append (shell-path/args) (list str))))))
+	(apply system* (shell-path/args "system" str)))))

@@ -18,4 +18,10 @@
        (eval stx)]
       [(require-for-syntax . _)
        (eval stx)]
+      [(define-values (id ...) . _)
+       (for-each (lambda (id)
+		   (with-syntax ([id id]
+				 [undefined (letrec ([x x]) x)])
+		     (eval (syntax (define (id) undefined)))))
+		 (syntax->list (syntax (id ...))))]
       [_else (void)])))

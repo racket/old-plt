@@ -942,10 +942,9 @@
 				 stx
 				 ids)])))
 		  (with-syntax ([decl-form decl-form])
-		    (syntax
-		     (begin
-		       (decl-form name)
-		       (define (name . ids) expr0 expr ...))))]
+		    (with-syntax ([decl (syntax/loc stx (decl-form name))]
+				  [defn (syntax/loc stx (define (name . ids) expr0 expr ...))])
+		      (syntax (begin decl defn))))]
 		 [(_ d . __)
 		  (or (identifier? (syntax d))
 		      (and (stx-pair? (syntax d))

@@ -7,30 +7,11 @@
   (define primitive-eval (current-eval))
   (define primitive-load (current-load))
 
-  (define top-parameterization (current-parameterization))
-  (define system-parameterization (make-parameterization top-parameterization))
-  (define eval-thread-parameterization
-    (make-parameterization-with-sharing 
-     system-parameterization
-     system-parameterization
-     (list current-exception-handler)
-     (lambda (x) #f)))
-  (define system-custodian (current-custodian))
-
-  (current-parameterization system-parameterization)
-
-  (parameterization-branch-handler
-   (lambda ()
-     (make-parameterization-with-sharing 
-      system-parameterization
-      system-parameterization
-      (list current-exception-handler)
-      (lambda (x) #f))))
-
   (print-struct #t)
   (break-enabled #f)
-  ((in-parameterization eval-thread-parameterization break-enabled) #f)
-  ((in-parameterization eval-thread-parameterization print-struct) #t)
+
+  (Define system-custodian (current-custodian))
+  (Define system-eventspace (current-eventspace))
 
   (error-display-handler
    (lambda (msg)

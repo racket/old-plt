@@ -473,7 +473,8 @@
 	   (set! in-evaluation? #t)
 	   (semaphore-post in-evaluation-semaphore)
 
-	   ;; this thread must be the user's thread
+	   ;; this thread must be the user's thread.
+	   ;; the user can only have one main thread
 	   (let ([thread-to-watch (current-thread)])
 
 	     (fluid-let ([breakable-thread thread-to-watch]
@@ -561,9 +562,7 @@
 			  (semaphore-post running-semaphore)
 			  (update-running))
 			(lambda ()
-			  (with-parameterization drscheme:init:system-parameterization
-			    (lambda ()
-			      (thunk))))
+			  (thunk))
 			(lambda ()
 			  (semaphore-wait running-semaphore)
 			  (set! evaluation-running #f)
@@ -636,40 +635,38 @@
 
 	[init-transparent-io-do-work
 	 (lambda (grab-focus?)
-	   (with-parameterization drscheme:init:system-parameterization
-	     (lambda ()
-	       (let ([c-locked? (locked?)])
-		 (begin-edit-sequence)
-		 (lock #f)
-		 (let ([starting-at-prompt-mode? prompt-mode?])
-		   (set! transparent-edit (make-object transparent-io-edit%))
-		   
-		   ;; ensure that there is a newline before the snip is inserted
-		   (unless (member 'hard-newline
-				   (send (find-snip (last-position) 'before) get-flags))
-		     (insert (string #\newline) (last-position) (last-position) #f))
-		   
-		   (when starting-at-prompt-mode?
-		     (set-prompt-mode #f))
-		   
-		   (unless transparent-edit
-		     (printf "transparent-edit is ~a!" transparent-edit))
-		   (send transparent-edit auto-wrap #t)
-		   (let ([snip (make-object mred:editor-snip% transparent-edit)])
-		     (set! transparent-snip snip)
-		     (insert snip (last-position) (last-position) #f)
-		     (insert (string #\newline) (last-position) (last-position) #f)
-		     (for-each (lambda (c) (send c add-wide-snip snip))
-			       (get-canvases)))
-		   (when grab-focus?
-		     (let ([a (send transparent-edit get-admin)])
-		       (when a
-			 (send a grab-caret))))
-		   (when starting-at-prompt-mode?
-		     (insert-prompt)))
-		 (set-prompt-position (last-position))
-		 (lock c-locked?)
-		 (end-edit-sequence)))))]
+	   (let ([c-locked? (locked?)])
+	     (begin-edit-sequence)
+	     (lock #f)
+	     (let ([starting-at-prompt-mode? prompt-mode?])
+	       (set! transparent-edit (make-object transparent-io-edit%))
+	       
+	       ;; ensure that there is a newline before the snip is inserted
+	       (unless (member 'hard-newline
+			       (send (find-snip (last-position) 'before) get-flags))
+		 (insert (string #\newline) (last-position) (last-position) #f))
+	       
+	       (when starting-at-prompt-mode?
+		 (set-prompt-mode #f))
+	       
+	       (unless transparent-edit
+		 (printf "transparent-edit is ~a!" transparent-edit))
+	       (send transparent-edit auto-wrap #t)
+	       (let ([snip (make-object mred:editor-snip% transparent-edit)])
+		 (set! transparent-snip snip)
+		 (insert snip (last-position) (last-position) #f)
+		 (insert (string #\newline) (last-position) (last-position) #f)
+		 (for-each (lambda (c) (send c add-wide-snip snip))
+			   (get-canvases)))
+	       (when grab-focus?
+		 (let ([a (send transparent-edit get-admin)])
+		   (when a
+		     (send a grab-caret))))
+	       (when starting-at-prompt-mode?
+		 (insert-prompt)))
+	     (set-prompt-position (last-position))
+	     (lock c-locked?)
+	     (end-edit-sequence)))]
 
 	  [this-in-read
 	   (lambda ()
@@ -858,220 +855,186 @@
       (private
        [initialize-parameters
 	(lambda ()
-	  (let ([p (basis:build-parameterization
-		    (list 'mred)
-		    (fw:preferences:get 'drscheme:settings)
-		    
-		    (lambda (in-<=-at-least-two-args
-			     in-allow-improper-lists
-			     in-eq?-only-compares-symbols
-			     parameterization)
-		      (let ([u
-			     (compound-unit/sig
-			       (import)
-			       (link [params : plt:userspace:params^
-					     ((unit/sig plt:userspace:params^
-						(import)
-						(define <=-at-least-two-args in-<=-at-least-two-args)
-						(define allow-improper-lists in-allow-improper-lists)
-						(define eq?-only-compares-symbols in-eq?-only-compares-symbols)))]
-				     [userspace : plt:userspace^ 
-						((require-library "gusrspcr.ss" "gusrspce")
-						 params)]
-				     [library : () ((unit/sig ()
-						      (import plt:userspace^)
-						      (when library-unit
-							(with-handlers ([(lambda (x) #t)
-									 (lambda (x)
-									   ((error-display-handler)
-									    (format
-									     "Invalid Library:~n~a"
-									     (if (exn? x) (exn-message x) x))
-									    "Invalid Library"))])
-							  (invoke-open-unit/sig library-unit #f plt:userspace^))))
-						    userspace)])
-			       (export (open userspace)))])
-			(with-parameterization parameterization
-			  (lambda ()
-			    (invoke-open-unit/sig u))))))])
+	  (basis:initialize-parameterization
+	   (list 'mred)
+	   (fw:preferences:get 'drscheme:settings)
+	   (lambda (in-<=-at-least-two-args
+		    in-allow-improper-lists
+		    in-eq?-only-compares-symbols
+		    parameterization)
+	     (invoke-open-unit/sig
+	      (compound-unit/sig (import)
+		(link [params : plt:userspace:params^
+			      ((unit/sig plt:userspace:params^
+				 (import)
+				 (define <=-at-least-two-args in-<=-at-least-two-args)
+				 (define allow-improper-lists in-allow-improper-lists)
+				 (define eq?-only-compares-symbols in-eq?-only-compares-symbols)))]
+		      [userspace : plt:userspace^ 
+				 ((require-library "gusrspcr.ss" "gusrspce")
+				  params)]
+		      [library : () ((unit/sig ()
+				       (import plt:userspace^)
+				       (when library-unit
+					 (with-handlers ([(lambda (x) #t)
+							  (lambda (x)
+							    ((error-display-handler)
+							     (format
+							      "Invalid Library:~n~a"
+							      (if (exn? x) (exn-message x) x))
+							     "Invalid Library"))])
+					   (invoke-open-unit/sig library-unit #f plt:userspace^))))
+				     userspace)])
+		(export (open userspace))))))
+
+	  (exception-reporting-rep this)
+	  (current-output-port this-out)
+	  (current-error-port this-err)
+	  (current-input-port this-in)
+	  
+	  (global-port-print-handler
+	   (let ([old (global-port-print-handler)])
+	     (lambda (value port)
+	       (if (or (eq? port this-result)
+		       (eq? port this-out)
+		       (eq? port this-err))
+		   (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+				   (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+				  [mzlib:pretty-print:pretty-print-print-hook
+				   (lambda (x _ port)
+				     (evcase port
+					     [this-result (this-result-write x)]
+					     [this-out (this-out-write x)]
+					     [this-err (this-err-write x)]))])
+		     (old value port))
+		   (old value port)))))
+	  
+	  (print-convert:current-print-convert-hook
+	   (lambda (expr basic-convert sub-convert)
+	     (let ([ans (if (is-a? expr mred:snip%)
+			    expr
+			    (basic-convert expr))])
+	       ans)))
+	  
+	  (current-load
+	   (let ([userspace-load (current-load)])
+	     (rec drscheme-load-handler
+		  (lambda (filename)
+		    (unless (string? filename)
+		      (raise (make-exn:application:arity
+			      (format "drscheme-load-handler: expects argument of type <string>; given: ~e" filename)
+			      ((debug-info-handler))
+			      filename
+			      'string)))
+		    (if (and (basis:setting-use-zodiac? user-setting)
+			     (let* ([p (open-input-file filename)]
+				    [loc (zodiac:make-location basis:INITIAL-LINE
+							       basis:INITIAL-COLUMN
+							       basis:INITIAL-OFFSET
+							       filename)]
+				    [chars (begin0
+					    (list (read-char p) (read-char p) (read-char p) (read-char p))
+					    (close-input-port p))])
+			       (equal? chars (string->list "WXME"))))
+			(let ([process-sexps
+			       (let ([last (list (void))])
+				 (lambda (sexp recur)
+				   (cond
+				    [(basis:process-finish? sexp) last]
+				    [else
+				     (set! last
+					   (call-with-values
+					    (lambda () (basis:syntax-checking-primitive-eval sexp))
+					    (lambda x x)))
+				     (recur)])))])
+			  (apply values 
+				 (let ([edit (make-object drscheme:edit:edit%)])
+				   (send edit load-file filename)
+				   (process-edit edit process-sexps
+						 0 
+						 (send edit last-position)
+						 #t))))
+			(userspace-load filename))))))
+	  
+	  (basis:error-display/debug-handler report-located-error)
+	  
+	  (error-display-handler
+	   (rec drscheme-error-display-handler
+		(lambda (msg)
+		  (let ([rep (exception-reporting-rep)])
+		    (mred:message-box "Debugging Error" msg)
+		    (if rep
+			(send rep report-unlocated-error msg)
+			(mred:message-box "Uncaught Error" msg))))))
+	  
+	  (let ([directory
+		 (let/ec k
+		   (unless (get-top-level-window)
+		     (k first-dir))
+		   (let*-values ([(filename) (send (ivar (get-top-level-window) definitions-edit)
+						   get-filename)]
+				 [(normalized) (if (string? filename)
+						   (mzlib:file:normalize-path filename)
+						   (k first-dir))]
+				 [(base _1 _2) (split-path normalized)])
+		     (or base 
+			 first-dir)))])
+	    (current-directory directory))
+	  
+	  (exit-handler (lambda (arg) (shutdown-user-custodian)))
+	  
+	  ;; set all parameters before constructing eventspace
+	  ;; so that the parameters are set in the eventspace's
+	  ;; parameterization
+	  (let* ([user-eventspace #f]
+		 [primitive-dispatch-handler (mred:event-dispatch-handler)]
+		 [event-semaphore (make-semaphore 0)]
+		 
+		 [ht (make-hash-table-weak)] ;; maps eventspaces to depth of nested yields (ints)
+		 
+		 [first-box (box #t)])
 	    
-	    (with-parameterization p
-	      (lambda ()
-		
-		(exception-reporting-rep this)
-		(current-output-port this-out)
-		(current-error-port this-err)
-		(current-input-port this-in)
-		
-		(global-port-print-handler
-		 (let ([old (global-port-print-handler)])
-		   (lambda (value port)
-		     (if (or (eq? port this-result)
-			     (eq? port this-out)
-			     (eq? port this-err))
-			 (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-					 (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
-					[mzlib:pretty-print:pretty-print-print-hook
-					 (lambda (x _ port)
-					   (evcase port
-						   [this-result (this-result-write x)]
-						   [this-out (this-out-write x)]
-						   [this-err (this-err-write x)]))])
-			   (old value port))
-			 (old value port)))))
-		
-		(print-convert:current-print-convert-hook
-		 (lambda (expr basic-convert sub-convert)
-		   (let ([ans (if (is-a? expr mred:snip%)
-				  expr
-				  (basic-convert expr))])
-		     ans)))
-		
-		(current-load
-		 (let ([userspace-load (current-load)])
-		   (rec drscheme-load-handler
-			(lambda (filename)
-			  (unless (string? filename)
-			    (raise (make-exn:application:arity
-				    (format "drscheme-load-handler: expects argument of type <string>; given: ~e" filename)
-				    ((debug-info-handler))
-				    filename
-				    'string)))
-			  (if (and (basis:setting-use-zodiac? user-setting)
-				   (let* ([p (open-input-file filename)]
-					  [loc (zodiac:make-location basis:INITIAL-LINE
-								     basis:INITIAL-COLUMN
-								     basis:INITIAL-OFFSET
-								     filename)]
-					  [chars (begin0
-						   (list (read-char p) (read-char p) (read-char p) (read-char p))
-						   (close-input-port p))])
-				     (equal? chars (string->list "WXME"))))
-			      (let ([process-sexps
-				     (let ([last (list (void))])
-				       (lambda (sexp recur)
-					 (cond
-					   [(basis:process-finish? sexp) last]
-					   [else
-					    (set! last
-						  (call-with-values
-						   (lambda () (basis:syntax-checking-primitive-eval sexp))
-						   (lambda x x)))
-					    (recur)])))])
-				(apply values 
-				       (let ([edit (with-parameterization drscheme:init:system-parameterization
-						     (lambda ()
-						       (make-object drscheme:edit:edit%)))])
-					 (with-parameterization drscheme:init:system-parameterization
-					   (lambda ()
-					     (send edit load-file filename)))
-					 (process-edit edit process-sexps
-						       0 
-						       (send edit last-position)
-						       #t))))
-			      (userspace-load filename))))))
-		
-		
-		(basis:error-display/debug-handler report-located-error)
-		
-		(error-display-handler
-		 (rec drscheme-error-display-handler
-		      (lambda (msg)
-			(let ([rep (exception-reporting-rep)])
-			  (with-parameterization drscheme:init:system-parameterization
-			    (lambda ()
-			      (mred:message-box "Debugging Error" msg)
-			      (if rep
-				  (send rep report-unlocated-error msg)
-				  (mred:message-box "Uncaught Error" msg))))))))
-		
-		(let ([directory
-		       (let/ec k
-			 (unless (get-top-level-window)
-			   (k first-dir))
-			 (let*-values ([(filename) (send (ivar (get-top-level-window) definitions-edit)
-							 get-filename)]
-				       [(normalized) (if (string? filename)
-							 (mzlib:file:normalize-path filename)
-							 (k first-dir))]
-				       [(base _1 _2) (split-path normalized)])
-			   (or base 
-			       first-dir)))])
-		  (current-directory directory))
-		
-		(exit-handler (lambda (arg)
-				(with-parameterization drscheme:init:system-parameterization
-				  (lambda ()
-				    (shutdown-user-custodian)))))
-		
-		;; set all parameter before constructing eventspace
-		;; so that the parameters are set in the eventspace's
-		;; parameterization
-		(let* ([user-eventspace #f]
-		       [primitive-dispatch-handler (mred:event-dispatch-handler)]
-		       [frame (get-top-level-window)]
-		       [running-flag-on? #f]
-		       [event-semaphore (make-semaphore 0)]
-		       
-		       [ht (make-hash-table-weak)] ;; maps eventspaces to depth of nested mred:yields (ints)
-		       
-		       [first-box (box #t)]
-		       
-		       [dispatch-handler-procedure primitive-dispatch-handler])
-		  
-		  (thread (rec f
-			       (lambda ()
-				 (semaphore-wait event-semaphore)
-				 ;(sleep 1/10)
-				 (update-running)
-				 (f))))
-		  
-		  (mred:event-dispatch-handler
-		   (rec drscheme-event-dispatch-handler
-			(lambda (eventspace)
-			  (mzlib:thread:dynamic-disable-break
-			   (lambda ()
-			     (when (and (eq? eventspace user-eventspace)
-					(not (unbox first-box)))
-			       
-			       (semaphore-wait running-semaphore)
-			       (hash-table-put! ht eventspace (+ 1 (hash-table-get ht eventspace (lambda () 0))))
-			       (when (= 1 (hash-table-get ht eventspace))
-				 (set! running-events (+ 1 running-events))
-				 (reset-break-state)
-				 (semaphore-post event-semaphore))
-			       (semaphore-post running-semaphore)
-			       
-			       
-			       (protect-user-evaluation
-				void
-				(lambda ()
-				  (mzlib:thread:dynamic-enable-break
-				   (lambda ()
-				     (primitive-dispatch-handler eventspace)))))
-			       
-			       (semaphore-wait running-semaphore)
-			       (hash-table-put! ht eventspace (max 0 (- (hash-table-get ht eventspace (lambda () 0)) 1)))
-			       (when (= 0 (hash-table-get ht eventspace))
-				 (set! running-events (- running-events 1)))
-			       (semaphore-post running-semaphore)
-			       (update-running)))))))
-		  
-		  (set! user-custodian (make-custodian))
-		  (parameterize ([current-custodian user-custodian])
-		    (set! user-eventspace (mred:make-eventspace)))
-		  (mred:current-eventspace user-eventspace)
-		  (init-evaluation-thread p first-box)
-		  
-		  ;; this subterfuge with the extra variable indirection is necessary
-		  ;; so that the correct event-dispatch-handler is installed in
-		  ;; eventspace's parameterization, but the real dispatch handler
-		  ;; cannot actually be installed until after init-evaluation-thread
-		  ;; returns, since initializing the evaluation thread requires dispatching
-		  ;; on an event. (could have used a boolean flag "first-event?" but this
-		  ;; seems better for all the events after the first one. No more test,
-		  ;; only one extra indirection (probably doens't really matter...))
-		  '(set! dispatch-handler-procedure real-dispatch-handler-procedure))))))])
+	    (thread (rec f
+			 (lambda ()
+			   (semaphore-wait event-semaphore)
+			   (update-running)
+			   (f))))
+	    
+	    (mred:event-dispatch-handler
+	     (rec drscheme-event-dispatch-handler
+		  (lambda (eventspace)
+		    (mzlib:thread:dynamic-disable-break
+		     (lambda ()
+		       (when (and (eq? eventspace user-eventspace)
+				  (not (unbox first-box)))
+			 
+			 (semaphore-wait running-semaphore)
+			 (hash-table-put! ht eventspace
+					  (+ 1 (hash-table-get ht eventspace (lambda () 0))))
+			 (when (= 1 (hash-table-get ht eventspace))
+			   (set! running-events (+ 1 running-events))
+			   (reset-break-state)
+			   (semaphore-post event-semaphore))
+			 (semaphore-post running-semaphore)
+			 
+			 
+			 (protect-user-evaluation
+			  void
+			  (lambda ()
+			    (mzlib:thread:dynamic-enable-break
+			     (lambda ()
+			       (primitive-dispatch-handler eventspace)))))
+			 
+			 (semaphore-wait running-semaphore)
+			 (hash-table-put! ht eventspace (max 0 (- (hash-table-get ht eventspace (lambda () 0)) 1)))
+			 (when (= 0 (hash-table-get ht eventspace))
+			   (set! running-events (- running-events 1)))
+			 (semaphore-post running-semaphore)
+			 (update-running)))))))
+	    
+	    (set! user-eventspace (mred:make-eventspace))
+	    (mred:current-eventspace user-eventspace)
+	    (init-evaluation-thread p first-box)))])
 	
       (override
        

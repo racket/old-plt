@@ -19,9 +19,6 @@
 			(mzlib function))]
 	[face : drscheme:face^ ((require-relative-library "face.ss") mred)]
 	[prefs : drscheme:prefs^ ((require-relative-library "prefs.ss") mred framework)]
-	[aries : plt:aries^ ((require-library "ariesr.ss" "cogen")
-			     zodiac
-			     (interface : zodiac:interface^))]
 	[interface : drscheme:interface^
 		   ((require-library "interface.ss" "userspce") zodiac)]
 	[zodiac : zodiac:system^
@@ -29,6 +26,9 @@
 		   (interface : zodiac:interface^)
 		   (mzlib pretty-print)
 		   (mzlib file))]
+	[aries : plt:aries^ ((require-library "ariesr.ss" "cogen")
+			     zodiac
+			     (interface : zodiac:interface^))]
 	[edit : drscheme:edit^ ((require-relative-library "edit.ss") framework aries zodiac)]
 	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
 	[graph : drscheme:graph^ ((require-relative-library "graph.ss") mred framework (mzlib string) (mzlib function))]

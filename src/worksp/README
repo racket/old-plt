@@ -1,28 +1,37 @@
 This directory contains makefiles and projects files for building
-MzScheme and MrEd with Microsoft Visual C++ (MSVC). MzScheme (but not
-MrEd) also compiles with Cygwin32 gcc (a free compiler from GNU and
-Cygnus Solutions); to compile with gcc, follow the Unix instructions
-in plt\src\mzscheme\README. (There is a short Windows-specific section
-in that file.)
+MzScheme and MrEd with Microsoft Visual C++ (MSVC) version 6. MzScheme
+(but not MrEd) also compiles with Cygwin gcc (a free compiler from GNU
+and Cygnus Solutions); to compile with gcc, follow the Unix
+instructions in plt\src\mzscheme\README. (There is a short
+Windows-specific section in that file.)
 
 The source code for MzScheme and MrEd is split into several
 projects. To make the project named `X', either open the file
-worksp\X\X.mdp with MSVC, or go into worksp\X and run
-`nmake -f X.mak' (assuiming the MSVC programs are in your
+plt\src\worksp\X\X.dsw with MSVC, or go into plt\src\worksp\X\ and
+execute `nmake -f X.mak' (assuiming the MSVC programs are in your
 path).
 
-To build MzScheme, make these projects in order:
+ NOTE: The makefiles as distributed do not contain dependencies. Thus,
+ if you modify a header file and recompile using `nmake', some files
+ may not be recompiled as they should be. To get makefiles with
+ dependencies, open the X.dsw files in MSVC and export new makefiles.
+
+To build MzScheme, make the MzScheme project in
+   plt\src\worksp\mzscheme - makes plt\mzscheme.exe
+
+To build MrEd, make the MrEd project:
+   plt\src\worksp\mred - makes plt\mred.exe
+
+The make process for MzScheme automatically builds the following:
    gc - makes plt\src\worksp\gc\Release\gc.lib
    mzsrc - makes plt\src\worksp\mzsrc\Release\mzsrc.lib
-   mzscheme - makes plt\mzscheme.exe
 
-To build MrEd, make these projects in order:
+The make process for MrEd automatically builds the following:
    gc - makes plt\src\worksp\gc\Release\gc.lib
    mzsrc - makes plt\src\worksp\mzsrc\Release\mzsrc.lib
    wxutils - makes ... you get the idea
    wxwin
    wxs
-   mred - makes plt\mred.exe
 
 If you're building from scratch, you'll also want the starter
 programs used by the launcher collection to make drscheme.exe
@@ -38,9 +47,6 @@ and mzscheme.exe) by running
    mzscheme.exe -mvqL- setup.ss compiler
 (This makes the .zo files, too. To skip compiling .zos, 
 add -n to the end of the above command.)
-
-NOTE: the makesfiles don't have dependencies files. You must
-re-generate them.
 
 As always, submit bug reports using
   http://www.cs.rice.edu/CS/PLT/Bugs/

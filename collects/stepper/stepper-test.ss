@@ -35,10 +35,11 @@
 				    PRETTY
 				    MZLIB-FILE)]
 	  [STEPPER : stepper^ ((require-library-unit/sig "stepperr.ss" "stepper")
+			       ZODIAC-INTERFACE
 			       FUNCTION
 			       ZODIAC)])
     (export (unit STEPPER))))
 
 (invoke-open-unit/sig stepper-test@)
 
-	  
+(define lookup (stepper:stepper-start "((lambda (x) x) (let ([x 3] [y 3]) (+ x y)))"))

@@ -186,7 +186,7 @@
 (define dll "../../../libmzsch3mxxxxxxx.dll")
 (define exe "../../../MzScheme3m.exe")
 
-(define libs "kernel32.lib user32.lib wsock32.lib shell32.lib")
+(define libs "kernel32.lib user32.lib wsock32.lib shell32.lib advapi32.lib")
 
 (define (link-dll objs sys-libs dll link-options exe?)
   (let ([ms (if (file-exists? dll)

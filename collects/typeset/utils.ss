@@ -1,5 +1,6 @@
 (module utils mzscheme
   (require (lib "mred.ss" "mred")
+           (lib "framework.ss" "framework")
            (lib "class.ss"))
   
   (provide 

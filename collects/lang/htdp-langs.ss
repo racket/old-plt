@@ -1,5 +1,7 @@
 (module htdp-langs mzscheme
   (require (lib "string-constant.ss" "string-constants")
+           (lib "framework.ss" "framework")
+           (lib "stacktrace.ss" "errortrace")
            (lib "pretty.ss")
            (prefix pc: (lib "pconvert.ss"))
            (lib "unitsig.ss")
@@ -51,7 +53,9 @@
           (define (on-execute settings run-in-user-thread)
             (run-in-user-thread
              (lambda ()
-	       ;(error-print-source-location #f)
+               (error-display-handler (add-error-display (error-display-handler)))
+	       (current-eval (add-debugging (current-eval)))
+               (error-print-source-location #f)
                (read-decimal-as-inexact #f)
                (read-dot-as-symbol #t)))
             (super-on-execute settings run-in-user-thread))
@@ -152,6 +156,80 @@
                     [(write) 2]))
             (send insert-newlines set-value 
                   (drscheme:language:simple-settings-insert-newlines settings))])))
+      
+      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;                                                                  ;;
+      ;;                 source location for runtime errors               ;;
+      ;;                                                                  ;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
+      ;; cm-key : symbol
+      ;; the key used to put information on the continuation
+      (define cm-key (gensym 'teaching-languages-continuation-mark-key))
+
+      ;; add-error-display : (string (union TST exn) -> void) -> string exn -> void
+      ;; adds in the bug icon, if there are contexts to display
+      (define (add-error-display orig-error-display-handler)
+        (define (debug-tool-error-display-handler msg exn)
+          (orig-error-display-handler msg exn)
+          (let ([cms (and (exn? exn) (continuation-mark-set->list (exn-continuation-marks exn) cm-key))]
+                [rep (drscheme:rep:current-rep)])
+            (when (and cms
+		       (not (null? cms)))
+              (let* ([first-cms (car cms)]
+                     [src (car first-cms)]
+                     [start-position (cadr first-cms)]
+                     [end-position (+ start-position (cddr first-cms))])
+                (send rep highlight-error src start-position end-position)))))
+        debug-tool-error-display-handler)
+
+      ;; wrap : syntax syntax -> syntax
+      ;; a member of stacktrace-imports^
+      ;; guarantees that the continuation marks associated with cm-key are
+      ;; members of the debug-source type
+      (define (with-mark mark expr)
+        (let ([source (syntax-source mark)]
+              [start-position (syntax-position mark)]
+              [span (syntax-span mark)])
+          (if (and (is-a? source text:basic<%>)
+                   (number? start-position)
+                   (number? span))
+              (with-syntax ([expr expr]
+                            [source source]
+                            [offset (- start-position 1)]
+                            [span span]
+                            [cm-key cm-key])
+                (syntax
+                 (with-continuation-mark
+                  'cm-key
+                  '(source offset . span)
+                  expr)))
+              expr)))
+
+      ;; an unused stacktrace-import^
+      (define (profile-point body name expr env trans?) body)
+      
+      (define-values/invoke-unit/sig stacktrace^ stacktrace@ #f stacktrace-imports^)
+
+      ;; add-debugging : (sexp -> value) -> sexp -> value
+      ;; adds debugging information to `sexp' and calls `oe'
+      (define (add-debugging oe)
+        (let ([teaching-language-eval-handler
+               (lambda (exp)
+                 (let ([annotated
+                        (if (compiled-expression? 
+                             (if (syntax? exp) (syntax-e exp) exp))
+                            exp
+                            (annotate-top (expand exp) null #f))])
+                   (oe annotated)))])
+          teaching-language-eval-handler))
+      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;                                                                  ;;
+      ;;                     put it all together                          ;;
+      ;;                                                                  ;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       ;; add-htdp-language : (implements htdp-language<%>) -> void
       (define (add-htdp-language class%)

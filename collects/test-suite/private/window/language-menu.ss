@@ -37,7 +37,8 @@
           (parent language-menu)
           (callback
            (lambda (button event)
-             (choose-language)))))
+             (choose-language)))
+          (shortcut #\l)))
       
       (frame:reorder-menus this)
       ))

@@ -220,10 +220,10 @@ static void draw_gc_bm(int on)
   GCBitmap *gcbm = gc_bitmaps;
   while (gcbm) {
     if (*gcbm->canvasptr)
-      (*gcbm->canvasptr)->GetDC()->Blit(gcbm->x, gcbm->y,
-					gcbm->w, gcbm->h,
-					on ? gcbm->on : gcbm->off,
-					0, 0);
+      ((wxCanvasDC *)(*gcbm->canvasptr)->GetDC())->GCBlit(gcbm->x, gcbm->y,
+							  gcbm->w, gcbm->h,
+							  on ? gcbm->on : gcbm->off,
+							  0, 0);
     gcbm = gcbm->next;
   }
 #ifdef wx_x

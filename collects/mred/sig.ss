@@ -142,7 +142,7 @@
          message-box
          get-file
          put-file
-         get-choice-from-user
+         get-choices-from-user
          get-text-from-user
          get-ps-setup-from-user
          play-sound

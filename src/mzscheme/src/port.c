@@ -5342,9 +5342,11 @@ static int tcp_check_accept(Scheme_Object *listener)
 #ifdef USE_SOCKETS_TCP
   tcp_t s;
   DECL_FDSET(readfds, 1);
+  DECL_FDSET(exnfds, 1);
   struct timeval time = {0, 0};
 
   INIT_DECL_FDSET(readfds, 1);
+  INIT_DECL_FDSET(exnfds, 1);
 
   if (LISTENER_WAS_CLOSED(listener))
     return 1;
@@ -5352,9 +5354,11 @@ static int tcp_check_accept(Scheme_Object *listener)
   s = ((listener_t *)listener)->s;
 
   MZ_FD_ZERO(readfds);
+  MZ_FD_ZERO(exnfds);
   MZ_FD_SET(s, readfds);
+  MZ_FD_SET(s, exnfds);
     
-  return select(s + 1, readfds, NULL, NULL, &time);
+  return select(s + 1, readfds, NULL, exnfds, &time);
 #endif
 #ifdef USE_MAC_TCP
   int i, count;
@@ -5377,7 +5381,12 @@ static void tcp_accept_needs_wakeup(Scheme_Object *listener, void *fds)
 {
 #ifdef USE_UNIX_SOCKETS_TCP
   tcp_t s = ((listener_t *)listener)->s;
+  void *fds2;
+
+  fds2 = MZ_GET_FDSET(fds, 2);
+
   MZ_FD_SET(s, (fd_set *)fds);
+  MZ_FD_SET(s, (fd_set *)fds2);
 #endif
 }
 

@@ -253,6 +253,7 @@
                                                                     lambda-exp
                                                                     closure-info
                                                                     lifter-val)))
+                                                   (set! counter 1)
                                                    body))))
                     (test 'a syntax-property (syntax lambda-exp) 'inferred-name)])))
         ; case-lambda
@@ -332,11 +333,11 @@
                 (syntax-case stx (begin with-continuation-mark define-values)
                   [(begin
                      (define-values . rest)
-                     (with-continuation-mark key-2 mark-2 a-exp-2)
+                     (with-continuation-mark key-2 mark-2 (begin var-break-0 a-exp-2))
                      (begin
-                       (with-continuation-mark key-3 mark-3 a-exp-3)
-                       (with-continuation-mark key-4 mark-4 a-exp-4)))
-                   #t])))
+                       (with-continuation-mark key-3 mark-3 (begin var-break-1 a-exp-3))
+                       (with-continuation-mark key-4 mark-4 (begin var-break-2 a-exp-4))))
+                   (test 'a syntax-e (syntax a-exp-2))])))
         
         ; begin0
         (list #'(lambda (a b) (begin0 a b)) 'mzscheme cadr
@@ -394,6 +395,7 @@
                             (set!-values vars-0 (with-continuation-mark key-1 mark-1 body-1))
                             (set! let-counter-0 1)
                             (set!-values vars-1 (with-continuation-mark key-2 mark-2 body-2))
+                            (set! let-counter-1 2)
                             (begin
                               break-2
                               body-3))))))
@@ -569,9 +571,8 @@
                     key-0
                     mark-0
                     (begin 
-                      break-0 
-                      (let* ([result-sym sym-0])
-                        . rest)))
+                      var-break-0 
+                      sym-0))
                    (begin
                      (test (void) check-mark (syntax mark-0) '(a) 'all)
                      (test 'a syntax-e (syntax sym-0)))])))
@@ -604,6 +605,7 @@
                           break-0
                           (begin
                             (set!-values (a-var-0) rest0)
+                            (set! counter-0 1)
                             (begin 
                               break-1
                               (with-continuation-mark
@@ -624,9 +626,9 @@
         
         ))
 
-(andmap (lambda (test-case)
+(for-each (lambda (test-case)
             ((cadddr test-case) ((caddr test-case) (annotate-expr (car test-case) (cadr test-case)))))
-        test-cases)
+          test-cases)
 
 (test 7 eval (cadr (annotate-expr #'(begin (+ 3 4) (+ 4 5)) 'mzscheme)))
 (test 9 eval (caddr (annotate-expr #'(begin (+ 3 4) (+ 4 5)) 'mzscheme)))

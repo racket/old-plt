@@ -108,7 +108,31 @@
 ; reconstruct does not handle begin0
 
 (test-mz-sequence #'(let ([a 3]) 4)
-                  `(((,highlight-placeholder) ((let ([a 3]) 4))) (,highlight-placeholder ,highlight-placeholder) ((define a 3) (begin 4))))) 
+                  `(((,highlight-placeholder) ((let-values ([(a) 3]) 4)) (,highlight-placeholder ,highlight-placeholder) ((define-values (a_0) 3) (begin 4)))
+                    (((define a_0 3))))) 
+
+(test-mz-sequence #'(let ([a (+ 4 5)] [b (+ 9 20)]) (+ a b))
+                  `(((,highlight-placeholder) ((let-values ([(a) (+ 4 5)] [(b) (+ 9 20)]) (+ a b))) 
+                     (,highlight-placeholder ,highlight-placeholder ,highlight-placeholder) 
+                     ((define-values (a_0) (+ 4 5)) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))))
+                    (((define-values (a_0) (,highlight-placeholder 4 5)) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))) (+))
+                    (((define-values (a_0) (,highlight-placeholder 4 5)) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))) (+))
+                    (((define-values (a_0) ,highlight-placeholder) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))) ((+ 4 5)))
+                    (((define-values (a_0) ,highlight-placeholder) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))) (9))
+                    (((define a_0 9) (define-values (b_1) (,highlight-placeholder 9 20)) (begin (+ a_0 b_1))) (+))
+                    (((define a_0 9) (define-values (b_1) (,highlight-placeholder 9 20)) (begin (+ a_0 b_1))) (+))
+                    (((define a_0 9) (define-values (b_1) ,highlight-placeholder) (begin (+ a_0 b_1))) ((+ 9 20)))
+                    (((define a_0 9) (define-values (b_1) ,highlight-placeholder) (begin (+ a_0 b_1))) (29))
+                    (((define a_0 9) (define b_1 29)))
+                    (((,highlight-placeholder a_0 b_1)) (+))
+                    (((,highlight-placeholder a_0 b_1)) (+))
+                    (((+ ,highlight-placeholder b_1)) (a_0))
+                    (((+ ,highlight-placeholder b_1)) (9))
+                    (((+ 9 ,highlight-placeholder)) (b_1))
+                    (((+ 9 ,highlight-placeholder)) (29))
+                    ((,highlight-placeholder) ((+ 9 29)))
+                    ((,highlight-placeholder) (38))))
+
 
 ;(syntax-object->datum (cadr (annotate-expr test2 'mzscheme 0 (lambda (x) x))))
 

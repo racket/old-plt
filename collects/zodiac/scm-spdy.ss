@@ -56,7 +56,7 @@
 
   (define create-reference-library-unit-form
     (lambda (file collection library-dirs kind signed? source)
-      (make-reference-unit-form (z:zodiac-origin source)
+      (make-reference-library-unit-form (z:zodiac-origin source)
 	(z:zodiac-start source) (z:zodiac-finish source)
 	(make-empty-back-box)
 	file collection library-dirs kind signed?)))

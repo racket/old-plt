@@ -86,7 +86,7 @@ $(srcdir)/wxs_fram.cxx : $(srcdir)/wxs_fram.xc $(srcdir)/wxs_win.xci $(srcdir)/w
 	$(XCTOCXX) $(srcdir)/wxs_fram.xc
 $(srcdir)/wxs_gage.cxx : $(srcdir)/wxs_gage.xc  $(XCDEPEND) $(CB_DEPEND) $(ITEM_DEPEND)
 	$(XCTOCXX) $(srcdir)/wxs_gage.xc
-$(srcdir)/wxs_gdi.cxx : $(srcdir)/wxs_gdi.xc  $(XCDEPEND)
+$(srcdir)/wxs_gdi.cxx : $(srcdir)/wxs_gdi.xc  $(XCDEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) $(srcdir)/wxs_gdi.xc
 $(srcdir)/wxs_glob.cxx : $(srcdir)/wxs_glob.xc  $(XCDEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) $(srcdir)/wxs_glob.xc

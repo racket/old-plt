@@ -467,8 +467,16 @@ extern "C" {
 
   void wxRemoveTimeOut(long timer)
     {
-      ((wxTimer *)timer)->Stop();
-      ((wxXtTimer *)timer)->Stopped();
+      wxXtTimer *t;
+#ifdef MZ_PRECISE_GC
+      t = *(wxXtTimer **)timer;
+      GC_free_immobile_box((void *)t);
+#else
+      t = (wxXtTimer *)timer;
+#endif
+
+      t->Stop();
+      t->Stopped();
     }
   
   long wxAppAddTimeOut(XtAppContext, unsigned long interval, 
@@ -477,7 +485,11 @@ extern "C" {
       wxTimer *t;
       t = new wxXtTimer(callback, data);
       t->Start(interval, TRUE);
+#ifdef MZ_PRECISE_GC
+      return (long)GC_malloc_immobile_box(t);
+#else
       return (long)t;
+#endif
     }
 }
 

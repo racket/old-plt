@@ -282,7 +282,10 @@
 	   [super-on-paint on-paint]
 	   [super-on-local-event on-local-event])
 	  (private
+
+            ;; (union #f (vector (union (-> menu) (listof arrow))))
 	    [arrow-vector #f]
+
 	    [tacked-hash-table (make-hash-table)]
 	    [cursor-location #f]
 	    [find-poss
@@ -317,7 +320,14 @@
 		 (set! arrow-vector #f)
 		 (set! cursor-location #f)
 		 (invalidate-bitmap-cache)))]
-	    [syncheck:add-arrow
+	    [syncheck:add-menu
+             (lambda (start-pos end-pos make-menu)
+               (when (and (<= 0 start-pos end-pos (last-position)))
+                 (let loop ([p start-pos])
+                   (when (<= p end-pos)
+                     (vector-set! arrow-vector p make-menu)
+                     (loop (+ p 1))))))]
+            [syncheck:add-arrow
 	     (lambda (start-pos-left start-pos-right end-pos-left end-pos-right id-name rename)
 	       (let* ([arrow (make-arrow start-pos-left start-pos-right
 					 end-pos-left end-pos-right
@@ -327,8 +337,8 @@
 		       (lambda (start end)
 			 (let loop ([p start])
 			   (when (<= p end)
-			     (vector-set! arrow-vector p
-					  (cons arrow (vector-ref arrow-vector p)))
+                             (let ([r (vector-ref arrow-vector p)])
+                               (vector-set! arrow-vector p (cons arrow (if (list? r) r null))))
 			     (loop (add1 p)))))])
 		 (add-to-range start-pos-left start-pos-right)
 		 (add-to-range end-pos-left end-pos-right)))])
@@ -349,7 +359,9 @@
 	      (when arrow-vector
 		(let loop ([n (vector-length arrow-vector)])
 		  (unless (zero? n)
-		    (for-each update-poss (vector-ref arrow-vector (- n 1)))
+                    (let ([ele (vector-ref arrow-vector (- n 1))])
+                      (when (pair? ele)
+                        (for-each update-poss ele)))
 		    (loop (- n 1))))
 		(invalidate-bitmap-cache)))]
 
@@ -407,7 +419,9 @@
 					   (when v 
 					     (draw-arrow arrow))))
 		    (send dc set-brush untacked-brush)
-		    (for-each draw-arrow (vector-ref arrow-vector cursor-location))
+                    (let ([ele (vector-ref arrow-vector cursor-location)])
+                      (when (pair? ele)
+                        (for-each draw-arrow ele)))
 		    (send dc set-brush old-brush)
 		    (send dc set-pen old-pen)))))]
 	   [on-local-event
@@ -428,67 +442,78 @@
                                      (= pos cursor-location))
                           (let ([old-pos pos])
                             (set! cursor-location pos)
-                            (for-each update-poss (vector-ref arrow-vector cursor-location))
+                            (let ([ele (vector-ref arrow-vector cursor-location)])
+                              (when (pair? ele)
+                                (for-each update-poss ele)))
                             (invalidate-bitmap-cache))))]
 		     [(send event button-down? 'right)
 		      (let* ([pos (get-pos event)]
 			     [arrows (vector-ref arrow-vector pos)])
-			(if (null? arrows)
-			    (super-on-local-event event)
-			    (let* ([menu (make-object mred:popup-menu% #f)]
-				   [stick-item
-				    (make-object mred:menu-item%
-				      "Tack/Untack Arrow"
-				      menu
-				      (lambda (item evt)
-					(for-each 
-					 (lambda (arrow)
-					   (hash-table-put! tacked-hash-table 
-							    arrow 
-							    (not (hash-table-get
-								  tacked-hash-table
-								  arrow
-								  (lambda () #f)))))
-					 arrows)
-					(invalidate-bitmap-cache)))]
-				   [jump-item
-				    (make-object mred:menu-item%
-				      "Jump"
-				      menu
-				      (lambda (item evt)
-					(unless (null? arrows)
-					  (let* ([arrow (car arrows)]
-						 [start-pos-left (arrow-start-pos-left arrow)]
-						 [start-pos-right (arrow-start-pos-right arrow)]
-						 [end-pos-left (arrow-end-pos-left arrow)]
-						 [end-pos-right (arrow-end-pos-right arrow)])
-					    (if (<= start-pos-left pos start-pos-right)
-						(set-position end-pos-left end-pos-right)
-						(set-position start-pos-left start-pos-right))))))]
-				   [rename-item
-				     (make-object mred:menu-item%
-				       "Rename"
-				       menu
-				       (lambda (item evt)
-					 (unless (null? arrows)
-					   (let* ([arrow (car arrows)]
-						  [id-name (arrow-id-name arrow)]
-						  [new-id 
-						   (fw:keymap:call/text-keymap-initializer
-						    (lambda ()
-						      (mred:get-text-from-user
-						       "Rename Identifier"
-						       (format "Rename ~a to:" id-name)
-						       #f
-						       (format "~a" id-name))))])
-					     ((arrow-rename arrow) new-id))
-					   (invalidate-bitmap-cache)
-					   (send (get-top-level-window)
-						 syncheck:button-callback))))])
-			       (send (get-canvas) popup-menu menu
-				     (inexact->exact (floor (send event get-x)))
-				     (inexact->exact (floor (send event get-y)))))))]
-		      [else (super-on-local-event event)])
+			(cond
+                          [(null? arrows)
+                           (super-on-local-event event)]
+                          [else
+                           (let ([menu 
+                                  (cond
+                                    [(procedure? arrows) (arrows)]
+                                    [else
+                                     (let* ([menu (make-object mred:popup-menu% #f)]
+                                            [stick-item
+                                             (make-object mred:menu-item%
+                                               "Tack/Untack Arrow"
+                                               menu
+                                               (lambda (item evt)
+                                                 (for-each 
+                                                  (lambda (arrow)
+                                                    (hash-table-put! tacked-hash-table 
+                                                                     arrow 
+                                                                     (not (hash-table-get
+                                                                           tacked-hash-table
+                                                                           arrow
+                                                                           (lambda () #f)))))
+                                                  arrows)
+                                                 (invalidate-bitmap-cache)))]
+                                            [jump-item
+                                             (make-object mred:menu-item%
+                                               "Jump"
+                                               menu
+                                               (lambda (item evt)
+                                                 (unless (null? arrows)
+                                                   (let* ([arrow (car arrows)]
+                                                          [start-pos-left (arrow-start-pos-left arrow)]
+                                                          [start-pos-right (arrow-start-pos-right arrow)]
+                                                          [end-pos-left (arrow-end-pos-left arrow)]
+                                                          [end-pos-right (arrow-end-pos-right arrow)])
+                                                     (if (<= start-pos-left pos start-pos-right)
+                                                         (set-position end-pos-left end-pos-right)
+                                                         (set-position start-pos-left start-pos-right))))))]
+                                            [rename-item
+                                             (make-object mred:menu-item%
+                                               "Rename"
+                                               menu
+                                               (lambda (item evt)
+                                                 (unless (null? arrows)
+                                                   (let* ([arrow (car arrows)]
+                                                          [id-name (arrow-id-name arrow)]
+                                                          [new-id 
+                                                           (fw:keymap:call/text-keymap-initializer
+                                                            (lambda ()
+                                                              (mred:get-text-from-user
+                                                               "Rename Identifier"
+                                                               (format "Rename ~a to:" id-name)
+                                                               #f
+                                                               (format "~a" id-name))))])
+                                                     ((arrow-rename arrow) new-id))
+                                                   (invalidate-bitmap-cache)
+                                                   (send (get-top-level-window)
+                                                         syncheck:button-callback))))])
+                                       menu)])])
+                             (if menu
+                                 (send (get-canvas) popup-menu menu
+                                       (inexact->exact (floor (send event get-x)))
+                                       (inexact->exact (floor (send event get-y))))
+                                 (super-on-local-event event)))]))]
+                     [else (super-on-local-event event)])
 		    (super-on-local-event event))))])))))
   
   
@@ -517,13 +542,15 @@
       (private
         [clear-highlighting
          (lambda ()
+           (send definitions-text syncheck:clear-arrows)
            (let* ([list (send definitions-text get-style-list)]
                   [style (send list find-named-style "Standard")])
-             (send definitions-text syncheck:clear-arrows)
              (if style
                  (send definitions-text
                        change-style style 0 (send definitions-text last-position))
-                 (printf "Warning: couldn't find Standard style~n"))))])
+                 (begin
+                   (set! clear-highlighting (lambda () (send definitions-text syncheck:clear-arrows)))
+                   (mred:message-box "DrScheme: Syntax Check" "Warning: couldn't find Standard style")))))])
       (public
         [syncheck:clear-highlighting
          (lambda ()
@@ -560,13 +587,21 @@
              (send super-root change-children (lambda (l) (list rest-panel)))
 	     r-root))])
       (private
+        [docs-messages-shown? #f]
+        [hide-docs-messages
+         (lambda ()
+           (when docs-messages-shown?
+             (set! docs-messages-shown? #f)
+             (send super-root change-children
+                   (lambda (l)
+                     (list rest-panel)))))]
         [set-docs-messages
          (let ([docs-lines-shown? #f])
            (lambda (l1 l2)
              (send docs-line1 set-label l1)
              (send docs-line2 set-label l2)
-             (unless docs-lines-shown?
-               (set! docs-lines-shown? #t)
+             (unless docs-messages-shown?
+               (set! docs-messages-shown? #t)
                (send super-root change-children
                      (lambda (l)
                        (list rest-panel docs-panel))))))])
@@ -956,7 +991,31 @@
                                 [is-built-in? (built-in? id)]
                                 [start (zodiac:location-offset (zodiac:zodiac-start var))]
                                 [finish (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))])
-                           (send text set-clickback start finish (lambda x (set-docs-messages "line1" "line2")))
+                           (send text syncheck:add-menu start finish 
+                                 (lambda ()
+                                   (let ([ht (case 'language
+                                               [(beginner) '...]
+                                               [(intermediate) '...]
+                                               [(advanced) '...]
+                                               [else #f])])
+                                     (cond
+                                       [(and ht (hash-table-get ht id (lambda () #f)))
+                                        =>
+                                        (lambda (txt)
+                                          (let ([m (make-object mred:popup-menu%)])
+                                            (make-object mred:menu-item% (format "Show summary of ~a" id)
+                                              m
+                                              (lambda x
+                                                (set-docs-messages "line1" "line2")))
+                                            (send 
+                                             (make-object mred:menu-item% "Hide primitive summary pane"
+                                               m
+                                               (lambda x
+                                                 (hide-docs-messages)))
+                                             enable
+                                             docs-messages-shown?)
+                                            m))]
+                                       [else #f]))))
                            (change-style
                             (cond
                               [(hash-table-get defineds id (lambda () #f))

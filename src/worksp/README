@@ -10,7 +10,7 @@ This directory contains
 If you have downloaded MzCOM, the directory also contains Visual
 Studio files for MzCOM.
 
-Visual Studio Express is available for free frmo Microsoft, and it is
+Visual Studio Express is available for free from Microsoft, and it is
 the recommended compiler for building PLT Scheme.
 
 MzScheme (but not MzCOM or MrEd) also compiles with Cygwin gcc (a

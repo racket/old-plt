@@ -1,3 +1,0 @@
-EXPORTS
- _scheme_mz_setjmp
- _scheme_mz_longjmp

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.6 1998/04/11 21:59:24 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.7 1998/09/12 15:30:46 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -313,11 +313,11 @@ void wxColourDatabase::Initialize (void)
   // are present, add them to an auxiliary list:
 
 #ifdef wx_msw
-#define APPEND_TO_DB Append
+# define APPEND_TO_DB Append
 #else
   if (!aux)
     return;
-#define APPEND_TO_DB aux->Put
+# define APPEND_TO_DB aux->Put
 #endif
 
   wxColour *tmpc;
@@ -426,46 +426,43 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
   wxNode *node = Find(colour);
   if (node)
     return (wxColour *)node->Data();
+
 #ifdef wx_msw
-  else return NULL;
+  return NULL;
 #else
-  else {
-    XColor xcolour;
+  XColor xcolour;
+  
+  Display *display = XtDisplay(wxTheApp->topLevel);
+  
+  wxColour *col;
+  
+  if (!aux) {
+    aux = new wxHashTable(wxKEY_STRING, 20);
+    Initialize(); /* fills in aux */
+  }
 
-#ifdef wx_motif
-    Display *display = XtDisplay(wxTheApp->topLevel) ;
-#endif
-#ifdef wx_xview
-    Xv_Screen screen = xv_get(xview_server, SERVER_NTH_SCREEN, 0);
-    Xv_opaque root_window = xv_get(screen, XV_ROOT);
-    Display *display = (Display *)xv_get(root_window, XV_DISPLAY);
-#endif
-
-    wxColour *col;
-
-    /* MATTHEW: [4] Use wxGetMainColormap */
-    if (XParseColor(display, wxGetMainColormap(display), colour,&xcolour)) {
+  /* MATTHEW: [4] Use wxGetMainColormap */
+  if (XParseColor(display, wxGetMainColormap(display), colour,&xcolour)) {
+    /* But only add it if it's a standard color */
+    if (aux->Get(colour)) {
       unsigned char r = (unsigned char)(xcolour.red >> 8);
       unsigned char g = (unsigned char)(xcolour.green >> 8);
       unsigned char b = (unsigned char)(xcolour.blue >> 8);
       
       col = new wxColour(r, g, b);
       col->Lock(1);
-    } else {  
-      if (!aux) {
-	aux = new wxHashTable(wxKEY_STRING, 20);
-	Initialize(); /* fills in aux */
-      }
-
-      col = (wxColour *)aux->Get(colour);
-      if (!col)
-	return NULL;
-    }
-
-    Append(colour, col);
-
-    return col;
+    } else
+      return NULL;
+  } else {  
+    /* Check the standard color list: */
+    col = (wxColour *)aux->Get(colour);
+    if (!col)
+      return NULL;
   }
+  
+  Append(colour, col);
+
+  return col;
 #endif
 }
 

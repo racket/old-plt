@@ -436,7 +436,10 @@
 	  (if (and (z:symbol? (car contents))
 		(or (eq? 'quote (z:read-object (car contents)))
 		  (eq? '#%quote (z:read-object (car contents)))))
-	    (create-quote-form (cadr contents) expr)
+	    (if (or (language>=? 'side-effecting)
+		  (z:symbol? (cadr contents)))
+	      (create-quote-form (cadr contents) expr)
+	      (static-error (cadr contents) "Not appropriate for a symbol"))
 	    (static-error expr "Malformed quote")))
 	(static-error expr "Malformed quote"))))
 
@@ -1151,14 +1154,20 @@
       "List cannot be a cond question-answer pair"
       "Improper-list cannot be a cond question-answer pair"))
 
+  ; Still missing:
+  ; Implicit begin's
+  ; (cond (x) y ...) => (or (x) (cond y ...))
+
   (add-list-micro cond-clause-vocab
     (let* ((kwd '(else =>))
 	    (in-pattern-1 '(else answer))
+	    (in-pattern-4 '(question =>)) ; [sic]
 	    (in-pattern-2 '(question answer))
 	    (in-pattern-3 '(question => answer))
 	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	    (m&e-2 (pat:make-match&env in-pattern-2 kwd))
-	    (m&e-3 (pat:make-match&env in-pattern-3 kwd)))
+	    (m&e-3 (pat:make-match&env in-pattern-3 kwd))
+	    (m&e-4 (pat:make-match&env in-pattern-4 kwd)))
       (lambda (expr env attributes vocab)
 	(cond
 	  ((pat:match-against m&e-1 expr env)
@@ -1166,6 +1175,10 @@
 	    (lambda (p-env)
 	      (let ((answer (pat:pexpand 'answer p-env kwd)))
 		(make-cond-clause expr #f answer #t #f))))
+	  ((pat:match-against m&e-4 expr env)
+	    =>
+	    (lambda (p-env)
+	      (static-error expr "=> not followed by receiver")))
 	  ((pat:match-against m&e-2 expr env)
 	    =>
 	    (lambda (p-env)
@@ -1199,7 +1212,11 @@
 		    (structurize-syntax
 		      (let loop ((exps exp-bodies))
 			(if (null? exps)
-			  `(#%void)
+			  (if (compile-allow-cond-fallthrough)
+			    '(#%void)
+			    '(#%raise (#%make-exn:else
+					"no matching else clause"
+					((debug-info-handler)))))
 			  (let ((first (car exps))
 				 (rest (cdr exps)))
 			    (cond

@@ -62,9 +62,12 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
   height = dc->FLogicalToDeviceY(yh) - y;
 
   if (is_ps) {
+    wxPSRgn *ra;
+
     height = -height;
 
-    ps = new wxPSRgn_Atomic("", "rect");
+    ra = new wxPSRgn_Atomic("", "rect");
+    ps = ra;
     Put(x); Put(" "); Put(y); Put(" moveto\n");
     Put(x + width); Put(" "); Put(y); Put(" lineto\n");
     Put(x + width); Put(" "); Put(y - height); Put(" lineto\n");
@@ -205,9 +208,12 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
   height = dc->FLogicalToDeviceY(yh) - y;
 
   if (is_ps) {
+    wxPSRgn *ra;
+
     height = -height;
 
-    ps = new wxPSRgn_Atomic("", "ellipse");
+    ra = new wxPSRgn_Atomic("", "ellipse");
+    ps = ra;
     Put(x + width / 2); Put(" "); Put(y - height / 2); Put(" moveto\n");
     Put(x + width / 2); Put(" "); Put(y - height / 2); Put(" ");
     Put(width / 2); Put(" "); Put(height / 2); Put(" 0 360 ellipse\n");
@@ -311,7 +317,9 @@ void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset,
   }
 
   if (is_ps) {
-    ps = new wxPSRgn_Atomic("", "poly");
+    wxPSRgn *ra;
+    ra = new wxPSRgn_Atomic("", "poly");
+    ps = ra;
     Put(fpoints[0].x); Put(" "); Put(fpoints[0].y); Put(" moveto\n");
     for (i = 1; i < n; i++) {
       Put(fpoints[i].x); Put(" "); Put(fpoints[i].y); Put(" lineto\n");
@@ -490,7 +498,9 @@ void wxRegion::Union(wxRegion *r)
     if (!ps)
       ps = r->ps;
     else {
-      ps = new wxPSRgn_Union(ps, r->ps);
+      wxPSRgn *ru;
+      ru = new wxPSRgn_Union(ps, r->ps);
+      ps = ru;
     }
   }
 
@@ -540,7 +550,9 @@ void wxRegion::Intersect(wxRegion *r)
     Cleanup();
     ps = NULL;
   } else if (is_ps) {
-    ps = new wxPSRgn_Intersect(ps, r->ps);
+    wxPSRgn *ri;
+    ri = new wxPSRgn_Intersect(ps, r->ps);
+    ps = ri;
   }
 }
 
@@ -567,9 +579,10 @@ void wxRegion::Subtract(wxRegion *r)
     ps = NULL;
   } else if (is_ps) {
     /* wxPSRgn_Diff is only half a subtract; the result must be intersected with the first part */
-    wxPSRgn *rd;
+    wxPSRgn *rd, *ri;
     rd = new wxPSRgn_Diff(ps, r->ps);
-    ps = new wxPSRgn_Intersect(ps, rd);
+    ri = new wxPSRgn_Intersect(ps, rd);
+    ps = ri;
   }
 }
 

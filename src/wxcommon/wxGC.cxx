@@ -173,6 +173,7 @@ typedef struct AllocStackLink {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   void *data;
+  void **var_stack;
   AllocStackLink *next;
 } AllocStackLink;
 
@@ -191,13 +192,22 @@ void *GC_pop_current_new()
   return p;
 }
 
+void GC_restore_current_new_var_stack()
+{
+  GC_variable_stack = new_stack->var_stack;
+}
+
 static void GC_push_current_new(void *p)
 {
   AllocStackLink *link;
+  void **vs;
+
+  vs = GC_variable_stack;
 
   link = (AllocStackLink *)GC_malloc_one_tagged(sizeof(AllocStackLink));
   link->type = scheme_rt_stack_object;
   link->data = p;
+  link->var_stack = vs;
   link->next = new_stack;
 
   new_stack = link;
@@ -232,7 +242,33 @@ static int mark_stack_object(void *p, Mark_Proc mark)
   return gcBYTES_TO_WORDS(sizeof(AllocStackLink));
 }
 
+static int mark_preallocated_object(void *p, Mark_Proc /* mark */)
+{
+  size_t size = ((size_t *)p)[1];
+
+  return gcBYTES_TO_WORDS(size) + 1;
+}
+
 static void *park;
+static void *preallocated;
+static int use_pre;
+
+void GC_pre_allocate(size_t size)
+{
+  if (preallocated) {
+    printf("ERROR: preallocated already waiting\n");
+    abort();
+  }
+
+  preallocated = GC_malloc_one_tagged(size + sizeof(long));
+  *(Scheme_Type *)preallocated = scheme_rt_preallocated_object;
+  ((size_t *)preallocated)[1] = size;
+}
+
+void GC_use_preallocated()
+{
+  use_pre = 1;
+}
 
 void *GC_cpp_malloc(size_t size)
 {
@@ -242,25 +278,40 @@ void *GC_cpp_malloc(size_t size)
     /* Initialize: */
     wxREGGLOB(park);
     wxREGGLOB(new_stack);
+    wxREGGLOB(preallocated);
 
     scheme_get_external_stack_val = get_new_stack;
     scheme_set_external_stack_val = set_new_stack;
 
     GC_register_traverser(scheme_rt_cpp_object, mark_cpp_object);
     GC_register_traverser(scheme_rt_stack_object, mark_stack_object);
+    GC_register_traverser(scheme_rt_preallocated_object, mark_preallocated_object);
   }
 
-  p = GC_malloc_one_tagged(size + sizeof(long));
-  *(Scheme_Type *)p = scheme_rt_cpp_object;
-
-  p = gcPTR_TO_OBJ(p);
+  if (use_pre) {
+    if (((size_t *)preallocated)[1] != size) {
+      printf("ERROR: preallocated wrong size\n");
+      abort();
+    }
+    p = preallocated;
+    use_pre = 0;
+    preallocated = NULL;
+  } else {
+    p = GC_malloc_one_tagged(size + sizeof(long));
+  }
 
   /* push_new might trigger a gc: */
+  *(Scheme_Type *)p = scheme_rt_preallocated_object;
+  ((size_t *)p)[1] = size;
   park = p;
 
-  GC_push_current_new(p);
+  GC_push_current_new(gcPTR_TO_OBJ(p));
 
-  return park;
+  p = park;
+  *(Scheme_Type *)p = scheme_rt_cpp_object;
+  ((size_t *)p)[1] = 0;
+
+  return p = gcPTR_TO_OBJ(p);
 }
 
 #endif

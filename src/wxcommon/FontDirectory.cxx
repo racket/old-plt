@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: FontDirectory.cxx,v 1.5 1999/11/24 21:20:31 mflatt Exp $
  *
  * Purpose: wxWindows font name handling
  *
@@ -319,6 +318,7 @@ static void SearchResource(const char *prefix, const char **names, int count, ch
 
 void wxInitializeFontNameDirectory(void)
 {
+  wxREGGLOB(wxTheFontNameDirectory);
   wxTheFontNameDirectory = new wxFontNameDirectory;
   wxTheFontNameDirectory->Initialize(wxSYSTEM, wxSYSTEM, "System");
   wxTheFontNameDirectory->Initialize(wxDEFAULT, wxDEFAULT, "Default");

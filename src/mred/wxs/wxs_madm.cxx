@@ -1184,8 +1184,8 @@ void objscheme_setup_wxMediaCanvas(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "get-editor" " method", (Scheme_Method_Prim *)os_wxMediaCanvasGetMedia, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "set-editor" " method", (Scheme_Method_Prim *)os_wxMediaCanvasSetMedia, 1, 2));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class,"get-wheel-step" " method", objscheme_wxMediaCanvas_Getwheel_amt, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class,"set-wheel-step" " method", objscheme_wxMediaCanvas_Setwheel_amt, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class,"get-wheel-step" " method", (Scheme_Method_Prim *)objscheme_wxMediaCanvas_Getwheel_amt, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class,"set-wheel-step" " method", (Scheme_Method_Prim *)objscheme_wxMediaCanvas_Setwheel_amt, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxMediaCanvas_class));
 
@@ -3591,10 +3591,10 @@ void objscheme_setup_wxSnipClass(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "read-header" " method", (Scheme_Method_Prim *)os_wxSnipClassReadHeader, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "read" " method", (Scheme_Method_Prim *)os_wxSnipClassRead, 1, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class,"get-classname" " method", objscheme_wxSnipClass_Getclassname, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class,"set-classname" " method", objscheme_wxSnipClass_Setclassname, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class,"get-version" " method", objscheme_wxSnipClass_Getversion, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class,"set-version" " method", objscheme_wxSnipClass_Setversion, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class,"get-classname" " method", (Scheme_Method_Prim *)objscheme_wxSnipClass_Getclassname, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class,"set-classname" " method", (Scheme_Method_Prim *)objscheme_wxSnipClass_Setclassname, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class,"get-version" " method", (Scheme_Method_Prim *)objscheme_wxSnipClass_Getversion, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class,"set-version" " method", (Scheme_Method_Prim *)objscheme_wxSnipClass_Setversion, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxSnipClass_class));
 

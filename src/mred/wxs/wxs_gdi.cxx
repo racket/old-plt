@@ -1439,10 +1439,10 @@ void objscheme_setup_wxPoint(Scheme_Env *env)
   os_wxPoint_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "point%", "object%", (Scheme_Method_Prim *)os_wxPoint_ConstructScheme, 4));
 
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"get-x" " method", objscheme_wxPoint_Getx, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"set-x" " method", objscheme_wxPoint_Setx, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"get-y" " method", objscheme_wxPoint_Gety, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"set-y" " method", objscheme_wxPoint_Sety, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"get-x" " method", (Scheme_Method_Prim *)objscheme_wxPoint_Getx, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"set-x" " method", (Scheme_Method_Prim *)objscheme_wxPoint_Setx, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"get-y" " method", (Scheme_Method_Prim *)objscheme_wxPoint_Gety, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"set-y" " method", (Scheme_Method_Prim *)objscheme_wxPoint_Sety, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxPoint_class));
 

@@ -2122,11 +2122,11 @@ void objscheme_setup_wxSnip(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "set-count" " method", (Scheme_Method_Prim *)os_wxSnipSetCount, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-admin" " method", (Scheme_Method_Prim *)os_wxSnipGetAdmin, 0, 0));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-count" " method", objscheme_wxSnip_Getcount, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-flags" " method", objscheme_wxSnip_Getflags, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-style" " method", objscheme_wxSnip_Getstyle, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-snipclass" " method", objscheme_wxSnip_Getsnipclass, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"set-snipclass" " method", objscheme_wxSnip_Setsnipclass, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-count" " method", (Scheme_Method_Prim *)objscheme_wxSnip_Getcount, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-flags" " method", (Scheme_Method_Prim *)objscheme_wxSnip_Getflags, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-style" " method", (Scheme_Method_Prim *)objscheme_wxSnip_Getstyle, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"get-snipclass" " method", (Scheme_Method_Prim *)objscheme_wxSnip_Getsnipclass, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class,"set-snipclass" " method", (Scheme_Method_Prim *)objscheme_wxSnip_Setsnipclass, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxSnip_class));
 
@@ -10058,8 +10058,8 @@ void objscheme_setup_wxBufferDataClass(Scheme_Env *env)
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class, "read" " method", (Scheme_Method_Prim *)os_wxBufferDataClassRead, 1, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class,"get-classname" " method", objscheme_wxBufferDataClass_Getclassname, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class,"set-classname" " method", objscheme_wxBufferDataClass_Setclassname, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class,"get-classname" " method", (Scheme_Method_Prim *)objscheme_wxBufferDataClass_Getclassname, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class,"set-classname" " method", (Scheme_Method_Prim *)objscheme_wxBufferDataClass_Setclassname, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxBufferDataClass_class));
 
@@ -10569,9 +10569,9 @@ void objscheme_setup_wxBufferData(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class, "set-next" " method", (Scheme_Method_Prim *)os_wxBufferDataSetNextNoCycle, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class, "write" " method", (Scheme_Method_Prim *)os_wxBufferDataWrite, 1, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class,"get-dataclass" " method", objscheme_wxBufferData_Getdataclass, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class,"set-dataclass" " method", objscheme_wxBufferData_Setdataclass, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class,"get-next" " method", objscheme_wxBufferData_Getnext, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class,"get-dataclass" " method", (Scheme_Method_Prim *)objscheme_wxBufferData_Getdataclass, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class,"set-dataclass" " method", (Scheme_Method_Prim *)objscheme_wxBufferData_Setdataclass, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class,"get-next" " method", (Scheme_Method_Prim *)objscheme_wxBufferData_Getnext, 0, 0));
 
   WITH_VAR_STACK(scheme_made_class(os_wxBufferData_class));
 

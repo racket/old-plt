@@ -9,10 +9,37 @@
   (define drscheme-eventspace (current-eventspace))
   
   (define stepper-canvas%
-    (class editor-canvas% (parent editor style scrolls-per-page)
+    (class editor-canvas% (parent (editor #f) (style null) (scrolls-per-page 100))
+      (rename (super-on-size on-size))
+      (override 
+        (on-size 
+         (lambda (width height)
+           (super-on-size width height))))
+      (sequence (super-init parent editor style scrolls-per-page))))
+  
       ;; PROVIDE DEFAULTS FOR THESE VARIABLES
-      
-      
+  ;;(send (send (get-style-list) basic-style) get-text-width dc)    
+; [reset-pretty-print-width
+;	   (lambda ()
+;	     (let* ([standard (send (get-style-list) find-named-style "Standard")])
+;	       (when standard
+;		 (let* ([admin (get-admin)]
+;			[width
+;			 (let ([bw (box 0)]
+;			       [b2 (box 0)])
+;			   (send admin get-view b2 b2 bw b2)
+;			   (unbox bw))]
+;			[dc (send admin get-dc)]
+;			[new-font (send standard get-font)]
+;			[old-font (send dc get-font)])
+;		   (send dc set-font new-font)
+;		   (let* ([char-width (send dc get-char-width)]
+;			  [min-columns 50]
+;			  [new-columns (max min-columns 
+;					    (floor (/ width char-width)))])
+;		     (send dc set-font old-font)
+;		     (mzlib:pretty-print:pretty-print-columns new-columns))))))]
+  
       
   (lambda (frame)
     (letrec ([edit (ivar frame definitions-text)]
@@ -90,7 +117,7 @@
              
              [next-button (make-object button% "Next >>" button-panel (lambda
                                                                           (_1 _2) (next)))]
-             [canvas (make-object editor-canvas% s-frame)]
+             [canvas (make-object stepper-canvas% s-frame)]
              
              [update-view
               (lambda (new-view)
@@ -104,7 +131,7 @@
              
              [break 
               (lambda (mark-list all-defs current-def)
-                (when (r:stop-here? mark-list all-defs global-defined-vars)
+                (when (r:stop-here? mark-list)
                   (parameterize ([current-eventspace drscheme-eventspace])
                     (queue-callback (lambda () 
                                       (apply store-step (r:reconstruct expr-list mark-list all-defs current-def))
@@ -139,21 +166,22 @@
                 (call-with-current-continuation
                  (lambda (k)
                    (let-values ([(annotated exprs)
-                                 (parameterize ([current-exception-handler
-                                                 (make-exception-handler k)])
-                                   (a:annotate text break))])
+                                 (a:annotate text break (make-exception-handler k))])
                      (set! expr-list exprs)
-                     (parameterize ([current-eventspace user-eventspace])
-                       (queue-callback 
-                        (lambda ()
-                          ((require-library "beginner.ss" "userspce"))
-                          (set! global-defined-vars
-                                (map car (make-global-value-list)))
-                          (call-with-current-continuation
-                           (lambda (k)
-                             (current-exception-handler
-                              (make-exception-handler k))
-                             (for-each eval annotated))))))))))]
+                     (let ([expanded-annotated
+                            (cons `((require-library "beginner.ss" "userspce"))
+                                  (cons `(,(lambda () (r:set-global-defined-vars! 
+                                                       (map car (make-global-value-list)))))
+                                        annotated))])
+                       (parameterize ([current-eventspace user-eventspace])
+                         (queue-callback 
+                          (lambda ()
+                            (call-with-current-continuation
+                             (lambda (k)
+                               (current-exception-handler
+                                (make-exception-handler k))
+                               (current-namespace (make-namespace))
+                               (for-each eval expanded-annotated)))))))))))]
            
 ;                          (d:basis:initialize-parameters
 ;                           (current-custodian)

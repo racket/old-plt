@@ -130,9 +130,9 @@
   (define debug-key (gensym "debug-key-"))
 
   ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
-  ; a source expression (in the parsed zodiac format) and a set of varref/value pairs.
-  ; the varref contains a name and a boolean indicating whether the binding is 
-  ; top-level.  
+  ; a source expression (in the parsed zodiac format) and a set of z:varref/value pairs.
+  ;((z:parsed (union (list-of z:varref) 'all) (list-of z:varref) (list-of z:varref) symbol) ->
+  ; debug-info)
   
   (define (make-debug-info source tail-bound top-env free-vars label)
     (let* ([top-level-varrefs (filter z:top-level-varref? free-vars)]
@@ -164,7 +164,8 @@
            [struct-proc-names (cdr names)]
            [closure-records (map (lambda (proc-name) `(,make-closure-record
                                                        (#%quote ,proc-name) 
-                                                       (lambda () #f)))
+                                                       (lambda () #f)
+                                                       ,(eq? proc-name (car struct-proc-names))))
                                  struct-proc-names)]
            [proc-arg-temp-syms (cdr arg-temp-syms)]
            [setters (map (lambda (arg-temp-sym closure-record)
@@ -173,7 +174,16 @@
                          closure-records)]
            [full-body (append setters (list `(values ,@arg-temp-syms)))])
       `(#%let-values ((,arg-temp-syms ,annotated)) ,@full-body)))
+
+  ; update-closure-record-name : adds a name to an existing closure table record,
+  ; if there is one for that value.
   
+  (define (update-closure-record-name value name)
+    (let* ([closure-record (closure-table-lookup value)]
+           [old-name (closure-record-name closure-record)])
+      (if old-name
+          (e:internal-error "closure-record already has a name: ~a" old-name)
+          (set-closure-record-name! closure-record name))))
   
   ; How do we know which bindings we need?  For every lambda body, there is a
   ; `tail-spine' of expressions which is the smallest set including:
@@ -192,7 +202,9 @@
   ; annotate takes an expression to annotate and a `break' function which will be inserted in
   ; the code.  It returns an annotated expression, ready for evaluation.
   
-  (define (annotate text break)
+  ; the zodiac-error-handler is an ugly hack and will hopefully disappear soon-ish.
+  
+  (define (annotate text break zodiac-exception-handler)
     (local
 	(  
 
@@ -218,7 +230,9 @@
          (define (wcm-break-wrap debug-info expr)
            (wcm-wrap debug-info (break-wrap expr)))
 
-         (define exprs-read (read-exprs text))
+         (define exprs-read
+           (parameterize ([current-exception-handler zodiac-exception-handler])
+             (read-exprs text)))
          
          (define (find-read-expr expr)
            (let ([offset (z:location-offset (z:zodiac-start expr))])
@@ -244,7 +258,9 @@
                             (else (e:static-error "unknown expression type in sequence" expr)))))
                        (else (e:static-error "unknown read type" expr))))))))
   
-         (define parsed-exprs (z:scheme-expand-program exprs-read 'previous z:beginner-vocabulary))  
+         (define parsed-exprs
+           (parameterize ([current-exception-handler zodiac-exception-handler])
+             (z:scheme-expand-program exprs-read 'previous z:beginner-vocabulary)))  
   
          ; find-defined-vars extracts a list of what variables an expression
          ; defines.  In the case of a top-level expression which does not
@@ -262,9 +278,9 @@
          
 	 ; annotate/inner takes an expression to annotate and (this is now wrong) a boolean
 	 ; indicating whether this expression lies on the evaluation spine.  It returns two things;
-	 ; an annotated expression, and a list of zodiac varref's.	 
-	 
-	 ; annotate/inner: (z:zodiac (union (listof sym) 'all) -> sexp (listof varref))
+	 ; an annotated expression, and a list of zodiac varref's.	
+	 ;(z:parsed (union (list-of z:varref) 'all) (list-of z:varref) -> 
+         ;          sexp (list-of z:varref))
 	 
 	 (define (annotate/inner expr tail-bound top-env)
 	   
@@ -414,7 +430,13 @@
                        [val (values annotated-val free-vars-val)
 			    (tail-recur val)]
 		       [val free-vars (varref-remove* vars free-vars-val)])
-                      (cond [(z:struct-form? val)
+                      (cond [(z:case-lambda-form? val)
+                             (values `(#%define-values ,var-names
+                                       (#%let ((,closure-temp ,annotated-val))
+                                        (,update-closure-record-name ,closure-temp (#%quote ,(car var-names)))
+                                        ,closure-temp))
+                                     free-vars)]
+                            [(z:struct-form? val)
                              (values `(#%define-values ,var-names
                                        ,(wrap-struct-form var-names annotated-val)) 
                                      free-vars)]
@@ -448,7 +470,10 @@
 		       [closure-info (make-debug-info-app 'all new-free-vars 'none)]
 		       [hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])
 				       (,closure-table-put! (,closure-key-maker ,closure-temp) 
-                                        (,make-closure-record #f ,closure-info))
+                                        (,make-closure-record 
+                                         #f
+                                         ,closure-info 
+                                         #f))
 				       ,closure-temp)])
 		  (values hash-wrapped
 			  new-free-vars))]

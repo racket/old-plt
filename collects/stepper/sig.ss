@@ -6,10 +6,7 @@
    read-exprs
    read->raw 
    arglist->ilist 
-   make-closure-record
-   closure-record-name
-   closure-record-mark
-   ;(struct closure-record (name mark))
+   (struct closure-record (name mark constructor?))
    create-bogus-bound-varref
    create-bogus-top-level-varref
    *unevaluated* 
@@ -29,6 +26,6 @@
   (annotate))
 
 (define-signature stepper:reconstruct^
-  (reconstruct final-mark-list? stop-here?))
+  (reconstruct set-global-defined-vars! final-mark-list? stop-here?))
 
   

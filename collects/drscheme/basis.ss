@@ -42,7 +42,7 @@
       (let ([plt:userspace@ (reference-unit/sig
 				(begin-elaboration-time 
 				 (normalize-path
-				  (build-path mred:plt-home-directory
+				  (build-path mred:constants:plt-home-directory
 					      "lib"
 					      "gusrspcu.ss"))))])
 	(lambda (n)

@@ -6,7 +6,7 @@
             zodiac:system^
             plt:parameters^)
 
-    (define filename (build-path plt-home-directory 
+    (define filename (build-path constants:plt-home-directory 
 				 "mrspidey"
 				 "drspidey.ss"))
     

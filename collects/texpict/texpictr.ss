@@ -808,6 +808,18 @@
     `(place 0 0 ,p)
     commands)))
 
+(define black-and-white
+  (make-parameter #f
+		  (lambda (x)
+		    (and x #t))))
+
+(define (colorize p color)
+  (if (black-and-white)
+      p
+      (extend-pict 
+       p 0 0 0 0 0
+       `(color ,color ,(pict-draw p)))))
+
 (define (optimize s)
   (let o-loop ([s s][dx 0][dy 0])
     (if (string? s)
@@ -817,6 +829,9 @@
 	    [(picture)
 	     (list* 'picture (cadr s) (caddr s)
 		    (map optimize (cdddr s)))]
+	    [(color)
+	     (list* 'color (cadr s) 
+		    (list 'put dx dy (optimize (caddr s))))]
 	    [(put)
 	     (let ([x (cadr s)]
 		   [y (caddr s)]
@@ -857,6 +872,9 @@
 	     (format "\\begin{picture}(~a,~a)~n~a\\end{picture}~n"
 		     (cadr s) (caddr s)
 		     (apply string-append (map output (cdddr s))))]
+	    [(color)
+	     (format "\\special{color push ~a}~n~a\\special{color pop}~n"
+		     (cadr s) (output (cddr s)))]
 	    [(put)
 	     (format "\\put(~a,~a){~a}~n" (cadr s) (caddr s) (output (cadddr s)))]
 	    [(qbezier)

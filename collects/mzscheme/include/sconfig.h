@@ -81,8 +81,8 @@
 # else
 #  define HAS_LINUX_IOB
 # endif
-# define FILES_HAVE_FDS
 # define USE_OSKIT_CONSOLE
+# define FILES_HAVE_FDS
 # define FIXED_FD_LIMIT 256
 # define USE_UNIX_SOCKETS_TCP
 # define USE_FCNTL_O_NONBLOCK

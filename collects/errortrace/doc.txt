@@ -56,6 +56,14 @@ the instrumented S-expression is passed to the default eval handler,
 but neither the S-expression nor its byte-code form can be marshalled
 to a string.
 
+The `print-error-trace' procedure takes a port and exception and
+prints the errortrace-collected debugging information contained in the
+exception. It is used by the exception handler installed by
+errortrace.
+
+> (print-error-trace output-port exn) - prints the errortrace
+  information in `exn' to `output-port'.
+
 The `error-context-display-depth' parameter controls how much context
 errortrace's exception handler displays. The default value is 10000.
 

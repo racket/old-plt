@@ -484,7 +484,7 @@
       (map
        (lambda (c)
 	 (cond 
-	  [(memq c '(#\$ #\| #\\ #\[ #\] #\. #\* #\? #\+ #\( #\)))
+	  [(memq c '(#\$ #\| #\\ #\[ #\] #\. #\* #\? #\+ #\( #\) #\^))
 	   (list #\\ c)]
 	  [(char-alphabetic? c)
 	   (list #\[ (char-upcase c) (char-downcase c) #\])]

@@ -6,7 +6,9 @@
 (invoke-open-unit
  (unit 
    (import)
-   (export errortrace-print-trace error-context-display-depth instrumenting-enabled profiling-enabled profile-paths-enabled get-profile-results)
+   (export print-error-trace error-context-display-depth 
+	   instrumenting-enabled 
+	   profiling-enabled profile-paths-enabled get-profile-results)
    
    (define key (gensym 'key))
 
@@ -284,7 +286,7 @@
    
    ;; port exn -> void
    ;; effect: prints out the context surrounding the exception
-   (define (errortrace-print-trace p x)
+   (define (print-error-trace p x)
      (let loop ([n (error-context-display-depth)]
 		[l (exn-debug-info x)])
        (cond
@@ -308,7 +310,7 @@
 	    (let ([p (current-error-port)])
 	      (display (exn-message x) p)
 	      (newline p)
-	      (errortrace-print-trace p x)
+	      (print-error-trace p x)
 	      ((error-escape-handler)))
 	    (orig x)))))
 

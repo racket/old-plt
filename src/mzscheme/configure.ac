@@ -282,8 +282,6 @@ if test "$CC" = "gcc" ; then
   fi
 fi
 
-AC_PATH_PROG(SED,sed)
-
 if test "${enable_perl}" = "yes" ; then
   AC_PATH_PROG(PERL,perl)
 else
@@ -934,7 +932,6 @@ AC_SUBST(COMPFLAGS)
 AC_SUBST(PROFFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(CPP)
-AC_SUBST(SED)
 AC_SUBST(PERL)
 AC_SUBST(AS)
 AC_SUBST(RANLIB)

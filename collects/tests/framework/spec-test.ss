@@ -19,7 +19,7 @@
     (test name
           (lambda (x) 
             (and (string? x)
-                 (let ([m (regexp-match "blame: ([^;]*);" x)])
+                 (let ([m (regexp-match ": (.*) failed contract:" x)])
                    (equal? (cadr m) blame))))
           (lambda ()
             (send-sexp-to-mred `(with-handlers ([(lambda (x) (and (not-break-exn? x) (exn? x)))

@@ -781,7 +781,8 @@
                       (lambda () ; =user=
                         (set-breakables (current-thread) (current-custodian))
                         (set-directory definitions-text)
-                        (error-display-handler (lambda (msg exn) (error-display msg exn)))
+                        (error-display-handler (lambda (msg exn)
+						 (error-display msg exn)))
                         (current-exception-handler
                          (let ([oh (current-exception-handler)])
                            (lambda (exn)

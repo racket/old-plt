@@ -193,8 +193,8 @@
 
  (install-plt-file-menu-item... "Install .plt File...")
  (install-plt-file-dialog-title "Install .plt File")
- (install-plt-from-web "Download and install .plt file from the web")
- (install-plt-from-file "Install .plt file from a local file")
+ (install-plt-web-tab "Web")
+ (install-plt-file-tab "File")
  (install-plt-filename "Filename:")
  (install-plt-url "URL:")
  
@@ -220,7 +220,6 @@
  
  ;;; preferences
  (preferences "Preferences")
- (preferences-category "Category")
  (saving-preferences "Saving Prefs")
  (error-unmarshalling "Error unmarshalling ~a preference")
  (error-saving-preferences "Error saving preferences: ~a")

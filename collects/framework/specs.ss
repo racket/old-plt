@@ -95,18 +95,61 @@
 		clause)]))
 	(syntax->list (syntax (clauses ...))))]))
   
-  (define (raise-error src-info to-blame fmt . args)
-    (error
-     'contract-error
-     (string-append (format "blame: ~a; contract established at: ~s ~s; "
-                            to-blame
-                            src-info
-			    (syntax-object->datum src-info))
-                    (apply format fmt args))))
+  ;; raise-contract-error : (union syntax #f) symbol symbol string args ... -> alpha
+  ;; doesn't return
+  (define (raise-contract-error src-info to-blame other-party fmt . args)
+    (let ([blame-src (if (syntax? src-info)
+			 (let ([source (syntax-source src-info)]
+			       [line (syntax-line src-info)]
+			       [col (syntax-column src-info)]
+			       [pos (syntax-position src-info)])
+			   (cond
+			      [(and (string? source) line col)
+			       (format "~a: ~a.~a: " source line col)]
+			      [(and line col)
+			       (format "~a.~a: " line col)]
+			      [(and (string? source) pos)
+			       (format "~a: ~a: " source pos)]
+			      [pos
+			       (format "~a: " pos)]
+			      [else ""]))
+			 "")]
+	  [specific-blame
+	   (let ([datum (syntax-object->datum src-info)])
+	     (if (symbol? datum)
+		 (format "broke ~a's contract" datum)
+		 "failed contract"))])
+    (raise
+     (make-exn
+      (string->immutable-string
+       (string-append (format "~a~a: ~a ~a: "
+			      blame-src
+			      other-party
+			      to-blame
+			      specific-blame)
+		      (apply format fmt args)))
+      (current-continuation-marks)))))
   
   ;; contract = (make-contract (alpha sym sym sym -> alpha))
   ;; generic contract container
   (define-struct contract (f))
+
+  ;; flat-named-contract = (make-flat-named-contract string (any -> boolean))
+  ;; this holds flat contracts that have names for error reporting
+  (define-struct flat-named-contract (type-name predicate))
+  (provide (rename build-flat-named-contract flat-named-contract)
+           flat-named-contract-type-name
+           flat-named-contract-predicate)
+  (define build-flat-named-contract
+    (let ([flat-named-contract
+	   (lambda (name contract)
+	     (unless (and (string? name)
+			  (procedure? contract)
+			  (procedure-arity-includes? contract 1))
+	       (error 'flat-named-contract "expected string and procedure of one argument as arguments, given: ~e and ~e"
+		      name contract))
+	     (make-flat-named-contract name contract))])
+      flat-named-contract))
 
   (define-syntax -contract
     (lambda (stx)
@@ -129,7 +172,7 @@
                     [pos-blame pos-blame-e]
                     [src-info src-info-e])
                 (unless (-contract? a-contract)
-                  (error 'contract "expected a contract as first argument, got: ~e, other args ~e ~e ~e ~e" 
+                  (error 'contract "expected a contract as first argument, given: ~e, other args ~e ~e ~e ~e" 
                          a-contract
                          name
                          pos-blame
@@ -137,13 +180,13 @@
                          src-info))
                 (unless (and (symbol? neg-blame)
                              (symbol? pos-blame))
-                  (error 'contract "expected symbols as names for assigning blame, got: ~e and ~e, other args ~e ~e ~e"
+                  (error 'contract "expected symbols as names for assigning blame, given: ~e and ~e, other args ~e ~e ~e"
                          neg-blame pos-blame
                          a-contract 
                          name
                          src-info))
                 (unless (syntax? src-info)
-                  (error 'contract "expected syntax as last argument, got: ~e, other args ~e ~e ~e ~e"
+                  (error 'contract "expected syntax as last argument, given: ~e, other args ~e ~e ~e ~e"
                          src-info
                          neg-blame 
                          pos-blame
@@ -187,9 +230,9 @@
 			     (let ([dom-x dom] ...
 				   [rng-x rng])
 			       (unless (-contract? dom-x)
-				 (error '-> "expected contract as argument, got ~e" dom-x)) ...
+				 (error '-> "expected contract as argument, given: ~e" dom-x)) ...
 				 (unless (-contract? rng-x)
-				   (error '-> "expected contract as argument, got: ~e" rng-x))
+				   (error '-> "expected contract as argument, given: ~e" rng-x))
 				 body))))]
 		       [->body (syntax (->* (dom-x ...) (rng-x)))])
 		   (let-values ([(->*add-outer-check ->*make-inner-check ->*make-body) (->*/h ->body)])
@@ -223,19 +266,20 @@
                    (let ([dom-x dom] ...
                          [rng-x rng] ...)
                      (unless (-contract? dom-x)
-                       (error '->* "expected contract as argument, got ~e" dom-x)) ...
+                       (error '->* "expected contract as argument, given: ~e" dom-x)) ...
                      (unless (-contract? rng-x)
-                       (error '->* "expected contract as argument, got: ~e" rng-x)) ...
+                       (error '->* "expected contract as argument, given: ~e" rng-x)) ...
                      body))))
               (lambda (stx)
                 (with-syntax ([(val pos-blame neg-blame src-info) stx])
                   (syntax
                    (unless (and (procedure? val)
                                 (procedure-arity-includes? val arity))
-                     (raise-error
+                     (raise-contract-error
                       src-info
                       pos-blame
-                      "expected a procedure that accepts ~a arguments, got: ~e"
+		      neg-blame
+                      "expected a procedure that accepts ~a arguments, given: ~e"
                       arity
                       val)))))
               (lambda (stx)
@@ -267,20 +311,21 @@
                          [dom-rest-x rest]
                          [rng-x rng] ...)
                      (unless (-contract? dom-x)
-                       (error '->* "expected contract for domain position, got ~e" dom-x)) ...
+                       (error '->* "expected contract for domain position, given: ~e" dom-x)) ...
                      (unless (-contract? dom-rest-x)
-                       (error '->* "expected contract for rest position, got ~e" dom-rest-x))
+                       (error '->* "expected contract for rest position, given: ~e" dom-rest-x))
                      (unless (-contract? rng-x)
-                       (error '->* "expected contract for range position, got: ~e" rng-x)) ...
+                       (error '->* "expected contract for range position, given: ~e" rng-x)) ...
                      body))))
               (lambda (stx)
                 (with-syntax ([(val pos-blame neg-blame src-info) stx])
                   (syntax
                    (unless (procedure? val)
-                     (raise-error
+                     (raise-contract-error
                       src-info
                       pos-blame
-                      "expected a procedure that accepts ~a arguments, got: ~e"
+		      neg-blame
+                      "expected a procedure that accepts ~a arguments, given: ~e"
                       arity
                       val)))))
               (lambda (stx)
@@ -318,10 +363,10 @@
                      (let ([dom-x dom] ...
                            [rng-x rng])
                        (unless (-contract? dom-x)
-                         (error '->d "expected contract as argument, got ~e" dom-x)) ...
+                         (error '->d "expected contract as argument, given: ~e" dom-x)) ...
                        (unless (and (procedure? rng-x)
                                     (procedure-arity-includes? rng-x arity))
-                         (error '->d "expected range portion to be a function that takes ~a arguments, got: ~e"
+                         (error '->d "expected range portion to be a function that takes ~a arguments, given: ~e"
                                 arity
                                 rng-x))
                        body))))
@@ -330,10 +375,11 @@
                     (syntax
                      (unless (and (procedure? val)
                                   (procedure-arity-includes? val arity))
-                       (raise-error
+                       (raise-contract-error
                         src-info
                         pos-blame
-                        "expected a procedure that accepts ~a arguments, got: ~e"
+			neg-blame
+                        "expected a procedure that accepts ~a arguments, given: ~e"
                         arity
                         val)))))
                 (lambda (stx)
@@ -342,7 +388,7 @@
                      ((arg-x ...)
                       (let ([rng-contract (rng-x arg-x ...)])
                         (unless (-contract? rng-contract)
-                          (error '->d "expected range portion to return a contract, got: ~e"
+                          (error '->d "expected range portion to return a contract, given: ~e"
                                  rng-contract))
                         (check-contract 
                          rng-contract
@@ -365,10 +411,10 @@
                    (let ([dom-x dom] ...
                          [rng-mk-x rng-mk])
                      (unless (-contract? dom-x)
-                       (error '->*d "expected contract as argument, got ~e" dom-x)) ...
+                       (error '->*d "expected contract as argument, given: ~e" dom-x)) ...
                      (unless (and (procedure? rng-mk-x)
                                   (procedure-arity-includes? rng-mk-x arity))
-                       (error '->*d "expected range position to be a procedure that accepts ~ arguments, got: ~e"
+                       (error '->*d "expected range position to be a procedure that accepts ~a arguments, given: ~e"
                               arity rng-mk-x))
                      body))))
               (lambda (stx)
@@ -376,10 +422,11 @@
                   (syntax
                    (unless (and (procedure? val)
                                 (procedure-arity-includes? val arity))
-                     (raise-error
+                     (raise-contract-error
                       src-info
                       pos-blame
-                      "expected a procedure that accepts ~a arguments, got: ~e"
+		      neg-blame
+                      "expected a procedure that accepts ~a arguments, given: ~e"
                       arity
                       val)))))
               (lambda (stx)
@@ -398,7 +445,7 @@
                         (lambda results
                           (unless (= (length results) (length rng-contracts))
                             (error '->d* 
-                                   "expected range contract contructor and function to have the same number of values, got ~a and ~a respectively" 
+                                   "expected range contract contructor and function to have the same number of values, given: ~a and ~a respectively" 
                                    (length results) (length rng-contracts)))
                           (apply 
                            values
@@ -423,21 +470,22 @@
                          [dom-rest-x rest]
                          [rng-mk-x rng-mk])
                      (unless (-contract? dom-x)
-                       (error '->*d "expected contract as argument, got ~e" dom-x)) ...
+                       (error '->*d "expected contract as argument, given: ~e" dom-x)) ...
                      (unless (-contract? dom-rest-x)
-                       (error '->*d "expected contract for rest argument, got ~e" dom-rest-x))
+                       (error '->*d "expected contract for rest argument, given: ~e" dom-rest-x))
                      (unless (procedure? rng-mk-x)
-                       (error '->*d "expected range position to be a procedure that accepts ~a arguments, got: ~e"
+                       (error '->*d "expected range position to be a procedure that accepts ~a arguments, given: ~e"
                               arity rng-mk-x))
                      body))))
               (lambda (stx)
                 (with-syntax ([(val pos-blame neg-blame src-info) stx])
                   (syntax
                    (unless (procedure? val)
-                     (raise-error
+                     (raise-contract-error
                       src-info
                       pos-blame
-                      "expected a procedure that accepts ~a arguments, got: ~e"
+		      neg-blame
+                      "expected a procedure that accepts ~a arguments, given: ~e"
                       arity
                       val)))))
               (lambda (stx)
@@ -458,7 +506,7 @@
                         (lambda results
                           (unless (= (length results) (length rng-contracts))
                             (error '->d* 
-                                   "expected range contract contructor and function to have the same number of values, got ~a and ~a respectively" 
+                                   "expected range contract contructor and function to have the same number of values, given: ~a and ~a respectively" 
                                    (length results) (length rng-contracts)))
                           (apply 
                            values
@@ -606,6 +654,7 @@
     (let ([contract?
            (lambda (val)
              (or (contract? val)  ;; refers to struct predicate
+		 (flat-named-contract? val)
                  (and (procedure? val)
                       (procedure-arity-includes? val 1))))])
       contract?))
@@ -614,21 +663,46 @@
     (cond
       [(contract? contract)
        ((contract-f contract) val pos neg src-info)]
+      [(flat-named-contract? contract)
+       (if ((flat-named-contract-predicate contract) val)
+           val
+           (raise-contract-error
+            src-info
+            pos
+	    neg
+            "expected type <~a>, given: ~e"
+	    (flat-named-contract-type-name contract)
+	    val))]
       [else
        (if (contract val)
            val
-           (raise-error
+           (raise-contract-error
             src-info
             pos
-            "predicate ~s failed for: ~e"
-            contract
-            val))]))
+	    neg
+            "~agiven: ~e"
+	    (predicate->type-name contract)
+	    val))]))
 
+  ;; predicate->type-name : function -> string
+  ;; if the function has a name and the name ends
+  ;; with a question mark, turn it into a mzscheme
+  ;; style type name
+  (define (predicate->type-name pred)
+    (let* ([name (object-name pred)])
+      (if name
+	  (let ([m (regexp-match "(.*)\\?" (symbol->string name))])
+	    (if m
+		(format "expected type <~a>, " (cadr m))
+		""))
+	  "")))
+
+  (provide union)
   (define (union . args)
     (for-each
      (lambda (x) 
        (unless (-contract? x)
-         (error 'union "expected procedures of arity 1 or -> contracts, got: ~e" x)))
+         (error 'union "expected procedures of arity 1, flat-named-contracts, or -> contracts, given: ~e" x)))
      args)
     (let-values ([(contracts procs)
                   (let loop ([ctcs null]
@@ -642,38 +716,43 @@
                                   (loop ctcs (cons arg procs) (cdr args))))]))])
       (unless (or (null? contracts)
                   (null? (cdr contracts)))
-        (error 'union "expected at most one function contract, got: ~e" args))
+        (error 'union "expected at most one function contract, given: ~e" args))
       (make-contract
        (lambda (val pos neg src-info)
          (cond
-           [(ormap (lambda (proc) (proc val)) procs)
+           [(ormap (lambda (proc)
+		     (if (flat-named-contract? proc)
+			 ((flat-named-contract-predicate proc) val)
+			 (proc val)))
+		   procs)
             val]
            [(null? contracts)
-            (raise-error src-info pos "union failed")]
+            (raise-contract-error src-info pos neg "union failed, given: ~e" val)]
            [(null? (cdr contracts))
             ((contract-f (car contracts)) val pos neg src-info)])))))
-             
 
   (provide and/f or/f 
            >=/c <=/c </c >/c 
 	   natural-number?
            false? any? 
 	   printable?
-           union symbols
+           symbols
            subclass?/c implementation?/c is-a?/c
            listof vectorof cons/p list/p
 	   mixin-contract make-mixin-contract)
-  
-  (define-syntax (name stx)
-    (syntax-case stx ()
-      [(_ name exp)
-       (syntax (let ([name exp])
-                 name))]))
 
   (define (symbols . ss)
-    (name symbols
-          (lambda (x)
-            (memq x ss))))
+    (unless ((length ss) . >= . 1)
+      (error 'symbols "expected at least one argument"))
+    (unless (andmap symbol? ss)
+      (error 'symbols "expected symbols as arguments, given: ~a"
+	     (apply string-append (map (lambda (x) (format "~e " x)) ss))))
+    (make-flat-named-contract
+     (apply string-append
+	    (format "'~a" (car ss))
+	    (map (lambda (x) (format ", '~a" x)) (cdr ss)))
+     (lambda (x)
+       (memq x ss))))
 
   (define (printable? x)
     (or (symbol? x)
@@ -693,57 +772,104 @@
   (define (and/f . fs)
     (for-each
      (lambda (x) 
-       (unless (and (procedure? x)
-                    (procedure-arity-includes? x 1))
-         (error 'and/f "expected procedures of arity 1, got: ~e" x)))
+       (unless (or (flat-named-contract? x)
+                   (and (procedure? x)
+                        (procedure-arity-includes? x 1)))
+         (error 'and/f "expected procedures of arity 1 or <flat-named-contract>s, given: ~e" x)))
      fs)
-    (name and/f
-          (lambda (x)
-            (andmap (lambda (f) (f x)) fs))))
+    (lambda (x)
+      (andmap (lambda (f) 
+                (if (flat-named-contract? f)
+                    ((flat-named-contract-predicate f) x)
+                    (f x)))
+              fs)))
 
   (define (or/f . fs)
     (for-each
      (lambda (x) 
-       (unless (and (procedure? x)
-                    (procedure-arity-includes? x 1))
-         (error 'or/f "expected procedures of arity 1, got: ~e" x)))
+       (unless (or (flat-named-contract? x)
+                   (and (procedure? x)
+                        (procedure-arity-includes? x 1)))
+         (error 'or/f "expected procedures of arity 1 or <flat-named-contract>s, given: ~e" x)))
      fs)
-    (name or/f
-          (lambda (x)
-            (ormap (lambda (f) (f x)) fs))))
+    (lambda (x)
+      (ormap (lambda (f)
+               (if (flat-named-contract? f)
+                   ((flat-named-contract-predicate f) x)
+                   (f x)))
+             fs)))
   
-  (define (>=/c x) (name >=/c (lambda (y) (and (number? y) (>= y x)))))
-  (define (<=/c x) (name <=/c (lambda (y) (and (number? y) (<= y x)))))
-  (define (</c x) (name </c (lambda (y) (and (number? y) (< y x)))))
-  (define (>/c x) (name >/c (lambda (y) (and (number? y) (> y x)))))
+  (define (>=/c x)
+    (make-flat-named-contract
+     (format "number >= ~a" x)
+     (lambda (y) (and (number? y) (>= y x)))))
+  (define (<=/c x)
+    (make-flat-named-contract
+     (format "number <= ~a" x)
+     (lambda (y) (and (number? y) (<= y x)))))
+  (define (</c x)
+    (make-flat-named-contract
+     (format "number < ~a" x)
+     (lambda (y) (and (number? y) (< y x)))))
+  (define (>/c x)
+    (make-flat-named-contract
+     (format "number > ~a" x)
+     (lambda (y) (and (number? y) (> y x)))))
 
-  (define natural-number? (and/f number? integer? (>=/c 0)))
+  (define (natural-number? x)
+    (and (number? x)
+	 (integer? x)
+	 (x . >= . 0)))
 
-  (define (is-a?/c <%>) (name is-a?/c (lambda (x) (is-a? x <%>))))
-  (define (subclass?/c <%>) (name subclass?/c (lambda (x) (subclass? x <%>))))
-  (define (implementation?/c <%>) (name implementation?/c (lambda (x) (implementation? x <%>))))
+  (define (is-a?/c <%>)
+    (unless (or (interface? <%>)
+		(class? <%>))
+      (error 'is-a?/c "expected <interface> or <class>, given: ~e" <%>))
+    (let ([name (object-name <%>)])
+      (make-flat-named-contract
+       (if name
+	   (format "instance of ~a" name)
+	   "instance of <<unknown>>")
+       (lambda (x) (is-a? x <%>)))))
+
+  (define (subclass?/c %)
+    (unless (class? %)
+      (error 'subclass?/c "expected type <class>, given: ~e" %))
+    (let ([name (object-name %)])
+      (make-flat-named-contract
+       (if name
+	   (format "subclass of ~a" name)
+	   "subclass of <<unknown>>")
+       (lambda (x) (subclass? x %)))))
+
+  (define (implementation?/c <%>)
+    (unless (interface? <%>)
+      (error 'implementation?/c "expected <interface>, given: ~e" <%>))
+    (let ([name (object-name <%>)])
+      (make-flat-named-contract
+       (if name
+	   (format "implementation of ~a" name)
+	   "implementation of <<unknown>>")
+       (lambda (x) (implementation? x <%>)))))
 
   (define (false? x) (not x))
   (define (any? x) #t)
 
   (define (listof p)
-    (name listof
-          (lambda (v)
-            (and (list? v)
-                 (andmap p v)))))
+    (lambda (v)
+      (and (list? v)
+	   (andmap p v))))
   
   (define (vectorof p)
-    (name vectorof
-          (lambda (v)
-            (and (vector? v)
-                 (andmap p (vector->list v))))))
+    (lambda (v)
+      (and (vector? v)
+	   (andmap p (vector->list v)))))
 
   (define (cons/p hdp tlp)
-    (name cons/p
-          (lambda (x)
-            (and (pair? x)
-                 (hdp (car x))
-                 (tlp (cdr x))))))
+    (lambda (x)
+      (and (pair? x)
+	   (hdp (car x))
+	   (tlp (cdr x)))))
 
   (define (list/p . args)
     (let loop ([args args])

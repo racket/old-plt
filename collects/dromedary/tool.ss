@@ -343,7 +343,7 @@
 		     (pair? (car x)) (= (length (car x)) 1))
 		(make-dromedary-settings (caar x))
 		#f))
-	  (define/public (create-executable settings parent src-file dest-file)
+	  (define/public (create-executable settings parent program-file)
 	    '(let ([code (compile-simplified (simplify (parse-a60-file src-file)
 						       base-importing-stx)
 					     base-importing-stx)])

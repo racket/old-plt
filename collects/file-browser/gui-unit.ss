@@ -78,9 +78,9 @@
             (let ((file (send snip get-file)))
               (cond
                 ((and on? (script:is-directory? file))
-                 ((get-user-value 'box-select-dir) file))
+                 (user-eval `(box-select-dir ,file) void))
                 (on?
-                 ((get-user-value 'box-select-file) file)))
+                 (user-eval `(box-select-file ,file) void)))
               (remove-selected snip)))
           
           (rename (super-on-event on-event))
@@ -102,27 +102,30 @@
                                    (set! last-click-time -inf.0)
                                    (cond
                                      ((script:is-directory? file)
-                                      ((get-user-value 'double-mouse-dir) file))
+                                      (user-eval `(double-mouse-dir ,file) void))
                                      (else
-                                      ((get-user-value 'double-mouse-file) file))))
+                                      (user-eval `(double-mouse-file ,file) void))))
                                   (else
                                    (set! last-click-time click-time)
                                    (cond
                                      ((script:is-directory? file)
-                                      ((get-user-value 'left-mouse-dir) file))
+                                      (user-eval `(left-mouse-dir ,file) void))
                                      (else
-                                      ((get-user-value 'left-mouse-file) file)))))))
+                                      (user-eval `(left-mouse-file ,file) void)))))))
                              (else
                               (cond
                                 ((script:is-directory? file)
                                  (case event-type
-                                   ((middle-down) ((get-user-value 'middle-mouse-dir) file))
-                                   ((right-down) ((get-user-value 'right-mouse-dir) file))))
+                                   ((middle-down) 
+                                    (user-eval `(middle-mouse-dir ,file) void))
+                                   ((right-down) 
+                                    (user-eval `(right-mouse-dir ,file) void))))
                                 (else
                                  (case event-type
-                                   ((middle-down) ((get-user-value 'middle-mouse-file) file))
+                                   ((middle-down) 
+                                    (user-eval `(middle-mouse-file ,file) void))
                                    ((right-down)
-                                    ((get-user-value 'right-mouse-file) file))))))))))))
+                                    (user-eval `(right-mouse-file ,file) void))))))))))))
                 (else
                  (super-on-event event)))))
           
@@ -156,9 +159,6 @@
           ;; dir: file
           (init-field dir)
           (define (get-dir) dir)
-          
-          (define file-filter (get-user-value 'all-files))
-          (define file-sort (get-user-value 'dirs-first))
           
           (define (change-directory new-dir)
             (send path-text set-value (script:file-full-path new-dir))
@@ -202,11 +202,12 @@
           ;(send file-pasteboard file-deleted file)))
           
           (define (refresh)
-            (let ((files 
-                   (quicksort (filter file-filter (script:directory-list dir)) file-sort)))
-              (set! file-pasteboard (make-object file-board% 
-                                      files (get-restricted-selection)))
-              (send file-canvas set-editor file-pasteboard)))
+            (let ((files (script:directory-list dir)))
+              (user-eval `(,quicksort (,filter filter-files ',files) sort-files)
+                         (lambda (files)
+                           (set! file-pasteboard (make-object file-board% 
+                                                   files (get-restricted-selection)))
+                           (send file-canvas set-editor file-pasteboard)))))
           
           (define (callback widget event)
             (cond
@@ -233,10 +234,8 @@
                   (cond
                     ((script:is-directory? file) file)
                     (else
-                     (user-thread-eval (format
-                                        "(printf \"No directory ~a~n\")"
-                                        path)
-                                       void)
+                     (user-eval `(,error ,(format "No directory ~a~n" path))
+                                void)
                      #f))))
               "path"
               this

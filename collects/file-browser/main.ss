@@ -35,7 +35,7 @@
               (define f-int name) ...)))))))
   
   (define orig-output (current-output-port))
-  (define trace? #t)
+  (define trace? #f)
   (define-syntax trace
     (syntax-rules ()
       ((_ str arg ...)
@@ -73,8 +73,6 @@
               (semaphore-post lock)
               #f)))))
 
-      ;;(load (build-path (find-system-path 'pref-dir) ".file-browser.ss"))
-
       (drscheme:get/extend:extend-unit-frame
        (lambda (frame%)
          (class frame%
@@ -93,29 +91,19 @@
                               
                (trace "code-engine through")
                
-               (define (wrap v)
-                 (cond
-                   ((not (procedure? v)) v)
-                   (else
-                    (lambda args
-                      (letrec ((s (make-semaphore))
-                               (res res))
-                        (send (get-interactions-text) run-in-evaluation-thread
-                              (lambda ()
-                                (set! res (apply v args))
-                                (semaphore-post s)))
-                        (semaphore-wait s)
-                        res)))))
-               
                (define (get-user-value sym)
                  (parameterize ((current-namespace
                                  (send (get-interactions-text) get-user-namespace)))
-                   (wrap (namespace-variable-value sym))))
+                   (namespace-variable-value sym)))
                
-               (define (user-thread-eval code-string callback)
-                 (send (get-interactions-text) run-in-evaluation-thread
-                       (lambda ()
-                         (callback (eval (read (open-input-string code-string)))))))))
+               (define (user-eval code callback)
+                 (parameterize ((current-eventspace 
+                                 (send (get-interactions-text) get-user-eventspace)))
+                   (trace "in user-eval")
+                   (queue-callback
+                    (lambda ()
+                      (trace "user callback running: ~a" code)
+                      (callback (eval code))))))))
            
            (define script-unit #f)
            (define (get-script-unit) script-unit)
@@ -184,7 +172,7 @@
 
            (send (get-button-panel) change-children
                  (lambda (x) (cons button (remq button x)))))))
-          
+           
       
       (define (phase1)
         (drscheme:language:extend-language-interface

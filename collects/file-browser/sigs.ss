@@ -49,4 +49,4 @@
 
      open-dir-window
      close-dir-window))
-  (define-signature code-engine^ (user-thread-eval get-user-value)))
+  (define-signature code-engine^ (user-eval get-user-value)))

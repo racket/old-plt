@@ -7,7 +7,7 @@
   (define-values/invoke-unit/sig script^ (script-unit-param))
   
   ;; all-files: file -> bool
-  (define (all-files f) (printf "here~n") #t)
+  (define (all-files f) #t)
   
   ;; unhidden-files: file -> bool
   (define (unhidden-files f)

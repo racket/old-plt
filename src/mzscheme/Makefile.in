@@ -189,22 +189,22 @@ mark:
 	$(MAKE) $(srcdir)/src/mzmark.c
 
 headers:
-	if [ ! -d $(srcdir)/../../include ] ; then mkdir $(srcdir)/../../include ; fi
-	$(MAKE) $(srcdir)/../../include/scheme.h
+	./mzscheme -r mkincludes.ss $(srcdir)/../.. . $(srcdir)
 	$(MAKE) $(srcdir)/../../collects/mzscheme/lib/mzdyn.c
 
-$(srcdir)/../../include/scheme.h: \
-          $(builddir)/mzconfig.h $(srcdir)/sconfig.h $(srcdir)/uconfig.h $(srcdir)/include/escheme.h $(srcdir)/src/schemef.h \
-          $(srcdir)/src/stypes.h $(srcdir)/src/schemex.h $(srcdir)/src/schemexm.h $(srcdir)/src/schexn.h \
-          $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/include/mzscheme3m.exp $(srcdir)/include/scheme.h \
-          $(srcdir)/src/schvers.h $(srcdir)/gc2/gc2.h
-	rm -rf $(srcdir)/../../include/*
-	cp $(builddir)/mzconfig.h $(srcdir)/sconfig.h $(srcdir)/uconfig.h $(srcdir)/include/escheme.h $(srcdir)/src/schemef.h $(srcdir)/src/schvers.h \
-          $(srcdir)/src/stypes.h $(srcdir)/src/schemex.h $(srcdir)/src/schemexm.h $(srcdir)/src/schexn.h \
-          $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/include/mzscheme3m.exp $(srcdir)/../../include 
-	cp  $(srcdir)/gc2/gc2.h $(srcdir)/../../include/schemegc2.h
-	$(SED) 's,^ */[*]III[*]/ *$$,#define INCLUDE_WITHOUT_PATHS,' \
-          < $(srcdir)/include/scheme.h > $(srcdir)/../../include/scheme.h
+# This is superseded by mkincludes.ss
+#$(srcdir)/../../include/scheme.h: \
+#          $(builddir)/mzconfig.h $(srcdir)/sconfig.h $(srcdir)/uconfig.h $(srcdir)/include/escheme.h $(srcdir)/src/schemef.h \
+#          $(srcdir)/src/stypes.h $(srcdir)/src/schemex.h $(srcdir)/src/schemexm.h $(srcdir)/src/schexn.h \
+#          $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/include/mzscheme3m.exp $(srcdir)/include/scheme.h \
+#          $(srcdir)/src/schvers.h $(srcdir)/gc2/gc2.h
+#	rm -rf $(srcdir)/../../include/*
+#	cp $(builddir)/mzconfig.h $(srcdir)/sconfig.h $(srcdir)/uconfig.h $(srcdir)/include/escheme.h $(srcdir)/src/schemef.h $(srcdir)/src/schvers.h \
+#          $(srcdir)/src/stypes.h $(srcdir)/src/schemex.h $(srcdir)/src/schemexm.h $(srcdir)/src/schexn.h \
+#          $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/include/mzscheme3m.exp $(srcdir)/../../include 
+#	cp  $(srcdir)/gc2/gc2.h $(srcdir)/../../include/schemegc2.h
+#	$(SED) 's,^ */[*]III[*]/ *$$,#define INCLUDE_WITHOUT_PATHS,' \
+#          < $(srcdir)/include/scheme.h > $(srcdir)/../../include/scheme.h
 
 # mzdyn.c, used for MacOS "library"
 $(srcdir)/../../collects/mzscheme/lib/mzdyn.c: $(srcdir)/dynsrc/mzdyn.c

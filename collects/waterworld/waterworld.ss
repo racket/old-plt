@@ -75,11 +75,14 @@
 		 (build-path 
 		  (collection-path "waterworld") s) 'gif))
   (define *jolly-bitmap* #f)
+  (define *jolly-ce-bitmap* #f)
   (define *jolly-large-bitmap* (make-bitmap "jolly-large.gif"))
   (define *jolly-small-bitmap* (make-bitmap "jolly-small.gif"))
+  (define *jolly-large-ce-bitmap* (make-bitmap "jolly-large-ce.gif"))
+  (define *jolly-small-ce-bitmap* (make-bitmap "jolly-small-ce.gif"))
 
-  (define *jolly-small-desc* (list *jolly-small-bitmap* 16 16))
-  (define *jolly-large-desc* (list *jolly-large-bitmap* 23 27))
+  (define *jolly-small-desc* (list *jolly-small-bitmap* *jolly-small-ce-bitmap* 16 16))
+  (define *jolly-large-desc* (list *jolly-large-bitmap* *jolly-large-ce-bitmap* 23 27))
 
   (define *jolly-width* #f)
   (define *jolly-height* #f) 
@@ -104,11 +107,13 @@
     (set! *even-slope* (/ *tile-height* (- *half-edge-length*)))
     (set! *odd-slope* (- *even-slope*))
     (let-values 
-     ([(bmp w h) (apply values (case *current-tile-size*
+     ([(bmp ce-bmp w h) (apply values 
+			       (case *current-tile-size*
 				 ((large) *jolly-large-desc*) 
 				 ((small) *jolly-small-desc*)
 				 (else "This is unreachable")))])
      (set! *jolly-bitmap* bmp)
+     (set! *jolly-ce-bitmap* ce-bmp)
      (set! *jolly-width* w)
      (set! *jolly-height* h))
     (set! *jolly-column-offset* 
@@ -130,7 +135,6 @@
 	       (build-list 26 (lambda (n) 
 				(string (integer->char 
 					 (+ n offset)))))))))
-
   (define (make-color s)
     (make-object color% s))
   (define *alpha-color*
@@ -145,6 +149,8 @@
     (make-colored-brush "lightblue"))
   (define *exposed-brush* 
     (make-colored-brush "white"))
+  (define *counterexample-brush*
+    (make-colored-brush "red"))
 
   ; limits
   (define *min-rows* 3)
@@ -174,21 +180,32 @@
 		      (substring s start (add1 end))
 		      (loop2 (sub1 end)))))))))
 
+  (define (fold-string . ss)
+    (foldr
+     (lambda (s a)
+       (if a
+	   (format "~a~n~a"
+		   s a)
+	   s))
+     #f
+     ss))
+
   ; classes
 
   (define location%
     (class object% 
-      (init-field safe? row column (concealed? #t))
-      (field (neighbors #f))
-      (private*
-       [player-error
-	(lambda ()
-	  (send frame game-over #t)
-	  (thread 
-	   (lambda ()
-	     (message-box *frame-label*
-		       "Player error! Game over!"
-		       frame '(ok)))))])
+      (init-field 
+       safe? 
+       row 
+       column 
+       [concealed? #t]
+       [unsafe-count 0])
+      (field 
+       [neighbors #f]
+       [revealed-neighbors 0]
+       [unsafe-revealed-neighbors 0]
+       [counterexample-safe? #f]
+       [in-counterexample-set? #f])
       (public*
 	[get-row
 	 (lambda () row)]
@@ -198,33 +215,80 @@
 	 (lambda () safe?)]
 	[make-unsafe!
 	 (lambda () (set! safe? #f))]
+	[get-counterexample-safe?
+	 (lambda () counterexample-safe?)]
+	[set-counterexample-safe!
+	 (lambda (v) (set! counterexample-safe? v))]
+	[get-in-counterexample-set?
+	 (lambda () in-counterexample-set?)]
+	[set-in-counterexample-set!
+	 (lambda (v) (set! in-counterexample-set? v))]
+	[set-unsafe-count!
+	 (lambda (n) (set! unsafe-count n))]
+	[get-unsafe-count
+	 (lambda () unsafe-count)]
 	[get-concealed?
 	 (lambda () concealed?)]
 	[get-neighbors
 	 (lambda () neighbors)]
+	[get-revealed-neighbors 
+	 (lambda () revealed-neighbors)]
+	[incr-revealed-neighbors! 
+	 (lambda () (set! revealed-neighbors (add1 revealed-neighbors)))]
+	[incr-unsafe-revealed-neighbors! 
+	 (lambda () (set! unsafe-revealed-neighbors (add1 unsafe-revealed-neighbors)))]
+	[set-unsafe-revealed-neighbors! 
+	 (lambda (n) (set! unsafe-revealed-neighbors n))]
+	[get-unsafe-revealed-neighbors
+	 (lambda ()
+	    unsafe-revealed-neighbors)]
 	[set-neighbors!
 	 (lambda (ns) (set! neighbors ns))]
 	[expose
-	 (lambda (decl-safe? show-error?)
+	 (lambda ()
 	   (if concealed?
 	       (begin
 		 (set! concealed? #f)
-		 (when show-error?
-		       (unless (eq? decl-safe? safe?)
-			       (player-error)))
 		 #t) ; indicates to caller it was concealed
 	       #f))])
       (super-instantiate ())))
 
+  (define (remove-duplicates lst)
+    (if (null? lst) 
+	'()
+	(let ([the-car (car lst)])
+	  (cons the-car
+		(remq the-car
+		      (remove-duplicates (cdr lst)))))))
+
   (define board%
     (class object%
       (init-field (rows *current-rows*) (columns *current-cols*)) 
-      (field (board-vector #f)
-	     (pirates-left #f)
-	     (pirates-ratio #f)
-	     (unsafe-count #f)
-	     (num-concealed (* rows columns)))
+      (field [board-vector #f]
+	     [pirates-left #f]
+	     [pirates-ratio #f]
+	     [unsafe-count #f]
+	     [num-concealed (* rows columns)]
+	     [frontier-table #f]
+	     [teaching-mode? #f]
+	     [canvas #f]
+	     [current-counterexample #f])
       (private*
+       [do-board-map 
+	(lambda (f update?)
+	  (when board-vector
+		(let ([olen (vector-length board-vector)]
+		      [ilen (vector-length (vector-ref board-vector 0))])
+		  (let oloop ([i 0])
+		    (when (< i olen)
+			  (let ([row-vec (vector-ref board-vector i)])    
+			    (let iloop ([j 0])
+			      (when (< j ilen)
+				    (let ([r (f (vector-ref row-vec j))])
+				      (when update? 
+					    (vector-set! row-vec j r)))
+				    (iloop (add1 j))))
+			    (oloop (add1 i))))))))]
        [sum-location-unsafe
 	(lambda (s)
 	  (foldr (lambda (loc accum)
@@ -245,39 +309,436 @@
        [decrement-pirates-left!
 	(lambda ()
 	  (set! pirates-left (sub1 pirates-left))
-	  (calc-pirates-ratio!))])
+	  (calc-pirates-ratio!))]
+       [num-unsafe-in-assignment
+	(lambda (assn)
+	  (foldl 
+	   (lambda (a total)
+	     (if a
+		 (add1 total)
+		 total))
+	   0
+	   (map cdr assn)))]
+       [beyond-frontier
+	(lambda ()
+	  (let ([locs null])
+	    (board-for-each ; OK, mutation here
+	     (lambda (loc)
+	       (when (and (send loc get-concealed?)
+			  (not (in-frontier? loc)))
+		     (set! locs (cons loc locs)))))
+	    locs))]
+       [get-frontier-elements
+	(lambda ()
+	  (hash-table-map frontier-table (lambda (key _) key)))]
+       [get-revealed-border
+	(lambda ()
+	  (filter (lambda (elt)
+		    (and (not (send elt get-concealed?))
+			 (send elt get-safe?)))
+		  (remove-duplicates
+		   (apply append 
+			  (map (lambda (elt)
+				 (get-neighbors elt))
+			       (get-frontier-elements))))))]
+       [get-border-counts
+	(lambda (border)
+	  ; assoc list, in which for each list element:
+	  ; the car is a revealed neighbor of the frontier
+	  ; the cdr is the difference between the number
+	  ;  of unsafe neighbors (what the user sees)
+	  ;  and the number of already-revealed neighbors;
+	  ;  a consistent frontier assignment must contribute
+	  ;  that difference 
+	  (map (lambda (loc)
+		 (cons loc
+		       (- (send loc get-unsafe-count)
+			  (send loc get-unsafe-revealed-neighbors))))
+	       border))]
+       [initial-assignment
+	(lambda (elts)
+	  (map (lambda (elt) 
+		 (cons elt #f)) 
+	       elts))]
+       [next-assignment 
+	(lambda (assn)
+	  (if (null? assn)
+	      null
+	      (let* ([the-car (car assn)]
+		     [first-loc (car the-car)]
+		     [first-val (cdr the-car)])
+		(if first-val
+		    (cons (cons first-loc #f) (next-assignment (cdr assn)))
+		    (cons (cons first-loc #t) (cdr assn))))))]
+       [run-consistency-checker
+	(lambda (loc safe? f)
+	  (let* ([f-elts-raw (get-frontier-elements)]
+		 [f-elts
+		  (filter (lambda (elt) (not (eq? elt loc))) f-elts-raw)] 
+		 [num-elts (length f-elts)]
+		 [num-assignments (expt 2 num-elts)]
+		 [border (get-revealed-border)]
+		 [border-frontier-neighbors 
+		  (map (lambda (b)
+			 (cons b (filter (lambda (loc) (in-frontier? loc))
+					 (send b get-neighbors))))
+		       border)]
+		 [border-counts (get-border-counts border)])
+	    (f f-elts num-assignments 
+	       border border-frontier-neighbors border-counts)))]
+       [uniform-consistent-frontiers
+	; returns all consistent frontiers, if all have same num pirates
+	; else returns #f
+	(lambda (loc safe?)
+	  (run-consistency-checker
+	   loc safe?
+	   (lambda (f-elts num-assignments 
+			   border border-frontier-neighbors border-counts)
+	     (let/ec kont
+	       (let loop ([count 0]
+			  [num-unsafe #f]
+			  [assignment-to-try (initial-assignment f-elts)])
+		 (if (>= count num-assignments)
+		     (if num-unsafe null #f)
+		     (if (check-consistency assignment-to-try 
+					    border
+					    border-frontier-neighbors
+					    border-counts)
+			 (let ([curr-num-unsafe
+				(num-unsafe-in-assignment assignment-to-try)])
+			   (if num-unsafe
+			       (if (= num-unsafe curr-num-unsafe)
+				   (cons assignment-to-try 
+					 (loop (add1 count) num-unsafe 
+					       (next-assignment 
+						assignment-to-try)))
+				   (kont #f))
+			       (cons assignment-to-try 
+				 (loop (add1 count) curr-num-unsafe
+				       (next-assignment assignment-to-try)))))
+			 (loop (add1 count) num-unsafe 
+			       (next-assignment assignment-to-try)))))))))]
+       [dump-assignment
+	(lambda (assn)
+	  (printf "*** dumping assignment ***~n")
+	  (let loop ([curr assn])
+	    (unless (null? curr)
+		    (let ([loc (caar curr)]
+			  [val (cdar curr)])
+		      (printf "row: ~a col: ~a val: ~a~n"
+			      (send loc get-row) 
+			      (send loc get-column) 
+			      val))
+		    (loop (cdr curr)))))]
+       [check-consistency
+	(lambda (assignment border border-frontier-neighbors border-counts)
+          (if (> (num-unsafe-in-assignment assignment) pirates-left)
+	      #f ; can't put more in assignment than total remaining
+	      (let* ([assignment-counts 
+                      ; the unsafe counts for revealed tiles with frontier
+		      ;  neighbor that the frontier assignment *would* yield
+		      (map
+		       (lambda (loc-nbrs)
+			 (cons (car loc-nbrs)
+			       (let loop ([nbrs (cdr loc-nbrs)])
+				 (if (null? nbrs)
+				     0
+				     (let* ([first-nbr (car nbrs)]
+					    [mem-front
+					     (assq first-nbr assignment)])
+				       (if (cdr mem-front)
+					; increment hypothetical unsafe count
+					   (add1 (loop (cdr nbrs)))
+					   (loop (cdr nbrs))))))))
+		       border-frontier-neighbors)])
+		(let ([unsafe-count-consistent?
+		       (let loop ([acs assignment-counts])
+			 (if (null? acs)
+			     #t
+			     (let ([first-ac (car acs)])
+			       (if (eq? (cdr (assq (car first-ac)
+						   border-counts))
+					(cdr first-ac))
+				   (loop (cdr acs))
+				   #f))))])
+		  unsafe-count-consistent?))))]
+       [counterexample-prompt
+	(lambda (assignment loc safe?)
+	  (if (= 1
+		 (message-box/custom "WaterWorld"
+				     (fold-string
+				      "There is a counterexample to your claim"
+				      (if teaching-mode?
+					  (format 
+					   "that the tile labeled ~a is ~a."
+					   (vector-ref 
+					    *teaching-mode-labels*
+					    (+ (* (send loc get-row) 
+						  *teaching-board-width*)
+					       (send loc get-column)))
+					   (if safe? "safe" "unsafe"))
+					  (format "that the tile on row ~a, column ~a is ~a."
+						  (add1 (send loc get-row))
+						  (add1 (send loc get-column))
+						  (if safe? "safe" "unsafe")))
+				      ""
+				      "Do you wish to see the counterexample?"
+				      "")
+				     "Yes, show me"  ; button 1
+				     "No, spare me"  ; button 2
+				     #f ; button 3
+				     #f
+				     '(default=1)
+				     2))
+	      (begin
+		(set! current-counterexample assignment)
+		; clear any existing counterexample
+		(board-for-each
+		 (lambda (loc)
+		   (send loc set-in-counterexample-set! #f)))
+		; set locations in assignment
+		(for-each
+		 (lambda (assn)
+		   (let ([loc (car assn)])
+		     (send loc set-counterexample-safe! (not (cdr assn)))
+		     (send loc set-in-counterexample-set! #t)))
+		 assignment)
+		; set locations not in assignment
+		(let ([unsafe-needed
+		       (- pirates-left
+			  (num-unsafe-in-assignment assignment))])
+		(board-for-each
+		 (lambda (loc)
+		   (unless (or (assq loc assignment)
+			       (not (send loc get-concealed?)))
+			   (send loc set-in-counterexample-set! #t)
+			   (if (> unsafe-needed 0)
+			       (begin
+				 (send loc set-counterexample-safe! #f)
+				 (set! unsafe-needed (sub1 unsafe-needed)))
+			       (send loc set-counterexample-safe! #t))))))
+		(send canvas set-in-counterexample! #t)
+		(draw)
+		#t) 
+	      #f))] 
+       [forced-location?
+        ; returns #t if loc is required to be safe?
+	(lambda (loc safe?)
+	  (cond
+	   [(= pirates-left 0) safe?]
+	   [(= pirates-left num-concealed) (not safe?)]
+	   [else #f]))]
+       [all-assignments-consistent?
+	(lambda (loc safe?)
+	  (run-consistency-checker
+	   loc safe?
+	   (lambda (f-elts num-assignments 
+			   border border-frontier-neighbors border-counts)
+	     (not
+	      (andmap
+	       (lambda (bool)
+		 (let loop ([count 0]
+			    [cdr-assignment (initial-assignment f-elts)])
+		   (if (>= count num-assignments)
+		       #f
+		       (if (check-consistency 
+			    (cons (cons loc bool) cdr-assignment)
+			    border
+			    border-frontier-neighbors
+			    border-counts)
+			   #t
+			   (loop (add1 count)
+				 (next-assignment cdr-assignment))))))
+	       (list #t #f))))))]
+       [find-consistent-frontier 
+	(lambda (loc safe?)
+	  (run-consistency-checker
+	   loc safe?
+	   (lambda (f-elts num-assignments border border-frontier-neighbors 
+			   border-counts)
+	     (let loop ([count 0]
+			[cdr-assignment (initial-assignment f-elts)])
+	       (if (>= count num-assignments)
+		   #f
+		   (let ([assignment-to-try
+			  (cons (cons loc safe?) cdr-assignment)])
+		     (if (check-consistency assignment-to-try
+					    border
+					    border-frontier-neighbors
+					    border-counts)
+			 (counterexample-prompt assignment-to-try loc safe?)
+			 (loop (add1 count)
+			       (next-assignment cdr-assignment)))))))))])
       (public*
+       [get-num-concealed
+	(lambda () num-concealed)]
+       [draw
+	(lambda ()
+	  (board-for-each 
+	   (lambda (loc) 
+	     (send canvas paint-tile loc))))]
+       [clear-counterexample!
+	(lambda ()
+	  (send canvas set-in-counterexample! #f)
+	  (draw))]
+       [set-teaching-mode!
+	(lambda (mode)
+	  (set! teaching-mode? mode))]
+       [set-canvas!
+	(lambda (cnv)
+	  (set! canvas cnv))]
        [update-settings!
 	(lambda ()
 	  (set! rows *current-rows*)
 	  (set! columns *current-cols*)
 	  (set-unsafe-count!))]
-       [expose-row-col
-	(lambda (r c decl show-error?)
-	  (let* ([loc (get-location r c)]
-		 [neighbors (send loc get-neighbors)])
-	    ; calculate neighbors on demand, then cache
-	    (unless neighbors
-		    (send loc set-neighbors! (get-neighbors r c)))
-	    (when (send loc expose decl show-error?)
+       [calc-unsafe!
+	(lambda ()
+	  (board-for-each
+	   (lambda (loc)
+	     (let* ([neighbors (get-neighbors loc)]
+		    [unsafe/revealed
+		     (foldl 
+		      (lambda (nbr tot)
+			(let ([c? (send nbr get-concealed?)]
+			      [s? (send nbr get-safe?)])
+			  (if s?
+			      tot ; safe
+			      (if c?
+				  ; unsafe but concealed
+				  (list (add1 (car tot)) (cadr tot))
+				  ; unsafe revealed
+				  (list (add1 (car tot)) (add1 (cadr tot)))))))
+		      (list 0 0)
+		      neighbors)])
+	       (send loc set-unsafe-revealed-neighbors! (cadr unsafe/revealed))
+	       (send loc set-unsafe-count! (car unsafe/revealed))))))]
+       [do-expose-row-col
+	(lambda (loc r c safe?)
+	  (let ([neighbors (get-neighbors loc)]
+		[actually-safe? (send loc get-safe?)])
+	    (when (send loc expose)
 		  (send frame draw-tile r c) ; really should notify a controller
+		  (update-frontier! loc)
+		  (for-each
+		   (lambda (nbr)
+		     (send nbr incr-revealed-neighbors!)
+		     (unless actually-safe?
+			     (send nbr incr-unsafe-revealed-neighbors!)))
+		   neighbors)
 		  (decrement-concealed!)
-		  (let ([safe? (send loc get-safe?)])
-		    (if (not safe?)
-			(decrement-pirates-left!)
-			(when (eq? *current-autoclick* 'yes)
-			      (let* ([ns (send loc get-neighbors)]
-				     [unsafe-count (sum-location-unsafe ns)])
-				(when (= 0 unsafe-count)
-				      (for-each
-				       (lambda (nloc)
-					 (when (send nloc get-concealed?)
-					       (expose-row-col 
-						(send nloc get-row)
-						(send nloc get-column)
-						#f
-						#f)))
-				       ns)))))))))]
+		  (if (not actually-safe?)
+		      (decrement-pirates-left!)
+		      (when (eq? *current-autoclick* 'yes)
+			    (let* ([unsafe-count (sum-location-unsafe neighbors)])
+			      (send loc set-unsafe-count! unsafe-count)
+			      (when (= 0 unsafe-count)
+				    (for-each
+				     (lambda (nloc)
+				       (when (send nloc get-concealed?)
+					     (expose-row-col 
+					      (send nloc get-row)
+					      (send nloc get-column)
+					      #f
+					      #f
+					      #t)))
+				     neighbors))))))))]
+       [guess-demerit
+	(lambda (loc safe? thunk)
+	  (thunk)
+	  (message-box "WaterWorld"
+		       (string-append
+			"Aaargh! Yer guessed "
+			(if (eq? safe? (send loc get-safe?))
+			    "right"
+			    "wrong")
+			" when ya ain't of guessed at all!")))]
+       [check-guess
+	(lambda (loc safe? thunk)
+	  (thunk)
+	  (unless (eq? safe? (send loc get-safe?))
+		  (message-box "WaterWorld"
+			       "Yer guess waren't so good, matey!")))]
+       [expose-row-col
+	(lambda (r c safe? assert auto-clicked?)
+	  (let* ([loc (get-location r c)]
+		 [expose-thunk (lambda () 
+				 (do-expose-row-col 
+				  loc r c safe?))])
+	    (if auto-clicked?
+		(expose-thunk)
+		(if assert
+                    ; assertion, not guess
+		    (cond
+		     [(forced-location? loc safe?)
+		      (expose-thunk)]
+		     [(forced-location? loc (not safe?))
+		      (counterexample-prompt (list (cons loc (not safe?)))
+					     loc safe?)]
+		     [(in-frontier? loc)
+		      ; if there's any consistent frontier
+		      ;  with the opposite assertion
+		      ;  the assertion must be wrong
+		      (unless (find-consistent-frontier loc safe?)
+			      (expose-thunk))]
+		     [else ; special cases for beyond frontier
+		      (cond
+		       [(uniform-consistent-frontiers loc safe?)
+			=>
+			(lambda (frontiers)
+			  (let ([k (num-unsafe-in-assignment 
+				    (car frontiers))])
+			    (if (= k pirates-left)
+                                ; no pirates beyond frontier
+				(if safe?
+				    (expose-thunk)
+				    (counterexample-prompt 
+				     (car frontiers)
+				     loc #f))
+				(let ([b-f (beyond-frontier)])
+				  (if (= (- pirates-left k)
+					 (length b-f))
+					; all beyond frontier unsafe
+				      (if safe?
+					  (counterexample-prompt 
+					   (cons 
+					    (cons loc #t)
+					    (append
+					     (map
+					      (lambda (c)
+						(cons c #t))
+					      b-f)
+					     (car frontiers)))
+					   loc #t)
+					  (expose-thunk))
+                                      ; must be a counterexample
+				      (counterexample-prompt 
+				       (cons
+					(cons loc safe?)
+					(car frontiers))
+				       loc safe?))))))]
+		       [else ; a counterexample must exist
+			(find-consistent-frontier loc safe?)])])
+                    ; guess, not assertion
+		    (cond
+		     [(or (forced-location? loc safe?)
+			  (forced-location? loc (not safe?)))
+		      (guess-demerit loc safe? expose-thunk)]
+		     [(in-frontier? loc)
+		      (if (all-assignments-consistent? loc safe?)
+			    (guess-demerit loc safe? expose-thunk)
+			    (check-guess loc safe? expose-thunk))]
+		     [(uniform-consistent-frontiers loc safe?)
+		      =>
+		      (lambda (frontiers)
+			(let ([k (num-unsafe-in-assignment (car frontiers))])
+			    (if (or (= k pirates-left)
+				    (= (- pirates-left k)
+				       (length (beyond-frontier))))
+				(guess-demerit loc safe? expose-thunk))
+			        (check-guess loc safe? expose-thunk)))]
+		     [else
+		      (check-guess loc safe? expose-thunk)])))))]
        [get-rows
 	(lambda () rows)]
        [get-columns
@@ -300,7 +761,17 @@
 	(lambda (r c)
 	  (sum-location-unsafe (get-neighbors r c)))]
        [get-neighbors 
-	(lambda (r c)
+	(case-lambda 
+	 [(loc)
+	  (or (send loc get-neighbors)
+	      (let ([nbrs
+		     (get-neighbors
+		      (send loc get-row)
+		      (send loc get-column))])
+		; opportunity to cache neighbor info 
+		(send loc set-neighbors! nbrs)
+		nbrs))]
+	 [(r c)
 	  (let* ([this-row (vector-ref board-vector r)]
 		 [eligible-rows (list (sub1 r) r (add1 r))]
 		 [eligible-cols ; row above, this row, row below
@@ -324,24 +795,7 @@
 				    (cons (vector-ref (vector-ref board-vector curr-row) curr-col)
 					  (iloop (cdr cols) curr-row))
 				    (iloop (cdr cols) curr-row)))))))])
-	    neighbors))])
-      (private*
-       [do-board-map 
-	(lambda (f update?)
-	  (when board-vector
-		(let ([olen (vector-length board-vector)]
-		      [ilen (vector-length (vector-ref board-vector 0))]) ; assume uniform
-		  (let oloop ([i 0])
-		    (when (< i olen)
-			  (let ([row-vec (vector-ref board-vector i)])    
-			    (let iloop ([j 0])
-			      (when (< j ilen)
-				    (let ([r (f (vector-ref row-vec j))])
-				      (when update? 
-					    (vector-set! row-vec j r)))
-				    (iloop (add1 j))))
-			    (oloop (add1 i))))))))])
-      (public*
+	    neighbors)])]
        [get-pirates-left
 	(lambda ()
 	  pirates-left)]
@@ -382,12 +836,79 @@
 			  (send rand-loc make-unsafe!)
 			  (loop (add1 i)))
 			(loop i)))))
-	  (reset-pirate-counts!))]
+	  (reset-pirate-counts!)
+	  (clear-counterexample!)
+	  (reset-frontier!))]
        [reset-pirate-counts!
 	(lambda () 
 	  (set! pirates-left unsafe-count)
 	  (set! num-concealed (* rows columns))
 	  (calc-pirates-ratio!))]
+       [calc-frontier!
+	(lambda ()
+	  (reset-frontier!)
+	  (board-for-each
+	   (lambda (loc)
+	     (unless (send loc get-concealed?)
+               (let* ([row (send loc get-row)]
+		      [col (send loc get-column)]
+		      [neighbors
+		       (or (send loc get-neighbors)
+			   (let ([nbrs (get-neighbors row col)])
+			     (send loc set-neighbors! nbrs)
+			     nbrs))]
+		      [frontier-neighbors 
+		       (filter (lambda (nbr) (send nbr get-concealed?))
+			       neighbors)])
+		 (for-each
+		  (lambda (nbr)
+		    (add-to-frontier nbr))
+		  frontier-neighbors))))))]
+       [reset-frontier!
+	(lambda ()
+	  (set! frontier-table (make-hash-table)))]
+       [in-frontier?
+	(lambda (loc)
+	  (hash-table-get frontier-table loc (lambda _ #f)))]
+       [add-to-frontier
+	(lambda (loc)
+	  (hash-table-put! frontier-table loc #t))]
+       [remove-from-frontier
+	(lambda (loc)
+	  (hash-table-remove! frontier-table loc))]
+       [update-frontier!
+	(lambda (loc)
+          ; this is called when a location has been exposed 
+          ; if loc was in the frontier, remove it
+          (when (in-frontier? loc)
+	    (remove-from-frontier loc))
+	  ; invariant: the neighbors of each location have been 
+	  ;  calculated before calling this method
+	  ; for each exposed location, add its neighbors to the 
+	  ;  frontier
+	  (for-each
+	   (lambda (nb)
+	     (unless (or (not (send nb get-concealed?))
+			 (in-frontier? nb))
+		     (add-to-frontier nb)))
+	   (send loc get-neighbors)))]
+       [dump-frontier
+	(lambda ()
+	  (printf "Current frontier:~n")
+	  (hash-table-for-each frontier-table
+			       (lambda (loc _)
+				 (printf "row: ~a  col: ~a~n"
+					 (send loc get-row)
+					 (send loc get-column)))))]
+       [dump-border
+	(lambda ()
+	  (printf "Current border:~n")
+	  (for-each
+	   (lambda (loc)
+	     (printf "row: ~a  col: ~a~n"
+		     (send loc get-row)
+		     (send loc get-column)))
+	   (get-revealed-border)))]
        [load-from-file 
 	(lambda (filename)
 	  (if (not (file-exists? filename))
@@ -416,24 +937,25 @@
 		     (board-map!
 		      (lambda (_)
 			(let-values 
-			 ([(_ loc-row-info loc-col-info loc-safe-info loc-concealed-info)
-		       (apply values (car locations))])
-		     (let ([safe? (cadr loc-safe-info)]
-			   [row (cadr loc-row-info)]
-			   [column (cadr loc-col-info)]
-			   [concealed? (cadr loc-concealed-info)])
-		     (unless safe?
-			     (set! unsafe-tally (add1 unsafe-tally))
-			     (when concealed?
-				   (set! pirates-left-tally (add1 pirates-left-tally))))
-		     (when concealed?
-			   (set! concealed-tally (add1 concealed-tally)))
-		     (set! locations (cdr locations))
-		     (instantiate location% ()
-				  (safe? safe?)
-				  (row row)
-				  (column column)
-				  (concealed? concealed?))))))
+			 ([(_ loc-row-info loc-col-info 
+			      loc-safe-info loc-concealed-info)
+			   (apply values (car locations))])
+			 (let ([safe? (cadr loc-safe-info)]
+			       [row (cadr loc-row-info)]
+			       [column (cadr loc-col-info)]
+			       [concealed? (cadr loc-concealed-info)])
+			   (unless safe?
+				   (set! unsafe-tally (add1 unsafe-tally))
+				   (when concealed?
+					 (set! pirates-left-tally (add1 pirates-left-tally))))
+			   (when concealed?
+				 (set! concealed-tally (add1 concealed-tally)))
+			   (set! locations (cdr locations))
+			   (instantiate location% ()
+					(safe? safe?)
+					(row row)
+					(column column)
+					(concealed? concealed?))))))
 		     (set! *current-rows* rows)
 		     (set! *current-cols* columns)
 		     (set! *current-density* (inexact->exact 
@@ -442,6 +964,8 @@
 		     (set! pirates-left pirates-left-tally)
 		     (set! num-concealed concealed-tally)
 		     (set-unsafe-count!)
+		     (calc-frontier!)
+		     (calc-unsafe!)
 		     (calc-pirates-ratio!)))))))]
        [save-to-file 
 	(lambda (filename)
@@ -462,7 +986,7 @@
       (super-instantiate ())
       (set-unsafe-count!)
       (reset-pirate-counts!)))
-
+  
   (define ww-frame%
     (class frame% 
 	   (init-field board)
@@ -473,21 +997,20 @@
 	    [new-game-panel #f]
 	    [status-panel #f]
 	    [pirates-left-msg #f]
-	    [pirates-ratio-msg #f])
+	    [pirates-ratio-msg #f]
+	    [clear-counterexample-button #f]
+	    [new-game-button #f])
 	   (private*
 	    [draw-location-tile
 	     (lambda (loc) 
-	       (let ([row (send loc get-row)]
-		     [col (send loc get-column)]
-		     [safe? (send loc get-safe?)]
-		     [concealed? (send loc get-concealed?)])
-		 (send canvas
-		       paint-tile
-		       row col
-		       safe? concealed?
-		       (lambda ()
-			 (send board get-neighbor-unsafe-count row col)))))])
+	       (send canvas paint-tile loc))])
 	   (public*
+	    [set-ce-button-state!
+	     (lambda (v)
+	       (send clear-counterexample-button enable v)
+	       (if v
+		   (send clear-counterexample-button focus)
+		   (send new-game-button focus)))]
 	    [new-game
 	     (lambda ()
 	       (game-over #f)
@@ -517,11 +1040,20 @@
 				  (stretchable-height #f)
 				  (vert-margin 2)
 				  (alignment '(center center))))
-	       (instantiate button% ()
-			    (label "New game")
-			    (parent new-game-panel)
-			    (callback (lambda (b ev) 
-					(new-game))))
+	       (set! new-game-button
+		     (instantiate button% ()
+				  (label "New game")
+				  (parent new-game-panel)
+				  (callback (lambda (b ev) 
+					      (new-game)))))
+	       (set! clear-counterexample-button
+		     (instantiate button% ()
+				  (label "Clear counterexample")
+				  (parent new-game-panel)
+				  (enabled #f)
+				  (callback (lambda (b ev) 
+					      (send board 
+						    clear-counterexample!)))))
 	       (set! status-panel 
 		     (instantiate horizontal-panel% ()
 				  (parent this)
@@ -571,498 +1103,538 @@
 				 row col safe? concealed?))))
 	       (printf "** end of dump **~n"))]
 	    [expose-row-col
-	     (lambda (r c decl show-err?)
-	       (send board expose-row-col r c decl show-err?))]
+	     (lambda (r c safe? assert)
+	       (send board expose-row-col r c safe? assert #f))]
 	    [draw-tile
 	     (lambda (r c)
 	       (draw-location-tile (send board get-location r c)))]
 	    [draw-board
 	     (lambda ()
-	       (send board 
-		     board-for-each (lambda (loc) (draw-location-tile loc))))])
-	   (private*
-	    [reset-frame! 
-	     (lambda ()
-	       (let ([new-frame
-		      (instantiate ww-frame% ()
-				   (board board)
-				   (label (get-label))
-				   (style '(no-resize-border))
-				   (x (max 0 (get-x)))
-				   (y (max 0 (get-y))))])
-		 (send new-frame update-board-size! 
-		       (send board get-rows) (send board get-columns))
-		 (send new-frame update-status!)
-		 (send new-frame draw-board)
-		 (show #f)
-		 (send new-frame show #t)
-		 (set! frame new-frame)))]
-	    [get-game-filename
-	     (lambda ()
-	       (let ([fn (get-file 
-			  "WaterWorld game files"
-			  this
-			  (or *last-game-dir*
-			      (build-path (collection-path "waterworld") 
-					  "games"))
-			  #f
-			  "ss"
-			  '()
-			  '(("Scheme files" "*.ss")))])
-		 (when fn
-		       (let-values 
-			([(base n d) (split-path fn)])
-			(set! *last-game-dir* base)))
-		 fn))]
-	    [save-game
-	     (lambda () 
-	       (if current-filename
-		   (send board save-to-file current-filename)
-		   (save-game-as)))]
-	    [save-game-as
-	     (lambda () 
-	       (let ([filename (get-game-filename)])
-		 (when filename
-		       (set! current-filename filename)
-		       (send board save-to-file current-filename))))]
-	    [open-game
-	     (lambda () 
-	       (let ([filename (get-game-filename)])
-		 (when filename
-		       (send board load-from-file filename)
-		       (game-over #f)
-		       (reset-frame!)
-		       (send frame set-filename! filename))))]
-	    [open-settings
-	     (lambda () 
-	       (let* ([settings-frame 
-		       (instantiate frame% ()
-				    (label "WaterWorld settings")
-				    (style '(no-resize-border)))]
-		      [main-panel (instantiate vertical-panel% () 
-					       (parent settings-frame) 
-					       (alignment '(center center)))]
-		      [msg-width 100]
-		      [panel-sep 4]
-		      [make-hpanel
-		       (lambda ()
-			 (instantiate horizontal-panel% () 
-				      (parent main-panel)
-				      (vert-margin panel-sep)
-				      (alignment '(center center))))]
-		      [row-panel (make-hpanel)]
-		      [make-msg
-		       (lambda (msg panel)
-			 (instantiate message% () 
-				      (min-width msg-width)
-				      (label msg) (parent panel)))]
-		      [row-msg (make-msg "Number of rows" row-panel)]
-		      [make-canvas
-		       (lambda (panel)
-			 (let ([txt (instantiate text% ())])
-			   (instantiate editor-canvas% () 
-					(editor txt)
-					(min-height 30)
-					(min-width 50)
-					(stretchable-width #f)
-					(parent panel) 
-					(style '(no-hscroll no-vscroll)))))]
-		      [row-canvas (make-canvas row-panel)]
-		      [col-panel (make-hpanel)]
-		      [col-msg (make-msg "Number of columns" col-panel)]
-		      [col-text (instantiate text% ())]
-		      [col-canvas (make-canvas col-panel)]
-		      [density-panel (make-hpanel)]
-		      [density-msg (make-msg "Pirate density (%)" density-panel)]
-		      [density-text (instantiate text% ())]
-		      [density-canvas (make-canvas density-panel)]
-		      [tile-panel (make-hpanel)]
-		      [tile-msg (make-msg "           Tile size" tile-panel)]
-		      [tile-map '(large small)]  ; list position corresponds to radio button index
-		      [tile-radio (instantiate radio-box% () 
-					       (label #f) (parent tile-panel) 
-					       (choices '("Large" "Small"))
-					       (callback (lambda (rb ev) #f))
-					       (style '(horizontal)))]
-		      [auto-panel (make-hpanel)]
-		      [auto-msg (make-msg "Autoclick empty cells?" auto-panel)]
-		      [auto-map '(yes no)] ; list position corresponds to radio button index
-		      [auto-radio (instantiate radio-box% () 
-					       (label #f) (parent auto-panel) 
-					       (choices '("Yes" "No"))
-					       (callback (lambda (rb ev) #f))
-					       (style '(horizontal)))]
-		      [list-pos 
-		       (lambda (lst sym)
-			 (let loop ([i 0]
-				    [lst lst])
-			   (if (null? lst)
-			       #f
-			       (if (eq? sym (car lst))
-				   i
-				   (loop (add1 i) (cdr lst))))))]
-		      [get-canv-text
-		       (lambda (canv)
-			 (send (send canv get-editor)
-			       get-text))]
-		      [valid-number?
-		       (lambda (s)
-			 (with-handlers
-			  ([void (lambda _ #f)])
-			  (string->number (trim s))))]
-		      [test-range
-		       (lambda (v min max)
-			 (or (not v)
-			     (< v min)
-			     (> v max)))]
-		      [range-error
-		       (lambda (lab v min max)
-			 (message-box
-			  "Settings error"
-			  (format "~a value \"~a\" is not a number or is out of the range [~a..~a]"
-				  lab v min max)
-			  settings-frame
-			  '(ok)))]
-		      [validate-and-save
-		       (lambda ()
-			 (let* ([row (get-canv-text row-canvas)]
-				[col (get-canv-text col-canvas)]
-				[density (get-canv-text density-canvas)]
-				[autoclick 
-				 (if (eq? (send auto-radio get-selection) 0)
-				     'yes
-				     'no)]
-				[tile-size 
-				 (if (eq? (send tile-radio get-selection) 0)
-				     'large
-				     'small)]
-				[row-num (valid-number? row)]
-				[col-num (valid-number? col)]
-				[density-num (valid-number? density)])
+	       (send board draw))])
+	    (private*
+	     [reset-frame! 
+	      (lambda ()
+		(let ([new-frame
+		       (instantiate ww-frame% ()
+				    (board board)
+				    (label (get-label))
+				    (style '(no-resize-border))
+				    (x (max 0 (get-x)))
+				    (y (max 0 (get-y))))])
+		  (send new-frame update-board-size! 
+			(send board get-rows) (send board get-columns))
+		  (send new-frame update-status!)
+		  (send new-frame draw-board)
+		  (show #f)
+		  (send new-frame show #t)
+		  (set! frame new-frame)))]
+	     [get-game-filename
+	      (lambda ()
+		(let ([fn (get-file 
+			   "WaterWorld game files"
+			   this
+			   (or *last-game-dir*
+			       (build-path (collection-path "waterworld") 
+					   "games"))
+			   #f
+			   "ss"
+			   '()
+			   '(("Scheme files" "*.ss")))])
+		  (when fn
+			(let-values 
+			 ([(base n d) (split-path fn)])
+			 (set! *last-game-dir* base)))
+		  fn))]
+	     [save-game
+	      (lambda () 
+		(if current-filename
+		    (send board save-to-file current-filename)
+		    (save-game-as)))]
+	     [save-game-as
+	      (lambda () 
+		(let ([filename (get-game-filename)])
+		  (when filename
+			(set! current-filename filename)
+			(send board save-to-file current-filename))))]
+	     [open-game
+	      (lambda () 
+		(let ([filename (get-game-filename)])
+		  (when filename
+			(send board load-from-file filename)
+			(game-over #f)
+			(reset-frame!)
+			(send frame set-filename! filename))))]
+	     [open-settings
+	      (lambda () 
+		(let* ([settings-frame 
+			(instantiate frame% ()
+				     (label "WaterWorld settings")
+				     (style '(no-resize-border)))]
+		       [main-panel (instantiate vertical-panel% () 
+						(parent settings-frame) 
+						(alignment '(center center)))]
+		       [msg-width 100]
+		       [panel-sep 4]
+		       [make-hpanel
+			(lambda ()
+			  (instantiate horizontal-panel% () 
+				       (parent main-panel)
+				       (vert-margin panel-sep)
+				       (alignment '(center center))))]
+		       [row-panel (make-hpanel)]
+		       [make-msg
+			(lambda (msg panel)
+			  (instantiate message% () 
+				       (min-width msg-width)
+				       (label msg) (parent panel)))]
+		       [row-msg (make-msg "Number of rows" row-panel)]
+		       [make-canvas
+			(lambda (panel)
+			  (let ([txt (instantiate text% ())])
+			    (instantiate editor-canvas% () 
+					 (editor txt)
+					 (min-height 30)
+					 (min-width 50)
+					 (stretchable-width #f)
+					 (parent panel) 
+					 (style '(no-hscroll no-vscroll)))))]
+		       [row-canvas (make-canvas row-panel)]
+		       [col-panel (make-hpanel)]
+		       [col-msg (make-msg "Number of columns" col-panel)]
+		       [col-text (instantiate text% ())]
+		       [col-canvas (make-canvas col-panel)]
+		       [density-panel (make-hpanel)]
+		       [density-msg (make-msg "Pirate density (%)" density-panel)]
+		       [density-text (instantiate text% ())]
+		       [density-canvas (make-canvas density-panel)]
+		       [tile-panel (make-hpanel)]
+		       [tile-msg (make-msg "           Tile size" tile-panel)]
+		       [tile-map '(large small)]  ; list position corresponds to radio button index
+		       [tile-radio (instantiate radio-box% () 
+						(label #f) (parent tile-panel) 
+						(choices '("Large" "Small"))
+						(callback (lambda (rb ev) #f))
+						(style '(horizontal)))]
+		       [auto-panel (make-hpanel)]
+		       [auto-msg (make-msg "Autoclick empty cells?" auto-panel)]
+		       [auto-map '(yes no)] ; list position corresponds to radio button index
+		       [auto-radio (instantiate radio-box% () 
+						(label #f) (parent auto-panel) 
+						(choices '("Yes" "No"))
+						(callback (lambda (rb ev) #f))
+						(style '(horizontal)))]
+		       [list-pos 
+			(lambda (lst sym)
+			  (let loop ([i 0]
+				     [lst lst])
+			    (if (null? lst)
+				#f
+				(if (eq? sym (car lst))
+				    i
+				    (loop (add1 i) (cdr lst))))))]
+		       [get-canv-text
+			(lambda (canv)
+			  (send (send canv get-editor)
+				get-text))]
+		       [valid-number?
+			(lambda (s)
+			  (with-handlers
+			   ([void (lambda _ #f)])
+			   (string->number (trim s))))]
+		       [test-range
+			(lambda (v min max)
+			  (or (not v)
+			      (< v min)
+			      (> v max)))]
+		       [range-error
+			(lambda (lab v min max)
+			  (message-box
+			   "Settings error"
+			   (format "~a value \"~a\" is not a number or is out of the range [~a..~a]"
+				   lab v min max)
+			   settings-frame
+			   '(ok)))]
+		       [validate-and-save
+			(lambda ()
+			  (let* ([row (get-canv-text row-canvas)]
+				 [col (get-canv-text col-canvas)]
+				 [density (get-canv-text density-canvas)]
+				 [autoclick 
+				  (if (eq? (send auto-radio get-selection) 0)
+				      'yes
+				      'no)]
+				 [tile-size 
+				  (if (eq? (send tile-radio get-selection) 0)
+				      'large
+				      'small)]
+				 [row-num (valid-number? row)]
+				 [col-num (valid-number? col)]
+				 [density-num (valid-number? density)])
 					; validate
-			   (let ([max-rows (if (eq? tile-size 'large)
-					       *max-large-rows*
-					       *max-small-rows*)]
-				 [max-cols (if (eq? tile-size 'large)
-					       *max-large-cols*
-					       *max-small-cols*)])
-			     (cond
-			      [(test-range row-num *min-rows* max-rows)
-			       (range-error "Row" row *min-rows* max-rows)]
-			      [(test-range col-num *min-cols* max-cols)
-			       (range-error "Column" col *min-cols* max-cols)]
-			      [(test-range density-num *min-density* *max-density*)
-			       (range-error "Density percentage" density *min-density* *max-density*)]
-			      [else ; save
-			       (let ([prefs 
-				    `((ww:numrows ,row-num)
-				      (ww:numcols ,col-num)
-				      (ww:density ,density-num)
-				      (ww:tile-size ,tile-size)
-				      (ww:autoclick ,autoclick))])
-			       (put-ww-prefs prefs)
-			       (set! *current-rows* row-num)
-			       (set! *current-cols* col-num)
-			       (set! *current-density* density-num)
-			       (set! *current-tile-size* tile-size)
-			       (set! *current-autoclick* autoclick)
-			       (set! *need-to-reset-size* #t)
-			       (send settings-frame show #f))]))))]
-		      [notice-panel (make-hpanel)]
-		      [notice-msg (make-msg "Some settings take effect on next game" notice-panel)]
-		      [init-text
-		       (lambda (canv v)
-			 (let* ([editor (send canv get-editor)]
-				[len (string-length (send editor get-text))])
-			 (send editor insert v 0 len)))]
-		      [init-num-text
-		       (lambda (canv v)
-			 (init-text canv (number->string v)))]
-		      [buttons-panel (make-hpanel)]
-		      [ok-button (instantiate button% ()
-					      (label "OK")
-					      (min-width 50)
-					      (parent buttons-panel)
-					      (callback (lambda (b ev) 
-							  (validate-and-save))))]
-		      [spacer 
-		       (instantiate message% () 
-				    (min-width 20)
-				    (label "") (parent buttons-panel))]
-		      [cancel-button (instantiate button% ()
-						  (label "Cancel")
-						  (min-width 50)
-						  (parent buttons-panel)
-						  (callback (lambda (b ev) 
-							      (send settings-frame show #f))))]
-		      [spacer2 
-		       (instantiate message% () 
-				    (min-width 20)
-				    (label "") (parent buttons-panel))]
-		      [defaults-button (instantiate button% ()
-						    (label "Defaults")
-						  (min-width 50)
-						  (parent buttons-panel)
-						  (callback 
-						   (lambda (b ev) 
-						     (send tile-radio set-selection
-							   (list-pos tile-map *default-tile-size*))
-						     (send auto-radio set-selection
-							   (list-pos auto-map *default-autoclick*))
-						     (init-num-text row-canvas *default-rows*)
-						     (init-num-text col-canvas *default-cols*)
-						     (init-num-text density-canvas *default-density*))))])
-		 
-		 (init-num-text row-canvas *current-rows*)
-		 (init-num-text col-canvas *current-cols*)
-		 (init-num-text density-canvas *current-density*)
-		 (send tile-radio set-selection
-		       (if (eq? *current-tile-size* 'large) 0 1))
-		 (send auto-radio set-selection
-		       (if (eq? *current-autoclick* 'yes) 0 1))
-		 (send settings-frame show #t)))]
-	    [exit-game
-	     (lambda () 
-	       (send this show #f)
-	       (exit))]
-	    [how-to-play
-	     (lambda () 
-	       (let ([url (string-append 
-			   "file://"
-			   (build-path 
-			    (collection-path "waterworld")
-			    "ww.html"))])
-		 (send-url url)))])
-	   (super-instantiate ())
-	   (let* ([menu-bar (instantiate menu-bar% () (parent this))]
-		  [game-menu (instantiate menu% ()
-					  (label "&Game")
-					  (parent menu-bar))]
-		  [help-menu
-		   (instantiate menu% ()
-				(label "&Help")
-				(parent menu-bar))]
-		  [game-menu-items
-		   `(("&New"
-		      ,(lambda (m ev) (new-game)))
-		     ("&Open..."
-		      ,(lambda (m ev) (open-game)))
-		     ("&Save"
-		      ,(lambda (m ev) (save-game)))
-		     ("Save &as..."
-		      ,(lambda (m ev) (save-game-as)))
-		     ("S&ettings..."
-		      ,(lambda (m ev) (open-settings)))
-		     ("E&xit"
-		      ,(lambda (m ev) (exit-game))))]
-		  [help-menu-items
-		   `(("How to &play"
-		      ,(lambda (m ev) (how-to-play))))])
-	     (for-each
-	      (lambda (it) 
-		(instantiate menu-item% ()
-			     (label (car it))
-			     (parent game-menu)
-			     (callback (cadr it))))
-	      game-menu-items)
-	     (for-each
-	      (lambda (it) 
-		(instantiate menu-item% ()
-			     (label (car it))
-			     (parent help-menu)
-			     (callback (cadr it))))
-	      help-menu-items)
-	     (set! canvas (instantiate board-canvas% ()
-				       (frame this) 
-				       (board-height (send board get-rows))
-				       (board-width (send board get-columns))
-				       (tile-size *current-tile-size*)
-				       (stretchable-height #f)
-				       (stretchable-width #f)))
-	     (reset-bottom-panels!))))
-  
-  (define board-canvas%
-    (class canvas% 
-	   (init-field frame) 
-	   (init-field board-height board-width tile-size)
-	   (init-field (teaching-mode? #f))
-	   (inherit get-dc min-client-width min-client-height 
-		    stretchable-width stretchable-height)
-	   (field
-	    [intercepts-vector #f]
-	    [triangle-points-even ; right-side-up, pointy side up
-	     (map
-	      (lambda (xy)
-		(make-object point% (car xy) (cadr xy)))
-	      `((0 ,*tile-height*)
-		(,*half-edge-length* 0)
-		(,*tile-edge-length* 
-		 ,*tile-height*)))]
-	    [triangle-points-odd ; inverted triangle, pointy side down
-	     (map
-	      (lambda (xy)
-		(make-object point% (car xy) (cadr xy)))
-	      `((0 0)
-		(,*half-edge-length* ,*tile-height*)
-		(,*tile-edge-length* 0)))])
-	   (public*
-	    [x-y->row-column
-	     (lambda (x y)
-	       (let* ([id (lambda (x) x)]
-		      [raw-col (floor (/ x *half-edge-length*))]
-		      [row (floor (/ y *tile-height*))]
-		      [calc-x-y
-		       (lambda (m col-fun-1 col-fun-2)
-			 (let ([b (get-intercept row raw-col)])
-			   (if (> y (+ (* m x) b))
-			       (values (col-fun-1 raw-col) row)
-			       (values (col-fun-2 raw-col) row))))])
-		 (if (even? (+ raw-col row))
-		     (calc-x-y *even-slope* id sub1)
-		     (calc-x-y *odd-slope* sub1 id))))]
-	    [draw-alpha-label
-	     (lambda (r c x y)
-	       (let ([color (send dc get-text-foreground)])
-		 (send dc set-text-foreground *alpha-color*)
-		 (send dc draw-text 
-		       (vector-ref *teaching-mode-labels*
-				   (+ (* r *teaching-board-width*) c))
-		       (+ x 14)
-		       (if (even? (+ r c))
-			   (+ y *tile-edge-length* -34)
-			   (+ y 2)))
-		 (send dc set-text-foreground color)))]
-	    [paint-tile
-	     (lambda (row col safe? concealed? neighbor-count-thunk)
-	       (let ([even-tile? (even? (+ row col))])
-		 (if concealed?
-		     (send dc set-brush *concealed-brush*)
-		     (send dc set-brush *exposed-brush*))
-		 (let ([xoff (* col *half-edge-length*)]
-		       [yoff (* row *tile-height*)])
-		   (send dc draw-polygon 
-			 (if even-tile?
-			     triangle-points-even
-			     triangle-points-odd)
-			 (* col *half-edge-length*)
-			 (* row *tile-height*))
-		   (when teaching-mode?
-			 (draw-alpha-label row col xoff yoff))
-		   (unless concealed?
-		       (if safe?
-			   (let* ([ns (neighbor-count-thunk)]
-				  [ns-string (number->string ns)]
-				  [fg-color (send dc get-text-foreground)])
-			     (send dc set-text-foreground 
-				   (if (zero? ns) 
-				       *zero-color*
-				       *non-zero-color*))
-			     (send dc draw-text 
-				   ns-string
-				   (+ xoff *half-edge-length* -4) 
-				   (+ yoff *half-tile-height* 
-				      (if even-tile? 
-					  -4
-					  -12)))
-			     (send dc set-text-foreground fg-color))
-			   (send dc draw-bitmap *jolly-bitmap*
-					(+ (* col *half-edge-length*) 
-					   *jolly-column-offset*)
-					(+ (* row *tile-height*)
-					   (if even-tile?
-					       *jolly-even-row-offset* 
-					       *jolly-odd-row-offset*))))))))]
-	    [set-intercepts!
-	     (lambda ()
-	       (set! intercepts-vector
-		(build-vector
-		 board-height
-		 (lambda (r)
-		   (build-vector 
-		    (add1 board-width)
-		    (lambda (c)
-		      ; y - mx
-		      (let ([x (* (add1 c) *half-edge-length*)])
-			(if (even? (+ r c))
-			    (- (* r *tile-height*)
-			       (* *even-slope* x))
-			    (- (* (add1 r) *tile-height*)
-			       (* *odd-slope* x))))))))))]
-	    [get-intercept
-	     (lambda (r c)
-	       (vector-ref (vector-ref intercepts-vector r) c))]
-	    [set-board-width!
-	     (lambda (w)
-	       (set! board-width w)
-	       (set-client-width!))]
-	    [set-board-height!
-	     (lambda (h)
-	       (set! board-height h)
-	       (set-client-height!))]
-	    [set-board-size!
-	     (lambda (h w)
-	       (set-board-height! h) 
-	       (set-board-width! w)
-	       (set-intercepts!)
-	       (set-teaching-mode!))]
-	    [set-teaching-mode!
-	     (lambda ()
-	       (set! teaching-mode? 
-		     (and (= board-height *teaching-board-height*)
-			  (= board-width *teaching-board-width*)
-			  (eq? tile-size *teaching-tile-size*))))]
-	    [set-client-height!
-	     (lambda ()
-	       (min-client-height (add1 (* board-height *tile-height*))))]
-	    [set-client-width!
-	     (lambda ()
-	       (min-client-width (* (/ (add1 board-width) 2) 
-				    *tile-edge-length*)))]
-	    [set-client-size!
-	     (lambda ()
-	       (set-client-height!)
-	       (set-client-width!))])
-	   (override*
-	    [on-event        ; handle a click
-	     (lambda (e)
-	       (when (and (not *game-over*)
-			  (send e button-down?))
-		     (let-values
-		      ([(col row) (x-y->row-column
-				   (send e get-x)
-				   (send e get-y))])
-		      (when (and (>= col 0)
-				 (< col board-width)
-				 (>= row 0)
-				 (< row board-height))
-			    (send frame expose-row-col
-				  row col
-				  (not (send e get-shift-down))
-				  #t)
-			    (send frame update-status!)))))]
-	    [on-paint
-	     (lambda () 
-	       (send frame draw-board))])
-	   (super-instantiate (frame))
-	   
-	   ;; Make canvas size always match the board size:
-	   (set-client-size!)
-	   (set-intercepts!)
-	   (stretchable-width #f)
-	   (stretchable-height #f)
-
-	   ; use teaching board if right dimensions
-	   (set-teaching-mode!)
-
-	   (define dc (get-dc))))
-  
-  (define frame 
-    (instantiate ww-frame%
-		 ()
-		 (board (instantiate board% ()))
-		 (label *frame-label*)
-		 (style '(no-resize-border))))
-  
-  (send frame new-game)
-  (send frame show #t))
-
+			    (let ([max-rows (if (eq? tile-size 'large)
+						*max-large-rows*
+						*max-small-rows*)]
+				  [max-cols (if (eq? tile-size 'large)
+						*max-large-cols*
+						*max-small-cols*)])
+			      (cond
+			       [(test-range row-num *min-rows* max-rows)
+				(range-error "Row" row *min-rows* max-rows)]
+			       [(test-range col-num *min-cols* max-cols)
+				(range-error "Column" col *min-cols* max-cols)]
+			       [(test-range density-num *min-density* *max-density*)
+				(range-error "Density percentage" density *min-density* *max-density*)]
+			       [else ; save
+				(let ([prefs 
+				       `((ww:numrows ,row-num)
+					 (ww:numcols ,col-num)
+					 (ww:density ,density-num)
+					 (ww:tile-size ,tile-size)
+					 (ww:autoclick ,autoclick))])
+				  (put-ww-prefs prefs)
+				  (set! *current-rows* row-num)
+				  (set! *current-cols* col-num)
+				  (set! *current-density* density-num)
+				  (set! *current-tile-size* tile-size)
+				  (set! *current-autoclick* autoclick)
+				  (set! *need-to-reset-size* #t)
+				  (send settings-frame show #f))]))))]
+		       [notice-panel (make-hpanel)]
+		       [notice-msg (make-msg "Some settings take effect on next game" notice-panel)]
+		       [init-text
+			(lambda (canv v)
+			  (let* ([editor (send canv get-editor)]
+				 [len (string-length (send editor get-text))])
+			    (send editor insert v 0 len)))]
+		       [init-num-text
+			(lambda (canv v)
+			  (init-text canv (number->string v)))]
+		       [buttons-panel (make-hpanel)]
+		       [ok-button (instantiate button% ()
+					       (label "OK")
+					       (min-width 50)
+					       (parent buttons-panel)
+					       (callback (lambda (b ev) 
+							   (validate-and-save))))]
+		       [spacer 
+			(instantiate message% () 
+				     (min-width 20)
+				     (label "") (parent buttons-panel))]
+		       [cancel-button (instantiate button% ()
+						   (label "Cancel")
+						   (min-width 50)
+						   (parent buttons-panel)
+						   (callback (lambda (b ev) 
+							       (send settings-frame show #f))))]
+		       [spacer2 
+			(instantiate message% () 
+				     (min-width 20)
+				     (label "") (parent buttons-panel))]
+		       [defaults-button (instantiate button% ()
+						     (label "Defaults")
+						     (min-width 50)
+						     (parent buttons-panel)
+						     (callback 
+						      (lambda (b ev) 
+							(send tile-radio set-selection
+							      (list-pos tile-map *default-tile-size*))
+							(send auto-radio set-selection
+							      (list-pos auto-map *default-autoclick*))
+							(init-num-text row-canvas *default-rows*)
+							(init-num-text col-canvas *default-cols*)
+							(init-num-text density-canvas *default-density*))))])
+		  
+		  (init-num-text row-canvas *current-rows*)
+		  (init-num-text col-canvas *current-cols*)
+		  (init-num-text density-canvas *current-density*)
+		  (send tile-radio set-selection
+			(if (eq? *current-tile-size* 'large) 0 1))
+		  (send auto-radio set-selection
+			(if (eq? *current-autoclick* 'yes) 0 1))
+		  (send settings-frame show #t)))]
+	     [exit-game
+	      (lambda () 
+		(send this show #f)
+		(exit))]
+	     [how-to-play
+	      (lambda () 
+		(let ([url (string-append 
+			    "file://"
+			    (build-path 
+			     (collection-path "waterworld")
+			     "ww.html"))])
+		  (send-url url)))])
+	    (super-instantiate ())
+	    (let* ([menu-bar (instantiate menu-bar% () (parent this))]
+		   [game-menu (instantiate menu% ()
+					   (label "&Game")
+					   (parent menu-bar))]
+		   [help-menu
+		    (instantiate menu% ()
+				 (label "&Help")
+				 (parent menu-bar))]
+		   [game-menu-items
+		    `(("&New"
+		       ,(lambda (m ev) (new-game)))
+		      ("&Open..."
+		       ,(lambda (m ev) (open-game)))
+		      ("&Save"
+		       ,(lambda (m ev) (save-game)))
+		      ("Save &as..."
+		       ,(lambda (m ev) (save-game-as)))
+		      ("S&ettings..."
+		       ,(lambda (m ev) (open-settings)))
+		      ("E&xit"
+		       ,(lambda (m ev) (exit-game))))]
+		   [help-menu-items
+		    `(("How to &play"
+		       ,(lambda (m ev) (how-to-play))))])
+	      (for-each
+	       (lambda (it) 
+		 (instantiate menu-item% ()
+			      (label (car it))
+			      (parent game-menu)
+			      (callback (cadr it))))
+	       game-menu-items)
+	      (for-each
+	       (lambda (it) 
+		 (instantiate menu-item% ()
+			      (label (car it))
+			      (parent help-menu)
+			      (callback (cadr it))))
+	       help-menu-items)
+	      (set! canvas (instantiate board-canvas% ()
+					(frame this) 
+					(board board)
+					(tile-size *current-tile-size*)
+					(stretchable-height #f)
+					(stretchable-width #f)))
+	      (reset-bottom-panels!))))
+    
+    (define board-canvas%
+      (class canvas% 
+	     (init-field frame) 
+	     (init-field board)
+	     (init-field tile-size)
+	     (init-field (teaching-mode? #f))
+	     (inherit get-dc min-client-width min-client-height 
+		      stretchable-width stretchable-height)
+	     (field
+	      [board-height (send board get-rows)]
+	      [board-width (send board get-columns)]
+	      [intercepts-vector #f]
+	      [triangle-points-even ; right-side-up, pointy side up
+	       (map
+		(lambda (xy)
+		  (make-object point% (car xy) (cadr xy)))
+		`((0 ,*tile-height*)
+		  (,*half-edge-length* 0)
+		  (,*tile-edge-length* 
+		   ,*tile-height*)))]
+	      [triangle-points-odd ; inverted triangle, pointy side down
+	       (map
+		(lambda (xy)
+		  (make-object point% (car xy) (cadr xy)))
+		`((0 0)
+		  (,*half-edge-length* ,*tile-height*)
+		  (,*tile-edge-length* 0)))]
+	      [in-counterexample? #f])
+	     (public*
+	      [set-in-counterexample!
+	       (lambda (v)
+		 (set! in-counterexample? v)
+		 (send frame set-ce-button-state! v))]
+	      [x-y->row-column
+	       (lambda (x y)
+		 (let* ([id (lambda (x) x)]
+			[raw-col (floor (/ x *half-edge-length*))]
+			[row (floor (/ y *tile-height*))]
+			[calc-x-y
+			 (lambda (m col-fun-1 col-fun-2)
+			   (let ([b (get-intercept row raw-col)])
+			     (if (> y (+ (* m x) b))
+				 (values (col-fun-1 raw-col) row)
+				 (values (col-fun-2 raw-col) row))))])
+		   (if (even? (+ raw-col row))
+		       (calc-x-y *even-slope* id sub1)
+		       (calc-x-y *odd-slope* sub1 id))))]
+	      [draw-alpha-label
+	       (lambda (r c x y)
+		 (let ([color (send dc get-text-foreground)])
+		   (send dc set-text-foreground *alpha-color*)
+		   (send dc draw-text 
+			 (vector-ref *teaching-mode-labels*
+				     (+ (* r *teaching-board-width*) c))
+			 (+ x 14)
+			 (if (even? (+ r c))
+			     (+ y *tile-edge-length* -34)
+			     (+ y 2)))
+		   (send dc set-text-foreground color)))]
+	      [paint-polygon
+	       (lambda (row col xoff yoff even-tile?)
+		 (send dc draw-polygon 
+		       (if even-tile?
+			   triangle-points-even
+			   triangle-points-odd)
+		       (* col *half-edge-length*)
+		       (* row *tile-height*))
+		 (when teaching-mode?
+		       (draw-alpha-label row col xoff yoff)))]
+	      [paint-jolly
+	       (lambda (bitmap row col even-tile?)
+		 (send dc draw-bitmap bitmap
+		       (+ (* col *half-edge-length*) 
+			  *jolly-column-offset*)
+		       (+ (* row *tile-height*)
+			  (if even-tile?
+			      *jolly-even-row-offset* 
+			      *jolly-odd-row-offset*))))]
+	      [paint-counterexample-tile
+	       (lambda (row col safe?)
+		 (let ([even-tile? (even? (+ row col))])
+		   (send dc set-brush *counterexample-brush*)
+		   (let ([xoff (* col *half-edge-length*)]
+			 [yoff (* row *tile-height*)])
+		     (paint-polygon row col xoff yoff even-tile?)
+		     (unless safe?
+			     (paint-jolly *jolly-ce-bitmap* row col even-tile?)))))]
+	      [paint-tile
+	       (lambda (loc)
+		 (let ([row (send loc get-row)]
+		       [col (send loc get-column)])
+		   (if (and in-counterexample? 
+			    (send loc get-in-counterexample-set?))
+		       (paint-counterexample-tile 
+			row col 
+			(send loc get-counterexample-safe?))
+		       (let ([safe? (send loc get-safe?)]
+			     [concealed? (send loc get-concealed?)]
+			     [neighbor-count-thunk 
+			      (lambda ()
+				(send board get-neighbor-unsafe-count row col))]
+			     [even-tile? (even? (+ row col))])
+			 (if concealed?
+			     (send dc set-brush *concealed-brush*)
+			     (send dc set-brush *exposed-brush*))
+			 (let ([xoff (* col *half-edge-length*)]
+			       [yoff (* row *tile-height*)])
+			   (paint-polygon row col xoff yoff even-tile?)
+			   (unless concealed?
+				   (if safe?
+				       (let* ([ns (neighbor-count-thunk)]
+					      [ns-string (number->string ns)]
+					      [fg-color (send dc get-text-foreground)])
+					 (send dc set-text-foreground 
+					       (if (zero? ns)
+						   *zero-color*
+						   *non-zero-color*))
+					 (send dc draw-text 
+					       ns-string
+					       (+ xoff *half-edge-length* -4) 
+					       (+ yoff *half-tile-height* 
+						  (if even-tile? 
+						      -4
+						      -12)))
+					 (send dc set-text-foreground fg-color))
+				       (paint-jolly *jolly-bitmap* row col even-tile?))))))))]
+	      [set-intercepts!
+	       (lambda ()
+		 (set! intercepts-vector
+		       (build-vector
+			board-height
+			(lambda (r)
+			  (build-vector 
+			   (add1 board-width)
+			   (lambda (c)
+					; y - mx
+			     (let ([x (* (add1 c) *half-edge-length*)])
+			       (if (even? (+ r c))
+				   (- (* r *tile-height*)
+				      (* *even-slope* x))
+				   (- (* (add1 r) *tile-height*)
+				      (* *odd-slope* x))))))))))]
+	      [get-intercept
+	       (lambda (r c)
+		 (vector-ref (vector-ref intercepts-vector r) c))]
+	      [set-board-width!
+	       (lambda (w)
+		 (set! board-width w)
+		 (set-client-width!))]
+	      [set-board-height!
+	       (lambda (h)
+		 (set! board-height h)
+		 (set-client-height!))]
+	      [set-board-size!
+	       (lambda (h w)
+		 (set-board-height! h) 
+		 (set-board-width! w)
+		 (set-intercepts!)
+		 (update-teaching-mode!))]
+	      [get-teaching-mode
+	       (lambda () teaching-mode?)]
+	      [update-teaching-mode!
+	       (lambda ()
+		 (set! teaching-mode? 
+		       (and (= board-height *teaching-board-height*)
+			    (= board-width *teaching-board-width*)
+			    (eq? tile-size *teaching-tile-size*)))
+		 (send board set-teaching-mode! teaching-mode?))]
+	      [set-client-height!
+	       (lambda ()
+		 (min-client-height (add1 (* board-height *tile-height*))))]
+	      [set-client-width!
+	       (lambda ()
+		 (min-client-width (* (/ (add1 board-width) 2) 
+				      *tile-edge-length*)))]
+	      [set-client-size!
+	       (lambda ()
+		 (set-client-height!)
+		 (set-client-width!))])
+	     (override*
+	      [on-event        ; handle a click
+	       (lambda (e)
+		 (when (and (not in-counterexample?)
+			    (not *game-over*)
+			    (send e button-down?))
+		       (let-values
+			([(col row) (x-y->row-column
+				     (send e get-x)
+				     (send e get-y))])
+			(when (and (>= col 0)
+				   (< col board-width)
+				   (>= row 0)
+				   (< row board-height)
+				   (> (send board get-num-concealed) 0))
+			      (send frame expose-row-col
+				    row col
+				    (not (send e get-shift-down))
+				    (send e get-control-down))
+			      (send frame update-status!)))))]
+	      [on-paint
+	       (lambda () 
+		 (send frame draw-board))])
+	     (super-instantiate (frame))
+	     
+	     ;; tie board and canvas
+	     (send board set-canvas! this)
+	     
+	     ;; Make canvas size always match the board size:
+	     (set-client-size!)
+	     (set-intercepts!)
+	     (stretchable-width #f)
+	     (stretchable-height #f)
+	     
+             ; use teaching board if right dimensions
+	     (update-teaching-mode!)
+	     
+	     (define dc (get-dc))))
+    
+    (define frame 
+      (instantiate ww-frame%
+		   ()
+		   (board (instantiate board% ()))
+		   (label *frame-label*)
+		   (style '(no-resize-border))))
+    
+    (send frame new-game)
+    (send frame show #t))

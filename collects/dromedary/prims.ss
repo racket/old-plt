@@ -175,6 +175,21 @@
 	(define (<and> a b)
 	  (and a b))
 
+	(define (print_char a)
+	  (begin (display a) (make-<unit> #f)))
+
+	(define (print_float a)
+	  (begin (display a) (make-<unit> #f)))
+
+	(define (print_int a)
+	  (begin (display a) (make-<unit> #f)))
+
+	(define (print_string a)
+	  (begin (display a) (make-<unit> #f)))
+
+	(define (print_newline)
+	  (begin (newline) (make-<unit> #f)))
+
 	(define (boolean-to-number n)
 	  (if n 1 0))
 
@@ -236,6 +251,12 @@
 	(hash-table-put! built-in-and-user-funcs ":=" (cons (make-arrow (list (make-ref (make-tvar "'a")) (make-tvar "'a")) "unit") <set-box!>))
 	(hash-table-put! built-in-and-user-funcs "ref" (cons (make-arrow (list (make-tvar "'a")) (make-ref (make-tvar "'a"))) box))
 	(hash-table-put! built-in-and-user-funcs "!" (cons (make-arrow (list (make-ref (make-tvar "'a"))) (make-tvar "'a")) unbox))
+	(hash-table-put! built-in-and-user-funcs "print_int" (cons (make-arrow (list "int") "unit") print_int))
+	(hash-table-put! built-in-and-user-funcs "print_char" (cons (make-arrow (list "char") "unit") print_char))
+	(hash-table-put! built-in-and-user-funcs "print_float" (cons (make-arrow (list "float") "unit") print_float))
+	(hash-table-put! built-in-and-user-funcs "print_string" (cons (make-arrow (list "string") "unit") print_string))
+	(hash-table-put! built-in-and-user-funcs "print_newline" (cons (make-arrow (list "unit") "unit") print_newline))
+
 	
 
 	

@@ -11,6 +11,15 @@
      (define next-label 0)     
      (define loc #f)
 
+     (define (at expr src)
+	     (datum->syntax-object (current-compile-context) expr
+				   (list loc
+					 (ast:src-line src)
+					 (ast:src-col src)
+					 (ast:src-pos src)
+					 (ast:src-span src))))
+     (define stx-for-original-property (read-syntax #f (open-input-string "original")))
+
      (define (compile-all stmt location)
        (set! loc location)
        (list
@@ -178,6 +187,7 @@
 		     [elseexpc (if (null? elseexp) null (compile-ml elseexp context))])
 		 #`(if #,testc #,ifexpc #,(if (not (null? elseexpc)) elseexpc (make-<unit> #f))))]
 	      [($ ast:pexp_construct name expr bool)
+	       (pretty-print (format "Found construct: ~a" (unlongident name)))
 	       (let ([constr (hash-table-get <constructors> (unlongident name) (lambda () #f))])
 		 (if constr
 		     (if (null? expr)
@@ -369,8 +379,9 @@
 ;													   (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car binding)))
 ;													   (car binding))))))
 	;       #,(compile-ml (cdr binding) context))
-       (if rec
-	   (pretty-print "This kind of expression is not allowed on right hand side of let rec")
+       (if (and rec
+		(not (ast:pexp_function? (ast:expression-pexp_desc (cdr binding)))))
+	   (raise-syntax-error #f "This kind of expression is not allowed on right hand side of let rec" (at (cdr binding) (ast:expression-pexp_src (cdr binding))))
 	   (let ([varpat (get-varpat (car binding))]
 		 [val (compile-ml (cdr binding) context)])
 	     #`(begin

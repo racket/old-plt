@@ -2634,6 +2634,9 @@ void scheme_push_kill_action(Scheme_Kill_Action_Func f, void *d)
   Scheme_Process *p = scheme_current_process;
 
   if (p->private_on_kill) {
+    /* Pretty unlikely that these get nested. An exception handler
+       would have to block on and within operations that need special
+       kill handling. But it could happen. */
     void **next;
     next = MALLOC_N(void *, 3);
     next[0] = (void *)p->private_on_kill;

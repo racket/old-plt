@@ -31,8 +31,7 @@
 	(string-append
 	 s
 	 (case (system-type)
-	   [(unix beos macos) ".so"]
-	   [(macosx) ".dylib"]
+	   [(unix beos macos macosx) ".so"]
 	   [(windows) ".dll"])))
 
       (define-values (extract-base-filename/ss
@@ -62,7 +61,7 @@
 	       "compiled object"
 	       (append-object-suffix ""))
 	   (mk (case (system-type)
-		 [(unix beos macos) "[sS][oO]"]
+		 [(unix beos macos macosx) "[sS][oO]"]
 		 [(windows) "[dD][lL][lL]"])
 	       "MzScheme extension"
 	       (append-extension-suffix ""))))))))

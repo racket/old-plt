@@ -64,7 +64,7 @@
 			    (format "-bE:~a/ext.exp" include-dir)
 			    "-bnoentry")]
 	  [(parisc-hpux) (list "-b")]
-	  [(macosx) (list "-dylib")]
+	  [(ppc-macosx) (list "-bundle" "-flat_namespace" "-undefined" "suppress")]
 	  [else (list "-shared")]))
 
       (define msvc-linker-flags (list "/LD"))

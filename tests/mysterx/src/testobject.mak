@@ -19,7 +19,7 @@ REGSVR32=regsvr32
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $< 
 
-MZC="D:\plt\mzc"
+MZC="C:\Program Files\PLT\mzc"
         
 LINK32=link.exe
 LINK32_FLAGS= \

@@ -33,10 +33,14 @@
 		  (lambda ()
 		    (current-output-port output)
 		    (current-error-port output)
+                    (let ([mred-name 
+                           ((current-module-name-resolver) '(lib "mred.ss" "mred") #f #f)]
+                          [orig-namespace (current-namespace)])
 		    (parameterize ([current-namespace (make-namespace 'mred)]
 				   [exit-handler (lambda (v) (custodian-shutdown-all cust))])
 		      (printf "Loading installer...~n")
 		      (global-defined-value 'argv (vector file))
+                      (namespace-attach-module orig-namespace mred-name)
 		      (require-library "setup.ss" "setup")))))])
 	(thread (lambda () (send f show #t) (semaphore-post s)))
 	(thread (lambda () 

@@ -209,6 +209,8 @@
   ;; ;;;;;;;;;;;;;;;;;;;; constants ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (try "5" "5")
+  (try "#t" true-string)
+  (try "#f" false-string)
   (try "\"apple\"" "\"apple\"")
   (try "'apple" (pc-diff "'apple" "apple"))
   (try "(quote apple)" (pc-diff "'apple" "apple"))
@@ -523,14 +525,14 @@
   (try '(and 7) (sao-diff "7" '(error "Malformed and")))
   (try '(or 14) (sao-diff "14" '(error "Malformed or")))
 
-  (try '(and 9 7) (cb-diff '(error "neither #t nor #f") "7"))
-  (try '(or 9 7) (cb-diff '(error "neither #t nor #f") "9"))
-  (try '(and #t 7) (cb-diff '(error "neither #t nor #f") "7"))
-  (try '(or #f 7) (cb-diff '(error "neither #t nor #f") "7"))
+  (try '(and 9 7) (cb-diff '(error "neither true nor false") "7"))
+  (try '(or 9 7) (cb-diff '(error "neither true nor false") "9"))
+  (try '(and #t 7) (cb-diff '(error "neither true nor false") "7"))
+  (try '(or #f 7) (cb-diff '(error "neither true nor false") "7"))
   (try '(and #f 7) false-string)
   (try '(or #t 7) true-string)
-  (try '(and 1 #f #f) (cb-diff '(error "neither #t nor #f") false-string))
-  (try '(or 3 #t #t) (cb-diff '(error "neither #t nor #f") "3"))
+  (try '(and 1 #f #f) (cb-diff '(error "neither true nor false") false-string))
+  (try '(or 3 #t #t) (cb-diff '(error "neither true nor false") "3"))
 
   ;; ;;;;;;;;;;;;;;;;;; set!, begin, begin0, do, delay ;;;;;;;;;;;;;;;;;;;;;;;;;;;
   

@@ -334,19 +334,12 @@
                 (local-defs defs))
        (cond
          ((null? local-defs) ordered-defs)
-         ((add-def? (car defs) local-defs ordered-defs)
-          (loop (cons (car defs) ordered-defs)
-                (remove-def (car defs) local-defs)))
+         ((add-def? (car local-defs) local-defs ordered-defs)
+          (loop (cons (car local-defs) ordered-defs)
+                (cdr local-defs)))
          (else
-          (loop ordered-defs (append (cdr local-defs) (list (car defs)))))))))
-  
-  ;remove-def: def (list def) -> (list def)
-  (define (remove-def def defs)
-    (cond
-      ((null? defs) null)
-      ((eq? (car defs) def) (cdr defs))
-      (else (cons (car defs) (remove-def (cdr defs))))))
-  
+          (loop ordered-defs (append (cdr local-defs) (list (car local-defs)))))))))
+    
   ;add-def? def (list def) (list def) -> bool
   (define (add-def? def local-defs ordered-defs)
     (andmap (lambda (e)

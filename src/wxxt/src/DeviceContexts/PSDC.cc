@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.6 1998/08/14 21:44:39 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.7 1998/08/14 21:48:45 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1357,6 +1357,9 @@ Bool wxPostScriptDC::StartDoc (char *message)
   return TRUE;
 }
 
+#ifdef wx_x
+extern void wxsExecute(char **);
+#endif
 
 void wxPostScriptDC::EndDoc (void)
 {
@@ -1418,7 +1421,7 @@ void wxPostScriptDC::EndDoc (void)
 	  argv[0] = preview_cmd;
           argv[1] = filename;
           argv[2] = NULL;
-	  wxExecute (argv);
+	  wxsExecute (argv);
 	}
 	break;
 
@@ -1434,7 +1437,7 @@ void wxPostScriptDC::EndDoc (void)
 	    argv[i++] = opts;
 	  argv[i++] = filename;
 	  argv[i] = NULL;
-	  wxExecute(argv);
+	  wxsExecute(argv);
 	}
 	break;
 

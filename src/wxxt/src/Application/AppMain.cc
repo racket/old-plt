@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.cc,v 1.4 1998/04/11 13:57:28 mflatt Exp $
+ * $Id: AppMain.cc,v 1.5 1998/08/13 02:13:12 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -146,7 +146,6 @@ Bool wxApp::Pending(void)
 #include <X11/Shell.h>
 
 static void wxCommonInit(void);
-static void wxCommonCleanUp(void);
 
 void wxInitNewToplevel(void)
 {
@@ -347,26 +346,4 @@ void wxCommonInit(void)
     wxHOURGLASS_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_WAIT);
     wxCROSS_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_CROSS);
     wxIBEAM_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_IBEAM);
-}
-
-void wxCommonCleanUp(void)
-{
-    delete wxTheColourDatabase;	// delete all colours from database (including wxBLACK, etc.)
-    delete wxThePenList;	// delete all pens form list
-    delete wxTheBrushList;	// delete all brushes from list
-    delete wxTheFontList;	// delete all fonts from list
-    delete wxTheBitmapList;	// delete all bitmaps, cursors, and icons from list
-
-    wxInitializePrintSetupData(FALSE);
-    delete wxThePrintPaperDatabase;
-    wxThePrintPaperDatabase = NULL;
-
-    delete[] wxBuffer;
-
-#if 0
-#if USE_RESOURCES
-    extern void wxFlushResources(void); // Defined in Utilities/wxResUtil.cxx
-    wxFlushResources();
-#endif
-#endif
 }

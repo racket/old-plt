@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Slider.h,v 1.2 1998/02/05 23:00:33 mflatt Exp $
+ * $Id: Slider.h,v 1.3 1998/08/15 15:05:49 mflatt Exp $
  *
  * Purpose: slider panel item
  *
@@ -45,7 +45,6 @@ public:
 		int x = -1, int y = -1, long style = wxHORIZONTAL, char *name = "slider");
 
     int   GetValue(void) { return value; }
-    void  SetButtonColour(wxColour *col);
     void  SetValue(int value);
     void Command(wxCommandEvent &event);
 

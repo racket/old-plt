@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: RadioBox.cc,v 1.5 1998/05/22 00:41:52 mflatt Exp $
+ * $Id: RadioBox.cc,v 1.6 1998/08/08 03:33:05 mflatt Exp $
  *
  * Purpose: radio box panel item
  *
@@ -463,7 +463,7 @@ void wxRadioBox::ChangeColours(void)
 //-----------------------------------------------------------------------------
 
 void wxRadioBox::EventCallback(Widget WXUNUSED(w),
-			       XtPointer dclient, XtPointer dcall)
+			       XtPointer dclient, XtPointer WXUNUSED(dcall))
 {
     wxRadioBox     *radioBox = (wxRadioBox*)dclient;
     wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);

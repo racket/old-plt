@@ -7,6 +7,11 @@ Removed letrec*; letrec has the same semantics
 Removed constant-name and constant-name-all-globals
 Removed secure-primitive-exception-types
 Removed readable type symbols (e.g., #<procedure>)
+Removed semaphore-callback (MrEd now has queue-callback)
+Fixed unfairness in threads (perpetually creating threads
+ would cause certain threads, particularly the main thread,
+ to never get any time)
+Added current-memory-use
 MzLib cleanup:
  Removed `@' suffix for embedded units in mzlib:core@ and mzlib@
  Removed all c.ss libraries, plus constan[t].ss

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.12 1998/08/08 03:33:06 mflatt Exp $
+ * $Id: Window.cc,v 1.13 1998/08/10 22:01:34 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -729,8 +729,8 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
   if (!X->frame || !X->handle) // forbid, if no widget associated
     return FALSE;
 
-  int dev_x = int(LogicalToDeviceX(x));
-  int dev_y = int(LogicalToDeviceY(y));
+  int dev_x = int(x);
+  int dev_y = int(y);
   
   ClientToScreen(&dev_x, &dev_y);
   menu->PopupMenu(X->frame, dev_x, dev_y);
@@ -887,8 +887,8 @@ void wxWindow::OnChar(wxKeyEvent& wxevent)
       KeySym keysym = CharCodeWXToX(wxevent.keyCode);
       if (keysym != 0) {
 	xev->xkey.keycode = XKeysymToKeycode(xev->xkey.display, keysym);
-	xev->xkey.x	 = int(LogicalToDeviceX(wxevent.x));
-	xev->xkey.y	 = int(LogicalToDeviceY(wxevent.y));
+	xev->xkey.x	 = (int)wxevent.x;
+	xev->xkey.y	 = (int)wxevent.y;
 	xev->xkey.state &= ~(ShiftMask | ControlMask | Mod1Mask | Mod3Mask);
 	xev->xkey.state |= (wxevent.altDown     ? Mod3Mask    : 0) |
 			   (wxevent.controlDown ? ControlMask : 0) |
@@ -1306,8 +1306,8 @@ void wxWindow::WindowEventHandler(Widget w,
 	// set wxWindows event structure
 	wxevent.eventHandle	= (char*)xev;
 	wxevent.keyCode		= CharCodeXToWX(keysym);
-	wxevent.x		= win->DeviceToLogicalX(xev->xkey.x);
-	wxevent.y		= win->DeviceToLogicalY(xev->xkey.y);
+	wxevent.x		= xev->xkey.x;
+	wxevent.y		= xev->xkey.y;
 	wxevent.altDown		= /* xev->xkey.state & Mod3Mask */ FALSE;
 	wxevent.controlDown	= xev->xkey.state & ControlMask;
 	wxevent.metaDown	= xev->xkey.state & Mod1Mask;
@@ -1361,8 +1361,8 @@ void wxWindow::WindowEventHandler(Widget w,
 	}
 	// set wxWindows event structure
 	wxevent.eventHandle	= (char*)xev;
-	wxevent.x		= win->DeviceToLogicalX(xev->xbutton.x);
-	wxevent.y		= win->DeviceToLogicalY(xev->xbutton.y);
+	wxevent.x		= xev->xbutton.x;
+	wxevent.y		= xev->xbutton.y;
 	wxevent.altDown		= /* xev->xbutton.state & Mod3Mask */ FALSE;
 	wxevent.controlDown	= xev->xbutton.state & ControlMask;
 	wxevent.metaDown	= xev->xbutton.state & Mod1Mask;
@@ -1412,8 +1412,8 @@ void wxWindow::WindowEventHandler(Widget w,
 
 	// set wxWindows event structure
 	wxevent.eventHandle	= (char*)xev;
-	wxevent.x		= win->DeviceToLogicalX(xev->xcrossing.x);
-	wxevent.y		= win->DeviceToLogicalY(xev->xcrossing.y);
+	wxevent.x		= xev->xcrossing.x;
+	wxevent.y		= xev->xcrossing.y;
 	wxevent.altDown		= /* xev->xcrossing.state & Mod3Mask */ FALSE;
 	wxevent.controlDown	= xev->xcrossing.state & ControlMask;
 	wxevent.metaDown	= xev->xcrossing.state & Mod1Mask;
@@ -1442,8 +1442,8 @@ void wxWindow::WindowEventHandler(Widget w,
 	}
 	// set wxWindows event structure
 	wxevent.eventHandle	= (char*)xev;
-	wxevent.x		= win->DeviceToLogicalX(xev->xmotion.x);
-	wxevent.y		= win->DeviceToLogicalY(xev->xmotion.y);
+	wxevent.x		= xev->xmotion.x;
+	wxevent.y		= xev->xmotion.y;
 	wxevent.altDown		= /* xev->xmotion.state & Mod3Mask */ FALSE;
 	wxevent.controlDown	= xev->xmotion.state & ControlMask;
 	wxevent.metaDown	= xev->xmotion.state & Mod1Mask;
@@ -1550,256 +1550,6 @@ wxWindowDC *wxWindow::GetDC(void)
   return dc; 
 }
 
-//-----------------------------------------------------------------------------
-// methods of the associated device context
-//-----------------------------------------------------------------------------
-
-void wxWindow::AutoSetTools(Bool set_auto)
-{
-    if (dc) dc->AutoSetTools(set_auto);
-}
-
-void wxWindow::BeginDrawing(void)
-{
-    if (dc) dc->BeginDrawing();
-}
-
-Bool wxWindow::Blit(float xdest, float ydest, float w, float h, wxDC *src, float xsrc,
-		    float ysrc, int rop)
-{
-    if (dc) return dc->Blit(xdest, ydest, w, h, src, xsrc, ysrc, rop);
-    return FALSE;
-}
-
-void wxWindow::Clear(void)
-{
-    if (dc) dc->Clear();
-}
-
-void wxWindow::CrossHair(float x, float y)
-{
-    if (dc) dc->CrossHair(x, y);
-}
-
-void wxWindow::DestroyClippingRegion(void)
-{
-    if (dc) dc->DestroyClippingRegion();
-}
-
-/* MATTHEW: */
-void wxWindow::GetClippingRegion(float *x, float *y, float *w, float *h)
-{
-    if (dc) 
-      dc->GetClippingRegion(x, y, w, h);
-    else {
-      *x = *y = 0;
-      *w = *h = -1;
-    }
-}
-
-/* MATTHEW: */
-void wxWindow::MakeModal(int)
-{
-}
-
-float wxWindow::DeviceToLogicalX(int x)
-{
-    if (dc) return dc->DeviceToLogicalX(x);
-    return x;
-}
-
-float wxWindow::DeviceToLogicalXRel(int x)
-{
-    if (dc) return dc->DeviceToLogicalXRel(x);
-    return x;
-}
-
-float wxWindow::DeviceToLogicalY(int y)
-{
-    if (dc) return dc->DeviceToLogicalY(y);
-    return y;
-}
-
-float wxWindow::DeviceToLogicalYRel(int y)
-{
-    if (dc) return dc->DeviceToLogicalYRel(y);
-    return y;
-}
-
-void wxWindow::DrawArc(float x1, float y1, float x2, float y2, float xc, float yc)
-{
-    if (dc) dc->DrawArc(x1, y1, x2, y2, xc, yc);
-}
-
-void wxWindow::DrawEllipse(float x, float y, float w, float h)
-{
-    if (dc) dc->DrawEllipse(x, y, w, h);
-}
-
-void wxWindow::DrawIcon(wxIcon *icon, float x, float y)
-{
-    if (dc) dc->DrawIcon(icon, x, y);
-}
-
-void wxWindow::DrawLine(float x1, float y1, float x2, float y2)
-{
-    if (dc) dc->DrawLine(x1, y1, x2, y2);
-}
-
-void wxWindow::DrawLines(int n, wxPoint pts[], float xoff, float yoff)
-{
-    if (dc) dc->DrawLines(n, pts, xoff, yoff);
-}
-
-void wxWindow::DrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
-{
-    if (dc) dc->DrawLines(n, pts, xoff, yoff);
-}
-
-void wxWindow::DrawLines(wxList *pts, float xoff, float yoff)
-{
-    if (dc) dc->DrawLines(pts, xoff, yoff);
-}
-
-void wxWindow::DrawPoint(float x, float y)
-{
-    if (dc) dc->DrawPoint(x, y);
-}
-
-void wxWindow::DrawPolygon(int n, wxPoint pts[], float xoff, float yoff, int fill)
-{
-    if (dc) dc->DrawPolygon(n, pts, xoff, yoff, fill);
-}
-	
-void wxWindow::DrawPolygon(wxList *pts, float xoff, float yoff, int fill)
-{
-    if (dc) dc->DrawPolygon(pts, xoff, yoff, fill);
-}
-
-void wxWindow::DrawRectangle(float x, float y, float w, float h)
-{
-    if (dc) dc->DrawRectangle(x, y, w, h);
-}
-
-void wxWindow::DrawRoundedRectangle(float x, float y, float w, float h, float radius)
-{
-    if (dc) dc->DrawRoundedRectangle(x, y, w, h, radius);
-}
-
-#if USE_SPLINES
-
-void wxWindow::DrawSpline(float x1,float y1, float x2,float y2, float x3,float y3)
-{
-    if (dc) dc->DrawSpline(x1, y1, x2, y2, x3, y3);
-}
-
-void wxWindow::DrawSpline(int n, wxPoint pts[])
-{
-    if (dc) dc->DrawSpline(n, pts);
-}
-
-void wxWindow::DrawSpline(wxList *pts)
-{
-    if (dc) dc->DrawSpline(pts);
-}
-
-#endif
-
-/* MATTHEW: */
-void wxWindow::DrawText(char *text, float x, float y, Bool use16)
-{
-    if (dc) dc->DrawText(text, x, y, use16);
-}
-
-void wxWindow::EndDrawing(void)
-{
-    if (dc) dc->EndDrawing();
-}
-
-void wxWindow::FloodFill(float x, float y, wxColour *col, int style)
-{
-    if (dc) dc->FloodFill(x, y, col, style);
-}
-
-wxBrush* wxWindow::GetBackground(void)
-{
-    if (dc) return dc->GetBackground();
-    return (NULL);
-}
-
-wxBrush* wxWindow::GetBrush(void)
-{
-    if (dc) return dc->GetBrush();
-    return (NULL);
-}
-
-float wxWindow::GetCharHeight(void)
-{
-    if (dc) return dc->GetCharHeight();
-
-    int dummy; XCharStruct overall;
-    XTextExtents((XFontStruct*)font->GetInternalFont(), "x", 1,
-		 &dummy, &dummy, &dummy, &overall);
-    return (float)(overall.ascent+overall.descent);
-}
-
-float wxWindow::GetCharWidth(void)
-{
-    if (dc) return dc->GetCharWidth();
-
-    int dummy; XCharStruct overall;
-    XTextExtents((XFontStruct*)font->GetInternalFont(), "x", 1,
-		 &dummy, &dummy, &dummy, &overall);
-    return (float)(overall.width);
-}
-
-wxFont* wxWindow::GetFont(void)
-{
-    if (dc) return dc->GetFont();
-    return (font);
-}
-
-int wxWindow::GetLogicalFunction(void)
-{
-    if (dc) return dc->GetLogicalFunction();
-    return (0);
-}
-
-int wxWindow::GetMapMode(void)
-{
-    if (dc) return dc->GetMapMode();
-    return (0);
-}
-
-Bool wxWindow::GetOptimization(void)
-{
-    if (dc) return dc->GetOptimization();
-    return (FALSE);
-}
-
-wxPen* wxWindow::GetPen(void)
-{
-    if (dc) return dc->GetPen();
-    return (NULL);
-}
-
-Bool wxWindow::GetPixel(float x, float y, wxColour *col)
-{
-    if (dc) return dc->GetPixel(x, y, col);
-    return (FALSE);
-}
-
-void wxWindow::GetSize(float *w, float *h)
-{
-    if (dc) dc->GetSize(w, h);
-}
-
-wxColour& wxWindow::GetTextBackground(void)
-{
-    if (dc) return dc->GetTextBackground();
-    return (*bg);
-}
-
 void wxWindow::GetTextExtent(const char *s, float *w, float *h, float *descent,
 			     float *ext_leading, wxFont *theFont,
 			     Bool use16bit)
@@ -1820,172 +1570,6 @@ void wxWindow::GetTextExtent(const char *s, float *w, float *h, float *descent,
     if (ext_leading) *ext_leading = 0.0;
 }
 
-wxColour& wxWindow::GetTextForeground(void)
-{
-    if (dc) return dc->GetTextForeground();
-    return (*fg);
-}
-
-void wxWindow::IntDrawLine(int x1, int y1, int x2, int y2)
-{
-    if (dc) dc->IntDrawLine(x1, y1, x2, y2);
-}
-
-void wxWindow::IntDrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
-{
-    if (dc) dc->IntDrawLines(n, pts, xoff, yoff);
-}
-
-int wxWindow::LogicalToDeviceX(float x)
-{
-    if (dc) return dc->LogicalToDeviceX(x);
-    return (int)x;
-}
-
-int wxWindow::LogicalToDeviceXRel(float x)
-{
-    if (dc) return dc->LogicalToDeviceXRel(x);
-    return (int)x;
-}
-
-int wxWindow::LogicalToDeviceY(float y)
-{
-    if (dc) return dc->LogicalToDeviceY(y);
-    return (int)y;
-}
-
-int wxWindow::LogicalToDeviceYRel(float y)
-{
-    if (dc) return dc->LogicalToDeviceYRel(y);
-    return (int)y;
-}
-
-float wxWindow::MaxX(void)
-{
-    if (dc) return dc->MaxX();
-    return (0.0);
-}
-
-float wxWindow::MaxY(void)
-{
-    if (dc) return dc->MaxY();
-    return (0.0);
-}
-
-float wxWindow::MinX(void)
-{
-    if (dc) return dc->MinX();
-    return (0.0);
-}
-
-float wxWindow::MinY(void)
-{
-    if (dc) return dc->MinY();
-    return (0.0);
-}
-
-Bool wxWindow::Ok(void)
-{
-    if (dc) return dc->Ok();
-    return (FALSE);
-}
-
-void wxWindow::SetBackground(wxBrush *brush)
-{
-    if (dc) dc->SetBackground(brush);
-}
-
-void wxWindow::SetBackgroundMode(int mode)
-{
-    if (dc) dc->SetBackgroundMode(mode);
-}
-
-void wxWindow::SetBrush(wxBrush *brush)
-{
-    if (dc) dc->SetBrush(brush);
-}
-
-void wxWindow::SetClippingRegion(float x, float y, float w, float h)
-{
-    if (dc) dc->SetClippingRegion(x, y, w, h);
-}
-
-void wxWindow::SetColourMap(wxColourMap *new_cmap)
-{
-    // set DC data
-    if (dc) dc->SetColourMap(new_cmap);
-    // wxWindow data
-    cmap = new_cmap ? new_cmap : wxAPP_COLOURMAP;
-    // apply to all widgets
-    if (X->frame)
-	XSetWindowColormap(XtDisplay(X->frame), XtWindow(X->frame), GETCOLORMAP(cmap));
-    if (X->scroll)
-	XSetWindowColormap(XtDisplay(X->scroll), XtWindow(X->scroll), GETCOLORMAP(cmap));
-    if (X->handle && !dc)
-	XSetWindowColormap(XtDisplay(X->handle), XtWindow(X->handle), GETCOLORMAP(cmap));
-}
-
-void wxWindow::SetDeviceOrigin(float x, float y)
-{
-    if (dc) dc->SetDeviceOrigin(x, y);
-}
-
-void wxWindow::SetFont(wxFont *new_font)
-{
-    // set DC data
-    if (dc) dc->SetFont(new_font);
-    // wxWindow data
-    if (!new_font) return;
-    font = new_font;
-    // apply to widget
-    if (X->handle)
-	XtVaSetValues(X->handle, XtNfont, font->GetInternalFont(), NULL);
-}
-
-void wxWindow::SetLogicalFunction(int fkt)
-{
-    if (dc) dc->SetLogicalFunction(fkt);
-}
-
-void wxWindow::SetLogicalOrigin(float x, float y)
-{
-    if (dc) dc->SetLogicalOrigin(x, y);
-}
-
-void wxWindow::SetLogicalScale(float xs, float ys)
-{
-    if (dc) dc->SetLogicalScale(xs, ys);
-}
-
-void wxWindow::SetMapMode(int mode)
-{
-    if (dc) dc->SetMapMode(mode);
-}
-
-void wxWindow::SetOptimization(Bool opt)
-{
-    if (dc) dc->SetOptimization(opt);
-}
-
-void wxWindow::SetPen(wxPen *pen)
-{
-    if (dc) dc->SetPen(pen);
-}
-
-void wxWindow::SetTextBackground(wxColour *col)
-{
-    if (dc) dc->SetTextBackground(col);
-}
-
-void wxWindow::SetTextForeground(wxColour *col)
-{
-    if (dc) dc->SetTextForeground(col);
-}
-
-void wxWindow::SetUserScale(float xs, float ys)
-{
-    if (dc) dc->SetUserScale(xs, ys);
-}
 
 void wxWindow::ForEach(void (*foreach)(wxWindow *w, void *data), void *data)
 {

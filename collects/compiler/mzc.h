@@ -214,8 +214,13 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 #if 0
 static Scheme_Object *DEBUG_CHECK(Scheme_Object *v)
 {
-  if ((SCHEME_TYPE(v) < _scheme_values_types_) || (SCHEME_TYPE(v) > _scheme_last_type_ + 5))
-    printf("wrong!\n");
+  if ((SCHEME_TYPE(v) < _scheme_values_types_) || (SCHEME_TYPE(v) > _scheme_last_type_ + 5)) {
+    /* Could be a boxed value ... */
+    Scheme_Object *o = *(Scheme_Object **)v;
+    if ((SCHEME_TYPE(v) < _scheme_values_types_) || (SCHEME_TYPE(v) > _scheme_last_type_ + 5)) {
+      printf("wrong!\n");
+    }
+  }
   return v;
 }
 #endif

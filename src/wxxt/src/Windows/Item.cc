@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Item.cc,v 1.1 1996/01/10 14:57:12 markus Exp $
+ * $Id: Item.cc,v 1.1.1.1 1997/12/22 17:28:58 mflatt Exp $
  *
  * Purpose: base class for all panel items
  *
@@ -86,10 +86,12 @@ void wxItem::ChangeColours(void)
     }
 }
 
+#if 0
 void wxItem::SetLabelColour(wxColour *col)
 {
     label_fg = col; ChangeColours();
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // functions to execute item

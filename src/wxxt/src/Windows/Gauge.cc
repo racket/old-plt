@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Gauge.cc,v 1.3 1998/07/18 21:51:03 mflatt Exp $
+ * $Id: Gauge.cc,v 1.4 1998/08/10 22:01:34 mflatt Exp $
  *
  * Purpose: gauge panel item
  *
@@ -132,13 +132,6 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 //-----------------------------------------------------------------------------
 // methods to access internal data
 //-----------------------------------------------------------------------------
-
-void wxGauge::SetButtonColour(wxColour *col)
-{
-    if (col && X->handle)
-	XtVaSetValues(X->handle, XtNthumbColor, col->GetPixel(cmap), NULL);
-    wxItem::SetButtonColour(col);
-}
 
 void wxGauge::SetRange(int new_range)
 {

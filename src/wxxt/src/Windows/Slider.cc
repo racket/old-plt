@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Slider.cc,v 1.3 1998/08/08 03:33:06 mflatt Exp $
+ * $Id: Slider.cc,v 1.4 1998/08/15 15:05:48 mflatt Exp $
  *
  * Purpose: slider panel item
  *
@@ -142,13 +142,6 @@ void wxSlider::OnSize(int width, int height)
 //-----------------------------------------------------------------------------
 // methods to access internal data
 //-----------------------------------------------------------------------------
-
-void wxSlider::SetButtonColour(wxColour *col)
-{
-    if (col && X->handle)
-	XtVaSetValues(X->handle, XtNthumbColor, col->GetPixel(cmap), NULL);
-    wxItem::SetButtonColour(col);
-}
 
 void wxSlider::SetValue(int new_value)
 {

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.h,v 1.3 1998/04/11 13:57:33 mflatt Exp $
+ * $Id: Window.h,v 1.4 1998/08/08 03:33:07 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -99,18 +99,13 @@ public:
     // GDI (colours, colourmap, font, cursor)
     virtual void      ChangeColours(void);
     virtual wxColour  *GetBackgroundColour(void) { return bg; }
-    virtual float     GetCharHeight(void);
-    virtual float     GetCharWidth(void);
-    virtual wxFont    *GetFont(void);
     virtual wxColour  *GetForegroundColour(void) { return fg; }
     virtual void      GetTextExtent(const char *string, float *x, float *y,
 				    float *descent = NULL,
 				    float *externalLeading = NULL,
 				    wxFont *theFont = NULL, Bool use16bit=FALSE);
     virtual void      SetBackgroundColour(wxColour *col);
-    virtual void      SetColourMap(wxColourMap *cmap);
     virtual wxCursor  *SetCursor(wxCursor *cursor);
-    virtual void      SetFont(wxFont *font);
     virtual void      SetForegroundColour(wxColour *col);
     // Caret
     virtual void  CreateCaret(int WXUNUSED(w), int WXUNUSED(h)) {};
@@ -164,89 +159,6 @@ public:
     virtual Bool PreOnEvent(wxWindow *, wxMouseEvent *);
     // get the associated device context
     wxWindowDC* GetDC(void);
-    // methods of the associated device context
-    void      AutoSetTools(Bool set_auto);
-    void      BeginDrawing(void);
-    Bool      Blit(float xdest, float ydest, float w, float h, wxDC *src, float xsrc,
-		   float ysrc, int rop=wxCOPY);
-    Bool      CanGetTextExtent(void) { return TRUE; }
-    Bool      CanDrawBitmap(void) { return TRUE; }
-    void      Clear(void);
-    void      CrossHair(float x, float y);
-    void      DestroyClippingRegion(void);
-    float     DeviceToLogicalX(int x);
-    float     DeviceToLogicalXRel(int x);
-    float     DeviceToLogicalY(int y);
-    float     DeviceToLogicalYRel(int y);
-    void      DrawArc(float x1, float y1, float x2, float y2, float xc, float yc);
-    void      DrawEllipse(float x, float y, float w, float h);
-    void      DrawIcon(wxIcon *icon, float x, float y);
-    void      DrawLine(float x1, float y1, float x2, float y2);
-    void      DrawLines(int n, wxPoint pts[], float xoff=0, float yoff=0);
-    void      DrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0);
-    void      DrawLines(wxList *pts, float xoff=0, float yoff=0);
-    void      DrawPoint(float x, float y);
-    void      DrawPoint(wxPoint &pt) { DrawPoint(pt.x, pt.y); }
-    void      DrawPolygon(int n, wxPoint pts[], float xoff=0, float yoff=0,
-			  int fill=wxODDEVEN_RULE);
-    void      DrawPolygon(wxList *pts, float xoff=0, float yoff=0,
-			  int fill=wxODDEVEN_RULE);
-    void      DrawRectangle(float x, float y, float w, float h);
-    void      DrawRoundedRectangle(float x, float y, float w, float h, float radius=20);
-#if USE_SPLINES
-    void      DrawSpline(float x1,float y1, float x2,float y2, float x3,float y3);
-    void      DrawSpline(int n, wxPoint pts[]);
-    void      DrawSpline(wxList *pts);
-#endif
-    /* MATTHEW: */
-    void      DrawText(char *text, float x, float y, Bool use16 = FALSE);
-    void      EndDrawing(void);
-    void      FloodFill(float x, float y, wxColour *col, int style=wxFLOOD_SURFACE);
-    wxBrush*  GetBackground(void);
-    wxBrush*  GetBrush(void);
-//     float     GetCharHeight(void);
-//     float     GetCharWidth(void);
-//     wxFont*   GetFont(void);
-    int       GetLogicalFunction(void);
-    int       GetMapMode(void);
-    Bool      GetOptimization(void);
-    wxPen*    GetPen(void);
-    Bool      GetPixel(float WXUNUSED(x), float WXUNUSED(y), wxColour *WXUNUSED(col));
-    void      GetSize(float *w, float *h);
-    wxColour& GetTextBackground(void);
-//     void      GetTextExtent(const char *string, float *x, float *y,
-// 			    float *descent = NULL, float *externalLeading = NULL,
-// 			    wxFont *theFont = NULL, Bool use16bit=FALSE);
-    wxColour& GetTextForeground(void);
-    void      IntDrawLine(int x1, int y1, int x2, int y2);
-    void      IntDrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0);
-    int       LogicalToDeviceX(float x);
-    int       LogicalToDeviceXRel(float x);
-    int       LogicalToDeviceY(float y);
-    int       LogicalToDeviceYRel(float y);
-    float     MaxX(void);
-    float     MaxY(void);
-    float     MinX(void);
-    float     MinY(void);
-    Bool      Ok(void);
-    void      SetBackground(wxBrush *brush);
-    void      SetBackgroundMode(int mode);
-    void      SetBrush(wxBrush *brush);
-    void      SetClippingRegion(float x, float y, float w, float h);
-    /* MATTHEW: */
-    void      GetClippingRegion(float *x, float *y, float *w, float *h);
-//     void      SetColourMap(wxColourMap *cmap);
-    void      SetDeviceOrigin(float x, float y);
-//     void      SetFont(wxFont *font);
-    void      SetLogicalFunction(int fkt);
-    void      SetLogicalOrigin(float x, float y);
-    void      SetLogicalScale(float xs, float ys);
-    void      SetMapMode(int mode);
-    void      SetOptimization(Bool opt);
-    void      SetPen(wxPen *pen);
-    void      SetTextBackground(wxColour *col);
-    void      SetTextForeground(wxColour *col);
-    void      SetUserScale(float xs, float ys);
 
     /* MATTHEW */
     void MakeModal(int on);

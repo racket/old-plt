@@ -1,9 +1,6 @@
 
 MrEd Engine:
 
-* wx:item%'s get-label includes & in names on some platforms,
-  strips & for others
-
 * Motif: pre-on-char doesn't work for sliders
 
 * Windows: pre-on-char doesn't work for input that moves
@@ -12,9 +9,6 @@ MrEd Engine:
 * MacOS needs way to control the 0-window menu bar
 
 * MacOS: bitmaps don't print with platform-specific printing
-
-* X Windows and drawing into b & w bitmaps: black and white
-   are reversed when using certain kinds of displays
 
 * wx:dc%'s draw-arc is undefined when input isn't
    consistent with a circle
@@ -31,8 +25,6 @@ MrEd Engine:
 
 * doc: [Mr] clarify "owning the caret" with respect to ownership by the parent, etc.
 
-* Motif: built-in get-file dialog modality is wrong for eventspaces
-
 * Windows and MacOS: "primitive" dialogs don't get closed by
    custodian-shutdown-all
 
@@ -40,9 +32,9 @@ MrEd Engine:
 
 * how does wx:dc% get-size interact with the user scale?
 
-* the full width for non-wrapped lines need not include the autowrap bitmap
+* editor: the full width for non-wrapped lines need not include the autowrap bitmap
 
-* should use a guaranteed offset for stippling in buffer redraws
+* editor: should use a guaranteed offset for stippling in buffer redraws
 
 * Xt: out-of-colours - widgets use too much black
 
@@ -52,13 +44,7 @@ MrEd Engine:
 
 * Xt: busy cursor not shown in the menu bar
 
-* a blinking caret would be nice
-
-* Motif: menus don't work with multiple displays
-
-* Motif: wxDialogBox doesn't obey current display for multiple displays
-
-* add background colour for buffers?
+* add background color for buffers?
 
 * updating bug?: long flash, not on same line, update on focus-in
 

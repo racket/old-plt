@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MessageBox.cc,v 1.2 1996/01/11 10:26:58 markus Exp $
+ * $Id: MessageBox.cc,v 1.1.1.1 1997/12/22 17:28:49 mflatt Exp $
  *
  * Purpose: message box
  *
@@ -26,16 +26,9 @@
 #define  Uses_wxDialogBase
 #include "wx.h"
 
-int wxMessageBox(char *message, char *caption, long style, wxWindow *parent,
-		 int x, int y)
-{
-    int selection;
+extern int wxsMessageBox(char *message, char *caption, long style, wxWindow *parent);
 
-    // create dialog box
-    wxDialogBase *box
-	= DEBUG_NEW wxDialogBase(message, caption, style, parent, x, y);
-    // wait for input
-    selection = box->GetInput();
-    delete box;
-    return selection;
+int wxMessageBox(char *message, char *caption, long style, wxWindow *parent, int, int)
+{
+  return wxsMessageBox(message, caption, style, parent);
 }

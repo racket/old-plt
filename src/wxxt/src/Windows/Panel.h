@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Panel.h,v 1.1 1996/01/10 14:57:22 markus Exp $
+ * $Id: Panel.h,v 1.1.1.1 1997/12/22 17:28:58 mflatt Exp $
  *
  * Purpose: base class for all panels
  *
@@ -62,7 +62,7 @@ public:
     wxFont    *GetLabelFont(void)       { return label_font; }
     void      SetBackgroundColour(wxColour *col);
     void      SetButtonColour(wxColour *col)   { button_colour = col; }
-    void      SetButtonFont(wxFont *font)      { wxWindow::SetFont(font); }
+    void      SetButtonFont(wxFont *font)      { font = font; }
     void      SetLabelColour(wxColour *col)    { label_colour = col; }
     void      SetLabelFont(wxFont *font)       { label_font = font; }
     // position of labels

@@ -801,27 +801,13 @@ void wxImage::CreateXImage()
     return;
   }
 
-  /* Enough with the fast hacks - we'll do it the way the designers of X 
-     intended: use XPutPixel. */
 
-#if 0
-  int    i;
-  int    effectiveDeep;
-
-  effectiveDeep = dispDEEP;
-  if (effectiveDeep == 24) {
-    /* Check whether this display likes real 24, or 24 in 32: */
-    XImage *i = XCreateImage(theDisp,theVisual,dispDEEP,ZPixmap,0,
-			     NULL, 1, 1, 8, 0);
-    effectiveDeep = i->bits_per_pixel;
-    XDestroyImage(i);
-  }
-
-  switch (effectiveDeep) 
+  switch (dispDEEP) 
     {
     case 8:
       {
       byte  *imagedata, *ip, *pp;
+      int i;
 
       imagedata = (byte *) malloc(eWIDE*eHIGH);
       if (!imagedata) FatalError("couldn't malloc imagedata");
@@ -837,7 +823,8 @@ void wxImage::CreateXImage()
 			      (char *) imagedata, eWIDE, eHIGH, 8, 0);
       if (!theImage) FatalError("couldn't create theImage!");
       }
-      break;
+
+    return;
 
     /*********************************/
 
@@ -853,14 +840,15 @@ void wxImage::CreateXImage()
       theImage->data = (char *) imagedata;
       FloydDitherize1(theImage);
       }
-      break;
+
+    return;
       
     /*********************************/
       
     case 4: {
       byte  *imagedata, *ip, *pp;
       byte *lip;
-      int  bperline, half, j;
+      int  bperline, half, j, i;
 
       theImage = XCreateImage(theDisp, theVisual, dispDEEP, ZPixmap, 0, NULL, 
 			      eWIDE, eHIGH, 8, 0);
@@ -921,13 +909,14 @@ void wxImage::CreateXImage()
       }
       
       }
-      break;
+
+    return;
       
     /*********************************/
       
     case 6: {
       byte  *imagedata, *ip, *pp;
-      int  bperline;
+      int  bperline, i;
 
       theImage = XCreateImage(theDisp, theVisual, dispDEEP, ZPixmap, 0, NULL, 
 			      eWIDE, eHIGH, 8, 0);
@@ -955,103 +944,9 @@ void wxImage::CreateXImage()
       }
       
       }
-      break;
+    return;
       
-    /*********************************/
-
-    case 24:
-      {
-      byte  *imagedata, *ip, *pp;
-      imagedata = (byte *) malloc(3 * eWIDE * eHIGH);
-      if (!imagedata) FatalError("couldn't malloc imagedata");
-      
-      theImage = XCreateImage(theDisp,theVisual,dispDEEP,ZPixmap,0,
-			      (char *) imagedata, eWIDE, eHIGH, 8,
-			      3 * eWIDE);
-      if (!theImage) {
-	return;
-	// FatalError("couldn't create theImage!");
-      }
-      
-      if (theImage->byte_order == MSBFirst) 
-	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata; i>0; i--,pp++) {
-	  *ip++ = (cols[*pp]>>16) & 0xff;
-	  *ip++ = (cols[*pp]>>8) & 0xff;
-	  *ip++ =  cols[*pp] & 0xff;
-	}
-      else 
-	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata; i>0; i--,pp++) {
-	  *ip++ =  cols[*pp] & 0xff;
-	  *ip++ = (cols[*pp]>>8) & 0xff;
-	  *ip++ = (cols[*pp]>>16) & 0xff;
-	}
-      }      
-      break;
-
-    /*********************************/
-
-    case 32:
-      {
-      byte  *imagedata, *ip, *pp;
-      imagedata = (byte *) malloc(4*eWIDE*eHIGH);
-      if (!imagedata) FatalError("couldn't malloc imagedata");
-      
-      theImage = XCreateImage(theDisp,theVisual,dispDEEP,ZPixmap,0,
-			      (char *) imagedata, eWIDE, eHIGH, 32, 0);
-      if (!theImage) {
-	return;
-	// FatalError("couldn't create theImage!");
-      }
-      
-      if (theImage->byte_order == MSBFirst) 
-	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata; i>0; i--,pp++) {
-	  *ip++ = 0;
-	  *ip++ = (cols[*pp]>>16) & 0xff;
-	  *ip++ = (cols[*pp]>>8) & 0xff;
-	  *ip++ =  cols[*pp] & 0xff;
-	}
-      else 
-	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata; i>0; i--,pp++) {
-	  *ip++ =  cols[*pp] & 0xff;
-	  *ip++ = (cols[*pp]>>8) & 0xff;
-	  *ip++ = (cols[*pp]>>16) & 0xff;
-	  *ip++ = 0;
-	}
-      }      
-      break;
-
-    /*********************************/
-
-    case 16:
-      {
-      byte  *imagedata, *ip, *pp;
-      imagedata = (byte *) malloc(2*eWIDE*eHIGH);
-      if (!imagedata) FatalError("couldn't malloc imagedata");
-      
-      theImage = XCreateImage(theDisp,theVisual,dispDEEP,ZPixmap,0,
-			      (char *) imagedata, eWIDE, eHIGH, 16, 0);
-      if (!theImage) {
-	return;
-	// FatalError("couldn't create theImage!");
-      }
-      
-      if (theImage->byte_order == MSBFirst) 
-	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata; i>0; i--,pp++) {
-	  *ip++ = (cols[*pp]>>8) & 0xff;
-	  *ip++ =  cols[*pp] & 0xff;
-	}
-      else 
-	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata; i>0; i--,pp++) {
-	  *ip++ =  cols[*pp] & 0xff;
-	  *ip++ = (cols[*pp]>>8) & 0xff;
-	}
-      }      
-      break;
-
-    /*********************************/
-
     }
-#endif
 
   theImage = XCreateImage(theDisp, theVisual, dispDEEP, ZPixmap, 0,
 			  NULL, eWIDE, eHIGH, 8, 0);

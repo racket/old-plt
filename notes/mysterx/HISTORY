@@ -1,3 +1,8 @@
+101
+
+moved Windows event loop from mx-document% class
+  initialization to unit
+
 100, August 17, 1999
 
 made changes for IE5:

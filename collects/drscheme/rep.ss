@@ -933,7 +933,6 @@
 		  (set! user-thread (current-thread))
 
 		  (initialize-parameters)
-		  (when library-unit (invoke-open-unit/sig library-unit #f (params : plt:userspace:params^)))
 
 		  (let ([drscheme-error-escape-handler
 			 (lambda ()

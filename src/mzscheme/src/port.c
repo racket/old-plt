@@ -220,7 +220,7 @@ System_Child *scheme_system_children;
 static int external_event_fd, put_external_event_fd, event_fd_set;
 #endif
 
-static void register_input_port_wait();
+static void register_port_wait();
 
 #ifdef USE_FD_PORTS
 static int flush_fd(Scheme_Output_Port *op, 
@@ -484,7 +484,7 @@ scheme_init_port (Scheme_Env *env)
 
   scheme_init_port_config();
 
-  register_input_port_wait();
+  register_port_wait();
 
   scheme_add_global_constant("subprocess", 
 			     scheme_make_prim_w_arity2(subprocess, 
@@ -926,19 +926,14 @@ static int waitable_input_port_p(Scheme_Object *p)
 	  || SAME_OBJ(sub_type, scheme_pipe_read_port_type));
 }
 
-static void register_input_port_wait()
-{
-  scheme_add_waitable(scheme_input_port_type,
-		      scheme_char_ready, scheme_need_wakeup, 
-		      waitable_input_port_p);
-}
-
 Scheme_Output_Port *
 scheme_make_output_port(Scheme_Object *subtype,
 			void *data,
 			void (*write_string_fun)(char *str, long, long,
 						 Scheme_Output_Port*),
 			void (*close_fun) (Scheme_Output_Port*),
+			int (*ready_fun) (Scheme_Output_Port*),
+			void (*need_wakeup_fun)(Scheme_Output_Port*, void *),
 			int must_close)
 {
   Scheme_Output_Port *op;
@@ -949,6 +944,8 @@ scheme_make_output_port(Scheme_Object *subtype,
   op->port_data = data;
   op->write_string_fun = write_string_fun;
   op->close_fun = close_fun;
+  op->ready_fun = ready_fun;
+  op->need_wakeup_fun = need_wakeup_fun;
   op->closed = 0;
   op->pos = 0;
   op->display_handler = NULL;
@@ -966,6 +963,60 @@ scheme_make_output_port(Scheme_Object *subtype,
     op->mref = NULL;
 
   return op;
+}
+
+static int waitable_output_port_p(Scheme_Object *p)
+{
+  Scheme_Object *sub_type = ((Scheme_Output_Port *)p)->sub_type;
+
+  return (SAME_OBJ(sub_type, file_output_port_type)
+#ifdef USE_FD_PORTS
+	  || SAME_OBJ(sub_type, fd_output_port_type)
+#endif
+#ifdef USE_TCP
+	  || SAME_OBJ(sub_type, scheme_tcp_output_port_type)
+#endif
+	  || SAME_OBJ(sub_type, scheme_pipe_write_port_type));
+}
+
+static int output_ready(Scheme_Object *port)
+{
+  Scheme_Output_Port *op;
+
+  op = (Scheme_Output_Port *)port;
+
+  if (op->closed)
+    return 1;
+
+  if (op->ready_fun) {
+    Out_Ready_Fun rf;
+    rf = op->ready_fun;
+    return rf(op);
+  }
+
+  return 0;
+}
+
+static void output_need_wakeup (Scheme_Object *port, void *fds)
+{
+  Scheme_Output_Port *op;
+
+  op = (Scheme_Output_Port *)port;
+  if (op->need_wakeup_fun) {
+    Need_Output_Wakeup_Fun f;
+    f = op->need_wakeup_fun;
+    f(op, fds);
+  }
+}
+
+static void register_port_wait()
+{
+  scheme_add_waitable(scheme_input_port_type,
+		      scheme_char_ready, scheme_need_wakeup, 
+		      waitable_input_port_p);
+  scheme_add_waitable(scheme_output_port_type,
+		      output_ready, output_need_wakeup, 
+		      waitable_output_port_p);
 }
 
 int
@@ -4095,6 +4146,7 @@ static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
 			       top,
 			       tested_file_write_string,
 			       tested_file_close_output,
+			       NULL, NULL,
 			       1);
 
   return (Scheme_Object *)op;  
@@ -4209,6 +4261,7 @@ scheme_make_file_output_port(FILE *fp)
 						  fop,
 						  file_write_string,
 						  file_close_output,
+						  NULL, NULL,
 						  1);
 }
 
@@ -4240,6 +4293,9 @@ fd_write_ready (Scheme_Object *port)
   Scheme_FD *fop;
 
   fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
+
+  if (fop->regfile)
+    return 1;
 
   {
     DECL_FDSET(writefds, 1);
@@ -4447,6 +4503,8 @@ make_fd_output_port(int fd, int regfile)
 						  fop,
 						  fd_write_string,
 						  fd_close_output,
+						  (Out_Ready_Fun)fd_write_ready,
+						  (Need_Output_Wakeup_Fun)fd_write_need_wakeup,
 						  1);
 }
 

@@ -381,6 +381,8 @@ Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype,
 						      void *data,
 						      void (*write_string_fun)(char*, long, long, Scheme_Output_Port*),
 						      void (*close_fun)(Scheme_Output_Port*),
+						      int (*ready_fun)(Scheme_Output_Port*),
+						      void (*need_wakeup_fun)(Scheme_Output_Port*, void *),
 						      int must_close);
 Scheme_Object *(*scheme_make_file_input_port)(FILE *fp);
 Scheme_Object *(*scheme_make_named_file_input_port)(FILE *fp, const char *filename);

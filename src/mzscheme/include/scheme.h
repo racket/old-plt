@@ -889,6 +889,8 @@ typedef struct Scheme_Output_Port
   void *port_data;
   void (*write_string_fun)(char *str, long d, long len, struct Scheme_Output_Port *);
   void (*close_fun) (struct Scheme_Output_Port *);
+  int (*ready_fun) (struct Scheme_Output_Port *);
+  void (*need_wakeup_fun)(struct Scheme_Output_Port *, void *);
   long pos;
   Scheme_Object *display_handler;
   Scheme_Object *write_handler;

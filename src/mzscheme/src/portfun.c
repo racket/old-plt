@@ -636,6 +636,7 @@ scheme_make_string_output_port (void)
 				make_indexed_string(NULL, 0),
 				string_write_string,
 				string_close_out,
+				NULL, NULL,
 				0);
 
   return (Scheme_Object *)op;
@@ -991,6 +992,25 @@ static void pipe_out_close(Scheme_Output_Port *p)
   pipe->eof = 1;
 }
 
+static int pipe_out_ready(Scheme_Output_Port *p)
+{
+  Scheme_Pipe *pipe;
+  long avail;
+
+  if (pipe->eof || !pipe->bufmax)
+    return 1;
+
+  pipe = (Scheme_Pipe *)(p->port_data);
+  
+  if (pipe->bufstart <= pipe->bufend) {
+    avail = (pipe->buflen - pipe->bufend) + pipe->bufstart - 1;
+  } else {
+    avail = pipe->bufstart - pipe->bufend - 1;
+  }
+
+  return !!avail;
+}
+
 void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int queuelimit)
 {
   Scheme_Pipe *pipe;
@@ -1029,6 +1049,8 @@ void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int que
 				   (void *)pipe,
 				   pipe_write,
 				   pipe_out_close,
+				   pipe_out_ready,
+				   NULL,
 				   0);
 
   *read = (Scheme_Object *)readp;
@@ -1151,6 +1173,8 @@ make_output_port (int argc, Scheme_Object *argv[])
 			       copy,
 			       user_write,
 			       user_close_output,
+			       NULL,
+			       NULL,
 			       0);
 
   return (Scheme_Object *)op;

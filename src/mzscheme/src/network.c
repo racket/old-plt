@@ -1315,11 +1315,12 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
       int i;
       
       wd = NULL;
-      for (i = 0; i < num_tcp_send_buffers; i++)
+      for (i = 0; i < num_tcp_send_buffers; i++) {
 	if (!((WriteData *)(tcp_send_buffers[i]))->xpb) {
 	  wd = (WriteData *)(tcp_send_buffers[i]);
 	  break;
 	}
+      }
       
       if (!wd) {
 	void **naya;
@@ -1467,6 +1468,8 @@ make_tcp_output_port(void *data)
 						  data,
 						  tcp_write_string,
 						  tcp_close_output,
+						  (Out_Ready_Fun)tcp_check_write,
+						  (Need_Output_Wakeup_Fun)tcp_write_needs_wakeup,
 						  1);
 }
 

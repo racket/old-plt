@@ -2725,7 +2725,7 @@ static Scheme_Object *object_wait(int argc, Scheme_Object *argv[])
       timeout = scheme_real_to_double(argv[0]);
 
     if (timeout < 0.0) {
-      scheme_wrong_type("object-wait", "non-negative real number", 0, argc, argv);
+      scheme_wrong_type("object-wait-multiple", "non-negative real number", 0, argc, argv);
       return NULL;
     }
 

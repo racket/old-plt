@@ -1871,6 +1871,8 @@ typedef int (*Peekc_Fun)(struct Scheme_Input_Port *port);
 typedef int (*Char_Ready_Fun)(struct Scheme_Input_Port *port);
 typedef void (*Close_Fun_i)(struct Scheme_Input_Port *port);
 typedef void (*Need_Wakeup_Fun)(struct Scheme_Input_Port *, void *);
+typedef int (*Out_Ready_Fun)(struct Scheme_Output_Port *port);
+typedef void (*Need_Output_Wakeup_Fun)(struct Scheme_Output_Port *, void *);
 
 Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 					   void *data,

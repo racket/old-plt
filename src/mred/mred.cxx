@@ -1340,7 +1340,7 @@ public:
       return TRUE; 
     }
 
-  void OnMenuCommand(int id) 
+  void OnMenuCommand(long id) 
     {
       if (id == 79)
 	media->Copy();

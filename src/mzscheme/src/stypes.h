@@ -174,6 +174,7 @@ enum {
   scheme_rt_stack_object,
   scheme_rt_preallocated_object,
   scheme_process_hop_type,
+  scheme_rt_breakable,
 #endif
 
   _scheme_last_type_

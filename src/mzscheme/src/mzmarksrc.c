@@ -959,6 +959,18 @@ END object;
 
 START port;
 
+mark_breakable {
+ mark:
+  Breakable *b = (Breakable *)p;
+    
+  gcMARK(b->config);
+  gcMARK(b->orig_param_val);
+  gcMARK(b->argv);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Breakable));
+}
+
 mark_listener {
  mark:
   listener_t *l = (listener_t *)p;

@@ -343,7 +343,9 @@ static Scheme_Object *read_char (int, Scheme_Object *[]);
 static Scheme_Object *read_line (int, Scheme_Object *[]);
 static Scheme_Object *read_string (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang (int, Scheme_Object *[]);
+static Scheme_Object *read_string_bang_break (int, Scheme_Object *[]);
 static Scheme_Object *write_string_avail(int argc, Scheme_Object *argv[]);
+static Scheme_Object *write_string_avail_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *peek_char (int, Scheme_Object *[]);
 static Scheme_Object *eof_object_p (int, Scheme_Object *[]);
 static Scheme_Object *char_ready_p (int, Scheme_Object *[]);
@@ -830,9 +832,19 @@ scheme_init_port (Scheme_Env *env)
 						      "read-string-avail!", 
 						      1, 4), 
 			     env);
+  scheme_add_global_constant("read-string-avail!/enable-break", 
+			     scheme_make_prim_w_arity(read_string_bang_break, 
+						      "read-string-avail!/enable-break", 
+						      1, 4), 
+			     env);
   scheme_add_global_constant("write-string-avail", 
 			     scheme_make_prim_w_arity(write_string_avail, 
 						      "write-string-avail", 
+						      1, 4),
+			     env);
+  scheme_add_global_constant("write-string-avail/enable-break",
+			     scheme_make_prim_w_arity(write_string_avail_break, 
+						      "write-string-avail/enable-break", 
 						      1, 4),
 			     env);
   scheme_add_global_constant("peek-char", 
@@ -4438,6 +4450,66 @@ read_string_bang(int argc, Scheme_Object *argv[])
   return scheme_make_integer(got);
 }
 
+typedef struct {
+  MZTAG_IF_REQUIRED
+  int argc;
+  Scheme_Object **argv;
+  Scheme_Config *config;
+  Scheme_Object *orig_param_val;
+  Scheme_Prim *k;
+} Breakable;
+
+static void pre_breakable(void *data)
+{
+  Breakable *b = (Breakable *)data;
+
+  b->orig_param_val = scheme_get_param(b->config, MZCONFIG_ENABLE_BREAK);
+  scheme_set_param(b->config, MZCONFIG_ENABLE_BREAK, scheme_true);
+}
+
+static Scheme_Object *do_breakable(void *data)
+{
+  Breakable *b = (Breakable *)data;
+  Scheme_Prim *k;
+
+  /* Need to check for a break, in case one was queued and we just enabled it: */
+  {
+    Scheme_Process *p = scheme_current_process;
+    if (p->external_break)
+      if (scheme_can_break(p, p->config))
+	scheme_process_block_w_process(0.0, p);
+  }
+
+  k = b->k;
+  return k(b->argc, b->argv);
+}
+
+static void post_breakable(void *data)
+{
+  Breakable *b = (Breakable *)data;
+  scheme_set_param(b->config, MZCONFIG_ENABLE_BREAK, b->orig_param_val);
+}
+
+static Scheme_Object *
+read_string_bang_break(int argc, Scheme_Object *argv[])
+{
+  Breakable *b;
+
+  b = MALLOC_ONE_RT(Breakable);
+#ifdef MZTAG_REQUIRED
+  b->type = scheme_rt_breakable;
+#endif
+  b->argc = argc;
+  b->argv = argv;
+  b->k = read_string_bang;
+  b->config = scheme_current_process->config;
+
+  return scheme_dynamic_wind(pre_breakable, 
+			     do_breakable, 
+			     post_breakable, 
+			     NULL, b);
+}
+
 static Scheme_Object *
 write_string_avail(int argc, Scheme_Object *argv[])
 {
@@ -4502,6 +4574,26 @@ write_string_avail(int argc, Scheme_Object *argv[])
   }
 
   return scheme_make_integer(putten);
+}
+
+static Scheme_Object *
+write_string_avail_break(int argc, Scheme_Object *argv[])
+{
+  Breakable *b;
+
+  b = MALLOC_ONE_RT(Breakable);
+#ifdef MZTAG_REQUIRED
+  b->type = scheme_rt_breakable;
+#endif
+  b->argc = argc;
+  b->argv = argv;
+  b->k = write_string_avail;
+  b->config = scheme_current_process->config;
+
+  return scheme_dynamic_wind(pre_breakable, 
+			     do_breakable, 
+			     post_breakable, 
+			     NULL, b);
 }
 
 static Scheme_Object *
@@ -8768,6 +8860,7 @@ START_XFORM_SKIP;
 
 static void register_traversers(void)
 {
+  GC_REG_TRAV(scheme_rt_breakable, mark_breakable);  
   GC_REG_TRAV(scheme_listener_type, mark_listener);  
 #ifdef WINDOWS_PROCESSES
   GC_REG_TRAV(scheme_rt_thread_memory, mark_thread_memory);

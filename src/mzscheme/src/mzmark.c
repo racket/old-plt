@@ -2202,6 +2202,34 @@ int mark_super_init_data_FIXUP(void *p) {
 
 #ifdef MARKS_FOR_PORT_C
 
+int mark_breakable_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Breakable));
+}
+
+int mark_breakable_MARK(void *p) {
+  Breakable *b = (Breakable *)p;
+    
+  gcMARK(b->config);
+  gcMARK(b->orig_param_val);
+  gcMARK(b->argv);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Breakable));
+}
+
+int mark_breakable_FIXUP(void *p) {
+  Breakable *b = (Breakable *)p;
+    
+  gcFIXUP(b->config);
+  gcFIXUP(b->orig_param_val);
+  gcFIXUP(b->argv);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Breakable));
+}
+
+
 int mark_listener_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(listener_t));

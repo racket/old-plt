@@ -20,8 +20,7 @@
 #include "schpriv.h"
 #include "schmach.h"
 
-/* Dummy pointer: */
-static int graph[1];
+#define STX_GRAPH_FLAG 0x1
 
 static Scheme_Object *syntax_p(int argc, Scheme_Object **argv);
 static Scheme_Object *graph_syntax_p(int argc, Scheme_Object **argv);
@@ -41,9 +40,9 @@ void scheme_init_stx(Scheme_Env *env)
 						      "syntax?",
 						      1, 1, 1),
 			     env);
-  scheme_add_global_constant("graph-syntax?", 
+  scheme_add_global_constant("syntax-graph?", 
 			     scheme_make_folding_prim(graph_syntax_p,
-						      "graph-syntax?",
+						      "syntax-graph?",
 						      1, 1, 1),
 			     env);
 
@@ -99,7 +98,9 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
 
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col)
 {
-  return scheme_make_stx(stx, line, col, (Scheme_Object *)graph);
+  ((Scheme_Stx *)stx)->hash_code |= STX_GRAPH_FLAG;
+
+  return stx;
 }
 
 static unsigned short mark_id;
@@ -180,6 +181,26 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
   return stx->val;
 }
 
+int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b)
+{
+  if (SCHEME_STXP(a))
+    a = SCHEME_STX_VAL(a);
+  if (SCHEME_STXP(b))
+    b = SCHEME_STX_VAL(b);
+
+  return SAME_OBJ(a, b);
+}
+
+int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b)
+{
+  if (SCHEME_STXP(a))
+    a = SCHEME_STX_VAL(a);
+  if (SCHEME_STXP(b))
+    b = SCHEME_STX_VAL(b);
+
+  return SAME_OBJ(a, b);
+}
+
 /*========================================================================*/
 /*                           syntax->datum                                */
 /*========================================================================*/
@@ -202,6 +223,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
 					    Scheme_Hash_Table **ht)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
+  Scheme_Object *ph, *v, *result;
 
 #ifdef DO_STACK_CHECK
   {
@@ -218,9 +240,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
 #endif
   SCHEME_USE_FUEL(1);
 
-  if (stx->src == (Scheme_Object *)graph) {
-    Scheme_Object *ph, *v;
-
+  if (stx->hash_code & STX_GRAPH_FLAG) {
     if (!*ht)
       *ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
     
@@ -233,57 +253,57 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
       ph->type = scheme_placeholder_type;
       
       scheme_add_to_table(*ht, (char *)stx, (void *)ph, 0);
-      
-      v = syntax_to_datum_inner(stx->val, ht);
-      
-      SCHEME_PTR_VAL(ph) = v;
-
-      return v; /* or ph */
     }
-  } else {
-    Scheme_Object *v = stx->val;
+  } else 
+    ph = NULL;
+    
+  v = stx->val;
+  
+  if (SCHEME_PAIRP(v)) {
+    Scheme_Object *first = NULL, *last = NULL, *p;
+    
+    while (SCHEME_PAIRP(v)) {
+      Scheme_Object *a;
+      
+      a = syntax_to_datum_inner(SCHEME_CAR(v), ht);
+      
+      p = scheme_make_pair(a, scheme_null);
+      
+      if (last)
+	SCHEME_CDR(last) = p;
+      else
+	first = p;
+      last = p;
+      v = SCHEME_CDR(v);
+    }
+    if (!SCHEME_NULLP(v)) {
+      v = syntax_to_datum_inner(v, ht);
+      SCHEME_CDR(last) = v;
+    }
+    
+    result = first;
+  } else if (SCHEME_BOXP(v)) {
+    v = syntax_to_datum_inner(SCHEME_BOX_VAL(v), ht);
+    result = scheme_box(v);
+  } else if (SCHEME_VECTORP(v)) {
+    int size = SCHEME_VEC_SIZE(v), i;
+    Scheme_Object *r, *a;
+    
+    r = scheme_make_vector(size, NULL);
+    
+    for (i = 0; i < size; i++) {
+      a = syntax_to_datum_inner(SCHEME_VEC_ELS(v)[i], ht);
+      SCHEME_VEC_ELS(r)[i] = a;
+    }
+    
+    result = r;
+  } else
+    result = v;
 
-    if (SCHEME_PAIRP(v)) {
-      Scheme_Object *first = NULL, *last = NULL, *p;
+  if (ph)
+    SCHEME_PTR_VAL(ph) = result;
 
-      while (SCHEME_PAIRP(v)) {
-	Scheme_Object *a;
-
-	a = syntax_to_datum_inner(SCHEME_CAR(v), ht);
-	
-	p = scheme_make_pair(a, scheme_null);
-
-	if (last)
-	  SCHEME_CDR(last) = p;
-	else
-	  first = p;
-	last = p;
-	v = SCHEME_CDR(v);
-      }
-      if (!SCHEME_NULLP(v)) {
-	v = syntax_to_datum_inner(v, ht);
-	SCHEME_CDR(last) = v;
-      }
-
-      return first;
-    } else if (SCHEME_BOXP(v)) {
-      v = syntax_to_datum_inner(SCHEME_BOX_VAL(v), ht);
-      return scheme_box(v);
-    } else if (SCHEME_VECTORP(v)) {
-      int size = SCHEME_VEC_SIZE(v), i;
-      Scheme_Object *r, *a;
-
-      r = scheme_make_vector(size, NULL);
-
-      for (i = 0; i < size; i++) {
-	a = syntax_to_datum_inner(SCHEME_VEC_ELS(v)[i], ht);
-	SCHEME_VEC_ELS(r)[i] = a;
-      }
-
-      return r;
-    } else
-      return v;
-  }
+  return result;
 }
 
 Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx)
@@ -294,7 +314,7 @@ Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx)
   v = syntax_to_datum_inner(stx, &ht);
 
   if (ht)
-    v = scheme_resolve_placeholders(v);
+    v = scheme_resolve_placeholders(v, 0);
 
   return v;
 }
@@ -324,7 +344,10 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 					    Scheme_Stx *stx,
 					    Scheme_Hash_Table *ht)
 {
-  Scheme_Object *result, *ph = NULL, *src;
+  Scheme_Object *result, *ph = NULL;
+
+  if (SCHEME_SYNTAXP(o))
+    return o;
 
 #ifdef DO_STACK_CHECK
   {
@@ -409,37 +432,30 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     result = o;
   }
 
-  src = stx->src;
-  if (src == (Scheme_Object *)graph) {
-    Scheme_Stx *x;
-    x = (Scheme_Stx *)stx->val;
-    while (x->src == (Scheme_Object *)graph) {
-      x = (Scheme_Stx *)x->val;
-    }
-    src = x->src;
-  }
-
-  result = scheme_make_stx(result, stx->line, stx->col, src);
+  result = scheme_make_stx(result, stx->line, stx->col, stx->src);
   ((Scheme_Stx *)result)->marks = stx->marks;
   if (ph) {
-    result = scheme_make_graph_stx(result, stx->line, stx->col);
+    ((Scheme_Stx *)result)->hash_code |= STX_GRAPH_FLAG;
     SCHEME_PTR_VAL(ph) = result;
   }
 
   return result;
 }
 
-Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Stx *stx)
+Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx)
 {
   Scheme_Hash_Table *ht;
   Scheme_Object *v;
 
+  if (!SCHEME_STXP(stx))
+    return o;
+
   ht = scheme_setup_datum_graph(o, 0);
 
-  v = datum_to_syntax_inner(o, stx, ht);
+  v = datum_to_syntax_inner(o, (Scheme_Stx *)stx, ht);
 
   if (ht)
-    v = scheme_resolve_placeholders(v);
+    v = scheme_resolve_placeholders(v, 1);
 
   return v;
 }
@@ -455,8 +471,10 @@ static Scheme_Object *syntax_p(int argc, Scheme_Object **argv)
 
 static Scheme_Object *graph_syntax_p(int argc, Scheme_Object **argv)
 {
-  return ((SCHEME_STXP(argv[0]) 
-	   && ((Scheme_Stx *)argv[0])->src == (Scheme_Object *)graph)
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax-graph?", "syntax", 0, argc, argv);
+
+  return ((((Scheme_Stx *)argv[0])->hash_code & STX_GRAPH_FLAG)
 	  ? scheme_true
 	  : scheme_false);
 }
@@ -475,7 +493,7 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[1]))
     scheme_wrong_type("datum->syntax", "syntax", 1, argc, argv);
     
-  return scheme_datum_to_syntax(argv[0], (Scheme_Stx *)argv[1]);
+  return scheme_datum_to_syntax(argv[0], argv[1]);
 }
 
 
@@ -513,10 +531,6 @@ static Scheme_Object *syntax_src(int argc, Scheme_Object **argv)
 
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-src", "syntax", 0, argc, argv);
-    
-  while (stx->src == (Scheme_Object *)graph) {
-    stx = (Scheme_Stx *)stx->val;
-  }
 
   return stx->src;
 }

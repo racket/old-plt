@@ -383,12 +383,20 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 				     long line, long col);
 
+Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx);
+Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx);
+
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_mark(Scheme_Object *o, Scheme_Object *m);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 
-Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj);
+int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b);
+int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b);
+
+Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, int mkstx);
 Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print);
+
+#define SCHEME_STX_VAL(s) ((Scheme_Stx *)s)->val
 
 /*========================================================================*/
 /*                   syntax run-time structures                           */

@@ -779,9 +779,8 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
   }
 
   result = obj;
-  while (SCHEME_STXP(obj)) {
-    obj = ((Scheme_Stx *)obj)->val;
-  }
+  if (mkstx && SCHEME_STXP(obj))
+    obj = SCHEME_STX_VAL(obj);
 
   if (SCHEME_PAIRP(obj)) {
     Scheme_Object *rr;
@@ -887,12 +886,12 @@ scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
   return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
 }
 
-Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj)
+Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, int mkstx)
 {
 #ifdef MZ_REAL_THREADS
   Scheme_Process *p = scheme_current_process;
 #endif
-  return resolve_references(obj, NULL, 0 CURRENTPROCARG);
+  return resolve_references(obj, NULL, mkstx CURRENTPROCARG);
 }
 
 /*========================================================================*/

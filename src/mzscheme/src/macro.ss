@@ -384,15 +384,17 @@
 			       (#%list 'set!-values args expr)
 			       arg)))
 		     args))
-    (#%let loop ([args args])
-      (#%unless (#%null? args)
-        (#%when (#%memq (#%car args) (#%cdr args))
-          (#%raise-syntax-error
-	   'set!-values
-	   "bad syntax (duplicate identifier)"
-	   (#%list 'set!-values args expr)
-	   (#%car args)))
-	(loop (#%cdr args))))
+    (#%let loop ([as args])
+      (#%if (#%null? as)
+        #f
+        (#%begin
+          (#%if (#%memq (#%car as) (#%cdr as))
+            (#%raise-syntax-error
+	     'set!-values
+	     "bad syntax (duplicate identifier)"
+	     (#%list 'set!-values args expr)
+	     (#%car as)))
+	  (loop (#%cdr as)))))
     (#%if (#%and (#%pair? args) (#%null? (#%cdr args)))
 	  `(#%set! ,(#%car args) ,expr)
 	  (#%let ([gens (#%map (#%lambda (arg) (#%gensym)) args)])

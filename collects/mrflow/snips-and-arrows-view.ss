@@ -2,51 +2,47 @@
 (module snips-and-arrows-view mzscheme
   (require
    (lib "class.ss")
-   (lib "list.ss")
    (lib "mred.ss" "mred")
    (prefix fw: (lib "framework.ss" "framework"))
    (prefix arrow: (lib "arrow.ss" "drscheme"))
    
-   "assoc-set-hash.ss"
+   (prefix cst: "constants.ss")
    (prefix saam: "snips-and-arrows-model.ss")
    )
   
   (provide
-   make-gui-state ; (label -> top) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) (label -> style-delta%) (symbol -> style-delta%) (listof symbol) boolean -> gui-state
+   make-gui-view-state ; (label -> top) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) (label -> style-delta%) (symbol -> style-delta%) (listof symbol) boolean -> gui-view-state
    
-   snips-and-arrows-currently-running? ; gui-state -> boolean
-   snips-currently-displayed-in-source? ; gui-state top -> boolean
-   is-user-action? ; gui-state -> boolean
-   color-all-labels ; gui-state -> void
-   clear-all-colors ; gui-state -> void
-   during-user-action ; gui-state -> void
+   (rename gui-view-state-analysis-currently-modifying? analysis-currently-modifying?) ; gui-view-state -> boolean
+   snips-currently-displayed-in-source? ; gui-view-state top -> boolean
+   color-all-labels ; gui-view-state -> void
+   clear-all-colors ; gui-view-state -> void
+   after-user-action ; gui-view-state -> void
    
-   register-label-with-gui ; gui-state label -> void
-   get-related-label-from-drscheme-pos-and-source ; gui-state non-negative-exact-integer top -> (setof label)
-   user-resize-label ; gui-state label string -> void
+   register-label-with-gui ; gui-view-state label gui-state -> void
+   get-related-label-from-drscheme-pos-and-source ; gui-view-state non-negative-exact-integer top -> (setof label)
+   user-resize-label ; gui-view-state label string -> void
    
-   add-arrow ; gui-state label label boolean -> void
-   get-parents-tacked-arrows ; gui-state label -> non-negative-exact-integer
-   get-children-tacked-arrows ; gui-state label -> non-negative-exact-integer
-   remove-arrows ; gui-state label (union symbol boolean) boolean -> void
-   redraw-arrows ; gui-state dc% real real pen% brush% brush% -> void
+   add-arrow ; gui-view-state label label boolean -> void
+   get-parents-tacked-arrows ; gui-view-state label -> non-negative-exact-integer
+   get-children-tacked-arrows ; gui-view-state label -> non-negative-exact-integer
+   remove-arrows ; gui-view-state label (union symbol boolean) boolean -> void
+   redraw-arrows ; gui-view-state dc% real real -> void
    
-   invalidate-bitmap-caches ; gui-state -> void
+   invalidate-all-bitmap-caches ; gui-view-state -> void
    
-   label-has-snips-of-this-type? ; gui-state label symbol -> boolean
-   add-snips ; gui-state label symbol (listof top) -> void
-   remove-inserted-snips ; gui-state label symbol -> void
-   remove-all-snips-in-source ; gui-state top -> void
-   remove-all-snips-and-arrows-and-colors ; gui-state -> void
-   )   
+   label-has-snips-of-this-type? ; gui-view-state label symbol -> boolean
+   add-snips ; gui-view-state label symbol (listof top) -> void
+   remove-inserted-snips ; gui-view-state label symbol -> void
+   remove-all-snips-in-source ; gui-view-state top -> void
+   remove-all-snips-and-arrows-and-colors ; gui-view-state -> void
+   for-each-snip-type ; gui-view-state (symbol -> void) -> void
+   )
   
-  ; gui-view-state gui-model-state
-  (define-struct gui-state (gui-view-state gui-model-state))
-  
-  (define-struct gui-view-state (; (label -> top)
+  (define-struct gui-view-state (; gui-model-state
+                                 gui-model-state
+                                 ; (label -> top)
                                  get-source-from-label
-                                 ; boolean
-                                 snips-and-arrows-currently-running?
                                  ; boolean
                                  ; so we can differenciate between actions done by the analysis and actions
                                  ; done by the user. Also prevents an infinite loop when deleting: if the user
@@ -62,6 +58,12 @@
                                  original-style
                                  ; boolean
                                  clear-colors-after-user-action?
+                                 ; brush%
+                                 tacked-arrow-brush
+                                 ; brush%
+                                 untacked-arrow-brush
+                                 ; pen%
+                                 arrow-pen
                                  ))
   
   ; (label -> top)
@@ -71,95 +73,91 @@
   ; (symbol -> style-delta%)
   ; (listof symbol)
   ; boolean
-  ; -> gui-state
-  (set! make-gui-state
-        (let ([real-make-gui-state make-gui-state])
+  ; -> gui-view-state
+  (set! make-gui-view-state
+        (let ([real-make-gui-view-state make-gui-view-state])
           (lambda (get-source-from-label
                    get-mzscheme-position-from-label
                    get-span-from-label
                    get-style-delta-from-label
                    get-box-style-delta-from-snip-type
                    snip-type-list
-                   clear-colors-after-user-action?)
-            (real-make-gui-state
-             (make-gui-view-state get-source-from-label
-                                  #f
-                                  #f
-                                  get-style-delta-from-label
-                                  get-box-style-delta-from-snip-type
-                                  (send (fw:scheme:get-style-list) find-named-style "standard")
-                                  clear-colors-after-user-action?)
-             (saam:make-gui-model-state get-source-from-label
-                                        get-mzscheme-position-from-label
-                                        get-span-from-label
-                                        snip-type-list)))))
-  
-  ; gui-state -> void
-  (define (reset-gui-state gui-state)
-    (saam:reset-gui-model-state (gui-state-gui-model-state gui-state))
-    (let ([gui-view-state (gui-state-gui-view-state gui-state)])
-      (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f)
-      (set-gui-view-state-snips-and-arrows-currently-running?! gui-view-state #f)))
-  
+                   clear-colors-after-user-action?
+                   tacked-arrow-brush
+                   untacked-arrow-brush
+                   arrow-pen)
+            (real-make-gui-view-state (saam:make-gui-model-state get-source-from-label
+                                                                 get-mzscheme-position-from-label
+                                                                 get-span-from-label
+                                                                 snip-type-list)
+                                      get-source-from-label
+                                      #f
+                                      get-style-delta-from-label
+                                      get-box-style-delta-from-snip-type
+                                      (send (fw:scheme:get-style-list) find-named-style "standard")
+                                      clear-colors-after-user-action?
+                                      tacked-arrow-brush
+                                      untacked-arrow-brush
+                                      arrow-pen))))
   
   ; INTERFACE BETWEEN MODEL AND USER PROGRAM
-  ; gui-state non-negative-exact-integer top -> (setof label)
-  (define (get-related-label-from-drscheme-pos-and-source gui-state pos source)
+  ; gui-view-state non-negative-exact-integer top -> (setof label)
+  (define (get-related-label-from-drscheme-pos-and-source gui-view-state pos source)
     (saam:get-related-label-from-drscheme-pos-and-source
-     (gui-state-gui-model-state gui-state) pos source))
+     (gui-view-state-gui-model-state gui-view-state) pos source))
   
-  ; gui-state label -> void
-  (define (register-label-with-gui gui-state label)
-    (saam:register-label-with-gui (gui-state-gui-model-state gui-state) label))
+  ; gui-view-state label gui-state -> void
+  ; registers a label with the gui. We need to pass the whole gui-state as an argument because
+  ; we'll need to initialize the source's state the first time we see that source, to make
+  ; sure all source are sharing the same state.  Note that we can't give just gui-state as
+  ; an argument and extract gui-view-state from it, because we need the gui-state-gui-view-state
+  ; function to do that which means this module would depend on the snips-and-arrows one, thereby
+  ; creating a loop in the module dependencies...
+  (define (register-label-with-gui gui-view-state label gui-state)
+    (let ([source
+           (saam:register-label-with-gui (gui-view-state-gui-model-state gui-view-state) label)])
+      (when source (send source initialize-snips-and-arrows-gui-state gui-state)))
+    cst:void)
   
-  ; gui-state label symbol -> boolean
-  (define (label-has-snips-of-this-type? gui-state label type)
-    (saam:label-has-snips-of-this-type? (gui-state-gui-model-state gui-state) label type))
+  ; gui-view-state (symbol -> void) -> void
+  (define (for-each-snip-type gui-view-state f)
+    (saam:for-each-snip-type (gui-view-state-gui-model-state gui-view-state) f))
   
-  ; gui-state top -> boolean
-  (define (snips-currently-displayed-in-source? gui-state source)
-    (saam:snips-currently-displayed-in-source? (gui-state-gui-model-state gui-state) source))
+  ; gui-view-state label symbol -> boolean
+  (define (label-has-snips-of-this-type? gui-view-state label type)
+    (saam:label-has-snips-of-this-type? (gui-view-state-gui-model-state gui-view-state) label type))
   
-  ; gui-state label -> non-negative-exact-integer
-  (define (get-parents-tacked-arrows gui-state label)
-    (saam:get-parents-tacked-arrows (gui-state-gui-model-state gui-state) label))
+  ; gui-view-state top -> boolean
+  (define (snips-currently-displayed-in-source? gui-view-state source)
+    (saam:snips-currently-displayed-in-source? (gui-view-state-gui-model-state gui-view-state) source))
   
-  ; gui-state label -> non-negative-exact-integer
-  (define (get-children-tacked-arrows gui-state label)
-    (saam:get-children-tacked-arrows (gui-state-gui-model-state gui-state) label))
+  ; gui-view-state label -> non-negative-exact-integer
+  (define (get-parents-tacked-arrows gui-view-state label)
+    (saam:get-parents-tacked-arrows (gui-view-state-gui-model-state gui-view-state) label))
   
-  ; gui-state label label boolean -> void
-  (define (add-arrow gui-state start-label end-label tacked?)
-    (saam:add-arrow (gui-state-gui-model-state gui-state) start-label end-label tacked?))
+  ; gui-view-state label -> non-negative-exact-integer
+  (define (get-children-tacked-arrows gui-view-state label)
+    (saam:get-children-tacked-arrows (gui-view-state-gui-model-state gui-view-state) label))
   
-  ; gui-state label (union symbol boolean) boolean -> void
-  (define (remove-arrows gui-state start-label tacked? exn?)
-    (saam:remove-arrows (gui-state-gui-model-state gui-state) start-label tacked? exn?))
+  ; gui-view-state label label boolean -> void
+  (define (add-arrow gui-view-state start-label end-label tacked?)
+    (saam:add-arrow (gui-view-state-gui-model-state gui-view-state) start-label end-label tacked?))
   
-  
-  ; INTERNAL STATUS
-  ; gui-state -> boolean
-  (define (snips-and-arrows-currently-running? gui-state)
-    (gui-view-state-snips-and-arrows-currently-running? (gui-state-gui-view-state gui-state)))
-  
-  ; gui-state -> boolean
-  ; is the action user-initiated?
-  (define (is-user-action? gui-state)
-    (not (gui-view-state-analysis-currently-modifying? (gui-state-gui-view-state gui-state))))
+  ; gui-view-state label (union symbol boolean) boolean -> void
+  (define (remove-arrows gui-view-state start-label tacked? exn?)
+    (saam:remove-arrows (gui-view-state-gui-model-state gui-view-state) start-label tacked? exn?))
   
   
   ; COLORING / CLEARING
-  ; gui-state -> void
-  (define (color-all-labels gui-state)
-    (let* ([gui-model-state (gui-state-gui-model-state gui-state)]
-           [gui-view-state (gui-state-gui-view-state gui-state)]
+  ; gui-view-state -> void
+  (define (color-all-labels gui-view-state)
+    (let* ([gui-model-state (gui-view-state-gui-model-state gui-view-state)]
            ; we assume the model's state doesn't change throughout the coloring phase
            ; (i.e. the user doesn't start changing stuff while we color). If that's not
            ; true, then we'll need to lock the editor during coloring
            [get-span-from-label (saam:make-get-span-from-label-from-model-state gui-model-state)]
            [get-source-from-label (gui-view-state-get-source-from-label gui-view-state)]
            [get-style-delta-from-label (gui-view-state-get-style-delta-from-label gui-view-state)])
-      (set-gui-view-state-snips-and-arrows-currently-running?! gui-view-state #t)
       (saam:for-each-source
        gui-model-state
        (lambda (source)
@@ -170,108 +168,111 @@
             (let ([label-left-pos (saam:get-position-from-label gui-model-state label)]
                   [source (get-source-from-label label)])
               (send source change-style (get-style-delta-from-label label)
-                    label-left-pos (+ label-left-pos (get-span-from-label label))))))
-         (send source end-edit-sequence))
-       #t)
-      (invalidate-bitmap-caches gui-state)))
+                    label-left-pos (+ label-left-pos (get-span-from-label label)) #f))))
+         (send source end-edit-sequence)))
+      (invalidate-all-bitmap-caches gui-view-state)))
   
-  ; gui-state -> void
+  ; gui-view-state -> void
   ; resets all colors to original style
-  (define (clear-all-colors gui-state)
-    (let ([original-style (gui-view-state-original-style (gui-state-gui-view-state gui-state))])
-      (saam:for-each-source (gui-state-gui-model-state gui-state)
+  (define (clear-all-colors gui-view-state)
+    (let ([original-style (gui-view-state-original-style gui-view-state)])
+      (saam:for-each-source (gui-view-state-gui-model-state gui-view-state)
                             (lambda (source)
                               (send source begin-edit-sequence #f)
-                              (send source change-style original-style 0 (send source last-position))
-                              (send source end-edit-sequence))
-                            #t)
-      (invalidate-bitmap-caches gui-state)))
+                              (send source change-style original-style 0 (send source last-position) #f)
+                              (send source end-edit-sequence)))
+      (invalidate-all-bitmap-caches gui-view-state)))
   
-  ; gui-state -> void
+  ; gui-view-state -> void
   ; remove all snips, group by group. We sort first, to make sure we remove snips from
   ; bottom to top. If we removed snips in any other order, we would have to recompute the
   ; positions of the remaining snips each time we removed one.
-  (define (remove-all-snips-and-arrows gui-state)
-    (let* ([gui-model-state (gui-state-gui-model-state gui-state)]
-           [gui-view-state (gui-state-gui-view-state gui-state)])
+  (define (remove-all-snips-and-arrows gui-view-state)
+    (let ([gui-model-state (gui-view-state-gui-model-state gui-view-state)])
       (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
       (saam:remove-all-arrows gui-model-state)
-      (invalidate-bitmap-caches gui-state)
+      (invalidate-all-bitmap-caches gui-view-state)
       (saam:for-each-source gui-model-state
                             (lambda (source)
-                              (remove-all-snips-in-source gui-state source)))))
+                              (remove-all-snips-in-source gui-view-state source)))))
   
-  ; gui-state top -> void
+  ; gui-view-state top -> void
   ; remove all snips in a given editor.
-  (define (remove-all-snips-in-source gui-state source)
+  (define (remove-all-snips-in-source gui-view-state source)
     (send source begin-edit-sequence #f)
     (saam:for-each-label-in-source
-     (gui-state-gui-model-state gui-state)
+     (gui-view-state-gui-model-state gui-view-state)
      source
      (lambda (label)
-       (remove-inserted-snips gui-state label 'all)))
+       (remove-inserted-snips gui-view-state label 'all)))
     (send source end-edit-sequence))
   
-  ; gui-state -> void
+  ; gui-view-state -> void
   ; invalidates the bitmap caches for sources that have been modified since the last call
-  (define (invalidate-bitmap-caches gui-state)
-    (saam:for-each-modified-source! (gui-state-gui-model-state gui-state)
-                                    (lambda (source)
-                                      (send source invalidate-bitmap-cache))))
+  (define (invalidate-all-bitmap-caches gui-view-state)
+    (saam:for-each-source (gui-view-state-gui-model-state gui-view-state)
+                          (lambda (source)
+                            (send source invalidate-bitmap-cache))))
+  
+  ; gui-view-state -> void
+  (define (reset-source-state gui-view-state)
+    (saam:for-each-source (gui-view-state-gui-model-state gui-view-state)
+                          (lambda (source)
+                            (send source reset-snips-and-arrows-state))))  
   
   
   ; EDITOR EVENTS INTERACTION
-  ; gui-state -> void
+  ; gui-view-state -> void
   ; the user has started modifying stuff, so we just remove all snips (in other sources only,
   ; since we know a user modification is only allowed if the current source doesn't have
   ; any snips - the current source is currently locked anyway) and all arrows (in all sources),
-  (define (during-user-action gui-state)
-    (remove-all-snips-and-arrows gui-state)
-    (when (gui-view-state-clear-colors-after-user-action? (gui-state-gui-view-state gui-state))
-      (clear-all-colors gui-state)
-      (reset-gui-state gui-state)))
+  (define (after-user-action gui-view-state)
+    (remove-all-snips-and-arrows gui-view-state)
+    (when (gui-view-state-clear-colors-after-user-action? gui-view-state)
+      (clear-all-colors gui-view-state)
+      (reset-source-state gui-view-state)))
   
-  ; gui-state -> void
+  ; gui-view-state -> void
   ; clear all and reset all
-  (define (remove-all-snips-and-arrows-and-colors gui-state)
-    (remove-all-snips-and-arrows gui-state)
-    (clear-all-colors gui-state)
-    (reset-gui-state gui-state))
+  (define (remove-all-snips-and-arrows-and-colors gui-view-state)
+    (remove-all-snips-and-arrows gui-view-state)
+    (clear-all-colors gui-view-state)
+    (reset-source-state gui-view-state))
   
-  ; gui-state dc% real real pen% brush% brush% -> void
+  ; gui-view-state dc% real real pen% brush% brush% -> void
   ; redraws arrows during on-paint
-  (define (redraw-arrows gui-state top-source dc dx dy arrow-pen tacked-arrow-brush untacked-arrow-brush)
-    (when (snips-and-arrows-currently-running? gui-state)
-      (let ([old-pen (send dc get-pen)]
-            [old-brush (send dc get-brush)]
-            [gui-view-state (gui-state-gui-view-state gui-state)])
-        (send dc set-pen arrow-pen)
-        (saam:for-each-arrow (gui-state-gui-model-state gui-state)
-                             (lambda (start-label-pos-left end-label-pos-left
-                                                           start-label-span end-label-span
-                                                           start-source end-source tacked?)
-                               (if tacked?
-                                   (send dc set-brush tacked-arrow-brush)
-                                   (send dc set-brush untacked-arrow-brush))
-                               (draw-arrow start-label-pos-left
-                                           (+ start-label-pos-left start-label-span)
-                                           end-label-pos-left
-                                           (+ end-label-pos-left end-label-span)
-                                           top-source
-                                           start-source
-                                           end-source
-                                           dc dx dy)))
-        (send dc set-pen old-pen)
-        (send dc set-brush old-brush))))
+  (define (redraw-arrows gui-view-state top-source dc dx dy)
+    (let ([arrow-pen (gui-view-state-arrow-pen gui-view-state)]
+          [tacked-arrow-brush (gui-view-state-tacked-arrow-brush gui-view-state)]
+          [untacked-arrow-brush (gui-view-state-untacked-arrow-brush gui-view-state)]
+          [old-pen (send dc get-pen)]
+          [old-brush (send dc get-brush)])
+      (send dc set-pen arrow-pen)
+      (saam:for-each-arrow (gui-view-state-gui-model-state gui-view-state)
+                           (lambda (start-label-pos-left end-label-pos-left
+                                                         start-label-span end-label-span
+                                                         start-source end-source tacked?)
+                             (if tacked?
+                                 (send dc set-brush tacked-arrow-brush)
+                                 (send dc set-brush untacked-arrow-brush))
+                             (draw-arrow start-label-pos-left
+                                         (+ start-label-pos-left start-label-span)
+                                         end-label-pos-left
+                                         (+ end-label-pos-left end-label-span)
+                                         top-source
+                                         start-source
+                                         end-source
+                                         dc dx dy)))
+      (send dc set-pen old-pen)
+      (send dc set-brush old-brush)))
   
   
   ; TEXT
-  ; gui-state label string -> void
+  ; gui-view-state label string -> void
   ; resize and re-color one label
-  (define (user-resize-label gui-state label new-string)
-    (let* ([gui-model-state (gui-state-gui-model-state gui-state)]
-           [gui-view-state (gui-state-gui-view-state gui-state)]
-           [source ((gui-view-state-get-source-from-label gui-view-state) label)])
+  (define (user-resize-label gui-view-state label new-string)
+    (let ([gui-model-state (gui-view-state-gui-model-state gui-view-state)]
+          [source ((gui-view-state-get-source-from-label gui-view-state) label)])
       (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
       (let-values ([(starting-pos old-ending-pos new-ending-pos)
                     (saam:user-resize-label gui-model-state
@@ -281,56 +282,73 @@
         (send source insert new-string starting-pos old-ending-pos)
         (send source change-style
               ((gui-view-state-get-style-delta-from-label gui-view-state) label)
-              starting-pos new-ending-pos)
+              starting-pos new-ending-pos #f)
         (send source end-edit-sequence)
         )
       (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f)))
   
   
   ; SNIPS
-  ; gui-state label symbol (listof top) -> void
+  ; lockable text% for snip content
+  (define snip-text%
+    (class text%
+      (define unlocked? #t)
+      
+      (define/public (lock-content)
+        (set! unlocked? #f))
+      
+      (rename [super-can-insert? can-insert?])
+      ; exact-non-negative-integer exact-non-negative-integer -> boolean
+      (define/override (can-insert? start len)
+        (and unlocked?
+             (super-can-insert? start len)))
+      
+      (rename [super-can-delete? can-delete?])
+      ; exact-non-negative-integer exact-non-negative-integer -> boolean
+      (define/override (can-delete? start len)
+        (and unlocked?
+             (super-can-delete? start len)))
+      
+      (super-instantiate ())))
+  
+  ; gui-view-state label symbol (listof top) -> void
   ; adds snips of given type to given label
-  (define (add-snips gui-state label type snips-content)
-    (let* ([gui-view-state (gui-state-gui-view-state gui-state)]
-           [source ((gui-view-state-get-source-from-label gui-view-state) label)])
+  (define (add-snips gui-view-state label type snips-content)
+    (let ([source ((gui-view-state-get-source-from-label gui-view-state) label)])
       (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
       (let ([get-box-style-delta-from-snip-type
              (gui-view-state-get-box-style-delta-from-snip-type gui-view-state)]
-            [starting-pos (saam:add-snips (gui-state-gui-model-state gui-state)
+            [starting-pos (saam:add-snips (gui-view-state-gui-model-state gui-view-state)
                                           label type (length snips-content))])
         (send source begin-edit-sequence #f)
         (for-each (lambda (snip-content)
-                    (let* ([snip-text (make-object text%)]
+                    (let* ([snip-text (make-object snip-text%)]
                            [snip (make-object editor-snip% snip-text)])
                       (send snip-text insert snip-content)
+                      (send snip-text lock-content)
                       (send source insert snip starting-pos starting-pos)
                       (send source change-style
                             (get-box-style-delta-from-snip-type type)
-                            starting-pos (add1 starting-pos))))
+                            starting-pos (add1 starting-pos) #f)))
                   snips-content)
         (send source end-edit-sequence))
-      ; adding snips might make the arrow moves, but "insert" will provoke a call
-      ; to "on-paint" even if the insertion occured in a sub-editor, so no need to
-      ; manually invalidate the bitmap caches here.
+      (invalidate-all-bitmap-caches gui-view-state)
       (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f)))
   
-  ; gui-state label symbol -> void
+  ; gui-view-state label symbol -> void
   ; remove snips for a given label and type
-  (define (remove-inserted-snips gui-state label type)
-    (let* ([gui-view-state (gui-state-gui-view-state gui-state)]
-           [source ((gui-view-state-get-source-from-label gui-view-state) label)])
+  (define (remove-inserted-snips gui-view-state label type)
+    (let ([source ((gui-view-state-get-source-from-label gui-view-state) label)])
       (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
       (let-values ([(starting-pos ending-pos)
-                    (saam:remove-inserted-snips (gui-state-gui-model-state gui-state) label type)])
+                    (saam:remove-inserted-snips (gui-view-state-gui-model-state gui-view-state) label type)])
         ; all the snips for a given label and type are contiguous and deleted at once.
         ; starting-pos is #f when type is 'all and the label has no snips displayed.
         (when starting-pos
           (send source begin-edit-sequence #f)
           (send source delete starting-pos ending-pos #f)
           (send source end-edit-sequence)))
-      ; removing snips might make the arrow moves, but "delete" will provoke a call
-      ; to "on-paint" even if the deletion occured in a sub-editor, so no need to
-      ; manually invalidate the bitmap caches here.
+      (invalidate-all-bitmap-caches gui-view-state)
       (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f)))
   
   

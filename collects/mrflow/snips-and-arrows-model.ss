@@ -14,7 +14,6 @@
 
 (module snips-and-arrows-model mzscheme
   (require
-   (lib "etc.ss") ; for opt-lambda
    
    (prefix cst: "constants.ss")
    ;"set-list.ss"
@@ -25,7 +24,6 @@
   
   (provide
    make-gui-model-state ; (label -> top) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) (listof symbol) -> gui-model-state
-   reset-gui-model-state ; gui-model-state -> void
    
    (rename get-related-label-from-drscheme-new-pos-and-source
            get-related-label-from-drscheme-pos-and-source) ; gui-model-state non-negative-exact-integer top -> (union label #f)
@@ -33,9 +31,8 @@
            make-get-span-from-label-from-model-state) ; gui-model-state -> (label -> non-negative-exact-integer)
    
    for-each-source ; gui-model-state (top -> void) -> void
-   for-each-modified-source! ; gui-model-state (top -> void) -> void
    
-   register-label-with-gui ; gui-model-state label -> void
+   register-label-with-gui ; gui-model-state label -> top
    (rename get-new-pos-from-label get-position-from-label) ; gui-model-state label -> exact-non-negative-integer
    user-resize-label ; gui-model-state label exact-integer -> (values non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer)
    for-each-label-in-source ; gui-model-state top (label -> void) -> void
@@ -47,6 +44,7 @@
    get-parents-tacked-arrows ; gui-model-state label -> non-negative-exact-integer
    get-children-tacked-arrows ; gui-model-state label -> non-negative-exact-integer
    
+   for-each-snip-type ; gui-model-state (symbol -> void) -> void
    label-has-snips-of-this-type? ; gui-model-state label symbol -> boolean
    snips-currently-displayed-in-source? ; gui-model-state top -> boolean
    add-snips ; gui-model-state label symbol non-negative-exact-integer -> non-negative-exact-integer
@@ -100,8 +98,6 @@
                                   get-span-from-label
                                   ; (listof symbol)
                                   snip-type-list
-                                  ; (setof top)
-                                  sources-recently-modified
                                   ))
   
   ; (label -> top)
@@ -131,13 +127,7 @@
                    (if label-gui-data
                        (+ span (label-gui-data-span-change label-gui-data))
                        span)))
-               snip-type-list
-               (set-make))))))
-  
-  ; gui-model-state -> void
-  (define (reset-gui-model-state gui-model-state)
-    (assoc-set-reset (gui-model-state-source-gui-data-by-source gui-model-state))
-    (set-reset (gui-model-state-sources-recently-modified gui-model-state)))
+               snip-type-list)))))
   
   
   ; DRSCHEME / MZSCHEME CONVERSIONS
@@ -164,25 +154,13 @@
   
   
   ; SOURCES
-  ; gui-model-state (top -> void) (opt boolean) -> void
-  ; applies f to each source
-  (define for-each-source
-    (opt-lambda (gui-model-state f (modifying? #f))
-      (let ([modified-sources-set (gui-model-state-sources-recently-modified gui-model-state)])
-        (assoc-set-for-each (gui-model-state-source-gui-data-by-source gui-model-state)
-                            (lambda (source source-gui-data)
-                              (when modifying?
-                                (set-set modified-sources-set source #f))
-                              (f source))))
-      cst:void))
-  
   ; gui-model-state (top -> void) -> void
-  ; applies f to each modified source, and forgets source was modified
-  (define (for-each-modified-source! gui-model-state f)
-    (let ([modified-sources-set (gui-model-state-sources-recently-modified gui-model-state)])
-      (set-for-each modified-sources-set f)
-      (set-reset modified-sources-set)
-      cst:void))
+  ; applies f to each source
+  (define (for-each-source gui-model-state f)
+    (assoc-set-for-each (gui-model-state-source-gui-data-by-source gui-model-state)
+                        (lambda (source source-gui-data)
+                          (f source)))
+    cst:void)
   
   ; gui-model-state top -> boolean
   ; are we currently displaying some snips in the source?
@@ -206,7 +184,7 @@
       ((gui-model-state-get-mzscheme-position-from-label gui-model-state) label))
      ((gui-model-state-get-source-from-label gui-model-state) label)))
   
-  ; gui-model-state label -> void
+  ; gui-model-state label -> top
   ; we register the source of the label, and the label by its position,
   ; but we don't associate any label-gui-data with it yet, to save memory.
   ; We'll associate some label-gui-data with it on the fly, as needed (when
@@ -228,14 +206,14 @@
                        "a label is already registered for position ~a" mzscheme-pos)
                 (begin
                   (assoc-set-set labels-by-mzscheme-position mzscheme-pos label)
-                  cst:void)))
+                  #f)))
           (begin
             (assoc-set-set source-gui-data-by-source source
                            (make-source-gui-data (assoc-set-make)
                                                  (assoc-set-set (assoc-set-make)
                                                                 mzscheme-pos label)
                                                  0))
-            cst:void))))
+            source))))
   
   ; gui-model-state label exact-integer -> (values non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer)
   ; modify the span of a label and move snips on the right, returning the interval
@@ -437,7 +415,6 @@
   ; We add the source to the set of recently modifed sources because moving stuff might change
   ; tha arrows for that source.
   (define (move-poss gui-model-state source start len add comp)
-    (set-set (gui-model-state-sources-recently-modified gui-model-state) source #f)
     (let ([move-pos (lambda (pos) (if (comp pos start) (add pos len) pos))]
           [source-gui-data
            (assoc-set-get (gui-model-state-source-gui-data-by-source gui-model-state) source)])
@@ -485,7 +462,6 @@
             (source-gui-data-label-gui-data-by-label this-end-source-gui-data)]
            [this-end-label-gui-data
             (assoc-set-get this-end-label-gui-data-by-label this-end-label cst:thunk-false)])
-      (set-set (gui-model-state-sources-recently-modified gui-model-state) this-end-source #f)
       (if this-end-label-gui-data
           (let* ([this-end-arrow-set
                   (label-gui-data-this-end-arrow-set-selector this-end-label-gui-data)]
@@ -524,8 +500,7 @@
   ; remove arrows starting at given label AND arrows ending at same given label
   ; Note that assoc-set-get will fail if we try to remove non-existant arrows...
   (define (remove-arrows gui-model-state start-label tacked? exn?)
-    (let* ([sources-recently-modified (gui-model-state-sources-recently-modified gui-model-state)]
-           [source-gui-data-by-source
+    (let* ([source-gui-data-by-source
             (gui-model-state-source-gui-data-by-source gui-model-state)]
            [get-source-from-label (gui-model-state-get-source-from-label gui-model-state)]
            [source (get-source-from-label start-label)]
@@ -538,34 +513,31 @@
                 (assoc-set-get label-gui-data-by-label start-label cst:thunk-false))])
       ; at this point, if the key was not found, either exn? was true and an exception
       ; was raised, or it was false and start-label-gui-data is false
-      (set-set sources-recently-modified source #f)
       (when start-label-gui-data
         (remove-both-ends source-gui-data-by-source
                           (label-gui-data-starting-arrows start-label-gui-data)
                           tacked?
                           arrow-end-label
                           label-gui-data-ending-arrows
-                          get-source-from-label
-                          sources-recently-modified)
+                          get-source-from-label)
         (remove-both-ends source-gui-data-by-source
                           (label-gui-data-ending-arrows start-label-gui-data)
                           tacked?
                           arrow-start-label
                           label-gui-data-starting-arrows
-                          get-source-from-label
-                          sources-recently-modified)))
+                          get-source-from-label)))
     cst:void)
   
   ; (assoc-setof top source-gui-data) (setof arrow) (union symbol boolean)
   ; (arrow -> label) (label-gui-data -> (setof arrow))
-  ; (label -> top) (setof top)
+  ; (label -> top)
   ; -> (setof arrow)
   ; remove arrows starting at given label OR arrows ending at given
   ; label (depending on selectors/settors)
   ; the result is thrown away by the caller...
   (define (remove-both-ends source-gui-data-by-source set tacked?
                             arrow-other-end-label-selector label-gui-data-other-end-arrow-set-selector
-                            get-source-from-label sources-recently-modified)
+                            get-source-from-label)
     (if (eq? tacked? 'all)
         ; remove all the other ends and reset this end
         ; we could do without this case and use the set-filter way used in the "else" case
@@ -575,7 +547,7 @@
           (set-for-each set (lambda (arrow)
                               (remove-other-end source-gui-data-by-source arrow
                                                 arrow-other-end-label-selector label-gui-data-other-end-arrow-set-selector
-                                                get-source-from-label sources-recently-modified)))
+                                                get-source-from-label)))
           (set-reset set))
         ; remove other end while filtering this set
         (set-filter set
@@ -584,20 +556,20 @@
                           (begin
                             (remove-other-end source-gui-data-by-source arrow
                                               arrow-other-end-label-selector label-gui-data-other-end-arrow-set-selector
-                                              get-source-from-label sources-recently-modified)
+                                              get-source-from-label)
                             #f)
                           #t))
                     'same)))
   
   ; (assoc-setof top source-gui-data) arrow (arrow -> label) (label-gui-data -> (setof arrow))
-  ; (label -> top) (setof top) -> (setof arrow)
+  ; (label -> top) -> (setof arrow)
   ; removes one arrow structure reference corresponding to the remote end of the arrow we
   ; are removing in remove-both-ends above.  We know the arrow is there, so no need to test
   ; whether label-gui-data-by-source-and-label and label-gui-data-by-label are false or not.
   ; the result is thrown away by the caller...
   (define (remove-other-end source-gui-data-by-source arrow
                             arrow-other-end-label-selector label-gui-data-other-end-arrow-set-selector
-                            get-source-from-label sources-recently-modified)
+                            get-source-from-label)
     (let* ([other-end-label (arrow-other-end-label-selector arrow)]
            [other-end-source (get-source-from-label other-end-label)]
            [other-end-source-gui-data
@@ -606,24 +578,21 @@
             (assoc-set-get (source-gui-data-label-gui-data-by-label other-end-source-gui-data)
                            other-end-label)]
            [other-end-arrow-set (label-gui-data-other-end-arrow-set-selector other-end-label-gui-data)])
-      (set-set sources-recently-modified other-end-source #f)
       (set-remove other-end-arrow-set arrow)))
   
   ; gui-model-state -> void
   ; remove all arrows in all sources
   (define (remove-all-arrows gui-model-state)
-    (let ([source-gui-data-by-source (gui-model-state-source-gui-data-by-source gui-model-state)]
-          [sources-recently-modified (gui-model-state-sources-recently-modified gui-model-state)])
+    (let ([source-gui-data-by-source (gui-model-state-source-gui-data-by-source gui-model-state)])
       (assoc-set-for-each
        source-gui-data-by-source
        (lambda (source source-gui-data)
-         (set-set sources-recently-modified source #f)
          (assoc-set-for-each
           (source-gui-data-label-gui-data-by-label source-gui-data)
           (lambda (label label-gui-data)
             (set-reset (label-gui-data-starting-arrows label-gui-data))
             (set-reset (label-gui-data-ending-arrows label-gui-data))))))))
-         
+  
   ; gui-model-state
   ; (non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer top top boolean -> void)
   ; -> void
@@ -685,6 +654,10 @@
   
   
   ; SNIPS
+  ; gui-model-state (symbol -> void) -> void
+  (define (for-each-snip-type gui-model-state f)
+    (for-each f (gui-model-state-snip-type-list gui-model-state)))
+  
   ; gui-model-state label symbol -> boolean
   ; does the label have snips of a given type currently displayed by the gui?
   (define (label-has-snips-of-this-type? gui-model-state label type)

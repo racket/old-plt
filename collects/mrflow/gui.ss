@@ -54,7 +54,8 @@
         (drscheme:language:extend-language-interface
          mrflow-language-extension-interface<%>
          mrflow-default-implementation-mixin)
-        (drscheme:unit:add-to-program-editor-mixin editor-mixin))
+        (drscheme:unit:add-to-program-editor-mixin
+         saa:drscheme:unit:add-to-program-editor-mixin-mixin))
       
       (define (phase2) cst:void)
       
@@ -174,36 +175,14 @@
            (lambda ()
              (map err:sba-error-message (sba:get-errors-from-label label)))]))
       
-      
-      ; DEFINITION WINDOW MIXIN AND ALL EDITOR MIXIN
-      (define-values (register-label-with-gui editor-mixin definition-text-mixin)
-        (saa:make-snips-and-arrows-mixins
-         sba:get-source-from-label
-         sba:get-mzscheme-position-from-label
-         get-span-from-label
-         sba:get-parents-from-label
-         sba:get-children-from-label
-         (lambda (label) #f)
-         (lambda (label) (error 'get-name-from-label "MrFlow internal error; renaming forbidden"))
-         (lambda (label) (error 'get-labels-to-rename-from-label "MrFlow internal error; renaming forbidden"))
-         get-style-delta-from-label
-         get-box-style-delta-from-snip-type
-         get-menu-text-from-snip-type
-         get-snip-text-from-snip-type
-         snip-type-list
-         #t
-         tacked-arrow-brush
-         untacked-arrow-brush
-         arrow-pen
-         ))
-      
-      (drscheme:get/extend:extend-definitions-text definition-text-mixin)
+      ; DEFINITION WINDOW MIXIN
+      (drscheme:get/extend:extend-definitions-text
+       saa:drscheme:get/extend:extend-definitions-text-mixin)
       
       ; UNIT FRAME MIXIN
       (drscheme:get/extend:extend-unit-frame
        (lambda (super%)
          (class super%
-           
            (inherit get-definitions-text)
            (rename [super-clear-annotations clear-annotations])
            ; -> void
@@ -238,7 +217,28 @@
                         [interactions-text (get-interactions-text)]
                         [language-settings
                          (fw:preferences:get
-                          (drscheme:language-configuration:get-settings-preferences-symbol))])
+                          (drscheme:language-configuration:get-settings-preferences-symbol))]
+                        [register-label-with-gui
+                         (saa:make-register-label-with-gui
+                          sba:get-source-from-label
+                          sba:get-mzscheme-position-from-label
+                          get-span-from-label
+                          sba:get-parents-from-label
+                          sba:get-children-from-label
+                          (lambda (label) #f)
+                          (lambda (label) (error 'get-name-from-label "MrFlow internal error; renaming forbidden"))
+                          (lambda (label) (error 'get-labels-to-rename-from-label "MrFlow internal error; renaming forbidden"))
+                          get-style-delta-from-label
+                          get-box-style-delta-from-snip-type
+                          get-menu-text-from-snip-type
+                          get-snip-text-from-snip-type
+                          snip-type-list
+                          #t
+                          tacked-arrow-brush
+                          untacked-arrow-brush
+                          arrow-pen
+                          )])
+                    (disable-evaluation)
                     (clear-annotations)
                     (sba:reset-all)
                     
@@ -274,7 +274,9 @@
                                        (sba:check-primitive-types)
                                        ;(printf "check time: ~a ms~n" (- (current-milliseconds) sba-end-time))
                                        )
-                                     (send definitions-text color-all-labels))
+                                     (enable-evaluation) ; definition window has been locked until now
+                                     (send definitions-text color-all-labels)
+                                     )
                                    (begin
                                      ;(printf "~a~n" (syntax-object->datum syntax-object-or-eof))
                                      (sba:create-label-from-term syntax-object-or-eof '() #f register-label-with-gui)

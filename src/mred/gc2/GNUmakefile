@@ -7,7 +7,7 @@
 MZOBJDIR=objects/sys$(MZPLATFORMSUFFIX)
 WXOBJDIR=objects/sys$(MZPLATFORMSUFFIX)
 
-XFORM = ../mzscheme/$(MZBUILDDIR)mzscheme -rq ../mzscheme/gc2/xform.ss "gcc -E -I../mzscheme/gc2 $(OPTIONS) $(GUI) $(INC) -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src $(XINCLUDE)"
+XFORM = ../mzscheme/$(MZBUILDDIR)mzscheme2k -rq ../mzscheme/gc2/xform.ss "gcc -E -I../mzscheme/gc2 $(OPTIONS) $(GUI) $(INC) -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src $(XINCLUDE)"
 XFORMDEP = ../mzscheme/gc2/xform.ss
 
 gc2/xsrc/Window.cc: $(WXDIR)/src/Windows/Window.cc $(WXDIR)/src/Windows/$(WXOBJDIR)/Window.o $(XFORMDEP)

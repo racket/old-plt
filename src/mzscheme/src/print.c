@@ -1348,10 +1348,11 @@ print_string(Scheme_Object *string, int escaped, Scheme_Process *p)
       print_this_string(p, SCHEME_STR_VAL(string), len);
     else {
       minibuf[1] = 0;
-      for (str = SCHEME_STR_VAL(string), i = 0; i < len; i++, str++) {
-	if ((*str == '"') || (*str == '\\'))
+      str = SCHEME_STR_VAL(string);
+      for (i = 0; i < len; i++) {
+	if ((str[i] == '"') || (str[i] == '\\'))
 	  print_this_string(p, "\\", 1);
-	minibuf[0] = *str;
+	minibuf[0] = str[i];
 	print_this_string(p, minibuf, 1);
       }
     }

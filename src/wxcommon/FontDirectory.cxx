@@ -156,20 +156,26 @@ class wxSuffixMap {
   wxSuffixMap();
 
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
-void wxSuffixMap::gcMark(Mark_Proc mark) {
-  if (mark) {
-    int i, j;
-    for (i = 0; i < wxNUM_WEIGHTS; i++)
-      for (j = 0; j < wxNUM_STYLES; j++) {
-	gcMARK_TYPED(char *, map[i][j]);
-      }
-  }
+void wxSuffixMap::gcMark() {
+  int i, j;
+  for (i = 0; i < wxNUM_WEIGHTS; i++)
+    for (j = 0; j < wxNUM_STYLES; j++) {
+      gcMARK_TYPED(char *, map[i][j]);
+    }
+}
+void wxSuffixMap::gcFixup() {
+  int i, j;
+  for (i = 0; i < wxNUM_WEIGHTS; i++)
+    for (j = 0; j < wxNUM_STYLES; j++) {
+      gcFIXUP_TYPED(char *, map[i][j]);
+    }
 }
 END_XFORM_SKIP;
 #endif

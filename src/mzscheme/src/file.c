@@ -3948,10 +3948,12 @@ find_system_path(int argc, Scheme_Object **argv)
     int		ends_in_colon;
     SInt16	vRefNum;
     SInt32	dirID;
+    OSErr	err;
 
     switch (which) {
     case id_home_dir:
     case id_pref_dir:
+    case id_pref_file:
     case id_init_dir:
     case id_init_file:
       t = 'pref';
@@ -3965,19 +3967,21 @@ find_system_path(int argc, Scheme_Object **argv)
       break;
     }
 
-    if (!FindFolder(kOnSystemDisk, t, kCreateFolder, &vRefNum, &dirID)) {
+    err = FindFolder(kOnSystemDisk, t, kCreateFolder, &vRefNum, &dirID);
+    
+    if (err == noErr) {
       FSMakeFSSpec(vRefNum,dirID,NULL,&spec);
       home = scheme_make_string(scheme_mac_spec_to_path(&spec));
     }
     else {
       if (which == id_temp_dir)
-	home = CURRENT_WD();
+		home = CURRENT_WD();
       else {
-	/* Everything else uses system current directory if there's no prefs folder */
-	home = scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1));
-	if (!home)
-	  /* disaster strikes; use Scheme CWD */
-	  home = CURRENT_WD();
+		/* Everything else uses system current directory if there's no prefs folder */
+		home = scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1));
+		if (!home)
+		  /* disaster strikes; use Scheme CWD */
+		  home = CURRENT_WD();
       }
     }
   

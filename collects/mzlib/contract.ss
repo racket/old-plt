@@ -462,21 +462,23 @@ add struct contracts for immutable structs?
                                             (syntax _))]
                             [(_ arg (... ...))
                              (syntax 
-                              ((-contract contract-id
-                                          id
-                                          pos-module-source
-                                          (module-source-as-symbol #'neg-stx)
-                                          (quote-syntax _))
+                              ((begin-lifted
+				(-contract contract-id
+					   id
+					   pos-module-source
+					   (module-source-as-symbol #'neg-stx)
+					   (quote-syntax _)))
                                arg
                                (... ...)))]
                             [_
                              (identifier? (syntax _))
                              (syntax 
-                              (-contract contract-id
-                                         id  
-                                         pos-module-source 
-                                         (module-source-as-symbol #'neg-stx)
-                                         (quote-syntax _)))]))))))))))
+                              (begin-lifted
+			       (-contract contract-id
+					  id  
+					  pos-module-source 
+					  (module-source-as-symbol #'neg-stx)
+					  (quote-syntax _))))]))))))))))
          
          (with-syntax ([(bodies ...) (code-for-each-clause (syntax->list (syntax (p/c-ele ...))))])
            (syntax 

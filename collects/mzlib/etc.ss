@@ -560,4 +560,5 @@
   (define-syntax (begin-lifted stx)
     (syntax-case stx ()
       [(_ expr0 expr ...)
-       (syntax-local-lift-expression #'(begin expr0 expr ...))])))
+       (syntax-local-lift-expression 
+	#'(begin expr0 expr ...))])))

@@ -436,6 +436,7 @@
   (display-line-numbers "Montrer le numéro de ligne et de colonne, pas la distance depuis le début d'éditeur.")
   (enable-keybindings-in-menus "Raccourcis clavier dans les menus.")
   (automatically-to-ps "Imprimer automatiquement dans un fichier postscript.")
+  (option-as-meta "Utiliser la touche option comme touche meta") ;; macos/macos x only
   (use-mdi "Utiliser les fenêtres MDI.") ;;; ms windows only -- use that window in a window thingy
   (separate-dialog-for-searching "Utiliser un dialogue séparé pour les recherches.")
   (reuse-existing-frames "Réutiliser les fenêtres existantes lors de l'ouverture de nouveaux fichiers")

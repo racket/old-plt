@@ -1,9 +1,10 @@
-#cs(module servlet2 mzscheme
+(module servlet2 mzscheme
   (require (lib "servlet-primitives.ss" "web-server")
            (lib "servlet2-unit.ss" "htdp")
            (lib "servlet-sig.ss" "web-server")
-	   (lib "process.ss")
            (lib "unitsig.ss"))
+  
+  (provide (all-from-except (lib "servlet2-unit.ss" "htdp") servlet2@ servlet2^))
   
   (provide-signature-elements servlet2^)
   

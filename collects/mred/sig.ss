@@ -286,7 +286,9 @@
   (icon
    paren-highlight-bitmap
    autowrap-bitmap
-   reset-console-bitmap))
+   reset-console-bitmap
+   lock-bitmap
+   unlock-bitmap))
 
 (define-signature mred:keymap^
   (keyerr

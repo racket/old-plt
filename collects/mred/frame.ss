@@ -499,6 +499,18 @@
 		      (send time-canvas set-media null)))])		     
 	    
 	    (public
+	      [lock-status-changed
+	       (let ([icon-currently-locked? #f])
+	       (lambda ()
+		 (let ([locked-now? (ivar (get-info-edit) locked?)])
+		   (unless (eq? locked-now? icon-currently-locked?)
+		     (send lock-message
+			   set-label
+			   (if locked-now?
+			       mred:icon:lock-bitmap
+			       mred:icon:unlock-bitmap))
+		     (set! icon-currently-locked? locked-now?)))))]
+		       
 	      [edit-position-changed
 	       (let ()
 		 (lambda ()
@@ -528,7 +540,8 @@
 	    (public
 	      [update-info
 	       (lambda ()
-		 (edit-position-changed))])
+		 (edit-position-changed)
+		 (lock-status-changed))])
 
 	    (sequence 
 	      (apply super-init args))
@@ -537,6 +550,8 @@
 	      [info-panel (make-object mred:container:horizontal-panel% 
 				       super-root)]
 	      [space (make-object mred:container:horizontal-panel% info-panel)]
+	      [lock-message (make-object mred:container:message%
+			      info-panel mred:icon:unlock-bitmap)]
 	      [position-canvas (make-object mred:canvas:one-line-canvas%
 					    info-panel)]
 	      [time-canvas (make-object mred:canvas:one-line-canvas% 

@@ -733,6 +733,7 @@
     JUST_DEFINED_FUNC(load/use-compiled);
     JUST_DEFINED_FUNC(require-library/proc);
     JUST_DEFINED_FUNC(require-relative-library/proc);
+    JUST_DEFINED_FUNC(provide-library);
     JUST_DEFINED_FUNC(collection-path);
   }
   {

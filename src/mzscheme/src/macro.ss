@@ -1014,7 +1014,7 @@
 			      provide-library
 			      collection-path))))
 
-> fstop load/use-compiled require-library/proc require-relative-library/proc collection-path <
+> fstop load/use-compiled require-library/proc require-relative-library/proc provide-library collection-path <
 
 (#%begin
  (#%define tmp-rl

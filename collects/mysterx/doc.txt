@@ -833,6 +833,17 @@ _Remote COM servers_
   turquoise violet wheat white whitesmoke yellow
   yellowgreen
 
+> get-html :: (send an-mx-element get-html)
+
+  Returns a string containing all the HTML between the pair of 
+  tags represented by the element.
+
+> get-text :: (send an-mx-element get-text)
+
+  Returns a string containing just the text between the pair of 
+  tags represented by the element.  Any nested HTML tags 
+  are not contained in the returned string.
+
 > insert-html :: (send an-mx-element insert-html html)
 
   Places the HTML given by the string `html' before the element.

@@ -67,12 +67,13 @@
 		  [first-segment (cadr m)]
 		  [rest-segment (caddr m)]
 		  [root-list (filesystem-root-list)])
-	    (build-path
-	      (if (member first-segment root-list)
-		first-segment
-		(car root-list))
-	      (file://rel-path->fs-path
-		(substring s 1 (string-length s)))))]
+	    (let ([path-contains-root? (member first-segment root-list)])
+	      (build-path
+		(if path-contains-root? first-segment (car root-list))
+		(file://rel-path->fs-path
+		  (if path-contains-root?
+		    rest-segment
+		    (substring s 1 (string-length s)))))))]
 	[else (file://rel-path->fs-path s)])))
 
   (define unixpath->path file://path->fs-path)

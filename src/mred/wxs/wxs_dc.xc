@@ -50,7 +50,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   return c;
 }
 
-static bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c)
+static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c)
 {
   if (bm->Ok()) {
     return dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c);
@@ -58,7 +58,7 @@ static bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxCol
     return FALSE;
 }
 
-static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int mode, wxColour *c)
+static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int mode, wxColour *c)
 {
   if (bm->Ok()) {
     return dc->Blit(x, y, dw, dh, bm, dx, dy, mode, c);
@@ -66,7 +66,7 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
     return FALSE;
 }
 
-static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, bool big)
+static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big)
 {
   float w, h, d, asc;
   Scheme_Object *a[4];

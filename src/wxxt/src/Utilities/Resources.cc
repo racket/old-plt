@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Resources.cc,v 1.1.1.1 1997/12/22 17:28:55 mflatt Exp $
+ * $Id: Resources.cc,v 1.2 1998/12/15 17:23:47 mflatt Exp $
  *
  * Purpose: read/write .Xdefaults
  *
@@ -93,7 +93,7 @@ static char *GetIniFile(char *dest, const char *filename)
 static XrmDatabase wxXrmGetFileDatabase(const char *s)
 {
   /* because directory names crash XrmGetFileDatabase */
-  if (!wxDirExists(s))
+  if (!wxDirExists((char *)s))
     return XrmGetFileDatabase(s);
   else
     return NULL;

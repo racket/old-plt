@@ -342,5 +342,5 @@
   
   ;; lex-error : Input-port String (-> Nat) TST* -> alpha
   (define (lex-error in pos str . rest)
-    (error 'lex-error " at positon ~a: ~a" (pos)
+    (error 'lex-error " at position ~a: ~a" (pos)
            (apply format str rest))))

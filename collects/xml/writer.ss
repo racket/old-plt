@@ -1,9 +1,6 @@
 (unit/sig writer^
   (import xml-structs^ mzlib:function^)
   
-  ;;(define empty-tag-shorthand (make-parameter #t))
-  ;;(define empty-tag-shorthand (make-parameter void))
-  
   ;; (empty-tag-shorthand) : (U 'always 'never (listof Symbol))
   (define empty-tag-shorthand
     (make-parameter 'always

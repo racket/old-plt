@@ -501,11 +501,10 @@
  (string?
   (union false? (is-a?/c mode:surrogate-text<%>))
   ((is-a?/c drscheme:rep:text%) number? . -> . boolean?)
-  ((union false? string?) . -> . boolean?)
   ((union false? (listof string?)) . -> . boolean?)
   . -> .
   drscheme:modes:mode?)
- (name surrogate repl-submit matches-filename matches-language)
+ (name surrogate repl-submit matches-language)
  "Adds a mode to DrScheme. Returns a mode value"
  "that identifies the mode."
  ""
@@ -530,11 +529,6 @@
  "If it returns \\scheme|#f|, the text is"
  "assumed to be an incomplete program fragment, and"
  "the keystroke is not treated specially."
- ""
- "The \\var{matches-filename} predicate is called whenever"
- "a new file is opened, or an open file changes its name"
- "(via Save As, for example). If it returns \\scheme|#t|"
- "the file is opened in this mode and otherwise not."
  ""
  "The \\var{matches-language} predicate is called whenever"
  "the language changes. If it returns \\scheme|#t|"
@@ -587,15 +581,6 @@
  (drscheme:modes:mode? . -> . any)
  (mode)
  "Extracts the repl submission predicate of the mode."
- ""
- "See also"
- "@flink drscheme:modes:add-mode %"
- ".")
-  
-(drscheme:modes:mode-matches-filename
- (drscheme:modes:mode? . -> . ((union false? string?) . -> . boolean?))
- (mode)
- "Extracts the filename matching predicate of the mode."
  ""
  "See also"
  "@flink drscheme:modes:add-mode %"

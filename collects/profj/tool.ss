@@ -83,13 +83,6 @@
                                             (not (= open-braces 0))
                                             (not (= open-curlies 0))
                                             is-if?))))
-                               (lambda (x) (and x
-                                                (not 
-                                                 (boolean?
-                                                  (or (regexp-match #rx"\\.java$" x)
-                                                      (regexp-match #rx"\\.bjava$" x)
-                                                      (regexp-match #rx"\\.ijava$" x)
-                                                      (regexp-match #rx"\\.ajava$" x))))))
                                (lambda (l)
                                  (and l 
                                       (pair? l)

@@ -47,7 +47,14 @@
           (6 w)
           (8 e)))
         
-  (make-object button% "Move" f (lambda (b e) (send drawn apply-queued-actions)))
+  (make-object button% "Move" f (lambda (b e) 
+                                  (send drawn apply-queued-actions)
+                                  (send drawn queue-robot-actions
+                                     '((5 w)
+                                       (3 (drop 3))
+                                       (7 n)
+                                       (6 w)
+                                       (8 e)))))
   
   (send f show #t))
 

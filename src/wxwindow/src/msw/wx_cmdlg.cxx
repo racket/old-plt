@@ -67,12 +67,12 @@ static int GetTotalLength(wchar_t* fileBuffer, int directoryLength)
   
   /* Skip the directory part */      
   currentLength = wx_wstrlen(currentFile);
-  currentFile += currentLength + 1;
+  currentFile = currentFile XFORM_OK_PLUS (currentLength + 1);
 
   while (*currentFile) {
     currentLength = wx_wstrlen(currentFile);
     totalLength += directoryLength + currentLength + 8;
-    currentFile += currentLength + 1;
+    currentFile = currentFile XFORM_OK_PLUS (currentLength + 1);
   }
 
   return totalLength;
@@ -269,7 +269,11 @@ char *wxFileSelector(char *message,
 
     b->pidlRoot = NULL;
     b->pszDisplayName = _result;
-    b->lpszTitle = wxWIDE_STRING_COPY(message);
+    {
+      wchar_t *ws;
+      ws = wxWIDE_STRING_COPY(message);
+      b->lpszTitle = ws;
+    }
     b->ulFlags = (BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS);
 
     ok = wxPrimitiveDialog((wxPDF)DoGetDir, b, 1);
@@ -402,7 +406,11 @@ char *wxFileSelector(char *message,
   of->lpstrFileTitle = NULL;
   of->nMaxFileTitle = 0;
   of->lpstrInitialDir = def_path;
-  of->lpstrTitle = wxWIDE_STRING_COPY(message);
+  {
+    wchar_t *ws;
+    ws = wxWIDE_STRING_COPY(message);
+    of->lpstrTitle = ws;
+  }
   of->nFileOffset = 0;
   of->nFileExtension = 0;
   of->lpstrDefExt = def_ext;

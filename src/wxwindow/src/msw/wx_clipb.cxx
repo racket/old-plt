@@ -15,6 +15,8 @@
 #include "wx_clipb.h"
 #include "wx_mf.h"
 
+extern int wx_no_unicode;
+
 Bool wxClipboardIsOpen = FALSE;
 
 Bool wxOpenClipboard(void)
@@ -111,6 +113,15 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
       HANDLE hGlobalMemory;
       LPSTR lpGlobalMemory;
       HANDLE success;
+
+      if ((dataFormat == wxCF_TEXT) && !wx_no_unicode) {
+	wchar_t *ws;
+	ws = wxWIDE_STRING(s);
+	width = wx_wstrlen(ws);
+	width = sizeof(wchar_t) * (width + 1);
+	s = (char *)ws;
+	dataFormat = CF_UNICODETEXT;
+      }
 
       l = (width * height);
       hGlobalMemory = GlobalAlloc(GHND, l);

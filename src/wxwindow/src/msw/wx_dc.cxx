@@ -1028,7 +1028,8 @@ static int ucs4_strlen(const unsigned int *c)
 #define QUICK_UBUF_SIZE 1024
 static wchar_t u_buf[QUICK_UBUF_SIZE];
 
-wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ulen, Bool combine, wxDC *dc, HDC hdc, wxFont *font)
+wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ulen, 
+				    Bool combine, wxDC *dc, HDC hdc)
 {
   int ulen, alloc_ulen;
   wchar_t *unicode;
@@ -1037,7 +1038,7 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
   if (!combine) {
     if (!dc->combine_status) {
       /* Check whether text renderer knows how to deal with ZWNJ, etc. */
-      if (font->GlyphAvailable(0x200C, hdc))
+      if (GetFontLanguageInfo(hdc))
 	dc->combine_status = 1;
       else
 	dc->combine_status = -1;
@@ -1116,7 +1117,7 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
     }
     ulen -= j;
     /* Add ZWNJ to prevent other combinations */
-	for (i = ulen; i--; ) {
+    for (i = ulen; i--; ) {
       unicode[(2 * i) + 1] = 0x200C;
       unicode[(2 * i)] = unicode[i];
 	}
@@ -1167,7 +1168,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4,
   
   SetRop(dc, wxSOLID);
 
-  ustring = convert_to_drawable_format(text, d, ucs4, &len, combine, this, dc, font);
+  ustring = convert_to_drawable_format(text, d, ucs4, &len, combine, this, dc);
 
   (void)TextOutW(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), ustring, len);
 
@@ -1426,8 +1427,7 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
     return;
   }
 
-  ustring = convert_to_drawable_format(string, d, ucs4, &len, combine, this, dc, 
-				       theFont ? theFont : font);
+  ustring = convert_to_drawable_format(string, d, ucs4, &len, combine, this, dc);
 
   GetTextExtentPointW(dc, ustring, len, &sizeRect);
   if (descent || topSpace)

@@ -142,6 +142,20 @@
      ""
      "")
 
+(try "../../foreign/foreign.c"
+     (list* ; (find-obj "main" "mzscheme")
+	    "../../foreign/foreign.c"
+	    common-deps)
+     "xsrc/foreign.c"
+     "xsrc/foreign.obj"
+     (string-append
+      mz-inc
+      "/I../../foreign/libffi_msvc "
+      "/I../../mzscheme/src ")
+     #f
+     ""
+     "")
+
 (compile "../../mzscheme/gc2/gc2.c" "xsrc/gc2.obj"
 	 (map (lambda (f) (build-path "../../mzscheme/gc2/" f))
 	      '("gc2.c"
@@ -189,7 +203,12 @@
 (let ([objs (list*
 	     "xsrc/gc2.obj"
 	     "xsrc/mzsj86.obj"
+	     "xsrc/foreign.obj"
 	     (find-obj "gmp" "libmzsch")
+	     (find-obj "ffi" "libmzsch")
+	     (find-obj "win32" "libmzsch")
+	     (find-obj "prep_cif" "libmzsch")
+	     (find-obj "types" "libmzsch")
 	     (map
 	      (lambda (n)
 		(format "xsrc/~a.obj" n))

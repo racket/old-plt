@@ -1,7 +1,8 @@
-; $Id: sigs.ss,v 1.66 1999/05/19 21:57:30 mflatt Exp $
+; $Id: sigs.ss,v 1.67 1999/05/23 17:31:24 mflatt Exp $
 
 (begin-elaboration-time (require-library "macro.ss"))
-(begin-elaboration-time (require-library "mzlibs.ss"))
+(begin-elaboration-time (require-library "prettys.ss"))
+(begin-elaboration-time (require-library "files.ss"))
 (begin-elaboration-time (require-library "refer.ss"))
 (require-library "refer.ss")
 

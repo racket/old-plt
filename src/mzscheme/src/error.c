@@ -56,8 +56,6 @@ static Scheme_Object *def_exit_handler_proc(int, Scheme_Object *[]);
 
 static Scheme_Object *do_raise(Scheme_Object *arg, int return_ok, int need_debug);
 
-static Scheme_Object *newline_char;
-
 static Scheme_Object *def_err_val_proc;
 static Scheme_Object *def_error_esc_proc;
 Scheme_Object *scheme_def_exit_proc;
@@ -457,8 +455,6 @@ void scheme_init_error(Scheme_Env *env)
 						      "exit", 
 						      0, 1), 
 			     env);
-
-  newline_char = scheme_make_char('\n');
 
   REGISTER_SO(scheme_def_exit_proc);
   scheme_def_exit_proc = scheme_make_prim_w_arity(def_exit_handler_proc, 

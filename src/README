@@ -105,7 +105,7 @@ Follow the instructions in plt/src/mac/README.
 
     For cross compilation, set the compiler variables to a compiler
     for the target platform compiler, but also set CC_FOR_BUILD to a
-    compiler for the host platform (form building binaries to execute
+    compiler for the host platform (for building binaries to execute
     during the build process).
 
  2. Run `make'.

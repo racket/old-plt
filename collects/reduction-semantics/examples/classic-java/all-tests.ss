@@ -4,4 +4,4 @@
            "program-tests.ss"
            "store-tests.ss"
            "parser-tests.ss"
-           #;"reduction-tests.ss"))
+           "reduction-tests.ss"))

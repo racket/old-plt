@@ -86,24 +86,25 @@
 		(lambda (binding)
 		  (cond
 		   [(vector-rhs? binding)
-		    (define-struct b&s (bind set!))
-		    (let* ([id (vector-rhs-id binding)])
-		      (let ([elems
-			     (twople-left
-			      (foldl (lambda (x data) 
-				       (let ([list (twople-left data)]
-					     [i (twople-right data)]
-					     [eid (gensym)])
-					 (make-twople (cons (make-b&s `(,eid ,x)
-								      `(vector-set! ,id ,i ,eid))
-							    list)
-						      (+ i 1))))
-				     (make-twople '() 0)
-				     (vector-rhs-args binding)))])
-			(make-trans `(,id (vector ,@(map (lambda (x) '(void))
-							 (vector-rhs-args binding))))
-				    (map b&s-bind elems)
-				    (map b&s-set! elems))))]
+		    (let ()
+		      (define-struct b&s (bind set!))
+		      (let* ([id (vector-rhs-id binding)])
+			(let ([elems
+			       (twople-left
+				(foldl (lambda (x data) 
+					 (let ([list (twople-left data)]
+					       [i (twople-right data)]
+					       [eid (gensym)])
+					   (make-twople (cons (make-b&s `(,eid ,x)
+									`(vector-set! ,id ,i ,eid))
+							      list)
+							(+ i 1))))
+				       (make-twople '() 0)
+				       (vector-rhs-args binding)))])
+			  (make-trans `(,id (vector ,@(map (lambda (x) '(void))
+							   (vector-rhs-args binding))))
+				      (map b&s-bind elems)
+				      (map b&s-set! elems)))))]
 		   [(box-rhs? binding)
 		    (let ([id (box-rhs-id binding)]
 			  [eid (gensym)])

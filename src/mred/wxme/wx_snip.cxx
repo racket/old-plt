@@ -872,8 +872,12 @@ char *wxTextSnip::GetText(long offset, long num, Bool flat, long *got)
     s[0] = '\r';
     s[1] = '\n';
 #else
-    // Macintosh
+# ifdef OS_X
+	s[0] = '\n';
+# else
+    // Macintosh Classic
     s[0] = '\r';
+# endif    
 #endif
 #endif
     s[NWL_RC] = 0;

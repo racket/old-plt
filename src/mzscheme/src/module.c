@@ -1963,6 +1963,8 @@ static void eval_defmacro(Scheme_Object *names, int count,
 
       values = scheme_current_thread->ku.multiple.array;
       scheme_current_thread->ku.multiple.array = NULL;
+      if (SAME_OBJ(values, scheme_current_thread->values_buffer))
+	scheme_current_thread->values_buffer = NULL;
       for (i = 0; i < g; i++, names = SCHEME_CDR(names)) {
 	name = SCHEME_CAR(names);
 

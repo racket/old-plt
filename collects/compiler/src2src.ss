@@ -143,7 +143,7 @@
       (define/public (get-value) (or known-value this))
 
       ;; helper:
-      (define (subexp-map! f)
+      (define/private (subexp-map! f)
         (set-nonbind-sub-exprs (map f (nonbind-sub-exprs)))
         this)
 
@@ -243,7 +243,7 @@
       
       (define mbind #f)
       (define bucket (global-bucket ((if trans? tables-et-global-ht tables-global-ht) tables) src-stx))
-      (define (get-mbind!)
+      (define/private (get-mbind!)
         (unless mbind
           (set! mbind ((if trans?
                            identifier-transformer-binding 
@@ -611,7 +611,7 @@
 
       (inherit set-known-value)
       
-      (define (known-single-result v)
+      (define/private (known-single-result v)
         (set! known-single-result? #t)
         (set-known-value v)
         v)
@@ -916,7 +916,7 @@
       (inherit drop-uses)
       
       
-      (define (multarity-ize l)
+      (define/private (multarity-ize l)
         (if (null? (cdr l))
             (car l)
             (cons (car l)

@@ -1,5 +1,5 @@
   EVAL_ONE_STR(
-"(module .stx .kernel"
+"(module #%stx #%kernel"
 "(define-values(identifier?)"
 "(lambda(p)"
 "(if(syntax? p)"
@@ -69,8 +69,8 @@
 " stx-car stx-cdr stx->list))"
 );
   EVAL_ONE_STR(
-"(module .qq-and-or .kernel"
-"(import-for-syntax .stx .kernel)"
+"(module #%qq-and-or #%kernel"
+"(import-for-syntax #%stx #%kernel)"
 "(define-syntax quasiquote"
 "(lambda(in-form)"
 "(if(identifier? in-form)"
@@ -264,8 +264,8 @@
 "(export quasiquote and or))"
 );
   EVAL_ONE_STR(
-"(module .cond .kernel"
-"(import-for-syntax .stx .qq-and-or .kernel)"
+"(module #%cond #%kernel"
+"(import-for-syntax #%stx #%qq-and-or #%kernel)"
 "(define-syntax cond"
 "(lambda(in-form)"
 "(if(identifier? in-form)"
@@ -323,8 +323,8 @@
 "(export cond))"
 );
   EVAL_ONE_STR(
-"(module .define-et-al .kernel"
-"(import-for-syntax .kernel .stx .qq-and-or .cond)"
+"(module #%define-et-al #%kernel"
+"(import-for-syntax #%kernel #%stx #%qq-and-or #%cond)"
 "(define-syntax define"
 "(lambda(code)"
 "(if(or(identifier? code)"
@@ -483,15 +483,15 @@
 "(export define when unless let/ec define-struct))"
 );
   EVAL_ONE_STR(
-"(module .small-scheme .kernel"
-"(import .stx .qq-and-or .cond .define-et-al)"
-"(export(all-from .qq-and-or)"
-"(all-from .cond)"
-"(all-from .define-et-al)))"
+"(module #%small-scheme #%kernel"
+"(import #%stx #%qq-and-or #%cond #%define-et-al)"
+"(export(all-from #%qq-and-or)"
+"(all-from #%cond)"
+"(all-from #%define-et-al)))"
 );
   EVAL_ONE_STR(
-"(module .sc .kernel"
-"(import .stx .small-scheme)"
+"(module #%sc #%kernel"
+"(import #%stx #%small-scheme)"
 "(define(stx-memq ssym l)"
 "(ormap(lambda(p)"
 "(and(syntax? P)"
@@ -911,9 +911,9 @@
 " stx-memq-pos))"
 );
   EVAL_ONE_STR(
-"(module .stxcase .kernel"
-"(import .stx .small-scheme)"
-"(import-for-syntax .stx .small-scheme .sc .kernel)"
+"(module #%stxcase #%kernel"
+"(import #%stx #%small-scheme)"
+"(import-for-syntax #%stx #%small-scheme #%sc #%kernel)"
 "(define-syntax syntax-case"
 "(lambda(x)"
 "(define l(and(stx-list? x)(stx->list x)))"
@@ -1111,9 +1111,9 @@
 "(export syntax-case syntax))"
 );
   EVAL_ONE_STR(
-"(module .syntax-loc .kernel"
-"(import .stxcase)"
-"(import-for-syntax .kernel .stxcase)"
+"(module #%stxloc #%kernel"
+"(import #%stxcase)"
+"(import-for-syntax #%kernel #%stxcase)"
 "(define-syntax syntax/loc"
 "(lambda(stx)"
 "(syntax-case stx()"
@@ -1126,9 +1126,9 @@
 "(export syntax/loc))"
 );
   EVAL_ONE_STR(
-"(module .with-syntax .kernel"
-"(import .stxcase .stx .small-scheme)"
-"(import-for-syntax .kernel .stxcase .syntax-loc)"
+"(module #%with-stx #%kernel"
+"(import #%stxcase #%stx #%small-scheme)"
+"(import-for-syntax #%kernel #%stxcase #%stxloc)"
 "(define-syntax with-syntax"
 "(lambda(x)"
 "(syntax-case x()"
@@ -1145,9 +1145,9 @@
 "(export with-syntax generate-temporaries))"
 );
   EVAL_ONE_STR(
-"(module .stxcase-scheme .kernel"
-"(import .small-scheme .stx .stxcase .with-syntax .syntax-loc)"
-"(import-for-syntax .kernel .small-scheme .stx .stxcase .with-syntax .syntax-loc)"
+"(module #%stxcase-scheme #%kernel"
+"(import #%small-scheme #%stx #%stxcase #%with-stx #%stxloc)"
+"(import-for-syntax #%kernel #%small-scheme #%stx #%stxcase #%with-stx #%stxloc)"
 "(define(check-duplicate-identifier names)"
 "(let/ec escape"
 "(let((ht(make-hash-table)))"
@@ -1180,14 +1180,14 @@
 "(syntax-case x(k ...)"
 "((dummy . pattern)(syntax template))"
 " ...))))))))"
-"(export(all-from .stxcase)(all-from .small-scheme)"
-"(all-from .with-syntax)(all-from .syntax-loc) check-duplicate-identifier"
+"(export(all-from #%stxcase)(all-from #%small-scheme)"
+"(all-from #%with-stx)(all-from #%stxloc) check-duplicate-identifier"
 " let-syntax syntax-rules))"
 );
   EVAL_ONE_STR(
-"(module .more-scheme .kernel"
-"(import .small-scheme)"
-"(import-for-syntax .kernel .stx .stxcase-scheme)"
+"(module #%more-scheme #%kernel"
+"(import #%small-scheme)"
+"(import-for-syntax #%kernel #%stx #%stxcase-scheme)"
 "(define(check-parameter-procedure p)"
 "(unless(and(procedure? p)"
 "(procedure-arity-includes? p 0)"
@@ -1372,8 +1372,8 @@
 " let/cc let-struct fluid-let time))"
 );
   EVAL_ONE_STR(
-"(module .misc .kernel"
-"(import .more-scheme .small-scheme)"
+"(module #%misc #%kernel"
+"(import #%more-scheme #%small-scheme)"
 "(define rationalize"
 "(letrec((check(lambda(x) "
 " (unless (real? x) (raise-type-error 'rationalize \"real\" x))))"
@@ -1783,31 +1783,31 @@
 " standard-module-name-resolver find-library-collection-paths))"
 );
   EVAL_ONE_STR(
-"(module .stxrules-body .kernel"
-"(import .stxcase-scheme)"
-"(import-for-syntax .kernel .stx)"
+"(module #%stxrules-body #%kernel"
+"(import #%stxcase-scheme)"
+"(import-for-syntax #%kernel #%stx)"
 "(define-syntax syntax-rules-module-begin"
 "(lambda(stx)"
 "(datum->syntax"
 "(list*(quote-syntax #%module-begin)"
 "(quote-syntax"
-"(import-for-syntax(rename .stxcase-scheme syntax-rules syntax-rules)))"
+"(import-for-syntax(rename #%stxcase-scheme syntax-rules syntax-rules)))"
 "(stx-cdr stx))"
 " stx"
 "(quote-syntax here))))"
 "(export syntax-rules-module-begin))"
 );
   EVAL_ONE_STR(
-"(module mzscheme .kernel"
-"(import .more-scheme)"
-"(import .misc)"
-"(import .stxcase-scheme)"
-"(import .stx)"
-"(import .stxrules-body)"
-"(export(all-from .more-scheme)"
-"(all-from .misc)"
-"(all-from .stxcase-scheme)"
-"(all-from .stx)"
-"(all-from-except .kernel #%module-begin)"
+"(module mzscheme #%kernel"
+"(import #%more-scheme)"
+"(import #%misc)"
+"(import #%stxcase-scheme)"
+"(import #%stx)"
+"(import #%stxrules-body)"
+"(export(all-from #%more-scheme)"
+"(all-from #%misc)"
+"(all-from #%stxcase-scheme)"
+"(all-from #%stx)"
+"(all-from-except #%kernel #%module-begin)"
 "(rename syntax-rules-module-begin #%module-begin)))"
 );

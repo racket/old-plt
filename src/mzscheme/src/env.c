@@ -415,7 +415,7 @@ static void make_init_env(void)
   scheme_install_type_reader(scheme_local_unbox_type, read_local_unbox);
 
   REGISTER_SO(kernel_symbol);
-  kernel_symbol = scheme_intern_symbol(".kernel");
+  kernel_symbol = scheme_intern_symbol("#%kernel");
 
   MARK_START_TIME();
 

@@ -126,7 +126,7 @@ void scheme_init_module(Scheme_Env *env)
 			    env);
 
   REGISTER_SO(kernel_symbol);
-  kernel_symbol = scheme_intern_symbol(".kernel");
+  kernel_symbol = scheme_intern_symbol("#%kernel");
 
   REGISTER_SO(module_symbol);
   REGISTER_SO(module_begin_symbol);
@@ -691,6 +691,14 @@ module_execute(Scheme_Object *data)
   Scheme_Env *env = (Scheme_Env *)SCHEME_CDR(data);
   Scheme_Env *menv;
   
+  if ((SCHEME_SYM_VAL(m->modname)[0] == '#')
+      && (SCHEME_SYM_VAL(m->modname)[1] == '%')
+      && scheme_lookup_in_table(env->module_registry, (char *)m->modname)) {
+    scheme_arg_mismatch("module",
+			"cannot re-declare a module name starting with `#%': ",
+			m->modname);
+  }
+
   scheme_add_to_table(env->module_registry, (const char *)m->modname, m, 0);
 
   /* Replaced an already-running module? */
@@ -896,9 +904,14 @@ static void check_import_name(Scheme_Object *name, Scheme_Object *nominal_modidx
     }
   }
 	    
-  /* Not imported: */
-  if (scheme_lookup_in_table(imported, (const char *)name)) {
-    scheme_wrong_syntax("module", name, e, "identifier already imported");
+  /* Not imported, or imported from same module: */
+  vec = scheme_lookup_in_table(imported, (const char *)name);
+  if (vec) {
+    if (same_modidx(SCHEME_VEC_ELS(vec)[1], modidx)
+	&& SAME_OBJ(SCHEME_VEC_ELS(vec)[2], exname))
+      return; /* already imported, same source */
+    scheme_wrong_syntax("module", name, e, 
+			"identifier already imported (from a different source)");
   }
 	    
   /* Not syntax: */
@@ -1910,10 +1923,17 @@ static void check_dup_import(Scheme_Object *name, Scheme_Object *nominal_modidx,
 			     Scheme_Object *modidx, Scheme_Object *srcname, 
 			     int isval, void *ht, Scheme_Object *e)
 {
-  if (scheme_lookup_in_table((Scheme_Hash_Table *)ht, (const char *)name))
+  Scheme_Object *i;
+
+  i = scheme_lookup_in_table((Scheme_Hash_Table *)ht, (const char *)name);
+
+  if (i) {
+    if (same_modidx(modidx, SCHEME_CAR(i)) && SAME_OBJ(srcname, SCHEME_CDR(i)))
+      return; /* same source */
     scheme_wrong_syntax("import", name, e, "duplicate import identifier");
-  else
-    scheme_add_to_table((Scheme_Hash_Table *)ht, (const char *)name, scheme_false, 0);
+  } else
+    scheme_add_to_table((Scheme_Hash_Table *)ht, (const char *)name, 
+			scheme_make_pair(modidx, srcname), 0);
 }
 
 static Scheme_Object *

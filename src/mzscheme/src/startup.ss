@@ -15,7 +15,7 @@
 ;;----------------------------------------------------------------------
 ;; basic syntax utilities
 
-(module .stx .kernel
+(module #%stx #%kernel
 
   ;; These utilities facilitate operations on syntax objects.
   ;; A syntax object that represents a parenthesized sequence
@@ -108,8 +108,8 @@
 ;;----------------------------------------------------------------------
 ;; quasiquote
 
-(module .qq-and-or .kernel
-  (import-for-syntax .stx .kernel)
+(module #%qq-and-or #%kernel
+  (import-for-syntax #%stx #%kernel)
 
   (define-syntax quasiquote
     (lambda (in-form)
@@ -309,8 +309,8 @@
 ;;----------------------------------------------------------------------
 ;; cond
 
-(module .cond .kernel
-  (import-for-syntax .stx .qq-and-or .kernel)
+(module #%cond #%kernel
+  (import-for-syntax #%stx #%qq-and-or #%kernel)
 
   (define-syntax cond
     (lambda (in-form)
@@ -372,8 +372,8 @@
 ;;----------------------------------------------------------------------
 ;; define, when, unless, let/ec, define-struct
 
-(module .define-et-al .kernel
-  (import-for-syntax .kernel .stx .qq-and-or .cond)
+(module #%define-et-al #%kernel
+  (import-for-syntax #%kernel #%stx #%qq-and-or #%cond)
 
   (define-syntax define
     (lambda (code)
@@ -538,21 +538,21 @@
   (export define when unless let/ec define-struct))
 
 ;;----------------------------------------------------------------------
-;; .small-scheme: assembles all basic forms we have so far
+;; #%small-scheme: assembles all basic forms we have so far
 
-(module .small-scheme .kernel
-  (import .stx .qq-and-or .cond .define-et-al)
+(module #%small-scheme #%kernel
+  (import #%stx #%qq-and-or #%cond #%define-et-al)
 
-  (export (all-from .qq-and-or)
-	  (all-from .cond)
-	  (all-from .define-et-al)))
+  (export (all-from #%qq-and-or)
+	  (all-from #%cond)
+	  (all-from #%define-et-al)))
 
 ;;----------------------------------------------------------------------
 ;; pattern-matching utilities
 ;; based on Shriram's pattern matcher for Zodiac
 
-(module .sc .kernel
-  (import .stx .small-scheme)
+(module #%sc #%kernel
+  (import #%stx #%small-scheme)
 
   ;; memq on a list of identifiers, and
   ;;  nested identifiers
@@ -1069,9 +1069,9 @@
 ;;----------------------------------------------------------------------
 ;; syntax-case and syntax
 
-(module .stxcase .kernel
-  (import .stx .small-scheme)
-  (import-for-syntax .stx .small-scheme .sc .kernel)
+(module #%stxcase #%kernel
+  (import #%stx #%small-scheme)
+  (import-for-syntax #%stx #%small-scheme #%sc #%kernel)
 
   (define-syntax syntax-case
     (lambda (x)
@@ -1283,9 +1283,9 @@
 ;;----------------------------------------------------------------------
 ;; syntax/loc
 
-(module .syntax-loc .kernel
-  (import .stxcase)
-  (import-for-syntax .kernel .stxcase)
+(module #%stxloc #%kernel
+  (import #%stxcase)
+  (import-for-syntax #%kernel #%stxcase)
 
   ;; Like syntax, but also takes a syntax object
   ;; that supplies a source location for the
@@ -1305,9 +1305,9 @@
 ;;----------------------------------------------------------------------
 ;; with-syntax, generate-temporaries
 
-(module .with-syntax .kernel
-  (import .stxcase .stx .small-scheme)
-  (import-for-syntax .kernel .stxcase .syntax-loc)
+(module #%with-stx #%kernel
+  (import #%stxcase #%stx #%small-scheme)
+  (import-for-syntax #%kernel #%stxcase #%stxloc)
 
   ;; From Dybvig
   (define-syntax with-syntax
@@ -1328,12 +1328,12 @@
   (export with-syntax generate-temporaries))
 
 ;;----------------------------------------------------------------------
-;; .stxcase-scheme: adds let-syntax, synatx-rules, and
+;; #%stxcase-scheme: adds let-syntax, synatx-rules, and
 ;;  check-duplicate-identifier, and assembles everything we have so far
 
-(module .stxcase-scheme .kernel
-  (import .small-scheme .stx .stxcase .with-syntax .syntax-loc)
-  (import-for-syntax .kernel .small-scheme .stx .stxcase .with-syntax .syntax-loc)
+(module #%stxcase-scheme #%kernel
+  (import #%small-scheme #%stx #%stxcase #%with-stx #%stxloc)
+  (import-for-syntax #%kernel #%small-scheme #%stx #%stxcase #%with-stx #%stxloc)
 
   (define (check-duplicate-identifier names)
     (let/ec escape
@@ -1371,16 +1371,16 @@
 		       ((dummy . pattern) (syntax template))
 		       ...))))))))
 
-  (export (all-from .stxcase) (all-from .small-scheme)
-	  (all-from .with-syntax) (all-from .syntax-loc) check-duplicate-identifier
+  (export (all-from #%stxcase) (all-from #%small-scheme)
+	  (all-from #%with-stx) (all-from #%stxloc) check-duplicate-identifier
 	  let-syntax syntax-rules))
 
 ;;----------------------------------------------------------------------
-;; .more-scheme : case, do, etc. - remaining syntax
+;; #%more-scheme : case, do, etc. - remaining syntax
 
-(module .more-scheme .kernel
-  (import .small-scheme)
-  (import-for-syntax .kernel .stx .stxcase-scheme)
+(module #%more-scheme #%kernel
+  (import #%small-scheme)
+  (import-for-syntax #%kernel #%stx #%stxcase-scheme)
 
   (define (check-parameter-procedure p)
     (unless (and (procedure? p)
@@ -1584,10 +1584,10 @@
 	  let/cc let-struct fluid-let time))
 
 ;;----------------------------------------------------------------------
-;; .misc : file utilities, etc. - remaining functions
+;; #%misc : file utilities, etc. - remaining functions
 
-(module .misc .kernel
-  (import .more-scheme .small-scheme)
+(module #%misc #%kernel
+  (import #%more-scheme #%small-scheme)
   
   (define rationalize
     (letrec ([check (lambda (x) 
@@ -2026,18 +2026,18 @@
 	  standard-module-name-resolver find-library-collection-paths))
 
 ;;----------------------------------------------------------------------
-;; .stxrules-body
+;; #%stxrules-body
 
-(module .stxrules-body .kernel
-  (import .stxcase-scheme)
-  (import-for-syntax .kernel .stx)
+(module #%stxrules-body #%kernel
+  (import #%stxcase-scheme)
+  (import-for-syntax #%kernel #%stx)
 
   (define-syntax syntax-rules-module-begin
     (lambda (stx)
       (datum->syntax
        (list* (quote-syntax #%module-begin)
 	      (quote-syntax
-	       (import-for-syntax (rename .stxcase-scheme syntax-rules syntax-rules)))
+	       (import-for-syntax (rename #%stxcase-scheme syntax-rules syntax-rules)))
 	      (stx-cdr stx))
        stx
        (quote-syntax here))))
@@ -2047,16 +2047,16 @@
 ;;----------------------------------------------------------------------
 ;; mzscheme: export everything
 
-(module mzscheme .kernel
-  (import .more-scheme)
-  (import .misc)
-  (import .stxcase-scheme)
-  (import .stx)
-  (import .stxrules-body)
+(module mzscheme #%kernel
+  (import #%more-scheme)
+  (import #%misc)
+  (import #%stxcase-scheme)
+  (import #%stx)
+  (import #%stxrules-body)
 
-  (export (all-from .more-scheme)
-	  (all-from .misc)
-	  (all-from .stxcase-scheme)
-	  (all-from .stx)
-	  (all-from-except .kernel #%module-begin)
+  (export (all-from #%more-scheme)
+	  (all-from #%misc)
+	  (all-from #%stxcase-scheme)
+	  (all-from #%stx)
+	  (all-from-except #%kernel #%module-begin)
 	  (rename syntax-rules-module-begin #%module-begin)))

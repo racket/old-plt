@@ -127,12 +127,8 @@ static long mark_stack_pos = 0;
 #if RECORD_MARK_SRC
 static void *mark_src;
 static int mark_type;
-static void *tagged_mark_src_stack[MARK_STACK_MAX];
-static int tagged_mark_src_type[MARK_STACK_MAX];
-static void *xtagged_mark_src_stack[MARK_STACK_MAX];
-static int xtagged_mark_src_type[MARK_STACK_MAX];
-static void *array_mark_src_stack[MARK_STACK_MAX];
-static int array_mark_src_type[MARK_STACK_MAX];
+static void *mark_src_stack[MARK_STACK_MAX];
+static int mark_src_type[MARK_STACK_MAX];
 
 static void *current_mark_src;
 static int current_mark_type;

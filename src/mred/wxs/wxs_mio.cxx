@@ -1237,7 +1237,7 @@ static Scheme_Object *os_wxMediaStreamOutStringBaseGetString(int n,  Scheme_Obje
   
   
   READY_TO_RETURN;
-  return (r ? scheme_make_sized_byte_string(r, _x0 - 1, 0) : XC_SCHEME_NULL);
+  return (r ? scheme_make_sized_byte_string(r, _x0, 0) : XC_SCHEME_NULL);
 }
 
 static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(int n,  Scheme_Object *p[])
@@ -1630,7 +1630,7 @@ static Scheme_Object *os_wxMediaStreamInGetString(int n,  Scheme_Object *p[])
     { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   
   READY_TO_RETURN;
-  return (r ? scheme_make_sized_byte_string(r, _x0 - 1, 0) : XC_SCHEME_NULL);
+  return (r ? scheme_make_sized_byte_string(r, _x0, 0) : XC_SCHEME_NULL);
 }
 
 static Scheme_Object *os_wxMediaStreamInGet(int n,  Scheme_Object *p[])

@@ -14,7 +14,6 @@
          _float _double
          _bool _pointer _scheme)
 
-(provide define*)
 (define-syntax define*
   (syntax-rules ()
     [(_ (name . args) body ...)
@@ -109,11 +108,11 @@
                      [var (p)])))))]))
 
 ;; Used to convert strings and symbols to a byte-string that names an object
-(define (get-ffi-obj-name name objname)
+(define (get-ffi-obj-name who objname)
   (cond [(bytes? objname) objname]
-        [(symbol? objname) (get-ffi-obj-name name (symbol->string objname))]
+        [(symbol? objname) (get-ffi-obj-name who (symbol->string objname))]
         [(string? objname) (string->bytes/utf-8 objname)]
-        [else (raise-type-error name "object-name" objname)]))
+        [else (raise-type-error who "object-name" objname)]))
 
 ;; This table keeps references to values that are set in foreign libraries, to
 ;; avoid them being GCed.  See set-ffi-obj! above.

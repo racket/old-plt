@@ -142,7 +142,7 @@
       (define-struct (not-boolean struct:exn) (val))
       (define signal-not-boolean? (make-parameter #t))
       (define not-boolean-error-format
-	"Value ~s is neither #t nor #f")
+	"Value ~e is neither #t nor #f")
 
       (define annotate
 	(lambda (expr)

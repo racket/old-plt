@@ -1,4 +1,4 @@
-; $Id: pattern.ss,v 1.4 1997/07/21 15:51:43 shriram Exp $
+; $Id: pattern.ss,v 1.5 1998/05/08 22:15:22 mflatt Exp $
 
 ; Uses of memq are okay, since they look up pattern var in kwd list
 
@@ -7,16 +7,6 @@
 (unit/sig zodiac:pattern^
   (import zodiac:misc^ zodiac:sexp^
     (z : zodiac:reader-structs^) zodiac:scheme-core^)
-
-  (define (andmap pred l)
-    (let mapf ((l l))
-      (or (null? l)
-	(and (pred (car l)) (mapf (cdr l))))))
-
-  (define (ormap pred l)
-    (let mapf ((l l))
-      (and (not (null? l))
-	(or (pred (car l)) (mapf (cdr l))))))
 
   (define (syntax-andmap pred l)
     (andmap pred (expose-list l)))
@@ -32,51 +22,50 @@
 	((m&e
 	   (lambda (p)
 	     (cond
-	       ((ellipsis? p)
+	       ((ellipsis? p) 
 		 (let ((p-head (car p)))
 		   (let ((nestings (get-ellipsis-nestings p-head k)))
 		     (let ((match-head (m&e p-head)))
-		       `(lambda (e)
-			  (if (,z:list? e)
-			    (#%list (#%cons ',nestings
-				      (#%map ,match-head
-					(,expose-list e))))
-			    (esc #f)))))))
-	       ((pair? p)
+		       (lambda (e esc env)
+			 (if (z:list? e)
+			     (list (cons nestings
+					 (map (lambda (e) (match-head e esc env))
+					      (expose-list e))))
+			     (esc #f)))))))
+	       ((pair? p) 
 		 (let ((match-head (m&e (car p)))
-			(match-tail (m&e (cdr p))))
-		   `(lambda (e)
-		      (if  (or (and (,z:list? e)
-				 (#%not (,syntax-null? e)))
-			     (,z:improper-list? e))
-			(#%append (,match-head (,syntax-car e))
-			  (,match-tail (,syntax-cdr e)))
-			(esc #f)))))
-	       ((null? p)
-		 `(lambda (e)
-		    (if (,syntax-null? e) '() (esc #f))))
-	       ((symbol? p)
+		       (match-tail (m&e (cdr p))))
+		   (lambda (e esc env) 
+		     (if  (or (and (z:list? e)
+				   (not (syntax-null? e)))
+			      (z:improper-list? e))
+			  (append (match-head (syntax-car e) esc env)
+				  (match-tail (syntax-cdr e) esc env))
+			  (esc #f)))))
+	       ((null? p) 
+		(lambda (e esc env)
+		  (if (syntax-null? e) '() (esc #f))))
+	       ((symbol? p) 
 		 (if (memq p k)
-		   `(lambda (e)
-		      (if (,z:symbol? e)
-			(if (,lexically-resolved? e env)
-			  (esc #f)
-			  (if (,name-eq? ',p (,z:read-object e))
-			    '()
-			    (esc #f)))
-			(esc #f)))
-		   `(lambda (e)
-		      (#%list (#%cons ',p e)))))
+		     (lambda (e esc env)
+		       (if (z:symbol? e)
+			   (if (lexically-resolved? e env)
+			       (esc #f)
+			       (if (name-eq? p (z:read-object e))
+				   '()
+				   (esc #f)))
+			   (esc #f)))
+		     (lambda (e esc env)
+		       (list (cons p e)))))
 	       (else
-		 `(lambda (e)
-		    (if (#%equal? ,p e) '() (esc #f))))))))
-	(#%eval `(lambda (esc env)
-		   ,(m&e p))))))
+		 (lambda (e esc env)
+		   (if (equal? p e) '() (esc #f))))))))
+	(m&e p))))
 
   (define match-against
     (lambda (matcher e env)
       (let/ec esc
-	((matcher esc env) e))))
+	(matcher e esc env))))
 
   (define penv-merge append)
 

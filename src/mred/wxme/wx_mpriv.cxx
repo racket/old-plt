@@ -886,7 +886,7 @@ wxSnip *wxMediaEdit::SnipSetAdmin(wxSnip *snip, wxSnipAdmin *a)
 
 void wxMediaEdit::SnipSplit(wxSnip *snip, long pos, wxSnip **a_ptr, wxSnip **b_ptr)
 {
-  int c = snip->count;
+  int c = snip->count, nl = (snip->flags & wxSNIP_NEWLINE), hnl = (snip->flags & wxSNIP_HARD_NEWLINE);
   wxSnip *a, *b;
   Bool wl, fl;
   wxSnip *orig;
@@ -934,6 +934,16 @@ void wxMediaEdit::SnipSplit(wxSnip *snip, long pos, wxSnip **a_ptr, wxSnip **b_p
   /* Make *sure* that count is right */
   a->count = pos;
   b->count = c - pos;
+
+  /* Make sure that NEWLINE & HARD_NEWLINE is consistent: */
+  if (nl)
+    b->flags |= wxSNIP_NEWLINE;
+  if (hnl)
+    b->flags |= wxSNIP_HARD_NEWLINE;
+  if (a->flags & wxSNIP_NEWLINE)
+    a->flags -= wxSNIP_NEWLINE;  
+  if (a->flags & wxSNIP_HARD_NEWLINE)
+    a->flags -= wxSNIP_HARD_NEWLINE;
 }
 
 /****************************************************************/

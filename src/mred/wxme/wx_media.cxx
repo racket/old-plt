@@ -1455,7 +1455,8 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	}
       }
 
-      if (gsnip && gsnip->flags & wxSNIP_HARD_NEWLINE) {
+      if (gsnip && (gsnip->flags & wxSNIP_HARD_NEWLINE) && (gsnip->next == snip)) {
+	/* Preceeding snip was a newline, so the new slip belongs on the next line: */
 	wxMediaLine *oldline = gsnip->line, *newline;
 	
 	if (!oldline->next) {

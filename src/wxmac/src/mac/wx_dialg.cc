@@ -179,6 +179,13 @@ Bool wxDialogBox::OnClose(void)
 // Public constructors
 //=============================================================================
 
+/* For now, we ignore the 'resize-border flag on dialogs */
+#if 0
+# define DIALOG_BORDER_STYLE wxMAXIMIZE
+#else
+# define DIALOG_BORDER_STYLE 0
+#endif
+
 //-----------------------------------------------------------------------------
 wxDialogBox::wxDialogBox // Constructor (for dialog window)
 	(
@@ -194,10 +201,14 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
 		WXTYPE		objectType
 	) :
 		wxPanel (new wxFrame(NULL, windowTitle, 
-				  x, y,
-				  width, height, style | wxMDI_CHILD | ((style & wxMAXIMIZE) ? 0 : wxNO_RESIZE_BORDER), 
-                                  windowName, objectType),
-	              0, 0, width, height),
+				     x, y,
+				     width, height, 
+				     (style | wxMDI_CHILD 
+				      | ((style & DIALOG_BORDER_STYLE) 
+					 ? 0
+					 : wxNO_RESIZE_BORDER)), 
+				     windowName, objectType),
+			 0, 0, width, height),
 		cButtonPressed (0)
 {
   WXGC_IGNORE(cFrame);

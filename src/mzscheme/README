@@ -6,11 +6,10 @@ Compiled binaries, documentation, and up-to-date information about
 MzScheme are at:
  http://www.cs.rice.edu/CS/PLT/packages/mzscheme/
 
-MzScheme should compile and execute with little or no modification
-using an ANSI C compiler on any platform supported by the conservative
-garbage collector. You may have to adjust some flags in the Makefile
-and "sconfig.h".  Special per-platform instructions are below,
-followed by some general notes on compilation and changing
+MzScheme should compile (via `mzmake') and execute without
+modification on most platforms. You may have to adjust some flags in
+the Makefile and "sconfig.h".  Special per-platform instructions are
+below, followed by some general notes on compilation and changing
 MzScheme. (Please read the general notes if you plan on changing
 MzScheme or the default compilation flags.)
 
@@ -20,7 +19,7 @@ MzScheme or the default compilation flags.)
  http://www.cs.utah.edu/~mflatt/
 
 ========================================================================
- Compiling for Unix (or BeOS or Cygwin)
+ Compiling for Unix (or Cygwin or BeOS)
 ========================================================================
 
 Compile
@@ -46,18 +45,20 @@ following platforms:
 [Solaris Note: To ensure that dynamic extensions work right, make sure
  your compiler uses the native Solaris `ld' rather than GNU's `ld'.]
 
-[Solaris 2.7 WARNING: gcc 2.8.1 does not work right under Solaris 2.7,
- producing a MzScheme binary that crashes. Thanks to Stever Hall for
- figuring this out in a long--and presumably torturous--process.
- Apparently, compiling under Solaris 2.6 or compiling without -O under
- Solaris 2.7 solves the problem.]
+[Solaris 2.7 Note: gcc 2.8.1 does not work correctly under Solaris
+ 2.7, producing a MzScheme binary that crashes. Thanks to Stever Hall
+ for figuring this out in a long--and presumably torturous--process.
+ Compiling under Solaris 2.6 or compiling without -O under Solaris 2.7
+ apparently solves the problem.]
 
 To compile the `mzscheme' executable for other Unix platforms:
 
-  1) Edit the Makefile if necessary. Common changes include the 
-     C compiler, compiler flags, ranlib processor (if your
+  1) Edit the Makefile if necessary. Common changes include the C
+     compiler name, compiler flags, the ranlib processor (if your
      machine does not have `ranlib', set RANLIB to ':'), and
-     libraries.
+     libraries. If Boehm's conservative garbage collector is not
+     supported for the platform, use SenoraGC by setting GCDIR to
+     'sgc' and including '-DUSE_SENORA_GC' in OPTIONS.
 
   2) Edit "sconfig.h" to set platform-specific flags if necessary.
 

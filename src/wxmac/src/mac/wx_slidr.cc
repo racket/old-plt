@@ -68,7 +68,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 
     Callback(func);
 	SetCurrentDC();
-	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	
   	s_min = min_value;
   	s_max = max_value;

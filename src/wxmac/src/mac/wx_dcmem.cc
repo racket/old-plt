@@ -30,7 +30,7 @@ static const char sccsid[] = "%W% %G%";
      anyway of some size. Since the manual says to select a bitmap first, I
      see no problem with this Mac implementation.
 */
-extern GrafPtr wxMainColormap;
+extern CGrafPtr wxMainColormap;
 
 wxMemoryDC::wxMemoryDC(Bool ro)
 {
@@ -117,7 +117,7 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
     if (gworldH) {
 	pixmap = ::GetGWorldPixMap(gworldH);
 	
-	cMacDC = new wxMacDC((GrafPtr)gworldH);
+	cMacDC = new wxMacDC((CGrafPtr)gworldH);
 	// bitmap->DrawMac(0, 0);
 	ok = TRUE;
 	    

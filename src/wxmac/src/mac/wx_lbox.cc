@@ -142,7 +142,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 	
 	Callback(func);
 	SetCurrentMacDC();
-	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
 	float lblWidth, lblHeight;
 	GetTextExtent(Title, &lblWidth, &lblHeight, NULL, NULL, labelFont);

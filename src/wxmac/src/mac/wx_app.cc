@@ -45,7 +45,7 @@ extern void wxDoEvents();
 extern void wxDoNextEvent();
 extern int wxEventReady();
 
-extern GrafPtr gMacFontGrafPort;
+extern CGrafPtr gMacFontGrafPort;
 
 extern int wxNumHelpItems;
 
@@ -97,12 +97,7 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 	
 	::FlushEvents(everyEvent, 0);
 
-#ifdef OS_X
-        gMacFontGrafPort = CreateNewPort();
-#else        
-	gMacFontGrafPort = new GrafPort;
-	::OpenPort((GrafPtr)gMacFontGrafPort);
-#endif
+    gMacFontGrafPort = CreateNewPort();
 
 	cMacCursorRgn = ::NewRgn(); // forces cursor-move event right away
 	CheckMemOK(cMacCursorRgn);

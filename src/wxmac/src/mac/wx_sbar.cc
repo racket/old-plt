@@ -103,7 +103,7 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
 // do platform stuff
 //////////////////////////////////////////
 	SetCurrentMacDC();
-	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	int clientWidth = ClientArea()->Width();
 	int clientHeight = ClientArea()->Height();
 	Rect boundsRect = {0, 0, clientHeight, clientWidth};

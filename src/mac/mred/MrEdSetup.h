@@ -11,11 +11,13 @@
   #include <Carbon/Carbon.h>
 #else
   #define ACCESSOR_CALLS_ARE_FUNCTIONS 1
+  #if 0 // can't use precompiled headers with change to ACCESSOR...
   #ifdef __MWERKS__
   #if defined(__powerc)
   #include <MacHeadersPPC>
   #else
   #include <MacHeaders68K>
+  #endif
   #endif
   #endif
 #endif

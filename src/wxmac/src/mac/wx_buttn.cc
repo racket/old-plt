@@ -93,7 +93,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	label = wxItemStripLabel(label);
 
 	SetCurrentMacDC();
-	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
 #ifdef OS_X
         // First, create the control with a bogus rectangle;
@@ -188,7 +188,7 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 	cMacControl = NULL;
 	
 	SetCurrentMacDC();
-	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
 	bounds.bottom += 2 * IB_MARGIN_Y;
 	bounds.right += 2 * IB_MARGIN_X;

@@ -51,7 +51,7 @@ class wxFont: public wxbFont
 class wxColourMap: public wxObject
 {
  public:
- 	GrafPtr cmap;
+ 	CGrafPtr cmap;
 
   wxColourMap(void);
   ~wxColourMap(void);

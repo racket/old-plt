@@ -12,6 +12,10 @@
 #ifndef wxb_commonh
 #define wxb_commonh
 
+#ifndef OS_X
+#include <QuickDraw.h>
+#endif
+
 #include "wx_setup.h"
 #include "wx_ver.h"
 

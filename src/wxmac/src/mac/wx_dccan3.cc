@@ -32,7 +32,7 @@ static const char sccsid[] = "%W% %G%";
 //		horiz,
 //		verti;
 
-extern GrafPtr wxMainColormap;
+extern CGrafPtr wxMainColormap;
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)

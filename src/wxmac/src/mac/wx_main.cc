@@ -10,6 +10,7 @@
 static const char sccsid[] = "%W% %G%";
 #ifndef OS_X
   #include <Windows.h>
+  #include <Folders.h>
 #endif
 #include <stdlib.h>
 

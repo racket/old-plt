@@ -247,14 +247,14 @@ static int WriteXBM(FILE *fp, byte *pic, int w, int h, char *fname)
 // bitmap, delete the image
 Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
-	GrafPtr  colorPort;
+	CGrafPtr  colorPort;
 	
 	wxImage *xbmImage  = new wxImage();
 	if (xbmImage->LoadXBM(fileName, 1) == 0) {
 		// CreateOffScreenPixMap(&colorPort, gifImage);
 		Rect bounds = {0, 0, xbmImage->pHIGH, xbmImage->pWIDE};
 		GDHandle savegw;
-		GrafPtr saveport;
+		CGrafPtr saveport;
 		GetGWorld(&saveport, &savegw);
 		QDErr err;
 		GWorldPtr	newGWorld;
@@ -302,7 +302,7 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 // bitmap, delete the image
 Bool wxSaveXBMFromBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
-	GrafPtr  colorPort;
+	CGrafPtr  colorPort;
 	FILE *f;
 	int w, h, i, j;
 	byte *pic, *p;
@@ -319,7 +319,7 @@ Bool wxSaveXBMFromBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 	  return 0;
 	
 	GDHandle savegw;
-	GrafPtr saveport;
+	CGrafPtr saveport;
 	GetGWorld(&saveport, &savegw);
 	
 	SetGWorld(bm->x_pixmap, 0);

@@ -14,12 +14,17 @@
 #include "wx_main.h"
 #include <stdarg.h>
 #include <ctype.h>
+#ifdef OS_X
 #include <sys/types.h>
+#endif
 #include <unistd.h>
 #if 1
 #ifndef OS_X
   #include <Strings.h>
+  #include <Gestalt.h>
   #include <Files.h>
+  #include <Sound.h>
+  #include <Folders.h>
   #include <PPCToolbox.h>
 extern "C" long atol(char *);
 extern "C" int atoi(char *);

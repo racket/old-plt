@@ -39,7 +39,7 @@ static const char sccsid[] = "%W% %G%";
 //		verti;
 
 
-extern GrafPtr wxMainColormap;
+extern CGrafPtr wxMainColormap;
 
 //-----------------------------------------------------------------------------
 // Default constructor
@@ -64,7 +64,7 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
   if (canvas) {
     WXGC_IGNORE(this, canvas);
    cMacDC = canvas->MacDC();
-   GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+   CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
    pixmap = GetPortPixMap(theMacGrafPort);
   }
 

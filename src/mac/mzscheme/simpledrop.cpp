@@ -2,6 +2,7 @@
 #include <Files.h>
 #ifndef OS_X
   #include <EPPC.h>
+  #include <AppleEvents.h>
 #endif
 
 #ifndef FOR_STARTER

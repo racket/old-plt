@@ -79,7 +79,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
 
 #ifdef OS_X
 	SetCurrentMacDC();
-	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	Rect boundsRect = {0, 0, 0, 0};
         OffsetRect(&boundsRect,SetOriginX + PAD_X,SetOriginY + PAD_Y);
 	wxMacString theMacLabel = label;

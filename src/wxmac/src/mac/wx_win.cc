@@ -665,7 +665,7 @@ wxMacDC* wxWindow::MacDC(void) { return cMacDC; } // mac platform only
 //-----------------------------------------------------------------------------
 void wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
 {
-	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	if (theMacGrafPort != GetQDGlobalsThePort()) {
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
         }
@@ -683,7 +683,7 @@ void wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
 //-----------------------------------------------------------------------------
 void wxWindow::SetCurrentMacDC(void) // mac platform only
 {
-	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	if (theMacGrafPort != GetQDGlobalsThePort()) {
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
         }
@@ -699,7 +699,7 @@ void wxWindow::SetCurrentMacDC(void) // mac platform only
 //-----------------------------------------------------------------------------
 void wxWindow::SetCurrentDC(void) // mac platform only
 {
-	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	if (theMacGrafPort != GetQDGlobalsThePort()) {
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
         }

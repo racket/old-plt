@@ -148,7 +148,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 
 	CheckMemOK(theMacWindow);
 	
-	cMacDC = new wxMacDC((GrafPtr)GetWindowPort(theMacWindow));
+	cMacDC = new wxMacDC(GetWindowPort(theMacWindow));
 
 #ifndef OS_X
  	WStateData **wstatedata = (WStateData**)((WindowPeek)theMacWindow)->dataHandle;
@@ -677,9 +677,9 @@ Bool wxFrame::IsVisible(void)
 #ifndef OS_X
 
 //-----------------------------------------------------------------------------
-void wxFrame::wxMacStartDrawing(GrafPtr * oldPort, GDHandle * oldGD)
+void wxFrame::wxMacStartDrawing(CGrafPtr * oldPort, GDHandle * oldGD)
 {
-    ::GetGWorld((CGrafPtr *)oldPort, oldGD);
+    ::GetGWorld(oldPort, oldGD);
 
     CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	::SetGWorld(theMacGrafPort, wxGetGDHandle());
@@ -691,7 +691,7 @@ void wxFrame::wxMacStartDrawing(GrafPtr * oldPort, GDHandle * oldGD)
 }
 
 //-----------------------------------------------------------------------------
-void wxFrame::wxMacStopDrawing(GrafPtr oldPort, GDHandle oldGD)
+void wxFrame::wxMacStopDrawing(CGrafPtr oldPort, GDHandle oldGD)
 {
 	//::SetOrigin(savePortH, savePortV);
 	::SetGWorld(oldPort, oldGD);
@@ -704,7 +704,7 @@ void wxFrame::wxMacStopDrawing(GrafPtr oldPort, GDHandle oldGD)
 //-----------------------------------------------------------------------------
 Rect wxFrame::wxMacGetContRect(void)
 {// express client area in screen window c.s.
-	GrafPtr oldPort; GDHandle oldGD;
+	CGrafPtr oldPort; GDHandle oldGD;
 	wxMacStartDrawing(&oldPort, &oldGD);
 	Rect theContRect;
         GetPortBounds(cMacDC->macGrafPort(),&theContRect); // client c.s.
@@ -725,8 +725,8 @@ Rect wxFrame::wxMacGetStrucRect(void)
 {// express window area in screen window c.s.
 	Rect theStrucRect;
 
-	GrafPtr oldPort; GDHandle oldGD;
-	wxMacStartDrawing(oldPort, oldGD);
+	CGrafPtr oldPort; GDHandle oldGD;
+	wxMacStartDrawing(&oldPort, &oldGD);
 
 	WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
 
@@ -754,7 +754,7 @@ Rect wxFrame::wxMacGetStrucRect(void)
 		::OffsetRect(&theStrucRect, 0, thePosition.v - kOffScreenLocation); // screen window c.s.
 	}
 
-	wxMacStopDrawing(oldPort, oldGD, savePortH, savePortV);
+	wxMacStopDrawing(oldPort, oldGD);
 
 	return theStrucRect; // screen window c.s.
 }

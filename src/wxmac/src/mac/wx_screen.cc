@@ -35,7 +35,7 @@ wxScreen::wxScreen // Constructor (for screen window)
 	) :
 		wxWindow (windowName, x, y, width, height, style)
 {
-	GrafPtr wPort;
+	CGrafPtr wPort;
         Rect wPortRect;
         wPort = GetQDGlobalsThePort();
         GetPortBounds(wPort,&wPortRect);

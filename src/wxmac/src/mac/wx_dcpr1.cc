@@ -31,7 +31,7 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
 {
   ok = true;
 
-    GrafPtr theGrafPtr;
+    CGrafPtr theGrafPtr;
     __type = wxTYPE_DC_PRINTER;
 
     cPrintData = printData;
@@ -57,10 +57,10 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
       return;
     }
 
-    theGrafPtr = &(prPort->gPort);
+    theGrafPtr = (CGrafPtr)(&(prPort->gPort));
 #endif
 
-    cMacDC = new wxMacDC((GrafPtr)theGrafPtr);
+    cMacDC = new wxMacDC(theGrafPtr);
 	
     cMacDoingDrawing = FALSE;
 

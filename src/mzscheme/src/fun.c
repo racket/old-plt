@@ -1766,7 +1766,6 @@ static void copy_cjs(Scheme_Continuation_Jump_State *a, Scheme_Continuation_Jump
 static void pre_call_ec(void *ec)
 {
   SCHEME_CONT_HOME(ec) = scheme_current_process;
-  ((Scheme_Escaping_Cont *)ec)->cont_mark_stack = MZ_CONT_MARK_STACK;
 }
 
 static void post_call_ec(void *ec)
@@ -1818,7 +1817,8 @@ scheme_call_ec (int argc, Scheme_Object *argv[])
   cont->f = argv[0];
   cont->suspend_break = p->suspend_break;
   copy_cjs(&cont->cjs, &p->cjs);
-
+  cont->cont_mark_stack = MZ_CONT_MARK_STACK;
+  
   return scheme_dynamic_wind(pre_call_ec, do_call_ec, post_call_ec,
 			     handle_call_ec, (void *)cont);
 }
@@ -2025,7 +2025,7 @@ call_cc (int argc, Scheme_Object *argv[])
   }
 }
 
-Scheme_Object *scheme_continuation_marks(Scheme_Process *p, 
+static Scheme_Object *continuation_marks(Scheme_Process *p, 
 					 Scheme_Object *_cont,
 					 Scheme_Object *econt)
      /* cont => p is not used */
@@ -2093,7 +2093,7 @@ Scheme_Object *scheme_continuation_marks(Scheme_Process *p,
 
 Scheme_Object *scheme_current_continuation_marks(void)
 {
-  return scheme_continuation_marks(scheme_current_process, NULL, NULL);
+  return continuation_marks(scheme_current_process, NULL, NULL);
 }
 
 static Scheme_Object *
@@ -2111,13 +2111,13 @@ cont_marks(int argc, Scheme_Object *argv[])
   if (SCHEME_ECONTP(argv[0])) {
     if (!SCHEME_CONT_HOME(argv[0])) {
       scheme_arg_mismatch("continuation-marks", 
-			  "escape continuation no long applicable",
+			  "escape continuation no long applicable: ",
 			  argv[0]);
     }
     
-    return scheme_continuation_marks(SCHEME_CONT_HOME(argv[0]), NULL, argv[0]);
+    return continuation_marks(SCHEME_CONT_HOME(argv[0]), NULL, argv[0]);
   } else
-    return scheme_continuation_marks(NULL, argv[0], NULL);
+    return continuation_marks(NULL, argv[0], NULL);
 }
 
 static Scheme_Object *

@@ -381,10 +381,6 @@ typedef struct Scheme_Object *
 typedef struct Scheme_Object *
 (Scheme_Closed_Prim)(void *d, int argc, struct Scheme_Object *argv[]);
 
-typedef struct Scheme_Object *
-(Scheme_Method_Prim)(struct Scheme_Object *o, 
-		     int argc, struct Scheme_Object *argv[]);
-
 typedef struct {
   Scheme_Type type;
   MZ_HASH_KEY_EX

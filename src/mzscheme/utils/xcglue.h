@@ -9,23 +9,36 @@ extern "C"
 {
 #endif
 
+/* Provided by the embedding client: */
+void scheme_install_xc_global(char *name, Scheme_Object *val, void *env);
+Scheme_Object *scheme_lookup_xc_global(char *name, void *env);
+
+/* initialization: */
+void objscheme_init(Scheme_Env *);
+
 /******************************************************************/
 /*                   Utilites used by xctocc                      */
 /******************************************************************/
 
 typedef struct Scheme_Class_Object {
   Scheme_Type type;
+  /* MZ_HASH_KEY */
   short primflag;
   void *primdata;
-  Scheme_Object *s_obj;
+  Scheme_Object *sclass;
+  Scheme_Object *dispatcher;
+  Scheme_Object *extra[1];
 } Scheme_Class_Object;
+  
+extern Scheme_Type objscheme_object_type;
+
+typedef Scheme_Prim Scheme_Method_Prim;
+#define POFFSET 1
+#define THEOBJ p[0]
 
 typedef long ExactLong;
 
 void objscheme_init(Scheme_Env *env);
-
-void scheme_install_xc_global(char *name, Scheme_Object *val, void *env);
-Scheme_Object *scheme_lookup_xc_global(char *name, void *env);
 
 /* Defining a primitive class: */
 Scheme_Object *
@@ -36,12 +49,20 @@ void objscheme_add_global_class(Scheme_Object *sclass, char *name,
 void objscheme_add_global_interface(Scheme_Object *sclass, char *name,
 				    void *env);
 
-void objscheme_note_creation(Scheme_Object *obj);
+void scheme_add_method_w_arity(Scheme_Object *c, const char *name,
+			       Scheme_Method_Prim *f, 
+			       int mina, int maxa);
+void scheme_add_method(Scheme_Object *c, const char *name,
+		       Scheme_Method_Prim *f);
+void scheme_made_class(Scheme_Object *c);
+Scheme_Object* scheme_class_to_interface(Scheme_Object *c, char *name);
+
+Scheme_Object *scheme_make_uninited_object(Scheme_Object *sclass);
 
 /* Maintaining the Scheme - C++ connection */
 void objscheme_save_object(void *, Scheme_Object *);
 Scheme_Class_Object *objscheme_find_object(void *);
-void objscheme_check_valid(Scheme_Object *);
+void objscheme_check_valid(Scheme_Object *sclass, const char *name, int n, Scheme_Object **argv);
 int objscheme_is_shutdown(Scheme_Object *o);
 
 void objscheme_register_primpointer(void *obj_addr, void *prim_ptr_address);
@@ -54,8 +75,7 @@ Scheme_Object *objscheme_find_method(Scheme_Object *obj,
 				     char *name, 
 				     void **cache);
 
-/* Checking a class relationship */
-#define objscheme_is_subclass scheme_is_subclass
+int objscheme_is_subclass(Scheme_Object *a, Scheme_Object *sup);
 
 Scheme_Object *objscheme_unbox(Scheme_Object *, const char *where);
 Scheme_Object *objscheme_nullable_unbox(Scheme_Object *, const char *where);

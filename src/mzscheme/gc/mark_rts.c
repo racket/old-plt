@@ -435,7 +435,7 @@ ptr_t cold_gc_frame;
 
 static int done_only_time; /* MATTHEW */
 #ifdef MSWIN32
-# define DO_DYNLIB_ONLY_ONCE 1
+# define DO_DYNLIB_ONLY_ONCE 0
 #else
 # define DO_DYNLIB_ONLY_ONCE 0
 #endif

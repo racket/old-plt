@@ -163,6 +163,8 @@
   (define mzscheme? mz?)
   (define single-and/or-ok? mz?)
   (define nonbool-and/or-ok? (not beg?))
+  (define no-struct-supertype? beg/inter?)
+  (define lambda-in-define-only? beg?)
 
   (define (mk-diff flag?)
     (lambda (x other)
@@ -184,6 +186,8 @@
   (define ei-diff (mk-diff explicit-inexact?))
   (define al-diff (mk-diff abbrev-list?))
   (define sao-diff (mk-diff single-and/or-ok?))
+  (define nss-diff (mk-diff no-struct-supertype?))
+  (define ldo-diff (mk-diff lambda-in-define-only?))
 
   (start-copy jr-out copy-out #f)
   (start-copy jr-err copy-err #f)
@@ -269,15 +273,29 @@
   (try-void "(define test-define-of-five 5)")
   (try "test-define-of-five" "5")
 
-  (try "(lambda (x) 5)" (pc-diff "(lambda (a1) ...)" "#<procedure>"))
-  (try "((lambda (x) 592) 92)" (sa-diff '(error "First term after paren")
-					"592"))
-  (try "(lambda () 5)" (el-diff (pc-diff "(lambda () ...)" "#<procedure>") 
-				'(error "at least one argument")))
-  (try "((lambda () 5))" (el-diff (sa-diff '(error "First term after paren")
-					   "5")
-				  '(error "at least one argument")))
+  (try "(lambda (x) 5)" (ldo-diff '(error "only in a definition")
+				  (pc-diff "(lambda (a1) ...)" "#<procedure>")))
+  (try "((lambda (x) 592) 92)" (ldo-diff '(error "only in a definition")
+					 (sa-diff '(error "First term after paren")
+						  "592")))
+  (try "(17 92)" (sa-diff '(error "First term after paren")
+			  '(error "application")))
+  (try "(lambda () 5)" (ldo-diff '(error "only in a definition")
+				 (el-diff (pc-diff "(lambda () ...)" "#<procedure>") 
+					  '(error "at least one argument"))))
+  (try "(define (func) 5)" (el-diff 'void
+				    '(error "at least one argument")))
+  (try "((lambda () 5))" (ldo-diff '(error "only in a definition")
+				   (el-diff (sa-diff '(error "First term after paren")
+						     "5")
+					    '(error "at least one argument"))))
   
+  (try "(case-lambda [(x) 10])" (ldo-diff '(error "only in a definition")
+					  (pc-diff "(lambda (a1) ...)" "#<procedure>")))
+
+  (try "lambda" '(error "Invalid use of keyword"))
+  (try "case-lambda" '(error "Invalid use of keyword"))
+
   (try-void "(define test-define-f (lambda (x) (+ x 5)))")
   (try "(test-define-f 3)" "8")
   (try "(test-define-f 4)" "9")
@@ -298,8 +316,8 @@
   (try "(if (odd? 10) 5 3)" "3")
   (try "(if #f 51 32)" "32")
   (try "(if #t 10)" (oai-diff "10" '(error "must have an else")))
-  (try "(lambda (x) (if #f (set! x 92)))"
-       (oai-diff (pc-diff "(lambda (a1) ...)" "#<procedure>")
+  (try "(define (y x) (if #f (set! x 92)))"
+       (oai-diff 'void
 		 '(error "must have an else")))
 
   ;; ;;;;;;;;;;;;;;;;;; define-struct ;;;;;;;;;;;;;;;;;;;;;
@@ -329,6 +347,10 @@
 	 "55")
     (try '(a? (make-a 3 4)) "#t"))
 
+  (try "(define-struct (a 0) (b c))"
+       (nss-diff '(error "ot an identifier")
+		 '(error "not a struct type value")))
+  
   ;; ;;;;;;;;;;;;;;;;;; local ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (if local?

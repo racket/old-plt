@@ -36,12 +36,11 @@
 
   (define gcc-compile-flags (append '("-c" "-O2")
 				    (case (string->symbol (system-library-subpath))
-				      [(parisc-hpux) '("-Aa" "-D_HPUX_SOURCE" "+z")]
+				      [(parisc-hpux) '("-D_HPUX_SOURCE" "-fpic")]
 				      [else null])))
-  (define unix-compile-flags (append gcc-compile-flags
-				     (case (string->symbol (system-library-subpath))
-				       [(parisc-hpux) '("-Aa")]
-				       [else null])))
+  (define unix-compile-flags (case (string->symbol (system-library-subpath))
+			       [(parisc-hpux) '("-c" "-O2" "-Aa" "-D_HPUX_SOURCE" "+z")]
+			       [else gcc-compile-flags]))
   (define msvc-compile-flags '("/c" "/O2"))
 
   (define current-extension-compiler-flags

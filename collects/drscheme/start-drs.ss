@@ -3,19 +3,5 @@
  (require-relative-library "drsig.ss"))
 
 (define (start-drscheme)  
-
-  (let-values ([(shutdown-splash close-splash)
-		((require-library "splash.ss" "framework")
-		 (build-path (collection-path "icons") "plt.gif")
-		 "DrScheme"
-		 81
-		 5)])
-    (require-relative-library "drsig.ss")
-    (let ([unit (require-relative-library "link.ss")])
-      (shutdown-splash)
-      (global-define-values/invoke-unit/sig framework^
-		unit
-		#f
-		(program argv))
-      (close-splash))))
+)
 

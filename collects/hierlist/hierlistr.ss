@@ -42,7 +42,7 @@
 			   (make-object wx:point% (quotient sz 2) (+ width offset voffset)))))))])
       (private
 	[get-width (lambda () (+ 2 size))]
-	[get-height (lambda () size)]
+	[get-height (lambda () (+ 2 size))]
 	[clicked? #f]
 	[update
 	 (lambda ()
@@ -53,11 +53,13 @@
 		      (unless size (set-sizes dc))
 		      (unless (null? w) (set-box! w (get-width)))
 		      (unless (null? h) (set-box! h (get-height)))
-		      (unless (null? descent) (set-box! descent 0))
+		      (unless (null? descent) (set-box! descent 2))
 		      (unless (null? space) (set-box! space 0)))]
 	[partial-offset (lambda (dc x y len)
 			  (unless size (set-sizes dc))
-			  (if (zero? len) 0 size))]
+			  (if (zero? len)
+			      0 
+			      (get-width)))]
 	[draw (lambda (dc x y left top right bottom dx dy draw-caret)
 		(unless size (set-sizes dc))
 		(let ([b (send dc get-brush)])
@@ -98,7 +100,7 @@
 		      (set! clicked? #f)
 		      (update))])))]
 	[on (case-lambda 
-	     [(v) (set! on? v) (send (get-admin) needs-update this 0 0 (add1 size) (add1 size))]
+	     [(v) (set! on? v) (update)]
 	     [() on?])]
 	[copy (lambda () (make-object arrow-snip% click-callback))])
       (sequence
@@ -137,9 +139,17 @@
     (class hierarchical-list-item% (snip)
       (public
 	[get-buffer (lambda () (send snip get-title-buffer))]
-	[new-item (lambda () (send (send snip get-content-buffer) new-item))]
-	[new-list (lambda () (send (send snip get-content-buffer) new-list))]
-	[delete-item (lambda (i) (send (send snip get-content-buffer) delete-item i))]
+	[new-item (lambda () 
+		    (begin0
+		     (send (send snip get-content-buffer) new-item)
+		     (send snip not-empty-anymore)))]
+	[new-list (lambda () 
+		    (begin0 
+		     (send (send snip get-content-buffer) new-list)
+		     (send snip not-empty-anymore)))]
+	[delete-item (lambda (i) (begin0
+				  (send (send snip get-content-buffer) delete-item i)
+				  (send snip check-empty-now)))]
 	[get-items (lambda () (send (send snip get-content-buffer) get-items))])
       (sequence
 	(super-init snip))))
@@ -204,7 +214,7 @@
 	     (send s get-item)))])
       (public
 	[deselect-all 
-	 (lambda () (for-each (lambda (l) (send l deselect-all)) children))]
+	 (lambda () (for-each (lambda (x) (send x deselect-all)) children))]
 	[new-item 
 	 (lambda () (insert-item mred:hierarchical-item-snip% #t))]
 	[new-list
@@ -216,6 +226,7 @@
 	     (cond
 	      [(null? l) (error 'hierarchical-list-compound-item::delete-item "item not found: ~a" i)]
 	      [(eq? (send (car l) get-item) i)
+	       (send (car l) deselect-all)
 	       (set! children (append (reverse others) (cdr l)))
 	       (let ([s (line-start-position pos)]
 		     [e (line-end-position pos)])
@@ -266,17 +277,39 @@
 			(select #f)
 			(send content-buffer deselect-all))]
 	[show-select (lambda (on?) (send title-buffer show-select on?))]
+	[not-empty-anymore (lambda ()
+			     (when was-empty?
+				   (set! was-empty? #f)
+				   (set! was-non-empty? #t)
+				   (send* main-buffer
+				     (begin-edit-sequence)
+				     (insert #\newline 2)
+				     (insert whitespace 3)
+				     (insert content-snip 4)
+				     (end-edit-sequence))))]
+	[check-empty-now (lambda ()
+			   (when (and was-non-empty? 
+				      (zero? (send content-buffer last-position)))
+				 (set! was-empty? #t)
+				 (set! was-non-empty? #f)
+				 (send main-buffer delete 2 5)))]
 	[on-arrow (lambda (a)
 		    (if (send a on)
 			(begin
 			  (send main-buffer begin-edit-sequence)
 			  (send top item-opened (get-item))
-			  (send* main-buffer
-			    (insert #\newline 2)
-			    (insert whitespace 3)
-			    (insert content-snip 4))
+			  (if (zero? (send content-buffer last-position))
+			      (set! was-empty? #t)
+			      (begin
+				(set! was-non-empty? #t)
+				(send* main-buffer
+				       (insert #\newline 2)
+				       (insert whitespace 3)
+				       (insert content-snip 4))))
 			  (send main-buffer end-edit-sequence))
 			(begin
+			  (set! was-empty? #f)
+			  (set! was-non-empty? #f)
 			  (send main-buffer begin-edit-sequence)
 			  (send content-buffer deselect-all)
 			  (send main-buffer delete 2 5)
@@ -286,6 +319,8 @@
 	[get-content-buffer (lambda () content-buffer)]
 	[get-item (lambda () item)])
       (private
+        [was-empty? #f]
+	[was-non-empty? #f]
 	[item (make-object hierarchical-list-compound-item% this)]
 	[main-buffer (make-object (get-main-buffer%))]
 	[title-buffer (make-object (get-title-buffer%) top top-select item this)]

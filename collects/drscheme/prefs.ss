@@ -11,22 +11,27 @@
 
   (include "various-programs.ss")
 
-  (define (get-fixed-faces)
-    (let* ([canvas (make-object canvas% (make-object frame% "bogus"))]
-	   [dc (send canvas get-dc)]
-	   [ans
-	    (let loop ([faces (get-face-list)])
-	      (cond
-	       [(null? faces) null]
-	       [else (let* ([face (car faces)]
-			    [font (make-object font% 12 face 'default 'normal 'normal #f)])
-		       (let*-values ([(wi _1 _2 _3) (send dc get-text-extent "i" font)]
-				     [(ww _1 _2 _3) (send dc get-text-extent "w" font)])
-			 (if (= ww wi)
-			     (cons face (loop (cdr faces)))
-			     (loop (cdr faces)))))]))])
-      (set! get-fixed-faces (lambda () ans))
-      ans))
+  (define get-fixed-faces
+    (cond
+      [(eq? (system-type) 'unix) 
+       (lambda () (get-face-list))]
+      [else
+       (lambda ()
+         (let* ([canvas (make-object canvas% (make-object frame% "bogus"))]
+                [dc (send canvas get-dc)]
+                [ans
+                 (let loop ([faces (get-face-list)])
+                   (cond
+                     [(null? faces) null]
+                     [else (let* ([face (car faces)]
+                                  [font (make-object font% 12 face 'default 'normal 'normal #f)])
+                             (let*-values ([(wi _1 _2 _3) (send dc get-text-extent "i" font)]
+                                           [(ww _1 _2 _3) (send dc get-text-extent "w" font)])
+                               (if (= ww wi)
+                                   (cons face (loop (cdr faces)))
+                                   (loop (cdr faces)))))]))])
+           (set! get-fixed-faces (lambda () ans))
+           ans))]))
 
   (define default-font-name (get-family-builtin-face 'modern))
   
@@ -73,14 +78,13 @@
    (lambda (p v)
      (set-font-name v)))
   
+  (unless (member (framework:preferences:get 'drscheme:font-name)
+                  (get-fixed-faces))
+    (framework:preferences:set 'drscheme:font-name default-font-name))
+  
   (framework:preferences:add-panel
    "Font"
    (lambda (panel)
-     
-     (unless (member (framework:preferences:get 'drscheme:font-name)
-                     (get-fixed-faces))
-       (framework:preferences:set 'drscheme:font-name default-font-name))
-     
      (let* ([main (make-object vertical-panel% panel)]
 	    [options-panel (make-object horizontal-panel% main)]
 	    [size (make-object slider% "Font Size" 1 72 options-panel

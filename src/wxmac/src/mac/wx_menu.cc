@@ -272,7 +272,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     }
     *s = 0;
     s = t;
-#ifdef WX_CARBON
+#ifdef OS_X
     helpflg = 0;
 #else
     helpflg = strncmp("Help", s, 4) ? 0 : 1;

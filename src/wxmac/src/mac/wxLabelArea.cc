@@ -17,47 +17,47 @@
 
 //-----------------------------------------------------------------------------
 wxLabelArea::wxLabelArea
-	(
-		wxWindow*	parentWindow,
-		char*		label,
-		wxFont*		theFont,
-		Direction	direction,
-		int			xoffset,
-		int			yoffset
-	) :
-		wxArea(parentWindow)
+(
+ wxWindow*	parentWindow,
+ char*		label,
+ wxFont*		theFont,
+ Direction	direction,
+ int			xoffset,
+ int			yoffset
+ ) :
+ wxArea(parentWindow)
 {
-	__type = wxTYPE_LABEL_AREA;
-	cLabelText = new wxMessage(this, label, theFont, xoffset, yoffset);
-	cDirection = direction;
+  __type = wxTYPE_LABEL_AREA;
+  cLabelText = new wxMessage(this, label, theFont, xoffset, yoffset);
+  cDirection = direction;
 
-	int labelWidth = 0;
-	int labelHeight = 0;
-	wxFont* labelFont = cLabelText->font;
-	if (labelFont)
-	{
-		char* labelText = cLabelText->GetLabel();
-		float fLabelWidth, fLabelHeight, fDescent, fExternalLeading;
-		labelFont->GetTextExtent(labelText, &fLabelWidth, &fLabelHeight,
-								&fDescent, &fExternalLeading);
-		labelWidth = (int)fLabelWidth;
-		labelHeight = (int)fLabelHeight;
-	}
+  int labelWidth = 0;
+  int labelHeight = 0;
+  wxFont* labelFont = cLabelText->font;
+  if (labelFont)
+    {
+      char* labelText = cLabelText->GetLabel();
+      float fLabelWidth, fLabelHeight, fDescent, fExternalLeading;
+      labelFont->GetTextExtent(labelText, &fLabelWidth, &fLabelHeight,
+			       &fDescent, &fExternalLeading);
+      labelWidth = (int)fLabelWidth;
+      labelHeight = (int)fLabelHeight;
+    }
 
-	if ((int)cDirection & Direction::wxTop)
-	{
-		SetMargin(labelHeight + 3, Direction::wxTop);
-	}
-	else
-	{
-		SetMargin(labelWidth + 3, Direction::wxLeft);
-	}
+  if ((int)cDirection & Direction::wxTop)
+    {
+      SetMargin(labelHeight + 3, Direction::wxTop);
+    }
+  else
+    {
+      SetMargin(labelWidth + 3, Direction::wxLeft);
+    }
 }
 
 //-----------------------------------------------------------------------------
 wxLabelArea::~wxLabelArea(void)	// destructor
 {
-	delete cLabelText;
+  cLabelText = NULL;
 }
 
 //=============================================================================

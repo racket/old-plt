@@ -23,12 +23,10 @@ wxScroll::wxScroll // root scroll
  ) :
   cScrollWindow (scrollWindow),
   cScrollData (scrollData),
-  cParentScroll (NULL),
-  cScrolls (wxList(wxList::kNoDestroyData))
+  cParentScroll (NULL)
 {
+  cScrolls = new wxList(wxList::kNoDestroyData);
   WXGC_IGNORE(this, scrollWindow);
-  if (!scrollWindow) wxFatalError("No scroll window for constructing scroll.");
-  if (!scrollData) wxFatalError("No scroll data for constructing root scroll.");
 }
 
 //-----------------------------------------------------------------------------
@@ -38,20 +36,17 @@ wxScroll::wxScroll // child scroll
  wxWindow*	parentScrollWindow
  ) :
   cScrollWindow (scrollWindow),
-  cScrollData (NULL),
-  cScrolls (wxList(wxList::kNoDestroyData))
+  cScrollData (NULL)
 {
   WXGC_IGNORE(this, scrollWindow);
-  if (!scrollWindow)
-    wxFatalError("No scroll window for constructing scroll.");
-  if (!parentScrollWindow)
-    wxFatalError("No parent scroll window for constructing scroll.");
 
+  cScrolls = new wxList(wxList::kNoDestroyData);
+ 
   cParentScroll = parentScrollWindow->GetScroll();
   if (!cParentScroll)
     wxFatalError("No parent scroll for constructing scroll.");
 
-  cParentScroll->cScrolls.Append(this);
+  cParentScroll->cScrolls->Append(this);
 }
 
 //=============================================================================
@@ -64,16 +59,14 @@ wxScroll::~wxScroll(void)	// destructor
   // NOTE: Only the wxWindow object that owns this wxScroll should invoke its deletion.
   //       Hence, owner will NULL out its cScroll link to this object
 
-  wxNode* childScrollNode = cScrolls.First();
+  wxNode* childScrollNode = cScrolls->First();
   while (childScrollNode)
     {
       wxScroll* childScroll = (wxScroll*)childScrollNode->Data();
       childScroll->cParentScroll = cParentScroll;
-      if (cParentScroll) cParentScroll->cScrolls.Append(this);
+      if (cParentScroll) cParentScroll->cScrolls->Append(this);
       childScrollNode = childScrollNode->Next();
     }
-
-  delete cScrollData;
 
   if (cParentScroll) cParentScroll->OnDeleteChildScroll(this);
 }
@@ -134,18 +127,10 @@ wxScroll* wxScroll::RootScroll(void)
 //-----------------------------------------------------------------------------
 void wxScroll::AddChildScrollWindow(wxWindow* childScrollWindow)
 {
-  if (!childScrollWindow)
-    wxFatalError("No childScrollWindow for AddChildScrollWindow.");
-
   wxScroll* childScroll = childScrollWindow->GetScroll();
-  if (!childScroll)
-    wxFatalError("No childScroll for AddChildScrollWindow.");
-
-  if (childScroll->cParentScroll)
-    wxFatalError("ChildScroll not root for AddChildScrollWindow.");
   childScroll->cParentScroll = this;
 
-  cScrolls.Append(childScroll);
+  cScrolls->Append(childScroll);
 
   if (childScroll->cScrollData)
     {
@@ -160,7 +145,7 @@ void wxScroll::AddChildScrollWindow(wxWindow* childScrollWindow)
 //-----------------------------------------------------------------------------
 void wxScroll::OnDeleteChildScroll(wxScroll* childScroll)
 {
-  cScrolls.OnDeleteObject(childScroll);
+  cScrolls->OnDeleteObject(childScroll);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -175,7 +160,7 @@ void wxScroll::OnSetScrollData
  wxScrollEvent*		e
  )
 {
-  wxNode* childScrollNode = cScrolls.First();
+  wxNode* childScrollNode = cScrolls->First();
   while (childScrollNode)
     {
       wxScroll* childScroll = (wxScroll*)childScrollNode->Data();

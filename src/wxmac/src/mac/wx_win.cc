@@ -47,7 +47,7 @@ wxWindow::wxWindow(void)
   cWindowHeight = 0;
   cStyle = 0;
   cScroll = NULL;
-  cAreas = wxList(wxList::kDestroyData);
+  cAreas = new wxList(wxList::kDestroyData);
   children = new wxChildList();
   cActive = FALSE;
   cEnable = TRUE;
@@ -83,9 +83,9 @@ wxWindow::wxWindow // Constructor (for screen window)
  cWindowHeight (height >= 0 ? height : 0),
  cStyle (style),
  cScroll (NULL),
- cAreas (wxList(wxList::kDestroyData)),
  children (new wxChildList())
 {
+  cAreas = new wxList(wxList::kDestroyData);
   cActive = FALSE;
   cEnable = TRUE;
   
@@ -120,7 +120,7 @@ wxWindow::wxWindow // Constructor (given parentScreen; i.e., this is frame)
  cWindowHeight (height >= 0 ? height : 0),
  cStyle (style),
  cScroll (NULL),
- cAreas (wxList(wxList::kDestroyData)),
+ cAreas (new wxList(wxList::kDestroyData)),
  children (new wxChildList())
 {
   cActive = FALSE;
@@ -163,7 +163,7 @@ wxWindow::wxWindow // Constructor (given parentArea)
  cWindowHeight (height >= 0 ? height : 0),
  cStyle (style),
  cScroll (NULL),
- cAreas (wxList(wxList::kDestroyData)),
+ cAreas (new wxList(wxList::kDestroyData)),
  children (new wxChildList())
 {
   cActive = FALSE;
@@ -204,7 +204,7 @@ wxWindow::wxWindow // Constructor (given parentWindow)
  cWindowHeight (height >= 0 ? height : 0),
  cStyle (style),
  cScroll (NULL),
- cAreas (wxList(wxList::kDestroyData)),
+ cAreas (new wxList(wxList::kDestroyData)),
  children (new wxChildList())
 {
   cActive = FALSE;
@@ -241,7 +241,7 @@ wxWindow::wxWindow // Constructor (given objectType; i.e., menu or menuBar)
  cWindowHeight (0),
  cStyle (0),
  cScroll (NULL),
- cAreas (wxList(wxList::kDestroyData)),
+ cAreas (new wxList(wxList::kDestroyData)),
  children (new wxChildList())
 {
   cActive = FALSE;
@@ -309,14 +309,9 @@ wxWindow::~wxWindow(void) // Destructor
   if (cScroll)
     delete cScroll;
 
-  {
-    wxNode *w;
-    while ((w = cAreas.First())) {
-      delete (wxArea *)w->Data();
-    }
-  }
+  delete cAreas;
   
-  //don't send leaveEvt messages to this window anymore.
+  // don't send leaveEvt messages to this window anymore.
   if (entered == this) entered = NULL; 
 }
 
@@ -622,7 +617,7 @@ void wxWindow::OnWindowDSize(int dW, int dH, int dX, int dY)
   OnClientAreaDSize(dW, dH, dX, dY);
 
   // Resize child areas
-  wxNode* areaNode = cAreas.First();
+  wxNode* areaNode = cAreas->First();
   while (areaNode) {
     wxArea* area = (wxArea*)areaNode->Data();
     if (area == ClientArea()) {
@@ -923,7 +918,7 @@ void wxWindow::GetClipRect(wxArea* area, Rect* clipRect) // mac platform only
 wxArea* wxWindow::ParentArea(void) { return cParentArea; } // mac platform only
 
 //-----------------------------------------------------------------------------
-wxList* wxWindow::Areas(void) { return &cAreas; } // mac platform only (kludge)
+wxList* wxWindow::Areas(void) { return cAreas; } // mac platform only (kludge)
 
 //-----------------------------------------------------------------------------
 wxArea* wxWindow::ClientArea(void) { return cClientArea; } // mac platform only
@@ -995,7 +990,7 @@ void wxWindow::OnDeleteChildWindow(wxWindow* childWindow) // mac platform only
 //-----------------------------------------------------------------------------
 void wxWindow::OnDeleteChildArea(wxArea* childArea) // mac platform only
 {
-  cAreas.OnDeleteObject(childArea);
+  cAreas->OnDeleteObject(childArea);
 }
 
 //-----------------------------------------------------------------------------
@@ -1198,7 +1193,7 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 
   int capThis = (wxWindow::gMouseWindow == this);
   wxArea* hitArea = NULL;
-  wxNode* areaNode = cAreas.Last();
+  wxNode* areaNode = cAreas->Last();
   while (areaNode && !hitArea) {
     if (!capThis) {
       wxArea* area = (wxArea*)areaNode->Data();
@@ -1374,7 +1369,7 @@ void wxWindow::Activate(Bool flag) // mac platform only
   
   cActive = flag;
   ShowAsActive(flag);
-  wxNode* areaNode = cAreas.First();
+  wxNode* areaNode = cAreas->First();
   while (areaNode)
     {
       wxArea* area = (wxArea*)areaNode->Data();
@@ -1410,7 +1405,7 @@ void wxWindow::Paint(void)
 { // Called when needs painting
   if (cHidden) return;
 
-  wxNode* areaNode = cAreas.Last();
+  wxNode* areaNode = cAreas->Last();
   while (areaNode)
     {
       wxArea* area = (wxArea*)areaNode->Data();
@@ -1589,7 +1584,8 @@ void wxWindow::Show(Bool v)
 
 Bool wxWindow::CanShow(Bool v)
 {
-  if (v && cUserHidden)
+  if (v && (cUserHidden 
+	    || (window_parent && window_parent->IsHidden())))
     return FALSE;
 
   v = !v;
@@ -1607,8 +1603,6 @@ void wxWindow::DoShow(Bool v)
 
   v = !v;
 
-  cHidden = FALSE; // temp...
-  
   if (SetCurrentMacDCNoMargin()) {
     // put newClientRect at (SetOriginX, SetOriginY)
     Rect r = { -1, -1, cWindowHeight, cWindowWidth };
@@ -1616,7 +1610,6 @@ void wxWindow::DoShow(Bool v)
     
     if (v) {
       MacSetBackground();
-      ::ClipRect(&r);
       ::EraseRect(&r);
     }
     
@@ -1767,7 +1760,7 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
   }
 
   wxArea* hitArea = NULL;
-  wxNode* areaNode = cAreas.Last();
+  wxNode* areaNode = cAreas->Last();
   while (areaNode && !hitArea) {
     wxArea* area = (wxArea*)areaNode->Data();
     if ((!wxWindow::gMouseWindow && area->WindowPointInArea(hitX, hitY))

@@ -112,10 +112,6 @@ wxApp::wxApp():wxbApp()
 //-----------------------------------------------------------------------------
 wxApp::~wxApp(void)
 {
-#if defined(DEBUG_NEW) && (DEBUG_NEW >= 2)
-  delete wxScreen::gScreenWindow;
-  DebugNewReportLeaks();
-#endif
 }
 
 //-----------------------------------------------------------------------------

@@ -96,7 +96,7 @@ protected:
 
   // For window area
   	wxArea* 	cParentArea; 	// mac platform only
-  	wxList 		cAreas; 		// mac platform only
+  	wxList* 		cAreas; 		// mac platform only
   	wxArea* 	cClientArea; 	// mac platform only
 
 //=============================================================================

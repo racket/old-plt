@@ -21,9 +21,9 @@
 wxArea::wxArea
 (
  wxWindow* parentWindow
- ) :
- cWindows (wxChildList())
+ )
 {
+ cWindows = new wxChildList();
   __type = wxTYPE_AREA;	//cjc
   //__type = wxTYPE_PANEL; // CJC, WCH kludge
   if (!parentWindow) wxFatalError("No parentWindow for wxArea");
@@ -43,13 +43,14 @@ wxArea::wxArea
 wxArea::~wxArea(void)
 {
   wxChildNode *node, *next;
-  for (node = cWindows.First(); node; node = next) {
+  for (node = cWindows->First(); node; node = next) {
     next = node->Next();
     wxWindow *win = (wxWindow *)(node->Data());
     if (win)
       delete win;
   }
-  if (cParentWindow) cParentWindow->OnDeleteChildArea(this);
+  if (cParentWindow)
+    cParentWindow->OnDeleteChildArea(this);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -320,7 +321,7 @@ void wxArea::OnAreaDSize(int dW, int dH, int dX, int dY)
 wxWindow* wxArea::ParentWindow(void) { return cParentWindow; }
 
 //-----------------------------------------------------------------------------
-wxChildList* wxArea::Windows(void) { return &cWindows; } // kludge
+wxChildList* wxArea::Windows(void) { return cWindows; } // kludge
 
 //-----------------------------------------------------------------------------
 wxArea* wxArea::First(void)
@@ -357,5 +358,5 @@ wxArea* wxArea::Next(void)
 //-----------------------------------------------------------------------------
 void wxArea::OnDeleteChildWindow(wxWindow* childWindow)
 {
-  cWindows.DeleteObject(childWindow);
+  cWindows->DeleteObject(childWindow);
 }

@@ -10,7 +10,7 @@ available at
   http://www.plt-scheme.org/software/mred/
 
 The MzScheme and MrEd source code should compile and execute on
-Windows, Mac OS X, or any Unix/X platform (including Linux). 
+Windows, Mac OS, or any Unix/X platform (including Linux).
 
 Per-platform instructions are below.
 
@@ -43,22 +43,37 @@ or Cygwin, cd to plt\src\mzscheme\dynsrc and run mkbordyn.bat. (The
 mkbordyn.bat script requires bcc23.exe.)
 
 ========================================================================
- Compiling for Mac OS X
+ Compiling for Mac OS
 ========================================================================
 
-First install the Mac OS X Developer Tools from Apple. After
-installing, run `fixPrecomps' to speed up compilations. (You can
-safely run `fixPrecomps' multiple times.)
+Mac OS X:
 
-Then follow the Unix instructions below. (The --enable-dynlib for
-`configure' is not currently supported for Mac OS X.) The output of
-the MrEd build will be a bundle "MrEd.app"; you can run MrEd from the
-command line as `MrEd.app/Contents/MacOS/MrEd'.
+ First install the Mac OS X Developer Tools from Apple. After
+ installing, run `fixPrecomps' to speed up compilations. (You can
+ safely run `fixPrecomps' multiple times.)
 
-To build an X11-based MrEd, run `configure' with the --enable-xonx
-flag. This flag also affects the MzScheme build in two ways:
-`system-type' reports 'unix, and character valus are treated as
-Latin-1 encodings instead of MacRoman encodings.
+ Then follow the Unix instructions below. (The --enable-dynlib for
+ `configure' is not currently supported for Mac OS X.) The output of
+ the MrEd build will be a bundle "MrEd.app"; you can run MrEd from the
+ command line as `MrEd.app/Contents/MacOS/MrEd'.
+
+ To build an X11-based MrEd, run `configure' with the --enable-xonx
+ flag. This flag also affects the MzScheme build in two ways:
+ `system-type' reports 'unix, and character valus are treated as
+ Latin-1 encodings instead of MacRoman encodings.
+
+Mac OS Classic:
+
+ MrEd compiles for Mac OS Classic using MPW.  Stand-alone MzScheme is
+ not suported for Classic.
+
+ To compile with MPW, set the workding directory to the "mac:mpw"
+ subdirectory, then
+    buildprogram all
+
+ Depending on how you obtained the source, you may need to force the
+ source code to have the type TEXT. The "textify.ss" program will do
+ this for you, but it requires a Mac OS X MzScheme.
 
 ========================================================================
  Compiling for supported Unix variants (including Linux)

@@ -334,15 +334,11 @@ void wxRadioBox::DoShow(Bool show)
 {
   if (!CanShow(show)) return;
 
+  if (show)
+    wxWindow::DoShow(show);
   cRadioPanel->DoShow(show);	
-  wxWindow::DoShow(show);
-#if 0
-  int numberItems = cRadioButtons.Number();
-  for (int i = 0; i < numberItems; i++)
-    {
-      Show(i, show);
-    }
-#endif
+  if (!show)
+    wxWindow::DoShow(show);
 }
 
 //-----------------------------------------------------------------------------
@@ -381,20 +377,3 @@ int wxRadioBox::ButtonFocus(int)
 {
   return -1;
 }
-
-#if 0
-// EMBEDDING
-// failed experiment, for the moment at least.
-//-----------------------------------------------------------------------------
-void wxRadioBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
-{
-  SetCurrentMacDCNoMargin();
-                
-  if (cEmbeddingControl) {
-    ::MoveControl(cEmbeddingControl,SetOriginX,SetOriginY);
-    ::SizeControl(cEmbeddingControl,cWindowWidth,cWindowHeight);
-  }
-}
-
-#endif
-	

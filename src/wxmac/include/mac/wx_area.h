@@ -30,7 +30,7 @@ protected:
 
 	wxMargin	cMargin;
 	wxWindow*	cParentWindow; /*OLD*/
-	wxChildList		cWindows;
+	wxChildList		*cWindows;
 
 //=============================================================================
 // Public methods

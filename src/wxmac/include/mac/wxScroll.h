@@ -24,7 +24,7 @@ class wxScroll: public wxObject
   protected:
 	wxWindow*		cScrollWindow;	// never NULL
 	wxScroll*		cParentScroll;	// may be NULL
-	wxList			cScrolls;		// list of child wxScroll* objects
+	wxList*			cScrolls;		// list of child wxScroll* objects
 	wxScrollData*	cScrollData;	// root scroll ? !NULL : NULL
 
 //=============================================================================

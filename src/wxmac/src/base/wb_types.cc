@@ -88,15 +88,6 @@ wxTypeTree::wxTypeTree(void):wxHashTable(wxKEY_INTEGER)
 
 wxTypeTree::~wxTypeTree(void)
 {
-  // Cleanup wxTypeDef allocated
-  BeginFind();
-  wxNode *node = Next();
-  while (node)
-    {
-      wxTypeDef *typ = (wxTypeDef *)node->Data();
-      delete typ;
-      node = Next();
-    }
 }
 
 void wxTypeTree::AddType(WXTYPE type, WXTYPE parent, char *name)

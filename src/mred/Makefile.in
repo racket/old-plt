@@ -41,7 +41,7 @@ LDFLAGS = $(XLIB)
 MREDLINKER = @MREDLINKER@
 
 EXTRALDFLAGS_wx_xt =
-EXTRALDFLAGS_wx_mac = -framework QuickTime
+EXTRALDFLAGS_wx_mac = -framework Carbon -framework QuickTime
 MREDLDFLAGS = $(LDFLAGS) $(EXTRALDFLAGS_@WXVARIANT@)
 WXLIBS_wx_xt = ../wxxt/src/libwx_xt.a ../wxxt/contrib/xpm/lib/libXpm.a ../wxxt/utils/image/src/libimage_xt.a 
 MREDX_wx_xt = mredx.o
@@ -97,7 +97,7 @@ $(LINKRESULT) : $(MZSCHEME) mrmain.o $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB)
 libmred.@LIBSFX@: $(WXLIBSNORM)
 	$(AR) $(ARFLAGS) libmred.@LIBSFX@ $(WXLIBSNORM)
 
-MrEd.app:
+MrEd.app: $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
 	$(srcdir)/../mac/osx_appl.ss $(srcdir)/..
 
 

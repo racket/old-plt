@@ -292,7 +292,6 @@ void wxButton::SetLabel(char* label)
     return;
   if (label)
     {
-      SetCurrentDC();
       wxMacString1 theMacString1 = wxItemStripLabel(label);
       if (cMacControl)
 	::SetControlTitle(cMacControl, theMacString1());
@@ -471,8 +470,6 @@ void wxButton::DoShow(Bool show)
   if (!CanShow(show)) return;
 
   if (!buttonBitmap && cMacControl) {
-    SetCurrentDC();
-
     if (show)
       ::ShowControl(cMacControl);
     else

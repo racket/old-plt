@@ -430,25 +430,29 @@ void wxPanel::ChangeColour(void)
 //-----------------------------------------------------------------------------
 void wxPanel::DoShow(Bool show)
 {
-  if (!CanShow(show)) return;
+  if (!CanShow(show))
+    return;
 
   if (cPanelBorder)
     ((wxBorderArea *)cPanelBorder)->cBorder->DoShow(show);
 
-  wxNode* areaNode = cAreas.First();
-  while (areaNode)
-    {
-      wxArea* area = (wxArea*)areaNode->Data();
-      wxChildNode* childWindowNode = area->Windows()->First();
-      while (childWindowNode)
-	{
-	  wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
-	  childWindow->DoShow(show);
-	  childWindowNode = childWindowNode->Next();
-	}
-      areaNode = areaNode->Next();
+  if (show)
+    wxWindow::DoShow(show);
+
+  wxNode* areaNode = cAreas->First();
+  while (areaNode) {
+    wxArea* area = (wxArea*)areaNode->Data();
+    wxChildNode* childWindowNode = area->Windows()->First();
+    while (childWindowNode) {
+      wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
+      childWindow->DoShow(show);
+      childWindowNode = childWindowNode->Next();
     }
-  wxWindow::DoShow(show);
+    areaNode = areaNode->Next();
+  }
+
+  if (!show)
+    wxWindow::DoShow(show);
 }
 
 //-----------------------------------------------------------------------------

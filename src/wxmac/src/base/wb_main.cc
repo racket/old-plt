@@ -93,16 +93,5 @@ void wxCommonInit(void)
 
 void wxCommonCleanUp(void)
 {
-  wxDeleteStockObjects() ;
-  // Destroy all GDI lists, etc.
-  delete wxTheBrushList;
-  delete wxThePenList;
-  delete wxTheFontList;
-
-  delete wxThePrintPaperDatabase;
-
-  delete wxTheColourDatabase;
-
-  delete[] wxBuffer;
 }
 

@@ -319,7 +319,6 @@ case $OS in
 
     CFLAGS="$CFLAGS -DOS_X"
 
-    LIBS="-framework Carbon $LIBS"
     if test "${enable_quartz}" = "yes" ; then
       :
     else

@@ -155,7 +155,6 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
   result = new WXGC_ATOMIC char[length + 1];
   err = GetScrapFlavorData(scrap,format,&length,result);
   if (err != noErr) {
-    delete result;
     return NULL;
   }
 #else  
@@ -300,8 +299,6 @@ wxClipboard::~wxClipboard()
 {
   if (clipOwner)
     clipOwner->BeingReplaced();
-  if (cbString)
-    delete[] cbString;
 }
 
 static int FormatStringToID(char *str)
@@ -321,7 +318,6 @@ void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
     clipOwner->BeingReplaced();
   clipOwner = client;
   if (cbString) {
-    delete[] cbString;
     cbString = NULL;
   }
 
@@ -369,8 +365,6 @@ void wxClipboard::SetClipboardString(char *str, long time)
     clipOwner->BeingReplaced();
     clipOwner = NULL;
   }
-  if (cbString)
-    delete[] cbString;
 
   cbString = str;
 
@@ -386,7 +380,6 @@ void wxClipboard::SetClipboardString(char *str, long time)
   got_selection = FALSE; // Assume another process takes over
 
   if (!got_selection) {
-    delete[] cbString;
     cbString = NULL;
   }
 }

@@ -89,7 +89,7 @@ public:
 
 static GCBitmap *gc_bitmaps = NULL;
 extern "C" {
-  typedef void (*GC_START_END_PTR)();
+  typedef void (*GC_START_END_PTR)(void);
   MZ_EXTERN GC_START_END_PTR GC_collect_start_callback;
   MZ_EXTERN GC_START_END_PTR GC_collect_end_callback;
 };

@@ -199,13 +199,11 @@ void wxCheckBox::SetLabel(char* label)
   
   labelString = label ? copystring(wxItemStripLabel(label)) : NULL;
 
-  if (label && cMacControl)
-    {
-      SetCurrentDC();
-      wxMacString1 theMacString1 = labelString;
-      ::SetControlTitle(cMacControl, theMacString1());
-    } else
-      Refresh();
+  if (label && cMacControl) {
+    wxMacString1 theMacString1 = labelString;
+    ::SetControlTitle(cMacControl, theMacString1());
+  } else
+    Refresh();
 }
 
 //-----------------------------------------------------------------------------
@@ -222,7 +220,6 @@ void wxCheckBox::SetLabel(wxBitmap* bitmap)
 //-----------------------------------------------------------------------------
 void wxCheckBox::SetValue(Bool value)
 {
-  SetCurrentDC();
   if (cMacControl) 
     ::SetControlValue(cMacControl, value ? 1 : 0);
   else {
@@ -365,7 +362,6 @@ void wxCheckBox::DoShow(Bool show)
 {
   if (!CanShow(show)) return;
 
-  SetCurrentDC();
   if (cMacControl) {
     if (show)
       ::ShowControl(cMacControl);

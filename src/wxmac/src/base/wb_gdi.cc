@@ -283,7 +283,6 @@ wxColourDatabase::~wxColourDatabase (void)
     wxNode *next;
     col = (wxColour *)(node->Data ());
     next = node->Next ();
-    delete col;
     node = next;
   }
 }
@@ -460,27 +459,6 @@ wxInitializeStockObjects (void)
 void 
 wxDeleteStockObjects (void)
 {
-  if (wxBLACK)
-    delete wxBLACK;
-  if (wxWHITE)
-    delete wxWHITE;
-  if (wxRED)
-    delete wxRED;
-  if (wxBLUE)
-    delete wxBLUE;
-  if (wxGREEN)
-    delete wxGREEN;
-  if (wxCYAN)
-    delete wxCYAN;
-  if (wxLIGHT_GREY)
-    delete wxLIGHT_GREY;
-
-  if (wxSTANDARD_CURSOR)
-    delete wxSTANDARD_CURSOR;
-  if (wxHOURGLASS_CURSOR)
-    delete wxHOURGLASS_CURSOR;
-  if (wxCROSS_CURSOR)
-    delete wxCROSS_CURSOR;
 }
 
 // Pens
@@ -674,22 +652,6 @@ void wxbBrush::SetStipple (wxBitmap * Stipple)
     --stipple->selectedIntoDC;
 
   stipple = Stipple;
-}
-
-wxGDIList::wxGDIList (void)
-{
-}
-
-wxGDIList::~wxGDIList (void)
-{
-  wxNode *node = First ();
-  while (node)
-    {
-      wxObject *object = static_cast<wxObject *> (node->Data ());
-      wxNode *next = node->Next ();
-      delete object;
-      node = next;
-    }
 }
 
 // Pen and Brush lists

@@ -45,8 +45,7 @@ wxbDC::wxbDC(void)
 
 wxbDC::~wxbDC(void)
 {
-  if (title)
-    delete[] title;
+  title = NULL;
 }
 
 void wxbDC::DrawPolygon(wxList *list, float xoffset, float yoffset,int fillStyle)
@@ -61,7 +60,6 @@ void wxbDC::DrawPolygon(wxList *list, float xoffset, float yoffset,int fillStyle
     points[i++].y = point->y;
   }
   DrawPolygon(n, points, xoffset, yoffset,fillStyle);
-  delete[] points;
 }
 
 void wxbDC::DrawLines(wxList *list, float xoffset, float yoffset)
@@ -76,7 +74,6 @@ void wxbDC::DrawLines(wxList *list, float xoffset, float yoffset)
     points[i++].y = point->y;
   }
   DrawLines(n, points, xoffset, yoffset);
-  delete []points;
 }
 
 void wxbDC::SetTextForeground(wxColour *colour)

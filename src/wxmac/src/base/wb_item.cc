@@ -349,8 +349,7 @@ wxbMenu::wxbMenu (char *Title, wxFunction func)
 // The wxWindow destructor will take care of deleting the submenus.
 wxbMenu::~wxbMenu (void)
 {
-  if (title)
-    delete[]title;
+  title = NULL;
 }
 
 // Finds the item id matching the given string, -1 if not found.
@@ -411,12 +410,9 @@ wxMenuItem *wxbMenu::FindItemForId (int itemId, wxMenu ** itemMenu)
 void wxbMenu::SetHelpString (int itemId, char *helpString)
 {
   wxMenuItem *item = FindItemForId (itemId);
-  if (item)
-    {
-      if (item->helpString)
-	delete[]item->helpString;
-      item->helpString = helpString ? copystring (helpString) : NULL;
-    }
+  if (item) {
+    item->helpString = helpString ? copystring (helpString) : NULL;
+  }
 }
 
 char *wxbMenu::GetHelpString (int itemId)

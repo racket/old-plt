@@ -67,7 +67,6 @@ typedef       void *wxbBrush;
 typedef       void *wxPenList;
 typedef       void *wxBrushList;
 typedef       void *wxColourDatabase;
-typedef       void *wxGDIList;
 typedef       void *wxDash ;
 #else
 
@@ -327,13 +326,6 @@ class wxColourDatabase: public wxList
   wxColour *FindColour(const char *colour);
   char *FindName(wxColour *colour);
   void Initialize(void);
-};
-
-class wxGDIList: public wxList
-{
- public:
-   wxGDIList(void);
-  ~wxGDIList(void);
 };
 
 // Lists of GDI objects

@@ -23,21 +23,23 @@ extern "C" int atoi(char *);
 
 // static int wxFindFileFlags = 0;
 
+#ifndef OS_X
 extern "C" {
+#endif
   extern char *scheme_mac_spec_to_path(FSSpec *spec);
+#ifndef OS_X
 }
+#endif
 
 static int wxFindFileFlags = 0;
-
-extern "C" {
-  extern char *scheme_mac_spec_to_path(FSSpec *spec);
-}
 
 #ifndef OS_X
 extern "C" {
   extern int scheme_file_exists(char *filename);
 }
 #define stat(name, ignored) !scheme_file_exists(name)
+#else
+# include <sys/stat.h>
 #endif
 
 // Get a temporary filename, opening and closing the file.

@@ -210,7 +210,6 @@ void wxRadioButton::SetLabel(wxBitmap* bitmap)
 //-----------------------------------------------------------------------------
 void wxRadioButton::SetValue(Bool val)
 {
-  SetCurrentDC();
   if (cMacControl)
     ::SetControlValue(cMacControl, val ? 1 : 0);
   else {
@@ -289,7 +288,6 @@ void wxRadioButton::DoShow(Bool show)
 {
   if (!CanShow(show)) return;
 
-  SetCurrentDC();
   if (cMacControl) {
     if (show)
       ::ShowControl(cMacControl);

@@ -61,7 +61,7 @@ wxbWindow::wxbWindow // Constructor
 // Destructor
 wxbWindow::~wxbWindow(void)
 {
-  if (windowName) delete[] windowName;
+  windowName = NULL;
 }
 
 char *wxbWindow::GetHandle(void)
@@ -106,8 +106,6 @@ void wxbWindow::MakeModal(Bool modal)
 
 void wxbWindow::SetName(char *name)
 {
-  if (windowName)
-    delete[] windowName;
   if (name)
     windowName = copystring(name);
   else

@@ -220,7 +220,7 @@ char *wxButton::GetLabel(void)
 void wxButton::ChangeToGray(Bool gray)
 {
   if (!X->handle) // forbid, if no widget associated
-    return NULL;
+    return;
 
   wxItem::ChangeToGray(gray);
 

@@ -136,7 +136,7 @@
     (lambda (input-directory reader vocab verbose? r-eval)
       (when verbose? (printf "~n Zodiac: reading... ") (flush-output))
       ; During reads, syntax errors are truly fatal
-      (let ([exprs (time
+      (let ([exprs (begin ; time
 		    (let loop ([n 1])
 		      (let ([sexp (let loop () 
 				    ; This loop handles the case where
@@ -160,7 +160,7 @@
 	(when verbose? (printf " expanding...~n"))
 	(parameterize ([current-load-relative-directory input-directory]
 		       [current-load load-prefix-file])
-	  (time
+	  (begin ; time
 	   (map r-eval (call/nal zodiac:scheme-expand-program/nal
 				 zodiac:scheme-expand-program
 				 (vocabulary:  vocab)

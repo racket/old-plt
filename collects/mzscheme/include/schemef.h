@@ -184,6 +184,7 @@ Scheme_Object *scheme_apply_multi_eb_wp(Scheme_Object *rator, int num_rands, Sch
 #endif
 Scheme_Object *scheme_apply_to_list(Scheme_Object *rator, Scheme_Object *argss);
 Scheme_Object *scheme_eval_string(const char *str, Scheme_Env *env);
+Scheme_Object *scheme_eval_string_multi(const char *str, Scheme_Env *env);
 Scheme_Object *scheme_eval_string_all(const char *str, Scheme_Env *env, int all);
 
 Scheme_Object *_scheme_apply_known_closed_prim(Scheme_Object *rator, int argc,
@@ -445,6 +446,7 @@ void scheme_fdzero(void *fd);
 void scheme_fdset(void *fd, int pos);
 void scheme_fdclr(void *fd, int pos);
 int scheme_fdisset(void *fd, int pos);
+void scheme_add_fd_handle(void *h, void *fds, int repost);
 
 /* environment */
 void scheme_add_global(const char *name, Scheme_Object *val, Scheme_Env *env);

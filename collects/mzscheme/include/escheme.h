@@ -24,8 +24,17 @@
 #pragma export on
 #endif
 
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
+
 extern Scheme_Object *scheme_initialize(Scheme_Env *global_env);
 extern Scheme_Object *scheme_reload(Scheme_Env *global_env);
+
+#ifdef __cplusplus
+};
+#endif
 
 #ifdef CODEFRAGMENT_DYNAMIC_LOAD
 #pragma export off

@@ -59,6 +59,51 @@
 
 
 /******** (BEGIN KNOWN ARCHITECTURE/SYSTEM CONFIGURATIONS) ********/
+  
+  /*************** OSKit with Linux/gcc *****************/
+
+#if defined(OSKIT)
+
+# define SYSTEM_TYPE_NAME "oskit"
+
+# define STACK_GROWS_DOWN
+
+# define UNIX_FILE_SYSTEM
+# define NO_UNIX_USERS
+
+# define TIME_SYNTAX
+# define DIR_FUNCTION
+# define DIRENT_NO_NAMLEN
+# define GETENV_FUNCTION
+
+# ifndef OSKIT_TEST
+#  define HAS_FREEBSD_IOB
+# else
+#  define HAS_LINUX_IOB
+# endif
+# define FILES_HAVE_FDS
+# define USE_OSKIT_CONSOLE
+# define FIXED_FD_LIMIT 256
+# define USE_UNIX_SOCKETS_TCP
+# define USE_FCNTL_O_NONBLOCK
+# define htons(x) x
+# define PF_INET AF_INET
+
+# define NO_USLEEP
+# define NO_SLEEP
+# define USER_TIME_IS_CLOCK
+
+     /* # define DO_STACK_CHECK */
+     /* # define UNIX_FIND_STACK_BOUNDS */
+# define STACK_SAFETY_MARGIN 50000
+
+# define SIGSET_IS_SIGNAL
+
+# define UNISTD_INCLUDE
+
+# define FLAGS_ALREADY_SET
+
+#else  /* >>>>>>> close after all platforms <<<<<<<<<< */
 
   /************** SunOS/Solaris with gcc ****************/
 
@@ -319,6 +364,8 @@ int scheme_solaris_semaphore_try_down(void *);
 # define BSTRING_INCLUDE
 
 # define POW_HANDLES_INF_CORRECTLY
+
+# define NO_INLINE_KEYWORD
 
 # define NO_USLEEP
 # define USE_FCNTL_O_NONBLOCK
@@ -718,6 +765,11 @@ int scheme_win32_semaphore_try_down(void *);
 
 #endif
 
+
+  /***************************************************/
+
+#endif /* end not OSKit */
+
 /************** (END KNOWN ARCHITECTURE/SYSTEMS) ****************/
 
 
@@ -810,6 +862,8 @@ int scheme_pthread_semaphore_try_down(void *);
  /* USE_MACTIME uses the Mac toolbox to implement time functions. */
 
  /* CLOCK_IS_USER_TIME uses the system time for user milliseconds. */
+
+ /* USER_TIME_IS_CLOCK uses the user time for system milliseconds. */
 
  /* TIME_TYPE_IS_UNSIGNED converts time_t values as unsigned. */
 
@@ -1124,12 +1178,16 @@ int scheme_pthread_semaphore_try_down(void *);
 /***********************/
 
 #define UNISTD_INCLUDE
+#define NO_INLINE_KEYWORD
 
  /* REGISTER_POOR_MACHINE guides a hand optimization that seems to
     be work best one way for Sparc machines, and better the other
     way for x86 machines. */
 
  /* SIXTY_FOUR_BIT_INTEGERS indicates that 'long's are 64-bits wide. */
+
+ /* NO_INLINE_KEYWORD indicates that the C compiler doesn't recognize
+    C's `inline' keyword. */
 
  /* NO_USER_BREAK_HANDLER turns off handling of INT signal in main.c */
 

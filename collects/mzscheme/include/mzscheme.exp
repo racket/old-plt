@@ -66,6 +66,7 @@ scheme_apply_eb
 scheme_apply_multi_eb
 scheme_apply_to_list
 scheme_eval_string
+scheme_eval_string_multi
 scheme_eval_string_all
 _scheme_apply_known_closed_prim
 _scheme_apply_known_closed_prim_multi
@@ -215,6 +216,7 @@ scheme_fdzero
 scheme_fdset
 scheme_fdclr
 scheme_fdisset
+scheme_add_fd_handle
 scheme_add_global
 scheme_add_global_constant
 scheme_add_global_keyword

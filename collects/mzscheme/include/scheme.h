@@ -923,6 +923,8 @@ extern Scheme_Object *(*scheme_make_stdin)(void);
 extern Scheme_Object *(*scheme_make_stdout)(void);
 extern Scheme_Object *(*scheme_make_stderr)(void);
 
+void scheme_set_banner(char *s);
+
 /* Initialization */
 Scheme_Env *scheme_basic_env(void);
 

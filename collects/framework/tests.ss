@@ -12,7 +12,9 @@
    run-one
 
    current-get-eventspaces
-
+   
+   close-frame
+   
    button-push
    set-check-box!
    set-choice!

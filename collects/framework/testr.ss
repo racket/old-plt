@@ -683,6 +683,6 @@
 		(void))))]))))
   
   (define (close-frame frame)
-    (when (send-frame can-close?)
+    (when (send frame can-close?)
       (send frame on-close)
       (send frame show #f))))

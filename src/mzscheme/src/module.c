@@ -1108,8 +1108,9 @@ static Scheme_Object *module_path_index_join(int argc, Scheme_Object *argv[])
 
   if (argv[1]) { /* mzc will generate NULL sometimes; see scheme_declare_module(), below */
     if (SCHEME_TRUEP(argv[1])
+	&& !SCHEME_SYMBOLP(argv[1])
 	&& !SAME_TYPE(SCHEME_TYPE(argv[1]), scheme_module_index_type))
-      scheme_wrong_type("module-path-index-join", "module-path-index or #f", 1, argc, argv);
+      scheme_wrong_type("module-path-index-join", "module-path-index, symbol, or #f", 1, argc, argv);
   }
 
   return scheme_make_modidx(argv[0], argv[1], scheme_false);

@@ -575,8 +575,16 @@ before the pattern compiler is invoked.
           [else
            (let ([mth ((car rhss) term hole-path hole-name)])
              (if mth
-                 (loop (cdr rhss) (cons mth anss))
+                 (loop (cdr rhss) (cons (remove-non-hole-bindings mth) anss))
                  (loop (cdr rhss) anss)))]))))
+  
+  ;; remove-non-hole-bindings : (listof bindings) -> (listof bindings)
+  (define (remove-non-hole-bindings lob)
+    (map (lambda (bindings)
+           (make-bindings
+            (filter (lambda (rib) (hole-binding? (rib-exp rib))) 
+                    (bindings-table bindings))))
+         lob))
   
   ;; rewrite-ellipses : (listof pattern) 
   ;;                    (pattern -> compiled-pattern)
@@ -870,6 +878,22 @@ before the pattern compiler is invoked.
                 '(+ 1 b)
                 #f)
 
+    (test-xab 'nesting-names
+              'b
+              (list (make-bindings (list))))
+    (test-xab 'nesting-names
+              '(a b)
+              (list (make-bindings (list))))
+    (test-xab 'nesting-names
+              '(a (a b))
+              (list (make-bindings (list))))
+    (test-xab '((name x a) nesting-names)
+              '(a (a (a b)))
+              (list (make-bindings (list (make-rib 'x 'a)))))
+    (test-xab 'nesting-names
+              '(a (a (a (a b))))
+              (list (make-bindings (list))))
+    
     (run-test
      'compatible-context-language1
      (build-compatible-context-language
@@ -980,7 +1004,10 @@ before the pattern compiler is invoked.
                                     (make-nt 'ctxt
                                              (list (make-rhs '(+ ctxt exp))
                                                    (make-rhs '(+ exp ctxt))
-                                                   (make-rhs 'hole)))))))
+                                                   (make-rhs 'hole)))
+                                    (make-nt 'nesting-names
+                                             (list (make-rhs '(a (name x nesting-names)))
+                                                   (make-rhs 'b)))))))
     (run-test
      `(match-pattern (compile-pattern xab-lang ',pat) ',exp)
      (match-pattern (compile-pattern xab-lang pat) exp)

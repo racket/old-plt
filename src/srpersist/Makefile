@@ -1,13 +1,13 @@
 # Makefile for srpersist.so on Unix boxes
 
 # change to ODBC version supported by driver manager
-ODBCVER=0x0250
+ODBCVER=0x0350
 
 # static library that implements driver manager
-DRIVER_MGR_LIB=iodbc
+DRIVER_MGR_LIB=odbc
 
 # installation directory
-LIBDIR=/home/scheme/Database/lib
+LIBDIR=/usr/site/unixODBC/lib
 
 MZC=../../bin/mzc 
 

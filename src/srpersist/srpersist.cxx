@@ -1939,7 +1939,7 @@ Scheme_Object *srp_SQLBindCol(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"bind-col");
 
-  sql_return(scheme_void,retcode,"bind-col");
+  sql_return(argv[0],retcode,"bind-col");
 }
 
 #if (ODBCVER >= 0x0300)
@@ -2017,7 +2017,7 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
       // need Decimals
 
       if (argc != 7) {
-	scheme_wrong_count("sql-bind-parameter",7,7,argc,argv);
+	scheme_wrong_count("bind-param",7,7,argc,argv);
       }
 
       if (isSmallInt(argv[6]) == FALSE) {
@@ -2041,7 +2041,7 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"bind-param");
 
-  sql_return(scheme_void,retcode,"bind-param");
+  sql_return(argv[0],retcode,"bind-param");
 }
 #endif
 
@@ -2060,7 +2060,7 @@ Scheme_Object *srp_SQLCancel(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"cancel");
   
-  sql_return(scheme_void,retcode,"cancel");
+  sql_return(argv[0],retcode,"cancel");
 }
 
 #if (ODBCVER >= 0x0300)
@@ -2079,7 +2079,7 @@ Scheme_Object *srp_SQLCloseCursor(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"close-cancel");
   
-  sql_return(scheme_void,retcode,"close-cancel");
+  sql_return(argv[0],retcode,"close-cancel");
 }
 #endif
 
@@ -2211,7 +2211,7 @@ Scheme_Object *srp_SQLColumns(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"columns");		       
 
-  sql_return(scheme_void,retcode,"columns");
+  sql_return(argv[0],retcode,"columns");
 }
 
 Scheme_Object *srp_SQLConnect(int argc,Scheme_Object **argv) {
@@ -2251,7 +2251,7 @@ Scheme_Object *srp_SQLConnect(int argc,Scheme_Object **argv) {
 		  
   retcode = checkSQLReturn(sr,"connect");		       
 
-  sql_return(scheme_void,retcode,"connect");
+  sql_return(argv[0],retcode,"connect");
 }
 
 #if (ODBCVER >= 0x0300)
@@ -2274,7 +2274,7 @@ Scheme_Object *srp_SQLCopyDesc(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"copy-desc");		       
 
-  sql_return(scheme_void,retcode,"copy-desc");
+  sql_return(argv[0],retcode,"copy-desc");
 }
 #endif
 
@@ -2398,7 +2398,7 @@ Scheme_Object *srp_SQLDisconnect(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"disconnect");
   
-  sql_return(scheme_void,retcode,"disconnect");
+  sql_return(argv[0],retcode,"disconnect");
 }
 
 #if (ODBCVER >= 0x0300)
@@ -2438,7 +2438,7 @@ Scheme_Object *srp_SQLEndTran(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"end-tran");
   
-  sql_return(scheme_void,retcode,"end-tran");
+  sql_return(argv[0],retcode,"end-tran");
 }
 #endif
 
@@ -2528,7 +2528,7 @@ Scheme_Object *srp_SQLExecDirect(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"exec-direct");  
 
-  sql_return(scheme_void,retcode,"exec-direct");
+  sql_return(argv[0],retcode,"exec-direct");
 }
 
 Scheme_Object *srp_SQLExecute(int argc,Scheme_Object **argv) {
@@ -2546,7 +2546,7 @@ Scheme_Object *srp_SQLExecute(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"execute");
   
-  sql_return(scheme_void,retcode,"execute");
+  sql_return(argv[0],retcode,"execute");
 }
 
 Scheme_Object *srp_SQLFetch(int argc,Scheme_Object **argv) {
@@ -2564,7 +2564,7 @@ Scheme_Object *srp_SQLFetch(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"fetch");
   
-  sql_return(scheme_void,retcode,"fetch");
+  sql_return(argv[0],retcode,"fetch");
 }
 
 #if (ODBCVER >= 0x0300)
@@ -2618,7 +2618,7 @@ Scheme_Object *srp_SQLFetchScroll(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"fetch-scroll");  
 
-  sql_return(scheme_void,retcode,"fetch-scroll");
+  sql_return(argv[0],retcode,"fetch-scroll");
 }
 #endif
 
@@ -2637,7 +2637,7 @@ Scheme_Object *srp_SQLFreeConnect(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"free-connect");  
 
-  sql_return(scheme_void,retcode,"free-connect");
+  sql_return(argv[0],retcode,"free-connect");
 }
 
 Scheme_Object *srp_SQLFreeEnv(int argc,Scheme_Object **argv) {
@@ -2655,7 +2655,7 @@ Scheme_Object *srp_SQLFreeEnv(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"free-env");  
 
-  sql_return(scheme_void,retcode,"free-env");
+  sql_return(argv[0],retcode,"free-env");
 }
 
 #if (ODBCVER >= 0x0300)
@@ -2683,7 +2683,7 @@ Scheme_Object *srp_SQLFreeHandle(int argc,Scheme_Object **argv) {
     
   retcode = checkSQLReturn(sr,"free-handle");  
 
-  sql_return(scheme_void,retcode,"free-handle");
+  sql_return(argv[0],retcode,"free-handle");
 }
 #endif
 
@@ -2719,7 +2719,7 @@ Scheme_Object *srp_SQLFreeStmt(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"free-stmt");  
 
-  sql_return(scheme_void,retcode,"free-stmt");
+  sql_return(argv[0],retcode,"free-stmt");
 }
 
 #if (ODBCVER >= 0x0300)
@@ -2934,7 +2934,7 @@ Scheme_Object *srp_SQLGetData(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"get-data");
 
-  sql_return(scheme_void,retcode,"get-data");
+  sql_return(argv[0],retcode,"get-data");
 }
 
 #if (ODBCVER >= 0x300)
@@ -4063,7 +4063,7 @@ Scheme_Object *srp_SQLGetTypeInfo(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"get-type-info");
 
-  sql_return(scheme_void,retcode,"get-type-info");
+  sql_return(argv[0],retcode,"get-type-info");
 }
 
 Scheme_Object *srp_SQLNumResultCols(int argc,Scheme_Object **argv) {
@@ -4134,7 +4134,7 @@ Scheme_Object *srp_SQLPrepare(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"prepare");
 
-  sql_return(scheme_void,retcode,"prepare");
+  sql_return(argv[0],retcode,"prepare");
 }
 
 Scheme_Object *srp_SQLPutData(int argc,Scheme_Object **argv) {
@@ -4160,7 +4160,7 @@ Scheme_Object *srp_SQLPutData(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"put-data");
 
-  sql_return(scheme_void,retcode,"put-data");
+  sql_return(argv[0],retcode,"put-data");
 }
 
 Scheme_Object *srp_SQLRowCount(int argc,Scheme_Object **argv) {
@@ -4233,9 +4233,7 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
     boolVal = (argv[2] == scheme_false) ? SQL_FALSE : SQL_TRUE;
 
     sr = SQLSetConnectAttr(connectionHandle,attribute,(SQLPOINTER)boolVal,0);
-    retcode = checkSQLReturn(sr,"set-connect-attr");
-
-    sql_return(scheme_void,retcode,"set-connect-attr");
+    break;
 
   case sqluinteger :
 
@@ -4250,9 +4248,7 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetConnectAttr(connectionHandle,attribute,(SQLPOINTER)number,0);
-    retcode = checkSQLReturn(sr,"set-connect-attr");
-
-    sql_return(scheme_void,retcode,"set-connect-attr");
+    break;
 
   case nameduinteger :
 
@@ -4272,9 +4268,7 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetConnectAttr(connectionHandle,attribute,(SQLPOINTER)val,0);
-    retcode = checkSQLReturn(sr,"set-connect-attr");
-
-    sql_return(scheme_void,retcode,"set-connect-attr");
+    break;
 
   case string :
 
@@ -4289,15 +4283,19 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
     len = SCHEME_STRLEN_VAL(argv[2]);
 
     sr = SQLSetConnectAttr(connectionHandle,attribute,s,len);
-    retcode = checkSQLReturn(sr,"set-connect-attr");
+    break;
 
-    sql_return(scheme_void,retcode,"set-connect-attr");
+  default :
+
+    sr = 0; 
+    scheme_signal_error("sql-set-connect-attr: unknown attribute type: %X",
+			attributeType);
+
   }
 
-  scheme_signal_error("sql-set-connect-attr: unknown attribute type: %X",
-		      attributeType);
+  retcode = checkSQLReturn(sr,"set-connect-attr");
+  sql_return(argv[0],retcode,"set-connect-attr");
 
-  return scheme_void; // unreachable
 }
 #endif
 
@@ -4352,9 +4350,7 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetConnectOption(connectionHandle,option,number);
-    retcode = checkSQLReturn(sr,"set-connect-option");
-
-    sql_return(scheme_void,retcode,"set-connect-option");
+    break;
 
   case nameduinteger :
 
@@ -4374,9 +4370,7 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetConnectOption(connectionHandle,option,val);
-    retcode = checkSQLReturn(sr,"set-connect-option");
-
-    sql_return(scheme_void,retcode,"set-connect-option");
+    break;
 
   case string :
 
@@ -4389,15 +4383,20 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
     s = (SQLCHAR *)SCHEME_STR_VAL(argv[2]);
 
     sr = SQLSetConnectOption(connectionHandle,option,(SQLUINTEGER)s);
-    retcode = checkSQLReturn(sr,"set-connect-option");
+    break;
 
-    sql_return(scheme_void,retcode,"set-connect-option");
+  default :
+
+    sr = 0;
+    scheme_signal_error("sql-set-connect-option: unknown option type: %X",
+			optionType);
+
   }
 
-  scheme_signal_error("sql-set-connect-option: unknown option type: %X",
-		      optionType);
+  retcode = checkSQLReturn(sr,"set-connect-option");
 
-  return scheme_void; // unreachable
+  sql_return(scheme_void,retcode,"set-connect-option");
+
 }
 
 Scheme_Object *srp_SQLSetCursorName(int argc,Scheme_Object **argv) {
@@ -4423,7 +4422,7 @@ Scheme_Object *srp_SQLSetCursorName(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"set-cursor-name");
 
-  sql_return(scheme_void,retcode,"set-cursor-name");
+  sql_return(argv[0],retcode,"set-cursor-name");
 }
 
 #if (ODBCVER >= 0x0300)
@@ -4612,12 +4611,14 @@ Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
 			 sizeof(SQLPOINTER));
 
   default :
+
+    sr = 0;
     scheme_signal_error("sql-set-desc-field: unknown field type %X",fieldType);
   }
 
   retcode = checkSQLReturn(sr,"set-desc-field");
 
-  sql_return(scheme_void,retcode,"set-desc-field");
+  sql_return(argv[0],retcode,"set-desc-field");
 }
 #endif
 
@@ -4719,7 +4720,7 @@ Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
   
   retcode = checkSQLReturn(sr,"set-desc-rec");
 
-  sql_return(scheme_void,retcode,"set-desc-rec");
+  sql_return(argv[0],retcode,"set-desc-rec");
 }
 #endif
 
@@ -4778,9 +4779,7 @@ Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetEnvAttr(envHandle,attribute,(SQLPOINTER)val,0);
-    retcode = checkSQLReturn(sr,"set-env-attr");
-
-    sql_return(scheme_void,retcode,"set-env-attr");
+    break;
 
   case sqlbool :
 
@@ -4791,15 +4790,18 @@ Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
     boolVal = (argv[2] == scheme_false) ? SQL_FALSE : SQL_TRUE;
 
     sr = SQLSetEnvAttr(envHandle,attribute,(SQLPOINTER)boolVal,0);
-    retcode = checkSQLReturn(sr,"set-env-attr");
-    
-    sql_return(scheme_void,retcode,"set-env-attr");
-  }
+    break;
 
-  scheme_signal_error("sql-set-env-attr: unknown attribute type: %X",
+  default :
+
+    sr = 0;
+    scheme_signal_error("sql-set-env-attr: unknown attribute type: %X",
 		      attributeType);
 
-  return scheme_void; // unreachable
+  }
+
+  retcode = checkSQLReturn(sr,"set-env-attr");
+  sql_return(argv[0],retcode,"set-env-attr");
 }
 #endif
 
@@ -4896,7 +4898,7 @@ Scheme_Object *srp_SQLSetParam(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"set-param");
 
-  sql_return(scheme_void,retcode,"set-param");
+  sql_return(argv[0],retcode,"set-param");
 }
 
 #if (ODBCVER >= 0x0300)
@@ -4950,9 +4952,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtAttr(stmtHandle,attribute,(SQLPOINTER)number,0);
-    retcode = checkSQLReturn(sr,"set-stmt-attr");
-
-    sql_return(scheme_void,retcode,"set-stmt-attr");
+    break;
 
   case sqlbool :
 
@@ -4964,9 +4964,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtAttr(stmtHandle,attribute,(SQLPOINTER)boolVal,0);
-    retcode = checkSQLReturn(sr,"set-stmt-attr");
-
-    sql_return(scheme_void,retcode,"set-stmt-attr");
+    break;
 
   case nameduinteger :
 
@@ -4985,9 +4983,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtAttr(stmtHandle,attribute,(SQLPOINTER)val,0);
-    retcode = checkSQLReturn(sr,"set-stmt-attr");
-
-    sql_return(scheme_void,retcode,"set-stmt-attr");
+    break;
 
   case possiblynameduinteger :
 
@@ -5016,9 +5012,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
       scheme_wrong_type("set-stmt-attr","int or symbol",2,argc,argv);
     }
 
-    retcode = checkSQLReturn(sr,"set-stmt-attr");
-
-    sql_return(scheme_void,retcode,"set-stmt-attr");
+    break;
 
   case rowstatus :
     
@@ -5027,10 +5021,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtAttr(stmtHandle,attribute,SQL_ROW_STATUS_VAL(argv[2]),0);
-
-    retcode = checkSQLReturn(sr,"set-stmt-attr");
-
-    sql_return(scheme_void,retcode,"set-stmt-attr");
+    break;
 
   case sqlboxeduint :
 
@@ -5039,10 +5030,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtAttr(stmtHandle,attribute,SQL_BOXED_UINT_VAL(argv[2]),0);
-    
-    retcode = checkSQLReturn(sr,"get-stmt-attr");
-
-    sql_return(scheme_void,retcode,"get-stmt-attr");
+    break;
 
   case hdesc :
 
@@ -5051,9 +5039,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtAttr(stmtHandle,attribute,(SQLPOINTER)SQL_HDESC_VAL(argv[2]),0);
-    retcode = checkSQLReturn(sr,"get-stmt-attr");
-
-    sql_return(scheme_void,retcode,"get-stmt-attr");
+    break;
 
   case opparms :  
 
@@ -5072,17 +5058,18 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
     } 
       
     sr = SQLSetStmtAttr(stmtHandle,attribute,SQL_OP_PARMS_VAL(argv[2]),0);
+    break;
 
-    retcode = checkSQLReturn(sr,"set-stmt-attr");
+  default :
 
-    sql_return(scheme_void,retcode,"set-stmt-attr");
-
+    sr = 0;
+    scheme_signal_error("sql-set-stmt-attr: invalid attribute type: %X",
+			attributeType);
   }
 
-  scheme_signal_error("sql-set-stmt-attr: invalid attribute type: %X",
-		      attributeType);
+  retcode = checkSQLReturn(sr,"set-stmt-attr");
 
-  return scheme_void; // unreachable
+  sql_return(argv[0],retcode,"set-stmt-attr");
 }
 #endif
 
@@ -5133,9 +5120,7 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtOption(stmtHandle,option,number);
-    retcode = checkSQLReturn(sr,"set-stmt-option");
-
-    sql_return(scheme_void,retcode,"set-stmt-option");
+    break;
 
   case nameduinteger :
 
@@ -5154,9 +5139,7 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtOption(stmtHandle,option,val);
-    retcode = checkSQLReturn(sr,"set-stmt-option");
-
-    sql_return(scheme_void,retcode,"set-stmt-option");
+    break;
 
   case possiblynameduinteger :
 
@@ -5185,16 +5168,21 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
       scheme_wrong_type("set-stmt-option","int or symbol",2,argc,argv);
     }
 
-    retcode = checkSQLReturn(sr,"set-stmt-option");
+    break;
 
-    sql_return(scheme_void,retcode,"set-stmt-option");
+
+  default :
+
+    sr = 0;
+    scheme_signal_error("sql-set-stmt-option: invalid option type: %X",
+			optionType);
 
   }
 
-  scheme_signal_error("sql-set-stmt-option: invalid option type: %X",
-		      optionType);
+  retcode = checkSQLReturn(sr,"set-stmt-option");
 
-  return scheme_void;
+  sql_return(scheme_void,retcode,"set-stmt-option");
+
 }
 
 Scheme_Object *srp_SQLSpecialColumns(int argc,Scheme_Object **argv) {
@@ -5296,7 +5284,7 @@ Scheme_Object *srp_SQLSpecialColumns(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"special-columns");
 
-  sql_return(scheme_void,retcode,"special-columns");
+  sql_return(argv[0],retcode,"special-columns");
 }
 
 Scheme_Object *srp_SQLStatistics(int argc,Scheme_Object **argv) {
@@ -5376,7 +5364,7 @@ Scheme_Object *srp_SQLStatistics(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"statistics");
 
-  sql_return(scheme_void,retcode,"statistics");
+  sql_return(argv[0],retcode,"statistics");
 }
 
 Scheme_Object *srp_SQLTables(int argc,Scheme_Object **argv) {
@@ -5498,7 +5486,7 @@ Scheme_Object *srp_SQLTables(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"tables");
 
-  sql_return(scheme_void,retcode,"tables");
+  sql_return(argv[0],retcode,"tables");
 
 }
 
@@ -5693,7 +5681,7 @@ Scheme_Object *srp_SQLBulkOperations(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"bulk-operations");
 
-  sql_return(scheme_void,retcode,"bulk-operations");
+  sql_return(argv[0],retcode,"bulk-operations");
 }
 #endif
 
@@ -5822,7 +5810,7 @@ Scheme_Object *srp_SQLColumnPrivileges(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"column-privileges");
 
-  sql_return(scheme_void,retcode,"column-privileges");
+  sql_return(argv[0],retcode,"column-privileges");
 }
 
 Scheme_Object *srp_SQLDescribeParam(int argc,Scheme_Object **argv) {
@@ -6016,7 +6004,7 @@ Scheme_Object *srp_SQLForeignKeys(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"foreign-keys");
   
-  sql_return(scheme_void,retcode,"foreign-keys");
+  sql_return(argv[0],retcode,"foreign-keys");
 }
 
 Scheme_Object *srp_SQLMoreResults(int argc,Scheme_Object **argv) {
@@ -6034,7 +6022,7 @@ Scheme_Object *srp_SQLMoreResults(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"more-results");  
 
-  sql_return(scheme_void,retcode,"more-results");  
+  sql_return(argv[0],retcode,"more-results");  
 }
 
 Scheme_Object *srp_SQLNativeSql(int argc,Scheme_Object **argv) {
@@ -6159,7 +6147,7 @@ Scheme_Object *srp_SQLPrimaryKeys(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"primary-keys");    
 
-  sql_return(scheme_void,retcode,"primary-keys");    
+  sql_return(argv[0],retcode,"primary-keys");    
 }
 
 Scheme_Object *srp_SQLProcedureColumns(int argc,Scheme_Object **argv) {
@@ -6208,7 +6196,7 @@ Scheme_Object *srp_SQLProcedureColumns(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"procedure-columns");    
 
-  sql_return(scheme_void,retcode,"procedure-columns");    
+  sql_return(argv[0],retcode,"procedure-columns");    
 
 }
 
@@ -6252,7 +6240,7 @@ Scheme_Object *srp_SQLProcedures(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"procedures");    
 
-  sql_return(scheme_void,retcode,"procedures");    
+  sql_return(argv[0],retcode,"procedures");    
 }
 
 Scheme_Object *srp_SQLSetPos(int argc,Scheme_Object **argv) {
@@ -6307,7 +6295,7 @@ Scheme_Object *srp_SQLSetPos(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"set-pos");    
 
-  sql_return(scheme_void,retcode,"set-pos");    
+  sql_return(argv[0],retcode,"set-pos");    
 }
 
 Scheme_Object *srp_SQLTablePrivileges(int argc,Scheme_Object **argv) {
@@ -6350,7 +6338,7 @@ Scheme_Object *srp_SQLTablePrivileges(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"table-privileges");    
 
-  sql_return(scheme_void,retcode,"table-privileges");    
+  sql_return(argv[0],retcode,"table-privileges");    
 }
 
 #if (ODBCVER >= 0x0200)
@@ -6526,9 +6514,9 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
 			valueSize,decimalDigits,
 			buffer,bufferLen,&indicator);
 
-  retcode = checkSQLReturn(sr,"bind-param");    
+  retcode = checkSQLReturn(sr,"bind-parameter");    
 
-  sql_return(scheme_void,retcode,"bind-param");
+  sql_return(argv[0],retcode,"bind-parameter");
 }
 #endif
 
@@ -6603,7 +6591,7 @@ Scheme_Object *srp_SQLSetScrollOptions(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"set-scroll-options");    
 
-  sql_return(scheme_void,retcode,"set-scroll-options");    
+  sql_return(argv[0],retcode,"set-scroll-options");    
 }
 
 Scheme_Object *stringArrayToSchemeSymbolList(char **strs,int count) {

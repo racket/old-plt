@@ -89,7 +89,7 @@
        [(l r equal?)
 	(if (null? l)
 	    r
-	    (remove* (cdr l) (remove (car l) r equal?)))]
+	    (remove* (cdr l) (remove (car l) r equal?) equal?))]
        [(l r) (remove* l r equal?)])))
      
    (define remq*

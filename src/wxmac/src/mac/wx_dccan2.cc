@@ -41,11 +41,20 @@ void wxCanvasDC::Clear(void)
     CGContextRef cg;
     wxColor *c = current_background_color;
     int r, g, b;
-      
+    CGrafPtr qdp;
+    Rect portRect;
+
     SetCurrentDC(TRUE);
     cg = GetCG();
 
     CGContextSaveGState(cg);
+
+    /* Need to clear the whole background, so turn off scaling and offset */
+    qdp = cMacDC->macGrafPort();
+    SyncCGContextOriginWithPort(cg, qdp);
+    GetPortBounds(qdp, &portRect);
+    CGContextTranslateCTM(cg, 0, (float)(portRect.bottom - portRect.top - gdy));
+    CGContextScaleCTM(cg, 1.0, -1.0 );
 
     r = c->Red();
     g = c->Green();

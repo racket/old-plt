@@ -69,10 +69,25 @@ Bool wxPrintDialog::UseIt(void)
 {
   Boolean prtJob = FALSE;
 
+  PMSessionDefaultPrintSettings(printData->cPrintSession, printData->cPrintSettings);
+  PMSessionDefaultPageFormat(printData->cPrintSession, printData->cPageFormat);
+
   if (cShowSetupDialog)
-    PMSessionPrintDialog(printData->cPrintSession,printData->cPrintSettings,printData->cPageFormat,&prtJob);
+    PMSessionPrintDialog(printData->cPrintSession,
+			 printData->cPrintSettings,
+			 printData->cPageFormat,
+			 &prtJob);
   else
-    PMSessionPageSetupDialog(printData->cPrintSession,printData->cPageFormat,&prtJob);
+    PMSessionPageSetupDialog(printData->cPrintSession,
+			     printData->cPageFormat,
+			     &prtJob);
+
+  if (prtJob) {
+    Boolean x;
+    PMSessionValidatePageFormat(printData->cPrintSession, 
+				printData->cPageFormat,
+				&x);
+  }
 
   return prtJob;
 }

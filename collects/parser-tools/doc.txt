@@ -17,23 +17,31 @@ CHANGE: (eof) is no longer treated as a character, but as a
 
 _lex.ss_
 A regular expression is one of the following:
- symbol                      expand the lex abbreviation whose name 
-                               is symbol
- character                   match the given character
- string                      match its sequence of characters
- (epsilon)                   match the empty string
- (* re)                      match 0 or more
- (+ s-re)                    match 1 or more
- (? s-re)                    match 0 or 1
- (: s-re ...)                match one of the sub-expressions
- (@ s-re ...)                match each sub-expression in succession
- (- char char)               match any character between two (inclusive)
-                              (A single character string can be used here)
- (^ char_or_range ...1)      match any character not listed
+ symbol                    expands the lex abbreviation whose name 
+                             is symbol
+ character                 matches the given character
+ string                    matches its sequence of characters
+ (epsilon)                 matches the empty string
+ (* re)                    matches the sub-expession 0 or more times
+ (+ re)                    matches the sub-expression 1 or more times
+ (? re)                    matches the sub-expression 0 or 1 times
+ (: re ...)                matches one of the sub-expressions
+ (& re ...)                matches all of the sub-expressions
+ (~ re)                    matches any string that the sub-expression does not match
+ (@ re ...)                matches each sub-expression in succession
+ (- char char)             matches any character between the two (inclusive)
+                             (A single character string can be used here)
+ (^ char_or_range ...1)    matches any character not listed                               
 
- (The null concatenation `(@) means epsilon as does "".
-  The null "or" `(:) means match nothing.
-  The null carat `(^) means match any character.)
+ (The empty concatenation, `(@), and "" both match the empty string.
+  The empty or, `(:), matches nothing.
+  The empty carat, `(^), matches any single character.
+  The empty and, `(&), matches any string.)
+
+ To denote all strings, use (&) instead of something like (* (^)).  The
+ dfa conversion understands the former idiom and will often create smaller
+ dfas in the first case.
+  
 
 To use the _lexer generator_ you must (require (lib "lex.ss" "parser-tools")).
 This gives you the following syntactic forms:

@@ -454,7 +454,7 @@ static void make_init_env(void)
 			     env);
   scheme_add_global_constant("syntax-local-module-introduce", 
 			     scheme_make_prim_w_arity(local_module_introduce,
-						      "syntax-local-module_introduce",
+						      "syntax-local-module-introduce",
 						      1, 1),
 			     env);
   scheme_add_global_constant("make-syntax-introducer", 
@@ -2816,11 +2816,11 @@ local_module_introduce(int argc, Scheme_Object *argv[])
     scheme_wrong_type("syntax-local-module-introduce", "syntax", 0, argc, argv);
 
   if (env->genv->module) {
-    if (!SAME_OBJ(scheme_true, env->genv->module->rn_stx)) {
+    if (env->genv->module->rn_stx && !SAME_OBJ(scheme_true, env->genv->module->rn_stx)) {
       v = scheme_stx_to_rename(env->genv->module->rn_stx);
       s = scheme_add_rename(s, v);
     }
-    if (!SAME_OBJ(scheme_true, env->genv->module->et_rn_stx)) {
+    if (env->genv->module->et_rn_stx && !SAME_OBJ(scheme_true, env->genv->module->et_rn_stx)) {
       v = scheme_stx_to_rename(env->genv->module->et_rn_stx);
       s = scheme_add_rename(s, v);
     }

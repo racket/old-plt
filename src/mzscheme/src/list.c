@@ -453,20 +453,26 @@ scheme_init_list (Scheme_Env *env)
 			     env);
 }
 
-Scheme_Object *
-scheme_make_pair (Scheme_Object *car, Scheme_Object *cdr)
+Scheme_Object *scheme_make_pair(Scheme_Object *car, Scheme_Object *cdr)
 {
   Scheme_Object *cons;
-
-#if 0
-  if (!SCHEME_INTP(cdr))
-    scheme_check_home(cdr);
-#endif
 
   cons = scheme_alloc_object();
   cons->type = scheme_pair_type;
   SCHEME_CAR(cons) = car;
   SCHEME_CDR(cons) = cdr;
+  return cons;
+}
+
+Scheme_Object *scheme_make_immutable_pair(Scheme_Object *car, Scheme_Object *cdr)
+{
+  Scheme_Object *cons;
+
+  cons = scheme_alloc_object();
+  cons->type = scheme_pair_type;
+  SCHEME_CAR(cons) = car;
+  SCHEME_CDR(cons) = cdr;
+  SCHEME_SET_PAIR_IMMUTABLE(cons);
   return cons;
 }
 

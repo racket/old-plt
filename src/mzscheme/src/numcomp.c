@@ -40,27 +40,27 @@ void scheme_init_numcomp(Scheme_Env *env)
   scheme_add_global_constant("=", 
 			     scheme_make_folding_prim(eq,
 						      "=",
-						      1, -1, 1),
+						      2, -1, 1),
 			     env);
   scheme_add_global_constant("<", 
 			     scheme_make_folding_prim(lt,
 						      "<",
-						      1, -1, 1),
+						      2, -1, 1),
 			     env);
   scheme_add_global_constant(">", 
 			     scheme_make_folding_prim(gt,
 						      ">",
-						      1, -1, 1),
+						      2, -1, 1),
 			     env);
   scheme_add_global_constant("<=", 
 			     scheme_make_folding_prim(lt_eq,
 						      "<=",
-						      1, -1, 1),
+						      2, -1, 1),
 			     env);
   scheme_add_global_constant(">=", 
 			     scheme_make_folding_prim(gt_eq,
 						      ">=",
-						      1, -1, 1),
+						      2, -1, 1),
 			     env);
   scheme_add_global_constant("zero?", 
 			     scheme_make_folding_prim(scheme_zero_p,

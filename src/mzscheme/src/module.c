@@ -233,16 +233,16 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(unbound_stx);
 
   w = scheme_sys_wraps0;
-  begin_stx = scheme_datum_to_syntax(scheme_intern_symbol("begin"), scheme_false, w);
-  define_values_stx = scheme_datum_to_syntax(scheme_intern_symbol("define-values"), scheme_false, w);
-  define_syntax_stx = scheme_datum_to_syntax(scheme_intern_symbol("define-syntax"), scheme_false, w);
-  import_stx = scheme_datum_to_syntax(scheme_intern_symbol("import"), scheme_false, w);
-  import_for_syntax_stx = scheme_datum_to_syntax(scheme_intern_symbol("import-for-syntax"), scheme_false, w);
-  export_stx = scheme_datum_to_syntax(scheme_intern_symbol("export"), scheme_false, w);
-  export_indirect_stx = scheme_datum_to_syntax(scheme_intern_symbol("export-indirect"), scheme_false, w);
-  set_stx = scheme_datum_to_syntax(scheme_intern_symbol("set!"), scheme_false, w);
-  app_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%app"), scheme_false, w);
-  unbound_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%unbound"), scheme_false, w);
+  begin_stx = scheme_datum_to_syntax(scheme_intern_symbol("begin"), scheme_false, w, 0);
+  define_values_stx = scheme_datum_to_syntax(scheme_intern_symbol("define-values"), scheme_false, w, 0);
+  define_syntax_stx = scheme_datum_to_syntax(scheme_intern_symbol("define-syntax"), scheme_false, w, 0);
+  import_stx = scheme_datum_to_syntax(scheme_intern_symbol("import"), scheme_false, w, 0);
+  import_for_syntax_stx = scheme_datum_to_syntax(scheme_intern_symbol("import-for-syntax"), scheme_false, w, 0);
+  export_stx = scheme_datum_to_syntax(scheme_intern_symbol("export"), scheme_false, w, 0);
+  export_indirect_stx = scheme_datum_to_syntax(scheme_intern_symbol("export-indirect"), scheme_false, w, 0);
+  set_stx = scheme_datum_to_syntax(scheme_intern_symbol("set!"), scheme_false, w, 0);
+  app_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%app"), scheme_false, w, 0);
+  unbound_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%unbound"), scheme_false, w, 0);
 
   REGISTER_SO(prefix_symbol);
   REGISTER_SO(rename_symbol);
@@ -293,7 +293,7 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
   /* Add a module mapping for all kernel exports: */
   scheme_extend_module_rename_with_kernel(rn);
   
-  w = scheme_datum_to_syntax(kernel_symbol, scheme_false, scheme_false);
+  w = scheme_datum_to_syntax(kernel_symbol, scheme_false, scheme_false, 0);
   w = scheme_add_rename(w, rn);
   if (phase == 0) {
     REGISTER_SO(scheme_sys_wraps0);
@@ -837,7 +837,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   menv->rename = rn;
   menv->et_rename = et_rn;
 
-  fm = scheme_datum_to_syntax(fm, form, form);
+  fm = scheme_datum_to_syntax(fm, form, form, 0);
   fm = scheme_add_rename(fm, rn);
   fm = scheme_add_rename(fm, et_rn);
 
@@ -895,9 +895,9 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     fm = cons(module_symbol,
 	      cons(nm,
 		   cons(ii,
-			scheme_datum_to_syntax(fm, form, mb))));
+			scheme_datum_to_syntax(fm, form, mb, 0))));
 
-    fm = scheme_datum_to_syntax(fm, form, form);
+    fm = scheme_datum_to_syntax(fm, form, form, 0);
     
     return fm;
   }
@@ -1209,7 +1209,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  m = scheme_make_pair(define_syntax_stx,
 			       scheme_make_pair(SCHEME_STX_CADR(e),
 						scheme_make_pair(code, scheme_null)));
-	  e = scheme_datum_to_syntax(m, e, e);
+	  e = scheme_datum_to_syntax(m, e, e, 0);
 	}
 	normal = 0;
       } else if (scheme_stx_module_eq(import_stx, SCHEME_STX_CAR(e), 0)) {	
@@ -1719,7 +1719,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
     return (Scheme_Object *)env->genv->module;
   } else
-    return scheme_datum_to_syntax(cons(SCHEME_STX_CAR(form), first), form, form);
+    return scheme_datum_to_syntax(cons(SCHEME_STX_CAR(form), first), form, form, 0);
 }
 
 static Scheme_Object *

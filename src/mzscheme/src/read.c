@@ -950,8 +950,11 @@ read_list(Scheme_Object *port,
       pair->type = scheme_pair_type;
       pair->u.pair_val.car = car;
       pair->u.pair_val.cdr = scheme_null;
-    } else
+    } else {
       pair = scheme_make_pair(car, scheme_null);
+      if (stxsrc)
+	SCHEME_SET_PAIR_IMMUTABLE(pair);
+    }
 
     ch = skip_whitespace_comments(port);
     if (ch == closer) {
@@ -1777,7 +1780,7 @@ static Scheme_Object *read_compact(CPort *port,
 	}
 
 	v = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
-	v = scheme_datum_to_syntax(v, scheme_false, (Scheme_Object *)local_rename_memory);
+	v = scheme_datum_to_syntax(v, scheme_false, (Scheme_Object *)local_rename_memory, 1);
       }
       break;
     case CPT_MARSHALLED:

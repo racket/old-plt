@@ -254,6 +254,7 @@ typedef struct Scheme_Vector {
 #define SCHEME_NULLP(obj)    SAME_OBJ(obj, scheme_null)
 #define SCHEME_PAIRP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_pair_type)
 #define SCHEME_MUTABLE_PAIRP(obj)    (SCHEME_PAIRP(obj) && !((obj)->keyex & 0x1))
+#define SCHEME_IMMUTABLE_PAIRP(obj)    (SCHEME_PAIRP(obj) && ((obj)->keyex & 0x1))
 #define SCHEME_LISTP(obj)    (SCHEME_NULLP(obj) || SCHEME_PAIRP(obj))
 
 #define SCHEME_BOXP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_box_type)

@@ -672,7 +672,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   if (SCHEME_STX_NULLP(forms))
     scheme_wrong_syntax("lambda", NULL, code, "bad syntax (empty body)");
 
-  forms = scheme_datum_to_syntax(forms, code, code);
+  forms = scheme_datum_to_syntax(forms, code, code, 0);
   forms = scheme_add_env_renames(forms, frame, env);
 
   data->name = rec[drec].value_name;

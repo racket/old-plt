@@ -84,6 +84,7 @@ static void register_traversers(void);
 #endif
 
 #define cons scheme_make_pair
+#define icons scheme_make_immutable_pair
 #define _intern scheme_intern_symbol
 
 #define BUILTIN_STRUCT_FLAGS 0
@@ -1032,13 +1033,13 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
   } else {
     Scheme_Object *base;
     base = (parent_expr 
-	    ? cons(base_symbol,
-		   cons(parent_expr, scheme_null))
+	    ? icons(base_symbol,
+		    icons(parent_expr, scheme_null))
 	    : base_symbol);
-    return scheme_datum_to_syntax(cons(SCHEME_STX_CAR(forms),
-				       cons(base,
-					    cons(field_symbols, scheme_null))),
-				  forms, forms);
+    return scheme_datum_to_syntax(icons(SCHEME_STX_CAR(forms),
+					icons(base,
+					      icons(field_symbols, scheme_null))),
+				  forms, forms, 0);
   }
 }
 

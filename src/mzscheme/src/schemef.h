@@ -316,6 +316,7 @@ Scheme_Object *scheme_make_folding_closed_prim(Scheme_Closed_Prim *prim,
 					       short functional);
 
 Scheme_Object *scheme_make_pair(Scheme_Object *car, Scheme_Object *cdr);
+Scheme_Object *scheme_make_immutable_pair(Scheme_Object *car, Scheme_Object *cdr);
 Scheme_Object *scheme_make_string(const char *chars);
 Scheme_Object *scheme_make_sized_string(char *chars, long len, int copy);
 Scheme_Object *scheme_make_sized_offset_string(char *chars, long d, long len, int copy);

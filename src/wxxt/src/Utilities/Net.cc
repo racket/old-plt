@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Net.cc,v 1.2 1999/11/24 21:20:20 mflatt Exp $
+ * $Id: Net.cc,v 1.3 2000/05/22 15:21:21 mflatt Exp $
  *
  * Purpose: host and user net info
  *
@@ -25,14 +25,6 @@
 
 #include "wx.h"
 
-#if defined(__alpha)
-extern "C" {
-#endif
-#include <netdb.h>
-#if defined(__alpha)
-};
-#endif
-
 #include <pwd.h>
 #include <string.h>
 #include <sys/types.h>
@@ -50,13 +42,10 @@ Bool wxGetHostName(char *buf, int sz)
     return (sysinfo(SI_HOSTNAME, buf, maxSize) != -1);
 #else /* BSD Sockets */
     char name[255];
-    struct hostent *h;
     // Get hostname
     if ((gethostname(name, sizeof(name)/sizeof(char)-1)) == -1)
 	return FALSE;
-    // Get official full name of host
-    h = gethostbyname(name);
-    strncpy(buf, h != NULL ? h->h_name : name, sz-1);
+    strncpy(buf, name, sz-1);
     return TRUE;
 #endif
 }

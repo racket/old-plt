@@ -152,7 +152,7 @@
   (define-struct field-record (name modifiers init? class type))
   
   ;; (make-method-record string (list symbol) type (list type) (list type) (U bool method-record) string)
-  (define-struct method-record (name modifiers rtype atypes throws override class))
+  (define-struct method-record (name modifiers rtype atypes throws override class) (make-inspector))
 
   ;;(make-inner-record string (list symbol) bool)
   (define-struct inner-record (name modifiers class?))

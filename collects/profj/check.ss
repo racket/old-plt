@@ -1568,7 +1568,7 @@
                                                             (send type-recs lookup-path 
                                                                   (car (class-record-name record))
                                                                   (lambda () null))
-                                                            (cdr (class-record-name record))))))                                                                  
+                                                            (cdr (class-record-name record))))))
                     (get-method-records (id-string name) record))
                   (if (and (= (length (access-name expr)) 1)
                            (with-handlers ((exn:syntax? (lambda (exn) #f)))
@@ -1585,7 +1585,12 @@
                                                             (send type-recs lookup-path 
                                                                   (car (class-record-name record))
                                                                   (lambda () null)))))
-                        (get-method-records (id-string name) record))
+                        (let ((methods (get-method-records (id-string name) record)))
+                          (unless (andmap (lambda (x) x) 
+                                          (map (lambda (mrec) (memq 'static (method-record-modifiers mrec)))
+                                               methods))
+                            (class-as-object-call level (id-string (car (access-name expr))) name (id-src name)))
+                          methods))
                       (raise exn)))))
            (methods 
             (cond 
@@ -2159,6 +2164,16 @@
                         "Perhaps it is miscaptialzed or misspelled")))
                    n src)))
 
+  ;class-as-object-call: level string id src -> void
+  (define (class-as-object-call level class meth src)
+    (let ((n (id->ext-name meth))
+          (c (string->symbol class)))
+      (raise-error n
+                   (case level
+                     ((intermediate) (format "Attempt to use class or interface ~a as an object to call method ~a" c n))
+                     ((advanced) (format "Attempt to use method ~a from class ~a as though it were static" n c)))
+                   c src)))
+  
   ;beginner-method-access-error: id src -> void
   (define (beginner-method-access-error name src)
     (let ((n (id->ext-name name)))

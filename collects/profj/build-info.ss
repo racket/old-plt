@@ -715,15 +715,20 @@
   ;class-fully-implemented? class-record id (list class-record) (list id) (list method) symbol -> bool
   (define (class-fully-implemented? super super-name ifaces ifaces-name methods level) 
     (when (memq 'abstract (class-record-modifiers super))
-      (implements-all? (filter (lambda (method)
-                                 (memq 'abstract (method-record-modifiers method)))
-                               (class-record-methods super))
+      (implements-all? (get-methods-need-implementing (class-record-methods super))
                        methods super-name level))
     (andmap (lambda (iface iface-name)
               (implements-all? (class-record-methods iface) methods iface-name level))
             ifaces
-            ifaces-name
-            ))
+            ifaces-name))
+  
+  ;get-methods-need-implementing: (list method-record) -> (list method-record)
+  (define (get-methods-need-implementing methods)
+    (let ((abstract-methods (filter (lambda (m) (memq 'abstract (method-record-modifiers m))) methods))
+          (non-abstract-methods (filter (lambda (m) (not (memq 'abstract (method-record-modifiers m)))) methods)))
+      (filter (lambda (m)
+                (not (member m (map method-record-override non-abstract-methods))))
+              abstract-methods)))
   
   ;implements-all? (list method-record) (list method) name symbol -> bool
   (define (implements-all? inherit-methods methods name level)

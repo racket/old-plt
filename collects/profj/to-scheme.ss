@@ -1442,21 +1442,21 @@
   ;All of the following functions translate Java Expressions into syntax.
   ;Straightforward unless otherwise noted
   
-  ;Converted
   ;translate-literal: symbol value src -> syntax
-  (define translate-literal
-    (lambda (type value src)
+  (define (translate-literal type value src)
+    (let ((make-string  `(let ((temp-obj (make-object |String|)))
+                         (send temp-obj make-mzscheme-string ,value)
+                         temp-obj)))
       (create-syntax #f 
                      (case type
                        ((char int long float double boolean) value)
-                       ((String string) 
-                        `(let ((temp-obj (make-object |String|)))
-                           (send temp-obj make-mzscheme-string ,value)
-                           temp-obj))
+                       ((String string) make-string)
                        ((null) 'null)
                        (else
-                        (error 'translate-literal (format "Translate literal given unknown type: ~s" type))))
-                     (build-src src))))
+                        (if (eq? type string-type)
+                            make-string
+                            (error 'translate-literal (format "Translate literal given unknown type: ~s" type)))))
+                   (build-src src))))
   
   ;;is-string? type -> bool
   (define is-string?

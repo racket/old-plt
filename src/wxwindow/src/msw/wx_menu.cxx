@@ -252,6 +252,7 @@ void wxMenu::SelectMenu(void)
 	      key = s[1];
 	      break;
 	    }
+	    s++;
 	  }
 	  if (key) {
 	    wxWnd *wnd = (wxWnd *)mb->menu_bar_frame->handle;

@@ -1,9 +1,9 @@
 (unit/sig reader^ (import xml-lex^)
   
-  ;; Document ::= (make-document Prolog Element (listof PI))
+  ;; Document ::= (make-document Prolog Element (listof Processing-instruction))
   (define-struct document (prolog element misc))
   
-  ;; Prolog ::= (make-prolog XMLDeclare (listof PI) DocType (listof PI))
+  ;; Prolog ::= (make-prolog XMLDeclare (listof Processing-instruction) DocType (listof Processing-instruction))
   (define-struct prolog (xml before-dtd dtd before-element))
   
   ;; XMLDeclare ::= (make-xmlD String (U String #f) (U String #f))
@@ -40,7 +40,7 @@
   ;;          |  Element
   
   
-  ;; PI ::= (make-pi Location Location String (list String))
+  ;; Processing-instruction ::= (make-pi Location Location String (list String))
   (define-struct (pi struct:source) (target-name instruction))
   
   (define-struct (xml-read:error struct:exn) ())

@@ -1,7 +1,7 @@
 (unit/sig extra-xexpr^
   (import reader^ mzlib:function^)
   ;; Xexpr ::= String
-  ;;        |  ProcessingInstruction
+  ;;        |  Processing-instruction
   ;;        |  (list* Symbol (listof Attribute-srep) (list Xexpr))
   ;; Attribute-srep ::= (list Symbol String)
   

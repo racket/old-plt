@@ -714,7 +714,7 @@ word bytes;
     GC_n_heap_sects++;
     words = BYTES_TO_WORDS(bytes);
     phdr -> hb_sz = words;
-    phdr -> hb_map = (char *)1;   /* A value != GC_invalid_map	*/
+    phdr -> hb_map = (unsigned char *)1;   /* A value != GC_invalid_map	*/
     phdr -> hb_flags = 0;
     GC_freehblk(p);
     GC_heapsize += bytes;

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dc.cc,v 1.5 1999/11/22 17:23:15 mflatt Exp $
+ * RCS_ID:      $Id: wb_dc.cc,v 1.6 1999/11/30 01:20:44 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -129,7 +129,7 @@ void wxbDC::DrawSpline(float x1, float y1, float x2, float y2, float x3, float y
 }
 #endif
 
-wxColor *wxbDC::GetBackground(void);
+wxColor *wxbDC::GetBackground(void)
 { 
   wxColour *c = new wxColour;
   c->CopyFrom(current_background_color);

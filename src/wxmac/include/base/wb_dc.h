@@ -180,7 +180,7 @@ class wxbDC: public wxObject
   inline virtual wxFont  *GetFont(void)            { return font ;}
   inline virtual wxPen   *GetPen(void)             { return current_pen ;}
   inline virtual wxColour *GetTextBackground(void)  { return current_text_background ;}
-  inline virtual wxColou *GetTextForeground(void)  { return current_text_foreground ;}
+  inline virtual wxColour *GetTextForeground(void)  { return current_text_foreground ;}
  
   virtual void SetLogicalOrigin(float x, float y);
   virtual void SetDeviceOrigin(float x, float y);

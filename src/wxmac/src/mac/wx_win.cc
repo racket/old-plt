@@ -751,14 +751,14 @@ void wxWindow::MacSetBackground(void) // mac platform only
 		return;
 	}
 
-	RGBColor pixel = cEraser->GetColour().pixel;
+	RGBColor pixel = cEraser->GetColour()->pixel;
 	if (cColour)
 		RGBBackColor(&pixel);
 	else
 	{
-		unsigned char red = cEraser->GetColour().Red();
-		unsigned char blue = cEraser->GetColour().Blue();
-		unsigned char green = cEraser->GetColour().Green();
+		unsigned char red = cEraser->GetColour()->Red();
+		unsigned char blue = cEraser->GetColour()->Blue();
+		unsigned char green = cEraser->GetColour()->Green();
 		Bool isBlackColour =
 			(red == (unsigned char )0 &&
 			 blue == (unsigned char)0 &&
@@ -814,14 +814,14 @@ void wxWindow::SetForeground(void) // mac platform only
 		PenPat(&qd.black); // WCH: must use PenPixPat for stipple
 	}
 
-	RGBColor pixel = cBrush->GetColour().pixel;
+	RGBColor pixel = cBrush->GetColour()->pixel;
 	if (cColour)
 		RGBForeColor(&pixel);
 	else
 	{
-		unsigned char red = cBrush->GetColour().Red();
-		unsigned char blue = cBrush->GetColour().Blue();
-		unsigned char green = cBrush->GetColour().Green();
+		unsigned char red = cBrush->GetColour()->Red();
+		unsigned char blue = cBrush->GetColour()->Blue();
+		unsigned char green = cBrush->GetColour()->Green();
 		Bool isWhiteColour =
 			(red == (unsigned char )255 &&
 			 blue == (unsigned char)255 &&
@@ -1045,7 +1045,7 @@ static void SendEnterLeaveEvent(wxWindow *target, int eventtype, wxWindow *evtsr
 	    theMouseEvent->y = clientHitY;
 
 	    if (!doCallPreMouseEvent(target, target, theMouseEvent))		  
-	      target->OnEvent(*theMouseEvent);
+	      target->OnEvent(theMouseEvent);
    }
 }
 
@@ -1184,7 +1184,7 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 				while (childWindowNode && !result)
 				{
 					wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
-					result = childWindow->SeekMouseEventArea(*areaMouseEvent);
+					result = childWindow->SeekMouseEventArea(areaMouseEvent);
 					if (!result) childWindowNode = childWindowNode->Next();
 				}
 			}
@@ -1214,7 +1214,7 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 						    ReleaseMouse();
 						}
 						
-						OnEvent(*areaMouseEvent);
+						OnEvent(areaMouseEvent);
 					}
 				}
 			}
@@ -1234,7 +1234,7 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 	  areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
 	  areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
 	  if (!doCallPreMouseEvent(this, this, areaMouseEvent))
-	    OnEvent(*areaMouseEvent);
+	    OnEvent(areaMouseEvent);
 	}
 	
 	return result;
@@ -1659,7 +1659,7 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
   wxPopupEvent *event = new wxPopupEvent();
   event->menuId = theWxMenuItem->itemId;
 
-  menu->ProcessCommand(*event);
+  menu->ProcessCommand(event);
 
   return TRUE;
 }

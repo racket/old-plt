@@ -361,7 +361,7 @@ void wxCanvas::SetScrollData
 	    // ((wxCanvasDC *)theDC)->SetCanvasClipping();
 	  }
  	  if (evnt) {
- 	    OnScroll(*evnt);
+ 	    OnScroll(evnt);
  	  }
           return;
  	}

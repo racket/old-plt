@@ -136,6 +136,7 @@ class wxColour: public wxObject
   wxColour(void);
   wxColour(unsigned char r, unsigned char b, unsigned char g);
   wxColour(const char *col);
+  wxColour(wxColour *);
   ~wxColour(void) ;
   wxColour *CopyFrom(wxColour *src);
   wxColour& operator =(wxColour& src) ;

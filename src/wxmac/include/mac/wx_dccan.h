@@ -122,7 +122,7 @@ class wxCanvasDC: public wxbCanvasDC
 
   void TryColour(wxColour *src, wxColour *dest);
   
-  void InstallColor(wxColour &c, int fg);
+  void InstallColor(wxColour *c, int fg);
   void InstallLogicalFunction(int func);
   
   wxRegion *BrushStipple();

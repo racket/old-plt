@@ -33,7 +33,7 @@ static const char sccsid[] = "%W% %G%";
 		radioBox->SetSelection(radioButtonIndex);
 
 		wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
-		radioBox->ProcessCommand(*commandEvent);
+		radioBox->ProcessCommand(commandEvent);
 	}
 
 //=============================================================================

@@ -953,7 +953,7 @@ RgnHandle wxFrame::GetCoveredRegion(int x, int y, int w, int h)
 }
 
 //-----------------------------------------------------------------------------
-void wxFrame::OnChar(wxKeyEvent& event) // mac platform only
+void wxFrame::OnChar(wxKeyEvent *event) // mac platform only
 {
 	if (cFocusWindow)
 	{

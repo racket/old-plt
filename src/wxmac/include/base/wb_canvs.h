@@ -55,7 +55,7 @@ class wxbCanvas: public wxWindow
 
   virtual void AllowDoubleClick(int value) ;
 
-  void OnChar(wxKeyEvent& event);
+  void OnChar(wxKeyEvent* event);
 
   // Number of pixels per user unit (0 or -1 for no scrollbar)
   // Length of virtual canvas in user units

@@ -317,19 +317,19 @@ void wxCanvasDC::SetBrush(wxBrush *brush)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::InstallColor(wxColour &c, int fg)
+void wxCanvasDC::InstallColor(wxColour *c, int fg)
 {
    RGBColor pixel;
-   pixel = c.pixel;
+   pixel = c->pixel;
    if (Colour) {
 	  if (fg)
 	    RGBForeColor(&pixel);
 	  else
 	    RGBBackColor(&pixel);
    } else {
-		unsigned char red = c.Red();
-		unsigned char blue = c.Blue();
-		unsigned char green = c.Green();
+		unsigned char red = c->Red();
+		unsigned char blue = c->Blue();
+		unsigned char green = c->Green();
 		if (fg) {
 		  Bool isWhiteColour =
 			(red == (unsigned char )255 &&
@@ -377,7 +377,7 @@ void wxCanvasDC::InstallLogicalFunction(int function)
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetBackground(wxColour* color)
 {
-    current_background_color = *color;
+    current_background_color = color;
 
     if (Ok()) {
  
@@ -391,7 +391,7 @@ void wxCanvasDC::SetBackground(wxColour* color)
 		::GetGWorld(&savep, &savegd);  
 		::SetGWorld((CGrafPtr)theMacGrafPort, wxGetGDHandle());
 
-        	InstallColor(*color, FALSE);
+        InstallColor(color, FALSE);
 
 		::SetGWorld(savep, savegd);
 	}

@@ -128,7 +128,7 @@ private:
 	void GetVirtualSize(int* x, int* y);
 
 	void SetColourMap(wxColourMap* cmap);
-	virtual void OnScroll(wxScrollEvent& event) { };
+	virtual void OnScroll(wxScrollEvent* event) { };
 
 	// Enable/disable Windows 3.1 scrolling in either direction.
 	// If TRUE, wxWindows scrolls the canvas and only a bit of

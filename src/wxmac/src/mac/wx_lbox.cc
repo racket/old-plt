@@ -318,25 +318,25 @@ static void ManualScroll(ListHandle list, ControlHandle scroll, Point startPt, i
 	}
 }
 		
-void wxListBox::OnEvent(wxMouseEvent& event) // WCH : mac only ?
+void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 {
 	SetCurrentDC();
-	if (event.leftDown || event.rightDown) {
+	if (event->leftDown || event->rightDown) {
 		float fStartH, fStartV;
-		event.Position(&fStartH, &fStartV); // client c.s.
+		event->Position(&fStartH, &fStartV); // client c.s.
 		int startH = fStartH;
 		int startV = fStartV;
 		
 		Point startPt = {startV, startH}; 	// client c.s.
 		int modifiers = 0;
-		if (event.shiftDown)
+		if (event->shiftDown)
 		  modifiers += shiftKey;
-		if (event.altDown)
+		if (event->altDown)
 		  modifiers += optionKey;
-		if (event.rightDown  // mflatt: right button is Cmd-click
-		    || ((multiple & wxEXTENDED) && !event.shiftDown))
+		if (event->rightDown  // mflatt: right button is Cmd-click
+		    || ((multiple & wxEXTENDED) && !event->shiftDown))
 		  modifiers += cmdKey;
-		if (event.controlDown)
+		if (event->controlDown)
 		  modifiers += controlKey;
 
 		if ((**cListHandle).vScroll) {
@@ -361,35 +361,35 @@ void wxListBox::OnEvent(wxMouseEvent& event) // WCH : mac only ?
 			return;							// ie in the scroll bars
 		Cell cell = LLastClick(cListHandle);
 
-		if (event.ButtonDown()) {
+		if (event->ButtonDown()) {
 		  if ((cell.h == cLastClickCell.h)
 			  && (cell.v == cLastClickCell.v)
-			  && (event.timeStamp - cLastClickTime < SCALE_TIMESTAMP(GetDblTime()))) {
+			  && (event->timeStamp - cLastClickTime < SCALE_TIMESTAMP(GetDblTime()))) {
 			// Double-click
 			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
-			ProcessCommand(*commandEvent);
+			ProcessCommand(commandEvent);
 			return;
 		  }
-		  cLastClickTime = event.timeStamp;
+		  cLastClickTime = event->timeStamp;
 		  cLastClickCell.h = cell.h;
 		  cLastClickCell.v = cell.v;
 		}
 		
 		{
 			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
-			ProcessCommand(*commandEvent);
+			ProcessCommand(commandEvent);
 		}
 	}
 }
 
 // mflatt:
-void wxListBox::OnChar(wxKeyEvent& event)
+void wxListBox::OnChar(wxKeyEvent *event)
 {
 	int move = 0;
 
 	SetCurrentDC();
 
-	switch (event.KeyCode()) {
+	switch (event->KeyCode()) {
 		case WXK_UP:
 		case WXK_LEFT:
 			move = -1;
@@ -434,7 +434,7 @@ void wxListBox::OnChar(wxKeyEvent& event)
 		} else
 			save.h = save.v = -1;
 
-		if ((!event.shiftDown && !event.metaDown) || ((**cListHandle).selFlags & lOnlyOne)) {
+		if ((!event->shiftDown && !event->metaDown) || ((**cListHandle).selFlags & lOnlyOne)) {
 			int i;
 			Cell next;
 			next.h = now.h;
@@ -465,7 +465,7 @@ void wxListBox::OnChar(wxKeyEvent& event)
 
 		{
 		    wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
-			ProcessCommand(*commandEvent);
+			ProcessCommand(commandEvent);
 	  	}
 	}
 }

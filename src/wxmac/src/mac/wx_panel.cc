@@ -379,9 +379,9 @@ void wxPanel::Paint(void)
 }
 
 //-----------------------------------------------------------------------------
-void wxPanel::OnChar(wxKeyEvent& event)
+void wxPanel::OnChar(wxKeyEvent *event)
  {
- 	switch (event.keyCode)
+ 	switch (event->keyCode)
 	{
  		case 0x03:	// enter
  		case 0x0D:	// return
@@ -398,7 +398,7 @@ void wxPanel::OnChar(wxKeyEvent& event)
  			wxWindow* wrapWindow = NULL;
 
  			// Tab steps forward, Shift-Tab steps backwards
- 			Bool backwards = event.shiftDown;
+ 			Bool backwards = event->shiftDown;
 #if 0
  			if (backwards)
  				childWindowNode = cClientArea->Windows()->Last();

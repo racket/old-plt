@@ -430,9 +430,9 @@ void wxChoice::ShowAsActive(Bool flag) // mac platform only
 }
 
 
-void wxChoice::OnEvent(wxMouseEvent& event) // mac platform only
+void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 {
-	if (event.LeftDown() && (no_strings > 0))
+	if (event->LeftDown() && (no_strings > 0))
 	{
 		SetCurrentDC();
 	
@@ -460,7 +460,7 @@ void wxChoice::OnEvent(wxMouseEvent& event) // mac platform only
 #endif
 				selection = newsel;
 				wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-				ProcessCommand(*commandEvent);
+				ProcessCommand(commandEvent);
 			}
 		}
 		DrawChoice(TRUE);

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.20 1999/11/29 21:37:10 clements Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.21 1999/11/30 01:20:44 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -41,6 +41,8 @@ extern Xv_Server xview_server;
 #if USE_IMAGE_LOADING_IN_MAC
 #include "wx_image.h"
 #endif
+
+#include "FontDirectory.cxx"
 
 
 wxbFont::wxbFont (void)
@@ -98,7 +100,7 @@ char *wxbFont::GetFamilyString(void)
 
 char *wxbFont::GetFaceString(void)
 {
-  return wxTheFontNameDirectory.GetFontName(fontid); 
+  return wxTheFontNameDirectory->GetFontName(fontid); 
 }
 
 char *wxbFont::GetStyleString(void)
@@ -181,6 +183,12 @@ wxColour::wxColour (unsigned char r, unsigned char g, unsigned char b)
 //  wxTheColourList->Append (this);
 }
 
+wxColour::wxColour (wxColour *src)
+{
+  CopyFrom(src);
+}
+
+
 wxColour::wxColour (const char *col)
 {
   __type = wxTYPE_COLOUR;
@@ -235,11 +243,11 @@ wxColour *wxColour::CopyFrom(wxColour *src)
 }
 
 
-wxColour &wxColour::operator =(wxColour &src)
+wxColour &wxColour::operator = (wxColour &src)
 {
   CopyFrom(&src);
 
-  return this;
+  return (*this);
 }
 
 wxColour& wxColour::operator = (const char *col)
@@ -477,7 +485,7 @@ wxInitializeStockObjects (void)
   wxBLACK_BRUSH->Lock(1);
   
   wxColour ctlGray(0xE8, 0xE8, 0xE8);
-  wxCONTROL_BACKGROUND_BRUSH = new wxBrush(ctlGray, wxSOLID);
+  wxCONTROL_BACKGROUND_BRUSH = new wxBrush(&ctlGray, wxSOLID);
   wxCONTROL_BACKGROUND_BRUSH->Lock(1);
 
   wxBLACK = new wxColour ("BLACK");
@@ -534,7 +542,7 @@ wxbPen::~wxbPen ()
     --stipple->selectedIntoDC;
 }
 
-wxbPen::wxbPen (wxColour& col, int Width, int Style)
+wxbPen::wxbPen (wxColour *col, int Width, int Style)
 {
   locked = 0;
   __type = wxTYPE_PEN;
@@ -584,7 +592,7 @@ wxColour *wxbPen::GetColour (void)
 
 void wxbPen::SetColour (wxColour *col)
 {
-  colour.CyopFrom(col);
+  colour.CopyFrom(col);
 }
 
 void wxbPen::SetColour (const char *col)
@@ -765,7 +773,7 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, int width, int style)
 	  each_pen->GetColour()->Blue () == colour->Blue ())
 	return each_pen;
     }
-  pen = new wxPen (*colour, width, style);
+  pen = new wxPen (colour, width, style);
 #if WXGARBAGE_COLLECTION_ON
   AddPen(pen);
 #endif
@@ -817,7 +825,7 @@ wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
 	  each_brush->GetColour()->Blue() == colour->Blue())
 	return each_brush;
     }
-  brush = new wxBrush (*colour, style);
+  brush = new wxBrush (colour, style);
 #if WXGARBAGE_COLLECTION_ON
   AddBrush(brush);
 #endif
@@ -879,7 +887,7 @@ wxFont *wxFontList::
 FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int Weight, Bool underline)
 {
   return FindOrCreateFont(PointSize,
-			  wxTheFontNameDirectory.FindOrCreateFontId(Face, Family),
+			  wxTheFontNameDirectory->FindOrCreateFontId(Face, Family),
 			  Style,
 			  Weight,
 			  underline);
@@ -917,539 +925,15 @@ wxIntPoint::~wxIntPoint (void)
 }
 #endif
 
-static WX_FAR char *font_defaults[] = {
-  /* MATTHEW: [4] Family map */
-  "FamilyDefault", "Default",
-  "FamilyRoman", "Roman",
-  "FamilyDecorative", "Decorative",
-  "FamilyModern", "Modern",
-  "FamilyTeletype", "Teletype",
-  "FamilySwiss", "Swiss",
-  "FamilyScript", "Script",
-  "FamilySystem", "System",
-  "FamilySymbol", "Symbol",
-
-  "AfmMedium", "",
-  "AfmBold", "Bo",
-  "AfmLight", "",
-  "AfmStraight", "",
-  "AfmItalic", "${AfmSlant}",
-  "AfmSlant", "O",
-  "AfmRoman", "Ro",
-
-  "AfmTimes", "Times",
-  "AfmHelvetica", "Helv",
-  "AfmCourier", "Cour",
-
-  "Afm___", "${AfmTimes,$[weight],$[style]}",
-
-  "AfmTimes__", "${AfmTimes}${Afm$[weight]}${Afm$[style]}",
-  "AfmTimesMediumStraight", "${AfmTimes}${AfmRoman}",
-  "AfmTimesLightStraight", "${AfmTimes}${AfmRoman}",
-  "AfmTimes_Italic", "${AfmTimes}$[weight]${AfmItalic}",
-  "AfmTimes_Slant", "${AfmTimes}$[weight]${AfmItalic}",
-
-  "AfmSwiss__", "${AfmHelvetica}${Afm$[weight]}${Afm$[style]}",
-  "AfmModern__", "${AfmCourier}${Afm$[weight]}${Afm$[style]}",
-  "AfmSymbol__", "Sym",
-
-  "AfmTeletype__", "${AfmModern,$[weight],$[style]}",
-
-  "PostScriptMediumStraight", "",
-  "PostScriptMediumItalic", "-Oblique",
-  "PostScriptMediumSlant", "-Oblique",
-  "PostScriptLightStraight", "",
-  "PostScriptLightItalic", "-Oblique",
-  "PostScriptLightSlant", "-Oblique",
-  "PostScriptBoldStraight", "-Bold",
-  "PostScriptBoldItalic", "-BoldOblique",
-  "PostScriptBoldSlant", "-BoldOblique",
-
-#if WX_NORMALIZED_PS_FONTS
-  "PostScript___", "${PostScriptTimes,$[weight],$[style]}",
-#else
-  "PostScriptRoman__", "${PostScriptTimes,$[weight],$[style]}",
-  "PostScript___", "LucidaSans${PostScript$[weight]$[style]}",
-#endif
-
-  "PostScriptTimesMedium", "",
-  "PostScriptTimesLight", "",
-  "PostScriptTimesBold", "Bold",
-
-  "PostScriptTimes__", "Times${PostScript$[weight]$[style]}",
-  "PostScriptTimesMediumStraight", "Times-Roman",
-  "PostScriptTimesLightStraight", "Times-Roman",
-  "PostScriptTimes_Slant", "Times-${PostScriptTimes$[weight]}Italic",
-  "PostScriptTimes_Italic", "Times-${PostScriptTimes$[weight]}Italic",
-
-  "PostScriptSwiss__", "Helvetica${PostScript$[weight]$[style]}",
-  "PostScriptModern__", "Courier${PostScript$[weight]$[style]}",
-  "PostScriptSymbol__", "Symbol",
-
-  "PostScriptTeletype__", "${PostScriptModern,$[weight],$[style]}",
-
-#if !WX_NORMALIZED_PS_FONTS
-  "PostScriptScript__", "Zapf-Chancery-MediumItalic",
-#endif
-
-  "ScreenDefault__", "applicationfont",
-  "ScreenSystem__", "systemfont",
-  "ScreenRoman__", "times",
-  "ScreenDecorative__", "geneva",
-  "ScreenModern__", "monaco", /* "courier" is also good */
-  "ScreenTeletype__", "${ScreenModern,$[weight],$[style]}",
-  "ScreenSwiss__", "helvetica",
-  "ScreenScript__", "geneva",
-  "ScreenSymbol__", "symbol",
-
-  NULL
-};
-
-
-wxFontNameDirectory wxTheFontNameDirectory;
-
-enum {
-  wxWEIGHT_NORMAL,
-  wxWEIGHT_BOLD,
-  wxWEIGHT_LIGHT,
-  wxNUM_WEIGHTS
-  };
-
-enum {
-  wxSTYLE_NORMAL,
-  wxSTYLE_ITALIC,
-  wxSTYLE_SLANT,
-  wxNUM_STYLES
-  };
-
-class wxSuffixMap {
- public:
-  char *map[wxNUM_WEIGHTS][wxNUM_STYLES];
-  void Initialize(const char *, const char *);
-  void Cleanup(void);
-};
-
-
-class wxFontNameItem : public wxObject
-{
- public:
-  int id;
-  int family;
-  char *name;
-  wxSuffixMap screen, printing, afm;
-  Bool isfamily;
-  
-  ~wxFontNameItem(void);
-};
-
-wxFontNameItem::~wxFontNameItem(void)
-{
-	screen.Cleanup();
-	printing.Cleanup();
-	afm.Cleanup();
-	delete [] name;
-}
-
-static int WCoordinate(int w)
-{
-  switch (w) {
-  case wxBOLD:
-    return wxWEIGHT_BOLD;
-  case wxLIGHT:
-    return wxWEIGHT_LIGHT;
-  case wxNORMAL:
-  default:
-    return wxWEIGHT_NORMAL;
-  }
-}
-
-static int SCoordinate(int s)
-{
-  switch (s) {
-  case wxITALIC:
-    return wxSTYLE_ITALIC;
-  case wxSLANT:
-    return wxSTYLE_SLANT;
-  case wxNORMAL:
-  default:
-    return wxSTYLE_NORMAL;
-  }
-}
-
-wxFontNameDirectory::wxFontNameDirectory(void)
-{
-  table = new wxHashTable(wxKEY_INTEGER, 20);
-  nextFontId = -1;
-}
-
-wxFontNameDirectory::~wxFontNameDirectory()
-{ // The data in the hash table must be deleted as well as the table
-  table->DeleteContents(1);
-  delete table;
-}
-
-int wxFontNameDirectory::GetNewFontId(void)
-{
-  return (nextFontId--);
-}
-
 #if !USE_RESOURCES
 #define wxGetResource(a, b, c) 0
 #endif
-
-static void SearchResource(const char *prefix, const char **names, int count, char **v)
-{
-  int k, i, j;
-  char resource[1024], **defaults, *internal;
-
-  k = 1 << count;
-
-  *v = NULL;
-  internal = NULL;
-
-  for (i = 0; i < k; i++) {
-    strcpy(resource, prefix);
-    for (j = 0; j < count; j++) {
-      if (!(i & (1 << j)))
-		strcat(resource, names[j]);
-      else
-		strcat(resource, "_");
-    }
-
-    if (wxGetResource(wxTheApp->wx_class, (char *)resource, v) && **v)
-      return;
-
-    if (!internal) {
-      defaults = font_defaults;
-      while (*defaults) {
-		if (!strcmp(*defaults, resource)) {
-	  	  internal = defaults[1];
-	  	  break;
-		}
-		defaults += 2;
-      }
-    }
-  }
-
-  if (internal)
-    *v = copystring(internal);
-}
-
-void wxFontNameDirectory::Initialize()
-{
-  wxTheFontNameDirectory.Initialize(wxDEFAULT, wxDEFAULT, "Default");
-  wxTheFontNameDirectory.Initialize(wxDECORATIVE, wxDECORATIVE, "Decorative");
-  wxTheFontNameDirectory.Initialize(wxROMAN, wxROMAN, "Roman");
-  wxTheFontNameDirectory.Initialize(wxMODERN, wxMODERN, "Modern");
-  wxTheFontNameDirectory.Initialize(wxTELETYPE, wxTELETYPE, "Teletype");
-  wxTheFontNameDirectory.Initialize(wxSWISS, wxSWISS, "Swiss");
-  wxTheFontNameDirectory.Initialize(wxSCRIPT, wxSCRIPT, "Script");
-  wxTheFontNameDirectory.Initialize(wxSYSTEM, wxSYSTEM, "System");
-  wxTheFontNameDirectory.Initialize(wxSYMBOL, wxSYMBOL, "Symbol");
-}
 
 typedef char *a_charptr;
 // Note from CJC - Initialize leaked like crazy because the copystring() returned by
 // searchresource() was not deleted on expansions.
 //
-void wxSuffixMap::Initialize(const char *resname, const char *devresname)
-{
-  const char *weight, *style;
-  char *v, *rname;
-  int i, j, k;
-  const char *names[3];
 
-  for (k = 0; k < wxNUM_WEIGHTS; k++) {
-    switch (k) {
-    case wxWEIGHT_NORMAL:
-      weight = "Medium";
-      break;
-    case wxWEIGHT_LIGHT:
-      weight = "Light";
-      break;
-    case wxWEIGHT_BOLD:
-      default:
-      weight = "Bold";
-  	}
-    for (j = 0; j < wxNUM_STYLES; j++) {
-      switch (j) {
-      case wxSTYLE_NORMAL:
-		style = "Straight";
-		break;
-      case wxSTYLE_ITALIC:
-		style = "Italic";
-		break;
-      case wxSTYLE_SLANT:
-	      default:
-		style = "Slant";
-   	  }
-
-      names[0] = resname;
-      names[1] = weight;
-      names[2] = style;
-      
-      SearchResource(devresname, names, 3, &v);
-
-      /* Expand macros in the found string: */
-  found:
-      int len, closer = 0, startpos = 0;
-
-      len = (v ? strlen(v) : 0);
-      for (i = 0; i < len; i++)
-		if (v[i] == '$' && ((v[i+1] == '[') || (v[i+1] == '{'))) {
-	 		startpos = i;
-	  		if (v[i+1] == '[')
-	   		  closer = ']';
-	  		else
-	    	  closer = '}';
-	  		i++;
-		} else if (v[i] == closer) {
-	  	  int newstrlen;
-	  	  const char *r = NULL;
-	  	  char *naya, *name;
-	  	  char *tmp; //cjc
-	  
-	  	  name = v + startpos + 2;
-	  	  v[i] = 0;
-		  tmp = NULL; //cjc
-	  	  if (closer == '}') {
-	    	int i, count, len;
-	    	char **names;
-
-	    	for (i = 0, count = 1; name[i]; i++)
-	      		if (name[i] == ',')
-				  count++;
-	    
-	    	len = i;
-
-	    	names = new a_charptr[count];
-	    	names[0] = name;
-	    	for (i = 0, count = 1; i < len; i++)
-	      		if (name[i] == ',') {
-					names[count++] = name + i + 1;
-					name[i] = 0;
-	      		}
-
-	    	SearchResource("", (const char **)names, count, (char **)&r);
-	    	delete[] names;
-			tmp = (char *)r;	// cjc
-	    	if (!r) {
-	      		for (i = 0; i < len; i++)
-					if (!name[i])
-		  				name[i] = ',';
-	      		r = "";
-	      		printf("Bad resource name \"%s\" in font lookup\n", name);
-	    	}
-	  	  } else if (!strcmp(name, "weight")) {
-	    	r = weight;
-	      } else if (!strcmp(name, "style")) {
-	    	r = style;
-	      } else if (!strcmp(name, "family")) {
-	    	r = resname;
-	      } else {
-	    	r = "";
-	    	printf("Bad font macro name \"%s\"\n", name);
-	      }
-	    newstrlen = strlen(r);
-
-	    naya = new char[len + newstrlen + 1];
-	    memcpy(naya, v, startpos);
-	    memcpy(naya + startpos, r, newstrlen);
-	    memcpy(naya + startpos + newstrlen, v + i + 1, len - i + 1);
-	    delete[] v;
-	    delete[] tmp; //cjc
-	    v = naya;
-
-	    goto found;
-	  }
-
-      rname = (char *)((resname[0] == '@') ? resname + 1 : resname);
-
-#if defined(wx_msw) || defined(wx_mac)
-      if (!v)
-		v = copystring(rname);
-#endif
-      /* We have a final value: */
-      map[k][j] = v;
-    } // wxNUM_STYLES (j);
-  } // wxNUM_WEIGHTS (k)
-}
-
-void wxSuffixMap::Cleanup(void)
-{
-	int i,j;
-	char *v, **vec,*str;
-	vec = map[0,0];
-	for (i = 0; i < wxNUM_WEIGHTS; i++) {
-		for (j = 0; j < wxNUM_STYLES; j++) {
-			str = *vec++;
-			if (*str) {
-				delete   str;
-			}
-		}
-	}
-}
-
-void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname)
-{
-  wxFontNameItem *item = new wxFontNameItem;
-  char *fam, resource[256];
-  
-  item->id = fontid;
-  item->family = family;
-  item->isfamily = (resname[0] != '@');
-  
-  sprintf(resource, "Family%s", resname);
-  fam = NULL;
-  SearchResource((const char *)resource, NULL, 0, (char **)&fam);
-  if (fam) {
-    if (!strcmp(fam, "Default"))
-      item->family = wxDEFAULT;
-    else if (!strcmp(fam, "Roman"))
-      item->family = wxROMAN;
-    else if (!strcmp(fam, "Decorative"))
-      item->family = wxDECORATIVE;
-    else if (!strcmp(fam, "Modern"))
-      item->family = wxMODERN;
-    else if (!strcmp(fam, "Teletype"))
-      item->family = wxTELETYPE;
-    else if (!strcmp(fam, "Swiss"))
-      item->family = wxSWISS;
-    else if (!strcmp(fam, "Script"))
-      item->family = wxSCRIPT;
-    else if (!strcmp(fam, "System"))
-      item->family = wxSYSTEM;
-    else if (!strcmp(fam, "Symbol"))
-      item->family = wxSYMBOL;
-    delete [] fam;
-  }
-
-  item->name = copystring(resname);
-  item->screen.Initialize(resname, "Screen");
-  item->printing.Initialize(resname, "PostScript");
-  item->afm.Initialize(resname, "Afm");
-
-  table->Put(fontid, item);
-}
-
-int wxFontNameDirectory::FindOrCreateFontId(const char *name, int family)
-{
-  int id;
-
-  if (id = GetFontId(name))
-    return id;
-
-  id = GetNewFontId();
-
-  char *s;
-  s = new char[strlen(name) + 2];
-  strcpy(s + 1, name);
-  s[0] = '@';
-  Initialize(id, family, s);
-
-  return id;
-}
-
-char *wxFontNameDirectory::GetScreenName(int fontid, int weight, int style)
-{
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
-  
-  if (!item)
-    return NULL;
-
-  return item->screen.map[WCoordinate(weight)][SCoordinate(style)];
-}
-
-void wxFontNameDirectory::SetScreenName(int fontid, int weight, int style, char *s)
-{
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
-  
-  if (!item)
-    return;
-
-  item->screen.map[WCoordinate(weight)][SCoordinate(style)] = s;
-}
-
-char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)
-{
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
-
-  if (!item)
-    return NULL;
-
-  return item->printing.map[WCoordinate(weight)][SCoordinate(style)];
-}
-
-void wxFontNameDirectory::SetPostScriptName(int fontid, int weight, int style, char *s)
-{
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
-
-  if (!item)
-    return;
-
-  item->printing.map[WCoordinate(weight)][SCoordinate(style)] = s;
-}
-
-char *wxFontNameDirectory::GetAFMName(int fontid, int weight, int style)
-{
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
-
-  if (!item)
-    return NULL;
-
-  return item->afm.map[WCoordinate(weight)][SCoordinate(style)];
-}
-
-void wxFontNameDirectory::SetAFMName(int fontid, int weight, int style, char *s)
-{
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
-
-  if (!item)
-    return;
-
-  item->afm.map[WCoordinate(weight)][SCoordinate(style)] = s;
-}
-
-char *wxFontNameDirectory::GetFontName(int fontid)
-{
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
-  
-  if (!item)
-    return NULL;
-
-  if (item->isfamily)
-    return NULL;
-
-  return item->name + 1;
-}
-
-int wxFontNameDirectory::GetFontId(const char *name)
-{
-  wxNode *node;
-
-  table->BeginFind();
-
-  while (node = table->Next()) {
-    wxFontNameItem *item = (wxFontNameItem *)node->Data();
-    if (!item->isfamily && !strcmp(name, item->name+1))
-      return item->id;
-  }
-
-  return 0;
-}
-
-int wxFontNameDirectory::GetFamily(int fontid)
-{
-  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
-  
-  if (!item)
-    return wxDEFAULT;
-
-  return item->family;
-}
-
-#include "::::wxcommon:FontDirectory.cxx"
-
-#include "::::wxcommon:Region.h"
-#include "::::wxcommon:Region.cxx"
+#include "Region.h"
+#include "Region.cxx"
 

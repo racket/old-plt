@@ -324,8 +324,8 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
   wxColour *back, *bright, *dim;
   
   if (!dark) {
-  	wxColour *norm; 
-    norm = &wxCONTROL_BACKGROUND_BRUSH->GetColour();
+  	wxColour *norm;
+    norm = wxCONTROL_BACKGROUND_BRUSH->GetColour();
     
 #   define DARK_SCALE(x) (x - (x >> 2))
 #   define DARKER_SCALE(x) (x >> 1)
@@ -346,10 +346,10 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
 
   if (pressed) {
     back = dark;
-    dim = &wxCONTROL_BACKGROUND_BRUSH->GetColour();
+    dim = wxCONTROL_BACKGROUND_BRUSH->GetColour();
     bright = darker;
   } else {
-    back = &wxCONTROL_BACKGROUND_BRUSH->GetColour();
+    back = wxCONTROL_BACKGROUND_BRUSH->GetColour();
     dim = darker;
     bright = lite;
   }
@@ -477,7 +477,7 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 		if (trackResult)
 		{
 			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
-	  		ProcessCommand(*commandEvent);
+	  		ProcessCommand(commandEvent);
 		}
 	}
 }

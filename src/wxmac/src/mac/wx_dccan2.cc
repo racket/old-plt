@@ -164,7 +164,7 @@ static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
 
   wxBitmap *bm = brush->GetStipple();
   int style = brush->GetStyle();
-  wxColour *c = &brush->GetColour();
+  wxColour *c = brush->GetColour();
 
   old = dc->GetClippingRegion();
   if (old) r->Intersect(old);
@@ -546,7 +546,7 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 	  wxMacSetCurrentTool(kColorBlitTool);
 	  if (rop == wxSOLID) BackColor(whiteColor);
 	  if (c)
-	    InstallColor(*c, TRUE);
+	    InstallColor(c, TRUE);
 	  else
 	    ForeColor(blackColor);
 	} else {

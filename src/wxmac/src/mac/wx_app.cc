@@ -536,7 +536,7 @@ void wxApp::doMacKeyDown(void)
 	wxWindow *in_win = theMacWxFrame->GetFocusWindow();
 
 	if (!in_win || !doPreOnChar(in_win, in_win, &theKeyEvent))
-		theMacWxFrame->OnChar(theKeyEvent);
+		theMacWxFrame->OnChar(&theKeyEvent);
 }
 
 //-----------------------------------------------------------------------------

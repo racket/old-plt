@@ -367,14 +367,14 @@ void wxCheckBox::ShowAsActive(Bool flag) // mac platform only
 }
 
 //-----------------------------------------------------------------------------
-void wxCheckBox::OnEvent(wxMouseEvent& event) // mac platform only
+void wxCheckBox::OnEvent(wxMouseEvent *event) // mac platform only
 {
-	if (event.LeftDown())
+	if (event->LeftDown())
 	{
 		SetCurrentDC();
 	
 		float fStartH, fStartV;
-		event.Position(&fStartH, &fStartV); // client c.s.
+		event->Position(&fStartH, &fStartV); // client c.s.
 		int startH = fStartH;
 		int startV = fStartV;
 	
@@ -391,7 +391,7 @@ void wxCheckBox::OnEvent(wxMouseEvent& event) // mac platform only
 		{
 			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
 			SetValue(!GetValue()); // toggle checkbox
-	  		ProcessCommand(*commandEvent);
+	  		ProcessCommand(commandEvent);
 		}
 	}
 }

@@ -306,16 +306,16 @@ void wxRadioButton::ShowAsActive(Bool flag) // mac platform only
 }
 
 //-----------------------------------------------------------------------------
-void wxRadioButton::OnEvent(wxMouseEvent& event) // mac platform only
+void wxRadioButton::OnEvent(wxMouseEvent *event) // mac platform only
 {
 	if (cEnable)
 	{
-		if (event.LeftDown())
+		if (event->LeftDown())
 		{
 			SetCurrentDC();
 		
 			float fStartH, fStartV;
-			event.Position(&fStartH, &fStartV); // client c.s.
+			event->Position(&fStartH, &fStartV); // client c.s.
 			int startH = fStartH;
 			int startV = fStartV;
 		
@@ -331,7 +331,7 @@ void wxRadioButton::OnEvent(wxMouseEvent& event) // mac platform only
 			if (trackResult)
 			{
 				wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND); // WCH: must change constant
-				ProcessCommand(*commandEvent);
+				ProcessCommand(commandEvent);
 			}
 		}
 	}

@@ -260,11 +260,11 @@ static ControlActionUPP SCTrackActionProcUPP = NewControlActionProc(SCTrackActio
 #define max(x, y) ((x > y) ? x : y)
 #define min(x, y) ((x > y) ? y : x)
 
-void wxSlider::OnEvent(wxMouseEvent& event) // WCH: mac only ?
+void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
 {
-	if (event.leftDown) {
+	if (event->leftDown) {
 		float fStartH, fStartV;
-		event.Position(&fStartH, &fStartV); // client c.s.
+		event->Position(&fStartH, &fStartV); // client c.s.
 		int startH = fStartH;
 		int startV = fStartV;
 		Point pt = {startV, startH};
@@ -311,7 +311,7 @@ void wxSlider::TrackPart(int part)
 		::DrawText(t,0,strlen(t));
 	}
 	wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
-	ProcessCommand(*commandEvent);
+	ProcessCommand(commandEvent);
 	
 	// So update happens correctly as we return...
 	SetCurrentDC();

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_item.cc,v 1.4 1998/08/14 13:56:01 robby Exp $
+ * RCS_ID:      $Id: wb_item.cc,v 1.5 1998/11/17 13:25:40 robby Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -252,16 +252,16 @@ void wxbItem::Centre (int direction)
 #endif // wx_mac
 }
 
-void wxbItem::Command (wxCommandEvent & event)
+void wxbItem::Command (wxCommandEvent * event)
 {
   ProcessCommand (event);
 }
 
-void wxbItem::ProcessCommand (wxCommandEvent & event)
+void wxbItem::ProcessCommand (wxCommandEvent * event)
 {
   wxFunction fun = callback;
   if (fun && *fun)
-    (void) (*(fun)) (*this, event);
+    (void) (*(fun)) (this, event);
 }
 
 

@@ -124,7 +124,7 @@ void wxItem::ChangeColour(void)
 }
 
 //-----------------------------------------------------------------------------
-void wxItem::OnChar(wxKeyEvent& event)
+void wxItem::OnChar(wxKeyEvent *event)
 {
    // Default is to pass chars up to our panel
    wxPanel *parent = (wxPanel *) GetParent();

@@ -135,15 +135,15 @@ wxFont::wxFont(void)
 wxFont::wxFont(int PointSize, int FontOrFamilyId, int Style, int Weight, Bool Underlined)
 {
 	Create(PointSize, FontOrFamilyId, 
-			wxTheFontNameDirectory.GetFamily(FontOrFamilyId), 
-			Style, Weight, Underlined);
+			wxTheFontNameDirectory->GetFamily(FontOrFamilyId), 
+		   Style, Weight, Underlined);
 }
 
 wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
 	 	         Bool underlined)
 {
-	int id = wxTheFontNameDirectory.FindOrCreateFontId(Face, Family);
-	int fam = wxTheFontNameDirectory.GetFamily(id);
+	int id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
+	int fam = wxTheFontNameDirectory->GetFamily(id);
 	
 	Create(PointSize, id, fam, Style, Weight, underlined);
 }
@@ -161,7 +161,7 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
 	int tried_once = 0;
 
 	while (1) {
-	  char *name = wxTheFontNameDirectory.GetScreenName(Font, Weight, Style);
+	  char *name = wxTheFontNameDirectory->GetScreenName(Font, Weight, Style);
 	  Str255 buffer;
 	  
 	  if (!strcmp(name, "systemfont")) {

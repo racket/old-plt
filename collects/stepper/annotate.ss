@@ -431,10 +431,9 @@
                      (let*-values
                          ([(binding-sets) (vars-fn expr)]
                           [(binding-list) (apply append binding-sets)]
-                          [(binding-names) (map get-binding-name binding-list)]
                           [(vals) (vals-fn expr)]
                           [(_1) (check-fn vals binding-list)]
-                          [(lifted-gensym-sets) (map (lambda (x) (map get-lifted-gensym x)) binding-sets)]
+                          [(lifted-gensym-sets) (map (lambda (x) (map get-lifted-sym x)) binding-sets)]
                           [(lifted-gensyms) (apply append lifted-gensym-sets)]
                           [(annotated-vals free-bindings-vals)
                            (dual-map (let-rhs-recur null) vals binding-sets lifted-gensym-sets)]

@@ -687,9 +687,9 @@
   (define (</c x) (name </c (lambda (y) (and (number? y) (< y x)))))
   (define (>/c x) (name >/c (lambda (y) (and (number? y) (> y x)))))
 
-  (define (is-a?/c <%>) (lambda (x) (is-a? x <%>)))
-  (define (subclass?/c <%>) (lambda (x) (subclass? x <%>)))
-  (define (implementation?/c <%>) (lambda (x) (implementation? x <%>)))
+  (define (is-a?/c <%>) (name is-a?/c (lambda (x) (is-a? x <%>))))
+  (define (subclass?/c <%>) (name subclass?/c (lambda (x) (subclass? x <%>))))
+  (define (implementation?/c <%>) (name implementation?/c (lambda (x) (implementation? x <%>))))
 
   (define (false? x) (not x))
   (define (any? x) #t)
@@ -729,10 +729,11 @@
                  (andmap p (vector->list v))))))
 
   (define (cons/p hdp tlp)
-    (lambda (x)
-      (and (pair? x)
-	   (hdp (car x))
-	   (tlp (cdr x)))))
+    (name cons/p
+          (lambda (x)
+            (and (pair? x)
+                 (hdp (car x))
+                 (tlp (cdr x))))))
 
   (define (list/p . args)
     (let loop ([args args])

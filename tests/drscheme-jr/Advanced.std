@@ -1,360 +1,315 @@
 Advanced level tests of DrScheme Jr
-Date: Mon Mar 23 17:32:36 CST 1998
+Date: Fri May 15 10:09:46 CDT 1998
 DrScheme Jr is loading. Please wait...
-Welcome to DrScheme Jr version 51, Copyright (c) 1995-98 PLT
+Welcome to DrScheme Jr version 52/3, Copyright (c) 1995-98 PLT
 Language: Advanced
-|- |- |- |- |- |- |- |- |- 'define
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- |- 5
-|- 'lambda
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- (lambda (a1) ...)
-|- 'app
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- |- 5
-|- 'cond-1
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- 5
-|- 'cond-2
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- 5
-|- 'cond-3
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- 5
-|- 'cond-4
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- 5
-|- 'if-1
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- 5
-|- 'if-2
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- 5
-|- 'quote-1
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- 'a
-|- 'quote-2
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- 'a
-|- 'local-1
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- 5
-|- 'local-2
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- 5
-|- 'local-3
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- #t
-|- 'local-4
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- #t
-|- 'let-1
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- 5
-|- 'let-2
-|- null
-|- stdin[1361-1361]:1.22-1.22
-   reference to undefined identifier: x
-|- 'let-3
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- 5
-|- 'let-4
-|- null
-|- stdin[1509-1509]:1.23-1.23
-   reference to undefined identifier: x
-|- 'letrec-1
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- #t
-|- 'letrec-2
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- #t
-|- 'letrec-3
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- 5
-|- 'case-sense
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- #t
-|- 'set!
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'begin
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'begin0
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'recur-1
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'recur-2
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'recur-3
-|- (list "Advanced" "R4RS+")
-|- #t
-|- 'do-1
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'do-2
-|- (list "Advanced" "R4RS+")
-|- (vector 0 1 2 3 4)
-|- 'call-cc-1
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'call-cc-2
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'let-cc-1
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'let-cc-2
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'when-1
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'when-2
-|- (list "Advanced" "R4RS+")
-|- |- 'unless-1
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'unless-2
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'one-armed-if-1
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'one-armed-if-2
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'eq?-1
-|- (list "Advanced" "R4RS+")
-|- stdin[2712-2720]:1.1-1.9
-   eq?: expected symbols as arguments, received 5, and 5
-|- 'quote-num-1
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'quote-num-2
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'if-3
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'cond-1
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'thunk
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'anonymous-fun-app
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'keyword-interface
-|- null
-|- stdin[3115-3125]:1.1-1.11
-   Invalid use of keyword #%interface
-|- 'keyword-unit
-|- null
-|- stdin[3207-3212]:1.1-1.6
-   Invalid use of keyword #%unit
-|- 'keyword-struct
-|- null
-|- stdin[3295-3302]:1.1-1.8
-   Invalid use of keyword #%struct
-|- 'keyword-unquote
-|- null
-|- stdin[3386-3394]:1.1-1.9
-   Invalid use of keyword #%unquote
-|- 'keyword-let-macro
-|- null
-|- stdin[3480-3490]:1.1-1.11
-   Invalid use of keyword #%let-macro
-|- 'keyword-set!
-|- null
-|- stdin[3572-3577]:1.1-1.6
-   Invalid use of keyword #%set!
-|- 'keyword-if
-|- null
-|- stdin[3656-3659]:1.1-1.4
-   Invalid use of keyword #%if
-|- 'keyword-quote
-|- null
-|- stdin[3741-3747]:1.1-1.7
-   Invalid use of keyword #%quote
-|- 'keyword-begin0
-|- null
-|- stdin[3830-3837]:1.1-1.8
-   Invalid use of keyword #%begin0
-|- 'keyword-begin
-|- null
-|- stdin[3919-3925]:1.1-1.7
-   Invalid use of keyword #%begin
-|- 'keyword-let
-|- null
-|- stdin[4005-4009]:1.1-1.5
-   Invalid use of keyword #%let
-|- 'keyword-let*
-|- null
-|- stdin[4090-4095]:1.1-1.6
-   Invalid use of keyword #%let*
-|- 'keyword-letrec*
-|- null
-|- stdin[4179-4187]:1.1-1.9
-   Invalid use of keyword #%letrec*
-|- 'keyword-letrec
-|- null
-|- stdin[4270-4277]:1.1-1.8
-   Invalid use of keyword #%letrec
-|- 'keyword-lambda
-|- null
-|- stdin[4360-4367]:1.1-1.8
-   Invalid use of keyword #%lambda
-|- 'keyword-let-expansion-time
-|- null
-|- stdin[4462-4481]:1.1-1.20
-   Invalid use of keyword #%let-expansion-time
-|- 'keyword-define-expansion-time
-|- null
-|- stdin[4580-4602]:1.1-1.23
-   Invalid use of keyword #%define-expansion-time
-|- 'keyword-invoke-open-unit
-|- null
-|- stdin[4696-4713]:1.1-1.18
-   Invalid use of keyword #%invoke-open-unit
-|- 'keyword-invoke-unit
-|- null
-|- stdin[4802-4814]:1.1-1.13
-   Invalid use of keyword #%invoke-unit
-|- 'keyword-compound-unit
-|- null
-|- stdin[4905-4919]:1.1-1.15
-   Invalid use of keyword #%compound-unit
-|- 'keyword-unquote-splicing
-|- null
-|- stdin[5013-5030]:1.1-1.18
-   Invalid use of keyword #%unquote-splicing
-|- 'keyword-let-id-macro
-|- null
-|- stdin[5120-5133]:1.1-1.14
-   Invalid use of keyword #%let-id-macro
-|- 'keyword-define-id-macro
-|- null
-|- stdin[5226-5242]:1.1-1.17
-   Invalid use of keyword #%define-id-macro
-|- 'keyword-define-macro
-|- null
-|- stdin[5332-5345]:1.1-1.14
-   Invalid use of keyword #%define-macro
-|- 'keyword-case-lambda
-|- null
-|- stdin[5434-5446]:1.1-1.13
-   Invalid use of keyword #%case-lambda
-|- 'keyword-let-values
-|- null
-|- stdin[5534-5545]:1.1-1.12
-   Invalid use of keyword #%let-values
-|- 'keyword-let*-values
-|- null
-|- stdin[5634-5646]:1.1-1.13
-   Invalid use of keyword #%let*-values
-|- 'keyword-letrec*-values
-|- null
-|- stdin[5738-5753]:1.1-1.16
-   Invalid use of keyword #%letrec*-values
-|- 'keyword-letrec-values
-|- null
-|- stdin[5844-5858]:1.1-1.15
-   Invalid use of keyword #%letrec-values
-|- 'keyword-define-values
-|- null
-|- stdin[5949-5963]:1.1-1.15
-   Invalid use of keyword #%define-values
-|- 'keyword-cond
-|- null
-|- stdin[6045-6050]:1.1-1.6
-   Invalid use of keyword #%cond
-|- 'keyword-class*/names
-|- null
-|- stdin[6139-6152]:1.1-1.14
-   Invalid use of keyword #%class*/names
-|- 'struct-1
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- |- (list (lambda (a1 a2) . #1=(...))
-      (lambda (a1) . #1#)
-      (lambda (a1) . #1#)
-      (lambda (a1) . #1#)
-      (lambda (a1 a2) . #1#)
-      (lambda (a1 a2) . #1#))
-|- 'struct-2
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- |- (list (lambda () . #0=(...)) (lambda (a1) . #0#))
-|- 'struct-3
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- |- 5
-|- 'struct-4
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- |- 5
-|- 'struct-5
-|- (list "Intermediate" "Advanced" "R4RS+")
-|- |- 5
-|- 'delay-1
-|- (list "Advanced" "R4RS+")
-|- (delay ...)
-|- 'delay-2
-|- (list "Advanced" "R4RS+")
-|- (delay ...)
-|- 'delay-3
-|- (list "Advanced" "R4RS+")
-|- 5
-|- 'quote-list-1
-|- (list "Advanced" "R4RS+")
-|- (list 'a 'a 'a)
-|- 'quote-list-2
-|- (list "Advanced" "R4RS+")
-|- (list 'a 'a 'a)
-|- 'empty-list-1
-|- (list "Advanced" "R4RS+")
-|- null
-|- 'empty-list-2
-|- (list "Advanced" "R4RS+")
-|- null
-|- 'back-quote-1
-|- (list "Advanced" "R4RS+")
-|- (list 'a 'a 'a)
-|- 'back-quote-2
-|- (list "Advanced" "R4RS+")
-|- (list 'a 'a 'a)
-|- 'back-quote-3
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- (list 'a 'a 'a)
-|- 'quasi-quote-1
-|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-|- 'a
-|- 'quasi-quote-2
-|- (list "Advanced" "R4RS+")
-|- (list 'a 'a 'a)
-|- 'quasi-quote-3
-|- (list "Advanced" "R4RS+")
-|- (list 'a 'a 'a)
-|- 'quasi-quote-4
-|- (list "Advanced" "R4RS+")
-|- (list 'a 'a 'a)
-|- 'set!-id
-|- "R4RS+"
-|- stdin[7668-7701]:1.1-1.34
-   set!: cannot set undefined identifier: some-undefined-identifier
-|- stdin[7765-7789]:1.1-1.25
-   reference to undefined identifier: some-undefined-identifier
-|- 'non-list
-|- "R4RS+"
-|- stdin[7882-7891]:1.1-1.10
-   cons: second argument must be of type <list>, given 3 and 4
-|- 'fallthrough-cond-1
-|- "R4RS+"
-|- stdin[8015-8028]:1.8-1.21
-   no matching cond clause
-|- 'fallthrough-cond-2
-|- "R4RS+"
-|- stdin[8105-8124]:1.8-1.27
-   no matching else clause
-|- 
+> > > > > > > > > 'define
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> > 5
+> 'lambda
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (lambda (a1) ...)
+> 'app
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> > 5
+> 'cond-1
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> 5
+> 'cond-2
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> 5
+> 'cond-3
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> 5
+> 'cond-4
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> 5
+> 'if-1
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> 5
+> 'if-2
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> 5
+> 'quote-1
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> 'a
+> 'quote-2
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> 'a
+> 'local-1
+> (list "Intermediate" "Advanced" "R4RS+")
+> 5
+> 'local-2
+> (list "Intermediate" "Advanced" "R4RS+")
+> 5
+> 'local-3
+> (list "Intermediate" "Advanced" "R4RS+")
+> #t
+> 'local-4
+> (list "Intermediate" "Advanced" "R4RS+")
+> #t
+> 'let-1
+> (list "Intermediate" "Advanced" "R4RS+")
+> 5
+> 'let-2
+> null
+> stdin: 120.22-120.22: reference to undefined identifier: x
+> 'let-3
+> (list "Intermediate" "Advanced" "R4RS+")
+> 5
+> 'let-4
+> null
+> stdin: 12.23-12.23: reference to undefined identifier: x
+> 'letrec-1
+> (list "Intermediate" "Advanced" "R4RS+")
+> #t
+> 'letrec-2
+> (list "Intermediate" "Advanced" "R4RS+")
+> #t
+> 'letrec-3
+> (list "Intermediate" "Advanced" "R4RS+")
+> 5
+> 'case-sense
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> #t
+> 'set!
+> (list "Advanced" "R4RS+")
+> 5
+> 'begin
+> (list "Advanced" "R4RS+")
+> 5
+> 'begin0
+> (list "Advanced" "R4RS+")
+> 5
+> 'recur-1
+> (list "Advanced" "R4RS+")
+> 5
+> 'recur-2
+> (list "Advanced" "R4RS+")
+> 5
+> 'recur-3
+> (list "Advanced" "R4RS+")
+> #t
+> 'do-1
+> (list "Advanced" "R4RS+")
+> 5
+> 'do-2
+> (list "Advanced" "R4RS+")
+> (vector 0 1 2 3 4)
+> 'call-cc-1
+> (list "Advanced" "R4RS+")
+> 5
+> 'call-cc-2
+> (list "Advanced" "R4RS+")
+> 5
+> 'let-cc-1
+> (list "Advanced" "R4RS+")
+> 5
+> 'let-cc-2
+> (list "Advanced" "R4RS+")
+> 5
+> 'when-1
+> (list "Advanced" "R4RS+")
+> 5
+> 'when-2
+> (list "Advanced" "R4RS+")
+> > 'unless-1
+> (list "Advanced" "R4RS+")
+> 5
+> 'unless-2
+> (list "Advanced" "R4RS+")
+> 5
+> 'one-armed-if-1
+> (list "Advanced" "R4RS+")
+> 5
+> 'one-armed-if-2
+> (list "Advanced" "R4RS+")
+> 5
+> 'eq?-1
+> (list "Advanced" "R4RS+")
+> #t
+> 'quote-num-1
+> (list "Advanced" "R4RS+")
+> 5
+> 'quote-num-2
+> (list "Advanced" "R4RS+")
+> 5
+> 'if-3
+> (list "Advanced" "R4RS+")
+> 5
+> 'cond-1
+> (list "Advanced" "R4RS+")
+> 5
+> 'thunk
+> (list "Advanced" "R4RS+")
+> 5
+> 'anonymous-fun-app
+> (list "Advanced" "R4RS+")
+> 5
+> 'keyword-interface
+> null
+> stdin: 174.1-174.11: unknown-phase: Invalid use of keyword #%interface
+> 'keyword-unit
+> null
+> stdin: 4.1-4.6: unknown-phase: Invalid use of keyword #%unit
+> 'keyword-struct
+> null
+> stdin: 4.1-4.8: Invalid use of keyword #%struct
+> 'keyword-unquote
+> null
+> stdin: 4.1-4.9: Invalid use of keyword #%unquote
+> 'keyword-let-macro
+> null
+> stdin: 4.1-4.11: Invalid use of keyword #%let-macro
+> 'keyword-set!
+> null
+> stdin: 4.1-4.6: Invalid use of keyword #%set!
+> 'keyword-if
+> null
+> stdin: 4.1-4.4: Invalid use of keyword #%if
+> 'keyword-quote
+> null
+> stdin: 4.1-4.7: Invalid use of keyword #%quote
+> 'keyword-begin0
+> null
+> stdin: 4.1-4.8: Invalid use of keyword #%begin0
+> 'keyword-begin
+> null
+> stdin: 4.1-4.7: Invalid use of keyword #%begin
+> 'keyword-let
+> null
+> stdin: 4.1-4.5: Invalid use of keyword #%let
+> 'keyword-let*
+> null
+> stdin: 4.1-4.6: Invalid use of keyword #%let*
+> 'keyword-letrec*
+> null
+> stdin: 4.1-4.9: Invalid use of keyword #%letrec*
+> 'keyword-letrec
+> null
+> stdin: 4.1-4.8: Invalid use of keyword #%letrec
+> 'keyword-lambda
+> null
+> stdin: 4.1-4.8: Invalid use of keyword #%lambda
+> 'keyword-let-expansion-time
+> null
+> stdin: 4.1-4.20: unknown-phase: Invalid use of keyword #%let-expansion-time
+> 'keyword-define-expansion-time
+> null
+> stdin: 4.1-4.23: unknown-phase: Invalid use of keyword #%define-expansion-time
+> 'keyword-invoke-open-unit
+> null
+> stdin: 4.1-4.18: unknown-phase: Invalid use of keyword #%invoke-open-unit
+> 'keyword-invoke-unit
+> null
+> stdin: 4.1-4.13: unknown-phase: Invalid use of keyword #%invoke-unit
+> 'keyword-compound-unit
+> null
+> stdin: 4.1-4.15: unknown-phase: Invalid use of keyword #%compound-unit
+> 'keyword-unquote-splicing
+> null
+> stdin: 4.1-4.18: Invalid use of keyword #%unquote-splicing
+> 'keyword-let-id-macro
+> null
+> stdin: 4.1-4.14: unknown-phase: Invalid use of keyword #%let-id-macro
+> 'keyword-define-id-macro
+> null
+> stdin: 4.1-4.17: unknown-phase: Invalid use of keyword #%define-id-macro
+> 'keyword-define-macro
+> null
+> stdin: 4.1-4.14: Invalid use of keyword #%define-macro
+> 'keyword-case-lambda
+> null
+> stdin: 4.1-4.13: Invalid use of keyword #%case-lambda
+> 'keyword-let-values
+> null
+> stdin: 4.1-4.12: Invalid use of keyword #%let-values
+> 'keyword-let*-values
+> null
+> stdin: 4.1-4.13: Invalid use of keyword #%let*-values
+> 'keyword-letrec*-values
+> null
+> stdin: 4.1-4.16: Invalid use of keyword #%letrec*-values
+> 'keyword-letrec-values
+> null
+> stdin: 4.1-4.15: Invalid use of keyword #%letrec-values
+> 'keyword-define-values
+> null
+> stdin: 4.1-4.15: Invalid use of keyword #%define-values
+> 'keyword-cond
+> null
+> stdin: 4.1-4.6: Invalid use of keyword #%cond
+> 'keyword-class*/names
+> null
+> stdin: 4.1-4.14: unknown-phase: Invalid use of keyword #%class*/names
+> 'struct-1
+> (list "Intermediate" "Advanced" "R4RS+")
+> > (list make-a a? a-b a-c set-a-b! set-a-c!)
+> 'struct-2
+> (list "Intermediate" "Advanced" "R4RS+")
+> > (list make-empty-testing-structure empty-testing-structure?)
+> 'struct-3
+> (list "Intermediate" "Advanced" "R4RS+")
+> > 5
+> 'struct-4
+> (list "Intermediate" "Advanced" "R4RS+")
+> > 5
+> 'struct-5
+> (list "Intermediate" "Advanced" "R4RS+")
+> > 5
+> 'delay-1
+> (list "Advanced" "R4RS+")
+> (delay ...)
+> 'delay-2
+> (list "Advanced" "R4RS+")
+> (delay ...)
+> 'delay-3
+> (list "Advanced" "R4RS+")
+> 5
+> 'quote-list-1
+> (list "Advanced" "R4RS+")
+> (list 'a 'a 'a)
+> 'quote-list-2
+> (list "Advanced" "R4RS+")
+> (list 'a 'a 'a)
+> 'empty-list-1
+> (list "Advanced" "R4RS+")
+> null
+> 'empty-list-2
+> (list "Advanced" "R4RS+")
+> null
+> 'back-quote-1
+> (list "Advanced" "R4RS+")
+> (list 'a 'a 'a)
+> 'back-quote-2
+> (list "Advanced" "R4RS+")
+> (list 'a 'a 'a)
+> 'back-quote-3
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (list 'a 'a 'a)
+> 'quasi-quote-1
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> 'a
+> 'quasi-quote-2
+> (list "Advanced" "R4RS+")
+> (list 'a 'a 'a)
+> 'quasi-quote-3
+> (list "Advanced" "R4RS+")
+> (list 'a 'a 'a)
+> 'quasi-quote-4
+> (list "Advanced" "R4RS+")
+> (list 'a 'a 'a)
+> 'set!-id
+> null
+> stdin: 96.1-96.34: set!: cannot set undefined identifier: some-undefined-identifier
+> stdin: 1.1-1.25: reference to undefined identifier: some-undefined-identifier
+> 'non-list
+> "R4RS+"
+> stdin: 4.1-4.10: cons: second argument must be of type <list>, given 3 and 4
+> 'fallthrough-cond-1
+> null
+> stdin: 4.8-4.21: no matching cond clause
+> 'fallthrough-cond-2
+> null
+> stdin: 4.8-4.27: no matching else clause
+> 

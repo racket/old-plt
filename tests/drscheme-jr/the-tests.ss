@@ -524,7 +524,7 @@ ar
 (quasiquote (a ,(car (quote (a a))) a))
 
 'set!-id
-r4rs
+no-levels
 (set! some-undefined-identifier 5)
 some-undefined-identifier
 
@@ -533,9 +533,9 @@ r4rs
 (cons 3 4)
 
 'fallthrough-cond-1
-r4rs
+no-levels
 (void? (cond (#f 32)))
 
 'fallthrough-cond-2
-r4rs
+no-levels
 (void? (case 'a ((b c) 32)))

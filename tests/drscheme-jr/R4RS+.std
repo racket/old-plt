@@ -1,7 +1,7 @@
 R4RS+ level tests of DrScheme Jr
-Date: Mon Mar 23 17:32:52 CST 1998
+Date: Fri May 15 10:10:04 CDT 1998
 DrScheme Jr is loading. Please wait...
-Welcome to DrScheme Jr version 51, Copyright (c) 1995-98 PLT
+Welcome to DrScheme Jr version 52/3, Copyright (c) 1995-98 PLT
 Language: R4RS+
 > > > > > > > > > define
 > ("Beginner" "Intermediate" "Advanced" "R4RS+")
@@ -53,15 +53,13 @@ Language: R4RS+
 > 5
 > let-2
 > ()
-> stdin[1188-1188]:1.22-1.22
-   reference to undefined identifier: x
+> stdin: 120.22-120.22: reference to undefined identifier: x
 > let-3
 > ("Intermediate" "Advanced" "R4RS+")
 > 5
 > let-4
 > ()
-> stdin[1321-1321]:1.23-1.23
-   reference to undefined identifier: x
+> stdin: 12.23-12.23: reference to undefined identifier: x
 > letrec-1
 > ("Intermediate" "Advanced" "R4RS+")
 > #t
@@ -150,132 +148,100 @@ Language: R4RS+
 > 5
 > keyword-interface
 > ()
-> stdin[2575-2585]:1.1-1.11
-   Invalid use of keyword #%interface
+> stdin: 174.1-174.11: Invalid use of keyword #%interface
 > keyword-unit
 > ()
-> stdin[2661-2666]:1.1-1.6
-   Invalid use of keyword #%unit
+> stdin: 4.1-4.6: Invalid use of keyword #%unit
 > keyword-struct
 > ()
-> stdin[2743-2750]:1.1-1.8
-   Invalid use of keyword #%struct
+> stdin: 4.1-4.8: Invalid use of keyword #%struct
 > keyword-unquote
 > ()
-> stdin[2828-2836]:1.1-1.9
-   Invalid use of keyword #%unquote
+> stdin: 4.1-4.9: Invalid use of keyword #%unquote
 > keyword-let-macro
 > ()
-> stdin[2916-2926]:1.1-1.11
-   Invalid use of keyword #%let-macro
+> stdin: 4.1-4.11: Invalid use of keyword #%let-macro
 > keyword-set!
 > ()
-> stdin[3002-3007]:1.1-1.6
-   Invalid use of keyword #%set!
+> stdin: 4.1-4.6: Invalid use of keyword #%set!
 > keyword-if
 > ()
-> stdin[3080-3083]:1.1-1.4
-   Invalid use of keyword #%if
+> stdin: 4.1-4.4: Invalid use of keyword #%if
 > keyword-quote
 > ()
-> stdin[3159-3165]:1.1-1.7
-   Invalid use of keyword #%quote
+> stdin: 4.1-4.7: Invalid use of keyword #%quote
 > keyword-begin0
 > ()
-> stdin[3242-3249]:1.1-1.8
-   Invalid use of keyword #%begin0
+> stdin: 4.1-4.8: Invalid use of keyword #%begin0
 > keyword-begin
 > ()
-> stdin[3325-3331]:1.1-1.7
-   Invalid use of keyword #%begin
+> stdin: 4.1-4.7: Invalid use of keyword #%begin
 > keyword-let
 > ()
-> stdin[3405-3409]:1.1-1.5
-   Invalid use of keyword #%let
+> stdin: 4.1-4.5: Invalid use of keyword #%let
 > keyword-let*
 > ()
-> stdin[3484-3489]:1.1-1.6
-   Invalid use of keyword #%let*
+> stdin: 4.1-4.6: Invalid use of keyword #%let*
 > keyword-letrec*
 > ()
-> stdin[3567-3575]:1.1-1.9
-   Invalid use of keyword #%letrec*
+> stdin: 4.1-4.9: Invalid use of keyword #%letrec*
 > keyword-letrec
 > ()
-> stdin[3652-3659]:1.1-1.8
-   Invalid use of keyword #%letrec
+> stdin: 4.1-4.8: Invalid use of keyword #%letrec
 > keyword-lambda
 > ()
-> stdin[3736-3743]:1.1-1.8
-   Invalid use of keyword #%lambda
+> stdin: 4.1-4.8: Invalid use of keyword #%lambda
 > keyword-let-expansion-time
 > ()
-> stdin[3832-3851]:1.1-1.20
-   Invalid use of keyword #%let-expansion-time
+> stdin: 4.1-4.20: unknown-phase: Invalid use of keyword #%let-expansion-time
 > keyword-define-expansion-time
 > ()
-> stdin[3944-3966]:1.1-1.23
-   Invalid use of keyword #%define-expansion-time
+> stdin: 4.1-4.23: unknown-phase: Invalid use of keyword #%define-expansion-time
 > keyword-invoke-open-unit
 > ()
-> stdin[4054-4071]:1.1-1.18
-   Invalid use of keyword #%invoke-open-unit
+> stdin: 4.1-4.18: Invalid use of keyword #%invoke-open-unit
 > keyword-invoke-unit
 > ()
-> stdin[4154-4166]:1.1-1.13
-   Invalid use of keyword #%invoke-unit
+> stdin: 4.1-4.13: Invalid use of keyword #%invoke-unit
 > keyword-compound-unit
 > ()
-> stdin[4251-4265]:1.1-1.15
-   Invalid use of keyword #%compound-unit
+> stdin: 4.1-4.15: Invalid use of keyword #%compound-unit
 > keyword-unquote-splicing
 > ()
-> stdin[4353-4370]:1.1-1.18
-   Invalid use of keyword #%unquote-splicing
+> stdin: 4.1-4.18: Invalid use of keyword #%unquote-splicing
 > keyword-let-id-macro
 > ()
-> stdin[4454-4467]:1.1-1.14
-   Invalid use of keyword #%let-id-macro
+> stdin: 4.1-4.14: unknown-phase: Invalid use of keyword #%let-id-macro
 > keyword-define-id-macro
 > ()
-> stdin[4554-4570]:1.1-1.17
-   Invalid use of keyword #%define-id-macro
+> stdin: 4.1-4.17: unknown-phase: Invalid use of keyword #%define-id-macro
 > keyword-define-macro
 > ()
-> stdin[4654-4667]:1.1-1.14
-   Invalid use of keyword #%define-macro
+> stdin: 4.1-4.14: Invalid use of keyword #%define-macro
 > keyword-case-lambda
 > ()
-> stdin[4750-4762]:1.1-1.13
-   Invalid use of keyword #%case-lambda
+> stdin: 4.1-4.13: Invalid use of keyword #%case-lambda
 > keyword-let-values
 > ()
-> stdin[4844-4855]:1.1-1.12
-   Invalid use of keyword #%let-values
+> stdin: 4.1-4.12: Invalid use of keyword #%let-values
 > keyword-let*-values
 > ()
-> stdin[4938-4950]:1.1-1.13
-   Invalid use of keyword #%let*-values
+> stdin: 4.1-4.13: Invalid use of keyword #%let*-values
 > keyword-letrec*-values
 > ()
-> stdin[5036-5051]:1.1-1.16
-   Invalid use of keyword #%letrec*-values
+> stdin: 4.1-4.16: Invalid use of keyword #%letrec*-values
 > keyword-letrec-values
 > ()
-> stdin[5136-5150]:1.1-1.15
-   Invalid use of keyword #%letrec-values
+> stdin: 4.1-4.15: Invalid use of keyword #%letrec-values
 > keyword-define-values
 > ()
-> stdin[5235-5249]:1.1-1.15
-   Invalid use of keyword #%define-values
+> stdin: 4.1-4.15: Invalid use of keyword #%define-values
 > keyword-cond
 > ()
-> stdin[5325-5330]:1.1-1.6
-   Invalid use of keyword #%cond
+> stdin: 4.1-4.6: Invalid use of keyword #%cond
 > keyword-class*/names
 > ()
-> stdin[5413-5426]:1.1-1.14
-   Invalid use of keyword #%class*/names
+> stdin: 4.1-4.14: Invalid use of keyword #%class*/names
 > struct-1
 > ("Intermediate" "Advanced" "R4RS+")
 > > (#<struct-procedure:make-a>
@@ -340,17 +306,16 @@ Language: R4RS+
 > ("Advanced" "R4RS+")
 > (a a a)
 > set!-id
-> "R4RS+"
-> > 5
+> ()
+> stdin: 96.1-96.34: set!: cannot set undefined identifier: some-undefined-identifier
+> stdin: 1.1-1.25: reference to undefined identifier: some-undefined-identifier
 > non-list
 > "R4RS+"
 > (3 . 4)
 > fallthrough-cond-1
-> "R4RS+"
-> stdin[6805-6818]:1.8-1.21
-   no matching cond clause
+> ()
+> stdin: 8.8-8.21: no matching cond clause
 > fallthrough-cond-2
-> "R4RS+"
-> stdin[6891-6910]:1.8-1.27
-   no matching else clause
+> ()
+> stdin: 4.8-4.27: no matching else clause
 > 

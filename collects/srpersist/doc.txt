@@ -98,10 +98,7 @@
 
  For each procedure, we indicate the ODBC version in which it was 
  introduced.  Therefore, some SrPersist procedures may not be available 
- to your program.  If the variable odbc-version is greater than or 
- equal to the ODBC version in which a procedure was introduced, the 
- procedure will be available; otherwise, the procedure will not be 
- available. 
+ to your program.  
 
  Exceptions
  ----------

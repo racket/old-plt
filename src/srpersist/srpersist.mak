@@ -19,7 +19,7 @@ clean :
 	-@erase srpersist.dll
 
 CPP=cl.exe
-CPP_FLAGS=/I"../../collects/mzscheme/include" /ML /W3 /GX /O2 /D ODBCVER=$(ODBCVER) /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /c
+CPP_FLAGS=/I"../../include" /MT /W3 /GX /O2 /D ODBCVER=$(ODBCVER) /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /c
 
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $< 

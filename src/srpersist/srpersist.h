@@ -1,7 +1,7 @@
 /* srpersist.h */
 
 #define SRP_PATCH_LEVEL ""
-#define SRP_VERSION VERSION
+#define SRP_VERSION MZSCHEME_VERSION
 
 #define sizeray(x) (sizeof(x)/sizeof(*x))
 

@@ -61,6 +61,8 @@ typedef short unsigned int WCHAR;
 #include "srpbitmask.tbl"
 
 static SRP_BUFFER_TBL_ENTRY *bufferTable[BUFFER_TBL_SIZE];
+static Scheme_Object *srp_name;
+static char *srp_name_string = "srpmain";
 
 /* NOTE
 
@@ -6863,6 +6865,11 @@ void sortConsts(void) {
   namedConstSort(SQLDataTypes);
 }
 
+Scheme_Object *scheme_module_name(void) {
+  srp_name = scheme_intern_symbol(srp_name_string);
+  return srp_name;
+}
+
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
   int i,j;
   Scheme_Object *srp_name,*srp_val;
@@ -6875,9 +6882,12 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   sortConsts();
 
+  scheme_register_extension_global(&srp_name,sizeof(srp_name));
   scheme_register_extension_global(&bufferTable,sizeof(bufferTable));
 
-  srp_name = scheme_intern_symbol("srpmain");
+  if (srp_name == NULL) {
+    srp_name = scheme_intern_symbol(srp_name_string);
+  }
   env = scheme_primitive_module(srp_name,env);
 
   for (i = 0; i < sizeray(srpPrims); i++) {

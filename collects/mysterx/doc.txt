@@ -72,14 +72,17 @@ _MysterX_
  browsers, which are instances of the class
  mx-browser%.
 
-> mx-browser% :: (make-object mx-browser% label width height x y style-list)
+> mx-browser% :: (make-object mx-browser% [label] [width] [height] [style-list])
 
-  Creates an instance of a MysterX document.  `label' is a string for the 
-  document caption, with default "MysterX".  `width', `height', `x', and 
-  `y' give the size and placement of the document on the desktop, 
-  with defaults provided by Windows if omitted.  `style-list' may contain 
-  any of the symbols 'iconize, 'maximize, 'no-caption, 'no-system-menu, 
-  and 'no-thick-border.
+  Creates an instance of a MysterX browser.
+  `label' is a string for the document caption,
+  with default "MysterX".  `width', `height', `x',
+  and `y' give the size and placement of the
+  browser window on the desktop, with defaults
+  provided by Windows if omitted.  `style-list'
+  may contain any of the symbols 'iconize,
+  'maximize, 'no-caption, 'no-system-menu, and
+  'no-thick-border.
 
 > current-document :: (send an-mx-browser current-document)
 

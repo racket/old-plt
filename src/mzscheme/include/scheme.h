@@ -283,7 +283,7 @@ typedef struct Scheme_Input_Port
   void (*need_wakeup_fun)(struct Scheme_Input_Port *, void *);
   Scheme_Object *read_handler;
   char *name;
-  char *ungotten;
+  unsigned char *ungotten;
   int ungotten_count, ungotten_allocated;
   long position, lineNumber, charsSinceNewline;
   int eoffound;

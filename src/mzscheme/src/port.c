@@ -265,6 +265,7 @@ static Scheme_Object *with_output_to_file (int, Scheme_Object *[]);
 static Scheme_Object *read_f (int, Scheme_Object *[]);
 static Scheme_Object *read_char (int, Scheme_Object *[]);
 static Scheme_Object *read_line (int, Scheme_Object *[]);
+static Scheme_Object *read_block (int, Scheme_Object *[]);
 static Scheme_Object *peek_char (int, Scheme_Object *[]);
 static Scheme_Object *eof_object_p (int, Scheme_Object *[]);
 static Scheme_Object *char_ready_p (int, Scheme_Object *[]);
@@ -623,6 +624,11 @@ scheme_init_port (Scheme_Env *env)
 			     scheme_make_prim_w_arity(read_line, 
 						      "read-line", 
 						      0, 1), 
+			     env);
+  scheme_add_global_constant("read-block", 
+			     scheme_make_prim_w_arity(read_block, 
+						      "read-block", 
+						      1, 2), 
 			     env);
   scheme_add_global_constant("peek-char", 
 			     scheme_make_prim_w_arity(peek_char, 
@@ -1097,7 +1103,7 @@ scheme_getc (Scheme_Object *port)
   BEGIN_LOCK_PORT(ip->sema);
 
   if (ip->ungotten_count)
-    c = (unsigned char)ip->ungotten[--ip->ungotten_count];
+    c = ip->ungotten[--ip->ungotten_count];
   else {
     check_closed("#<primitive:get-port-char>", "input", port, ip->closed);
     c = ip->getc_fun(ip);
@@ -1249,7 +1255,7 @@ scheme_ungetc (int ch, Scheme_Object *port)
     else
       ip->ungotten_allocated = 5;
 
-    ip->ungotten = (char *)scheme_malloc_atomic(ip->ungotten_allocated);
+    ip->ungotten = (unsigned char *)scheme_malloc_atomic(ip->ungotten_allocated);
     if (oldc)
       memcpy(ip->ungotten, old, oldc);
   }
@@ -2845,6 +2851,49 @@ read_line (int argc, Scheme_Object *argv[])
   buf[i] = '\0';
 
   return scheme_make_sized_string(buf, i, buf == onstack);
+}
+
+static Scheme_Object *
+read_block (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *port, *str;
+  long size, got;
+
+  if (!SCHEME_INTP(argv[0])) {
+    if (SCHEME_BIGNUMP(argv[0])) {
+      scheme_raise_out_of_memory("read-block", "making string of length %s",
+				 scheme_make_provided_string(argv[0], 0, NULL));
+    } else
+      size = -1; /* cause the error message to be printed */
+  } else
+    size = SCHEME_INT_VAL(argv[0]);
+
+  if (size < 0) {
+    scheme_wrong_type("read-block", "positive exact integer", 0, argc, argv);
+    return NULL;
+  }
+
+  str = scheme_alloc_string(size, 0);
+
+  if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
+    scheme_wrong_type("read-block", "input-port", 1, argc, argv);
+
+  if (argc > 1)
+    port = argv[1];
+  else
+    port = CURRENT_INPUT_PORT(scheme_config);
+
+  if ((Scheme_Object *)port == scheme_orig_stdin_port)
+    flush_orig_outputs();
+
+  got = scheme_get_chars(port, size, SCHEME_STR_VAL(str));
+
+  if (got < size) {
+    /* Reallocate in case got << size */
+    str = scheme_make_sized_string(SCHEME_STR_VAL(str), got, 1);
+  }
+
+  return str;
 }
 
 static Scheme_Object *

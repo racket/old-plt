@@ -8,7 +8,7 @@
   (static-error dynamic-error internal-error))
 
 (define-signature stepper:model-input^
-  (text-stream settings image?))
+  (text-stream settings image? receive-result))
 
 (define-signature stepper:model^
   (check-pre-defined-var
@@ -22,7 +22,7 @@
    print-convert))
 
 (define-signature stepper:shared^
-  ((struct before-after-result (finished-exprs exp redex reduct))
+  ((struct before-after-result (finished-exprs exp redex post-exp reduct))
    (struct before-error-result (finished-exprs exp redex err-msg))
    (struct error-result (finished-exprs err-msg))
    (struct finished-result (finished-exprs))

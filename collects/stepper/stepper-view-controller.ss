@@ -130,13 +130,12 @@
             [else exp])))
   
   (define stepper-text%
-    (class f:text:basic% (finished-exprs exp redex reduct error-msg (line-spacing 1.0) (tabstops null))
-      (inherit find-snip insert change-style highlight-range last-position lock erase
+    (class f:text:basic% (finished-exprs exp redex post-exp reduct error-msg (line-spacing 1.0) (tabstops null))
+      (inherit find-snip insert change-style highlight-range last-position lock erase auto-wrap
                begin-edit-sequence end-edit-sequence get-start-position get-style-list set-style-list)
       (public (pretty-printed-width -1)
               (char-width 0)
               (clear-highlight-thunks null)
-              (now-finished-exprs finished-exprs)
               [reset-style
                (lambda ()
                  (change-style (send (get-style-list) find-named-style "Standard")))]
@@ -217,7 +216,7 @@
                   (lambda (expr)
                     (format-sexp expr no-sexp #f)
                     (insert #\newline))
-                  now-finished-exprs)
+                  finished-exprs)
                  (insert (make-object separator-snip%))
                  (when (not (eq? redex no-sexp))
                    (insert #\newline)
@@ -229,11 +228,12 @@
                    (insert #\newline))
                  (cond [(not (eq? reduct no-sexp))
                         (reset-style)
-                        (format-sexp (maybe-insert-highlighted-value exp reduct)
+                        (format-sexp (maybe-insert-highlighted-value post-exp reduct)
                                      reduct result-highlight-color)]
                        [error-msg
                         (let ([before-error-msg (last-position)])
                           (reset-style)
+                          (auto-wrap #t)
                           (insert error-msg)
                           (change-style error-delta before-error-msg (last-position)))])
                  (end-edit-sequence)
@@ -264,7 +264,7 @@
             
             (define (next)
               (send next-button enable #f)
-              (send next-button enable #f)
+              (send previous-button enable #f)
               (send home-button enable #f)
               (if (= view (- (length view-history) 1))
                   (update-view/next-step (+ view 1))
@@ -287,13 +287,16 @@
             
             (define (update-view/next-step new-view)
               (set! view-currently-updating new-view)
-              (step receive-result))
+              (step))
             
             (define (update-view new-view)
               (set! view new-view)
               (let ([e (list-ref view-history view)])
                 (send e reset-pretty-print-width canvas)
-                (send canvas set-editor e))
+                (send canvas lazy-refresh #t)
+                (send canvas set-editor e)
+                (send e set-position (send e last-position))
+                (send canvas lazy-refresh #f))
               (send previous-button enable (not (zero? view)))
               (send home-button enable (not (zero? view)))
               (send next-button enable (not (eq? final-view view))))
@@ -305,6 +308,7 @@
                                          (before-after-result-finished-exprs result)
                                          (before-after-result-exp result)
                                          (before-after-result-redex result)
+                                         (before-after-result-post-exp result)
                                          (before-after-result-reduct result)
                                          #f)]
                            [(before-error-result? result)
@@ -314,6 +318,7 @@
                                          (before-error-result-exp result)
                                          (before-error-result-redex result)
                                          no-sexp
+                                         no-sexp
                                          (before-error-result-err-msg result))]
                            [(error-result? result)  
                             (set! final-view view-currently-updating)
@@ -322,10 +327,13 @@
                                          no-sexp
                                          no-sexp
                                          no-sexp
+                                         no-sexp
                                          (error-result-err-msg result))]
-                           [(finished-result? result) 
+                           [(finished-result? result)
+                            (set! final-view view-currently-updating)
                             (make-object stepper-text%
                                          (finished-result-finished-exprs result)
+                                         no-sexp
                                          no-sexp
                                          no-sexp
                                          no-sexp
@@ -360,7 +368,7 @@
       (send next-button enable #f)
       (send (send s-frame edit-menu:get-undo-item) enable #f)
       (send (send s-frame edit-menu:get-redo-item) enable #f)
-      (step receive-result)
+      (step)
       (send s-frame show #t)))
   
   (define beginner-level-name "Beginning Student")

@@ -14,7 +14,7 @@
                                    (define default-error-handler
                                      (lambda (keyword)
                                        (lambda (where fmt-spec . args)
-                                         (printf "Error at: ~s~n" where)
+                                         ; (printf "Error at: ~s~n" where)
                                          (apply error keyword fmt-spec args))))
                                    (define internal-error
                                      (default-error-handler 'internal-error))

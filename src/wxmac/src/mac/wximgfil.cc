@@ -623,27 +623,20 @@ BOOL wxGIF::SetColourMap(ushort n, byte *r, byte *g, byte *b)
 
 CTabHandle XlateColorMap(wxGIF *gif)
 {
+  CTabHandle  gDirClut;
+  int i;
 
-CTabHandle		gDirClut;
-int i;
+  gDirClut =  GetCTable ( 36 ); // 36 = 256 shades of gray
+ 
+  if (gDirClut) {
 
-	gDirClut = (CTabHandle)NewHandleClear(8 + (256 * 8));
-	CheckMemOK(gDirClut);
-
-	if (gDirClut) {
-
-		i = GetCTSeed();
-		(*gDirClut)->ctSeed = i;
-       (*gDirClut)->ctFlags = (0x8000); // mac-magic
-       (*gDirClut)->ctSize = gif->numcmapentries - 1;
-
-
-		for (i = 0; i < gif->numcmapentries; ++i) {
-			(*gDirClut)->ctTable[i].value = i;
-			(*gDirClut)->ctTable[i].rgb.red = 256 *gif->red[i];
-			(*gDirClut)->ctTable[i].rgb.green = 256 *gif->green[i];
-			(*gDirClut)->ctTable[i].rgb.blue = 256 *gif->blue[i];
-        }
+    (*gDirClut)->ctSize = gif->numcmapentries - 1;
+    for (i = 0; i < gif->numcmapentries; ++i) {
+        (*gDirClut)->ctTable[i].value = i;
+        (*gDirClut)->ctTable[i].rgb.red = 256 *gif->red[i];
+        (*gDirClut)->ctTable[i].rgb.green = 256 *gif->green[i];
+        (*gDirClut)->ctTable[i].rgb.blue = 256 *gif->blue[i];
+    }
 			
   }
   else

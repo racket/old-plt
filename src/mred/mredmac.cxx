@@ -739,6 +739,7 @@ void MrEdDispatchEvent(EventRecord *e)
     CopyRgn(rgn,copied);
     GetWindowBounds(w,kWindowContentRgn,&windowBounds);
     OffsetRgn(copied,-1 * windowBounds.left,-1 * windowBounds.top);
+    SetOrigin(0,0);
     InvalWindowRgn(w,copied); 
 #else
  	if (!((WindowRecord *)w)->updateRgn)

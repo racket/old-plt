@@ -313,6 +313,20 @@ static BOOL do_choose_color(void *data, HWND parent)
 }
 #endif
 
+#ifdef wx_mac
+Boolean NullEventFilter(EventRecord *evt) 
+{
+  // just dump them all on the color picker
+  return false;
+}
+
+void MyColorChangedCallback ( SInt32 userData, PMColor *newColor )
+{
+  // do nothing
+  return;
+}
+#endif
+
 static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
 {
   char *s;
@@ -337,16 +351,51 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
   return scheme_false;
 #endif
 #ifdef wx_mac
+# ifdef OS_X  
+  struct ColorPickerInfo cpInfo;
+  struct PMColor pmColor;
+  
+  pmColor.profile = NULL; // use the default ColorSync profile
+  if (c) {
+    pmColor.color.rgb.red = c->Red() << 8;
+    pmColor.color.rgb.green = c->Green() << 8;
+    pmColor.color.rgb.blue = c->Blue() << 8;
+  } else {
+    pmColor.color.rgb.red = pmColor.color.rgb.green = pmColor.color.rgb.blue = 0;
+  }
+
+  cpInfo.theColor = pmColor;
+  cpInfo.dstProfile = NULL; // default Profile (again!)
+  cpInfo.flags = NULL;
+  cpInfo.placeWhere = kCenterOnMainScreen;  
+  cpInfo.dialogOrigin.h = 0;
+  cpInfo.dialogOrigin.v = 0;
+  cpInfo.pickerType = 0; 
+  cpInfo.eventProc = &NullEventFilter;
+  cpInfo.colorProc = &MyColorChangedCallback;
+  cpInfo.colorProcData = 0;
+  cpInfo.mInfo.editMenuID = 128; // Not sure this will work.
+  CopyCStringToPascal(s,cpInfo.prompt);
+  cpInfo.newColorChosen = FALSE;
+  
+  if (PickColor(&cpInfo) != noErr) {
+    return scheme_false;
+  }
+  if (cpInfo.newColorChosen == FALSE) {
+    return scheme_false;
+  }
+  
+  c = new wxColour(pmColor.color.rgb.red >> 8, pmColor.color.rgb.green >> 8, pmColor.color.rgb.blue >> 8);
+
+  return objscheme_bundle_wxColour(c);
+  
+# else
   int l;
   Point pt = {0, 0};
   Str255 buf;
   RGBColor in, out;
-
-  l = strlen(s);
-  if (l > 255) l = 255;
-
-  memcpy(buf + 1, s, l);
-  buf[0] = l;
+  
+  CopyCStringToPascal(s,buf);
 
   if (c) {
     in.red = c->Red() << 8;
@@ -361,6 +410,7 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
   c = new wxColour(out.red >> 8, out.green >> 8, out.blue >> 8);
 
   return objscheme_bundle_wxColour(c);
+# endif
 #endif
 #ifdef wx_msw
   CHOOSECOLOR *cc;

@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.9 1999/01/10 02:14:40 robby Exp $
+;; $Id: testr.ss,v 1.10 1999/02/02 22:28:27 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -447,23 +447,23 @@
   (define menu-tag 'test:menu-select)
   
   (define menu-select
-    (lambda (menu-name item-name)
+    (lambda (menu-name . item-names)
       (cond
 	[(not (string? menu-name))
 	 (arg-error menu-tag "expects string, given: ~s" menu-name)]
-	[(not (string? item-name))
-	 (arg-error menu-tag "expects string, given: ~s" item-name)]
+	[(not (andmap string? item-names))
+	 (arg-error menu-tag "expects strings, given: ~s" item-names)]
 	[else
 	 (run-one
 	  (lambda ()
 	    (let* ([frame (get-active-frame)]
-		   [item (get-menu-item frame menu-name item-name)]
+		   [item (get-menu-item frame (cons menu-name item-names))]
 		   [evt (make-object mred:control-event% 'menu)])
-	      (send evt set-stamp (current-milliseconds))
+	      (send evt set-time-stamp (current-milliseconds))
 	      (send item command evt))))])))
 
   (define get-menu-item
-    (lambda (frame menu-name item-name)
+    (lambda (frame item-names)
       (cond
 	[(not frame)
 	 (run-error menu-tag "no active frame")]
@@ -473,23 +473,35 @@
 	 (let ([menu-bar  (send frame get-menu-bar)])
 	   (unless menu-bar
 	     (run-error menu-tag "active frame does not have menu bar"))
-	   (let* ([items (send menu-bar get-items)]
-		  [item (let loop ([items items])
+	   (let* ([items (send menu-bar get-items)])
+	     (let loop ([items items]
+			[this-name (car item-names)]
+			[wanted-names (cdr item-names)])
+	       (cond
+		[(null? items)
+		 (error 'menu-select "didn't find a menu: ~s~n" item-names)]
+		[else (let ([i (car items)])
+			(cond
+			 [(not (is-a? i mred:labelled-menu-item<%>))
+			  (loop (cdr items)
+				this-name
+				wanted-names)]
+			 [(string=? this-name (send i get-plain-label))
 			  (cond
-			    [(null? items) null]
-			    [else (let ([i (car items)])
-				    (printf "checking ~a~n" (send i get-label))
-				    (cond
-				      [(is-a? i mred:submenu-item<%>) (loop (cdr items))]
-				      [(and (string=? item-name (send i get-label))
-					    (string=? menu-name (send (send (send i get-parent) get-item) get-label)))
-				       (cons i (loop (cdr items)))]
-				      [else (loop (cdr items))]))]))])
-	     (when (null? item) (run-error menu-tag "no such menu ~a | ~a" menu-name item-name))
-	     (unless (= 1 (length item)) (run-error menu-tag "more than one ~a | ~a menu" menu-name item-name))
-	     (unless (is-a? (car item) mred:shortcut-menu-item<%>)
-	       (run-error menu-tag "the menu ~a|~a is not a shortcut-menu-item<%> object"))
-	     (car item)))])))
+			   [(and (null? wanted-names)
+				 (not (is-a? i mred:submenu-item<%>)))
+			    i]
+			   [(and (not (null? wanted-names))
+				 (is-a? i mred:submenu-item<%>))
+			    (loop (send (send i get-menu) get-items)
+				  (car wanted-names)
+				  (cdr wanted-names))]
+			   [else
+			    (run-error menu-tag "no menu matching ~s~n" item-names)])]
+			 [else
+			  (loop (cdr items)
+				this-name
+				wanted-names)]))]))))])))
   
   
   ;;

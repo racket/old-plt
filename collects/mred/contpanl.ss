@@ -41,7 +41,7 @@
 	  user-min-height
 	  get-client-size
 	  get-parent)
-
+	
 	(rename
 	  [super-on-size on-size]
 	  [super-set-size set-size])
@@ -56,7 +56,7 @@
 	  ; list of child-info structs corresponding to the children.  (#f
 	  ;  if no longer valid.)
 	  [children-info null])
-	  
+	
 	(public
 	  
 	  ; list-diff: computes the difference between two lists
@@ -77,7 +77,7 @@
 		   [(hash-table-get table (car l) (lambda () #f))
 		    (loop (cdr l))]
 		   [else (cons (car l) (loop (cdr l)))]))))]
-
+	  
 	  ; list of panel's contents.
 	  [children null]
 	  
@@ -95,8 +95,8 @@
 			 "(not child's parent)")
 			new-child this))
 	       (change-children
-		 (lambda (l)
-		   (append l (list new-child))))
+		(lambda (l)
+		  (append l (list new-child))))
 	       (when (eq? wx:window-system 'motif)
 		 (send this set-item-cursor 0 0))))]
 	  
@@ -121,12 +121,12 @@
 		children new-children)
 	       (unless (andmap (lambda (child)
 				 (eq? this (send child get-parent)))
-			 new-children)
+			       new-children)
 		 (error 'change-children
-		   (string-append 
-		    "Not all members of the new list are "
-		    "children of this panel ~s~nlist: ~s")
-		   this new-children))
+			(string-append 
+			 "Not all members of the new list are "
+			 "children of this panel ~s~nlist: ~s")
+			this new-children))
 	       ; show all new children, hide all deleted children.
 	       (mred:debug:printf 
 		'container-panel-change-children
@@ -153,7 +153,6 @@
 	  ; effects: removes child from list; forces redraw.
 	  [delete-child
 	   (lambda (child)
-	     (send child show #f)
 	     (change-children (lambda (child-list)
 				(mzlib:function:remq child child-list))))]
 	  
@@ -169,7 +168,7 @@
 	      (string-append
 	       "container-panel-get-children-info: "
 	       "Entering get-children-info; object ~s")
-	       object-ID)
+	      object-ID)
 	     (unless children-info
 	       (mred:debug:printf
 		'container-panel-get-children-info
@@ -202,8 +201,8 @@
 		 (mred:debug:printf 
 		  'container-panel-force-redraw
 		  (string-append
-		  "container-panel-force-redraw: "
-		  "calling parent's force-redraw"))
+		   "container-panel-force-redraw: "
+		   "calling parent's force-redraw"))
 		 (send parent force-redraw))))]
 	  
 	  ; get-min-size: poll children and return minimum possible size
@@ -233,78 +232,78 @@
 	       (let-values ([(client-w client-h)
 			     (get-two-int-values get-client-size)])
 		 (let ([min-client-size
-			 (gms-helper (get-children-info)
-				     (* 2 const-default-border)
-				     (* 2 const-default-border))]
+			(gms-helper (get-children-info)
+				    (* 2 const-default-border)
+				    (* 2 const-default-border))]
 		       [delta-w (- (get-width) client-w)]
 		       [delta-h (- (get-height) client-h)])
 		   (list (max (user-min-width)
 			      (+ delta-w (car min-client-size)))
 		         (max (user-min-height)
-			   (+ delta-h (cadr min-client-size))))))))]
+			      (+ delta-h (cadr min-client-size))))))))]
 	  
 	  ; set-size:
 	  [set-size
-	    (lambda (x y width height)
-	      (mred:debug:printf 
-	       'container-panel-set-size
-	       (string-append
-		"container-panel-set-size: entering; "
-		"args ~s ~s ~s ~s; object ID ~s")
-		x y width height object-ID)
-	      (if (and (same-dimension? x (get-x))
-		       (same-dimension? y (get-y))
-		       (same-dimension? width (get-width))
-		       (same-dimension? height (get-height)))
-		  (begin
-		    (mred:debug:printf 'container-panel-set-size
-		      "container-panel-set-size: redrawing children")
-		    (call-with-values
-		      (lambda ()
-			(get-two-int-values get-client-size))
-		      redraw))
-		  (begin
-		    (mred:debug:printf 'container-panel-set-size
-		      "container-panel-set-size: calling super-set-size")
-		    (super-set-size x y width height))))]
-
+	   (lambda (x y width height)
+	     (mred:debug:printf 
+	      'container-panel-set-size
+	      (string-append
+	       "container-panel-set-size: entering; "
+	       "args ~s ~s ~s ~s; object ID ~s")
+	      x y width height object-ID)
+	     (if (and (same-dimension? x (get-x))
+		      (same-dimension? y (get-y))
+		      (same-dimension? width (get-width))
+		      (same-dimension? height (get-height)))
+		 (begin
+		   (mred:debug:printf 'container-panel-set-size
+				      "container-panel-set-size: redrawing children")
+		   (call-with-values
+		    (lambda ()
+		      (get-two-int-values get-client-size))
+		    redraw))
+		 (begin
+		   (mred:debug:printf 'container-panel-set-size
+				      "container-panel-set-size: calling super-set-size")
+		   (super-set-size x y width height))))]
+	  
 	  ; on-size: called when the container is resized (usu by its
           ;   parent) 
 	  ; input: new-width/new-height: new size of panel
 	  ; returns: nothing
 	  ; effects: causes children to redraw themselves.
 	  [on-size
-	    (lambda (new-width new-height)
-	      (mred:debug:printf 'container-panel-on-size
-		"container-panel-on-size: Entering; args: ~s x ~s; object ~s"
-		new-width new-height object-ID)
-	      (mred:debug:printf 'container-panel-on-size
-		"container-panel-on-size: current size: ~s ~s"
-		(get-width) (get-height))
-	      (mred:debug:printf 'container-panel-on-size
-		"container-panel-on-size: calling overridden method")
-	      (super-on-size new-width new-height)
-	      (mred:debug:printf 'container-panel-on-size
-		"container-panel-on-size: Current size: ~s ~s"
-		(get-width) (get-height))
-	      (let-values ([(client-width client-height)
-			    (get-two-int-values get-client-size)])
-		(if (and (number? curr-width)
-			 (number? curr-height)
-			 (= curr-width client-width)
-			 (= curr-height client-height))
-		    (mred:debug:printf
-		     'container-panel-on-size
-		     (string-append
-		      "Container-panel-on-size: "
-		      "same size so not redrawing."))
-		    (begin
-		      (mred:debug:printf
-		       'container-panel-on-size
-		       "container-panel-on-size: Client size: ~s x ~s"
-		       client-width client-height)
-		      (redraw client-width client-height)))))]
-
+	   (lambda (new-width new-height)
+	     (mred:debug:printf 'container-panel-on-size
+				"container-panel-on-size: Entering; args: ~s x ~s; object ~s"
+				new-width new-height object-ID)
+	     (mred:debug:printf 'container-panel-on-size
+				"container-panel-on-size: current size: ~s ~s"
+				(get-width) (get-height))
+	     (mred:debug:printf 'container-panel-on-size
+				"container-panel-on-size: calling overridden method")
+	     (super-on-size new-width new-height)
+	     (mred:debug:printf 'container-panel-on-size
+				"container-panel-on-size: Current size: ~s ~s"
+				(get-width) (get-height))
+	     (let-values ([(client-width client-height)
+			   (get-two-int-values get-client-size)])
+	       (if (and (number? curr-width)
+			(number? curr-height)
+			(= curr-width client-width)
+			(= curr-height client-height))
+		   (mred:debug:printf
+		    'container-panel-on-size
+		    (string-append
+		     "Container-panel-on-size: "
+		     "same size so not redrawing."))
+		   (begin
+		     (mred:debug:printf
+		      'container-panel-on-size
+		      "container-panel-on-size: Client size: ~s x ~s"
+		      client-width client-height)
+		     (redraw client-width client-height)))))]
+	  
 	  ; place-children: determines where each child of panel should be
 	  ; placed.
 	  ; input: children-info: list of mred:child-info structs
@@ -315,18 +314,18 @@
 	  ;   y-posn, x-size, y-size.  Items are in same order as
 	  ;   children-info list.
 	  [place-children
-	    (lambda (children-info width height)
-	      (if (null? children-info)
-		  null
-		  (let ([curr-info (car children-info)])
-		    (cons
-		      (list
-			(child-info-x-posn curr-info)
-			(child-info-y-posn curr-info)
-			(child-info-x-min curr-info)
-			(child-info-y-min curr-info))
-		      (place-children (cdr children-info) width height)))))]
-
+	   (lambda (children-info width height)
+	     (if (null? children-info)
+		 null
+		 (let ([curr-info (car children-info)])
+		   (cons
+		    (list
+		     (child-info-x-posn curr-info)
+		     (child-info-y-posn curr-info)
+		     (child-info-x-min curr-info)
+		     (child-info-y-min curr-info))
+		    (place-children (cdr children-info) width height)))))]
+	  
 	  ; redraw: redraws panel and all children
 	  ; input: width, height: size of drawable area in panel.
 	  ; returns: nothing
@@ -337,16 +336,16 @@
 		       (unless (null? children)
 			 (let ([curr-child (car children)])
 			   (apply
-			     (ivar curr-child set-size)
-			     (car placement-info))
+			    (ivar curr-child set-size)
+			    (car placement-info))
 			   (redraw-helper
-			     (cdr children)
-			     (cdr placement-info)))))])
+			    (cdr children)
+			    (cdr placement-info)))))])
 	     (lambda (width height)
 	       (mred:debug:printf 'container-panel-redraw
-		 "container-panel-redraw: Redrawing panel's children")
+				  "container-panel-redraw: Redrawing panel's children")
 	       (redraw-helper children
-		 (place-children (get-children-info) width height))))])
+			      (place-children (get-children-info) width height))))])
 	(sequence
 	  (apply super-init
 		 (apply 
@@ -361,7 +360,7 @@
 			       (bitwise-ior style wx:const-border)
 			       style)
 			   args))
-		    args)))))
+		  args)))))
     
     ; make-get-size: creates a function which returns the minimum possible
     ;   size for a horizontal-panel% or vertical-panel% object.
@@ -380,21 +379,21 @@
     (define make-get-size
       (lambda (container compute-x compute-y)
 	(letrec ([gms-help
-		   (lambda (kid-info x-accum y-accum)
-		     (if (null? kid-info)
-			 (list x-accum y-accum)
-			 (gms-help
-			   (cdr kid-info)
-			   (compute-x x-accum kid-info)
-			   (compute-y y-accum kid-info))))])
+		  (lambda (kid-info x-accum y-accum)
+		    (if (null? kid-info)
+			(list x-accum y-accum)
+			(gms-help
+			 (cdr kid-info)
+			 (compute-x x-accum kid-info)
+			 (compute-y y-accum kid-info))))])
 	  (lambda ()
 	    (let-values ([(client-w client-h)
 			  (get-two-int-values
-			    (ivar container get-client-size))])
+			   (ivar container get-client-size))])
 	      (let* ([border (send container border)]
 		     [min-client-size
-		       (gms-help (send container get-children-info)
-				 (* 2 border) (* 2 border))]
+		      (gms-help (send container get-children-info)
+				(* 2 border) (* 2 border))]
 		     [delta-w (- (send container get-width) client-w)]
 		     [delta-h (- (send container get-height) client-h)])
 		(list
@@ -425,106 +424,106 @@
     ;   posn&size info for each child. 
     (define make-place-children
       (lambda (container child-major-size
-		child-major-stretch
-		child-minor-size
-		child-minor-stretch
-		major-dim minor-dim
-		get-x-info get-y-info)
+			 child-major-stretch
+			 child-minor-size
+			 child-minor-stretch
+			 major-dim minor-dim
+			 get-x-info get-y-info)
 	(lambda (kid-info width height)
 	  (letrec ([count-stretchable
-		     (lambda (kid-info)
-		       (if (null? kid-info)
-			   0
-			   (let ([curr-info (car kid-info)])
-			     (if (child-major-stretch curr-info)
-				 (add1 (count-stretchable (cdr kid-info)))
-				 (count-stretchable (cdr kid-info))))))])
+		    (lambda (kid-info)
+		      (if (null? kid-info)
+			  0
+			  (let ([curr-info (car kid-info)])
+			    (if (child-major-stretch curr-info)
+				(add1 (count-stretchable (cdr kid-info)))
+				(count-stretchable (cdr kid-info))))))])
 	    (let* ([spacing (send container spacing)]
 		   [border (send container border)]
 		   [full-w (send container get-width)]
 		   [full-h (send container get-height)]
 		   [delta-list (list
-				 (- full-w width)
-				 (- full-h height))]
+				(- full-w width)
+				(- full-h height))]
 		   [num-stretchable (count-stretchable kid-info)]
 		   [extra-space (- (major-dim width height)
 				   (- (apply major-dim
-					(send container get-min-size))
+					     (send container get-min-size))
 				      (apply major-dim delta-list)))]
 		   [extra-per-stretchable (if (zero? num-stretchable)
 					      0
 					      (inexact->exact
-						(round
-						  (/ extra-space
-						     num-stretchable))))]
+					       (round
+						(/ extra-space
+						   num-stretchable))))]
 		   [num-children (length kid-info)])
 	      (letrec
-		([pc-help
-		   (lambda (kid-info left-edge)
-		     (if (null? kid-info)
-			 null
-			 (let* ([curr-info (car kid-info)]
-				[major-posn left-edge]
-				[major-size
+		  ([pc-help
+		    (lambda (kid-info left-edge)
+		      (if (null? kid-info)
+			  null
+			  (let* ([curr-info (car kid-info)]
+				 [major-posn left-edge]
+				 [major-size
 				  (if (child-major-stretch curr-info)
 				      (+ extra-per-stretchable
 					 (child-major-size curr-info))
 				      (child-major-size curr-info))]
-				[minor-posn (if (child-minor-stretch
+				 [minor-posn (if (child-minor-stretch
 						  curr-info)
-						border
-						(inexact->exact
+						 border
+						 (inexact->exact
 						  (round
-						    (/ (- (minor-dim
-							    width
-							    height)
-							  (child-minor-size
-							    curr-info))
-						       2))))]
-				[minor-size (if (child-minor-stretch
+						   (/ (- (minor-dim
+							  width
+							  height)
+							 (child-minor-size
+							  curr-info))
+						      2))))]
+				 [minor-size (if (child-minor-stretch
 						  curr-info)
-						(- (minor-dim width height)
-						   (* 2 border))
-						(child-minor-size
+						 (- (minor-dim width height)
+						    (* 2 border))
+						 (child-minor-size
 						  curr-info))])
-			   (cons
+			    (cons
 			     (list
-			       (get-x-info major-posn minor-posn)
-			       (get-y-info major-posn minor-posn)
-			       (get-x-info major-size minor-size)
-			       (get-y-info major-size minor-size))
+			      (get-x-info major-posn minor-posn)
+			      (get-y-info major-posn minor-posn)
+			      (get-x-info major-size minor-size)
+			      (get-y-info major-size minor-size))
 			     (pc-help (cdr kid-info)
-			       (+ major-size major-posn spacing))))))])
+				      (+ major-size major-posn spacing))))))])
 		(mred:debug:printf 'container-panel-redraw
-		  "container-panel-redraw: redrawing panel's children")
+				   "container-panel-redraw: redrawing panel's children")
 		(pc-help kid-info border)))))))
-
+    
     (define make-spacing
       (lambda (panel)
 	(let ([curr-spacing (ivar panel default-spacing-width)])
 	  (case-lambda
-	    [() curr-spacing]
-	    [(new-val)
-	     (unless (non-negative-number? new-val)
-	       (error 'spacing
-		 "Expected a non-negative number; given ~s"
-		 new-val))
-	     (set! curr-spacing new-val)
-	     (send panel force-redraw)]))))
-
+	   [() curr-spacing]
+	   [(new-val)
+	    (unless (non-negative-number? new-val)
+	      (error 'spacing
+		     "Expected a non-negative number; given ~s"
+		     new-val))
+	    (set! curr-spacing new-val)
+	    (send panel force-redraw)]))))
+    
     (define make-border
       (lambda (panel)
 	(let ([curr-border (ivar panel default-border-width)])
 	  (case-lambda
-	    [() curr-border]
-	    [(new-val)
-	     (unless (non-negative-number? new-val)
-	       (error 'border
-		      "Expected a non-negative number; given ~s"
-		      new-val))
-	     (set! curr-border new-val)
-	     (send panel force-redraw)]))))
-	
+	   [() curr-border]
+	   [(new-val)
+	    (unless (non-negative-number? new-val)
+	      (error 'border
+		     "Expected a non-negative number; given ~s"
+		     new-val))
+	    (set! curr-border new-val)
+	    (send panel force-redraw)]))))
+    
     ; horizontal-panel%: a panel which arranges its children in an evenly
     ; spaced horizontal row.  Items are vertically centered (or stretched
     ; to fit the dialog box if they are stretchable).  The items are evenly
@@ -538,68 +537,68 @@
 	  [default-border-width const-default-border]
 	  
 	  [spacing (make-spacing this)]
-
+	  
 	  [border (make-border this)]
 	  
 	  [get-min-size
-	    (make-get-size this
-	      (lambda (x-accum kid-info)
-		(+ x-accum (child-info-x-min (car kid-info))
-		  (if (null? (cdr kid-info))
-		      0
-		      (spacing))))
-	      (lambda (y-accum kid-info)
-		(max y-accum
-		  (+ (child-info-y-min (car kid-info))
-		     (* 2 (border))))))]
+	   (make-get-size this
+			  (lambda (x-accum kid-info)
+			    (+ x-accum (child-info-x-min (car kid-info))
+			       (if (null? (cdr kid-info))
+				   0
+				   (spacing))))
+			  (lambda (y-accum kid-info)
+			    (max y-accum
+				 (+ (child-info-y-min (car kid-info))
+				    (* 2 (border))))))]
 	  
 	  [place-children
 	   (make-place-children
-	     this
-	     child-info-x-min
-	     child-info-x-stretch
-	     child-info-y-min
-	     child-info-y-stretch
-	     (lambda (width height) width)
-	     (lambda (width height) height)
-	     (lambda (major minor) major)
-	     (lambda (major minor) minor))])))
+	    this
+	    child-info-x-min
+	    child-info-x-stretch
+	    child-info-y-min
+	    child-info-y-stretch
+	    (lambda (width height) width)
+	    (lambda (width height) height)
+	    (lambda (major minor) major)
+	    (lambda (major minor) minor))])))
     
     ; vertical-panel%.  See horizontal-panel%, but reverse
     ; "horizontal" and "vertical."
     (define vertical-panel%
       (class-asi panel%
-
+	
 	(public
 	  [default-spacing-width const-default-spacing]
 	  [default-border-width const-default-border]
 	  
 	  [spacing (make-spacing this)]
-
+	  
 	  [border (make-border this)]
 	  
 	  [get-min-size
-	    (make-get-size this
-	      (lambda (x-accum kid-info)
-		(max x-accum
-		  (+ (child-info-x-min (car kid-info))
-		     (* 2 (border)))))
-	      (lambda (y-accum kid-info)
-		(+ y-accum (child-info-y-min (car kid-info))
-		  (if (null? (cdr kid-info))
-		      0
-		      (spacing)))))]
-
+	   (make-get-size this
+			  (lambda (x-accum kid-info)
+			    (max x-accum
+				 (+ (child-info-x-min (car kid-info))
+				    (* 2 (border)))))
+			  (lambda (y-accum kid-info)
+			    (+ y-accum (child-info-y-min (car kid-info))
+			       (if (null? (cdr kid-info))
+				   0
+				   (spacing)))))]
+	  
 	  [place-children
 	   (make-place-children this
-	     child-info-y-min
-	     child-info-y-stretch
-	     child-info-x-min
-	     child-info-x-stretch
-	     (lambda (width height) height)
-	     (lambda (width height) width)
-	     (lambda (major minor) minor)
-	     (lambda (major minor) major))])))
+				child-info-y-min
+				child-info-y-stretch
+				child-info-x-min
+				child-info-x-stretch
+				(lambda (width height) height)
+				(lambda (width height) width)
+				(lambda (major minor) minor)
+				(lambda (major minor) major))])))
     
     (define add-at-end
       (lambda (object)
@@ -629,51 +628,58 @@
 	  [default-border-width const-default-border]
 	  
 	  [border (make-border this)]
-
+	  
 	  [add-child
 	   (lambda (new-child)
 	     (super-add new-child)
 	     (send new-child show #f))]
-
+	  
 	  ; if the child is active, make the next child active (null if
 	  ; child was last in list)
 	  [delete-child
-	    (lambda (child)
-	      (when (eq? child (active-child))
-		(let ([rest-of-list (cdr (memq child children))])
-		  (active-child (if (null? rest-of-list)
-				    null
-				    (car rest-of-list)))))
-	      (super-delete child))]
-		  
+	   (lambda (child)
+	     (when (eq? child (active-child))
+	       (let ([rest-of-list (cdr (memq child children))])
+		 (active-child (if (null? rest-of-list)
+				   null
+				   (car rest-of-list)))))
+	     (super-delete child))]
+	  
 	  ; if the active child is removed, make nothing active.
 	  [change-children
-	    (lambda (f)
-	      (let ([new-children (f children)])
-		(mred:debug:printf 'container-panel-change-children
-		  "container-panel-change-children: Changing children")
-		(mred:debug:printf 'container-panel-change-children
-		  "container-panel-change-children: old children ~s~nnewchildren ~s"
-		  children new-children)
-		(unless (andmap (lambda (child)
-				  (eq? this (send child get-parent)))
-			  new-children)
-		  (error 'change-children
-		    (string-append "not all children in the new list "
-		      "have this panel ~s as their parent~nnew list: ~s")
-		    this new-children))
-		(unless (memq (active-child) new-children)
-		  (active-child null))
-		(mred:debug:printf 'container-panel-change-children
-		  "container-panel-change-children: setting children and forcing redraw")
-		(set! children new-children)
-		(force-redraw)))]
-
+	   (lambda (f)
+	     (let ([new-children (f children)])
+	       (mred:debug:printf 'container-panel-change-children
+				  "container-panel-change-children: Changing children")
+	       (mred:debug:printf 
+		'container-panel-change-children
+		(string-append
+		 "container-panel-change-children: "
+		 "old children ~s~nnewchildren ~s")
+		children new-children)
+	       (unless (andmap (lambda (child)
+				 (eq? this (send child get-parent)))
+			       new-children)
+		 (error 'change-children
+			(string-append "not all children in the new list "
+				       "have this panel ~s as their parent~nnew list: ~s")
+			this new-children))
+	       (unless (memq (active-child) new-children)
+		 (active-child null))
+	       (mred:debug:printf 
+		'container-panel-change-children
+		(string-append
+		 "container-panel-change-children: "
+		 "setting children and forcing redraw"))
+	       (set! children new-children)
+	       (force-redraw)))]
+	  
 	  [active-child
 	   (case-lambda
 	    [() active]
 	    [(new-child)
-	     (unless (or (null? new-child) (eq? this (send new-child get-parent)))
+	     (unless (or (null? new-child) 
+			 (eq? this (send new-child get-parent)))
 	       (error 'active-child
 		      (string-append
 		       "The child specified (~s) is not "
@@ -683,57 +689,57 @@
 	     (unless (null? new-child) (send new-child show #t))
 	     (set! active new-child)
 	     (force-redraw)])]
-
+	  
 	  [get-min-size
-	    (make-get-size
-	      this
-	      (lambda (x-accum kid-info)
-		(max x-accum (+ (* 2 (border))
-				(child-info-x-min (car kid-info)))))
-	      (lambda (y-accum kid-info)
-		(max y-accum (+ (* 2 (border))
-				(child-info-y-min (car kid-info))))))]
-
+	   (make-get-size
+	    this
+	    (lambda (x-accum kid-info)
+	      (max x-accum (+ (* 2 (border))
+			      (child-info-x-min (car kid-info)))))
+	    (lambda (y-accum kid-info)
+	      (max y-accum (+ (* 2 (border))
+			      (child-info-y-min (car kid-info))))))]
+	  
 	  ; only place the active child.
 	  [place-children
-	    (lambda (children-info width height)
-	      (mred:debug:printf 'container-panel-place-children
-		"Entering place-children; object ~s" object-ID)
-	      (unless (null? active)
-		(mred:debug:printf 'container-panel-place-children
-		  "Placing active child")
-		(let* ([active-info (send active get-info)]
-		       [x-stretch (child-info-x-stretch active-info)]
-		       [x-min (child-info-x-min active-info)]
-		       [y-stretch (child-info-y-stretch active-info)]
-		       [y-min (child-info-y-min active-info)]
-		       [x-posn (if x-stretch
-				   (border)
-				   (/ (- width x-min) 2))]
-		       [x-size (if x-stretch
-				   (- width (* 2 (border)))
-				   x-min)]
-		       [y-posn (if y-stretch
-				   (border)
-				   (/ (- height y-min) 2))]
-		       [y-size (if y-stretch
-				   (- height (* 2 (border)))
-				   y-min)])
-		  (list x-posn y-posn x-size y-size))))]
-
+	   (lambda (children-info width height)
+	     (mred:debug:printf 'container-panel-place-children
+				"Entering place-children; object ~s" object-ID)
+	     (unless (null? active)
+	       (mred:debug:printf 'container-panel-place-children
+				  "Placing active child")
+	       (let* ([active-info (send active get-info)]
+		      [x-stretch (child-info-x-stretch active-info)]
+		      [x-min (child-info-x-min active-info)]
+		      [y-stretch (child-info-y-stretch active-info)]
+		      [y-min (child-info-y-min active-info)]
+		      [x-posn (if x-stretch
+				  (border)
+				  (/ (- width x-min) 2))]
+		      [x-size (if x-stretch
+				  (- width (* 2 (border)))
+				  x-min)]
+		      [y-posn (if y-stretch
+				  (border)
+				  (/ (- height y-min) 2))]
+		      [y-size (if y-stretch
+				  (- height (* 2 (border)))
+				  y-min)])
+		 (list x-posn y-posn x-size y-size))))]
+	  
 	  [redraw
-	    (lambda (width height)
-	      (mred:debug:printf 'container-panel-redraw
-		"container-panel-redraw: Entering redraw; object ~s"
-		object-ID)
-	      (unless (null? active)
-		(apply
-		  (ivar active set-size)
-		  ; we don't really care about the children info...
-		  (place-children null width height))))])
+	   (lambda (width height)
+	     (mred:debug:printf 'container-panel-redraw
+				"container-panel-redraw: Entering redraw; object ~s"
+				object-ID)
+	     (unless (null? active)
+	       (apply
+		(ivar active set-size)
+		; we don't really care about the children info...
+		(place-children null width height))))])
 	(sequence
 	  (mred:debug:printf 'container-single-panel
-	    "About to call single-panel's super-init")
+			     "About to call single-panel's super-init")
 	  (mred:debug:printf 'container-single-panel
-	    "Function: ~s  Args: ~s" super-init args)
+			     "Function: ~s  Args: ~s" super-init args)
 	  (apply super-init args))))))

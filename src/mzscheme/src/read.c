@@ -1400,7 +1400,7 @@ read_list(Scheme_Object *port,
 	/* Found paren. Use read_list directly so we can specify mz_shape_hash_elem. */
 	car = read_list(port, stxsrc, scheme_tell_line(port), scheme_tell_column(port), scheme_tell(port),
 			((ch == '(') ? ')' : ((ch == '[') ? ']' : '}')),
-			mz_shape_hash_elem, 1, ht, indentation, params);
+			mz_shape_hash_elem, use_stack, ht, indentation, params);
 	/* car is guaranteed to have an appropriate shape */
       }
     } else {
@@ -2281,7 +2281,7 @@ static Scheme_Object *read_hash(Scheme_Object *port, Scheme_Object *stxsrc,
   Scheme_Hash_Table *t;
 
   /* using mz_shape_hash_list ensures that l is a list of pairs */
-  l = read_list(port, stxsrc, line, col, pos, closer, mz_shape_hash_list, 1, ht, indentation, params);
+  l = read_list(port, stxsrc, line, col, pos, closer, mz_shape_hash_list, 0, ht, indentation, params);
 
   if (eq)
     t = scheme_make_hash_table(SCHEME_hash_ptr);

@@ -289,9 +289,8 @@
 		 (inherit get-text)
 		 (rename [super-after-insert after-insert]
 			 [super-after-delete after-delete])
-		 (private
-		   [searching-frame #f])
 		 (public
+		   [searching-frame #f]
 		   [set-searching-frame
 		    (lambda (frame)
 		      (set! searching-frame frame))]
@@ -360,7 +359,8 @@
 	(lambda (super%)
 	  (class super% args
 	    (inherit active-edit active-canvas edit)
-	    (rename [super-make-root-panel make-root-panel])
+	    (rename [super-make-root-panel make-root-panel]
+		    [super-on-close on-close])
 	    (private
 	      [super-root 'unitiaialized-super-root])
 	    (public
@@ -443,6 +443,18 @@
 	      (send replace-edit add-canvas replace-canvas)
 	      (hide-search))
 	    (public
+	      [on-close
+	       (lambda ()
+		 (and (super-on-close)
+		      (begin (let ([close-canvas
+				    (lambda (canvas edit)
+				      (send edit remove-canvas canvas)
+				      (send canvas set-media ()))])
+			       (close-canvas find-canvas find-edit)
+			       (close-canvas replace-canvas replace-edit))
+			     (if (eq? this (ivar find-edit searching-frame))
+				 (send find-edit set-searching-frame #f))
+			     #t)))]
 	      [set-search-direction (lambda (x) (set! searching-direction x))]
 	      [replace&search
 	       (lambda ()

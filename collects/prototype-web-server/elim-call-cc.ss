@@ -52,12 +52,13 @@
        (syntax-case #'w (lambda)
          [(lambda (formals ...) body)
           (let ([w-prime (datum->syntax-object #f (gensym 'f))])
-            (markit #`(let ([#,w-prime #,(elim-call/cc #'w)])
-                        (#%app #,w-prime
-                               #,(elim-call/cc/mark
-                                  #'e
-                                  (lambda (x)
-                                    #`(with-continuation-mark the-cont-key #,w-prime #,x)))))))]
+            #`(let ([#,w-prime #,(elim-call/cc #'w)])
+                #,(markit
+                   #`(#%app #,w-prime
+                            #,(elim-call/cc/mark
+                               #'e
+                               (lambda (x)
+                                 #`(with-continuation-mark the-cont-key #,w-prime #,x)))))))]
          [_else
           (let ([w-prime (elim-call/cc #'w)])
             (markit #`(#%app #,w-prime

@@ -72,7 +72,7 @@
   ;; produce the labeling function for a particular program
   (define make-labeling
     (case-lambda
-      [(pgm) (make-labeling default-file-name)]
+      [(pgm) (make-labeling pgm default-file-name)]
       [(pgm filename)
        (dynamic-wind
         (lambda () (semaphore-wait file-system-mutex))

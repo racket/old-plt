@@ -52,6 +52,8 @@
       [_else
        (raise-syntax-error #f "normalize-definition: dropped through" def)]))
   
+;  'expression, 'top-level, 'module, 'module-begin, 
+  
   ;; normalize-term: source-expr -> target-expr
   ;; transform a term into an application chain
   (define (normalize-term src-expr)
@@ -131,7 +133,9 @@
   (define (compose ctxt frame)
     (if (eq? ctxt id) frame
         (lambda (val)
-          (let ([x (datum->syntax-object #f (gensym 'x))])
+          (let ([x (if (syntax-transforming?)
+                       (car (generate-temporaries (list (gensym 'x))))
+                       (datum->syntax-object #f (gensym 'x)))])
             #`(#%app (lambda (#,x) #,(ctxt x)) #,(frame val))))))
   )
 

@@ -1,9 +1,10 @@
 (module defunctionalize mzscheme
-  (require "closure.ss"
-           (lib "list.ss"))
+  (require (lib "list.ss")
+           "closure.ss")
+  (require-for-template mzscheme)
   (provide defunctionalize-definition
-           defunctionalize)
-  
+           defunctionalize)  
+
   ;; **************************************************
   ;; LANGUAGE
   ;;
@@ -19,8 +20,8 @@
   ;;        |  (#%app w w...)
   ;;
   ;; E ::= [] 
-  ;;    |  (let ([f (lambda (var) expr)])
-  ;;         (f (w-c-m f E)))
+  ;;    |  (let-values ([(f) (lambda (var) expr)])
+  ;;         (#%app f (w-c-m f E)))
   ;;
   ;;   w  ::= var | (#%top . var) | value
   ;;
@@ -33,14 +34,14 @@
     (syntax-case def ()
       [(define-values (var ...) expr)
        (let-values ([(new-expr defs) (defunctionalize #'expr labeling)])
-         (cons #`(define-values (var ...) #,new-expr) defs))]
+         (append defs (list #`(define-values (var ...) #,new-expr))))]
       [else
        (raise-syntax-error #f "defunctionalize-definition dropped through" def)]))
   
   ;; defunctionalize: expr (-> symbol) -> (values expr (listof definition))
   ;; remove lambdas from an expression
   (define (defunctionalize expr labeling)
-    (syntax-case expr (if #%app lambda let #%top #%datum with-continuation mark)
+    (syntax-case expr (if #%app lambda let-values #%top #%datum with-continuation mark)
       [(if test-expr csq-expr)
        (let-values ([(new-test-expr test-defs) (defunctionalize #'test-expr labeling)]
                     [(new-csq-expr csq-defs) (defunctionalize #'csq-expr labeling)])
@@ -54,10 +55,11 @@
          (values #`(if #,new-test-expr #,new-csq-expr #,new-alt-expr)
                  (append test-defs csq-defs alt-defs)))]
       [(#%app exprs ...)
-       (let-values ([(new-exprs defs) (defunctionalize* (syntax->list #'(exprs ...) labeling))])
+       (let-values ([(new-exprs defs) (defunctionalize* (syntax->list #'(exprs ...)) labeling)])
          (values #`(#%app #,@new-exprs) defs))]
-      [(let ([f rhs])
-         (f-apply (with-continuation-mark ignore-key f-mark body-expr)))
+      
+      [(let-values ([(f) rhs])
+         (#%app f-apply (with-continuation-mark ignore-key f-mark body-expr)))
        ;; (and (bound-identifier=? #'f #'f-apply) (bound-identifier=? #'f #'f-mark))
        (let-values ([(new-rhs rhs-defs) (defunctionalize #'rhs labeling)]
                     [(new-body-expr body-defs) (defunctionalize #'body-expr labeling)])
@@ -65,18 +67,27 @@
           #`(let ([f #,new-rhs])
               (f-apply (with-continuation-mark ignore-key f-mark #,new-body-expr)))
           (append rhs-defs body-defs)))]
+      
+      [(let-values ([(f) rhs]) (#%app f-apply body-expr))
+       (let-values ([(new-rhs rhs-defs) (defunctionalize #'rhs labeling)]
+                    [(new-body-expr body-defs) (defunctionalize #'body-expr labeling)])
+         (values
+          #`(let ([f #,new-rhs])
+              (f-apply #,new-body-expr))
+          (append rhs-defs body-defs)))]
+      
       [(lambda (formals ...) body-expr)
        (let-values ([(new-body-expr body-defs) (defunctionalize #'body-expr labeling)])
-         (let ([fvars (free-vars #'body-expr)]
+         (let ([fvars (free-vars expr)]
                [tag (labeling)])
-           (with-syntax ([make-CLOSURE (datum->syntax-object
-                                        #'tag (string->symbol (format "make-~a" (syntax-object->datum #'tag))))])
+           (let-values ([(make-CLOSURE closure-definitions)
+                         (make-closure-definition-syntax tag (syntax->list #'(formals ...)) fvars new-body-expr)])
              (values
               (if (null? fvars)
-                  #'(make-CLOSURE)
-                  #`(make-CLOSURE (lambda () (values #,@fvars))))
+                  #`(#,make-CLOSURE)
+                  #`(#,make-CLOSURE (lambda () (values #,@fvars))))
               (append body-defs
-                      (list #`(define-closure #,tag (formals ...) #,new-body-expr)))))))]
+                      closure-definitions)))))]
       [(#%top . var) (values expr '())]
       [(#%datum . var) (values expr '())]
       [var (identifier? #'var) (values expr '())]
@@ -108,20 +119,26 @@
                      (free-vars #'alt-expr)))]
       [(#%app exprs ...)
        (free-vars* (syntax->list #'(exprs ...)))]
-      [(let ([f rhs])
-         (f-apply (with-continuation-mark ignore-key f-mark body-expr)))
+      [(let-values ([(f) rhs])
+         (#%app f-apply (with-continuation-mark ignore-key f-mark body-expr)))
        ;; (and (bound-identifier=? #'f #'f-apply) (bound-identifier=? #'f #'f-mark))
        (union (free-vars #'rhs)
               (set-diff (free-vars #'body-expr) (list #'f)))]
+      
+      [(let-values ([(f) rhs]) (#%app f-apply body-expr))
+       (union (free-vars #'rhs)
+              (set-diff (free-vars #'body-expr) (list #'f)))]
+      
       [(lambda (formals ...) body-expr)
        (set-diff (free-vars #'body-expr) (syntax->list #'(formals ...)))]
       [(#%top . var) '()]
       [(#%datum . var) '()]
       [var (identifier? #'var)
-           (cond
-             [(eqv? 'lexical (identifier-binding #'var))
-              (list #'var)]
-             [else '()])]
+           (let ([i-bdg (identifier-binding #'var)])
+             (cond
+               [(eqv? 'lexical (identifier-binding #'var))
+                (list #'var)]
+               [else '()]))]
       [_else
        (raise-syntax-error #f "free-vars: dropped through" expr)]))
   

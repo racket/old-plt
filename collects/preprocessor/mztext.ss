@@ -80,7 +80,7 @@
                  (loop 0 (+ n so-far) (cdr ports)))]))))
   (define (close)
     (for-each (lambda (p) (when (input-port? p) (close-input-port p))) ports))
-  (let ([p (make-custom-input-port read! peek! close)])
+  (let ([p '(!!!make-custom-input-port read! peek! close)])
     (port->adder-op p 'set! add!)
     p))
 

@@ -11,7 +11,9 @@
 
 (define DIGIT-COLOR-NAMES
   ; 0th is background; 8th is foreground
-  (vector "LIGHT GREY" "BLUE" "GREEN" "RED" "PURPLE" "ORANGE" "YELLOW" "BROWN" "BLACK"))
+  (vector "LIGHT GREY" 
+	  "BLUE" "GREEN" "RED" "PURPLE" 
+	  "ORANGE" "YELLOW" "BROWN" "BLACK"))
 
 (define DIGIT-COLORS
   (build-vector 9 (lambda (i)
@@ -22,16 +24,23 @@
 (define FG-COLOR (vector-ref DIGIT-COLORS 8))
 (define EXPLODE-COLOR (send wx:the-colour-database find-colour "RED"))
 
-(define BG-PEN (send wx:the-pen-list find-or-create-pen BG-COLOR 1 wx:const-solid))
-(define FG-PEN (send wx:the-pen-list find-or-create-pen FG-COLOR 1 wx:const-solid))
+(define BG-PEN (send wx:the-pen-list find-or-create-pen BG-COLOR 
+		     1 wx:const-solid))
+(define FG-PEN (send wx:the-pen-list find-or-create-pen FG-COLOR 
+		     1 wx:const-solid))
 
 ;; There's a lot of number-based loops below
 (define step-while
-  (opt-lambda (first test until step f [accum void] [init (void)])
+  (case-lambda 
+   [(first test until step f)
+    (step-while first test until step f void (void))]
+   [(first test until step f accum)
+    (step-while first test until step f accum (void))]
+   [(first test until step f accum init)
     (let loop ([n first][a init])
       (if (test n until)
 	  (loop (step n) (accum a (f n)))
-	  a))))
+	  a))]))
 
 ; Class for a basic tile
 (define tile:plain%
@@ -215,14 +224,16 @@
 	 (set! start-time (current-seconds))
 	 (set! timer
 	       (make-object
-		(class-asi wx:timer%
+		(class wx:timer% ()
 		  (public
 		    [notify
 		     (lambda ()
 		       (let ([e (- (current-seconds) start-time)])
 			 (when (> e elapsed-time)
 			   (set! elapsed-time e)
-			   (set-time e))))]))))
+			   (set-time e))))])
+		  (sequence
+		    (super-init)))))
 	 (send timer start 100 #f)))
       (end-of-game
        (lambda (win?)
@@ -322,8 +333,10 @@
 	   (unless start-time
 	     (when (send e button-down?)
 	       (start-timer)))
-	   (let* ([x (quotient (inexact->exact (floor (send e get-x))) TILE-HW)]
-		  [y (quotient (inexact->exact (floor (send e get-y))) TILE-HW)]
+	   (let* ([x (quotient (inexact->exact 
+				(floor (send e get-x))) TILE-HW)]
+		  [y (quotient (inexact->exact 
+				(floor (send e get-y))) TILE-HW)]
 		  [t (if (and (< -1 x WIDTH)
 			      (< -1 y HEIGHT))
 			 (get-tile board x y)

@@ -4,13 +4,15 @@
            "search.ss")
   (provide start-client)
   
-  (define (start-client baseline? host-name port)
+  (define (start-client baseline? gui? host-name port)
     ;;(with-handlers ((exn? (lambda (ex) (printf "exception: ~a~n" ex))))
       (let-values (((input output) (tcp-connect host-name port)))
         (display "Player" output)
         (newline output)
-        (read-board! input)
-        (do-turn baseline? input output)))
+        (read-board! input (cond
+                             (gui? (dynamic-require "gui-client.ss" 'initialize))
+                             (else void)))
+        (do-turn baseline? gui? input output)))
 
   (define (read-packages in)
     (let ((in (open-input-string (read-line in))))
@@ -45,7 +47,7 @@
        
   
   
-  (define (do-turn baseline? in out)
+  (define (do-turn baseline? gui? in out)
     (let loop ((packages (read-packages in))
                (robots null))
       (cond
@@ -54,6 +56,8 @@
         (baseline? (send-command (compute-baseline-move packages robots) out))
         (else
          (send-command (compute-move packages robots) out)))
-      (let ((robots (read-response! packages in)))
+      (let ((robots (read-response! packages in (cond
+                                                  (gui? (dynamic-require "gui-client.ss" 'update))
+                                                  (else void)))))
         (loop (read-packages in) robots))))
   )

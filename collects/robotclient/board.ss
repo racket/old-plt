@@ -95,7 +95,7 @@
        (let ((x1 x)
              (y1 y))
          (cond
-           ((and (> x1 0) (> y1 0) (<= x1 board-width) (<= y1 board-height))
+           ((and (> x1 0) (> y1 0) (<= x1 (board-width)) (<= y1 (board-height)))
             (array2d-ref board (sub1 y1) (sub1 x1)))
            (else
             #b01000000000000000000000000000))))))
@@ -106,7 +106,7 @@
        (let ((x1 x)
              (y1 y))
          (cond
-           ((and (> x1 0) (> y1 0) (<= x1 board-width) (<= y1 board-height))
+           ((and (> x1 0) (> y1 0) (<= x1 (board-width)) (<= y1 (board-height)))
             (array2d-set! board (sub1 y1) (sub1 x1) new-val)))))))
   
   (define-syntax get-player-x
@@ -152,12 +152,13 @@
         ((X) 
          (let ((x (read s)))
            (read s)
-           (make-response id X (cons x (read s))))))))
+           (make-response id 'X (cons x (read s))))))))
   
-  (define (read-initial-response! in)
-    (let ((s (open-input-string (regexp-replace "#" (read-line in) ""))))
+  (define (read-initial-response! in init-gui)
+    (let ((s (open-input-string (regexp-replace "#" (read-line in) " ^ "))))
       (let* ((responses
               (filter (lambda (x)
+                        (printf "~a~n" x)
                         (eq? 'X (response-name x)))
                       (let loop ((in (read s)))
                         (cond
@@ -180,6 +181,8 @@
                       (set-spot (board) x y (set-robot (get-spot (board) x y))))
                     (hash-table-put! (robot-table) (robot-id robot) robot))
                   robots)
+        (init-gui (board-width) (board-height) (board)
+                  robots)
         (robot-indexes (map robot-id robots)))))
     
   (define (find-dead alive all)
@@ -191,14 +194,20 @@
        (cons (car all)
              (find-dead alive (cdr all))))))
   
-  (define (read-response! packages in)
-    (let ((s (open-input-string (regexp-replace "#" (read-line in) ""))))
+  (define (read-response! packages in gui-update)
+    (let ((s (open-input-string (regexp-replace "#" (read-line in) " ^ "))))
       (let* ((responses (read-response s))
              (alive-robots (map response-id responses))
              (dead-robots
               (find-dead (mergesort alive-robots <)
                          (mergesort (robot-indexes) <)))
              (package-table (make-hash-table)))
+        (gui-update (map (lambda (r)
+                           (list (response-id r)
+                                 0
+                                 (case (response-command r)
+                                   ((n s w e) (response-command r))
+                                   ((p) (list 'pick (response-arg
         (for-each
          (lambda (p)
            (hash-table-put! package-table
@@ -269,7 +278,7 @@
            responses)
           (robot-indexes alive-robots)))))
         
-  (define (read-board! input)
+  (define (read-board! input init-gui)
     (board-width (read input))
     (board-height (read input))
     (board (make-array2d (board-height) (board-width) 0))
@@ -291,7 +300,7 @@
     (player-capacity (read input))
     (player-money (read input))
     (read-line input)
-    (read-initial-response! input))
+    (read-initial-response! input init-gui))
     
   (define (fix-home!)
     (let ((spot (get-spot (board) (get-player-x) (get-player-y))))

@@ -31,6 +31,8 @@
 #endif
 #include "gc_priv.h"
 
+#undef DYNAMIC_LOADING
+
 /* BTL: avoid circular redefinition of dlopen if SOLARIS_THREADS defined */
 # if defined(SOLARIS_THREADS) && defined(dlopen)
     /* To support threads in Solaris, gc.h interposes on dlopen by       */

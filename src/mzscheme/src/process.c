@@ -77,6 +77,10 @@
 # include <process.h>
 #endif
 
+#ifndef SIGNMZTHREAD
+# define SIGMZTHREAD SIGUSR2
+#endif
+
 #if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
 # ifndef NO_STDIO_THREADS
 #  include <windows.h>
@@ -1410,14 +1414,19 @@ void scheme_break_thread(Scheme_Process *p)
 {
   if (!p) {
     p = scheme_main_process;
-    if (!p) return;
-    if (p->external_break) /* needed for real threads */
+    if (!p)
       return;
   }
 
   /* Propagate breaks: */
   while (p->nestee && scheme_can_break(p, p->config))
     p = p->nestee;
+
+#ifdef MZ_REAL_THREADS
+  /* Avoid signals to wrapping thread when nested already has died: */
+  if (!MZTHREAD_STILL_RUNNING(p->running))
+    return;
+#endif
 
   p->external_break = 1;
 
@@ -2196,8 +2205,11 @@ static int do_kill_thread(Scheme_Process *p)
     kill_self = 1;
   else {
     p->fuel_counter = 0;
-    /* in case it's blocked on a semaphore: */
-    SCHEME_BREAK_THREAD(p->thread);
+    /* In case it's blocked on a semaphore, send a signal, but don't
+       interrupt a nestee again because we've already sent the
+       nestee a signal: */
+    if (!p->nestee)
+      SCHEME_BREAK_THREAD(p->thread);
   }
   SCHEME_RELEASE_LOCK();
 #else
@@ -2430,6 +2442,7 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 
 #ifdef MZ_REAL_THREADS
   np->thread = p->thread;
+  np->done_sema = scheme_make_sema(0);
 #endif
 
   np->overflow_set = p->overflow_set;
@@ -2475,7 +2488,11 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   MZ_CONT_MARK_POS = np->cont_mark_pos;
 #endif
 
+#ifdef MZ_REAL_THREADS
+  SCHEME_SET_CURRENT_PROCESS(np);
+#else
   scheme_current_process = np;
+#endif
 
   /* Call thunk, catch escape: */
   if (scheme_setjmp(np->error_buf)) {
@@ -2500,6 +2517,9 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   np->next->prev = np->prev;
 
   np->running = 0;
+#ifdef MZ_REAL_THREADS
+  scheme_post_sema(np->done_sema);
+#endif
 
   p->nestee = NULL;
 
@@ -2509,7 +2529,11 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   np->list_stack = NULL;
   np->config = NULL;
 
+#ifdef MZ_REAL_THREADS
+  SCHEME_SET_CURRENT_PROCESS(p);
+#else
   scheme_current_process = p;
+#endif
 
 #ifdef RUNSTACK_IS_GLOBAL
   MZ_CONT_MARK_STACK = p->cont_mark_stack;
@@ -3031,20 +3055,10 @@ typedef struct {
   sem_t stackset_sema;
 } pthread_closure;
 
-void *scheme_pthread_init_threads(void)
-{
-  if (pthread_key_create(&cp_key, NULL)) {
-    printf("init failed\n");
-    exit(-1);
-  }
-
-  return (void *)pthread_self();
-}
-
 static void do_nothing(int ignored)
 {
 # ifdef SIGSET_NEEDS_REINSTALL
-  MZ_SIGSET(SIGINT, do_nothing);
+  MZ_SIGSET(SIGMZTHREAD, do_nothing);
 # endif
 
 # ifdef ____MZ_USE_LINUX_PTHREADS
@@ -3059,6 +3073,18 @@ static void do_nothing(int ignored)
 #endif
 }
 
+void *scheme_pthread_init_threads(void)
+{
+  if (pthread_key_create(&cp_key, NULL)) {
+    printf("init failed\n");
+    exit(-1);
+  }
+
+  MZ_SIGSET(SIGMZTHREAD, do_nothing);
+
+  return (void *)pthread_self();
+}
+
 static void *start_pthread_thread(void *_cl)
 {
   pthread_closure *cl = (pthread_closure *)_cl;
@@ -3068,7 +3094,7 @@ static void *start_pthread_thread(void *_cl)
   sem_wait(&cl->go_sema);
   sem_destroy(&cl->go_sema);
 
-  MZ_SIGSET(SIGINT, do_nothing);
+  MZ_SIGSET(SIGMZTHREAD, do_nothing);
 
 #ifdef MZ_USE_LINUX_PTHREADS
   {
@@ -3177,7 +3203,7 @@ void scheme_pthread_exit_thread()
 
 void scheme_pthread_break_thread(void *th)
 {
-  pthread_kill((pthread_t)th, SIGINT);
+  pthread_kill((pthread_t)th, SIGMZTHREAD);
 }
 
 Scheme_Process *scheme_pthread_get_current_process()
@@ -3292,6 +3318,10 @@ typedef struct {
   void *stack;
 } solaris_closure;
 
+static void do_nothing(int ignored)
+{
+}
+
 void *scheme_solaris_init_threads(void)
 {
   if (thr_keycreate(&cp_key, NULL)) {
@@ -3299,16 +3329,14 @@ void *scheme_solaris_init_threads(void)
     exit(-1);
   }
 
-  return (void *)thr_self();
-}
+  MZ_SIGSET(SIGMZTHREAD, do_nothing);
 
-static void do_nothing(int ignored)
-{
+  return (void *)thr_self();
 }
 
 static void *start_solaris_thread(void *cl)
 {
-  sigset(SIGINT, do_nothing);
+  sigset(SIGMZTHREAD, do_nothing);
 
   ((solaris_closure *)cl)->f(((solaris_closure *)cl)->data);
 
@@ -3359,7 +3387,7 @@ void scheme_solaris_exit_thread()
 
 void scheme_solaris_break_thread(void *th)
 {
-  thr_kill((thread_t)th, SIGINT);
+  thr_kill((thread_t)th, SIGMZTHREAD);
 }
 
 Scheme_Process *scheme_solaris_get_current_process()
@@ -3675,7 +3703,7 @@ static void start_sproc_thread(void *cl, size_t ignored)
 {
   sproc_closure *scl = (sproc_closure *)cl;
 
-  sigset(SIGINT, do_nothing);
+  sigset(SIGMZTHREAD, do_nothing);
 
   /* wait until `*stackend' and `*thp' have been set. */
 #ifdef MZ_PRIVATE_SPAWN_MUTEX
@@ -3757,7 +3785,7 @@ void scheme_sproc_exit_thread()
 
 void scheme_sproc_break_thread(void *th)
 {
-  kill((int)th, SIGINT);
+  kill((int)th, SIGMZTHREAD);
 }
 
 Scheme_Process *scheme_sproc_get_current_process()

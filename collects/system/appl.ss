@@ -1,14 +1,14 @@
 (lambda (console@)
   (let* ([cmdline-table@
-	  (unit/sig (user-setup? files-to-open)
+	  (unit/sig (user-setup? argv)
 	    (import [mred : mred^]
 		    mzlib:command-line^
-		    mred:application-imports^)
+		    (I : mred:application-imports^))
 	    
 	    (mred:current-app-name "MrEd")
 	    (mred:scheme-mode-allow-console-eval #t)
 	    (define user-setup? #t)
-	    (define files-to-open null)
+	    (define argv null)
 	    
 	    (define table
 	      `((once-any
@@ -30,10 +30,10 @@
 		   "file")])))
 	    
 	    (parse-command-line "mred"
-				argv
+				I:argv
 				table
 				(lambda (accum . rest)
-				  (set! files-to-open rest))
+				  (set! argv (list->vector rest)))
 				'("file")
 				(lambda (string)
 				  (display string)
@@ -43,7 +43,7 @@
 	  (unit/sig ()
 	    (import [wx : wx^]
 		    [mred : mred^]
-		    (user-setup? files-to-open))
+		    (user-setup? argv))
 	    
 	    (when user-setup?
 	      (let* ([init-file (wx:find-path 'init-file)])
@@ -52,16 +52,14 @@
 				   (lambda (e) 
 				     (wx:message-box (exn-message e)
 						     (format "~a Error" init-file)))])
-		    (load/cd init-file)))))
-	    
-	    (for-each mred:edit-file files-to-open))]
+		    (load/cd init-file))))))]
 	 [inner-compound@
 	  (compound-unit/sig (import [I : mred:application-imports^]
 				     [core : mzlib:core^]
 				     [cmdline : mzlib:command-line^])
 	    (link [mred : mred^ ((reference-library-unit/sig "link.ss" "mred") core)]
-		  [cmdline-table : (user-setup? files-to-open) (cmdline-table@ mred cmdline I)]
-		  [console : (console) (console@ mred I)]
+		  [cmdline-table : (user-setup? argv) (cmdline-table@ mred cmdline I)]
+		  [console : (console) (console@ mred (cmdline-table : (argv)))]
 		  [wx : wx^ (wx@)]
 		  [after-console : () (after-console@ wx mred cmdline-table)])
 	    (export (open mred)

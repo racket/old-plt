@@ -6,10 +6,11 @@ procedures described below.
 Differences from the book:
 
  * Datatypes must be defined before they are used in `cases'
-   expressions, for better error reporting.
+   expressions. This constraint enables better (earlier) error
+   reporting.
 
- * The sllgen: functions have been changed to syntactic forms, for
-   better error reporting.
+ * The sllgen: functions have been changed to syntactic forms. This
+   change is also related to better error reporting.
 
 ----------------------------------------
 

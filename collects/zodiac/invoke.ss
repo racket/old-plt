@@ -1,4 +1,4 @@
-; $Id: invoke.ss,v 1.32 1998/04/21 02:59:55 robby Exp $
+; $Id: invoke.ss,v 1.33 1998/05/09 17:14:40 shriram Exp $
 
 (require-library "coreu.ss")
 (require-library "match.ss")
@@ -28,7 +28,7 @@
 (define zodiac:mzscheme-parameters@
   (unit/sig plt:parameters^
     (import (plt : plt:parameters^))
-    (define check-syntax-level 'advanced)))
+    (define check-syntax-level 'core)))
 ; plt:check-syntax-level
 
 ; (define language-levels '(core structured side-effecting advanced))

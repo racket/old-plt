@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.153 1998/05/15 04:17:31 shriram Exp $
+; $Id: scm-main.ss,v 1.154 1998/05/17 02:43:30 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1726,7 +1726,7 @@
 
 ;  (include "shared.ss")
 
-  (add-primitivized-micro-form 'reference scheme-vocabulary
+  (add-primitivized-micro-form 'require scheme-vocabulary
     (let* ((kwd '())
 	    (in-pattern '(_ filename))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -1746,7 +1746,7 @@
 		      env attributes vocab)
 		    (static-error filename "Does not yield a filename"))))))
 	  (else
-	    (static-error expr "Malformed reference"))))))
+	    (static-error expr "Malformed require"))))))
 
   (add-primitivized-micro-form 'require-library scheme-vocabulary
     (let* ((kwd '())

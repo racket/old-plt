@@ -1,5 +1,5 @@
 ;;
-;; $Id: test-prims.ss,v 1.2 1998/11/19 20:53:19 robby Exp $
+;; $Id: test-prims.ss,v 1.3 1998/11/19 21:24:36 robby Exp $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -18,7 +18,9 @@
     (make-parameter (lambda () (list (mred:current-eventspace)))))
 
   (define (get-active-frame)
-    (ormap mred:get-top-level-focus-window
+    (ormap (lambda (eventspace)
+	     (parameterize ([mred:current-eventspace eventspace])
+	       (mred:get-top-level-focus-window)))
 	   ((current-eventspaces))))
 
   (define (get-focused-window)
@@ -81,8 +83,8 @@
 
   (define object-tag 'test:find-object)
 
-  (define find-object 
-    (lambda (obj-class b-desc)
+  (define (find-object obj-class b-desc)
+    (lambda ()
       (cond
 	[(string? b-desc)
 	 (let* ([active-frame (get-active-frame)]
@@ -91,7 +93,7 @@
 				"could not find object: ~a, no active frame" 
 				b-desc))]
 		[found
-		 (let loop ([panel (send active-frame get-top-panel)])
+		 (let loop ([panel active-frame])
 		   (ormap (lambda (child)
 			    (cond
 			      [(and (is-a? child obj-class)
@@ -99,11 +101,11 @@
 			       child]
 			      [(is-a? child mred:area-container<%>) (loop child)]
 			      [else #f]))
-			  (ivar panel children)))])
+			  (send panel get-children)))])
 	   (if found
 	       found
 	       (run-error object-tag 
-			  "no object of class ~a named ~a in active frame"
+			  "no object of class ~a named ~s in active frame"
 			  obj-class
 			  b-desc)))]
 	[(is-a? b-desc obj-class) b-desc]
@@ -115,7 +117,7 @@
 ;;; CONTROL functions, to be specialized for individual controls 
 
   (define control-action
-    (lambda (error-tag event-sym find-ctrl)
+    (lambda (error-tag event-sym find-ctrl update-control)
       (test:run-one
        (lambda ()
 	 (let ([event (make-object mred:control-event% event-sym)]
@@ -126,6 +128,7 @@
 	     [(not (in-active-frame? ctrl))
 	      (run-error error-tag "control ~s is not in active frame" ctrl)]
 	     [else
+	      (update-control ctrl)
 	      (send ctrl command event)
 	      (void)]))))))	     
 
@@ -137,36 +140,35 @@
     (control-action
      'test:button-push
      'button
-     (find-object mred:button% button)))
+     (find-object mred:button% button)
+     void))
 
 ;; 
 ;; CHECK-BOX 
 ;;
 
   (define (set-check-box! in-cb state) 
-    (let ([cb (find-object mred:check-box% in-cb)])
-      (send cb set-value state)
-      (control-action
-       'test:set-check-box!
-       'check-box 
-       cb)))
+    (control-action
+     'test:set-check-box!
+     'check-box 
+     (find-object mred:check-box% in-cb)
+     (lambda (cb) (send cb set-value state))))
 
 ;;; CHOICE 
 
 ; set-choice! : ((instance in-choice%) (union string number) -> void)
   (define (set-choice! in-choice str)
-    (let ([choice (find-object mred:choice% in-choice)])
-      (cond
-	[(number? str) (send choice set-selection str)]
-	[(string? str) (send choice set-string-selection str)]
-	[else (error 'test:set-choice!
-		     "expected a string or a number as second arg, got: ~e (other arg: ~e)"
-		     str in-choice)])
-      (control-action
-       'test:set-choice!
-       'choice
-       choice)))
-
+    (control-action
+     'test:set-choice!
+     'choice
+     (find-object mred:choice% in-choice)
+     (lambda (choice)
+       (cond
+	 [(number? str) (send choice set-selection str)]
+	 [(string? str) (send choice set-string-selection str)]
+	 [else (error 'test:set-choice!
+		      "expected a string or a number as second arg, got: ~e (other arg: ~e)"
+		      str in-choice)]))))
   ;;
   ;; KEYSTROKES 
   ;;

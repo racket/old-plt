@@ -48,9 +48,14 @@ string=? ; exec mred -magqvf $0
 	 null
 	 signature-names))
 
+(define (add-let-prefix sym)
+  (string->symbol
+   (string-append "mred-interfaces.ss-"
+		  (symbol->string sym))))
+
 (define (build-interface class-name)
-  `(define ,(class-name->interface-name class-name)
-     (interface () ,@(class->names (global-defined-value class-name)))))
+  `[,(add-let-prefix (class-name->interface-name class-name))
+    (interface () ,@(class->names (global-defined-value class-name)))])
 
 (define (add-export-prefix x)
   (string->symbol (string-append "-" (symbol->string x))))
@@ -59,19 +64,26 @@ string=? ; exec mred -magqvf $0
   (let* ([class (eval class-name)]
 	 [interfaces (foldl (lambda (this-class-name so-far)
 			      (if (subclass? class (eval this-class-name))
-				  (cons (class-name->interface-name this-class-name) so-far)
+				  (cons (add-let-prefix (class-name->interface-name this-class-name)) so-far)
 				  so-far))
 			    null
 			    class-names)])
-    `(define ,(add-export-prefix class-name)
-       (class* ,class-name (,@interfaces) args
-	 (sequence
-	   (apply super-init args))))))
+    `[,(add-let-prefix class-name)
+      (class* ,class-name (,@interfaces) args
+	(sequence
+	  (apply super-init args)))]))
 
 (define new-signature-definition
   `(define-signature mred-interfaces^
      ((open mred^)
       ,@interface-names)))
+
+(define (build-interface-definition name)
+  `(define ,(class-name->interface-name name)
+     ,(add-let-prefix (class-name->interface-name name))))
+
+(define (build-new-class-definition name)
+  `(define ,name ,(add-let-prefix name)))
 
 (define new-unit-definition
   `(define mred-interfaces@
@@ -81,14 +93,15 @@ string=? ; exec mred -magqvf $0
 	    [interfaces
 	     :
 	     (,@(append interface-names class-names))
-	     ((unit/sig (,@(append interface-names class-names))
-		(import mred^)
-		(rename ,@(map (lambda (x) `[,(add-export-prefix x) ,x]) class-names))
-
-		,@(append
-		   (map build-interface class-names)
-		   (map build-new-class class-names)))
-	      mred)])
+	     ((letrec ,(append
+			(map build-interface class-names)
+			(map build-new-class class-names))
+		(unit/sig (,@(append interface-names class-names))
+		  (import)
+		  
+		  ,@(append
+		     (map build-interface-definition class-names)
+		     (map build-new-class-definition class-names)))))])
       (export (open (mred : (,@leftover-names)))
 	      (open interfaces)))))
 

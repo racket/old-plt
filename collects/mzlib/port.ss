@@ -58,11 +58,11 @@
        (lambda (s start end non-block? breakable?) (- end start))
        void
        (lambda (special non-block? breakable?) #t)
-       (lambda (s start end) (convert-evt
+       (lambda (s start end) (wrap-evt
 			      always-evt
 			      (lambda (x)
 				(- end start))))
-       (lambda (special) (convert-evt always-evt (lambda (x) #t))))))
+       (lambda (special) (wrap-evt always-evt (lambda (x) #t))))))
 
   ;; ----------------------------------------
 
@@ -125,7 +125,7 @@
     (define special-peeked-tail #f)
     (define progress-requested? #f)
     (define (try-again)
-      (convert-evt
+      (wrap-evt
        (semaphore-peek-evt lock-semaphore)
        (lambda (x) 0)))
     (define (make-progress)
@@ -423,7 +423,7 @@
 	   ;; In poll mode, call `go' directly:
 	   (let ([v (go never-evt #f #t)])
 	     (if v
-		 (convert-evt always-evt (lambda (x) v))
+		 (wrap-evt always-evt (lambda (x) v))
 		 never-evt))
 	   ;; In non-poll mode, start a thread to call go
 	   (nack-guard-evt
@@ -482,7 +482,7 @@
 	       [poll? #f]
 	       [else (try-again 0 orig-bstr)]))]))))
     (if (zero? (bytes-length orig-bstr))
-	(convert-evt always-evt (lambda (x) 0))
+	(wrap-evt always-evt (lambda (x) 0))
 	(poll-or-spawn go)))
   
   (define (read-bytes-avail!-evt bstr input-port)
@@ -504,7 +504,7 @@
   
   (define (read-bytes-evt len input-port)
     (let ([bstr (make-bytes len)])
-      (convert-evt
+      (wrap-evt
        (read-bytes!-evt bstr input-port)
        (lambda (v)
 	 (if (number? v)
@@ -515,10 +515,10 @@
 	   
   (define (read-string-evt goal input-port)
     (if (zero? goal)
-	(convert-evt always-evt (lambda (x) ""))
+	(wrap-evt always-evt (lambda (x) ""))
 	(let ([bstr (make-bytes goal)]
 	      [c (bytes-open-converter "UTF-8-permissive" "UTF-8")])
-	  (convert-evt
+	  (wrap-evt
 	   (read-at-least-bytes!-evt bstr input-port 
 				     (lambda (bstr v)
 				       (if (= v (bytes-length bstr))
@@ -556,7 +556,7 @@
 		   v)))))))
 
   (define (read-string!-evt str input-port)
-    (convert-evt
+    (wrap-evt
      (read-string-evt (string-length str) input-port)
      (lambda (s)
        (if (string? s)
@@ -580,7 +580,7 @@
 	    (if poll?
 		#f
 		(sync nack
-		      (finish-evt progress-evt
+		      (handle-evt progress-evt
 				  (lambda (x) (try-again)))))]
 	   [else
 	    (let ([m2 (map (lambda (p)
@@ -620,7 +620,7 @@
 
   (define read-bytes-line-evt
     (opt-lambda (input-port [mode 'linefeed])
-      (convert-evt
+      (wrap-evt
        (regexp-match-evt (case mode
 			   [(linefeed) (newline-rx "\n")]
 			   [(return) (newline-rx "\r")]
@@ -637,7 +637,7 @@
   
   (define read-line-evt
     (opt-lambda (input-port [mode 'linefeed])
-      (convert-evt
+      (wrap-evt
        (read-bytes-line-evt input-port mode)
        (lambda (s)
 	 (if (eof-object? s)
@@ -645,7 +645,7 @@
 	     (bytes->string/utf-8 s #\?))))))
 
   (define (eof-evt input-port)
-    (convert-evt
+    (wrap-evt
      (regexp-match-evt #rx#"^$" input-port)
      (lambda (x)
        eof))))

@@ -41,7 +41,7 @@
 	      (channel-put-evt empty-ch (make-semaphore))] ; see poll->ch
 	     [tell-full 
 	      (channel-put-evt full-ch (make-semaphore))]  ; see poll->ch
-	     [enqueue (convert-evt
+	     [enqueue (handle-evt
 		       enqueue-ch
 		       (lambda (v)
 			 ;; We received a put; enqueue it:
@@ -51,7 +51,7 @@
 			   (set! queue-last p))))]
 	     [mk-dequeue
 	      (lambda ()
-		(convert-evt
+		(handle-evt
 		 (channel-put-evt dequeue-ch (car queue-first))
 		 (lambda (ignored)
 		   ;; A get succeeded; dequeue it:
@@ -106,7 +106,7 @@
   ;; Put ----------------------------------------
 
   (define (async-channel-put-evt ac v)
-    (letrec ([p (convert-evt
+    (letrec ([p (wrap-evt
 		 (guard-evt
 		  (lambda ()
 		    ;; Make sure queue manager is running:
@@ -133,11 +133,11 @@
      ;; If a value becomes available,
      ;;  create a waitable that returns
      ;;  the value:
-     (convert-evt
+     (wrap-evt
       normal
       (lambda (v)
 	;; Return a waitable for a successful poll:
-	(convert-evt
+	(wrap-evt
 	 always-evt
 	 (lambda (ignored) v))))
      ;; If not-ready becomes available,

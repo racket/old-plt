@@ -795,8 +795,8 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_evt_set_type, hash_general);
   PROC(scheme_udp_type, hash_general);
   PROC(scheme_udp_evt_type, hash_general);
-  PROC(scheme_convert_evt_type, hash_general);
-  PROC(scheme_finish_evt_type, hash_general);
+  PROC(scheme_wrap_evt_type, hash_general);
+  PROC(scheme_handle_evt_type, hash_general);
   PROC(scheme_nack_evt_type, hash_general);
   PROC(scheme_nack_guard_evt_type, hash_general);
   PROC(scheme_poll_evt_type, hash_general);

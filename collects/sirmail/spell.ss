@@ -60,11 +60,11 @@
                                     dict
                                     (fetch-dictionary))])
              (sync
-              (finish-evt
+              (handle-evt
                (channel-put-evt answer-chan (check-word computed-dict bad-dict word))
                (lambda (done)
                  (loop #t computed-dict)))
-              (finish-evt
+              (handle-evt
                give-up-chan
                (lambda (done)
                  (loop #t computed-dict))))))))))

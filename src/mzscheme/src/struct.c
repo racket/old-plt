@@ -71,8 +71,8 @@ static Scheme_Object *make_struct_field_accessor(int argc, Scheme_Object *argv[]
 static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *nack_evt(int argc, Scheme_Object *argv[]);
-static Scheme_Object *finish_evt(int argc, Scheme_Object *argv[]);
-static Scheme_Object *finish_evt_p(int argc, Scheme_Object *argv[]);
+static Scheme_Object *handle_evt(int argc, Scheme_Object *argv[]);
+static Scheme_Object *handle_evt_p(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_p(int argc, Scheme_Object *argv[]);
@@ -239,10 +239,10 @@ scheme_init_struct (Scheme_Env *env)
 		   is_evt_struct, 1);
   }
 
-  scheme_add_evt(scheme_convert_evt_type,
+  scheme_add_evt(scheme_wrap_evt_type,
 		 (Scheme_Ready_Fun)wrapped_evt_is_ready,
 		 NULL, NULL, 1);
-  scheme_add_evt(scheme_finish_evt_type,
+  scheme_add_evt(scheme_handle_evt_type,
 		 (Scheme_Ready_Fun)wrapped_evt_is_ready,
 		 NULL, NULL, 1);
   scheme_add_evt(scheme_nack_guard_evt_type,
@@ -282,14 +282,14 @@ scheme_init_struct (Scheme_Env *env)
 						      2, 3),
 			     env);
 
-  scheme_add_global_constant("convert-evt",
-			     scheme_make_prim_w_arity(scheme_convert_evt,
-						      "convert-evt",
+  scheme_add_global_constant("wrap-evt",
+			     scheme_make_prim_w_arity(scheme_wrap_evt,
+						      "wrap-evt",
 						      2, 2),
 			     env);
-  scheme_add_global_constant("finish-evt",
-			     scheme_make_prim_w_arity(finish_evt,
-						      "finish-evt",
+  scheme_add_global_constant("handle-evt",
+			     scheme_make_prim_w_arity(handle_evt,
+						      "handle-evt",
 						      2, 2),
 			     env);
   scheme_add_global_constant("nack-guard-evt",
@@ -302,9 +302,9 @@ scheme_init_struct (Scheme_Env *env)
 						      "poll-guard-evt",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("finish-evt?",
-			     scheme_make_folding_prim(finish_evt_p,
-						      "finish-evt?",
+  scheme_add_global_constant("handle-evt?",
+			     scheme_make_folding_prim(handle_evt_p,
+						      "handle-evt?",
 						      1, 1, 1),
 			     env);
 
@@ -1401,38 +1401,38 @@ static Scheme_Object *wrap_evt(const char *who, int wrap, int argc, Scheme_Objec
 {
   Wrapped_Evt *ww;
 
-  if (!scheme_is_evt(argv[0]) || (wrap && finish_evt_p(0, argv)))
-    scheme_wrong_type(who, wrap ? "non-finish evt" : "evt", 0, argc, argv);
+  if (!scheme_is_evt(argv[0]) || (wrap && handle_evt_p(0, argv)))
+    scheme_wrong_type(who, wrap ? "non-handle evt" : "evt", 0, argc, argv);
   scheme_check_proc_arity(who, 1, 1, argc, argv);
 
   ww = MALLOC_ONE_TAGGED(Wrapped_Evt);
-  ww->so.type = (wrap ? scheme_convert_evt_type : scheme_finish_evt_type);
+  ww->so.type = (wrap ? scheme_wrap_evt_type : scheme_handle_evt_type);
   ww->evt = argv[0];
   ww->wrapper = argv[1];
 
   return (Scheme_Object *)ww;
 }
 
-Scheme_Object *scheme_convert_evt(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_wrap_evt(int argc, Scheme_Object *argv[])
 {
-  return wrap_evt("convert-evt", 1, argc, argv);
+  return wrap_evt("wrap-evt", 1, argc, argv);
 }
 
-Scheme_Object *finish_evt(int argc, Scheme_Object *argv[])
+Scheme_Object *handle_evt(int argc, Scheme_Object *argv[])
 {
-  return wrap_evt("finish-evt", 0, argc, argv);
+  return wrap_evt("handle-evt", 0, argc, argv);
 }
 
-Scheme_Object *finish_evt_p(int argc, Scheme_Object *argv[])
+Scheme_Object *handle_evt_p(int argc, Scheme_Object *argv[])
 {
-  if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_finish_evt_type))
+  if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_handle_evt_type))
     return scheme_true;
 
   if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_evt_set_type)) {
     Evt_Set *es = (Evt_Set *)argv[0];
     int i;
     for (i = es->argc; i--; ) {
-      if (SAME_TYPE(SCHEME_TYPE(es->argv[i]), scheme_finish_evt_type)) {
+      if (SAME_TYPE(SCHEME_TYPE(es->argv[i]), scheme_handle_evt_type)) {
 	return scheme_true;
       }
     }
@@ -1475,7 +1475,7 @@ static int wrapped_evt_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
   Wrapped_Evt *ww = (Wrapped_Evt *)o;
   Scheme_Object *wrapper;
 
-  if (ww->so.type == scheme_convert_evt_type) {
+  if (ww->so.type == scheme_wrap_evt_type) {
     wrapper = ww->wrapper;
   } else {
     /* A box around the proc means that it's a cont wrapper: */
@@ -2640,8 +2640,8 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_struct_type_type, mark_struct_type_val);
   GC_REG_TRAV(scheme_struct_property_type, mark_struct_property);
 
-  GC_REG_TRAV(scheme_convert_evt_type, mark_wrapped_evt);
-  GC_REG_TRAV(scheme_finish_evt_type, mark_wrapped_evt);
+  GC_REG_TRAV(scheme_wrap_evt_type, mark_wrapped_evt);
+  GC_REG_TRAV(scheme_handle_evt_type, mark_wrapped_evt);
   GC_REG_TRAV(scheme_nack_guard_evt_type, mark_nack_guard_evt);
   GC_REG_TRAV(scheme_poll_evt_type, mark_nack_guard_evt);
 

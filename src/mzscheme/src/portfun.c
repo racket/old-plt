@@ -1508,7 +1508,7 @@ user_write_bytes_evt(Scheme_Output_Port *port,
 
   a[0] = val;
   a[1] = wrapper;
-  return scheme_convert_evt(2, a);
+  return scheme_wrap_evt(2, a);
 }
 
 static void

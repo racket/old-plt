@@ -249,6 +249,54 @@ static void* MyGetOrigin(wxDC *dc)
   return WITH_VAR_STACK(scheme_values(2, a));
 }
 
+static void dcGetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char *s)
+{
+  int i, j, p;
+  unsigned char *ss = (unsigned char *)s;
+  wxColour *c;
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH(0, ss);
+  VAR_STACK_PUSH(1, c);
+  VAR_STACK_PUSH(2, dc);
+
+  c = new wxColour();
+  
+  p = 0;
+
+  for (i = 0; i < w; i++) {
+    for (j = 0; j < h; j++) {
+      WITH_VAR_STACK(dc->GetPixel(x + i, y + j, c));
+      ss[p++] = 255; /* alpha */
+      ss[p++] = c->Red();
+      ss[p++] = c->Green();
+      ss[p++] = c->Blue();
+    }
+  }
+}
+
+static void dcSetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char *s)
+{
+  int i, j, p;
+  unsigned char *ss = (unsigned char *)s;
+  wxColour *c;
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH(0, ss);
+  VAR_STACK_PUSH(1, c);
+  VAR_STACK_PUSH(2, dc);
+
+  c = new wxColour();
+  
+  p = 0;
+
+  for (i = 0; i < w; i++) {
+    for (j = 0; j < h; j++) {
+      WITH_VAR_STACK(c->Set(ss[p+1], ss[p+2], ss[p+3]));
+      WITH_VAR_STACK(dc->SetPixel(x + i, y + j, c));
+      p += 4;
+    }
+  }
+}
+
 
 
 
@@ -1640,6 +1688,8 @@ class wxDC *objscheme_unbundle_wxDC(Scheme_Object *obj, const char *where, int n
 
 
 
+
+
 class os_wxMemoryDC : public wxMemoryDC {
  public:
 
@@ -1708,6 +1758,66 @@ static Scheme_Object *os_wxMemoryDCSelectObject(int n,  Scheme_Object *p[])
 
   if (x0) { if (!x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-bitmap"), "bad bitmap: ", p[POFFSET+0])); if (BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-bitmap"), "bitmap is already installed into a bitmap-dc%: ", p[POFFSET+0])); if (BM_IN_USE(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-bitmap"), "bitmap is currently installed as a control label or pen/brush stipple: ", p[POFFSET+0])); }
   WITH_VAR_STACK(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata)->SelectObject(x0));
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxMemoryDCdcSetARGBPixels(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMemoryDC_class, "set-argb-pixels in bitmap-dc%", n, p);
+  float x0;
+  float x1;
+  int x2;
+  int x3;
+  string x4 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x4);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-argb-pixels in bitmap-dc%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-argb-pixels in bitmap-dc%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 10000, "set-argb-pixels in bitmap-dc%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 10000, "set-argb-pixels in bitmap-dc%"));
+  x4 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+4], "set-argb-pixels in bitmap-dc%"));
+
+  DO_OK_CHECK(METHODNAME("memory-dc%","set-argb-pixels"))if (SCHEME_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","set-argb-pixels"), "string too short: ", p[4+POFFSET]));
+  WITH_VAR_STACK(dcSetARGBPixels(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4));
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxMemoryDCdcGetARGBPixels(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMemoryDC_class, "get-argb-pixels in bitmap-dc%", n, p);
+  float x0;
+  float x1;
+  int x2;
+  int x3;
+  string x4 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x4);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "get-argb-pixels in bitmap-dc%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "get-argb-pixels in bitmap-dc%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 10000, "get-argb-pixels in bitmap-dc%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 10000, "get-argb-pixels in bitmap-dc%"));
+  x4 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+4], "get-argb-pixels in bitmap-dc%"));
+
+  DO_OK_CHECK(METHODNAME("memory-dc%","get-argb-pixels"))if (SCHEME_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","get-argb-pixels"), "string too short: ", p[4+POFFSET]));
+  WITH_VAR_STACK(dcGetARGBPixels(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4));
 
   
   
@@ -1803,10 +1913,12 @@ void objscheme_setup_wxMemoryDC(Scheme_Env *env)
 
   wxREGGLOB(os_wxMemoryDC_class);
 
-  os_wxMemoryDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap-dc%", "dc%", (Scheme_Method_Prim *)os_wxMemoryDC_ConstructScheme, 4));
+  os_wxMemoryDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap-dc%", "dc%", (Scheme_Method_Prim *)os_wxMemoryDC_ConstructScheme, 6));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "get-bitmap" " method", (Scheme_Method_Prim *)os_wxMemoryDCGetObject, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "set-bitmap" " method", (Scheme_Method_Prim *)os_wxMemoryDCSelectObject, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "set-argb-pixels" " method", (Scheme_Method_Prim *)os_wxMemoryDCdcSetARGBPixels, 5, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "get-argb-pixels" " method", (Scheme_Method_Prim *)os_wxMemoryDCdcGetARGBPixels, 5, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "set-pixel" " method", (Scheme_Method_Prim *)os_wxMemoryDCSetPixel, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "get-pixel" " method", (Scheme_Method_Prim *)os_wxMemoryDCGetPixel, 3, 3));
 

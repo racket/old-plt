@@ -157,6 +157,54 @@ static void* MyGetOrigin(wxDC *dc)
   return WITH_VAR_STACK(scheme_values(2, a));
 }
 
+static void dcGetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char *s)
+{
+  int i, j, p;
+  unsigned char *ss = (unsigned char *)s;
+  wxColour *c;
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH(0, ss);
+  VAR_STACK_PUSH(1, c);
+  VAR_STACK_PUSH(2, dc);
+
+  c = new wxColour();
+  
+  p = 0;
+
+  for (i = 0; i < w; i++) {
+    for (j = 0; j < h; j++) {
+      WITH_VAR_STACK(dc->GetPixel(x + i, y + j, c));
+      ss[p++] = 255; /* alpha */
+      ss[p++] = c->Red();
+      ss[p++] = c->Green();
+      ss[p++] = c->Blue();
+    }
+  }
+}
+
+static void dcSetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char *s)
+{
+  int i, j, p;
+  unsigned char *ss = (unsigned char *)s;
+  wxColour *c;
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH(0, ss);
+  VAR_STACK_PUSH(1, c);
+  VAR_STACK_PUSH(2, dc);
+
+  c = new wxColour();
+  
+  p = 0;
+
+  for (i = 0; i < w; i++) {
+    for (j = 0; j < h; j++) {
+      WITH_VAR_STACK(c->Set(ss[p+1], ss[p+2], ss[p+3]));
+      WITH_VAR_STACK(dc->SetPixel(x + i, y + j, c));
+      p += 4;
+    }
+  }
+}
+
 @MACRO CheckStringIndex[n.s.i] = if (x<i> > SCHEME_STRLEN_VAL(p[POFFSET+<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), "string index too large: ", p[POFFSET+<i>]));
 
 @CLASSBASE wxDC "dc":"object"
@@ -225,6 +273,8 @@ static void* MyGetOrigin(wxDC *dc)
 
 @END
 
+@MACRO STRINGENOUGH[who] = if (SCHEME_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%",<who>), "string too short: ", p[4+POFFSET]));
+
 @CLASSBASE wxMemoryDC "bitmap-dc":"dc"
 
 @CLASSID wxTYPE_DC_MEMORY
@@ -234,6 +284,9 @@ static void* MyGetOrigin(wxDC *dc)
 
 @ "get-pixel" : bool GetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("memory-dc%","get-pixel")]
 @ "set-pixel" : void SetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("memory-dc%","set-pixel")]
+
+@ m "get-argb-pixels" : void dcGetARGBPixels(float,float,rint[0|10000],rint[0|10000],string) : : /CheckOk[METHODNAME("memory-dc%","get-argb-pixels")]|STRINGENOUGH["get-argb-pixels"]
+@ m "set-argb-pixels" : void dcSetARGBPixels(float,float,rint[0|10000],rint[0|10000],string) : : /CheckOk[METHODNAME("memory-dc%","set-argb-pixels")]|STRINGENOUGH["set-argb-pixels"]
 
 @ "set-bitmap" : void SelectObject(wxBitmap^);  : : /CHECKOKFORDC[0.METHODNAME("memory-dc%","set-bitmap")]
 @ "get-bitmap" : wxBitmap^ GetObject();

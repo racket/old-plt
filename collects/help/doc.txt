@@ -227,11 +227,14 @@ _Supplemental Help Desk functions_
 _Creating Help Desk Documentation in doc.txt files_
 ===================================================
 
-Help Desk reads the files named doc.txt in each top-level
-collection. Additionally, if the info.ss file contains a
-definition of _doc-sub-collections_ bound to a list of
-strings naming immediate subcollections, those
-sub-collections are also searched for doc.txt files.
+Help Desk reads doc.txt files that are named by info.ss
+files (in PLaneT, or in collections or thier
+subcollections). The info.ss file should have a line:
+
+  (define doc.txt "filename.txt")
+
+directing Help Desk to read the file named "filename.txt"
+(usually, by convention these files are named "doc.txt").
 
 Index Entry Annotations
 - - - - - - - - - - - -

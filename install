@@ -101,10 +101,10 @@ if [ "$installplthome" != '' ] ; then
   done
 fi
 
-# text-mode version checker - prompts user to check or not
-bin/mzscheme -mve '(require (lib "check-text.ss" "version"))'
 
 if [ -z "${RPM_INSTALL_PREFIX}" ] ; then
+  # text-mode version checker - prompts user to check or not
+  bin/mzscheme -mve '(require (lib "check-text.ss" "version"))'
   echo 'PLT software starts up much faster with .zo files, but creating .zo'
   echo 'files now takes a few minutes and requires about 5MB of additional'
   echo 'disk space. Create .zo files later by running plt/bin/setup-plt.'

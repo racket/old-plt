@@ -5015,7 +5015,7 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
 			      int with_break, int with_timeout, int tailok)
 {
   Evt_Set *evt_set;
-  Syncing *syncing;
+  Syncing * volatile syncing;
   float timeout = -1.0;
   double start_time;
   Scheme_Cont_Frame_Data cframe;

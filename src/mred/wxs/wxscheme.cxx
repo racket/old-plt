@@ -1197,14 +1197,14 @@ static Scheme_Object *SetPSProcs(int, Scheme_Object *a[])
 
 void wxPostScriptDrawText(Scheme_Object *f, const char *fontname,
 			  const char *text, int dt, Bool combine, int use16, 
-			  int font_size)
+			  double font_size)
 {
   if (ps_draw_text) {
     Scheme_Object *a[5], *v;
 
     v = scheme_make_utf8_string(fontname);
     a[0] = v;
-    a[1] = scheme_make_integer(font_size);
+    a[1] = scheme_make_double(font_size);
     if (use16)
       v = scheme_make_sized_offset_char_string((mzchar *)text, dt, -1, 1);
     else 
@@ -1219,7 +1219,7 @@ void wxPostScriptDrawText(Scheme_Object *f, const char *fontname,
 
 extern void wxPostScriptGetTextExtent(const char *fontname, 
 				      const char *text, int dt, Bool combine, int use16, 
-				      int font_size,
+				      double font_size,
 				      float *x, float *y, float *descent, float *topSpace)
 {
   if (ps_get_text_extent) {
@@ -1227,7 +1227,7 @@ extern void wxPostScriptGetTextExtent(const char *fontname,
 
     v = scheme_make_utf8_string(fontname);
     a[0] = v;
-    a[1] = scheme_make_integer(font_size);
+    a[1] = scheme_make_double(font_size);
     if (use16)
       v = scheme_make_sized_offset_char_string((mzchar *)text, dt, -1, 1);
     else 

@@ -65,10 +65,10 @@
 
 extern void wxPostScriptDrawText(Scheme_Object *f, const char *fontname, 
 				 const char *text, int dt, Bool combine, int use16, 
-				 int font_size);
+				 double font_size);
 extern void wxPostScriptGetTextExtent(const char *fontname, 
 				      const char *text, int dt, Bool combine, int use16, 
-				      int font_size,
+				      double font_size,
 				      float *x, float *y, float *descent, float *topSpace);
 extern char *wxPostScriptFixupFontName(const char *fontname);
 extern Bool wxPostScriptGlyphExists(const char *fontname, int c);

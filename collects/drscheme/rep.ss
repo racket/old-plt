@@ -139,7 +139,7 @@
 		 set-clickback
 		 set-last-header-position
 		 this-err-write this-err 
-		 this-out this-out-write
+		 this-out
 		 this-in this-result this-result-write
 		 output-delta set-output-delta
 		 do-post-eval
@@ -162,7 +162,7 @@
 	(rename
 	  [super-initialize-console initialize-console]
 	  [super-reset-console reset-console]
-	  [super-init-transparent-io init-transparent-io])
+	  [super-init-transparent-io-do-work init-transparent-io-do-work])
 	(private
 	  return-value
 	  return-error
@@ -172,15 +172,15 @@
 	  [load-success? #f])
 	
 	(public
-	  [init-transparent-io
-	   (lambda x
+	  [init-transparent-io-do-work
+	   (lambda (grab-focus?)
 	     (with-parameterization system-parameterization
 	       (lambda ()
 		 (let ([c-locked? locked?])
 		   (begin-edit-sequence)
 		   (lock #f)
-		   (apply super-init-transparent-io x)
-		   (lock c-locked?)		   
+		   (super-init-transparent-io-do-work grab-focus?)
+		   (lock c-locked?)
 		   (end-edit-sequence)))))])
 	(private
 	  [escape-fn #f])
@@ -207,7 +207,7 @@
 		   (begin-edit-sequence)
 		   (lock #f)
 		   (this-err-write (string-append message (string #\newline)))
-		   (lock locked?)		   
+		   (lock locked?)
 		   (end-edit-sequence)))
 	       (when (is-a? file wx:media-edit%)
 		 (send file begin-edit-sequence)
@@ -290,31 +290,30 @@
 		     (lambda (error?)
 		       (f (make-process/zodiac-finish error?) void))])
 	       (let loop ()
-		 (with-handlers ([zodiac:interface:zodiac-exn?
-				  (lambda (exn)
-				    (report-error (zodiac:interface:zodiac-exn-start-location exn)
-						  (zodiac:interface:zodiac-exn-end-location exn)
-						  (zodiac:interface:zodiac-exn-type exn)
-						  (zodiac:interface:zodiac-exn-message exn))
-				    (cleanup #t))])
-		   (let ([zodiac-read (reader)])
-		     (if (zodiac:eof? zodiac-read)
-			 (cleanup #f)
-			 (let* ([exp (call/nal
-				      zodiac:scheme-expand/nal
-				      zodiac:scheme-expand
-				      (expression: zodiac-read)
-				      (vocabulary: vocab)
-				      (parameterization: 
-				       ;(make-parameterization system-parameterization)
-				       param
-				       ))]
-				[heading-out (if annotate? 
-						 (aries:annotate exp)
-						 exp)])
-			   (mred:debug:when 'drscheme:sexp
-					    (mzlib:pretty-print@:pretty-print heading-out))
-			   (f heading-out loop))))))))])
+		 (let ([next-iteration
+			(with-handlers ([zodiac:interface:zodiac-exn?
+					 (lambda (exn)
+					   (report-error (zodiac:interface:zodiac-exn-start-location exn)
+							 (zodiac:interface:zodiac-exn-end-location exn)
+							 (zodiac:interface:zodiac-exn-type exn)
+							 (zodiac:interface:zodiac-exn-message exn))
+					   (lambda () (cleanup #t)))])
+			  (let ([zodiac-read (reader)])
+			    (if (zodiac:eof? zodiac-read)
+				(cleanup #f)
+				(let* ([exp (call/nal
+					     zodiac:scheme-expand/nal
+					     zodiac:scheme-expand
+					     (expression: zodiac-read)
+					     (vocabulary: vocab)
+					     (parameterization: param))]
+				       [heading-out (if annotate? 
+							(aries:annotate exp)
+							exp)])
+				  (mred:debug:when 'drscheme:sexp
+						   (mzlib:pretty-print@:pretty-print heading-out))
+				  (lambda () (f heading-out loop))))))])
+		   (next-iteration)))))])
 	(private
 	  [in-evaluation? #f]
 	  [in-evaluation-semaphore (make-semaphore 1)]

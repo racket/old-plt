@@ -257,6 +257,25 @@
  (backward "Backward")
  (hide "Hide")
  
+ ;;; multi-file-search
+ (mfs-multi-file-search-menu-item "Search in files...")
+ (mfs-string-match/graphics "String match (handles files with graphics)")
+ (mfs-regexp-match/no-graphics "Regular Expression (only raw text files)")
+ (mfs-searching... "Searching...")
+ (mfs-configure-search "Configure Search") ;; dialog title
+ (mfs-files-section "Files")   ;; section in config dialog
+ (mfs-search-section "Search") ;; section in config dialog
+ (mfs-dir "Dir")
+ (mfs-recur-over-subdirectories "Recur over subdirectories")
+ (mfs-regexp-filename-filter "Regexp filename filter")
+ (mfs-search-string "Search string")
+ (mfs-drscheme-multi-file-search "DrScheme - Multi File Search") ;; results window and error message title
+ (mfs-not-a-dir "\"~a\" is not a directory")
+ (mfs-open-file "Open File")
+ (mfs-stop-search "Stop Search")
+ (mfs-case-sensitive-label "Case sensitive")
+ 
+ 
  ;;; reverting a file
  (error-reverting "DrScheme - Error Reverting")
  (could-not-read "could not read \"~a\"")

@@ -24,8 +24,7 @@
       (import drscheme:tool^)
 
 
-      (define (printf . args)
-        (apply fprintf o args))
+      (define (printf . args) (apply fprintf o args))
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;;                                                                ;;;
@@ -1077,8 +1076,8 @@
                            [high-level? #f])
             (annotate-original-keywords sexp)
             (set! referenced-macros (get-referenced-macros high-level? sexp referenced-macros))
-            (set! varrefs (flatten-cons-tree (syntax-property sexp 'bound-in-source) varrefs))
-            (set! binders (flatten-cons-tree (syntax-property sexp 'binding-in-source) binders))
+            (set! varrefs (flatten-cons-tree #t (syntax-property sexp 'bound-in-source) varrefs))
+            (set! binders (flatten-cons-tree 'no-cons (syntax-property sexp 'binding-in-source) binders))
             (let ([loop (lambda (sexp) (level-loop sexp high-level?))])
               (syntax-case* sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
                                    quote quote-syntax with-continuation-mark 
@@ -1289,25 +1288,30 @@
       (define (get-referenced-macros high-level? sexp acc)
         (let ([origin (syntax-property sexp 'origin)])
           (if origin
-              (let loop ([origin origin]
-                         [stxs acc])
-                (cond
-                  [(cons? origin) (loop (car origin) (loop (cdr origin) stxs))]
-                  [(syntax? origin) (if (syntax-original? origin)
-                                        (cons (cons high-level? origin) stxs)
-                                        stxs)]
-                  [else stxs]))
+              (flatten-cons-tree high-level? origin acc)
               acc)))
       
       ;; type cons-tree : (union (cons cons-tree cons-tree) syntax)
-      ;; flatten-cons-tree : cons-tree (listof syntax[original]) -> (listof syntax[original])
-      (define (flatten-cons-tree ct acc)
-        (cond
-          [(cons? ct) (flatten-cons-tree (car ct) (flatten-cons-tree (cdr ct) acc))]
-          [(syntax? ct) (if (syntax-original? ct)
-                            (cons ct acc)
-                            acc)]
-          [else acc]))
+      ;; flatten-cons-tree : (union 'no-cons boolean)
+      ;;                     cons-tree
+      ;;                     (union (listof syntax[original]) (listof (cons boolean syntax[original])))
+      ;;                     -> (listof syntax[original])
+      ;; flattens the cons tree in one of two ways. If the first
+      ;; argument is 'no-cons, `acc' must be a list of syntax; if
+      ;; the first argument is a boolean, `acc' must be a list of pairs.
+      ;; Uses the first argument's value to match the acc, either
+      ;; constructing pairs or not as elements of the list.
+      (define (flatten-cons-tree level ct acc)
+        (let loop ([ct ct]
+                   [acc acc])
+          (cond
+            [(pair? ct) (loop (car ct) (loop (cdr ct) acc))]
+            [(syntax? ct) (if (syntax-original? ct)
+                              (if (boolean? level)
+                                  (cons (cons level ct) acc)
+                                  (cons ct acc))
+                              acc)]
+            [else acc])))
 
       ;; extract-provided-vars : syntax -> (listof syntax[identifier])
       (define (extract-provided-vars stx)

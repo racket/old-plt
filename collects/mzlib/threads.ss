@@ -1,4 +1,7 @@
 
+(begin-elaboration-time
+ (require-relative-library "spidey.ss"))
+
 (define-signature mzlib:thread^
   (consumer-thread
    merge-input

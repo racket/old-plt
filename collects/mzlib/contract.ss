@@ -10,7 +10,7 @@ add struct contracts for immutable structs?
 (module contract mzscheme
   
   ;; no bytes in v206
-;  (define (bytes? x) #f)
+  (define (bytes? x) #f)
   
   (provide (rename -contract contract)
            ->
@@ -28,10 +28,7 @@ add struct contracts for immutable structs?
            contract-name
            flat-contract?
            flat-contract
-           flat-contract-predicate
-	   flat-named-contract?
-           flat-named-contract
-           flat-named-contract-type-name)
+           flat-named-contract)
 
   (require-for-syntax mzscheme
                       "list.ss"
@@ -44,40 +41,6 @@ add struct contracts for immutable structs?
   
   (require (lib "contract-helpers.scm" "mzlib" "private"))
   (require-for-syntax (prefix a: (lib "contract-helpers.scm" "mzlib" "private")))
-
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;
-  ;;  deprecated
-  ;;
-
-  (define-syntax (deprecated stx)
-    (syntax-case stx ()
-      [(_ old new)
-       (syntax 
-	(define-syntax (old stx)
-	  (syntax-case stx ()
-	    [(_ args (... ...))
-	     (fprintf
-	      (current-error-port)
-	      "WARNING: ~a is deprecated, use ~a instead ~a:~a.~a\n"
-	      'old
-	      'new
-	      (syntax-source stx)
-	      (syntax-line stx)
-	      (syntax-column stx))
-	     (syntax (new args (... ...)))])))]))
-
-  (provide or/f and/f flat-named-contract-predicate)
-  (deprecated or/f union)
-  (deprecated and/f and/c)
-  (deprecated flat-named-contract-predicate flat-contract-predicate)
-  (deprecated flat-named-contract? flat-contract?)
-  (deprecated flat-named-contract-type-name contract-name)
-
-  ;;
-  ;; end deprecated
-  ;;
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   
   
@@ -660,7 +623,11 @@ add struct contracts for immutable structs?
                      [arity-count (length (syntax->list (syntax (x ...))))])
          (syntax 
           (make-contract 
-           "name"
+           (build-compound-type-name '->r
+                                     (build-compound-type-name
+                                      #f 
+                                      (build-compound-type-name 'x '(... ...)) ...)
+                                     '(... ...))
            (lambda (pos-blame neg-blame src-info orig-str)
              (lambda (v)
                (unless (procedure? v)
@@ -679,7 +646,7 @@ add struct contracts for immutable structs?
                                        arity-count
                                        v))
                (lambda (x ...)
-                 (let ([dom-id ((coerce/select-contract ->r dom) pos-blame neg-blame src-info orig-str)]
+                 (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
                        ...
                        [rng-id ((coerce/select-contract ->r rng) pos-blame neg-blame src-info orig-str)])
                    (rng-id (v (dom-id x) ...)))))))))]

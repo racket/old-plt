@@ -2039,7 +2039,10 @@
   (test-name "(->d integer? boolean? ...)" (->d integer? boolean? (lambda (x y) char?)))
   (test-name "(->d* (integer? boolean?) ...)" (->d* (integer? boolean?) (lambda (x y) char?)))
   (test-name "(->d* (integer? boolean?) any? ...)" (->d* (integer? boolean?) any? (lambda (x y . z) char?)))
-    
+  
+  (test-name "(->r ((x ...)) ...)" (->r ((x number?)) number?))
+  (test-name "(->r ((x ...) (y ...) (z ...)) ...)" (->r ((x number?) (y boolean?) (z pair?)) number?))
+  
   (test-name "(case-> (-> integer? integer?) (-> integer? integer? integer?))"
              (case-> (-> integer? integer?) (-> integer? integer? integer?)))
   

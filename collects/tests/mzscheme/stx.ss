@@ -649,50 +649,48 @@
 	     exn:fail:syntax?)
 
 (let ([expr (expand-syntax #'++v)])
-  (test #f syntax-recertify-constrained? expr (syntax-make-certificate-env) (current-inspector))
-  (let ([ctx (syntax-extend-certificate-env expr (syntax-make-certificate-env))])
-    (test #t syntax-recertify-constrained? expr ctx (current-inspector))
-    (test expr syntax-recertify expr expr (current-inspector))
-    (let ([new (syntax-recertify #'no-marks expr (current-inspector))])
+  (test expr syntax-recertify expr expr (current-inspector) #f)
+    (let ([new (syntax-recertify #'no-marks expr (current-inspector) #f)])
       (test #t syntax? new)
       (test 'no-marks syntax-e new))
     (test #t syntax? (syntax-recertify (syntax-case expr ()
 					 [(beg id) #'beg])
-				       expr (current-inspector)))
-    (err/rt-test (syntax-recertify (syntax-case expr ()
-				     [(beg id) #'id])
-				   expr (current-inspector)))
+				       expr (current-inspector) #f))
+    ;; we'd prefer this to fail, but it's defined to succeed:
+    (test #t syntax? (syntax-recertify (syntax-case expr ()
+					 [(beg id) #'id])
+				       expr (current-inspector) #f))
     (test #t syntax? (syntax-recertify (datum->syntax-object expr (syntax-e expr))
-				       expr (current-inspector)))
-    (err/rt-test (syntax-recertify (syntax-case expr ()
-				     [(beg id) #'(ack id)])
-				   expr (current-inspector)))))
+				       expr (current-inspector) #f))
+    ;; we'd prefer this to fail, but it's defined to succeed:
+    (test #t syntax? (syntax-recertify (syntax-case expr ()
+					 [(beg id) #'(ack id)])
+				       expr (current-inspector) #f)))
 
 (let ([expr (expand-syntax #'(++apply-to-d ack))])
-  (test #f syntax-recertify-constrained? expr (syntax-make-certificate-env) (current-inspector))
-  (let ([ctx (syntax-extend-certificate-env expr (syntax-make-certificate-env))])
-    (test #t syntax-recertify-constrained? expr ctx (current-inspector))
-    (test '(#%app (#%top . ack) ++d) syntax-object->datum expr)
-    (let ([try (lambda (cvt? other)
-		 (syntax-recertify (datum->syntax-object 
-				    expr
-				    (cons (car (syntax-e expr))
-					  ((if cvt?
-					       (lambda (x) (datum->syntax-object
-							    (cdr (syntax-e expr))
-							    x))
-					       values)
-					   (cons
-					    other
-					    (cdr (syntax-e (cdr (syntax-e expr))))))))
-				   expr
-				   (current-inspector)))])
-      (test #t syntax? (try #f #'other!))
-      (let ([new (try #t #'other!)])
-	(test #t syntax? new)
-	(test '(#%app other! ++d) syntax-object->datum new))
-      (err/rt-test (try #t (syntax-case expr ()
-			     [(ap _ d) #'d]))))))
+  (test '(#%app (#%top . ack) ++d) syntax-object->datum expr)
+  (let ([try (lambda (cvt? other)
+	       (syntax-recertify (datum->syntax-object 
+				  expr
+				  (cons (car (syntax-e expr))
+					((if cvt?
+					     (lambda (x) (datum->syntax-object
+							  (cdr (syntax-e expr))
+							  x))
+					     values)
+					 (cons
+					  other
+					  (cdr (syntax-e (cdr (syntax-e expr))))))))
+				 expr
+				 (current-inspector)
+				 #f))])
+    (test #t syntax? (try #f #'other!))
+    (let ([new (try #t #'other!)])
+      (test #t syntax? new)
+      (test '(#%app other! ++d) syntax-object->datum new))
+    ;; we'd prefer this to fail, but it's defined to succeed:
+    (test #t syntax? (try #t (syntax-case expr ()
+			       [(ap _ d) #'d])))))
 
     
 ;; ----------------------------------------

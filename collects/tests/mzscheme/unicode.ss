@@ -563,6 +563,11 @@
 (define (unicode-vector->bytes v)
   (string->bytes/utf-8 (list->string (map integer->char (vector->list v)))))
 
+(define (list->string/eof l)
+  (if (and (pair? l) (eof-object? (car l)) (null? (cdr l)))
+      eof
+      (list->string l)))
+
 (let ([utf-8-iconv (bytes-open-converter "UTF-8" "UTF-8")]
       [utf-8-iconv-p (bytes-open-converter "UTF-8-permissive" "UTF-8")])
   ;; First, check some simple conversions
@@ -727,9 +732,12 @@
 				(test #t 'read-10
 				      (let loop ([i 0])
 					(if (= i 10)
-					    #t
+					    (let ([v (read-string 1 in)])
+					      (or (eof-object? v)
+						  (and (test eof `(eof for ,(caddr p) = ,us with ,read-string) v)
+						       #t)))
 					    (let ([rs (read-string (string-length us) in)])
-					      (and (or (string=? us rs)
+					      (and (or (equal? us rs)
 						       (test us `(,i of 10 for ,(caddr p) with ,read-string) rs))
 						   (loop (add1 i)))))))))])
 		    (go read-string)
@@ -748,14 +756,14 @@
 			     (set! pos (+ (bytes-length s) pos))))))
 		    ;; Read-char
 		    (go (lambda (n p)
-			  (list->string
+			  (list->string/eof
 			   (let loop ([i 0])
 			     (if (= i n)
 				 null
 				 (cons (read-char p) (loop (add1 i))))))))
 		    ;; Peek-char, consistent with read-char
 		    (go (lambda (n p)
-			    (list->string
+			    (list->string/eof
 			     (let loop ([i 0])
 			       (if (= i n)
 				   null
@@ -765,6 +773,37 @@
 					 (cons a (loop (add1 i)))
 					 (list* #\* a b #\* (loop (add1 i))))))))))))))
 	    basic-utf-8-tests))
+
+;; Seems like this sort of thing should be covered above, and maybe it
+;;  it after some other corrections. But just in case:
+(let ([check-one
+       (lambda (str)
+	 (for-each
+	  (lambda (str)
+	    (for-each
+	     (lambda (peek?)
+	       (for-each
+		(lambda (byte?)
+		  (let ([p (open-input-string str)])
+		    (test str read-string (string-length str) p)
+		    (test eof 
+			  (if peek? 
+			      (if byte? peek-byte peek-char)
+			      (if byte? read-byte read-char))
+			  p)
+		    (test eof (if byte? read-byte read-char) p)))
+		'(#t #f)))
+	     '(#t #f)))
+	  (list str 
+		(string-append str "a") 
+		(string-append "a" str) 
+		(string-append str str))))])
+  (check-one "a")
+  (check-one "\uA4")
+  (check-one "\u104")
+  (check-one "\u7238")
+  (check-one "\Ua7238")
+  (check-one "\Uba7238"))
 
 (test '(#o302 #o251) bytes->list (unicode-vector->bytes (vector 169)))
 (test '(#o304 #o250) bytes->list (unicode-vector->bytes (vector 296)))

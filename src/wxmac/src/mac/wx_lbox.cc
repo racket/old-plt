@@ -361,10 +361,10 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
       modifiers += shiftKey;
     if (event->altDown)
       modifiers += optionKey;
-    if (event->rightDown  // mflatt: right button is Cmd-click
+    if (event->metaDown
 	|| ((multiple & wxEXTENDED) && !event->shiftDown))
       modifiers += cmdKey;
-    if (event->controlDown)
+    if (event->rightDown)  // mflatt: right button is control-click
       modifiers += controlKey;
 
     /*		if ((**cListHandle).vScroll) {

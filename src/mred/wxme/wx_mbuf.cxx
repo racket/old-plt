@@ -1316,7 +1316,7 @@ void wxMediaBuffer::Print(Bool interactive, Bool fitToPage, int WXUNUSED_X(outpu
     wxDC *dc;
     void *data;
     
-    dc = new wxPostScriptDC(interactive, parent);
+    dc = new wxPostScriptDC(interactive, parent, TRUE);
 
     if (dc->Ok()) { 
       dc->StartDoc("Printing buffer");

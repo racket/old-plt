@@ -7,15 +7,10 @@
  * Copyright:   (c) 1995, AIAI, University of Edinburgh
  */
 
-#ifndef WX_CARBON
-# include <FixMath.h>
-#endif
-#ifdef WX_CARBON
-# ifdef OS_X
-#  include <ApplicationServices/ApplicationServices.h>
-# else
-#  include <ApplicationServices.h>
-# endif
+#ifdef OS_X
+# include <ApplicationServices/ApplicationServices.h>
+#else
+# include <ApplicationServices.h>
 #endif
 
 #include "common.h"
@@ -46,11 +41,7 @@ pascal void printIdle(void)
   }
 }
 
-#ifdef WX_CARBON
 PMIdleUPP printIdleUPP = NewPMIdleUPP(printIdle);
-#else
-PrIdleUPP printIdleUPP = NewPrIdleUPP(printIdle);
-#endif
 
 
 wxPrintDialog::wxPrintDialog(wxWindow *p, wxPrintData *data):
@@ -76,23 +67,12 @@ void wxPrintDialog::Show(Bool flag)
 
 Bool wxPrintDialog::UseIt(void)
 {
-  Show(TRUE);
-  
   Boolean prtJob = FALSE;
 
-  if (cShowSetupDialog) {
-#ifdef WX_CARBON
+  if (cShowSetupDialog)
     PMSessionPrintDialog(printData->cPrintSession,printData->cPrintSettings,printData->cPageFormat,&prtJob);
-#else
-    prtJob = PrJobDialog(printData->macPrData);
-#endif
-  } else {
-#ifdef WX_CARBON
+  else
     PMSessionPageSetupDialog(printData->cPrintSession,printData->cPageFormat,&prtJob);
-#else
-    prtJob = PrStlDialog(printData->macPrData);
-#endif
-  }
 
   return prtJob;
 }
@@ -103,78 +83,41 @@ Bool wxPrintDialog::UseIt(void)
 
 wxPrintData::wxPrintData(void)
 {
-#ifdef WX_CARBON
   if (PMCreatePrintSettings(&cPrintSettings) != noErr)
     return;
-    
-  if (PMSessionDefaultPrintSettings(cPrintSession, cPrintSettings) != noErr) {
-    PMRelease(cPrintSettings);
-    return;
-  }
-  
+
   if (PMCreatePageFormat(&cPageFormat) != noErr) {
     PMRelease(cPrintSettings);
+    cPrintSettings = NULL;
     return;
   }
-  
-  if (PMSessionDefaultPageFormat(cPrintSession, cPageFormat) != noErr) {
-    PMRelease(cPrintSettings);
-    PMRelease(cPageFormat);
-    return;
-  }
-
-#else
-  THPrint pd = (THPrint)NewHandleClear(sizeof(TPrint));
-  CheckMemOK(pd);
-  macPrData = pd;
-  
-  /* MATTHEW: [6] */
-  PrintDefault(macPrData);
-#endif
 }
 
 wxPrintData::~wxPrintData(void)
 {
-#ifdef WX_CARBON
   if (cPrintSettings)
     PMRelease(cPrintSettings);
 
   if (cPageFormat)
     PMRelease(cPageFormat);
-#else
-  if (macPrData)
-    DisposeHandle((Handle)macPrData);
-#endif
 }
 
 void wxPrintData::SetAbortFlag()
 {
-#ifndef WX_CARBON
-  // can't implement this function under OS X
-  (**macPrData).prJob.fFromUsr=TRUE;
-#endif
 }
 
 int wxPrintData::GetFromPage(void)
 {
-#ifdef WX_CARBON
   UInt32 result;
   PMGetFirstPage(cPrintSettings,&result);
   return result;
-#else
-  return (**macPrData).prJob.iFstPage;
-#endif
 }
 
 int wxPrintData::GetToPage(void)
 {
-#ifdef WX_CARBON
   UInt32 result;
   PMGetLastPage(cPrintSettings,&result);
   return result;
-#else
-  return (**macPrData).prJob.iLstPage;
-#endif
 }
 
 int wxPrintData::GetMinPage(void)
@@ -189,13 +132,9 @@ int wxPrintData::GetMaxPage(void)
 
 int wxPrintData::GetNoCopies(void)
 {
-#ifdef WX_CARBON
   UInt32 result;
   PMGetCopies(cPrintSettings,&result);
   return result;
-#else
-  return (**macPrData).prJob.iCopies;
-#endif
 }
 
 Bool wxPrintData::GetAllPages(void)
@@ -225,20 +164,12 @@ wxDC *wxPrintData::GetDC(void)
 
 void wxPrintData::SetFromPage(int p)
 {
-#ifdef WX_CARBON
   PMSetFirstPage(cPrintSettings,p,false);
-#else
-  (**macPrData).prJob.iFstPage = p;
-#endif
 }
 
 void wxPrintData::SetToPage(int p)
 {
-#ifdef WX_CARBON
   PMSetLastPage(cPrintSettings,p,false);
-#else
-  (**macPrData).prJob.iLstPage = p;
-#endif
 }
 
 void wxPrintData::SetMinPage(int p)
@@ -253,18 +184,12 @@ void wxPrintData::SetMaxPage(int p)
 
 void wxPrintData::SetNoCopies(int c)
 {
-#ifdef WX_CARBON
   PMSetCopies(cPrintSettings,c,false);
-#else
-  (**macPrData).prJob.iCopies = c;
-#endif
 }
 
 void wxPrintData::SetAllPages(Bool flag)
 {
-#ifdef WX_CARBON
   PMSetPageRange(cPrintSettings,0,kPMPrintAllPages);
-#endif
 }
 
 void wxPrintData::SetCollate(Bool flag)
@@ -273,7 +198,6 @@ void wxPrintData::SetCollate(Bool flag)
 
 void wxPrintData::SetPrintToFile(Bool flag)
 {
-  //(**macPrData).
 }
 
 void wxPrintData::EnablePrintToFile(Bool flag)
@@ -291,13 +215,6 @@ void wxPrintData::EnablePageNumbers(Bool flag)
 void wxPrintData::EnableHelp(Bool flag)
 {
 }
-
-#ifndef WX_CARBON
-void wxPrintData::operator=(const wxPrintData& data)
-{
-  this->macPrData = data.macPrData;
-}
-#endif
 
 /*
  * Printer
@@ -334,11 +251,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 
   printData = new wxPrintData();
 
-#ifdef WX_CARBON
   PMCreateSession(&printData->cPrintSession);
-#else
-  PrOpen();
-#endif
 
   printout->SetIsPreview(FALSE);
   printout->OnPreparePrinting();
@@ -358,48 +271,43 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   if (toPage != 0)
     printData->SetToPage(toPage);
 
-  if (minPage != 0)
-    {
-      printData->EnablePageNumbers(TRUE);
-      if (printData->GetFromPage() < printData->GetMinPage())
-	printData->SetFromPage(printData->GetMinPage());
-      else if (printData->GetFromPage() > printData->GetMaxPage())
-	printData->SetFromPage(printData->GetMaxPage());
-      if (printData->GetToPage() > printData->GetMaxPage())
-	printData->SetToPage(printData->GetMaxPage());
-      else if (printData->GetToPage() < printData->GetMinPage())
-	printData->SetToPage(printData->GetMinPage());
-    }
-  else
+  if (minPage != 0) {
+    printData->EnablePageNumbers(TRUE);
+    if (printData->GetFromPage() < printData->GetMinPage())
+      printData->SetFromPage(printData->GetMinPage());
+    else if (printData->GetFromPage() > printData->GetMaxPage())
+      printData->SetFromPage(printData->GetMaxPage());
+    if (printData->GetToPage() > printData->GetMaxPage())
+      printData->SetToPage(printData->GetMaxPage());
+    else if (printData->GetToPage() < printData->GetMinPage())
+      printData->SetToPage(printData->GetMinPage());
+  } else
     printData->EnablePageNumbers(FALSE);
   
-  if (prompt)
-    {
-      Bool goAhead;
+  if (prompt) {
+    Bool goAhead;
     
-      wxPrintDialog *dialog = new wxPrintDialog(parent, printData);
-      goAhead = dialog->UseIt();
-      if (goAhead == FALSE) 
-        return FALSE;
-      delete dialog;
-    }
+    wxPrintDialog *dialog = new wxPrintDialog(parent, printData);
+    dialog->ShowSetupDialog(TRUE);
+    goAhead = dialog->UseIt();
+    if (goAhead == FALSE) 
+      return FALSE;
+    delete dialog;
+  }
 
   // sanity check  
   if (printData->GetFromPage() <= 0 || 
-      printData->GetToPage() <= 0)
-    {
-      return FALSE;
-    }
+      printData->GetToPage() <= 0) {
+    return FALSE;
+  }
   
   // Create a suitable device context  
   wxDC *dc = new wxPrinterDC(printData); 
 
-  // May have pressed cancel.
-  if (!dc || !dc->Ok())
-    {
-      if (dc) delete dc; // PrSetError
-      return FALSE;
-    }
+  if (!dc->Ok()) {
+    if (dc) delete dc; // PrSetError
+    return FALSE;
+  }
 
   GDHandle gThisGDevice = GetMainDevice();
   int logPPIScreenX = (int)Fix2Long((**(**gThisGDevice).gdPMap).hRes);
@@ -407,114 +315,66 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 
   printout->SetPPIScreen(logPPIScreenX, logPPIScreenY);
 
-#ifdef WX_CARBON
   PMResolution res;
   
   PMGetResolution(printData->cPageFormat,&res);
   printout->SetPPIPrinter((int)res.hRes,(int)res.vRes);
-#else  
-  int logPPIPrinterX = (**(printData->macPrData)).prInfo.iHRes;  //::GetDeviceCaps(dc->cdc, LOGPIXELSX);
-  int logPPIPrinterY = (**(printData->macPrData)).prInfo.iVRes;  //::GetDeviceCaps(dc->cdc, LOGPIXELSY);
 
-  printout->SetPPIPrinter(logPPIPrinterX, logPPIPrinterY);
-#endif
   // Set printout parameters  
   printout->SetDC(dc);
 
   ///// TODO figure the equivalent
-  float w, h;
+    float w, h;
   dc->GetSize(&w, &h);
   printout->SetPageSizePixels((int)w, (int)h);
   //dc->GetSizeMM(&w, &h);
   dc->GetSize(&w, &h);
   printout->SetPageSizeMM((int)w, (int)h);
 
-#ifndef WX_CARBON
-  // Create an abort window
-  //wxBeginBusyCursor();
-  wxWindow *win = CreateAbortWindow(parent, printout);
-  //wxYield();
-  //::SetAbortProc(dc->cdc, lpAbortProc);
-  
-  if (!win)
-    {
-      //   wxEndBusyCursor();
-      wxMessageBox("Sorry, could not create an abort dialog.", "Print Error", wxOK, (wxFrame *)parent);
-      delete dc;
-      return FALSE;
-    }
-  abortWindow = win;
-  abortWindow->Show(TRUE);
-  // wxYield();
- 
-#endif
-
-#ifdef WX_CARBON
-  PMSessionSetIdleProc(printData->cPrintSession, printIdleUPP);
-#else
-  (**printData->macPrData).prJob.pIdleProc = printIdleUPP;
-#endif
+  // PMSessionSetIdleProc(printData->cPrintSession, printIdleUPP);
   
   printout->OnBeginPrinting();
   
   Bool keepGoing = TRUE;
 
-  for (int copyCount = 1; copyCount <= printData->GetNoCopies(); copyCount ++)
-    {
-      if (!printout->OnBeginDocument(printData->GetFromPage(), printData->GetToPage()))
-	{
-	  //wxEndBusyCursor();
-	  wxMessageBox("Could not start printing.", "Print Error");
-	  break;
-	}
+  for (int copyCount = 1; copyCount <= printData->GetNoCopies(); copyCount ++) {
+    if (!printout->OnBeginDocument(printData->GetFromPage(), printData->GetToPage())) {
+      //wxEndBusyCursor();
+      wxMessageBox("Could not start printing.", "Print Error");
+      break;
+    }
+    if (abortIt) {
+      printData->SetAbortFlag();
+      wxDialogBox *dialog = new wxDialogBox(parent, "Print Aborted", 0, 0, 400, 400);
+      break;
+    }
+    for (int pn = printData->GetFromPage(); 
+	 keepGoing && 
+	 (pn <= printData->GetToPage()) && printout->HasPage(pn);
+	 pn++) {
       if (abortIt) {
 	printData->SetAbortFlag();
 	wxDialogBox *dialog = new wxDialogBox(parent, "Print Aborted", 0, 0, 400, 400);
+	keepGoing = FALSE;
 	break;
+      } else {      
+	dc->StartPage();
+	printout->OnPrintPage(pn);
+	dc->EndPage();
       }
-      for (int pn = printData->GetFromPage(); 
-	   keepGoing && 
-             (pn <= printData->GetToPage()) && printout->HasPage(pn);
-	   pn++)
-	{
-	  if (abortIt)
-	    {
-	      printData->SetAbortFlag();
-	      wxDialogBox *dialog = new wxDialogBox(parent, "Print Aborted", 0, 0, 400, 400);
-	      keepGoing = FALSE;
-	      break;
-	    }
-	  else
-	    {      
-	      dc->StartPage();
-	      printout->OnPrintPage(pn);
-	      dc->EndPage();
-	    }
-	}
-      printout->OnEndDocument();
     }
-
+    printout->OnEndDocument();
+  }
+  
   printout->OnEndPrinting();
 
-#ifndef WX_CARBON
-  if (abortWindow)
-    {
-      abortWindow->Show(FALSE);
-      delete abortWindow;
-      abortWindow = NULL;
-    }
-#endif
-  
   //wxEndBusyCursor();
+
+  PMRelease(printData->cPrintSession);
+  printData->cPrintSession = NULL;
 
   delete dc;
   
-#ifdef WX_CARBON
-  PMRelease(printData->cPrintSession);
-#else
-  PrClose();
-#endif
-
   delete printData;
 
   return TRUE;
@@ -527,30 +387,6 @@ Bool wxPrinter::PrintDialog(wxWindow *parent)
   delete dialog;
   return 0;
 }
-
-#ifndef WX_CARBON
-// TODO make this a UPP and stuf in THPrintPtr
-static void wxAbortWindowCancel(wxButton& but, wxCommandEvent& event)
-{
-  wxPrinter::abortIt = TRUE;
-  wxPrinter::abortWindow->Show(FALSE);
-  delete wxPrinter::abortWindow;
-  wxPrinter::abortWindow = NULL;
-}
-
-wxWindow *wxPrinter::CreateAbortWindow(wxWindow *parent, wxPrintout *printout)
-{
-  //wxMessageBox("Printing, please wait.", "Printing", wxOK, (wxFrame *)parent);
-
-  wxDialogBox *dialog = new wxDialogBox(parent, "Printing", FALSE, 0, 0, 400, 400);
-  wxMessage *message = new wxMessage(dialog, "Press Cmd-. to stop printing");
-  dialog->Fit();
-
-  dialog->Centre(wxBOTH);
-  
-  return dialog;
-}
-#endif
 
 Bool wxPrinter::Setup(wxWindow *parent)
 {

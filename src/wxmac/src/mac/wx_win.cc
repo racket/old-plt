@@ -1045,10 +1045,10 @@ static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *ev
   e.what = 42;
   e.when = UNSCALE_TIMESTAMP(evt->timeStamp);
   e.modifiers = ((evt->shiftDown ? shiftKey : 0)
-		 + (evt->controlDown ? controlKey : 0)
+		 + (evt->metaDown ? cmdKey : 0)
 		 + (evt->altDown ? optionKey : 0)
 		 + ((evt->leftDown || evt->rightDown) ? btnState : 0)
-		 + (evt->rightDown ? cmdKey : 0));
+		 + (evt->rightDown ? controlKey : 0));
   
   QueueMrEdEvent(&e);
 }

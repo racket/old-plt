@@ -164,7 +164,7 @@ extern "C" {
 void wxCanvasDC::SetCurrentDC(void) // mac platform only
   //-----------------------------------------------------------------------------
 {
-  if (!Ok()) return;
+  if (!Ok() || !cMacDC) return;
   
   dc_set_depth++;
 
@@ -204,6 +204,9 @@ void wxCanvasDC::ReleaseCurrentDC(void)
 void wxCanvasDC::SetCanvasClipping(void)
   //-----------------------------------------------------------------------------
 {
+  if (!Ok() || !cMacDC)
+    return;
+
   if (current_reg) ::DisposeRgn(current_reg);
   if (clipping || onpaint_reg) {
     current_reg = ::NewRgn();
@@ -218,8 +221,6 @@ void wxCanvasDC::SetCanvasClipping(void)
   else if (onpaint_reg)
     ::CopyRgn(onpaint_reg, current_reg);
 
-  if (!Ok()) return;
-  
   wxObject* theCurrentUser = cMacDC->currentUser();
   if (theCurrentUser == this) { 
     // must update
@@ -240,9 +241,8 @@ void wxCanvasDC::SetCanvasClipping(void)
 void wxCanvasDC::GetClippingBox(float *x,float *y,float *w,float *h)
   //-----------------------------------------------------------------------------
 {
-  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-
-  if (current_reg) {
+  if (current_reg && cMacDC) {
+    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
     RgnHandle clipRgn = NewRgn();
     Rect theClipRect;
       
@@ -463,11 +463,14 @@ void wxCanvasDC::wxMacSetClip(void)
     ::ClipRect(&zeroClipRect);
   } else {
     if (current_reg) {
-      RgnHandle rgn = ::NewRgn();
-      ::CopyRgn(current_reg,rgn);
-      ::OffsetRgn(rgn,SetOriginX,SetOriginY);
-      ::SetClip(rgn);
-      DisposeRgn(rgn);
+      if (SetOriginX || SetOriginY) {
+	RgnHandle rgn = ::NewRgn();
+	::CopyRgn(current_reg,rgn);
+	::OffsetRgn(rgn,SetOriginX,SetOriginY);
+	::SetClip(rgn);
+	DisposeRgn(rgn);
+      } else
+	::SetClip(current_reg);
     } else {
       Rect largestClipRect = {-32767, -32767, 32767, 32767};
       ::ClipRect(&largestClipRect);
@@ -480,7 +483,7 @@ void wxCanvasDC::wxMacSetClip(void)
 void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
   /* assumes that SetCurrentDC() has been called, already */  
 {
-  if (!Ok()) return;
+  if (!Ok() || !cMacDC) return;
 
   if (whichTool == cMacCurrentTool)
     return;

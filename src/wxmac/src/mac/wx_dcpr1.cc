@@ -28,37 +28,21 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
 {
   ok = true;
 
-  CGrafPtr theGrafPtr;
   __type = wxTYPE_DC_PRINTER;
 
   cPrintData = printData;
+  if (!printData->cPrintSession) {
+    PMCreateSession(&printData->cPrintSession);
 
-#ifdef WX_CARBON
-  if (PMSessionBeginDocument(cPrintData->cPrintSession, cPrintData->cPrintSettings,cPrintData->cPageFormat) != noErr) {
-    ok = false;
-    return;
-  }  
-  
-  if (PMSessionGetGraphicsContext(cPrintData->cPrintSession, NULL, (void **)&theGrafPtr) != noErr) {
-    ok = false;
-    return;
+    wxPrintDialog *dialog = new wxPrintDialog(NULL, printData);
+    dialog->ShowSetupDialog(TRUE);
+    if (!dialog->UseIt()) {
+      PMRelease(printData->cPrintSession);
+      printData->cPrintSession = NULL;
+    }
+    delete dialog;
   }
 
-#else    
-  prPort = PrOpenDoc(cPrintData->macPrData, 0, 0);
-
-  if (PrError()) {
-    PrCloseDoc(prPort);
-    PrClose();
-    ok = FALSE;
-    return;
-  }
-
-  theGrafPtr = (CGrafPtr)(&(prPort->gPort));
-#endif
-
-  cMacDC = new wxMacDC(theGrafPtr);
-  
   cMacDoingDrawing = FALSE;
 
   clipping = FALSE;
@@ -70,16 +54,11 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
   min_x = 0; min_y = 0;
   max_x = 0; max_y = 0;
 
-#ifdef WX_CARBON
   PMRect pageRect;
   
   PMGetAdjustedPageRect(cPrintData->cPageFormat,&pageRect);
   pixmapWidth = (int)(pageRect.right - pageRect.left);
   pixmapHeight = (int)(pageRect.bottom - pageRect.top);
-#else
-  pixmapWidth = (*cPrintData->macPrData)->prInfo.rPage.right;
-  pixmapHeight = (*cPrintData->macPrData)->prInfo.rPage.bottom;
-#endif
 
   device = wxDEVICE_CANVAS;
   font = wxNORMAL_FONT;
@@ -100,8 +79,7 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
 
   title = NULL;
 
-
-  ok = TRUE;
+  ok = (printData->cPrintSession ? TRUE : FALSE);
   current_pen_join = -1 ;
   current_pen_cap = -1 ;
   current_pen_nb_dash = -1 ;
@@ -113,62 +91,88 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
   current_pen = NULL;
   current_brush = NULL;
   current_text_foreground = new wxColour(wxBLACK);
-  //  current_text_background = NULL;
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);
-
-  int clientWidth, clientHeight;
-  //the_canvas->GetClientSize(&clientWidth, &clientHeight);
-  clientWidth = pixmapWidth;
-  clientHeight = pixmapHeight; // paper
-  Rect paintRect = {0, 0, clientHeight, clientWidth};
-  SetPaintRegion(&paintRect);
-
 }
 
 //-----------------------------------------------------------------------------
 wxPrinterDC::~wxPrinterDC(void)
 {
-  if (ok) {
-#ifdef WX_CARBON
-    PMSessionEndDocument(cPrintData->cPrintSession);
-#else    
-    PrCloseDoc(prPort);
-#endif
+  if (current_phase == 1)
+    EndDoc();
+  if (current_phase == 2)
+    EndPage();
+  if (current_phase == 1)
+    EndDoc();
+
+  if (cPrintData->cPrintSession) {
+    PMRelease(cPrintData->cPrintSession);
+    cPrintData->cPrintSession = NULL;
   }
 }
 
 //-----------------------------------------------------------------------------
 Bool wxPrinterDC::StartDoc(char *message) 
 { 
-  return TRUE; 
+  if (current_phase != 0)
+   return FALSE;
+
+  OSErr rlt;
+  rlt = PMSessionBeginDocument(cPrintData->cPrintSession, cPrintData->cPrintSettings,cPrintData->cPageFormat);
+  if (rlt != noErr) {
+    ok = false;
+    return FALSE;
+  } else
+    current_phase = 1;
+
+  return TRUE;
 }
 
 //-----------------------------------------------------------------------------
-void wxPrinterDC::EndDoc(void) { }
+void wxPrinterDC::EndDoc(void)
+{
+  if (current_phase != 1)
+    return;
+
+  PMSessionEndDocument(cPrintData->cPrintSession);
+}
 
 //-----------------------------------------------------------------------------
 void wxPrinterDC::StartPage(void)
 {
-#ifdef WX_CARBON
-  if (cPrintContext)
-    PMSessionBeginPage(cPrintData->cPrintSession,
-		       cPrintData->cPageFormat,
-		       NULL);
-#else
-  if (prPort)
-    PrOpenPage(prPort, 0); 
-#endif
+  if (current_phase != 1)
+    return;
+
+  if (ok) {
+    CGrafPtr theGrafPtr;
+
+    if (PMSessionBeginPage(cPrintData->cPrintSession,
+			   cPrintData->cPageFormat,
+			   NULL) != noErr) {
+      PMSessionEndDocument(cPrintData->cPrintSession);
+      current_phase = 0;
+      return;
+    } else {
+      if (PMSessionGetGraphicsContext(cPrintData->cPrintSession, NULL, (void **)&theGrafPtr) != noErr) {
+	ok = false;
+	PMSessionEndPage(cPrintData->cPrintSession);
+	PMSessionEndDocument(cPrintData->cPrintSession);
+	current_phase = 0;
+	return;
+      }
+    }
+    
+    current_phase = 2;
+    cMacDC = new wxMacDC(theGrafPtr);
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxPrinterDC::EndPage(void)
 {
-#ifdef WX_CARBON
-  if (cPrintContext)
-    PMSessionEndPage(cPrintData->cPrintSession);
-#else
-  if (prPort)
-    PrClosePage(prPort);
-#endif
+  if (current_phase != 2)
+    return;
+  PMSessionEndPage(cPrintData->cPrintSession);
+  cMacDC = NULL;
+  current_phase = 1;
 }

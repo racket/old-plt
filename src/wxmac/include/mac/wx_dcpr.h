@@ -24,11 +24,7 @@ class wxPrinterDC: public wxCanvasDC
  public:
 
   wxPrintData *cPrintData;
-#ifdef WX_CARBON
-  PMPrintContext cPrintContext;
-#else
-  TPPrPort prPort;
-#endif  
+  int current_phase;
 
   wxPrinterDC(wxPrintData *); // Create a DC corresponding to a canvas
 

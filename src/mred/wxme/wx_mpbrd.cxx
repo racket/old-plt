@@ -3041,10 +3041,6 @@ void wxMediaPasteboard::PrintToDC(wxDC *dc, int page)
     if (page < 0)
       dc->StartPage();
     
-    /* Establish page size: */
-    dc->DrawLine(0, 0, 0, 0);
-    dc->DrawLine(FW, FH, FW, FH);
-
     skipBox = this;
     Draw(dc, -x + hm, -y + vm,
 	 x, y, x + W, y + H,

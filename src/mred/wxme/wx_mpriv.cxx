@@ -2948,10 +2948,6 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
       if (page < 0)
 	dc->StartPage();
       
-      /* Establish page size: */
-      dc->DrawLine(0, 0, 0, 0);
-      dc->DrawLine(FW, FH, FW, FH);
-      
       savesb = skipBox;
       skipBox = this;
       Redraw(dc, y + (i ? 1 : 0), y + h - 1, 0, W, -y + vm, hm, 

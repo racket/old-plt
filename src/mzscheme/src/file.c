@@ -4415,7 +4415,7 @@ find_system_path(int argc, Scheme_Object **argv)
 
     if ((which == id_addon_dir)
 	|| (which == id_pref_dir)
-	|| (which == id_pref_file))
+	|| (which == id_pref_file)) {
       /* Try to get Application Data directory: */
       LPITEMIDLIST items;
       if (SHGetSpecialFolderLocation(NULL, CSIDL_APPDATA, &items) == S_OK) {

@@ -5735,7 +5735,7 @@ static long mz_spawnv(char *command, const char * const *argv,
   else
     cr_flag = 0;
 
-  if (CreateProcessW(WIDE_STRING_COPY(command), WDIE_STRING_COPY(cmdline), 
+  if (CreateProcessW(WIDE_PATH_COPY(command), WDIE_PATH_COPY(cmdline), 
 		     NULL, NULL, 1 /*inherit*/,
 		     cr_flag, NULL, NULL,
 		     &startup, &info)) {
@@ -5957,8 +5957,8 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     }
 
     /* Set real CWD - and hope no other thread changes it! */
-    scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config,
-						     MZCONFIG_CURRENT_DIRECTORY)),
+    scheme_os_setcwd(SCHEME_BYTE_STR_VAL(scheme_get_param(scheme_config,
+							  MZCONFIG_CURRENT_DIRECTORY)),
 		     0);
 
     spawn_status = mz_spawnv(command, (const char * const *)argv,
@@ -6323,9 +6323,9 @@ static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
     if (SCHEME_FALSEP(sv))
       se.lpVerb = NULL;
     else
-      se.lpVerb = WIDE_PATH_COPY(SCHEME_STR_VAL(sv));
-    se.lpFile = WIDE_PATH_COPY(SCHEME_STR_VAL(sf));
-    se.lpParameters = WIDE_PATH_COPY(SCHEME_STR_VAL(sp));
+      se.lpVerb = WIDE_PATH_COPY(SCHEME_BYTE_STR_VAL(sv));
+    se.lpFile = WIDE_PATH_COPY(SCHEME_BYTE_STR_VAL(sf));
+    se.lpParameters = WIDE_PATH_COPY(SCHEME_BYTE_STR_VAL(sp));
     se.lpDirectory = WIDE_PATH_COPY(dir);
     se.nShow = show;
     se.hwnd = NULL;

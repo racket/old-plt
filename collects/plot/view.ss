@@ -50,6 +50,7 @@
         
         get-x-label
         get-y-label
+        get-title
         
         start-plot 
         finish-plot
@@ -247,6 +248,7 @@
       (define (plot)
         (start-plot)
         (set-plot-environment (get-x-min) (get-x-max) (get-y-min) (get-y-max) 0 1)
+        (set-labels (get-x-label) (get-y-label) (get-title))
         (with-handlers ((exn? (lambda (ex) (finish-plot) (raise ex))))
           ((get-renderer) this))
         (finish-plot)

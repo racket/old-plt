@@ -1224,6 +1224,49 @@ int wxsMessageBox(char *message, char *caption, long style, wxWindow *parent)
   return wxNO;
 }
 
+int wxsGetImageType(char *fn)
+{
+  FILE *f;
+  int type;
+  char *expect = NULL;
+
+  f = fopen(fn, "r");
+  if (f) {
+    switch (fgetc(f)) {
+    case 'B':
+      expect = "M";
+      type = wxBITMAP_TYPE_BMP;
+      break;
+    case '#':
+      expect = "define";
+      type = wxBITMAP_TYPE_XBM;
+      break;
+    case '/':
+      expect = "* XPM */";
+      type = wxBITMAP_TYPE_XPM;
+      break;
+    case 'G':
+      expect = "IF8";
+      type = wxBITMAP_TYPE_GIF;
+      break;
+    }
+
+    if (expect) {
+      while (*expect) {
+	if (*expect != fgetc(f)) {
+	  type = 0;
+	  break;
+	}
+	expect++;
+      }
+    }
+
+    fclose(f);
+  }
+
+  return type ? type : wxBITMAP_TYPE_XBM;
+}
+
 void wxsExecute(char **argv)
 {
   int i, c;

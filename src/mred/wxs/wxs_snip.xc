@@ -91,10 +91,10 @@
 @INCLUDE wxs_snip.xci
 
 // This isn't `pathname' because it expands internally
-@ "load-file" : void LoadFile(nstring,SYM[bitmapType],bool=FALSE,bool=TRUE);
+@ "load-file" : void LoadFile(nstring,SYM[bitmapType]=0,bool=FALSE,bool=TRUE);
 
 @ "get-filename" : nstring GetFilename(bool?);
-@ "get-filetype" : long GetFiletype();
+@ "get-filetype" : SYM[bitmapType] GetFiletype();
 
 @ "set-bitmap" : void SetBitmap(wxBitmap!);
 

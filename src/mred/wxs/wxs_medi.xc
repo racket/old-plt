@@ -70,6 +70,8 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @SYM "postscript" : 1
 @ENDSYMBOLS
 
+@INCLUDE wxs_bmt.xci
+
 @CLASSBASE wxMediaBuffer "editor" : "object"
 @INTERFACE "editor"
 
@@ -159,7 +161,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ "get-filename" : nstring GetFilename(bool?=NULL);
 
 @ "insert-box" : void InsertBox(SYM[bufferType]=wxEDIT_BUFFER);
-@ "insert-image" : void InsertImage(nstring=NULL,long=-1,bool=FALSE,bool=TRUE);
+@ "insert-image" : void InsertImage(nstring=NULL,SYM[bitmapType]=0,bool=FALSE,bool=TRUE);
 
 @ "print" : void Print(nstring=NULL,bool=TRUE,bool=FALSE,SYM[printMethod]=0);
 

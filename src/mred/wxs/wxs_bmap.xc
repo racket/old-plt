@@ -22,14 +22,14 @@
 	
 @CREATOR (char[]/bList/ubList/cList,int,int,int=1); : : /ZEROERR[1."width"]|ZEROERR[2."height"]|NONZERODEPTH|LISTENOUGH|glueUncountedListSet[char.0.0.METHODNAME("bitmap%","initialization")]// <> character list
 @CREATOR (int,int,int=-1); : : /ZEROERR[0."width"]|ZEROERR[1."height"] <> width/height
-@CREATOR (pathname,SYM[bitmapType]); <> pathname
+@CREATOR (pathname,SYM[bitmapType]=0); <> pathname
 
 @ "get-depth" : int GetDepth();
 @ "get-height" : int GetHeight();
 @ "get-width" : int GetWidth();
 @ "ok?" : bool Ok();
 
-@ "load-file" : void LoadFile(pathname,SYM[bitmapType]);
+@ "load-file" : void LoadFile(pathname,SYM[bitmapType]=0);
 @ "save-file" : void SaveFile(pathname,int);
 
 @END

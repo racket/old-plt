@@ -19,66 +19,62 @@
 
 
 #ifndef wx_mac
-#define wxBITMAP_TYPE_PICT 101
-#define wxBITMAP_TYPE_PICT_RESOURCE 100
+# define wxBITMAP_TYPE_PICT 101
 #endif
 
+#define wxBITMAP_TYPE_UNKNOWN 0
+
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_GIF_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_XBM_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_XPM_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_UNKNOWN_sym = NULL;
 
 static void init_symset_bitmapType(void) {
   bitmapType_wxBITMAP_TYPE_BMP_sym = scheme_intern_symbol("bmp");
-  bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym = scheme_intern_symbol("bmp-resource");
   bitmapType_wxBITMAP_TYPE_GIF_sym = scheme_intern_symbol("gif");
   bitmapType_wxBITMAP_TYPE_XBM_sym = scheme_intern_symbol("xbm");
   bitmapType_wxBITMAP_TYPE_XPM_sym = scheme_intern_symbol("xpm");
   bitmapType_wxBITMAP_TYPE_PICT_sym = scheme_intern_symbol("pict");
-  bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym = scheme_intern_symbol("pict-resource");
+  bitmapType_wxBITMAP_TYPE_UNKNOWN_sym = scheme_intern_symbol("unknown");
 }
 
 static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
-  if (!bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) init_symset_bitmapType();
+  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
   if (0) { }
   else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
-  else if (v == bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym) { return wxBITMAP_TYPE_BMP_RESOURCE; }
   else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
   else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
   else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
   else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
-  else if (v == bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) { return wxBITMAP_TYPE_PICT_RESOURCE; }
+  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
   if (where) scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_bitmapType(Scheme_Object *v, const char *where) {
-  if (!bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) init_symset_bitmapType();
+  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
   if (0) { }
   else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return 1; }
-  else if (v == bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym) { return 1; }
   else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return 1; }
   else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return 1; }
   else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return 1; }
   else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return 1; }
-  else if (v == bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return 1; }
   if (where) scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_bitmapType(int v) {
-  if (!bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) init_symset_bitmapType();
+  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
   switch (v) {
   case wxBITMAP_TYPE_BMP: return bitmapType_wxBITMAP_TYPE_BMP_sym;
-  case wxBITMAP_TYPE_BMP_RESOURCE: return bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym;
   case wxBITMAP_TYPE_GIF: return bitmapType_wxBITMAP_TYPE_GIF_sym;
   case wxBITMAP_TYPE_XBM: return bitmapType_wxBITMAP_TYPE_XBM_sym;
   case wxBITMAP_TYPE_XPM: return bitmapType_wxBITMAP_TYPE_XPM_sym;
   case wxBITMAP_TYPE_PICT: return bitmapType_wxBITMAP_TYPE_PICT_sym;
-  case wxBITMAP_TYPE_PICT_RESOURCE: return bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym;
+  case wxBITMAP_TYPE_UNKNOWN: return bitmapType_wxBITMAP_TYPE_UNKNOWN_sym;
   default: return NULL;
   }
 }
@@ -178,7 +174,7 @@ class os_wxBitmap : public wxBitmap {
 
   os_wxBitmap(Scheme_Object * obj, char* x0, int x1, int x2, int x3 = 1);
   os_wxBitmap(Scheme_Object * obj, int x0, int x1, int x2 = -1);
-  os_wxBitmap(Scheme_Object * obj, pathname x0, int x1);
+  os_wxBitmap(Scheme_Object * obj, pathname x0, int x1 = 0);
   ~os_wxBitmap();
 };
 
@@ -243,7 +239,10 @@ static Scheme_Object *os_wxBitmapLoadFile(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   x0 = (pathname)objscheme_unbundle_pathname(p[0], "load-file in bitmap%");
-  x1 = unbundle_symset_bitmapType(p[1], "load-file in bitmap%");
+  if (n > 1) {
+    x1 = unbundle_symset_bitmapType(p[1], "load-file in bitmap%");
+  } else
+    x1 = 0;
 
   
   ((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->LoadFile(x0, x1);
@@ -330,10 +329,13 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x1;
 
     
-    if (n != 2) 
-      scheme_wrong_count("initialization in bitmap% (pathname case)", 2, 2, n, p);
+    if ((n < 1) ||(n > 2)) 
+      scheme_wrong_count("initialization in bitmap% (pathname case)", 1, 2, n, p);
     x0 = (pathname)objscheme_unbundle_pathname(p[0], "initialization in bitmap% (pathname case)");
-    x1 = unbundle_symset_bitmapType(p[1], "initialization in bitmap% (pathname case)");
+    if (n > 1) {
+      x1 = unbundle_symset_bitmapType(p[1], "initialization in bitmap% (pathname case)");
+    } else
+      x1 = 0;
 
     
     realobj = new os_wxBitmap(obj, x0, x1);
@@ -395,7 +397,7 @@ if (os_wxBitmap_class) {
   os_wxBitmap_class = objscheme_def_prim_class(env, "bitmap%", "object%", os_wxBitmap_ConstructScheme, 6);
 
  scheme_add_method_w_arity(os_wxBitmap_class, "save-file", os_wxBitmapSaveFile, 2, 2);
- scheme_add_method_w_arity(os_wxBitmap_class, "load-file", os_wxBitmapLoadFile, 2, 2);
+ scheme_add_method_w_arity(os_wxBitmap_class, "load-file", os_wxBitmapLoadFile, 1, 2);
  scheme_add_method_w_arity(os_wxBitmap_class, "ok?", os_wxBitmapOk, 0, 0);
  scheme_add_method_w_arity(os_wxBitmap_class, "get-width", os_wxBitmapGetWidth, 0, 0);
  scheme_add_method_w_arity(os_wxBitmap_class, "get-height", os_wxBitmapGetHeight, 0, 0);

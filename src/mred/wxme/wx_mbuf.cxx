@@ -24,11 +24,6 @@
 #define  Uses_wxPrintSetup /* for wx_xt */
 #include "wx_utils.h"
 #include "wx_win.h"
-#include "wx_menu.h"
-#include "wx_dialg.h"
-#include "wx_buttn.h"
-#include "wx_rbox.h"
-#include "wx_check.h"
 #include "wx_dcps.h"
 #ifndef OLD_WXWINDOWS
 # include "wx_cmdlg.h"
@@ -488,32 +483,6 @@ static void MediaStyleNotify(wxStyle *which, wxMediaBuffer *media)
 
 /******************************************************************/
 
-#define NUM_IMAGE_TYPES 4
-
-static long image_type[NUM_IMAGE_TYPES]
-  = {wxBITMAP_TYPE_BMP,
-     wxBITMAP_TYPE_GIF,
-     wxBITMAP_TYPE_XBM,
-     wxBITMAP_TYPE_XPM};
-static char *image_type_name[NUM_IMAGE_TYPES]
-  = {"Windows Bitmap", "GIF", "X Bitmap", "XPM"};
-static char *image_extension[NUM_IMAGE_TYPES]
-  = {"bmp", "gif", "xbm", "xpm"};
-
-static int image_hit_ok;
-
-static void wxmbSetCancel(wxObject& obj, wxEvent& WXUNUSED(evt))
-{
-  image_hit_ok = 0;
-  ((wxButton *)&obj)->GetParent()->Show(FALSE);
-}
-
-static void wxmbSetOK(wxObject& obj, wxEvent& evt)
-{
-  wxmbSetCancel(obj, evt);
-  image_hit_ok = 1;
-}
-
 int wxMediaBuffer::AppendEditItems(wxMenu *, int)
 {
   return 0;
@@ -605,81 +574,13 @@ wxSnip *wxMediaBuffer::OnNewBox(int type)
   return snip;
 }
 
-#ifdef wx_msw
-#define WILDCARD "*.*"
-#else
-#define WILDCARD "*"
-#endif
-
 void wxMediaBuffer::InsertImage(char *filename, long type, Bool relative, Bool inlineImg)
 {
-  wxDialogBox *dial;
-  wxRadioBox *boxes;
-  wxCheckBox *inlineBox;
-  int i, len;
-  char extension[10];
-    
   if (!filename)
     filename = GetFile(NULL);
 
   if (!filename)
     return;
-
-  for (i = 0; i < NUM_IMAGE_TYPES; i++)
-    if (type == image_type[i])
-      break;
-
-  if (i >=  NUM_IMAGE_TYPES) {
-    dial = new wxDialogBox((wxFrame *)NULL, "Image Type", TRUE);
-    
-    len = strlen(filename);
-    for (i = len; --i; )
-      if (filename[i] == '.')
-	break;
-    
-    if (i + 10 > len) {
-      strcpy(extension, filename + i + 1);
-      for (i = 0; extension[i]; i++)
-	extension[i] = tolower(extension[i]);
-    } else
-      extension[0] = 0;
-    
-    dial->SetLabelPosition(wxVERTICAL);
-    boxes = new wxRadioBox(dial, NULL,
-			   "Image format:", -1, -1, -1, -1,
-			   NUM_IMAGE_TYPES, image_type_name,
-			   0, wxVERTICAL);
-    
-    for (i = 0; i < NUM_IMAGE_TYPES; i++)
-      if (!strcmp(image_extension[i], extension))
-	boxes->SetSelection(i);
-    
-    dial->NewLine();
-
-    inlineBox = new wxCheckBox(dial, NULL, "Inline Image");
-    if (inlineImg)
-      inlineBox->SetValue(1);
-    
-    dial->NewLine();
-    
-    (void)(new wxButton(dial, (wxFunction)wxmbSetCancel, "Cancel"));
-    (void)(new wxButton(dial, (wxFunction)wxmbSetOK, "OK"));
-    
-    dial->NewLine();
-    
-    dial->Fit();
-    dial->Center(wxBOTH);
-    dial->Show(TRUE);
-    
-    inlineImg = inlineBox->GetValue();
-
-    type = image_type[boxes->GetSelection()];
-
-    delete dial;
-
-    if (!image_hit_ok)
-      return;
-  }
 
   wxImageSnip *snip;
       
@@ -2036,6 +1937,12 @@ void wxMediaBuffer::OnDisplaySize(void)
 {
   /* Do nothing */
 }
+
+#ifdef wx_msw
+#define WILDCARD "*.*"
+#else
+#define WILDCARD "*"
+#endif
 
 char *wxMediaBuffer::GetFile(char *path)
 {

@@ -1,15 +1,15 @@
 
 #ifndef wx_mac
-#define wxBITMAP_TYPE_PICT 101
-#define wxBITMAP_TYPE_PICT_RESOURCE 100
+# define wxBITMAP_TYPE_PICT 101
 #endif
+
+#define wxBITMAP_TYPE_UNKNOWN 0
 
 @BEGINSYMBOLS bitmapType > ONE
 @SYM "bmp" : wxBITMAP_TYPE_BMP
-@SYM "bmp-resource" : wxBITMAP_TYPE_BMP_RESOURCE
 @SYM "gif" : wxBITMAP_TYPE_GIF
 @SYM "xbm" : wxBITMAP_TYPE_XBM
 @SYM "xpm" : wxBITMAP_TYPE_XPM
 @SYM "pict" : wxBITMAP_TYPE_PICT
-@SYM "pict-resource" : wxBITMAP_TYPE_PICT_RESOURCE
+@SYM "unknown" : wxBITMAP_TYPE_UNKNOWN
 @ENDSYMBOLS

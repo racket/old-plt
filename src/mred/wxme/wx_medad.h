@@ -197,7 +197,7 @@ class wxMediaBuffer : public wxObject
   inline wxSnip *GetFocusSnip(void) { return caretSnip; }
 
   void InsertBox(int type = wxEDIT_BUFFER);
-  void InsertImage(char *filename = NULL, long type = -1, 
+  void InsertImage(char *filename = NULL, long type = 0, 
 		   Bool relative = FALSE, Bool inlineImg = TRUE);
 
   virtual wxSnip *OnNewBox(int type);

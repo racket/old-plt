@@ -142,7 +142,7 @@
       (define-struct (not-boolean struct:exn) (val))
       (define signal-not-boolean? (make-parameter #t))
       (define not-boolean-error-format
-	"Value ~e is neither #t nor #f")
+	"value ~e is neither #t nor #f")
 
       (define annotate
 	(lambda (expr)
@@ -198,15 +198,15 @@
 	      (if (z:language<=? 'structured)
 		`(#%let ((if-test-v ,(wrap (z:if-form-test expr)
 				       (annotate (z:if-form-test expr)))))
-		   (#%if (#%eq? if-test-v #t)
-		     ,(annotate (z:if-form-then expr))
-		     (#%if (#%eq? if-test-v #f)
-		       ,(annotate (z:if-form-else expr))
-		       (#%raise (,make-not-boolean
-				  (#%format ,not-boolean-error-format
-				    if-test-v)
-				  ((#%debug-info-handler))
-				  if-test-v)))))
+		   (#%if (#%boolean? if-test-v)
+		     (#%if if-test-v
+		       ,(annotate (z:if-form-then expr))
+		       ,(annotate (z:if-form-else expr)))
+		     (#%raise (,make-not-boolean
+				(#%format ,not-boolean-error-format
+				  if-test-v)
+				((#%debug-info-handler))
+				if-test-v))))
 		`(#%if ,(annotate (z:if-form-test expr))
 		   ,(annotate (z:if-form-then expr))
 		   ,(annotate (z:if-form-else expr))))]

@@ -16,7 +16,11 @@ types:
 (require-library "spidey.ss")
 
 (define-signature GUI^ (paint-by-numbers-canvas%))
-(define-signature MAIN^ (canvas 
-			 problem
-			 (struct problem (name rows cols))))
-(define-signature SOLVE^ (solve))
+
+(define-signature SOLVE^
+  (solve)) ; : ((list-of (list-of nat)) (list-of (list-of nat)) -> void)
+
+(define-signature BOARD^
+  (setup-progress ; : (nat -> (-> void))
+   set-entry      ; : (nat nat (union 'on 'off 'unknown) -> void)
+   get-entry))    ; : (nat nat -> (union 'on 'off 'unknown))

@@ -1,4 +1,4 @@
-(unit/sig MAIN^
+(unit/sig BOARD^
 
   (import [GUI : GUI^]
 	  [SOLVE : SOLVE^]
@@ -43,7 +43,12 @@
     (make-object button%
       "Solve"
       top-panel
-      (lambda (button evt) (SOLVE:solve))))
+      (lambda (button evt)
+	(send canvas all-unknown)
+	(send canvas on-paint)
+	(SOLVE:solve
+	 (problem-rows problem)
+	 (problem-cols problem)))))
   
   (define canvas #f)
   (define problem #f)
@@ -120,11 +125,33 @@
      [(null? ps) (set-problem (car problems))
 		 (send choice set-selection 0)]
      [else (let ([problem (car ps)])
-	     (if (string=? "Izay" (problem-name problem))
+	     (if (string=? "John" (problem-name problem))
 		 (begin (set-problem problem)
 			(send choice set-selection n))
 		 (loop (+ n 1)
 		       (cdr ps))))]))
+
+  (define (set-entry i j nv)
+    (send canvas set-rect i j nv)
+    (send canvas paint-rect i j))
+
+  (define (get-entry i j)
+    (send canvas get-rect i j))
+
+  (define (setup-progress max)
+    (let* ([f (parameterize ([current-eventspace (make-eventspace)])
+		(make-object frame% "Solver Setup Progress"))]
+	   [g (make-object gauge% #f max f)]
+	   [counter 0])
+      (send g min-width 300)
+      (send f show #t)
+      (lambda ()
+	(set! counter (+ 1 counter))
+	(cond
+	 [(= counter max)
+	  (collect-garbage)
+	  (send f show #f)]
+	 [else (send g set-value counter)]))))
 
   (send frame show #t)
   (yield semaphore))

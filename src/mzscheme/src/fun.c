@@ -1586,10 +1586,12 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
 
   type = SCHEME_TYPE(p);
   if (type == scheme_prim_type) {
-    *len = strlen(((Scheme_Primitive_Proc *)p)->name);
+    if (((Scheme_Primitive_Proc *)p)->name)
+      *len = strlen(((Scheme_Primitive_Proc *)p)->name);
     return ((Scheme_Primitive_Proc *)p)->name;
   } else if (type == scheme_closed_prim_type) {
-    *len = strlen(((Scheme_Closed_Primitive_Proc *)p)->name);
+    if (((Scheme_Closed_Primitive_Proc *)p)->name)
+      *len = strlen(((Scheme_Closed_Primitive_Proc *)p)->name);
     return ((Scheme_Closed_Primitive_Proc *)p)->name;
   } else if (type == scheme_cont_type || type == scheme_escaping_cont_type) {
     return NULL;

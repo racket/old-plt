@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DialogBox.h,v 1.3 1999/11/25 16:32:23 mflatt Exp $
+ * $Id: DialogBox.h,v 1.4 2000/01/12 17:23:00 mflatt Exp $
  *
  * Purpose: dialog box
  *
@@ -41,12 +41,12 @@ public:
 		int x=-1, int y=-1, int width=500, int height=500,
 		long style=wxDEFAULT_DIALOG_STYLE, char *name="dialogBox");
 
-    void SetModal(Bool mod) { modal = mod; }
     Bool Show(Bool show);
 
     Bool ModalShowing() { return modal_showing; }
+    Bool ModalPleaseClose() { return modal_please_close; }
 private:
-    Bool modal, modal_showing;
+    Bool modal_please_close, modal_showing;
 };
 
 #endif // DialogBox_h

@@ -343,8 +343,6 @@
 		 (setup-fprintf port "  ~s" x))))
 	 errors))
 
-      (use-compiled-file-kinds 'all)
-
       (define (make-it desc compile-collection)
 	(for-each (lambda (cc)
 		    (record-error

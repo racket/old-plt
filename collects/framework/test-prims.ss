@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.20 1998/05/12 03:10:21 robby Exp $
+;; $Id: test-prims.ss,v 1.1 1998/11/19 17:23:42 robby Exp $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -8,10 +8,23 @@
 ;; originally by Mark Krentel
 ;; modified by Paul Steckler, Robby Findler
 
-(unit/sig mred:test:primitives^
+(unit/sig framework:test:primitives^
   
-  (import [keymap    : framework:keymap^]
-	  [test      : mred:test:run^])
+  (import [mred : mred-interfaces^]
+	  [keymap : framework:keymap^]
+	  [test : framework:test:run^])
+  
+  (define current-eventspaces
+    (make-parameter (lambda () (list (mred:current-eventspace)))))
+
+  (define (get-active-frame)
+    (ormap mred:get-top-level-focus-window
+	   ((current-eventspaces))))
+
+  (define (get-focused-window)
+    (let ([f (get-active-frame)])
+      (and f
+	   (send f get-focus-window))))
 
   (define arg-error error)  ;; naive error handling (for now).
   (define run-error error)
@@ -38,7 +51,7 @@
   
   (define in-active-frame?
     (lambda (window)
-      (let ([frame  (test:get-active-frame)])
+      (let ([frame  (get-active-frame)])
 	(let loop ([window  window])
 	  (cond [(null? window)      #f]
 		[(eq? window frame)  #t]
@@ -72,7 +85,7 @@
     (lambda (obj-class b-desc)
       (cond
 	[(string? b-desc)
-	 (let* ([active-frame (test:get-active-frame)]
+	 (let* ([active-frame (get-active-frame)]
 		[_ (unless active-frame
 		     (run-error object-tag
 				"could not find object: ~a, no active frame" 
@@ -84,7 +97,7 @@
 			      [(and (is-a? child obj-class)
 				    (equal? (send child get-label) b-desc))
 			       child]
-			      [(is-a? child area-container<%>) (loop child)]
+			      [(is-a? child mred:area-container<%>) (loop child)]
 			      [else #f]))
 			  (ivar panel children)))])
 	   (if found
@@ -105,7 +118,7 @@
     (lambda (error-tag event-sym find-ctrl)
       (test:run-one
        (lambda ()
-	 (let ([event (make-object control-event% event-sym)]
+	 (let ([event (make-object mred:control-event% event-sym)]
 	       [ctrl (find-ctrl)])
 	   (cond
 	     [(not (send ctrl is-shown?))
@@ -124,14 +137,14 @@
     (control-action
      'test:button-push
      'button
-     (find-object button% button)))
+     (find-object mred:button% button)))
 
 ;; 
 ;; CHECK-BOX 
 ;;
 
   (define (set-check-box! in-cb state) 
-    (let ([cb (find-object check-box% in-cb)])
+    (let ([cb (find-object mred:check-box% in-cb)])
       (send cb set-value state)
       (control-action
        'test:set-check-box!
@@ -142,7 +155,7 @@
 
 ; set-choice! : ((instance in-choice%) (union string number) -> void)
   (define (set-choice! in-choice str)
-    (let ([choice (find-object choice% in-choice)])
+    (let ([choice (find-object mred:choice% in-choice)])
       (cond
 	[(number? str) (send choice set-selection str)]
 	[(string? str) (send choice set-string-selection str)]
@@ -191,7 +204,7 @@
       [else
        (test:run-one
 	(lambda ()
-	  (let ([window (test:get-focused-window)])
+	  (let ([window (get-focused-window)])
 	    (cond
 	      [(not window)
 	       (run-error key-tag "no focused window")]
@@ -215,7 +228,7 @@
 	    [(send (car l) pre-on-char window event) #f]
 	    [else (loop (cdr l))])))
   
-  ;; Make full wx:key-event% object.
+  ;; Make full mred:key-event% object.
   ;; Shift is determined implicitly from key-code.
   ;; Alt, Meta, Control come from modifier-list.
   ;; get-alt-down, etc are #f unless explicitly set to #t.
@@ -223,16 +236,16 @@
   
   (define make-key-event
     (lambda (key window modifier-list)
-      (let ([event (make-object key-event%)])
+      (let ([event (make-object mred:key-event%)])
 	(send event set-key-code key)
 	(send event set-event-object window)
 	(send event set-time-stamp (time-stamp))
-	(set-key-modifiers event int modifier-list)
+	(set-key-modifiers event key modifier-list)
 	event)))
   
   (define set-key-modifiers
-    (lambda (event int modifier-list)
-      (when (shifted? int) (send event set-shift-down #t))
+    (lambda (event key modifier-list)
+      (when (shifted? key) (send event set-shift-down #t))
       (let loop ([l  modifier-list])
 	(unless (null? l)
 	  (let ([mod  (car l)])
@@ -253,17 +266,13 @@
   ;; vector-ref is faster than member.
   
   (define shifted?
-    (let* 
-	([ascii-size  256]
-	 [keys     (make-vector ascii-size #f)]
-	 [letters  (list  "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" 
-			  "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z")]
-	 [set-shifted
-	  (lambda (str) 
-	    (vector-set! keys (char->integer (string-ref str 0)) #t))])
-      (for-each set-shifted letters)
-      (for-each set-shifted (keymap:get-shifted-key-list))
-      (lambda (int) (and (< 0 int ascii-size) (vector-ref keys int)))))
+    (let* ([letters  (list  #\A #\B #\C #\D #\E #\F #\G #\H #\I #\J #\K #\L #\M 
+			    #\N #\O #\P #\Q #\R #\S #\T #\U #\V #\W #\X #\Y #\Z)]
+	   [all #f])
+      (lambda (key)
+	(unless all
+	  (set! all (append letters (map (lambda (s) (string-ref s 0)) (keymap:get-shifted-key-list)))))
+	(memq key all))))
     
   ;;
   ;; MENU ITEMS 
@@ -287,7 +296,7 @@
 	[else
 	 (test:run-one
 	  (lambda ()
-	    (let* ([frame    (test:get-active-frame)]
+	    (let* ([frame    (get-active-frame)]
 		   [item-id  (menu-item-id frame menu item)])
 	      (send frame command item-id))))])))
 
@@ -348,7 +357,7 @@
 	[else
 	 (test:run-one
 	  (lambda ()
-	    (let ([window  (test:get-focused-window)])
+	    (let ([window  (get-focused-window)])
 	      (cond 
 		[(not window)
 		 (run-error mouse-tag "no focused window")]
@@ -387,7 +396,7 @@
   
   (define make-mouse-event
     (lambda (type window x y modifier-list)
-      (let ([event (make-object mouse-event% (mouse-type-const type))])
+      (let ([event (make-object mred:mouse-event% (mouse-type-const type))])
 	(send event set-event-object window)
 	(when (and (pair? type) (not (eq? (cadr type) 'up)))
 	  (set-mouse-modifiers event (list (car type))))
@@ -466,15 +475,15 @@
     (let ([tag  'test:new-window])
       (lambda (new-window)
 	(cond
-	  [(not (is-a? new-window top-level-window<%>))
-	   (arg-error tag "new-window is not a top-level-window<%>")]
+	  [(not (is-a? new-window mred:top-level-window<%>))
+	   (arg-error tag "new-window is not a mred:top-level-window<%>")]
 	  [else
 	   (test:run-one
 	    (lambda ()
 	      (let
-		  ([old-window  (test:get-focused-window)]
-		   [leave   (make-object mouse-event% 'leave)]
-		   [enter   (make-object mouse-event% 'enter)]
+		  ([old-window  (get-focused-window)]
+		   [leave   (make-object mred:mouse-event% 'leave)]
+		   [enter   (make-object mred:mouse-event% 'enter)]
 		   [root    (car (ancestor-list new-window))])
 		(send leave  set-x 0)   (send leave  set-y 0)
 		(send enter  set-x 0)   (send enter  set-y 0)

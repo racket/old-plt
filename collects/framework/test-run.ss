@@ -1,5 +1,5 @@
 ;;
-;; $Id: strun.ss,v 1.11 1998/01/27 21:54:17 robby Exp $
+;; $Id: test-run.ss,v 1.1 1998/11/19 17:23:42 robby Exp $
 ;;
 ;; Run one fake action in the real handler thread.
 ;; This should be the only file that needs to worry about multiple
@@ -22,19 +22,7 @@
 
 (unit/sig framework:test:run^
   
-  (import [mred : mred^])
-  
-  (define current-eventspaces
-    (make-parameter (lambda () (list (current-eventspace)))))
-
-  (define (get-active-frame)
-    (ormap get-top-level-focus-window
-	   ((current-eventspaces))))
-
-  (define (get-focused-window)
-    (let ([f (get-active-frame)])
-      (and f
-	   (send f get-focus-window))))
+  (import [mred : mred-interfaces^])
 
   (define initial-run-interval 100)  ;; milliseconds
   
@@ -65,7 +53,7 @@
   
   (define timer-callback%
     (class mred:timer% (thunk)
-      (public [notify  thunk])
+      (override [notify thunk])
       (sequence (super-init))))
   
   (define install-timer
@@ -164,7 +152,7 @@
 	(letrec
 	    ([start
 	      (lambda ()
-		(yield)  ;; flush out real events.
+		(mred:yield)  ;; flush out real events.
 		(install-timer (run-interval) return)
 		(unless (is-exn?)
 		  (begin-action)

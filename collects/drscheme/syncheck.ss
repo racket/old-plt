@@ -1853,6 +1853,14 @@
                    (annotate-tail-position/last sexp (syntax->list (syntax (bodies ...))) tail-ht)
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 
+                ;; treat a single body expression specially, since this has
+                ;; different tail behavior.
+                [(begin0 body)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (annotate-tail-position sexp (syntax body) tail-ht)
+                   (loop (syntax body)))]
+                
                 [(begin0 bodies ...)
                  (begin
                    (annotate-raw-keyword sexp)

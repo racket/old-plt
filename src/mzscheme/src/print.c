@@ -712,7 +712,8 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 #endif
 
   if (ht && HAS_SUBSTRUCT(obj)) {
-    Scheme_Bucket *b = scheme_bucket_from_table(ht, (const char *)obj);
+    Scheme_Bucket *b;
+    b = scheme_bucket_from_table(ht, (const char *)obj);
     
     if ((long)b->val != 1) {
       if (compact) {
@@ -858,12 +859,14 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 	print_this_string(p, p->quick_print_struct ? "#(" : "#<", 2);
 	{
 	  int l;
-	  const char *s = scheme_symbol_name_and_size(name, &l, 
-						      (p->quick_print_struct
-						       ? SNF_FOR_TS
-						       : (p->quick_can_read_pipe_quote 
-							  ? SNF_PIPE_QUOTE
-							  : SNF_NO_PIPE_QUOTE)));
+	  const char *s;
+
+	  s = scheme_symbol_name_and_size(name, &l, 
+					  (p->quick_print_struct
+					   ? SNF_FOR_TS
+					   : (p->quick_can_read_pipe_quote 
+					      ? SNF_PIPE_QUOTE
+					      : SNF_NO_PIPE_QUOTE)));
 	  print_this_string(p, s, l);
 	}
 
@@ -926,7 +929,8 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 	print_escaped(p, escaped, obj, ht);
       } else {
 	int len;
-	const char *s = scheme_get_proc_name(obj, &len, 0);
+	const char *s;
+	s = scheme_get_proc_name(obj, &len, 0);
 	
 	print_named(obj, "procedure", s, len, p);
       }
@@ -939,7 +943,8 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 	print_escaped(p, escaped, obj, ht);
       else {
 	int len;
-	const char *cl = scheme_get_class_name(((Scheme_Class_Object *)obj)->sclass, &len);
+	const char *cl;
+	cl = scheme_get_class_name(((Scheme_Class_Object *)obj)->sclass, &len);
 	
 	print_named(obj, "object", cl, len, p);
       }
@@ -951,7 +956,8 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 	print_escaped(p, escaped, obj, ht);
       else {
 	int len;
-	const char *cl = scheme_get_class_name(obj, &len);
+	const char *cl;
+	cl = scheme_get_class_name(obj, &len);
 	
 	print_named(obj, "class", cl, len, p);
       }
@@ -963,7 +969,8 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 	print_escaped(p, escaped, obj, ht);
       else {
 	int len;
-	const char *cl = scheme_get_interface_name(obj, &len);
+	const char *cl;
+	cl = scheme_get_interface_name(obj, &len);
 	
 	print_named(obj, "interface", cl, len, p);
       }
@@ -976,7 +983,8 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 	print_escaped(p, escaped, obj, ht);
       else {
 	int len;
-	const char *cl = scheme_get_unit_name(obj, &len);
+	const char *cl;
+	cl = scheme_get_unit_name(obj, &len);
 	
 	print_named(obj, "unit", cl, len, p);
       }
@@ -1171,8 +1179,9 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
       if (compact)
 	print_escaped(p, escaped, obj, ht);
       else {
-	char *s = scheme_get_type_name((SCHEME_TYPE(obj)));
+	char *s;
 	long len = -1;
+	s = scheme_get_type_name((SCHEME_TYPE(obj)));
 	print_this_string(p, "#", 1);
 #ifdef SGC_STD_DEBUGGING
 	len = strlen(s) - 1;

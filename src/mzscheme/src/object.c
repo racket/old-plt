@@ -150,6 +150,7 @@ typedef char slotkind;
 
 typedef struct Scheme_Interface {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short num_names, num_supers;
   short for_class; /* 1 => impl iff subclass, 0 => normal interface */
   Scheme_Object **names;
@@ -175,6 +176,7 @@ typedef struct Scheme_Interface_Assembly {
 
 typedef struct Scheme_Class {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
 
   ClassVariable *ivars; /* Order determines order of evaluation */
 
@@ -263,6 +265,7 @@ typedef struct {
 typedef struct Internal_Object {
   struct {
     Scheme_Type type;
+    MZ_HASH_KEY_EX
     Scheme_Object *sclass;
   } o;
   Scheme_Object *slots[1];
@@ -380,7 +383,7 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 	scheme_dup_symbol_check(r, where, old[i], what, form, 0);
   }
 
-  pos = (((long)symbol) >> 2) % r->scheck_size;
+  pos = (scheme_hash_key(symbol) >> 2) % r->scheck_size;
   if (pos < 0)
     pos = -pos;
   while(r->scheck_hash[pos]) {
@@ -472,11 +475,11 @@ static Scheme_Object *NullClass(void)
 
 static int CompareObjectPtrs(Scheme_Object **a, Scheme_Object **b)
 {
-  return ((long)*a) - ((long)*b);
+  return (scheme_hash_key(*a)) - (scheme_hash_key(*b));
 }
 
-#define SEQUALS(a, b) (((unsigned long)a) == ((unsigned long)b))
-#define SLESSTHAN(a, b) (((unsigned long)a) < ((unsigned long)b))
+#define SEQUALS(a, b) (scheme_hash_key(a) == scheme_hash_key(b))
+#define SLESSTHAN(a, b) (scheme_hash_key(a) < scheme_hash_key(b))
 
 static int MergeArray(int ac, Scheme_Object **ak, Scheme_Object **a, short *as,
 		      int bc, Scheme_Object **bk, Scheme_Object **b, short *bs,
@@ -2731,7 +2734,7 @@ static int DoFindName(int num_public, Scheme_Object **pn, Scheme_Object *symbol)
       return p;
     if (w == 1)
       return -1;
-    if (((long)n) < ((long)symbol)) {
+    if (scheme_hash_key(n) < scheme_hash_key(symbol)) {
       w = o + w - p;
       o = p;
     } else

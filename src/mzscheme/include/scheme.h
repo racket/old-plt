@@ -53,6 +53,12 @@
 # define MZ_USE_SINGLE_FLOATS
 #endif
 
+#ifdef MZ_PRECISE_GC
+# define MZ_HASH_KEY_EX  short keyex;
+#else
+# define MZ_HASH_KEY_EX /**/
+#endif
+
 #include <stdio.h>
 #include <setjmp.h>
 #include <stdarg.h>
@@ -90,6 +96,7 @@ typedef struct Scheme_Bucket
 typedef struct Scheme_Hash_Table
 {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   int size, count, step;
   Scheme_Bucket **buckets;
   char has_constants, forever, weak;
@@ -110,7 +117,7 @@ enum {
 typedef struct Scheme_Env
 {
   Scheme_Type type; /* scheme_namespace_type */
-  short no_keywords;
+  short no_keywords; /* only low-bit used; rest is hash key for precise gc */
   Scheme_Hash_Table *globals;
   Scheme_Hash_Table *loaded_libraries;
   struct Scheme_Comp_Env *init; /* initial compilation environment */
@@ -130,6 +137,7 @@ typedef struct Scheme_Object
 {
   Scheme_Type type; /* Anything that starts with a type field
 		       can be a Scheme_Object */
+  MZ_HASH_KEY_EX
   union
     {
       struct { char *string_val; int tag_val; } str_val;
@@ -149,6 +157,7 @@ typedef struct Scheme_Object
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   union {
     char char_val;
     Scheme_Object *ptr_value;
@@ -160,12 +169,14 @@ typedef struct {
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   double double_val;
 } Scheme_Double;
 
 #ifdef MZ_USE_SINGLE_FLOATS
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   float float_val;
 } Scheme_Float;
 #endif
@@ -234,18 +245,16 @@ typedef struct {
    (rec)->cases = cses, \
    rec)
 
-typedef struct Scheme_Debugging_Info {
-  Scheme_Object *src;
-} Scheme_Debugging_Info;
-
 typedef struct Scheme_Symbol {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   int len;
   char s[1];
 } Scheme_Symbol;
 
 typedef struct Scheme_Vector {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   int size;
   Scheme_Object *els[1];
 } Scheme_Vector;
@@ -255,6 +264,7 @@ typedef struct Scheme_Manager *Scheme_Manager_Reference;
 
 typedef struct Scheme_Manager {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   int count, alloc;
   Scheme_Object ***boxes;
   Scheme_Manager_Reference **mrefs;
@@ -270,6 +280,7 @@ typedef struct Scheme_Manager {
 typedef struct Scheme_Input_Port
 {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short closed;
   Scheme_Object *sub_type;
   Scheme_Manager_Reference *mref;
@@ -293,6 +304,7 @@ typedef struct Scheme_Input_Port
 typedef struct Scheme_Output_Port
 {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short closed;
   Scheme_Object *sub_type;
   Scheme_Manager_Reference *mref;
@@ -310,6 +322,7 @@ typedef struct Scheme_Output_Port
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   struct Scheme_Object *sclass;
   /* The following fields are only here for instances of classes
      created with scheme_make_class(): */
@@ -320,6 +333,7 @@ typedef struct {
 
 typedef struct Scheme_Unit {
   Scheme_Type type;        /* scheme_unit_type */
+  MZ_HASH_KEY_EX
   short num_imports;       /* num expected import args */
   short num_exports;       /* num exported vars */
   Scheme_Object **exports; /* names of exported */
@@ -420,6 +434,7 @@ enum {
 
 typedef struct Scheme_Config {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   Scheme_Hash_Table *extensions;
   Scheme_Object *configs[1];
 } Scheme_Config;
@@ -445,6 +460,7 @@ typedef struct Scheme_Continuation_Jump_State {
 
 typedef struct Scheme_Process {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
 
   struct Scheme_Process *next;
   struct Scheme_Process *prev;

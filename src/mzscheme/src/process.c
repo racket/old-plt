@@ -128,6 +128,7 @@ typedef struct ActiveWill {
 
 typedef struct WillExecutor {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   Scheme_Object *sema;
   ActiveWill *first, *last;
 } WillExecutor;
@@ -2655,7 +2656,9 @@ static Scheme_Object *make_parameter(int argc, Scheme_Object **argv)
   Scheme_Object *p;
   ParamData *data;
   ParamExtensionRec *erec, *prev;
-  void *k = scheme_malloc_atomic(1); /* generates a key */
+  void *k;
+
+  k = scheme_make_pair(scheme_true, scheme_false); /* generates a key */
 
   if (argc > 1)
     scheme_check_proc_arity("make-parameter", 1, 1, argc, argv);

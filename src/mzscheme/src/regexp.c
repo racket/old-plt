@@ -37,6 +37,7 @@
 
 typedef struct regexp {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   long nsubexp;
   long regsize;
   char regstart;		/* Internal use only. */

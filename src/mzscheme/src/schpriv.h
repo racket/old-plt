@@ -131,7 +131,8 @@ typedef struct Scheme_Closure_Compilation_Data
 typedef struct {
   Scheme_Type type;
 #ifdef MZ_PRECISE_GC
-  short closure_size;
+  MZ_HASH_KEY_EX
+  int closure_size;
 #endif
   Scheme_Object *code;
   Scheme_Object *vals[1];
@@ -142,6 +143,7 @@ typedef struct {
 
 typedef struct Scheme_Struct_Type {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short num_slots;
   short name_pos;
   Scheme_Object *type_name;
@@ -151,6 +153,7 @@ typedef struct Scheme_Struct_Type {
 typedef struct Scheme_Structure
 {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   Scheme_Struct_Type *stype;
   Scheme_Object *slots[1];
 } Scheme_Structure;
@@ -176,6 +179,7 @@ typedef struct {
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short max_let_depth;
   Scheme_Object *code;
 } Scheme_Compilation_Top;
@@ -211,6 +215,7 @@ typedef struct {
 void scheme_init_stack_check(void);
 #ifdef MZ_PRECISE_GC
 void scheme_register_traversers(void);
+void scheme_init_hash_key_procs(void);
 #endif
 Scheme_Process *scheme_make_process(void);
 void scheme_init_true_false(void);
@@ -305,6 +310,7 @@ typedef struct {
   
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   Scheme_Object *num;
   Scheme_Object *denom;
 } Scheme_Rational;
@@ -313,6 +319,7 @@ typedef Scheme_Rational Small_Rational;
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   Scheme_Object *r;
   Scheme_Object *i;
 } Scheme_Complex;
@@ -358,6 +365,7 @@ typedef struct Scheme_Cont_Mark_Chain {
 
 typedef struct Scheme_Cont_Mark_Set {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   struct Scheme_Cont_Mark_Chain *chain;
 } Scheme_Cont_Mark_Set;
 
@@ -388,6 +396,7 @@ typedef struct Scheme_Dynamic_Wind {
 
 typedef struct Scheme_Cont {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   Scheme_Object *value;
   Scheme_Jumpup_Buf buf;
   long *ok;
@@ -406,6 +415,7 @@ typedef struct Scheme_Cont {
 
 typedef struct Scheme_Escaping_Cont {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   Scheme_Continuation_Jump_State cjs;
   Scheme_Process *home;
   long *ok;  
@@ -438,6 +448,7 @@ typedef struct Scheme_Sema_Waiter {
 
 typedef struct Scheme_Sema {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
 #ifdef MZ_REAL_THREADS
   void *sema;
 #else
@@ -508,6 +519,7 @@ typedef struct {
 
 typedef struct Scheme_Promise {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   char forced;
   char is_expr;
   Scheme_Object *val;
@@ -1176,6 +1188,12 @@ extern int scheme_internal_checking_char;
 #define MZTHREAD_NEED_KILL_CLEANUP 0x8
 #define MZTHREAD_STILL_RUNNING(running) ((running) && !((running) & MZTHREAD_KILLED))
 
+#ifdef MZ_PRECISE_GC
+long scheme_hash_key(Scheme_Object *o);
+#else
+# define scheme_hash_key(o) ((long)(o))
+#endif
+
 #ifdef WINDOWS_PROCESSES
 struct Scheme_Thread_Memory *scheme_remember_thread(void *);
 void scheme_remember_subthread(struct Scheme_Thread_Memory *, void *);
@@ -1190,6 +1208,7 @@ Scheme_Object *scheme_call_ec(int argc, Scheme_Object *argv[]);
 #define	MZ_RANDOM_STATE_DEG 31
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short fpos, rpos;
   long state[MZ_RANDOM_STATE_DEG];
 } Scheme_Random_State;

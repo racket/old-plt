@@ -25,7 +25,7 @@
    (lambda ()
      (close-output-port (current-output-port))
      (current-output-port (current-error-port))
-     (delete-file file-out)
+     '(delete-file file-out)
      (eh))))
 
 ;; Header:
@@ -232,9 +232,13 @@
 (define (prototype? e)
   (let ([l (length e)])
     (and (> l 2)
+	 ; Ends in semicolon
 	 (eq? semi (tok-n (list-ref e (sub1 l))))
+	 ; next-to-last is parens
 	 (let ([v (list-ref e (- l 2))])
-	   (and (parens? v))))))
+	   (and (parens? v)))
+	 ; Symbol before parens
+	 (symbol? (tok-n (list-ref e (- l 3)))))))
 
 (define (typedef? e)
   (eq? 'typedef (tok-n (car e))))
@@ -265,7 +269,7 @@
   (let loop ([e e][type null])
     (if (parens? (cadr e))
 	(let ([name (tok-n (car e))]
-	      [type (let loop ([t (reverse! type)])
+	      [type (let loop ([t (reverse type)])
 		      (if (memq (tok-n (car t)) '(extern static))
 			  (loop (cdr t))
 			  t))])
@@ -549,7 +553,7 @@
 					 \| \|\| & && : ? % + - * / ^ >> << 
 					 = >>= <<= ^= += *= /= -= %= \|= &= ++ --
 					 return sizeof if for while else switch case
-					 __asm __asm__ __volatile __volatile__ __extension__
+					 __asm __asm__ __volatile __volatile__ volatile __extension__
 					 ;; These are functions, but they don't trigger GC:
 					 strcpy strlen memcpy cos sin exp pow log sqrt atan2
 					 floor ceil round
@@ -701,10 +705,10 @@
 			(or (not (pair? complain-not-in))
 			    (not (memq args complain-not-in))))
 	       (let ([err-stuff
-		      (list "Mondo complexo. Bad place for function call, line ~a, starting tok is ~s."
+		      (list "Bu xiang hua. Bad place for function call, line ~a, starting tok is ~s."
 			    (tok-line (car func))
 			    (tok-n (car func)))])
-		 (if #t ; <= should e #f
+		 (if #f ; <= #t to get multiple errors at once as warnings
 		     (begin
 		       (display "WARNING: " (current-error-port))
 		       (apply fprintf (current-error-port) err-stuff)

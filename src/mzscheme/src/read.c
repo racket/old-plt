@@ -541,7 +541,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	    
 	      if (*ht)
 		ph = (Scheme_Object *)scheme_lookup_in_table(*ht, 
-							     (const char *)vector_length);
+							     (const char *)scheme_make_integer(vector_length));
 	      else
 		ph = NULL;
 	      
@@ -570,7 +570,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 				 buffer);
 	      
 	      if (*ht) {
-		if (scheme_lookup_in_table(*ht, (const char *)vector_length)) {
+		if (scheme_lookup_in_table(*ht, (const char *)scheme_make_integer(vector_length))) {
 		  scheme_raise_exn(MZEXN_READ,
 				   port,
 				   "read: multiple #%ld= tags",
@@ -582,7 +582,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	      ph = scheme_alloc_small_object();
 	      ph->type = scheme_placeholder_type;
 	      
-	      scheme_add_to_table(*ht, (const char *)vector_length, 
+	      scheme_add_to_table(*ht, (const char *)scheme_make_integer(vector_length), 
 				  (void *)ph, 0);
 	      
 	      SCHEME_PTR_VAL(ph) = v = read_inner(port, ht CURRENTPROCARG);

@@ -3325,7 +3325,8 @@ static Scheme_Object *read_syntax(Scheme_Object *obj)
   /* Copy obj: */
   obj = SCHEME_CDR(obj);
   while (SCHEME_PAIRP(obj)) {
-    Scheme_Object *p = scheme_make_pair(SCHEME_CAR(obj), scheme_null);
+    Scheme_Object *p;
+    p = scheme_make_pair(SCHEME_CAR(obj), scheme_null);
     if (last)
       SCHEME_CDR(last) = p;
     else

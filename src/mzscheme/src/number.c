@@ -2505,8 +2505,10 @@ static Scheme_Object *magnitude(int argc, Scheme_Object *argv[])
   if (SCHEME_COMPLEXP(o)) {
     Scheme_Object *r = _scheme_complex_real_part(o);
     Scheme_Object *i = _scheme_complex_imaginary_part(o);
-    Scheme_Object *m2 = scheme_bin_plus(scheme_bin_mult(r, r),
-					scheme_bin_mult(i, i));
+    Scheme_Object *m2;
+
+    m2 = scheme_bin_plus(scheme_bin_mult(r, r),
+			 scheme_bin_mult(i, i));
     
     return scheme_sqrt(1, &m2);
   } else

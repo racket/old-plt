@@ -213,6 +213,7 @@ Scheme_Env *scheme_basic_env ()
 #ifdef MZ_PRECISE_GC
   scheme_register_traversers();
   register_traversers();
+  scheme_init_hash_key_procs();
 #endif
 
 #ifdef TIME_STARTUP_PROCESS
@@ -858,7 +859,7 @@ void scheme_check_identifier(const char *formname, Scheme_Object *id,
 			"not an identifier%s", where);
 
   root = scheme_min_env(env);
-  if (root->no_keywords)
+  if (root->no_keywords & 0x1)
     return;
 
   globals = get_globals(root);

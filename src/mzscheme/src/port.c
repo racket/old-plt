@@ -178,6 +178,7 @@ typedef SOCKET tcp_t;
 #ifdef USE_SOCKETS_TCP
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   tcp_t s;
   Scheme_Manager_Reference *mref;
 } listener_t;
@@ -195,6 +196,7 @@ typedef struct {
 
 typedef struct {
   Scheme_Type type; 
+  MZ_HASH_KEY_EX
   int portid;
   int count;
   struct Scheme_Tcp **datas;

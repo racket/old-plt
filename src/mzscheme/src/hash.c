@@ -26,12 +26,15 @@
 #include <ctype.h>
 #include <memory.h>
 
-#ifdef DOS_MEMORY
-#include <dos.h>
-
-#define PTR_TO_LONG(p) ((FP_SEG(p) << 4) + FP_OFF(p))
+#ifdef MZ_PRECISE_GC
+# define PTR_TO_LONG(p) scheme_hash_key(p)
 #else
-#define PTR_TO_LONG(p) ((long)(p))
+# ifdef DOS_MEMORY
+#  include <dos.h>
+#  define PTR_TO_LONG(p) ((FP_SEG(p) << 4) + FP_OFF(p))
+# else
+#  define PTR_TO_LONG(p) ((long)(p))
+# endif
 #endif
 
 #ifdef SMALL_HASH_TABLES
@@ -130,8 +133,10 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
     h = h % table->size;
     h2 = h2 % table->size;
   } else {
-    h = (PTR_TO_LONG(key) >> 2) % table->size;
-    h2 = (PTR_TO_LONG(key) >> 3) % table->size;
+    long lkey;
+    lkey = PTR_TO_LONG((Scheme_Object *)key);
+    h = (lkey >> 2) % table->size;
+    h2 = (lkey >> 3) % table->size;
   }
 
   if (h < 0) h = -h;
@@ -348,3 +353,131 @@ scheme_change_in_table (Scheme_Hash_Table *table, const char *key, void *naya)
   if (bucket)
     bucket->val = naya;
 }
+
+/***********************************************************************/
+
+#ifdef MZ_PRECISE_GC
+
+typedef long (*Hash_Key_Proc)(Scheme_Object *o);
+Hash_Key_Proc hash_key_procs[_scheme_last_normal_type_];
+static short keygen;
+
+static long hash_addr(Scheme_Object *o)
+{
+  return (long)o;
+}
+
+static long hash_general(Scheme_Object *o)
+{
+  if (!(((short *)o)[1] & 0xFFFC)) {
+    if (!keygen)
+      keygen += 4;
+    ((short *)o)[1] |= keygen;
+    keygen += 4;
+  }
+
+  return *(long *)o;
+}
+
+static long hash_prim(Scheme_Object *o)
+{
+  return (long)((Scheme_Primitive_Proc *)o)->prim_val;
+}
+
+static long hash_case(Scheme_Object *o)
+{
+  Scheme_Case_Lambda *cl = (Scheme_Case_Lambda *)o;
+
+  if (cl->count)
+    return scheme_hash_key(cl->array[0]);
+  else
+    return scheme_case_closure_type << 2;
+}
+
+static long hash_bignum(Scheme_Object *o)
+{
+  int i = SCHEME_BIGLEN(o);
+  bigdig *d = SCHEME_BIGDIG(o);
+  long k = 0;
+  
+  while (i--)
+    k += d[i];
+  
+  return k;
+}
+
+void scheme_init_hash_key_procs(void)
+{
+#define PROC(t,f) hash_key_procs[t] = f
+  PROC(scheme_prim_type, hash_prim);
+  PROC(scheme_closed_prim_type, hash_prim);
+  PROC(scheme_linked_closure_type, hash_general);
+  PROC(scheme_case_closure_type, hash_case);
+  PROC(scheme_cont_type, hash_general);
+  PROC(scheme_escaping_cont_type, hash_general);
+  PROC(scheme_char_type, hash_addr);
+  PROC(scheme_bignum_type, hash_bignum);
+  PROC(scheme_rational_type, hash_general);
+  PROC(scheme_float_type, hash_general);
+  PROC(scheme_double_type, hash_general);
+  PROC(scheme_complex_izi_type, hash_general);
+  PROC(scheme_complex_type, hash_general);
+  PROC(scheme_string_type, hash_general);
+  PROC(scheme_symbol_type, hash_general);
+  PROC(scheme_null_type, hash_addr);
+  PROC(scheme_pair_type, hash_general);
+  PROC(scheme_vector_type, hash_general);
+  PROC(scheme_closure_type, hash_general);
+  PROC(scheme_input_port_type, hash_general);
+  PROC(scheme_output_port_type, hash_general);
+  PROC(scheme_eof_type, hash_addr);
+  PROC(scheme_true_type, hash_addr);
+  PROC(scheme_false_type, hash_addr);
+  PROC(scheme_void_type, hash_addr);
+  PROC(scheme_syntax_compiler_type, hash_general);
+  PROC(scheme_macro_type, hash_general);
+  PROC(scheme_promise_type, hash_general);
+  PROC(scheme_box_type, hash_general);
+  PROC(scheme_process_type, hash_general);
+  PROC(scheme_object_type, hash_general);
+  PROC(scheme_class_type, hash_general);
+  PROC(scheme_structure_type, hash_general);
+  PROC(scheme_cont_mark_set_type, hash_general);
+  PROC(scheme_sema_type, hash_general);
+  PROC(scheme_hash_table_type, hash_general);
+  PROC(scheme_weak_box_type, hash_general);
+  PROC(scheme_struct_type_type, hash_general);
+  PROC(scheme_id_macro_type, hash_general);
+  PROC(scheme_unit_type, hash_general);
+  PROC(scheme_exp_time_type, hash_general);
+  PROC(scheme_listener_type, hash_general);
+  PROC(scheme_namespace_type, hash_general);
+  PROC(scheme_config_type, hash_general);
+  PROC(scheme_will_executor_type, hash_general);
+  PROC(scheme_interface_type, hash_general);
+  PROC(scheme_manager_type, hash_general);
+  PROC(scheme_random_state_type, hash_general);
+  PROC(scheme_regexp_type, hash_general);
+  PROC(scheme_compilation_top_type, hash_general);
+  PROC(scheme_placeholder_type, hash_general);
+#undef PROC
+}
+
+long scheme_hash_key(Scheme_Object *o)
+{
+  Scheme_Type t;
+
+  if (SCHEME_INTP(o))
+    return (long)o;
+
+  t = SCHEME_TYPE(o);
+
+  if (!hash_key_procs[t]) {
+    printf("Can't hash %d\n", t);
+    exit(0);
+  }
+
+  return hash_key_procs[t](o);
+}
+
+#endif

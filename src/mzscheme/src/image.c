@@ -115,7 +115,8 @@ static Scheme_Object *dump_heap(int argc, Scheme_Object **argv)
       return NULL;
 #endif
     } else {
-      Scheme_Object *v = scheme_dump_heap(filename);
+      Scheme_Object *v;
+      v = scheme_dump_heap(filename);
       if (!v) {
 	if (argc > 1) {
 	  if (SCHEME_FALSEP(argv[1]))

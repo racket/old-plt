@@ -215,24 +215,20 @@
 
   (define possible-arrow-slopes (generate-possible-slopes 4))
   (define possible-line-slopes (generate-possible-slopes 6))
-  (printf "possible-arrow-slopes: ~s~n" possible-arrow-slopes)
 
   (define (find-slope/robby dh dv possible-slopes)
     (if (= dh 0)
 	'vertical
-	(let* ([slope (/ dv dh)]
-	       [answer
-		(let loop ([best (car possible-slopes)]
-			   [rst (cdr possible-slopes)])
-		  (cond
-		   [(null? rst) best]
-		   [else
-		    (if (<= (abs (- slope (car rst)))
-			    (abs (- slope best)))
-			(loop (car rst) (cdr rst))
-			(loop best (cdr rst)))]))])
-	  (printf "slope: ~s answer: ~s~n" slope answer)
-	  answer)))
+	(let* ([slope (/ dv dh)])
+	  (let loop ([best (car possible-slopes)]
+		     [rst (cdr possible-slopes)])
+	    (cond
+	     [(null? rst) best]
+	     [else
+	      (if (<= (abs (- slope (car rst)))
+		      (abs (- slope best)))
+		  (loop (car rst) (cdr rst))
+		  (loop best (cdr rst)))])))))
 
   (define (find-slope dh dv max-slope-num h-within v-within) ; max-slope-num is 4 or 6
     ; Result is (slope new-dh), where slope can be 'vertical, in which case
@@ -290,11 +286,11 @@
 		      (best-of-two (lambda () (find-slope (add1 dh) dv max-slope-num (sub1 h-within) v-within))
 				   (lambda () (find-slope (sub1 dh) dv max-slope-num (sub1 h-within) v-within)))))))])))
   
-  (define (parse-slope sl dh)
+  (define (parse-slope sl dh dv)
     (if (eq? sl 'vertical)
-	(if (negative? dh)
-	    (values 0 -1 (abs dh))
-	    (values 0 1 dh))
+	(if (negative? dh)   ; (negative? dv)
+	    (values 0 -1 dv) ;(values 0 -1 (abs dh))
+	    (values 0 1 dv)) ;(values 0 -1 dh)
 	(let ([d (denominator sl)]
 	      [n (numerator sl)])
 	  (if (negative? dh)
@@ -323,7 +319,7 @@
 			   (- x2 x1)
 			   (- y2 y1)
 			   (if arrow? possible-arrow-slopes possible-line-slopes)))])
-		(let-values ([(lh lv ll) (parse-slope s dh)])
+		(let-values ([(lh lv ll) (parse-slope s dh dv)])
 		  `((put ,x1 ,y1 (,(if arrow? 'vector 'line) ,lh ,lv ,ll)))))))]))
 
 #|

@@ -11,11 +11,12 @@
 	[prefs : drscheme:prefs^ ((require-relative-library "prefs.ss")
 				  mred framework
 				  (export* basis))]
-	[text : drscheme:text^ ((require-relative-library "edit.ss") framework aries zodiac)]
+	[text : drscheme:text^ ((require-relative-library "edit.ss")
+				mzlib:date framework aries zodiac)]
 	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
 	[graph : drscheme:graph^ ((require-relative-library "graph.ss") mred framework (mzlib string) (mzlib function))]
         [export* : drscheme:export^ ((require-relative-library "export.ss")
-				     mred mzlib mzlib:date framework print-convert app
+				     mred mzlib framework print-convert app
 				     text language snip
 				     init graph intro
 				     aries zodiac)]

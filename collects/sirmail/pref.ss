@@ -161,6 +161,7 @@
   ;;                   ((union #f string) (union #f top-level-window<%>) string -> boolean)
   ;;                   (any -> string)
   ;;                   (string -> any)
+  ;;                   [ (union #f string) ]
   ;;                -> void
   ;; sets up a text field for a preference
   ;; The 3rd-to-last argument checks the validity of the field content.If
@@ -169,53 +170,60 @@
   ;;  is bad if it is bad.
   ;; the last two arguments convert between the string representation (as shown in the text field)
   ;; and the preferences's actual Scheme value.
-  (define (make-text-field label panel width-num pref optional? check-value val->str str->val)
-    (define p0 (and optional?
-		    (instantiate horizontal-panel% (panel) [stretchable-height #f])))
-    (define e (and optional?
-		   (make-object check-box% label p0
-				(lambda (c e)
-				  (let ([on? (send c get-value)])
-				    (send t enable on?)
-				    (if on?
-					(t-cb t e)
-					(begin
-					  ;; remove all need-check registrations, if any:
-					  (let loop ()
-					    (let ([a (assq t needs-check)])
-					      (when a
-						(set! needs-check (remq a needs-check))
-						(loop))))
-					  (preferences:set pref #f))))))))
-    (define t-cb (lambda (t e)
-		   (let* ([s (send t get-value)])
-		     (if (check-value #f #f s)
-			 (preferences:set pref (str->val s))
-			 (begin
-			   (set! needs-check (cons (list t label check-value) needs-check))
-			   (set-hilite (send t get-editor) #t))))))
-    (define t (make-object text-field% 
-			   (if optional? #f label) 
-			   (or p0 panel)
-			   t-cb
-			   (make-string width-num #\space)))
-    (send t set-value (let ([v (preferences:get pref)])
-                        (if v
-                            (val->str v)
-                            "")))
-    (when optional?
-      (send e set-value (preferences:get pref)))
-    (when e
-      (send t enable (send e get-value)))
-    (preferences:add-callback pref (lambda (name val)
-				     (set-hilite (send t get-editor) #f)
-				     (when e
-				       (send e set-value val)
-				       (send t enable val))
-				     (when val
-				       (let ([sval (val->str val)])
-					 (unless (equal? sval (send t get-value))
-					   (send t set-value sval)))))))
+  (define make-text-field
+    (opt-lambda (label panel width-num pref optional? check-value val->str str->val [post-label #f])
+      (define p0 (and (or optional? post-label)
+		      (instantiate horizontal-panel% (panel) [stretchable-height #f])))
+      (define e (and optional?
+		     (make-object check-box% label p0
+				  (lambda (c e)
+				    (let ([on? (send c get-value)])
+				      (send t enable on?)
+				      (if on?
+					  (t-cb t e)
+					  (begin
+					    ;; remove all need-check registrations, if any:
+					    (let loop ()
+					      (let ([a (assq t needs-check)])
+						(when a
+						  (set! needs-check (remq a needs-check))
+						  (loop))))
+					    (preferences:set pref #f))))))))
+      (define t-cb (lambda (t e)
+		     (let* ([s (send t get-value)])
+		       (if (check-value #f #f s)
+			   (preferences:set pref (str->val s))
+			   (begin
+			     (set! needs-check (cons (list t label check-value) needs-check))
+			     (set-hilite (send t get-editor) #t))))))
+      (define t (make-object text-field% 
+			     (if optional? #f label) 
+			     (or p0 panel)
+			     t-cb
+			     (make-string width-num #\X)))
+      (when post-label
+	(send t stretchable-width #f)
+	(make-object message% post-label p0))
+
+      (send t set-value (let ([v (preferences:get pref)])
+			  (if v
+			      (val->str v)
+			      "")))
+      (when optional?
+	(send e set-value (preferences:get pref)))
+      (when e
+	(send t enable (send e get-value)))
+      (preferences:add-callback pref (lambda (name val)
+				       (set-hilite (send t get-editor) #f)
+				       (when e
+					 (send e set-value val)
+					 (send t enable val))
+				       (when val
+					 (let ([sval (val->str val)])
+					   (unless (equal? sval (send t get-value))
+					     (send t set-value sval))))))
+
+      (or p0 t)))
 
   (define (check-unsaved-pref?)
     (and (andmap (lambda (a)
@@ -448,14 +456,14 @@
 				  "Save Sent Files")
 
 
-      (make-text-field "Default To Domain" p 20 'sirmail:default-to-domain #f check-host-address (lambda (x) x) (lambda (x) x))
+      (make-text-field "Default \"To\" domain" p 20 'sirmail:default-to-domain #f check-host-address (lambda (x) x) (lambda (x) x))
       (make-file/directory-button #f #f p
 				  'sirmail:aliases-file
 				  "Aliases File")
 
       (make-text-list "Self Addresses" p 'sirmail:self-addresses check-simple-user-address)
 
-      (make-boolean "Enable Compose-with-Emacs" p 'sirmail:use-extenal-composer?)
+      (make-boolean "Enable compose-with-Emacs" p 'sirmail:use-extenal-composer?)
 
       p))
 
@@ -472,27 +480,29 @@
 		      (lambda (on?) (send cert enable on?)))
 	(set! cert (make-file/directory-button #f #f sp
 					       'sirmail:server-certificate
-					       "SSL Certificates to Verify Server"))
-	(make-text-field "Folder List Root" sp 20 'sirmail:root-mailbox-folder #t void (lambda (x) x) (lambda (x) x))
+					       "Verify SSL with certificates"))
+	(make-text-field "Folder list root" sp 20 'sirmail:root-mailbox-folder #t void (lambda (x) x) (lambda (x) x))
 
 	(send cert enable (preferences:get 'sirmail:use-ssl?)))
 
-      (make-file/directory-button #t "Local Directory" p
+      (make-file/directory-button #t "Local directory" p
 				  'sirmail:local-directory
 				  #f)
 
-      (make-text-field "Biff Delay" p 5 'sirmail:biff-delay #t check-biff-delay number->string string->number)
+      (make-text-field "Check mail every" p 5 'sirmail:biff-delay #t check-biff-delay number->string string->number
+		       "seconds")
 
-      (make-text-field "Verify Download of Messages Larger Than" p 5 
+      (make-text-field "Verify download of messages larger than" p 10
 		       'sirmail:warn-download-size #t 
-		       check-message-size number->string string->number)
+		       check-message-size number->string string->number
+		       "bytes")
 
       (make-file/directory-button #f #f p
 				  'sirmail:auto-file-table-file
-				  "Auto-File Table File")
+				  "Auto-file table file")
       
-      (make-boolean "Show GC Icon" p 'sirmail:show-gc-icon)
-      (make-boolean "Always Happy to Get Email" p 'sirmail:always-happy)
+      (make-boolean "Show GC icon" p 'sirmail:show-gc-icon)
+      (make-boolean "Always happy to get mail" p 'sirmail:always-happy)
       
       (make-text-list "Shown Header Fields" p 'sirmail:fields-to-show void)
 

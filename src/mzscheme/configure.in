@@ -90,6 +90,8 @@ if test "${enable_oskit}" = "yes" ; then
   fi
 
   MZBINTARGET=oskit
+else
+  enable_oskit=no
 fi
 
 ###### Autoconfigure #######

@@ -1,8 +1,6 @@
 
-(define mred:editor-frame@
   (unit/sig mred:editor-frame^
-    (import [mred:debug : mred:debug^]
-	    [mred:preferences : mred:preferences^]
+    (import [mred:preferences : mred:preferences^]
 	    [mred:edit : mred:edit^]
 	    [mred:frame : mred:frame^]
 	    [mred:container : mred:container^]
@@ -274,5 +272,5 @@
 	    [get-canvas%
 	     (lambda ()
 	       (class-asi super-get-canvas%
-		 (public [use-panel? #t])))]))))))
+		 (public [use-panel? #t])))])))))
 

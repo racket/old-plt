@@ -1,8 +1,6 @@
 
-(define mred:console@
   (unit/sig mred:console^
-    (import [mred:debug : mred:debug^] 
-	    [mred:preferences : mred:preferences^]
+    (import [mred:preferences : mred:preferences^]
 	    [mred:edit : mred:edit^]
 	    [mred:frame : mred:frame^]
 	    [mred:canvas : mred:canvas^]
@@ -675,8 +673,7 @@
 		      (print-struct #t)
 		      (mred:gui-utils:message-box (format "~a" x) "Uncaught Exception")
 		      (old x))))
-		 (unless ((if (list? mred:debug:on?) member eq?)
-			  'no-takeover mred:debug:on?)
+		 (mred:debug:unless 'no-takeover
 		   (let ([doit
 			  (lambda ()
 			    (current-output-port this-out)
@@ -997,4 +994,4 @@
 
     (define console-frame% (make-console-frame%
 			    (mred:find-string:make-searchable-frame%
-			     mred:frame:simple-menu-frame%)))))
+			     mred:frame:simple-menu-frame%))))

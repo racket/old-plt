@@ -29,22 +29,20 @@
 ;  vertical-panel%
 ;  single-panel%
 
-(define mred:container@
   (compound-unit/sig
-    (import [debug : mred:debug^]
-	    [connections : mred:connections^]
+    (import [connections : mred:connections^]
             [function : mzlib:function^])
     (link [container-frames : mred:container-frames^
-	    (mred:container-frames@ debug connections
-				    container-children
-				    container-panels)]
+	    ((reference-unit/sig "contfram.ss")
+	     connections container-children container-panels)]
+
 	  [container-children : mred:container-children^
-	    (mred:container-children@ debug connections
-				      container-frames container-panels)]
+	    ((reference-unit/sig "contkids.ss")
+	     connections container-frames container-panels)]
 	  [container-panels : mred:container-panels^
-	    (mred:container-panels@ debug connections
-				    function container-children)])
+	    ((reference-unit/sig "contpanl.ss")
+	     connections function container-children)])
     (export
      (open (container-frames : mred:container-frames^))
      (open (container-children : mred:container-children-export^))
-     (open (container-panels : mred:container-panels^)))))
+     (open (container-panels : mred:container-panels^))))

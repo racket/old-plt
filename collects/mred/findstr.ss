@@ -1,12 +1,6 @@
-;- searching in embedded buffers
-;  - use get-focus-snip to find the place to search
-;  - use set-caret-owner to turn on the selection when the text is found
-;  - implement "pop-out" searching
 
-(define mred:find-string@
   (unit/sig mred:find-string^
-    (import [mred:debug : mred:debug^]
-	    [mred:container : mred:container^]
+    (import [mred:container : mred:container^]
 	    [mred:canvas : mred:canvas^]
 	    [mred:edit : mred:edit^]
 	    [mred:frame : mred:frame^])
@@ -275,7 +269,7 @@
 	    (show #t)
 	    (send canvas force-display-focus #t)
 	    
-	    (send find-canvas set-focus)))))
+	    (send find-canvas set-focus)))))    
 
     (define find-frame% (make-find-frame% mred:container:dialog-box%))
 
@@ -571,4 +565,4 @@
 	     (send frame search (if (member 'reverse flags)
 				    -1
 				    1)))]
-	  [else (make-object find-frame% canvas in-edit x y flags)])))))
+	  [else (make-object find-frame% canvas in-edit x y flags)]))))

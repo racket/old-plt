@@ -3,10 +3,8 @@
 
 ; Scheme mode for MrEd.
 
-(define mred:scheme-mode@
   (unit/sig mred:scheme-mode^
-    (import [mred:debug : mred:debug^]
-	    [mred:preferences : mred:preferences^]
+    (import [mred:preferences : mred:preferences^]
 	    [mred:application : mred:application^]
 	    [mred : mred:container^]
 	    [mred:mode : mred:mode^]
@@ -945,4 +943,4 @@
 	(mred:keymap:send-map-function-meta keymap "n" "put-next-sexp")))
 
     (define global-scheme-interaction-mode-keymap (make-object wx:keymap%))
-    (setup-global-scheme-interaction-mode-keymap global-scheme-interaction-mode-keymap)))
+    (setup-global-scheme-interaction-mode-keymap global-scheme-interaction-mode-keymap))

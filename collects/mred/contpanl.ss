@@ -8,15 +8,13 @@
 ; make-item%
 ; child-info
 
-(define mred:container-panels@
   (let-macro PRINTF
     ; Swap commenting of the next two lines to enable/disbale debugging
     ; (lambda args (list* 'mred:debug:printf args))
     void
     
     (unit/sig mred:container-panels^
-      (import [mred:debug : mred:debug^]
-	      [mred:connections : mred:connections^]
+      (import [mred:connections : mred:connections^]
 	      [mzlib:function : mzlib:function^]
 	      mred:container-children^)
       
@@ -802,5 +800,5 @@
 			       "About to call single-panel's super-init")
 	    (PRINTF 'container-single-panel
 			       "Function: ~s  Args: ~s" super-init args)
-	    (apply super-init args)))))))
+	    (apply super-init args))))))
   

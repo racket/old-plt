@@ -1,9 +1,10 @@
-(define mred:version@
   (unit/sig mred:version^
     (import mzlib:function^
 	    mzlib:string^)
 
     (rename [-version version])
+
+    (mred:debug:printf 'invoke "mred:version@")
 
     (define specs null)
 
@@ -21,4 +22,4 @@
 				(expr->string num))
 			  specs))))
     
-    '(add-version-spec 's 2)))
+    '(add-version-spec 's 2))

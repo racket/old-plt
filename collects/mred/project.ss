@@ -1,7 +1,5 @@
-(define mred:project@
   (unit/sig mred:project^
-    (import [mred:debug : mred:debug^]
-	    [mred:group : mred:group^]
+    (import [mred:group : mred:group^]
 	    [mred:container : mred:container^]
 	    [mred:gui-utils : mred:gui-utils^]
 	    [mred:exit : mred:exit^]
@@ -318,4 +316,4 @@
     (mred:handler:insert-format-handler "Project" "mpj"
 					 (lambda (filename group-ignored)
 					   (make-object project-frame% 
-					     filename)))))
+					     filename))))

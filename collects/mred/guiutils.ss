@@ -1,8 +1,6 @@
 
-(define mred:gui-utils@
   (unit/sig mred:gui-utils^
-    (import [mred:debug : mred:debug^]
-	    [mred:frame : mred:frame^]
+    (import [mred:frame : mred:frame^]
 	    [mred:container : mred:container^]
 	    [mred:canvas : mred:canvas^]
 	    [mred:edit : mred:edit^]
@@ -10,6 +8,18 @@
 	    [mzlib:trigger : mzlib:trigger^])
 
     (mred:debug:printf 'invoke "mred:gui-utils@")
+
+    (define get-colour-from-user 
+      (lambda (prompt init)
+	(if (wx:can-get-user-colour?)
+	    (wx:get-colour-from-user prompt init)
+	    (wx:message-box "not yet implemented"))))
+    
+    (define get-font-from-user
+      (lambda (prompt init)
+	(if (wx:can-get-user-font?)
+	    (wx:get-font-from-user prompt init)
+	    (wx:message-box "not yet implemented"))))
 
     (define message-box
       (let ([e% (class-asi mred:edit:edit%
@@ -225,4 +235,4 @@
        "A4 210 x 297 mm"
        "A3 297 x 420 mm"
        "Letter 8 1/2 x 11 in"
-       "Legal 8 1/2 x 14 in"))))
+       "Legal 8 1/2 x 14 in")))

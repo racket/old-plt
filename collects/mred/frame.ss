@@ -1,8 +1,6 @@
 
-(define mred:frame@
   (unit/sig mred:frame^
-    (import [mred:debug : mred:debug^]
-	    [mred:preferences : mred:preferences^]
+    (import [mred:preferences : mred:preferences^]
 	    [mred:edit : mred:edit^]
 	    [mred:container : mred:container^]
 	    [mred:canvas : mred:canvas^]
@@ -383,7 +381,7 @@
 	      (set-icon mred:icon:icon))
 	    (do-title)))))
 
-    (define simple-menu-frame% (make-simple-frame% standard-menus-frame%))))
+    (define simple-menu-frame% (make-simple-frame% standard-menus-frame%)))
 
 
 

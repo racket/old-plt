@@ -5,15 +5,13 @@
 ; to be imported:
 ; child-info
 
-(define mred:container-frames@
   (let-macro PRINTF
     ; Swap commenting of the next two lines to enable/disbale debugging
     ; (lambda args (list* 'mred:debug:printf args))
     void
 
     (unit/sig mred:container-frames^
-      (import [mred:debug : mred:debug^]
-	      [mred:connections : mred:connections^]
+      (import [mred:connections : mred:connections^]
 	      mred:container-children^
 	      mred:container-panels^)
       
@@ -345,4 +343,4 @@
 		   (super-init parent title modal x y w h
 			       (bitwise-ior style wx:const-allow-auto-resize)
 			       name))
-		 args)))))))
+		 args))))))

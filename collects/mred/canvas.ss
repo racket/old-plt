@@ -1,8 +1,6 @@
 
-(define mred:canvas@
   (unit/sig mred:canvas^
-    (import [mred:debug : mred:debug^] 
-	    [mred:container : mred:container^]
+    (import [mred:container : mred:container^]
 	    [mred:edit : mred:edit^]
 	    [mzlib:file : mzlib:file^])
 	    
@@ -153,4 +151,36 @@
 	    (super-init parent x y w h name style spp m)
 	    (update-size (get-media))))))
     
-    (define one-line-canvas% (make-one-line-canvas% wrapping-canvas%))))
+    (define one-line-canvas% (make-one-line-canvas% wrapping-canvas%))
+    
+    (define number-control%
+      (class one-line-canvas% args
+	(private
+	  [number 0]
+	  [edit%
+	   (class-asi mred:edit:edit%
+	     (inherit get-text delete)
+	     (rename [super-after-insert after-insert])
+	     (public
+	       [after-insert
+		(lambda (start len)
+		  (super-after-insert start len)
+		  (let ([s (string->number (get-text))])
+		    (if s 
+			(set! number s)
+			(delete start (+ start len)))))]))])
+	(public
+	  [get-number (lambda () number)]
+	  [set-number (lambda (n) 
+			(when (number? n)
+			  (set! number n)
+			  (send edit clear)
+			  (send edit insert (number->string n))))])
+	(sequence
+	  (apply super-init args))
+	(private
+	  [edit (make-object edit%)])
+	(inherit set-media)
+	(sequence (send edit insert (number->string number))
+		  (set-media edit)))))
+		  

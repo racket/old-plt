@@ -4,9 +4,8 @@
 
 ; BALANCER ASSUMES THAT QUOTED STRINGS DO NOT SPAN LINES
 
-(define mred:paren@
   (unit/sig mred:paren^
-    (import [mred:debug : mred:debug^])
+    (import)
 	    
     (mred:debug:printf 'invoke "mred:paren@")
 
@@ -522,8 +521,7 @@
 			     (+(cdr first-quote)
 			       (string-length
 				(cdr(vector-ref quotes(car first-quote))))))]
-			   ))])))))))))
-    ))
+			   ))]))))))))))
 
 
 	    

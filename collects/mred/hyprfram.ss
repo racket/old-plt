@@ -2,10 +2,9 @@
 ; Hyper Frame
 ; July 17, 1995
 
-(define mred:hyper-frame@
+
   (unit/sig mred:hyper-frame^
-    (import [mred:debug : mred:debug^]
-	    [mred:hyper-edit : mred:hyper-edit^]
+    (import [mred:hyper-edit : mred:hyper-edit^]
 	    [mred:hyper-dialog : mred:hyper-dialog^]
 	    [mred:container : mred:container^]
 	    [mred:frame : mred:frame^]
@@ -359,4 +358,4 @@
 
     (mred:handler:insert-format-handler  "Hyper-Text" (list "htx")
 					  (lambda (filename group)
-					    (open-hyper-make filename group)))))
+					    (open-hyper-make filename group))))

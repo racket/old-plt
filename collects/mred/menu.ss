@@ -1,7 +1,6 @@
-(define mred:menu@
+
   (unit/sig mred:menu^
-    (import [mred:debug : mred:debug^]
-	    [mzlib:function : mzlib:function^])
+    (import [mzlib:function : mzlib:function^])
 	    
     (mred:debug:printf 'invoke "mred:menu@")
 
@@ -254,4 +253,4 @@
 		     (if (send (car menus) dispatch op)
 			 #t
 			 (loop (cdr menus))))))]))))
-    (define menu-bar% (make-menu-bar% wx:menu-bar%))))
+    (define menu-bar% (make-menu-bar% wx:menu-bar%)))

@@ -21,15 +21,13 @@
 ; media-canvas%
 ; text-window%
 
-(define mred:container-children@
   (let-macro PRINTF
     ; Swap commenting of the next two lines to enable/disbale debugging
     ; (lambda args (list* 'mred:debug:printf args))
     void
     
     (unit/sig mred:container-children^
-      (import [mred:debug : mred:debug^]
-	      [mred:connections : mred:connections^]
+      (import [mred:connections : mred:connections^]
 	      mred:container-frames^
 	      mred:container-panels^)
       
@@ -651,4 +649,4 @@
       (define media-canvas% (make-item%
 			     mred:connections:connections-media-canvas%
 			     0 0 #t #t canvas-args))
-      (define text-window% (make-item% wx:text-window% 0 0 #t #t canvas-args)))))
+      (define text-window% (make-item% wx:text-window% 0 0 #t #t canvas-args))))

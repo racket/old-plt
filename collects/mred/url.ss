@@ -9,12 +9,28 @@
 ;   "impure" = they have text waiting
 ;   "pure" = the MIME headers have been read
 
-(define mred:url@
   (unit/sig mred:url^
     (import [f : mzlib:function^]
             [gui : mred:gui-utils^]
             [mred : mred:exn^]
             [file : mzlib:file^])
+
+    (mred:debug:printf 'invoke "mred:url@")
+
+    ; This is commented out; it's here for debugging.
+    ; It used to be outside the unit.
+    
+    (quote
+     (begin
+       (invoke-open-unit/sig mred:url@ #f)
+       (define url:cs (string->url "http://www.cs.rice.edu/"))
+       (define url:me (string->url "http://www.cs.rice.edu/~shriram/"))
+       (define comb combine-url/relative)
+       (define (test url)
+	 (call/input-url url
+			 get-pure-port
+			 display-pure-port))))
+
 
     (define url-error
       (lambda (fmt . args)
@@ -498,16 +514,5 @@
 		(else
 		  (loop (add1 index) first-colon first-slash))))))))
 
-    ))
+    )
 
-; This is commented out; it's here for debugging.
-(quote
-  (begin
-    (invoke-open-unit/sig mred:url@ #f)
-    (define url:cs (string->url "http://www.cs.rice.edu/"))
-    (define url:me (string->url "http://www.cs.rice.edu/~shriram/"))
-    (define comb combine-url/relative)
-    (define (test url)
-      (call/input-url url
-	get-pure-port
-	display-pure-port))))

@@ -1,9 +1,7 @@
 ; Dialog box for picking a tag.
 
-(define mred:hyper-dialog@
   (unit/sig mred:hyper-dialog^
-    (import [mred:debug : mred:debug^]
-	    [mred:hyper-edit : mred:hyper-edit^]
+    (import [mred:hyper-edit : mred:hyper-edit^]
 	    [mzlib:file : mzlib:file^])
 	    
     (mred:debug:printf 'invoke "mred:hyper-dialog@")
@@ -53,4 +51,4 @@
 	  (if (send temp-edit load-file  
 		    (mzlib:file:normalize-path filename directory))
 	      (reverse (map mred:hyper-edit:hypertag-name (ivar temp-edit hypertags-list)))
-	      (list "top")))))))
+	      (list "top"))))))

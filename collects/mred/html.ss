@@ -1,8 +1,6 @@
 
-(define mred:html@
   (unit/sig mred:html^
-    (import [mred:debug : mred:debug^]
-	    [mred:url : mred:url^]
+    (import [mred:url : mred:url^]
 	    mzlib:file^
 	    mzlib:string^)
 
@@ -123,12 +121,12 @@
 
 	     ;; Don't report error; don't raise an exception
 	     [html-error
-	      (if (eq? mred:debug:on? 'html)
-		  (lambda args
-		    (begin
-		      (apply fprintf (current-error-port) args)
-		      (newline (current-error-port))))
-		  void)]
+	      (mred:debug:if 'html
+			     (lambda args
+			       (begin
+				 (apply fprintf (current-error-port) args)
+				 (newline (current-error-port))))
+			     void)]
 
 	     [i-buffer null]
 	     [buffer-pos 0]
@@ -486,4 +484,4 @@
 		   (call-with-values
 		    (lambda () (translate pos #t del-white? 0))
 		    loop))))
-	     (set-position 0))))))
+	     (set-position 0)))))

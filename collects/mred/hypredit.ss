@@ -2,12 +2,10 @@
 ; Hyper Edit 
 ; July 17, 1995
 
-(define top-box (box #f))
+;(define top-box (box #f))
 
-(define mred:hyper-edit@
   (unit/sig mred:hyper-edit^
-    (import [mred:debug : mred:debug^]
-	    [mred:edit : mred:edit^]
+    (import [mred:edit : mred:edit^]
 	    [mred:hyper-dialog : mred:hyper-dialog^]
 	    [mred:html : mred:html^]
 	    [mred:url : mred:url^]
@@ -713,4 +711,4 @@
 	    (apply super-init args)
 	    (add-h-link-style)))))
 
-    (define hyper-edit% (make-hyper-edit% mred:edit:edit%))))
+    (define hyper-edit% (make-hyper-edit% mred:edit:edit%)))

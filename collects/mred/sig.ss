@@ -83,7 +83,7 @@
 (define-signature mred:debug^ (printf exit? on?))
 
 (define-signature mred:constants^
-  (plt-home-directory system-source-directory))
+  (plt-home-directory))
 
 (define-signature mred:exn-external^
   (exn? exn:unknown-preference? exn:during-preferences? exn:url?))
@@ -146,7 +146,9 @@
    exit))
 
 (define-signature mred:gui-utils^
-  (message-box
+  (get-font-from-user
+   get-colour-from-user
+   message-box
    cursor-delay
    show-busy-cursor
    delay-action
@@ -217,7 +219,9 @@
    one-line-canvas%
 
    make-frame-title-canvas%
-   frame-title-canvas%))
+   frame-title-canvas%
+   
+   number-control%))
 
 (define-signature mred:frame^
   (frame-width
@@ -358,8 +362,7 @@
    (open mred:container-panels^)))
 
 (define-signature mred^
-  ((unit debug : mred:debug^)
-   (open mred:constants^)
+  ((open mred:constants^)
    (open mred:version^)
    (open mred:exn-external^)
    (open mred:connections^) (open mred:container^) (open mred:preferences^)

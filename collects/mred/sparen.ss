@@ -1,10 +1,8 @@
 
 ; Scheme parenthesis wrappers around the general routines
 
-(define mred:scheme-paren@
   (unit/sig mred:scheme-paren^
-    (import [mred:debug : mred:debug^]
-	    [mred:paren : mred:paren^])
+    (import [mred:paren : mred:paren^])
 	    
     (mred:debug:printf 'invoke "mred:scheme-paren@")
 
@@ -50,4 +48,4 @@
 				    scheme-quote-pairs
 				    scheme-comments
 				    #t
-				    cache)))))
+				    cache))))

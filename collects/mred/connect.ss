@@ -1,7 +1,6 @@
-(define mred:connections@
+
   (unit/sig mred:connections^
-    (import [mred:debug : mred:debug^]
-	    [mzlib:function : mzlib:function^])
+    (import [mzlib:function : mzlib:function^])
 
     (mred:debug:printf 'invoke "mred:connections@")
 
@@ -54,6 +53,12 @@
 	  (inherit get-media)
   
 	  (public
+	    [edit-renamed
+	     (lambda (name)
+	       (void))]
+	    [edit-modified
+	     (lambda (modified?)
+	       (void))]
 	    [set-media
 	     (opt-lambda (media [redraw? #t])
 	       (let ([m (get-media)])
@@ -85,7 +90,19 @@
     (define make-connections-media-buffer%
       (lambda (%)
 	(class-asi %
+	  (rename [super-set-modified set-modified]
+		  [super-set-filename set-filename])
 	  (public
+            [set-filename
+             (opt-lambda (name [temp? #f])
+               (super-set-filename name temp?)
+               (for-each (lambda (canvas) (send canvas edit-renamed name))
+                         canvases))]
+            [set-modified
+             (lambda (modified?)
+               (super-set-modified modified?)
+               (for-each (lambda (canvas) (send canvas edit-modified modified?))
+                         canvases))]
 	    [get-canvas
 	     (lambda ()
 	       (or active-canvas
@@ -116,4 +133,4 @@
     (define connections-dialog-box% (make-connections-frame% wx:dialog-box%))
     (define connections-media-edit% (make-connections-media-buffer% wx:media-edit%)) 
     (define connections-media-pasteboard% (make-connections-media-buffer% wx:media-pasteboard%))
-    (define connections-media-canvas% (make-connections-media-canvas% wx:media-canvas%))))
+    (define connections-media-canvas% (make-connections-media-canvas% wx:media-canvas%)))

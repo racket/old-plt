@@ -1,6 +1,6 @@
-(define mred:path-utils@
+
   (unit/sig mred:path-utils^
-    (import [mred:debug : mred:debug^])
+    (import)
 	    
     (mred:debug:printf 'invoke "mred:path-utils@")
 
@@ -51,6 +51,5 @@
 		   '(#\. #\b #\a #\k)
 		   (cons (car list)
 			 (loop (cdr list))))))
-	    (string-append name "~"))))
-    ))
+	    (string-append name "~")))))
 

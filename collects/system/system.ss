@@ -12,61 +12,64 @@
 (define mred:system-source-directory (current-directory))
 (constant-name 'mred:system-source-directory)
 
-(define mred:default-splash (build-path mred:system-source-directory
-				   "splash.gif"))
-(define mred:default-splash-title "MrEd")
-
 (define mzlib:constant-lib? #t)
 
 (define mred:plt-home-directory
-  (and (defined? 'mred:plt-home-directory)
-       mred:plt-home-directory))
+  (let ([plt (getenv "PLTHOME")])
+    (or plt
+	(let-values ([(base name dir?) 
+		      (split-path mred:system-source-directory)])
+	  (if (string? base)
+	      (let-values ([(base name dir?) (split-path base)])
+		(if (string? base)
+		    base
+		    mred:system-source-directory))
+	      mred:system-source-directory)))))
 
+(define mred:app-sig-location #f)
+(define mred:app-location "app.ss")
+(define mred:output-spidey-file #f)
+
+(define plt:home-directory mred:plt-home-directory)
+
+(define mred:default-splash (build-path mred:plt-home-directory
+					"icons"
+					"mred.gif"))
+(define mred:default-splash-title "MrEd")
+
+(let ([libdir
+       (let ([try-dir (build-path (current-directory) 'up "mzlib")])
+	 (if (directory-exists? try-dir)
+	     try-dir
+	     (let ([try-dir (build-path (current-directory) 'up "mzscheme" "mzlib")])
+	       (if (directory-exists? try-dir)
+		   try-dir
+		   (let ([try-dir (build-path (current-directory) 'up 'up "mzscheme" "mzlib")])
+		     (if (directory-exists? try-dir)
+			 try-dir
+			 (let* ([v (getenv "PLTHOME")]
+				[dir (if v 
+					 v 
+					 (cond
+					  [(eq? wx:platform 'unix)
+					   "/usr/local/lib/plt"]
+					  [(eq? wx:platform 'windows)
+					   "c:\\plt"]
+					  [else ; macintosh (there is no good default here)
+					   (current-directory)]))])
+			   (build-path dir "mzscheme" "mzlib"))))))))])
+  (current-library-path libdir))
+
+(require-library "referc.ss")
+
+(load "debug.ss")
+
+(mred:debug:printf 'startup "mred:plt-home-directory: ~a" mred:plt-home-directory)
+(mred:debug:printf 'startup "mred:system-source-directory: ~a" mred:system-source-directory)
 
 (define (load-system)
   (let ([old (current-directory)])
 
-    (set! mred:plt-home-directory
-	  (or mred:plt-home-directory
-	      (let ([plt (getenv "PLTHOME")])
-		(if plt
-		    plt
-		    (let-values ([(base name dir?) 
-				  (split-path mred:system-source-directory)])
-		      (if (string? base)
-			  (let-values ([(base name dir?) (split-path base)])
-			    (if (string? base)
-				base
-				mred:system-source-directory))
-			  mred:system-source-directory))))))
-
-    (current-directory mred:system-source-directory)
-    (load "debug.ss")
-
-    (mred:debug:printf 'startup "mred:plt-home-directory: ~a" mred:plt-home-directory)
-
-    (let ([libdir
-	   (let ([try-dir (build-path (current-directory) 'up "mzlib")])
-	     (if (directory-exists? try-dir)
-		 try-dir
-		 (let ([try-dir (build-path (current-directory) 'up "mzscheme" "mzlib")])
-		   (if (directory-exists? try-dir)
-		       try-dir
-		       (let ([try-dir (build-path (current-directory) 'up 'up "mzscheme" "mzlib")])
-			 (if (directory-exists? try-dir)
-			     try-dir
-			     (let* ([v (getenv "PLTHOME")]
-				    [dir (if v 
-					     v 
-					     (cond
-					      [(eq? wx:platform 'unix)
-					       "/usr/local/lib/plt"]
-					      [(eq? wx:platform 'windows)
-					       "c:\\plt"]
-					      [else ; macintosh
-					       (current-directory)]))])
-			       (build-path dir "mzscheme" "mzlib"))))))))])
-      (current-library-path libdir))
     (when (not (directory-exists? (current-library-path)))
       (wx:message-box "Cannot find the MzScheme libraries." "Error")
       (error 'mrsystem "cannot find the MzScheme libraries"))
@@ -78,22 +81,13 @@
       (when (file-exists? p)
 	(require-library p)))
 
-    (for-each load-recent
-	      (list "macros" "sig" "invoke"
+    (reference "macros.ss")
+    (reference "sig.ss")
+    (when mred:app-sig-location
+      (load-recent mred:app-sig-location))
+    (reference "invoke.ss")))
 
-		    ;; standard system units
-		    "autoload" "autosave" "canvas" "connect"
-		    "console" "contfram"
-		    "contkids" "contpanl" "containr" "edframe"
-		    "edit" "exit" "exn" "fileutil" "finder" "findstr" "frame"
-		    "group" "guiutils" "handler"
-		    "html" "hypredit" "hyprfram" "hyprdial"
-		    "icon" "keys" "mcache" "menu" "mode" "panel" "paren"
-		    "prefs" "project" "sparen" "ssmode" "url" "version"
-
-		    ;; linking code
-		    "link"))
-    (current-directory old)))
+(define mred:mred-startup-directory #f)
 
 ;; called with the arguments on the command line
 (define mred:initialize
@@ -103,52 +97,73 @@
 	[no-show-splash? #f])
     (lambda args
       (cond
-       [(null? args)
-	(unless (or mred:splash-frame no-show-splash?)
-	  (mred:open-splash mred:default-splash mred:default-splash-title #f))
-	(when (eq? wx:platform 'unix)
-	  (let* ([default-path "/usr/local/transcript-4.0/lib/"]
-		 [path-box (box default-path)])
-	    (wx:get-resource "MrEd" "afmPath" path-box)
-	    (wx:set-afm-path 
-	     (if (or (directory-exists? (unbox path-box))
-		     (not (directory-exists? default-path)))
-		 (unbox path-box)
-		 default-path))))
-	(load-system)
-	(current-library-path (normalize-path (current-library-path)))
-	(set! mred:plt-home-directory (normalize-path mred:plt-home-directory))
-	(constant-name 'mred:plt-home-directory)
-	(when (and (eq? wx:platform 'windows))
-	  (let ([hd (getenv "HOMEDRIVE")]
-		[hp (getenv "HOMEPATH")])
-	    (when (and hd hp)
-	      (current-directory (build-path hd hp)))))
-	(user-break-poll-handler wx:check-for-break)
-	(mred:change-splash-message "Command Line...")
-	(for-each (lambda (x) (apply (car x) (cdr x))) (reverse todo))
-	(when (eq? mred:debug:on? 'compile-and-exit)
-	  (wx:exit))
-	(mred:invoke)
-	(mred:no-more-splash-messages)
-	(when mred:non-unit-startup?
-	  (set! mred:console (mred:startup)))
-	(for-each mred:edit-file files-to-open)
-	(when mred:debug:on?
-	  (unless (= mred:splash-max mred:splash-counter)
-	    (printf "WARNING: splash max (~a) != splash counter (~a)~n"
-		    mred:splash-max mred:splash-counter)))
-	(mred:close-splash)
-	mred:console]
+	[(null? args)
+	 (set! mred:mred-startup-directory (current-directory))
+	 (current-directory mred:system-source-directory)
+	 (unless (or mred:splash-frame no-show-splash?)
+	   (mred:open-splash mred:default-splash mred:default-splash-title #f))
+	 (when (eq? wx:platform 'unix)
+	   (let* ([default-path "/usr/local/transcript-4.0/lib/"]
+		  [path-box (box default-path)])
+	     (wx:get-resource "MrEd" "afmPath" path-box)
+	     (wx:set-afm-path 
+	      (if (or (directory-exists? (unbox path-box))
+		      (not (directory-exists? default-path)))
+		  (unbox path-box)
+		  default-path))))
+	 (load-system)
+	 (current-library-path (normalize-path (current-library-path)))
+	 (set! mred:plt-home-directory (normalize-path mred:plt-home-directory))
+	 ;(constant-name 'mred:plt-home-directory)
+	 (when (and (eq? wx:platform 'windows))
+	   (let ([hd (getenv "HOMEDRIVE")]
+		 [hp (getenv "HOMEPATH")])
+	     (when (and hd hp)
+	       (current-directory (build-path hd hp)))))
+	 (user-break-poll-handler wx:check-for-break)
+	 (mred:change-splash-message "Command Line...")
+	 
+	 (for-each (lambda (x) (apply (car x) (cdr x))) (reverse todo))
+	 
+	 (mred:debug:when 'compile-and-exit
+			  (wx:exit))
+	 (mred:invoke)
+	 (mred:no-more-splash-messages)
+	 (mred:build-spidey-unit)
+	 (when mred:non-unit-startup?
+	   (set! mred:console (mred:startup)))
+	 (for-each mred:edit-file files-to-open)
+	 (mred:debug:when 'splash
+			  (unless (= mred:splash-max mred:splash-counter)
+			    (printf "WARNING: splash max (~a) != splash counter (~a)~n"
+				    mred:splash-max mred:splash-counter)))
+	 (mred:close-splash)
+	 (current-directory mred:mred-startup-directory)
+	 mred:console]
        [else 
 	(let* ([arg (car args)]
 	       [rest (cdr args)]
+	       [wrap
+		(lambda (f)
+		  (lambda (x)
+		    (current-directory mred:mred-startup-directory)
+		    (begin0(f x)
+			   (current-directory mred:system-source-directory))))]
+	       [do-f (wrap load-with-cd)]
+	       [do-e (wrap eval-string)]
 	       [use-next-arg
 		(lambda (f)
 		  (if (null? rest)
 		      (error "expected another arg after ~a" arg)
 		      (begin (f (car rest))
 			     (apply mred:initialize (cdr rest)))))]
+	       [use-next-2args
+		(lambda (f)
+		  (if (or (null? rest)
+			  (null? (cdr rest)))
+		      (error "expected another 2 args after ~a" arg)
+		      (begin (f (car rest) (cadr rest))
+			     (apply mred:initialize (cddr rest)))))]
 	       [use-next-3args
 		(lambda (f)
 		  (if (or (null? rest)
@@ -158,10 +173,26 @@
 		      (begin (f (car rest) (cadr rest) (caddr rest))
 			     (apply mred:initialize (cdddr rest)))))])
 	  (cond
+	   [(string-ci=? "-w" arg) (use-next-arg
+				    (lambda (arg)
+				      (set! mred:output-spidey-file 
+					    (if (relative-path? arg)
+						(build-path (current-directory) arg)
+						arg))))]							    
+	   [(string-ci=? "-a" arg) (use-next-2args
+				    (lambda (apploc sigloc)
+				      (set! mred:app-location 
+					    (if (relative-path? apploc)
+						(build-path (current-directory) apploc)
+						apploc))
+				      (set! mred:app-sig-location
+					    (if (relative-path? sigloc)
+						(build-path (current-directory) sigloc)
+						sigloc))))]
 	   [(string-ci=? "-f" arg) (use-next-arg
 				    (lambda (fn)
 				      (set! todo
-					    (cons (list load-with-cd fn)
+					    (cons (list do-f fn)
 						  todo))))]
 	   [(string-ci=? "-p" arg) (use-next-3args mred:open-splash)]
 	   [(string-ci=? "-b" arg) 
@@ -170,7 +201,7 @@
 	   [(string-ci=? "-e" arg)
 	    (use-next-arg
 	     (lambda (s)
-	       (set! todo (cons (list eval-string s) todo))))]
+	       (set! todo (cons (list do-e s) todo))))]
 	   [(string-ci=? "--" arg) (use-next-arg
 				    (lambda (fn)
 				      (set! files-to-open

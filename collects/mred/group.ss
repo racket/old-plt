@@ -1,7 +1,6 @@
-(define mred:group@
+
   (unit/sig mred:group^
-    (import [mred:debug : mred:debug^]
-	    [mred:preferences : mred:preferences^]
+    (import [mred:preferences : mred:preferences^]
 	    [mred:editor-frame : mred:editor-frame^]
 	    [mred:gui-utils : mred:gui-utils^]
 	    [mred:exit : mred:exit^]
@@ -287,4 +286,4 @@
 
     (define (keep-frames)
       (unless (current-frames)
-	(current-frames (make-object frame-group%))))))
+	(current-frames (make-object frame-group%)))))

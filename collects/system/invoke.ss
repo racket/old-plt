@@ -1,51 +1,68 @@
-
 (define mred:non-unit-startup? #f)
 (define mred:load-user-setup? #t)
 
-(define mred:make-mred-invokable-unit
-  (lambda ()
-    (let* ([application (mred:make-application@)]
-	   [U
-	    (compound-unit/sig (import)
-	      (link [core : mzlib:core^ (mzlib:core@)]
-		    [trigger : mzlib:trigger^ (mzlib:trigger@)]
-		    [mred : mred^ (mred@ core trigger application)]
-		    [application : mred:application^ (application mred core)])
-	      (export (open mred)
-		      (open application)))])
-      (compound-unit/sig (import)
-	 (link [mred : ((open mred^) (open mred:application^)) (U)])
-	 (export (unit mred))))))
+(define mred@ #f)
 
-(define mred:unit-make-application@
+(define mred:build-spidey-unit
   (lambda ()
-    (unit/sig mred:application^
-      (import [mred@ : mred^]
-	      [core@ : mzlib:core^])
-      (define app-name "MrEd")
-      (define console (make-object mred@:console-frame%))
-      (define eval-string (lambda (s)
-			    (let ([ce (send console get-edit)])
-			      (send ce eval-and-display s)
-			      (send ce insert-prompt)
-			      #t))))))
+    (when mred:output-spidey-file
+      (call-with-output-file mred:output-spidey-file
+	(lambda (port)
+	  (pretty-print
+	   `(begin-elaboration-time
+	     (current-library-path ,(current-library-path)))
+	   port)
+	  (pretty-print `(reference-library "cores.ss") port)
+	  (pretty-print `(reference-library "triggers.ss") port)
+	  (pretty-print `(reference ,(build-path mred:system-source-directory
+						 "sig.ss"))
+			port)
+	  (when mred:app-sig-location
+	    (pretty-print `(reference ,mred:app-sig-location) port))
+	  (pretty-print
+	   `(compound-unit/sig (import)
+	      (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
+		    [trigger : mzlib:trigger^ ((reference-library-unit/sig "triggerr.ss"))]
+		    [mred : mred^ ((reference-unit/sig ,(build-path mred:system-source-directory 
+								    "link.ss"))
+				   core trigger application)]
+		    [application : mred:application^
+				 ((reference-unit/sig ,(cond
+							[(complete-path? mred:app-location)
+							 mred:app-location]
+							[(relative-path? mred:app-location)
+							   (build-path mred:system-source-directory 
+								       mred:app-location)]
+							[else (build-path (current-drive)
+									  mred:app-location)]))
+				  mred core)])
+	      (export))
+	      port))
+	'replace))))
 
-(define mred:non-unit-make-application@
+(define mred:make-invokable-unit 
   (lambda ()
-    (unit/sig mred:application^
-      (import [mred : mred^]
-	      [core : mzlib:core^])
-      (define app-name "MrEd")
-      (define console (make-object wx:frame% '() "hidden"))
-      (define eval-string (lambda (string) (void))))))
-
-;; one of these two definitions will be redefined by the application
-(define mred:make-invokable-unit mred:make-mred-invokable-unit)
-(define mred:make-application@ mred:unit-make-application@)
+    (let ([app (load-recent mred:app-location)])
+      (unless (unit/sig? app)
+	(error 'invokation "the application file didn't return a unit, got: ~a" app))
+      (let ([U
+	     (compound-unit/sig (import)
+	       (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
+		     [trigger : mzlib:trigger^ ((reference-library-unit/sig "triggerr.ss"))]
+		     [mred : mred^ ((let ([u@ (reference-unit/sig "link.ss")])
+				      (set! mred@ u@)
+				      u@)
+				    core trigger application)]
+		     [application : mred:application^ (app mred core)])
+	       (export (open mred)
+		       (open application)))])
+	(compound-unit/sig (import)
+	  (link [mred : ((open mred^) (open mred:application^)) (U)])
+	  (export (unit mred)))))))
 
 (define mred:non-unit-startup
   (lambda ()
-    (set! mred:make-application@ mred:non-unit-make-application@)
+    (set! mred:app-location (build-path mred:system-source-directory "nuapp.ss"))
     (set! mred:non-unit-startup? #t)
     (mred:invoke)))
 
@@ -74,19 +91,12 @@
   (lambda ()
     (when mred:load-user-setup?
       (set! mred:load-user-setup? #f)
-      (let* ([init-file 
-	      (wx:find-path 'init-file)
-	   #|
-	      (build-path (wx:find-directory 'init)
-			  (if (eq? wx:platform 'unix)
-			      ".mredrc"
-			      "mredrc.ss"))
-	   |#
-	      ])
+      (let* ([init-file (wx:find-path 'init-file)])
 	(when (file-exists? init-file)
 	  (let ([orig-escape (error-escape-handler)])
-	    (catch-errors (lambda (s) (wx:message-box s "Error"))
-			  (lambda () (orig-escape))
-			  (eval-string 
-			   (string-append
-			    (expr->string `(load/cd ,init-file)))))))))))
+	    (with-handlers ([void (lambda (e) 
+				    (wx:message-box (exn-message e)
+						    (format "~a Error" init-file)))])
+	      (eval-string 
+	       (string-append
+		(expr->string `(load/cd ,init-file)))))))))))

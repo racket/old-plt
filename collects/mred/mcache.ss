@@ -1,8 +1,8 @@
 ; Cache parenthesis-matching
 ;  Implemented as a splay tree
-(define mred:match-cache@
+
   (unit/sig mred:match-cache^
-    (import [mred:debug : mred:debug^])
+    (import)
 	    
     (mred:debug:printf 'invoke "mred:mcache@")
 
@@ -136,6 +136,5 @@
 		       (list (loop (node-left tree))
 			     (node-pos tree)
 			     (loop (node-right tree)))
-		       '())))])))
-    ))
+		       '())))]))))
 

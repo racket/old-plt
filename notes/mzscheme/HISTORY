@@ -1,4 +1,4 @@
-Version 52, ??, 1998
+Version 52, May 25, 1998
 R5RS non-compliance reduced to macros
 Added scheme-report-environment, null-environment, and
  interaction-environment
@@ -25,7 +25,7 @@ Fixed read-eval-print loop when jumping to the continuation
  the evaluation finishes
 regexp-replace and regexp-replace*: \$ ("\\$" in Scheme)
  is now replaced by the empty string; this allows forms
- like "\\0\\$3" to insert the 1st submatch followed by 3
+ like "\\0\\$3", which inserts the 1st submatch and "3"
 Fixed a potential bug with continuations (although I never
  saw it happen); they need to be marked by the GC with
  interior pointer marking
@@ -38,10 +38,11 @@ Changed MzLib's read-string and read-string-all to
  read-from-string and read-from-string-all
 Changed MzLib's with-semaphore to return the value returned
  by the thunk.
-Added a command-line macro to MzLib's cmdline.ss
+Added the command-line macro to MzLib's cmdline.ss
+Linux and FreeBSD: turned on support for using more
+ than 256 file descriptors
 Inside MzScheme: current-directory, now a parameter, no
  longer sets the current directory as managed by the OS
-Inside MzScheme: added scheme_apply_eb
 Inside MzScheme: scheme_split_pathname changed
 Inside MzScheme: scheme_setcwd and scheme_getcwd renamed to
  scheme_os_setcwd and scheme_os_getcwd; these set and get the

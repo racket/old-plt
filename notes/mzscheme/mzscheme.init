@@ -139,7 +139,7 @@
 ;	queue				;queues
 	pretty-print
 ;	object->string
-	format
+;	format
 ;	trace				;has macros: TRACE and UNTRACE
 ;	compiler			;has (COMPILER)
 ;	ed				;(ED) is editor

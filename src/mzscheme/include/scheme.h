@@ -800,6 +800,8 @@ typedef struct Scheme_Thread {
   Scheme_Object *current_local_mark;
   Scheme_Object *current_local_name;
 
+  char skip_error;
+
   /* These are used to lock in values during `print': */
   char quick_print_struct;
   char quick_print_graph;
@@ -817,10 +819,6 @@ typedef struct Scheme_Thread {
   long print_maxlen;
   Scheme_Object *print_port;
   mz_jmp_buf print_escape;
-
-  char exn_raised;
-  char error_invoked;
-  char err_val_str_invoked;
 
   Scheme_Object *(*overflow_k)(void);
   Scheme_Object *overflow_reply;
@@ -926,6 +924,7 @@ enum {
   MZCONFIG_INIT_EXN_HANDLER,
 
   MZCONFIG_EVAL_HANDLER,
+  MZCONFIG_COMPILE_HANDLER,
   MZCONFIG_LOAD_HANDLER,
 
   MZCONFIG_PRINT_HANDLER,

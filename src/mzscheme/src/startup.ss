@@ -2635,6 +2635,20 @@
 		 expr1
 		 expr ...))))])))
 
+  (define (current-parameterization)
+    (continuation-mark-set-first #f parameterization-key))
+  
+  (define (call-with-parameterization paramz thunk)
+    (unless (parameterization? paramz)
+      (raise-type-error 'call-with-parameterization "parameterization" 0 paramz thunk))
+    (unless (and (procedure? thunk)
+		 (procedure-arity-includes? thunk 0))
+      (raise-type-error 'call-with-parameterization "procedure (arity 0)" 1 paramz thunk))
+    (with-continuation-mark
+	parameterization-key
+	paramz
+      (thunk)))
+
   (define-syntax with-handlers
     (lambda (stx)
       (syntax-case stx ()
@@ -2732,7 +2746,8 @@
 	    (apply values v)))])))
 
   (provide case do delay force promise?
-	   parameterize with-handlers set!-values
+	   parameterize current-parameterization call-with-parameterization
+	   with-handlers set!-values
 	   let/cc let-struct fluid-let time))
 
 ;;----------------------------------------------------------------------

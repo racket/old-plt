@@ -272,6 +272,7 @@ static Scheme_Object *parameter_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *parameter_procedure_eq(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_parameter(int argc, Scheme_Object *args[]);
 static Scheme_Object *extend_parameterization(int argc, Scheme_Object *args[]);
+static Scheme_Object *parameterization_p(int argc, Scheme_Object *args[]);
 
 static Scheme_Object *make_thread_cell(int argc, Scheme_Object *args[]);
 static Scheme_Object *thread_cell_p(int argc, Scheme_Object *args[]);
@@ -564,6 +565,11 @@ void scheme_init_thread(Scheme_Env *env)
 			     scheme_make_prim_w_arity(parameter_procedure_eq,
 						      "parameter-procedure=?", 
 						      2, 2), 
+			     env);
+  scheme_add_global_constant("parameterization?", 
+			     scheme_make_prim_w_arity(parameterization_p,
+						      "parameteration?", 
+						      1, 1), 
 			     env);
 
   scheme_add_global_constant("thread-cell?", 
@@ -1863,12 +1869,6 @@ static Scheme_Thread *make_thread(Scheme_Config *config,
   process->print_buffer = NULL;
   process->print_allocated = 0;
 
-#ifndef NO_SCHEME_EXN
-  process->exn_raised = 0;
-#endif
-  process->error_invoked = 0;
-  process->err_val_str_invoked = 0;
-
   process->ran_some = 1;
 
   process->list_stack = NULL;
@@ -3041,7 +3041,7 @@ static void init_schedule_info(Scheme_Schedule_Info *sinfo, int false_pos_ok,
 
 int scheme_can_break(Scheme_Thread *p)
 {
-  if (!p->suspend_break && !p->exn_raised) {
+  if (!p->suspend_break) {
     Scheme_Config *config;
     if (p == scheme_current_thread) {
       config = scheme_current_config();
@@ -5249,6 +5249,16 @@ Scheme_Parameterization *flatten_config(Scheme_Config *orig_c)
   return (Scheme_Parameterization *)orig_c->cell;
 }
 
+static Scheme_Object *parameterization_p(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *v = argv[0];
+
+  return (SCHEME_CONFIGP(v)
+	  ? scheme_true
+	  : scheme_false);
+}
+
+
 #define SCHEME_PARAMETERP(v) ((SCHEME_PRIMP(v) || SCHEME_CLSD_PRIMP(v)) \
                               && (((Scheme_Primitive_Proc *)v)->flags & SCHEME_PRIM_IS_PARAMETER))
 
@@ -5482,6 +5492,15 @@ static void make_initial_config(Scheme_Thread *p)
 				   1, 1,
 				   0, -1);
     init_param(cells, paramz, MZCONFIG_EVAL_HANDLER, eh);
+  }
+  
+  {
+    Scheme_Object *eh;
+    eh = scheme_make_prim_w_arity2(scheme_default_compile_handler,
+				   "default-compile-handler",
+				   1, 1,
+				   0, -1);
+    init_param(cells, paramz, MZCONFIG_COMPILE_HANDLER, eh);
   }
   
   {

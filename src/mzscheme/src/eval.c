@@ -151,6 +151,7 @@ static Scheme_Object *expand_once(int argc, Scheme_Object **argv);
 static Scheme_Object *expand_to_top_form(int argc, Scheme_Object **argv);
 static Scheme_Object *enable_break(int, Scheme_Object *[]);
 static Scheme_Object *current_eval(int argc, Scheme_Object *[]);
+static Scheme_Object *current_compile(int argc, Scheme_Object *[]);
 
 static Scheme_Object *eval_stx(int argc, Scheme_Object *argv[]);
 static Scheme_Object *compile_stx(int argc, Scheme_Object *argv[]);
@@ -377,6 +378,11 @@ scheme_init_eval (Scheme_Env *env)
 			     scheme_register_parameter(current_eval, 
 						       "current-eval",
 						       MZCONFIG_EVAL_HANDLER),
+			     env);
+  scheme_add_global_constant("current-compile",
+			     scheme_register_parameter(current_compile, 
+						       "current-compile",
+						       MZCONFIG_COMPILE_HANDLER),
 			     env);
 
   scheme_add_global_constant("compile-allow-set!-undefined", 
@@ -744,7 +750,7 @@ static Scheme_Object *try_apply(Scheme_Object *f, Scheme_Object *args)
 {
   Scheme_Object * volatile result;
   mz_jmp_buf savebuf;
-  scheme_current_thread->error_invoked = 5;
+  scheme_current_thread->skip_error = 5;
   memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
 
   if (scheme_setjmp(scheme_error_buf))
@@ -753,7 +759,7 @@ static Scheme_Object *try_apply(Scheme_Object *f, Scheme_Object *args)
     result = _scheme_apply_to_list(f, args);
   
   memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-  scheme_current_thread->error_invoked = 0;  
+  scheme_current_thread->skip_error = 0;  
 
   return result;
 }
@@ -1518,7 +1524,7 @@ static void *compile_k(void)
   Scheme_Object *o, *tl_queue;
   Scheme_Compilation_Top *top;
   Resolve_Prefix *rp;
-  Scheme_Object *gval;
+  Scheme_Object *gval, *argv[1];
   Scheme_Comp_Env *cenv;
 
   form = (Scheme_Object *)p->ku.k.p1;
@@ -1580,18 +1586,30 @@ static void *compile_k(void)
 	  break;
       }
     }
-      
-    o = scheme_compile_expr(form, cenv, &rec, 0);
-    
-    rp = scheme_resolve_prefix(0, cenv->prefix, 1);
-    
-    o = scheme_resolve_expr(o, scheme_resolve_info_create(rp));
 
-    top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
-    top->type = scheme_compilation_top_type;
-    top->max_let_depth = rec.max_let_depth;
-    top->code = o;
-    top->prefix = rp;
+    if (for_eval) {
+      argv[0] = form;
+      o = scheme_apply(scheme_get_param(scheme_current_config(), MZCONFIG_COMPILE_HANDLER),
+		       1, argv);
+      if (!SAME_TYPE(SCHEME_TYPE(o), scheme_compilation_top_type)) {
+	argv[0] = o;
+	scheme_wrong_type("compile-handler", "compiled code", 0, -1, argv);
+	return NULL;
+      }
+      top = (Scheme_Compilation_Top *)o;
+    } else {
+      o = scheme_compile_expr(form, cenv, &rec, 0);
+    
+      rp = scheme_resolve_prefix(0, cenv->prefix, 1);
+      
+      o = scheme_resolve_expr(o, scheme_resolve_info_create(rp));
+      
+      top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
+      top->type = scheme_compilation_top_type;
+      top->max_let_depth = rec.max_let_depth;
+      top->code = o;
+      top->prefix = rp;
+    }
 
     if (SCHEME_PAIRP(tl_queue)) {
       /* This compile is interleaved with evaluation,
@@ -4098,6 +4116,12 @@ do_default_eval_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
   return _eval(v, env, 0, 1, 0);
 }
 
+static Scheme_Object *
+do_default_compile_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
+{
+  return _compile(argv[0], env, 0, 0, 0, 0);
+}
+
 /* local functions */
 
 static Scheme_Object *
@@ -4166,17 +4190,32 @@ Scheme_Object *
 scheme_default_eval_handler(int argc, Scheme_Object **argv)
 {
   Scheme_Env *env;
-
   env = scheme_get_env(NULL);
-
   return do_default_eval_handler(env, argc, argv);
+}
+
+Scheme_Object *
+scheme_default_compile_handler(int argc, Scheme_Object **argv)
+{
+  Scheme_Env *env;
+  env = scheme_get_env(NULL);
+  return do_default_compile_handler(env, argc, argv);
 }
 
 static Scheme_Object *
 current_eval(int argc, Scheme_Object **argv)
 {
-  return scheme_param_config("eval-handler", 
+  return scheme_param_config("current-eval", 
 			     scheme_make_integer(MZCONFIG_EVAL_HANDLER),
+			     argc, argv,
+			     1, NULL, NULL, 0);
+}
+
+static Scheme_Object *
+current_compile(int argc, Scheme_Object **argv)
+{
+  return scheme_param_config("current-compile", 
+			     scheme_make_integer(MZCONFIG_COMPILE_HANDLER),
 			     argc, argv,
 			     1, NULL, NULL, 0);
 }

@@ -58,8 +58,11 @@ static Scheme_Object *def_exit_handler_proc(int, Scheme_Object *[]);
 
 static Scheme_Object *do_raise(Scheme_Object *arg, int return_ok, int need_debug);
 
+static Scheme_Object *nested_exn_handler(void *old_exn, int argc, Scheme_Object *argv[]);
+
 static Scheme_Object *def_err_val_proc;
 static Scheme_Object *def_error_esc_proc;
+static Scheme_Object *default_display_handler;
 Scheme_Object *scheme_def_exit_proc;
 
 static char *init_buf(long *len, long *blen);
@@ -517,14 +520,12 @@ void scheme_init_error(Scheme_Env *env)
 void scheme_init_error_config(void)
 {
   scheme_set_root_param(MZCONFIG_EXIT_HANDLER, scheme_def_exit_proc);
-
-  {
-    Scheme_Object *edh;
-    edh = scheme_make_prim_w_arity(def_error_display_proc,
-				   "default-error-display-handler",
-				   2, 2);
-    scheme_set_root_param(MZCONFIG_ERROR_DISPLAY_HANDLER, edh);
-  }
+  
+  REGISTER_SO(default_display_handler);
+  default_display_handler = scheme_make_prim_w_arity(def_error_display_proc,
+						     "default-error-display-handler",
+						     2, 2);
+  scheme_set_root_param(MZCONFIG_ERROR_DISPLAY_HANDLER, default_display_handler);
 
   scheme_set_root_param(MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
 			def_err_val_proc);
@@ -552,36 +553,71 @@ scheme_inescapeable_error(const char *a, const char *b)
 static void
 call_error(char *buffer, int len, Scheme_Object *exn)
 {
-  Scheme_Object *p[2];
-  mz_jmp_buf savebuf;
-
-  if (scheme_current_thread->error_invoked == 5) {
+  if (scheme_current_thread->skip_error) {
     scheme_longjmp (scheme_error_buf, 1);
-  } else if (scheme_current_thread->error_invoked == 1) {
-    scheme_inescapeable_error("error trying to display error: ", buffer);
-    scheme_longjmp (scheme_error_buf, 1);
-  } else if (scheme_current_thread->error_invoked == 2) {
-    scheme_inescapeable_error("error trying to escape from error: ", buffer);
-    scheme_longjmp(scheme_error_buf, 1);
   } else {
-    scheme_current_thread->error_invoked = 1;
+    mz_jmp_buf savebuf;
+    Scheme_Object *p[2], *display_handler, *escape_handler, *v;
+    Scheme_Config *config, *orig_config;
+    Scheme_Cont_Frame_Data cframe;
+
+    /* For last resort: */
+    memcpy((void *)&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+
+    orig_config = scheme_current_config();
+    display_handler = scheme_get_param(orig_config, MZCONFIG_ERROR_DISPLAY_HANDLER);
+    escape_handler = scheme_get_param(orig_config, MZCONFIG_ERROR_ESCAPE_HANDLER);
+    
+    v = scheme_make_byte_string_without_copying("error display handler");
+    v = scheme_make_closed_prim_w_arity(nested_exn_handler,
+					scheme_make_pair(v, exn),
+					"nested-exception-handler", 
+					1, 1);
+    config = scheme_extend_config(orig_config,
+				  MZCONFIG_EXN_HANDLER,
+				  v);
+    config = scheme_extend_config(config,
+				  MZCONFIG_ERROR_DISPLAY_HANDLER,
+				  default_display_handler);
+    config = scheme_extend_config(config,
+				  MZCONFIG_ENABLE_BREAK,
+				  scheme_false);
+    
+    scheme_push_continuation_frame(&cframe);
+    scheme_install_config(config);
+
     p[0] = scheme_make_immutable_sized_utf8_string(buffer, len);
     p[1] = exn;
-    memcpy((void *)&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-    if (scheme_setjmp(scheme_error_buf)) {
-      scheme_current_thread->error_invoked = 0;
-      scheme_longjmp(savebuf, 1);
-    } else {
-      if (buffer)
-	scheme_apply_multi(scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_DISPLAY_HANDLER), 2, p);
-      scheme_current_thread->error_invoked = 2;
-      /* Typically jumps out of here */
-      scheme_apply_multi(scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_ESCAPE_HANDLER), 0, NULL);
-      /* Uh-oh; record the error fall back to the default escaper */
-      scheme_inescapeable_error("error escape handler did not escape; calling the default error escape handler", "");
-      scheme_current_thread->error_invoked = 0;
-      scheme_longjmp(savebuf, 1); /* force an exit */
-    }
+    scheme_apply_multi(display_handler, 2, p);
+
+    v = scheme_make_byte_string_without_copying("error escape handler");
+    v = scheme_make_closed_prim_w_arity(nested_exn_handler,
+					scheme_make_pair(v, exn),
+					"nested-exception-handler", 
+					1, 1);
+    config = scheme_extend_config(orig_config,
+				  MZCONFIG_EXN_HANDLER,
+				  v);
+    config = scheme_extend_config(config,
+				  MZCONFIG_ERROR_DISPLAY_HANDLER,
+				  default_display_handler);
+    config = scheme_extend_config(config,
+				  MZCONFIG_ERROR_ESCAPE_HANDLER,
+				  def_error_esc_proc);
+    config = scheme_extend_config(config,
+				  MZCONFIG_ENABLE_BREAK,
+				  scheme_false);
+        
+    scheme_install_config(config);
+
+    /* Typically jumps out of here */
+    scheme_apply_multi(escape_handler, 0, NULL);
+
+    scheme_pop_continuation_frame(&cframe);
+
+    /* Uh-oh; record the error and fall back to the default escaper */
+    scheme_inescapeable_error("error escape handler did not escape; calling the default error escape handler", "");
+    scheme_longjmp(savebuf, 1); /* force an exit */
   }
 }
 
@@ -682,32 +718,15 @@ void scheme_warning(char *msg, ...)
 			   scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_PORT));
 }
 
-static void pre_conv(void *v)
-{
-  scheme_current_thread->err_val_str_invoked = 1;
-}
-
-static Scheme_Object *now_do_conv(void *v)
-{
-  Scheme_Object **argv = (Scheme_Object **)v;
-  return _scheme_apply(argv[2], 2, argv);
-}
-
-static void post_conv(void *v)
-{
-  scheme_current_thread->err_val_str_invoked = 0;
-}
-
 static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
 {
-  Scheme_Object *o, *args[3];
+  Scheme_Object *o, *args[2];
 
   o = scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_PRINT_VALUE_HANDLER);
 
   if ((SAME_OBJ(o, def_err_val_proc)
        && SAME_OBJ(scheme_get_param(scheme_current_config(), MZCONFIG_PORT_PRINT_HANDLER),
-		   scheme_default_global_print_handler))
-      || (scheme_current_thread->err_val_str_invoked)) {
+		   scheme_default_global_print_handler))) {
     long l;
     char *s;
     s = scheme_write_to_string_w_max(v, &l, len);
@@ -715,13 +734,25 @@ static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
       *lenout = l;
     return s;
   } else {
+    Scheme_Config *config;
+    Scheme_Cont_Frame_Data cframe;
+
     args[0] = v;
     args[1] = scheme_make_integer(len);
-    args[2] = o;
 
-    o = scheme_dynamic_wind(pre_conv, now_do_conv,
-			    post_conv, NULL,
-			    (void *)args);
+    config = scheme_extend_config(scheme_current_config(),
+				  MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
+				  def_err_val_proc);
+    config = scheme_extend_config(config,
+				  MZCONFIG_ENABLE_BREAK,
+				  scheme_false);
+
+    scheme_push_continuation_frame(&cframe);
+    scheme_install_config(config);
+
+    o = _scheme_apply(o, 2, args);
+
+    scheme_pop_continuation_frame(&cframe);
 
     if (SCHEME_CHAR_STRINGP(o)) {
       o = scheme_char_string_to_byte_string(o);
@@ -2064,86 +2095,63 @@ init_exn_handler(int argc, Scheme_Object *argv[])
 			     1, NULL, NULL, 0);
 }
 
-static void pre_raise(void *v)
+static Scheme_Object *
+nested_exn_handler(void *old_exn, int argc, Scheme_Object *argv[])
 {
-  scheme_current_thread->exn_raised = 1;
-}
+  Scheme_Object *arg = argv[0], *orig_arg = SCHEME_CDR((Scheme_Object *)old_exn);
+  long len, mlen = -1, orig_mlen = -1, blen;
+  char *buffer, *msg, *orig_msg, *raisetype, *orig_raisetype, *who;
+  
+  buffer = init_buf(&len, &blen);
+  
+  who = SCHEME_BYTE_STR_VAL(SCHEME_CAR((Scheme_Object *)old_exn));
 
-static Scheme_Object *now_do_raise(void *v)
-{
-  Scheme_Object *p[1];
+  if (SCHEME_STRUCTP(arg)
+      && scheme_is_struct_instance(exn_table[MZEXN].type, arg)) {
+    Scheme_Object *str = ((Scheme_Structure *)arg)->slots[0];
+    raisetype = "exception raised";
+    str = scheme_char_string_to_byte_string(str);
+    msg = SCHEME_BYTE_STR_VAL(str);
+    mlen = SCHEME_BYTE_STRLEN_VAL(str);
+  } else {
+    msg = error_write_to_string_w_max(arg, len, NULL);
+    raisetype = "raise called (with non-exception value)";
+  }
 
-  p[0] = (Scheme_Object *)v;
+  if (SCHEME_STRUCTP(orig_arg)
+      && scheme_is_struct_instance(exn_table[MZEXN].type, orig_arg)) {
+    Scheme_Object *str = ((Scheme_Structure *)orig_arg)->slots[0];
+    orig_raisetype = "exception raised";
+    str = scheme_char_string_to_byte_string(str);
+    orig_msg = SCHEME_BYTE_STR_VAL(str);
+    orig_mlen = SCHEME_BYTE_STRLEN_VAL(str);
+  } else {
+    orig_msg = error_write_to_string_w_max(orig_arg, len, NULL);
+    orig_raisetype = "raise called (with non-exception value)";
+  }
 
-  return scheme_apply(scheme_get_param(scheme_current_config(), MZCONFIG_EXN_HANDLER),
-		      1, (Scheme_Object **)p);
-}
 
-static void post_raise_or_debug(void *v)
-{
-  scheme_current_thread->exn_raised = 0;
+  blen = scheme_sprintf(buffer, blen, "%s by %s: %t; original %s: %t",
+			raisetype,
+			who,
+			msg, mlen,
+			orig_raisetype,
+			orig_msg, orig_mlen);
+    
+  call_error(buffer, blen, scheme_false);
+
+  return scheme_void;
 }
 
 static Scheme_Object *
 do_raise(Scheme_Object *arg, int return_ok, int need_debug)
 {
- Scheme_Object *v;
+ Scheme_Object *v, *p[1], *h;
+ Scheme_Config *config;
+ Scheme_Cont_Frame_Data cframe;
 
- if (scheme_current_thread->error_invoked) {
-   char *s;
-   long slen = -1;
-   if (SCHEME_STRUCTP(arg)
-       && scheme_is_struct_instance(exn_table[MZEXN].type, arg)) {
-     Scheme_Object *str = ((Scheme_Structure *)arg)->slots[0];
-     if (SCHEME_CHAR_STRINGP(str)) {
-       char *msg, *prefix = "exception raised: ";
-       long len, clen;
-       clen = strlen(prefix);
-       str = scheme_char_string_to_byte_string(str);
-       msg = SCHEME_BYTE_STR_VAL(str);
-       len = SCHEME_BYTE_STRLEN_VAL(str);
-       s = (char *)scheme_malloc_atomic(len + clen);
-       memcpy(s, prefix, clen);
-       memcpy(s + clen, msg, len + 1);
-       slen = clen + len;
-     } else
-       s = "exception raised [message field is not a string]";
-   } else
-     s = "raise called (with non-exception value)";
-   call_error(s, slen, arg);
- }
-
- if (scheme_current_thread->exn_raised) {
-   long len, mlen = -1, blen;
-   char *buffer, *msg, *raisetype;
-
-   buffer = init_buf(&len, &blen);
-
-   if (SCHEME_STRUCTP(arg)
-       && scheme_is_struct_instance(exn_table[MZEXN].type, arg)) {
-     Scheme_Object *str = ((Scheme_Structure *)arg)->slots[0];
-     raisetype = "exception raised";
-     if (SCHEME_CHAR_STRINGP(str)) {
-       str = scheme_char_string_to_byte_string(str);
-       msg = SCHEME_BYTE_STR_VAL(str);
-       mlen = SCHEME_BYTE_STRLEN_VAL(str);
-     } else
-       msg = "[exception message field is not a string]";
-   } else {
-     msg = error_write_to_string_w_max(arg, len, NULL);
-     raisetype = "raise called (with non-exception value)";
-   }
-
-   blen = scheme_sprintf(buffer, blen, "%s by %s: %t",
-			 raisetype,
-			 (scheme_current_thread->exn_raised < 2)
-			 ? "exception handler"
-			 : "debug info handler",
-			 msg, mlen);
-
-   call_error(buffer, blen, scheme_false);
-
-   return scheme_void;
+ if (scheme_current_thread->skip_error) {
+   scheme_longjmp (scheme_error_buf, 1);
  }
 
  if (need_debug) {
@@ -2152,9 +2160,29 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
    ((Scheme_Structure *)arg)->slots[1] = marks;
  }
 
- v = scheme_dynamic_wind(pre_raise, now_do_raise,
-			 post_raise_or_debug, NULL,
-			 (void *)arg);
+ config = scheme_current_config();
+ h = scheme_get_param(config, MZCONFIG_EXN_HANDLER);
+
+ v = scheme_make_byte_string_without_copying("exception handler");
+ v = scheme_make_closed_prim_w_arity(nested_exn_handler,
+				     scheme_make_pair(v, arg),
+				     "nested-exception-handler", 
+				     1, 1);
+
+ config = scheme_extend_config(config,
+			       MZCONFIG_EXN_HANDLER,
+			       v);
+ config = scheme_extend_config(config,
+			       MZCONFIG_ENABLE_BREAK,
+			       scheme_false);
+
+ scheme_push_continuation_frame(&cframe);
+ scheme_install_config(config);
+
+ p[0] = arg;
+ v = scheme_apply(h, 1, (Scheme_Object **)p);
+
+ scheme_pop_continuation_frame(&cframe);
 
  if (return_ok)
    return v;

@@ -30,6 +30,9 @@
          (make-object ((drscheme:language:get-default-mixin) 
 		       beginner-lang%)))
 	)
+      
+      ;(make-dromedary-settings symbol)
+      (define-struct dromedary-settings (typechoice))
 
       (define (dromedary-lang-mixin level name position numbers one-line parser)
 	(class* object% (drscheme:language:language<%>)
@@ -202,12 +205,41 @@
 		    (format "\"~a\"" value)]
 		   [else value]))
 		
+		
 		(define/public (config-panel parent)
+		  (letrec ([typechoice-panel (instantiate group-box-panel% ()
+							  (label "Typechecking Preferences")
+							  (parent parent)
+							  (alignment '(left center)))]
+			   [print-typechoice (make-object radio-box%
+							  "Typechecking:"
+							  (list "Require types for function arguments"
+								"Allow type inferencing for function arguments"
+								"No static typechecking")
+							  typechoice-panel
+							  (lambda (x y) (update-tc)))]
+			   [update-tc (lambda () (void))])
+
 		  (case-lambda
-		   [() null]
-		   [(x) (void)]))
-		(define/public (default-settings) null)
-		(define/public (default-settings? x) #t)
+		   [() 
+		    (make-dromedary-settings (case 
+						 (send print-typechoice
+						       get-selection)
+					       [(0) 'fullcheck]
+					       [(1) 'inference]
+					       [(2) 'nocheck]))]
+		   [(settings) 
+		    (send print-typechoice set-selection
+			  (case (dromedary-settings-typechoice settings)
+			    [(fullcheck default) 0]
+			    [(inference) 1]
+			    [(nocheck) 2]))])))
+		(define/public (default-settings)
+		  (if (eq? level 'beginner)
+		      (make-dromedary-settings 'fullcheck)
+		      (make-dromedary-settings 'inference)))
+		(define/public (default-settings? x) 
+		  (equal? x (default-settings)))
 		(define/public (front-end/complete-program input settings) (front-end input settings 0))
 		(define/public (front-end/interaction input settings) (front-end input settings (drscheme:language:text/pos-start input)))
 		(define/public (front-end input settings offset)
@@ -276,7 +308,8 @@
           (define/public (get-language-url) #f)
           (define/public (get-language-numbers) numbers)
           (define/public (get-teachpack-names) null)
-          (define/public (marshall-settings x) x)
+          (define/public (marshall-settings x) 
+	    (list (list (dromedary-settings-typechoice x))))
           (define/public (on-execute settings run-in-user-thread)
             (dynamic-require '(lib "prims.ss" "dromedary") #f)
             (let ([path ((current-module-name-resolver) '(lib "prims.ss" "dromedary") #f #f)]
@@ -297,7 +330,11 @@
 									 (display (ml-style value) port)));(format-typevalue value) port))
           (define/public (render-value/format value settings port port-write width)
 	    (display (format-typevalue value) port))
-          (define/public (unmarshall-settings x) x)
+          (define/public (unmarshall-settings x) 
+	    (if (and (pair? x) (= (length x) 1)
+		     (pair? (car x)) (= (length (car x)) 1))
+		(make-dromedary-settings (caar x))
+		#f))
 	  (define/public (create-executable settings parent src-file dest-file)
 	    '(let ([code (compile-simplified (simplify (parse-a60-file src-file)
 						       base-importing-stx)

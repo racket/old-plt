@@ -65,6 +65,9 @@ case $OS in
   FreeBSD)
     SYS=i386${SEP}freebsd
     ;;
+  Darwin)
+    SYS=ppc${SEP}macosx
+    ;;
   OpenBSD)
     SYS=i386${SEP}openbsd
     ;;

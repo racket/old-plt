@@ -31,6 +31,7 @@
 	    [handler : mred:handler^
 		     (mred:handler@ debug group gui-utils 
 				  editor-frame finder hyper-frame
+				  canvas container edit preferences
 				  (core file@))] 
 	    [keymap : mred:keymap^
 		    (mred:keymap@ debug preferences exit finder handler
@@ -88,7 +89,8 @@
 					  (core file@) (core string@))]
 	    [hyper-frame : mred:hyper-frame^ 
 			 (mred:hyper-frame@ debug hyper-edit hyper-dialog container
-					  frame canvas group handler)]
+					  frame canvas group find-string
+					  preferences handler)]
 	    [html : mred:html^ (mred:html@ debug url
 					   (core file@) (core string@))])
       (export (unit debug)

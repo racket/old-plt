@@ -11,9 +11,13 @@
 	    [mred:frame : mred:frame^]
 	    [mred:canvas : mred:canvas^]
 	    [mred:group : mred:group^]
+	    [mred:find-string : mred:find-string^]
+	    [mred:preferences : mred:preferences^]
 	    [mred:handler : mred:handler^])
 	    
     (mred:debug:printf 'invoke "mred:hyper-frame@")
+
+    (mred:preferences:set-preference-default 'mred:bookmarks null)
 
     (define hyper-frame-group (make-object mred:group:frame-group%))
 
@@ -103,7 +107,7 @@
       (lambda (super%)
 	(class super% ([file-name #f] [group #f] [keep-locked? #t]
 		       [tag "top"] [relative? #f])
-	  (inherit canvas edit panel make-menu menu-bar% show on-size)
+	  (inherit canvas panel make-menu menu-bar% show on-size)
 	  (public
 	    [get-edit% (lambda () mred:hyper-edit:hyper-edit%)]
 	    [get-canvas% (lambda () hyper-canvas%)]
@@ -147,10 +151,53 @@
 			  (set-history (cons home backs))
 			  (set-forward ())))
 		 (send canvas set-focus)))])
+
+	  (private
+	    [bookmark-callback
+	     (lambda ()
+	       (mred:preferences:set-preference
+		'mred:bookmarks
+		(cons (send (send canvas get-media) get-filename)
+		      (mred:preferences:get-preference 'mred:bookmarks))))]
+	    [bookmark-string "Bookmark this URL"]
+	    [bookmark-ids null]
+	    [bookmark-menu #f]
+
+	    [set-bookmark-entries
+	     (lambda (new-entries)
+	       (when bookmark-menu
+		 (for-each (lambda (id) (send bookmark-menu delete id))
+			 bookmark-ids)
+		 (set! bookmark-ids
+		       (map 
+			(lambda (bookmark)
+			  (send bookmark-menu append-item
+				bookmark
+				(lambda ()
+				  (send (send canvas get-media)
+					goto-url bookmark))))
+			new-entries))))])
+		    
+	  (rename [super-make-menu-bar make-menu-bar])
+	  (public
+	    [make-menu-bar
+	     (lambda ()
+	       (let ([m (super-make-menu-bar)])
+		 (set! bookmark-menu (make-menu))
+		 (send m append bookmark-menu "Bookmarks")
+		 (send bookmark-menu append-item bookmark-string bookmark-callback)
+		 (send bookmark-menu append-separator)
+		 (set-bookmark-entries (mred:preferences:get-preference 'mred:bookmarks))
+		 m))])
+	  (sequence
+	    (mred:preferences:add-preference-callback 
+	     'mred:bookmarks
+	     (lambda (b v) (set-bookmark-entries v))))
+
 	  (sequence
 	    (mred:debug:printf 'super-init "hyper-basic-frame; file-name: ~a" file-name)
 	    (super-init file-name)
-	    (send edit load-file file-name))
+	    (send (send canvas get-media) load-file file-name))
 	  
 	  (private
 	    [button-panel (make-object mred:container:horizontal-panel% panel)]
@@ -172,11 +219,13 @@
 			  (adjust-stacks-on-follow tag))
 	    (show #t)))))
 
-    (define hyper-basic-frame% (make-hyper-basic-frame% mred:frame:simple-menu-frame%))
+    (define hyper-basic-frame% (make-hyper-basic-frame% 
+				(mred:find-string:make-searchable-frame%
+				 mred:frame:simple-menu-frame%)))
 
-    (define make-hyper-view-frame% make-hyper-basic-frame%)
+    (define make-hyper-view-frame% (lambda (x) x))
 
-    (define hyper-view-frame% (make-hyper-view-frame% mred:frame:simple-menu-frame%))
+    (define hyper-view-frame% (make-hyper-view-frame% hyper-basic-frame%))
     
     (define make-hyper-make-frame%
       (lambda (super%)

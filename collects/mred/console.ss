@@ -398,11 +398,7 @@
 		   [(void? v) v]
 		   [else (pretty-print-out v)]))]
 	      [eval-and-display
-	       (letrec ([add-tread
-			 (lambda ()
-			   (eval `(define tread ,transparent-read))
-			   (set! add-tread void))])
-		 (lambda (str)
+	       (lambda (str)
 		   (catch-errors
 		    #f
 		    (lambda () #f)
@@ -412,9 +408,8 @@
 			(lambda ()
 			  (with-parameterization user-parameterization
 			    (lambda ()
-			      (add-tread)
 			      (eval-str str))))
-			(lambda v (map display-result v))))))))])
+			(lambda v (map display-result v)))))))])
 	    
 	    (private
 	      [only-spaces-after
@@ -622,6 +617,7 @@
 	       (current-output-port this-out)
 	       (current-input-port this-in)
 	       (current-error-port this-err))
+	    (port-read-handler this-in (lambda (x) (transparent-read)))
 	    (with-parameterization user-parameterization
 	      (lambda ()
 		(current-output-port this-out)

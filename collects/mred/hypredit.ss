@@ -297,6 +297,20 @@
 						     tag-str))))
 				 (loop (sub1 num-links-left)))))))]
 		 [else (super-read-footer-from-file stream name)]))]
+	    [goto-url
+	     (lambda (url-string)
+	       (let ([e (make-object (object-class this))]
+		     [url-string
+		      (if (string? (get-filename))
+			  (mred:url:url->string
+			   (mred:url:combine-url/relative 
+			    (mred:url:string->url (get-filename))
+			    url-string))
+			  url-string)])
+		 (send e load-file url-string)
+		 (let ([c (get-canvas)])
+		   (send e add-canvas c)
+		   (send c set-media e))))]
 	    [make-clickback-funct
 	     (lambda (url-string)
 	       (lambda (edit start end)
@@ -308,16 +322,7 @@
 		     "Error"))
 		  (lambda () #f)
 		  (if follow-on-click?
-		      (let ([e (make-object (object-class this))]
-			    [url-string
-			     (if (string? (get-filename))
-				 (mred:url:url->string
-				  (mred:url:combine-url/relative 
-				   (mred:url:string->url (get-filename))
-				   url-string))
-				 url-string)])
-			(send e load-file url-string)
-			(send (get-canvas) set-media e))
+		      (goto-url url-string)
 		      (show-message (format "url: ~a" url-string))))))]
 	    
 	    [install-clickbacks 

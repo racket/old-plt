@@ -3129,7 +3129,7 @@ peeked_read(int argc, Scheme_Object *argv[])
 	&& !SAME_TYPE(t, scheme_always_evt_type)
 	&& !SAME_TYPE(t, scheme_never_evt_type)
 	&& !SAME_TYPE(t, scheme_semaphore_repost_type))
-      scheme_wrong_type("port-commit-peeked", "channel-put evt, channel, semaphore, semephore-peek evt, always evt, or never evt", 
+      scheme_wrong_type("port-commit-peeked", "channel-put evt, channel, semaphore, semephore-peek evt, always evt, or never evt",
 			2, argc, argv);
   }
 
@@ -3996,7 +3996,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   }
 
   config = scheme_current_config();
-  config = scheme_extend_config(config, MZCONFIG_CASE_SENS, scheme_case_sensitive); // for legacy code
+  config = scheme_extend_config(config, MZCONFIG_CASE_SENS, (scheme_case_sensitive ? scheme_true : scheme_false)); // for legacy code
   config = scheme_extend_config(config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS, scheme_true);
   config = scheme_extend_config(config, MZCONFIG_CURLY_BRACES_ARE_PARENS, scheme_true);
   config = scheme_extend_config(config, MZCONFIG_CAN_READ_GRAPH, scheme_true);

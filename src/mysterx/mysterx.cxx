@@ -476,7 +476,7 @@ void scheme_release_document(void *doc,void *) {
 
   if (((MX_Document_Object *)doc)->pIEventQueue) {
     ((MX_Document_Object *)doc)->pIEventQueue->Release();
-  }
+  } 
 
   MX_MANAGED_OBJ_RELEASED(doc) = TRUE;
 }
@@ -3763,6 +3763,8 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   if (hr != S_OK || pIEventQueue == NULL) {
     codedComError("Can't get event queue interface",hr);
   }
+
+  pIEventQueue->AddRef();
   
   // may have to wait for document to be created
   

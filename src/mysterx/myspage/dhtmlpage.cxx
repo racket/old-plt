@@ -89,8 +89,6 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
        return -1;
     }
 
-    pEvent->AddRef();
-
     pIHTMLEventObj->get_type(&eventString);
 
     eventEntry = (EVENT_MAP *)bsearch(eventString,eventMap,
@@ -230,8 +228,6 @@ LRESULT CDHTMLPage::OnCreate(UINT,WPARAM,LPARAM,BOOL&) {
     return -1;
   }
   
-  pIEventQueue->AddRef();
-
   return 0;
 }
 

@@ -35,7 +35,7 @@ LINK32_OBJS= \
 
 mysterx.dll : $(DEF_FILE) $(LINK32_OBJS)
 	$(LINK32) --ld mysterx.dll $(LINK32_OBJS) $(LINK32_LIBS)
-	copy mysterx.dll ..\..\collects\mysterx\compiled\native
+	copy mysterx.dll ..\..\collects\mysterx\compiled\native\win32\i386
 	
 comtypes.obj : comtypes.cxx mysterx.h stdafx.h
 

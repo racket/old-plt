@@ -290,6 +290,8 @@ Scheme_Object *mx_get_event(int argc,Scheme_Object **argv) {
     codedComError("Error retrieving event",hr);
   }
 
+  pEvent->AddRef();
+
   event_object = (MX_Event *)scheme_malloc(sizeof(MX_Event));
 
   event_object->type = mx_event_type;

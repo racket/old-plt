@@ -327,7 +327,7 @@
 	 (format "the size of the name list (~a) does not match the size of the value list (~a): "
 		 (length names) (length vals))
 	 vals))
-      (let ([lock-file (build-path (find-system-path 'pref-dir) "PREFLOCK")])
+      (let ([lock-file (build-path (find-system-path 'pref-dir) ".plt-PREFLOCK")])
 	(with-handlers ([(lambda (x)
 			   (and (exn:i/o:filesystem? x)
 				(eq? (exn:i/o:filesystem-detail x) 'already-exists)))

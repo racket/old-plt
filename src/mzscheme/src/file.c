@@ -68,6 +68,7 @@
 #endif
 #ifdef DOS_FILE_SYSTEM
 # include <windows.h>
+# include <shlobj.h>
 #endif
 #ifdef NO_ERRNO_GLOBAL
 # define errno -1
@@ -4103,42 +4104,67 @@ find_system_path(int argc, Scheme_Object **argv)
       
       return CURRENT_WD();
     }
-    
-    d = getenv("HOMEDRIVE");
-    p = getenv("HOMEPATH");
 
-    if (d && p) {
-      char *s;
-      s = scheme_malloc_atomic(strlen(d) + strlen(p) + 1);
-      strcpy(s, d);
-      strcat(s, p);
-      
-      if (scheme_directory_exists(s))
-	home = scheme_make_string_without_copying(s);
-      else
-	home = NULL;
-    } else 
-      home = NULL;
-    
-    if (!home) {
-      char name[1024];
-      
-      if (!GetModuleFileName(NULL, name, 1024)) {
-	/* Disaster. Use CWD. */
-	home = CURRENT_WD();
-      } else {
-	int i;
-	char *s;
-	
-	s = name;
-	
-	i = strlen(s) - 1;
-	
-	while (i && (s[i] != '\\')) {
-	  --i;
+    home = NULL;
+
+    if (which == id_addon_dir) {
+      /* Try to get Application Data directory: */
+      LPITEMIDLIST items;
+      if (SHGetSpecialFolderLocation(NULL, CSIDL_APPDATA, &items) == S_OK) {
+	int ok;
+	IMalloc *mi;
+	char *buf;
+
+	buf = (char *)scheme_malloc_atomic(MAX_PATH);
+	ok = SHGetPathFromIDList(items, buf);
+
+	SHGetMalloc(&mi);
+	mi->lpVtbl->Free(mi, items);
+	mi->lpVtbl->Release(mi);
+
+	if (ok) {
+	  home = scheme_make_string_without_copying(buf);
 	}
-	s[i] = 0;
-	home = scheme_make_string(s);
+      }
+    }
+
+    if (!home) {
+      d = getenv("HOMEDRIVE");
+      p = getenv("HOMEPATH");
+
+      if (d && p) {
+	char *s;
+	s = scheme_malloc_atomic(strlen(d) + strlen(p) + 1);
+	strcpy(s, d);
+	strcat(s, p);
+      
+	if (scheme_directory_exists(s))
+	  home = scheme_make_string_without_copying(s);
+	else
+	  home = NULL;
+      } else 
+	home = NULL;
+    
+      if (!home) {
+	char name[1024];
+      
+	if (!GetModuleFileName(NULL, name, 1024)) {
+	  /* Disaster. Use CWD. */
+	  home = CURRENT_WD();
+	} else {
+	  int i;
+	  char *s;
+	
+	  s = name;
+	
+	  i = strlen(s) - 1;
+	
+	  while (i && (s[i] != '\\')) {
+	    --i;
+	  }
+	  s[i] = 0;
+	  home = scheme_make_string(s);
+	}
       }
     }
     
@@ -4155,7 +4181,7 @@ find_system_path(int argc, Scheme_Object **argv)
     if (which == id_pref_file)
       return scheme_append_string(home, scheme_make_string("\\plt-prefs.ss" + ends_in_slash));
     if (which == id_addon_dir)
-      return scheme_append_string(home, scheme_make_string("\\PLT Scheme AddOns" + ends_in_slash));
+      return scheme_append_string(home, scheme_make_string("\\PLT Scheme" + ends_in_slash));
   }
 #endif
 

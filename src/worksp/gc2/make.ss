@@ -105,9 +105,11 @@
 
 (define mz-inc "/I ../../mzscheme/include ")
 
-(try "precomp.c" common-deps "xsrc/precomp.h" #f 
-	(string-append mz-inc "/I ../../mzscheme/src")
-	#f "" "")
+(try "precomp.c" (list* "../../mzscheme/src/schvers.h"
+			common-deps)
+     "xsrc/precomp.h" #f 
+     (string-append mz-inc "/I ../../mzscheme/src")
+     #f "" "")
 
 (for-each
  (lambda (x)
@@ -195,7 +197,8 @@
 			      "/I ../../wxwindow/contrib/wxxpm/libxpm.34b/lib "
 			      "/I ../../wxWindow/contrib/fafa "
 			      "/I ../../wxcommon/jpeg /I ../../worksp/jpeg /I ../../wxcommon/zlib "))
-(try "wxprecomp.cxx" common-deps "xsrc/wxprecomp.h" #f wx-inc #f "" "-DGC2_AS_IMPORT")
+(try "wxprecomp.cxx" (list* "../../mzscheme/src/schvers.h" common-deps)
+     "xsrc/wxprecomp.h" #f wx-inc #f "" "-DGC2_AS_IMPORT")
 
 (define (wx-try base proj x use-precomp? suffix)
   (let ([cxx-file (format "../../~a/~a.~a" base x suffix)])

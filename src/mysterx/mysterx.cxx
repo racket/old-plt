@@ -658,12 +658,12 @@ void codedComError(char *s,HRESULT hr) {
   if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 		    0,hr,0,buff,sizeof(buff),NULL) > 0) {
     sprintf(finalBuff,"%s, code = %X: %s",s,hr,buff);
-    scheme_signal_error(finalBuff);
   }
   else {
-    sprintf(buff,"%s, code = %%X",s);    
-    scheme_signal_error(buff,hr);
+    sprintf(finalBuff,"%s, code = %X",s,hr);    
   }
+
+  scheme_signal_error(finalBuff);
 }
 
 Scheme_Object *do_cocreate_instance(CLSID clsId,char *name) {
@@ -3310,7 +3310,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 
       len = SysStringLen(exnInfo.bstrDescription);
       WideCharToMultiByte(CP_ACP,(DWORD)0,
-			  exnInfo.bstrSource,len,
+			  exnInfo.bstrDescription,len,
 			  description,sizeof(description)-1,
 			  NULL,NULL);
       description[len] = '\0';
@@ -3326,13 +3326,13 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
     }
     else {
       sprintf(errBuff,
-	      "COM object exception, %s%s",
+	      "COM object exception%s%s",
 	      hasDescription ? "\nDescription: " : "" ,
 	      hasDescription ? description : "");
       codedComError(errBuff,exnInfo.scode);
     }
   }
-  
+
   if (hr != S_OK) {
     char buff[2048];
     sprintf(buff,"\"%s\" (%s) failed",
@@ -3350,6 +3350,8 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
     scheme_gc_ptr_ok(methodArguments.rgvarg);
   }  
   
+puts("7");
+
   if (invKind == INVOKE_PROPERTYPUT) {
     return scheme_void;
   }

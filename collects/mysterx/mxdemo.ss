@@ -109,8 +109,6 @@
   (when (send ev click?)
 	(com-invoke cal "AboutBox")))
 
-(collect-garbage)
-
 (define (hide-handler ev)
   (when (send ev click?)
 	(send calwb show #f)))

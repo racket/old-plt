@@ -9,7 +9,6 @@
 #ifndef OS_X
 # define SELF_SUSPEND_RESUME
 #endif
-
 #include "common.h"
 
 #include "wx_main.h"
@@ -123,11 +122,7 @@ static void UpdateRgnToWindowCoords(WindowPtr w, RgnHandle updateRgn)
   Rect windowBounds;
   RgnHandle contentRgn;
   
-#ifdef OS_X
-  GetWindowBounds(w, kWindowContentRgn, &windowBounds);
-#else
   GetWindowBounds(w, kWindowGlobalPortRgn, &windowBounds);
-#endif
 
   /* Avoid overflow in offset: */
   contentRgn = NewRgn();

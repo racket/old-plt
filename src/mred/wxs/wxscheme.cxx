@@ -343,11 +343,28 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
 #endif
 #ifdef wx_mac
 # define USE_GL
-# define PROTECT_GLS
+# ifdef OS_X
+#  define PROTECT_GLS
+# endif
 #endif
 
 #ifdef PROTECT_GLS
 static int gl_param;
+#endif
+
+#ifdef MPW_CPLUS
+extern "C" {
+  typedef void (*DW_PRE_PTR)(void *);
+  typedef Scheme_Object *(*DW_RUN_PTR)(void *);
+  typedef void (*DW_POST_PTR)(void *);
+}
+# define CAST_DW_PRE (DW_PRE_PTR)
+# define CAST_DW_RUN (DW_RUN_PTR)
+# define CAST_DW_POST (DW_POST_PTR)
+#else
+# define CAST_DW_PRE /* empty */
+# define CAST_DW_RUN /* empty */
+# define CAST_DW_POST /* empty */
 #endif
 
 #ifdef USE_GL
@@ -485,7 +502,9 @@ void *wxWithGLContext(wxGL *gl, void *thunk, void *alt_waitable, int eb)
     a[1] = glo;
 
     BEGIN_ESCAPEABLE(release_context_lock, a);
-    v = scheme_dynamic_wind(swap_ctx_in, do_call_ctx, swap_ctx_out,
+    v = scheme_dynamic_wind(CAST_DW_PRE swap_ctx_in, 
+			    CAST_DW_RUN do_call_ctx, 
+			    CAST_DW_POST swap_ctx_out,
 			    NULL, a);
     END_ESCAPEABLE();
   }

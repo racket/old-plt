@@ -162,6 +162,7 @@
 (define image-include ((mk-src-path "wxmac" "utils" "image" "src")))
 (define jpeg-include ((mk-src-path "wxcommon" "jpeg")))
 (define mrjpeg-include ((mk-src-path "mac" "mred")))
+(define zlib-include ((mk-src-path "wxcommon" "zlib")))
 (define simpledrop-include ((mk-src-path "mac" "mzscheme")))
 
 (define wxs-srcs
@@ -237,6 +238,7 @@
 		    al-include
 		    jpeg-include
 		    mrjpeg-include
+		    zlib-include
 		    simpledrop-include))
    (map (mk-src-path "mred")
 	'((up "mzscheme" "utils" "xcglue.c")
@@ -437,6 +439,46 @@
 	  "jerror.c"
 	  "jmemnobs.c"))))
 
+(define png-srcs
+  (map
+   (make-comp (list zlib-include))
+   (map (mk-src-path "wxcommon" "libpng")
+	'("png.c"
+	  "pngerror.c"
+	  "pngrio.c"
+	  "pngwio.c"
+	  "pngmem.c"
+	  "pngset.c"
+	  "pngget.c"
+	  "pngread.c"
+	  "pngrtran.c"
+	  "pngrutil.c"
+	  "pngtest.c"
+	  "pngtrans.c"
+	  "pngwrite.c"
+	  "pngwtran.c"
+	  "pngwutil.c"
+	  "pngpread.c"))))
+
+(define zlib-srcs
+  (map
+   (make-comp (list zlib-include))
+   (map (mk-src-path "wxcommon" "zlib")
+	'("adler32.c"
+	  "compress.c"
+	  "crc32.c"
+	  "gzio.c"
+	  "uncompr.c"
+	  "deflate.c"
+	  "trees.c"
+	  "zutil.c"
+	  "inflate.c"
+	  "infblock.c"
+	  "inftrees.c"
+	  "infcodes.c"
+	  "infutil.c"
+	  "inffast.c"))))
+
 (define starter-srcs
   (map
    (make-comp (list ((mk-src-path "mac" "mzscheme"))))
@@ -452,7 +494,9 @@
 	  mred-srcs
 	  xpm-srcs
 	  a-list-srcs
-	  jpeg-srcs))
+	  jpeg-srcs
+	  png-srcs
+	  zlib-srcs))
 
 (define src-dirs
   (list (mk-src-path "mzscheme" "src")

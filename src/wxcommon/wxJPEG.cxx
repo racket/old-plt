@@ -15,6 +15,7 @@
 #include "wx_gdi.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 extern "C" {
 # ifdef WX_USE_LIBJPEG
 #  include <jpeglib.h>
@@ -485,6 +486,18 @@ int write_JPEG_file(char *filename, wxBitmap *bm, int quality)
 static char *png_err_msg;
 static int pem_registered;
 
+#ifdef MPW_CPLUS
+extern "C" {
+  typedef void (*UEP_PTR)(png_structp png_ptr, png_const_charp msg);
+  typedef void (*UWP_PTR)(png_structp png_ptr, png_const_charp msg);
+}
+# define CAST_UEP (UEP_PTR)
+# define CAST_UWP (UWP_PTR)
+#else
+# define CAST_UEP /* empty */
+# define CAST_UWP /* empty */
+#endif
+
 static void user_error_proc(png_structp png_ptr, png_const_charp msg)
 {
   int len;
@@ -624,7 +637,9 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
     * the compiler header file version, so that we know if the application
     * was compiled with a compatible version of the library.  REQUIRED
     */
-   png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, user_error_proc, user_warn_proc);
+   png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, 
+				    CAST_UEP user_error_proc, 
+				    CAST_UWP user_warn_proc);
 
    if (png_ptr == NULL)
    {
@@ -760,8 +775,10 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
        
        if (wxGetPreference("gamma", buf, 30)) {
 	 screen_gamma = (double)atof(buf);
+#ifdef MPW_CPLUS
        } else if ((gamma_str = getenv("SCREEN_GAMMA"))) {
 	 screen_gamma = (double)atof(gamma_str);
+#endif
        } else
 	 screen_gamma = 0;
        
@@ -907,7 +924,9 @@ int wx_write_png(char *file_name, wxBitmap *bm)
     * the compiler header file version, so that we know if the application
     * was compiled with a compatible version of the library.  REQUIRED
     */
-   png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, user_error_proc, user_warn_proc);
+   png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, 
+				     CAST_UEP user_error_proc, 
+				     CAST_UWP user_warn_proc);
 
    if (png_ptr == NULL)
    {

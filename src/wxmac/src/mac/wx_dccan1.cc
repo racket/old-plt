@@ -15,7 +15,9 @@
 #include "wx_mac_utils.h"
 #include "wx_area.h"
 #include "wx_rgn.h"
-#include <AGL/agl.h> 
+#ifdef OS_X
+# include <AGL/agl.h> 
+#endif
 
 extern CGrafPtr wxMainColormap;
 
@@ -739,16 +741,17 @@ wxGL *wxCanvasDC::GetGL()
 }
 
 static wxGL *current_gl_context = NULL;
+#ifdef OS_X
 static AGLPixelFormat fmt;
 static AGLPixelFormat sb_fmt;
 static AGLContext dummy;
+#endif
 
 void wxInitGL()
 {
+#ifdef OS_X
   GC_CAN_IGNORE GLint attrib[] = { AGL_RGBA, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 16, AGL_NONE };
   GC_CAN_IGNORE GLint sb_attrib[] = { AGL_RGBA, AGL_OFFSCREEN, AGL_PIXEL_SIZE, 32, AGL_NONE };
-  
-  wxREGGLOB(current_gl_context); 
   
   fmt = aglChoosePixelFormat(NULL, 0, attrib);
   sb_fmt = aglChoosePixelFormat(NULL, 0, sb_attrib);
@@ -757,6 +760,9 @@ void wxInitGL()
     dummy = aglCreateContext(fmt, NULL);
     aglSetCurrentContext(dummy);
   }
+#endif
+
+  wxREGGLOB(current_gl_context); 
 }
 
 wxGL::wxGL()
@@ -766,6 +772,7 @@ wxGL::wxGL()
 
 void wxGL::Reset(CGrafPtr gp, int offscreen, int w, int h)
 {
+#ifdef OS_X
   AGLContext ctx; 
 
   if (gl_ctx) {
@@ -804,6 +811,7 @@ void wxGL::Reset(CGrafPtr gp, int offscreen, int w, int h)
       aglSetCurrentContext(ctx);
     }
   }
+#endif
 }
 
 int wxGL::Ok()
@@ -813,49 +821,59 @@ int wxGL::Ok()
 
 void wxGL::SwapBuffers(void)
 {
+#ifdef OS_X
   if (gl_ctx) {
     aglSwapBuffers((AGLContext)gl_ctx);
   }
+#endif
 }
 
 void wxGL::ThisContextCurrent(void)
 {
+#ifdef OS_X
   if (current_gl_context != this) {
     current_gl_context = this;
     if (gl_ctx) {
       aglSetCurrentContext((AGLContext)gl_ctx);
     }
   }
+#endif
 }
 
 void wxGL::ResetGLView(int x, int y, int w, int h)
 {
+#ifdef OS_X
   GLint bufferRect[4];
   AGLContext ctx = (AGLContext)gl_ctx;
   
-  bufferRect[0] = x;
-  bufferRect[1] = y;
-  bufferRect[2] = w;
-  bufferRect[3] = h;
+  if (ctx) {
+    bufferRect[0] = x;
+    bufferRect[1] = y;
+    bufferRect[2] = w;
+    bufferRect[3] = h;
   
-  aglSetInteger(ctx, AGL_BUFFER_RECT, bufferRect);
-  aglEnable(ctx, AGL_BUFFER_RECT);
-  
-  if (current_gl_context != this) {
-    aglSetCurrentContext(ctx);
-  }
-  glViewport(0, 0, (GLsizei)w, (GLsizei)h);
-  if (current_gl_context != this) {
-    if (current_gl_context) {
-      aglSetCurrentContext((AGLContext)current_gl_context->gl_ctx);
-    } else {
-      aglSetCurrentContext(dummy);
+    aglSetInteger(ctx, AGL_BUFFER_RECT, bufferRect);
+    aglEnable(ctx, AGL_BUFFER_RECT);
+    
+    if (current_gl_context != this) {
+      aglSetCurrentContext(ctx);
+    }
+    glViewport(0, 0, (GLsizei)w, (GLsizei)h);
+    if (current_gl_context != this) {
+      if (current_gl_context) {
+	aglSetCurrentContext((AGLContext)current_gl_context->gl_ctx);
+      } else {
+	aglSetCurrentContext(dummy);
+      }
     }
   }
+#endif
 }
 
 void wxGLNoContext()
 {
+#ifdef OS_X
   current_gl_context = NULL;
   aglSetCurrentContext(dummy);
+#endif
 }

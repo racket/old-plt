@@ -116,8 +116,10 @@ wxFrame::wxFrame // Constructor (for frame window)
     }
   }
 
+#ifdef OS_X
   if (cStyle & wxTOOLBAR_BUTTON)
     windowAttributes |= kWindowToolbarButtonAttribute;
+#endif
 
   result = ::CreateNewWindow(windowClass, windowAttributes, &theBoundsRect, &theMacWindow);  
   

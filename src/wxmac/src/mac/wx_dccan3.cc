@@ -596,11 +596,15 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  
  GetForeColor( &textColor );
 
+#ifdef OS_X
  if (smoothing == wxSMOOTHING_OFF)
    options = kATSStyleNoAntiAliasing;
  else if (smoothing == wxSMOOTHING_ON)
    options = kATSStyleApplyAntiAliasing;
- 
+#else
+ options = 0;
+#endif
+
  // C doesn't allow this to be done in an initializer, so we have to fill in the pointers here.
  theValues[0] = &atsuFont;
  theValues[1] = &atsuSize;

@@ -4,7 +4,9 @@
 
   (define installer
     (lambda (plt-home) 
-      (unless (file-exists? (build-path (collection-path "slatex") "compiled" "slatexsrc.zo"))
+      (unless (and #f ;; FIXME - currently recompiling every time; a smarter
+		      ;; strategy would have to check the MzScheme version, etc.
+		   (file-exists? (build-path (collection-path "slatex") "compiled" "slatexsrc.zo")))
 	(let ([slatex-code-directory (build-path (collection-path "slatex") "slatex-code")]
 	      [compiled-directory (build-path (collection-path "slatex") "compiled")])
 	  (parameterize ([current-namespace (make-namespace)]
@@ -17,8 +19,10 @@
 	    (load (build-path slatex-code-directory "slaconfg.scm")))
 	  (unless (directory-exists? compiled-directory)
 	    (make-directory compiled-directory))
-	  (copy-file (build-path slatex-code-directory "slatex.scm") ; this file is actually a .zo file
-		     (build-path compiled-directory "slatexsrc.zo"))))
+	  (let ([dest (build-path compiled-directory "slatexsrc.zo")])
+	    (when (file-exists? dest) (delete-file dest))
+	    (copy-file (build-path slatex-code-directory "slatex.scm") ; this file is actually a .zo file
+		       dest))))
       (let ([meta-make-mzscheme-launcher
              (lambda (launcher name)
                (make-mzscheme-launcher 

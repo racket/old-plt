@@ -1092,6 +1092,10 @@ void fault_handler(int sn, int code, struct sigcontext *sc, char *addr)
 # define NEED_SIGBUS
 #endif
 
+#ifdef OS_X
+void macosx_init_exception_handler() ;
+#endif
+
 #if defined(sun)
 # include <signal.h>
 void fault_handler(int sn, struct siginfo *si, void *ctx) 
@@ -1112,36 +1116,6 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
 }
 # define NEED_SIGWIN
 #endif
-
-/* this is stolen from compact.c */
-/* ========== Mac OS X signal handler ========== */
-#if defined(OS_X)
-/* Note: sigaction with SA_SIGINFO doesn't work.  si->si_addr is
-   normally the faulting referenced address (on other platforms), but
-   it turns out to be the faulting instruction address in 10.2. So we
-   have to parse machine-code instructions and look at the
-   registers. */
-# include <signal.h>
-# include "osx_addr.inc"
-void fault_handler(int sn, siginfo_t *si, struct sigcontext *scp)
-{
-# if 0
-  /* Old approach from CGC, doesn't seem to work in 10.2 because scp
-     is nonsense. */
-  unsigned int   instr = *((unsigned int *) scp->sc_ir);
-  unsigned int * regs = &((unsigned int *) scp->sc_regs)[2];
-  designate_modified(get_fault_addr(instr, regs));
-# else
-  /* Hack: relevant context info seems to be 50 words deeper into the
-     stack than &scp */
-  unsigned int   instr = *(((unsigned int **)&scp)[50]);
-  unsigned int * regs = ((unsigned int *)&scp) + 52;
-  designate_modified(get_fault_addr(instr, regs));
-# endif
-# define NEED_OSX_SIGBUS
-}
-#endif
-
 
 void GC_init_type_tags(int count, int weakbox) 
 {
@@ -1170,15 +1144,9 @@ void GC_init_type_tags(int count, int weakbox)
 #ifdef NEED_SIGBUS
     signal(SIGBUS, (void (*)(int))fault_handler);     
 #endif
-/* #ifdef NEED_OSX_SIGBUS */
-/*     { */
-/*       struct sigaction act, oact; */
-/*       act.sa_handler = fault_handler; */
-/*       sigemptyset(&act.sa_mask); */
-/*       act.sa_flags = SA_RESTART; */
-/*       sigaction(SIGBUS, &act, &oact); */
-/*     } */
-/* #endif */
+#ifdef OS_X
+    macosx_init_exception_handler();
+#endif
 #ifdef NEED_SIGACTION
     {
       struct sigaction act, oact;
@@ -2812,6 +2780,15 @@ static unsigned long determine_max_heap_size(void)
   return (1 * 1024 * 1024 * 1024);
 }
 
+# define MALLOCATOR_DEFINED
+#endif
+
+/******************************************************************************/
+/* OS/X */
+
+#ifdef OS_X
+# define TEST 0
+# include "vm_osx.c"
 # define MALLOCATOR_DEFINED
 #endif
 

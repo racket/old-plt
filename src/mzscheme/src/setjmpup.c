@@ -319,7 +319,7 @@ void scheme_ensure_stack_start(Scheme_Process *p, void *d)
     p->stack_start = d;
 }
 
-# if defined(__CYGWIN32__)
+# if defined(__CYGWIN__)
 /* We have to define setjmp & longjmp to remain compatible
    with MSVC-compiled extensions. It's the mostly same code 
    as mzsj86.c, just in a slightly different syntax, and it

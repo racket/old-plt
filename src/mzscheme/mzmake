@@ -78,13 +78,9 @@ case $OS in
   SCO) # How do you really recognize SCO?
     make $GCOPTS LIBS='-lc -lsocket' RANLIB=':' "$@"
     ;;
-  CYGWIN32*)
-    if [ "${MZNOEXTTABLE}" = "yes" ]; then 
-      make cygwin-dll-setup
-      make $GCOPTS LIBS='gmzwin.exp' "$@"
-    else
-      make $GCOPTS "$@"
-    fi
+  CYGWIN*)
+    make --unix cygwin-dll-setup
+    make --unix $GCOPTS PERL='' LIBS='gmzwin.exp' "$@"
     ;;
   BeOS)
     GCOPTS="GCDIR='sgc' OPTIONS='-DUSE_SENORA_GC'"

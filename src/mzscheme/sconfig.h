@@ -467,7 +467,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 
 #endif
 
-  /******* Windows with MS Visual C++ or CYGWIN32 *********/
+  /******** Windows with MS Visual C++ or CYGWIN **********/
   /* See the "windows" directory for more MSVC details.   */
   /* MzScheme is probably no longer Borland-friendly,     */
   /* since it currently relies on one MSVC-style inline   */
@@ -482,7 +482,7 @@ int   scheme_sproc_semaphore_try_down(void *);
   /*   not under Win32s. A Win32s version will also work  */
   /*   under Windows NT.                                  */
 
-#if (defined(__BORLANDC__) || defined(_MSC_VER) || defined(__CYGWIN32__)) \
+#if (defined(__BORLANDC__) || defined(_MSC_VER) || defined(__CYGWIN__)) \
     && (defined(__WIN32__) || defined(WIN32) || defined(_WIN32))
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "win32\\i386"
@@ -502,14 +502,14 @@ int   scheme_sproc_semaphore_try_down(void *);
 #  define NO_READLINK
 #  define MKDIR_NO_MODE_FLAG
 # endif
-# if defined(__CYGWIN32__)
+# if defined(__CYGWIN__)
 #  define USE_GET_CURRENT_DIRECTORY
 #  define USE_WINDOWS_FIND_FIRST
 #  define DIRENT_NO_NAMLEN
 # endif
 
 # define TIME_SYNTAX
-# ifndef __CYGWIN32__
+# ifndef __CYGWIN__
 #   define USE_FTIME
 # endif
 # define GETENV_FUNCTION
@@ -528,6 +528,9 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define NAN_EQUALS_ANYTHING
 # define POW_HANDLES_INF_CORRECTLY
 #endif
+#ifdef __CYGWIN__
+# define USE_DIVIDE_MAKE_INFINITY
+#endif
 
 # define IO_INCLUDE
 # define NO_SLEEP
@@ -540,7 +543,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define SIGSET_IS_SIGNAL
 # define SIGSET_NEEDS_REINSTALL
 
-#ifdef __CYGWIN32__
+#ifdef __CYGWIN__
 # define USE_UNIX_SOCKETS_TCP
 # define CANT_SET_SOCKET_BUFSIZE
 # define NO_NEED_FOR_BEGINTHREAD

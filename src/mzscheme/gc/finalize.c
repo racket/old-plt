@@ -81,6 +81,7 @@ static struct finalizable_object {
     int eager_level; /* MATTHEW: eager finalizers don't care about cycles */
 } **fo_head = 0;
 
+
 struct finalizable_object * GC_finalize_now = 0;
 	/* LIst of objects that should be finalized now.	*/
 

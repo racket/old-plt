@@ -279,6 +279,7 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
       return scheme_overflow_reply;
   } else
     scheme_longjmp(scheme_current_process->overflow_buf, 1);
+  return NULL; /* never gets here */
 #else
   if (!scheme_current_process->stack_overflow) {
     scheme_current_process->stack_overflow = 1;

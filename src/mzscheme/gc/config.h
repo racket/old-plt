@@ -627,6 +627,12 @@
 #       endif
 #   endif
 #   ifdef CYGWIN32
+      /* MATTHEW: for Cygwin B20, use the addresses rather than the values */
+#     ifdef __CYGWIN__
+#        define CW_ADDR_OF &
+#     else
+#        define CW_ADDR_OF /* empty */
+#     endif
           extern int _data_start__;
           extern int _data_end__;
           extern int _bss_start__;
@@ -641,8 +647,9 @@
   	/* minumum/maximum of the two.			*/
 #   	define MAX(x,y) ((x) > (y) ? (x) : (y))
 #   	define MIN(x,y) ((x) < (y) ? (x) : (y))
-#       define DATASTART ((ptr_t) MIN(_data_start__, _bss_start__))
-#       define DATAEND	 ((ptr_t) MAX(_data_end__, _bss_end__))
+      /* MATTHEW: for Cygwin B20, use the addresses rather than the values */
+#       define DATASTART ((ptr_t) MIN(CW_ADDR_OF _data_start__, CW_ADDR_OF _bss_start__))
+#       define DATAEND	 ((ptr_t) MAX(CW_ADDR_OF _data_end__, CW_ADDR_OF _bss_end__))
 #	undef STACK_GRAN
 #       define STACK_GRAN 0x10000
 #       define HEURISTIC1

@@ -34,7 +34,7 @@ To compile the `mzscheme' executable for these platforms:
   SGI IRIX
   Sparc Solaris [see note below]
   Sparc SunOS4    
-  i386 Win32 with CYGWIN32
+  i386 Win32 with Cygwin Beta 20
 run the `mzmake' script.
 
 [Solaris Note: To ensure that dynamic extensions work right, use the

@@ -48,7 +48,7 @@
     (lambda (file-name)
       (build-path dir (file-name-from-path (append-extension-suffix file-name)))))
   
-  (verbose #t)
+  ;(verbose #t)
   
   (define make-ext
     (lambda (scheme-file c-file-names src-dir)
@@ -130,32 +130,32 @@
                         (file-name-from-path plot-scheme-file)
                         f))))
                    (directory-list  plot-src-dir)))))]
-            (make-ext plot-scheme-file plot-c-files plot-src-dir)
+            (make-ext plot-scheme-file plot-c-files plot-src-dir)))))
 
-	    ;; copy plot docs from src here
-
-	    (let ((docs-dir
-		   (build-path (collection-path "doc") "plot")))
-	      (unless (directory-exists? docs-dir)
-		      (make-directory* docs-dir))
-	      (for-each
-	       (lambda (file)
-                 (let ((new-file (build-path docs-dir (file-name-from-path file))))
-                   (if (file-exists? new-file)
-                       (delete-file new-file))
-                   (copy-file file new-file)))
-	       (find-files
-		(lambda (file)
-		  (or
-		   (regexp-match
-		    #rx"hdindex$"
-		    file)
-		   (and
-		    (not
-		     (regexp-match
-		      #rx".tex" file))
-		    (regexp-match
-		     #rx"plot-docs"
-		     file))))
-		(build-path (collection-path "plot") "src" "docs")))
-	      )))))))
+    ;; copy plot docs from src here
+    #;
+    (let ((docs-dir
+           (build-path (collection-path "doc") "plot")))
+      (unless (directory-exists? docs-dir)
+        (make-directory* docs-dir))
+      (for-each
+       (lambda (file)
+         (let ((new-file (build-path docs-dir (file-name-from-path file))))
+           (if (file-exists? new-file)
+             (delete-file new-file))
+           (copy-file file new-file)))
+       (find-files
+        (lambda (file)
+          (or
+           (regexp-match
+            #rx"hdindex$"
+            file)
+           (and
+            (not
+             (regexp-match
+              #rx".tex" file))
+            (regexp-match
+             #rx"plot-docs"
+             file))))
+        (build-path (collection-path "plot") "src" "docs"))))
+    ))

@@ -165,7 +165,7 @@
 	     (make-object button%
 			  button-panel do-home "Home")))
 	  (sequence
-	    (send button-panel stretchable-in-y? #f)
+	    (send button-panel stretchable-in-y #f)
 	    (send panel change-children reverse)
 	    (send (active-canvas) set-focus)
 	    (send (active-canvas) set-home tag)

@@ -123,6 +123,28 @@
 "@flink drscheme:eval:expand-program/multiple %"
 ".")
 
+(drscheme:eval:traverse-program/multiple
+ (drscheme:language-configuration:language-settings?
+  (-> void?)
+  (-> void?)
+  . -> .
+  ((union port? drscheme:language:text/pos?)
+   ((union eof-object? syntax? (cons/p string? any?))
+    (-> any)
+    . -> .
+    any)
+   boolean?
+   . -> .
+   void?))
+ (language-settings init kill-termination)
+
+ "This function is similar to"
+ "@flink drscheme:eval:expand-program/multiple"
+ "The only difference is that it does not"
+ "expand the program in the editor; instead"
+ "the processing function can decide how to"
+ "expand the program.")
+  
 (drscheme:eval:expand-program/multiple
  (drscheme:language-configuration:language-settings?
   boolean?

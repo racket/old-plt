@@ -20,8 +20,8 @@
 
   (define o (current-output-port))
   
-  (define status-init "Check Syntax: Creating user environment")
-  (define status-coloring-program "Check Syntax: coloring expression")
+  (define status-init "Check Syntax: Initializing environment for user code")
+  (define status-coloring-program "Check Syntax: coloring definitions")
   (define status-eval-compile-time "Check Syntax: eval compile time")
   (define status-expanding-expression "Check Syntax: expanding expression")
   (define status-teachpacks "Check Syntax: installing teachpacks")
@@ -850,6 +850,8 @@
           ;; syncheck:button-callback : -> void
           ;; this is the only function that has any code running on the user's thread
           (define/public (syncheck:button-callback)
+            (open-status-line 'drscheme:check-syntax)
+            (update-status-line 'drscheme:check-syntax status-init)
             (let-values ([(expanded-expression expansion-completed) (make-traversal)]
                          [(old-break-thread old-kill-eventspace) (get-breakables)])
               (let* ([definitions-text (get-definitions-text)]
@@ -887,8 +889,6 @@
                      [teachpacks (fw:preferences:get 'drscheme:teachpacks)]
                      [init-proc
                       (lambda () ; =user=
-                        (open-status-line 'drscheme:check-syntax)
-                        (update-status-line 'drscheme:check-syntax status-init)
                         (set-breakables (current-thread) (current-custodian))
                         (set-directory definitions-text)
                         (error-display-handler (lambda (msg exn) ;; =user=

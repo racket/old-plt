@@ -22,23 +22,29 @@
   (define (grey-editor-snip-mixin super%)
     (class super%
       (rename [super-draw draw])
-      (inherit get-admin)
+      (inherit get-admin get-inset)
       (define/override (draw dc x y left top right bottom dx dy draw-caret)
         (let ([old-pen (send dc get-pen)]
               [old-brush (send dc get-brush)]
               [admin (get-admin)]
+              [left-inset (box 0)]
+              [top-inset (box 0)]
+              [right-inset (box 0)]
+              [bottom-inset (box 0)]
+              [xb (box 0)]
+              [yb (box 0)]
               [wb (box 0)]
               [hb (box 0)])
           (when admin
-            (send admin get-view #f #f wb hb this)
+            (send admin get-view xb yb wb hb this)
+            (get-inset left-inset top-inset right-inset bottom-inset)
             (send dc set-pen (send the-pen-list find-or-create-pen *disable-color* 1 'solid))
             (send dc set-brush (send the-brush-list find-or-create-brush *disable-color* 'solid))
-            
-            ;; should be use inset instead of 1 and 2
-            (send dc draw-rectangle (+ x 1) (+ y 1)
-                  (max 0 (- (unbox wb) 2))
-                  (max 0 (- (unbox hb) 2)))
-            
+            (send dc draw-rectangle
+                  (+ x (unbox xb) (unbox left-inset))
+                  (+ y (unbox yb) (unbox top-inset))
+                  (max 0 (- (unbox wb) (+ (unbox left-inset) (unbox right-inset))))
+                  (max 0 (- (unbox hb) (+ (unbox top-inset) (unbox bottom-inset)))))
             (send dc set-pen old-pen)
             (send dc set-brush old-brush)))
         (super-draw dc x y left top right bottom dx dy draw-caret))
@@ -47,18 +53,13 @@
   (define (grey-editor-mixin super%)
     (class super%
       (rename [super-on-paint on-paint])
-      (inherit get-admin)
       (define/override (on-paint before? dc left top right bottom dx dy draw-caret)
         (when before?
           (let ([old-pen (send dc get-pen)]
-                [old-brush (send dc get-brush)]
-                [admin (get-admin)]
-                [wb (box 0)]
-                [hb (box 0)])
+                [old-brush (send dc get-brush)])
             (send dc set-pen (send the-pen-list find-or-create-pen *disable-color* 1 'solid))
             (send dc set-brush (send the-brush-list find-or-create-brush *disable-color* 'solid))
-            (send admin get-max-view #f #f wb hb #t)
-            (send dc draw-rectangle (+ dx 0) (+ dy 0) (unbox wb) (unbox hb))
+            (send dc draw-rectangle (+ left dx) (+ top dy) (+ right dx) (+ bottom dy))
             (send dc set-pen old-pen)
             (send dc set-brush old-brush)))
         (super-on-paint before? dc left top right bottom dx dy draw-caret))

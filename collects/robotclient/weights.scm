@@ -48,14 +48,17 @@
   
 	(define (update-robots robot-list p)
           (player-cur p)
-	  (do 
-	      ([y (- (search-player-y (player-cur)) 2) (+ y 1)]
-	       [counter-y 0 (+ counter-y 1)])
-	      ((< counter-y 5) (void 2))
-	    (do ([x (- (search-player-x (player-cur)) 2) (+ x 1)]
-                  [counter-x 0 (+ counter-x 1)])
-               ((< counter-x 5) (void 2))
-	      (set-valid (get-spot board x y)))))
+          (let ([around-val (if (> (home-squares) (dest-squares))
+                                (home-squares)
+                                (dest-squares))])
+            (do 
+                ([y (- (search-player-y (player-cur)) around-val) (+ y 1)]
+                 [counter-y 0 (+ counter-y 1)])
+	      ((< counter-y (+ 1 (* 2 around-val))) (void 2))
+              (do ([x (- (search-player-x (player-cur)) around-val) (+ x 1)]
+                   [counter-x 0 (+ counter-x 1)])
+                ((< counter-x (+ 1 (* 2 around-val))) (void 2))
+                (set-invalid (get-spot board x y))))))
 	;; 
 
 	
@@ -75,36 +78,56 @@
 			     (get-weight spot)
 			     (let ([new-weight
 				    (+ (if (could-player-move? (board) x y (player-cur))
-				    (+ (* (wall-danger-value) (wall-danger? (board) x y))
-				       (* (water-danger-value) (water-danger? (board) x y))
-				       (* (blank-danger-value) (blank-danger? (board) x y))
-				       (* (wall-threat-value) (wall-threat? (board) x y))
-				       (* (water-threat-value) (water-threat? (board) x y))
-				       (* (blank-threat-value) (blank-threat? (board) x y))
-				       (* (water-escape-value) (water-escape? (board) x y (player-cur)))
-				       (* (blank-escape-value) (blank-escape? (board) x y (player-cur)))
-				       (* (wall-escape-value) (wall-escape? (board) x y p))
-				       (* (water-push-value) (water-push? (board) x y p))
-				       (* (blank-push-value) (blank-push? (board) x y p))
-				       (* (wall-push-value) (wall-push? (board) x y p )))
+                                           (+ (* (wall-danger-value) (wall-danger? (board) x y))
+                                              (* (water-danger-value) (water-danger? (board) x y))
+                                              (* (blank-danger-value) (blank-danger? (board) x y))
+                                              (* (wall-threat-value) (wall-threat? (board) x y))
+                                              (* (water-threat-value) (water-threat? (board) x y))
+                                              (* (blank-threat-value) (blank-threat? (board) x y))
+                                              (* (water-escape-value) (water-escape? (board) x y (player-cur)))
+                                              (* (blank-escape-value) (blank-escape? (board) x y (player-cur)))
+                                              (* (wall-escape-value) (wall-escape? (board) x y p))
+                                              (* (water-push-value) (water-push? (board) x y p))
+                                              (* (blank-push-value) (blank-push? (board) x y p))
+                                              (* (wall-push-value) (wall-push? (board) x y p )))
 				    
-				    0)
-				(if (blank? (board) x y)
-				    (blank-value)
-				    (if (wall? (board) x y)
-					(wall-value)
-					(if (water? (board) x y)
-					    (water-value)
-					    (if (home? (board) x y)
-						(* (home-value) no-packages)))))
-				(* (next-water-value) (next-to-water? (board) x y))
-				(* (destination-value) (destination? x y (search-player-packages (player-cur))))
-				(* (one-destination-value) (one-away-destination? (board) x y (search-player-packages (player-cur))))
-				(* (two-destination-value) (two-away-destination? (board) x y (search-player-packages (player-cur))))
-				(* (three-destination-value) (three-away-destination? (board) x y (search-player-packages (player-cur))))
-				(* (one-home-value) (one-away-base? (board) x y) no-packages)
-				(* (two-home-value) (two-away-base? (board) x y) no-packages)
-				(* (three-home-value) (three-away-base? (board) x y) no-packages))])
+                                           0)
+                                       (if (blank? (board) x y)
+                                           (blank-value)
+                                           0)
+                                       (* (next-water-value) (next-to-water? (board) x y))
+                                       (let loop ([dist 0]
+                                                  [counter 0])
+                                         (cond [(> dest-squares dist) counter]
+                                               [else (let ([toadd (if (package-away-goal? dist x y (search-player-packages (player-cur)))
+                                                                      (* (destination-value) (if (geometric)
+                                                                                                 (expt falloff dist)
+                                                                                                 (let ([arith (* (- falloff) dist)])
+                                                                                                   (if (< arith 0)
+                                                                                                       0
+                                                                                                       arith))))
+                                                                      0)])
+                                                       (loop (+ 1 dist) (+ counter toadd)))]))
+                                       
+                                       (let loop ([dist 0]
+                                                  [counter 0])
+                                         (cond [(> dest-squares dist) counter]
+                                               [else (let ([toadd (if (home-away-goal? dist x y (home-list))
+                                                                      (* (home-value) (if (geometric)
+                                                                                          (expt falloff dist)
+                                                                                          (let ([arith (* (- falloff) dist)])
+                                                                                            (if (< arith 0)
+                                                                                                0
+                                                                                                arith))))
+                                                                      0)])
+                                                       (loop (+ 1 dist) (+ counter toadd)))])))])
+;				(* (destination-value) (destination? x y (search-player-packages (player-cur))))
+;				(* (one-destination-value) (one-away-destination? (board) x y (search-player-packages (player-cur))))
+;				(* (two-destination-value) (two-away-destination? (board) x y (search-player-packages (player-cur))))
+;				(* (three-destination-value) (three-away-destination? (board) x y (search-player-packages (player-cur))))
+;				(* (one-home-value) (one-away-base? (board) x y) no-packages)
+;				(* (two-home-value) (two-away-base? (board) x y) no-packages)
+;;				(* (three-home-value) (three-away-base? (board) x y) no-packages))])
 			       (begin
 				 (set-weight (inexact->exact (round new-weight)) (get-spot (board) x y))
 				 (set-valid (get-spot (board) x y))
@@ -202,49 +225,21 @@
                              0))))
 
 
-	(define-syntax one-away-destination?
-	  (syntax-rules ()
-			((_ board x y plist)
-			 (if (or (not (null? (get-packages-for (+ x 1) y plist)))
-				 (not (null? (get-packages-for (- x 1) y plist)))
-				 (not (null? (get-packages-for x (+ y 1) plist)))
-				 (not (null? (get-packages-for x (- y 1) plist))))
-			     1
-			     0))))
+  (define-syntax x-away-goal?
+    (syntax-rules ()
+      ((_ n x y gx gy)
+       (= n (+ (abs (- x gx)) (abs (- y gy)))))))
 
-	(define-syntax two-away-destination?
-	  (syntax-rules ()
-			((_ board x y plist)
-			 (if (or (not (null? (get-packages-for (+ x 2) y plist)))
-				 (not (null? (get-packages-for (- x 2) y plist)))
-				 (not (null? (get-packages-for x (+ y 2) plist)))
-				 (not (null? (get-packages-for x (- y 2) plist)))
-				 (not (null? (get-packages-for (+ x 1) (+ y 1) plist)))
-				 (not (null? (get-packages-for (+ x 1) (- y 1) plist)))
-				 (not (null? (get-packages-for (- x 1) (- y 1) plist)))
-				 (not (null? (get-packages-for (- x 1) (+ y 1) plist))))
-			     1
-			     0))))
+(define-syntax package-away-goal?
+  (syntax-rules ()
+    ((_ n x y plist)
+     (not (null? (filter (lambda (p) (x-away-goal? n x y (package-x p) (package-y p)))))))))
 
-
-	(define-syntax three-away-destination?
-	  (syntax-rules ()
-			((_ board x y plist)
-			 (if (or (not (null? (get-packages-for (+ x 3) y plist)))
-				 (not (null? (get-packages-for (- x 3) y plist)))
-				 (not (null? (get-packages-for x (+ y 3) plist)))
-				 (not (null? (get-packages-for x (- y 3) plist)))
-				 (not (null? (get-packages-for (+ x 2) (+ y 1) plist)))
-				 (not (null? (get-packages-for (+ x 2) (- y 1) plist)))
-				 (not (null? (get-packages-for (- x 2) (+ y 1) plist)))
-				 (not (null? (get-packages-for (- x 2) (- y 1) plist)))
-				 (not (null? (get-packages-for (+ x 1) (+ y 2) plist)))
-				 (not (null? (get-packages-for (- x 1) (+ y 2) plist)))
-				 (not (null? (get-packages-for (+ x 1) (- y 2) plist)))
-				 (not (null? (get-packages-for (- x 1) (- y 2) plist))))
-			     1
-			     0))))
-
+(define-syntax home-away-goal?
+  (syntax-rules ()
+    ((_ n x y hlist)
+     (not (null? (filter (lambda (h) (x-away-goal? n x y (car h) (cdr h)))))))))
+  
 	(define-syntax is-robot?
 	  (syntax-rules ()
 			((_ board x y)

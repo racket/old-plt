@@ -89,6 +89,13 @@ search.ss in the private subdirectory of the help collection.
 Calling this procedure indicates to the Help Desk search engine that 
 the documentation collections have changed.
 
+_Manual listing_
+----------------
+
+> (find-manuals)
+
+ Returns HTML showing the installed documentation.
+
 _Manual search functions_
 -------------------------
 

@@ -24,6 +24,8 @@
     search-for-docs
     do-search
     doc-collections-changed
+    ;; manuals
+    find-manuals
     ;; manual search
     finddoc
     findreldoc

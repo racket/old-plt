@@ -165,8 +165,15 @@
                     (cond
                       [(null? pats) names]
                       [else (i-loop (cdr pats) (loop (car pats) names))]))]
+                 [x
+                  (and (identifier? (syntax x))
+                       (has-underscore? (syntax x)))
+                  (cons (syntax x) names)]
                  [else names]))])
         (filter-duplicates dups)))
+    
+    (define (has-underscore? x)
+      (memq #\_ (string->list (symbol->string (syntax-e x)))))
     
     (define (filter-duplicates dups)
       (let loop ([dups dups])

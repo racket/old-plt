@@ -84,5 +84,5 @@
       (subterms '() xs)]))
   
   (define term '((lambda (x num) (lambda (y num) (if (= x y) 0 x))) 1))
-  (gui/pred lang reductions (list term) (lambda (x) (zero? (random 2))))
+  (gui lang reductions term)
   )

@@ -325,17 +325,22 @@
                         (- end start))
                       void
                       void)])
+          (send text thaw-colorer)
           (send text set-styles-sticky #f)
           (send text begin-edit-sequence)
           (send text erase)
           (pp expr port char-width text)
           (when (char=? #\newline (send text get-character (- (send text last-position) 1)))
             (send text delete (- (send text last-position) 1) (send text last-position)))
+          (send text freeze-colorer)
+          (when bad?
+            (send text change-style bad-style-delta 0 (send text last-position)))
           (send text end-edit-sequence)))
 
       (super-instantiate ())))
   
   (define lines-pen (send the-pen-list find-or-create-pen "black" 1 'solid))
+  (define bad-style-delta (make-object style-delta% 'change-italic))
   
   ;; where the first snips are inserted
   (define init-rightmost-x 25)
@@ -394,6 +399,7 @@
                  (expr expr)
                  (bad? (not (pred expr))))])
       (send text set-autowrap-bitmap #f)
+      (send text freeze-colorer)
       (send es format-expr)
       es))
   

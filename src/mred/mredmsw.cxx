@@ -250,22 +250,37 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
      We therefore set up a special trampoline for events that trigger
      Scheme code. For example, WM_LBUTTONDOWN. Other events, such as
-     WM_PAINT or WM_SETFOCUS messages, are handled through queued
-     callbacks, since those events may be received other than through
-     an event dispatch (i.e., some other Windows toolbox call triggers
-     and event that it sends directly).
+     WM_PAINT or WM_SETFOCUS messages, are handled through a
+     "trampoline" in the form of queued callbacks, since those events
+     may be received other than through an event dispatch (i.e., some
+     other Windows toolbox call triggers and event that it sends
+     directly).
 
      For trampolined events, we return from the Windows-sponsored
-     message send and then re-send the message (where the re-send
+     message send, and then re-send the message (where the re-send
      might trigger Scheme code). These events *cannot* be handled
      without a trampoline. For example, if somehow the WM_LBUTTONDOWN
      message is sent directly to a window, we can't handle it. The
-     wx_start_win_event() function returns 0 to say "give up". 
+     wx_start_win_event() function returns 0 to say "give up".
 
      For certain kinds of events, the callback queueing is most easily
      implemented in Scheme within mred.ss. For those cases, we put
      MzScheme into atomic mode while handling the event. The "mred.ss"
-     implementation promises to run quickly (and not call user code). */
+     implementation promises to run quickly (and not call user code). 
+
+     Scrolling is a special case. To implement interactive scrolling,
+     we jump into a special mode started by wxHiEventTrampoline().
+     This mode calls into Windows to implement scrolling, but handles
+     WM_HSCROLL and WM_VSCROLL messages specially. On those messages,
+     it runs Scheme code atomically, which can be arbitrary
+     code. However, the code does not run to completion. Instead, we
+     suspend the continuation after a while, and then try to continue
+     on the next WM_XSCROLL message. A timer ensures that a suspended
+     continuation gets to continue soon when nothing else is going on.
+     During this special mode, other messages that can call into
+     Scheme are ignored (e.g., WM_ACTIVATE). After the scroller
+     returns, any pending continuation is finished, but in non-atomic
+     mode, and things are generally back to normal. */
 {
   int tramp;
 

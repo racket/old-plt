@@ -8,9 +8,11 @@ in the following.
 _Server functions_
 ------------------
 
-> start-help-server : -> hd-cookie
+> start-help-server : [external? #f] -> hd-cookie
 
-Starts the Web server for Help Desk.  The return value is 
+Starts the Web server for Help Desk.  The optional argument 
+`external' indicates whether external connections should 
+be allowed; the default is #f.  The return value is 
 a structure that contains instance information about the
 server.  The cookie needs to be passed to some of the functions
 described below.

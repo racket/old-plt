@@ -22,6 +22,7 @@
    empty?
 
    boolean=?
+   symbol=?
 
    identity
    compose

@@ -305,6 +305,14 @@
                           (if (boolean? x) y x)))
       (eq? x y)))
   
+  (define (symbol=? x y)
+    (lambda (x y)
+      (unless (and (symbol? x)
+                   (symbol? y))
+        (raise-type-error 'symbol=? "symbol"
+			  (if (symbol? x) y x)))
+      (eq? x y)))
+  
   (define cons? (lambda (x) (pair? x)))
   (define empty? (lambda (x) (null? x)))
   (define empty '()))

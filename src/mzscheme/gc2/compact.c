@@ -412,8 +412,8 @@ void flush_freed_pages(void)
 int fd, fd_created;
 #endif
 
-/* Instead of immeidtately freeing pages with munmap, only to mmap
-   them again, we cache BLOCKFREE_CACHE_SIZE freed pages. A page is
+/* Instead of immediaately freeing pages with munmap---only to mmap
+   them again---we cache BLOCKFREE_CACHE_SIZE freed pages. A page is
    cached unused for at most BLOCKFREE_UNMAP_AGE cycles of the
    collector. (A max age of 1 seems useful, anything more seems
    dangerous.) 

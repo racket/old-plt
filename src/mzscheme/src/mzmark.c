@@ -3192,12 +3192,14 @@ int mark_regexp_SIZE(void *p) {
 
 int mark_regexp_MARK(void *p) {
   regexp *r = (regexp *)p;
+  gcMARK(r->source);
   return
   gcBYTES_TO_WORDS((sizeof(regexp) + r->regsize));
 }
 
 int mark_regexp_FIXUP(void *p) {
   regexp *r = (regexp *)p;
+  gcFIXUP(r->source);
   return
   gcBYTES_TO_WORDS((sizeof(regexp) + r->regsize));
 }

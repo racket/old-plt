@@ -1409,6 +1409,7 @@ START regexp;
 mark_regexp {
   regexp *r = (regexp *)p;
  mark:
+  gcMARK(r->source);
  size:
   gcBYTES_TO_WORDS((sizeof(regexp) + r->regsize));
 }

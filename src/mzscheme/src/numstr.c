@@ -1753,7 +1753,8 @@ static Scheme_Object *bytes_to_real (int argc, Scheme_Object *argv[])
   default:
     {
       double d;
-      d = *(double *)str;
+      /* don't use `double' cast, due to possible alignment problems: */
+      memcpy(&d, str, sizeof(double));
       return scheme_make_double(d);
     }
     break;
@@ -1801,8 +1802,10 @@ static Scheme_Object *real_to_bytes (int argc, Scheme_Object *argv[])
   
   if (size == 4)
     *(float *)(SCHEME_STR_VAL(s)) = d;
-  else
-    *(double *)(SCHEME_STR_VAL(s)) = d;
+  else {
+    /* Don't use `double' cast, due to alignment concerns */
+    memcpy(SCHEME_STR_VAL(s), &d, sizeof(double));
+  }
 
   if (bigend != MZ_IS_BIG_ENDIAN) {
     int i;

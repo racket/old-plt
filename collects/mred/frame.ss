@@ -84,7 +84,9 @@
 	     (lambda (op)
 	       (send (get-menu-bar) dispatch op))])
 	  (sequence
+	    (mred:debug:printf 'super-init "before mred:menu-frame%")
 	    (apply super-init args)
+	    (mred:debug:printf 'super-init "after mred:menu-frame%")
 	    ; Build and install the menu bar:
 	    (let ([menu-bar (make-menu-bar)])
 	      (set-menu-bar menu-bar)
@@ -181,7 +183,15 @@
 	    [edit-menu:select-all-id #f]
 	    [edit-menu:select-all-help-string "Selects all of the current window"]
 
-	    [edit-menu:between-select-all-and-preferences (lambda (edit-menu) (send edit-menu append-separator))]
+	    [edit-menu:between-select-all-and-find (lambda (edit-menu) (send edit-menu append-separator))]
+
+	    [edit-menu:find 
+	     (lambda () 
+	       (send this search))]
+	    [edit-menu:find-id #f]
+	    [edit-menu:find-help-string "Search for a string in the buffer"]
+
+	    [edit-menu:between-find-and-preferences (lambda (edit-menu) (send edit-menu append-separator))]
 
 	    [edit-menu:preferences mred:preferences:show-preferences-dialog]
 	    [edit-menu:preferences-id #f]
@@ -271,7 +281,14 @@
 		 (set! edit-menu:select-all-id
 		       (send edit-menu append-item "Select A&ll"
 			     edit-menu:select-all edit-menu:select-all-help-string #f "a"))
-		 (edit-menu:between-select-all-and-preferences edit-menu)
+		 (edit-menu:between-select-all-and-find edit-menu)
+		 (when edit-menu:find
+		   (set! edit-menu:find-id
+			 (send edit-menu append-item "Find" 
+			       edit-menu:find
+			       edit-menu:find-help-string
+			       #f "f")))
+		 (edit-menu:between-find-and-preferences edit-menu)
 		 (when edit-menu:preferences
 		   (set! edit-menu:preferences-id
 			 (send edit-menu append-item "Prefere&nces..." edit-menu:preferences
@@ -353,9 +370,11 @@
 	  
 	  ; Initialization:
 	  (sequence
+	    (mred:debug:printf 'super-init "before simple-frame%")
 	    (super-init () name -1 -1 WIDTH HEIGHT
 			(+ wx:const-default-frame wx:const-sdi)
-			name))
+			name)
+	    (mred:debug:printf 'super-init "after simple-frame%"))
 
 	  
 	  (public

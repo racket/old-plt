@@ -278,13 +278,21 @@
 			 (send edit set-auto-set-wrap (not (ivar edit auto-set-wrap?)))
 			 (send panel force-redraw))))
 	       (send edit-menu append-separator))]
-	    [edit-menu:after-standard-items
-	     (lambda (edit-menu)
-	       (send edit-menu append-separator)
-	       (set! font-offset (send (make-object wx:media-edit%) append-font-items edit-menu 0)))])
 
+	  [make-menu-bar
+	   (lambda ()
+	     (let ([mb (super-make-menu-bar)]
+		   [font-menu (make-menu)])
+	       (send mb append font-menu "Fon&t")
+	       (set! font-offset (send (make-object wx:media-edit%)
+				       append-font-items 
+				       font-menu 0))
+	       mb))])
 	  (sequence
-	    (super-init))
+	    (mred:debug:printf 'super-init "before mred:editor-frame%")
+	    (begin0
+	      (super-init)
+	      (mred:debug:printf 'super-init "after mred:editor-frame%")))
 	  
 	  (public
 	    [exit-callback-tag

@@ -249,9 +249,11 @@
 	    
 	    (mred:show-busy-cursor
 	     (lambda ()
+	       (mred:debug:printf 'super-init "initializing console")
 	       (send console-edit do-initialize)
-	       (map (lambda (x) (send console-edit load-file-into-scheme x))
-		    (mred:get-preference 'drscheme:startup-files))))))))
+	       (mred:debug:printf 'super-init "initialized console")
+	       (for-each (lambda (x) (send console-edit load-file-into-scheme x))
+			 (mred:get-preference 'drscheme:startup-files))))))))
 
     (define scheme-project-frame%
       (make-scheme-project-frame% mred:project-frame%))

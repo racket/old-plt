@@ -55,7 +55,9 @@
 	(class super% args
 	       (inherit set-mode)
 	       (sequence
+		 (mred:debug:printf 'super-init "before scheme-mode-edit%")
 		 (apply super-init args)
+		 (mred:debug:printf 'super-init "before scheme-mode-edit%")
 		 (set-mode (make-object mred:scheme-mode:scheme-mode%))))))
 
     (define scheme-mode-edit% (make-scheme-mode-edit% mred:edit:edit%))
@@ -456,7 +458,9 @@
 		 (lambda ()
 		   (make-output-port this-err-write generic-close))])
 	       (sequence
+		 (mred:debug:printf 'super-init "before console-edit%")
 		 (apply super-init args)
+		 (mred:debug:printf 'super-init "after console-edit%")
 		 (set-mode (make-object mred:scheme-mode:scheme-interaction-mode%)))
 	       (public
 		[this-in (make-input-port this-in-read
@@ -536,7 +540,9 @@
 	    [frame-title "MrEdConsole"])
 	  
 	  (sequence
+	    (mred:debug:printf 'super-init "before console-frame%")
 	    (super-init frame-title)
+	    (mred:debug:printf 'super-init "after console-frame%")
 	    (send edit set-file-format wx:const-media-ff-std)
 	    
 	    ; Welcome message and initial prompt:

@@ -22,9 +22,9 @@
  are made all lowercase, and hyphens are inserted before the location
  of formerly uppercase letters, other than the first following "SQL".  
  For example, the hypothetical ODBC name SQLProcedureName would be 
- mapped to the Scheme name procedure-name.  The exception is SQLError, 
- which is mapped to sql-error, to avoid confusion with the MzScheme 
- procedure error.
+ mapped to the Scheme name procedure-name.  The exceptions are SQLError
+ and SQLExecute, which are mapped to sql-error and sql-execute, to 
+ avoid confusion with MzScheme procedures.
 
  The documentation here may be sufficient to get started with
  SrPersist, but you will certainly want to consult an ODBC reference for 

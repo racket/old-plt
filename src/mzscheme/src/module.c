@@ -934,6 +934,8 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 
       todo = SCHEME_CDR(todo);
 
+      scheme_hash_set(checked, name, scheme_true);
+
       if (!SAME_OBJ(name, kernel_symbol)) {
 	menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(from_modchain), name);
 
@@ -1038,7 +1040,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
     do {
       if (SCHEME_PAIRP(prev_phase_todo)) {
 	future_todos = cons(next_phase_todo, future_todos);
-	future_checkeds = cons((Scheme_Object *)next_checked, future_todos);
+	future_checkeds = cons((Scheme_Object *)next_checked, future_checkeds);
 	next_checked = checked;
 	
 	next_phase_todo = scheme_null;
@@ -1084,8 +1086,9 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
     past_checkeds = cons((Scheme_Object *)prev_checked, past_checkeds);
   /* Reverse the list */
   while (!SCHEME_NULLP(past_checkeds)) {
-    future_checkeds = scheme_make_pair(SCHEME_CAR(past_checkeds),
-				       future_checkeds);
+    if (SCHEME_CAR(past_checkeds))
+      future_checkeds = scheme_make_pair(SCHEME_CAR(past_checkeds),
+					 future_checkeds);
     past_checkeds = SCHEME_CDR(past_checkeds);
   }
   /* Now all the modules to check are in the future_checkeds
@@ -1780,8 +1783,10 @@ static void templstart_module(Scheme_Env *menv, Scheme_Env *env,
   np = scheme_null;
   for (l = menv->module->tt_requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     midx = scheme_modidx_shift(SCHEME_CAR(l), menv->module->src_modidx, env->link_midx);
+
+    scheme_prepare_template_env(env);
     
-    if (with_tt)
+    if (with_tt > 1)
       start_module(module_load(scheme_module_resolve(midx), env, NULL), 
 		   env->template_env, 0, 
 		   midx,
@@ -1831,8 +1836,8 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
     if (menv && menv->et_running) {
       if (!delay_exptime && menv->lazy_syntax)
 	finish_expstart_module(menv, env, with_tt, cycle_list);
-      else if (((with_tt > 0) && (menv->tt_running <= 0))
-	       || ((with_tt >= 0) && (menv->tt_running == 0)))
+      else if (((with_tt > 1) && (menv->tt_running <= 0))
+	       || ((with_tt > 0) && (menv->tt_running == 0)))
 	templstart_module(menv, env, with_tt, cycle_list);
       return;
     }
@@ -1980,8 +1985,8 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env,
   if (SCHEME_NULLP(menv->module->tt_requires))
     menv->tt_running = 1;
 
-  if (((with_tt > 0) && (menv->tt_running <= 0))
-      || ((with_tt >= 0) && (menv->tt_running == 0))) {
+  if (((with_tt > 1) && (menv->tt_running <= 0))
+      || ((with_tt > 0) && (menv->tt_running == 0))) {
     templstart_module(menv, env, with_tt, cycle_list);
   }
 
@@ -2591,7 +2596,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 
   /* load the module for the initial require */
   iim = module_load(_module_resolve(iidx, ii), menv, NULL); 
-  expstart_module(iim, menv, 0, iidx, 0, 1, scheme_null);
+  expstart_module(iim, menv, 0, iidx, 0, 0, scheme_null);
 
   mn_ht = scheme_make_hash_table(SCHEME_hash_ptr);
   et_mn_ht = scheme_make_hash_table(SCHEME_hash_ptr);
@@ -4393,7 +4398,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
     m = module_load(name, env, NULL);
 
     if (start)
-      start_module(m, env, 0, idx, 0, 0, scheme_null);
+      start_module(m, env, 0, idx, 0, 1, scheme_null);
     else if (expstart)
       expstart_module(m, env, 0, idx, 0, 0, scheme_null);
 

@@ -3,6 +3,61 @@
 
 (SECTION 'module)
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Check namespace-attach-module:
+
+(let* ([n (make-namespace)]
+       [l null]
+       [here (lambda (v)
+	       (set! l (cons v l)))])
+  (parameterize ([current-namespace n])
+    (eval `(module a mzscheme
+	     (define a 1)
+	     (,here 'a)
+	     (provide a)))
+    (test null values l)
+    (eval `(module b mzscheme
+	     (require-for-template a)
+	     (define b 1)
+	     (,here 'b)
+	     (provide b)))
+    (test null values l)
+    (eval `(module c mzscheme
+	     (require-for-template b)
+	     (define c 1)
+	     (,here 'c)
+	     (provide c)))
+    (test null values l)
+    (eval `(module d mzscheme
+	     (require-for-syntax c)
+	     (define d 1)
+	     (,here 'd)
+	     (provide d)))
+    (test '(c) values l)
+    (eval `(module e mzscheme
+	     (require-for-syntax d)
+	     (define e 1)
+	     (,here 'e)
+	     (provide e)))
+    (test '(d c b c) values l)
+    (eval `(module f mzscheme
+	     (,here 'f)
+	     (require b e)))
+    (test '(d c b d c b c) values l)
+    (eval `(require f))
+    (let ([finished '(f b e  d c b a  d c b d c b c)])
+      (test finished values l)
+      (let ([n2 (make-namespace)])
+	(namespace-attach-module n 'f)
+	(test finished values l)
+	(eval `(require a))
+	(eval `(require f))
+	(test finished values l)))))
+
+done
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (module n mzscheme 
   (define n 'n) 
   (define-struct s (field1 field2))
@@ -127,6 +182,7 @@
 
 ;; Cyclic re-def of n:
 (syntax-test #'(module n n 10))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -686,12 +686,12 @@
       ;; 15.20.2
       ;; SKIP - doing the checking
       ((instanceof? exp)
-       (check-expr (instanceof-expr exp) env type-recs current-class)
-       (check-type-spec (instanceof-type exp) env type-recs)
-       (let ((type (type-spec-to-type (instanceof-type exp) type-recs)))
-         (unless (equal? (car current-class) (ref-type-class/iface type))
-           (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type)))))
-       (set-expr-type exp 'boolean))
+       (set-expr-type exp
+                      (check-instanceof (check-expr (instanceof-expr exp) env type-recs current-class)
+                                        (instanceof-type exp)
+                                        (expr-src exp)
+                                        current-class
+                                        type-recs)))
 
       ((assignment? exp)
        (set-expr-type exp
@@ -765,6 +765,14 @@
       ((or (eq? 'long t1) (eq? 'long t2)) 'long)
       (else 'int)))
 
+  ;check-instanceof type type-spec src (list string) type-records -> type
+  (define (check-instanceof exp-type inst-type src current-class type-recs)
+    (let ((type (type-spec-to-type inst-type type-recs)))
+      (unless (equal? (car current-class) (ref-type-class/iface type))
+        (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
+      'boolean))
+     
+  
   ;; 15.26
   ;; SKIP - worrying about final - doing the check for compound assignment
   ;check-assignment: symbol type type src bool symbol type-records -> type

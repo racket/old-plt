@@ -16,11 +16,19 @@ This section describes the current implementation of the Python-to-Scheme compil
 \subsection{Lexical and Syntax Analysis}
 \label{parsing}
 
-Python program text is read by the lexical analyzer -- created by Scott Owens of Utah University -- and transformed into tokens.  Tokens are either reserved keywords, represented as symbols, or input items, such as literal values, identifiers, and indentation directives.  The lexical analyzer outputs tokens, which are consumed by the parser.
+Python program text is read by the lexical analyzer---created by Scott Owens of Utah University---and transformed into tokens.  Tokens are either reserved keywords, represented as symbols, or input items, such as literal values, identifiers, and indentation directives.  The lexical analyzer outputs tokens, which are consumed by the parser.
 
-The parser -- also provided by Scott Owens, along with the grammar it uses -- accepts a stream of tokens from the lexical analyzer and generates abstract syntax trees (ASTs) according to the grammar described in section~\ref{grammar}.
+The parser---also provided by Scott Owens, along with the grammar it uses---accepts a stream of tokens from the lexical analyzer and generates abstract syntax trees (ASTs) according to the grammar described in section~\ref{grammar}.
 
-Abstract syntax trees are data structures representing the syntax elements present in a program.  For example, the Python expression \verb{x + 3} is a binary expression (section~\ref{arithzzzexprb}).  This binary expression is made up of the identifier \verb{x}, the number \verb{3}, and the addition operation operation symbol (\verb{+}).  See figure~\ref{simpleastfig} for a UML~\cite{silva00umli} representation of the statement's syntax tree.
+Abstract syntax trees are data structures representing the terms present in a program.  For example, the Python expression \verb|x + 3| is a binary expression (section~\ref{arithzzzexprb}).  This binary expression is made up of the identifier \verb{x}, the number \verb{3}, and the addition operation symbol (\verb{+}).  Figure \ref{simpleasthierarchyfig} displays the UML~\cite{silva00umli} type hierarchy of the data structures necessary to represent \verb{x + 3}.  These are the MzScheme classes (from the class system provided by \verb{mzlib/class.ss}) used by the parser to create its output of ASTs.  The \verb|object%| base class of \scm{ast-node%} is the MzScheme \scm{object%} class provided by the PLT class system.  Figure~\ref{simpleastfig} displays the objects involved in the representation of the expression's syntax tree.  These are instantiations of the classes in Figure~\ref{simpleasthierarchyfig}.
+
+\begin{figure}
+	\caption{AST type hierarchy}
+	\label{simpleasthierarchyfig}
+	\begin{center}
+		\includegraphics{images/uml/simple-ast-hierarchy}
+	\end{center}
+\end{figure}
 
 \begin{figure}
 	\caption{AST for x + 3}
@@ -29,17 +37,16 @@ Abstract syntax trees are data structures representing the syntax elements prese
 		\includegraphics{images/uml/simple-ast}
 	\end{center}
 \end{figure}
-
 %Python abstract syntax trees are represented by subclasses of \mbox{ast-node\%}, a base class containing source location and methods to emit MzScheme syntax-objects, which are s-expressions with additional properties, including lexical context and source location.  The \verb{->orig-so} method creates a syntax object with the compiler's context from an s-expression, and the \verb{->lex-so} method creates a syntax object from the given s-expression and context arguments:
 
 %Given an s-expression, the function \verb{->py-so} creates a syntax object within the runtime system's context.
 
-The parser produces a list of abstract syntax trees (one for each top-level statement in the original program).  They are accepted by the code generator as input.
+The parser produces a list of abstract syntax trees, one for each top-level statement in the original program.  They are then accepted by the code generator as input.
 
 \subsection{Code Generation}
 \label{codegeneration}
 
-The code generator must produce Scheme code from a list of ASTs.  It does so by converting the meaning of the supplied ASTs (by the parser described in section~\ref{parsing}) into the equivalent Scheme representation.  The following subsections display and explain the Scheme code generated for the most important parts of the Python language.
+The code generator must produce Scheme code from a list of ASTs.  It does so by converting the supplied ASTs (by the parser described in section~\ref{parsing}) into Scheme code that is operationally equivalent to the original Python code.  The following subsections explain the Scheme code generated for the most important parts of the Python language.
 
 \subsubsection{Function Definitions}
 \label{functions}
@@ -68,9 +75,9 @@ Language: Python.
 {'test': 4} 
 \end{verbatim}
 
-The right behavior is emulated by converting the function definition into the following Scheme code, where \verb{procedure->py-function%} takes a procedure, its name, and its argument names to produce an object representing the Python function:
+The right behavior is emulated by converting the function definition into the following Scheme code, where \verb|procedure->py-function%| takes a procedure, its name, and its argument names to produce an object representing the Python function:
 
-\scm{
+\begin{verbatim}
 (define f
   (procedure->py-function%
    (opt-lambda (dict x y z . rest)
@@ -82,11 +89,11 @@ The right behavior is emulated by converting the function definition into the fo
           (py-print #f (list dict))
           py-none))))
    'f (list 'x 'y 'z) null 'rest 'dict))
-}
+\end{verbatim}
 
 In this translation, \verb{procedure->py-function%}, \verb{list->py-tuple%}, and \verb{py-print} are runtime system functions, and \verb{py-none} is a runtime system constant representing the Python \verb{None}.  We will delay further discussion of the runtime system until section~\ref{runtimesystem}.  The more interesting part of the example is the generated lambda.
 
-In the function described by the \verb{opt-lambda} expression, the compiler shifts the dictionary argument, \verb{dict}, into the first position among the function's parameters (where the function call mechanism knows to put keyword arguments), and places a \verb{let} binding to convert the Scheme list of leftover arguments -- the \verb{rest} in the \verb{opt-lambda} parameter list -- into the Python tuple of leftover arguments.  After handling parameters, the compiler generates the function's \verb{return} handler, followed by the function body itself.
+In the function described by the \verb{opt-lambda} expression, the compiler shifts the dictionary argument, \verb{dict}, into the first position among the function's parameters (where the function call mechanism knows to put keyword arguments), and places a \verb{let} binding to convert the Scheme list of leftover arguments---the \verb{rest} in the \verb{opt-lambda} parameter list---into the Python tuple of leftover arguments.  After handling parameters, the compiler generates the function's \verb{return} handler, followed by the function body itself.
 
 The meaning of a Python \verb{return} statement can be emulated with a Scheme escape continuation, which represents the rest of the program.  A label is generated for the ``return'' continuation; any \verb{return} \emph{value} statement would be translated into \scm{(return10846} \emph{value}\scm{)}.  With the returning mechanism established, the function body can now be generated.
 
@@ -96,7 +103,7 @@ While it is fairly simple to convert a Python function into Scheme text that loo
 
 \subsubsection{Class Definitions}
 
-The Python built-in \verb{type} function returns a new type (synonymous and used interchangeably with class) when given a name, tuple of parents, and dictionary of member fields and methods.  The compiler generates a Python class object as the result of a call to \verb{type}.
+The Python built-in \verb{type} functor returns a new type (i.e., a new class) when given a name, tuple of parents, and dictionary of member fields and methods.  The compiler generates a Python class object as the result of a call to \verb{type}; that is, a statement of the form \verb{class C...} is treated as \verb{C = type("C",...)}.
 
 Consider this small Python class:
 
@@ -109,66 +116,57 @@ class C(A, B):
         return C.some_static_field + x
 \end{verbatim}
 
-In this class \verb|C|, three members are defined, the two static fields, and the method \verb|m|, which adds the value of the first static field to its argument.  This short example compiles into thirty-nine lines of Scheme code, which we now dissect:
+In this class \verb|C|, three members are defined, the two static fields, and the method \verb|m|, which adds the value of the first static field to its argument.  This short example compiles into thirty lines of Scheme code, which we now dissect:
 
-\scm{
+\begin{verbatim}
 01(define C
 02  (python-method-call type '__call__
 03   (list
 04    (symbol->py-string% 'C) (list->py-tuple% (list A B))
-}
+\end{verbatim}
 
-Since \verb|type| is both a class and a callable object, what looks like the function call \verb|type(...)| is in reality the \emph{static method} call \verb{type.__call__(...)}, which is what line 2 starts to invoke.  The \verb{__call__} method yields a new class object when given three arguments: a name, a tuple of parents, and a dictionary of fields and methods (or list of thunks ready to be converted into such a dictionary).  Line 4 hands off the class name, C, and a tuple of base classes, A and B, as the first two parameters of the call.  The third argument is a list of functions, each of which accept one argument, the created class, and returns a pair where the first item is the name of a class field or method and the second, its value.  The entire rest of the program listing makes up this third argument.
+Since \verb|type| is both a class and a callable object, what looks like the function call \verb|type(...)| is in reality the \emph{static method} call \linebreak[4] \verb{type.__call__(...)}, which is what line 2 starts to invoke.  The \verb{__call__} method yields a new class object when given three arguments: a name, a tuple of parents, and a dictionary of fields and methods (or list of thunks ready to be converted into such a dictionary).  Line 4 hands off the class name, C, and a tuple of base classes, A and B, as the first two parameters of the call.  The third argument is a list of functions, each of which accept one argument, the created class, and returns a pair where the first item is the name of a class field or method and the second, its value.  The entire rest of the program listing makes up this third argument.
 
-\scm{
+\begin{verbatim}
 05    (list
 06     (lambda (this-class)
-07       (list
-08        'some_static_field
-09        (number->py-number% 7)))
-}
+07       (list 'some_static_field
+08             (number->py-number% 7)))
+\end{verbatim}
 
 The need for wrapping each key-value pair around a function is shown in the result of compiling the next member field:
 
-\scm{
-10     (lambda (this-class)
-11       (list
-12        'another_static_field
-13        (let-values ([(some_static_field)
-14                      (values (python-get-member this-class
-15                                                 'some_static_field
-16                                                 #f))])
-17          (number->py-number% 3))))
-}
+\begin{verbatim}
+09     (lambda (this-class)
+10       (list
+11        'another_static_field
+12        (let-values ([(some_static_field)
+13                      (values (python-get-member this-class
+14                                                 'some_static_field
+15                                                 #f))])
+16          (number->py-number% 3))))
+\end{verbatim}
 
-Notice the \scm{let-values} form wrapping the member field value.  In Python, at class creation time, member variables have access to the previously created ones.  To emulate this, the Scheme code must contain the right bindings when creating the member variable value, hence the need to always pass the class object to allow the extraction of currently bound values.  The number of bound member variables grows as more definitions are encountered by the class initializer, and so does the \scm{let-values}, as in the final part of the third \verb{type} argument.
+Notice the \scm{let-values} form wrapping the member field value.  In Python, at class creation time, member fields (but not methods) have access to the previously created fields and methods.  To emulate this, the Scheme code must contain the right bindings when creating the member field value, hence the need to always pass the class object to allow the extraction of currently bound values.  As member methods do not have access to previously defined member variables, the following Scheme code for the method \verb{m} lacks a \scm{let-values}:
 
-\scm{
-18     (lambda (this-class)
-19       (list
-20        'm
-21        (let-values ([(another_static_field some_static_field)
-22                      (values
-23                       (python-get-member this-class
-24                                          'another_static_field
-25                                          #f)
-26                       (python-get-member this-class
-27                                          'some_static_field
-28                                          #f))])
-29          (procedure->py-function%
-30           (opt-lambda (this x)
-31             (call/ec (lambda (return1732)
-32                        (return1732
-33                          (python-method-call
-34                          (python-get-attribute C
-35                                                'some_static_field)
-36                          '__add__
-37                          (list x)))
-38                        py-none)))
-39           'm (list 'this 'x) (list) #f #f))))))))
-}
+\begin{verbatim}
+17     (lambda (this-class)
+18       (list
+19        'm
+20        (procedure->py-function%
+21         (opt-lambda (this x)
+22           (call/ec (lambda (return1732)
+23                      (return1732
+24                        (python-method-call
+25                        (python-get-attribute C
+26                                              'some_static_field)
+27                        '__add__
+28                        (list x)))
+29                      py-none)))
+30         'm (list 'this 'x) null #f #f))))))))
+\end{verbatim}
 
-This locally creates the proper bindings and adds the right python function to the class as a member method.  To bind top level variables, though, the compiler must create the appropriate \scm{define}s or \scm{let}s.
+Though a class definition is compiled as though it were the result of a function call being bound to a variable (the class name), it is not compiled as though it were a Python assignment statement.  We turn now to the process of generating Scheme code for those.
 
 \subsubsection{Variable Assignments}
 
@@ -183,18 +181,18 @@ x = y = 2
 
 The first line becomes the following two Scheme lines:
 
-\scm{
+\begin{verbatim}
 (define rhs2320 (number->py-number% 1))
 (define x rhs2320)
-}
+\end{verbatim}
 
-While it seems redundant to use an auxiliary variable (\verb{rhs2320}), its need is obviated in the translation of the second statement:
+While it seems redundant to use an auxiliary variable (\verb{rhs2320}), its need is exemplified in the translation of the second statement:
 
-\scm{
+\begin{verbatim}
 (define rhs2321 (number->py-number% 2))
 (set! x rhs2321)
 (define y rhs2321)
-}
+\end{verbatim}
 
 As \verb{x} and \verb{y} share the same value, the right-hand side must only be evaluated once.  A similar strategy is followed for function variables, though as a current shortcoming of the compiler, they are all defined as \scm{void} at the start of a function.  For example, the following function uses a single variable, \verb{x}.
 
@@ -206,7 +204,7 @@ def f():
 
 Its body is translated into this Scheme equivalent (omitting the \scm{call/ec} scaffolding):
 
-\scm{
+\begin{verbatim}
 (opt-lambda ()
   (let ([x (void)])
     (py-print #f
@@ -214,32 +212,55 @@ Its body is translated into this Scheme equivalent (omitting the \scm{call/ec} s
     (let ([rhs1718 (number->py-number% 1)])
       (set! x rhs1718))
     py-none))
-}
+\end{verbatim}
 
 This does ensure that a runtime error is the result of using \verb{x} before its definition, but it does not provide a good error message.  This will be fixed in the future (see section~\ref{futurework}).
 
 When a \verb{global} statement names any variable, the named variable is simply omitted from the Scheme function's initial \scm{let} bindings, thereby allowing assignments to said variable to mutate an identifier existing at the outer scope instead of defining a new one.
 
+\subsubsection{Function Application}
+
+A function is applied through \scm{py-call} (Section~\ref{pycall}).  The function object expression is passed as the first argument to \scm{py-call}, followed by a list of supplied positional arguments (in the order they were supplied), and a list of supplied keyword arguments (also in order), so, for example, the function call \verb{add_one(2)} becomes:
+
+\begin{verbatim}
+(py-call add_one
+         (list (number->py-number% 2))
+         null)
+\end{verbatim}
+
+
 \subsubsection{Importing Modules}
 \label{import}
 
-In order to import a Python module at runtime -- and, in fact, to initialize the environment at startup -- the runtime system creates a new MzScheme namespace and populates it with the built-in library.  The runtime system then compiles the requested file and evaluates it in this new namespace.  Finally, new bindings are introduced in the original namespace for the necessary values.  For example, when evaluating the statement \verb{import popen from os}, only the binding for \verb{popen} is copied into the original namespace from the new one.
+In order to import a Python module at runtime---and, in fact, to initialize the environment at startup---the runtime system creates a new MzScheme namespace and populates it with the built-in Python library.  The runtime system then compiles the requested file and evaluates it in this new namespace.  Finally, new bindings are introduced in the original namespace for the necessary values.  For example, when evaluating the statement \verb{import popen from os}, only the binding for \verb{popen} is copied into the original namespace from the new one.  In Figure~\ref{simpleimportfig}, squares represent both Python modules and Scheme namespaces, and the arrow reprents the values to be copied from one namespace to another.
+
+
+\begin{figure}
+	\caption{import popen from os}
+	\label{simpleimportfig}
+	\begin{center}
+		\includegraphics{images/simpleimport}
+	\end{center}
+\end{figure}
+
 
 \subsection{The Runtime System}
 \label{runtimesystem}
 
 The examples in the previous section have all made references to \scm{py-print}, \scm{procedure->py-function%}, \scm{py-none}, and other runtime system library exports.  This section explains the runtime system and the runtime libraries used throughout the generated Scheme program text.
 
-The Python runtime system models the mechanics of the Python language.  Python objects -- called \emph{python-nodes} in the runtime system for readability so as to not confuse them with the \verb{object} class that is also seen at many places in the source code -- have a type, a mutability specifier (so that you cannot, for example, change the contents of an immutable string), and a hash table (dictionary) of dynamic fields.  The syntactic form \emph{obj.attrib} refers, save a couple of exceptions, to the value associated with \emph{attrib} in \emph{obj}'s (or \emph{obj}'s parent's) dictionary.
+The Python runtime system models the mechanics of the Python language.  Python objects---called \emph{python-nodes} in the runtime system for readability so as to not confuse them with the \verb{object} class that is also seen at many places in the source code---have a type, a mutability specifier (so that you cannot, for example, change the contents of an immutable string), and a hash table (dictionary) of dynamic fields.  The syntactic form \emph{obj.attrib} refers, save a couple of exceptions, to the value associated with \emph{attrib} in \emph{obj}'s (or \emph{obj}'s parent's) dictionary.
 
-For efficiency reasons, there are two special attributes not stored in the object dictionary:
+There are two special attributes not stored in the object dictionary:
 
 \begin{enumerate}
 \item \verb{__dict__} points to the object's dictionary; and
 \item \verb{__class__} refers to the object's type.
 \end{enumerate} 
 
-Though an object's type is its \verb{__class__} attribute, a type's type is always the built-in \verb{type} object, and its parent classes are found in its \verb{__bases__} attribute.  Base types inherit from the built-in type \verb{object} (Figure~\ref{simpleclassfig}).
+Though an object's type is its \verb{__class__} attribute, a type's type is always the built-in \verb{type} object, and its parent classes are found in its \verb{__bases__} attribute.  Base types inherit from the built-in type \verb{object} (Figure~\ref{simpleclassfig}).  This is what the Python programmer envisions when writing Python code.
+
+Internally, all Python objects, types and instances alike, are represented by the \scm{python-node} data structure (Figure~\ref{simpleinternalrepresentationfig}).  This is the Scheme encoding of Python objects, and the hierarchy from Figure~\ref{simpleclassfig} is emulated by storing an object's type (in the Python sense) in a field (called \scm{parent}) of the Scheme structure.  The convention adopted by the runtime system has been to name each Python type \verb{py-}\emph{name}\%{}, where \emph{name} is the Python type (e.g., the Python \verb{object} type is named \verb{py-object%} in the runtime system).
 
 \begin{figure}
 	\caption{A simple Python class}
@@ -249,11 +270,23 @@ Though an object's type is its \verb{__class__} attribute, a type's type is alwa
 	\end{center}
 \end{figure}
 
+\begin{figure}
+	\caption{Internal representation of Python objects}
+	\label{simpleinternalrepresentationfig}
+	\begin{center}
+		\includegraphics{images/uml/simple-internal-representation}
+	\end{center}
+\end{figure}
+
 With these concepts in mind, let us now explore a set of important functions from the runtime system.
 
 \subsubsection{py-print}
 
-\verb{py-print} accepts a list of objects to print, each one separated by a space character, and an output device object (one that has a \emph{write} method).  If the output object is false, the current output port is used.
+\verb{py-print} accepts a list of objects to print and an output device object (one that has a \emph{write} method).  If the output object is false, the current output port is used.  The string stream sent to the output object consists of each item from the list of objects, each converted to its string representation, with a space character in between each one.
+
+\subsubsection{number-$>$py-number\%}
+
+Wraps a Scheme number as a Python number object.
 
 \subsubsection{string-$>$py-string\%}
 
@@ -261,4 +294,30 @@ This function converts a Scheme string into a Python string.
 
 \subsubsection{procedure-$>$py-function\%}
 
-This function accepts a Scheme procedure, a function name symbol, a list of positional argument names, a list of optional argument names, a rest-argument name (or false), and a dictionary argument name (or false).  It returns a Python function object.
+This function accepts a Scheme procedure, a function name symbol, a list of positional argument names, a list of optional argument names, a rest-argument name (or false), and a dictionary argument name (or false).  It returns a Python function object, which is internally a \scm{python-node} with its parent field set to \scm{py-function%} (another \scm{python-node} object, this one representing the Python \verb{function} type object).
+
+\subsubsection{python-get-member}
+\label{pythongetmember}
+
+This function takes a Python object, an attribute name (as a symbol), and an optional flag.  It extracts and returns the value associated with the given attribute name in the object's dictionary.  If no such attribute is found, the object's parent classes are searched in the same manner.  Once there are no more parent classes to search, the Python \verb{AttributeError} is raised.
+
+When the optional flag is set to \scm{true}, \scm{py-function%} objects are wrapped inside \scm{py-method%} objects, which, as per the Python language specification, contain attributes referring to the wrapped function, owner class, and possibly owner object.  The flag's default value is \scm{true}.
+
+\subsubsection{python-get-attribute}
+
+This function looks up an object's attribute through the use of the object type's \verb{__getattrib__} method.  The default implementation of \verb{__getattrib__} is \verb{python-get-member} (\ref{pythongetmember}).
+
+
+\subsubsection{python-set-member!}
+
+Sets a specified attribute in the object's dictionary to the given value.
+
+
+\subsubsection{python-method-call}
+
+This function accepts a Python object, an attribute name, and a list of arguments.  It fetches the method named by the attribute argument and applies it, passing the object argument as the first argument before the supplied argument list.
+
+\subsubsection{py-call}
+\label{pycall}
+
+This function accepts a callable object and list of arguments to return the result of its application.  A callable object is either a Python \verb{function} object, a Python object implementing a \verb{__call__} method, or a Scheme procedure.  When the input is an object implementing a \verb{__call__} method, that method is extracted and passed to a recursive call to \scm{py-call}.  When the input is a Python function object, it is converted to a Scheme procedure and passed to a recursive call to \scm{py-call}.  When the input is a Scheme procedure, it is applied.

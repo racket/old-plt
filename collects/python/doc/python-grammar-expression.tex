@@ -2,16 +2,27 @@
 
 \rulesection{tuple\_or\_test}
 \label{tuplezzzorzzztestb}
-\begin{tabular}{lcl}
-{\bf \verb+<+tuple\_or\_test\verb+>+} & ::=  & {\bf \verb+<+tuple~\ref{tupleb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<tuple_or_test> ::= <tuple \myref[tupleb]>
+	\alt <test \myref[testb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+tuple\_or\_test\verb+>+} & ::=  & {\bf \verb+<+tuple~\ref{tupleb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{tuple}
 \label{tupleb}
-\begin{tabular}{lcl}
-{\bf \verb+<+tuple\verb+>+} & ::=  & {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<tuple> ::= <testlist \myref[testlistb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+tuple\verb+>+} & ::=  & {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
+%\end{tabular} \\
 
 A tuple has the same syntactic rules as a testlist (\ref{testlistb}), but the name ``tuple'' is more descriptive sometimes.
 
@@ -20,205 +31,366 @@ A tuple has the same syntactic rules as a testlist (\ref{testlistb}), but the na
 
 See the Python reference~\cite{pythonlang}, section 5.10.
 
-\begin{tabular}{lcl}
-{\bf \verb+<+test\verb+>+} & ::=  & {\bf \verb+<+or\_test~\ref{orzzztestb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+lambdef~\ref{lambdefb}\verb+>+}  \\
-\end{tabular}
+\begin{grammar}
+<test> ::= <or_test \myref[orzzztestb]>
+	\alt <lambdef \myref[lambdefb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+test\verb+>+} & ::=  & {\bf \verb+<+or\_test~\ref{orzzztestb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+lambdef~\ref{lambdefb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{test\_list}
 \label{testzzzlistb}
-\begin{tabular}{lcl}
-{\bf \verb+<+test\_list\verb+>+} & ::=  & $\varepsilon$ \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test\_list~\ref{testzzzlistb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<test_list> ::= \greeke
+	\alt <test \myref[testb]>
+	\alt <test \myref[testb]> `,' <test_list \myref[testzzzlistb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+test\_list\verb+>+} & ::=  & $\varepsilon$ \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test\_list~\ref{testzzzlistb}\verb+>+}  \\
+%\end{tabular} \\
 
 This non-terminal is only used by \verb|print| statements (\ref{printzzzstmtb}).
 
 \rulesection{testlist}
 \label{testlistb}
-\begin{tabular}{lcl}
-{\bf \verb+<+testlist\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
-\end{tabular} \\
 
-See note for {\bf test\_{}list~\ref{testzzzlistb}}.  A {\bf testlist} is never empty.
+\begin{grammar}
+<testlist> ::= <test \myref[testb]> `,'
+	\alt <test \myref[testb]> `,' <test \myref[testb]>
+	\alt <test \myref[testb]> `,' <testlist \myref[testlistb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+testlist\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
+%\end{tabular} \\
+
+See note for \synt{test_list} (\ref{testzzzlistb}).  A \synt{testlist} is never empty.
 This non-terminal is used by:
 
 \begin{itemize}
-\item \textbf{tuple} (\ref{tupleb});
-\item \textbf{listmaker} (\ref{listmakerb});
-\item \textbf{testlist\_safe} (\ref{testlistzzzsafeb});
-\item and class definitions: \textbf{classdef} (\ref{classdefb}).
+\item \synt{tuple} (\ref{tupleb});
+\item \synt{listmaker} (\ref{listmakerb});
+\item \synt{testlist\_safe} (\ref{testlistzzzsafeb});
+\item and class definitions: \synt{classdef} (\ref{classdefb}).
 \end{itemize} 
 
 \rulesection{lambdef}
 \label{lambdefb}
-\begin{tabular}{lcl}
-{\bf \verb+<+lambdef\verb+>+} & ::=  & lambda {\bf \verb+<+varargslist~\ref{varargslistb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & lambda \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<lambdef> ::= `lambda' <varargslist \myref[varargslistb]> `:' <test \myref[testb]>
+	\alt `lambda' `:' <test \myref[testb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+lambdef\verb+>+} & ::=  & lambda {\bf \verb+<+varargslist~\ref{varargslistb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & lambda \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{or\_test}
 \label{orzzztestb}
-\begin{tabular}{lcl}
-{\bf \verb+<+or\_test\verb+>+} & ::=  & {\bf \verb+<+and\_test~\ref{andzzztestb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+or\_test~\ref{orzzztestb}\verb+>+}  or {\bf \verb+<+and\_test~\ref{andzzztestb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<or_test> ::= <and_test \myref[andzzztestb]>
+	\alt <or_test> `or' <and_test \myref[andzzztestb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+or\_test\verb+>+} & ::=  & {\bf \verb+<+and\_test~\ref{andzzztestb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+or\_test~\ref{orzzztestb}\verb+>+}  or {\bf \verb+<+and\_test~\ref{andzzztestb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{and\_test}
 \label{andzzztestb}
-\begin{tabular}{lcl}
-{\bf \verb+<+and\_test\verb+>+} & ::=  & {\bf \verb+<+not\_test~\ref{notzzztestb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+and\_test~\ref{andzzztestb}\verb+>+}  and {\bf \verb+<+not\_test~\ref{notzzztestb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<and_test> ::= <not_test \myref[notzzztestb]>
+	\alt <and_test> `and' <not_test \myref[notzzztestb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+and\_test\verb+>+} & ::=  & {\bf \verb+<+not\_test~\ref{notzzztestb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+and\_test~\ref{andzzztestb}\verb+>+}  and {\bf \verb+<+not\_test~\ref{notzzztestb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{not\_test}
 \label{notzzztestb}
-\begin{tabular}{lcl}
-{\bf \verb+<+not\_test\verb+>+} & ::=  & not {\bf \verb+<+not\_test~\ref{notzzztestb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+comparison~\ref{comparisonb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<not_test> ::= `not' <not_test>
+	\alt <comparison \myref[comparisonb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+not\_test\verb+>+} & ::=  & not {\bf \verb+<+not\_test~\ref{notzzztestb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+comparison~\ref{comparisonb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{comparison}
 \label{comparisonb}
-\begin{tabular}{lcl}
-{\bf \verb+<+comparison\verb+>+} & ::=  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+comparison~\ref{comparisonb}\verb+>+}  {\bf \verb+<+comp\_op~\ref{compzzzopb}\verb+>+}  {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<comparison> ::= <expr \myref[exprb]>
+	\alt <comparison> <comp_op \myref[compzzzopb]> <expr \myref[exprb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+comparison\verb+>+} & ::=  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+comparison~\ref{comparisonb}\verb+>+}  {\bf \verb+<+comp\_op~\ref{compzzzopb}\verb+>+}  {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{comp\_op}
 \label{compzzzopb}
-\begin{tabular}{lcl}
-{\bf \verb+<+comp\_op\verb+>+} & ::=  & \verb|<| \\
- & \verb+|+  & \verb|>| \\
- & \verb+|+  & \verb|==| \\
- & \verb+|+  & \verb|>=| \\
- & \verb+|+  & \verb|<=| \\
- & \verb+|+  & \verb|<>| \\
- & \verb+|+  & \verb|!=| \\
- & \verb+|+  & in \\
- & \verb+|+  & not in \\
- & \verb+|+  & is \\
- & \verb+|+  & is not \\
-\end{tabular}
+
+\begin{grammar}
+<comp_op> ::= `<'
+	\alt `>'
+	\alt `=='
+	\alt `>='
+	\alt `<='
+	\alt `<>'
+	\alt `!='
+	\alt `in'
+	\alt `not' `in'
+	\alt `is'
+	\alt `is' `not'
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+comp\_op\verb+>+} & ::=  & \verb|<| \\
+% & \verb+|+  & \verb|>| \\
+% & \verb+|+  & \verb|==| \\
+% & \verb+|+  & \verb|>=| \\
+% & \verb+|+  & \verb|<=| \\
+% & \verb+|+  & \verb|<>| \\
+% & \verb+|+  & \verb|!=| \\
+% & \verb+|+  & in \\
+% & \verb+|+  & not in \\
+% & \verb+|+  & is \\
+% & \verb+|+  & is not \\
+%\end{tabular}
 
 \rulesection{expr}
 \label{exprb}
-\begin{tabular}{lcl}
-{\bf \verb+<+expr\verb+>+} & ::=  & {\bf \verb+<+xor\_expr~\ref{xorzzzexprb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \verb+|+ {\bf \verb+<+xor\_expr~\ref{xorzzzexprb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<expr> ::= <xor_expr \myref[xorzzzexprb]>
+	\alt <expr> `|' <xor_expr \myref[xorzzzexprb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+expr\verb+>+} & ::=  & {\bf \verb+<+xor\_expr~\ref{xorzzzexprb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \verb+|+ {\bf \verb+<+xor\_expr~\ref{xorzzzexprb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{xor\_expr}
 \label{xorzzzexprb}
-\begin{tabular}{lcl}
-{\bf \verb+<+xor\_expr\verb+>+} & ::=  & {\bf \verb+<+and\_expr~\ref{andzzzexprb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+xor\_expr~\ref{xorzzzexprb}\verb+>+}  \verb|^| {\bf \verb+<+and\_expr~\ref{andzzzexprb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<xor_expr> ::= <and_expr \myref[andzzzexprb]>
+	\alt <xor_expr> `^' <and_expr \myref[andzzzexprb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+xor\_expr\verb+>+} & ::=  & {\bf \verb+<+and\_expr~\ref{andzzzexprb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+xor\_expr~\ref{xorzzzexprb}\verb+>+}  \verb|^| {\bf \verb+<+and\_expr~\ref{andzzzexprb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{and\_expr}
 \label{andzzzexprb}
-\begin{tabular}{lcl}
-{\bf \verb+<+and\_expr\verb+>+} & ::=  & {\bf \verb+<+shift\_expr~\ref{shiftzzzexprb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+and\_expr~\ref{andzzzexprb}\verb+>+}  \verb|&| {\bf \verb+<+shift\_expr~\ref{shiftzzzexprb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<and_expr> ::= <shift_expr \myref[shiftzzzexprb]>
+	\alt <and_expr> `&' <shift_expr \myref[shiftzzzexprb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+and\_expr\verb+>+} & ::=  & {\bf \verb+<+shift\_expr~\ref{shiftzzzexprb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+and\_expr~\ref{andzzzexprb}\verb+>+}  \verb|&| {\bf \verb+<+shift\_expr~\ref{shiftzzzexprb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{shift\_expr}
 \label{shiftzzzexprb}
-\begin{tabular}{lcl}
-{\bf \verb+<+shift\_expr\verb+>+} & ::=  & {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+shift\_expr~\ref{shiftzzzexprb}\verb+>+}  \verb|<<| {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+shift\_expr~\ref{shiftzzzexprb}\verb+>+}  \verb|>>| {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<shift_expr> ::= <arith_expr \myref[arithzzzexprb]>
+	\alt <shift_expr> `<<' <arith_expr \myref[arithzzzexprb]>
+	\alt <shift_expr> `>>' <arith_expr \myref[arithzzzexprb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+shift\_expr\verb+>+} & ::=  & {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+shift\_expr~\ref{shiftzzzexprb}\verb+>+}  \verb|<<| {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+shift\_expr~\ref{shiftzzzexprb}\verb+>+}  \verb|>>| {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{arith\_expr}
 \label{arithzzzexprb}
-\begin{tabular}{lcl}
-{\bf \verb+<+arith\_expr\verb+>+} & ::=  & {\bf \verb+<+term~\ref{termb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \verb|+| {\bf \verb+<+term~\ref{termb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \verb|-| {\bf \verb+<+term~\ref{termb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<arith_expr> ::= <term \myref[termb]>
+	\alt <arith_expr> `+' <term \myref[termb]>
+	\alt <arith_expr> `-' <term \myref[termb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+arith\_expr\verb+>+} & ::=  & {\bf \verb+<+term~\ref{termb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \verb|+| {\bf \verb+<+term~\ref{termb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \verb|-| {\bf \verb+<+term~\ref{termb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{term}
 \label{termb}
-\begin{tabular}{lcl}
-{\bf \verb+<+term\verb+>+} & ::=  & {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+term~\ref{termb}\verb+>+}  \verb|*| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+term~\ref{termb}\verb+>+}  \verb|/| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+term~\ref{termb}\verb+>+}  \verb|%| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+term~\ref{termb}\verb+>+}  \verb|//| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<term> ::= <factor \myref[factorb]>
+	\alt <term> `*' <factor \myref[factorb]>
+	\alt <term> `/' <factor \myref[factorb]>
+	\alt <term> `%' <factor \myref[factorb]>
+	\alt <term> `//' <factor \myref[factorb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+term\verb+>+} & ::=  & {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+term~\ref{termb}\verb+>+}  \verb|*| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+term~\ref{termb}\verb+>+}  \verb|/| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+term~\ref{termb}\verb+>+}  \verb|%| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+term~\ref{termb}\verb+>+}  \verb|//| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{factor}
 \label{factorb}
-\begin{tabular}{lcl}
-{\bf \verb+<+factor\verb+>+} & ::=  & \verb|+| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
- & \verb+|+  & \verb|-| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
- & \verb+|+  & \verb|~| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+power~\ref{powerb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<factor> ::= `+' <factor>
+	\alt `-' <factor>
+	\alt `~' <factor>
+	\alt <power \myref[powerb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+factor\verb+>+} & ::=  & \verb|+| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
+% & \verb+|+  & \verb|-| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
+% & \verb+|+  & \verb|~| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+power~\ref{powerb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{power}
 \label{powerb}
-\begin{tabular}{lcl}
-{\bf \verb+<+power\verb+>+} & ::=  & {\bf \verb+<+atom~\ref{atomb}\verb+>+}  {\bf \verb+<+trailer\_list~\ref{trailerzzzlistb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+atom~\ref{atomb}\verb+>+}  {\bf \verb+<+trailer\_list~\ref{trailerzzzlistb}\verb+>+}  \verb|**| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<power> ::= <atom \myref[atomb]> <trailer_list \myref[trailerzzzlistb]>
+	\alt <atom \myref[atomb]> <trailer_list \myref[trailerzzzlistb]> `**' <factor \myref[factorb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+power\verb+>+} & ::=  & {\bf \verb+<+atom~\ref{atomb}\verb+>+}  {\bf \verb+<+trailer\_list~\ref{trailerzzzlistb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+atom~\ref{atomb}\verb+>+}  {\bf \verb+<+trailer\_list~\ref{trailerzzzlistb}\verb+>+}  \verb|**| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
+%\end{tabular} \\
 
 A trailer list is an index operation (e.g., the \verb|[7]| in \verb|x[7]|), a function argument list, or a class attribute reference.
 
 \rulesection{trailer\_list}
 \label{trailerzzzlistb}
-\begin{tabular}{lcl}
-{\bf \verb+<+trailer\_list\verb+>+} & ::=  & $\varepsilon$ \\
- & \verb+|+  & {\bf \verb+<+trailer~\ref{trailerb}\verb+>+}  {\bf \verb+<+trailer\_list~\ref{trailerzzzlistb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<trailer_list> ::= \greeke
+	\alt <trailer \myref[trailerb]> <trailer_list>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+trailer\_list\verb+>+} & ::=  & $\varepsilon$ \\
+% & \verb+|+  & {\bf \verb+<+trailer~\ref{trailerb}\verb+>+}  {\bf \verb+<+trailer\_list~\ref{trailerzzzlistb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{trailer}
 \label{trailerb}
-\begin{tabular}{lcl}
-{\bf \verb+<+trailer\verb+>+} & ::=  & ( ) \\
- & \verb+|+  & ( {\bf \verb+<+arglist~\ref{arglistb}\verb+>+}  ) \\
- & \verb+|+  & [ {\bf \verb+<+subscriptlist~\ref{subscriptlistb}\verb+>+}  ] \\
- & \verb+|+  & [ {\bf \verb+<+subscript~\ref{subscriptb}\verb+>+}  ] \\
- & \verb+|+  & \verb|.| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<trailer> ::= `(' `)'
+	\alt `(' <arglist \myref[arglistb]> `)'
+	\alt `[' <subscriptlist \myref[subscriptlistb]> `]'
+	\alt `[' <subscript \myref[subscriptb]> `]'
+	\alt `.' <ident \myref[identb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+trailer\verb+>+} & ::=  & ( ) \\
+% & \verb+|+  & ( {\bf \verb+<+arglist~\ref{arglistb}\verb+>+}  ) \\
+% & \verb+|+  & [ {\bf \verb+<+subscriptlist~\ref{subscriptlistb}\verb+>+}  ] \\
+% & \verb+|+  & [ {\bf \verb+<+subscript~\ref{subscriptb}\verb+>+}  ] \\
+% & \verb+|+  & \verb|.| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
+%\end{tabular}
 
 %arglist has been moved
 \rulesection{arglist}
 \label{arglistb}
-\begin{tabular}{lcl}
-{\bf \verb+<+arglist\verb+>+} & ::=  & \verb|**| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & \verb|*| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & \verb|*| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| \verb|**| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+argument~\ref{argumentb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+argument~\ref{argumentb}\verb+>+}  \verb|,| \\
- & \verb+|+  & {\bf \verb+<+argument~\ref{argumentb}\verb+>+}  \verb|,| {\bf \verb+<+arglist~\ref{arglistb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<arglist> ::= `**' <test \myref[testb]>
+	\alt `*' <test \myref[testb]>
+	\alt `*' <test \myref[testb]> `,' `**' <test \myref[testb]>
+	\alt <argument \myref[argumentb]>
+	\alt <argument \myref[argumentb]> `,'
+	\alt <argument \myref[argumentb]> `,' <arglist \myref[arglistb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+arglist\verb+>+} & ::=  & \verb|**| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & \verb|*| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & \verb|*| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| \verb|**| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+argument~\ref{argumentb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+argument~\ref{argumentb}\verb+>+}  \verb|,| \\
+% & \verb+|+  & {\bf \verb+<+argument~\ref{argumentb}\verb+>+}  \verb|,| {\bf \verb+<+arglist~\ref{arglistb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{argument}
 \label{argumentb}
-\begin{tabular}{lcl}
-{\bf \verb+<+argument\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|=| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<argument> ::= <test \myref[testb]>
+	\alt <ident \myref[identb]> `=' <test \myref[testb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+argument\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|=| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{atom}
 \label{atomb}
-\begin{tabular}{lcl}
-{\bf \verb+<+atom\verb+>+} & ::=  & ( {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  ) \\
- & \verb+|+  & [ {\bf \verb+<+listmaker~\ref{listmakerb}\verb+>+}  ] \\
- & \verb+|+  & \{ {\bf \verb+<+dictmaker~\ref{dictmakerb}\verb+>+}  \} \\
- & \verb+|+  & ( ) \\
- & \verb+|+  & [ ] \\
- & \verb+|+  & \{ \} \\
- & \verb+|+  & ` {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  ` \\
- & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
- & \verb+|+  & NUMBER \\
- & \verb+|+  & {\bf \verb+<+string\_list\_plus~\ref{stringzzzlistzzzplusb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<atom> ::= `(' <tuple_or_test \myref[tuplezzzorzzztestb]> `)'
+	\alt `[' <listmaker \myref[listmakerb]> `]'
+	\alt `{' <dictmaker \myref[dictmakerb]> `}'
+	\alt `(' `)'
+	\alt `[' `]'
+	\alt `{' `}'
+	\alt ``' <tuple_or_test \myref[tuplezzzorzzztestb]> ``'
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+atom\verb+>+} & ::=  & ( {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  ) \\
+% & \verb+|+  & [ {\bf \verb+<+listmaker~\ref{listmakerb}\verb+>+}  ] \\
+% & \verb+|+  & \{ {\bf \verb+<+dictmaker~\ref{dictmakerb}\verb+>+}  \} \\
+% & \verb+|+  & ( ) \\
+% & \verb+|+  & [ ] \\
+% & \verb+|+  & \{ \} \\
+% & \verb+|+  & ` {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  ` \\
+% & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
+% & \verb+|+  & NUMBER \\
+% & \verb+|+  & {\bf \verb+<+string\_list\_plus~\ref{stringzzzlistzzzplusb}\verb+>+}  \\
+%\end{tabular} \\
 
 \begin{itemize}
 \item ( ) is the empty tuple
@@ -229,123 +401,215 @@ A trailer list is an index operation (e.g., the \verb|[7]| in \verb|x[7]|), a fu
 
 \rulesection{string\_list\_plus}
 \label{stringzzzlistzzzplusb}
-\begin{tabular}{lcl}
-{\bf \verb+<+string\_list\_plus\verb+>+} & ::=  & STRING \\
- & \verb+|+  & STRING {\bf \verb+<+string\_list\_plus~\ref{stringzzzlistzzzplusb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<string_list_plus> ::= STRING
+	\alt STRING <string_list_plus>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+string\_list\_plus\verb+>+} & ::=  & STRING \\
+% & \verb+|+  & STRING {\bf \verb+<+string\_list\_plus~\ref{stringzzzlistzzzplusb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{listmaker}
 \label{listmakerb}
-\begin{tabular}{lcl}
-{\bf \verb+<+listmaker\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+list\_for~\ref{listzzzforb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<listmaker> ::= <test \myref[testb]> <list_for \myref[listzzzforb]>
+	\alt <testlist \myref[testlistb]>
+	\alt <test \myref[testb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+listmaker\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+list\_for~\ref{listzzzforb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{list\_iter}
 \label{listzzziterb}
-\begin{tabular}{lcl}
-{\bf \verb+<+list\_iter\verb+>+} & ::=  & {\bf \verb+<+list\_for~\ref{listzzzforb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+list\_if~\ref{listzzzifb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<list_iter> ::= <list_for \myref[listzzzforb]>
+	\alt <list_if \myref[listzzzifb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+list\_iter\verb+>+} & ::=  & {\bf \verb+<+list\_for~\ref{listzzzforb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+list\_if~\ref{listzzzifb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{list\_for}
 \label{listzzzforb}
 
-\settowidth{\tw}{list\_for  ::=  }
-\addtolength{\tw}{2\arraycolsep}
+\begin{grammar}
+<list_for> ::= `for' <target_tuple_or_expr \myref[targetzzztuplezzzorzzzexprb]> `in' <testlist_safe \myref[testlistzzzsafeb]>
+	\alt `for' <target_tuple_or_expr \myref[targetzzztuplezzzorzzzexprb]> `in' <testlist_safe \myref[testlistzzzsafeb]> <list_iter \myref[listzzziterb]>
+\end{grammar}
 
-\setlength{\len}{\textwidth}
-\addtolength{\len}{-1\tw}
-\begin{tabular}{lcp{\len}}
-{\bf \verb+<+list\_for\verb+>+} & ::=  & for {\bf \verb+<+target\_tuple\_or\_expr~\ref{targetzzztuplezzzorzzzexprb}\verb+>+}  in {\bf \verb+<+testlist\_safe~\ref{testlistzzzsafeb}\verb+>+}  \\
- & \verb+|+  & for {\bf \verb+<+target\_tuple\_or\_expr~\ref{targetzzztuplezzzorzzzexprb}\verb+>+}  in {\bf \verb+<+testlist\_safe~\ref{testlistzzzsafeb}\verb+>+}  {\bf \verb+<+list\_iter~\ref{listzzziterb}\verb+>+}  \\
-\end{tabular} \\
+%\settowidth{\tw}{list\_for  ::=  }
+%\addtolength{\tw}{2\arraycolsep}
+%\setlength{\len}{\textwidth}
+%\addtolength{\len}{-1\tw}
+%\begin{tabular}{lcp{\len}}
+%{\bf \verb+<+list\_for\verb+>+} & ::=  & for {\bf \verb+<+target\_tuple\_or\_expr~\ref{targetzzztuplezzzorzzzexprb}\verb+>+}  in {\bf \verb+<+testlist\_safe~\ref{testlistzzzsafeb}\verb+>+}  \\
+% & \verb+|+  & for {\bf \verb+<+target\_tuple\_or\_expr~\ref{targetzzztuplezzzorzzzexprb}\verb+>+}  in {\bf \verb+<+testlist\_safe~\ref{testlistzzzsafeb}\verb+>+}  {\bf \verb+<+list\_iter~\ref{listzzziterb}\verb+>+}  \\
+%\end{tabular} \\
 
 See the Python reference~\cite{pythonlang}, section 5.2.4.
 
 \rulesection{list\_if}
 \label{listzzzifb}
-\begin{tabular}{lcl}
-{\bf \verb+<+list\_if\verb+>+} & ::=  & if {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & if {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+list\_iter~\ref{listzzziterb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<list_if> ::= `if' <test \myref[testb]>
+	\alt `if' <test \myref[testb]> <list_iter \myref[listzzziterb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+list\_if\verb+>+} & ::=  & if {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & if {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+list\_iter~\ref{listzzziterb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{subscriptlist}
 \label{subscriptlistb}
-\begin{tabular}{lcl}
-{\bf \verb+<+subscriptlist\verb+>+} & ::=  & {\bf \verb+<+subscript~\ref{subscriptb}\verb+>+}  \verb|,| \\
- & \verb+|+  & {\bf \verb+<+subscript~\ref{subscriptb}\verb+>+}  \verb|,| {\bf \verb+<+subscript~\ref{subscriptb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+subscript~\ref{subscriptb}\verb+>+}  \verb|,| {\bf \verb+<+subscriptlist~\ref{subscriptlistb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<subscriptlist> ::= <subscript \myref[subscriptb]> `,'
+	\alt <subscript \myref[subscriptb]> `,' <subscript \myref[subscriptb]>
+	\alt <subscript \myref[subscriptb]> `,' <subscriptlist \myref[subscriptlistb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+subscriptlist\verb+>+} & ::=  & {\bf \verb+<+subscript~\ref{subscriptb}\verb+>+}  \verb|,| \\
+% & \verb+|+  & {\bf \verb+<+subscript~\ref{subscriptb}\verb+>+}  \verb|,| {\bf \verb+<+subscript~\ref{subscriptb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+subscript~\ref{subscriptb}\verb+>+}  \verb|,| {\bf \verb+<+subscriptlist~\ref{subscriptlistb}\verb+>+}  \\
+%\end{tabular}
 
 %the last production had to be changed from \verb|.| \verb|.| \verb|.| to \verb|...|
 \rulesection{subscript}
 \label{subscriptb}
-\begin{tabular}{lcl}
-{\bf \verb+<+subscript\verb+>+} & ::=  & \verb|:| \\
- & \verb+|+  & \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & \verb|:| {\bf \verb+<+sliceop~\ref{sliceopb}\verb+>+}  \\
- & \verb+|+  & \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+sliceop~\ref{sliceopb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+sliceop~\ref{sliceopb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+sliceop~\ref{sliceopb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & \verb|...| \\
-\end{tabular}
+
+\begin{grammar}
+<subscript> ::= `:'
+	\alt `:' <test \myref[testb]>
+	\alt <test \myref[testb]> `:'
+	\alt <test \myref[testb]> `:' <test \myref[testb]>
+	\alt `:' <sliceop \myref[sliceopb]>
+	\alt `:' <test \myref[testb]> <sliceop \myref[sliceopb]>
+	\alt <test \myref[testb]> `:' <sliceop \myref[sliceopb]>
+	\alt <test \myref[testb]> `:' <test \myref[testb]> <sliceop \myref[sliceopb]>
+	\alt <test \myref[testb]>
+	\alt `...'
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+subscript\verb+>+} & ::=  & \verb|:| \\
+% & \verb+|+  & \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & \verb|:| {\bf \verb+<+sliceop~\ref{sliceopb}\verb+>+}  \\
+% & \verb+|+  & \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+sliceop~\ref{sliceopb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+sliceop~\ref{sliceopb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+sliceop~\ref{sliceopb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & \verb|...| \\
+%\end{tabular}
 
 \rulesection{sliceop}
 \label{sliceopb}
-\begin{tabular}{lcl}
-{\bf \verb+<+sliceop\verb+>+} & ::=  & \verb|:| \\
- & \verb+|+  & \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
-\end{tabular} \\
 
-This non-terminal occurs only inside of a {\bf subscript} (\ref{subscriptb}).
+\begin{grammar}
+<sliceop> ::= `:'
+	\alt `:' <test \myref[testb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+sliceop\verb+>+} & ::=  & \verb|:| \\
+% & \verb+|+  & \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+%\end{tabular} \\
+
+This non-terminal occurs only inside of a \synt{subscript} (\ref{subscriptb}).
 
 \rulesection{exprlist}
 \label{exprlistb}
-\begin{tabular}{lcl}
-{\bf \verb+<+exprlist\verb+>+} & ::=  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \verb|,| \\
- & \verb+|+  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \verb|,| {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \verb|,| {\bf \verb+<+exprlist~\ref{exprlistb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<exprlist> ::= <expr \myref[exprb]> `,'
+	\alt <expr \myref[exprb]> `,' <expr \myref[exprb]>
+	\alt <expr \myref[exprb]> `,' <exprlist>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+exprlist\verb+>+} & ::=  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \verb|,| \\
+% & \verb+|+  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \verb|,| {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \verb|,| {\bf \verb+<+exprlist~\ref{exprlistb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{target\_tuple\_or\_expr}
 \label{targetzzztuplezzzorzzzexprb}
-\begin{tabular}{lcl}
-{\bf \verb+<+target\_tuple\_or\_expr\verb+>+} & ::=  & {\bf \verb+<+target\_tuple~\ref{targetzzztupleb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<target_tuple_or_expr> ::= <target_tuple \myref[targetzzztupleb]>
+	\alt <expr \myref[exprb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+target\_tuple\_or\_expr\verb+>+} & ::=  & {\bf \verb+<+target\_tuple~\ref{targetzzztupleb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{target\_tuple}
 \label{targetzzztupleb}
-\begin{tabular}{lcl}
-{\bf \verb+<+target\_tuple\verb+>+} & ::=  & {\bf \verb+<+exprlist~\ref{exprlistb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<target_tuple> ::= <exprlist \myref[exprlistb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+target\_tuple\verb+>+} & ::=  & {\bf \verb+<+exprlist~\ref{exprlistb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{testlist\_safe}
 \label{testlistzzzsafeb}
-\begin{tabular}{lcl}
-{\bf \verb+<+testlist\_safe\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<testlist_safe> ::= <test \myref[testb]>
+	\alt <test \myref[testb]> `,' <testlist \myref[testlistb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+testlist\_safe\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
+%\end{tabular} \\
 
 Used in list comprehensions (\ref{listzzzforb}).  A safe \verb|testlist| cannot end with a comma.
 
 \rulesection{dictmaker}
 \label{dictmakerb}
-\begin{tabular}{lcl}
-{\bf \verb+<+dictmaker\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+dictmaker~\ref{dictmakerb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<dictmaker> ::= <test \myref[testb]> `:' <test \myref[testb]>
+	\alt <test \myref[testb]> `:' <test \myref[testb]> `,'
+	\alt <test \myref[testb]> `:' <test \myref[testb]> `,' <dictmaker>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+dictmaker\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| \\
+% & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+dictmaker~\ref{dictmakerb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{ident}
 \label{identb}
-\begin{tabular}{lcl}
-{\bf \verb+<+ident\verb+>+} & ::=  & NAME \\
-\end{tabular} \\
+
+\begin{grammar}
+<ident> ::= NAME
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+ident\verb+>+} & ::=  & NAME \\
+%\end{tabular} \\
 
 The NAME token is a valid Python identifier.  A valid Python identifier is an alphanumeric sequence of characters starting with a letter.  The underscore character (\_) counts as a letter.  The language is case-sensitive.

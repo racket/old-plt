@@ -4,76 +4,135 @@
 
 \rulesection{stmt}
 \label{stmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+stmt\verb+>+} & ::=  & {\bf \verb+<+simple\_stmt~\ref{simplezzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+compound\_stmt~\ref{compoundzzzstmtb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<stmt> ::= <simple_stmt \myref[simplezzzstmtb]>
+	\alt <compound_stmt \myref[compoundzzzstmtb]>
+\end{grammar}
+%\begin{tabular}{lcl}
+%{\bf \verb+<+stmt\verb+>+} & ::=  & {\bf \verb+<+simple\_stmt~\ref{simplezzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+compound\_stmt~\ref{compoundzzzstmtb}\verb+>+}  \\
+%\end{tabular} \\
 
 Simple statements (\ref{simplezzzstmtb}) span a single line (no new indentation levels).  Compound statements (\ref{compoundzzzstmtb}) may span multiple lines. \\
 
 \rulesection{simple\_stmt}
 \label{simplezzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+simple\_stmt\verb+>+} & ::=  & {\bf \verb+<+small\_stmt~\ref{smallzzzstmtb}\verb+>+}  NEWLINE \\
- & \verb+|+  & {\bf \verb+<+small\_stmt~\ref{smallzzzstmtb}\verb+>+}  \verb|;| NEWLINE \\
- & \verb+|+  & {\bf \verb+<+small\_stmt~\ref{smallzzzstmtb}\verb+>+}  \verb|;| {\bf \verb+<+simple\_stmt~\ref{simplezzzstmtb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<simple_stmt> ::= <small_stmt \myref[smallzzzstmtb]> NEWLINE
+	\alt <small_stmt \myref[smallzzzstmtb]> `;' NEWLINE
+	\alt <small_stmt \myref[smallzzzstmtb]> `;' <simple_stmt>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+simple\_stmt\verb+>+} & ::=  & {\bf \verb+<+small\_stmt~\ref{smallzzzstmtb}\verb+>+}  NEWLINE \\
+% & \verb+|+  & {\bf \verb+<+small\_stmt~\ref{smallzzzstmtb}\verb+>+}  \verb|;| NEWLINE \\
+% & \verb+|+  & {\bf \verb+<+small\_stmt~\ref{smallzzzstmtb}\verb+>+}  \verb|;| {\bf %\verb+<+simple\_stmt~\ref{simplezzzstmtb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{small\_stmt}
 \label{smallzzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+small\_stmt\verb+>+} & ::=  & {\bf \verb+<+expr\_stmt~\ref{exprzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+print\_stmt~\ref{printzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+del\_stmt~\ref{delzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+pass\_stmt~\ref{passzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+flow\_stmt~\ref{flowzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+import\_stmt~\ref{importzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+global\_stmt~\ref{globalzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+exec\_stmt~\ref{execzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+assert\_stmt~\ref{assertzzzstmtb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<small_stmt> ::= <expr_stmt \myref[exprzzzstmtb]>
+	\alt <print_stmt \myref[printzzzstmtb]>
+	\alt <del_stmt \myref[delzzzstmtb]>
+	\alt <pass_stmt \myref[passzzzstmtb]>
+	\alt <flow_stmt \myref[flowzzzstmtb]>
+	\alt <import_stmt \myref[importzzzstmtb]>
+	\alt <global_stmt \myref[globalzzzstmtb]>
+	\alt <exec_stmt \myref[execzzzstmtb]>
+	\alt <assert_stmt \myref[assertzzzstmtb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+small\_stmt\verb+>+} & ::=  & {\bf \verb+<+expr\_stmt~\ref{exprzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+print\_stmt~\ref{printzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+del\_stmt~\ref{delzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+pass\_stmt~\ref{passzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+flow\_stmt~\ref{flowzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+import\_stmt~\ref{importzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+global\_stmt~\ref{globalzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+exec\_stmt~\ref{execzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+assert\_stmt~\ref{assertzzzstmtb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{expr\_stmt}
 \label{exprzzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+expr\_stmt\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+augassign~\ref{augassignb}\verb+>+}  {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+testlist\_list\_plus~\ref{testlistzzzlistzzzplusb}\verb+>+}  \\
-\end{tabular} \\
 
-An expression statement consists of either a mutative operation or a {\bf \verb+<+testlist\_list\_plus~\ref{testlistzzzlistzzzplusb}\verb+>+}.
+\begin{grammar}
+<expr_stmt> ::= <test \myref[testb]> <augassign \myref[augassignb]> <tuple_or_test \myref[tuplezzzorzzztestb]>
+	\alt <testlist_list_plus \myref[testlistzzzlistzzzplusb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+expr\_stmt\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+augassign~\ref{augassignb}\verb+>+}  {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+testlist\_list\_plus~\ref{testlistzzzlistzzzplusb}\verb+>+}  \\
+%\end{tabular} \\
+
+An expression statement consists of either a mutative operation or a \synt{testlist_list_plus} (\ref{testlistzzzlistzzzplusb}). %{\bf \verb+<+testlist\_list\_plus~\ref{testlistzzzlistzzzplusb}\verb+>+}.
 
 \rulesection{testlist\_list\_plus}
 \label{testlistzzzlistzzzplusb}
-\begin{tabular}{lcl}
-{\bf \verb+<+testlist\_list\_plus\verb+>+} & ::=  & {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \verb|=| {\bf \verb+<+testlist\_list\_plus~\ref{testlistzzzlistzzzplusb}\verb+>+}  \\
-\end{tabular} \\
 
-A \verb|testlist_list_plus| is an assignment or an expression (\ref{tuplezzzorzzztestb}) which will be displayed in the output of the interpreter.
+\begin{grammar}
+<testlist_list_plus> ::= <tuple_or_test \myref[tuplezzzorzzztestb]>
+	\alt <tuple_or_test \myref[tuplezzzorzzztestb]> `=' <testlist_list_plus>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+testlist\_list\_plus\verb+>+} & ::=  & {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \verb|=| {\bf \verb+<+testlist\_list\_plus~\ref{testlistzzzlistzzzplusb}\verb+>+}  \\
+%\end{tabular} \\
+
+A \synt{testlist_list_plus} is an assignment or an expression (\ref{tuplezzzorzzztestb}) which will be displayed in the output of the interpreter.
 
 \rulesection{augassign}
 \label{augassignb}
-\begin{tabular}{lcl}
-{\bf \verb+<+augassign\verb+>+} & ::=  & \verb|+=| \\
- & \verb+|+  & \verb|-=| \\
- & \verb+|+  & \verb|*=| \\
- & \verb+|+  & \verb|/=| \\
- & \verb+|+  & \verb|%=| \\
- & \verb+|+  & \verb|&=| \\
- & \verb+|+  & \verb+|=+ \\
- & \verb+|+  & \verb|^=| \\
- & \verb+|+  & \verb|<<=| \\
- & \verb+|+  & \verb|>>=| \\
- & \verb+|+  & \verb|**=| \\
- & \verb+|+  & \verb|//=| \\
-\end{tabular}
+
+\begin{grammar}
+<augassign> ::= `+='
+	\alt `-='
+	\alt `*='
+	\alt `/='
+	\alt `%='
+	\alt `&='
+	\alt `|='
+	\alt `^='
+	\alt `<<='
+	\alt `>>='
+	\alt `**='
+	\alt `//='
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+augassign\verb+>+} & ::=  & \verb|+=| \\
+% & \verb+|+  & \verb|-=| \\
+% & \verb+|+  & \verb|*=| \\
+% & \verb+|+  & \verb|/=| \\
+% & \verb+|+  & \verb|%=| \\
+% & \verb+|+  & \verb|&=| \\
+% & \verb+|+  & \verb+|=+ \\
+% & \verb+|+  & \verb|^=| \\
+% & \verb+|+  & \verb|<<=| \\
+% & \verb+|+  & \verb|>>=| \\
+% & \verb+|+  & \verb|**=| \\
+% & \verb+|+  & \verb|//=| \\
+%\end{tabular}
 
 \rulesection{print\_stmt}
 \label{printzzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+print\_stmt\verb+>+} & ::=  & print {\bf \verb+<+test\_list~\ref{testzzzlistb}\verb+>+}  \\
- & \verb+|+  & print \verb|>>| {\bf \verb+<+test\_list~\ref{testzzzlistb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<print_stmt> ::= `print' <test_list \myref[testzzzlistb]>
+	\alt `print' `>>' <test_list \myref[testzzzlistb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+print\_stmt\verb+>+} & ::=  & print {\bf \verb+<+test\_list~\ref{testzzzlistb}\verb+>+}  \\
+% & \verb+|+  & print \verb|>>| {\bf \verb+<+test\_list~\ref{testzzzlistb}\verb+>+}  \\
+%\end{tabular} \\
 
 From the Python Reference~\cite{pythonlang}, section 6.6:
 \begin{quote}
@@ -86,33 +145,55 @@ object, specifically an object that has a \verb|write| method, or \verb|None|.
 \label{delzzzstmtb}
 See the Python Reference~\cite{pythonlang}, section 6.5.
 
-\begin{tabular}{lcl}
-{\bf \verb+<+del\_stmt\verb+>+} & ::=  & del {\bf \verb+<+target\_tuple\_or\_expr~\ref{targetzzztuplezzzorzzzexprb}\verb+>+}  \\
-\end{tabular}
+\begin{grammar}
+<del_stmt> ::= `del' <target_tuple_or_expr \myref[targetzzztuplezzzorzzzexprb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+del\_stmt\verb+>+} & ::=  & del {\bf \verb+<+target\_tuple\_or\_expr~\ref{targetzzztuplezzzorzzzexprb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{pass\_stmt}
 \label{passzzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+pass\_stmt\verb+>+} & ::=  & pass \\
-\end{tabular}
+
+\begin{grammar}
+<pass_stmt> ::= `pass'
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+pass\_stmt\verb+>+} & ::=  & pass \\
+%\end{tabular}
 
 \rulesection{flow\_stmt}
 \label{flowzzzstmtb}
 A flow statement directs or modifies program flow. \\
 
-\begin{tabular}{lcl}
-{\bf \verb+<+flow\_stmt\verb+>+} & ::=  & {\bf \verb+<+break\_stmt~\ref{breakzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+continue\_stmt~\ref{continuezzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+return\_stmt~\ref{returnzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+raise\_stmt~\ref{raisezzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+yield\_stmt~\ref{yieldzzzstmtb}\verb+>+}  \\
-\end{tabular}
+\begin{grammar}
+<flow_stmt> ::= <break_stmt \myref[breakzzzstmtb]>
+	\alt <continue_stmt \myref[continuezzzstmtb]>
+	\alt <return_stmt \myref[returnzzzstmtb]>
+	\alt <raise_stmt \myref[raisezzzstmtb]>
+	\alt <yield_stmt \myref[yieldzzzstmtb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+flow\_stmt\verb+>+} & ::=  & {\bf \verb+<+break\_stmt~\ref{breakzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+continue\_stmt~\ref{continuezzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+return\_stmt~\ref{returnzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+raise\_stmt~\ref{raisezzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+yield\_stmt~\ref{yieldzzzstmtb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{break\_stmt}
 \label{breakzzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+break\_stmt\verb+>+} & ::=  & break \\
-\end{tabular} \\
+
+\begin{grammar}
+<break_stmt> ::= `break'
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+break\_stmt\verb+>+} & ::=  & break \\
+%\end{tabular} \\
 
 From the Python reference~\cite{pythonlang}, section 6.10:
 \begin{quote}
@@ -122,9 +203,14 @@ but not nested in a function or class definition within that loop.
 
 \rulesection{continue\_stmt}
 \label{continuezzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+continue\_stmt\verb+>+} & ::=  & continue \\
-\end{tabular} \\
+
+\begin{grammar}
+<continue_stmt> ::= `continue'
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+continue\_stmt\verb+>+} & ::=  & continue \\
+%\end{tabular} \\
 
 From the Python reference~\cite{pythonlang}, section 6.11:
 \begin{quote}
@@ -135,10 +221,16 @@ that loop.
 
 \rulesection{return\_stmt}
 \label{returnzzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+return\_stmt\verb+>+} & ::=  & return {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
- & \verb+|+  & return \\
-\end{tabular} \\
+
+\begin{grammar}
+<return_stmt> ::= `return' <tuple_or_test \myref[tuplezzzorzzztestb]>
+	\alt `return'
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+return\_stmt\verb+>+} & ::=  & return {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
+% & \verb+|+  & return \\
+%\end{tabular} \\
 
 From the Python reference~\cite{pythonlang}, section 6.7:
 \begin{quote}
@@ -148,12 +240,20 @@ the \verb|return| statement is not allowed to include an expression list (\ref{t
 
 \rulesection{raise\_stmt}
 \label{raisezzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+raise\_stmt\verb+>+} & ::=  & raise \\
- & \verb+|+  & raise {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & raise {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & raise {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<raise_stmt> ::= `raise'
+	\alt `raise' <test \myref[testb]>
+	\alt `raise' <test \myref[testb]> `,' <test \myref[testb]>
+	\alt `raise' <test \myref[testb]> `,' <test \myref[testb]> `,' <test \myref[testb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+raise\_stmt\verb+>+} & ::=  & raise \\
+% & \verb+|+  & raise {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & raise {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & raise {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+%\end{tabular} \\
 
 From the Python reference~\cite{pythonlang}, section 6.9:
 \begin{quote}
@@ -163,9 +263,14 @@ the second being its value, and the third being a traceback.
 
 \rulesection{yield\_stmt (NOT YET IMPLEMENTED)}
 \label{yieldzzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+yield\_stmt\verb+>+} & ::=  & yield {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<yield_stmt> ::= `yield' <tuple_or_test \myref[tuplezzzorzzztestb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+yield\_stmt\verb+>+} & ::=  & yield {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
+%\end{tabular} \\
 
 From the Python reference~\cite{pythonlang}, section 6.8:
 \begin{quote}
@@ -177,55 +282,98 @@ to create a generator function instead of a normal function.
 
 \rulesection{import\_stmt}
 \label{importzzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+import\_stmt\verb+>+} & ::=  & {\bf \verb+<+import\_stmt1~\ref{importzzzstmt1b}\verb+>+}  \\
- & \verb+|+  & from {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  import \verb|*| \\
- & \verb+|+  & from {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  import {\bf \verb+<+import\_stmt2~\ref{importzzzstmt2b}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<import_stmt> ::= <import_stmt1 \myref[importzzzstmt1b]>
+	\alt `from' <dotted_name \myref[dottedzzznameb]> `import' `*'
+	\alt `from' <dotted_name \myref[dottedzzznameb]> `import' <import_stmt2 \myref[importzzzstmt2b]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+import\_stmt\verb+>+} & ::=  & {\bf \verb+<+import\_stmt1~\ref{importzzzstmt1b}\verb+>+}  \\
+% & \verb+|+  & from {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  import \verb|*| \\
+% & \verb+|+  & from {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  import {\bf \verb+<+import\_stmt2~\ref{importzzzstmt2b}\verb+>+}  \\
+%\end{tabular} \\
 
 See the Python reference~\cite{pythonlang}, section 6.12.
 
 \rulesection{import\_stmt1}
 \label{importzzzstmt1b}
-\begin{tabular}{lcl}
-{\bf \verb+<+import\_stmt1\verb+>+} & ::=  & import {\bf \verb+<+dotted\_as\_name~\ref{dottedzzzaszzznameb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+import\_stmt1~\ref{importzzzstmt1b}\verb+>+}  \verb|,| {\bf \verb+<+dotted\_as\_name~\ref{dottedzzzaszzznameb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<import_stmt1> ::= `import' <dotted_as_name \myref[dottedzzzaszzznameb]>
+	\alt <import_stmt1> `,' <dotted_as_name \myref[dottedzzzaszzznameb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+import\_stmt1\verb+>+} & ::=  & import {\bf \verb+<+dotted\_as\_name~\ref{dottedzzzaszzznameb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+import\_stmt1~\ref{importzzzstmt1b}\verb+>+}  \verb|,| {\bf \verb+<+dotted\_as\_name~\ref{dottedzzzaszzznameb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{import\_stmt2}
 \label{importzzzstmt2b}
-\begin{tabular}{lcl}
-{\bf \verb+<+import\_stmt2\verb+>+} & ::=  & {\bf \verb+<+import\_as\_name~\ref{importzzzaszzznameb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+import\_as\_name~\ref{importzzzaszzznameb}\verb+>+}  \verb|,| {\bf \verb+<+import\_stmt2~\ref{importzzzstmt2b}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<import_stmt2> ::= <import_as_name \myref[importzzzaszzznameb]>
+	\alt <import_as_name \myref[importzzzaszzznameb]> `,' <import_stmt2>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+import\_stmt2\verb+>+} & ::=  & {\bf \verb+<+import\_as\_name~\ref{importzzzaszzznameb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+import\_as\_name~\ref{importzzzaszzznameb}\verb+>+}  \verb|,| {\bf \verb+<+import\_stmt2~\ref{importzzzstmt2b}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{import\_as\_name}
 \label{importzzzaszzznameb}
-\begin{tabular}{lcl}
-{\bf \verb+<+import\_as\_name\verb+>+} & ::=  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  NAME {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<import_as_name> ::= <ident \myref[identb]> NAME <ident \myref[identb]>
+	\alt <ident \myref[identb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+import\_as\_name\verb+>+} & ::=  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  NAME {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{dotted\_as\_name}
 \label{dottedzzzaszzznameb}
-\begin{tabular}{lcl}
-{\bf \verb+<+dotted\_as\_name\verb+>+} & ::=  & {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  NAME {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<dotted_as_name> ::= <dotted_name \myref[dottedzzznameb]> NAME <ident \myref[identb]>
+	\alt <dotted_name \myref[dottedzzznameb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+dotted\_as\_name\verb+>+} & ::=  & {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  NAME {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{dotted\_name}
 \label{dottedzzznameb}
-\begin{tabular}{lcl}
-{\bf \verb+<+dotted\_name\verb+>+} & ::=  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|.| {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<dotted_name> ::= <ident \myref[identb]>
+	\alt <ident \myref[identb]> `.' <dotted_name>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+dotted\_name\verb+>+} & ::=  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|.| {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{global\_stmt}
 \label{globalzzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+global\_stmt\verb+>+} & ::=  & global {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+global\_stmt~\ref{globalzzzstmtb}\verb+>+}  \verb|,| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<global_stmt> ::= `global' <ident \myref[identb]>
+	\alt <global_stmt \myref[globalzzzstmtb]> `,' <ident \myref[identb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+global\_stmt\verb+>+} & ::=  & global {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+global\_stmt~\ref{globalzzzstmtb}\verb+>+}  \verb|,| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
+%\end{tabular} \\
 
 From the Python reference~\cite{pythonlang}, section 6.13:
 \begin{quote}
@@ -251,20 +399,33 @@ the generated code will define a new \verb|x|, not modify an existing one.
 
 \rulesection{exec\_stmt (NOT YET IMPLEMENTED)}
 \label{execzzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+exec\_stmt\verb+>+} & ::=  & exec {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
- & \verb+|+  & exec {\bf \verb+<+expr~\ref{exprb}\verb+>+}  in {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & exec {\bf \verb+<+expr~\ref{exprb}\verb+>+}  in {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<exec_stmt> ::= `exec' <expr \myref[exprb]>
+	\alt `exec' <expr \myref[exprb]> `in' <test \myref[testb]>
+	\alt `exec' <expr \myref[exprb]> `in' <test \myref[testb]> `,' <test \myref[testb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+exec\_stmt\verb+>+} & ::=  & exec {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
+% & \verb+|+  & exec {\bf \verb+<+expr~\ref{exprb}\verb+>+}  in {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & exec {\bf \verb+<+expr~\ref{exprb}\verb+>+}  in {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+%\end{tabular} \\
 
 See the Python reference~\cite{pythonlang}, section 6.14.
 
 \rulesection{assert\_stmt}
 \label{assertzzzstmtb}
-\begin{tabular}{lcl}
-{\bf \verb+<+assert\_stmt\verb+>+} & ::=  & assert {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & assert {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<assert_stmt> ::= `assert' <test \myref[testb]>
+	\alt `assert' <test \myref[testb]> `,' <test \myref[testb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+assert\_stmt\verb+>+} & ::=  & assert {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & assert {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+%\end{tabular} \\
 
 From the Python reference~\cite{pythonlang}, section 6.2:
 \begin{quote}
@@ -283,148 +444,227 @@ if __debug__:
 
 \rulesection{compound\_stmt}
 \label{compoundzzzstmtb}
-\settowidth{\tw}{compound\_stmt  ::=  }
-\addtolength{\tw}{2\arraycolsep}
-\setlength{\len}{\textwidth}
-\addtolength{\len}{-1\tw}
-\begin{tabular}{lcp{\len}}
-{\bf \verb+<+compound\_stmt\verb+>+} & ::=  & {\bf \verb+<+if\_stmt~\ref{ifzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+while\_stmt~\ref{whilezzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+for\_stmt~\ref{forzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+try\_stmt~\ref{tryzzzstmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+funcdef~\ref{funcdefb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+classdef~\ref{classdefb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<compound_stmt> ::= <if_stmt \myref[ifzzzstmtb]>
+	\alt <while_stmt \myref[whilezzzstmtb]>
+	\alt <for_stmt \myref[forzzzstmtb]>
+	\alt <try_stmt \myref[tryzzzstmtb]>
+	\alt <funcdef \myref[funcdefb]>
+	\alt <classdef \myref[classdefb]>
+\end{grammar}
+
+%\settowidth{\tw}{compound\_stmt  ::=  }
+%\addtolength{\tw}{2\arraycolsep}
+%\setlength{\len}{\textwidth}
+%\addtolength{\len}{-1\tw}
+%\begin{tabular}{lcp{\len}}
+%{\bf \verb+<+compound\_stmt\verb+>+} & ::=  & {\bf \verb+<+if\_stmt~\ref{ifzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+while\_stmt~\ref{whilezzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+for\_stmt~\ref{forzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+try\_stmt~\ref{tryzzzstmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+funcdef~\ref{funcdefb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+classdef~\ref{classdefb}\verb+>+}  \\
+%\end{tabular} \\
 
 Compound statements can span multiple lines, so they may introduce a new indentation level.
 
 \rulesection{if\_stmt}
 \label{ifzzzstmtb}
 
-\settowidth{\tw}{if\_stmt  ::=  }
-\addtolength{\tw}{2\arraycolsep}
+\begin{grammar}
+<if_stmt> ::= `if' <test \myref[testb]> `:' <suite \myref[suiteb]> <elif_list \myref[elifzzzlistb]>
+	\alt `if' <test \myref[testb]> `:' <suite \myref[suiteb]> <elif_list \myref[elifzzzlistb]> `else' `:' <suite \myref[suiteb]>
+\end{grammar}
 
-\setlength{\len}{\textwidth}
-\addtolength{\len}{-1\tw}
-\begin{tabular}{lcp{\len}}
-{\bf \verb+<+if\_stmt\verb+>+} & ::=  & if {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  {\bf \verb+<+elif\_list~\ref{elifzzzlistb}\verb+>+}  \\
- & \verb+|+  & if {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  {\bf \verb+<+elif\_list~\ref{elifzzzlistb}\verb+>+}  else \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
-\end{tabular}
+%\settowidth{\tw}{if\_stmt  ::=  }
+%\addtolength{\tw}{2\arraycolsep}
+%\setlength{\len}{\textwidth}
+%\addtolength{\len}{-1\tw}
+%\begin{tabular}{lcp{\len}}
+%{\bf \verb+<+if\_stmt\verb+>+} & ::=  & if {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  {\bf \verb+<+elif\_list~\ref{elifzzzlistb}\verb+>+}  \\
+% & \verb+|+  & if {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  {\bf \verb+<+elif\_list~\ref{elifzzzlistb}\verb+>+}  else \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{elif\_list}
 \label{elifzzzlistb}
-\begin{tabular}{lcl}
-{\bf \verb+<+elif\_list\verb+>+} & ::=  & $\varepsilon$ \\
- & \verb+|+  & {\bf \verb+<+elif\_list~\ref{elifzzzlistb}\verb+>+}  elif {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<elif_list> ::= \greeke
+	\alt <elif_list> `elif' <test \myref[testb]> `:' <suite \myref[suiteb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+elif\_list\verb+>+} & ::=  & $\varepsilon$ \\
+% & \verb+|+  & {\bf \verb+<+elif\_list~\ref{elifzzzlistb}\verb+>+}  elif {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+%\end{tabular}
 
 %the suite subsection was moved
 \rulesection{suite}
 \label{suiteb}
-\begin{tabular}{lcl}
-{\bf \verb+<+suite\verb+>+} & ::=  & {\bf \verb+<+simple\_stmt~\ref{simplezzzstmtb}\verb+>+}  \\
- & \verb+|+  & NEWLINE INDENT {\bf \verb+<+stmt\_list\_plus~\ref{stmtzzzlistzzzplusb}\verb+>+}  DEDENT \\
-\end{tabular} \\
+
+\begin{grammar}
+<suite> ::= <simple_stmt \myref[simplezzzstmtb]>
+	\alt NEWLINE INDENT <stmt_list_plus \myref[stmtzzzlistzzzplusb]> DEDENT
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+suite\verb+>+} & ::=  & {\bf \verb+<+simple\_stmt~\ref{simplezzzstmtb}\verb+>+}  \\
+% & \verb+|+  & NEWLINE INDENT {\bf \verb+<+stmt\_list\_plus~\ref{stmtzzzlistzzzplusb}\verb+>+}  DEDENT \\
+%\end{tabular} \\
 
 The INDENT token indicates a new indentation level.  Similarly, the DEDENT token indicates a return to the previous indentation level.
 
 \rulesection{stmt\_list\_plus}
 \label{stmtzzzlistzzzplusb}
-\begin{tabular}{lcl}
-{\bf \verb+<+stmt\_list\_plus\verb+>+} & ::=  & {\bf \verb+<+stmt~\ref{stmtb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+stmt\_list\_plus~\ref{stmtzzzlistzzzplusb}\verb+>+}  {\bf \verb+<+stmt~\ref{stmtb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<stmt_list_plus> ::= <stmt \myref[stmtb]>
+	\alt <stmt_list_plus> <stmt \myref[stmtb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+stmt\_list\_plus\verb+>+} & ::=  & {\bf \verb+<+stmt~\ref{stmtb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+stmt\_list\_plus~\ref{stmtzzzlistzzzplusb}\verb+>+}  {\bf \verb+<+stmt~\ref{stmtb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{while\_stmt}
 \label{whilezzzstmtb}
 
-\settowidth{\tw}{while\_stmt  ::=  }
-\addtolength{\tw}{2\arraycolsep}
+\begin{grammar}
+<while_stmt> ::= `while' <test \myref[testb]> `:' <suite \myref[suiteb]>
+	\alt `while' <test \myref[testb]> `:' <suite \myref[suiteb]> `else' <suite \myref[suiteb]>
+\end{grammar}
 
-\setlength{\len}{\textwidth}
-\addtolength{\len}{-1\tw}
-\begin{tabular}{lcp{\len}}
-{\bf \verb+<+while\_stmt\verb+>+} & ::=  & while {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
- & \verb+|+  & while {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  else \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
-\end{tabular}
+%\settowidth{\tw}{while\_stmt  ::=  }
+%\addtolength{\tw}{2\arraycolsep}
+%\setlength{\len}{\textwidth}
+%\addtolength{\len}{-1\tw}
+%\begin{tabular}{lcp{\len}}
+%{\bf \verb+<+while\_stmt\verb+>+} & ::=  & while {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+% & \verb+|+  & while {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  else \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{for\_stmt}
 \label{forzzzstmtb}
 
-\settowidth{\tw}{for\_stmt  ::=  }
-\addtolength{\tw}{2\arraycolsep}
+\begin{grammar}
+<for_stmt> ::= `for' <target_tuple_or_expr \myref[targetzzztuplezzzorzzzexprb]> `in' <tuple_or_test \myref[tuplezzzorzzztestb]> `:' <suite \myref[suiteb]>
+	\alt `for' <target_tuple_or_expr \myref[targetzzztuplezzzorzzzexprb]> `in' <tuple_or_test \myref[tuplezzzorzzztestb]> `:' <suite \myref[suiteb]> `else' `:' <suite \myref[suiteb]>
+\end{grammar}
 
-\setlength{\len}{\textwidth}
-\addtolength{\len}{-1\tw}
-\begin{tabular}{lcp{\len}}
-{\bf \verb+<+for\_stmt\verb+>+} & ::=  & for {\bf \verb+<+target\_tuple\_or\_expr~\ref{targetzzztuplezzzorzzzexprb}\verb+>+}  in {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
- & \verb+|+  & for {\bf \verb+<+target\_tuple\_or\_expr~\ref{targetzzztuplezzzorzzzexprb}\verb+>+}  in {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  else \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
-\end{tabular}
+%\settowidth{\tw}{for\_stmt  ::=  }
+%\addtolength{\tw}{2\arraycolsep}
+%\setlength{\len}{\textwidth}
+%\addtolength{\len}{-1\tw}
+%\begin{tabular}{lcp{\len}}
+%{\bf \verb+<+for\_stmt\verb+>+} & ::=  & for {\bf \verb+<+target\_tuple\_or\_expr~\ref{targetzzztuplezzzorzzzexprb}\verb+>+}  in {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+% & \verb+|+  & for {\bf \verb+<+target\_tuple\_or\_expr~\ref{targetzzztuplezzzorzzzexprb}\verb+>+}  in {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  else \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{try\_stmt}
 \label{tryzzzstmtb}
 
-\settowidth{\tw}{try\_stmt  ::=  }
-\addtolength{\tw}{2\arraycolsep}
+\begin{grammar}
+<try_stmt> ::= `try' `:' <suite \myref[suiteb]> <except_clause_list_plus \myref[exceptzzzclausezzzlistzzzplusb]>
+	\alt `try' `:' <suite \myref[suiteb]> <except_clause_list_plus \myref[exceptzzzclausezzzlistzzzplusb]> `else' `:' <suite \myref[suiteb]>
+	\alt `try' `:' <suite \myref[suiteb]> `finally' `:' <suite \myref[suiteb]>
+\end{grammar}
 
-\setlength{\len}{\textwidth}
-\addtolength{\len}{-1\tw}
-\begin{tabular}{lcp{\len}}
-{\bf \verb+<+try\_stmt\verb+>+} & ::=  & try \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  {\bf \verb+<+except\_clause\_list\_plus~\ref{exceptzzzclausezzzlistzzzplusb}\verb+>+}  \\
- & \verb+|+  & try \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  {\bf \verb+<+except\_clause\_list\_plus~\ref{exceptzzzclausezzzlistzzzplusb}\verb+>+}  else \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
- & \verb+|+  & try \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  finally \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
-\end{tabular}
+%\settowidth{\tw}{try\_stmt  ::=  }
+%\addtolength{\tw}{2\arraycolsep}
+%\setlength{\len}{\textwidth}
+%\addtolength{\len}{-1\tw}
+%\begin{tabular}{lcp{\len}}
+%{\bf \verb+<+try\_stmt\verb+>+} & ::=  & try \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  {\bf \verb+<+except\_clause\_list\_plus~\ref{exceptzzzclausezzzlistzzzplusb}\verb+>+}  \\
+% & \verb+|+  & try \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  {\bf \verb+<+except\_clause\_list\_plus~\ref{exceptzzzclausezzzlistzzzplusb}\verb+>+}  else \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+% & \verb+|+  & try \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  finally \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{except\_clause\_list\_plus}
 \label{exceptzzzclausezzzlistzzzplusb}
 
-\settowidth{\tw}{except\_clause\_list\_plus  ::=  }
-\addtolength{\tw}{2\arraycolsep}
+\begin{grammar}
+<except_clause_list_plus> ::= <except_clause \myref[exceptzzzclauseb]> `:' <suite \myref[suiteb]>
+	\alt <except_clause_list_plus \myref[exceptzzzclausezzzlistzzzplusb]> <except_clause \myref[exceptzzzclauseb]> `:' <suite \myref[suiteb]>
+\end{grammar}
 
-\setlength{\len}{\textwidth}
-\addtolength{\len}{-1\tw}
-\begin{tabular}{lcp{\len}}
-{\bf \verb+<+except\_clause\_list\_plus\verb+>+} & ::=  & {\bf \verb+<+except\_clause~\ref{exceptzzzclauseb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+except\_clause\_list\_plus~\ref{exceptzzzclausezzzlistzzzplusb}\verb+>+}  {\bf \verb{<}\mbox{except\_clause~\ref{exceptzzzclauseb}}\verb|>|}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
-\end{tabular}
+%\settowidth{\tw}{except\_clause\_list\_plus  ::=  }
+%\addtolength{\tw}{2\arraycolsep}
+%\setlength{\len}{\textwidth}
+%\addtolength{\len}{-1\tw}
+%\begin{tabular}{lcp{\len}}
+%{\bf \verb+<+except\_clause\_list\_plus\verb+>+} & ::=  & {\bf \verb+<+except\_clause~\ref{exceptzzzclauseb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+except\_clause\_list\_plus~\ref{exceptzzzclausezzzlistzzzplusb}\verb+>+}  {\bf \verb{<}\mbox{except\_clause~\ref{exceptzzzclauseb}}\verb|>|}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{except\_clause}
 \label{exceptzzzclauseb}
-\begin{tabular}{lcl}
-{\bf \verb+<+except\_clause\verb+>+} & ::=  & except \\
- & \verb+|+  & except {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & except {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<except_clause> ::= `except'
+	\alt `except' <test \myref[testb]>
+	\alt `except' <test \myref[testb]> `,' <test \myref[testb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+except\_clause\verb+>+} & ::=  & except \\
+% & \verb+|+  & except {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & except {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{funcdef}
 \label{funcdefb}
 
 See the Python reference~\cite{pythonlang}, section 7.5.
 
-\begin{tabular}{lcl}
-{\bf \verb+<+funcdef\verb+>+} & ::=  & def {\bf \verb+<+ident~\ref{identb}\verb+>+}  {\bf \verb+<+parameters~\ref{parametersb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
-\end{tabular}
+\begin{grammar}
+<funcdef> ::= `def' <ident \myref[identb]> <parameters \myref[parametersb]> `:' <suite \myref[suiteb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+funcdef\verb+>+} & ::=  & def {\bf \verb+<+ident~\ref{identb}\verb+>+}  {\bf \verb+<+parameters~\ref{parametersb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{parameters}
 \label{parametersb}
-\begin{tabular}{lcl}
-{\bf \verb+<+parameters\verb+>+} & ::=  & \verb|(| \verb|)| \\
- & \verb+|+  & \verb|(| {\bf \verb+<+varargslist~\ref{varargslistb}\verb+>+}  \verb|)| \\
-\end{tabular}
+
+\begin{grammar}
+<parameters> ::= `(' `)'
+	\alt `(' <varargslist \myref[varargslistb]> `)'
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+parameters\verb+>+} & ::=  & \verb|(| \verb|)| \\
+% & \verb+|+  & \verb|(| {\bf \verb+<+varargslist~\ref{varargslistb}\verb+>+}  \verb|)| \\
+%\end{tabular}
 
 \rulesection{varargslist}
 \label{varargslistb}
-\begin{tabular}{lcl}
-{\bf \verb+<+varargslist\verb+>+} & ::=  & \verb|**| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
- & \verb+|+  & \verb|*| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
- & \verb+|+  & \verb|*| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|,| \verb|**| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|,| \\
- & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|=| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| \\
- & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|=| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|,| {\bf \verb+<+varargslist~\ref{varargslistb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|=| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+varargslist~\ref{varargslistb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<varargslist> ::= `**' <ident \myref[identb]>
+	\alt `*' <ident \myref[identb]>
+	\alt `*' <ident \myref[identb]> `,' `**' <ident \myref[identb]>
+	\alt <fpdef \myref[fpdefb]> `,'
+	\alt <fpdef \myref[fpdefb]> `=' <test \myref[testb]> `,'
+	\alt <fpdef \myref[fpdefb]>
+	\alt <fpdef \myref[fpdefb]> `=' <test \myref[testb]>
+	\alt <fpdef \myref[fpdefb]> `,' <varargslist \myref[varargslistb]>
+	\alt <fpdef \myref[fpdefb]> `=' <test \myref[testb]> `,' <varargslist \myref[varargslistb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+varargslist\verb+>+} & ::=  & \verb|**| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
+% & \verb+|+  & \verb|*| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
+% & \verb+|+  & \verb|*| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|,| \verb|**| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|,| \\
+% & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|=| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| \\
+% & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|=| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|,| {\bf \verb+<+varargslist~\ref{varargslistb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|=| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+varargslist~\ref{varargslistb}\verb+>+}  \\
+%\end{tabular} \\
 
 From the Python reference~\cite{pythonlang}, section 7.5:
 \begin{quote}
@@ -434,15 +674,21 @@ If the form ``**identifier'' is present, it is initialized to a new dictionary
 receiving any excess keyword arguments, defaulting to a new empty dictionary.
 
 If a parameter has a default value, all following parameters must also have a 
-default value -- this is a syntactic restriction that is not expressed by the grammar, but is checked by the parser.   
+default value---this is a syntactic restriction that is not expressed by the grammar, but is checked by the parser.   
 \end{quote}
 
 \rulesection{fpdef}
 \label{fpdefb}
-\begin{tabular}{lcl}
-{\bf \verb+<+fpdef\verb+>+} & ::=  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
- & \verb+|+  & ( {\bf \verb+<+fplist~\ref{fplistb}\verb+>+}  ) \\
-\end{tabular} \\
+
+\begin{grammar}
+<fpdef> ::= <ident \myref[identb]>
+	\alt `(' <fplist \myref[fplistb]> `)'
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+fpdef\verb+>+} & ::=  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
+% & \verb+|+  & ( {\bf \verb+<+fplist~\ref{fplistb}\verb+>+}  ) \\
+%\end{tabular} \\
 
 A function parameter is either an identifier or a tuple that will be unpacked.  For example, in:
 \begin{verbatim}
@@ -456,19 +702,33 @@ when f is called, \verb|x| is bound to \verb|1|, \verb|y| is bound to \verb|2|, 
 
 \rulesection{fplist}
 \label{fplistb}
-\begin{tabular}{lcl}
-{\bf \verb+<+fplist\verb+>+} & ::=  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|,| \\
- & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|,| {\bf \verb+<+fplist~\ref{fplistb}\verb+>+}  \\
-\end{tabular}
+
+\begin{grammar}
+<fplist> ::= <fpdef \myref[fpdefb]>
+	\alt <fpdef \myref[fpdefb]> `,'
+	\alt <fpdef \myref[fpdefb]> `,' <fplist>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+fplist\verb+>+} & ::=  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \\
+% & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|,| \\
+% & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|,| {\bf \verb+<+fplist~\ref{fplistb}\verb+>+}  \\
+%\end{tabular}
 
 \rulesection{classdef}
 \label{classdefb}
-\begin{tabular}{lcl}
-{\bf \verb+<+classdef\verb+>+} & ::=  & class {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
- & \verb+|+  & class {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|(| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|)| \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
- & \verb+|+  & class {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|(| {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \verb|)| \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
-\end{tabular} \\
+
+\begin{grammar}
+<classdef> ::= `class' <ident \myref[identb]> `:' <suite \myref[suiteb]>
+	\alt `class' <ident \myref[identb]> `(' <test \myref[testb]> `)' `:' <suite \myref[suiteb]>
+	\alt `class' <ident \myref[identb]> `(' <testlist \myref[testlistb]> `)' `:' <suite \myref[suiteb]>
+\end{grammar}
+
+%\begin{tabular}{lcl}
+%{\bf \verb+<+classdef\verb+>+} & ::=  & class {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+% & \verb+|+  & class {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|(| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|)| \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+% & \verb+|+  & class {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|(| {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \verb|)| \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+%\end{tabular} \\
 
 In the CPython interpreter (version~2.2), ``old-style'' classes are defined by
 \verb+class classname(superclasses)+, and ``new-style'' classes are defined by 

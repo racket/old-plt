@@ -1,19 +1,70 @@
 \documentclass[12pt]{article}
+
 %\usepackage{doublespace}
-\usepackage{tex2page}
-%\usepackage[dvips]{graphicx}
+% or, get "double spacing" through:
+% \renewcommand{\baselinestretch}{2}
+
 \usepackage{graphicx}
+
+\usepackage{fancyheadings}
+\pagestyle{fancy}
+
+% http://www.ctan.org/tex-archive/help/Catalogue/entries/syntax-mdw.html
+\usepackage{syntax}
+\grammarindent=3cm
+
+% http://www.ccs.neu.edu/home/dorai/tex2page/tex2page-doc.html
+\usepackage{tex2page}
+
+% suppress "overfull" and "underfull" messages
+%\tolerance=500
+
+% 2 spaces after a period
+\nonfrenchspacing
+
+% 'sloppy' ensures everything falls within the margins,
+% but the text spacing is distorted and looks, well, sloppy
+%\sloppy
+
+\newcommand{\greeke}{\ensuremath{\varepsilon}}%
+\newcommand{\myref}[1][blah]{\ref{#1}}%
+
+
+	\newif\ifpdf
+	\ifx\pdfoutput\undefined
+        \pdffalse
+	\else
+        \pdfoutput=1
+        \pdftrue
+    \fi
+% Set up PDF specific
+	\ifpdf
+		\renewcommand\url\undefined % sorry, tex2page, hyperref provides its own
+	    \usepackage[pdftex,colorlinks=true,urlcolor=blue,pdfstartview=FitH]{hyperref}
+	    \pdfcompresslevel=9
+		\DeclareGraphicsExtensions{.pdf}
+	    \hypersetup{
+			pdftitle={Implementing a Python to Scheme Compiler},
+			pdfauthor={Daniel P.M. Silva}
+	    }
+	\else
+%		\usepackage{hyperref}
+	\fi
+
+
+\hyphenation{Mz-Scheme}
+\hyphenation{Dr-Scheme}
+\hyphenation{Mr-Ed}
 
 
 \title{Implementing a Python to Scheme Compiler}
-\author{Daniel Silva}
+\author{Daniel P.M. Silva}
 \date{\today}
-
 
 \begin{document}
 
 	\maketitle
-
+	\input{pts-abstract}
 %	\section {Introduction}
 %		\emph{Section omitted.}
 	\input{pts-introduction}
@@ -56,8 +107,7 @@
 
 	\input{pts-future-work}
 
-	\section{Conclusion}
-		\input{pts-conclusion}
+	\input{pts-conclusion}
 
 	\newpage
 	\tableofcontents

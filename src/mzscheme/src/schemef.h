@@ -614,3 +614,5 @@ char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv
 void scheme_no_dumps(char *why);
 
 const char *scheme_system_library_subpath();
+
+void scheme_blocking_output(int block);

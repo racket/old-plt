@@ -802,7 +802,9 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     bad_seeds = 0;
 
     traced = GC_trace_count(&stack_c, &roots_c, &uncollectable_c, &final_c);
+    scheme_blocking_output(TRUE);
     GC_dump();
+    scheme_blocking_output(FALSE);
 
     scheme_console_printf("\ntraced: %ld\n", traced);
 
@@ -903,7 +905,9 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     smc_ht = NULL;
   }
 #else
+  scheme_blocking_output(1);
   GC_dump();
+  scheme_blocking_output(0);
 #endif
 
   if (scheme_external_dump_info)

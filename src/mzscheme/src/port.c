@@ -3261,7 +3261,7 @@ make_fd_output_port(int fd)
 # ifdef NEED_RESET_STDOUT_BLOCKING
 void reset_stdout_blocking_mode(void)
 {
-  scheme_blocking_output(TRUE);
+  scheme_blocking_output(1);
 }
 # endif
 #endif

@@ -5,7 +5,7 @@ all: mz @MAKE_MRED@
 
 3m: mz3m @MAKE_MRED3M@
 
-install: mzinstall @MAKE_MREDINSTALL@
+install: mzinstall @MAKE_MREDINSTALL@ lib-finish
 
 clean:
 	cd mzscheme; $(MAKE) clean
@@ -28,3 +28,6 @@ mzinstall:
 
 mrinstall:
 	cd mred; $(MAKE) install
+
+lib-finish:
+	@LIBFINISH@ @srcdir@/../lib

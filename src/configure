@@ -2481,17 +2481,20 @@ if test "${enable_dynlib}" = "yes" ; then
   WXLIBS=WXLIBSDYN
   ICP="${LTDIR}/libtool cp"
   MRLIBINSTALL="install-lib"
+  LIBFINISH="${LTDIR}/libtool --finish"
 else
   LIBSFX=a
   MREDLINKER="$CXX"
   WXLIBS=WXLIBSNORM
   ICP=cp
   MRLIBINSTALL="install-no-lib"
+  LIBFINISH=echo
 fi
 
 ############## final output ################
 
 LIBS="$LIBS $EXTRALIBS"
+
 
 
 
@@ -2764,6 +2767,7 @@ s%@LIBSFX@%$LIBSFX%g
 s%@WXLIBS@%$WXLIBS%g
 s%@ICP@%$ICP%g
 s%@MRLIBINSTALL@%$MRLIBINSTALL%g
+s%@LIBFINISH@%$LIBFINISH%g
 s%@MAKE_MRED@%$MAKE_MRED%g
 s%@MAKE_MRED3M@%$MAKE_MRED3M%g
 s%@MAKE_MREDINSTALL@%$MAKE_MREDINSTALL%g

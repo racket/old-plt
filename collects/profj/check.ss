@@ -171,17 +171,7 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
   ;;Checks      
 
-  ;check-block: (list (U statement variable)) src type env type-records (U #f (list string))-> void
-  (define check-block
-    (lambda (stmts src return env type-recs current-class)
-      (cond 
-        ((null? stmts) void)
-        ((or (var-decl? (car stmts)) (var-init? (car stmts)))
-         (check-block (cdr stmts) src return 
-                      (check-local-var (car stmts) env type-recs current-class) type-recs current-class))
-        (else
-         (check-statement (car stmts) return env null 'full type-recs current-class #t #f)
-         (check-block (cdr stmts) src return env type-recs current-class)))))
+  
   
   ;build-method-env: (list var-decl) env type-records-> env
   (define build-method-env
@@ -237,19 +227,24 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Statement checking functions
   
-  ;;check-statement: statement type env (list type) symbol type-records (U #f string) bool bool-> type
+  ;;check-statement: statement type env (list type) (list string) symbol type-records (U #f string) bool bool-> type
   (define check-statement
-    (lambda (statement return env exn-env level type-recs current-class ctor? static?)
-      (let ((check-s (lambda (stmt env exn-env)
-                       (check-statement stmt return env exn-env level type-recs current-class ctor? static?)))
-            (check-e (lambda (exp env exn-env)
-                       (check-expr exp env level type-recs current-class ctor? static?))))
+    (lambda (statement return env exn-env label-env level type-recs c-c ctor? static?)
+      (let* ((check-s (lambda (stmt env exn-env label-env)
+                       (check-statement stmt return env exn-env label-env level type-recs c-c ctor? static?)))
+             (check-s-no-change (lambda (stmt) (check-s stmt env exn-env label-env)))
+             (check-s-env-change (lambda (stmt env) (check-s stmt env exn-env label-env)))
+             (check-s-exn-change (lambda (stmt exn-env) (check-s stmt env exn-env label-env)))
+             (check-s-label-change (lambda (stmt label-env) (check-s stmt env exn-env label-env)))
+             (check-e (lambda (exp env exn-env)
+                        (check-expr exp env level type-recs c-c ctor? static?)))
+             (check-e-no-change (lambda (exp) (check-e exp env exn-env))))
       (cond
         ((ifS? statement) 
-         (check-ifS (check-e (ifS-cond statement) env exn-env)
+         (check-ifS (check-e-no-change (ifS-cond statement))
                     (expr-src (ifS-cond statement)))
-         (check-s (ifS-then statement) env exn-env)
-         (check-s (ifS-else statement) env exn-env))                                     
+         (check-s-no-change (ifS-then statement))
+         (check-s-no-change (ifS-else statement)))                                     
         ((throw? statement)
          (check-throw (check-e (throw-expr statement) env exn-env)
                       (expr-src (throw-expr statement))
@@ -258,17 +253,17 @@
         ((return? statement)
          (check-return (return-expr statement)
                        return
-                       (lambda (e) (check-e e env exn-env))
+                       check-e-no-change
                        (return-src statement)
                        type-recs))
         ((while? statement) 
-         (check-while (check-e (while-cond statement) env exn-env)
+         (check-while (check-e-no-change (while-cond statement))
                       (expr-src (while-cond statement)))
-         (check-s (while-loop statement) env exn-env))
+         (check-s-no-change (while-loop statement)))
         ((doS? statement) 
-         (check-do (check-e (doS-cond statement) env exn-env)
+         (check-do (check-e-no-change (doS-cond statement))
                    (expr-src (doS-cond statement)))
-         (check-s (doS-loop statement) env exn-env))
+         (check-s-no-change (doS-loop statement)))
         ((for? statement)
          (check-for (for-init statement)
                     (for-cond statement)
@@ -295,10 +290,10 @@
                        (lambda (s env) (check-s s env exn-env))))
         ((block? statement)
          (check-block (block-stmts statement)
-                      (block-src statement)
-                      return
-                      env type-recs
-                      current-class))
+                      env
+                      (lambda (s env) (check-s s env exn-env))
+                      (lambda (e env) (check-e e env exn-env))
+                      type-recs))
         ((break? statement)
          void)
         ((continue? statement)
@@ -451,7 +446,19 @@
                       void
                       (raise-statement-error (list cons-type expr-type) (expr-src constant) 'switch incompatible-case))))
               cases))
-    
+  
+  ;check-block: (list (U statement field)) env (statement env -> void) (expr -> type) type-records -> void
+  (define (check-block stmts env check-s check-e type-recs)
+    (let loop ((stmts stmts) (block-env env) (check-e (lambda (e) (check-e env))))
+      (cond 
+        ((null? stmts) (void))
+        ((field? (car stmts))
+         (loop (cdr stmts) (check-local-var (car stmts) block-env check-e type-recs)
+               (lambda (e) (check-e e block-env))))
+        (else
+         (check-s (car stmts) block-env)
+         (loop (cdr stmts) block-env (lambda (e) (check-e e block-env)))))))
+  
   ;Statement error messages
   
   (define (statement-cond-not-bool kind)

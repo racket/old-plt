@@ -673,7 +673,7 @@
 	   (case-lambda
 	    [() active]
 	    [(new-child)
-	     (unless (eq? this (send new-child get-parent))
+	     (unless (or (null? new-child) (eq? this (send new-child get-parent)))
 	       (error 'active-child
 		      (string-append
 		       "The child specified (~s) is not "

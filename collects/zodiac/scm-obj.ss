@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.32 1997/09/19 02:35:34 shriram Exp $
+; $Id: scm-obj.ss,v 1.33 1998/03/18 22:06:23 shriram Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -644,7 +644,7 @@
 		  (valid-syntactic-id? name)
 		  (expand-expr
 		    (structurize-syntax
-		      `(#%uq-ivar ,object (quote ,name))
+		      `(#%ivar/proc ,object (quote ,name))
 		      expr '(-1))
 		    env attributes vocab))))
 	    (else

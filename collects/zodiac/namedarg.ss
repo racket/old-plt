@@ -1,11 +1,11 @@
-; $Id: namedarg.ss,v 1.9 1998/01/14 15:04:20 mflatt Exp $
+; $Id: namedarg.ss,v 1.10 1998/03/14 17:53:46 mflatt Exp $
 
-(begin-construction-time (reference-library "match.ss"))
-(begin-construction-time (reference-library "macro.ss"))
+(begin-construction-time (require-library "match.ss"))
+(begin-construction-time (require-library "macro.ss"))
 
 (begin-construction-time 
  (invoke-open-unit
-  (reference-relative-library "namedargr.ss")))
+  (require-relative-library "namedargr.ss")))
 
 (define-macro define-argument-list
   (lambda args

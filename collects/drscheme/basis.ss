@@ -60,8 +60,7 @@
 		(compound-unit/sig (import [drscheme:init : drscheme:init^]
 					   [params : plt:userspace:params^])
 		  (link [userspace : plt:userspace^ 
-				   ((reference-library-unit/sig "gusrspcr.ss" "gusrspce")
-				    drscheme:init
+				   ((require-library-unit/sig "gusrspcr.ss" "gusrspce")
 				    params)]
 			[library : () (l@ userspace)])
 		  (export (open userspace)))])

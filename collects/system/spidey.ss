@@ -24,22 +24,22 @@
 		  (current-library-collection-paths)))))
 	   port)
 
-	  (pretty-print `(reference-library "match.ss") port)
-	  (pretty-print `(begin-elaboration-time (reference-library "match.ss")) port)
-	  (pretty-print `(reference-library "macro.ss") port)
-	  (pretty-print `(begin-elaboration-time (reference-library "macro.ss")) port)
-	  (pretty-print `(reference-library "debug.ss" "system") port)
+	  (pretty-print `(require-library "match.ss") port)
+	  (pretty-print `(begin-elaboration-time (require-library "match.ss")) port)
+	  (pretty-print `(require-library "macro.ss") port)
+	  (pretty-print `(begin-elaboration-time (require-library "macro.ss")) port)
+	  (pretty-print `(require-library "debug.ss" "system") port)
 	  
-	  (pretty-print `(reference-library "invsig.ss" "system") port)
+	  (pretty-print `(require-library "invsig.ss" "system") port)
 	  (when app-sig-library
-	    (pretty-print `(reference-library ,app-sig-library ,app-collection) port))
+	    (pretty-print `(require-library ,app-sig-library ,app-collection) port))
 
 	  (pretty-print `(define argv (vector)) port)
 	  (pretty-print `(define mred:initialize void) port)
 
 	  (pretty-print
 	   `(invoke-unit/sig
-	     (reference-library-unit/sig
+	     (require-library-unit/sig
 	      ,app-unit-library
 	      ,app-collection)
 	     mred:application-imports^)

@@ -1,58 +1,58 @@
 (compound-unit/sig (import [I : mred:application-imports^])
   (link [wx : wx^ (wx@)]
-	[init : drscheme:init^ ((reference-unit/sig "init.ss") wx mred)]
-	[mzlib : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
-	[mred : mred^ ((reference-library-unit/sig "link.ss" "mred") mzlib)]
+	[init : drscheme:init^ ((require-unit/sig "init.ss") wx mred)]
+	[mzlib : mzlib:core^ ((require-library-unit/sig "corer.ss"))]
+	[mred : mred^ ((require-library-unit/sig "link.ss" "mred") mzlib)]
 	[print-convert : mzlib:print-convert^
-		       ((reference-library-unit/sig "pconverr.ss")
+		       ((require-library-unit/sig "pconverr.ss")
 			(mzlib string@)
 			(mzlib function@))]
-	[face : drscheme:face^ ((reference-unit/sig "face.ss") mred)]
-	[prefs : drscheme:prefs^ ((reference-unit/sig "prefs.ss") mred)]
+	[face : drscheme:face^ ((require-unit/sig "face.ss") mred)]
+	[prefs : drscheme:prefs^ ((require-unit/sig "prefs.ss") mred)]
 	[basis : drscheme:basis^
-	       ((reference-unit/sig "basis.ss")
+	       ((require-unit/sig "basis.ss")
 		wx init language mred drzodiac)]
-	[aries : plt:aries^ ((reference-library-unit/sig "ariesr.ss" "cogen")
+	[aries : plt:aries^ ((require-library-unit/sig "ariesr.ss" "cogen")
 			     (drzodiac : zodiac:system^)
 			     (interface : zodiac:interface^))]
 	[language : drscheme:language^
-		  ((reference-unit/sig "language.ss")
+		  ((require-unit/sig "language.ss")
 		   wx mred 
 		   basis
 		   (export* unit)
 		   aries drzodiac
 		   (mzlib function@) print-convert)]
 	[interface : drscheme:interface^
-		   ((reference-unit/sig "intrface.ss") 
+		   ((require-unit/sig "intrface.ss") 
 		    drzodiac
 		    init
 		    mred)]
 	[drzodiac : drscheme:zodiac^
-		  ((reference-unit/sig "zlink.ss")
+		  ((require-unit/sig "zlink.ss")
 		   mred
 		   basis
 		   interface
 		   (mzlib pretty-print@)
 		   (mzlib file@))]
-	[edit : drscheme:edit^ ((reference-unit/sig "edit.ss") 
+	[edit : drscheme:edit^ ((require-unit/sig "edit.ss") 
 				mred aries drzodiac)]
-	[setup : drscheme:setup^ ((reference-unit/sig "setup.ss") wx mred mzlib)]
-	[snip : drscheme:snip^ ((reference-unit/sig "snip.ss") wx mred)]
-	[export* : drscheme:export^ ((reference-unit/sig "export.ss")
+	[setup : drscheme:setup^ ((require-unit/sig "setup.ss") wx mred mzlib)]
+	[snip : drscheme:snip^ ((require-unit/sig "snip.ss") wx mred)]
+	[export* : drscheme:export^ ((require-unit/sig "export.ss")
 				    wx mred mzlib print-convert app
 				    basis edit language setup snip
 				    init interface face
 				    aries drzodiac)]
 	[tool : () 
-	      ((reference-unit/sig "tool.ss")
+	      ((require-unit/sig "tool.ss")
 	       wx mred mzlib print-convert 
 	       drzodiac
 	       export*)]
-	[app : drscheme:app^ ((reference-unit/sig "app.ss")
+	[app : drscheme:app^ ((require-unit/sig "app.ss")
 			      wx
 			      mred
 			      mzlib)]
-	[main : drscheme:main^ ((reference-unit/sig "main.ss")
+	[main : drscheme:main^ ((require-unit/sig "main.ss")
 				wx I
 				mred
 				(mzlib pretty-print@)

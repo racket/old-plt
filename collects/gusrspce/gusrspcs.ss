@@ -1,7 +1,7 @@
-(reference-library "cores.ss")
-(reference-library "userspcs.ss" "userspce")
-(reference-library "graphics.ss" "graphics")
-(reference-library "turtles.ss" "graphics")
+(require-library "cores.ss")
+(require-library "userspcs.ss" "userspce")
+(require-library "graphics.ss" "graphics")
+(require-library "turtles.ss" "graphics")
 
 (define-signature plt:userspace^
   ((open mzlib:pretty-print^)

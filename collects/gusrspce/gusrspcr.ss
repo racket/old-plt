@@ -1,12 +1,12 @@
 (compound-unit/sig (import [params : plt:userspace:params^])
-  (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
-	[mred : mred^ ((reference-library-unit/sig "link.ss" "mred") core)]
+  (link [core : mzlib:core^ ((require-library-unit/sig "corer.ss"))]
+	[mred : mred^ ((require-library-unit/sig "link.ss" "mred") core)]
 	[wx : wx^ (wx@)]
-	[rice : ricedefs^ ((reference-library-unit/sig "ricedefr.ss" "userspce")
+	[rice : ricedefs^ ((require-library-unit/sig "ricedefr.ss" "userspce")
 			   params)]
-	[graphics : graphics^ ((reference-library-unit/sig "graphicr.ss" "graphics")
+	[graphics : graphics^ ((require-library-unit/sig "graphicr.ss" "graphics")
 			       wx (core file@) mred)]
-	[turtle : turtle^ ((reference-library-unit/sig "turtlmr.ss" "graphics")
+	[turtle : turtle^ ((require-library-unit/sig "turtlmr.ss" "graphics")
 			   wx 
 			   (core function@))])
   (export (open (core pretty-print@))

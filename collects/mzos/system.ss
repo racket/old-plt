@@ -141,8 +141,8 @@
 	   (gui:open-gui))])
     (compound-unit/sig (import)
       (link [W : wx^ (wx@)]
-	    [F : mzlib:function^ ((reference-library-unit/sig "functior.ss"))]
-	    [S : mred:minimal^ ((reference-library-unit/sig "minimal.ss" "mred") F W)]
+	    [F : mzlib:function^ ((require-library-unit/sig "functior.ss"))]
+	    [S : mred:minimal^ ((require-library-unit/sig "minimal.ss" "mred") F W)]
 	    [G : (add-button open-gui) (gui@ W (S container))]
 	    [A : (start-app) (app@ W)]
 	    [M : () (main@ G A F)])

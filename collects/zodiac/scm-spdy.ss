@@ -1,4 +1,4 @@
-; $Id: scm-spdy.ss,v 1.36 1998/03/13 21:20:44 shriram Exp $
+; $Id: scm-spdy.ss,v 1.37 1998/03/18 22:06:23 shriram Exp $
 
 (unit/sig zodiac:scheme-mrspidey^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -369,13 +369,13 @@
 	      (static-error expr (string-append "Malformed "
 				   (symbol->string form-name)))))))))
 
-  (add-primitivized-micro-form 'reference-library mrspidey-vocabulary
-    (reference-library/relative-maker 'reference-library
+  (add-primitivized-micro-form 'require-library mrspidey-vocabulary
+    (reference-library/relative-maker 'require-library
       (lambda (raw-f raw-cs expr)
 	(apply mzlib:find-library raw-f raw-cs))))
 
-  (add-primitivized-micro-form 'reference-relative-library mrspidey-vocabulary
-    (reference-library/relative-maker 'reference-relative-library
+  (add-primitivized-micro-form 'require-relative-library mrspidey-vocabulary
+    (reference-library/relative-maker 'require-relative-library
       (lambda (raw-f raw-cs expr)
 	(apply mzlib:find-library raw-f
 	  (append (or (current-require-relative-collection)
@@ -412,8 +412,8 @@
 	      (else
 		(static-error expr "Malformed ~a" form-name))))))))
 
-  (reference-unit-maker 'reference-unit #f)
-  (reference-unit-maker 'reference-unit/sig #t)
+  (reference-unit-maker 'require-unit #f)
+  (reference-unit-maker 'require-unit/sig #t)
 
   (define reference-library-unit-maker
     (lambda (form-name sig? relative?)
@@ -476,10 +476,10 @@
 		  (static-error expr
 		    (string-append "Malformed ~a" form-name))))))))))
 
-  (reference-library-unit-maker 'reference-library-unit #f #f)
-  (reference-library-unit-maker 'reference-library-unit/sig #t #f)
-  (reference-library-unit-maker 'reference-relative-library-unit #f #t)
-  (reference-library-unit-maker 'reference-relative-library-unit/sig #t #t)
+  (reference-library-unit-maker 'require-library-unit #f #f)
+  (reference-library-unit-maker 'require-library-unit/sig #t #f)
+  (reference-library-unit-maker 'require-relative-library-unit #f #t)
+  (reference-library-unit-maker 'require-relative-library-unit/sig #t #t)
 
 '  (add-primitivized-micro-form 'references-unit-imports mrspidey-vocabulary
     (let* ((kwd '())
@@ -497,7 +497,7 @@
 		  'imp
 		  expr))))
 	  (else
-	    (static-error expr "Malformed reference-unit-imports"))))))
+	    (static-error expr "Malformed require-unit-imports"))))))
 
   ; --------------------------------------------------------------------
 
@@ -522,12 +522,12 @@
     (lambda (expr p->r)
       (case (reference-unit-form-kind expr)
 	((exp) `(,(if (reference-unit-form-signed? expr)
-		    'reference-unit/sig
-		    'reference-unit)
+		    'require-unit/sig
+		    'require-unit)
 		  ,(sexp->raw (reference-unit-form-file expr))))
-	((imp) `(reference-unit-imports
+	((imp) `(require-unit-imports
 		  ,(sexp->raw (reference-unit-form-file expr))))
-	(else (internal-error 'reference-unit-form "Invalid kind")))))
+	(else (internal-error 'require-unit-form "Invalid kind")))))
 
   (extend-parsed->raw define-type-form?
     (lambda (expr p->r)

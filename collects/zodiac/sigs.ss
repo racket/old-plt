@@ -1,7 +1,7 @@
-; $Id: sigs.ss,v 1.48 1998/03/14 17:53:46 mflatt Exp $
+; $Id: sigs.ss,v 1.49 1998/03/15 00:08:16 mflatt Exp $
 
 (begin-elaboration-time
- (reference-relative-library "namedarg.ss"))
+ (require-relative-library "namedarg.ss"))
 
   (define-argument-list zodiac:scheme-expand/nal
     (kwd expression: expr)

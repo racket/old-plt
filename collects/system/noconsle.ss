@@ -5,7 +5,7 @@
 ;; Note that under X Windows, you must still have the X display set
 ;; to something valid.
 
-((reference-library "appl.ss" "system")
+((require-library "appl.ss" "system")
  (unit/sig (console)
    (import [mred : mred^]
 	   [I : mred:application-imports^])

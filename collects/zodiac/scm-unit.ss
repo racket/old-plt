@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.60 1998/03/15 00:08:16 mflatt Exp $
+; $Id: scm-unit.ss,v 1.61 1998/03/18 22:06:24 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -1050,8 +1050,8 @@
 		(else
 		  (static-error expr "Malformed ~a" form-name)))))))))
 
-  (reference-unit-maker 'reference-unit #f)
-  (reference-unit-maker 'reference-unit/sig #t)
+  (reference-unit-maker 'require-unit #f)
+  (reference-unit-maker 'require-unit/sig #t)
 
   (define reference-library-unit-maker
     (lambda (form-name sig? relative?)
@@ -1121,10 +1121,10 @@
 		  (static-error expr
 		    (string-append "Malformed ~a" form-name))))))))))
 
-  (reference-library-unit-maker 'reference-library-unit #f #f)
-  (reference-library-unit-maker 'reference-library-unit/sig #t #f)
-  (reference-library-unit-maker 'reference-relative-library-unit #f #t)
-  (reference-library-unit-maker 'reference-relative-library-unit/sig #t #t)
+  (reference-library-unit-maker 'require-library-unit #f #f)
+  (reference-library-unit-maker 'require-library-unit/sig #t #f)
+  (reference-library-unit-maker 'require-relative-library-unit #f #t)
+  (reference-library-unit-maker 'require-relative-library-unit/sig #t #t)
 
   (define (reset-unit-attributes attr)
     (put-attribute attr c-unit-link-import/body-vocab-attr null)

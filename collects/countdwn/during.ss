@@ -68,8 +68,8 @@
        (lambda ()
 	 (let ([cu (compound-unit/sig (import)
 		    (link [wx : wx^ (wx:wx@)]
-			  [C : mzlib:core^ ((reference-library "corer.ss"))]
-			  [mred : mred^ ((reference-library "linkwx.ss" "mred") C wx)])
+			  [C : mzlib:core^ ((require-library "corer.ss"))]
+			  [mred : mred^ ((require-library "linkwx.ss" "mred") C wx)])
 		    (export (unit mred)
 			    (open C)
 			    (unit wx)))])

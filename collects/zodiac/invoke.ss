@@ -1,13 +1,13 @@
-; $Id: invoke.ss,v 1.30 1998/03/14 22:57:48 shriram Exp $
+; $Id: invoke.ss,v 1.31 1998/03/17 20:52:19 shriram Exp $
 
-(reference-library "coreu.ss")
-(reference-library "match.ss")
-(begin-elaboration-time (reference-library "match.ss"))
-(begin-construction-time (reference-library "match.ss"))
+(require-library "coreu.ss")
+(require-library "match.ss")
+(begin-elaboration-time (require-library "match.ss"))
+(begin-construction-time (require-library "match.ss"))
 
-(reference-library "sparams.ss" "backward")
+(require-library "sparams.ss" "backward")
 
-(reference-library "load.ss" "zodiac")
+(require-library "load.ss" "zodiac")
 
 (define zodiac:default-interface@
   (unit/sig zodiac:interface^
@@ -25,7 +25,7 @@
       (default-error-handler 'run-time-error))))
 
 (define plt:mzscheme-parameters@
-  (reference-library-unit/sig "sparamr.ss" "backward"))
+  (require-library-unit/sig "sparamr.ss" "backward"))
 
 (define zodiac:mzscheme-parameters@
   (unit/sig plt:parameters^
@@ -36,7 +36,7 @@
 ; (define language-levels '(core structured side-effecting advanced))
 
 (define zodiac:system@
-  (reference-library-unit/sig "link.ss" "zodiac"))
+  (require-library-unit/sig "link.ss" "zodiac"))
 
 (define zodiac:invoke-system
   (lambda ()

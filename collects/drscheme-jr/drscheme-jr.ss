@@ -1,6 +1,6 @@
 
-(reference-library "macro.ss")
-(reference-library "cmdline.ss")
+(require-library "macro.ss")
+(require-library "cmdline.ss")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -312,19 +312,19 @@
 
 ;; Dont' require mzlib or pretty-print here; they are linked with zodiac
 
-(reference-library "zsigs.ss" "zodiac")
-(reference-library "sigs.ss" "zodiac")
+(require-library "zsigs.ss" "zodiac")
+(require-library "sigs.ss" "zodiac")
 
-(reference-library "sparams.ss" "backward")
-(reference-library "ariess.ss" "cogen")
-(reference-library "userspcs.ss" "userspce")
-(reference-library "coreu.ss")
+(require-library "sparams.ss" "backward")
+(require-library "ariess.ss" "cogen")
+(require-library "userspcs.ss" "userspce")
+(require-library "coreu.ss")
 
-(reference-library "pconver.ss")
+(require-library "pconver.ss")
 
-(define zodiac@ (reference-library-unit/sig "link.ss" "zodiac"))
+(define zodiac@ (require-library-unit/sig "link.ss" "zodiac"))
 
-(define aries@ (reference-library-unit/sig "ariesr.ss" "cogen"))
+(define aries@ (require-library-unit/sig "ariesr.ss" "cogen"))
 
 (define params@
   (let ([eq?-only-on-syms eq?-only-on-syms]
@@ -629,7 +629,7 @@
 		  (link
 		   [params : plt:userspace:params^ (params@)]
 		   [userspace : plt:userspace^
-			      ((reference-library-unit/sig
+			      ((require-library-unit/sig
 				"userspcr.ss" "userspce")
 			       params)])
 		  (export [open params]

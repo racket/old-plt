@@ -14,26 +14,26 @@
 			   [aries : plt:aries^]
 			   [zodiac : drscheme:zodiac^])
   (link [rep : drscheme:rep^
-	     ((reference-relative-library-unit/sig "rep.ss")
+	     ((require-relative-library-unit/sig "rep.ss")
 	      wx mred mzlib print-convert aries zodiac
 	      interface init snip language app basis edit)]
 	[frame : drscheme:frame^
-	       ((reference-relative-library-unit/sig "frame.ss")
+	       ((require-relative-library-unit/sig "frame.ss")
 		wx mred mzlib basis
 		setup unit
 		compound-unit* app zodiac)]
 	[unit : drscheme:unit^
-	  ((reference-relative-library-unit/sig "unit.ss")
+	  ((require-relative-library-unit/sig "unit.ss")
 	   wx mred mzlib app setup compound-unit* frame edit rep
 	   language get/extend face)]
 	[compound-unit* : drscheme:compound-unit^
-	  ((reference-relative-library-unit/sig "cunit.ss")
+	  ((require-relative-library-unit/sig "cunit.ss")
 	   wx mred mzlib unit frame face)]
-	[signature : drscheme:signature^ ((reference-relative-library-unit/sig "sig.ss")
+	[signature : drscheme:signature^ ((require-relative-library-unit/sig "sig.ss")
 					  mred)]
-	[program : drscheme:program^ ((reference-relative-library-unit/sig "prog.ss"))]
+	[program : drscheme:program^ ((require-relative-library-unit/sig "prog.ss"))]
 	[get/extend : drscheme:get/extend^
-		    ((reference-relative-library-unit/sig "params.ss") 
+		    ((require-relative-library-unit/sig "params.ss") 
 		     wx mred unit frame rep mzlib)])
   (export (unit frame)
 	  (unit unit)

@@ -98,7 +98,7 @@
 
 	(with-new-flags 
 	 current-extension-compiler-flags
-	 (list (format "-I~a/include" sys-path))
+	 (list (format "-I~a" (build-path sys-path "include")))
 	  
 	 ;; Add -L and -l for Unix:
 	 (with-new-flags

@@ -92,8 +92,10 @@
 				     (build-path (current-directory) f)
 				     f)]
 			   [counter-string
-			    (let ([str (format "~a" (and (defined? 'mred:splash-counter)
-							 mred:splash-counter))])
+			    (let ([str (format "~a" (and  (defined? 'mred:splash-counter)
+							  (if mred:splash-message
+							      mred:splash-counter
+							      "")))])
 			      (string-append (make-string (- counter-max-size
 							     (string-length str)) #\space)
 					     str

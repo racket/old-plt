@@ -1,6 +1,7 @@
 (compound-unit/sig (import [i : (program argv)])
   (link [mred : mred^ (mred@)]
 	[mzlib : mzlib:core^ ((require-library "corer.ss"))]
+	[mzlib:date : mzlib:date^ ((require-library "dater.ss") (mzlib function))]
 	[init : drscheme:init^ ((require-relative-library "init.ss") mred)]
 	[framework : framework^ ((require-library "frameworkr.ss" "framework") mzlib mred)]
 	[print-convert : mzlib:print-convert^
@@ -14,7 +15,7 @@
 	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
 	[graph : drscheme:graph^ ((require-relative-library "graph.ss") mred framework (mzlib string) (mzlib function))]
         [export* : drscheme:export^ ((require-relative-library "export.ss")
-				     mred mzlib framework print-convert app
+				     mred mzlib mzlib:date framework print-convert app
 				     text language snip
 				     init graph intro
 				     aries zodiac)]

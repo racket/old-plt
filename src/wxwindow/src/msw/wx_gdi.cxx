@@ -931,7 +931,7 @@ wxBitmap::wxBitmap(void)
   selectedInto = NULL;
   numColors = 0;
   bitmapColourMap = NULL;
-  WXGC_IGNORE(selectedInto);
+  WXGC_IGNORE(this, selectedInto);
 }
 
 wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
@@ -972,7 +972,7 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
     ok = FALSE;
 
   selectedInto = NULL;
-  WXGC_IGNORE(selectedInto);
+  WXGC_IGNORE(this, selectedInto);
 }
 
 wxBitmap::wxBitmap(int w, int h, Bool b_and_w)
@@ -989,7 +989,7 @@ wxBitmap::wxBitmap(int w, int h, Bool b_and_w)
   bitmapColourMap = NULL;
 
   (void)Create(w, h, b_and_w ? 1 : -1);
-  WXGC_IGNORE(selectedInto);
+  WXGC_IGNORE(this, selectedInto);
 }
 
 wxBitmap::wxBitmap(char *bitmap_file, long flags)
@@ -1006,7 +1006,7 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
   bitmapColourMap = NULL;
 
   LoadFile(bitmap_file, (int)flags);
-  WXGC_IGNORE(selectedInto);
+  WXGC_IGNORE(this, selectedInto);
 }
 
 #if USE_XPM_IN_MSW
@@ -1061,7 +1061,7 @@ wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem))
     }
     DeleteDC(dc);
   }
-  WXGC_IGNORE(selectedInto);
+  WXGC_IGNORE(this, selectedInto);
 }
 #endif
 

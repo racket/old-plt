@@ -38,7 +38,7 @@ Bool wxbDialogBox::Create(wxWindow *Parent, char *WXUNUSED(Title), Bool Modal,
   modal = Modal;
 
   context = wxGetContextForFrame();
-  WXGC_IGNORE(context);
+  WXGC_IGNORE(this, context);
 
   wxTopLevelWindows(this)->Append(this);
   wxTopLevelWindows(this)->Show(this, FALSE);

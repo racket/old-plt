@@ -32,12 +32,12 @@
 #define IMPLEMENT_CLASS IMPLEMENT_ABSTRACT_CLASS
 #define IMPLEMENT_CLASS2 IMPLEMENT_ABSTRACT_CLASS2
 
-#define WXGC_IGNORE(ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
+#define WXGC_IGNORE(base, ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
 #define WXGC_ATOMIC (AtomicGC)
 #define WXGC_NO_CLEANUP FALSE
 #define DELETE_OBJ delete
 #define DELETE_VAL delete
-#define COPYSTRING_TO_ALIGNED(x) x
+#define COPYSTRING_TO_ALIGNED(s, d) (s + d)
 
 class wxObject : public WXGC_CLEANUP_CLASS
 {

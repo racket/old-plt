@@ -26,7 +26,7 @@ wxbWindow::wxbWindow(void)
   winCaptured = FALSE;
   internal_disabled = 0;
   is_shown = 1;
-  WXGC_IGNORE(window_parent);
+  WXGC_IGNORE(this, window_parent);
 }
 
 // Destructor

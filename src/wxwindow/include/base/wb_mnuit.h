@@ -37,7 +37,7 @@ class wbMenuItem: public wxObject
   inline wbMenuItem(void)
   { itemId = 0; itemName = NULL; topMenu = NULL; subMenu = NULL;
     menuBar = NULL; helpString = NULL;
-    WXGC_IGNORE(menuBar); WXGC_IGNORE(topMenu); }
+    WXGC_IGNORE(this, menuBar); WXGC_IGNORE(this, topMenu); }
   inline ~wbMenuItem(void) { if (itemName) delete[] itemName; if (helpString) delete[] helpString; }
 };
 

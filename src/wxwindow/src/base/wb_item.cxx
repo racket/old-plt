@@ -157,8 +157,8 @@ wxbMenu::wxbMenu (char *Title, wxFunction WXUNUSED(func))
   __type = wxTYPE_MENU;
   no_items = 0;
   menu_bar = NULL;
-  WXGC_IGNORE(menu_bar);
-  WXGC_IGNORE(top_level_menu);
+  WXGC_IGNORE(this, menu_bar);
+  WXGC_IGNORE(this, top_level_menu);
   if (Title)
     title = copystring (Title);
   else
@@ -242,7 +242,7 @@ wxbMenuBar::wxbMenuBar (void)
   menus = NULL;
   titles = NULL;
   menu_bar_frame = NULL;
-  WXGC_IGNORE(menu_bar_frame);
+  WXGC_IGNORE(this, menu_bar_frame);
 }
 
 wxbMenuBar::wxbMenuBar (int N, wxMenu * Menus[], char *Titles[])
@@ -255,7 +255,7 @@ wxbMenuBar::wxbMenuBar (int N, wxMenu * Menus[], char *Titles[])
   int i;
   for (i = 0; i < N; i++)
     menus[i]->menu_bar = (wxMenuBar *) this;
-  WXGC_IGNORE(menu_bar_frame);
+  WXGC_IGNORE(this, menu_bar_frame);
 }
 
 wxbMenuBar::~wxbMenuBar (void)

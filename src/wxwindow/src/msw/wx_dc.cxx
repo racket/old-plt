@@ -322,7 +322,7 @@ void wxDC::FloodFill(float x, float y, wxColour *col, int style)
 
   SetBrush(current_brush);
 
-  (void)ExtFloodFill(dc, XLOG2DEV(xx), YLOG2DEV(yy),
+  (void)ExtFloodFill(dc, (int)XLOG2DEV(xx), (int)YLOG2DEV(yy),
 		     col->pixel,
 		     (style == wxFLOOD_SURFACE
 		      ? FLOODFILLSURFACE
@@ -345,7 +345,7 @@ Bool wxDC::GetPixel(float x, float y, wxColour *col)
   ShiftXY(x, y, xx1, yy1);
   
   // get the color of the pixel
-  COLORREF pixelcolor = ::GetPixel(dc, XLOG2DEV(xx1), YLOG2DEV(yy1));
+  COLORREF pixelcolor = ::GetPixel(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1));
   
   DoneDC(dc);
 
@@ -379,11 +379,11 @@ void wxDC::CrossHair(float x, float y)
   int yy2 = yy+2000;
 
   if (StartPen(dc)) {
-    (void)MoveToEx(dc, XLOG2DEV(xx1), YLOG2DEV(yy), NULL);
-    (void)LineTo(dc, XLOG2DEV(xx2), YLOG2DEV(yy));
+    (void)MoveToEx(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy), NULL);
+    (void)LineTo(dc, (int)XLOG2DEV(xx2), (int)YLOG2DEV(yy));
     
-    (void)MoveToEx(dc, XLOG2DEV(xx), YLOG2DEV(yy1), NULL);
-    (void)LineTo(dc, XLOG2DEV(xx), YLOG2DEV(yy2));
+    (void)MoveToEx(dc, (int)XLOG2DEV(xx), (int)YLOG2DEV(yy1), NULL);
+    (void)LineTo(dc, (int)XLOG2DEV(xx), (int)YLOG2DEV(yy2));
 
     DonePen(dc);
   }
@@ -454,8 +454,8 @@ void wxDC::DrawLine(float x1, float y1, float x2, float y2)
       }
     }
 
-    (void)MoveToEx(dc, XLOG2DEV(xx1), YLOG2DEV(yy1), NULL);
-    (void)LineTo(dc, XLOG2DEV(xx2), YLOG2DEV(yy2));
+    (void)MoveToEx(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), NULL);
+    (void)LineTo(dc, (int)XLOG2DEV(xx2), (int)YLOG2DEV(yy2));
 
     DonePen(dc);
   }
@@ -570,7 +570,7 @@ void wxDC::SetPixel(float x, float y, wxColour *c)
 
   ShiftXY(x, y, xx1, yy1);
   
-  ::SetPixelV(dc, XLOG2DEV(xx1), YLOG2DEV(yy1), c->pixel);
+  ::SetPixelV(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), c->pixel);
 
   DoneDC(dc);
 
@@ -703,13 +703,13 @@ void wxDC::DrawRectangle(float x, float y, float width, float height)
   Bool do_brush, do_pen;
 
   if (StartBrush(dc, 1)) {
-    (void)Rectangle(dc, XLOG2DEV(x1), YLOG2DEV(y1),
-		    XLOG2DEV(x2) + 1, YLOG2DEV(y2) + 1);
+    (void)Rectangle(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1),
+		    (int)XLOG2DEV(x2) + 1, (int)YLOG2DEV(y2) + 1);
     DoneBrush(dc);
   }
   if (StartPen(dc)) {
-    (void)Rectangle(dc, XLOG2DEV(x1), YLOG2DEV(y1),
-		    XLOG2DEV(x2), YLOG2DEV(y2));
+    (void)Rectangle(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1),
+		    (int)XLOG2DEV(x2), (int)YLOG2DEV(y2));
     DonePen(dc);
   }
 
@@ -747,13 +747,13 @@ void wxDC::DrawRoundedRectangle(float x, float y, float width, float height, flo
   }
 
   if (StartBrush(dc, 1)) {
-    (void)RoundRect(dc, XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2) + 1,
-		    YLOG2DEV(y2) + 1, XLOG2DEV(radius), YLOG2DEV(radius));
+    (void)RoundRect(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1), (int)XLOG2DEV(x2) + 1,
+		    (int)YLOG2DEV(y2) + 1, (int)XLOG2DEV(radius), (int)YLOG2DEV(radius));
     DoneBrush(dc);
   }
   if (StartPen(dc)) {
-    (void)RoundRect(dc, XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2),
-		    YLOG2DEV(y2), XLOG2DEV(radius), YLOG2DEV(radius));
+    (void)RoundRect(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1), (int)XLOG2DEV(x2),
+		    (int)YLOG2DEV(y2), (int)XLOG2DEV(radius), (int)YLOG2DEV(radius));
     DonePen(dc);
   }
   
@@ -780,11 +780,13 @@ void wxDC::DrawEllipse(float x, float y, float width, float height)
   ShiftXY(x + width, y + height, x2, y2);
 
   if (StartBrush(dc, 1)) {
-    (void)Ellipse(dc, XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2) + 1, YLOG2DEV(y2) + 1);
+    (void)Ellipse(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1), 
+		  (int)XLOG2DEV(x2) + 1, (int)YLOG2DEV(y2) + 1);
     DoneBrush(dc);
   }
   if (StartPen(dc)) {
-    (void)Ellipse(dc, XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
+    (void)Ellipse(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1),
+		  (int)XLOG2DEV(x2), (int)YLOG2DEV(y2));
     DonePen(dc);
   }
 
@@ -840,7 +842,7 @@ void wxDC::SetBrush(wxBrush *brush)
     brush->ChangeBrush();
 }
 
-void wxDC::DrawText(const char *text, float x, float y, Bool use16bit)
+void wxDC::DrawText(const char *text, float x, float y, Bool use16bit, int d)
 {
   HDC dc = ThisDC();
 
@@ -873,7 +875,8 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit)
   
   SetRop(dc, wxSOLID);
 
-  (void)TextOut(dc, XLOG2DEV(xx1), YLOG2DEV(yy1), text, strlen(text));
+  (void)TextOut(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), 
+		text + d, strlen(text + d));
 
   if (current_text_background->Ok())
     (void)SetBkColor(dc, old_background);
@@ -883,7 +886,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit)
   CalcBoundingBox((float)x, (float)y);
 
   float w, h;
-  GetTextExtent(text, &w, &h);
+  GetTextExtent(text, &w, &h, NULL, NULL, NULL, use16bit, d);
   CalcBoundingBox((float)(x + w), (float)(y + h));
 }
 
@@ -1059,7 +1062,7 @@ float wxDC::GetCharWidth(void)
 
 void wxDC::GetTextExtent(const char *string, float *x, float *y,
                          float *descent, float *topSpace, 
-			 wxFont *theFont, Bool use16bt)
+			 wxFont *theFont, Bool use16bt, int d)
 {
   wxFont *oldFont = NULL;
   if (theFont) {
@@ -1079,9 +1082,9 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
   
   SIZE sizeRect;
   TEXTMETRIC tm;
-  int len = strlen(string);
+  int len = strlen(string + d);
 
-  GetTextExtentPoint(dc, len ? string : " ", len ? len : 1, &sizeRect);
+  GetTextExtentPoint(dc, len ? string + d : " ", len ? len : 1, &sizeRect);
   GetTextMetrics(dc, &tm);
 
   DoneDC(dc);
@@ -1369,7 +1372,7 @@ wxCanvasDC::wxCanvasDC(wxCanvas *the_canvas) : wxbCanvasDC()
 {
   __type = wxTYPE_DC_CANVAS;
   canvas = the_canvas;
-  WXGC_IGNORE(canvas);
+  WXGC_IGNORE(this, canvas);
   device = wxDEVICE_WINDOWS;
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);

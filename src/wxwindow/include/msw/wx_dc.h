@@ -101,13 +101,13 @@ class wxDC: public wxbDC
   wxRegion* GetClippingRegion();
   void SetClippingRegion(wxRegion*);
   void SetColourMap(wxColourMap *cmap);
-  void DrawText(const char *text, float x, float y, Bool use16bit = FALSE);
+  void DrawText(const char *text, float x, float y, Bool use16bit = FALSE, int d = 0);
 
   float GetCharHeight(void);
   float GetCharWidth(void);
   void GetTextExtent(const char *string, float *x, float *y,
                      float *descent = NULL, float *externalLeading = NULL, 
-		     wxFont *theFont = NULL, Bool use16bit = FALSE);
+		     wxFont *theFont = NULL, Bool use16bit = FALSE, int d = 0);
   void GetSize(float *width, float *height);
   void GetSizeMM(float *width, float *height);
   Bool StartDoc(char *message);

@@ -384,6 +384,9 @@ Bool wxFrame::Show(Bool show)
 	  ::DrawMenuBar(cparent->handle);
 	}
       }
+
+      /* Force redraw in the MDI parent: */
+      InvalidateRect(cparent->client_hwnd, NULL, TRUE);
     }
   }
 

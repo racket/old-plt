@@ -285,6 +285,8 @@ typedef struct Scheme_Vector {
 #define SCHEME_SYM_VAL(obj)  (((Scheme_Symbol *)(obj))->s)
 #define SCHEME_SYM_LEN(obj)  (((Scheme_Symbol *)(obj))->len)
 
+#define SCHEME_SYMSTR_OFFSET(obj) ((unsigned long)SCHEME_SYM_VAL(obj)-(unsigned long)(obj))
+
 #define SCHEME_BOX_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
 
 #define SCHEME_CAR(obj)      ((obj)->u.pair_val.car)
@@ -356,6 +358,7 @@ typedef struct Scheme_Object *
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short flags; /* keep flags at same place as in closed */
   Scheme_Prim *prim_val;
   const char *name;
@@ -369,6 +372,7 @@ typedef struct {
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short flags; /* keep flags at same place as in unclosed */
   Scheme_Closed_Prim *prim_val;
   void *data;
@@ -434,6 +438,7 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 typedef struct Scheme_Bucket
 {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   void *val;
   char *key;
 } Scheme_Bucket;
@@ -462,6 +467,7 @@ enum {
 typedef struct Scheme_Env
 {
   Scheme_Type type; /* scheme_namespace_type */
+  MZ_HASH_KEY_EX
   short no_keywords; /* only low-bit used; rest is hash key for precise gc */
   Scheme_Hash_Table *globals;
   Scheme_Hash_Table *loaded_libraries;
@@ -629,7 +635,7 @@ typedef struct Scheme_Process {
     } multiple;
     struct {
       void *p1, *p2, *p3, *p4;
-      long i1, i2;
+      long i1, i2, i3;
     } k;
   } ku;
 
@@ -798,7 +804,7 @@ typedef struct Scheme_Output_Port
   Scheme_Object *sub_type;
   Scheme_Manager_Reference *mref;
   void *port_data;
-  void (*write_string_fun)(char *str, long len, struct Scheme_Output_Port *);
+  void (*write_string_fun)(char *str, long d, long len, struct Scheme_Output_Port *);
   void (*close_fun) (struct Scheme_Output_Port *);
   long pos;
   Scheme_Object *display_handler;
@@ -915,7 +921,7 @@ typedef void Scheme_Instance_Init_Proc(Scheme_Object **init_boxes,
 #define scheme_multiple_count (scheme_current_process->ku.multiple.count)
 #define scheme_multiple_array (scheme_current_process->ku.multiple.array)
 
-#define scheme_setjmpup(b, s) scheme_setjmpup_relative(b, s, NULL)
+#define scheme_setjmpup(b, base, s) scheme_setjmpup_relative(b, base, s, NULL)
 
 #ifdef MZ_REAL_THREADS
 #define scheme_do_eval(r,n,e,f) scheme_do_eval_w_process(r,n,e,f,scheme_current_process)
@@ -1063,6 +1069,7 @@ void *scheme_malloc(size_t size);
 # define scheme_malloc_envunbox GC_malloc_one_tagged
 # define scheme_malloc_weak GC_malloc_weak
 # define scheme_malloc_weak_tagged GC_malloc_one_weak_tagged
+# define scheme_malloc_allow_interior GC_malloc_allow_interior
 #else
 # ifdef USE_TAGGED_ALLOCATION
 extern void *scheme_malloc_tagged(size_t);
@@ -1081,6 +1088,7 @@ extern void *scheme_malloc_envunbox(size_t);
 #  define scheme_malloc_uncollectable_tagged scheme_malloc_uncollectable
 #  define scheme_malloc_envunbox scheme_malloc
 # endif
+# define scheme_malloc_allow_interior scheme_malloc
 #endif
 
 

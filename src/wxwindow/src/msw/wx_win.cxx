@@ -250,6 +250,25 @@ void wxWindow::SetFocus(void)
 {
   wxWindow *p = GetTopLevel();
   
+  if (p && wxSubType(p->__type, wxTYPE_FRAME)
+      && (((wxFrame *)p)->frame_type == wxMDI_CHILD)) {
+    wxWindow *mdip = p->GetParent();
+    DWORD r;
+
+    if (mdip && (GetActiveWindow() != mdip->GetHWND()))
+      r = 0;
+    else
+      r = ::SendMessage(((wxMDIFrame *)mdip->handle)->client_hwnd, WM_MDIGETACTIVE,
+			(WPARAM)NULL, (LPARAM)NULL);
+
+    if ((HWND)r != p->GetHWND()) {
+      /* This frame not active within parent; remember local focus */
+      p->focusWindow = this;
+      return;
+    }
+    p = NULL;
+  }
+  
   // If the frame/dialog is not active, just set the focus
   //  locally.
   if (p && (GetActiveWindow() != p->GetHWND())) {
@@ -1513,7 +1532,7 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
 		   int x, int y, int width, int height,
 		   DWORD style, char *dialog_template, DWORD extendedStyle)
 {
-  WXGC_IGNORE(wx_window);
+  WXGC_IGNORE(this, wx_window);
 
   wx_window = wx_win;
   if (wx_window)

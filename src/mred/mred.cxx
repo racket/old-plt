@@ -1715,6 +1715,10 @@ public:
       fileMenu->Append(77, QUIT_MENU_ITEM);
 
       media->Insert("\n[Exited]");
+      if (beginEditSeq) {
+	beginEditSeq = 0;
+	media->EndEditSequence();
+      }
       media->Lock(1);
     }
 };
@@ -1862,16 +1866,55 @@ static void MrEdSchemeMessagesOutput(char *s, long l)
 
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
 
+static int mrconsole_getc(Scheme_Input_Port *ip)
+{
+  Scheme_Object *pipe = (Scheme_Object *)ip->port_data;
+  MrEdSchemeMessages("");
+  return scheme_getc(pipe);
+}
+
+static int mrconsole_peekc(Scheme_Input_Port *ip)
+{
+  Scheme_Object *pipe = (Scheme_Object *)ip->port_data;
+  MrEdSchemeMessages("");
+  return scheme_peekc(pipe);
+}
+
+static int mrconsole_char_ready(Scheme_Input_Port *ip)
+{
+  Scheme_Object *pipe = (Scheme_Object *)ip->port_data;
+  MrEdSchemeMessages("");
+  return scheme_char_ready(pipe);
+}
+
+static void mrconsole_close(Scheme_Input_Port *ip)
+{
+  Scheme_Object *pipe = (Scheme_Object *)ip->port_data;
+  scheme_close_input_port(pipe);
+}
+
 static Scheme_Object *MrEdMakeStdIn(void)
 {
   Scheme_Object *readp;
+  Scheme_Input_Port *ip;
+
+  wxREGGLOB(stdin_pipe);
 
   scheme_pipe(&readp, &stdin_pipe);
 
-  return readp;
+  ip = scheme_make_input_port(scheme_make_port_type("mred-console-input-port"), 
+			      readp,
+			      mrconsole_getc,
+			      mrconsole_peekc,
+			      mrconsole_char_ready,
+			      mrconsole_close,
+			      NULL,
+			      0);
+  
+  return (Scheme_Object *)ip;
 }
 
-static void stdout_write(char *s, long l, Scheme_Output_Port*)
+static void stdout_write(char *s, long d, long l, Scheme_Output_Port*)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
   MrEdSchemeMessages(NULL, s, l);
@@ -1882,7 +1925,7 @@ static void stdout_write(char *s, long l, Scheme_Output_Port*)
     out = fopen("mrstdout.txt", "w");
   
   if (out)
-    fwrite(s, l, 1, out);
+    fwrite(s + d, l, 1, out);
 #endif
 }
 
@@ -1895,7 +1938,7 @@ static Scheme_Object *MrEdMakeStdOut(void)
 						  NULL, 0);
 }
 
-static void stderr_write(char *s, long l, Scheme_Output_Port*)
+static void stderr_write(char *s, long d, long l, Scheme_Output_Port*)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
   MrEdSchemeMessages(NULL, s, l);
@@ -1904,7 +1947,7 @@ static void stderr_write(char *s, long l, Scheme_Output_Port*)
     mrerr = fopen("mrstderr.txt", "w");
   
   if (mrerr)
-    fwrite(s, l, 1, mrerr);
+    fwrite(s + d, l, 1, mrerr);
 #endif
 }
 

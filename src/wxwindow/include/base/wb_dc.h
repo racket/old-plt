@@ -123,9 +123,8 @@ class wxbDC: public wxObject
   virtual void DrawSpline(wxList *points);
   virtual void DrawSpline(int n, wxPoint points[]);
 #endif
-  /* MATTHEW: [2] for 16-bit (non-Roman) text */
   virtual void DrawText(const char *text, float x, float y,
-                        Bool use16bit = FALSE) = 0;
+                        Bool use16bit = FALSE, int d = 0) = 0;
   virtual void Clear(void) = 0;
 
   virtual Bool StartDoc(char *message) = 0;
@@ -149,12 +148,12 @@ class wxbDC: public wxObject
 
   virtual float GetCharHeight(void) = 0;
   virtual float GetCharWidth(void) = 0;
-  /* MATTHEW: [2] for 16-bit (non-Roman) text */
   virtual void GetTextExtent(const char *string, float *x, float *y,
                              float *descent = NULL, 
                              float *externalLeading = NULL, 
                              wxFont *theFont = NULL,
-                             Bool use16bit = FALSE) = 0;
+                             Bool use16bit = FALSE,
+			     int d = 0) = 0;
 
   inline virtual Bool Ok(void) {return ok;};
   virtual Bool CanGetTextExtent(void) = 0;

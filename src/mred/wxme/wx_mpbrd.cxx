@@ -2947,12 +2947,21 @@ extern void wxmeGetDefaultSize(float *w, float *h);
 void *wxMediaPasteboard::BeginPrint(wxDC *, Bool)
 {
   SizeCacheInvalid();  
+
+  writeLocked++;
+  OnChange();
+  --writeLocked;
+
   return NULL;
 }
 
 void wxMediaPasteboard::EndPrint(wxDC *, void *)
 {
   SizeCacheInvalid();
+
+  writeLocked++;
+  OnChange();
+  --writeLocked;
 }
 
 Bool wxMediaPasteboard::HasPrintPage(wxDC *dc, int p)

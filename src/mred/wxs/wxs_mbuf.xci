@@ -26,7 +26,6 @@
 @ Y "refresh" : void Refresh(float,float,nnfloat,nnfloat,SYM[caret]);
 @ Y "own-caret" : void OwnCaret(bool);
 @ Y "blink-caret" : void BlinkCaret(); 
-@ Y "size-cache-invalid" : void SizeCacheInvalid();
 
 @ X "find-first-snip" : wxSnip^ FindFirstSnip();
 

@@ -968,7 +968,6 @@ class os_wxMediaEdit : public wxMediaEdit {
   void OnDefaultEvent(class wxMouseEvent* x0);
   void OnLocalChar(class wxKeyEvent* x0);
   void OnLocalEvent(class wxMouseEvent* x0);
-  void SizeCacheInvalid();
   void BlinkCaret();
   void OwnCaret(Bool x0);
   void Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4);
@@ -2819,37 +2818,6 @@ void os_wxMediaEdit::OnLocalEvent(class wxMouseEvent* x0)
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
-  
-  
-  }
-}
-
-void os_wxMediaEdit::SizeCacheInvalid()
-{
-  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
-  Scheme_Object *v;
-  Scheme_Object *method INIT_NULLED_OUT;
-#ifdef MZ_PRECISE_GC
-  os_wxMediaEdit *sElF = this;
-#endif
-  static void *mcache = 0;
-
-  SETUP_VAR_STACK(5);
-  VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH(1, sElF);
-  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
-  SET_VAR_STACK();
-
-  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "size-cache-invalid", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
-    SET_VAR_STACK();
-    ASSELF wxMediaEdit::SizeCacheInvalid();
-  } else {
-  
-  
-  p[0] = (Scheme_Object *) ASSELF __gc_external;
-
-  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   
   
   }
@@ -7163,28 +7131,6 @@ static Scheme_Object *os_wxMediaEditFindFirstSnip(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
-static Scheme_Object *os_wxMediaEditSizeCacheInvalid(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(os_wxMediaEdit_class, "size-cache-invalid in text%", n, p);
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-
-  
-  if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaEdit::SizeCacheInvalid());
-  else
-    WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->SizeCacheInvalid());
-
-  
-  
-  return scheme_void;
-}
-
 static Scheme_Object *os_wxMediaEditBlinkCaret(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -7434,7 +7380,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaEdit_class);
 
-  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 139));
+  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 138));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "call-clickback", os_wxMediaEditCallClickback, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback", os_wxMediaEditRemoveClickback, 2, 2));
@@ -7566,7 +7512,6 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-local-char", os_wxMediaEditOnLocalChar, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-local-event", os_wxMediaEditOnLocalEvent, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-first-snip", os_wxMediaEditFindFirstSnip, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "size-cache-invalid", os_wxMediaEditSizeCacheInvalid, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "blink-caret", os_wxMediaEditBlinkCaret, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "own-caret", os_wxMediaEditOwnCaret, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "refresh", os_wxMediaEditRefresh, 5, 5));

@@ -2747,6 +2747,8 @@ public:
 
 void *wxMediaEdit::BeginPrint(wxDC *dc, Bool fit)
 {
+  SaveSizeInfo *savedInfo;
+
   if (flowLocked)
     return NULL;
 
@@ -2757,7 +2759,6 @@ void *wxMediaEdit::BeginPrint(wxDC *dc, Bool fit)
   if (fit) {
     float w, h;
     long hm, vm;
-    SaveSizeInfo *savedInfo;
 
     savedInfo = new SaveSizeInfo;
     
@@ -2769,10 +2770,24 @@ void *wxMediaEdit::BeginPrint(wxDC *dc, Bool fit)
     dc->GetSize(&w, &h);
     w -= 2 * hm;
     SetMaxWidth(w);
-
-    return savedInfo;
   } else
-    return NULL;
+    savedInfo = NULL;
+
+  RecalcLines(dc, TRUE);
+
+  {
+    Bool wl, fl;
+
+    wl = writeLocked;
+    fl = flowLocked;
+    writeLocked = flowLocked = TRUE;
+    OnChange();
+    writeLocked = wl;
+    flowLocked = fl;
+  }
+
+
+  return savedInfo;
 }
 
 void wxMediaEdit::EndPrint(wxDC *, void *data)
@@ -2780,7 +2795,8 @@ void wxMediaEdit::EndPrint(wxDC *, void *data)
   if (flowLocked)
     return;
 
-  SizeCacheInvalid();  
+  SizeCacheInvalid();
+
   if (data) {
     SaveSizeInfo *savedInfo = (SaveSizeInfo *)data;
     
@@ -2788,6 +2804,17 @@ void wxMediaEdit::EndPrint(wxDC *, void *data)
     SetAutowrapBitmap(savedInfo->bm);
 
     DELETE_OBJ savedInfo;
+  }
+
+  {
+    Bool wl, fl;
+
+    wl = writeLocked;
+    fl = flowLocked;
+    writeLocked = flowLocked = TRUE;
+    OnChange();
+    writeLocked = wl;
+    flowLocked = fl;
   }
 }
 

@@ -30,6 +30,13 @@
  (stop "Stop")   
  (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
  
+ ;;; important urls
+ (web-materials "Sites web apparentés") ;; menu item title
+ (drscheme-homepage "DrScheme")
+ (plt-homepage "PLT")
+ (how-to-use-scheme "How to Use Scheme") ;; title of a book.
+ (teachscheme!-homepage "TeachScheme!") ;; probably this should be a `word' in all languages
+
  ;;; bug report form
  (cancel-bug-report? "Annuler la soumission du formulaire de bogue ?")
  (are-you-sure-cancel-bug-report?
@@ -63,7 +70,8 @@
  (illegal-bug-report "Formulaire de soumission de bogue incomplet.")
  (pls-fill-in-field "Merci de compléter le champ \"~a\".")
  (malformed-email-address "Adresse email malformée.")
- 
+ (pls-fill-in-either-description-or-reproduce "Veuillez remplir soit le champ \"Description\", soit le champ \"Etapes à suivre pour reproduire le bogue\".")
+
  ;;; check syntax
  (check-syntax "Vérifier") ; "Syntaxe" ; "Correcteur de syntaxe" est long...
  (cs-italic "Italique")
@@ -149,6 +157,15 @@
  (nothing-found-for-empty-search "Rien n'a été trouvé pour cette recherche vide.")
  (nothing-found-for "Rien n'a été trouvé pour ~a.")
  (and "et")
+ (error-finding-docs
+  "Documentation introuvable.\n\n~a")
+ ; help desk htty proxy
+ (http-proxy "Proxy HTTP")
+ (proxy-direct-connection "Connexion directe")
+ (proxy-use-proxy "Utiliser le proxy:")
+ (proxy-host "Machine")
+ (proxy-port "Port")
+ (proxy-bad-host "Mauvaise machine proxy")
  
  ;; browser
  (rewind-in-browser-history "Retourner")
@@ -235,8 +252,14 @@
  (select-font-name "Sélectionnez une police")
  (example-text "Example de texte:")
  (general-ii "Général II")
- (only-warn-once "Prévenir une fois seulement quand exécutions et interactions n'ont pas été synchronées.")
+ (only-warn-once "Prévenir une fois seulement quand exécutions et interactions n'ont pas été synchronisées.")
  
+ ; warning message when lockfile is around
+ (waiting-for-pref-lock "Attente sur le fichier de verrouillage des préférences...")
+ (pref-lock-not-gone
+  "Les préférences sont verrouillées par le fichier:\n\n   ~a\n\nqui empêche les préférences d'être sauvegardées. Assurez-vous qu'aucun logiciel PLT n'est en cours d'exécution et effacer le fichier.")
+ (still-locked-exit-anyway? "Les préférences n'ont pu être sauvegardées correctement. Quitter quand même ?")
+
  ;;; indenting preferences panel
  (indenting-prefs-panel-label "Indentation")
  
@@ -254,6 +277,8 @@
  (find-and-replace "Chercher et remplacer")
  (find "Chercher")
  (replace "Remplacer")
+ (dock "Attacher")
+ (undock "Séparer")
  (use-separate-dialog-for-searching "Utiliser un menu séparé pour chercher.")
  (replace&find-again "Remplacer && chercher à nouveau") ;;; need double & to get a single &
  (replace-to-end "Remplacer jusqu'à la fin")
@@ -278,6 +303,8 @@
  (mfs-open-file "Ouvrir le fichier")
  (mfs-stop-search "Stopper la recherche")
  (mfs-case-sensitive-label "Différentier les lettres majuscules des minuscules.")
+ (mfs-no-matches-found "Rien n'a été trouvé.")
+ (mfs-search-interrupted "Recherche avortée.")
  
  ;;;reverting a file
  (error-reverting "DrScheme - Erreur durant le retour à l'original.")
@@ -506,6 +533,17 @@
  (comment-out-menu-item-label "&Commenter")
  (uncomment-menu-item-label "&Décommenter")
  
+ ;;; executables
+ (create-executable-menu-item-label "Créer un exécutable...")
+ (create-executable-title "Créer un exécutable")
+ (must-save-before-executable "Vous devez sauvegarder votre programme avant de créer un exécutable.")
+ (save-an-executable "Sauvegarder un exécutable")
+ (definitions-not-saved "La fenêtre de définition n'a pas été sauvegardée. L'exécutable va utiliser la dernière version sauvegardée de la fenêtre de définition. Continuer ?")
+ (inline-saved-program-in-executable?
+  "Insérer dans l'exécutable le programme sauvegardé ? Si oui, vous pourrez copier l'exécutable sur un autre ordinateur ~a, mais l'exécutable sera probablement gros. Si vous choisissez non, vous ne pourrez pas copier l'exécutable sur un autre ordinateur, mais il sera bien plus petit. De plus, si vous choisissez non, l'exécutable utilisera toujours la version la plus récente du programme.")
+ (use-mred-binary?
+  "Utiliser le binaire de mred pour cet exécutable ?\n\nSi oui, votre program peut utiliser la bibliothèque (lib \"mred.ss\" \"mred\"). Si non, DrScheme va choisir mzscheme comme binaire pour cet exécutable.\n\nASi vous n'êtes pas sûr, choisissez oui.")
+ 
  ;;; buttons
  (execute-button-label "Exécuter") 
  (save-button-label "Sauvegarder")
@@ -561,21 +599,30 @@
  (hide-details-button-label "Cacher les détails")
  (choose-language-menu-item-label "Sélectionner le language...")
  (revert-to-language-defaults "Retourner aux valeurs par défaut pour le language.")
+ (language-docs-button-label "Docs languages")
  
  ;;; languages
  (beginning-student "Etudiant niveau débutant")
+ (beginning-one-line-summary "define, cond, structs, constantes, et primitives")
  (beginning-student/abbrev "Etudiant niveau débutant avec abréviations pour les listes")
+ (beginning/abbrev-one-line-summary "Débutant, avec impression des résultats dans le REPL sous forme de listes")
  (intermediate-student "Etudiant niveau intermédiaire")
+ (intermediate-one-line-summary "Débutant plus portée lexicale")
  (intermediate-student/lambda "Etudiant niveau intermédiaire, plus lambda")
+ (intermediate/lambda-one-line-summary "Intermédiaire plus fonctions d'ordre supérieur")
  (advanced-student "Etudiant niveau avancé")
+ (advanced-one-line-summary "Intermédiaire plus lambda et mutation")
  (full-language "Complet") ;; also in the HtDP languages section
+ (htdp-full-one-line-summary "Avancé, plus extensions PLT et bibliothèques graphiques")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS et languages semblabes")
  (mred-lang-name "Graphique sans débogage (MrEd)")
  (mzscheme-lang-name "Textuel sans débogage (MzScheme)")
  (r5rs-lang-name "Standard (R5RS)")
+ (r5rs-one-line-summary "R5RS, de base")
  (unknown-debug-frame "[inconnu]")
  
+ (module-language-one-line-summary "Language avec module comme seule forme")
  (bad-module-language-specs
   "Les spécifications de drscheme-language-position et drscheme-language-modules sont incorrectes. Espérait (listof (cons string (listof string))) et (listof (listof string)) respectivement, avec les listes drscheme-language-position et drscheme-language-module ayant la même longueur. Trouvé ~e et ~e.")
 
@@ -585,7 +632,9 @@
  (stack-frame-in-current-interactions "interactions")
  (stack-frame-in-current-definitions "définitions")
  (mzscheme-w/debug "Textuel (MzScheme)")
+ (mzscheme-one-line-summary "PLT Scheme sans la bibliothèque graphique")
  (mred-w/debug "Graphique (MrEd)")
+ (mred-one-line-summary "PLT Scheme plus la bibliothèque graphique")
  
  ;;; repl stuff
  (evaluation-terminated "Evaluation terminée.")

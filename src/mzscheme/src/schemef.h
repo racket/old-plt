@@ -486,7 +486,7 @@ MZ_EXTERN Scheme_Object *scheme_make_string_output_port();
 MZ_EXTERN char *scheme_get_string_output(Scheme_Object *);
 MZ_EXTERN char *scheme_get_sized_string_output(Scheme_Object *, long *len);
 
-MZ_EXTERN void scheme_pipe(Scheme_Object **write, Scheme_Object **read);
+MZ_EXTERN void scheme_pipe(Scheme_Object **read, Scheme_Object **write);
 MZ_EXTERN void scheme_pipe_with_limit(Scheme_Object **write, Scheme_Object **read, int maxsize);
 
 MZ_EXTERN int scheme_file_exists(char *filename);

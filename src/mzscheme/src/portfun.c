@@ -47,6 +47,7 @@ static Scheme_Object *read_char (int, Scheme_Object *[]);
 static Scheme_Object *read_char_spec (int, Scheme_Object *[]);
 static Scheme_Object *read_line (int, Scheme_Object *[]);
 static Scheme_Object *sch_read_string (int, Scheme_Object *[]);
+static Scheme_Object *sch_peek_string (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang_nonblock (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang_break (int, Scheme_Object *[]);
@@ -330,6 +331,11 @@ scheme_init_port_fun(Scheme_Env *env)
 			     scheme_make_prim_w_arity(sch_read_string, 
 						      "read-string", 
 						      1, 2), 
+			     env);
+  scheme_add_global_constant("peek-string", 
+			     scheme_make_prim_w_arity(sch_peek_string, 
+						      "peek-string", 
+						      2, 3), 
 			     env);
   scheme_add_global_constant("read-string-avail!", 
 			     scheme_make_prim_w_arity(read_string_bang, 
@@ -743,7 +749,7 @@ static long
 user_get_or_peek_string(Scheme_Input_Port *port, 
 			char *buffer, long offset, long size,
 			int nonblock,
-			int peek, long peek_skip)
+			int peek, Scheme_Object *peek_skip)
 {
   Scheme_Object *fun, *val, *waitable, *a[3];
   char *vb;
@@ -753,7 +759,9 @@ user_get_or_peek_string(Scheme_Input_Port *port,
 
   val = uip->peeked;
   if (val) {
-    /* leftover from a peek used to implement `char-ready?' */
+    /* Leftover from a read-based peek used to implement `char-ready?'
+       This can't happen is peek is 1, because in that case we have a
+       peek_proc, so there's no need for read-based peeks. */
     uip->peeked = NULL;
     if (SCHEME_CHARP(val)) {
       buffer[offset] = SCHEME_CHAR_VAL(val);
@@ -795,6 +803,7 @@ user_get_or_peek_string(Scheme_Input_Port *port,
       /* Another thread closed the input port while we were waiting. */
       /* Call scheme_getc to signal the error */
       scheme_getc((Scheme_Object *)port);
+      return 0; /* doesn't get here */
     }
   }
 
@@ -805,7 +814,7 @@ user_get_or_peek_string(Scheme_Input_Port *port,
 
   vb = scheme_malloc_atomic(size + 1);
   a[0] = scheme_make_sized_string(vb, size, 0);
-  a[1] = scheme_make_integer(peek_skip);
+  a[1] = peek_skip;
   val = scheme_apply(fun, peek ? 2 : 1, a);
 
   if (SCHEME_EOFP(val))
@@ -819,9 +828,45 @@ user_get_or_peek_string(Scheme_Input_Port *port,
       } else if (scheme_check_proc_arity(NULL, 4, 0, 1, &val)) {
 	port->special = val;
 	return SCHEME_SPECIAL;
+      } else if (peek && scheme_is_waitable(val)) {
+	/* A peek failed, and we were given a waitable that unblocks
+	   when the peek (at some offset) might succeed. */
+	if (nonblock)
+	  return 0;
+	else {
+	  /* Wait on the given waitable.  (Probably we're trying to
+	     peek ahead.) */
+	  waitable = val;
+	  uip->block_count++;
+	  a[0] = scheme_false;
+	  a[1] = waitable;
+	  a[2] = uip->closed_sema;
+	  val = scheme_object_wait_multiple(3, a);
+	  --uip->block_count;
+	  
+	  if (SAME_OBJ(val, waitable)) {
+	    if (SCHEME_SEMAP(waitable))
+	      scheme_post_sema(waitable);
+	    
+	    /* Port may have been closed while we were waiting: */
+	    if (port->closed) {
+	      /* Another thread closed the input port while we were waiting. */
+	      /* Call scheme_getc to signal the error */
+	      scheme_getc((Scheme_Object *)port);
+	    }
+	    goto try_again;
+	  } else {
+	    /* Another thread closed the input port while we were waiting. */
+	    /* Call scheme_peekc to signal the error */
+	    scheme_peekc((Scheme_Object *)port);
+	    return 0; /* doesn't get here */
+	  }
+	}
       } else {
 	scheme_wrong_type(peek ? "user port peek-string" : "user port read-string", 
-			  "non-negative exact integer, eof, or procedure of arity 4", 
+			  (peek 
+			   ? "non-negative exact integer, eof, waitable, or procedure of arity 4"
+			   : "non-negative exact integer, eof, or procedure of arity 4"), 
 			  -1, -1, &val);
 	return 0;
       }
@@ -849,7 +894,8 @@ user_get_string(Scheme_Input_Port *port,
 		char *buffer, long offset, long size,
 		int nonblock)
 {
-  return user_get_or_peek_string(port, buffer, offset, size, nonblock, 0, 0);
+  return user_get_or_peek_string(port, buffer, offset, size, nonblock, 
+				 0, NULL);
 }
 
 static long 
@@ -858,7 +904,18 @@ user_peek_string(Scheme_Input_Port *port,
 		 long skip,
 		 int nonblock)
 {
-  return user_get_or_peek_string(port, buffer, offset, size, nonblock, 1, skip);
+  return user_get_or_peek_string(port, buffer, offset, size, nonblock, 
+				 1, scheme_make_integer(skip));
+}
+
+static long 
+user_peek_string_bignum_skip(Scheme_Input_Port *port, 
+			     char *buffer, long offset, long size,
+			     Scheme_Object *skip,
+			     int nonblock)
+{
+  return user_get_or_peek_string(port, buffer, offset, size, nonblock, 
+				 1, skip);
 }
 
 static int
@@ -886,7 +943,7 @@ user_char_ready(Scheme_Input_Port *port)
       if (c == SCHEME_SPECIAL)
 	uip->peeked = scheme_void;
       else
-	uip->peeked = scheme_make_character(c);
+	uip->peeked = scheme_make_character(s[0]);
     }
     return 1;
   } else
@@ -1089,9 +1146,10 @@ static void pipe_did_read(Scheme_Pipe *pipe)
   }
 }
 
-static long pipe_get_string(Scheme_Input_Port *p, 
-			    char *buffer, long offset, long size,
-			    int nonblock)
+static long pipe_get_or_peek_string(Scheme_Input_Port *p, 
+				    char *buffer, long offset, long size,
+				    int nonblock,
+				    int peek, long peek_skip)
 {
   Scheme_Pipe *pipe;
   long c;
@@ -1121,34 +1179,85 @@ static long pipe_get_string(Scheme_Input_Port *p,
   if (pipe->bufstart == pipe->bufend)
     c = EOF;
   else {
+    long bs = pipe->bufstart;
     c = 0;
-    if (pipe->bufstart > pipe->bufend) {
+    if (bs > pipe->bufend) {
       int n;
-      n = pipe->buflen - pipe->bufstart;
+
+      /* Determine how much to copy: */
+      n = pipe->buflen - bs;
+      if (n < peek_skip) {
+	peek_skip -= n;
+	bs += n;
+	n = 0;
+      } else {
+	bs += peek_skip;
+	n -= peek_skip;
+	peek_skip = 0;
+      }
       if (n > size)
 	n = size;
-      memcpy(buffer + offset, pipe->buf + pipe->bufstart, n);
-      pipe->bufstart += n;
-      if (pipe->bufstart == pipe->buflen)
-	pipe->bufstart = 0;
+
+      /* Copy it */
+      memcpy(buffer + offset, pipe->buf + bs, n);
+
+      /* Fix up indices */
+      bs += n;
+      if (bs == pipe->buflen)
+	bs = 0;
+      if (!peek)
+	pipe->bufstart = bs;
       size -= n;
       c += n;
     }
-    if (pipe->bufstart < pipe->bufend) {
+    if (bs < pipe->bufend) {
       int n;
-      n = pipe->bufend - pipe->bufstart;
+
+      /* Determine how much to copy: */
+      n = pipe->bufend - bs;
+      if (n < peek_skip) {
+	peek_skip -= n;
+	bs += n;
+	n = 0;
+      } else {
+	bs += peek_skip;
+	n -= peek_skip;
+	peek_skip = 0;
+      }
       if (n > size)
 	n = size;
-      memcpy(buffer + offset + c, pipe->buf + pipe->bufstart, n);
-      pipe->bufstart += n;
+
+      /* Copy it */
+      memcpy(buffer + offset + c, pipe->buf + bs, n);
+
+      /* Fix up indices */
+      bs += n;
+      if (!peek)
+	pipe->bufstart = bs;
       size -= n;
       c += n;
     }
   }
 
-  pipe_did_read(pipe);
+  if (!peek)
+    pipe_did_read(pipe);
 
   return c;
+}
+
+static long pipe_get_string(Scheme_Input_Port *p, 
+			    char *buffer, long offset, long size,
+			    int nonblock)
+{
+  return pipe_get_or_peek_string(p, buffer, offset, size, nonblock, 0, 0);
+}
+
+static long pipe_peek_string(Scheme_Input_Port *p, 
+			     char *buffer, long offset, long size,
+			     long peek_skip,
+			     int nonblock)
+{
+  return pipe_get_or_peek_string(p, buffer, offset, size, nonblock, 1, peek_skip);
 }
 
 static long pipe_write_string(Scheme_Output_Port *p, 
@@ -1353,7 +1462,7 @@ void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int que
   readp = _scheme_make_input_port(scheme_pipe_read_port_type,
 				  (void *)pipe,
 				  pipe_get_string,
-				  NULL,
+				  pipe_peek_string,
 				  pipe_char_ready,
 				  pipe_in_close,
 				  NULL,
@@ -2026,77 +2135,49 @@ read_line (int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-sch_read_string(int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *port, *str;
-  long size, got;
-
-  if (!SCHEME_INTP(argv[0])) {
-    if (SCHEME_BIGNUMP(argv[0])) {
-      scheme_raise_out_of_memory("read-string", "making string of length %s",
-				 scheme_make_provided_string(argv[0], 0, NULL));
-      return NULL;
-    } else
-      size = -1; /* cause the error message to be printed */
-  } else
-    size = SCHEME_INT_VAL(argv[0]);
-
-  if (size < 0) {
-    scheme_wrong_type("read-string", "non-negative exact integer", 0, argc, argv);
-    return NULL;
-  }
-
-  if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
-    scheme_wrong_type("read-string", "input-port", 1, argc, argv);
-
-  if (argc > 1)
-    port = argv[1];
-  else
-    port = CURRENT_INPUT_PORT(scheme_config);
-
-  if ((Scheme_Object *)port == scheme_orig_stdin_port)
-    scheme_flush_orig_outputs();
-  
-  if (!size)
-    return scheme_make_sized_string("", 0, 0);
-
-  str = scheme_alloc_string(size, 0);
-
-  got = scheme_get_chars(port, size, SCHEME_STR_VAL(str), 0);
-
-  if (!got)
-    return scheme_eof;
-
-  if (got < size) {
-    /* Reallocate in case got << size */
-    str = scheme_make_sized_string(SCHEME_STR_VAL(str), got, 1);
-  }
-
-  return str;
-}
-
-static Scheme_Object *
-do_read_string_bang(const char *who, int argc, Scheme_Object *argv[],
-		    int only_avail, int peek)
+do_general_read_string(const char *who, int argc, Scheme_Object *argv[],
+		       int alloc_mode, int only_avail, int peek)
 {
   Scheme_Object *port, *str;
   long size, start, finish, got, peek_skip;
-  int delta;
+  int delta, skip_was_bignum = 0, size_too_big = 0;
 
-  if (!SCHEME_MUTABLE_STRINGP(argv[0])) {
-    scheme_wrong_type(who, "mutable-string", 0, argc, argv);
-    return NULL;
-  } else
+  if (alloc_mode) {
+    if (!SCHEME_INTP(argv[0])) {
+      if (SCHEME_BIGNUMP(argv[0])) {
+	size = 1;
+	size_too_big = 1;
+      } else
+	size = -1; /* cause the error message to be printed */
+    } else
+      size = SCHEME_INT_VAL(argv[0]);
+    
+    if (size < 0) {
+      scheme_wrong_type(who, "non-negative exact integer", 0, argc, argv);
+      return NULL;
+    }
+    str = NULL; /* allocated later */
+  } else {
+    if (!SCHEME_MUTABLE_STRINGP(argv[0])) {
+      scheme_wrong_type(who, "mutable-string", 0, argc, argv);
+      return NULL;
+    }
     str = argv[0];
+    size = 0;
+  }
 
   if (peek) {
     Scheme_Object *v;
     v = argv[1];
     if (SCHEME_INTP(v) && (SCHEME_INT_VAL(v) >= 0))
       peek_skip = SCHEME_INT_VAL(v);
-    else if (SCHEME_BIGNUMP(v) && SCHEME_BIGPOS(v))
-      peek_skip = 0x7FFFFFFF; /* we'll hit EOF or run out of memory */
-    else {
+    else if (SCHEME_BIGNUMP(v) && SCHEME_BIGPOS(v)) {
+      /* For most all port types, we'll hit EOF or run out of memory.
+	 The exception, potentially, is a custom port with a peek
+	 procedure. See below. */
+      peek_skip = 0x7FFFFFFF; 
+      skip_was_bignum = 1;
+    } else {
       scheme_wrong_type(who, "non-negative exact integer", 1, argc, argv);
       return NULL;
     }
@@ -2109,11 +2190,16 @@ do_read_string_bang(const char *who, int argc, Scheme_Object *argv[],
   if ((argc > (1+delta)) && !SCHEME_INPORTP(argv[1+delta]))
     scheme_wrong_type(who, "input-port", 1+delta, argc, argv);
   
-  scheme_get_substring_indices(who, str, 
-			       argc, argv,
-			       2+delta, 3+delta, &start, &finish);
-
-  size = finish - start;
+  if (alloc_mode) {
+    start = 0;
+    finish = size;
+  } else {
+    scheme_get_substring_indices(who, str, 
+				 argc, argv,
+				 2+delta, 3+delta, &start, &finish);
+    
+    size = finish - start;
+  }
 
   if (argc > (delta+1))
     port = argv[delta+1];
@@ -2126,6 +2212,33 @@ do_read_string_bang(const char *who, int argc, Scheme_Object *argv[],
   if (!size)
     return scheme_make_integer(0);
 
+  if (alloc_mode) {
+    if (size_too_big) {
+      scheme_raise_out_of_memory(who, "making string of length %s",
+				 scheme_make_provided_string(argv[0], 0, NULL));
+      return NULL;
+    }
+    str = scheme_alloc_string(size, 0);
+  }
+
+  if (skip_was_bignum) {
+    if (SAME_OBJ(((Scheme_Input_Port *)port)->sub_type, scheme_user_input_port_type)) {
+      User_Input_Port *uop = (User_Input_Port *)((Scheme_Input_Port *)port)->port_data;
+      if (uop->peek_proc) {
+	/* Corner case: bignum supplied as the peek offset for a
+	   custom input port. */
+	got = user_peek_string_bignum_skip((Scheme_Input_Port *)port,
+					   SCHEME_STR_VAL(str), start, size, 
+					   argv[1], only_avail == 2);
+	if (got == EOF)
+	  return scheme_eof;
+	else
+	  return scheme_make_integer(got);
+      }
+    }
+		 
+  }
+
   got = scheme_get_string(who, port, 
 			  SCHEME_STR_VAL(str), start, size, 
 			  only_avail,
@@ -2134,31 +2247,50 @@ do_read_string_bang(const char *who, int argc, Scheme_Object *argv[],
   if (got == EOF)
     return scheme_eof;
 
-  return scheme_make_integer(got);
+  if (alloc_mode) {
+    if (got < size - 5) {
+      /* Reallocate in case got << size */
+      str = scheme_make_sized_string(SCHEME_STR_VAL(str), got, 1);
+    }
+    return str;
+  } else
+    return scheme_make_integer(got);
+}
+
+static Scheme_Object *
+sch_read_string(int argc, Scheme_Object *argv[])
+{
+  return do_general_read_string("read-string", argc, argv, 1, 0, 0);
+}
+
+static Scheme_Object *
+sch_peek_string(int argc, Scheme_Object *argv[])
+{
+  return do_general_read_string("peek-string", argc, argv, 1, 0, 1);
 }
 
 static Scheme_Object *
 read_string_bang(int argc, Scheme_Object *argv[])
 {
-  return do_read_string_bang("read-string-avail!", argc, argv, 1, 0);
+  return do_general_read_string("read-string-avail!", argc, argv, 0, 1, 0);
 }
 
 static Scheme_Object *
 read_string_bang_nonblock(int argc, Scheme_Object *argv[])
 {
-  return do_read_string_bang("read-string-avail!*", argc, argv, 2, 0);
+  return do_general_read_string("read-string-avail!*", argc, argv, 0, 2, 0);
 }
 
 static Scheme_Object *
 peek_string_bang(int argc, Scheme_Object *argv[])
 {
-  return do_read_string_bang("peek-string-avail!", argc, argv, 1, 1);
+  return do_general_read_string("peek-string-avail!", argc, argv, 0, 1, 1);
 }
 
 static Scheme_Object *
 peek_string_bang_nonblock(int argc, Scheme_Object *argv[])
 {
-  return do_read_string_bang("peek-string-avail!*", argc, argv, 2, 1);
+  return do_general_read_string("peek-string-avail!*", argc, argv, 0, 2, 1);
 }
 
 

@@ -450,10 +450,13 @@ input_port {
   gcMARK(ip->sub_type);
   gcMARK(ip->port_data);
   gcMARK(ip->name);
-  gcMARK(ip->ungotten);
+  gcMARK(ip->peeked_read);
+  gcMARK(ip->peeked_write);
   gcMARK(ip->read_handler);
   gcMARK(ip->mref);
   gcMARK(ip->output_half);
+  gcMARK(ip->special);
+  gcMARK(ip->ungotten_special);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));

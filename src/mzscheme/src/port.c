@@ -921,9 +921,7 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->need_wakeup_fun = need_wakeup_fun;
   ip->close_fun = close_fun;
   ip->name = "stdin";
-  ip->ungotten = NULL;
   ip->ungotten_count = 0;
-  ip->ungotten_allocated = 0;
   ip->position = 0;
   ip->readpos = 0; /* like position, but collapses CRLF */
   ip->lineNumber = 1;
@@ -1050,6 +1048,20 @@ static void register_port_wait()
 		      waitable_output_port_p);
 }
 
+static int pipe_char_count(Scheme_Object *p)
+{
+  if (p) {
+    Scheme_Pipe *pipe;
+    pipe = (Scheme_Pipe *)((Scheme_Input_Port *)p)->port_data;
+
+    if (pipe->bufstart <= pipe->bufend)
+      return pipe->bufend - pipe->bufstart;
+    else
+      return (pipe->buflen - pipe->bufstart) + pipe->bufend;
+  } else
+    return 0;
+}
+
 /****************************** main input reader ******************************/
 
 long scheme_get_string(const char *who,
@@ -1080,7 +1092,8 @@ long scheme_get_string(const char *who,
 
     CHECK_PORT_CLOSED(who, "input", port, ip->closed);
 
-    if (ip->ungotten_count && (!total_got || !peek)) {
+    if ((ip->ungotten_count || pipe_char_count(ip->peeked_read))
+	&& (!total_got || !peek)) {
       long l, i;
       unsigned char *s;
 
@@ -1110,6 +1123,26 @@ long scheme_get_string(const char *who,
     
       if (!peek)
 	ip->ungotten_count = i;
+
+      l = pipe_char_count(ip->peeked_read);
+      if (size && l) {
+	if (l > peek_skip) {
+	  l -= peek_skip;
+
+	  if (l > size)
+	    l = size;
+
+	  if (l) {
+	    scheme_get_string("depipe", ip->peeked_read,
+			      buffer, offset + got, l,
+			      1, peek, peek_skip);
+	    size -= l;
+	    got += l;
+	    peek_skip = 0;
+	  }
+	} else
+	  peek_skip -= l;
+      }
     } else if (ip->ungotten_special) {
       if (!special_ok)
 	scheme_bad_time_for_special(who, port);
@@ -1132,17 +1165,20 @@ long scheme_get_string(const char *who,
       return SCHEME_SPECIAL;
     }
 
+    if (got && (only_avail == 1))
+      only_avail = 2;
+
     /* If we get this far in peek mode, ps is NULL, peek_skip is non-zero, and
        we haven't gotten anything so far, it means that we need to read before we
        can actually peek. Handle this case with a recursive peek that starts
        from the current position, then set peek_skip to 0 and go on. */
-    if (peek && !ps && peek_skip && !total_got) {
+    if (peek && !ps && peek_skip && !total_got && !got) {
       char *tmp;
       int v;
       tmp = (char *)scheme_malloc_atomic(peek_skip);
       v = scheme_get_string(who, port, tmp, 0, peek_skip,
 			    (only_avail == 2) ? 2 : 0, 
-			    1, ip->ungotten_count);
+			    1, ip->ungotten_count + pipe_char_count(ip->peeked_read));
       if (v == EOF)
 	return EOF;
       else if (v == SCHEME_SPECIAL) {
@@ -1298,35 +1334,21 @@ long scheme_get_string(const char *who,
       /***************************************************/
       /* save newly peeked string for future peeks/reads */
       /***************************************************/
-      /* need to save newly peeked string */
-      unsigned char *uca;
-      long j, k;
-
-      if (ip->ungotten_count + gc > ip->ungotten_allocated) {
-	unsigned char *old;
-	long oldc;
+      if (gc) {
+	if ((gc == 1) && !ip->ungotten_count && !ip->peeked_write) {
+	  ip->ungotten[ip->ungotten_count++] = buffer[offset];
+	} else {
+	  if (!ip->peeked_write) {
+	    Scheme_Object *rd, *wt;
+	    scheme_pipe(&rd, &wt);
+	    ip->peeked_read = rd;
+	    ip->peeked_write = wt;
+	  }
 	
-	old = ip->ungotten;
-	oldc = ip->ungotten_count;
-	if (oldc)
-	  ip->ungotten_allocated = 2 * oldc;
-	else
-	  ip->ungotten_allocated = 5;
-	if (ip->ungotten_allocated < oldc + gc)
-	  ip->ungotten_allocated = oldc + gc;
-	
-	
-	uca = (unsigned char *)scheme_malloc_atomic(ip->ungotten_allocated);
-	ip->ungotten = uca;
-	if (oldc)
-	  memcpy(uca, old, oldc);
-      } else
-	uca = ip->ungotten;
-
-      for (j = ip->ungotten_count + gc - 1, k = 0; k < gc; k++, j--) {
-	uca[j] = buffer[offset + k];
+	  scheme_put_string("peek", ip->peeked_write, 
+			    buffer, offset + got - gc, gc, 0);
+	}
       }
-      ip->ungotten_count += gc;
     }
 
     offset += gc;
@@ -1439,25 +1461,8 @@ scheme_ungetc (int ch, Scheme_Object *port)
     ip->ungotten_special = ip->special;
     ip->special = NULL;
   } else {
-    if (ip->ungotten_count == ip->ungotten_allocated) {
-      unsigned char *old;
-      int oldc;
-
-      old = ip->ungotten;
-      oldc = ip->ungotten_count;
-      if (oldc)
-	ip->ungotten_allocated = 2 * oldc;
-      else
-	ip->ungotten_allocated = 5;
-
-      {
-	unsigned char *uca;
-	uca = (unsigned char *)scheme_malloc_atomic(ip->ungotten_allocated);
-	ip->ungotten = uca;
-      }
-      if (oldc)
-	memcpy(ip->ungotten, old, oldc);
-    }
+    if (ip->ungotten_count == 4)
+      scheme_signal_error("ungetc overflow");
     ip->ungotten[ip->ungotten_count++] = ch;
   }
 
@@ -1490,7 +1495,8 @@ scheme_char_ready (Scheme_Object *port)
    
   CHECK_PORT_CLOSED("char-ready?", "input", port, ip->closed);
 
-  if (ip->ungotten_count || ip->ungotten_special)
+  if (ip->ungotten_count || ip->ungotten_special
+      || pipe_char_count(ip->peeked_read))
     retval = 1;
   else {
     Scheme_In_Ready_Fun f = ip->char_ready_fun;
@@ -2559,11 +2565,12 @@ scheme_file_position(int argc, Scheme_Object *argv[])
 	p = is->index;
     }
 
-    /* Back up for un-gotten chars: */
+    /* Back up for un-gotten & peeked chars: */
     if (SCHEME_INPORTP(argv[0])) {
       Scheme_Input_Port *ip;
       ip = (Scheme_Input_Port *)argv[0];
       p -= ip->ungotten_count;
+      p -= pipe_char_count(ip->peeked_read);
     }
 
     return scheme_make_integer(p);

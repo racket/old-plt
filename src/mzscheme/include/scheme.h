@@ -899,8 +899,9 @@ struct Scheme_Input_Port
   Scheme_Need_Wakeup_Input_Fun need_wakeup_fun;
   Scheme_Object *read_handler;
   char *name;
-  unsigned char *ungotten;
-  int ungotten_count, ungotten_allocated;
+  Scheme_Object *peeked_read, *peeked_write;
+  unsigned char ungotten[4];
+  int ungotten_count;
   Scheme_Object *special, *ungotten_special;
   long position, readpos, lineNumber, charsSinceNewline;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */

@@ -1819,7 +1819,7 @@ typedef struct Scheme_Indexed_String {
   } u;
 } Scheme_Indexed_String;
 
-typedef struct {
+typedef struct Scheme_Pipe {
   MZTAG_IF_REQUIRED
   unsigned char *buf;
   long buflen, bufmax;

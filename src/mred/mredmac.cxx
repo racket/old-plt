@@ -417,6 +417,8 @@ int MrEdGetNextEvent(int check_only, int current_only,
 #else
 	  MrDequeue(osq);
 #endif
+	  found = 1;
+	  foundc = keyOk;
 	  cont_event_context = NULL;
         } else if (window != front) {
 	  fr = wxWindowPtrToFrame(window, NULL);

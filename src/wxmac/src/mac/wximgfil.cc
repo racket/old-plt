@@ -29,7 +29,7 @@
 void CreateOffScreenPixMap (CGrafPtr *,wxGIF *gif);
 CTabHandle XlateColorMap(wxGIF *);
 
-#pragma pack(1) Yes
+// #pragma pack(1) Yes
 static struct {           
   char header[6];       
   ushort scrwidth;

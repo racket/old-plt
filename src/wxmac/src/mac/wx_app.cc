@@ -33,6 +33,8 @@ static const char sccsid[] = "%W% %G%";
 QDGlobals 	qd;
 #endif
 
+#include <stdlib.h>
+
 extern void wxDoEvents();
 extern void wxDoNextEvent();
 extern int wxEventReady();
@@ -638,8 +640,14 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
 
 	WindowPtr theMacWindow = ::FrontWindow();
 	if (!theMacWindow) {
-		wxTheApp->ExitMainLoop();
-		return TRUE;
+	  if (macMenuId == 128) {
+	  	// Must be "About..."
+	  	DoDefaultAboutItem();
+	  } else {
+	  	// Must be quit
+		exit(0);
+	  }
+	  return TRUE;
 	}
 	
 	wxFrame* theMacWxFrame = findMacWxFrame(theMacWindow);

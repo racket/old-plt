@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.15 1998/09/24 17:09:45 mflatt Exp $
+ * RCS_ID:      $Id: wb_ps.cc,v 1.12 1998/09/24 18:00:16 robby Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -294,7 +294,7 @@ wxPostScriptDC::wxPostScriptDC (Bool interactive)
 Bool wxPostScriptDC::Create(Bool interactive)
 {
   if (!pie)
-    pie = 2 * asin(1);
+    pie = 2 * asin((double)1.0);
 
   __type = wxTYPE_DC_POSTSCRIPT;
 #ifndef wx_xt

@@ -3,6 +3,7 @@
     [(name) "Help"]
     [(compile-prefix) `(begin
 			 (require-library "sig.ss" "mred")
+			 (require-library "drsig.ss" "drscheme")
 			 (require-library "sig.ss" "help")
 			 (require-library "help-raw-sig.ss" "help"))]
     [(compile-omit-files) (list "sig.ss" "search-sig.ss" "help-raw-sig.ss" "manuals.ss")]

@@ -230,7 +230,12 @@ scheme_init_number (Scheme_Env *env)
 
     inf_object = scheme_make_double(scheme_infinity_val);
     minus_inf_object = scheme_make_double(scheme_minus_infinity_val);
+#ifdef NAN_EQUALS_ANYTHING
+    nan_object = scheme_make_double(1);
+    SCHEME_DBL_VAL(nan_object) = not_a_number_val;
+#else
     nan_object = scheme_make_double(not_a_number_val);
+#endif
 #ifdef MZ_USE_SINGLE_FLOATS
     single_inf_object = scheme_make_float((float)scheme_infinity_val);
     single_minus_inf_object = scheme_make_float((float)scheme_minus_infinity_val);
@@ -625,7 +630,7 @@ int scheme_get_unsigned_int_val(Scheme_Object *o, unsigned long *v)
     return 0;
 }
 
-static inline int minus_zero_p(double d)
+static MSC_IZE(inline) int minus_zero_p(double d)
 {
   double a[2];
   long *f, *s;
@@ -649,6 +654,10 @@ Scheme_Object *scheme_make_double(double d)
   if (!d) {
     if (minus_zero_p(d))
       return nzerod;
+#ifdef NAN_EQUALS_ANYTHING
+    else if (MZ_IS_NAN(d))
+      return nan_object;
+#endif
     else
       return zerod;
   }

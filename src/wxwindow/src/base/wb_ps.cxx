@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.3 1998/08/05 23:56:30 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.11 1998/09/13 16:56:50 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -225,7 +225,7 @@ class PSStream : public wxObject {
     int_width = 0;
   }
   ~PSStream(void) {
-    fclose(f);
+    if (f) fclose(f);
   }
 
   int good(void) {
@@ -281,15 +281,15 @@ IMPLEMENT_DYNAMIC_CLASS(wxPostScriptDC, wxDC)
 
 wxPostScriptDC::wxPostScriptDC (void)
 {
-  Create(NULL, TRUE, NULL);
+  Create(TRUE);
 }
 
-wxPostScriptDC::wxPostScriptDC (char *file, Bool interactive, wxWindow *parent)
+wxPostScriptDC::wxPostScriptDC (Bool interactive)
 {
-  Create(file, interactive, parent);
+  Create(interactive);
 }
 
-Bool wxPostScriptDC::Create(char *file, Bool interactive, wxWindow *parent)
+Bool wxPostScriptDC::Create(Bool interactive)
 {
   if (!pie)
     pie = 2 * asin(1);
@@ -340,10 +340,7 @@ Bool wxPostScriptDC::Create(char *file, Bool interactive, wxWindow *parent)
 
   title = NULL;
 
-  if (file)
-    filename = copystring(file);
-  else
-    filename = NULL;
+  filename = NULL;
 
   pstream = NULL;
 
@@ -353,7 +350,7 @@ Bool wxPostScriptDC::Create(char *file, Bool interactive, wxWindow *parent)
   clipw = -1;
   cliph = -1;
 
-  if ((ok = PrinterDialog(interactive, parent)) == FALSE)
+  if ((ok = PrinterDialog(interactive)) == FALSE)
     return FALSE;
 
   currentRed = 0;
@@ -422,10 +419,10 @@ wxPostScriptDC::~wxPostScriptDC (void)
     delete[]filename;
 }
 
-Bool wxPostScriptDC::PrinterDialog(Bool interactive, wxWindow *parent)
+Bool wxPostScriptDC::PrinterDialog(Bool interactive)
 {
   if (interactive) {
-    ok = XPrinterDialog(parent);
+    ok = XPrinterDialog(NULL);
     if (!ok)
       return FALSE;
   } else
@@ -438,11 +435,7 @@ Bool wxPostScriptDC::PrinterDialog(Bool interactive, wxWindow *parent)
   print_cmd = copystring(wxThePrintSetupData->GetPrinterCommand());
   print_opts = copystring(wxThePrintSetupData->GetPrinterOptions());
 
-  if (!filename && ((mode == PS_PREVIEW) || (mode == PS_PRINTER))) {
-// steve, 05.09.94
-#ifdef VMS
-    wxThePrintSetupData->SetPrinterFile("preview");
-#else
+  if ((mode == PS_PREVIEW) || (mode == PS_PRINTER)) {
     // For PS_PRINTER action this depends on a Unix-style print spooler
     // since the wx_printer_file can be destroyed during a session
     // @@@ TODO: a Windows-style answer for non-Unix
@@ -451,20 +444,16 @@ Bool wxPostScriptDC::PrinterDialog(Bool interactive, wxWindow *parent)
     char tmp[256];
     strcpy (tmp, "/tmp/preview_");
     strcat (tmp, userId);
-    wxThePrintSetupData->SetPrinterFile(tmp);
-#endif
-    char tmp2[256];
-    strcpy(tmp2, wxThePrintSetupData->GetPrinterFile());
-    strcat (tmp2, ".ps");
-    wxThePrintSetupData->SetPrinterFile(tmp2);
-    filename = copystring(tmp2);
-  } else if (!filename && (mode == PS_FILE)) {
-    char *file = wxSaveFileSelector("PostScript", "ps");
+    strcat (tmp, ".ps");
+    filename = copystring(tmp);
+  } else if (mode == PS_FILE) {
+    char *file = interactive ? (char *)NULL : wxThePrintSetupData->GetPrinterFile();
+    if (!file)
+      file = wxSaveFileSelector("PostScript", "ps");
     if (!file) {
       ok = FALSE;
       return FALSE;
     }
-    wxThePrintSetupData->SetPrinterFile(file);
     filename = copystring(file);
     ok = TRUE;
   }
@@ -1357,6 +1346,9 @@ Bool wxPostScriptDC::StartDoc (char *message)
   return TRUE;
 }
 
+#ifdef wx_x
+extern void wxsExecute(char **);
+#endif
 
 void wxPostScriptDC::EndDoc (void)
 {
@@ -1418,7 +1410,7 @@ void wxPostScriptDC::EndDoc (void)
 	  argv[0] = preview_cmd;
           argv[1] = filename;
           argv[2] = NULL;
-	  wxExecute (argv);
+	  wxsExecute (argv);
 	}
 	break;
 
@@ -1434,7 +1426,7 @@ void wxPostScriptDC::EndDoc (void)
 	    argv[i++] = opts;
 	  argv[i++] = filename;
 	  argv[i] = NULL;
-	  wxExecute(argv);
+	  wxsExecute(argv);
 	}
 	break;
 
@@ -1928,208 +1920,13 @@ void wxPostScriptDC::GetSizeMM(float *WXUNUSED(width), float *WXUNUSED(height))
 #endif
 }
 
-#ifndef NO_XPRINT_DIALOG
-
-class wxPrinterDialogBox : public wxDialogBox
-{
-  public:
-  wxPrinterDialogBox (wxWindow *parent, char *title, Bool modal = FALSE,
-		      int x = -1, int y = -1, int
-		      width = -1, int height = -1);
-};
-
-wxPrinterDialogBox::wxPrinterDialogBox (wxWindow *parent, char *title, Bool isModal,
-		    int x, int y, int width, int height):
-wxDialogBox (parent, title, isModal, x, y, width, height)
-{
-}
-
-Bool wxPrinterDialogAnswer = TRUE;
-
-static void 
-wxPrinterDialogOk (wxButton & button, wxEvent & WXUNUSED(event))
-{
-  wxPrinterDialogAnswer = TRUE;
-  wxPrinterDialogBox *dialog = (wxPrinterDialogBox *) button.GetParent ();
-  dialog->Show (FALSE);
-}
-
-static void 
-wxPrinterDialogCancel (wxButton & button, wxEvent & WXUNUSED(event))
-{
-  wxPrinterDialogAnswer = FALSE;
-  wxPrinterDialogBox *dialog = (wxPrinterDialogBox *) button.GetParent ();
-  dialog->Show (FALSE);
-}
-
-#define wxSetPrintPaperName wxThePrintSetupData->SetPaperName
-#define wxGetPrintPaperName wxThePrintSetupData->GetPaperName
-
-#define COLUMN_WIDTH 150
+extern Bool wxsPrinterDialog(wxWindow *parent);
 
 Bool 
 XPrinterDialog (wxWindow *parent)
 {
-#if 0
-  wxBeginBusyCursor();
-  char buf[100];
-  wxPrinterDialogBox &dialog = *(new wxPrinterDialogBox(parent, "Printer Settings", TRUE, 
-							150, 150, 400, 400));
-
-  char *paper[4];
-  paper[0] = "A4 210 x 297 mm";
-  paper[1] = "A3 297 x 420 mm";
-  paper[2] = "Letter 8 1/2 x 11 in";
-  paper[3] = "Legal 8 1/2 x 14 in";
-  wxChoice *c = new wxChoice(&dialog, NULL, NULL, -1, -1, -1, -1, 4, paper);
-  char *pt = wxGetPrintPaperName();
-  int i;
-  for (i = 0; i < 4; i++)
-    if (!strcmp(pt, paper[i]))
-      c->SetSelection(i);
-
-  wxButton *okBut = new wxButton ((wxPrinterDialogBox *)&dialog, 
-				  (wxFunction)wxPrinterDialogOk, 
-				  wxSTR_BUTTON_OK);
-  (void) new wxButton ((wxPrinterDialogBox *)&dialog, 
-		       (wxFunction)wxPrinterDialogCancel, 
-		       wxSTR_BUTTON_CANCEL);
-  dialog.NewLine();
-  dialog.NewLine();
-  okBut->SetDefault();
-
-  dialog.SetLabelPosition(wxVERTICAL);
-
-#ifdef wx_x
-  wxText &text_prt = *(new wxText(&dialog, (wxFunction) NULL, "Printer Command: ", 
-				  wxGetPrinterCommand(), -1, -1, COLUMN_WIDTH, -1));
-
-  wxText &text0 = *(new wxText(&dialog, (wxFunction) NULL, "Printer Options: ", 
-			       wxGetPrinterOptions(), -1, -1, COLUMN_WIDTH, -1));
-  dialog.NewLine ();
-  dialog.NewLine ();
-#endif
-
-  char *orientation[2];
-  orientation[0] = "Portrait";
-  orientation[1] = "Landscape";
-  wxRadioBox &radio0 = *(new wxRadioBox((wxPrinterDialogBox *)&dialog, 
-					(wxFunction)NULL, 
-					"Orientation: ", -1, -1, COLUMN_WIDTH,- 1,
-					2, (char **)orientation, 0, wxVERTICAL));
-  radio0.SetSelection((wxGetPrinterOrientation() == PS_LANDSCAPE) ? 1 : 0);
-
-  // @@@ Configuration hook
-  if (wxGetPrintPreviewCommand() == NULL) {
-#if 0
-    wxGetResource("wxWindows", "PSView", &wxThePrintSetupData->previewCommand);
-#endif
-    wxSetPrintPreviewCommand(PS_VIEWER_PROG);
-  }
-
-  char *print_modes[3];
-  print_modes[0] = "Send to Printer";
-  print_modes[1] = "Print to File";
-  print_modes[2] = "Preview Only";
-  int features = ((wxThePrintSetupData->GetPrintPreviewCommand() 
-		   && *wxThePrintSetupData->GetPrintPreviewCommand()) 
-		  ? 3 
-		  : 2);
-  wxRadioBox &radio1 = *(new wxRadioBox((wxPrinterDialogBox *)&dialog, (wxFunction)NULL, 
-					"Destination:" , -1, -1, COLUMN_WIDTH, -1, 
-					features, (char **)print_modes, 0, wxVERTICAL));
-#if defined(wx_msw) || defined(wx_mac)
-  radio1.Enable(0, FALSE);
-  if (wxGetPrintPreviewCommand() && *wxGetPrintPreviewCommand())
-    radio1.Enable(2, FALSE);
-#endif
-  radio1.SetSelection((wxGetPrinterMode() == PS_PRINTER) 
-		      ? 0 
-		      : ((wxGetPrinterMode() == PS_FILE)
-			 ? 1
-			 : 2));
-  
-  float wx_printer_translate_x, wx_printer_translate_y;
-  float wx_printer_scale_x, wx_printer_scale_y;
-  wxGetPrinterTranslation(&wx_printer_translate_x, &wx_printer_translate_y);
-  wxGetPrinterScaling(&wx_printer_scale_x, &wx_printer_scale_y);
-
-  sprintf(buf, "%.2f", wx_printer_scale_x);
-  dialog.NewLine();
-  dialog.NewLine();
-
-  wxText &text1 = *(new wxText((wxPrinterDialogBox *)&dialog, (wxFunction) NULL, 
-			       "Horizontal Scaling: ", (char *)buf, -1, -1, COLUMN_WIDTH, -1));
-
-  sprintf(buf, "%.2f", wx_printer_scale_y);
-  wxText &text2 = *(new wxText((wxPrinterDialogBox *)&dialog, (wxFunction) NULL, 
-			       "Vertical Scaling: ", (char *)buf, -1, -1, COLUMN_WIDTH, -1));
-
-  dialog.NewLine();
-
-  sprintf(buf, "%.2f", wx_printer_translate_x);
-  wxText &text3 = *(new wxText((wxPrinterDialogBox *)&dialog, (wxFunction) NULL, 
-			       "Horizontal Translation: ", (char *)buf, -1, -1, COLUMN_WIDTH, -1));
-
-  sprintf (buf, "%.2f", wx_printer_translate_y);
-  wxText &text4 = *(new wxText ((wxPrinterDialogBox *)&dialog, (wxFunction) NULL, 
-				"Vertical Translation: ", (char *)buf, -1, -1, COLUMN_WIDTH, -1));
-
-  dialog.NewLine();
-  dialog.NewLine();
-
-  wxCheckBox *l2 = new wxCheckBox(&dialog, (wxFunction)NULL, "PostScript Level2");
-  if (wxGetLevel2Ok())
-    l2->SetValue(1);
-
-  dialog.NewLine();
-  dialog.NewLine();
-
-  dialog.Fit();
-  dialog.Centre(wxBOTH);
-
-  wxEndBusyCursor();
-
-  dialog.Show(TRUE);
-
-  if (wxPrinterDialogAnswer) {
-    float x, y;
-    StringToFloat(text1.GetValue (), &x);
-    StringToFloat(text2.GetValue (), &y);
-    wxSetPrinterScaling(x, y);
-    StringToFloat(text3.GetValue (), &x);
-    StringToFloat(text4.GetValue (), &y);
-    wxSetPrinterTranslation(x, y);
-
-#ifdef wx_x
-    wxSetPrinterOptions(text0.GetValue());
-    wxSetPrinterCommand(text_prt.GetValue());
-#endif
-
-    wxSetPrinterOrientation(radio0.GetSelection() ? PS_LANDSCAPE : PS_PORTRAIT);
-
-    wxSetPrintPaperName(paper[c->GetSelection()]);
-
-    wxSetLevel2Ok(l2->GetValue());
-
-#ifdef wx_x
-    // C++ wants this
-    switch ( radio1.GetSelection() ) {
-    case 2: wxSetPrinterMode(PS_PREVIEW); break;
-    case 1:    wxSetPrinterMode(PS_FILE);    break;
-    case 0: wxSetPrinterMode(PS_PRINTER); break;
-    }
-#endif
-  }
-
-  return wxPrinterDialogAnswer;
-#endif
-  return FALSE;
+  return wxsPrinterDialog(parent);
 }
-
-#endif
-
-
 
 //-----------------------------------------------------------------------------
 // wxPrintSetup implementation
@@ -2140,7 +1937,7 @@ XPrinterDialog (wxWindow *parent)
 #if defined(sun) && defined(wx_xview)
 #	define PS_PREVIEW_COMMAND	"pageview"
 #	define PS_PRINTER_COMMAND	"lpr"
-#	define PS_PRINTER_OPTIONS	NULL
+#	define PS_PRINTER_OPTIONS	""
 #	define PS_AFM_PATH		NULL
 #elif defined(VMS)
 #	define PS_PREVIEW_COMMAND	"view/format=ps/select=x_display"
@@ -2150,18 +1947,18 @@ XPrinterDialog (wxWindow *parent)
 #elif defined(__sgi)
 #	define PS_PREVIEW_COMMAND	"dps"
 #	define PS_PRINTER_COMMAND	"lpr"
-#	define PS_PRINTER_OPTIONS	NULL
+#	define PS_PRINTER_OPTIONS	""
 #	define PS_AFM_PATH		NULL
 #elif defined(wx_x)
 #	define PS_PREVIEW_COMMAND	"ghostview"
 #	define PS_PRINTER_COMMAND	"lpr"
-#	define PS_PRINTER_OPTIONS	NULL
+#	define PS_PRINTER_OPTIONS	""
 #	define PS_AFM_PATH		NULL
-#elif defined(wx_msw)
-#	define PS_PREVIEW_COMMAND	NULL
+#elif defined(wx_msw) || defined(wx_mac)
+#	define PS_PREVIEW_COMMAND	"ghostview"
 #	define PS_PRINTER_COMMAND	"print"
-#	define PS_PRINTER_OPTIONS	NULL
-#	define PS_AFM_PATH		"c:\\windows\\system\\"
+#	define PS_PRINTER_OPTIONS	""
+#	define PS_AFM_PATH		NULL
 #else
 #	define PS_PREVIEW_COMMAND	NULL
 #	define PS_PRINTER_COMMAND	NULL
@@ -2173,18 +1970,23 @@ IMPLEMENT_DYNAMIC_CLASS(wxPrintSetupData, wxObject)
 
 wxPrintSetupData::wxPrintSetupData(void)
 {
-    printer_command = NULL;
-    preview_command = NULL;
-    printer_flags = NULL;
+    printer_command = PS_PRINTER_COMMAND;
+    preview_command = PS_PREVIEW_COMMAND;
+    printer_flags = PS_PRINTER_OPTIONS;
     printer_orient = PS_PORTRAIT;
     printer_scale_x = 1.0;
     printer_scale_y = 1.0;
     printer_translate_x = 0.0;
     printer_translate_y = 0.0;
-    printer_mode = PS_PREVIEW;
+#ifdef wx_x
+    printer_mode = PS_PRINTER;
+#else
+    printer_mode = PS_FILE;
+#endif
     afm_path = NULL;
-    paper_name = NULL;
+    paper_name = DEFAULT_PAPER;
     print_colour = TRUE;
+    print_level_2 = TRUE;
     printer_file = NULL;
 }
 

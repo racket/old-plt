@@ -135,16 +135,14 @@ Bool wxPrintDialog::Show(Bool flag)
 {
   if (!flag)
     return FALSE;
+
 #ifdef wx_msw    
-  if (WINDOWS_PRINTING)
-  {
-    if (wxPrimitiveDialog(do_print, printData.printData , 0) != 0 )
-    {
+  if (WINDOWS_PRINTING) {
+    if (wxPrimitiveDialog(do_print, printData.printData , 0)) {
       wxPrinterDC *pdc = new wxPrinterDC(((PRINTDLG *)printData.printData)->hDC);
       printerDC = pdc;
       return TRUE;
-    }
-    else
+    } else
       return FALSE;
   }
 #endif
@@ -168,7 +166,7 @@ wxDC *wxPrintDialog::GetPrintDC(void)
   else
 #endif
   {
-    return new wxPostScriptDC(wxGetThePrintSetupData()->GetPrinterFile(), FALSE, NULL);
+    return NULL;
   }
 }
 
@@ -835,7 +833,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     else
 #endif
     {
-      dc = new wxPostScriptDC(wxGetThePrintSetupData()->GetPrinterFile(), FALSE, NULL);
+      dc = NULL;
     }
   }
 

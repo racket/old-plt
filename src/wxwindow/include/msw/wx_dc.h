@@ -145,10 +145,9 @@ class wxDC: public wxbDC
 
   void SetRop(HDC cdc);
   void DoClipping(HDC cdc);
-  void SelectOldObjects(HDC dc);
-
-   HDC ThisDC();
-   void DoneDC(HDC dc);
+  void SelectOldObjects(HDC dc);
+   HDC ThisDC();
+   void DoneDC(HDC dc);
    void ShiftXY(float x, float y, int &ix, int &iy);
 };
 
@@ -159,7 +158,7 @@ class wxPrinterDC: public wxDC
   DECLARE_CLASS(wxPrinterDC)
 
   // Create a printer DC
-  wxPrinterDC(char *driver, char *device, char *output, Bool interactive = TRUE);
+  wxPrinterDC(char *driver = NULL, char *device = NULL, char *output = NULL, Bool interactive = TRUE);
   wxPrinterDC(HDC theDC);
 
   ~wxPrinterDC(void);

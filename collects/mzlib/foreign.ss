@@ -2,11 +2,11 @@
 
 (module ffi mzscheme
 
-(require "ffi-prim.ss")
+(require #%foreign)
 (require-for-syntax (lib "stx.ss" "syntax"))
 
 (provide ffi-lib ffi-malloc ffi-sizeof ffi-alignof
-         ffi-ptr? ptr-ref ptr-set! ptr-equal?
+         cpointer? ptr-ref ptr-set! ptr-equal?
          make-ffi-type make-ffi-struct-type ffi-register-finalizer
          make-sized-byte-string)
 (provide _void _int8 _uint8 _byte _int16 _uint16 _word _int32 _uint32 _int
@@ -398,7 +398,7 @@
       cblock)))
 (define* (cblock->list cblock type len)
   (cond [(zero? len) '()]
-        [(ffi-ptr? cblock)
+        [(cpointer? cblock)
          (let loop ([i (sub1 len)] [r '()])
            (if (< i 0)
              r
@@ -419,7 +419,7 @@
         cblock))))
 (define* (cblock->vector cblock type len)
   (cond [(zero? len) '#()]
-        [(ffi-ptr? cblock)
+        [(cpointer? cblock)
          (let ([v (make-vector len)])
            (let loop ([i (sub1 len)])
              (unless (< i 0)

@@ -1,5 +1,6 @@
 
->INDEX: "debug" "debugger" "debugging" "profile" "profiler" "profiling"
+ [index entires: _debug_ _debugger_ _debugging_
+                 _profile_ _profiler_ _profiling_ ]
 
 Errortrace is a poor man's stack-trace-on-exceptions/profiler for
  MzScheme.  Errortrace is not a complete debugger, and a real debugger

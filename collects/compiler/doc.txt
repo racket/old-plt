@@ -2,10 +2,11 @@
 The Compiler
 ============
 
->INDEX: "compile.ss"
-To use the compiler, require "compile.ss".  It defines the following
-functions (plus a few signatures).  Options that control the compiler
-are documented in the next section.
+To use the compiler within a Scheme program, require _compile.ss_:
+  (require-library "compile.ss" "compiler")
+The compile.ss library defines the following functions (plus a few
+signatures).  Options that control the compiler are documented in the
+next section.
 
  Single-file extension compilation
  ---------------------------------
@@ -90,39 +91,39 @@ are documented in the next section.
       "compiled/native/PLATFORM" directory (where `PLATFORM' is the
       system name for the current platform).
 
-      The collection compiler reads the collection's "info.ss"
-      file to obtain information about compiling the collection.
-      The following fields are used:
+      The collection compiler reads the collection's _info.ss_ file
+      (see the mzc manual for information about info.ss) to obtain
+      information about compiling the collection.  The following
+      fields are used:
 
-       `name' - the name of the collection as a string.
+>      'name - the name of the collection as a string.
 
-       `compile-prefix' - an S-expression to use as the elaboration-time
+>      'compile-prefix - an S-expression to use as the elaboration-time
          prefix expression for compiling all files in the collection.
 
-       `compile-omit-files' - a list of filenames (without paths); all
+>      'compile-omit-files - a list of filenames (without paths); all
          Scheme files in the collection are compiled except for the
          files in this list.  If a file contains elaboration time
          expressions (e.g., macros, signatures) that are not intended
          to be local to the file, then the file should be included in
          this list.
 
-       `compile-extension-omit-files' - a list of filenames to extend
+>      'compile-extension-omit-files - a list of filenames to extend
          the list returned for `compile-omit-files'. Unlike the list
          returned for `compile-omit-files', this extension is not used
          when compiling .zo files.
 
-       `compile-subcollections' - a list of collection paths, where each
+>      'compile-subcollections - a list of collection paths, where each
          path is a list of strings. `compile-collection-extension' is 
          applied to each of the collections.
 
-      Only the `name' field is required from info.ss, but the 
-      `compile-prefix' field should also be provided, because the
+      Only the 'name field is required from info.ss, but the 
+      'compile-prefix field should also be provided, because the
       Setup PLT uses this field as an indication that the collection 
       should be compiled (see "Setup PLT" below).
 
-      The compilation process is driven by the `make-collection'
-      function in the "collection.ss" library of the "make"
-      collection.
+      The compilation process is driven by the 'make-collection
+      function in the collection.ss library of the `make' collection.
 
 >  (compile-collection-zos collection sub-collection ...)
 
@@ -130,14 +131,14 @@ are documented in the next section.
       The .zo files are placed into the collection's "compiled"
       directory.
 
-      The "info.ss" file is used as in `compile-collection-extension',
+      The _info.ss_ file is used as in `compile-collection-extension',
       except for `compile-extension-omit-files'. In addition, the
       following two fields are used:
 
-       `compile-zo-omit-files' - a list of filenames to extend the
-         list returned for `compile-omit-files'.
+>      'compile-zo-omit-files - a list of filenames to extend the
+         list returned for 'compile-omit-files.
 
-       `compile-elaboration-zos' - a list of filenames (without paths);
+>      'compile-elaboration-zos - a list of filenames (without paths);
          the Scheme files in this list are compiled with elaborations 
          preserved (see MzLib's compile-file for information about 
          preserving elaborations). The files are compiled from left to
@@ -145,12 +146,12 @@ are documented in the next section.
          not need to be compiled, it is nevertheless loaded before 
          subsequent files in the list are compiled.
 
-       `compile-elaboration-zos-prefix' - an S-expression to use
+>      'compile-elaboration-zos-prefix - an S-expression to use
          as an elaboration-time prefix expression for compiling
-         the files returned for `compile-elaboration-zos'.
+         the files returned for 'compile-elaboration-zos.
 
       The main compilation process is driven by the `make-collection'
-      function in the "collection.ss" library of the "make"
+      function in the collection.ss library of the `make'
       collection. The elaboration-preserving compilation does not
       use make, but it only recompiles a file when the source file
       is newer.
@@ -160,9 +161,9 @@ are documented in the next section.
 Options for the Compiler
 ========================
 
-To set options for the "compile.ss" extension compiler, load the
-libray "option.ss".  (This library is automatically loaded by
-"compile.ss", but it can also be loaded earlier.) Options are set by
+To set options for the compile.ss extension compiler, load the
+libray _option.ss_.  (This library is automatically loaded by
+compile.ss, but it can also be loaded earlier.) Options are set by
 the following parameters:
 
 > compiler:option:verbose - #t causes the compiler to print
@@ -223,35 +224,37 @@ the following parameters:
 > compiler:option:test - #t ignores top-level expressions with syntax
    errors.  Default = #f.
 
-More options are defined by "mzscheme" "dynext"'s "compile.ss" and
-"link.ss" libraries.  Those options control the actual C compiler and
-linker that are used.  See "doc.txt" in the "mzscheme" "dynext"
-collection for more information about those options.
+More options are defined by the compile.ss and link.ss libraries in
+the `dynext' collection . Those options control the actual C compiler
+and linker that are used. See doc.txt in the `dynext' collection for
+more information about those options.
 
-The "optionr.ss" library is a unit/sig matching the signature
-`compiler:option^' containing these options.  (The unitized option
-names do not have the `compiler:option:' prefix.) The "sig.ss" library
-defines the `compiler:option^' signature.
+The _optionr.ss_ library is a unit/sig matching the signature
+>    compiler:option^
+which contains these options.  (The unitized option names do not have
+the `compiler:option:' prefix.) The _sig.ss_ library defines the
+`compiler:option^' signature.
 
 ---------------------------------------------------------------------------
 
 The Compiler as a Unit
 ======================
 
-The "compiler.ss" library is a unit/sig matching `compiler^' that
-provides the "compile.ss" functions.  This signature and all auxilliary
-signatures needed by "compiler.ss" are defined by the "sig.ss"
-library.
+The _compiler.ss_ library is a unit/sig matching the signature
+>      compiler^ 
+which provides the compile.ss functions.  This signature and all
+auxilliary signatures needed by compiler.ss are defined by the
+_sig.ss_ library.
 
-The "compiler.ss" signed unit requires the following imports:
+The compiler.ss signed unit requires the following imports:
 
-   compiler:option^ - from "optionr.ss" or "option.ss" (the latter
+   compiler:option^ - from optionr.ss or option.ss (the latter
                       uses a `compiler:option:' prefix)
    mzlib:function^
    mzlib:pretty-print^
    mzlib:file^
    mzlib:compile^
-   dynext:compile^ - From the collection "mzscheme" "dynext"
+   dynext:compile^ - From the `dynext' collection
    dynext:link^
    dynext:file^
 
@@ -260,12 +263,12 @@ The "compiler.ss" signed unit requires the following imports:
 Low-level Extension Compiler and Linker
 =======================================
 
-The high-level "compile.ss" interface relies on low-level
+The high-level compile.ss interface relies on low-level
 implementations of the extension compiler and linker.  (Of course, .zo
-compilation is handled by MzLib's "compile.ss" library.)
+compilation is handled by MzLib's compile.ss library.)
 
-The "loadr.ss" and "ldr.ss" libraries define unit/sigs for the
-low-level extension compiler and multi-file linker.  The "load.ss"
+The _loadr.ss_ and _ldr.ss_ libraries define unit/sigs for the
+low-level extension compiler and multi-file linker.  The _load.ss_
 library opens these units into the current namespace with the prefix
 `mzc:'.
 
@@ -298,30 +301,29 @@ The low-level functions are:
 > (mzc:link-extension object-and-kp-file-list dest-dir) - Links
     compiled object and .kp files into a multi-file extension.
 
-All but the last function are from the "loadr.ss" unit, and the
-last one is from "ldr.ss".  The "loadr.ss" unit/sig requires the
+All but the last function are from the loadr.ss unit, and the
+last one is from ldr.ss.  The loadr.ss unit/sig requires the
 following imports:
    mzlib:function^
    mzlib:pretty-print^
    mzlib:file^
-   dynext:compile^ - From the collection "mzscheme" "dynext"
+   dynext:compile^ - From the `dynext' collection
    dynext:link^
    dynext:file^
-   compiler:option^ - from "optionr.ss" or "option.ss" (the latter
+   compiler:option^ - from optionr.ss or option.ss (the latter
                       uses a `compiler:option:' prefix)
-and the "ldr.ss" unit/sig requires the following imports:
-   dynext:compile^ - From the collection "mzscheme" "dynext"
+and the ldr.ss unit/sig requires the following imports:
+   dynext:compile^ - From the `dynext' collection
    dynext:link^
    dynext:file^
    mzlib:function^
-   compiler:option^ - from "optionr.ss" or "option.ss" (the latter
+   compiler:option^ - from optionr.ss or option.ss (the latter
                       uses a `compiler:option:' prefix)
 
 ---------------------------------------------------------------------------
 
-Setup PLT: Collection Setup and Unpacking
-=========================================
->INDEX: ".plt" "setup-plt" "Setup PLT"
+_Setup PLT_ or _setup-plt_: Collection Setup and Unpacking
+==========================================================
 
 The Setup PLT executable (bin/setup-plt for Unix) performs two
 services:
@@ -344,7 +346,7 @@ services:
    can specify executables to be installed in the plt directory
    (plt/bin under Unix) or other installation actions.
 
- * Unpacking .plt files: A .plt file is a platform-indepedent
+ * Unpacking _.plt_ files: A .plt file is a platform-indepedent
    distribution archive for MzScheme- and MrEd-based software.
    When one or more file names are provided as the command line
    arguments to Setup PLT, the files contained in the .plt
@@ -364,7 +366,7 @@ Setup PLT attempts to compile and set up any collection that:
    set up with the `compile-subcollections' info.ss field);
    and
 
- * has the `name' info.ss field.
+ * has the 'name info.ss field.
 
 Collections meeting this criteria are compiled using the
 `compile-collection-zos' procedure described above. If the -e or
@@ -373,7 +375,7 @@ using the `compile-collection-extension' procedure described above.
 
 Additional info.ss fields trigger additional setup actions:
 
- * `mzscheme-launcher-names' - a list of executable names to be
+>  'mzscheme-launcher-names - a list of executable names to be
    installed in plt (or plt/bin) to run MzScheme programs implemented
    by the collection. A parallel list of library names must be
    provided by `mzscheme-launcher-libraries'. For each name, a
@@ -381,10 +383,10 @@ Additional info.ss fields trigger additional setup actions:
    `install-mzscheme-program-launcher'. If the executable already
    exists, no action is taken.
 
- * `mzscheme-launcher-libraries' - a list of library names in
+> 'mzscheme-launcher-libraries - a list of library names in
    parallel to `mzscheme-launcher-names'.
 
- * `mred-launcher-names' - a list of executable names to be installed
+>  'mred-launcher-names - a list of executable names to be installed
    in plt (or plt/bin) to run MrEd programs implemented by the
    collection.  A parallel list of library names must be provided by
    `mred-launcher-libraries'. For each name, a launching executable is
@@ -392,10 +394,10 @@ Additional info.ss fields trigger additional setup actions:
    `install-mred-program-launcher'. If the executable already exists,
    no action is taken.
 
- * `mred-launcher-libraries' - a list of library names in
+>  'mred-launcher-libraries - a list of library names in
    parallel to `mred-launcher-names'.
 
- * `install-collection' - a procedure that accepts a directory path
+>  'install-collection - a procedure that accepts a directory path
    argument (the path to the collection) and performs
    collection-specific installation work.  This procedure should avoid
    unnecessary work in the case that it is called multiple times for
@@ -418,17 +420,17 @@ a base64-encoded file is decoded).
 
 The raw format is
 
- * "PLT" is the first three characters.
+ * "PLT" are the first three characters.
 
  * An info.ss-like procedure that takes a symbol and a failure thunk
    and returns information about archive for recognized symbols. The
    two required info fields are:
 
-     + `name' - a human-readable string describing the archive's
+     + 'name - a human-readable string describing the archive's
        contents. This name is used only for printing messages to the
        user during unpacking.
 
-     + `unpacker' - a symbol indicating the expected unpacking
+     + 'unpacker - a symbol indicating the expected unpacking
        environment. Currently, the only allowed value is 'mzscheme.
 
    The procedure is extracted from the archive using MzScheme's
@@ -527,35 +529,36 @@ make .plt archives, especially under Unix:
  Setup PLT as a Unit
  -------------------
 
-The "setupr.ss" library in the "compiler" collection contains a signed
+The _setupr.ss_ library in the compiler collection contains a signed
 unit that imports
 
   compiler:setup-option^ - described below
   mzlib:file^
-  compiler^ - from "sig.ss" in "compiler", described above
-  compiler:option^  - from "sig.ss" in "compiler", described above
-  launcher-maker^ - "launchers.ss" in "launcher"
+  compiler^ - from sig.ss, described above
+  compiler:option^  - from sig.ss, described above
+  launcher-maker^ - from launchers.ss in the `launcher' collection
 
-Invoking this unit starts the setup process. The "setupsig.ss" library
-defines the compiler:setup-option^ signature, which is implemented by
-the unit in "setup-optionr.ss". It defines the following parameters
-that control the setup process:
+Invoking this unit starts the setup process. The _setupsig.ss_ library
+defines the
+>      compiler:setup-option^
+signature, which is implemented by the unit in _setup-optionr.ss_. It
+defines the following parameters that control the setup process:
 
- verbose - #t => prints message from `make' to stderr [default: #f]
- make-verbose - #t => verbose `make' [default: #f]
- compiler-verbose - #t => verbose `compiler' [default: #f]
- clean - #t => delete .zo and .so/.dll files in the specified collections
+> verbose - #t => prints message from `make' to stderr [default: #f]
+> make-verbose - #t => verbose `make' [default: #f]
+> compiler-verbose - #t => verbose `compiler' [default: #f]
+> clean - #t => delete .zo and .so/.dll files in the specified collections
          [default: #f]
- make-zo - #t => compile .zo files [default #t]
- make-so - #t => compile .so/.dll files [default: #f]
- make-launchers - #t => make collection info.ss-specified launchers
+> make-zo - #t => compile .zo files [default #t]
+> make-so - #t => compile .so/.dll files [default: #f]
+> make-launchers - #t => make collection info.ss-specified launchers
                    [default: #t]
- call-install - #t => call collection info.ss-specified setup code
+> call-install - #t => call collection info.ss-specified setup code
                  [default: #t]
- specific-collections - a list of collections to set up; the empty
+> specific-collections - a list of collections to set up; the empty
            list means set-up all collections if  the archives
            list is also empty [default: null]
- archives - a list of .plt archives to unpack; any collections specified
+> archives - a list of .plt archives to unpack; any collections specified
             by the archives are set-up in addition to the collections
             listed in specific-collections  [default: null]
 

@@ -1,10 +1,8 @@
 
-make.ss
--------
+_make.ss_
+---------
 
->INDEX: "make"
-
-The "make.ss" library in the "make" collection provides a `make' macro
+The make.ss library in the `make' collection provides a `make' macro
 and a `make/proc' procedure.
 
 > (make ((target (depend ...) command ...) ...) argv)
@@ -60,12 +58,12 @@ lines for dependancies that have a corresponding make line.  Defaultly
 > (make-print-reasons [on?]) If #t, make prints the reason for each
 dependancy that fires. Defaultly #t.
 
-collection.ss
--------------
+_collection.ss_
+---------------
 
->INDEX: "collections, compiling"
+ [index entry: _collections, compiling_]
 
-The "collection.ss" library in the "make" collection provides a
+The collection.ss library in the make collection provides a
 `make-collection' procedure.
 
 > (make-collection collection-name et-expr collection-files argv)

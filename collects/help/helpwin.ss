@@ -247,11 +247,12 @@
   (define enbolden (make-object style-delta% 'change-bold))
 
   (define (find-start key name)
-    (let ([l (string-length key)])
-      (let loop ([n 0])
-	(if (string=? key (substring name n (+ n l)))
-	    n
-	    (loop (add1 n))))))
+    (with-handlers ([void (lambda (x) #f)])
+      (let ([l (string-length key)])
+	(let loop ([n 0])
+	  (if (string=? key (substring name n (+ n l)))
+	      n
+	      (loop (add1 n)))))))
 
   (define (add-choice key name title page label ckey)
     (semaphore-wait choices-sema)
@@ -279,8 +280,9 @@
 			      [key-start (find-start key name)])
 			  (send editor insert (format " in ~s~n" title) end 'same #f)
 			  (send editor make-link-style start end)
-			  (send editor change-style enbolden (+ key-start start) 
-				(+ key-start start (string-length key)))
+			  (when key-start
+			    (send editor change-style enbolden (+ key-start start) 
+				  (+ key-start start (string-length key))))
 			  (send editor set-clickback start end
 				(lambda (edit start end)
 				  (send results goto-url 
@@ -333,24 +335,7 @@
 
   ; Check collections for doc.txt files:
   (define-values (txt-docs txt-doc-names)
-    (let loop ([collection-paths (current-library-collection-paths)]
-	       [docs null]
-	       [names null])
-      (cond
-       [(null? collection-paths)
-	(values docs names)]
-       [else (let ([path (car collection-paths)])
-	       (let cloop ([l (with-handlers ([void (lambda (x) null)]) (directory-list path))]
-			   [docs docs]
-			   [names names])
-		 (cond
-		  [(null? l) (loop (cdr collection-paths) docs names)]
-		  [(and (directory-exists? (build-path path (car l)))
-			(not (member (car l) names))
-			(file-exists? (build-path path (car l) "doc.txt")))
-		   (cloop (cdr l) (cons (build-path path (car l)) docs)
-			  (cons (car l) names))]
-		  [else (cloop (cdr l) docs names)])))])))
+    ((require-library "colldocs.ss" "help") quicksort))
 
   (define docs (append std-docs txt-docs))
   (define doc-names (append std-doc-names (map (lambda (s) (format "~a collection" s)) txt-doc-names)))
@@ -423,7 +408,7 @@
 		  [(handle-one r start) => (lambda (vs) (append vs (loop next)))]
 		  [else (loop next)])))))))))
 
-  (define re:keyword-line (regexp "^>[^I]"))
+  (define re:keyword-line (regexp "^>"))
   (define text-keywords (make-hash-table))
   (define (load-txt-keywords doc)
     (parse-txt-file
@@ -437,7 +422,9 @@
 		[key (let loop ([entry entry])
 		       (cond
 			[(symbol? entry) entry]
-			[(pair? entry) (loop (car entry))]
+			[(pair? entry) (if (eq? (car entry) 'quote)
+					   (loop (cadr entry))
+					   (loop (car entry)))]
 			[else (error "bad entry")]))]
 		[content (if (symbol? entry)
 			     (with-handlers ([not-break? (lambda (x) #f)])
@@ -452,14 +439,17 @@
 		  (let ([p (open-output-string)])
 		    (if content
 			(display content p)
-			(display entry p))
+			(if (and (pair? entry) 
+				 (eq? (car entry) 'quote))
+			    (fprintf p "'~s" (cadr entry))
+			    (display entry p)))
 		    (get-output-string p)) ; the text to display
 		  "doc.txt" ; file
 		  start ; label (a position in this case)
 		  "doc.txt")))] ; title
 	[else #f]))))
 
-  (define re:index-line (regexp "^>INDEX:(.*)"))
+  (define re:index-line (regexp "_([^_]*)_(.*)"))
   (define text-indices (make-hash-table))
   (define (load-txt-index doc)
     (parse-txt-file
@@ -469,15 +459,15 @@
        (cond
 	[(regexp-match re:index-line r)
 	 => (lambda (m)
-	      (let ([p (open-input-string (cadr m))])
-		(let loop ()
-		  (let ([r (read p)])
-		    (if (eof-object? r)
-			null
-			(cons
-			 ; Make an index entry:
-			 (cons r start)
-			 (loop)))))))]
+	      (let loop ([m m])
+		(let ([s (cadr m)])
+		  (cons 
+		    ; Make an index entry:
+		   (cons s start)
+		   (let ([m (regexp-match re:index-line (caddr m))])
+		     (if m
+			 (loop m)
+			 null))))))]
 	[else #f]))))
 
   (define (non-regexp s)

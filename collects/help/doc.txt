@@ -1,35 +1,32 @@
 
->INDEX: "documentation"
-
-The "help" collection provides tools for working with the Help Desk.
+The `help' collection provides tools for working with _Help Desk_.
 
 Running or Embedding Help Desk
 ==============================
 
-Loading the "help.ss" library directly executes the Help Desk
-program. The "helpr.ss" library provides the Help Desk as a unit with
+Loading the _help.ss_ library directly executes the Help Desk
+program. The _helpr.ss_ library provides the Help Desk as a unit with
 the following imports:
 
-  help:option^ - described below
+> help:option^ - described below
   mzlib:function^
   mzlib:string^
   mzlib:file^
   mzlib:url^ - not really in MzLib; it's in the "net" collection
   mred^
 
-The help:option^ signature is defined in "sig.ss". It contains one
-item: `startup-url'. The value of `startup-url' must be a url (a
-string or a url record) which is used as the initial page for the Help
-Desk.
+The help:option^ signature is defined in _sig.ss_. It contains one
+item:
+
+>  startup-url - a url (a string or a url record) which is used as the
+                 initial page for the Help Desk.
 
 Invoking the Help Desk unit executes the Help Desk program. Thus, when
 linking Help Desk into a larger program, all of its imports must be
 initialized before the Help Desk unit itself.
 
-Producing Help Desk Documentation
-=================================
-
->INDEX: "creating help desk documents" 
+_Creating Help Desk Documentation_
+==================================
 
 Help Desk combines an HTML browser with a search engine. The search
 engine looks for information in three places:
@@ -70,21 +67,24 @@ procedure or method.
 The Help Desk locates the installed documentation as follows:
 
  * Help Desk checks each top-level collection to see if it contains a
-   "doc.txt" file for collection-specific, text-based documentation.
+   doc.txt file for collection-specific, text-based documentation.
 
  * Help Desk checks plt/collects/doc for more general, HTML-formatted
    documentaion.
 
 The two documentation formats are described below.
 
-The doc.txt Format
-------------------
-
->INDEX: "doc.txt" ">INDEX:"
+The _doc.txt_ Format
+--------------------
 
 The Help Desk inspects each top-level collection to see if it contains
-a "doc.txt" file. If so, the "doc.txt" file is parsed for index and
-keyword entries.
+a doc.txt file. If so, the doc.txt file is parsed for index and
+keyword entries. If a top-level collection contains a info.ss file
+with a
+>   'doc-sub-collections
+field  (see the mzc manual for information about info.ss), then the
+field's value should be a list of sub-collections to search for
+doc.txt files (or even nested info.ss files).
 
 No annotations are removed from a doc.txt file before it is presented
 to the user. Thus, despite the annotations described below, "doc.txt"
@@ -93,15 +93,9 @@ is a WYSIWYG documentation format.
 Index Entry Annotations
 - - - - - - - - - - - -
 
-An index entry is specified by starting a line with:
-
-  >INDEX:
-
-There can be no spaces at the beginning of the line before the
-">". After the colon, specify a sequence of index entries as Scheme
-string.
-
-Notice that this "doc.txt" section begins with an index specification.
+An index entry is specified by surrounding the indexed phrase with
+underscores. For example, the both of the section titles preceding
+current are indexed: "Creating Help Desk Documentation" and "doc.txt".
 
 Keyword Entry Annotations
 - - - - - - - - - - - - -
@@ -110,10 +104,9 @@ A keyword entry is specified using
 
   >
 
-at the beginning of a line, with no spaces before the ">" and
-something other than "I" after ">" (normally, a space follows the
-">"). After the ">", put an S-expression that contains only
-symbols. The leftmost atom must be a symbol, and this symbol is used
+at the beginning of a line. After the ">", put an S-expression that
+contains only symbols. (Spaces between ">" and the S-expression are
+ignored.) The leftmost atom must be a symbol, and this symbol is used
 as the key for the entry, whereas the whole S-expression is displayed
 when the user searches on the key.
 
@@ -125,8 +118,8 @@ When the user searches on "cons", the Help Desk will display a link
 that looks something like
 
  In mytools collection:
-   _(cons v list)_ in "doc.txt"
-
+   (cons v list) in "doc.txt"
+    ^^^^^^^^^^^
 Note that a search on "list" will not reveal this entry, because
 "cons" is used as the key, not the whole S-expression.
 
@@ -142,24 +135,24 @@ follows:
 
   > set-title :: (send o set-title string) - sets the title
 
-The "(send o set-title string)" part allows a Help Desk user can learn
+The "(send o set-title string)" part allows a Help Desk user to learn
 about the calling convention of `set-title' without accessing the
 documentation directly.
 
 The HTML Format
 ---------------
 
-HTML documention is put in its own sub-directory in the "doc"
+HTML documention is put in its own sub-directory in the `doc'
 collection. For example, the MzScheme manual is in the directory
-plt/collects/doc/mzscheme. The starting point for the manual must be
+plt/collects/doc/mzscheme. The starting point for each manual must be
 called "index.htm" (no "l").
 
 In addition to HTML files, a manual directory can contain a "keywords"
-file, which maps keywords to HTML pages and labels, and a "hdindex"
+file, which maps keywords to HTML pages and labels, and an "hdindex"
 file, which similarly maps index entries HTML pages.
 
-The "keywords" File
-- - - - - - - - - -
+The _"keywords"_ File
+- - - - - - - - - - -
 
 The "keywords" file must contain one S-expression (not evaluated),
 which is a list of keyword entries. Each keyword entry is a list of
@@ -181,8 +174,8 @@ five values:
 
 See plt/collects/doc/mzscheme/keywords for an example.
 
-The "hdindex" File
-- - - - - - - - - 
+The _"hdindex"_ File
+- - - - - - - - - -
 
 The "hdindex" file is similar to the "keywords" file; it must contain
 one S-expression (not evaluated), which is a list of index entries.

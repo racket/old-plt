@@ -1,11 +1,9 @@
 
->INDEX: "browser" "HTML" "hypertext"
-
-The "browser.ss" library in the "browser" collection provides the
-following procedures and classes for parsing and vewing HTML files.
+The _browser.ss_ library in the "browser" collection provides the
+following procedures and classes for parsing and veiwing _HTML_ files.
 
 The browser supports basic HTML commands, plus special Scheme
-hyperlinks of the form <A SCHEME=sexpr>...</A>. When the user clicks
+hyperlinks of the form <A MZSCHEME=sexpr>...</A>. When the user clicks
 on such a link, the string `sexpr' is parsed as a Scheme program and
 evaluated. Since `sexpr' is likely to contain Scheme strings, and
 since escape characters are difficult for people to read, a vertical
@@ -18,9 +16,9 @@ creates a "Nowhere" hyperlink, which executes the Scheme program
 
   "This goes nowhere."
 
-The values of that program is a string. When a Scheme hyperlink
-returns a string, it is parsed as a new HTML document. Thus, where the
-use clicks on "Nowhere", the result is a new page that says "This goes
+The value of that program is a string. When a Scheme hyperlink returns
+a string, it is parsed as a new HTML document. Thus, where the use
+clicks on "Nowhere", the result is a new page that says "This goes
 nowhere."
 
 ----------------------------------------

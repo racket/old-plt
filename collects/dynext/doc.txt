@@ -1,12 +1,10 @@
 
->INDEX: "dynext"
+The _dynext_ collection provides three libraries --- compile.ss,
+link.ss, and file.ss --- for communicating with a platform-specific C
+compiler and linker.
 
-The dynext collection provides three libraries: compile.ss, link.ss,
-and file.ss.
-
->INDEX: "compile.ss"
-compile.ss
-----------
+_compile.ss_
+------------
 
 > (compile-extension quiet? input-file output-file includes)
    quiet? - Boolean indicating whether command should be echoed to stdout
@@ -58,11 +56,11 @@ Under MacOS, none of these options are used. The compiler always
 uses CodeWarrior if it can be found and the compilation options
 cannot be changed.
 
-The unit/sig form defined by "compiler.ss" requires no imports.
+The unit/sig form defined by _compiler.ss_ (signature in
+_compiles.ss_) requires no imports.
 
->INDEX: "link.ss"
-link.ss
--------
+_link.ss_
+---------
 
 > (link-extension quiet? input-files output-file)
    quiet? - Boolean indicating whether command should be echoed to stdout
@@ -105,11 +103,11 @@ Under MacOS, none of these options are used. The linker always uses
 CodeWarrior if it can be found and the linking options cannot be
 changed.
 
-The unit/sig form defined by "linkr.ss" requires no imports.
+The unit/sig form defined by _linkr.ss_ (signature in _links.ss_)
+requires no imports.
 
->INDEX: "file.ss"
-file.ss
--------
+_file.ss_
+---------
 
 > (append-zo-suffix s) - appends the .zo file suffix to s.
 
@@ -143,5 +141,5 @@ file.ss
 > (extract-base-filename/ext s program) - same as
    extract-base-filename/ss, but for extension files.
 
-The unit/sig form defined by "filer.ss" requires no imports.
-
+The unit/sig defined by _filer.ss_ (signature in _files.ss_) requires
+no imports.

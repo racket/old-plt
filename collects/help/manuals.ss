@@ -37,29 +37,8 @@
 		    [else (loop)]))))))
 	 doc-paths)])
   (let-values ([(collections collection-names)
-		(let loop ([collection-paths (current-library-collection-paths)]
-			   [docs null]
-			   [names null])
-		  (cond
-		   [(null? collection-paths)
-		    (let ([sorted
-			   (quicksort (map cons docs names)
-				      (lambda (a b)
-					(string<? (cdr a) (cdr b))))])
-		      (values (map car sorted) (map cdr sorted)))]
-		   [else (let ([path (car collection-paths)])
-			   (let cloop ([l (with-handlers ([void (lambda (x) null)]) (directory-list path))]
-				       [docs docs]
-				       [names names])
-			     (cond
-			      [(null? l) (loop (cdr collection-paths) docs names)]
-			      [(and (directory-exists? (build-path path (car l)))
-				    (not (member (car l) names))
-				    (file-exists? (build-path path (car l) "doc.txt")))
-			       (cloop (cdr l) (cons (build-path path (car l)) docs)
-				      (cons (car l) names))]
-			      [else (cloop (cdr l) docs names)])))]))])
-    
+		((require-library "colldocs.ss" "help") quicksort)])
+
     (apply
      string-append
      "<TITLE>Installed Manuals</TITLE>"

@@ -1,8 +1,7 @@
 
->INDEX: "launchers"
-
-The launcherr.ss library in the "launcher" collection imports nothing
-and exports the following procedures.
+The _launcherr.ss_ library in the "launcher" collection imports
+nothing and exports the following procedures for creating MzScheme and
+MrEd launcher executables:
 
 > (make-mred-launcher args dest) - Creates the launcher `dest'. The
    `dest' executeable (for the current OS platform) will start MrEd

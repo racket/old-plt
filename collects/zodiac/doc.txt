@@ -1,8 +1,6 @@
 
-Using Zodiac
-------------
-
->INDEX: "zodiac"
+Using _Zodiac_
+--------------
 
 The top-level way:
 
@@ -83,12 +81,12 @@ Handler Parameters
 Error Handlers
 --------------
 
->INDEX: "zodiac:interface^" "zodiac:static-error" "zodiac:internal-error"
-
-Zodiac relies on two error handles that are provided by the
- zodiac:interface^ import: internal-error (for when things go wrong in
- zodiac that should never go wrong) and static-error (for input errors
- during read or expand).
+Zodiac relies on two error handlers that are provided by its
+>     zodiac:interface^
+import: 
+>   internal-error - for when things go wrong in zodiac that should
+                     never go wrong
+>   static-error - for input errors during read or expand.
 
 A zodiac error handler takes a zodiac AST followed by format-style
  arguments. For example:
@@ -100,9 +98,9 @@ A zodiac error handler takes a zodiac AST followed by format-style
 Example
 -------
 
- > (require-library "invoke.ss" "zodiac")
- > (zodiac:invoke-system)
- > (let ([r ((zodiac:read (open-input-string "(cons 1 null)")
-                          (zodiac:make-location 1 1 0 "string")))])
-     (eval (zodiac:parsed->raw (zodiac:scheme-expand r))))
+  (require-library "invoke.ss" "zodiac")
+  (zodiac:invoke-system)
+  (let ([r ((zodiac:read (open-input-string "(cons 1 null)")
+                         (zodiac:make-location 1 1 0 "string")))])
+    (eval (zodiac:parsed->raw (zodiac:scheme-expand r))))
   = (list 1)

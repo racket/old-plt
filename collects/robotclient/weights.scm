@@ -117,7 +117,7 @@
 			  1)])
 		(values weight (if (= (round bid) 0)
                                    1
-                                   (round bid)) null null))]
+                                   (inexact->exact (round bid))) null null))]
 	   [(eq? mtype 'd)
 	    (let* ([ptod (get-packages-for x y (search-player-packages (player-cur)))]
 		   [weight (+ (if (could-player-move? (board) x y p)
@@ -136,7 +136,7 @@
 			    1)])
 	      (values weight (if (= (round bid) 0)
                                  1
-                                 (round bid)) ptod null))]
+                                 (inexact->exact (round bid))) ptod null))]
 	   [(eq? mtype 'p)
 	    (let* ([spack 
                     (begin

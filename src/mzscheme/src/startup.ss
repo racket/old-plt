@@ -3180,7 +3180,10 @@
 			    (string-append
 			     " (relative string form must contain only a-z, A-Z, 0-9, -, _, ., /, and "
 			     "space, with no leading or trailing /)"))))]
-		    [(path? s) s]
+		    [(path? s) 
+		     (if (absolute-path s)
+			 s
+			 (list "(a path must be absolute)"))]
 		    [(or (not (pair? s))
 			 (not (list? s)))
 		     #f]

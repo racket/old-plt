@@ -2207,7 +2207,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
     backlog = SCHEME_INT_VAL(argv[1]);
   else
     backlog = 4;
-  if (argc > 3) {
+  if ((argc > 3) && SCHEME_TRUEP(argv[3])) {
     Scheme_Object *bs;
     bs = scheme_char_string_to_byte_string(argv[3]);
     address = SCHEME_BYTE_STR_VAL(bs);

@@ -38,7 +38,7 @@
     (define const-default-spacing 10)
     
     ; default spacing around edge of panel
-    (define const-default-border 10)
+    (define const-default-border 5)
     
     (define counter 0)
     
@@ -99,7 +99,6 @@
 	    get-x
 	    get-y
 	    get-parent)
-;	    set-size)
 
 	  (rename
 	    [super-set-size set-size])
@@ -211,8 +210,7 @@
 						(stretchable-in-x?)
 						(stretchable-in-y?))])
 		  (mred:debug:printf 'container-child-get-info
-		    "container-child-get-info: Result: ~s"
-		    result)
+		    "container-child-get-info: Result: ~s" result)
 		  result))]
 	    
 	    ; force-redraw: unconditionally trigger redraw.
@@ -222,14 +220,20 @@
 	    ;   itself. This will recompute the min-size cache if it is
 	    ;   invalid.
 	    [force-redraw
-	      (lambda ()
-		(mred:debug:printf 'container-child-force-redraw
-		  "container-child-force-redraw: Entering force-redraw; object ~s"
-		  object-ID)
+	     (lambda ()
+		(mred:debug:printf
+		 'container-child-force-redraw
+		 (string-append
+		  "container-child-force-redraw: "
+		  "Entering force-redraw; object ~s")
+		 object-ID)
 		(let ([parent (get-parent)])
 		  (unless (null? parent)
-		    (mred:debug:printf 'container-child-force-redraw
-		      "container-child-force-redraw: calling parent's force-redraw and quitting")
+		    (mred:debug:printf
+		     'container-child-force-redraw
+		     (string-append
+		      "container-child-force-redraw: "
+		      "calling parent's force-redraw and quitting"))
 		    (send parent force-redraw))))]
 	    
 	    ; set-size
@@ -355,8 +359,11 @@
 		      [delta-h (- (get-height) client-height)]
 		      [horizontal? (positive? (bitwise-and style
 						wx:const-horizontal))])
-		  (mred:debug:printf 'container-child-set-min-sizes
-		    "container-child-set-min-sizes: entering gauge set-min-size; args ~s ~s"
+		  (mred:debug:printf
+		   'container-child-set-min-sizes
+		   (string-append
+		    "container-child-set-min-sizes: "
+		    "entering gauge set-min-size; args ~s ~s")
 		    range style)
 		  (mred:debug:printf 'container-child-set-min-sizes
 		    "container-child-set-min-sizes: client size: ~s x ~s"
@@ -415,9 +422,8 @@
 				      [y const-default-posn]
 				      [w const-default-size]
 				      [h const-default-size] . args)
-		    (append (list parent callback label multiple-selection x y
-				  const-default-size const-default-size)
-			    args))))
+		    (list* parent callback label multiple-selection x y
+			   const-default-size const-default-size args))))
     
     (define message%
       (make-item% wx:message% #f #f list))
@@ -467,8 +473,11 @@
 		      [range (add1 (- max-val min-val))]
 		      [horizontal? (positive? (bitwise-and style
 						wx:const-horizontal))])
-		  (mred:debug:printf 'container-child-set-min-sizes
-		    "container-child-set-min-sizes: Entering slider's set-min-size; args ~s ~s ~s"
+		  (mred:debug:printf
+		   'container-child-set-min-sizes
+		   (string-append
+		    "container-child-set-min-sizes: "
+		    "Entering slider's set-min-size; args ~s ~s ~s")
 		    min-val max-val style)
 		  (mred:debug:printf 'container-child-set-min-sizes
 		    "container-child-set-min-sizes: Client size: ~s x ~s"
@@ -476,12 +485,14 @@
 		  (mred:debug:printf 'container-child-set-min-sizes
 		    "container-child-set-min-sizes: Full size: ~s x ~s"
 		    full-width full-height)
-		  (mred:debug:printf 'container-child-set-min-sizes
-		    "container-child-set-min-sizes: setting sizes and leaving")
+		  (mred:debug:printf 
+		   'container-child-set-min-sizes
+		   (string-append
+		    "container-child-set-min-sizes: "
+		    "setting sizes and leaving"))
 		  (set! min-width
 		    (if horizontal?
-			(+ (* range pixels-per-value)
-			   (- full-width client-w))
+			(+ (* range pixels-per-value) (- full-width client-w))
 			full-width))
 		  (set! min-height
 		    (if horizontal?
@@ -497,9 +508,8 @@
 		  [x const-default-posn]
 		  [y const-default-posn]
 		  [style wx:const-horizontal] . args)
-		(append (list parent func label value min max default-width
-			  x y style)
-		  args))
+		(list* parent func label value min max default-width x y style
+		       args))
 	      args))
 	  (apply (opt-lambda     ; set min size, stretchability.
 		   (parent func label value min max width
@@ -527,9 +537,8 @@
 				      [y const-default-posn]
 				      [w const-default-size]
 				      [h const-default-size] . args)
-		    (append (list parent callback label val x y
-				  const-default-size const-default-size)
-			    args))))
+		    (list* parent callback label val x y
+			   const-default-size const-default-size args))))
     
     (define multi-text%
       (make-item% wx:multi-text% #t #t
@@ -539,64 +548,20 @@
 				      [y const-default-posn]
 				      [w const-default-size]
 				      [h const-default-size] . args)
-		    (append (list parent callback label val x y
-				  const-default-size const-default-size)
-			    args))))
+		    (list* parent callback label val x y
+			   const-default-size const-default-size args))))
     
-    (define make-canvas%
-      (lambda (base%)
-	(class (make-item% base% #t #t
-			   (opt-lambda (parent [x const-default-posn]
-					       [y const-default-posn]
-					       [w const-default-size]
-					       [h const-default-size] . args)
-			     (append (list parent x y const-default-size
-					   const-default-size)
-				     args)))
-	  args
-	  
-	  (inherit
-	    force-redraw
-	    get-client-size
-	    get-height
-	    get-width
-	    min-height
-	    min-width)
-	  
-	  (private
-	    ; the smallest possible client size for the canvas.
-	    [smallest-client-size 5]
-	    
-	    ; find-min-size: determines the minimum possible size for the
-	    ; canvas.
-	    ; input: none
-	    ; returns: nothing
-	    ; effects: sets min-height and min-width to the smallest
-	    ;   possible size of the canvas (defined to be that size which
-	    ;   results in the client area of the canvas being 5 x 5).
-	    [find-min-size
-	      (lambda ()
-		(let-values ([(width height)
-			      (get-two-int-values get-client-size)])
-		  (mred:debug:printf 'container-canvas-find-min-size
-		    "container-canvas-find-min-size: entering find-min-size.  client size: ~s x ~s"
-		    width height)
-		  (mred:debug:printf 'container-canvas-find-min-size
-		    "container-canvas-find-min-size: Full size: ~s x ~s" (get-width) (get-height))
-		  (let* ([delta-x (- (get-width) width)]
-			 [delta-y (- (get-height) height)])
-		    (mred:debug:printf 'container-canvas-find-min-size
-		      "container-canvas-find-min-size: setting sizes, forcing redraw, and quitting.")
-		    (set! min-height (+ smallest-client-size delta-y))
-		    (set! min-width (+ smallest-client-size delta-x))
-		    ; we have to invalidate the parent's child-info cache
-		    ; because we got added to it before we computed our
-		    ; minimum size.
-		    (force-redraw))))])
-	  (sequence
-	    (apply super-init args)
-	    (find-min-size)))))
+    (define canvas-default-size 30)
+    ; an arbitrary default size for canvases to avoid initial size problems
+    ; under xt.
     
-    (define canvas% (make-canvas% wx:canvas%))
-    (define media-canvas% (make-canvas% wx:media-canvas%))		    
-    (define text-window% (make-canvas% wx:text-window%))))    
+    (define canvas-args
+      (opt-lambda (parent [x const-default-posn]
+			  [y const-default-posn]
+			  [w canvas-default-size]
+			  [h canvas-default-size] . args)
+	(list* parent x y canvas-default-size canvas-default-size args)))
+    
+    (define canvas% (make-item% wx:canvas% #t #t canvas-args))
+    (define media-canvas% (make-item% wx:media-canvas% #t #t canvas-args))
+    (define text-window% (make-item% wx:text-window% #t #t canvas-args))))

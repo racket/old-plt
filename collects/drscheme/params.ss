@@ -43,13 +43,7 @@
 
   (define current-interactions-edit%
     (make-parameter 
-     (begin0
-       (class-asi mred:edit%
-	 (public
-	   [enable-autoprompt void]
-	   [insert-prompt void]
-	   [initialize-console void]))
-       drscheme:rep:edit%)
+     drscheme:rep:edit%
      (lambda (x)
        (if (subclass? x wx:media-edit%)
 	   x

@@ -65,8 +65,13 @@
              '())))))
 
 
-  ;; url->servlet-path: path url -> (union path #f)
-  ;; given a servlet directory and url, find a servlet
+  ;; url->servlet-path: path url -> (values (union path #f)
+  ;;                                        (union (listof url->string) #f)
+  ;;                                        (union (listof string) #f))
+  ;; Given a servlet directory and url, find a servlet.
+  ;;   The first value is the servlet path.
+  ;;   The second value is the prefix of the url-path used to find the servlet.
+  ;;   The third value is the remaining suffix of the url-path.
   (define (url->servlet-path servlet-dir uri)
     (printf "   current-directory = ~s~n" (current-directory))
     (let loop ([base-path servlet-dir]

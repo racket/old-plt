@@ -3,10 +3,8 @@
            (lib "url.ss" "net")
            (lib "request-parsing.ss" "web-server")
            (lib "response.ss" "web-server"))
-  (provide current-session
-           start-session
-           encode-session
-           )
+  (require-for-syntax (lib "url.ss" "net"))
+  (provide current-session)
   
   (define-struct session (id cust namespace handler url))
   
@@ -17,7 +15,8 @@
                     [handler (request? . -> . response?)]
                     [url url?])]
    [lookup-session (number? . -> . (union session? boolean?))]
-   [new-session (custodian? namespace? url? . -> . session?)])
+   [new-session (custodian? namespace? url? . -> . session?)]
+   [start-session ((request? . -> . response?) . -> . any)])
   
   (define current-session (make-parameter #f))
   
@@ -55,7 +54,7 @@
   (define (lookup-session ses-id)
     (hash-table-get the-session-table ses-id (lambda () #f)))
   
-  ;; encode-session: url -> url
+  ;; encode-session: url number -> url
   (define (encode-session a-url ses-id)
     (insert-param a-url (number->string ses-id)))
   
@@ -89,6 +88,7 @@
        new-path
        (url-query in-url)
        (url-fragment in-url))))
+
   )
   
     

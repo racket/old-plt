@@ -33,7 +33,7 @@
 
 (define mred:startup
   (lambda ()
-    (make-object mred:console%)))
+    (make-object mred:console-frame%)))
 
 ;; called with the arguments on the command line
 (define mred:initialize

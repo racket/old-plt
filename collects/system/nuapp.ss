@@ -11,6 +11,7 @@
 		     (import mred:application-imports^
 			     [mred : mred^])
 		     (define app-name "MrEd")
+		     (define console #f)
 		     (define eval-string (lambda (s)
 					   (if console
 					       (let ([ce (send console get-edit)])

@@ -329,8 +329,7 @@
 	      (lambda ()
 		(let ([lib-dir (build-path 
 				(collection-path "mzlib") 
-				".." ".." 
-				"lib")])
+				'up 'up "lib")])
 		  (if (directory-exists? lib-dir)
 		      (set! the-dir lib-dir)
 		      (set! the-dir ()))))])

@@ -193,7 +193,8 @@
 		      [orig (#%gensym)]
 		      [pz (#%gensym)])
 		 `(#%let* ([param ,param]
-                           [,pz ,param])
+                           [,pz ,param]
+			   [,orig (,pz)])
 			  (#%dynamic-wind
 			   (#%lambda () (,pz ,(#%cadar params)))
 			   (#%lambda () (parameterize* ,(cdr params) ,@body))

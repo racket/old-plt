@@ -77,9 +77,6 @@
 
 (require-library "load.ss" "zodiac")
 (require-library "sigs.ss" "mrspidey" "Sba")
-(define mrspidey:sba@
-  (require-library "link.ss" "mrspidey" "Sba"))
-
 (require-library "drspidey.ss" "mrspidey")
 
 (define mrspidey:interaction@

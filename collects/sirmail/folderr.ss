@@ -2,11 +2,10 @@
 (module folderr mzscheme
   (require (lib "unitsig.ss")
            (lib "class.ss")
-           (lib "class100.ss")
+           (lib "framework.ss" "framework")
            (lib "mred-sig.ss" "mred"))
   
-  (require (lib "string.ss")
-           (lib "list.ss")
+  (require (lib "list.ss")
            (lib "etc.ss"))
   
   (require "sirmails.ss")
@@ -37,35 +36,29 @@
 
       (define imap-mailbox-name-mixin
         (lambda (list%)
-          (class100 list% args
-            (private-field
+          (class list%
+            (field
              [full-mailbox-name 'unknown-full-mailbox-name])
-            (public
-              [set-full-mailbox-name
-               (lambda (fm)
-                 (set! full-mailbox-name fm))]
-              [get-full-mailbox-name
-               (lambda ()
-                 full-mailbox-name)])
-            (sequence
-              (apply super-init args)))))
+            [define/public set-full-mailbox-name
+              (lambda (fm)
+                (set! full-mailbox-name fm))]
+            [define/public get-full-mailbox-name
+             (lambda ()
+               full-mailbox-name)]
+            (super-instantiate ()))))
       
       (define imap-mailbox-list-mixin
         (lambda (list%)
-          (class100 list% args
-            (private-field
+          (class list%
+            (field
              [mailbox-name 'unknown-mailbox-name])
-            (public
-              [get-mailbox-name
-               (lambda ()
-                 mailbox-name)]
-              [set-mailbox-name
-               (lambda (m)
-                 (set! mailbox-name m))])
-            
-            (inherit new-list new-item delete-item get-items)
-            (sequence
-              (apply super-init args)))))
+            [define/public get-mailbox-name
+              (lambda ()
+                mailbox-name)]
+            [define/public set-mailbox-name
+              (lambda (m)
+                (set! mailbox-name m))]
+            (super-instantiate ()))))
       
       ;; mailbox-folder = (make-deep-folder string string nested-mailbox-folder)
       ;; nested-mailbox-folder = 
@@ -173,25 +166,23 @@
          imap-mailbox-name-mixin))
       
       (define imap-top-list% 
-        (class100 (imap-mailbox-list-mixin hierarchical-list%) (frame)
-          (private-field
+        (class (imap-mailbox-list-mixin hierarchical-list%) 
+          (field
            [selected-mailbox #f])
-          (public
-            [get-selected-mailbox
-             (lambda ()
-               selected-mailbox)])
+          [define/public get-selected-mailbox
+            (lambda ()
+              selected-mailbox)]
           (rename [super-on-select on-select])
-          (override
-            [on-select
-             (lambda (i)
-               (set! selected-mailbox (and i (send i get-full-mailbox-name)))
-               (send open-button enable i)
-               (send open-button set-label
-                     (if i
-                         (format "Open ~a" (send i get-full-mailbox-name))
-                         "Open ..."))
-               (super-on-select i))])
-          (sequence (super-init frame))))
+          (define/override on-select
+            (lambda (i)
+              (set! selected-mailbox (and i (send i get-full-mailbox-name)))
+              (send open-button enable i)
+              (send open-button set-label
+                    (if i
+                        (format "Open ~a" (send i get-full-mailbox-name))
+                        "Open ..."))
+              (super-on-select i)))
+          (super-instantiate ())))
       
       (define (update-gui orig-mbf)
         (define (add-child hl mbf)
@@ -220,7 +211,7 @@
         (send (send top-list get-editor) end-edit-sequence))
       
       (define folders-frame%
-        (class frame%
+        (class frame:basic%
           (define/override (on-close)
             (shutdown-folders-window))
           (define/override (on-message msg)
@@ -258,7 +249,7 @@
       (define icon-mask (make-object bitmap% (build-path (collection-path "sirmail")
                                                          "postmark-mask.xbm")))
       (define frame (make-object folders-frame% "Folders"))
-      (define top-panel (make-object horizontal-panel% frame))
+      (define top-panel (make-object horizontal-panel% (send frame get-area-container)))
       (send top-panel stretchable-height #f)
       
       (define re:setup-mailboxes (regexp "^([^/]*)/(.*)$"))
@@ -326,7 +317,7 @@
       (send open-button stretchable-width #t)
       (send open-button enable #f)
       
-      (define top-list (make-object imap-top-list% frame))
+      (define top-list (make-object imap-top-list% (send frame get-area-container)))
       
       (when (and (send icon ok?) (send icon-mask ok?))
         (send frame set-icon icon icon-mask 'both))

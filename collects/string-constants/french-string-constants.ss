@@ -360,6 +360,9 @@
  ; ~a is filled with the filename
  (error-saving "Erreur durant la sauvegarde") ;; title of error message dialog
  (error-saving-file/name "Une erreur s'est produite durant la sauvegarde de ~a.")
+ (error-loading "Erreur durant le chargement")
+ (error-loading-file/name "Une erreur s'est produite durant le chargement de ~a.")
+ (unknown-filename "<< inconnu >>")
  
  ;;; finder dialog
  (must-specify-a-filename "Vous devez spécifier un nom de fichier.")
@@ -487,6 +490,7 @@
  (bring-frame-to-front... "Amener une fenêtre au premier plan...") ;;; corresponding title of menu item
  (next-window "Fenêtre suivante")
  (previous-window "Fenêtre précédente")
+ (most-recent-window "Fenêtre la plus récente")
  
  (show-menu-label "&Montrer")
  (show-overview "Montrer le contour") 
@@ -591,11 +595,18 @@
  (box-comment-out-menu-item-label "&Commenter à l'aide d'une boite")
  (uncomment-menu-item-label "&Décommenter")
  
+ (convert-to-semicolon-comment "Convertir en un commentaire avec points-virgules")
+ 
  ;;; executables
  (create-executable-menu-item-label "Créer un exécutable...")
  (create-executable-title "Créer un exécutable")
  (must-save-before-executable "Vous devez sauvegarder votre programme avant de créer un exécutable.")
  (save-an-executable "Sauvegarder un exécutable")
+ (save-a-mred-launcher "Sauvegarder un lanceur de type MrEd")
+ (save-a-mzscheme-launcher "Sauvegarder un lanceur de type MzScheme")
+ (save-a-mred-stand-alone-executable "Sauvegarder un exécutable autonome de type MrEd")
+ (save-a-mzscheme-stand-alone-executable "Sauvegarder un exécutable autonome de type MzScheme")
+  
  (definitions-not-saved "La fenêtre de définition n'a pas été sauvegardée. L'exécutable va utiliser la dernière version sauvegardée de la fenêtre de définition. Continuer ?")
  (inline-saved-program-in-executable?
   "Insérer dans l'exécutable le programme sauvegardé ? Si oui, vous pourrez copier l'exécutable sur un autre ordinateur ~a, mais l'exécutable sera probablement gros. Si vous choisissez non, vous ne pourrez pas copier l'exécutable sur un autre ordinateur, mais il sera bien plus petit. De plus, si vous choisissez non, l'exécutable utilisera toujours la version la plus récente du programme.")
@@ -610,6 +621,12 @@
  (filename "Nom de fichier: ")
  (create "Créer")
  (please-choose-an-executable-filename "Veuillez sélectionner un nom de fichier pour sauvegarder l'exécutable.")
+ (windows-executables-must-end-with-exe
+  "Le nom de fichier\n\n  ~a\n\nest illégal. Sous Windows, le nom d'un exécutable doit se terminer par .exe.")
+ (macosx-executables-must-end-with-app
+  "Le nom de fichier\n\n  ~a\n\nest illégal. Sous MacOS X, le nom d'un exécutable doit se terminer par .app.")
+ (warning-directory-will-be-replaced
+  "ATTENTION: le répertoire:\n\n  ~a\n\nva être remplacé. Voulez-vous continuer ?")
  
  (create-servlet "Créer un servlet...") ;servlet = greffon, extension serveur?
  
@@ -637,6 +654,8 @@
  ;; number snip popup menu
  (show-decimal-expansion "Montrer l'expansion décimale")
  (show-fraction-view "Montrer sous forme de fraction")
+ (show-mixed-fraction-view "Montrer sous forme partie-entière plus fraction")
+ (show-improper-fraction-view "Montrer sous forme de fraction")
  (show-more-decimal-places "Montrer plus de décimales")
  
  ;;; Teachpack messages
@@ -648,7 +667,6 @@
  (teachpack-error-invoke "Le fichier teachpack ~a a produit une erreur au moment de son invocation.")
  (add-teachpack-menu-item-label "Ajouter un teachpack...")
  (clear-all-teachpacks-menu-item-label "Enlever tous les teachpacks")
- (teachpack-not-only-one-import "La unit/sig du teachpack dans ~a doit avoir exactement un import.")
  (drscheme-teachpack-message-title "DrScheme teachpack")
  (already-added-teachpack "Le teachpack ~a a déjà été ajouté.")
  
@@ -661,6 +679,7 @@
  (constructor-printing-style "Constructeur")
  (quasiquote-printing-style "Quasiquote")
  (write-printing-style "write")
+ (print-printing-style "current-print")
  (sharing-printing-label "Montrer le partage entre valeurs.")
  (use-pretty-printer-label "Insérer des retours-chariots lors de l'impression des résultats.")
  (input-syntax "Syntaxe d'entrée")
@@ -855,4 +874,6 @@
  (wizard-back "Précédent")
  (wizard-finish "Fin")
 
- )
+ (plt-installer-progress-window-title "Progresssion de l'installation")
+
+  )

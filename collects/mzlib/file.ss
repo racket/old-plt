@@ -148,6 +148,8 @@
 
   (define explode-path
     (lambda (orig-path)
+      (unless (path-string? orig-path)
+	(raise-type-error 'explode-path "path or string" orig-path))
       (do-explode-path 'explode-path orig-path)))
 
   ;; Arguments must be in normal form
@@ -171,6 +173,8 @@
 
   (define file-name-from-path
     (lambda (name)
+      (unless (path-string? name)
+	(raise-type-error 'file-name-from-path "path or string" name))
       (let-values ([(base file dir?) (split-path name)])
 	(if (and (not dir?) (path? file))
 	    file
@@ -178,6 +182,8 @@
 
   (define path-only
     (lambda (name)
+      (unless (path-string? name)
+	(raise-type-error 'path-only "path or string" name))
       (let-values ([(base file dir?) (split-path name)])
 	(cond
 	 [dir? name]
@@ -187,14 +193,18 @@
   ;; name can be any string; we just look for a dot
   (define filename-extension
     (lambda (name)
-      (let ([name (if (string? name)
-		      name
-		      (path->bytes name))])
+      (unless (path-string? name)
+	(raise-type-error 'filename-extension "path or string" name))
+      (let ([name (if (path? name)
+		      (path->bytes name)
+		      name)])
 	(let ([m (regexp-match #rx#"[.]([^.]+)$" name)])
 	  (and m
 	       (cadr m))))))
 
   (define (delete-directory/files path)
+    (unless (path-string? path)
+      (raise-type-error 'delete-directory/files "path or string" path))
     (cond
      [(or (link-exists? path) (file-exists? path))
       (delete-file path)]

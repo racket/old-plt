@@ -202,6 +202,7 @@
     (let ([locked? (send editor is-locked?)])
       (send editor begin-edit-sequence #f)
       (send editor lock #f)
+      ; comment this out if you want to keep all the pretty colors
       (let* ([style-list (send editor get-style-list)]
              [standard-style (send style-list find-named-style "Standard")])
         (when standard-style

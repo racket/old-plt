@@ -8,6 +8,8 @@
            (lib "String.ss" "profj" "libs" "java" "lang"))
   (require "compile.ss" "parameters.ss" "parsers/lexer.ss" "parser.ss" "ast.ss")
 
+  (require-for-syntax "compile.ss")
+  
   (provide tool@)
 
   ;Set the default classpath
@@ -466,7 +468,9 @@
           
           (define/public (on-execute settings run-in-user-thread)
             (dynamic-require '(lib "Object.ss" "profj" "libs" "java" "lang") #f)
-            (let ([path ((current-module-name-resolver) '(lib "Object.ss" "profj" "libs" "java" "lang") #f #f)]
+            (let ([obj-path ((current-module-name-resolver) '(lib "Object.ss" "profj" "libs" "java" "lang") #f #f)]
+                  [class-path ((current-module-name-resolver) '(lib "class.ss") #f #f)]
+                  [tool-path ((current-module-name-resolver) '(lib "tool.ss" "profj") #f #f)]
                   [n (current-namespace)])
               (read-case-sensitive #t)
               (run-in-user-thread
@@ -506,10 +510,12 @@
                             (syntax-as-top (compile-interactions-ast exp (syntax loc) level execute-types)))))
                         (_ (old-current-eval exp))))))
                  (with-handlers ([void (lambda (x)  (printf "~a~n" (exn-message x)))])
-                   (namespace-attach-module n path)
                    (namespace-require 'mzscheme)
-                   (namespace-require '(lib "class.ss"))
-                   (namespace-require path)
+                   (namespace-attach-module n obj-path)
+                   (namespace-attach-module n class-path)
+                   (namespace-require obj-path)
+                   ;(namespace-require '(lib "tool.ss" "profj"))
+                   (namespace-require class-path)
                    (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))))))))
           
           (define/public (render-value value settings port); port-write)
@@ -770,56 +776,7 @@
       
       (drscheme:get/extend:extend-unit-frame java-interactions-box-mixin)
       
-;      ))
 
-;  ;TEMP
-;      
-;  ;;The following code has been taken with small modifications from framework/private/comment-box.ss
-;      (define snipclass-java-class%
-;        (class decorated-editor-snipclass%
-;          (define/override (make-snip stream-in) (instantiate java-class-box% ()))
-;          (super-instantiate ())))
-;      
-;      (define snipclass-class (make-object snipclass-java-class%))
-;      (send snipclass-class set-version 1)
-;      (send snipclass-class set-classname "java-class-box%")
-;      (send (get-the-snip-class-list) add snipclass-class)
-;      
-;      (define java-class-box%
-;        (class* java-box% (readable-snip<%>)
-;          (define/override (make-editor) (new text:keymap%))
-;          (define/override (make-snip) (make-object java-class-box%))
-;          (define/override (get-corner-bitmap) comment-gif)
-;
-;           (define/public (read-one-special index source line column position)
-;             (values (lambda (level)
-;                       (list (lambda () (open-input-string "class X { X(){}}"))
-;                             (lambda ()
-;                               (parse (open-input-string "class X { X(){} }")
-;                                      "a"
-;                                      level))))
-;                           1 #t))
-;             
-;          (super-instantiate ())
-;          (inherit set-snipclass get-editor)
-;          (set-snipclass snipclass-class)))
-;          
-;      (define (java-class-box-mixin %)
-;        (class %
-;          (inherit get-special-menu get-edit-target-object)
-;          
-;          (super-new)
-;          (new menu-item%
-;            (label "Insert Java Class Box")
-;            (parent (get-special-menu))
-;            (callback
-;             (lambda (menu event)
-;               (let ([c-box (new java-class-box%)]
-;                     [text (get-edit-target-object)])
-;                 (send text insert c-box)
-;                 (send text set-caret-owner c-box 'global)))))))
-;      
-;      (drscheme:get/extend:extend-unit-frame java-class-box-mixin)
   ))
   (define (editor-filter delay?)
     (lambda (s)
@@ -830,7 +787,20 @@
           ((equal? "java-class-box%" name) (values (make-class-case s) 1))
           (delay? (values (lambda () (send s read-one-special 0 #f #f #f #f)) 1))
           (else (values s 1))))))
+    
+  (provide compile-interactions-helper)
+  (define-syntax (compile-interactions-helper syn)
+    (syntax-case syn ()
+      ((_ ast loc level types)
+       (begin
+       (printf "~a~n" (struct? ((syntax-object->datum (syntax types)))))
+       (compile-interactions-ast (syntax-e (syntax ast))
+                                 (syntax-e (syntax loc)) 
+                                 (syntax-e (syntax level)) 
+                                 ((syntax-object->datum (syntax types)))))))
+  )
   
+    
   (provide format-java)
   ;formats a java value (number, character or Object) into a string
   ;format-java: java-value bool symbol (list value) -> string

@@ -614,6 +614,7 @@
                                                                   (accesses-package methods)
                                                                   (accesses-protected methods))
                                                           overridden-methods))
+               (dynamic-method-defs (generate-dyn-method-defs names-for-dynamic))
                (static-method-names (make-static-method-names (accesses-static methods) type-recs))
                (static-field-names (make-static-field-names (accesses-static fields)))
                (static-field-setters (make-static-field-setters-names 
@@ -631,7 +632,6 @@
                                    ,@(map build-identifier providable-generics)
                                    ,@field-getters/setters)))
 
-          (printf "~a~n" names-for-dynamic)
           (let ((class-syntax
                  (create-syntax 
                   #f
@@ -701,6 +701,8 @@
                                             (accesses-package methods)
                                             (accesses-protected methods)
                                             (accesses-private methods)))
+                             
+                             ,@dynamic-method-defs
                              
                              (define/override (my-name) ,(class-name))
                              
@@ -802,8 +804,27 @@
              (refine-method-list overloaded-removed overridden-methods))
             ((memq (car methods) overridden-methods)
              (refine-method-list (cdr methods) overridden-methods))
+            ((eq? 'ctor (method-record-rtype (method-rec (car methods))))
+             (refine-method-list (cdr methods) overridden-methods))
             (else (cons (car methods) (refine-method-list (cdr methods) overridden-methods)))))))
     
+  ;generate-dyn-method-defs: (list (list string method)) -> (list syntax)
+  (define (generate-dyn-method-defs methods)
+    (map (lambda (name-method)
+           (let ((args (map (lambda (arg)
+                              (build-identifier (id-string (var-decl-name arg))))
+                            (method-parms (cadr name-method)))))
+             (create-syntax 
+              #f
+              `(define/public (,(build-identifier (car name-method)) ,@args)
+                 (,(build-identifier (mangle-method-name (id-string (method-name (cadr name-method)))
+                                                         (method-record-atypes (method-rec (cadr name-method)))))
+                   ,@args))
+              #f)))
+         (filter (lambda (name-method)
+                   (not (equal? (car name-method) (id-string (method-name (cadr name-method))))))
+                 methods)))
+  
   ;build-method-table: (list method) (list symbol) -> sexp
   (define (build-method-table methods generics)
     `(let ((table (make-hash-table)))

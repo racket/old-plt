@@ -662,12 +662,12 @@
         (set! stack (current-continuation-marks))
         (send this Object-constructor))    
       
-      (public-final set-exception! get-exception)
+      (public-final set-exception! get-mzscheme-exception)
       ;Used to interoperate with mzscheme exceptions: set and get the current exception
       (define (set-exception! exn)
         (set! exception exn)
         (set! stack (exn-continuation-marks exn)))
-      (define (get-exception) exception)
+      (define (get-mzscheme-exception) exception)
 
       ;Needs to throw exceptions. Needs to be callable only once per object
       (define/public (initCause-java.lang.Throwable cse)

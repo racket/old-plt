@@ -3,6 +3,10 @@
 WARNING: printf is rebound in the mosdule to always print
  to the original stdout of DrScheme.
 
+;; we don't use the built in debugging, use our own
+;; version here that has no bug icon and only
+;; annotates code that comes from editors.
+
 |#
 
 (module htdp-langs mzscheme
@@ -53,15 +57,15 @@ WARNING: printf is rebound in the mosdule to always print
              #t
              'constructor
              (sharing-printing)
-             #t))
+             #t
+             #f))
           
           (override config-panel)
           (rename [super-config-panel config-panel])
           (inherit allow-sharing?)
           (define (config-panel parent)
-            (if (allow-sharing?)
-                (super-config-panel parent)
-                (no-sharing-config-panel parent)))
+            (sharing/not-config-panel (allow-sharing?) parent))
+
           
           (define (on-execute settings run-in-user-thread)
             (let ([drs-namespace (current-namespace)])
@@ -110,9 +114,9 @@ WARNING: printf is rebound in the mosdule to always print
           
           (super-instantiate ())))
 
-      ;; no-sharing-config-panel :  parent -> (case-> (-> settings) (settings -> void))
+      ;; sharing/not-config-panel :  boolean parent -> (case-> (-> settings) (settings -> void))
       ;; constructs the config-panel for a language without a sharing option.
-      (define (no-sharing-config-panel _parent)
+      (define (sharing/not-config-panel allow-sharing-config? _parent)
 	(let* ([parent (make-object vertical-panel% _parent)]
 	       
 	       [input-msg (make-object message% (string-constant input-syntax) parent)]
@@ -132,10 +136,18 @@ WARNING: printf is rebound in the mosdule to always print
 				     (string-constant write-printing-style))
 			       output-panel
 			       void)]
+               [show-sharing #f]
 	       [insert-newlines (make-object check-box%
 				  (string-constant use-pretty-printer-label)
 				  output-panel
 				  void)])
+
+          (when allow-sharing-config?
+            (set! show-sharing
+                  (instantiate check-box% ()
+                    (parent output-panel)
+                    (label (string-constant sharing-printing-label))
+                    (callback void))))
 	  
 	  ;; set the characteristics of the GUI
           (send _parent set-alignment 'center 'center)
@@ -145,13 +157,6 @@ WARNING: printf is rebound in the mosdule to always print
 	  (send output-panel stretchable-width #f)
 	  (send output-panel set-alignment 'left 'center)
           
-          (send parent reflow-container)
-	  (let*-values ([(iw) (send input-panel get-width)]
-                        [(ow) (send output-panel get-width)]
-                        [(w) (max iw ow)])
-            (send input-panel min-width w)
-            (send output-panel min-width w))
-          
 	  (case-lambda
            [()
 	    (drscheme:language:make-simple-settings
@@ -160,8 +165,9 @@ WARNING: printf is rebound in the mosdule to always print
 	       [(0) 'constructor]
 	       [(1) 'quasiquote]
 	       [(2) 'write])
-             #f
-	     (send insert-newlines get-value))]
+             (and allow-sharing-config? (send show-sharing get-value))
+	     (send insert-newlines get-value)
+             #f)]
            [(settings)
             (send case-sensitive set-value (drscheme:language:simple-settings-case-sensitive settings))
             (send output-style set-selection
@@ -169,6 +175,8 @@ WARNING: printf is rebound in the mosdule to always print
                     [(constructor) 0]
                     [(quasiquote) 1]
                     [(write) 2]))
+            (when allow-sharing-config?
+              (send show-sharing set-value (drscheme:language:simple-settings-show-sharing settings)))
             (send insert-newlines set-value 
                   (drscheme:language:simple-settings-insert-newlines settings))])))
       

@@ -229,7 +229,7 @@
  (backward "Backward")
  (hide "Hide")
  
- ;;;reverting a file
+ ;;; reverting a file
  (error-reverting "Error Reverting")
  (could-not-read "could not read \"~a\"")
  
@@ -490,7 +490,9 @@
  (sharing-printing-label "Show sharing in values")
  (use-pretty-printer-label "Insert newlines in printed values")
  (input-syntax "Input Syntax")
+ (dynamic-properties "Dynamic Properties")
  (output-syntax "Output Syntax")
+ (debugging "Debugging")
  (whole/fractional-exact-numbers-label "Print numbers as fractions")
  (booleans-as-true/false-label "Print booleans using true and false")
  (show-details-button-label "Show Details")
@@ -509,6 +511,10 @@
  (mzscheme-lang-name "Textual without debugging (MzScheme)")
  (r5rs-lang-name "R5RS without debugging")
  (unknown-debug-frame "[unknown]")
+ 
+ (bad-module-language-specs
+  "The drscheme-language-position and drscheme-language-modules specifications aren't correct. Expected (listof (cons string (listof string))) and (listof (listof string)) respectively, where the lengths drscheme-language-position and drscheme-language-module lists are the same. Got ~e and ~e")
+  
  
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")

@@ -273,17 +273,18 @@
 	(drscheme:language-configuration:add-language
 	 (make-simple '(lib "full-mred.ss" "lang")
                       (list (string-constant r5rs-like-languages)
-                            (string-constant mred-lang-name))))
+                            (string-constant mred-w/debug))))
 	(drscheme:language-configuration:add-language
 	 (make-simple '(lib "full-mzscheme.ss" "lang") 
                       (list (string-constant r5rs-like-languages)
-                            (string-constant mzscheme-lang-name))))
+                            (string-constant mzscheme-w/debug))))
         (drscheme:language-configuration:add-language
 	 (make-simple '(lib "r5rs.ss" "lang")
                       (list (string-constant r5rs-like-languages)
-                            (string-constant r5rs-lang-name)))))
+                            (string-constant r5rs-w/debug)))))
       
       (drscheme:module-language:add-module-language)
+      (drscheme:language-configuration:add-info-specified-languages)
       
   ;; add a handler to open .plt files.
       (handler:insert-format-handler 

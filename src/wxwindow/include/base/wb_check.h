@@ -38,9 +38,6 @@ class wxbCheckBox: public wxItem
              long style = 0, char *name = "checkBox");
   ~wxbCheckBox(void);
 
-  void Command(wxCommandEvent& event);
-  void ProcessCommand(wxCommandEvent& event);
-
   virtual void SetValue(Bool) = 0;
   virtual Bool GetValue(void) = 0;
   // Avoids compiler warning

@@ -25,6 +25,7 @@
 BOOL wxRadioBox::MSWCommand(UINT param, WORD id)
 {
   if (param == BN_CLICKED)  {
+    selected = id;
     wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
     ProcessCommand(*event);
     return TRUE;

@@ -19,9 +19,6 @@
 #include "wx_setup.h"
 #include "wb_cmdlg.h"
 
-#define wxColourDialog wxGenericColourDialog
-#define wxFontDialog wxGenericFontDialog
-
 #define ORPHAN_PARENT NULL
 
 int wxMessageBox(char *message, char *caption = "Message", long style = wxOK|wxCENTRE,

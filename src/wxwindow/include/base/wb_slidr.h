@@ -36,9 +36,6 @@ class wxbSlider: public wxItem
 
   virtual int GetValue(void) = 0;
   virtual void SetValue(int) = 0;
-
-  void Command(wxCommandEvent& event);
-  void ProcessCommand(wxCommandEvent& event);
 };
 
 #endif // IN_CPROTO

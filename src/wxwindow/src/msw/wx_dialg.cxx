@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.3 1998/05/09 14:13:05 mflatt Exp $
+ * RCS_ID:      $Id: wx_dialg.cxx,v 1.4 1998/08/09 20:55:21 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -190,8 +190,8 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
   current_hspacing = hSpacing ;
   current_vspacing = vSpacing ;
   
-  labelFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxDEFAULT, wxDEFAULT, FALSE);
-  buttonFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxDEFAULT, wxDEFAULT, FALSE);
+  labelFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
+  buttonFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
 
   if (Parent) Parent->AddChild(this);
   window_parent = Parent;

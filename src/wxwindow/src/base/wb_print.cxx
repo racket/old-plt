@@ -168,7 +168,7 @@ wxDC *wxPrintDialog::GetPrintDC(void)
   else
 #endif
   {
-    return new wxPostScriptDC(wxThePrintSetupData->GetPrinterFile(), FALSE, NULL);
+    return new wxPostScriptDC(wxGetThePrintSetupData()->GetPrinterFile(), FALSE, NULL);
   }
 }
 
@@ -839,7 +839,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     else
 #endif
     {
-      dc = new wxPostScriptDC(wxThePrintSetupData->GetPrinterFile(), FALSE, NULL);
+      dc = new wxPostScriptDC(wxGetThePrintSetupData()->GetPrinterFile(), FALSE, NULL);
     }
   }
 

@@ -46,8 +46,6 @@ class wxbChoice: public wxItem
   virtual Bool SetStringSelection(char *s);
   virtual char *GetString(int n) = 0;
   inline int Number(void) { return no_strings; }
-  void Command(wxCommandEvent& event);
-  void ProcessCommand(wxCommandEvent& event);
 };
 
 #endif // IN_CPROTO

@@ -26,6 +26,7 @@
 #include "wx_dialg.h"
 #include "wx_cmdlg.h"
 #include "wx_menu.h"
+#include "wx_dcps.h"
 #ifdef USE_SENORA_GC
 # include "wx_types.h"
 #endif
@@ -1124,8 +1125,7 @@ public:
   wxMediaEdit *media;
   Bool hidden, beginEditSeq;
 
-  IOFrame() : wxFrame(NULL, "Standard Output", -1, -1, 600, 400, 
-		      wxDEFAULT_FRAME + wxSDI, "stdout")
+  IOFrame() : wxFrame(NULL, "Standard Output", -1, -1, 600, 400, 0, "stdout")
     {
       display = new wxMediaCanvas(this);
       

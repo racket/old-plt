@@ -63,7 +63,7 @@ enum {
   };
 
 EdJrWindow::EdJrWindow(char *filename, EdJrWindow *mainParent)
-: wxFrame(NULL, "EdJr", -1, -1, 600, 400, wxDEFAULT_FRAME + wxSDI, "EdJr")
+: wxFrame(NULL, "EdJr", -1, -1, 600, 400, 0, "EdJr")
 {
   wxMenuBar *menubar;
   wxMenu *file, *edit;

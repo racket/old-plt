@@ -24,45 +24,6 @@
 // Windows common dialog header
 #include "commdlg.h"
 
-/*
- * COLOUR DIALOG
- */
-
-class wxColourDialog: public wxDialogBox
-{
- DECLARE_DYNAMIC_CLASS(wxColourDialog)
- protected:
-  wxColourData colourData;
-  wxWindow *dialogParent;
- public:
-  wxColourDialog(void);
-  wxColourDialog(wxWindow *parent, wxColourData *data = NULL);
-
-  Bool Create(wxWindow *parent, wxColourData *data = NULL);
-
-  Bool Show(Bool show);
-  wxColourData& GetColourData(void) { return colourData; }
-};
-
-/*
- * FONT DIALOG
- */
- 
-class wxFontDialog: public wxDialogBox
-{
- DECLARE_DYNAMIC_CLASS(wxFontDialog)
- protected:
-  wxWindow *dialogParent;
-  wxFontData fontData;
- public:
-  wxFontDialog(void);
-  wxFontDialog(wxWindow *parent, wxFontData *data = NULL);
-
-  Bool Create(wxWindow *parent, wxFontData *data = NULL);
-
-  Bool Show(Bool show);
-  wxFontData& GetFontData(void) { return fontData; }
-};
 
 /*
  * The following code was formerly in wx_dialg.h.

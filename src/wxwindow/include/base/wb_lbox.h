@@ -71,9 +71,6 @@ class wxbListBox: public wxItem
   virtual void InsertItems(int nItems, char **Items, int pos) = 0;
 
   virtual int NumberOfVisibleItems(void) = 0;
-
-  void Command(wxCommandEvent& event);
-  void ProcessCommand(wxCommandEvent& event);
 };
 
 #endif // IN_CPROTO

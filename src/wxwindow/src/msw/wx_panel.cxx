@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_panel.cxx,v 1.2 1998/07/04 02:57:33 mflatt Exp $
+ * RCS_ID:      $Id: wx_panel.cxx,v 1.3 1998/08/09 20:55:22 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -139,8 +139,8 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
     labelColour = parentPanel->labelColour;
     buttonColour = parentPanel->buttonColour;
   } else {
-    labelFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxDEFAULT, wxDEFAULT, FALSE);
-    buttonFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxDEFAULT, wxDEFAULT, FALSE);
+    labelFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
+    buttonFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
     backColour = NULL;
     labelColour = NULL;
     buttonColour = NULL;

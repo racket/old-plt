@@ -1756,3 +1756,4 @@
 (import-for-syntax .more-scheme)
 (import-for-syntax .misc)
 (import-for-syntax .stxcase-scheme)
+(import-for-syntax .stx)

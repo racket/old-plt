@@ -1839,8 +1839,11 @@ static void check_unbound(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
 	modname = NULL;
     }
 
-    if (modname || !scheme_lookup_in_table(env->genv->toplevel, (const char *)SCHEME_STX_SYM(c)))
+    if (modname || !scheme_lookup_in_table(env->genv->toplevel, (const char *)SCHEME_STX_SYM(c))) {
+      symbol = c;
+      modname = scheme_stx_module_name(&symbol, env->genv->phase, &home);
       scheme_wrong_syntax(when, NULL, c, "unbound variable in module");
+    }
   }
 }
 

@@ -543,7 +543,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *rename_stack = scheme_null;
   Scheme_Object *result, *mresult = scheme_false;
-  int phase_found = 0;
+  int is_in_module = 0;
 
   if (home)
     *home = NULL;
@@ -560,21 +560,24 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
       if (SCHEME_FALSEP(result))
 	result = mresult;
       return result;
-    } else if (SCHEME_RENAMESP(SCHEME_CAR(wraps)) && home && !phase_found) {
+    } else if (SCHEME_RENAMESP(SCHEME_CAR(wraps)) && home) {
       /* Module rename: */
       Module_Renames *mrn = (Module_Renames *)SCHEME_CAR(wraps);
-      if (phase == mrn->phase) {
-	Scheme_Object *rename;
+      if (!is_in_module || !mrn->nonmodule) {
+	if (!mrn->nonmodule)
+	  is_in_module = 1;
 	
-	phase_found = 1;
-
-	rename = scheme_lookup_in_table(mrn->ht, (const char *)SCHEME_STX_VAL(a));
-	if (!rename && mrn->plus_kernel)
-	  rename = scheme_lookup_in_table(krn->ht, (const char *)SCHEME_STX_VAL(a));
-
-	if (rename) {
-	  /* Match: set mresult for the case of no lexical capture: */
-	  mresult = SCHEME_CAR(rename);
+	if (phase == mrn->phase) {
+	  Scheme_Object *rename;
+	  
+	  rename = scheme_lookup_in_table(mrn->ht, (const char *)SCHEME_STX_VAL(a));
+	  if (!rename && mrn->plus_kernel)
+	    rename = scheme_lookup_in_table(krn->ht, (const char *)SCHEME_STX_VAL(a));
+	  
+	  if (rename) {
+	    /* Match: set mresult for the case of no lexical capture: */
+	    mresult = SCHEME_CAR(rename);
+	  }
 	}
       }
     } else if (SCHEME_BOXP(SCHEME_CAR(wraps)) && home) {
@@ -629,7 +632,7 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always, long pha
 {
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *result;
-  int phase_found = 0;
+  int is_in_module = 0;
 
   result = NULL;
 
@@ -639,21 +642,25 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always, long pha
 	return SCHEME_STX_VAL(a);
       else
 	return result;
-    } else if (SCHEME_RENAMESP(SCHEME_CAR(wraps)) && !phase_found) {
+    } else if (SCHEME_RENAMESP(SCHEME_CAR(wraps))) {
       Module_Renames *mrn = (Module_Renames *)SCHEME_CAR(wraps);
-      if (phase == mrn->phase) {
-	/* Module rename: */
-	Scheme_Object *rename;
+
+      if (!is_in_module || !mrn->nonmodule) {
+	if (!mrn->nonmodule)
+	  is_in_module = 1;
 	
-	phase_found = 1;
-
-	rename = scheme_lookup_in_table(mrn->ht, (const char *)SCHEME_STX_VAL(a));
-	if (!rename && mrn->plus_kernel)
-	  rename = scheme_lookup_in_table(krn->ht, (const char *)SCHEME_STX_VAL(a));
-
-	if (rename) {
-	  /* Match: set result: */
-	  result = SCHEME_CDR(rename);
+	if (phase == mrn->phase) {
+	  /* Module rename: */
+	  Scheme_Object *rename;
+	  
+	  rename = scheme_lookup_in_table(mrn->ht, (const char *)SCHEME_STX_VAL(a));
+	  if (!rename && mrn->plus_kernel)
+	    rename = scheme_lookup_in_table(krn->ht, (const char *)SCHEME_STX_VAL(a));
+	  
+	  if (rename) {
+	    /* Match: set result: */
+	    result = SCHEME_CDR(rename);
+	  }
 	}
       }
     } else if (SCHEME_BOXP(SCHEME_CAR(wraps))) {
@@ -945,8 +952,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in, int subs,
 				     Scheme_Hash_Table *rns)
 {
   Scheme_Object *stack, *a, *w = w_in;
-  char *phases = NULL;
-  int num_phases = 0, phase_shift = 0;
+  int is_in_module = 0;
 
   if (subs) {
     if (SCHEME_FALSEP(w))
@@ -1033,73 +1039,61 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in, int subs,
       }
     } else if (SCHEME_RENAMESP(a)) {
       Module_Renames *mrn = (Module_Renames *)a;
-      int phase;
-
-      phase = mrn->phase + phase_shift;
-
-      /* Already did this phase? */
-      if (phase >= num_phases) {
-	int c;
-	char *r;
-	c = phase + 5;
-	r = MALLOC_N_ATOMIC(char, c);
-	memcpy(r, phases, num_phases);
-	memset(r + num_phases, 0, c - num_phases);
-	num_phases = c;
-	phases = r;
-      }
-
-      if (!phases[phase]) {
-	phases[phase] = 1;
-	if (mrn->nonmodule) {
-	  stack = scheme_make_pair(((phase == 0)
+      
+      if (mrn->nonmodule) {
+	/* For module code, we can drop non-module renamings */
+	if (!is_in_module) {
+	  stack = scheme_make_pair(((mrn->phase == 0)
 				    ? scheme_true
 				    : scheme_false), 
 				   stack);
+	}
+      } else {
+	Scheme_Object *local_key;
+	
+	is_in_module = 1;
+
+	local_key = scheme_lookup_in_table(rns, (const char *)mrn);
+	if (local_key) {
+	  stack = scheme_make_pair(local_key, stack);
 	} else {
-	  Scheme_Object *local_key;
-
-	  local_key = scheme_lookup_in_table(rns, (const char *)mrn);
-	  if (local_key) {
-	    stack = scheme_make_pair(local_key, stack);
-	  } else {
-	    /* Convert hash table to list: */
-	    int i;
-	    Scheme_Bucket **bs, *b;
-	    Scheme_Object *l = scheme_null, *v;
+	  /* Convert hash table to list: */
+	  int i;
+	  Scheme_Bucket **bs, *b;
+	  Scheme_Object *l = scheme_null, *v;
 	    
-	    bs = mrn->ht->buckets;
-	    for (i = mrn->ht->size; i--; ) {
-	      b = bs[i];
-	      if (b && b->val) {
-		v = (Scheme_Object *)b->val;
-		if (SCHEME_PAIRP(v) && SAME_OBJ(SCHEME_CDR(v), (Scheme_Object *)b->key))
-		  l = scheme_make_pair(v, l);
-		else
-		  l = scheme_make_pair(scheme_make_pair((Scheme_Object *)b->key, v), 
-				       l);
-	      }
+	  bs = mrn->ht->buckets;
+	  for (i = mrn->ht->size; i--; ) {
+	    b = bs[i];
+	    if (b && b->val) {
+	      v = (Scheme_Object *)b->val;
+	      if (SCHEME_PAIRP(v) && SAME_OBJ(SCHEME_CDR(v), (Scheme_Object *)b->key))
+		l = scheme_make_pair(v, l);
+	      else
+		l = scheme_make_pair(scheme_make_pair((Scheme_Object *)b->key, v), 
+				     l);
 	    }
-
-	    local_key = scheme_make_integer(rns->count);
-	    scheme_add_to_table(rns, 
-				(const char *)a,
-				local_key,
-				0);
-
-	    l = scheme_make_pair(scheme_make_integer(mrn->phase), l);
-	    if (mrn->plus_kernel)
-	      l = scheme_make_pair(scheme_true,l);
-	    l = scheme_make_pair(local_key, l);
-	    
-	    stack = scheme_make_pair(l, stack);
 	  }
+
+	  local_key = scheme_make_integer(rns->count);
+	  scheme_add_to_table(rns, 
+			      (const char *)a,
+			      local_key,
+			      0);
+
+	  l = scheme_make_pair(scheme_make_integer(mrn->phase), l);
+	  if (mrn->plus_kernel)
+	    l = scheme_make_pair(scheme_true,l);
+	  l = scheme_make_pair(local_key, l);
+	    
+	  stack = scheme_make_pair(l, stack);
 	}
       }
     } else {
       a = SCHEME_PTR_VAL(a);
-      phase_shift += SCHEME_INT_VAL(SCHEME_CAR(a));
-      /* Forget any module that might be in the shift: */
+      /* Forget any module that might be in the shift. Linking
+         the bytecodes seems to install a correct module. 
+         --- I'm not entirely convinced of this! */
       a = scheme_box(SCHEME_CAR(a));
       stack = scheme_make_pair(a, stack);
     }

@@ -288,11 +288,9 @@
 		(send printing set-selection
 		      (get-printer-style-number (basis:setting-printing v)))
 		(let ([r4rs-style? (eq? 'r4rs-style (basis:setting-printing v))])
-		  (send whole/fractional-exact-numbers enable (not r4rs-style?))
 		  (send booleans-as-true/false enable (not r4rs-style?))
 		  (when r4rs-style?
-		    (basis:set-setting-print-booleans-as-true/false! v #f)
-		    (basis:set-setting-whole/fractional-exact-numbers! v #f)))
+		    (basis:set-setting-print-booleans-as-true/false! v #f)))
 
 		(for-each
 		 (lambda (get check-box) (send check-box set-value (get v)))

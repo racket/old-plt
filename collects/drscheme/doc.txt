@@ -19,7 +19,6 @@ definitions into the top-level matching these signatures:
   zodiac:system^ (prefix: zodiac)
   plt:aries^ (prefix: plt:aries)
   drscheme:text^ (prefix: drscheme:text)
-  drscheme:snip^ (prefix: drscheme:snip)
   drscheme:export^ (prefix: drscheme:export)
   drscheme:app^ (prefix: drscheme:app)
   drscheme:main^ (prefix: drscheme:main)

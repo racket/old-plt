@@ -139,7 +139,7 @@
      (set! par-abbreviate-cons-as-list (p:abbreviate-cons-as-list))
      (set! par-cons (global-defined-value 'cons))
      (set! par-list (global-defined-value 'list))
-     (set! par-vector (global-defined-value 'vector))
+     ;(set! par-vector (global-defined-value 'vector))
      (semaphore-post stepper-return-val-semaphore)))
   (semaphore-wait stepper-return-val-semaphore)
   

@@ -24,6 +24,27 @@
 	  [drscheme:load-handler : drscheme:load-handler^]
           [help : help:drscheme-interface^])
   
+  (define (use-number-snip? x)
+    (and (number? x)
+         (exact? x)
+         (real? x)
+         (not (integer? x))))
+  
+  (define (drscheme-pretty-print-size-hook x _ port)
+    (cond
+     [(is-a? x mred:snip%) 1]
+     [(and
+       (basis:setting-whole/fractional-exact-numbers (basis:current-setting))
+       (use-number-snip? x))
+      (+ (string-length (number->string (floor x)))
+	 (max (string-length
+	       (number->string 
+		(numerator (- x (floor x)))))
+	      (string-length
+	       (number->string 
+		(numerator (- x (floor x)))))))]
+     [else #f]))
+  
   (define drs-bindings-keymap (make-object mred:keymap%))
   (send drs-bindings-keymap add-function
         "toggle-focus-between-definitions-and-interactions"
@@ -42,6 +63,10 @@
         "c:x;o"
         "toggle-focus-between-definitions-and-interactions")
   
+  ;; drs-bindings-keymap-mixin :
+  ;;   ((implements editor:keymap<%>) -> (implements editor:keymap<%>))
+  ;;   for any x that is an instance of the resulting class,
+  ;;     (is-a? (send (send x get-canvas) get-top-level-frame) drscheme:unit:frame%)
   (define (drs-bindings-keymap-mixin editor%)
     (class editor% args
       (rename [super-get-keymaps get-keymaps])
@@ -193,14 +218,17 @@
   
   (define context<%>
     (interface ()
-      ensure-rep-shown
-      ensure-defs-shown
-      needs-execution? 
-      enable-evaluation
-      disable-evaluation
-      running
-      not-running
-      get-directory))
+      ensure-rep-shown   ;; (-> void)
+      ensure-defs-shown  ;; (-> void)
+      needs-execution?   ;; (-> boolean)
+
+      enable-evaluation  ;; (-> void)
+      disable-evaluation ;; (-> void)
+
+      running            ;; (-> void)
+      not-running        ;; (-> void)
+
+      get-directory))    ;; (-> directory-exists)
   
   (define file-icon
     (let ([bitmap
@@ -488,11 +516,12 @@
                             (send text insert snip))
                           (send text insert #\newline))
                         (close-text))))
-                  (send text insert #\newline)))                (let loop ([snip (send from-text find-snip start-pos 'after-or-none)])
-                                                                  (when (and snip
-                                                                             (< (send from-text get-snip-position snip) end-pos))
-                                                                    (send context-text insert (send snip copy))
-                                                                    (loop (send snip next))))
+                  (send text insert #\newline)))
+	      (let loop ([snip (send from-text find-snip start-pos 'after-or-none)])
+		(when (and snip
+			   (< (send from-text get-snip-position snip) end-pos))
+		  (send context-text insert (send snip copy))
+		  (loop (send snip next))))
               (send context-text change-style modern-style-delta 0 (send context-text last-position))
               (send context-text highlight-range from-start from-end error-color #f #f 'high)
               (send text insert "  ")
@@ -737,46 +766,45 @@
               (lock c-locked?)
               (end-edit-sequence)))) 
         
-        (define make-fetcher
-          (lambda ()
-            (make-object
-                (class object% ()
-                  (public
-                    [fetch-char-sema (make-semaphore 1)]
-                    [fetcher-spawned? #f]
-                    [char-fetched-sema (make-semaphore)]
-                    [char-fetched #f]
-                    [fetch ; =Protected-User=
-                     (lambda (ut peek?)
-                       ; Only one reader at a time:
-                       (semaphore-wait/enable-break fetch-char-sema)
-                       ; Now we're the active reader...
-                       (unless fetcher-spawned?
-                         (set! fetcher-spawned? #t)
-                         ; Spawn a fetcher:
-                         (queue-system-callback
-                          ut
-                          (lambda () ; =Kernel=, =Handler=
-                            (let ([text (init-transparent-input)])
-                              (set! char-fetched (send text fetch-char)))
-                            (semaphore-post char-fetched-sema))))
-                       ; Wait for a char, allow breaks:
-                       (with-handlers ([void (lambda (x)
-                                               ; Let someone else try to read...
-                                               (semaphore-post fetch-char-sema)
-                                               (raise x))])
-                         (semaphore-wait/enable-break char-fetched-sema))
-                       ; Got the char (no breaks)
-                       (if peek?
-                           ; preserve the fecthed cahr
-                           (semaphore-post char-fetched-sema)
-                           ; Next reader'll have to spawn a fetcher
-                           (set! fetcher-spawned? #f))
-                       (begin0
-                         char-fetched
-                         ; Got our char; let another reader go
-                         (semaphore-post fetch-char-sema)))])
-                  (sequence (super-init))))))
+        (define (make-fetcher)
+	  (make-object
+	      (class object% ()
+		(public
+		  [fetch-char-sema (make-semaphore 1)]
+		  [fetcher-spawned? #f]
+		  [char-fetched-sema (make-semaphore)]
+		  [char-fetched #f]
+		  [fetch ; =Protected-User=
+		   (lambda (ut peek?)
+					; Only one reader at a time:
+		     (semaphore-wait/enable-break fetch-char-sema)
+					; Now we're the active reader...
+		     (unless fetcher-spawned?
+		       (set! fetcher-spawned? #t)
+					; Spawn a fetcher:
+		       (queue-system-callback
+			ut
+			(lambda () ; =Kernel=, =Handler=
+			  (let ([text (init-transparent-input)])
+			    (set! char-fetched (send text fetch-char)))
+			  (semaphore-post char-fetched-sema))))
+					; Wait for a char, allow breaks:
+		     (with-handlers ([void (lambda (x)
+					; Let someone else try to read...
+					     (semaphore-post fetch-char-sema)
+					     (raise x))])
+		       (semaphore-wait/enable-break char-fetched-sema))
+					; Got the char (no breaks)
+		     (if peek?
+					; preserve the fecthed cahr
+			 (semaphore-post char-fetched-sema)
+					; Next reader'll have to spawn a fetcher
+			 (set! fetcher-spawned? #f))
+		     (begin0
+		      char-fetched
+					; Got our char; let another reader go
+		      (semaphore-post fetch-char-sema)))])
+		(sequence (super-init)))))
         (define fetcher #f)
         (define fetcher-semaphore (make-semaphore 1))
         (define drop-fetcher ; =Kernel=, =Handler=
@@ -898,9 +926,12 @@
               (send text begin-edit-sequence)
               (send text lock #f)
               (send text insert
-                    (if (is-a? s mred:snip%)
-                        (send s copy)
-                        s)
+                    (cond
+                      [(is-a? s mred:snip%) (send s copy)]
+                      [(and (use-number-snip? s)
+			    (basis:setting-whole/fractional-exact-numbers user-setting))
+                       (make-object drscheme:snip:whole/part-number-snip% s)]
+                      [else s])
                     start
                     start
                     #t)
@@ -966,78 +997,78 @@
                                    symbol-chars)]
                  [ivar-regexp (regexp ivar-regexp-str)])
             (lambda (s exn) ; =User=
-              (queue-output
-               (lambda () ; =Kernel=, =Handler=
-                 (cleanup-transparent-io)
-                 (generic-write
-                  this
-                  s
-                  (lambda (start end)
-                    (change-style error-delta start end)
-                    (cond
-                      [(exn:variable? exn)
-                       (let* ([var (symbol->string (exn:variable-id exn))]
-                              [regexp (format "^(.*)(~a)" (quote-regexp-specials var))]
-                              [match (with-handlers ([(lambda (x) #t)
-						      (lambda (x)
-							((error-display-handler)
-							 (format "error constructing regexp: ~s~n"
-								 regexp))
-							#f)])
-				       (regexp-match regexp s))])
-                         (when match
-                           (let* ([var-start (+ start (string-length (cadr match)))]
-                                  [var-end (+ var-start (string-length (caddr match)))])
-                             (change-style click-delta var-start var-end)
-                             (set-clickback var-start var-end
-                                            (lambda x
-                                              (help:help-desk var))))))]
-		      [(or (zodiac:interface:exn:zodiac-syntax? exn)
-			   (zodiac:interface:exn:zodiac-read? exn))
-		       ;; in this case the error message _must_ have a
-		       ;; colon in it,
-		       ;; because of the drscheme:interface library
-		       (let ([link-tag
-			      (symbol->string
+	      (queue-output
+	       (lambda () ; =Kernel=, =Handler=
+		 (cleanup-transparent-io)
+		 (generic-write
+		  this
+		  s
+		  (lambda (start end)
+		    (change-style error-delta start end)
+		    (cond
+		     [(exn:variable? exn)
+		      (let* ([var (symbol->string (exn:variable-id exn))]
+			     [regexp (format "^(.*)(~a)" (quote-regexp-specials var))]
+			     [match (with-handlers ([(lambda (x) #t)
+						     (lambda (x)
+						       ((error-display-handler)
+							(format "error constructing regexp: ~s~n"
+								regexp))
+						       #f)])
+				      (regexp-match regexp s))])
+			(when match
+			  (let* ([var-start (+ start (string-length (cadr match)))]
+				 [var-end (+ var-start (string-length (caddr match)))])
+			    (change-style click-delta var-start var-end)
+			    (set-clickback var-start var-end
+					   (lambda x
+					     (help:help-desk var))))))]
+		     [(or (zodiac:interface:exn:zodiac-syntax? exn)
+			  (zodiac:interface:exn:zodiac-read? exn))
+		      ;; in this case the error message _must_ have a
+		      ;; colon in it,
+		      ;; because of the drscheme:interface library
+		      (let ([link-tag
+			     (symbol->string
+			      (cond
+			       [(zodiac:interface:exn:zodiac-syntax? exn)
+				(zodiac:interface:exn:zodiac-syntax-link-tag exn)]
+			       [(zodiac:interface:exn:zodiac-read? exn)
+				(zodiac:interface:exn:zodiac-read-link-tag exn)]))]
+			    [colon-index
+			     (let loop ([n 0])
 			       (cond
-				[(zodiac:interface:exn:zodiac-syntax? exn)
-				 (zodiac:interface:exn:zodiac-syntax-link-tag exn)]
-				[(zodiac:interface:exn:zodiac-read? exn)
-				 (zodiac:interface:exn:zodiac-read-link-tag exn)]))]
-			     [colon-index
-			      (let loop ([n 0])
-				(cond
-				 [(<= (string-length s) n)
-				  0]
-				 [(char=? #\: (string-ref s n))
-				  n]
-				 [else (loop (+ n 1))]))])
-			 (change-style click-delta start (+ start colon-index))
-			 (set-clickback
-			  start (+ start colon-index)
-			  (lambda x
-			    (help:help-desk link-tag))))]
-                      [else
-                       (let ([bind-to-help
-                              (lambda (regexp s)
-				(let ([match (regexp-match regexp s)])
-				  (if match
-				      (let* ([prefix (cadr match)]
-					     [var (caddr match)]
-					     [var-start (+ start (string-length prefix))]
-					     [var-end (+ var-start (string-length var))])
-					(change-style click-delta var-start var-end)
-					(set-clickback
-					 var-start var-end
-					 (lambda x
-					   (help:help-desk var)))
-					prefix)
-				      #f)))])
-                         (let loop ([s s])
-                           (when s
-                             (loop (bind-to-help class-regexp s))))
-                         (bind-to-help ivar-regexp s)
-                         (bind-to-help fallthru-regexp s))]))))))))
+				[(<= (string-length s) n)
+				 0]
+				[(char=? #\: (string-ref s n))
+				 n]
+				[else (loop (+ n 1))]))])
+			(change-style click-delta start (+ start colon-index))
+			(set-clickback
+			 start (+ start colon-index)
+			 (lambda x
+			   (help:help-desk link-tag))))]
+		     [else
+		      (let ([bind-to-help
+			     (lambda (regexp s)
+			       (let ([match (regexp-match regexp s)])
+				 (if match
+				     (let* ([prefix (cadr match)]
+					    [var (caddr match)]
+					    [var-start (+ start (string-length prefix))]
+					    [var-end (+ var-start (string-length var))])
+				       (change-style click-delta var-start var-end)
+				       (set-clickback
+					var-start var-end
+					(lambda x
+					  (help:help-desk var)))
+				       prefix)
+				     #f)))])
+			(let loop ([s s])
+			  (when s
+			    (loop (bind-to-help class-regexp s))))
+			(bind-to-help ivar-regexp s)
+			(bind-to-help fallthru-regexp s))]))))))))
         (define this-err-write ; =User=
           (lambda (s)
             (this-err-write/exn s #f)))
@@ -1065,8 +1096,7 @@
                                      (symbol? v))
                                  (original v p)
                                  (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-                                                 (lambda (x _ port)
-                                                   (and (is-a? x mred:snip%) 1))]
+                                                 drscheme-pretty-print-size-hook]
                                                 [mzlib:pretty-print:pretty-print-print-hook
                                                  (lambda (x _ port)
                                                    (port-out-write x))]
@@ -1092,7 +1122,7 @@
 			       v
 			       (print-convert:print-convert v))])
                    (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-                                   (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+                                   drscheme-pretty-print-size-hook]
                                   [mzlib:pretty-print:pretty-print-print-hook
                                    (lambda (x _ port) (this-result-write x))])
 		     (if (basis:setting-use-pretty-printer? setting)
@@ -1626,7 +1656,7 @@
 			 (eq? port this-out)
 			 (eq? port this-err))
 		     (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-				     (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+				     drscheme-pretty-print-size-hook]
 				    [mzlib:pretty-print:pretty-print-print-hook
 				     (lambda (x _ port)
 				       (evcase port

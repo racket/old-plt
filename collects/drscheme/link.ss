@@ -15,7 +15,6 @@
 
 	[text : drscheme:text^ ((require-relative-library "edit.ss")
 				mzlib:date framework zodiac)]
-	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
 	[graph : drscheme:graph^ ((require-relative-library "graph.ss")
                                   mred framework (mzlib string) (mzlib function))]
         [zodiac : zodiac:system^
@@ -23,13 +22,12 @@
 		   ((export* interface) : zodiac:interface^)
 		   (mzlib pretty-print)
 		   (mzlib file))]
-
-	[export* : drscheme:export^ ((require-relative-library "export.ss")
+        
+        [export* : drscheme:export^ ((require-relative-library "export.ss")
 				     mred mzlib mzlib:date framework
 				     plt-installer get-info
 				     print-convert app
-				     text snip
-				     init graph
+				     text init graph
 				     cogen zodiac)]
 
         [main-before : ()
@@ -99,7 +97,6 @@
 
 	  (unit init drscheme:init)
 	  (unit text drscheme:text)
-	  (unit snip drscheme:snip)
 	  (unit export* drscheme:export)
 	  (unit tool drscheme:tool)
 	  (unit app drscheme:app)

@@ -77,7 +77,7 @@
 	     (error-sym/string-only #t)
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #t)
-	     (whole/fractional-exact-numbers #f)
+	     (whole/fractional-exact-numbers #t)
              (print-booleans-as-true/false #t)
 	     (printing constructor-style)
 	     (print-exact-as-decimal? #t)
@@ -104,7 +104,7 @@
 	     (error-sym/string-only #t)
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #t)
-	     (whole/fractional-exact-numbers #f)
+	     (whole/fractional-exact-numbers #t)
 	     (print-booleans-as-true/false #t)
              (printing constructor-style)
 	     (print-exact-as-decimal? #t)
@@ -131,7 +131,7 @@
 	     (error-sym/string-only #t)
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #t)
-	     (whole/fractional-exact-numbers #f)
+	     (whole/fractional-exact-numbers #t)
 	     (print-booleans-as-true/false #t)
              (printing constructor-style)
 	     (print-exact-as-decimal? #t)
@@ -158,7 +158,7 @@
 	     (error-sym/string-only #f)
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #f)
-	     (whole/fractional-exact-numbers #f)
+	     (whole/fractional-exact-numbers #t)
 	     (print-booleans-as-true/false #f)
              (printing r4rs-style)
 	     (print-exact-as-decimal? #f)
@@ -185,7 +185,7 @@
 	     (error-sym/string-only #f)
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #f)
-	     (whole/fractional-exact-numbers #f)
+	     (whole/fractional-exact-numbers #t)
 	     (print-booleans-as-true/false #f)
              (printing r4rs-style)
 	     (print-exact-as-decimal? #f)
@@ -782,8 +782,10 @@
       (mzlib:pretty-print:pretty-print-show-inexactness
        (setting-print-tagged-inexact-numbers setting))
       (mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
-      (mzlib:print-convert:whole/fractional-exact-numbers
-       (setting-whole/fractional-exact-numbers setting))
+
+      ;; use the fractional snips instead.
+      (mzlib:print-convert:whole/fractional-exact-numbers #f)
+
       (mzlib:print-convert:booleans-as-true/false
        (setting-print-booleans-as-true/false setting))
       (print-graph (and (r4rs-style-printing) (setting-sharing-printing? setting)))

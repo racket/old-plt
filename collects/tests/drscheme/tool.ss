@@ -44,10 +44,12 @@
      (lambda ()
        (invoke-unit/sig
 	(compound-unit/sig (import [fw : framework^]
-				   [mred : mred^])
+				   [mred : mred^]
+				   [export : drscheme:export^])
 	  (link
 	   [utils : test-utils:gui^ ((require-library "guir.ss" "tests" "utils") mred)]
-	   [drs-utils : drscheme:test-util^ ((require-library "drscheme-test-util.ss" "tests" "drscheme") mred fw utils)]
+	   [drs-utils : drscheme:test-util^ ((require-library "drscheme-test-util.ss" "tests" "drscheme")
+					     mred fw utils export)]
 	   [main : ()
 		 ((unit/sig ()
 		    (import [drs-utils : drscheme:test-util^]
@@ -78,7 +80,8 @@
 		  drs-utils utils)])
 	  (export))
 	(fw : framework^)
-	(mred : mred^)))))
+	(mred : mred^)
+	(drscheme : drscheme:export^)))))
 
   (fw:preferences:set-default 'drscheme:test-suite:file-name "repl-tests.ss" string?)
   (fw:preferences:set-default 'drscheme:test-suite:run-interval 10 number?)

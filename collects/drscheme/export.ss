@@ -7,7 +7,6 @@
 			   [print-convert : mzlib:print-convert^]
 			   [app : drscheme:app^]
 			   [text : drscheme:text^]
-			   [snip : drscheme:snip^]
 			   [init : drscheme:init^]
 			   [graph : drscheme:graph^]
 			   [aries : plt:aries^]
@@ -18,6 +17,9 @@
                                      (mzlib file)
                                      dynext-compiler
                                      dynext-linker)]
+
+	[snip : drscheme:snip^ ((require-relative-library "snip.ss") 
+                                mred framework zodiac)]
 
         [interface : drscheme:interface^
           ((require-library "interface.ss" "userspce") aries zodiac)]
@@ -95,7 +97,8 @@
 		    basis)])
 
 	
-  (export (unit interface)
+  (export (unit snip)
+	  (unit interface)
           (unit basis)
 	  (unit frame)
 	  (unit unit)

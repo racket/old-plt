@@ -181,19 +181,36 @@
 	    
 	    [set-size
 	      (lambda (x y width height)
+		(mred:debug:printf
+		 'container-frame-set-size
+		 "Container-frame-set-size: entering; args ~s ~s ~s ~s"
+		 x y width height)
 		(let-values ([(correct-w correct-h)
 			      (correct-size width height)])
-		(if (and (same-dimension? x (get-x))
-		         (same-dimension? y (get-y))
-			 (and (same-dimension? width (get-width))
-			      (= width correct-w))
-			 (and (same-dimension? height (get-height))
-			      (= height correct-h)))
-		    (unless (null? (get-panel))
-		      (send panel set-size
-			(send panel get-x) (send panel get-y)
-			(send panel get-width) (send panel get-height)))
-		    (super-set-size x y correct-w correct-h))))]
+		  (mred:debug:printf
+		   'container-frame-set-size
+		   "container-frame-set-size: correct size ~s ~s"
+		   correct-w correct-h)
+		  (if (and (same-dimension? x (get-x))
+			   (same-dimension? y (get-y))
+			   (and (same-dimension? width (get-width))
+				(= width correct-w))
+			   (and (same-dimension? height (get-height))
+				(= height correct-h)))
+		      (unless (null? (get-panel))
+			(mred:debug:printf
+			 'container-frame-set-size
+			 "container-frame-set-size: forcing panel to redraw")
+			(send panel set-size
+			      (send panel get-x) (send panel get-y)
+			      (send panel get-width) (send panel get-height)))
+		      (begin
+			(mred:debug:printf
+			 'container-frame-set-size
+			 (string-append
+			  "Container-frame-set-size: passing correct size to "
+			  "super-set-size"))
+			(super-set-size x y correct-w correct-h)))))]
 
 	    [correct-size
 	      (lambda (frame-w frame-h)

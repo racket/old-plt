@@ -209,7 +209,7 @@ MrEdContext *mred_contexts;
 static MrEdContext *mred_main_context;
 static MrEdContext *mred_only_context;
 static MrEdContext *user_main_context;
-static MrEdContextFrames *mred_frames; /* list of all frames (weak link to invisible ones) */
+static MrEdContextFramesRef mred_frames; /* list of all frames (weak link to invisible ones) */
 static wxTimer *mred_timers;
 int mred_eventspace_param;
 int mred_event_dispatch_param;
@@ -582,7 +582,7 @@ static void CollectingContext(void *cfx, void *)
   if (cf->frames->prev)
     FRAMES_REF(cf->frames->prev)->next = cf->frames->next;
   else
-    mred_frames = FRAMES_REF(cf->frames->next);
+    mred_frames = cf->frames->next;
 
   cf->frames->next = NULL;
   cf->frames->prev = NULL;
@@ -639,19 +639,16 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 
   frames = new MrEdContextFrames;
   c->finalized->frames = frames;
-  {
-    MrEdContextFramesRef r;
-    r = MAKE_FRAMES_REF(mred_frames);
-    frames->next = r;
-  }
+  frames->next = mred_frames;
   frames->prev = NULL;
   frames->list = c->topLevelWindowList;
-  if (mred_frames) {
+  {
     MrEdContextFramesRef r;
     r = MAKE_FRAMES_REF(frames);
-    mred_frames->prev = r;
+    if (mred_frames)
+      FRAMES_REF(mred_frames)->prev = r;
+    mred_frames = r;
   }
-  mred_frames = frames;
 
   c->modal_window = NULL;
 
@@ -663,8 +660,9 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   c->main_config = config;
 
 #ifdef MZ_PRECISE_GC
+  /* Override destructor-based finalizer: */
   GC_set_finalizer(gcOBJ_TO_PTR(c->finalized),
-		   0, 0,
+		   0, 3,
 		   CollectingContext, NULL,
 		   NULL, NULL);
 #else
@@ -703,12 +701,14 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 
 static void ChainContextsList()
 {
-  MrEdContextFrames *f = mred_frames;
+  MrEdContextFrames *f;
+  MrEdContextFramesRef fr = mred_frames;
   wxChildNode *first;
 
   mred_contexts = NULL;
 
-  while (f) {
+  while (fr) {
+    f = FRAMES_REF(fr);
     first = f->list->First();
 
 #if 0
@@ -724,7 +724,7 @@ static void ChainContextsList()
       c->next = mred_contexts;
       mred_contexts = c;
     }
-    f = FRAMES_REF(f->next);
+    fr = f->next;
   }
 }
 
@@ -787,10 +787,12 @@ Scheme_Object *MrEdGetFrameList(void)
 
 void *MrEdForEachFrame(ForEachFrameProc fp, void *data)
 {
-  MrEdContextFrames *f = mred_frames;
+  MrEdContextFrames *f;
+  MrEdContextFramesRef fr = mred_frames;
   wxChildNode *node;
 
-  while (f) {
+  while (fr) {
+    f = FRAMES_REF(fr);
     node = f->list->First();
 
     while (node) {
@@ -814,7 +816,7 @@ void *MrEdForEachFrame(ForEachFrameProc fp, void *data)
       node = node->Next();
     }
 
-    f = FRAMES_REF(f->next);
+    fr = f->next;
   }
 
   return data;
@@ -1211,6 +1213,7 @@ static void event_found(MrEdContext *c)
     c->waiting_for_nested = 0;
   } else {
     Scheme_Object *cp;
+
     cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
     scheme_thread_w_custodian(cp, c->main_config,
 			    (Scheme_Custodian *)scheme_get_param(c->main_config, 
@@ -1291,9 +1294,10 @@ static int try_dispatch(Scheme_Object *do_it)
     if (c) {
       memcpy(&c->event, &e, sizeof(MrEdEvent));
       event_found(c);
-    } else
+    } else {
       /* Event with unknown context: */
       MrEdDispatchEvent(&e);
+    }
     
     return 1;
   }

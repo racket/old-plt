@@ -372,6 +372,17 @@ Scheme_Object *objscheme_unbox(Scheme_Object *obj, const char *where)
   return scheme_unbox(obj);
 }
 
+Scheme_Object *objscheme_nullable_unbox(Scheme_Object *obj, const char *where)
+{  
+  if (!SCHEME_BOXP(obj)) {
+    if (where)
+      scheme_wrong_type(where, "box or " XC_NULL_STR, -1, 0, &obj);
+    return NULL;
+  } else
+    return scheme_unbox(obj);
+    
+}
+
 /************************************************************************/
 
 void objscheme_set_car(Scheme_Object *l, Scheme_Object *v)

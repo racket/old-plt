@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.cc,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
+ * $Id: Canvas.cc,v 1.2 1998/07/18 21:51:03 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -256,7 +256,7 @@ void wxCanvas::ViewStart(int *x, int *y)
     Position xx, yy;
 
     XtVaGetValues(X->handle, XtNx, &xx, XtNy, &yy, NULL);
-    *x = -xx/h_units; *y = -yy/v_units;
+    *x = -xx; *y = -yy;
 }
 
 void wxCanvas::WarpPointer(int x, int y)

@@ -26,7 +26,5 @@
  display-size
  application-file-handler
  get-color-from-user
- get-font-from-user)
-
-
-
+ get-font-from-user
+ middle-queue-key)

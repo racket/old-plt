@@ -1440,16 +1440,16 @@ sub PrintUnbundleVar
 	print "(";
 	print substr($paramtype, 8);
 	print ")objscheme_unbundle_generic($var, $stop)";
-    } elsif (substr($paramtype, -1) eq '*' || substr($paramtype, -1) eq '?') {
+    } elsif (substr($paramtype, -1) eq '*' || substr($paramtype, -1) eq '+') {
 	substr($paramtype, -1) = '';
-	&PrintUnbundleVar("objscheme_unbox($var, $stop)", $paramtype, "", "", $stop);
+	&PrintUnbundleVar("objscheme_unbox($var, $stop)", $paramtype, "", "", &Unboxing($stop));
     } elsif (substr($paramtype, -1) eq '&') {
 	substr($paramtype, -1) = '';
 	print "*" if ($outgoing);
 	&PrintUnbundleVar("$var", $paramtype, "", "", $stop);
-    } elsif (substr($paramtype, -1) eq '+') {
+    } elsif (substr($paramtype, -1) eq '?') {
 	substr($paramtype, -1) = '';
-	&PrintUnbundleVar("objscheme_unbox($var, $stop)", $paramtype, "", "", $stop);
+	&PrintUnbundleVar("objscheme_nullable_unbox($var, $stop)", $paramtype, "", "", &Unboxing($stop));
     } elsif ($paramtype eq 'bool') {
 	print "objscheme_unbundle_bool(${var}, $stop)";
     } elsif ($paramtype eq 'char') {
@@ -1633,14 +1633,12 @@ sub PrintUnbundles
 	    $svar = "p[" . ($paramnum - $offset) . "]";
 	    $xvar = "x${paramnum}";
 	    if (&NeedsDeref($paramtype)) {
-		print "if (XC_SCHEME_NULLP($svar))\n";
 		if (&CanBeNull($paramtype)) {
+		    print "if (XC_SCHEME_NULLP($svar))\n";
 		    print "$prefix    $xvar = NULL;";
-		} else {
-		    print "$prefix    scheme_wrong_type($mname, ";
-		    print "\"non-\" XC_NULL_STR, ($paramnum - $offset), n, p);"
+		    print "\n$prefix  else\n";
 		}
-		print "\n$prefix  else\n$prefix    *";
+		print "$prefix    *";
 	    }
 	    print "$xvar = ";
 	    &PrintUnbundleVar($svar, $paramtype, $unbundle, "", $mname);
@@ -1739,17 +1737,17 @@ sub PrintTypecheck
     } elsif (substr($paramtype, -1) eq '*') {
 	print "(objscheme_istype_box($var, $stop) && ";
 	substr($paramtype, -1) = '';
-	&PrintTypecheck("objscheme_unbox($var, $stop)", $paramtype, '', $stop);
+	&PrintTypecheck("objscheme_unbox($var, $stop)", $paramtype, '', &Unboxing($stop));
 	print ")";
     } elsif (substr($paramtype, -1) eq '+') {
 	print "(objscheme_istype_box($var, $stop) && ";
 	substr($paramtype, -1) = '';
-	&PrintTypecheck("objscheme_unbox($var, $stop)", $paramtype, '', $stop);
+	&PrintTypecheck("objscheme_unbox($var, $stop)", $paramtype, '', &Unboxing($stop));
 	print ")";
     } elsif (substr($paramtype, -1) eq '?') {
 	print "(XC_SCHEME_NULLP($var) || (objscheme_istype_box($var, $stop) && ";
 	substr($paramtype, -1) = '';
-	&PrintTypecheck("objscheme_unbox($var, $stop)", $paramtype, '', $stop);
+	&PrintTypecheck("objscheme_nullable_unbox($var, $stop)", $paramtype, '', &Unboxing($stop));
 	print "))";
     } elsif (substr($paramtype, -1) eq '&') {
 	substr($paramtype, -1) = '';
@@ -1865,6 +1863,17 @@ sub Overridden
     }
 
     return 0;
+}
+
+sub Unboxing
+{
+    local($stop) = @_;
+
+    if ($stop) {
+	return "$stop\", extracting boxed argument\"";
+    } else {
+	return $stop;
+    }
 }
 
 sub OperatorClean

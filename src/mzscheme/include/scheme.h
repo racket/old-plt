@@ -921,7 +921,6 @@ extern long scheme_creator_id;
 #ifdef MACINTOSH_EVENTS
 extern void (*scheme_handle_aewait_event)(EventRecord *e);
 #endif
-extern void *(*scheme_get_sema_callback_context)(void);
 
 extern Scheme_Object *(*scheme_make_stdin)(void);
 extern Scheme_Object *(*scheme_make_stdout)(void);
@@ -931,8 +930,6 @@ extern Scheme_Object *(*scheme_make_stderr)(void);
 Scheme_Env *scheme_basic_env(void);
 
 void scheme_check_threads(void);
-void *scheme_check_sema_callbacks(int (*)(void *, void*), void *, int check_only);
-void scheme_remove_sema_callbacks(int (*)(void *, void*), void *);
 void scheme_wake_up(void);
 
 /* image dump enabling startup: */

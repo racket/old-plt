@@ -52,6 +52,7 @@ Scheme_Object *objscheme_find_method(Scheme_Object *obj,
 
 void objscheme_set_car(Scheme_Object *, Scheme_Object *);
 Scheme_Object *objscheme_unbox(Scheme_Object *, const char *where);
+Scheme_Object *objscheme_nullable_unbox(Scheme_Object *, const char *where);
 Scheme_Object *objscheme_box(Scheme_Object *);
 void objscheme_set_box(Scheme_Object *, Scheme_Object *);
 

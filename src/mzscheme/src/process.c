@@ -144,7 +144,6 @@ void (*scheme_sleep)(float seconds, void *fds);
 void (*scheme_notify_multithread)(int on);
 void (*scheme_wakeup_on_input)(void *fds);
 int (*scheme_check_for_break)(void);
-void *(*scheme_get_sema_callback_context)(void);
 
 #ifndef MZ_REAL_THREADS
 static int scheme_do_atomic = 0;
@@ -165,8 +164,6 @@ extern long GC_get_memory_use();
 static Scheme_Object *keywords_symbol, *no_keywords_symbol;
 static Scheme_Object *callcc_is_callec_symbol, *callcc_is_not_callec_symbol;
 static Scheme_Object *hash_percent_syntax_symbol, *all_syntax_symbol, *empty_symbol;
-
-static Scheme_Sema_Callback *sema_callbacks = NULL;
 
 static Scheme_Object *collect_garbage(int argc, Scheme_Object *args[]);
 static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[]);
@@ -504,7 +501,6 @@ void scheme_init_process(Scheme_Env *env)
   if (scheme_starting_up) {
     REGISTER_SO(config_map);
     REGISTER_SO(namespace_options);
-    REGISTER_SO(sema_callbacks);
     REGISTER_SO(param_ext_recs);
 
 #ifdef MZ_REAL_THREADS
@@ -571,6 +567,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
     scheme_current_process = process;
 #endif
     scheme_first_process = scheme_main_process = process;
+    process->prev = NULL;
     process->next = NULL;
 
 #ifndef MZ_REAL_THREADS
@@ -1165,8 +1162,7 @@ static void start_child(Scheme_Process *child,
 #ifndef MZ_REAL_THREADS
     process_ended_with_activity = 1;
     
-    if (scheme_notify_multithread && !scheme_first_process->next
-	&& !sema_callbacks) {
+    if (scheme_notify_multithread && !scheme_first_process->next) {
       scheme_notify_multithread(0);
       have_activity = 0;
     }
@@ -1241,7 +1237,7 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   Scheme_Process *child, *return_to_process;
   int turn_on_multi;
  
-  turn_on_multi = !scheme_first_process->next && !sema_callbacks;
+  turn_on_multi = !scheme_first_process->next;
   
   scheme_ensure_stack_start(scheme_current_process, child_start);
   
@@ -1405,44 +1401,6 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
   return (Scheme_Object *)env;
 }
 
-void scheme_add_sema_callback(Scheme_Sema_Callback *cb)
-{
-  cb->next = NULL;
-  cb->context = (scheme_get_sema_callback_context
-		 ? scheme_get_sema_callback_context()
-		 : NULL);
-  cb->ready = 0;
-
-  SCHEME_GET_LOCK();
-  if (!sema_callbacks)
-    sema_callbacks = cb;
-  else {
-    Scheme_Sema_Callback *c;
-
-    for (c = sema_callbacks; c->next; c = c->next);
-    c->next = cb;
-  }
-  SCHEME_RELEASE_LOCK();
-#ifndef MZ_REAL_THREADS
-  if (!scheme_first_process->next
-      && scheme_notify_multithread) {
-    scheme_notify_multithread(1);
-    have_activity = 1;
-  }
-#endif
-}
-
-int scheme_count_sema_callbacks(int kind)
-{
-  int count = 0;
-
-  Scheme_Sema_Callback *c;
-  for (c = sema_callbacks; c; c = c->next)
-    count++;
-
-  return count;
-}
-
 #ifndef MZ_REAL_THREADS
 static int check_sleep(int need_activity, int sleep_now)
 {
@@ -1547,90 +1505,8 @@ static int check_sleep(int need_activity, int sleep_now)
 }
 #endif
 
-void *scheme_check_sema_callbacks(int (*test)(void *, void *), void *cdata, int check_only)
-{
-  Scheme_Sema_Callback *cb, *prev;
-  mz_jmp_buf savebuf;
-  
-  cb = sema_callbacks;
-  while (cb) {
-    int passed;
-#ifdef MZ_REAL_THREADS
-    passed = SCHEME_SEMA_TRY_DOWN(cb->sema->sema);
-#else
-    if (!test || test(cdata, cb->context)) {
-      if (cb->ready)
-	passed = 1;
-      else if (cb->sema->value) {
-	passed = 1;
-	cb->sema->value--;
-	cb->ready = 1;
-      } else
-	passed = 0;
-    } else
-      passed = 0;
-#endif
-    if (passed) {
-      if (check_only)
-	return cb->context;
-      SCHEME_GET_LOCK();
-      /* Remove this callback record from the list: */
-      if (NOT_SAME_PTR(cb, sema_callbacks)) {
-	prev = sema_callbacks;
-	while (prev) {
-	  if (SAME_PTR(prev->next, cb)) {
-	    prev->next = cb->next;
-	    break;
-	  } else
-	    prev = prev->next;
-	}
-      } else {
-	sema_callbacks = cb->next;
-	
-#ifndef MZ_REAL_THREADS
-	if (!sema_callbacks 
-	    && !scheme_first_process->next
-	    && scheme_notify_multithread) {
-	  scheme_notify_multithread(0);
-	  have_activity = 0;
-	}
-#endif
-      }
-      SCHEME_RELEASE_LOCK();
-
-      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-      if (!scheme_setjmp(scheme_error_buf))
-	scheme_apply_multi_eb(cb->callback, 0, NULL);
-      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-
-      return cb->context;
-    }
-    cb = cb->next;
-  }
-
-  return NULL;
-}
-
-void scheme_remove_sema_callbacks(int (*test)(void *, void *), void *cdata)
-{
-  Scheme_Sema_Callback *cb, *prev;
-
-  prev = NULL;
-  for (cb = sema_callbacks; cb; cb = cb->next) {
-    if (test(cdata, cb->context)) {
-      if (prev)
-	prev->next = cb->next;
-      else
-	sema_callbacks = cb->next;
-    } else
-      prev = cb;
-  }
-}
-
 void scheme_check_threads(void)
 {
-  scheme_check_sema_callbacks(NULL, NULL, 0);
-
 #ifndef MZ_REAL_THREADS
   scheme_current_process->checking_break = 1;
   scheme_process_block((float)0);

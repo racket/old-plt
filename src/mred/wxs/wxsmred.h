@@ -14,3 +14,5 @@ extern Scheme_Object *MrEdMakeEventspace(Scheme_Config *c);
 extern Scheme_Object *wxsBundlePSSetup(wxPrintSetupData *d);
 extern wxPrintSetupData *wxsUnbundlePSSetup(Scheme_Object *s);
 
+extern void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv);
+extern Scheme_Object *MrEd_mid_queue_key;

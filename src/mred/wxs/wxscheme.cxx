@@ -981,8 +981,6 @@ static Scheme_Object *wxSchemeCurrentPSSetup(int argc, Scheme_Object **argv)
 			     -1, PS_Setup_p, "ps-setup% instance", 0);
 }
 
-extern void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv);
-
 static Scheme_Object *queue_callback(int argc, Scheme_Object **argv)
 {
   MrEd_add_q_callback("queue-callback", argc, argv);
@@ -1385,6 +1383,8 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
 						    "queue-callback",
 						    1, 2),
 			   global_env);
+  MrEd_mid_queue_key = scheme_make_pair(scheme_false, scheme_false);
+  scheme_install_xc_global("middle-queue-key", MrEd_mid_queue_key, global_env);
 
 
   scheme_install_xc_global("check-for-break",

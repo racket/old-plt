@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Bitmap.cc,v 1.3 1998/03/12 01:01:02 mflatt Exp $
+ * $Id: Bitmap.cc,v 1.4 1998/08/01 12:42:15 mflatt Exp $
  *
  * Purpose: bitmap classes to implement pixmaps, icons, and cursors
  *
@@ -296,6 +296,8 @@ void wxBitmap::Destroy(void)
     Xbitmap = NULL;
 }
 
+extern int wxsGetImageType(char *);
+
 // load bitmaps
 Bool wxBitmap::LoadFile(char *fname, long flags)
 {
@@ -303,6 +305,9 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
       return FALSE;
 
     Destroy(); // destroy old pixmap if any
+
+    if (!flags)
+      flags = wxsGetImageType(fname);
 
     /* MATTHEW: move "Xbitmap = new wxBitmap_Xintern" into
        two appropriate cases. */

@@ -61,11 +61,6 @@ void scheme_init_sema(Scheme_Env *env)
 						      "semaphore-wait/enable-break", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("semaphore-callback", 
-			     scheme_make_prim_w_arity(sema_callback, 
-						      "semaphore-callback", 
-						      2, 2), 
-			     env);
 }
 
 #ifdef MZ_REAL_THREADS
@@ -340,23 +335,6 @@ static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p)
     scheme_wrong_type("semaphore-wait/enable-break", "sema", 0, n, p);
 
   scheme_wait_sema(p[0], -1);
-
-  return scheme_void;
-}
-
-static Scheme_Object *sema_callback(int n, Scheme_Object **p)
-{
-  Scheme_Sema_Callback *cb;
-
-  if (!SCHEME_SEMAP(p[0]))
-    scheme_wrong_type("semaphore-callback", "semaphore", 0, n, p);
-  scheme_check_proc_arity("semaphore-callback", 0, 1, n, p);
-
-  cb = (Scheme_Sema_Callback*)scheme_malloc(sizeof(Scheme_Sema_Callback));
-  cb->sema = (Scheme_Sema *)p[0];
-  cb->callback = p[1];
-  
-  scheme_add_sema_callback(cb);
 
   return scheme_void;
 }

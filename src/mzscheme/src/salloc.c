@@ -750,15 +750,6 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     total_count += scheme_envunbox_count;
     total_size += scheme_envunbox_size;
 
-    {
-      int c;
-
-      c = scheme_count_sema_callbacks(0);
-      scheme_console_printf("%30.30s %10ld          -          -\n",
-			    "semaphore-callback", c);
-      total_count += c;
-    }
-
     scheme_console_printf("%30.30s          - %10ld          -\n",
 			  "miscellaneous", 
 			  scheme_misc_count + scheme_type_table_count);

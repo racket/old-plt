@@ -562,7 +562,7 @@ static void GoAhead(MrEdContext *c)
   c->ready_to_go = 0;
 
   if (c->q_callback) {
-    int hi = (c->q_callback == 2);
+    int hi = (c->q_callback - 1);
     c->q_callback = 0;
     (void)check_q_callbacks(hi, MrEdSameContext, c, 0);
   } else if (c->timer) {
@@ -621,12 +621,15 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
   save_config = scheme_config;
   scheme_config = c->main_config;
 
-  if (check_q_callbacks(1, MrEdSameContext, c, 1)) {
-    c->q_callback = 2;
+  if (check_q_callbacks(2, MrEdSameContext, c, 1)) {
+    c->q_callback = 3;
     DoTheEvent(c);
   } else if ((timer = TimerReady(c))) {
     timer->Dequeue();
     c->timer = timer;
+    DoTheEvent(c);
+  } else if (check_q_callbacks(1, MrEdSameContext, c, 1)) {
+    c->q_callback = 2;
     DoTheEvent(c);
   } else if (MrEdGetNextEvent(0, 1, &c->event, NULL)) {
     DoTheEvent(c);
@@ -681,6 +684,7 @@ void wxDoNextEvent()
 int MrEdEventReady(MrEdContext *c)
 {
   return (TimerReady(c) || MrEdGetNextEvent(1, 1, NULL, NULL)
+	  || check_q_callbacks(2, MrEdSameContext, c, 1)
 	  || check_q_callbacks(1, MrEdSameContext, c, 1)
 	  || check_q_callbacks(0, MrEdSameContext, c, 1));
 }
@@ -851,7 +855,7 @@ static int try_dispatch(Scheme_Object *do_it)
   if (main_loop_exited)
     return 1;
 
-  if (try_q_callback(do_it, 1))
+  if (try_q_callback(do_it, 2))
     return 1;
 
   if ((timer = TimerReady(NULL))) {
@@ -873,6 +877,9 @@ static int try_dispatch(Scheme_Object *do_it)
 
     return 1;
   }
+
+  if (try_q_callback(do_it, 1))
+    return 1;
 
   ChainContextsList();
 
@@ -1218,7 +1225,7 @@ static void remove_q_callbacks(MrEdContext *c)
   Q_Callback *cb, *next;
   int i;
 
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < 3; i++) {
     cs = q_callbacks + i;
     for (cb = cs->first; cb; cb = next) {
       next = cb->next;
@@ -1228,6 +1235,8 @@ static void remove_q_callbacks(MrEdContext *c)
   }
 }
 
+Scheme_Object *MrEd_mid_queue_key;
+
 void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv)
 {
   MrEdContext *c = (MrEdContext *)wxGetContextForFrame();
@@ -1236,10 +1245,16 @@ void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv)
   int hi;
   
   scheme_check_proc_arity(who, 0, 0, argc, argv);
-  hi = (argc > 1) ? SCHEME_TRUEP(argv[1]) : 1;
+  if (argc > 1) {
+    if (argv[1] == MrEd_mid_queue_key)
+      hi = 1;
+    else
+      hi = (SCHEME_TRUEP(argv[1]) ? 2 : 0);
+  } else
+    hi = 2;
   
   cs = q_callbacks + hi;
-
+  
   cb = (Q_Callback*)scheme_malloc(sizeof(Q_Callback));
   cb->context = c;
   cb->callback = argv[0];

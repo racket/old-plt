@@ -1,5 +1,5 @@
  /*								-*- C++ -*-
- * $Id: Font.cc,v 1.3 1998/02/07 13:43:59 mflatt Exp $
+ * $Id: Font.cc,v 1.4 1998/03/06 23:50:55 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -130,7 +130,20 @@ wxFont::~wxFont(void)
 
 char *wxFont::GetFaceString(void)
 {
-  return wxTheFontNameDirectory.GetFontName(font_id); 
+  /* If it's one of the portable facelss fonts, return NULL. */
+  switch (font_id) {
+  case wxDEFAULT:
+  case wxDECORATIVE:
+  case wxMODERN:
+  case wxROMAN:
+  case wxSCRIPT:
+  case wxSWISS:
+  case wxTELETYPE:
+  case wxSYSTEM:
+    return NULL;
+  default:
+    return wxTheFontNameDirectory.GetFontName(font_id); 
+  }
 }
 
 //-----------------------------------------------------------------------------

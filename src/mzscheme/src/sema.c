@@ -45,10 +45,9 @@ static void register_traversers(void);
 #endif
 
 /* For object-wait: */
-static Scheme_Object *sema_identity(Scheme_Object *s, int *repost)
+static int sema_ready(Scheme_Object *s)
 {
-  *repost = 0;
-  return s;
+  return scheme_wait_sema(s, 1);
 }
 
 static Scheme_Object *sema_for_repost(Scheme_Object *s, int *repost)
@@ -116,7 +115,7 @@ void scheme_init_sema(Scheme_Env *env)
 						      1, 1, 1), 
 			     env);  
 
-  scheme_add_waitable_through_sema(scheme_sema_type, sema_identity, NULL);
+  scheme_add_waitable(scheme_sema_type, sema_ready, NULL, NULL, 0);
   scheme_add_waitable_through_sema(scheme_semaphore_repost_type, sema_for_repost, NULL);
   scheme_add_waitable(scheme_channel_type, (Scheme_Ready_Fun)channel_get_ready, NULL, NULL, 1);
   scheme_add_waitable(scheme_channel_put_type, channel_put_ready, NULL, NULL, 0);
@@ -178,8 +177,7 @@ static Scheme_Object *semap(int n, Scheme_Object **p)
 void scheme_post_sema(Scheme_Object *o)
 {
   Scheme_Sema *t = (Scheme_Sema *)o;
-
-  int v;
+  int v, consumed;
 
   if (t->value < 0) return;
 
@@ -203,10 +201,16 @@ void scheme_post_sema(Scheme_Object *o)
 	  w->waiting->result = w->waiting_i + 1;
 	  if (w->waiting->disable_break)
 	    scheme_set_param(w->waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
-	  t->value -= 1;
-	}
+	  if (!w->waiting->reposts || !w->waiting->reposts[w->waiting_i]) {
+	    t->value -= 1;
+	    consumed = 1;
+	  } else
+	    consumed = 0;
+	} else
+	  consumed = 1;
 	w->picked = 1;
-      }
+      } else
+	consumed = 0;
 
       w->in_line = 0;
       w->prev = NULL;
@@ -214,7 +218,8 @@ void scheme_post_sema(Scheme_Object *o)
 
       if (w->picked) {
 	scheme_weak_resume_thread(w->p);
-	break;
+	if (consumed)
+	  break;
       }
       /* otherwise, loop to find one we can wake up */
     }
@@ -473,7 +478,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
   int v, i;
 
   if (just_try) {
-    /* assert: n == 1 */
+    /* assert: n == 1, !waiting */
     Scheme_Sema *sema = semas[0];
     if (just_try > 0) {
       if (sema->type == scheme_sema_type) {
@@ -507,7 +512,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
     for (i = 0; i < n; i++) {
       if (semas[i]->type == scheme_sema_type) {
 	if (semas[i]->value) {
-	  if (semas[i]->value > 0)
+	  if ((semas[i]->value > 0) && (!waiting || !waiting->reposts || !waiting->reposts[i]))
 	    --semas[i]->value;
 	  break;
 	}
@@ -580,8 +585,11 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	    if (ws[i]->picked) {
 	      out_of_a_line = 1;
 	      if (semas[i]->value) {
-		if (semas[i]->value > 0)
+		if (semas[i]->value > 0) {
 		  --(semas[i]->value);
+		  if (waiting && waiting->reposts && waiting->reposts[i])
+		    scheme_post_sema((Scheme_Object *)semas[i]);
+		}
 		break;
 	      }
 	    }
@@ -628,7 +636,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 		       has been told to go, and we're accepting a different post. */
 		    if (semas[j]->value > 0)
 		      --semas[j]->value;
-		    scheme_post_sema((Scheme_Object *)(semas[j]));
+		    scheme_post_sema((Scheme_Object *)semas[j]);
 		  }
 		}
 	      }
@@ -658,7 +666,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	for (i = 0; i < n; i++) {
 	  if (semas[i]->type == scheme_sema_type) {
 	    if (semas[i]->value) {
-	      if (semas[i]->value > 0)
+	      if ((semas[i]->value > 0) && (!waiting || !waiting->reposts || !waiting->reposts[i]))
 		--semas[i]->value;
 	      break;
 	    }
@@ -787,7 +795,7 @@ static int channel_get_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo)
   Scheme_Object *result;
 
   if (try_channel((Scheme_Sema *)ch, NULL, 0, &result)) {
-    scheme_set_wait_target(sinfo, result, NULL, NULL, 0);
+    scheme_set_wait_target(sinfo, result, NULL, NULL, 0, 0);
     return 1;
   }
 

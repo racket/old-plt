@@ -8,7 +8,39 @@
 (define SYNC-BUSY-DELAY 0.1) ; go a little slower to check busy waits
 
 ;; ----------------------------------------
+;;  Semaphore peeks
+
+(let* ([s (make-semaphore)]
+       [p (make-semaphore-peek s)]
+       [ch (make-channel)])
+  (test #f object-wait-multiple 0 s p)
+  (test #f object-wait-multiple 0 s p)
+  (semaphore-post s)
+  (test p object-wait-multiple 0 p)
+  (test p object-wait-multiple #f p)
+  (test s object-wait-multiple #f s)
+  (test #f object-wait-multiple 0 p)
+  (thread (lambda () (sleep SYNC-SLEEP-DELAY) (semaphore-post s)))
+  (test p object-wait-multiple #f p)
+  (test p object-wait-multiple #f p)
+  (test s object-wait-multiple #f s)
+  (test #f object-wait-multiple 0 p)
+  (thread (lambda () (object-wait-multiple 0 p) (channel-put ch 7)))
+  (thread (lambda () (object-wait-multiple 0 p) (channel-put ch 7)))
+  (thread (lambda () (object-wait-multiple 0 p) (channel-put ch 7)))
+  (semaphore-post s)
+  (test 7 channel-get ch)
+  (test 7 channel-get ch)
+  (test 7 channel-get ch))
+
+(arity-test make-semaphore-peek 1 1)
+(err/rt-test (make-semaphore-peek #f))
+(err/rt-test (make-semaphore-peek (make-semaphore-peek (make-semaphore))))
+
+;; ----------------------------------------
 ;; Channels
+
+(arity-test make-channel 0 0)
 
 (let ([c (make-channel)]
       [v 'nope])
@@ -154,7 +186,19 @@
       (thread (lambda () (channel-get c)))
       (test p object-wait-multiple SYNC-SLEEP-DELAY set)
       (test #f object-wait-multiple SYNC-SLEEP-DELAY set))))
-    
+
+(test 77 object-wait-multiple 
+      #f 
+      (make-wrapped-waitable (make-semaphore) void) 
+      (make-guard-waitable 
+       (lambda () 
+	 (waitables->waitable-set 
+	  (make-semaphore) (make-semaphore) (make-semaphore) (make-semaphore) 
+	  (make-semaphore) (make-semaphore) (make-semaphore) (make-semaphore) 
+	  (let ([sema (make-semaphore 1)])
+	    (make-wrapped-waitable sema (lambda (x)
+					  (test sema values x)
+					  77)))))))
 
 ;; ----------------------------------------
 ;; Wrapped waitables
@@ -541,6 +585,7 @@
 (check-threads-gcable 'sema (lambda () (semaphore-wait (make-semaphore))))
 (define (check/combine c)
   (check-threads-gcable 'semaw (lambda () (object-wait-multiple #f (c (make-semaphore)))))
+  (check-threads-gcable 'semap (lambda () (object-wait-multiple #f (c (make-semaphore-peek (make-semaphore))))))
   (check-threads-gcable 'ch (lambda () (object-wait-multiple #f (c (make-channel)))))
   (check-threads-gcable 'chput (lambda () (object-wait-multiple #f (c (make-channel-put-waitable (make-channel) 10)))))
   (check-threads-gcable 'wrapped (lambda () (object-wait-multiple #f (c (make-wrapped-waitable (make-semaphore) void)))))

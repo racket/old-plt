@@ -1360,6 +1360,7 @@ mark_waiting {
   gcMARK(w->set);
   gcMARK(w->wrapss);
   gcMARK(w->nackss);
+  gcMARK(w->reposts);
   gcMARK(w->disable_break);
 
  size:

@@ -628,7 +628,7 @@ static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinf
     v = ((Scheme_Structure *)o)->slots[SCHEME_INT_VAL(v)];
 
   if (scheme_is_waitable(v)) {
-    scheme_set_wait_target(sinfo, v, NULL, NULL, 1);
+    scheme_set_wait_target(sinfo, v, NULL, NULL, 0, 1);
     return 0;
   }
 
@@ -645,12 +645,12 @@ static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinf
       result = scheme_apply(f, 1, a);
 
       if (scheme_is_waitable(result)) {
-	scheme_set_wait_target(sinfo, result, NULL, NULL, 1);
+	scheme_set_wait_target(sinfo, result, NULL, NULL, 0, 1);
 	return 0;
       }
 
       /* non-waitable => ready and result is self */
-      scheme_set_wait_target(sinfo, o, o, NULL, 0);
+      scheme_set_wait_target(sinfo, o, o, NULL, 0, 0);
 
       return 1;
     }
@@ -1297,7 +1297,7 @@ static int wrapped_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sin
 {
   Wrapped_Waitable *ww = (Wrapped_Waitable *)o;
 
-  scheme_set_wait_target(sinfo, ww->waitable, ww->wrapper, NULL, 1);
+  scheme_set_wait_target(sinfo, ww->waitable, ww->wrapper, NULL, 0, 1);
   return 0;
 }
 
@@ -1311,13 +1311,13 @@ static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
   /* Install the semaphore immediately, so that it's posted on
      exceptions (e.g., breaks) even if they happen while trying
      to run the maker. */
-  scheme_set_wait_target(sinfo, o, NULL, sema, 0);
+  scheme_set_wait_target(sinfo, o, NULL, sema, 0, 0);
 
   a[0] = sema;
   result = scheme_apply(nw->maker, 1, a);
 
   if (scheme_is_waitable(result)) {
-    scheme_set_wait_target(sinfo, result, NULL, NULL, 1);
+    scheme_set_wait_target(sinfo, result, NULL, NULL, 0, 1);
     return 0;
   } else
     return 1; /* Non-waitable => ready */

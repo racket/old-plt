@@ -319,7 +319,8 @@ typedef struct {
 } Scheme_Schedule_Info;
 
 void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target, 
-			    Scheme_Object *wrap, Scheme_Object *nack, int retry);
+			    Scheme_Object *wrap, Scheme_Object *nack, 
+			    int repost, int retry);
 
 typedef int (*Scheme_Ready_Fun_FPC)(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 
@@ -917,6 +918,7 @@ typedef struct Waiting {
 
   Scheme_Object **wrapss;
   Scheme_Object **nackss;
+  char *reposts;
 
   Scheme_Thread *disable_break; /* when result is set */
 } Waiting;

@@ -3418,6 +3418,7 @@ int mark_waiting_MARK(void *p) {
   gcMARK(w->set);
   gcMARK(w->wrapss);
   gcMARK(w->nackss);
+  gcMARK(w->reposts);
   gcMARK(w->disable_break);
 
   return
@@ -3430,6 +3431,7 @@ int mark_waiting_FIXUP(void *p) {
   gcFIXUP(w->set);
   gcFIXUP(w->wrapss);
   gcFIXUP(w->nackss);
+  gcFIXUP(w->reposts);
   gcFIXUP(w->disable_break);
 
   return

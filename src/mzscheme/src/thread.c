@@ -3050,11 +3050,11 @@ static int resume_suspend_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 
   t = SCHEME_PTR2_VAL(o);
   if (t) {
-    scheme_set_wait_target(sinfo, o, t, NULL, 0);
+    scheme_set_wait_target(sinfo, o, t, NULL, 0, 0);
     return 1;
   }
 
-  scheme_set_wait_target(sinfo, SCHEME_PTR1_VAL(o), o, NULL, 1);
+  scheme_set_wait_target(sinfo, SCHEME_PTR1_VAL(o), o, NULL, 0, 1);
   return 0;
 }
 
@@ -3086,7 +3086,7 @@ static Scheme_Object *make_thread_dead(int argc, Scheme_Object *argv[])
 
 static int dead_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  scheme_set_wait_target(sinfo, SCHEME_PTR_VAL(o), o, NULL, 1);
+  scheme_set_wait_target(sinfo, SCHEME_PTR_VAL(o), o, NULL, 0, 1);
   return 0;
 }
 
@@ -3190,7 +3190,7 @@ static void *splice_ptr_array(void **a, int al, void **b, int bl, int i)
 {
   void **r;
   
-  r = MALLOC_N(void*, al + bl);
+  r = MALLOC_N(void*, al + bl - 1);
 
   if (a)
     memcpy(r, a, i * sizeof(void*));
@@ -3202,16 +3202,12 @@ static void *splice_ptr_array(void **a, int al, void **b, int bl, int i)
   return r;
 }
 
-void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target, 
-			    Scheme_Object *wrap, Scheme_Object *nack, int retry)
+static void set_wait_target(Waiting *waiting, int i, Scheme_Object *target, 
+			    Scheme_Object *wrap, Scheme_Object *nack, 
+			    int repost)
 /* Not ready, deferred to target. */
 {
-  Waiting *waiting = (Waiting *)sinfo->current_waiting;
-  Waitable_Set *waitable_set;
-  int i;
-
-  waitable_set = waiting->set;
-  i = sinfo->w_i;
+  Waitable_Set *waitable_set = waiting->set;
 
   if (wrap) {
     if (!waiting->wrapss) {
@@ -3237,6 +3233,16 @@ void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
     waiting->nackss[i] = nack;
   }
 
+  if (repost) {
+    if (!waiting->reposts) {
+      char *s;
+      s = (char *)scheme_malloc_atomic(waitable_set->argc);
+      memset(s, 0, waitable_set->argc);
+      waiting->reposts = s;
+    }
+    waiting->reposts[i] = 1;
+  }
+
   if (SCHEME_WAITSETP(target)) {
     /* Flatten the set into this one */
     Waitable_Set *wts = (Waitable_Set *)target;
@@ -3259,9 +3265,41 @@ void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
 					 (void **)wts->ws, 
 					 wts->argc,
 					 i);
-      
+
       waitable_set->argv = argv;
       waitable_set->ws = ws;
+
+      if (waiting->wrapss) {
+	argv = (Scheme_Object **)splice_ptr_array((void **)waiting->wrapss, 
+						  waitable_set->argc,
+						  (void **)NULL,
+						  wts->argc,
+						  i);
+	waiting->wrapss = argv;
+      }
+      if (waiting->nackss) {
+	argv = (Scheme_Object **)splice_ptr_array((void **)waiting->nackss, 
+						  waitable_set->argc,
+						  (void **)NULL,
+						  wts->argc,
+						  i);
+	waiting->nackss = argv;
+      }
+      if (waiting->reposts) {
+	char *s;
+	int len;
+	
+	len = waitable_set->argc + wts->argc - 1;
+	
+	s = (char *)scheme_malloc_atomic(len);
+	memset(s, 0, len);
+	
+	memcpy(s, waiting->reposts, i);
+	memcpy(s + i + wts->argc, waiting->reposts + i + 1, waitable_set->argc - i - 1);
+	waiting->reposts = s;
+      }
+
+      waitable_set->argc += (wts->argc - 1);
     }
   } else {
     Waitable *ww;
@@ -3269,7 +3307,14 @@ void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
     ww = find_waitable(target);
     waitable_set->ws[i] = ww;
   }
- 
+}
+
+void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target, 
+			    Scheme_Object *wrap, Scheme_Object *nack, 
+			    int repost, int retry)
+{
+  set_wait_target((Waiting *)sinfo->current_waiting, sinfo->w_i,
+		  target, wrap, nack, repost);
   if (retry) {
     /* Rewind one step to try new ones (or continue
        if the set was empty). */
@@ -3337,6 +3382,8 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 	  waiting->result = i + 1;
 	  if (waiting->disable_break)
 	    scheme_set_param(waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	  if (waiting->reposts && waiting->reposts[i])
+	    scheme_post_sema(o);
 	  return 1;
 	} else {
 	  sinfo->potentially_false_positive = 1;
@@ -3351,14 +3398,8 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
       Scheme_Object *sema;
       
       sema = get_sema(o, &repost);
-      if (scheme_wait_sema(sema, 1)) {
-	if (repost)
-	  scheme_post_sema(sema);
-	waiting->result = i + 1;
-	if (waiting->disable_break)
-	  scheme_set_param(waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
-	return 1;
-      }
+      set_wait_target(waiting, i, sema, o, NULL, repost);
+      i--; /* try again with this sema */
     }
   }
 

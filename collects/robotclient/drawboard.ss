@@ -26,7 +26,7 @@
   (define pack-colors (make-package-colors num-pack-icons))
 
   (define-struct pack (icon pen id dest-x dest-y weight x y owner))
-  (define-struct robot (icon id x y))
+  (define-struct robot (icon id x y packages))
 
   (define max-width 800)
   (define max-height 600)
@@ -37,10 +37,11 @@
             ;; board is a vector of row vectors
             board)
       
-      (define/public (install-robots orig-robots)
+      (define/public (install-robots&packages orig-robots orig-pkgs)
+        ;; Each robot is (list id x y (list pkg-id ...))
+        ;; Each package is (list id x y dest-x dext-y weight)
+        (send canvas install-packages orig-pkgs package-list)
         (send canvas install-robots orig-robots robot-list))
-      (define/public (install-packages orig-pkgs)
-        (send canvas install-packages orig-pkgs package-list))
       
       (super-instantiate (frame))
       (define canvas (make-object board-canvas% this width height board
@@ -87,14 +88,35 @@
       (define active-j #f)
       
       (define/public (install-robots orig-robots hlist)
-        ;; robot is (list id x y)
+        ;; robot is (list id x y (list pkg-id ...))
         (set! robots
               (map (lambda (orig icon)
-                     (make-robot icon
-                                 (car orig)
-                                 ;; sub1 for 0-indexed
-                                 (sub1 (cadr orig))
-                                 (sub1 (caddr orig))))
+                     (let ([pkgs (map (lambda (pid)
+                                        (or (ormap (lambda (pkg)
+                                                     (and (= (pack-id pkg) pid)
+                                                          pkg))
+                                                   packages)
+                                            (error 'install "robot package not found: ~a" pid)))
+                                      (cadddr orig))])
+                       (let ([r (make-robot icon
+                                            (car orig)
+                                            ;; sub1 for 0-indexed
+                                            (sub1 (cadr orig))
+                                            (sub1 (caddr orig))
+                                            pkgs)])
+                         (for-each (lambda (pkg) 
+                                     (when (pack-owner pkg) 
+                                       (error 'install
+                                              "two robots own package ~a" (pack-id pkg)))
+                                     (unless (and (= (pack-x pkg) (robot-x r))
+                                                  (= (pack-y pkg) (robot-y r)))
+                                       (error 'install
+                                              "owning robot ~a not on the same location as owned package ~a" 
+                                              (robot-id r)
+                                              (pack-id pkg)))
+                                     (set-pack-owner! pkg r))
+                                   pkgs)
+                         r)))
                    orig-robots
                    (make-robot-icons cell-paint-size (make-robot-colors (length orig-robots)))))
         (map (lambda (i) (send hlist delete-item i)) (send hlist get-items))
@@ -104,12 +126,11 @@
                            (send e insert (format " ~a" (robot-id r)))
                            (send i user-data (cons (robot-x r) (robot-y r)))))
              robots))
-                           
       
       (define packages null)
       
       (define/public (install-packages orig-pkgs hlist)
-        ;; package is (list id x y dest-x dext-y weight)
+        ;; Each package is (list id x y dest-x dext-y weight)
         (set! packages
               (if (null? orig-pkgs)
                   null
@@ -190,14 +211,14 @@
                   (draw-board-pos offscreen i j non-water-rgn)
                   (loop (add1 j))))
               (loop (add1 i))))
-          (for-each (lambda (pack)
-                      (draw-package offscreen pack))
-                    packages)
           (send offscreen set-clipping-region non-water-rgn)
           (for-each (lambda (robot)
                       (draw-robot offscreen robot))
                     robots)
           (send offscreen set-clipping-region #f)
+          (for-each (lambda (pack)
+                      (draw-package offscreen pack))
+                    packages)
           (when active-i
             (let-values ([(x y) (pos->location active-i active-j)])
               (send offscreen set-pen red-pen)

@@ -93,9 +93,26 @@
 			  void
 			  (lambda () (write code out))
 			  (lambda () (close-output-port out)))))
+		  (let ([ss-sec (file-or-directory-modify-seconds path)]
+			[zo-sec (file-or-directory-modify-seconds zo-name)])
+		    (when (< zo-sec ss-sec)
+		      (error 'compile-zo "newly created .zo file (~a @ ~a) is older than .ss file (~a @ ~a)"
+			     zo-name
+			     (format-date (seconds->date zo-sec))
+			     path
+			     (format-date (seconds->date ss-sec)))))
 		  (write-deps code path external-deps)))))))
     (indent (substring (indent) 2 (string-length (indent))))
     ((trace) (format "~aend compile: ~a" (indent) path)))
+
+  (define (format-date date)
+    (format "~a:~a:~a:~a:~a:~a"
+	    (date-year date)
+	    (date-month date)
+	    (date-day date)
+	    (date-hour date)
+	    (date-minute date)
+	    (date-second date)))
   
   (define (get-compiled-time path)
     (with-handlers ((exn:i/o:filesystem?

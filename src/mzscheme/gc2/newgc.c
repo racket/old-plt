@@ -1068,49 +1068,7 @@ static void designate_modified(void *p)
   }
 }
 
-#if defined(linux)
-# include <signal.h>
-void fault_handler(int sn, struct sigcontext sc) 
-{
-  designate_modified((void *)sc.cr2);
-  signal(SIGSEGV, (void(*)(int))fault_handler);
-}
-# define NEED_SIGSEGV
-#endif
-
-#if defined(__FreeBSD__)
-# include <signal.h>
-void fault_handler(int sn, int code, struct sigcontext *sc, char *addr) 
-{
-  designate_modified(addr);
-}
-# define NEED_SIGBUS
-#endif
-
-#ifdef OS_X
-void macosx_init_exception_handler() ;
-#endif
-
-#if defined(sun)
-# include <signal.h>
-void fault_handler(int sn, struct siginfo *si, void *ctx) 
-{
-  designate_modified(si->su_addr);
-}
-# define NEED_SIGACTION
-#endif
-
-#if defined(_WIN32)
-LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e) 
-{
-  if((e->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION)
-     && (e->ExceptionRecord->ExceptionInformation[0] == 1)) {
-    designate_modifed((void *)e->ExceptionRecord->ExceptionInformation[1]);
-    return EXCEPTION_CONTINUE_EXECUTION;
-  } else return EXCEPTION_CONTINUE_SEARCH;
-}
-# define NEED_SIGWIN
-#endif
+#include "sighand.c"
 
 void GC_init_type_tags(int count, int weakbox) 
 {
@@ -1133,27 +1091,8 @@ void GC_init_type_tags(int count, int weakbox)
                            repair_weak_box, 0, 0);
     GC_register_traversers(weak_array_tag, size_weak_array, mark_weak_array,
                            repair_weak_array, 0, 0);
-#ifdef NEED_SIGSEGV
-    signal(SIGSEGV, (void (*)(int))fault_handler);
-#endif
-#ifdef NEED_SIGBUS
-    signal(SIGBUS, (void (*)(int))fault_handler);     
-#endif
-#ifdef OS_X
-    macosx_init_exception_handler();
-#endif
-#ifdef NEED_SIGACTION
-    {
-      struct sigaction act, oact;
-      act.sa_sigaction = fault_handler;
-      sigemptyset(&act.sa_mask);
-      act.sa_flags = SA_SIGINFO;
-      sigaction(SIGSEGV, &act, &oact);
-    }
-#endif
-#ifdef NEED_SIGWIN
-    SetUnhandledExceptionFilter(fault_handler);
-#endif
+
+    initialize_signal_handler();
   }
   weak_box_tag = weakbox;
 }

@@ -1676,8 +1676,9 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
   Scheme_Compiled_Let_Value *last = NULL, *lv;
   DupCheckRecord r;
 
-  if (scheme_stx_proper_list_length(form) < 3)
-    scheme_wrong_syntax(NULL, NULL, form, NULL);
+  i = scheme_stx_proper_list_length(form);
+  if (i < 3)
+    scheme_wrong_syntax(NULL, NULL, form, (!i ? "bad syntax (empty body)" : NULL));
 
   bindings = SCHEME_STX_CDR(form);
   bindings = SCHEME_STX_CAR(bindings);
@@ -1907,13 +1908,15 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
     return named_let_syntax(form, origenv, NULL, 0, depth, boundname);
 
   if (!SCHEME_STX_PAIRP(vars))
-    scheme_wrong_syntax(NULL, vars, form, NULL);
+    scheme_wrong_syntax(NULL, NULL, form, NULL);
 
   body = SCHEME_STX_CDR(vars);
   vars = SCHEME_STX_CAR(vars);
 
   if (!SCHEME_STX_PAIRP(body))
-    scheme_wrong_syntax(NULL, body, form, NULL);
+    scheme_wrong_syntax(NULL, NULL, form, (SCHEME_STX_NULLP(body) 
+					   ? "bad syntax (empty body)" 
+					   : NULL));
 
   if (letstar) {
     if (!SCHEME_STX_NULLP(vars)) {
@@ -2155,10 +2158,12 @@ let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 {
   Scheme_Object *rest;
 
-  if (!SCHEME_STX_PAIRP(SCHEME_STX_CDR(form)))
-    scheme_wrong_syntax(NULL, NULL, form, "bad syntax (" IMPROPER_LIST_FORM ")");
-
   rest = SCHEME_STX_CDR(form);
+  if (!SCHEME_STX_PAIRP(rest))
+    scheme_wrong_syntax(NULL, NULL, form, (SCHEME_STX_NULLP(rest)
+					   ? NULL
+					   : "bad syntax (" IMPROPER_LIST_FORM ")"));
+
   if (SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(rest)))
     return named_let_syntax (form, env, rec, drec, 0, scheme_false);
   

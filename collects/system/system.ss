@@ -2,7 +2,7 @@
 
 (error-print-width 250)
 
-(define mred:debug:turned-on (box (list 'load 'startup 'invoke 'html 'dv)))
+(define mred:debug:turned-on (box (list 'load 'startup 'html 'dv)))
 
 (define mred:debug@
   (let* ([debug-env (getenv "MREDDEBUG")]

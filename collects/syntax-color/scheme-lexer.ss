@@ -211,6 +211,52 @@
              ((= 0 next-num-opens) (ret "" 'comment #f start-pos end))
              (else (read-nested-comment next-num-opens start-pos input))))))))
   
+  (define (get-offset i)
+    (let-values (((x y offset) (port-next-location i)))
+      offset))
+  
+  (define (escape-regexp s)
+    (apply string-append 
+           (map (lambda (c)
+                  (if (memq c '(#\( #\) #\* #\+ #\? #\[ #\] #\. #\^ #\\ #\|))
+                      (string #\\ c)
+                      (string c)))
+                (string->list s))))
+  
+  (define (special-read-line i)
+    (let ((next (peek-char-or-special i)))
+      (cond
+        ((or (eq? next #\newline) (not (char? next)))
+         null)
+        (else
+         (read-char i)
+         (cons next (special-read-line i))))))
+          
+  (define (get-here-string start-pos i)
+    (let* ((ender (list->string (special-read-line i)))
+           (next-char (peek-char-or-special i)))
+      (cond
+        ((or (equal? ender "") (not (eq? #\newline next-char)))
+         (values (string-append "#<<" ender) 'error #f start-pos (get-offset i)))
+        (else
+         (read-char i)
+         (let loop ((acc (list (string-append "#<<" ender "\n"))))
+           (let* ((next-line (list->string (special-read-line i)))
+                  (next-char (peek-char-or-special i)))
+             (cond
+               ((not (or (char? next-char) (eof-object? next-char))) ;; a special
+                (values (apply string-append (reverse! (cons next-line acc)))
+                        'error #f start-pos (get-offset i)))
+               ((equal? next-line ender)  ;; end of string
+                (values (apply string-append (reverse! (cons next-line acc)))
+                        'string #f start-pos (get-offset i)))
+               ((eof-object? next-char)
+                (values (apply string-append (reverse! (cons next-line acc)))
+                        'error #f start-pos (get-offset i)))
+               (else
+                (read-char i)
+                (loop (cons (string-append next-line "\n") acc))))))))))
+        
   (define scheme-lexer
     (lexer
      [(:+ scheme-whitespace) (ret lexeme 'white-space #f start-pos end-pos)]
@@ -237,6 +283,7 @@
      [(:or script sharing reader-command "." "," ",@" "#," "#,@")
       (values lexeme 'other #f (position-offset start-pos) (position-offset end-pos))]
      [identifier (values lexeme 'symbol #f (position-offset start-pos) (position-offset end-pos))]
+     ["#<<" (get-here-string (position-offset start-pos) input-port)]
      [(special)
       (ret "" 'no-color #f start-pos end-pos)]
      [(special-comment)
@@ -246,7 +293,7 @@
      [(eof) (values lexeme 'eof #f #f #f)]
      [(:or bad-char bad-str 
            (:& bad-id
-               (complement (:: (:or reader-command sharing "#\\" "#|" "#;" "#&" script) any-string))))
+               (complement (:: (:or reader-command sharing "#<<" "#\\" "#|" "#;" "#&" script) any-string))))
       (ret lexeme 'error #f start-pos end-pos)]
      [any-char (extend-error lexeme start-pos end-pos input-port)]))
   

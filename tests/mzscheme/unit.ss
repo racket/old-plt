@@ -77,6 +77,8 @@
 		  (U b))])
 	(export))))
 
+(error-test '(invoke-unit (unit (import not-defined) (export) 10) not-defined) exn:unit?)
+
 (unless (defined? 'test-global-var)
   (let ()
     (define test-global-var 5)

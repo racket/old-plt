@@ -131,6 +131,9 @@
 			U)])
 	(export))))
 
+(define-signature not-defined^ (not-defined))
+(error-test '(invoke-unit/sig (unit/sig () (import not-defined^) 10) not-defined^) exn:unit?)
+
 (test #t unit/sig? (unit/sig a (import)))
 (test #t unit/sig? (unit/sig b (import) (define x 1) (define y 2)))
 (test #t unit/sig? (unit/sig a (import (i : b)) i:x))

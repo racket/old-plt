@@ -1,0 +1,23 @@
+This directory contains code for testing Help Desk.
+Because many of the tests use MysterX, the code 
+will only run under Windows.  And you'll need to 
+install MysterX, besides.
+
+To run the tests, run the batch file `go.bat'.  It 
+presumes that MzScheme is in your PATH.
+
+There are two kinds of tests that are run.
+
+The first kind of test tries to `load' each
+servlet file.  If there's a servlet syntax error, 
+you'll see a message like
+
+  *** Load error *** in servlets foo.ss
+
+The second kind of test uses a browser to navigate
+to servlets reachable from the Help Desk home page.
+Some servlets are ignored, such as the bug report 
+form or the missing manual page, because they have
+have side effects not desirable during testing.
+For offsite content, the checker does not check
+links contained in that content.

@@ -2279,7 +2279,7 @@
   
   (define path-list-string->path-list
     (let ((r (regexp (let ((sep (case (system-type) 
-				  ((unix beos oskit) ":")
+				  ((unix beos oskit macosx) ":")
 				  ((windows macos) ";"))))
 		       (format "([^~a]*)~a(.*)" sep sep))))
 	  (cons-path (lambda (default s l) 

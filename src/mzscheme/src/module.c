@@ -679,8 +679,10 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
       srcmname = (srcm->provide_srcs ? srcm->provide_srcs[i] : scheme_false);
       if (SCHEME_FALSEP(srcmname))
 	srcmname = srcm->modname;
-      else
+      else {
+	srcmname = scheme_modidx_shift(srcmname, srcm->src_modidx, srcm->self_modidx);
 	srcmname = scheme_module_resolve(srcmname);
+      }
       srcname = srcm->provide_src_names[i];
     }
 

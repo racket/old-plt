@@ -1966,7 +1966,7 @@
 "(define(load-relative-extension path)(-load load-extension 'load-relative-extension path))"
 "(define path-list-string->path-list"
 "(let((r(regexp(let((sep(case(system-type) "
-" ((unix beos oskit) \":\")"
+" ((unix beos oskit macosx) \":\")"
 " ((windows macos) \";\"))))\n"
 " (format \"([^~a]*)~a(.*)\" sep sep))))"
 "(cons-path(lambda(default s l) "

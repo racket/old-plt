@@ -150,8 +150,9 @@
                           (add x len)))])
                (set! inserted-snip-poss (map update-pos inserted-snip-poss))
                (set! arrows (map (lambda (x)
-                                   (cons (update-pos (car x))
-                                         (update-pos (cdr x))))
+                                   (list (update-pos (car x))
+                                         (update-pos (cadr x))
+                                         (caddr x)))
                                  arrows))))]
           [add-inserted-snip
            (lambda (pos)
@@ -234,7 +235,7 @@
                  (send dc set-brush (send the-brush-list find-or-create-brush "purple" 'solid))
                  (for-each (lambda (arrow)
                              (let ([start (car arrow)]
-                                   [end (cdr arrow)]
+                                   [end (cadr arrow)]
                                    [start-x-left (box 0)]
                                    [start-y-top (box 0)]
                                    [end-x-left (box 0)]
@@ -243,15 +244,27 @@
                                    [start-y-bot (box 0)]
                                    [end-x-right (box 0)]
                                    [end-y-bot (box 0)]
-                                   [avg (lambda (x y) (/ (+ (unbox x) (unbox y)) 2))])
+                                   [avg (lambda (x y)
+                                          (/ (+ (unbox x) (unbox y)) 2))])
+                               ;(if (eq? (caddr arrow) 'child)
+                               ;  (begin
+                               ;    (position-location start start-x-left start-y-top #t)
+                               ;    (position-location (add1 start) start-x-right start-y-bot #f)
+                               ;    (position-location (sub1 end) end-x-left end-y-top #t)
+                               ;    (position-location end end-x-right end-y-bot #f))
+                               ;  (begin
+                               ;    (position-location (sub1 start) start-x-left start-y-top #t)
+                               ;    (position-location start start-x-right start-y-bot #f)
+                               ;    (position-location end end-x-left end-y-top #t)
+                               ;    (position-location (add1 end) end-x-right end-y-bot #f)))
                                (position-location start start-x-left start-y-top #t)
                                (position-location start start-x-right start-y-bot #f)
                                (position-location end end-x-left end-y-top #t)
                                (position-location end end-x-right end-y-bot #f)
-                               (draw-arrow dc 
+                               (draw-arrow dc
                                            (avg start-x-left start-x-right)
                                            (avg start-y-top start-y-bot)
-                                           (avg end-x-left end-x-right) 
+                                           (avg end-x-left end-x-right)
                                            (avg end-y-top end-y-bot)
                                            dx dy)))
                            arrows)
@@ -279,10 +292,11 @@
                           (begin-edit-sequence #f) ; so it is not undoable...
                           (insert (make-object editor-snip% t) pos pos)
                           (change-style box-style pos (+ pos 1))
+                          (add-inserted-snip pos)
                           (invalidate-bitmap-cache)
                           (end-edit-sequence)
                           (set! analysis-modifing? #f)
-                          (add-inserted-snip pos))))
+                          )))
                     
 ;                    (make-object menu-item%
 ;                      "show expanded"
@@ -294,10 +308,11 @@
 ;                          (begin-edit-sequence #f) ; so it is not undoable...
 ;                          (insert (make-object editor-snip% t) pos pos)
 ;                          (change-style box-style pos (+ pos 1))
+;                          (add-inserted-snip pos)
 ;                          (invalidate-bitmap-cache)
 ;                          (end-edit-sequence)
 ;                          (set! analysis-modifing? #f)
-;                          (add-inserted-snip pos))))
+;                          )))
  
                     (make-object menu-item%
                       "show errors"
@@ -310,15 +325,16 @@
                                       (set! analysis-modifing? #t)
                                       (insert (make-object editor-snip% t) pos pos)
                                       (change-style box-style pos (+ pos 1))
+                                      (add-inserted-snip pos)
                                       (invalidate-bitmap-cache)
                                       (set! analysis-modifing? #f)
-                                      (add-inserted-snip pos)))
+                                      ))
                                   (mrflow:get-errors label))
                         (end-edit-sequence)
                         ))
  
                     (let ([make-children/parents-item
-                           (lambda (menu-label children/parents pair)
+                           (lambda (menu-label children/parents f)
                              (make-object menu-item%
                                menu-label
                                menu
@@ -328,11 +344,12 @@
                                     (let ([loc (get-loc var)])
                                       (when loc
                                         (let ([parent/child (var-pos->edit-pos loc)])
-                                          (set! arrows (cons (pair pos parent/child) arrows))))))
+                                          (set! arrows (cons (f pos parent/child) arrows))
+                                          ))))
                                   (children/parents label))
                                  (invalidate-bitmap-cache))))])
-                      (make-children/parents-item "Parents" parents (lambda (x y) (cons y x)))
-                      (make-children/parents-item "Children" children cons))
+                      (make-children/parents-item "Parents" parents (lambda (x y) (list y x 'parent)))
+                      (make-children/parents-item "Children" children (lambda (x y) (list x y 'child))))
                     
                     (send (get-canvas) popup-menu menu
                           (+ 1 (inexact->exact (floor (send event get-x))))

@@ -2036,8 +2036,8 @@
                                        (make-hash-table)
                                        '()
                                        (void))]
-           [mutated-labels '()]
-           [value-labels '()]
+           [state-label (create-simple-prim-label term)]
+           [state-edge (create-simple-edge state-label)]
            [mutator-body-label (create-simple-prim-label term)]
            [mutator-body-edge (create-simple-edge mutator-body-label)]
            [mutator-first-arg-label (create-simple-prim-label term)]
@@ -2048,15 +2048,9 @@
                 [(out-label inflowing-label tunnel-label)
                  ; name sink => no use for out-label
                  (if (pred-first-arg inflowing-label)
-                   (let ([mutated-label (accessor-first-arg inflowing-label)])
-                     (for-each
-                      (lambda (value-label)
-                        (add-edge-and-propagate-set-through-edge
-                         value-label
-                         (create-simple-edge mutated-label)))
-                      value-labels)
-                     (set! mutated-labels (cons mutated-label mutated-labels))
-                     #t)
+                   (add-edge-and-propagate-set-through-edge
+                    state-label
+                    (create-simple-edge (accessor-first-arg inflowing-label)))
                    (begin
                      (set! *errors*
                            (cons (list
@@ -2076,15 +2070,9 @@
                 [(out-label inflowing-label tunnel-label)
                  ; name sink => no use for out-label
                  (if (pred-second-arg inflowing-label)
-                   (let ([value-label (accessor-second-arg inflowing-label)])
-                     (for-each
-                      (lambda (mutated-label)
-                        (add-edge-and-propagate-set-through-edge
-                         value-label
-                         (create-simple-edge mutated-label)))
-                      mutated-labels)
-                     (set! value-labels (cons value-label value-labels))
-                     #t)
+                   (add-edge-and-propagate-set-through-edge
+                    (accessor-second-arg inflowing-label)
+                    state-edge)
                    (begin
                      (set! *errors*
                            (cons (list
@@ -2128,8 +2116,8 @@
                                        (make-hash-table)
                                        '()
                                        (void))]
-           [mutated-labels '()]
-           [value-labels '()]
+           [state-label (create-simple-prim-label term)]
+           [state-edge (create-simple-edge state-label)]
            [mutator-body-label (create-simple-prim-label term)]
            [mutator-body-edge (create-simple-edge mutator-body-label)]
            [mutator-first-arg-label (create-simple-prim-label term)]
@@ -2141,15 +2129,9 @@
                 [(out-label inflowing-label tunnel-label)
                  ; name sink => no use for out-label
                  (if (pred-first-arg inflowing-label)
-                   (let ([mutated-label (accessor-first-arg inflowing-label)])
-                     (for-each
-                      (lambda (value-label)
-                        (add-edge-and-propagate-set-through-edge
-                         value-label
-                         (create-simple-edge mutated-label)))
-                      value-labels)
-                     (set! mutated-labels (cons mutated-label mutated-labels))
-                     #t)
+                   (add-edge-and-propagate-set-through-edge
+                    state-label
+                    (create-simple-edge (accessor-first-arg inflowing-label)))
                    (begin
                      (set! *errors*
                            (cons (list
@@ -2189,15 +2171,9 @@
                 [(out-label inflowing-label tunnel-label)
                  ; name sink => no use for out-label
                  (if (pred-third-arg inflowing-label)
-                   (let ([value-label (accessor-third-arg inflowing-label)])
-                     (for-each
-                      (lambda (mutated-label)
-                        (add-edge-and-propagate-set-through-edge
-                         value-label
-                         (create-simple-edge mutated-label)))
-                      mutated-labels)
-                     (set! value-labels (cons value-label value-labels))
-                     #t)
+                   (add-edge-and-propagate-set-through-edge
+                    (accessor-third-arg inflowing-label)
+                    state-edge)
                    (begin
                      (set! *errors*
                            (cons (list
@@ -4752,17 +4728,17 @@
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; DRIVER
   
-  ; port value -> void
-  (define (sba-driver port source)
-    (let ([start (current-milliseconds)])
-      (reset-all)
-      (read-and-analyze port source)
-      (check-primitive-types)
-      (printf "time: ~a ms~n" (- (current-milliseconds) start)))
-    
-    ; XXX perf analysis
-    ;(printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n" ast-nodes graph-nodes graph-edges)
-    )
+;  ; port value -> void
+;  (define (sba-driver port source)
+;    (let ([start (current-milliseconds)])
+;      (reset-all)
+;      (read-and-analyze port source)
+;      (check-primitive-types)
+;      (printf "time: ~a ms~n" (- (current-milliseconds) start)))
+;    
+;    ; XXX perf analysis
+;    ;(printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n" ast-nodes graph-nodes graph-edges)
+;    )
   
   ; -> void
   (define (reset-all)
@@ -4772,32 +4748,32 @@
     ;(reset-perf)
     )
   
-  ; port value -> void
-  ; read and analyze, one syntax object at a time
-  (define (read-and-analyze port source)
-    (let ([stx-obj (read-syntax source port)])
-;      (unless (eof-object? stx-obj)
-;        (begin (printf "sba-driver in: ~a~n" (syntax-object->datum stx-obj))
-;               (printf "sba-driver analyzed: ~a~n~n" (syntax-object->datum (expand stx-obj)))
-;               (printf "sba-driver out: ~a~n~n" (create-label-from-term (expand stx-obj) '() #f '())))
-;        (read-and-analyze port source))))
-      (if (eof-object? stx-obj)
-        '()
-        (cons (create-label-from-term (expand stx-obj) '() #f '())
-              (read-and-analyze port source)))))
-  
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PERFORMANCE TEST
-  
-  ; (: test-i (nothing -> void))
-  ; parse expression interactively
-  (define (test-i)
-    (sba-driver (current-input-port) 'interactive))
-  
-  ; (: test-f (string -> (listof Ast)))
-  (define (test-f filename)
-    (let ([port (open-input-file filename)])
-      (sba-driver port filename)
-      (close-input-port port)))
+;  ; port value -> void
+;  ; read and analyze, one syntax object at a time
+;  (define (read-and-analyze port source)
+;    (let ([stx-obj (read-syntax source port)])
+;;      (unless (eof-object? stx-obj)
+;;        (begin (printf "sba-driver in: ~a~n" (syntax-object->datum stx-obj))
+;;               (printf "sba-driver analyzed: ~a~n~n" (syntax-object->datum (expand stx-obj)))
+;;               (printf "sba-driver out: ~a~n~n" (create-label-from-term (expand stx-obj) '() #f '())))
+;;        (read-and-analyze port source))))
+;      (if (eof-object? stx-obj)
+;        '()
+;        (cons (create-label-from-term (expand stx-obj) '() #f '())
+;              (read-and-analyze port source)))))
+;  
+;  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PERFORMANCE TEST
+;  
+;  ; (: test-i (nothing -> void))
+;  ; parse expression interactively
+;  (define (test-i)
+;    (sba-driver (current-input-port) 'interactive))
+;  
+;  ; (: test-f (string -> (listof Ast)))
+;  (define (test-f filename)
+;    (let ([port (open-input-file filename)])
+;      (sba-driver port filename)
+;      (close-input-port port)))
   
   ;   (let* ([path (build-path (collection-path "mrflow") "tests")]
   ;          [files (list:filter (lambda (file)

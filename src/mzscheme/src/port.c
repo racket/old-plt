@@ -7711,13 +7711,13 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
     int l;
     
     l = sizeof(tcp_here_addr);
-    if (getsockname(tcp->tcp, &tcp_here_addr, &l)) {
+    if (getsockname(tcp->tcp, (struct sockaddr *)&tcp_here_addr, &l)) {
       scheme_raise_exn(MZEXN_I_O_TCP,
 		       "tcp-addresses: could not get local address (%d)",
 		       errno);
     }
     l = sizeof(tcp_there_addr);
-    if (getpeername(tcp->tcp, &tcp_there_addr, &l)) {
+    if (getpeername(tcp->tcp, (struct sockaddr *)&tcp_there_addr, &l)) {
       scheme_raise_exn(MZEXN_I_O_TCP,
 		       "tcp-addresses: could not get peer address (%d)",
 		       errno);
@@ -7728,9 +7728,10 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
   }
 # endif
 # ifdef USE_MAC_TCP
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		   "tcp-addresses: not yet supported");
-  return NULL;
+  {
+    here_a = ((TCPOpenPB *)tcp->tcp.create_pb)->localHost;
+    here_a = ((TCPOpenPB *)tcp->tcp.create_pb)->remoteHost;
+  }
 # endif
 
   b = (unsigned char *)&here_a;

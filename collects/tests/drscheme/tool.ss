@@ -69,17 +69,17 @@
 	  [define on-close
 	   (lambda ()
 	     (set! current-test-suite-frame #f))]
-	  (super-make-object
-	   "Test Suites"
-	   #f
-	   (fw:preferences:get 'drscheme:test-suite:frame-width)
-	   (fw:preferences:get 'drscheme:test-suite:frame-height))))
+	  (super-instantiate ())))
 
-      (define (ask-test-suite)
+      (define (ask-test-suite parent)
         (if current-test-suite-frame
             (send current-test-suite-frame show #t)
             (let* ([drscheme-test-dir (collection-path "tests" "drscheme")]
-                   [frame (make-object test-suite-frame%)]
+                   [frame (make-object test-suite-frame% 
+                            "Test Suites"
+                            parent
+                            (fw:preferences:get 'drscheme:test-suite:frame-width)
+                            (fw:preferences:get 'drscheme:test-suite:frame-height))]
                    [panel (make-object mred:vertical-panel% frame)]
                    [top-panel (make-object mred:vertical-panel% panel)]
                    [bottom-panel (make-object mred:horizontal-panel% panel)])
@@ -172,7 +172,7 @@
 		  [button (make-object mred:button%
 			    (if (send bitmap ok?) bitmap "Console")
 			    (get-button-panel)
-			    (lambda (button evt) (ask-test-suite)))])
+			    (lambda (button evt) (ask-test-suite this)))])
 	     (send (get-button-panel) change-children
 		   (lambda (l)
 		     (cons button (remq button l)))))))))))

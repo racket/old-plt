@@ -325,10 +325,20 @@ void wxMediaCanvas::OnFocus(Bool focus)
 void wxMediaCanvas::BlinkCaret()
 {
   if (focuson) {
+    wxCanvasMediaAdmin *oldadmin;
+    
+    if (PTRNE((oldadmin = (wxCanvasMediaAdmin *)media->GetAdmin()), admin)) {
+      media->SetAdmin(admin);
+    }
+
     if (media)
       media->BlinkCaret();
     if (focuson)
       blinkTimer->Start(BLINK_DELAY, 1);
+
+    if (PTRNE(oldadmin, admin)) {
+      media->SetAdmin(oldadmin);
+    }
   }
 }
 
@@ -1174,19 +1184,31 @@ void wxCanvasMediaAdmin::GetMaxView(float *fx, float *fy, float *fw, float *fh,
     GetView(fx, fy, fw, fh, full);
   } else {
     wxCanvasMediaAdmin *a;
-    float cx, x, cy, y, cw, w, ch, h;
+    float cx, x, cy, y, cw, w, ch, h, cr, r, cb, b;
 
     a = this;
     while (a->prevadmin)
       a = a->prevadmin;
     a->GetView(&cx, &cy, &cw, &ch);
+    cr = cx + cw;
+    cb = cy + ch;
     for (a = a->nextadmin; a; a = a->nextadmin) {
       a->GetView(&x, &y, &w, &h);
-      if (w > cw)
-	cw = w;
-      if (h > ch)
-	ch = h;
+      r = x + w;
+      b = y + h;
+
+      if (x < cx)
+	cx = x;
+      if (y < cy)
+	cy = y;
+      if (r > cr)
+	cr = r;
+      if (b > cb)
+	cb = b;
     }
+
+    cw = cr - cx;
+    ch = cb - cy;
 
     if (fx)
       *fx = cx;
@@ -1278,7 +1300,7 @@ void wxCanvasMediaAdmin::UpdateCursor()
 
 void wxCanvasMediaAdmin::AdjustStdFlag(void)
 { 
-  /* 1 indicates that this is the main admin. 
+  /* 1 indicates that this is the sole, main admin. 
      This info is used for quick (Xor) caret refreshing
      by an editor buffer. */
 

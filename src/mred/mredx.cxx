@@ -298,19 +298,23 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
 #endif
 	    return FALSE;
 	  } else {
-	    *(MrEdContext **)args = c;
+	    if (args)
+	      *(MrEdContext **)args = c;
 	    goto found;
 	  }
 	}
 
-      /* Toplevel without context; perhaps it's the main context: */
+      /* Toplevel without context; handle in the main context: */
 #if 0
       printf("Can't map top-level to eventspace for %lx\n", window);
 #endif
       if (checking_for_break)
 	return FALSE;
-      else
+      else {
+	if (args)
+	  *(MrEdContext **)args = NULL;
 	goto found;
+      }
     }
 
   } else {
@@ -320,8 +324,12 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
 #endif
     if (checking_for_break)
       return FALSE;
-    else
+    else {
+      /* Toplevel without context; handle in the main context: */
+      if (args)
+	*(MrEdContext **)args = NULL;
       goto found;
+    }
   }
 
   return FALSE;

@@ -132,16 +132,16 @@
   (define language
     (if (< 1 (vector-length argv))
 	(vector-ref argv 1)
-	"MzSchemeDebug"))
+	"MzScheme Debug"))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                       Configurations                         ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define mz? (string=? language "MzSchemeDebug"))
+  (define mz? (string=? language "MzScheme Debug"))
   (define beg? (string=? language "Beginner"))
   (define beg/inter? (member language '("Beginner" "Intermediate")))
-  (define adv/mz? (member language '("Advanced" "MzSchemeDebug")))
+  (define adv/mz? (member language '("Advanced" "MzScheme Debug")))
 
   (define print-convert? (not mz?))
   (define case-sens? (not mz?))
@@ -157,9 +157,9 @@
   (define imperative? adv/mz?)
   (define symbol-apps? beg/inter?)
   (define proper-list? (not mz?))
-  (define define-struct? (not beg?))
-  (define explicit-inexact? beg/inter?)
-  (define abbrev-list? (not beg/inter?))
+  (define define-struct? #t)
+  (define explicit-inexact? (not mz?))
+  (define abbrev-list? (not beg?))
   (define mzscheme? mz?)
 
   (define (mk-diff flag?)
@@ -597,7 +597,7 @@
   (set! errs? (or (go) errs?))
   (set! argv #("-l" "Advanced"))
   (set! errs? (or (go) errs?))
-  (set! argv #("-l" "MzSchemeDebug"))
+  (set! argv #("-l" "MzScheme Debug"))
   (set! errs? (or (go) errs?))
   (when errs?
     (printf "THERE WERE ERRORS~n")))

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.173 1999/02/04 21:14:42 mflatt Exp $
+; $Id: scm-main.ss,v 1.174 1999/02/25 22:21:29 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -939,16 +939,16 @@
        (z:symbol-orig-name s)
        (z:symbol-marks s)))
     
-  (define (make-let-macro named?)
+  (define (make-let-macro begin? named?)
       (let* ((kwd '())
 	     
-	     (in-pattern-1 '(_ fun ((v e) ...) b ...))
-	     (out-pattern-1 '((letrec ((fun (lambda (v ...) b ...)))
+	     (in-pattern-1 `(_ fun ((v e) ...) ,@(get-expr-pattern begin?)))
+	     (out-pattern-1 `((letrec ((fun (lambda (v ...) ,@(get-expr-pattern begin?))))
 				fun-copy) ; fun-copy is fun with a different source
 			      e ...))
-
-	     (in-pattern-2 '(_ ((v e) ...) b))
-	     (out-pattern-2 '(let-values (((v) e) ...) b))
+	     
+	     (in-pattern-2 `(_ ((v e) ...) ,@(get-expr-pattern begin?)))
+	     (out-pattern-2 `(let-values (((v) e) ...) ,@(get-expr-pattern begin?)))
 
 	     (m&e-1 (and named? (pat:make-match&env in-pattern-1 kwd)))
 	     (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
@@ -963,9 +963,9 @@
 		(or (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
 		    (static-error expr "Malformed let")))))))
 
-  (add-primitivized-macro-form 'let intermediate-vocabulary (make-let-macro #f))
-  (add-primitivized-macro-form 'let advanced-vocabulary (make-let-macro #t))
-  (add-primitivized-macro-form 'let scheme-vocabulary (make-let-macro #t))
+  (add-primitivized-macro-form 'let intermediate-vocabulary (make-let-macro #f #f))
+  (add-primitivized-macro-form 'let advanced-vocabulary (make-let-macro #t #t))
+  (add-primitivized-macro-form 'let scheme-vocabulary (make-let-macro #t #t))
 
   ; Turtle Macros for Robby
   (let ([add-patterned-macro
@@ -995,18 +995,10 @@
   
   (define (make-let*-macro begin?)
       (let* ((kwd '())
-	      (in-pattern-1 (if (not begin?)
-			      '(_ () b) 
-			      '(_ () b ...)))
-	      (out-pattern-1 (if (not begin?)
-			       '(let-values () b)
-			       '(let-values () b ...)))
-	      (in-pattern-2 (if (not begin?)
-			      '(_ ((v0 e0) (v1 e1) ...) b)
-			      '(_ ((v0 e0) (v1 e1) ...) b ...)))
-	      (out-pattern-2 (if (not begin?)
-			       '(let ((v0 e0)) (let* ((v1 e1) ...) b))
-			       '(let ((v0 e0)) (let* ((v1 e1) ...) b ...))))
+	      (in-pattern-1 `(_ () ,@(get-expr-pattern begin?)))
+	      (out-pattern-1 `(let-values () ,@(get-expr-pattern begin?)))
+	      (in-pattern-2 `(_ ((v0 e0) (v1 e1) ...) ,@(get-expr-pattern begin?)))
+	      (out-pattern-2 `(let ((v0 e0)) (let* ((v1 e1) ...) ,@(get-expr-pattern begin?))))
 	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
 	(lambda (expr env)

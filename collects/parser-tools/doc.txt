@@ -1,3 +1,4 @@
+_parser tools_
 _lex.ss_
 A regular expression is one of the following
 character                          match the given character
@@ -41,6 +42,19 @@ In particular a (define-syntax name ...) could interfere.
  > (get-lexeme) returns a string of the match.
  > lex-buf is the lex-buf passed into the function lex generates.
 
+> (define-tokens group-name (token-name ...)) which binds group-name
+  to the group of tokens being defined.  For each token-name a function
+  (token-token-name expr) is created, which makes a token with name
+  token-name and stores the value of expr in it.  The definition of
+  group-name has the same scoping properties as a normal mzscheme macro
+  definition.  In particular a (define-syntax group-name ...) could
+  interfere.  error cannot be defined as a token since it has special
+  use in the parser.
+> (define-empty-tokens group-name (token-name ...)) like
+  define-tokens, except the token constructor takes no arguments and
+  stores the value #f into the token.
+
+
 Several values are also provided:
 > (make-lex-buf input-port) creates a lex-buf from an input-port
 > (get-position lex-buf) returns a position struct for the next character in
@@ -63,19 +77,6 @@ _yacc.ss_
 
 To use the _parser generator_ (require (lib "yacc.ss" "parser-tools")).
 This module provides the following syntactic forms:
-
-> (define-tokens group-name (token-name ...)) which binds group-name
-to the group of tokens being defined.  For each token-name a function
-(token-token-name expr) is created, which makes a token with name
-token-name and stores the value of expr in it.  The definition of
-group-name has the same scoping properties as a normal mzscheme macro
-definition.  In particular a (define-syntax group-name ...) could
-interfere.  error cannot be defined as a token since it has special
-use in the parser.
-
-> (define-empty-tokens group-name (token-name ...)) like
-  define-tokens, except the token constructor takes no arguments and
-  stores the value #f into the token.
 
 
 > (parser args ...) where the possible args may come in any order (as
@@ -136,9 +137,6 @@ generator is run.  To avoid this overhead place the parser into a
 module and compile the module to a .zo with 'mzc -z filename' Then
 place the resulting .zo file in a subdirectory named 'compiled'.
 
-
-KNOWN BUGS:
-epsilon productions are ignored
 
 As example of both lex and yacc here is a read function that works for
 a subset of the R5RS scheme syntax: (and must read an entire file)

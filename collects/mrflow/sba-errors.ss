@@ -1,7 +1,7 @@
 
 (module sba-errors mzscheme
   (require
-   (lib "contracts.ss")
+   (lib "contract.ss")
    
    (prefix cst: "constants.ss")
    (prefix lab: "labels.ss")

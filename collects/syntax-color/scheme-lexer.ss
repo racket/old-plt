@@ -204,9 +204,13 @@
      [str (ret 'string start-pos end-pos)]
      [(: "#;" line-comment) (ret 'comment start-pos end-pos)]
      ["#|" (read-nested-comment 1 start-pos input-port)]
-     [(: "(" ")") (values 'other (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
+     [(@ "#" (* digit10) "(")
+      (values 'other '|(| (position-offset start-pos) (position-offset end-pos))]
+     [(@ "#" (* digit10) "[")
+      (values 'other '|[| (position-offset start-pos) (position-offset end-pos))]
+     [(@ "#" (* digit10) "{")
+      (values 'other '|{| (position-offset start-pos) (position-offset end-pos))]
      [(: "(" ")" "[" "]" "{" "}"
-         (@ "#" (* digit10) "(")
          "'" "`" "," ",@"
          "#'" "#`" "#," "#,@"
          "."  "#&"

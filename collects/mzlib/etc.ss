@@ -36,6 +36,7 @@
 
 	   namespace-defined?
 	   this-expression-source-directory
+           this-expression-file-name
 	   define-syntax-set
            
            hash-table
@@ -465,6 +466,14 @@
             (syntax (un-plthome-ify 'd)))
           (with-syntax ([d (if (bytes? dir) dir (path->bytes dir))])
             (syntax (bytes->path d)))))]))
+
+ (define-syntax (this-expression-file-name stx)
+   (syntax-case stx ()
+     [(_)
+      (let* ([f (syntax-source stx)]
+             [f (and f (string? f) (file-exists? f)
+                     (let-values ([(base file dir?) (split-path f)]) file))])
+        (datum->syntax-object (quote-syntax here) f stx))]))
 
  ;; This is a macro-generating macro that wants to expand
  ;; expressions used in the generated macro. So it's weird,

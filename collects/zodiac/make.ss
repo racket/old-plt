@@ -1,6 +1,6 @@
 (define file-names
   '("corelate" "invoke" "link" "misc" "pattern"
-     "scm-core" "scm-main" "scm-obj" "scm-unit" "scm-o+u"
+     "scm-core" "scm-main" "scm-obj" "scm-unit" "scm-ou"
      "sexp" "sigs" "x" "zcode" "zsigs"))
 
 (printf "Deleting ...~n")

@@ -29,6 +29,6 @@
 (load-recent "scm-main")
 (load-recent "scm-obj")
 (load-recent "scm-unit")
-(load-recent "scm-o+u")
+(load-recent "scm-ou")
 (load-recent "link")
 (load-recent "invoke")

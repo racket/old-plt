@@ -412,6 +412,159 @@
 
     ; ----------------------------------------------------------------------
 
+    (define paroptarglist-pattern 'vars)
+
+    (define-struct paroptarglist-entry (var+marks))
+    (define-struct (initialized-paroptarglist-entry struct:paroptarglist-entry)
+      (expr))
+
+    (define-struct paroptarglist (vars))
+    (define-struct (sym-paroptarglist struct:paroptarglist) ())
+    (define-struct (list-paroptarglist struct:paroptarglist) ())
+    (define-struct (ilist-paroptarglist struct:paroptarglist) ())
+
+    ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    (define paroptarglist-decl-entry-parser-vocab (make-vocabulary))
+
+    (add-sym-micro paroptarglist-decl-entry-parser-vocab
+      (lambda (expr env attributes vocab)
+	(let ((status-holder (get-attribute attributes 'paroptarglist-status)))
+	  (case (unbox status-holder)
+	    ((proper improper) (void))
+	    ((proper/defaults)
+	      (static-error expr
+		"Appears after initial value specifications"))
+	    ((improper/defaults)
+	      (set-box! status-holder 'improper/done))
+	    ((improper/done)
+	      (static-error expr
+		"Appears past catch-all argument"))
+	    (else (internal-error (unbox status-holder)
+		    "Invalid in paroptarglist-decl-entry-parser-vocab sym"))))
+	(make-paroptarglist-entry
+	  (create-lexical-binding+marks expr))))
+
+    (add-list-micro paroptarglist-decl-entry-parser-vocab
+      (let* ((kwd '())
+	      (in-pattern '(var val))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (let ((status-holder (get-attribute attributes 'paroptarglist-status)))
+	    (case (unbox status-holder)
+	      ((proper) (set-box! status-holder 'proper/defaults))
+	      ((improper) (set-box! status-holder 'improper/defaults))
+	      ((proper/defaults improper/defaults) (void))
+	      ((improper/done) (static-error expr
+				 "Invalid default value specification"))
+	      (else (internal-error (unbox status-holder)
+		      "Invalid in paroptarglist-decl-entry-parser-vocab list"))))
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((var (pat:pexpand 'var p-env kwd))
+		       (val (pat:pexpand 'val p-env kwd)))
+		  (valid-syntactic-id? var)
+		  (make-initialized-paroptarglist-entry
+		    (create-lexical-binding+marks var)
+		    val))))
+	    (else
+	      (static-error expr "Invalid init-var declaration"))))))
+
+    (define paroptarglist-decls-vocab (make-vocabulary))
+
+    (add-sym-micro paroptarglist-decls-vocab
+      (lambda (expr env attributes vocab)
+	(make-sym-paroptarglist
+	  (list
+	    (make-paroptarglist-entry
+	      (create-lexical-binding+marks expr))))))
+
+    (add-list-micro paroptarglist-decls-vocab
+      (lambda (expr env attributes vocab)
+	(let ((expr (expose-list expr))
+	       (new-attr (put-attribute attributes 'paroptarglist-status
+			   (box 'proper))))
+	  (make-list-paroptarglist
+	    (map (lambda (decl)
+		   (expand-expr decl env new-attr
+		     paroptarglist-decl-entry-parser-vocab))
+	      expr)))))
+
+    (add-ilist-micro paroptarglist-decls-vocab
+      (lambda (expr env attributes vocab)
+	(let ((expr-list (expose-list expr))
+	       (new-attr (put-attribute attributes 'paroptarglist-status
+			   (box 'improper))))
+	  (let ((result
+		  (map (lambda (decl)
+			 (expand-expr decl env new-attr
+			   paroptarglist-decl-entry-parser-vocab))
+		    expr-list)))
+	    (let loop ((result result) (exprs expr-list))
+	      (if (null? (cdr result))
+		(when (initialized-paroptarglist-entry? (car result))
+		  (static-error (car exprs)
+		    "Last argument must not have an initial value"))
+		(loop (cdr result) (cdr exprs))))
+	    (make-ilist-paroptarglist result)))))
+
+    (define make-paroptargument-list
+      (lambda (paroptarglist env attributes vocab)
+	(extend-env
+	  (map paroptarglist-entry-var+marks
+	    (paroptarglist-vars paroptarglist))
+	  env)
+	(let ((result
+		(map
+		  (lambda (e)
+		    (if (initialized-paroptarglist-entry? e)
+		      (cons
+			(car (paroptarglist-entry-var+marks e))
+			(expand-expr
+			  (initialized-paroptarglist-entry-expr
+			    e)
+			  env attributes vocab))
+		      (car (paroptarglist-entry-var+marks e))))
+		  (paroptarglist-vars paroptarglist))))
+	  (cond
+	    ((sym-paroptarglist? paroptarglist)
+	      (make-sym-paroptarglist result))
+	    ((list-paroptarglist? paroptarglist)
+	      (make-list-paroptarglist result))
+	    ((ilist-paroptarglist? paroptarglist)
+	      (make-ilist-paroptarglist result))
+	    (else
+	      (internal-error paroptarglist
+		"Invalid in make-paroptargument-list"))))))
+
+    ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    (extend-parsed->raw paroptarglist?
+      (lambda (expr p->r)
+	(let ((process-args
+		(lambda (element)
+		  (if (pair? element)
+		    (list (p->r (car element)) (p->r (cdr element)))
+		    (p->r element)))))
+	  (cond
+	    ((sym-paroptarglist? expr)
+	      (process-args (car (paroptarglist-vars expr))))
+	    ((list-paroptarglist? expr)
+	      (map process-args (paroptarglist-vars expr)))
+	    ((ilist-paroptarglist? expr)
+	      (let loop ((vars (map process-args (paroptarglist-vars expr))))
+		(cond
+		  ((null? (cddr vars))
+		    (cons (car vars) (cadr vars)))
+		  (else
+		    (cons (car vars) (loop (cdr vars)))))))
+	    (else
+	      (internal-error expr "p->r: not an paroptarglist"))))))
+
+    ; ----------------------------------------------------------------------
+
     (define arglist-pattern 'args)
 
     (define-struct arglist (vars))

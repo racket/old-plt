@@ -932,6 +932,11 @@ static Scheme_Object *wxSchemeGetPanelBackground(int, Scheme_Object **)
 
 #ifdef wx_mac
 
+# ifdef OS_X
+/* In MzScheme in Classic, mredmac.cxx in OS X */
+extern int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
+# endif
+
 typedef struct AsyncSoundRec {
   Movie mov;
   short file;
@@ -1329,6 +1334,29 @@ void wxsExecute(char **argv)
   (void *)scheme_apply_multi(executer, c, a);
 }
 
+#ifdef wx_mac
+extern int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv, 
+				 Scheme_Object **result, 
+				 int *err, char **stage);
+#endif
+
+static Scheme_Object *wxSendEvent(int c, Scheme_Object *args[])
+{
+#ifdef wx_mac
+  int err;
+  char *stage = "";
+  Scheme_Object *result;
+  if (scheme_mac_send_event("send-event", c, args, &result, &err, &stage))
+    return result;
+  else
+    scheme_raise_exn(MZEXN_MISC, "send-event: failed (%s%e)", stage, err);
+#else
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "send-event: not supported on this platform");
+  return NULL;
+#endif
+}
+
 /***********************************************************************/
 /*                             ps-setup                                */
 /***********************************************************************/
@@ -1518,9 +1546,10 @@ static Scheme_Object *wLabelShortcutsVisible(int argc, Scheme_Object **argv)
 /***********************************************************************/
 
 #ifdef wx_mac
-extern "C" {
- extern char *scheme_mac_spec_to_path(FSSpec *spec);
-};
+# ifdef OS_X
+/* In MzScheme in Classic, mredmac.cxx in OS X */
+extern char *scheme_mac_spec_to_path(FSSpec *spec);
+# endif
 # ifndef OS_X
 extern char *wxmac_startup_directory;
 # endif
@@ -2241,6 +2270,12 @@ static void wxScheme_Install(Scheme_Env *global_env)
 			   scheme_make_prim_w_arity(SetDialogs,
 						    "set-dialogs",
 						    4, 4),
+			   global_env);
+
+  scheme_install_xc_global("send-event",
+			   scheme_make_prim_w_arity(wxSendEvent,
+						    "send-event",
+						    3, 5),
 			   global_env);
 
 #ifdef USE_GL

@@ -1049,7 +1049,7 @@ sub DoPrintClass
 	}
 	print ", ";
 	if ($#creators >= 0) {
-	    print "${newclass}_ConstructScheme";
+	    print "(Scheme_Method_Prim *)${newclass}_ConstructScheme";
 	} else {
 	    print "NULL";
 	}
@@ -1116,14 +1116,14 @@ sub DoPrintClass
 	    &ReadIvarFields($ivar);
 	    &OIStart;
 	    print "  WITH_VAR_STACK(scheme_add_method_w_arity(${newclass}_class,";
-	    print "${getname} \" method\", objscheme_${oldclass}_Get${ivarname}, 0, 0));\n";
+	    print "${getname} \" method\", (Scheme_Method_Prim *)objscheme_${oldclass}_Get${ivarname}, 0, 0));\n";
 
 	    $sym = &Unquote($getname);
 	    print SOUT "\n    $sym";
 
 	    if (!$readonly) {
 		print "  WITH_VAR_STACK(scheme_add_method_w_arity(${newclass}_class,";
-		print "${setname} \" method\", objscheme_${oldclass}_Set${ivarname}, 1, 1));\n";
+		print "${setname} \" method\", (Scheme_Method_Prim *)objscheme_${oldclass}_Set${ivarname}, 1, 1));\n";
 
 		$sym = &Unquote($setname);
 		print SOUT "\n    $sym";

@@ -31,7 +31,8 @@
     location->window
     set-dialogs
     set-executer
-    current-gl-context)
+    current-gl-context
+    send-event)
 
 )
 ;; end

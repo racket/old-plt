@@ -285,7 +285,6 @@ static Scheme_Object *subprocess_kill(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_pid(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_p(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_wait(int c, Scheme_Object *args[]);
-static Scheme_Object *sch_send_event(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_shell_execute(int c, Scheme_Object *args[]);
 static void register_subprocess_wait();
 
@@ -546,11 +545,6 @@ scheme_init_port (Scheme_Env *env)
 
   register_subprocess_wait();
 
-  scheme_add_global_constant("send-event", 
-			     scheme_make_prim_w_arity(sch_send_event,
-						      "send-event", 
-						      3, 5), 
-			     env);
   scheme_add_global_constant("shell-execute", 
 			     scheme_make_prim_w_arity(sch_shell_execute,
 						      "shell-execute", 
@@ -5346,23 +5340,6 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 		   name);
   return NULL;
 # endif
-#endif
-}
-
-static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
-{
-#ifdef MACINTOSH_EVENTS
-  int err;
-  char *stage = "";
-  Scheme_Object *result;
-  if (scheme_mac_send_event("send-event", c, args, &result, &err, &stage))
-    return result;
-  else
-    scheme_raise_exn(MZEXN_MISC, "send-event: failed (%s%e)", stage, err);
-#else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		   "send-event: not supported on this platform");
-  return NULL;
 #endif
 }
 

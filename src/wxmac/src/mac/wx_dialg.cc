@@ -244,10 +244,14 @@ int wxMessageBox(char* message, char* caption, long style,
   return wxsMessageBox(message, caption, style, parent);
 }
 
+#ifndef OS_X
 extern "C" {
+#endif
   extern char *scheme_mac_spec_to_path(FSSpec *f);
   extern int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
+#ifndef OS_X
 }
+#endif
 
 //= T.P. ==============================================================================
 

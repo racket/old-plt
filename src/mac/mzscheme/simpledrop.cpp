@@ -218,12 +218,8 @@ static void Startup(char **argv, int argc)
 
 static int gone = 0;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-  extern char *scheme_mac_spec_to_path(FSSpec *spec);
-#ifdef __cplusplus
-};
+#ifdef OS_X
+extern char *scheme_mac_spec_to_path(FSSpec *spec);
 #endif
 
 static pascal short DoNothing(const AppleEvent *a, AppleEvent *b, long c)

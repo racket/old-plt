@@ -29,9 +29,13 @@ extern "C" {
 
 static int wxFindFileFlags = 0;
 
+#ifndef OS_X
 extern "C" {
+#endif
   extern char *scheme_mac_spec_to_path(FSSpec *spec);
+#ifndef OS_X
 }
+#endif
 
 // Get a temporary filename, opening and closing the file.
 char *wxGetTempFileName (const char *prefix, char *dest)

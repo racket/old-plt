@@ -41,10 +41,14 @@ void wxCleanUp(void);
 ///////////////////////////////////////////////////////////////////////////////
 void CreateApp(void);
 
+#ifndef OS_X
 extern "C" {
+#endif
   extern char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn);
   extern char *scheme_mac_spec_to_path(FSSpec *spec);
+#ifndef OS_X
 }
+#endif
 
 //-----------------------------------------------------------------------------
 int wxEntry(int argc, char* argv[])

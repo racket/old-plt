@@ -24,7 +24,14 @@
    cocreate-instance
    com-object-eq?
    com-object?	
-   com-omit))
+   com-omit
+   make-css-percentage
+   css-percentage?
+   css-percentage-num
+   make-css-length
+   css-length?
+   css-length-num
+   css-length-units))
 
 (define-signature mysterx:prims^
   (com-invoke
@@ -80,6 +87,8 @@
    element-set-font!
    element-background
    element-set-background!
+   element-background-attachment
+   element-set-background-attachment!
    element-background-image
    element-set-background-image!
    element-background-repeat
@@ -136,8 +145,6 @@
    element-set-list-style-image!
    element-list-style
    element-set-list-style!
-   element-whitespace
-   element-set-whitespace!
    element-position
    element-overflow
    element-set-overflow!
@@ -190,8 +197,6 @@
    element-set-background-position-x!
    element-background-position-y
    element-set-background-position-y!
-   element-word-spacing
-   element-set-word-spacing!
    element-letter-spacing
    element-set-letter-spacing!
    element-vertical-align
@@ -272,4 +277,140 @@
    com-omit
    com-terminate	
    release-type-table))
+
+(define-signature mysterx:style^
+  (make-css-percentage
+   css-percentage?
+   css-percentage-num
+   make-css-length
+   css-length?
+   css-length-num
+   css-length-units
+   font-families->string
+   string->font-families
+   string->font-size
+   valid-css-length?
+   css-length->string
+   percentage-or-length?
+   percentage-or-length->string
+   make-bg-pos-getter	
+   make-bg-pos-setter	
+   make-element-getter
+   make-element-setter
+   make-pagebreak-getter
+   make-pagebreak-setter
+   list->background-position
+   border-width?
+   border-style->string
+   border-width->string
+   border->string
+   border-items->string
+   set-border-with-fun
+   string->border-item
+   make-border-getter
+   make-border-style-getter
+   make-border-style-setter
+   make-border-width-getter
+   make-border-width-setter
+   string->html-color
+   html-color->string
+   make-color-getter
+   make-color-setter
+   make-css-getter
+   make-css-setter
+   make-const-or-css-getter-maker
+   make-normal-or-css-getter
+   make-auto-or-css-getter
+   make-const-or-css-setter-maker
+   make-normal-or-css-setter
+   make-auto-or-css-setter
+   parse-string
+   parse-decoration
+   validated-string->symbols
+   string->list-style-item
+   list-style-item->string
+   string->background-position
+   string->margin
+   margin->string
+   string->padding
+   padding->string
+   url->string
+   string->url
+   clip-rect?
+   clip-rect->symbols))
+
+(define-signature mysterx:filter^
+  (string->filter
+   filter->string))
+
+(define-signature mysterx:properties^
+  (*css-units*
+   *background-attachments*
+   *background-repeats*
+   *text-transforms*
+   *text-aligns*
+   *border-widths*
+   *border-styles*
+   *displays*
+   *font-styles*
+   *font-variants*
+   *font-sizes* 
+   *style-floats*
+   *clears*
+   *horizontals*
+   *verticals* 
+   *decorations*
+   *visibilities*
+   *list-style-types*
+   *list-style-positions*
+   *positions*
+   *overflows*
+   *page-breaks*
+   *cursors*
+   *html-colors*
+   *filters-and-official-names*
+   *official-names-and-filters*
+   *filters*
+   *filter-official-names* 
+   *filter-re*
+   *alpha-filter-styles*
+   *trans-filter-statuses*
+   *filter-directions*
+   *reveal-transitions*
+   *vertical-aligns* 
+   decoration?
+   horizontal?
+   vertical?
+   font-size?
+   style-float?
+   clear?
+   display?
+   visibility?
+   list-style-type?
+   list-style-position? 
+   position?
+   overflow?
+   pagebreak?
+   cursor?
+   filter?
+   alpha-filter-style?
+   trans-filter-status? 
+   filter-direction?
+   reveal-transition? 
+   vertical-align?
+   css-unit?
+   border-style?))
+
+(define-signature mysterx:util^
+  (fold-strings-with-spaces
+   map-to-string
+   empty-string?
+   bool->string
+   exact-with-bounds?
+   list-pos
+   remove-ws
+   symbols->string
+   hex-digit-string?
+   hex-color-string?
+   empty-property-error))
 

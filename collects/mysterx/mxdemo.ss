@@ -94,13 +94,13 @@
 (com-register-event-handler 
  cal "Click" 
  (lambda ()
-   (send reflector set-color! "white") 
-   (send reflector set-background-color! "blue")
+   (send reflector set-color! 'white) 
+   (send reflector set-background-color! 'blue)
    (thread
     (lambda ()
       (sleep 0.25)
-      (send reflector set-color! "black") 
-      (send reflector set-background-color! "white")))))
+      (send reflector set-color! 'black) 
+      (send reflector set-background-color! 'white)))))
 
 (define (about-handler ev)
   (when (send ev click?)

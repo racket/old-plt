@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.15 1999/07/06 16:52:20 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.16 1999/07/28 17:44:29 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1585,7 +1585,7 @@ char *wxFontNameDirectory::GetFontName(int fontid)
   if (item->isfamily)
     return NULL;
 
-  return item->name;
+  return item->name + 1;
 }
 
 int wxFontNameDirectory::GetFontId(const char *name) /* MATTHEW: [4] const */

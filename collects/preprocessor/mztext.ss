@@ -150,7 +150,7 @@
      [(new)
       (set! marker new)
       (command-marker-here-re
-       (regexp (string-append "^" (regexp-quote marker))))
+       (and marker (regexp (string-append "^" (regexp-quote marker)))))
       (rebuild-dispatcher-table)])))
 (define command-marker-here-re (make-parameter #f))
 

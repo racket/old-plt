@@ -425,8 +425,8 @@ START_XFORM_SKIP;
 
 END_XFORM_SKIP;
 
-#define GC_register_eager_finalizer(o, level, f, d, of, od) GC_set_finalizer(o, level, 1, f, d, of, od)
-#define GC_register_finalizer(o, f, d, of, od) GC_set_finalizer(o, 3, 1, f, d, of, od)
+#define GC_register_eager_finalizer(o, level, f, d, of, od) GC_set_finalizer(o, 1, level, f, d, of, od)
+#define GC_register_finalizer(o, f, d, of, od) GC_set_finalizer(o, 1, 3, f, d, of, od)
 
 #endif
 

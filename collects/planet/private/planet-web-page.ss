@@ -4,7 +4,7 @@
            "../server-config.ss"
            (lib "xml.ss" "xml")
            (lib "list.ss")
-           (lib "etc.ss"))
+           (lib "getinfo.ss" "setup"))
   
   (provide build-web-page-file)
   
@@ -34,14 +34,28 @@
             (lambda (a b) (string<? (pkg->name a) (pkg->name b)))))))
     
     (define (package-line->html pkg owner-name)
-      (define description (let ((metainfo (build-path (PLANET-SERVER-REPOSITORY) 
-                                                      (version)
-                                                      owner-name
-                                                      (pkg->name pkg)
-                                                      (METAINFO-FILE))))
-                            (if (file-exists? metainfo)
-                                (read-file-to-string metainfo)
-                                "No description available.")))
+      
+      (define metainfo-file-path (build-path (PLANET-SERVER-REPOSITORY) 
+                                             (version)
+                                             owner-name
+                                             (pkg->name pkg)
+                                             (METAINFO-FILE)))
+      
+      (define metainfo
+        (let ((getter (get-info-from-file metainfo-file-path)))
+          (if getter
+              (lambda (item default) 
+                (with-handlers ([not-break-exn? (lambda (x) (default))])
+                  (getter item)))
+              (lambda (x default) (default)))))
+      
+      (define description 
+        (let ((orig-blurb (metainfo 'blurb (lambda () "No description available."))))
+          (if (string? orig-blurb)
+              (list orig-blurb)
+              orig-blurb)))
+      
+      (define file-to-require (metainfo 'primary-file (lambda () "[file]")))
       
       (define latest-major-version (apply max (pkg->major-versions pkg)))
       (define latest-minor-version (apply max (pkg->minor-versions pkg latest-major-version)))
@@ -69,8 +83,8 @@
                  (br)
                  "Latest minor version: " ,(number->string latest-minor-version)
                  (br)
-                 "To require: " (tt ,(format "(require (planet [file] (~s ~s ~s ~s)))" owner-name (pkg->name pkg) latest-major-version latest-minor-version)))
-            (p ,description)))
+                 "To require: " (tt ,(format "(require (planet ~s (~s ~s ~s ~s)))" file-to-require owner-name (pkg->name pkg) latest-major-version latest-minor-version)))
+            (p ,@description)))
     
     
     (let* ([owners/all-versions (current-repository-contents)]

@@ -2082,7 +2082,7 @@ do_def_execute(char *who, Scheme_Object *form, Scheme_Type type, int require_pro
 
   save_env = p->current_local_env;
   p->current_local_env = scheme_get_env(p->config)->init;
-  val = _scheme_eval_compiled_expr(val);
+  val = scheme_eval_compiled_expr(val);
   p->current_local_env = save_env;
 
   if (require_proc)

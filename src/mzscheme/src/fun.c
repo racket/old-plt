@@ -101,8 +101,6 @@ static Scheme_Object *rep;
 
 #define CONS(a,b) scheme_make_pair(a,b)
 
-#define DYNAMIC_WIND "dynamic-wind"
-
 #ifdef USE_DIFFTIME
 static time_t base_time;
 #endif
@@ -240,9 +238,9 @@ scheme_init_fun (Scheme_Env *env)
 			     env);
 #endif
 
-  scheme_add_global_constant(DYNAMIC_WIND, 
+  scheme_add_global_constant("dynamic-wind", 
 			     scheme_make_prim_w_arity(dynamic_wind,  
-						      DYNAMIC_WIND, 
+						      "dynamic-wind", 
 						      3, 3), 
 			     env);
 
@@ -684,10 +682,11 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   return (Scheme_Object *)data;
 }
 
-void *scheme_top_level_do(void *(*k)(void))
+void *scheme_top_level_do(void *(*k)(void), int eb)
 {
   void *v;
-  long *old_cc_ok, *ok;
+  long *old_cc_ok, *cc_ok;
+  long *old_ec_ok;
   void *old_cc_start;
   mz_jmp_buf save, oversave;
 #ifdef ERROR_ON_OVERFLOW
@@ -703,14 +702,26 @@ void *scheme_top_level_do(void *(*k)(void))
 #endif
 
   old_cc_ok = p->cc_ok;
+  old_ec_ok = p->ec_ok;
   old_cc_start = p->cc_start;
 
-  p->cc_ok = ok = (long *)scheme_malloc_atomic(sizeof(long));
+  p->cc_ok = cc_ok = (long *)scheme_malloc_atomic(sizeof(long));
   p->cc_start = &v;
   
   if (old_cc_ok)
     *old_cc_ok = 0;
-  *ok = 1;
+  *cc_ok = 1;
+
+  if (eb) {
+    /* We'll turn this on in version 53. More support is needed in MzScheme
+       to make escape continuation boundaries work right. */
+#if 0
+    if (old_ec_ok)
+      *old_ec_ok = 0;
+#endif
+    p->ec_ok = (long *)scheme_malloc_atomic(sizeof(long));
+    *p->ec_ok = 1;
+  }
 
 #ifdef ERROR_ON_OVERFLOW
   orig_overflow = p->stack_overflow;
@@ -778,10 +789,13 @@ void *scheme_top_level_do(void *(*k)(void))
 
   if (scheme_setjmp(p->error_buf)) {
     scheme_restore_env_stack_w_process(envss, p);
-    *ok = 0;
+    *cc_ok = 0;
     if (old_cc_ok)
       *old_cc_ok = 1;
+    if (old_ec_ok)
+      *old_ec_ok = 1;
     p->cc_ok = old_cc_ok;
+    p->ec_ok = old_ec_ok;
     p->cc_start = old_cc_start;  
 #ifdef ERROR_ON_OVERFLOW
     p->stack_overflow = orig_overflow;
@@ -803,10 +817,13 @@ void *scheme_top_level_do(void *(*k)(void))
   memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
 #endif
 
-  *ok = 0;
+  *cc_ok = 0;
   if (old_cc_ok)
     *old_cc_ok = 1;
   p->cc_ok = old_cc_ok;
+  if (old_ec_ok)
+    *old_ec_ok = 1;
+  p->ec_ok = old_ec_ok;
   p->cc_start = old_cc_start;
 
 #ifndef MZ_REAL_THREADS
@@ -837,12 +854,19 @@ static void *apply_k()
     return (void *)_scheme_apply_wp(rator, num_rands, rands, p);
 }
 
-static Scheme_Object *
-_apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands, int multi
 #ifdef MZ_REAL_THREADS
-	     , Scheme_Process *p
+# define APP_PROC_FORMAL , Scheme_Process *p
+# define APP_PROC_ARG    , p
+# define APP_PROC_NAME(x) x ## _wp
+#else
+# define APP_PROC_FORMAL /* empty */
+# define APP_PROC_ARG    /* empty */
+# define APP_PROC_NAME(x)     x
 #endif
-	     )
+
+static Scheme_Object *
+_apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands, int multi, 
+       int eb APP_PROC_FORMAL)
 {
 #ifndef MZ_REAL_THREADS
   Scheme_Process *p = scheme_current_process;
@@ -853,42 +877,37 @@ _apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands, int multi
   p->ku.k.i1 = num_rands;
   p->ku.k.i2 = multi;
 
-  return (Scheme_Object *)scheme_top_level_do(apply_k);
+  return (Scheme_Object *)scheme_top_level_do(apply_k, eb);
 }
 
 
-#ifndef MZ_REAL_THREADS
 Scheme_Object *
-scheme_apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands)
-#else
-Scheme_Object *
-scheme_apply_wp(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
-		Scheme_Process *p)
-#endif
+APP_PROC_NAME(scheme_apply)(Scheme_Object *rator, int num_rands, Scheme_Object **rands
+			    APP_PROC_FORMAL)
 {
-  return _apply(rator, num_rands, rands, 0
-#ifdef MZ_REAL_THREADS
-		, p
-#endif
-		);
+  return _apply(rator, num_rands, rands, 0, 0 APP_PROC_ARG);
 }
 
-#ifndef MZ_REAL_THREADS
 Scheme_Object *
-scheme_apply_multi(Scheme_Object *rator, int num_rands, Scheme_Object **rands)
-#else
-Scheme_Object *
-scheme_apply_multi_wp(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
-		      Scheme_Process *p)
-#endif
+APP_PROC_NAME(scheme_apply_multi)(Scheme_Object *rator, int num_rands, Scheme_Object **rands
+				  APP_PROC_FORMAL)
 {
-  return _apply(rator, num_rands, rands, 1
-#ifdef MZ_REAL_THREADS
-		, p
-#endif
-		);
+  return _apply(rator, num_rands, rands, 1, 0 APP_PROC_ARG);
 }
 
+Scheme_Object *
+APP_PROC_NAME(scheme_apply_eb)(Scheme_Object *rator, int num_rands, Scheme_Object **rands
+			       APP_PROC_FORMAL)
+{
+  return _apply(rator, num_rands, rands, 0, 1 APP_PROC_ARG);
+}
+ 
+Scheme_Object *
+APP_PROC_NAME(scheme_apply_multi_eb)(Scheme_Object *rator, int num_rands, Scheme_Object **rands
+			       APP_PROC_FORMAL)
+{
+  return _apply(rator, num_rands, rands, 1, 1 APP_PROC_ARG);
+}
  
 Scheme_Object *
 scheme_tail_apply (Scheme_Object *rator, int num_rands, Scheme_Object **rands)
@@ -1636,16 +1655,18 @@ static Scheme_Object *
 call_ec (int argc, Scheme_Object *argv[])
 {
   Scheme_Escaping_Cont *cont;
+  Scheme_Process *p = scheme_current_process;
 
   scheme_check_proc_arity("call-with-escaping-continuation", 1, 
 			  0, argc, argv);
 
   cont = MALLOC_ONE_TAGGED(Scheme_Escaping_Cont);
   cont->type = scheme_escaping_cont_type;
-  SCHEME_CONT_HOME(cont) = scheme_current_process;
+  SCHEME_CONT_HOME(cont) = p;
+  cont->ok = p->ec_ok;
   cont->u.val = argv[0];
 #ifdef ERROR_ON_OVERFLOW
-  cont->orig_overflow = scheme_current_process->stack_overflow;
+  cont->orig_overflow = p->stack_overflow;
 #endif
 
   return scheme_dynamic_wind(pre_call_ec, do_call_ec, post_call_ec,

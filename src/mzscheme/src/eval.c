@@ -801,7 +801,7 @@ static void *compile_k()
   return (void *)top;
 }
 
-Scheme_Object *scheme_compile(Scheme_Object *form, Scheme_Env *env, int writeable)
+static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeable, int eb)
 {
   Scheme_Process *p = scheme_current_process;
 
@@ -812,7 +812,12 @@ Scheme_Object *scheme_compile(Scheme_Object *form, Scheme_Env *env, int writeabl
   p->ku.k.p2 = env->init;
   p->ku.k.i1 = writeable;
 
-  return (Scheme_Object *)scheme_top_level_do(compile_k);
+  return (Scheme_Object *)scheme_top_level_do(compile_k, eb);
+}
+
+Scheme_Object *scheme_compile(Scheme_Object *form, Scheme_Env *env, int writeable)
+{
+  return _compile(form, env, writeable, 1);
 }
 
 Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first, 
@@ -2169,13 +2174,13 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       
       DO_CHECK_FOR_BREAK(p, ;);
 
-      if (!*c->ok)
-	scheme_raise_exn(MZEXN_MISC_CONTINUATION,
-			 "continuation application: attempted to cross a continuation boundary");
       if (NOT_SAME_OBJ(c->home, p))
 	scheme_raise_exn(MZEXN_MISC_CONTINUATION,
 			 "continuation application: attempted to apply foreign continuation"
 			 " (created in another thread)");
+      if (c->ok && !*c->ok)
+	scheme_raise_exn(MZEXN_MISC_CONTINUATION,
+			 "continuation application: attempted to cross a continuation boundary");
       
       /* Find `common', then intersection of dynamic-wind chain for 
 	 the current continuation and the given continuation */
@@ -2236,6 +2241,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	scheme_raise_exn(MZEXN_MISC_CONTINUATION,
 			 "continuation application: attempted to apply foreign escape continuation"
 			 " (created in another thread)");
+      if (SCHEME_CONT_OK(obj) && !*SCHEME_CONT_OK(obj))
+	scheme_raise_exn(MZEXN_MISC_CONTINUATION,
+			 "continuation application: attempted to cross an escape continuation boundary");
       SCHEME_CONT_VAL(obj) = value;
       MZTHREADELEM(p, jumping_to_continuation) = 1;
       scheme_longjmp(MZTHREADELEM(p, error_buf), 1);
@@ -2675,65 +2683,75 @@ static void *eval_k()
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *v;
+  int isexpr, multi;
 
   v = (Scheme_Object *)p->ku.k.p1;
-
-  if (SAME_TYPE(SCHEME_TYPE(v), scheme_compilation_top_type)) {
+  p->ku.k.p1 = NULL;
+  isexpr = p->ku.k.i2;
+  multi = p->ku.k.i1;
+    
+  if (isexpr) {
+    if (multi)
+      v = _scheme_eval_compiled_expr_multi_wp(v, p);
+    else
+      v = _scheme_eval_compiled_expr_wp(v, p);
+  } else if (SAME_TYPE(SCHEME_TYPE(v), scheme_compilation_top_type)) {
     Scheme_Compilation_Top *top = (Scheme_Compilation_Top *)v;
     int multi;
 
     if (!scheme_check_runstack(top->max_let_depth))
       return (Scheme_Object *)scheme_enlarge_runstack(top->max_let_depth, eval_k);
 
-    v = top->code;
-    
-    p->ku.k.p1 = NULL;
+    v = top->code;    
 
-    multi = p->ku.k.i1;
-    
     if (multi)
       v = _scheme_eval_compiled_expr_multi_wp(v, p);
     else
       v = _scheme_eval_compiled_expr_wp(v, p);
   } else {
-    p->ku.k.p1 = NULL;
     v = scheme_void;
   }
 
   return (void *)v;
 }
 
-static Scheme_Object *_eval(Scheme_Object *obj, int multi, int top)
+static Scheme_Object *_eval(Scheme_Object *obj, int isexpr, int multi, int top)
 {
   Scheme_Process *p = scheme_current_process;
   
   p->ku.k.p1 = obj;
   p->ku.k.i1 = multi;
+  p->ku.k.i2 = isexpr;
 
   if (top)
-    return (Scheme_Object *)scheme_top_level_do(eval_k);
+    return (Scheme_Object *)scheme_top_level_do(eval_k, 1);
   else
     return (Scheme_Object *)eval_k();
 }
 
 Scheme_Object *scheme_eval_compiled(Scheme_Object *obj)
 {
-  return _eval(obj, 0, 1);
+  return _eval(obj, 0, 0, 1);
 }
 
 Scheme_Object *scheme_eval_compiled_multi(Scheme_Object *obj)
 {
-  return _eval(obj, 1, 1);
+  return _eval(obj, 0, 1, 1);
 }
 
 Scheme_Object *_scheme_eval_compiled(Scheme_Object *obj)
 {
-  return _eval(obj, 0, 0);
+  return _eval(obj, 0, 0, 0);
 }
 
 Scheme_Object *_scheme_eval_compiled_multi(Scheme_Object *obj)
 {
-  return _eval(obj, 1, 0);
+  return _eval(obj, 0, 1, 0);
+}
+
+Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *obj)
+{
+  return _eval(obj, 1, 0, 1);
 }
 
 static void *expand_k()
@@ -2748,17 +2766,23 @@ static void *expand_k()
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
 
-  return scheme_expand_expr(obj, env, -1);
+  return scheme_expand_expr(obj, env, p->ku.k.i1);
 }
 
-Scheme_Object *scheme_expand(Scheme_Object *obj, Scheme_Env *env)
+static Scheme_Object *_expand(Scheme_Object *obj, Scheme_Comp_Env *env, int depth, int eb)
 {
   Scheme_Process *p = scheme_current_process;
 
   p->ku.k.p1 = obj;
-  p->ku.k.p2 = env->init;
+  p->ku.k.p2 = env;
+  p->ku.k.i1 = depth;
 
-  return (Scheme_Object *)scheme_top_level_do(expand_k);
+  return (Scheme_Object *)scheme_top_level_do(expand_k, eb);
+}
+
+Scheme_Object *scheme_expand(Scheme_Object *obj, Scheme_Env *env)
+{
+  return _expand(obj, env->init, 1, -1);
 }
 
 Scheme_Object *scheme_tail_eval_expr(Scheme_Object *obj)
@@ -2771,9 +2795,9 @@ do_default_eval_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
 {
   Scheme_Object *v;
 
-  v = scheme_compile(argv[0], env, 0);
+  v = _compile(argv[0], env, 0, 0);
 
-  return _eval(v, 1, 0);
+  return _eval(v, 0, 1, 0);
 }
 
 /* local functions */
@@ -2846,7 +2870,7 @@ current_eval(int argc, Scheme_Object **argv)
 static Scheme_Object *
 compile(int argc, Scheme_Object *argv[])
 {
-  return scheme_compile(argv[0], scheme_get_env(scheme_config), 1);
+  return _compile(argv[0], scheme_get_env(scheme_config), 1, 0);
 }
 
 #if OPT_COMPILE_VISIBLE
@@ -2868,7 +2892,7 @@ compile_x(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *expand(int argc, Scheme_Object **argv)
 {
-  return scheme_expand_expr(argv[0], scheme_get_env(scheme_config)->init, -1);
+  return _expand(argv[0], scheme_get_env(scheme_config)->init, -1, 0);
 }
 
 static Scheme_Comp_Env *local_expand_extend_env(Scheme_Object *locals, 
@@ -2901,7 +2925,7 @@ local_expand(int argc, Scheme_Object **argv)
     scheme_raise_exn(MZEXN_MISC_EXPANSION_TIME,
 		     "local-expand-defmacro: illegal at run-time");
 
-  return scheme_expand_expr(argv[0], env, -1);
+  return _expand(argv[0], env, -1, 0);
 }
 
 static Scheme_Object *
@@ -2942,7 +2966,7 @@ local_expand_body_expression(int argc, Scheme_Object **argv)
 static Scheme_Object *
 expand_once(int argc, Scheme_Object **argv)
 {
-  return scheme_expand_expr(argv[0], scheme_get_env(scheme_config)->init, 1);
+  return _expand(argv[0], scheme_get_env(scheme_config)->init, 1, 0);
 }
 
 Scheme_Object *scheme_eval_string_all(const char *str, Scheme_Env *env, int cont)

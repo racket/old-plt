@@ -288,8 +288,8 @@ Scheme_Object *_scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *
 
 void scheme_ensure_stack_start(Scheme_Process *p, void *d);
 
-void *scheme_top_level_do(void *(*k)(void));
-#define scheme_top_level_do_w_process(k, p) scheme_top_level_do(k)
+void *scheme_top_level_do(void *(*k)(void), int eb);
+#define scheme_top_level_do_w_process(k, eb, p) scheme_top_level_do(k, eb)
 
 typedef struct Scheme_Stack_State {
   Scheme_Object **runstack;
@@ -334,6 +334,7 @@ typedef struct Scheme_Escaping_Cont {
   Scheme_Type type;
   short num_vals;
   Scheme_Process *home;
+  long *ok;
   union {
     Scheme_Object **vals;
     Scheme_Object *val;
@@ -344,6 +345,7 @@ typedef struct Scheme_Escaping_Cont {
 } Scheme_Escaping_Cont;
 
 #define SCHEME_CONT_HOME(obj)  (((Scheme_Escaping_Cont *)(obj))->home)
+#define SCHEME_CONT_OK(obj)  (((Scheme_Escaping_Cont *)(obj))->ok)
 #define SCHEME_CONT_VAL(obj)  (((Scheme_Escaping_Cont *)(obj))->u.val)
 #define SCHEME_CONT_VALS(obj)  (((Scheme_Escaping_Cont *)(obj))->u.vals)
 #define SCHEME_CONT_NUM_VALS(obj)  (((Scheme_Escaping_Cont *)(obj))->num_vals)
@@ -952,6 +954,8 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[]);
 #define _scheme_eval_compiled_expr_multi(obj) scheme_do_eval(obj,-1,NULL,-1)
 #define _scheme_eval_compiled_expr_wp(obj, p) scheme_do_eval_w_process(obj,-1,NULL,1,p)
 #define _scheme_eval_compiled_expr_multi_wp(obj, p) scheme_do_eval_w_process(obj,-1,NULL,-1,p)
+
+Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *obj);
 
 char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv);
 

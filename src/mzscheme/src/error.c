@@ -173,7 +173,7 @@ scheme_inescapeable_error(const char *a, const char *b)
   memcpy(t, a, al);
   memcpy(t + al, b, bl + 1);
 
-  scheme_console_printf("%s", t);
+  scheme_console_printf("%s\n", t);
 }
 
 #define RAISE_RETURNED "exception handler did not escape"

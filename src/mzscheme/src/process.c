@@ -1499,7 +1499,7 @@ void *scheme_check_sema_callbacks(int (*test)(void *, void *), void *cdata, int 
 
       memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
       if (!scheme_setjmp(scheme_error_buf))
-	scheme_apply_multi(cb->callback, 0, NULL);
+	scheme_apply_multi_eb(cb->callback, 0, NULL);
       memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 
       return cb->context;

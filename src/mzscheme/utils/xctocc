@@ -835,7 +835,7 @@ sub PrintMethod
 
     print "  " . &ApplyMacros($methprecall) . "\n";
 
-    print "\n  v = scheme_apply(";
+    print "\n  v = scheme_apply_eb(";
     print "method, ";
     print "${numschemes}, p);\n";
 

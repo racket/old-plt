@@ -732,7 +732,7 @@ scheme_read(Scheme_Object *port)
 							  MZCONFIG_CAN_READ_COMPILED));
 
   p->ku.k.p1 = (void *)port;
-  return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k);
+  return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
 }
 
 /* "(" has already been read */

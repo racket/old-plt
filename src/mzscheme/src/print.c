@@ -197,7 +197,7 @@ void scheme_write_w_max(Scheme_Object *obj, Scheme_Object *port, long maxl)
     p->ku.k.i1 = maxl;
     p->ku.k.i2 = 1;
     
-    (void)scheme_top_level_do(print_to_port_k);
+    (void)scheme_top_level_do(print_to_port_k, 0);
   }
 }
 
@@ -218,7 +218,7 @@ void scheme_display_w_max(Scheme_Object *obj, Scheme_Object *port, long maxl)
     p->ku.k.i1 = maxl;
     p->ku.k.i2 = 0;
     
-    (void)scheme_top_level_do(print_to_port_k);
+    (void)scheme_top_level_do(print_to_port_k, 0);
   }
 }
 
@@ -256,7 +256,7 @@ char *scheme_write_to_string_w_max(Scheme_Object *obj, long *len, long maxl)
   p->ku.k.i1 = maxl;
   p->ku.k.i2 = 1;
 
-  return (char *)scheme_top_level_do(print_to_string_k);
+  return (char *)scheme_top_level_do(print_to_string_k, 0);
 }
 
 char *scheme_write_to_string(Scheme_Object *obj, long *len)
@@ -273,7 +273,7 @@ char *scheme_display_to_string_w_max(Scheme_Object *obj, long *len, long maxl)
   p->ku.k.i1 = maxl;
   p->ku.k.i2 = 0;
 
-  return (char *)scheme_top_level_do(print_to_string_k);
+  return (char *)scheme_top_level_do(print_to_string_k, 0);
 }
 
 char *scheme_display_to_string(Scheme_Object *obj, long *len)

@@ -3310,7 +3310,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
 
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
-				    "load", 
+				    "default-load-handler", 
 				    NULL);
 
   if (scheme_directory_exists(filename)) {

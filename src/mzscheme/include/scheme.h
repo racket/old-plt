@@ -468,6 +468,7 @@ typedef struct Scheme_Process {
 
   void *cc_start;
   long *cc_ok;
+  long *ec_ok;
   struct Scheme_Dynamic_Wind *dw;
 
   struct Scheme_Process *next;
@@ -725,9 +726,13 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 #ifdef MZ_REAL_THREADS
 #define scheme_apply(r,n,a) scheme_apply_wp(r,n,a,scheme_current_process)
 #define scheme_apply_multi(r,n,a) scheme_apply_multi_wp(r,n,a,scheme_current_process)
+#define scheme_apply_eb(r,n,a) scheme_apply_eb_wp(r,n,a,scheme_current_process)
+#define scheme_apply_multi_eb(r,n,a) scheme_apply_multi_eb_wp(r,n,a,scheme_current_process)
 #else
 #define scheme_apply_wp(r,n,a,p) scheme_apply(r,n,a)
 #define scheme_apply_multi_wp(r,n,a,p) scheme_apply_multi(r,n,a)
+#define scheme_apply_eb_wp(r,n,a,p) scheme_apply_eb(r,n,a)
+#define scheme_apply_multi_eb_wp(r,n,a,p) scheme_apply_multi_eb(r,n,a)
 #endif
 
 #define _scheme_apply(r,n,rs) scheme_do_eval(r,n,rs,1)

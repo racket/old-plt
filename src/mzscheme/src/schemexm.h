@@ -74,9 +74,13 @@
 #ifndef MZ_REAL_THREADS
 #define scheme_apply (scheme_extension_table->scheme_apply)
 #define scheme_apply_multi (scheme_extension_table->scheme_apply_multi)
+#define scheme_apply_eb (scheme_extension_table->scheme_apply_eb)
+#define scheme_apply_multi_eb (scheme_extension_table->scheme_apply_multi_eb)
 #else
 #define scheme_apply_wp (scheme_extension_table->scheme_apply_wp)
 #define scheme_apply_multi_wp (scheme_extension_table->scheme_apply_multi_wp)
+#define scheme_apply_eb_wp (scheme_extension_table->scheme_apply_eb_wp)
+#define scheme_apply_multi_eb_wp (scheme_extension_table->scheme_apply_multi_eb_wp)
 #endif
 #define scheme_apply_to_list (scheme_extension_table->scheme_apply_to_list)
 #define scheme_eval_string (scheme_extension_table->scheme_eval_string)

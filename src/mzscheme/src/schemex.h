@@ -123,11 +123,17 @@ Scheme_Object *(*_scheme_eval_compiled_multi)(Scheme_Object *obj);
 #ifndef MZ_REAL_THREADS
 Scheme_Object *(*scheme_apply)(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
 Scheme_Object *(*scheme_apply_multi)(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
+Scheme_Object *(*scheme_apply_eb)(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
+Scheme_Object *(*scheme_apply_multi_eb)(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
 #else
 Scheme_Object *(*scheme_apply_wp)(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
 			       Scheme_Process *p);
 Scheme_Object *(*scheme_apply_multi_wp)(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
 				     Scheme_Process *p);
+Scheme_Object *(*scheme_apply_eb_wp)(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
+				  Scheme_Process *p);
+Scheme_Object *(*scheme_apply_multi_eb_wp)(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
+					Scheme_Process *p);
 #endif
 Scheme_Object *(*scheme_apply_to_list)(Scheme_Object *rator, Scheme_Object *argss);
 Scheme_Object *(*scheme_eval_string)(const char *str, Scheme_Env *env);

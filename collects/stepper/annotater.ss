@@ -115,7 +115,7 @@
                                    (#%cons ,x
                                     null))))
                              kept-vars)])
-      `(#%lambda () (#%list ,#f (#%quote ,label) ,@var-clauses)))) ; took source out temporarily
+      `(#%lambda () (#%list #f (#%quote ,label) ,@var-clauses)))) ; took source out temporarily
   
   
   ; wrap-struct-form 
@@ -277,8 +277,8 @@
 	     
              ; find the source expression and associate it with the parsed expression
              
-             (when red-exprs
-               (set-expr-read! expr (find-read-expr expr)))
+             ;(when red-exprs
+             ;  (set-expr-read! expr (find-read-expr expr)))
 	     
 	     (cond
 	       

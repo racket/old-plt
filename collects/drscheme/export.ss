@@ -37,6 +37,9 @@
 		(mzlib pretty-print)
 		(mzlib function))]
 
+        [load-handler : drscheme:load-handler^
+                      ((require-library "load-handler.ss" "drscheme") mred zodiac basis)]
+
 	[rep : drscheme:rep^
 	     ((require-relative-library "rep.ss")
 	      mred mzlib framework print-convert zodiac

@@ -935,7 +935,7 @@
 				    (if (or (and (interface? key)
 						 (ivar-in-interface? name key))
 					    (and (class? key)
-						 (ivar-in-class? name key)))
+						 (ivar-in-interface? name (class->interface key))))
 					
 					;; Method is there, check arity
 					(when (is-a? ex key)

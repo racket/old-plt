@@ -87,9 +87,12 @@
 			(for-each (lambda (d) (make-file d (string-append " " indent))) deps)
 			(let ([reason
 			       (or (not date)
-				   (ormap (lambda (dep) (and (file-exists? dep)
-							     (> (file-or-directory-modify-seconds dep) date)
-							     dep)) 
+				   (ormap (lambda (dep)
+					    (unless (or (file-exists? dep)
+							(directory-exists? dep))
+					      (error 'make "dependancy ~a was not made~n" dep))
+					    (and (> (file-or-directory-modify-seconds dep) date)
+						 dep))
 					  deps))])
 			  (when reason
 			    (let ([l (cddr line)])

@@ -63,6 +63,14 @@
 #include "wx_rgn.h"
 #include "../mzscheme/include/scheme.h"
 
+extern void wxPostScriptDrawText(Scheme_Object *f, const char *fontname, 
+				 const char *text, int dt, int use16, 
+				 int font_size);
+extern void wxPostScriptGetTextExtent(const char *fontname, 
+				      const char *text, int dt, int use16, 
+				      int font_size,
+				      float *x, float *y, float *descent, float *topSpace);
+
 # define YSCALE(y) ((paper_h) - ((y) * user_scale_y + device_origin_y))
 # define XSCALE(x) ((x) * user_scale_x + device_origin_x)
 # define YOFFSET(y) ((paper_h) - ((y) + device_origin_y))
@@ -80,7 +88,6 @@
 #define RESET_COLOR 0x2
 
 static double pie = 0.0;
-static int complained_afm = 0;
 
 #ifndef WXUNUSED
 # define WXUNUSED(x) x
@@ -121,10 +128,10 @@ wxPrintPaperDatabase *wxThePrintPaperDatabase;
 #endif
 
 class PSStream : public wxObject {
+ public:
+
   Scheme_Object *f;
   int int_width;
-
- public:
 
   PSStream(char *file) {
     f = scheme_open_output_file(file, "post-script-dc%");
@@ -1233,7 +1240,8 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
 			      Bool combine, Bool use16, int dt, float angle)
 {
   float tw, th;
-  int i, len, size;
+  int size;
+  const char *name;
 
   if (!pstream)
     return;
@@ -1308,7 +1316,23 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
       current_font_size = next_font_size;
       current_font_name = next_font_name;
     }
+    name = next_font_name;
     next_font_name = NULL;
+  } else {
+    int family, style, weight;
+    if (current_font) {
+      family = current_font->GetFontId();
+      style = current_font->GetStyle();
+      weight = current_font->GetWeight();
+    } else {
+      family = wxDEFAULT;
+      style = wxNORMAL;
+      weight = wxNORMAL;
+    }
+    
+    name = wxTheFontNameDirectory->GetPostScriptName(family, weight, style);
+    if (!name)
+      name = "Times-Roman";
   }
 
   size = 10;
@@ -1331,17 +1355,7 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
     pstream->Out(" moveto\n");
   }
 
-  pstream->Out("(");
-  len = strlen(text XFORM_OK_PLUS dt);
-  for (i = 0; i < len; i++)
-    {
-      char ch = text[i + dt];
-      if (ch == ')' || ch == '(' || ch == '\\')
-	pstream->Out("\\");
-      pstream->Out(ch);
-    }
-
-  pstream->Out(")"); pstream->Out(" show\n");
+  wxPostScriptDrawText(pstream->f, name, text, dt, use16, size);
 
   if (angle != 0.0) {
     pstream->Out("grestore\n"); 
@@ -1881,232 +1895,31 @@ float wxPostScriptDC::GetCharWidth (void)
   return 0;
 }
 
-// these static vars are for storing the state between calls
-static int lastFamily= INT_MIN;
-static int lastSize= INT_MIN;
-static int lastStyle= INT_MIN;
-static int lastWeight= INT_MIN;
-static int lastDescender = INT_MIN;
-static int capHeight = -1;
-static int lastWidths[256]; // widths of the characters
-
 void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 				    float *descent, float *topSpace, wxFont *theFont,
-				    Bool WXUNUSED(combine), Bool WXUNUSED(use16), int dt)
+				    Bool WXUNUSED(combine), Bool use16, int dt)
 {
   wxFont *fontToUse = theFont;
   int family;
   int size;
   int style;
   int weight;
-
-  float widthSum = 0.0;
-  float height;
-  int dp;
+  const char *name;
 
   if (!fontToUse)
     fontToUse = current_font;
-    
-  // ************************************************************
-  // method for calculating string widths in postscript:
-  // read in the AFM (adobe font metrics) file for the
-  // actual font, parse it and extract the character widths
-  // and also the descender. this may be improved, but for now
-  // it works well. the AFM file is only read in if the
-  // font is changed. this may be chached in the future.
-  // calls to GetTextExtent with the font unchanged are rather
-  // efficient!
-  //
-  // for each font and style used there is an AFM file necessary.
-  // currently i have only files for the roman font family.
-  // i try to get files for the other ones!
 
-  // get actual parameters
   family = fontToUse->GetFontId();
   size =   fontToUse->GetPointSize();
   style =  fontToUse->GetStyle();
   weight = fontToUse->GetWeight();
-  
-  // if we have a new font, read the font-metrics
-  if (family != lastFamily 
-      || size != lastSize 
-      || style != lastStyle
-      || weight != lastWeight) {
-    char *name;
-    char *afmName;
-    Scheme_Object *afmFile;
 
-    // store cached values
-    lastFamily = family;
-    lastSize =   size;
-    lastStyle =  style;
-    lastWeight = weight;
+  name = wxTheFontNameDirectory->GetPostScriptName(family, weight, style);
+  if (!name)
+    name = "Times-Roman";
 
-    // read in new font metrics **************************************
-
-    // 1. construct filename ******************************************
-    name = wxTheFontNameDirectory->GetPostScriptName(family, weight, style);
-    if (name && afm_path) {
-      int len = strlen(afm_path);
-      // get the directory of the AFM files
-      afmName = new char[strlen(name) + len + 256];
-      strcpy(afmName, afm_path);
-#if defined(wx_mac) && !defined(OS_X)
-      if (len && (afm_path[len - 1] != ':'))
-	strcat(afmName, ":");
-#endif
-#if defined(wx_x) || defined(OS_X)
-      if (len && (afm_path[len - 1] != '/'))
-	strcat(afmName, "/");
-#endif
-#ifdef wx_msw
-      if (len && (afm_path[len - 1] != '/') && (afm_path[len - 1] != '\\'))
-	strcat(afmName, "/");
-#endif
-      strcat(afmName, name);
-      strcat(afmName,".afm");
-    } else
-      afmName = NULL;
-
-    // 2. open and process the file **********************************
-
-    // a short explanation of the AFM format:
-    // we have for each character a line, which gives its size
-    // e.g.:
-    //
-    //   C 63 ; WX 444 ; N question ; B 49 -14 395 676 ;
-    //
-    // that means, we have a character with ascii code 63, and width 
-    // (444/1000 * fontSize) points.
-    // the other data is ignored for now!
-    //
-    // when the font has changed, we read in the right AFM file and store the
-    // character widths in an array, which is processed below (see point 3.).
-
-    afmFile = (afmName ? scheme_open_input_file(afmName, "post-script-dc%") : (Scheme_Object *)NULL);
-
-    lastDescender = INT_MIN;
-    capHeight = -1;
-
-    if (afmFile==NULL) {
-      int i;
-      if (!complained_afm) {
-	char bfr[256];
-	sprintf(bfr, "Cannot open AFM file for %.150s; guessing font sizes.\n"
-		"(Silently guessing fonts for future AFM failures.)"
-		, (afmName ? afmName : (name ? name : "<unknown>")));
-	scheme_console_printf("%s\n", bfr);
-	complained_afm = 1;
-      }
-      for (i = 0; i < 256; i++) {
-	lastWidths[i] = 500; // an approximate value
-      }
-      lastDescender = -150; // dito.
-    } else {
-      // some variables for holding parts of a line
-      char cString[256], semiString[256], WXString[256], descString[256];
-      char line[256];
-      int ascii, cWidth;
-      int i;
-      int bbox_down = INT_MIN;
-
-      // init the widths array
-      for (i = 0; i < 256; i++) {
-	lastWidths[i] = INT_MIN;
-      }
-
-      // read in the file and parse it
-      while (read_line_up_to(line, sizeof(line), afmFile)) {
-        if (!strncmp(line, "Descender ", 10)) {
-	  // descender
-          if ((sscanf(line, "%s%d", descString, &lastDescender) != 2)
-	      || strcmp(descString,"Descender")) {
-	    wxDebugMsg("AFM-file '%s': line '%s' has error (bad descender)\n",
-		       afmName, line);
-          }
-        } else if (!strncmp(line, "FontBBox ", 8)) {
-	  // bbox
-	  int l, t, r;
-          if ((sscanf(line, "%s%d%d%d%d", descString, &l, &bbox_down, &r, &t) != 5)
-	      || strcmp(descString,"FontBBox")) {
-	    wxDebugMsg("AFM-file '%s': line '%s' has error (bad bbox)\n",
-		       afmName, line);
-          }
-        } else if (!strncmp(line, "CapHeight ", 10)) {
-	  // descender
-          if ((sscanf(line, "%s%d", descString, &capHeight) != 2)
-	      || strcmp(descString, "CapHeight")) {
-	    wxDebugMsg("AFM-file '%s': line '%s' has error (bad cap height)\n",
-		       afmName, line);
-          }
-        } else if (!strncmp(line, "C ", 2)){
-	  // char-width
-          if(sscanf(line, "%s%d%s%s%d", cString, &ascii, 
-		    semiString, WXString, &cWidth) != 5) {
-	    wxDebugMsg("AFM-file '%s': line '%s' has an error (bad character width)\n",
-		       afmName, line);
-          }
-          if(strcmp(cString,"C") 
-	     || strcmp(semiString,";") 
-	     || strcmp(WXString,"WX")) {
-	    wxDebugMsg("AFM-file '%s': line '%s' has a format error\n",afmName,line);
-          }
-          //printf("            char '%c'=%d has width '%d'\n",ascii,ascii,cWidth);
-          if (ascii >= 0 && ascii < 256) {
-            lastWidths[ascii] = cWidth; // store width
-          } else {
-	    /* This happens a lot; don't print an error */
-            // wxDebugMsg("AFM-file '%s': ASCII value %d out of range\n",afmName,ascii);
-          }
-        }
-      }
-      scheme_close_input_port(afmFile);
-
-      if (lastDescender == INT_MIN)
-	lastDescender = bbox_down;
-    }
-  }
-  
-  // 3. now the font metrics are read in, calc size *******************
-  // this is done by adding the widths of the characters in the
-  // string. they are given in 1/1000 of the size!
-
-  height = (float)size;
-  for (dp = dt; string[dp]; dp++) {
-    int ch;
-    ch = ((unsigned char *)string)[dp];
-    if (lastWidths[ch] == INT_MIN) {
-      wxDebugMsg("GetTextExtent: undefined width for character '%c' (%d)\n",
-                 ch, ch);
-      widthSum += lastWidths[' ']; // assume space
-    } else {
-      widthSum += (lastWidths[ch] / 1000.0F) * size;
-    }
-  }
-
-  // add descender to height (it is usually a negative value)
-  if (lastDescender != INT_MIN) {
-    height += ((-lastDescender) / 1000.0F) * size;
-  }
-  
-  // return size values
-  *x = widthSum;
-  *y = height;
-
-  // return other parameters
-  if (descent){
-    if (lastDescender != INT_MIN)
-      *descent = ((-lastDescender) / 1000.0F) * size;
-    else
-      *descent = 0.0;
-  }
-
-  if (topSpace) {
-    if (capHeight > -1)
-      *topSpace = ((1000 - capHeight) / 1000.0F) * size;
-    else
-      *topSpace = 0.0;
-  }
+  wxPostScriptGetTextExtent(name, string, dt, use16, size,
+			    x, y, descent, topSpace);
 }
 
 void wxPostScriptDC::SetMapMode (int WXXTUNUSED(mode))

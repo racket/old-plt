@@ -38,6 +38,7 @@
     file-creator-and-type
     set-snip-class-getter
     set-editor-data-class-getter
+    set-ps-draw-text/get-text-extent
     main-eventspace?
     eventspace-handler-thread)
 

@@ -1173,6 +1173,82 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
 }
 
 /***********************************************************************/
+/*                        PostScript hooks                             */
+/***********************************************************************/
+
+static Scheme_Object *ps_draw_text, *ps_get_text_extent;
+
+static Scheme_Object *SetPSProcs(int, Scheme_Object *a[])
+{
+  wxREGGLOB(ps_draw_text);
+  wxREGGLOB(ps_get_text_extent);
+  ps_draw_text = a[0];
+  ps_get_text_extent = a[1];
+  return scheme_void;
+}
+
+void wxPostScriptDrawText(Scheme_Object *f, const char *fontname,
+			  const char *text, int dt, int use16, 
+			  int font_size)
+{
+  if (ps_draw_text) {
+    Scheme_Object *a[4], *v;
+
+    v = scheme_make_utf8_string(fontname);
+    a[0] = v;
+    a[1] = scheme_make_integer(font_size);
+    if (use16)
+      v = scheme_make_sized_offset_char_string((mzchar *)text, dt, -1, 1);
+    else 
+      v = scheme_make_sized_offset_byte_string((char *)text, dt, -1, 1);
+    a[2] = v;
+    a[3] = f;
+
+    scheme_apply(ps_draw_text, 4, a);
+  }
+}
+
+extern void wxPostScriptGetTextExtent(const char *fontname, 
+				      const char *text, int dt, int use16, 
+				      int font_size,
+				      float *x, float *y, float *descent, float *topSpace)
+{
+  if (ps_get_text_extent) {
+    Scheme_Object *a[3], *v;
+
+    v = scheme_make_utf8_string(fontname);
+    a[0] = v;
+    a[1] = scheme_make_integer(font_size);
+    if (use16)
+      v = scheme_make_sized_offset_char_string((mzchar *)text, dt, -1, 1);
+    else 
+      v = scheme_make_sized_offset_byte_string((char *)text, dt, -1, 1);
+    a[2] = v;
+
+    v = scheme_apply(ps_get_text_extent, 3, a);
+    
+    if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)
+	&& (scheme_multiple_count == 4)) {
+      if (SCHEME_FLTP(scheme_multiple_array[0]))
+	*x = SCHEME_FLT_VAL(scheme_multiple_array[0]);
+      if (SCHEME_FLTP(scheme_multiple_array[1]))
+	*x = SCHEME_FLT_VAL(scheme_multiple_array[1]);
+      if (descent)
+	if (SCHEME_FLTP(scheme_multiple_array[2]))
+	  *descent = SCHEME_FLT_VAL(scheme_multiple_array[2]);
+      if (topSpace)
+	if (SCHEME_FLTP(scheme_multiple_array[3]))
+	  *topSpace = SCHEME_FLT_VAL(scheme_multiple_array[3]);
+    } else {
+      *x = 0;
+      *y = 0;
+      if (descent) *descent = 0;
+      if (topSpace) *topSpace = 0;
+    }
+  }
+}
+
+/***********************************************************************/
 /*                           panel color                               */
 /***********************************************************************/
 
@@ -2860,6 +2936,12 @@ static void wxScheme_Install(Scheme_Env *global_env)
 			   scheme_make_prim_w_arity(CAST_SP file_type_and_creator,
 						    "file-creator-and-type", 
 						    1, 3), 
+			   global_env);
+
+  scheme_install_xc_global("set-ps-draw-text/get-text-extent",
+			   scheme_make_prim_w_arity(CAST_SP SetPSProcs,
+						    "set-ps-draw-text/get-text-extent",
+						    2, 2),
 			   global_env);
 
 

@@ -1,15 +1,15 @@
 
-* MacOS: bitmaps don't print (with MacOS-specific printing)
+MacOS: bitmaps don't print (with MacOS-specific printing)
 
-* Windows and MacOS: "primitive" dialogs don't get closed by
-  custodian-shutdown-all
+Windows and MacOS: "primitive" dialogs don't get closed by
+ custodian-shutdown-all
 
-* MacOS: std file dialog and print dialogs block MzScheme threads
+MacOS: std file dialog and print dialogs block MzScheme threads
 
-* Unix: Clipboard client is invoked in the wrong thread/eventspace
+Unix: Clipboard client is invoked in the wrong thread/eventspace
 
-* Windows: System menu navigation in a menuless MDI window leads to a
-  crash
+Windows: System menu navigation in a menuless MDI window leads to a
+ crash
 
-* A top-level-window<%>'s on-move method is not reliably called; also,
-  the result from get-x, get-y, and is-iconized? are not reliable
+A top-level-window<%>'s on-move method is not reliably called; also,
+ the result from get-x, get-y, and is-iconized? are not reliable

@@ -2,6 +2,23 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.28:
+
+ * Changed `assf' in MzLib's "list.ss" to apply its first argument to
+   the car of each list element, instead of directly to each list
+   element. The new behavior seems like a more natural generalization
+   of `assq'.
+
+ * Added a `current-load/use-compiled' parameter.
+
+ * Unix: fixed `subprocess' handling of execute failures.
+
+ * Fixed performance problems with `equal?' and `equal?'-based hashing
+   on (transparent) structures.
+
+ * Miscellaneous minor bug fixes, many of which were actually
+   exp-tagged between the 199.27 and 199.28 designations.
+
 Version 199.27:
 
  * Changed `struct?' to return #t for v only if `struct->vector'

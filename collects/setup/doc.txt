@@ -299,6 +299,8 @@ The _getinfo.ss_ module defines the following functions:
    "info-domain" sub-directory of each collection directory (as
    determined by the PLT_COLLECTION_PATHS environment variable, etc.).
 
+   The result is in a cannonical order (sorted
+   lexographically by the collection names).
 
 _.plt_ Archive Internals
 ==========================================================

@@ -1,8 +1,8 @@
 
 (module getinfo mzscheme
 
-  (require (lib "file.ss"))
-  (require (lib "match.ss"))
+  (require (lib "match.ss")
+           (lib "list.ss"))
 
   (provide get-info
            get-info/full
@@ -78,16 +78,28 @@
       (set! relevant-ht (make-hash-table))
       (set! relevant-collection-paths (current-library-collection-paths))
       (populate-relevant-table!))
-    (if (= (length syms) 1)
-	;; Simple case: look up in table
-	(hash-table-get relevant-ht (car syms) (lambda () null))
-	;; Use a hash table, because the same collection might work for multiple syms
-	(let ([result (make-hash-table 'equal)])
-	  (for-each (lambda (sym)
-		      (let ([l (hash-table-get relevant-ht sym (lambda () null))])
-			(for-each (lambda (c) (hash-table-put! result c #t))
-				  l)))
-		    syms)
-	  ;; Extract the relevant collections:
-	  (hash-table-map result (lambda (k v) k))))))
-
+    (let ([unsorted (if (= (length syms) 1)
+                        ;; Simple case: look up in table
+                        (hash-table-get relevant-ht (car syms) (lambda () null))
+                        ;; Use a hash table, because the same collection might work for multiple syms
+                        (let ([result (make-hash-table 'equal)])
+                          (for-each (lambda (sym)
+                                      (let ([l (hash-table-get relevant-ht sym (lambda () null))])
+                                        (for-each (lambda (c) (hash-table-put! result c #t))
+                                                  l)))
+                                    syms)
+                          ;; Extract the relevant collections:
+                          (hash-table-map result (lambda (k v) k))))])
+      (quicksort unsorted compare-collection-lists)))
+  
+  (define (compare-collection-lists a b)
+    (let loop ([a a]
+               [b b])
+      (cond
+        [(and (null? a) (null? b)) #t]
+        [(null? a) #t]
+        [(null? b) #f]
+        [else (cond
+                [(string=? (car a) (car b))
+                 (loop (cdr a) (cdr b))]
+                [else (string<=? (car a) (car b))])]))))

@@ -2281,6 +2281,9 @@ fd_char_ready (Scheme_Input_Port *port)
 
   fip = (Scheme_FD *)port->port_data;
 
+  if (fip->regfile)
+    return 1;
+
   if (fip->bufcount)
     return 1;
   else {

@@ -6,4 +6,7 @@
   (define blurb 
     (list
      "The net collection provides a suite of libraries to handle standard "
-     "internet-based protocols.")))
+     "internet-based protocols."))
+  (define tools (list (list "browser.ss")))
+  (define tool-names (list "Browser"))
+  (define tool-icons (list #f)))

@@ -55,35 +55,35 @@
           [analyzed? #f]
           [get-prims (void)]
           [get-loc (void)]
-          [get-var (void)]
+          [get-label (void)]
           [get-type (void)]
           [pp-type (void)]
           [parents (void)]
           [children (void)]
           [has-member? (void)]
-          [show-expanded (void)]
+          ;[show-expanded (void)]
           )
          
          (inherit last-position begin-edit-sequence end-edit-sequence change-style)
          (public*
-          [mrflow:run-analysis
+          [run-analysis
            (lambda ()
              (set! get-prims mrflow:get-prims)
              (set! get-loc mrflow:get-loc)
-             (set! get-var mrflow:get-var)
+             (set! get-label mrflow:get-label)
              (set! get-type mrflow:get-type)
              (set! pp-type mrflow:pp-type)
              (set! parents mrflow:parents)
              (set! children mrflow:children)
              (set! has-member? mrflow:has-member?)
-             (set! show-expanded mrflow:show-expanded)
+             ;(set! show-expanded mrflow:show-expanded)
              
              (begin-edit-sequence #f)
              
              ; color clickable positions
              (let loop ([i (last-position)])
                (unless (zero? i)
-                 (when (get-var i)
+                 (when (get-label i)
                    (change-style can-click-style (- i 1) i))
                  (loop (- i 1))))
              
@@ -264,9 +264,9 @@
                 (super-on-local-event event)]
                [(and (send event button-down? 'right)
                      ; mzscheme numbers starting from 1, DrScheme numbers starting from 0
-                     (get-var (+ (edit-pos->var-pos (get-pos event)) 1)))
+                     (get-label (add1 (edit-pos->var-pos (get-pos event)))))
                 =>
-                (lambda (set-var)
+                (lambda (label)
                   (let ([menu (make-object popup-menu%)]
                         [pos (get-pos event)])
                     (make-object menu-item%
@@ -274,7 +274,7 @@
                       menu
                       (lambda (item evt)
                         (let ([t (make-object text%)])
-                          (send t insert (pp-type (get-type set-var)))
+                          (send t insert (pp-type (get-type label) 'gui))
                           (set! analysis-modifing? #t)
                           (begin-edit-sequence #f) ; so it is not undoable...
                           (insert (make-object editor-snip% t) pos pos)
@@ -284,25 +284,43 @@
                           (set! analysis-modifing? #f)
                           (add-inserted-snip pos))))
                     
+;                    (make-object menu-item%
+;                      "show expanded"
+;                      menu
+;                      (lambda (item evt)
+;                        (let ([t (make-object text%)])
+;                          (send t insert (show-expanded label))
+;                          (set! analysis-modifing? #t)
+;                          (begin-edit-sequence #f) ; so it is not undoable...
+;                          (insert (make-object editor-snip% t) pos pos)
+;                          (change-style box-style pos (+ pos 1))
+;                          (invalidate-bitmap-cache)
+;                          (end-edit-sequence)
+;                          (set! analysis-modifing? #f)
+;                          (add-inserted-snip pos))))
+ 
                     (make-object menu-item%
-                      "show expanded"
+                      "show errors"
                       menu
                       (lambda (item evt)
-                        (let ([t (make-object text%)])
-                          (send t insert (show-expanded set-var))
-                          (set! analysis-modifing? #t)
-                          (begin-edit-sequence #f) ; so it is not undoable...
-                          (insert (make-object editor-snip% t) pos pos)
-                          (change-style box-style pos (+ pos 1))
-                          (invalidate-bitmap-cache)
-                          (end-edit-sequence)
-                          (set! analysis-modifing? #f)
-                          (add-inserted-snip pos))))
+                        (begin-edit-sequence #f) ; so it is not undoable...
+                        (for-each (lambda (error-msg)
+                                    (let ([t (make-object text%)])
+                                      (send t insert error-msg)
+                                      (set! analysis-modifing? #t)
+                                      (insert (make-object editor-snip% t) pos pos)
+                                      (change-style box-style pos (+ pos 1))
+                                      (invalidate-bitmap-cache)
+                                      (set! analysis-modifing? #f)
+                                      (add-inserted-snip pos)))
+                                  (mrflow:get-errors label))
+                        (end-edit-sequence)
+                        ))
  
                     (let ([make-children/parents-item
-                           (lambda (label children/parents pair)
+                           (lambda (menu-label children/parents pair)
                              (make-object menu-item%
-                               label
+                               menu-label
                                menu
                                (lambda (item evt)
                                  (for-each
@@ -311,7 +329,7 @@
                                       (when loc
                                         (let ([parent/child (var-pos->edit-pos loc)])
                                           (set! arrows (cons (pair pos parent/child) arrows))))))
-                                  (children/parents set-var))
+                                  (children/parents label))
                                  (invalidate-bitmap-cache))))])
                       (make-children/parents-item "Parents" parents (lambda (x y) (cons y x)))
                       (make-children/parents-item "Children" children cons))
@@ -396,22 +414,24 @@
                                         (send (get-definitions-text) change-style red-style
                                               start (+ start (syntax-span syntax-object)))
                                         (message-box "syntax exception"
-                                                     (string-append "syntax exception: " message)
+                                                     (format "syntax exception: ~a~nCheck the language level."
+                                                             message)
                                                      #f '(ok)))))]
                                  [else
                                   (message-box "unknown exception"
                                                (format "unknown exception: ~a" exn))]))
                            (unless (eof-object? syntax-object/exception)
-                             (mrflow:create-label-from-term syntax-object/exception '() #f)))
+                             (mrflow:create-label-from-term syntax-object/exception '() #f '())))
                          (loop)))
                  (mrflow:check-primitive-types)
-                 (printf "time: ~a ms~n" (- (current-milliseconds) start)))
+                 ;(printf "time: ~a ms~n" (- (current-milliseconds) start))
+                 )
                
                ; XXX perf analysis
-               (printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n"
-                       mrflow:ast-nodes mrflow:graph-nodes mrflow:graph-edges)
+               ;(printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n"
+               ;        mrflow:ast-nodes mrflow:graph-nodes mrflow:graph-edges)
                
-               (send (get-definitions-text) mrflow:run-analysis))))])
+               (send (get-definitions-text) run-analysis))))])
          ;(sequence
          ; XXX state is shared between instances of the tool, so we could do
          ; this call only once, outside the mixin...

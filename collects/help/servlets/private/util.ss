@@ -68,7 +68,7 @@
   (define (manual-entry man ndx txt)
     (let ([fname (with-handlers
 		  ([void (lambda _ #f)])
-		  (finddoc-page-anchor man ndx))])
+		  (finddoc-page man ndx))])
       (if fname
 	  `(A ((HREF ,(string-append 
 		       "/doc/"
@@ -80,7 +80,7 @@
 		      `(B "[Bad manual entry: "
 			  ,man "::" ,ndx)))))
 
-  (define hexifiable '(#\: #\?))
+  (define hexifiable '(#\: #\? #\&))
   ; string -> string
   (define (hexify-string s)
     (apply string-append 

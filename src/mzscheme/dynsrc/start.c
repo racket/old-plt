@@ -278,7 +278,9 @@ int main(int argc_in, char **argv_in)
 
   p = getenv("PLTHOME");
   if (p == NULL || strcmp(p,exedir)) {
-    _putenv(exedir);
+    char plthome[1024];
+    sprintf(plthome,"PLTHOME=%s",exedir);
+    _putenv(plthome);
   }
   
   for (i = 0; i < sizeof(si); i++)

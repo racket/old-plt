@@ -25,14 +25,14 @@
 	   "private/editor.ss"
 	   "private/pasteboard.ss"
 	   "private/text.ss"
-	   
 	   "private/finder.ss"
 	   "private/group.ss"
 	   "private/canvas.ss"
 	   "private/panel.ss"
 	   "private/frame.ss"
 	   "private/scheme.ss"
-	   "private/main.ss")
+	   "private/main.ss"
+           "private/mode.ss")
 
   (provide framework@)
 
@@ -43,7 +43,8 @@
 	    [version : framework:version^ (version@)]
 	    [color-model : framework:color-model^ (color-model@ )]
 	    [exn : framework:exn^ (exn@)]
-	    [exit : framework:exit^ (exit@ mred preferences)]
+	    [mode : framework:mode^ (mode@)]
+            [exit : framework:exit^ (exit@ mred preferences)]
 	    [menu : framework:menu^ (menu@ mred preferences)]
 	    [preferences : framework:preferences^ (preferences@ mred exn exit panel frame)]
 	    [autosave : framework:autosave^ (autosave@ mred exit preferences frame
@@ -78,7 +79,7 @@
 
 	    [scheme : framework:scheme^ 
 		    (scheme@ mred preferences match-cache paren scheme-paren 
-                           icon keymap text editor frame comment-box)]
+                           icon keymap text editor frame comment-box mode)]
 	    [main : framework:main^ (main@ mred preferences exit group handler)])
       (export
        (unit menu)

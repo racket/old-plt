@@ -54,6 +54,12 @@ executables.
       -'resource-files_ (Mac OS X) - extra files to copy into the
               "Resources" directory of the generated executable
 
+      _'forget-exe?_ (Windows, Mac OS X) - a boolean; #t does not 
+              preserve the original executable name for
+              `(find-system-path 'exec-file)'; the main consequence is
+              that library collections will be found relative to the
+              launcher instead of the original executable
+
    See also `build-aux-from-path' below. The default `aux' is `null'.
 
    For Unix/X, the script created by `make-mred-launcher' detects and

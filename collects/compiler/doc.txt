@@ -431,6 +431,13 @@ _embedr-sig.ss_ library provides the signature, _compiler:embed^_.
       -'resource-files_ (Mac OS X) - extra files to copy into the
               "Resources" directory of the generated executable
 
+      _'forget-exe?_ (Windows, Mac OS X) - a boolean; #t for a launcher
+              (see `launcher?' below) does not preserve the original
+              executable name for `(find-system-path 'exec-file)'; the
+              main consequence is that library collections will be
+              found relative to the launcher instead of the original
+              executable
+
    See also `build-aux-from-path' in the "launcher" collection. The
    default `aux' is `null'.
 

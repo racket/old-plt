@@ -231,14 +231,14 @@
 		      resource-files))
 	  (build-path dest "Contents" "MacOS" name)))
 
-      (define (finish-osx-mred dest flags exec-name launcher?)
+      (define (finish-osx-mred dest flags exec-name keep-exe?)
 	(call-with-output-file (build-path dest 
 					   "Contents" 
 					   "Resources" 
 					   "starter-info")
 	  (lambda (port)
 	    (write-plist 
-	     `(dict ,@(if launcher?
+	     `(dict ,@(if keep-exe?
 			  `((assoc-pair "executable name"
 					,exec-name))
 			  null)
@@ -416,6 +416,10 @@
 			  [aux null]
 			  [launcher? #f]
 			  [variant 'normal])
+	  (define keep-exe? (and launcher?
+				 (let ([m (assq 'forget-exe? aux)])
+				   (or (not m)
+				       (not (cdr m))))))
 	  (define long-cmdline? (or (eq? (system-type) 'windows)
 				    (and mred? (eq? 'macosx (system-type)))))
 	  (unless (or long-cmdline?
@@ -506,13 +510,14 @@
 			    [end-s (number->string end)])
 			(let ([full-cmdline (append
 					     (if launcher?
-						 (if (eq? 'windows (system-type))
+						 (if (and (eq? 'windows (system-type))
+							  keep-exe?)
 						     (list exe) ; argv[0]
 						     null)
 						 (list "-k" start-s end-s))
 					     cmdline)])
 			  (if osx?
-			      (finish-osx-mred dest full-cmdline exe launcher?)
+			      (finish-osx-mred dest full-cmdline exe keep-exe?)
 			      (let ([cmdpos (with-input-from-file dest-exe find-cmdline)]
 				    [out (open-output-file dest-exe 'update)])
 				(dynamic-wind
@@ -539,7 +544,7 @@
 					(let ([new-end (file-position out)])
 					  (file-position out cmdpos)
 					  (fprintf out "~a...~a~a"
-						   (if launcher? "*" "?")
+						   (if keep-exe? "*" "?")
 						   (integer->integer-byte-string end 4 #t #f)
 						   (integer->integer-byte-string (- new-end end) 4 #t #f)))))
 				    (lambda ()

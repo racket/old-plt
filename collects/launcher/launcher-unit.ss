@@ -358,7 +358,6 @@
 			   (build-path dest "Contents" "PkgInfo"))
 		(let ([icon (or (and aux-root
 				     (let ([icon (string-append aux-root ".icns")])
-				       (printf "trying ~a~n" icon)
 				       (and (file-exists? icon)
 					    icon)))
 				(build-path src "Contents" "Resources" "Starter.icns"))])

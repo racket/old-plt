@@ -297,8 +297,6 @@ FILE *history;
 
 #define leaveEvt 42
 
-extern FILE *log_file_ptr;
-
 int MrEdGetNextEvent(int check_only, int current_only,
 		     EventRecord *event, MrEdContext **which)
 {
@@ -381,12 +379,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
     case leaveEvt:
       {
         wxWindow *win = (wxWindow *)q->event.message;
-        if (check_only) {
-	        fprintf(log_file_ptr,"O%X\n",win);
-	    } else {
-	        fprintf(log_file_ptr,"L%X\n",win);
-	    }
-	    fflush(log_file_ptr);
+
         if ((win->__type != -1) && win->IsShown()) {
           fr = (wxFrame *)win->GetRootFrame();
 	      fc = fr ? (MrEdContext *)fr->context : NULL;

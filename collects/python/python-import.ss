@@ -13,7 +13,7 @@
            eval-python
            build-module-path
            module-path->string
-           toggle-python-cache-namespace!
+           toggle-python-use-cache-namespace!
            set-python-cache-namespace!
            )
   
@@ -167,7 +167,7 @@
       ;    (namespace-attach-module caller 'mzscheme)))
 ;      (when new-cache?
 ;        (set-python-cache-namespace! p-n))
-      (init-python-namespace p-n (lambda (init) (init)) (error-display-handler) (current-eval))
+      (init-python-namespace p-n)
       p-n)))
   
   ; init-python-namespace: ((-> void) -> void)
@@ -175,40 +175,21 @@
   ;                        ((U syntax-object sxp) -> (U value values))
   ;                        -> void
   ; see on-execute in the drscheme extension manual
-  (define (init-python-namespace python-namespace run-in-user-thread err-display-handler curr-eval)
-    (run-in-user-thread
-     (lambda ()
-       (parameterize ([current-namespace python-namespace])
-         (error-display-handler err-display-handler)
-         (current-eval curr-eval))
-       (my-dynamic-require python-namespace '(lib "base.ss" "python"))
-       (my-dynamic-require python-namespace '(lib "runtime-support.ss" "python"))
-       (my-dynamic-require python-namespace '(lib "python-import.ss" "python"))
-       (my-dynamic-require python-namespace '(lib "primitives.ss" "python")))))
-;    (let ([path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
-;          [caller-namespace (current-namespace)])
-;      (dynamic-require path #f)
-;      (run-in-user-thread
-;       (lambda ()
-;         (parameterize ([current-namespace python-namespace])
-;           (error-display-handler err-display-handler)
-;           (current-eval curr-eval)
-;           (namespace-attach-module caller-namespace path)
-;             (namespace-require path))))))
+  (define (init-python-namespace python-namespace)
+    (my-dynamic-require python-namespace '(lib "base.ss" "python"))
+    (my-dynamic-require python-namespace '(lib "runtime-support.ss" "python"))
+    (my-dynamic-require python-namespace '(lib "python-import.ss" "python"))
+    (my-dynamic-require python-namespace '(lib "primitives.ss" "python")))
   
   (define (my-dynamic-require dest-namespace spec)
-    ;(namespace-require spec)
-    ;(parameterize ([current-namespace dest-namespace])
-    ;  (namespace-require spec)))
     (let ([cache (get-cache-namespace)]
           [path (lookup-cached-mzscheme-module spec)]
           [caller-namespace (current-namespace)])
       (parameterize ([current-namespace dest-namespace])
-        ;(namespace-attach-module caller-namespace path)
         (with-handlers ([exn:application:mismatch? (lambda (e)
                                                      (printf "FAILURE. spec: ~a path: ~a exn: ~a~n" spec path e))])
           (namespace-attach-module cache path)
-          (printf "SUCCESS. spec: ~a  path: ~a~n" spec path)
+        ;  (printf "SUCCESS. spec: ~a  path: ~a~n" spec path)
           )
           (namespace-require spec) ;path)
           
@@ -227,14 +208,14 @@
   (define (set-python-cache-namespace! ns)
     (set! cache-namespace ns))
   
-  (define (toggle-python-cache-namespace! use?)
+  (define (toggle-python-use-cache-namespace! use?)
     (set! use-cache-namespace? use?))
   
   (define (lookup-cached-mzscheme-module spec)
     (parameterize ([current-namespace (get-cache-namespace)])
-;      (namespace-require spec)
+      (namespace-require spec)
       (let ([path ((current-module-name-resolver) spec #f #f)])
-        (dynamic-require path #f)
+;        (dynamic-require path #f)
         path)))
 
   ; eval-python&copy: (listof syntax-object) namespace [(listof (list symbol symbol))] [symbol]-> (listof python-node)

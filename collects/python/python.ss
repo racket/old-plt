@@ -4,7 +4,7 @@
           ; (lib "etc.ss")
           ; "compiler.ss"
           ; "python-node.ss"
-           "primitives.ss" ;; need py-object%->string
+          ; "primitives.ss" ;; need py-object%->string
           ; "read-python.ss"
            "compile-python.ss"
            "python-import.ss")
@@ -19,16 +19,23 @@
            ;compile-python-ast
            ;parse-python-port
            ;parse-python-file
-           render-python-value)
+           render-python-value
+           render-python-value/format)
   
+  (define (convert-value value)
+    ((dynamic-require '(lib "primitives.ss" "python") 'py-object%->string) value))
+  
+  (define (render-python-value/format value port port-write)
+    (render-python-value value port port-write))
   
   (define (render-python-value value port port-write)
-            (let ([to-render (if (python-node? value)
-                                (format "~a~n" (py-object%->string value))
-                                value)])
-              (if port-write
+            (let ([to-render (convert-value value)])
+                             ;(if (python-node? value)
+                             ;   (format "~a" (py-object%->string value))
+                             ;   value)])
+              (if #f ;port-write
                   (port-write to-render)
-                  (write to-render port))))
+                  (display to-render port))))
   
 
 
@@ -36,11 +43,11 @@
     
   (define (python path)
     (let ([results (eval-python&copy (python-to-scheme path) (make-python-namespace))])
-      (let ([port (current-output-port)])
-        (for-each (lambda (value)
-                    (render-python-value value port printf))
-                  results))
-      (map py-object%->string results)))
+      ;(let ([port (current-output-port)])
+      ;  (for-each (lambda (value)
+      ;              (render-python-value value port printf))
+      ;            results))
+      (map convert-value results)))
         
                      
 ;  (define (python path)

@@ -8,10 +8,28 @@
           ; (lib "etc.ss")
            "python.ss"
            "compile-python.ss"
+           ;"base.ss"
+           "runtime-support.ss"
+           "primitives.ss"
            "python-import.ss")
 
   (provide tool@)
+  
+;  (my-dynamic-require (current-namespace) '(lib "base.ss" "python"))
+;  (my-dynamic-require (current-namespace) '(lib "runtime-support.ss" "python"))
+;  (my-dynamic-require (current-namespace) '(lib "python-import.ss" "python"))
+;  (my-dynamic-require (current-namespace) '(lib "primitives.ss" "python"))
+;  (toggle-python-use-cache-namespace! #f)
 
+  (define (create-python-cache-namespace)
+    (print "creating the python cache namespace!")
+    ;(set-python-cache-namespace! (current-namespace))
+    (make-python-namespace)
+    (print "done creating the python cache namespace"))
+  
+  (define cpcn create-python-cache-namespace)
+  
+    
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
@@ -76,7 +94,8 @@
           (define/public (get-language-position) (list (string-constant experimental-languages) "Python"))
           (define/public (get-language-name) "Python")
           (define/public (get-language-url) #f)
-          (define/public (get-language-numbers) (list 1000 10))
+          (define/public (get-language-numbers)
+            (list 1000 10))
           (define/public (get-teachpack-names) null)
           (define/public (marshall-settings x) x)
           (define/public (on-execute settings run-in-user-thread)
@@ -84,11 +103,13 @@
             ; (lambda ()
             ;   (toggle-python-cache-namespace! #t)
             ;   (set-python-cache-namespace! (current-namespace))))
-            (init-python-namespace (current-namespace)
-                                   run-in-user-thread
-                                   (drscheme:debug:make-debug-error-display-handler
-                                    (error-display-handler))
-                                   (drscheme:debug:make-debug-eval-handler (current-eval))))
+            (run-in-user-thread
+             (lambda ()
+               (error-display-handler 
+                (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
+               (current-eval 
+                (drscheme:debug:make-debug-eval-handler (current-eval)))
+               (init-python-namespace (current-namespace)))))
 ;            (dynamic-require '(lib "base.ss" "python") #f)
 ;            (let ([path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
 ;                  [n (current-namespace)])
@@ -114,7 +135,7 @@
 ;                  (port-write to-render)
 ;                  (write to-render port))))
           (define/public (render-value/format value settings port port-write width)
-            (render-value value settings port port-write))
+            (render-python-value/format value port port-write))
           (define/public (unmarshall-settings x) x)
 	  (define/public (create-executable settings parent src-file)
 	    (let ([dst-file (drscheme:language:put-executable

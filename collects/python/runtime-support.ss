@@ -100,10 +100,13 @@
                              d-or-e
                              (syntax-case d-or-e (define)
                                [(__ member-name member-value)
-                                ;; make sure the "define" here is introduced by the compiler
-                                (free-identifier=? (datum->syntax-object #'here ;runtime-context
-                                                                         'define)
-                                                   (syntax __))
+                                ;; make sure the "define" or "set!" here is introduced by the compiler
+                                (or (free-identifier=? (datum->syntax-object #'here ;runtime-context
+                                                                             'define)
+                                                       (syntax __))
+                                    (free-identifier=? (datum->syntax-object #'here
+                                                                             'set!)
+                                                       (syntax __)))
                                 `(list ',(syntax method-name) ,(syntax procedure))]
                                ;; if it's not a member def, create a thunk and execute it later
                                [expr `(lambda () ,(syntax expr))])

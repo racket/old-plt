@@ -466,14 +466,14 @@
       [else (format "<~a object>" (py-string%->string (python-get-type-name (python-node-type x))))]))
   
   (define (python-get-attribute obj attr-sym)
-;    (printf "python-get-attribute is looking for ~a~n" attr-sym)
+   ; (printf "python-get-attribute is looking for ~a~n" attr-sym)
     (python-method-call obj
-                        (python-get-member obj '__getattribute__)
+                        (python-get-member (python-node-type obj) '__getattribute__)
                         (list (symbol->py-string% attr-sym))))
   
   (define (python-set-attribute! obj attr-sym value)
     (python-method-call obj
-                        '__setattribute__
+                        (python-get-member (python-node-type obj) '__setattr__)
                         (list (symbol->py-string% attr-sym)
                               value)))
   
@@ -634,12 +634,12 @@
                         (__repr__ ,py-repr)
                         (__getattribute__ ,(py-lambda '__getattribute__ (this key)
                                                (python-get-member this (py-string%->symbol key))))
-                        (__setattribute__ ,(py-lambda '__setattribute__ (this key value)
+                        (__setattr__ ,(py-lambda '__setattribute__ (this key value)
                                                 (python-set-member! this (py-string%->symbol key) value)))))
 
 ;  (python-add-members py-type%
 ;                      `((__getattribute__ ,python-get-member)
-;                        (__setattribute__ ,python-set-member!)))
+;                        (__setattr__ ,python-set-member!)))
   (dprintf "7~n")
   
   (define (py-bin-op op)
@@ -854,7 +854,7 @@
                                                                          (lambda ()
                                                                            (python-get-member this
                                                                                               key)))))))
-                        (__setattribute__ ,(py-lambda '__setattribute__ (this key value)
+                        (__setattr__ ,(py-lambda '__setattr__ (this key value)
                                            (parameterize ([current-namespace
                                                            (py-module%->namespace this)])
                                              (namespace-set-variable-value! (py-string%->symbol key)

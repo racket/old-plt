@@ -514,11 +514,21 @@
             (sub-stmt-map (lambda (s)
                             (let* ([so (send s to-scheme)]
                                    [so-l (syntax->list so)])
-                              (if (and so-l
-                                       (free-identifier=? (first so-l)
-                                                          (datum->syntax-object runtime-context
-                                                                                'define)))
-                                  (list (second so-l) (third so-l))
+                              (if so-l
+                                       ;;;; either when defining or mutating a class field
+                                  (if (free-identifier=? (first so-l)
+                                                              (datum->syntax-object runtime-context
+                                                                                    'define))
+                                      (list (second so-l) (third so-l))
+                                      (if (and (free-identifier=? (first so-l)
+                                                                  (datum->syntax-object runtime-context
+                                                                                        'begin))
+                                               (free-identifier=? (first (syntax->list (second so-l)))
+                                                                  (datum->syntax-object runtime-context
+                                                                                        'let)))
+                                          (list (second (syntax->list (third (syntax->list (second so-l)))))
+                                                (second (syntax->list (first (syntax->list (second (syntax->list (second so-l))))))))
+                                          so))
                                   so)))))
       
       ;;daniel

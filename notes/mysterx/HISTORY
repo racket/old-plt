@@ -1,3 +1,10 @@
+Version 102:
+
+added Scheme-syntax property getters and 
+ setters for HTML elements
+removed getter and setter for whitespace
+ property, since not implemented by IE4/5
+
 Version 101:
 
 moved Windows event loop from mx-document% class

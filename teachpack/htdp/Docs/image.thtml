@@ -52,13 +52,20 @@ using the next two functions.
  respect to the pinhole of the first image.
 </menu>
 
-These functions provide sizing information for an image.
+These functions provide information about the image's size
+and pinhole location.
 
 <menu>
 <li><code>{(idx image-width)}</code> :  image -> number <br>
  to obtain an image's width in pixels
 <li><code>{(idx image-height)}</code> :  image -> number <br>
  to obtain an image's height in pixels
+<li><code>{(idx pinhole-x)}</code> :  image -> number <br>
+ to determine the x coordinate of the pinhole, measuring from
+ the left of the image
+<li><code>{(idx pinhole-y)}</code> :  image -> number <br>
+ to determine the y coordinate of the pinhole, measuring down from 
+ the left of the image
 </menu>
  
 This function precisely specifies what a valid image color is.

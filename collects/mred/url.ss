@@ -1,7 +1,5 @@
-
 ; To do:
 ;   Handle HTTP/file errors.
-;   Report internal errors properly.
 ;   Not throw away MIME headers.
 ;     Determine file type.
 
@@ -14,7 +12,19 @@
 (define mred:url@
   (unit/sig mred:url^
     (import [f : mzlib:function^]
-	    [file : mzlib:file^])
+            [gui : mred:gui-utils^]
+            [mred : mred:exn^]
+            [file : mzlib:file^])
+
+    (define url-error
+      (lambda (fmt . args)
+	(let ((s (apply format fmt (map (lambda (arg)
+					  (if (url? arg)
+					    (url->string arg)
+					    arg))
+				     args))))
+	  (gui:message-box s "URL Error")
+	  (raise (mred:make-exn:url s ((debug-info-handler)))))))
 
     ;; if the path is absolute, it just arbitrarily picks the first
     ;; filesystem root.
@@ -84,8 +94,7 @@
 	    ((not scheme) 80)
 	    ((string=? scheme "http") 80)
 	    (else
-	      (error 'url->default-port "Scheme ~s not supported"
-		(url-scheme url)))))))
+	      (url-error "Scheme ~a not supported" (url-scheme url)))))))
 
     ; make-ports : url -> in-port x out-port
     (define make-ports
@@ -116,8 +125,7 @@
 		  (string=? host "localhost"))
 	      (open-input-file
 	       (unixpath->path (url-path url)))
-	      (error 'file://get-pure-port
-		     "Cannot get file from remote hosts")))))
+	    (url-error "Cannot get files from remote hosts")))))
 
     ; get-impure-port : url [x list (str)] -> in-port
     (define get-impure-port
@@ -125,13 +133,13 @@
 	(let ((scheme (url-scheme url)))
 	  (cond
 	    ((not scheme)
-	      (error 'get-impure-port "Scheme unspecified"))
+	      (url-error "Scheme unspecified in ~a" url))
 	    ((string=? scheme "http")
 	      (http://get-impure-port url strings))
 	    ((string=? scheme "file")
-	      (error 'get-impure-port "There are no impure file:// ports"))
+	      (url-error "There are no impure file:// ports"))
 	    (else
-	      (error 'get-impure-port "Unsupported scheme: ~s" scheme))))))
+	      (url-error "Scheme ~a unsupported" scheme))))))
 
     ; get-pure-port : url [x list (str)] -> in-port
     (define get-pure-port
@@ -139,7 +147,7 @@
 	(let ((scheme (url-scheme url)))
 	  (cond
 	    ((not scheme)
-	      (error 'get-pure-port "Scheme unspecified"))
+	      (url-error "Scheme unspecified in ~a" url))
 	    ((string=? scheme "http")
 	      (let ((port (http://get-impure-port url strings)))
 		(purify-port port)
@@ -147,7 +155,7 @@
 	    ((string=? scheme "file")
 	      (file://get-pure-port url))
 	    (else
-	      (error 'get-pure-port "Unsupported scheme: ~s" scheme))))))
+	      (url-error "Scheme ~a unsupported" scheme))))))
 
     ; display-pure-port : in-port -> ()
     (define display-pure-port
@@ -364,7 +372,7 @@
 	  (if (url-scheme url)
 	    url
 	    (if (string=? string "")
-	      (error 'netscape/string->url "Given empty string")
+	      (url-error "Can't resolve empty string as URL")
 	      (begin
 		(set-url-scheme! url
 		  (if (char=? (string-ref string 0) #\/)

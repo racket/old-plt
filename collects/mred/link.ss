@@ -86,7 +86,10 @@
 			 (mred:scheme-mode@ debug preferences application container
 					  mode match-cache paren scheme-paren icon
 					  handler keymap (core string@))]
-	    [url : mred:url^ (mred:url@ (core function@) (core file@))]
+	    [url : mred:url^ (mred:url@ (core function@)
+			       gui-utils
+			       exn
+			       (core file@))]
 	    [hyper-dialog : mred:hyper-dialog^ 
 			  (mred:hyper-dialog@ debug hyper-edit (core file@))]
 	    [hyper-edit : mred:hyper-edit^ 

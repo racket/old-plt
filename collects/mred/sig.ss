@@ -40,7 +40,8 @@
 (define-signature mred:exn^
   ((struct exn ())
    (struct exn:unknown-preference ())
-   (struct exn:during-preferences ())))
+   (struct exn:during-preferences ())
+   (struct exn:url ())))
 
 (define-signature mred:container-children^
   (const-default-size
@@ -84,7 +85,7 @@
   (plt-home-directory system-source-directory))
 
 (define-signature mred:exn-external^
-  (exn? exn:unknown-preference? exn:during-preferences?))
+  (exn? exn:unknown-preference? exn:during-preferences? exn:url?))
 
 (define-signature mred:preferences^
   (get-preference

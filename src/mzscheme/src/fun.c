@@ -2308,7 +2308,8 @@ do_call_with_sema(const char *who, int enable_break, int argc, Scheme_Object *ar
   long * volatile cc_ok;
   long * volatile old_cc_ok;
   long volatile old_cc_ok_val;
-  int extra, i, just_try;
+  int i, just_try;
+  int volatile extra;
   Scheme_Object * volatile sema;
   Scheme_Object *v, *quick_args[4], **extra_args;
 

@@ -1309,7 +1309,7 @@ Bool wxPostScriptDC::StartDoc (char *message)
   if (title) {
     pstream->Out("%%Title: "); pstream->Out(title); pstream->Out("\n");
   }
-  pstream->Out("%%Creator: "); pstream->Out("wxWindows (MrEd)"); pstream->Out("\n");
+  pstream->Out("%%Creator: "); pstream->Out("MrEd"); pstream->Out("\n");
   pstream->Out("%%CreationDate: "); pstream->Out(wxNow()); pstream->Out("\n");
 
   // User Id information

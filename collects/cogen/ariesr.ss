@@ -63,12 +63,14 @@
 	       ,x))))
 
       (define mv-wrap
-	(lambda (zodiac body)
-	  (let ((start (z:zodiac-start zodiac))
-		 (finish (z:zodiac-finish zodiac)))
-	    `(#%begin0 ,body
-	       (,set-box! ,error-box
-		 ,(z:make-zodiac #f start finish))))))
+	(case-lambda
+	  ((body) (mv-wrap body (annotate body)))
+	  ((zodiac body)
+	    (let ((start (z:zodiac-start zodiac))
+		   (finish (z:zodiac-finish zodiac)))
+	      `(#%begin0 ,body
+		 (,set-box! ,error-box
+		   ,(z:make-zodiac #f start finish)))))))
 
       (define check-for-keyword
 	(lambda (id)
@@ -188,10 +190,8 @@
 
 	    [(z:if-form? expr)
 	      `(#%if ,(annotate (z:if-form-test expr))
-		 ,(mv-wrap (z:if-form-then expr)
-		    (annotate (z:if-form-then expr)))
-		 ,(mv-wrap (z:if-form-else expr)
-		    (annotate (z:if-form-else expr))))]
+		 ,(mv-wrap (z:if-form-then expr))
+		 ,(mv-wrap (z:if-form-else expr)))]
 
 	    [(z:quote-form? expr)
 	      `(#%quote ,(unparse-read (z:quote-form-expr expr)))]
@@ -209,7 +209,7 @@
 		      (map (lambda (vars val)
 			     (map check-for-keyword vars)
 			     `(,(map z:binding-var vars)
-				,(mv-wrap val (annotate val))))
+				,(mv-wrap val)))
 			(z:let-values-form-vars expr)
 			(z:let-values-form-vals expr))))
 		`(#%let-values ,bindings
@@ -220,7 +220,7 @@
 		      (map (lambda (vars val)
 			     (map check-for-keyword vars)
 			     `(,(map z:binding-var vars)
-				,(mv-wrap val (annotate val))))
+				,(mv-wrap val)))
 			(z:letrec*-values-form-vars expr)
 			(z:letrec*-values-form-vals expr))))
 		`(#%letrec*-values ,bindings
@@ -232,13 +232,12 @@
 			 (check-for-keyword v)
 			 (z:varref-var v))
 		    (z:define-values-form-vars expr))
-		 ,(mv-wrap (z:define-values-form-val expr)
-		    (annotate (z:define-values-form-val expr))))]
+		 ,(mv-wrap (z:define-values-form-val expr)))]
 
 	    [(z:set!-form? expr)
 	      (check-for-keyword (z:set!-form-var expr))
 	      (let ([g (gensym "set!")])
-		`(#%let ([,g ,(annotate (z:set!-form-val expr))])
+		`(#%let ([,g ,(mv-wrap (z:set!-form-val expr))])
 		   ,(wrap expr 
 		      `(#%set! ,(z:varref-var (z:set!-form-var expr))
 			 ,g))))]
@@ -276,7 +275,7 @@
 		     (map
 		       (lambda (link-clause)
 			 (let ((tag (read->raw (car link-clause)))
-				(sub-unit (annotate (cadr link-clause)))
+				(sub-unit (mv-wrap (cadr link-clause)))
 				(imports
 				  (map (lambda (import)
 					 (if (z:lexical-varref? import)
@@ -299,14 +298,14 @@
 		     (export ,@exports))))]
 
 	    [(z:invoke-unit-form? expr)
-	      `(#%invoke-unit ,(annotate (z:invoke-unit-form-unit expr))
+	      `(#%invoke-unit ,(mv-wrap (z:invoke-unit-form-unit expr))
 		 ,@(map z:varref-var
 		     (z:invoke-unit-form-variables expr)))]
 
 	    [(z:invoke-open-unit-form? expr)
 	      (let ((name-spec (z:invoke-open-unit-form-name-specifier
 				 expr))
-		     (unit (annotate
+		     (unit (mv-wrap
 			     (z:invoke-open-unit-form-unit expr)))
 		     (vars (map z:varref-var
 			     (z:invoke-open-unit-form-variables expr))))
@@ -324,7 +323,7 @@
 	    [(z:interface-form? expr)
 	      (let ((vars (z:interface-form-variables expr)))
 		(map check-for-keyword vars)
-		`(#%interface ,(map annotate
+		`(#%interface ,(map mv-wrap
 				 (z:interface-form-super-exprs expr))
 		   ,@(map read->raw vars)))]
 
@@ -332,8 +331,8 @@
 	      `(#%class*/names
 		 (,(z:binding-var (z:class*/names-form-this expr))
 		   ,(z:binding-var (z:class*/names-form-super-init expr)))
-		 ,(annotate (z:class*/names-form-super-expr expr))
-		 ,(map annotate (z:class*/names-form-interfaces expr))
+		 ,(mv-wrap (z:class*/names-form-super-expr expr))
+		 ,(map mv-wrap (z:class*/names-form-interfaces expr))
 		 ,(paroptarglist->ilist (z:class*/names-form-init-vars expr))
 		 ,@(map
 		     (lambda (clause)
@@ -343,7 +342,7 @@
 			      ,@(map (lambda (internal export expr)
 				       `((,(z:binding-var internal)
 					   ,(read->raw export))
-					  ,(annotate expr)))
+					  ,(mv-wrap expr)))
 				  (z:public-clause-internals clause)
 				  (z:public-clause-exports clause)
 				  (z:public-clause-exprs clause))))
@@ -351,7 +350,7 @@
 			   `(private
 			      ,@(map (lambda (internal expr)
 				       `(,(z:binding-var internal)
-					  ,(annotate expr)))
+					  ,(mv-wrap expr)))
 				  (z:private-clause-internals clause)
 				  (z:private-clause-exprs clause))))
 			 ((z:inherit-clause? clause)
@@ -392,6 +391,6 @@
 		  (let* ([expanded (z:scheme-expand expr)]
 			  [_ '(printf "expanded: ~s~n" expanded)]
 			  [annotated (annotate expanded)])
-		    (begin ((global-defined-value 'pretty-print) annotated)
+		    '(begin ((global-defined-value 'pretty-print) annotated)
 		       (newline))
 		    (read-loop (cons annotated exprs))))))))))

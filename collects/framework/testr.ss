@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.20 1999/03/16 04:51:40 robby Exp $
+;; $Id: testr.ss,v 1.21 1999/03/22 03:54:04 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -297,11 +297,11 @@
 	       [ctrl (find-ctrl)])
 	   (cond
 	     [(not (send ctrl is-shown?))
-	      (run-error error-tag "control ~s is not shown" ctrl)]
+	      (run-error error-tag "control ~e is not shown (label ~e)" ctrl (send ctrl get-label))]
 	     [(not (send ctrl is-enabled?))
-	      (run-error error-tag "control ~s is not enabled" ctrl)]
+	      (run-error error-tag "control ~e is not enabled (label ~e)" ctrl (send ctrl get-label))]
 	     [(not (in-active-frame? ctrl))
-	      (run-error error-tag "control ~s is not in active frame" ctrl)]
+	      (run-error error-tag "control ~e is not in active frame (label ~e)" ctrl (send ctrl get-label))]
 	     [else
 	      (update-control ctrl)
 	      (send ctrl command event)
@@ -340,8 +340,21 @@
      (find-object mred:original:radio-box% in-cb)
      (lambda (rb) 
        (cond
-	[(string? state) (send rb set-string-selection state)]
-	[(number? state) (send rb set-selection state)]
+	[(string? state) 
+	 (let ([total (send rb get-number)])
+	   (let loop ([n total])
+	     (cond
+	       [(zero? n) (error 'test:set-radio-box! "did not find ~e as an enabled label for ~e" state in-cb)]
+	       [else (let ([i (- total n)])
+		       (if (and (send rb is-enabled? i)
+				(or (string=? state (send rb get-item-label i))
+				    (string=? state (send rb get-item-plain-label i))))
+			   (send rb set-selection i)
+			   (loop (- n 1))))])))]
+	[(number? state)
+	 (unless (send rb is-enabled? state)
+	   (error 'test:set-radio-box! "item ~a is not enabled~n" state))
+	 (send rb set-selection state)]
 	[else (error 'test:set-radio-box!
 		     "expected a string or a number as second arg, got: ~e (other arg: ~e)"
 		     state in-cb)]))))

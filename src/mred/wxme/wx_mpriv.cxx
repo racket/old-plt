@@ -740,6 +740,7 @@ void wxMediaEdit::MakeOnlySnip(void)
   snips->next = NULL;
 
   snips->line = lineRoot = firstLine = lastLine = new wxMediaLine;
+  lineRoot->SetStartsParagraph(TRUE);
 
   lineRoot->snip = lineRoot->lastSnip = snips;
 
@@ -2534,8 +2535,6 @@ void wxMediaEdit::CaretOn(void)
 
 /* 8.5" x 11" Paper, 0.5" Margin; usually not used */
 static long page_width = 612, page_height = 792;
-/* Printing margins: */
-static long h_margin = 36, v_margin = 36;
 
 #define wxGetPrinterOrientation() wxGetThePrintSetupData()->GetPrinterOrientation()
 

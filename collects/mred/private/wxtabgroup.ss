@@ -392,7 +392,7 @@
 
 	(compute-sizes)
 	(set-min-width (inexact->exact (ceiling (get-total-width))))
-	(set-min-height (inexact->exact (ceiling (+ tab-height 9 raise-h))))
+	(set-min-height (inexact->exact (ceiling (+ tab-height (if mac-tab? 6 9) raise-h))))
 	(when mac-tab?
 	  (send (get-top-level) add-activate-update this))
 	(set-tab-focus focus-ok?))))

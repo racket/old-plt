@@ -704,36 +704,50 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 static int same_marks(Scheme_Object *awl, Scheme_Object *bwl, int ignore_barrier)
 /* Compares the marks in two wraps lists */
 {
+  Scheme_Object *acur_mark, *bcur_mark;
+
   while (1) {
     /* Skip over renames and cancelled marks: */
+    acur_mark = NULL;
     while (1) {
       if (SCHEME_NULLP(awl))
 	break;
       if (SCHEME_NUMBERP(SCHEME_CAR(awl))) {
-	if (SCHEME_PAIRP(SCHEME_CDR(awl))
-	    && SAME_OBJ(SCHEME_CADR(awl), SCHEME_CAR(awl)))
-	  awl = SCHEME_CDDR(awl);
-	else
-	  break;
+	if (acur_mark) {
+	  if (SAME_OBJ(acur_mark, SCHEME_CAR(awl))) {
+	    acur_mark = NULL;
+	    awl = SCHEME_CDR(awl);
+	  } else
+	    break;
+	} else
+	  acur_mark = SCHEME_CAR(awl);
       } else if (SAME_OBJ(SCHEME_CAR(awl), barrier_symbol) && !ignore_barrier) {
 	awl = scheme_null;
       } else
 	awl = SCHEME_CDR(awl);
     }
+    bcur_mark = NULL;
     while (1) {
       if (SCHEME_NULLP(bwl))
 	break;
       if (SCHEME_NUMBERP(SCHEME_CAR(bwl))) {
-	if (SCHEME_PAIRP(SCHEME_CDR(bwl))
-	    && SAME_OBJ(SCHEME_CADR(bwl), SCHEME_CAR(bwl)))
-	  bwl = SCHEME_CDDR(bwl);
-	else
-	  break;
+	if (bcur_mark) {
+	  if (SAME_OBJ(bcur_mark, SCHEME_CAR(bwl))) {
+	    bcur_mark = NULL;
+	    bwl = SCHEME_CDR(bwl);
+	  } else
+	    break;
+	} else
+	  bcur_mark = SCHEME_CAR(bwl);
       } else if (SAME_OBJ(SCHEME_CAR(bwl), barrier_symbol)) {
 	bwl = scheme_null;
       } else
 	bwl = SCHEME_CDR(bwl);
     }
+
+    /* Same mark? */
+    if (!SAME_OBJ(acur_mark, bcur_mark))
+      return 0;
 
     /* Either at end? Then the same only if both at end. */
     if (SCHEME_NULLP(awl) || SCHEME_NULLP(bwl))

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.163 1998/11/20 21:20:11 mflatt Exp $
+; $Id: scm-main.ss,v 1.164 1998/11/23 17:38:41 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -180,15 +180,94 @@
 	'(expr)))
 
   (define parse-expr
-    (lambda (expr env attributes vocab source)
-      (if (or (null? expr) (not (null? (cdr expr))))
-	  (expand-expr (structurize-syntax
-			`(begin ,@expr) source '(-1))
-		       env attributes vocab)
-	  (let ((v (expand-expr (car expr) env attributes vocab)))
-	    (if (internal-definition? v)
-		(static-error (car expr) "Internal definition not followed by expression")
-		v)))))
+    (lambda (who expr bodies env attributes vocab source)
+      ;; Do internal definition parsing
+      (let*-values
+	  (((internal-define-vocab)
+	    (append-vocabulary internal-define-vocab-delta
+			       vocab 'internal-define-vocab))
+	   ((definitions parsed-first-term rest-terms bindings)
+	    (let loop ((seen null) (rest bodies) (prev #f) (bindings null) (vars-seen null))
+	      (if (null? rest)
+		  (static-error prev
+				(if (null? seen)
+				    (static-error expr (format "Malformed ~a" who))
+				    (if (null? (cdr seen))
+					"Internal definition not followed by expression"
+					"Internal definitions not followed by expression")))
+		  (let ((first (car rest)))
+		    (let* ((internal? (get-internal-define-status attributes))
+			   (_ (set-internal-define-status attributes #t))
+			   (e-first (expand-expr first env
+						 attributes
+						 internal-define-vocab))
+			   (_ (set-internal-define-status attributes internal?)))
+		      (cond
+		       [(internal-definition? e-first)
+			(let ((def-vars (internal-definition-vars e-first)))
+			  (let* ((new-vars+marks
+				  (map create-lexical-binding+marks
+				       def-vars)))
+			    (for-each
+			     (lambda (v)
+			       (when (memq (z:read-object v)
+					   vars-seen)
+				 (static-error v
+					       "Duplicate internally defined identifier ~a"
+					       (z:read-object v))))
+			     def-vars)
+			    (extend-env new-vars+marks env)
+			    (loop (cons e-first seen)
+				  (cdr rest)
+				  first
+				  (cons new-vars+marks bindings)
+				  (append vars-seen
+					  (map z:read-object def-vars)))))]
+		       [(internal-begin? e-first)
+			(loop seen 
+			      (append (internal-begin-exprs e-first) (cdr rest))
+			      first
+			      bindings vars-seen)]
+		       [else
+			(values (reverse seen)
+				e-first
+				(cdr rest)
+				bindings)])))))))
+	(if (null? definitions)
+
+	    ;; No internal defines
+	    (if (null? rest-terms)
+		parsed-first-term
+		(create-begin-form
+		 (cons parsed-first-term
+		       (map (lambda (e)
+			      (expand-expr e env attributes
+					   vocab))
+			    rest-terms))
+		 expr))
+
+	    ;; Found internal defines
+	    (begin0
+	     (create-letrec*-values-form
+	      (reverse (map (lambda (vars+marks)
+			      (map car vars+marks))
+			    bindings))
+	      (map (lambda (def)
+		     (expand-expr (internal-definition-val def)
+				  env attributes vocab))
+		   definitions)
+	      (if (null? rest-terms)
+		  parsed-first-term
+		  (create-begin-form
+		   (cons parsed-first-term
+			 (map (lambda (e)
+				(expand-expr e env attributes vocab))
+			      rest-terms))
+		   expr))
+	      expr)
+	     (for-each (lambda (new-vars+marks)
+			 (retract-env (map car new-vars+marks) env))
+		       bindings))))))
 
   ; ----------------------------------------------------------------------
 
@@ -222,7 +301,7 @@
 			      (as-nested
 			       attributes
 			       (lambda ()
-				 (parse-expr body env attributes vocab expr))))
+				 (parse-expr "case-lambda" expr body env attributes vocab expr))))
 			     (retract-env (map car arg-vars+marks) env))))
 			args bodies)))
 		  (create-case-lambda-form
@@ -252,13 +331,10 @@
   (add-primitivized-macro-form 'lambda scheme-vocabulary (make-lambda-macro #t))
 
   (define-struct internal-definition (vars val))
+  (define-struct internal-begin (exprs))
 
   (define internal-define-vocab-delta
     (create-vocabulary 'internal-define-vocab-delta))
-
-  '(add-sym-micro internal-define-vocab-delta
-    (lambda (expr env attributes vocab)
-      expr))
 
   (add-primitivized-micro-form 'define-values internal-define-vocab-delta
     (let* ((kwd '())
@@ -287,204 +363,85 @@
 	    (static-error expr
 	      "Malformed internal definition"))))))
 
-  (define begin-micro
-      (let* ((kwd '())
-	      (in-pattern `(_ b ...))
-	      (m&e (pat:make-match&env in-pattern kwd)))
-	(lambda (expr env attributes vocab)
-	  (cond
-	    ((pat:match-against m&e expr env)
+  (add-primitivized-micro-form 'begin internal-define-vocab-delta
+    (let* ((kwd '())
+	   (in-pattern `(_ expr ...))
+	   (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(if (at-internal-define? attributes)
+
+	    ;; Parse begin in internal define context
+	    (cond
+	     ((pat:match-against m&e expr env)
 	      =>
 	      (lambda (p-env)
-		(let ((bodies (pat:pexpand '(b ...) p-env kwd)))
-		  (if (get-top-level-status attributes)
-		    (if (null? bodies)
+		(let* ((exprs (pat:pexpand '(expr ...) p-env kwd)))
+		  (make-internal-begin exprs))))
+	     (else
+	      (static-error expr
+			    "Malformed internal begin")))
+
+	    ;; Chain to regular begin:
+	    (begin-micro expr env attributes vocab)))))
+  
+  (define begin-micro
+    (let* ((kwd '())
+	   (in-pattern `(_ b ...))
+	   (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	 ((pat:match-against m&e expr env)
+	  =>
+	  (lambda (p-env)
+	    (let* ([bodies (pat:pexpand '(b ...) p-env kwd)]
+		   [top? (get-top-level-status attributes)]
+		   [as-nested (if top? (lambda (x y) (y)) as-nested)])
+	      (if (and (pair? bodies) (null? (cdr bodies)))
+		  (as-nested
+		   attributes
+		   (lambda ()
+		     (expand-expr (car bodies) env attributes vocab)))
+		  (if (and (not top?)
+			   (null? bodies))
 		      (static-error expr "Malformed begin")
-		      (if (null? (cdr bodies))
-			(expand-expr (car bodies) env attributes vocab)
-			(create-begin-form
+		      (as-nested
+		       attributes
+		       (lambda ()
+			 (create-begin-form
 			  (map (lambda (e)
 				 (expand-expr e env attributes vocab))
-			    bodies)
-			  expr)))
-		    (let*-values
-		      (((internal-define-vocab)
-			 (append-vocabulary internal-define-vocab-delta
-			   vocab 'internal-define-vocab))
-			((definitions parsed-first-term rest-terms bindings)
-			  (let loop ((seen null) (rest bodies) (bindings null)
-				      (vars-seen null))
-			    (if (null? rest)
-			      (static-error expr
-				(if (null? seen)
-				  "Malformed begin"
-				  (if (null? (cdr seen))
-				    "Internal definition not followed by expression"
-				    "Internal definitions not followed by expression")))
-			      (let ((first (car rest)))
-				(let* ((internal? (get-internal-define-status attributes))
-				       (_ (set-internal-define-status attributes #t))
-				       (e-first
-					(expand-expr first env
-						     attributes
-						     internal-define-vocab))
-				       (_ (set-internal-define-status attributes internal?)))
-				  (if (internal-definition? e-first)
-				    (let ((def-vars (internal-definition-vars e-first)))
-				      (let* ((new-vars+marks
-					       (map create-lexical-binding+marks
-						 def-vars)))
-					(for-each
-					  (lambda (v)
-					    (when (memq (z:read-object v)
-						    vars-seen)
-					      (static-error v
-						"Duplicate internally defined identifier ~a"
-						(z:read-object v))))
-					  def-vars)
-					(extend-env new-vars+marks env)
-					(loop (cons e-first seen)
-					  (cdr rest)
-					  (cons new-vars+marks bindings)
-					  (append vars-seen
-					    (map z:read-object def-vars)))))
-				    (values (reverse seen)
-				      e-first
-				      (cdr rest)
-				      bindings))))))))
-		      (if (null? definitions)
-			(if (null? rest-terms)
-			  parsed-first-term
-			  (create-begin-form
-			    (cons parsed-first-term
-			      (map (lambda (e)
-				     (expand-expr e env attributes
-				       vocab))
-				rest-terms))
-			    expr))
-			(begin0
-			  (create-letrec*-values-form
-			    (reverse (map (lambda (vars+marks)
-					    (map car vars+marks))
-				       bindings))
-			    (map (lambda (def)
-				   (expand-expr (internal-definition-val def)
-				     env attributes vocab))
-			      definitions)
-			    (if (null? rest-terms)
-			      parsed-first-term
-			      (create-begin-form
-				(cons parsed-first-term
-				  (map (lambda (e)
-					 (expand-expr e env attributes vocab))
-				    rest-terms))
-				expr))
-			    expr)
-			  (for-each (lambda (new-vars+marks)
-				      (retract-env (map car new-vars+marks) env))
-			    bindings))))))))
-	    (else
-	      (static-error expr "Malformed begin"))))))
+			       bodies)
+			  expr))))))))
+	 (else
+	  (static-error expr "Malformed begin"))))))
 
   (add-primitivized-micro-form 'begin advanced-vocabulary begin-micro)
   (add-primitivized-micro-form 'begin scheme-vocabulary begin-micro)
 
   (define begin0-micro
       (let* ((kwd '())
-	      (in-pattern `(_ b ...))
+	      (in-pattern `(_ b0 b ...))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)
 	  (cond
 	    ((pat:match-against m&e expr env)
 	      =>
 	      (lambda (p-env)
-		(let ((bodies (pat:pexpand '(b ...) p-env kwd)))
-		  (when (null? bodies)
-		    (static-error expr "Malformed begin0"))
-		  (let*-values
-		    (((internal-define-vocab)
-		       (append-vocabulary internal-define-vocab-delta
-			 vocab 'internal-define-vocab))
-		      ((parsed-return-value-term)
-		       (as-nested attributes (lambda () (expand-expr (car bodies) env attributes vocab))))
-		      ((definitions parsed-first-term rest-terms bindings)
-			(let loop ((seen null) (rest (cdr bodies))
-				    (bindings null) (vars-seen null))
-			  (if (null? rest)
-			    (if (null? seen)
-			      (values null #f null null)
-			      (static-error expr
-				"Internal definitions not followed by expression"))
-			    (let ((first (car rest)))
-			      (let* ((internal? (get-internal-define-status attributes))
-				     (_ (set-internal-define-status attributes #t))
-				     (e-first
-				      (expand-expr first env
-						   attributes
-						   internal-define-vocab))
-				     (_ (set-internal-define-status attributes internal?)))
-				(if (internal-definition? e-first)
-				  (let ((def-vars (internal-definition-vars e-first)))
-				    (let* ((new-vars+marks
-					     (map create-lexical-binding+marks
-					       def-vars)))
-				      (for-each
-					(lambda (v)
-					  (when (memq (z:read-object v)
-						  vars-seen)
-					    (static-error v
-					      "Duplicate internally defined identifier ~a"
-					      (z:read-object v))))
-					def-vars)
-				      (extend-env new-vars+marks env)
-				      (loop (cons e-first seen)
-					(cdr rest)
-					(cons new-vars+marks bindings)
-					(append vars-seen
-					  (map z:read-object def-vars)))))
-				  (values (reverse seen)
-				    e-first
-				    (cdr rest)
-				    bindings))))))))
-		    (if parsed-first-term
-		      (if (null? definitions)
-			(create-begin0-form
-			  (cons parsed-return-value-term
-			    (cons parsed-first-term
-			      (map (lambda (e)
-				     (as-nested attributes (lambda () (expand-expr e env attributes vocab))))
-				rest-terms)))
-			  expr)
-			(begin0
+		(let ((bodies (pat:pexpand '(b ...) p-env kwd))
+		      (body0 (pat:pexpand 'b0 p-env kwd)))
+		  (let ([first (as-nested 
+				attributes
+				(lambda () (expand-expr body0 env attributes vocab)))])
+		    (if (null? bodies)
+			first
+			(let ([rest (parse-expr "begin0" expr bodies env attributes vocab expr)])
 			  (create-begin0-form
-			    (list parsed-return-value-term
-			      (create-letrec*-values-form
-				(reverse (map (lambda (vars+marks)
-						(map car vars+marks))
-					   bindings))
-				(map (lambda (def)
-				       (as-nested 
-					attributes
-					(lambda ()
-					  (expand-expr (internal-definition-val def)
-						       env attributes vocab))))
-				  definitions)
-				(if (null? rest-terms)
-				  parsed-first-term
-				  (create-begin-form
-				    (cons parsed-first-term
-				      (map (lambda (e)
-					     (as-nested attributes (lambda () (expand-expr e env attributes vocab))))
-					rest-terms))
-				    expr))
-				expr))
-			    expr)
-			  (for-each (lambda (new-vars+marks)
-				      (retract-env (map car new-vars+marks) env))
-			    bindings)))
-		      parsed-return-value-term)))))
+			   (if (begin-form? rest)
+			       (cons first (begin-form-bodies rest))
+			       (list first rest))
+			   expr)))))))
 	    (else
-	      (static-error expr "Malformed begin0"))))))
+	     (static-error expr "Malformed begin0"))))))
 
   (add-primitivized-micro-form 'begin0 advanced-vocabulary begin0-micro)
   (add-primitivized-micro-form 'begin0 scheme-vocabulary begin0-micro)
@@ -1123,7 +1080,7 @@
 				 (cons head
 				       (loop (cdr var-lists) tail)))))
 			 expanded-vals
-			 (parse-expr body env
+			 (parse-expr "let-values" expr body env
 				     attributes vocab expr)
 			 expr)
 			(retract-env new-vars env))))))))
@@ -1198,7 +1155,7 @@
 			  (as-nested
 			   attributes
 			   (lambda ()
-			     (parse-expr body env attributes vocab expr)))
+			     (parse-expr "letrec-values" expr body env attributes vocab expr)))
 			  expr))
 		      (_ (retract-env new-vars env)))
 		    result))))
@@ -1676,23 +1633,23 @@
   (add-primitivized-micro-form 'fluid-let scheme-vocabulary fluid-let-macro)
 
   (define parameterize-macro
-      (let* ((kwd '())
-	      (in-pattern-1 '(_ () body ...))
-	      (out-pattern-1 '(begin body ...))
-	      (in-pattern-2 '(_ ((param value) rest ...) body ...))
-	      (out-pattern-2 '(let* ((pz (#%in-parameterization
-					   (#%current-parameterization)
-					   param))
-				      (orig (pz)))
-				(dynamic-wind
-				  (lambda () (pz value))
-				  (lambda () (parameterize (rest ...)
-					       body ...))
-				  (lambda () (pz orig)))))
-	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
-	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
-	(lambda (expr env)
-	  (or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd env)
+    (let* ((kwd '())
+	   (in-pattern-1 '(_ () body ...))
+	   (out-pattern-1 '(let-values () body ...))
+	   (in-pattern-2 '(_ ((param value) rest ...) body ...))
+	   (out-pattern-2 '(let* ((pz (#%in-parameterization
+				       (#%current-parameterization)
+				       param))
+				  (orig (pz)))
+			     (dynamic-wind
+			      (lambda () (pz value))
+			      (lambda () (parameterize (rest ...)
+					   body ...))
+			      (lambda () (pz orig)))))
+	   (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	   (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+      (lambda (expr env)
+	(or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd env)
 	    (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
 	    (static-error expr "Malformed parameterize")))))
 

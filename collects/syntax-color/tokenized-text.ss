@@ -272,9 +272,7 @@
 
       (define match-parens
         (opt-lambda ([just-clear? #f])
-          (printf "trying match~n")
           (unless in-match-parens?
-            (printf "matching~n")
             (set! in-match-parens? #t)
             (begin-edit-sequence #f #f)
             (clear-old-locations)

@@ -209,7 +209,7 @@
 			  (list language-choice custom-message))))))]
 	 [update-to
 	  (lambda (v)
-	    (let ([zodiac? (basis:setting-use-zodiac? v)])
+	    (let ([zodiac? (basis:zodiac-vocabulary? v)])
 	      (unless zodiac?
 		(basis:set-setting-signal-undefined! v #f))
 	      (send signal-undefined enable zodiac?))

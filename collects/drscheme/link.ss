@@ -63,7 +63,8 @@
 				print-convert
 				(export* unit)
 				(export* compound-unit)
-				(export* get/extend))])
+				(export* get/extend)
+				(export* basis))])
   (export (unit init)
 	  (unit mzlib)
 	  (unit mred)

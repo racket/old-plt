@@ -78,9 +78,9 @@
    level-symbols
    level-strings
 
+   add-setting
    copy-setting
-   (struct setting (use-zodiac?
-		    vocabulary-symbol
+   (struct setting (vocabulary-symbol
 		    case-sensitive?
 		    allow-set!-on-undefined?
 		    unmatched-cond/case-is-error?

@@ -5,8 +5,14 @@
 	  [print-convert : mzlib:print-convert^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:compound-unit : drscheme:compound-unit^]
-	  [drscheme:get/extend : drscheme:get/extend^])
+	  [drscheme:get/extend : drscheme:get/extend^]
+	  [basis : userspace:basis^])
   
+
+  ;; add the new settings
+  (basis:add-setting 'MrEd (basis:copy-setting (basis:find-setting-name 'MzScheme)))
+  (basis:add-setting '|MrEd Debug| (basis:copy-setting (basis:find-setting-name '|MzScheme Debug|)))
+
   (fw:application:current-app-name "DrScheme")
   (fw:version:add-spec 'd 1)
   

@@ -30,8 +30,7 @@
   
   (define this-program (with-handlers ([void "mzscheme"]) (global-defined-value 'program)))
 
-  (define-struct/parse setting (use-zodiac?
-				vocabulary-symbol
+  (define-struct/parse setting (vocabulary-symbol
 				case-sensitive?
 				allow-set!-on-undefined?
 				unmatched-cond/case-is-error?
@@ -52,8 +51,7 @@
   ;; settings : (list-of (vector symbol setting))
   (define settings
     (list (vector 'Beginner (make-setting/parse
-			     `((use-zodiac? #t)
-			       (vocabulary-symbol beginner)
+			     `((vocabulary-symbol beginner)
 			       (case-sensitive? #t)
 			       (allow-set!-on-undefined? #f)
 			       (unmatched-cond/case-is-error? #t)
@@ -71,8 +69,7 @@
 			       (printing constructor-style)
 			       (define-argv? #f))))
 	  (vector 'Intermediate (make-setting/parse
-				 `((use-zodiac? #t)
-				   (vocabulary-symbol intermediate)
+				 `((vocabulary-symbol intermediate)
 				   (case-sensitive? #t)
 				   (allow-set!-on-undefined? #f)
 				   (unmatched-cond/case-is-error? #t)
@@ -90,8 +87,7 @@
 				   (printing constructor-style)
 				   (define-argv? #f))))
 	  (vector 'Advanced (make-setting/parse
-			     `((use-zodiac? #t)
-			       (vocabulary-symbol advanced)
+			     `((vocabulary-symbol advanced)
 			       (case-sensitive? #t)
 			       (allow-set!-on-undefined? #f)
 			       (unmatched-cond/case-is-error? #t)
@@ -109,8 +105,7 @@
 			       (printing constructor-style)
 			       (define-argv? #f))))
 	  (vector 'MzScheme (make-setting/parse
-			     `((use-zodiac? #f)
-			       (vocabulary-symbol mzscheme)
+			     `((vocabulary-symbol mzscheme)
 			       (case-sensitive? #t)
 			       (allow-set!-on-undefined? #f)
 			       (unmatched-cond/case-is-error? #f)
@@ -128,8 +123,7 @@
 			       (printing r4rs-style)
 			       (define-argv? #t))))
 	  (vector '|MzScheme Debug| (make-setting/parse
-				     `((use-zodiac? #t)
-				       (vocabulary-symbol mzscheme-debug)
+				     `((vocabulary-symbol mzscheme-debug)
 				       (case-sensitive? #t)
 				       (allow-set!-on-undefined? #f)
 				       (unmatched-cond/case-is-error? #f)
@@ -147,22 +141,18 @@
 				       (printing r4rs-style)
 				       (define-argv? #t))))))
 
-  ;; level->number : symbol -> int
-  (define level->number
-    (lambda (x)
-      (evcase x
-	['beginner 0]
-	['intermediate 1]
-	['advanced 2]
-	['mzscheme 3]
-	['mzscheme-debug 4]
-	[else (error 'level->number "unexpected level: ~a" x)])))
+  (define (snoc x y) (append y (list x)))
+
+  (define (add-setting name setting)
+    (set! settings (snoc (vector name setting) settings))
+    (set! level-symbols (snoc name level-symbols))
+    (set! level-strings (map symbol->string level-symbols)))
 
   ;; level-symbols (list-of sym)
-  (define level-symbols (list 'beginner 'intermediate 'advanced 'mzscheme 'mzscheme-debug))
+  (define level-symbols (list 'Beginner 'Intermediate 'Advanced 'MzScheme '|MzScheme Debug|))
 
   ;; level-strings : (list-of string)
-  (define level-strings (list "Beginner" "Intermediate" "Advanced" "MzScheme" "MzScheme Debug"))
+  (define level-strings (map symbol->string level-symbols))
 
   ;; find-setting-name : setting -> (union symbol #f)
   (define (find-setting-name setting)
@@ -179,15 +169,29 @@
       (apply make-setting (cdr (vector->list (struct->vector x))))))
   
   ;; get-default-setting : _ -> setting
-  (define (get-default-setting) (copy-setting (vector-ref (mzlib:function:first (reverse settings)) 1)))
+  (define (get-default-setting) (copy-setting (car settings)))
+
+  ;; level->number : symbol -> int
+  (define level->number
+    (lambda (name)
+      (let loop ([n 0]
+		 [settings settings])
+	(cond
+	 [(null? settings) (error 'level->number "unexpected level: ~a" name)]
+	 [else (let ([setting (car settings)])
+		 (if (eq? name (vector-ref setting 0))
+		     n
+		     (loop (+ n 1)
+			   (cdr settings))))]))))
 
   ;; zodiac-vocabulary? : symbol -> boolean
   (define (zodiac-vocabulary? sym)
-    (not (eq? sym 'mzscheme)))
+    (not (eq? sym 'MzScheme)))
+
   ;; has-set!? : symbol -> boolean
   (define (has-set!? sym)
-    (not (or (eq? sym 'intermediate)
-	     (eq? sym 'beginner))))
+    (not (or (eq? sym 'Intermediate)
+	     (eq? sym 'Beginner))))
 
   ;; r4rs-style-printing? : setting -> boolean
   (define (r4rs-style-printing? setting)
@@ -311,7 +315,7 @@
 			 (lambda () (zodiac:interface:set-zodiac-phase #f)))]
 		       ; Sometimes, we throw away source information and
 		       ;  expand with MzScheme
-		       [use-z-exp? (and (setting-use-zodiac? (current-setting))
+		       [use-z-exp? (and (zodiac-vocabulary? (current-setting))
 					(eq? (current-namespace) (current-zodiac-namespace)))])
 		   (if (zodiac:eof? zodiac-read)
 		       (lambda () (cleanup #f))
@@ -423,7 +427,7 @@
 	 [zo-file?
 	  (parameterize ([current-eval primitive-eval])
 	    (primitive-load filename))]
-	 [(setting-use-zodiac? (current-setting))
+	 [(zodiac-vocabulary? (current-setting))
 	  (let* ([process-sexps
 		  (let ([last (list (void))])
 		    (lambda (sexp recur)
@@ -444,7 +448,7 @@
 
     ;; drscheme-eval : sexp ->* TST
     (define (drscheme-eval-handler sexp)
-      (if (and (setting-use-zodiac? (current-setting))
+      (if (and (zodiac-vocabulary? (current-setting))
 	       (eq? (current-namespace) (current-zodiac-namespace)))
 	  (let* ([z (let ([continuation-stack (current-continuation-marks aries:w-c-m-key)])
 		      (if (null? continuation-stack)
@@ -498,10 +502,10 @@
     ;; effect: sets the parameters for drscheme and drscheme-jr
     (define (initialize-parameters custodian namespace-flags setting)
       (let* ([n (apply make-namespace
-		       (if (setting-use-zodiac? setting)
+		       (if (zodiac-vocabulary? setting)
 			   (append (list 'hash-percent-syntax) namespace-flags)
 			   namespace-flags))])
-	(when (setting-use-zodiac? setting)
+	(when (zodiac-vocabulary? setting)
 	  (require-library-use-compiled #f))
 	(current-setting setting)
 	(compile-allow-set!-undefined #f)
@@ -527,7 +531,7 @@
 	(error-print-width 250)
 	(current-print drscheme-print)
 
-	(when (setting-use-zodiac? setting)
+	(when (zodiac-vocabulary? setting)
 	  (current-vocabulary (zodiac:create-vocabulary
 			       'scheme-w/user-defined-macros/drscheme
 			       (case (setting-vocabulary-symbol setting)
@@ -548,7 +552,7 @@
 
 	;; ricedefs
 	(let ([improper-lists?
-	       (or (not (setting-use-zodiac? setting))
+	       (or (not (zodiac-vocabulary? setting))
 		   (setting-allow-improper-lists? setting))])
 	  (zodiac:allow-improper-lists improper-lists?)
 	  (params:allow-improper-lists improper-lists?))

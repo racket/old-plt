@@ -220,6 +220,11 @@
      'mred:console-previous-exprs
      marshall unmarshall))
   
+  (define (setting-has-mred? setting)
+    (let ([name (basis:find-setting-name setting)])
+      (or (eq? 'MrEd name)
+	  (eq? '|MrEd Debug| name))))
+
   (define (make-edit% super%)
     (class super% args
       (inherit insert change-style
@@ -516,7 +521,7 @@
 	[report-located-error
 	 (lambda (message di)
 	   (if (and (zodiac:zodiac? di)
-		    (basis:setting-use-zodiac? user-setting))
+		    (basis:zodiac-vocabulary? user-setting))
 	       (let* ([start (zodiac:zodiac-start di)]
 		      [finish (zodiac:zodiac-finish di)])
 		 (report-error start finish 'dynamic message))
@@ -557,17 +562,17 @@
       (public
 	[process-edit
 	 (lambda (edit fn start end annotate?)
-	   (if (basis:setting-use-zodiac? user-setting)
+	   (if (basis:zodiac-vocabulary? user-setting)
 	       (process-edit/zodiac edit fn start end annotate?)
 	       (process-edit/no-zodiac edit fn start end)))]
 	[process-file
 	 (lambda (filename fn annotate?)
-	   (if (basis:setting-use-zodiac? user-setting)
+	   (if (basis:zodiac-vocabulary? user-setting)
 	       (basis:process-file/zodiac filename fn annotate?)
 	       (basis:process-file/no-zodiac filename fn)))]
 	[process-sexp
 	 (lambda (sexp z fn annotate?)
-	   (if (basis:setting-use-zodiac? user-setting)
+	   (if (basis:zodiac-vocabulary? user-setting)
 	       (basis:process-sexp/zodiac sexp z fn annotate?)
 	       (basis:process-sexp/no-zodiac sexp fn)))])
 
@@ -676,7 +681,7 @@
 							(lambda ()
 							  (mzlib:thread:dynamic-enable-break
 							   (lambda ()
-							     (if (basis:setting-use-zodiac? (basis:current-setting))
+							     (if (basis:zodiac-vocabulary? (basis:current-setting))
 								 (basis:syntax-checking-primitive-eval expr)
 								 (basis:primitive-eval expr)))))
 							(lambda x x))])
@@ -893,151 +898,154 @@
       (private
 	[initialize-parameters
 	 (lambda ()
-	   (basis:initialize-parameters
-	    user-custodian
-	    (list 'mred)
-	    (fw:preferences:get 'drscheme:settings))
+	   (let ([setting (fw:preferences:get 'drscheme:settings)])
+	     (basis:initialize-parameters
+	      user-custodian
+	      (if (setting-has-mred? setting)
+		  (list 'mred)
+		  (list))
+	      setting)
 
-	   (exception-reporting-rep this)
-	   (current-output-port this-out)
-	   (current-error-port this-err)
-	   (current-input-port this-in)
-	   
-	   (global-port-print-handler
-	    (let ([old (global-port-print-handler)])
-	      (lambda (value port)
-		(if (or (eq? port this-result)
-			(eq? port this-out)
-			(eq? port this-err))
-		    (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-				    (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
-				   [mzlib:pretty-print:pretty-print-print-hook
-				    (lambda (x _ port)
-				      (evcase port
-					      [this-result (this-result-write x)]
-					      [this-out (this-out-write x)]
-					      [this-err (this-err-write x)]))])
-		      (old value port))
-		    (old value port)))))
-	   
-	   (print-convert:current-print-convert-hook
-	    (lambda (expr basic-convert sub-convert)
-	      (let ([ans (if (is-a? expr mred:snip%)
-			     expr
-			     (basic-convert expr))])
-		ans)))
-	   
-	   (current-load
-	    (let ([userspace-load (current-load)])
-	      (rec drscheme-load-handler
-		   (lambda (filename)
-		     (unless (string? filename)
-		       (raise (make-exn:application:arity
-			       (format "drscheme-load-handler: expects argument of type <string>; given: ~e" filename)
-			       ((debug-info-handler))
-			       filename
-			       'string)))
-		     (if (and (basis:setting-use-zodiac? user-setting)
-			      (let* ([p (open-input-file filename)]
-				     [loc (zodiac:make-location basis:INITIAL-LINE
-								basis:INITIAL-COLUMN
-								basis:INITIAL-OFFSET
-								filename)]
-				     [chars (begin0
-					     (list (read-char p) (read-char p) (read-char p) (read-char p))
-					     (close-input-port p))])
-				(equal? chars (string->list "WXME"))))
-			 (let ([process-sexps
-				(let ([last (list (void))])
-				  (lambda (sexp recur)
-				    (cond
-				     [(basis:process-finish? sexp) last]
-				     [else
-				      (set! last
-					    (call-with-values
-					     (lambda () (basis:syntax-checking-primitive-eval sexp))
-					     (lambda x x)))
-				      (recur)])))])
-			   (apply values 
-				  (let ([edit (make-object drscheme:edit:edit%)])
-				    (send edit load-file filename)
-				    (process-edit edit process-sexps
-						  0 
-						  (send edit last-position)
-						  #t))))
-			 (userspace-load filename))))))
-	   
-	   (basis:error-display/debug-handler report-located-error)
-	   
-	   (error-display-handler
-	    (rec drscheme-error-display-handler
-		 (lambda (msg)
-		   (let ([rep (exception-reporting-rep)])
-		     (mred:message-box "Debugging Error" msg)
-		     (if rep
-			 (send rep report-unlocated-error msg)
-			 (mred:message-box "Uncaught Error" msg))))))
-	   
-	   (let ([directory
-		  (let/ec k
-		    (unless (get-top-level-window)
-		      (k drscheme:init:first-dir))
-		    (let*-values ([(filename) (send (ivar (get-top-level-window) definitions-edit)
-						    get-filename)]
-				  [(normalized) (if (string? filename)
-						    (mzlib:file:normalize-path filename)
-						    (k drscheme:init:first-dir))]
-				  [(base _1 _2) (split-path normalized)])
-		      (or base 
-			  drscheme:init:first-dir)))])
-	     (current-directory directory))
-	   
-	   (exit-handler (lambda (arg) (shutdown-user-custodian)))
-	   
-	   ;; set all parameters before constructing eventspace
-	   ;; so that the parameters are set in the eventspace's
-	   ;; parameterization
-	   (let* ([primitive-dispatch-handler (mred:event-dispatch-handler)]
-		  [event-semaphore (make-semaphore 0)]
-		  
-		  [ht (make-hash-table-weak)]) ;; maps eventspaces to depth of nested yields (ints)
+	     (exception-reporting-rep this)
+	     (current-output-port this-out)
+	     (current-error-port this-err)
+	     (current-input-port this-in)
 	     
-	     (thread (rec f
-			  (lambda ()
-			    (semaphore-wait event-semaphore)
-			    (update-running)
-			    (f))))
+	     (global-port-print-handler
+	      (let ([old (global-port-print-handler)])
+		(lambda (value port)
+		  (if (or (eq? port this-result)
+			  (eq? port this-out)
+			  (eq? port this-err))
+		      (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+				      (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+				     [mzlib:pretty-print:pretty-print-print-hook
+				      (lambda (x _ port)
+					(evcase port
+						[this-result (this-result-write x)]
+						[this-out (this-out-write x)]
+						[this-err (this-err-write x)]))])
+			(old value port))
+		      (old value port)))))
 	     
-	     (mred:event-dispatch-handler
-	      (rec drscheme-event-dispatch-handler
-		   (lambda (eventspace)
-		     (mzlib:thread:dynamic-disable-break
-		      (lambda ()
-			(when (eq? eventspace user-eventspace)
-			  
-			  (semaphore-wait running-semaphore)
-			  (hash-table-put! ht eventspace
-					   (+ 1 (hash-table-get ht eventspace (lambda () 0))))
-			  (when (= 1 (hash-table-get ht eventspace))
-			    (set! running-events (+ 1 running-events))
-			    (reset-break-state)
-			    (semaphore-post event-semaphore))
-			  (semaphore-post running-semaphore)
-			  
-			  
-			  (protect-user-evaluation
-			   void
-			   (lambda ()
-			     (mzlib:thread:dynamic-enable-break
-			      (lambda ()
-				(primitive-dispatch-handler eventspace)))))
-			  
-			  (semaphore-wait running-semaphore)
-			  (hash-table-put! ht eventspace (max 0 (- (hash-table-get ht eventspace (lambda () 0)) 1)))
-			  (when (= 0 (hash-table-get ht eventspace))
-			    (set! running-events (- running-events 1)))
-			  (semaphore-post running-semaphore)
-			  (update-running)))))))))])
+	     (print-convert:current-print-convert-hook
+	      (lambda (expr basic-convert sub-convert)
+		(let ([ans (if (is-a? expr mred:snip%)
+			       expr
+			       (basic-convert expr))])
+		  ans)))
+	     
+	     (current-load
+	      (let ([userspace-load (current-load)])
+		(rec drscheme-load-handler
+		     (lambda (filename)
+		       (unless (string? filename)
+			 (raise (make-exn:application:arity
+				 (format "drscheme-load-handler: expects argument of type <string>; given: ~e" filename)
+				 ((debug-info-handler))
+				 filename
+				 'string)))
+		       (if (and (basis:zodiac-vocabulary? user-setting)
+				(let* ([p (open-input-file filename)]
+				       [loc (zodiac:make-location basis:INITIAL-LINE
+								  basis:INITIAL-COLUMN
+								  basis:INITIAL-OFFSET
+								  filename)]
+				       [chars (begin0
+					       (list (read-char p) (read-char p) (read-char p) (read-char p))
+					       (close-input-port p))])
+				  (equal? chars (string->list "WXME"))))
+			   (let ([process-sexps
+				  (let ([last (list (void))])
+				    (lambda (sexp recur)
+				      (cond
+				       [(basis:process-finish? sexp) last]
+				       [else
+					(set! last
+					      (call-with-values
+					       (lambda () (basis:syntax-checking-primitive-eval sexp))
+					       (lambda x x)))
+					(recur)])))])
+			     (apply values 
+				    (let ([edit (make-object drscheme:edit:edit%)])
+				      (send edit load-file filename)
+				      (process-edit edit process-sexps
+						    0 
+						    (send edit last-position)
+						    #t))))
+			   (userspace-load filename))))))
+	     
+	     (basis:error-display/debug-handler report-located-error)
+	     
+	     (error-display-handler
+	      (rec drscheme-error-display-handler
+		   (lambda (msg)
+		     (let ([rep (exception-reporting-rep)])
+		       (mred:message-box "Debugging Error" msg)
+		       (if rep
+			   (send rep report-unlocated-error msg)
+			   (mred:message-box "Uncaught Error" msg))))))
+	     
+	     (let ([directory
+		    (let/ec k
+		      (unless (get-top-level-window)
+			(k drscheme:init:first-dir))
+		      (let*-values ([(filename) (send (ivar (get-top-level-window) definitions-edit)
+						      get-filename)]
+				    [(normalized) (if (string? filename)
+						      (mzlib:file:normalize-path filename)
+						      (k drscheme:init:first-dir))]
+				    [(base _1 _2) (split-path normalized)])
+			(or base 
+			    drscheme:init:first-dir)))])
+	       (current-directory directory))
+	     
+	     (exit-handler (lambda (arg) (shutdown-user-custodian)))
+	     
+	     ;; set all parameters before constructing eventspace
+	     ;; so that the parameters are set in the eventspace's
+	     ;; parameterization
+	     (let* ([primitive-dispatch-handler (mred:event-dispatch-handler)]
+		    [event-semaphore (make-semaphore 0)]
+		    
+		    [ht (make-hash-table-weak)]) ;; maps eventspaces to depth of nested yields (ints)
+	       
+	       (thread (rec f
+			    (lambda ()
+			      (semaphore-wait event-semaphore)
+			      (update-running)
+			      (f))))
+	       
+	       (mred:event-dispatch-handler
+		(rec drscheme-event-dispatch-handler
+		     (lambda (eventspace)
+		       (mzlib:thread:dynamic-disable-break
+			(lambda ()
+			  (when (eq? eventspace user-eventspace)
+			    
+			    (semaphore-wait running-semaphore)
+			    (hash-table-put! ht eventspace
+					     (+ 1 (hash-table-get ht eventspace (lambda () 0))))
+			    (when (= 1 (hash-table-get ht eventspace))
+			      (set! running-events (+ 1 running-events))
+			      (reset-break-state)
+			      (semaphore-post event-semaphore))
+			    (semaphore-post running-semaphore)
+			    
+			    
+			    (protect-user-evaluation
+			     void
+			     (lambda ()
+			       (mzlib:thread:dynamic-enable-break
+				(lambda ()
+				  (primitive-dispatch-handler eventspace)))))
+			    
+			    (semaphore-wait running-semaphore)
+			    (hash-table-put! ht eventspace (max 0 (- (hash-table-get ht eventspace (lambda () 0)) 1)))
+			    (when (= 0 (hash-table-get ht eventspace))
+			      (set! running-events (- running-events 1)))
+			    (semaphore-post running-semaphore)
+			    (update-running))))))))))])
 	
       (override
 	[reset-console

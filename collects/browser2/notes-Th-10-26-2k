@@ -1,0 +1,26 @@
+Notes:
+
+browser.ss
+- integrated gui-framework.ss
+- uses new classes, browser-frame% (doesn't trap Enter key) and browser-editor-canvas% (auto resize min-height)
+- History consists of two lists: backwards and forwards, each with a corresponding constant defining max length.
+  As pages are viewed, these lists accumulate up to MAX_BACK_HIST and MAX_FORW_HIST, respectively, editors containing rendered-html.  History lists are FIFO (first in, first out).
+- back button loads previously viewed page in the browser
+- forward button loads the next page in the browser's history.
+- reload button reopens and rerenders html on the page
+*- home button loads the home page in the browser
+*- print button prints the page
+*- history choice-box provides drop down list for viewing and selecting from the browser's history.
+- textfield used to enter URL to open in browser
+
+* Denotes not implemented yet.  All other buttons are somewhat functional.
+**Also, the browser initialized with blank editor, which is then rolled into history after user begins to navigate.  This can be fixed when bgcolor-text% is implemented. 
+
+bgcolor.ss
+- seems to render background color ok, however, need a way to instantiate with or without a parameter.
+
+
+
+
+
+

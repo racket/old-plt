@@ -434,9 +434,10 @@
 					   (rec restart
 						(case-lambda
 						 [(new-file)
-						  (unless (or (relative-path? file)
-							      (absolute-path? file))
-						    (raise-type-error 'restart "path string" file))
+						  (when (or (not (string? new-file))
+							    (not (or (relative-path? new-file)
+								     (absolute-path? new-file))))
+						    (raise-type-error 'restart "path string" new-file))
 						  (set! file new-file)
 						  (die)]
 						 [() (die)]))))

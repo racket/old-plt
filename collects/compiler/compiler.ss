@@ -250,7 +250,7 @@
 	    (lambda (s)
 	      (unless (and (pair? s) (list? s) (andmap string? s))
 	        (error 'compile-collection "bad sub-collection path: ~a" s))
-	      (compile-collection (append cp s) zos?))
+	      (compile-collection s zos?))
 	    (info 'compile-subcollections (lambda () null))))))))
 
  (define (compile-collection-extension collection . cp)

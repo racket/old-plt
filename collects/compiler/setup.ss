@@ -378,11 +378,10 @@
 	  (append
 	   (list cc)
 	   (map
-	    (lambda (sub)
-	      (let ([subcol (append (cc-collection cc) sub)])
-		(or
-		 (collection->cc subcol)
-		 (cannot-compile subcol))))
+	    (lambda (subcol)
+	      (or
+	       (collection->cc subcol)
+	       (cannot-compile subcol)))
 	    (call-info info 'compile-subcollections null
 		       (lambda (x)
 			 (unless (and (list? x)

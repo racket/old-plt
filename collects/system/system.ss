@@ -50,6 +50,7 @@
 		      dir))
 	       (list
 		;(build-path mred:system-source-directory 'up "collects")
+		(build-path mred:plt-home-directory "mzscheme" "collects")
 		(build-path mred:system-source-directory 'up "mzscheme" "collects")
 		(build-path mred:system-source-directory 'up 'up "mzscheme" "collects")
 		(build-path (let ([v (getenv "PLTHOME")])

@@ -291,16 +291,6 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid, int famil
 	  if (!font)
 	    font = wxLoadQueryFont(i, fontid,  wxNORMAL, wxNORMAL_WEIGHT, underlined);
 	}
-
-	// Try default family
-	if (!font && fontid != wxDEFAULT)
-	    font = wxLoadQueryFont(point_size, wxDEFAULT, style, weight, underlined);
-	
-	// Bogus font
-	if (!font)
-	    font = wxLoadQueryFont(120, wxDEFAULT, wxNORMAL, wxNORMAL_WEIGHT,
-				    underlined);
-
       }
       
       if (font || tried_once)

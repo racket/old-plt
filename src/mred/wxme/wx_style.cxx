@@ -211,13 +211,10 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
   return this;
 }
 
-wxStyleDelta *wxStyleDelta::SetDeltaFace(char *name)
+wxStyleDelta *wxStyleDelta::SetDeltaFace(char *name, int fam)
 {
-  int id;
-
   face = copystring(name);
-  id = FONT_DIRECTORY->FindOrCreateFontId(name, wxDEFAULT);
-  family = FONT_DIRECTORY->GetFamily(id);
+  family = fam;
 
   return this;
 }
@@ -351,13 +348,11 @@ Bool wxStyleDelta::Collapse(wxStyleDelta *deltaIn)
 		     aabb + (int)(ambb * babb), 
 		     aabg + (int)(ambg * babg));
 
-  if (family == wxBASE && !face) {
+  if (family == wxBASE) {
     family = deltaIn->family;
-    if (deltaIn->face) {
-      char *str;
-      str = copystring(deltaIn->face);
-      face = str;
-    }
+  }
+  if (!face) {
+    face = deltaIn->face;
   }
 
   if (styleOn == wxBASE && styleOff == wxBASE) {
@@ -418,8 +413,9 @@ Bool wxStyleDelta::Equal(wxStyleDelta *deltaIn)
   deltaIn->foregroundAdd->Get(&bafr, &bafb, &bafg);
   deltaIn->backgroundAdd->Get(&babr, &babb, &babg);
 
-  return (((!face && !deltaIn->face && family == deltaIn->family)
-	   || (face && deltaIn->face && !strcmp(face, deltaIn->face)))
+  return ((family == deltaIn->family)
+	  && ((face && deltaIn->face && !strcmp(face, deltaIn->face))
+	      || (!face && !deltaIn->face))
 	  && sizeMult == deltaIn->sizeMult
 	  && sizeAdd == deltaIn->sizeAdd
 	  && weightOn == deltaIn->weightOn
@@ -554,11 +550,17 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
 
   if (!nonjoin_delta->face && nonjoin_delta->family == wxBASE) {
     fontid = base->font->GetFontId();
-  } else if (nonjoin_delta->face)
-    fontid = FONT_DIRECTORY->FindOrCreateFontId(nonjoin_delta->face, 
-						nonjoin_delta->family);
-  else
-    fontid = nonjoin_delta->family;
+  } else {
+    int fam;
+    fam = nonjoin_delta->family;
+    if (fam == wxBASE)
+      fam = base->font->GetFamily();
+
+    if (nonjoin_delta->face)
+      fontid = FONT_DIRECTORY->FindOrCreateFontId(nonjoin_delta->face, fam);
+    else
+      fontid = fam;
+  }
 
   style = base->font->GetStyle();
   match = (style == nonjoin_delta->styleOff);

@@ -48,11 +48,12 @@ mkbordyn.bat script requires bcc23.exe.)
 
 Mac OS X:
 
- First install the Mac OS X Developer Tools from Apple. After
+ First, install the Mac OS X Developer Tools from Apple. After
  installing, run `fixPrecomps' to speed up compilations. (You can
- safely run `fixPrecomps' multiple times.)
+ safely run `fixPrecomps' multiple times. You may need to run it as
+ root or with `sudo'.)
 
- Then follow the Unix instructions below, but note the following:
+ Then, follow the Unix instructions below, but note the following:
 
    * The MzScheme build creates a framework, PLT_MzScheme.framework,
      which is installed into ~/Library/Frameworks. This framework is
@@ -67,9 +68,9 @@ Mac OS X:
      you may accumlate many old, unused versions of the framework in
      ~/Library/Frameworks.
 
-   * The --enable-dynlib flag for `configure' is not supported for Mac
-     OS X, because it is redundant (i.e., builds create and use
-     frameworks by default).
+   * The --enable-shared flag for `configure' is redundant (i.e.,
+     builds create and use frameworks by default), and
+     --disable-shared is not supported.
 
    * To build an X11-based MrEd, run `configure' with the
      --enable-xonx flag. Frameworks are not used for such builds. The
@@ -165,6 +166,17 @@ Mac OS Classic (PowerPC only):
     compiler for the host platform (for building binaries to execute
     during the build process).
 
+    If you re-run `configure' after running `make', then products of
+    the `make' may be incorrect due to changes in the compiler command
+    line. To be safe, run `make clean' each time after running
+    `configure'.
+
+    When building for multiple platforms or configurations out of the
+    same source directory, beware of cached `configure' information in
+    `config.cache'. Avoid this problem entirely by using a separate
+    build directory (but the same source) for each platform or
+    configuration.
+
  2. Run `make'.
 
     With Cygwin, use `make --unix'.
@@ -187,7 +199,8 @@ Mac OS Classic (PowerPC only):
     created, or because the target directory is not the one you
     wanted, then you can run `configure' again with a new --prefix
     value, then try step 3 again. After changing the --prefix value,
-    it is not necessary to repeat steps 1 or 2.
+    it is sometimes not necessary to repeat steps 1 or 2. (Try it and
+    find out...)
 
     If you build frequently from the CVS-based sources with
     --enabled-shared, beware that you may accumlate many old, unused
@@ -208,7 +221,8 @@ Mac OS Classic (PowerPC only):
     builds, manually run plt/bin/setup-plt.
 
 After an "in-place" install without CVS, the plt/src directory is no
-longer needed, and it can be safely deleted.
+longer needed, and it can be safely deleted. Build information is
+recorded in plt/lib/buildinfo.
 
 If you move the plt tree (for a build without dynamic libraries), run
 the script ./install in the relocated plt directory.
@@ -348,10 +362,3 @@ If you modify MzScheme and change any primitive syntax or the
 collection of built-in identifers, be sure to turn off
 USE_COMPILED_MACROS in schminc.h. Otherwise, MzScheme won't start.
 See schminc.h for details.
-
-Guile Compatibility Library
----------------------------
-
-In the mzscheme/ directory, `make libguile' produces a libguile.a
-library that implements an ancient high-level guile interface. See
-mzscheme/libguile/README.

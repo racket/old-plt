@@ -201,13 +201,13 @@ CLEANDIR_wx_mac = ../wxmac/src
 
 clean:
 	cd $(CLEANDIR_@WXVARIANT@); $(MAKE) clean
-	rm -f *.@LTO@ *.d core
+	rm -f *.@LTO@ *.d core mred mred3m
 	rm -f gc2/*.@LTO@ gc2/xsrc/*.c gc2/xsrc/*.cc
 	cd wxme; $(MAKE) clean
 	cd wxs; $(MAKE) clean
-	cd ../wxcommon/jpeg; $(MAKE) clean
-	cd ../wxcommon/libpng; $(MAKE) clean
-	cd ../wxcommon/zlib; $(MAKE) clean
+	if [ -d ../wxcommon/jpeg ] ; then cd ../wxcommon/jpeg; $(MAKE) clean ; fi
+	if [ -d ../wxcommon/libpng ] ; then cd ../wxcommon/libpng; $(MAKE) clean ; fi
+	if [ -d ../wxcommon/zlib ] ; then cd ../wxcommon/zlib; $(MAKE) clean ; fi
 	rm -f $(WXLIBS_@WXVARIANT@)
 	$(MAKE) clean_@WXVARIANT@
 

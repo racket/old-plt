@@ -1313,8 +1313,11 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
 #endif
 
   this_thread = scheme_current_thread;
-  if (!this_thread->name)
-    this_thread->name = scheme_intern_symbol("handler");
+  if (!this_thread->name) {
+    Scheme_Object *tn;
+    tn = scheme_intern_symbol("handler");
+    this_thread->name = tn;
+  }
   c->handler_running = this_thread;
   this_thread->on_kill = CAST_TOK on_handler_killed;
   this_thread->kill_data = c;
@@ -1512,7 +1515,8 @@ void wxDoEvents()
       cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
       wxREGGLOB(user_main_thread);
       user_main_thread = (Scheme_Thread *)scheme_thread(cp, c->main_config);
-      user_main_thread->name = scheme_intern_symbol("mred");
+      cp = scheme_intern_symbol("mred");
+      user_main_thread->name = cp;
     }
 
 #if WINDOW_STDIO

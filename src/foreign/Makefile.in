@@ -31,3 +31,7 @@ lightning.@LTO@: $(srcdir)/lightning.c \
            $(srcdir)/../mzscheme/src/schemef.h \
            $(srcdir)/../mzscheme/src/schvers.h
 	$(CC) $(CFLAGS) -c $(srcdir)/lightning.c -o lightning.@LTO@
+
+clean:
+	rm -f foreign.@LTO@ lightning.@LTO@
+	cd gcc/libffi; $(MAKE) clean

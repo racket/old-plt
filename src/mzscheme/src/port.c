@@ -5108,6 +5108,7 @@ static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array,
    complexity. */
 
 static void default_sleep(float v, void *fds)
+/* Signals are blocked */
 {
 #ifdef USE_OSKIT_CONSOLE
   /* Don't really sleep; keep polling the keyboard: */

@@ -1274,12 +1274,15 @@ static void select_process(Scheme_Process *start_process)
     }
 
     if (!new_process && !start_process) {
-      /* The main thread must blocked on a nestee, and
-	 everything else is suspended. */
-      do_atomic++;
-      check_sleep(1, 1);
-      --do_atomic;
-      return;
+      /* The main thread must be blocked on a nestee, and everything
+	 else is suspended. But we have to go somewhere.  Weakly
+	 resume the main thread's innermost nestee. */
+      new_process = scheme_main_process;
+      while (new_process->nestee) {
+	new_process = new_process->nestee;
+      }
+      scheme_weak_resume_thread(new_process);
+      break;
     } 
     start_process = NULL;
   } while (!new_process);
@@ -1872,6 +1875,7 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 
 #ifndef MZ_REAL_THREADS
 static int check_sleep(int need_activity, int sleep_now)
+/* Signals should be suspended */
 {
   Scheme_Process *p, *p2;
   int end_with_act;
@@ -1970,15 +1974,16 @@ static int check_sleep(int need_activity, int sleep_now)
       scheme_sleep(max_sleep_time, fds);
     else
       scheme_wakeup_on_input(fds);
-    
+
     return 1;
   }
-  
+
   return 0;
 }
 #endif
 
 void scheme_check_threads(void)
+/* Signals should be suspended. */
 {
 #ifndef MZ_REAL_THREADS
   scheme_current_process->suspend_break++;
@@ -2020,7 +2025,7 @@ static Scheme_Object *raise_user_break(int argc, Scheme_Object **argv)
   return scheme_void;
 }
 
-static void signal_break(Scheme_Process *p)
+static void raise_break(Scheme_Process *p)
 {
   int block_descriptor;
   Scheme_Object *blocker; /* semaphore or port */
@@ -2158,11 +2163,17 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   else
     start = 0; /* compiler-friendly */
 
+ start_sleep_check:
+
+  scheme_suspend_all_signals();
+
   if (!p->external_break && !p->next && scheme_check_for_break && scheme_check_for_break())
     p->external_break = 1;
 
   if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
-    signal_break(p);
+    scheme_resume_all_signals();
+    raise_break(p);
+    goto start_sleep_check;
   }
   
  swap_or_sleep:
@@ -2263,6 +2274,8 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 #endif
 
   if (next) {
+    scheme_resume_all_signals();
+
     if (!p->next) {
       /* This is the main process */
       scheme_ensure_stack_start(p, (void *)&start);
@@ -2273,6 +2286,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     /* If all processes are blocked, check for total process sleeping: */
     if (p->block_descriptor != NOT_BLOCKED)
       check_sleep(1, 1);
+    scheme_resume_all_signals();
   }
 
   if (p->block_descriptor == SLEEP_BLOCKED) {
@@ -2282,41 +2296,8 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     p->sleep_time = 0.0;
   }
 #else
-  if ((sleep_time > 0) && scheme_sleep)
-    scheme_sleep(sleep_time, NULL);
-#endif
-
-#ifndef MZ_REAL_THREADS
-  /* Killed while I was asleep? */
-  if (p->running & MZTHREAD_KILLED) {
-    /* This thread is dead! Give up now. */
-    if (p->running & MZTHREAD_NEED_KILL_CLEANUP) {
-      /* The thread needs to clean up. It will block immediately to die. */
-      return;
-    } else {
-      exit_or_escape(p);
-    }
-  }
-#else
-  if (!p->running || (p->running & MZTHREAD_KILLED)) {
-    exit_or_escape(p);
-  }
-#endif
-
-  /* Check for external break again after swap or sleep */
-  if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
-    signal_break(p);
-  }
-  
-  if (sleep_time > 0) {
-    d = (scheme_get_milliseconds() - start);
-    if (d < 0)
-      d = -d;
-    if (d < (sleep_time * 1000))
-      goto swap_or_sleep;
-  }
-
-#if defined(MZ_REAL_THREADS) && (defined(USING_FDS))
+  /* MZ_REAL_THREADS */
+# if defined(USING_FDS)
   if ((p->block_descriptor == PORT_BLOCKED)
       || (p->block_descriptor == -1)) {
     DECL_FDSET(set, 3);
@@ -2344,8 +2325,44 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     
     if (scheme_sleep)
       scheme_sleep(sleep_time, fds);
+  } else 
+# endif
+    if ((sleep_time > 0) && scheme_sleep)
+      scheme_sleep(sleep_time, NULL);
+  scheme_resume_all_signals();
+#endif
+
+#ifndef MZ_REAL_THREADS
+  /* Killed while I was asleep? */
+  if (p->running & MZTHREAD_KILLED) {
+    /* This thread is dead! Give up now. */
+    if (p->running & MZTHREAD_NEED_KILL_CLEANUP) {
+      /* The thread needs to clean up. It will block immediately to die. */
+      return;
+    } else {
+      exit_or_escape(p);
+    }
+  }
+#else
+  if (!p->running || (p->running & MZTHREAD_KILLED)) {
+    exit_or_escape(p);
   }
 #endif
+
+  /* Check for external break again after swap or sleep */
+  if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
+    raise_break(p);
+  }
+  
+  if (sleep_time > 0) {
+    d = (scheme_get_milliseconds() - start);
+    if (d < 0)
+      d = -d;
+    if (d < (sleep_time * 1000)) {
+      scheme_suspend_all_signals();
+      goto swap_or_sleep;
+    }
+  }
 
 #ifndef MZ_REAL_THREADS
   if (do_atomic)

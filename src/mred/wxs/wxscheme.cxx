@@ -1092,6 +1092,7 @@ char *wx_get_mac_font_name(FMFontFamily fam, unsigned char *fname, int *_l)
       s = new WXGC_ATOMIC char[l];
     l = scheme_utf8_encode((unsigned int *)us_buf, 0, ulen,
 			   (unsigned char *)s, 0, 1 /* UTF-16 */);
+    s[l] = 0;
   }
 
   *_l = l;

@@ -3713,7 +3713,7 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
     for (i = start; i < end; i++) {
       if (utf16) {
 	wc = ((unsigned short *)us)[i];
-	if ((wc & 0xD800) == 0xD800) {
+	if ((wc & 0xF800) == 0xD800) {
 	  /* Unparse surrogates. We assume that the surrogates are
 	     well formed. */
 	  i++;
@@ -3744,7 +3744,7 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
     for (i = start; i < end; i++) {
       if (utf16) {
 	wc = ((unsigned short *)us)[i];
-	if ((wc & 0xD800) == 0xD800) {
+	if ((wc & 0xF800) == 0xD800) {
 	  /* Unparse surrogates. We assume that the surrogates are
 	     well formed. */
 	  i++;
@@ -3837,8 +3837,8 @@ unsigned short *scheme_ucs4_to_utf16(const mzchar *text, int start, int end,
   for (i = start, j = 0; i < end; i++) {
     v = text[i];
     if (v > 0xFFFF) {
-      utf16[j++] = 0xD8000000 | ((v >> 10) & 0x3FF);
-      utf16[j++] = 0xDC000000 | (v & 0x3FF);
+      utf16[j++] = 0xD8000 | ((v >> 10) & 0x3FF);
+      utf16[j++] = 0xDC000 | (v & 0x3FF);
     } else
       utf16[j++] = v;
   }
@@ -3857,7 +3857,7 @@ mzchar *scheme_utf16_to_ucs4(const unsigned short *text, int start, int end,
 
   for (i = start, j = 0; i < end; i++) {
     wc = text[i];
-    if ((wc & 0xD800) == 0xD800) {
+    if ((wc & 0xF800) == 0xD800) {
       i++;
     }
     j++;
@@ -3868,13 +3868,9 @@ mzchar *scheme_utf16_to_ucs4(const unsigned short *text, int start, int end,
 
   for (i = start, j = 0; i < end; i++) {
     wc = text[i];
-    if ((wc & 0xD800) == 0xD800) {
+    if ((wc & 0xF800) == 0xD800) {
       i++;
-#ifdef SCHEME_BIG_ENDIAN
       wc = ((wc & 0x3FF) << 10) + ((((unsigned short *)text)[i]) & 0x3FF);
-#else
-      wc = (wc & 0x3FF) + (((((unsigned short *)text)[i]) & 0x3FF) << 10);
-#endif
       wc += 0x100000;
     }
     buf[j++] = wc;

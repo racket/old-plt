@@ -1575,6 +1575,8 @@
 	  (if (stx-memq p k) 
 	      '() 
 	      (list p))]
+	 [(stx-vector? p #f)
+	  (sub (vector->list (syntax-e p)) use-ellipses?)]
 	 [else '()]))))
 
   ;; Checks whether the given nesting matches a nesting in the

@@ -153,7 +153,7 @@
 (err/rt-test (parse-command-line "test" #() (list (list 'multi (list (list "--xi") void '("" a)))) void '("arg")))
 (err/rt-test (parse-command-line "test" #() null (lambda () null) null))
 
-(err/rt-test (parse-command-line "test" #() null (lambda (x y) null) null) exn:user?)
+(err/rt-test (parse-command-line "test" #() null (lambda (x y) null) null) exn:fail?)
 
 (test (void) 'cmdline (command-line "something" #("-ab")
 				    (once-each

@@ -739,7 +739,7 @@ int scheme_is_compiled_procedure(Scheme_Object *o, int can_be_closed)
 }
 
 int scheme_get_eval_type(Scheme_Object *obj)
-     /* Categories for shirt-cutting recursive calls to the evaluator */
+     /* Categories for short-cutting recursive calls to the evaluator */
 {
   Scheme_Type type;
 

@@ -1315,6 +1315,8 @@
 "(if(stx-memq p k) "
 " '() "
 "(list p)))"
+"((stx-vector? p #f)"
+"(sub(vector->list(syntax-e p)) use-ellipses?))"
 "(else '())))))"
 "(-define ellipsis-sub-env"
 "(lambda(nesting proto-r src detail-src)"

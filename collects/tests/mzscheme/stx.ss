@@ -69,6 +69,31 @@
 (test 'no 'dot-literal (syntax-case #'(1 2) () [(_ . #t) 'yes] [_ 'no]))
 (test 'yes 'dot-literal (syntax-case #'(1 . #t) () [(_ . #t) 'yes] [_ 'no]))
 
+(test '(((x 3) (y 3) (z 3)) ;; each line should be x y z, not x x x...
+	((x 4) (y 4) (z 4))
+	((x 5) (y 5) (z 5)))
+      'ellipses
+      (syntax-object->datum (syntax-case '(_ 1 (x y z) ((3 3 3) (4 4 4) (5 5 5))) () 
+			      [(_ x (a ...) ((b ...) ...)) #'(((a b) ...) ...)])))
+
+(test '(((x y z 3) (x y z 3) (x y z 3))
+	((x y z 4) (x y z 4) (x y z 4))
+	((x y z 5) (x y z 5) (x y z 5)))
+      'ellipses
+      (syntax-object->datum (syntax-case '(_ 1 (x y z) ((3 3 3) (4 4 4) (5 5 5))) () 
+			      [(_ x (a ...) ((b ...) ...)) #'(((a ... b) ...) ...)])))
+
+
+(test '((1 z) (2 w) (x z) (y w))
+      'ellipses
+      (syntax-object->datum (syntax-case '(((1 2) (x y)) (z w)) () 
+			      [(((a ...) ...) (b ...)) #'((a b) ... ...)])))
+
+(test '(#(1) #(2 3))
+      'ellipses+vector
+      (syntax-object->datum 
+       (syntax-case '((1) (2 3)) () [((a ...) ...) #'(#(a ...) ...)])))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test basic expansion and property propagation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

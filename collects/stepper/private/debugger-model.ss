@@ -73,6 +73,7 @@
         
         (let ([ns (current-namespace)]
               [break-module-name ((current-module-name-resolver) '(lib "break.ss" "stepper") #f #f)])
+          (fprintf (current-error-port) "break-module-name: ~v\n" break-module-name)
           (parameterize ([current-custodian user-custodian])
             (program-expander
              (lambda ()

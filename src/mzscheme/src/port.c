@@ -1187,7 +1187,7 @@ static Scheme_Object *quick_plus(Scheme_Object *s, long v)
     k = SCHEME_INT_VAL(s);
     if ((k < 0x1000000) && (v < 0x1000000)) {
       k += v;
-      return scheme_make_integer(v);
+      return scheme_make_integer(k);
     }
   }
 

@@ -260,6 +260,10 @@ void wxSnip::OwnCaret(Bool)
 {
 }
 
+void wxSnip::BlinkCaret(wxDC *, float, float)
+{
+}
+
 void wxSnip::SizeCacheInvalid(void)
 {
 }

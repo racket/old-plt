@@ -173,6 +173,8 @@ wxMediaEdit::wxMediaEdit(float spacing, float *tabstops, int numtabs)
 
   keepAnchorStreak = FALSE;
 
+  caretBlinked = FALSE;
+
   changed = FALSE;
 
 #if ALLOW_X_STYLE_SELECTION
@@ -550,6 +552,30 @@ void wxMediaEdit::OwnCaret(Bool ownit)
   if (DoOwnCaret(ownit)) {
     NeedCaretRefresh();
     OnFocus(ownit);
+  }
+}
+
+void wxMediaEdit::BlinkCaret()
+{
+  if (caretSnip) {
+    wxDC *dc;
+    float dx, dy;
+    if ((dc = admin->GetDC(&dx, &dy))) {
+      float x, y;
+      if (GetSnipLocation(caretSnip, &x, &y))
+	caretSnip->BlinkCaret(dc, x - dx, y - dy);
+    }
+  } else {
+    if ((startpos == endpos) 
+	&& !delayRefresh 
+	&& !flash 
+	&& hiliteOn) {
+      caretBlinked  = !caretBlinked;
+      if (caretBlinked)
+	CaretOff();
+      else
+	CaretOn();
+    }
   }
 }
 

@@ -145,6 +145,7 @@ class wxMediaBuffer : public wxObject
   virtual void Refresh(float localx, float localy, float w, float h, 
 		       Bool show_caret) = 0;
   virtual void OwnCaret(Bool ownit) = 0;
+  virtual void BlinkCaret() = 0;
   virtual void SizeCacheInvalid(void) = 0;
   virtual void GetExtent(float *w, float *h) = 0;
 
@@ -328,6 +329,7 @@ Bool wxmbWriteSnipsToFile(wxMediaStreamOut &, wxStyleList *,
 
 class wxCanvasMediaAdmin;
 class SimpleScroll;
+class wxTimer;
 
 class wxMediaCanvas : public wxCanvas
 {
@@ -336,6 +338,7 @@ class wxMediaCanvas : public wxCanvas
 
   wxCanvasMediaAdmin *admin;
   wxMediaBuffer *media;
+  wxTimer *blinkTimer;
   Bool noloop;
   long hpixelsPerScroll;
   int givenHScrollsPerPage;
@@ -401,6 +404,8 @@ class wxMediaCanvas : public wxCanvas
 			     int x_page, int y_page, int x_pos=0, int y_pos=0,
 			     Bool setVirtualSize = TRUE);
 #endif
+
+  void BlinkCaret();
 
   void ForceDisplayFocus(Bool on);
 

@@ -455,6 +455,7 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void OnLocalChar(class wxKeyEvent& x0);
   void OnLocalEvent(class wxMouseEvent& x0);
   void SizeCacheInvalid();
+  void BlinkCaret();
   void OwnCaret(Bool x0);
   void Refresh(float x0, float x1, float x2, float x3, Bool x4);
   class wxCursor* AdjustCursor(class wxMouseEvent& x0);
@@ -1649,6 +1650,38 @@ void os_wxMediaBuffer::SizeCacheInvalid()
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "size-cache-invalid", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+return;
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxMediaBuffer::BlinkCaret()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "blink-caret", &mcache);
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
@@ -3966,6 +3999,25 @@ static Scheme_Object *os_wxMediaBufferSizeCacheInvalid(Scheme_Object *obj, int n
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaBufferBlinkCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->BlinkCaret();
+  else
+    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->BlinkCaret();
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaBufferOwnCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4286,7 +4338,7 @@ if (os_wxMediaBuffer_class) {
     objscheme_add_global_class(os_wxMediaBuffer_class, "editor%", env);
     objscheme_add_global_interface(os_wxMediaBuffer_interface, "editor" "<%>", env);
 } else {
-  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 108);
+  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 109);
 
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location", os_wxMediaBufferwxbDCToBuffer, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location", os_wxMediaBufferwxbBufferToDC, 2, 2);
@@ -4381,6 +4433,7 @@ if (os_wxMediaBuffer_class) {
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-local-char", os_wxMediaBufferOnLocalChar, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-local-event", os_wxMediaBufferOnLocalEvent, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "size-cache-invalid", os_wxMediaBufferSizeCacheInvalid, 0, 0);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "blink-caret", os_wxMediaBufferBlinkCaret, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "own-caret", os_wxMediaBufferOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "refresh", os_wxMediaBufferRefresh, 5, 5);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "adjust-cursor", os_wxMediaBufferAdjustCursor, 1, 1);

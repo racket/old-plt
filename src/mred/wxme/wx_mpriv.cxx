@@ -2327,6 +2327,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
 
   caretLocationX = -1;
   caretOn = FALSE;
+  caretBlinked = FALSE;
 
   if (ReadyOffscreen(width, height))
     drawCachedInBitmap = FALSE;
@@ -2492,13 +2493,17 @@ void wxMediaEdit::RefreshByLineDemand(void)
 void wxMediaEdit::NeedCaretRefresh(void)
 {
   if (!admin || (admin->standard <= 0) || delayRefresh 
-      || startpos != endpos || flash || !hiliteOn)
+      || startpos != endpos || flash || !hiliteOn) {
+    caretBlinked = FALSE;
     NeedRefresh(startpos, endpos);
-  else if (ownCaret) {
-    if (hiliteOn)
-      CaretOn();
-  } else
-    CaretOff();
+  } else if (ownCaret) {
+    caretBlinked = FALSE;
+    CaretOn();
+  } else {
+    if (!caretBlinked)
+      CaretOff();
+    caretBlinked = FALSE;
+  }
 }
 
 void wxMediaEdit::CalcCaretLocation(void)

@@ -1839,6 +1839,19 @@ void wxMediaPasteboard::OwnCaret(Bool ownit)
   }
 }
 
+void wxMediaPasteboard::BlinkCaret()
+{
+  if (caretSnip) {
+    wxDC *dc;
+    float dx, dy;
+    if ((dc = admin->GetDC(&dx, &dy))) {
+      float x, y;
+      if (GetSnipLocation(caretSnip, &x, &y))
+	caretSnip->BlinkCaret(dc, x - dx, y - dy);
+    }
+  }
+}
+
 void wxMediaPasteboard::SizeCacheInvalid(void)
 {
   sizeCacheInvalid = TRUE;

@@ -17,6 +17,7 @@ class wxMediaPasteboard : public wxMediaBuffer
   virtual void Refresh(float localx, float localy, float w, float h, 
 		       int show_caret);
   virtual void OwnCaret(Bool ownit);
+  virtual void BlinkCaret();
   virtual void SizeCacheInvalid(void);
   void GetExtent(float *w, float *h);
 

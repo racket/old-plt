@@ -304,6 +304,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void OnLocalChar(class wxKeyEvent& x0);
   void OnLocalEvent(class wxMouseEvent& x0);
   void SizeCacheInvalid();
+  void BlinkCaret();
   void OwnCaret(Bool x0);
   void Refresh(float x0, float x1, float x2, float x3, Bool x4);
   class wxCursor* AdjustCursor(class wxMouseEvent& x0);
@@ -2144,6 +2145,38 @@ void os_wxMediaPasteboard::SizeCacheInvalid()
   } else sj = 1;
   if (sj) {
 wxMediaPasteboard::SizeCacheInvalid();
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxMediaPasteboard::BlinkCaret()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "blink-caret", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxMediaPasteboard::BlinkCaret();
   } else {
   
   
@@ -4434,6 +4467,25 @@ static Scheme_Object *os_wxMediaPasteboardSizeCacheInvalid(Scheme_Object *obj, i
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaPasteboardBlinkCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::BlinkCaret();
+  else
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->BlinkCaret();
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOwnCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4706,7 +4758,7 @@ void objscheme_setup_wxMediaPasteboard(void *env)
 if (os_wxMediaPasteboard_class) {
     objscheme_add_global_class(os_wxMediaPasteboard_class, "pasteboard%", env);
 } else {
-  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "pasteboard%", "editor%", os_wxMediaPasteboard_ConstructScheme, 95);
+  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "pasteboard%", "editor%", os_wxMediaPasteboard_ConstructScheme, 96);
 
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "set-scroll-step", os_wxMediaPasteboardSetScrollStep, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-scroll-step", os_wxMediaPasteboardGetScrollStep, 0, 0);
@@ -4792,6 +4844,7 @@ if (os_wxMediaPasteboard_class) {
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-local-char", os_wxMediaPasteboardOnLocalChar, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-local-event", os_wxMediaPasteboardOnLocalEvent, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "size-cache-invalid", os_wxMediaPasteboardSizeCacheInvalid, 0, 0);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "blink-caret", os_wxMediaPasteboardBlinkCaret, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "own-caret", os_wxMediaPasteboardOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "refresh", os_wxMediaPasteboardRefresh, 5, 5);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "adjust-cursor", os_wxMediaPasteboardAdjustCursor, 1, 1);

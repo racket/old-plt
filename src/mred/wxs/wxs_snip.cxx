@@ -147,6 +147,7 @@ class os_wxSnip : public wxSnip {
   Bool Match(class wxSnip* x0);
   void DoFont(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
+  void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
   class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
   void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5);
@@ -370,6 +371,41 @@ wxSnip::DoEdit(x0, x1, x2);
   p[0] = scheme_make_integer(x0);
   p[1] = (x1 ? scheme_true : scheme_false);
   p[2] = scheme_make_integer(x2);
+  
+
+  v = scheme_apply(method, 3, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
+{
+  Scheme_Object *p[3];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSnip_class, "blink-caret", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxSnip::BlinkCaret(x0, x1, x2);
+  } else {
+  
+  p[0] = objscheme_bundle_wxDC(x0);
+  p[1] = scheme_make_double(x1);
+  p[2] = scheme_make_double(x2);
   
 
   v = scheme_apply(method, 3, p);
@@ -1006,6 +1042,31 @@ static Scheme_Object *os_wxSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Object 
 }
 
 #pragma argsused
+static Scheme_Object *os_wxSnipBlinkCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxDC* x0;
+  float x1;
+  float x2;
+
+  
+  x0 = objscheme_unbundle_wxDC(p[0], "blink-caret in snip%", 0);
+  x1 = objscheme_unbundle_float(p[1], "blink-caret in snip%");
+  x2 = objscheme_unbundle_float(p[2], "blink-caret in snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::BlinkCaret(x0, x1, x2);
+  else
+    ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->BlinkCaret(x0, x1, x2);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxSnipOwnCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1614,7 +1675,7 @@ void objscheme_setup_wxSnip(void *env)
 if (os_wxSnip_class) {
     objscheme_add_global_class(os_wxSnip_class, "snip%", env);
 } else {
-  os_wxSnip_class = objscheme_def_prim_class(env, "snip%", "object%", os_wxSnip_ConstructScheme, 31);
+  os_wxSnip_class = objscheme_def_prim_class(env, "snip%", "object%", os_wxSnip_ConstructScheme, 32);
 
  scheme_add_method_w_arity(os_wxSnip_class, "previous", os_wxSnipPrevious, 0, 0);
  scheme_add_method_w_arity(os_wxSnip_class, "next", os_wxSnipNext, 0, 0);
@@ -1624,6 +1685,7 @@ if (os_wxSnip_class) {
  scheme_add_method_w_arity(os_wxSnip_class, "match?", os_wxSnipMatch, 1, 1);
  scheme_add_method_w_arity(os_wxSnip_class, "do-font", os_wxSnipDoFont, 1, 2);
  scheme_add_method_w_arity(os_wxSnip_class, "do-edit-operation", os_wxSnipDoEdit, 1, 3);
+ scheme_add_method_w_arity(os_wxSnip_class, "blink-caret", os_wxSnipBlinkCaret, 3, 3);
  scheme_add_method_w_arity(os_wxSnip_class, "own-caret", os_wxSnipOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxSnip_class, "adjust-cursor", os_wxSnipAdjustCursor, 6, 6);
  scheme_add_method_w_arity(os_wxSnip_class, "on-char", os_wxSnipOnChar, 6, 6);
@@ -1731,6 +1793,7 @@ class os_wxTextSnip : public wxTextSnip {
   Bool Match(class wxSnip* x0);
   void DoFont(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
+  void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
   class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
   void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5);
@@ -1954,6 +2017,41 @@ wxTextSnip::DoEdit(x0, x1, x2);
   p[0] = scheme_make_integer(x0);
   p[1] = (x1 ? scheme_true : scheme_false);
   p[2] = scheme_make_integer(x2);
+  
+
+  v = scheme_apply(method, 3, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxTextSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
+{
+  Scheme_Object *p[3];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTextSnip_class, "blink-caret", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxTextSnip::BlinkCaret(x0, x1, x2);
+  } else {
+  
+  p[0] = objscheme_bundle_wxDC(x0);
+  p[1] = scheme_make_double(x1);
+  p[2] = scheme_make_double(x2);
   
 
   v = scheme_apply(method, 3, p);
@@ -2601,6 +2699,31 @@ static Scheme_Object *os_wxTextSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Obj
 }
 
 #pragma argsused
+static Scheme_Object *os_wxTextSnipBlinkCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxDC* x0;
+  float x1;
+  float x2;
+
+  
+  x0 = objscheme_unbundle_wxDC(p[0], "blink-caret in text-snip%", 0);
+  x1 = objscheme_unbundle_float(p[1], "blink-caret in text-snip%");
+  x2 = objscheme_unbundle_float(p[2], "blink-caret in text-snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::BlinkCaret(x0, x1, x2);
+  else
+    ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->BlinkCaret(x0, x1, x2);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxTextSnipOwnCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3031,7 +3154,7 @@ void objscheme_setup_wxTextSnip(void *env)
 if (os_wxTextSnip_class) {
     objscheme_add_global_class(os_wxTextSnip_class, "text-snip%", env);
 } else {
-  os_wxTextSnip_class = objscheme_def_prim_class(env, "text-snip%", "snip%", os_wxTextSnip_ConstructScheme, 20);
+  os_wxTextSnip_class = objscheme_def_prim_class(env, "text-snip%", "snip%", os_wxTextSnip_ConstructScheme, 21);
 
  scheme_add_method_w_arity(os_wxTextSnip_class, "read", os_wxTextSnipRead, 2, 2);
  scheme_add_method_w_arity(os_wxTextSnip_class, "insert", os_wxTextSnipInsert, 2, 3);
@@ -3041,6 +3164,7 @@ if (os_wxTextSnip_class) {
  scheme_add_method_w_arity(os_wxTextSnip_class, "match?", os_wxTextSnipMatch, 1, 1);
  scheme_add_method_w_arity(os_wxTextSnip_class, "do-font", os_wxTextSnipDoFont, 1, 2);
  scheme_add_method_w_arity(os_wxTextSnip_class, "do-edit-operation", os_wxTextSnipDoEdit, 1, 3);
+ scheme_add_method_w_arity(os_wxTextSnip_class, "blink-caret", os_wxTextSnipBlinkCaret, 3, 3);
  scheme_add_method_w_arity(os_wxTextSnip_class, "own-caret", os_wxTextSnipOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxTextSnip_class, "adjust-cursor", os_wxTextSnipAdjustCursor, 6, 6);
  scheme_add_method_w_arity(os_wxTextSnip_class, "on-char", os_wxTextSnipOnChar, 6, 6);
@@ -3136,6 +3260,7 @@ class os_wxTabSnip : public wxTabSnip {
   Bool Match(class wxSnip* x0);
   void DoFont(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
+  void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
   class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
   void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5);
@@ -3359,6 +3484,41 @@ wxTabSnip::DoEdit(x0, x1, x2);
   p[0] = scheme_make_integer(x0);
   p[1] = (x1 ? scheme_true : scheme_false);
   p[2] = scheme_make_integer(x2);
+  
+
+  v = scheme_apply(method, 3, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxTabSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
+{
+  Scheme_Object *p[3];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTabSnip_class, "blink-caret", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxTabSnip::BlinkCaret(x0, x1, x2);
+  } else {
+  
+  p[0] = objscheme_bundle_wxDC(x0);
+  p[1] = scheme_make_double(x1);
+  p[2] = scheme_make_double(x2);
   
 
   v = scheme_apply(method, 3, p);
@@ -3961,6 +4121,31 @@ static Scheme_Object *os_wxTabSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Obje
 }
 
 #pragma argsused
+static Scheme_Object *os_wxTabSnipBlinkCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxDC* x0;
+  float x1;
+  float x2;
+
+  
+  x0 = objscheme_unbundle_wxDC(p[0], "blink-caret in tab-snip%", 0);
+  x1 = objscheme_unbundle_float(p[1], "blink-caret in tab-snip%");
+  x2 = objscheme_unbundle_float(p[2], "blink-caret in tab-snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::BlinkCaret(x0, x1, x2);
+  else
+    ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->BlinkCaret(x0, x1, x2);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxTabSnipOwnCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4386,7 +4571,7 @@ void objscheme_setup_wxTabSnip(void *env)
 if (os_wxTabSnip_class) {
     objscheme_add_global_class(os_wxTabSnip_class, "tab-snip%", env);
 } else {
-  os_wxTabSnip_class = objscheme_def_prim_class(env, "tab-snip%", "text-snip%", os_wxTabSnip_ConstructScheme, 18);
+  os_wxTabSnip_class = objscheme_def_prim_class(env, "tab-snip%", "text-snip%", os_wxTabSnip_ConstructScheme, 19);
 
  scheme_add_method_w_arity(os_wxTabSnip_class, "set-admin", os_wxTabSnipSetAdmin, 1, 1);
  scheme_add_method_w_arity(os_wxTabSnip_class, "resize", os_wxTabSnipResize, 2, 2);
@@ -4394,6 +4579,7 @@ if (os_wxTabSnip_class) {
  scheme_add_method_w_arity(os_wxTabSnip_class, "match?", os_wxTabSnipMatch, 1, 1);
  scheme_add_method_w_arity(os_wxTabSnip_class, "do-font", os_wxTabSnipDoFont, 1, 2);
  scheme_add_method_w_arity(os_wxTabSnip_class, "do-edit-operation", os_wxTabSnipDoEdit, 1, 3);
+ scheme_add_method_w_arity(os_wxTabSnip_class, "blink-caret", os_wxTabSnipBlinkCaret, 3, 3);
  scheme_add_method_w_arity(os_wxTabSnip_class, "own-caret", os_wxTabSnipOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxTabSnip_class, "adjust-cursor", os_wxTabSnipAdjustCursor, 6, 6);
  scheme_add_method_w_arity(os_wxTabSnip_class, "on-char", os_wxTabSnipOnChar, 6, 6);
@@ -4561,6 +4747,7 @@ class os_wxImageSnip : public wxImageSnip {
   Bool Match(class wxSnip* x0);
   void DoFont(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
+  void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
   class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
   void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5);
@@ -4784,6 +4971,41 @@ wxImageSnip::DoEdit(x0, x1, x2);
   p[0] = scheme_make_integer(x0);
   p[1] = (x1 ? scheme_true : scheme_false);
   p[2] = scheme_make_integer(x2);
+  
+
+  v = scheme_apply(method, 3, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxImageSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
+{
+  Scheme_Object *p[3];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxImageSnip_class, "blink-caret", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxImageSnip::BlinkCaret(x0, x1, x2);
+  } else {
+  
+  p[0] = objscheme_bundle_wxDC(x0);
+  p[1] = scheme_make_double(x1);
+  p[2] = scheme_make_double(x2);
   
 
   v = scheme_apply(method, 3, p);
@@ -5496,6 +5718,31 @@ static Scheme_Object *os_wxImageSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Ob
 }
 
 #pragma argsused
+static Scheme_Object *os_wxImageSnipBlinkCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxDC* x0;
+  float x1;
+  float x2;
+
+  
+  x0 = objscheme_unbundle_wxDC(p[0], "blink-caret in image-snip%", 0);
+  x1 = objscheme_unbundle_float(p[1], "blink-caret in image-snip%");
+  x2 = objscheme_unbundle_float(p[2], "blink-caret in image-snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::BlinkCaret(x0, x1, x2);
+  else
+    ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->BlinkCaret(x0, x1, x2);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxImageSnipOwnCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5941,7 +6188,7 @@ void objscheme_setup_wxImageSnip(void *env)
 if (os_wxImageSnip_class) {
     objscheme_add_global_class(os_wxImageSnip_class, "image-snip%", env);
 } else {
-  os_wxImageSnip_class = objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 23);
+  os_wxImageSnip_class = objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 24);
 
  scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset", os_wxImageSnipSetOffset, 2, 2);
  scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap", os_wxImageSnipSetBitmap, 1, 1);
@@ -5954,6 +6201,7 @@ if (os_wxImageSnip_class) {
  scheme_add_method_w_arity(os_wxImageSnip_class, "match?", os_wxImageSnipMatch, 1, 1);
  scheme_add_method_w_arity(os_wxImageSnip_class, "do-font", os_wxImageSnipDoFont, 1, 2);
  scheme_add_method_w_arity(os_wxImageSnip_class, "do-edit-operation", os_wxImageSnipDoEdit, 1, 3);
+ scheme_add_method_w_arity(os_wxImageSnip_class, "blink-caret", os_wxImageSnipBlinkCaret, 3, 3);
  scheme_add_method_w_arity(os_wxImageSnip_class, "own-caret", os_wxImageSnipOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxImageSnip_class, "adjust-cursor", os_wxImageSnipAdjustCursor, 6, 6);
  scheme_add_method_w_arity(os_wxImageSnip_class, "on-char", os_wxImageSnipOnChar, 6, 6);
@@ -6054,6 +6302,7 @@ class os_wxMediaSnip : public wxMediaSnip {
   Bool Match(class wxSnip* x0);
   void DoFont(int x0, Bool x1 = TRUE);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
+  void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
   class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
   void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5);
@@ -6277,6 +6526,41 @@ wxMediaSnip::DoEdit(x0, x1, x2);
   p[0] = scheme_make_integer(x0);
   p[1] = (x1 ? scheme_true : scheme_false);
   p[2] = scheme_make_integer(x2);
+  
+
+  v = scheme_apply(method, 3, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxMediaSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
+{
+  Scheme_Object *p[3];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaSnip_class, "blink-caret", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxMediaSnip::BlinkCaret(x0, x1, x2);
+  } else {
+  
+  p[0] = objscheme_bundle_wxDC(x0);
+  p[1] = scheme_make_double(x1);
+  p[2] = scheme_make_double(x2);
   
 
   v = scheme_apply(method, 3, p);
@@ -7198,6 +7482,31 @@ static Scheme_Object *os_wxMediaSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Ob
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaSnipBlinkCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxDC* x0;
+  float x1;
+  float x2;
+
+  
+  x0 = objscheme_unbundle_wxDC(p[0], "blink-caret in editor-snip%", 0);
+  x1 = objscheme_unbundle_float(p[1], "blink-caret in editor-snip%");
+  x2 = objscheme_unbundle_float(p[2], "blink-caret in editor-snip%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::BlinkCaret(x0, x1, x2);
+  else
+    ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->BlinkCaret(x0, x1, x2);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaSnipOwnCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -7728,7 +8037,7 @@ void objscheme_setup_wxMediaSnip(void *env)
 if (os_wxMediaSnip_class) {
     objscheme_add_global_class(os_wxMediaSnip_class, "editor-snip%", env);
 } else {
-  os_wxMediaSnip_class = objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 34);
+  os_wxMediaSnip_class = objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 35);
 
  scheme_add_method_w_arity(os_wxMediaSnip_class, "get-inset", os_wxMediaSnipGetInset, 4, 4);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "set-inset", os_wxMediaSnipSetInset, 4, 4);
@@ -7750,6 +8059,7 @@ if (os_wxMediaSnip_class) {
  scheme_add_method_w_arity(os_wxMediaSnip_class, "match?", os_wxMediaSnipMatch, 1, 1);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "do-font", os_wxMediaSnipDoFont, 1, 2);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "do-edit-operation", os_wxMediaSnipDoEdit, 1, 3);
+ scheme_add_method_w_arity(os_wxMediaSnip_class, "blink-caret", os_wxMediaSnipBlinkCaret, 3, 3);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "own-caret", os_wxMediaSnipOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "adjust-cursor", os_wxMediaSnipAdjustCursor, 6, 6);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "on-char", os_wxMediaSnipOnChar, 6, 6);

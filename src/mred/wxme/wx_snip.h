@@ -159,6 +159,7 @@ class wxSnip : public wxObject
 				 float mediax, float mediay, 
 				 wxMouseEvent &event);
   virtual void OwnCaret(Bool);  
+  virtual void BlinkCaret(wxDC *dc, float x, float y);  
   
   virtual void DoEdit(int op, Bool recursive = TRUE, long time = 0);
   virtual void DoFont(int op, Bool recursive = TRUE);
@@ -372,6 +373,7 @@ class wxMediaSnip : public wxSnip
   virtual void OnChar(wxDC *, float, float, float, float, wxKeyEvent &event);
   virtual wxCursor *AdjustCursor(wxDC *, float, float, float,float, wxMouseEvent &event);
   virtual void OwnCaret(Bool);  
+  virtual void BlinkCaret(wxDC *dc, float x, float y);
 
   virtual void DoEdit(int op, Bool recursive = TRUE, long time = 0);
   virtual void DoFont(int op, Bool recursive = TRUE);

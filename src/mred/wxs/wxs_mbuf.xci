@@ -25,6 +25,7 @@
 @ Y "adjust-cursor" : wxCursor^ AdjustCursor(wxMouseEvent%); : : : : XrNULL
 @ Y "refresh" : void Refresh(float,float,float,float,bool);
 @ Y "own-caret" : void OwnCaret(bool);
+@ Y "blink-caret" : void BlinkCaret(); 
 @ Y "size-cache-invalid" : void SizeCacheInvalid();
 
 @ Z "on-local-event" : void OnLocalEvent(wxMouseEvent%);

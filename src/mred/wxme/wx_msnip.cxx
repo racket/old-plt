@@ -192,6 +192,17 @@ void wxMediaSnip::OwnCaret(Bool ownit)
     me->OwnCaret(ownit);
 }
 
+void wxMediaSnip::BlinkCaret(wxDC *dc, float x, float y)
+{
+  if (me) {
+    wxMSMA_SnipDrawState save;
+
+    myAdmin->SaveState(&save, dc, x, y);
+    me->BlinkCaret();
+    myAdmin->RestoreState(&save);
+  }
+}
+
 void wxMediaSnip::DoEdit(int op, Bool recursive, long time)
 {
   if (me)

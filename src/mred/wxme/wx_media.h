@@ -137,6 +137,7 @@ class wxMediaEdit : public wxMediaBuffer
   virtual void Refresh(float localx, float localy, float w, float h, 
 		       int show_caret);
   virtual void OwnCaret(Bool ownit);
+  virtual void BlinkCaret();
   virtual void SizeCacheInvalid(void);
 
   virtual void OnDefaultEvent(wxMouseEvent &event);
@@ -435,6 +436,8 @@ class wxMediaEdit : public wxMediaBuffer
 #if ALLOW_X_STYLE_SELECTION
   TF_Flag( needXCopy );
 #endif
+
+  TF_Flag( caretBlinked );
 
 #undef TF_Flag
 

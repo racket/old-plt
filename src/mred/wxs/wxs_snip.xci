@@ -14,6 +14,7 @@
 @ s "on-char" : void OnChar(wxDC!,float,float,float,float,wxKeyEvent%); : : /CHECKOK[0.METHODNAME("snip%","on-char")]
 @ s "adjust-cursor" : wxCursor^ AdjustCursor(wxDC!,float,float,float,float,wxMouseEvent%); : : /CHECKOK[0.METHODNAME("snip%","adjust-cursor")]
 @ s "own-caret" : void OwnCaret(bool); 
+@ s "blink-caret" : void BlinkCaret(wxDC!,float,float); 
 
 @ s "do-edit-operation" : void DoEdit(int,bool=TRUE,long=0);
 @ s "do-font" : void DoFont(int,bool=TRUE);

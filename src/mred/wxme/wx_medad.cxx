@@ -91,6 +91,21 @@ class wxUpdateCursorTimer : public wxTimer
   }
 };
 
+#define BLINK_DELAY 500
+
+class wxBlinkTimer : public wxTimer 
+{
+  wxMediaCanvas *canvas;
+ public:
+  wxBlinkTimer(wxMediaCanvas *c) {
+    canvas = c;
+  }
+  void Notify(void) {
+    wxYield();
+    canvas->BlinkCaret();
+  }
+};
+
 #define AUTO_DRAG_DELAY 100
 
 class wxAutoDragTimer : public wxTimer 
@@ -288,6 +303,22 @@ void wxMediaCanvas::OnFocus(Bool focus)
     if (PTRNE(oldadmin, admin)) {
       media->SetAdmin(oldadmin);
     }
+  }
+
+  if (focuson) {
+    if (!blinkTimer)
+      blinkTimer = new wxBlinkTimer(this);
+    blinkTimer->Start(BLINK_DELAY, 1);
+  }
+}
+
+void wxMediaCanvas::BlinkCaret()
+{
+  if (focuson) {
+    if (media)
+      media->BlinkCaret();
+    if (focuson)
+      blinkTimer->Start(BLINK_DELAY, 1);
   }
 }
 

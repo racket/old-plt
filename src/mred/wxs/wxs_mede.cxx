@@ -727,6 +727,7 @@ class os_wxMediaEdit : public wxMediaEdit {
   void OnLocalChar(class wxKeyEvent& x0);
   void OnLocalEvent(class wxMouseEvent& x0);
   void SizeCacheInvalid();
+  void BlinkCaret();
   void OwnCaret(Bool x0);
   void Refresh(float x0, float x1, float x2, float x3, Bool x4);
   class wxCursor* AdjustCursor(class wxMouseEvent& x0);
@@ -2411,6 +2412,38 @@ void os_wxMediaEdit::SizeCacheInvalid()
   } else sj = 1;
   if (sj) {
 wxMediaEdit::SizeCacheInvalid();
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxMediaEdit::BlinkCaret()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "blink-caret", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxMediaEdit::BlinkCaret();
   } else {
   
   
@@ -5920,6 +5953,25 @@ static Scheme_Object *os_wxMediaEditSizeCacheInvalid(Scheme_Object *obj, int n, 
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaEditBlinkCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->wxMediaEdit::BlinkCaret();
+  else
+    ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->BlinkCaret();
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaEditOwnCaret(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -6109,7 +6161,7 @@ void objscheme_setup_wxMediaEdit(void *env)
 if (os_wxMediaEdit_class) {
     objscheme_add_global_class(os_wxMediaEdit_class, "text%", env);
 } else {
-  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 125);
+  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 126);
 
  scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback", os_wxMediaEditRemoveClickback, 2, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-clickback", os_wxMediaEditSetClickback, 3, 5);
@@ -6229,6 +6281,7 @@ if (os_wxMediaEdit_class) {
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-local-char", os_wxMediaEditOnLocalChar, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-local-event", os_wxMediaEditOnLocalEvent, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "size-cache-invalid", os_wxMediaEditSizeCacheInvalid, 0, 0);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "blink-caret", os_wxMediaEditBlinkCaret, 0, 0);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "own-caret", os_wxMediaEditOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "refresh", os_wxMediaEditRefresh, 5, 5);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "adjust-cursor", os_wxMediaEditAdjustCursor, 1, 1);

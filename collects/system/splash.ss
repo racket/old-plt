@@ -23,8 +23,8 @@
 
 	   [(title) (info 'name)]
 
-	   [(splash-width-resource) "splash-max-width"]
-	   [(splash-depth-resource) "splash-max-depth"]
+	   [(splash-width-resource) (format "~a-splash-max-width" title)]
+	   [(splash-depth-resource) (format "~a-splash-max-depth" title)]
 	   [(splash-max-width) (get-resource splash-width-resource (info 'splash-max))]
 	   [(splash-max-depth) (get-resource splash-depth-resource (info 'splash-depth))]
 	   

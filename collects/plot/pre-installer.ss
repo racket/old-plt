@@ -21,6 +21,8 @@
          '("scheme.h" "schvers.h" "schemef.h" "sconfig.h" "stypes.h")))
 
   
+  (define PLOT-SCHEME-FILE-NAME "plplot-low-level")
+  
   (define here (this-expression-source-directory))
 
   (define dir (build-path here "compiled" "native" (system-library-subpath)))
@@ -67,10 +69,13 @@
                       ((compile-extensions-to-c #f)
                        (list scheme-file-with-ext)
                        src-dir)))
+              (list (append-object-suffix scheme-file)
+                    (append headers (list append-c-suffix scheme-file)))
               (map (lambda (file)
                      (list (append-object-suffix file)
-                           (append headers
-                                   (list (append-c-suffix file)))
+                           ;(append headers
+                           ;        (list (append-c-suffix file)))
+                           (list (append-c-suffix file))
                            (lambda ()
                              (compile-c-extension-parts
                               (list (append-c-suffix file))
@@ -86,7 +91,7 @@
            [fit-c-files     `("fit-low-level" "fit" "matrix")])
       (unless (do-copy (final-so-file fit-scheme-file))
         (make-ext fit-scheme-file fit-c-files fit-src-dir)))
-    (let* ([plot-scheme-file (build-path here "plplot-low-level")]
+    (let* ([plot-scheme-file (build-path here PLOT-SCHEME-FILE-NAME)]
            [plot-src-dir (build-path here "src" "all")]
            [plot-c-files
             (map (lambda (f) (regexp-replace #rx".c$" f ""))

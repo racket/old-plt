@@ -70,7 +70,7 @@
 	       (for-each run-test (if (null? x) all-tests x))))
 	   fw function file drs-utils utils mred)])
    (export))
- (fw : framework^)
+ framework^
  mzlib:function^
  mzlib:file^
  mred^)

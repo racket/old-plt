@@ -536,9 +536,9 @@
 
   (define (teaching-level? setting)
     (let* ([name (setting-name setting)]
-	   [ans (or (equal? name "Beginner")
-		    (equal? name "Intermediate")
-		    (equal? name "Advanced"))])
+	   [ans (or (equal? name "Beginning Student")
+		    (equal? name "Intermediate Student")
+		    (equal? name "Advanced Student"))])
       ans))
 
   ;; initialize-parameters : custodian

@@ -76,7 +76,8 @@
 	       (case (send full-scheme-radio-box get-selection)
 		 [(0) "Textual Full Scheme"]
 		 [(1) "Graphical Full Scheme"]
-		 [else (send full-scheme-radio-box get-string-selection)])))))]
+		 [(2) "MzScheme"]
+                 [(3) "MrEd"])))))]
          [close-full-scheme-radio-box
           (lambda ()
             (when full-scheme-radio-box
@@ -97,17 +98,19 @@
                                         "MrEd (no debugging)")
                                   full-scheme-panel
                                   (lambda x (full-scheme-radio-box-callback))))]))]
-	 [language-choice
+	 [full-scheme "Full Scheme"]
+         [language-choice-choices (list (first language-levels)
+                                        (second language-levels)
+                                        (third language-levels)
+                                        full-scheme)]
+         [language-choice
 	  (make-object mred:choice%
 	    "Language"
-	    (list (first language-levels)
-		  (second language-levels)
-		  (third language-levels)
-		  "Full Scheme")
+	    language-choice-choices
 	    language-panel
 	    (lambda (choice evt)
 	      (cond
-	       [(string=? "Full Scheme" (send choice get-string-selection))
+	       [(string=? full-scheme (send choice get-string-selection))
 		(open-full-scheme-radio-box)
 		(full-scheme-radio-box-callback)]
 	       [else
@@ -249,7 +252,23 @@
 	  (lambda (v)
 	    (let ([zodiac? (basis:zodiac-vocabulary? v)])
 
-	      (send language-choice set-string-selection (basis:setting-name v))
+              (cond
+                [(member (basis:setting-name v) language-choice-choices)
+                 (send language-choice set-string-selection (basis:setting-name v))
+                 (close-full-scheme-radio-box)]
+                [else
+                 (send language-choice set-string-selection full-scheme)
+                 (open-full-scheme-radio-box)
+                 (cond
+                   [(string=? (basis:setting-name v) "Textual Full Scheme")
+                    (send full-scheme-radio-box set-selection 0)]
+                   [(string=? (basis:setting-name v) "Graphical Full Scheme")
+                    (send full-scheme-radio-box set-selection 1)]
+                   [(string=? (basis:setting-name v) "MzScheme")
+                    (send full-scheme-radio-box set-selection 2)]
+                   [(string=? (basis:setting-name v) "MrEd")
+                    (send full-scheme-radio-box set-selection 3)]
+                   [else (void)])])
 	      
 	      (send printing set-selection
 		    (get-printer-style-number (basis:setting-printing v)))

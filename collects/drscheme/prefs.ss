@@ -45,7 +45,6 @@
     (let* ([scheme-standard (send (framework:scheme:get-style-list)
 				  find-named-style "Standard")]
 	   [scheme-delta (make-object style-delta%)])
-      (framework:preferences:set 'drscheme:font-size size)
       (send scheme-standard get-delta scheme-delta)
       (send scheme-delta set-size-mult 0)
       (send scheme-delta set-size-add size)
@@ -55,7 +54,6 @@
     (let* ([scheme-standard (send (framework:scheme:get-style-list)
 				  find-named-style "Standard")]
 	   [scheme-delta (make-object style-delta%)])
-      (framework:preferences:set 'drscheme:font-name name)
       (send scheme-standard get-delta scheme-delta)
       (send scheme-delta set-delta-face name)
       (send scheme-standard set-delta scheme-delta)))
@@ -63,6 +61,16 @@
   (set-font-size (framework:preferences:get 'drscheme:font-size))
   (set-font-name (framework:preferences:get 'drscheme:font-name))
 
+  (framework:preferences:add-callback
+   'drscheme:font-size
+   (lambda (p v)
+     (set-font-size v)))
+  
+  (framework:preferences:add-callback
+   'drscheme:font-name
+   (lambda (p v)
+     (set-font-name v)))
+  
   (framework:preferences:add-panel
    "Font"
    (lambda (panel)
@@ -70,7 +78,7 @@
 	    [options-panel (make-object horizontal-panel% main)]
 	    [size (make-object slider% "Font Size" 1 72 options-panel
 			       (lambda (size evt)
-				 (set-font-size (send size get-value)))
+                                 (framework:preferences:set 'drscheme:font-size (send size get-value)))
 			       (framework:preferences:get 'drscheme:font-size))]
 
 	    [font-name-control
@@ -81,7 +89,8 @@
 				    (get-fixed-faces)
 				    options-panel
 				    (lambda (font-name evt)
-				      (set-font-name
+				      (framework:preferences:set 
+                                       'drscheme:font-name
 				       (send font-name get-string-selection))))])
 		  (send choice set-string-selection
 			(framework:preferences:get 'drscheme:font-name))
@@ -96,7 +105,7 @@
 				   "Select Font Name"
 				   (get-fixed-faces))])
 		      (when choice
-			(set-font-name (list-ref (get-fixed-faces) (car choice)))))))])]
+			(framework:preferences:set 'drscheme:font-name (list-ref (get-fixed-faces) (car choice)))))))])]
 				      
 	    [text (make-object text%)]
 	    [ex-panel (make-object horizontal-panel% main)]
@@ -110,15 +119,17 @@
 		 (send text erase)
 		 (send text insert
 		       (cond
-			[(string=? language "Beginner") beginner-program]
-			[(string=? language "Intermediate") intermediate-program]
-			[(string=? language "Advanced") advanced-program]
+			[(string=? language "Beginning Student") beginner-program]
+			[(string=? language "Intermediate Student") intermediate-program]
+			[(string=? language "Advanced Student") advanced-program]
 			[(or (string=? language "MrEd")
-			     (string=? language "MrEd Debug"))
+			     (string=? language "Graphical Full Scheme"))
 			 mred-program]
 			[(or (string=? language "MzScheme")
-			     (string=? language "MzScheme Debug"))
-			 mzscheme-program]))
+			     (string=? language "Textual Full Scheme"))
+			 mzscheme-program]
+                        [else
+                         (format "unknown language: ~a" language)]))
 		 (send text set-position 0 0)
 		 (send text lock #t)
 		 (send text end-edit-sequence)))])
@@ -136,10 +147,10 @@
        (send text lock #t)
        main)))
 
-  (framework:scheme:add-preferences-panel)
-  (framework:preferences:add-general-panel)
+  '(framework:scheme:add-preferences-panel)
+  '(framework:preferences:add-general-panel)
 
-  (framework:preferences:add-panel
+  '(framework:preferences:add-panel
    "General II"
    (lambda (panel)
      (let* ([main (make-object vertical-panel% panel)]

@@ -198,36 +198,40 @@ evaluation contexts and v for values.
 Returns #t if its argument was produced by `language', #f
 otherwise.
 
-> (term-let ([id-pat expr] ...) body)           SYNTAX
+> (term-let ([tl-pat expr] ...) body)           SYNTAX
 
-Match each given id pattern to the value 
-yielded by evaluating the corresponding expr and binds each
-variable in that match to the appropriate value (described 
-below). These bindings are then accessible to the `term' 
-syntactic form. 
+Matches each given id pattern to the value yielded by
+evaluating the corresponding expr and binds each variable in
+the id pattern to the appropriate value (described
+below). These bindings are then accessible to the `term'
+syntactic form.
 
 Identifier-patterns are terms in the following grammar:
 
-id-pat ::= identifier
-         | ([id-pat | id-pat ...]*)
+    tl-pat ::= identifier
+             | (tl-pat-ele ...)
+tl-pat-ele ::= tl-pat
+             | tl-pat ellipses
 
-where ... is the literal symbol. If id-pat is an identifier,
-it matches and binds any value. If it is a list, it matches
-only if the value being matched is a list value and only if
-every subpattern recursively matches the corresponding list
-element. There may be up to one ellipsis in any list pattern;
-if one is present, the overall list pattern matches any number
-of duplications of the pattern in front of the ellipsis including
-0.
+where ellipses is the literal symbol consisting of three
+dots (and the ... indicates repetition as usual). If tl-pat
+is an identifier, it matches any value and binds it to the
+identifier, for use inside `term'. If it is a list, it
+matches only if the value being matched is a list value and
+only if every subpattern recursively matches the
+corresponding list element. There may be a single ellipsis
+in any list pattern; if one is present, the pattern before
+the ellipses may match multiple adjacent elements in the
+list value (possibly none).
 
 > (term s-expr)                                 SYNTAX
 
-This form is used for construction of new s-expressions in 
-the right-hand sides of reductions. It behaves identically to
-quasiquote except that names bound by `term-let' are
-implicitly substituted with the values those names were bound
-to, expanding ellipses as in-place sublists in the same manner 
-as right-hand sides of syntax-case patterns.
+This form is used for construction of new s-expressions in
+the right-hand sides of reductions. It behaves identically
+to quasiquote except that names bound by `term-let' are
+implicitly substituted with the values that those names were
+bound to, expanding ellipses as in-place sublists (in the
+same manner as syntax-case patterns).
 
 For example,
 
@@ -243,12 +247,11 @@ evaluates to
               [(c d) (values * /)]) 
    (+ x 1))
 
-It is an error for a term variable to appear in an 
-expression with an ellipsis-depth different from the
-depth with which it was bound by `term-let'. It is also
-an error for two `term-let'-bound identifiers bound to lists
-of different lengths to appear together inside any
-term expression followed by an ellipsis.
+It is an error for a term variable to appear in an
+expression with an ellipsis-depth different from the depth
+with which it was bound by `term-let'. It is also an error
+for two `term-let'-bound identifiers bound to lists of
+different lengths to appear together inside an ellipsis.
 
 > (reduction language pattern bodies ...)       SYNTAX
 

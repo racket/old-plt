@@ -161,10 +161,10 @@ BOOL wxGIF::ReadHeader( FILE *fp)
   if (strncmp(dscgif.header,"GIF8",3)!=0)
     return FALSE;
 
-  TabCol.sogct = 1 << ((dscgif.pflds & 0x0007) + 0x0001);
-  TabCol.colres = (dscgif.pflds>>6) & 7 + 1;
+  TabCol.sogct = 1 << ((dscgif.pflds & 7) + 1);
+  TabCol.colres = (dscgif.pflds >> 6) & 7 + 1;
 
-  if (tstA[10] & 0x80) {
+  if (dscgif.pflds & 0x80) {
     rgbTable = new unsigned char[3*TabCol.sogct];
     int errcnt = fread((char *)rgbTable,1, 3*TabCol.sogct,fp);
     unsigned char *tp = rgbTable;
@@ -212,12 +212,12 @@ BOOL wxGIF::ReadHeader( FILE *fp)
 	j = 0;
       if (!j) {
 	fread((char*)&tstA[0], 
-	      (len - i > 198) ? 198 : (len - i),
+	      (len - i > 66) ? 198 : (3 * (len - i)),
 	      1, fp);
       }
-      r[i] = tstA[j++];
-      g[i] = tstA[j++];
-      b[i] = tstA[j++];
+      TabCol.paleta[i].r = tstA[j++];
+      TabCol.paleta[i].g = tstA[j++];
+      TabCol.paleta[i].b = tstA[j++];
     }
   }
 

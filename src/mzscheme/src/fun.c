@@ -272,7 +272,7 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("continuation-mark-set->list",
 			     scheme_make_prim_w_arity(extract_cc_marks,
 						      "continuation-mark-set->list",
-						      2, 3),
+						      2, 2),
 			     env);
   scheme_add_global_constant("continuation-mark-set-first",
 			     scheme_make_prim_w_arity(extract_one_cc_mark,
@@ -2932,7 +2932,7 @@ static Scheme_Object *
 extract_cc_marks(int argc, Scheme_Object *argv[])
 {
   Scheme_Cont_Mark_Chain *chain;
-  Scheme_Object *first = scheme_null, *last = NULL, *key, *skipval;
+  Scheme_Object *first = scheme_null, *last = NULL, *key;
   Scheme_Object *pr;
   long last_pos;
 
@@ -2950,27 +2950,8 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
     return NULL;
   }
 
-  if (argc > 2)
-    skipval = argv[2];
-  else
-    skipval = NULL;
-
   while (chain) {
     if (chain->key == key) {
-      if (skipval) {
-	long pos;
-	pos = (long)chain->pos;
-	if (pos != last_pos - 2) {
-	  pr = scheme_make_pair(skipval, scheme_null);
-	  if (last)
-	    SCHEME_CDR(last) = pr;
-	  else
-	    first = pr;
-	  last = pr;
-	}
-	last_pos = pos;
-      }
-
       pr = scheme_make_pair(chain->val, scheme_null);
       if (last)
 	SCHEME_CDR(last) = pr;
@@ -2980,14 +2961,6 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
     }
 
     chain = chain->next;
-  }
-
-  if (skipval) {
-    pr = scheme_make_pair(skipval, scheme_null);
-    if (last)
-      SCHEME_CDR(last) = pr;
-    else
-      first = pr;
   }
 
   return first;

@@ -376,7 +376,7 @@
   (test '(a.4 a.3 a.2 a.1 b.4 b.2 b.1) 'thread-marks result))
 
 (arity-test current-continuation-marks 0 0)
-(arity-test continuation-mark-set->list 2 3)
+(arity-test continuation-mark-set->list 2 2)
 (arity-test continuation-mark-set? 1 1)
 
 (err/rt-test (continuation-mark-set->list 5 1))

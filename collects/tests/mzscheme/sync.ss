@@ -485,11 +485,11 @@
 			   (abs (- (current-gc-milliseconds) gc-msecs))))
 		   1000.0)]
 	  [real-took (/ (abs (- (current-milliseconds) real-msecs)) 1000.0)]
-	  [boundary (/ SYNC-SLEEP-DELAY 6)])
+	  [boundary (/ SYNC-BUSY-DELAY 6)])
       ;; Hack.
       ;; The following test isn't reliable, so only Matthew should see it.
       (when (regexp-match #rx"(mflatt)|(matthewf)" (path->string (find-system-path 'home-dir)))
-	(test busy? (lambda (a b c d) (> b c)) 'busy-wait? took boundary real-took)))))
+	(test busy? (lambda (a ax b c d) (> b c)) 'busy-wait? go took boundary real-took)))))
 
 (define (test-good-waitable wrap-sema)
   (let ([sema (make-semaphore)])

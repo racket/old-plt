@@ -700,7 +700,7 @@
       (define first-gap 35)
       (define second-gap 15)
       (define line-space 8)
-      (define extra-height 3)
+      (define extra-height 2)
       (define left-edge-space 2)
 
       (define line-snip%

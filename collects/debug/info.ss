@@ -1,0 +1,5 @@
+(module info (lib "infotab.ss" "setup")
+  (define name "Debugger")
+  (define tools (list "debug-tool.ss"))
+  (define tool-icons (list '("bug09.gif" "icons")))
+  (define tool-names (list "Debugger")))

@@ -1,6 +1,7 @@
 /*
  * @(#)regexp.c	1.3 of 18 April 87
  * Revised for PLT MzScheme, 1995-2001
+ * Copyright (c) 2004 PLT Scheme, Inc.
  *
  *	Copyright (c) 1986 by University of Toronto.
  *	Written by Henry Spencer.  Not derived from licensed software.
@@ -27,6 +28,7 @@
  *   Removed hardwired limits on parenthesis nesting
  *   Changed to index-based instead of pointer-based (better for GC)
  *   Added non-greedy operators *?, +?, and ??
+ *   Added (?:...) grouping without reporting the group match
  *   Added MzScheme glue
  *
  * from Vladimir Tsyshevsky:
@@ -1404,6 +1406,8 @@ regmatch(Regwork *rw, rxpos prog)
     }
   }
 #endif
+
+  SCHEME_USE_FUEL(1);
 
   scan = prog;
   while (scan != 0) {

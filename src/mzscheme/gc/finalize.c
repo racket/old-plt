@@ -228,7 +228,7 @@ void GC_register_late_disappearing_link(void **link, void *obj)
 	UNLOCK();
     	ENABLE_SIGNALS();
 #     endif
-      new_dl == GC_oom_fn(sizeof(struct disappearing_link));
+      new_dl = GC_oom_fn(sizeof(struct disappearing_link));
       if (0 == new_dl) {
 	GC_finalization_failures++;
 	return(0);
@@ -477,7 +477,7 @@ int eager_level; /* PLTSCHEME */
 	UNLOCK();
     	ENABLE_SIGNALS();
 #     endif
-      new_fo == GC_oom_fn(sizeof(struct finalizable_object));
+      new_fo = GC_oom_fn(sizeof(struct finalizable_object));
       if (0 == new_fo) {
 	GC_finalization_failures++;
 	return;

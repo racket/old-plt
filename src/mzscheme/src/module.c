@@ -756,6 +756,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
   Scheme_Object *to_modchain, *from_modchain, *l;
   Scheme_Hash_Table *checked, *next_checked;
   Scheme_Module *m2;
+  int same_namespace;
 
   if (!SCHEME_NAMESPACEP(argv[0]))
     scheme_wrong_type("namespace-attach-module", "namespace", 0, argc, argv);
@@ -764,6 +765,8 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 
   from_env = (Scheme_Env *)argv[0];
   to_env = scheme_get_env(scheme_config);
+
+  same_namespace = SAME_OBJ(from_env, to_env);
 
   todo = scheme_make_pair(scheme_module_resolve(argv[1]), scheme_null);
   next_phase_todo = scheme_null;
@@ -815,7 +818,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	} else
 	  menv2 = NULL;
       
-	if (!menv2) {
+	if (!menv2 || same_namespace) {
 	  /* Push requires onto the check list: */
 	  l = menv->module->requires;
 	  while (!SCHEME_NULLP(l)) {
@@ -886,7 +889,8 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	  scheme_hash_set(to_env->module_registry, name, (Scheme_Object *)menv2->module);
 
 	  /* Push name onto notify list: */
-	  notifies = scheme_make_pair(name, notifies);
+	  if (!same_namespace)
+	    notifies = scheme_make_pair(name, notifies);
 
 	  /* Push requires onto the check list: */
 	  todo = scheme_append(menv->module->requires, todo);

@@ -808,6 +808,17 @@ static void print_escaped(Scheme_Thread *p, int notdisplay,
   print_this_string(p, r, 0, len);
 }
 
+static void cannot_print(Scheme_Thread *p, int notdisplay, 
+			 Scheme_Object *obj, Scheme_Hash_Table *ht)
+{
+  scheme_raise_exn(MZEXN_APPLICATION_TYPE, 
+		   obj,
+		   scheme_intern_symbol("code with only printable constants"),
+		   "%s: cannot marshal constant that is embedded in compiled code: %V",
+		   notdisplay ? "write" : "display",
+		   obj);
+}
+
 #ifdef SGC_STD_DEBUGGING
 static void printaddress(Scheme_Thread *p, Scheme_Object *o)
 {
@@ -1045,7 +1056,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type))
     {
       if (compact)
-	print_escaped(p, notdisplay, obj, ht);
+	cannot_print(p, notdisplay, obj, ht);
       else {
 	Scheme_Object *name = SCHEME_STRUCT_NAME_SYM(obj);
 	int pb;
@@ -1079,7 +1090,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   else if (SCHEME_PRIMP(obj) && ((Scheme_Primitive_Proc *)obj)->name)
     {
       if (compact) {
-	print_escaped(p, notdisplay, obj, ht);
+	cannot_print(p, notdisplay, obj, ht);
       } else {
 	print_this_string(p, "#<", 0, 2);
 	print_string_in_angle(p, ((Scheme_Primitive_Proc *)obj)->name, "primitive:", -1);
@@ -1091,7 +1102,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   else if (SCHEME_CLSD_PRIMP(obj) && ((Scheme_Closed_Primitive_Proc *)obj)->name)
     {
       if (compact)
-	print_escaped(p, notdisplay, obj, ht);
+	cannot_print(p, notdisplay, obj, ht);
       else {
 	if (SCHEME_STRUCT_PROCP(obj)) {
 	  print_named(obj, "struct-procedure", 
@@ -1116,7 +1127,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	  /* Print original code: */
 	  compact = print(SCHEME_COMPILED_CLOS_CODE(closure), notdisplay, compact, ht, symtab, rnht, p);
 	} else
-	  print_escaped(p, notdisplay, obj, ht);
+	  cannot_print(p, notdisplay, obj, ht);
       } else {
 	int len;
 	const char *s;
@@ -1128,41 +1139,61 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_struct_type_type))
     {
-      print_this_string(p, "#<", 0, 2);
-      print_string_in_angle(p, scheme_symbol_val(((Scheme_Struct_Type *)obj)->name),
-			    "struct-type:",
-			    SCHEME_SYM_LEN(((Scheme_Struct_Type *)obj)->name));
-      PRINTADDRESS(p, obj);
-      print_this_string(p, ">", 0, 1);
+      if (compact) {
+	cannot_print(p, notdisplay, obj, ht);
+      } else {
+	print_this_string(p, "#<", 0, 2);
+	print_string_in_angle(p, scheme_symbol_val(((Scheme_Struct_Type *)obj)->name),
+			      "struct-type:",
+			      SCHEME_SYM_LEN(((Scheme_Struct_Type *)obj)->name));
+	PRINTADDRESS(p, obj);
+	print_this_string(p, ">", 0, 1);
+      }
     }
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_struct_property_type))
     {
-      print_this_string(p, "#<", 0, 2);
-      print_string_in_angle(p, scheme_symbol_val(((Scheme_Struct_Property *)obj)->name),
-			    "struct-type-property:", 
-			    SCHEME_SYM_LEN(((Scheme_Struct_Property *)obj)->name));
-      PRINTADDRESS(p, obj);
-      print_this_string(p, ">", 0, 1);
+      if (compact) {
+	cannot_print(p, notdisplay, obj, ht);
+      } else {
+	print_this_string(p, "#<", 0, 2);
+	print_string_in_angle(p, scheme_symbol_val(((Scheme_Struct_Property *)obj)->name),
+			      "struct-type-property:", 
+			      SCHEME_SYM_LEN(((Scheme_Struct_Property *)obj)->name));
+	PRINTADDRESS(p, obj);
+	print_this_string(p, ">", 0, 1);
+      }
     }
   else if (SCHEME_INPORTP(obj))
     {
-      Scheme_Input_Port *ip;
-      ip = (Scheme_Input_Port *)obj;
-      print_this_string(p, "#", 0, 1);
-      print_this_string(p, scheme_symbol_val(ip->sub_type), 0, SCHEME_SYM_LEN(ip->sub_type));
+      if (compact) {
+	cannot_print(p, notdisplay, obj, ht);
+      } else {
+	Scheme_Input_Port *ip;
+	ip = (Scheme_Input_Port *)obj;
+	print_this_string(p, "#", 0, 1);
+	print_this_string(p, scheme_symbol_val(ip->sub_type), 0, SCHEME_SYM_LEN(ip->sub_type));
+      }
     }
   else if (SCHEME_OUTPORTP(obj))
     {
-      Scheme_Output_Port *op;
-      op = (Scheme_Output_Port *)obj;
-      print_this_string(p, "#", 0, 1);
-      print_this_string(p, scheme_symbol_val(op->sub_type), 0, SCHEME_SYM_LEN(op->sub_type));
+      if (compact) {
+	cannot_print(p, notdisplay, obj, ht);
+      } else {
+	Scheme_Output_Port *op;
+	op = (Scheme_Output_Port *)obj;
+	print_this_string(p, "#", 0, 1);
+	print_this_string(p, scheme_symbol_val(op->sub_type), 0, SCHEME_SYM_LEN(op->sub_type));
+      }
     }
   else if (SCHEME_CPTRP(obj))
     {
-      print_this_string(p, "#<c-pointer:", 0, 12);
-      print_this_string(p, SCHEME_CPTR_TYPE(obj), 0, -1);
-      print_this_string(p, ">", 0, 1);
+      if (compact) {
+	cannot_print(p, notdisplay, obj, ht);
+      } else {
+	print_this_string(p, "#<c-pointer:", 0, 12);
+	print_this_string(p, SCHEME_CPTR_TYPE(obj), 0, -1);
+	print_this_string(p, ">", 0, 1);
+      }
     }
   else if (SCHEME_STXP(obj))
     {
@@ -1439,7 +1470,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   else 
     {
       if (compact)
-	print_escaped(p, notdisplay, obj, ht);
+	cannot_print(p, notdisplay, obj, ht);
       else {
 	char *s;
 	long len = -1;

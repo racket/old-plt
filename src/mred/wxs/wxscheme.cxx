@@ -45,6 +45,10 @@
 #include "wxs_mpb.h"
 #include "wxs_snip.h"
 
+#ifdef wx_msw
+# include "wx_pdf.h"
+#endif
+
 #include <stdlib.h>
 
 #ifdef OS_X

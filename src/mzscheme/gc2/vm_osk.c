@@ -53,7 +53,9 @@ static void flush_freed_pages(void)
 }
 
 #ifndef DONT_NEED_MAX_HEAP_SIZE
-static unsigned long determine_max_heap_size(void)
+typedef unsigned long size_type;
+
+static size_type determine_max_heap_size(void)
 {
   GCPRINT(GCOUTF, 
 	  "Don't know how to get heap size for OSKit: assuming 1GB\n");

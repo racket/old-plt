@@ -1,5 +1,4 @@
 /* A new accouting precise GC for MzScheme
-   Copyright (C) 2004 PLT Scheme, Inc.
    Copyright (C) 2001, 2002 Matthew Flatt and Adam Wick
    All rights reserved.
 
@@ -139,6 +138,7 @@ inline static void free_used_pages(size_t len)
 
 #ifdef OS_X
 # define TEST 0
+void designate_modified(void *p);
 # include "vm_osx.c"
 # define MALLOCATOR_DEFINED
 #endif
@@ -287,7 +287,7 @@ int GC_mtrace_union_current_with(int newval)
 
 #ifdef NEWGC_MEMORY_TRACE
 # define SET_MTRACE_INFO(info, size) info->tracefun = current_mtrace_mark(size)
-# define DO_MTRACE_MARKS() gcMARK(mtrace_cmark_key)
+# define DO_MTRACE_MARKS() gcFIXUP(mtrace_cmark_key)
 #else
 # define SET_MTRACE_INFO(info, size) /* */
 # define DO_MTRACE_MARKS() /* */
@@ -309,7 +309,10 @@ struct objhead {
 
 struct mpage {
   unsigned int size, previous_size;
-  unsigned char generation, back_pointers, big_page, page_type;
+  unsigned int generation;
+  unsigned int back_pointers;
+  unsigned int big_page;
+  unsigned int page_type;
   struct mpage *next, *prev;
 };
 
@@ -323,6 +326,10 @@ struct mpage {
 #define PAGE_XTAGGED 4
 #define PAGE_BIG 5
 #define PAGE_TYPES 6
+
+#define SET_PAGE_NEW_BIT(n) n = n | 0x10000000;
+#define CLEAR_PAGE_NEW_BIT(n) n = n & 0x01111111;
+#define PAGE_NEW_BIT(n) (n & 0x10000000)
 
 static struct mpage *page_map[1 << USEFUL_ADDR_BITS];
 static void **gen0_alloc_region = NULL;
@@ -460,6 +467,7 @@ inline static int marked(void *p)
   struct mpage *page = find_page(p);
   if(!p || !page) return 0;
   if(!gc_full && page->generation) return 1;
+  if(PAGE_NEW_BIT(page->generation)) return 1;
   return ((struct objhead *)(NUM(p) - WORD_SIZE))->mark;
 }
 
@@ -489,7 +497,7 @@ inline static void potential_id_free(u_int64_t id)
 
 inline static void repair_mtrace_table()
 {
-  gcFIXUP(mtrace_cmark_key);
+  mtrace_cmark_key = GC_resolve(mtrace_cmark_key);
   if(track_mtrace_info) {
     int i;
 
@@ -497,7 +505,7 @@ inline static void repair_mtrace_table()
       if(mtrace_table[i]) {
 	
 	if(mtrace_table[i]->func && marked(mtrace_table[i]->func)) {
-	  gcFIXUP(mtrace_table[i]->func);
+	  mtrace_table[i]->func = GC_resolve(mtrace_table[i]->func);
 	} else if(mtrace_table[i]->func) {
 	  mtrace_table[i]->func = NULL;
 	}
@@ -784,11 +792,6 @@ void GC_add_roots(void *start, void *end)
 
 inline static void mark_roots() 
 {
-  traverse_roots(gcMARK);
-}
-
-inline static void repair_roots() 
-{
   traverse_roots(gcFIXUP);
 }
 
@@ -835,11 +838,6 @@ void GC_free_immobile_box(void **b)
   }
 
 inline static void mark_immobiles(void)
-{
-  traverse_immobiles(gcMARK);
-}
-
-inline static void repair_immobiles(void)
 {
   traverse_immobiles(gcFIXUP);
 }
@@ -903,28 +901,26 @@ void GC_set_finalizer(void *p, int tagged, int level,
 #define traverse_finalizers(fnls, muck) {	                      \
     struct finalizer *work;                                           \
                                                                       \
+    gcFIXUP(fnls);                                                    \
     for(work = fnls; work; work = work->next)                         \
       muck(work);                                                     \
   }
 
-#define mark_all(fnl) { gcMARK(fnl->data); gcMARK(fnl->p); gcMARK(fnl); }
-#define mark_data(fnl) { gcMARK(fnl->data); gcMARK(fnl); }
-#define repair_next(fnl) { gcFIXUP(fnl->next); }
-#define repair_data(fnl) { gcFIXUP(fnl->data); gcFIXUP(fnl->p); }
+#define do_all(fnl) { gcFIXUP(fnl->data); gcFIXUP(fnl->p); gcFIXUP(fnl->next); }
+#define do_data(fnl) { gcFIXUP(fnl->data); gcFIXUP(fnl->next); }
+#define repair_p(fnl) { fnl->p = GC_resolve(fnl->p); }
 
 inline static void mark_finalizers(void)
 {
-  traverse_finalizers(finalizers, mark_data);
-  traverse_finalizers(run_queue, mark_all);
-  gcFIXUP(finalizers); gcFIXUP(run_queue);
-  traverse_finalizers(finalizers, repair_next);
-  traverse_finalizers(run_queue, repair_next);
+/*   printf("finalizers = %p\n", finalizers); */
+  traverse_finalizers(finalizers, do_data);
+/*   printf("finalizers = %p\n", finalizers); */
+  traverse_finalizers(run_queue, do_all);
 }
 
 inline static void repair_finalizers(void)
 {
-  traverse_finalizers(finalizers, repair_data);
-  traverse_finalizers(run_queue, repair_data);
+  traverse_finalizers(finalizers, repair_p);
 }
 
 inline static void check_finalizers(int level)
@@ -938,7 +934,7 @@ inline static void check_finalizers(int level)
       GCDEBUG((DEBUGOUTF, 
 	       "CFNL: Level %i finalizer %p on %p queued for finalization.\n",
 	       work->eager_level, work, work->p));
-      gcMARK(work->p);
+      gcFIXUP(work->p);
       if(prev) prev->next = next;
       if(!prev) finalizers = next;
       if(last_in_queue) last_in_queue = last_in_queue->next = work;
@@ -959,8 +955,8 @@ inline static void do_ordered_level3(void)
       GCDEBUG((DEBUGOUTF,
 	       "LVL3: %p is not marked. Marking payload (%p)\n", 
 	       temp, temp->p));
-      if(temp->tagged) mark_table[*(unsigned short*)temp->p](temp->p);
-      if(!temp->tagged) GC_mark_xtagged(temp->p);
+      if(temp->tagged) fixup_table[*(unsigned short*)temp->p](temp->p);
+      if(!temp->tagged) GC_fixup_xtagged(temp->p);
     }
 }
 
@@ -988,8 +984,6 @@ inline static void mark_weak_finalizers(void)
 {
   struct weak_finalizer *work;
 
-  for(work = weak_finalizers; work; work = work->next)
-    gcMARK(work);
   gcFIXUP(weak_finalizers);
   for(work = weak_finalizers; work; work = work->next)
     gcFIXUP(work->next);
@@ -1004,7 +998,7 @@ inline static void repair_weak_finalizers(void)
       if(prev) prev->next = work->next;
       if(!prev) weak_finalizers = work->next;
       work = work->next;
-    } else { gcFIXUP(work->p); prev = work; work = work->next; }
+    } else { work->p = GC_resolve(work->p); prev = work; work = work->next; }
   }
 }
 
@@ -1023,9 +1017,8 @@ inline static void reset_weak_finalizers(void)
   struct weak_finalizer *wfnl;
 
   for(wfnl = weak_finalizers; wfnl; wfnl = wfnl->next) {
+    if(marked(wfnl->p)) gcFIXUP(wfnl->saved); 
     *(void**)(NUM(GC_resolve(wfnl->p)) + wfnl->offset) = wfnl->saved;
-    if(marked(wfnl->p))
-      gcMARK(wfnl->saved); 
     wfnl->saved = NULL;
   }
 }
@@ -1044,7 +1037,6 @@ struct weak_box {
 
 static unsigned short weak_box_tag;
 static struct weak_box *weak_boxes = NULL;
-static int doing_memory_accounting_pass = 0;
 
 void *GC_malloc_weak_box(void *p, void **secondary, int soffset)
 {
@@ -1068,19 +1060,18 @@ static int mark_weak_box(void *p)
 {
   struct weak_box *wb = (struct weak_box *)p;
 
-  gcMARK(wb->secondary_erase);
-  if(!doing_memory_accounting_pass) {
-    wb->next = weak_boxes;
-    weak_boxes = wb;
-  }
+  gcFIXUP(wb->secondary_erase);
   return size_weak_box(p);
 }
 
 static int repair_weak_box(void *p)
 {
   struct weak_box *wb = (struct weak_box *)p;
-  gcFIXUP(wb->val);
+
   gcFIXUP(wb->secondary_erase);
+  wb->next = weak_boxes;
+  weak_boxes = wb;
+
   return size_weak_box(p);
 }
 
@@ -1094,7 +1085,7 @@ inline static void reset_weak_boxes(void)
       if(work->secondary_erase)
 	*(work->secondary_erase + work->soffset) = NULL;
       work->secondary_erase = NULL;
-    } 
+    } else { work->val = GC_resolve(work->val); }
   }
   weak_boxes = NULL;
 }
@@ -1137,22 +1128,16 @@ static int mark_weak_array(void *p)
   struct weak_array *wa = (struct weak_array *)p;
 
   gcMARK(wa->replace_val);
-  if(!doing_memory_accounting_pass) {
-    wa->next = weak_arrays;
-    weak_arrays = wa;
-  }
   return size_weak_array(p);
 }
 
 static int repair_weak_array(void *p)
 {
   struct weak_array *wa = (struct weak_array *)p;
-  int i;
-  void **data;
 
   gcFIXUP(wa->replace_val);
-  for(data = wa->data, i = wa->count; i--; ) 
-    if(data[i]) gcFIXUP(data[i]);
+  wa->next = weak_arrays;
+  weak_arrays = wa;
   return size_weak_array(p);
 }
 
@@ -1167,9 +1152,13 @@ inline static void reset_weak_arrays()
     for(data = work->data, i = work->count; i--; ) {
       void *p = data[i];
       
-      if(p && !marked(p)) {
-	data[i] = work->replace_val;
-      }
+      if(p) {
+	if(marked(p)) {
+	  data[i] = GC_resolve(p);
+	} else {
+	  data[i] = work->replace_val;
+	}
+      } 
     }
   }
   weak_arrays = NULL;
@@ -1220,7 +1209,7 @@ inline static void repair_thread_list(void)
 
   while(work) {
     if(marked(work->thread)) {
-      gcFIXUP(work->thread);
+      work->thread = GC_resolve(work->thread);
       prev = work;
       work = work->next;
     } else {
@@ -1420,8 +1409,7 @@ inline static void repair_owner_table(void)
       /* repair or delete the originator */
       if(!marked(owner_table[i]->originator)) 
 	owner_table[i]->originator = NULL;
-      else 
-	gcFIXUP(owner_table[i]->originator);
+      else owner_table[i]->originator = GC_resolve(owner_table[i]->originator);
       /* potential delete */
       if(i != 1) 
 	if((owner_table[i]->memory_use == 0) && !owner_table[i]->originator)
@@ -1523,7 +1511,24 @@ inline static void mark_normal_obj(struct mpage *page, void *ptr)
   }
 }
 
-inline static void mark_big_page(struct mpage *page);
+inline static void mark_acc_big_page(struct mpage *page)
+{
+  void **start = PPTR(NUM(page) + HEADER_SIZEB + WORD_SIZE);
+  void **end = PPTR(NUM(page) + page->size);
+
+  switch(page->page_type) {
+    case PAGE_TAGGED: mark_table[*(unsigned short*)start](start); break;
+    case PAGE_ATOMIC: break;
+    case PAGE_ARRAY: while(start < end) gcMARK(*(start++)); break;
+    case PAGE_XTAGGED: GC_mark_xtagged(start); break;
+    case PAGE_TARRAY: {
+      unsigned short tag = *(unsigned short *)start;
+      while(start < end) start += mark_table[tag](start);
+      break;
+    }
+  }
+}
+
 
 static void propagate_accounting_marks(void)
 {
@@ -1532,11 +1537,13 @@ static void propagate_accounting_marks(void)
 
   while(pop_2ptr((void**)&page, &p)) {
     if(page->big_page)
-      mark_big_page(page);
+      mark_acc_big_page(page);
     else
       mark_normal_obj(page, p);
   }
 }
+
+static int doing_memory_accounting_pass = 0;
 
 static void btc_account(void)
 {
@@ -1583,9 +1590,23 @@ static struct account_hook *hooks = NULL;
 
 inline static void add_account_hook(int type,void *c1,void *c2,unsigned long b)
 {
-  struct account_hook *work = malloc(sizeof(struct account_hook));
-  work->type = type; work->c1 = c1; work->c2 = c2; work->amount = b;
-  work->next = hooks; hooks = work;
+  struct account_hook *work;
+
+  for(work = hooks; work; work = work->next) {
+    if((work->type == type) && (work->c2 == c2)) {
+      if(type == MZACCT_REQUIRE) {
+	if(b > work->amount) work->amount = b;
+      } else { /* (type == MZACCT_LIMIT) */
+	if(b < work->amount) work->amount = b;
+      }
+    } 
+  }
+
+  if(!work) {
+    work = malloc(sizeof(struct account_hook));
+    work->type = type; work->c1 = c1; work->c2 = c2; work->amount = b;
+    work->next = hooks; hooks = work;
+  }
 }
 
 inline static void repair_account_hooks()
@@ -1601,7 +1622,8 @@ inline static void repair_account_hooks()
       free(work);
       work = next;
     } else {
-      gcFIXUP(work->c1); gcFIXUP(work->c2);
+      work->c1 = GC_resolve(work->c1);
+      work->c2 = GC_resolve(work->c2);
       prev = work; work = work->next;
     }
   }
@@ -1855,92 +1877,14 @@ void GC_fixup(void *pp)
   if(!p || (NUM(p) & 0x1)) return; else {
     struct mpage *page = find_page(p);
 
+/*     printf("Marking %p persuant to pending fixup.\n", p); */
+    gcMARK(p);
     if(page && !page->big_page 
        && ((struct objhead *)(NUM(p) - WORD_SIZE))->mark) {
       p = *(void**)p;
       *(void**)pp = p;
     } 
   }
-}
-
-inline static void repair_big_page(struct mpage *page) 
-{
-  void **start = PPTR(NUM(page) + HEADER_SIZEB + WORD_SIZE);
-  void **end = PPTR(NUM(page) + page->size);
-
-  switch(page->page_type) {
-    case PAGE_TAGGED: fixup_table[*(unsigned short*)start](start); break;
-    case PAGE_ATOMIC: break;
-    case PAGE_ARRAY: while(start < end) gcFIXUP(*(start++)); break;
-    case PAGE_XTAGGED: GC_fixup_xtagged(start); break;
-    case PAGE_TARRAY: {
-      unsigned short tag = *(unsigned short *)start;
-      while(start < end) start += fixup_table[tag](start);
-      break;
-    }
-  }
-}
-
-inline static void repair_tagged_page(struct mpage *page)
-{
-  void **start = PPTR(NUM(page) + HEADER_SIZEB);
-  void **end = PPTR(NUM(page) + page->size);
-
-  while(start < end) {
-    fixup_table[*(unsigned short*)(start+1)](start+1);
-    start += ((struct objhead *)start)->size;
-  }
-}
-
-inline static void repair_array_page(struct mpage *page)
-{
-  void **start = PPTR(NUM(page) + HEADER_SIZEB);
-  void **end = PPTR(NUM(page) + page->size);
-  
-  while(start < end) {
-    struct objhead *ohead = (struct objhead *)start++;
-    unsigned long size = ohead->size;
-    while(--size) gcFIXUP(*(start++));
-  }
-}
-
-inline static void repair_tarray_page(struct mpage *page)
-{
-  void **start = PPTR(NUM(page) + HEADER_SIZEB);
-  void **end = PPTR(NUM(page) + page->size);
-  
-  while(start < end) {
-    struct objhead *ohead = (struct objhead *)start;
-    void **tempend = (start + ohead->size) - 1;
-    unsigned short tag = *(unsigned short*)(++start);
-    
-    while(start < tempend)
-      start += fixup_table[tag](start);
-  }
-}
-
-inline static void repair_xtagged_page(struct mpage *page)
-{
-  void **start = PPTR(NUM(page) + HEADER_SIZEB);
-  void **end = PPTR(NUM(page) + page->size);
-
-  GCDEBUG((DEBUGOUTF, "Repairing xtagged object at %p\n", start));
-  while(start < end) {
-    GC_fixup_xtagged(start + 1);
-    start += ((struct objhead *)start)->size;
-  }
-}
-
-static void repair_page(struct mpage *page)
-{
-  if(page->big_page) repair_big_page(page); else 
-    switch(page->page_type) {
-      case PAGE_TAGGED: repair_tagged_page(page); break;
-      case PAGE_ATOMIC: break;
-      case PAGE_ARRAY: repair_array_page(page); break;
-      case PAGE_TARRAY: repair_tarray_page(page); break;
-      case PAGE_XTAGGED: repair_xtagged_page(page); break;
-    }
 }
 
 /*****************************************************************************/
@@ -1951,7 +1895,7 @@ inline static void mark_normal_object(struct mpage *page, void *p)
 {
   struct objhead *ohead = (struct objhead *)(NUM(p) - WORD_SIZE);
 
-  if(!ohead->mark) {
+  if(!ohead->mark && !PAGE_NEW_BIT(page->generation)) {
     unsigned short type = ohead->type;
     struct mpage *work;
     size_t size, sizeb;
@@ -1973,6 +1917,7 @@ inline static void mark_normal_object(struct mpage *page, void *p)
     else {
       work = (struct mpage *)malloc_pages(PAGE_SIZE, PAGE_SIZE);
       work->generation = 1; work->page_type = type; 
+      SET_PAGE_NEW_BIT(work->generation);
       work->size = work->previous_size = HEADER_SIZEB;
       work->next = to_pages[1][type]; work->prev = NULL;
       if(work->next) work->next->prev = work;
@@ -1986,7 +1931,7 @@ inline static void mark_normal_object(struct mpage *page, void *p)
     while(size--) *(dest++) = *(src++);
     *(void**)p = PTR(NUM(newplace) + WORD_SIZE);
     ohead->mark = 1;
-    GCDEBUG((DEBUGOUTF, "Marked/copid %i bytes from obj %p to %p\n", 
+    GCDEBUG((DEBUGOUTF, "Marked/copied %i bytes from obj %p to %p\n", 
 	     ohead->size, p, PTR(NUM(newplace) + WORD_SIZE)));
   }
 }
@@ -2034,13 +1979,13 @@ inline static void mark_big_page(struct mpage *page)
   void **end = PPTR(NUM(page) + page->size);
 
   switch(page->page_type) {
-    case PAGE_TAGGED: mark_table[*(unsigned short*)start](start); break;
+    case PAGE_TAGGED: fixup_table[*(unsigned short*)start](start); break;
     case PAGE_ATOMIC: break;
-    case PAGE_ARRAY: while(start < end) GC_mark(*(start++)); break;
-    case PAGE_XTAGGED: GC_mark_xtagged(start); break;
+    case PAGE_ARRAY: while(start < end) gcFIXUP(*(start++)); break;
+    case PAGE_XTAGGED: GC_fixup_xtagged(start); break;
     case PAGE_TARRAY: {
       unsigned short tag = *(unsigned short *)start;
-      while(start < end) start += mark_table[tag](start);
+      while(start < end) start += fixup_table[tag](start);
       break;
     }
   }
@@ -2051,7 +1996,7 @@ inline static void mark_tagged_page(struct mpage *page)
   void **start = PPTR(NUM(page) + page->previous_size);
 
   while(start < PPTR(NUM(page) + page->size)) {
-    mark_table[*(unsigned short*)(start + 1)](start + 1);
+    fixup_table[*(unsigned short*)(start + 1)](start + 1);
     start += ((struct objhead *)start)->size;
   }
 }
@@ -2063,7 +2008,7 @@ inline static void mark_array_page(struct mpage *page)
   while(start < PPTR(NUM(page) + page->size)) {
     struct objhead *info = (struct objhead *)start++;
     unsigned long size = info->size;
-    while(--size) GC_mark(*(start++));
+    while(--size) gcFIXUP(*(start++));
   }
 }
 
@@ -2077,7 +2022,7 @@ inline static void mark_tarray_page(struct mpage *page)
     unsigned short tag = *(unsigned short*)(++start);
 
     while(start < tempend)
-      start += mark_table[tag](start);
+      start += fixup_table[tag](start);
   }
 }
 
@@ -2086,7 +2031,7 @@ inline static void mark_xtagged_page(struct mpage *page)
   void **start = PPTR(NUM(page) + page->previous_size);
   
   while(start < PPTR(NUM(page) + page->size)) {
-    GC_mark_xtagged(start + 1);
+    GC_fixup_xtagged(start + 1);
     start += ((struct objhead *)start)->size;
   }
 }
@@ -2194,8 +2139,8 @@ static void repair_heap(void)
     while(work) {
       struct mpage *next = work->next;
       
-      repair_page(work);
       memory_in_use += work->size;
+      CLEAR_PAGE_NEW_BIT(work->generation);
       if(work->big_page) work->big_page = 1;
       work->next = pages[1][j]; work->prev = NULL;
       if(work->next) work->next->prev = work;
@@ -2244,6 +2189,7 @@ static void garbage_collect(int force_full)
   number++; if(gc_full) since_last_full = 0; else since_last_full++;
   INIT_DEBUG_FILE(); DUMP_HEAP();
   
+/*   printf("Collection Number %li (full = %i)\n", number, gc_full); */
   if(GC_collect_start_callback)
     GC_collect_start_callback();
 
@@ -2252,8 +2198,8 @@ static void garbage_collect(int force_full)
   mark_weak_finalizers();
   mark_roots();
   mark_immobiles();
-  DO_MTRACE_MARKS();
-  GC_mark_variable_stack(GC_variable_stack, 0, gc_stack_base);
+  DO_MTRACE_MARKS(); 
+  GC_fixup_variable_stack(GC_variable_stack, 0, gc_stack_base);
 
   propagate_marks();
   check_finalizers(1);
@@ -2269,27 +2215,26 @@ static void garbage_collect(int force_full)
 
   repair_finalizers();
   repair_weak_finalizers();
-  repair_roots();
-  repair_immobiles();
-  GC_fixup_variable_stack(GC_variable_stack, 0, gc_stack_base);
   REPAIR_OWNER_TABLE(); REPAIR_THREAD_LIST(); REPAIR_ACCOUNT_HOOKS();
-  REPAIR_MTRACE_TABLE();
+  REPAIR_MTRACE_TABLE(); 
   reset_weak_boxes(); reset_weak_arrays();
-  repair_heap();
-
+  /* I'm here */
   reset_nursery();
   DO_BTC_ACCOUNTING();
+  repair_heap();
   protect_older_pages();
 
   if(GC_collect_start_callback)
     GC_collect_end_callback();
 
+/*   printf("head of run queue is %p\n", run_queue); */
   if(!running_finalizers) {
     running_finalizers = 1;
     while(run_queue) {
       struct finalizer *f;
       void **gcs;
 
+/*       printf("Run queue head is = %p\n", run_queue); */
       f = run_queue; run_queue = run_queue->next;
       if(!run_queue) last_in_queue = NULL;
 

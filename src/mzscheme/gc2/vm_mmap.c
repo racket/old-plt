@@ -133,10 +133,12 @@ static void protect_pages(void *p, size_t len, int writeable)
 # include <sys/resource.h>
 # include <unistd.h>
 
-static unsigned long determine_max_heap_size(void) 
+typedef unsigned long size_type;
+
+static size_type determine_max_heap_size(void) 
 {
   struct rlimit *rlim = malloc(sizeof(struct rlimit));
-  unsigned long retval = 0;
+  size_type retval = 0;
 
 # ifdef OS_X
   getrlimit(RLIMIT_RSS, rlim);

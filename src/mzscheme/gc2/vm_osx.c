@@ -2,6 +2,7 @@
    Provides:
       Mach-based allocator (uses alloc_cache.c)
       macosx_init_exception_handler() --- installs fault handler
+      size_type -- the type of the heap size
       determine_max_heap_size()
    Requires:
       TEST = 0
@@ -162,10 +163,12 @@ static void protect_pages(void *p, size_t len, int writeable)
 #include "alloc_cache.c"
 
 #ifndef DONT_NEED_MAX_HEAP_SIZE
+typedef int64_t size_type;
+
 static unsigned long determine_max_heap_size()
 {
   struct rlimit *rlim = malloc(sizeof(struct rlimit));
-  unsigned long retval = 0;
+  size_type retval = 0;
 
   getrlimit(RLIMIT_RSS, rlim);
   retval = rlim->rlim_cur; free(rlim);

@@ -102,6 +102,7 @@ OBJS = \
    wx_canvs.o \
    wx_lbox.o \
    wx_check.o \
+   wx_tabc.o \
    wx_mac_utils.o \
 \
    wx_bmp.o \
@@ -279,6 +280,8 @@ wx_lbox.o : $(srcdir)/mac/wx_lbox.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_lbox.o -c $(srcdir)/mac/wx_lbox.cc
 wx_check.o : $(srcdir)/mac/wx_check.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_check.o -c $(srcdir)/mac/wx_check.cc
+wx_tabc.o : $(srcdir)/mac/wx_tabc.cc
+	$(CXX) $(WXMAC_CXXFLAGS) -o wx_tabc.o -c $(srcdir)/mac/wx_tabc.cc
 wx_mac_utils.o : $(srcdir)/mac/wx_mac_utils.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_mac_utils.o -c $(srcdir)/mac/wx_mac_utils.cc
 
@@ -441,6 +444,7 @@ ALSelectors.o : $(ALISTDEPS) $(ALISTDIR)/ALSelectors.c
 @INCLUDEDEP@ wx_canvs.d
 @INCLUDEDEP@ wx_lbox.d
 @INCLUDEDEP@ wx_check.d
+@INCLUDEDEP@ wx_tabc.d
 @INCLUDEDEP@ wx_mac_utils.d
 @INCLUDEDEP@ wx_bmp.d
 @INCLUDEDEP@ wx_24to8.d

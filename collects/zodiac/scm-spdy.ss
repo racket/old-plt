@@ -13,9 +13,7 @@
   (define-struct (type:-form struct:parsed) (type attrs))
   (define-struct (st:control-form struct:parsed) (para val))
   (define-struct (reference-unit-form struct:parsed)
-    (file cd kind signed?))
-  (define-struct (reference-library-unit-form struct:parsed)
-    (file collection library-dirs kind signed?))
+    (file kind signed?))
   (define-struct (define-type-form struct:parsed) (sym type))
   (define-struct (define-constructor-form struct:parsed) (sym modes))
 
@@ -48,18 +46,11 @@
 	para val)))
 
     (define create-reference-unit-form
-    (lambda (file cd kind signed? source)
+    (lambda (file kind signed? source)
       (make-reference-unit-form (z:zodiac-origin source)
 	(z:zodiac-start source) (z:zodiac-finish source)
 	(make-empty-back-box)
-	file cd kind signed?)))
-
-  (define create-reference-library-unit-form
-    (lambda (file collection library-dirs kind signed? source)
-      (make-reference-library-unit-form (z:zodiac-origin source)
-	(z:zodiac-start source) (z:zodiac-finish source)
-	(make-empty-back-box)
-	file collection library-dirs kind signed?)))
+	file kind signed?)))
 
   (define create-define-type-form
     (lambda (sym type source)
@@ -370,8 +361,8 @@
 		      (if (and (quote-form? f)
 			    (z:string? (quote-form-expr f)))
 			(create-reference-unit-form
-			  (quote-form-expr f)
-			  (current-directory)
+			  (path->complete-path (quote-form-expr f)
+			    (current-load-relative-directory))
 			  'exp
 			  signed?
 			  expr)
@@ -415,10 +406,11 @@
 		      (unless (and (quote-form? c)
 				(z:string? (quote-form-expr c)))
 			(static-error collection "Does not yield a string"))
-		      (create-reference-library-unit-form
-			(quote-form-expr f)
-			(quote-form-expr c)
-			(current-library-collection-paths)
+		      (create-reference-unit-form
+			(path->complete-path
+			  (find-library (quote-form-expr f)
+			    (quote-form-expr c))
+			  (current-load-relative-directory))
 			'exp
 			signed?
 			expr)))))

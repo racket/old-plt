@@ -2853,9 +2853,12 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
       int ok;
 
 #ifdef USE_NULL_TO_DISCONNECT_UDP
-      if (!origid)
-	ok = !connect(udp->s, NULL, 0);
-      else
+      if (!origid) {
+	if (udp->connected)
+	  ok = !connect(udp->s, NULL, 0);
+	else
+	  ok = 1;
+      } else
 #endif
 	ok = !connect(udp->s, (struct sockaddr *)&udp_bind_addr, sizeof(udp_bind_addr));
       if (!ok)

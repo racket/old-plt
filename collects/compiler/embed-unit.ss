@@ -443,7 +443,7 @@
 			 (copy-port i (current-output-port)))))
 		    literal-files)
 	  (when literal-expression
-		(write literal-expression))))
+	    (write literal-expression))))
 
       ;; Use `write-module-bundle', but figure out how to put it into an executable
       (define make-embedding-executable
@@ -461,80 +461,84 @@
 	  (define long-cmdline? (or (eq? (system-type) 'windows)
 				    (and mred? (eq? 'macosx (system-type)))))
 	  (unless (or long-cmdline?
-		      ((apply + (length cmdline) (map string-length cmdline)) . < . 50))
+		      ((apply + (length cmdline) (map (lambda (s)
+							(bytes-length (string->bytes/utf-8 s)))
+						      cmdline)) . < . 50))
 	    (error 'make-embedding-executable "command line too long"))
-	    (let ([exe (find-exe mred? variant)])
-	      (when verbose?
-		(fprintf (current-error-port) "Copying to ~s~n" dest))
-	      (let-values ([(dest-exe osx?)
-			    (if (and mred? (eq? 'macosx (system-type)))
-				(values (prepare-macosx-mred exe dest aux variant) #t)
-				(begin
-				  (when (or (file-exists? dest)
-					    (directory-exists? dest)
-					    (link-exists? dest))
-				    (delete-directory/files dest))
-				  (copy-file exe dest)
-				  (values dest #f)))])
-		(with-handlers ([void (lambda (x)
-					(if osx?
-					    (when (directory-exists? dest)
-					      (delete-directory/files dest))
-					    (when (file-exists? dest)
-					      (delete-file dest)))
-					(raise x))])
-		  (let ([start (file-size dest-exe)])
-		    (with-output-to-file dest-exe
-		      (lambda ()
-			(write-module-bundle verbose? modules literal-files literal-expression))
-		      'append)
-		    (let ([end (file-size dest-exe)])
-		      (when verbose?
-			(fprintf (current-error-port) "Setting command line~n"))
-		      (let ([start-s (number->string start)]
-			    [end-s (number->string end)])
-			(let ([full-cmdline (append
-					     (if launcher?
-						 (if (and (eq? 'windows (system-type))
-							  keep-exe?)
-						     (list (path->string exe)) ; argv[0]
-						     null)
-						 (list "-k" start-s end-s))
-					     cmdline)])
-			  (if osx?
-			      (finish-osx-mred dest full-cmdline exe keep-exe?)
-			      (let ([cmdpos (with-input-from-file dest-exe find-cmdline)]
-				    [out (open-output-file dest-exe 'update)])
-				(dynamic-wind
-				    void
-				    (lambda ()
-				      (if long-cmdline?
-					  ;; write cmdline at end:
-					  (file-position out end)
-					  (begin
-					    ;; write (short) cmdline in the normal position:
-					    (file-position out cmdpos)
-					    (display "!" out)))
-				      (for-each
-				       (lambda (s)
-					 (fprintf out "~a~a~c"
-						  (integer->integer-bytes (add1 (string-length s)) 4 #t #f)
-						  s
-						  #\000))
-				       full-cmdline)
-				      (display "\0\0\0\0" out)
-				      (when long-cmdline?
-					;; cmdline written at the end;
-					;; now put forwarding information at the normal cmdline pos
-					(let ([new-end (file-position out)])
+	  (let ([exe (find-exe mred? variant)])
+	    (when verbose?
+	      (fprintf (current-error-port) "Copying to ~s~n" dest))
+	    (let-values ([(dest-exe osx?)
+			  (if (and mred? (eq? 'macosx (system-type)))
+			      (values (prepare-macosx-mred exe dest aux variant) #t)
+			      (begin
+				(when (or (file-exists? dest)
+					  (directory-exists? dest)
+					  (link-exists? dest))
+				  (delete-directory/files dest))
+				(copy-file exe dest)
+				(values dest #f)))])
+	      (with-handlers ([void (lambda (x)
+				      (if osx?
+					  (when (directory-exists? dest)
+					    (delete-directory/files dest))
+					  (when (file-exists? dest)
+					    (delete-file dest)))
+				      (raise x))])
+		(let ([start (file-size dest-exe)])
+		  (with-output-to-file dest-exe
+		    (lambda ()
+		      (write-module-bundle verbose? modules literal-files literal-expression))
+		    'append)
+		  (let ([end (file-size dest-exe)])
+		    (when verbose?
+		      (fprintf (current-error-port) "Setting command line~n"))
+		    (let ([start-s (number->string start)]
+			  [end-s (number->string end)])
+		      (let ([full-cmdline (append
+					   (if launcher?
+					       (if (and (eq? 'windows (system-type))
+							keep-exe?)
+						   (list (path->string exe)) ; argv[0]
+						   null)
+					       (list "-k" start-s end-s))
+					   cmdline)])
+			(if osx?
+			    (finish-osx-mred dest full-cmdline exe keep-exe?)
+			    (let ([cmdpos (with-input-from-file dest-exe find-cmdline)]
+				  [out (open-output-file dest-exe 'update)])
+			      (dynamic-wind
+				  void
+				  (lambda ()
+				    (if long-cmdline?
+					;; write cmdline at end:
+					(file-position out end)
+					(begin
+					  ;; write (short) cmdline in the normal position:
 					  (file-position out cmdpos)
-					  (fprintf out "~a...~a~a"
-						   (if keep-exe? "*" "?")
-						   (integer->integer-bytes end 4 #t #f)
-						   (integer->integer-bytes (- new-end end) 4 #t #f)))))
-				    (lambda ()
-				      (close-output-port out)))
-				(let ([m (and (eq? 'windows (system-type))
-					      (assq 'ico aux))])
-				  (when m
-				    (install-icon dest-exe (cdr m))))))))))))))))))
+					  (display "!" out)))
+				    (for-each
+				     (lambda (s)
+				       (fprintf out "~a~a~c"
+						(integer->integer-bytes 
+						 (add1 (bytes-length (string->bytes/utf-8 s)) )
+						 4 #t #f)
+						s
+						#\000))
+				     full-cmdline)
+				    (display "\0\0\0\0" out)
+				    (when long-cmdline?
+				      ;; cmdline written at the end;
+				      ;; now put forwarding information at the normal cmdline pos
+				      (let ([new-end (file-position out)])
+					(file-position out cmdpos)
+					(fprintf out "~a...~a~a"
+						 (if keep-exe? "*" "?")
+						 (integer->integer-bytes end 4 #t #f)
+						 (integer->integer-bytes (- new-end end) 4 #t #f)))))
+				  (lambda ()
+				    (close-output-port out)))
+			      (let ([m (and (eq? 'windows (system-type))
+					    (assq 'ico aux))])
+				(when m
+				  (install-icon dest-exe (cdr m))))))))))))))))))

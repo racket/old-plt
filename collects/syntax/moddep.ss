@@ -317,7 +317,7 @@
 	(cond
 	 [(string? s)
 	  ;; Parse Unix-style relative path string
-	  (let loop ([elements null][s s])
+	  (let loop ([elements null][s (string->bytes/utf-8 s)])
 	    (let ([prefix (regexp-match re:dir s)])
 	      (if prefix
 		  (loop (cons (let ([p (cadr prefix)])

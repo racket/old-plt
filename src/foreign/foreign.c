@@ -7,7 +7,7 @@
  ********************************************/
 
 
-#include <schpriv.h>
+#include "schpriv.h"
 #ifndef WINDOWS_DYNAMIC_LOAD
 # include <dlfcn.h>
 # include <inttypes.h>
@@ -23,7 +23,7 @@
   typedef _int64   int64_t;
   typedef unsigned _int64 uint64_t;
 #endif
-#include <ffi.h>
+#include "ffi.h"
 
 #ifndef MZ_PRECISE_GC
 # define XFORM_OK_PLUS +

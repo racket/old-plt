@@ -339,12 +339,69 @@
 			     "unable to locate PLTHOME"))
 	      ;; have to roll my own install-template, because Apps are
 	      ;; really directories.
-	      (let* ([dest (string-append dest ".app")]
+	      (let* ([name (let-values ([(base name dir?) (split-path dest)])
+			     name)]
+		     [dest (string-append dest ".app")]
 		     [src (build-path (collection-path "launcher")
-				      "Starter.app")])
+				      "Starter.app")]
+		     [exec-name (build-path plthome 
+					    "MrEd.app"
+					    "Contents"
+					    "MacOS"
+					    "MrEd")])
 		(when (directory-exists? dest)
 		  (delete-directory/files dest))
-		(copy-directory/files src dest)
+		(make-directory* (build-path dest "Contents" "Resources"))
+		(make-directory* (build-path dest "Contents" "MacOS"))
+		(make-file-or-directory-link exec-name
+					     (build-path dest "Contents" "MacOS" name))
+		(make-file-or-directory-link (build-path plthome 
+							 "MrEd.app" "Contents" "Resources" 
+							 "MrEd.rsrc")
+					     (build-path dest "Contents" "Resources" 
+							 (format "~a.rsrc" name)))
+		(copy-file (build-path src "Contents" "PkgInfo")
+			   (build-path dest "Contents" "PkgInfo"))
+		(copy-file (build-path src "Contents" "Resources" "Starter.icns")
+			   (build-path dest "Contents" "Resources" "Starter.icns"))
+		(let ([orig-plist (call-with-input-file (build-path src
+								    "Contents"
+								    "Info.plist")
+				    read-plist)]
+		      [plist-replace (lambda (plist . l)
+				       (let loop ([plist plist][l l])
+					 (if (null? l)
+					     plist
+					     (let ([key (car l)]
+						   [val (cadr l)])
+					       (loop `(dict
+						       ,@(let loop ([c (cdr plist)])
+							   (cond
+							    [(null? c) (list (list 'assoc-pair key val))]
+							    [(string=? (cadar c) key)
+							     (cons (list 'assoc-pair key val)
+								   (cdr c))]
+							    [else
+							     (cons (car c)
+								   (loop (cdr c)))])))
+						     (cddr l))))))])
+		  (let ([new-plist (plist-replace
+				    orig-plist
+
+				    "CFBundleExecutable" 
+				    name
+
+				    ;; "CFBundleIconFile"
+				    ;; name
+				    
+				    "CFBundleIdentifier" 
+				    (format "org.plt-scheme.~a" name))])
+		    (call-with-output-file (build-path dest 
+						       "Contents" 
+						       "Info.plist")
+		      (lambda (port)
+			(write-plist new-plist port))
+		      'truncate)))
 		(call-with-output-file (build-path dest 
 						   "Contents" 
 						   "Resources" 
@@ -352,11 +409,7 @@
 		  (lambda (port)
 		    (write-plist 
 		     `(dict (assoc-pair "executable name"
-					,(build-path plthome 
-						     "MrEd.app"
-						     "Contents"
-						     "MacOS"
-						     "MrEd"))
+					,exec-name)
 			    (assoc-pair "stored arguments"
 					(array ,@flags)))
 		     port))

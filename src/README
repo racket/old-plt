@@ -9,10 +9,8 @@ available at
   http://www.plt-scheme.org/software/mzscheme/
   http://www.plt-scheme.org/software/mred/
 
-The MzScheme source code should compile and execute on any Windows,
-Mac OS, or Unix (Linux) platform. The MrEd source code should compile
-and execute on any Windows, Mac OS, or Unix (Linux) platform, but not
-using Cygwin or Borland with Windows.
+The MzScheme and MrEd source code should compile and execute on
+Windows, Mac OS X, or any Unix/X platform (including Linux). 
 
 Per-platform instructions are below.
 
@@ -33,10 +31,10 @@ To compile with Microsoft Visual C, read the instructions in
 plt\src\worksp\README.
 
 To compile MzScheme with Cygwin tools, follow the Unix instructions
-below.
+below. MrEd does not compile with Cygwin.
 
-To compile with Borland C, read the instructions in
-plt\src\borland\README.
+To compile MzScheme with Borland C, read the instructions in
+plt\src\borland\README. MrEd does not compile with Borland.
 
 Regardless of the compiler used to build MzScheme, compatible
 extensions can be built with any of the other compilers. For example,
@@ -45,18 +43,22 @@ or Cygwin, cd to plt\src\mzscheme\dynsrc and run mkbordyn.bat. (The
 mkbordyn.bat script requires bcc23.exe.)
 
 ========================================================================
- Compiling for Mac OS (OS X or Classic)
+ Compiling for Mac OS X
 ========================================================================
 
-OS X:
+First install the Mac OS X Developer Tools from Apple. After
+installing, run `fixPrecomp' to speed up compilations. (You can
+safely run `fixPrecomp' multiple times.)
 
-Read the instructions in the following section, then follow the 
-instructions in plt/src/mac/README.
+Then follow the Unix instructions below. (The --enable-dynlib for
+`configure' is not currently supported for Mac OS X.) The output of
+the MrEd build will be a bundle "MrEd.app"; you can run MrEd from the
+command line as `MrEd.app/Contents/MacOS/MrEd'.
 
-Classic:
-
-Follow the instructions in plt/src/mac/README.
-
+To build an X11-based MrEd, run `configure' with the --enable-xonx
+flag. This flag also affects the MzScheme build in two ways:
+`system-type' reports 'unix, and character valus are treated as
+Latin-1 encodings instead of MacRoman encodings.
 
 ========================================================================
  Compiling for supported Unix variants (including Linux)

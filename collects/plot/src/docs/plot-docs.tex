@@ -9,8 +9,12 @@
 
 \section{Introduction}
 
+PLTplot provides a basic interface for producing common types
+of plots such as line and vector field plots
+as well as an advanced interface for producing customized plot types.
+Additionally, plots and plot-items are first-class values and can be generated
+in and passed to other programs.
 
-The plotting library does something useful.. really...
 
 \pagebreak
 
@@ -19,7 +23,8 @@ The plotting library does something useful.. really...
 \subsection{Making basic plots}
 
 
-After loading the correct module using \scheme{(require (lib "plot.ss" "plot"))} try \scheme{(plot (line (lambda (x) x)))}
+After loading the correct module using 
+\scheme{(require (lib "plot.ss" "plot"))} try \scheme{(plot (line (lambda (x) x)))}
 
 
 Any other function with the contract \scheme{number -> number} can be plotted using the same form. To plot multiple items, use the functions \scheme{mix} and \scheme{mix*} to combine the items to be plotted 
@@ -42,7 +47,6 @@ The display area and appearance of the plot can be changed by adding
  (x-min -1) (x-max 1) (title "Sin(x)")) 
       
 \end{schemedisplay}
-
 
 
 The appearance of each individual plot item can be altered by passing an associative list 
@@ -74,19 +78,19 @@ can be interpreted in several ways\begin{itemize}
 \item As Error Data: \scheme{(plot (error-bars data))}
 \end{itemize}
 \begin{itemize}
-\item as a spline? maybe later..
+%\item as a spline? maybe later..
 \end{itemize}
 
 
-
 \item 
-A function of two variables, such as
+  A function of two variables, such as
 \begin{schemedisplay}
 (define 3dfun (lambda (x y) (* (sin x) (sin y))))
 \end{schemedisplay}
-can be plotted on a 2d graph\begin{itemize}
+can be plotted on a 2d graph
+\begin{itemize}
 \item Using contours to represent height (z)
-\begin{schemedisplay}
+ \begin{schemedisplay}
 (plot (contour 3dfun))
 \end{schemedisplay}
 
@@ -107,25 +111,27 @@ or in a 3d box\begin{itemize}
 (plot3d (surface 3dfun))
 \end{schemedisplay}
 
-\item Display the bottom of the surface...
-\item Displaying the surface using magnitude - valued coloration...
+%\item Display the bottom of the surface...
+%\item Displaying the surface using magnitude - valued coloration...
 \end{itemize}
 
 
 
 \end{itemize}
 
-
+\index{curve fitting}
+\index{fitting}
+\label{Curve Fitting}
 \subsection{Curve Fitting}
 
-\label{Curve Fitting}
 
 
 The scheme-plot library uses a Non-Linear Least Squares fit algorithm 
        to fit parametrized functions to given data.
 
 
-To fit a particular function to a curve:\begin{enumerate}
+To fit a particular function to a curve:
+\begin{enumerate}
 \item Set up the independent and dependent variable data.
 \begin{schemedisplay}
 
@@ -142,13 +148,13 @@ To fit a particular function to a curve:\begin{enumerate}
 \end{schemedisplay}
 
 \item If possible, come up with some guesses for the values of the parameters.
-         The more guesses the better, but this list can always be left empty.
+         The more guesses the better, but this list can  be left empty.
 \begin{schemedisplay}
 
 (define guess '((b 2)))
 \end{schemedisplay}
 
-\item Do the fit - the details of the function are described later *note: add link*
+\item Do the fit - the details of the function are described in \urlh{#Fitting}{Curve Fitting} section
 \begin{schemedisplay}
 
 (define fit-result (fit fit-fun guess x-data results null))
@@ -174,26 +180,26 @@ To fit a particular function to a curve:\begin{enumerate}
 
 \end{enumerate}
 
+A more realistic example can be found in {\tt demos/fit-demo-2.ss}
 
 \subsection{Creating Custom Plots}
 
 
-Defining custom plots is simple : a renderer (that is passed to plot or mix) is just a function
-       that acts on a \urlh{#view-snip} {\scheme{view-snip%}}. Both the 2d and 3d view snip have several drawing functions defined that
-       the renderer can call in any order. The full details of the view interface can be found in the
-       view-interface.txt file. Also, there are several predefined macros and functions defined 
-       in syntax.ss and renderer-helpers.ss that can be useful in creating your own renderers.
+Defining custom plots is simple : a Plot-item (that is passed to plot or mix) is just a function
+       that acts on a \urlh{#2d-view} {view }. Both the 2d and 3d view snip have several drawing functions defined that
+       the plot-item can call in any order. The full details of the view interface can be found in the
+       \urlh{plot-extend.ss} {plot-extend.ss} section. 
 
 
-For example, if we wanted to create a function that creates renderers that 
+For example, if we wanted to create a constructor that creates Plot-items that 
        draw dashed-lines given a number-number function we could do the following:
 \begin{schemedisplay}
 ; Load the required modules
 (require (lib "class.ss")
-         (lib "renderer-helpers.ss" "plot"))
+         (lib "plot-extend.ss" "plot"))
 
 
-; Set up the renderer-generator
+; Set up the constructor
 (define dashed-line
   (r-lambda fun 2dview (x-min x-max) ((samples 100) (segments 20) (color 'red) (width 1))
    (let* ((dash-size (/ (- x-max x-min) segments))
@@ -222,7 +228,7 @@ For example, if we wanted to create a function that creates renderers that
 \section{plot.ss}
 
 
-The plot.ss module provides the ability to make basic plots, fit curves to data, and some usefull miscilannious functions.
+The plot.ss module provides the ability to make basic plots, fit curves to data, and some useful miscellaneous functions.
 
 \subsection{Plotting}
 
@@ -234,7 +240,7 @@ The \scheme{plot} and \scheme{plot3d} forms generate plots that can be viewed in
 \begin{schemedisplay}
 
        
-Functions:
+Forms:
        
  (plot 2d-plot-item 2d-plot-option*) -> VIEW
  (plot3d 3d-plot-item 3d-plot-option*) -> VIEW
@@ -253,20 +259,19 @@ Functions:
  (z-label)
  (z-min number)
  (z-max number)
- (alt number)
- (az number) 
+ (alt number)    ; altitude angle, in degrees
+ (az number)     ; azimuthal angle, in degrees
      
 \end{schemedisplay}
 
 
 
-The 2d and 3d plot-options modify the view in whitch the graph is drawn. The 3d-plot-options alt and az set the viewing altitude (in degrees) and azimuth (also in degrees) respectively. The rest of the options should be self-explanitory.
+The 2d and 3d plot-options modify the view in which the graph is drawn. The 3d-plot-options alt and az set the viewing altitude (in degrees) and azimuth (also in degrees) respectively. The rest of the options should be self-explanatory.
 
 
 
 \begin{schemedisplay}
-
-Data:
+Data Definitions:
      
 2d-plot-item is one of:
 
@@ -274,18 +279,17 @@ Data:
  (line [(number -> number) | (number -> number number)] line-options?)
  (error-bars (list-of (vector number number number)) error-bar-options?)
  (field r2->r2 field-options?)
- (contour (number number -> number) countour-options?)
+ (contour (number number -> number) contour-options?)
  (shade (number number -> number) shade-options?)
  (mix* 2d-plot-item 2d-plot-item+)
- (make-custom (2d-view-snip% -> void))
+ (make-custom (2d-view% -> void))
      
 3d-plot-item is one of:
  (surface (number number -> number) surface-options?)
- ;(para-3d (number number -> (list number number number)) para-3d-options) ; not yet
  (mix* 3d-plot-item 3d-plot-item+)
- (make-custom (3d-view-snip% -> void))
+ (make-custom (3d-view% -> void))
 
-note: ? is a 0 or 1 relationship, all options appear inside assosiation lists.
+note: ? is a 0 or 1 relationship, all options appear inside association lists.
 the -> means `default'
 
 point-options are:
@@ -306,7 +310,7 @@ error-bar-options are:
 
 field-options are:
  color : symbol -> 'red
- wudth : number -> 1
+ width : number -> 1
  style : symbol -> 'scaled
 
 contour-options are:
@@ -323,14 +327,11 @@ surface-options are:
  samples : number -> 50
  color : symbol -> black
  width : number -> 1
- 
-
-     
 \end{schemedisplay}
 
 
 
-The 2d and 3d plot-items can be created in several ways. The first is by using the built-in renderers with your own data. 
+The 2d and 3d plot-items can be created in several ways. The first is by using the built-in constructors with your own data. 
 
 
 \scheme{points} will draw points on a graph given a list. of vectors specifying their location. Sym changes the appearence of the points (either 'circle or 'square).
@@ -345,14 +346,15 @@ The 2d and 3d plot-items can be created in several ways. The first is by using t
 \scheme{field} will draw a vector field from a vector valued function. Styles are either \scheme{real}, \scheme{scaled}, or \scheme{normalized}. 
 
 
-Both \scheme{shade} and \scheme{contour} will render 3d functions on a 2d graph using colored shades and contours (respectively) to represent the value of the funciton at that position. \scheme{contour} will let you choose the levels explicitly if desired, by setting the \scheme{levels} option to a list of contour levels to be plotted.
+Both \scheme{shade} and \scheme{contour} will render 3d functions on a 2d graph using colored shades and contours (respectively) to represent the value of the function at that position. \scheme{contour} will let you choose the levels explicitly if desired, by setting the \scheme{levels} option to a list of contour levels to be plotted.
 
 \scheme{surface} plots a 3d surface in a 3d box, showing only the \emp{top} of the surface
 
 \subsection{Fitting}
+\label{Fitting}
 
 
-PLTPlot uses the standard Non-Linear Least Squares fit agorithm for curve fitting. The code that implements the algorithm is public domain, and is used by the gnuplot package.
+PLTPlot uses the standard Non-Linear Least Squares fit algorithm for curve fitting. The code that implements the algorithm is public domain, and is used by the gnuplot package.
 
 
 
@@ -366,7 +368,7 @@ a fit-result is
 fittable-funciton is
   (fit-lambda (symbol+) (symbol+) body)
   
-guess-list is an assosiative list
+guess-list is an assosiative list of symbol / value pairs
   
 x-data, y-data and result-data is
   (list-of number)
@@ -385,11 +387,11 @@ Functions:
 
 
 
-The \scheme{fit} form attempts to fit a a \scheme{fittable-function} to the data that is given.The \scheme{guess-list}should be an associative list of parameters and values. The more accurate  your initial guesses are, the more likely the fit is to succed. Any guesses not included in the list will be initialized to 1\scheme{x-data}, \scheme{y-data} (if provided) , \scheme{result-data} and \scheme{error-data} should be lists of equal size. If all the data points have equal weight
+The \scheme{fit} form attempts to fit a a \scheme{fittable-function} to the data that is given.The \scheme{guess-list}should be an associative list of parameters and values. The more accurate  your initial guesses are, the more likely the fit is to succeed. Any guesses not included in the list will be initialized to 1\scheme{x-data}, \scheme{y-data} (if provided) , \scheme{result-data} and \scheme{error-data} should be lists of equal size. If all the data points have equal weight
        the \scheme{error-data} can be replaced with \scheme{null}
 
 
-\scheme{fit-lambda} is nessisary to distinguish between the formal arguments and fitting parameters. The first set of symbols us the formal arguments, while the second set is the parameters. For example, in a function such as f(x) = mx+b the x is the formal argument while the m and b are parameters
+\scheme{fit-lambda} is necessary to distinguish between the formal arguments and fitting parameters. The first set of symbols us the formal arguments, while the second set is the parameters. For example, in a function such as f(x) = mx+b the x is the formal argument while the m and b are parameters
 
 
 \scheme{fit-result-final-params} returns an assosiative list of the parameters specified  in fit-lambda and their values. Note that the values may not be correct if the fit failed to converge. For a visual test use \scheme{fit-result-function} to get the function with the parameters in place and plot it along with the original data.
@@ -397,7 +399,7 @@ The \scheme{fit} form attempts to fit a a \scheme{fittable-function} to the data
 \subsection{Misc Functions}
 
 
-The plot library comes with a few useful functions
+The plot library comes with a few useful miscilanious functions
 
 
 \begin{schemedisplay}
@@ -417,15 +419,20 @@ make-vec : (number number -> number) (number number -> number) -> (vector -> vec
 
 \pagebreak
 
+
+\index{plot-extend.ss}
+\label{plot-extend.ss}
 \section{plot-extend.ss}
 
 
-plot-extend.ss allows you to create your own renderers, further customize the appearance of the plot windows,
+
+plot-extend.ss allows you to create your own constructors, further customize the appearance of the plot windows,
      and in general extend the package.
 
-\subsection{\scheme{2d-view%}}
 
+\index{2d-view\%}
 \label{2d-view}
+\subsection{\scheme{2d-view%}}
 
 
 Provides an interface to drawing 2dplots. Some methods call low-level functions while others are emulated in scheme.
@@ -470,7 +477,8 @@ Plots a line given a set of points. Each point is represented by a \scheme{vecto
 \scheme{plot-contours : (listof (lisftof number)) (listof number) (listof number) (listof number) ->void}
 
 
-plots a grid representing a 3d function using contours to distinguish levels. Args are grid, xvalues yvalues and levels to plot.
+plots a grid representing a 3d function using contours to distinguish levels. 
+Args are grid, xvalues yvalues and levels to plot. 
 
 
 \item 
@@ -481,9 +489,11 @@ plots a grid representing a 3d function using shades to represent height (z)
 
 
 \end{itemize}
+\index{3d-view\%}
+\label{3d-view}
 \subsection{\scheme{3d-view%}}
 
-\label{3d-view}
+
 
 
 Provides an interface to drawing 3d plots. 
@@ -529,12 +539,13 @@ Returns the azumuthal angle
 
 
 \end{itemize}
-\subsection{\scheme{r-lambda}}
 
 \label{r-lambda}
+\index{r-lambda}
+\subsection{\scheme{r-lambda}}
 
 
-Macro used to create new renderers. It is easiest to explain with  an example, so here is an implementation of a simple line renderer :
+Macro used to create new constructors. It is easiest to explain with  an example, so here is an implementation of a simple line constructor :
 \begin{schemedisplay}
 
 (define line 
@@ -548,16 +559,16 @@ Macro used to create new renderers. It is easiest to explain with  an example, s
 \item The first keyword, \scheme{func} in this case, is used to refer to 
          the data that will be rendered. For example, in the execution of \scheme{(plot (line (lambda (x) x))) func} would refer to the indentify function
 \item \scheme{2dplotview} refers to the name of the view object that the 
-         renderer will be applied to by \scheme{plot}
+         Plot-item will be applied to by \scheme{plot}
 \item The \scheme{x-min} and \scheme{x-max} are fields in the \scheme{2dplotview} object. They will be bound to the values of those fields before the execution of the body
          , assuming the object has the methods \scheme{get-x-min} and \scheme{get-x-max}. This entire expression can be omitted if none of the fields are necessary 
          (such as for plotting discrete data points)
 \item The last set of parenthesized expressions sets keywords based arguments and their default
-         values for the renderer-generator. To over-ride values the user needs to 
+         values for the constructor. To over-ride values the user needs to 
          provide an associative list with the desired values. Ex: \scheme{(line (lambda (x) x) '((color blue)))}
 \end{itemize}
 
-
+\pagebreak
 \section{Index}
 
 \inputindex

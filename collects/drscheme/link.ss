@@ -52,6 +52,7 @@
 	[main : drscheme:main^ ((reference-unit/sig "main.ss")
 				wx I
 				mred
+				(mzlib pretty-print@)
 				print-convert
 				(export unit)
 				(export compound-unit)

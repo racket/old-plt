@@ -1,4 +1,3 @@
-
 (unit/sig mred:console^
   (import [wx : wx^]
 	  [mred:constants : mred:constants^]
@@ -6,6 +5,7 @@
 	  [mred:preferences : mred:preferences^]
 	  [mred:edit : mred:edit^]
 	  [mred:frame : mred:frame^]
+	  [mred:group : mred:group^]
 	  [mred:canvas : mred:canvas^]
 	  [mred:find-string : mred:find-string^]
 	  [mred:exit : mred:exit^]
@@ -24,6 +24,9 @@
   
   (mred:debug:printf 'invoke "mred:console@")
   
+  (define (printf string . args)
+    (apply fprintf mred:constants:original-output-port string args))
+
   (define-struct sexp (left right prompt))
   
   (define newline-string (string #\newline))
@@ -313,11 +316,12 @@
   (define make-console-edit%
     (lambda (super%)
       (class super% args
-	(inherit begin-edit-sequence end-edit-sequence
-		 position-line position-location
+	(inherit position-line position-location
 		 line-location get-admin
 		 set-position set-caret-owner
 		 clear-undos insert delete
+		 begin-edit-sequence
+		 end-edit-sequence
 		 ;styles-fixed?
 		 set-styles-fixed
 		 change-style split-snip
@@ -332,6 +336,8 @@
 		[super-on-local-char on-local-char]
 		[super-on-paint on-paint]
 		[super-after-set-size-constraint after-set-size-constraint])
+	(private
+	  [edit-sequence-count 0])
 	(public
 	  [styles-fixed? #f]
 	  [orig-stdout (current-output-port)]
@@ -398,7 +404,6 @@
 	  [needs-to-move-left #f]
 	  [needs-to-move-right #f]
 	  [needs-to-move-original null]
-	  [edit-sequence-count 0]
 	  [updating-highlighted-prompt #f]
 	  [on-something
 	   (opt-lambda (super start len [attend-to-styles-fixed? #f])
@@ -481,119 +486,65 @@
 	  [resetting? #f]
 	  [set-resetting (lambda (v) (set! resetting? v))])
 	(public
-	  [has-focus? #t]
-	  [update-highlighted-prompt
-	   (let ([last-start #f]
-		 [last-end #f]
-		 [plain (make-object wx:style-delta% wx:const-change-weight wx:const-normal)]
-		 [at-prompt (make-object wx:style-delta% wx:const-change-weight wx:const-bold)])
-	     (send at-prompt set-delta-foreground "FIREBRICK")
-	     (send plain set-delta-foreground "BLACK")
-	     (lambda ()
-	       (when (and #f
-			  (not updating-highlighted-prompt)
-			  (zero? edit-sequence-count))
-		 (set! updating-highlighted-prompt #t)
-		 (begin-edit-sequence)
-		 (let ([local-styles-fixed styles-fixed?]
-		       [local-locked? locked?]
-		       [clear-out
-			(lambda ()
-			  (when last-start
-			    (change-style plain last-start last-end)
-			    (set! last-start #f)
-			    (set! last-end #f)))])
-		   (set-styles-fixed #f)
-		   (lock #f)
-		   (if has-focus?
-		       (let*-values ([(left right) (find-which-previous-sexp)]
-				     [(start end) (values (get-start-position)
-							  (get-end-position))])
-			 (when (and prompt-mode?
-				    (<= prompt-position start)
-				    (<= prompt-position end))
-			   (set! left prompt-position))
-			 (if left
-			     (let ([prompt-start (- left (string-length (get-prompt)))])
-			       (when (or (not last-start)
-					 (not (= last-start prompt-start)))
-				 (clear-out)
-				 (change-style at-prompt prompt-start left)
-				 (set! last-start prompt-start)
-				 (set! last-end left)))
-			     (clear-out)))
-		       (clear-out))
-		   (lock local-locked?)
-		   (set-styles-fixed local-styles-fixed))
-		 (end-edit-sequence)
-		 (set! updating-highlighted-prompt #f))))])
-	(public
 	  [on-insert
 	   (lambda (start len)
-	     '(fprintf mred:constants:original-output-port "on-insert~n")
 	     (on-something super-on-insert start len))]
 	  [on-delete
 	   (lambda (start len)
-	     '(fprintf mred:constants:original-output-port "on-delete~n")
 	     (on-something super-on-delete start len))]
 	  [on-change-style
 	   (lambda (start len)
-	     '(fprintf mred:constants:original-output-port "on-change-style~n")
 	     (on-something super-on-change-style start len #t))]
 	  [on-focus
 	   (lambda (on?)
-	     (set! has-focus? on?)
-	     (update-highlighted-prompt)
 	     (super-on-focus on?))]
 	  [after-insert
 	   (lambda (start len)
-	     '(fprintf mred:constants:original-output-port "after-insert~n")
-	     (update-highlighted-prompt)
 	     (after-something + start len)
 	     (super-after-insert start len))]
 	  [after-delete
 	   (lambda (start len)
-	     '(fprintf mred:constants:original-output-port "after-delete~n")
-	     (update-highlighted-prompt)
 	     (after-something - start len)
 	     (super-after-delete start len))]
 	  [after-change-style
 	   (lambda (start len)
-	     '(fprintf mred:constants:original-output-port "after-change-style~n")
-	     (update-highlighted-prompt)
 	     (after-something (lambda (start len) start) start len)
 	     (super-after-change-style start len))]
 	  [on-edit-sequence
 	   (lambda ()
-	     (and (super-on-edit-sequence)
-		  (begin '(fprintf mred:constants:original-output-port "on-edit-sequence ~a~n" edit-sequence-count)
-			 (set! edit-sequence-count (add1 edit-sequence-count))
-			 #t)))]
+	     (super-on-edit-sequence))]
 	  [after-edit-sequence
 	   (lambda ()
-	     (set! edit-sequence-count (sub1 edit-sequence-count))
-	     '(fprintf mred:constants:original-output-port "after-edit-sequence ~a~n" edit-sequence-count)
-	     (update-highlighted-prompt)
 	     (super-after-edit-sequence))]
 	  [after-set-position
 	   (lambda ()
-	     (update-highlighted-prompt)
 	     (super-after-set-position))])
 	
 	(private
 	  [last-str (lambda (l)
 		      (if (null? (cdr l))
 			  (car l)
-			  (last-str (cdr l))))]
+			  (last-str (cdr l))))])
+
+	  
+	;; These two instance variables are used to control the delaying of
+	;; console io with edit-sequences.
+	;; The box `timer-on' is either #f, meaning no delaying is happening, or
+	;; a box, containing a list of embedded edits which are in edit-sequences
+	;; The generic-write procedure initializes the begin-edit-sequence
+	;; and creates a thread to end the edit-sequence. 
+	;; It updates the timer-on instance variable with a box containing a list
+	;; of the active transparent edits, and that box is captured in the closure 
+	;; of the thread's procedure. When the thread awakens it checks the box.
+	;; If the box contains #f, the computation has finished and the io has been flushed.
+	;; If the box contains a list, the computation has not yet completed 
+	;; but the io should be flushed.
+	;; Also note that the generic-write procedure does not create more than one thread
+	;; to end the edit-sequence at one time.
+	(private
 	  [timer-on #f]
 	  [timer-sema (make-semaphore 1)])
-	
-	;(rename [super-lock lock])
-	;(public
-	;  [lock (lambda (x) 
-	;	    (fprintf mred:constants:original-output-port "lock ~a~n" x)
-	;	    (super-lock x))])
-	
+
 	(public
 	  [MAX-CACHE-TIME 4000]
 	  [MIN-CACHE-TIME 100]
@@ -602,24 +553,22 @@
 	  
 	  [generic-write
 	   (let ([first-time? #t])
-	     (lambda (s style-func)
+	     (lambda (edit s style-func)
 	       (mzlib:function:dynamic-disable-break
 		(lambda ()
 		  (let ([handle-insertion
 			 (lambda ()
-			   (let ([start (last-position)]
-				 [c-locked? locked?])
-			     '(fprintf mred:constants:original-output-port "handling insertion ~s~n" s)
-			     (begin-edit-sequence)
-			     (lock #f)
-			     (insert (if (is-a? s wx:snip%)
+			   (let ([start (send edit last-position)]
+				 [c-locked? (ivar edit locked?)])
+			     (send edit lock #f)
+			     (send edit insert
+				   (if (is-a? s wx:snip%)
 					 (send s copy)
 					 s))
-			     (let ([end (last-position)])
-			       (change-style null start end)
-			       (style-func start end)
-			       (lock c-locked?))
-			     (end-edit-sequence)))])
+			     (let ([end (send edit last-position)])
+			       (send edit change-style null start end)
+			       (style-func start end))
+			     (send edit lock c-locked?)))])
 		    (if first-time?
 			(begin
 			  (set! first-time? #f)
@@ -630,32 +579,36 @@
 			  (semaphore-post timer-sema))
 			(begin
 			  (semaphore-wait timer-sema)
-			  (if timer-on
-			      (void)
-			      (let ([on-box (box #t)])
-				(begin-edit-sequence #f)
-				(set! timer-on on-box)
-				(thread 
-				 (lambda ()
-				   (dynamic-wind
-				    void
-				    (lambda ()
-				      (sleep (/ CACHE-TIME 1000.)))
-				    (lambda ()
-				      (semaphore-wait timer-sema)
-				      (when (unbox on-box)
-					(let* ([start (current-milliseconds)]
-					       [_ (end-edit-sequence)]
-					       [end (current-milliseconds)]
-					       [new-cache-time
-						(* TIME-FACTOR (- end start))]
-					       [between
-						(min (max MIN-CACHE-TIME
-							  new-cache-time)
-						     MAX-CACHE-TIME)])
-					  (set! CACHE-TIME between)
-					  (set! timer-on #f)))
-				      (semaphore-post timer-sema)))))))
+			  (unless timer-on
+			    (let ([on-box (box (if transparent-edit
+						   (list transparent-edit)
+						   null))])
+			      (begin-edit-sequence #f)
+			      (when transparent-edit
+				(send transparent-edit begin-edit-sequence))
+			      (set! timer-on on-box)
+			      (thread 
+			       (lambda ()
+				 (dynamic-wind
+				  void
+				  (lambda ()
+				    (sleep (/ CACHE-TIME 1000.)))
+				  (lambda ()
+				    (semaphore-wait timer-sema)
+				    (when (unbox on-box)
+				      (let* ([start (current-milliseconds)]
+					     [_ (begin (for-each (lambda (e) (send e end-edit-sequence))
+								 (unbox on-box))
+						       (end-edit-sequence))]
+					     [end (current-milliseconds)]
+					     [new-cache-time (* TIME-FACTOR (- end start))]
+					     [between
+					      (min (max MIN-CACHE-TIME
+							new-cache-time)
+						   MAX-CACHE-TIME)])
+					(set! CACHE-TIME between)
+					(set! timer-on #f)))
+				    (semaphore-post timer-sema)))))))
 			  (begin-edit-sequence #f)
 			  (set-position (last-position))
 			  (when (and prompt-mode? autoprompting?)
@@ -669,6 +622,7 @@
 	   (lambda ()
 	     (semaphore-wait timer-sema)
 	     (when timer-on
+	       (for-each (lambda (e) (send e end-edit-sequence)) (unbox timer-on))
 	       (end-edit-sequence)
 	       (set-box! timer-on #f)
 	       (set! timer-on #f))
@@ -697,24 +651,22 @@
 	      (lambda ()
 		(parameterize ([current-output-port orig-stdout]
 			       [current-error-port orig-stderr])
-		  (begin-edit-sequence)
 		  (init-transparent-io #f)
-		  (send transparent-edit 
-			generic-write s 
-			(lambda (start end)
-			  (send* transparent-edit
-			    (begin-edit-sequence #f)
-			    (change-style output-delta start end)
-			    (end-edit-sequence))))
-		  (end-edit-sequence)))))]
+		  (generic-write
+		   transparent-edit
+		   s 
+		   (lambda (start end)
+		     (send transparent-edit
+			   change-style output-delta start end)))))))]
 	  [this-err-write
 	   (lambda (s)
 	     (mzlib:function:dynamic-disable-break
 	      (lambda ()
 		(parameterize ([current-output-port orig-stdout]
 			       [current-error-port orig-stderr])
-		  '(cleanup-transparent-io)
-		  (generic-write s
+		  (cleanup-transparent-io)
+		  (generic-write this
+				 s
 				 (lambda (start end)
 				   (change-style error-delta 
 						 start end)))))))])
@@ -741,10 +693,14 @@
 	   (lambda (grab-focus?)
 	     (let ([starting-at-prompt-mode? prompt-mode?])
 	       (set! transparent-edit (make-object transparent-io-edit%))
+	       (semaphore-wait timer-sema)
+	       (when timer-on
+		 (set-box! timer-on (cons transparent-edit (unbox timer-on)))
+		 (send transparent-edit begin-edit-sequence))
+	       (semaphore-post timer-sema)
 	       (send transparent-edit enable-autoprompt #f)
 	       (dynamic-wind
-		(lambda () (begin-edit-sequence #f)
-		  (send transparent-edit begin-edit-sequence))
+		(lambda () (begin-edit-sequence #f))
 		(lambda ()		  
 		  (when starting-at-prompt-mode?
 		    (set! prompt-mode? #f)
@@ -762,8 +718,7 @@
 			(send a grab-caret))))
 		  (when starting-at-prompt-mode?
 		    (insert-prompt)))
-		(lambda () 
-		  (send transparent-edit end-edit-sequence)
+		(lambda ()
 		  (end-edit-sequence)))
 	       (set! prompt-position (last-position))))]
 	  [init-transparent-io
@@ -883,8 +838,7 @@
 		     (mzlib:pretty-print:pretty-print-columns new-columns))))))]
 	  [do-eval
 	   (lambda (start end)
-	     (with-parameterization user-parameterization
-	       (lambda () (reset-pretty-print-width)))
+	     (reset-pretty-print-width)
 	     (do-pre-eval)
 	     (mred:gui-utils:local-busy-cursor
 	      (get-canvas)
@@ -902,7 +856,8 @@
 	  [eval-str mzlib:string:eval-string]
 	  [this-result-write 
 	   (lambda (s)
-	     (generic-write s 
+	     (generic-write this
+			    s 
 			    (lambda (start end)
 			      (change-style result-delta
 					    start end))))]
@@ -911,14 +866,12 @@
 	   (lambda (v)
 	     (unless (void? v)
 	       (begin-edit-sequence)
-	       (with-parameterization user-parameterization
-		 (lambda ()
-		   (parameterize 
-		       ([mzlib:pretty-print:pretty-print-size-hook
-			 (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
-			[mzlib:pretty-print:pretty-print-print-hook
-			 (lambda (x _ port) (this-result-write x))])
-		     (mzlib:pretty-print:pretty-print v this-result))))
+	       (parameterize 
+		   ([mzlib:pretty-print:pretty-print-size-hook
+		     (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
+		    [mzlib:pretty-print:pretty-print-print-hook
+		     (lambda (x _ port) (this-result-write x))])
+		 (mzlib:pretty-print:pretty-print v this-result))
 	       (end-edit-sequence)))]
 	  [eval-and-display
 	   (lambda (str)
@@ -927,11 +880,9 @@
 	      (lambda () #f)
 	      (call-with-values 
 	       (lambda ()
-		 (with-parameterization user-parameterization
-		   (lambda ()
-		     (dynamic-enable-break
-		      (lambda ()
-			(eval-str str))))))
+		 (dynamic-enable-break
+		  (lambda ()
+		    (eval-str str))))
 	       (lambda v
 		 (let ([v
 			(let loop ([v v])
@@ -1090,31 +1041,32 @@
 	     (when (and (not before) 
 			reset-console-start-location
 			reset-console-end-location)
-	       (let* ([old-pen (send dc get-pen)]
-		      [old-brush (send dc get-brush)]
-		      [old-logical (send dc get-logical-function)]
-		      [pen (send wx:the-pen-list
-				 find-or-create-pen
-				 "BLACK" 0
-				 wx:const-transparent)]
-		      [brush (make-object wx:brush% "BLACK" 
-					  wx:const-stipple)]
-		      [x dx]
-		      [y (+ dy reset-console-start-location)]
-		      [width (let ([b (box 0)])
-			       (get-extent b null)
-			       (max 0 (unbox b)))]
-		      [height (max 0
-				   (- reset-console-end-location
-				      reset-console-start-location))])
-		 (send brush set-stipple (mred:icon:get-reset-console-bitmap))
-		 (send dc set-pen pen)
-		 (send dc set-brush brush)
-		 (send dc set-logical-function wx:const-xor)
-		 (send dc draw-rectangle x y width height)
-		 (send dc set-pen old-pen)
-		 (send dc set-brush old-brush)
-		 (send dc set-logical-function old-logical))))]
+	       (let ([height (max 0
+				  (- reset-console-end-location
+				     reset-console-start-location))])
+		 (when (> height 0)
+		   (let* ([old-pen (send dc get-pen)]
+			  [old-brush (send dc get-brush)]
+			  [old-logical (send dc get-logical-function)]
+			  [pen (send wx:the-pen-list
+				     find-or-create-pen
+				     "BLACK" 0
+				     wx:const-transparent)]
+			  [brush (make-object wx:brush% "BLACK" 
+					      wx:const-stipple)]
+			  [x dx]
+			  [y (+ dy reset-console-start-location)]
+			  [width (let ([b (box 0)])
+				   (get-extent b null)
+				   (max 0 (unbox b)))])
+		     (send brush set-stipple (mred:icon:get-reset-console-bitmap))
+		     (send dc set-pen pen)
+		     (send dc set-brush brush)
+		     (send dc set-logical-function wx:const-xor)
+		     (send dc draw-rectangle x y width height)
+		     (send dc set-pen old-pen)
+		     (send dc set-brush old-brush)
+		     (send dc set-logical-function old-logical))))))]
 	  [ready-non-prompt
 	   (lambda ()
 	     (when prompt-mode?
@@ -1145,73 +1097,69 @@
 	  [this-in (make-this-in)]
 	  [takeover
 	   (lambda ()
-	     (error-display-handler
-	      (let ([old (error-display-handler)])
-		(lambda (x)
-		  (old x)
-		  (flush-console-output))))
-	     (mred:debug:unless 'no-takeover
-				(let ([doit
-				       (lambda ()
-					 (current-output-port this-out)
-					 (current-input-port this-in)
-					 (current-error-port this-err)
-					 '(mzlib:pretty-print:pretty-print-display-string-handler 
-					   (lambda (string port)
-					     (for-each (lambda (x) (write-char x port))
-						       (string->list string))))
-					 (for-each (lambda (port port-out-write)
-						     (let ([original-write-handler (port-write-handler port)]
-							   [original-display-handler (port-display-handler port)]
-							   [handler-maker
-							    (lambda (pretty original)
-							      (lambda (v p)
-								(if (or (string? v) 
-									(char? v)
-									(number? v)
-									(symbol? v))
-								    (original v p)
-								    (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-										    (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
-										   [mzlib:pretty-print:pretty-print-print-hook
-										    (lambda (x _ port) (port-out-write x))])
-								      (pretty v p 'infinity)))))])
-						       (port-display-handler 
-							port
-							(handler-maker mzlib:pretty-print:pretty-display 
-								       original-display-handler))
-						       (port-write-handler 
-							port  
-							(handler-maker mzlib:pretty-print:pretty-print
-								       original-write-handler))))
-						   (list this-out this-err this-result)
-						   (list this-out-write this-err-write this-result-write)))])
-				  (doit)
-				  (with-parameterization user-parameterization doit))))])
-	(public [user-parameterization (make-parameterization)])
+	     (mred:debug:unless 
+	      'no-takeover
+	      (error-display-handler
+	       (let ([old (error-display-handler)])
+		 (rec console-error-display-handler
+		      (lambda (x)
+			(old x)
+			(flush-console-output)))))
+	      (current-output-port this-out)
+	      (current-input-port this-in)
+	      (current-error-port this-err)
+	      (port-read-handler this-in (lambda (x) (transparent-read)))
+	      (mzlib:pretty-print:pretty-print-display-string-handler 
+	       (lambda (string port)
+		 (for-each (lambda (x) (write-char x port))
+			   (string->list string))))
+	      (for-each (lambda (port port-out-write)
+			  (let ([original-write-handler (port-write-handler port)]
+				[original-display-handler (port-display-handler port)]
+				[handler-maker
+				 (lambda (port-handler pretty original)
+				   (port-handler
+				    port
+				    (rec console-pp-handler
+					 (lambda (v p)
+					   (if (or (string? v) 
+						   (char? v)
+						   (number? v)
+						   (symbol? v))
+					       (original v p)
+					       (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+							       (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
+							      [mzlib:pretty-print:pretty-print-print-hook
+							       (lambda (x _ port) (port-out-write x))])
+						 (pretty v p 'infinity)))))))])
+			    (handler-maker port-display-handler 
+					   mzlib:pretty-print:pretty-display 
+					   original-display-handler)
+			    (handler-maker port-write-handler
+					   mzlib:pretty-print:pretty-print
+					   original-write-handler)))
+			(list this-out this-err this-result)
+			(list this-out-write this-err-write this-result-write))))])
 	(sequence
 	  (mred:debug:printf 'super-init "before console-edit%")
 	  (apply super-init args)
-	  (mred:debug:printf 'super-init "after console-edit%")
-	  (set-mode (make-object mred:scheme-mode:scheme-interaction-mode%)))
+	  (mred:debug:printf 'super-init "after console-edit%"))
 	(sequence
-	  (takeover)
-	  (with-parameterization user-parameterization
-	    (lambda ()
-	      (port-read-handler this-in (lambda (x) (transparent-read)))))))))
+	  (set-mode (make-object mred:scheme-mode:scheme-interaction-mode%))
+	  (takeover)))))
   
   (define console-edit% (make-console-edit% mred:edit:backup-autosave-edit%))
   
   (define make-transparent-io-edit%
     (lambda (super%)
       (class super% args
-	(inherit change-style prompt-position set-prompt-position resetting? set-resetting lock get-text
+	(inherit change-style prompt-position set-prompt-position
+		 resetting? set-resetting lock get-text
 		 flush-console-output set-position last-position get-character
 		 clear-undos set-auto-set-wrap locked?
 		 do-pre-eval do-post-eval)
 	(rename [super-on-insert on-insert]
-		[super-on-local-char on-local-char]
-		[super-generic-write generic-write])
+		[super-on-local-char on-local-char])
 	(private
 	  [input-delta (make-object wx:style-delta%)]
 	  [data null])
@@ -1227,7 +1175,7 @@
 	  [wait-for-sexp (make-semaphore 0)]
 	  
 	  [auto-set-wrap #t]
-	  [on-local-char
+	  [on-local-char-NO-LONGER
 	   (lambda (key)
 	     (flush-console-output)
 	     (super-on-local-char key))]
@@ -1317,11 +1265,6 @@
 		      (loop)])))))]
 	  [takeover void]
 	  [get-prompt (lambda () "")]
-	  [generic-write
-	   (lambda (s style-funct)
-	     (super-generic-write s (lambda (start end)
-				      (style-funct start end)
-				      (set-prompt-position end))))]
 	  [on-insert
 	   (lambda (start len)
 	     (let ([old-r resetting?])
@@ -1352,9 +1295,9 @@
 	  (apply super-init args)))))
   
   (define transparent-io-edit% 
-    (make-transparent-io-edit% (make-console-edit%
-				mred:edit:searching-edit%)))
-  
+    (make-transparent-io-edit%
+     (make-console-edit%
+      mred:edit:searching-edit%)))
   
   (define make-console-frame%
     (lambda (super%)
@@ -1363,6 +1306,7 @@
 		     [show? #t])
 	(inherit active-edit get-edit get-canvas show make-menu)
 	(rename [super-can-close? can-close?]
+		[super-on-close on-close]
 		[super-file-menu:close file-menu:close])
 	(private 
 	  edit-offset 
@@ -1374,7 +1318,13 @@
 	  [can-close?
 	   (lambda ()
 	     (and (super-can-close?)
-		  (mred:exit:exit)))]
+		  (unless (= 1 
+			     (length
+			      (send mred:group:the-frame-group get-frames)))
+		    (mred:exit:exit))))]
+	  [on-close
+	   (lambda ()
+	     (super-on-close))]
 	  [next-menu-id (lambda () other-offset)]
 	  [load-file
 	   (lambda (file)

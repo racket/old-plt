@@ -12,7 +12,13 @@
       (lambda (frame)
 	(mred:show-busy-cursor
 	 (lambda ()
-	   (require-library "drspidey.ss" "mrspidey")
+	   (let* ([f [parameterize ([wx:current-eventspace [wx:make-eventspace]])
+		       (make-object mred:frame% null "Spidey")]]
+		  [p (make-object mred:vertical-panel% f)]
+		  [m (make-object mred:canvas-message% p "Please wait, loading the Analysis.")])
+	     (send f show #t)
+	     (require-library "drspidey.ss" "mrspidey")
+	     (send f show #f))
 	   (set! invoke-spidey
 		 (invoke-open-unit/sig
 		  (global-defined-value 'tool@) 

@@ -48,7 +48,14 @@
 		(unit/sig ()
 		  (import plt:userspace^)
 		  (when library-unit
-		    (invoke-open-unit/sig library-unit #f plt:userspace^)))]
+		    (with-handlers ([(lambda (x) #t)
+				     (lambda (x)
+				       (mred:message-box
+					(format
+					 "Invalid Library:~n~a"
+					 (if (exn? x) (exn-message x) x))
+					"Invalid Library"))])
+		    (invoke-open-unit/sig library-unit #f plt:userspace^))))]
 	       [c@
 		(compound-unit/sig (import [drscheme:init : drscheme:init^]
 					   [params : plt:userspace:params^])

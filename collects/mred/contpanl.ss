@@ -30,7 +30,7 @@
   ; that can hold items and reposition them as necessary.  Note that a
   ; panel can contain other panels.
   (define panel%
-    (class (make-item% mred:connections:connections-panel% 0 0 #t #t list) args
+    (class (make-item% mred:connections:connections-panel% std-enable 0 0 #t #t list) args
       (sequence (mred:debug:printf 'creation "creating a panel"))
       (inherit
 	object-ID

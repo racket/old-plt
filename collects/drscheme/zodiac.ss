@@ -1,18 +1,5 @@
 (begin-elaboration-time
- (let* ([get-signature
-	 (lambda (sexp name)
-	   (parameterize ([current-namespace (make-namespace)])
-	     (eval sexp)
-	     (let ([e (eval `(let-id-macro 
-			      x 
-			      `',(global-expansion-time-value ',name) 
-			      x))])
-	       (vector->list e))))]
-	[all-names (get-signature '(begin
-				     (require-library "refer.ss")
-				     (require-library "zsigs.ss" "zodiac")
-				     (require-library "sigs.ss" "zodiac"))
-				   'zodiac:system^)]
+ (let* ([all-names (vector->list (signature->symbols zodiac:system^))]
 	[non-function-names
 	 '(scheme-vocabulary
 	   arglist-decls-vocab

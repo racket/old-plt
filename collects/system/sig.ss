@@ -1,5 +1,4 @@
 (require-library "sig.ss" "mred")
-(require-library "cmdlines.ss")
-(require-library "compatm.ss")
+(require-library "core.ss")
 (require-library "macro.ss")
-(require-library "defstru.ss")
+(require-library "cmdline.ss")

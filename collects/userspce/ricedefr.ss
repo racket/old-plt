@@ -9,7 +9,7 @@
     (define boolean=?
       (lambda (x y)
 	(unless (boolean? x)
-	  (error 'boolean=? "expected boolean arguments, received ~a ~a"
+	  (error 'boolean=? "expected boolean arguments, received ~e ~e"
 		 x y))
 	(if x
 	    y
@@ -20,7 +20,7 @@
 	  (lambda (x y)
 	    (unless (and (symbol? x)
 			 (symbol? y))
-	      (error 'eq? "expected symbols as arguments, received ~a ~a" x y))
+	      (error 'eq? "expected symbols as arguments, received ~e, and ~e" x y))
 	    (#%eq? x y))
 	  (lambda (x y)
 	    (#%eq? x y))))
@@ -29,7 +29,7 @@
       (lambda (prim-name a b)
 	(unless (list? b)
 	  (error prim-name
-		 "second argument must be of type <list>, given ~a and ~a"
+		 "second argument must be of type <list>, given ~e and ~e"
 		 a b))))
     
     (define check-last
@@ -41,9 +41,9 @@
 	     (let ([last (car l)])
 	       (unless (list? last)
 		 (error prim-name
-			"last argument must be of type <list>, given ~a; all args: ~a"
+			"last argument must be of type <list>, given ~e; all args: ~a"
 			last
-			args)))]
+			(map (lambda (x) (format "~e" x)) args))))]
 	    [else (loop (cdr l))]))))
     
     (define cons (if (params:allow-improper-lists)

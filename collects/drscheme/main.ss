@@ -2,6 +2,7 @@
   (import [wx : wx^]
 	  [I : mred:application-imports^]
 	  [mred : mred^]
+	  [pretty-print : mzlib:pretty-print^]
 	  [print-convert : mzlib:print-convert^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:compound-unit : drscheme:compound-unit^]
@@ -19,6 +20,9 @@
   (drscheme:get/extend:get-interactions-edit%)
   (drscheme:get/extend:get-definitions-edit%)
   
+
+  (pretty-print:pretty-print-show-inexactness #t)
+  (print-convert:empty-list-name 'empty)
   (print-convert:current-print-convert-hook
    (lambda (expr basic-convert sub-convert)
      (if (is-a? expr wx:image-snip%)

@@ -101,7 +101,8 @@
 	      (values  (pick-out 'begin all-keywords null)
 		       (pick-out 'define all-keywords null)
 		       (pick-out 'lambda all-keywords null))))]
-	 [(begin-keywords define-keywords lambda-keywords) (get-keywords (mred:preferences:get-preference 'mred:tabify))])
+	 [(begin-keywords define-keywords lambda-keywords)
+	  (get-keywords (mred:preferences:get-preference 'mred:tabify))])
 	(let* ([add-callback
 		   (lambda (keyword-type keyword-symbol list-box)
 		     (lambda (button command)
@@ -300,6 +301,12 @@
 			  (unless just-clear?
 			    (let* ([here (send edit get-start-position)]
 				   [there (send edit get-end-position)]
+				   [slash?
+				    (lambda (before after)
+				      (let ([text (send edit get-text before after)])
+					(and (string=? text)
+					     (>= (string-length text) 1)
+					     (char=? #\\ (string-ref text 0)))))]
 				   [is-paren?
 				    (lambda (f)
 				      (lambda (char)
@@ -313,19 +320,25 @@
 				      ([(left right)
 					(cond
 					 [(is-right-paren? (send edit get-character (sub1 here))) 
-					  (let ([end-pos (mred:scheme-paren:scheme-backward-match
-							  edit here (get-limit edit here)
-							  backward-cache)])
-					    (if end-pos
-						(values end-pos here)
-						(k (void))))]
+					  (cond
+					   [(slash? (- here 2) (- here 1)) (k (void))]
+					   [(mred:scheme-paren:scheme-backward-match
+					     edit here (get-limit edit here)
+					     backward-cache)
+					    =>
+					    (lambda (end-pos) 
+					      (values end-pos here))]
+					   [else (k (void))])]
 					 [(is-left-paren? (send edit get-character here))
-					  (let ([end-pos (mred:scheme-paren:scheme-forward-match
-							  edit here (send edit last-position)
-							  forward-cache)])
-					    (if end-pos
-						(values here end-pos)
-						(k (void))))]
+					  (cond
+					   [(slash? (- here 1) here) (k (void))]
+					   [(mred:scheme-paren:scheme-forward-match
+					     edit here (send edit last-position)
+					     forward-cache)
+					    =>
+					    (lambda (end-pos)
+					      (values here end-pos))]
+					   [else (k (void))])]
 					 [else (k (void))])])
 				    (clear-old-location)
 				    (set! clear-old-location
@@ -371,29 +384,33 @@
 			[get-right-paren (lambda (p) 
 					   (ormap (check-one p)
 						  mred:scheme-paren:scheme-paren-pairs))])
-		   (if (or paren-match? fixup-parens?)
-		       (let* ([end-pos (mred:paren:backward-match
-					edit here limit
-					mred:scheme-paren:scheme-paren-pairs
-					mred:scheme-paren:scheme-quote-pairs
-					mred:scheme-paren:scheme-comments
-					#t
-					backward-cache)])
-			 (cond
-			   [end-pos
-			    (let ([right-paren-string (get-right-paren end-pos)])
-			      (if right-paren-string
-				  (begin
-				    (send edit insert (if fixup-parens?
-							  right-paren-string
-							  (integer->char code)))
-				    (when paren-match?
-				      (send edit flash-on
-					    (- end-pos (string-length right-paren-string))
-					    end-pos)))
-				  (send edit insert char)))]
-			   [else (send edit insert char)]))
-		       (send edit insert char))
+		   (cond
+		    [(and (not (= 0 here))
+			  (char=? (string-ref (get-text (- here 1) here) 0) #\\))
+		     (send edit insert char)]
+		    [(or paren-match? fixup-parens?)
+		     (let* ([end-pos (mred:paren:backward-match
+				      edit here limit
+				      mred:scheme-paren:scheme-paren-pairs
+				      mred:scheme-paren:scheme-quote-pairs
+				      mred:scheme-paren:scheme-comments
+				      #t
+				      backward-cache)])
+		       (cond
+			[end-pos
+			 (let ([right-paren-string (get-right-paren end-pos)])
+			   (if right-paren-string
+			       (begin
+				 (send edit insert (if fixup-parens?
+						       right-paren-string
+						       (integer->char code)))
+				 (when paren-match?
+				   (send edit flash-on
+					 (- end-pos (string-length right-paren-string))
+					 end-pos)))
+			       (send edit insert char)))]
+			[else (send edit insert char)]))]
+		    [else (send edit insert char)])
 		   #t)))]
 	    [tabify-on-return?
 	     (lambda ()

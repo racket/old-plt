@@ -448,13 +448,14 @@
 	       (set! parents (cons c parents))
 	       (invalidate-to c)
 	       (set-buffer-modified)))])
+	(private [name #f])
 	(public 
+	  [set-name! (lambda (x) (set! name x))]
 	  [get-name
-	   (let ([name #f])
-	     (lambda ()
-	       (unless name
-		 (set! name (get-next-node-snip-name)))
-	       name))])
+	   (lambda ()
+	     (unless name
+	       (set-name! (get-next-node-snip-name)))
+	     name)])
 	(public
 	  [get-pos
 	   (lambda ()

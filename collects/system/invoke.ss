@@ -11,17 +11,7 @@
 	    (current-custodian (make-custodian))
 	    (user-break-poll-handler wx:check-for-break)
 	    (init-param)
-	    (wx:current-eventspace (wx:make-eventspace))
-	    ;; test for working eventspaces
-	    ;; should have both names the same in the list
-	    '(let ([eh (lambda (param)
-			 (with-parameterization param 
-			   (lambda () (exit-handler))))])
-	       (wx:message-box (format
-				"~a"
-				(list (eh (wx:eventspace-parameterization
-					   (wx:current-eventspace)))
-				      (eh new-param)))))
+	    (wx:current-eventspace (wx:make-eventspace (current-parameterization)))
 	    
 	    (require-library "invsig.ss" "system")
 	    (require-library "invsig.ss" "system")
@@ -59,5 +49,4 @@
 	      (let ([argv (list->vector extra-args)])
 		;; the non unitized approach relies on this being invoke-open
 		(invoke-open-unit/sig app #f mred:application-imports^)))
-	    
 	    (mred:close-splash)))))))

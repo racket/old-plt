@@ -72,8 +72,8 @@
 		  (public
 		    [auto-set-wrap #t]
 		    [autowrap-bitmap null]))])
-	(opt-lambda (s [title "Message Box"])
-	  (let* ([f (make-object mred:container:dialog-box% '() title #t)]
+	(opt-lambda (s [title "Message Box"] [modal? #t])
+	  (let* ([f (make-object mred:container:dialog-box% '() title modal?)]
 		 [p (make-object mred:container:vertical-panel% f)]
 		 [c (make-object mred:canvas:wrapping-canvas% p)]
 		 [e (make-object mred:edit:media-edit%)]

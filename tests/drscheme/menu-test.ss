@@ -56,7 +56,7 @@
 
        [language-dialog-items 
 	'("Configure Language..." 
-	  "Select Library...")])
+	  "Set Library To...")])
 
        ; this makes sure REPL is loaded
 

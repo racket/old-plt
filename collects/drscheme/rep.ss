@@ -32,24 +32,28 @@
     (set-delta-foreground "BLACK")
     (set-delta-background "YELLOW"))
 
-  (define exception-reporting-rep (make-parameter #f))
+  (define exception-reporting-rep
+    (let ([edit #f])
+      (case-lambda 
+       [() edit]
+       [(x)
+	(set! edit x)])))
 
   (define user-exception-handler
     (lambda (exn)
-      (let ([rep (exception-reporting-rep)])
-	(if rep
-	    (with-parameterization drscheme:init:system-parameterization
-	      (lambda ()
-		(send rep report-exception-error exn)
-		(send rep escape)))
-	    (begin
-	      (with-parameterization drscheme:init:system-parameterization
-		(lambda ()
+      (with-parameterization drscheme:init:system-parameterization
+	(lambda ()
+	  (let ([rep (exception-reporting-rep)])
+	    (if rep
+		(begin
+		  (send rep report-exception-error exn)
+		  (send rep escape))
+		(begin
 		  (mred:message-box (if (exn? exn)
 					(exn-message exn)
 					(format "~e" exn))
-				    "Uncaught Exception")))
-	      ((error-escape-handler)))))))
+				    "Uncaught Exception"))))))
+      ((error-escape-handler))))
 
   (define build-parameterization
     (lambda (user-custodian)
@@ -64,10 +68,14 @@
 	     [bottom-eventspace 
 	      (parameterize ([current-custodian user-custodian])
 		(wx:make-eventspace (userspace-branch-handler)))]
-	     [n (make-namespace 'no-constants 'wx 'hash-percent-syntax)])
+	     [n (if (drscheme:language:use-zodiac)
+		    (make-namespace 'no-constants 'wx 'hash-percent-syntax)
+		    (make-namespace 'wx))])
 	(with-parameterization p
 	  (lambda ()
 	    (parameterization-branch-handler userspace-branch-handler)
+	    (compile-allow-set!-undefined #f)
+	    (compile-allow-cond-fallthrough #f)
 	    (current-custodian user-custodian)
 	    (require-library-use-compiled #f)
 	    (error-value->string-handler
@@ -389,20 +397,16 @@
 	     (process/no-zodiac (let ([first? #t]) 
 				  (lambda ()
 				    (if first?
-					sexp
+					(begin (set! first? #f)
+					       sexp)
 					eof)))
 				f))]
-
-	  ;(report-unlocated-error (if (exn? expr) (exn-message expr) (format "~a" expr)))
 	  [process/no-zodiac
 	   (lambda (reader f)
 	     (let loop ()
 	       (let-values ([(expr error?) (with-handlers ([(lambda (x) #t)
 							    (lambda (exn) (values exn #t))])
-					     (let* ([unexpanded (reader)]
-						    [expanded (parameterize ([current-namespace no-zodiac-vocab])
-								(expand-defmacro unexpanded))])
-					       (values expanded #f)))])
+					     (values (reader) #f))])
 		 (if error?
 		     (begin
 		       (report-unlocated-error
@@ -645,31 +649,31 @@
 	  [send-scheme 
 	   (lambda (expr)
 	     (let/ec k
-	       (dynamic-wind
-		(lambda () 
-		  (current-directory current-thread-directory)
-		  (set! error-escape-k k)
-		  '(set! exception-handler
-			(lambda (exn)
-			  (with-parameterization drscheme:init:system-parameterization
-			    (lambda ()
-			      (report-exception-error exn)))
-			  ((error-escape-handler))
-			  (with-parameterization drscheme:init:system-parameterization
-			    (lambda ()
-			      (mred:message-box "error-escape-handler didn't escape"
-						"Error Escape")))
-			  (k (list (void)) #t))))
-		(lambda ()
-		  (call-with-values
-		   (lambda ()
-		     (with-parameterization user-param
-		       (lambda ()
-			 (drscheme:init:primitive-eval expr))))
-		   (lambda anss
-		     (values anss #f))))
-		(lambda () 
-		  (set! current-thread-directory (current-directory))))))])
+	       (fluid-let ([error-escape-k k])
+			  (dynamic-wind
+			   (lambda () 
+			     (current-directory current-thread-directory)
+			     '(set! exception-handler
+				    (lambda (exn)
+				      (with-parameterization drscheme:init:system-parameterization
+					(lambda ()
+					  (report-exception-error exn)))
+				      ((error-escape-handler))
+				      (with-parameterization drscheme:init:system-parameterization
+					(lambda ()
+					  (mred:message-box "error-escape-handler didn't escape"
+							    "Error Escape")))
+				      (k (list (void)) #t))))
+			   (lambda ()
+			     (call-with-values
+			      (lambda ()
+				(with-parameterization user-param
+				  (lambda ()
+				    (drscheme:init:primitive-eval expr))))
+			      (lambda anss
+				(values anss #f))))
+			   (lambda () 
+			     (set! current-thread-directory (current-directory)))))))])
 	(public
 	  [evaluation-thread #f]
 	  [run-in-evaluation-thread void]
@@ -752,6 +756,7 @@
 	       (set! should-collect-garbage? #t)
 	       (lock #f) ;; locked if the thread was killed
 	       (init-evaluation-thread)
+	       (drscheme:language:set-use-zodiac)
 	       (let ([p (build-parameterization user-custodian)])
 		 (with-parameterization p
 		   (lambda ()

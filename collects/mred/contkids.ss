@@ -1,5 +1,5 @@
 ;;
-;; $Id: contkids.ss,v 1.48 1997/12/13 02:23:58 robby Exp robby $
+;; $Id: contkids.ss,v 1.49 1998/01/27 21:54:12 robby Exp $
 ;;
 
 ; need to export:
@@ -130,7 +130,11 @@
       
       (define make-item%
         (polymorphic
-          (lambda (item% x-margin y-margin stretch-x stretch-y make-default-size)
+          (lambda (item%
+		   input-enable
+		   x-margin y-margin
+		   stretch-x stretch-y
+		   make-default-size)
             (class item% args
               (inherit
                 get-width
@@ -145,9 +149,10 @@
 	      (private [enabled? #t])
 	      (public
 		[enable
-		 (lambda (b)
-		   (begin0 (super-enable b)
-			   (set! enabled? b)))]
+		 (input-enable
+		  (lambda (b)
+		    (set! enabled? b))
+		  (lambda x (apply super-enable x)))]
 		[is-enabled? (lambda () enabled?)])
 		       
 
@@ -423,25 +428,36 @@
 	  (list* parent callback label x y const-default-size
 		 const-default-size args)))
       
+      (define std-enable
+	(lambda (work-enable super-enable)
+	  (rec enable
+	       (lambda (b)
+		 (begin0 (super-enable b)
+			 (work-enable b))))))
+
       ; these next definitions descend classes from the children of wx:item%
       ; which can be inserted into panel% objects.
       (define button%
 	(make-item% mred:testable-button% 
+		    std-enable
 		    const-default-x-margin const-default-y-margin 
 		    #f #f standard-make-default-size))
       
       (define check-box%
 	(make-item% mred:testable-check-box% 
+		    std-enable
 		    const-default-x-margin const-default-y-margin 
 		    #f #f standard-make-default-size))
       
       (define choice%
 	(make-item% mred:testable-choice% 
+		    std-enable
 		    const-default-x-margin const-default-y-margin 
 		    #t #f standard-make-default-size))
       
       (define gauge%
 	(class (make-item% mred:testable-gauge% 
+			   std-enable
 			   const-default-x-margin const-default-y-margin 
 			   #t #f list) args
 	  (inherit
@@ -533,6 +549,7 @@
       (define list-box%
 	(let ([container-list-box%
 	       (make-item% mred:testable-list-box% 
+			   std-enable
 			   const-default-x-margin const-default-y-margin 
 			   #t #t
 			   (opt-lambda (parent callback label
@@ -555,19 +572,32 @@
 	  
       (define message%
 	(make-item% mred:testable-message% 
+		    std-enable
 		    const-default-x-margin const-default-y-margin 
 		    #f #f list))
       ; we don't need to process the size args at all cause there aren't
       ; any. Therefore, we just need to bundle the args up in a list.  list
       ; already does that.
       
+      (define radio-box-enable
+	(lambda (work super)
+	  (let ([b (box #f)])
+	    (rec enable
+		 (case-lambda 
+		  [(b) (begin0 (work b)
+			       (super b))]
+		  [(n b) (begin0 (work b)
+				 (super n b))])))))
+
       (define radio-box%
 	(make-item% mred:testable-radio-box% 
+		    radio-box-enable
 		    const-default-x-margin const-default-y-margin 
 		    #f #f standard-make-default-size))
       
       (define slider%
 	(class (make-item% mred:testable-slider% 
+			   std-enable
 			   const-default-x-margin const-default-y-margin 
 			   #f #f list) args
 	  (inherit
@@ -666,6 +696,7 @@
       
       (define text% ;; for now
 	(make-item% mred:testable-text% 
+		    std-enable
 		    const-default-x-margin const-default-y-margin 
 		    #t #f
 		    (opt-lambda (parent callback label
@@ -679,6 +710,7 @@
       
       (define multi-text%
 	(make-item% mred:testable-multi-text% 
+		    std-enable
 		    const-default-x-margin const-default-y-margin 
 		    #t #t
 		    (opt-lambda (parent callback label
@@ -701,11 +733,15 @@
 			    [h canvas-default-size] . args)
 	  (list* parent x y canvas-default-size canvas-default-size args)))
       
-      (define canvas% (make-item% mred:testable-canvas% 0 0 #t #t canvas-args))
+      (define canvas% (make-item% mred:testable-canvas% std-enable 
+				  0 0 #t #t canvas-args))
       (define media-canvas% (make-item%
 			     mred:connections:connections-media-canvas%
+			     std-enable
 			     0 0 #t #t canvas-args))
-      (define text-window% (make-item% mred:testable-text-window% 0 0 #t #t canvas-args))
+      (define text-window% (make-item% mred:testable-text-window%
+				       std-enable
+				       0 0 #t #t canvas-args))
 
       (define canvas-message%
 	(class canvas% (panel

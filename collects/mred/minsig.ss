@@ -4,6 +4,7 @@
 
 (define-signature mred:constants^
   (original-input-port
+   original-error-port
    original-output-port))
 
 (define-signature mred:connections^
@@ -29,6 +30,7 @@
    non-negative-number?
    same-dimension?
    make-item%
+   std-enable
    button%
    check-box%
    choice%

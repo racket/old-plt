@@ -75,10 +75,16 @@
   (define r4rs-style-printing (make-parameter #f))
   (define use-zodiac (make-parameter #t))
   
+  (define set-use-zodiac
+    (lambda ()
+      (use-zodiac
+       (setting-use-zodiac? 
+	(mred:get-preference 'drscheme:settings)))))
+
+
   (define install-language
     (lambda (parameterization)
       (let ([pref (mred:get-preference 'drscheme:settings)])
-	(use-zodiac (setting-use-zodiac? pref))
 	(zodiac:current-vocabulary (setting-vocabulary-symbol pref))
 	
 	((in-parameterization parameterization read-case-sensitive)
@@ -208,27 +214,27 @@
 		   input-syntax-panel)]
 	   [case-sensitive? (make-check-box set-setting-case-sensitive?!
 					    setting-case-sensitive?
-					    "Case sensitive?"
+					    "Case sensitive"
 					    input-syntax-panel)]
 	   [allow-improper-lists?
 	    (make-check-box set-setting-allow-improper-lists?!
 			    setting-allow-improper-lists?
-			    "Allow improper lists?"
+			    "Allow improper lists"
 			    dynamic-panel)]
 	   [allow-set!-on-undefined?
 	    (make-check-box set-setting-allow-set!-on-undefined?!
 			    setting-allow-set!-on-undefined?
-			    "Allow set! on undefined identifiers?"
+			    "Allow set! on undefined identifiers"
 			    dynamic-panel)]
 	   [unmatched-cond/case-is-error?
 	    (make-check-box set-setting-unmatched-cond/case-is-error?!
 			    setting-unmatched-cond/case-is-error?
-			    "Unmatched cond/case is an error?"
+			    "Unmatched cond/case is an error"
 			    dynamic-panel)]
 	   [signal-undefined
 	    (make-check-box set-setting-signal-undefined!
 			    setting-signal-undefined
-			    "Signal undefined variables when first referenced?"
+			    "Signal undefined variables when first referenced"
 			    dynamic-panel)]
 	   [signal-not-boolean
 	    (make-check-box set-setting-signal-not-boolean!
@@ -272,12 +278,12 @@
 	   [abbreviate-cons-as-list?
 	    (make-check-box set-setting-abbreviate-cons-as-list?!
 			    abbreviate-cons-as-list?
-			    "Abbreviate multiples cons's with list?"
+			    "Abbreviate multiples cons's with list"
 			    output-syntax-panel)]
 	   [sharing-printing?
 	    (make-check-box set-setting-sharing-printing?!
 			    setting-sharing-printing?
-			    "Show sharing in values?"
+			    "Show sharing in values"
 			    output-syntax-panel)]
 	   [ok-panel (make-object mred:horizontal-panel% main)]
 	   [hide-button (make-object mred:button% ok-panel
@@ -386,7 +392,7 @@
       (send* language-menu 
 	(append-item "Configure Language..." language-dialog)
 	(append-separator)
-	(append-item "Select Library..."
+	(append-item "Set Library To..."
 		     (lambda ()
 		       (let ([lib-file (mred:get-file 
 					() 

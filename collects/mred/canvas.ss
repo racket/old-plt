@@ -182,36 +182,39 @@
 		      [snip-media (send s get-this-media)]
 		      [edit (get-media)])
 		 (unless (null? edit)
-		   (let ([admin (send edit get-admin)])
-		     (send admin get-view null null width height)
-		     (send s get-margin leftm topm rightm bottomm)
-		     (send edit get-snip-position-and-location
-			   s null left-edge-box top-edge-box)
-		     (if width?
-			 (let ([snip-width (- (unbox width)
-					      (unbox left-edge-box)
-					      (unbox leftm)
-					      (unbox rightm)
-					      
-					      ;; this two is the space that 
-					      ;; the caret needs at the right of
-					      ;; a buffer.
-					      2)])
-			   (send* s 
-				  (set-min-width snip-width)
-				  (set-max-width snip-width))
-			   (unless (null? snip-media)
-			     (send snip-media set-max-width
-				   (if autowrap-snips?
-				       snip-width
-				       0))))
-			 (let ([snip-height (- (unbox height)
-					       (unbox top-edge-box)
-					       (unbox topm)
-					       (unbox bottomm))])
-			   (send* s 
-				  (set-min-height snip-height)
-				  (set-max-height snip-height)))))))))])
+		   (send edit
+			 run-after-edit-sequence
+			 (lambda ()
+			   (let ([admin (send edit get-admin)])
+			     (send admin get-view null null width height)
+			     (send s get-margin leftm topm rightm bottomm)
+			     (send edit get-snip-position-and-location
+				   s null left-edge-box top-edge-box)
+			     (if width?
+				 (let ([snip-width (- (unbox width)
+						      (unbox left-edge-box)
+						      (unbox leftm)
+						      (unbox rightm)
+						      
+						      ;; this two is the space that 
+						      ;; the caret needs at the right of
+						      ;; a buffer.
+						      2)])
+				   (send* s 
+				     (set-min-width snip-width)
+				     (set-max-width snip-width))
+				   (unless (null? snip-media)
+				     (send snip-media set-max-width
+					   (if autowrap-snips?
+					       snip-width
+					       0))))
+				 (let ([snip-height (- (unbox height)
+						       (unbox top-edge-box)
+						       (unbox topm)
+						       (unbox bottomm))])
+				   (send* s 
+				     (set-min-height snip-height)
+				     (set-max-height snip-height)))))))))))])
 	  (public
 	    [widen-snips
 	     (lambda (x)

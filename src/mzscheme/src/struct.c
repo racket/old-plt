@@ -628,16 +628,14 @@ static Scheme_Object *struct_getter(Struct_Proc_Info *i, int argc, Scheme_Object
   Scheme_Structure *inst;
   int pos;
 
-  if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type)) {
+  inst = (Scheme_Structure *)args[0];
+
+  if (NOT_SAME_TYPE(inst->type, scheme_structure_type)) {
     scheme_wrong_type(i->func_name, 
 		      type_name_string(i->struct_type->name), 
 		      0, argc, args);
     return NULL;
-  }
-  
-  inst = (Scheme_Structure *)args[0];
-
-  if (!STRUCT_TYPEP(i->struct_type, inst)) {
+  } else if (!STRUCT_TYPEP(i->struct_type, inst)) {
     wrong_struct_type(i->func_name, 
 		      i->struct_type->name, 
 		      SCHEME_STRUCT_NAME_SYM(inst), 

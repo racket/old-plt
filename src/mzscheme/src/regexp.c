@@ -888,7 +888,7 @@ regexec(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp,
   }
 
   /* If there is a "must appear" string, look for it. */
-  if (prog->regmust >= 0) {
+  if (!port && (prog->regmust >= 0)) {
     spos = stringpos;
     slen = stringlen;
     while ((spos = l_strchr(string, spos, slen, ((char *)prog + prog->regmust)[0])) != -1) {
@@ -912,12 +912,34 @@ regexec(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp,
   regbol = stringpos;
 
   /* Simplest case:  anchored match need be tried only once. */
-  if (prog->reganch)
-    return(regtry(prog, string, stringpos, stringlen, startp, endp));
+  if (prog->reganch) {
+    if (port) {
+      rxpos len = 0, space = 0;
+      *stringp = NULL;
+      if (regtry_port(prog, port, startp, endp, stringp, &len, &space, 0)) {
+	if (!peek) {
+	  /* Need to consume matched chars: */
+	  scheme_get_chars(port, *stringp, 0, *endp, 0, 0, 0);
+	}
+	return 1;
+      } else {
+	if (!peek) {
+	  /* Need to consume all chars */
+	  char *drain;
+	  drain = (char *)scheme_malloc_atomic(4096);
+	  while (scheme_get_chars(port, drain, 0, 4096, 0, 0, 0) != EOF) {
+	    /* ... drain more ... */
+	  }
+	}
+	return 0;
+      }
+    } else
+      return regtry(prog, string, stringpos, stringlen, startp, endp);
+  }
 
   /* Messy cases:  unanchored match. */
   spos = stringpos;
-  if (prog->regstart != '\0') {
+  if (!port && (prog->regstart != '\0')) {
     /* We know what char it must start with. */
     while ((spos = l_strchr(string, spos, stringlen - (spos - stringpos), prog->regstart)) != -1) {
       if (regtry(prog, string, spos, stringlen - (spos - stringpos), startp, endp))
@@ -926,11 +948,62 @@ regexec(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp,
     }
   } else {
     /* We don't -- general case. */
-    rxpos e = stringpos + stringlen;
-    do {
-      if (regtry(prog, string, spos, stringlen - (spos - stringpos), startp, endp))
-	return 1;
-    } while (spos++ != e);
+    if (port) {
+      rxpos len = 0, skip = 0, dropped = 0;
+      *stringp = NULL;
+      
+      do {
+	if (!peek && (skip == 32)) {
+	  char drain[32];
+	  int got;
+	  got = scheme_get_chars(port, drain, 0, 32, 0, 0, 0);
+	  if (got == EOF) {
+	    /* Broken port, or someone else is reading it */
+	    got = skip;
+	  }
+	  skip -= got;
+	  len -= got;
+	  memmove(*stringp, *stringp + got, len);
+	}
+
+	if (regtry_port(prog, port, startp, endp, stringp, &len, &space, skip)) {
+	  if (!peek) {
+	    char *drain;
+	    
+	    scheme_get_string(port, *stringp, 0, skip, 0, 0, 0);
+	    
+	  }
+
+	  if (dropped && nonpeek_offsets) {
+	    /* The offsets will be returned to the user,
+	       not used to index *stringp, so increment
+	       by the number of characters we'd already dropped: */
+	    for (i = 0; i < prog->nsubexp; i++) {
+	      if (startp[i] != -1) {
+		startp[i] += dropped;
+		endp[i] += dropped;
+	      }
+	    }
+	  }
+
+	  return 1;
+	} else if (len > skip)
+	  skip++;
+      } while (len > skip);
+
+      if (!peek) {
+	/* If we get here, there must be skip leftover characters in the port,
+	   and *stringp must be at least skip characters long: */
+	if (skip)
+	  scheme_get_string(port, *stringp, 0, skip, 0, 0, 0);
+      }
+    } else {
+      rxpos e = stringpos + stringlen;
+      do {
+	if (regtry(prog, string, spos, stringlen - (spos - stringpos), startp, endp))
+	  return 1;
+      } while (spos++ != e);
+    }
   }
 
   /* Failure. */
@@ -969,6 +1042,75 @@ regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, 
   } else
     return 0;
 }
+
+/*
+   - regtry - try match in a port
+   */
+static int			/* 0 failure, 1 success */
+regtry_port(regexp *prog, Scheme_Object *port, rxpos *startp, rxpos *endp, 
+	    char **work_string, rxpos *len, rxpos *size, rxpos skip)
+{
+  int m;
+
+  regport = port;
+  reginstr_size = *size;
+
+  m = regtry(prog, *work_string, skip, *len, startp, endp);
+
+  *work_string = reginstr;
+  *len = reginput_end;
+  *size = reginstr_size;
+
+  return m;
+}
+
+#define NEED_INPUT(v, n) if (regport && (((v) + (n)) > reginput_end)) read_more_from_regport((v) + (n))
+
+static void read_more_from_regport(rxpos need_total)
+     /* Called when we're about to look past our read-ahead */
+{
+  long got;
+
+  if (reginstr_size < need_total) {
+    char *naya;
+    long size;
+    
+    size = size * 2;
+    if (size <need_total)
+      size += need_total;
+
+    naya = (char *)scheme_malloc_atomic(size);
+    memcpy(naya, reginstr, reginput_end);
+
+    reginstr_size = size;
+  }
+
+  /* Fill as much of our buffer as possible: */
+  got = scheme_get_string("regexp-match", regport, 
+			  reginstr, reginput_end, reginstr_size - reginput_end,
+			  1, /* read at least one char, and as much as possible */
+			  1, regnput_end);
+
+  if (got == EOF)
+    regport = NULL; /* turn off further port reading */
+  else {
+    reginput_end += got;
+
+    /* Non-blocking read got enough? If not, try againin blocking mode: */
+    if (need_total > reginput_end) {
+      got = scheme_get_string("regexp-match", regport, 
+			      reginstr, reginput_end, need_total - reginput_end,
+			      0, /* blocking mode */
+			      1, regnput_end);
+      
+      if (got == EOF)
+	regport = NULL; /* turn off further port reading */
+      else
+	reginput_end += got;
+    }
+  }
+}
+
 
 #ifdef DO_STACK_CHECK
 
@@ -1018,10 +1160,12 @@ regmatch(rxpos prog)
 	return(0);
       break;
     case EOL:
+      NEED_INPUT(reginput, 1);
       if (reginput != reginput_end)
 	return(0);
       break;
     case ANY:
+      NEED_INPUT(reginput, 1);
       if (reginput == reginput_end)
 	return(0);
       reginput++;
@@ -1032,6 +1176,7 @@ regmatch(rxpos prog)
 
       opnd = OPSTR(OPERAND(scan));
       len = OPLEN(OPERAND(scan));
+      NEED_INPUT(reginput, len);
       if (len > reginput_end - reginput)
 	return 0;
       for (i = 0; i < len; i++) {
@@ -1042,6 +1187,7 @@ regmatch(rxpos prog)
     }
       break;
     case ANYOF:
+      NEED_INPUT(reginput, 1);
       if (reginput == reginput_end || (l_strchr(regstr, OPSTR(OPERAND(scan)), 
 						OPLEN(OPERAND(scan)), 
 						reginstr[reginput]) == -1))
@@ -1049,6 +1195,7 @@ regmatch(rxpos prog)
       reginput++;
       break;
     case ANYBUT:
+      NEED_INPUT(reginput, 1);
       if (reginput == reginput_end || (l_strchr(regstr, OPSTR(OPERAND(scan)), 
 						OPLEN(OPERAND(scan)), 
 						reginstr[reginput]) != -1))
@@ -1204,6 +1351,7 @@ regrepeat(rxpos p)
   opnd = OPERAND(p);
   switch (OP(p)) {
   case ANY:
+    NEED_INPUT(scan, 0x7FFFFFFF); /* need all! */
     count = reginput_end - scan;
     scan += count;
     break;
@@ -1217,17 +1365,21 @@ regrepeat(rxpos p)
     }
     break;
   case ANYOF:
+    NEED_INPUT(scan, 1);
     while (scan != reginput_end 
 	   && (l_strchr(regstr, OPSTR(opnd), OPLEN(opnd), reginstr[scan]) != -1)) {
       count++;
       scan++;
+      NEED_INPUT(scan, 1);
     }
     break;
   case ANYBUT:
+    NEED_INPUT(scan, 1);
     while (scan != reginput_end 
 	   && (l_strchr(regstr, OPSTR(opnd), OPLEN(opnd), reginstr[scan]) == -1)) {
       count++;
       scan++;
+      NEED_INPUT(scan, 1);
     }
     break;
   default:			/* Oh dear.  Called inappropriately. */

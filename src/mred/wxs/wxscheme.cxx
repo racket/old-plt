@@ -1764,7 +1764,7 @@ int wxGetPreference(const char *name, char *res, long len)
 
       if (!FindFolder(kOnSystemDisk, 'pref', kCreateFolder, &vRefNum, &dirID) == noErr) {
 	FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
-	home = scheme_make_string(scheme_mac_spec_to_path(&spec));
+	home = scheme_mac_spec_to_path(&spec);
       } else if (wxmac_startup_directory) {
 	home = wxmac_startup_directory;
       } else {

@@ -15,7 +15,10 @@
        [drscheme-frame-new 'dummy]
        [menubar (send drscheme-frame get-menu-bar)]
        [menubar-new 'dummy]
-       [menus-expected '("File" "Edit" "Windows" "View" "Scheme" "Language" "Help")]
+       [menus-expected 
+	(if (eq? wx:platform 'windows)
+	    '("&File" "&Edit" "&Windows" "&View" "S&cheme" "&Language" "&Help")
+	    '("File" "Edit" "Windows" "View" "Scheme" "Language" "Help"))]
        [buttons-expected '(check-syntax analyze execute break help)]
        [check-menus
 	(lambda ()

@@ -15,7 +15,7 @@
 		 (fprintf (current-error-port) 
 			  "Warning: MzCOM binary not installed~n")
 		 (failure-thunk))
-	       `(system (format "~a /RegServer" ,exe-path)))))]
+	       `(system (format "\"~a\" /RegServer" ,exe-path)))))]
     [(blurb)
      (list
       "MzCOM is a COM class that makes Scheme available to any COM client.")]

@@ -29,7 +29,7 @@
 		      (for-each	
 		       (lambda (dll-path)	 
 			 (system
-			  (format "~a ~a" 
+			  (format "\"~a\" \"~a\"" 
 				  (build-path winsys-dir 
 					      "REGSVR32")
 				  dll-path)))

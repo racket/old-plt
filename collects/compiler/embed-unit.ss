@@ -232,7 +232,8 @@
 					 modules 
 					 literal-files literal-expression
 					 cmdline)
-	(unless ((apply + (length cmdline) (map string-length cmdline)) . < . 50)
+	(unless (or (eq? (system-type) 'windows)
+		    ((apply + (length cmdline) (map string-length cmdline)) . < . 50))
 	  (error 'make-embedding-executable "command line too long"))
 	(let* ([module-paths (map cadr modules)]
 	       [files (map
@@ -308,17 +309,33 @@
 		    (fprintf (current-error-port) "Setting command line~n"))
 		  (let ([out (open-output-file dest 'update)]
 			[start-s (number->string start)]
-			[end-s (number->string end)])
+			[end-s (number->string end)]
+			[long-cmdline? (eq? (system-type) 'windows)])
 		    (dynamic-wind
 		     void
 		     (lambda ()
-		       (file-position out cmdpos)
-		       (display "!" out)
+		       (if long-cmdline?
+			   ;; write cmdline at end:
+			   (file-position out end)
+			   (begin
+			     ;; write (short) cmdline in the normal position:
+			     (file-position out cmdpos)
+			     (display "!" out)))
 		       (for-each
 			(lambda (s)
-			  (fprintf out "~c~a~c"
-				   (integer->char (add1 (string-length s))) s #\000))
+			  (fprintf out "~a~a~c"
+				   (integer->integer-byte-string (add1 (string-length s)) 4 #t #f)
+				   s
+				   #\000))
 			(list* "-k" start-s end-s cmdline))
-		       (display #\000 out))
+		       (display "\0\0\0\0" out)
+		       (when long-cmdline?
+			 ;; cmdline written at the end;
+			 ;; now put forwarding information at the normal cmdline pos
+			 (let ([new-end (file-position out)])
+			   (file-position out cmdpos)
+			   (fprintf out "?...~a~a"
+				    (integer->integer-byte-string end 4 #t #f)
+				    (integer->integer-byte-string (- new-end end) 4 #t #f)))))
 		     (lambda ()
 		       (close-output-port out)))))))))))))

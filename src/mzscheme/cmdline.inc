@@ -8,6 +8,10 @@
 
 char *cmdline_exe_hack = "[Replace me for EXE hack                                       ]";
 
+#ifdef DOS_FILE_SYSTEM
+# include <Windows.h>
+#endif
+
 #ifndef DONT_PARSE_COMMAND_LINE
 static int is_number_arg(const char *s)
 {
@@ -395,23 +399,71 @@ static int run_from_cmd_line(int argc, char *_argv[],
   /* If cmdline_exe_hack is changed, then we extract built-in
      arguments. */
   if (cmdline_exe_hack[0] != '[') {
-    int n, i, d;
-    GC_CAN_IGNORE char *p;
+    int n, i;
+    long d;
+    GC_CAN_IGNORE unsigned char *p;
+    GC_CAN_IGNORE unsigned char *orig_p;
     char **argv2;
 
-    p = cmdline_exe_hack + 1;
-    n = 0;
-    while (*p) {
-      n++;
-      p += *p + 1;
-    }
+#ifdef DOS_FILE_SYSTEM
+    if (cmdline_exe_hack[0] == '?') {
+      /* This is how we make launchers in Windows.
+	 The cmdline is appended to the end of the binary.
+	 The long integer at cmdline_exe_hack[4] says
+	 where the old end was, and cmdline_exe_hack[8]
+	 says how long the cmdoine string is. */
+      char *path;
+      HANDLE fd;
 
+      path = malloc(1024);
+      GetModuleFileName(NULL, path, 1024);
+      fd = CreateFile(path, GENERIC_READ,
+		      FILE_SHARE_READ | FILE_SHARE_WRITE,
+		      NULL,
+		      OPEN_EXISTING,
+		      0,
+		      NULL);
+      if (fd == INVALID_HANDLE_VALUE)
+	p = "\0\0\0";
+      else {
+	long start, len, got;
+	start = *(long *)&cmdline_exe_hack[4];
+	len = *(long *)&cmdline_exe_hack[8];
+	p = malloc(len);
+	SetFilePointer(fd, start, 0, FILE_BEGIN);
+	ReadFile(fd, p, len, &got, NULL);
+	CloseHandle(fd);
+	if (got != len)
+	  p = "\0\0\0";
+      }
+    } else
+#endif
+      p = cmdline_exe_hack + 1;
+
+    /* Command line is encoded as a sequence of pascal-style strings;
+       we use four whole bytes for the length, though, little-endian. */
+
+    orig_p = p;
+
+    n = 0;
+    while (p[0] || p[1] || p[2] || p[3]) {
+      n++;
+      p += (p[0]
+	    + (((long)p[1]) << 8)
+	    + (((long)p[2]) << 16)
+	    + (((long)p[3]) << 24)
+	    + 4);
+    }
+    
     argv2 = (char **)malloc(sizeof(char *) * (argc + n));
-    p = cmdline_exe_hack + 1;
+    p = orig_p;
     for (i = 0; i < n; i++) {
-      d = *p;
-      argv2[i] = p + 1;
-      p += d + 1;
+      d = (p[0]
+	   + (((long)p[1]) << 8)
+	   + (((long)p[2]) << 16)
+	   + (((long)p[3]) << 24));
+      argv2[i] = (char *)p + 4;
+      p += d + 4;
     }
     for (; i < n + argc; i++) {
       argv2[i] = argv[i - n];

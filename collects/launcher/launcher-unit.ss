@@ -2,14 +2,15 @@
 (module launcher-unit mzscheme
   (require (lib "unitsig.ss")
 	   (lib "file.ss")
-	   (lib "etc.ss"))
+	   (lib "etc.ss")
 
-  (require (lib "compile-sig.ss" "dynext"))
-  (require (lib "link-sig.ss" "dynext"))
+	   (lib "compile-sig.ss" "dynext")
+	   (lib "link-sig.ss" "dynext")
+	   (lib "embed.ss" "compiler")
 
-  (require (lib "plist.ss" "xml"))
+	   (lib "plist.ss" "xml")
 
-  (require "launcher-sig.ss")
+	   "launcher-sig.ss")
 
   (provide launcher@)
 
@@ -260,73 +261,9 @@
 	    (close-output-port p))))
       
       (define (make-windows-launcher kind variant flags dest aux-root)
-	(install-template dest kind "mzstart.exe" "mrstart.exe")
-	(let ([str (str-list->dos-str flags)]
-	      [p (open-input-file dest)]
-	      [m (string->list "<Command Line: Replace This")]
-	      [x (string->list "<Executable Directory: Replace This")])
-	  (let* ([exedir (string-append 
-			  plthome
-			  ;; null character marks end of executable directory
-			  (string (latin-1-integer->char 0)))]
-		 [pos-fun ; Find the magic start
-		  (lambda (magic s)
-		    (file-position p 0)
-		    (let loop ([pos 0][l magic])
-		      (cond
-		       [(null? l) (- pos (length magic))]
-		       [else (let ([c (read-char p)])
-			       (when (eof-object? c)
-				 (close-input-port p)
-				 (when (file-exists? dest)
-				   (delete-file dest))
-				 (error 
-				  'make-windows-launcher 
-				  (format
-				   "Couldn't find ~a position in template" s)))
-			       (if (eq? c (car l))
-				   (loop (add1 pos) (cdr l))
-				   (loop (add1 pos) magic)))])))]
-		 [len-fun
-		  (lambda (magic)
-		    (+ (length magic)
-		       (let loop ([c 1])
-			 (let ([v (read-char p)])
-			   (if (or (eof-object? v) (eq? v #\>))
-			       c
-			       (loop (add1 c)))))))]
-		 [pos-exedir (pos-fun x "executable path")]
-		 [len-exedir (len-fun x)]
-		 [pos-command (pos-fun m "command-line")]
-		 [len-command (len-fun m)]
-		 [write-magic
-		  (lambda (p s pos len)
-		    (file-position p pos)
-		    (display s p)
-		    (let loop ([c (- len (string-length s))])
-		      (unless (zero? c)
-			(write-char #\space p)
-			(loop (sub1 c)))))]
-		 [check-len
-		  (lambda (len s es)
-		    (when (> (string-length s) len)
-		      (when (file-exists? dest)
-			(delete-file dest))
-		      (error 
-		       (format	
-			"~a exceeds limit of ~a characters with ~a characters: ~a"
-			es len (string-length s) s))))]
-		 [content (begin
-			    (file-position p 0)
-			    (read-string (file-size dest) p))])
-	    (close-input-port p)
-	    (check-len len-exedir exedir "executable home directory")
-	    (check-len len-command str "collection/file name")
-	    (let ([p (open-output-file dest 'truncate)])
-	      (display content p)
-	      (write-magic p exedir pos-exedir len-exedir)   
-	      (write-magic p str pos-command len-command)   
-	      (close-output-port p)))))
+	(make-embedding-executable dest (eq? kind 'mred) #f
+				   null null null
+				   flags))
       
       ;; OS X launcher code:
      

@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.45 1997/08/24 19:27:19 shriram Exp $
+; $Id: scm-unit.ss,v 1.46 1997/08/24 19:31:49 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -919,7 +919,7 @@
 		  (expand-expr
 		    (structurize-syntax
 		      (pat:pexpand
-			`(,form-name filename "standard")
+			`(,form-name filename "mzlib")
 			p-env kwd)
 		      expr)
 		    env attributes vocab)))

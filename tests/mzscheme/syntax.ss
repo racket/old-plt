@@ -229,8 +229,6 @@
 (set!-values (x) 9)
 (test 9 'set!-values x)
 (test (void) 'set!-values (set!-values () (values)))
-(set!-values (x x) (values 1 2))
-(test 2 'set!-values x)
 (syntax-test '(set!-values))
 (syntax-test '(set!-values . x))
 (syntax-test '(set!-values x))
@@ -243,6 +241,9 @@
 (syntax-test '(set!-values (x 8) 0))
 (syntax-test '(set!-values (x) 0 1))
 (syntax-test '(set!-values (x) 0 . 1))
+(syntax-test '(set!-values (x x) 0))
+(syntax-test '(set!-values (x y x) 0))
+(syntax-test '(set!-values (y x x) 0))
 
 (error-test '(set!-values () 1) arity?)
 (error-test '(set!-values () (values 1 2)) arity?)

@@ -2,7 +2,7 @@
 (module mrpict-extra mzscheme
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
-	   (lib "list.ss"))
+           (lib "etc.ss"))
 
   (require (lib "mred-sig.ss" "mred"))
 
@@ -17,6 +17,46 @@
 	      ((open texpict-common^)
 	       (open texpict-internal^)))
 
+      (define show-pict
+        (opt-lambda (p [w #f] [h #f])
+          (define the-pict p)
+          (define no-redraw? #f)
+          (define pict-frame%
+            (class frame%
+              (define/public (set-pict p)
+                (set! the-pict p)
+                (set! no-redraw? #t)
+                (let ([pw (inexact->exact (floor (pict-width the-pict)))]
+                      [ph (inexact->exact (floor (pict-height the-pict)))])
+                  (send c min-width (if w (max w pw) pw))
+                  (send c min-height (if h (max h ph) ph)))
+                (set! no-redraw? #f)
+                (send c on-paint))
+              (super-instantiate ())))
+          (define pict-canvas%
+            (class canvas%
+              (inherit get-dc)
+              (define/override (on-paint)
+                (unless no-redraw?
+                  (let ([dc (get-dc)])
+                    (send dc clear)
+                    (let* ([pw (pict-width the-pict)]
+                           [ph (pict-height the-pict)]
+                           [xo (if (and w
+                                        (pw . < . w))
+                                   (- (/ w 2) (/ pw 2))
+                                   0)]
+                           [yo (if (and h
+                                        (ph . < . h))
+                                   (- (/ h 2) (/ ph 2))
+                                   0)])
+                    (draw-pict the-pict dc xo yo)))))
+              (super-instantiate ())))
+          (define f (make-object pict-frame% "MrPict"))
+          (define c (make-object pict-canvas% f))
+          (send f set-pict p)
+          (send f show #t)))
+      
       (define dc-for-text-size (make-parameter 
 				#f
 				(lambda (x)

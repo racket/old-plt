@@ -5,7 +5,7 @@
   (provide mrpict-extra^)
   (define-signature mrpict-extra^
     (dc-for-text-size
-     
+     show-pict
      text caps-text
      dc
      linewidth

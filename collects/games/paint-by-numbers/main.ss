@@ -172,15 +172,15 @@
 	   (update-filename #f)
 	   (send wrong-item enable (problem-solution prlmb))
 	   (send editor-item enable (problem-solution prlmb))
-	   (stretchable-width #f)
-	   (stretchable-height #f)
-	   (stretchable-width #t)
-	   (stretchable-height #t)
 	   (let ([rows (problem-rows prlmb)]
 		 [cols (problem-cols prlmb)])
 	     (set! problem prlmb)
 	     (set! canvas (make-object GUI:paint-by-numbers-canvas% canvas-panel rows cols))
-	     (send canvas-panel change-children (lambda (l) (list canvas)))))]
+	     (send canvas-panel change-children (lambda (l) (list canvas))))
+	   (stretchable-width #f)
+	   (stretchable-height #f)
+	   (stretchable-width #t)
+	   (stretchable-height #t))]
 
 	[show-wrong
 	 (lambda ()

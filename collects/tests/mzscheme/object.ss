@@ -825,14 +825,16 @@
 
 (let ([c% (let ()
 	    (define-local-member-name priv)
-	    (let ([c% (class object%
-			(init-field val)
-			(define/public (priv) val)
-			(super-make-object))])
+	    (let* ([i<%> (interface () priv)]
+                   [c% (class* object% (i<%>)
+                         (init-field val)
+                         (define/public (priv) val)
+                         (super-make-object))])
 	      (test 100 'priv (send (make-object c% 100) priv))
 	      (test 100 'priv (send* (make-object c% 100) (priv)))
 	      (test 100 'priv (with-method ([p ((make-object c% 100) priv)]) (p)))
-	      (test 100 'gen-priv (send-generic (make-object c% 100) (generic c% priv)))
+	      (test 100 'gen-priv-cls (send-generic (make-object c% 100) (generic c% priv)))
+              (test 100 'gen-priv-intf (send-generic (make-object c% 100) (generic i<%> priv)))
 	      (err/rt-test (make-generic c% 'priv) exn:fail:object?)
 	      c%))])
   (test #t object? (make-object c% 10))

@@ -2066,7 +2066,7 @@
 			 (string->symbol (format "generic:~a~a" name (for-intf (interface-name intf))))
 			 (format "instance~a" (for-intf (interface-name intf)))
 			 obj))
-		      (let-values ([(mth ths) (find-method/who obj name 'make-generic)])
+		      (let-values ([(mth ths) (find-method/who 'make-generic obj name)])
                         mth)))
 		  (let ([pos (hash-table-get (class-method-ht class) name
 					     (lambda ()

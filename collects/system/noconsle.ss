@@ -11,6 +11,7 @@
     (unit/sig mred:application^
       (import [mred : mred^]
 	      [core : mzlib:core^])
+      (define app-name "MrEdNoConsole")
       (define console #f)
       (define eval-string (lambda (s) (eval (read (open-input-string s)))))
       (display mred:welcome-message)

@@ -47,7 +47,9 @@
 		(and (bytes? l)
 		     (not (= (char->integer #\.) (bytes-ref l 0)))))
 	    l
-	    (string-append "." l)))
+	    (if (bytes? l)
+		(bytes-append #"." l)
+		(string-append "." l))))
 
       (define smtp-sending-end-of-message
 	(make-parameter void

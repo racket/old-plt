@@ -1,4 +1,4 @@
-(define graphical-debug? #t)
+(define graphical-debug? #f)
 (define textual-debug? #f)
 
 (require-library "macro.ss")
@@ -50,7 +50,7 @@
 		 [current-namespace drscheme-namespace])
     (set! drscheme-eventspace (make-eventspace))
     (parameterize ([current-eventspace drscheme-eventspace])
-      (start-drscheme))))
+      (queue-callback start-drscheme))))
 
 (cond
   [graphical-debug?

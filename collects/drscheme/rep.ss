@@ -16,22 +16,14 @@
 
   ;; Max length of output queue (user's thread blocks if the
   ;; queue is full):
-  (define output-limit-size 500)
-
+  (define output-limit-size 2000)
+  
   ;; note: the parameter basis:current-setting contains the setting
   ;; currently in use in the repl. The preference drscheme:setting,
   ;; however, contains the current settings in the language dialog.
 
   (define (printf . args) (apply fprintf drscheme:init:original-output-port args))
 
-  (define (system thunk)
-    (parameterize ([current-output-port drscheme:init:original-output-port]
-		   [current-error-port drscheme:init:original-error-port]
-		   [current-custodian drscheme:init:system-custodian]
-		   [mred:current-eventspace drscheme:init:system-eventspace]
-		   [break-enabled #f])
-      (thunk)))
-  
   (define setup-scheme-interaction-mode-keymap
     (lambda (keymap)
       (send keymap add-function "put-previous-sexp"
@@ -259,7 +251,41 @@
        [super-initialize-console initialize-console]
        [super-reset-console reset-console])
 
-      
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;;					     ;;;
+	;;;            User -> Kernel                ;;;
+	;;;					     ;;;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (public
+	[protect
+	 (lambda (proc)
+	   (let ([ut user-thread])
+	     (call-in-nested-thread
+	      (lambda ()
+		(break-enabled #f)
+		(begin0
+		 (proc ut)
+		 (break-enabled #t))) ; in case a break was queued
+	      drscheme:init:system-custodian)))]
+	
+	[queue-system-callback
+	 (case-lambda
+	  [(ut thunk) (queue-system-callback ut thunk #f)]
+	  [(ut thunk always?)
+	   (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
+	     (mred:queue-callback 
+	      (lambda ()
+		(when (or always? (eq? ut user-thread))
+		  (thunk)))
+	      #f))])]
+	   
+	[queue-system-callback/sync
+	 (lambda (ut thunk)
+	   (let ([s (make-semaphore)])
+	     (queue-system-callback ut (lambda () (thunk) (semaphore-post s)))
+	     (semaphore-wait s)))])
+
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;;;					     ;;;
 	;;;                  I/O                     ;;;
@@ -270,7 +296,7 @@
 	(public
 	  [transparent-edit #f]
 	  [transparent-snip #f]
-	  [cleanup-transparent-io
+	  [cleanup-transparent-io ; =Kernel=, =Handler=
 	   (lambda ()
 	     (when transparent-edit
 	       (set! saved-newline? #f) 
@@ -281,9 +307,10 @@
 		 (when a
 		   (send a grab-caret)))
 	       (send transparent-edit lock #t)
-	       (set! transparent-edit #f)))]
+	       (set! transparent-edit #f)
+	       (drop-fetcher)))]
 
-	[init-transparent-io
+	[init-transparent-io ; =Kernel=, =Handler=
 	 (lambda (grab-focus?)
 	   (begin-edit-sequence)
 	   (if transparent-edit
@@ -294,10 +321,19 @@
 	       (init-transparent-io-do-work grab-focus?))
 	   (when  (eq? (current-thread) user-thread)
 	     (set-caret-owner transparent-snip 'display))
-	   (end-edit-sequence))]
+	   (end-edit-sequence)
+	   transparent-edit)]
 
+	[init-transparent-input ; =Kernel=, =Handler=
+	 (lambda ()
+	   (let ([edit (init-transparent-io #t)])
+	     (mred:yield) ; to flush output and set `saved-newline?'
+	     (when saved-newline?
+	       (this-out-write "")
+	       (mred:yield)) ; flush output again
+	     edit))]
 
-	[init-transparent-io-do-work
+	[init-transparent-io-do-work  ; =Kernel=, =Handler=
 	 (lambda (grab-focus?)
 	   (let ([c-locked? (locked?)])
 	     (begin-edit-sequence)
@@ -325,48 +361,93 @@
 	       (when grab-focus?
 		 (let ([a (send transparent-edit get-admin)])
 		   (when a
-		     (send a grab-caret))))
-	       (when starting-at-prompt-mode?
-		 (insert-prompt)))
+		     (send a grab-caret)))))
 	     (lock c-locked?)
 	     (end-edit-sequence)))])
 
 	(private
-	  [this-in-result
-	   (lambda (thunk) 
-	     (let ([s (make-semaphore 0)]
-		   [answer #f])
-	       (system
-		(lambda ()
-		  (mred:queue-callback
-		   (lambda ()
-		     (init-transparent-io #t)
-		     (mred:yield)
-		     (when saved-newline?
-		       (this-out-write "")
-		       (mred:yield))
-		     (set! answer (thunk))
-		     (semaphore-post s))
-		   #f)))
-	       (semaphore-wait s)
-	       answer))])
+	  [make-fetcher
+	   (lambda ()
+	     (make-object
+	      (class object% ()
+		(public
+		  [fetch-char-sema (make-semaphore 1)]
+		  [fetcher-spawned? #f]
+		  [char-fetched-sema (make-semaphore)]
+		  [char-fetched #f]
+		  [fetch ; =Protected-User=
+		   (lambda (ut peek?)
+		     ; Only one reader at a time:
+		     (semaphore-wait/enable-break fetch-char-sema)
+		     ; Now we're the active reader...
+		     (unless fetcher-spawned?
+		       (set! fetcher-spawned? #t)
+		       ; Spawn a fetcher:
+		       (queue-system-callback
+			ut
+			(lambda () ; =Kernel=, =Handler=
+			  (let ([edit (init-transparent-input)])
+			    (set! char-fetched (send edit fetch-char)))
+			  (semaphore-post char-fetched-sema))))
+		     ; Wait for a char, allow breaks:
+		     (with-handlers ([void (lambda (x)
+					     ; Let someone else try to read...
+					     (semaphore-post fetch-char-sema)
+					     (raise x))])
+		       (semaphore-wait/enable-break char-fetched-sema))
+		     ; Got the char (no breaks)
+		     (if peek?
+			 ; preserve the fecthed cahr
+			 (semaphore-post char-fetched-sema)
+			 ; Next reader'll have to spawn a fetcher
+			 (set! fetcher-spawned? #f))
+		     (begin0
+		      char-fetched
+		      ; Got our char; let another reader go
+		      (semaphore-post fetch-char-sema)))])
+		(sequence (super-init)))))]
+	  [fetcher #f]
+	  [fetcher-semaphore (make-semaphore 1)]
+	  [drop-fetcher ; =Kernel=, =Handler=
+	   (lambda ()
+	     (semaphore-wait fetcher-semaphore)
+	     (set! fetcher #f)
+	     (semaphore-post fetcher-semaphore))]
+	  [this-in-fetch-char ; =User=
+	   (lambda (peek?)
+	     (protect
+	      (lambda (ut) ; =Protected-User=
+		(semaphore-wait fetcher-semaphore)
+		(unless fetcher (set! fetcher (make-fetcher)))
+		(semaphore-post fetcher-semaphore)
+		(send fetcher fetch ut peek?))))])
 
 	(public
 	  
 	  [this-in-char-ready?
+	   (lambda () ; =User=
+	     (protect
+	      (lambda (ut)  ; =Protected-User=
+		(let ([answer #f]
+		      [s (make-semaphore 0)])
+		  (queue-system-callback
+		   ut
+		   (lambda () ; =Kernel=, =Handler=
+		     (let ([edit (init-transparent-input)])
+		       (set! answer (send edit check-char-ready?)))
+		     (semaphore-post s)))
+		  ; enable-break in case the thread dies and the callback never 
+		  ;  happens:
+		  (semaphore-wait/enable-break s)
+		  answer))))]
+
+	  [this-in-read-char ; =User=
 	   (lambda ()
-	     (this-in-result
-	      (lambda () (send transparent-edit check-char-ready?))))]
+	     (this-in-fetch-char #f))]
 	  
-	  [this-in-read-char
+	  [this-in-peek-char ; =User=
 	   (lambda ()
-	     (this-in-result
-	      (lambda () (send transparent-edit fetch-char #f))))]
-	  
-	  [this-in-peek-char
-	   (lambda ()
-	     (this-in-result
-	      (lambda () (send transparent-edit fetch-char #t))))])
+	     (this-in-fetch-char #t))])
 	
 	(public
 	  [output-delta (make-object mred:style-delta%
@@ -385,63 +466,79 @@
 	  (send output-delta set-delta-foreground (make-object mred:color% 150 0 150)))
 
 	(private
-	  [flushing-event-running? #f]
-	  [limiting-sema (make-semaphore)]
-	  [io-collected-thunks null]
-	  [io-collected-edits null]
-	  [run-io-collected-thunks
+	  [flushing-event-running (make-semaphore 1)]
+	  [limiting-sema (make-semaphore output-limit-size)] ; waited once foreach in io-collected-thunks
+
+	  [io-semaphore (make-semaphore 1)]
+	  [io-collected-thunks null] ; protected by semaphore
+	  [io-collected-edits null] ; always set in the kernel's handler thread
+	  [run-io-collected-thunks ; =Kernel=, =Handler=
 	   (lambda ()
 	     ;; also need to start edit-sequence in any affected
 	     ;; transparent io boxes.
-	     (begin-edit-sequence)
-	     (for-each (lambda (t) (semaphore-post limiting-sema) (t))
-		       (reverse io-collected-thunks))
-	     (for-each (lambda (e) (send e end-edit-sequence)) io-collected-edits)
-	     (end-edit-sequence)
+	     (semaphore-wait io-semaphore)
+	     (let ([io-thunks io-collected-thunks])
+	       (set! io-collected-thunks null)
+	       (semaphore-post io-semaphore)
+	       
+	       (begin-edit-sequence)
+	       (for-each (lambda (t) (semaphore-post limiting-sema) (t))
+			 (reverse io-thunks))
+	       (for-each (lambda (e) (send e end-edit-sequence)) io-collected-edits)
+	       (unless (null? io-thunks)
+		 (scroll-to-position (last-position)))
+	       (end-edit-sequence)
+	       
+	       (set! io-collected-edits null)))]
 
-	     (set! io-collected-edits null)
-	     (set! io-collected-thunks null))]
-	  [wait-for-io-to-complete
+	  [wait-for-io-to-complete ; =Kernel=, =Handler=
 	   (lambda ()
-	     (let ([semaphore (make-semaphore 0)])
-	       (system
-		(lambda ()
-		  (mred:queue-callback
-		   (lambda ()
-		     (run-io-collected-thunks)
-		     (semaphore-post semaphore))
-		   #f)))
-	       (semaphore-wait semaphore)))]
-	  [queue-io
+	     (unless (null? io-collected-thunks)
+	       (let ([semaphore (make-semaphore 0)])
+		 (mred:queue-callback
+		  (lambda () ; =Kernel=, =Handler=
+		    (run-io-collected-thunks)
+		    (semaphore-post semaphore))
+		  #f)
+		 (mred:yield semaphore))))]
+	  [queue-output ; =User=
 	   (lambda (thunk)
-	     (semaphore-wait limiting-sema)
-	     (let ([this-eventspace user-eventspace])
-	       (system
-		(lambda ()
-		  (mred:queue-callback
-		   (lambda ()
-		     (set! io-collected-thunks
-			   (cons
-			    (lambda ()
-			      (when (eq? this-eventspace user-eventspace)
-				(thunk)))
-			    io-collected-thunks))
-		     (unless flushing-event-running?
-		       (set! flushing-event-running? #t)
-		       (mred:queue-callback
-			(lambda ()
-			  (run-io-collected-thunks)
-			  (set! flushing-event-running? #f))
-			#f)))
-		   #f)))))])
+	     (protect
+	      (lambda (ut) ; =Protected-User=
+		; limiting-sema prevents queueing too much output from the user
+		(semaphore-wait/enable-break limiting-sema)
+		; Queue the output:
+		(let ([this-eventspace user-eventspace])
+		  (semaphore-wait io-semaphore)
+		  (if (eq? ut user-thread)
+		      ; Queue output:
+		      (set! io-collected-thunks
+			    (cons thunk io-collected-thunks))
+		      ; Release limit allocation, instead:
+		      (semaphore-post limiting-sema))
+		  (semaphore-post io-semaphore))
+		; If there's not one, queue an event that will flush the output queue
+		(when (semaphore-try-wait? flushing-event-running)
+		  ; Unlike most callbacks, this one has to run always, even if
+		  ;   the user thread changes.
+		  (queue-system-callback
+		   ut
+		   (lambda () ; =Kernel=, =Handler=
+		     (semaphore-post flushing-event-running)
+		     (run-io-collected-thunks))
+		   #t)))))])
 
 	(public
-	  [generic-write
+	  [generic-write ; =Kernel=, =Handler=
 	   (lambda (edit s style-func)
 	     
-	     (unless (or (eq? this edit) (member edit io-collected-edits))
-	       (set! io-collected-edits (cons edit io-collected-edits))
-	       (send edit begin-edit-sequence))
+	     (let ([add-edit
+		    (lambda (edit)
+		      (unless (or (eq? this edit)
+				  (member edit io-collected-edits))
+			(set! io-collected-edits (cons edit io-collected-edits))
+			(send edit begin-edit-sequence)))])
+	       (add-edit edit))
 	     
 	     (when prompt-mode?
 	       (insert (string #\newline) (last-position) (last-position) #f)
@@ -463,14 +560,14 @@
 		 (send edit set-prompt-position end))
 	       (send edit lock c-locked?)
 	       (send edit end-edit-sequence)))]
-	  [generic-close (lambda () (void))]
+	  [generic-close void]
 	  
 	  [saved-newline? #f]
 
 	  [this-result-write 
-	   (lambda (s)
-	     (queue-io
-	      (lambda ()
+	   (lambda (s) ; =User=
+	     (queue-output
+	      (lambda () ; =Kernel=, =Handler=
 		(cleanup-transparent-io)
 		(generic-write this
 			       s
@@ -478,11 +575,11 @@
 				 (change-style result-delta
 					       start end))))))]
 	  [this-out-write
-	   (lambda (s)
-	     (queue-io
-	      (lambda ()
-		(init-transparent-io #f)
-		(let* ([old-saved-newline? saved-newline?]
+	   (lambda (s) ; = User=
+	     (queue-output
+	      (lambda () ; =Kernel=, =Handler=
+		(let* ([edit (init-transparent-io #f)]
+		       [old-saved-newline? saved-newline?]
 		       [len (and (string? s)
 				 (string-length s))]
 		       [s1 (if (and len
@@ -497,17 +594,15 @@
 		       [gw
 			(lambda (s)
 			  (generic-write
-			   transparent-edit
+			   edit
 			   s
 			   (lambda (start end)
-			     (when transparent-edit
-			       (send transparent-edit
-				     change-style output-delta start end)))))])
+			     (send edit change-style output-delta start end))))])
 		  (when old-saved-newline?
 		    (gw (string #\newline)))
 		  (gw s1)))))]
 
-	  [this-err-write/exn
+	  [this-err-write/exn ; =User=
 	   (let* ([raw-symbol-chars "a-z/*!?>:-"]
 		  [symbol-chars (format "[~a]" raw-symbol-chars)]
 		  [not-symbol-chars (format "[^~a]" raw-symbol-chars)]
@@ -518,9 +613,9 @@
 				(format
 				 "^(ivar: instance variable not found: )(~a*)"
 				 symbol-chars))])
-	     (lambda (s exn)
-	       (queue-io
-		(lambda ()
+	     (lambda (s exn) ; =User=
+	       (queue-output
+		(lambda () ; =Kernel=, =Handler=
 		  (cleanup-transparent-io)
 		  (generic-write
 		   this
@@ -560,7 +655,7 @@
 			     (loop (bind-to-help class-regexp s))))
 			 (bind-to-help ivar-regexp s)
 			 (bind-to-help fallthru-regexp s))])))))))]
-	  [this-err-write
+	  [this-err-write ; =User=
 	   (lambda (s)
 	     (this-err-write/exn s #f))]
 	  
@@ -605,7 +700,7 @@
 	      (list this-out-write this-err-write this-result-write)))])
 
       (public
-	[display-results
+	[display-results ; =User=, =Handler=, =Breaks=
 	 (lambda (anss)
 	   (for-each 
 	    (lambda (v)
@@ -628,7 +723,7 @@
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       (public
-	[report-located-error
+	[report-located-error ; =Kernel=, =Handler=
 	 (lambda (message di exn)
 	   (if (and (zodiac:zodiac? di)
 		    (basis:zodiac-vocabulary? user-setting))
@@ -636,7 +731,7 @@
 		      [finish (zodiac:zodiac-finish di)])
 		 (report-error start finish 'dynamic message exn))
 	       (report-unlocated-error message exn)))]
-	[report-unlocated-error
+	[report-unlocated-error ; =Kernel=
 	 (lambda (message exn)
 	   (let* ([frame (get-top-level-window)]
 		  [interactions-edit (ivar frame interactions-edit)])
@@ -649,7 +744,7 @@
 		     exn)
 	       (send interactions-edit lock locked?)
 	       (send interactions-edit end-edit-sequence))))]
-	[report-error
+	[report-error ; =Kernel=, =Handler=
 	 (lambda (start-location end-location type input-string exn)
 	   (let* ([start (zodiac:location-offset start-location)]
 		  [finish (add1 (zodiac:location-offset end-location))]
@@ -673,7 +768,7 @@
 	[on-set-media void])
 
       (public
-	[process-edit
+	[process-edit ; =User=, =Handler=, =No-Breaks=
 	 (lambda (edit fn start end annotate?)
 	   (if (basis:zodiac-vocabulary? user-setting)
 	       (process-edit/zodiac edit fn start end annotate?)
@@ -706,8 +801,7 @@
 	[user-eventspace #f]
 	[user-thread #f])
       (private
-	[in-evaluation? #f]
-	[in-evaluation-semaphore (make-semaphore 1)]
+	[in-evaluation? #f] ; a heursitic for making the Break button send a break
 	[should-collect-garbage? #f]
 	[ask-about-kill? #f])
       (public
@@ -744,7 +838,8 @@
       (public
 	[cleanup
 	 (lambda ()
-	   (unless (thread-running? user-thread)
+	   (update-running #f)
+	   (unless (and user-thread (thread-running? user-thread))
 	     (lock #t)
 	     (unless shutting-down?
 	       (mred:message-box
@@ -752,91 +847,91 @@
 		(format "The evaluation thread is no longer running, ~
 			 so no evaluation can take place until ~
 			 the next execution.")))))]
-	[cleanup-interaction
+	[need-interaction-cleanup? #f]
+	[cleanup-interaction ; =Kernel=, =Handler=
 	 (lambda ()
-	   (system
-	    (lambda ()
-	      (mred:end-busy-cursor)
-	      (begin-edit-sequence)
-	      (wait-for-io-to-complete)
-	      (cleanup-transparent-io)
-	      (set-caret-owner #f 'display)
-	      (when (thread-running? user-thread)
-		(let ([c-locked? (locked?)])
-		  (lock #f)
-		  (insert-prompt)
-		  (lock c-locked?)))
-	      (cleanup)
-	      (end-edit-sequence)
-	      (send (get-top-level-window) enable-evaluation))))]
-	[cleanup-evaluation
-	 (lambda ()
+	   (set! need-interaction-cleanup? #f)
+	   (mred:end-busy-cursor)
 	   (begin-edit-sequence)
 	   (wait-for-io-to-complete)
+	   (cleanup-transparent-io)
+	   (set-caret-owner #f 'display)
+	   (when (thread-running? user-thread)
+	     (let ([c-locked? (locked?)])
+	       (lock #f)
+	       (insert-prompt)
+	       (lock c-locked?)))
 	   (cleanup)
-	   (end-edit-sequence))])
+	   (end-edit-sequence)
+	   (send (get-top-level-window) enable-evaluation))])
       (public
-	[do-many-buffer-evals
+	[do-many-buffer-evals ; =Kernel=, =Handler=
 	 (lambda (edit start end)
-	   (semaphore-wait in-evaluation-semaphore)
-	   (cond
-	    [in-evaluation?
-	     (semaphore-post in-evaluation-semaphore)
-	     (mred:bell)]
-	    [else
-	     (set! in-evaluation? #t)
-	     (semaphore-post in-evaluation-semaphore)
-	     (send (get-top-level-window) disable-evaluation)
-	     (reset-break-state)
-	     (cleanup-transparent-io)
-	     (reset-pretty-print-width)
-	     (ready-non-prompt)
-	     (mred:begin-busy-cursor)
-	     (when should-collect-garbage?
-	       (set! should-collect-garbage? #f)
-	       (collect-garbage))
-	     (run-in-evaluation-thread
-	      (lambda ()
-		(with-running-flag
-		 (lambda ()
-		   (protect-user-evaluation
-		    (lambda ()
-		      (system cleanup-interaction))
-		    (lambda ()
-		      (process-edit
-		       edit
-		       (lambda (expr recur)
-			 (cond
-			  [(basis:process-finish? expr)
-			   (void)]
-			  [else
-			   (let ([answers
-				  (call-with-values
-				   (lambda ()
-				     (dynamic-wind
-				      (lambda () (break-enabled user-break-enabled?))
-				      (lambda ()
-					(if (basis:zodiac-vocabulary? (basis:current-setting))
-					    (basis:syntax-checking-primitive-eval expr)
-					    (basis:primitive-eval expr)))
-				      (lambda () 
-					(set! user-break-enabled? (break-enabled))
-					(break-enabled #f))))      
-				   (lambda x x))])
-			     (display-results answers)
-			     (recur))]))
-		       start
-		       end
-		       #t)))))))]))])
-      (private
-	[shutdown-user-custodian
-	 (lambda ()
-	   (let* ([frame (get-top-level-window)]
-		  [interactions-edit (ivar frame interactions-edit)])
-	     (set! in-evaluation? #f)
-	     (send (get-top-level-window) not-running)
+	   (send (get-top-level-window) disable-evaluation)
+	   (cleanup-transparent-io)
+	   (reset-pretty-print-width)
+	   (ready-non-prompt)
+	   (mred:begin-busy-cursor)
+	   (when should-collect-garbage?
+	     (set! should-collect-garbage? #f)
+	     (collect-garbage))
+	   (set! need-interaction-cleanup? #t)
+	   
+	   (run-in-evaluation-thread
+	    (lambda () ; =User=, =Handler=, =No-Breaks=
+	      (reset-break-state)
 
-	     (custodian-shutdown-all user-custodian)))])
+	      (protect-user-evaluation
+	       ; Evaluate the expression(s)
+	       (lambda () ; =User=, =Handler=, =No-Breaks=
+		 ; This procedure must also ensure that breaks are off before
+		 ;  returning or escaping.
+		 (process-edit
+		  ; BUG: is it possible that a macro turns on breaking?
+		  edit
+		  (lambda (expr recur) ; =User=, =Handler=, =No-Breaks=
+		    (cond
+		     [(basis:process-finish? expr)
+		      (void)]
+		     [else
+		      ; Evaluate the user's expression. We're careful to turn on
+		      ;   breaks as we go in and turn them off as we go out.
+		      ;   (Actually, we adjust breaks however the user wanted it.)
+		      ; A continuation hop might take us out of this instance of
+		      ;   evaluation and into another one, which is fine.
+		      (dynamic-wind
+		       (lambda () 
+			 (break-enabled user-break-enabled)
+			 (set! user-break-enabled 'user))
+		       (lambda ()
+			 (let ([answers
+				(call-with-values
+				 (lambda ()
+				   (if (basis:zodiac-vocabulary? (basis:current-setting))
+				       (basis:syntax-checking-primitive-eval expr)
+				       (basis:primitive-eval expr)))
+				 list)])
+			   (display-results answers)))
+		       (lambda () 
+			 (set! user-break-enabled (break-enabled))
+			 (break-enabled #f)))
+		      (recur)]))
+		  start
+		  end
+		  #t))
+	       
+	       ; Cleanup after evaluation:
+	       (lambda () ; =User=, =Handler=, =No-Breaks=
+		 (queue-system-callback/sync user-thread cleanup-interaction))))))])
+      (private
+	[shutdown-user-custodian ; =Kernel=, =Handler=
+	 (lambda ()
+	   (custodian-shutdown-all user-custodian)
+	   (set! user-thread #f)
+	   (semaphore-wait io-semaphore)
+	   (for-each (lambda (i) (semaphore-post limiting-sema)) io-collected-thunks)
+	   (set! io-collected-thunks null)
+	   (semaphore-post io-semaphore))])
       (public
 	[reset-break-state (lambda () (set! ask-about-kill? #f))]
 	[break (lambda ()
@@ -856,82 +951,90 @@
 		   (set! ask-about-kill? #t)]))])
       (public
 	[error-escape-k void]
-	[user-break-enabled? #t])
+	[user-break-enabled #t])
 
       (private
 	[eval-thread-thunks null]
-	[eval-thread-state-sema (make-semaphore 1)]
-	[eval-thread-queue-sema (make-semaphore 0)]
+	[eval-thread-state-sema 'not-yet-state-sema]
+	[eval-thread-queue-sema 'not-yet-thread-sema]
 	
 	[cleanup-sucessful 'not-yet-cleanup-sucessful]
 	[cleanup-semaphore 'not-yet-cleanup-semaphore]
 	[thread-grace 'not-yet-thread-grace]
 	[thread-kill 'not-yet-thread-kill]
 	
-	[killed-callback void]
 	[thread-killed 'not-yet-thread-killed]
-	[initialize-killed-thread
+	[initialize-killed-thread ; =Kernel=
 	 (lambda ()
 	   (when (thread? thread-killed)
 	     (kill-thread thread-killed))
 	   (set! thread-killed
 		 (thread
-		  (lambda ()
-		    (thread-wait user-thread)
-		    (killed-callback)))))]
-
-	[protect-user-evaluation
-	 (lambda (cleanup thunk)
-	   ;; in-evaluation? flag must be set to #t, before getting here.
-	   ;; for repl / execute evaluation, it must be set in the 
-	   ;; impl eventspace's thread
-
+		  (lambda () ; =Other=
+		    (let ([ut user-thread])
+		      (thread-wait ut)
+		      (mred:queue-callback
+		       (lambda ()
+			 (when (eq? user-thread ut)
+			   (if need-interaction-cleanup?
+			       (cleanup-interaction)
+			       (cleanup))))))))))]
+	
+	[protect-user-evaluation ; =User=, =Handler=, =No-Breaks=
+	 (lambda (thunk cleanup)
 	   ;; We only run cleanup if thunk finishes normally or tries to
 	   ;; error-escape. Otherwise, it must be a continuation jump
 	   ;; into a different call to protect-user-evaluation.
 
+	   ;; `thunk' is responsible for ensureing that breaks are off when
+	   ;; it returns or jumps out.
+
+	   (update-running #t)
+
 	   (let/ec k
-	     (let ([saved-killed-callback killed-callback]
-		   [saved-error-escape-k error-escape-k]
+	     (let ([saved-error-escape-k error-escape-k]
 		   [cleanup? #f])
 	       (dynamic-wind
 		(lambda ()
 		  (set! cleanup? #f)
-		  (set! killed-callback cleanup)
 		  (set! error-escape-k (lambda () 
 					 (set! cleanup? #t)
 					 (k (void)))))
-		(lambda () (thunk) (set! cleanup? #t))
+		(lambda () (thunk) 
+			; Breaks must be off!
+			(set! cleanup? #t))
 		(lambda () 
-		  (set! killed-callback saved-killed-callback)
 		  (set! error-escape-k saved-error-escape-k)
 		  (when cleanup?
-		    (cleanup))))))
-
-	   (semaphore-wait in-evaluation-semaphore)
-	   (set! in-evaluation? #f)
-	   (semaphore-post in-evaluation-semaphore))])
+		    (update-running #f)
+		    (cleanup)))))))])
       (public
-	[run-in-evaluation-thread 
+	[run-in-evaluation-thread ; =Kernel=
 	 (lambda (thunk)
 	   (semaphore-wait eval-thread-state-sema)
 	   (set! eval-thread-thunks (append eval-thread-thunks (list thunk)))
 	   (semaphore-post eval-thread-state-sema)
 	   (semaphore-post eval-thread-queue-sema))]
-	[init-evaluation-thread
+	[init-evaluation-thread ; =Kernel=
 	 (lambda ()
 	   (set! user-custodian (make-custodian))
 	   (set! user-eventspace (parameterize ([current-custodian user-custodian])
 				   (mred:make-eventspace)))
-	   (set! limiting-sema (make-semaphore output-limit-size))
-	   (set! user-break-enabled? #t)
-	   (let ([ready (make-semaphore)]
-		 [goahead (make-semaphore)])
+	   (set! user-break-enabled #t)
+	   (set! eval-thread-thunks null)
+	   (set! eval-thread-state-sema (make-semaphore 1))
+	   (set! eval-thread-queue-sema (make-semaphore 0))
+
+	   (let ([thread-set (make-semaphore)]
+		 [goahead (make-semaphore)]
+		 [o (current-output-port)])
 	     (parameterize ([mred:current-eventspace user-eventspace])
 	       (mred:queue-callback
-		(lambda ()
+		(lambda () ; =User=, =No-Breaks=
+		  ; No user code has been evaluated yet, so we're in the clear...
 		  (break-enabled #f)
 		  (set! user-thread (current-thread))
+		  (semaphore-post thread-set)
 
 		  (initialize-parameters)
 
@@ -941,102 +1044,50 @@
 		    (error-escape-handler drscheme-error-escape-handler)
 		    (basis:bottom-escape-handler drscheme-error-escape-handler))
 
-		  (send (get-top-level-window) not-running)
+		  (update-running #f)
 
-		  (semaphore-post ready)
+		  ; We're about to start running user code.
+
+		  ; Pause to let killed-thread get initialized
 		  (semaphore-wait goahead)
 
-		  (let loop ()
+		  (let loop () ; =User=, =Handler=, =No-Breaks=
+		    ; Wait for something to do
 		    (unless (semaphore-try-wait? eval-thread-queue-sema)
+		      ; User event callbacks run here; we turn on
+		      ;  breaks in the dispatch handler.
 		      (mred:yield eval-thread-queue-sema))
+		    ; About to eval something
 		    (semaphore-wait eval-thread-state-sema)
 		    (let ([thunk (car eval-thread-thunks)])
 		      (set! eval-thread-thunks (cdr eval-thread-thunks))
 		      (semaphore-post eval-thread-state-sema)
+		      ; This thunk evals the user's expressions with appropriate
+		      ;   protections.
 		      (thunk))
 		    (loop)))))
-	     (semaphore-wait ready)
+	     (semaphore-wait thread-set)
+	     ; Start killed-thread
 	     (initialize-killed-thread)
+	     ; Let user expressions go...
 	     (semaphore-post goahead)))])
       (public
 	[shutting-down? #f]
-	[shutdown 
+	[shutdown ; =Kernel=, =Handler=
 	 (lambda ()
 	   (set! shutting-down? #t)
 	   (shutdown-user-custodian))])
       
 	(private
-	  [with-running-flag
-	   (lambda (thunk)
-	     (dynamic-wind
+	  [update-running ; =User=, =Handler=, =No-Breaks=
+	   (lambda (on?)
+	     (set! in-evaluation? on?)
+	     (queue-system-callback
+	      user-thread
 	      (lambda ()
-		(update-running #t))
-	      (lambda ()
-		(thunk))
-	      (lambda ()
-		(update-running #f))))]
-
-	  [start-callback? #f]
-
-	  [waiting-to-turn-on #f]
-	  [skip-turning-on #f]
-	  [turn-on-semaphore (make-semaphore 1)]
-	  
-	  [wait-to-turn-on (make-semaphore 0)]
-	  
-	  [running-callback-start
-	   (lambda ()
-	     (semaphore-wait turn-on-semaphore)
-	     (set! skip-turning-on #f)
-	     (unless waiting-to-turn-on
-	       (set! waiting-to-turn-on #t)
-	       (semaphore-post wait-to-turn-on))
-	     (semaphore-post turn-on-semaphore))]
-	  [running-callback-stop
-	   (lambda ()
-	     (semaphore-wait turn-on-semaphore)
-	     (when waiting-to-turn-on
-	       (set! skip-turning-on #t))
-	     (semaphore-post turn-on-semaphore)
-	     (conditionally-turn-running-off))]
-	  [running-thread
-	   (thread
-	    (lambda ()
-	      (let loop ()
-		(semaphore-wait wait-to-turn-on)
-		(sleep)
-		(semaphore-wait turn-on-semaphore)
-		(unless skip-turning-on
-		  (update-running #t))
-		(set! waiting-to-turn-on #f)
-		(semaphore-post turn-on-semaphore)
-		(loop))))]
-
-	  [turned-on #f]
-	  [turned-on-semaphore (make-semaphore 1)]
-	  
-	  [update-running/semaphore
-	   (lambda (flag)
-	     (when (eq? flag turned-on)
-	       (semaphore-post turned-on-semaphore)
-	       (error 'update-running "flags are already the same (~a)!" flag))
-	     (set! turned-on flag)
-	     (system
-	      (lambda ()
-		(if turned-on
-		    (mred:queue-callback (lambda () (send (get-top-level-window) running)))
-		    (mred:queue-callback (lambda () (send (get-top-level-window) not-running)))))))]
-	  [update-running
-	   (lambda (flag)
-	     (semaphore-wait turned-on-semaphore)
-	     (update-running/semaphore flag)
-	     (semaphore-post turned-on-semaphore))]
-	  [conditionally-turn-running-off
-	   (lambda ()
-	     (semaphore-wait turned-on-semaphore)
-	     (when turned-on
-	       (update-running/semaphore #f))
-	     (semaphore-post turned-on-semaphore))])
+		(if in-evaluation?
+		    (send (get-top-level-window) running)
+		    (send (get-top-level-window) not-running)))))])
 
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1057,7 +1108,7 @@
 	[repl-initially-active? #f])
       
       (private
-	[initialize-parameters
+	[initialize-parameters ; =User=
 	 (lambda ()
 	   (let ([setting (fw:preferences:get 'drscheme:settings)]
 		 [library-unit
@@ -1095,15 +1146,6 @@
 	     (current-output-port this-out)
 	     (current-error-port this-err)
 	     (current-input-port this-in)
-	     (let ([orig (port-read-handler this-in)])
-	       (port-read-handler 
-		this-in
-		(lambda (p)
-		  ;; KILL BUG: kill during the read will not decrement read-mode
-		  (dynamic-wind
-		   (lambda () '(inc-read-mode 1))
-		   (lambda () (orig p))
-		   (lambda () '(inc-read-mode -1))))))
 	     
 	     (global-port-print-handler
 	      (let ([old (global-port-print-handler)])
@@ -1134,11 +1176,10 @@
 		(rec drscheme-load-handler
 		     (lambda (filename)
 		       (unless (string? filename)
-			 (raise (make-exn:application:arity
-				 (format "drscheme-load-handler: expects argument of type <string>; given: ~e" filename)
-				 ((debug-info-handler))
-				 filename
-				 'string)))
+			 (raise (raise-type-error
+				 'drscheme-load-handler
+				 "string"
+				 filename)))
 		       (if (and (basis:zodiac-vocabulary? user-setting)
 				(let* ([p (open-input-file filename)]
 				       [loc (zodiac:make-location basis:initial-line
@@ -1169,7 +1210,11 @@
 						    #t))))
 			   (userspace-load filename))))))
 	     
-	     (basis:error-display/debug-handler report-located-error)
+	     (basis:error-display/debug-handler
+	      (lambda (msg marks exn) 
+		(queue-system-callback/sync
+		 user-thread
+		 (lambda () (report-located-error msg marks exn)))))
 	     
 	     (error-display-handler
 	      (rec drscheme-error-display-handler
@@ -1205,58 +1250,75 @@
 	     ;; set all parameters before constructing eventspace
 	     ;; so that the parameters are set in the eventspace's
 	     ;; parameterization
-	     (let* ([primitive-dispatch-handler (mred:event-dispatch-handler)]
-		    [depth 0])
+	     (let* ([primitive-dispatch-handler (mred:event-dispatch-handler)])
 	       
 	       (mred:event-dispatch-handler
-		(rec drscheme-event-dispatch-handler
-		     (lambda (eventspace)
-		       (let ([break-ok? (break-enabled)])
-			 (mzlib:thread:dynamic-disable-break
-			  (lambda ()
-			    (cond
-			     [(eq? eventspace user-eventspace)
+		(rec drscheme-event-dispatch-handler ; <= a name for #<...> printout
+		     (lambda (eventspace) ; =User=, =Handler=
+		       ; Breaking is enabled if the user turned on breaks and
+		       ;  is in a `yield'. If we get a break, that's ok, because
+		       ;  the kernel never queues an event in the user's eventspace.
+		       (cond
+			[(eq? eventspace user-eventspace)
+			 ; =User=, =Handler=, =No-Breaks=
 
-			      (set! depth (+ depth 1))
+			 (let* ([ub? (eq? user-break-enabled 'user)]
+				[break-ok? (if ub?
+					       (break-enabled)
+					       user-break-enabled)])
+			   (break-enabled #f)
+			   
+			   ; We must distinguish between "top-level" events and
+			   ;  those within `yield' in the user's program.
 
-			      (cond
-			       [(and (= depth 1)
-				     (not in-evaluation?))
-
-				(system
+			   (cond
+			    [(not in-evaluation?)
+			     
+			     (reset-break-state) ; Is this a good idea?
+			     
+			     (protect-user-evaluation
+			      ; Run the dispatch:
+			      (lambda () ; =User=, =Handler=, =No-Breaks=
+				; This procedure is responsible for adjusting breaks to
+				;  match the user's expectations:
+				(dynamic-wind
+				 (lambda () 
+				   (break-enabled break-ok?)
+				   (unless ub?
+				     (set! user-break-enabled 'user)))
 				 (lambda ()
-				   (reset-break-state)
-				   (running-callback-start)))
-
-				(protect-user-evaluation
+				   (primitive-dispatch-handler eventspace))
 				 (lambda ()
-				   (system
-				    (lambda ()
-				      (running-callback-stop)
-				      (cleanup-evaluation)
-				      (set! in-evaluation? #f)
-				      (set! depth (- depth 1)))))
-				 (lambda ()
-				   (set! in-evaluation? #t)
-				   (parameterize ([break-enabled break-ok?])
-				     (lambda ()
-				       (primitive-dispatch-handler eventspace)))))]
-			       [else
-				(set! depth (- depth 1))])]
-			     [else (primitive-dispatch-handler eventspace)]))))))))))])
-	
+				   (unless ub?
+				     (set! user-break-enabled (break-enabled)))
+				   (break-enabled #f))))
+			      ; Cleanup after dispatch
+			      void)
+			     
+			     ; Restore break:
+			     (when ub?
+			       (break-enabled break-ok?))]
+			    [else
+			     ; Nested dispatch; don't adjust interface, and restore break:
+			     (break-enabled break-ok?)
+			     (primitive-dispatch-handler eventspace)]))]
+			[else 
+			 ; =User=, =Non-Handler=, =No-Breaks=
+			 (primitive-dispatch-handler eventspace)])))))))])
+      
       (override
 	[reset-console
 	 (lambda ()
-	   (clear-previous-expr-positions)
+	   (when (thread? thread-killed)
+	     (kill-thread thread-killed))
 	   (shutdown-user-custodian)
 	   (cleanup-transparent-io)
+	   (clear-previous-expr-positions)
 	   (set! should-collect-garbage? #t)
 
 	   ;; in case the last evaluation thread was killed, clean up some state.
 	   (lock #f)
-	   (set! in-evaluation? #f)
-	   (conditionally-turn-running-off)
+	   (update-running #f)
 
 	   (set! user-setting (fw:preferences:get 'drscheme:settings))
 
@@ -1704,7 +1766,7 @@
 	       (change-style consumed-delta start end)
 	       (set-resetting old-resetting)))]
 	  [ibeam-cursor (make-object mred:cursor% 'ibeam)]
-	  [check-char-ready?
+	  [check-char-ready? ; =Reentrant=
 	   (lambda ()
 	     (semaphore-wait potential-sexps-protect)
 	     (begin0
@@ -1713,14 +1775,13 @@
 	       [(< stream-start stream-end) #t]
 	       [else #f])
 	      (semaphore-post potential-sexps-protect)))]
-	  [fetch-char
-	   (lambda (peek?)
+	  [fetch-char ; =Kernel=, =Handler=, =Non-Reentrant= (queue requests externally)
+	   (lambda ()
 	     (let ([found-char
 		    (lambda ()
 		      (let ([s stream-start])
-			(unless peek?
-			  (mark-consumed s (add1 s))
-			  (set! stream-start (add1 s)))
+			(mark-consumed s (add1 s))
+			(set! stream-start (add1 s))
 			(get-character s)))])
 	       (let loop ()
 		 (let ([ready-char #f])
@@ -1748,6 +1809,7 @@
 			 (if shutdown? 
 			     eof
 			     (loop))))))))])
+
 	(override
 	  [get-prompt (lambda () "")])
 	(override

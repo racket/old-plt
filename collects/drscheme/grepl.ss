@@ -253,7 +253,6 @@
 	 (current-error-port user-error-port)
 	 (current-input-port (make-input-port (lambda () eof) void void))
 	 (current-custodian user-custodian)
-	 (current-will-executor (make-will-executor))
 	 (semaphore-post semaphore))))
     (semaphore-wait semaphore))
 

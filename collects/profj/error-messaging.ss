@@ -26,7 +26,7 @@
                  (= (src-pos src) 0)
                  (= (src-span src) 0))
             #f
-            (list (parm) (src-line src) (src-col src) (src-pos src) (src-span src)))))
+            (list (or (src-file src) (parm)) (src-line src) (src-col src) (src-pos src) (src-span src)))))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Message helpers

@@ -851,7 +851,7 @@
          ((field)
           (let* ((retrieve-fields (send value fields-for-display))
                  (st (format "~a(" (send value my-name)))
-                 (new-tabs (+ num-tabs (string-length st)))
+                 (new-tabs (+ num-tabs 3));(string-length st)))
                  (fields ""))
             (let loop ((current (retrieve-fields)))
               (let ((next (retrieve-fields)))
@@ -859,15 +859,17 @@
                   (set! fields 
                         (string-append fields 
                                        (format "~a~a = ~a~a~a" 
-                                               (if newline? (if (equal? fields "") "" (get-n-spaces new-tabs)) "")
+                                               (if newline? (if (equal? fields "") 
+                                                                (format "~n~a" (get-n-spaces new-tabs)); "" 
+                                                                (get-n-spaces new-tabs)) "")
                                                (car current)
                                                (if (memq (cadr current) already-printed)
                                                    (format-java (cadr current) full-print? 'type already-printed #f 0)
                                                    (format-java (cadr current) full-print? style 
                                                                 (cons value already-printed) newline?
                                                                 (if newline? 
-                                                                  (+ new-tabs (string-length (car current)) 3)
-                                                                  num-tabs)))
+                                                                    (+ new-tabs (string-length (car current)) 3)
+                                                                    num-tabs)))
                                                (if next "," "")
                                                (if newline? (format "~n") " "))))
                   (loop next))))

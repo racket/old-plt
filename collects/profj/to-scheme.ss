@@ -71,7 +71,7 @@
                  (= (src-pos src) 0)
                  (= (src-span src) 0))
             #f
-            (list (loc) (src-line src) (src-col src) (src-pos src) (src-span src)))))
+            (list (or (src-file src) (loc)) (src-line src) (src-col src) (src-pos src) (src-span src)))))
   
   ;get-defualt-value: type-spec -> syntax
   (define (get-default-value type)
@@ -80,8 +80,8 @@
           (make-syntax #f 'null #f)
           (cond
             ((prim-numeric-type? name) (make-syntax #f 0 #f))
-            ((eq? 'char name) (make-syntax #f `#\ #f))
-            ((eq? 'boolean name) (make-syntax #f `#f #f))
+            ((eq? 'char name) (make-syntax #f '#\ #f))
+            ((eq? 'boolean name) (make-syntax #f '#f #f))
             (else (make-syntax #f 'null #f))))))
   
   ;create-get-name: string string? -> symbol

@@ -2207,6 +2207,8 @@
                 ;Advanced
                 ((and (advanced?) (o-bracket? next-tok))
                  (parse-expression next (getter) 'array-size getter statement-ok?))
+                ((c-paren? next-tok)
+                 (parse-error (format "Expected ( to begin constructor arguments for ~a" out) (get-start pre) end))
                 ((open-separator? next-tok) 
                  (parse-error (format 
                                (if (advanced?)
@@ -2219,7 +2221,7 @@
                   (format (if (advanced?)
                               "Expected constructor arguments in parens or array size in []s, found ~a"
                               "Expected constructor arguments in parens, found ~a")
-                          (format-out next-tok)) (get-start next) (get-end next))))))
+                          (format-out next-tok)) (get-start pre) (get-end next))))))
            ;Advanced
            ((and (advanced?) (prim-type? tok))
             (let* ((next (getter))

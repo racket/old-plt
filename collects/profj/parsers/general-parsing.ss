@@ -86,14 +86,27 @@
         (var-init-init decl)
         (var-init-src decl)))))
   
-  (define (parse-class-box box box-pos level)
-    (let*-values (((old-file-path) (file-path))
-                  ((parse-func _ __) (class:send (class-case-box box) read-one-special 0 #f #f #f #f))
-                  ((class-ast) (parse-func level old-file-path box-pos input-port)))
+  (define (parse-class-box box)
+    (let*-values (((old-input-port) (input-port))
+                  ((old-file-path) (file-path))
+                  ((func _ __) (class:send (class-case-box box) read-one-special 0 #f #f #f #f))
+                  ((parse-port-list) (func 'beginner)))
+      (input-port (car parse-port-list))
       (begin0
-        class-ast
-        (file-path old-file-path))))
-  
+        (car (package-defs ((cadr parse-port-list))))
+        (file-path old-file-path)
+        (input-port old-input-port))))
+
+;  (define (parse-class-box box box-pos level)
+;    (let*-values (((old-file-path) (file-path))
+;                  ((old-input-port) (input-port))
+;                  ((parse-func _ __) (class:send (class-case-box box) read-one-special 0 #f #f #f #f))
+;                  ((class-ast) (parse-func level old-file-path box-pos input-port)))
+;      (begin0
+;        class-ast
+;        (input-port old-input-port)
+;        (file-path old-file-path))))
+;  
 ;  (lambda (level class-loc box-pos input-spec)
 ;    (make-class-def (make-header ....)
 ;                    (list methods, fields, ctor)

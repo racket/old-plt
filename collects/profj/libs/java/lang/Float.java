@@ -74,17 +74,17 @@ public final class Float extends Number implements Comparable
   /**
    * The value of a float representation -1.0/0.0, negative infinity.
    */
-  public static final float NEGATIVE_INFINITY = -1.0f / 0.0f;
+  public static final float NEGATIVE_INFINITY = (float) Double.NEGATIVE_INFINITY;//-1.0f / 0.0f;
 
   /**
    * The value of a float representation 1.0/0.0, positive infinity.
    */
-  public static final float POSITIVE_INFINITY = 1.0f / 0.0f;
+  public static final float POSITIVE_INFINITY = (float) Double.POSITIVE_INFINITY;//1.0f / 0.0f;
 
   /**
    * All IEEE 754 values of NaN have the same value in Java.
    */
-  public static final float NaN = 0.0f / 0.0f;
+  public static final float NaN = (float) Double.NaN;//0.0f / 0.0f;
 
   /**
    * The primitive type <code>float</code> is represented by this

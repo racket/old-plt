@@ -527,9 +527,10 @@
 	  (lambda (p-env)
 	    (let ((tag (pat:pexpand 'tag p-env kwd)))
 	      (let ((table (extract-cu/s-tag-table attributes)))
-		(signature-exploded
-		  (tag-table-entry-signature
-		    (cu/s-tag-table-lookup/internal-error table tag)))))))
+		(cons (z:read-object tag)
+		  (signature-exploded
+		    (tag-table-entry-signature
+		      (cu/s-tag-table-lookup/internal-error table tag))))))))
 	(else
 	  (static-error expr "Malformed compound-unit/sig import clause"))))))
 

@@ -2,13 +2,14 @@
          (lib "servlet-sig.ss" "web-server")
          (lib "help-desk-mz.ss" "help"))
 
-(require "../private/hd-css.ss")
+(require "../private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
 
  `(HTML 
    (HEAD ,hd-css
+         ,@hd-links
 	(TITLE "A Note on Language Levels") )
    (BODY 
     (H1  "A Note on Language Levels") 

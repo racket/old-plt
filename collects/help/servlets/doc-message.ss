@@ -1,7 +1,7 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server"))
 
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -9,6 +9,7 @@
   (let ([bindings (request-bindings initial-request)])
     `(HTML 
       (HEAD ,hd-css
+	    ,@hd-links
 	    (TITLE "PLT collection message"))
       (BODY 
        ,(format-collection-message 

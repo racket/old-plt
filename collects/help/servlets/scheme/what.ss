@@ -3,7 +3,7 @@
          (lib "help-desk-mz.ss" "help"))
 
 (require "../private/util.ss")
-(require "../private/hd-css.ss")
+(require "../private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -14,6 +14,7 @@
 
  `(HTML 
    (HEAD ,hd-css
+         ,@hd-links
          (TITLE "Scheme Languages"))
    (BODY 
     (H1  "Scheme Languages")  

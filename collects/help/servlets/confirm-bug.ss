@@ -4,7 +4,7 @@
 	 (lib "head.ss" "net")
 	 (lib "smtp.ss" "net"))
 
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 (require "private/external.ss")
 
 (unit/sig ()
@@ -67,7 +67,8 @@
 	  `(HTML
 	    (HEAD
 	     (TITLE "Missing bug report field")
-	     ,hd-css)
+	     ,hd-css
+	     ,@hd-links)
 	    (BODY
 	     (H1 ,(color-with "red" "Missing bug report field"))
 	     (P)

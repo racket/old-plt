@@ -8,6 +8,8 @@
            make-hd-cookie 
 	   hd-cookie->port
 	   hd-cookie->exit-proc
+           set-hd-cookie-port!
+           set-hd-cookie-exit-proc!
 	   hd-cookie?
            min-port
            max-port)

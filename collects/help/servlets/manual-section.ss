@@ -3,9 +3,6 @@
          (lib "servlet-helpers.ss" "web-server")
 	 (lib "help-desk-mz.ss" "help"))
 
-(require "private/hd-css.ss")
-(require "private/util.ss")
-
 (unit/sig ()
   (import servlet^)
 

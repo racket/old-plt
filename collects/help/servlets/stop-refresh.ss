@@ -3,7 +3,7 @@
          (lib "string-constant.ss" "string-constants"))
 
 (require "private/refresh-util.ss")
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -14,6 +14,7 @@
 
     `(HTML 
       (HEAD ,hd-css
+            ,@hd-links
 	    (TITLE "PLT manuals refresh stopped"))
       (BODY
 	(H2 (B ,(color-with "red" (string-constant plt:hd:refresh-stopped))))

@@ -3,7 +3,7 @@
          (lib "servlet-sig.ss" "web-server")
 	 (lib "help-desk-mz.ss" "help"))
 
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 (require "private/util.ss")
 (require "private/external.ss")
 
@@ -20,6 +20,7 @@
 	 [external-connections? (unbox external-box)])
     `(HTML
       (HEAD ,hd-css
+            ,@hd-links 
             (TITLE "Missing PLT manual")) 
       (BODY ((BGCOLOR "white")) 
        ,(color-with "red"

@@ -1,7 +1,7 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server"))
 
-(require "../private/hd-css.ss")
+(require "../private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -11,6 +11,7 @@
 
  `(HTML 
    (HEAD ,hd-css
+         ,@hd-links
 	(TITLE "Documentation"))
    (BODY 
     (H1  "Documentation")

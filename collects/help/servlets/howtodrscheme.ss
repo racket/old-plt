@@ -2,14 +2,15 @@
          (lib "servlet-sig.ss" "web-server"))
 
 (require "private/util.ss")
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
 
  `(HTML 
    (TITLE "DrScheme")	
-   (HEAD ,hd-css)	
+   (HEAD ,hd-css
+	 ,@hd-links)
    (BODY 
     (H1 "DrScheme") 
     "DrScheme is PLT's flagship programming environment. "

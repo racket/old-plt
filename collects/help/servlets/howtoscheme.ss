@@ -1,13 +1,14 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server"))
 
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
   `(HTML 
     (TITLE "Software")
-    (HEAD ,hd-css)
+    (HEAD ,hd-css
+	  ,@hd-links)
     (BODY 
      (H1  "Software")  
      (UL  

@@ -1,7 +1,7 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server"))
 
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 (require "private/read-lines.ss")
 
 (unit/sig ()
@@ -16,7 +16,8 @@
 		   (extract-binding/single 'offset bindings)))])
     `(HTML
       (HEAD (TITLE "PLT Help Desk") 
-	    ,hd-css)
+	    ,hd-css
+	    ,@hd-links)
       ,(read-lines file caption offset))))
 
 

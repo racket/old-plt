@@ -11,7 +11,7 @@
 
   ; to get CSS style spec
   (require (lib "xml.ss" "xml"))
-  (require (lib "hd-css.ss" "help" "servlets" "private"))  
+  (require (lib "headelts.ss" "help" "servlets" "private"))  
 
   (provide find-manuals)
  
@@ -126,10 +126,12 @@
       (let-values ([(collections-doc-files collection-names) (colldocs)])
         (apply
 	 string-append
-	 "<html><head>"
-	 "<TITLE>PLT Manuals</TITLE>"
-	(xexpr->string hd-css)
-	 "</head>"
+	 "<html>"
+         (xexpr->string 
+	  `(HEAD
+	    ,hd-css
+	    ,@hd-links
+	    (TITLE "PLT Manuals")))
 	 "<body>"
 	 (append 
 	  

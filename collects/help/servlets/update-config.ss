@@ -3,7 +3,7 @@
 	 (lib "file.ss"))
 
 (require "private/util.ss")
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -16,6 +16,7 @@
   (define (make-error-page msgs)
     `(HTML 
       (HEAD ,hd-css
+            ,@hd-links
 	    (TITLE "PLT Help Desk configuration error"))
       (BODY
        (H1 ((STYLE "color:red"))

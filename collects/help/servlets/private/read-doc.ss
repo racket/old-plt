@@ -5,7 +5,7 @@
 
   (require "util.ss")
   (require "read-lines.ss")
-  (require "hd-css.ss")
+  (require "headelts.ss")
 
   (provide read-doc)
 
@@ -27,7 +27,8 @@
 	      ; message, with frames
 	      `(HTML 
 		(HEAD (TITLE "PLT Help Desk") 
-		      ,hd-css)
+		      ,hd-css
+	              ,@hd-links)
 		(FRAMESET ((ROWS "36,*")
 			   (BORDER "0"))
 			  (FRAME ((NAME "message")

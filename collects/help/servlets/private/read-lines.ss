@@ -5,7 +5,6 @@
 	   (lib "xml.ss" "xml"))
 
   (require "util.ss")	
-  (require "hd-css.ss")	
 
   (provide read-lines)
 

@@ -1,7 +1,7 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server"))
 
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 (require "private/util.ss")
 (require "private/synthesize.ss")
 (require "private/external.ss")
@@ -56,6 +56,7 @@
   `(HTML 
     (HEAD 
 	,hd-css
+        ,@hd-links 
 	(TITLE "PLT bug report"))
     (BODY 
      (TABLE ((CELLPADDING "0")

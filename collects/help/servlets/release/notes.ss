@@ -3,7 +3,7 @@
          (lib "servlet-sig.ss" "web-server"))
 
 (require "../private/util.ss")
-(require "../private/hd-css.ss")
+(require "../private/headelts.ss")
 
 (define (make-entry s)
   (let* ([label (car s)]
@@ -23,6 +23,7 @@
 
   `(HTML
     (HEAD ,hd-css
+          ,@hd-links
          (TITLE "PLT release notes"))
     (H1 "Release Notes for PLT Scheme version " ,(version))
     (A ((NAME "relnotes") (VALUE "Release notes")))

@@ -6,7 +6,7 @@
 
 (require "private/util.ss")
 (require "private/refresh-util.ss")
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -16,6 +16,7 @@
      (show "<HTML>")
      (show (xexpr->string
 	    `(HEAD ,hd-css 
+                   ,@hd-links
 		   (TITLE  "PLT manual download progress"))))
      (show "<BODY>")
      (show (xexpr->string 

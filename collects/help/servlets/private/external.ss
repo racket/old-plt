@@ -4,7 +4,7 @@
            (lib "servlet-helpers.ss" "web-server")
            (lib "defmacro.ss"))
 
-  (require "hd-css.ss")
+  (require "headelts.ss")
 
   (provide external-box
 	   check-external)
@@ -16,6 +16,7 @@
       (show 
        `(HTML
 	 (HEAD ,hd-css
+               ,@hd-links
 	       (TITLE "Servlet unavailable"))
 	 (BODY
 	  (H3

@@ -1,7 +1,10 @@
-(module hd-css mzscheme
-  (require (lib "list.ss"))	
+; elements to go in HEAD part of HTML document
 
-  (provide hd-css)
+(module headelts mzscheme
+  (require (lib "list.ss"))
+
+  (provide hd-css
+           hd-links)
 
   ; cascading style sheet rules for Help Desk
  
@@ -52,5 +55,13 @@
 
   (define hd-css
     `(STYLE ((TYPE "text/css"))
-	    ,(css-rules->style))))
+	    ,(css-rules->style)))
+
+  ; LINKs for showing PLT icon
+
+  (define hd-links
+    `((LINK ((REL "icon") (HREF "/help/servlets/plticon.ico") 
+	     (TYPE "image/ico")))
+      (LINK ((REL "SHORTCUT ICON") (HREF "/help/servlets/plticon.ico"))))))
+
 

@@ -3,7 +3,7 @@
 	 (lib "string.ss"))
 
 (require "../private/util.ss")
-(require "../private/hd-css.ss")
+(require "../private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -20,6 +20,7 @@
 
  `(HTML
    (HEAD ,hd-css
+         ,@hd-links
          (TITLE "Known Bugs"))
    (BODY
     (H1 "Known Bugs in PLT Scheme")

@@ -4,7 +4,7 @@
 
 (require "private/main-pane.ss")
 (require "private/util.ss")
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 (require "private/external.ss")
 
 (unit/sig ()
@@ -12,6 +12,7 @@
 
  `(HTML
    (HEAD ,hd-css
+         ,@hd-links 
 	 (TITLE "PLT Help Desk"))
    (BODY 
     ,(main-pane))))

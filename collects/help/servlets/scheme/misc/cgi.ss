@@ -2,13 +2,14 @@
          (lib "servlet-sig.ss" "web-server"))
 
 (require "../../private/util.ss")
-(require "../../private/hd-css.ss")
+(require "../../private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
 
  `(HTML 
    (HEAD ,hd-css
+	 ,@hd-links
          (TITLE  "How to write CGI scripts"))
    (BODY 
     (H1  "How to write CGI scripts")

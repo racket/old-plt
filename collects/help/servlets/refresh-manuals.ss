@@ -7,7 +7,7 @@
          (lib "url.ss" "net"))
 
 (require "private/util.ss"
-         "private/hd-css.ss"
+         "private/headelts.ss"
 	 "private/refresh-util.ss"
 	 "private/external.ss")
 
@@ -21,6 +21,7 @@
   (define no-dir-page
     `(HTML
       (HEAD ,hd-css
+            ,@hd-links
             (TITLE "CVS refresh error"))	
       (BODY
        (H1 ,(color-with "red"

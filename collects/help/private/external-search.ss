@@ -51,7 +51,7 @@
 	  (put-prefs '(plt:hd:search-type
 		       plt:hd:match-type)
 		     (list search-type match-type))
-	  (help-desk-navigate url))))
+	  (help-desk-navigate cookie url))))
 
   ; cookie is an hd-cookie struct
   ; hd-url is /doc/<manual>/... or /servlet/...
@@ -65,12 +65,13 @@
     (let* ([port (hd-cookie->port cookie)]
 	   [hd-url (finddoc-page-anchor manual index-key)]
 	   [url (make-external-search-url cookie hd-url)])
-      (help-desk-navigate url)))
+      (help-desk-navigate cookie url)))
 
   (define (goto-hd-location cookie sym)
     ; the assq is guarded by the contract
     (let ([entry (assq sym hd-locations)])
       (help-desk-navigate 
+       cookie
        (make-external-search-url 
 	cookie
 	(cadr entry))))))

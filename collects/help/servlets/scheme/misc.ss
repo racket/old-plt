@@ -1,7 +1,7 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server"))
 
-(require "../private/hd-css.ss")
+(require "../private/headelts.ss")
 
 ; (listof string string) -> xexpr
 (define (make-link-line url/txt)
@@ -34,6 +34,7 @@
 
  `(HTML 
    (HEAD ,hd-css
+         ,@hd-links
          (TITLE "How to do things in Scheme"))  
    (BODY 
     (H1 "How to do things in Scheme") 

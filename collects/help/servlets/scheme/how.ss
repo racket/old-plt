@@ -6,7 +6,7 @@
 
 (require "../private/util.ss")
 (require "../private/read-doc.ss")
-(require "../private/hd-css.ss")
+(require "../private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -14,6 +14,7 @@
   (define soft-page
     `(HTML 
       (HEAD ,hd-css
+            ,@hd-links 
 	    (TITLE "Software & Components"))
       (BODY 
        (H1  "Software & Components")

@@ -2,7 +2,7 @@
          (lib "servlet-sig.ss" "web-server"))
 
 (require "../private/util.ss")
-(require "../private/hd-css.ss")
+(require "../private/headelts.ss")
 
 (define (make-item ss)
   `(UL
@@ -16,6 +16,7 @@
 
   `(HTML
     (HEAD ,hd-css
+	  ,@hd-links
           (TITLE "License"))
     (BODY
      (A ((NAME "lic") (VALUE "License")))

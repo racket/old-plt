@@ -9,7 +9,7 @@
          (lib "plt-browser.ss" "help" "private"))
 
 (require "private/util.ss"
-	 "private/hd-css.ss"
+	 "private/headelts.ss"
 	 "private/external.ss")
 
 (unit/sig ()
@@ -103,7 +103,8 @@
 	 " }"
          "}")
 	(TITLE "PLT Help Desk configuration")
-	,hd-css)
+	,hd-css
+	,@hd-links) 
       (BODY ((onLoad "showSearchPaneHeight()"))
        (H1 ,(string-constant plt:hd:configuration))
        (P)

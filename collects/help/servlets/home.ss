@@ -1,7 +1,7 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server"))
 
-(require "private/hd-css.ss"
+(require "private/headelts.ss"
          "private/frames.ss"
          "private/no-frames.ss"
          "private/util.ss")
@@ -11,10 +11,8 @@
 
  `(HTML
    (HEAD ,hd-css
-	(TITLE "PLT Help Desk")
-	(LINK ((REL "icon") (HREF "/help/servlets/plticon.ico") 
-	       (TYPE "image/ico")))
-	(LINK ((REL "SHORTCUT ICON") (HREF "/help/servlets/plticon.ico"))))
+         ,@hd-links
+	(TITLE "PLT Help Desk"))
    ,(if (use-frames?)
        (home-frames)
        (home-no-frames))))

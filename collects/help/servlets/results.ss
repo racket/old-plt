@@ -14,7 +14,7 @@
 (require "private/util.ss")
 (require "private/search-util.ss")
 (require "private/search-pane.ss")
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -244,6 +244,7 @@
   (define (make-results-page search-string items)
     `(HTML
       (HEAD ,hd-css
+            ,@hd-links
 	    (TITLE "PLT Help Desk search results"))
       (BODY
        ,@(if (use-frames?)

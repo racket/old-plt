@@ -4,7 +4,7 @@
 
 (require "private/search-pane.ss")
 (require "private/util.ss")
-(require "private/hd-css.ss")
+(require "private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -22,6 +22,7 @@
 
   `(HTML 
     (HEAD (TITLE "PLT Help Desk search")
-	  ,hd-css)
+	  ,hd-css
+          ,@hd-links)
     (BODY ((STYLE ,(string-append "background-color:" (search-bg))))
 	  ,(search-pane search-string))))

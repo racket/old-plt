@@ -2,13 +2,14 @@
          (lib "servlet-sig.ss" "web-server")
 	 (lib "string.ss"))
 
-(require "../private/hd-css.ss")
+(require "../private/headelts.ss")
 
 (unit/sig ()
   (import servlet^)
   
   `(HTML
     (HEAD ,hd-css
+          ,@hd-links
 	  (TITLE "Downloadable Patches"))
     (H1 "Downloadable Patches")
     (A ((NAME="patches") (VALUE "Downloadable patches")))

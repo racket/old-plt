@@ -429,66 +429,67 @@
 					    event-x event-y)])
 			(find-position x y)))])
 	       (lambda (event)
-		 (and arrow-vector
-		      (cond
-			[(send event moving?)
-			 (let ([pos (get-pos event)])
-			   (unless (and cursor-location
-					(= pos cursor-location))
-			     (set! cursor-location pos)
-			     (for-each update-poss (vector-ref arrow-vector cursor-location))
-			     (invalidate-bitmap-cache))
-			   (super-on-local-event event))]
-			[(send event button-down? 3)
-			 (let* ([pos (get-pos event)]
-				[arrows (vector-ref arrow-vector pos)])
-			   (if (null? arrows)
-			       (super-on-local-event event)
-			       (let* ([canvas (get-canvas)]
-				      [JUMP-ID 1]
-				      [STICK-ID 2]
-				      [RENAME-ID 3]
-				      [callback (lambda (menu evt)
-						  (let* ([id (send evt get-command-int)])
-						    (cond
-						      [(= id STICK-ID)
-						       (for-each 
-							(lambda (arrow)
-							  (hash-table-put! tacked-hash-table 
-									   arrow 
-									   (not (hash-table-get tacked-hash-table
-												arrow
-												(lambda () #f)))))
-							arrows)
-						       (invalidate-bitmap-cache)]
-						      [(= id JUMP-ID)
-						       (unless (null? arrows)
-							 (let* ([arrow (car arrows)]
-								[start-pos-left (arrow-start-pos-left arrow)]
-								[start-pos-right (arrow-start-pos-right arrow)]
-								[end-pos-left (arrow-end-pos-left arrow)]
-								[end-pos-right (arrow-end-pos-right arrow)])
-							   (if (<= start-pos-left pos start-pos-right)
-							       (set-position end-pos-left end-pos-right)
-							       (set-position start-pos-left start-pos-right))))]							     
-						      [(= id RENAME-ID)
-						       (unless (null? arrows)
-							 (let* ([arrow (car arrows)]
-								[id-name (arrow-id-name arrow)])
-							   ((arrow-rename arrow)
-							    (mred:get-text-from-user
-							     (format "Rename ~a to:" id-name)
-							     "Rename Identifier"
-							     (format "~a" id-name))))
-							 (invalidate-bitmap-cache))])))]
-				      [menu (make-object wx:menu% null callback)])
-				 (send menu append STICK-ID "Toggle Tackedness")
-				 (send menu append JUMP-ID "Jump")
-				 (send menu append RENAME-ID "Rename")
-				 (send canvas popup-menu menu
-				       (send event get-x)
-				       (send event get-y)))))]
-			[else (super-on-local-event event)]))))]))))
+		 (if arrow-vector
+		     (cond
+		       [(send event moving?)
+			(let ([pos (get-pos event)])
+			  (unless (and cursor-location
+				       (= pos cursor-location))
+			    (set! cursor-location pos)
+			    (for-each update-poss (vector-ref arrow-vector cursor-location))
+			    (invalidate-bitmap-cache))
+			  (super-on-local-event event))]
+		       [(send event button-down? 3)
+			(let* ([pos (get-pos event)]
+			       [arrows (vector-ref arrow-vector pos)])
+			  (if (null? arrows)
+			      (super-on-local-event event)
+			      (let* ([canvas (get-canvas)]
+				     [JUMP-ID 1]
+				     [STICK-ID 2]
+				     [RENAME-ID 3]
+				     [callback (lambda (menu evt)
+						 (let* ([id (send evt get-command-int)])
+						   (cond
+						     [(= id STICK-ID)
+						      (for-each 
+						       (lambda (arrow)
+							 (hash-table-put! tacked-hash-table 
+									  arrow 
+									  (not (hash-table-get tacked-hash-table
+											       arrow
+											       (lambda () #f)))))
+						       arrows)
+						      (invalidate-bitmap-cache)]
+						     [(= id JUMP-ID)
+						      (unless (null? arrows)
+							(let* ([arrow (car arrows)]
+							       [start-pos-left (arrow-start-pos-left arrow)]
+							       [start-pos-right (arrow-start-pos-right arrow)]
+							       [end-pos-left (arrow-end-pos-left arrow)]
+							       [end-pos-right (arrow-end-pos-right arrow)])
+							  (if (<= start-pos-left pos start-pos-right)
+							      (set-position end-pos-left end-pos-right)
+							      (set-position start-pos-left start-pos-right))))]							     
+						     [(= id RENAME-ID)
+						      (unless (null? arrows)
+							(let* ([arrow (car arrows)]
+							       [id-name (arrow-id-name arrow)])
+							  ((arrow-rename arrow)
+							   (mred:get-text-from-user
+							    (format "Rename ~a to:" id-name)
+							    "Rename Identifier"
+							    (format "~a" id-name))))
+							(invalidate-bitmap-cache))])))]
+				     [menu (make-object wx:menu% null callback)])
+				(send menu append STICK-ID "Toggle Tackedness")
+				(send menu append JUMP-ID "Jump")
+				(send menu append RENAME-ID "Rename")
+				(send canvas popup-menu menu
+				      (send event get-x)
+				      (send event get-y)))))]
+		       [else (super-on-local-event event)])
+		     (super-on-local-event event))))]))))
 
     (define new%
       (class (drscheme:parameters:current-frame%) args
@@ -558,9 +559,9 @@
 		       [color-loop
 			(lambda (zodiac-ast)
 			  (let* ([source-object?
-				  (eq? (zodiac:origin-who
-					(zodiac:zodiac-origin zodiac-ast))
-				       'source)]
+				  (let ([who (zodiac:origin-who
+					      (zodiac:zodiac-origin zodiac-ast))])
+				    (or (eq? who 'source) (eq? who 'reader)))]
 				 [z:start (zodiac:location-offset (zodiac:zodiac-start zodiac-ast))]
 				 [z:finish (+ 1
 					      (zodiac:location-offset

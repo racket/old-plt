@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.143 1998/03/05 04:25:48 shriram Exp $
+; $Id: scm-main.ss,v 1.144 1998/03/06 21:15:41 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -231,14 +231,14 @@
 
   (define-struct internal-definition (vars val))
 
-  (define internal-define-vocab
-    (create-vocabulary 'internal-define-vocab scheme-vocabulary))
+  (define internal-define-vocab-delta
+    (create-vocabulary 'internal-define-vocab-delta))
 
-  (add-sym-micro internal-define-vocab
+  (add-sym-micro internal-define-vocab-delta
     (lambda (expr env attributes vocab)
       expr))
 
-  (add-primitivized-micro-form 'define-values internal-define-vocab
+  (add-primitivized-micro-form 'define-values internal-define-vocab-delta
     (let* ((kwd '())
 	    (in-pattern `(_ (var ...) val))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -284,24 +284,27 @@
 				 (expand-expr e env attributes vocab))
 			    bodies)
 			  expr)))
-		    (let-values
-		      (((definitions terms)
-			 (let loop ((seen '()) (rest bodies))
-			   (if (null? rest)
-			     (static-error expr
-			       (if (null? seen)
-				 "Malformed begin"
-				 "Internal definitions not followed by expression"))
-			     (let ((first (car rest)))
-			       (let ((e-first
-				       (expand-expr first env
-					 attributes
-					 internal-define-vocab)))
-				 (if (internal-definition? e-first)
-				   (loop (cons e-first seen)
-				     (cdr rest))
-				   (values (reverse seen)
-				     rest))))))))
+		    (let*-values
+		      (((internal-define-vocab)
+			 (append-vocabulary internal-define-vocab-delta
+			   vocab 'internal-define-vocab))
+			((definitions terms)
+			  (let loop ((seen '()) (rest bodies))
+			    (if (null? rest)
+			      (static-error expr
+				(if (null? seen)
+				  "Malformed begin"
+				  "Internal definitions not followed by expression"))
+			      (let ((first (car rest)))
+				(let ((e-first
+					(expand-expr first env
+					  attributes
+					  internal-define-vocab)))
+				  (if (internal-definition? e-first)
+				    (loop (cons e-first seen)
+				      (cdr rest))
+				    (values (reverse seen)
+				      rest))))))))
 		      (if (null? definitions)
 			(if (null? (cdr terms))
 			  (expand-expr (car terms) env attributes vocab)
@@ -343,7 +346,10 @@
 		    (static-error expr "Malformed begin0"))
 		  (set-top-level-status attributes)
 		  (let*-values
-		    (((first-body) (car bodies))
+		    (((internal-define-vocab)
+		       (append-vocabulary internal-define-vocab-delta
+			 vocab 'internal-define-vocab))
+		      ((first-body) (car bodies))
 		      ((definitions terms)
 			(let loop ((seen '()) (rest (cdr bodies)))
 			  (if (null? rest)
@@ -1037,9 +1043,13 @@
 	    (in-pattern-1 '(_))
 	    (out-pattern-1 '#f)
 	    (in-pattern-2 '(_ e))
-	    (out-pattern-2 'e)
+	    (out-pattern-2 (if (language>=? 'structured)
+			     'e
+			     '(if e #t #f)))
 	    (in-pattern-3 '(_ e0 e1 ...))
-	    (out-pattern-3 '(let ((t e0)) (if t t (or e1 ...))))
+	    (out-pattern-3 (if (language>=? 'structured)
+			     '(let ((t e0)) (if t t (or e1 ...)))
+			     '(if e0 #t (or e1 ...))))
 	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	    (m&e-2 (pat:make-match&env in-pattern-2 kwd))
 	    (m&e-3 (pat:make-match&env in-pattern-3 kwd)))
@@ -1243,10 +1253,8 @@
       'case
       scheme-vocabulary
       (let* ((kwd-1 '(else))
-	      (in-pattern-1 (if (language<=? 'structured)
-			      '(_ val (else b))
-			      '(_ val (else b ...))))
-	      (out-pattern-1 (if (language<=? 'structured) 'b '(begin b ...)))
+	      (in-pattern-1 '(_ val (else b ...)))
+	      (out-pattern-1 '(begin val b ...))
 	      (kwd-2 '())
 	      (in-pattern-2 '(_ val))
 	      (out-pattern-2-signal-error
@@ -1255,18 +1263,11 @@
 			    ,debug-info-handler-expression)))
 	      (out-pattern-2-no-error
 		'(begin val (#%void)))
-	      (in-pattern-3 (if (language<=? 'structured)
-			      '(_ val ((keys ...) b) rest ...)
-			      '(_ val ((keys ...) b ...) rest ...)))
-	      (out-pattern-3 (if (language<=? 'structured)
-			       '(let ((tmp val))
-				  (if (#%memv tmp (quote (keys ...)))
-				    b
-				    (case tmp rest ...)))
-			       '(let ((tmp val))
-				  (if (#%memv tmp (quote (keys ...)))
-				    (begin b ...)
-				    (case tmp rest ...)))))
+	      (in-pattern-3 '(_ val ((keys ...) b ...) rest ...))
+	      (out-pattern-3 '(let ((tmp val))
+				(if (#%memv tmp (quote (keys ...)))
+				  (begin b ...)
+				  (case tmp rest ...))))
 	      (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
 	      (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))
 	      (m&e-3 (pat:make-match&env in-pattern-3 kwd-2)))
@@ -1279,6 +1280,39 @@
 		out-pattern-2-signal-error kwd-2 env))
 	    (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd-2 env)
 	    (static-error expr "Malformed case"))))))
+
+  (when (language>=? 'side-effecting)
+    (add-primitivized-macro-form
+      'evcase
+      scheme-vocabulary
+      (let* ((kwd-1 '(else))
+	      (in-pattern-1 '(_ val (else b ...)))
+	      (out-pattern-1 '(begin val b ...))
+	      (kwd-2 '())
+	      (in-pattern-2 '(_ val))
+	      (out-pattern-2-signal-error
+		`(#%raise (#%make-exn:else
+			    "no matching else clause"
+			    ,debug-info-handler-expression)))
+	      (out-pattern-2-no-error
+		'(begin val (#%void)))
+	      (in-pattern-3 '(_ val (test-expr b ...) rest ...))
+	      (out-pattern-3 '(let ((tmp val))
+				(if (#%eqv? tmp test-expr)
+				  (begin b ...)
+				  (evcase tmp rest ...))))
+	      (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
+	      (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))
+	      (m&e-3 (pat:make-match&env in-pattern-3 kwd-2)))
+	(lambda (expr env)
+	  (or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd-1 env)
+	    (if (compile-allow-cond-fallthrough)
+	      (pat:match-and-rewrite expr m&e-2
+		out-pattern-2-no-error kwd-2 env)
+	      (pat:match-and-rewrite expr m&e-2
+		out-pattern-2-signal-error kwd-2 env))
+	    (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd-2 env)
+	    (static-error expr "Malformed evcase"))))))
 
   (when (language>=? 'side-effecting)
     (add-primitivized-macro-form

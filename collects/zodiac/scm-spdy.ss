@@ -1,4 +1,4 @@
-; $Id: scm-spdy.ss,v 1.34 1997/09/09 18:05:36 shriram Exp $
+; $Id: scm-spdy.ss,v 1.35 1997/12/02 22:07:18 shriram Exp $
 
 (unit/sig zodiac:scheme-mrspidey^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -267,194 +267,121 @@
 	  (else
 	    (static-error expr "Malformed reference"))))))
 
+  (define reference-library/relative-maker
+    (lambda (form-name make-raw-filename)
+      (let* ((kwd '())
+	      (in-pattern '(_ filename collections ...))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((filename (pat:pexpand 'filename p-env kwd))
+		       (collections (pat:pexpand '(collections ...) p-env kwd)))
+		  (let ((f (expand-expr filename env attributes vocab))
+			 (cs (map (lambda (c)
+				    (expand-expr c env attributes vocab))
+			       collections)))
+		    (unless (and (quote-form? f)
+			      (z:string? (quote-form-expr f)))
+		      (static-error filename "Does not yield a filename"))
+		    (for-each
+		      (lambda (c collection)
+			(unless (and (quote-form? c)
+				  (z:string? (quote-form-expr c)))
+			  (static-error collection "Does not yield a string")))
+		      cs collections)
+		    (let* ((raw-f (z:read-object (quote-form-expr f)))
+			    (raw-cs (map (lambda (c)
+					   (z:read-object (quote-form-expr c)))
+				      cs))
+			    (raw-filename
+			      (if (relative-path? raw-f)
+				(or (make-raw-filename raw-f raw-cs expr)
+				  (static-error filename
+				    "No such library file found"))
+				(static-error f
+				  "Library path ~s must be a relative path"
+				  raw-f))))
+		      (if (and (or (null? raw-cs)
+				 (and (null? (cdr raw-cs))
+				   (string=? "mzlib" (car raw-cs))))
+			    (member raw-f mzscheme-libraries-provided))
+			(expand-expr (structurize-syntax '(#%void) expr)
+			  env attributes vocab)
+			(let-values (((base name dir?)
+				       (split-path raw-filename)))
+			  (when dir?
+			    (static-error filename
+			      "Cannot include a directory"))
+			  (let ((original-directory
+				  (current-load-relative-directory))
+				 (original-collections
+				   (current-require-relative-collection))
+				 (p (with-handlers
+				      ((exn:i/o:filesystem?
+					 (lambda (exn)
+					   (static-error filename
+					     "Unable to open file ~a"
+					     raw-filename))))
+				      (open-input-file raw-filename))))
+			    (dynamic-wind
+			      (lambda ()
+				(current-require-relative-collection
+				  (if (null? raw-cs) '("mzlib") raw-cs))
+				(when (string? base)
+				  (current-load-relative-directory base)))
+			      (lambda ()
+				(let ((reader
+					(z:read p
+					  (z:make-location
+					    (z:location-line
+					      z:default-initial-location)
+					    (z:location-column
+					      z:default-initial-location)
+					    (z:location-offset
+					      z:default-initial-location)
+					    (build-path
+					      (current-load-relative-directory)
+					      name)))))
+				  (let ((code
+					  (let loop ()
+					    (let ((input (reader)))
+					      (if (z:eof? input)
+						'()
+						(cons input
+						  (loop)))))))
+				    (if (null? code)
+				      (static-error expr "Empty file")
+				      (expand-expr
+					(structurize-syntax
+					  `(begin ,@code)
+					  expr)
+					env attributes vocab)))))
+			      (lambda ()
+				(current-load-relative-directory
+				  original-directory)
+				(current-require-relative-collection
+				  original-collections)
+				(close-input-port p)))))))))))
+	    (else
+	      (static-error expr (string-append "Malformed "
+				   (symbol->string form-name)))))))))
+
   (add-primitivized-micro-form 'reference-library mrspidey-vocabulary
-    (let* ((kwd '())
-	    (in-pattern '(_ filename collections ...))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e expr env)
-	    =>
-	    (lambda (p-env)
-	      (let ((filename (pat:pexpand 'filename p-env kwd))
-		     (collections (pat:pexpand '(collections ...) p-env kwd)))
-		(let ((f (expand-expr filename env attributes vocab))
-		       (cs (map (lambda (c)
-				  (expand-expr c env attributes vocab))
-			     collections)))
-		  (unless (and (quote-form? f)
-			    (z:string? (quote-form-expr f)))
-		    (static-error filename "Does not yield a filename"))
-		  (for-each
-		    (lambda (c collection)
-		      (unless (and (quote-form? c)
-				(z:string? (quote-form-expr c)))
-			(static-error collection "Does not yield a string")))
-		    cs collections)
-		  (let* ((raw-f (z:read-object (quote-form-expr f)))
-			  (raw-cs (map (lambda (c)
-					 (z:read-object (quote-form-expr c)))
-				    cs))
-			  (raw-filename
-			    (if (relative-path? raw-f)
-			      (or (apply mzlib:find-library raw-f raw-cs)
-				(static-error filename
-				  "No such library file found"))
-			      (static-error f
-				"Library path ~s must be a relative path"
-				raw-f))))
-		    (if (and (or (null? raw-cs)
-			       (and (null? (cdr raw-cs))
-				 (string=? "mzlib" (car raw-cs))))
-			  (member raw-f mzscheme-libraries-provided))
-		      (expand-expr (structurize-syntax '(#%void) expr)
-			env attributes vocab)
-		      (let-values (((base name dir?)
-				     (split-path raw-filename)))
-			(when dir?
-			  (static-error filename
-			    "Cannot include a directory"))
-			(let ((original-directory
-				(current-load-relative-directory))
-			       (p (with-handlers
-				    ((exn:i/o:filesystem?
-				       (lambda (exn)
-					 (static-error filename
-					   "Unable to open file ~a"
-					   raw-filename))))
-				    (open-input-file raw-filename))))
-			  (dynamic-wind
-			    (lambda ()
-			      (when (string? base)
-				(current-load-relative-directory base)))
-			    (lambda ()
-			      (let ((reader
-				      (z:read p
-					(z:make-location
-					  (z:location-line
-					    z:default-initial-location)
-					  (z:location-column
-					    z:default-initial-location)
-					  (z:location-offset
-					    z:default-initial-location)
-					  (build-path
-					    (current-load-relative-directory)
-					    name)))))
-				(let ((code
-					(let loop ()
-					  (let ((input (reader)))
-					    (if (z:eof? input)
-					      '()
-					      (cons input
-						(loop)))))))
-				  (if (null? code)
-				    (static-error expr "Empty file")
-				    (expand-expr
-				      (structurize-syntax
-					`(begin ,@code)
-					expr)
-				      env attributes vocab)))))
-			    (lambda ()
-			      (current-load-relative-directory original-directory)
-			      (close-input-port p)))))))))))
-	  (else
-	    (static-error expr "Malformed reference-library"))))))
+    (reference-library/relative-maker 'reference-library
+      (lambda (raw-f raw-cs expr)
+	(apply mzlib:find-library raw-f raw-cs))))
 
   (add-primitivized-micro-form 'reference-relative-library mrspidey-vocabulary
-    (let* ((kwd '())
-	    (in-pattern '(_ filename collections ...))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e expr env)
-	    =>
-	    (lambda (p-env)
-	      (let ((filename (pat:pexpand 'filename p-env kwd))
-		     (collections (pat:pexpand '(collections ...) p-env kwd)))
-		(let ((f (expand-expr filename env attributes vocab))
-		       (cs (map (lambda (c)
-				  (expand-expr c env attributes vocab))
-			     collections)))
-		  (unless (and (quote-form? f)
-			    (z:string? (quote-form-expr f)))
-		    (static-error filename "Does not yield a filename"))
-		  (for-each
-		    (lambda (c collection)
-		      (unless (and (quote-form? c)
-				(z:string? (quote-form-expr c)))
-			(static-error collection "Does not yield a string")))
-		    cs collections)
-		  (let* ((raw-f (z:read-object (quote-form-expr f)))
-			  (raw-cs (map (lambda (c)
-					 (z:read-object (quote-form-expr c)))
-				    cs))
-			  (raw-filename
-			    (if (relative-path? raw-f)
-			      (or (apply mzlib:find-library raw-f
-				    (append (or (current-require-relative-collection)
-					      null)
-				      raw-cs))
-				(static-error filename
-				  "No such library file found"))
-			      (static-error f
-				"Library path ~s must be a relative path"
-				raw-f))))
-		    (if (and (or (null? raw-cs)
-			       (and (null? (cdr raw-cs))
-				 (string=? "mzlib" (car raw-cs))))
-			  (member raw-f mzscheme-libraries-provided))
-		      (expand-expr (structurize-syntax '(#%void) expr)
-			env attributes vocab)
-		      (let-values (((base name dir?)
-				     (split-path raw-filename)))
-			(when dir?
-			  (static-error filename
-			    "Cannot include a directory"))
-			(let ((original-directory
-				(current-load-relative-directory))
-			       (p (with-handlers
-				    ((exn:i/o:filesystem?
-				       (lambda (exn)
-					 (static-error filename
-					   "Unable to open file ~a"
-					   raw-filename))))
-				    (open-input-file raw-filename))))
-			  (dynamic-wind
-			    (lambda ()
-			      (when (string? base)
-				(current-load-relative-directory base)))
-			    (lambda ()
-			      (let ((reader
-				      (z:read p
-					(z:make-location
-					  (z:location-line
-					    z:default-initial-location)
-					  (z:location-column
-					    z:default-initial-location)
-					  (z:location-offset
-					    z:default-initial-location)
-					  (build-path
-					    (current-load-relative-directory)
-					    name)))))
-				(let ((code
-					(let loop ()
-					  (let ((input (reader)))
-					    (if (z:eof? input)
-					      '()
-					      (cons input
-						(loop)))))))
-				  (if (null? code)
-				    (static-error expr "Empty file")
-				    (expand-expr
-				      (structurize-syntax
-					`(begin ,@code)
-					expr)
-				      env attributes vocab)))))
-			    (lambda ()
-			      (current-load-relative-directory original-directory)
-			      (close-input-port p)))))))))))
-	  (else
-	    (static-error expr "Malformed reference-relative-library"))))))
+    (reference-library/relative-maker 'reference-relative-library
+      (lambda (raw-f raw-cs expr)
+	(apply mzlib:find-library raw-f
+	  (append (or (current-require-relative-collection)
+		    (static-error expr
+		      "No current collection for library \"~a\"" raw-f))
+	    raw-cs)))))
 
   (define reference-unit-maker
     (lambda (form-name signed?)

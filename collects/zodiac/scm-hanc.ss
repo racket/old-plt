@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.42 1997/12/05 16:36:10 mflatt Exp $
+; $Id: scm-hanc.ss,v 1.43 1998/02/25 22:57:42 shriram Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -9,6 +9,46 @@
 (define cu/s-this-link-attr 'cu/s-this-link-name)
 
 (define-struct signature (name elements exploded))
+
+(define check-unique-cu/s-exports
+  (lambda (in:exports sign:exports)
+    (let loop ((in:all in:exports)
+		(sign:all sign:exports)
+		(in:names null)
+		(sign:names null)
+		(in:rest null)
+		(sign:rest null))
+      (if (null? in:all)
+	(begin
+	  (let loop ((in in:rest)
+		      (signs (map car sign:rest)))
+	    (unless (null? in)
+	      (if (memq (car signs) (cdr signs))
+		(static-error (car in)
+		  "Name \"~s\" is exported twice"
+		  (car signs))
+		(loop (cdr in) (cdr signs)))))
+	  (let loop ((in in:names)
+		      (signs sign:names))
+	    (unless (null? in)
+	      (if (memq (car signs) (cdr signs))
+		(static-error (car in)
+		  "Name \"~s\" is exported twice"
+		  (car signs))
+		(loop (cdr in) (cdr signs))))))
+	(let ((in (car in:all)) (sign (car sign:all)))
+	  (if (or (symbol? sign) (z:symbol? sign))
+	    (loop (cdr in:all) (cdr sign:all)
+	      (cons in in:names)
+	      (cons (if (symbol? sign)
+		      sign
+		      (z:read-object sign))
+		sign:names)
+	      in:rest sign:rest)
+	    (loop (cdr in:all) (cdr sign:all)
+	      in:names sign:names
+	      (cons in in:rest)
+	      (cons sign sign:names))))))))
 
 ; This is based on code lifted from Matthew's implementation (note the
 ; use of brackets (-:).
@@ -653,7 +693,7 @@
 			       ((exn:i/o:filesystem?
 				  (lambda (exn)
 				    (static-error filename
-				      "Unable to open file ~s" raw-filename))))
+				      "Unable to open file ~s: ~a" raw-filename exn))))
 			       (open-input-file
 				 (if (and original-directory
 				       (not (complete-path? raw-filename)))
@@ -1740,6 +1780,7 @@
 					       (expand-expr e env attributes
 						 cu/s-export-sign-vocab))
 					  in:exports))))
+		  (check-unique-cu/s-exports in:exports sign:exports)
 		  (let ((output
 			  `(let ,(map list linkage:unit-vars linkage:unit-exprs)
 			     (#%verify-linkage-signature-match
@@ -1747,7 +1788,9 @@
 			       ',linkage:tags
 			       (#%list ,@linkage:unit-vars)
 			       ',(map sig-list->sig-vector linkage:link-exports)
-			       ',(map (lambda (l) (map named-sig-list->named-sig-vector l)) linkage:link-imports))
+			       ',(map (lambda (l)
+					(map named-sig-list->named-sig-vector l))
+				   linkage:link-imports))
 			     (#%make-unit-with-signature
 			       (compound-unit
 				 (import ,@prim:imports)

@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.53 1998/03/04 22:07:53 shriram Exp $
+; $Id: scm-unit.ss,v 1.54 1998/03/04 22:10:04 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -69,6 +69,25 @@
     (lambda (attributes)
       (put-attribute attributes c-unit-link-import/body-vocab-attr
 	(cdr (get-attribute attributes c-unit-link-import/body-vocab-attr)))))
+
+  (define c-unit-current-link-tag-attribute 'c-unit-current-link-tag-attribute)
+
+  (define put-c-unit-current-link-tag-attribute
+    (lambda (attributes tag)
+      (put-attribute attributes c-unit-current-link-tag-attribute
+	(cons tag
+	  (get-attribute attributes c-unit-current-link-tag-attribute
+	    (lambda () null))))))
+
+  (define get-c-unit-current-link-tag-attribute
+    (lambda (attributes)
+      (car
+	(get-attribute attributes c-unit-current-link-tag-attribute))))
+
+  (define remove-c-unit-current-link-tag-attribute
+    (lambda (attributes)
+      (put-attribute attributes c-unit-current-link-tag-attribute
+	(cdr (get-attribute attributes c-unit-current-link-tag-attribute)))))
 
   (define make-vars-attribute
     (lambda (attributes)
@@ -463,6 +482,11 @@
 	    (lambda (p-env)
 	      (let ((tag (pat:pexpand 'tag p-env kwd))
 		     (ids (pat:pexpand '(id ...) p-env kwd)))
+		(when (eq? (z:read-object tag)
+			(get-c-unit-current-link-tag-attribute
+			  attributes))
+		  (static-error expr "Self-import of tag ~a"
+		    (z:read-object tag)))
 		(map (lambda (id) (cons tag id)) ids))))
 	  (else
 	    (static-error expr "Invalid link syntax"))))))
@@ -587,34 +611,34 @@
 		      (raw-link-clauses (map z:read-object in:link-tags))
 		      (proc:link-clauses
 			(map (lambda (link-tag link-body)
-			       (let ((expanded-body
-				       (expand-expr link-body env
-					 attributes
-					 c-unit-link-body-vocab)))
-				 (let ((unit-expr (car expanded-body))
-					(unit-args (apply append
-						     (cdr expanded-body)))
-					(this-tag (z:read-object link-tag)))
-				   (let loop ((args unit-args))
-				     (if (null? args)
-				       (cons link-tag
-					 (cons unit-expr unit-args))
-				       (begin
-					 (if (pair? (car args))
-					   (let ((arg (caar args)))
-					     (if (z:symbol? arg)
-					       (let ((arg-name
-						       (z:read-object arg)))
-						 (if (eq? this-tag arg-name)
-						   (static-error arg
-						     "Self-import not allowed")
-						   (if (not (memq arg-name
+			       (let ((this-tag (z:read-object link-tag)))
+				 (put-c-unit-current-link-tag-attribute
+				   attributes this-tag)
+				 (let ((expanded-body
+					 (expand-expr link-body env
+					   attributes
+					   c-unit-link-body-vocab)))
+				   (let ((unit-expr (car expanded-body))
+					  (unit-args (apply append
+						       (cdr expanded-body))))
+				     (let loop ((args unit-args))
+				       (if (null? args)
+					 (begin
+					   (remove-c-unit-current-link-tag-attribute
+					     attributes)
+					   (cons link-tag
+					     (cons unit-expr unit-args)))
+					 (begin
+					   (if (pair? (car args))
+					     (let ((arg (caar args)))
+					       (if (z:symbol? arg)
+						 (when (not (memq (z:read-object arg)
 							      raw-link-clauses))
-						     (static-error arg
-						       "Not a valid tag"))))
-					       (static-error arg
-						 "Tag must be a symbol"))))
-					 (loop (cdr args))))))))
+						   (static-error arg
+						     "Not a valid tag"))
+						 (static-error arg
+						   "Tag must be a symbol"))))
+					   (loop (cdr args)))))))))
 			  in:link-tags in:link-bodies))
 		      (proc:export-clauses
 			(apply append

@@ -41,8 +41,9 @@
 # define RELEASE_FIN_LOCK() /* empty */
 #else
 static void *fin_mutex = NULL;
-# define GET_FIN_LOCK() (fin_mutex = (fin_mutex ? fin_mutex : SCHEME_MAKE_MUTEX())); SCHEME_LOCK_MUTEX(fin_mutex)
-# define RELEASE_FIN_LOCK()  SCHEME_UNLOCK_MUTEX(fin_mutex)
+static int fin_lock_c;
+# define GET_FIN_LOCK() (fin_mutex = (fin_mutex ? fin_mutex : SCHEME_MAKE_MUTEX())); SCHEME_LOCK_MUTEX(fin_mutex); fin_lock_c++;
+# define RELEASE_FIN_LOCK()  --fin_lock_c; SCHEME_UNLOCK_MUTEX(fin_mutex)
 #endif
 
 static void **dgc_array;

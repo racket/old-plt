@@ -1094,6 +1094,7 @@
 
 (define prefix-w/-:
   (lambda (prefix name)
+    (printf "prefix: ~s~n~n" prefix)
     (cond
       ((symbol? prefix)
 	(if (string=? "" (symbol->string prefix))

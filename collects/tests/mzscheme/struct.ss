@@ -166,47 +166,60 @@
 		'...))))))))
 
 (let ([t-insp (make-inspector)])
-  (define (try-proc-structs proc bad-arity name re 1-2-value t-insp)
+  (define (try-proc-structs proc proc2 bad-arity name re 1-2-value t-insp)
     (letrec-values ([(type make pred sel set) (make-struct-type 'p #f 1 2 (lambda (x) (pred x)) null t-insp proc)]
+		    ;; Derived from proc
 		    [(type2 make2 pred2 sel2 set2) (make-struct-type 'q type 1 2 (lambda (x) (pred2 x)) null t-insp #f)]
-		    [(type3 make3 pred3 sel3 set3) (make-struct-type 'r type 1 1 (lambda (x) (pred3 x)) null t-insp proc)])
+		    ;; Derived, adds proc
+		    [(type3 make3 pred3 sel3 set3) (make-struct-type 'r struct:arity-at-least 1 1 (lambda (x) (pred3 x)) 
+								     null t-insp proc)]
+		    ;; Derived, overrides proc
+		    [(type4 make4 pred4 sel4 set4) (make-struct-type 's type 1 1 (lambda (x) (pred4 x)) null t-insp proc2)])
       (let* ([bad1 (make 17)]
 	     [bad2 (make2 18 -18)]
 	     [bad3 (make3 #f 19)]
+	     [bad4 (make4 21 33)]
 	     [bad11 (make bad1)])
 	(test #t pred bad1)
 	(test #t pred2 bad2)
 	(test #t pred3 bad3)
+	(test #t pred4 bad4)
 	(test #t pred bad11)
 
 	(test #t procedure? bad1)
 	(test #t procedure? bad2)
 	(test #t procedure? bad3)
+	(test #t procedure? bad4)
 	(test #t procedure? bad11)
 
 	(test bad-arity procedure-arity bad1)
 	(test bad-arity procedure-arity bad2)
 	(test bad-arity procedure-arity bad3)
+	(test bad-arity procedure-arity bad4)
 	(test bad-arity procedure-arity bad11)
 
 	(test 'p object-name bad1)
 	(test 'q object-name bad2)
 	(test 'r object-name bad3)
+	(test 's object-name bad4)
 	(test 'p object-name bad11)
 
 	(when (equal? 2 bad-arity)
 	  (test 1-2-value bad1 1 2)
 	  (test 1-2-value bad2 1 2)
 	  (test 1-2-value bad3 1 2)
+	  (test 1-2-value bad4 1 2)
 	  (test 1-2-value bad11 1 2))
 
 	(err/rt-test (bad1) exn:application:arity?)
 	(err/rt-test (bad2) exn:application:arity?)
 	(err/rt-test (bad3) exn:application:arity?)
+	(err/rt-test (bad4) exn:application:arity?)
 	(err/rt-test (bad11) exn:application:arity?)
 	(err/rt-test (bad1 1) exn:application:arity?)
 	(err/rt-test (bad2 1) exn:application:arity?)
 	(err/rt-test (bad3 1) exn:application:arity?)
+	(err/rt-test (bad4 1) exn:application:arity?)
 	(err/rt-test (bad11 1) exn:application:arity?)
 
 	(test #f not (regexp-match "p:"
@@ -218,6 +231,9 @@
 	(test #f not (regexp-match "r:"
 				   (with-handlers ([not-break-exn? exn-message])
 				     (bad3))))
+	(test #f not (regexp-match "s:"
+				   (with-handlers ([not-break-exn? exn-message])
+				     (bad4))))
 	(test #f not (regexp-match "p:"
 				   (with-handlers ([not-break-exn? exn-message])
 				     (bad11)))))
@@ -225,35 +241,42 @@
       (let* ([cons1 (make cons)]
 	     [cons2 (make2 cons -18)]
 	     [cons3 (make3 #f cons)]
+	     [cons4 (make4 #f cons)]
 	     [cons11 (make cons1)])
 	(test #t pred cons1)
 	(test #t pred2 cons2)
 	(test #t pred3 cons3)
+	(test #t pred4 cons4)
 	(test #t pred cons11)
 
 	(test #t procedure? cons1)
 	(test #t procedure? cons2)
 	(test #t procedure? cons3)
+	(test #t procedure? cons4)
 	(test #t procedure? cons11)
 
 	(test 2 procedure-arity cons1)
 	(test 2 procedure-arity cons2)
 	(test 2 procedure-arity cons3)
+	(test 2 procedure-arity cons4)
 	(test 2 procedure-arity cons11)
 
 	(test (name 'p) object-name cons1)
 	(test (name 'q) object-name cons2)
 	(test (name 'r) object-name cons3)
+	(test (name 's) object-name cons4)
 	(test (name 'p) object-name cons11)
 
 	(arity-test cons1 2 2)
 	(arity-test cons2 2 2)
 	(arity-test cons3 2 2)
+	(arity-test cons4 2 2)
 	(arity-test cons11 2 2)
 
 	(test 1-2-value cons1 1 2)
 	(test 1-2-value cons2 1 2)
 	(test 1-2-value cons3 1 2)
+	(test 1-2-value cons4 1 2)
 	(test 1-2-value cons11 1 2)
 
 	(test #f not (regexp-match (re "p:")
@@ -265,21 +288,34 @@
 	(test #f not (regexp-match (re "r:")
 				   (with-handlers ([not-break-exn? exn-message])
 				     (cons3))))
+	(test #f not (regexp-match (re "s:")
+				   (with-handlers ([not-break-exn? exn-message])
+				     (cons4))))
 	(test #f not (regexp-match (re "p:")
 				   (with-handlers ([not-break-exn? exn-message])
 				     (cons11)))))
       
       'done))
 
-  (try-proc-structs 0 null (lambda (x) 'cons) (lambda (x) "cons:") '(1 . 2) #f)
-  (try-proc-structs 0 null (lambda (x) 'cons) (lambda (x) "cons:") '(1 . 2) t-insp)
+  (try-proc-structs 0 0 null (lambda (x) 'cons) (lambda (x) "cons:") '(1 . 2) #f)
+  (try-proc-structs 0 0 null (lambda (x) 'cons) (lambda (x) "cons:") '(1 . 2) t-insp)
   (try-proc-structs (lambda (s a b) 
-		      (when (struct? s) (error "should be opaque"))
+		      (when (and (struct? s) (not (arity-at-least? s)))
+			(error "should be opaque"))
 		      (cons b a)) 
+		    (lambda (s a b) 
+		      (when (struct? s)
+			(error "should be opaque"))
+		      (cons b a))
 		    2 values values '(2 . 1) #f)
   (try-proc-structs (lambda (s a b) 
 		      (unless (struct? s) (error "should be transparent"))
 		      (unless ((vector-ref (struct->vector s) 3) s) (error "should be instance"))
+		      (cons b a))
+		    (lambda (s a b) 
+		      (unless (struct? s) (error "should be transparent"))
+		      (unless ((vector-ref (struct->vector s) 3) s) (error "should be instance"))
+		      (unless ((vector-ref (struct->vector s) 5) s) (error "should be instance"))
 		      (cons b a))
 		    2 values values '(2 . 1) t-insp))
 

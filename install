@@ -30,8 +30,6 @@ exit 1
 
 (use-compiled-file-kinds 'none)
 
-(define release-date "August 2003")
-
 (define plthome (current-directory))
 (putenv "PLTHOME" plthome)
 (putenv "PLTCOLLECTS" "")
@@ -280,9 +278,7 @@ exit 1
 (when (eq? 'ask updates?)
   (set! updates?
         (get-y-n
-         (list (format "This distribution was created in ~a.\n" release-date)
-               "  Check for updates of PLT software over "
-               "the Internet (y/n)?"))))
+         (list "Check for updates of PLT software over the Internet (y/n)?"))))
 
 (require (lib "check-text.ss" "version"))
 (when updates? (check-version))

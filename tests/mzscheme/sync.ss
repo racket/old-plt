@@ -66,7 +66,8 @@
   (collect-garbage) ; reduces false-positives in detecting busy wait
   (let ([msecs (current-process-milliseconds)])
     (go)
-    (test busy? 'is-busy-wait (> (abs (- (current-process-milliseconds) msecs)) (/ SYNC-SLEEP-DELAY 2)))))
+    (test busy? 'is-busy-wait (> (/ (abs (- (current-process-milliseconds) msecs)) 1000.0)
+				 (/ SYNC-SLEEP-DELAY 2)))))
 
 (define (test-good-waitable wrap-sema)
   (let* ([sema (make-semaphore)]

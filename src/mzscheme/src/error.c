@@ -83,7 +83,7 @@ void scheme_init_error_escape_proc(Scheme_Process *p)
 			       0, 0);
   }
 
-  p->error_escape_proc = def_error_esc_proc;
+  scheme_set_param(p->config, MZCONFIG_ERROR_ESCAPE_HANDLER, def_error_esc_proc);
 }
 
 void scheme_init_format_procedure(Scheme_Env *env)
@@ -127,9 +127,9 @@ void scheme_init_error(Scheme_Env *env)
 						       MZCONFIG_ERROR_PRINT_VALUE_HANDLER), 
 			     env);
   scheme_add_global_constant("error-escape-handler", 
-			     scheme_make_prim_w_arity(error_escape_handler, 
+			     scheme_register_parameter(error_escape_handler,
 						      "error-escape-handler",
-						      0, 1),
+						       MZCONFIG_ERROR_ESCAPE_HANDLER),
 			     env);
   scheme_add_global_constant("exit-handler", 
 			     scheme_register_parameter(exit_handler, 
@@ -215,7 +215,7 @@ call_error(char *buffer, int len)
 	scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_DISPLAY_HANDLER), 1, p);
       scheme_current_process->error_invoked = 2;
       /* Typically jumps out of here */
-      scheme_apply_multi(scheme_current_process->error_escape_proc, 0, NULL);
+      scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_ESCAPE_HANDLER), 0, NULL);
       /* Uh-oh; record the error fall back to the default escaper */
       scheme_inescapeable_error("error escape handler did not escape; calling the default error escape handler", "");
       scheme_current_process->error_invoked = 0;
@@ -864,7 +864,7 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
 #else
   _scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_DISPLAY_HANDLER), 1, newargs);
 
-  return _scheme_tail_apply(scheme_current_process->error_escape_proc,
+  return _scheme_tail_apply(scheme_get_param(scheme_config, MZCONFIG_ERROR_ESCAPE_HANDLER),
 			    0, NULL);
 #endif
 }
@@ -993,13 +993,9 @@ error_value_string_handler(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 error_escape_handler(int argc, Scheme_Object *argv[])
 {
-  if (argc) {
-    scheme_check_proc_arity("error-escape-handler", 0,
-			    0, argc, argv);
-    scheme_current_process->error_escape_proc = argv[0];
-    return scheme_void;
-  } else
-    return scheme_current_process->error_escape_proc;
+  return scheme_param_config("error-escape-handler", MZCONFIG_ERROR_ESCAPE_HANDLER,
+			     argc, argv,
+			     0, NULL, NULL, 0);
 }
 
 static Scheme_Object *

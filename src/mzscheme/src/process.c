@@ -194,20 +194,14 @@ static Scheme_Object *manager_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *manager_close_all(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_manager(int argc, Scheme_Object *argv[]);
 
-static Scheme_Object *config_p(int argc, Scheme_Object **argv);
-static Scheme_Object *parameter_p(int argc, Scheme_Object **argv);
-static Scheme_Object *make_parameter(int argc, Scheme_Object **argv);
-static Scheme_Object *parameter_procedure_eq(int argc, Scheme_Object **argv);
-static Scheme_Object *namespace_p(int argc, Scheme_Object **argv);
-
-static Scheme_Object *make_config(int argc, Scheme_Object *args[]);
-static Scheme_Object *make_config_with_sharing(int argc, Scheme_Object *args[]);
-static Scheme_Object *current_config(int argc, Scheme_Object *args[]);
-static Scheme_Object *in_config(int argc, Scheme_Object **argv);
 static Scheme_Object *current_namespace(int argc, Scheme_Object *args[]);
-static Scheme_Object *config_branch_handler(int argc, Scheme_Object *args[]);
+static Scheme_Object *namespace_p(int argc, Scheme_Object *args[]);
 
-static Scheme_Object *make_new_config(Scheme_Config *base, Scheme_Object *defshare, Scheme_Object *clist, Scheme_Object *sharef);
+static Scheme_Object *parameter_p(int argc, Scheme_Object *args[]);
+static Scheme_Object *parameter_procedure_eq(int argc, Scheme_Object *args[]);
+static Scheme_Object *make_parameter(int argc, Scheme_Object *args[]);
+
+static Scheme_Object *make_new_config(Scheme_Config *base);
 
 static void adjust_manager_family(void *pr, void *ignored);
 
@@ -220,7 +214,6 @@ static Scheme_Object *will_executor_try(int argc, Scheme_Object *args[]);
 static Scheme_Object *do_next_will(WillExecutor *w, int tail);
 static Scheme_Config *make_initial_config(void);
 static int do_kill_thread(Scheme_Process *p);
-static int check_distinct_params(Scheme_Object *l);
 
 static void remove_process(Scheme_Process *r);
 
@@ -331,16 +324,6 @@ void scheme_init_process(Scheme_Env *env)
 						      "make-namespace",
 						      0, -1),
 			     env);
-  scheme_add_global_constant("make-parameterization",
-			     scheme_make_prim_w_arity(make_config,
-						      "make-parameterization",
-						      0, 1),
-			     env);
-  scheme_add_global_constant("make-parameterization-with-sharing",
-			     scheme_make_prim_w_arity(make_config_with_sharing,
-						      "make-parameterization-with-sharing",
-						      4, 4),
-			     env);
 #ifndef NO_SCHEME_THREADS
   scheme_add_global_constant("thread",
 			     scheme_make_prim_w_arity(sch_thread,
@@ -353,12 +336,6 @@ void scheme_init_process(Scheme_Env *env)
 			     scheme_make_prim_w_arity(sch_sleep,
 						      "sleep",
 						      0, 1),
-			     env);
-
-  scheme_add_global_constant("in-parameterization",
-			     scheme_make_prim_w_arity(in_config,
-						      "in-parameterization",
-						      2, 2),
 			     env);
 
 #ifndef NO_SCHEME_THREADS
@@ -422,32 +399,15 @@ void scheme_init_process(Scheme_Env *env)
 						       MZCONFIG_MANAGER),
 			     env);
 
-  scheme_add_global_constant("current-parameterization", 
-			     scheme_make_prim_w_arity(current_config,
-						      "current-parameterization", 
-						      0, 1), 
-			     env);
-
   scheme_add_global_constant("current-namespace", 
 			     scheme_register_parameter(current_namespace,
 						       "current-namespace",
 						       MZCONFIG_ENV),
 			     env);
 
-  scheme_add_global_constant("parameterization-branch-handler", 
-			     scheme_register_parameter(config_branch_handler,
-						       "parameterization-branch-handler",
-						       MZCONFIG_CONFIG_BRANCH_HANDLER),
-			     env);
-
   scheme_add_global_constant("namespace?", 
 			     scheme_make_prim_w_arity(namespace_p,
 						      "namespace?", 
-						      1, 1), 
-			     env);
-  scheme_add_global_constant("parameterization?", 
-			     scheme_make_prim_w_arity(config_p,
-						      "parameterization?", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("parameter?", 
@@ -1997,20 +1957,7 @@ void scheme_weak_resume_thread(Scheme_Process *r)
 
 Scheme_Object *scheme_branch_config(void)
 {
-  Scheme_Object *o;
-
-  o = _scheme_apply(scheme_get_param(scheme_config,
-				     MZCONFIG_CONFIG_BRANCH_HANDLER),
-		    0, NULL);
-
-  if (!SCHEME_CONFIGP(o)) {
-    scheme_raise_exn(MZEXN_MISC,
-		     "thread: parameterization branch handler returned a non-parameterization: %s",
-		     scheme_make_provided_string(o, 1, NULL));
-    return NULL;
-  }
-
-  return o;
+  return scheme_make_config(scheme_config);
 }
 
 static Scheme_Object *sch_thread(int argc, Scheme_Object *args[])
@@ -2306,65 +2253,6 @@ static Scheme_Object *current_manager(int argc, Scheme_Object *argv[])
 			     -1, manager_p, "custodian", 0);
 }
 
-static Scheme_Object *make_config(int argc, Scheme_Object *args[])
-{
-  Scheme_Config *c;
-
-  if (argc) {
-    if (!SAME_TYPE(SCHEME_TYPE(args[0]), scheme_config_type))
-      scheme_wrong_type("make-parameterization", "parameterization", 0, argc, args);
-    c = (Scheme_Config *)args[0];
-  } else
-    c = NULL;
-    
-  return make_new_config(c, NULL, NULL, NULL);
-}
-
-static Scheme_Object *make_config_with_sharing(int argc, Scheme_Object *args[])
-{
-  Scheme_Config *c;
-  Scheme_Object *p, *l, *tl, *s;
-  char *badlist;
-
-  if (!SAME_TYPE(SCHEME_TYPE(args[0]), scheme_config_type))
-    scheme_wrong_type("make-parameterization-with-sharing", "parameterization", 0, argc, args);
-  c = (Scheme_Config *)args[0];
-
-  if (SCHEME_FALSEP(args[1])) {
-    s = scheme_false;
-  } else {
-    if (!SAME_TYPE(SCHEME_TYPE(args[1]), scheme_config_type)) {
-      scheme_wrong_type("make-parameterization-with-sharing", "parameterization or #f", 1, argc, args);
-      return NULL;
-    }
-    s = args[1];
-  }
-
-  l = args[2];
-  badlist = NULL;
-  for (tl = l; SCHEME_PAIRP(tl); tl = SCHEME_CDR(tl)) {
-    Scheme_Object *v = SCHEME_CAR(tl);
-    if (!((SCHEME_PRIMP(v) || SCHEME_CLSD_PRIMP(v))
-	  && (((Scheme_Primitive_Proc *)v)->flags & SCHEME_PRIM_IS_PARAMETER)))
-      break;
-  }
-  if (SCHEME_NULLP(tl)) {
-    if (!SCHEME_NULLP(l) && !check_distinct_params(l))
-      badlist = "list of DISTINCT parameter procedures";
-  } else
-    badlist = "list of (distinct) parameter procedures";
-  
-  if (badlist) {
-    scheme_wrong_type("make-parameterization-with-sharing", badlist, 2, argc, args);
-    return NULL;
-  }
-
-  scheme_check_proc_arity("make-parameterization-with-sharing", 1, 3, argc, args);
-  p = args[3];
-  
-  return make_new_config(c, s, l, p);
-}
-
 static Scheme_Object *parameter_p(int argc, Scheme_Object **argv)
 {
   Scheme_Object *v = argv[0];
@@ -2463,69 +2351,6 @@ static Scheme_Object *parameter_procedure_eq(int argc, Scheme_Object **argv)
 	  : scheme_false);
 }
 
-static Scheme_Object *do_param_in_config(Scheme_Object *data, int argc, Scheme_Object *args[])
-{
-  Scheme_Object *args2[2], *p;
-
-  if (argc)
-    args2[0] = args[0];
-  else
-    args2[0] = NULL;
-  args2[1] = SCHEME_CDR(data);
-
-  p = SCHEME_CAR(data);
-
-  if (SCHEME_PRIMP(p))
-    return ((Scheme_Primitive_Proc *)p)->prim_val(2, args2);
-  else {
-    Scheme_Closed_Primitive_Proc *c = (Scheme_Closed_Primitive_Proc *)p;
-
-    return c->prim_val(c->data, 2, args2);
-  }
-}
-
-static Scheme_Object *in_config(int argc, Scheme_Object *args[])
-{
-  char name[256];
-  Scheme_Object *p;
-
-  if (!SAME_TYPE(SCHEME_TYPE(args[0]), scheme_config_type))
-    scheme_wrong_type("in-parameterization", "parameterization", 0, argc, args);
-  p = args[1];
-  if ((!SCHEME_PRIMP(p) && !SCHEME_CLSD_PRIMP(p))
-      || !(((Scheme_Primitive_Proc *)p)->flags & SCHEME_PRIM_IS_PARAMETER))
-    scheme_wrong_type("in-parameterization", "parameter procedure", 1, argc, args);
-  
-  sprintf(name, "%s in parameterization", 
-	  SCHEME_PRIMP(p) 
-	  ? ((Scheme_Primitive_Proc *)p)->name
-	  : ((Scheme_Closed_Primitive_Proc *)p)->name);
-
-  return scheme_make_closed_prim_w_arity((Scheme_Closed_Prim *)do_param_in_config,
-					 scheme_make_pair(args[1], args[0]),
-					 scheme_strdup(name),
-					 0, 1);
-}
-
-static Scheme_Object *config_p(int argc, Scheme_Object **argv)
-{
-  return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_config_type)) 
-	  ? scheme_true 
-	  : scheme_false);
-}
-
-static Scheme_Object *current_config(int argc, Scheme_Object *args[])
-{
-  if (!argc)
-    return (Scheme_Object *)scheme_config;
-  else {
-    if (!SAME_TYPE(SCHEME_TYPE(args[0]), scheme_config_type))
-      scheme_wrong_type("current-parameterization", "parameterization", 0, argc, args);
-    scheme_config = (Scheme_Config *)args[0];
-    return scheme_void;
-  }
-}
-
 static Scheme_Object *namespace_p(int argc, Scheme_Object **argv)
 {
   return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_namespace_type)) 
@@ -2540,77 +2365,22 @@ static Scheme_Object *current_namespace(int argc, Scheme_Object *argv[])
 			     -1, namespace_p, "namespace", 0);
 }
 
-static Scheme_Object *config_branch_handler(int argc, Scheme_Object *argv[])
-{
-  return scheme_param_config("parameterization-branch-handler", MZCONFIG_CONFIG_BRANCH_HANDLER,
-			     argc, argv,
-			     0, NULL, NULL, 0);
-}
-
 /****************************************/
 
 static int max_configs = __MZCONFIG_BUILTIN_COUNT__;
-
-static int occurs_in_list(Scheme_Object *v, Scheme_Object *l)
-{
-  Scheme_Object *tl;
-  int count = 0;
-
-  for (tl = l; SCHEME_PAIRP(tl); tl = SCHEME_CDR(tl)) {
-    if (SAME_OBJ(SCHEME_CAR(tl), v))
-      count++;
-  }
-
-  return count;
-}
-
-static int check_distinct_params(Scheme_Object *l)
-{
-  int i;
-  ParamExtensionRec *erec;
- 
-  for (i = 0; i < max_configs; i++) {
-    if (occurs_in_list(config_map[i], l) > 1)
-      return 0;
-  }
-  
-  for (erec = param_ext_recs; erec; erec = erec->next) {
-    if (erec->data->p && (occurs_in_list(erec->data->p, l) > 1))
-      return 0;
-  }
-  
-  return 1;
-}
 
 int scheme_new_param(void)
 {
   return max_configs++;
 }
 
-static Scheme_Object *default_config_branch_handler(int argc, Scheme_Object **argv)
-{
-  return scheme_make_config(scheme_config);
-}
-
 static Scheme_Config *make_initial_config(void)
 {
   Scheme_Config *config;
-  int i;
 
   config = (Scheme_Config *)scheme_malloc_tagged(sizeof(Scheme_Config) + 
 						 (max_configs - 1) * sizeof(Scheme_Object*));
   
-  config->type = scheme_config_type;
-  config->parent = MALLOC_ONE_ATOMIC(Scheme_Config*);
-  *config->parent = NULL;
-  config->child = MALLOC_ONE_ATOMIC(Scheme_Config*);
-  *config->child = NULL;
-  config->sibling = MALLOC_ONE_ATOMIC(Scheme_Config*);
-  *config->sibling = NULL;
-
-  for (i = 0; i < max_configs; i++)
-    config->configs[i] = MALLOC_ONE(Scheme_Object *);
-
   scheme_set_param(config, MZCONFIG_ENABLE_BREAK, scheme_true);
   scheme_set_param(config, MZCONFIG_ENABLE_EXCEPTION_BREAK, scheme_false);
   scheme_set_param(config, MZCONFIG_CAN_READ_GRAPH, scheme_true);
@@ -2630,10 +2400,6 @@ static Scheme_Config *make_initial_config(void)
 							      ? scheme_true : scheme_false));
 
   scheme_set_param(config, MZCONFIG_ERROR_PRINT_WIDTH, scheme_make_integer(40));
-
-  scheme_set_param(config, MZCONFIG_CONFIG_BRANCH_HANDLER, scheme_make_prim_w_arity(default_config_branch_handler,
-										    "default-parameterization-branch-handler",
-										    0, 0));
 
   REGISTER_SO(main_manager);
   main_manager = scheme_make_manager(NULL);
@@ -2661,139 +2427,24 @@ static Scheme_Config *make_initial_config(void)
   return config;
 }
 
-static void adjust_config_family(void *c, void *ignored)
-{
-  Scheme_Config *config = (Scheme_Config *)c;
-  Scheme_Config **p;
-
-  if (*config->parent) {
-
-    p = (*config->parent)->child;
-    while (*p && *p != config)
-      p = (*p)->sibling;
-    
-    if (*p)
-      *p = *config->sibling;
-
-    while (*p)
-      p = (*p)->sibling;
-
-    *p = *config->child;
-
-  }
-
-  p = config->child;
-  while (*p) {
-    *(*p)->parent = *config->parent;
-    p = (*p)->sibling;
-  }
-}
-
-static Scheme_Object *make_new_config(Scheme_Config *base, Scheme_Object *defshare,
-				      Scheme_Object *share_list, Scheme_Object *sharef)
+static Scheme_Object *make_new_config(Scheme_Config *base)
 {
   Scheme_Config *config;
   int i;
-  int share_tried = 0;
-  int share_must_try;
   
   if (!base)
     base = scheme_config;
 
   config = (Scheme_Config *)scheme_malloc_tagged(sizeof(Scheme_Config) + 
-						 (max_configs - 1) * sizeof(Scheme_Object**));
+						 (max_configs - 1) * sizeof(Scheme_Object*));
 
   config->type = scheme_config_type;
   config->extensions = NULL;
   
-  if (share_list)
-    share_must_try = scheme_list_length(share_list);
-  else
-    share_must_try = 0;
+  for (i = 0; i < max_configs; i++)
+    config->configs[i] = base->configs[i];
 
-  for (i = 0; i < max_configs; i++) {
-    if (defshare) {
-      Scheme_Object *r;
-
-      if (occurs_in_list(config_map[i], share_list)) {
-	share_tried++;
-	r = _scheme_apply(sharef, 1, config_map + i);
-      } else
-	r = defshare;
-
-      if (SCHEME_FALSEP(r)) {
-	config->configs[i] = MALLOC_ONE(Scheme_Object *);
-	*config->configs[i] = *base->configs[i];
-      } else if (SCHEME_CONFIGP(r)) {
-	Scheme_Config *s = (Scheme_Config *)r;
-	config->configs[i] = s->configs[i];
-      } else {
-	scheme_raise_exn(MZEXN_MISC,
-			 "make-parameterization: sharing procedure returned a non-parameterization: %s",
-			 scheme_make_provided_string(r, 1, NULL));
-	return NULL;
-      }
-    } else {
-      config->configs[i] = MALLOC_ONE(Scheme_Object *);
-      *config->configs[i] = *base->configs[i];
-    }
-  }
-
-  if (defshare 
-      && !((share_tried == share_must_try) && SCHEME_FALSEP(defshare))) {
-    if (share_tried == share_must_try) {
-      /* Just share the whole extension table */
-      Scheme_Config *s = (Scheme_Config *)defshare;
-      if (!s->extensions)
-	s->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
-      config->extensions = s->extensions;
-      defshare = NULL;
-    } else {
-      ParamExtensionRec *erec;
-      
-      if (!config->extensions)
-	config->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
-      
-      for (erec = param_ext_recs; erec; erec = erec->next) {
-	if (erec->data->p) {
-	  Scheme_Object *r, *defval;
-	  unsigned long key;
-	  
-	  key = erec->data->key;
-	  defval = ((ParamData *)((Scheme_Closed_Primitive_Proc *)erec->data->p)->data)->defval;
-	  
-	  if (occurs_in_list(erec->data->p, share_list)) {
-	    Scheme_Object *p = erec->data->p;
-	    r = _scheme_apply(sharef, 1, &p);
-	  } else
-	    r = defshare;
-	  
-	  if (!SCHEME_FALSEP(r)) {
-	    if (SCHEME_CONFIGP(r)) {
-	      Scheme_Config *s = (Scheme_Config *)r;
-	      Scheme_Bucket *b;
-	      
-	      if (!s->extensions)
-		s->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
-	      
-	      b = scheme_bucket_from_table(s->extensions, (const char *)key);
-	      if (!b->val)
-		b->val = defval;
-	      
-	      scheme_add_bucket_to_table(config->extensions, b);
-	    } else {
-	      scheme_raise_exn(MZEXN_MISC,
-			       "make-parameterization: "
-			       "sharing procedure returned a non-parameterization: %s",
-			       scheme_make_provided_string(r, 1, NULL));
-	      return NULL;
-	    }
-	  } else if (!SCHEME_FALSEP(defshare))
-	    scheme_add_to_table(config->extensions, (const char *)key, defval, 0);
-	}
-      }
-    }
-  } else if (base->extensions) {
+  if (base->extensions) {
     Scheme_Bucket **bs = base->extensions->buckets;
     int i = base->extensions->size;
     
@@ -2807,29 +2458,12 @@ static Scheme_Object *make_new_config(Scheme_Config *base, Scheme_Object *defsha
     }
   }
 
-  config->parent = MALLOC_ONE_ATOMIC(Scheme_Config*);
-  *config->parent = NULL;
-  config->child = MALLOC_ONE_ATOMIC(Scheme_Config*);
-  *config->child = NULL;
-  config->sibling = MALLOC_ONE_ATOMIC(Scheme_Config*);
-  *config->sibling = NULL;
-
-  if (defshare && !SCHEME_FALSEP(defshare)) {
-    Scheme_Config *d = (Scheme_Config *)defshare;
-    *config->sibling = *d->child;
-    *d->child = config;
-    *config->parent = d;
-
-    scheme_add_finalizer_once(config, adjust_config_family, NULL);
-    scheme_add_finalizer_once(d, adjust_config_family, NULL);
-  }
-
   return (Scheme_Object *)config;
 }
 
 Scheme_Object *scheme_make_config(Scheme_Config *base)
 {
-  return make_new_config(base, NULL, NULL, NULL);
+  return make_new_config(base);
 }
 
 Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int which)
@@ -2850,63 +2484,23 @@ Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int 
   return o;
 }
 
-static Scheme_Bucket *get_ext_bucket(Scheme_Config *config, const char *key, Scheme_Object *defval)
-{
-  Scheme_Config *c = config;
-  Scheme_Bucket *b;
-  
-  while (1) {
-    b = scheme_bucket_or_null_from_table(c->extensions, key, 0);
-    if (b) {
-      if (c != config)
-	scheme_add_bucket_to_table(config->extensions, b);
-      
-      return b;
-    } else if (*c->parent)
-      c = *c->parent;
-    else
-      break;
-  }
-
-  b = scheme_bucket_from_table(c->extensions, key);
-  b->val = (char *)defval;
-  if (c != config)
-    scheme_add_bucket_to_table(c->extensions, b);
-
-  return b;
-}
-
 typedef Scheme_Object *(*PCheck_Proc)(int, Scheme_Object **, Scheme_Config *);
 
 Scheme_Object *scheme_param_config(char *name, long pos,
 				   int argc, Scheme_Object **argv,
 				   int arity,
 				   /* -3 => like -1, plus use check to unmarshall the value
-                                      -2 => user paramter; pos is (cons key defval)
+                                      -2 => user parameter; pos is (cons key defval)
 				      -1 => use check; if isboolorfilter, check is a filter
                                             (and expected is ignored)
 				      0+ => check argument for this arity */
 				   Scheme_Object *(*check)(int, Scheme_Object **), 
-				   /* Actually called witjh (int, S_O **, Scheme_Config *) */
+				   /* Actually called with (int, S_O **, Scheme_Config *) */
 				   char *expected,
 				   int isboolorfilter)
 {
-  int set = 0;
-  Scheme_Config *config;
-
-  if (argc < 2) {
-    config = scheme_config;
-    if (argc == 1)
-      set = 1;
-  } else {
-    config = (Scheme_Config *)argv[1];
-    if (argv[0]) {
-      set = 1;
-      argc = 1;
-    } else {
-      argc = 0;
-    }
-  }
+  int set = (argc == 1);
+  Scheme_Config *config = scheme_config;
 
   if (!set) {
     if (arity == -2) {
@@ -2914,9 +2508,12 @@ Scheme_Object *scheme_param_config(char *name, long pos,
       if (config->extensions) {
 	const char *key = (const char *)SCHEME_CAR((Scheme_Object *)pos);
 	Scheme_Bucket *b;
-	
-	b = get_ext_bucket(config, key, defval);
-	return (Scheme_Object *)b->val;
+
+	b = scheme_bucket_or_null_from_table(config->extensions, key, 0);
+	if (b)
+	  return (Scheme_Object *)b->val;
+	else
+	  return defval;
       }
       return defval;
     } else {
@@ -2960,8 +2557,8 @@ Scheme_Object *scheme_param_config(char *name, long pos,
 
       if (!config->extensions)
 	config->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
-      
-      b = get_ext_bucket(config, key, NULL);
+
+      b = scheme_bucket_from_table(config->extensions, key);
       b->val = naya;
     }
   

@@ -385,7 +385,7 @@ enum {
 
   MZCONFIG_ERROR_PRINT_WIDTH,
 
-  MZCONFIG_CONFIG_BRANCH_HANDLER,
+  MZCONFIG_ERROR_ESCAPE_HANDLER,
 
   MZCONFIG_WILL_EXECUTOR,
 
@@ -417,13 +417,7 @@ enum {
 typedef struct Scheme_Config {
   Scheme_Type type;
   Scheme_Hash_Table *extensions;
-
-  /* For sharing as-yet uncreated parameters: */
-  struct Scheme_Config **parent;
-  struct Scheme_Config **child;
-  struct Scheme_Config **sibling;
-
-  Scheme_Object **configs[1];
+  Scheme_Object *configs[1];
 } Scheme_Config;
 
 typedef struct Scheme_Continuation_Jump_State {
@@ -436,8 +430,8 @@ typedef struct Scheme_Continuation_Jump_State {
 } Scheme_Continuation_Jump_State;
 
 
-#define scheme_set_param(c, pos, o) (*((c)->configs[pos]) = o)
-#define scheme_get_param(c, pos) (*((c)->configs[pos]))
+#define scheme_set_param(c, pos, o) ((c)->configs[pos] = (o))
+#define scheme_get_param(c, pos) ((c)->configs[pos])
 
 /* Although it's really an integer, it seems beneficial to declare the
    mark position counter as a poiner, perhaps due to locality effects. */
@@ -496,8 +490,6 @@ typedef struct Scheme_Process {
   mz_jmp_buf overflow_buf;
 
   struct Scheme_Comp_Env *current_local_env;
-
-  Scheme_Object *error_escape_proc; /* Per-thread "paramater" */
 
   /* These are used to lock in values during `read': */
   char quick_can_read_compiled;

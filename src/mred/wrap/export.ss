@@ -12,6 +12,7 @@
  pane%
  horizontal-pane%
  vertical-pane%
+ grow-box-spacer-pane%
  panel%
  horizontal-panel%
  vertical-panel%
@@ -62,4 +63,5 @@
  unregister-collecting-blit
  bitmap-dc%
  install-standard-text-bindings
- sleep/yield)
+ sleep/yield
+ get-window-text-extent)

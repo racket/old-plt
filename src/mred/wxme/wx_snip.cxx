@@ -3,7 +3,7 @@
  * Purpose:     wxSnip implementations
  * Author:      Matthew Flatt
  * Created:     1995
- * Copyright:   (c) 1995, Matthew Flatt
+ * Copyright:   (c) 1995-99, Matthew Flatt
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -1118,12 +1118,9 @@ wxImageSnip::wxImageSnip(char *name, long type, Bool relative, Bool inlineImg)
   filename = NULL;
   filetype = 0;
   relativePath = FALSE;
-  userbm = FALSE;
-  sharing = NULL;
   bm = NULL;
   vieww = viewh = -1.0;
   viewdx = viewdy = 0.0;
-  offscreen = NULL;
 
   if (name && *name)
     LoadFile(name, type, relative, inlineImg);
@@ -1133,18 +1130,6 @@ wxImageSnip::~wxImageSnip()
 {
   if (filename)
     delete[] filename;
-
-  if (!sharing || !(--*sharing)) {
-    if (offscreen) {
-      offscreen->SelectObject(NULL);
-      delete offscreen;
-    }
-
-    if (bm && !userbm) {
-      delete bm;
-      bm = NULL;
-    }
-  }
 }
 
 void wxImageSnip::SizeCacheInvalid(void)
@@ -1214,7 +1199,7 @@ void wxImageSnip::Draw(wxDC *dc, float x, float y,
   }
 
 
-  dc->Blit(x, y, w, h, offscreen->GetObject(), 0, 0, wxCOPY);
+  dc->Blit(x, y, w, h, bm, 0, 0, wxCOPY);
   return;
 }
 
@@ -1296,25 +1281,8 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
   if (name && !*name)
     name = NULL;
 
-  if (!sharing || !(--*sharing)) {
-    if (offscreen && sharing) {
-      offscreen->SelectObject(NULL);
-      delete offscreen;
-      offscreen = NULL;
-    }
-    if (bm && !userbm)
-      delete bm;
-    bm = NULL;
-  }
+  bm = NULL;
 
-  if (sharing) {
-    sharing = NULL;
-    offscreen = NULL;
-    bm = NULL;
-  }
-
-  userbm = FALSE;
-  
   if (relative && name) {
 #ifdef wx_mac
     if (name[0] != ':') {
@@ -1385,11 +1353,7 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
 
       wxEndBusyCursor();
       
-      if (bm->Ok()) {
-	if (!offscreen)
-	  offscreen = new wxMemoryDC;
-	offscreen->SelectObject(bm);
-      } else {
+      if (!bm->Ok()) {
 	delete bm;
 	bm = NULL;
       }
@@ -1414,7 +1378,6 @@ void wxImageSnip::Copy(wxImageSnip *newSnip)
 {
   wxSnip::Copy(newSnip);
   
-  newSnip->userbm = userbm;
   if (filename)
     newSnip->filename = copystring(filename);
   else
@@ -1426,21 +1389,7 @@ void wxImageSnip::Copy(wxImageSnip *newSnip)
   newSnip->viewh = viewh;
   newSnip->viewdx = viewdx;
   newSnip->viewdy = viewdy;
-  
-  if (bm) {
-    if (!sharing) {
-      sharing = new int;
-      *sharing = 1;
-    }
-    (*sharing)++;
-    newSnip->sharing = sharing;
-    newSnip->bm = bm;
-    newSnip->offscreen = offscreen;
-  } else {
-    newSnip->sharing = NULL;
-    newSnip->bm = NULL;
-    newSnip->offscreen = NULL;
-  }
+  newSnip->bm = bm;
 }
 
 char *wxImageSnip::GetFilename(Bool *rel)
@@ -1467,30 +1416,12 @@ void wxImageSnip::SetBitmap(wxBitmap *map)
     return;
 #endif
 
-  if (sharing) {
-    if (--(*sharing)) {
-      offscreen = NULL;
-      bm = NULL;
-    }
-    sharing = NULL;
-  } else if (offscreen)
-    offscreen->SelectObject(NULL);
-
-  if (bm && !userbm)
-    delete bm;
   bm = NULL;
-  userbm = FALSE;
 
   if (!map->Ok())
     return;
 
   bm = map;
-
-  if (!offscreen)
-    offscreen = new wxMemoryDC;
-
-  offscreen->SelectObject(map);
-  userbm = TRUE;
 
   contentsChanged = TRUE;
   

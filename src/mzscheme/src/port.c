@@ -197,9 +197,6 @@ typedef struct Scheme_Tcp {
   int refcount;
   char buffer[TCP_BUFFER_SIZE];
   short bufpos, bufmax;
-  char *sendbuf;
-  int sendbufsize, sendbuflen;
-  short sendbuftrying;
   short hiteof;
 #ifdef USE_MAC_TCP
   TCPiopb *activeRcv;
@@ -352,7 +349,6 @@ static Scheme_Object *tcp_stop(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_accept_ready(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_accept(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[]);
-static Scheme_Object *tcp_port_send_waiting_p(int argc, Scheme_Object *argv[]);
 #endif
 
 static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[]);
@@ -908,11 +904,6 @@ scheme_init_port (Scheme_Env *env)
 			     scheme_make_folding_prim(tcp_listener_p,
 						      "tcp-listener?", 
 						      1, 1, 1), 
-			     env);
-  scheme_add_global_constant("tcp-port-send-waiting?",
-			     scheme_make_prim_w_arity(tcp_port_send_waiting_p,
-						      "tcp-port-send-waiting?", 
-						      1, 1), 
 			     env);
 #endif
 }
@@ -5711,11 +5702,6 @@ static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount)
   data->hiteof = 0;
   data->refcount = refcount;
 
-  data->sendbuf = NULL;
-  data->sendbuflen = 0;
-  data->sendbufsize = 0;
-  data->sendbuftrying = 0;
-
 #ifndef USE_MAC_TCP
 # ifdef USE_WINSOCK_TCP
   {
@@ -5941,47 +5927,6 @@ static void tcp_close_input(Scheme_Input_Port *port)
 static void tcp_write_string(char *s, long len, Scheme_Output_Port *port);
 static void tcp_close_output(Scheme_Output_Port *port);
 
-static Scheme_Object *write_when_possible(void *port, int argc, Scheme_Object **argv)
-{
-  Scheme_Tcp *data;
-  char *s;
-  int len, error;
-  mz_jmp_buf savebuf;
-
-  data = (Scheme_Tcp *)((Scheme_Output_Port *)port)->port_data;
-
-  /* Block for writing: */
-  scheme_block_until(tcp_check_write, tcp_write_needs_wakeup, data, (float)1.0);
-
-  /* Ok - try again! */
-  s = data->sendbuf;
-  len = data->sendbuflen;
-
-  data->sendbuf = NULL;
-  data->sendbuflen = 0;
-  data->sendbufsize = 0;
-  data->sendbuftrying = 1;
-
-  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-
-  if (scheme_setjmp(scheme_error_buf))
-    error = 1;
-  else {
-    tcp_write_string(s, len, (Scheme_Output_Port *)port);
-    error = 0;
-  }
-
-  /* decrement refcount: */
-  tcp_close_output((Scheme_Output_Port *)port);
-
-  if (error)
-    scheme_longjmp(savebuf, 1);
-  else
-    memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-  
-  return scheme_void;
-}
-
 static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
 {
   Scheme_Tcp *data;
@@ -5995,22 +5940,7 @@ static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
 
   data = (Scheme_Tcp *)port->port_data;
 
-  if (data->sendbuflen) {
-    /* already blocking: */
-    if (data->sendbuflen + len > data->sendbufsize){
-      char *naya;
-      
-      data->sendbufsize = (2 * data->sendbufsize) + len;
-      naya = (char *)scheme_malloc_atomic(data->sendbufsize);
-      memcpy(naya, data->sendbuf, data->sendbuflen);
-      data->sendbuf = naya;
-    }
-
-    memcpy(data->sendbuf + data->sendbuflen, s, len);
-    data->sendbuflen += len;
-
-    return;
-  }
+ top:
 
 #ifdef USE_SOCKETS_TCP
   if ((sent = send(data->tcp, s, len, 0)) != len) {
@@ -6136,17 +6066,12 @@ static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
 #endif
 
   if (would_block) {
-    data->sendbuf = (char *)scheme_malloc_atomic(len);
-    data->sendbuflen = data->sendbufsize = len;
-    memcpy(data->sendbuf, s, len);
+    /* Block for writing: */
+    scheme_block_until(tcp_check_write, tcp_write_needs_wakeup, data, (float)0.0);
 
-    data->refcount++;
-
-    scheme_thread_w_manager(scheme_make_closed_prim(write_when_possible, port), 
-			    scheme_config,
-			    *(port->mref));
-  } else
-    data->sendbuftrying = 0;
+    /* Ok - try again! */
+    goto top;
+  }
 
   if (errid)
     scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
@@ -6745,24 +6670,6 @@ static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[])
    return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_listener_type)
 	   ? scheme_true
 	   : scheme_false);
-}
-
-static Scheme_Object *tcp_port_send_waiting_p(int argc, Scheme_Object *argv[])
-{
-#ifdef USE_TCP
-  Scheme_Tcp *data;
-
-  if (!SCHEME_OUTPORTP(argv[0])
-      || (((Scheme_Output_Port *)argv[0])->sub_type != tcp_output_port_type))
-    scheme_wrong_type("tcp-port-send-waiting?", "tcp-output-port", 0, argc, argv);
-
-  data = (Scheme_Tcp *)(((Scheme_Output_Port *)argv[0])->port_data);
-
-  return (data->sendbuflen || data->sendbuftrying) ? scheme_true : scheme_false;
-#else
-  scheme_wrong_type("tcp-port-send-waiting?", "tcp-output-port", 0, argc, argv);
-  return NULL;
-#endif
 }
 
 #endif /* !NO_TCP_SUPPORT */

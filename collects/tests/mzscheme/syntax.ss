@@ -888,6 +888,10 @@
 	    exn:user?)
 (error-test '(parameterize ([error-print-width 'a]) 10))
 
+(define p (make-parameter 1))
+(define q (make-parameter 2))
+(test '1 'pz-order (parameterize ([p 3][q (p)]) (q)))
+
 (error-test '(parameterize) syntaxe?)
 (error-test '(parameterize ()) syntaxe?)
 (error-test '(parameterize ((x y))) syntaxe?)

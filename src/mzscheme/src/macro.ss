@@ -586,22 +586,34 @@
 		msg
 		(#%list* 'parameterize params body)))])
       (#%if (#%null? body) (fail "bad syntax (empty body)"))
+      (#%if (#%not (#%list? params)) (fail "bad syntax"))
+      (#%if (#%ormap (#%lambda (pp)
+                       (#%or (#%not (#%pair? pp))
+		             (#%not (#%pair? (#%cdr pp)))
+		             (#%not (#%null? (#%cddr pp)))))
+                     params)
+            (fail "bad syntax"))
       (#%if (#%null? params)
         `(#%let-values () ,@body)
-	(#%if (#%or (#%not (#%pair? params))
-		    (#%not (#%pair? (#%car params)))
-		    (#%not (#%pair? (#%cdar params)))
-		    (#%not (#%null? (#%cddar params))))
-	      (fail "bad syntax")
-	      (#%let ([param (#%caar params)]
-		      [orig (#%gensym)]
-		      [pz (#%gensym)])
-		 `(#%let* ([,pz (#%in-parameterization (#%current-parameterization) ,param)]
-			   [,orig #f])
-		     (#%dynamic-wind
-		        (#%lambda () (set! ,orig (,pz)) (,pz ,(#%cadar params)))
-		        (#%lambda () (parameterize ,(cdr params) ,@body))
-			(#%lambda () (,pz ,orig))))))))))
+        (#%let ([params (#%map #%car params)]
+                [vals (#%map #%cadr params)]
+                [saves (#%map (#%lambda (x) (#%gensym)) params)]
+                [pzs (#%map (#%lambda (x) (#%gensym)) params)]
+                [swap (#%gensym 'swap)])
+           `(#%let ,(#%append
+		     (#%map list pzs params)
+		     (#%map list saves vals))
+		   (#%let ((,swap 
+			    (#%lambda () ,@(#%map 
+					    (#%lambda (save pz)
+					      `(#%let ([x ,save])
+						  (#%set! ,save (,pz))
+						  (,pz x)))
+					    saves pzs))))
+			  (#%dynamic-wind
+			   ,swap
+			   (#%lambda () ,@body)
+			   ,swap))))))))
 
 > kstop parameterize <
 
@@ -685,31 +697,6 @@
 
 > literal "#endif"
 
-(#%define with-parameterization
-  (#%lambda (p thunk)
-     (#%unless (#%parameterization? p)
-	(#%raise-type-error 'with-parameterization "parameterization" p))
-     (#%unless (#%and (#%procedure? thunk)
-		      (#%procedure-arity-includes? thunk 0))
-	(#%raise-type-error 'with-parameterization "procedure (arity 0)" thunk))
-     (#%let* ([orig (#%current-parameterization)])
-       (#%dynamic-wind
-	 (#%lambda () (#%current-parameterization p))
-	 (#%lambda () (thunk))
-	 (#%lambda () (#%current-parameterization orig))))))
-
-> fstop with-parameterization <
-
-(#%define with-new-parameterization
-  (#%lambda (thunk)
-     (#%unless (#%and (#%procedure? thunk)
-		      (#%procedure-arity-includes? thunk 0))
-	(#%raise-type-error 'with-new-parameterization "procedure (arity 0)" thunk))
-     (#%let* ([naya (#%make-parameterization)])
-       (#%with-parameterization naya thunk))))
-
-> fstop with-new-parameterization <
-
 (#%define load/cd
   (#%let ([make-exn make-exn:i/o:filesystem]
 	  [debug debug-info-handler])
@@ -743,23 +730,22 @@
 > fstop load/cd <
 
 (#%define (read-eval-print-loop)
-  (#%let* ([p (#%make-parameterization)]
-           [user-p (#%current-parameterization)]
-           [eeh #f]
+  (#%let* ([eeh #f]
 	   [jump #f]
+	   [be? #f]
 	   [rep-error-escape-handler (#%lambda () (jump))])
-    ((#%in-parameterization p break-enabled) #f)
     (#%dynamic-wind
       (#%lambda () (#%set! eeh (#%error-escape-handler))
+		   (#%set! be? (#%break-enabled))
 		   (#%error-escape-handler rep-error-escape-handler)
-                   (#%current-parameterization p))
+                   (#%break-enabled #f))
       (#%lambda ()
 	(#%let/ec done
           (#%let loop ()
 	    (#%let/ec k
               (#%dynamic-wind
                  (#%lambda ()
-                   (#%current-parameterization user-p)
+                   (#%break-enabled be?)
                    (#%set! jump k))
 		 (#%lambda ()
 		   (#%let ([v ((#%current-prompt-read))])
@@ -768,12 +754,12 @@
 		      (#%lambda () ((#%current-eval) v))
 		      (#%lambda results (#%for-each (#%current-print) results)))))
 		 (#%lambda () 
-                   (set! user-p (#%current-parameterization))
-                   (#%current-parameterization p)
+                   (#%set! be? (#%break-enabled))
+		   (#%break-enabled #f)
                    (#%set! jump #f))))
 	    (loop))))
       (#%lambda () (#%error-escape-handler eeh)
-                   (#%current-parameterization user-p)
+                   (#%break-enabled be?)
 		   (#%set! jump #f)
                    (#%set! eeh #f)))))
 

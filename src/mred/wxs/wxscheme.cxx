@@ -996,11 +996,7 @@ extern void wxDispatchEventsUntil(int (*f)(void *), void *data);
 
 static Scheme_Object *wxSchemeMakeEventspace(int argc, Scheme_Object **argv)
 {
-  if (argc && (SCHEME_TYPE(argv[0]) != scheme_config_type))
-    scheme_wrong_type("make-eventspace", "parameterization",
-		      0, argc, argv);
-
-  return (Scheme_Object *)MrEdMakeEventspace(argc ? (Scheme_Config *)argv[0] : (Scheme_Config *)NULL);
+  return (Scheme_Object *)MrEdMakeEventspace((Scheme_Config *)NULL);
 }
 
 static Scheme_Object *PS_Setup_p(int, Scheme_Object **argv)
@@ -1479,11 +1475,6 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
   scheme_install_xc_global("eventspace?",
 			   scheme_make_prim_w_arity(Eventspace_p,
 						    "eventspace?",
-						    1, 1),
-			   global_env);
-  scheme_install_xc_global("eventspace-parameterization",
-			   scheme_make_prim_w_arity(wxSchemeEventspaceConfig,
-						    "eventspace-parameterization",
 						    1, 1),
 			   global_env);
 

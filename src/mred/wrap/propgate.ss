@@ -25,7 +25,6 @@
  end-busy-cursor
  event%
  event-dispatch-handler
- eventspace-parameterization
  eventspace?
  find-graphical-system-path
  flush-display

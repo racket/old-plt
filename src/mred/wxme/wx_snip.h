@@ -271,12 +271,9 @@ class wxTabSnip : public wxTextSnip
 class wxImageSnip : public wxInternalSnip
 {
  private:
-  Bool userbm;
   char *filename;
   long filetype; /* file != NULL => type of file, otherwise loaded 1 => XBM and 2 => XPM */
   wxBitmap *bm;
-  wxMemoryDC *offscreen;
-  int *sharing;
   Bool relativePath;
 
  protected:

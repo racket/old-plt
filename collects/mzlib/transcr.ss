@@ -1,43 +1,31 @@
 
 (module transcr mzscheme
+  (require (lib "thread.ss"))
   (provide (rename -transcript-on transcript-on)
-	  (rename -transcript-off transcript-off))
+	   (rename -transcript-off transcript-off))
+
+  ;; Bug: the implementation strategy used for the tees does not
+  ;; guarantee that flushes to stdout and stderr are kept in order.
+  ;; It depends instead on the whims of scheduling the tee threads.
+  ;; This problem could be fixed using `make-output-port' instead
+  ;; of pipes and `copy-port'.
 
   (define-values (-transcript-on -transcript-off)
     (let ([in #f]
 	  [out #f]
 	  [err #f]
 	  [tee-out (lambda (p p2)
-		     (make-output-port
-		      (lambda (s)
-			(display s p)
-			(display s p2)
-			(flush-output p)
-			(flush-output p2))
-		      void))]
+		     (let-values ([(r w) (make-pipe)])
+		       (thread
+			(lambda () 
+			  (copy-port r p p2)))
+		       w))]
 	  [tee-in (lambda (in out)
-		    (let ([s null])
-		      (make-input-port
-		       (lambda () 
-			 (let loop ()
-			   (if (null? s)
-			       (begin
-				 (let loop ()
-				   (set! s (cons (read-char in) s))
-				   (when (char-ready? in)
-				     (loop)))
-				 (set! s (reverse! s))
-				 (for-each 
-				  (lambda (c) (unless (eof-object? c) (write-char c out))) 
-				  s)
-				 (flush-output out)
-				 (loop))
-			       (begin0
-				(car s)
-				(set! s (cdr s))))))
-		       (lambda () (char-ready? in))
-		       void
-		       (lambda () (peek-char in)))))])
+		     (let-values ([(r w) (make-pipe)])
+		       (thread
+			(lambda ()
+			  (copy-port in w out)))
+		       r))])
       (values
        (lambda (file)
 	 (when in

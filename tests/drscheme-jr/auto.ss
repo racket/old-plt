@@ -785,28 +785,13 @@
   (try '(set! #%define 10)
        '(error "invalid use of keyword"))
 
-  (try '(define (x define) define)
-       (if mz?
-	   'void
-	   '(error "invalid use of keyword")))
+  ;; ;;;;;;;;;;;;;;;;;; macro mappings  ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (try '(define define 10)
-       (if mz?
-	   'void
-	   '(error "invalid use of keyword")))
-  (try 'define
-       (if mz?
-	   "10"
-	   '(error "invalid use of keyword")))
-
-  (try '(set! lambda 12)
-       (if mz?
-	   'void
-	   '(error "invalid use of keyword")))
-  (try 'lambda
-       (if mz?
-	   "12"
-	   '(error "invalid use of keyword")))
+  (try '(#%define (cond-macro x) x) 'void)
+  (try '(define-macro cond cond-macro) 'void)
+  (try '(cond 12) "12")
+  (try '(#%cond 12) '(error "clause is not in question-answer format"))
+  (try '(eval (list 'cond 12) (make-namespace)) '(error "clause is not in question-answer format"))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

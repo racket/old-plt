@@ -365,11 +365,11 @@
  (warnings-prefs-panel-label "Avertissements")
  (editor-prefs-panel-label "Edition")
  (general-prefs-panel-label "Général")
- (highlight-parens "Griser les paires de parenthèses.")
+ (highlight-parens "Surligner les paires de parenthèses.")
  (fixup-parens "Corriger les parenthèses.")
- (flash-paren-match "Montrer le pairage de parenthèses.")
+ (flash-paren-match "Montrer la parenthèse correspondante.")
  (auto-save-files "Sauvegarde automatique des fichiers.")
- (backup-files "Fichiers de sauvegarde")
+ (backup-files "Fichiers de sauvegarde.")
  (map-delete-to-backspace "La touche Delete génére Backspace.")
  (verify-exit "Confirmation pour quitter.")
  (ask-before-changing-format "Confirmation avant de changer le format de sauvegarde.")
@@ -381,11 +381,16 @@
  (automatically-to-ps "Imprimer automatiquement dans un fichier postscript.")
  (use-mdi "Utiliser les fenêtres MDI.") ;;; ms windows only -- use that window in a window thingy
  (separate-dialog-for-searching "Utiliser un dialogue séparé pour les recherches.")
- (reuse-existing-frames "Réutiliser les fenêtre existantes lors de l'ouverture de nouveaux fichiers")
+ (reuse-existing-frames "Réutiliser les fenêtres existantes lors de l'ouverture de nouveaux fichiers")
  (default-fonts "Polices par défaut")
+ (paren-match-color "Couleur de surlignage des parenthèses") ; in prefs dialog
+ (choose-color "Sélectionnez une couleur") ; in prefs dialog
+
+ ; title of the color choosing dialog
+ (choose-paren-highlight-color "Sélectionnez une couleur pour surligner les parenthèses")
  
  ; should have entire alphabet
- (font-example-string "aâàbcçdeéêèëfghiîjklmnoôpqrstuûùvwxyz")
+ (font-example-string "aâàbcçdeéêèëfghiîïjklmnoôpqrstuûùüvwxyz")
  
  (change-font-button-label "Changer")
  (fonts "Polices")

@@ -1,7 +1,7 @@
 
 (module beginner mzscheme
   (require (lib "reduction-semantics.ss" "reduction-semantics")
-	   ;(lib "gui.ss" "reduction-semantics")
+	   (lib "gui.ss" "reduction-semantics")
            (lib "subst.ss" "reduction-semantics")
            (lib "match.ss"))
 
@@ -50,7 +50,7 @@
         boolean
         string)
         
-     (prim-op + / cons first rest empty? struct?)
+     (prim-op + / cons first rest empty? struct? symbol=?)
      
      (p-ctxt (d/e-v ... d/e-ctxt d/e ...))
      (d/e-ctxt (define x e-ctxt)
@@ -213,8 +213,22 @@
       . e--> .
       "rest: expects argument of type <pair>")
      
-     ((+ (name n number) ...) . --> . (apply + n))
+     ((symbol=? '(name y x) '(name x x)) . --> . (if (eq? x y) 'true 'false))
+     ((side-condition (symbol=? (name v1 v) (name v2 v))
+                      (or (not (and (pair? v1)
+                                    (eq? (car v1) 'quote)))
+                          (not (and (pair? v2)
+                                    (eq? (car v2) 'quote)))))
+      . e--> .
+      "symbol=?: expects argument of type <symbol>")
+     ((symbol=?)
+      . e--> .
+      "procedure symbol=?: expects 2 arguments")
+     ((symbol=? v v v v ...)
+      . e--> .
+      "procedure symbol=?: expects 2 arguments")
      
+     ((+ (name n number) ...) . --> . (apply + n))
      ((side-condition (+ (name arg v) ...)
                       (ormap (lambda (x) (not (number? x))) arg))
       . e--> .
@@ -224,12 +238,10 @@
                       (not (ormap zero? ns)))
       . --> .
       (apply / (cons n ns)))
-     
      ((side-condition (/ (name n number) (name ns number) ...)
                       (ormap zero? ns))
       . e--> . 
       "/: division by zero")
-     
      ((side-condition (/ (name arg v) ...)
                       (ormap (lambda (x) (not (number? x))) arg))
       . e--> .
@@ -484,19 +496,35 @@
                        step
                        this
                        nexts)])]))))
-  
+    
+  (define show-dots (make-parameter #f))
   (define (normalize term failed)
     (let loop ([term term]
                [n 1000])
       (unless (p? term)
         (failed (format "not a p: ~s" term)))
       (let ([nexts (reduce reductions term)])
+        (when (show-dots)
+          (display #\.)
+          (flush-output))
         (cond
-          [(= n 0) (error 'normalize "found too many reductions")]
-          [(null? nexts) term]
-          [(string? (car nexts)) (car nexts)]
+          [(= n 0)
+           (when (show-dots)
+             (newline))
+           (error 'normalize "found too many reductions")]
+          [(null? nexts) 
+           (when (show-dots)
+             (newline))
+           term]
+          [(string? (car nexts))
+           (when (show-dots)
+             (newline))
+           (car nexts)]
           [(null? (cdr nexts)) (loop (car nexts) (- n 1))]
-          [else (failed (format "found more than one reduction\n ~s\n ->\n~s" term nexts))]))))
+          [else 
+           (when (show-dots)
+             (newline))
+           (failed (format "found more than one reduction\n ~s\n ->\n~s" term nexts))]))))
 
   (define (show-test-results)
     (cond
@@ -629,6 +657,13 @@
       "/: expects type <number>")
      
      (test '((+ 1 (/ (+ 3 5) (+ 2 2)))) '(3))
+
+     (test '((symbol=? 'x 'x)) '(true))
+     (test '((symbol=? 'x 'y)) '(false))
+     (test '((symbol=? 1 'x)) 
+           "symbol=?: expects argument of type <symbol>")
+     (test '((symbol=? 'x 1)) 
+           "symbol=?: expects argument of type <symbol>")
      
      (test '((cons 1 empty)) '((cons 1 empty)))
      (test '((cons 1 2))
@@ -787,35 +822,51 @@
       '('y))))
 
   (define (run-big-test)
-    (tests
-     (test
-      '((define-struct pr (hd tl))
-        (define (avg l)
-          (cond
-            [(empty? l) 'infinite]
-            [else (/ (sum l) (howmany/acc l 0))]))
-        (define (sum l)
-          (cond
-            [(empty? (pr-tl l)) (pr-hd l)]
-            [else (+ (pr-hd l) (sum (pr-tl l)))]))
-        (define (howmany/acc l acc)
-          (cond
-            [(empty? l) acc]
-            [else (howmany/acc (pr-tl l) (+ acc 1))]))
-        (avg empty)
-        (avg (make-pr 3 (make-pr 4 (make-pr 5 empty)))))
-      '((define-struct pr (hd tl))
-        (define (avg l)
-          (cond
-            [(empty? l) 'infinite]
-            [else (/ (sum l) (howmany/acc l 0))]))
-        (define (sum l)
-          (cond
-            [(empty? (pr-tl l)) (pr-hd l)]
-            [else (+ (pr-hd l) (sum (pr-tl l)))]))
-        (define (howmany/acc l acc)
-          (cond
-            [(empty? l) acc]
-            [else (howmany/acc (pr-tl l) (+ acc 1))]))
-        'infinite
-        4)))))
+    (parameterize ([show-dots #t])
+      (tests
+       (test
+        '((define-struct pr (hd tl))
+          (define (avg l)
+            (cond
+              [(empty? l) 'infinite]
+              [else (/ (sum l) (howmany/acc l 0))]))
+          (define (sum l)
+            (cond
+              [(empty? (pr-tl l)) (pr-hd l)]
+              [else (+ (pr-hd l) (sum (pr-tl l)))]))
+          (define (howmany/acc l acc)
+            (cond
+              [(empty? l) acc]
+              [else (howmany/acc (pr-tl l) (+ acc 1))]))
+          (avg empty)
+          (avg (make-pr 3 (make-pr 4 (make-pr 5 empty)))))
+        '((define-struct pr (hd tl))
+          (define (avg l)
+            (cond
+              [(empty? l) 'infinite]
+              [else (/ (sum l) (howmany/acc l 0))]))
+          (define (sum l)
+            (cond
+              [(empty? (pr-tl l)) (pr-hd l)]
+              [else (+ (pr-hd l) (sum (pr-tl l)))]))
+          (define (howmany/acc l acc)
+            (cond
+              [(empty? l) acc]
+              [else (howmany/acc (pr-tl l) (+ acc 1))]))
+          'infinite
+          4))
+       (test
+        '((define (contains-sym? s l)
+            (cond
+              [(empty? l) false]
+              [true (or (symbol=? s (first l))
+                        (contains-sym? s (rest l)))]))
+          (contains-sym? 'x (cons 'z (cons 'y (cons 'x empty))))
+          (contains-sym? 'a (cons 'p (cons 'q empty))))
+        '((define (contains-sym? s l)
+            (cond
+              [(empty? l) false]
+              [true (or (symbol=? s (first l))
+                        (contains-sym? s (rest l)))]))
+          true
+          false))))))

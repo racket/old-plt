@@ -39,17 +39,29 @@ HICON wxSTD_FRAME_ICON = NULL;
 HFONT wxSTATUS_LINE_FONT = NULL;
 LRESULT APIENTRY wxWndProc(HWND, UINT, WPARAM, LPARAM);
 
-void RegisterNoCursor(HINSTANCE hInstance, wchar_t *src, wchar_t *dest)
+void RegisterNoCursor(HINSTANCE hInstance, int is_win95, char *src, char *dest, wchar_t *wsrc, wchar_t *wdest)
 {
-  WNDCLASSEXW c;
+  if (is_win95) {
+    WNDCLASSEX c;
 
-  c.cbSize = sizeof(c);
-  if (!GetClassInfoExW(hInstance, src, &c))
-    wxFatalError("Can't get info for cursorless class");
-  c.lpszClassName = dest;
-  c.hCursor = NULL;
-  if (!RegisterClassExW(&c))
-    wxFatalError("Can't register cursorless class");
+    c.cbSize = sizeof(c);
+    if (!GetClassInfoEx(hInstance, src, &c))
+      wxFatalError("Can't get info for cursorless class");
+    c.lpszClassName = dest;
+    c.hCursor = NULL;
+    if (!RegisterClassEx(&c))
+      wxFatalError("Can't register cursorless class");
+  } else {
+    WNDCLASSEXW c;
+    
+    c.cbSize = sizeof(c);
+    if (!GetClassInfoExW(hInstance, wsrc, &c))
+      wxFatalError("Can't get info for cursorless class");
+    c.lpszClassName = wdest;
+    c.hCursor = NULL;
+    if (!RegisterClassExW(&c))
+      wxFatalError("Can't register cursorless class");
+  }
 }
 
 void wxInitialize(HINSTANCE hInstance)
@@ -160,11 +172,20 @@ void wxInitialize(HINSTANCE hInstance)
   if (!RegisterClass( &wndclass3))
    wxFatalError("Can't register Canvas class");
 
-  RegisterNoCursor(hInstance, L"BUTTON", L"wxBUTTON");
-  RegisterNoCursor(hInstance, L"COMBOBOX", L"wxCOMBOBOX");
-  RegisterNoCursor(hInstance, L"LISTBOX", L"wxLISTBOX");
-  RegisterNoCursor(hInstance, L"EDIT", L"wxEDIT");
-  RegisterNoCursor(hInstance, L"STATIC", L"wxSTATIC");
+  {
+    OSVERSIONINFO info;
+    int is_win95;
+
+    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    GetVersionEx(&info);
+    is_win95 = (info.dwPlatformId != VER_PLATFORM_WIN32_NT);
+
+    RegisterNoCursor(hInstance, is_win95, "BUTTON", "wxBUTTON", L"BUTTON", L"wxBUTTON");
+    RegisterNoCursor(hInstance, is_win95, "COMBOBOX", "wxCOMBOBOX", L"COMBOBOX", L"wxCOMBOBOX");
+    RegisterNoCursor(hInstance, is_win95, "LISTBOX", "wxLISTBOX", L"LISTBOX", L"wxLISTBOX");
+    RegisterNoCursor(hInstance, is_win95, "EDIT", "wxEDIT", L"EDIT", L"wxEDIT");
+    RegisterNoCursor(hInstance, is_win95, "STATIC", "wxSTATIC", L"STATIC", L"wxSTATIC");
+  }
 
   wxREGGLOB(wxWinHandleList);
   wxREGGLOB(wxSliderList);

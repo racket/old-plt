@@ -165,6 +165,9 @@
  (plt:hd:refresh-installing... "Installerer ny version af ~a...")
  (reload "Opdater")
 
+ ;;; help-desk-specific menus
+ (new-help-desk "Nyt hjælpebord")
+
  (plt:hd:about-help-desk "Om hjælpebord")
  (plt:hd:help-desk-about-string
   "Hjælpebordet indeholder al dokumention om PLT software, inklusive DrScheme, MzScheme og MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT")

@@ -297,6 +297,9 @@
  (plt:hd:help-on-help-details "Pour obtenir de l'aide sur comment utiliser l'Aide, suivez le lien `How to use Help Desk' à partir de la page principale de l'Aide (pour trouver la page principale, si vous n'y êtes pas déjà, cliquez sur le boutton `Home' qui apparaît en haut de la fenêtre de l'Aide).")
  (reload "Rafraîchir")
 
+ ;;; help-desk-specific menus
+ (plt:hd:new-help-desk "&Nouvelle Aide")
+
  ; help desk htty proxy
  (http-proxy "Proxy HTTP")
  (proxy-direct-connection "Connexion directe pour les téléchargements HTTP")

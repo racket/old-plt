@@ -197,6 +197,9 @@
  (plt:hd:help-on-help-details "Para ayuda sobre el uso del Módulo de Ayuda, sigue la liga `Cómo usar el Módulo de Ayuda' desde el página principal del Módulo de Ayuda.  (Para llegar a la página principal si no estás ahí ya, presiona el botón marcado `Hogar' en la parte superior de la ventana del Módulo de Ayuda.")
  (reload "Volver a cargar") ;; Reload
 
+ ;;; help-desk-specific menus
+ (new-help-desk "&Nuevo Módulo de Ayuda")
+
  ;; help desk http proxy
  (http-proxy "Proxy de HTTP")
  (proxy-direct-connection "Coneción Directa para bajar archivos via HTTP")

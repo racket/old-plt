@@ -119,6 +119,11 @@ please adhere to these guidelines:
  (ignore "Ignore")
  (revert "Revert")
 
+ ;; label for a generic check box, often supported on dialogs
+ ;; that ask a binary choice of the user. If checked, the
+ ;; dialog isn't going to be shown again.
+ (dont-ask-again "Do not ask again (always use current choice)")
+
  ;;; important urls
  (web-materials "Related Web Sites") ;; menu item title
  (tool-web-sites "Tool Web Sites")   ;; menu item title
@@ -295,9 +300,15 @@ please adhere to these guidelines:
   "Help Desk is a complete source of information about PLT software, including DrScheme, MzScheme, and MrEd.\n\nVersion ~a\nCopyright (c) 1995-2003 PLT")
  (plt:hd:help-on-help "Help on Help")
  (plt:hd:help-on-help-details "For help on using Help Desk, follow the `How to use Help Desk' link on Help Desk's home page. (To get to the home page if you're not already there, click the `Home' button at the top of the Help Desk window.)")
-  (reload "Reload")
+  (reload "Reload") ;; refresh the page in a web browser
+  (plt:hd:ask-about-separate-browser
+   "You have selected a link to content from the world-wide web. Would you like to view it in the Help Desk homebrew browser, or would you like to use a separate browser program to view it?")
+  (plt:hd:homebrew-browser "Homebrew Browser") ;; choice for the above string (in a button)
+  (plt:hd:separate-browser "Separate Browser") ;; other choice for the above string (also in a button)
+  (plt:hd:use-homebrew-browser "Use homebew browser for external URLs")
+  (plt:hd:new-help-desk "New Help Desk")
 
- ;; help desk htty proxy
+ ;; Help desk htty proxy
  (http-proxy "HTTP Proxy")
  (proxy-direct-connection "Direct connection for HTTP downloads")
  (proxy-use-proxy "Use proxy for HTTP downloads:")

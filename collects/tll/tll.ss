@@ -5,7 +5,7 @@
    #%app #%datum #%top #%module-begin #%plain-module-begin
    cons car cdr null? eq?
    (rename tll-define define)  (rename tll-lambda lambda) (rename tll-cond cond)
-   quote
+   quote and or
    add1 (rename tll-sub1 sub1) zero? 
    )
   

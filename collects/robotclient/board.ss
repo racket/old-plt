@@ -1,16 +1,15 @@
 (module board mzscheme
   
   (require "array2d.ss"
+	   "client-parameters.ss"
            (lib "list.ss")
            (lib "lex.ss" "parser-tools")
            (lib "yacc.ss" "parser-tools"))
 
   (provide get-type get-robot get-valid set-valid set-invalid get-weight set-weight
            get-spot set-spot get-player-x get-player-y
-           board-height board-width board
            (struct command (bid command arg))
            (struct package (id weight x y))
-           player-id player-money player-initial-money player-capacity packages-held
            (struct robot (id x y))
            read-board! read-response!
            fix-home!)
@@ -120,31 +119,21 @@
       ((_) (robot-y (hash-table-get (robot-table) (player-id))))))
   
   
-  (define board-height (make-parameter 0))
-  (define board-width (make-parameter 0))
-  (define board (make-parameter (vector)))
-  
   ;; (make-command num `(s n e w p d) list-of-package)
   (define-struct command (bid command arg) (make-inspector))
   
+  ;; (make-package num num num num)
   (define-struct package (id weight x y) (make-inspector))
-  
-  (define player-id (make-parameter 0))
-  (define player-money (make-parameter 0))
-  (define player-initial-money (make-parameter 0))
-  (define player-capacity (make-parameter 0))
-  (define packages-held (make-parameter null))
-  
+
+  ;; (make-robot num num num)
   (define-struct robot (id x y))
+
+  ;; robot-table: (num robot hash-table)
   (define robot-table (make-parameter #f))
+
+  ;; robot-indexes: num list
   (define robot-indexes (make-parameter null))
   
-  (define (read-good-char in)
-    (let ((c (read-char in)))
-      (case c
-        ((#\. #\~ #\# #\@) c)
-        (else (read-good-char in)))))
-
   (define-struct response (id name arg) (make-inspector))
   
   (define-tokens rt (NUM))
@@ -348,11 +337,19 @@
              old-robot))
          flat-responses)
         (robot-indexes alive-robots))))
+
+  (define (read-good-char in)
+    (let ((c (read-char in)))
+      (case c
+        ((#\. #\~ #\# #\@) c)
+        (else (read-good-char in)))))
+
         
   (define (read-board! input gui?)
+    (robot-indexes null)
+    (robot-table (make-hash-table))
     (board-width (read input))
     (board-height (read input))
-    (robot-table (make-hash-table))
     (board (make-array2d (board-height) (board-width) 0))
     (let loop ((i 1)
                (j 1))

@@ -23,7 +23,7 @@
         (cond
           ((null? picks) null)
           ((< (package-weight (car picks)) remaining-weight)
-           (cons (package-id (car picks))
+           (cons (car picks)
                  (loop (- remaining-weight (package-weight (car picks)))
                        (cdr picks))))
           (else (loop remaining-weight (cdr picks))))))

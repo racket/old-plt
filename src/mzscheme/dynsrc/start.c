@@ -216,10 +216,13 @@ int main(int argc_in, char **argv_in)
   strcat(go, GOSUBDIR GOEXE);
 
   if (_stat(go, &st)) {
+    char errbuff[1024];
 #ifdef MRSTART
-    MessageBox(NULL, "Can't find " GOEXE, "Error", MB_OK);
+    sprintf(errbuff,"Can't find %s",go);
+    MessageBox(NULL,errbuff,"Error",MB_OK);
 #else
-    WriteStr(out, "Can't find " GOEXE "\n");
+    sprintf(errbuff,"Can't find %s\n",go);
+    WriteStr(out,errbuff);
 #endif
     exit(-1);
   }

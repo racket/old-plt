@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.57 1998/12/01 00:17:15 mflatt Exp $
+; $Id: sigs.ss,v 1.58 1999/01/15 13:47:48 mflatt Exp $
 
 (begin-elaboration-time (require-library "macro.ss"))
 (begin-elaboration-time (require-library "mzlibs.ss"))
@@ -155,6 +155,7 @@
     (struct invoke-open-unit-form (unit name-specifier variables))
     unit-clauses-vocab-delta update-unresolved-attribute
     inside-unit? check-export
+    process-unit-top-level-resolution
     ))
 
 (define-signature zodiac:scheme-objects+units^

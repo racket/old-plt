@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.48 1998/11/23 17:38:41 mflatt Exp $
+; $Id: scm-core.ss,v 1.49 1998/12/01 00:17:15 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -166,23 +166,23 @@
 	  r))))
 
   (define process-top-level-resolution
-    (lambda (expr env attributes vocab)
+    (lambda (expr attributes)
       (let ((id (z:read-object expr)))
 	(let ((top-level-space (get-attribute attributes 'top-levels)))
 	  (if top-level-space
-	    (let ((ref
-		    (create-top-level-varref/bind/unit
+	      (let ((ref
+		     (create-top-level-varref/bind/unit
 		      id
 		      (hash-table-get top-level-space id
-			(lambda ()
-			  (let ((b (box '())))
-			    (hash-table-put! top-level-space id b)
-			    b)))
+				      (lambda ()
+					(let ((b (box '())))
+					  (hash-table-put! top-level-space id b)
+					  b)))
 		      expr)))
-	      (let ((b (top-level-varref/bind-slot ref)))
-		(set-box! b (cons ref (unbox b))))
-	      ref)
-	    (create-top-level-varref id expr))))))      
+		(let ((b (top-level-varref/bind-slot ref)))
+		  (set-box! b (cons ref (unbox b))))
+		ref)
+	      (create-top-level-varref id expr))))))      
 
   (add-sym-micro common-vocabulary
     (lambda (expr env attributes vocab)
@@ -191,7 +191,7 @@
 	  ((lexical-binding? r)
 	    (create-lexical-varref r expr))
 	  ((top-level-resolution? r)
-	    (process-top-level-resolution expr env attributes vocab))
+	    (process-top-level-resolution expr attributes))
 	  (else
 	    (internal-error expr "Invalid resolution in core: ~s" r))))))
 

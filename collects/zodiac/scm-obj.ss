@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.38 1998/11/04 19:52:54 mflatt Exp $
+; $Id: scm-obj.ss,v 1.39 1998/11/06 01:35:12 mflatt Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -125,23 +125,7 @@
 	  ((lexical-binding? r)
 	    (create-lexical-varref r expr))
 	  ((top-level-resolution? r)
-	    (let ((id (z:read-object expr)))
-	      (let ((top-level-space (get-attribute attributes 'top-levels)))
-		(if top-level-space
-		  (begin
-		    (let ((ref
-			    (create-top-level-varref/bind
-			      id
-			      (hash-table-get top-level-space id
-				(lambda ()
-				  (let ((b (box '())))
-				    (hash-table-put! top-level-space id b)
-				    b)))
-			      expr)))
-		      (let ((b (top-level-varref/bind-slot ref)))
-			(set-box! b (cons ref (unbox b))))
-		      ref))
-		  (create-top-level-varref id expr)))))
+	   (process-top-level-resolution expr attributes))
 	  ((public-binding? r)
 	    (create-public-varref r expr))
 	  ((override-binding? r)

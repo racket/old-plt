@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.73 1999/01/28 17:08:28 mflatt Exp $
+; $Id: scm-unit.ss,v 1.74 1999/01/28 18:34:22 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -6,7 +6,7 @@
     (z : zodiac:reader-structs^)
     (z : zodiac:reader-code^)
     zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
-    zodiac:scheme-main^ zodiac:back-protocol^
+    zodiac:scheme-main^ zodiac:scheme-objects^ zodiac:back-protocol^
     zodiac:expander^ zodiac:interface^)
 
   (define-struct (unit-form struct:parsed)
@@ -146,10 +146,11 @@
 
   ; --------------------------------------------------------------------
 
-  (define-struct import-id (id))
-  (define-struct export-id (id defined?))
-  (define-struct internal-id (id))
-  (define-struct link-id (id))
+  (define-struct unit-id (id))
+  (define-struct (import-id struct:unit-id) ())
+  (define-struct (export-id struct:unit-id) (defined?))
+  (define-struct (internal-id struct:unit-id) ())
+  (define-struct (link-id struct:unit-id) ())
 
   (define register-links
     (lambda (ids attributes)
@@ -309,9 +310,7 @@
 		  ((or (internal-id? entry) (export-id? entry))
 		    ; Need to set the box here
 		    (when (top-level-varref/bind? (unresolved-varref u))
-		      (let* ([id  (if (internal-id? entry)
-				      (internal-id-id entry)
-				      (export-id-id entry))]
+		      (let* ([id  (unit-id-id entry)]
 			     [box (and top-level-space
 				       (hash-table-get top-level-space
 					 (z:read-object uid)
@@ -441,6 +440,93 @@
 
   ; ----------------------------------------------------------------------
 
+  (define (fixup-shadowed-varrefs exprs exports env attributes vocab)
+    (let ([shadowed (let loop ([exports exports])
+		      (if (null? exports)
+			  null
+			  (let ([r (resolve (car exports) env vocab)]
+				[rest (loop (cdr exports))])
+			    (if (lexical-binding? r)
+				(cons (cons
+				       r 
+				       (lambda ()
+					 (process-unit-top-level-resolution 
+					  (car exports)
+					  attributes)))
+				      rest)
+				rest))))])
+      (if (null? shadowed)
+	  exprs
+	  (begin
+	    (map
+	     (lambda (expr)
+	       (fixup expr shadowed))
+	     exprs)))))
+
+  ;; Yuck - traverse and re-create expressions to fix varrefs pointing to
+  ;; lexical bindings that are shadowed by unit definitions.
+
+  (define (fixup expr binding-map)
+    (print-struct #f)
+    (let fix ([expr expr])
+      (if (bound-varref? expr)
+	  (let ([fixed (assoc (bound-varref-binding expr) binding-map)])
+	    (if fixed
+		((cdr fixed))
+		expr))
+	  (begin
+	    (cond
+	     [(not expr) expr]
+	     [(varref? expr) expr]
+	     [(quote-form? expr) expr]
+	     [(app? expr)
+	      (set-app-fun! expr (fix (app-fun expr)))
+	      (set-app-args! expr (map fix (app-args expr)))]
+	     [(struct-form? expr)
+	      (set-struct-form-super! expr (fix (struct-form-super expr)))]
+	     [(if-form? expr)
+	      (set-if-form-test! expr (fix (if-form-test expr)))
+	      (set-if-form-then! expr (fix (if-form-then expr)))
+	      (set-if-form-else! expr (fix (if-form-else expr)))]
+	     [(begin-form? expr)
+	      (set-begin-form-bodies! expr (map fix (begin-form-bodies expr)))]
+	     [(begin0-form? expr)
+	      (set-begin0-form-bodies! expr (map fix (begin0-form-bodies expr)))]
+	     [(let-values-form? expr)
+	      (set-let-values-form-vals! expr (map fix (let-values-form-vals expr)))]
+	     [(letrec*-values-form? expr)
+	      (set-letrec*-values-form-vals! expr (map fix (letrec*-values-form-vals expr)))]
+	     [(define-values-form? expr)
+	      (set-define-values-form-val! expr (fix (define-values-form-val expr)))]
+	     [(set!-form? expr)
+	      (set-set!-form-var! expr (fix (set!-form-var expr)))
+	      (set-set!-form-val! expr (fix (set!-form-val expr)))]
+	     [(case-lambda-form? expr)
+	      (set-case-lambda-form-bodies! expr (map fix (case-lambda-form-bodies expr)))]
+	     [(with-continuation-mark-form? expr)
+	      (set-with-continuation-mark-form-key! expr (fix (with-continuation-mark-form-key expr)))
+	      (set-with-continuation-mark-form-val! expr (fix (with-continuation-mark-form-val expr)))
+	      (set-with-continuation-mark-form-body! expr (fix (with-continuation-mark-form-body expr)))]
+	     [(class*/names-form? expr)
+	      expr] ; !!!
+	     [(interface-form? expr)
+	      (set-interface-form-super-exprs! expr (map fix (interface-form-super-exprs expr)))]
+	     [(unit-form? expr)
+	      (set-unit-form-clauses! expr (map fix (unit-form-clauses expr)))]
+	     [(compound-unit-form? expr)
+	      expr] ; !!!
+	     [(invoke-unit-form? expr)
+	      (set-invoke-unit-form-unit! expr (fix (invoke-unit-form-unit expr)))
+	      (set-invoke-unit-form-variables! expr (map fix (invoke-unit-form-variables expr)))]
+	     [(invoke-open-unit-form? expr)
+	      (set-invoke-open-unit-form-unit! expr (fix (invoke-open-unit-form-unit expr)))
+	      (set-invoke-open-unit-form-variables! expr (map fix (invoke-open-unit-form-variables expr)))]
+	     [else
+	      (internal-error expr "Cannot fix unknown form: ~s" expr)])
+	    expr))))
+
+  ; ----------------------------------------------------------------------
+
   (define unit-micro
       (let* ((kwd `(import export))
 	      (in-pattern `(_
@@ -453,13 +539,12 @@
 	    ((pat:match-against m&e expr env)
 	      =>
 	      (lambda (p-env)
-		(let ((top-level? (get-top-level-status attributes))
-		      (internal? (get-internal-define-status attributes))
-		      (old-top-level
-		       (get-attribute attributes 'top-levels))
-		      (unit-clauses-vocab
+		(let ([top-level? (get-top-level-status attributes)]
+		      [internal? (get-internal-define-status attributes)]
+		      [old-top-level (get-attribute attributes 'top-levels)]
+		      [unit-clauses-vocab
 		       (append-vocabulary unit-clauses-vocab-delta
-					  vocab 'unit-clauses-vocab)))
+					  vocab 'unit-clauses-vocab)])
 		  (set-top-level-status attributes #t)
 		  (set-internal-define-status attributes #f)
 		  (when old-top-level
@@ -496,7 +581,16 @@
 				   (expand-expr e env attributes
 						unit-generate-external-names-vocab))
 				 in:exports))
-			   (unresolveds (get-unresolved-vars attributes)))
+			   (unresolveds (get-unresolved-vars attributes))
+			   (fixed-proc:clauses (fixup-shadowed-varrefs
+						proc:clauses
+						(hash-table-map
+						 (get-vars-attribute attributes)
+						 (lambda (key val) (unit-id-id val)))
+						env
+						attributes
+						vocab)))
+
 		      (distinct-valid-syntactic-id/s? proc:exports-externals)
 		      (remove-vars-attribute attributes)
 		      (remove/update-unresolved-attribute attributes
@@ -505,10 +599,12 @@
 			(put-attribute attributes 'top-levels old-top-level))
 		      (set-top-level-status attributes top-level?)
 		      (set-internal-define-status attributes internal?)
+		      
 		      (create-unit-form
 		       (map car proc:imports)
 		       proc:exports
-		       proc:clauses expr))))))
+		       fixed-proc:clauses
+		       expr))))))
 	    (else
 	     (static-error expr "Malformed unit"))))))
 
@@ -902,16 +998,13 @@
 	    (register-definitions vars attributes)
 	    (let* ((id-exprs (map (lambda (v)
 				    (let ((parsed
-					    (expand-expr v env attributes
-					      define-values-id-parse-vocab)))
-				      (if (top-level-varref? parsed)
-					parsed
-					(process-top-level-resolution
-					  v env attributes vocab))))
-			       vars))
-		    (expr-expr (expand-expr
-				 (pat:pexpand 'val p-env kwd)
-				 env attributes vocab)))
+					   (expand-expr v env attributes
+							define-values-id-parse-vocab)))
+				      parsed))
+				  vars))
+		   (expr-expr (expand-expr
+			       (pat:pexpand 'val p-env kwd)
+			       env attributes vocab)))
 	      (create-define-values-form id-exprs expr-expr expr)))))))
 
   (define define-values-id-parse-vocab
@@ -966,6 +1059,15 @@
 	      (create-set!-form id-expr expr-expr expr))
 	    (static-error expr "Malformed set!"))))))
 
+  (define process-unit-top-level-resolution
+    (lambda (expr attributes)
+      (let ([varref
+	     (process-top-level-resolution expr attributes)])
+	(let ([id (z:read-object expr)])
+	  (unless (built-in-name id)
+	    (update-unresolved-attribute attributes expr varref)))
+	varref)))
+	  
   (add-sym-micro unit-clauses-vocab-delta
     (let ((top-level-resolution (make-top-level-resolution 'dummy #f)))
       (lambda (expr env attributes vocab)
@@ -979,27 +1081,7 @@
 	    ((lexical-binding? r)
 	      (create-lexical-varref r expr))
 	    ((top-level-resolution? r)
-	      (let ((id (z:read-object expr)))
-		(let ((top-level-space (get-attribute attributes 'top-levels)))
-		  (let ((varref
-			 (if top-level-space
-			     (begin
-			       (let ((ref
-				      (create-top-level-varref/bind/unit
-				       id
-				       (hash-table-get top-level-space id
-					 (lambda ()
-					   (let ((b (box '())))
-					     (hash-table-put! top-level-space id b)
-					     b)))
-				       expr)))
-				 (let ((b (top-level-varref/bind-slot ref)))
-				   (set-box! b (cons ref (unbox b))))
-				 ref))
-			     (create-top-level-varref id expr))))
-		    (unless (built-in-name id)
-		      (update-unresolved-attribute attributes expr varref))
-		    varref))))
+	     (process-unit-top-level-resolution expr attributes))
 	    (else
 	      (internal-error expr "Invalid resolution in unit delta: ~s"
 		r)))))))

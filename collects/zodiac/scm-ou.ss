@@ -1,4 +1,4 @@
-; $Id: scm-ou.ss,v 1.15 1998/11/04 19:52:55 mflatt Exp $
+; $Id: scm-ou.ss,v 1.16 1998/12/01 00:17:15 mflatt Exp $
 
 (unit/sig zodiac:scheme-objects+units^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -15,28 +15,7 @@
 		  ((lexical-binding? r)
 		    (create-lexical-varref r expr))
 		  ((top-level-resolution? r)
-		    (let ((id (z:read-object expr)))
-		      (let ((top-level-space (get-attribute attributes
-					       'top-levels)))
-			(let ((varref
-			       (if top-level-space
-				   (begin
-				     (let ((ref
-					    (create-top-level-varref/bind/unit
-					     id
-					     (hash-table-get top-level-space id
-					       (lambda ()
-						 (let ((b (box '())))
-						   (hash-table-put! top-level-space id b)
-						   b)))
-					     expr)))
-				       (let ((b (top-level-varref/bind-slot ref)))
-					 (set-box! b (cons ref (unbox b))))
-				       ref))
-				   (create-top-level-varref id expr))))
-			      (unless (built-in-name id)
-				(update-unresolved-attribute attributes expr varref))
-			      varref))))
+		   (process-unit-top-level-resolution expr attributes))
 		  ((public-binding? r)
 		    (create-public-varref r expr))
 		  ((override-binding? r)
@@ -53,10 +32,11 @@
 		    (create-superinit-varref r expr))
 		  ((or (macro-resolution? r) (micro-resolution? r))
 		    (if (and (inside-unit? attributes)
-			  (check-export expr attributes))
-		      (loop top-level-resolution)
-		      (static-error expr
-			"Invalid use of keyword ~a" (z:symbol-orig-name expr))))
+			     (check-export expr attributes))
+			(loop top-level-resolution)
+			(static-error 
+			 expr
+			 "Invalid use of keyword ~a" (z:symbol-orig-name expr))))
 		  (else
 		    (internal-error expr "Invalid resolution in ou: ~s" r))))))))
 

@@ -281,7 +281,7 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
  * temporary files are deleted if the program is interrupted.  See libjpeg.doc.
  */
 
-static unsigned char ofni[] = {
+static unsigned char alternate_icon[] = {
 83,67,70,84,67,70,85,67,70,85,66,70,85,66,70,85,66,70,85,68,71,
 86,69,73,87,68,72,87,67,71,87,66,71,87,66,71,87,66,71,86,66,71,
 86,67,71,86,68,71,87,68,72,88,69,73,87,70,74,86,70,73,86,70,73,
@@ -867,4 +867,53 @@ static unsigned char ofni[] = {
 86,65,70,88,65,71,89,66,72,89,65,71,88,65,71,88,66,70,86,66,70,
 85,65,70,84,67,70,86,70,73,89,70,74,89,69,74,89,67,72,89,67,73,
 89,69,73,88,70,73,87,72,73,87,72,73,87,70,74,88,69,75,91,69,76,
-112,89,76  }
+112,89,76  };
+
+wxBitmap *wx_get_alternate_icon(int small)
+{
+  wxBitmap *bm;
+  wxMemoryDC *dc;
+  int i, j, step, unstep, dx, dy;
+
+  bm = new wxBitmap((small ? 20 : 64), (small ? 20 : 64), 0);
+
+  dc = new wxMemoryDC();
+  dc->SelectObject(bm);
+
+  if (!dc->Ok()) {
+    dc->SelectObject(NULL);
+    return NULL;
+  }
+
+  if (!the_color) {
+    wxREGGLOB(the_color);
+    the_color = new wxColour(0, 0, 0);
+  }
+
+  if (small) {
+    step = 4;
+    unstep = 2;
+    dx = 2;
+    dy = 2;
+  } else {
+    step = 1;
+    unstep = 0;
+    dx = 0;
+    dy = 0;
+  }
+
+  dc->Clear();
+
+  for (i = 0; i < 64; i += step) {
+    for (j = 0; j < 64; j += step) {
+      the_color->Set(alternate_icon[i * 64 * 3 + j * 3], 
+		     alternate_icon[i * 64 * 3 + j * 3 + 1], 
+		     alternate_icon[i * 64 * 3 + j * 3 + 2]);
+      dc->SetPixel(dx + (i >> unstep), dy + (j >> unstep), the_color);
+    }
+  }
+
+  dc->SelectObject(NULL);
+
+  return bm;
+}

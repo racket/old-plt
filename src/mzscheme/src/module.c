@@ -28,6 +28,7 @@
 /* globals */
 Scheme_Object *scheme_sys_wraps0;
 Scheme_Object *scheme_sys_wraps1;
+Scheme_Object *(*scheme_mzlib_info_hook)(int, Scheme_Object **);
 
 /* locals */
 static Scheme_Object *current_module_name_resolver(int argc, Scheme_Object *argv[]);
@@ -777,6 +778,12 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 
 static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
 {
+  if (scheme_mzlib_info_hook) {
+    Scheme_Object *r;
+    r = scheme_mzlib_info_hook(argc, argv);
+    if (r) return r;
+  }
+
   return _dynamic_require(argc, argv, scheme_get_env(scheme_config), 0, 0, 0, 1, -1);
 }
 
@@ -1808,6 +1815,23 @@ static void eval_module_body(Scheme_Env *menv)
   for (; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
     _scheme_eval_linked_expr_multi(SCHEME_CAR(body));
   }
+
+  if (scheme_mzlib_info_hook) {
+    if (SCHEME_SYM_VAL(menv->module->modname)[0] == ',') {
+      depth = SCHEME_SYM_LEN(menv->module->modname);
+      if ((depth > 11) && !strcmp("mzlib/info", SCHEME_SYM_VAL(menv->module->modname) + depth - 10)) {
+	Scheme_Object *sym, *val;
+	sym = scheme_intern_symbol("#%info-lookup");
+	val = scheme_lookup_global(sym, menv);
+	if (val) {
+	  val = scheme_mzlib_info_hook(1, &val);
+	  scheme_add_global_symbol(sym, val, menv);
+	}
+      }
+    }
+  }
+
+  scheme_pop_prefix(save_runstack);
 }
 
 Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env)

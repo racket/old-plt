@@ -473,6 +473,111 @@
   (test eval 'expand-to-top-form (eval (expand-syntax-to-top-form #'eval)))
   (test #t syntax? (expand-syntax-to-top-form (datum->syntax-object #f 'eval))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; origin tracking
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Checks whether stx includes an mapping for
+;;  a `where' form (indicated by a symbol) going back to
+;;  a `what' form (another symbol)
+;; If `where' is #f, look for the annotation on a let...-values
+;;  binding clause
+(define (has-stx-property? stx where what prop)
+  (define (has-p? stx)
+    (let ([p (syntax-property stx prop)])
+      (and p
+	   (let loop ([p p])
+	     (cond
+	      [(pair? p) (or (loop (car p))
+			     (loop (cdr p)))]
+	      [else (and (identifier? p)
+			 (eq? what (syntax-e p)))])))))
+  
+  (let loop ([stx stx])
+    (or (and (has-p? stx)
+	     (printf "yes!~n")
+	     (or (eq? #t where)
+		 (eq? (syntax-e stx) where)
+		 (and (pair? (syntax-e stx))
+		      (eq? (syntax-e (car (syntax-e stx)))
+			   where))))
+	(syntax-case stx (lambda case-lambda begin begin0
+				 set! with-continuation-mark
+				 if #%app module #%plain-module-begin
+				 define-values)
+	  [(lambda formals expr ...)
+	   (ormap loop (syntax->list #'(expr ...)))]
+	  [(case-lambda [formals expr ...] ...)
+	   (ormap (lambda (l)
+		    (ormap loop (syntax->list l)))
+		  (syntax->list #'((expr ...) ...)))]
+	  [(let ([(id ...) rhs] ...) expr ...)
+	   (or (module-identifier=? #'let #'let-values)
+	       (module-identifier=? #'let #'letrec-values))
+	   (or (and (boolean? where)
+		    (syntax-case stx ()
+		      [(let [clause ...] expr)
+		       (ormap has-p? (syntax->list #'(clause ...)))]))
+	       (ormap loop (syntax->list #'(expr ...)))
+	       (ormap loop (syntax->list #'(rhs ...))))]
+	  [(begin expr ...)
+	   (ormap loop (syntax->list #'(expr ...)))]
+	  [(begin0 expr ...)
+	   (ormap loop (syntax->list #'(expr ...)))]
+	  [(set! id expr)
+	   (loop #'expr)]
+	  [(with-continuation-mark key val expr)
+	   (or (loop #'key) (loop #'val) (loop #'expr))]
+	  [(if test then else)
+	   (or (loop #'test) (loop #'then) (loop #'else))]
+	  [(#%app expr ...)
+	   (ormap loop (syntax->list #'(expr ...)))]
+	  [(module name init body)
+	   (loop #'body)]
+	  [(#%plain-module-begin expr ...)
+	   (ormap loop (syntax->list #'(expr ...)))]
+	  [(define-values (id ...) expr)
+	   (loop #'expr)]
+	  [_else #f]))))
+
+(test #t has-stx-property? (expand #'(let ([x 1]) 2)) 'let-values 'let 'origin)
+
+;; The define-struct macro expands to begin,
+(test #t has-stx-property? (expand #'(define-struct x (a))) 'begin 'define-struct 'origin)
+(test #t has-stx-property? (expand #'(module m mzscheme (define-struct x (a)))) 'define-values 'define-struct 'origin)
+(test #t has-stx-property? (expand #'(module m mzscheme (define-struct x (a)))) 'define-syntaxes 'define-struct 'origin)
+
+;; The s macro also expands to begin:
+(test #t has-stx-property? (expand #'(module m mzscheme 
+				 (define-syntax (s stx)
+				   #'(begin
+				       (+ 1 10)
+				       14))
+				 s))
+      '#%app 's 'origin)
+(test #t has-stx-property? (expand #'(module m mzscheme 
+				 (define-syntax (s stx)
+				   #'(begin
+				       (+ 1 10)
+				       14))
+				 (let ()
+				   s)))
+      '#%app 's 'origin)
+
+;; Check per-clause origin from internal-defn conversion
+(test #t has-stx-property? (expand #'(let () (define x 1) x)) #f 'define 'origin)
+(test #t has-stx-property? (expand #'(let () (define-struct x (a)) 12)) #f 'define-struct 'origin)
+
+;; Disappearing syntax decls:
+(test #t has-stx-property? (expand #'(let () (define-syntax x 1) (define y 12) 10)) 'letrec-values 'x 'disappeared-binding)
+(test #t has-stx-property? (expand #'(let () (define-struct s (x)) 10)) 'letrec-values 's 'disappeared-binding)
+(test #t has-stx-property? (expand #'(let () (define-syntax x 1) 10)) '#%datum 'x 'disappeared-binding)
+(test #f has-stx-property? (expand #'(fluid-let-syntax ([x 1]) 10)) '#%datum 'x 'disappeared-binding)
+
+;; Disappearing use:
+(test #t has-stx-property? (expand #'(let () (define-struct a (x)) (define-struct (b a) (z)) 10))
+      #f 'a 'disappeared-use)
+
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (report-errs)

@@ -2991,8 +2991,8 @@ add struct contracts for immutable structs?
   
   #|
    as with copy-struct in struct.ss, this first begin0
-   expansion "declares" that struct/c is an expression
-   preventing further expansion until the internal definition
+   expansion "declares" that struct/c is an expression.
+   It prevents further expansion until the internal definition
    context is sorted out.
   |#
   (define-syntax (struct/c stx)

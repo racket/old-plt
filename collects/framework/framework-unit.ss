@@ -68,7 +68,7 @@
 	    [finder : framework:finder^ (finder@ mred preferences keymap)]
 	    [group : framework:group^ 
                    (group@ mred application frame preferences text canvas menu)]
-	    [canvas : framework:canvas^ (canvas@ mred preferences frame)]
+	    [canvas : framework:canvas^ (canvas@ mred preferences frame text)]
 	    [panel : framework:panel^ (panel@ icon mred)]
 	    [frame : framework:frame^ 
 		   (frame@ mred group preferences icon handler application panel

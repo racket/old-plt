@@ -226,12 +226,17 @@ void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
 
   if (!Ok() || !cMacDC) return;
   
-  SetCurrentDC();
+  if (start == end) {
+    DrawEllipse(x, y, w, h);
+    return;
+  }
 
   if ((rgn = BrushStipple())) {
     rgn->SetArc(x, y, w, h, start, end);
     PaintStipple(rgn);
   }
+
+  SetCurrentDC();
 
   xx = XLOG2DEV(x); yy = YLOG2DEV(y);
   xx2 = XLOG2DEV(x+w); yy2 = YLOG2DEV(y+h);
@@ -307,12 +312,12 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
   
   if (n <= 0) return;
 
-  SetCurrentDC();
-
   if ((rgn = BrushStipple())) {
     rgn->SetPolygon(n, points, xoffset, yoffset, fillStyle);
     PaintStipple(rgn);
   }
+
+  SetCurrentDC();
 
   xpoints1 = new Point[n+1];
   for (i = 0; i < n; i++) {
@@ -434,13 +439,13 @@ void wxCanvasDC::DrawRectangle(float x, float y, float width, float height)
 
   if (!Ok() || !cMacDC) return;
   
-  SetCurrentDC();
-  
   if ((rgn = BrushStipple())) {
     rgn->SetRectangle(x, y, width, height);
     PaintStipple(rgn);
   }
 
+  SetCurrentDC();
+  
   {
     int top = YLOG2DEV(y);
     int left = XLOG2DEV(x);
@@ -477,13 +482,13 @@ void wxCanvasDC::DrawRoundedRectangle
 
   if (!Ok() || !cMacDC) return;
   
-  SetCurrentDC();
-  
   if ((rgn = BrushStipple())) {
     rgn->SetRoundedRectangle(x, y, width, height, radius);
     PaintStipple(rgn);
   }
 
+  SetCurrentDC();
+  
   if (radius < 0.0) {
     float w = width;
     if (height < w)
@@ -534,13 +539,13 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
 
   if (!Ok() || !cMacDC) return;
   
-  SetCurrentDC();
-  
   if ((rgn = BrushStipple())) {
     rgn->SetEllipse(x, y, width, height);
     PaintStipple(rgn);
   }
 
+  SetCurrentDC();
+  
   {
     int top = YLOG2DEV(y);
     int left = XLOG2DEV(x);

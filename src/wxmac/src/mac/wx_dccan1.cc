@@ -148,7 +148,7 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 
   if ((dc_set_depth != 1)
       || def_grafptr)
-    printf("ACK!\n");
+    printf("Nested SetDCs\n");
 
   theMacGrafPort = cMacDC->macGrafPort();
 

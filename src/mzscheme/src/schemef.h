@@ -471,7 +471,7 @@ MZ_EXTERN int scheme_get_unsigned_int_val(Scheme_Object *o, unsigned long *v);
 
 MZ_EXTERN double scheme_real_to_double(Scheme_Object *r);
 
-MZ_EXTERN Scheme_Object *scheme_make_cptr(void *cptr, const char *typestr);
+MZ_EXTERN Scheme_Object *scheme_make_cptr(void *cptr, Scheme_Object *typetag);
 
 MZ_EXTERN const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error);
 

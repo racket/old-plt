@@ -384,7 +384,7 @@ Scheme_Object *(*scheme_make_channel_put_evt)(Scheme_Object *ch, Scheme_Object *
 int (*scheme_get_int_val)(Scheme_Object *o, long *v);
 int (*scheme_get_unsigned_int_val)(Scheme_Object *o, unsigned long *v);
 double (*scheme_real_to_double)(Scheme_Object *r);
-Scheme_Object *(*scheme_make_cptr)(void *cptr, const char *typestr);
+Scheme_Object *(*scheme_make_cptr)(void *cptr, Scheme_Object *typetag);
 const char *(*scheme_get_proc_name)(Scheme_Object *p, int *len, int for_error);
 /*========================================================================*/
 /*                               strings                                  */

@@ -205,7 +205,7 @@ scheme_strdup_eternal(const char *str)
   return naya;
 }
 
-Scheme_Object *scheme_make_cptr(void *cptr, const char *typestr)
+Scheme_Object *scheme_make_cptr(void *cptr, Scheme_Object *typetag)
 {
   Scheme_Object *o;
 

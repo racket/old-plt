@@ -2853,7 +2853,7 @@ static Scheme_Config *make_initial_config(void)
 						 (max_configs - 1) * sizeof(Scheme_Object*));
   config->type = scheme_config_type;
   
-  scheme_set_param(config, MZCONFIG_ENABLE_BREAK, scheme_true);
+  scheme_set_param(config, MZCONFIG_ENABLE_BREAK, scheme_false);
   scheme_set_param(config, MZCONFIG_CAN_READ_GRAPH, scheme_true);
   scheme_set_param(config, MZCONFIG_CAN_READ_COMPILED, scheme_false);
   scheme_set_param(config, MZCONFIG_CAN_READ_BOX, scheme_true);

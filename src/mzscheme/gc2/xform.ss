@@ -635,7 +635,7 @@
 				[union? (eq? base 'union)]
 				[struct-array? (and base-struct (not pointer?) (number? array-size))])
 			   (when (and struct-array?
-				      (> array-size 5))
+				      (> array-size 10))
 			     (log-error "[SIZE] ~a in ~a: Large array of structures at ~a."
 					(tok-line v) (tok-file v) name))
 			   (when (and (not union-ok?)

@@ -467,6 +467,8 @@ static int run_from_cmd_line(int argc, char *argv[],
 #endif
   fa->global_env = global_env;
 
+  scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, scheme_true);
+
   return cont_run(fa);
 
 #ifndef DONT_PARSE_COMMAND_LINE

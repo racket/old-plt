@@ -158,6 +158,34 @@ gc2/xxx:
 
 gc2/Window.cc: $(WXDIR)/src/Windows/Window.cc
 	$(XFORM) $< $@
+gc2/Button.cc: $(WXDIR)/src/Windows/Button.cc
+	$(XFORM) $< $@
+gc2/Layout.cc: $(WXDIR)/src/Windows/Layout.cc
+	$(XFORM) $< $@
+gc2/MenuBar.cc: $(WXDIR)/src/Windows/MenuBar.cc
+	$(XFORM) $< $@
+gc2/RadioBox.cc: $(WXDIR)/src/Windows/RadioBox.cc
+	$(XFORM) $< $@ 
+gc2/Choice.cc: $(WXDIR)/src/Windows/Choice.cc
+	$(XFORM) $< $@
+gc2/Gauge.cc: $(WXDIR)/src/Windows/Gauge.cc
+	$(XFORM) $< $@  
+gc2/ListBox.cc: $(WXDIR)/src/Windows/ListBox.cc
+	$(XFORM) $< $@
+gc2/Message.cc: $(WXDIR)/src/Windows/Message.cc
+	$(XFORM) $< $@
+gc2/Slider.cc: $(WXDIR)/src/Windows/Slider.cc
+	$(XFORM) $< $@
+gc2/Canvas.cc: $(WXDIR)/src/Windows/Canvas.cc
+	$(XFORM) $< $@
+gc2/DialogBox.cc: $(WXDIR)/src/Windows/DialogBox.cc
+	$(XFORM) $< $@ 
+gc2/Item.cc: $(WXDIR)/src/Windows/Item.cc
+	$(XFORM) $< $@
+gc2/Menu.cc: $(WXDIR)/src/Windows/Menu.cc
+	$(XFORM) $< $@
+gc2/Panel.cc: $(WXDIR)/src/Windows/Panel.cc
+	$(XFORM) $< $@
 
 gc2/WindowDC.cc: $(WXDIR)/src/DeviceContexts/WindowDC.cc
 	$(XFORM) $< $@
@@ -200,6 +228,20 @@ gc2/$(OBJDIR)/%.o: gc2/%.cc
 	$(CXX) -DGC2_JUST_MACROS -include ../mzscheme/gc2/gc2.h -c $(CXXFLAGS) -o $@ $<
 
 XSRCS = gc2/Window.cc \
+  gc2/Button.cc \
+  gc2/Layout.cc \
+  gc2/MenuBar.cc \
+  gc2/RadioBox.cc \
+  gc2/Choice.cc \
+  gc2/Gauge.cc \
+  gc2/ListBox.cc \
+  gc2/Message.cc \
+  gc2/Slider.cc \
+  gc2/Canvas.cc \
+  gc2/DialogBox.cc \
+  gc2/Item.cc \
+  gc2/Menu.cc \
+  gc2/Panel.cc \
   gc2/WindowDC.cc \
   gc2/wx_media.cc \
   gc2/wx_mpriv.cc \

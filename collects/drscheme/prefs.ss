@@ -9,6 +9,12 @@
                                (basis:setting-name x)))
            basis:settings))
 
+  (framework:preferences:set-default 
+   'drscheme:keybindings-window-size
+   (cons 200 400)
+   (lambda (x) (and (pair? x)
+                    (number? (car x))
+                    (number? (cdr x)))))
 
   ;; if the unmarshaller returns #f, that will fail the
   ;; test for this preference, reverting back to the default.

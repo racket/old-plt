@@ -370,7 +370,15 @@
 		       'drscheme:teachpack-file
 		       (append old-pref (list lib-file)))))))
 	    (set! teachpack-directory (path-only lib-file))))))
-    (make-object mred:menu-item%
+    (make-object (class mred:menu-item% args
+                   (inherit enable)
+                   (rename [super-on-demand on-demand])
+                   (override
+                     [on-demand
+                      (lambda ()
+                        (enable (not (null? (fw:preferences:get 'drscheme:teachpack-file))))
+                        (super-on-demand))])
+                   (sequence (apply super-init args)))
       "Clear All Teachpacks"
       language-menu
       (lambda (_1 _2) (fw:preferences:set 'drscheme:teachpack-file null)))))

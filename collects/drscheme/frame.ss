@@ -12,15 +12,28 @@
 
   (define basics<%> (interface (fw:frame:standard-menus<%>)))
 
+  (define keybindings-dialog%
+    (class mred:dialog% args
+      (rename [super-on-size on-size])
+      (override
+        [on-size
+         (lambda (w h)
+           (fw:preferences:set 'drscheme:keybindings-window-size (cons w h))
+           (super-on-size w h))])
+      (sequence (apply super-init args))))
+
   (define (show-keybindings-to-user bindings frame)
-    (letrec ([f (make-object mred:dialog% "Keybindings" frame #f #f #f #f '(resize-border))]
+    (letrec ([f (make-object keybindings-dialog% "Keybindings" frame 
+                  (car (fw:preferences:get 'drscheme:keybindings-window-size))
+                  (cdr (fw:preferences:get 'drscheme:keybindings-window-size))
+                  #f #f '(resize-border))]
 	     [bp (make-object mred:horizontal-panel% f)]
 	     [b-name (make-object mred:button% "Sort by Name" bp (lambda x (update-bindings #f)))]
 	     [b-key (make-object mred:button% "Sort by Key" bp (lambda x (update-bindings #t)))]
 	     [lb
 	      (make-object mred:list-box% #f null f void)]
 	     [bp2 (make-object mred:horizontal-panel% f)]
-	     [cancel (make-object mred:button% "OK" bp2 (lambda x (send f show #f)))]
+	     [cancel (make-object mred:button% "Close" bp2 (lambda x (send f show #f)))]
              [space (make-object mred:grow-box-spacer-pane% bp2)]
 	     [update-bindings
 	      (lambda (by-key?)

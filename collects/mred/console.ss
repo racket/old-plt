@@ -104,6 +104,7 @@
 	    (widen-snips #t)
 	    (add-wide-snip es))
 	  (send* oe 
+	    (set-auto-set-wrap #f)
 	    (insert is)
 	    (insert es))
 	  (send* ie 

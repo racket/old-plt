@@ -1,6 +1,7 @@
 (module synthesize mzscheme
   (require (lib "list.ss"))
   (require (lib "string-constant.ss" "string-constants"))
+  (require "drbug.ss")
 
   (provide get-synthesized-info)
 
@@ -11,7 +12,10 @@
 		    (system-type)
 		    (system-type #t)
 		    (system-library-subpath))]
-	   [synth:language (format "~s" (this-language))]
+	   [synth:computer-language 
+	    (or (get-dr-bug-report-item 'computer-language)
+		"unknown")]
+	   [synth:human-language (format "~s" (this-language))]
 	   [synth:docs 
 	    (format "~s"
 		    (with-handlers 
@@ -28,7 +32,8 @@
 		     (current-library-collection-paths)))])
       `((version ,synth:version)
 	(environment ,synth:environment)
-	(language ,synth:language)
+	(computer-language ,synth:computer-language)
+	(human-language ,synth:human-language)
 	(documentation ,synth:docs)
 	(collections ,synth:collects)))))
 

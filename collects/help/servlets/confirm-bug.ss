@@ -100,7 +100,8 @@
     (cadr (assoc s synth-info)))
   (define plt-version (get-synth-item 'version))
   (define environment (get-synth-item 'environment))
-  (define language (get-synth-item 'language))
+  (define computer-language (get-synth-item 'computer-language))
+  (define human-language (get-synth-item 'human-language))
   (define docs-installed (get-synth-item 'documentation))
   (define collects-installed (get-synth-item 'collections))
 
@@ -211,7 +212,8 @@
 	    ,@(map make-synth-entry 
 		   '(("PLT version" version)
 		     ("Environment" environment)
-		     ("Human language" language)
+		     ("Computer language" computer-language)
+		     ("Human language" human-language)
 		     ("Installed documentation" documentation)
 		     ("Installed collections" collections))))))])))
 
@@ -257,7 +259,7 @@
 	     (format "~a" docs-installed)
 	     (format "~n~a" "Collections:")
 	     (format "~a" collects-installed)
-	     (format "~nHuman Language: ~a" language)
+	     (format "~nHuman Language: ~a" human-language)
 	     ">Fix: "
 	     ">Description:"
 	     (format "~a" description)

@@ -198,8 +198,12 @@ _docprovide.ss_: attaching documentation to exports
 ======================================================================
 
 > (provide-and-document doc-label-id doc-row ...) - a form that
-  exports names and records documentation information.  The
-  `doc-label-id' identifier is used as a key for accessing the
+  exports names and records documentation information.  
+
+  !! IMPORTANT: For now, the exporting module must be required with a
+     `lib' or `file' form. Releatiuve paths do no work correctly !!
+
+  The `doc-label-id' identifier is used as a key for accessing the
   documentation through `lookup-documentation'.  The actual
   documentation is organized into "rows", each with a section title.
 
@@ -312,7 +316,8 @@ currently exist).
 > (collapse-module-path module-path-v rel-to-module-path-v) - returns
   a "simplified" module path by combining `module-path-v' with
   `rel-to-module-path', where the latter must have the form '(lib
-  <relative-path> <collection>), or '(file <path>).
+  <relative-path> <collection>), '(file <path>), a relative path, or a
+  thunk to generate one of those.
 
 > (collapse-module-path-index module-path-index rel-to-module-path-v)
   - like `collapse-module-path', but the input is a module path index

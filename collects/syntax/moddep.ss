@@ -268,7 +268,7 @@
       (let ([s (symbol->string base)])
 	(if (and ((string-length s) . > . 0)
 		 (char=? #\, (string-ref s 0)))
-	    `(file ,(substring s 1 (string-length s)))
+	    (substring s 1 (string-length s))
 	    relto))]
      [relto (if (procedure? relto)
 		(relto)
@@ -367,8 +367,7 @@
   (define (collapse-module-path-index mpi relto-mp)
     (let-values ([(path base) (module-path-index-split mpi)])
       (if path
-	  (collapse-module-path path (lambda ()
-				       (resolve-possible-module-path-index base relto-mp)))
+	  (collapse-module-path path relto-mp)
 	  relto-mp)))
 
   (define (show-import-tree module-path)

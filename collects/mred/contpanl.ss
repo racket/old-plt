@@ -170,8 +170,8 @@
 	  ; get-min-size: poll children and return minimum possible size
 	  ;   for the container.
 	  ; input: none
-	  ; returns: minimum size (as a list, width & height) of
-	  ; container.
+	  ; returns: minimum full size (as a list, width & height) of
+	  ;   container.
 	  ; effects: none.
 	  [get-min-size
 	   (letrec ([gms-helper
@@ -305,7 +305,8 @@
     ;          the gap between adjacent objects and objects and the edge
     ;          of the panel.
     ; returns: a thunk which returns the minimum possible size of the
-    ;   entire panel as a list of two elements: (min-x min-y).
+    ;   entire panel (not just client) as a list of two elements:
+    ;   (min-x min-y). 
     (define make-get-size
       (lambda (container compute-x compute-y)
 	(letrec ([gms-help

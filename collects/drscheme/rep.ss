@@ -151,7 +151,8 @@
 		 scroll-to-position)
 	(rename
 	  [super-initialize-console initialize-console]
-	  [super-reset-console reset-console])
+	  [super-reset-console reset-console]
+	  [super-init-transparent-io init-transparent-io])
 	(private
 	  return-value
 	  return-error
@@ -160,6 +161,15 @@
 	  waiting-for-loaded
 	  [load-success? #f])
 	
+	(public
+	  [init-transparent-io
+	   (lambda x
+	     (with-parameterization system-parameterization
+	       (lambda ()
+		 (lock #f)
+		 (apply super-init-transparent-io x)
+		 (lock #t))))])
+
 	(private
 	  [escape-fn #f])
 	(public

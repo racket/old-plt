@@ -7,7 +7,6 @@
 #endif
 
 #include "wx_panel.h"
-#include "wx_enhdg.h"
 #include "wx_dialg.h"
 #include "wx_types.h"
 

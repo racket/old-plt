@@ -3,7 +3,6 @@
 
 #include "wx_item.h"
 #include "wx_messg.h"
-#include "wx_group.h"
 
 @INCLUDE wxs.xci
 

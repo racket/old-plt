@@ -846,7 +846,7 @@
 					  (list title
 						(lambda ()
 						  (let* ([f (make-object mred:hyper-frame:hyper-view-frame%
-									 (string-append "file://" f))])
+									 (string-append "file:/" f))])
 						    (send f set-title-prefix title)
 						    f)))
 					  output))

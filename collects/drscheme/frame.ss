@@ -13,10 +13,12 @@
 
     (define do-help
       (lambda ()
-	(mred:open-hyper-view (build-path mred:plt-home-directory
-					  "doc"
-					  "drscheme"
-					  "index.htm"))))
+	(mred:open-hyper-view (string-append
+			       "file:/"
+			       (build-path mred:plt-home-directory
+					   "doc"
+					   "drscheme"
+					   "index.htm")))))
 
     (define frame-group (make-object mred:frame-group%))
     (send frame-group set-empty-callback mred:exit)

@@ -1221,7 +1221,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     scheme_console_printf("End Apps\n");
 
     {
-      Scheme_Custodian *m = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+      Scheme_Custodian *m = (Scheme_Custodian *)scheme_get_param(scheme_current_config(), MZCONFIG_CUSTODIAN);
       int c = 0, a = 0, u = 0, t = 0, ipt = 0, opt = 0, th = 0;
 
       while (*m->parent)
@@ -1262,7 +1262,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     GC_inital_root_skip = NULL;
     GC_initial_trace_root = NULL;
     
-    w = scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_WIDTH);
+    w = scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_PRINT_WIDTH);
     if (SCHEME_INTP(w))
       max_w = SCHEME_INT_VAL(w);
     else

@@ -403,7 +403,7 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, unsigned int *length
   else if (flags & SCHEME_SNF_NO_PIPE_QUOTE)
     pipe_quote = 0;
   else {
-    pipe_quote = SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_CAN_READ_PIPE_QUOTE));
+    pipe_quote = SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_CAN_READ_PIPE_QUOTE));
   }
 
   if (len < 100) {

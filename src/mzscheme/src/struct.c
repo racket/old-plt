@@ -373,7 +373,7 @@ Scheme_Object *make_inspector(int argc, Scheme_Object **argv)
     if (!SAME_TYPE(SCHEME_TYPE(superior), scheme_inspector_type))
       scheme_wrong_type("make-inspector", "inspector", 0, argc, argv);
   } else
-    superior = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+    superior = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
 
   naya = MALLOC_ONE_TAGGED(Scheme_Inspector);
   naya->type = scheme_inspector_type;
@@ -922,7 +922,7 @@ struct_p(int argc, Scheme_Object *argv[])
 {
   if (SCHEME_STRUCTP(argv[0])) {
     Scheme_Object *insp;
-    insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+    insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
     if (scheme_inspector_sees_part(argv[0], insp, -1))
       return scheme_true;
     else
@@ -948,7 +948,7 @@ static Scheme_Object *struct_info(int argc, Scheme_Object *argv[])
   if (SCHEME_STRUCTP(argv[0])) {
     s = (Scheme_Structure *)argv[0];
 
-    insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+    insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
     
     stype = s->stype;
     p = stype->name_pos + 1;
@@ -981,7 +981,7 @@ static void get_struct_type_info(int argc, Scheme_Object *argv[], Scheme_Object 
 
   stype = (Scheme_Struct_Type *)argv[0];
 
-  insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+  insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
 
   if (!always && !scheme_is_subinspector(stype->inspector, insp)) {
     scheme_arg_mismatch("struct-type-info", 
@@ -1133,7 +1133,7 @@ static Scheme_Object *struct_to_vector(int argc, Scheme_Object *argv[])
 
   return scheme_struct_to_vector(argv[0], 
 				 (argc > 1) ? argv[1] : NULL, 
-				 scheme_get_param(scheme_config, MZCONFIG_INSPECTOR));
+				 scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR));
 }
 
 int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos)
@@ -1935,7 +1935,7 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
     if (parent_type)
       inspector = parent_type->inspector;
     else {
-      inspector = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+      inspector = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
       inspector = (Scheme_Object *)((Scheme_Inspector *)inspector)->superior;
     }
   }
@@ -2246,7 +2246,7 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
     uninit_val = scheme_false;
 
   if (!inspector)
-    inspector = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+    inspector = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
 
   /* To make it opaque: */
   inspector = (Scheme_Object *)((Scheme_Inspector *)inspector)->superior;

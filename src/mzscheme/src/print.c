@@ -38,13 +38,6 @@
 /* locals */
 #define MAX_PRINT_BUFFER 500
 
-#define quick_print_struct quick_can_read_compiled
-#define quick_print_graph quick_can_read_graph
-#define quick_print_box quick_can_read_box
-#define quick_print_vec_shorthand quick_square_brackets_are_parens
-#define quick_print_hash_table quick_curly_braces_are_parens
-/* Don't use can_read_pipe_quote or case_sens! */
-
 static void print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, 
 			  int notdisplay, long maxl, Scheme_Thread *p,
 			  Scheme_Config *config);
@@ -149,7 +142,7 @@ static void *print_to_port_k(void)
   print_to_port(p->ku.k.i2 ? "write" : "display", 
 		obj, port,
 		p->ku.k.i2, p->ku.k.i1,
-		p, p->config);
+		p, scheme_current_config());
 
   return NULL;
 }
@@ -239,7 +232,7 @@ static void *print_to_string_k(void)
 
   return (void *)print_to_string(obj, len, iswrite, 
 				 NULL, maxl,
-				 p, p->config);
+				 p, scheme_current_config());
 }
 
 char *scheme_write_to_string_w_max(Scheme_Object *obj, long *len, long maxl)

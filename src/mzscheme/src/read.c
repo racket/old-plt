@@ -1211,9 +1211,11 @@ Scheme_Object *
 _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
 {
   Scheme_Object *v, *v2;
-  Scheme_Config *config = scheme_config;
+  Scheme_Config *config;
   Scheme_Hash_Table **ht = NULL;
   ReadParams params;
+
+  config = scheme_current_config();
 
   params.can_read_compiled = crc;
   params.can_read_pipe_quote = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE));
@@ -1260,7 +1262,7 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int ca
   Scheme_Thread *p = scheme_current_thread;
 
   if (crc < 0)
-    crc = SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_CAN_READ_COMPILED));
+    crc = SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_CAN_READ_COMPILED));
   
   /* Need this before top_level_do: */
   if (USE_LISTSTACK(!p->list_stack))

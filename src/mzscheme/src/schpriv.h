@@ -164,6 +164,7 @@ void scheme_init_dynamic_extension(Scheme_Env *env);
 extern void scheme_regexp_initialize(Scheme_Env *env);
 #endif
 void scheme_init_memtrace(Scheme_Env *env);
+void scheme_init_parameterization(Scheme_Env *env);
 void scheme_init_getenv(void);
 
 /* Type readers & writers for compiled code data */
@@ -284,7 +285,7 @@ Scheme_Object *scheme_get_thread_dead(Scheme_Thread *p);
 
 void scheme_zero_unneeded_rands(Scheme_Thread *p);
 
-int scheme_can_break(Scheme_Thread *p, Scheme_Config *config);
+int scheme_can_break(Scheme_Thread *p);
 
 extern int scheme_overflow_count;
 
@@ -339,6 +340,23 @@ typedef int (*Scheme_Ready_Fun_FPC)(Scheme_Object *o, Scheme_Schedule_Info *sinf
 void scheme_check_break_now(void);
 
 extern int scheme_main_was_once_suspended;
+
+/* A "flattened" config. Maps parameters to thread cells. */
+typedef struct {
+  MZTAG_IF_REQUIRED
+  Scheme_Bucket_Table *extensions;
+  Scheme_Object *prims[1];
+} Scheme_Parameterization;
+
+struct Scheme_Config {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  Scheme_Object *key;
+  Scheme_Object *cell;
+  struct Scheme_Config *next;
+};
+
+extern Scheme_Object *scheme_parameterization_key;
 
 /*========================================================================*/
 /*                       hash tables and globals                          */
@@ -925,7 +943,7 @@ typedef struct Waiting {
   Scheme_Object **nackss;
   char *reposts;
 
-  Scheme_Thread *disable_break; /* when result is set */
+  Scheme_Config *disable_break; /* when result is set */
 } Waiting;
 
 int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiting);

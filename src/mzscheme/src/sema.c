@@ -222,7 +222,7 @@ void scheme_post_sema(Scheme_Object *o)
 	if (w->waiting) {
 	  w->waiting->result = w->waiting_i + 1;
 	  if (w->waiting->disable_break)
-	    scheme_set_param(w->waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	    scheme_set_param(w->waiting->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
 	  if (!w->waiting->reposts || !w->waiting->reposts[w->waiting_i]) {
 	    t->value -= 1;
 	    consumed = 1;
@@ -278,39 +278,6 @@ static Scheme_Object *hit_sema(int n, Scheme_Object **p)
   return scheme_void;
 }
 
-typedef struct {
-  MZTAG_IF_REQUIRED
-  Scheme_Config *config;
-  Scheme_Object *orig_param_val;
-  Scheme_Object *sema;
-} BreakableWait;
-
-static void pre_breakable_wait(void *data)
-{
-  BreakableWait *bw = (BreakableWait *)data;
-
-  bw->orig_param_val = scheme_get_param(bw->config, MZCONFIG_ENABLE_BREAK);
-  scheme_set_param(bw->config, MZCONFIG_ENABLE_BREAK, scheme_true);
-}
-
-static Scheme_Object *do_breakable_wait(void *data)
-{
-  BreakableWait *bw = (BreakableWait *)data;
-
-  /* Need to check for a break, in case one was queued and we just enabled it: */
-  scheme_check_break_now();
-
-  scheme_wait_sema(bw->sema, 0);
-
-  return scheme_void;
-}
-
-static void post_breakable_wait(void *data)
-{
-  BreakableWait *bw = (BreakableWait *)data;
-  scheme_set_param(bw->config, MZCONFIG_ENABLE_BREAK, bw->orig_param_val);
-}
-
 static int out_of_line(Scheme_Object *a)
 {
   Scheme_Thread *p;
@@ -330,7 +297,7 @@ static int out_of_line(Scheme_Object *a)
   if (p->external_break) {
     int v;
     --p->suspend_break;
-    v = scheme_can_break(p, p->config);
+    v = scheme_can_break(p);
     p->suspend_break++;
     if (v)
       return 1; 
@@ -436,13 +403,13 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
 	  w->picked = 1;
 	  w->waiting->result = w->waiting_i + 1;
 	  if (w->waiting->disable_break)
-	    scheme_set_param(w->waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	    scheme_set_param(w->waiting->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
 	  if (result)
 	    *result = chp->val;
 	  if (waiting) {
 	    waiting->result = pos + 1;
 	    if (waiting->disable_break)
-	      scheme_set_param(waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	      scheme_set_param(waiting->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
 	    waiting->set->argv[pos] = chp->val;
 	  }
 	  picked = 1;
@@ -476,11 +443,11 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
 	  w->waiting->set->argv[w->waiting_i] = chp->val;
 	  w->waiting->result = w->waiting_i + 1;
 	  if (w->waiting->disable_break)
-	    scheme_set_param(w->waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	    scheme_set_param(w->waiting->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
 	  if (waiting) {
 	    waiting->result = pos + 1;
 	    if (waiting->disable_break)
-	      scheme_set_param(waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	      scheme_set_param(waiting->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
 	  }
 	  picked = 1;
 	  scheme_weak_resume_thread(w->p);
@@ -519,19 +486,22 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	v = try_channel(sema, waiting, 0, NULL);
       }
     } else {
-      BreakableWait *bw;
-      bw = MALLOC_ONE_RT(BreakableWait);
+      Scheme_Config *config;
+      Scheme_Cont_Frame_Data cframe;
 
-#ifdef MZTAG_REQUIRED
-      bw->type = scheme_rt_breakable_wait;
-#endif
-      bw->sema = (Scheme_Object *)sema;
-      bw->config = scheme_config;
+      config = scheme_extend_config(scheme_current_config(),
+				    MZCONFIG_ENABLE_BREAK, 
+				    scheme_true);
 
-      scheme_dynamic_wind(pre_breakable_wait, 
-			  do_breakable_wait, 
-			  post_breakable_wait, 
-			  NULL, bw);
+      scheme_push_continuation_frame(&cframe);
+      scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
+      
+      /* Need to check for a break, in case one was queued and we just enabled it: */
+      scheme_check_break_now();
+
+      scheme_wait_sema((Scheme_Object *)sema, 0);
+
+      scheme_pop_continuation_frame(&cframe);
 
       return 1;
     }
@@ -542,7 +512,8 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
       if (waiting)
 	start_pos = waiting->start_pos;
       else
-	start_pos = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_SCHEDULER_RANDOM_STATE));
+	start_pos = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_current_config(), 
+									MZCONFIG_SCHEDULER_RANDOM_STATE));
     } else
       start_pos = 0;
 
@@ -816,7 +787,7 @@ static int pending_break(Scheme_Thread *p)
       --p->suspend_break;
     }
 
-    v = scheme_can_break(p, p->config);
+    v = scheme_can_break(p);
 
     if (!p->next)
       p->suspend_break++;
@@ -938,7 +909,6 @@ START_XFORM_SKIP;
 static void register_traversers(void)
 {
   GC_REG_TRAV(scheme_alarm_type, mark_alarm);
-  GC_REG_TRAV(scheme_rt_breakable_wait, mark_breakable_wait);
   GC_REG_TRAV(scheme_rt_sema_waiter, mark_sema_waiter);
 }
 

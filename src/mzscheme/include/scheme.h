@@ -720,6 +720,8 @@ typedef struct Scheme_Custodian *Scheme_Custodian_Reference;
 #endif
 
 typedef struct Scheme_Custodian Scheme_Custodian;
+typedef Scheme_Bucket_Table Scheme_Thread_Cell_Table;
+typedef struct Scheme_Config Scheme_Config;
 
 typedef int (*Scheme_Ready_Fun)(Scheme_Object *o);
 typedef void (*Scheme_Needs_Wakeup_Fun)(Scheme_Object *, void *);
@@ -742,7 +744,8 @@ typedef struct Scheme_Thread {
   mz_jmp_buf error_buf;
   Scheme_Continuation_Jump_State cjs;
 
-  struct Scheme_Config *config;
+  Scheme_Thread_Cell_Table *cell_values;
+  Scheme_Config *init_config;
 
   Scheme_Object **runstack;
   Scheme_Object **runstack_start;
@@ -789,17 +792,14 @@ typedef struct Scheme_Thread {
   Scheme_Object *current_local_mark;
   Scheme_Object *current_local_name;
 
-  /* These are used to lock in values during `read' and `print': */
-  char quick_can_read_compiled;
+  /* These are used to lock in values during `print': */
+  char quick_print_struct;
+  char quick_print_graph;
+  char quick_print_box;
+  char quick_print_vec_shorthand;
+  char quick_print_hash_table;
   char quick_can_read_pipe_quote;
-  char quick_can_read_box;
-  char quick_can_read_graph;
-  char quick_can_read_dot;
-  char quick_can_read_quasi;
   char quick_case_sens;
-  char quick_square_brackets_are_parens;
-  char quick_curly_braces_are_parens;
-  char quick_read_decimal_inexact;
   Scheme_Object *quick_inspector;
 
   /* Used during `display' and `write': */
@@ -984,18 +984,6 @@ enum {
   __MZCONFIG_BUILTIN_COUNT__
 };
 
-
-typedef struct Scheme_Config {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  int *use_count; /* non-zero => copy-on-write of extensions table */
-  Scheme_Bucket_Table *extensions;
-  Scheme_Object *configs[1];
-} Scheme_Config;
-
-#define scheme_set_param(c, pos, o) ((c)->configs[pos] = (o))
-#define scheme_get_param(c, pos) ((c)->configs[pos])
-
 /*========================================================================*/
 /*                                  ports                                 */
 /*========================================================================*/
@@ -1131,7 +1119,6 @@ typedef void (*Scheme_Invoke_Proc)(Scheme_Env *env, long phase_shift,
 
 #define scheme_error_buf (scheme_current_thread->error_buf)
 #define scheme_jumping_to_continuation (scheme_current_thread->cjs.jumping_to_continuation)
-#define scheme_config (scheme_current_thread->config)
 
 #define scheme_multiple_count (scheme_current_thread->ku.multiple.count)
 #define scheme_multiple_array (scheme_current_thread->ku.multiple.array)

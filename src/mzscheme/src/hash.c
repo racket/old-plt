@@ -744,6 +744,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_listener_type, hash_general);
   PROC(scheme_namespace_type, hash_general);
   PROC(scheme_config_type, hash_general);
+  PROC(scheme_thread_cell_type, hash_general);
   PROC(scheme_will_executor_type, hash_general);
   PROC(scheme_stx_type, hash_general);
   PROC(scheme_module_index_type, hash_general);
@@ -925,7 +926,7 @@ long scheme_equal_hash_key(Scheme_Object *o)
   case scheme_proc_struct_type:
     {
       Scheme_Object *insp;
-      insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+      insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
       if (scheme_inspector_sees_part(o, insp, -2)) {
 	int i;
 	Scheme_Structure *s1 = (Scheme_Structure *)o;
@@ -1115,7 +1116,7 @@ long scheme_equal_hash_key2(Scheme_Object *o)
   case scheme_proc_struct_type:
     {
       Scheme_Object *insp;
-      insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+      insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
       if (scheme_inspector_sees_part(o, insp, -2)) {
 	int i;
 	long k = 0;

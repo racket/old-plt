@@ -873,7 +873,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
   }
   if (argc)
     SCHEME_SET_VECTOR_IMMUTABLE(sch_argv);
-  scheme_set_param(scheme_config, MZCONFIG_CMDLINE_ARGS, sch_argv);
+  scheme_set_param(scheme_current_config(), MZCONFIG_CMDLINE_ARGS, sch_argv);
 
 #ifndef DONT_PARSE_COMMAND_LINE
   if (!no_argv)
@@ -922,7 +922,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #endif
   fa->global_env = global_env;
 
-  scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, scheme_true);
+  scheme_set_param(scheme_current_config(), MZCONFIG_ENABLE_BREAK, scheme_true);
 
   return cont_run(fa);
 

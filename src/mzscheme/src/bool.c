@@ -226,7 +226,7 @@ int scheme_equal (Scheme_Object *obj1, Scheme_Object *obj2)
       return 0;
     else {
       Scheme_Object *insp;
-      insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+      insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
       if (scheme_inspector_sees_part(obj1, insp, -2)
 	  && scheme_inspector_sees_part(obj2, insp, -2)) {
 #       include "mzeqchk.inc"

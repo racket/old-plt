@@ -531,7 +531,7 @@ Scheme_Object *scheme_default_load_extension(int argc, Scheme_Object **argv)
 					   NULL,
 					   SCHEME_GUARD_FILE_EXECUTE);
 
-  return scheme_force_value(do_load_extension(filename, argv[0], expected_module, scheme_get_env(scheme_config)));
+  return scheme_force_value(do_load_extension(filename, argv[0], expected_module, scheme_get_env(scheme_current_config())));
 }
 
 Scheme_Object *scheme_load_extension(const char *filename, Scheme_Env *env)

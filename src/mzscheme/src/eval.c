@@ -4011,7 +4011,7 @@ Scheme_Object *scheme_load_compiled_stx_string(const char *str, long len)
 
   expr = scheme_internal_read(port, NULL, 1, 0);
 
-  expr = _scheme_eval_compiled(expr, scheme_get_env(scheme_config));
+  expr = _scheme_eval_compiled(expr, scheme_get_env(NULL));
 
   /* Unwrap syntax once; */
   expr = SCHEME_STX_VAL(expr);
@@ -4124,58 +4124,32 @@ do_default_eval_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
 
 /* local functions */
 
-typedef struct {
-  MZTAG_IF_REQUIRED
-  Scheme_Config *config;
-  Scheme_Object *e;
-  Scheme_Object *namespace;
-  Scheme_Object *old;
-} Eval_In_Env;
-
-static void pre_eval_in_env(void *e)
-{
-  Eval_In_Env *ee = (Eval_In_Env *)e;
-  ee->old = scheme_get_param(ee->config, MZCONFIG_ENV);
-  scheme_set_param(ee->config, MZCONFIG_ENV, ee->namespace);
-}
-
-static void post_eval_in_env(void *e)
-{
-  Eval_In_Env *ee = (Eval_In_Env *)e;
-  scheme_set_param(ee->config, MZCONFIG_ENV, ee->old);
-}
-
-static Scheme_Object *do_eval_in_env(void *e)
-{
-  Eval_In_Env *ee = (Eval_In_Env *)e;
-  Scheme_Object *a[1];
-  a[0] = ee->e;
-  return _scheme_apply_multi(scheme_get_param(ee->config, MZCONFIG_EVAL_HANDLER),
-			     1, a);
-}
-
 static Scheme_Object *
 sch_eval(const char *who, int argc, Scheme_Object *argv[])
 {
   if (argc == 1) {
-    return _scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_EVAL_HANDLER),
+    return _scheme_apply_multi(scheme_get_param(scheme_current_config(), MZCONFIG_EVAL_HANDLER),
 			       1, argv);
   } else {
-    Eval_In_Env *ee;
+    Scheme_Config *config;
+    Scheme_Cont_Frame_Data cframe;
+    Scheme_Object *v;
     
     if (SCHEME_TYPE(argv[1]) != scheme_namespace_type)
       scheme_wrong_type(who, "namespace", 1, argc, argv);
 
-    ee = MALLOC_ONE_RT(Eval_In_Env);
-#ifdef MZTAG_REQUIRED
-    ee->type = scheme_rt_eval_in_env;
-#endif
-    ee->e = argv[0];
-    ee->config = scheme_config;
-    ee->namespace = argv[1];
+    config = scheme_extend_config(scheme_current_config(),
+				  MZCONFIG_ENV,
+				  argv[1]);
+    scheme_push_continuation_frame(&cframe);
+    scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
 
-    return scheme_dynamic_wind(pre_eval_in_env, do_eval_in_env, post_eval_in_env,
-			       NULL, ee);
+    v = _scheme_apply_multi(scheme_get_param(config, MZCONFIG_EVAL_HANDLER),
+			    1, argv);
+
+    scheme_pop_continuation_frame(&cframe);
+
+    return v;
   }
 }
 
@@ -4188,7 +4162,7 @@ eval(int argc, Scheme_Object *argv[])
   if (SCHEME_STXP(form)
       && !SAME_TYPE(SCHEME_TYPE(SCHEME_STX_VAL(form)), scheme_compilation_top_type)) {
     Scheme_Env *genv;
-    genv = (Scheme_Env *)scheme_get_param(scheme_config, MZCONFIG_ENV);
+    genv = (Scheme_Env *)scheme_get_param(scheme_current_config(), MZCONFIG_ENV);
     if (genv->rename)
       form = scheme_add_rename(form, genv->rename);
     if (genv->exp_env && genv->exp_env->rename)
@@ -4217,7 +4191,7 @@ scheme_default_eval_handler(int argc, Scheme_Object **argv)
 {
   Scheme_Env *env;
 
-  env = scheme_get_env(scheme_config);
+  env = scheme_get_env(NULL);
 
   return do_default_eval_handler(env, argc, argv);
 }
@@ -4245,7 +4219,7 @@ top_introduce_stx(int argc, Scheme_Object **argv)
 
   if (!SAME_TYPE(SCHEME_TYPE(SCHEME_STX_VAL(form)), scheme_compilation_top_type)) {
     Scheme_Env *genv;
-    genv = (Scheme_Env *)scheme_get_param(scheme_config, MZCONFIG_ENV);
+    genv = (Scheme_Env *)scheme_get_param(scheme_current_config(), MZCONFIG_ENV);
     if (genv->rename)
       form = scheme_add_rename(form, genv->rename);
     if (genv->exp_env && genv->exp_env->rename)
@@ -4258,7 +4232,7 @@ top_introduce_stx(int argc, Scheme_Object **argv)
 static Scheme_Object *
 compile(int argc, Scheme_Object *argv[])
 {
-  return _compile(argv[0], scheme_get_env(scheme_config), 1, 0, 0, 1);
+  return _compile(argv[0], scheme_get_env(NULL), 1, 0, 0, 1);
 }
 
 static Scheme_Object *
@@ -4267,7 +4241,7 @@ compile_stx(int argc, Scheme_Object *argv[])
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("compile-syntax", "syntax", 0, argc, argv);
 
-  return _compile(argv[0], scheme_get_env(scheme_config), 1, 0, 0, 0);
+  return _compile(argv[0], scheme_get_env(NULL), 1, 0, 0, 0);
 }
 
 static Scheme_Object *
@@ -4283,7 +4257,7 @@ static Scheme_Object *expand(int argc, Scheme_Object **argv)
 {
   Scheme_Env *env;
 
-  env = scheme_get_env(scheme_config);
+  env = scheme_get_env(NULL);
 
   return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), -1, 1, 0, 0);
 }
@@ -4295,7 +4269,7 @@ static Scheme_Object *expand_stx(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("expand-syntax", "syntax", 0, argc, argv);
 
-  env = scheme_get_env(scheme_config);
+  env = scheme_get_env(NULL);
 
   return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), -1, -1, 0, 0);
 }
@@ -4414,7 +4388,7 @@ expand_once(int argc, Scheme_Object **argv)
 {
   Scheme_Env *env;
 
-  env = scheme_get_env(scheme_config);
+  env = scheme_get_env(NULL);
 
   return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), 1, 1, 0, 0);
 }
@@ -4427,7 +4401,7 @@ expand_stx_once(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("expand-syntax-once", "syntax", 0, argc, argv);
   
-  env = scheme_get_env(scheme_config);
+  env = scheme_get_env(NULL);
 
   return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), 1, -1, 0, 0);
 }
@@ -4437,7 +4411,7 @@ expand_to_top_form(int argc, Scheme_Object **argv)
 {
   Scheme_Env *env;
 
-  env = scheme_get_env(scheme_config);
+  env = scheme_get_env(NULL);
 
   return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), 1, 1, 1, 0);
 }
@@ -4450,7 +4424,7 @@ expand_stx_to_top_form(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("expand-syntax-to-top", "syntax", 0, argc, argv);
   
-  env = scheme_get_env(scheme_config);
+  env = scheme_get_env(NULL);
 
   return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), 1, -1, 1, 0);
 }
@@ -4503,7 +4477,7 @@ enable_break(int argc, Scheme_Object *argv[])
 			  -1, NULL, NULL, 1);
 
   if (argc == 1) { /* might have turned on breaking... */
-    if (p->external_break && scheme_can_break(p, p->config)) {
+    if (p->external_break && scheme_can_break(p)) {
       scheme_thread_block_w_thread(0.0, p);
       p->ran_some = 1;
     }
@@ -5087,7 +5061,6 @@ static void register_traversers(void)
 {
   GC_REG_TRAV(scheme_rt_compile_info, mark_comp_info);
   GC_REG_TRAV(scheme_rt_saved_stack, mark_saved_stack);
-  GC_REG_TRAV(scheme_rt_eval_in_env, mark_eval_in_env);
 }
 
 END_XFORM_SKIP;

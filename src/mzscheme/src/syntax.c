@@ -482,7 +482,7 @@ void scheme_set_global_bucket(char *who, Scheme_Bucket *b, Scheme_Object *val,
     if (((Scheme_Bucket_With_Home *)b)->home->module) {
       const char *msg;
 
-      if (SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_SRCLOC)))
+      if (SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_PRINT_SRCLOC)))
 	msg = "%s: cannot set identifier before its definition: %S in module: %S";
       else
 	msg = "%s: cannot set identifier before its definition: %S";
@@ -1178,7 +1178,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
     }
   }
   
-  set_undef = SCHEME_TRUEP(scheme_get_param(scheme_config,
+  set_undef = SCHEME_TRUEP(scheme_get_param(scheme_current_config(),
 					    MZCONFIG_ALLOW_SET_UNDEFINED));
   
   return scheme_make_syntax_compiled(SET_EXPD, 
@@ -2897,7 +2897,7 @@ do_define_syntaxes_execute(Scheme_Object *form, Scheme_Env *dm_env)
   dummy = SCHEME_CAR(form);
   form = SCHEME_CDR(form);
 
-  rhs_env = scheme_new_comp_env(scheme_get_env(scheme_config), SCHEME_TOPLEVEL_FRAME);
+  rhs_env = scheme_new_comp_env(scheme_get_env(NULL), SCHEME_TOPLEVEL_FRAME);
 
   if (!dm_env)
     dm_env = scheme_environment_from_dummy(dummy);

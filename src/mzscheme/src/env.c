@@ -297,9 +297,10 @@ Scheme_Env *scheme_basic_env()
   env = scheme_make_empty_env();
   scheme_require_from_original_env(env, 1); /* Need kernel syntax... */
 
-  scheme_set_param(scheme_current_thread->config, MZCONFIG_ENV, 
+  scheme_set_param(scheme_current_config(), MZCONFIG_ENV, 
 		   (Scheme_Object *)env); 
   scheme_init_memtrace(env);
+  scheme_init_parameterization(env);
 
   scheme_add_embedded_builtins(env);
 
@@ -326,7 +327,7 @@ static void make_init_env(void)
 
   env = make_env(NULL, 0, GLOBAL_TABLE_SIZE);
 
-  scheme_set_param(scheme_current_thread->config, MZCONFIG_ENV, 
+  scheme_set_param(scheme_current_config(), MZCONFIG_ENV, 
 		   (Scheme_Object *)env);
 
   REGISTER_SO(scheme_initial_env);
@@ -2514,7 +2515,7 @@ namespace_identifier(int argc, Scheme_Object *argv[])
   if (argc > 1)
     genv = (Scheme_Env *)argv[1];
   else
-    genv = scheme_get_env(scheme_config);
+    genv = scheme_get_env(NULL);
 
   obj = argv[0];
   obj = scheme_datum_to_syntax(obj, scheme_false, scheme_false, 1, 0);
@@ -2547,7 +2548,7 @@ namespace_variable_value(int argc, Scheme_Object *argv[])
   if (argc > 3)
     genv = (Scheme_Env *)argv[3];
   else
-    genv = scheme_get_env(scheme_config);
+    genv = scheme_get_env(NULL);
 
   if (!use_map)
     v = scheme_lookup_global(argv[0], genv);
@@ -2604,7 +2605,7 @@ namespace_set_variable_value(int argc, Scheme_Object *argv[])
   if (argc > 3)
     env = (Scheme_Env *)argv[3];
   else
-    env = scheme_get_env(scheme_config);
+    env = scheme_get_env(NULL);
 
   bucket = scheme_global_bucket(argv[0], env);
   
@@ -2631,7 +2632,7 @@ namespace_undefine_variable(int argc, Scheme_Object *argv[])
   if (argc > 1)
     env = (Scheme_Env *)argv[1];
   else
-    env = scheme_get_env(scheme_config);
+    env = scheme_get_env(NULL);
 
   if (scheme_lookup_global(argv[0], env)) {
     bucket = scheme_global_bucket(argv[0], env);
@@ -2661,7 +2662,7 @@ namespace_mapped_symbols(int argc, Scheme_Object *argv[])
   if (argc)
     env = (Scheme_Env *)argv[0];
   else
-    env = scheme_get_env(scheme_config);
+    env = scheme_get_env(NULL);
   
   mapped = scheme_make_hash_table(SCHEME_hash_ptr);
 
@@ -3070,7 +3071,7 @@ static Scheme_Object *read_variable(Scheme_Object *obj)
 {
   Scheme_Env *env;
 
-  env = scheme_get_env(scheme_config);
+  env = scheme_get_env(NULL);
 
   if (!SCHEME_SYMBOLP(obj)) {
     /* Find variable from module. */

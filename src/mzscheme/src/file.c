@@ -120,7 +120,7 @@ long scheme_creator_id = 'MzSc';
 # define IS_A_SEP(x) (!(x))
 #endif
 
-#define CURRENT_WD() scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY)
+#define CURRENT_WD() scheme_get_param(scheme_current_config(), MZCONFIG_CURRENT_DIRECTORY)
 
 #define TO_PATH(x) (SCHEME_PATHP(x) ? x : scheme_char_string_to_path(x))
 
@@ -752,7 +752,7 @@ Scheme_Object *scheme_remove_current_directory_prefix(Scheme_Object *fn)
   Scheme_Object *cwd;
   long len;
 
-  cwd = scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY);
+  cwd = scheme_get_param(scheme_current_config(), MZCONFIG_CURRENT_DIRECTORY);
 
   fn = TO_PATH(fn);
 
@@ -3793,7 +3793,7 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
 #  ifdef DOS_FILE_SYSTEM
     else if ((errno == EACCES) && !tried_cwd) {
       /* Maybe we're using the target directory. Try a real setcwd. */
-      scheme_os_setcwd(SCHEME_PATH_VAL(scheme_get_param(scheme_config, 
+      scheme_os_setcwd(SCHEME_PATH_VAL(scheme_get_param(scheme_current_config(), 
 						       MZCONFIG_CURRENT_DIRECTORY)),
 		       0);
       tried_cwd = 1;
@@ -4186,13 +4186,6 @@ static Scheme_Object *cwd_check(int argc, Scheme_Object **argv)
 
     expanded = scheme_expand_string_filename(argv[0], "current-directory", NULL, SCHEME_GUARD_FILE_EXISTS);
     ed = scheme_make_sized_path(expanded, strlen(expanded), 1);
-    if (!scheme_directory_exists(expanded)) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       ed,
-		       fail_err_symbol,
-		       "current-directory: directory not found or not a directory: \"%q\"",
-		       expanded);
-    }
 
 # ifndef NO_FILE_SYSTEM_UTILS
     ed = do_simplify_path(ed, scheme_null);
@@ -4629,7 +4622,7 @@ static int appl_name_to_spec(char *name, int find_path, Scheme_Object *o, FSSpec
     long creator = check_four(name, 0, 1, &o);
 
     /* try current volume: */
-    scheme_os_setcwd(SCHEME_PATH_VAL(scheme_get_param(scheme_config, 
+    scheme_os_setcwd(SCHEME_PATH_VAL(scheme_get_param(scheme_current_config(), 
 						      MZCONFIG_CURRENT_DIRECTORY)),
 		     0);
     if (HGetVol(nm, &vrefnum, &junk) == noErr) {

@@ -8,11 +8,13 @@
 #endif
   scheme_extension_table->scheme_clear_escape = scheme_clear_escape;
   scheme_extension_table->scheme_new_jmpupbuf_holder = scheme_new_jmpupbuf_holder;
-  scheme_extension_table->scheme_make_config = scheme_make_config;
-  scheme_extension_table->scheme_branch_config = scheme_branch_config;
   scheme_extension_table->scheme_new_param = scheme_new_param;
   scheme_extension_table->scheme_param_config = scheme_param_config;
   scheme_extension_table->scheme_register_parameter = scheme_register_parameter;
+  scheme_extension_table->scheme_current_config = scheme_current_config;
+  scheme_extension_table->scheme_extend_config = scheme_extend_config;
+  scheme_extension_table->scheme_get_param = scheme_get_param;
+  scheme_extension_table->scheme_set_param = scheme_set_param;
   scheme_extension_table->scheme_get_env = scheme_get_env;
 #ifndef LINK_EXTENSIONS_BY_TABLE
   scheme_extension_table->scheme_current_thread = scheme_current_thread;
@@ -23,8 +25,7 @@
 #endif
   scheme_extension_table->scheme_out_of_fuel = scheme_out_of_fuel;
   scheme_extension_table->scheme_thread = scheme_thread;
-  scheme_extension_table->scheme_thread_w_custodian = scheme_thread_w_custodian;
-  scheme_extension_table->scheme_thread_w_custodian_killkind = scheme_thread_w_custodian_killkind;
+  scheme_extension_table->scheme_thread_w_details = scheme_thread_w_details;
   scheme_extension_table->scheme_kill_thread = scheme_kill_thread;
   scheme_extension_table->scheme_break_thread = scheme_break_thread;
   scheme_extension_table->scheme_thread_block = scheme_thread_block;
@@ -35,6 +36,9 @@
   scheme_extension_table->scheme_block_until = scheme_block_until;
   scheme_extension_table->scheme_in_main_thread = scheme_in_main_thread;
   scheme_extension_table->scheme_cancel_sleep = scheme_cancel_sleep;
+  scheme_extension_table->scheme_make_thread_cell = scheme_make_thread_cell;
+  scheme_extension_table->scheme_thread_cell_get = scheme_thread_cell_get;
+  scheme_extension_table->scheme_thread_cell_set = scheme_thread_cell_set;
   scheme_extension_table->scheme_tls_allocate = scheme_tls_allocate;
   scheme_extension_table->scheme_tls_set = scheme_tls_set;
   scheme_extension_table->scheme_tls_get = scheme_tls_get;
@@ -120,6 +124,7 @@
   scheme_extension_table->scheme_temp_dec_mark_depth = scheme_temp_dec_mark_depth;
   scheme_extension_table->scheme_temp_inc_mark_depth = scheme_temp_inc_mark_depth;
   scheme_extension_table->scheme_current_continuation_marks = scheme_current_continuation_marks;
+  scheme_extension_table->scheme_extract_one_cc_mark = scheme_extract_one_cc_mark;
   scheme_extension_table->scheme_do_eval = scheme_do_eval;
   scheme_extension_table->scheme_eval_compiled_stx_string = scheme_eval_compiled_stx_string;
   scheme_extension_table->scheme_load_compiled_stx_string = scheme_load_compiled_stx_string;

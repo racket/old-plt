@@ -222,9 +222,9 @@ void scheme_init_module(Scheme_Env *env)
   o = scheme_make_prim_w_arity(default_module_resolver,
 			       "default-module-name-resolver",
 			       3, 3);
-  scheme_set_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER, o);
+  scheme_set_param(scheme_current_config(), MZCONFIG_CURRENT_MODULE_RESOLVER, o);
 
-  scheme_set_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX, scheme_false);
+  scheme_set_param(scheme_current_config(), MZCONFIG_CURRENT_MODULE_PREFIX, scheme_false);
 
   scheme_add_global_constant("current-module-name-resolver", 
 			     scheme_register_parameter(current_module_name_resolver, 
@@ -793,12 +793,12 @@ static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
     if (r) return r;
   }
 
-  return _dynamic_require(argc, argv, scheme_get_env(scheme_config), 0, 0, 0, 1, -1);
+  return _dynamic_require(argc, argv, scheme_get_env(NULL), 0, 0, 0, 1, -1);
 }
 
 static Scheme_Object *dynamic_require_for_syntax(int argc, Scheme_Object *argv[])
 {
-  return _dynamic_require(argc, argv, scheme_get_env(scheme_config), 0, 1, 0, 1, -1);
+  return _dynamic_require(argc, argv, scheme_get_env(NULL), 0, 1, 0, 1, -1);
 }
 
 static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int for_exp, int copy, int etonly)
@@ -806,7 +806,7 @@ static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int 
   Scheme_Object *form, *rn, *brn;
   Scheme_Env *env;
 
-  env = scheme_get_env(scheme_config);
+  env = scheme_get_env(NULL);
   if (for_exp) {
     scheme_prepare_exp_env(env);
     env = env->exp_env;
@@ -851,24 +851,6 @@ static Scheme_Object *namespace_require_etonly(int argc, Scheme_Object *argv[])
 {
   return do_namespace_require(argc, argv, 0, 0, 1);
 }
-
-static void pre_post_force(void *_v)
-{
-  Scheme_Object *old, *v = (Scheme_Object *)_v;
-
-  old = scheme_get_param(scheme_config, MZCONFIG_ENV);
-  scheme_set_param(scheme_config, MZCONFIG_ENV, SCHEME_VEC_ELS(v)[0]);
-  SCHEME_VEC_ELS(v)[0] = old;
-}
-	
-static Scheme_Object *now_do_force(void *_v)
-{
-  Scheme_Object *v = (Scheme_Object *)_v;
-  finish_expstart_module((Scheme_Env *)SCHEME_VEC_ELS(v)[1], 
-			 (Scheme_Env *)scheme_get_param(scheme_config, MZCONFIG_ENV),
-			 scheme_null);
-  return scheme_void;
-}
 	
 static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 {
@@ -889,7 +871,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
     to_env = (Scheme_Env *)argv[2];
     skip_notify = 1;
   } else
-    to_env = scheme_get_env(scheme_config);
+    to_env = scheme_get_env(NULL);
 
   same_namespace = SAME_OBJ(from_env, to_env);
 
@@ -980,15 +962,19 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 
 	  /* Have to force laziness in source to ensure sharing: */
 	  if (menv->lazy_syntax) {
-	    Scheme_Object *v;
+	    Scheme_Cont_Frame_Data cframe;
+	    Scheme_Config *config;
 
-	    v = scheme_make_vector(2, NULL);
-	    SCHEME_VEC_ELS(v)[0] = (Scheme_Object *)from_env;
-	    SCHEME_VEC_ELS(v)[1] = (Scheme_Object *)menv;
+	    config = scheme_extend_config(scheme_current_config(),
+					  MZCONFIG_ENV,
+					  (Scheme_Object *)from_env);
+	    
+	    scheme_push_continuation_frame(&cframe);
+	    scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
 
-	    scheme_dynamic_wind(pre_post_force, now_do_force,
-				pre_post_force, NULL,
-				(void *)v);
+	    finish_expstart_module(menv, from_env, scheme_null);
+	    
+	    scheme_pop_continuation_frame(&cframe);
 	  }
 
 	  l = menv->et_require_names;
@@ -1060,7 +1046,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 
   if (!skip_notify) {
     /* Notify module name resolver of attached modules: */
-    resolver = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER);
+    resolver = scheme_get_param(scheme_current_config(), MZCONFIG_CURRENT_MODULE_RESOLVER);
     while (!SCHEME_NULLP(notifies)) {
       a[0] = scheme_false;
       a[1] = SCHEME_CAR(notifies);
@@ -1108,7 +1094,7 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
   Scheme_Env *menv, *env;
   Scheme_Object *modchain, *name;
 
-  env = scheme_get_env(scheme_config);
+  env = scheme_get_env(NULL);
 
   name = scheme_module_resolve(scheme_make_modidx(argv[0], scheme_false, scheme_false));
 
@@ -1372,7 +1358,7 @@ static Scheme_Object *_module_resolve(Scheme_Object *modidx, Scheme_Object *stx)
 			  "broken compiled/expanded code: unresolved module index without path");
     }
 
-    name = scheme_apply(scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER), 3, a);
+    name = scheme_apply(scheme_get_param(scheme_current_config(), MZCONFIG_CURRENT_MODULE_RESOLVER), 3, a);
     
     ((Scheme_Modidx *)modidx)->resolved = name;
   }
@@ -2010,7 +1996,7 @@ Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env)
   
   env = scheme_new_module_env(for_env, m, 0);
 
-  prefix = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
+  prefix = scheme_get_param(scheme_current_config(), MZCONFIG_CURRENT_MODULE_PREFIX);
   if (SCHEME_SYMBOLP(prefix))
     name = scheme_symbol_append(prefix, name);
 
@@ -2091,7 +2077,7 @@ Scheme_Object *scheme_builtin_value(const char *name)
 
   /* Try kernel first: */
   a[0] = kernel_symbol;
-  v = _dynamic_require(2, a, scheme_get_env(scheme_config), 0, 0, 0, 0, -1);
+  v = _dynamic_require(2, a, scheme_get_env(NULL), 0, 0, 0, 0, -1);
 
   if (v)
     return v;
@@ -2256,7 +2242,7 @@ module_execute(Scheme_Object *data)
   m = MALLOC_ONE_TAGGED(Scheme_Module);
   memcpy(m, data, sizeof(Scheme_Module));
 
-  prefix = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
+  prefix = scheme_get_param(scheme_current_config(), MZCONFIG_CURRENT_MODULE_PREFIX);
   if (SCHEME_SYMBOLP(prefix)) {
     prefix = scheme_symbol_append(prefix, m->modname);
     m->modname = prefix;
@@ -2634,7 +2620,7 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
   m = MALLOC_ONE_TAGGED(Scheme_Module);
   m->type = scheme_module_type;
 
-  prefix = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
+  prefix = scheme_get_param(scheme_current_config(), MZCONFIG_CURRENT_MODULE_PREFIX);
   if (SCHEME_SYMBOLP(prefix))
     name = scheme_symbol_append(prefix, name);
   

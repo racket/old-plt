@@ -571,7 +571,9 @@ scheme_init_port (Scheme_Env *env)
 
 void scheme_init_port_config(void)
 {
-  Scheme_Config *config = scheme_config;
+  Scheme_Config *config;
+
+  config = scheme_current_config();
 
   scheme_set_param(config, MZCONFIG_INPUT_PORT,
 		   scheme_orig_stdin_port);
@@ -972,7 +974,7 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->charsSinceNewline = 1;
   ip->closed = 0;
   ip->read_handler = NULL;
-  ip->count_lines = SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_PORT_COUNT_LINES));
+  ip->count_lines = SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_PORT_COUNT_LINES));
 
   if (must_close) {
     Scheme_Custodian_Reference *mref;
@@ -1952,7 +1954,6 @@ scheme_char_ready (Scheme_Object *port)
 
 typedef struct {
   MZTAG_IF_REQUIRED
-  int crc, crpq, crb, crg, cs, sbap, cbap, rdi, crd, crq;
   int exn;
   Scheme_Object *f;
   Scheme_Object **a;
@@ -1981,51 +1982,8 @@ static Scheme_Object *read_special_exn_handler(void *e, int argc, Scheme_Object 
 static void pre_read_special(void *e)
 {
   Read_Special_DW *rs = (Read_Special_DW *)e;
-  Scheme_Thread *p = scheme_current_thread;
-  Scheme_Object *my_handler;
-
-  /* In case there's a recursive call to `read', save the "quick" param vals
-     and restore them afterward */
-  rs->crc = p->quick_can_read_compiled;
-  rs->crpq = p->quick_can_read_pipe_quote;
-  rs->crb = p->quick_can_read_box;
-  rs->crg = p->quick_can_read_graph;
-  rs->cs = p->quick_case_sens;
-  rs->sbap = p->quick_square_brackets_are_parens;
-  rs->cbap = p->quick_curly_braces_are_parens;
-  rs->rdi = p->quick_read_decimal_inexact;
-  rs->crd = p->quick_can_read_dot;
-  rs->crq = p->quick_can_read_quasi;
-
-  rs->exn_handler = scheme_get_param(p->config, MZCONFIG_EXN_HANDLER);
-
-  my_handler = scheme_make_closed_prim_w_arity(read_special_exn_handler,
-					       rs,
-					       "read-special-exception-handler",
-					       1, 1);
-
-  scheme_set_param(p->config, MZCONFIG_EXN_HANDLER, my_handler);
 
   rs->exn = 0;
-}
-
-static void post_read_special(void *e)
-{
-  Read_Special_DW *rs = (Read_Special_DW *)e;
-  Scheme_Thread *p = scheme_current_thread;
-
-  p->quick_can_read_compiled = rs->crc;
-  p->quick_can_read_pipe_quote = rs->crpq;
-  p->quick_can_read_box = rs->crb;
-  p->quick_can_read_graph = rs->crg;
-  p->quick_case_sens = rs->cs;
-  p->quick_square_brackets_are_parens = rs->sbap;
-  p->quick_curly_braces_are_parens = rs->cbap;
-  p->quick_read_decimal_inexact = rs->rdi;
-  p->quick_can_read_dot = rs->crd;
-  p->quick_can_read_quasi = rs->crq;
-
-  scheme_set_param(p->config, MZCONFIG_EXN_HANDLER, rs->exn_handler);
 }
 
 static Scheme_Object *do_read_special(void *e)
@@ -2055,7 +2013,9 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
 				  Scheme_Object *src, long line, long col, long pos,
 				  Scheme_Object **exn)
 {
-  Scheme_Object *r, *val, *pd, *a[4];
+  Scheme_Config *config;
+  Scheme_Cont_Frame_Data cframe;
+  Scheme_Object *r, *val, *pd, *a[4], *my_handler;
   Scheme_Input_Port *ip;
   long pos_delta;
   Read_Special_DW *rs;
@@ -2099,6 +2059,16 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
   rs->f = ip->special;
   ip->special = NULL;
 
+  config = scheme_current_config();
+
+  r = scheme_get_param(config, MZCONFIG_EXN_HANDLER);
+  rs->exn_handler = r;
+  
+  my_handler = scheme_make_closed_prim_w_arity(read_special_exn_handler,
+					       rs,
+					       "read-special-exception-handler",
+					       1, 1);
+
   a[0] = (src ? src : scheme_false);
   a[1] = (line > 0) ? scheme_make_integer(line) : scheme_false;
   a[2] = (col > 0) ? scheme_make_integer(col-1) : scheme_false;
@@ -2106,11 +2076,20 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
 
   rs->a = a;
 
+  config = scheme_extend_config(config,
+				MZCONFIG_EXN_HANDLER,
+				my_handler);
+
+  scheme_push_continuation_frame(&cframe);
+  scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
+
   r = scheme_dynamic_wind(pre_read_special,
 			  do_read_special,
-			  post_read_special,
+			  NULL,
 			  handle_call_ec,
 			  rs);
+
+  scheme_pop_continuation_frame(&cframe);
 
   if (rs->exn) {
     /* r is the exception value */
@@ -5957,7 +5936,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     }
 
     /* Set real CWD - and hope no other thread changes it! */
-    scheme_os_setcwd(SCHEME_BYTE_STR_VAL(scheme_get_param(scheme_config,
+    scheme_os_setcwd(SCHEME_BYTE_STR_VAL(scheme_get_param(scheme_current_config(),
 							  MZCONFIG_CURRENT_DIRECTORY)),
 		     0);
 
@@ -6091,7 +6070,8 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
       }
 
       /* Set real CWD */
-      scheme_os_setcwd(SCHEME_PATH_VAL(scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY)), 0);
+      scheme_os_setcwd(SCHEME_PATH_VAL(scheme_get_param(scheme_current_config(), 
+							MZCONFIG_CURRENT_DIRECTORY)), 0);
 
       /* Exec new process */
 

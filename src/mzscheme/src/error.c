@@ -107,7 +107,7 @@ void scheme_init_error_escape_proc(Scheme_Thread *p)
 			       0, 0);
   }
 
-  scheme_set_param(p->config, MZCONFIG_ERROR_ESCAPE_HANDLER, def_error_esc_proc);
+  scheme_set_param(p->init_config, MZCONFIG_ERROR_ESCAPE_HANDLER, def_error_esc_proc);
 }
 
 /*
@@ -519,7 +519,9 @@ void scheme_init_error(Scheme_Env *env)
 
 void scheme_init_error_config(void)
 {
-  Scheme_Config *config = scheme_config;
+  Scheme_Config *config;
+
+  config = scheme_current_config();
 
   scheme_set_param(config, MZCONFIG_EXIT_HANDLER, scheme_def_exit_proc);
 
@@ -578,10 +580,10 @@ call_error(char *buffer, int len, Scheme_Object *exn)
       scheme_longjmp(savebuf, 1);
     } else {
       if (buffer)
-	scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_DISPLAY_HANDLER), 2, p);
+	scheme_apply_multi(scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_DISPLAY_HANDLER), 2, p);
       scheme_current_thread->error_invoked = 2;
       /* Typically jumps out of here */
-      scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_ESCAPE_HANDLER), 0, NULL);
+      scheme_apply_multi(scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_ESCAPE_HANDLER), 0, NULL);
       /* Uh-oh; record the error fall back to the default escaper */
       scheme_inescapeable_error("error escape handler did not escape; calling the default error escape handler", "");
       scheme_current_thread->error_invoked = 0;
@@ -595,7 +597,7 @@ static long get_print_width(void)
   long print_width;
   Scheme_Object *w;
 
-  w = scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_WIDTH);
+  w = scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_PRINT_WIDTH);
   if (SCHEME_INTP(w))
     print_width = SCHEME_INT_VAL(w);
   else
@@ -684,7 +686,7 @@ void scheme_warning(char *msg, ...)
   buffer[len] = 0;
 
   scheme_write_byte_string(buffer, len,
-			   scheme_get_param(scheme_config, MZCONFIG_ERROR_PORT));
+			   scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_PORT));
 }
 
 static void pre_conv(void *v)
@@ -707,10 +709,10 @@ static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
 {
   Scheme_Object *o, *args[3];
 
-  o = scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_VALUE_HANDLER);
+  o = scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_PRINT_VALUE_HANDLER);
 
   if ((SAME_OBJ(o, def_err_val_proc)
-       && SAME_OBJ(scheme_get_param(scheme_config, MZCONFIG_PORT_PRINT_HANDLER),
+       && SAME_OBJ(scheme_get_param(scheme_current_config(), MZCONFIG_PORT_PRINT_HANDLER),
 		   scheme_default_global_print_handler))
       || (scheme_current_thread->err_val_str_invoked)) {
     long l;
@@ -1198,7 +1200,7 @@ void scheme_read_err(Scheme_Object *port,
   ls = "";
   fnlen = 0;
 
-  show_loc = SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_SRCLOC));
+  show_loc = SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_PRINT_SRCLOC));
 
   if (stxsrc) {
     Scheme_Object *xsrc;
@@ -1327,7 +1329,7 @@ void scheme_wrong_syntax(const char *where,
   p = NULL;
   plen = 0;
 
-  show_src = SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_SRCLOC));
+  show_src = SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_PRINT_SRCLOC));
 
   if (form) {
     Scheme_Object *pform;
@@ -1608,7 +1610,7 @@ void scheme_unbound_global(Scheme_Bucket *b)
   if (((Scheme_Bucket_With_Home *)b)->home->module) {
     const char *errmsg;
     
-    if (SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_SRCLOC)))
+    if (SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_PRINT_SRCLOC)))
       errmsg = "reference to an identifier before its definition: %S in module: %S";
     else
       errmsg = "reference to an identifier before its definition: %S";
@@ -1679,10 +1681,12 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
       newargs[0] = scheme_make_immutable_sized_utf8_string(r, l + l2 + 2);
     }
   } else {
-    Scheme_Config *config = scheme_config;
+    Scheme_Config *config;
     Scheme_Object *strout;
     char *str;
     long len, i;
+
+    config = scheme_current_config();
 
     /* String followed by other values: */
     if (!SCHEME_CHAR_STRINGP(argv[0]))
@@ -1708,9 +1712,9 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
 
   return scheme_void;
 #else
-  _scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_DISPLAY_HANDLER), 1, newargs);
+  _scheme_apply_multi(scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_DISPLAY_HANDLER), 1, newargs);
 
-  return _scheme_tail_apply(scheme_get_param(scheme_config, MZCONFIG_ERROR_ESCAPE_HANDLER),
+  return _scheme_tail_apply(scheme_get_param(scheme_current_config(), MZCONFIG_ERROR_ESCAPE_HANDLER),
 			    0, NULL);
 #endif
 }
@@ -1847,8 +1851,11 @@ static Scheme_Object *error_print_srcloc(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 def_error_display_proc(int argc, Scheme_Object *argv[])
 {
-  Scheme_Config *config = scheme_config;
-  Scheme_Object *port = scheme_get_param(config, MZCONFIG_ERROR_PORT), *s;
+  Scheme_Config *config;
+  Scheme_Object *port, *s;
+
+  config = scheme_current_config();
+  port = scheme_get_param(config, MZCONFIG_ERROR_PORT);
 
   if (!SCHEME_CHAR_STRINGP(argv[0]))
     scheme_wrong_type("default-error-display-handler", "string", 0, argc, argv);
@@ -1876,7 +1883,7 @@ def_error_value_string_proc(int argc, Scheme_Object *argv[])
 
   origl = len = SCHEME_INT_VAL(argv[1]);
 
-  pph = scheme_get_param(scheme_config, MZCONFIG_PORT_PRINT_HANDLER);
+  pph = scheme_get_param(scheme_current_config(), MZCONFIG_PORT_PRINT_HANDLER);
   if (SAME_OBJ(pph, scheme_default_global_print_handler)) {
     if (len < 3)
       len = 3;
@@ -1993,7 +2000,7 @@ scheme_do_exit(int argc, Scheme_Object *argv[])
   } else
     status = 0;
 
-  handler = scheme_get_param(scheme_config, MZCONFIG_EXIT_HANDLER);
+  handler = scheme_get_param(scheme_current_config(), MZCONFIG_EXIT_HANDLER);
 
   if (handler) {
     Scheme_Object *p[1];
@@ -2131,7 +2138,7 @@ static Scheme_Object *now_do_raise(void *v)
 
   p[0] = (Scheme_Object *)v;
 
-  return scheme_apply(scheme_get_param(scheme_config, MZCONFIG_EXN_HANDLER),
+  return scheme_apply(scheme_get_param(scheme_current_config(), MZCONFIG_EXN_HANDLER),
 		      1, (Scheme_Object **)p);
 }
 
@@ -2314,8 +2321,10 @@ void scheme_init_exn(Scheme_Env *env)
 
 void scheme_init_exn_config(void)
 {
-  Scheme_Config *config = scheme_config;
+  Scheme_Config *config;
   Scheme_Object *h;
+
+  config = scheme_current_config();
 
   h = scheme_make_prim_w_arity(def_exn_handler,
 			       "default-exception-handler",

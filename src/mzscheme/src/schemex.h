@@ -40,8 +40,6 @@ Scheme_Jumpup_Buf_Holder *(*scheme_new_jmpupbuf_holder)(void);
 /*========================================================================*/
 /*                                parameters                              */
 /*========================================================================*/
-Scheme_Object *(*scheme_make_config)(Scheme_Config *base);
-Scheme_Object *(*scheme_branch_config)(void);
 int (*scheme_new_param)(void);
 Scheme_Object *(*scheme_param_config)(char *name, Scheme_Object *pos,
 					     int argc, Scheme_Object **argv,
@@ -49,6 +47,10 @@ Scheme_Object *(*scheme_param_config)(char *name, Scheme_Object *pos,
 					     Scheme_Prim *check, char *expected,
 					     int isbool);
 Scheme_Object *(*scheme_register_parameter)(Scheme_Prim *function, char *name, int which);
+Scheme_Config *(*scheme_current_config)(void);
+Scheme_Config *(*scheme_extend_config)(Scheme_Config *c, int pos, Scheme_Object *init_val);
+Scheme_Object *(*scheme_get_param)(Scheme_Config *c, int pos);
+void (*scheme_set_param)(Scheme_Config *c, int pos, Scheme_Object *o);
 Scheme_Env *(*scheme_get_env)(Scheme_Config *config);
 /*========================================================================*/
 /*                                threads                                 */
@@ -61,11 +63,12 @@ Scheme_Thread **scheme_current_thread_ptr;
 volatile int *scheme_fuel_counter_ptr;
 #endif
 void (*scheme_out_of_fuel)(void);
-Scheme_Object *(*scheme_thread)(Scheme_Object *thunk, Scheme_Config *config);
-Scheme_Object *(*scheme_thread_w_custodian)(Scheme_Object *thunk, Scheme_Config *config,
-						   Scheme_Custodian *mgr);
-Scheme_Object *(*scheme_thread_w_custodian_killkind)(Scheme_Object *thunk, Scheme_Config *config,
-							    Scheme_Custodian *mgr, int normal_kill);
+Scheme_Object *(*scheme_thread)(Scheme_Object *thunk);
+Scheme_Object *(*scheme_thread_w_details)(Scheme_Object *thunk, 
+						 Scheme_Config *init_config,
+						 Scheme_Thread_Cell_Table *copy_from,
+						 Scheme_Custodian *owning_custodian, 
+						 int suspend_to_kill);
 void (*scheme_kill_thread)(Scheme_Thread *p);
 void (*scheme_break_thread)(Scheme_Thread *p);
 void (*scheme_thread_block)(float sleep_time);
@@ -76,6 +79,9 @@ void (*scheme_weak_resume_thread)(Scheme_Thread *p);
 int (*scheme_block_until)(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Object *, float);
 int (*scheme_in_main_thread)(void);
 void (*scheme_cancel_sleep)(void);
+Scheme_Object *(*scheme_make_thread_cell)(Scheme_Object *def_val, int inherited);
+Scheme_Object *(*scheme_thread_cell_get)(Scheme_Object *cell);
+void (*scheme_thread_cell_set)(Scheme_Object *cell, Scheme_Object *v);
 int (*scheme_tls_allocate)();
 void (*scheme_tls_set)(int pos, void *v);
 void *(*scheme_tls_get)(int pos);
@@ -199,6 +205,8 @@ void (*scheme_pop_continuation_frame)(Scheme_Cont_Frame_Data *);
 void (*scheme_temp_dec_mark_depth)();
 void (*scheme_temp_inc_mark_depth)();
 Scheme_Object *(*scheme_current_continuation_marks)(void);
+Scheme_Object *(*scheme_extract_one_cc_mark)(Scheme_Object *mark_set, 
+						    Scheme_Object *key);
 /* Internal */
 Scheme_Object *(*scheme_do_eval)(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val);
 Scheme_Object *(*scheme_eval_compiled_stx_string)(Scheme_Object *expr, Scheme_Env *env,

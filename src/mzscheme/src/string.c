@@ -1612,7 +1612,7 @@ char *scheme_format(mzchar *format, int flen, int argc, Scheme_Object **argv, lo
 
 void scheme_printf(mzchar *format, int flen, int argc, Scheme_Object **argv)
 {
-  scheme_do_format("printf", scheme_get_param(scheme_config, MZCONFIG_OUTPUT_PORT), 
+  scheme_do_format("printf", scheme_get_param(scheme_current_config(), MZCONFIG_OUTPUT_PORT), 
 		   format, flen, 0, 0, argc, argv);
 }
 
@@ -1659,7 +1659,7 @@ format(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 sch_printf(int argc, Scheme_Object *argv[])
 {
-  scheme_do_format("printf", scheme_get_param(scheme_config, MZCONFIG_OUTPUT_PORT), 
+  scheme_do_format("printf", scheme_get_param(scheme_current_config(), MZCONFIG_OUTPUT_PORT), 
 		   NULL, 0, 0, 1, argc, argv);
   return scheme_void;
 }
@@ -2758,7 +2758,7 @@ void scheme_reset_locale(void)
   Scheme_Object *v;
   const mzchar *name;
 
-  v = scheme_get_param(scheme_config, MZCONFIG_LOCALE);
+  v = scheme_get_param(scheme_current_config(), MZCONFIG_LOCALE);
   scheme_locale_on = SCHEME_TRUEP(v);
 
   if (scheme_locale_on) {

@@ -528,7 +528,7 @@ thread_val {
 
   MARK_cjs(&pr->cjs);
 
-  gcMARK(pr->config);
+  gcMARK(pr->cell_values);
 
   {
     Scheme_Object **rs = pr->runstack_start;
@@ -930,19 +930,6 @@ mark_saved_stack {
   gcBYTES_TO_WORDS(sizeof(Scheme_Saved_Stack));
 }
 
-mark_eval_in_env {
- mark:
-  Eval_In_Env *ee = (Eval_In_Env *)p;
-  
-  gcMARK(ee->e);
-  gcMARK(ee->config);
-  gcMARK(ee->namespace);
-  gcMARK(ee->old);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(Eval_In_Env));
-}
-
 END eval;
 
 /**********************************************************************/
@@ -1039,24 +1026,9 @@ mark_load_handler_data {
   gcMARK(d->p);
   gcMARK(d->stxsrc);
   gcMARK(d->expected_module);
-  /* reader_params has only #ts and #fs, which don't
-     have to be marked, because they don't move. */
   
  size:
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
-}
-
-mark_load_data {
- mark:
-  LoadData *d = (LoadData *)p;
-  
-  gcMARK(d->filename);
-  gcMARK(d->config);
-  gcMARK(d->load_dir);
-  gcMARK(d->old_load_dir);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(LoadData));
 }
 
 mark_indexed_string {
@@ -1276,20 +1248,29 @@ END network;
 
 START thread;
 
-mark_config_val {
+mark_paramz_val {
  mark:
-  Scheme_Config *c = (Scheme_Config *)p;
+  Scheme_Parameterization *c = (Scheme_Config *)p;
   int i;
     
   for (i = max_configs; i--; ) {
-    gcMARK(c->configs[i]);
+    gcMARK(c->prims[i]);
   }
-  gcMARK(c->use_count);
   gcMARK(c->extensions);
 
  size:
-  gcBYTES_TO_WORDS((sizeof(Scheme_Config)
+  gcBYTES_TO_WORDS((sizeof(Scheme_Parameterization)
 		    + ((max_configs - 1) * sizeof(Scheme_Object*))));
+}
+
+mark_config_type {
+ mark:
+  Scheme_Config *c = (Scheme_Config *)p;
+  gcMARK(config->key);
+  gcMARK(config->cell);
+  gcMARK(config->next);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Config));
 }
 
 mark_will_executor_val {
@@ -1468,18 +1449,6 @@ END salloc;
 /**********************************************************************/
 
 START sema;
-
-mark_breakable_wait {
- mark:
-  BreakableWait *w = (BreakableWait *)p;
-    
-  gcMARK(w->config);
-  gcMARK(w->orig_param_val);
-  gcMARK(w->sema);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(BreakableWait));
-}
 
 mark_sema_waiter {
  mark:

@@ -47,16 +47,20 @@ MZ_EXTERN Scheme_Jumpup_Buf_Holder *scheme_new_jmpupbuf_holder(void);
 /*                                parameters                              */
 /*========================================================================*/
 
-MZ_EXTERN Scheme_Object *scheme_make_config(Scheme_Config *base);
-MZ_EXTERN Scheme_Object *scheme_branch_config(void);
 MZ_EXTERN int scheme_new_param(void);
-
 MZ_EXTERN Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 					     int argc, Scheme_Object **argv,
 					     int arity,
 					     Scheme_Prim *check, char *expected,
 					     int isbool);
 MZ_EXTERN Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int which);
+
+MZ_EXTERN Scheme_Config *scheme_current_config(void);
+MZ_EXTERN Scheme_Config *scheme_extend_config(Scheme_Config *c, int pos, Scheme_Object *init_val);
+
+MZ_EXTERN Scheme_Object *scheme_get_param(Scheme_Config *c, int pos);
+MZ_EXTERN void scheme_set_param(Scheme_Config *c, int pos, Scheme_Object *o);
+
 MZ_EXTERN Scheme_Env *scheme_get_env(Scheme_Config *config);
 
 /*========================================================================*/
@@ -73,11 +77,12 @@ MZ_EXTERN volatile int *scheme_fuel_counter_ptr;
 
 MZ_EXTERN void scheme_out_of_fuel(void);
 
-MZ_EXTERN Scheme_Object *scheme_thread(Scheme_Object *thunk, Scheme_Config *config);
-MZ_EXTERN Scheme_Object *scheme_thread_w_custodian(Scheme_Object *thunk, Scheme_Config *config,
-						   Scheme_Custodian *mgr);
-MZ_EXTERN Scheme_Object *scheme_thread_w_custodian_killkind(Scheme_Object *thunk, Scheme_Config *config,
-							    Scheme_Custodian *mgr, int normal_kill);
+MZ_EXTERN Scheme_Object *scheme_thread(Scheme_Object *thunk);
+MZ_EXTERN Scheme_Object *scheme_thread_w_details(Scheme_Object *thunk, 
+						 Scheme_Config *init_config,
+						 Scheme_Thread_Cell_Table *copy_from,
+						 Scheme_Custodian *owning_custodian, 
+						 int suspend_to_kill);
 MZ_EXTERN void scheme_kill_thread(Scheme_Thread *p);
 MZ_EXTERN void scheme_break_thread(Scheme_Thread *p);
 
@@ -93,6 +98,10 @@ MZ_EXTERN int scheme_block_until(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Sc
 MZ_EXTERN int scheme_in_main_thread(void);
 
 MZ_EXTERN void scheme_cancel_sleep(void);
+
+MZ_EXTERN Scheme_Object *scheme_make_thread_cell(Scheme_Object *def_val, int inherited);
+MZ_EXTERN Scheme_Object *scheme_thread_cell_get(Scheme_Object *cell);
+MZ_EXTERN void scheme_thread_cell_set(Scheme_Object *cell, Scheme_Object *v);
 
 MZ_EXTERN int scheme_tls_allocate();
 MZ_EXTERN void scheme_tls_set(int pos, void *v);
@@ -247,6 +256,8 @@ MZ_EXTERN void scheme_temp_dec_mark_depth();
 MZ_EXTERN void scheme_temp_inc_mark_depth();
 
 MZ_EXTERN Scheme_Object *scheme_current_continuation_marks(void);
+MZ_EXTERN Scheme_Object *scheme_extract_one_cc_mark(Scheme_Object *mark_set, 
+						    Scheme_Object *key);
 
 /* Internal */
 MZ_EXTERN Scheme_Object *scheme_do_eval(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val);

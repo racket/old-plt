@@ -1384,7 +1384,7 @@ string_to_number (int argc, Scheme_Object *argv[])
   } else
     radix = 10;
 
-  decimal_inexact = SCHEME_TRUEP(scheme_get_param(scheme_config, 
+  decimal_inexact = SCHEME_TRUEP(scheme_get_param(scheme_current_config(), 
 						  MZCONFIG_READ_DECIMAL_INEXACT));
 
   mzstr = SCHEME_CHAR_STR_VAL(argv[0]);
@@ -1961,7 +1961,7 @@ random_seed(int argc, Scheme_Object *argv[])
   if (i < 0)
     scheme_wrong_type("random-seed", "exact integer in [0, 2147483647]", 0, argc, argv);
 
-  sch_srand(i, (Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE));
+  sch_srand(i, (Scheme_Random_State *)scheme_get_param(scheme_current_config(), MZCONFIG_RANDOM_STATE));
 
   return scheme_void;
 }
@@ -1980,7 +1980,7 @@ sch_random(int argc, Scheme_Object *argv[])
   if (i <= 0)
     scheme_wrong_type("random", "exact integer in [1, 2147483647]", 0, argc, argv);
   
-  v = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE)) % i;
+  v = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_current_config(), MZCONFIG_RANDOM_STATE)) % i;
 
   return scheme_make_integer_value(v);
 }

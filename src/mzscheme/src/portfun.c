@@ -645,7 +645,9 @@ scheme_init_port_fun(Scheme_Env *env)
 
 void scheme_init_port_fun_config(void)
 {
-  Scheme_Config *config = scheme_config;
+  Scheme_Config *config;
+
+  config = scheme_current_config();
   scheme_set_param(config, MZCONFIG_LOAD_DIRECTORY, scheme_false);
   scheme_set_param(config, MZCONFIG_USE_COMPILED_KIND, all_symbol);
 
@@ -1984,78 +1986,71 @@ static Scheme_Object *with_call_thunk(void *d)
   return _scheme_apply_multi(SCHEME_CAR((Scheme_Object *)d), 0, NULL);
 }
 
-static void with_set_output_port(void *d)
+static void with_close_output(void *d)
 {
-  Scheme_Config *config = scheme_config;
-
-  SCHEME_CDR(SCHEME_CDR((Scheme_Object *)d)) = scheme_get_param(config, MZCONFIG_OUTPUT_PORT);
-  scheme_set_param(config, MZCONFIG_OUTPUT_PORT, SCHEME_CAR(SCHEME_CDR((Scheme_Object *)d)));
+  scheme_close_output_port(SCHEME_CDR((Scheme_Object *)d));
 }
 
-static void with_unset_output_port(void *d)
-{
-  Scheme_Config *config = scheme_config;
-
-  scheme_set_param(config, MZCONFIG_OUTPUT_PORT, SCHEME_CDR(SCHEME_CDR((Scheme_Object *)d)));
-  scheme_close_output_port(SCHEME_CAR(SCHEME_CDR((Scheme_Object *)d)));
-}
 
 static Scheme_Object *
 with_output_to_file (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *port, *v;
+  Scheme_Cont_Frame_Data cframe;
+  Scheme_Config *config;
 
   scheme_check_proc_arity("with-output-to-file", 0, 1, argc, argv);
 
   port = scheme_do_open_output_file("with-output-to-file", 1, argc, argv, 0);
   
-  v = scheme_dynamic_wind(with_set_output_port,
-			  with_call_thunk,
-			  with_unset_output_port,
-			  NULL,
-			  scheme_make_pair(argv[1], 
-					   scheme_make_pair(port,
-							    scheme_void)));
+  config = scheme_extend_config(scheme_current_config(),
+				MZCONFIG_OUTPUT_PORT, 
+				port);
 
-  scheme_close_output_port(port);
+  scheme_push_continuation_frame(&cframe);
+  scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
+
+  v = scheme_dynamic_wind(NULL,
+			  with_call_thunk,
+			  with_close_output,
+			  NULL,
+			  scheme_make_pair(argv[1], port));
+
+  scheme_pop_continuation_frame(&cframe);
 
   return v;
 }
 
-static void with_set_input_port(void *d)
+static void with_close_input(void *d)
 {
-  Scheme_Config *config = scheme_config;
-
-  SCHEME_CDR(SCHEME_CDR((Scheme_Object *)d)) = scheme_get_param(config, MZCONFIG_INPUT_PORT);
-  scheme_set_param(config, MZCONFIG_INPUT_PORT, SCHEME_CAR(SCHEME_CDR((Scheme_Object *)d)));
-}
-
-static void with_unset_input_port(void *d)
-{
-  Scheme_Config *config = scheme_config;
-
-  scheme_set_param(config, MZCONFIG_INPUT_PORT, SCHEME_CDR(SCHEME_CDR((Scheme_Object *)d)));
-  scheme_close_input_port(SCHEME_CAR(SCHEME_CDR((Scheme_Object *)d)));
+  scheme_close_input_port(SCHEME_CDR((Scheme_Object *)d));
 }
 
 static Scheme_Object *
 with_input_from_file(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *port, *v;
+  Scheme_Cont_Frame_Data cframe;
+  Scheme_Config *config;
 
   scheme_check_proc_arity("with-input-from-file", 0, 1, argc, argv);
 
   port = scheme_do_open_input_file("with-input-from-file", 1, argc, argv);
-  
-  v = scheme_dynamic_wind(with_set_input_port,
-			  with_call_thunk,
-			  with_unset_input_port,
-			  NULL,
-			  scheme_make_pair(argv[1], 
-					   scheme_make_pair(port,
-							    scheme_void)));
 
-  scheme_close_input_port(port);
+  config = scheme_extend_config(scheme_current_config(),
+				MZCONFIG_INPUT_PORT, 
+				port);
+
+  scheme_push_continuation_frame(&cframe);
+  scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
+
+  v = scheme_dynamic_wind(NULL,
+			  with_call_thunk,
+			  with_close_input,
+			  NULL,
+			  scheme_make_pair(argv[1], port));
+
+  scheme_pop_continuation_frame(&cframe);
 
   return v;
 }
@@ -2155,7 +2150,7 @@ static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
   if (argc)
     port = argv[0];
   else
-    port = CURRENT_INPUT_PORT(scheme_current_thread->config);
+    port = CURRENT_INPUT_PORT(scheme_current_config());
   
   if (((Scheme_Input_Port *)port)->read_handler) {
     Scheme_Object *o[1];
@@ -2180,7 +2175,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
   if (argc > 1)
     port = argv[1];
   else
-    port = CURRENT_INPUT_PORT(scheme_current_thread->config);
+    port = CURRENT_INPUT_PORT(scheme_current_config());
 
   if (argc > 2) {
     /* Argument should be a list: (list line col pos) */
@@ -2235,7 +2230,7 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec, in
   if (argc)
     port = argv[0];
   else
-    port = CURRENT_INPUT_PORT(scheme_config);
+    port = CURRENT_INPUT_PORT(scheme_current_config());
 
   if (peek) {
     Scheme_Object *skip;
@@ -2378,7 +2373,7 @@ do_read_line (int as_bytes, const char *who, int argc, Scheme_Object *argv[])
   if (argc)
     port = argv[0];
   else
-    port = CURRENT_INPUT_PORT(scheme_config);
+    port = CURRENT_INPUT_PORT(scheme_current_config());
 
   if ((Scheme_Object *)port == scheme_orig_stdin_port)
     scheme_flush_orig_outputs();
@@ -2538,7 +2533,7 @@ do_general_read_bytes(int as_bytes,
   if (argc > (delta+1))
     port = argv[delta+1];
   else
-    port = CURRENT_INPUT_PORT(scheme_config);
+    port = CURRENT_INPUT_PORT(scheme_current_config());
 
   if ((Scheme_Object *)port == scheme_orig_stdin_port)
     scheme_flush_orig_outputs();
@@ -2691,7 +2686,7 @@ do_write_bytes_avail(int as_bytes, const char *who,
   if (argc > 1)
     port = argv[1];
   else
-    port = CURRENT_OUTPUT_PORT(scheme_config);
+    port = CURRENT_OUTPUT_PORT(scheme_current_config());
 
   if (as_bytes)
     putten = scheme_put_byte_string(who, port, 
@@ -2731,59 +2726,28 @@ write_string(int argc, Scheme_Object *argv[])
   return do_write_bytes_avail(0, "write-string", argc, argv, 0);
 }
 
-typedef struct {
-  MZTAG_IF_REQUIRED
-  int argc;
-  Scheme_Object **argv;
+Scheme_Object *
+scheme_call_enable_break(Scheme_Prim *prim, int argc, Scheme_Object *argv[])
+{
   Scheme_Config *config;
-  Scheme_Object *orig_param_val;
-  Scheme_Prim *k;
-} Breakable;
+  Scheme_Cont_Frame_Data cframe;
+  Scheme_Object *v; 
 
-static void pre_breakable(void *data)
-{
-  Breakable *b = (Breakable *)data;
+  config = scheme_extend_config(scheme_current_config(),
+				MZCONFIG_ENABLE_BREAK, 
+				scheme_true);
 
-  b->orig_param_val = scheme_get_param(b->config, MZCONFIG_ENABLE_BREAK);
-  scheme_set_param(b->config, MZCONFIG_ENABLE_BREAK, scheme_true);
-}
-
-static Scheme_Object *do_breakable(void *data)
-{
-  Breakable *b = (Breakable *)data;
-  Scheme_Prim *k;
+  scheme_push_continuation_frame(&cframe);
+  scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
 
   /* Need to check for a break, in case one was queued and we just enabled it: */
   scheme_check_break_now();
 
-  k = b->k;
-  return k(b->argc, b->argv);
-}
+  v = prim(argc, argv);
 
-static void post_breakable(void *data)
-{
-  Breakable *b = (Breakable *)data;
-  scheme_set_param(b->config, MZCONFIG_ENABLE_BREAK, b->orig_param_val);
-}
+  scheme_pop_continuation_frame(&cframe);
 
-Scheme_Object *
-scheme_call_enable_break(Scheme_Prim *prim, int argc, Scheme_Object *argv[])
-{
-  Breakable *b;
-
-  b = MALLOC_ONE_RT(Breakable);
-#ifdef MZTAG_REQUIRED
-  b->type = scheme_rt_breakable;
-#endif
-  b->argc = argc;
-  b->argv = argv;
-  b->k = prim;
-  b->config = scheme_current_thread->config;
-
-  return scheme_dynamic_wind(pre_breakable, 
-			     do_breakable, 
-			     post_breakable, 
-			     NULL, b);
+  return v;
 }
 
 static Scheme_Object *
@@ -2821,7 +2785,7 @@ char_ready_p (int argc, Scheme_Object *argv[])
   if (argc)
     port = argv[0];
   else
-    port = CURRENT_INPUT_PORT(scheme_config);
+    port = CURRENT_INPUT_PORT(scheme_current_config());
   
   return (scheme_char_ready(port) ? scheme_true : scheme_false);
 }
@@ -2837,7 +2801,7 @@ byte_ready_p (int argc, Scheme_Object *argv[])
   if (argc)
     port = argv[0];
   else
-    port = CURRENT_INPUT_PORT(scheme_config);
+    port = CURRENT_INPUT_PORT(scheme_current_config());
   
   return (scheme_byte_ready(port) ? scheme_true : scheme_false);
 }
@@ -2847,7 +2811,7 @@ static Scheme_Object *sch_default_display_handler(int argc, Scheme_Object *argv[
   if (!SCHEME_OUTPORTP(argv[1]))
     scheme_wrong_type("default-port-display-handler", "output-port", 1, argc, argv);
 
-  scheme_internal_display(argv[0], argv[1], scheme_config);
+  scheme_internal_display(argv[0], argv[1], scheme_current_config());
 
   return scheme_void;
 }
@@ -2857,7 +2821,7 @@ static Scheme_Object *sch_default_write_handler(int argc, Scheme_Object *argv[])
   if (!SCHEME_OUTPORTP(argv[1]))
     scheme_wrong_type("default-port-write-handler", "output-port", 1, argc, argv);
 
-  scheme_internal_write(argv[0], argv[1], scheme_config);
+  scheme_internal_write(argv[0], argv[1], scheme_current_config());
 
   return scheme_void;
 }
@@ -2867,7 +2831,7 @@ static Scheme_Object *sch_default_print_handler(int argc, Scheme_Object *argv[])
   if (!SCHEME_OUTPORTP(argv[1]))
     scheme_wrong_type("default-port-print-handler", "output-port", 1, argc, argv);
 
-  return _scheme_apply(scheme_get_param(scheme_config,
+  return _scheme_apply(scheme_get_param(scheme_current_config(),
 					MZCONFIG_PORT_PRINT_HANDLER),
 		       argc, argv);
 }
@@ -2877,7 +2841,7 @@ static Scheme_Object *sch_default_global_port_print_handler(int argc, Scheme_Obj
   if (!SCHEME_OUTPORTP(argv[1]))
     scheme_wrong_type("default-global-port-print-handler", "output-port", 1, argc, argv);
 
-  scheme_internal_write(argv[0], argv[1], scheme_config);
+  scheme_internal_write(argv[0], argv[1], scheme_current_config());
 
   return scheme_void;
 }
@@ -2887,7 +2851,9 @@ display_write(char *name,
 	      int argc, Scheme_Object *argv[], int escape)
 {
   Scheme_Object *port;
-  Scheme_Config *config = scheme_config;
+  Scheme_Config *config;
+
+  config = scheme_current_config();
 
   if (argc > 1) {
     if (!SCHEME_OUTPORTP(argv[1]))
@@ -2971,7 +2937,7 @@ newline (int argc, Scheme_Object *argv[])
   if (argc)
     port = argv[0];
   else
-    port = CURRENT_OUTPUT_PORT(scheme_config);
+    port = CURRENT_OUTPUT_PORT(scheme_current_config());
   
   (void)scheme_put_byte_string("newline", port, "\n", 0, 1, 0);
 
@@ -2996,7 +2962,7 @@ write_byte (int argc, Scheme_Object *argv[])
       scheme_wrong_type("write-char", "output-port", 1, argc, argv);
     port = argv[1];
   } else
-    port = CURRENT_OUTPUT_PORT(scheme_config);
+    port = CURRENT_OUTPUT_PORT(scheme_current_config());
 
   buffer[0] = v;
 
@@ -3022,7 +2988,7 @@ write_char (int argc, Scheme_Object *argv[])
       scheme_wrong_type("write-char", "output-port", 1, argc, argv);
     port = argv[1];
   } else
-    port = CURRENT_OUTPUT_PORT(scheme_config);
+    port = CURRENT_OUTPUT_PORT(scheme_current_config());
 
   ubuffer[0] = SCHEME_CHAR_VAL(argv[0]);
   len = scheme_utf8_encode_all(ubuffer, 1, buffer);
@@ -3187,56 +3153,11 @@ typedef struct {
   Scheme_Thread *p;
   Scheme_Object *stxsrc;
   Scheme_Object *expected_module;
-  Scheme_Object *reader_params[10]; /* only #ts and #fs; see mzmarksrc.c */
 } LoadHandlerData;
-
-static void swap_reader_params(void *data)
-{
-  LoadHandlerData *lhd = (LoadHandlerData *)data;
-
-  if (SCHEME_SYMBOLP(lhd->expected_module)) {
-    Scheme_Object *reader_params[10];
-
-    reader_params[0] = scheme_get_param(lhd->config, MZCONFIG_CASE_SENS);
-    reader_params[1] = scheme_get_param(lhd->config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS);
-    reader_params[2] = scheme_get_param(lhd->config, MZCONFIG_CURLY_BRACES_ARE_PARENS);
-    reader_params[3] = scheme_get_param(lhd->config, MZCONFIG_CAN_READ_GRAPH);
-    reader_params[4] = scheme_get_param(lhd->config, MZCONFIG_CAN_READ_COMPILED);
-    reader_params[5] = scheme_get_param(lhd->config, MZCONFIG_CAN_READ_BOX);
-    reader_params[6] = scheme_get_param(lhd->config, MZCONFIG_CAN_READ_PIPE_QUOTE);
-    reader_params[7] = scheme_get_param(lhd->config, MZCONFIG_CAN_READ_DOT);
-    reader_params[8] = scheme_get_param(lhd->config, MZCONFIG_CAN_READ_QUASI);
-    reader_params[9] = scheme_get_param(lhd->config, MZCONFIG_READ_DECIMAL_INEXACT);
-
-    scheme_set_param(lhd->config, MZCONFIG_CASE_SENS, lhd->reader_params[0]);
-    scheme_set_param(lhd->config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS, lhd->reader_params[1]);
-    scheme_set_param(lhd->config, MZCONFIG_CURLY_BRACES_ARE_PARENS, lhd->reader_params[2]);
-    scheme_set_param(lhd->config, MZCONFIG_CAN_READ_GRAPH, lhd->reader_params[3]);
-    scheme_set_param(lhd->config, MZCONFIG_CAN_READ_COMPILED, lhd->reader_params[4]);
-    scheme_set_param(lhd->config, MZCONFIG_CAN_READ_BOX, lhd->reader_params[5]);
-    scheme_set_param(lhd->config, MZCONFIG_CAN_READ_PIPE_QUOTE, lhd->reader_params[6]);
-    scheme_set_param(lhd->config, MZCONFIG_CAN_READ_DOT, lhd->reader_params[7]);
-    scheme_set_param(lhd->config, MZCONFIG_CAN_READ_QUASI, lhd->reader_params[8]);
-    scheme_set_param(lhd->config, MZCONFIG_READ_DECIMAL_INEXACT, lhd->reader_params[9]);
-
-    lhd->reader_params[0] = reader_params[0];
-    lhd->reader_params[1] = reader_params[1];
-    lhd->reader_params[2] = reader_params[2];
-    lhd->reader_params[3] = reader_params[3];
-    lhd->reader_params[4] = reader_params[4];
-    lhd->reader_params[5] = reader_params[5];
-    lhd->reader_params[6] = reader_params[6];
-    lhd->reader_params[7] = reader_params[7];
-    lhd->reader_params[8] = reader_params[8];
-    lhd->reader_params[9] = reader_params[9];
-  }
-}
 
 static void post_load_handler(void *data)
 {
   LoadHandlerData *lhd = (LoadHandlerData *)data;
-
-  swap_reader_params(data);
 
   scheme_close_input_port((Scheme_Object *)lhd->port);
 }
@@ -3346,7 +3267,7 @@ static Scheme_Object *do_load_handler(void *data)
 
     /* ... end special support for module loading ... */
 
-    genv = (Scheme_Env *)scheme_get_param(config, MZCONFIG_ENV);
+    genv = scheme_get_env(config);
     if (genv->rename)
       obj = scheme_add_rename(obj, genv->rename);
     if (genv->exp_env && genv->exp_env->rename)
@@ -3387,11 +3308,12 @@ static Scheme_Object *do_load_handler(void *data)
 
 static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *port, *name, *expected_module;
+  Scheme_Object *port, *name, *expected_module, *v;
   int ch;
   Scheme_Thread *p = scheme_current_thread;
-  Scheme_Config *config = p->config;
+  Scheme_Config *config;
   LoadHandlerData *lhd;
+  Scheme_Cont_Frame_Data cframe;
 
   if (!SCHEME_PATH_STRINGP(argv[0]))
     scheme_wrong_type("default-load-handler", SCHEME_PATH_STRING_STR, 0, argc, argv);
@@ -3443,6 +3365,18 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   } else
     scheme_ungetc(ch, port);
 
+  config = scheme_current_config();
+  config = scheme_extend_config(config, MZCONFIG_CASE_SENS, scheme_false);
+  config = scheme_extend_config(config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS, scheme_true);
+  config = scheme_extend_config(config, MZCONFIG_CURLY_BRACES_ARE_PARENS, scheme_true);
+  config = scheme_extend_config(config, MZCONFIG_CAN_READ_GRAPH, scheme_true);
+  config = scheme_extend_config(config, MZCONFIG_CAN_READ_COMPILED, scheme_true);
+  config = scheme_extend_config(config, MZCONFIG_CAN_READ_BOX, scheme_true);
+  config = scheme_extend_config(config, MZCONFIG_CAN_READ_PIPE_QUOTE, scheme_true);
+  config = scheme_extend_config(config, MZCONFIG_CAN_READ_DOT, scheme_true);
+  config = scheme_extend_config(config, MZCONFIG_CAN_READ_QUASI, scheme_true);
+  config = scheme_extend_config(config, MZCONFIG_READ_DECIMAL_INEXACT, scheme_true);
+
   lhd = MALLOC_ONE_RT(LoadHandlerData);
 #ifdef MZTAG_REQUIRED
   lhd->type = scheme_rt_load_handler_data;
@@ -3453,65 +3387,25 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   name = scheme_make_path(((Scheme_Input_Port *)port)->name);
   lhd->stxsrc = name;
   lhd->expected_module = expected_module;
+  
+  scheme_push_continuation_frame(&cframe);
+  scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
 
-  if (SCHEME_SYMBOLP(expected_module)) {
-    /* Init reader params: */
-    lhd->reader_params[0] = scheme_false;  /* MZCONFIG_CASE_SENS */
-    lhd->reader_params[1] = scheme_true;   /* MZCONFIG_SQUARE_BRACKETS_ARE_PARENS */
-    lhd->reader_params[2] = scheme_true;   /* MZCONFIG_CURLY_BRACES_ARE_PARENS */
-    lhd->reader_params[3] = scheme_true;   /* MZCONFIG_CAN_READ_GRAPH */
-    lhd->reader_params[4] = scheme_true;   /* MZCONFIG_CAN_READ_COMPILED */
-    lhd->reader_params[5] = scheme_true;   /* MZCONFIG_CAN_READ_BOX */
-    lhd->reader_params[6] = scheme_true;   /* MZCONFIG_CAN_READ_PIPE_QUOTE */
-    lhd->reader_params[7] = scheme_true;   /* MZCONFIG_CAN_READ_DOT */
-    lhd->reader_params[8] = scheme_true;   /* MZCONFIG_CAN_READ_QUASI */
-    lhd->reader_params[9] = scheme_true;   /* MZCONFIG_READ_DECIMAL_INEXACT */
-  }
+  v = scheme_dynamic_wind(NULL, do_load_handler, post_load_handler,
+			  NULL, (void *)lhd);
 
-  return scheme_dynamic_wind(swap_reader_params, do_load_handler, post_load_handler,
-			     NULL, (void *)lhd);
-}
+  scheme_pop_continuation_frame(&cframe);
 
-typedef struct {
-  MZTAG_IF_REQUIRED
-  int param;
-  Scheme_Object *filename;
-  Scheme_Config *config;
-  Scheme_Object *load_dir, *old_load_dir;
-} LoadData;
-
-static void pre_load(void *data)
-{
-  LoadData *ld = (LoadData *)data;
-
-  scheme_set_param(ld->config, MZCONFIG_LOAD_DIRECTORY, ld->load_dir);  
-}
-
-static void post_load(void *data)
-{
-  LoadData *ld = (LoadData *)data;
-
-  scheme_set_param(ld->config, MZCONFIG_LOAD_DIRECTORY, ld->old_load_dir);
-}
-
-static Scheme_Object *do_load(void *data)
-{  
-  LoadData *ld = (LoadData *)data;
-  Scheme_Object *argv[2];
-
-  argv[0] = ld->filename;
-  argv[1] = scheme_false;
-  return _scheme_apply_multi(scheme_get_param(ld->config, ld->param), 2, argv);
+  return v;
 }
 
 Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[],
 				     char *who, int handler_param)
 {
-  Scheme_Thread *p = scheme_current_thread;
-  Scheme_Config *config = p->config;
-  LoadData *ld;
   const char *filename;
-  Scheme_Object *load_dir;
+  Scheme_Object *load_dir, *a[2], *filename_path, *v;
+  Scheme_Cont_Frame_Data cframe;
+  Scheme_Config *config;
 
   if (!SCHEME_PATH_STRINGP(argv[0]))
     scheme_wrong_type(who, SCHEME_PATH_STRING_STR, 0, argc, argv);
@@ -3524,22 +3418,22 @@ Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[],
   /* Calculate load directory */
   load_dir = scheme_get_file_directory(filename);
 
-  ld = MALLOC_ONE_RT(LoadData);
-#ifdef MZTAG_REQUIRED
-  ld->type = scheme_rt_load_data;
-#endif
-  ld->param = handler_param;
-  {
-    Scheme_Object *ss;
-    ss = scheme_make_sized_path((char *)filename, -1, 0);
-    ld->filename = ss;
-  }
-  ld->config = config;
-  ld->load_dir = load_dir;
-  ld->old_load_dir = scheme_get_param(config, MZCONFIG_LOAD_DIRECTORY);
+  filename_path = scheme_make_sized_path((char *)filename, -1, 0);
 
-  return scheme_dynamic_wind(pre_load, do_load, post_load,
-			     NULL, (void *)ld);
+  config = scheme_extend_config(scheme_current_config(),
+				MZCONFIG_LOAD_DIRECTORY, 
+				load_dir);
+
+  scheme_push_continuation_frame(&cframe);
+  scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
+
+  a[0] = filename_path;
+  a[1] = scheme_false;
+  v = _scheme_apply_multi(scheme_get_param(config, handler_param), 2, a);
+
+  scheme_pop_continuation_frame(&cframe);
+
+  return v;
 }
 
 static Scheme_Object *load(int argc, Scheme_Object *argv[])
@@ -3670,7 +3564,7 @@ flush_output(int argc, Scheme_Object *argv[])
   if (argc) 
     op = argv[0];
   else
-    op = CURRENT_OUTPUT_PORT(scheme_config);
+    op = CURRENT_OUTPUT_PORT(scheme_current_config());
 
   scheme_flush_output(op);
 
@@ -3693,7 +3587,6 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_rt_breakable, mark_breakable);  
   GC_REG_TRAV(scheme_rt_indexed_string, mark_indexed_string);
   GC_REG_TRAV(scheme_rt_load_handler_data, mark_load_handler_data);
-  GC_REG_TRAV(scheme_rt_load_data, mark_load_data);
   GC_REG_TRAV(scheme_rt_user_input, mark_user_input);
   GC_REG_TRAV(scheme_rt_user_output, mark_user_output);
 }

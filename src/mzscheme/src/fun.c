@@ -87,6 +87,7 @@ static Scheme_Object *cc_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cont_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *extract_cc_marks (int argc, Scheme_Object *argv[]);
+static Scheme_Object *extract_one_cc_mark (int argc, Scheme_Object *argv[]);
 static Scheme_Object *void_func (int argc, Scheme_Object *argv[]);
 static Scheme_Object *void_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *dynamic_wind (int argc, Scheme_Object *argv[]);
@@ -238,6 +239,11 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("continuation-mark-set->list",
 			     scheme_make_prim_w_arity(extract_cc_marks,
 						      "continuation-mark-set->list",
+						      2, 3),
+			     env);
+  scheme_add_global_constant("continuation-mark-set-first",
+			     scheme_make_prim_w_arity(extract_one_cc_mark,
+						      "continuation-mark-set-first",
 						      2, 3),
 			     env);
   scheme_add_global_constant("continuation-mark-set?",
@@ -2455,11 +2461,19 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
   Scheme_Object *pr;
   long last_pos;
 
-  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_mark_set_type))
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_mark_set_type)) {
     scheme_wrong_type("continuation-mark-set->list", "continuation-mark-set", 0, argc, argv);
+    return NULL;
+  }
   chain = ((Scheme_Cont_Mark_Set *)argv[0])->chain;
   last_pos = ((Scheme_Cont_Mark_Set *)argv[0])->cmpos + 2;
   key = argv[1];
+
+  if (key == scheme_parameterization_key) {
+    scheme_signal_error("continuation-mark-set->list: secret key leaked!");
+    return NULL;
+  }
+
   if (argc > 2)
     skipval = argv[2];
   else
@@ -2501,6 +2515,46 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
   }
 
   return first;
+}
+
+Scheme_Object *
+scheme_extract_one_cc_mark(Scheme_Object *mark_set, Scheme_Object *key)
+{
+  Scheme_Cont_Mark_Chain *chain;
+
+  chain = ((Scheme_Cont_Mark_Set *)mark_set)->chain;
+  
+  while (chain) {
+    if (chain->key == key)
+      return chain->val;
+    else 
+      chain = chain->next;
+  }
+
+  if (key == scheme_parameterization_key) {
+    return (Scheme_Object *)scheme_current_thread->init_config;
+  }
+  
+  return NULL;
+}
+
+static Scheme_Object *
+extract_one_cc_mark(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *r;
+
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_mark_set_type))
+    scheme_wrong_type("continuation-mark-set-first", "continuation-mark-set", 0, argc, argv);
+  
+  r = scheme_extract_one_cc_mark(argv[0], argv[1]);
+  if (!r) {
+    if (argc > 2)
+      r = argv[2];
+    else
+      r = scheme_false;
+  }
+
+  return r;
 }
 
 /*========================================================================*/
@@ -2562,7 +2616,7 @@ static Scheme_Object *dynamic_wind(int c, Scheme_Object *argv[])
   /* We may have just re-activated breaking: */
   {
     Scheme_Thread *p = scheme_current_thread;
-    if (p->external_break && scheme_can_break(p, p->config)) {
+    if (p->external_break && scheme_can_break(p)) {
       Scheme_Object **save_values;
       int save_count;
 
@@ -3131,9 +3185,12 @@ scheme_default_print_handler(int argc, Scheme_Object *argv[])
   Scheme_Object *obj = argv[0];
 
   if (!SAME_OBJ(obj, scheme_void)) {
-    Scheme_Config *config = scheme_config;
-    Scheme_Object *port = scheme_get_param(config, MZCONFIG_OUTPUT_PORT);
+    Scheme_Config *config;
+    Scheme_Object *port;
     Scheme_Object *argv[2];
+
+    config = scheme_current_config();
+    port = scheme_get_param(config, MZCONFIG_OUTPUT_PORT);
 
     argv[0] = obj;
     argv[1] = port;
@@ -3147,10 +3204,14 @@ scheme_default_print_handler(int argc, Scheme_Object *argv[])
 Scheme_Object *
 scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
 {
-  Scheme_Config *config = scheme_config;
-  Scheme_Object *port = scheme_get_param(config, MZCONFIG_OUTPUT_PORT);
-  Scheme_Object *inport = scheme_get_param(config, MZCONFIG_INPUT_PORT);
+  Scheme_Config *config;
+  Scheme_Object *port;
+  Scheme_Object *inport;
   char *name;
+
+  config = scheme_current_config();
+  port = scheme_get_param(config, MZCONFIG_OUTPUT_PORT);
+  inport = scheme_get_param(config, MZCONFIG_INPUT_PORT);
 
   scheme_write_byte_string("> ", 2, port);
   scheme_flush_output(port);

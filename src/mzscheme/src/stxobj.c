@@ -2889,8 +2889,9 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       a = (Scheme_Object *)mrn;
     } else if (SAME_OBJ(a, scheme_true)) {
       /* current env rename */
-      Scheme_Env *env = (Scheme_Env *)scheme_get_param(scheme_current_thread->config, MZCONFIG_ENV);
-      
+      Scheme_Env *env;
+
+      env = scheme_get_env(NULL);
       if (!env->rename) {
 	Scheme_Object *rn;
 	rn = scheme_make_module_rename(0, 1, NULL);
@@ -2899,7 +2900,8 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       a = env->rename;
     } else if (SCHEME_FALSEP(a)) {
       /* current exp-env rename */
-      Scheme_Env *env = (Scheme_Env *)scheme_get_param(scheme_current_thread->config, MZCONFIG_ENV);
+      Scheme_Env *env;
+      env = scheme_get_env(NULL);
       scheme_prepare_exp_env(env);
       if (!env->exp_env->rename) {
 	Scheme_Object *rn;
@@ -3719,7 +3721,7 @@ static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **ar
 	int pos;
 	
 	m = scheme_module_resolve(m);
-	pos = scheme_module_export_position(m, scheme_get_env(scheme_config), a);
+	pos = scheme_module_export_position(m, scheme_get_env(NULL), a);
 	if (pos < 0)
 	  return scheme_false;
 	else

@@ -179,6 +179,8 @@ static Scheme_Custodian *last_custodian;
 
 static Scheme_Object *scheduled_kills;
 
+Scheme_Object *scheme_parameterization_key;
+
 long scheme_total_gc_time;
 static long start_this_gc_time;
 extern MZ_DLLIMPORT void (*GC_collect_start_callback)(void);
@@ -269,6 +271,12 @@ static Scheme_Object *namespace_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *parameter_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *parameter_procedure_eq(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_parameter(int argc, Scheme_Object *args[]);
+static Scheme_Object *extend_parameterization(int argc, Scheme_Object *args[]);
+
+static Scheme_Object *make_thread_cell(int argc, Scheme_Object *args[]);
+static Scheme_Object *thread_cell_p(int argc, Scheme_Object *args[]);
+static Scheme_Object *thread_cell_get(int argc, Scheme_Object *args[]);
+static Scheme_Object *thread_cell_set(int argc, Scheme_Object *args[]);
 
 static Scheme_Object *make_security_guard(int argc, Scheme_Object *argv[]);
 static Scheme_Object *security_guard_p(int argc, Scheme_Object *argv[]);
@@ -287,7 +295,9 @@ static Scheme_Object *will_executor_try(int argc, Scheme_Object *args[]);
 static Scheme_Object *will_executor_go(int argc, Scheme_Object *args[]);
 static Scheme_Object *will_executor_sema(Scheme_Object *w, int *repost);
 
-static Scheme_Config *make_initial_config(void);
+static void make_initial_config(Scheme_Thread *p);
+static Scheme_Thread_Cell_Table *inherit_cells(Scheme_Thread_Cell_Table *cells);
+
 static int do_kill_thread(Scheme_Thread *p);
 static void suspend_thread(Scheme_Thread *p);
 static void wait_until_suspend_ok();
@@ -309,7 +319,7 @@ typedef struct {
   MZTAG_IF_REQUIRED
   Scheme_Object *key;
   Scheme_Object *guard;
-  Scheme_Object *defval;
+  Scheme_Object *defcell;
 } ParamData;
 
 enum {
@@ -557,6 +567,28 @@ void scheme_init_thread(Scheme_Env *env)
 						      2, 2), 
 			     env);
 
+  scheme_add_global_constant("thread-cell?", 
+			     scheme_make_prim_w_arity(thread_cell_p,
+						      "thread-cell?", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("make-thread-cell", 
+			     scheme_make_prim_w_arity(make_thread_cell,
+						      "make-thread-cell", 
+						      1, 2), 
+			     env);
+  scheme_add_global_constant("thread-cell-ref", 
+			     scheme_make_prim_w_arity(thread_cell_get,
+						      "thread-cell-ref", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("set-thread-cell!", 
+			     scheme_make_prim_w_arity(thread_cell_set,
+						      "thread-cell-set!", 
+						      2, 2), 
+			     env);
+
+  
   scheme_add_global_constant("make-will-executor", 
 			     scheme_make_prim_w_arity(make_will_executor,
 						      "make-will-executor", 
@@ -644,7 +676,6 @@ void scheme_init_memtrace(Scheme_Env *env)
   Scheme_Object *v;
   Scheme_Env *newenv;
 
-
   v = scheme_intern_symbol("#%memtrace");
   newenv = scheme_primitive_module(v, env);
     
@@ -657,6 +688,29 @@ void scheme_init_memtrace(Scheme_Env *env)
   v = scheme_make_prim_w_arity(union_tracking_val, 
 			       "unioned-memtrace-tracking-value", 1, 1);
   scheme_add_global("unioned-memtrace-tracking-value", v, newenv);
+  scheme_finish_primitive_module(newenv);
+}
+
+void scheme_init_parameterization(Scheme_Env *env)
+{
+  Scheme_Object *v;
+  Scheme_Env *newenv;
+
+  REGISTER_SO(scheme_parameterization_key);
+  scheme_parameterization_key = scheme_make_symbol("paramz");
+  
+  v = scheme_intern_symbol("#%paramz");
+  newenv = scheme_primitive_module(v, env);
+  
+  scheme_add_global_constant("parameterization-key", 
+			     scheme_parameterization_key,
+			     newenv);
+  scheme_add_global_constant("extend-parameterization", 
+			     scheme_make_prim_w_arity(extend_parameterization,
+						      "extend-parameterization", 
+						      1, -1), 
+			     newenv);
+
   scheme_finish_primitive_module(newenv);
 }
 
@@ -1073,7 +1127,7 @@ static void managed_object_gone(void *o, void *mr)
 void scheme_custodian_check_available(Scheme_Custodian *m, const char *who, const char *what)
 {
   if (!m)
-    m = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+    m = (Scheme_Custodian *)scheme_get_param(scheme_current_config(), MZCONFIG_CUSTODIAN);
   
   if (m->shut_down) {
     scheme_arg_mismatch(who, "the custodian has been shut down: ",
@@ -1093,7 +1147,7 @@ Scheme_Custodian_Reference *scheme_add_managed(Scheme_Custodian *m, Scheme_Objec
   Scheme_Custodian_Reference *mr;
 
   if (!m)
-    m = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+    m = (Scheme_Custodian *)scheme_get_param(scheme_current_config(), MZCONFIG_CUSTODIAN);
   
   if (m->shut_down) {
     /* The custodian was shut down in the time that it took
@@ -1337,7 +1391,7 @@ static Scheme_Object *make_custodian(int argc, Scheme_Object *argv[])
       scheme_wrong_type("make-custodian", "custodian", 0, argc, argv);
     m = (Scheme_Custodian *)argv[0];
   } else
-    m = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+    m = (Scheme_Custodian *)scheme_get_param(scheme_current_config(), MZCONFIG_CUSTODIAN);
 
   if (m->shut_down)
     scheme_arg_mismatch("make-custodian", 
@@ -1530,7 +1584,7 @@ static void check_current_custodian_allows(const char *who, Scheme_Thread *p)
   Scheme_Custodian *m, *current;
 
   /* Check management of the thread: */
-  current = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+  current = (Scheme_Custodian *)scheme_get_param(scheme_current_config(), MZCONFIG_CUSTODIAN);
 
   for (l = p->extra_mrefs; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     mref = (Scheme_Custodian_Reference *)SCHEME_CAR(l);
@@ -1599,7 +1653,7 @@ static Scheme_Object *make_thread_set(int argc, Scheme_Object *argv[])
       scheme_wrong_type("make-thread-group", "thread-group", 0, argc, argv);
     parent = (Scheme_Thread_Set *)argv[0];
   } else
-    parent = (Scheme_Thread_Set *)scheme_get_param(scheme_config, MZCONFIG_THREAD_SET);
+    parent = (Scheme_Thread_Set *)scheme_get_param(scheme_current_config(), MZCONFIG_THREAD_SET);
 
   return (Scheme_Object *)create_thread_set(parent);
 }
@@ -1705,7 +1759,9 @@ static void unschedule_in_set(Scheme_Object *s, Scheme_Thread_Set *t_set)
 /*                      thread record creation                            */
 /*========================================================================*/
 
-static Scheme_Thread *make_thread(Scheme_Config *config, Scheme_Custodian *mgr)
+static Scheme_Thread *make_thread(Scheme_Config *config, 
+				  Scheme_Thread_Cell_Table *cells,
+				  Scheme_Custodian *mgr)
 {
   Scheme_Thread *process;
   int prefix = 0;
@@ -1759,11 +1815,19 @@ static Scheme_Thread *make_thread(Scheme_Config *config, Scheme_Custodian *mgr)
 
   process->engine_weight = 10000;
 
-  if (!config) {    
-    config = make_initial_config();
-    process->config = config;
-  } else
-    process->config = config;
+  process->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
+  process->cont_mark_stack = 0;
+  process->cont_mark_stack_segments = NULL;
+  process->cont_mark_seg_count = 0;
+
+  if (!config) {
+    make_initial_config(process);
+    config = process->init_config;
+  } else {
+    process->init_config = config;
+    cells = inherit_cells(cells);
+    process->cell_values = cells;
+  }
 
   if (!mgr)
     mgr = (Scheme_Custodian *)scheme_get_param(config, MZCONFIG_CUSTODIAN);
@@ -1832,11 +1896,6 @@ static Scheme_Thread *make_thread(Scheme_Config *config, Scheme_Custodian *mgr)
   process->runstack = process->runstack_start + INIT_SCHEME_STACK_SIZE;
   process->runstack_saved = NULL;
 
-  process->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
-  process->cont_mark_stack = 0;
-  process->cont_mark_stack_segments = NULL;
-  process->cont_mark_seg_count = 0;
-
 #ifdef RUNSTACK_IS_GLOBAL
   if (!prefix) {
 # ifndef MZ_PRECISE_GC
@@ -1890,7 +1949,7 @@ static Scheme_Thread *make_thread(Scheme_Config *config, Scheme_Custodian *mgr)
 Scheme_Thread *scheme_make_thread()
 {
   /* Makes the initial process. */
-  return make_thread(NULL, NULL);
+  return make_thread(NULL, NULL, NULL);
 }
 
 static void scheme_check_tail_buffer_size(Scheme_Thread *p)
@@ -2097,7 +2156,7 @@ static void thread_is_dead(Scheme_Thread *r)
   r->list_stack = NULL;
 
   r->dw = NULL;
-  r->config = NULL;
+  r->init_config = NULL;
   r->cont_mark_stack_segments = NULL;
   r->overflow = NULL;
 
@@ -2240,6 +2299,7 @@ static void start_child(Scheme_Thread * volatile child,
 static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
 				      void *child_start, 
 				      Scheme_Config *config,
+				      Scheme_Thread_Cell_Table *cells,
 				      Scheme_Custodian *mgr,
 				      int normal_kill)
 {
@@ -2250,7 +2310,7 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   
   scheme_ensure_stack_start(scheme_current_thread, child_start);
   
-  child = make_thread(config, mgr);
+  child = make_thread(config, cells, mgr);
 
   /* Use child_thunk name, if any, for the thread name: */
   {
@@ -2272,8 +2332,8 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
     child->suspend_to_kill = 1;
 
   scheme_init_error_escape_proc(child);
-  scheme_set_param(child->config, MZCONFIG_EXN_HANDLER,
-		   scheme_get_param(child->config, MZCONFIG_INIT_EXN_HANDLER));
+  scheme_set_param(child->init_config, MZCONFIG_EXN_HANDLER,
+		   scheme_get_param(child->init_config, MZCONFIG_INIT_EXN_HANDLER));
 
   child->stack_start = child_start;
   
@@ -2294,31 +2354,25 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   return (Scheme_Object *)child;
 }
 
-Scheme_Object *scheme_thread(Scheme_Object *thunk, Scheme_Config *config)
+Scheme_Object *scheme_thread(Scheme_Object *thunk)
 {
-  return scheme_thread_w_custodian(thunk, config, NULL);
+  return scheme_thread_w_details(thunk, NULL, NULL, NULL, 0);
 }
 
 static Scheme_Object *sch_thread(int argc, Scheme_Object *args[])
 {
-  Scheme_Config *c;
-
   scheme_check_proc_arity("thread", 0, 0, argc, args);
   scheme_custodian_check_available(NULL, "thread", "thread");
 
-  c = (Scheme_Config *)scheme_branch_config();
-  return scheme_thread(args[0], c);
+  return scheme_thread(args[0]);
 }
 
 static Scheme_Object *sch_thread_nokill(int argc, Scheme_Object *args[])
 {
-  Scheme_Config *c;
-
   scheme_check_proc_arity("thread/suspend-to-kill", 0, 0, argc, args);
   scheme_custodian_check_available(NULL, "thread/suspend-to-kill", "thread");
 
-  c = (Scheme_Config *)scheme_branch_config();
-  return scheme_thread_w_custodian_killkind(args[0], c, NULL, 0);
+  return scheme_thread_w_details(args[0], NULL, NULL, NULL, 1);
 }
 
 static Scheme_Object *sch_current(int argc, Scheme_Object *args[])
@@ -2433,7 +2487,8 @@ static Scheme_Object *thread_k(void)
   Scheme_Object *thunk, *result;
   Scheme_Config *config;
   Scheme_Custodian *mgr;
-  int normal_kill = p->ku.k.i1;
+  Scheme_Thread_Cell_Table *cells;
+  int suspend_to_kill = p->ku.k.i1;
 #ifndef MZ_PRECISE_GC
   long dummy;
 #endif
@@ -2441,10 +2496,12 @@ static Scheme_Object *thread_k(void)
   thunk = (Scheme_Object *)p->ku.k.p1;
   config = (Scheme_Config *)p->ku.k.p2;
   mgr = (Scheme_Custodian *)p->ku.k.p3;
+  cells = (Scheme_Thread_Cell_Table *)p->ku.k.p4;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
+  p->ku.k.p4 = NULL;
   
   result = make_subprocess(thunk,
 #ifdef MZ_PRECISE_GC
@@ -2452,7 +2509,7 @@ static Scheme_Object *thread_k(void)
 #else
 			   (void *)&dummy, 
 #endif
-			   config, mgr, normal_kill);
+			   config, cells, mgr, !suspend_to_kill);
 
   /* Don't get rid of `result'; it keeps the
      Precise GC xformer from "optimizing" away
@@ -2462,8 +2519,11 @@ static Scheme_Object *thread_k(void)
 
 #endif /* DO_STACK_CHECK */
 
-Scheme_Object *scheme_thread_w_custodian_killkind(Scheme_Object *thunk, Scheme_Config *config, 
-						  Scheme_Custodian *mgr, int normal_kill)
+Scheme_Object *scheme_thread_w_details(Scheme_Object *thunk, 
+				       Scheme_Config *config, 
+				       Scheme_Thread_Cell_Table *cells,
+				       Scheme_Custodian *mgr, 
+				       int suspend_to_kill)
 {
   Scheme_Object *result;
 #ifndef MZ_PRECISE_GC
@@ -2483,7 +2543,8 @@ Scheme_Object *scheme_thread_w_custodian_killkind(Scheme_Object *thunk, Scheme_C
     p->ku.k.p1 = thunk;
     p->ku.k.p2 = config;
     p->ku.k.p3 = mgr;
-    p->ku.k.i1 = normal_kill;
+    p->ku.k.p4 = cells;
+    p->ku.k.i1 = suspend_to_kill;
 
     return scheme_handle_stack_overflow(thread_k);
   }
@@ -2495,18 +2556,12 @@ Scheme_Object *scheme_thread_w_custodian_killkind(Scheme_Object *thunk, Scheme_C
 #else
 			   (void *)&dummy, 
 #endif
-			   config, mgr, normal_kill);
+			   config, cells, mgr, !suspend_to_kill);
 
   /* Don't get rid of `result'; it keeps the
      Precise GC xformer from "optimizing" away
      the __gc_var_stack__ frame. */
   return result;
-}
-
-Scheme_Object *scheme_thread_w_custodian(Scheme_Object *thunk, Scheme_Config *config, 
-				       Scheme_Custodian *mgr)
-{
-  return scheme_thread_w_custodian_killkind(thunk, config, mgr, 1);
 }
 
 /**************************************************************************/
@@ -2542,7 +2597,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
       return NULL;
     }
   } else
-    mgr = (Scheme_Custodian *)scheme_get_param(p->config, MZCONFIG_CUSTODIAN);
+    mgr = (Scheme_Custodian *)scheme_get_param(scheme_current_config(), MZCONFIG_CUSTODIAN);
 
   scheme_custodian_check_available(mgr, "call-in-nested-thread", "thread");
 
@@ -2599,9 +2654,14 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   schedule_in_set((Scheme_Object *)np, np->t_set_parent);
 
   {
-    Scheme_Config *nconfig;
-    nconfig = (Scheme_Config *)scheme_make_config(p->config);
-    np->config = nconfig;
+    Scheme_Thread_Cell_Table *cells;
+    cells = inherit_cells(p->cell_values);
+    np->cell_values = cells;
+  }
+  {
+    Scheme_Config *config;
+    config = scheme_current_config();
+    np->init_config = config;
   }
   np->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
   /* others 0ed already by allocation */
@@ -2614,7 +2674,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   }
 
   scheme_init_error_escape_proc(np);
-  scheme_set_param(np->config, MZCONFIG_EXN_HANDLER, nested_exn_handler);
+  scheme_set_param(np->init_config, MZCONFIG_EXN_HANDLER, nested_exn_handler);
 
   /* zero out anything we need now, because nestee disables
      GC cleaning for this thread: */
@@ -2911,17 +2971,20 @@ static void init_schedule_info(Scheme_Schedule_Info *sinfo, int false_pos_ok,
   sinfo->sleep_end = sleep_end;
 }
 
-int scheme_can_break(Scheme_Thread *p, Scheme_Config *config)
+int scheme_can_break(Scheme_Thread *p)
 {
-  return (!p->suspend_break
-	  && SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_ENABLE_BREAK))
-	  && !p->exn_raised);
+  if (!p->suspend_break && !p->exn_raised) {
+    Scheme_Config *config;
+    config = scheme_current_config();
+    return SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_ENABLE_BREAK));
+  }
+  return 0;
 }
 
 void scheme_check_break_now(void) {
   Scheme_Thread *p = scheme_current_thread;
 
-  if (p->external_break && scheme_can_break(p, p->config)) {
+  if (p->external_break && scheme_can_break(p)) {
     scheme_thread_block_w_thread(0.0, p);
     p->ran_some = 1;
   }
@@ -3037,7 +3100,7 @@ void scheme_break_thread(Scheme_Thread *p)
   p->external_break = 1;
 
   if (p == scheme_current_thread) {
-    if (scheme_can_break(p, p->config))
+    if (scheme_can_break(p))
       scheme_fuel_counter = 0;
   }
   scheme_weak_resume_thread(p);
@@ -3056,7 +3119,6 @@ void scheme_thread_block(float sleep_time)
   Scheme_Thread *next, *p = scheme_current_thread;
   Scheme_Object *next_in_set;
   Scheme_Thread_Set *t_set;
-  Scheme_Config *config = p->config;
   int dummy;
 
   if (p->running & MZTHREAD_KILLED) {
@@ -3092,7 +3154,7 @@ void scheme_thread_block(float sleep_time)
   if (!p->external_break && !p->next && scheme_check_for_break && scheme_check_for_break())
     p->external_break = 1;
 
-  if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
+  if (p->external_break && !p->suspend_break && scheme_can_break(p)) {
     raise_break(p);
     goto start_sleep_check;
   }
@@ -3164,7 +3226,7 @@ void scheme_thread_block(float sleep_time)
 	} else
 	  remove_thread(next);
 	break;
-      } else if (next->external_break && scheme_can_break(next, next->config)) {
+      } else if (next->external_break && scheme_can_break(next)) {
 	break;
       } else {
 	if (next->block_descriptor == GENERIC_BLOCKED) {
@@ -3310,7 +3372,7 @@ void scheme_thread_block(float sleep_time)
   }
 
   /* Check for external break again after swap or sleep */
-  if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
+  if (p->external_break && !p->suspend_break && scheme_can_break(p)) {
     raise_break(p);
   }
   
@@ -4264,7 +4326,9 @@ static Waiting *make_waiting(Waitable_Set *waitable_set, float timeout, double s
     waiting->sleep_end = 0.0;
 
   if (waitable_set->argc > 1) {
-    pos = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_SCHEDULER_RANDOM_STATE));
+    Scheme_Config *config;
+    config = scheme_current_config();
+    pos = scheme_rand((Scheme_Random_State *)scheme_get_param(config, MZCONFIG_SCHEDULER_RANDOM_STATE));
     waiting->start_pos = (pos % waitable_set->argc);
   }
 
@@ -4486,7 +4550,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 	if (!r_sinfo.potentially_false_positive) {
 	  waiting->result = i + 1;
 	  if (waiting->disable_break)
-	    scheme_set_param(waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	    scheme_set_param(waiting->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
 	  if (waiting->reposts && waiting->reposts[i])
 	    scheme_post_sema(o);
 	  result = 1;
@@ -4726,8 +4790,11 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
   if (timeout < 0.0)
     timeout = 0.0; /* means "no timeout" to block_until */
 
-  if (with_break)
-    waiting->disable_break = scheme_current_thread;
+  if (with_break) {
+    Scheme_Config *config;
+    config = scheme_current_config();
+    waiting->disable_break = config;
+  }
 
   BEGIN_ESCAPEABLE(post_waiting_nacks, waiting);
   scheme_block_until((Scheme_Ready_Fun)waiting_ready, waiting_needs_wakeup, 
@@ -4801,7 +4868,7 @@ Scheme_Object *scheme_object_wait_multiple_enable_break(int argc, Scheme_Object 
   /* Since we do special work to disable breaks after a sucessful wait,
      make sure that the work is necessary, and that it won't interfere
      with normal breakpoint checking: */
-  v = scheme_get_param(scheme_config, MZCONFIG_ENABLE_BREAK);
+  v = scheme_get_param(scheme_current_config(), MZCONFIG_ENABLE_BREAK);
 
   if (SCHEME_FALSEP(v))
     return scheme_call_enable_break(do_object_wait_multiple_break, argc, argv);
@@ -4815,27 +4882,280 @@ static Scheme_Object *waitables_to_waitable(int argc, Scheme_Object *argv[])
 }
 
 /*========================================================================*/
+/*                             thread cells                               */
+/*========================================================================*/
+
+Scheme_Object *scheme_make_thread_cell(Scheme_Object *def_val, int inherited)
+{
+  Scheme_Object *c;
+
+  c = MALLOC_ONE(Scheme_Object);
+  c->type = scheme_thread_cell_type;
+  SCHEME_IPTR_VAL(c) = def_val;
+  SCHEME_PINT_VAL(c) = inherited;
+
+  return c;
+}
+
+Scheme_Object *scheme_thread_cell_get(Scheme_Object *cell)
+{
+  Scheme_Object *v;
+
+  v = scheme_lookup_in_table(scheme_current_thread->cell_values, (const char *)cell);
+  if (v)
+    return v;
+  else
+    return SCHEME_IPTR_VAL(cell);
+}
+
+void scheme_thread_cell_set(Scheme_Object *cell, Scheme_Object *v)
+{
+  scheme_add_to_table(scheme_current_thread->cell_values, 
+		      (const char *)cell, (void *)v, 
+		      0);
+}
+
+static Scheme_Thread_Cell_Table *inherit_cells(Scheme_Thread_Cell_Table *cells)
+{
+  Scheme_Bucket_Table *t;
+  Scheme_Bucket *bucket;
+  Scheme_Object *cell, *v;
+  int i;
+  
+  t = scheme_make_bucket_table(20, SCHEME_hash_weak_ptr);
+  
+  for (i = cells->size; i--; ) {
+    bucket = cells->buckets[i];
+    if (bucket && bucket->val && bucket->key) {
+      cell = (Scheme_Object *)HT_EXTRACT_WEAK(bucket->key);
+      if (cell && SCHEME_PINT_VAL(cell)) {
+	v = (Scheme_Object *)bucket->val;
+	scheme_add_to_table(t, (const char *)cell, v, 0);
+      }
+    }
+  }
+
+  return t;
+}
+
+static Scheme_Object *make_thread_cell(int argc, Scheme_Object *argv[])
+{
+  return scheme_make_thread_cell(argv[0], argc && SCHEME_TRUEP(argv[1]));
+}
+
+#define SCHEME_THREAD_CELLP(x) (SAME_TYPE(SCHEME_TYPE(x), scheme_thread_cell_type))
+
+static Scheme_Object *thread_cell_p(int argc, Scheme_Object *argv[])
+{
+  return (SCHEME_THREAD_CELLP(argv[0])
+	  ? scheme_true
+	  : scheme_false);
+}
+
+static Scheme_Object *thread_cell_get(int argc, Scheme_Object *argv[])
+{
+  if (!SCHEME_THREAD_CELLP(argv[0]))
+    scheme_wrong_type("thread-cell-ref", "thread cell", 0, argc, argv);
+  return scheme_thread_cell_get(argv[0]);
+}
+
+static Scheme_Object *thread_cell_set(int argc, Scheme_Object *argv[])
+{
+  if (!SCHEME_THREAD_CELLP(argv[0]))
+    scheme_wrong_type("thread-cell-set!", "thread cell", 0, argc, argv);
+  scheme_thread_cell_set(argv[0], argv[1]);
+  return scheme_void;
+}
+
+
+/*========================================================================*/
 /*                              parameters                                */
 /*========================================================================*/
 
-Scheme_Object *scheme_branch_config(void)
+static int max_configs = __MZCONFIG_BUILTIN_COUNT__;
+static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[]);
+
+Scheme_Config *scheme_current_config()
 {
-  return scheme_make_config(scheme_config);
+  return (Scheme_Config *)scheme_extract_one_cc_mark(scheme_current_continuation_marks(), 
+						     scheme_parameterization_key);
+}
+
+static Scheme_Config *do_extend_config(Scheme_Config *c, Scheme_Object *key, Scheme_Object *cell)
+{
+  Scheme_Config *naya;
+
+  /* In principle, the key+cell link should be weak, but it's
+     difficult to imagine a parameter being GC'ed while an active
+     `parameterize' is still on the stack (or, at least, difficult to
+     imagine that it matters). */
+
+  naya = MALLOC_ONE_TAGGED(Scheme_Config);
+  naya->type = scheme_config_type;
+  naya->key = key;
+  naya->cell = cell;
+  naya->next = c;
+
+  return naya;
+}
+
+Scheme_Config *scheme_extend_config(Scheme_Config *c, int pos, Scheme_Object *init_val)
+{
+  return do_extend_config(c, scheme_make_integer(pos), scheme_make_thread_cell(init_val, 1));
+}
+
+#ifdef MZTAG_REQUIRED
+# define IS_VECTOR(c) SCHEME_VECTORP((c)->content)
+#else
+# define IS_VECTOR(c) (!(c)->is_param)
+#endif
+
+Scheme_Object *find_param_cell(Scheme_Config *c, Scheme_Object *k)
+{
+  while (1) {
+    if (SAME_OBJ(c->key, k))
+      return c->cell;
+    else if (!c->next) {
+      /* Eventually bottoms out here */
+      Scheme_Parameterization *p = (Scheme_Parameterization *)c->cell;
+      if (SCHEME_INTP(k))
+	return p->prims[SCHEME_INT_VAL(k)];
+      else {
+	if (p->extensions)
+	  return scheme_lookup_in_table(p->extensions, (const char *)k);
+	else
+	  return NULL;
+      }
+    } else
+      c = c->next;
+  }
+}
+
+Scheme_Object *scheme_get_param(Scheme_Config *c, int pos)
+{
+  return scheme_thread_cell_get(find_param_cell(c, scheme_make_integer(pos)));
+}
+
+void scheme_set_param(Scheme_Config *c, int pos, Scheme_Object *o)
+{
+  scheme_thread_cell_set(find_param_cell(c, scheme_make_integer(pos)), o);
+}
+
+Scheme_Parameterization *flatten_config(Scheme_Config *orig_c)
+{
+  int pos, i;
+  Scheme_Parameterization *paramz, *paramz2;
+  Scheme_Object *key;
+  Scheme_Bucket *b, *b2;
+  Scheme_Config *c;
+
+  if (orig_c->next) {
+    paramz = (Scheme_Parameterization *)scheme_malloc_tagged(sizeof(Scheme_Parameterization) + 
+							     (max_configs - 1) * sizeof(Scheme_Object*));
+    
+    c = orig_c;
+    while (1) {
+      if (c->key) {
+	if (SCHEME_INTP(c->key)) {
+	  pos = SCHEME_INT_VAL(c->key);
+	  if (!paramz->prims[pos])
+	    paramz->prims[pos] = c->cell;
+	} else {
+	  if (!paramz->extensions) {
+	    Scheme_Bucket_Table *t;
+	    t = scheme_make_bucket_table(20, SCHEME_hash_weak_ptr);
+	    paramz->extensions = t;
+	  }
+	  b = scheme_bucket_from_table(paramz->extensions, (const char *)c->key);
+	  if (!b->val)
+	    b->val = c->cell;
+	}
+	c = c->next;
+      } else {
+	paramz2 = (Scheme_Parameterization *)c->cell;
+
+	for (i = 0; i < max_configs; i++) {
+	  if (!paramz->prims[i])
+	    paramz->prims[i] = paramz2->prims[i];
+	}
+
+	if (paramz2->extensions) {
+	  if (!paramz->extensions) {
+	    Scheme_Bucket_Table *t;
+	    t = scheme_make_bucket_table(20, SCHEME_hash_weak_ptr);
+	    paramz->extensions = t;
+	  }
+	  
+	  for (i = paramz2->extensions->size; i--; ) {
+	    b = paramz2->extensions->buckets[i];
+	    if (b && b->val && b->key) {
+	      key = (Scheme_Object *)HT_EXTRACT_WEAK(b->key);
+	      if (key) {
+		b2 = scheme_bucket_from_table(paramz->extensions, (const char *)key);
+		if (!b2->val)
+		  b2->val = b->val;
+	      }
+	    }
+	  }
+	}
+
+	break;
+      }
+    }
+
+    orig_c->cell = (Scheme_Object *)paramz;
+    orig_c->key = NULL;
+    orig_c->next = NULL;
+  }
+    
+  return (Scheme_Parameterization *)orig_c->cell;
+}
+
+#define SCHEME_PARAMETERP(v) ((SCHEME_PRIMP(v) || SCHEME_CLSD_PRIMP(v)) \
+                              && (((Scheme_Primitive_Proc *)v)->flags & SCHEME_PRIM_IS_PARAMETER))
+
+static Scheme_Object *extend_parameterization(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *key, *a[2];
+  Scheme_Config *c;
+  int i;
+
+  if (SCHEME_CONFIGP(argv[0]) && (argc & 1)) {
+    c = (Scheme_Config *)argv[0];
+    for (i = 1; i < argc; i += 2) {
+      if (!SCHEME_PARAMETERP(argv[i])) {
+	scheme_wrong_type("parameterize", "parameter", i, argc, argv);
+	return NULL;
+      }
+      a[0] = argv[i + 1];
+      a[1] = scheme_make_thread_cell(scheme_false, 1);
+      if (SCHEME_PRIMP(argv[i])) {
+	Scheme_Prim *proc;
+	proc = ((Scheme_Primitive_Proc *)argv[i])->prim_val;
+	key = proc(2, a); /* leads to scheme_param_config to set the cell in a[1] */
+      } else {
+	/* sets the cell in a[1] */
+	key = do_param(((Scheme_Closed_Primitive_Proc *)argv[i])->data, 2, a);
+      }
+      c = do_extend_config(c, key, a[1]);
+    }
+  }
+
+  return (Scheme_Object *)c;
 }
 
 static Scheme_Object *parameter_p(int argc, Scheme_Object **argv)
 {
   Scheme_Object *v = argv[0];
 
-  return (((SCHEME_PRIMP(v) || SCHEME_CLSD_PRIMP(v))
-	   && (((Scheme_Primitive_Proc *)v)->flags & SCHEME_PRIM_IS_PARAMETER))
+  return (SCHEME_PARAMETERP(v)
 	  ? scheme_true
 	  : scheme_false);
 }
 
 static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *guard, **argv2, *kv;
+  Scheme_Object *guard, **argv2, *pos[2];
 
   if (argc && argv[0]) {
     guard = ((ParamData *)data)->guard;
@@ -4843,26 +5163,37 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
       Scheme_Object *v;
       
       v = scheme_apply(guard, 1, argv);
+
+      if (argc == 2) {
+	/* Special hook for parameterize: */
+	SCHEME_IPTR_VAL(argv[1]) = v;
+	return ((ParamData *)data)->key;
+      }
+
       argv2 = MALLOC_N(Scheme_Object *, argc);
       memcpy(argv2, argv, argc * sizeof(Scheme_Object *));
       argv2[0] = v;
+    } if (argc == 2) {
+      /* Special hook for parameterize: */
+      SCHEME_IPTR_VAL(argv[1]) = argv[0];
+      return ((ParamData *)data)->key;
     } else
       argv2 = argv;
   } else
     argv2 = argv;    
 
-  kv = scheme_make_pair(((ParamData *)data)->key,
-			((ParamData *)data)->defval);
+  pos[0] = ((ParamData *)data)->key;
+  pos[1] = ((ParamData *)data)->defcell;
   
   return scheme_param_config("parameter-procedure", 
-			     kv,
+			     (Scheme_Object *)pos,
 			     argc, argv2,
 			     -2, NULL, NULL, 0);
 }
 
 static Scheme_Object *make_parameter(int argc, Scheme_Object **argv)
 {
-  Scheme_Object *p;
+  Scheme_Object *p, *cell;
   ParamData *data;
   void *k;
 
@@ -4876,7 +5207,8 @@ static Scheme_Object *make_parameter(int argc, Scheme_Object **argv)
   data->type = scheme_rt_param_data;
 #endif
   data->key = (Scheme_Object *)k;
-  data->defval = argv[0];
+  cell = scheme_make_thread_cell(argv[0], 1);
+  data->defcell = cell;
   data->guard = ((argc > 1) ? argv[1] : NULL);
 
   p = scheme_make_closed_prim_w_arity(do_param, (void *)data, 
@@ -4905,75 +5237,96 @@ static Scheme_Object *parameter_procedure_eq(int argc, Scheme_Object **argv)
 	  : scheme_false);
 }
 
-static int max_configs = __MZCONFIG_BUILTIN_COUNT__;
-
 int scheme_new_param(void)
 {
   return max_configs++;
 }
 
-static Scheme_Config *make_initial_config(void)
+static void init_param(Scheme_Thread_Cell_Table *cells,
+		       Scheme_Parameterization *params,
+		       int pos,
+		       Scheme_Object *v)
 {
+  Scheme_Object *cell;
+  cell = scheme_make_thread_cell(v, 1);
+  params->prims[pos] = cell;
+}
+
+static void make_initial_config(Scheme_Thread *p)
+{
+  Scheme_Thread_Cell_Table *cells;
+  Scheme_Parameterization *paramz;
   Scheme_Config *config;
 
-  config = (Scheme_Config *)scheme_malloc_tagged(sizeof(Scheme_Config) + 
-						 (max_configs - 1) * sizeof(Scheme_Object*));
-  config->type = scheme_config_type;
-  
-  scheme_set_param(config, MZCONFIG_ENABLE_BREAK, scheme_false);
-  scheme_set_param(config, MZCONFIG_CAN_READ_GRAPH, scheme_true);
-  scheme_set_param(config, MZCONFIG_CAN_READ_COMPILED, scheme_false);
-  scheme_set_param(config, MZCONFIG_CAN_READ_BOX, scheme_true);
-  scheme_set_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE, scheme_true);
-  scheme_set_param(config, MZCONFIG_CAN_READ_DOT, scheme_true);
-  scheme_set_param(config, MZCONFIG_CAN_READ_QUASI, scheme_true);
-  scheme_set_param(config, MZCONFIG_READ_DECIMAL_INEXACT, scheme_true);
+  cells = scheme_make_bucket_table(5, SCHEME_hash_weak_ptr);
+  p->cell_values = cells;
 
-  scheme_set_param(config, MZCONFIG_PRINT_GRAPH, scheme_false);
-  scheme_set_param(config, MZCONFIG_PRINT_STRUCT, scheme_false);
-  scheme_set_param(config, MZCONFIG_PRINT_BOX, scheme_true);
-  scheme_set_param(config, MZCONFIG_PRINT_VEC_SHORTHAND, scheme_true);
-  scheme_set_param(config, MZCONFIG_PRINT_HASH_TABLE, scheme_false);
+  paramz = (Scheme_Parameterization *)scheme_malloc_tagged(sizeof(Scheme_Parameterization) + 
+							   (max_configs - 1) * sizeof(Scheme_Object*));
+#ifdef MZTAG_REQUIRED
+  paramz->type = scheme_rt_parameterization;
+#endif
+
+  config = MALLOC_ONE_TAGGED(Scheme_Config);
+  config->type = scheme_config_type;
+  config->cell = (Scheme_Object *)paramz;
+
+  p->init_config = config;
+  
+  init_param(cells, paramz, MZCONFIG_ENABLE_BREAK, scheme_false);
+  init_param(cells, paramz, MZCONFIG_CAN_READ_GRAPH, scheme_true);
+  init_param(cells, paramz, MZCONFIG_CAN_READ_COMPILED, scheme_false);
+  init_param(cells, paramz, MZCONFIG_CAN_READ_BOX, scheme_true);
+  init_param(cells, paramz, MZCONFIG_CAN_READ_PIPE_QUOTE, scheme_true);
+  init_param(cells, paramz, MZCONFIG_CAN_READ_DOT, scheme_true);
+  init_param(cells, paramz, MZCONFIG_CAN_READ_QUASI, scheme_true);
+  init_param(cells, paramz, MZCONFIG_READ_DECIMAL_INEXACT, scheme_true);
+
+  init_param(cells, paramz, MZCONFIG_PRINT_GRAPH, scheme_false);
+  init_param(cells, paramz, MZCONFIG_PRINT_STRUCT, scheme_false);
+  init_param(cells, paramz, MZCONFIG_PRINT_BOX, scheme_true);
+  init_param(cells, paramz, MZCONFIG_PRINT_VEC_SHORTHAND, scheme_true);
+  init_param(cells, paramz, MZCONFIG_PRINT_HASH_TABLE, scheme_false);
 
   {
     Scheme_Object *s;
     s = scheme_make_immutable_sized_utf8_string("", 0);
-    scheme_set_param(config, MZCONFIG_LOCALE, s);
+    init_param(cells, paramz, MZCONFIG_LOCALE, s);
   }
 
-  scheme_set_param(config, MZCONFIG_CASE_SENS, (scheme_case_sensitive ? scheme_true : scheme_false));
-  scheme_set_param(config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS, (scheme_square_brackets_are_parens
+  init_param(cells, paramz, MZCONFIG_CASE_SENS, (scheme_case_sensitive ? scheme_true : scheme_false));
+  init_param(cells, paramz, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS, (scheme_square_brackets_are_parens
 								 ? scheme_true : scheme_false));
-  scheme_set_param(config, MZCONFIG_CURLY_BRACES_ARE_PARENS, (scheme_curly_braces_are_parens
+  init_param(cells, paramz, MZCONFIG_CURLY_BRACES_ARE_PARENS, (scheme_curly_braces_are_parens
 							      ? scheme_true : scheme_false));
 
-  scheme_set_param(config, MZCONFIG_ERROR_PRINT_WIDTH, scheme_make_integer(100));
-  scheme_set_param(config, MZCONFIG_ERROR_PRINT_SRCLOC, scheme_true);
+  init_param(cells, paramz, MZCONFIG_ERROR_PRINT_WIDTH, scheme_make_integer(100));
+  init_param(cells, paramz, MZCONFIG_ERROR_PRINT_SRCLOC, scheme_true);
 
   REGISTER_SO(main_custodian);
   REGISTER_SO(last_custodian);
   main_custodian = scheme_make_custodian(NULL);
   last_custodian = main_custodian;
-  scheme_set_param(config, MZCONFIG_CUSTODIAN, (Scheme_Object *)main_custodian);
+  init_param(cells, paramz, MZCONFIG_CUSTODIAN, (Scheme_Object *)main_custodian);
 
-  scheme_set_param(config, MZCONFIG_ALLOW_SET_UNDEFINED, (scheme_allow_set_undefined
+  init_param(cells, paramz, MZCONFIG_ALLOW_SET_UNDEFINED, (scheme_allow_set_undefined
 							  ? scheme_true
 							  : scheme_false));
 
-  scheme_set_param(config, MZCONFIG_COLLECTION_PATHS,  scheme_null);
+  init_param(cells, paramz, MZCONFIG_COLLECTION_PATHS,  scheme_null);
 
   {
     Scheme_Object *s;
     s = scheme_make_path(scheme_os_getcwd(NULL, 0, NULL, 1));
-    scheme_set_param(config, MZCONFIG_CURRENT_DIRECTORY, s);
+    init_param(cells, paramz, MZCONFIG_CURRENT_DIRECTORY, s);
   }
 
   {
     Scheme_Object *rs;
     rs = scheme_make_random_state(scheme_get_milliseconds());
-    scheme_set_param(config, MZCONFIG_RANDOM_STATE, rs);
+    init_param(cells, paramz, MZCONFIG_RANDOM_STATE, rs);
     rs = scheme_make_random_state(scheme_get_milliseconds());
-    scheme_set_param(config, MZCONFIG_SCHEDULER_RANDOM_STATE, rs);
+    init_param(cells, paramz, MZCONFIG_SCHEDULER_RANDOM_STATE, rs);
   }
 
   {
@@ -4982,7 +5335,7 @@ static Scheme_Config *make_initial_config(void)
 				   "default-eval-handler",
 				   1, 1,
 				   0, -1);
-    scheme_set_param(config, MZCONFIG_EVAL_HANDLER, eh);
+    init_param(cells, paramz, MZCONFIG_EVAL_HANDLER, eh);
   }
   
   {
@@ -4991,14 +5344,14 @@ static Scheme_Config *make_initial_config(void)
     ph = scheme_make_prim_w_arity(scheme_default_print_handler,
 				  "default-print-handler",
 				  1, 1);
-    scheme_set_param(config, MZCONFIG_PRINT_HANDLER, ph);
+    init_param(cells, paramz, MZCONFIG_PRINT_HANDLER, ph);
 
     prh = scheme_make_prim_w_arity(scheme_default_prompt_read_handler,
 				   "default-prompt-read-handler",
 				   0, 0);
-    scheme_set_param(config, MZCONFIG_PROMPT_READ_HANDLER, prh);
+    init_param(cells, paramz, MZCONFIG_PROMPT_READ_HANDLER, prh);
   }
-  scheme_set_param(config, MZCONFIG_PORT_COUNT_LINES, scheme_false);
+  init_param(cells, paramz, MZCONFIG_PORT_COUNT_LINES, scheme_false);
 
   {
     Scheme_Object *lh;
@@ -5006,19 +5359,19 @@ static Scheme_Config *make_initial_config(void)
 				   "default-load-extension-handler",
 				   2, 2,
 				   0, -1);
-    scheme_set_param(config, MZCONFIG_LOAD_EXTENSION_HANDLER, lh);
+    init_param(cells, paramz, MZCONFIG_LOAD_EXTENSION_HANDLER, lh);
   }
 
   {
     Scheme_Object *ins;
     ins = scheme_make_initial_inspectors();
-    scheme_set_param(config, MZCONFIG_INSPECTOR, ins);
+    init_param(cells, paramz, MZCONFIG_INSPECTOR, ins);
   }
   
   {
     Scheme_Object *zlv;
     zlv = scheme_make_vector(0, NULL);
-    scheme_set_param(config, MZCONFIG_CMDLINE_ARGS, zlv);
+    init_param(cells, paramz, MZCONFIG_CMDLINE_ARGS, zlv);
   }
 
   {
@@ -5026,49 +5379,22 @@ static Scheme_Config *make_initial_config(void)
 
     sg = MALLOC_ONE_TAGGED(Scheme_Security_Guard);
     sg->type = scheme_security_guard_type;
-    scheme_set_param(config, MZCONFIG_SECURITY_GUARD, (Scheme_Object *)sg);
+    init_param(cells, paramz, MZCONFIG_SECURITY_GUARD, (Scheme_Object *)sg);
   }
 
   {
     Scheme_Thread_Set *t_set;
     t_set = create_thread_set(NULL);
-    scheme_set_param(config, MZCONFIG_THREAD_SET, (Scheme_Object *)t_set);
+    init_param(cells, paramz, MZCONFIG_THREAD_SET, (Scheme_Object *)t_set);
   }
 
-  config->use_count = NULL;
-  config->extensions = NULL;
-
-  return config;
-}
-
-Scheme_Object *scheme_make_config(Scheme_Config *base)
-{
-  Scheme_Config *config;
-  int i;
-  
-  if (!base)
-    base = scheme_config;
-
-  config = (Scheme_Config *)scheme_malloc_tagged(sizeof(Scheme_Config) + 
-						 (max_configs - 1) * sizeof(Scheme_Object*));
-
-  config->type = scheme_config_type;
-  
-  for (i = 0; i < max_configs; i++) {
-    config->configs[i] = base->configs[i];
+  {
+    int i;
+    for (i = 0; i < max_configs; i++) {
+      if (!paramz->prims[i])
+	init_param(cells, paramz, i, scheme_false);      
+    }
   }
-
-
-  if (base->extensions) {
-    config->extensions = base->extensions;
-    config->use_count = base->use_count;
-    *(base->use_count) += 1;
-  } else {
-    config->extensions = NULL;
-    config->use_count = NULL;
-  }
-
-  return (Scheme_Object *)config;
 }
 
 Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int which)
@@ -5097,7 +5423,7 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 				   int argc, Scheme_Object **argv,
 				   int arity,
 				   /* -3 => like -1, plus use check to unmarshall the value
-                                      -2 => user parameter; pos is (cons key defval)
+                                      -2 => user parameter; pos is array [key, defcell]
 				      -1 => use check; if isboolorfilter, check is a filter
                                             (and expected is ignored), and if check is NULL,
                                             parameter is boolean-valued
@@ -5107,25 +5433,22 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 				   char *expected,
 				   int isboolorfilter)
 {
-  int set = (argc == 1);
-  Scheme_Config *config = scheme_config;
+  Scheme_Config *config;
 
-  if (!set) {
+  config = scheme_current_config();
+
+  if (argc == 0) {
     if (arity == -2) {
-      Scheme_Object *defval = SCHEME_CDR(pos);
-      if (config->extensions) {
-	const char *key = (const char *)SCHEME_CAR(pos);
-	Scheme_Bucket *b;
+      Scheme_Object *cell;
 
-	b = scheme_bucket_or_null_from_table(config->extensions, key, 0);
-	if (b)
-	  return (Scheme_Object *)b->val;
-	else
-	  return defval;
-      }
-      return defval;
+      cell = find_param_cell(config, ((Scheme_Object **)pos)[0]);
+      if (!cell)
+	cell = ((Scheme_Object **)pos)[1];
+
+      return scheme_thread_cell_get(cell);
     } else {
-      Scheme_Object *s = scheme_get_param(config, SCHEME_INT_VAL(pos));
+      Scheme_Object *s;
+      s = scheme_get_param(config, SCHEME_INT_VAL(pos));
       if (arity == -3) {
 	Scheme_Object *a[1];
 	PCheck_Proc checkp = (PCheck_Proc)check;
@@ -5160,47 +5483,22 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 	scheme_check_proc_arity(name, arity, 0, argc, argv);
 
       if (isboolorfilter && !check)
-	scheme_set_param(config, SCHEME_INT_VAL(pos), ((SCHEME_TRUEP(naya)) ? scheme_true : scheme_false));
-      else
+	naya = ((SCHEME_TRUEP(naya)) ? scheme_true : scheme_false);
+
+      if (argc == 2) {
+	/* Special hook for parameterize: */
+	SCHEME_IPTR_VAL(argv[1]) = naya;
+	return pos;
+      } else
 	scheme_set_param(config, SCHEME_INT_VAL(pos), naya);
     } else {
-      const char *key = (const char *)SCHEME_CAR(pos);
-      Scheme_Bucket *b;
-
-      if (!config->extensions) {
-	Scheme_Bucket_Table *ht;
-	int *use_count;
-	ht = scheme_make_bucket_table(2, SCHEME_hash_weak_ptr);
-	config->extensions = ht;
-	use_count = MALLOC_ONE_ATOMIC(int);
-	*use_count = 0;
-	config->use_count = use_count;
-      }
-
-      if (*(config->use_count)) {
-	/* Copy-on-write! */
-	int *use_count;
-	Scheme_Bucket **bs = config->extensions->buckets;
-	int i = config->extensions->size;
-	Scheme_Bucket_Table *ht;
-	
-	ht = scheme_make_bucket_table(2, SCHEME_hash_weak_ptr);
-	
-	config->extensions = ht;
-	
-	while (i--) {
-	  b = bs[i];
-	  if (b && b->val && b->key && HT_EXTRACT_WEAK(b->key))
-	    scheme_add_to_table(config->extensions, (const char *)HT_EXTRACT_WEAK(b->key), b->val, 0);
-	}
+      Scheme_Object *cell;
       
-	use_count = MALLOC_ONE_ATOMIC(int);
-	*use_count = 0;
-	config->use_count = use_count;
-      }
+      cell = find_param_cell(config, ((Scheme_Object **)pos)[0]);
+      if (!cell)
+	cell = ((Scheme_Object **)pos)[1];
 
-      b = scheme_bucket_from_table(config->extensions, key);
-      b->val = naya;
+      scheme_thread_cell_set(cell, naya);
     }
   
     return scheme_void;
@@ -5217,7 +5515,12 @@ START_XFORM_SKIP;
 
 Scheme_Env *scheme_get_env(Scheme_Config *c)
 {
-  Scheme_Object *o = scheme_get_param(c, MZCONFIG_ENV);
+  Scheme_Object *o;
+
+  if (!c)
+    c = scheme_current_config();
+
+  o = scheme_get_param(c, MZCONFIG_ENV);
   return (Scheme_Env *)o;
 }
 
@@ -5322,7 +5625,7 @@ void scheme_security_check_file(const char *who, const char *filename, int guard
 {
   Scheme_Security_Guard *sg;
 
-  sg = (Scheme_Security_Guard *)scheme_get_param(scheme_config, MZCONFIG_SECURITY_GUARD);
+  sg = (Scheme_Security_Guard *)scheme_get_param(scheme_current_config(), MZCONFIG_SECURITY_GUARD);
 
   if (sg->file_proc) {
     Scheme_Object *l = scheme_null, *a[3];
@@ -5367,7 +5670,7 @@ void scheme_security_check_network(const char *who, const char *host, int port, 
 {
   Scheme_Security_Guard *sg;
 
-  sg = (Scheme_Security_Guard *)scheme_get_param(scheme_config, MZCONFIG_SECURITY_GUARD);
+  sg = (Scheme_Security_Guard *)scheme_get_param(scheme_current_config(), MZCONFIG_SECURITY_GUARD);
 
   if (sg->network_proc) {
     Scheme_Object *a[4];
@@ -5864,12 +6167,12 @@ START_XFORM_SKIP;
 
 static void register_traversers(void)
 {
-  GC_REG_TRAV(scheme_config_type, mark_config_val);
   GC_REG_TRAV(scheme_will_executor_type, mark_will_executor_val);
   GC_REG_TRAV(scheme_custodian_type, mark_custodian_val);
   GC_REG_TRAV(scheme_thread_hop_type, mark_thread_hop);
   GC_REG_TRAV(scheme_waitable_set_type, mark_waitable_set);
   GC_REG_TRAV(scheme_thread_set_type, mark_thread_set);
+  GC_REG_TRAV(scheme_config_type, mark_config);
 
   GC_REG_TRAV(scheme_rt_namespace_option, mark_namespace_option);
   GC_REG_TRAV(scheme_rt_param_data, mark_param_data);
@@ -5877,6 +6180,7 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_rt_will_registration, mark_will_registration);
   GC_REG_TRAV(scheme_rt_waitable, mark_waitable);
   GC_REG_TRAV(scheme_rt_waiting, mark_waiting);
+  GC_REG_TRAV(scheme_rt_parameterization, mark_parameterization);
 }
 
 END_XFORM_SKIP;

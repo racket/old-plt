@@ -253,6 +253,8 @@
                                 [end (drscheme:rep:text/pos-end input)]
                                 [start-line (send text position-paragraph start)]
                                 [start-col (- start (send text paragraph-start-position start-line))])
+                           (send text split-snip start)
+                           (send text split-snip end)
                            (values (open-input-text text start end)
                                    text
                                    start
@@ -273,8 +275,14 @@
                [next-snip
                 (lambda ()
                   (set! snip (send snip next))
-                  (set! str (and (object? snip) (send snip get-text 0 (send snip get-count))))
-                  (set! pos 0))]
+                  (set! pos 0)
+                  (cond
+                    [(not snip)
+                     (set! str #f)]
+                    [((send text get-snip-position snip) . >= . end)
+                     (set! str #f)]
+                    [else
+                     (set! str (send snip get-text 0 (send snip get-count)))]))]
                [read-char (lambda () 
                             (when (and str
                                        ((string-length str) . <= . pos))

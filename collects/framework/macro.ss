@@ -35,14 +35,16 @@
 		(let ([all-from (list from-ids ...)])
 		  (void)
 		  (unless (interface? from-ids)
-		    (error "expected interfaces for from, got: ~e, others ~e"
+		    (error 'mixin
+                           "expected interfaces for from, got: ~e, others ~e"
 			   from-ids
 			   all-from)) ...)
 
 		(let ([all-to (list to-ids ...)])
 		  (void)
 		  (unless (interface? to-ids)
-		    (error "expected interfaces for to, got: ~e, others ~e"
+		    (error 'mixin
+                           "expected interfaces for to, got: ~e, others ~e"
 			   to-ids
 			   all-to)) ...)
 

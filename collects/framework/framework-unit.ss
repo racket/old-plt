@@ -84,7 +84,7 @@
 			   exit finder keymap text pasteboard editor canvas menu)]
 	    [scheme : framework:scheme^ 
 		    (scheme@ mred preferences match-cache paren
-			     scheme-paren icon keymap text frame)]
+			     scheme-paren icon keymap text editor frame)]
 	    [main : framework:main^ (main@ mred preferences exit group)])
       (export
        (unit menu)

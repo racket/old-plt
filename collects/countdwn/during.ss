@@ -61,6 +61,7 @@
   (define (load-user-config)
     (let ([orig-escape #f]
 	  [escape-k #f])
+      (set! files-loaded null)
       (dynamic-wind
        (lambda ()
 	 (set! orig-escape (error-escape-handler))
@@ -77,12 +78,17 @@
 	     (set! escape-k k)
 	     (let ([param (make-parameterization)])
 	       (map (lambda (x v) ((in-parameterization param x) v))
-		    (list error-print-width 
+		    (list current-load
+			  error-print-width 
 			  current-namespace
 			  current-eventspace
 			  current-custodian
 			  error-display-handler)
-		    (list 500
+		    (list (let ([ol ((in-parameterization param current-load))])
+			    (lambda (f)
+			      (set! files-loaded (cons f files-loaded))
+			      (ol f)))
+			  500
 			  (make-namespace)
 			  (make-eventspace)
 			  (make-custodian)
@@ -100,17 +106,22 @@
        (lambda ()
 	 (error-escape-handler orig-escape)
 	 (send edit end-edit-sequence)))))
-  
+
+  (define files-loaded null)
   (load-user-config)
   (define last-loaded (current-seconds))
 
   (thread (rec check-user-config
 	       (lambda ()
-		 (let ([now (current-seconds)]
-		       [last-mod (file-or-directory-modify-seconds user-config-file)])
-		   (when (<= last-loaded last-mod)
-		     (set! last-loaded (current-seconds))
-		     (load-user-config))
-		   (sleep 4)
-		   (check-user-config))))))
+		 (when (ormap (lambda (file)
+				(let ([now (current-seconds)]
+				      [last-mod (file-or-directory-modify-seconds file)])
+				  (if (<= last-loaded last-mod)
+				      (begin (set! last-loaded (current-seconds))
+					     #t)
+				      #f)))
+			      files-loaded)
+		   (load-user-config))
+		 (sleep 4)
+		 (check-user-config)))))
 		       

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Pen+Brush.cc,v 1.2 1998/01/29 15:52:59 mflatt Exp $
+ * $Id: Pen+Brush.cc,v 1.3 1998/02/07 13:43:59 mflatt Exp $
  *
  * Purpose: pen and brush classes needed for drawing
  *
@@ -210,12 +210,13 @@ void wxPenList::AddPen(wxPen *Pen)
 wxPen *wxPenList::FindOrCreatePen(wxColour *colour, int w, int style)
 {
   wxPen *pen;
+  wxChildNode *node;
   int i = 0;
   
   if (!colour)
     return NULL;
   
-  while (wxChildNode *node = list->NextNode(i)) {
+  while ((node = list->NextNode(i))) {
     wxPen *each_pen = (wxPen*)node->Data();
     if (each_pen &&
 	each_pen->GetWidth() == w &&
@@ -264,12 +265,13 @@ void wxBrushList::AddBrush(wxBrush *Brush)
 wxBrush *wxBrushList::FindOrCreateBrush(wxColour *colour, int style)
 {
   wxBrush *brush;
+  wxChildNode *node;
   int i = 0;
 
   if (!colour)
     return NULL;
 
-  while (wxChildNode *node = list->NextNode(i)) {
+  while ((node = list->NextNode(i))) {
     wxBrush *each_brush = (wxBrush*)node->Data();
     if (each_brush &&
 	each_brush->GetStyle() == style &&

@@ -32,27 +32,39 @@ PLANNED FEATURES:
      (once-any
       (("-f" "--file")
        plt-file owner maj min
-       "Install local file <plt-file> as though it had been downloaded from the planet server. The installed package has path (planet (<owner> <plt-file's filename> <maj> <min>))"
+       ""
+       "Install local file <plt-file> as though it had been downloaded from"
+       "the planet server.  The installed package has path"
+       "  (planet (<owner> <plt-file's filename> <maj> <min>))"
        (set! actions (cons (lambda () (install-plt-file plt-file owner maj min)) actions)))
       (("-c" "--create-archive")
        path
-       "Create a PLaneT archive in the current directory whose contents are the directory <path>"
+       ""
+       "Create a PLaneT archive in the current directory"
+       "whose contents are the directory <path>"
        (set! actions (cons (lambda () (do-archive path)) actions)))
       (("-i" "--install")
        owner pkg maj min
-       "Download and install the package (require (planet \"file.ss\" (<owner> <pkg> <maj> <min>)) would install"
+       ""
+       "Download and install the package"
+       "  (require (planet \"file.ss\" (<owner> <pkg> <maj> <min>)))"
+       "would install"
        (set! actions (cons (lambda () (download/install owner pkg maj min)) actions)))
       (("-r" "--remove")
        owner pkg maj min
+       ""
        "Remove the specified package from the local cache"
        (set! actions (cons (lambda () (remove owner pkg maj min)) actions)))
       (("-U" "--unlink-all")
+       ""
        "Clear the linkage table, unlinking all packages and allowing upgrades"
        (set! actions (cons unlink-all actions)))
       (("-p" "--packages")
+       ""
        "List the packages installed in the local cache"
        (set! actions (cons show-installed-packages actions)))
       (("-l" "--linkage")
+       ""
        "List the current linkage table"
        (set! actions (cons show-linkage actions)))
       

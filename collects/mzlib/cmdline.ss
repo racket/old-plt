@@ -96,6 +96,8 @@
 								      [(expr1 rest)
 								       (extract-one
 									"handler body expressions" rest line)])
+                                                          (when (null? helps)
+                                                            (serror "missing help string/s"))
 							  (with-syntax ([formals formals]
 									[formal-names (formal-names formals)]
 									[helps helps]
@@ -266,14 +268,13 @@
 					       (arity-at-least? a)
 					       (bad-table (format "flag handler procedure cannot have multiple cases: ~e" (cadr line)))))
 
-					 (or (and (list? (caddr line))
-						  (let ([h (caddr line)])
-                                                    (or (null? h)
-                                                        (and (or (string? (car h))
-                                                                 (andmap string? (car h)))
-                                                             (andmap string? (cdr h))))))
-					     (bad-table (format "spec-line help section must be a list of strings")))
-					 
+					 (or (let ([h (caddr line)])
+                                               (and (pair? h)
+                                                    (or (string? (car h))
+                                                        (andmap string? (car h)))
+                                                    (andmap string? (cdr h))))
+					     (bad-table (format "spec-line help section must be a list of string-or-string-list and strings")))
+
 					 (or (let ([l (length (caddr line))]
 						   [a (procedure-arity (cadr line))])
 					       (if (number? a)
@@ -295,7 +296,7 @@
 		   (let ([a (procedure-arity unknown-flag)])
 		     (or (number? a) (arity-at-least? a))))
 	(raise-type-error 'parse-command-line "unknown-flag procedure of simple arity, accepting 1 argument (an perhaps more)" unknown-flag))
-      
+
       (letrec ([a (procedure-arity finish)]
 	       [l (length finish-help)]
 	       [a-c (lambda (a)

@@ -1350,14 +1350,13 @@
 
   (define-struct cond-clause (text question answer else? =>? or?))
 
-  (define qa-error-msg "clause not in question-answer format")
-
   (define (make-cond-clause-vocab)
-    (create-vocabulary 'cond-clause-vocab #f
-		       qa-error-msg   ; symbol
-		       qa-error-msg   ; literal
-		       qa-error-msg   ; list
-		       qa-error-msg)) ; ilist
+    (let([qa-error-msg "Not a clause in question-answer format"])
+      (create-vocabulary 'cond-clause-vocab #f
+			 qa-error-msg   ; symbol
+			 qa-error-msg   ; literal
+			 qa-error-msg   ; list
+			 qa-error-msg)) ; ilist
 
   (define nobegin-cond-clause-vocab (make-cond-clause-vocab))
   (define answered-cond-clause-vocab (make-cond-clause-vocab))
@@ -1415,7 +1414,7 @@
 	      (let ((question (pat:pexpand 'question p-env kwd))
 		     (answer (pat:pexpand get-pattern-4 p-env kwd)))
 		(make-cond-clause expr question answer #f #f #f))))
-	  (else (static-error expr qa-error-msg))))))
+	  (else (static-error expr "Clause is not in question-answer format"))))))
 
   (add-list-micro nobegin-cond-clause-vocab (make-cond-list-micro #f #f))
   (add-list-micro answered-cond-clause-vocab (make-cond-list-micro #t #f))

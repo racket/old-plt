@@ -224,8 +224,8 @@ void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
     PaintStipple(rgn);
   }
 
-  int xx = XLOG2DEV(x); int yy = XLOG2DEV(y);
-  int ww = XLOG2DEVREL(w); int hh = XLOG2DEVREL(h);
+  int xx = XLOG2DEV(x); int yy = YLOG2DEV(y);
+  int xx2 = XLOG2DEV(x+w); int yy2 = YLOG2DEV(y+h);
   
   double degrees1, degrees2;
 
@@ -248,8 +248,8 @@ void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
   Rect rect;
   rect.left = xx;
   rect.top = yy;
-  rect.right = rect.left + ww;
-  rect.bottom = rect.top + hh;
+  rect.right = xx2;
+  rect.bottom = yy2;
   OffsetRect(&rect,SetOriginX,SetOriginY);
 
   if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {

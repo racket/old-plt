@@ -550,13 +550,16 @@ char_to_latin1_integer (int argc, Scheme_Object *argv[])
 #ifdef MACROMAN_CHAR_SET
   if (!m2l_mapping_inited) {
     int i;
-    for (i = 0; i < 256; i++)
+    for (i = 0; i < 256; i++) {
       mac_to_latin1_mapping[i] = (unsigned char)i;
-    for (i = 0; deviation_table[i]; i += 2)
+    }
+    for (i = 0; deviation_table[i]; i += 2) {
       if (deviation_table[i + 1])
 	mac_to_latin1_mapping[deviation_table[i + 1]] = deviation_table[i];
-    for (i = 0; mac_extras_table[i]; i++)
+    }
+    for (i = 0; mac_extras_table[i]; i++) {
       mac_to_latin1_mapping[mac_extras_table[i]] = 0;
+    }
       
     m2l_mapping_inited = 1;
   }

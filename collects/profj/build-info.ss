@@ -655,6 +655,10 @@
                                 (method-throws method))))
            (over? (overrides? name parms inherited-methods)))
       
+      (when (eq? ret 'ctor)
+        (unless (equal? name (car cname))
+          (not-ctor-error name (car cname) (id-src (method-name method)))))
+            
       (check-parm-names (method-parms method) name cname)
       
       (when over?
@@ -946,6 +950,15 @@
                       (format "Method ~a from ~a is not implemented" m-name class)))
                    m-name src)))
 
+  ;not-ctor-error: string string src -> void
+  (define (not-ctor-error meth class src)
+    (let ((n (string->symbol meth)))
+      (raise-error n
+                   (format "Method ~a has no return type and does not have the same name as the class, ~a.~n
+                   Only constructors may have no return type, but must have the name of the class"
+                           n class)
+                   n src)))
+  
   ;inherited-throw-error:symbol string (list type) (list string) string type src -> void
   (define (inherited-throw-error kind m-name parms class parent throw src)
     (raise-error 'throws

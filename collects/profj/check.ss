@@ -1057,7 +1057,11 @@
           ((eq? exp-type 'super) (no-method-error 'super exp-type name src))
           (exp-type (no-method-error 'class exp-type name src))
           (else (no-method-error 'this exp-type name src))))
-
+      
+      (when (and (not ctor?)
+                 (eq? (method-record-rtype (car methods)) 'ctor))
+        (ctor-called-error exp-type name src))
+      
       (let* ((method-record 
               (if (memq level '(full advanced))
                   (resolve-overloading methods 
@@ -1376,6 +1380,15 @@
                              ((super) "This class's super class")
                              ((this) "The current class"))
                            n)
+                   n src)))
+  
+  ;ctor-called-error: type id src -> void
+  (define (ctor-called-error exp name src)
+    (let ((t (type->ext-name exp))
+          (n (id->ext-name name)))
+      (raise-error n
+                   (format "Constructor ~a from ~a cannot be used as a method"
+                           n t)
                    n src)))
   
   (define (illegal-ctor-call name src level)

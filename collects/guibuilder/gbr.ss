@@ -2215,7 +2215,8 @@
 		  [se (get-selected-snip)]
 		  [s (if (ivar se container?)
 			 se
-			 (ivar se parent))])
+			 (or (ivar se parent)
+			     main-panel))])
 	     (send s gb-add-child i)
 	     (set-selected s)))])
       (private
@@ -2318,22 +2319,26 @@
 		(let* ([w (- (unbox rb) (unbox lb))]
 		       [h (- (unbox bb) (unbox tb))]
 		       [th (+ (or frame-label-h 0) 2)]
-		       [tw (+ (* 2 margin) w)])
-		  (set! last-frame-paint-w tw)
-		  (set! last-frame-paint-h (+ th (* 2 margin) h))
-		  (send dc draw-rectangle dx dy 
-			tw (+ th (* 2 margin) h))
-		  (send dc draw-line dx (+ dy th)
-			(+ dx tw -1) (+ dy th))
-		  (with-clipping-region dc (add1 dx) (add1 dy) 
-					(+ tw -2) (- th 2)
-		   (lambda ()
-		     (let ([f (send dc get-font)])
-		       (send dc set-font f)
-		       (send dc draw-text frame-label 
-			     (+ dx (/ (- tw frame-label-w) 2)) 
-			     (+ dy 1))
-		       (send dc set-font f))))))))]
+		       [tw (+ (* 2 margin) w)]
+		       [totalh (+ th (* 2 margin) h)])
+		  (when (and (or (<= 0 l tw) (<= 0 r tw) (<= l 0 tw r))
+			     (or (<= 0 t totalh) (<= 0 b totalh) (<= t 0 totalh b)))
+		    (set! last-frame-paint-w tw)
+		    (set! last-frame-paint-h totalh)
+		    (send dc draw-rectangle dx dy 
+			  tw totalh)
+		    (send dc draw-line dx (+ dy th)
+			  (+ dx tw -1) (+ dy th))
+		    (with-clipping-region 
+		     dc (add1 dx) (add1 dy) 
+		     (+ tw -2) (- th 2)
+		     (lambda ()
+		       (let ([f (send dc get-font)])
+			 (send dc set-font f)
+			 (send dc draw-text frame-label 
+			       (+ dx (/ (- tw frame-label-w) 2)) 
+			       (+ dy 1))
+			 (send dc set-font f)))))))))]
 	[write-footers-to-file
 	 (lambda (stream)
 	   (super-write-footers-to-file stream)

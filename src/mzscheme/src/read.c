@@ -2488,18 +2488,28 @@ static Scheme_Object *read_compact(CPort *port,
       RANGE_CHECK(l, < port->symtab_size);
       v = symtab[l];
       break;
-    case CPT_UNINTERNED_SYMBOL:
-      l = read_compact_number(port);
-      RANGE_CHECK_GETS(l);
-      s = read_compact_chars(port, buffer, BLK_BUF_SIZE, l);
-      v = scheme_make_exact_symbol(s, l);
+    case CPT_WEIRD_SYMBOL:
+      {
+	int uninterned;
 
-      l = read_compact_number(port);
-      RANGE_CHECK(l, < port->symtab_size);
-      symtab[l] = v;
-      /* The fact that other uses of the symbol go through the table
-	 means that uninterned symbols are consistently re-created for
-	 a particular compiled expression */
+	uninterned = read_compact_number(port);
+
+	l = read_compact_number(port);
+	RANGE_CHECK_GETS(l);
+	s = read_compact_chars(port, buffer, BLK_BUF_SIZE, l);
+
+	if (uninterned)
+	  v = scheme_make_exact_symbol(s, l);
+	else
+	  v = scheme_intern_exact_parallel_symbol(s, l);
+	
+	l = read_compact_number(port);
+	RANGE_CHECK(l, < port->symtab_size);
+	symtab[l] = v;
+	/* The fact that other uses of the symbol go through the table
+	   means that uninterned symbols are consistently re-created for
+	   a particular compiled expression. */
+      }
       break;
     case CPT_STRING:
       l = read_compact_number(port);

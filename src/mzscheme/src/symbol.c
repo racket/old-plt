@@ -46,6 +46,7 @@ extern int GC_is_marked(void *);
 #endif
 
 Scheme_Bucket_Table *scheme_symbol_table = NULL;
+Scheme_Bucket_Table *scheme_parallel_symbol_table = NULL;
 
 long scheme_max_found_symbol_name;
 
@@ -171,15 +172,15 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
 }
 
 #ifndef MZ_PRECISE_GC
-static void clean_symbol_table(void)
+static void clean_one_symbol_table(Scheme_Bucket_Table *symbol_table)
 {
   /* Clean the symbol table by removing pointers to collected
      symbols. The correct way to do this is to install a GC
      finalizer on symbol pointers, but that would be expensive. */
      
-  if (scheme_symbol_table) {
-    Scheme_Object **buckets = (Scheme_Object **)scheme_symbol_table->buckets;
-    int i = scheme_symbol_table->size;
+  if (symbol_table) {
+    Scheme_Object **buckets = (Scheme_Object **)symbol_table->buckets;
+    int i = symbol_table->size;
     void *b;
     
     while (i--) {
@@ -193,28 +194,44 @@ static void clean_symbol_table(void)
     }
   }
 }
+
+static void clean_symbol_table(void)
+{
+  clean_one_symbol_table(scheme_symbol_table);
+  clean_one_symbol_table(scheme_parallel_symbol_table);
+}
 #endif
 
 /**************************************************************************/
 
-void
-scheme_init_symbol_table ()
+static Scheme_Bucket_Table *init_one_symbol_table()
 {
+  Scheme_Bucket_Table *symbol_table;
   int size;
   Scheme_Bucket **ba;
 
-  REGISTER_SO(scheme_symbol_table);
+  symbol_table = scheme_make_bucket_table(HASH_TABLE_SIZE, SCHEME_hash_ptr);
   
-  scheme_symbol_table = scheme_make_bucket_table(HASH_TABLE_SIZE, SCHEME_hash_ptr);
-  
-  size = scheme_symbol_table->size * sizeof(Scheme_Bucket *);
+  size = symbol_table->size * sizeof(Scheme_Bucket *);
 #ifdef MZ_PRECISE_GC
   ba = (Scheme_Bucket **)GC_malloc_weak_array(size, SYMTAB_LOST_CELL);
 #else
   ba = MALLOC_N_ATOMIC(Scheme_Bucket *, size);
   memset((char *)ba, 0, size);
 #endif
-  scheme_symbol_table->buckets = ba;
+  symbol_table->buckets = ba;
+
+  return symbol_table;
+}
+
+void
+scheme_init_symbol_table ()
+{
+  REGISTER_SO(scheme_symbol_table);
+  REGISTER_SO(scheme_parallel_symbol_table);
+  
+  scheme_symbol_table = init_one_symbol_table();
+  scheme_parallel_symbol_table = init_one_symbol_table();
 
 #ifndef MZ_PRECISE_GC
   GC_custom_finalize = clean_symbol_table;
@@ -257,17 +274,22 @@ scheme_init_symbol (Scheme_Env *env)
 }
 
 static Scheme_Object *
-make_a_symbol(const char *name, int len, int uninterned)
+make_a_symbol(const char *name, int len, int kind)
 {
   Scheme_Symbol *sym;
   
   sym = (Scheme_Symbol *)scheme_malloc_atomic_tagged(sizeof(Scheme_Symbol) + len - 3);
   
   sym->type = scheme_symbol_type;
-  sym->keyex = uninterned;
+  sym->keyex = kind;
   sym->len = len;
   memcpy(sym->s, name, len);
   sym->s[len] = 0;
+
+  if (len > scheme_max_found_symbol_name) {
+    scheme_max_found_symbol_name = len;
+    scheme_reset_prepared_error_buffer();
+  }
   
   return (Scheme_Object *)(sym);
 }
@@ -275,36 +297,40 @@ make_a_symbol(const char *name, int len, int uninterned)
 Scheme_Object *
 scheme_make_symbol(const char *name)
 {
-  return make_a_symbol(name, strlen(name), 1);
+  return make_a_symbol(name, strlen(name), 0x1);
 }
 
 Scheme_Object *
 scheme_make_exact_symbol(const char *name, int len)
 {
-  return make_a_symbol(name, len, 1);
+  return make_a_symbol(name, len, 0x1);
+}
+
+Scheme_Object *
+scheme_intern_exact_symbol_in_table(Scheme_Bucket_Table *symbol_table, int kind, const char *name, int len)
+{
+  Scheme_Object *sym;
+
+  sym = symbol_bucket(symbol_table, name, len, NULL);
+
+  if (!sym) {
+    sym = make_a_symbol(name, len, kind);
+    symbol_bucket(symbol_table, name, len, sym);
+  }
+   
+  return sym;
 }
 
 Scheme_Object *
 scheme_intern_exact_symbol(const char *name, int len)
 {
-  Scheme_Object *sym;
+  return scheme_intern_exact_symbol_in_table(scheme_symbol_table, 0, name, len);
+}
 
-  if (len > scheme_max_found_symbol_name) {
-    scheme_max_found_symbol_name = len;
-    scheme_reset_prepared_error_buffer();
-  }
-
-  sym = symbol_bucket(scheme_symbol_table, name, len, NULL);
-
-  if (sym && !SCHEME_TYPE(sym))
-    *(long *)0x0 = 1;
-
-  if (!sym) {
-    sym = make_a_symbol(name, len, 0);
-    symbol_bucket(scheme_symbol_table, name, len, sym);
-  }
-   
-  return sym;
+Scheme_Object *
+scheme_intern_exact_parallel_symbol(const char *name, int len)
+{
+  return scheme_intern_exact_symbol_in_table(scheme_parallel_symbol_table, 0x2, name, len);
 }
 
 #define MAX_SYMBOL_SIZE 256
@@ -550,8 +576,10 @@ Scheme_Object *scheme_symbol_append(Scheme_Object *s1, Scheme_Object *s2)
   s = MALLOC_N_ATOMIC(char, SCHEME_SYM_LEN(s1) + SCHEME_SYM_LEN(s2) + 1);
   memcpy(s, SCHEME_SYM_VAL(s1), SCHEME_SYM_LEN(s1));
   memcpy(s + SCHEME_SYM_LEN(s1), SCHEME_SYM_VAL(s2), SCHEME_SYM_LEN(s2) + 1);
-  if (SCHEME_SYM_UNINTERNED(s1) || SCHEME_SYM_UNINTERNED(s2))
+  if (SCHEME_SYM_UNINTERNEDP(s1) || SCHEME_SYM_UNINTERNEDP(s2))
     return scheme_make_exact_symbol(s, SCHEME_SYM_LEN(s1) + SCHEME_SYM_LEN(s2));
+  else if (SCHEME_SYM_PARALLELP(s1) || SCHEME_SYM_PARALLELP(s2))
+    return scheme_intern_exact_parallel_symbol(s, SCHEME_SYM_LEN(s1) + SCHEME_SYM_LEN(s2));
   else
     return scheme_intern_exact_symbol(s, SCHEME_SYM_LEN(s1) + SCHEME_SYM_LEN(s2));
 }

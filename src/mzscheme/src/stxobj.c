@@ -87,7 +87,9 @@ typedef struct Module_Renames {
                                           (cons modidx exportname) OR
                                           (cons-immutable modidx nominal_modidx) OR
                                           (list* modidx exportname nominal_modidx nominal_exportname) */
-  Scheme_Hash_Table *marked_names; /* shared with module environment while compiling the module */
+  Scheme_Hash_Table *marked_names; /* shared with module environment while compiling the module;
+				      this table maps a top-level-bound identifier with a non-empty mark
+				      set to a gensym created for the binding */
 } Module_Renames;
 
 static Module_Renames *krn;
@@ -2511,6 +2513,30 @@ int scheme_syntax_is_graph(Scheme_Object *stx)
 /*                            datum->wraps                                */
 /*========================================================================*/
 
+static Scheme_Object *unmarshall_mark(Scheme_Object *a, Scheme_Hash_Table *rns)
+{
+  Scheme_Object *n;
+
+  if (SCHEME_INTP(a))
+    a = scheme_make_integer(-SCHEME_INT_VAL(a));
+  else
+    a = scheme_intern_symbol(scheme_number_to_string(10, a));
+  
+  /* Picked a mapping yet? */
+  n = scheme_hash_get(rns, a);
+  if (!n) {
+    /* Map marshalled mark to a new mark. */
+    n = scheme_new_mark();
+    scheme_hash_set(rns, a, n);
+  }
+  
+  /* Really a mark? */
+  if (!SCHEME_NUMBERP(n))
+    return NULL;
+
+  return n;
+}
+
 static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 				     Scheme_Hash_Table *rns)
 {
@@ -2561,28 +2587,8 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 	       && SCHEME_NULLP(SCHEME_CDR(a))
 	       && SCHEME_NUMBERP(SCHEME_CAR(a))) {
       /* Mark */
-      Scheme_Object *n;
-
-      a = SCHEME_CAR(a);
-
-      if (SCHEME_INTP(a))
-	a = scheme_make_integer(-SCHEME_INT_VAL(a));
-      else
-	a = scheme_intern_symbol(scheme_number_to_string(10, a));
-
-      /* Picked a mapping yet? */
-      n = scheme_hash_get(rns, a);
-      if (!n) {
-	/* Map marshalled mark to a new mark. */
-	n = scheme_new_mark();
-	scheme_hash_set(rns, a, n);
-      }
-
-      /* Really a mark? */
-      if (!SCHEME_NUMBERP(n))
-	return NULL;
-
-      a = n;
+      a = unmarshall_mark(SCHEME_CAR(a), rns);
+      if (!a) return NULL;
     } else if (SCHEME_VECTORP(a)) {
       /* A (simplified) rename table. First element is the key. */
       Scheme_Object *local_key;
@@ -2653,22 +2659,42 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       /* Extract the mark-rename table, if any: */
       if (SCHEME_PAIRP(mns)) {
 	Scheme_Hash_Table *ht;
+	Scheme_Object *ll, *kkey, *kfirst, *klast, *kp;
 
 	ht = scheme_make_hash_table(SCHEME_hash_ptr);
 	for (; SCHEME_PAIRP(mns); mns = SCHEME_CDR(mns)) {
 	  p = SCHEME_CAR(mns);
-	  if (!SCHEME_PAIRP(p)) { printf("no pair\n"); return NULL; }
+	  if (!SCHEME_PAIRP(p)) return NULL;
 	  key = SCHEME_CAR(p);
 	  p = SCHEME_CDR(p);
 	  if (!SCHEME_SYMBOLP(key)) return NULL;
-	  scheme_hash_set(ht, key, p);
+	  
+	  ll = scheme_null;
 
-	  /* Check shape of a mark/name list: */
+	  /* Convert marks */
 	  for (; SCHEME_PAIRP(p); p = SCHEME_CDR(p)) {
-	    key = SCHEME_CAR(p);
-	    if (!SCHEME_PAIRP(key))  return NULL;
-	    if (!SCHEME_SYMBOLP(SCHEME_CDR(key))) return NULL;
+	    a = SCHEME_CAR(p);
+	    if (!SCHEME_PAIRP(a))  return NULL;
+	    kkey = SCHEME_CDR(a);
+	    if (!SCHEME_SYMBOLP(kkey)) return NULL;
+
+	    kfirst = scheme_null;
+	    klast = NULL;
+	    for (a = SCHEME_CAR(a); SCHEME_PAIRP(a); a = SCHEME_CDR(a)) {
+	      kp = CONS(unmarshall_mark(SCHEME_CAR(a), rns), scheme_null);
+	      if (!klast)
+		kfirst = kp;
+	      else
+		SCHEME_CDR(klast) = kp;
+	      klast = kp;
+	    }
+	    if (!SCHEME_NULLP(a)) return NULL;
+
+	    ll = CONS(CONS(kfirst, kkey), ll);
 	  }
+	  
+	  scheme_hash_set(ht, key, ll);
+
 	  if (!SCHEME_NULLP(p)) return NULL;
 	}
 	if (!SCHEME_NULLP(mns)) return NULL;

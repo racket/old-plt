@@ -970,16 +970,19 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	l = SCHEME_INT_VAL(idx);
 	print_compact_number(p, l);
       } else if (compact) {
-	int uninterned;
+	int weird;
 
-	uninterned = SCHEME_SYM_UNINTERNED(obj);
+	weird = SCHEME_SYM_WEIRDP(obj);
 	l = SCHEME_SYM_LEN(obj);
-	if (!uninterned && (l < CPT_RANGE(SMALL_SYMBOL))) {
+	if (!weird && (l < CPT_RANGE(SMALL_SYMBOL))) {
 	  unsigned char s[1];
 	  s[0] = l + CPT_SMALL_SYMBOL_START;
 	  print_this_string(p, (char *)s, 0, 1);
 	} else {
-	  print_compact(p, (uninterned ? CPT_UNINTERNED_SYMBOL : CPT_SYMBOL));
+	  print_compact(p, (weird ? CPT_WEIRD_SYMBOL : CPT_SYMBOL));
+	  if (weird) {
+	    print_compact_number(p, SCHEME_SYM_UNINTERNEDP(obj) ? 1 : 0);
+	  }
 	  print_compact_number(p, l);
 	  /* Note: the written symbol table will preserve equivalence
              of uninterned symbols for a single compiled

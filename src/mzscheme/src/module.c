@@ -3676,12 +3676,12 @@ static void qsort_provides(Scheme_Object **exs, Scheme_Object **exsns, Scheme_Ob
     /* Look for uninterned and move to end: */
 
     for (j = count; j--; ) {
-      if (!SCHEME_SYM_UNINTERNED(exs[j]))
+      if (!SCHEME_SYM_WEIRDP(exs[j]))
 	break;
     }
 
     for (i = start; i < j; i++) {
-      if (SCHEME_SYM_UNINTERNED(exs[i])) {
+      if (SCHEME_SYM_WEIRDP(exs[i])) {
 	tmp_ex = exs[i];
 	exs[i] = exs[j];
 	exs[j] = tmp_ex;
@@ -3700,7 +3700,7 @@ static void qsort_provides(Scheme_Object **exs, Scheme_Object **exsns, Scheme_Ob
 	j--;
 	/* Skip over uninterns already at the end: */
 	while (j) {
-	  if (!SCHEME_SYM_UNINTERNED(exs[j]))
+	  if (!SCHEME_SYM_WEIRDP(exs[j]))
 	    break;
 	  else
 	    j--;

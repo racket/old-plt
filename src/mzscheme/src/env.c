@@ -55,8 +55,6 @@ Scheme_Object *toplevels[MAX_CONST_TOPLEVEL_DEPTH][MAX_CONST_TOPLEVEL_POS];
 
 Scheme_Env *scheme_initial_env;
 
-static Scheme_Object *kernel_symbol;
-
 /* locals */
 static Scheme_Env *make_env(Scheme_Env *base, int semi, int toplevel_size);
 static void make_init_env(void);
@@ -91,6 +89,10 @@ static void register_traversers(void);
 #endif
 
 typedef Scheme_Object *(*Lazy_Macro_Fun)(Scheme_Object *, int);
+
+static Scheme_Object *kernel_symbol;
+
+static int tl_id_counter = 0;
 
 static int builtin_ref_counter = 0;
 
@@ -1383,6 +1385,7 @@ Scheme_Object *scheme_tl_id_sym(Scheme_Env *env, Scheme_Object *id, int is_def)
       for (m = marks, ms = 0; 
 	   SCHEME_PAIRP(m) && (ms < best_match_skipped);
 	   m = SCHEME_CDR(m), ms++) {
+  
 	if (scheme_equal(amarks, m)) {
 	  if (ms < best_match_skipped) {
 	    best_match = SCHEME_CDR(a);
@@ -1393,13 +1396,31 @@ Scheme_Object *scheme_tl_id_sym(Scheme_Env *env, Scheme_Object *id, int is_def)
       }
     }
   }
-  
+
   if (!best_match) {
     if (!is_def)
       return sym;
 
-    /* Adding a definition. */
-    best_match = scheme_make_exact_symbol(SCHEME_SYM_VAL(sym), SCHEME_SYM_LEN(sym));
+    /* Adding a definition. We "gensym" here in a sense; actually, we
+       use a symbol table that's in parallel to the normal table, so
+       that we get the same parallel-symbol when unmarshalling
+       code. We use a counter, which works fine for modules and
+       marshalling, because symbols need to be distinct only within
+       the module. For the top level, it's possible that symbols from
+       different compilations collide. */
+    {
+      char buf[50];
+      int len;
+
+      tl_id_counter++;
+      len = SCHEME_SYM_LEN(sym);
+      if (len > 25)
+	len = 25;
+      memcpy(buf, SCHEME_SYM_VAL(sym), len);
+      sprintf(buf + len, "%d", tl_id_counter);
+
+      best_match = scheme_intern_exact_parallel_symbol(buf, strlen(buf));
+    }
     a = scheme_make_pair(marks, best_match);
     map = scheme_make_pair(a, map);
     

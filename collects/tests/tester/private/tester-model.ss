@@ -154,6 +154,9 @@
       ; run-chosen-tests : (listof (list test-group (listof test))) -> void
       ; for each item in the given list, runs the tests, which are a subset 
       ; of the tests that the test-group provides
+      ; FIXME ----------------------
+      ; I need to ensure that this function does not return until the tests
+      ; are complete
       (define run-chosen-tests
         (lambda (chosen-tests)
           (parameterize ((current-eventspace (make-eventspace)))
@@ -192,15 +195,15 @@
                      (get-result (test-thunk (car tests))))
                     (run (cdr tests)))]))
         
-        ; -> (-> void)
-        ; gives a thunk that runs the test group's initializer and then
+        ; -> thread
+        ; gives a thread that runs the test group's initializer and then
         ; the tests that have not yet been run in the group
-        (define (get-runner-thunk)
-          (lambda () (begin
-                       (let ((initializer (test-group-initializer group)))
-                         (begin
-                           (if initializer (initializer))
-                           (run to-be-run))))))
+        (define (get-runner-thread)
+          (parameterize ([current-custodian (make-custodian)])
+            (thread (lambda () 
+                      (begin
+                        ((test-group-initializer group))
+                        (run to-be-run))))))
  
         ; run the tester thread. restart it if it dies. If we wake up
         ; (because testing-thread died) and curr-test is not #f, we
@@ -209,7 +212,7 @@
         ; because there isn't just one place where we can control where
         ; answers come from. There are at least 2 now, which is yucky.
         (define (main-test-loop)
-          (let ((testing-thread (thread (get-runner-thunk))))
+          (let ((testing-thread (get-runner-thread)))
             (begin
               (thread-wait testing-thread)
               (cond
@@ -243,7 +246,7 @@
               (let ((result-val
                      (parameterize ([current-output-port op]
                                     [exit-handler 
-                                     (lambda (x) (kill-thread (current-thread)))])
+                                     (lambda (x) (custodian-shutdown-all (current-custodian)))])
                        (with-handlers ([void (lambda (e)
                                                (make-error (exn-message e)))])
                          (let ([result-val (thunk)])

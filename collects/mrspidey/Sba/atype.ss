@@ -54,6 +54,7 @@
 
   (define (create-fo-FlowType fo-atype)
     (assert (fo-Atype? fo-atype) 'create-fo-FlowType fo-atype)
+    ;; (pretty-print-debug `(create-fo-FlowType ,fo-atype))
     (if (and 
 	 (not (st:use-fo-ftype))
 	 (or

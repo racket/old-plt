@@ -84,7 +84,6 @@
      ;; Now do analyis 
      
      (let-values ([(env refs result) (top-level-traverse-defs defs init-env)])
-       
        (pretty-debug '(fixing up envs))
        (set! global-def-env env)
        (set! global-result result)

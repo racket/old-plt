@@ -453,7 +453,7 @@
        ;; control features
        (apply          (case->
 			(forall (l r)       ((l *->* r)             l ->* r))
-			(forall (a l r)     ((a l *->* r)     a     l ->* r))
+			(forall (a l r)     ((a l *->* r)       a   l ->* r))
 			(forall (a b l r)   ((a b l *->* r)   a b   l ->* r))
 			(forall (a b c l r) ((a b c l *->* r) a b c l ->* r))
 			(forall (a b c d l r) ((a b c d l *->* r) a b c d l ->* r))
@@ -737,7 +737,7 @@
        (file-exists?        (str -> bool))
        (delete-file         (str -> bool))
        (rename-file         (str str -> bool))
-       (file-modify-seconds (str -> num))
+       (file-or-directory-modify-seconds (str -> num))
        (file-or-directory-permissions (str -> (listof sym)))
 
        ;; Hash Tables - fields are key and value

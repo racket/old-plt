@@ -244,6 +244,8 @@
 			  (match (FlowType->Atype ftype)
 			    [(and pi ($ atprim sym tschema))
 			     (set! values-trap-pt "C")
+			     ;; (pretty-print-debug `(ftype-in-traverse
+			     ;;  			   ,ftype ,(FlowType->Atype ftype)))
 			     (zodiac:set-parsed-atprim! fn pi)
 			     (let ([tvar-fn (mk-Tvar sym)])
 			       (tschema->con-for-nargs tschema 

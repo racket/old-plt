@@ -198,33 +198,54 @@
   ;; ======================================================================
   ;; For input-type-expander, recursion is done in expand-input-type
 
+  (define (create-dom-conses lst) 
+    (cond [(null? lst) 
+	   (mrspidey:internal-error 
+	    'create-dom-conses 
+	    "Invalid type syntax ~s" lst)]
+	  [(eq? (cadr lst) '*->*) (car lst)]
+	  [else `(cons ,(car lst) ,(create-dom-conses (cdr lst)))]))
+
   (define input-type-expander 'input-type-expander)
 
   (define (init-input-type-expander!)
     (set! input-type-expander (lambda (x) x))
-    (let ([loop (lambda (x) x)])
+    (letrec ([loop (lambda (x) x)]
+	     [create-dom-conses
+
+	      ; '(dom1 ... domn '*->* rng) => 
+	      ;     '(cons dom1 ... (cons ... (cons domn-1 domn)))
+	      ; added by PAS to handle type for apply
+	      
+	      (lambda (ts)
+		(cond [(null? ts) 
+		       (mrspidey:internal-error 
+			'create-dom-conses 
+			"Invalid type syntax ~s" ts)]
+		      [(eq? (cadr ts) '*->*) (car ts)]
+		      [else (list 'cons 
+				  (car ts) 
+				  (create-dom-conses (cdr ts)))]))])
+
       (install-input-type-expander!
        (match-lambda
-        ['atom      (loop '(union nil num sym str char true false))]
-        ['sexp      (let ([u (gensym)])
-                      (loop `(MU ,u (union atom (box ,u) (cons ,u ,u) (vec ,u)))))]
-        ['bool      (loop '(union false true))]
+        ['atom (loop '(union nil num sym str char true false))]
+        ['sexp (let ([u (gensym)])
+		 (loop `(MU ,u (union atom (box ,u) (cons ,u ,u) (vec ,u)))))]
+        ['bool (loop '(union false true))]
         [('arg a b) (loop (list 'cons a b))]
-        ['noarg     (loop 'nil)]
-        ['null      (loop 'nil)]
-        [('arglistof t)
-	 (let ((u (gensym)))
-	   (loop `(MU ,u (union noarg (arg ,t ,u)))))]
+        ['noarg (loop 'nil)]
+        ['null (loop 'nil)]
+        [('arglistof t) (let ((u (gensym)))
+			  (loop `(MU ,u (union noarg (arg ,t ,u)))))]
         [('arglist) (loop 'noarg)]
         [('arglist t . t*) (loop `(arg ,t (list ,@t*)))]
-        [('listof t)
-	 (let ((u (gensym)))
-	   (loop `(MU ,u (union nil (cons ,t ,u)))))]
+        [('listof t) (let ((u (gensym)))
+		       (loop `(MU ,u (union nil (cons ,t ,u)))))]
         [('list) (loop 'nil)]
         [('list t . t*) (loop `(cons ,t (list ,@t*)))]
 
-        [('MU (? typevar? a) t)
-	 (loop `(rec ([,a ,t]) ,a))]
+        [('MU (? typevar? a) t) (loop `(rec ([,a ,t]) ,a))]
         [(? type-constructor? C) (loop (list C))]
         [(? (lambda (t) (and (list? t) (memq '-> t)))
 	    t)
@@ -262,14 +283,31 @@
 	   [(result '->* . domain)
 	    `( (list ,@(reverse domain)) *->* ,result)]
 	   [_ (mrspidey:error "Bad type ~s" t)])]
-        [(dom '*->* rng) (loop `(lambda ,dom ,rng))]
+
+        [(? (lambda (t) (and (list? t)
+			     (let ([memq-result (memq '*->* t)])
+			       (and memq-result
+				    (null? (cddr memq-result))))))
+	    t)
+
+	 ; matches dom1 ... domn '*->* rng (written by PAS)
+	 ; old match case handled only one dom argument
+
+	(let* ([len (length t)]
+	       [rng (list-ref t (sub1 len))]
+	       [doms (create-dom-conses t)])
+	  ;; (pretty-print-debug `(dom-and-range ,doms '*->* ,rng))
+	  (loop `(lambda ,doms ,rng)))]
+
         [type type]))))
 
   (define (install-input-type-expander! expander)
     (let ([old-expander input-type-expander])
       (set! input-type-expander
 	    (lambda (type) 
-	      ;;(pretty-print-debug `(input-type-expander ,type))
+	      ;; (pretty-print-debug `(input-type-expander ,type))
+	      ;; (pretty-print-debug `(result-of-type-expansion 
+	      ;;		    ,(old-expander (expander type))))
 	      (old-expander (expander type))))))
 
   ;; ======================================================================
@@ -315,8 +353,9 @@
 
   (define (expand-input-type type)
     ;; Do rewriting transformations
-    ;; (pretty-print-debug `(expand-type ,type))
+    ;; (pretty-print-debug `(expand-input-type ,type))
     (let ([t2 (input-type-expander type)])
+      ;; (pretty-print-debug `(expand-input-type ,t2))
       (if (eq? type t2)
 	  (or (compat-type-once type expand-input-type)
 	      (mrspidey:error (format "Invalid type syntax ~s" type)))
@@ -327,8 +366,9 @@
     ;; (pretty-print-debug `(expand-type ,type))
     (let ([t2 (input-type-expander type)])
       (if (eq? type t2)
-	  (or (compat-type-once type 
-				(lambda (type) (expand-input-type-err type at)))
+	  (or (compat-type-once 
+	       type 
+	       (lambda (type) (expand-input-type-err type at)))
 	      (mrspidey:error (format "Invalid type syntax ~s" type) at))
 	  (expand-input-type-err t2 at))))
 
@@ -579,10 +619,12 @@
        type)))
 
   (define (schema->con schema Tvar prefix top-misc)
-    (let-values ([(forall-env type) (schema->env+type schema)])
-
+    ;; (pretty-print-debug `(scheme->con0 ,schema ,Tvar ,prefix))
+    (let-values 
+     ([(forall-env type) (schema->env+type schema)])
+      ;; (pretty-print-debug `(scheme->con1 ,forall-env ,type))
       (new-edge! (generic-type->con type prefix forall-env #t) Tvar)
-
+      ;; (pretty-print-debug `(scheme->con2 ,forall-env ,type))
       ;; Put top-misc in misc field of each AV
       (for-each
        (lambda (AV) (set-AV-misc! AV top-misc))
@@ -591,6 +633,7 @@
   ;; ----------------------------------------------------------------------
 
   (define (tschema->con tschema Tvar prefix top-misc)
+    ;; (pretty-print-debug `(tschema->con ,tschema ,Tvar ,prefix))
     (schema->con
      (match tschema
        [('case-> . schema*) (rac schema*)]
@@ -612,7 +655,7 @@
 		 (schema->con schema Tvar prefix top-misc)
 		 #f)))
 	 schema*)
-        (schema->con (rac schema*) Tvar prefix top-misc))]
+	(schema->con (rac schema*) Tvar prefix top-misc))]
       [schema 
        (schema->con schema Tvar prefix top-misc)]))
 

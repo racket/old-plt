@@ -88,6 +88,10 @@ wxFrame::wxFrame // Constructor (for frame window)
 	CheckMemOK(theMacWindow);
 	cMacDC = new wxMacDC(theMacWindow);
 
+ 	WStateData **wstatedata = (WStateData**)((WindowPeek)theMacWindow)->dataHandle;
+	(*wstatedata)->stdState.right -= 80;
+	//(*wstatedata)->stdState.top = GetMBarHeight() + 5;
+
   // Calculate the platformArea size
 	Rect theStrucRect = wxMacGetStrucRect();
 	Rect theContRect = wxMacGetContRect();

@@ -63,7 +63,7 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
 {
 	buttonBitmap = NULL;
 	Callback(function);
-
+	
 	font = buttonFont; // WCH: mac platform only
 
 	float fLabelWidth = 100.0;
@@ -162,9 +162,11 @@ char* wxRadioButton::GetLabel()
 
 		::GetControlTitle(cMacControl, pLabel);
 		wxMacPtoCString(pLabel, wxBuffer);
-	    return wxBuffer;
-	 } else
-	 	return "";
+	    return copystring(wxBuffer);
+	 } else if (labelString)
+	   return labelString;
+	 else
+	 	return NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -172,9 +174,12 @@ void wxRadioButton::SetLabel(char* label)
 {
   if (label && !buttonBitmap)
   {
-	SetCurrentDC();
-  	wxMacString1 theMacString1 = label;
-  	::SetControlTitle(cMacControl, theMacString1());
+    if (cMacControl) {
+	  SetCurrentDC();
+  	  wxMacString1 theMacString1 = label;
+  	  ::SetControlTitle(cMacControl, theMacString1());
+  	} else
+  	  labelString = label;
   }
 }
 

@@ -99,7 +99,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	window_parent = panel;
 	labelPosition = panel->label_position;
 	windowStyle = style;
-	valueFont = wxNORMAL_FONT;
+	valueFont = buttonFont;
 	Callback (func);
 	
 	SetCurrentMacDC();
@@ -472,7 +472,8 @@ void wxChoice::OnEvent(wxMouseEvent& event) // mac platform only
 
 void wxChoice::Command(wxCommandEvent& event) // mac platform only (also xview platform)
 {
-	ProcessCommand(event);
+   SetSelection (event.commandInt);
+   ProcessCommand(event);
 }
 
 // ------------ Methods available to user ------------

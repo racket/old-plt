@@ -162,7 +162,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 	(**cListHandle).indent.v = tHeight - tDescent;
 
 	// by default the Mac allows fancy selections
-	if (multiple & wxMULTIPLE) {
+	if (multiple & (wxMULTIPLE | wxEXTENDED)) {
 #if 0
 		(**cListHandle).selFlags = lExtendDrag | lNoDisjoint | lNoExtend | lNoRect 
 			| lUseSense;
@@ -330,13 +330,14 @@ void wxListBox::OnEvent(wxMouseEvent& event) // WCH : mac only ?
 		Point startPt = {startV, startH}; 	// client c.s.
 		int modifiers = 0;
 		if (event.shiftDown)
-			modifiers += shiftKey;
+		  modifiers += shiftKey;
 		if (event.altDown)
-			modifiers += optionKey;
-		if (event.rightDown) // mflatt: right button is Cmd-click
-			modifiers += cmdKey;
+		  modifiers += optionKey;
+		if (event.rightDown  // mflatt: right button is Cmd-click
+		    || ((multiple & wxEXTENDED) && !event.shiftDown))
+		  modifiers += cmdKey;
 		if (event.controlDown)
-			modifiers += controlKey;
+		  modifiers += controlKey;
 
 		if ((**cListHandle).vScroll) {
 		  int thePart = ::TestControl((**cListHandle).vScroll, startPt);
@@ -344,6 +345,15 @@ void wxListBox::OnEvent(wxMouseEvent& event) // WCH : mac only ?
 		    ManualScroll(cListHandle, (**cListHandle).vScroll, startPt, thePart);
 		    return;
 		  }
+		}
+
+		/* Click past the last cell => ignore it */
+		if (PtInRect(startPt, &(**cListHandle).rView)) {
+		  Cell lastCell = { no_items - 1, 0 };
+		  Rect r;
+		  LRect(&r, lastCell, cListHandle);
+		  if (startPt.v >= r.bottom)
+		    return;
 		}
 
 		::LClick(startPt, modifiers, cListHandle);
@@ -367,6 +377,8 @@ void wxListBox::OnEvent(wxMouseEvent& event) // WCH : mac only ?
 		
 		{
 			int which = ((cell.v < no_items) ? cell.v : -1);
+			if (multiple & (wxMULTIPLE | wxEXTENDED))
+			  which = -1;
 			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
 			commandEvent->commandString = GetString(which);
 			commandEvent->commandInt = which;
@@ -553,14 +565,14 @@ void wxListBox::Clear(void)
 // Find string for position
 char *wxListBox::GetString(int N)
 {
-	if (N >= no_items)
+	if ((N < 0) || (N >= no_items))
 		return NULL;
 
 	Cell cell = {N, 0};
 	short	len = 255;				// FIXME - really should be size of wxBuffer
 	LGetCell(wxBuffer, &len,  cell, cListHandle);
 	if (len <= 0 )
-		return NULL;
+	  return NULL;
 	
 	wxBuffer[len] = '\0';
 	return wxBuffer;

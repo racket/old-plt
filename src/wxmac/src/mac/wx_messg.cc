@@ -38,7 +38,7 @@ wxMessage::wxMessage // Constructor (given parentArea)
 	) :
 		wxbMessage(parentArea, x, y, 0, 0, style, windowName)
 {
-	CreateWxMessage(label);
+	CreateWxMessage(label, labelFont);
 }
 
 //-----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ wxMessage::wxMessage // Constructor (given parentPanel)
 	) :
 		wxbMessage(parentPanel, x, y, 0, 0, style, windowName)
 {
-	CreateWxMessage(label);
+	CreateWxMessage(label, labelFont);
 }
 
 //-----------------------------------------------------------------------------

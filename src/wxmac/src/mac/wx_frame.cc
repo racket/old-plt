@@ -285,7 +285,7 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
  		  EraseRect(&r);
  		  
  		  cStatusPanel->SetSize(0, theMacHeight - cStatusPanel->Height(),
- 		  	                    theMacWidth - 18, -1);
+ 		  	                    theMacWidth, -1);
  		  int w, h;
  		  cStatusPanel->GetClientSize(&w, &h);
  		  cStatusText->SetSize(-1, -1, w, -1);
@@ -360,9 +360,10 @@ void wxFrame::CreateStatusLine(int number, char* name)
 
 	nb_status = number;
 	status_line_exists = TRUE;
-	cStatusPanel = new wxPanel(ControlArea(), -1, -1, -1, -1, wxBORDER);
-	cStatusText = new wxText(cStatusPanel, NULL, NULL);
-	cStatusText->Enable(FALSE);
+	cStatusPanel = new wxPanel(ControlArea());
+	cStatusText = new wxMessage(cStatusPanel, "");
+	cStatusPanel->SetEraser(cEraser);
+	cStatusText->SetEraser(cEraser);
 	cStatusText->SetFont(wxNORMAL_FONT);
 	int statusLineHeight = cStatusText->GetCharHeight() * nb_status;
 	int clientWidth, clientHeight;
@@ -372,7 +373,7 @@ void wxFrame::CreateStatusLine(int number, char* name)
 #if 1
  	// it is a hack to put the line down..
  	cStatusPanel->SetSize(0, clientHeight - cStatusPanel->Height(),
- 		 cStatusPanel->Width() - 18, cStatusPanel->Height()); // tom!!
+ 		 cStatusPanel->Width(), cStatusPanel->Height()); // tom!!
  	// tom: here the Statuspanel is placed over the controlArea!!
  	cControlArea->SetMargin(cStatusPanel->Height() + 1, Direction::wxBottom);
 #else
@@ -394,8 +395,7 @@ void wxFrame::SetStatusText(char* text, int number)
 {
  	if (!status_line_exists) 
  		return;
- 	cStatusText->Clear(); // tom: replace, don't append
-  	cStatusText->WriteText(text);
+ 	cStatusText->SetLabel(text);
 }
   
 // tom: perhaps this could be done otherwise:
@@ -830,7 +830,7 @@ void wxFrame::Paint(void)
 	RgnHandle rgn, subrgn;
 	if (rgn = NewRgn()) {
 		if (subrgn = NewRgn()) {
-			SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight);
+		    SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight);
 			AddWhiteRgn(subrgn);
 			DiffRgn(rgn, subrgn, rgn);
 			EraseRgn(rgn);
@@ -851,6 +851,13 @@ void wxFrame::Paint(void)
     	                         - statusLineHeight, 
  							   	 Direction::wxBottom);
 	  ClientArea()->SetMargin(clientAreaMargin);
+
+	  int w, h;
+	  cStatusPanel->GetSize(&w, &h);
+
+	  cStatusPanel->SetCurrentDC();
+	  Rect r = { 0, 0, h, w };
+	  EraseRect(&r);
 	  cStatusPanel->Paint();
 	  clientAreaMargin.SetMargin(clientAreaMargin.Offset(Direction::wxBottom) 
     	                         + statusLineHeight, 

@@ -312,24 +312,14 @@ int wxSlider::GetValue(void)
 
 void wxSlider::SetValue(int value)
 {
+	SetCurrentDC();
 	::SetControlValue(cMacControl, value);
+	::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase);
+	::EraseRect(&valueRect);
+	char t[8];
+	sprintf(t,"%d",::GetControlValue(cMacControl));
+	::DrawText(t,0,strlen(t));
 }
-
-
-#if 0 // the following 3 methods are in wxWindows 16.x but should not
-	  // be implemented in wxMac because they interfere with the Area
-	  // calcs. This is a FIXME
-void wxSlider::SetSize(int x, int y, int width, int height)
-{
-}
-void wxSlider::GetSize (int *x, int *y)
-{
-}
-
-void wxSlider::GetPosition(int *x, int *y)
-{
-}
-#endif
 
 void wxSlider::SetBackgroundColour(wxColour*col)
 {

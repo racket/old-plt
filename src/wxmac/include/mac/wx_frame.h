@@ -19,7 +19,7 @@ typedef       void* wxFrame;
 class wxMenuBar;
 class wxCommandEvent;
 class wxPanel;
-class wxText;
+class wxMessage;
 class wxDialogBox;
 
 class wxFrame: public wxbFrame
@@ -32,7 +32,7 @@ protected:
 	char		cWindowTitle[256];
 	Bool		cMaximized;
 	wxPanel*	cStatusPanel;
-	wxText*		cStatusText;
+	wxMessage*	cStatusText;
   	wxArea* 	cPlatformArea; // mac platform only
   	wxArea* 	cContentArea; // mac platform only
   	wxArea* 	cControlArea; // mac platform only

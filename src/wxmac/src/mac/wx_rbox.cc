@@ -65,8 +65,8 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
 	Callback(function);
 
 	cRadioPanel = new wxPanel(this->ClientArea(), 0, 0, 0, 0, 0);
-	cRadioPanel->SetButtonFont(wxNORMAL_FONT);
-	cRadioPanel->SetLabelFont(wxNORMAL_FONT);
+	cRadioPanel->SetButtonFont(buttonFont);
+	cRadioPanel->SetLabelFont(labelFont);
 
 	wxPanel *buttonHolder = cRadioPanel;
 	
@@ -133,8 +133,8 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
 	Callback(function);
 
 	cRadioPanel = new wxPanel(this->ClientArea(), 0, 0, 0, 0, 0);
-	cRadioPanel->SetButtonFont(wxNORMAL_FONT);
-	cRadioPanel->SetLabelFont(wxNORMAL_FONT);
+	cRadioPanel->SetButtonFont(buttonFont);
+	cRadioPanel->SetLabelFont(labelFont);
 	
 	wxPanel *buttonHolder = cRadioPanel;
 	
@@ -347,19 +347,9 @@ void wxRadioBox::Command(wxCommandEvent& event) // mac platform only
 	int numberItems = cRadioButtons.Number();
 	if (0 <= selection && selection < numberItems)
 	{
-		wxNode* node = cRadioButtons.Nth(selection);
-		wxRadioButton* radioButton = (wxRadioButton*)node->Data();
-		if (radioButton->IsEnable())
-		{
-			radioButton->Highlight(TRUE); // highlight button
-			long delayTicks = 10; // one tick is 1/60th of a second
-			unsigned long finalTicks;
-			Delay(delayTicks, &finalTicks);
-			radioButton->Highlight(FALSE); // unhighlight button
-			SetSelection(selection); // set radioButton
-		  	ProcessCommand(event);
-	  	}
+	  SetSelection(selection); // set radioButton
   	}
+  	ProcessCommand(event);
 }
 
 void wxRadioBox::ChangeToGray(Bool gray)

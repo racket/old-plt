@@ -510,18 +510,24 @@ void wxCanvas::SetScrollPos(int dir, int val)
 
 int wxCanvas::GetScrollPos(int dir)
 {
+  if (!cScroll) return 0;
+  
   return cScroll->GetScrollData()->GetValue((dir == wxHORIZONTAL) ? wxWhatScrollData::wxPositionH
 												   : wxWhatScrollData::wxPositionV);
 }
 
 int wxCanvas::GetScrollPage(int dir)
 {
+  if (!cScroll) return 1;
+  
   return cScroll->GetScrollData()->GetValue((dir == wxHORIZONTAL) ? wxWhatScrollData::wxPageW
 												   : wxWhatScrollData::wxPageH);
 }
 int wxCanvas::GetScrollRange(int dir)
 {
-  return cScroll->GetScrollData()->GetValue((dir == wxHORIZONTAL) ? wxWhatScrollData::wxSizeW
+ if (!cScroll) return 1;
+  
+ return cScroll->GetScrollData()->GetValue((dir == wxHORIZONTAL) ? wxWhatScrollData::wxSizeW
 												   : wxWhatScrollData::wxSizeH);
 }
 

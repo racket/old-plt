@@ -1528,25 +1528,27 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SCHEME_CPTRP(obj))
     {
+      Scheme_Object *tag = SCHEME_CPTR_TYPE(obj);
       if (compact || !pp->print_unreadable) {
 	cannot_print(pp, notdisplay, obj, ht, compact);
-      } else if (SCHEME_CPTR_TYPE(obj) == NULL) {
+      } else if (tag == NULL) {
 	print_this_string(pp, "#<cpointer>", 0, 11);
       } else {
+        Scheme_Object *name = tag;
+        if (SCHEME_PAIRP(name)) name = SCHEME_CAR(name);
 	print_this_string(pp, "#<cpointer:", 0, 11);
-        if (SCHEME_SYMBOLP(SCHEME_CPTR_TYPE(obj))) {
+        if (SCHEME_SYMBOLP(name)) {
           print_this_string(pp,
-                            (char *)SCHEME_CPTR_TYPE(obj),
-                            ((char *)(SCHEME_SYM_VAL(SCHEME_CPTR_TYPE(obj))))
-                              - ((char *)SCHEME_CPTR_TYPE(obj)),
-                            SCHEME_SYM_LEN(SCHEME_CPTR_TYPE(obj)));
-        } else if (SCHEME_BYTE_STRINGP(SCHEME_CPTR_TYPE(obj))) {
-          print_byte_string(SCHEME_BYTE_STR_VAL(SCHEME_CPTR_TYPE(obj)),
-                            SCHEME_BYTE_STRLEN_VAL(SCHEME_CPTR_TYPE(obj)),
+                            (char*)name,
+                            ((char*)(SCHEME_SYM_VAL(name))) - ((char*)name),
+                            SCHEME_SYM_LEN(name));
+        } else if (SCHEME_BYTE_STRINGP(name)) {
+          print_byte_string(SCHEME_BYTE_STR_VAL(name),
+                            SCHEME_BYTE_STRLEN_VAL(name),
                             0, pp);
-        } else if (SCHEME_CHAR_STRINGP(SCHEME_CPTR_TYPE(obj))) {
-          Scheme_Object *s = SCHEME_CPTR_TYPE(obj);
-	  scheme_print_string(pp, SCHEME_CHAR_STR_VAL(s), 0, SCHEME_CHAR_STRTAG_VAL(s));
+        } else if (SCHEME_CHAR_STRINGP(name)) {
+	  scheme_print_string(pp, SCHEME_CHAR_STR_VAL(name), 0,
+                              SCHEME_CHAR_STRTAG_VAL(name));
           closed = 1;
         } else {
           print_this_string(pp, "#", 0, 1);
